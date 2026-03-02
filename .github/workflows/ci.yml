@@ -71,7 +71,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Validate migration timestamps
-        run: bash scripts/validate-migration-timestamps.sh
+        run: node scripts/check-migration-timestamps.js
       - uses: supabase/setup-cli@v1
         with:
           version: latest
