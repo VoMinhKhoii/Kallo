@@ -62,7 +62,7 @@
         "noStaticOnlyClass": "off"
       },
       "security": {
-        "noDangerouslySetInnerHtml": "off"
+        "noDangerouslySetInnerHtml": "warn"
       },
       "suspicious": {
         "noExplicitAny": "off",
