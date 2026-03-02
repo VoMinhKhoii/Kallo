@@ -104,7 +104,7 @@ function expectMatch(
 }
 
 // Helper: assert specific ID appears in results
-function expectId(results: FuzzyResult[] | VectorResult[], id: string) {
+function _expectId(results: FuzzyResult[] | VectorResult[], id: string) {
   expect(results.some((r) => r.id === id)).toBe(true);
 }
 
@@ -590,9 +590,7 @@ describe('combined search pipeline', () => {
       // at DB level we just verify vector CAN find rice.
       const trgmResults = await fuzzy('cơm trắng', 5, 0.15);
       const hasTrgmRice = trgmResults.some(
-        (r) =>
-          r.name_primary.includes('Gạo') ||
-          r.name_primary.includes('gạo')
+        (r) => r.name_primary.includes('Gạo') || r.name_primary.includes('gạo')
       );
       // trgm does NOT surface rice — this is the gap
       expect(hasTrgmRice).toBe(false);
@@ -729,9 +727,7 @@ describe('diacritic routing', () => {
     const r = await fuzzy('thit lon', 5, 0.1);
     expect(r.length).toBeGreaterThan(0);
     const hasPork = r.some(
-      (x) =>
-        x.name_primary.includes('Thịt') &&
-        x.name_primary.includes('lợn')
+      (x) => x.name_primary.includes('Thịt') && x.name_primary.includes('lợn')
     );
     expect(hasPork).toBe(true);
   });
@@ -845,7 +841,7 @@ describe('search infrastructure integrity', () => {
 
   it('trigger updates search_text on name change', async () => {
     // Create a temp row, verify trigger, clean up
-    const testId = 'test_trigger_' + Date.now();
+    const testId = `test_trigger_${Date.now()}`;
     await sql`
       INSERT INTO vietnamese_food_composition 
         (id, name_primary, name_en, type_vn, type_en, source, state)

@@ -75,6 +75,10 @@ Recent decisions affecting current work:
 
 None yet.
 
+### Roadmap Evolution
+
+- Phase 1.1 inserted after Phase 1: CI/CD Pipeline (URGENT)
+
 ### Blockers/Concerns
 
 - [Phase 3]: AI Pipeline is highest-risk phase — needs research on Vietnamese ingredient canonicalization, prompt engineering for cooking adjustments, raw→cooked conversion factors, pgvector similarity thresholds

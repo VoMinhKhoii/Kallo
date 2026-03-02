@@ -1,11 +1,4 @@
-import {
-  afterEach,
-  beforeEach,
-  describe,
-  expect,
-  it,
-  vi,
-} from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // We need to mock React since useEffect/useState won't run
 // in a non-component context. Test the logic directly.
@@ -55,15 +48,11 @@ describe('useIsMobile logic', () => {
 
     it('creates matchMedia with correct query', () => {
       window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT - 1}px)`);
-      expect(window.matchMedia).toHaveBeenCalledWith(
-        '(max-width: 767px)'
-      );
+      expect(window.matchMedia).toHaveBeenCalledWith('(max-width: 767px)');
     });
 
     it('responds to resize events', () => {
-      const mql = window.matchMedia(
-        `(max-width: ${MOBILE_BREAKPOINT - 1}px)`
-      );
+      const _mql = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT - 1}px)`);
 
       let isMobile = window.innerWidth < MOBILE_BREAKPOINT;
       expect(isMobile).toBe(false);

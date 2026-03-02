@@ -14,9 +14,7 @@ export function encodeDbUrl(raw: string): string {
   if (userEnd === -1 || atHost === -1) return raw;
   const password = raw.slice(userEnd + 1, atHost);
   return (
-    raw.slice(0, userEnd + 1) +
-    encodeURIComponent(password) +
-    raw.slice(atHost)
+    raw.slice(0, userEnd + 1) + encodeURIComponent(password) + raw.slice(atHost)
   );
 }
 
