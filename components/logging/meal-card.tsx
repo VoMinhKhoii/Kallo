@@ -138,7 +138,7 @@ export function MealCard({ message, onConfirm }: MealCardProps) {
             {['Item', 'Cal', 'Pro', 'Carb', 'Fat'].map((label, i) => (
               <span
                 key={label}
-                className={`${i > 0 ? 'text-right' : ''}font-semibold uppercase tracking-wider ${
+                className={`${i > 0 ? 'text-right' : ''} font-semibold uppercase tracking-wider ${
                   i === 0
                     ? 'text-[#8B7355]'
                     : i === 1
