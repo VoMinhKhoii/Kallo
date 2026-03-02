@@ -15,7 +15,7 @@ jobs:
     name: Lint (Biome)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: biomejs/setup-biome@v2
       - run: biome ci .
 
@@ -23,7 +23,7 @@ jobs:
     name: Type Check
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: oven-sh/setup-bun@v2
       - uses: actions/cache@v4
         with:
@@ -38,7 +38,7 @@ jobs:
     name: Unit Test
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: oven-sh/setup-bun@v2
       - uses: actions/cache@v4
         with:
@@ -55,7 +55,7 @@ jobs:
       NEXT_PUBLIC_SUPABASE_URL: "https://placeholder.supabase.co"
       NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: "placeholder"
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: oven-sh/setup-bun@v2
       - uses: actions/cache@v4
         with:
@@ -69,7 +69,7 @@ jobs:
     name: Validate Migrations
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Validate migration timestamps
         run: node scripts/check-migration-timestamps.js
       - uses: supabase/setup-cli@v1
@@ -90,5 +90,5 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: actions/dependency-review-action@v4
