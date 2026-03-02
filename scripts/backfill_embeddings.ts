@@ -27,7 +27,7 @@ const BATCH_DELAY_MS = 35_000;
 if (!process.env.DATABASE_URL || !process.env.GEMINI_API_KEY) {
   console.error(
     'Missing DATABASE_URL or GEMINI_API_KEY. Run with:',
-    '\n  bun --env-file=.env.local scripts/backfill_embeddings.ts',
+    '\n  bun --env-file=.env.local scripts/backfill_embeddings.ts'
   );
   process.exit(1);
 }
@@ -43,7 +43,7 @@ function buildEmbeddingText(row: {
   typeVn: string;
   typeEn: string;
 }): string {
-  const alt = row.nameAlt?.length ? ' ' + row.nameAlt.join(' ') : '';
+  const alt = row.nameAlt?.length ? ` ${row.nameAlt.join(' ')}` : '';
   return `${row.namePrimary}${alt} ${row.nameEn} ${row.typeVn} ${row.typeEn}`;
 }
 
@@ -64,7 +64,7 @@ async function embedBatch(texts: string[]): Promise<number[][]> {
         ? Math.ceil(Number.parseFloat(retryMatch[1]) * 1000) + 1000
         : 1000 * 2 ** attempt;
       console.warn(
-        `Retry ${attempt}/${MAX_RETRIES} in ${(delay / 1000).toFixed(0)}s`,
+        `Retry ${attempt}/${MAX_RETRIES} in ${(delay / 1000).toFixed(0)}s`
       );
       await new Promise((r) => setTimeout(r, delay));
     }
@@ -77,7 +77,7 @@ async function embedBatch(texts: string[]): Promise<number[][]> {
  */
 async function updateBatch(
   ids: string[],
-  embeddings: number[][],
+  embeddings: number[][]
 ): Promise<void> {
   // Build VALUES list directly as raw SQL to avoid parameter binding
   // issues with vector arrays
@@ -88,12 +88,14 @@ async function updateBatch(
     return `('${safeId}', '${vec}'::vector(768))`;
   });
 
-  await db.execute(sql.raw(`
+  await db.execute(
+    sql.raw(`
     UPDATE vietnamese_food_composition AS vfc
     SET embedding = data.vec
     FROM (VALUES ${rows.join(',')}) AS data(id, vec)
     WHERE vfc.id = data.id
-  `));
+  `)
+  );
 }
 
 async function main() {
@@ -126,12 +128,12 @@ async function main() {
       const embeddings = await embedBatch(texts);
       await updateBatch(
         batch.map((r) => r.id),
-        embeddings,
+        embeddings
       );
 
       processed += batch.length;
       console.log(
-        `Batch ${Math.floor(i / BATCH_SIZE) + 1}: ${processed}/${rows.length}`,
+        `Batch ${Math.floor(i / BATCH_SIZE) + 1}: ${processed}/${rows.length}`
       );
 
       // Rate-limit: wait between batches to stay under free tier quota

@@ -43,9 +43,7 @@ export function MealCardItem({
           <div className="flex items-center gap-0.5">
             <button
               type="button"
-              onClick={() =>
-                onQuantityChange(item.id, getDelta(-1))
-              }
+              onClick={() => onQuantityChange(item.id, getDelta(-1))}
               className="flex h-5 w-5 items-center justify-center rounded-md border border-[#E8D5B5]/60 bg-white text-[#8B7355] transition-colors hover:bg-[#F0EAE0]"
             >
               <Minus className="h-2.5 w-2.5" />
@@ -60,9 +58,7 @@ export function MealCardItem({
             </span>
             <button
               type="button"
-              onClick={() =>
-                onQuantityChange(item.id, getDelta(1))
-              }
+              onClick={() => onQuantityChange(item.id, getDelta(1))}
               className="flex h-5 w-5 items-center justify-center rounded-md border border-[#E8D5B5]/60 bg-white text-[#8B7355] transition-colors hover:bg-[#F0EAE0]"
             >
               <Plus className="h-2.5 w-2.5" />
@@ -118,10 +114,7 @@ export function MealCardItem({
         {Math.round(item.macros.carbs)}g
       </span>
       <span
-        className={cn(
-          'text-right font-medium tabular-nums',
-          MACRO_COLORS.fat
-        )}
+        className={cn('text-right font-medium tabular-nums', MACRO_COLORS.fat)}
         style={{ fontFamily: 'DM Sans, sans-serif' }}
       >
         {Math.round(item.macros.fat)}g

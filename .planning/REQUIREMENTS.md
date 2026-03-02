@@ -13,6 +13,12 @@
 - [x] **DB-04**: `body_weight_log` table with daily weight entries
 - [x] **DB-05**: RLS policies on all new tables (users access own data only)
 
+### CI/CD
+
+- [ ] **CI-01**: GitHub Actions CI workflow runs on PRs and pushes to main with parallel quality checks (Biome lint, ESLint, type check, unit tests, production build)
+- [ ] **CI-02**: Supabase migration validation in CI — all migrations apply cleanly against local Postgres with pgvector and pg_trgm extensions
+- [ ] **CI-03**: Branch protection rules require all CI checks to pass before merging to main
+
 ### Onboarding
 
 - [ ] **ONB-01**: User completes body metrics screen (weight, height, age, sex, activity level)
@@ -117,6 +123,9 @@ Deferred to future releases. Tracked but not in current roadmap.
 | DB-03 | Phase 1 | Complete |
 | DB-04 | Phase 1 | Complete |
 | DB-05 | Phase 1 | Complete |
+| CI-01 | Phase 1.1 | Pending |
+| CI-02 | Phase 1.1 | Pending |
+| CI-03 | Phase 1.1 | Pending |
 | ONB-01 | Phase 2 | Pending |
 | ONB-02 | Phase 2 | Pending |
 | ONB-03 | Phase 2 | Pending |
@@ -156,8 +165,8 @@ Deferred to future releases. Tracked but not in current roadmap.
 | TPL-03 | Phase 8 | Pending |
 
 **Coverage:**
-- v1 requirements: 42 total
-- Mapped to phases: 42 ✓
+- v1 requirements: 45 total
+- Mapped to phases: 45 ✓
 - Unmapped: 0
 
 ---

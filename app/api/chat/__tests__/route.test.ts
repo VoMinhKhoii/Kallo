@@ -1,12 +1,5 @@
 import type { NextRequest } from 'next/server';
-import {
-  afterEach,
-  beforeEach,
-  describe,
-  expect,
-  it,
-  vi,
-} from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mockGenerateContent = vi.fn();
 
@@ -106,9 +99,7 @@ describe('POST /api/chat', () => {
   });
 
   it('returns 429 on rate limit errors', async () => {
-    mockGenerateContent.mockRejectedValue(
-      new Error('429 Too Many Requests')
-    );
+    mockGenerateContent.mockRejectedValue(new Error('429 Too Many Requests'));
 
     const res = await POST(createRequest({ message: 'test' }));
     const json = await res.json();
@@ -118,9 +109,7 @@ describe('POST /api/chat', () => {
   });
 
   it('returns 500 on generic API errors', async () => {
-    mockGenerateContent.mockRejectedValue(
-      new Error('Service unavailable')
-    );
+    mockGenerateContent.mockRejectedValue(new Error('Service unavailable'));
 
     const res = await POST(createRequest({ message: 'test' }));
     const json = await res.json();

@@ -1,0 +1,40 @@
+# CodeRabbit AI Code Review Configuration
+# https://docs.coderabbit.ai/getting-started/configuration
+language: en
+reviews:
+  # High-level review summary for every PR
+  high_level_summary: true
+  # Enable poem in summary (fun touch for open source)
+  poem: true
+  # Review status for new PRs
+  auto_review:
+    enabled: true
+    drafts: false
+  # Path-based review instructions
+  path_instructions:
+    - path: "lib/db/**"
+      instructions: >
+        Review database queries and schema changes carefully.
+        This project uses Drizzle ORM with Supabase (Postgres).
+        Check for SQL injection risks, missing indexes, and N+1 queries.
+        Migrations in supabase/migrations/ use a two-domain model:
+        Domain A (Drizzle) for tables/columns and Domain B (manual SQL) for RLS/triggers.
+    - path: "app/**"
+      instructions: >
+        This is a Next.js 16 App Router project with React 19.
+        Components are React Server Components by default.
+        Check for proper use of 'use client' directive.
+        Verify TypeScript strict mode compliance.
+    - path: "supabase/migrations/**"
+      instructions: >
+        SQL migrations for Supabase. Check for:
+        - Proper SET search_path for pgvector/pg_trgm extensions
+        - RLS policies on new tables
+        - Migration ordering (Drizzle DDL before manual Domain B SQL)
+    - path: ".github/**"
+      instructions: >
+        Review GitHub Actions workflows and configuration.
+        Check for security best practices, pinned action versions,
+        and proper secret handling.
+chat:
+  auto_reply: true

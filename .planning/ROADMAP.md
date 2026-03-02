@@ -40,6 +40,16 @@ Plans:
 - [ ] 01-02-PLAN.md — pgvector embeddings infrastructure (extension, embedding column, HNSW index, match_ingredients function)
 - [ ] 01-03-PLAN.md — RLS policies for all new tables (user data isolation)
 
+### Phase 1.1: CI/CD Pipeline (INSERTED)
+
+**Goal:** Automated quality gate via GitHub Actions — lint, type-check, test, build, and Supabase migration validation run on every PR and push to main
+**Requirements**: CI-01, CI-02, CI-03
+**Depends on:** Phase 1
+**Plans:** 1 plan
+
+Plans:
+- [ ] 01.1-01-PLAN.md — GitHub Actions CI workflow (6 parallel jobs: Biome, ESLint, TypeScript, unit tests, build, migration validation) + branch protection
+
 ### Phase 2: Onboarding
 **Goal**: New users can set up their nutritional profile so the AI pipeline has the personal context it needs for accurate estimates
 **Depends on**: Phase 1 (user_profiles table already exists; this phase builds UI and TDEE logic)

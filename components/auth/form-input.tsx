@@ -4,8 +4,7 @@ import { Eye, EyeOff } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
 
-interface FormInputProps
-  extends React.InputHTMLAttributes<HTMLInputElement> {
+interface FormInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label: string;
   type?: string;
   placeholder?: string;

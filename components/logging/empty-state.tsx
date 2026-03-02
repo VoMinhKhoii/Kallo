@@ -5,11 +5,7 @@ interface EmptyStateProps {
   onSuggestionClick: (suggestion: string) => void;
 }
 
-const SUGGESTIONS = [
-  '2 mực kho + cơm',
-  'Phở bò tái',
-  'Bún chả Hà Nội',
-];
+const SUGGESTIONS = ['2 mực kho + cơm', 'Phở bò tái', 'Bún chả Hà Nội'];
 
 export function EmptyState({ onSuggestionClick }: EmptyStateProps) {
   return (
@@ -59,8 +55,8 @@ export function EmptyState({ onSuggestionClick }: EmptyStateProps) {
             fontFamily: 'DM Sans, sans-serif',
           }}
         >
-          Describe your meal naturally — Vietnamese or English — and
-          I&apos;ll break down the macros for you.
+          Describe your meal naturally — Vietnamese or English — and I&apos;ll
+          break down the macros for you.
         </motion.p>
       </div>
 

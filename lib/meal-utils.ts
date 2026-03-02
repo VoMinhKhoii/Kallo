@@ -1,8 +1,6 @@
 import type { MacroBreakdown, MealItem } from '@/lib/types/meal';
 
-export function recalculateTotals(
-  items: MealItem[]
-): MacroBreakdown {
+export function recalculateTotals(items: MealItem[]): MacroBreakdown {
   return items.reduce(
     (acc, item) => ({
       calories: acc.calories + item.macros.calories,
@@ -27,9 +25,7 @@ export function applyQuantityChange(
 
     const newQuantity = Math.max(0, item.quantity + delta);
     const ratio =
-      originalItem.quantity > 0
-        ? newQuantity / originalItem.quantity
-        : 0;
+      originalItem.quantity > 0 ? newQuantity / originalItem.quantity : 0;
 
     return {
       ...item,

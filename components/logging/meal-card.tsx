@@ -3,15 +3,8 @@
 import { Check, Pencil, Sparkles, X } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useState } from 'react';
-import type {
-  ChatMessage,
-  MealItem,
-  ParsedMeal,
-} from '@/lib/types/meal';
-import {
-  applyQuantityChange,
-  recalculateTotals,
-} from '@/lib/meal-utils';
+import { applyQuantityChange, recalculateTotals } from '@/lib/meal-utils';
+import type { ChatMessage, MealItem, ParsedMeal } from '@/lib/types/meal';
 import { MealCardActions } from './meal-card-actions';
 import { MealCardItem } from './meal-card-item';
 
@@ -36,10 +29,7 @@ export function MealCard({ message, onConfirm }: MealCardProps) {
   const currentItems = isEditing ? editedItems : savedItems;
   const currentTotals = recalculateTotals(currentItems);
 
-  const handleQuantityChange = (
-    itemId: string,
-    delta: number
-  ) => {
+  const handleQuantityChange = (itemId: string, delta: number) => {
     setEditedItems((prev) =>
       applyQuantityChange(prev, meal.items, itemId, delta)
     );
@@ -145,29 +135,27 @@ export function MealCard({ message, onConfirm }: MealCardProps) {
 
           {/* Column headers */}
           <div className="grid grid-cols-[1fr_4rem_3rem_3rem_3rem] items-center gap-1 border-[#E8D5B5]/30 border-b bg-[#FEFBF6]/80 px-4 py-1.5 text-[9px]">
-            {['Item', 'Cal', 'Pro', 'Carb', 'Fat'].map(
-              (label, i) => (
-                <span
-                  key={label}
-                  className={`${i > 0 ? 'text-right ' : ''}font-semibold uppercase tracking-wider ${
-                    i === 0
+            {['Item', 'Cal', 'Pro', 'Carb', 'Fat'].map((label, i) => (
+              <span
+                key={label}
+                className={`${i > 0 ? 'text-right' : ''} font-semibold uppercase tracking-wider ${
+                  i === 0
+                    ? 'text-[#8B7355]'
+                    : i === 1
                       ? 'text-[#8B7355]'
-                      : i === 1
-                        ? 'text-[#8B7355]'
-                        : i === 2
-                          ? 'text-blue-500'
-                          : i === 3
-                            ? 'text-amber-500'
-                            : 'text-rose-400'
-                  }`}
-                  style={{
-                    fontFamily: 'DM Sans, sans-serif',
-                  }}
-                >
-                  {label}
-                </span>
-              )
-            )}
+                      : i === 2
+                        ? 'text-blue-500'
+                        : i === 3
+                          ? 'text-amber-500'
+                          : 'text-rose-400'
+                }`}
+                style={{
+                  fontFamily: 'DM Sans, sans-serif',
+                }}
+              >
+                {label}
+              </span>
+            ))}
           </div>
 
           {/* Items list */}

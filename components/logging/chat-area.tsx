@@ -97,9 +97,7 @@ export function ChatArea() {
         className="flex min-h-0 flex-1 flex-col overflow-y-auto px-0 py-6"
       >
         <AnimatePresence mode="wait">
-          {!hasMessages && (
-            <EmptyState onSuggestionClick={setInputValue} />
-          )}
+          {!hasMessages && <EmptyState onSuggestionClick={setInputValue} />}
         </AnimatePresence>
 
         {hasMessages && (

@@ -9,11 +9,7 @@ interface TabButtonProps {
   onClick: () => void;
 }
 
-export function TabButton({
-  active,
-  children,
-  onClick,
-}: TabButtonProps) {
+export function TabButton({ active, children, onClick }: TabButtonProps) {
   return (
     <button
       type="button"

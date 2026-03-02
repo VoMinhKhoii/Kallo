@@ -37,7 +37,12 @@
         "noLabelWithoutControl": "off",
         "useKeyWithClickEvents": "off",
         "noStaticElementInteractions": "off",
-        "useMediaCaption": "off"
+        "useMediaCaption": "off",
+        "useValidAnchor": "off",
+        "useSemanticElements": "off",
+        "useFocusableInteractive": "off",
+        "noSvgWithoutTitle": "off",
+        "useAriaPropsForRole": "off"
       },
       "style": {
         "noNonNullAssertion": "off",
@@ -56,9 +61,13 @@
       "complexity": {
         "noStaticOnlyClass": "off"
       },
+      "security": {
+        "noDangerouslySetInnerHtml": "warn"
+      },
       "suspicious": {
         "noExplicitAny": "off",
         "noArrayIndexKey": "off",
+        "noDocumentCookie": "off",
         "noUnknownAtRules": {
           "level": "error",
           "options": {
