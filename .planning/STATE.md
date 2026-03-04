@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-current_plan: 2
-status: executing
-stopped_at: Completed 02-01-PLAN.md
-last_updated: "2026-03-04T14:34:00.000Z"
+current_plan: 3
+status: unknown
+stopped_at: Completed 02-02-PLAN.md
+last_updated: "2026-03-04T15:01:09.110Z"
 progress:
   total_phases: 3
   completed_phases: 1
-  total_plans: 4
-  completed_plans: 1
-  percent: 25
+  total_plans: 8
+  completed_plans: 5
+  percent: 63
 ---
 
 # Project State
@@ -26,12 +26,12 @@ See: .planning/PROJECT.md (updated 2026-02-28)
 ## Current Position
 
 Phase: 2 of 8 (Onboarding Flow)
-**Current Plan:** 2
+**Current Plan:** 3
 **Total Plans in Phase:** 4
 Status: Executing
 Last activity: 2026-03-04 — Completed 02-01-PLAN.md
 
-**Progress:** [██░░░░░░░░] 25%
+**Progress:** [██████░░░░] 63%
 
 ## Performance Metrics
 
@@ -55,6 +55,7 @@ Last activity: 2026-03-04 — Completed 02-01-PLAN.md
 | Phase 01 P02 | 3min | 1 tasks | 1 files |
 | Phase 01 P03 | 2min | 1 tasks | 1 files |
 | Phase 02 P01 | 7min | 2 tasks | 7 files |
+| Phase 02-onboarding P02 | 12min | 2 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -73,6 +74,9 @@ Recent decisions affecting current work:
 - [Phase 01]: user_profiles gets handle_updated_at trigger since it has updated_at column but no trigger existed
 - [Phase 02]: deficitOverride is transient (not persisted) — computed targets stored instead
 - [Phase 02]: WIZARD_DEFAULTS and SKIP_FALLBACK_DEFAULTS use `as Type` casts, NOT `as const`
+- [Phase 02-onboarding]: screen1Schema = bodyMetricsSchema.merge(goalSchema) — single merged schema for Screen 1
+- [Phase 02-onboarding]: Form mode: onBlur — prevents validation spam on number inputs
+- [Phase 02-onboarding]: Reference matrix always uses moderate aggression — labeled accordingly for user clarity
 
 ### Pending Todos
 
@@ -89,6 +93,6 @@ None yet.
 
 ## Session Continuity
 
-**Last session:** 2026-03-04T14:34:00.000Z
-**Stopped at:** Completed 02-01-PLAN.md
+**Last session:** 2026-03-04T15:01:09.097Z
+**Stopped at:** Completed 02-02-PLAN.md
 Resume file: None
