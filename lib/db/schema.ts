@@ -46,6 +46,7 @@ export const userProfiles = pgTable(
     proteinTargetG: smallint('protein_target_g'),
     carbsTargetG: smallint('carbs_target_g'),
     fatTargetG: smallint('fat_target_g'),
+    carbSplit: text('carb_split'),
 
     // Screen 3: Regional Profile
     regionalProfile: text('regional_profile'),
@@ -62,6 +63,17 @@ export const userProfiles = pgTable(
     // Screen 5: Portion Calibration
     bowlSizeMl: smallint('bowl_size_ml').default(200),
     plateSizeMl: smallint('plate_size_ml').default(400),
+
+    // Hand measurements & onboarding progress
+    handSpanCm: decimal('hand_span_cm', { precision: 4, scale: 1 }),
+    knuckleDepthCm: decimal('knuckle_depth_cm', {
+      precision: 3,
+      scale: 1,
+    }),
+    onboardingStep: smallint('onboarding_step').default(0),
+    onboardingCompletedAt: timestamp('onboarding_completed_at', {
+      withTimezone: true,
+    }),
 
     createdAt: timestamp('created_at', { withTimezone: true })
       .notNull()
@@ -115,6 +127,10 @@ export const userProfiles = pgTable(
     check(
       'user_profiles_sugar_braised_check',
       sql`${table.sugarBraised} IN ('low', 'medium', 'high')`
+    ),
+    check(
+      'user_profiles_carb_split_check',
+      sql`${table.carbSplit} IN ('moderate_carb', 'lower_carb', 'higher_carb')`
     ),
   ]
 );
