@@ -9,9 +9,13 @@ import {
   ScreenBodyMetrics,
   type ScreenOneData,
 } from './screen-body-metrics';
+import { ScreenRegional } from './screen-regional';
+import { ScreenCooking } from './screen-cooking';
+import { ScreenPortions } from './screen-portions';
 import { saveOnboardingScreen } from '@/lib/onboarding/actions';
 import { WIZARD_DEFAULTS } from '@/lib/onboarding/constants';
 import type { getOnboardingProfile } from '@/lib/onboarding/actions';
+import type { RegionalProfile } from '@/lib/onboarding/types';
 
 type ProfileRow = NonNullable<
   Awaited<ReturnType<typeof getOnboardingProfile>>
@@ -97,9 +101,79 @@ export function WizardShell({
     setCurrentStep((prev) => prev - 1);
   };
 
+  const handleSkip = () => {
+    startTransition(async () => {
+      await saveOnboardingScreen(4, {
+        handSpanCm: null,
+        knuckleDepthCm: null,
+        bowlSizeMl: WIZARD_DEFAULTS.bowlSizeMl,
+        plateSizeMl: WIZARD_DEFAULTS.plateSizeMl,
+      });
+      router.push('/logging');
+    });
+  };
+
   const screenOneDefaults = buildScreenOneDefaults(
     initialProfile,
   );
+
+  const screenTwoDefaults = {
+    regionalProfile:
+      (initialProfile?.regionalProfile as RegionalProfile) ??
+      null,
+  };
+
+  const screenThreeDefaults = {
+    oilUsage:
+      (initialProfile?.oilUsage as
+        | 'minimal'
+        | 'normal'
+        | 'heavy') ?? undefined,
+    fatTrim:
+      (initialProfile?.fatTrimPork as
+        | 'trim'
+        | 'eat_all'
+        | 'by_dish') ?? undefined,
+    boneAwareness:
+      initialProfile?.boneAwareness ?? undefined,
+    defaultRicePortion:
+      (initialProfile?.defaultRicePortion as
+        | 'small'
+        | 'medium'
+        | 'large') ?? undefined,
+    sugarBraised:
+      (initialProfile?.sugarBraised as
+        | 'low'
+        | 'medium'
+        | 'high') ?? undefined,
+  };
+
+  const screenFourDefaults = {
+    handSpanCm: initialProfile?.handSpanCm
+      ? Number(initialProfile.handSpanCm)
+      : null,
+    knuckleDepthCm: initialProfile?.knuckleDepthCm
+      ? Number(initialProfile.knuckleDepthCm)
+      : null,
+    bowlSizeMl:
+      initialProfile?.bowlSizeMl ??
+      WIZARD_DEFAULTS.bowlSizeMl,
+    plateSizeMl:
+      initialProfile?.plateSizeMl ??
+      WIZARD_DEFAULTS.plateSizeMl,
+  };
+
+  // Get regional profile from screenData (step 2) or initial profile
+  const currentRegionalProfile =
+    (screenData[2]?.regionalProfile as RegionalProfile) ??
+    screenTwoDefaults.regionalProfile;
+
+  // Step 2 next disabled if no regional profile selected
+  const isNextDisabled =
+    isPending ||
+    !screenData[currentStep] ||
+    (currentStep === 2 &&
+      !screenData[2]?.regionalProfile);
 
   return (
     <div className="space-y-8">
@@ -124,10 +198,43 @@ export function WizardShell({
             }
           />
         )}
-        {currentStep >= 2 && currentStep <= 4 && (
-          <div className="rounded-lg border p-8 text-center text-muted-foreground">
-            Coming in Plan 03
-          </div>
+        {currentStep === 2 && (
+          <ScreenRegional
+            defaultValues={screenTwoDefaults}
+            onChange={(data) =>
+              handleScreenChange(2, data)
+            }
+          />
+        )}
+        {currentStep === 3 && (
+          <ScreenCooking
+            defaultValues={screenThreeDefaults}
+            regionalProfile={currentRegionalProfile}
+            onChange={(data) =>
+              handleScreenChange(
+                3,
+                data as unknown as Record<
+                  string,
+                  unknown
+                >,
+              )
+            }
+          />
+        )}
+        {currentStep === 4 && (
+          <ScreenPortions
+            defaultValues={screenFourDefaults}
+            onChange={(data) =>
+              handleScreenChange(
+                4,
+                data as unknown as Record<
+                  string,
+                  unknown
+                >,
+              )
+            }
+            onSkip={handleSkip}
+          />
         )}
       </div>
 
@@ -140,17 +247,41 @@ export function WizardShell({
         >
           Back
         </Button>
-        <Button
-          onClick={handleNext}
-          disabled={isPending || !screenData[currentStep]}
-        >
-          {isPending && (
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-          )}
-          {currentStep >= TOTAL_STEPS
-            ? 'Complete'
-            : 'Next'}
-        </Button>
+        {currentStep === 4 ? (
+          <div className="flex gap-3">
+            <Button
+              variant="outline"
+              onClick={handleSkip}
+              disabled={isPending}
+            >
+              {isPending && (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              )}
+              Bỏ qua, dùng mặc định
+            </Button>
+            <Button
+              onClick={handleNext}
+              disabled={isNextDisabled}
+            >
+              {isPending && (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              )}
+              Đo ngay (1 phút)
+            </Button>
+          </div>
+        ) : (
+          <Button
+            onClick={handleNext}
+            disabled={isNextDisabled}
+          >
+            {isPending && (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            )}
+            {currentStep >= TOTAL_STEPS
+              ? 'Complete'
+              : 'Next'}
+          </Button>
+        )}
       </div>
     </div>
   );
