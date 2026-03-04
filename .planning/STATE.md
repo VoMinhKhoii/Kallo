@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-current_plan: 3
+current_plan: 4
 status: unknown
-stopped_at: Completed 02-02-PLAN.md
-last_updated: "2026-03-04T15:01:09.110Z"
+stopped_at: Completed 02-04-PLAN.md (Phase 2 complete)
+last_updated: "2026-03-04T15:28:36.345Z"
 progress:
   total_phases: 3
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 8
-  completed_plans: 5
-  percent: 63
+  completed_plans: 7
+  percent: 88
 ---
 
 # Project State
@@ -26,12 +26,12 @@ See: .planning/PROJECT.md (updated 2026-02-28)
 ## Current Position
 
 Phase: 2 of 8 (Onboarding Flow)
-**Current Plan:** 3
+**Current Plan:** 4
 **Total Plans in Phase:** 4
 Status: Executing
 Last activity: 2026-03-04 — Completed 02-01-PLAN.md
 
-**Progress:** [██████░░░░] 63%
+**Progress:** [█████████░] 88%
 
 ## Performance Metrics
 
@@ -56,6 +56,8 @@ Last activity: 2026-03-04 — Completed 02-01-PLAN.md
 | Phase 01 P03 | 2min | 1 tasks | 1 files |
 | Phase 02 P01 | 7min | 2 tasks | 7 files |
 | Phase 02-onboarding P02 | 12min | 2 tasks | 6 files |
+| Phase 02-onboarding P03 | 7min | 2 tasks | 4 files |
+| Phase 02-onboarding P04 | 7min | 2 tasks | 8 files |
 
 ## Accumulated Context
 
@@ -77,6 +79,11 @@ Recent decisions affecting current work:
 - [Phase 02-onboarding]: screen1Schema = bodyMetricsSchema.merge(goalSchema) — single merged schema for Screen 1
 - [Phase 02-onboarding]: Form mode: onBlur — prevents validation spam on number inputs
 - [Phase 02-onboarding]: Reference matrix always uses moderate aggression — labeled accordingly for user clarity
+- [Phase 02-onboarding]: ToggleGroup (outline variant) for segmented controls — consistent look with shadcn library
+- [Phase 02-onboarding]: Explicit PortionFormData type to avoid .default() inference issues with react-hook-form
+- [Phase 02-onboarding]: CalorieTarget editable for fine-tuning but goal/aggression/carbSplit overwrites from TDEE
+- [Phase 02-onboarding]: 3 separate fat-trim controls in settings (pork/chicken/fish) vs single toggle in wizard
+- [Phase 02-onboarding]: SSR-safe localStorage pattern: useEffect+useState, never at render time
 
 ### Pending Todos
 
@@ -93,6 +100,6 @@ None yet.
 
 ## Session Continuity
 
-**Last session:** 2026-03-04T15:01:09.097Z
-**Stopped at:** Completed 02-02-PLAN.md
+**Last session:** 2026-03-04T15:28:36.330Z
+**Stopped at:** Completed 02-04-PLAN.md (Phase 2 complete)
 Resume file: None

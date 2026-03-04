@@ -1,6 +1,12 @@
 'use client';
 
-import { useMemo, useEffect, useCallback } from 'react';
+import {
+  Fragment,
+  useMemo,
+  useEffect,
+  useCallback,
+  useRef,
+} from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -142,6 +148,9 @@ export function ScreenBodyMetrics({
   defaultValues,
   onChange,
 }: ScreenBodyMetricsProps) {
+  const onChangeRef = useRef(onChange);
+  onChangeRef.current = onChange;
+
   const form = useForm<Screen1FormData>({
     resolver: zodResolver(screen1Schema),
     defaultValues: {
@@ -235,7 +244,7 @@ export function ScreenBodyMetrics({
   const reportChange = useCallback(() => {
     const v = form.getValues();
     if (tdee === null || !finalTargets) return;
-    onChange({
+    onChangeRef.current({
       ...v,
       tdeeKcal: tdee,
       calorieTarget: finalTargets.calories,
@@ -243,7 +252,7 @@ export function ScreenBodyMetrics({
       carbsTargetG: finalTargets.carbsG,
       fatTargetG: finalTargets.fatG,
     });
-  }, [form, tdee, finalTargets, onChange]);
+  }, [form, tdee, finalTargets]);
 
   // Report on mount if data pre-filled
   useEffect(() => {
@@ -554,9 +563,8 @@ export function ScreenBodyMetrics({
 
                   {/* Data rows */}
                   {GOALS.map((g) => (
-                    <>
+                    <Fragment key={g}>
                       <div
-                        key={`${g}-label`}
                         className="flex items-center pr-1 font-medium text-xs"
                       >
                         {GOAL_LABELS[g]}
@@ -627,7 +635,7 @@ export function ScreenBodyMetrics({
                           </button>
                         );
                       })}
-                    </>
+                    </Fragment>
                   ))}
                 </div>
               </div>
