@@ -1,8 +1,8 @@
 'use client';
 
-import { useRef, useEffect, useCallback } from 'react';
-import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useCallback, useEffect, useRef } from 'react';
+import { useForm } from 'react-hook-form';
 import {
   Form,
   FormControl,
@@ -10,21 +10,15 @@ import {
   FormItem,
   FormLabel,
 } from '@/components/ui/form';
-import { Switch } from '@/components/ui/switch';
-import {
-  ToggleGroup,
-  ToggleGroupItem,
-} from '@/components/ui/toggle-group';
 import { Label } from '@/components/ui/label';
-import {
-  cookingHabitsSchema,
-  type CookingHabitsInput,
-} from '@/lib/onboarding/schemas';
+import { Switch } from '@/components/ui/switch';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { REGIONAL_COOKING_DEFAULTS } from '@/lib/onboarding/constants';
-import type {
-  CookingHabits,
-  RegionalProfile,
-} from '@/lib/onboarding/types';
+import {
+  type CookingHabitsInput,
+  cookingHabitsSchema,
+} from '@/lib/onboarding/schemas';
+import type { CookingHabits, RegionalProfile } from '@/lib/onboarding/types';
 
 interface ScreenCookingProps {
   defaultValues: Partial<CookingHabits>;
@@ -40,9 +34,7 @@ const NEUTRAL_DEFAULTS: CookingHabits = {
   sugarBraised: 'medium',
 };
 
-function allCookingFieldsNull(
-  values: Partial<CookingHabits>,
-): boolean {
+function allCookingFieldsNull(values: Partial<CookingHabits>): boolean {
   return (
     !values.oilUsage &&
     !values.fatTrim &&
@@ -89,8 +81,7 @@ export function ScreenCooking({
       allCookingFieldsNull(defaultValues) &&
       regionalProfile
     ) {
-      const defaults =
-        REGIONAL_COOKING_DEFAULTS[regionalProfile];
+      const defaults = REGIONAL_COOKING_DEFAULTS[regionalProfile];
       for (const [key, val] of Object.entries(defaults)) {
         form.setValue(key as keyof CookingHabitsInput, val);
       }
@@ -104,49 +95,65 @@ export function ScreenCooking({
     <Form {...form}>
       <form className="space-y-8">
         <div>
-          <h2 className="font-semibold text-lg">
+          <h2
+            className="font-semibold text-[#2C2416] text-lg"
+            style={{ fontFamily: 'Lora, serif' }}
+          >
             Thói quen nấu ăn
           </h2>
-          <p className="mt-1 text-muted-foreground text-sm">
-            AI sẽ dùng thông tin này để ước lượng dinh dưỡng
-            chính xác hơn
+          <p
+            className="mt-1.5 text-[#6B5D4F] text-sm"
+            style={{ fontFamily: 'DM Sans, sans-serif' }}
+          >
+            AI sẽ dùng thông tin này để ước lượng dinh dưỡng chính xác hơn
           </p>
         </div>
 
-        <div className="space-y-6">
+        <div className="space-y-4">
           {/* Oil Usage */}
           <FormField
             control={form.control}
             name="oilUsage"
             render={({ field }) => (
               <FormItem>
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                  <FormLabel className="text-sm font-medium">
-                    Mức dầu mỡ khi nấu
-                  </FormLabel>
-                  <FormControl>
-                    <ToggleGroup
-                      type="single"
-                      variant="outline"
-                      value={field.value}
-                      onValueChange={(v) => {
-                        if (v) {
-                          field.onChange(v);
-                          reportChange();
-                        }
-                      }}
-                    >
-                      <ToggleGroupItem value="minimal">
-                        Ít dầu
-                      </ToggleGroupItem>
-                      <ToggleGroupItem value="normal">
-                        Bình thường
-                      </ToggleGroupItem>
-                      <ToggleGroupItem value="heavy">
-                        Nhiều dầu
-                      </ToggleGroupItem>
-                    </ToggleGroup>
-                  </FormControl>
+                <div className="rounded-xl border border-[#E8D5B5]/50 bg-[#FEFBF6] p-4">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <FormLabel className="font-medium text-[#2C2416] text-sm">
+                      Mức dầu mỡ khi nấu
+                    </FormLabel>
+                    <FormControl>
+                      <ToggleGroup
+                        type="single"
+                        variant="outline"
+                        value={field.value}
+                        onValueChange={(v) => {
+                          if (v) {
+                            field.onChange(v);
+                            reportChange();
+                          }
+                        }}
+                      >
+                        <ToggleGroupItem
+                          value="minimal"
+                          className="min-w-[72px] px-3 py-2"
+                        >
+                          Ít dầu
+                        </ToggleGroupItem>
+                        <ToggleGroupItem
+                          value="normal"
+                          className="min-w-[72px] px-3 py-2"
+                        >
+                          Bình thường
+                        </ToggleGroupItem>
+                        <ToggleGroupItem
+                          value="heavy"
+                          className="min-w-[72px] px-3 py-2"
+                        >
+                          Nhiều dầu
+                        </ToggleGroupItem>
+                      </ToggleGroup>
+                    </FormControl>
+                  </div>
                 </div>
               </FormItem>
             )}
@@ -158,33 +165,44 @@ export function ScreenCooking({
             name="fatTrim"
             render={({ field }) => (
               <FormItem>
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                  <FormLabel className="text-sm font-medium">
-                    Khi ăn thịt, bạn xử lý mỡ thế nào?
-                  </FormLabel>
-                  <FormControl>
-                    <ToggleGroup
-                      type="single"
-                      variant="outline"
-                      value={field.value}
-                      onValueChange={(v) => {
-                        if (v) {
-                          field.onChange(v);
-                          reportChange();
-                        }
-                      }}
-                    >
-                      <ToggleGroupItem value="trim">
-                        Bỏ mỡ
-                      </ToggleGroupItem>
-                      <ToggleGroupItem value="eat_all">
-                        Ăn nguyên
-                      </ToggleGroupItem>
-                      <ToggleGroupItem value="by_dish">
-                        Tùy món
-                      </ToggleGroupItem>
-                    </ToggleGroup>
-                  </FormControl>
+                <div className="rounded-xl border border-[#E8D5B5]/50 bg-[#FEFBF6] p-4">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <FormLabel className="font-medium text-[#2C2416] text-sm">
+                      Khi ăn thịt, bạn xử lý mỡ thế nào?
+                    </FormLabel>
+                    <FormControl>
+                      <ToggleGroup
+                        type="single"
+                        variant="outline"
+                        value={field.value}
+                        onValueChange={(v) => {
+                          if (v) {
+                            field.onChange(v);
+                            reportChange();
+                          }
+                        }}
+                      >
+                        <ToggleGroupItem
+                          value="trim"
+                          className="min-w-[72px] px-3 py-2"
+                        >
+                          Bỏ mỡ
+                        </ToggleGroupItem>
+                        <ToggleGroupItem
+                          value="eat_all"
+                          className="min-w-[72px] px-3 py-2"
+                        >
+                          Ăn nguyên
+                        </ToggleGroupItem>
+                        <ToggleGroupItem
+                          value="by_dish"
+                          className="min-w-[72px] px-3 py-2"
+                        >
+                          Tùy món
+                        </ToggleGroupItem>
+                      </ToggleGroup>
+                    </FormControl>
+                  </div>
                 </div>
               </FormItem>
             )}
@@ -196,24 +214,25 @@ export function ScreenCooking({
             name="boneAwareness"
             render={({ field }) => (
               <FormItem>
-                <div className="flex items-center justify-between gap-4">
-                  <Label
-                    htmlFor="bone-awareness"
-                    className="text-sm font-medium"
-                  >
-                    Bạn có cân nhắc xương khi ước lượng
-                    phần ăn?
-                  </Label>
-                  <FormControl>
-                    <Switch
-                      id="bone-awareness"
-                      checked={field.value}
-                      onCheckedChange={(v) => {
-                        field.onChange(v);
-                        reportChange();
-                      }}
-                    />
-                  </FormControl>
+                <div className="rounded-xl border border-[#E8D5B5]/50 bg-[#FEFBF6] p-4">
+                  <div className="flex items-center justify-between gap-4">
+                    <Label
+                      htmlFor="bone-awareness"
+                      className="font-medium text-[#2C2416] text-sm"
+                    >
+                      Bạn có cân nhắc xương khi ước lượng phần ăn?
+                    </Label>
+                    <FormControl>
+                      <Switch
+                        id="bone-awareness"
+                        checked={field.value}
+                        onCheckedChange={(v) => {
+                          field.onChange(v);
+                          reportChange();
+                        }}
+                      />
+                    </FormControl>
+                  </div>
                 </div>
               </FormItem>
             )}
@@ -225,33 +244,44 @@ export function ScreenCooking({
             name="defaultRicePortion"
             render={({ field }) => (
               <FormItem>
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                  <FormLabel className="text-sm font-medium">
-                    Khẩu phần cơm mặc định
-                  </FormLabel>
-                  <FormControl>
-                    <ToggleGroup
-                      type="single"
-                      variant="outline"
-                      value={field.value}
-                      onValueChange={(v) => {
-                        if (v) {
-                          field.onChange(v);
-                          reportChange();
-                        }
-                      }}
-                    >
-                      <ToggleGroupItem value="small">
-                        Nhỏ ~150g
-                      </ToggleGroupItem>
-                      <ToggleGroupItem value="medium">
-                        Vừa ~200g
-                      </ToggleGroupItem>
-                      <ToggleGroupItem value="large">
-                        Lớn ~300g
-                      </ToggleGroupItem>
-                    </ToggleGroup>
-                  </FormControl>
+                <div className="rounded-xl border border-[#E8D5B5]/50 bg-[#FEFBF6] p-4">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <FormLabel className="font-medium text-[#2C2416] text-sm">
+                      Khẩu phần cơm mặc định
+                    </FormLabel>
+                    <FormControl>
+                      <ToggleGroup
+                        type="single"
+                        variant="outline"
+                        value={field.value}
+                        onValueChange={(v) => {
+                          if (v) {
+                            field.onChange(v);
+                            reportChange();
+                          }
+                        }}
+                      >
+                        <ToggleGroupItem
+                          value="small"
+                          className="min-w-[72px] px-3 py-2"
+                        >
+                          Nhỏ ~150g
+                        </ToggleGroupItem>
+                        <ToggleGroupItem
+                          value="medium"
+                          className="min-w-[72px] px-3 py-2"
+                        >
+                          Vừa ~200g
+                        </ToggleGroupItem>
+                        <ToggleGroupItem
+                          value="large"
+                          className="min-w-[72px] px-3 py-2"
+                        >
+                          Lớn ~300g
+                        </ToggleGroupItem>
+                      </ToggleGroup>
+                    </FormControl>
+                  </div>
                 </div>
               </FormItem>
             )}
@@ -263,33 +293,44 @@ export function ScreenCooking({
             name="sugarBraised"
             render={({ field }) => (
               <FormItem>
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                  <FormLabel className="text-sm font-medium">
-                    Mức đường trong món kho?
-                  </FormLabel>
-                  <FormControl>
-                    <ToggleGroup
-                      type="single"
-                      variant="outline"
-                      value={field.value}
-                      onValueChange={(v) => {
-                        if (v) {
-                          field.onChange(v);
-                          reportChange();
-                        }
-                      }}
-                    >
-                      <ToggleGroupItem value="low">
-                        Ít
-                      </ToggleGroupItem>
-                      <ToggleGroupItem value="medium">
-                        Vừa
-                      </ToggleGroupItem>
-                      <ToggleGroupItem value="high">
-                        Nhiều
-                      </ToggleGroupItem>
-                    </ToggleGroup>
-                  </FormControl>
+                <div className="rounded-xl border border-[#E8D5B5]/50 bg-[#FEFBF6] p-4">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <FormLabel className="font-medium text-[#2C2416] text-sm">
+                      Mức đường trong món kho?
+                    </FormLabel>
+                    <FormControl>
+                      <ToggleGroup
+                        type="single"
+                        variant="outline"
+                        value={field.value}
+                        onValueChange={(v) => {
+                          if (v) {
+                            field.onChange(v);
+                            reportChange();
+                          }
+                        }}
+                      >
+                        <ToggleGroupItem
+                          value="low"
+                          className="min-w-[72px] px-3 py-2"
+                        >
+                          Ít
+                        </ToggleGroupItem>
+                        <ToggleGroupItem
+                          value="medium"
+                          className="min-w-[72px] px-3 py-2"
+                        >
+                          Vừa
+                        </ToggleGroupItem>
+                        <ToggleGroupItem
+                          value="high"
+                          className="min-w-[72px] px-3 py-2"
+                        >
+                          Nhiều
+                        </ToggleGroupItem>
+                      </ToggleGroup>
+                    </FormControl>
+                  </div>
                 </div>
               </FormItem>
             )}

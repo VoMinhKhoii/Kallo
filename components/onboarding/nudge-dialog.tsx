@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
+import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -10,7 +11,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
 import { ONBOARDING_REQUIRED_STEP } from '@/lib/onboarding/constants';
 
 const NUDGE_DISMISS_KEY = 'onboarding_nudge_dismiss_count';
@@ -33,18 +33,13 @@ export function NudgeDialog({
   useEffect(() => {
     setMounted(true);
     setDismissCount(
-      parseInt(
-        localStorage.getItem(NUDGE_DISMISS_KEY) ?? '0',
-        10,
-      ),
+      parseInt(localStorage.getItem(NUDGE_DISMISS_KEY) ?? '0', 10)
     );
   }, []);
 
   // 7-day trigger
   const daysSinceCreation = Math.floor(
-    (Date.now() -
-      new Date(accountCreatedAt).getTime()) /
-      (1000 * 60 * 60 * 24),
+    (Date.now() - new Date(accountCreatedAt).getTime()) / (1000 * 60 * 60 * 24)
   );
   const shouldShowTimeTrigger = daysSinceCreation >= 7;
 
@@ -58,19 +53,11 @@ export function NudgeDialog({
     ) {
       setOpen(true);
     }
-  }, [
-    mounted,
-    onboardingStep,
-    shouldShowTimeTrigger,
-    dismissCount,
-  ]);
+  }, [mounted, onboardingStep, shouldShowTimeTrigger, dismissCount]);
 
   function handleDismiss() {
     const newCount = dismissCount + 1;
-    localStorage.setItem(
-      NUDGE_DISMISS_KEY,
-      newCount.toString(),
-    );
+    localStorage.setItem(NUDGE_DISMISS_KEY, newCount.toString());
     setDismissCount(newCount);
     setOpen(false);
   }
@@ -85,24 +72,42 @@ export function NudgeDialog({
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogContent>
+      <DialogContent className="border-[#E8D5B5]/60 bg-[#FEFBF6] sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>
+          <DialogTitle
+            className="text-[#2C2416]"
+            style={{ fontFamily: 'Lora, serif' }}
+          >
             Hồ sơ dinh dưỡng chưa hoàn tất
           </DialogTitle>
-          <DialogDescription>
-            Bạn đã dùng ứng dụng được 1 tuần! Hoàn tất hồ
-            sơ giúp AI tính toán dinh dưỡng chính xác hơn.
+          <DialogDescription
+            className="text-[#6B5D4F]"
+            style={{
+              fontFamily: 'DM Sans, sans-serif',
+            }}
+          >
+            Bạn đã dùng ứng dụng được 1 tuần! Hoàn tất hồ sơ giúp AI tính toán
+            dinh dưỡng chính xác hơn.
           </DialogDescription>
         </DialogHeader>
         <DialogFooter className="gap-2 sm:gap-0">
           <Button
             variant="outline"
             onClick={handleDismiss}
+            className="border-[#E8D5B5] text-[#6B5D4F] hover:bg-[#E8D5B5]/20 hover:text-[#2C2416]"
+            style={{
+              fontFamily: 'DM Sans, sans-serif',
+            }}
           >
             Để sau
           </Button>
-          <Button onClick={handleGoToOnboarding}>
+          <Button
+            onClick={handleGoToOnboarding}
+            className="bg-[#2C2416] text-[#FEFBF6] hover:bg-[#3D3225]"
+            style={{
+              fontFamily: 'DM Sans, sans-serif',
+            }}
+          >
             Hoàn tất ngay
           </Button>
         </DialogFooter>

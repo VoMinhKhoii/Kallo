@@ -1,16 +1,15 @@
 'use client';
 
-import {
-  Fragment,
-  useMemo,
-  useEffect,
-  useCallback,
-  useRef,
-} from 'react';
-import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
 import { ChevronDown } from 'lucide-react';
+import { Fragment, useCallback, useEffect, useMemo, useRef } from 'react';
+import { useForm } from 'react-hook-form';
+import type { z } from 'zod';
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible';
 import {
   Form,
   FormControl,
@@ -20,10 +19,8 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import {
-  RadioGroup,
-  RadioGroupItem,
-} from '@/components/ui/radio-group';
+import { Label } from '@/components/ui/label';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import {
   Select,
   SelectContent,
@@ -31,29 +28,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from '@/components/ui/collapsible';
-import { Label } from '@/components/ui/label';
-import { cn } from '@/lib/utils';
-import {
-  bodyMetricsSchema,
-  goalSchema,
-} from '@/lib/onboarding/schemas';
-import {
-  calcBMR,
-  calcTDEE,
-  calcDailyTargets,
-} from '@/lib/onboarding/tdee';
 import { AGGRESSION_PRESETS } from '@/lib/onboarding/constants';
+import { bodyMetricsSchema, goalSchema } from '@/lib/onboarding/schemas';
+import { calcBMR, calcDailyTargets, calcTDEE } from '@/lib/onboarding/tdee';
 import type {
-  Goal,
-  CarbSplit,
-  Aggression,
   ActivityLevel,
+  Aggression,
+  CarbSplit,
+  Goal,
 } from '@/lib/onboarding/types';
+import { cn } from '@/lib/utils';
 
 // Merged schema for screen 1
 const screen1Schema = bodyMetricsSchema.merge(goalSchema);
@@ -79,36 +63,36 @@ const ACTIVITY_OPTIONS: {
 }[] = [
   {
     value: 'sedentary',
-    label: 'Sedentary',
-    desc: 'Little or no exercise, desk job',
+    label: 'Ít vận động',
+    desc: 'Ít hoặc không tập, công việc văn phòng',
   },
   {
     value: 'light',
-    label: 'Lightly active',
-    desc: 'Light exercise 1-3 days/week',
+    label: 'Nhẹ nhàng',
+    desc: 'Tập nhẹ 1-3 ngày/tuần',
   },
   {
     value: 'moderate',
-    label: 'Moderately active',
-    desc: 'Moderate exercise 3-5 days/week',
+    label: 'Vừa phải',
+    desc: 'Tập vừa 3-5 ngày/tuần',
   },
   {
     value: 'very_active',
-    label: 'Very active',
-    desc: 'Hard exercise 6-7 days/week',
+    label: 'Rất năng động',
+    desc: 'Tập nặng 6-7 ngày/tuần',
   },
 ];
 
 const GOAL_LABELS: Record<Goal, string> = {
-  maintaining: 'Maintenance',
-  cutting: 'Cutting',
-  bulking: 'Bulking',
+  maintaining: 'Duy trì',
+  cutting: 'Giảm cân',
+  bulking: 'Tăng cân',
 };
 
 const CARB_SPLIT_LABELS: Record<CarbSplit, string> = {
-  moderate_carb: 'Moderate Carb',
-  lower_carb: 'Lower Carb',
-  higher_carb: 'Higher Carb',
+  moderate_carb: 'Carb vừa',
+  lower_carb: 'Ít carb',
+  higher_carb: 'Nhiều carb',
 };
 
 const AGGRESSION_OPTIONS: {
@@ -118,31 +102,23 @@ const AGGRESSION_OPTIONS: {
 }[] = [
   {
     value: 'gentle',
-    label: 'Gentle',
+    label: 'Nhẹ nhàng',
     desc: '~0.25 kg/week (~275 kcal/day)',
   },
   {
     value: 'moderate',
-    label: 'Moderate',
+    label: 'Vừa phải',
     desc: '~0.5 kg/week (~550 kcal/day)',
   },
   {
     value: 'aggressive',
-    label: 'Aggressive',
+    label: 'Mạnh',
     desc: '~0.75 kg/week (~825 kcal/day)',
   },
 ];
 
-const GOALS: Goal[] = [
-  'maintaining',
-  'cutting',
-  'bulking',
-];
-const CARB_SPLITS: CarbSplit[] = [
-  'moderate_carb',
-  'lower_carb',
-  'higher_carb',
-];
+const GOALS: Goal[] = ['maintaining', 'cutting', 'bulking'];
+const CARB_SPLITS: CarbSplit[] = ['moderate_carb', 'lower_carb', 'higher_carb'];
 
 export function ScreenBodyMetrics({
   defaultValues,
@@ -158,15 +134,11 @@ export function ScreenBodyMetrics({
       weightKg: defaultValues.weightKg,
       heightCm: defaultValues.heightCm,
       age: defaultValues.age,
-      activityLevel:
-        defaultValues.activityLevel ?? 'light',
+      activityLevel: defaultValues.activityLevel ?? 'light',
       goal: defaultValues.goal ?? 'maintaining',
-      aggression:
-        defaultValues.aggression ?? 'moderate',
-      carbSplit:
-        defaultValues.carbSplit ?? 'moderate_carb',
-      deficitOverride:
-        defaultValues.deficitOverride ?? null,
+      aggression: defaultValues.aggression ?? 'moderate',
+      carbSplit: defaultValues.carbSplit ?? 'moderate_carb',
+      deficitOverride: defaultValues.deficitOverride ?? null,
     },
     mode: 'onBlur',
   });
@@ -192,10 +164,7 @@ export function ScreenBodyMetrics({
         activityLevel: values.activityLevel,
       })
     : null;
-  const tdee =
-    bmr !== null
-      ? calcTDEE(bmr, values.activityLevel)
-      : null;
+  const tdee = bmr !== null ? calcTDEE(bmr, values.activityLevel) : null;
 
   // Reference matrix: 3×3 grid (always moderate aggression)
   const matrix = useMemo(() => {
@@ -207,12 +176,7 @@ export function ScreenBodyMetrics({
     for (const g of GOALS) {
       grid[g] = {};
       for (const cs of CARB_SPLITS) {
-        grid[g][cs] = calcDailyTargets(
-          tdee,
-          g,
-          'moderate',
-          cs,
-        );
+        grid[g][cs] = calcDailyTargets(tdee, g, 'moderate', cs);
       }
     }
     return grid;
@@ -226,7 +190,7 @@ export function ScreenBodyMetrics({
       values.goal,
       values.aggression,
       values.carbSplit,
-      values.deficitOverride,
+      values.deficitOverride
     );
   }, [
     tdee,
@@ -237,8 +201,7 @@ export function ScreenBodyMetrics({
   ]);
 
   // TDEE warning
-  const tdeeWarning =
-    tdee !== null && (tdee < 800 || tdee > 5000);
+  const tdeeWarning = tdee !== null && (tdee < 800 || tdee > 5000);
 
   // Report data upstream on discrete changes
   const reportChange = useCallback(() => {
@@ -269,8 +232,7 @@ export function ScreenBodyMetrics({
     }
   }, [tdee, finalTargets, reportChange]);
 
-  const showFineTuning =
-    tdee !== null && values.goal !== 'maintaining';
+  const showFineTuning = tdee !== null && values.goal !== 'maintaining';
 
   // Targets to display (use finalTargets for cutting/bulking,
   // matrix maintenance for maintaining)
@@ -278,8 +240,7 @@ export function ScreenBodyMetrics({
     tdee !== null
       ? values.goal !== 'maintaining'
         ? finalTargets
-        : matrix?.[values.goal]?.[values.carbSplit] ??
-          null
+        : (matrix?.[values.goal]?.[values.carbSplit] ?? null)
       : null;
 
   return (
@@ -289,12 +250,26 @@ export function ScreenBodyMetrics({
           {/* LEFT COLUMN: Form inputs */}
           <div className="space-y-6">
             <div>
-              <h2 className="font-semibold text-lg">
-                Body Metrics
+              <h2
+                className="font-semibold text-[#2C2416] text-lg"
+                style={{ fontFamily: 'Lora, serif' }}
+              >
+                Chỉ số cơ thể
               </h2>
-              {tdee !== null && (
-                <p className="mt-1 text-muted-foreground text-sm">
-                  Something look off? Adjust above
+              {tdee !== null ? (
+                <p
+                  className="mt-1 text-[#8B7355] text-sm"
+                  style={{ fontFamily: 'DM Sans, sans-serif' }}
+                >
+                  Có gì chưa đúng? Điều chỉnh phía trên
+                </p>
+              ) : (
+                <p
+                  className="mt-1 text-[#6B5D4F] text-sm"
+                  style={{ fontFamily: 'DM Sans, sans-serif' }}
+                >
+                  Để AI tính toán dinh dưỡng chính xác, chúng tôi cần vài thông
+                  tin cơ bản về bạn.
                 </p>
               )}
             </div>
@@ -305,7 +280,7 @@ export function ScreenBodyMetrics({
               name="biologicalSex"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Biological Sex</FormLabel>
+                  <FormLabel>Giới tính sinh học</FormLabel>
                   <FormControl>
                     <RadioGroup
                       onValueChange={(v) => {
@@ -317,11 +292,11 @@ export function ScreenBodyMetrics({
                     >
                       <div className="flex items-center gap-2">
                         <RadioGroupItem value="male" />
-                        <Label>Male</Label>
+                        <Label>Nam</Label>
                       </div>
                       <div className="flex items-center gap-2">
                         <RadioGroupItem value="female" />
-                        <Label>Female</Label>
+                        <Label>Nữ</Label>
                       </div>
                     </RadioGroup>
                   </FormControl>
@@ -336,7 +311,7 @@ export function ScreenBodyMetrics({
               name="weightKg"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Weight (kg)</FormLabel>
+                  <FormLabel>Cân nặng (kg)</FormLabel>
                   <FormControl>
                     <Input
                       type="number"
@@ -345,11 +320,7 @@ export function ScreenBodyMetrics({
                       value={field.value ?? ''}
                       onChange={(e) => {
                         const v = e.target.value;
-                        field.onChange(
-                          v === ''
-                            ? undefined
-                            : Number(v),
-                        );
+                        field.onChange(v === '' ? undefined : Number(v));
                       }}
                       onBlur={(e) => {
                         field.onBlur();
@@ -370,7 +341,7 @@ export function ScreenBodyMetrics({
               name="heightCm"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Height (cm)</FormLabel>
+                  <FormLabel>Chiều cao (cm)</FormLabel>
                   <FormControl>
                     <Input
                       type="number"
@@ -379,11 +350,7 @@ export function ScreenBodyMetrics({
                       value={field.value ?? ''}
                       onChange={(e) => {
                         const v = e.target.value;
-                        field.onChange(
-                          v === ''
-                            ? undefined
-                            : Number(v),
-                        );
+                        field.onChange(v === '' ? undefined : Number(v));
                       }}
                       onBlur={(e) => {
                         field.onBlur();
@@ -404,7 +371,7 @@ export function ScreenBodyMetrics({
               name="age"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Age</FormLabel>
+                  <FormLabel>Tuổi</FormLabel>
                   <FormControl>
                     <Input
                       type="number"
@@ -413,11 +380,7 @@ export function ScreenBodyMetrics({
                       value={field.value ?? ''}
                       onChange={(e) => {
                         const v = e.target.value;
-                        field.onChange(
-                          v === ''
-                            ? undefined
-                            : Number(v),
-                        );
+                        field.onChange(v === '' ? undefined : Number(v));
                       }}
                       onBlur={(e) => {
                         field.onBlur();
@@ -438,7 +401,7 @@ export function ScreenBodyMetrics({
               name="activityLevel"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Activity Level</FormLabel>
+                  <FormLabel>Mức vận động</FormLabel>
                   <Select
                     onValueChange={(v) => {
                       field.onChange(v);
@@ -448,19 +411,14 @@ export function ScreenBodyMetrics({
                   >
                     <FormControl>
                       <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Select activity level" />
+                        <SelectValue placeholder="Chọn mức vận động" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
                       {ACTIVITY_OPTIONS.map((opt) => (
-                        <SelectItem
-                          key={opt.value}
-                          value={opt.value}
-                        >
-                          <span className="font-medium">
-                            {opt.label}
-                          </span>
-                          <span className="ml-1 text-muted-foreground text-xs">
+                        <SelectItem key={opt.value} value={opt.value}>
+                          <span className="font-medium">{opt.label}</span>
+                          <span className="ml-1 text-[#8B7355] text-xs">
                             — {opt.desc}
                           </span>
                         </SelectItem>
@@ -478,59 +436,47 @@ export function ScreenBodyMetrics({
             {/* TDEE Results */}
             {tdee !== null && bmr !== null && (
               <div className="space-y-4">
-                <h2 className="font-semibold text-lg">
-                  Your TDEE
+                <h2
+                  className="font-semibold text-[#2C2416] text-lg"
+                  style={{ fontFamily: 'Lora, serif' }}
+                >
+                  TDEE của bạn
                 </h2>
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="rounded-lg border bg-card p-4">
-                    <p className="text-muted-foreground text-sm">
-                      BMR
-                    </p>
-                    <p className="font-bold text-2xl">
+                  <div className="rounded-lg border border-[#E8D5B5] bg-[#FEFBF6] p-4">
+                    <p className="text-[#8B7355] text-sm">BMR</p>
+                    <p className="font-bold text-2xl text-[#2C2416]">
                       {Math.round(bmr)}
                     </p>
-                    <p className="text-muted-foreground text-xs">
-                      kcal/day
-                    </p>
+                    <p className="text-[#B0A695] text-xs">kcal/ngày</p>
                   </div>
-                  <div className="rounded-lg border bg-primary/5 p-4">
-                    <p className="text-muted-foreground text-sm">
-                      TDEE
-                    </p>
-                    <p className="font-bold text-2xl text-primary">
-                      {tdee}
-                    </p>
-                    <p className="text-muted-foreground text-xs">
-                      kcal/day
-                    </p>
+                  <div className="rounded-lg border border-[#C9A87C]/40 bg-gradient-to-br from-[#FEFBF6] to-white p-4">
+                    <p className="text-[#8B7355] text-sm">TDEE</p>
+                    <p className="font-bold text-2xl text-[#2C2416]">{tdee}</p>
+                    <p className="text-[#B0A695] text-xs">kcal/ngày</p>
                   </div>
                 </div>
 
                 {tdeeWarning && (
-                  <p className="text-muted-foreground text-sm">
-                    These numbers look unusual —
-                    double-check your inputs
+                  <p className="text-[#8B7355] text-sm">
+                    Các chỉ số này có vẻ bất thường — hãy kiểm tra lại
                   </p>
                 )}
 
                 {/* Formula collapsible */}
                 <Collapsible>
-                  <CollapsibleTrigger className="flex items-center gap-1 text-muted-foreground text-sm hover:text-foreground">
+                  <CollapsibleTrigger className="flex items-center gap-1 text-[#8B7355] text-sm hover:text-foreground">
                     <ChevronDown className="h-4 w-4" />
                     Mifflin-St Jeor formula
                   </CollapsibleTrigger>
-                  <CollapsibleContent className="mt-2 rounded-lg bg-muted/50 p-3 text-muted-foreground text-xs">
+                  <CollapsibleContent className="mt-2 rounded-lg bg-[#E8D5B5]/15 p-3 text-[#8B7355] text-xs">
                     <p className="font-mono">
-                      Male: (10 × kg) + (6.25 × cm) - (5
-                      × age) + 5
+                      Male: (10 × kg) + (6.25 × cm) - (5 × age) + 5
                     </p>
                     <p className="font-mono">
-                      Female: (10 × kg) + (6.25 × cm) -
-                      (5 × age) - 161
+                      Female: (10 × kg) + (6.25 × cm) - (5 × age) - 161
                     </p>
-                    <p className="mt-1">
-                      TDEE = BMR × activity multiplier
-                    </p>
+                    <p className="mt-1">TDEE = BMR × activity multiplier</p>
                   </CollapsibleContent>
                 </Collapsible>
               </div>
@@ -540,11 +486,17 @@ export function ScreenBodyMetrics({
             {matrix && tdee !== null && (
               <div className="space-y-3">
                 <div>
-                  <h3 className="font-semibold text-base">
-                    Macro Targets
+                  <h3
+                    className="font-semibold text-[#2C2416] text-base"
+                    style={{ fontFamily: 'Lora, serif' }}
+                  >
+                    Mục tiêu dinh dưỡng
                   </h3>
-                  <p className="text-muted-foreground text-sm">
-                    Shown at moderate pace — adjust below
+                  <p
+                    className="text-[#8B7355] text-sm"
+                    style={{ fontFamily: 'DM Sans, sans-serif' }}
+                  >
+                    Hiển thị ở mức vừa phải — điều chỉnh bên dưới
                   </p>
                 </div>
 
@@ -553,10 +505,7 @@ export function ScreenBodyMetrics({
                   {/* Header row */}
                   <div />
                   {CARB_SPLITS.map((cs) => (
-                    <div
-                      key={cs}
-                      className="text-center font-medium text-xs"
-                    >
+                    <div key={cs} className="text-center font-medium text-xs">
                       {CARB_SPLIT_LABELS[cs]}
                     </div>
                   ))}
@@ -564,73 +513,45 @@ export function ScreenBodyMetrics({
                   {/* Data rows */}
                   {GOALS.map((g) => (
                     <Fragment key={g}>
-                      <div
-                        className="flex items-center pr-1 font-medium text-xs"
-                      >
+                      <div className="flex items-center pr-1 font-medium text-xs">
                         {GOAL_LABELS[g]}
                       </div>
                       {CARB_SPLITS.map((cs) => {
-                        const cell =
-                          matrix[g]?.[cs];
+                        const cell = matrix[g]?.[cs];
                         if (!cell) return null;
                         const isSelected =
-                          values.goal === g &&
-                          values.carbSplit === cs;
+                          values.goal === g && values.carbSplit === cs;
                         return (
                           <button
                             key={`${g}-${cs}`}
                             type="button"
                             className={cn(
                               'rounded-md border p-2 text-left transition-all',
-                              'hover:border-primary/50 hover:bg-primary/5',
+                              'hover:border-[#C9A87C]/50 hover:bg-[#C9A87C]/5',
                               isSelected
-                                ? 'border-primary bg-primary/10 ring-1 ring-primary'
-                                : 'border-border bg-card',
+                                ? 'border-[#C9A87C] bg-[#C9A87C]/10 ring-1 ring-[#C9A87C]'
+                                : 'border-[#E8D5B5] bg-[#FEFBF6]'
                             )}
                             onClick={() => {
-                              form.setValue(
-                                'goal',
-                                g,
-                              );
-                              form.setValue(
-                                'carbSplit',
-                                cs,
-                              );
+                              form.setValue('goal', g);
+                              form.setValue('carbSplit', cs);
                               // Reset aggression
                               // defaults when
                               // switching goals
-                              if (
-                                g !== 'maintaining'
-                              ) {
-                                if (
-                                  !values.aggression
-                                ) {
-                                  form.setValue(
-                                    'aggression',
-                                    'moderate',
-                                  );
+                              if (g !== 'maintaining') {
+                                if (!values.aggression) {
+                                  form.setValue('aggression', 'moderate');
                                 }
-                                form.setValue(
-                                  'deficitOverride',
-                                  null,
-                                );
+                                form.setValue('deficitOverride', null);
                               }
                               reportChange();
                             }}
                           >
-                            <p className="font-bold text-sm">
-                              {cell.calories}
-                            </p>
-                            <div className="mt-0.5 space-y-0 text-muted-foreground text-[10px] leading-tight">
-                              <p>
-                                P: {cell.proteinG}g
-                              </p>
-                              <p>
-                                C: {cell.carbsG}g
-                              </p>
-                              <p>
-                                F: {cell.fatG}g
-                              </p>
+                            <p className="font-bold text-sm">{cell.calories}</p>
+                            <div className="mt-0.5 space-y-0 text-[#8B7355] text-xs leading-tight">
+                              <p>P: {cell.proteinG}g</p>
+                              <p>C: {cell.carbsG}g</p>
+                              <p>F: {cell.fatG}g</p>
                             </div>
                           </button>
                         );
@@ -644,8 +565,11 @@ export function ScreenBodyMetrics({
             {/* Fine-tuning (cutting/bulking only) */}
             {showFineTuning && (
               <div className="space-y-4">
-                <h3 className="font-semibold text-base">
-                  Fine-tuning
+                <h3
+                  className="font-semibold text-[#2C2416] text-base"
+                  style={{ fontFamily: 'Lora, serif' }}
+                >
+                  Điều chỉnh chi tiết
                 </h3>
 
                 {/* Aggression Level */}
@@ -655,48 +579,34 @@ export function ScreenBodyMetrics({
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>
-                        {values.goal === 'cutting'
-                          ? 'Deficit'
-                          : 'Surplus'}{' '}
-                        Pace
+                        Tốc độ {values.goal === 'cutting' ? 'giảm' : 'tăng'}
                       </FormLabel>
                       <FormControl>
                         <RadioGroup
-                          onValueChange={(
-                            v: string,
-                          ) => {
+                          onValueChange={(v: string) => {
                             field.onChange(v);
                             // Reset override to
                             // new preset
-                            form.setValue(
-                              'deficitOverride',
-                              null,
-                            );
+                            form.setValue('deficitOverride', null);
                             reportChange();
                           }}
                           value={field.value ?? ''}
                           className="space-y-2"
                         >
-                          {AGGRESSION_OPTIONS.map(
-                            (opt) => (
-                              <div
-                                key={opt.value}
-                                className="flex items-center gap-2"
-                              >
-                                <RadioGroupItem
-                                  value={opt.value}
-                                />
-                                <Label className="flex flex-col">
-                                  <span className="font-medium">
-                                    {opt.label}
-                                  </span>
-                                  <span className="text-muted-foreground text-xs">
-                                    {opt.desc}
-                                  </span>
-                                </Label>
-                              </div>
-                            ),
-                          )}
+                          {AGGRESSION_OPTIONS.map((opt) => (
+                            <div
+                              key={opt.value}
+                              className="flex items-center gap-2"
+                            >
+                              <RadioGroupItem value={opt.value} />
+                              <Label className="flex flex-col">
+                                <span className="font-medium">{opt.label}</span>
+                                <span className="text-[#8B7355] text-xs">
+                                  {opt.desc}
+                                </span>
+                              </Label>
+                            </div>
+                          ))}
                         </RadioGroup>
                       </FormControl>
                       <FormMessage />
@@ -710,33 +620,19 @@ export function ScreenBodyMetrics({
                   name="deficitOverride"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>
-                        Custom{' '}
-                        {values.goal === 'cutting'
-                          ? 'deficit'
-                          : 'surplus'}{' '}
-                        (kcal/day)
-                      </FormLabel>
+                      <FormLabel>Tùy chỉnh (kcal/ngày)</FormLabel>
                       <FormControl>
                         <Input
                           type="number"
                           placeholder={String(
                             AGGRESSION_PRESETS[
-                              (values.aggression ??
-                                'moderate') as Aggression
-                            ],
+                              (values.aggression ?? 'moderate') as Aggression
+                            ]
                           )}
-                          value={
-                            field.value ?? ''
-                          }
+                          value={field.value ?? ''}
                           onChange={(e) => {
-                            const v =
-                              e.target.value;
-                            field.onChange(
-                              v === ''
-                                ? null
-                                : Number(v),
-                            );
+                            const v = e.target.value;
+                            field.onChange(v === '' ? null : Number(v));
                           }}
                           onBlur={() => {
                             field.onBlur();
@@ -755,42 +651,33 @@ export function ScreenBodyMetrics({
 
             {/* Live Final Targets */}
             {displayTargets && (
-              <div className="rounded-lg border bg-primary/5 p-4">
-                <h3 className="mb-3 font-semibold text-base">
-                  Your Daily Targets
+              <div className="rounded-lg border border-[#C9A87C]/30 bg-gradient-to-br from-[#FEFBF6] to-[#C9A87C]/5 p-4">
+                <h3
+                  className="mb-3 font-semibold text-[#2C2416] text-base"
+                  style={{ fontFamily: 'Lora, serif' }}
+                >
+                  Mục tiêu hàng ngày
                 </h3>
                 <div className="grid grid-cols-4 gap-2 text-center">
                   <div>
                     <p className="font-bold text-lg">
                       {displayTargets.calories}
                     </p>
-                    <p className="text-muted-foreground text-xs">
-                      kcal
-                    </p>
+                    <p className="text-[#8B7355] text-xs">kcal</p>
                   </div>
                   <div>
                     <p className="font-bold text-lg">
                       {displayTargets.proteinG}
                     </p>
-                    <p className="text-muted-foreground text-xs">
-                      Protein (g)
-                    </p>
+                    <p className="text-[#8B7355] text-xs">Đạm (g)</p>
                   </div>
                   <div>
-                    <p className="font-bold text-lg">
-                      {displayTargets.carbsG}
-                    </p>
-                    <p className="text-muted-foreground text-xs">
-                      Carbs (g)
-                    </p>
+                    <p className="font-bold text-lg">{displayTargets.carbsG}</p>
+                    <p className="text-[#8B7355] text-xs">Tinh bột (g)</p>
                   </div>
                   <div>
-                    <p className="font-bold text-lg">
-                      {displayTargets.fatG}
-                    </p>
-                    <p className="text-muted-foreground text-xs">
-                      Fat (g)
-                    </p>
+                    <p className="font-bold text-lg">{displayTargets.fatG}</p>
+                    <p className="text-[#8B7355] text-xs">Chất béo (g)</p>
                   </div>
                 </div>
               </div>
