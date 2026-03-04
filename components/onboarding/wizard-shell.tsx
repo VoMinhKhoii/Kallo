@@ -5,7 +5,10 @@ import { useTransition, useState, useCallback } from 'react';
 import { Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { StepIndicator } from './step-indicator';
-import { ScreenBodyMetrics } from './screen-body-metrics';
+import {
+  ScreenBodyMetrics,
+  type ScreenOneData,
+} from './screen-body-metrics';
 import { saveOnboardingScreen } from '@/lib/onboarding/actions';
 import { WIZARD_DEFAULTS } from '@/lib/onboarding/constants';
 import type { getOnboardingProfile } from '@/lib/onboarding/actions';
@@ -110,8 +113,14 @@ export function WizardShell({
         {currentStep === 1 && (
           <ScreenBodyMetrics
             defaultValues={screenOneDefaults}
-            onChange={(data) =>
-              handleScreenChange(1, data)
+            onChange={(data: ScreenOneData) =>
+              handleScreenChange(
+                1,
+                data as unknown as Record<
+                  string,
+                  unknown
+                >,
+              )
             }
           />
         )}
