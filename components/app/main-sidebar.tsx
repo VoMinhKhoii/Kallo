@@ -2,7 +2,6 @@
 
 import {
   Activity,
-  ChevronDown,
   LayoutDashboard,
   LogOut,
   PanelLeftClose,
@@ -151,29 +150,31 @@ export function MainSidebar() {
       {/* Settings */}
       <div className="flex flex-1 flex-col gap-2">
         <SectionHeader label="Settings" collapsed={collapsed} />
-        <button
-          type="button"
-          title={collapsed ? 'Settings' : undefined}
-          className="flex items-center rounded-lg px-3 py-2.5 text-muted-foreground transition-all duration-200 hover:bg-[#F0EAE0]/60 hover:text-[#2C2416]"
+        <Link
+          href="/settings"
+          title={collapsed ? 'Cài đặt' : undefined}
+          className={cn(
+            'flex items-center rounded-lg px-3 py-2.5 transition-all duration-200',
+            pathname === '/settings'
+              ? 'bg-[#695e4e] text-white shadow-[#695e4e]/20 shadow-sm'
+              : 'text-muted-foreground hover:bg-[#F0EAE0]/60 hover:text-[#2C2416]'
+          )}
         >
           <Settings className="h-5 w-5 shrink-0" />
-          <div
+          <span
             className={cn(
-              'flex flex-1 items-center overflow-hidden transition-all duration-300',
-              collapsed ? 'ml-0 max-w-0 opacity-0' : 'ml-3 max-w-40 opacity-100'
+              'overflow-hidden whitespace-nowrap font-medium text-sm tracking-tight transition-all duration-300',
+              collapsed
+                ? 'ml-0 max-w-0 opacity-0'
+                : 'ml-3 max-w-40 opacity-100'
             )}
+            style={{
+              fontFamily: 'DM Sans, sans-serif',
+            }}
           >
-            <span
-              className="flex-1 whitespace-nowrap text-left font-medium text-sm tracking-tight"
-              style={{
-                fontFamily: 'DM Sans, sans-serif',
-              }}
-            >
-              Settings
-            </span>
-            <ChevronDown className="ml-2 h-4 w-4 shrink-0" />
-          </div>
-        </button>
+            Cài đặt
+          </span>
+        </Link>
       </div>
 
       {/* User Profile */}

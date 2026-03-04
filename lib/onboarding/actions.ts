@@ -116,3 +116,56 @@ export async function saveOnboardingScreen(
 
   return { success: true };
 }
+
+export async function saveProfileSettings(
+  data: Record<string, unknown>,
+) {
+  const user = await getAuthUser();
+
+  const updateObj = {
+    weightKg: String(data.weightKg),
+    heightCm: data.heightCm as number,
+    age: data.age as number,
+    biologicalSex: data.biologicalSex as string,
+    activityLevel: data.activityLevel as string,
+    tdeeKcal: data.tdeeKcal as number,
+    goal: data.goal as string,
+    aggression: data.aggression as string | null,
+    carbSplit: data.carbSplit as string,
+    calorieTarget: Math.max(
+      Number(data.calorieTarget) || 0,
+      500,
+    ),
+    proteinTargetG: data.proteinTargetG as number,
+    carbsTargetG: data.carbsTargetG as number,
+    fatTargetG: data.fatTargetG as number,
+    regionalProfile: data.regionalProfile as string,
+    oilUsage: data.oilUsage as string,
+    fatTrimPork: data.fatTrimPork as string,
+    fatTrimChicken: data.fatTrimChicken as string,
+    fatTrimFish: data.fatTrimFish as string,
+    boneAwareness: data.boneAwareness as boolean,
+    defaultRicePortion: data.defaultRicePortion as string,
+    sugarBraised: data.sugarBraised as string,
+    // Null guard: if user clears hand measurements, apply SKIP_FALLBACK_DEFAULTS
+    handSpanCm: String(
+      data.handSpanCm ?? SKIP_FALLBACK_DEFAULTS.handSpanCm,
+    ),
+    knuckleDepthCm: String(
+      data.knuckleDepthCm ??
+        SKIP_FALLBACK_DEFAULTS.knuckleDepthCm,
+    ),
+    bowlSizeMl: (data.bowlSizeMl ??
+      SKIP_FALLBACK_DEFAULTS.bowlSizeMl) as number,
+    plateSizeMl: (data.plateSizeMl ??
+      SKIP_FALLBACK_DEFAULTS.plateSizeMl) as number,
+  };
+
+  // Does NOT touch onboardingStep or onboardingCompletedAt
+  await db
+    .update(userProfiles)
+    .set(updateObj)
+    .where(eq(userProfiles.userId, user.id));
+
+  return { success: true };
+}
