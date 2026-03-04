@@ -63,7 +63,7 @@ Plans:
 **Plans**: 4 plans
 
 Plans:
-- [ ] 02-01-PLAN.md — Schema migration (5 new columns) + TDEE calculation engine with types, constants, Zod schemas, and tests
+- [x] 02-01-PLAN.md — Schema migration (5 new columns) + TDEE calculation engine with types, constants, Zod schemas, and tests
 - [ ] 02-02-PLAN.md — Wizard infrastructure (route, layout, server actions, step indicator) + Screen 1 (body metrics, live TDEE, goal/aggression/carb split)
 - [ ] 02-03-PLAN.md — Screen 2 (regional profile cards) + Screen 3 (cooking habits with pre-population) + Screen 4 (portion calibration with skip)
 - [ ] 02-04-PLAN.md — Settings profile editor + onboarding nudge system (home card + time-based dialog)
