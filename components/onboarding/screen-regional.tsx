@@ -1,6 +1,5 @@
 'use client';
 
-import { motion } from 'motion/react';
 import { useEffect, useState } from 'react';
 import type { RegionalProfile } from '@/lib/onboarding/types';
 
@@ -14,40 +13,38 @@ interface ScreenRegionalProps {
 const REGION_CARDS: {
   value: RegionalProfile;
   title: string;
-  description: string;
+  quote: string;
+  detail: string;
 }[] = [
   {
     value: 'mien_bac',
     title: 'Miền Bắc',
-    description:
-      'Thanh đạm, cân bằng. Ít dầu mỡ, ít ngọt — AI mặc định nêm nếm nhẹ nhàng, giữ nguyên vị tự nhiên của nguyên liệu.',
+    quote: 'Thanh đạm, cân bằng.',
+    detail:
+      'Ít dầu mỡ, ít ngọt — AI mặc định nêm nếm nhẹ nhàng, giữ nguyên vị tự nhiên của nguyên liệu.',
   },
   {
     value: 'mien_trung',
     title: 'Miền Trung',
-    description:
-      'Đậm đà, tròn vị. Gia vị phong phú, mắm đặc trưng — AI mặc định đậm hơn về muối và gia vị, khẩu phần cô đọng và tập trung hơn.',
+    quote: 'Đậm đà, tròn vị.',
+    detail:
+      'Gia vị phong phú, mắm đặc trưng — AI mặc định đậm hơn về muối và gia vị, khẩu phần cô đọng.',
   },
   {
     value: 'mien_nam',
     title: 'Miền Nam',
-    description:
-      'Ngọt dịu, phong phú. Vị ngọt nhẹ xuất hiện trong hầu hết các món — AI tự động cộng thêm lượng đường nhỏ cho món kho và xào.',
+    quote: 'Ngọt dịu, phong phú.',
+    detail:
+      'Vị ngọt nhẹ xuất hiện trong hầu hết các món — AI tự động cộng thêm lượng đường nhỏ cho món kho và xào.',
   },
   {
     value: 'mien_tay',
     title: 'Miền Tây',
-    description:
-      'Béo ngậy, ngọt sâu. Nước cốt dừa và đường là linh hồn của bếp miền Tây — AI mặc định lượng chất béo và carb cao hơn cho các món kho, canh, xào.',
+    quote: 'Béo ngậy, ngọt sâu.',
+    detail:
+      'Nước cốt dừa và đường là linh hồn — AI mặc định lượng chất béo và carb cao hơn cho các món kho, canh, xào.',
   },
 ];
-
-const REGION_ACCENT: Record<string, string> = {
-  mien_bac: '#7C9A7C',
-  mien_trung: '#C9A87C',
-  mien_nam: '#D4A09A',
-  mien_tay: '#8B7355',
-};
 
 export function ScreenRegional({
   defaultValues,
@@ -57,7 +54,7 @@ export function ScreenRegional({
     defaultValues.regionalProfile ?? null
   );
 
-  // Report on mount if resuming with pre-selected value
+  // biome-ignore lint/correctness/useExhaustiveDependencies: intentional mount-only effect
   useEffect(() => {
     if (selected) {
       onChange({ regionalProfile: selected });
@@ -70,85 +67,50 @@ export function ScreenRegional({
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <div>
         <h2
-          className="font-semibold text-[#2C2416] text-lg"
+          className="mb-2 font-medium text-2xl text-[#2C2416] tracking-tight"
           style={{ fontFamily: 'Lora, serif' }}
         >
-          Vùng miền ẩm thực của bạn
+          Regional Profile
         </h2>
         <p
-          className="mt-1.5 text-[#6B5D4F] text-sm"
+          className="text-[#8B8682] text-[15px] leading-relaxed"
           style={{ fontFamily: 'DM Sans, sans-serif' }}
         >
-          AI sẽ điều chỉnh ước lượng gia vị và cách nấu theo vùng miền bạn chọn.
+          AI uses this to infer default seasoning, oil usage, and portion styles
+          when details are missing.
         </p>
       </div>
 
-      <div className="space-y-3">
-        {REGION_CARDS.map((region, index) => {
+      <div className="grid gap-4 sm:grid-cols-2">
+        {REGION_CARDS.map((region) => {
           const isSelected = selected === region.value;
-          const accent = REGION_ACCENT[region.value];
           return (
-            <motion.button
+            <button
               key={region.value}
               type="button"
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{
-                delay: index * 0.08,
-                duration: 0.4,
-                ease: 'easeOut',
-              }}
               onClick={() => handleSelect(region.value)}
-              className={`relative w-full rounded-xl border border-l-4 text-left transition-all duration-200 ${
+              className={`flex flex-col gap-2 rounded-2xl border p-5 text-left transition-all ${
                 isSelected
-                  ? 'border-[#C9A87C] bg-[#C9A87C]/5 ring-1 ring-[#C9A87C]/40'
-                  : 'border-[#E8D5B5]/60 bg-[#FEFBF6] hover:border-[#C9A87C]/40 hover:bg-[#C9A87C]/[0.02]'
+                  ? 'border-[#C9A87C] bg-[#C9A87C]/5 shadow-sm'
+                  : 'border-[#EAE7E0] bg-white hover:border-[#C9A87C]/50'
               }`}
-              style={{ borderLeftColor: accent }}
             >
-              <div className="p-4">
-                <div className="flex items-center justify-between">
-                  <h3
-                    className="font-medium text-[#2C2416] text-base"
-                    style={{ fontFamily: 'Lora, serif' }}
-                  >
-                    {region.title}
-                  </h3>
-                  {isSelected && (
-                    <motion.div
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                      className="flex h-5 w-5 items-center justify-center rounded-full bg-[#2C2416]"
-                    >
-                      <svg
-                        className="h-3 w-3 text-white"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                        strokeWidth={3}
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          d="M5 13l4 4L19 7"
-                        />
-                      </svg>
-                    </motion.div>
-                  )}
-                </div>
-                <p
-                  className="mt-1.5 text-[#6B5D4F] text-sm leading-relaxed"
-                  style={{
-                    fontFamily: 'DM Sans, sans-serif',
-                  }}
-                >
-                  {region.description}
-                </p>
-              </div>
-            </motion.button>
+              <h3 className="font-medium text-[#2C2416] text-[16px]">
+                {region.title}
+              </h3>
+              <p
+                className="font-medium text-[#8B8682] text-[13px] italic"
+                style={{ fontFamily: 'Lora, serif' }}
+              >
+                &ldquo;{region.quote}&rdquo;
+              </p>
+              <p className="text-[#8B8682] text-[13px] leading-relaxed">
+                {region.detail}
+              </p>
+            </button>
           );
         })}
       </div>

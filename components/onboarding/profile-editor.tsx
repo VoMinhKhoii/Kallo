@@ -266,11 +266,11 @@ export function ProfileEditor({ profile }: ProfileEditorProps) {
         }}
       >
         {/* ─── Body Metrics & Goals ─── */}
-        <Card className="border-[#E8D5B5]/60 bg-[#FEFBF6]">
+        <Card className="border-[#D4C4A8] bg-white shadow-sm">
           <CardHeader>
             <CardTitle
               className="text-[#2C2416]"
-              style={{ fontFamily: 'Lora, serif' }}
+              style={{ fontFamily: "'DM Sans', sans-serif" }}
             >
               Chỉ số cơ thể & Mục tiêu
             </CardTitle>
@@ -396,7 +396,7 @@ export function ProfileEditor({ profile }: ProfileEditorProps) {
             {tdee && (
               <div className="rounded-lg border-[#C9A87C]/30 bg-gradient-to-br from-[#FEFBF6] to-[#C9A87C]/5 p-3 text-sm">
                 <span className="font-medium text-[#2C2416]">TDEE: </span>
-                <span className="text-[#6B5D4F]">{tdee} kcal/ngày</span>
+                <span className="text-[#8B7355]">{tdee} kcal/ngày</span>
               </div>
             )}
 
@@ -549,15 +549,15 @@ export function ProfileEditor({ profile }: ProfileEditorProps) {
               <div className="grid grid-cols-3 gap-3 rounded-lg border-[#C9A87C]/30 bg-gradient-to-br from-[#FEFBF6] to-[#C9A87C]/5 p-3 text-center text-sm">
                 <div>
                   <div className="font-medium text-[#2C2416]">Đạm</div>
-                  <div className="text-[#6B5D4F]">{macros.proteinG}g</div>
+                  <div className="text-[#8B7355]">{macros.proteinG}g</div>
                 </div>
                 <div>
                   <div className="font-medium text-[#2C2416]">Tinh bột</div>
-                  <div className="text-[#6B5D4F]">{macros.carbsG}g</div>
+                  <div className="text-[#8B7355]">{macros.carbsG}g</div>
                 </div>
                 <div>
                   <div className="font-medium text-[#2C2416]">Chất béo</div>
-                  <div className="text-[#6B5D4F]">{macros.fatG}g</div>
+                  <div className="text-[#8B7355]">{macros.fatG}g</div>
                 </div>
               </div>
             )}
@@ -565,11 +565,11 @@ export function ProfileEditor({ profile }: ProfileEditorProps) {
         </Card>
 
         {/* ─── Regional Profile ─── */}
-        <Card className="border-[#E8D5B5]/60 bg-[#FEFBF6]">
+        <Card className="border-[#D4C4A8] bg-white shadow-sm">
           <CardHeader>
             <CardTitle
               className="text-[#2C2416]"
-              style={{ fontFamily: 'Lora, serif' }}
+              style={{ fontFamily: "'DM Sans', sans-serif" }}
             >
               Vùng miền ẩm thực
             </CardTitle>
@@ -602,11 +602,11 @@ export function ProfileEditor({ profile }: ProfileEditorProps) {
         </Card>
 
         {/* ─── Cooking Habits (3 separate fat-trim) ─── */}
-        <Card className="border-[#E8D5B5]/60 bg-[#FEFBF6]">
+        <Card className="border-[#D4C4A8] bg-white shadow-sm">
           <CardHeader>
             <CardTitle
               className="text-[#2C2416]"
-              style={{ fontFamily: 'Lora, serif' }}
+              style={{ fontFamily: "'DM Sans', sans-serif" }}
             >
               Thói quen nấu ăn
             </CardTitle>
@@ -829,11 +829,11 @@ export function ProfileEditor({ profile }: ProfileEditorProps) {
         </Card>
 
         {/* ─── Portion Calibration ─── */}
-        <Card className="border-[#E8D5B5]/60 bg-[#FEFBF6]">
+        <Card className="border-[#D4C4A8] bg-white shadow-sm">
           <CardHeader>
             <CardTitle
               className="text-[#2C2416]"
-              style={{ fontFamily: 'Lora, serif' }}
+              style={{ fontFamily: "'DM Sans', sans-serif" }}
             >
               Hiệu chỉnh phần ăn
             </CardTitle>
@@ -961,7 +961,7 @@ export function ProfileEditor({ profile }: ProfileEditorProps) {
           <Button
             type="submit"
             disabled={isPending}
-            className="bg-[#2C2416] text-[#FEFBF6] hover:bg-[#3D3225]"
+            className="bg-[#695E4E] text-[#FEFBF6] hover:bg-[#5A5043]"
           >
             {isPending ? 'Đang lưu...' : 'Lưu cài đặt'}
           </Button>

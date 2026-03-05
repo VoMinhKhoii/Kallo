@@ -10,9 +10,6 @@ import {
   FormItem,
   FormLabel,
 } from '@/components/ui/form';
-import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
-import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { REGIONAL_COOKING_DEFAULTS } from '@/lib/onboarding/constants';
 import {
   type CookingHabitsInput,
@@ -83,258 +80,253 @@ export function ScreenCooking({
     ) {
       const defaults = REGIONAL_COOKING_DEFAULTS[regionalProfile];
       for (const [key, val] of Object.entries(defaults)) {
-        form.setValue(key as keyof CookingHabitsInput, val);
+        form.setValue(key as any, val);
       }
+      form.trigger();
+      onChange(defaults);
       hasPrePopulated.current = true;
     }
-    // Report initial values upstream
-    reportChange();
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [defaultValues, regionalProfile, form, onChange]);
 
   return (
     <Form {...form}>
       <form className="space-y-8">
         <div>
           <h2
-            className="font-semibold text-[#2C2416] text-lg"
+            className="mb-2 font-medium text-2xl text-[#2C2416] tracking-tight"
             style={{ fontFamily: 'Lora, serif' }}
           >
-            Thói quen nấu ăn
+            Cooking Habits
           </h2>
           <p
-            className="mt-1.5 text-[#6B5D4F] text-sm"
-            style={{ fontFamily: 'DM Sans, sans-serif' }}
+            className="text-[#8B8682] text-[15px] leading-relaxed"
+            style={{
+              fontFamily: 'DM Sans, sans-serif',
+            }}
           >
-            AI sẽ dùng thông tin này để ước lượng dinh dưỡng chính xác hơn
+            Pre-populated based on your{' '}
+            <strong className="font-medium text-[#2C2416]">
+              {regionalProfile
+                ? {
+                    mien_bac: 'Miền Bắc',
+                    mien_trung: 'Miền Trung',
+                    mien_nam: 'Miền Nam',
+                    mien_tay: 'Miền Tây',
+                  }[regionalProfile]
+                : '—'}
+            </strong>{' '}
+            profile. Adjust your defaults below.
           </p>
         </div>
 
-        <div className="space-y-4">
-          {/* Oil Usage */}
+        <div className="space-y-6">
+          {/* Oil usage */}
           <FormField
             control={form.control}
             name="oilUsage"
             render={({ field }) => (
-              <FormItem>
-                <div className="rounded-xl border border-[#E8D5B5]/50 bg-[#FEFBF6] p-4">
-                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                    <FormLabel className="font-medium text-[#2C2416] text-sm">
-                      Mức dầu mỡ khi nấu
-                    </FormLabel>
-                    <FormControl>
-                      <ToggleGroup
-                        type="single"
-                        variant="outline"
-                        value={field.value}
-                        onValueChange={(v) => {
-                          if (v) {
-                            field.onChange(v);
-                            reportChange();
-                          }
-                        }}
-                      >
-                        <ToggleGroupItem
-                          value="minimal"
-                          className="min-w-[72px] px-3 py-2"
-                        >
-                          Ít dầu
-                        </ToggleGroupItem>
-                        <ToggleGroupItem
-                          value="normal"
-                          className="min-w-[72px] px-3 py-2"
-                        >
-                          Bình thường
-                        </ToggleGroupItem>
-                        <ToggleGroupItem
-                          value="heavy"
-                          className="min-w-[72px] px-3 py-2"
-                        >
-                          Nhiều dầu
-                        </ToggleGroupItem>
-                      </ToggleGroup>
-                    </FormControl>
-                  </div>
-                </div>
-              </FormItem>
-            )}
-          />
-
-          {/* Fat Trimming */}
-          <FormField
-            control={form.control}
-            name="fatTrim"
-            render={({ field }) => (
-              <FormItem>
-                <div className="rounded-xl border border-[#E8D5B5]/50 bg-[#FEFBF6] p-4">
-                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                    <FormLabel className="font-medium text-[#2C2416] text-sm">
-                      Khi ăn thịt, bạn xử lý mỡ thế nào?
-                    </FormLabel>
-                    <FormControl>
-                      <ToggleGroup
-                        type="single"
-                        variant="outline"
-                        value={field.value}
-                        onValueChange={(v) => {
-                          if (v) {
-                            field.onChange(v);
-                            reportChange();
-                          }
-                        }}
-                      >
-                        <ToggleGroupItem
-                          value="trim"
-                          className="min-w-[72px] px-3 py-2"
-                        >
-                          Bỏ mỡ
-                        </ToggleGroupItem>
-                        <ToggleGroupItem
-                          value="eat_all"
-                          className="min-w-[72px] px-3 py-2"
-                        >
-                          Ăn nguyên
-                        </ToggleGroupItem>
-                        <ToggleGroupItem
-                          value="by_dish"
-                          className="min-w-[72px] px-3 py-2"
-                        >
-                          Tùy món
-                        </ToggleGroupItem>
-                      </ToggleGroup>
-                    </FormControl>
-                  </div>
-                </div>
-              </FormItem>
-            )}
-          />
-
-          {/* Bone Awareness */}
-          <FormField
-            control={form.control}
-            name="boneAwareness"
-            render={({ field }) => (
-              <FormItem>
-                <div className="rounded-xl border border-[#E8D5B5]/50 bg-[#FEFBF6] p-4">
-                  <div className="flex items-center justify-between gap-4">
-                    <Label
-                      htmlFor="bone-awareness"
-                      className="font-medium text-[#2C2416] text-sm"
-                    >
-                      Bạn có cân nhắc xương khi ước lượng phần ăn?
-                    </Label>
-                    <FormControl>
-                      <Switch
-                        id="bone-awareness"
-                        checked={field.value}
-                        onCheckedChange={(v) => {
-                          field.onChange(v);
+              <FormItem className="rounded-2xl border border-[#EAE7E0] bg-white p-5">
+                <FormLabel className="mb-3 block font-bold text-[#2C2416] text-[13px]">
+                  How much oil/fat when stir-frying?
+                </FormLabel>
+                <FormControl>
+                  <div className="flex rounded-xl bg-[#F5F4F0] p-1">
+                    {[
+                      { value: 'minimal', label: 'Minimal' },
+                      { value: 'normal', label: 'Normal' },
+                      { value: 'heavy', label: 'Heavy' },
+                    ].map((opt) => (
+                      <button
+                        key={opt.value}
+                        type="button"
+                        onClick={() => {
+                          field.onChange(opt.value);
                           reportChange();
                         }}
-                      />
-                    </FormControl>
+                        className={`flex-1 rounded-lg py-2 font-medium text-[13px] transition-all ${
+                          field.value === opt.value
+                            ? 'bg-white text-[#2C2416] shadow-sm'
+                            : 'text-[#8B8682] hover:text-[#2C2416]'
+                        }`}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
                   </div>
-                </div>
+                </FormControl>
               </FormItem>
             )}
           />
 
-          {/* Default Rice Portion */}
+          {/* Rice per meal */}
           <FormField
             control={form.control}
             name="defaultRicePortion"
             render={({ field }) => (
-              <FormItem>
-                <div className="rounded-xl border border-[#E8D5B5]/50 bg-[#FEFBF6] p-4">
-                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                    <FormLabel className="font-medium text-[#2C2416] text-sm">
-                      Khẩu phần cơm mặc định
-                    </FormLabel>
-                    <FormControl>
-                      <ToggleGroup
-                        type="single"
-                        variant="outline"
-                        value={field.value}
-                        onValueChange={(v) => {
-                          if (v) {
-                            field.onChange(v);
-                            reportChange();
-                          }
+              <FormItem className="rounded-2xl border border-[#EAE7E0] bg-white p-5">
+                <FormLabel className="mb-3 block font-bold text-[#2C2416] text-[13px]">
+                  Rice per meal
+                </FormLabel>
+                <FormControl>
+                  <div className="flex rounded-xl bg-[#F5F4F0] p-1">
+                    {[
+                      {
+                        value: 'small',
+                        label: 'Minimal',
+                        hint: '~150g',
+                      },
+                      {
+                        value: 'medium',
+                        label: 'Normal',
+                        hint: '~200g',
+                      },
+                      {
+                        value: 'large',
+                        label: 'Heavy',
+                        hint: '~300g',
+                      },
+                    ].map((opt) => (
+                      <button
+                        key={opt.value}
+                        type="button"
+                        onClick={() => {
+                          field.onChange(opt.value);
+                          reportChange();
                         }}
+                        className={`flex flex-1 flex-col items-center rounded-lg py-2 transition-all ${
+                          field.value === opt.value
+                            ? 'bg-white text-[#2C2416] shadow-sm'
+                            : 'text-[#8B8682] hover:text-[#2C2416]'
+                        }`}
                       >
-                        <ToggleGroupItem
-                          value="small"
-                          className="min-w-[72px] px-3 py-2"
-                        >
-                          Nhỏ ~150g
-                        </ToggleGroupItem>
-                        <ToggleGroupItem
-                          value="medium"
-                          className="min-w-[72px] px-3 py-2"
-                        >
-                          Vừa ~200g
-                        </ToggleGroupItem>
-                        <ToggleGroupItem
-                          value="large"
-                          className="min-w-[72px] px-3 py-2"
-                        >
-                          Lớn ~300g
-                        </ToggleGroupItem>
-                      </ToggleGroup>
-                    </FormControl>
+                        <span className="font-medium text-[13px]">
+                          {opt.label}
+                        </span>
+                        <span className="mt-0.5 font-mono text-[10px] opacity-70">
+                          {opt.hint}
+                        </span>
+                      </button>
+                    ))}
                   </div>
-                </div>
+                </FormControl>
               </FormItem>
             )}
           />
 
-          {/* Sugar in Braised Dishes */}
+          {/* Fat trim */}
+          <FormField
+            control={form.control}
+            name="fatTrim"
+            render={({ field }) => (
+              <FormItem className="rounded-2xl border border-[#EAE7E0] bg-white p-5">
+                <FormLabel className="mb-3 block font-bold text-[#2C2416] text-[13px]">
+                  Fat trimming habit
+                </FormLabel>
+                <FormControl>
+                  <div className="flex rounded-xl bg-[#F5F4F0] p-1">
+                    {[
+                      { value: 'trim', label: 'Trim all' },
+                      {
+                        value: 'by_dish',
+                        label: 'By dish',
+                      },
+                      {
+                        value: 'eat_all',
+                        label: 'Eat all',
+                      },
+                    ].map((opt) => (
+                      <button
+                        key={opt.value}
+                        type="button"
+                        onClick={() => {
+                          field.onChange(opt.value);
+                          reportChange();
+                        }}
+                        className={`flex-1 rounded-lg py-2 font-medium text-[13px] transition-all ${
+                          field.value === opt.value
+                            ? 'bg-white text-[#2C2416] shadow-sm'
+                            : 'text-[#8B8682] hover:text-[#2C2416]'
+                        }`}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+                </FormControl>
+              </FormItem>
+            )}
+          />
+
+          {/* Sugar in braised */}
           <FormField
             control={form.control}
             name="sugarBraised"
             render={({ field }) => (
-              <FormItem>
-                <div className="rounded-xl border border-[#E8D5B5]/50 bg-[#FEFBF6] p-4">
-                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                    <FormLabel className="font-medium text-[#2C2416] text-sm">
-                      Mức đường trong món kho?
-                    </FormLabel>
-                    <FormControl>
-                      <ToggleGroup
-                        type="single"
-                        variant="outline"
-                        value={field.value}
-                        onValueChange={(v) => {
-                          if (v) {
-                            field.onChange(v);
-                            reportChange();
-                          }
+              <FormItem className="rounded-2xl border border-[#EAE7E0] bg-white p-5">
+                <FormLabel className="mb-3 block font-bold text-[#2C2416] text-[13px]">
+                  Sugar in braised dishes
+                </FormLabel>
+                <FormControl>
+                  <div className="flex rounded-xl bg-[#F5F4F0] p-1">
+                    {[
+                      { value: 'low', label: 'Low' },
+                      {
+                        value: 'medium',
+                        label: 'Medium',
+                      },
+                      { value: 'high', label: 'High' },
+                    ].map((opt) => (
+                      <button
+                        key={opt.value}
+                        type="button"
+                        onClick={() => {
+                          field.onChange(opt.value);
+                          reportChange();
                         }}
+                        className={`flex-1 rounded-lg py-2 font-medium text-[13px] transition-all ${
+                          field.value === opt.value
+                            ? 'bg-white text-[#2C2416] shadow-sm'
+                            : 'text-[#8B8682] hover:text-[#2C2416]'
+                        }`}
                       >
-                        <ToggleGroupItem
-                          value="low"
-                          className="min-w-[72px] px-3 py-2"
-                        >
-                          Ít
-                        </ToggleGroupItem>
-                        <ToggleGroupItem
-                          value="medium"
-                          className="min-w-[72px] px-3 py-2"
-                        >
-                          Vừa
-                        </ToggleGroupItem>
-                        <ToggleGroupItem
-                          value="high"
-                          className="min-w-[72px] px-3 py-2"
-                        >
-                          Nhiều
-                        </ToggleGroupItem>
-                      </ToggleGroup>
-                    </FormControl>
+                        {opt.label}
+                      </button>
+                    ))}
                   </div>
-                </div>
+                </FormControl>
               </FormItem>
             )}
           />
+
+          {/* Checkbox items */}
+          <div className="space-y-3">
+            <FormField
+              control={form.control}
+              name="boneAwareness"
+              render={({ field }) => (
+                <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-[#EAE7E0] bg-white p-4 transition-colors hover:border-[#C9A87C]/50">
+                  <input
+                    type="checkbox"
+                    checked={field.value}
+                    onChange={(e) => {
+                      field.onChange(e.target.checked);
+                      reportChange();
+                    }}
+                    className="mt-1 h-4 w-4 rounded border-[#EAE7E0] bg-[#F5F4F0] text-[#2C2416] focus:ring-[#C9A87C]"
+                  />
+                  <div>
+                    <div className="font-medium text-[#2C2416] text-[14px]">
+                      Bone awareness
+                    </div>
+                    <div className="mt-0.5 text-[#8B8682] text-[12px]">
+                      Automatically deduct bone weight from raw meat inputs
+                      (e.g., ribs, chicken wings).
+                    </div>
+                  </div>
+                </label>
+              )}
+            />
+          </div>
         </div>
       </form>
     </Form>

@@ -72,41 +72,35 @@ export function NudgeDialog({
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogContent className="border-[#E8D5B5]/60 bg-[#FEFBF6] sm:max-w-md">
-        <DialogHeader>
+      <DialogContent className="overflow-hidden rounded-2xl border border-[#E8D5B5]/60 bg-[#FFFCF8] p-6 shadow-lg sm:max-w-md">
+        <DialogHeader className="space-y-3 pb-2 text-left">
           <DialogTitle
-            className="text-[#2C2416]"
+            className="font-medium text-[#2C2416] text-xl"
             style={{ fontFamily: 'Lora, serif' }}
           >
-            Hồ sơ dinh dưỡng chưa hoàn tất
+            Hồ sơ chưa hoàn tất
           </DialogTitle>
           <DialogDescription
-            className="text-[#6B5D4F]"
-            style={{
-              fontFamily: 'DM Sans, sans-serif',
-            }}
+            className="text-[#8B7355] text-sm leading-relaxed"
+            style={{ fontFamily: 'DM Sans, sans-serif' }}
           >
-            Bạn đã dùng ứng dụng được 1 tuần! Hoàn tất hồ sơ giúp AI tính toán
-            dinh dưỡng chính xác hơn.
+            Bạn đã dùng Nhẩm được 1 tuần! Hoàn tất hồ sơ giúp Nhẩm thông minh
+            hơn và cá nhân hóa chính xác lượng dinh dưỡng cho riêng bạn.
           </DialogDescription>
         </DialogHeader>
-        <DialogFooter className="gap-2 sm:gap-0">
+        <DialogFooter className="mt-6 flex-col-reverse gap-2 sm:flex-row sm:justify-end sm:gap-2">
           <Button
-            variant="outline"
+            variant="ghost"
             onClick={handleDismiss}
-            className="border-[#E8D5B5] text-[#6B5D4F] hover:bg-[#E8D5B5]/20 hover:text-[#2C2416]"
-            style={{
-              fontFamily: 'DM Sans, sans-serif',
-            }}
+            className="h-10 w-full rounded-xl px-4 font-medium text-[#8B7355] text-sm transition-colors hover:bg-[#F0EAE0]/50 hover:text-[#2C2416] sm:w-auto"
+            style={{ fontFamily: 'DM Sans, sans-serif' }}
           >
             Để sau
           </Button>
           <Button
             onClick={handleGoToOnboarding}
-            className="bg-[#2C2416] text-[#FEFBF6] hover:bg-[#3D3225]"
-            style={{
-              fontFamily: 'DM Sans, sans-serif',
-            }}
+            className="h-10 w-full rounded-xl bg-[#2C2416] px-6 font-medium text-[#FFFCF8] text-sm transition-colors hover:bg-[#3D3425] sm:w-auto"
+            style={{ fontFamily: 'DM Sans, sans-serif' }}
           >
             Hoàn tất ngay
           </Button>

@@ -1,7 +1,13 @@
 import type { Metadata } from 'next';
-import { DM_Sans, Geist, Geist_Mono, Lora } from 'next/font/google';
+import { DM_Sans, Fraunces, Geist, Geist_Mono, Lora } from 'next/font/google';
 import { Toaster } from '@/components/ui/sonner';
 import './globals.css';
+
+const fraunces = Fraunces({
+  variable: '--font-fraunces',
+  subsets: ['vietnamese', 'latin'],
+  axes: ['SOFT', 'WONK', 'opsz'],
+});
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -36,8 +42,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} ${lora.variable} ${dmSans.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} ${lora.variable} ${dmSans.variable} ${fraunces.variable} antialiased`}
       >
+        <div className="noise-bg pointer-events-none fixed inset-0 z-50 opacity-[0.03] mix-blend-overlay"></div>
         {children}
         <Toaster />
       </body>
