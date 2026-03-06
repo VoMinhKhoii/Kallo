@@ -29,7 +29,7 @@ import { Switch } from '@/components/ui/switch';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { saveProfileSettings } from '@/lib/onboarding/actions';
 import {
-  AGGRESSION_PRESETS,
+  AGGRESSION_KCAL_PER_KG,
   SKIP_FALLBACK_DEFAULTS,
 } from '@/lib/onboarding/constants';
 import { bodyMetricsSchema, goalSchema } from '@/lib/onboarding/schemas';
@@ -56,7 +56,7 @@ import { cn } from '@/lib/utils';
 const metricsGoalSchema = bodyMetricsSchema.merge(
   z.object({
     goal: z.enum(['cutting', 'bulking', 'maintaining']),
-    aggression: z.enum(['gentle', 'moderate', 'aggressive']).nullable(),
+    aggression: z.number().min(0.1).max(0.8).nullable(),
     carbSplit: z.enum(['moderate_carb', 'lower_carb', 'higher_carb']),
   })
 );
@@ -70,8 +70,7 @@ interface ProfileEditorForm {
   activityLevel: ActivityLevel;
   // Goals
   goal: Goal;
-  aggression: Aggression | null;
-  carbSplit: CarbSplit;
+  aggression: Aggression | null;  carbSplit: CarbSplit;
   calorieTarget: number;
   // Regional
   regionalProfile: RegionalProfile;
@@ -142,7 +141,7 @@ export function ProfileEditor({ profile }: ProfileEditorProps) {
       age: profile.age ?? 25,
       activityLevel: (profile.activityLevel as ActivityLevel) ?? 'light',
       goal: (profile.goal as Goal) ?? 'maintaining',
-      aggression: (profile.aggression as Aggression) ?? null,
+      aggression: profile.aggression ? Number(profile.aggression) : null,
       carbSplit: (profile.carbSplit as CarbSplit) ?? 'moderate_carb',
       calorieTarget: profile.calorieTarget ?? 2000,
       regionalProfile:
@@ -420,8 +419,8 @@ export function ProfileEditor({ profile }: ProfileEditorProps) {
                             newGoal !== 'maintaining' &&
                             !form.getValues('aggression')
                           ) {
-                            form.setValue('aggression', 'moderate');
-                            recomputeFromTDEE(newGoal, 'moderate');
+                            form.setValue('aggression', 0.5);
+                            recomputeFromTDEE(newGoal, 0.5);
                           } else {
                             recomputeFromTDEE(newGoal);
                           }
@@ -455,26 +454,26 @@ export function ProfileEditor({ profile }: ProfileEditorProps) {
                       <ToggleGroup
                         type="single"
                         variant="outline"
-                        value={field.value ?? ''}
+                        value={String(field.value ?? '')}
                         onValueChange={(v) => {
                           if (v) {
-                            const newAgg = v as Aggression;
+                            const newAgg = Number(v);
                             field.onChange(newAgg);
                             recomputeFromTDEE(undefined, newAgg);
                           }
                         }}
                       >
-                        <ToggleGroupItem value="gentle">
+                        <ToggleGroupItem value="0.25">
                           Nhẹ nhàng (~
-                          {AGGRESSION_PRESETS.gentle} kcal)
+                          {Math.round(0.25 * AGGRESSION_KCAL_PER_KG)} kcal)
                         </ToggleGroupItem>
-                        <ToggleGroupItem value="moderate">
+                        <ToggleGroupItem value="0.5">
                           Vừa phải (~
-                          {AGGRESSION_PRESETS.moderate} kcal)
+                          {Math.round(0.5 * AGGRESSION_KCAL_PER_KG)} kcal)
                         </ToggleGroupItem>
-                        <ToggleGroupItem value="aggressive">
+                        <ToggleGroupItem value="0.75">
                           Nhanh (~
-                          {AGGRESSION_PRESETS.aggressive} kcal)
+                          {Math.round(0.75 * AGGRESSION_KCAL_PER_KG)} kcal)
                         </ToggleGroupItem>
                       </ToggleGroup>
                     </FormControl>

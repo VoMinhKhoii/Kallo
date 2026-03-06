@@ -17,7 +17,9 @@ export const goalSchema = z
   .object({
     goal: z.enum(['cutting', 'bulking', 'maintaining']),
     aggression: z
-      .enum(['gentle', 'moderate', 'aggressive'])
+      .number()
+      .min(0.1)
+      .max(0.8)
       .nullable(),
     carbSplit: z.enum([
       'moderate_carb',

@@ -30,7 +30,7 @@ export async function getOnboardingProfile() {
 
 export async function saveOnboardingScreen(
   step: number,
-  data: Record<string, unknown>,
+  data: Record<string, unknown>
 ) {
   const user = await getAuthUser();
 
@@ -38,8 +38,7 @@ export async function saveOnboardingScreen(
   const [existing] = await db
     .select({
       onboardingStep: userProfiles.onboardingStep,
-      onboardingCompletedAt:
-        userProfiles.onboardingCompletedAt,
+      onboardingCompletedAt: userProfiles.onboardingCompletedAt,
       handSpanCm: userProfiles.handSpanCm,
       knuckleDepthCm: userProfiles.knuckleDepthCm,
     })
@@ -47,10 +46,7 @@ export async function saveOnboardingScreen(
     .where(eq(userProfiles.userId, user.id))
     .limit(1);
 
-  const newStep = Math.max(
-    existing?.onboardingStep ?? 0,
-    step,
-  );
+  const newStep = Math.max(existing?.onboardingStep ?? 0, step);
   const updateObj: Record<string, unknown> = {
     onboardingStep: newStep,
   };
@@ -64,12 +60,10 @@ export async function saveOnboardingScreen(
     updateObj.activityLevel = data.activityLevel;
     updateObj.tdeeKcal = data.tdeeKcal;
     updateObj.goal = data.goal;
-    updateObj.aggression = data.aggression;
+    updateObj.aggression =
+      data.aggression != null ? String(data.aggression) : null;
     updateObj.carbSplit = data.carbSplit;
-    updateObj.calorieTarget = Math.max(
-      Number(data.calorieTarget) || 0,
-      500,
-    );
+    updateObj.calorieTarget = Math.max(Number(data.calorieTarget) || 0, 500);
     updateObj.proteinTargetG = data.proteinTargetG;
     updateObj.carbsTargetG = data.carbsTargetG;
     updateObj.fatTargetG = data.fatTargetG;
@@ -82,8 +76,7 @@ export async function saveOnboardingScreen(
     updateObj.fatTrimChicken = data.fatTrim;
     updateObj.fatTrimFish = data.fatTrim;
     updateObj.boneAwareness = data.boneAwareness;
-    updateObj.defaultRicePortion =
-      data.defaultRicePortion;
+    updateObj.defaultRicePortion = data.defaultRicePortion;
     updateObj.sugarBraised = data.sugarBraised;
   } else if (step === 4) {
     updateObj.handSpanCm = data.handSpanCm;
@@ -100,12 +93,10 @@ export async function saveOnboardingScreen(
     // Apply SKIP_FALLBACK_DEFAULTS for Screen 4 fields
     // still null
     if (!existing?.handSpanCm) {
-      updateObj.handSpanCm =
-        SKIP_FALLBACK_DEFAULTS.handSpanCm;
+      updateObj.handSpanCm = SKIP_FALLBACK_DEFAULTS.handSpanCm;
     }
     if (!existing?.knuckleDepthCm) {
-      updateObj.knuckleDepthCm =
-        SKIP_FALLBACK_DEFAULTS.knuckleDepthCm;
+      updateObj.knuckleDepthCm = SKIP_FALLBACK_DEFAULTS.knuckleDepthCm;
     }
   }
 
@@ -117,9 +108,7 @@ export async function saveOnboardingScreen(
   return { success: true };
 }
 
-export async function saveProfileSettings(
-  data: Record<string, unknown>,
-) {
+export async function saveProfileSettings(data: Record<string, unknown>) {
   const user = await getAuthUser();
 
   const updateObj = {
@@ -130,12 +119,12 @@ export async function saveProfileSettings(
     activityLevel: data.activityLevel as string,
     tdeeKcal: data.tdeeKcal as number,
     goal: data.goal as string,
-    aggression: data.aggression as string | null,
+    aggression:
+      data.aggression != null
+        ? String(data.aggression)
+        : (null as string | null),
     carbSplit: data.carbSplit as string,
-    calorieTarget: Math.max(
-      Number(data.calorieTarget) || 0,
-      500,
-    ),
+    calorieTarget: Math.max(Number(data.calorieTarget) || 0, 500),
     proteinTargetG: data.proteinTargetG as number,
     carbsTargetG: data.carbsTargetG as number,
     fatTargetG: data.fatTargetG as number,
@@ -148,12 +137,9 @@ export async function saveProfileSettings(
     defaultRicePortion: data.defaultRicePortion as string,
     sugarBraised: data.sugarBraised as string,
     // Null guard: if user clears hand measurements, apply SKIP_FALLBACK_DEFAULTS
-    handSpanCm: String(
-      data.handSpanCm ?? SKIP_FALLBACK_DEFAULTS.handSpanCm,
-    ),
+    handSpanCm: String(data.handSpanCm ?? SKIP_FALLBACK_DEFAULTS.handSpanCm),
     knuckleDepthCm: String(
-      data.knuckleDepthCm ??
-        SKIP_FALLBACK_DEFAULTS.knuckleDepthCm,
+      data.knuckleDepthCm ?? SKIP_FALLBACK_DEFAULTS.knuckleDepthCm
     ),
     bowlSizeMl: (data.bowlSizeMl ??
       SKIP_FALLBACK_DEFAULTS.bowlSizeMl) as number,

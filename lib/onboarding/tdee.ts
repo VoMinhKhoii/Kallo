@@ -5,10 +5,9 @@ import type {
   Goal,
   MacroTargets,
 } from './types';
-import type { Aggression } from './types';
 import {
   ACTIVITY_MULTIPLIERS,
-  AGGRESSION_PRESETS,
+  AGGRESSION_KCAL_PER_KG,
   CARB_SPLIT_RATIOS,
 } from './constants';
 
@@ -55,12 +54,12 @@ export function calcMacroGrams(
 
 /**
  * Compute daily calorie/macro targets based on goal and aggression.
- * deficitOverride overrides aggression preset when provided.
+ * aggression is kg/week (0.1–0.8). deficitOverride overrides when provided.
  */
 export function calcDailyTargets(
   tdee: number,
   goal: Goal,
-  aggression: Aggression | null,
+  aggression: number | null,
   carbSplit: CarbSplit,
   deficitOverride?: number | null,
 ): MacroTargets {
@@ -70,7 +69,8 @@ export function calcDailyTargets(
     calories = tdee;
   } else {
     const adjustment =
-      deficitOverride ?? AGGRESSION_PRESETS[aggression!];
+      deficitOverride ??
+      Math.round(aggression! * AGGRESSION_KCAL_PER_KG);
     calories =
       goal === 'cutting' ? tdee - adjustment : tdee + adjustment;
   }

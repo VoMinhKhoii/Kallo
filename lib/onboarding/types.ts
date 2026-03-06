@@ -5,7 +5,8 @@ export type ActivityLevel =
   | 'moderate'
   | 'very_active';
 export type Goal = 'cutting' | 'bulking' | 'maintaining';
-export type Aggression = 'gentle' | 'moderate' | 'aggressive';
+/** kg/week rate (0.1–0.8, step 0.1) */
+export type Aggression = number;
 export type CarbSplit =
   | 'moderate_carb'
   | 'lower_carb'

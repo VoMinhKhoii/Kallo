@@ -32,12 +32,8 @@ export const CARB_SPLIT_RATIOS: Record<
   higher_carb: { protein: 30, fat: 20, carbs: 50 },
 };
 
-// kcal deficit/surplus per day (derived from 1 kg fat ≈ 7,700 kcal)
-export const AGGRESSION_PRESETS: Record<Aggression, number> = {
-  gentle: 275, // ~0.25 kg/week
-  moderate: 550, // ~0.5 kg/week
-  aggressive: 825, // ~0.75 kg/week
-};
+// 1 kg fat ≈ 7,700 kcal → daily kcal = kg/week × 1100
+export const AGGRESSION_KCAL_PER_KG = 1100;
 
 // Default cooking habits per regional profile — Screen 3 pre-fills from this
 export const REGIONAL_COOKING_DEFAULTS: Record<
@@ -82,7 +78,7 @@ export const WIZARD_DEFAULTS = {
   activityLevel: 'light' as ActivityLevel,
   // Screen 1 — goals
   goal: 'maintaining' as Goal,
-  aggression: 'moderate' as Aggression, // auto-applied when goal switches to cutting/bulking
+  aggression: 0.5 as Aggression, // auto-applied when goal switches to cutting/bulking
   carbSplit: 'moderate_carb' as CarbSplit,
   deficitOverride: null as number | null, // transient, initialized null
   // Screen 2 — regional: no default (must be explicitly chosen)

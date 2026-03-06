@@ -41,7 +41,7 @@ export const userProfiles = pgTable(
 
     // Screen 2: Goal & Targets
     goal: text('goal'),
-    aggression: text('aggression'),
+    aggression: decimal('aggression', { precision: 2, scale: 1 }),
     calorieTarget: smallint('calorie_target'),
     proteinTargetG: smallint('protein_target_g'),
     carbsTargetG: smallint('carbs_target_g'),
@@ -98,7 +98,7 @@ export const userProfiles = pgTable(
     ),
     check(
       'user_profiles_aggression_check',
-      sql`${table.aggression} IN ('gentle', 'moderate', 'aggressive')`
+      sql`${table.aggression} >= 0.1 AND ${table.aggression} <= 0.8`
     ),
     check(
       'user_profiles_regional_profile_check',

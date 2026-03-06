@@ -64,11 +64,11 @@ describe('calcMacroGrams', () => {
 });
 
 describe('calcDailyTargets', () => {
-  it('cutting with moderate aggression reduces by 550', () => {
+  it('cutting with 0.5 kg/week aggression reduces by 550', () => {
     const result = calcDailyTargets(
       2000,
       'cutting',
-      'moderate',
+      0.5,
       'moderate_carb',
     );
     expect(result.calories).toBe(1450);
@@ -78,11 +78,11 @@ describe('calcDailyTargets', () => {
     expect(result.carbsG).toBe(127); // (1450*0.35)/4 = 126.875 → 127
   });
 
-  it('bulking with gentle aggression increases by 275', () => {
+  it('bulking with 0.25 kg/week aggression increases by 275', () => {
     const result = calcDailyTargets(
       2000,
       'bulking',
-      'gentle',
+      0.25,
       'moderate_carb',
     );
     expect(result.calories).toBe(2275);
@@ -105,11 +105,11 @@ describe('calcDailyTargets', () => {
     expect(result.carbsG).toBe(175);
   });
 
-  it('deficitOverride=400 overrides moderate (550) preset', () => {
+  it('deficitOverride=400 overrides 0.5 (550) aggression', () => {
     const result = calcDailyTargets(
       2000,
       'cutting',
-      'moderate',
+      0.5,
       'moderate_carb',
       400,
     );
@@ -117,11 +117,11 @@ describe('calcDailyTargets', () => {
     expect(result.calories).toBe(1600);
   });
 
-  it('deficitOverride=null falls through to aggression preset via ??', () => {
+  it('deficitOverride=null falls through to aggression via ??', () => {
     const result = calcDailyTargets(
       2000,
       'cutting',
-      'moderate',
+      0.5,
       'moderate_carb',
       null,
     );
@@ -144,10 +144,10 @@ describe('goalSchema validation', () => {
     }
   });
 
-  it('accepts cutting with valid aggression', () => {
+  it('accepts cutting with valid numeric aggression', () => {
     const result = goalSchema.safeParse({
       goal: 'cutting',
-      aggression: 'moderate',
+      aggression: 0.5,
       carbSplit: 'moderate_carb',
       deficitOverride: null,
     });

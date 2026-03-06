@@ -41,7 +41,7 @@ function buildScreenOneDefaults(profile: ProfileRow | null) {
       (profile?.goal as 'cutting' | 'bulking' | 'maintaining') ??
       WIZARD_DEFAULTS.goal,
     aggression:
-      (profile?.aggression as 'gentle' | 'moderate' | 'aggressive' | null) ??
+      (profile?.aggression ? Number(profile.aggression) : null) ??
       WIZARD_DEFAULTS.aggression,
     carbSplit:
       (profile?.carbSplit as 'moderate_carb' | 'lower_carb' | 'higher_carb') ??

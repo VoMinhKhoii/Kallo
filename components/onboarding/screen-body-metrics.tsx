@@ -1,25 +1,24 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { ChevronDown } from 'lucide-react';
-import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { Check, ChevronDown } from 'lucide-react';
+import { AnimatePresence, motion } from 'motion/react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import type { z } from 'zod';
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from '@/components/ui/collapsible';
 import { Form, FormControl, FormField, FormItem } from '@/components/ui/form';
+import {
+  AGGRESSION_KCAL_PER_KG,
+  CARB_SPLIT_RATIOS,
+} from '@/lib/onboarding/constants';
 import { bodyMetricsSchema, goalSchema } from '@/lib/onboarding/schemas';
-import { calcBMR, calcDailyTargets, calcTDEE } from '@/lib/onboarding/tdee';
-import type {
-  ActivityLevel,
-  Aggression,
-  CarbSplit,
-  Goal,
-} from '@/lib/onboarding/types';
-import { cn } from '@/lib/utils';
+import {
+  calcBMR,
+  calcDailyTargets,
+  calcMacroGrams,
+  calcTDEE,
+} from '@/lib/onboarding/tdee';
+import type { ActivityLevel, CarbSplit, Goal } from '@/lib/onboarding/types';
 
 // Merged schema for screen 1
 const screen1Schema = bodyMetricsSchema.merge(goalSchema);
@@ -41,66 +40,117 @@ interface ScreenBodyMetricsProps {
 const ACTIVITY_OPTIONS: {
   value: ActivityLevel;
   label: string;
-  desc: string;
 }[] = [
   {
     value: 'sedentary',
-    label: 'Ít vận động',
-    desc: 'Ít hoặc không tập, công việc văn phòng',
+    label: 'Sedentary (Office job, little to no exercise)',
   },
   {
     value: 'light',
-    label: 'Nhẹ nhàng',
-    desc: 'Tập nhẹ 1-3 ngày/tuần',
+    label: 'Lightly active (Light exercise 1-3 days/week)',
   },
   {
     value: 'moderate',
-    label: 'Vừa phải',
-    desc: 'Tập vừa 3-5 ngày/tuần',
+    label: 'Moderately active (Moderate exercise 3-5 days/week)',
   },
   {
     value: 'very_active',
-    label: 'Rất năng động',
-    desc: 'Tập nặng 6-7 ngày/tuần',
+    label: 'Very active (Heavy exercise 6-7 days/week)',
   },
 ];
+
+const GOALS: Goal[] = ['cutting', 'maintaining', 'bulking'];
+const CARB_SPLITS: CarbSplit[] = ['moderate_carb', 'lower_carb', 'higher_carb'];
+
+const CARB_SPLIT_INFO: Record<CarbSplit, { label: string; desc: string }> = {
+  moderate_carb: {
+    label: 'Moderate Carb',
+    desc: 'Balanced (30/35/35)',
+  },
+  lower_carb: {
+    label: 'Lower Carb',
+    desc: 'High Protein (40/40/20)',
+  },
+  higher_carb: {
+    label: 'Higher Carb',
+    desc: 'Active (30/20/50)',
+  },
+};
 
 const GOAL_LABELS: Record<Goal, string> = {
-  maintaining: 'Duy trì',
-  cutting: 'Giảm cân',
-  bulking: 'Tăng cân',
+  maintaining: 'Maintenance',
+  cutting: 'Cutting',
+  bulking: 'Bulking',
 };
 
-const CARB_SPLIT_LABELS: Record<CarbSplit, string> = {
-  moderate_carb: 'Carb vừa',
-  lower_carb: 'Ít carb',
-  higher_carb: 'Nhiều carb',
-};
+// Custom dropdown matching the Apple Notes aesthetic
+function CustomSelect({
+  options,
+  value,
+  onChange,
+}: {
+  options: { label: string; value: any }[];
+  value: any;
+  onChange: (v: any) => void;
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  const selectedOption = options.find((o) => o.value === value);
 
-const AGGRESSION_OPTIONS: {
-  value: Aggression;
-  label: string;
-  desc: string;
-}[] = [
-  {
-    value: 'gentle',
-    label: 'Nhẹ nhàng',
-    desc: '~0.25 kg/week (~275 kcal/day)',
-  },
-  {
-    value: 'moderate',
-    label: 'Vừa phải',
-    desc: '~0.5 kg/week (~550 kcal/day)',
-  },
-  {
-    value: 'aggressive',
-    label: 'Mạnh',
-    desc: '~0.75 kg/week (~825 kcal/day)',
-  },
-];
-
-const GOALS: Goal[] = ['maintaining', 'cutting', 'bulking'];
-const CARB_SPLITS: CarbSplit[] = ['moderate_carb', 'lower_carb', 'higher_carb'];
+  return (
+    <div className="relative">
+      <button
+        type="button"
+        onClick={() => setIsOpen(!isOpen)}
+        className={`flex w-full items-center justify-between rounded-lg border bg-white px-3 py-2 text-[#2C2416] text-[14px] transition-all focus:outline-none ${
+          isOpen
+            ? 'border-[#C9A87C] shadow-sm ring-1 ring-[#C9A87C]/20'
+            : 'border-[#EAE7E0] hover:border-[#C9A87C]/50'
+        }`}
+      >
+        <span className="truncate pr-2">{selectedOption?.label}</span>
+        <ChevronDown
+          className={`h-4 w-4 text-[#8B8682] transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`}
+        />
+      </button>
+      <AnimatePresence>
+        {isOpen && (
+          <>
+            <div
+              className="fixed inset-0 z-[110]"
+              onClick={() => setIsOpen(false)}
+            />
+            <motion.div
+              initial={{ opacity: 0, y: -5, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -5, scale: 0.98 }}
+              transition={{ duration: 0.15, ease: 'easeOut' }}
+              className="absolute top-full right-0 left-0 z-[120] mt-1.5 overflow-hidden rounded-xl border border-[#EAE7E0] bg-white py-1.5 shadow-[0_8px_30px_rgb(0,0,0,0.08)]"
+            >
+              {options.map((opt) => (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => {
+                    onChange(opt.value);
+                    setIsOpen(false);
+                  }}
+                  className="flex w-full items-center justify-between px-3 py-2.5 text-left text-[#2C2416] text-[14px] transition-colors hover:bg-[#F5F4F0]"
+                >
+                  <span className={value === opt.value ? 'font-medium' : ''}>
+                    {opt.label}
+                  </span>
+                  {value === opt.value && (
+                    <Check className="h-4 w-4 text-[#C9A87C]" />
+                  )}
+                </button>
+              ))}
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
 
 export function ScreenBodyMetrics({
   defaultValues,
@@ -118,7 +168,7 @@ export function ScreenBodyMetrics({
       age: defaultValues.age,
       activityLevel: defaultValues.activityLevel ?? 'light',
       goal: defaultValues.goal ?? 'maintaining',
-      aggression: defaultValues.aggression ?? 'moderate',
+      aggression: defaultValues.aggression ?? 0.5,
       carbSplit: defaultValues.carbSplit ?? 'moderate_carb',
       deficitOverride: defaultValues.deficitOverride ?? null,
     },
@@ -148,7 +198,7 @@ export function ScreenBodyMetrics({
     : null;
   const tdee = bmr !== null ? calcTDEE(bmr, values.activityLevel) : null;
 
-  // Reference matrix: 3×3 grid (always moderate aggression)
+  // Reference matrix: compute macros for each goal × carbSplit
   const matrix = useMemo(() => {
     if (tdee === null) return null;
     const grid: Record<
@@ -158,7 +208,7 @@ export function ScreenBodyMetrics({
     for (const g of GOALS) {
       grid[g] = {};
       for (const cs of CARB_SPLITS) {
-        grid[g][cs] = calcDailyTargets(tdee, g, 'moderate', cs);
+        grid[g][cs] = calcDailyTargets(tdee, g, 0.5, cs);
       }
     }
     return grid;
@@ -182,8 +232,27 @@ export function ScreenBodyMetrics({
     values.deficitOverride,
   ]);
 
-  // TDEE warning
-  const tdeeWarning = tdee !== null && (tdee < 800 || tdee > 5000);
+  // Target calories based on goal + aggression
+  const targetCalories = useMemo(() => {
+    if (!finalTargets) return 0;
+    return finalTargets.calories;
+  }, [finalTargets]);
+
+  // Carb split options with computed macros
+  const carbOptions = useMemo(
+    () =>
+      CARB_SPLITS.map((cs) => {
+        const macros = calcMacroGrams(targetCalories, cs);
+        const info = CARB_SPLIT_INFO[cs];
+        return {
+          id: cs,
+          label: info.label,
+          desc: info.desc,
+          macros,
+        };
+      }),
+    [targetCalories]
+  );
 
   // Report data upstream on discrete changes
   const reportChange = useCallback(() => {
@@ -208,31 +277,21 @@ export function ScreenBodyMetrics({
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Report whenever finalTargets or tdee changes
-  // (triggered by select/radio changes or blur)
   useEffect(() => {
     if (tdee !== null && finalTargets) {
       reportChange();
     }
   }, [tdee, finalTargets, reportChange]);
 
-  const showFineTuning = tdee !== null && values.goal !== 'maintaining';
-
-  const displayTargets =
-    tdee !== null
-      ? values.goal !== 'maintaining'
-        ? finalTargets
-        : (matrix?.[values.goal]?.[values.carbSplit] ?? null)
-      : null;
+  const inputClass =
+    'w-full rounded-lg border border-[#EAE7E0] bg-white px-3 py-2 text-[14px] text-[#2C2416] transition-colors focus:outline-none focus:border-[#C9A87C] hover:border-[#C9A87C]/50';
 
   return (
     <Form {...form}>
       <form className="space-y-10">
         {/* Header */}
         <div>
-          <h2
-            className="mb-2 font-medium text-2xl text-[#2C2416] tracking-tight"
-            style={{ fontFamily: 'Lora, serif' }}
-          >
+          <h2 className="mb-2 font-medium font-serif text-2xl text-[#2C2416] tracking-tight">
             Body Metrics &amp; Targets
           </h2>
           <p className="text-[#8B8682] text-[15px] leading-relaxed">
@@ -243,7 +302,7 @@ export function ScreenBodyMetrics({
 
         {/* Body Metrics Grid */}
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-          {/* Sex — select dropdown */}
+          {/* Sex */}
           <div className="col-span-2 sm:col-span-1">
             <FormField
               control={form.control}
@@ -254,20 +313,20 @@ export function ScreenBodyMetrics({
                     Sex
                   </label>
                   <FormControl>
-                    <select
-                      className="w-full rounded-lg border border-[#EAE7E0] bg-white px-3 py-2 text-[#2C2416] outline-none focus:border-[#C9A87C]"
+                    <CustomSelect
                       value={field.value ?? ''}
-                      onChange={(e) => {
-                        field.onChange(e.target.value);
+                      onChange={(v) => {
+                        field.onChange(v);
                         reportChange();
                       }}
-                    >
-                      <option value="" disabled>
-                        Select
-                      </option>
-                      <option value="male">Male</option>
-                      <option value="female">Female</option>
-                    </select>
+                      options={[
+                        { label: 'Male', value: 'male' },
+                        {
+                          label: 'Female',
+                          value: 'female',
+                        },
+                      ]}
+                    />
                   </FormControl>
                 </FormItem>
               )}
@@ -297,7 +356,7 @@ export function ScreenBodyMetrics({
                       field.onBlur();
                       reportChange();
                     }}
-                    className="w-full rounded-lg border border-[#EAE7E0] bg-white px-3 py-2 text-[#2C2416] outline-none focus:border-[#C9A87C]"
+                    className={inputClass}
                   />
                 </FormControl>
               </FormItem>
@@ -327,7 +386,7 @@ export function ScreenBodyMetrics({
                       field.onBlur();
                       reportChange();
                     }}
-                    className="w-full rounded-lg border border-[#EAE7E0] bg-white px-3 py-2 text-[#2C2416] outline-none focus:border-[#C9A87C]"
+                    className={inputClass}
                   />
                 </FormControl>
               </FormItem>
@@ -357,14 +416,14 @@ export function ScreenBodyMetrics({
                       field.onBlur();
                       reportChange();
                     }}
-                    className="w-full rounded-lg border border-[#EAE7E0] bg-white px-3 py-2 text-[#2C2416] outline-none focus:border-[#C9A87C]"
+                    className={inputClass}
                   />
                 </FormControl>
               </FormItem>
             )}
           />
 
-          {/* Activity Level — full-width select */}
+          {/* Activity Level */}
           <div className="col-span-2 sm:col-span-4">
             <FormField
               control={form.control}
@@ -375,20 +434,17 @@ export function ScreenBodyMetrics({
                     Activity Level
                   </label>
                   <FormControl>
-                    <select
-                      className="w-full rounded-lg border border-[#EAE7E0] bg-white px-3 py-2 text-[#2C2416] outline-none focus:border-[#C9A87C]"
+                    <CustomSelect
                       value={field.value ?? ''}
-                      onChange={(e) => {
-                        field.onChange(e.target.value);
+                      onChange={(v) => {
+                        field.onChange(v);
                         reportChange();
                       }}
-                    >
-                      {ACTIVITY_OPTIONS.map((opt) => (
-                        <option key={opt.value} value={opt.value}>
-                          {opt.label} — {opt.desc}
-                        </option>
-                      ))}
-                    </select>
+                      options={ACTIVITY_OPTIONS.map((opt) => ({
+                        label: opt.label,
+                        value: opt.value,
+                      }))}
+                    />
                   </FormControl>
                 </FormItem>
               )}
@@ -396,284 +452,217 @@ export function ScreenBodyMetrics({
           </div>
         </div>
 
-        {/* TDEE + Goal + Targets (visible once metrics filled) */}
+        {/* TDEE + Goal + Targets */}
         {tdee !== null && (
           <div className="space-y-8 border-[#EAE7E0] border-t pt-6">
-            {/* Centered TDEE */}
-            <div className="text-center">
-              <span className="mb-1 block font-bold text-[#A8A29E] text-[11px] uppercase tracking-widest">
-                Your Estimated TDEE
-              </span>
-              <div
-                className="font-normal text-4xl text-[#2C2416] tracking-tighter"
-                style={{ fontFamily: 'Lora, serif' }}
-              >
-                ~{Math.round(tdee).toLocaleString()}{' '}
-                <span className="font-sans text-[#8B8682] text-lg">kcal</span>
+            {/* TDEE + Goal side by side */}
+            <div className="flex flex-col items-center justify-between gap-6 sm:flex-row">
+              <div className="text-center sm:text-left">
+                <span className="mb-1 block font-bold text-[#A8A29E] text-[11px] uppercase tracking-widest">
+                  Your Estimated TDEE
+                </span>
+                <div className="font-normal font-serif text-4xl text-[#2C2416] tracking-tighter">
+                  ~{Math.round(tdee).toLocaleString()}{' '}
+                  <span className="font-sans text-[#8B8682] text-lg">kcal</span>
+                </div>
               </div>
-              {tdeeWarning && (
-                <p className="mt-2 text-[12px] text-amber-600">
-                  This value looks unusual. Double-check your inputs above.
-                </p>
-              )}
-              {!tdeeWarning && (
-                <p className="mt-2 text-[#A8A29E] text-[12px]">
-                  Mifflin-St Jeor formula. Something look off? Adjust above.
-                </p>
-              )}
+
+              <div className="w-full sm:w-auto">
+                <label className="mb-2 block font-bold text-[#A8A29E] text-[11px] uppercase tracking-widest sm:text-right">
+                  Select Goal
+                </label>
+                <FormField
+                  control={form.control}
+                  name="goal"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormControl>
+                        <div className="flex rounded-xl bg-[#EAE7E0]/40 p-1">
+                          {GOALS.map((g) => (
+                            <button
+                              key={g}
+                              type="button"
+                              onClick={() => {
+                                field.onChange(g);
+                                reportChange();
+                              }}
+                              className={`rounded-lg px-4 py-2 font-medium text-[14px] transition-all ${
+                                field.value === g
+                                  ? 'bg-white text-[#2C2416] shadow-sm'
+                                  : 'text-[#8B8682] hover:text-[#2C2416]'
+                              }`}
+                            >
+                              {GOAL_LABELS[g]}
+                            </button>
+                          ))}
+                        </div>
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+              </div>
             </div>
 
-            {/* Goal segmented control */}
-            <div className="space-y-4">
-              <label className="block font-bold text-[#A8A29E] text-[11px] uppercase tracking-widest">
-                Select Goal
-              </label>
+            {/* Pace & Aggression slider */}
+            {values.goal !== 'maintaining' && (
               <FormField
                 control={form.control}
-                name="goal"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormControl>
-                      <div className="flex rounded-xl bg-[#EAE7E0]/40 p-1">
-                        {GOALS.map((g) => (
-                          <button
-                            key={g}
-                            type="button"
-                            onClick={() => {
-                              field.onChange(g);
-                              reportChange();
-                            }}
-                            className={`flex-1 rounded-lg py-2 font-medium text-[14px] transition-all ${
-                              field.value === g
-                                ? 'bg-white text-[#2C2416] shadow-sm'
-                                : 'text-[#8B8682] hover:text-[#2C2416]'
-                            }`}
-                          >
-                            {GOAL_LABELS[g]}
-                          </button>
-                        ))}
-                      </div>
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
-
-              {/* Aggression cards (if not maintaining) */}
-              {showFineTuning && (
-                <div className="pt-2">
-                  <label className="mb-2 block font-bold text-[#A8A29E] text-[11px] uppercase tracking-widest">
-                    Aggression
-                  </label>
-                  <FormField
-                    control={form.control}
-                    name="aggression"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormControl>
-                          <div className="grid grid-cols-3 gap-2">
-                            {AGGRESSION_OPTIONS.map((opt) => (
-                              <button
-                                key={opt.value}
-                                type="button"
-                                onClick={() => {
-                                  field.onChange(opt.value);
-                                  reportChange();
-                                }}
-                                className={`rounded-xl border p-3 text-left transition-all ${
-                                  field.value === opt.value
-                                    ? 'border-[#C9A87C] bg-[#C9A87C]/5'
-                                    : 'border-[#EAE7E0] hover:border-[#C9A87C]/50'
-                                }`}
-                              >
-                                <div className="font-medium text-[#2C2416] text-[13px]">
-                                  {opt.label}
-                                </div>
-                                <div className="mt-0.5 text-[#8B8682] text-[11px]">
-                                  {opt.desc}
-                                </div>
-                              </button>
-                            ))}
+                name="aggression"
+                render={({ field }) => {
+                  const aggressionKg = field.value ?? 0.5;
+                  return (
+                    <FormItem>
+                      <FormControl>
+                        <div className="rounded-2xl border border-[#EAE7E0] bg-white p-5">
+                          <div className="mb-4 flex items-end justify-between">
+                            <label className="block font-bold text-[#2C2416] text-[13px]">
+                              Pace &amp; Aggression
+                            </label>
+                            <div className="font-medium text-[#2C2416] text-[14px]">
+                              {aggressionKg.toFixed(1)}{' '}
+                              <span className="text-[#8B8682]">kg/week</span>
+                            </div>
                           </div>
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
-
-                  {/* Deficit override */}
-                  <Collapsible className="mt-3">
-                    <CollapsibleTrigger className="flex items-center gap-1 font-medium text-[#C9A87C] text-[12px] hover:text-[#2C2416]">
-                      <ChevronDown className="h-3.5 w-3.5" />
-                      Custom kcal override
-                    </CollapsibleTrigger>
-                    <CollapsibleContent className="pt-2">
-                      <FormField
-                        control={form.control}
-                        name="deficitOverride"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormControl>
-                              <input
-                                type="number"
-                                placeholder="e.g. 400"
-                                value={field.value ?? ''}
-                                onChange={(e) => {
-                                  const v = e.target.value;
-                                  field.onChange(v === '' ? null : Number(v));
-                                }}
-                                onBlur={() => {
-                                  field.onBlur();
-                                  reportChange();
-                                }}
-                                className="w-40 rounded-lg border border-[#EAE7E0] bg-white px-3 py-2 text-[#2C2416] outline-none focus:border-[#C9A87C]"
-                              />
-                            </FormControl>
-                          </FormItem>
-                        )}
-                      />
-                    </CollapsibleContent>
-                  </Collapsible>
-                </div>
-              )}
-            </div>
-
-            {/* Daily target card + carb split */}
-            {displayTargets && (
-              <div className="rounded-2xl border border-[#EAE7E0] bg-white p-6">
-                <div className="mb-6 flex items-end justify-between">
-                  <div>
-                    <label className="mb-1 block font-bold text-[#A8A29E] text-[11px] uppercase tracking-widest">
-                      Daily Target
-                    </label>
-                    <div
-                      className="font-normal text-3xl text-[#2C2416]"
-                      style={{
-                        fontFamily: 'Lora, serif',
-                      }}
-                    >
-                      {Math.round(displayTargets.calories)}{' '}
-                      <span className="font-sans text-[#8B8682] text-sm">
-                        kcal
-                      </span>
-                    </div>
-                  </div>
-                  <FormField
-                    control={form.control}
-                    name="carbSplit"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormControl>
-                          <select
-                            className="cursor-pointer border-none bg-transparent text-right font-medium text-[#C9A87C] text-[13px] outline-none"
-                            value={field.value}
-                            onChange={(e) => {
-                              field.onChange(e.target.value);
-                              reportChange();
-                            }}
-                          >
-                            {CARB_SPLITS.map((cs) => (
-                              <option key={cs} value={cs}>
-                                {CARB_SPLIT_LABELS[cs]}
-                              </option>
-                            ))}
-                          </select>
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                {/* 3 macro cards */}
-                <div className="grid grid-cols-3 gap-4">
-                  <div className="rounded-xl bg-[#F5F4F0] p-3 text-center">
-                    <div className="mb-1 font-bold text-[#A8A29E] text-[10px] uppercase tracking-widest">
-                      Protein
-                    </div>
-                    <div className="font-medium font-mono text-[#2C2416] text-[17px]">
-                      {Math.round(displayTargets.proteinG)}g
-                    </div>
-                  </div>
-                  <div className="rounded-xl bg-[#F5F4F0] p-3 text-center">
-                    <div className="mb-1 font-bold text-[#A8A29E] text-[10px] uppercase tracking-widest">
-                      Carbs
-                    </div>
-                    <div className="font-medium font-mono text-[#2C2416] text-[17px]">
-                      {Math.round(displayTargets.carbsG)}g
-                    </div>
-                  </div>
-                  <div className="rounded-xl bg-[#F5F4F0] p-3 text-center">
-                    <div className="mb-1 font-bold text-[#A8A29E] text-[10px] uppercase tracking-widest">
-                      Fat
-                    </div>
-                    <div className="font-medium font-mono text-[#2C2416] text-[17px]">
-                      {Math.round(displayTargets.fatG)}g
-                    </div>
-                  </div>
-                </div>
-              </div>
+                          <div className="relative px-1">
+                            <input
+                              type="range"
+                              min="0.1"
+                              max="0.8"
+                              step="0.1"
+                              value={aggressionKg}
+                              onChange={(e) => {
+                                const v = Number(e.target.value);
+                                field.onChange(v);
+                                reportChange();
+                              }}
+                              className="h-1.5 w-full cursor-pointer appearance-none rounded-lg bg-[#EAE7E0] accent-[#2C2416]"
+                            />
+                            <div className="mt-3 flex justify-between text-[#8B8682] text-[11px]">
+                              <span
+                                className={
+                                  aggressionKg <= 0.3
+                                    ? 'font-bold text-[#2C2416]'
+                                    : ''
+                                }
+                              >
+                                Gentle
+                              </span>
+                              <span
+                                className={
+                                  aggressionKg > 0.3 && aggressionKg <= 0.6
+                                    ? 'font-bold text-[#2C2416]'
+                                    : ''
+                                }
+                              >
+                                Moderate
+                              </span>
+                              <span
+                                className={
+                                  aggressionKg > 0.6
+                                    ? 'font-bold text-[#2C2416]'
+                                    : ''
+                                }
+                              >
+                                Aggressive
+                              </span>
+                            </div>
+                          </div>
+                          <div className="mt-4 rounded-lg bg-[#F5F4F0] py-2 text-center text-[#A8A29E] text-[12px]">
+                            Translates to a{' '}
+                            <span className="font-medium text-[#2C2416]">
+                              ~
+                              {Math.round(
+                                aggressionKg * AGGRESSION_KCAL_PER_KG
+                              )}{' '}
+                              kcal/day
+                            </span>{' '}
+                            {values.goal === 'cutting' ? 'deficit' : 'surplus'}.
+                          </div>
+                        </div>
+                      </FormControl>
+                    </FormItem>
+                  );
+                }}
+              />
             )}
 
-            {/* Reference matrix (collapsible) */}
-            {matrix && (
-              <Collapsible>
-                <CollapsibleTrigger className="flex items-center gap-1 font-medium text-[#8B8682] text-[12px] hover:text-[#2C2416]">
-                  <ChevronDown className="h-3.5 w-3.5" />
-                  Reference matrix (all combos)
-                </CollapsibleTrigger>
-                <CollapsibleContent className="pt-3">
-                  <div className="overflow-x-auto rounded-xl border border-[#EAE7E0]">
-                    <table className="w-full text-[11px]">
-                      <thead>
-                        <tr className="border-[#EAE7E0] border-b bg-[#F5F4F0]">
-                          <th className="px-3 py-2 text-left font-bold text-[#A8A29E] uppercase tracking-widest">
-                            Goal
-                          </th>
-                          {CARB_SPLITS.map((cs) => (
-                            <th
-                              key={cs}
-                              className="px-3 py-2 text-center font-bold text-[#A8A29E] uppercase tracking-widest"
-                            >
-                              {CARB_SPLIT_LABELS[cs]}
-                            </th>
-                          ))}
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {GOALS.map((g) => (
-                          <tr
-                            key={g}
-                            className={cn(
-                              'border-[#EAE7E0] border-b last:border-0',
-                              g === values.goal && 'bg-[#C9A87C]/5'
-                            )}
-                          >
-                            <td className="px-3 py-2 font-medium text-[#2C2416]">
-                              {GOAL_LABELS[g]}
-                            </td>
-                            {CARB_SPLITS.map((cs) => {
-                              const t = matrix[g]?.[cs];
-                              const isActive =
-                                g === values.goal && cs === values.carbSplit;
-                              return (
-                                <td
-                                  key={cs}
-                                  className={cn(
-                                    'px-3 py-2 text-center',
-                                    isActive
-                                      ? 'font-medium text-[#2C2416]'
-                                      : 'text-[#8B8682]'
-                                  )}
-                                >
-                                  {t ? `${Math.round(t.calories)} kcal` : '—'}
-                                </td>
-                              );
-                            })}
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
+            {/* Daily Target & Macros */}
+            {targetCalories > 0 && (
+              <div className="pt-2">
+                <div className="mb-4 flex items-baseline justify-between">
+                  <label className="block font-bold text-[#A8A29E] text-[11px] uppercase tracking-widest">
+                    Daily Target &amp; Macros
+                  </label>
+                  <div className="font-normal font-serif text-2xl text-[#2C2416]">
+                    {targetCalories}{' '}
+                    <span className="font-sans text-[#8B8682] text-sm">
+                      kcal
+                    </span>
                   </div>
-                </CollapsibleContent>
-              </Collapsible>
+                </div>
+                <FormField
+                  control={form.control}
+                  name="carbSplit"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormControl>
+                        <div className="grid gap-3 sm:grid-cols-3">
+                          {carbOptions.map((opt) => (
+                            <button
+                              key={opt.id}
+                              type="button"
+                              onClick={() => {
+                                field.onChange(opt.id);
+                                reportChange();
+                              }}
+                              className={`flex flex-col justify-between gap-4 rounded-xl border p-4 text-left transition-all ${
+                                field.value === opt.id
+                                  ? 'border-[#C9A87C] bg-[#C9A87C]/5 shadow-sm'
+                                  : 'border-[#EAE7E0] bg-white hover:border-[#C9A87C]/50'
+                              }`}
+                            >
+                              <div>
+                                <div className="mb-0.5 font-medium text-[#2C2416] text-[14px]">
+                                  {opt.label}
+                                </div>
+                                <div className="font-mono text-[#8B8682] text-[11px]">
+                                  {opt.desc}
+                                </div>
+                              </div>
+                              <div className="grid w-full grid-cols-3 gap-2 text-center">
+                                <div className="rounded-lg border border-[#EAE7E0]/60 bg-[#FDFCF8] py-1.5">
+                                  <div className="mb-0.5 font-bold text-[#A8A29E] text-[10px] uppercase tracking-wider">
+                                    Pro
+                                  </div>
+                                  <div className="font-medium text-[#2C2416] text-[13px]">
+                                    {opt.macros.proteinG}g
+                                  </div>
+                                </div>
+                                <div className="rounded-lg border border-[#EAE7E0]/60 bg-[#FDFCF8] py-1.5">
+                                  <div className="mb-0.5 font-bold text-[#A8A29E] text-[10px] uppercase tracking-wider">
+                                    Carb
+                                  </div>
+                                  <div className="font-medium text-[#2C2416] text-[13px]">
+                                    {opt.macros.carbsG}g
+                                  </div>
+                                </div>
+                                <div className="rounded-lg border border-[#EAE7E0]/60 bg-[#FDFCF8] py-1.5">
+                                  <div className="mb-0.5 font-bold text-[#A8A29E] text-[10px] uppercase tracking-wider">
+                                    Fat
+                                  </div>
+                                  <div className="font-medium text-[#2C2416] text-[13px]">
+                                    {opt.macros.fatG}g
+                                  </div>
+                                </div>
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+              </div>
             )}
           </div>
         )}
