@@ -70,7 +70,8 @@ interface ProfileEditorForm {
   activityLevel: ActivityLevel;
   // Goals
   goal: Goal;
-  aggression: Aggression | null;  carbSplit: CarbSplit;
+  aggression: Aggression | null;
+  carbSplit: CarbSplit;
   calorieTarget: number;
   // Regional
   regionalProfile: RegionalProfile;
@@ -141,7 +142,12 @@ export function ProfileEditor({ profile }: ProfileEditorProps) {
       age: profile.age ?? 25,
       activityLevel: (profile.activityLevel as ActivityLevel) ?? 'light',
       goal: (profile.goal as Goal) ?? 'maintaining',
-      aggression: profile.aggression ? Number(profile.aggression) : null,
+      aggression: (() => {
+        const raw = profile.aggression;
+        if (!raw) return null;
+        const n = Number(raw);
+        return Number.isNaN(n) ? 0.5 : n;
+      })(),
       carbSplit: (profile.carbSplit as CarbSplit) ?? 'moderate_carb',
       calorieTarget: profile.calorieTarget ?? 2000,
       regionalProfile:
