@@ -1,5 +1,5 @@
 # Nhẩm Design System v1.0
-> Extracted from live app — `nham-cal-track.vercel.app` · March 2026
+> Design system for Nhẩm — `nham-cal-track.vercel.app` · March 2026
 
 ---
 
@@ -58,7 +58,7 @@ The app never pretends to know things it doesn't. This principle lives in copy (
 
 ## 2. Color System
 
-All values extracted from live Tailwind classes and computed styles.
+All values derived from Tailwind classes and computed styles.
 
 ### Backgrounds
 
@@ -500,11 +500,11 @@ All motion uses Tailwind's default transition — `cubic-bezier(0.4, 0, 0.2, 1)`
 |----------|-------|---------|
 | `duration-200` | 200ms | Button hover bg, nav item highlight, chip hover |
 | `duration-300` | 300ms | Sidebar collapse/expand, input bar border |
-| Framer Motion default | ~300ms | Message bubble entry, analysis card row stagger |
+| Motion library default | ~300ms | Message bubble entry, analysis card row stagger |
 
 ### Chat Message Entry
 
-User bubble and AI card both animate in with Framer Motion:
+User bubble and AI card both animate in with the Motion library:
 ```
 initial: { opacity: 0, y: 8 }
 animate: { opacity: 1, y: 0 }
@@ -578,12 +578,12 @@ Always Vietnamese units below ingredient names: `1 chén`, `1 miếng`, `1 phầ
 
 ## 10. Token Reference
 
-Copy-paste reference for implementation. These are the ground-truth values extracted from the live app.
+Copy-paste reference for implementation. These are the ground-truth design token values.
 
 ```css
 /* ============================================
    NHẨM DESIGN TOKENS v1.0
-   Source: live app, March 2026
+   Source: Nhẩm design system, March 2026
    ============================================ */
 
 /* Backgrounds */
@@ -642,5 +642,5 @@ Copy-paste reference for implementation. These are the ground-truth values extra
 
 ---
 
-*Nhẩm Design System v1.0 · Extracted from live app · March 2026*
+*Nhẩm Design System v1.0 · March 2026*
 *Scope: landing page + `/logging` route (auth required for full coverage)*
