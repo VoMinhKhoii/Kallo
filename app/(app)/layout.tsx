@@ -21,10 +21,7 @@ export default async function AppLayout({
   const onboardingStep = profile?.onboardingStep ?? 0;
 
   return (
-    <AppShell
-      onboardingStep={onboardingStep}
-      initialProfile={profile}
-    >
+    <AppShell onboardingStep={onboardingStep} initialProfile={profile}>
       {children}
     </AppShell>
   );

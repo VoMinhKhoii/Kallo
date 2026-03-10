@@ -1,6 +1,6 @@
 {
-  "id": "f6bdd694-779c-4340-b87d-92db67d793d5",
-  "prevId": "26bfd6f6-faf4-41fc-bbfb-f264ee1666d0",
+  "id": "20d3f73e-ac49-4c2f-afb2-2682949bf313",
+  "prevId": "f6bdd694-779c-4340-b87d-92db67d793d5",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -926,6 +926,18 @@
         "user_profiles_carb_split_check": {
           "name": "user_profiles_carb_split_check",
           "value": "\"user_profiles\".\"carb_split\" IN ('moderate_carb', 'lower_carb', 'higher_carb')"
+        },
+        "user_profiles_default_protein_portion_check": {
+          "name": "user_profiles_default_protein_portion_check",
+          "value": "\"user_profiles\".\"default_protein_portion\" IN ('small', 'medium', 'large')"
+        },
+        "user_profiles_broth_consumption_check": {
+          "name": "user_profiles_broth_consumption_check",
+          "value": "\"user_profiles\".\"broth_consumption\" IN ('none', 'some', 'all')"
+        },
+        "user_profiles_onboarding_step_check": {
+          "name": "user_profiles_onboarding_step_check",
+          "value": "\"user_profiles\".\"onboarding_step\" >= 0 AND \"user_profiles\".\"onboarding_step\" <= 5"
         }
       },
       "isRLSEnabled": false

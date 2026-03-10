@@ -134,6 +134,18 @@ export const userProfiles = pgTable(
       'user_profiles_carb_split_check',
       sql`${table.carbSplit} IN ('moderate_carb', 'lower_carb', 'higher_carb')`
     ),
+    check(
+      'user_profiles_default_protein_portion_check',
+      sql`${table.defaultProteinPortion} IN ('small', 'medium', 'large')`
+    ),
+    check(
+      'user_profiles_broth_consumption_check',
+      sql`${table.brothConsumption} IN ('none', 'some', 'all')`
+    ),
+    check(
+      'user_profiles_onboarding_step_check',
+      sql`${table.onboardingStep} >= 0 AND ${table.onboardingStep} <= 5`
+    ),
   ]
 );
 

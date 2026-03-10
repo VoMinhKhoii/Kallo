@@ -184,7 +184,7 @@ Full documentation in `docs/DATABASE.md`. Key points:
 - **Test migrations against remote DB early**. Local and remote Supabase behave differently (search_path, extensions).
 - **After `bun dbr:push` fails mid-migration**: repair with `supabase migration repair --status reverted <timestamp> --linked`.
 - **Drizzle snapshot/journal must stay in sync** when reordering timestamps.
-- **Always include meaningful names**when converting Drizzle to Supabase migrations.
+- **Always include meaningful names** when converting Drizzle to Supabase migrations.
 
 ### Vietnamese Text Search
 - **Never unaccent both query AND data** simultaneously. Diacritics are load-bearing: bò=beef, bơ=butter, bổ=nutritious.

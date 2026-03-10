@@ -1,11 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import {
-  calcBMR,
-  calcDailyTargets,
-  calcMacroGrams,
-  calcTDEE,
-} from '../tdee';
 import { goalSchema } from '../schemas';
+import { calcBMR, calcDailyTargets, calcMacroGrams, calcTDEE } from '../tdee';
 
 describe('calcBMR', () => {
   it('computes male BMR correctly (70kg/175cm/30y)', () => {
@@ -65,12 +60,7 @@ describe('calcMacroGrams', () => {
 
 describe('calcDailyTargets', () => {
   it('cutting with 0.5 kg/week aggression reduces by 550', () => {
-    const result = calcDailyTargets(
-      2000,
-      'cutting',
-      0.5,
-      'moderate_carb',
-    );
+    const result = calcDailyTargets(2000, 'cutting', 0.5, 'moderate_carb');
     expect(result.calories).toBe(1450);
     // Verify macros at 1450 cal, moderate_carb (30/35/35)
     expect(result.proteinG).toBe(109); // (1450*0.30)/4 = 108.75 → 109
@@ -79,12 +69,7 @@ describe('calcDailyTargets', () => {
   });
 
   it('bulking with 0.25 kg/week aggression increases by 275', () => {
-    const result = calcDailyTargets(
-      2000,
-      'bulking',
-      0.25,
-      'moderate_carb',
-    );
+    const result = calcDailyTargets(2000, 'bulking', 0.25, 'moderate_carb');
     expect(result.calories).toBe(2275);
     // Verify macros at 2275 cal, moderate_carb (30/35/35)
     expect(result.proteinG).toBe(171); // (2275*0.30)/4 = 170.625 → 171
@@ -93,12 +78,7 @@ describe('calcDailyTargets', () => {
   });
 
   it('maintaining ignores aggression and uses TDEE directly', () => {
-    const result = calcDailyTargets(
-      2000,
-      'maintaining',
-      null,
-      'moderate_carb',
-    );
+    const result = calcDailyTargets(2000, 'maintaining', null, 'moderate_carb');
     expect(result.calories).toBe(2000);
     expect(result.proteinG).toBe(150);
     expect(result.fatG).toBe(78);
@@ -106,13 +86,7 @@ describe('calcDailyTargets', () => {
   });
 
   it('deficitOverride=400 overrides 0.5 (550) aggression', () => {
-    const result = calcDailyTargets(
-      2000,
-      'cutting',
-      0.5,
-      'moderate_carb',
-      400,
-    );
+    const result = calcDailyTargets(2000, 'cutting', 0.5, 'moderate_carb', 400);
     // 2000 - 400 = 1600
     expect(result.calories).toBe(1600);
   });
@@ -123,7 +97,7 @@ describe('calcDailyTargets', () => {
       'cutting',
       0.5,
       'moderate_carb',
-      null,
+      null
     );
     // null ?? 550 = 550 → 2000 - 550 = 1450
     expect(result.calories).toBe(1450);

@@ -26,34 +26,29 @@ export function NudgeDialog({
 }: NudgeDialogProps) {
   const router = useRouter();
   const [dismissCount, setDismissCount] = useState(0);
-  const [mounted, setMounted] = useState(false);
   const [open, setOpen] = useState(false);
 
-  // SSR-safe localStorage read
+  // SSR-safe: read localStorage + compute time trigger on mount only
   useEffect(() => {
-    setMounted(true);
-    setDismissCount(
-      parseInt(localStorage.getItem(NUDGE_DISMISS_KEY) ?? '0', 10)
+    const storedCount = parseInt(
+      localStorage.getItem(NUDGE_DISMISS_KEY) ?? '0',
+      10
     );
-  }, []);
+    setDismissCount(storedCount);
 
-  // 7-day trigger
-  const daysSinceCreation = Math.floor(
-    (Date.now() - new Date(accountCreatedAt).getTime()) / (1000 * 60 * 60 * 24)
-  );
-  const shouldShowTimeTrigger = daysSinceCreation >= 7;
+    const daysSinceCreation = Math.floor(
+      (Date.now() - new Date(accountCreatedAt).getTime()) /
+        (1000 * 60 * 60 * 24)
+    );
 
-  // Show dialog when conditions are met
-  useEffect(() => {
     if (
-      mounted &&
       onboardingStep < ONBOARDING_REQUIRED_STEP &&
-      shouldShowTimeTrigger &&
-      dismissCount < 2
+      daysSinceCreation >= 7 &&
+      storedCount < 2
     ) {
       setOpen(true);
     }
-  }, [mounted, onboardingStep, shouldShowTimeTrigger, dismissCount]);
+  }, [onboardingStep, accountCreatedAt]);
 
   function handleDismiss() {
     const newCount = dismissCount + 1;

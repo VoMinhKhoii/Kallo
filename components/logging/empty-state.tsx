@@ -1,4 +1,4 @@
-import { Sparkles, UtensilsCrossed } from 'lucide-react';
+import { UtensilsCrossed } from 'lucide-react';
 import { motion } from 'motion/react';
 
 interface EmptyStateProps {

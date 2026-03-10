@@ -208,7 +208,7 @@ export function MainSidebar({
           title={collapsed ? 'Settings' : undefined}
           className={cn(
             'flex items-center rounded-lg px-3 py-2.5 transition-all duration-200',
-            pathname === '/settings'
+            pathname.startsWith('/settings')
               ? 'bg-[#695e4e] text-white shadow-[#695e4e]/20 shadow-sm'
               : 'text-muted-foreground hover:bg-[#F0EAE0]/60 hover:text-[#2C2416]'
           )}
