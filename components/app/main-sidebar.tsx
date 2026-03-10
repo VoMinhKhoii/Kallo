@@ -156,12 +156,7 @@ export function MainSidebar({
 
       {/* Onboarding nudge card */}
       {onboardingIncomplete && (
-        <div
-          className={cn(
-            'overflow-hidden transition-all duration-300',
-            collapsed ? 'px-1' : 'px-1'
-          )}
-        >
+        <div className="overflow-hidden px-1 transition-all duration-300">
           {collapsed ? (
             <button
               type="button"
@@ -210,7 +205,7 @@ export function MainSidebar({
         <SectionHeader label="Settings" collapsed={collapsed} />
         <Link
           href="/settings"
-          title={collapsed ? 'Cài đặt' : undefined}
+          title={collapsed ? 'Settings' : undefined}
           className={cn(
             'flex items-center rounded-lg px-3 py-2.5 transition-all duration-200',
             pathname === '/settings'
@@ -228,7 +223,7 @@ export function MainSidebar({
               fontFamily: 'DM Sans, sans-serif',
             }}
           >
-            Cài đặt
+            Settings
           </span>
         </Link>
       </div>

@@ -11,9 +11,9 @@ import type {
 // 0 = not started
 // 1 = Screen 1 complete (body metrics + goals)
 // 2 = Screen 2 complete (regional profile)
-// 3 = Screen 3 complete (cooking habits) — REQUIRED COMPLETE
-// 4 = Screen 4 complete (portion calibration) — optional
-export const ONBOARDING_REQUIRED_STEP = 3;
+// 3 = Screen 3 complete (portion calibration)
+// 4 = Screen 4 complete (cooking habits) — ALL REQUIRED
+export const ONBOARDING_REQUIRED_STEP = 4;
 
 export const ACTIVITY_MULTIPLIERS: Record<ActivityLevel, number> = {
   sedentary: 1.2,
@@ -36,39 +36,37 @@ export const CARB_SPLIT_RATIOS: Record<
 export const AGGRESSION_KCAL_PER_KG = 1100;
 
 // Default cooking habits per regional profile — Screen 3 pre-fills from this
-export const REGIONAL_COOKING_DEFAULTS: Record<
-  RegionalProfile,
-  CookingHabits
-> = {
-  mien_bac: {
-    oilUsage: 'minimal',
-    fatTrim: 'trim',
-    boneAwareness: true,
-    defaultRicePortion: 'medium',
-    sugarBraised: 'low',
-  },
-  mien_trung: {
-    oilUsage: 'normal',
-    fatTrim: 'by_dish',
-    boneAwareness: true,
-    defaultRicePortion: 'medium',
-    sugarBraised: 'medium',
-  },
-  mien_nam: {
-    oilUsage: 'normal',
-    fatTrim: 'eat_all',
-    boneAwareness: false,
-    defaultRicePortion: 'medium',
-    sugarBraised: 'medium',
-  },
-  mien_tay: {
-    oilUsage: 'heavy',
-    fatTrim: 'eat_all',
-    boneAwareness: false,
-    defaultRicePortion: 'large',
-    sugarBraised: 'high',
-  },
-};
+export const REGIONAL_COOKING_DEFAULTS: Record<RegionalProfile, CookingHabits> =
+  {
+    mien_bac: {
+      oilUsage: 'minimal',
+      defaultRicePortion: 'medium',
+      sugarBraised: 'low',
+      defaultProteinPortion: 'medium',
+      brothConsumption: 'some',
+    },
+    mien_trung: {
+      oilUsage: 'normal',
+      defaultRicePortion: 'medium',
+      sugarBraised: 'medium',
+      defaultProteinPortion: 'medium',
+      brothConsumption: 'some',
+    },
+    mien_nam: {
+      oilUsage: 'normal',
+      defaultRicePortion: 'medium',
+      sugarBraised: 'medium',
+      defaultProteinPortion: 'medium',
+      brothConsumption: 'finish_it',
+    },
+    mien_tay: {
+      oilUsage: 'heavy',
+      defaultRicePortion: 'large',
+      sugarBraised: 'high',
+      defaultProteinPortion: 'large',
+      brothConsumption: 'finish_it',
+    },
+  };
 
 // Form field defaults — what react-hook-form initializes inputs to
 // Single source of truth for initial form state. Do NOT hardcode defaults in UI components.
@@ -81,19 +79,13 @@ export const WIZARD_DEFAULTS = {
   aggression: 0.5 as Aggression, // auto-applied when goal switches to cutting/bulking
   carbSplit: 'moderate_carb' as CarbSplit,
   deficitOverride: null as number | null, // transient, initialized null
-  // Screen 2 — regional: no default (must be explicitly chosen)
-  // Screen 4 — starts empty, user must enter or skip
+  // Screen 3 — portion calibration: starts empty, user must enter or skip
   handSpanCm: null as number | null,
   knuckleDepthCm: null as number | null,
-  bowlSizeMl: 200,
-  plateSizeMl: 400,
 };
 
-// DB fallback values written when user skips Screen 4 entirely
-// Server Action uses these when onboardingStep < 4 (Screen 4 never submitted)
+// DB fallback values written when user skips Screen 3 (Portion Calibration)
 export const SKIP_FALLBACK_DEFAULTS = {
   handSpanCm: 20.0, // median adult hand span in cm
   knuckleDepthCm: 2.5, // median adult index finger knuckle depth in cm
-  bowlSizeMl: 200,
-  plateSizeMl: 400,
 };

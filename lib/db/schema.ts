@@ -59,6 +59,8 @@ export const userProfiles = pgTable(
     boneAwareness: boolean('bone_awareness').default(false),
     defaultRicePortion: text('default_rice_portion'),
     sugarBraised: text('sugar_braised'),
+    defaultProteinPortion: text('default_protein_portion'),
+    brothConsumption: text('broth_consumption'),
 
     // Screen 5: Portion Calibration
     bowlSizeMl: smallint('bowl_size_ml').default(200),

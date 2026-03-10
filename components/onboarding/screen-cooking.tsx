@@ -25,19 +25,59 @@ interface ScreenCookingProps {
 
 const NEUTRAL_DEFAULTS: CookingHabits = {
   oilUsage: 'normal',
-  fatTrim: 'eat_all',
-  boneAwareness: false,
   defaultRicePortion: 'medium',
   sugarBraised: 'medium',
+  defaultProteinPortion: 'medium',
+  brothConsumption: 'some',
 };
 
 function allCookingFieldsNull(values: Partial<CookingHabits>): boolean {
   return (
     !values.oilUsage &&
-    !values.fatTrim &&
-    !values.boneAwareness &&
     !values.defaultRicePortion &&
-    !values.sugarBraised
+    !values.sugarBraised &&
+    !values.defaultProteinPortion &&
+    !values.brothConsumption
+  );
+}
+
+interface OptionStripItem {
+  value: string;
+  label: string;
+  hint?: string;
+}
+
+function OptionStrip({
+  options,
+  value,
+  onChange,
+}: {
+  options: OptionStripItem[];
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  return (
+    <div className="flex rounded-xl bg-[#F5F4F0] p-1">
+      {options.map((opt) => (
+        <button
+          key={opt.value}
+          type="button"
+          onClick={() => onChange(opt.value)}
+          className={`flex flex-1 flex-col items-center rounded-lg py-2 transition-all ${
+            value === opt.value
+              ? 'bg-white text-[#2C2416] shadow-sm'
+              : 'text-[#8B8682] hover:text-[#2C2416]'
+          }`}
+        >
+          <span className="font-medium text-[13px]">{opt.label}</span>
+          {opt.hint && (
+            <span className="mt-0.5 text-center text-[10px] leading-tight opacity-70">
+              {opt.hint}
+            </span>
+          )}
+        </button>
+      ))}
+    </div>
   );
 }
 
@@ -48,10 +88,8 @@ export function ScreenCooking({
 }: ScreenCookingProps) {
   const hasPrePopulated = useRef(false);
 
-  // Determine initial values for the form
   const initialDefaults = (() => {
     if (!allCookingFieldsNull(defaultValues)) {
-      // Resuming with saved values
       return defaultValues as CookingHabits;
     }
     if (regionalProfile) {
@@ -108,10 +146,10 @@ export function ScreenCooking({
             <strong className="font-medium text-[#2C2416]">
               {regionalProfile
                 ? {
-                    mien_bac: 'Miền Bắc',
-                    mien_trung: 'Miền Trung',
-                    mien_nam: 'Miền Nam',
-                    mien_tay: 'Miền Tây',
+                    mien_bac: 'Northern',
+                    mien_trung: 'Central',
+                    mien_nam: 'Southern',
+                    mien_tay: 'Mekong Delta',
                   }[regionalProfile]
                 : '—'}
             </strong>{' '}
@@ -127,32 +165,33 @@ export function ScreenCooking({
             render={({ field }) => (
               <FormItem className="rounded-2xl border border-[#EAE7E0] bg-white p-5">
                 <FormLabel className="mb-3 block font-bold text-[#2C2416] text-[13px]">
-                  How much oil/fat when stir-frying?
+                  How would you describe your typical cooked dishes?
                 </FormLabel>
                 <FormControl>
-                  <div className="flex rounded-xl bg-[#F5F4F0] p-1">
-                    {[
-                      { value: 'minimal', label: 'Minimal' },
-                      { value: 'normal', label: 'Normal' },
-                      { value: 'heavy', label: 'Heavy' },
-                    ].map((opt) => (
-                      <button
-                        key={opt.value}
-                        type="button"
-                        onClick={() => {
-                          field.onChange(opt.value);
-                          reportChange();
-                        }}
-                        className={`flex-1 rounded-lg py-2 font-medium text-[13px] transition-all ${
-                          field.value === opt.value
-                            ? 'bg-white text-[#2C2416] shadow-sm'
-                            : 'text-[#8B8682] hover:text-[#2C2416]'
-                        }`}
-                      >
-                        {opt.label}
-                      </button>
-                    ))}
-                  </div>
+                  <OptionStrip
+                    options={[
+                      {
+                        value: 'minimal',
+                        label: 'Light',
+                        hint: 'Dry, clean taste. Dish looks matte.',
+                      },
+                      {
+                        value: 'normal',
+                        label: 'Moderate',
+                        hint: 'Light coating. Slight sheen on food.',
+                      },
+                      {
+                        value: 'heavy',
+                        label: 'Rich',
+                        hint: 'Visibly oily. Sauce pools slightly.',
+                      },
+                    ]}
+                    value={field.value}
+                    onChange={(v) => {
+                      field.onChange(v);
+                      reportChange();
+                    }}
+                  />
                 </FormControl>
               </FormItem>
             )}
@@ -165,93 +204,33 @@ export function ScreenCooking({
             render={({ field }) => (
               <FormItem className="rounded-2xl border border-[#EAE7E0] bg-white p-5">
                 <FormLabel className="mb-3 block font-bold text-[#2C2416] text-[13px]">
-                  Rice per meal
+                  How much rice per meal?
                 </FormLabel>
                 <FormControl>
-                  <div className="flex rounded-xl bg-[#F5F4F0] p-1">
-                    {[
+                  <OptionStrip
+                    options={[
                       {
                         value: 'small',
-                        label: 'Minimal',
-                        hint: '~150g',
+                        label: 'Light',
+                        hint: '~1 small bowl',
                       },
                       {
                         value: 'medium',
                         label: 'Normal',
-                        hint: '~200g',
+                        hint: '~1–1.5 bowls',
                       },
                       {
                         value: 'large',
                         label: 'Heavy',
-                        hint: '~300g',
+                        hint: '~2+ bowls',
                       },
-                    ].map((opt) => (
-                      <button
-                        key={opt.value}
-                        type="button"
-                        onClick={() => {
-                          field.onChange(opt.value);
-                          reportChange();
-                        }}
-                        className={`flex flex-1 flex-col items-center rounded-lg py-2 transition-all ${
-                          field.value === opt.value
-                            ? 'bg-white text-[#2C2416] shadow-sm'
-                            : 'text-[#8B8682] hover:text-[#2C2416]'
-                        }`}
-                      >
-                        <span className="font-medium text-[13px]">
-                          {opt.label}
-                        </span>
-                        <span className="mt-0.5 font-mono text-[10px] opacity-70">
-                          {opt.hint}
-                        </span>
-                      </button>
-                    ))}
-                  </div>
-                </FormControl>
-              </FormItem>
-            )}
-          />
-
-          {/* Fat trim */}
-          <FormField
-            control={form.control}
-            name="fatTrim"
-            render={({ field }) => (
-              <FormItem className="rounded-2xl border border-[#EAE7E0] bg-white p-5">
-                <FormLabel className="mb-3 block font-bold text-[#2C2416] text-[13px]">
-                  Fat trimming habit
-                </FormLabel>
-                <FormControl>
-                  <div className="flex rounded-xl bg-[#F5F4F0] p-1">
-                    {[
-                      { value: 'trim', label: 'Trim all' },
-                      {
-                        value: 'by_dish',
-                        label: 'By dish',
-                      },
-                      {
-                        value: 'eat_all',
-                        label: 'Eat all',
-                      },
-                    ].map((opt) => (
-                      <button
-                        key={opt.value}
-                        type="button"
-                        onClick={() => {
-                          field.onChange(opt.value);
-                          reportChange();
-                        }}
-                        className={`flex-1 rounded-lg py-2 font-medium text-[13px] transition-all ${
-                          field.value === opt.value
-                            ? 'bg-white text-[#2C2416] shadow-sm'
-                            : 'text-[#8B8682] hover:text-[#2C2416]'
-                        }`}
-                      >
-                        {opt.label}
-                      </button>
-                    ))}
-                  </div>
+                    ]}
+                    value={field.value}
+                    onChange={(v) => {
+                      field.onChange(v);
+                      reportChange();
+                    }}
+                  />
                 </FormControl>
               </FormItem>
             )}
@@ -267,66 +246,100 @@ export function ScreenCooking({
                   Sugar in braised dishes
                 </FormLabel>
                 <FormControl>
-                  <div className="flex rounded-xl bg-[#F5F4F0] p-1">
-                    {[
+                  <OptionStrip
+                    options={[
                       { value: 'low', label: 'Low' },
-                      {
-                        value: 'medium',
-                        label: 'Medium',
-                      },
+                      { value: 'medium', label: 'Medium' },
                       { value: 'high', label: 'High' },
-                    ].map((opt) => (
-                      <button
-                        key={opt.value}
-                        type="button"
-                        onClick={() => {
-                          field.onChange(opt.value);
-                          reportChange();
-                        }}
-                        className={`flex-1 rounded-lg py-2 font-medium text-[13px] transition-all ${
-                          field.value === opt.value
-                            ? 'bg-white text-[#2C2416] shadow-sm'
-                            : 'text-[#8B8682] hover:text-[#2C2416]'
-                        }`}
-                      >
-                        {opt.label}
-                      </button>
-                    ))}
-                  </div>
+                    ]}
+                    value={field.value}
+                    onChange={(v) => {
+                      field.onChange(v);
+                      reportChange();
+                    }}
+                  />
                 </FormControl>
               </FormItem>
             )}
           />
 
-          {/* Checkbox items */}
-          <div className="space-y-3">
-            <FormField
-              control={form.control}
-              name="boneAwareness"
-              render={({ field }) => (
-                <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-[#EAE7E0] bg-white p-4 transition-colors hover:border-[#C9A87C]/50">
-                  <input
-                    type="checkbox"
-                    checked={field.value}
-                    onChange={(e) => {
-                      field.onChange(e.target.checked);
+          {/* Protein portion */}
+          <FormField
+            control={form.control}
+            name="defaultProteinPortion"
+            render={({ field }) => (
+              <FormItem className="rounded-2xl border border-[#EAE7E0] bg-white p-5">
+                <FormLabel className="mb-3 block font-bold text-[#2C2416] text-[13px]">
+                  How much protein (meat, fish, eggs) per meal?
+                </FormLabel>
+                <FormControl>
+                  <OptionStrip
+                    options={[
+                      {
+                        value: 'small',
+                        label: 'Small',
+                        hint: 'Smaller than your palm, e.g. ~2-3 eggs',
+                      },
+                      {
+                        value: 'medium',
+                        label: 'Medium',
+                        hint: 'About palm-sized',
+                      },
+                      {
+                        value: 'large',
+                        label: 'Large',
+                        hint: 'Bigger than your palm, e.g. a chicken thigh or more',
+                      },
+                    ]}
+                    value={field.value}
+                    onChange={(v) => {
+                      field.onChange(v);
                       reportChange();
                     }}
-                    className="mt-1 h-4 w-4 rounded border-[#EAE7E0] bg-[#F5F4F0] text-[#2C2416] focus:ring-[#C9A87C]"
                   />
-                  <div>
-                    <div className="font-medium text-[#2C2416] text-[14px]">
-                      Bone awareness
-                    </div>
-                    <div className="mt-0.5 text-[#8B8682] text-[12px]">
-                      Automatically deduct bone weight from raw meat inputs
-                      (e.g., ribs, chicken wings).
-                    </div>
-                  </div>
-                </label>
-              )}
-            />
-          </div>
+                </FormControl>
+              </FormItem>
+            )}
+          />
+
+          {/* Broth consumption */}
+          <FormField
+            control={form.control}
+            name="brothConsumption"
+            render={({ field }) => (
+              <FormItem className="rounded-2xl border border-[#EAE7E0] bg-white p-5">
+                <FormLabel className="mb-3 block font-bold text-[#2C2416] text-[13px]">
+                  When there&rsquo;s soup, how much broth do you usually drink?
+                </FormLabel>
+                <FormControl>
+                  <OptionStrip
+                    options={[
+                      {
+                        value: 'leave_it',
+                        label: 'Leave it',
+                        hint: 'Eat the solids, skip most broth',
+                      },
+                      {
+                        value: 'some',
+                        label: 'Some',
+                        hint: 'Drink about half the bowl',
+                      },
+                      {
+                        value: 'finish_it',
+                        label: 'Finish it',
+                        hint: 'Drink all or most of the broth',
+                      },
+                    ]}
+                    value={field.value}
+                    onChange={(v) => {
+                      field.onChange(v);
+                      reportChange();
+                    }}
+                  />
+                </FormControl>
+              </FormItem>
+            )}
+          />
         </div>
       </form>
     </Form>

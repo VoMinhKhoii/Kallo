@@ -7,10 +7,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import type { z } from 'zod';
 import { Form, FormControl, FormField, FormItem } from '@/components/ui/form';
-import {
-  AGGRESSION_KCAL_PER_KG,
-  CARB_SPLIT_RATIOS,
-} from '@/lib/onboarding/constants';
+import { AGGRESSION_KCAL_PER_KG } from '@/lib/onboarding/constants';
 import { bodyMetricsSchema, goalSchema } from '@/lib/onboarding/schemas';
 import {
   calcBMR,
@@ -199,7 +196,7 @@ export function ScreenBodyMetrics({
   const tdee = bmr !== null ? calcTDEE(bmr, values.activityLevel) : null;
 
   // Reference matrix: compute macros for each goal × carbSplit
-  const matrix = useMemo(() => {
+  const _matrix = useMemo(() => {
     if (tdee === null) return null;
     const grid: Record<
       string,
@@ -233,10 +230,7 @@ export function ScreenBodyMetrics({
   ]);
 
   // Target calories based on goal + aggression
-  const targetCalories = useMemo(() => {
-    if (!finalTargets) return 0;
-    return finalTargets.calories;
-  }, [finalTargets]);
+  const targetCalories = finalTargets?.calories ?? 0;
 
   // Carb split options with computed macros
   const carbOptions = useMemo(
@@ -268,15 +262,7 @@ export function ScreenBodyMetrics({
     });
   }, [form, tdee, finalTargets]);
 
-  // Report on mount if data pre-filled
-  // biome-ignore lint/correctness/useExhaustiveDependencies: intentional mount-only effect
-  useEffect(() => {
-    if (tdee !== null && finalTargets) {
-      reportChange();
-    }
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Report whenever finalTargets or tdee changes
+  // Report whenever finalTargets or tdee changes (also covers mount with pre-filled data)
   useEffect(() => {
     if (tdee !== null && finalTargets) {
       reportChange();

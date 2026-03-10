@@ -70,19 +70,14 @@ export async function saveOnboardingScreen(
   } else if (step === 2) {
     updateObj.regionalProfile = data.regionalProfile;
   } else if (step === 3) {
-    updateObj.oilUsage = data.oilUsage;
-    // Single fatTrim → all 3 columns
-    updateObj.fatTrimPork = data.fatTrim;
-    updateObj.fatTrimChicken = data.fatTrim;
-    updateObj.fatTrimFish = data.fatTrim;
-    updateObj.boneAwareness = data.boneAwareness;
-    updateObj.defaultRicePortion = data.defaultRicePortion;
-    updateObj.sugarBraised = data.sugarBraised;
-  } else if (step === 4) {
     updateObj.handSpanCm = data.handSpanCm;
     updateObj.knuckleDepthCm = data.knuckleDepthCm;
-    updateObj.bowlSizeMl = data.bowlSizeMl;
-    updateObj.plateSizeMl = data.plateSizeMl;
+  } else if (step === 4) {
+    updateObj.oilUsage = data.oilUsage;
+    updateObj.defaultRicePortion = data.defaultRicePortion;
+    updateObj.sugarBraised = data.sugarBraised;
+    updateObj.defaultProteinPortion = data.defaultProteinPortion;
+    updateObj.brothConsumption = data.brothConsumption;
   }
 
   // Completion + fallback defaults
@@ -90,8 +85,8 @@ export async function saveOnboardingScreen(
     if (!existing?.onboardingCompletedAt) {
       updateObj.onboardingCompletedAt = new Date();
     }
-    // Apply SKIP_FALLBACK_DEFAULTS for Screen 4 fields
-    // still null
+    // Apply SKIP_FALLBACK_DEFAULTS for hand measurements
+    // if still null (user skipped Screen 3)
     if (!existing?.handSpanCm) {
       updateObj.handSpanCm = SKIP_FALLBACK_DEFAULTS.handSpanCm;
     }
@@ -130,21 +125,15 @@ export async function saveProfileSettings(data: Record<string, unknown>) {
     fatTargetG: data.fatTargetG as number,
     regionalProfile: data.regionalProfile as string,
     oilUsage: data.oilUsage as string,
-    fatTrimPork: data.fatTrimPork as string,
-    fatTrimChicken: data.fatTrimChicken as string,
-    fatTrimFish: data.fatTrimFish as string,
-    boneAwareness: data.boneAwareness as boolean,
     defaultRicePortion: data.defaultRicePortion as string,
     sugarBraised: data.sugarBraised as string,
+    defaultProteinPortion: data.defaultProteinPortion as string,
+    brothConsumption: data.brothConsumption as string,
     // Null guard: if user clears hand measurements, apply SKIP_FALLBACK_DEFAULTS
     handSpanCm: String(data.handSpanCm ?? SKIP_FALLBACK_DEFAULTS.handSpanCm),
     knuckleDepthCm: String(
       data.knuckleDepthCm ?? SKIP_FALLBACK_DEFAULTS.knuckleDepthCm
     ),
-    bowlSizeMl: (data.bowlSizeMl ??
-      SKIP_FALLBACK_DEFAULTS.bowlSizeMl) as number,
-    plateSizeMl: (data.plateSizeMl ??
-      SKIP_FALLBACK_DEFAULTS.plateSizeMl) as number,
   };
 
   // Does NOT touch onboardingStep or onboardingCompletedAt

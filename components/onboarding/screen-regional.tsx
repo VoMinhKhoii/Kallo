@@ -59,7 +59,7 @@ export function ScreenRegional({
     if (selected) {
       onChange({ regionalProfile: selected });
     }
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleSelect = (value: RegionalProfile) => {
     setSelected(value);

@@ -25,6 +25,15 @@ interface WizardShellProps {
 
 const TOTAL_STEPS = 4;
 
+function parseAggression(
+  raw: string | null | undefined,
+  fallback: number
+): number {
+  if (!raw) return fallback;
+  const n = Number(raw);
+  return Number.isNaN(n) ? fallback : n;
+}
+
 function buildScreenOneDefaults(profile: ProfileRow | null) {
   return {
     biologicalSex: (profile?.biologicalSex as 'male' | 'female') ?? undefined,
@@ -40,12 +49,10 @@ function buildScreenOneDefaults(profile: ProfileRow | null) {
     goal:
       (profile?.goal as 'cutting' | 'bulking' | 'maintaining') ??
       WIZARD_DEFAULTS.goal,
-    aggression: (() => {
-      const raw = profile?.aggression;
-      if (!raw) return WIZARD_DEFAULTS.aggression;
-      const n = Number(raw);
-      return Number.isNaN(n) ? WIZARD_DEFAULTS.aggression : n;
-    })(),
+    aggression: parseAggression(
+      profile?.aggression,
+      WIZARD_DEFAULTS.aggression
+    ),
     carbSplit:
       (profile?.carbSplit as 'moderate_carb' | 'lower_carb' | 'higher_carb') ??
       WIZARD_DEFAULTS.carbSplit,
@@ -104,13 +111,11 @@ export function WizardShell({
 
   const handleSkip = () => {
     startTransition(async () => {
-      await saveOnboardingScreen(4, {
+      await saveOnboardingScreen(3, {
         handSpanCm: null,
         knuckleDepthCm: null,
-        bowlSizeMl: WIZARD_DEFAULTS.bowlSizeMl,
-        plateSizeMl: WIZARD_DEFAULTS.plateSizeMl,
       });
-      finishWizard();
+      setCurrentStep(4);
     });
   };
 
@@ -122,28 +127,28 @@ export function WizardShell({
   };
 
   const screenThreeDefaults = {
-    oilUsage:
-      (initialProfile?.oilUsage as 'minimal' | 'normal' | 'heavy') ?? undefined,
-    fatTrim:
-      (initialProfile?.fatTrimPork as 'trim' | 'eat_all' | 'by_dish') ??
-      undefined,
-    boneAwareness: initialProfile?.boneAwareness ?? undefined,
-    defaultRicePortion:
-      (initialProfile?.defaultRicePortion as 'small' | 'medium' | 'large') ??
-      undefined,
-    sugarBraised:
-      (initialProfile?.sugarBraised as 'low' | 'medium' | 'high') ?? undefined,
-  };
-
-  const screenFourDefaults = {
     handSpanCm: initialProfile?.handSpanCm
       ? Number(initialProfile.handSpanCm)
       : null,
     knuckleDepthCm: initialProfile?.knuckleDepthCm
       ? Number(initialProfile.knuckleDepthCm)
       : null,
-    bowlSizeMl: initialProfile?.bowlSizeMl ?? WIZARD_DEFAULTS.bowlSizeMl,
-    plateSizeMl: initialProfile?.plateSizeMl ?? WIZARD_DEFAULTS.plateSizeMl,
+  };
+
+  const screenFourDefaults = {
+    oilUsage:
+      (initialProfile?.oilUsage as 'minimal' | 'normal' | 'heavy') ?? undefined,
+    defaultRicePortion:
+      (initialProfile?.defaultRicePortion as 'small' | 'medium' | 'large') ??
+      undefined,
+    sugarBraised:
+      (initialProfile?.sugarBraised as 'low' | 'medium' | 'high') ?? undefined,
+    defaultProteinPortion:
+      (initialProfile?.defaultProteinPortion as 'small' | 'medium' | 'large') ??
+      undefined,
+    brothConsumption:
+      (initialProfile?.brothConsumption as 'leave_it' | 'some' | 'finish_it') ??
+      undefined,
   };
 
   const currentRegionalProfile =
@@ -212,35 +217,35 @@ export function WizardShell({
                 />
               )}
               {currentStep === 3 && (
-                <ScreenCooking
+                <ScreenPortions
                   defaultValues={screenThreeDefaults}
-                  regionalProfile={currentRegionalProfile}
                   onChange={(data) =>
                     handleScreenChange(
                       3,
                       data as unknown as Record<string, unknown>
                     )
                   }
+                  onSkip={handleSkip}
                 />
               )}
               {currentStep === 4 && (
-                <ScreenPortions
+                <ScreenCooking
                   defaultValues={screenFourDefaults}
+                  regionalProfile={currentRegionalProfile}
                   onChange={(data) =>
                     handleScreenChange(
                       4,
                       data as unknown as Record<string, unknown>
                     )
                   }
-                  onSkip={handleSkip}
                 />
               )}
             </motion.div>
           </AnimatePresence>
         </div>
 
-        {/* Footer Navigation */}
-        {currentStep < 4 && (
+        {/* Footer Navigation — hidden on step 3 (Portions has its own CTAs) */}
+        {currentStep !== 3 && (
           <div className="flex shrink-0 items-center justify-between border-[#EAE7E0]/60 border-t bg-[#F5F4F0]/50 px-6 py-4">
             <button
               type="button"
@@ -262,7 +267,7 @@ export function WizardShell({
               className="flex items-center gap-2 rounded-xl bg-[#2C2416] px-5 py-2.5 font-medium text-[#FDFCF8] text-[14px] shadow-sm transition-all hover:bg-[#1C1917] disabled:opacity-50"
             >
               {isPending && <Loader2 className="h-4 w-4 animate-spin" />}
-              Next Step
+              {currentStep >= TOTAL_STEPS ? 'Finish' : 'Next Step'}
               <ArrowRight className="h-4 w-4" />
             </button>
           </div>

@@ -6,18 +6,18 @@ interface StepIndicatorProps {
 }
 
 export function StepIndicator({ currentStep, totalSteps }: StepIndicatorProps) {
+  function getStepClass(step: number): string {
+    if (step === currentStep) return 'w-6 bg-[#2C2416]';
+    if (step < currentStep) return 'w-2 bg-[#2C2416]';
+    return 'w-2 bg-[#EAE7E0]';
+  }
+
   return (
     <div className="flex gap-1.5">
       {Array.from({ length: totalSteps }, (_, i) => i + 1).map((i) => (
         <div
           key={i}
-          className={`h-1.5 rounded-full transition-all duration-300 ${
-            i === currentStep
-              ? 'w-6 bg-[#2C2416]'
-              : i < currentStep
-                ? 'w-2 bg-[#2C2416]'
-                : 'w-2 bg-[#EAE7E0]'
-          }`}
+          className={`h-1.5 rounded-full transition-all duration-300 ${getStepClass(i)}`}
         />
       ))}
     </div>
