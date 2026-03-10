@@ -142,10 +142,7 @@ export const userProfiles = pgTable(
       'user_profiles_broth_consumption_check',
       sql`${table.brothConsumption} IN ('leave_it', 'some', 'finish_it')`
     ),
-    check(
-      'user_profiles_hand_span_cm_check',
-      sql`${table.handSpanCm} > 0`
-    ),
+    check('user_profiles_hand_span_cm_check', sql`${table.handSpanCm} > 0`),
     check(
       'user_profiles_knuckle_depth_cm_check',
       sql`${table.knuckleDepthCm} > 0`
