@@ -490,6 +490,8 @@ Text: "Analyzing your meal..." text-sm text-[#8B7355]
 
 ## 8. Motion Language
 
+**Library:** The app uses [Framer Motion](https://www.framer.com/motion/) via the `motion` package (Motion fork) for all animations and transitions. Import from `motion/react`.
+
 ### Easing
 
 All motion uses Tailwind's default transition — `cubic-bezier(0.4, 0, 0.2, 1)` (ease-in-out). The app doesn't use custom spring curves. Duration is the key variable.
@@ -500,11 +502,11 @@ All motion uses Tailwind's default transition — `cubic-bezier(0.4, 0, 0.2, 1)`
 |----------|-------|---------|
 | `duration-200` | 200ms | Button hover bg, nav item highlight, chip hover |
 | `duration-300` | 300ms | Sidebar collapse/expand, input bar border |
-| Motion library default | ~300ms | Message bubble entry, analysis card row stagger |
+| Framer Motion default | ~300ms | Message bubble entry, analysis card row stagger |
 
 ### Chat Message Entry
 
-User bubble and AI card both animate in with the Motion library:
+User bubble and AI card both animate in with Framer Motion:
 ```
 initial: { opacity: 0, y: 8 }
 animate: { opacity: 1, y: 0 }
