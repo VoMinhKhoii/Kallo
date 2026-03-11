@@ -1,4 +1,4 @@
-import { Sparkles, UtensilsCrossed } from 'lucide-react';
+import { UtensilsCrossed } from 'lucide-react';
 import { motion } from 'motion/react';
 
 interface EmptyStateProps {
@@ -30,9 +30,6 @@ export function EmptyState({ onSuggestionClick }: EmptyStateProps) {
       >
         <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-[#E8D5B5]/40 to-[#C9A87C]/20 shadow-inner">
           <UtensilsCrossed className="h-7 w-7 text-[#8B7355]" />
-        </div>
-        <div className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-[#2C2416] shadow-sm">
-          <Sparkles className="h-2.5 w-2.5 text-[#C9A87C]" />
         </div>
       </motion.div>
 

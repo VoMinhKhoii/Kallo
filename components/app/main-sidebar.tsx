@@ -2,7 +2,7 @@
 
 import {
   Activity,
-  ChevronDown,
+  AlertCircle,
   LayoutDashboard,
   LogOut,
   PanelLeftClose,
@@ -72,7 +72,13 @@ function SectionHeader({
   );
 }
 
-export function MainSidebar() {
+export function MainSidebar({
+  onboardingIncomplete,
+  onResumeOnboarding,
+}: {
+  onboardingIncomplete?: boolean;
+  onResumeOnboarding?: () => void;
+}) {
   const pathname = usePathname();
   const router = useRouter();
   const [collapsed, setCollapsed] = useState(false);
@@ -148,32 +154,78 @@ export function MainSidebar() {
       {/* Separator */}
       <div className="h-px bg-gradient-to-r from-transparent via-[#E8D5B5]/60 to-transparent" />
 
+      {/* Onboarding nudge card */}
+      {onboardingIncomplete && (
+        <div className="overflow-hidden px-1 transition-all duration-300">
+          {collapsed ? (
+            <button
+              type="button"
+              onClick={onResumeOnboarding}
+              title="Complete profile"
+              className="flex h-8 w-8 items-center justify-center rounded-lg text-[#C9A87C] transition-colors hover:bg-[#F0EAE0]/60"
+            >
+              <AlertCircle className="h-4 w-4" />
+            </button>
+          ) : (
+            <div className="rounded-xl border border-[#E8D5B5]/40 bg-[#FFFCF8] p-3">
+              <p
+                className="mb-1 font-medium text-[#2C2416] text-[11px] leading-snug"
+                style={{
+                  fontFamily: 'DM Sans, sans-serif',
+                }}
+              >
+                Your estimates are using default settings
+              </p>
+              <p
+                className="mb-3 text-[#8B7355] text-[10px] leading-relaxed"
+                style={{
+                  fontFamily: 'DM Sans, sans-serif',
+                }}
+              >
+                Personalize them for your cooking style to get the most accurate
+                calorie and macro extractions from the AI.
+              </p>
+              <button
+                type="button"
+                onClick={onResumeOnboarding}
+                className="w-full rounded-lg bg-[#2C2416] px-3 py-1.5 font-medium text-[#FFFCF8] text-[11px] transition-colors hover:bg-[#3D3425]"
+                style={{
+                  fontFamily: 'DM Sans, sans-serif',
+                }}
+              >
+                Complete profile
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Settings */}
       <div className="flex flex-1 flex-col gap-2">
         <SectionHeader label="Settings" collapsed={collapsed} />
-        <button
-          type="button"
+        <Link
+          href="/settings"
           title={collapsed ? 'Settings' : undefined}
-          className="flex items-center rounded-lg px-3 py-2.5 text-muted-foreground transition-all duration-200 hover:bg-[#F0EAE0]/60 hover:text-[#2C2416]"
+          className={cn(
+            'flex items-center rounded-lg px-3 py-2.5 transition-all duration-200',
+            pathname.startsWith('/settings')
+              ? 'bg-[#695e4e] text-white shadow-[#695e4e]/20 shadow-sm'
+              : 'text-muted-foreground hover:bg-[#F0EAE0]/60 hover:text-[#2C2416]'
+          )}
         >
           <Settings className="h-5 w-5 shrink-0" />
-          <div
+          <span
             className={cn(
-              'flex flex-1 items-center overflow-hidden transition-all duration-300',
+              'overflow-hidden whitespace-nowrap font-medium text-sm tracking-tight transition-all duration-300',
               collapsed ? 'ml-0 max-w-0 opacity-0' : 'ml-3 max-w-40 opacity-100'
             )}
+            style={{
+              fontFamily: 'DM Sans, sans-serif',
+            }}
           >
-            <span
-              className="flex-1 whitespace-nowrap text-left font-medium text-sm tracking-tight"
-              style={{
-                fontFamily: 'DM Sans, sans-serif',
-              }}
-            >
-              Settings
-            </span>
-            <ChevronDown className="ml-2 h-4 w-4 shrink-0" />
-          </div>
-        </button>
+            Settings
+          </span>
+        </Link>
       </div>
 
       {/* User Profile */}

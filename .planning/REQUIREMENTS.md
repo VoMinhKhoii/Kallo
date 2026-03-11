@@ -21,13 +21,13 @@
 
 ### Onboarding
 
-- [ ] **ONB-01**: User completes body metrics screen (weight, height, age, sex, activity level)
-- [ ] **ONB-02**: System calculates TDEE via Mifflin-St Jeor and suggests daily targets
-- [ ] **ONB-03**: User selects goal (cutting/bulking/maintenance) and aggression level
-- [ ] **ONB-04**: User selects regional food profile (Bắc/Trung/Nam/Tây)
-- [ ] **ONB-05**: User configures cooking habits (oil usage, fat trimming, rice portion, sugar in braised dishes)
-- [ ] **ONB-06**: User calibrates bowl/portion sizes (optional screen)
-- [ ] **ONB-07**: Profile stored in `user_profiles` and editable from settings at any time
+- [x] **ONB-01**: User completes body metrics screen (weight, height, age, sex, activity level)
+- [x] **ONB-02**: System calculates TDEE via Mifflin-St Jeor and suggests daily targets
+- [x] **ONB-03**: User selects goal (cutting/bulking/maintenance) and aggression level
+- [x] **ONB-04**: User selects regional food profile (Bắc/Trung/Nam/Tây)
+- [x] **ONB-05**: User configures cooking habits (oil usage, fat trimming, rice portion, sugar in braised dishes)
+- [x] **ONB-06**: User calibrates bowl/portion sizes (optional screen)
+- [x] **ONB-07**: Profile stored in `user_profiles` and editable from settings at any time
 
 ### AI Pipeline
 
@@ -126,13 +126,13 @@ Deferred to future releases. Tracked but not in current roadmap.
 | CI-01 | Phase 1.1 | Pending |
 | CI-02 | Phase 1.1 | Pending |
 | CI-03 | Phase 1.1 | Pending |
-| ONB-01 | Phase 2 | Pending |
-| ONB-02 | Phase 2 | Pending |
-| ONB-03 | Phase 2 | Pending |
-| ONB-04 | Phase 2 | Pending |
-| ONB-05 | Phase 2 | Pending |
-| ONB-06 | Phase 2 | Pending |
-| ONB-07 | Phase 2 | Pending |
+| ONB-01 | Phase 2 | Complete |
+| ONB-02 | Phase 2 | Complete |
+| ONB-03 | Phase 2 | Complete |
+| ONB-04 | Phase 2 | Complete |
+| ONB-05 | Phase 2 | Complete |
+| ONB-06 | Phase 2 | Complete |
+| ONB-07 | Phase 2 | Complete |
 | AI-01 | Phase 3 | Pending |
 | AI-02 | Phase 3 | Pending |
 | AI-03 | Phase 3 | Pending |

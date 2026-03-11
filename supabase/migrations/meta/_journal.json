@@ -36,6 +36,41 @@
       "when": 1772297100000,
       "tag": "20260228155500_add_search_text_ascii",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1772634580841,
+      "tag": "20260304142940_add_onboarding_columns",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1772764112219,
+      "tag": "20260306022832_aggression_text_to_decimal",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1772769453729,
+      "tag": "20260306035733_protein_broth_onboardings",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1773136404321,
+      "tag": "20260310095324_fat_hellion",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1773161551943,
+      "tag": "20260310165231_hand_checks_notnull_step",
+      "breakpoints": true
     }
   ]
 }

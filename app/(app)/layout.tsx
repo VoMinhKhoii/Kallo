@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation';
-import { MainSidebar } from '@/components/app/main-sidebar';
+import { AppShell } from '@/components/app/app-shell';
+import { getOnboardingProfile } from '@/lib/onboarding/actions';
 import { createClient } from '@/lib/supabase/server';
 
 export default async function AppLayout({
@@ -16,12 +17,12 @@ export default async function AppLayout({
     redirect('/');
   }
 
+  const profile = await getOnboardingProfile();
+  const onboardingStep = profile?.onboardingStep ?? 0;
+
   return (
-    <div className="flex h-screen bg-[#FEFBF6]">
-      <div className="mx-3 my-3 flex flex-1 gap-3">
-        <MainSidebar />
-        {children}
-      </div>
-    </div>
+    <AppShell onboardingStep={onboardingStep} initialProfile={profile}>
+      {children}
+    </AppShell>
   );
 }

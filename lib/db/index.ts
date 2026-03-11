@@ -18,7 +18,30 @@ export function encodeDbUrl(raw: string): string {
   );
 }
 
-const connectionString = encodeDbUrl(process.env.DATABASE_URL!);
-const client = postgres(connectionString);
+// Lazy-initialise the DB client so the module can be imported at
+// build time even when DATABASE_URL is not set (e.g. CI builds,
+// static page generation).
+let _client: ReturnType<typeof postgres> | undefined;
+let _db: ReturnType<typeof drizzle<typeof schema>> | undefined;
 
-export const db = drizzle(client, { schema });
+function getClient() {
+  if (!_client) {
+    const url = process.env.DATABASE_URL;
+    if (!url) {
+      throw new Error(
+        'DATABASE_URL is not set — cannot connect to the database.'
+      );
+    }
+    _client = postgres(encodeDbUrl(url));
+  }
+  return _client;
+}
+
+export const db = new Proxy({} as ReturnType<typeof drizzle<typeof schema>>, {
+  get(_, prop) {
+    if (!_db) {
+      _db = drizzle(getClient(), { schema });
+    }
+    return Reflect.get(_db, prop);
+  },
+});

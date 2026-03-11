@@ -41,11 +41,12 @@ export const userProfiles = pgTable(
 
     // Screen 2: Goal & Targets
     goal: text('goal'),
-    aggression: text('aggression'),
+    aggression: decimal('aggression', { precision: 2, scale: 1 }),
     calorieTarget: smallint('calorie_target'),
     proteinTargetG: smallint('protein_target_g'),
     carbsTargetG: smallint('carbs_target_g'),
     fatTargetG: smallint('fat_target_g'),
+    carbSplit: text('carb_split'),
 
     // Screen 3: Regional Profile
     regionalProfile: text('regional_profile'),
@@ -58,10 +59,23 @@ export const userProfiles = pgTable(
     boneAwareness: boolean('bone_awareness').default(false),
     defaultRicePortion: text('default_rice_portion'),
     sugarBraised: text('sugar_braised'),
+    defaultProteinPortion: text('default_protein_portion'),
+    brothConsumption: text('broth_consumption'),
 
     // Screen 5: Portion Calibration
     bowlSizeMl: smallint('bowl_size_ml').default(200),
     plateSizeMl: smallint('plate_size_ml').default(400),
+
+    // Hand measurements & onboarding progress
+    handSpanCm: decimal('hand_span_cm', { precision: 4, scale: 1 }),
+    knuckleDepthCm: decimal('knuckle_depth_cm', {
+      precision: 3,
+      scale: 1,
+    }),
+    onboardingStep: smallint('onboarding_step').notNull().default(0),
+    onboardingCompletedAt: timestamp('onboarding_completed_at', {
+      withTimezone: true,
+    }),
 
     createdAt: timestamp('created_at', { withTimezone: true })
       .notNull()
@@ -86,7 +100,7 @@ export const userProfiles = pgTable(
     ),
     check(
       'user_profiles_aggression_check',
-      sql`${table.aggression} IN ('gentle', 'moderate', 'aggressive')`
+      sql`${table.aggression} >= 0.1 AND ${table.aggression} <= 0.8`
     ),
     check(
       'user_profiles_regional_profile_check',
@@ -115,6 +129,27 @@ export const userProfiles = pgTable(
     check(
       'user_profiles_sugar_braised_check',
       sql`${table.sugarBraised} IN ('low', 'medium', 'high')`
+    ),
+    check(
+      'user_profiles_carb_split_check',
+      sql`${table.carbSplit} IN ('moderate_carb', 'lower_carb', 'higher_carb')`
+    ),
+    check(
+      'user_profiles_default_protein_portion_check',
+      sql`${table.defaultProteinPortion} IN ('small', 'medium', 'large')`
+    ),
+    check(
+      'user_profiles_broth_consumption_check',
+      sql`${table.brothConsumption} IN ('leave_it', 'some', 'finish_it')`
+    ),
+    check('user_profiles_hand_span_cm_check', sql`${table.handSpanCm} > 0`),
+    check(
+      'user_profiles_knuckle_depth_cm_check',
+      sql`${table.knuckleDepthCm} > 0`
+    ),
+    check(
+      'user_profiles_onboarding_step_check',
+      sql`${table.onboardingStep} >= 0 AND ${table.onboardingStep} <= 5`
     ),
   ]
 );

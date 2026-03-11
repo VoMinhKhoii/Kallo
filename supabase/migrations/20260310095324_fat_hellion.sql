@@ -1,0 +1,3 @@
+ALTER TABLE "user_profiles" ADD CONSTRAINT "user_profiles_default_protein_portion_check" CHECK ("user_profiles"."default_protein_portion" IN ('small', 'medium', 'large'));--> statement-breakpoint
+ALTER TABLE "user_profiles" ADD CONSTRAINT "user_profiles_broth_consumption_check" CHECK ("user_profiles"."broth_consumption" IN ('none', 'some', 'all'));--> statement-breakpoint
+ALTER TABLE "user_profiles" ADD CONSTRAINT "user_profiles_onboarding_step_check" CHECK ("user_profiles"."onboarding_step" >= 0 AND "user_profiles"."onboarding_step" <= 5);

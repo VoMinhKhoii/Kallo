@@ -60,11 +60,13 @@ Plans:
   3. User selects regional food profile (Bắc/Trung/Nam/Tây) and configures cooking habits (oil usage, fat trimming, rice portion, sugar in braised dishes)
   4. User can optionally calibrate bowl/portion sizes or skip with sensible defaults
   5. Completed profile is persisted to `user_profiles` and editable from settings at any time after onboarding
-**Plans**: TBD
+**Plans**: 4 plans
 
 Plans:
-- [ ] 02-01: TBD
-- [ ] 02-02: TBD
+- [x] 02-01-PLAN.md — Schema migration (5 new columns) + TDEE calculation engine with types, constants, Zod schemas, and tests
+- [ ] 02-02-PLAN.md — Wizard infrastructure (route, layout, server actions, step indicator) + Screen 1 (body metrics, live TDEE, goal/aggression/carb split)
+- [ ] 02-03-PLAN.md — Screen 2 (regional profile cards) + Screen 3 (cooking habits with pre-population) + Screen 4 (portion calibration with skip)
+- [ ] 02-04-PLAN.md — Settings profile editor + onboarding nudge system (home card + time-based dialog)
 
 ### Phase 3: AI Pipeline
 **Goal**: The system can analyze a Vietnamese meal description and produce a grounded, bounded nutrition estimate with transparent assumptions
@@ -164,7 +166,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Database Schema & Infrastructure | 0/? | Not started | - |
-| 2. Onboarding | 0/? | Not started | - |
+| 2. Onboarding | 1/4 | In progress | - |
 | 3. AI Pipeline | 0/? | Not started | - |
 | 4. Meal Logging | 0/? | Not started | - |
 | 5. Daily Log View | 0/? | Not started | - |

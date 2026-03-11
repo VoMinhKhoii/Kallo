@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-current_plan: 3
+current_plan: Not started
 status: unknown
-stopped_at: Completed 01-03-PLAN.md
-last_updated: "2026-02-28T16:03:08.438Z"
+stopped_at: Completed 02-04-PLAN.md (Phase 2 complete)
+last_updated: "2026-03-04T15:44:22.397Z"
 progress:
-  total_phases: 1
-  completed_phases: 1
-  total_plans: 3
-  completed_plans: 3
-  percent: 100
+  total_phases: 3
+  completed_phases: 2
+  total_plans: 8
+  completed_plans: 7
+  percent: 88
 ---
 
 # Project State
@@ -21,17 +21,17 @@ progress:
 See: .planning/PROJECT.md (updated 2026-02-28)
 
 **Core value:** Users describe Vietnamese meals in natural language and get reliable, goal-adjusted macro estimates grounded in verified ingredient data.
-**Current focus:** Phase 1 — Database Schema & Infrastructure
+**Current focus:** Phase 2 — Onboarding Flow
 
 ## Current Position
 
-Phase: 1 of 8 (Database Schema & Infrastructure)
-**Current Plan:** 3
-**Total Plans in Phase:** 3
+Phase: 2 of 8 (Onboarding Flow)
+**Current Plan:** Not started
+**Total Plans in Phase:** 4
 Status: Executing
-Last activity: 2026-02-28 — Completed 01-01-PLAN.md
+Last activity: 2026-03-04 — Completed 02-01-PLAN.md
 
-**Progress:** [██████████] 100%
+**Progress:** [█████████░] 88%
 
 ## Performance Metrics
 
@@ -54,6 +54,10 @@ Last activity: 2026-02-28 — Completed 01-01-PLAN.md
 | Phase 01 P01 | 10min | 2 tasks | 3 files |
 | Phase 01 P02 | 3min | 1 tasks | 1 files |
 | Phase 01 P03 | 2min | 1 tasks | 1 files |
+| Phase 02 P01 | 7min | 2 tasks | 7 files |
+| Phase 02-onboarding P02 | 12min | 2 tasks | 6 files |
+| Phase 02-onboarding P03 | 7min | 2 tasks | 4 files |
+| Phase 02-onboarding P04 | 7min | 2 tasks | 8 files |
 
 ## Accumulated Context
 
@@ -70,6 +74,16 @@ Recent decisions affecting current work:
 - [Phase 01]: Used ai.embed('gte-small') for in-database embedding generation with documented Edge Function fallback
 - [Phase 01]: HNSW index (m=16, ef_construction=64) chosen over IVFFlat for 526-row dataset — better recall, no re-training
 - [Phase 01]: user_profiles gets handle_updated_at trigger since it has updated_at column but no trigger existed
+- [Phase 02]: deficitOverride is transient (not persisted) — computed targets stored instead
+- [Phase 02]: WIZARD_DEFAULTS and SKIP_FALLBACK_DEFAULTS use `as Type` casts, NOT `as const`
+- [Phase 02-onboarding]: screen1Schema = bodyMetricsSchema.merge(goalSchema) — single merged schema for Screen 1
+- [Phase 02-onboarding]: Form mode: onBlur — prevents validation spam on number inputs
+- [Phase 02-onboarding]: Reference matrix always uses moderate aggression — labeled accordingly for user clarity
+- [Phase 02-onboarding]: ToggleGroup (outline variant) for segmented controls — consistent look with shadcn library
+- [Phase 02-onboarding]: Explicit PortionFormData type to avoid .default() inference issues with react-hook-form
+- [Phase 02-onboarding]: CalorieTarget editable for fine-tuning but goal/aggression/carbSplit overwrites from TDEE
+- [Phase 02-onboarding]: 3 separate fat-trim controls in settings (pork/chicken/fish) vs single toggle in wizard
+- [Phase 02-onboarding]: SSR-safe localStorage pattern: useEffect+useState, never at render time
 
 ### Pending Todos
 
@@ -86,6 +100,6 @@ None yet.
 
 ## Session Continuity
 
-**Last session:** 2026-02-28T16:03:08.424Z
-**Stopped at:** Completed 01-03-PLAN.md
+**Last session:** 2026-03-04T15:28:36.330Z
+**Stopped at:** Completed 02-04-PLAN.md (Phase 2 complete)
 Resume file: None
