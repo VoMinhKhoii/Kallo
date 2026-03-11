@@ -166,7 +166,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Database Schema & Infrastructure | 0/? | Not started | - |
-| 2. Onboarding | 0/4 | Not started | - |
+| 2. Onboarding | 1/4 | In progress | - |
 | 3. AI Pipeline | 0/? | Not started | - |
 | 4. Meal Logging | 0/? | Not started | - |
 | 5. Daily Log View | 0/? | Not started | - |

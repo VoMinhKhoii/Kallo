@@ -107,7 +107,7 @@ export async function saveProfileSettings(data: Record<string, unknown>) {
   const user = await getAuthUser();
 
   const updateObj = {
-    weightKg: String(data.weightKg),
+    weightKg: data.weightKg,
     heightCm: data.heightCm as number,
     age: data.age as number,
     biologicalSex: data.biologicalSex as string,
@@ -130,10 +130,9 @@ export async function saveProfileSettings(data: Record<string, unknown>) {
     defaultProteinPortion: data.defaultProteinPortion as string,
     brothConsumption: data.brothConsumption as string,
     // Null guard: if user clears hand measurements, apply SKIP_FALLBACK_DEFAULTS
-    handSpanCm: String(data.handSpanCm ?? SKIP_FALLBACK_DEFAULTS.handSpanCm),
-    knuckleDepthCm: String(
-      data.knuckleDepthCm ?? SKIP_FALLBACK_DEFAULTS.knuckleDepthCm
-    ),
+    handSpanCm: data.handSpanCm ?? SKIP_FALLBACK_DEFAULTS.handSpanCm,
+    knuckleDepthCm:
+      data.knuckleDepthCm ?? SKIP_FALLBACK_DEFAULTS.knuckleDepthCm,
   };
 
   // Does NOT touch onboardingStep or onboardingCompletedAt

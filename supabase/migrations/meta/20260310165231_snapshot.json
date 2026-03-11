@@ -1,0 +1,1230 @@
+{
+  "id": "86af604f-97d2-4df6-8eee-4c839091ac49",
+  "prevId": "20d3f73e-ac49-4c2f-afb2-2682949bf313",
+  "version": "7",
+  "dialect": "postgresql",
+  "tables": {
+    "public.body_weight_log": {
+      "name": "body_weight_log",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "logged_date": {
+          "name": "logged_date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "weight_kg": {
+          "name": "weight_kg",
+          "type": "numeric(5, 2)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "body_weight_log_user_id_users_id_fk": {
+          "name": "body_weight_log_user_id_users_id_fk",
+          "tableFrom": "body_weight_log",
+          "tableTo": "users",
+          "schemaTo": "auth",
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "body_weight_log_user_date_uniq": {
+          "name": "body_weight_log_user_date_uniq",
+          "nullsNotDistinct": false,
+          "columns": ["user_id", "logged_date"]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.meal_items": {
+      "name": "meal_items",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "meal_id": {
+          "name": "meal_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "food_composition_id": {
+          "name": "food_composition_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "ingredient_name": {
+          "name": "ingredient_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "estimated_grams": {
+          "name": "estimated_grams",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "user_facing_unit": {
+          "name": "user_facing_unit",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cooking_method": {
+          "name": "cooking_method",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "match_confidence": {
+          "name": "match_confidence",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "calories_kcal": {
+          "name": "calories_kcal",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "protein_g": {
+          "name": "protein_g",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "carbohydrate_g": {
+          "name": "carbohydrate_g",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "fat_g": {
+          "name": "fat_g",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "fiber_g": {
+          "name": "fiber_g",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "sodium_mg": {
+          "name": "sodium_mg",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "calcium_mg": {
+          "name": "calcium_mg",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "iron_mg": {
+          "name": "iron_mg",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "magnesium_mg": {
+          "name": "magnesium_mg",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "phosphorus_mg": {
+          "name": "phosphorus_mg",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "potassium_mg": {
+          "name": "potassium_mg",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "zinc_mg": {
+          "name": "zinc_mg",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "copper_mcg": {
+          "name": "copper_mcg",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "manganese_mg": {
+          "name": "manganese_mg",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "beta_carotene_mcg": {
+          "name": "beta_carotene_mcg",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "vitamin_a_mcg": {
+          "name": "vitamin_a_mcg",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "vitamin_d_mcg": {
+          "name": "vitamin_d_mcg",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "vitamin_e_mg": {
+          "name": "vitamin_e_mg",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "vitamin_k_mcg": {
+          "name": "vitamin_k_mcg",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "vitamin_c_mg": {
+          "name": "vitamin_c_mg",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "vitamin_b1_mg": {
+          "name": "vitamin_b1_mg",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "vitamin_b2_mg": {
+          "name": "vitamin_b2_mg",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "vitamin_pp_mg": {
+          "name": "vitamin_pp_mg",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "vitamin_b5_mg": {
+          "name": "vitamin_b5_mg",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "vitamin_b6_mg": {
+          "name": "vitamin_b6_mg",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "vitamin_b9_mcg": {
+          "name": "vitamin_b9_mcg",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "vitamin_b12_mcg": {
+          "name": "vitamin_b12_mcg",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "vitamin_h_mcg": {
+          "name": "vitamin_h_mcg",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "meal_items_meal_id_meals_id_fk": {
+          "name": "meal_items_meal_id_meals_id_fk",
+          "tableFrom": "meal_items",
+          "tableTo": "meals",
+          "columnsFrom": ["meal_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "meal_items_food_composition_id_vietnamese_food_composition_id_fk": {
+          "name": "meal_items_food_composition_id_vietnamese_food_composition_id_fk",
+          "tableFrom": "meal_items",
+          "tableTo": "vietnamese_food_composition",
+          "columnsFrom": ["food_composition_id"],
+          "columnsTo": ["id"],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.meals": {
+      "name": "meals",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "raw_input": {
+          "name": "raw_input",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "meal_slot": {
+          "name": "meal_slot",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "slot_override": {
+          "name": "slot_override",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false,
+          "default": false
+        },
+        "confidence_overall": {
+          "name": "confidence_overall",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "logged_at": {
+          "name": "logged_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "calories_kcal": {
+          "name": "calories_kcal",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "protein_g": {
+          "name": "protein_g",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "carbohydrate_g": {
+          "name": "carbohydrate_g",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "fat_g": {
+          "name": "fat_g",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "fiber_g": {
+          "name": "fiber_g",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "sodium_mg": {
+          "name": "sodium_mg",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "calcium_mg": {
+          "name": "calcium_mg",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "iron_mg": {
+          "name": "iron_mg",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "magnesium_mg": {
+          "name": "magnesium_mg",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "phosphorus_mg": {
+          "name": "phosphorus_mg",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "potassium_mg": {
+          "name": "potassium_mg",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "zinc_mg": {
+          "name": "zinc_mg",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "copper_mcg": {
+          "name": "copper_mcg",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "manganese_mg": {
+          "name": "manganese_mg",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "beta_carotene_mcg": {
+          "name": "beta_carotene_mcg",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "vitamin_a_mcg": {
+          "name": "vitamin_a_mcg",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "vitamin_d_mcg": {
+          "name": "vitamin_d_mcg",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "vitamin_e_mg": {
+          "name": "vitamin_e_mg",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "vitamin_k_mcg": {
+          "name": "vitamin_k_mcg",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "vitamin_c_mg": {
+          "name": "vitamin_c_mg",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "vitamin_b1_mg": {
+          "name": "vitamin_b1_mg",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "vitamin_b2_mg": {
+          "name": "vitamin_b2_mg",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "vitamin_pp_mg": {
+          "name": "vitamin_pp_mg",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "vitamin_b5_mg": {
+          "name": "vitamin_b5_mg",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "vitamin_b6_mg": {
+          "name": "vitamin_b6_mg",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "vitamin_b9_mcg": {
+          "name": "vitamin_b9_mcg",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "vitamin_b12_mcg": {
+          "name": "vitamin_b12_mcg",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "vitamin_h_mcg": {
+          "name": "vitamin_h_mcg",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "meals_user_logged_at_idx": {
+          "name": "meals_user_logged_at_idx",
+          "columns": [
+            {
+              "expression": "user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "logged_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "meals_user_id_users_id_fk": {
+          "name": "meals_user_id_users_id_fk",
+          "tableFrom": "meals",
+          "tableTo": "users",
+          "schemaTo": "auth",
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "meals_meal_slot_check": {
+          "name": "meals_meal_slot_check",
+          "value": "\"meals\".\"meal_slot\" IN ('breakfast', 'brunch', 'lunch', 'dinner', 'snack')"
+        },
+        "meals_confidence_overall_check": {
+          "name": "meals_confidence_overall_check",
+          "value": "\"meals\".\"confidence_overall\" IN ('high', 'medium', 'low')"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.unmatched_ingredients": {
+      "name": "unmatched_ingredients",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "meal_id": {
+          "name": "meal_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "query_text": {
+          "name": "query_text",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "meal_context": {
+          "name": "meal_context",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "unmatched_ingredients_meal_id_meals_id_fk": {
+          "name": "unmatched_ingredients_meal_id_meals_id_fk",
+          "tableFrom": "unmatched_ingredients",
+          "tableTo": "meals",
+          "columnsFrom": ["meal_id"],
+          "columnsTo": ["id"],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.user_profiles": {
+      "name": "user_profiles",
+      "schema": "",
+      "columns": {
+        "user_id": {
+          "name": "user_id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "weight_kg": {
+          "name": "weight_kg",
+          "type": "numeric(5, 2)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "height_cm": {
+          "name": "height_cm",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "age": {
+          "name": "age",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "biological_sex": {
+          "name": "biological_sex",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "activity_level": {
+          "name": "activity_level",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "tdee_kcal": {
+          "name": "tdee_kcal",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "goal": {
+          "name": "goal",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "aggression": {
+          "name": "aggression",
+          "type": "numeric(2, 1)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "calorie_target": {
+          "name": "calorie_target",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "protein_target_g": {
+          "name": "protein_target_g",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "carbs_target_g": {
+          "name": "carbs_target_g",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "fat_target_g": {
+          "name": "fat_target_g",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "carb_split": {
+          "name": "carb_split",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "regional_profile": {
+          "name": "regional_profile",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "oil_usage": {
+          "name": "oil_usage",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "fat_trim_pork": {
+          "name": "fat_trim_pork",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "fat_trim_chicken": {
+          "name": "fat_trim_chicken",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "fat_trim_fish": {
+          "name": "fat_trim_fish",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "bone_awareness": {
+          "name": "bone_awareness",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false,
+          "default": false
+        },
+        "default_rice_portion": {
+          "name": "default_rice_portion",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "sugar_braised": {
+          "name": "sugar_braised",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "default_protein_portion": {
+          "name": "default_protein_portion",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "broth_consumption": {
+          "name": "broth_consumption",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "bowl_size_ml": {
+          "name": "bowl_size_ml",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": false,
+          "default": 200
+        },
+        "plate_size_ml": {
+          "name": "plate_size_ml",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": false,
+          "default": 400
+        },
+        "hand_span_cm": {
+          "name": "hand_span_cm",
+          "type": "numeric(4, 1)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "knuckle_depth_cm": {
+          "name": "knuckle_depth_cm",
+          "type": "numeric(3, 1)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "onboarding_step": {
+          "name": "onboarding_step",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "onboarding_completed_at": {
+          "name": "onboarding_completed_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "user_profiles_user_id_users_id_fk": {
+          "name": "user_profiles_user_id_users_id_fk",
+          "tableFrom": "user_profiles",
+          "tableTo": "users",
+          "schemaTo": "auth",
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "user_profiles_biological_sex_check": {
+          "name": "user_profiles_biological_sex_check",
+          "value": "\"user_profiles\".\"biological_sex\" IN ('male', 'female')"
+        },
+        "user_profiles_activity_level_check": {
+          "name": "user_profiles_activity_level_check",
+          "value": "\"user_profiles\".\"activity_level\" IN ('sedentary', 'light', 'moderate', 'very_active')"
+        },
+        "user_profiles_goal_check": {
+          "name": "user_profiles_goal_check",
+          "value": "\"user_profiles\".\"goal\" IN ('cutting', 'bulking', 'maintaining')"
+        },
+        "user_profiles_aggression_check": {
+          "name": "user_profiles_aggression_check",
+          "value": "\"user_profiles\".\"aggression\" >= 0.1 AND \"user_profiles\".\"aggression\" <= 0.8"
+        },
+        "user_profiles_regional_profile_check": {
+          "name": "user_profiles_regional_profile_check",
+          "value": "\"user_profiles\".\"regional_profile\" IN ('mien_bac', 'mien_trung', 'mien_nam', 'mien_tay')"
+        },
+        "user_profiles_oil_usage_check": {
+          "name": "user_profiles_oil_usage_check",
+          "value": "\"user_profiles\".\"oil_usage\" IN ('minimal', 'normal', 'heavy')"
+        },
+        "user_profiles_fat_trim_pork_check": {
+          "name": "user_profiles_fat_trim_pork_check",
+          "value": "\"user_profiles\".\"fat_trim_pork\" IN ('trim', 'eat_all', 'by_dish')"
+        },
+        "user_profiles_fat_trim_chicken_check": {
+          "name": "user_profiles_fat_trim_chicken_check",
+          "value": "\"user_profiles\".\"fat_trim_chicken\" IN ('trim', 'eat_all', 'by_dish')"
+        },
+        "user_profiles_fat_trim_fish_check": {
+          "name": "user_profiles_fat_trim_fish_check",
+          "value": "\"user_profiles\".\"fat_trim_fish\" IN ('trim', 'eat_all', 'by_dish')"
+        },
+        "user_profiles_default_rice_portion_check": {
+          "name": "user_profiles_default_rice_portion_check",
+          "value": "\"user_profiles\".\"default_rice_portion\" IN ('small', 'medium', 'large')"
+        },
+        "user_profiles_sugar_braised_check": {
+          "name": "user_profiles_sugar_braised_check",
+          "value": "\"user_profiles\".\"sugar_braised\" IN ('low', 'medium', 'high')"
+        },
+        "user_profiles_carb_split_check": {
+          "name": "user_profiles_carb_split_check",
+          "value": "\"user_profiles\".\"carb_split\" IN ('moderate_carb', 'lower_carb', 'higher_carb')"
+        },
+        "user_profiles_default_protein_portion_check": {
+          "name": "user_profiles_default_protein_portion_check",
+          "value": "\"user_profiles\".\"default_protein_portion\" IN ('small', 'medium', 'large')"
+        },
+        "user_profiles_broth_consumption_check": {
+          "name": "user_profiles_broth_consumption_check",
+          "value": "\"user_profiles\".\"broth_consumption\" IN ('leave_it', 'some', 'finish_it')"
+        },
+        "user_profiles_hand_span_cm_check": {
+          "name": "user_profiles_hand_span_cm_check",
+          "value": "\"user_profiles\".\"hand_span_cm\" > 0"
+        },
+        "user_profiles_knuckle_depth_cm_check": {
+          "name": "user_profiles_knuckle_depth_cm_check",
+          "value": "\"user_profiles\".\"knuckle_depth_cm\" > 0"
+        },
+        "user_profiles_onboarding_step_check": {
+          "name": "user_profiles_onboarding_step_check",
+          "value": "\"user_profiles\".\"onboarding_step\" >= 0 AND \"user_profiles\".\"onboarding_step\" <= 5"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.vietnamese_food_composition": {
+      "name": "vietnamese_food_composition",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "name_primary": {
+          "name": "name_primary",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "name_alt": {
+          "name": "name_alt",
+          "type": "text[]",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "name_en": {
+          "name": "name_en",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "type_vn": {
+          "name": "type_vn",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "type_en": {
+          "name": "type_en",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "source": {
+          "name": "source",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'FAO_VN_2007'"
+        },
+        "state": {
+          "name": "state",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "inedible_portion_pct": {
+          "name": "inedible_portion_pct",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "calories_kcal": {
+          "name": "calories_kcal",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "protein_g": {
+          "name": "protein_g",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "carbohydrate_g": {
+          "name": "carbohydrate_g",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "fat_g": {
+          "name": "fat_g",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "fiber_g": {
+          "name": "fiber_g",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "sodium_mg": {
+          "name": "sodium_mg",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "calcium_mg": {
+          "name": "calcium_mg",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "iron_mg": {
+          "name": "iron_mg",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "magnesium_mg": {
+          "name": "magnesium_mg",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "phosphorus_mg": {
+          "name": "phosphorus_mg",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "potassium_mg": {
+          "name": "potassium_mg",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "zinc_mg": {
+          "name": "zinc_mg",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "copper_mcg": {
+          "name": "copper_mcg",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "manganese_mg": {
+          "name": "manganese_mg",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "beta_carotene_mcg": {
+          "name": "beta_carotene_mcg",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "vitamin_a_mcg": {
+          "name": "vitamin_a_mcg",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "vitamin_d_mcg": {
+          "name": "vitamin_d_mcg",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "vitamin_e_mg": {
+          "name": "vitamin_e_mg",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "vitamin_k_mcg": {
+          "name": "vitamin_k_mcg",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "vitamin_c_mg": {
+          "name": "vitamin_c_mg",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "vitamin_b1_mg": {
+          "name": "vitamin_b1_mg",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "vitamin_b2_mg": {
+          "name": "vitamin_b2_mg",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "vitamin_pp_mg": {
+          "name": "vitamin_pp_mg",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "vitamin_b5_mg": {
+          "name": "vitamin_b5_mg",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "vitamin_b6_mg": {
+          "name": "vitamin_b6_mg",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "vitamin_b9_mcg": {
+          "name": "vitamin_b9_mcg",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "vitamin_b12_mcg": {
+          "name": "vitamin_b12_mcg",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "vitamin_h_mcg": {
+          "name": "vitamin_h_mcg",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "last_verified": {
+          "name": "last_verified",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "search_text": {
+          "name": "search_text",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "search_text_ascii": {
+          "name": "search_text_ascii",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "embedding": {
+          "name": "embedding",
+          "type": "vector(768)",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "vietnamese_food_composition_state_check": {
+          "name": "vietnamese_food_composition_state_check",
+          "value": "\"vietnamese_food_composition\".\"state\" IN ('raw', 'cooked')"
+        }
+      },
+      "isRLSEnabled": false
+    }
+  },
+  "enums": {},
+  "schemas": {},
+  "sequences": {},
+  "roles": {},
+  "policies": {},
+  "views": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  }
+}
