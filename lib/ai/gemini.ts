@@ -1,5 +1,5 @@
 import { GoogleGenAI } from '@google/genai';
-import { type ZodType, toJSONSchema } from 'zod';
+import { toJSONSchema, type ZodType } from 'zod';
 
 const EMBEDDING_MODEL = 'gemini-embedding-001';
 const EMBEDDING_DIMENSIONS = 768;
@@ -41,7 +41,7 @@ function sleep(ms: number): Promise<void> {
 
 export function createGeminiClient(
   apiKey: string,
-  retryOptions?: Partial<RetryOptions>,
+  retryOptions?: Partial<RetryOptions>
 ): GeminiClient {
   const ai = new GoogleGenAI({ apiKey });
   const retry = { ...DEFAULT_RETRY, ...retryOptions };
@@ -69,7 +69,7 @@ export function createGeminiClient(
 
   return {
     async generateStructuredOutput<T>(
-      params: StructuredOutputParams<T>,
+      params: StructuredOutputParams<T>
     ): Promise<T> {
       return withRetry(async () => {
         const response = await ai.models.generateContent({

@@ -1,11 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { GeminiClient } from '../gemini';
-import type { DecomposedIngredient } from '../types';
 import {
   CONFIDENCE_THRESHOLDS,
   classifyConfidence,
   matchIngredients,
-} from '../ingredient-matching';
+} from '../matching';
+import type { DecomposedIngredient } from '../types';
 
 // ---------------------------------------------------------------------------
 // Mock DB
@@ -121,7 +121,7 @@ describe('matchIngredients', () => {
       [sampleIngredient],
       'bún bò Huế',
       mockDb as any,
-      mockGemini,
+      mockGemini
     );
 
     expect(result.matched).toHaveLength(1);
@@ -146,7 +146,7 @@ describe('matchIngredients', () => {
       [sampleIngredient],
       'bún bò Huế',
       mockDb as any,
-      mockGemini,
+      mockGemini
     );
 
     expect(result.matched).toHaveLength(1);
@@ -164,7 +164,7 @@ describe('matchIngredients', () => {
       [sampleIngredient],
       'bún bò Huế',
       mockDb as any,
-      mockGemini,
+      mockGemini
     );
 
     expect(result.matched).toHaveLength(0);
@@ -210,7 +210,7 @@ describe('matchIngredients', () => {
       ingredients,
       'cơm chiên',
       mockDb as any,
-      mockGemini,
+      mockGemini
     );
 
     expect(result.matched).toHaveLength(1);
@@ -228,7 +228,7 @@ describe('matchIngredients', () => {
       [sampleIngredient],
       'test',
       mockDb as any,
-      mockGemini,
+      mockGemini
     );
 
     const nutrition = result.matched[0].nutritionPer100g;
@@ -247,8 +247,18 @@ describe('matchIngredients', () => {
     });
 
     const ingredients: DecomposedIngredient[] = [
-      { name: 'a', estimatedGrams: 10, cookingMethod: null, userFacingUnit: null },
-      { name: 'b', estimatedGrams: 20, cookingMethod: null, userFacingUnit: null },
+      {
+        name: 'a',
+        estimatedGrams: 10,
+        cookingMethod: null,
+        userFacingUnit: null,
+      },
+      {
+        name: 'b',
+        estimatedGrams: 20,
+        cookingMethod: null,
+        userFacingUnit: null,
+      },
     ];
 
     await matchIngredients(ingredients, 'test', mockDb as any, mockGemini);

@@ -1,14 +1,14 @@
 import type { Goal } from '@/lib/onboarding/types';
+import {
+  GOAL_ADJUSTED_NUTRIENTS,
+  GOAL_BOUND_DIRECTION,
+  NUTRITION_KEYS,
+} from './constants';
 import type {
   BoundedEstimate,
   BoundedNutrition,
   GoalAdjustedNutrient,
   NutritionValues,
-} from './types';
-import {
-  GOAL_ADJUSTED_NUTRIENTS,
-  GOAL_BOUND_DIRECTION,
-  NUTRITION_KEYS,
 } from './types';
 
 /**
@@ -23,7 +23,7 @@ export function goalAdjust(
   estimate: BoundedEstimate | null,
   goal: Goal,
   aggression: number,
-  nutrientKey: keyof NutritionValues,
+  nutrientKey: keyof NutritionValues
 ): number | null {
   if (estimate === null) return null;
 
@@ -49,7 +49,7 @@ export function goalAdjust(
 export function goalAdjustNutrition(
   bounded: BoundedNutrition,
   goal: Goal,
-  aggression: number,
+  aggression: number
 ): NutritionValues {
   const result = {} as Record<string, number | null>;
 
@@ -66,7 +66,7 @@ export function goalAdjustNutrition(
  * If ALL items have null for a nutrient, the sum is null.
  */
 export function sumBoundedNutrition(
-  items: BoundedNutrition[],
+  items: BoundedNutrition[]
 ): BoundedNutrition {
   const result = {} as Record<string, BoundedEstimate | null>;
 
@@ -97,7 +97,7 @@ export function sumBoundedNutrition(
  * For each nutrient, sums non-null values. If all null, result is null.
  */
 export function sumDisplayedNutrition(
-  items: NutritionValues[],
+  items: NutritionValues[]
 ): NutritionValues {
   const result = {} as Record<string, number | null>;
 

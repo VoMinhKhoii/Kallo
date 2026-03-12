@@ -13,12 +13,12 @@ import type {
 // Mocks
 // ---------------------------------------------------------------------------
 
-vi.mock('../ingredient-matching', () => ({
+vi.mock('../matching', () => ({
   matchIngredients: vi.fn(),
   logUnmatchedIngredients: vi.fn(),
 }));
 
-import { matchIngredients } from '../ingredient-matching';
+import { matchIngredients } from '../matching';
 
 const mockMatchIngredients = matchIngredients as ReturnType<typeof vi.fn>;
 

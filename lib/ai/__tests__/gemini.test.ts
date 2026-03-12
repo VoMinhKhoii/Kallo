@@ -53,7 +53,7 @@ describe('GeminiClient', () => {
           systemPrompt: 'test',
           userMessage: 'test',
           model: 'gemini-3.0-flash',
-        }),
+        })
       ).rejects.toThrow('Gemini returned empty response');
     });
 
@@ -69,7 +69,7 @@ describe('GeminiClient', () => {
           systemPrompt: 'test',
           userMessage: 'test',
           model: 'gemini-3.0-flash',
-        }),
+        })
       ).rejects.toThrow();
     });
   });
@@ -90,7 +90,7 @@ describe('GeminiClient', () => {
         expect.objectContaining({
           model: 'gemini-embedding-001',
           config: { outputDimensionality: 768 },
-        }),
+        })
       );
     });
 
@@ -99,7 +99,7 @@ describe('GeminiClient', () => {
 
       const client = createGeminiClient('test-key');
       await expect(client.generateEmbedding('test')).rejects.toThrow(
-        'Gemini returned no embedding',
+        'Gemini returned no embedding'
       );
     });
   });
@@ -143,13 +143,13 @@ describe('GeminiClient', () => {
           systemPrompt: 'test',
           userMessage: 'test',
           model: 'gemini-3.0-flash',
-        }),
+        })
       ).rejects.toThrow('429');
     });
 
     it('does not retry on non-429 errors', async () => {
       mockGenerateContent.mockRejectedValueOnce(
-        new Error('500 Internal Server Error'),
+        new Error('500 Internal Server Error')
       );
 
       const client = createGeminiClient('test-key', {
@@ -162,7 +162,7 @@ describe('GeminiClient', () => {
           systemPrompt: 'test',
           userMessage: 'test',
           model: 'gemini-3.0-flash',
-        }),
+        })
       ).rejects.toThrow('500');
 
       expect(mockGenerateContent).toHaveBeenCalledTimes(1);

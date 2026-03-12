@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { toJSONSchema } from 'zod';
 import {
-  decomposedIngredientSchema,
-  mealDecompositionSchema,
   boundedEstimateSchema,
+  decomposedIngredientSchema,
   ingredientLlmNutritionSchema,
-  nutritionAdjustmentSchema,
+  mealDecompositionSchema,
   normalizeBoundedEstimate,
+  nutritionAdjustmentSchema,
 } from '../schemas';
 
 describe('decomposedIngredientSchema', () => {

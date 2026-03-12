@@ -8,7 +8,7 @@ export const decomposedIngredientSchema = z.object({
   name: z
     .string()
     .describe(
-      'Vietnamese ingredient name (e.g., "bún", "thịt bò", "nước dùng")',
+      'Vietnamese ingredient name (e.g., "bún", "thịt bò", "nước dùng")'
     ),
   estimatedGrams: z
     .number()
@@ -18,13 +18,13 @@ export const decomposedIngredientSchema = z.object({
     .string()
     .nullable()
     .describe(
-      'Cooking method if identifiable (e.g., "luộc", "chiên", "kho", "nướng"), null if raw or unclear',
+      'Cooking method if identifiable (e.g., "luộc", "chiên", "kho", "nướng"), null if raw or unclear'
     ),
   userFacingUnit: z
     .string()
     .nullable()
     .describe(
-      'Original unit from user input for display (e.g., "1 chén", "2 miếng"), null if not specified',
+      'Original unit from user input for display (e.g., "1 chén", "2 miếng"), null if not specified'
     ),
 });
 
@@ -32,7 +32,7 @@ export const decomposedMealItemSchema = z.object({
   name: z
     .string()
     .describe(
-      'User-facing meal item name (e.g., "bún bò Huế", "cơm", "thịt kho")',
+      'User-facing meal item name (e.g., "bún bò Huế", "cơm", "thịt kho")'
     ),
   ingredients: z
     .array(decomposedIngredientSchema)
@@ -44,18 +44,18 @@ export const mealDecompositionSchema = z.object({
   isFood: z
     .boolean()
     .describe(
-      'Whether the input describes recognizable food or meal items. false for gibberish, non-food, or unrelated text.',
+      'Whether the input describes recognizable food or meal items. false for gibberish, non-food, or unrelated text.'
     ),
   mealItems: z
     .array(decomposedMealItemSchema)
     .describe(
-      'Meal decomposed into user-facing items with ingredient breakdown. Empty array when isFood is false.',
+      'Meal decomposed into user-facing items with ingredient breakdown. Empty array when isFood is false.'
     ),
   mealSlot: z
     .enum(['breakfast', 'brunch', 'lunch', 'dinner', 'snack'])
     .nullable()
     .describe(
-      'Classified meal slot if confident (Sáng→breakfast, Trưa→lunch, Tối→dinner, Bữa phụ→snack, Brunch→brunch), null if uncertain',
+      'Classified meal slot if confident (Sáng→breakfast, Trưa→lunch, Tối→dinner, Bữa phụ→snack, Brunch→brunch), null if uncertain'
     ),
 });
 
@@ -89,7 +89,7 @@ export function normalizeBoundedEstimate(raw: {
 
   const sorted = [raw.low, raw.mid, raw.high].sort((a, b) => a - b);
   console.warn(
-    `[ai/schemas] Re-sorted bounded estimate: {low:${raw.low}, mid:${raw.mid}, high:${raw.high}} → {low:${sorted[0]}, mid:${sorted[1]}, high:${sorted[2]}}`,
+    `[ai/schemas] Re-sorted bounded estimate: {low:${raw.low}, mid:${raw.mid}, high:${raw.high}} → {low:${sorted[0]}, mid:${sorted[1]}, high:${sorted[2]}}`
   );
   return { low: sorted[0], mid: sorted[1], high: sorted[2] };
 }
@@ -120,7 +120,7 @@ export const mealItemNutritionSchema = z.object({
     .array(ingredientLlmNutritionSchema)
     .min(1)
     .describe(
-      'Bounded nutrition per ingredient (5 key nutrients), adjusted for cooking method and portion',
+      'Bounded nutrition per ingredient (5 key nutrients), adjusted for cooking method and portion'
     ),
 });
 

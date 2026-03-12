@@ -1,15 +1,15 @@
 import { describe, expect, it } from 'vitest';
-import type {
-  BoundedEstimate,
-  BoundedNutrition,
-  NutritionValues,
-} from '../types';
 import {
   goalAdjust,
   goalAdjustNutrition,
   sumBoundedNutrition,
   sumDisplayedNutrition,
 } from '../goal-adjustment';
+import type {
+  BoundedEstimate,
+  BoundedNutrition,
+  NutritionValues,
+} from '../types';
 
 // ---------------------------------------------------------------------------
 // Helper: create a bounded estimate
@@ -23,7 +23,7 @@ function macrosOnly(
   cal: BoundedEstimate | null,
   protein: BoundedEstimate | null,
   carbs: BoundedEstimate | null,
-  fat: BoundedEstimate | null,
+  fat: BoundedEstimate | null
 ): BoundedNutrition {
   return {
     caloriesKcal: cal,
@@ -60,75 +60,75 @@ function macrosOnly(
 describe('goalAdjust', () => {
   it('cutting + calories → biases toward high (pessimistic)', () => {
     expect(
-      goalAdjust(bounded(200, 300, 400), 'cutting', 0.5, 'caloriesKcal'),
+      goalAdjust(bounded(200, 300, 400), 'cutting', 0.5, 'caloriesKcal')
     ).toBe(350);
   });
 
   it('cutting + protein → biases toward low (pessimistic)', () => {
-    expect(
-      goalAdjust(bounded(200, 300, 400), 'cutting', 0.5, 'proteinG'),
-    ).toBe(250);
+    expect(goalAdjust(bounded(200, 300, 400), 'cutting', 0.5, 'proteinG')).toBe(
+      250
+    );
   });
 
   it('cutting + fat → biases toward high (pessimistic)', () => {
     expect(goalAdjust(bounded(200, 300, 400), 'cutting', 0.5, 'fatG')).toBe(
-      350,
+      350
     );
   });
 
   it('cutting + carbs → biases toward high (pessimistic)', () => {
     expect(
-      goalAdjust(bounded(200, 300, 400), 'cutting', 0.5, 'carbohydrateG'),
+      goalAdjust(bounded(200, 300, 400), 'cutting', 0.5, 'carbohydrateG')
     ).toBe(350);
   });
 
   it('bulking + calories → biases toward low (optimistic)', () => {
     expect(
-      goalAdjust(bounded(200, 300, 400), 'bulking', 0.5, 'caloriesKcal'),
+      goalAdjust(bounded(200, 300, 400), 'bulking', 0.5, 'caloriesKcal')
     ).toBe(250);
   });
 
   it('bulking + protein → biases toward high (optimistic)', () => {
-    expect(
-      goalAdjust(bounded(200, 300, 400), 'bulking', 0.5, 'proteinG'),
-    ).toBe(350);
+    expect(goalAdjust(bounded(200, 300, 400), 'bulking', 0.5, 'proteinG')).toBe(
+      350
+    );
   });
 
   it('maintaining → always returns mid regardless of aggression', () => {
     expect(
-      goalAdjust(bounded(200, 300, 400), 'maintaining', 0, 'caloriesKcal'),
+      goalAdjust(bounded(200, 300, 400), 'maintaining', 0, 'caloriesKcal')
     ).toBe(300);
     expect(
-      goalAdjust(bounded(200, 300, 400), 'maintaining', 0, 'proteinG'),
+      goalAdjust(bounded(200, 300, 400), 'maintaining', 0, 'proteinG')
     ).toBe(300);
   });
 
   it('aggression 0 → returns mid for any goal', () => {
     expect(
-      goalAdjust(bounded(200, 300, 400), 'cutting', 0, 'caloriesKcal'),
+      goalAdjust(bounded(200, 300, 400), 'cutting', 0, 'caloriesKcal')
     ).toBe(300);
-    expect(
-      goalAdjust(bounded(200, 300, 400), 'bulking', 0, 'proteinG'),
-    ).toBe(300);
+    expect(goalAdjust(bounded(200, 300, 400), 'bulking', 0, 'proteinG')).toBe(
+      300
+    );
   });
 
   it('aggression 0.8 → strong bias toward goal bound', () => {
     expect(
-      goalAdjust(bounded(200, 300, 400), 'cutting', 0.8, 'caloriesKcal'),
+      goalAdjust(bounded(200, 300, 400), 'cutting', 0.8, 'caloriesKcal')
     ).toBe(380);
-    expect(
-      goalAdjust(bounded(200, 300, 400), 'bulking', 0.8, 'proteinG'),
-    ).toBe(380);
+    expect(goalAdjust(bounded(200, 300, 400), 'bulking', 0.8, 'proteinG')).toBe(
+      380
+    );
   });
 
   it('non-goal-adjusted nutrient → always returns mid', () => {
     expect(goalAdjust(bounded(10, 20, 30), 'cutting', 0.8, 'fiberG')).toBe(20);
     expect(goalAdjust(bounded(10, 20, 30), 'bulking', 0.8, 'sodiumMg')).toBe(
-      20,
+      20
     );
-    expect(
-      goalAdjust(bounded(10, 20, 30), 'cutting', 0.5, 'vitaminCMg'),
-    ).toBe(20);
+    expect(goalAdjust(bounded(10, 20, 30), 'cutting', 0.5, 'vitaminCMg')).toBe(
+      20
+    );
   });
 
   it('null bounded estimate → returns null', () => {
@@ -143,7 +143,7 @@ describe('goalAdjustNutrition', () => {
       bounded(200, 300, 400),
       bounded(20, 30, 40),
       bounded(40, 50, 60),
-      bounded(10, 15, 20),
+      bounded(10, 15, 20)
     );
 
     const result = goalAdjustNutrition(bn, 'cutting', 0.5);
@@ -161,7 +161,7 @@ describe('goalAdjustNutrition', () => {
       bounded(200, 300, 400),
       bounded(20, 30, 40),
       bounded(40, 50, 60),
-      bounded(10, 15, 20),
+      bounded(10, 15, 20)
     );
 
     const result = goalAdjustNutrition(bn, 'maintaining', 0);
@@ -177,7 +177,7 @@ describe('goalAdjustNutrition', () => {
       bounded(200, 300, 400),
       bounded(20, 30, 40),
       bounded(40, 50, 60),
-      bounded(10, 15, 20),
+      bounded(10, 15, 20)
     );
     bn.fiberG = bounded(3, 5, 7);
     bn.vitaminCMg = bounded(10, 15, 20);
@@ -196,13 +196,13 @@ describe('sumBoundedNutrition', () => {
         bounded(100, 150, 200),
         bounded(10, 15, 20),
         bounded(20, 25, 30),
-        bounded(5, 8, 10),
+        bounded(5, 8, 10)
       ),
       macrosOnly(
         bounded(200, 250, 300),
         bounded(20, 25, 30),
         bounded(30, 35, 40),
-        bounded(10, 12, 15),
+        bounded(10, 12, 15)
       ),
     ];
 
