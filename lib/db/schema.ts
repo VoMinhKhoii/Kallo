@@ -53,10 +53,6 @@ export const userProfiles = pgTable(
 
     // Screen 4: Cooking Habits
     oilUsage: text('oil_usage'),
-    fatTrimPork: text('fat_trim_pork'),
-    fatTrimChicken: text('fat_trim_chicken'),
-    fatTrimFish: text('fat_trim_fish'),
-    boneAwareness: boolean('bone_awareness').default(false),
     defaultRicePortion: text('default_rice_portion'),
     sugarBraised: text('sugar_braised'),
     defaultProteinPortion: text('default_protein_portion'),
@@ -109,18 +105,6 @@ export const userProfiles = pgTable(
     check(
       'user_profiles_oil_usage_check',
       sql`${table.oilUsage} IN ('minimal', 'normal', 'heavy')`
-    ),
-    check(
-      'user_profiles_fat_trim_pork_check',
-      sql`${table.fatTrimPork} IN ('trim', 'eat_all', 'by_dish')`
-    ),
-    check(
-      'user_profiles_fat_trim_chicken_check',
-      sql`${table.fatTrimChicken} IN ('trim', 'eat_all', 'by_dish')`
-    ),
-    check(
-      'user_profiles_fat_trim_fish_check',
-      sql`${table.fatTrimFish} IN ('trim', 'eat_all', 'by_dish')`
     ),
     check(
       'user_profiles_default_rice_portion_check',

@@ -71,6 +71,13 @@
       "when": 1773161551943,
       "tag": "20260310165231_hand_checks_notnull_step",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1773310465871,
+      "tag": "20260312101425_drop_dead_cooking_columns",
+      "breakpoints": true
     }
   ]
 }
