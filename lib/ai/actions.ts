@@ -6,36 +6,15 @@ import { db } from '@/lib/db';
 import { userProfiles } from '@/lib/db/schema';
 import { createClient } from '@/lib/supabase/server';
 import { createGeminiClient } from './gemini';
+import { buildUserContext } from './mappers';
 import { logUnmatchedIngredients } from './matching';
 import { analyzeMeal } from './pipeline';
-import type { PipelineResponse, UserContext } from './types';
+import type { PipelineResponse } from './types';
 
 const rawInputSchema = z
   .string()
   .min(1, 'Meal description cannot be empty')
   .max(500, 'Meal description is too long');
-
-type ProfileRow = typeof userProfiles.$inferSelect;
-
-function buildUserContext(profile: ProfileRow): UserContext {
-  return {
-    goal: profile.goal as UserContext['goal'],
-    aggression: profile.aggression ? Number(profile.aggression) : 0,
-    regionalProfile: profile.regionalProfile as UserContext['regionalProfile'],
-    cookingHabits: {
-      oilUsage: (profile.oilUsage ??
-        'normal') as UserContext['cookingHabits']['oilUsage'],
-      defaultRicePortion: (profile.defaultRicePortion ??
-        'medium') as UserContext['cookingHabits']['defaultRicePortion'],
-      sugarBraised: (profile.sugarBraised ??
-        'medium') as UserContext['cookingHabits']['sugarBraised'],
-      defaultProteinPortion: (profile.defaultProteinPortion ??
-        'medium') as UserContext['cookingHabits']['defaultProteinPortion'],
-      brothConsumption: (profile.brothConsumption ??
-        'some') as UserContext['cookingHabits']['brothConsumption'],
-    },
-  };
-}
 
 function errorResponse(
   type: 'non_food_input' | 'parse_error' | 'api_error',

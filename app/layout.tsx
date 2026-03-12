@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { DM_Sans, Fraunces, Geist, Geist_Mono, Lora } from 'next/font/google';
+import { QueryProvider } from '@/components/providers/query-provider';
 import { Toaster } from '@/components/ui/sonner';
 import './globals.css';
 
@@ -45,7 +46,7 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} ${lora.variable} ${dmSans.variable} ${fraunces.variable} antialiased`}
       >
         <div className="noise-bg pointer-events-none fixed inset-0 z-50 opacity-[0.03] mix-blend-overlay"></div>
-        {children}
+        <QueryProvider>{children}</QueryProvider>
         <Toaster />
       </body>
     </html>

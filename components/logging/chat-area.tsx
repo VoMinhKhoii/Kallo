@@ -3,6 +3,8 @@
 import { Loader2 } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useCallback, useRef, useState } from 'react';
+import { toast } from 'sonner';
+import { useAnalyzeMeal } from '@/hooks/use-analyze-meal';
 import type { ChatMessage, ParsedMeal } from '@/lib/types/meal';
 import { EmptyState } from './empty-state';
 import { MealCard } from './meal-card';
@@ -16,8 +18,8 @@ function generateId() {
 export function ChatArea() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputValue, setInputValue] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const { mutateAsync, isPending } = useAnalyzeMeal();
 
   const scrollToBottom = useCallback(() => {
     requestAnimationFrame(() => {
@@ -32,7 +34,7 @@ export function ChatArea() {
 
   const handleSubmit = async () => {
     const text = inputValue.trim();
-    if (!text || isLoading) return;
+    if (!text || isPending) return;
 
     const userMessage: ChatMessage = {
       id: generateId(),
@@ -43,21 +45,10 @@ export function ChatArea() {
 
     setMessages((prev) => [...prev, userMessage]);
     setInputValue('');
-    setIsLoading(true);
     scrollToBottom();
 
     try {
-      const response = await fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: text }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to process meal');
-      }
-
-      const parsedMeal: ParsedMeal = await response.json();
+      const parsedMeal: ParsedMeal = await mutateAsync(text);
 
       const assistantMessage: ChatMessage = {
         id: generateId(),
@@ -69,17 +60,21 @@ export function ChatArea() {
 
       setMessages((prev) => [...prev, assistantMessage]);
       scrollToBottom();
-    } catch {
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : 'Failed to analyze meal. Please try again.';
+      toast.error(message);
+
       const errorMessage: ChatMessage = {
         id: generateId(),
         role: 'assistant',
-        content: 'Sorry, I could not process that meal. Please try again.',
+        content: message,
         timestamp: new Date(),
       };
       setMessages((prev) => [...prev, errorMessage]);
       scrollToBottom();
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -172,7 +167,7 @@ export function ChatArea() {
             </AnimatePresence>
 
             <AnimatePresence>
-              {isLoading && (
+              {isPending && (
                 <motion.div
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -204,7 +199,7 @@ export function ChatArea() {
             value={inputValue}
             onChange={setInputValue}
             onSubmit={handleSubmit}
-            disabled={isLoading}
+            disabled={isPending}
           />
         </div>
       </div>

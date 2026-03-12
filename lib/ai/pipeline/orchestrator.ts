@@ -21,7 +21,7 @@ import {
 } from './errors';
 
 /** D1/D8: Default model for both LLM calls, configurable per call */
-const GEMINI_MODEL = 'gemini-3.0-flash';
+const GEMINI_MODEL = 'gemini-2.5-flash';
 
 /**
  * Full meal analysis pipeline.

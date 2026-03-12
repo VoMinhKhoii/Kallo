@@ -36,7 +36,7 @@ describe('GeminiClient', () => {
         schema: testSchema,
         systemPrompt: 'You are a test assistant.',
         userMessage: 'Give me data.',
-        model: 'gemini-3.0-flash',
+        model: 'gemini-2.5-flash',
       });
 
       expect(result).toEqual({ name: 'test', value: 42 });
@@ -52,7 +52,7 @@ describe('GeminiClient', () => {
           schema: testSchema,
           systemPrompt: 'test',
           userMessage: 'test',
-          model: 'gemini-3.0-flash',
+          model: 'gemini-2.5-flash',
         })
       ).rejects.toThrow('Gemini returned empty response');
     });
@@ -68,7 +68,7 @@ describe('GeminiClient', () => {
           schema: testSchema,
           systemPrompt: 'test',
           userMessage: 'test',
-          model: 'gemini-3.0-flash',
+          model: 'gemini-2.5-flash',
         })
       ).rejects.toThrow();
     });
@@ -122,7 +122,7 @@ describe('GeminiClient', () => {
         schema: z.object({ name: z.string(), value: z.number() }),
         systemPrompt: 'test',
         userMessage: 'test',
-        model: 'gemini-3.0-flash',
+        model: 'gemini-2.5-flash',
       });
 
       expect(result).toEqual({ name: 'ok', value: 1 });
@@ -142,7 +142,7 @@ describe('GeminiClient', () => {
           schema: z.object({ name: z.string() }),
           systemPrompt: 'test',
           userMessage: 'test',
-          model: 'gemini-3.0-flash',
+          model: 'gemini-2.5-flash',
         })
       ).rejects.toThrow('429');
     });
@@ -161,7 +161,7 @@ describe('GeminiClient', () => {
           schema: z.object({ name: z.string() }),
           systemPrompt: 'test',
           userMessage: 'test',
-          model: 'gemini-3.0-flash',
+          model: 'gemini-2.5-flash',
         })
       ).rejects.toThrow('500');
 
