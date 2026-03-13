@@ -64,7 +64,7 @@ export type LlmBoundedNutrient = (typeof LLM_BOUNDED_NUTRIENTS)[number];
  * null cooking method → 1.0 (assumed raw/unprocessed)
  */
 export const COOKED_TO_RAW_FACTOR: Record<string, number> = {
-  // Rice/grains absorb water: cooked is ~2.5× heavier than raw
+  nấu: 0.38, // rice/grains: cooked is ~2.6× heavier than raw (1/2.6 ≈ 0.38)
   luộc: 0.75, // boiled: slight water absorption (meat/eggs)
   chiên: 0.85, // fried: loses moisture
   xào: 0.85, // stir-fried: loses moisture
@@ -73,6 +73,7 @@ export const COOKED_TO_RAW_FACTOR: Record<string, number> = {
   hấp: 0.9, // steamed: minimal change
   rán: 0.85, // deep-fried: loses moisture
   rang: 0.85, // dry-roasted: loses moisture
+  ninh: 0.75, // slow-simmered: loses moisture (similar to boiled)
 };
 
 /** Default cooked-to-raw factor when cooking method is unknown or null */

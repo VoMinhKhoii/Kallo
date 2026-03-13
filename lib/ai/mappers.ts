@@ -51,14 +51,10 @@ export function toParsedMeal(result: PipelineResult): ParsedMeal {
   const items: MealItem[] = result.mealItems.map((mealItem, idx) => ({
     id: `item-${idx + 1}`,
     name: mealItem.name,
-    quantity: mealItem.ingredients.reduce(
-      (sum, ing) => sum + ing.estimatedGrams,
-      0
+    quantity: Math.round(
+      mealItem.ingredients.reduce((sum, ing) => sum + ing.estimatedGrams, 0)
     ),
-    unit:
-      mealItem.ingredients.length === 1
-        ? (mealItem.ingredients[0].userFacingUnit ?? 'g')
-        : 'g',
+    unit: 'g',
     macros: toMacros(mealItem.displayedNutrition),
   }));
 

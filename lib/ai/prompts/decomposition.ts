@@ -36,13 +36,15 @@ export function buildDecompositionPrompt(userContext: UserContext): string {
   </task>
 
   <gram_weight_rule>
-    estimatedGrams MUST be the raw, uncooked weight in grams — as the ingredient would be measured before any cooking.
+    estimatedGrams MUST be the cooked/as-eaten weight in grams — the amount the user actually eats on their plate.
 
-    Back-calculate from the cooked portion the user described:
-    - Cooked rice weighs ~2.6× its raw weight. If the user eats ~100g cooked rice → output estimatedGrams: 38 for gạo tẻ.
-    - Braised/stewed meat shrinks to ~75–80% of raw weight. If the user eats ~80g cooked pork → output estimatedGrams: 100 for thịt lợn ba chỉ.
-    - Boiled vegetables lose ~10% weight. If the user eats ~90g cooked rau muống → output estimatedGrams: 100.
+    Examples:
+    - User eats ~1 bowl of rice (~150g cooked rice) → estimatedGrams: 150 for gạo tẻ
+    - User eats ~100g of braised pork → estimatedGrams: 100 for thịt lợn ba chỉ
+    - User eats ~90g of boiled morning glory → estimatedGrams: 90 for rau muống
 
+    Do NOT back-calculate to raw weight. The system handles raw conversion internally.
+    If the user specifies a weight (e.g., "200g bánh chưng"), use that weight directly.
     The cooking method is captured in cookingMethod — never embed it in estimatedGrams.
   </gram_weight_rule>
 
@@ -64,6 +66,11 @@ export function buildDecompositionPrompt(userContext: UserContext): string {
     - "nước mắm" (fish sauce — use this exact form)
     - "tỏi" (garlic — use this exact form)
     - "rau muống" (morning glory — use this exact form)
+    - "quả me chua" (tamarind — not bare "me")
+    - "giá đỗ" (bean sprouts — not "giá")
+    - "đậu xanh" (mung beans — not "đậu" alone)
+    - "nước dùng" (broth — use this exact form)
+    - "chả cá" (fish cake — not bare "cá" when referring to processed fish cake)
   </ingredient_naming_rule>
 
   <meal_item_rule>
@@ -119,7 +126,7 @@ export function buildDecompositionPrompt(userContext: UserContext): string {
           "ingredients": [
             {
               "ingredientName": "gạo tẻ",
-              "estimatedGrams": 65,
+              "estimatedGrams": 170,
               "cookingMethod": "nấu"
             }
           ]
@@ -131,12 +138,12 @@ export function buildDecompositionPrompt(userContext: UserContext): string {
           "ingredients": [
             {
               "ingredientName": "thịt lợn ba chỉ",
-              "estimatedGrams": 120,
+              "estimatedGrams": 100,
               "cookingMethod": "kho"
             },
             {
               "ingredientName": "trứng gà",
-              "estimatedGrams": 55,
+              "estimatedGrams": 50,
               "cookingMethod": "kho"
             },
             {
@@ -160,11 +167,10 @@ export function buildDecompositionPrompt(userContext: UserContext): string {
     }
     </output>
     <reasoning>
-      The user's default_rice_portion maps to ~1–1.5 bowls cooked (~150–200g cooked). Back-calculating: 
-      ~170g cooked ÷ 2.6 ≈ 65g raw gạo tẻ. Default protein = medium (~120g cooked pork). 
-      Braised pork shrinks to ~75% of raw, so 120g cooked ÷ 0.75 = 160g raw — but the protein 
-      here is shared with trứng gà, so 120g raw pork is reasonable. Ingredient names use canonical 
-      DB forms. estimatedGrams are all raw weights.
+      The user's default_rice_portion maps to ~1–1.5 bowls cooked (~150–200g cooked).
+      estimatedGrams = 170g is the cooked rice weight on the plate.
+      Braised pork ~100g cooked serving, 1 braised egg ~50g cooked.
+      Seasonings (sugar, fish sauce, oil) stay at their added weight.
     </reasoning>
   </example>
 
@@ -182,7 +188,7 @@ export function buildDecompositionPrompt(userContext: UserContext): string {
           "ingredients": [
             {
               "ingredientName": "gạo tẻ",
-              "estimatedGrams": 65,
+              "estimatedGrams": 170,
               "cookingMethod": "nấu"
             }
           ]
@@ -194,7 +200,7 @@ export function buildDecompositionPrompt(userContext: UserContext): string {
           "ingredients": [
             {
               "ingredientName": "thịt lợn ba chỉ",
-              "estimatedGrams": 150,
+              "estimatedGrams": 120,
               "cookingMethod": "kho"
             },
             {
@@ -219,8 +225,8 @@ export function buildDecompositionPrompt(userContext: UserContext): string {
     </output>
     <reasoning>
       User said "thịt kho" — NOT "thịt kho trứng". Do NOT add trứng gà.
-      Only pork + base seasonings (sugar, fish sauce, oil) for the "kho" method.
-      This is a different dish from "thịt kho trứng".
+      estimatedGrams are all cooked/as-eaten weights.
+      120g cooked braised pork is a typical serving.
     </reasoning>
   </example>
 
@@ -243,7 +249,7 @@ export function buildDecompositionPrompt(userContext: UserContext): string {
             },
             {
               "ingredientName": "thịt bò",
-              "estimatedGrams": 100,
+              "estimatedGrams": 80,
               "cookingMethod": "ninh"
             },
             {
@@ -273,8 +279,9 @@ export function buildDecompositionPrompt(userContext: UserContext): string {
     </output>
     <reasoning>
       "1 tô lớn" is preserved as userFacingUnit. This is a Central Vietnamese dish — 
-      mien_trung profile aligns. bún tươi is raw weight (200g fresh noodles). 
-      Beef is raw weight before simmering. Aromatics (sả, hành tím, ớt) use canonical DB names.
+      mien_trung profile aligns. bún tươi: 200g (served fresh, no cooking change).
+      Beef: 80g cooked after simmering. Aromatics and condiments at their added weights.
+      estimatedGrams are all cooked/as-eaten weights.
     </reasoning>
   </example>
 
