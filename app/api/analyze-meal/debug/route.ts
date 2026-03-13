@@ -132,6 +132,7 @@ export async function POST(request: NextRequest) {
         systemInstruction: systemPrompt,
         responseMimeType: 'application/json',
         responseJsonSchema: toJSONSchema(mealDecompositionSchema),
+        temperature: 0.1,
       },
     });
 

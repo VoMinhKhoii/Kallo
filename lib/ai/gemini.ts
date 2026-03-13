@@ -19,6 +19,7 @@ interface StructuredOutputParams<T> {
   systemPrompt: string;
   userMessage: string;
   model: string;
+  temperature?: number;
 }
 
 export interface GeminiClient {
@@ -79,6 +80,9 @@ export function createGeminiClient(
             systemInstruction: params.systemPrompt,
             responseMimeType: 'application/json',
             responseJsonSchema: toJSONSchema(params.schema),
+            ...(params.temperature != null && {
+              temperature: params.temperature,
+            }),
           },
         });
 

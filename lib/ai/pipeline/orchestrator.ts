@@ -116,6 +116,7 @@ async function decomposeMeal(
     systemPrompt: buildDecompositionPrompt(userContext),
     userMessage: rawInput,
     model: GEMINI_MODEL,
+    temperature: 0.1,
   });
 }
 

@@ -39,7 +39,7 @@ describe('buildDecompositionPrompt', () => {
 
   it('includes decomposition instructions', () => {
     const prompt = buildDecompositionPrompt(sampleUserContext);
-    expect(prompt).toContain('meal items');
+    expect(prompt).toContain('meal item');
     expect(prompt).toContain('ingredients');
     expect(prompt).toContain('estimatedGrams');
   });
