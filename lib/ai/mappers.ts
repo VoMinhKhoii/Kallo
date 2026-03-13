@@ -44,23 +44,23 @@ function toMacros(nutrition: {
 
 /**
  * Maps PipelineResult → ParsedMeal for the /api/analyze-meal response.
- * Flattens meal items into a simple list with 4-macro display.
+ * Uses meal item names (user-facing cooked names) for display, not raw DB ingredient names.
+ * estimatedGrams (cooked weight) is the display weight — rawEquivalentGrams is internal only.
  */
 export function toParsedMeal(result: PipelineResult): ParsedMeal {
-  const items: MealItem[] = [];
-  let counter = 1;
-
-  for (const mealItem of result.mealItems) {
-    for (const ingredient of mealItem.ingredients) {
-      items.push({
-        id: `item-${counter++}`,
-        name: ingredient.ingredientName,
-        quantity: ingredient.estimatedGrams,
-        unit: ingredient.userFacingUnit ?? 'g',
-        macros: toMacros(ingredient.displayedNutrition),
-      });
-    }
-  }
+  const items: MealItem[] = result.mealItems.map((mealItem, idx) => ({
+    id: `item-${idx + 1}`,
+    name: mealItem.name,
+    quantity: mealItem.ingredients.reduce(
+      (sum, ing) => sum + ing.estimatedGrams,
+      0
+    ),
+    unit:
+      mealItem.ingredients.length === 1
+        ? (mealItem.ingredients[0].userFacingUnit ?? 'g')
+        : 'g',
+    macros: toMacros(mealItem.displayedNutrition),
+  }));
 
   return {
     mealName: result.mealItems.map((item) => item.name).join(', '),

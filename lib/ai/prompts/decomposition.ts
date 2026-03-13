@@ -1,4 +1,17 @@
+import type { ProteinPortion, RicePortion } from '@/lib/onboarding/types';
 import type { UserContext } from '../types';
+
+const RICE_PORTION_DESCRIPTION: Record<RicePortion, string> = {
+  small: '~1 small bowl (~100g cooked rice)',
+  medium: '~1–1.5 bowls (~150g cooked rice)',
+  large: '~2+ bowls (~250g cooked rice)',
+};
+
+const PROTEIN_PORTION_DESCRIPTION: Record<ProteinPortion, string> = {
+  small: 'smaller than palm, ~2-3 eggs (~80g cooked)',
+  medium: 'about palm-sized (~120g cooked)',
+  large: 'bigger than palm, e.g. a chicken thigh (~160g cooked)',
+};
 
 /**
  * Build the system prompt for LLM Call 1 (meal decomposition).
@@ -31,9 +44,9 @@ export function buildDecompositionPrompt(userContext: UserContext): string {
 ## User's cooking context (use as priors for ambiguous inputs)
 - regional_profile: ${regionalProfile}
 - oil_usage: ${cookingHabits.oilUsage}
-- default_rice_portion: ${cookingHabits.defaultRicePortion}
+- default_rice_portion: ${RICE_PORTION_DESCRIPTION[cookingHabits.defaultRicePortion]}
 - sugar_braised: ${cookingHabits.sugarBraised}
-- default_protein_portion: ${cookingHabits.defaultProteinPortion}
+- default_protein_portion: ${PROTEIN_PORTION_DESCRIPTION[cookingHabits.defaultProteinPortion]}
 - broth_consumption: ${cookingHabits.brothConsumption}
 
 ## Regional cooking notes
@@ -43,6 +56,20 @@ export function buildDecompositionPrompt(userContext: UserContext): string {
 - mien_tay (Western/Mekong): heavy oil, sweet, large portions, river fish
 
 When the input is ambiguous (e.g., "thịt kho" without specifying protein), use the regional profile to choose the most common interpretation.
+
+## Ingredient naming rules
+Ingredient names MUST use the raw, uncooked form as it would appear in a food composition database.
+The cooking method is captured in the cookingMethod field — never encode it in the ingredient name.
+
+Correct examples:
+- "gạo tẻ" (not "cơm trắng" or "cơm")
+- "thịt lợn ba chỉ" (not "thịt heo kho" or "thịt ba chỉ kho")
+- "trứng gà" (not "trứng luộc" or "trứng chiên")
+- "đậu phụ" (not "đậu phụ chiên" or "tofu xào")
+- "bún tươi" (not "bún" when describing cooked vermicelli)
+
+The cookingMethod field carries how the ingredient was prepared.
+The ingredientName field carries what the raw ingredient is called in a food database.
 
 ## Output format
 Return JSON matching the provided schema. Every meal item must have at least one ingredient. Use Vietnamese ingredient names.`;

@@ -79,7 +79,27 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    return NextResponse.json(toParsedMeal(result.data));
+    const meal = toParsedMeal(result.data);
+
+    const hasNutrition = meal.items?.some(
+      (item) => item.macros.calories !== 0 || item.macros.protein !== 0
+    );
+
+    if (!hasNutrition) {
+      console.error(
+        '[analyze-meal] Pipeline returned all-null nutrition — assembly likely failed',
+        { input: parsed.data, rawResult: result.data }
+      );
+      return NextResponse.json(
+        {
+          error:
+            'Could not estimate nutrition for this meal. Please try describing it differently.',
+        },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json(meal);
   } catch (error) {
     console.error('Chat API error:', error);
 

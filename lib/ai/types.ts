@@ -174,6 +174,7 @@ export interface ProcessedIngredient {
   ingredientName: string;
   foodCompositionId: string | null;
   estimatedGrams: number;
+  rawEquivalentGrams: number;
   cookingMethod: string | null;
   userFacingUnit: string | null;
   matchConfidence: number | null;

@@ -5,8 +5,12 @@ import { type NextRequest, NextResponse } from 'next/server';
 import { toJSONSchema } from 'zod';
 
 import { createGeminiClient } from '@/lib/ai/gemini';
-import { buildUserContext } from '@/lib/ai/mappers';
-import { classifyConfidence } from '@/lib/ai/matching';
+import { buildUserContext, toParsedMeal } from '@/lib/ai/mappers';
+import {
+  classifyConfidence,
+  FUZZY_SIMILARITY_THRESHOLD,
+  VECTOR_SIMILARITY_THRESHOLD,
+} from '@/lib/ai/matching';
 import { fetchNutritionPer100g } from '@/lib/ai/matching/nutrition-db';
 import { assembleResult } from '@/lib/ai/pipeline/assembly';
 import { NON_FOOD_BLOCKLIST } from '@/lib/ai/pipeline/errors';
@@ -201,9 +205,13 @@ export async function POST(request: NextRequest) {
             }));
             q.fuzzyMatches = fuzzyMatches;
 
-            if (fuzzyMatches.length > 0) {
+            const fuzzyTop = fuzzyMatches[0];
+            const fuzzyAccepted =
+              fuzzyTop && fuzzyTop.similarity >= FUZZY_SIMILARITY_THRESHOLD;
+
+            if (fuzzyAccepted) {
               q.searchMethod = 'fuzzy';
-              const top = fuzzyMatches[0];
+              const top = fuzzyTop;
               const confidence = classifyConfidence(top.similarity);
               const nutrition = await fetchNutritionPer100g(top.id, untypedDb);
 
@@ -232,7 +240,7 @@ export async function POST(request: NextRequest) {
                 });
               }
             } else {
-              // Vector fallback
+              // Vector fallback — fuzzy match absent or below threshold
               try {
                 const embedding = await gemini.generateEmbedding(
                   ingredient.name
@@ -251,9 +259,14 @@ export async function POST(request: NextRequest) {
                 }));
                 q.vectorMatches = vectorMatches;
 
-                if (vectorMatches.length > 0) {
+                const vectorTop = vectorMatches[0];
+                const vectorAccepted =
+                  vectorTop &&
+                  vectorTop.similarity >= VECTOR_SIMILARITY_THRESHOLD;
+
+                if (vectorAccepted) {
                   q.searchMethod = 'vector';
-                  const top = vectorMatches[0];
+                  const top = vectorTop;
                   const confidence = classifyConfidence(top.similarity);
                   const nutrition = await fetchNutritionPer100g(
                     top.id,
@@ -291,7 +304,11 @@ export async function POST(request: NextRequest) {
                     mealContext: mealItem.name,
                   });
                 }
-              } catch {
+              } catch (vectorErr) {
+                console.error(
+                  `[debug] Vector search failed for "${ingredient.name}":`,
+                  vectorErr
+                );
                 unmatched.push({
                   ingredientName: ingredient.name,
                   mealContext: mealItem.name,
@@ -406,6 +423,19 @@ export async function POST(request: NextRequest) {
   trace.step4_assembly = step4;
 
   trace.totalDurationMs = Date.now() - totalStart;
+
+  // Null nutrition guard check (mirrors route.ts)
+  if (step4.result) {
+    const meal = toParsedMeal(step4.result);
+    const hasNutrition = meal.items?.some(
+      (item) => item.macros.calories !== 0 || item.macros.protein !== 0
+    );
+    trace.nullNutritionGuard = {
+      parsedMeal: meal,
+      hasNutrition,
+      wouldReturn500: !hasNutrition,
+    };
+  }
 
   return NextResponse.json(trace);
 }

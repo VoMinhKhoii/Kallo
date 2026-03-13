@@ -1,9 +1,22 @@
+import type { ProteinPortion, RicePortion } from '@/lib/onboarding/types';
 import type {
   DecomposedMealItem,
   MatchedIngredient,
   UnmatchedIngredient,
   UserContext,
 } from '../types';
+
+const RICE_PORTION_DESCRIPTION: Record<RicePortion, string> = {
+  small: '~1 small bowl (~100g cooked rice)',
+  medium: '~1–1.5 bowls (~150g cooked rice)',
+  large: '~2+ bowls (~250g cooked rice)',
+};
+
+const PROTEIN_PORTION_DESCRIPTION: Record<ProteinPortion, string> = {
+  small: 'smaller than palm, ~2-3 eggs (~80g cooked)',
+  medium: 'about palm-sized (~120g cooked)',
+  large: 'bigger than palm, e.g. a chicken thigh (~160g cooked)',
+};
 
 /**
  * Build the system prompt for LLM Call 2 (cooking-adjusted bounded nutrition).
@@ -80,8 +93,8 @@ For each ingredient in each meal item, produce low/mid/high bounded estimates fo
 ## User's cooking context
 - oil_usage: ${cookingHabits.oilUsage}
 - sugar_braised: ${cookingHabits.sugarBraised}
-- default_rice_portion: ${cookingHabits.defaultRicePortion}
-- default_protein_portion: ${cookingHabits.defaultProteinPortion}
+- default_rice_portion: ${RICE_PORTION_DESCRIPTION[cookingHabits.defaultRicePortion]}
+- default_protein_portion: ${PROTEIN_PORTION_DESCRIPTION[cookingHabits.defaultProteinPortion]}
 - broth_consumption: ${cookingHabits.brothConsumption}
 
 Adjust bounds based on these habits:

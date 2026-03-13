@@ -56,6 +56,29 @@ export const LLM_BOUNDED_NUTRIENTS = [
 export type LlmBoundedNutrient = (typeof LLM_BOUNDED_NUTRIENTS)[number];
 
 /**
+ * Cooked-to-raw weight conversion factors by cooking method.
+ * Multiplied by cooked weight to get raw equivalent weight.
+ * E.g., 150g cooked rice × 0.38 = 57g raw rice.
+ *
+ * Sources: FAO food yield factors for Vietnamese ingredients.
+ * null cooking method → 1.0 (assumed raw/unprocessed)
+ */
+export const COOKED_TO_RAW_FACTOR: Record<string, number> = {
+  // Rice/grains absorb water: cooked is ~2.5× heavier than raw
+  luộc: 0.75, // boiled: slight water absorption (meat/eggs)
+  chiên: 0.85, // fried: loses moisture
+  xào: 0.85, // stir-fried: loses moisture
+  kho: 0.8, // braised: loses some moisture, absorbs sauce
+  nướng: 0.75, // grilled: loses moisture/fat
+  hấp: 0.9, // steamed: minimal change
+  rán: 0.85, // deep-fried: loses moisture
+  rang: 0.85, // dry-roasted: loses moisture
+};
+
+/** Default cooked-to-raw factor when cooking method is unknown or null */
+export const DEFAULT_COOKED_TO_RAW_FACTOR = 1.0;
+
+/**
  * For each goal, which bound direction is the "goal bound" per nutrient.
  * Cutting = pessimistic: overestimate cal/carbs/fat, underestimate protein.
  * Bulking = optimistic: underestimate cal/carbs/fat, overestimate protein.

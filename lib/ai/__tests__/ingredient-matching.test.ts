@@ -3,7 +3,9 @@ import type { GeminiClient } from '../gemini';
 import {
   CONFIDENCE_THRESHOLDS,
   classifyConfidence,
+  FUZZY_SIMILARITY_THRESHOLD,
   matchIngredients,
+  VECTOR_SIMILARITY_THRESHOLD,
 } from '../matching';
 import type { DecomposedIngredient } from '../types';
 
@@ -100,6 +102,11 @@ describe('classifyConfidence', () => {
     expect(CONFIDENCE_THRESHOLDS.high).toBe(0.6);
     expect(CONFIDENCE_THRESHOLDS.medium).toBe(0.3);
   });
+
+  it('similarity threshold constants are correct', () => {
+    expect(FUZZY_SIMILARITY_THRESHOLD).toBe(0.4);
+    expect(VECTOR_SIMILARITY_THRESHOLD).toBe(0.75);
+  });
 });
 
 describe('matchIngredients', () => {
@@ -135,7 +142,7 @@ describe('matchIngredients', () => {
   });
 
   it('falls back to vector search when fuzzy returns no results', async () => {
-    const vectorResult = { ...sampleFuzzyResult, similarity: 0.55 };
+    const vectorResult = { ...sampleFuzzyResult, similarity: 0.8 };
 
     mockDb.execute
       .mockResolvedValueOnce([]) // fuzzy match: empty
@@ -151,8 +158,47 @@ describe('matchIngredients', () => {
 
     expect(result.matched).toHaveLength(1);
     expect(result.unmatched).toHaveLength(0);
-    expect(result.matched[0].confidence).toBe('medium');
+    expect(result.matched[0].confidence).toBe('high');
     expect(mockGemini.generateEmbedding).toHaveBeenCalledWith('thịt bò');
+  });
+
+  it('rejects fuzzy match below threshold and falls through to vector', async () => {
+    const lowFuzzy = { ...sampleFuzzyResult, similarity: 0.3 };
+    const goodVector = { ...sampleFuzzyResult, similarity: 0.8 };
+
+    mockDb.execute
+      .mockResolvedValueOnce([lowFuzzy]) // fuzzy match: below threshold
+      .mockResolvedValueOnce([goodVector]) // vector match: above threshold
+      .mockResolvedValueOnce([sampleNutritionRow]); // nutrition fetch
+
+    const result = await matchIngredients(
+      [sampleIngredient],
+      'test',
+      mockDb as any,
+      mockGemini
+    );
+
+    expect(result.matched).toHaveLength(1);
+    expect(result.matched[0].similarity).toBe(0.8);
+    expect(mockGemini.generateEmbedding).toHaveBeenCalled();
+  });
+
+  it('rejects vector match below threshold as unmatched', async () => {
+    const lowVector = { ...sampleFuzzyResult, similarity: 0.6 };
+
+    mockDb.execute
+      .mockResolvedValueOnce([]) // fuzzy: empty
+      .mockResolvedValueOnce([lowVector]); // vector: below threshold
+
+    const result = await matchIngredients(
+      [sampleIngredient],
+      'test',
+      mockDb as any,
+      mockGemini
+    );
+
+    expect(result.matched).toHaveLength(0);
+    expect(result.unmatched).toHaveLength(1);
   });
 
   it('returns unmatched when both searches fail', async () => {

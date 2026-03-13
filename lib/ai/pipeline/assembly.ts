@@ -1,4 +1,9 @@
-import { LLM_BOUNDED_NUTRIENTS, NUTRITION_KEYS } from '../constants';
+import {
+  COOKED_TO_RAW_FACTOR,
+  DEFAULT_COOKED_TO_RAW_FACTOR,
+  LLM_BOUNDED_NUTRIENTS,
+  NUTRITION_KEYS,
+} from '../constants';
 import {
   goalAdjustNutrition,
   sumBoundedNutrition,
@@ -64,6 +69,17 @@ function nullBoundedNutrition(): BoundedNutrition {
   ) as BoundedNutrition;
 }
 
+/** Convert cooked weight to raw equivalent using cooking method factor */
+function computeRawEquivalent(
+  cookedGrams: number,
+  cookingMethod: string | null
+): number {
+  if (!cookingMethod) return cookedGrams * DEFAULT_COOKED_TO_RAW_FACTOR;
+  const factor =
+    COOKED_TO_RAW_FACTOR[cookingMethod] ?? DEFAULT_COOKED_TO_RAW_FACTOR;
+  return Math.round(cookedGrams * factor);
+}
+
 export function computeOverallConfidence(
   matched: MatchedIngredient[],
   unmatched: UnmatchedIngredient[]
@@ -101,31 +117,34 @@ export function assembleResult(
   const { goal, aggression } = userContext;
   const matchedLookup = new Map(matched.map((m) => [m.ingredientName, m]));
 
-  const llmNutritionLookup = new Map<
-    string,
-    Map<string, IngredientLlmNutrition>
-  >();
+  // Flatten all Step 3 ingredients into a single map keyed by ingredientName.
+  // This makes assembly resilient to LLM regrouping meal items between steps.
+  const llmNutritionByIngredient = new Map<string, IngredientLlmNutrition>();
   for (const mi of nutrition.mealItems) {
-    llmNutritionLookup.set(
-      mi.mealItemName,
-      new Map(mi.ingredients.map((ing) => [ing.ingredientName, ing]))
-    );
+    for (const ing of mi.ingredients) {
+      llmNutritionByIngredient.set(ing.ingredientName, ing);
+    }
   }
 
   const pipelineMealItems: PipelineMealItem[] = decomposition.mealItems.map(
     (decomposedItem) => {
-      const itemLlmMap = llmNutritionLookup.get(decomposedItem.name);
-
       const ingredients: ProcessedIngredient[] = decomposedItem.ingredients.map(
         (ing) => {
           const matchInfo = matchedLookup.get(ing.name);
-          const llmData = itemLlmMap?.get(ing.name);
+          const llmData = llmNutritionByIngredient.get(ing.name);
+
+          // estimatedGrams is the cooked/as-eaten weight (user-facing).
+          // rawEquivalentGrams is used for DB nutrition scaling only.
+          const rawEquivalentGrams = computeRawEquivalent(
+            ing.estimatedGrams,
+            ing.cookingMethod
+          );
 
           const boundedNutrition = llmData
             ? mergeNutrition(
                 llmData,
                 matchInfo?.nutritionPer100g ?? null,
-                ing.estimatedGrams
+                rawEquivalentGrams
               )
             : nullBoundedNutrition();
 
@@ -139,6 +158,7 @@ export function assembleResult(
             ingredientName: ing.name,
             foodCompositionId: matchInfo?.foodCompositionId ?? null,
             estimatedGrams: ing.estimatedGrams,
+            rawEquivalentGrams,
             cookingMethod: ing.cookingMethod,
             userFacingUnit: ing.userFacingUnit,
             matchConfidence: matchInfo?.similarity ?? null,

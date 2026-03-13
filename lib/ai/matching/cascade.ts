@@ -14,6 +14,12 @@ export const CONFIDENCE_THRESHOLDS = {
   medium: 0.3,
 } as const;
 
+/** Minimum similarity to accept a fuzzy (pg_trgm) match */
+export const FUZZY_SIMILARITY_THRESHOLD = 0.4;
+
+/** Minimum similarity to accept a vector (pgvector) match */
+export const VECTOR_SIMILARITY_THRESHOLD = 0.75;
+
 export function classifyConfidence(similarity: number): MatchConfidence {
   if (similarity >= CONFIDENCE_THRESHOLDS.high) return 'high';
   if (similarity >= CONFIDENCE_THRESHOLDS.medium) return 'medium';
@@ -78,6 +84,7 @@ async function matchSingleIngredient(
   const fuzzyResult = await buildMatchResult(
     ingredientName,
     fuzzyRows as unknown as FuzzyMatchRow[],
+    FUZZY_SIMILARITY_THRESHOLD,
     db
   );
   if (fuzzyResult) return fuzzyResult;
@@ -90,6 +97,7 @@ async function matchSingleIngredient(
   return buildMatchResult(
     ingredientName,
     vectorRows as unknown as FuzzyMatchRow[],
+    VECTOR_SIMILARITY_THRESHOLD,
     db
   );
 }
@@ -97,11 +105,14 @@ async function matchSingleIngredient(
 async function buildMatchResult(
   ingredientName: string,
   rows: FuzzyMatchRow[],
+  minSimilarity: number,
   db: PostgresJsDatabase
 ): Promise<MatchedIngredient | null> {
   if (rows.length === 0) return null;
 
   const topMatch = rows[0];
+  if (topMatch.similarity < minSimilarity) return null;
+
   const nutrition = await fetchNutritionPer100g(topMatch.id, db);
   if (!nutrition) return null;
 
