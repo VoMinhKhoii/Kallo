@@ -68,7 +68,7 @@ export function buildNutritionPrompt(
       if (match) {
         const rawGrams = computeRawGrams(ing.estimatedGrams, ing.cookingMethod);
         ingredientData += `    <ingredient name="${ing.name}" source="db_matched" db_name="${match.matchedName}" raw_grams="${rawGrams}"${ing.cookingMethod ? ` cooking="${ing.cookingMethod}"` : ''}>\n`;
-        ingredientData += `      <per_100g_raw calories="${match.nutritionPer100g.caloriesKcal ?? '?'}" protein="${match.nutritionPer100g.proteinG ?? '?'}g" carbs="${match.nutritionPer100g.carbohydrateG ?? '?'}g" fat="${match.nutritionPer100g.fatG ?? '?'}g" fiber="${match.nutritionPer100g.fiberG ?? '?'}g" />\n`;
+        ingredientData += `      <per_100g_raw calories="${match.nutritionPer100g.caloriesKcal ?? '?'}" protein="${match.nutritionPer100g.proteinG ?? '?'}g" carbs="${match.nutritionPer100g.carbohydrateG ?? '?'}g" fat="${match.nutritionPer100g.fatG ?? '?'}g" />\n`;
         ingredientData += `    </ingredient>\n`;
       }
     }
@@ -97,12 +97,11 @@ export function buildNutritionPrompt(
 
 <instructions>
   <task>
-    For each ingredient in each meal item, produce LOW/MID/HIGH bounded estimates for 5 nutrients:
+    For each ingredient in each meal item, produce LOW/MID/HIGH bounded estimates for 4 macros:
     - caloriesKcal
     - proteinG
     - carbohydrateG
     - fatG
-    - fiberG (null if no data available)
   </task>
 
   <calculation_steps>
@@ -152,7 +151,7 @@ export function buildNutritionPrompt(
   <input>
     Meal item: cơm trắng
     Ingredient: gạo tẻ, raw_grams=65, cooking=nấu
-    DB per 100g raw: calories=352, protein=6.8g, carbs=78.2g, fat=0.5g, fiber=0.4g
+    DB per 100g raw: calories=352, protein=6.8g, carbs=78.2g, fat=0.5g
     User context: oil_usage=minimal, sugar_braised=low
   </input>
   <output>
@@ -163,22 +162,19 @@ export function buildNutritionPrompt(
       "caloriesKcal": 204,
       "proteinG": 3.9,
       "carbohydrateG": 44.2,
-      "fatG": 0.3,
-      "fiberG": 0.2
+      "fatG": 0.3
     },
     "mid": {
       "caloriesKcal": 229,
       "proteinG": 4.4,
       "carbohydrateG": 50.8,
-      "fatG": 0.3,
-      "fiberG": 0.3
+      "fatG": 0.3
     },
     "high": {
       "caloriesKcal": 263,
       "proteinG": 5.1,
       "carbohydrateG": 58.4,
-      "fatG": 0.4,
-      "fiberG": 0.3
+      "fatG": 0.4
     }
   }
   </output>
@@ -195,7 +191,7 @@ export function buildNutritionPrompt(
   <input>
     Meal item: thịt kho trứng
     Ingredient: thịt lợn ba chỉ, raw_grams=120, cooking=kho
-    DB per 100g raw: calories=258, protein=16.8g, carbs=0g, fat=21.1g, fiber=0g
+    DB per 100g raw: calories=258, protein=16.8g, carbs=0g, fat=21.1g
     User context: oil_usage=normal, sugar_braised=medium
   </input>
   <output>
@@ -206,22 +202,19 @@ export function buildNutritionPrompt(
       "caloriesKcal": 268,
       "proteinG": 17.2,
       "carbohydrateG": 2.1,
-      "fatG": 22.8,
-      "fiberG": null
+      "fatG": 22.8
     },
     "mid": {
       "caloriesKcal": 318,
       "proteinG": 20.2,
       "carbohydrateG": 3.6,
-      "fatG": 26.6,
-      "fiberG": null
+      "fatG": 26.6
     },
     "high": {
       "caloriesKcal": 380,
       "proteinG": 21.8,
       "carbohydrateG": 5.8,
-      "fatG": 32.1,
-      "fiberG": null
+      "fatG": 32.1
     }
   }
   </output>

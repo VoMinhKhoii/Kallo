@@ -141,17 +141,16 @@ export interface UnmatchedIngredient {
 }
 
 // ---------------------------------------------------------------------------
-// LLM Call 2 output: Cooking-adjusted bounded estimates (5 nutrients only)
+// LLM Call 2 output: Cooking-adjusted bounded estimates (4 macros only)
 // ---------------------------------------------------------------------------
 
-/** Bounded estimates for the 5 LLM-adjusted nutrients of a single ingredient */
+/** Bounded estimates for the 4 LLM-adjusted macros of a single ingredient */
 export interface IngredientLlmNutrition {
   ingredientName: string;
   caloriesKcal: BoundedEstimate;
   proteinG: BoundedEstimate;
   carbohydrateG: BoundedEstimate;
   fatG: BoundedEstimate;
-  fiberG: BoundedEstimate | null;
 }
 
 /** LLM Call 2 output for a single meal item */

@@ -149,7 +149,7 @@ describe('buildNutritionPrompt', () => {
     expect(prompt).toContain('fallback');
   });
 
-  it('only asks for 5 key nutrients (D5)', () => {
+  it('only asks for 4 key macros (D5)', () => {
     const prompt = buildNutritionPrompt(
       sampleMealItems,
       sampleMatched,
@@ -160,8 +160,8 @@ describe('buildNutritionPrompt', () => {
     expect(prompt).toContain('proteinG');
     expect(prompt).toContain('carbohydrateG');
     expect(prompt).toContain('fatG');
-    expect(prompt).toContain('fiberG');
-    // Should NOT ask for all 28 nutrients
+    // Should NOT ask for all 28 nutrients or fiber (now DB-passthrough)
+    expect(prompt).not.toContain('fiberG');
     expect(prompt).not.toContain('sodiumMg');
     expect(prompt).not.toContain('vitaminB12Mcg');
   });

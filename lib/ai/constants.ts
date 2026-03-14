@@ -42,15 +42,14 @@ export const GOAL_ADJUSTED_NUTRIENTS = [
 ] as const;
 
 /**
- * The 5 nutrients that LLM Call 2 produces bounded estimates for.
- * All remaining nutrients pass through as DB mid values.
+ * The 4 macros that LLM Call 2 produces bounded estimates for.
+ * All remaining nutrients (including fiber) pass through as DB mid values.
  */
 export const LLM_BOUNDED_NUTRIENTS = [
   'caloriesKcal',
   'proteinG',
   'carbohydrateG',
   'fatG',
-  'fiberG',
 ] as const;
 
 export type LlmBoundedNutrient = (typeof LLM_BOUNDED_NUTRIENTS)[number];

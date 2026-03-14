@@ -47,6 +47,10 @@ export async function analyzeMeal(
     }
 
     // D4: Parse/API errors get one retry
+    console.warn(
+      '[pipeline] First attempt failed, retrying entire pipeline:',
+      error
+    );
     try {
       return await runPipeline(rawInput, userContext, db, gemini);
     } catch (retryError) {
@@ -61,7 +65,9 @@ async function runPipeline(
   db: PostgresJsDatabase,
   gemini: GeminiClient
 ): Promise<PipelineResponse> {
+  const t0 = Date.now();
   const decomposition = await decomposeMeal(rawInput, userContext, gemini);
+  console.info(`[pipeline] decomposition: ${Date.now() - t0}ms`);
 
   // D6 Layer 1: Check isFood field from LLM
   if (!decomposition.isFood) {
@@ -80,13 +86,18 @@ async function runPipeline(
   const allIngredients = decomposition.mealItems.flatMap(
     (mi) => mi.ingredients
   );
+  const t1 = Date.now();
   const matchResult = await matchIngredients(
     allIngredients,
     rawInput,
     db,
     gemini
   );
+  console.info(
+    `[pipeline] matching ${allIngredients.length} ingredients: ${Date.now() - t1}ms`
+  );
 
+  const t2 = Date.now();
   const nutritionResult = await adjustNutrition(
     decomposition.mealItems,
     matchResult.matched,
@@ -94,6 +105,7 @@ async function runPipeline(
     userContext,
     gemini
   );
+  console.info(`[pipeline] nutrition adjustment: ${Date.now() - t2}ms`);
 
   const pipelineResult = assembleResult(
     decomposition,
@@ -103,6 +115,7 @@ async function runPipeline(
     userContext
   );
 
+  console.info(`[pipeline] total: ${Date.now() - t0}ms`);
   return { success: true, data: pipelineResult };
 }
 

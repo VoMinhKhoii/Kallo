@@ -44,8 +44,7 @@ export interface MatchResult {
  * Match a list of decomposed ingredients against the food composition DB.
  *
  * Cascade: fuzzy_match_ingredients (pg_trgm) → match_ingredients (pgvector) → unmatched.
- * Each ingredient is processed independently (no shared state between iterations)
- * for easy future parallelization with Promise.all.
+ * Each ingredient is processed independently — run in parallel with Promise.allSettled.
  */
 export async function matchIngredients(
   ingredients: DecomposedIngredient[],
@@ -56,14 +55,25 @@ export async function matchIngredients(
   const matched: MatchedIngredient[] = [];
   const unmatched: UnmatchedIngredient[] = [];
 
-  for (const ingredient of ingredients) {
-    const result = await matchSingleIngredient(ingredient.name, db, gemini);
+  const results = await Promise.allSettled(
+    ingredients.map((ingredient) =>
+      matchSingleIngredient(ingredient.name, db, gemini)
+    )
+  );
 
-    if (result) {
-      matched.push(result);
+  for (let i = 0; i < ingredients.length; i++) {
+    const result = results[i];
+    if (result.status === 'fulfilled' && result.value) {
+      matched.push(result.value);
     } else {
+      if (result.status === 'rejected') {
+        console.error(
+          `[matching] Failed to match "${ingredients[i].name}":`,
+          result.reason
+        );
+      }
       unmatched.push({
-        ingredientName: ingredient.name,
+        ingredientName: ingredients[i].name,
         mealContext,
       });
     }

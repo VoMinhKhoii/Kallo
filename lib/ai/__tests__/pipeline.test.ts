@@ -99,7 +99,7 @@ const nullNutrition: NutritionPer100g = {
   vitaminHMcg: null,
 };
 
-/** D5: LLM only returns 5 nutrients */
+/** D5: LLM only returns 4 macros */
 function makeLlmNutrition(
   name: string,
   cal: number,
@@ -113,7 +113,6 @@ function makeLlmNutrition(
     proteinG: { low: protein * 0.8, mid: protein, high: protein * 1.2 },
     carbohydrateG: { low: carbs * 0.8, mid: carbs, high: carbs * 1.2 },
     fatG: { low: fat * 0.8, mid: fat, high: fat * 1.2 },
-    fiberG: null,
   };
 }
 

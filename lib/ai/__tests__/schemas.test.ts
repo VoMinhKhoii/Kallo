@@ -205,7 +205,6 @@ describe('nutritionAdjustmentSchema', () => {
     proteinG: { low: 5, mid: 7, high: 9 },
     carbohydrateG: { low: 70, mid: 78, high: 85 },
     fatG: { low: 0.5, mid: 1, high: 1.5 },
-    fiberG: null,
   };
 
   it('accepts valid nutrition adjustment', () => {

@@ -235,8 +235,9 @@ describe('matchIngredients', () => {
       },
     ];
 
+    // With parallel execution, both fuzzy calls fire first, then dependent calls
     mockDb.execute
-      // Ingredient 1: fuzzy match succeeds
+      // Call 1: fuzzy for 'gạo' (match)
       .mockResolvedValueOnce([
         {
           ...sampleFuzzyResult,
@@ -245,12 +246,14 @@ describe('matchIngredients', () => {
           similarity: 0.8,
         },
       ])
+      // Call 2: fuzzy for 'unknown_food' (miss)
+      .mockResolvedValueOnce([])
+      // Call 3: nutrition fetch for 'gạo' match
       .mockResolvedValueOnce([
         { ...sampleNutritionRow, id: 'rice-001', calories_kcal: '350' },
       ])
-      // Ingredient 2: both searches fail
-      .mockResolvedValueOnce([]) // fuzzy: empty
-      .mockResolvedValueOnce([]); // vector: empty
+      // Call 4: vector search for 'unknown_food' (miss)
+      .mockResolvedValueOnce([]);
 
     const result = await matchIngredients(
       ingredients,
@@ -285,7 +288,7 @@ describe('matchIngredients', () => {
     expect(nutrition.vitaminCMg).toBe(0);
   });
 
-  it('processes ingredients sequentially (no inter-ingredient dependencies)', async () => {
+  it('processes ingredients in parallel (no inter-ingredient dependencies)', async () => {
     const callOrder: string[] = [];
     mockDb.execute.mockImplementation(async () => {
       callOrder.push('db-call');
@@ -310,7 +313,7 @@ describe('matchIngredients', () => {
     await matchIngredients(ingredients, 'test', mockDb as any, mockGemini);
 
     // Each ingredient: 1 fuzzy call + 1 vector call = 2 calls per ingredient
-    // Sequential: a-fuzzy, a-vector, b-fuzzy, b-vector
+    // Parallel: all run concurrently via Promise.allSettled
     expect(mockDb.execute).toHaveBeenCalledTimes(4);
   });
 });

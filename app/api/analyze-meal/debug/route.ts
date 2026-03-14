@@ -36,6 +36,19 @@ const GEMINI_MODEL = 'gemini-2.5-flash';
 const untypedDb = db as unknown as PostgresJsDatabase;
 const DEFAULT_USER_ID = '4681f168-e81b-4590-83ce-0f32734f19a9';
 
+/** Extract only the big 4 macros from a nutrition object for debug readability */
+function pickMacros<T extends Record<string, unknown>>(
+  obj: T | null | undefined
+) {
+  if (!obj) return obj;
+  return {
+    caloriesKcal: (obj as Record<string, unknown>).caloriesKcal ?? null,
+    proteinG: (obj as Record<string, unknown>).proteinG ?? null,
+    carbohydrateG: (obj as Record<string, unknown>).carbohydrateG ?? null,
+    fatG: (obj as Record<string, unknown>).fatG ?? null,
+  };
+}
+
 interface FuzzyMatchRow {
   id: string;
   name_primary: string;
@@ -221,7 +234,7 @@ export async function POST(request: NextRequest) {
                 name: top.name,
                 similarity: top.similarity,
                 confidence,
-                nutritionPer100g: nutrition ?? {},
+                nutritionPer100g: pickMacros(nutrition),
               };
               q.matchStatus = confidence === 'low' ? 'low_confidence' : 'hit';
 
@@ -279,7 +292,7 @@ export async function POST(request: NextRequest) {
                     name: top.name,
                     similarity: top.similarity,
                     confidence,
-                    nutritionPer100g: nutrition ?? {},
+                    nutritionPer100g: pickMacros(nutrition),
                   };
                   q.matchStatus =
                     confidence === 'low' ? 'low_confidence' : 'hit';
@@ -412,9 +425,24 @@ export async function POST(request: NextRequest) {
         unmatched,
         userContext
       );
-      step4.result = result;
+      // Trim nutrition to big 4 for debug readability
+      step4.result = {
+        ...result,
+        boundedNutrition: pickMacros(result.boundedNutrition),
+        displayedNutrition: pickMacros(result.displayedNutrition),
+        mealItems: result.mealItems.map((mi) => ({
+          ...mi,
+          boundedNutrition: pickMacros(mi.boundedNutrition),
+          displayedNutrition: pickMacros(mi.displayedNutrition),
+          ingredients: mi.ingredients.map((ing) => ({
+            ...ing,
+            boundedNutrition: pickMacros(ing.boundedNutrition),
+            displayedNutrition: pickMacros(ing.displayedNutrition),
+          })),
+        })),
+      };
       step4.confidenceOverall = result.confidenceOverall;
-      step4.displayedNutrition = result.displayedNutrition;
+      step4.displayedNutrition = pickMacros(result.displayedNutrition);
     }
   } catch (err) {
     step4.error = err instanceof Error ? err.message : String(err);

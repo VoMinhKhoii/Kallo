@@ -60,7 +60,7 @@ export const mealDecompositionSchema = z.object({
 });
 
 // ---------------------------------------------------------------------------
-// LLM Call 2: Cooking-adjusted bounded nutrition schema (5 nutrients only)
+// LLM Call 2: Cooking-adjusted bounded nutrition schema (4 macros only)
 // ---------------------------------------------------------------------------
 
 /**
@@ -94,12 +94,10 @@ export function normalizeBoundedEstimate(raw: {
   return { low: sorted[0], mid: sorted[1], high: sorted[2] };
 }
 
-const nullableBounded = boundedEstimateSchema.nullable();
-
 /**
- * LLM Call 2 produces bounded estimates for 5 nutrients only:
- * calories, protein, carbs, fat, fiber.
- * All other nutrients pass through as DB mid values in the pipeline.
+ * LLM Call 2 produces bounded estimates for the 4 macros only:
+ * calories, protein, carbs, fat.
+ * All other nutrients (including fiber) pass through as DB mid values.
  */
 export const ingredientLlmNutritionSchema = z.object({
   ingredientName: z
@@ -109,7 +107,6 @@ export const ingredientLlmNutritionSchema = z.object({
   proteinG: boundedEstimateSchema.describe('Protein in grams'),
   carbohydrateG: boundedEstimateSchema.describe('Carbohydrates in grams'),
   fatG: boundedEstimateSchema.describe('Fat in grams'),
-  fiberG: nullableBounded.describe('Fiber in grams, null if no data'),
 });
 
 export const mealItemNutritionSchema = z.object({
