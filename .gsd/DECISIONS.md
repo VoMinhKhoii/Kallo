@@ -1,0 +1,7 @@
+- "Meal slot values use English (breakfast, brunch, lunch, dinner, snack) instead of Vietnamese per user request"
+- "Added supabase prefix to drizzle.config.ts for timestamp-named migrations matching existing convention"
+- "Used ai.embed('gte-small') for in-database embedding generation with documented fallback for Edge Function approach"
+- "384 dimensions matching Supabase gte-small model"
+- "HNSW over IVFFlat for small dataset (526 rows) — better recall, no re-training"
+- "match_ingredients includes match_threshold parameter for future filtering, initial impl returns top-N"
+- "user_profiles also gets handle_updated_at trigger since it has updated_at column but no trigger existed"
