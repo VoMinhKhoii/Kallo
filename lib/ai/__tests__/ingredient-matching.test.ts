@@ -3,8 +3,11 @@ import type { GeminiClient } from '../gemini';
 import {
   CONFIDENCE_THRESHOLDS,
   classifyConfidence,
+  clearMemoryCache,
+  FUZZY_FALLBACK_THRESHOLD,
   FUZZY_SIMILARITY_THRESHOLD,
   matchIngredients,
+  rerankCandidates,
   VECTOR_SIMILARITY_THRESHOLD,
 } from '../matching';
 import type { DecomposedIngredient } from '../types';
@@ -13,10 +16,49 @@ import type { DecomposedIngredient } from '../types';
 // Mock DB
 // ---------------------------------------------------------------------------
 
-function createMockDb() {
-  return {
-    execute: vi.fn(),
+/**
+ * Create a mock DB that routes responses based on SQL query content.
+ * Handles the embedding cache layer transparently:
+ * - SELECT from ingredient_query_embeddings → always returns [] (cache miss)
+ * - INSERT INTO ingredient_query_embeddings → always returns [] (fire-and-forget)
+ * - Other queries → dispatched from the provided response queue
+ */
+function createRoutingMockDb(responses: unknown[][]) {
+  let idx = 0;
+  const db = {
+    execute: vi.fn().mockImplementation((query: unknown) => {
+      // drizzle-orm sql`` produces an object with queryChunks containing StringChunk values
+      const queryStr = extractSqlText(query);
+      // Embedding cache lookup/insert or synonym candidate logging — return empty
+      if (
+        queryStr.includes('ingredient_query_embeddings') ||
+        queryStr.includes('synonym_candidates')
+      ) {
+        return Promise.resolve([]);
+      }
+      // Regular query — return next response from queue
+      return Promise.resolve(responses[idx++] ?? []);
+    }),
   };
+  return db;
+}
+
+/** Extract raw SQL text from a drizzle-orm sql`` tagged template object */
+function extractSqlText(query: unknown): string {
+  if (typeof query === 'string') return query;
+  if (query && typeof query === 'object' && 'queryChunks' in query) {
+    const chunks = (query as { queryChunks: unknown[] }).queryChunks;
+    return chunks
+      .map((c) => {
+        if (typeof c === 'string') return c;
+        if (c && typeof c === 'object' && 'value' in c) {
+          return (c as { value: string[] }).value.join('');
+        }
+        return '';
+      })
+      .join('');
+  }
+  return String(query);
 }
 
 // ---------------------------------------------------------------------------
@@ -105,24 +147,25 @@ describe('classifyConfidence', () => {
 
   it('similarity threshold constants are correct', () => {
     expect(FUZZY_SIMILARITY_THRESHOLD).toBe(0.4);
-    expect(VECTOR_SIMILARITY_THRESHOLD).toBe(0.75);
+    expect(VECTOR_SIMILARITY_THRESHOLD).toBe(0.7);
+    expect(FUZZY_FALLBACK_THRESHOLD).toBe(0.7);
   });
 });
 
 describe('matchIngredients', () => {
-  let mockDb: ReturnType<typeof createMockDb>;
   let mockGemini: GeminiClient;
 
   beforeEach(() => {
-    mockDb = createMockDb();
     mockGemini = createMockGemini();
+    clearMemoryCache();
     vi.clearAllMocks();
   });
 
-  it('matches via fuzzy search when similarity is high enough', async () => {
-    mockDb.execute
-      .mockResolvedValueOnce([sampleFuzzyResult]) // fuzzy match
-      .mockResolvedValueOnce([sampleNutritionRow]); // nutrition fetch
+  it('matches via vector search when similarity is high enough', async () => {
+    const mockDb = createRoutingMockDb([
+      [{ ...sampleFuzzyResult, similarity: 0.8 }], // vector match
+      [sampleNutritionRow], // nutrition fetch
+    ]);
 
     const result = await matchIngredients(
       [sampleIngredient],
@@ -137,17 +180,14 @@ describe('matchIngredients', () => {
     expect(result.matched[0].confidence).toBe('high');
     expect(result.matched[0].nutritionPer100g.caloriesKcal).toBe(250);
     expect(result.matched[0].nutritionPer100g.proteinG).toBe(26);
-    // Gemini embedding should NOT be called (fuzzy matched)
-    expect(mockGemini.generateEmbedding).not.toHaveBeenCalled();
   });
 
-  it('falls back to vector search when fuzzy returns no results', async () => {
-    const vectorResult = { ...sampleFuzzyResult, similarity: 0.8 };
-
-    mockDb.execute
-      .mockResolvedValueOnce([]) // fuzzy match: empty
-      .mockResolvedValueOnce([vectorResult]) // vector match
-      .mockResolvedValueOnce([sampleNutritionRow]); // nutrition fetch
+  it('falls back to fuzzy search when vector returns no results', async () => {
+    const mockDb = createRoutingMockDb([
+      [], // vector match: empty
+      [{ ...sampleFuzzyResult, similarity: 0.75 }], // fuzzy match (≥0.7)
+      [sampleNutritionRow], // nutrition fetch
+    ]);
 
     const result = await matchIngredients(
       [sampleIngredient],
@@ -159,17 +199,18 @@ describe('matchIngredients', () => {
     expect(result.matched).toHaveLength(1);
     expect(result.unmatched).toHaveLength(0);
     expect(result.matched[0].confidence).toBe('high');
-    expect(mockGemini.generateEmbedding).toHaveBeenCalledWith('thịt bò');
   });
 
-  it('rejects fuzzy match below threshold and falls through to vector', async () => {
-    const lowFuzzy = { ...sampleFuzzyResult, similarity: 0.3 };
-    const goodVector = { ...sampleFuzzyResult, similarity: 0.8 };
+  it('rejects vector match below threshold and falls through to fuzzy', async () => {
+    // 0.5 + 0.15 exact-match boost = 0.65, still below 0.70 threshold
+    const lowVector = { ...sampleFuzzyResult, similarity: 0.5 };
+    const goodFuzzy = { ...sampleFuzzyResult, similarity: 0.75 }; // above 0.7
 
-    mockDb.execute
-      .mockResolvedValueOnce([lowFuzzy]) // fuzzy match: below threshold
-      .mockResolvedValueOnce([goodVector]) // vector match: above threshold
-      .mockResolvedValueOnce([sampleNutritionRow]); // nutrition fetch
+    const mockDb = createRoutingMockDb([
+      [lowVector], // vector: below threshold after reranking
+      [goodFuzzy], // fuzzy: above fallback threshold
+      [sampleNutritionRow], // nutrition fetch
+    ]);
 
     const result = await matchIngredients(
       [sampleIngredient],
@@ -179,16 +220,20 @@ describe('matchIngredients', () => {
     );
 
     expect(result.matched).toHaveLength(1);
-    expect(result.matched[0].similarity).toBe(0.8);
-    expect(mockGemini.generateEmbedding).toHaveBeenCalled();
+    // Single candidate: re-ranking doesn't change similarity
+    expect(result.matched[0].similarity).toBe(0.75);
   });
 
-  it('rejects vector match below threshold as unmatched', async () => {
-    const lowVector = { ...sampleFuzzyResult, similarity: 0.6 };
+  it('rejects both below threshold as unmatched', async () => {
+    // 0.5 + 0.15 exact-match boost = 0.65, below 0.70
+    const lowVector = { ...sampleFuzzyResult, similarity: 0.5 };
+    // 0.4 + 0.15 = 0.55, below 0.70
+    const lowFuzzy = { ...sampleFuzzyResult, similarity: 0.4 };
 
-    mockDb.execute
-      .mockResolvedValueOnce([]) // fuzzy: empty
-      .mockResolvedValueOnce([lowVector]); // vector: below threshold
+    const mockDb = createRoutingMockDb([
+      [lowVector], // vector: below 0.70 after reranking
+      [lowFuzzy], // fuzzy: below 0.70 after reranking
+    ]);
 
     const result = await matchIngredients(
       [sampleIngredient],
@@ -202,9 +247,10 @@ describe('matchIngredients', () => {
   });
 
   it('returns unmatched when both searches fail', async () => {
-    mockDb.execute
-      .mockResolvedValueOnce([]) // fuzzy: empty
-      .mockResolvedValueOnce([]); // vector: empty
+    const mockDb = createRoutingMockDb([
+      [], // vector: empty
+      [], // fuzzy: empty
+    ]);
 
     const result = await matchIngredients(
       [sampleIngredient],
@@ -235,25 +281,25 @@ describe('matchIngredients', () => {
       },
     ];
 
-    // With parallel execution, both fuzzy calls fire first, then dependent calls
-    mockDb.execute
-      // Call 1: fuzzy for 'gạo' (match)
-      .mockResolvedValueOnce([
+    // Both ingredients go through cache miss → API → vector search
+    // Order may interleave due to concurrency, use routing mock
+    const mockDb = createRoutingMockDb([
+      // gạo: vector match
+      [
         {
           ...sampleFuzzyResult,
           id: 'rice-001',
           name_primary: 'Gạo',
           similarity: 0.8,
         },
-      ])
-      // Call 2: fuzzy for 'unknown_food' (miss)
-      .mockResolvedValueOnce([])
-      // Call 3: nutrition fetch for 'gạo' match
-      .mockResolvedValueOnce([
-        { ...sampleNutritionRow, id: 'rice-001', calories_kcal: '350' },
-      ])
-      // Call 4: vector search for 'unknown_food' (miss)
-      .mockResolvedValueOnce([]);
+      ],
+      // unknown_food: vector miss
+      [],
+      // gạo: nutrition fetch
+      [{ ...sampleNutritionRow, id: 'rice-001', calories_kcal: '350' }],
+      // unknown_food: fuzzy fallback miss
+      [],
+    ]);
 
     const result = await matchIngredients(
       ingredients,
@@ -269,9 +315,10 @@ describe('matchIngredients', () => {
   });
 
   it('parses nutrition values from string to number, null stays null', async () => {
-    mockDb.execute
-      .mockResolvedValueOnce([sampleFuzzyResult])
-      .mockResolvedValueOnce([sampleNutritionRow]);
+    const mockDb = createRoutingMockDb([
+      [{ ...sampleFuzzyResult, similarity: 0.8 }], // vector match
+      [sampleNutritionRow], // nutrition fetch
+    ]);
 
     const result = await matchIngredients(
       [sampleIngredient],
@@ -290,10 +337,16 @@ describe('matchIngredients', () => {
 
   it('processes ingredients in parallel (no inter-ingredient dependencies)', async () => {
     const callOrder: string[] = [];
-    mockDb.execute.mockImplementation(async () => {
-      callOrder.push('db-call');
-      return [];
-    });
+    const mockDb = {
+      execute: vi.fn().mockImplementation(async (query: unknown) => {
+        const queryStr = extractSqlText(query);
+        if (queryStr.includes('ingredient_query_embeddings')) {
+          return [];
+        }
+        callOrder.push('db-call');
+        return [];
+      }),
+    };
 
     const ingredients: DecomposedIngredient[] = [
       {
@@ -312,8 +365,107 @@ describe('matchIngredients', () => {
 
     await matchIngredients(ingredients, 'test', mockDb as any, mockGemini);
 
-    // Each ingredient: 1 fuzzy call + 1 vector call = 2 calls per ingredient
-    // Parallel: all run concurrently via Promise.allSettled
-    expect(mockDb.execute).toHaveBeenCalledTimes(4);
+    // Each ingredient: 1 vector call + 1 fuzzy fallback = 2 non-cache DB calls per ingredient
+    expect(callOrder).toHaveLength(4);
+  });
+
+  it('rejects fuzzy fallback below 0.7 threshold as unmatched', async () => {
+    // 0.4 + 0.15 exact-match boost = 0.55, below 0.70
+    const lowFuzzy = { ...sampleFuzzyResult, similarity: 0.4 };
+
+    const mockDb = createRoutingMockDb([
+      [], // vector: empty
+      [lowFuzzy], // fuzzy: below 0.7 after reranking
+    ]);
+
+    const result = await matchIngredients(
+      [sampleIngredient],
+      'test',
+      mockDb as any,
+      mockGemini
+    );
+
+    expect(result.matched).toHaveLength(0);
+    expect(result.unmatched).toHaveLength(1);
+    expect(result.unmatched[0].ingredientName).toBe('thịt bò');
+  });
+});
+
+describe('rerankCandidates', () => {
+  const makeCand = (name: string, sim: number) => ({
+    id: `id-${name}`,
+    name_primary: name,
+    name_alt: null,
+    name_en: '',
+    state: 'raw',
+    similarity: sim,
+  });
+
+  it('boosts exact match (+0.15) over higher-similarity derived product', () => {
+    const candidates = [
+      makeCand('Quả trứng gà', 0.8),
+      makeCand('Trứng gà', 0.78),
+      makeCand('Trứng vịt', 0.72),
+    ];
+    const result = rerankCandidates('trứng gà', candidates);
+    expect(result[0].name_primary).toBe('Trứng gà');
+    expect(result[0].similarity).toBeCloseTo(0.93); // 0.78 + 0.15
+  });
+
+  it('exact match for "quả trứng gà" correctly boosts the fruit entry', () => {
+    const candidates = [
+      makeCand('Quả trứng gà', 0.8),
+      makeCand('Trứng gà', 0.78),
+    ];
+    const result = rerankCandidates('quả trứng gà', candidates);
+    expect(result[0].name_primary).toBe('Quả trứng gà');
+    expect(result[0].similarity).toBeCloseTo(0.95); // 0.8 + 0.15
+  });
+
+  it('boosts name-starts-with-query (+0.10) for base ingredient', () => {
+    const candidates = [
+      makeCand('Bột gạo nếp', 0.82),
+      makeCand('Gạo nếp cái', 0.78),
+    ];
+    const result = rerankCandidates('gạo nếp', candidates);
+    expect(result[0].name_primary).toBe('Gạo nếp cái');
+    expect(result[0].similarity).toBeCloseTo(0.88); // 0.78 + 0.10
+  });
+
+  it('does not penalize derived products — only boosts direct matches', () => {
+    const candidates = [
+      makeCand('Bánh đậu xanh', 0.83),
+      makeCand('Đậu xanh (đậu tắt)', 0.75),
+    ];
+    const result = rerankCandidates('đậu xanh', candidates);
+    // Đậu xanh (đậu tắt) starts with "đậu xanh" → +0.10
+    expect(result[0].name_primary).toBe('Đậu xanh (đậu tắt)');
+    expect(result[0].similarity).toBeCloseTo(0.85);
+    // Bánh đậu xanh stays at original (no penalty)
+    expect(result[1].similarity).toBeCloseTo(0.83);
+  });
+
+  it('returns single candidate unchanged', () => {
+    const candidates = [makeCand('Thịt bò', 0.8)];
+    const result = rerankCandidates('thịt bò', candidates);
+    expect(result).toHaveLength(1);
+    expect(result[0].similarity).toBe(0.8);
+  });
+
+  it('returns empty array unchanged', () => {
+    const result = rerankCandidates('thịt bò', []);
+    expect(result).toHaveLength(0);
+  });
+
+  it('boosts query-starts-with-name (+0.05)', () => {
+    const candidates = [
+      makeCand('Thịt bò', 0.75),
+      makeCand('Thịt bò viên', 0.78),
+    ];
+    const result = rerankCandidates('thịt bò tươi', candidates);
+    // "Thịt bò" — query starts with name → +0.05
+    // "Thịt bò viên" — no match → 0
+    expect(result[0].name_primary).toBe('Thịt bò');
+    expect(result[0].similarity).toBeCloseTo(0.8);
   });
 });

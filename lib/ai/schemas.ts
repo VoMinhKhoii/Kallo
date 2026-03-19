@@ -117,7 +117,7 @@ export const mealItemNutritionSchema = z.object({
     .array(ingredientLlmNutritionSchema)
     .min(1)
     .describe(
-      'Bounded nutrition per ingredient (5 key nutrients), adjusted for cooking method and portion'
+      'Bounded nutrition per ingredient (4 macros), adjusted for cooking method and portion'
     ),
 });
 

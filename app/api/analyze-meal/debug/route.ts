@@ -9,8 +9,14 @@ import { buildUserContext, toParsedMeal } from '@/lib/ai/mappers';
 import {
   classifyConfidence,
   FUZZY_SIMILARITY_THRESHOLD,
+  normalizeIngredientKey,
   VECTOR_SIMILARITY_THRESHOLD,
 } from '@/lib/ai/matching';
+import {
+  cacheQueryEmbedding,
+  getMemoryCacheStats,
+  resolveQueryEmbedding,
+} from '@/lib/ai/matching/embedding-cache';
 import { fetchNutritionPer100g } from '@/lib/ai/matching/nutrition-db';
 import { assembleResult } from '@/lib/ai/pipeline/assembly';
 import { NON_FOOD_BLOCKLIST } from '@/lib/ai/pipeline/errors';
@@ -32,7 +38,7 @@ import { db } from '@/lib/db';
 import { userProfiles } from '@/lib/db/schema';
 import { createClient } from '@/lib/supabase/server';
 
-const GEMINI_MODEL = 'gemini-2.5-flash';
+const GEMINI_MODEL = 'gemini-3-flash-preview';
 const untypedDb = db as unknown as PostgresJsDatabase;
 const DEFAULT_USER_ID = '4681f168-e81b-4590-83ce-0f32734f19a9';
 
@@ -256,9 +262,23 @@ export async function POST(request: NextRequest) {
             } else {
               // Vector fallback — fuzzy match absent or below threshold
               try {
-                const embedding = await gemini.generateEmbedding(
-                  ingredient.name
+                // Use embedding cache (same as production pipeline)
+                let embedding = await resolveQueryEmbedding(
+                  ingredient.name,
+                  untypedDb
                 );
+                let embeddingSource: 'cache' | 'gemini_api' = 'cache';
+
+                if (!embedding) {
+                  embedding = await gemini.generateEmbedding(ingredient.name);
+                  cacheQueryEmbedding(ingredient.name, embedding, untypedDb);
+                  embeddingSource = 'gemini_api';
+                }
+
+                q.embeddingCache = {
+                  normalizedKey: normalizeIngredientKey(ingredient.name),
+                  source: embeddingSource,
+                };
                 const vectorRows = (await db.execute(
                   sql`SELECT * FROM match_ingredients(
                     ${JSON.stringify(embedding)}::vector,
@@ -452,6 +472,7 @@ export async function POST(request: NextRequest) {
   trace.step4_assembly = step4;
 
   trace.totalDurationMs = Date.now() - totalStart;
+  trace.embeddingCacheStats = getMemoryCacheStats();
 
   // Null nutrition guard check (mirrors route.ts)
   if (step4.result) {

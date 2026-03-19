@@ -10,6 +10,7 @@ import {
   pgSchema,
   pgTable,
   real,
+  serial,
   smallint,
   text,
   timestamp,
@@ -361,4 +362,35 @@ export const unmatchedIngredients = pgTable('unmatched_ingredients', {
   createdAt: timestamp('created_at', { withTimezone: true })
     .notNull()
     .defaultNow(),
+});
+
+// ---------------------------------------------------------------------------
+// Precomputed query embeddings cache
+// ---------------------------------------------------------------------------
+
+export const ingredientQueryEmbeddings = pgTable(
+  'ingredient_query_embeddings',
+  {
+    nameVi: text('name_vi').primaryKey(),
+    nameEn: text('name_en'),
+    embedding: vector('embedding', { dimensions: 768 }).notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  }
+);
+
+// ---------------------------------------------------------------------------
+// Synonym candidates (written by background jobs + async cache-miss logging)
+// ---------------------------------------------------------------------------
+
+export const synonymCandidates = pgTable('synonym_candidates', {
+  id: serial('id').primaryKey(),
+  queriedVi: text('queried_vi').notNull(),
+  matchedEn: text('matched_en').notNull(),
+  matchedVi: text('matched_vi').notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+  reviewed: boolean('reviewed').notNull().default(false),
 });

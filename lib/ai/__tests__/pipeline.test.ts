@@ -119,8 +119,8 @@ function makeLlmNutrition(
 const sampleNutritionAdjustment: NutritionAdjustment = {
   mealItems: [
     {
-      mealItemName: 'cơm',
-      ingredients: [makeLlmNutrition('gạo', 350, 7, 78, 0.5)],
+      mealItemName: 'Cơm',
+      ingredients: [makeLlmNutrition('Gạo', 350, 7, 78, 0.5)],
     },
   ],
 };
@@ -143,7 +143,7 @@ describe('analyzeMeal', () => {
     mockMatchIngredients.mockResolvedValueOnce({
       matched: [
         {
-          ingredientName: 'gạo',
+          ingredientName: 'Gạo',
           foodCompositionId: 'rice-001',
           matchedName: 'Gạo tẻ',
           similarity: 0.85,
@@ -165,7 +165,7 @@ describe('analyzeMeal', () => {
     if (!result.success) return;
 
     expect(result.data.mealItems).toHaveLength(1);
-    expect(result.data.mealItems[0].name).toBe('cơm');
+    expect(result.data.mealItems[0].name).toBe('Cơm');
     expect(result.data.mealSlot).toBe('lunch');
     expect(result.data.confidenceOverall).toBe('high');
     expect(result.data.unmatchedIngredients).toHaveLength(0);
@@ -181,7 +181,7 @@ describe('analyzeMeal', () => {
     mockMatchIngredients.mockResolvedValueOnce({
       matched: [
         {
-          ingredientName: 'gạo',
+          ingredientName: 'Gạo',
           foodCompositionId: 'rice-001',
           matchedName: 'Gạo tẻ',
           similarity: 0.85,
@@ -295,11 +295,11 @@ describe('analyzeMeal', () => {
     expect(mockGemini.generateStructuredOutput).toHaveBeenCalledTimes(2);
   });
 
-  it('D4: retries once on API error then returns api_error', async () => {
+  it('D4: API errors surface immediately without retry', async () => {
     const apiError = new Error('500 Internal Server Error');
-    (mockGemini.generateStructuredOutput as ReturnType<typeof vi.fn>)
-      .mockRejectedValueOnce(apiError)
-      .mockRejectedValueOnce(apiError);
+    (
+      mockGemini.generateStructuredOutput as ReturnType<typeof vi.fn>
+    ).mockRejectedValueOnce(apiError);
 
     const result = await analyzeMeal('phở bò', userContext, mockDb, mockGemini);
 
@@ -307,7 +307,8 @@ describe('analyzeMeal', () => {
     if (result.success) return;
     expect(result.error.type).toBe('api_error');
     expect(result.error.retryable).toBe(true);
-    expect(mockGemini.generateStructuredOutput).toHaveBeenCalledTimes(2);
+    // API errors no longer trigger pipeline retry (only parse errors do)
+    expect(mockGemini.generateStructuredOutput).toHaveBeenCalledTimes(1);
   });
 
   it('downgrades confidence when unmatched ingredients present', async () => {
@@ -340,10 +341,10 @@ describe('analyzeMeal', () => {
       .mockResolvedValueOnce({
         mealItems: [
           {
-            mealItemName: 'phở bò',
+            mealItemName: 'Phở bò',
             ingredients: [
-              makeLlmNutrition('bún phở', 200, 5, 45, 0.5),
-              makeLlmNutrition('rare_herb', 5, 0.5, 1, 0.1),
+              makeLlmNutrition('Bún phở', 200, 5, 45, 0.5),
+              makeLlmNutrition('Rare_herb', 5, 0.5, 1, 0.1),
             ],
           },
         ],
@@ -352,7 +353,7 @@ describe('analyzeMeal', () => {
     mockMatchIngredients.mockResolvedValueOnce({
       matched: [
         {
-          ingredientName: 'bún phở',
+          ingredientName: 'Bún phở',
           foodCompositionId: 'noodle-001',
           matchedName: 'Bún phở',
           similarity: 0.7,
@@ -360,7 +361,7 @@ describe('analyzeMeal', () => {
           nutritionPer100g: nullNutrition,
         },
       ],
-      unmatched: [{ ingredientName: 'rare_herb', mealContext: 'phở bò' }],
+      unmatched: [{ ingredientName: 'Rare_herb', mealContext: 'Phở bò' }],
     });
 
     const result = await analyzeMeal(
@@ -407,10 +408,10 @@ describe('analyzeMeal', () => {
       .mockResolvedValueOnce({
         mealItems: [
           {
-            mealItemName: 'lẩu cá',
+            mealItemName: 'Lẩu cá',
             ingredients: [
-              makeLlmNutrition('cá lóc', 80, 18, 0, 1),
-              makeLlmNutrition('exotic_spice', 2, 0.1, 0.5, 0),
+              makeLlmNutrition('Cá lóc', 80, 18, 0, 1),
+              makeLlmNutrition('Exotic_spice', 2, 0.1, 0.5, 0),
             ],
           },
         ],
@@ -419,7 +420,7 @@ describe('analyzeMeal', () => {
     mockMatchIngredients.mockResolvedValueOnce({
       matched: [
         {
-          ingredientName: 'cá lóc',
+          ingredientName: 'Cá lóc',
           foodCompositionId: 'fish-001',
           matchedName: 'Cá lóc',
           similarity: 0.2,
@@ -427,7 +428,7 @@ describe('analyzeMeal', () => {
           nutritionPer100g: nullNutrition,
         },
       ],
-      unmatched: [{ ingredientName: 'exotic_spice', mealContext: 'lẩu cá' }],
+      unmatched: [{ ingredientName: 'Exotic_spice', mealContext: 'Lẩu cá' }],
     });
 
     const result = await analyzeMeal(
@@ -477,12 +478,12 @@ describe('analyzeMeal', () => {
     const twoItemNutrition: NutritionAdjustment = {
       mealItems: [
         {
-          mealItemName: 'cơm',
-          ingredients: [makeLlmNutrition('gạo', 350, 7, 78, 0.5)],
+          mealItemName: 'Cơm',
+          ingredients: [makeLlmNutrition('Gạo', 350, 7, 78, 0.5)],
         },
         {
-          mealItemName: 'thịt kho',
-          ingredients: [makeLlmNutrition('thịt heo', 250, 26, 5, 15)],
+          mealItemName: 'Thịt kho',
+          ingredients: [makeLlmNutrition('Thịt heo', 250, 26, 5, 15)],
         },
       ],
     };
@@ -494,7 +495,7 @@ describe('analyzeMeal', () => {
     mockMatchIngredients.mockResolvedValueOnce({
       matched: [
         {
-          ingredientName: 'gạo',
+          ingredientName: 'Gạo',
           foodCompositionId: 'rice-001',
           matchedName: 'Gạo',
           similarity: 0.85,
@@ -502,7 +503,7 @@ describe('analyzeMeal', () => {
           nutritionPer100g: nullNutrition,
         },
         {
-          ingredientName: 'thịt heo',
+          ingredientName: 'Thịt heo',
           foodCompositionId: 'pork-001',
           matchedName: 'Thịt heo',
           similarity: 0.8,
@@ -530,11 +531,141 @@ describe('analyzeMeal', () => {
     expect(result.data.boundedNutrition.caloriesKcal!.mid).toBe(600);
   });
 
-  it('succeeds on retry after first attempt fails', async () => {
-    const apiError = new Error('503 Service Unavailable');
+  it('Fix 2: same ingredient in multiple meal items gets per-meal-item LLM bounds', async () => {
+    const sharedIngDecomposition: MealDecomposition = {
+      isFood: true,
+      mealItems: [
+        {
+          name: 'thịt kho trứng',
+          ingredients: [
+            {
+              name: 'thịt heo',
+              estimatedGrams: 120,
+              cookingMethod: 'kho',
+              userFacingUnit: null,
+            },
+            {
+              name: 'dầu ăn',
+              estimatedGrams: 15,
+              cookingMethod: 'kho',
+              userFacingUnit: null,
+            },
+          ],
+        },
+        {
+          name: 'xào rau',
+          ingredients: [
+            {
+              name: 'rau cải',
+              estimatedGrams: 150,
+              cookingMethod: 'xào',
+              userFacingUnit: null,
+            },
+            {
+              name: 'dầu ăn',
+              estimatedGrams: 10,
+              cookingMethod: 'xào',
+              userFacingUnit: null,
+            },
+          ],
+        },
+      ],
+      mealSlot: 'lunch',
+    };
+
+    const sharedIngNutrition: NutritionAdjustment = {
+      mealItems: [
+        {
+          mealItemName: 'Thịt kho trứng',
+          ingredients: [
+            makeLlmNutrition('Thịt heo', 250, 26, 5, 15),
+            makeLlmNutrition('Dầu ăn', 135, 0, 0, 15), // 15g oil in kho
+          ],
+        },
+        {
+          mealItemName: 'Xào rau',
+          ingredients: [
+            makeLlmNutrition('Rau cải', 30, 2, 5, 0.5),
+            makeLlmNutrition('Dầu ăn', 90, 0, 0, 10), // 10g oil in xào
+          ],
+        },
+      ],
+    };
 
     (mockGemini.generateStructuredOutput as ReturnType<typeof vi.fn>)
-      .mockRejectedValueOnce(apiError)
+      .mockResolvedValueOnce(sharedIngDecomposition)
+      .mockResolvedValueOnce(sharedIngNutrition);
+
+    mockMatchIngredients.mockResolvedValueOnce({
+      matched: [
+        {
+          ingredientName: 'Thịt heo',
+          foodCompositionId: 'pork-001',
+          matchedName: 'Thịt heo',
+          similarity: 0.85,
+          confidence: 'high',
+          nutritionPer100g: nullNutrition,
+        },
+        {
+          ingredientName: 'Dầu ăn',
+          foodCompositionId: 'oil-001',
+          matchedName: 'Dầu ăn',
+          similarity: 0.9,
+          confidence: 'high',
+          nutritionPer100g: nullNutrition,
+        },
+        {
+          ingredientName: 'Rau cải',
+          foodCompositionId: 'veg-001',
+          matchedName: 'Rau cải',
+          similarity: 0.8,
+          confidence: 'high',
+          nutritionPer100g: nullNutrition,
+        },
+        {
+          ingredientName: 'Dầu ăn',
+          foodCompositionId: 'oil-001',
+          matchedName: 'Dầu ăn',
+          similarity: 0.9,
+          confidence: 'high',
+          nutritionPer100g: nullNutrition,
+        },
+      ],
+      unmatched: [],
+    });
+
+    const result = await analyzeMeal(
+      'cơm thịt kho trứng, xào rau',
+      userContext,
+      mockDb,
+      mockGemini
+    );
+
+    expect(result.success).toBe(true);
+    if (!result.success) return;
+
+    expect(result.data.mealItems).toHaveLength(2);
+
+    // "dầu ăn" in thịt kho trứng should have 135 kcal mid
+    const khoOil = result.data.mealItems[0].ingredients.find(
+      (i) => i.ingredientName === 'Dầu ăn'
+    );
+    expect(khoOil).toBeDefined();
+    expect(khoOil!.boundedNutrition.caloriesKcal!.mid).toBe(135);
+
+    // "dầu ăn" in xào rau should have 90 kcal mid (NOT 135 from last-write-wins)
+    const xaoOil = result.data.mealItems[1].ingredients.find(
+      (i) => i.ingredientName === 'Dầu ăn'
+    );
+    expect(xaoOil).toBeDefined();
+    expect(xaoOil!.boundedNutrition.caloriesKcal!.mid).toBe(90);
+  });
+
+  it('succeeds on retry after first attempt fails with parse error', async () => {
+    const parseError = new Error('Zod parse error: invalid type');
+
+    (mockGemini.generateStructuredOutput as ReturnType<typeof vi.fn>)
+      .mockRejectedValueOnce(parseError)
       // Retry succeeds
       .mockResolvedValueOnce(sampleDecomposition)
       .mockResolvedValueOnce(sampleNutritionAdjustment);
@@ -542,7 +673,7 @@ describe('analyzeMeal', () => {
     mockMatchIngredients.mockResolvedValueOnce({
       matched: [
         {
-          ingredientName: 'gạo',
+          ingredientName: 'Gạo',
           foodCompositionId: 'rice-001',
           matchedName: 'Gạo tẻ',
           similarity: 0.85,

@@ -78,18 +78,28 @@ export function buildNutritionPrompt(
 
   let unmatchedSection = '';
   if (unmatched.length > 0) {
+    const unmatchedNames = new Set(unmatched.map((u) => u.ingredientName));
     unmatchedSection = '\n<unmatched_ingredients>\n';
     unmatchedSection +=
       '  <!-- No DB match found. Use your knowledge of Vietnamese cuisine for these. -->\n';
-    for (const u of unmatched) {
-      const ing = mealItems
-        .flatMap((mi) => mi.ingredients)
-        .find((i) => i.name === u.ingredientName);
-      const rawGrams = ing
-        ? computeRawGrams(ing.estimatedGrams, ing.cookingMethod)
-        : '?';
-      unmatchedSection += `  <ingredient name="${u.ingredientName}" raw_grams="${rawGrams}"${ing?.cookingMethod ? ` cooking="${ing.cookingMethod}"` : ''} />\n`;
+
+    for (const mealItem of mealItems) {
+      const unmatchedIngs = mealItem.ingredients.filter((ing) =>
+        unmatchedNames.has(ing.name)
+      );
+      if (unmatchedIngs.length > 0) {
+        unmatchedSection += `  <meal_item name="${mealItem.name}">\n`;
+        for (const ing of unmatchedIngs) {
+          const rawGrams = computeRawGrams(
+            ing.estimatedGrams,
+            ing.cookingMethod
+          );
+          unmatchedSection += `    <ingredient name="${ing.name}" raw_grams="${rawGrams}"${ing.cookingMethod ? ` cooking="${ing.cookingMethod}"` : ''} />\n`;
+        }
+        unmatchedSection += `  </meal_item>\n`;
+      }
     }
+
     unmatchedSection += '</unmatched_ingredients>\n';
   }
 
@@ -134,8 +144,18 @@ export function buildNutritionPrompt(
 
   <unmatched_rule>
     For ingredients in <unmatched_ingredients>: use fallback estimation from your knowledge
-    of standard Vietnamese food composition, then apply the same Steps 1–3 above.
+    of Vietnamese food composition, then apply the same Steps 1–3 above.
     Treat these estimates as inherently wider — set LOW 15% below MID and HIGH 25% above MID.
+
+    IMPORTANT: Each unmatched ingredient is nested under its parent <meal_item>.
+    You MUST use the meal item name as primary context for estimation — do not estimate in isolation.
+
+    Examples:
+    - "nước dùng" in "canh rau lang tôm" → light vegetable broth, near-water composition, ~5–8 kcal/100ml
+    - "nước dùng" in "bún bò Huế" → rich bone broth with shrimp paste, ~30–50 kcal/100ml
+
+    The same ingredient name in different meal items may have very different nutrition —
+    always resolve against the parent dish context first.
   </unmatched_rule>
 </instructions>
 
@@ -157,25 +177,10 @@ export function buildNutritionPrompt(
   <output>
   {
     "ingredientName": "gạo tẻ",
-    "mealItemName": "cơm trắng",
-    "low": {
-      "caloriesKcal": 204,
-      "proteinG": 3.9,
-      "carbohydrateG": 44.2,
-      "fatG": 0.3
-    },
-    "mid": {
-      "caloriesKcal": 229,
-      "proteinG": 4.4,
-      "carbohydrateG": 50.8,
-      "fatG": 0.3
-    },
-    "high": {
-      "caloriesKcal": 263,
-      "proteinG": 5.1,
-      "carbohydrateG": 58.4,
-      "fatG": 0.4
-    }
+    "caloriesKcal": { "low": 204, "mid": 229, "high": 263 },
+    "proteinG": { "low": 3.9, "mid": 4.4, "high": 5.1 },
+    "carbohydrateG": { "low": 44.2, "mid": 50.8, "high": 58.4 },
+    "fatG": { "low": 0.3, "mid": 0.3, "high": 0.4 }
   }
   </output>
   <reasoning>
@@ -197,25 +202,10 @@ export function buildNutritionPrompt(
   <output>
   {
     "ingredientName": "thịt lợn ba chỉ",
-    "mealItemName": "thịt kho trứng",
-    "low": {
-      "caloriesKcal": 268,
-      "proteinG": 17.2,
-      "carbohydrateG": 2.1,
-      "fatG": 22.8
-    },
-    "mid": {
-      "caloriesKcal": 318,
-      "proteinG": 20.2,
-      "carbohydrateG": 3.6,
-      "fatG": 26.6
-    },
-    "high": {
-      "caloriesKcal": 380,
-      "proteinG": 21.8,
-      "carbohydrateG": 5.8,
-      "fatG": 32.1
-    }
+    "caloriesKcal": { "low": 268, "mid": 318, "high": 380 },
+    "proteinG": { "low": 17.2, "mid": 20.2, "high": 21.8 },
+    "carbohydrateG": { "low": 2.1, "mid": 3.6, "high": 5.8 },
+    "fatG": { "low": 22.8, "mid": 26.6, "high": 32.1 }
   }
   </output>
   <reasoning>
@@ -232,7 +222,9 @@ ${unmatchedSection}
 
 <output_format>
   Return JSON matching the provided schema.
-  Each object must include: ingredientName, mealItemName, low, mid, high.
+  The top-level has "mealItems" array. Each meal item has "mealItemName" and "ingredients" array.
+  Each ingredient has "ingredientName" and 4 nutrient fields (caloriesKcal, proteinG, carbohydrateG, fatG),
+  where each nutrient is an object with "low", "mid", "high" number values.
   ingredientName must exactly match the name from the decomposition step.
   All numeric values rounded to 1 decimal place.
 </output_format>`;

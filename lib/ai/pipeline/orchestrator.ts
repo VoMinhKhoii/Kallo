@@ -1,4 +1,5 @@
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
+import { capitalizeFirst } from '@/lib/utils';
 import type { GeminiClient } from '../gemini';
 import { matchIngredients } from '../matching';
 import { buildDecompositionPrompt, buildNutritionPrompt } from '../prompts';
@@ -21,7 +22,7 @@ import {
 } from './errors';
 
 /** D1/D8: Default model for both LLM calls, configurable per call */
-const GEMINI_MODEL = 'gemini-2.5-flash';
+const GEMINI_MODEL = 'gemini-3-flash-preview';
 
 /**
  * Full meal analysis pipeline.
@@ -30,8 +31,9 @@ const GEMINI_MODEL = 'gemini-2.5-flash';
  *
  * Error handling (D4):
  * - non_food_input: returned immediately, no retry (isFood=false or blocklist)
- * - parse_error: one retry (LLMs are non-deterministic), then surface
- * - api_error: one retry, then surface
+ * - parse_error: one retry of the full pipeline (safe — embedding cache prevents rate limit re-trigger)
+ * - rate_limit (429): surfaces immediately — withRetry in gemini.ts handles per-call retries
+ * - api_error: surfaces immediately
  */
 export async function analyzeMeal(
   rawInput: string,
@@ -46,16 +48,33 @@ export async function analyzeMeal(
       return nonFoodResponse();
     }
 
-    // D4: Parse/API errors get one retry
-    console.warn(
-      '[pipeline] First attempt failed, retrying entire pipeline:',
-      error
-    );
-    try {
-      return await runPipeline(rawInput, userContext, db, gemini);
-    } catch (retryError) {
-      return handleError(retryError);
+    // Rate limit errors must NOT trigger pipeline retry — would create doom loop
+    if (error instanceof Error && error.message.includes('429')) {
+      console.error(
+        '[pipeline] Rate limit error — not retrying pipeline:',
+        error.message
+      );
+      return handleError(error);
     }
+
+    // Parse errors get one retry (LLMs are non-deterministic)
+    const message = error instanceof Error ? error.message : String(error);
+    const isParse =
+      message.includes('parse') ||
+      message.includes('Zod') ||
+      message.includes('JSON');
+
+    if (isParse) {
+      console.warn('[pipeline] Parse error, retrying pipeline once:', message);
+      try {
+        return await runPipeline(rawInput, userContext, db, gemini);
+      } catch (retryError) {
+        return handleError(retryError);
+      }
+    }
+
+    // All other errors (API errors, network, etc.) surface immediately
+    return handleError(error);
   }
 }
 
@@ -68,6 +87,14 @@ async function runPipeline(
   const t0 = Date.now();
   const decomposition = await decomposeMeal(rawInput, userContext, gemini);
   console.info(`[pipeline] decomposition: ${Date.now() - t0}ms`);
+
+  // Normalize names: capitalize first letter for consistent cache keys and UI display
+  for (const mi of decomposition.mealItems) {
+    mi.name = capitalizeFirst(mi.name);
+    for (const ing of mi.ingredients) {
+      ing.name = capitalizeFirst(ing.name);
+    }
+  }
 
   // D6 Layer 1: Check isFood field from LLM
   if (!decomposition.isFood) {
@@ -94,8 +121,16 @@ async function runPipeline(
     gemini
   );
   console.info(
-    `[pipeline] matching ${allIngredients.length} ingredients: ${Date.now() - t1}ms`
+    `[pipeline] matching ${allIngredients.length} ingredients: ${Date.now() - t1}ms | matched=${matchResult.matched.length} unmatched=${matchResult.unmatched.length}`
   );
+  for (const m of matchResult.matched) {
+    console.info(
+      `[pipeline]   ✓ ${m.ingredientName} → ${m.matchedName} (${m.similarity.toFixed(3)}, ${m.confidence})`
+    );
+  }
+  for (const u of matchResult.unmatched) {
+    console.info(`[pipeline]   ✗ ${u.ingredientName} → unmatched`);
+  }
 
   const t2 = Date.now();
   const nutritionResult = await adjustNutrition(
@@ -129,7 +164,10 @@ async function decomposeMeal(
     systemPrompt: buildDecompositionPrompt(userContext),
     userMessage: rawInput,
     model: GEMINI_MODEL,
-    temperature: 0.1,
+    temperature: 1.0,
+    topP: 1,
+    topK: 1,
+    thinkingConfig: { thinkingLevel: 'low' },
   });
 }
 
@@ -151,5 +189,7 @@ async function adjustNutrition(
     userMessage:
       'Produce bounded nutrition estimates for each ingredient in each meal item based on the reference data provided.',
     model: GEMINI_MODEL,
+    temperature: 1.0,
+    thinkingConfig: { thinkingLevel: 'low' },
   });
 }

@@ -117,12 +117,12 @@ export function assembleResult(
   const { goal, aggression } = userContext;
   const matchedLookup = new Map(matched.map((m) => [m.ingredientName, m]));
 
-  // Flatten all Step 3 ingredients into a single map keyed by ingredientName.
-  // This makes assembly resilient to LLM regrouping meal items between steps.
-  const llmNutritionByIngredient = new Map<string, IngredientLlmNutrition>();
+  // Flatten all Step 3 ingredients into a single map keyed by ingredientName::mealItemName.
+  // Composite key prevents last-write-wins when the same ingredient appears in multiple meal items.
+  const llmNutritionByKey = new Map<string, IngredientLlmNutrition>();
   for (const mi of nutrition.mealItems) {
     for (const ing of mi.ingredients) {
-      llmNutritionByIngredient.set(ing.ingredientName, ing);
+      llmNutritionByKey.set(`${ing.ingredientName}::${mi.mealItemName}`, ing);
     }
   }
 
@@ -131,7 +131,9 @@ export function assembleResult(
       const ingredients: ProcessedIngredient[] = decomposedItem.ingredients.map(
         (ing) => {
           const matchInfo = matchedLookup.get(ing.name);
-          const llmData = llmNutritionByIngredient.get(ing.name);
+          const llmData = llmNutritionByKey.get(
+            `${ing.name}::${decomposedItem.name}`
+          );
 
           // estimatedGrams is the cooked/as-eaten weight (user-facing).
           // rawEquivalentGrams is used for DB nutrition scaling only.

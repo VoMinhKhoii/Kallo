@@ -36,7 +36,7 @@ describe('GeminiClient', () => {
         schema: testSchema,
         systemPrompt: 'You are a test assistant.',
         userMessage: 'Give me data.',
-        model: 'gemini-2.5-flash',
+        model: 'gemini-3-flash-preview',
       });
 
       expect(result).toEqual({ name: 'test', value: 42 });
@@ -52,7 +52,7 @@ describe('GeminiClient', () => {
           schema: testSchema,
           systemPrompt: 'test',
           userMessage: 'test',
-          model: 'gemini-2.5-flash',
+          model: 'gemini-3-flash-preview',
         })
       ).rejects.toThrow('Gemini returned empty response');
     });
@@ -68,9 +68,32 @@ describe('GeminiClient', () => {
           schema: testSchema,
           systemPrompt: 'test',
           userMessage: 'test',
-          model: 'gemini-2.5-flash',
+          model: 'gemini-3-flash-preview',
         })
       ).rejects.toThrow();
+    });
+
+    it('forwards thinkingConfig to the API call', async () => {
+      mockGenerateContent.mockResolvedValueOnce({
+        text: JSON.stringify({ name: 'test', value: 1 }),
+      });
+
+      const client = createGeminiClient('test-key');
+      await client.generateStructuredOutput({
+        schema: testSchema,
+        systemPrompt: 'test',
+        userMessage: 'test',
+        model: 'gemini-3-flash-preview',
+        thinkingConfig: { thinkingLevel: 'low' },
+      });
+
+      expect(mockGenerateContent).toHaveBeenCalledWith(
+        expect.objectContaining({
+          config: expect.objectContaining({
+            thinkingConfig: { thinkingLevel: 'low' },
+          }),
+        })
+      );
     });
   });
 
@@ -122,7 +145,7 @@ describe('GeminiClient', () => {
         schema: z.object({ name: z.string(), value: z.number() }),
         systemPrompt: 'test',
         userMessage: 'test',
-        model: 'gemini-2.5-flash',
+        model: 'gemini-3-flash-preview',
       });
 
       expect(result).toEqual({ name: 'ok', value: 1 });
@@ -142,7 +165,7 @@ describe('GeminiClient', () => {
           schema: z.object({ name: z.string() }),
           systemPrompt: 'test',
           userMessage: 'test',
-          model: 'gemini-2.5-flash',
+          model: 'gemini-3-flash-preview',
         })
       ).rejects.toThrow('429');
     });
@@ -161,7 +184,7 @@ describe('GeminiClient', () => {
           schema: z.object({ name: z.string() }),
           systemPrompt: 'test',
           userMessage: 'test',
-          model: 'gemini-2.5-flash',
+          model: 'gemini-3-flash-preview',
         })
       ).rejects.toThrow('500');
 

@@ -134,19 +134,152 @@ describe('buildNutritionPrompt', () => {
     expect(prompt).toContain('oil_usage: normal');
   });
 
-  it('includes unmatched ingredients with fallback instruction', () => {
+  it('includes unmatched ingredients grouped by meal item', () => {
+    const mealItemsWithUnmatched: DecomposedMealItem[] = [
+      {
+        name: 'cơm',
+        ingredients: [
+          {
+            name: 'gạo',
+            estimatedGrams: 200,
+            cookingMethod: null,
+            userFacingUnit: '1 chén',
+          },
+          {
+            name: 'nước mắm đặc biệt',
+            estimatedGrams: 5,
+            cookingMethod: null,
+            userFacingUnit: null,
+          },
+        ],
+      },
+    ];
+
     const unmatched: UnmatchedIngredient[] = [
-      { ingredientName: 'nước mắm đặc biệt', mealContext: 'cơm' },
+      { ingredientName: 'nước mắm đặc biệt', mealContext: 'cơm trắng' },
     ];
 
     const prompt = buildNutritionPrompt(
-      sampleMealItems,
+      mealItemsWithUnmatched,
       sampleMatched,
       unmatched,
       sampleUserContext
     );
     expect(prompt).toContain('nước mắm đặc biệt');
+    expect(prompt).toContain('<meal_item name="cơm">');
     expect(prompt).toContain('fallback');
+  });
+
+  it('groups unmatched ingredients under their parent meal items', () => {
+    const multiMealItems: DecomposedMealItem[] = [
+      {
+        name: 'canh rau lang tôm',
+        ingredients: [
+          {
+            name: 'tôm',
+            estimatedGrams: 80,
+            cookingMethod: 'luộc',
+            userFacingUnit: null,
+          },
+          {
+            name: 'nước dùng',
+            estimatedGrams: 200,
+            cookingMethod: null,
+            userFacingUnit: null,
+          },
+        ],
+      },
+      {
+        name: 'bún bò Huế',
+        ingredients: [
+          {
+            name: 'bún',
+            estimatedGrams: 200,
+            cookingMethod: null,
+            userFacingUnit: null,
+          },
+          {
+            name: 'nước dùng',
+            estimatedGrams: 300,
+            cookingMethod: null,
+            userFacingUnit: null,
+          },
+        ],
+      },
+    ];
+
+    const matched: MatchedIngredient[] = [
+      {
+        ingredientName: 'tôm',
+        foodCompositionId: 'shrimp-001',
+        matchedName: 'Tôm',
+        similarity: 0.9,
+        confidence: 'high',
+        nutritionPer100g: fullNutrition,
+      },
+      {
+        ingredientName: 'bún',
+        foodCompositionId: 'noodle-001',
+        matchedName: 'Bún',
+        similarity: 0.85,
+        confidence: 'high',
+        nutritionPer100g: fullNutrition,
+      },
+    ];
+
+    const unmatched: UnmatchedIngredient[] = [
+      {
+        ingredientName: 'nước dùng',
+        mealContext: 'canh rau lang tôm, bún bò Huế',
+      },
+    ];
+
+    const prompt = buildNutritionPrompt(
+      multiMealItems,
+      matched,
+      unmatched,
+      sampleUserContext
+    );
+
+    // Should have two <meal_item> wrappers for the same unmatched ingredient
+    expect(prompt).toContain('<meal_item name="canh rau lang tôm">');
+    expect(prompt).toContain('<meal_item name="bún bò Huế">');
+
+    // Each should contain nước dùng with the correct raw_grams
+    expect(prompt).toContain('name="nước dùng" raw_grams="200"');
+    expect(prompt).toContain('name="nước dùng" raw_grams="300"');
+  });
+
+  it('unmatched_rule instructs LLM to use meal item context', () => {
+    const mealItemsWithUnmatched: DecomposedMealItem[] = [
+      {
+        name: 'canh',
+        ingredients: [
+          {
+            name: 'nước dùng',
+            estimatedGrams: 200,
+            cookingMethod: null,
+            userFacingUnit: null,
+          },
+        ],
+      },
+    ];
+
+    const unmatched: UnmatchedIngredient[] = [
+      { ingredientName: 'nước dùng', mealContext: 'canh' },
+    ];
+
+    const prompt = buildNutritionPrompt(
+      mealItemsWithUnmatched,
+      [],
+      unmatched,
+      sampleUserContext
+    );
+
+    expect(prompt).toContain('parent <meal_item>');
+    expect(prompt).toContain('MUST use the meal item name as primary context');
+    expect(prompt).toContain('canh rau lang tôm');
+    expect(prompt).toContain('bún bò Huế');
   });
 
   it('only asks for 4 key macros (D5)', () => {

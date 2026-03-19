@@ -56,7 +56,7 @@ export function buildDecompositionPrompt(userContext: UserContext): string {
     - "gạo tẻ" (not "cơm", "cơm trắng", "cơm nấu")
     - "thịt lợn ba chỉ" (not "thịt heo kho", "thịt ba chỉ", "ba chỉ heo")
     - "thịt gà" (not "gà luộc", "gà kho")
-    - "trứng gà" (not "trứng luộc", "trứng chiên")
+    - "trứng gà" (chicken egg — NOT "quả trứng gà" which is an ornamental plant, not food)
     - "đậu phụ" (not "đậu phụ chiên", "tofu xào")
     - "bún tươi" (not "bún" when describing fresh vermicelli noodles)
     - "hạt tiêu đen" (not "tiêu đen", "tiêu", "pepper")
@@ -77,7 +77,17 @@ export function buildDecompositionPrompt(userContext: UserContext): string {
     Meal items are user-visible dishes: "cơm trắng", "thịt kho", "canh chua".
     Ingredients are the internal breakdown: gạo tẻ, thịt lợn ba chỉ, cà chua, etc.
     userFacingUnit: preserve original unit from user input (e.g., "1 chén", "2 miếng"), null if not specified.
-    cookingMethod: the preparation method (luộc, chiên, kho, nướng, xào, hấp, etc.), null if unclear.
+
+    cookingMethod assignment rules:
+    - "nấu" — ONLY for rice/grain/starch cooking where water is absorbed INTO the food (cơm, cháo, xôi). NOT for soup/broth-based dishes.
+    - "luộc" — boiling meat/vegetables in water (minor moisture absorption). NOT for eggs.
+    - "ninh" — slow-simmering in broth (similar to luộc)
+    - null — for eggs (shell/membrane prevents weight change), fresh/raw items, condiments/sauces, and items where cooking method is unclear
+    - "kho" — braising in sauce (for meat/tofu, NOT for eggs in the same dish — eggs retain weight)
+    - "chiên"/"xào" — frying/stir-frying
+    - "hấp" — steaming
+
+    Composite cooked dishes (bánh chưng, xôi, cháo, etc.): decompose into raw ingredients, but set estimatedGrams to the cooked weight the user eats. Do NOT back-calculate to raw proportions yourself.
   </meal_item_rule>
 
   <strict_adherence_rule>
@@ -144,7 +154,7 @@ export function buildDecompositionPrompt(userContext: UserContext): string {
             {
               "ingredientName": "trứng gà",
               "estimatedGrams": 50,
-              "cookingMethod": "kho"
+              "cookingMethod": null
             },
             {
               "ingredientName": "đường trắng",
@@ -170,6 +180,7 @@ export function buildDecompositionPrompt(userContext: UserContext): string {
       The user's default_rice_portion maps to ~1–1.5 bowls cooked (~150–200g cooked).
       estimatedGrams = 170g is the cooked rice weight on the plate.
       Braised pork ~100g cooked serving, 1 braised egg ~50g cooked.
+      trứng gà cookingMethod is null — egg shell/membrane prevents weight change during braising.
       Seasonings (sugar, fish sauce, oil) stay at their added weight.
     </reasoning>
   </example>
@@ -280,7 +291,8 @@ export function buildDecompositionPrompt(userContext: UserContext): string {
     <reasoning>
       "1 tô lớn" is preserved as userFacingUnit. This is a Central Vietnamese dish — 
       mien_trung profile aligns. bún tươi: 200g (served fresh, no cooking change).
-      Beef: 80g cooked after simmering. Aromatics and condiments at their added weights.
+      Beef: 80g cooked after simmering. cookingMethod "ninh" for slow-simmered broth (NOT "nấu").
+      Aromatics and condiments at their added weights.
       estimatedGrams are all cooked/as-eaten weights.
     </reasoning>
   </example>
