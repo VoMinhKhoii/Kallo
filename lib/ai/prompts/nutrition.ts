@@ -1,7 +1,7 @@
-import type { ProteinPortion, RicePortion } from '@/lib/onboarding/types';
 import {
-  COOKED_TO_RAW_FACTOR,
-  DEFAULT_COOKED_TO_RAW_FACTOR,
+  convertCookedToRaw,
+  PROTEIN_PORTION_DESCRIPTION,
+  RICE_PORTION_DESCRIPTION,
 } from '../constants';
 import type {
   DecomposedMealItem,
@@ -9,18 +9,6 @@ import type {
   UnmatchedIngredient,
   UserContext,
 } from '../types';
-
-const RICE_PORTION_DESCRIPTION: Record<RicePortion, string> = {
-  small: '~1 small bowl (~100g cooked rice)',
-  medium: '~1–1.5 bowls (~150g cooked rice)',
-  large: '~2+ bowls (~250g cooked rice)',
-};
-
-const PROTEIN_PORTION_DESCRIPTION: Record<ProteinPortion, string> = {
-  small: 'smaller than palm, ~2-3 eggs (~80g cooked)',
-  medium: 'about palm-sized (~120g cooked)',
-  large: 'bigger than palm, e.g. a chicken thigh (~160g cooked)',
-};
 
 /**
  * Build the system prompt for LLM Call 2 (cooking-adjusted bounded nutrition).
@@ -35,16 +23,6 @@ const PROTEIN_PORTION_DESCRIPTION: Record<ProteinPortion, string> = {
  * Note: estimatedGrams from Step 1 are COOKED weights. We convert to raw here
  * before passing to the LLM, since DB values are per 100g RAW.
  */
-function computeRawGrams(
-  cookedGrams: number,
-  cookingMethod: string | null
-): number {
-  if (!cookingMethod)
-    return Math.round(cookedGrams * DEFAULT_COOKED_TO_RAW_FACTOR);
-  const factor =
-    COOKED_TO_RAW_FACTOR[cookingMethod] ?? DEFAULT_COOKED_TO_RAW_FACTOR;
-  return Math.round(cookedGrams * factor);
-}
 
 export function buildNutritionPrompt(
   mealItems: DecomposedMealItem[],
@@ -66,7 +44,10 @@ export function buildNutritionPrompt(
     for (const ing of mealItem.ingredients) {
       const match = matchedLookup.get(ing.name);
       if (match) {
-        const rawGrams = computeRawGrams(ing.estimatedGrams, ing.cookingMethod);
+        const rawGrams = convertCookedToRaw(
+          ing.estimatedGrams,
+          ing.cookingMethod
+        );
         ingredientData += `    <ingredient name="${ing.name}" source="db_matched" db_name="${match.matchedName}" raw_grams="${rawGrams}"${ing.cookingMethod ? ` cooking="${ing.cookingMethod}"` : ''}>\n`;
         ingredientData += `      <per_100g_raw calories="${match.nutritionPer100g.caloriesKcal ?? '?'}" protein="${match.nutritionPer100g.proteinG ?? '?'}g" carbs="${match.nutritionPer100g.carbohydrateG ?? '?'}g" fat="${match.nutritionPer100g.fatG ?? '?'}g" />\n`;
         ingredientData += `    </ingredient>\n`;
@@ -90,7 +71,7 @@ export function buildNutritionPrompt(
       if (unmatchedIngs.length > 0) {
         unmatchedSection += `  <meal_item name="${mealItem.name}">\n`;
         for (const ing of unmatchedIngs) {
-          const rawGrams = computeRawGrams(
+          const rawGrams = convertCookedToRaw(
             ing.estimatedGrams,
             ing.cookingMethod
           );

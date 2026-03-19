@@ -1,5 +1,4 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { GeminiClient } from '../gemini';
 import { analyzeMeal } from '../pipeline';
 import type {
   IngredientLlmNutrition,
@@ -8,6 +7,7 @@ import type {
   NutritionPer100g,
   UserContext,
 } from '../types';
+import { createMockGemini } from './test-helpers';
 
 // ---------------------------------------------------------------------------
 // Mocks
@@ -21,13 +21,6 @@ vi.mock('../matching', () => ({
 import { matchIngredients } from '../matching';
 
 const mockMatchIngredients = matchIngredients as ReturnType<typeof vi.fn>;
-
-function createMockGemini(): GeminiClient {
-  return {
-    generateStructuredOutput: vi.fn(),
-    generateEmbedding: vi.fn(),
-  };
-}
 
 function createMockDb() {
   return {} as any;

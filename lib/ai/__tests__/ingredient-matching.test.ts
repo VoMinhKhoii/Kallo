@@ -11,66 +11,11 @@ import {
   VECTOR_SIMILARITY_THRESHOLD,
 } from '../matching';
 import type { DecomposedIngredient } from '../types';
-
-// ---------------------------------------------------------------------------
-// Mock DB
-// ---------------------------------------------------------------------------
-
-/**
- * Create a mock DB that routes responses based on SQL query content.
- * Handles the embedding cache layer transparently:
- * - SELECT from ingredient_query_embeddings → always returns [] (cache miss)
- * - INSERT INTO ingredient_query_embeddings → always returns [] (fire-and-forget)
- * - Other queries → dispatched from the provided response queue
- */
-function createRoutingMockDb(responses: unknown[][]) {
-  let idx = 0;
-  const db = {
-    execute: vi.fn().mockImplementation((query: unknown) => {
-      // drizzle-orm sql`` produces an object with queryChunks containing StringChunk values
-      const queryStr = extractSqlText(query);
-      // Embedding cache lookup/insert or synonym candidate logging — return empty
-      if (
-        queryStr.includes('ingredient_query_embeddings') ||
-        queryStr.includes('synonym_candidates')
-      ) {
-        return Promise.resolve([]);
-      }
-      // Regular query — return next response from queue
-      return Promise.resolve(responses[idx++] ?? []);
-    }),
-  };
-  return db;
-}
-
-/** Extract raw SQL text from a drizzle-orm sql`` tagged template object */
-function extractSqlText(query: unknown): string {
-  if (typeof query === 'string') return query;
-  if (query && typeof query === 'object' && 'queryChunks' in query) {
-    const chunks = (query as { queryChunks: unknown[] }).queryChunks;
-    return chunks
-      .map((c) => {
-        if (typeof c === 'string') return c;
-        if (c && typeof c === 'object' && 'value' in c) {
-          return (c as { value: string[] }).value.join('');
-        }
-        return '';
-      })
-      .join('');
-  }
-  return String(query);
-}
-
-// ---------------------------------------------------------------------------
-// Mock GeminiClient
-// ---------------------------------------------------------------------------
-
-function createMockGemini(): GeminiClient {
-  return {
-    generateStructuredOutput: vi.fn(),
-    generateEmbedding: vi.fn().mockResolvedValue(Array(768).fill(0.1)),
-  };
-}
+import {
+  createMockGemini,
+  createRoutingMockDb,
+  extractSqlText,
+} from './test-helpers';
 
 // ---------------------------------------------------------------------------
 // Test data

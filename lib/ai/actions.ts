@@ -9,20 +9,13 @@ import { createGeminiClient } from './gemini';
 import { buildUserContext } from './mappers';
 import { logUnmatchedIngredients } from './matching';
 import { analyzeMeal } from './pipeline';
+import { makeErrorResponse } from './pipeline/errors';
 import type { PipelineResponse } from './types';
 
 const rawInputSchema = z
   .string()
   .min(1, 'Meal description cannot be empty')
   .max(500, 'Meal description is too long');
-
-function errorResponse(
-  type: 'non_food_input' | 'parse_error' | 'api_error',
-  message: string,
-  retryable: boolean
-): PipelineResponse {
-  return { success: false, error: { type, message, retryable } };
-}
 
 /**
  * Server action: Analyze a meal description.
@@ -35,7 +28,7 @@ export async function analyzeMealAction(
 ): Promise<PipelineResponse> {
   const parsed = rawInputSchema.safeParse(rawInput);
   if (!parsed.success) {
-    return errorResponse(
+    return makeErrorResponse(
       'non_food_input',
       parsed.error.issues[0]?.message ?? 'Invalid input.',
       false
@@ -49,7 +42,7 @@ export async function analyzeMealAction(
     } = await supabase.auth.getUser();
 
     if (!user) {
-      return errorResponse(
+      return makeErrorResponse(
         'api_error',
         'You must be logged in to analyze meals.',
         false
@@ -64,7 +57,7 @@ export async function analyzeMealAction(
 
     const profile = rows[0];
     if (!profile?.goal || !profile?.regionalProfile) {
-      return errorResponse(
+      return makeErrorResponse(
         'api_error',
         'Please complete onboarding before analyzing meals.',
         false
@@ -73,7 +66,11 @@ export async function analyzeMealAction(
 
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
-      return errorResponse('api_error', 'AI service is not configured.', false);
+      return makeErrorResponse(
+        'api_error',
+        'AI service is not configured.',
+        false
+      );
     }
 
     const gemini = createGeminiClient(apiKey);
@@ -98,7 +95,7 @@ export async function analyzeMealAction(
     return result;
   } catch (error) {
     console.error('analyzeMealAction error:', error);
-    return errorResponse(
+    return makeErrorResponse(
       'api_error',
       'Something went wrong. Please try again.',
       true

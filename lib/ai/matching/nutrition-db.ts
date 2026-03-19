@@ -66,10 +66,12 @@ export async function logUnmatchedIngredients(
   mealId: string | null,
   db: PostgresJsDatabase
 ): Promise<void> {
-  for (const item of items) {
-    await db.execute(
-      sql`INSERT INTO unmatched_ingredients (query_text, meal_context, meal_id)
-          VALUES (${item.ingredientName}, ${item.mealContext}, ${mealId})`
-    );
-  }
+  await Promise.all(
+    items.map((item) =>
+      db.execute(
+        sql`INSERT INTO unmatched_ingredients (query_text, meal_context, meal_id)
+            VALUES (${item.ingredientName}, ${item.mealContext}, ${mealId})`
+      )
+    )
+  );
 }

@@ -1,7 +1,6 @@
 import {
-  COOKED_TO_RAW_FACTOR,
-  DEFAULT_COOKED_TO_RAW_FACTOR,
-  LLM_BOUNDED_NUTRIENTS,
+  convertCookedToRaw,
+  GOAL_ADJUSTED_NUTRIENTS,
   NUTRITION_KEYS,
 } from '../constants';
 import {
@@ -39,7 +38,7 @@ export function mergeNutrition(
   estimatedGrams: number
 ): BoundedNutrition {
   const result = {} as Record<string, BoundedEstimate | null>;
-  const llmKeys = new Set<string>(LLM_BOUNDED_NUTRIENTS);
+  const llmKeys = new Set<string>(GOAL_ADJUSTED_NUTRIENTS);
 
   for (const key of NUTRITION_KEYS) {
     if (llmKeys.has(key)) {
@@ -67,17 +66,6 @@ function nullBoundedNutrition(): BoundedNutrition {
   return Object.fromEntries(
     NUTRITION_KEYS.map((key) => [key, null])
   ) as BoundedNutrition;
-}
-
-/** Convert cooked weight to raw equivalent using cooking method factor */
-function computeRawEquivalent(
-  cookedGrams: number,
-  cookingMethod: string | null
-): number {
-  if (!cookingMethod) return cookedGrams * DEFAULT_COOKED_TO_RAW_FACTOR;
-  const factor =
-    COOKED_TO_RAW_FACTOR[cookingMethod] ?? DEFAULT_COOKED_TO_RAW_FACTOR;
-  return Math.round(cookedGrams * factor);
 }
 
 export function computeOverallConfidence(
@@ -137,7 +125,7 @@ export function assembleResult(
 
           // estimatedGrams is the cooked/as-eaten weight (user-facing).
           // rawEquivalentGrams is used for DB nutrition scaling only.
-          const rawEquivalentGrams = computeRawEquivalent(
+          const rawEquivalentGrams = convertCookedToRaw(
             ing.estimatedGrams,
             ing.cookingMethod
           );

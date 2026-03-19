@@ -1,17 +1,8 @@
-import type { ProteinPortion, RicePortion } from '@/lib/onboarding/types';
+import {
+  PROTEIN_PORTION_DESCRIPTION,
+  RICE_PORTION_DESCRIPTION,
+} from '../constants';
 import type { UserContext } from '../types';
-
-const RICE_PORTION_DESCRIPTION: Record<RicePortion, string> = {
-  small: '~1 small bowl (~100g cooked rice)',
-  medium: '~1–1.5 bowls (~150g cooked rice)',
-  large: '~2+ bowls (~250g cooked rice)',
-};
-
-const PROTEIN_PORTION_DESCRIPTION: Record<ProteinPortion, string> = {
-  small: 'smaller than palm, ~2-3 eggs (~80g cooked)',
-  medium: 'about palm-sized (~120g cooked)',
-  large: 'bigger than palm, e.g. a chicken thigh (~160g cooked)',
-};
 
 /**
  * Build the system prompt for LLM Call 1 (meal decomposition).

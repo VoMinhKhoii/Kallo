@@ -5,17 +5,16 @@ import { matchIngredients } from '../matching';
 import { buildDecompositionPrompt, buildNutritionPrompt } from '../prompts';
 import { mealDecompositionSchema, nutritionAdjustmentSchema } from '../schemas';
 import type {
-  MatchedIngredient,
   MealDecomposition,
   NutritionAdjustment,
   PipelineResponse,
-  UnmatchedIngredient,
   UserContext,
 } from '../types';
 import { assembleResult } from './assembly';
 import {
   handleError,
   isNonFoodError,
+  isParseError,
   NON_FOOD_BLOCKLIST,
   NonFoodError,
   nonFoodResponse,
@@ -58,13 +57,8 @@ export async function analyzeMeal(
     }
 
     // Parse errors get one retry (LLMs are non-deterministic)
-    const message = error instanceof Error ? error.message : String(error);
-    const isParse =
-      message.includes('parse') ||
-      message.includes('Zod') ||
-      message.includes('JSON');
-
-    if (isParse) {
+    if (isParseError(error)) {
+      const message = error instanceof Error ? error.message : String(error);
       console.warn('[pipeline] Parse error, retrying pipeline once:', message);
       try {
         return await runPipeline(rawInput, userContext, db, gemini);
@@ -85,7 +79,17 @@ async function runPipeline(
   gemini: GeminiClient
 ): Promise<PipelineResponse> {
   const t0 = Date.now();
-  const decomposition = await decomposeMeal(rawInput, userContext, gemini);
+  const decomposition: MealDecomposition =
+    await gemini.generateStructuredOutput({
+      schema: mealDecompositionSchema,
+      systemPrompt: buildDecompositionPrompt(userContext),
+      userMessage: rawInput,
+      model: GEMINI_MODEL,
+      temperature: 1.0,
+      topP: 1,
+      topK: 1,
+      thinkingConfig: { thinkingLevel: 'low' },
+    });
   console.info(`[pipeline] decomposition: ${Date.now() - t0}ms`);
 
   // Normalize names: capitalize first letter for consistent cache keys and UI display
@@ -133,13 +137,21 @@ async function runPipeline(
   }
 
   const t2 = Date.now();
-  const nutritionResult = await adjustNutrition(
-    decomposition.mealItems,
-    matchResult.matched,
-    matchResult.unmatched,
-    userContext,
-    gemini
-  );
+  const nutritionResult: NutritionAdjustment =
+    await gemini.generateStructuredOutput({
+      schema: nutritionAdjustmentSchema,
+      systemPrompt: buildNutritionPrompt(
+        decomposition.mealItems,
+        matchResult.matched,
+        matchResult.unmatched,
+        userContext
+      ),
+      userMessage:
+        'Produce bounded nutrition estimates for each ingredient in each meal item based on the reference data provided.',
+      model: GEMINI_MODEL,
+      temperature: 1.0,
+      thinkingConfig: { thinkingLevel: 'low' },
+    });
   console.info(`[pipeline] nutrition adjustment: ${Date.now() - t2}ms`);
 
   const pipelineResult = assembleResult(
@@ -152,44 +164,4 @@ async function runPipeline(
 
   console.info(`[pipeline] total: ${Date.now() - t0}ms`);
   return { success: true, data: pipelineResult };
-}
-
-async function decomposeMeal(
-  rawInput: string,
-  userContext: UserContext,
-  gemini: GeminiClient
-): Promise<MealDecomposition> {
-  return gemini.generateStructuredOutput({
-    schema: mealDecompositionSchema,
-    systemPrompt: buildDecompositionPrompt(userContext),
-    userMessage: rawInput,
-    model: GEMINI_MODEL,
-    temperature: 1.0,
-    topP: 1,
-    topK: 1,
-    thinkingConfig: { thinkingLevel: 'low' },
-  });
-}
-
-async function adjustNutrition(
-  mealItems: MealDecomposition['mealItems'],
-  matched: MatchedIngredient[],
-  unmatched: UnmatchedIngredient[],
-  userContext: UserContext,
-  gemini: GeminiClient
-): Promise<NutritionAdjustment> {
-  return gemini.generateStructuredOutput({
-    schema: nutritionAdjustmentSchema,
-    systemPrompt: buildNutritionPrompt(
-      mealItems,
-      matched,
-      unmatched,
-      userContext
-    ),
-    userMessage:
-      'Produce bounded nutrition estimates for each ingredient in each meal item based on the reference data provided.',
-    model: GEMINI_MODEL,
-    temperature: 1.0,
-    thinkingConfig: { thinkingLevel: 'low' },
-  });
 }

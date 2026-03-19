@@ -1,4 +1,4 @@
-import type { Goal } from '@/lib/onboarding/types';
+import type { Goal, ProteinPortion, RicePortion } from '@/lib/onboarding/types';
 import type { GoalAdjustedNutrient, NutritionValues } from './types';
 
 /** All NutritionValues keys — useful for iteration */
@@ -33,26 +33,16 @@ export const NUTRITION_KEYS: readonly (keyof NutritionValues)[] = [
   'vitaminHMcg',
 ] as const;
 
-/** The 4 macros that get goal-adjusted (shown to users) */
+/**
+ * The 4 macros that the LLM produces bounded estimates for AND that get goal-adjusted.
+ * Both concerns share the same set — if they ever diverge, split into two arrays.
+ */
 export const GOAL_ADJUSTED_NUTRIENTS = [
   'caloriesKcal',
   'proteinG',
   'carbohydrateG',
   'fatG',
 ] as const;
-
-/**
- * The 4 macros that LLM Call 2 produces bounded estimates for.
- * All remaining nutrients (including fiber) pass through as DB mid values.
- */
-export const LLM_BOUNDED_NUTRIENTS = [
-  'caloriesKcal',
-  'proteinG',
-  'carbohydrateG',
-  'fatG',
-] as const;
-
-export type LlmBoundedNutrient = (typeof LLM_BOUNDED_NUTRIENTS)[number];
 
 /**
  * Cooked-to-raw weight conversion factors by cooking method.
@@ -77,6 +67,30 @@ export const COOKED_TO_RAW_FACTOR: Record<string, number> = {
 
 /** Default cooked-to-raw factor when cooking method is unknown or null */
 export const DEFAULT_COOKED_TO_RAW_FACTOR = 1.0;
+
+/** Convert cooked/as-eaten weight to raw equivalent using cooking method factor */
+export function convertCookedToRaw(
+  cookedGrams: number,
+  cookingMethod: string | null
+): number {
+  const factor = cookingMethod
+    ? (COOKED_TO_RAW_FACTOR[cookingMethod] ?? DEFAULT_COOKED_TO_RAW_FACTOR)
+    : DEFAULT_COOKED_TO_RAW_FACTOR;
+  return Math.round(cookedGrams * factor);
+}
+
+/** User-facing portion descriptions used in LLM prompts */
+export const RICE_PORTION_DESCRIPTION: Record<RicePortion, string> = {
+  small: '~1 small bowl (~100g cooked rice)',
+  medium: '~1–1.5 bowls (~150g cooked rice)',
+  large: '~2+ bowls (~250g cooked rice)',
+};
+
+export const PROTEIN_PORTION_DESCRIPTION: Record<ProteinPortion, string> = {
+  small: 'smaller than palm, ~2-3 eggs (~80g cooked)',
+  medium: 'about palm-sized (~120g cooked)',
+  large: 'bigger than palm, e.g. a chicken thigh (~160g cooked)',
+};
 
 /**
  * For each goal, which bound direction is the "goal bound" per nutrient.

@@ -1,5 +1,6 @@
 import { sql } from 'drizzle-orm';
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
+import { mapWithConcurrency } from '@/lib/utils';
 import type { GeminiClient } from '../gemini';
 import type {
   DecomposedIngredient,
@@ -44,37 +45,8 @@ export interface MatchResult {
   unmatched: UnmatchedIngredient[];
 }
 
-/** Max concurrent DB lookups to avoid exhausting Supabase PgBouncer session pool */
+/** Max concurrent DB calls to avoid exhausting PgBouncer pool */
 const MATCH_CONCURRENCY = 3;
-
-/**
- * Run an async function over items with bounded concurrency.
- * Returns PromiseSettledResult[] in the same order as the input.
- */
-async function mapWithConcurrency<T, R>(
-  items: T[],
-  fn: (item: T) => Promise<R>,
-  limit: number
-): Promise<PromiseSettledResult<R>[]> {
-  const results: PromiseSettledResult<R>[] = new Array(items.length);
-  let nextIndex = 0;
-
-  async function worker() {
-    while (nextIndex < items.length) {
-      const i = nextIndex++;
-      try {
-        results[i] = { status: 'fulfilled', value: await fn(items[i]) };
-      } catch (reason: unknown) {
-        results[i] = { status: 'rejected', reason };
-      }
-    }
-  }
-
-  await Promise.all(
-    Array.from({ length: Math.min(limit, items.length) }, () => worker())
-  );
-  return results;
-}
 
 /**
  * Match a list of decomposed ingredients against the food composition DB.

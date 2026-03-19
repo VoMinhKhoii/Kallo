@@ -45,6 +45,15 @@ export function isNonFoodError(error: unknown): boolean {
   return error instanceof NonFoodError;
 }
 
+export function isParseError(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : String(error);
+  return (
+    message.includes('parse') ||
+    message.includes('Zod') ||
+    message.includes('JSON')
+  );
+}
+
 export function makeErrorResponse(
   type: PipelineErrorType,
   message: string,
@@ -58,13 +67,7 @@ export function handleError(error: unknown): PipelineResponse {
     return makeErrorResponse('non_food_input', NON_FOOD_MESSAGE, false);
   }
 
-  const message = error instanceof Error ? error.message : String(error);
-  const isParse =
-    message.includes('parse') ||
-    message.includes('Zod') ||
-    message.includes('JSON');
-
-  if (isParse) {
+  if (isParseError(error)) {
     return makeErrorResponse(
       'parse_error',
       'We had trouble understanding the AI response. Please try again.',
