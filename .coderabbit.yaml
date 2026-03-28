@@ -1,16 +1,20 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
 # CodeRabbit AI Code Review Configuration
 # https://docs.coderabbit.ai/getting-started/configuration
-language: en
+language: en-US
+early_access: false
 reviews:
-  # High-level review summary for every PR
+  profile: chill
+  request_changes_workflow: true
   high_level_summary: true
-  # Enable poem in summary (fun touch for open source)
-  poem: true
-  # Review status for new PRs
+  high_level_summary_placeholder: '@coderabbitai summary'
+  review_status: true
+  poem: false
   auto_review:
     enabled: true
-    drafts: false
-  # Path-based review instructions
+    drafts: true
+    base_branches:
+      - main
   path_instructions:
     - path: "lib/db/**"
       instructions: >
@@ -19,6 +23,12 @@ reviews:
         Check for SQL injection risks, missing indexes, and N+1 queries.
         Migrations in supabase/migrations/ use a two-domain model:
         Domain A (Drizzle) for tables/columns and Domain B (manual SQL) for RLS/triggers.
+    - path: "lib/ai/**"
+      instructions: >
+        This is the AI pipeline for Vietnamese meal analysis.
+        Uses Google Gemini (gemini-2.0-flash) for LLM calls.
+        Key patterns: Zod schema validation, structured output, fuzzy + embedding matching.
+        Check for proper error handling, rate limiting awareness, and type safety.
     - path: "app/**"
       instructions: >
         This is a Next.js 16 App Router project with React 19.
@@ -36,5 +46,10 @@ reviews:
         Review GitHub Actions workflows and configuration.
         Check for security best practices, pinned action versions,
         and proper secret handling.
+  tools:
+    gitleaks:
+      enabled: true
+  slop_detection:
+    enabled: true
 chat:
   auto_reply: true

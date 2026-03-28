@@ -43,15 +43,13 @@ const untypedDb = db as unknown as PostgresJsDatabase;
 const DEFAULT_USER_ID = '4681f168-e81b-4590-83ce-0f32734f19a9';
 
 /** Extract only the big 4 macros from a nutrition object for debug readability */
-function pickMacros<T extends Record<string, unknown>>(
-  obj: T | null | undefined
-) {
+function pickMacros(obj: any) {
   if (!obj) return obj;
   return {
-    caloriesKcal: (obj as Record<string, unknown>).caloriesKcal ?? null,
-    proteinG: (obj as Record<string, unknown>).proteinG ?? null,
-    carbohydrateG: (obj as Record<string, unknown>).carbohydrateG ?? null,
-    fatG: (obj as Record<string, unknown>).fatG ?? null,
+    caloriesKcal: obj.caloriesKcal ?? null,
+    proteinG: obj.proteinG ?? null,
+    carbohydrateG: obj.carbohydrateG ?? null,
+    fatG: obj.fatG ?? null,
   };
 }
 

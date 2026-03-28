@@ -57,11 +57,9 @@ export function goalAdjustNutrition(
     result[key] = goalAdjust(bounded[key], goal, aggression, key);
   }
 
-  return result as NutritionValues;
+  return result as unknown as NutritionValues;
 }
-
 /**
- * Sum bounded nutrition across multiple items.
  * For each nutrient, sums low/mid/high independently.
  * If ALL items have null for a nutrient, the sum is null.
  */
@@ -89,7 +87,7 @@ export function sumBoundedNutrition(
     result[key] = hasAny ? { low, mid, high } : null;
   }
 
-  return result as BoundedNutrition;
+  return result as unknown as BoundedNutrition;
 }
 
 /**
@@ -116,5 +114,5 @@ export function sumDisplayedNutrition(
     result[key] = hasAny ? sum : null;
   }
 
-  return result as NutritionValues;
+  return result as unknown as NutritionValues;
 }

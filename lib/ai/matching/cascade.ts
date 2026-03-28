@@ -58,7 +58,7 @@ const MATCH_CONCURRENCY = 3;
 export async function matchIngredients(
   ingredients: DecomposedIngredient[],
   mealContext: string,
-  db: PostgresJsDatabase,
+  db: PostgresJsDatabase<any>,
   gemini: GeminiClient
 ): Promise<MatchResult> {
   const matched: MatchedIngredient[] = [];
@@ -93,7 +93,7 @@ export async function matchIngredients(
 
 async function matchSingleIngredient(
   ingredientName: string,
-  db: PostgresJsDatabase,
+  db: PostgresJsDatabase<any>,
   gemini: GeminiClient
 ): Promise<MatchedIngredient | null> {
   // Tiered embedding lookup: L1 memory → L2 exact (name_vi) → L3 Gemini API

@@ -35,7 +35,7 @@ export function clearMemoryCache() {
  */
 export async function resolveQueryEmbedding(
   ingredientName: string,
-  db: PostgresJsDatabase
+  db: PostgresJsDatabase<any>
 ): Promise<number[] | null> {
   const normalized = normalizeIngredientKey(ingredientName);
 
@@ -70,7 +70,7 @@ export async function resolveQueryEmbedding(
 export function cacheQueryEmbedding(
   ingredientName: string,
   embedding: number[],
-  db: PostgresJsDatabase
+  db: PostgresJsDatabase<any>
 ): void {
   const normalized = normalizeIngredientKey(ingredientName);
 
@@ -115,7 +115,7 @@ function promoteToMemoryCache(row: Record<string, unknown>): number[] | null {
  */
 function logSynonymCandidateIfEnMatch(
   normalizedQuery: string,
-  db: PostgresJsDatabase
+  db: PostgresJsDatabase<any>
 ): void {
   db.execute(
     sql`SELECT name_vi, name_en

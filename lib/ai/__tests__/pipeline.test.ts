@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { GeminiClient } from '../gemini';
 import { analyzeMeal } from '../pipeline';
 import type {
   IngredientLlmNutrition,

@@ -11,7 +11,7 @@ import {
 // Mock DB
 // ---------------------------------------------------------------------------
 
-function createMockDb() {
+function createMockDb(): any {
   return {
     execute: vi.fn(),
   };
@@ -46,7 +46,7 @@ function createRoutingMockDb(opts: {
   exactResponse?: unknown[];
   enCheckResponse?: unknown[];
   extraResponses?: unknown[][];
-}) {
+}): any {
   let extraIdx = 0;
   const db = {
     execute: vi.fn().mockImplementation((query: unknown) => {
@@ -394,7 +394,7 @@ describe('logSynonymCandidateIfEnMatch (via resolveQueryEmbedding)', () => {
       }),
     };
 
-    const result = await resolveQueryEmbedding('test', db);
+    const result = await resolveQueryEmbedding('test', db as any);
     expect(result).toBeNull();
 
     await new Promise((r) => setTimeout(r, 10));
@@ -424,7 +424,7 @@ describe('logSynonymCandidateIfEnMatch (via resolveQueryEmbedding)', () => {
       }),
     };
 
-    const result = await resolveQueryEmbedding('rice', db);
+    const result = await resolveQueryEmbedding('rice', db as any);
     expect(result).toBeNull();
 
     await new Promise((r) => setTimeout(r, 10));

@@ -1,3 +1,4 @@
+import type { ThinkingLevel } from '@google/genai';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
 
@@ -5,12 +6,15 @@ const mockGenerateContent = vi.fn();
 const mockEmbedContent = vi.fn();
 
 vi.mock('@google/genai', () => ({
-  GoogleGenAI: vi.fn().mockImplementation(() => ({
-    models: {
-      generateContent: mockGenerateContent,
-      embedContent: mockEmbedContent,
-    },
-  })),
+  // biome-ignore lint/complexity/useArrowFunction: must use function() for `new` constructor mock
+  GoogleGenAI: vi.fn().mockImplementation(function () {
+    return {
+      models: {
+        generateContent: mockGenerateContent,
+        embedContent: mockEmbedContent,
+      },
+    };
+  }),
 }));
 
 import { createGeminiClient } from '../gemini';
@@ -84,13 +88,13 @@ describe('GeminiClient', () => {
         systemPrompt: 'test',
         userMessage: 'test',
         model: 'gemini-3-flash-preview',
-        thinkingConfig: { thinkingLevel: 'low' },
+        thinkingConfig: { thinkingLevel: 'low' as ThinkingLevel },
       });
 
       expect(mockGenerateContent).toHaveBeenCalledWith(
         expect.objectContaining({
           config: expect.objectContaining({
-            thinkingConfig: { thinkingLevel: 'low' },
+            thinkingConfig: { thinkingLevel: 'low' as ThinkingLevel },
           }),
         })
       );

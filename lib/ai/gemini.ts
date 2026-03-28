@@ -1,4 +1,4 @@
-import { GoogleGenAI } from '@google/genai';
+import { GoogleGenAI, type ThinkingLevel } from '@google/genai';
 import { toJSONSchema, type ZodType } from 'zod';
 
 const EMBEDDING_MODEL = 'gemini-embedding-001';
@@ -34,7 +34,7 @@ interface StructuredOutputParams<T> {
   temperature?: number;
   topP?: number;
   topK?: number;
-  thinkingConfig?: { thinkingLevel?: string };
+  thinkingConfig?: { thinkingLevel?: ThinkingLevel };
 }
 
 export interface GeminiClient {

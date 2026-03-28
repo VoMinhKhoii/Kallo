@@ -1,3 +1,4 @@
+import type { ThinkingLevel } from '@google/genai';
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import { capitalizeFirst } from '@/lib/utils';
 import type { GeminiClient } from '../gemini';
@@ -37,7 +38,7 @@ const GEMINI_MODEL = 'gemini-3-flash-preview';
 export async function analyzeMeal(
   rawInput: string,
   userContext: UserContext,
-  db: PostgresJsDatabase,
+  db: PostgresJsDatabase<any>,
   gemini: GeminiClient
 ): Promise<PipelineResponse> {
   try {
@@ -75,7 +76,7 @@ export async function analyzeMeal(
 async function runPipeline(
   rawInput: string,
   userContext: UserContext,
-  db: PostgresJsDatabase,
+  db: PostgresJsDatabase<any>,
   gemini: GeminiClient
 ): Promise<PipelineResponse> {
   const t0 = Date.now();
@@ -88,7 +89,7 @@ async function runPipeline(
       temperature: 1.0,
       topP: 1,
       topK: 1,
-      thinkingConfig: { thinkingLevel: 'low' },
+      thinkingConfig: { thinkingLevel: 'low' as ThinkingLevel },
     });
   console.info(`[pipeline] decomposition: ${Date.now() - t0}ms`);
 
@@ -150,7 +151,7 @@ async function runPipeline(
         'Produce bounded nutrition estimates for each ingredient in each meal item based on the reference data provided.',
       model: GEMINI_MODEL,
       temperature: 1.0,
-      thinkingConfig: { thinkingLevel: 'low' },
+      thinkingConfig: { thinkingLevel: 'low' as ThinkingLevel },
     });
   console.info(`[pipeline] nutrition adjustment: ${Date.now() - t2}ms`);
 

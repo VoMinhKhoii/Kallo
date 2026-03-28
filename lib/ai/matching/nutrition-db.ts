@@ -46,12 +46,12 @@ export function parseNutritionRow(
     result[key] = rawVal != null ? Number(rawVal) : null;
   }
 
-  return result as NutritionPer100g;
+  return result as unknown as NutritionPer100g;
 }
 
 export async function fetchNutritionPer100g(
   foodCompositionId: string,
-  db: PostgresJsDatabase
+  db: PostgresJsDatabase<any>
 ): Promise<NutritionPer100g | null> {
   const rows = await db.execute(
     sql`SELECT * FROM vietnamese_food_composition WHERE id = ${foodCompositionId} LIMIT 1`
@@ -64,7 +64,7 @@ export async function fetchNutritionPer100g(
 export async function logUnmatchedIngredients(
   items: UnmatchedIngredient[],
   mealId: string | null,
-  db: PostgresJsDatabase
+  db: PostgresJsDatabase<any>
 ): Promise<void> {
   await Promise.all(
     items.map((item) =>
