@@ -43,6 +43,9 @@ export interface GeminiClient {
 }
 
 function isRateLimitError(error: unknown): boolean {
+  if (error && typeof error === 'object' && 'status' in error) {
+    return (error as { status: number }).status === 429;
+  }
   return error instanceof Error && error.message.includes('429');
 }
 

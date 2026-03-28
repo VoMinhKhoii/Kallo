@@ -69,9 +69,9 @@ export const mealDecompositionSchema = z.object({
  * object schema for JSON schema generation and normalize after parsing.
  */
 export const boundedEstimateSchema = z.object({
-  low: z.number().describe('Conservative lower bound'),
-  mid: z.number().describe('Most likely estimate'),
-  high: z.number().describe('Conservative upper bound'),
+  low: z.number().min(0).describe('Conservative lower bound'),
+  mid: z.number().min(0).describe('Most likely estimate'),
+  high: z.number().min(0).describe('Conservative upper bound'),
 });
 
 /**

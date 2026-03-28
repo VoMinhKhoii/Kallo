@@ -136,12 +136,12 @@ async function backfillDirection(
       );
       if (!translated) continue;
 
-      const pkValue = row.name_vi;
+      const pkValue = sourceText;
       if (!pkValue) continue;
 
       await db.execute(
         sql.raw(
-          `UPDATE ingredient_query_embeddings SET ${targetCol} = '${translated.replace(/'/g, "''")}' WHERE name_vi = '${pkValue.replace(/'/g, "''")}'`
+          `UPDATE ingredient_query_embeddings SET ${targetCol} = '${translated.replace(/'/g, "''")}' WHERE ${sourceCol} = '${pkValue.replace(/'/g, "''")}'`
         )
       );
       updated++;

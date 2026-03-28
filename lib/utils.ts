@@ -23,6 +23,10 @@ export async function mapWithConcurrency<T, R>(
   fn: (item: T) => Promise<R>,
   limit: number
 ): Promise<PromiseSettledResult<R>[]> {
+  if (!Number.isInteger(limit) || limit < 1) {
+    throw new RangeError('limit must be a positive integer');
+  }
+
   const results: PromiseSettledResult<R>[] = new Array(items.length);
   let nextIndex = 0;
 
