@@ -45,3 +45,4 @@ next-env.d.ts
 
 /.planning
 supabase/.temp/
+__pycache__/

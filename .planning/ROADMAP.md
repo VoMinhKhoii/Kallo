@@ -74,16 +74,14 @@ Plans:
 **Requirements**: AI-01, AI-02, AI-03, AI-04, AI-05, AI-06, AI-07, AI-08
 **Success Criteria** (what must be TRUE):
   1. Given a natural-language Vietnamese meal description, the system decomposes it into individual ingredients with estimated quantities and classifies the meal slot (Sáng/Trưa/Tối/Bữa phụ) when confident
-  2. Each extracted ingredient is matched against the food composition DB via pgvector semantic search, with unmatched ingredients logged server-side and handled via LLM fallback with flagged assumption
+  2. Each extracted ingredient is matched against the food composition DB via pg_trgm and fallback to pgvector semantic search, with unmatched ingredients logged server-side and handled via LLM fallback with flagged assumption
   3. The system returns bounded macro estimates (low/mid/high) per ingredient and overall meal, adjusted for the user's regional profile and cooking habits, with a confidence signal (HIGH/MEDIUM/LOW) per ingredient and overall
   4. Goal-adjusted display values are computed (upper-bound calories for cutting, lower-bound protein for cutting, etc.)
-  5. A plain-Vietnamese assumption summary ("Xem giả định") is generated explaining what the AI assumed about portions, cooking method, and ingredients
-**Plans**: TBD
-
-Plans:
-- [ ] 03-01: TBD
-- [ ] 03-02: TBD
-- [ ] 03-03: TBD
+  5. A plain-Vietnamese assumption summary ("Xem giả định") is generated explaining what the AI assumed about portions, cooking method, and ingredients (Optional, will consider its feasibility)
+**Plans**:
+- [ ] 03-01-PLAN.md — Types, Schemas & Dead Column Cleanup (pipeline domain types, Zod schemas for LLM structured output, pure goal-adjustment functions, dead column removal)
+- [ ] 03-02-PLAN.md — Gemini Client & Ingredient Matching Service (Gemini wrapper with retry/rate-limit, DB ingredient matching cascade, nutrition fetcher)
+- [ ] 03-03-PLAN.md — LLM Prompts, Pipeline Orchestration & Server Action (prompt builders, pipeline orchestrator, server action entry point)
 
 ### Phase 4: Meal Logging
 **Goal**: Users can log meals via natural language, review the AI's analysis, and correct mistakes

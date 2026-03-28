@@ -71,6 +71,27 @@
       "when": 1773161551943,
       "tag": "20260310165231_hand_checks_notnull_step",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1773310465871,
+      "tag": "20260312101425_drop_dead_cooking_columns",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1773890244800,
+      "tag": "20260319031724_add_query_embeddings_cache",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1773909478002,
+      "tag": "20260319083757_add_synonym_candidates",
+      "breakpoints": true
     }
   ]
 }

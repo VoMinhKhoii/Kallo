@@ -64,6 +64,12 @@ Supabase uses timestamp-based filenames: `YYYYMMDDHHMMSS_description.sql`
 | `20260228155500_add_search_text_ascii.sql` | A (Drizzle) | `search_text_ascii` column on food composition |
 | `20260228155945_rls_new_tables.sql` | B (Manual) | RLS policies + `updated_at` triggers for meals/weight tables |
 | `20260301022622_pg_trgm_ingredient_search.sql` | B (Manual) | pg_trgm + unaccent extensions, dual GIN indexes, `fuzzy_match_ingredients()` with diacritic routing |
+| `20260319031724_add_query_embeddings_cache.sql` | A (Drizzle) | `ingredient_query_embeddings` table — bilingual query-side embeddings cache |
+| `20260319031800_rls_query_embeddings.sql` | B (Manual) | RLS policies + GIN trgm indexes on `name_vi`/`name_en` for tiered lookup |
+| `20260319034000_seed_query_embeddings_from_fct.sql` | B (Manual) | Seed cache from `vietnamese_food_composition` (name_vi + name_en per row) |
+| `20260319083757_add_synonym_candidates.sql` | A (Drizzle) | `synonym_candidates` table for cross-language match logging |
+| `20260319083800_rls_synonym_candidates.sql` | B (Manual) | RLS policies for synonym_candidates (read/write/update for authenticated) |
+| `20260319083900_normalize_query_embeddings_keys.sql` | B (Manual) | Normalize existing `name_vi` PKs to lowercase + NFC (with collision resolution) |
 
 **Migration ordering matters**: Drizzle migrations that add columns must be timestamped BEFORE manual migrations that reference those columns (e.g., `search_text` column must exist before the trgm migration creates a GIN index on it).
 
@@ -104,7 +110,7 @@ Both columns are populated by a trigger on INSERT/UPDATE.
 **Function**: `match_ingredients(query_embedding, match_count, threshold)`
 
 - Used when trgm fails (e.g., synonyms: "cơm trắng" → "Gạo tẻ máy")
-- Requires embedding generation via external API (Gemini)
+- Requires query embedding — resolved via tiered cache (see below)
 - HNSW index for fast approximate nearest neighbor search
 
 #### Embeddings
@@ -114,14 +120,47 @@ Both columns are populated by a trigger on INSERT/UPDATE.
 - **Backfill script**: `scripts/backfill_embeddings.ts`
 - All 526 rows have embeddings pre-populated
 
+#### Query Embedding Cache (Tiered Lookup)
+
+The query-side embedding (for the ingredient name output by the LLM) is resolved via a tiered cache to avoid runtime Gemini API calls:
+
+| Tier | Source | Latency | Location |
+|------|--------|---------|----------|
+| L1 | In-memory `Map<string, number[]>` | ~0ms | `lib/ai/matching/embedding-cache.ts` |
+| L2 | Exact match: `WHERE name_vi = $1` | ~1-3ms | Supabase (PK scan) |
+| L3 | Gemini API (`gemini-embedding-001`) | ~400-700ms | External API (rare after seed) |
+
+**Input normalization**: All inputs are normalized via `normalizeIngredientKey()` (NFC + lowercase + trim) at the entry point of both `resolveQueryEmbedding()` and `cacheQueryEmbedding()`, before any tier is checked.
+
+- **L1 hit**: Returns immediately from process memory. Lost on server restart.
+- **L2 hit**: Exact match on `name_vi` only. Promotes both `name_vi` and `name_en` into L1.
+- **L2 miss + name_en match**: If `name_en` matches but `name_vi` doesn't, this is a synonym signal. The system logs a `synonym_candidates` row asynchronously (fire-and-forget) and continues to L3.
+- **L3 fallback**: Calls Gemini API, then fire-and-forget inserts into L2 (as `name_vi`) + sets L1. `ON CONFLICT DO NOTHING` for concurrency safety.
+- **pg_trgm**: Removed from the live lookup path. GIN trgm indexes remain for a future background synonym discovery job that writes to `synonym_candidates`.
+- **Seed migration**: `20260319034000_seed_query_embeddings_from_fct.sql` copies `(name_primary, name_en, embedding)` from `vietnamese_food_composition`.
+- **Table**: `ingredient_query_embeddings(name_vi TEXT PK, name_en TEXT, embedding VECTOR(768), created_at TIMESTAMPTZ)`
+- **Indexes**: B-tree on `name_en`, GIN trgm on `name_vi` and `name_en` (for background job)
+- **Translation backfill**: `scripts/backfill-translations.ts` fills NULL `name_en` (vi→en) or `name_vi` (en→vi) via Google Cloud Translation API
+
+#### Synonym Candidates
+
+Cross-language and near-miss matches are logged for human review:
+
+- **Table**: `synonym_candidates(id SERIAL PK, queried_vi TEXT, matched_en TEXT, matched_vi TEXT, created_at TIMESTAMPTZ, reviewed BOOLEAN)`
+- **Written by**: (1) Async name_en check on embedding cache miss, (2) future background trgm job
+- **Not used in live path** — candidates are surfaced for review only, never auto-resolved
+
 ### Pipeline Flow (App-Level)
 
 ```
 User describes meal → LLM decomposes into ingredients
   → For each ingredient:
-    1. fuzzy_match_ingredients(name) — instant, free
-    2. If no good trgm match → generate embedding → match_ingredients(embedding)
-    3. LLM picks the best candidate from results
+    1. Normalize name: NFC + lowercase + trim
+    2. Resolve query embedding (L1 memory → L2 exact name_vi → L3 Gemini API)
+       On L2 miss: async check name_en → log synonym_candidate if match
+    3. match_ingredients(embedding) via pgvector
+    4. If no good vector match → fuzzy_match_ingredients(name) via pg_trgm
+    5. LLM picks the best candidate from results
 ```
 
 ## DB Client Usage

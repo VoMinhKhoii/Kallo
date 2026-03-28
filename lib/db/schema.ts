@@ -10,6 +10,7 @@ import {
   pgSchema,
   pgTable,
   real,
+  serial,
   smallint,
   text,
   timestamp,
@@ -53,10 +54,6 @@ export const userProfiles = pgTable(
 
     // Screen 4: Cooking Habits
     oilUsage: text('oil_usage'),
-    fatTrimPork: text('fat_trim_pork'),
-    fatTrimChicken: text('fat_trim_chicken'),
-    fatTrimFish: text('fat_trim_fish'),
-    boneAwareness: boolean('bone_awareness').default(false),
     defaultRicePortion: text('default_rice_portion'),
     sugarBraised: text('sugar_braised'),
     defaultProteinPortion: text('default_protein_portion'),
@@ -109,18 +106,6 @@ export const userProfiles = pgTable(
     check(
       'user_profiles_oil_usage_check',
       sql`${table.oilUsage} IN ('minimal', 'normal', 'heavy')`
-    ),
-    check(
-      'user_profiles_fat_trim_pork_check',
-      sql`${table.fatTrimPork} IN ('trim', 'eat_all', 'by_dish')`
-    ),
-    check(
-      'user_profiles_fat_trim_chicken_check',
-      sql`${table.fatTrimChicken} IN ('trim', 'eat_all', 'by_dish')`
-    ),
-    check(
-      'user_profiles_fat_trim_fish_check',
-      sql`${table.fatTrimFish} IN ('trim', 'eat_all', 'by_dish')`
     ),
     check(
       'user_profiles_default_rice_portion_check',
@@ -377,4 +362,35 @@ export const unmatchedIngredients = pgTable('unmatched_ingredients', {
   createdAt: timestamp('created_at', { withTimezone: true })
     .notNull()
     .defaultNow(),
+});
+
+// ---------------------------------------------------------------------------
+// Precomputed query embeddings cache
+// ---------------------------------------------------------------------------
+
+export const ingredientQueryEmbeddings = pgTable(
+  'ingredient_query_embeddings',
+  {
+    nameVi: text('name_vi').primaryKey(),
+    nameEn: text('name_en'),
+    embedding: vector('embedding', { dimensions: 768 }).notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  }
+);
+
+// ---------------------------------------------------------------------------
+// Synonym candidates (written by background jobs + async cache-miss logging)
+// ---------------------------------------------------------------------------
+
+export const synonymCandidates = pgTable('synonym_candidates', {
+  id: serial('id').primaryKey(),
+  queriedVi: text('queried_vi').notNull(),
+  matchedEn: text('matched_en').notNull(),
+  matchedVi: text('matched_vi').notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+  reviewed: boolean('reviewed').notNull().default(false),
 });
