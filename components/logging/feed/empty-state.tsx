@@ -22,8 +22,8 @@ export function EmptyState({ onSuggestionClick }: EmptyStateProps) {
         animate={{ scale: 1, opacity: 1 }}
         transition={{ delay: 0.05, duration: 0.3 }}
       >
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#E8D5B5]/30">
-          <UtensilsCrossed className="h-5 w-5 text-[#8B7355]" />
+        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-nham-border/30">
+          <UtensilsCrossed className="h-5 w-5 text-nham-text-muted" />
         </div>
       </motion.div>
 
@@ -32,7 +32,7 @@ export function EmptyState({ onSuggestionClick }: EmptyStateProps) {
           initial={{ opacity: 0, y: 6 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1, duration: 0.3 }}
-          className="font-normal text-[#2C2416] text-xl tracking-tight"
+          className="font-normal text-nham-text text-xl tracking-tight"
           style={{ fontFamily: 'Lora, serif' }}
         >
           What are you having?
@@ -41,7 +41,7 @@ export function EmptyState({ onSuggestionClick }: EmptyStateProps) {
           initial={{ opacity: 0, y: 6 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2, duration: 0.3 }}
-          className="text-[#8B7355] text-sm"
+          className="text-nham-text-muted text-sm"
           style={{ fontFamily: 'DM Sans, sans-serif' }}
         >
           Describe your meal and get a macro breakdown.
@@ -59,7 +59,7 @@ export function EmptyState({ onSuggestionClick }: EmptyStateProps) {
             type="button"
             key={suggestion}
             onClick={() => onSuggestionClick(suggestion)}
-            className="rounded-full border border-[#E8D5B5]/60 bg-white/80 px-3 py-1 font-medium text-[#6B5D4F] text-xs transition-colors hover:border-[#C9A87C]/50 hover:bg-[#E8D5B5]/15"
+            className="rounded-full border border-nham-border/60 bg-white/80 px-3 py-1 font-medium text-nham-text-muted text-xs transition-colors hover:border-nham-accent/50 hover:bg-nham-border/15"
             style={{ fontFamily: 'DM Sans, sans-serif' }}
           >
             {suggestion}

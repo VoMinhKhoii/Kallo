@@ -64,7 +64,7 @@ function SectionHeader({
       </span>
       <div
         className={cn(
-          'absolute inset-x-1 top-1/2 h-px bg-gradient-to-r from-transparent via-[#E8D5B5]/60 to-transparent transition-opacity duration-300',
+          'absolute inset-x-1 top-1/2 h-px bg-gradient-to-r from-transparent via-nham-border/60 to-transparent transition-opacity duration-300',
           collapsed ? 'opacity-100' : 'opacity-0'
         )}
       />
@@ -100,7 +100,7 @@ export function MainSidebar({
         <button
           type="button"
           onClick={() => setCollapsed(!collapsed)}
-          className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-[#F0EAE0]/60 hover:text-[#2C2416]"
+          className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-nham-hover/60 hover:text-nham-text"
           aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
         >
           {collapsed ? (
@@ -125,8 +125,8 @@ export function MainSidebar({
                   className={cn(
                     'flex items-center rounded-lg px-3 py-2 transition-all duration-200',
                     isActive
-                      ? 'bg-[#695e4e] text-white shadow-[#695e4e]/20 shadow-sm'
-                      : 'text-muted-foreground hover:bg-[#F0EAE0]/60 hover:text-[#2C2416]'
+                      ? 'bg-nham-btn text-white shadow-nham-btn/20 shadow-sm'
+                      : 'text-muted-foreground hover:bg-nham-hover/60 hover:text-nham-text'
                   )}
                   aria-current={isActive ? 'page' : undefined}
                 >
@@ -152,7 +152,7 @@ export function MainSidebar({
       </nav>
 
       {/* Separator */}
-      <div className="h-px bg-gradient-to-r from-transparent via-[#E8D5B5]/60 to-transparent" />
+      <div className="h-px bg-gradient-to-r from-transparent via-nham-border/60 to-transparent" />
 
       {/* Onboarding nudge card */}
       {onboardingIncomplete && (
@@ -162,14 +162,14 @@ export function MainSidebar({
               type="button"
               onClick={onResumeOnboarding}
               title="Complete profile"
-              className="flex h-8 w-8 items-center justify-center rounded-lg text-[#C9A87C] transition-colors hover:bg-[#F0EAE0]/60"
+              className="flex h-8 w-8 items-center justify-center rounded-lg text-nham-accent transition-colors hover:bg-nham-hover/60"
             >
               <AlertCircle className="h-4 w-4" />
             </button>
           ) : (
-            <div className="rounded-xl border border-[#E8D5B5]/40 bg-[#FFFCF8] p-3">
+            <div className="rounded-xl border border-nham-border/40 bg-nham-surface p-3">
               <p
-                className="mb-1 font-medium text-[#2C2416] text-[11px] leading-snug"
+                className="mb-1 font-medium text-[11px] text-nham-text leading-snug"
                 style={{
                   fontFamily: 'DM Sans, sans-serif',
                 }}
@@ -177,7 +177,7 @@ export function MainSidebar({
                 Your estimates are using default settings
               </p>
               <p
-                className="mb-3 text-[#8B7355] text-[10px] leading-relaxed"
+                className="mb-3 text-[10px] text-nham-text-muted leading-relaxed"
                 style={{
                   fontFamily: 'DM Sans, sans-serif',
                 }}
@@ -188,7 +188,7 @@ export function MainSidebar({
               <button
                 type="button"
                 onClick={onResumeOnboarding}
-                className="w-full rounded-lg bg-[#2C2416] px-3 py-1.5 font-medium text-[#FFFCF8] text-[11px] transition-colors hover:bg-[#3D3425]"
+                className="w-full rounded-lg bg-nham-text px-3 py-1.5 font-medium text-[11px] text-nham-surface transition-colors hover:bg-nham-text/85"
                 style={{
                   fontFamily: 'DM Sans, sans-serif',
                 }}
@@ -209,8 +209,8 @@ export function MainSidebar({
           className={cn(
             'flex items-center rounded-lg px-3 py-2.5 transition-all duration-200',
             pathname.startsWith('/settings')
-              ? 'bg-[#695e4e] text-white shadow-[#695e4e]/20 shadow-sm'
-              : 'text-muted-foreground hover:bg-[#F0EAE0]/60 hover:text-[#2C2416]'
+              ? 'bg-nham-btn text-white shadow-nham-btn/20 shadow-sm'
+              : 'text-muted-foreground hover:bg-nham-hover/60 hover:text-nham-text'
           )}
         >
           <Settings className="h-5 w-5 shrink-0" />
@@ -229,11 +229,11 @@ export function MainSidebar({
       </div>
 
       {/* User Profile */}
-      <div className="flex items-center justify-between rounded-lg p-1.5 transition-colors hover:bg-[#F0EAE0]/40">
+      <div className="flex items-center justify-between rounded-lg p-1.5 transition-colors hover:bg-nham-hover/40">
         <div className="flex items-center">
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#C9A87C]/30 to-[#E8D5B5]/50 ring-1 ring-[#C9A87C]/20">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-nham-accent/30 to-nham-border/50 ring-1 ring-nham-accent/20">
             <span
-              className="font-bold text-[#695e4e] text-xs"
+              className="font-bold text-nham-btn text-xs"
               style={{
                 fontFamily: 'DM Sans, sans-serif',
               }}
@@ -270,7 +270,7 @@ export function MainSidebar({
           onClick={handleSignOut}
           title="Sign out"
           className={cn(
-            'flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-[#F0EAE0]/60 hover:text-red-500',
+            'flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-nham-hover/60 hover:text-red-500',
             collapsed ? 'hidden' : ''
           )}
         >

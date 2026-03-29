@@ -133,7 +133,7 @@ export function FeedArea({ targets }: FeedAreaProps) {
         {(hasMessages || isPending) && (
           <>
             {/* Sticky macro summary */}
-            <div className="sticky top-0 z-10 bg-[#FEFBF6] px-4 pt-4 pb-3 sm:px-6">
+            <div className="sticky top-0 z-10 bg-nham-surface px-4 pt-4 pb-3 sm:px-6">
               <div className="mx-auto max-w-4xl">
                 <MacroSummary totals={dailyTotals} targets={targets} />
               </div>
@@ -165,12 +165,12 @@ export function FeedArea({ targets }: FeedAreaProps) {
                           animate={{ opacity: 1, y: 0 }}
                           className="group relative"
                         >
-                          <div className="absolute top-2 bottom-0 -left-10 w-px bg-[#E8D5B5]/60 group-last:bg-transparent" />
+                          <div className="absolute top-2 bottom-0 -left-10 w-px bg-nham-border/60 group-last:bg-transparent" />
                           <div className="absolute top-2 -left-[43px] h-2 w-2 rounded-full border-2 border-rose-400 bg-white" />
                           <div className="rounded-2xl border border-rose-200/60 bg-rose-50/50 p-4">
                             {msg.userInput && (
                               <p
-                                className="mb-2 text-[#8B7355] text-[13px]"
+                                className="mb-2 text-[13px] text-nham-text-muted"
                                 style={{ fontFamily: 'Lora, serif' }}
                               >
                                 &ldquo;{msg.userInput}&rdquo;
@@ -199,12 +199,12 @@ export function FeedArea({ targets }: FeedAreaProps) {
                         exit={{ opacity: 0, y: -5 }}
                         className="group relative"
                       >
-                        <div className="absolute top-2 bottom-0 -left-10 w-px bg-[#E8D5B5]/60 group-last:bg-transparent" />
-                        <div className="absolute top-2 -left-[43px] h-2 w-2 animate-pulse rounded-full border-2 border-[#C9A87C] bg-[#C9A87C]/30" />
-                        <div className="flex items-center gap-2.5 rounded-2xl border border-[#E8D5B5]/30 bg-white px-4 py-3">
-                          <Loader2 className="h-4 w-4 animate-spin text-[#C9A87C]" />
+                        <div className="absolute top-2 bottom-0 -left-10 w-px bg-nham-border/60 group-last:bg-transparent" />
+                        <div className="absolute top-2 -left-[43px] h-2 w-2 animate-pulse rounded-full border-2 border-nham-accent bg-nham-accent/30" />
+                        <div className="flex items-center gap-2.5 rounded-2xl border border-nham-border/30 bg-white px-4 py-3">
+                          <Loader2 className="h-4 w-4 animate-spin text-nham-accent" />
                           <span
-                            className="text-[#8B7355] text-sm"
+                            className="text-nham-text-muted text-sm"
                             style={{
                               fontFamily: 'DM Sans, sans-serif',
                             }}

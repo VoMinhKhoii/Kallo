@@ -89,7 +89,7 @@ export function TimelineSidebar() {
           <button
             type="button"
             onClick={() => toggleMonth(month.id)}
-            className="flex items-center gap-2 px-3 transition-colors hover:text-[#2C2416]"
+            className="flex items-center gap-2 px-3 transition-colors hover:text-nham-text"
           >
             <span
               className="flex-1 text-left font-medium text-[10px] text-muted-foreground uppercase tracking-[0.04em]"
@@ -122,8 +122,8 @@ export function TimelineSidebar() {
                         onClick={() => hasDays && toggleWeek(month.id, week.id)}
                         className={cn(
                           'flex w-full items-center gap-3 rounded-lg px-3 py-2 transition-colors',
-                          week.active && 'bg-[#C9A87C]/30',
-                          hasDays && 'hover:bg-[#F0EAE0]/40'
+                          week.active && 'bg-nham-accent/30',
+                          hasDays && 'hover:bg-nham-hover/40'
                         )}
                       >
                         <span
@@ -145,19 +145,19 @@ export function TimelineSidebar() {
                       {/* Days tree */}
                       {hasDays && isExpanded && (
                         <div className="flex pl-3">
-                          <div className="w-0.5 shrink-0 bg-[#C9A87C]" />
+                          <div className="w-0.5 shrink-0 bg-nham-accent" />
                           <ul className="-ml-0.5 flex flex-col gap-2">
                             {week.days!.map((day) => (
                               <li
                                 key={day.id}
                                 className="flex w-full items-center"
                               >
-                                <div className="h-2 w-[13px] shrink-0 rounded-bl-lg border-[#C9A87C] border-b-2 border-l-2" />
+                                <div className="h-2 w-[13px] shrink-0 rounded-bl-lg border-nham-accent border-b-2 border-l-2" />
                                 <button
                                   type="button"
                                   className={cn(
                                     'flex flex-1 items-center rounded-lg px-3 py-2',
-                                    day.active && 'bg-[#C9A87C]/30'
+                                    day.active && 'bg-nham-accent/30'
                                   )}
                                 >
                                   <span

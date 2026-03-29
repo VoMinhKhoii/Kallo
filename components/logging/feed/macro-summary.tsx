@@ -19,9 +19,9 @@ const MACROS: {
   label: string;
   color: string;
 }[] = [
-  { key: 'protein', label: 'Protein', color: '#C9A87C' },
-  { key: 'carbs', label: 'Carbs', color: '#8B7355' },
-  { key: 'fat', label: 'Fat', color: '#A8A29E' },
+  { key: 'protein', label: 'Protein', color: 'var(--nham-macro-protein)' },
+  { key: 'carbs', label: 'Carbs', color: 'var(--nham-macro-carbs)' },
+  { key: 'fat', label: 'Fat', color: 'var(--nham-macro-fat)' },
 ];
 
 export function MacroSummary({ totals, targets }: MacroSummaryProps) {
@@ -62,7 +62,7 @@ export function MacroSummary({ totals, targets }: MacroSummaryProps) {
               cy={RING_CENTER}
               r={RING_RADIUS}
               fill="none"
-              stroke="#F5F4F0"
+              stroke="var(--nham-track)"
               strokeWidth={RING_STROKE}
             />
             <motion.circle
@@ -70,7 +70,7 @@ export function MacroSummary({ totals, targets }: MacroSummaryProps) {
               cy={RING_CENTER}
               r={RING_RADIUS}
               fill="none"
-              stroke="#2C2416"
+              stroke="var(--nham-text)"
               strokeWidth={RING_STROKE}
               strokeDasharray={RING_CIRCUMFERENCE}
               initial={{ strokeDashoffset: RING_CIRCUMFERENCE }}
@@ -82,13 +82,13 @@ export function MacroSummary({ totals, targets }: MacroSummaryProps) {
           </svg>
           <div className="absolute inset-0 flex flex-col items-center justify-center">
             <span
-              className="font-semibold text-[#2C2416] text-xl tabular-nums leading-none"
+              className="font-semibold text-nham-text text-xl tabular-nums leading-none"
               style={{ fontFamily: 'Lora, serif' }}
             >
               {remaining.toLocaleString()}
             </span>
             <span
-              className="mt-0.5 font-bold text-[#8B7355]/60 text-[7px] uppercase tracking-widest"
+              className="mt-0.5 font-bold text-[7px] text-nham-text-muted/60 uppercase tracking-widest"
               style={{ fontFamily: 'DM Sans, sans-serif' }}
             >
               remaining
@@ -96,7 +96,7 @@ export function MacroSummary({ totals, targets }: MacroSummaryProps) {
           </div>
         </div>
         <span
-          className="font-semibold text-[#8B7355] text-xs tabular-nums"
+          className="font-semibold text-nham-text-muted text-xs tabular-nums"
           style={{ fontFamily: 'DM Sans, sans-serif' }}
         >
           {calories} / {targets.calories.toLocaleString()} kcal
@@ -104,7 +104,7 @@ export function MacroSummary({ totals, targets }: MacroSummaryProps) {
       </div>
 
       {/* Divider */}
-      <div className="h-12 w-px bg-[#E8D5B5]/30" aria-hidden="true" />
+      <div className="h-12 w-px bg-nham-border/30" aria-hidden="true" />
 
       {/* Macro progress bars */}
       <div className="flex flex-1 flex-col gap-3">
@@ -119,12 +119,12 @@ export function MacroSummary({ totals, targets }: MacroSummaryProps) {
           return (
             <div key={key} className="flex items-center gap-3">
               <span
-                className="w-14 font-bold text-[#8B7355]/70 text-[10px] uppercase tracking-wider"
+                className="w-14 font-bold text-[10px] text-nham-text-muted/70 uppercase tracking-wider"
                 style={{ fontFamily: 'DM Sans, sans-serif' }}
               >
                 {label}
               </span>
-              <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-[#F5F4F0]">
+              <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-nham-track">
                 <motion.div
                   initial={{ width: 0 }}
                   animate={{ width: `${percent}%` }}
@@ -138,7 +138,7 @@ export function MacroSummary({ totals, targets }: MacroSummaryProps) {
                 />
               </div>
               <span
-                className="w-16 text-right text-[#8B7355] text-[11px] tabular-nums"
+                className="w-16 text-right text-[11px] text-nham-text-muted tabular-nums"
                 style={{ fontFamily: 'DM Sans, sans-serif' }}
               >
                 {Math.round(current)}/{target}g

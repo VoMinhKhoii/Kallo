@@ -76,13 +76,13 @@ export function MealEntry({ message, onConfirm }: MealEntryProps) {
       className="group relative"
     >
       {/* Timeline dot & line */}
-      <div className="absolute top-2 bottom-0 -left-10 w-px bg-[#E8D5B5]/60 group-last:bg-transparent" />
-      <div className="absolute top-2 -left-[43px] h-2 w-2 rounded-full border-2 border-[#C9A87C] bg-white" />
+      <div className="absolute top-2 bottom-0 -left-10 w-px bg-nham-border/60 group-last:bg-transparent" />
+      <div className="absolute top-2 -left-[43px] h-2 w-2 rounded-full border-2 border-nham-accent bg-white" />
 
       {/* Time label */}
       <div className="mb-2">
         <span
-          className="font-bold text-[#8B7355]/60 text-[11px] tracking-widest"
+          className="font-bold text-[11px] text-nham-text-muted/60 tracking-widest"
           style={{ fontFamily: 'DM Sans, sans-serif' }}
         >
           {timeLabel}
@@ -90,12 +90,12 @@ export function MealEntry({ message, onConfirm }: MealEntryProps) {
       </div>
 
       {/* Card */}
-      <div className="rounded-2xl border border-[#E8D5B5]/60 bg-white p-5 shadow-sm transition-shadow hover:shadow-md">
+      <div className="rounded-2xl border border-nham-border/60 bg-white p-5 shadow-sm transition-shadow hover:shadow-md">
         {/* Header: quoted input + controls */}
         <div className="flex items-start justify-between gap-3">
           {message.userInput && (
             <p
-              className="text-[#2C2416] text-[17px] leading-relaxed"
+              className="text-[17px] text-nham-text leading-relaxed"
               style={{ fontFamily: 'Lora, serif' }}
             >
               &ldquo;{message.userInput}&rdquo;
@@ -108,7 +108,7 @@ export function MealEntry({ message, onConfirm }: MealEntryProps) {
                 aria-label="Toggle meal details"
                 aria-expanded={!isCollapsed}
                 onClick={() => setIsCollapsed((prev) => !prev)}
-                className="rounded-full p-1 text-[#8B7355]/60 transition-colors hover:bg-[#F0EAE0]/40 hover:text-[#2C2416]"
+                className="rounded-full p-1 text-nham-text-muted/60 transition-colors hover:bg-nham-hover/40 hover:text-nham-text"
               >
                 <ChevronDown
                   className={`h-4 w-4 transition-transform duration-200 ${isCollapsed ? '' : 'rotate-180'}`}
@@ -145,7 +145,7 @@ export function MealEntry({ message, onConfirm }: MealEntryProps) {
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.85 }}
                     transition={{ duration: 0.15 }}
-                    className="flex items-center gap-1.5 rounded-full border border-[#E8D5B5]/50 px-2.5 py-1 text-[#8B7355] transition-colors hover:border-[#C9A87C]/50 hover:bg-[#F0EAE0]/40 hover:text-[#2C2416]"
+                    className="flex items-center gap-1.5 rounded-full border border-nham-border/50 px-2.5 py-1 text-nham-text-muted transition-colors hover:border-nham-accent/50 hover:bg-nham-hover/40 hover:text-nham-text"
                   >
                     <Pencil className="h-3 w-3" />
                     <span
@@ -167,12 +167,12 @@ export function MealEntry({ message, onConfirm }: MealEntryProps) {
             className="mt-2 flex items-center justify-between"
             style={{ fontFamily: 'DM Sans, sans-serif' }}
           >
-            <span className="text-[#8B7355] text-[11px] tabular-nums">
+            <span className="text-[11px] text-nham-text-muted tabular-nums">
               P: {Math.round(currentTotals.protein)}g{'  '}C:{' '}
               {Math.round(currentTotals.carbs)}g{'  '}F:{' '}
               {Math.round(currentTotals.fat)}g
             </span>
-            <span className="font-bold text-[#2C2416] text-sm tabular-nums">
+            <span className="font-bold text-nham-text text-sm tabular-nums">
               {Math.round(currentTotals.calories)} kcal
             </span>
           </div>
@@ -180,7 +180,7 @@ export function MealEntry({ message, onConfirm }: MealEntryProps) {
 
         {/* Expandable details */}
         {!isCollapsed && (
-          <div className="mt-5 border-[#E8D5B5] border-t border-dashed pt-4">
+          <div className="mt-5 border-nham-border border-t border-dashed pt-4">
             {/* Items list */}
             <div className="mb-4 space-y-1">
               {currentItems.map((item, idx) => (
@@ -195,17 +195,17 @@ export function MealEntry({ message, onConfirm }: MealEntryProps) {
             </div>
 
             {/* Totals — flat, no card */}
-            <div className="border-[#E8D5B5]/50 border-t border-dashed pt-3">
+            <div className="border-nham-border/50 border-t border-dashed pt-3">
               <div className="flex items-center justify-between">
                 <span
-                  className="font-bold text-[#2C2416] text-[13px]"
+                  className="font-bold text-[13px] text-nham-text"
                   style={{ fontFamily: 'DM Sans, sans-serif' }}
                 >
                   Total
                 </span>
                 <div className="flex items-center gap-4">
                   <span
-                    className="text-[#8B7355] text-[11px] tabular-nums"
+                    className="text-[11px] text-nham-text-muted tabular-nums"
                     style={{ fontFamily: 'DM Sans, sans-serif' }}
                   >
                     P: {Math.round(currentTotals.protein)}g{'  '}C:{' '}
@@ -213,7 +213,7 @@ export function MealEntry({ message, onConfirm }: MealEntryProps) {
                     {Math.round(currentTotals.fat)}g
                   </span>
                   <span
-                    className="font-bold text-[#2C2416] tabular-nums"
+                    className="font-bold text-nham-text tabular-nums"
                     style={{ fontFamily: 'DM Sans, sans-serif' }}
                   >
                     {Math.round(currentTotals.calories)} kcal

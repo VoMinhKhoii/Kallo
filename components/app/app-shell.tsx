@@ -34,7 +34,7 @@ export function AppShell({
   };
 
   return (
-    <div className="flex h-screen bg-[#FEFBF6]">
+    <div className="flex h-screen bg-nham-surface">
       <div className="mx-3 my-3 flex flex-1 gap-3">
         <MainSidebar
           onboardingIncomplete={isIncomplete && !showOnboarding}
