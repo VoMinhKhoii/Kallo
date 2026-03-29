@@ -16,7 +16,11 @@ function generateId() {
   return `msg-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
 }
 
-export function FeedArea() {
+interface FeedAreaProps {
+  targets: MacroBreakdown;
+}
+
+export function FeedArea({ targets }: FeedAreaProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputValue, setInputValue] = useState('');
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -112,99 +116,111 @@ export function FeedArea() {
       {/* Scrollable feed */}
       <div
         ref={scrollRef}
-        className="flex min-h-0 flex-1 flex-col overflow-y-auto px-4 py-6 sm:px-6"
+        className="flex min-h-0 flex-1 flex-col overflow-y-auto"
       >
         <AnimatePresence mode="wait">
           {!hasMessages && !isPending && (
-            <div className="flex flex-1 items-center justify-center">
+            <div className="flex flex-1 items-center justify-center px-4 py-6 sm:px-6">
               <EmptyState onSuggestionClick={setInputValue} />
             </div>
           )}
         </AnimatePresence>
 
         {(hasMessages || isPending) && (
-          <div className="mx-auto w-full max-w-2xl pl-12">
-            {/* Daily macro summary */}
-            <div className="mb-6">
-              <MacroSummary totals={dailyTotals} />
+          <>
+            {/* Sticky macro summary */}
+            <div className="sticky top-0 z-10 bg-[#FEFBF6] px-4 pt-4 pb-3 sm:px-6">
+              <div className="mx-auto max-w-4xl">
+                <MacroSummary totals={dailyTotals} targets={targets} />
+              </div>
             </div>
 
             {/* Meal entries */}
-            <div className="flex flex-col gap-8">
-              <AnimatePresence initial={false}>
-                {assistantMessages.map((msg) => {
-                  if (msg.parsedMeal) {
-                    return (
-                      <MealEntry
-                        key={msg.id}
-                        message={msg}
-                        onConfirm={(meal) => handleConfirmMeal(msg.id, meal)}
-                      />
-                    );
-                  }
+            <div className="px-4 pb-6 sm:px-6">
+              <div className="mx-auto w-full max-w-3xl pl-12">
+                <div className="flex flex-col gap-8">
+                  <AnimatePresence initial={false}>
+                    {assistantMessages.map((msg) => {
+                      if (msg.parsedMeal) {
+                        return (
+                          <MealEntry
+                            key={msg.id}
+                            message={msg}
+                            onConfirm={(meal) =>
+                              handleConfirmMeal(msg.id, meal)
+                            }
+                          />
+                        );
+                      }
 
-                  // Error message display
-                  return (
-                    <motion.div
-                      key={msg.id}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className="group relative"
-                    >
-                      <div className="absolute top-2 bottom-0 -left-10 w-px bg-[#E8D5B5]/60 group-last:bg-transparent" />
-                      <div className="absolute top-2 -left-[43px] h-2 w-2 rounded-full border-2 border-rose-400 bg-white" />
-                      <div className="rounded-2xl border border-rose-200/60 bg-rose-50/50 p-4">
-                        {msg.userInput && (
-                          <p
-                            className="mb-2 text-[#8B7355] text-[13px]"
-                            style={{ fontFamily: 'Lora, serif' }}
-                          >
-                            &ldquo;{msg.userInput}&rdquo;
-                          </p>
-                        )}
-                        <p
-                          className="text-rose-600 text-sm"
-                          style={{ fontFamily: 'DM Sans, sans-serif' }}
+                      // Error message display
+                      return (
+                        <motion.div
+                          key={msg.id}
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          className="group relative"
                         >
-                          {msg.content}
-                        </p>
-                      </div>
-                    </motion.div>
-                  );
-                })}
-              </AnimatePresence>
+                          <div className="absolute top-2 bottom-0 -left-10 w-px bg-[#E8D5B5]/60 group-last:bg-transparent" />
+                          <div className="absolute top-2 -left-[43px] h-2 w-2 rounded-full border-2 border-rose-400 bg-white" />
+                          <div className="rounded-2xl border border-rose-200/60 bg-rose-50/50 p-4">
+                            {msg.userInput && (
+                              <p
+                                className="mb-2 text-[#8B7355] text-[13px]"
+                                style={{ fontFamily: 'Lora, serif' }}
+                              >
+                                &ldquo;{msg.userInput}&rdquo;
+                              </p>
+                            )}
+                            <p
+                              className="text-rose-600 text-sm"
+                              style={{
+                                fontFamily: 'DM Sans, sans-serif',
+                              }}
+                            >
+                              {msg.content}
+                            </p>
+                          </div>
+                        </motion.div>
+                      );
+                    })}
+                  </AnimatePresence>
 
-              {/* Loading indicator */}
-              <AnimatePresence>
-                {isPending && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -5 }}
-                    className="group relative"
-                  >
-                    <div className="absolute top-2 bottom-0 -left-10 w-px bg-[#E8D5B5]/60 group-last:bg-transparent" />
-                    <div className="absolute top-2 -left-[43px] h-2 w-2 animate-pulse rounded-full border-2 border-[#C9A87C] bg-[#C9A87C]/30" />
-                    <div className="flex items-center gap-2.5 rounded-2xl border border-[#E8D5B5]/30 bg-white px-4 py-3">
-                      <Loader2 className="h-4 w-4 animate-spin text-[#C9A87C]" />
-                      <span
-                        className="text-[#8B7355] text-sm"
-                        style={{ fontFamily: 'DM Sans, sans-serif' }}
+                  {/* Loading indicator */}
+                  <AnimatePresence>
+                    {isPending && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -5 }}
+                        className="group relative"
                       >
-                        Analyzing your meal...
-                      </span>
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
+                        <div className="absolute top-2 bottom-0 -left-10 w-px bg-[#E8D5B5]/60 group-last:bg-transparent" />
+                        <div className="absolute top-2 -left-[43px] h-2 w-2 animate-pulse rounded-full border-2 border-[#C9A87C] bg-[#C9A87C]/30" />
+                        <div className="flex items-center gap-2.5 rounded-2xl border border-[#E8D5B5]/30 bg-white px-4 py-3">
+                          <Loader2 className="h-4 w-4 animate-spin text-[#C9A87C]" />
+                          <span
+                            className="text-[#8B7355] text-sm"
+                            style={{
+                              fontFamily: 'DM Sans, sans-serif',
+                            }}
+                          >
+                            Analyzing your meal...
+                          </span>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              </div>
             </div>
-          </div>
+          </>
         )}
       </div>
 
       {/* Input area */}
       <div className="px-4 pt-2 pb-4">
-        <div className="mx-auto max-w-2xl">
+        <div className="mx-auto max-w-3xl">
           <MealInput
             value={inputValue}
             onChange={setInputValue}

@@ -1,6 +1,6 @@
 'use client';
 
-import { Check, ChefHat, Pencil, X } from 'lucide-react';
+import { ChevronDown, Pencil, X } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useState } from 'react';
 import { applyQuantityChange, recalculateTotals } from '@/lib/meal-utils';
@@ -22,6 +22,7 @@ export function MealEntry({ message, onConfirm }: MealEntryProps) {
   const [editedItems, setEditedItems] = useState<MealItem[]>(
     message.parsedMeal?.items ?? []
   );
+  const [isCollapsed, setIsCollapsed] = useState(false);
 
   const meal = message.parsedMeal;
   if (!meal) return null;
@@ -53,6 +54,7 @@ export function MealEntry({ message, onConfirm }: MealEntryProps) {
   const handleConfirm = () => {
     setConfirmed(true);
     setIsEditing(false);
+    setIsCollapsed(true);
     if (onConfirm) {
       onConfirm({
         ...meal,
@@ -89,31 +91,28 @@ export function MealEntry({ message, onConfirm }: MealEntryProps) {
 
       {/* Card */}
       <div className="rounded-2xl border border-[#E8D5B5]/60 bg-white p-5 shadow-sm transition-shadow hover:shadow-md">
-        {/* Quoted user input */}
-        {message.userInput && (
-          <p
-            className="mb-5 text-[#2C2416] text-[17px] leading-relaxed"
-            style={{ fontFamily: 'Lora, serif' }}
-          >
-            &ldquo;{message.userInput}&rdquo;
-          </p>
-        )}
-
-        {/* Extraction divider */}
-        <div className="border-[#E8D5B5] border-t border-dashed pt-4">
-          {/* Section header with edit toggle */}
-          <div className="mb-3 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <ChefHat className="h-3.5 w-3.5 text-[#C9A87C]" />
-              <span
-                className="font-bold text-[#8B7355]/70 text-[10px] uppercase tracking-widest"
-                style={{ fontFamily: 'DM Sans, sans-serif' }}
+        {/* Header: quoted input + controls */}
+        <div className="flex items-start justify-between gap-3">
+          {message.userInput && (
+            <p
+              className="text-[#2C2416] text-[17px] leading-relaxed"
+              style={{ fontFamily: 'Lora, serif' }}
+            >
+              &ldquo;{message.userInput}&rdquo;
+            </p>
+          )}
+          <div className="flex shrink-0 items-center gap-2">
+            {confirmed && (
+              <button
+                type="button"
+                onClick={() => setIsCollapsed((prev) => !prev)}
+                className="rounded-full p-1 text-[#8B7355]/60 transition-colors hover:bg-[#F0EAE0]/40 hover:text-[#2C2416]"
               >
-                Extracted
-              </span>
-            </div>
-
-            {/* Edit ↔ Cancel toggle */}
+                <ChevronDown
+                  className={`h-4 w-4 transition-transform duration-200 ${isCollapsed ? '' : 'rotate-180'}`}
+                />
+              </button>
+            )}
             {!confirmed && (
               <AnimatePresence mode="wait" initial={false}>
                 {isEditing ? (
@@ -158,59 +157,68 @@ export function MealEntry({ message, onConfirm }: MealEntryProps) {
               </AnimatePresence>
             )}
           </div>
-
-          {/* Items list */}
-          <div className="mb-4 space-y-1">
-            {currentItems.map((item, idx) => (
-              <MealEntryItem
-                key={item.id}
-                item={item}
-                index={idx}
-                isEditing={isEditing}
-                onQuantityChange={handleQuantityChange}
-              />
-            ))}
-          </div>
-
-          {/* Totals bar */}
-          <div className="flex items-center justify-between rounded-xl border border-[#E8D5B5]/50 bg-[#FEFBF6] p-3">
-            <span
-              className="font-bold text-[#2C2416] text-[13px]"
-              style={{ fontFamily: 'DM Sans, sans-serif' }}
-            >
-              Meal Total
-            </span>
-            <div className="flex items-center gap-4">
-              <div className="flex gap-2 font-mono text-[#8B7355] text-[10px]">
-                <span className="rounded border border-[#E8D5B5] bg-white px-1.5 py-0.5">
-                  P: {Math.round(currentTotals.protein)}g
-                </span>
-                <span className="rounded border border-[#E8D5B5] bg-white px-1.5 py-0.5">
-                  C: {Math.round(currentTotals.carbs)}g
-                </span>
-                <span className="rounded border border-[#E8D5B5] bg-white px-1.5 py-0.5">
-                  F: {Math.round(currentTotals.fat)}g
-                </span>
-              </div>
-              <span className="font-bold font-mono text-[#2C2416] tabular-nums">
-                {Math.round(currentTotals.calories)} kcal
-              </span>
-            </div>
-          </div>
         </div>
 
-        {/* Confirmed banner */}
-        {confirmed && (
-          <div className="mt-4 flex items-center justify-center gap-2 rounded-xl bg-emerald-50/80 px-4 py-2.5">
-            <div className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500/15">
-              <Check className="h-3 w-3 text-emerald-600" />
-            </div>
-            <span
-              className="font-medium text-emerald-700 text-xs"
-              style={{ fontFamily: 'DM Sans, sans-serif' }}
-            >
-              Meal logged successfully
+        {/* Collapsed summary */}
+        {confirmed && isCollapsed && (
+          <div
+            className="mt-2 flex items-center justify-between"
+            style={{ fontFamily: 'DM Sans, sans-serif' }}
+          >
+            <span className="text-[#8B7355] text-[11px] tabular-nums">
+              P: {Math.round(currentTotals.protein)}g{'  '}C:{' '}
+              {Math.round(currentTotals.carbs)}g{'  '}F:{' '}
+              {Math.round(currentTotals.fat)}g
             </span>
+            <span className="font-bold text-[#2C2416] text-sm tabular-nums">
+              {Math.round(currentTotals.calories)} kcal
+            </span>
+          </div>
+        )}
+
+        {/* Expandable details */}
+        {!isCollapsed && (
+          <div className="mt-5 border-[#E8D5B5] border-t border-dashed pt-4">
+            {/* Items list */}
+            <div className="mb-4 space-y-1">
+              {currentItems.map((item, idx) => (
+                <MealEntryItem
+                  key={item.id}
+                  item={item}
+                  index={idx}
+                  isEditing={isEditing}
+                  onQuantityChange={handleQuantityChange}
+                />
+              ))}
+            </div>
+
+            {/* Totals — flat, no card */}
+            <div className="border-[#E8D5B5]/50 border-t border-dashed pt-3">
+              <div className="flex items-center justify-between">
+                <span
+                  className="font-bold text-[#2C2416] text-[13px]"
+                  style={{ fontFamily: 'DM Sans, sans-serif' }}
+                >
+                  Total
+                </span>
+                <div className="flex items-center gap-4">
+                  <span
+                    className="text-[#8B7355] text-[11px] tabular-nums"
+                    style={{ fontFamily: 'DM Sans, sans-serif' }}
+                  >
+                    P: {Math.round(currentTotals.protein)}g{'  '}C:{' '}
+                    {Math.round(currentTotals.carbs)}g{'  '}F:{' '}
+                    {Math.round(currentTotals.fat)}g
+                  </span>
+                  <span
+                    className="font-bold text-[#2C2416] tabular-nums"
+                    style={{ fontFamily: 'DM Sans, sans-serif' }}
+                  >
+                    {Math.round(currentTotals.calories)} kcal
+                  </span>
+                </div>
+              </div>
+            </div>
           </div>
         )}
       </div>

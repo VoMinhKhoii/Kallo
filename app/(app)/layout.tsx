@@ -17,7 +17,12 @@ export default async function AppLayout({
     redirect('/');
   }
 
-  const profile = await getOnboardingProfile();
+  let profile = null;
+  try {
+    profile = await getOnboardingProfile();
+  } catch {
+    // DB unreachable — continue with null profile
+  }
   const onboardingStep = profile?.onboardingStep ?? 0;
 
   return (

@@ -41,7 +41,7 @@ export function MealEntryItem({
             >
               <Minus className="h-2.5 w-2.5" />
             </button>
-            <span className="w-7 text-center font-mono font-semibold text-[#2C2416] text-[11px] tabular-nums">
+            <span className="w-7 text-center font-semibold text-[#2C2416] text-[11px] tabular-nums">
               {item.quantity}
             </span>
             <button
@@ -58,7 +58,7 @@ export function MealEntryItem({
 
       {/* Right: P/C/F macros + calories */}
       <div className="flex shrink-0 items-center gap-3">
-        <div className="flex gap-2 font-mono text-[#8B7355] text-[10px] tabular-nums">
+        <div className="flex gap-2 text-[#8B7355] text-[10px] tabular-nums">
           <span className="w-6 text-right">
             P:{Math.round(item.macros.protein)}
           </span>
@@ -69,7 +69,7 @@ export function MealEntryItem({
             F:{Math.round(item.macros.fat)}
           </span>
         </div>
-        <span className="w-12 text-right font-bold font-mono text-[#2C2416] tabular-nums">
+        <span className="w-12 text-right font-bold text-[#2C2416] tabular-nums">
           {Math.round(item.macros.calories)}
         </span>
       </div>

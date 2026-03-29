@@ -1,73 +1,149 @@
 'use client';
 
-import { Flame } from 'lucide-react';
 import { motion } from 'motion/react';
 import type { MacroBreakdown } from '@/lib/types/meal';
-import { cn } from '@/lib/utils';
 
 interface MacroSummaryProps {
   totals: MacroBreakdown;
+  targets: MacroBreakdown;
 }
 
-export function MacroSummary({ totals }: MacroSummaryProps) {
+const RING_RADIUS = 42;
+const RING_STROKE = 2.5;
+const RING_SIZE = (RING_RADIUS + RING_STROKE) * 2;
+const RING_CENTER = RING_SIZE / 2;
+const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS;
+
+const MACROS: {
+  key: 'protein' | 'carbs' | 'fat';
+  label: string;
+  color: string;
+}[] = [
+  { key: 'protein', label: 'Protein', color: '#C9A87C' },
+  { key: 'carbs', label: 'Carbs', color: '#8B7355' },
+  { key: 'fat', label: 'Fat', color: '#A8A29E' },
+];
+
+export function MacroSummary({ totals, targets }: MacroSummaryProps) {
   const { calories, protein, carbs, fat } = totals;
 
   if (calories === 0 && protein === 0 && carbs === 0 && fat === 0) {
     return null;
   }
 
+  const remaining = Math.max(0, targets.calories - calories);
+  const calPercent =
+    targets.calories > 0
+      ? Math.min(100, (calories / targets.calories) * 100)
+      : 0;
+  const dashOffset =
+    RING_CIRCUMFERENCE - (RING_CIRCUMFERENCE * calPercent) / 100;
+
   return (
     <motion.div
       initial={{ opacity: 0, y: -8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.35, ease: 'easeOut' }}
-      className={cn(
-        'flex items-center gap-3 rounded-xl border px-4 py-2.5',
-        'border-[#E8D5B5] bg-[#FEFBF6]'
-      )}
+      className="flex items-center gap-6"
     >
-      <div className="flex items-center gap-1.5">
-        <Flame className="size-4 text-[#C9A87C]" />
-        <span
-          className="font-mono font-semibold text-[#2C2416] text-lg tabular-nums"
-          style={{ fontFamily: 'Lora, serif' }}
+      {/* Circular calorie progress */}
+      <div className="flex shrink-0 flex-col items-center gap-1">
+        <div
+          className="relative"
+          style={{ width: RING_SIZE, height: RING_SIZE }}
         >
-          {calories}
-        </span>
+          <svg
+            width={RING_SIZE}
+            height={RING_SIZE}
+            aria-label={`${remaining} calories remaining of ${targets.calories}`}
+          >
+            <circle
+              cx={RING_CENTER}
+              cy={RING_CENTER}
+              r={RING_RADIUS}
+              fill="none"
+              stroke="#F5F4F0"
+              strokeWidth={RING_STROKE}
+            />
+            <motion.circle
+              cx={RING_CENTER}
+              cy={RING_CENTER}
+              r={RING_RADIUS}
+              fill="none"
+              stroke="#2C2416"
+              strokeWidth={RING_STROKE}
+              strokeDasharray={RING_CIRCUMFERENCE}
+              initial={{ strokeDashoffset: RING_CIRCUMFERENCE }}
+              animate={{ strokeDashoffset: dashOffset }}
+              transition={{ duration: 1, ease: 'easeOut' }}
+              strokeLinecap="round"
+              transform={`rotate(-90 ${RING_CENTER} ${RING_CENTER})`}
+            />
+          </svg>
+          <div className="absolute inset-0 flex flex-col items-center justify-center">
+            <span
+              className="font-semibold text-[#2C2416] text-xl tabular-nums leading-none"
+              style={{ fontFamily: 'Lora, serif' }}
+            >
+              {remaining.toLocaleString()}
+            </span>
+            <span
+              className="mt-0.5 font-bold text-[#8B7355]/60 text-[7px] uppercase tracking-widest"
+              style={{ fontFamily: 'DM Sans, sans-serif' }}
+            >
+              remaining
+            </span>
+          </div>
+        </div>
         <span
-          className="text-[#8B7355] text-xs"
+          className="font-semibold text-[#8B7355] text-xs tabular-nums"
           style={{ fontFamily: 'DM Sans, sans-serif' }}
         >
-          kcal
+          {calories} / {targets.calories.toLocaleString()} kcal
         </span>
       </div>
 
-      <div className="h-4 w-px bg-[#E8D5B5]" aria-hidden="true" />
+      {/* Divider */}
+      <div className="h-12 w-px bg-[#E8D5B5]/30" aria-hidden="true" />
 
-      <div className="flex items-center gap-1.5">
-        {(
-          [
-            ['P', protein],
-            ['C', carbs],
-            ['F', fat],
-          ] as const
-        ).map(([label, value]) => (
-          <span
-            key={label}
-            className={cn(
-              'rounded border border-[#E8D5B5] bg-white px-1.5 py-0.5',
-              'font-mono text-[#2C2416] text-xs tabular-nums'
-            )}
-          >
-            <span
-              className="text-[#8B7355]"
-              style={{ fontFamily: 'DM Sans, sans-serif' }}
-            >
-              {label}:
-            </span>{' '}
-            {value}g
-          </span>
-        ))}
+      {/* Macro progress bars */}
+      <div className="flex flex-1 flex-col gap-3">
+        {MACROS.map(({ key, label, color }) => {
+          const current = totals[key];
+          const target = targets[key];
+          const percent =
+            target > 0 ? Math.min(100, (current / target) * 100) : 0;
+
+          return (
+            <div key={key} className="flex items-center gap-3">
+              <span
+                className="w-14 font-bold text-[#8B7355]/70 text-[10px] uppercase tracking-wider"
+                style={{ fontFamily: 'DM Sans, sans-serif' }}
+              >
+                {label}
+              </span>
+              <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-[#F5F4F0]">
+                <motion.div
+                  initial={{ width: 0 }}
+                  animate={{ width: `${percent}%` }}
+                  transition={{
+                    duration: 1,
+                    delay: 0.2,
+                    ease: 'easeOut',
+                  }}
+                  className="h-full rounded-full"
+                  style={{ backgroundColor: color }}
+                />
+              </div>
+              <span
+                className="w-16 text-right text-[#8B7355] text-[11px] tabular-nums"
+                style={{ fontFamily: 'DM Sans, sans-serif' }}
+              >
+                {Math.round(current)}/{target}g
+              </span>
+            </div>
+          );
+        })}
       </div>
     </motion.div>
   );
