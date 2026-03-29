@@ -1,21 +1,21 @@
 import { Check, X } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 
-interface MealCardActionsProps {
+interface MealEntryActionsProps {
   isEditing: boolean;
   onCancel: () => void;
   onSave: () => void;
   onConfirm: () => void;
 }
 
-export function MealCardActions({
+export function MealEntryActions({
   isEditing,
   onCancel,
   onSave,
   onConfirm,
-}: MealCardActionsProps) {
+}: MealEntryActionsProps) {
   return (
-    <div className="mt-2 flex">
+    <div className="mt-3 flex">
       {/* Cancel — slides in from the left */}
       <motion.div
         className="shrink-0 overflow-hidden"
@@ -29,7 +29,7 @@ export function MealCardActions({
           <button
             type="button"
             onClick={onCancel}
-            className="flex h-full w-full items-center justify-center gap-1.5 rounded-xl border border-[#E8D5B5]/70 bg-white px-3 py-2.5 font-medium text-[#8B7355] text-xs shadow-sm transition-all duration-200 hover:border-[#C9A87C]/50 hover:bg-[#F0EAE0]/60"
+            className="flex h-full w-full items-center justify-center gap-1.5 rounded-xl border border-nham-border/70 bg-white px-3 py-2.5 font-medium text-nham-text-muted text-xs shadow-sm transition-all duration-200 hover:border-nham-accent/50 hover:bg-nham-hover/60"
             style={{ fontFamily: 'DM Sans, sans-serif' }}
           >
             <X className="h-3.5 w-3.5 shrink-0" />
@@ -42,7 +42,7 @@ export function MealCardActions({
       <button
         type="button"
         onClick={isEditing ? onSave : onConfirm}
-        className="relative flex flex-1 items-center justify-center gap-1.5 overflow-hidden rounded-xl bg-[#695e4e] px-3 py-2.5 font-medium text-white text-xs shadow-sm transition-all duration-200 hover:bg-[#5a5043] hover:shadow-md"
+        className="relative flex flex-1 items-center justify-center gap-1.5 overflow-hidden rounded-xl bg-nham-btn px-3 py-2.5 font-medium text-white text-xs shadow-sm transition-all duration-200 hover:bg-nham-btn-hover hover:shadow-md"
         style={{ fontFamily: 'DM Sans, sans-serif' }}
       >
         <AnimatePresence mode="wait" initial={false}>

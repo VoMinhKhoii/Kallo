@@ -26,6 +26,7 @@ export interface ChatMessage {
   role: ChatRole;
   content: string;
   parsedMeal?: ParsedMeal;
+  userInput?: string;
   timestamp: Date;
   isLoading?: boolean;
 }
