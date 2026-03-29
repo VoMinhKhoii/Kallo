@@ -3,10 +3,10 @@
 import { ChevronDown, Pencil, X } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useState } from 'react';
+import { MealEntryActions } from '@/components/logging/feed/meal-entry-actions';
+import { MealEntryItem } from '@/components/logging/feed/meal-entry-item';
 import { applyQuantityChange, recalculateTotals } from '@/lib/meal-utils';
 import type { ChatMessage, MealItem, ParsedMeal } from '@/lib/types/meal';
-import { MealEntryActions } from './meal-entry-actions';
-import { MealEntryItem } from './meal-entry-item';
 
 interface MealEntryProps {
   message: ChatMessage;
@@ -105,6 +105,8 @@ export function MealEntry({ message, onConfirm }: MealEntryProps) {
             {confirmed && (
               <button
                 type="button"
+                aria-label="Toggle meal details"
+                aria-expanded={!isCollapsed}
                 onClick={() => setIsCollapsed((prev) => !prev)}
                 className="rounded-full p-1 text-[#8B7355]/60 transition-colors hover:bg-[#F0EAE0]/40 hover:text-[#2C2416]"
               >

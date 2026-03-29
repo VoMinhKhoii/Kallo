@@ -20,8 +20,8 @@ export default async function AppLayout({
   let profile = null;
   try {
     profile = await getOnboardingProfile();
-  } catch {
-    // DB unreachable — continue with null profile
+  } catch (error) {
+    console.error('Failed to load onboarding profile:', error);
   }
   const onboardingStep = profile?.onboardingStep ?? 0;
 

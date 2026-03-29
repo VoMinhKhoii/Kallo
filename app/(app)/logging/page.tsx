@@ -15,16 +15,16 @@ export default async function LoggingPage() {
 
   try {
     const profile = await getOnboardingProfile();
-    if (profile?.calorieTarget) {
+    if (profile) {
       targets = {
-        calories: profile.calorieTarget,
+        calories: profile.calorieTarget ?? DEFAULT_TARGETS.calories,
         protein: profile.proteinTargetG ?? DEFAULT_TARGETS.protein,
         carbs: profile.carbsTargetG ?? DEFAULT_TARGETS.carbs,
         fat: profile.fatTargetG ?? DEFAULT_TARGETS.fat,
       };
     }
-  } catch {
-    // Fall back to defaults if DB is unreachable
+  } catch (error) {
+    console.error('Failed to load onboarding profile:', error);
   }
 
   return (

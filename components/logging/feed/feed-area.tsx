@@ -4,13 +4,13 @@ import { Loader2 } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
+import { EmptyState } from '@/components/logging/feed/empty-state';
+import { MacroSummary } from '@/components/logging/feed/macro-summary';
+import { MealEntry } from '@/components/logging/feed/meal-entry';
+import { MealInput } from '@/components/logging/input/meal-input';
 import { useAnalyzeMeal } from '@/hooks/use-analyze-meal';
 import { recalculateTotals } from '@/lib/meal-utils';
 import type { ChatMessage, MacroBreakdown, ParsedMeal } from '@/lib/types/meal';
-import { MealInput } from '../input/meal-input';
-import { EmptyState } from './empty-state';
-import { MacroSummary } from './macro-summary';
-import { MealEntry } from './meal-entry';
 
 function generateId() {
   return `msg-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
@@ -104,8 +104,12 @@ export function FeedArea({ targets }: FeedAreaProps) {
     }
   };
 
-  const handleConfirmMeal = (_messageId: string, _meal: ParsedMeal) => {
-    // In-memory only — persistence comes later
+  const handleConfirmMeal = (messageId: string, meal: ParsedMeal) => {
+    setMessages((prev) =>
+      prev.map((msg) =>
+        msg.id === messageId ? { ...msg, parsedMeal: meal } : msg
+      )
+    );
   };
 
   const assistantMessages = messages.filter((m) => m.role === 'assistant');

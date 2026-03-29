@@ -34,7 +34,7 @@ export function MacroSummary({ totals, targets }: MacroSummaryProps) {
   const remaining = Math.max(0, targets.calories - calories);
   const calPercent =
     targets.calories > 0
-      ? Math.min(100, (calories / targets.calories) * 100)
+      ? Math.max(0, Math.min(100, (calories / targets.calories) * 100))
       : 0;
   const dashOffset =
     RING_CIRCUMFERENCE - (RING_CIRCUMFERENCE * calPercent) / 100;
@@ -112,7 +112,9 @@ export function MacroSummary({ totals, targets }: MacroSummaryProps) {
           const current = totals[key];
           const target = targets[key];
           const percent =
-            target > 0 ? Math.min(100, (current / target) * 100) : 0;
+            target > 0
+              ? Math.max(0, Math.min(100, (current / target) * 100))
+              : 0;
 
           return (
             <div key={key} className="flex items-center gap-3">
