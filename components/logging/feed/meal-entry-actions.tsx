@@ -1,21 +1,21 @@
 import { Check, X } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 
-interface MealCardActionsProps {
+interface MealEntryActionsProps {
   isEditing: boolean;
   onCancel: () => void;
   onSave: () => void;
   onConfirm: () => void;
 }
 
-export function MealCardActions({
+export function MealEntryActions({
   isEditing,
   onCancel,
   onSave,
   onConfirm,
-}: MealCardActionsProps) {
+}: MealEntryActionsProps) {
   return (
-    <div className="mt-2 flex">
+    <div className="mt-3 flex">
       {/* Cancel — slides in from the left */}
       <motion.div
         className="shrink-0 overflow-hidden"

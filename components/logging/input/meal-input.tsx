@@ -25,9 +25,9 @@ export function MealInput({
   const canSubmit = value.trim().length > 0 && !disabled;
 
   return (
-    <div className="flex items-center gap-3 rounded-2xl border border-[#E8D5B5]/40 bg-white p-3 shadow-[0_4px_20px_rgba(201,168,124,0.08)] transition-shadow duration-300 focus-within:border-[#C9A87C]/40 focus-within:shadow-[0_4px_24px_rgba(201,168,124,0.15)]">
+    <div className="flex items-center gap-3 rounded-2xl border border-[#E8D5B5]/40 bg-white p-3 shadow-[0_4px_20px_rgba(201,168,124,0.06)] transition-all duration-300 focus-within:border-[#C9A87C]/40 focus-within:shadow-[0_4px_20px_rgba(201,168,124,0.12)]">
       <label htmlFor="meal-input" className="sr-only">
-        Input meal
+        Describe your meal
       </label>
       <input
         id="meal-input"
@@ -44,7 +44,7 @@ export function MealInput({
         type="button"
         onClick={onSubmit}
         disabled={!canSubmit}
-        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#695e4e] text-white shadow-sm transition-all duration-200 hover:bg-[#5a5043] hover:shadow-md active:scale-95 disabled:opacity-30 disabled:shadow-none"
+        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#695e4e] text-white transition-all duration-200 hover:bg-[#5a5043] active:scale-95 disabled:opacity-30"
         aria-label="Submit meal"
       >
         <ArrowUp className="h-4 w-4" />
