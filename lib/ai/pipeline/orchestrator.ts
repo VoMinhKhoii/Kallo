@@ -198,7 +198,7 @@ async function runPipeline(
 
   // Stage 3: LLM nutrition estimation (with timeout)
   const t2 = Date.now();
-  const nutritionResult: NutritionAdjustment = await withTimeout(
+  let nutritionResult: NutritionAdjustment = await withTimeout(
     gemini.generateStructuredOutput({
       schema: nutritionAdjustmentSchema,
       systemPrompt: buildNutritionPrompt(
@@ -217,6 +217,38 @@ async function runPipeline(
     LLM_TIMEOUT_MS,
     'nutrition'
   );
+
+  // Retry once if nutrition result is implausible (0 total calories)
+  const totalMidKcal = nutritionResult.mealItems.reduce(
+    (sum, mi) =>
+      sum +
+      mi.ingredients.reduce((s, ing) => s + (ing.caloriesKcal?.mid ?? 0), 0),
+    0
+  );
+  if (totalMidKcal === 0) {
+    console.warn(
+      '[pipeline] Implausible 0-calorie result from Call 2, retrying once'
+    );
+    nutritionResult = await withTimeout(
+      gemini.generateStructuredOutput({
+        schema: nutritionAdjustmentSchema,
+        systemPrompt: buildNutritionPrompt(
+          decomposition.mealItems,
+          matchResult.matched,
+          matchResult.unmatched,
+          userContext
+        ),
+        userMessage:
+          'The previous result had 0 calories. Please recalculate bounded nutrition estimates carefully.',
+        model: GEMINI_MODEL,
+        temperature: 0.5,
+        topP: 1,
+        topK: 1,
+      }),
+      LLM_TIMEOUT_MS,
+      'nutrition-retry'
+    );
+  }
   const nutritionMs = Date.now() - t2;
 
   // Pre-assembly validation: flag implausible LLM nutrition values

@@ -710,4 +710,58 @@ describe('analyzeMeal', () => {
 
     expect(result.success).toBe(true);
   });
+
+  it('retries Call 2 when nutrition result has 0 total calories', async () => {
+    const zeroCalNutrition: NutritionAdjustment = {
+      mealItems: [
+        {
+          mealItemName: 'Cơm',
+          ingredients: [makeLlmNutrition('Gạo tẻ', 0, 0, 0, 0)],
+        },
+      ],
+    };
+
+    // First Call 1 stream resolves normally
+    (
+      mockGemini.generateStructuredOutputStream as ReturnType<typeof vi.fn>
+    ).mockResolvedValueOnce(sampleDecomposition);
+    // First Call 2 returns 0 calories → triggers retry
+    (
+      mockGemini.generateStructuredOutput as ReturnType<typeof vi.fn>
+    ).mockResolvedValueOnce(zeroCalNutrition);
+    // Retry Call 2 returns valid result
+    (
+      mockGemini.generateStructuredOutput as ReturnType<typeof vi.fn>
+    ).mockResolvedValueOnce(sampleNutritionAdjustment);
+
+    mockMatchIngredients.mockResolvedValueOnce({
+      matched: [
+        {
+          ingredientName: 'Gạo tẻ',
+          foodCompositionId: 'rice-001',
+          matchedName: 'Gạo tẻ',
+          similarity: 0.85,
+          confidence: 'high',
+          nutritionPer100g: nullNutrition,
+        },
+      ],
+      unmatched: [],
+    });
+
+    const result = await analyzeMeal(
+      'cơm trắng',
+      userContext,
+      mockDb,
+      mockGemini
+    );
+
+    expect(result.success).toBe(true);
+    if (!result.success) return;
+    // Should have used the retry result (350 kcal), not the 0-calorie result
+    expect(result.data.displayedNutrition.caloriesKcal).toBeGreaterThan(0);
+    // generateStructuredOutput should have been called twice (original + retry)
+    expect(
+      mockGemini.generateStructuredOutput as ReturnType<typeof vi.fn>
+    ).toHaveBeenCalledTimes(2);
+  });
 });
