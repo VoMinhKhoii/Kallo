@@ -11,7 +11,11 @@ import type {
   PipelineResponse,
   UserContext,
 } from '../types';
-import { detectAnomalies, validateNutritionOutput } from '../validation';
+import {
+  type ValidationAnomaly,
+  detectAnomalies,
+  validateNutritionOutput,
+} from '../validation';
 import { assembleResult } from './assembly';
 import {
   handleError,
@@ -24,6 +28,47 @@ import {
 
 /** D1/D8: Default model for both LLM calls, configurable per call */
 const GEMINI_MODEL = 'gemini-3-flash-preview';
+
+/** Per-call timeout for Gemini API calls (ms) */
+const LLM_TIMEOUT_MS = 15_000;
+
+// ---------------------------------------------------------------------------
+// Structured logging
+// ---------------------------------------------------------------------------
+
+export interface PipelineMetrics {
+  decomposeMs: number;
+  matchMs: number;
+  nutritionMs: number;
+  assemblyMs: number;
+  totalMs: number;
+  ingredientCount: number;
+  matchedCount: number;
+  unmatchedCount: number;
+  mealItemCount: number;
+  anomalies: ValidationAnomaly[];
+}
+
+function logMetrics(metrics: PipelineMetrics): void {
+  console.info('[pipeline] metrics', JSON.stringify(metrics));
+}
+
+// ---------------------------------------------------------------------------
+// Timeout helper
+// ---------------------------------------------------------------------------
+
+function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(
+      () => reject(new Error(`${label} timed out after ${ms}ms`)),
+      ms
+    );
+    promise.then(
+      (v) => { clearTimeout(timer); resolve(v); },
+      (e) => { clearTimeout(timer); reject(e); }
+    );
+  });
+}
 
 /**
  * Full meal analysis pipeline.
@@ -81,8 +126,10 @@ async function runPipeline(
   gemini: GeminiClient
 ): Promise<PipelineResponse> {
   const t0 = Date.now();
-  const decomposition: MealDecomposition =
-    await gemini.generateStructuredOutput({
+
+  // Stage 1: LLM decomposition (with timeout)
+  const decomposition: MealDecomposition = await withTimeout(
+    gemini.generateStructuredOutput({
       schema: mealDecompositionSchema,
       systemPrompt: buildDecompositionPrompt(userContext),
       userMessage: rawInput,
@@ -90,8 +137,11 @@ async function runPipeline(
       temperature: 0.3,
       topP: 1,
       topK: 1,
-    });
-  console.info(`[pipeline] decomposition: ${Date.now() - t0}ms`);
+    }),
+    LLM_TIMEOUT_MS,
+    'decomposition'
+  );
+  const decomposeMs = Date.now() - t0;
 
   // Normalize names: capitalize first letter for consistent cache keys and UI display
   for (const mi of decomposition.mealItems) {
@@ -118,6 +168,7 @@ async function runPipeline(
     }
   }
 
+  // Stage 2: Ingredient matching
   const allIngredients = decomposition.mealItems.flatMap(
     (mi) => mi.ingredients
   );
@@ -128,21 +179,12 @@ async function runPipeline(
     db,
     gemini
   );
-  console.info(
-    `[pipeline] matching ${allIngredients.length} ingredients: ${Date.now() - t1}ms | matched=${matchResult.matched.length} unmatched=${matchResult.unmatched.length}`
-  );
-  for (const m of matchResult.matched) {
-    console.info(
-      `[pipeline]   ✓ ${m.ingredientName} → ${m.matchedName} (${m.similarity.toFixed(3)}, ${m.confidence})`
-    );
-  }
-  for (const u of matchResult.unmatched) {
-    console.info(`[pipeline]   ✗ ${u.ingredientName} → unmatched`);
-  }
+  const matchMs = Date.now() - t1;
 
+  // Stage 3: LLM nutrition estimation (with timeout)
   const t2 = Date.now();
-  const nutritionResult: NutritionAdjustment =
-    await gemini.generateStructuredOutput({
+  const nutritionResult: NutritionAdjustment = await withTimeout(
+    gemini.generateStructuredOutput({
       schema: nutritionAdjustmentSchema,
       systemPrompt: buildNutritionPrompt(
         decomposition.mealItems,
@@ -156,21 +198,20 @@ async function runPipeline(
       temperature: 0.5,
       topP: 1,
       topK: 1,
-    });
-  console.info(`[pipeline] nutrition adjustment: ${Date.now() - t2}ms`);
+    }),
+    LLM_TIMEOUT_MS,
+    'nutrition'
+  );
+  const nutritionMs = Date.now() - t2;
 
   // Pre-assembly validation: flag implausible LLM nutrition values
   const nutritionAnomalies = validateNutritionOutput(
     nutritionResult,
     matchResult.matched
   );
-  if (nutritionAnomalies.length > 0) {
-    console.warn(
-      `[pipeline] nutrition anomalies:`,
-      nutritionAnomalies.map((a) => `${a.type}: ${a.message}`)
-    );
-  }
 
+  // Stage 4: Assembly
+  const t3 = Date.now();
   const pipelineResult = assembleResult(
     decomposition,
     nutritionResult,
@@ -178,6 +219,7 @@ async function runPipeline(
     matchResult.unmatched,
     userContext
   );
+  const assemblyMs = Date.now() - t3;
 
   // Post-assembly anomaly detection
   const resultAnomalies = detectAnomalies(
@@ -185,13 +227,21 @@ async function runPipeline(
     matchResult.matched,
     matchResult.unmatched
   );
-  if (resultAnomalies.length > 0) {
-    console.warn(
-      `[pipeline] result anomalies:`,
-      resultAnomalies.map((a) => `${a.type}: ${a.message}`)
-    );
-  }
 
-  console.info(`[pipeline] total: ${Date.now() - t0}ms`);
+  // Emit structured metrics
+  const allAnomalies = [...nutritionAnomalies, ...resultAnomalies];
+  logMetrics({
+    decomposeMs,
+    matchMs,
+    nutritionMs,
+    assemblyMs,
+    totalMs: Date.now() - t0,
+    ingredientCount: allIngredients.length,
+    matchedCount: matchResult.matched.length,
+    unmatchedCount: matchResult.unmatched.length,
+    mealItemCount: decomposition.mealItems.length,
+    anomalies: allAnomalies,
+  });
+
   return { success: true, data: pipelineResult };
 }
