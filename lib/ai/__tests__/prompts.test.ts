@@ -53,6 +53,26 @@ describe('buildDecompositionPrompt', () => {
     const prompt = buildDecompositionPrompt(sampleUserContext);
     expect(prompt).toContain('isFood');
   });
+
+  it('only includes the user regional prior, not all regions', () => {
+    const prompt = buildDecompositionPrompt(sampleUserContext);
+    // mien_nam is in context, should be in regional_priors
+    expect(prompt).toContain('<regional_priors>');
+    expect(prompt).toContain('mien_nam: sweeter');
+    // Other regions should NOT be present
+    expect(prompt).not.toContain('mien_bac');
+    expect(prompt).not.toContain('mien_trung');
+    expect(prompt).not.toContain('mien_tay');
+  });
+
+  it('omits regional_priors section for unknown region', () => {
+    const ctx: UserContext = {
+      ...sampleUserContext,
+      regionalProfile: 'unknown' as UserContext['regionalProfile'],
+    };
+    const prompt = buildDecompositionPrompt(ctx);
+    expect(prompt).not.toContain('<regional_priors>');
+  });
 });
 
 const fullNutrition = {
@@ -297,6 +317,59 @@ describe('buildNutritionPrompt', () => {
     expect(prompt).not.toContain('fiberG');
     expect(prompt).not.toContain('sodiumMg');
     expect(prompt).not.toContain('vitaminB12Mcg');
+  });
+
+  it('only includes cooking adjustments for methods used in ingredients', () => {
+    const khoMealItems: DecomposedMealItem[] = [
+      {
+        name: 'thịt kho',
+        ingredients: [
+          {
+            name: 'thịt lợn',
+            estimatedGrams: 100,
+            cookingMethod: 'kho',
+            userFacingUnit: null,
+          },
+        ],
+      },
+    ];
+    const prompt = buildNutritionPrompt(
+      khoMealItems,
+      [],
+      [],
+      sampleUserContext
+    );
+    // Should include kho adjustment
+    expect(prompt).toContain('kho: carbs +10–20%');
+    // Should always include null/raw fallback
+    expect(prompt).toContain('null/raw: use base directly');
+    // Should NOT include unrelated methods
+    expect(prompt).not.toContain('nướng');
+    expect(prompt).not.toContain('hấp');
+    expect(prompt).not.toContain('luộc');
+  });
+
+  it('includes chiên/xào when either chiên or xào is used', () => {
+    const xaoMealItems: DecomposedMealItem[] = [
+      {
+        name: 'rau xào',
+        ingredients: [
+          {
+            name: 'rau muống',
+            estimatedGrams: 150,
+            cookingMethod: 'xào',
+            userFacingUnit: null,
+          },
+        ],
+      },
+    ];
+    const prompt = buildNutritionPrompt(
+      xaoMealItems,
+      [],
+      [],
+      sampleUserContext
+    );
+    expect(prompt).toContain('chiên/xào: fat +15–30%');
   });
 });
 

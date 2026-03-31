@@ -30,6 +30,37 @@ export function buildNutritionPrompt(
 
   const matchedLookup = new Map(matched.map((m) => [m.ingredientName, m]));
 
+  // Collect cooking methods in use for dynamic prompt trimming
+  const usedMethods = new Set<string | null>();
+  for (const mi of mealItems) {
+    for (const ing of mi.ingredients) {
+      usedMethods.add(ing.cookingMethod);
+    }
+  }
+
+  // Build dynamic cooking adjustment table (only used methods)
+  const allAdjustments: Record<string, string> = {
+    kho: 'kho: carbs +10–20% (sugar/caramel), fat +5–10% (oil)',
+    'chiên/xào': 'chiên/xào: fat +15–30% (absorbed oil)',
+    'luộc': 'luộc: calories −5% (nutrient loss to water)',
+    'nướng': 'nướng: fat −5–10% (drip loss)',
+    'hấp': 'hấp: no change',
+    'nấu': 'nấu (rice): no macro change (water absorption only)',
+  };
+
+  const cookingLines: string[] = [];
+  for (const [key, line] of Object.entries(allAdjustments)) {
+    // Include if any method matches (chiên/xào matches either chiên or xào)
+    const methodKeys = key.split('/');
+    if (methodKeys.some((k) => usedMethods.has(k))) {
+      cookingLines.push(`       ${line}`);
+    }
+  }
+  // Always include null/raw fallback
+  cookingLines.push('       null/raw: use base directly');
+
+  const cookingTable = cookingLines.join('\n');
+
   let ingredientData = '<ingredient_data>\n';
   ingredientData +=
     '  <!-- DB values are per 100g RAW uncooked weight. estimatedGrams is also RAW. -->\n\n';
@@ -90,12 +121,7 @@ export function buildNutritionPrompt(
   <calculation>
     1. Scale: base = (estimatedGrams / 100) × per_100g_raw. All values are RAW weights.
     2. Adjust for cooking method:
-       kho: carbs +10–20% (sugar/caramel), fat +5–10% (oil)
-       chiên/xào: fat +15–30% (absorbed oil)
-       luộc: calories −5% (nutrient loss to water)
-       nướng: fat −5–10% (drip loss)
-       hấp: no change | nấu (rice): no macro change (water absorption only)
-       null/raw: use base directly
+${cookingTable}
     3. Bound: MID = adjusted base. LOW = MID −10–15%. HIGH = MID +15–25%.
        Widen HIGH for: heavy oil_usage (+5% fat on fried), high sugar_braised (+5% carbs on kho),
        finish_it broth_consumption (full broth calories in MID/HIGH for soups).
