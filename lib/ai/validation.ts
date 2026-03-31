@@ -83,7 +83,6 @@ export function validateNutritionOutput(
 
         // DB-anchor deviation: LLM mid kcal vs DB-scaled mid kcal
         if (dbKcalPer100g != null && dbKcalPer100g > 0 && midKcal > 0) {
-          const grams = ing.caloriesKcal.mid; // Using mid as a proxy
           // We approximate by comparing low/high ratio — wide bounds signal uncertainty
           const ratio = ing.caloriesKcal.high / ing.caloriesKcal.low;
           if (ratio > 1 + THRESHOLDS.DB_DEVIATION_RATIO * 2) {

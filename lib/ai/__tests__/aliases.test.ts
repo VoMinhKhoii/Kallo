@@ -123,7 +123,7 @@ describe('INGREDIENT_ALIASES', () => {
   });
 
   it('has non-empty canonical names', () => {
-    for (const [key, value] of Object.entries(INGREDIENT_ALIASES)) {
+    for (const [_key, value] of Object.entries(INGREDIENT_ALIASES)) {
       expect(value.length).toBeGreaterThan(0);
       // Canonical names should be capitalized
       expect(value[0]).toBe(value[0].toUpperCase());

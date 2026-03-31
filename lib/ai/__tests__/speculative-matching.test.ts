@@ -19,7 +19,7 @@ describe('extractIngredientNames', () => {
     extractIngredientNames(partial1, seen);
 
     // Second chunk adds a new ingredient
-    const partial2 = partial1 + '},{"name":"Thịt bò","estimatedGrams":150}';
+    const partial2 = `${partial1},{"name":"Thịt bò","estimatedGrams":150}`;
     const newNames = extractIngredientNames(partial2, seen);
     expect(newNames).toEqual(['Thịt bò']);
     expect(newNames).not.toContain('Gạo tẻ');
