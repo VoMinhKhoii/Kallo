@@ -13,8 +13,8 @@ import type {
   UserContext,
 } from '../types';
 import {
-  type ValidationAnomaly,
   detectAnomalies,
+  type ValidationAnomaly,
   validateNutritionOutput,
 } from '../validation';
 import { assembleResult } from './assembly';
@@ -58,15 +58,25 @@ function logMetrics(metrics: PipelineMetrics): void {
 // Timeout helper
 // ---------------------------------------------------------------------------
 
-function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
+function withTimeout<T>(
+  promise: Promise<T>,
+  ms: number,
+  label: string
+): Promise<T> {
   return new Promise<T>((resolve, reject) => {
     const timer = setTimeout(
       () => reject(new Error(`${label} timed out after ${ms}ms`)),
       ms
     );
     promise.then(
-      (v) => { clearTimeout(timer); resolve(v); },
-      (e) => { clearTimeout(timer); reject(e); }
+      (v) => {
+        clearTimeout(timer);
+        resolve(v);
+      },
+      (e) => {
+        clearTimeout(timer);
+        reject(e);
+      }
     );
   });
 }

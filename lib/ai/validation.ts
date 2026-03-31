@@ -70,7 +70,10 @@ export function validateNutritionOutput(
         const dbKcalPer100g = matchInfo.nutritionPer100g.caloriesKcal;
 
         // Calorie density: does DB value itself exceed pure fat?
-        if (dbKcalPer100g != null && dbKcalPer100g > THRESHOLDS.MAX_KCAL_PER_100G) {
+        if (
+          dbKcalPer100g != null &&
+          dbKcalPer100g > THRESHOLDS.MAX_KCAL_PER_100G
+        ) {
           anomalies.push({
             type: 'calorie_density',
             message: `${ing.ingredientName}: DB ${dbKcalPer100g} kcal/100g > ${THRESHOLDS.MAX_KCAL_PER_100G}`,

@@ -4,7 +4,8 @@ import { extractIngredientNames } from '../speculative-matching';
 describe('extractIngredientNames', () => {
   it('extracts names from partial JSON stream', () => {
     const seen = new Set<string>();
-    const partial = '{"mealItems":[{"name":"Cơm","ingredients":[{"name":"Gạo tẻ","estimatedGrams":200';
+    const partial =
+      '{"mealItems":[{"name":"Cơm","ingredients":[{"name":"Gạo tẻ","estimatedGrams":200';
     const names = extractIngredientNames(partial, seen);
     // Both "Cơm" (meal item) and "Gạo tẻ" (ingredient) are extracted
     expect(names).toContain('Cơm');
@@ -13,7 +14,8 @@ describe('extractIngredientNames', () => {
 
   it('tracks seen names and returns only new ones', () => {
     const seen = new Set<string>();
-    const partial1 = '{"mealItems":[{"name":"Cơm","ingredients":[{"name":"Gạo tẻ"';
+    const partial1 =
+      '{"mealItems":[{"name":"Cơm","ingredients":[{"name":"Gạo tẻ"';
     extractIngredientNames(partial1, seen);
 
     // Second chunk adds a new ingredient
@@ -42,7 +44,8 @@ describe('extractIngredientNames', () => {
 
   it('extracts names with Vietnamese diacritics', () => {
     const seen = new Set<string>();
-    const partial = '{"name":"Bún bò Huế","ingredients":[{"name":"Bún phở"},{"name":"Thịt bò"}]}';
+    const partial =
+      '{"name":"Bún bò Huế","ingredients":[{"name":"Bún phở"},{"name":"Thịt bò"}]}';
     const names = extractIngredientNames(partial, seen);
     expect(names).toContain('Bún bò Huế');
     expect(names).toContain('Bún phở');

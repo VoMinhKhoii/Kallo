@@ -178,7 +178,8 @@ export function createGeminiClient(
           }
         }
 
-        if (!accumulated) throw new Error('Gemini stream returned empty response');
+        if (!accumulated)
+          throw new Error('Gemini stream returned empty response');
         return params.schema.parse(JSON.parse(accumulated));
       }, `${params.model}-stream`);
     },
@@ -225,9 +226,7 @@ export function createGeminiClient(
         .filter((i) => i >= 0);
 
       if (uncachedIndices.length === 0) {
-        console.info(
-          `[gemini] batch embed: all ${texts.length} cached`
-        );
+        console.info(`[gemini] batch embed: all ${texts.length} cached`);
         return results as number[][];
       }
 
@@ -236,30 +235,27 @@ export function createGeminiClient(
         `[gemini] batch embed: ${uncachedTexts.length} uncached / ${texts.length} total`
       );
 
-      const embeddings = await withRetry(
-        async () => {
-          const result = await ai.models.embedContent({
-            model: EMBEDDING_MODEL,
-            contents: uncachedTexts,
-            config: { outputDimensionality: EMBEDDING_DIMENSIONS },
-          });
+      const embeddings = await withRetry(async () => {
+        const result = await ai.models.embedContent({
+          model: EMBEDDING_MODEL,
+          contents: uncachedTexts,
+          config: { outputDimensionality: EMBEDDING_DIMENSIONS },
+        });
 
-          if (
-            !result.embeddings ||
-            result.embeddings.length !== uncachedTexts.length
-          ) {
-            throw new Error(
-              `Gemini batch returned ${result.embeddings?.length ?? 0} embeddings for ${uncachedTexts.length} texts`
-            );
-          }
+        if (
+          !result.embeddings ||
+          result.embeddings.length !== uncachedTexts.length
+        ) {
+          throw new Error(
+            `Gemini batch returned ${result.embeddings?.length ?? 0} embeddings for ${uncachedTexts.length} texts`
+          );
+        }
 
-          return result.embeddings.map((e) => {
-            if (!e.values) throw new Error('Gemini returned null embedding');
-            return e.values;
-          });
-        },
-        `batch-embed(${uncachedTexts.length})`
-      );
+        return result.embeddings.map((e) => {
+          if (!e.values) throw new Error('Gemini returned null embedding');
+          return e.values;
+        });
+      }, `batch-embed(${uncachedTexts.length})`);
 
       // Populate cache and fill results
       for (let j = 0; j < uncachedIndices.length; j++) {

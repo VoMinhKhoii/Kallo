@@ -339,20 +339,22 @@ describe('analyzeMeal', () => {
       mealSlot: 'lunch',
     };
 
-    (mockGemini.generateStructuredOutputStream as ReturnType<typeof vi.fn>)
-      .mockResolvedValueOnce(decompositionWithTwo);
-    (mockGemini.generateStructuredOutput as ReturnType<typeof vi.fn>)
-      .mockResolvedValueOnce({
-        mealItems: [
-          {
-            mealItemName: 'Phở bò',
-            ingredients: [
-              makeLlmNutrition('Bún phở', 200, 5, 45, 0.5),
-              makeLlmNutrition('Rare_herb', 5, 0.5, 1, 0.1),
-            ],
-          },
-        ],
-      });
+    (
+      mockGemini.generateStructuredOutputStream as ReturnType<typeof vi.fn>
+    ).mockResolvedValueOnce(decompositionWithTwo);
+    (
+      mockGemini.generateStructuredOutput as ReturnType<typeof vi.fn>
+    ).mockResolvedValueOnce({
+      mealItems: [
+        {
+          mealItemName: 'Phở bò',
+          ingredients: [
+            makeLlmNutrition('Bún phở', 200, 5, 45, 0.5),
+            makeLlmNutrition('Rare_herb', 5, 0.5, 1, 0.1),
+          ],
+        },
+      ],
+    });
 
     mockMatchIngredients.mockResolvedValueOnce({
       matched: [
@@ -407,20 +409,22 @@ describe('analyzeMeal', () => {
       mealSlot: 'dinner',
     };
 
-    (mockGemini.generateStructuredOutputStream as ReturnType<typeof vi.fn>)
-      .mockResolvedValueOnce(decomposition);
-    (mockGemini.generateStructuredOutput as ReturnType<typeof vi.fn>)
-      .mockResolvedValueOnce({
-        mealItems: [
-          {
-            mealItemName: 'Lẩu cá',
-            ingredients: [
-              makeLlmNutrition('Cá lóc', 80, 18, 0, 1),
-              makeLlmNutrition('Exotic_spice', 2, 0.1, 0.5, 0),
-            ],
-          },
-        ],
-      });
+    (
+      mockGemini.generateStructuredOutputStream as ReturnType<typeof vi.fn>
+    ).mockResolvedValueOnce(decomposition);
+    (
+      mockGemini.generateStructuredOutput as ReturnType<typeof vi.fn>
+    ).mockResolvedValueOnce({
+      mealItems: [
+        {
+          mealItemName: 'Lẩu cá',
+          ingredients: [
+            makeLlmNutrition('Cá lóc', 80, 18, 0, 1),
+            makeLlmNutrition('Exotic_spice', 2, 0.1, 0.5, 0),
+          ],
+        },
+      ],
+    });
 
     mockMatchIngredients.mockResolvedValueOnce({
       matched: [
@@ -493,10 +497,12 @@ describe('analyzeMeal', () => {
       ],
     };
 
-    (mockGemini.generateStructuredOutputStream as ReturnType<typeof vi.fn>)
-      .mockResolvedValueOnce(twoItemDecomposition);
-    (mockGemini.generateStructuredOutput as ReturnType<typeof vi.fn>)
-      .mockResolvedValueOnce(twoItemNutrition);
+    (
+      mockGemini.generateStructuredOutputStream as ReturnType<typeof vi.fn>
+    ).mockResolvedValueOnce(twoItemDecomposition);
+    (
+      mockGemini.generateStructuredOutput as ReturnType<typeof vi.fn>
+    ).mockResolvedValueOnce(twoItemNutrition);
 
     mockMatchIngredients.mockResolvedValueOnce({
       matched: [
@@ -598,10 +604,12 @@ describe('analyzeMeal', () => {
       ],
     };
 
-    (mockGemini.generateStructuredOutputStream as ReturnType<typeof vi.fn>)
-      .mockResolvedValueOnce(sharedIngDecomposition);
-    (mockGemini.generateStructuredOutput as ReturnType<typeof vi.fn>)
-      .mockResolvedValueOnce(sharedIngNutrition);
+    (
+      mockGemini.generateStructuredOutputStream as ReturnType<typeof vi.fn>
+    ).mockResolvedValueOnce(sharedIngDecomposition);
+    (
+      mockGemini.generateStructuredOutput as ReturnType<typeof vi.fn>
+    ).mockResolvedValueOnce(sharedIngNutrition);
 
     mockMatchIngredients.mockResolvedValueOnce({
       matched: [
@@ -675,8 +683,9 @@ describe('analyzeMeal', () => {
       .mockRejectedValueOnce(parseError)
       // Retry succeeds
       .mockResolvedValueOnce(sampleDecomposition);
-    (mockGemini.generateStructuredOutput as ReturnType<typeof vi.fn>)
-      .mockResolvedValueOnce(sampleNutritionAdjustment);
+    (
+      mockGemini.generateStructuredOutput as ReturnType<typeof vi.fn>
+    ).mockResolvedValueOnce(sampleNutritionAdjustment);
 
     mockMatchIngredients.mockResolvedValueOnce({
       matched: [

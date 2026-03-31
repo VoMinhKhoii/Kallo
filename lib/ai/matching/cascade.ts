@@ -82,9 +82,7 @@ export async function matchIngredients(
   // Phase 2: Batch embed all L3 misses in a single API call
   if (missIndices.length > 0) {
     const missNames = missIndices.map((i) => ingredients[i].name);
-    console.info(
-      `[matching] batch embedding ${missNames.length} L3 misses`
-    );
+    console.info(`[matching] batch embedding ${missNames.length} L3 misses`);
     const batchResults = await gemini.generateEmbeddingBatch(missNames);
     for (let j = 0; j < missIndices.length; j++) {
       const idx = missIndices[j];
@@ -99,8 +97,7 @@ export async function matchIngredients(
       name: ingredient.name,
       embedding: embeddings[i]!,
     })),
-    (item) =>
-      matchSingleIngredientWithEmbedding(item.name, item.embedding, db),
+    (item) => matchSingleIngredientWithEmbedding(item.name, item.embedding, db),
     MATCH_CONCURRENCY
   );
 

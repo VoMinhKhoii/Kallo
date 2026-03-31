@@ -42,10 +42,10 @@ export function buildNutritionPrompt(
   const allAdjustments: Record<string, string> = {
     kho: 'kho: carbs +10–20% (sugar/caramel), fat +5–10% (oil)',
     'chiên/xào': 'chiên/xào: fat +15–30% (absorbed oil)',
-    'luộc': 'luộc: calories −5% (nutrient loss to water)',
-    'nướng': 'nướng: fat −5–10% (drip loss)',
-    'hấp': 'hấp: no change',
-    'nấu': 'nấu (rice): no macro change (water absorption only)',
+    luộc: 'luộc: calories −5% (nutrient loss to water)',
+    nướng: 'nướng: fat −5–10% (drip loss)',
+    hấp: 'hấp: no change',
+    nấu: 'nấu (rice): no macro change (water absorption only)',
   };
 
   const cookingLines: string[] = [];
