@@ -90,10 +90,10 @@ Assembly (~100ms)
 
 #### 1.3d Remove `thinkingLevel: 'low'`
 
-- Currently enabled for LLM Call 1 (decomposition)
-- Extended thinking adds ~200-500ms latency for internal reasoning chain
-- Structured extraction tasks don't benefit from explicit thinking
-- Action: Remove `thinkingConfig` parameter from Call 1
+- Currently enabled for **both** LLM calls (decomposition AND nutrition) in `orchestrator.ts`
+- Extended thinking adds ~200-500ms latency per call for internal reasoning chain
+- Both calls are structured extraction tasks that don't benefit from explicit thinking
+- Action: Remove `thinkingConfig` parameter from **both** Call 1 and Call 2
 
 #### 1.3e Explicit Context Caching (Future, Paid Tier)
 
@@ -150,8 +150,9 @@ Assembly (~100ms)
 - USDA has more nutrients than our schema — extract only the 28 we track
 
 **Step 4: Import into `vietnamese_food_composition` table**
-- Use existing `source` column: 'USDA_SR' (alongside 'FAO_VN_2007')
-- Add `source_id` for traceability (e.g., 'usda_01001')
+- Create new `ingredient_sources` reference table: `{ id, name }` with values 'FAO' and 'USDA'
+- Replace existing text `source` column in `vietnamese_food_composition` with FK to `ingredient_sources.id`
+  - Requires editing `lib/db/schema.ts` → `bun db:generate` → data migration (convert existing 'FAO_VN_2007' rows → FK)
 - Generate embeddings via existing batch backfill script
 
 **Step 5: Translation pipeline (separate phase)**
@@ -195,7 +196,7 @@ Well within limits. ✅
 | Decomposition (Call 1) | 1.0 | 0.3 | Extraction is deterministic — lower temp = fewer invented ingredients |
 | Nutrition (Call 2) | 1.0 | 0.5 | Needs some variance for meaningful bounded estimates (low ≠ mid ≠ high) |
 
-Keep `topK: 1` (greedy decoding for top token) — already set.
+Keep `topK: 1` (greedy decoding for top token) — currently set on Call 1, add to Call 2 as well for consistency.
 
 ### 3.2 Output Validation Layer (Post-Parse Sanity Checks)
 
@@ -249,18 +250,10 @@ Applied after LLM decomposition, before ingredient matching. Improves DB match r
 
 ### 4.1 Prompt Compression Strategy
 
-**Decomposition prompt: 7,500 → ~3,500 tokens**
-- 2 worked examples (down from 4): keep most diverse (simple + complex)
-- Remove verbose preamble
-- Merge overlapping rules
-- Terse instruction style
-
-**Nutrition prompt: ~10,000 → ~5,500 tokens**
-- Compress instruction section
-- Keep XML data sections verbatim
-- Concise reference table for cooking adjustments
-
-**Per-request savings: ~8,000 input tokens (16K → 8K)**
+See Section 1.3a for full details. Summary:
+- Decomposition: 7,500 → ~3,500 tokens (2 examples, terse rules)
+- Nutrition: ~10,000 → ~5,500 tokens (compressed instructions, keep XML data)
+- Per-request savings: ~8,000 input tokens
 
 ### 4.2 Dynamic Prompt Assembly
 
@@ -285,7 +278,7 @@ Conditional template sections:
 - 24 micronutrients scaled from DB: `micro = (grams / 100) × dbPer100g`
 - No LLM involvement for micros — zero additional tokens
 - Store scaled micros per-meal-item in DB for future premium features (daily RDA tracking, deficiency alerts)
-- Persistence handled when Phase 4 meal logging is built
+- Note: `meal_items` table already has all 28 micro JSONB columns in schema — only the population logic during pipeline assembly needs to be wired up
 
 ---
 
@@ -353,6 +346,7 @@ All items ship as part of a single pipeline V2 upgrade:
 - `lib/ai/aliases.ts` — Ingredient name alias map
 
 ### Modified Files
+- `lib/db/schema.ts` — Add `ingredient_sources` table, replace text `source` column with FK
 - `lib/ai/prompts/decomposition.ts` — Compressed prompt (~3,500 tokens)
 - `lib/ai/prompts/nutrition.ts` — Compressed prompt (~5,500 tokens)
 - `lib/ai/pipeline/orchestrator.ts` — Streaming, timeout, structured logging
