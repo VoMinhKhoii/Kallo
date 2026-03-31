@@ -1,6 +1,6 @@
-import type { ThinkingLevel } from '@google/genai';
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import { capitalizeFirst } from '@/lib/utils';
+import { applyIngredientAliases } from '../aliases';
 import type { GeminiClient } from '../gemini';
 import { matchIngredients } from '../matching';
 import { buildDecompositionPrompt, buildNutritionPrompt } from '../prompts';
@@ -86,10 +86,9 @@ async function runPipeline(
       systemPrompt: buildDecompositionPrompt(userContext),
       userMessage: rawInput,
       model: GEMINI_MODEL,
-      temperature: 1.0,
+      temperature: 0.3,
       topP: 1,
       topK: 1,
-      thinkingConfig: { thinkingLevel: 'low' as ThinkingLevel },
     });
   console.info(`[pipeline] decomposition: ${Date.now() - t0}ms`);
 
@@ -100,6 +99,9 @@ async function runPipeline(
       ing.name = capitalizeFirst(ing.name);
     }
   }
+
+  // Apply ingredient aliases: map common shorthand names to canonical DB names
+  applyIngredientAliases(decomposition);
 
   // D6 Layer 1: Check isFood field from LLM
   if (!decomposition.isFood) {
@@ -150,8 +152,9 @@ async function runPipeline(
       userMessage:
         'Produce bounded nutrition estimates for each ingredient in each meal item based on the reference data provided.',
       model: GEMINI_MODEL,
-      temperature: 1.0,
-      thinkingConfig: { thinkingLevel: 'low' as ThinkingLevel },
+      temperature: 0.5,
+      topP: 1,
+      topK: 1,
     });
   console.info(`[pipeline] nutrition adjustment: ${Date.now() - t2}ms`);
 
