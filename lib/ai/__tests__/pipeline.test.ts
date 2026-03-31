@@ -123,6 +123,19 @@ describe('analyzeMeal', () => {
   let mockGemini: GeminiClient;
   let mockDb: any;
 
+  /** Mock Call 1 (streaming decomposition) + Call 2 (nutrition) */
+  function mockLlmCalls(
+    decomposition: MealDecomposition,
+    nutrition: NutritionAdjustment
+  ) {
+    (
+      mockGemini.generateStructuredOutputStream as ReturnType<typeof vi.fn>
+    ).mockResolvedValueOnce(decomposition);
+    (
+      mockGemini.generateStructuredOutput as ReturnType<typeof vi.fn>
+    ).mockResolvedValueOnce(nutrition);
+  }
+
   beforeEach(() => {
     mockGemini = createMockGemini();
     mockDb = createMockDb();
@@ -130,9 +143,7 @@ describe('analyzeMeal', () => {
   });
 
   it('returns successful result for a simple meal', async () => {
-    (mockGemini.generateStructuredOutput as ReturnType<typeof vi.fn>)
-      .mockResolvedValueOnce(sampleDecomposition)
-      .mockResolvedValueOnce(sampleNutritionAdjustment);
+    mockLlmCalls(sampleDecomposition, sampleNutritionAdjustment);
 
     mockMatchIngredients.mockResolvedValueOnce({
       matched: [
@@ -168,9 +179,7 @@ describe('analyzeMeal', () => {
   });
 
   it('D5: merges LLM 5 nutrients with DB mid values for remaining 23', async () => {
-    (mockGemini.generateStructuredOutput as ReturnType<typeof vi.fn>)
-      .mockResolvedValueOnce(sampleDecomposition)
-      .mockResolvedValueOnce(sampleNutritionAdjustment);
+    mockLlmCalls(sampleDecomposition, sampleNutritionAdjustment);
 
     mockMatchIngredients.mockResolvedValueOnce({
       matched: [
@@ -217,7 +226,7 @@ describe('analyzeMeal', () => {
 
   it('D6: returns non_food_input when isFood=false', async () => {
     (
-      mockGemini.generateStructuredOutput as ReturnType<typeof vi.fn>
+      mockGemini.generateStructuredOutputStream as ReturnType<typeof vi.fn>
     ).mockResolvedValueOnce({
       isFood: false,
       mealItems: [],
@@ -235,13 +244,13 @@ describe('analyzeMeal', () => {
     if (result.success) return;
     expect(result.error.type).toBe('non_food_input');
     expect(result.error.retryable).toBe(false);
-    // Should NOT retry — only 1 LLM call
-    expect(mockGemini.generateStructuredOutput).toHaveBeenCalledTimes(1);
+    // Should NOT retry — only 1 LLM call (streaming decomposition)
+    expect(mockGemini.generateStructuredOutputStream).toHaveBeenCalledTimes(1);
   });
 
   it('D6: returns non_food_input when blocklist ingredient detected', async () => {
     (
-      mockGemini.generateStructuredOutput as ReturnType<typeof vi.fn>
+      mockGemini.generateStructuredOutputStream as ReturnType<typeof vi.fn>
     ).mockResolvedValueOnce({
       isFood: true,
       mealItems: [
@@ -275,7 +284,7 @@ describe('analyzeMeal', () => {
 
   it('D4: retries once on parse error then returns parse_error', async () => {
     const parseError = new Error('Zod parse error: invalid type');
-    (mockGemini.generateStructuredOutput as ReturnType<typeof vi.fn>)
+    (mockGemini.generateStructuredOutputStream as ReturnType<typeof vi.fn>)
       .mockRejectedValueOnce(parseError)
       .mockRejectedValueOnce(parseError);
 
@@ -286,13 +295,13 @@ describe('analyzeMeal', () => {
     expect(result.error.type).toBe('parse_error');
     expect(result.error.retryable).toBe(true);
     // Should have been called twice (original + 1 retry)
-    expect(mockGemini.generateStructuredOutput).toHaveBeenCalledTimes(2);
+    expect(mockGemini.generateStructuredOutputStream).toHaveBeenCalledTimes(2);
   });
 
   it('D4: API errors surface immediately without retry', async () => {
     const apiError = new Error('500 Internal Server Error');
     (
-      mockGemini.generateStructuredOutput as ReturnType<typeof vi.fn>
+      mockGemini.generateStructuredOutputStream as ReturnType<typeof vi.fn>
     ).mockRejectedValueOnce(apiError);
 
     const result = await analyzeMeal('phở bò', userContext, mockDb, mockGemini);
@@ -302,7 +311,7 @@ describe('analyzeMeal', () => {
     expect(result.error.type).toBe('api_error');
     expect(result.error.retryable).toBe(true);
     // API errors no longer trigger pipeline retry (only parse errors do)
-    expect(mockGemini.generateStructuredOutput).toHaveBeenCalledTimes(1);
+    expect(mockGemini.generateStructuredOutputStream).toHaveBeenCalledTimes(1);
   });
 
   it('downgrades confidence when unmatched ingredients present', async () => {
@@ -330,8 +339,9 @@ describe('analyzeMeal', () => {
       mealSlot: 'lunch',
     };
 
+    (mockGemini.generateStructuredOutputStream as ReturnType<typeof vi.fn>)
+      .mockResolvedValueOnce(decompositionWithTwo);
     (mockGemini.generateStructuredOutput as ReturnType<typeof vi.fn>)
-      .mockResolvedValueOnce(decompositionWithTwo)
       .mockResolvedValueOnce({
         mealItems: [
           {
@@ -397,8 +407,9 @@ describe('analyzeMeal', () => {
       mealSlot: 'dinner',
     };
 
+    (mockGemini.generateStructuredOutputStream as ReturnType<typeof vi.fn>)
+      .mockResolvedValueOnce(decomposition);
     (mockGemini.generateStructuredOutput as ReturnType<typeof vi.fn>)
-      .mockResolvedValueOnce(decomposition)
       .mockResolvedValueOnce({
         mealItems: [
           {
@@ -482,8 +493,9 @@ describe('analyzeMeal', () => {
       ],
     };
 
+    (mockGemini.generateStructuredOutputStream as ReturnType<typeof vi.fn>)
+      .mockResolvedValueOnce(twoItemDecomposition);
     (mockGemini.generateStructuredOutput as ReturnType<typeof vi.fn>)
-      .mockResolvedValueOnce(twoItemDecomposition)
       .mockResolvedValueOnce(twoItemNutrition);
 
     mockMatchIngredients.mockResolvedValueOnce({
@@ -586,8 +598,9 @@ describe('analyzeMeal', () => {
       ],
     };
 
+    (mockGemini.generateStructuredOutputStream as ReturnType<typeof vi.fn>)
+      .mockResolvedValueOnce(sharedIngDecomposition);
     (mockGemini.generateStructuredOutput as ReturnType<typeof vi.fn>)
-      .mockResolvedValueOnce(sharedIngDecomposition)
       .mockResolvedValueOnce(sharedIngNutrition);
 
     mockMatchIngredients.mockResolvedValueOnce({
@@ -658,10 +671,11 @@ describe('analyzeMeal', () => {
   it('succeeds on retry after first attempt fails with parse error', async () => {
     const parseError = new Error('Zod parse error: invalid type');
 
-    (mockGemini.generateStructuredOutput as ReturnType<typeof vi.fn>)
+    (mockGemini.generateStructuredOutputStream as ReturnType<typeof vi.fn>)
       .mockRejectedValueOnce(parseError)
       // Retry succeeds
-      .mockResolvedValueOnce(sampleDecomposition)
+      .mockResolvedValueOnce(sampleDecomposition);
+    (mockGemini.generateStructuredOutput as ReturnType<typeof vi.fn>)
       .mockResolvedValueOnce(sampleNutritionAdjustment);
 
     mockMatchIngredients.mockResolvedValueOnce({

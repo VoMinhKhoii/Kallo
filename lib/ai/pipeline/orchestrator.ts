@@ -5,6 +5,7 @@ import type { GeminiClient } from '../gemini';
 import { matchIngredients } from '../matching';
 import { buildDecompositionPrompt, buildNutritionPrompt } from '../prompts';
 import { mealDecompositionSchema, nutritionAdjustmentSchema } from '../schemas';
+import { createSpeculativeMatcher } from '../speculative-matching';
 import type {
   MealDecomposition,
   NutritionAdjustment,
@@ -127,17 +128,21 @@ async function runPipeline(
 ): Promise<PipelineResponse> {
   const t0 = Date.now();
 
-  // Stage 1: LLM decomposition (with timeout)
+  // Stage 1: Streaming decomposition with speculative embedding pre-warming
+  const speculativeMatcher = createSpeculativeMatcher(db);
   const decomposition: MealDecomposition = await withTimeout(
-    gemini.generateStructuredOutput({
-      schema: mealDecompositionSchema,
-      systemPrompt: buildDecompositionPrompt(userContext),
-      userMessage: rawInput,
-      model: GEMINI_MODEL,
-      temperature: 0.3,
-      topP: 1,
-      topK: 1,
-    }),
+    gemini.generateStructuredOutputStream(
+      {
+        schema: mealDecompositionSchema,
+        systemPrompt: buildDecompositionPrompt(userContext),
+        userMessage: rawInput,
+        model: GEMINI_MODEL,
+        temperature: 0.3,
+        topP: 1,
+        topK: 1,
+      },
+      speculativeMatcher
+    ),
     LLM_TIMEOUT_MS,
     'decomposition'
   );

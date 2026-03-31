@@ -10,6 +10,7 @@ export function createMockGemini(
 ): GeminiClient {
   return {
     generateStructuredOutput: vi.fn(),
+    generateStructuredOutputStream: vi.fn(),
     generateEmbedding: vi.fn().mockResolvedValue(Array(768).fill(0.1)),
     generateEmbeddingBatch: vi
       .fn()

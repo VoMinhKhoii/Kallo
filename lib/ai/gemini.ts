@@ -39,6 +39,10 @@ interface StructuredOutputParams<T> {
 
 export interface GeminiClient {
   generateStructuredOutput<T>(params: StructuredOutputParams<T>): Promise<T>;
+  generateStructuredOutputStream<T>(
+    params: StructuredOutputParams<T>,
+    onChunk?: (accumulated: string) => void
+  ): Promise<T>;
   generateEmbedding(text: string): Promise<number[]>;
   generateEmbeddingBatch(texts: string[]): Promise<number[][]>;
 }
@@ -137,6 +141,46 @@ export function createGeminiClient(
 
         return params.schema.parse(JSON.parse(text));
       }, params.model);
+    },
+
+    async generateStructuredOutputStream<T>(
+      params: StructuredOutputParams<T>,
+      onChunk?: (accumulated: string) => void
+    ): Promise<T> {
+      const jsonSchema = toJSONSchema(params.schema);
+      const promptSize = params.systemPrompt.length + params.userMessage.length;
+      console.info(
+        `[gemini] ${params.model} streaming output: prompt=${promptSize} chars (~${Math.round(promptSize / 4)} tokens)`
+      );
+
+      return withRetry(async () => {
+        const response = await ai.models.generateContentStream({
+          model: params.model,
+          contents: params.userMessage,
+          config: {
+            systemInstruction: params.systemPrompt,
+            responseMimeType: 'application/json',
+            responseJsonSchema: jsonSchema,
+            ...(params.temperature != null && {
+              temperature: params.temperature,
+            }),
+            ...(params.topP != null && { topP: params.topP }),
+            ...(params.topK != null && { topK: params.topK }),
+          },
+        });
+
+        let accumulated = '';
+        for await (const chunk of response) {
+          const text = chunk.text ?? '';
+          accumulated += text;
+          if (onChunk && text.length > 0) {
+            onChunk(accumulated);
+          }
+        }
+
+        if (!accumulated) throw new Error('Gemini stream returned empty response');
+        return params.schema.parse(JSON.parse(accumulated));
+      }, `${params.model}-stream`);
     },
 
     async generateEmbedding(text: string): Promise<number[]> {
