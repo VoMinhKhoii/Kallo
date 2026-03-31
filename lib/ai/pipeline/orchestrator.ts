@@ -254,7 +254,8 @@ async function runPipeline(
   // Pre-assembly validation: flag implausible LLM nutrition values
   const nutritionAnomalies = validateNutritionOutput(
     nutritionResult,
-    matchResult.matched
+    matchResult.matched,
+    decomposition.mealItems
   );
 
   // Stage 4: Assembly

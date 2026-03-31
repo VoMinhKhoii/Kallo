@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type {
+  DecomposedMealItem,
   MatchedIngredient,
   NutritionAdjustment,
   PipelineResult,
@@ -36,6 +37,20 @@ function makeMatched(
     },
     ...overrides,
   };
+}
+
+function makeDecomposition(
+  items: { name: string; ingredients: { name: string; grams: number; cooking?: string }[] }[]
+): DecomposedMealItem[] {
+  return items.map((mi) => ({
+    name: mi.name,
+    ingredients: mi.ingredients.map((ing) => ({
+      name: ing.name,
+      estimatedGrams: ing.grams,
+      cookingMethod: ing.cooking ?? null,
+      userFacingUnit: null,
+    })),
+  }));
 }
 
 function makeNutrition(
@@ -146,7 +161,10 @@ describe('validateNutritionOutput', () => {
       { name: 'Cơm', ingredients: [{ name: 'Gạo tẻ', midKcal: 300 }] },
     ]);
     const matched = [makeMatched({ ingredientName: 'Gạo tẻ' })];
-    expect(validateNutritionOutput(nutrition, matched)).toEqual([]);
+    const decomp = makeDecomposition([
+      { name: 'Cơm', ingredients: [{ name: 'Gạo tẻ', grams: 200 }] },
+    ]);
+    expect(validateNutritionOutput(nutrition, matched, decomp)).toEqual([]);
   });
 
   it('flags calorie density when DB kcal/100g exceeds threshold', () => {
@@ -165,7 +183,10 @@ describe('validateNutritionOutput', () => {
     const nutrition = makeNutrition([
       { name: 'Xào', ingredients: [{ name: 'Dầu ăn', midKcal: 90 }] },
     ]);
-    const anomalies = validateNutritionOutput(nutrition, matched);
+    const decomp = makeDecomposition([
+      { name: 'Xào', ingredients: [{ name: 'Dầu ăn', grams: 10 }] },
+    ]);
+    const anomalies = validateNutritionOutput(nutrition, matched, decomp);
     expect(anomalies.some((a) => a.type === 'calorie_density')).toBe(true);
   });
 
@@ -179,38 +200,56 @@ describe('validateNutritionOutput', () => {
         ],
       },
     ]);
-    const anomalies = validateNutritionOutput(nutrition, []);
+    const decomp = makeDecomposition([
+      {
+        name: 'Bữa lớn',
+        ingredients: [
+          { name: 'Gạo tẻ', grams: 300 },
+          { name: 'Thịt', grams: 300 },
+        ],
+      },
+    ]);
+    const anomalies = validateNutritionOutput(nutrition, [], decomp);
     expect(anomalies.some((a) => a.type === 'meal_item_cap')).toBe(true);
     expect(
       anomalies.find((a) => a.type === 'meal_item_cap')?.message
     ).toContain('1600');
   });
 
-  it('flags wide bounds suggesting high uncertainty', () => {
+  it('flags DB-anchor deviation when LLM mid diverges from DB-scaled value', () => {
+    // DB: 200 kcal/100g, 150g raw → DB-scaled = 300 kcal
+    // LLM says mid = 500 kcal → 67% deviation > 50% threshold
     const matched = [makeMatched({ ingredientName: 'Gạo tẻ' })];
     const nutrition = makeNutrition([
       {
         name: 'Cơm',
-        ingredients: [
-          { name: 'Gạo tẻ', midKcal: 300, lowKcal: 50, highKcal: 600 },
-        ],
+        ingredients: [{ name: 'Gạo tẻ', midKcal: 500 }],
       },
     ]);
-    const anomalies = validateNutritionOutput(nutrition, matched);
+    const decomp = makeDecomposition([
+      { name: 'Cơm', ingredients: [{ name: 'Gạo tẻ', grams: 150 }] },
+    ]);
+    const anomalies = validateNutritionOutput(nutrition, matched, decomp);
     expect(anomalies.some((a) => a.type === 'db_deviation')).toBe(true);
+    expect(anomalies.find((a) => a.type === 'db_deviation')?.message).toContain(
+      '67%'
+    );
   });
 
-  it('does not flag normal bounds', () => {
+  it('does not flag DB-anchor deviation within threshold', () => {
+    // DB: 200 kcal/100g, 150g raw → DB-scaled = 300 kcal
+    // LLM says mid = 330 kcal → 10% deviation < 50% threshold
     const matched = [makeMatched({ ingredientName: 'Gạo tẻ' })];
     const nutrition = makeNutrition([
       {
         name: 'Cơm',
-        ingredients: [
-          { name: 'Gạo tẻ', midKcal: 300, lowKcal: 270, highKcal: 330 },
-        ],
+        ingredients: [{ name: 'Gạo tẻ', midKcal: 330 }],
       },
     ]);
-    const anomalies = validateNutritionOutput(nutrition, matched);
+    const decomp = makeDecomposition([
+      { name: 'Cơm', ingredients: [{ name: 'Gạo tẻ', grams: 150 }] },
+    ]);
+    const anomalies = validateNutritionOutput(nutrition, matched, decomp);
     expect(anomalies.some((a) => a.type === 'db_deviation')).toBe(false);
   });
 });

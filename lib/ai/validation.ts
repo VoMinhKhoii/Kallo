@@ -1,4 +1,6 @@
+import { convertCookedToRaw } from './constants';
 import type {
+  DecomposedMealItem,
   MatchedIngredient,
   NutritionAdjustment,
   PipelineResult,
@@ -53,10 +55,22 @@ export interface ValidationAnomaly {
  */
 export function validateNutritionOutput(
   nutrition: NutritionAdjustment,
-  matched: MatchedIngredient[]
+  matched: MatchedIngredient[],
+  decomposition: DecomposedMealItem[]
 ): ValidationAnomaly[] {
   const anomalies: ValidationAnomaly[] = [];
   const matchedLookup = new Map(matched.map((m) => [m.ingredientName, m]));
+
+  // Build a lookup for decomposition grams + cooking method per ingredient
+  const decomposedLookup = new Map<string, { estimatedGrams: number; cookingMethod: string | null }>();
+  for (const mi of decomposition) {
+    for (const ing of mi.ingredients) {
+      decomposedLookup.set(ing.name, {
+        estimatedGrams: ing.estimatedGrams,
+        cookingMethod: ing.cookingMethod,
+      });
+    }
+  }
 
   for (const mealItem of nutrition.mealItems) {
     let mealItemMidKcal = 0;
@@ -81,16 +95,24 @@ export function validateNutritionOutput(
           });
         }
 
-        // DB-anchor deviation: LLM mid kcal vs DB-scaled mid kcal
+        // DB-anchor deviation: compare LLM mid kcal vs DB-scaled value
         if (dbKcalPer100g != null && dbKcalPer100g > 0 && midKcal > 0) {
-          // We approximate by comparing low/high ratio — wide bounds signal uncertainty
-          const ratio = ing.caloriesKcal.high / ing.caloriesKcal.low;
-          if (ratio > 1 + THRESHOLDS.DB_DEVIATION_RATIO * 2) {
-            anomalies.push({
-              type: 'db_deviation',
-              message: `${ing.ingredientName} in ${mealItem.mealItemName}: bounds ratio ${ratio.toFixed(1)}x suggests high uncertainty`,
-              severity: 'warning',
-            });
+          const decomposed = decomposedLookup.get(ing.ingredientName);
+          if (decomposed) {
+            const rawGrams = convertCookedToRaw(
+              decomposed.estimatedGrams,
+              decomposed.cookingMethod
+            );
+            const dbScaledKcal = (rawGrams / 100) * dbKcalPer100g;
+            const deviation =
+              Math.abs(midKcal - dbScaledKcal) / dbScaledKcal;
+            if (deviation > THRESHOLDS.DB_DEVIATION_RATIO) {
+              anomalies.push({
+                type: 'db_deviation',
+                message: `${ing.ingredientName} in ${mealItem.mealItemName}: LLM ${midKcal.toFixed(0)} vs DB-scaled ${dbScaledKcal.toFixed(0)} kcal (${(deviation * 100).toFixed(0)}% deviation)`,
+                severity: 'warning',
+              });
+            }
           }
         }
       }
