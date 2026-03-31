@@ -11,6 +11,7 @@ import type {
   PipelineResponse,
   UserContext,
 } from '../types';
+import { detectAnomalies, validateNutritionOutput } from '../validation';
 import { assembleResult } from './assembly';
 import {
   handleError,
@@ -158,6 +159,18 @@ async function runPipeline(
     });
   console.info(`[pipeline] nutrition adjustment: ${Date.now() - t2}ms`);
 
+  // Pre-assembly validation: flag implausible LLM nutrition values
+  const nutritionAnomalies = validateNutritionOutput(
+    nutritionResult,
+    matchResult.matched
+  );
+  if (nutritionAnomalies.length > 0) {
+    console.warn(
+      `[pipeline] nutrition anomalies:`,
+      nutritionAnomalies.map((a) => `${a.type}: ${a.message}`)
+    );
+  }
+
   const pipelineResult = assembleResult(
     decomposition,
     nutritionResult,
@@ -165,6 +178,19 @@ async function runPipeline(
     matchResult.unmatched,
     userContext
   );
+
+  // Post-assembly anomaly detection
+  const resultAnomalies = detectAnomalies(
+    pipelineResult,
+    matchResult.matched,
+    matchResult.unmatched
+  );
+  if (resultAnomalies.length > 0) {
+    console.warn(
+      `[pipeline] result anomalies:`,
+      resultAnomalies.map((a) => `${a.type}: ${a.message}`)
+    );
+  }
 
   console.info(`[pipeline] total: ${Date.now() - t0}ms`);
   return { success: true, data: pipelineResult };
