@@ -13,7 +13,7 @@ import type {
 /**
  * Build the system prompt for LLM Call 2 (cooking-adjusted bounded nutrition).
  *
- * V2: Compressed instructions, concise cooking adjustment table.
+ * V2: Compressed instructions, no hardcoded % — LLM decides bounds.
  * Dynamic XML data sections kept verbatim.
  *
  * Note: estimatedGrams from Step 1 are COOKED weights. We convert to raw here
@@ -29,37 +29,6 @@ export function buildNutritionPrompt(
   const { cookingHabits } = userContext;
 
   const matchedLookup = new Map(matched.map((m) => [m.ingredientName, m]));
-
-  // Collect cooking methods in use for dynamic prompt trimming
-  const usedMethods = new Set<string | null>();
-  for (const mi of mealItems) {
-    for (const ing of mi.ingredients) {
-      usedMethods.add(ing.cookingMethod);
-    }
-  }
-
-  // Build dynamic cooking adjustment table (only used methods)
-  const allAdjustments: Record<string, string> = {
-    kho: 'kho: carbs +10–20% (sugar/caramel), fat +5–10% (oil)',
-    'chiên/xào': 'chiên/xào: fat +15–30% (absorbed oil)',
-    luộc: 'luộc: calories −5% (nutrient loss to water)',
-    nướng: 'nướng: fat −5–10% (drip loss)',
-    hấp: 'hấp: no change',
-    nấu: 'nấu (rice): no macro change (water absorption only)',
-  };
-
-  const cookingLines: string[] = [];
-  for (const [key, line] of Object.entries(allAdjustments)) {
-    // Include if any method matches (chiên/xào matches either chiên or xào)
-    const methodKeys = key.split('/');
-    if (methodKeys.some((k) => usedMethods.has(k))) {
-      cookingLines.push(`       ${line}`);
-    }
-  }
-  // Always include null/raw fallback
-  cookingLines.push('       null/raw: use base directly');
-
-  const cookingTable = cookingLines.join('\n');
 
   let ingredientData = '<ingredient_data>\n';
   ingredientData +=
@@ -120,16 +89,22 @@ export function buildNutritionPrompt(
 
   <calculation>
     1. Scale: base = (estimatedGrams / 100) × per_100g_raw. All values are RAW weights.
-    2. Adjust for cooking method:
-${cookingTable}
-    3. Bound: MID = adjusted base. LOW = MID −10–15%. HIGH = MID +15–25%.
-       Widen HIGH for: heavy oil_usage (+5% fat on fried), high sugar_braised (+5% carbs on kho),
-       finish_it broth_consumption (full broth calories in MID/HIGH for soups).
+    2. Adjust for cooking method: each ingredient has a "cooking" attribute — use your knowledge of
+       how that cooking method affects macros (e.g., fat absorption in frying, nutrient loss in boiling).
+    3. MID = your best estimate after cooking adjustment.
   </calculation>
 
+  <why_three_values>
+    We use LOW/MID/HIGH to power goal-based adjustments for users cutting or bulking.
+    - LOW: conservative lower bound — how low could this realistically be?
+    - HIGH: conservative upper bound — how high could this realistically be?
+    Express genuine uncertainty: widen bounds for uncertain ingredients (unknown oil quantity,
+    variable sugar, unmatched ingredients) and keep them tighter for well-known, DB-matched ones.
+  </why_three_values>
+
   <unmatched_rule>
-    For ingredients in <unmatched_ingredients>: use fallback estimation from Vietnamese food knowledge,
-    then apply same calculation. Widen bounds: LOW −15%, HIGH +25%.
+    For ingredients in <unmatched_ingredients>: use your Vietnamese food knowledge to estimate.
+    Use wider bounds since we have no DB reference.
 
     IMPORTANT: Each unmatched ingredient is nested under its parent <meal_item>.
     You MUST use the meal item name as primary context — same ingredient differs by dish:
@@ -148,8 +123,8 @@ ${cookingTable}
 
 <example>
   gạo tẻ, 65g raw, nấu, DB: 352 kcal/100g → base=(65/100)×352=229 kcal.
-  nấu: no macro change. MID≈229. LOW=229×0.89≈204. HIGH=229×1.15≈263.
-  → {"ingredientName":"gạo tẻ","caloriesKcal":{"low":204,"mid":229,"high":263},...}
+  nấu: no macro change. MID≈229. LOW≈210 (tighter, DB-matched). HIGH≈250.
+  → {"ingredientName":"gạo tẻ","caloriesKcal":{"low":210,"mid":229,"high":250},...}
 </example>
 
 ${ingredientData}

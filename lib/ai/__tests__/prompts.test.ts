@@ -187,7 +187,7 @@ describe('buildNutritionPrompt', () => {
     );
     expect(prompt).toContain('nước mắm đặc biệt');
     expect(prompt).toContain('<meal_item name="cơm">');
-    expect(prompt).toContain('fallback');
+    expect(prompt).toContain('Vietnamese food knowledge');
   });
 
   it('groups unmatched ingredients under their parent meal items', () => {
@@ -319,7 +319,19 @@ describe('buildNutritionPrompt', () => {
     expect(prompt).not.toContain('vitaminB12Mcg');
   });
 
-  it('only includes cooking adjustments for methods used in ingredients', () => {
+  it('explains why three values are needed for goal adjustment', () => {
+    const prompt = buildNutritionPrompt(
+      sampleMealItems,
+      sampleMatched,
+      [],
+      sampleUserContext
+    );
+    expect(prompt).toContain('<why_three_values>');
+    expect(prompt).toContain('goal-based adjustments');
+    expect(prompt).toContain('genuine uncertainty');
+  });
+
+  it('includes cooking method attribute in ingredient data', () => {
     const khoMealItems: DecomposedMealItem[] = [
       {
         name: 'thịt kho',
@@ -333,43 +345,24 @@ describe('buildNutritionPrompt', () => {
         ],
       },
     ];
-    const prompt = buildNutritionPrompt(
-      khoMealItems,
-      [],
-      [],
-      sampleUserContext
-    );
-    // Should include kho adjustment
-    expect(prompt).toContain('kho: carbs +10–20%');
-    // Should always include null/raw fallback
-    expect(prompt).toContain('null/raw: use base directly');
-    // Should NOT include unrelated methods
-    expect(prompt).not.toContain('nướng');
-    expect(prompt).not.toContain('hấp');
-    expect(prompt).not.toContain('luộc');
-  });
-
-  it('includes chiên/xào when either chiên or xào is used', () => {
-    const xaoMealItems: DecomposedMealItem[] = [
+    const matched: MatchedIngredient[] = [
       {
-        name: 'rau xào',
-        ingredients: [
-          {
-            name: 'rau muống',
-            estimatedGrams: 150,
-            cookingMethod: 'xào',
-            userFacingUnit: null,
-          },
-        ],
+        ingredientName: 'thịt lợn',
+        foodCompositionId: 'pork-001',
+        matchedName: 'Thịt lợn',
+        similarity: 0.9,
+        confidence: 'high',
+        nutritionPer100g: fullNutrition,
       },
     ];
     const prompt = buildNutritionPrompt(
-      xaoMealItems,
-      [],
+      khoMealItems,
+      matched,
       [],
       sampleUserContext
     );
-    expect(prompt).toContain('chiên/xào: fat +15–30%');
+    expect(prompt).toContain('cooking="kho"');
+    expect(prompt).toContain('cooking method');
   });
 });
 
