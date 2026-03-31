@@ -11,6 +11,11 @@ export function createMockGemini(
   return {
     generateStructuredOutput: vi.fn(),
     generateEmbedding: vi.fn().mockResolvedValue(Array(768).fill(0.1)),
+    generateEmbeddingBatch: vi
+      .fn()
+      .mockImplementation((texts: string[]) =>
+        Promise.resolve(texts.map(() => Array(768).fill(0.1)))
+      ),
     ...overrides,
   };
 }

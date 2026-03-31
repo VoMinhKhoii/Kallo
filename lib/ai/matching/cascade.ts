@@ -52,8 +52,8 @@ const MATCH_CONCURRENCY = 3;
  * Match a list of decomposed ingredients against the food composition DB.
  *
  * Cascade: match_ingredients (pgvector/semantic) → fuzzy_match_ingredients (pg_trgm) → unmatched.
- * Each ingredient is processed independently with bounded concurrency to avoid
- * exhausting the Supabase PgBouncer connection pool.
+ * Embedding resolution is batched: L1/L2 cache hits are resolved first, then all L3 misses
+ * are collected into a single batch Gemini API call before matching proceeds.
  */
 export async function matchIngredients(
   ingredients: DecomposedIngredient[],
@@ -64,9 +64,43 @@ export async function matchIngredients(
   const matched: MatchedIngredient[] = [];
   const unmatched: UnmatchedIngredient[] = [];
 
+  // Phase 1: Resolve embeddings (L1/L2 cache) and collect misses
+  const embeddings: (number[] | null)[] = new Array(ingredients.length).fill(
+    null
+  );
+  const missIndices: number[] = [];
+
+  for (let i = 0; i < ingredients.length; i++) {
+    const emb = await resolveQueryEmbedding(ingredients[i].name, db);
+    if (emb) {
+      embeddings[i] = emb;
+    } else {
+      missIndices.push(i);
+    }
+  }
+
+  // Phase 2: Batch embed all L3 misses in a single API call
+  if (missIndices.length > 0) {
+    const missNames = missIndices.map((i) => ingredients[i].name);
+    console.info(
+      `[matching] batch embedding ${missNames.length} L3 misses`
+    );
+    const batchResults = await gemini.generateEmbeddingBatch(missNames);
+    for (let j = 0; j < missIndices.length; j++) {
+      const idx = missIndices[j];
+      embeddings[idx] = batchResults[j];
+      cacheQueryEmbedding(ingredients[idx].name, batchResults[j], db);
+    }
+  }
+
+  // Phase 3: Match each ingredient with its pre-resolved embedding
   const results = await mapWithConcurrency(
-    ingredients,
-    (ingredient) => matchSingleIngredient(ingredient.name, db, gemini),
+    ingredients.map((ingredient, i) => ({
+      name: ingredient.name,
+      embedding: embeddings[i]!,
+    })),
+    (item) =>
+      matchSingleIngredientWithEmbedding(item.name, item.embedding, db),
     MATCH_CONCURRENCY
   );
 
@@ -91,21 +125,15 @@ export async function matchIngredients(
   return { matched, unmatched };
 }
 
-async function matchSingleIngredient(
+/**
+ * Match a single ingredient using a pre-resolved embedding.
+ * Embedding resolution is handled in the batch phase above.
+ */
+async function matchSingleIngredientWithEmbedding(
   ingredientName: string,
-  db: PostgresJsDatabase<any>,
-  gemini: GeminiClient
+  embedding: number[],
+  db: PostgresJsDatabase<any>
 ): Promise<MatchedIngredient | null> {
-  // Tiered embedding lookup: L1 memory → L2 exact (name_vi) → L3 Gemini API
-  let embedding = await resolveQueryEmbedding(ingredientName, db);
-
-  if (!embedding) {
-    // L3: Gemini API fallback (rare after seed script runs)
-    embedding = await gemini.generateEmbedding(ingredientName);
-    // Fire-and-forget: persist for future use across restarts/instances
-    cacheQueryEmbedding(ingredientName, embedding, db);
-  }
-
   // Step 1: Try vector/semantic search (pgvector) — primary
   const vectorRows = await db.execute(
     sql`SELECT * FROM match_ingredients(${JSON.stringify(embedding)}::vector, 3, 0.5)`
