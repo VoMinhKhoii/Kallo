@@ -1,5 +1,6 @@
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
-import { resolveQueryEmbedding } from './embedding-cache';
+import type { GeminiClient } from '../gemini';
+import { cacheQueryEmbedding, resolveQueryEmbedding } from './embedding-cache';
 
 /**
  * Extract ingredient names from a partial JSON stream.
@@ -31,18 +32,30 @@ export function extractIngredientNames(
  * as ingredient names are discovered in the decomposition stream.
  *
  * Returns an `onChunk` callback for the streaming decomposition call.
- * Each newly discovered ingredient name triggers a fire-and-forget
- * L1/L2 embedding cache lookup — if the embedding is already cached,
- * it's available instantly when matching runs later.
+ * Each newly discovered ingredient name triggers:
+ * 1. L1/L2 cache lookup (instant if hit)
+ * 2. On L1/L2 miss → Gemini embedding API call (fire-and-forget),
+ *    result cached to L1+L2 so the batch phase in cascade.ts finds it.
  */
-export function createSpeculativeMatcher(db: PostgresJsDatabase<any>) {
+export function createSpeculativeMatcher(
+  db: PostgresJsDatabase<any>,
+  gemini: GeminiClient
+) {
   const seen = new Set<string>();
 
   return (accumulated: string) => {
     const newNames = extractIngredientNames(accumulated, seen);
     for (const name of newNames) {
-      // Fire-and-forget: pre-warm L1/L2 cache. Errors are silently ignored.
-      resolveQueryEmbedding(name, db).catch(() => {});
+      // Fire-and-forget: pre-warm embedding cache through all tiers
+      resolveQueryEmbedding(name, db)
+        .then((cached) => {
+          if (cached) return; // L1/L2 hit — already warm
+          // L3 miss: fire Gemini embed and cache result
+          return gemini.generateEmbedding(name).then((embedding) => {
+            cacheQueryEmbedding(name, embedding, db);
+          });
+        })
+        .catch(() => {}); // Silently ignore errors — matching phase will retry
     }
   };
 }

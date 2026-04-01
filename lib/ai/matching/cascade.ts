@@ -64,19 +64,14 @@ export async function matchIngredients(
   const matched: MatchedIngredient[] = [];
   const unmatched: UnmatchedIngredient[] = [];
 
-  // Phase 1: Resolve embeddings (L1/L2 cache) and collect misses
-  const embeddings: (number[] | null)[] = new Array(ingredients.length).fill(
-    null
+  // Phase 1: Resolve embeddings (L1/L2 cache) concurrently and collect misses
+  const cacheResults = await Promise.all(
+    ingredients.map((ing) => resolveQueryEmbedding(ing.name, db))
   );
+  const embeddings: (number[] | null)[] = cacheResults.slice();
   const missIndices: number[] = [];
-
-  for (let i = 0; i < ingredients.length; i++) {
-    const emb = await resolveQueryEmbedding(ingredients[i].name, db);
-    if (emb) {
-      embeddings[i] = emb;
-    } else {
-      missIndices.push(i);
-    }
+  for (let i = 0; i < cacheResults.length; i++) {
+    if (!cacheResults[i]) missIndices.push(i);
   }
 
   // Phase 2: Batch embed all L3 misses in a single API call

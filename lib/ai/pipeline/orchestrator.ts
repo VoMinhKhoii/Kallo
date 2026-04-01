@@ -27,8 +27,11 @@ import {
   validateNutritionOutput,
 } from './validation';
 
-/** D1/D8: Default model for both LLM calls, configurable per call */
-const GEMINI_MODEL = 'gemini-3-flash-preview';
+/** Model for LLM Call 1 (decomposition) — structured extraction, speed-optimized */
+const DECOMPOSITION_MODEL = 'gemini-3.1-flash-lite-preview';
+
+/** Model for LLM Call 2 (nutrition estimation) — needs domain accuracy */
+const NUTRITION_MODEL = 'gemini-3.1-flash-lite-preview';
 
 /** Per-call timeout for Gemini API calls (ms) */
 const LLM_TIMEOUT_MS = 15_000;
@@ -139,14 +142,14 @@ async function runPipeline(
   const t0 = Date.now();
 
   // Stage 1: Streaming decomposition with speculative embedding pre-warming
-  const speculativeMatcher = createSpeculativeMatcher(db);
+  const speculativeMatcher = createSpeculativeMatcher(db, gemini);
   const decomposition: MealDecomposition = await withTimeout(
     gemini.generateStructuredOutputStream(
       {
         schema: mealDecompositionSchema,
         systemPrompt: buildDecompositionPrompt(userContext),
         userMessage: rawInput,
-        model: GEMINI_MODEL,
+        model: DECOMPOSITION_MODEL,
         temperature: 0.3,
         topP: 1,
         topK: 1,
@@ -209,7 +212,7 @@ async function runPipeline(
       ),
       userMessage:
         'Produce bounded nutrition estimates for each ingredient in each meal item based on the reference data provided.',
-      model: GEMINI_MODEL,
+      model: NUTRITION_MODEL,
       temperature: 0.5,
       topP: 1,
       topK: 1,
@@ -240,7 +243,7 @@ async function runPipeline(
         ),
         userMessage:
           'The previous result had 0 calories. Please recalculate bounded nutrition estimates carefully.',
-        model: GEMINI_MODEL,
+        model: NUTRITION_MODEL,
         temperature: 0.5,
         topP: 1,
         topK: 1,
