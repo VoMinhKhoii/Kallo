@@ -109,7 +109,7 @@ describe('matchIngredients', () => {
   it('matches via vector search when similarity is high enough', async () => {
     const mockDb = createRoutingMockDb([
       [{ ...sampleFuzzyResult, similarity: 0.8 }], // vector match
-      [sampleNutritionRow], // nutrition fetch
+      [sampleNutritionRow], // batch nutrition fetch (after all matching)
     ]);
 
     const result = await matchIngredients(
@@ -131,7 +131,7 @@ describe('matchIngredients', () => {
     const mockDb = createRoutingMockDb([
       [], // vector match: empty
       [{ ...sampleFuzzyResult, similarity: 0.75 }], // fuzzy match (≥0.7)
-      [sampleNutritionRow], // nutrition fetch
+      [sampleNutritionRow], // batch nutrition fetch (after all matching)
     ]);
 
     const result = await matchIngredients(
@@ -154,7 +154,7 @@ describe('matchIngredients', () => {
     const mockDb = createRoutingMockDb([
       [lowVector], // vector: below threshold after reranking
       [goodFuzzy], // fuzzy: above fallback threshold
-      [sampleNutritionRow], // nutrition fetch
+      [sampleNutritionRow], // batch nutrition fetch (after all matching)
     ]);
 
     const result = await matchIngredients(
@@ -226,8 +226,12 @@ describe('matchIngredients', () => {
       },
     ];
 
-    // Both ingredients go through cache miss → API → vector search
-    // Order may interleave due to concurrency, use routing mock
+    // All matching runs first, then batch nutrition at the end.
+    // With concurrency=3 and 2 items:
+    //   Worker 1: gạo vector match → response[0]
+    //   Worker 2: unknown_food vector miss → response[1]
+    //   Worker 2: unknown_food fuzzy miss → response[2]
+    //   Then: batch nutrition for matched IDs → response[3]
     const mockDb = createRoutingMockDb([
       // gạo: vector match
       [
@@ -240,10 +244,10 @@ describe('matchIngredients', () => {
       ],
       // unknown_food: vector miss
       [],
-      // gạo: nutrition fetch
-      [{ ...sampleNutritionRow, id: 'rice-001', calories_kcal: '350' }],
       // unknown_food: fuzzy fallback miss
       [],
+      // batch nutrition fetch (after ALL matching completes)
+      [{ ...sampleNutritionRow, id: 'rice-001', calories_kcal: '350' }],
     ]);
 
     const result = await matchIngredients(
@@ -262,7 +266,7 @@ describe('matchIngredients', () => {
   it('parses nutrition values from string to number, null stays null', async () => {
     const mockDb = createRoutingMockDb([
       [{ ...sampleFuzzyResult, similarity: 0.8 }], // vector match
-      [sampleNutritionRow], // nutrition fetch
+      [sampleNutritionRow], // batch nutrition fetch
     ]);
 
     const result = await matchIngredients(
@@ -310,7 +314,8 @@ describe('matchIngredients', () => {
 
     await matchIngredients(ingredients, 'test', mockDb as any, mockGemini);
 
-    // Each ingredient: 1 vector call + 1 fuzzy fallback = 2 non-cache DB calls per ingredient
+    // 2 ingredients × (1 vector + 1 fuzzy fallback) = 4 match calls
+    // No matches → batchFetchNutrition gets empty IDs → skips DB call
     expect(callOrder).toHaveLength(4);
   });
 
@@ -333,6 +338,71 @@ describe('matchIngredients', () => {
     expect(result.matched).toHaveLength(0);
     expect(result.unmatched).toHaveLength(1);
     expect(result.unmatched[0].ingredientName).toBe('thịt bò');
+  });
+
+  it('batch-fetches nutrition in 1 query instead of N (N+1 fix)', async () => {
+    // 3 ingredients all match via vector → should trigger exactly 1 batch nutrition query
+    const ingredients: DecomposedIngredient[] = [
+      { name: 'gạo tẻ', estimatedGrams: 150, cookingMethod: 'nấu', userFacingUnit: null },
+      { name: 'thịt bò', estimatedGrams: 100, cookingMethod: 'luộc', userFacingUnit: null },
+      { name: 'rau muống', estimatedGrams: 80, cookingMethod: 'luộc', userFacingUnit: null },
+    ];
+
+    const dbCallQueries: string[] = [];
+    let responseIdx = 0;
+    const responses: unknown[][] = [
+      // 3 vector matches (one per ingredient)
+      [{ ...sampleFuzzyResult, id: 'rice-001', name_primary: 'Gạo tẻ', similarity: 0.85 }],
+      [{ ...sampleFuzzyResult, id: 'beef-001', name_primary: 'Thịt bò', similarity: 0.9 }],
+      [{ ...sampleFuzzyResult, id: 'veg-001', name_primary: 'Rau muống', similarity: 0.88 }],
+      // 1 batch nutrition query returning all 3 rows
+      [
+        { ...sampleNutritionRow, id: 'rice-001', calories_kcal: '352' },
+        { ...sampleNutritionRow, id: 'beef-001', calories_kcal: '250' },
+        { ...sampleNutritionRow, id: 'veg-001', calories_kcal: '20' },
+      ],
+    ];
+
+    const mockDb = {
+      execute: vi.fn().mockImplementation(async (query: unknown) => {
+        const queryStr = extractSqlText(query);
+        if (
+          queryStr.includes('ingredient_query_embeddings') ||
+          queryStr.includes('synonym_candidates')
+        ) {
+          return [];
+        }
+        dbCallQueries.push(queryStr);
+        return responses[responseIdx++] ?? [];
+      }),
+    };
+
+    const result = await matchIngredients(
+      ingredients,
+      'cơm thịt bò xào rau muống',
+      mockDb as any,
+      mockGemini
+    );
+
+    // All 3 should match
+    expect(result.matched).toHaveLength(3);
+    expect(result.unmatched).toHaveLength(0);
+
+    // Verify nutrition was correctly assigned per ingredient
+    const rice = result.matched.find((m) => m.ingredientName === 'gạo tẻ');
+    const beef = result.matched.find((m) => m.ingredientName === 'thịt bò');
+    const veg = result.matched.find((m) => m.ingredientName === 'rau muống');
+    expect(rice?.nutritionPer100g.caloriesKcal).toBe(352);
+    expect(beef?.nutritionPer100g.caloriesKcal).toBe(250);
+    expect(veg?.nutritionPer100g.caloriesKcal).toBe(20);
+
+    // KEY ASSERTION: Only 4 DB calls total (3 vector matches + 1 batch nutrition)
+    // NOT 6 (3 vector + 3 individual nutrition fetches)
+    const nutritionQueries = dbCallQueries.filter((q) =>
+      q.includes('vietnamese_food_composition')
+    );
+    expect(nutritionQueries).toHaveLength(1); // exactly 1 batch query, not 3
+    expect(dbCallQueries).toHaveLength(4); // 3 match + 1 batch nutrition
   });
 });
 

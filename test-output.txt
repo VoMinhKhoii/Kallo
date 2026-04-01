@@ -1,0 +1,84 @@
+﻿
+[1m[46m RUN [49m[22m [36mv4.1.2 [39m[90mE:/Smolfish/Nham[39m
+
+[90mstdout[2m | lib/ai/__tests__/ingredient-matching.test.ts[2m > [22m[2mmatchIngredients[2m > [22m[2mmatches via vector search when similarity is high enough
+[22m[39m[matching] batch embedding 1 L3 misses
+
+[90mstdout[2m | lib/ai/__tests__/ingredient-matching.test.ts[2m > [22m[2mmatchIngredients[2m > [22m[2mmatches via vector search when similarity is high enough
+[22m[39m[matching] "thß╗ït b├▓" vector: Thß╗ït b├▓ (0.800)
+
+[90mstdout[2m | lib/ai/__tests__/ingredient-matching.test.ts[2m > [22m[2mmatchIngredients[2m > [22m[2mfalls back to fuzzy search when vector returns no results
+[22m[39m[matching] batch embedding 1 L3 misses
+
+[90mstdout[2m | lib/ai/__tests__/ingredient-matching.test.ts[2m > [22m[2mmatchIngredients[2m > [22m[2mfalls back to fuzzy search when vector returns no results
+[22m[39m[matching] "thß╗ït b├▓" fuzzy fallback: Thß╗ït b├▓ (0.750)
+
+[90mstdout[2m | lib/ai/__tests__/ingredient-matching.test.ts[2m > [22m[2mmatchIngredients[2m > [22m[2mrejects vector match below threshold and falls through to fuzzy
+[22m[39m[matching] batch embedding 1 L3 misses
+
+[90mstdout[2m | lib/ai/__tests__/ingredient-matching.test.ts[2m > [22m[2mmatchIngredients[2m > [22m[2mrejects vector match below threshold and falls through to fuzzy
+[22m[39m[matching] "thß╗ït b├▓" vector: Thß╗ït b├▓ (0.500)
+
+[90mstdout[2m | lib/ai/__tests__/ingredient-matching.test.ts[2m > [22m[2mmatchIngredients[2m > [22m[2mrejects vector match below threshold and falls through to fuzzy
+[22m[39m[matching] "thß╗ït b├▓" fuzzy fallback: Thß╗ït b├▓ (0.750)
+
+[90mstdout[2m | lib/ai/__tests__/ingredient-matching.test.ts[2m > [22m[2mmatchIngredients[2m > [22m[2mrejects both below threshold as unmatched
+[22m[39m[matching] batch embedding 1 L3 misses
+
+[90mstdout[2m | lib/ai/__tests__/ingredient-matching.test.ts[2m > [22m[2mmatchIngredients[2m > [22m[2mrejects both below threshold as unmatched
+[22m[39m[matching] "thß╗ït b├▓" vector: Thß╗ït b├▓ (0.500)
+
+[90mstdout[2m | lib/ai/__tests__/ingredient-matching.test.ts[2m > [22m[2mmatchIngredients[2m > [22m[2mrejects both below threshold as unmatched
+[22m[39m[matching] "thß╗ït b├▓" fuzzy fallback: Thß╗ït b├▓ (0.400)
+[matching] "thß╗ït b├▓" ΓåÆ unmatched
+
+[90mstdout[2m | lib/ai/__tests__/ingredient-matching.test.ts[2m > [22m[2mmatchIngredients[2m > [22m[2mreturns unmatched when both searches fail
+[22m[39m[matching] batch embedding 1 L3 misses
+
+[90mstdout[2m | lib/ai/__tests__/ingredient-matching.test.ts[2m > [22m[2mmatchIngredients[2m > [22m[2mreturns unmatched when both searches fail
+[22m[39m[matching] "thß╗ït b├▓" ΓåÆ unmatched
+
+[90mstdout[2m | lib/ai/__tests__/ingredient-matching.test.ts[2m > [22m[2mmatchIngredients[2m > [22m[2mhandles multiple ingredients with mixed results
+[22m[39m[matching] batch embedding 2 L3 misses
+
+[90mstdout[2m | lib/ai/__tests__/ingredient-matching.test.ts[2m > [22m[2mmatchIngredients[2m > [22m[2mhandles multiple ingredients with mixed results
+[22m[39m[matching] "gß║ío" vector: Gß║ío (0.800)
+
+[90mstdout[2m | lib/ai/__tests__/ingredient-matching.test.ts[2m > [22m[2mmatchIngredients[2m > [22m[2mhandles multiple ingredients with mixed results
+[22m[39m[matching] "unknown_food" ΓåÆ unmatched
+
+[90mstdout[2m | lib/ai/__tests__/ingredient-matching.test.ts[2m > [22m[2mmatchIngredients[2m > [22m[2mparses nutrition values from string to number, null stays null
+[22m[39m[matching] batch embedding 1 L3 misses
+
+[90mstdout[2m | lib/ai/__tests__/ingredient-matching.test.ts[2m > [22m[2mmatchIngredients[2m > [22m[2mparses nutrition values from string to number, null stays null
+[22m[39m[matching] "thß╗ït b├▓" vector: Thß╗ït b├▓ (0.800)
+
+[90mstdout[2m | lib/ai/__tests__/ingredient-matching.test.ts[2m > [22m[2mmatchIngredients[2m > [22m[2mprocesses ingredients in parallel (no inter-ingredient dependencies)
+[22m[39m[matching] batch embedding 2 L3 misses
+
+[90mstdout[2m | lib/ai/__tests__/ingredient-matching.test.ts[2m > [22m[2mmatchIngredients[2m > [22m[2mprocesses ingredients in parallel (no inter-ingredient dependencies)
+[22m[39m[matching] "a" ΓåÆ unmatched
+[matching] "b" ΓåÆ unmatched
+
+[90mstdout[2m | lib/ai/__tests__/ingredient-matching.test.ts[2m > [22m[2mmatchIngredients[2m > [22m[2mrejects fuzzy fallback below 0.7 threshold as unmatched
+[22m[39m[matching] batch embedding 1 L3 misses
+
+[90mstdout[2m | lib/ai/__tests__/ingredient-matching.test.ts[2m > [22m[2mmatchIngredients[2m > [22m[2mrejects fuzzy fallback below 0.7 threshold as unmatched
+[22m[39m[matching] "thß╗ït b├▓" fuzzy fallback: Thß╗ït b├▓ (0.400)
+[matching] "thß╗ït b├▓" ΓåÆ unmatched
+
+[90mstdout[2m | lib/ai/__tests__/ingredient-matching.test.ts[2m > [22m[2mmatchIngredients[2m > [22m[2mbatch-fetches nutrition in 1 query instead of N (N+1 fix)
+[22m[39m[matching] batch embedding 3 L3 misses
+
+[90mstdout[2m | lib/ai/__tests__/ingredient-matching.test.ts[2m > [22m[2mmatchIngredients[2m > [22m[2mbatch-fetches nutrition in 1 query instead of N (N+1 fix)
+[22m[39m[matching] "gß║ío tß║╗" vector: Gß║ío tß║╗ (0.850)
+[matching] "thß╗ït b├▓" vector: Thß╗ït b├▓ (0.900)
+[matching] "rau muß╗æng" vector: Rau muß╗æng (0.880)
+
+ [32mΓ£ô[39m lib/ai/__tests__/ingredient-matching.test.ts [2m([22m[2m22 tests[22m[2m)[22m[32m 58[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m1 passed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[32m22 passed[39m[22m[90m (22)[39m
+[2m   Start at [22m 23:23:51
+[2m   Duration [22m 3.77s[2m (transform 271ms, setup 299ms, import 925ms, tests 58ms, environment 2.03s)[22m
+

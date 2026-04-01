@@ -6,10 +6,11 @@ import type {
   DecomposedIngredient,
   MatchConfidence,
   MatchedIngredient,
+  NutritionPer100g,
   UnmatchedIngredient,
 } from '../types';
 import { cacheQueryEmbedding, resolveQueryEmbedding } from './embedding-cache';
-import { fetchNutritionPer100g } from './nutrition-db';
+import { parseNutritionRow } from './nutrition-db';
 
 export const CONFIDENCE_THRESHOLDS = {
   high: 0.6,
@@ -40,6 +41,18 @@ interface FuzzyMatchRow {
   similarity: number;
 }
 
+/**
+ * Lightweight match result carrying only match metadata (no nutrition).
+ * Used internally to decouple matching from nutrition fetching.
+ */
+interface MatchInfo {
+  ingredientName: string;
+  foodCompositionId: string;
+  matchedName: string;
+  similarity: number;
+  confidence: MatchConfidence;
+}
+
 export interface MatchResult {
   matched: MatchedIngredient[];
   unmatched: UnmatchedIngredient[];
@@ -54,6 +67,9 @@ const MATCH_CONCURRENCY = 3;
  * Cascade: match_ingredients (pgvector/semantic) → fuzzy_match_ingredients (pg_trgm) → unmatched.
  * Embedding resolution is batched: L1/L2 cache hits are resolved first, then all L3 misses
  * are collected into a single batch Gemini API call before matching proceeds.
+ *
+ * Nutrition fetching is batched: all matched IDs are collected after matching,
+ * then fetched in a single WHERE id = ANY(...) query to avoid N+1 round-trips.
  */
 export async function matchIngredients(
   ingredients: DecomposedIngredient[],
@@ -86,7 +102,7 @@ export async function matchIngredients(
     }
   }
 
-  // Phase 3: Match each ingredient with its pre-resolved embedding
+  // Phase 3: Match each ingredient (returns MatchInfo without nutrition)
   const results = await mapWithConcurrency(
     ingredients.map((ingredient, i) => ({
       name: ingredient.name,
@@ -96,10 +112,12 @@ export async function matchIngredients(
     MATCH_CONCURRENCY
   );
 
+  // Collect successful MatchInfo results and track failures
+  const matchInfos: MatchInfo[] = [];
   for (let i = 0; i < ingredients.length; i++) {
     const result = results[i];
     if (result.status === 'fulfilled' && result.value) {
-      matched.push(result.value);
+      matchInfos.push(result.value);
     } else {
       if (result.status === 'rejected') {
         console.error(
@@ -114,18 +132,63 @@ export async function matchIngredients(
     }
   }
 
+  // Phase 4: Batch-fetch nutrition for all matched IDs in a single query
+  const uniqueIds = [...new Set(matchInfos.map((m) => m.foodCompositionId))];
+  const nutritionMap = await batchFetchNutrition(uniqueIds, db);
+
+  // Phase 5: Combine MatchInfo + nutrition → MatchedIngredient
+  for (const info of matchInfos) {
+    const nutrition = nutritionMap.get(info.foodCompositionId);
+    if (nutrition) {
+      matched.push({ ...info, nutritionPer100g: nutrition });
+    } else {
+      console.warn(
+        `[matching] No nutrition data for matched ID "${info.foodCompositionId}" (${info.ingredientName})`
+      );
+      unmatched.push({
+        ingredientName: info.ingredientName,
+        mealContext,
+      });
+    }
+  }
+
   return { matched, unmatched };
 }
 
 /**
+ * Batch-fetch nutrition per 100g for a list of food composition IDs.
+ * Returns a Map from ID → NutritionPer100g.
+ * Replaces N individual fetchNutritionPer100g calls with 1 batch query.
+ */
+async function batchFetchNutrition(
+  ids: string[],
+  db: PostgresJsDatabase<any>
+): Promise<Map<string, NutritionPer100g>> {
+  const map = new Map<string, NutritionPer100g>();
+  if (ids.length === 0) return map;
+
+  const rows = await db.execute(
+    sql`SELECT * FROM vietnamese_food_composition WHERE id = ANY(${ids})`
+  );
+
+  for (const row of rows as unknown as Record<string, unknown>[]) {
+    const id = row.id as string;
+    map.set(id, parseNutritionRow(row));
+  }
+
+  return map;
+}
+
+/**
  * Match a single ingredient using a pre-resolved embedding.
- * Embedding resolution is handled in the batch phase above.
+ * Returns lightweight MatchInfo (no nutrition data).
+ * Nutrition is batch-fetched separately in matchIngredients.
  */
 async function matchSingleIngredientWithEmbedding(
   ingredientName: string,
   embedding: number[],
   db: PostgresJsDatabase<any>
-): Promise<MatchedIngredient | null> {
+): Promise<MatchInfo | null> {
   // Step 1: Try vector/semantic search (pgvector) — primary
   const vectorRows = await db.execute(
     sql`SELECT * FROM match_ingredients(${JSON.stringify(embedding)}::vector, 3, 0.5)`
@@ -136,11 +199,10 @@ async function matchSingleIngredientWithEmbedding(
       `[matching] "${ingredientName}" vector: ${vectorTop.name_primary} (${vectorTop.similarity.toFixed(3)})`
     );
   }
-  const vectorResult = await buildMatchResult(
+  const vectorResult = buildMatchResult(
     ingredientName,
     vectorRows as unknown as FuzzyMatchRow[],
-    VECTOR_SIMILARITY_THRESHOLD,
-    db
+    VECTOR_SIMILARITY_THRESHOLD
   );
   if (vectorResult) return vectorResult;
 
@@ -154,11 +216,10 @@ async function matchSingleIngredientWithEmbedding(
       `[matching] "${ingredientName}" fuzzy fallback: ${fuzzyTop.name_primary} (${fuzzyTop.similarity.toFixed(3)})`
     );
   }
-  const fuzzyResult = await buildMatchResult(
+  const fuzzyResult = buildMatchResult(
     ingredientName,
     fuzzyRows as unknown as FuzzyMatchRow[],
-    FUZZY_FALLBACK_THRESHOLD,
-    db
+    FUZZY_FALLBACK_THRESHOLD
   );
   if (!fuzzyResult) {
     console.info(`[matching] "${ingredientName}" → unmatched`);
@@ -201,20 +262,20 @@ export function rerankCandidates(
   return adjusted.sort((a, b) => b.similarity - a.similarity);
 }
 
-async function buildMatchResult(
+/**
+ * Build a lightweight MatchInfo from candidate rows.
+ * Pure function — no DB calls. Nutrition is fetched separately in batch.
+ */
+function buildMatchResult(
   ingredientName: string,
   rows: FuzzyMatchRow[],
-  minSimilarity: number,
-  db: PostgresJsDatabase
-): Promise<MatchedIngredient | null> {
+  minSimilarity: number
+): MatchInfo | null {
   if (rows.length === 0) return null;
 
   const reranked = rerankCandidates(ingredientName, rows);
   const topMatch = reranked[0];
   if (topMatch.similarity < minSimilarity) return null;
-
-  const nutrition = await fetchNutritionPer100g(topMatch.id, db);
-  if (!nutrition) return null;
 
   return {
     ingredientName,
@@ -222,6 +283,5 @@ async function buildMatchResult(
     matchedName: topMatch.name_primary,
     similarity: topMatch.similarity,
     confidence: classifyConfidence(topMatch.similarity),
-    nutritionPer100g: nutrition,
   };
 }
