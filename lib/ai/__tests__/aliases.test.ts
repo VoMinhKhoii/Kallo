@@ -3,7 +3,7 @@ import {
   applyIngredientAliases,
   INGREDIENT_ALIASES,
   resolveAlias,
-} from '../aliases';
+} from '../matching/aliases';
 import type { MealDecomposition } from '../types';
 
 describe('resolveAlias', () => {

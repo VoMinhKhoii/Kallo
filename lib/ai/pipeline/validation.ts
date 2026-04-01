@@ -1,11 +1,11 @@
-import { convertCookedToRaw } from './constants';
+import { convertCookedToRaw } from '../constants';
 import type {
   DecomposedMealItem,
   MatchedIngredient,
   NutritionAdjustment,
   PipelineResult,
   UnmatchedIngredient,
-} from './types';
+} from '../types';
 
 // ---------------------------------------------------------------------------
 // Thresholds (exported for test assertions)
@@ -62,7 +62,10 @@ export function validateNutritionOutput(
   const matchedLookup = new Map(matched.map((m) => [m.ingredientName, m]));
 
   // Build a lookup for decomposition grams + cooking method per ingredient
-  const decomposedLookup = new Map<string, { estimatedGrams: number; cookingMethod: string | null }>();
+  const decomposedLookup = new Map<
+    string,
+    { estimatedGrams: number; cookingMethod: string | null }
+  >();
   for (const mi of decomposition) {
     for (const ing of mi.ingredients) {
       decomposedLookup.set(ing.name, {
@@ -104,8 +107,7 @@ export function validateNutritionOutput(
               decomposed.cookingMethod
             );
             const dbScaledKcal = (rawGrams / 100) * dbKcalPer100g;
-            const deviation =
-              Math.abs(midKcal - dbScaledKcal) / dbScaledKcal;
+            const deviation = Math.abs(midKcal - dbScaledKcal) / dbScaledKcal;
             if (deviation > THRESHOLDS.DB_DEVIATION_RATIO) {
               anomalies.push({
                 type: 'db_deviation',

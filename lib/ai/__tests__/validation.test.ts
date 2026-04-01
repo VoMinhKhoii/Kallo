@@ -1,4 +1,9 @@
 import { describe, expect, it } from 'vitest';
+import {
+  detectAnomalies,
+  THRESHOLDS,
+  validateNutritionOutput,
+} from '../pipeline/validation';
 import type {
   DecomposedMealItem,
   MatchedIngredient,
@@ -6,15 +11,7 @@ import type {
   PipelineResult,
   UnmatchedIngredient,
 } from '../types';
-import {
-  detectAnomalies,
-  THRESHOLDS,
-  validateNutritionOutput,
-} from '../validation';
-import {
-  NULL_BOUNDED_NUTRITION,
-  NULL_NUTRITION_VALUES,
-} from './test-helpers';
+import { NULL_BOUNDED_NUTRITION, NULL_NUTRITION_VALUES } from './test-helpers';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -40,7 +37,10 @@ function makeMatched(
 }
 
 function makeDecomposition(
-  items: { name: string; ingredients: { name: string; grams: number; cooking?: string }[] }[]
+  items: {
+    name: string;
+    ingredients: { name: string; grams: number; cooking?: string }[];
+  }[]
 ): DecomposedMealItem[] {
   return items.map((mi) => ({
     name: mi.name,

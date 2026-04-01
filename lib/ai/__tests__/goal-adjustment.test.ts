@@ -4,7 +4,7 @@ import {
   goalAdjustNutrition,
   sumBoundedNutrition,
   sumDisplayedNutrition,
-} from '../goal-adjustment';
+} from '../pipeline/goal-adjustment';
 import type {
   BoundedEstimate,
   BoundedNutrition,

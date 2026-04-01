@@ -1,3 +1,4 @@
+export { applyIngredientAliases } from './aliases';
 export {
   CONFIDENCE_THRESHOLDS,
   classifyConfidence,
@@ -20,3 +21,7 @@ export {
   logUnmatchedIngredients,
   parseNutritionRow,
 } from './nutrition-db';
+export {
+  createSpeculativeMatcher,
+  extractIngredientNames,
+} from './speculative';

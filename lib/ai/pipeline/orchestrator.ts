@@ -1,22 +1,16 @@
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import { capitalizeFirst } from '@/lib/utils';
-import { applyIngredientAliases } from '../aliases';
 import type { GeminiClient } from '../gemini';
 import { matchIngredients } from '../matching';
+import { applyIngredientAliases } from '../matching/aliases';
+import { createSpeculativeMatcher } from '../matching/speculative';
 import { buildDecompositionPrompt, buildNutritionPrompt } from '../prompts';
-import { mealDecompositionSchema, nutritionAdjustmentSchema } from '../schemas';
-import { createSpeculativeMatcher } from '../speculative-matching';
 import type {
   MealDecomposition,
   NutritionAdjustment,
   PipelineResponse,
   UserContext,
 } from '../types';
-import {
-  detectAnomalies,
-  type ValidationAnomaly,
-  validateNutritionOutput,
-} from '../validation';
 import { assembleResult } from './assembly';
 import {
   handleError,
@@ -26,6 +20,12 @@ import {
   NonFoodError,
   nonFoodResponse,
 } from './errors';
+import { mealDecompositionSchema, nutritionAdjustmentSchema } from './schemas';
+import {
+  detectAnomalies,
+  type ValidationAnomaly,
+  validateNutritionOutput,
+} from './validation';
 
 /** D1/D8: Default model for both LLM calls, configurable per call */
 const GEMINI_MODEL = 'gemini-3-flash-preview';

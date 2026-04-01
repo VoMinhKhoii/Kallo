@@ -1,5 +1,5 @@
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
-import { resolveQueryEmbedding } from './matching/embedding-cache';
+import { resolveQueryEmbedding } from './embedding-cache';
 
 /**
  * Extract ingredient names from a partial JSON stream.

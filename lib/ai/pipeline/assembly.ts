@@ -3,12 +3,6 @@ import {
   GOAL_ADJUSTED_NUTRIENTS,
   NUTRITION_KEYS,
 } from '../constants';
-import {
-  goalAdjustNutrition,
-  sumBoundedNutrition,
-  sumDisplayedNutrition,
-} from '../goal-adjustment';
-import { normalizeBoundedEstimate } from '../schemas';
 import type {
   BoundedEstimate,
   BoundedNutrition,
@@ -24,6 +18,12 @@ import type {
   UnmatchedIngredient,
   UserContext,
 } from '../types';
+import {
+  goalAdjustNutrition,
+  sumBoundedNutrition,
+  sumDisplayedNutrition,
+} from './goal-adjustment';
+import { normalizeBoundedEstimate } from './schemas';
 
 /**
  * D5: Merge LLM's 4 bounded macros with DB mid values for remaining 24.

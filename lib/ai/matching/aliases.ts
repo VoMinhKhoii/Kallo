@@ -1,4 +1,4 @@
-import type { MealDecomposition } from './types';
+import type { MealDecomposition } from '../types';
 
 /**
  * Common ingredient aliases: map shorthand Vietnamese names to canonical

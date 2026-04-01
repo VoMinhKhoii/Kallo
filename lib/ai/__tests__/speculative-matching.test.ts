@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { extractIngredientNames } from '../speculative-matching';
+import { extractIngredientNames } from '../matching/speculative';
 
 describe('extractIngredientNames', () => {
   it('extracts names from partial JSON stream', () => {
