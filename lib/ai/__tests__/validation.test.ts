@@ -275,6 +275,20 @@ describe('detectAnomalies', () => {
     const anomalies = detectAnomalies(result, [], []);
     expect(anomalies.some((a) => a.type === 'total_calories')).toBe(true);
     expect(anomalies[0].message).toContain('30');
+    expect(anomalies[0].severity).toBe('warning');
+  });
+
+  it('flags 0-calorie result as error severity', () => {
+    const result = makePipelineResult({
+      boundedNutrition: {
+        ...makePipelineResult().boundedNutrition,
+        caloriesKcal: { low: 0, mid: 0, high: 0 },
+      },
+    });
+    const anomalies = detectAnomalies(result, [], []);
+    expect(anomalies.some((a) => a.type === 'total_calories')).toBe(true);
+    expect(anomalies[0].severity).toBe('error');
+    expect(anomalies[0].message).toContain('LLM failure');
   });
 
   it('flags suspiciously high total calories', () => {
@@ -321,16 +335,6 @@ describe('detectAnomalies', () => {
     const result = makePipelineResult();
     const anomalies = detectAnomalies(result, matched, unmatched);
     expect(anomalies.some((a) => a.type === 'unmatched_ratio')).toBe(false);
-  });
-
-  it('does not flag zero calories (empty input)', () => {
-    const result = makePipelineResult({
-      boundedNutrition: {
-        ...makePipelineResult().boundedNutrition,
-        caloriesKcal: { low: 0, mid: 0, high: 0 },
-      },
-    });
-    expect(detectAnomalies(result, [], [])).toEqual([]);
   });
 });
 

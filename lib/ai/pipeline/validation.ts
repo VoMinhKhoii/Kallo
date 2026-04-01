@@ -150,11 +150,14 @@ export function detectAnomalies(
 
   // Total calories range check
   const totalMidKcal = result.boundedNutrition.caloriesKcal?.mid ?? 0;
-  if (totalMidKcal > 0 && totalMidKcal < THRESHOLDS.MIN_TOTAL_KCAL) {
+  if (totalMidKcal < THRESHOLDS.MIN_TOTAL_KCAL) {
     anomalies.push({
       type: 'total_calories',
-      message: `Total ${totalMidKcal.toFixed(0)} kcal < ${THRESHOLDS.MIN_TOTAL_KCAL} — suspiciously low`,
-      severity: 'warning',
+      message:
+        totalMidKcal === 0
+          ? 'Total 0 kcal — likely LLM failure'
+          : `Total ${totalMidKcal.toFixed(0)} kcal < ${THRESHOLDS.MIN_TOTAL_KCAL} — suspiciously low`,
+      severity: totalMidKcal === 0 ? 'error' : 'warning',
     });
   }
   if (totalMidKcal > THRESHOLDS.MAX_TOTAL_KCAL) {
