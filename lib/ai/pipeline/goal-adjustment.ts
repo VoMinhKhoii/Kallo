@@ -3,13 +3,13 @@ import {
   GOAL_ADJUSTED_NUTRIENTS,
   GOAL_BOUND_DIRECTION,
   NUTRITION_KEYS,
-} from './constants';
+} from '../constants';
 import type {
   BoundedEstimate,
   BoundedNutrition,
   GoalAdjustedNutrient,
   NutritionValues,
-} from './types';
+} from '../types';
 
 /**
  * Apply goal adjustment to a single bounded estimate for one nutrient.

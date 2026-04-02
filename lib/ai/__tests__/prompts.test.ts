@@ -53,6 +53,26 @@ describe('buildDecompositionPrompt', () => {
     const prompt = buildDecompositionPrompt(sampleUserContext);
     expect(prompt).toContain('isFood');
   });
+
+  it('only includes the user regional prior, not all regions', () => {
+    const prompt = buildDecompositionPrompt(sampleUserContext);
+    // mien_nam is in context, should be in regional_priors
+    expect(prompt).toContain('<regional_priors>');
+    expect(prompt).toContain('mien_nam: sweeter');
+    // Other regions should NOT be present
+    expect(prompt).not.toContain('mien_bac');
+    expect(prompt).not.toContain('mien_trung');
+    expect(prompt).not.toContain('mien_tay');
+  });
+
+  it('omits regional_priors section for unknown region', () => {
+    const ctx: UserContext = {
+      ...sampleUserContext,
+      regionalProfile: 'unknown' as UserContext['regionalProfile'],
+    };
+    const prompt = buildDecompositionPrompt(ctx);
+    expect(prompt).not.toContain('<regional_priors>');
+  });
 });
 
 const fullNutrition = {
@@ -167,7 +187,7 @@ describe('buildNutritionPrompt', () => {
     );
     expect(prompt).toContain('nước mắm đặc biệt');
     expect(prompt).toContain('<meal_item name="cơm">');
-    expect(prompt).toContain('fallback');
+    expect(prompt).toContain('Vietnamese food knowledge');
   });
 
   it('groups unmatched ingredients under their parent meal items', () => {
@@ -297,6 +317,52 @@ describe('buildNutritionPrompt', () => {
     expect(prompt).not.toContain('fiberG');
     expect(prompt).not.toContain('sodiumMg');
     expect(prompt).not.toContain('vitaminB12Mcg');
+  });
+
+  it('explains why three values are needed for goal adjustment', () => {
+    const prompt = buildNutritionPrompt(
+      sampleMealItems,
+      sampleMatched,
+      [],
+      sampleUserContext
+    );
+    expect(prompt).toContain('<why_three_values>');
+    expect(prompt).toContain('goal-based adjustments');
+    expect(prompt).toContain('genuine uncertainty');
+  });
+
+  it('includes cooking method attribute in ingredient data', () => {
+    const khoMealItems: DecomposedMealItem[] = [
+      {
+        name: 'thịt kho',
+        ingredients: [
+          {
+            name: 'thịt lợn',
+            estimatedGrams: 100,
+            cookingMethod: 'kho',
+            userFacingUnit: null,
+          },
+        ],
+      },
+    ];
+    const matched: MatchedIngredient[] = [
+      {
+        ingredientName: 'thịt lợn',
+        foodCompositionId: 'pork-001',
+        matchedName: 'Thịt lợn',
+        similarity: 0.9,
+        confidence: 'high',
+        nutritionPer100g: fullNutrition,
+      },
+    ];
+    const prompt = buildNutritionPrompt(
+      khoMealItems,
+      matched,
+      [],
+      sampleUserContext
+    );
+    expect(prompt).toContain('cooking="kho"');
+    expect(prompt).toContain('cooking method');
   });
 });
 

@@ -19,6 +19,20 @@ This file is the **single source of truth** for agent behavior. Rules here take 
 
 ### 2.2 Mandatory Actions (ALWAYS DO)
 
+- **Pre-Coding Skill Check**: BEFORE ANY coding task — even the slightest edit — invoke the relevant React skill(s) from Vercel and review matching rules. Only begin coding after relevant rules have been reviewed. This prevents anti-patterns before they're written.
+
+  **Which skill to invoke:**
+
+  | Skill | When to use |
+  |-------|-------------|
+  | `vercel-react-best-practices` | **Default for all tasks.** Any React/Next.js code: components, pages, data fetching, hooks, server actions, bundle optimization, re-render prevention, SSR/client patterns. 68 rules across 8 categories. |
+  | `vercel-composition-patterns` | Component architecture: refactoring prop-heavy components, building compound components, designing reusable APIs, lifting state, context providers, React 19 patterns. |
+  | `web-design-guidelines` | UI/UX work: styling, layout, accessibility, responsive design, form design, color contrast, spacing, typography. Audits against Web Interface Guidelines. |
+  | `vercel-react-view-transitions` | Animations: page transitions, route change animations, shared element animations, enter/exit animations, list reorder, directional navigation. Uses native View Transition API. |
+
+  **Workflow:** Invoke skill → search rules matching your task → read relevant rules → then code.
+  **Multiple skills:** If a task spans categories (e.g., new component with animations), invoke all relevant skills.
+
 - **End-of-Session Check**: Run `bunx @biomejs/biome check .` before signing off. Fix issues you introduced.
 - **Write Tests**: Write tests (Vitest) for new features and bug fixes.
 - **Zod Validation**: Validate all external inputs (API params, form data, URL params) with Zod schemas.

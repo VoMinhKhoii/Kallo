@@ -21,13 +21,13 @@ import { fetchNutritionPer100g } from '@/lib/ai/matching/nutrition-db';
 import { assembleResult } from '@/lib/ai/pipeline/assembly';
 import { NON_FOOD_BLOCKLIST } from '@/lib/ai/pipeline/errors';
 import {
+  mealDecompositionSchema,
+  nutritionAdjustmentSchema,
+} from '@/lib/ai/pipeline/schemas';
+import {
   buildDecompositionPrompt,
   buildNutritionPrompt,
 } from '@/lib/ai/prompts';
-import {
-  mealDecompositionSchema,
-  nutritionAdjustmentSchema,
-} from '@/lib/ai/schemas';
 import type {
   MatchedIngredient,
   MealDecomposition,

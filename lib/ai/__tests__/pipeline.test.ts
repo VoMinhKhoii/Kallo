@@ -114,7 +114,7 @@ const sampleNutritionAdjustment: NutritionAdjustment = {
   mealItems: [
     {
       mealItemName: 'Cơm',
-      ingredients: [makeLlmNutrition('Gạo', 350, 7, 78, 0.5)],
+      ingredients: [makeLlmNutrition('Gạo tẻ', 350, 7, 78, 0.5)],
     },
   ],
 };
@@ -123,6 +123,19 @@ describe('analyzeMeal', () => {
   let mockGemini: GeminiClient;
   let mockDb: any;
 
+  /** Mock Call 1 (streaming decomposition) + Call 2 (nutrition) */
+  function mockLlmCalls(
+    decomposition: MealDecomposition,
+    nutrition: NutritionAdjustment
+  ) {
+    (
+      mockGemini.generateStructuredOutputStream as ReturnType<typeof vi.fn>
+    ).mockResolvedValueOnce(decomposition);
+    (
+      mockGemini.generateStructuredOutput as ReturnType<typeof vi.fn>
+    ).mockResolvedValueOnce(nutrition);
+  }
+
   beforeEach(() => {
     mockGemini = createMockGemini();
     mockDb = createMockDb();
@@ -130,9 +143,7 @@ describe('analyzeMeal', () => {
   });
 
   it('returns successful result for a simple meal', async () => {
-    (mockGemini.generateStructuredOutput as ReturnType<typeof vi.fn>)
-      .mockResolvedValueOnce(sampleDecomposition)
-      .mockResolvedValueOnce(sampleNutritionAdjustment);
+    mockLlmCalls(sampleDecomposition, sampleNutritionAdjustment);
 
     mockMatchIngredients.mockResolvedValueOnce({
       matched: [
@@ -168,14 +179,12 @@ describe('analyzeMeal', () => {
   });
 
   it('D5: merges LLM 5 nutrients with DB mid values for remaining 23', async () => {
-    (mockGemini.generateStructuredOutput as ReturnType<typeof vi.fn>)
-      .mockResolvedValueOnce(sampleDecomposition)
-      .mockResolvedValueOnce(sampleNutritionAdjustment);
+    mockLlmCalls(sampleDecomposition, sampleNutritionAdjustment);
 
     mockMatchIngredients.mockResolvedValueOnce({
       matched: [
         {
-          ingredientName: 'Gạo',
+          ingredientName: 'Gạo tẻ',
           foodCompositionId: 'rice-001',
           matchedName: 'Gạo tẻ',
           similarity: 0.85,
@@ -217,7 +226,7 @@ describe('analyzeMeal', () => {
 
   it('D6: returns non_food_input when isFood=false', async () => {
     (
-      mockGemini.generateStructuredOutput as ReturnType<typeof vi.fn>
+      mockGemini.generateStructuredOutputStream as ReturnType<typeof vi.fn>
     ).mockResolvedValueOnce({
       isFood: false,
       mealItems: [],
@@ -235,13 +244,13 @@ describe('analyzeMeal', () => {
     if (result.success) return;
     expect(result.error.type).toBe('non_food_input');
     expect(result.error.retryable).toBe(false);
-    // Should NOT retry — only 1 LLM call
-    expect(mockGemini.generateStructuredOutput).toHaveBeenCalledTimes(1);
+    // Should NOT retry — only 1 LLM call (streaming decomposition)
+    expect(mockGemini.generateStructuredOutputStream).toHaveBeenCalledTimes(1);
   });
 
   it('D6: returns non_food_input when blocklist ingredient detected', async () => {
     (
-      mockGemini.generateStructuredOutput as ReturnType<typeof vi.fn>
+      mockGemini.generateStructuredOutputStream as ReturnType<typeof vi.fn>
     ).mockResolvedValueOnce({
       isFood: true,
       mealItems: [
@@ -275,7 +284,7 @@ describe('analyzeMeal', () => {
 
   it('D4: retries once on parse error then returns parse_error', async () => {
     const parseError = new Error('Zod parse error: invalid type');
-    (mockGemini.generateStructuredOutput as ReturnType<typeof vi.fn>)
+    (mockGemini.generateStructuredOutputStream as ReturnType<typeof vi.fn>)
       .mockRejectedValueOnce(parseError)
       .mockRejectedValueOnce(parseError);
 
@@ -286,13 +295,13 @@ describe('analyzeMeal', () => {
     expect(result.error.type).toBe('parse_error');
     expect(result.error.retryable).toBe(true);
     // Should have been called twice (original + 1 retry)
-    expect(mockGemini.generateStructuredOutput).toHaveBeenCalledTimes(2);
+    expect(mockGemini.generateStructuredOutputStream).toHaveBeenCalledTimes(2);
   });
 
   it('D4: API errors surface immediately without retry', async () => {
     const apiError = new Error('500 Internal Server Error');
     (
-      mockGemini.generateStructuredOutput as ReturnType<typeof vi.fn>
+      mockGemini.generateStructuredOutputStream as ReturnType<typeof vi.fn>
     ).mockRejectedValueOnce(apiError);
 
     const result = await analyzeMeal('phở bò', userContext, mockDb, mockGemini);
@@ -302,7 +311,7 @@ describe('analyzeMeal', () => {
     expect(result.error.type).toBe('api_error');
     expect(result.error.retryable).toBe(true);
     // API errors no longer trigger pipeline retry (only parse errors do)
-    expect(mockGemini.generateStructuredOutput).toHaveBeenCalledTimes(1);
+    expect(mockGemini.generateStructuredOutputStream).toHaveBeenCalledTimes(1);
   });
 
   it('downgrades confidence when unmatched ingredients present', async () => {
@@ -330,19 +339,22 @@ describe('analyzeMeal', () => {
       mealSlot: 'lunch',
     };
 
-    (mockGemini.generateStructuredOutput as ReturnType<typeof vi.fn>)
-      .mockResolvedValueOnce(decompositionWithTwo)
-      .mockResolvedValueOnce({
-        mealItems: [
-          {
-            mealItemName: 'Phở bò',
-            ingredients: [
-              makeLlmNutrition('Bún phở', 200, 5, 45, 0.5),
-              makeLlmNutrition('Rare_herb', 5, 0.5, 1, 0.1),
-            ],
-          },
-        ],
-      });
+    (
+      mockGemini.generateStructuredOutputStream as ReturnType<typeof vi.fn>
+    ).mockResolvedValueOnce(decompositionWithTwo);
+    (
+      mockGemini.generateStructuredOutput as ReturnType<typeof vi.fn>
+    ).mockResolvedValueOnce({
+      mealItems: [
+        {
+          mealItemName: 'Phở bò',
+          ingredients: [
+            makeLlmNutrition('Bún phở', 200, 5, 45, 0.5),
+            makeLlmNutrition('Rare_herb', 5, 0.5, 1, 0.1),
+          ],
+        },
+      ],
+    });
 
     mockMatchIngredients.mockResolvedValueOnce({
       matched: [
@@ -397,19 +409,22 @@ describe('analyzeMeal', () => {
       mealSlot: 'dinner',
     };
 
-    (mockGemini.generateStructuredOutput as ReturnType<typeof vi.fn>)
-      .mockResolvedValueOnce(decomposition)
-      .mockResolvedValueOnce({
-        mealItems: [
-          {
-            mealItemName: 'Lẩu cá',
-            ingredients: [
-              makeLlmNutrition('Cá lóc', 80, 18, 0, 1),
-              makeLlmNutrition('Exotic_spice', 2, 0.1, 0.5, 0),
-            ],
-          },
-        ],
-      });
+    (
+      mockGemini.generateStructuredOutputStream as ReturnType<typeof vi.fn>
+    ).mockResolvedValueOnce(decomposition);
+    (
+      mockGemini.generateStructuredOutput as ReturnType<typeof vi.fn>
+    ).mockResolvedValueOnce({
+      mealItems: [
+        {
+          mealItemName: 'Lẩu cá',
+          ingredients: [
+            makeLlmNutrition('Cá lóc', 80, 18, 0, 1),
+            makeLlmNutrition('Exotic_spice', 2, 0.1, 0.5, 0),
+          ],
+        },
+      ],
+    });
 
     mockMatchIngredients.mockResolvedValueOnce({
       matched: [
@@ -473,33 +488,36 @@ describe('analyzeMeal', () => {
       mealItems: [
         {
           mealItemName: 'Cơm',
-          ingredients: [makeLlmNutrition('Gạo', 350, 7, 78, 0.5)],
+          ingredients: [makeLlmNutrition('Gạo tẻ', 350, 7, 78, 0.5)],
         },
         {
           mealItemName: 'Thịt kho',
-          ingredients: [makeLlmNutrition('Thịt heo', 250, 26, 5, 15)],
+          ingredients: [makeLlmNutrition('Thịt lợn nạc', 250, 26, 5, 15)],
         },
       ],
     };
 
-    (mockGemini.generateStructuredOutput as ReturnType<typeof vi.fn>)
-      .mockResolvedValueOnce(twoItemDecomposition)
-      .mockResolvedValueOnce(twoItemNutrition);
+    (
+      mockGemini.generateStructuredOutputStream as ReturnType<typeof vi.fn>
+    ).mockResolvedValueOnce(twoItemDecomposition);
+    (
+      mockGemini.generateStructuredOutput as ReturnType<typeof vi.fn>
+    ).mockResolvedValueOnce(twoItemNutrition);
 
     mockMatchIngredients.mockResolvedValueOnce({
       matched: [
         {
-          ingredientName: 'Gạo',
+          ingredientName: 'Gạo tẻ',
           foodCompositionId: 'rice-001',
-          matchedName: 'Gạo',
+          matchedName: 'Gạo tẻ',
           similarity: 0.85,
           confidence: 'high',
           nutritionPer100g: nullNutrition,
         },
         {
-          ingredientName: 'Thịt heo',
+          ingredientName: 'Thịt lợn nạc',
           foodCompositionId: 'pork-001',
-          matchedName: 'Thịt heo',
+          matchedName: 'Thịt lợn nạc',
           similarity: 0.8,
           confidence: 'high',
           nutritionPer100g: nullNutrition,
@@ -572,38 +590,41 @@ describe('analyzeMeal', () => {
         {
           mealItemName: 'Thịt kho trứng',
           ingredients: [
-            makeLlmNutrition('Thịt heo', 250, 26, 5, 15),
-            makeLlmNutrition('Dầu ăn', 135, 0, 0, 15), // 15g oil in kho
+            makeLlmNutrition('Thịt lợn nạc', 250, 26, 5, 15),
+            makeLlmNutrition('Dầu đậu nành', 135, 0, 0, 15), // 15g oil in kho
           ],
         },
         {
           mealItemName: 'Xào rau',
           ingredients: [
             makeLlmNutrition('Rau cải', 30, 2, 5, 0.5),
-            makeLlmNutrition('Dầu ăn', 90, 0, 0, 10), // 10g oil in xào
+            makeLlmNutrition('Dầu đậu nành', 90, 0, 0, 10), // 10g oil in xào
           ],
         },
       ],
     };
 
-    (mockGemini.generateStructuredOutput as ReturnType<typeof vi.fn>)
-      .mockResolvedValueOnce(sharedIngDecomposition)
-      .mockResolvedValueOnce(sharedIngNutrition);
+    (
+      mockGemini.generateStructuredOutputStream as ReturnType<typeof vi.fn>
+    ).mockResolvedValueOnce(sharedIngDecomposition);
+    (
+      mockGemini.generateStructuredOutput as ReturnType<typeof vi.fn>
+    ).mockResolvedValueOnce(sharedIngNutrition);
 
     mockMatchIngredients.mockResolvedValueOnce({
       matched: [
         {
-          ingredientName: 'Thịt heo',
+          ingredientName: 'Thịt lợn nạc',
           foodCompositionId: 'pork-001',
-          matchedName: 'Thịt heo',
+          matchedName: 'Thịt lợn nạc',
           similarity: 0.85,
           confidence: 'high',
           nutritionPer100g: nullNutrition,
         },
         {
-          ingredientName: 'Dầu ăn',
+          ingredientName: 'Dầu đậu nành',
           foodCompositionId: 'oil-001',
-          matchedName: 'Dầu ăn',
+          matchedName: 'Dầu đậu nành',
           similarity: 0.9,
           confidence: 'high',
           nutritionPer100g: nullNutrition,
@@ -617,9 +638,9 @@ describe('analyzeMeal', () => {
           nutritionPer100g: nullNutrition,
         },
         {
-          ingredientName: 'Dầu ăn',
+          ingredientName: 'Dầu đậu nành',
           foodCompositionId: 'oil-001',
-          matchedName: 'Dầu ăn',
+          matchedName: 'Dầu đậu nành',
           similarity: 0.9,
           confidence: 'high',
           nutritionPer100g: nullNutrition,
@@ -640,16 +661,16 @@ describe('analyzeMeal', () => {
 
     expect(result.data.mealItems).toHaveLength(2);
 
-    // "dầu ăn" in thịt kho trứng should have 135 kcal mid
+    // "dầu ăn" aliased to "Dầu đậu nành" in thịt kho trứng should have 135 kcal mid
     const khoOil = result.data.mealItems[0].ingredients.find(
-      (i) => i.ingredientName === 'Dầu ăn'
+      (i) => i.ingredientName === 'Dầu đậu nành'
     );
     expect(khoOil).toBeDefined();
     expect(khoOil!.boundedNutrition.caloriesKcal!.mid).toBe(135);
 
-    // "dầu ăn" in xào rau should have 90 kcal mid (NOT 135 from last-write-wins)
+    // "dầu ăn" aliased to "Dầu đậu nành" in xào rau should have 90 kcal mid
     const xaoOil = result.data.mealItems[1].ingredients.find(
-      (i) => i.ingredientName === 'Dầu ăn'
+      (i) => i.ingredientName === 'Dầu đậu nành'
     );
     expect(xaoOil).toBeDefined();
     expect(xaoOil!.boundedNutrition.caloriesKcal!.mid).toBe(90);
@@ -658,16 +679,18 @@ describe('analyzeMeal', () => {
   it('succeeds on retry after first attempt fails with parse error', async () => {
     const parseError = new Error('Zod parse error: invalid type');
 
-    (mockGemini.generateStructuredOutput as ReturnType<typeof vi.fn>)
+    (mockGemini.generateStructuredOutputStream as ReturnType<typeof vi.fn>)
       .mockRejectedValueOnce(parseError)
       // Retry succeeds
-      .mockResolvedValueOnce(sampleDecomposition)
-      .mockResolvedValueOnce(sampleNutritionAdjustment);
+      .mockResolvedValueOnce(sampleDecomposition);
+    (
+      mockGemini.generateStructuredOutput as ReturnType<typeof vi.fn>
+    ).mockResolvedValueOnce(sampleNutritionAdjustment);
 
     mockMatchIngredients.mockResolvedValueOnce({
       matched: [
         {
-          ingredientName: 'Gạo',
+          ingredientName: 'Gạo tẻ',
           foodCompositionId: 'rice-001',
           matchedName: 'Gạo tẻ',
           similarity: 0.85,
@@ -686,5 +709,59 @@ describe('analyzeMeal', () => {
     );
 
     expect(result.success).toBe(true);
+  });
+
+  it('retries Call 2 when nutrition result has 0 total calories', async () => {
+    const zeroCalNutrition: NutritionAdjustment = {
+      mealItems: [
+        {
+          mealItemName: 'Cơm',
+          ingredients: [makeLlmNutrition('Gạo tẻ', 0, 0, 0, 0)],
+        },
+      ],
+    };
+
+    // First Call 1 stream resolves normally
+    (
+      mockGemini.generateStructuredOutputStream as ReturnType<typeof vi.fn>
+    ).mockResolvedValueOnce(sampleDecomposition);
+    // First Call 2 returns 0 calories → triggers retry
+    (
+      mockGemini.generateStructuredOutput as ReturnType<typeof vi.fn>
+    ).mockResolvedValueOnce(zeroCalNutrition);
+    // Retry Call 2 returns valid result
+    (
+      mockGemini.generateStructuredOutput as ReturnType<typeof vi.fn>
+    ).mockResolvedValueOnce(sampleNutritionAdjustment);
+
+    mockMatchIngredients.mockResolvedValueOnce({
+      matched: [
+        {
+          ingredientName: 'Gạo tẻ',
+          foodCompositionId: 'rice-001',
+          matchedName: 'Gạo tẻ',
+          similarity: 0.85,
+          confidence: 'high',
+          nutritionPer100g: nullNutrition,
+        },
+      ],
+      unmatched: [],
+    });
+
+    const result = await analyzeMeal(
+      'cơm trắng',
+      userContext,
+      mockDb,
+      mockGemini
+    );
+
+    expect(result.success).toBe(true);
+    if (!result.success) return;
+    // Should have used the retry result (350 kcal), not the 0-calorie result
+    expect(result.data.displayedNutrition.caloriesKcal).toBeGreaterThan(0);
+    // generateStructuredOutput should have been called twice (original + retry)
+    expect(
+      mockGemini.generateStructuredOutput as ReturnType<typeof vi.fn>
+    ).toHaveBeenCalledTimes(2);
   });
 });
