@@ -6,7 +6,7 @@ Scripts for downloading, filtering, and importing USDA FoodData Central SR Legac
 
 1. **USDA API key** — sign up at https://fdc.nal.usda.gov/api-key-signup
 2. Add to `.env.local`:
-   ```
+   ```dotenv
    USDA_API_KEY=your_key_here
    ```
 3. Python 3.10+ (for download script — no pip dependencies)

@@ -844,9 +844,9 @@ describe('search infrastructure integrity', () => {
     const testId = `test_trigger_${Date.now()}`;
     await sql`
       INSERT INTO vietnamese_food_composition 
-        (id, name_primary, name_en, type_vn, type_en, source, state)
+        (id, name_primary, name_en, type_vn, type_en, source_id, state)
       VALUES 
-        (${testId}, 'Test Thực Phẩm', 'Test Food', 'Test', 'Test', 'TEST', 'raw')
+        (${testId}, 'Test Thực Phẩm', 'Test Food', 'Test', 'Test', 1, 'raw')
     `;
 
     const [row] = await sql`

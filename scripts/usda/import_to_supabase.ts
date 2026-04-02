@@ -38,7 +38,7 @@ if (csvIdx === -1 || !args[csvIdx + 1]) {
 
 const csvPath = args[csvIdx + 1];
 
-if (!process.env.DATABASE_URL) {
+if (!dryRun && !process.env.DATABASE_URL) {
   console.error(
     'Missing DATABASE_URL. Run with:\n  bun --env-file=.env.local scripts/usda/import_to_supabase.ts --csv <path>'
   );
@@ -50,7 +50,7 @@ if (!process.env.DATABASE_URL) {
 // ---------------------------------------------------------------------------
 
 function parseCSV(content: string): Record<string, string>[] {
-  const lines = content.split('\n').filter((l) => l.trim());
+  const lines = content.split(/\r?\n/).filter((l) => l.trim());
   if (lines.length < 2) return [];
 
   const headers = parseCSVLine(lines[0]);
