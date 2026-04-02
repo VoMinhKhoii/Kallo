@@ -22,8 +22,13 @@ INSERT INTO "ingredient_sources" ("code", "name") VALUES
 ALTER TABLE "vietnamese_food_composition" ADD COLUMN "source_id" integer;
 
 -- 4. Migrate existing text values → integer FK
+-- Map known source text values to integer IDs
+-- 'FAO_VN_2007' → 1, anything USDA-related ('USDA_FDC', 'USDA_SR', etc.) → 2
 UPDATE "vietnamese_food_composition"
-SET "source_id" = (SELECT "id" FROM "ingredient_sources" WHERE "code" = "source");
+SET "source_id" = CASE
+  WHEN "source" LIKE 'USDA%' THEN (SELECT "id" FROM "ingredient_sources" WHERE "code" = 'USDA_SR')
+  ELSE (SELECT "id" FROM "ingredient_sources" WHERE "code" = 'FAO_VN_2007')
+END;
 
 -- 5. Make source_id NOT NULL with default
 ALTER TABLE "vietnamese_food_composition" ALTER COLUMN "source_id" SET NOT NULL;
