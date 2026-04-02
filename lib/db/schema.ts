@@ -5,6 +5,7 @@ import {
   date,
   decimal,
   index,
+  integer,
   jsonb,
   numeric,
   pgSchema,
@@ -139,6 +140,20 @@ export const userProfiles = pgTable(
   ]
 );
 
+// ---------------------------------------------------------------------------
+// Ingredient Sources (reference table for food composition data origins)
+// ---------------------------------------------------------------------------
+
+export const ingredientSources = pgTable('ingredient_sources', {
+  id: serial('id').primaryKey(),
+  code: text('code').notNull().unique(),
+  name: text('name').notNull(),
+});
+
+// ---------------------------------------------------------------------------
+// Vietnamese Food Composition (FAO + USDA ingredient data)
+// ---------------------------------------------------------------------------
+
 export const vietnameseFoodComposition = pgTable(
   'vietnamese_food_composition',
   {
@@ -148,7 +163,10 @@ export const vietnameseFoodComposition = pgTable(
     nameEn: text('name_en').notNull(),
     typeVn: text('type_vn').notNull(),
     typeEn: text('type_en').notNull(),
-    source: text('source').notNull().default('FAO_VN_2007'),
+    sourceId: integer('source_id')
+      .notNull()
+      .default(1)
+      .references(() => ingredientSources.id),
     state: text('state').notNull(),
     inediblePortionPct: numeric('inedible_portion_pct'),
 
