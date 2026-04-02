@@ -343,18 +343,54 @@ describe('matchIngredients', () => {
   it('batch-fetches nutrition in 1 query instead of N (N+1 fix)', async () => {
     // 3 ingredients all match via vector → should trigger exactly 1 batch nutrition query
     const ingredients: DecomposedIngredient[] = [
-      { name: 'gạo tẻ', estimatedGrams: 150, cookingMethod: 'nấu', userFacingUnit: null },
-      { name: 'thịt bò', estimatedGrams: 100, cookingMethod: 'luộc', userFacingUnit: null },
-      { name: 'rau muống', estimatedGrams: 80, cookingMethod: 'luộc', userFacingUnit: null },
+      {
+        name: 'gạo tẻ',
+        estimatedGrams: 150,
+        cookingMethod: 'nấu',
+        userFacingUnit: null,
+      },
+      {
+        name: 'thịt bò',
+        estimatedGrams: 100,
+        cookingMethod: 'luộc',
+        userFacingUnit: null,
+      },
+      {
+        name: 'rau muống',
+        estimatedGrams: 80,
+        cookingMethod: 'luộc',
+        userFacingUnit: null,
+      },
     ];
 
     const dbCallQueries: string[] = [];
     let responseIdx = 0;
     const responses: unknown[][] = [
       // 3 vector matches (one per ingredient)
-      [{ ...sampleFuzzyResult, id: 'rice-001', name_primary: 'Gạo tẻ', similarity: 0.85 }],
-      [{ ...sampleFuzzyResult, id: 'beef-001', name_primary: 'Thịt bò', similarity: 0.9 }],
-      [{ ...sampleFuzzyResult, id: 'veg-001', name_primary: 'Rau muống', similarity: 0.88 }],
+      [
+        {
+          ...sampleFuzzyResult,
+          id: 'rice-001',
+          name_primary: 'Gạo tẻ',
+          similarity: 0.85,
+        },
+      ],
+      [
+        {
+          ...sampleFuzzyResult,
+          id: 'beef-001',
+          name_primary: 'Thịt bò',
+          similarity: 0.9,
+        },
+      ],
+      [
+        {
+          ...sampleFuzzyResult,
+          id: 'veg-001',
+          name_primary: 'Rau muống',
+          similarity: 0.88,
+        },
+      ],
       // 1 batch nutrition query returning all 3 rows
       [
         { ...sampleNutritionRow, id: 'rice-001', calories_kcal: '352' },
