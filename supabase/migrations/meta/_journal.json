@@ -92,6 +92,13 @@
       "when": 1773909478002,
       "tag": "20260319083757_add_synonym_candidates",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1775068812806,
+      "tag": "20260401184012_add_ingredient_sources",
+      "breakpoints": true
     }
   ]
 }
