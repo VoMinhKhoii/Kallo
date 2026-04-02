@@ -181,6 +181,7 @@ Full documentation in `docs/DATABASE.md`. Key points:
 
 ### Schema & Migrations
 - **Always edit `lib/db/schema.ts` first** for column changes, then generate. Never hand-add columns in SQL migrations.
+- **Always rename Drizzle migrations** to meaningful names after generation. Replace the random name (e.g., `right_maria_hill`) in both the SQL filename and `meta/_journal.json` tag field. Example: `20260401174419_right_maria_hill.sql` → `20260401174419_add_ingredient_sources.sql`.
 - **Test migrations against remote DB early**. Local and remote Supabase behave differently (search_path, extensions).
 - **After `bun dbr:push` fails mid-migration**: repair with `supabase migration repair --status reverted <timestamp> --linked`.
 - **Drizzle snapshot/journal must stay in sync** when reordering timestamps.
