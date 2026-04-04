@@ -63,6 +63,8 @@ function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+let totalGeminiCalls = 0;
+
 export function createGeminiClient(
   apiKey: string,
   retryOptions?: Partial<RetryOptions>
@@ -78,10 +80,11 @@ export function createGeminiClient(
 
     for (let attempt = 1; attempt <= retry.maxRetries; attempt++) {
       const t0 = Date.now();
+      totalGeminiCalls++;
       try {
         const result = await fn();
         console.info(
-          `[gemini] ${label ?? 'call'} attempt ${attempt}/${retry.maxRetries}: ${Date.now() - t0}ms`
+          `[gemini] ${label ?? 'call'} attempt ${attempt}/${retry.maxRetries} (total calls: ${totalGeminiCalls}): ${Date.now() - t0}ms`
         );
         return result;
       } catch (err) {
@@ -90,14 +93,14 @@ export function createGeminiClient(
 
         if (!isRateLimitError(lastError) || attempt === retry.maxRetries) {
           console.error(
-            `[gemini] ${label ?? 'call'} attempt ${attempt}/${retry.maxRetries} failed (${elapsed}ms): ${lastError.message}`
+            `[gemini] ${label ?? 'call'} attempt ${attempt}/${retry.maxRetries} failed (${elapsed}ms, total calls: ${totalGeminiCalls}): ${lastError.message}`
           );
           throw lastError;
         }
 
         const delay = parseRetryDelay(lastError, retry.baseDelayMs * attempt);
         console.warn(
-          `[gemini] ${label ?? 'call'} attempt ${attempt}/${retry.maxRetries} got 429 (${elapsed}ms), retrying in ${delay}ms`
+          `[gemini] ${label ?? 'call'} attempt ${attempt}/${retry.maxRetries} got 429 (${elapsed}ms, total calls: ${totalGeminiCalls}), retrying in ${delay}ms`
         );
         await sleep(delay);
       }
@@ -171,10 +174,12 @@ export function createGeminiClient(
 
         let accumulated = '';
         for await (const chunk of response) {
-          const text = chunk.text ?? '';
-          accumulated += text;
-          if (onChunk && text.length > 0) {
-            onChunk(accumulated);
+          const text = chunk.text;
+          if (text) {
+            accumulated += text;
+            if (onChunk) {
+              onChunk(accumulated);
+            }
           }
         }
 

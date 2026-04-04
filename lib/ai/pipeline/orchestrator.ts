@@ -1,9 +1,12 @@
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import { capitalizeFirst } from '@/lib/utils';
 import type { GeminiClient } from '../gemini';
-import { matchIngredients } from '../matching';
 import { applyIngredientAliases } from '../matching/aliases';
-import { createSpeculativeMatcher } from '../matching/speculative';
+import { aggregateConcurrentMatches } from '../matching/cascade';
+import {
+  type ConcurrentMatchTask,
+  createConcurrentMatcher,
+} from '../matching/speculative';
 import { buildDecompositionPrompt, buildNutritionPrompt } from '../prompts';
 import type {
   MealDecomposition,
@@ -141,8 +144,9 @@ async function runPipeline(
 ): Promise<PipelineResponse> {
   const t0 = Date.now();
 
-  // Stage 1: Streaming decomposition with speculative embedding pre-warming
-  const speculativeMatcher = createSpeculativeMatcher(db, gemini);
+  // Stage 1: Streaming decomposition with concurrent DB matching
+  const matchPromises: Promise<ConcurrentMatchTask>[] = [];
+  const concurrentMatcher = createConcurrentMatcher(db, gemini, matchPromises);
   const decomposition: MealDecomposition = await withTimeout(
     gemini.generateStructuredOutputStream(
       {
@@ -154,7 +158,7 @@ async function runPipeline(
         topP: 1,
         topK: 1,
       },
-      speculativeMatcher
+      concurrentMatcher
     ),
     LLM_TIMEOUT_MS,
     'decomposition'
@@ -186,17 +190,19 @@ async function runPipeline(
     }
   }
 
-  // Stage 2: Ingredient matching
+  // Stage 2: Aggregate Concurrent Matches
   const allIngredients = decomposition.mealItems.flatMap(
     (mi) => mi.ingredients
   );
   const t1 = Date.now();
-  const matchResult = await matchIngredients(
+
+  const matchResult = await aggregateConcurrentMatches(
+    matchPromises,
     allIngredients,
     rawInput,
-    db,
-    gemini
+    db
   );
+
   const matchMs = Date.now() - t1;
 
   // Stage 3: LLM nutrition estimation (with timeout)

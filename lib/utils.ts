@@ -46,3 +46,32 @@ export async function mapWithConcurrency<T, R>(
   );
   return results;
 }
+
+/**
+ * A simple concurrency queue for dynamic/streaming workloads.
+ * Limits the number of concurrent async functions running.
+ */
+export class ConcurrencyQueue {
+  private active = 0;
+  private queue: (() => void)[] = [];
+
+  constructor(private limit: number) {
+    if (!Number.isInteger(limit) || limit < 1) {
+      throw new RangeError('limit must be a positive integer');
+    }
+  }
+
+  async add<T>(fn: () => Promise<T>): Promise<T> {
+    if (this.active >= this.limit) {
+      await new Promise<void>((resolve) => this.queue.push(resolve));
+    }
+    this.active++;
+    try {
+      return await fn();
+    } finally {
+      this.active--;
+      const next = this.queue.shift();
+      if (next) next();
+    }
+  }
+}

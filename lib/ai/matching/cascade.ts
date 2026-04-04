@@ -11,6 +11,7 @@ import type {
 } from '../types';
 import { cacheQueryEmbedding, resolveQueryEmbedding } from './embedding-cache';
 import { parseNutritionRow } from './nutrition-db';
+import type { ConcurrentMatchTask } from './speculative';
 
 export const CONFIDENCE_THRESHOLDS = {
   high: 0.6,
@@ -45,7 +46,7 @@ interface FuzzyMatchRow {
  * Lightweight match result carrying only match metadata (no nutrition).
  * Used internally to decouple matching from nutrition fetching.
  */
-interface MatchInfo {
+export interface MatchInfo {
   ingredientName: string;
   foodCompositionId: string;
   matchedName: string;
@@ -156,11 +157,60 @@ export async function matchIngredients(
 }
 
 /**
+ * Stage 2 matching replacement.
+ * Awaits the results of concurrently dispatched matches during the stream,
+ * batch-fetches their nutrition, and builds the MatchResult interface.
+ */
+export async function aggregateConcurrentMatches(
+  matchPromises: Promise<ConcurrentMatchTask>[],
+  allIngredients: { name: string }[],
+  mealContext: string,
+  db: PostgresJsDatabase<any>
+): Promise<MatchResult> {
+  const rawMatches = await Promise.allSettled(matchPromises);
+
+  // Build a lookup map of canonical ingredientName -> MatchInfo
+  const matchInfoMap = new Map<string, MatchInfo>();
+  for (const result of rawMatches) {
+    if (result.status === 'fulfilled' && result.value.matchInfo) {
+      matchInfoMap.set(result.value.ingredientName, result.value.matchInfo);
+    }
+  }
+
+  // Batch-fetch nutrition for all successful matches
+  const uniqueIds = [
+    ...new Set(
+      Array.from(matchInfoMap.values()).map((m) => m.foodCompositionId)
+    ),
+  ];
+  const nutritionMap = await batchFetchNutrition(uniqueIds, db);
+
+  const matched: MatchedIngredient[] = [];
+  const unmatched: UnmatchedIngredient[] = [];
+
+  for (const ing of allIngredients) {
+    const info = matchInfoMap.get(ing.name);
+    if (info) {
+      const nutrition = nutritionMap.get(info.foodCompositionId);
+      if (nutrition) {
+        matched.push({ ...info, nutritionPer100g: nutrition });
+      } else {
+        unmatched.push({ ingredientName: ing.name, mealContext });
+      }
+    } else {
+      unmatched.push({ ingredientName: ing.name, mealContext });
+    }
+  }
+
+  return { matched, unmatched };
+}
+
+/**
  * Batch-fetch nutrition per 100g for a list of food composition IDs.
  * Returns a Map from ID → NutritionPer100g.
  * Replaces N individual fetchNutritionPer100g calls with 1 batch query.
  */
-async function batchFetchNutrition(
+export async function batchFetchNutrition(
   ids: string[],
   db: PostgresJsDatabase<any>
 ): Promise<Map<string, NutritionPer100g>> {
@@ -184,7 +234,7 @@ async function batchFetchNutrition(
  * Returns lightweight MatchInfo (no nutrition data).
  * Nutrition is batch-fetched separately in matchIngredients.
  */
-async function matchSingleIngredientWithEmbedding(
+export async function matchSingleIngredientWithEmbedding(
   ingredientName: string,
   embedding: number[],
   db: PostgresJsDatabase<any>

@@ -1,30 +1,39 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { GeminiClient } from '../gemini';
-import { analyzeMeal } from '../pipeline';
+import { createMockGemini } from '@/lib/ai/__tests__/test-helpers';
+import type { GeminiClient } from '@/lib/ai/gemini';
+import { extractIngredientNames } from '@/lib/ai/matching/speculative';
+import { analyzeMeal } from '@/lib/ai/pipeline';
 import type {
   IngredientLlmNutrition,
   MealDecomposition,
   NutritionAdjustment,
   NutritionPer100g,
   UserContext,
-} from '../types';
-import { createMockGemini } from './test-helpers';
+} from '@/lib/ai/types';
+import { ConcurrencyQueue } from '@/lib/utils';
 
 // ---------------------------------------------------------------------------
 // Mocks
 // ---------------------------------------------------------------------------
 
-vi.mock('../matching', () => ({
-  matchIngredients: vi.fn(),
-  logUnmatchedIngredients: vi.fn(),
+vi.mock('@/lib/ai/matching/cascade', () => ({
+  aggregateConcurrentMatches: vi.fn(),
 }));
 
-import { matchIngredients } from '../matching';
+import { aggregateConcurrentMatches } from '@/lib/ai/matching/cascade';
 
-const mockMatchIngredients = matchIngredients as ReturnType<typeof vi.fn>;
+const mockAggregateConcurrentMatches = aggregateConcurrentMatches as ReturnType<
+  typeof vi.fn
+>;
 
 function createMockDb() {
-  return {} as any;
+  return {
+    select: vi.fn().mockReturnThis(),
+    from: vi.fn().mockReturnThis(),
+    where: vi.fn().mockReturnThis(),
+    limit: vi.fn().mockResolvedValue([]),
+    execute: vi.fn().mockResolvedValue([]),
+  } as any;
 }
 
 // ---------------------------------------------------------------------------
@@ -145,7 +154,7 @@ describe('analyzeMeal', () => {
   it('returns successful result for a simple meal', async () => {
     mockLlmCalls(sampleDecomposition, sampleNutritionAdjustment);
 
-    mockMatchIngredients.mockResolvedValueOnce({
+    mockAggregateConcurrentMatches.mockResolvedValueOnce({
       matched: [
         {
           ingredientName: 'Gạo',
@@ -181,7 +190,7 @@ describe('analyzeMeal', () => {
   it('D5: merges LLM 5 nutrients with DB mid values for remaining 23', async () => {
     mockLlmCalls(sampleDecomposition, sampleNutritionAdjustment);
 
-    mockMatchIngredients.mockResolvedValueOnce({
+    mockAggregateConcurrentMatches.mockResolvedValueOnce({
       matched: [
         {
           ingredientName: 'Gạo tẻ',
@@ -356,7 +365,7 @@ describe('analyzeMeal', () => {
       ],
     });
 
-    mockMatchIngredients.mockResolvedValueOnce({
+    mockAggregateConcurrentMatches.mockResolvedValueOnce({
       matched: [
         {
           ingredientName: 'Bún phở',
@@ -426,7 +435,7 @@ describe('analyzeMeal', () => {
       ],
     });
 
-    mockMatchIngredients.mockResolvedValueOnce({
+    mockAggregateConcurrentMatches.mockResolvedValueOnce({
       matched: [
         {
           ingredientName: 'Cá lóc',
@@ -504,7 +513,7 @@ describe('analyzeMeal', () => {
       mockGemini.generateStructuredOutput as ReturnType<typeof vi.fn>
     ).mockResolvedValueOnce(twoItemNutrition);
 
-    mockMatchIngredients.mockResolvedValueOnce({
+    mockAggregateConcurrentMatches.mockResolvedValueOnce({
       matched: [
         {
           ingredientName: 'Gạo tẻ',
@@ -611,7 +620,7 @@ describe('analyzeMeal', () => {
       mockGemini.generateStructuredOutput as ReturnType<typeof vi.fn>
     ).mockResolvedValueOnce(sharedIngNutrition);
 
-    mockMatchIngredients.mockResolvedValueOnce({
+    mockAggregateConcurrentMatches.mockResolvedValueOnce({
       matched: [
         {
           ingredientName: 'Thịt lợn nạc',
@@ -687,7 +696,7 @@ describe('analyzeMeal', () => {
       mockGemini.generateStructuredOutput as ReturnType<typeof vi.fn>
     ).mockResolvedValueOnce(sampleNutritionAdjustment);
 
-    mockMatchIngredients.mockResolvedValueOnce({
+    mockAggregateConcurrentMatches.mockResolvedValueOnce({
       matched: [
         {
           ingredientName: 'Gạo tẻ',
@@ -734,7 +743,7 @@ describe('analyzeMeal', () => {
       mockGemini.generateStructuredOutput as ReturnType<typeof vi.fn>
     ).mockResolvedValueOnce(sampleNutritionAdjustment);
 
-    mockMatchIngredients.mockResolvedValueOnce({
+    mockAggregateConcurrentMatches.mockResolvedValueOnce({
       matched: [
         {
           ingredientName: 'Gạo tẻ',
@@ -763,5 +772,166 @@ describe('analyzeMeal', () => {
     expect(
       mockGemini.generateStructuredOutput as ReturnType<typeof vi.fn>
     ).toHaveBeenCalledTimes(2);
+  });
+
+  it('verifies streaming + concurrent dispatch during decompose stage', async () => {
+    const mockDecomposition: MealDecomposition = {
+      isFood: true,
+      mealSlot: 'lunch',
+      mealItems: [
+        {
+          name: 'Phở bò',
+          ingredients: [
+            {
+              name: 'Bánh phở',
+              estimatedGrams: 150,
+              cookingMethod: null,
+              userFacingUnit: null,
+            },
+            {
+              name: 'Thịt bò',
+              estimatedGrams: 50,
+              cookingMethod: null,
+              userFacingUnit: null,
+            },
+          ],
+        },
+      ],
+    };
+
+    // Mock streaming generator to manually trigger chunks
+    (
+      mockGemini.generateStructuredOutputStream as ReturnType<typeof vi.fn>
+    ).mockImplementation(async (_params: any, onChunk: any) => {
+      // Simulate streaming chunks
+      if (onChunk) {
+        onChunk('{"mealItems":[{"ingredients":[{"name":"Bánh phở"');
+        onChunk('},{"name":"Thịt bò"}]}]}');
+      }
+      return mockDecomposition;
+    });
+
+    (
+      mockGemini.generateStructuredOutput as ReturnType<typeof vi.fn>
+    ).mockResolvedValue({
+      mealItems: [
+        {
+          mealItemName: 'Phở bò',
+          ingredients: [],
+        },
+      ],
+    } as NutritionAdjustment);
+
+    mockAggregateConcurrentMatches.mockResolvedValue({
+      matched: [],
+      unmatched: [],
+    });
+
+    await analyzeMeal('transcription', userContext, mockDb, mockGemini);
+
+    // Verify that aggregateConcurrentMatches was called with 2 promises
+    // (one for each unique ingredient name found in the stream)
+    expect(mockAggregateConcurrentMatches).toHaveBeenCalled();
+    const firstCallArgs = mockAggregateConcurrentMatches.mock.calls[0];
+    const matchPromises = firstCallArgs[0];
+    expect(matchPromises).toHaveLength(2);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Unit Tests: Concurrency Queue
+// ---------------------------------------------------------------------------
+
+describe('ConcurrencyQueue', () => {
+  it('correctly limits the number of concurrent tasks', async () => {
+    const queue = new ConcurrencyQueue(2);
+    let active = 0;
+    let maxSeen = 0;
+
+    const task = async () => {
+      active++;
+      maxSeen = Math.max(maxSeen, active);
+      await new Promise((resolve) => setTimeout(resolve, 50));
+      active--;
+    };
+
+    // Dispatch 5 tasks to a queue with a limit of 2
+    await Promise.all([
+      queue.add(task),
+      queue.add(task),
+      queue.add(task),
+      queue.add(task),
+      queue.add(task),
+    ]);
+
+    expect(maxSeen).toBe(2);
+    expect(active).toBe(0);
+  });
+
+  it('handles rejections and continues processing', async () => {
+    const queue = new ConcurrencyQueue(1);
+
+    const successResult = await queue.add(async () => 'ok');
+    expect(successResult).toBe('ok');
+
+    await expect(
+      queue.add(async () => {
+        throw new Error('fail');
+      })
+    ).rejects.toThrow('fail');
+
+    const nextResult = await queue.add(async () => 'still ok');
+    expect(nextResult).toBe('still ok');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Unit Tests: Streaming Parser (Speculative)
+// ---------------------------------------------------------------------------
+
+describe('extractIngredientNames', () => {
+  it('finds complete ingredient names in partial JSON', () => {
+    const seen = new Set<string>();
+
+    const chunk1 = '{"mealItems":[{"ingredients":[{"name":"Gạo"}]}';
+    expect(extractIngredientNames(chunk1, seen)).toEqual(['Gạo']);
+    expect(seen.has('Gạo')).toBe(true);
+
+    const chunk2 = '{"mealItems":[{"ingredients":[{"name":"Thịt lợn nạc"}]}';
+    expect(extractIngredientNames(chunk2, seen)).toEqual(['Thịt lợn nạc']);
+    expect(seen.has('Thịt lợn nạc')).toBe(true);
+  });
+
+  it('handles name split across chunk boundary (passed as accumulated)', () => {
+    const seen = new Set<string>();
+
+    const chunk1 = '{"name":"Thị';
+    const chunk2 = 't lợn nạc"}';
+
+    // Step 1: Incomplete token in first call
+    expect(extractIngredientNames(chunk1, seen)).toEqual([]);
+
+    // Step 2: Next chunk provides completion in the accumulated string
+    const accumulated = chunk1 + chunk2;
+    expect(extractIngredientNames(accumulated, seen)).toEqual(['Thịt lợn nạc']);
+    expect(seen.has('Thịt lợn nạc')).toBe(true);
+  });
+
+  it('handles multi-byte UTF-8 split across boundary', () => {
+    const seen = new Set<string>();
+
+    // phở - 'ở' is multi-byte.
+    // Let's assume the string is correctly reconstruction in the accumulator
+    const chunk1 = '{"name":"ph';
+    const chunk2 = 'ở bò"}';
+
+    expect(extractIngredientNames(chunk1, seen)).toEqual([]);
+    expect(extractIngredientNames(chunk1 + chunk2, seen)).toEqual(['phở bò']);
+  });
+
+  it('ignores incomplete name fields', () => {
+    const seen = new Set<string>();
+    const chunk = '{"mealItems":[{"ingred';
+    expect(extractIngredientNames(chunk, seen)).toEqual([]);
   });
 });

@@ -1,6 +1,15 @@
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
+import { ConcurrencyQueue, capitalizeFirst } from '@/lib/utils';
 import type { GeminiClient } from '../gemini';
+import { resolveAlias } from './aliases';
+import type { MatchInfo } from './cascade';
+import { matchSingleIngredientWithEmbedding } from './cascade';
 import { cacheQueryEmbedding, resolveQueryEmbedding } from './embedding-cache';
+
+export interface ConcurrentMatchTask {
+  ingredientName: string;
+  matchInfo: MatchInfo | null;
+}
 
 /**
  * Extract ingredient names from a partial JSON stream.
@@ -56,6 +65,62 @@ export function createSpeculativeMatcher(
           });
         })
         .catch(() => {}); // Silently ignore errors — matching phase will retry
+    }
+  };
+}
+
+/**
+ * Creates a concurrent matcher that overlaps DB querying with LLM streaming.
+ * Uses a concurrency queue to prevent exhausting PgBouncer.
+ */
+export function createConcurrentMatcher(
+  db: PostgresJsDatabase<any>,
+  gemini: GeminiClient,
+  matchPromises: Promise<ConcurrentMatchTask>[]
+) {
+  const seen = new Set<string>();
+  const queue = new ConcurrencyQueue(4);
+  let lastScannedLength = 0;
+
+  return (accumulated: string) => {
+    // Only scan the new part of the string + a small lookbehind buffer
+    // to catch "name":"..." tokens that were split across chunks.
+    // The lookbehind (e.g. 50 chars) ensures we don't miss a token
+    // whose start was at the very end of the previous accumulated string.
+    const lookbehind = Math.max(0, lastScannedLength - 50);
+    const textToScan = accumulated.slice(lookbehind);
+
+    const newNames = extractIngredientNames(textToScan, seen);
+    lastScannedLength = accumulated.length;
+
+    for (const name of newNames) {
+      const task = queue.add(async (): Promise<ConcurrentMatchTask> => {
+        try {
+          const finalName = resolveAlias(capitalizeFirst(name));
+
+          let embedding = await resolveQueryEmbedding(finalName, db);
+          if (!embedding) {
+            embedding = await gemini.generateEmbedding(finalName);
+            cacheQueryEmbedding(finalName, embedding, db);
+          }
+          const matchInfo = await matchSingleIngredientWithEmbedding(
+            finalName,
+            embedding,
+            db
+          );
+          return { ingredientName: finalName, matchInfo };
+        } catch (err) {
+          console.error(
+            `[matching] Concurrent match failed for "${name}":`,
+            err
+          );
+          return {
+            ingredientName: resolveAlias(capitalizeFirst(name)),
+            matchInfo: null,
+          };
+        }
+      });
+      matchPromises.push(task);
     }
   };
 }
