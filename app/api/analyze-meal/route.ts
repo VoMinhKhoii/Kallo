@@ -131,6 +131,11 @@ export async function POST(request: NextRequest) {
         }
 
         if (!result.success) {
+          console.error(
+            '[analyze-meal] Pipeline returned error:',
+            result.error.type,
+            result.error.message
+          );
           emit({
             type: 'error',
             code: result.error.type,
