@@ -5,6 +5,11 @@ import { matchIngredients } from '../matching';
 import { applyIngredientAliases } from '../matching/aliases';
 import { createSpeculativeMatcher } from '../matching/speculative';
 import { buildDecompositionPrompt, buildNutritionPrompt } from '../prompts';
+import {
+  computeStreamingMealItem,
+  extractCompletedMealItemNutrition,
+  extractMealItemNames,
+} from '../streaming/parsers';
 import type { StreamEvent } from '../streaming/types';
 import type {
   MealDecomposition,
@@ -126,11 +131,16 @@ export async function analyzeMeal(
       try {
         return await runPipeline(rawInput, userContext, db, gemini, onEvent);
       } catch (retryError) {
+        const retryMsg =
+          retryError instanceof Error ? retryError.message : String(retryError);
+        console.error('[pipeline] Retry also failed:', retryMsg);
         return handleError(retryError);
       }
     }
 
     // All other errors (API errors, network, etc.) surface immediately
+    const message = error instanceof Error ? error.message : String(error);
+    console.error('[pipeline] Unhandled error:', message);
     return handleError(error);
   }
 }
@@ -146,8 +156,27 @@ async function runPipeline(
   const emit = onEvent ?? (() => {});
 
   // Stage 1: Streaming decomposition with speculative embedding pre-warming
+  // + per-item name detection for progressive UI
   emit({ type: 'stage', stage: 'decomposing' });
   const speculativeMatcher = createSpeculativeMatcher(db, gemini);
+  const mealItemNamesSeen = new Set<string>();
+  let mealItemIndex = 0;
+
+  const composedOnChunk = (accumulated: string) => {
+    // Existing: pre-warm embedding cache for ingredient names
+    speculativeMatcher(accumulated);
+
+    // New: detect meal item names and emit individually for progressive UI
+    const newNames = extractMealItemNames(accumulated, mealItemNamesSeen);
+    for (const name of newNames) {
+      emit({
+        type: 'item_name',
+        name: capitalizeFirst(name),
+        index: mealItemIndex++,
+      });
+    }
+  };
+
   const decomposition: MealDecomposition = await withTimeout(
     gemini.generateStructuredOutputStream(
       {
@@ -159,7 +188,7 @@ async function runPipeline(
         topP: 1,
         topK: 1,
       },
-      speculativeMatcher
+      composedOnChunk
     ),
     LLM_TIMEOUT_MS,
     'decomposition'
@@ -177,9 +206,15 @@ async function runPipeline(
   // Apply ingredient aliases: map common shorthand names to canonical DB names
   applyIngredientAliases(decomposition);
 
-  // Emit discovered items for progressive UI
-  const itemNames = decomposition.mealItems.map((mi) => mi.name);
-  emit({ type: 'items_found', items: itemNames });
+  // Flush: emit any meal item names that weren't detected during streaming
+  for (const mi of decomposition.mealItems) {
+    if (
+      !mealItemNamesSeen.has(mi.name) &&
+      !mealItemNamesSeen.has(mi.name.toLowerCase())
+    ) {
+      emit({ type: 'item_name', name: mi.name, index: mealItemIndex++ });
+    }
+  }
 
   // D6 Layer 1: Check isFood field from LLM
   if (!decomposition.isFood) {
@@ -209,28 +244,89 @@ async function runPipeline(
   );
   const matchMs = Date.now() - t1;
 
-  // Stage 3: LLM nutrition estimation (with timeout)
+  // Stage 3: LLM nutrition estimation (streaming with per-item boundary detection)
   emit({ type: 'stage', stage: 'estimating' });
   const t2 = Date.now();
+  let lastExtractedCount = 0;
+
+  // Build a lookup from meal item name → total grams for computeStreamingMealItem
+  const mealItemGrams = new Map<string, number>();
+  for (const mi of decomposition.mealItems) {
+    const totalGrams = mi.ingredients.reduce(
+      (sum, ing) => sum + ing.estimatedGrams,
+      0
+    );
+    mealItemGrams.set(mi.name, totalGrams);
+  }
+
+  const nutritionOnChunk = (accumulated: string) => {
+    const { items, newCount } = extractCompletedMealItemNutrition(
+      accumulated,
+      lastExtractedCount
+    );
+    lastExtractedCount = newCount;
+
+    for (const itemNutrition of items) {
+      const quantity =
+        mealItemGrams.get(itemNutrition.mealItemName) ??
+        mealItemGrams.get(capitalizeFirst(itemNutrition.mealItemName)) ??
+        0;
+      const streamItem = computeStreamingMealItem(
+        itemNutrition,
+        quantity,
+        lastExtractedCount - items.length + items.indexOf(itemNutrition),
+        userContext.goal,
+        userContext.aggression
+      );
+      emit({ type: 'item_macros', item: streamItem });
+    }
+  };
+
   let nutritionResult: NutritionAdjustment = await withTimeout(
-    gemini.generateStructuredOutput({
-      schema: nutritionAdjustmentSchema,
-      systemPrompt: buildNutritionPrompt(
-        decomposition.mealItems,
-        matchResult.matched,
-        matchResult.unmatched,
-        userContext
-      ),
-      userMessage:
-        'Produce bounded nutrition estimates for each ingredient in each meal item based on the reference data provided.',
-      model: NUTRITION_MODEL,
-      temperature: 0.5,
-      topP: 1,
-      topK: 1,
-    }),
+    gemini.generateStructuredOutputStream(
+      {
+        schema: nutritionAdjustmentSchema,
+        systemPrompt: buildNutritionPrompt(
+          decomposition.mealItems,
+          matchResult.matched,
+          matchResult.unmatched,
+          userContext
+        ),
+        userMessage:
+          'Produce bounded nutrition estimates for each ingredient in each meal item based on the reference data provided.',
+        model: NUTRITION_MODEL,
+        temperature: 0.5,
+        topP: 1,
+        topK: 1,
+      },
+      nutritionOnChunk
+    ),
     LLM_TIMEOUT_MS,
     'nutrition'
   );
+
+  // Flush the last meal item (in-progress during streaming, never boundary-detected)
+  if (nutritionResult.mealItems.length > lastExtractedCount) {
+    for (
+      let i = lastExtractedCount;
+      i < nutritionResult.mealItems.length;
+      i++
+    ) {
+      const itemNutrition = nutritionResult.mealItems[i];
+      const quantity =
+        mealItemGrams.get(itemNutrition.mealItemName) ??
+        mealItemGrams.get(capitalizeFirst(itemNutrition.mealItemName)) ??
+        0;
+      const streamItem = computeStreamingMealItem(
+        itemNutrition,
+        quantity,
+        i,
+        userContext.goal,
+        userContext.aggression
+      );
+      emit({ type: 'item_macros', item: streamItem });
+    }
+  }
 
   // Retry once if nutrition result is implausible (0 total calories)
   const totalMidKcal = nutritionResult.mealItems.reduce(
@@ -244,21 +340,45 @@ async function runPipeline(
       '[pipeline] Implausible 0-calorie result from Call 2, retrying once'
     );
     nutritionResult = await withTimeout(
-      gemini.generateStructuredOutput({
-        schema: nutritionAdjustmentSchema,
-        systemPrompt: buildNutritionPrompt(
-          decomposition.mealItems,
-          matchResult.matched,
-          matchResult.unmatched,
-          userContext
-        ),
-        userMessage:
-          'The previous result had 0 calories. Please recalculate bounded nutrition estimates carefully.',
-        model: NUTRITION_MODEL,
-        temperature: 0.5,
-        topP: 1,
-        topK: 1,
-      }),
+      gemini.generateStructuredOutputStream(
+        {
+          schema: nutritionAdjustmentSchema,
+          systemPrompt: buildNutritionPrompt(
+            decomposition.mealItems,
+            matchResult.matched,
+            matchResult.unmatched,
+            userContext
+          ),
+          userMessage:
+            'The previous result had 0 calories. Please recalculate bounded nutrition estimates carefully.',
+          model: NUTRITION_MODEL,
+          temperature: 0.5,
+          topP: 1,
+          topK: 1,
+        },
+        // On retry, emit all items as they come (reset counter)
+        (accumulated: string) => {
+          const { items, newCount } = extractCompletedMealItemNutrition(
+            accumulated,
+            lastExtractedCount
+          );
+          lastExtractedCount = newCount;
+          for (const itemNutrition of items) {
+            const quantity =
+              mealItemGrams.get(itemNutrition.mealItemName) ??
+              mealItemGrams.get(capitalizeFirst(itemNutrition.mealItemName)) ??
+              0;
+            const streamItem = computeStreamingMealItem(
+              itemNutrition,
+              quantity,
+              lastExtractedCount - items.length + items.indexOf(itemNutrition),
+              userContext.goal,
+              userContext.aggression
+            );
+            emit({ type: 'item_macros', item: streamItem });
+          }
+        }
+      ),
       LLM_TIMEOUT_MS,
       'nutrition-retry'
     );

@@ -167,8 +167,12 @@ async function batchFetchNutrition(
   const map = new Map<string, NutritionPer100g>();
   if (ids.length === 0) return map;
 
+  const idList = sql.join(
+    ids.map((id) => sql`${id}`),
+    sql`, `
+  );
   const rows = await db.execute(
-    sql`SELECT * FROM vietnamese_food_composition WHERE id = ANY(${ids})`
+    sql`SELECT * FROM vietnamese_food_composition WHERE id IN (${idList})`
   );
 
   for (const row of rows as unknown as Record<string, unknown>[]) {

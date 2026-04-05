@@ -71,8 +71,9 @@ export function MealEntry({ message, onConfirm }: MealEntryProps) {
 
   return (
     <motion.article
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
+      layout
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
       className="group relative"
     >
       {/* Timeline dot & line */}

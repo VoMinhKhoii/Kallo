@@ -1,4 +1,4 @@
-import type { ParsedMeal } from '@/lib/types/meal';
+import type { MealItem, ParsedMeal } from '@/lib/types/meal';
 
 // ---------------------------------------------------------------------------
 // SSE Event Types — contract between route handler and client consumer
@@ -22,10 +22,17 @@ export interface StageEvent {
   message?: string;
 }
 
-/** Meal item names extracted from decomposition (before nutrition) */
-export interface ItemsFoundEvent {
-  type: 'items_found';
-  items: string[];
+/** Single meal item name discovered during decomposition streaming */
+export interface ItemNameEvent {
+  type: 'item_name';
+  name: string;
+  index: number;
+}
+
+/** Single meal item with macros estimated during nutrition streaming */
+export interface ItemMacrosEvent {
+  type: 'item_macros';
+  item: MealItem;
 }
 
 /** Final display-optimized result for the client */
@@ -57,7 +64,8 @@ export interface StreamErrorEvent {
  */
 export type StreamEvent =
   | StageEvent
-  | ItemsFoundEvent
+  | ItemNameEvent
+  | ItemMacrosEvent
   | ResultEvent
   | AnalysisCompleteEvent
   | StreamErrorEvent;

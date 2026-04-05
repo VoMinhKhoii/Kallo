@@ -12,15 +12,35 @@ describe('encodeSSE', () => {
     );
   });
 
-  it('formats an items_found event', () => {
+  it('formats an item_name event', () => {
     const event: StreamEvent = {
-      type: 'items_found',
-      items: ['Phở bò', 'Trà đá'],
+      type: 'item_name',
+      name: 'Phở bò',
+      index: 0,
     };
     const encoded = encodeSSE(event);
 
-    expect(encoded).toContain('event: items_found\n');
-    expect(encoded).toContain('"items":["Phở bò","Trà đá"]');
+    expect(encoded).toContain('event: item_name\n');
+    expect(encoded).toContain('"name":"Phở bò"');
+    expect(encoded).toContain('"index":0');
+    expect(encoded.endsWith('\n\n')).toBe(true);
+  });
+
+  it('formats an item_macros event', () => {
+    const event: StreamEvent = {
+      type: 'item_macros',
+      item: {
+        id: 'item-1',
+        name: 'Cơm trắng',
+        quantity: 200,
+        unit: 'g',
+        macros: { calories: 260, protein: 5, carbs: 57, fat: 1 },
+      },
+    };
+    const encoded = encodeSSE(event);
+
+    expect(encoded).toContain('event: item_macros\n');
+    expect(encoded).toContain('"name":"Cơm trắng"');
     expect(encoded.endsWith('\n\n')).toBe(true);
   });
 
@@ -66,13 +86,13 @@ describe('parseSSEChunk', () => {
     const buffer = { current: '' };
     const chunk =
       'event: stage\ndata: {"type":"stage","stage":"decomposing"}\n\n' +
-      'event: items_found\ndata: {"type":"items_found","items":["Cơm"]}\n\n';
+      'event: item_name\ndata: {"type":"item_name","name":"Cơm","index":0}\n\n';
 
     const events = parseSSEChunk(chunk, buffer);
 
     expect(events).toHaveLength(2);
     expect(events[0]).toEqual({ type: 'stage', stage: 'decomposing' });
-    expect(events[1]).toEqual({ type: 'items_found', items: ['Cơm'] });
+    expect(events[1]).toEqual({ type: 'item_name', name: 'Cơm', index: 0 });
   });
 
   it('handles split events across chunks', () => {
@@ -113,14 +133,15 @@ describe('parseSSEChunk', () => {
   it('handles Vietnamese text with diacritics', () => {
     const buffer = { current: '' };
     const chunk =
-      'event: items_found\ndata: {"type":"items_found","items":["Bún bò Huế","Bánh mì"]}\n\n';
+      'event: item_name\ndata: {"type":"item_name","name":"Bún bò Huế","index":0}\n\n';
 
     const events = parseSSEChunk(chunk, buffer);
 
     expect(events).toHaveLength(1);
     expect(events[0]).toEqual({
-      type: 'items_found',
-      items: ['Bún bò Huế', 'Bánh mì'],
+      type: 'item_name',
+      name: 'Bún bò Huế',
+      index: 0,
     });
   });
 
