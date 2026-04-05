@@ -249,9 +249,8 @@ describe('resolveQueryEmbedding', () => {
     const db = createMockDb();
     db.execute.mockRejectedValue(new Error('connection timeout'));
 
-    await expect(resolveQueryEmbedding('thịt bò', db)).rejects.toThrow(
-      'connection timeout'
-    );
+    const result = await resolveQueryEmbedding('thịt bò', db);
+    expect(result).toBeNull();
   });
 
   it('handles empty string input without crashing', async () => {

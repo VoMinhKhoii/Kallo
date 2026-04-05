@@ -140,7 +140,11 @@ export async function analyzeMeal(
 
     // All other errors (API errors, network, etc.) surface immediately
     const message = error instanceof Error ? error.message : String(error);
-    console.error('[pipeline] Unhandled error:', message);
+    const cause =
+      error instanceof Error && error.cause
+        ? ` [cause: ${error.cause instanceof Error ? error.cause.message : String(error.cause)}]`
+        : '';
+    console.error(`[pipeline] Unhandled error: ${message}${cause}`);
     return handleError(error);
   }
 }

@@ -134,7 +134,14 @@ export async function matchIngredients(
 
   // Phase 4: Batch-fetch nutrition for all matched IDs in a single query
   const uniqueIds = [...new Set(matchInfos.map((m) => m.foodCompositionId))];
-  const nutritionMap = await batchFetchNutrition(uniqueIds, db);
+  let nutritionMap: Map<string, NutritionPer100g>;
+  try {
+    nutritionMap = await batchFetchNutrition(uniqueIds, db);
+  } catch (err) {
+    const cause = err instanceof Error ? (err.cause ?? err.message) : err;
+    console.error('[matching] batchFetchNutrition failed:', cause);
+    nutritionMap = new Map();
+  }
 
   // Phase 5: Combine MatchInfo + nutrition → MatchedIngredient
   for (const info of matchInfos) {
