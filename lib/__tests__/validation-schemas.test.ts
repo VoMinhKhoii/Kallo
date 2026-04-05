@@ -26,8 +26,8 @@ describe('mealMessageSchema', () => {
   });
 
   it('normalizes to NFC', () => {
-    // NFD form: 'ô' as o + combining circumflex
-    const nfd = 'C\u01A1m';
+    // NFD form: 'ơ' as "o" + COMBINING HORN (U+031B)
+    const nfd = 'Co\u031Bm';
     const result = mealMessageSchema.safeParse({ message: nfd });
     expect(result.success).toBe(true);
     if (result.success) {

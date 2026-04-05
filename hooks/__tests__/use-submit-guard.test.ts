@@ -57,13 +57,11 @@ describe('useSubmitGuard (logic)', () => {
   it('resets after fn throws', async () => {
     const { guard } = createGuard();
 
-    try {
-      await guard(async () => {
+    await expect(
+      guard(async () => {
         throw new Error('boom');
-      });
-    } catch {
-      // expected
-    }
+      })
+    ).rejects.toThrow('boom');
 
     const result = await guard(async () => 'recovered');
     expect(result).toBe('recovered');

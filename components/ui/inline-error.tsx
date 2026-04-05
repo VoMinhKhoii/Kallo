@@ -19,6 +19,7 @@ export function InlineError({ message, retryable, onRetry }: InlineErrorProps) {
       <span className="flex-1">{message}</span>
       {retryable && onRetry && (
         <Button
+          type="button"
           variant="ghost"
           size="sm"
           onClick={onRetry}
