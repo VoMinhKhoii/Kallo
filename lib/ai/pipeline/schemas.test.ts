@@ -7,7 +7,7 @@ import {
   mealDecompositionSchema,
   normalizeBoundedEstimate,
   nutritionAdjustmentSchema,
-} from '../pipeline/schemas';
+} from './schemas';
 
 describe('decomposedIngredientSchema', () => {
   it('accepts valid ingredient', () => {

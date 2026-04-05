@@ -7,7 +7,10 @@ import { toast } from 'sonner';
 import { EmptyState } from '@/components/logging/feed/empty-state';
 import { MacroSummary } from '@/components/logging/feed/macro-summary';
 import { MealEntry } from '@/components/logging/feed/meal-entry';
-import { MealInput } from '@/components/logging/input/meal-input';
+import {
+  MealInput,
+  type MealInputHandle,
+} from '@/components/logging/input/meal-input';
 import { useAnalyzeMeal } from '@/hooks/use-analyze-meal';
 import { recalculateTotals } from '@/lib/meal-utils';
 import type { ChatMessage, MacroBreakdown, ParsedMeal } from '@/lib/types/meal';
@@ -22,7 +25,7 @@ interface FeedAreaProps {
 
 export function FeedArea({ targets }: FeedAreaProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [inputValue, setInputValue] = useState('');
+  const inputRef = useRef<MealInputHandle>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const { mutateAsync, isPending } = useAnalyzeMeal();
 
@@ -57,7 +60,7 @@ export function FeedArea({ targets }: FeedAreaProps) {
   }, [messages]);
 
   const handleSubmit = async () => {
-    const text = inputValue.trim();
+    const text = inputRef.current?.getText()?.trim() ?? '';
     if (!text || isPending) return;
 
     const userMessage: ChatMessage = {
@@ -68,7 +71,7 @@ export function FeedArea({ targets }: FeedAreaProps) {
     };
 
     setMessages((prev) => [...prev, userMessage]);
-    setInputValue('');
+    inputRef.current?.clear();
     scrollToBottom();
 
     try {
@@ -125,7 +128,12 @@ export function FeedArea({ targets }: FeedAreaProps) {
         <AnimatePresence mode="wait">
           {!hasMessages && !isPending && (
             <div className="flex flex-1 items-center justify-center px-4 py-6 sm:px-6">
-              <EmptyState onSuggestionClick={setInputValue} />
+              <EmptyState
+                onSuggestionClick={(suggestion) => {
+                  inputRef.current?.setText(suggestion);
+                  inputRef.current?.focus();
+                }}
+              />
             </div>
           )}
         </AnimatePresence>
@@ -226,8 +234,7 @@ export function FeedArea({ targets }: FeedAreaProps) {
       <div className="px-4 pt-2 pb-4">
         <div className="mx-auto max-w-3xl">
           <MealInput
-            value={inputValue}
-            onChange={setInputValue}
+            ref={inputRef}
             onSubmit={handleSubmit}
             disabled={isPending}
           />

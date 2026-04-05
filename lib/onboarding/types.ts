@@ -1,41 +1,52 @@
-export type BiologicalSex = 'male' | 'female';
-export type ActivityLevel = 'sedentary' | 'light' | 'moderate' | 'very_active';
-export type Goal = 'cutting' | 'bulking' | 'maintaining';
+import type { z } from 'zod';
+import type {
+  activityLevelSchema,
+  biologicalSexSchema,
+  bodyMetricsSchema,
+  brothConsumptionSchema,
+  carbSplitSchema,
+  cookingHabitsSchema,
+  goalEnumSchema,
+  oilUsageSchema,
+  proteinPortionSchema,
+  regionalProfileSchema,
+  ricePortionSchema,
+  sugarBraisedSchema,
+} from './schemas';
+
+// ---------------------------------------------------------------------------
+// Enum types derived from Zod schemas (single source of truth)
+// ---------------------------------------------------------------------------
+
+export type BiologicalSex = z.infer<typeof biologicalSexSchema>;
+export type ActivityLevel = z.infer<typeof activityLevelSchema>;
+export type Goal = z.infer<typeof goalEnumSchema>;
 /** kg/week rate (0.1–0.8, step 0.1) */
 export type Aggression = number;
-export type CarbSplit = 'moderate_carb' | 'lower_carb' | 'higher_carb';
-export type RegionalProfile =
-  | 'mien_bac'
-  | 'mien_trung'
-  | 'mien_nam'
-  | 'mien_tay';
-export type OilUsage = 'minimal' | 'normal' | 'heavy';
-export type RicePortion = 'small' | 'medium' | 'large';
-export type SugarBraised = 'low' | 'medium' | 'high';
-export type ProteinPortion = 'small' | 'medium' | 'large';
-export type BrothConsumption = 'leave_it' | 'some' | 'finish_it';
+export type CarbSplit = z.infer<typeof carbSplitSchema>;
+export type RegionalProfile = z.infer<typeof regionalProfileSchema>;
+export type OilUsage = z.infer<typeof oilUsageSchema>;
+export type RicePortion = z.infer<typeof ricePortionSchema>;
+export type SugarBraised = z.infer<typeof sugarBraisedSchema>;
+export type ProteinPortion = z.infer<typeof proteinPortionSchema>;
+export type BrothConsumption = z.infer<typeof brothConsumptionSchema>;
 
-export interface BodyMetrics {
-  biologicalSex: BiologicalSex;
-  weightKg: number;
-  heightCm: number;
-  age: number;
-  activityLevel: ActivityLevel;
-}
+// ---------------------------------------------------------------------------
+// Composite types derived from Zod schemas
+// ---------------------------------------------------------------------------
+
+export type BodyMetrics = z.infer<typeof bodyMetricsSchema>;
+export type CookingHabits = z.infer<typeof cookingHabitsSchema>;
+
+// ---------------------------------------------------------------------------
+// Types without corresponding schemas
+// ---------------------------------------------------------------------------
 
 export interface MacroTargets {
   calories: number;
   proteinG: number;
   carbsG: number;
   fatG: number;
-}
-
-export interface CookingHabits {
-  oilUsage: OilUsage;
-  defaultRicePortion: RicePortion;
-  sugarBraised: SugarBraised;
-  defaultProteinPortion: ProteinPortion;
-  brothConsumption: BrothConsumption;
 }
 
 export interface OnboardingProfile {

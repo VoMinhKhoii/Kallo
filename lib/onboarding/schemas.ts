@@ -1,18 +1,66 @@
 import { z } from 'zod';
 
+// ---------------------------------------------------------------------------
+// Standalone enum schemas (source of truth for enum values)
+// ---------------------------------------------------------------------------
+
+export const biologicalSexSchema = z.enum(['male', 'female']);
+export const activityLevelSchema = z.enum([
+  'sedentary',
+  'light',
+  'moderate',
+  'very_active',
+]);
+export const goalEnumSchema = z.enum(['cutting', 'bulking', 'maintaining']);
+export const carbSplitSchema = z.enum([
+  'moderate_carb',
+  'lower_carb',
+  'higher_carb',
+]);
+export const regionalProfileSchema = z.enum([
+  'mien_bac',
+  'mien_trung',
+  'mien_nam',
+  'mien_tay',
+]);
+export const oilUsageSchema = z.enum(['minimal', 'normal', 'heavy']);
+export const ricePortionSchema = z.enum(['small', 'medium', 'large']);
+export const sugarBraisedSchema = z.enum(['low', 'medium', 'high']);
+export const proteinPortionSchema = z.enum(['small', 'medium', 'large']);
+export const brothConsumptionSchema = z.enum(['leave_it', 'some', 'finish_it']);
+
+// ---------------------------------------------------------------------------
+// Runtime value arrays
+// ---------------------------------------------------------------------------
+
+export const BIOLOGICAL_SEX_VALUES = biologicalSexSchema.options;
+export const ACTIVITY_LEVEL_VALUES = activityLevelSchema.options;
+export const GOAL_VALUES = goalEnumSchema.options;
+export const CARB_SPLIT_VALUES = carbSplitSchema.options;
+export const REGIONAL_PROFILE_VALUES = regionalProfileSchema.options;
+export const OIL_USAGE_VALUES = oilUsageSchema.options;
+export const RICE_PORTION_VALUES = ricePortionSchema.options;
+export const SUGAR_BRAISED_VALUES = sugarBraisedSchema.options;
+export const PROTEIN_PORTION_VALUES = proteinPortionSchema.options;
+export const BROTH_CONSUMPTION_VALUES = brothConsumptionSchema.options;
+
+// ---------------------------------------------------------------------------
+// Composite object schemas
+// ---------------------------------------------------------------------------
+
 export const bodyMetricsSchema = z.object({
-  biologicalSex: z.enum(['male', 'female']),
+  biologicalSex: biologicalSexSchema,
   weightKg: z.number().min(30).max(300),
   heightCm: z.number().int().min(100).max(250),
   age: z.number().int().min(13).max(100),
-  activityLevel: z.enum(['sedentary', 'light', 'moderate', 'very_active']),
+  activityLevel: activityLevelSchema,
 });
 
 export const goalSchema = z
   .object({
-    goal: z.enum(['cutting', 'bulking', 'maintaining']),
+    goal: goalEnumSchema,
     aggression: z.number().min(0.1).max(0.8).nullable(),
-    carbSplit: z.enum(['moderate_carb', 'lower_carb', 'higher_carb']),
+    carbSplit: carbSplitSchema,
     deficitOverride: z.number().min(50).max(1500).nullable(),
   })
   .superRefine((data, ctx) => {
@@ -26,15 +74,15 @@ export const goalSchema = z
   });
 
 export const regionalSchema = z.object({
-  regionalProfile: z.enum(['mien_bac', 'mien_trung', 'mien_nam', 'mien_tay']),
+  regionalProfile: regionalProfileSchema,
 });
 
 export const cookingHabitsSchema = z.object({
-  oilUsage: z.enum(['minimal', 'normal', 'heavy']),
-  defaultRicePortion: z.enum(['small', 'medium', 'large']),
-  sugarBraised: z.enum(['low', 'medium', 'high']),
-  defaultProteinPortion: z.enum(['small', 'medium', 'large']),
-  brothConsumption: z.enum(['leave_it', 'some', 'finish_it']),
+  oilUsage: oilUsageSchema,
+  defaultRicePortion: ricePortionSchema,
+  sugarBraised: sugarBraisedSchema,
+  defaultProteinPortion: proteinPortionSchema,
+  brothConsumption: brothConsumptionSchema,
 });
 
 export const portionCalibrationSchema = z.object({
