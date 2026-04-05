@@ -5,6 +5,7 @@ import { matchIngredients } from '../matching';
 import { applyIngredientAliases } from '../matching/aliases';
 import { createSpeculativeMatcher } from '../matching/speculative';
 import { buildDecompositionPrompt, buildNutritionPrompt } from '../prompts';
+import type { StreamEvent } from '../streaming/types';
 import type {
   MealDecomposition,
   NutritionAdjustment,
@@ -99,10 +100,11 @@ export async function analyzeMeal(
   rawInput: string,
   userContext: UserContext,
   db: PostgresJsDatabase<any>,
-  gemini: GeminiClient
+  gemini: GeminiClient,
+  onEvent?: (event: StreamEvent) => void
 ): Promise<PipelineResponse> {
   try {
-    return await runPipeline(rawInput, userContext, db, gemini);
+    return await runPipeline(rawInput, userContext, db, gemini, onEvent);
   } catch (error) {
     if (isNonFoodError(error)) {
       return nonFoodResponse();
@@ -122,7 +124,7 @@ export async function analyzeMeal(
       const message = error instanceof Error ? error.message : String(error);
       console.warn('[pipeline] Parse error, retrying pipeline once:', message);
       try {
-        return await runPipeline(rawInput, userContext, db, gemini);
+        return await runPipeline(rawInput, userContext, db, gemini, onEvent);
       } catch (retryError) {
         return handleError(retryError);
       }
@@ -137,11 +139,14 @@ async function runPipeline(
   rawInput: string,
   userContext: UserContext,
   db: PostgresJsDatabase<any>,
-  gemini: GeminiClient
+  gemini: GeminiClient,
+  onEvent?: (event: StreamEvent) => void
 ): Promise<PipelineResponse> {
   const t0 = Date.now();
+  const emit = onEvent ?? (() => {});
 
   // Stage 1: Streaming decomposition with speculative embedding pre-warming
+  emit({ type: 'stage', stage: 'decomposing' });
   const speculativeMatcher = createSpeculativeMatcher(db, gemini);
   const decomposition: MealDecomposition = await withTimeout(
     gemini.generateStructuredOutputStream(
@@ -172,6 +177,10 @@ async function runPipeline(
   // Apply ingredient aliases: map common shorthand names to canonical DB names
   applyIngredientAliases(decomposition);
 
+  // Emit discovered items for progressive UI
+  const itemNames = decomposition.mealItems.map((mi) => mi.name);
+  emit({ type: 'items_found', items: itemNames });
+
   // D6 Layer 1: Check isFood field from LLM
   if (!decomposition.isFood) {
     throw new NonFoodError('Input is not food');
@@ -187,6 +196,7 @@ async function runPipeline(
   }
 
   // Stage 2: Ingredient matching
+  emit({ type: 'stage', stage: 'matching' });
   const allIngredients = decomposition.mealItems.flatMap(
     (mi) => mi.ingredients
   );
@@ -200,6 +210,7 @@ async function runPipeline(
   const matchMs = Date.now() - t1;
 
   // Stage 3: LLM nutrition estimation (with timeout)
+  emit({ type: 'stage', stage: 'estimating' });
   const t2 = Date.now();
   let nutritionResult: NutritionAdjustment = await withTimeout(
     gemini.generateStructuredOutput({
@@ -262,6 +273,7 @@ async function runPipeline(
   );
 
   // Stage 4: Assembly
+  emit({ type: 'stage', stage: 'assembling' });
   const t3 = Date.now();
   const pipelineResult = assembleResult(
     decomposition,
