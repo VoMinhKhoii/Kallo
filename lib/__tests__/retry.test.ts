@@ -76,4 +76,35 @@ describe('withRetry', () => {
     ).rejects.toThrow('fail');
     expect(fn).toHaveBeenCalledTimes(1);
   });
+
+  it('applies exponential backoff with jitter between retries', async () => {
+    // Fix jitter: delay = base * 2^(attempt-1) * (0.5 + 0.5) = base * 2^(attempt-1)
+    vi.spyOn(Math, 'random').mockReturnValue(0.5);
+
+    try {
+      const callTimes: number[] = [];
+      const fn = vi.fn().mockImplementation(async () => {
+        callTimes.push(performance.now());
+        if (fn.mock.calls.length < 3) throw new Error('fail');
+        return 'ok';
+      });
+
+      await withRetry(fn, { maxAttempts: 3, baseDelayMs: 50 });
+
+      expect(fn).toHaveBeenCalledTimes(3);
+
+      const delay1 = callTimes[1] - callTimes[0]; // ~50ms (50 * 2^0 * 1.0)
+      const delay2 = callTimes[2] - callTimes[1]; // ~100ms (50 * 2^1 * 1.0)
+
+      // Verify delays are roughly correct (allow margin for event loop)
+      expect(delay1).toBeGreaterThanOrEqual(30);
+      expect(delay1).toBeLessThan(120);
+      expect(delay2).toBeGreaterThanOrEqual(70);
+      expect(delay2).toBeLessThan(200);
+      // Second delay should be ~2x first (exponential)
+      expect(delay2).toBeGreaterThan(delay1 * 1.3);
+    } finally {
+      vi.restoreAllMocks();
+    }
+  });
 });

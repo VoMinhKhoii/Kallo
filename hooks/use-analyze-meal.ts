@@ -10,7 +10,11 @@ async function analyzeMeal(message: string): Promise<ParsedMeal> {
 
   if (!response.ok) {
     const body = await response.json().catch(() => null);
-    throw new Error(body?.error ?? 'Failed to analyze meal');
+    const errorMsg =
+      typeof body?.error === 'string'
+        ? body.error
+        : (body?.error?.message ?? 'Failed to analyze meal');
+    throw new Error(errorMsg);
   }
 
   return response.json();

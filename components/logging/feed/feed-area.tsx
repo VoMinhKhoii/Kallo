@@ -9,6 +9,7 @@ import { MealEntry } from '@/components/logging/feed/meal-entry';
 import { StreamingMealEntry } from '@/components/logging/feed/streaming-meal-entry';
 import { MealInput } from '@/components/logging/input/meal-input';
 import { useStreamAnalysis } from '@/hooks/use-stream-analysis';
+import { useSubmitGuard } from '@/hooks/use-submit-guard';
 import { recalculateTotals } from '@/lib/meal-utils';
 import type {
   ChatMessage,
@@ -50,6 +51,7 @@ export function FeedArea({ targets }: FeedAreaProps) {
   const [inputValue, setInputValue] = useState('');
   const scrollRef = useRef<HTMLDivElement>(null);
   const stream = useStreamAnalysis();
+  const { guard } = useSubmitGuard();
   const [streamingMsgId, setStreamingMsgId] = useState<string | null>(null);
 
   const scrollToBottom = useCallback(() => {
@@ -86,33 +88,35 @@ export function FeedArea({ targets }: FeedAreaProps) {
     const text = inputValue.trim();
     if (!text || stream.isAnalyzing) return;
 
-    const assistantMsgId = generateId();
-    setStreamingMsgId(assistantMsgId);
-    lastAnalysisIdRef.current = null;
-    lastErrorRef.current = null;
+    await guard(async () => {
+      const assistantMsgId = generateId();
+      setStreamingMsgId(assistantMsgId);
+      lastAnalysisIdRef.current = null;
+      lastErrorRef.current = null;
 
-    const userMessage: ChatMessage = {
-      id: generateId(),
-      role: 'user',
-      content: text,
-      timestamp: new Date(),
-    };
+      const userMessage: ChatMessage = {
+        id: generateId(),
+        role: 'user',
+        content: text,
+        timestamp: new Date(),
+      };
 
-    const streamingMessage: ChatMessage = {
-      id: assistantMsgId,
-      role: 'assistant',
-      content: '',
-      userInput: text,
-      timestamp: new Date(),
-      isStreaming: true,
-      streamingPhase: 'waiting',
-    };
+      const streamingMessage: ChatMessage = {
+        id: assistantMsgId,
+        role: 'assistant',
+        content: '',
+        userInput: text,
+        timestamp: new Date(),
+        isStreaming: true,
+        streamingPhase: 'waiting',
+      };
 
-    setMessages((prev) => [...prev, userMessage, streamingMessage]);
-    setInputValue('');
-    scrollToBottom();
+      setMessages((prev) => [...prev, userMessage, streamingMessage]);
+      setInputValue('');
+      scrollToBottom();
 
-    await stream.analyze(text);
+      await stream.analyze(text);
+    });
   };
 
   // Derive display messages: overlay live streaming state onto the active message.

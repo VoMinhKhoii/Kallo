@@ -28,7 +28,9 @@ import {
 } from './errors';
 import { mealDecompositionSchema, nutritionAdjustmentSchema } from './schemas';
 import {
+  classifyAnomalies,
   detectAnomalies,
+  THRESHOLDS,
   type ValidationAnomaly,
   validateNutritionOutput,
 } from './validation';
@@ -309,17 +311,28 @@ async function runPipeline(
     'nutrition'
   );
 
-  // Retry once if nutrition result is implausible (0 total calories)
+  // Early anomaly check: classify total calories before flush
   const totalMidKcal = nutritionResult.mealItems.reduce(
     (sum, mi) =>
       sum +
       mi.ingredients.reduce((s, ing) => s + (ing.caloriesKcal?.mid ?? 0), 0),
     0
   );
-  if (totalMidKcal === 0) {
-    console.warn(
-      '[pipeline] Implausible 0-calorie result from Call 2, retrying once'
-    );
+  const earlyAnomalies: ValidationAnomaly[] = [];
+  if (totalMidKcal < THRESHOLDS.MIN_TOTAL_KCAL) {
+    earlyAnomalies.push({
+      type: 'total_calories',
+      message:
+        totalMidKcal === 0
+          ? 'Total 0 kcal — likely LLM failure'
+          : `Total ${totalMidKcal.toFixed(0)} kcal < ${THRESHOLDS.MIN_TOTAL_KCAL} — suspiciously low`,
+      severity: totalMidKcal === 0 ? 'error' : 'warning',
+    });
+  }
+
+  const decision = classifyAnomalies(earlyAnomalies);
+  if (decision === 'retry_step2') {
+    console.warn('[pipeline] classifyAnomalies → retry_step2, retrying Call 2');
     // Reset streaming state so retry re-emits from scratch
     lastExtractedCount = 0;
     nutritionResult = await withTimeout(

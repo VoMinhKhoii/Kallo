@@ -44,7 +44,7 @@ export function MealInput({
         type="button"
         onClick={onSubmit}
         disabled={!canSubmit}
-        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-nham-btn text-white transition-all duration-200 hover:bg-nham-btn-hover active:scale-95 disabled:opacity-30"
+        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-nham-btn text-white transition-all duration-200 hover:bg-nham-btn-hover active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
         aria-label="Submit meal"
       >
         <ArrowUp className="h-4 w-4" />
