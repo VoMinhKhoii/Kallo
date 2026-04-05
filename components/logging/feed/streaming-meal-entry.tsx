@@ -59,11 +59,16 @@ export function StreamingMealEntry({ message }: StreamingMealEntryProps) {
   const namedItems = message.streamingItems ?? [];
   const completedItems = message.streamingCompletedItems ?? [];
 
-  // Build a set of completed item names for quick lookup
-  const completedNames = new Set(completedItems.map((i) => i.name));
+  // Build a set of completed item names (lowercase) for case-insensitive matching
+  // Call 1 and Call 2 names come from different LLM calls and may differ in casing
+  const completedNamesLower = new Set(
+    completedItems.map((i) => i.name.toLowerCase())
+  );
 
   // Named but not yet completed → skeleton with name
-  const pendingNames = namedItems.filter((name) => !completedNames.has(name));
+  const pendingNames = namedItems.filter(
+    (name) => !completedNamesLower.has(name.toLowerCase())
+  );
 
   // Unknown items: skeleton count minus known items
   const totalKnown = completedItems.length + pendingNames.length;
