@@ -7,7 +7,10 @@ import { EmptyState } from '@/components/logging/feed/empty-state';
 import { MacroSummary } from '@/components/logging/feed/macro-summary';
 import { MealEntry } from '@/components/logging/feed/meal-entry';
 import { AnalysisStageBanner } from '@/components/logging/feed/skeletons';
-import { MealInput } from '@/components/logging/input/meal-input';
+import {
+  MealInput,
+  type MealInputHandle,
+} from '@/components/logging/input/meal-input';
 import { useStreamAnalysis } from '@/hooks/use-stream-analysis';
 import { recalculateTotals } from '@/lib/meal-utils';
 import type { ChatMessage, MacroBreakdown, ParsedMeal } from '@/lib/types/meal';
@@ -57,7 +60,7 @@ export function FeedArea({ targets }: FeedAreaProps) {
   }, [messages]);
 
   const handleSubmit = async () => {
-    const text = inputValue.trim();
+    const text = (inputRef.current?.getText() ?? '').trim();
     if (!text || stream.isAnalyzing) return;
 
     const userMessage: ChatMessage = {

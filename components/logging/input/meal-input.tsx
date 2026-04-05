@@ -121,7 +121,7 @@ export const MealInput = forwardRef<MealInputHandle, MealInputProps>(
     const canSubmit = hasContent && !disabled;
 
     return (
-      <div className="flex items-center gap-3 rounded-2xl border border-nham-border/40 bg-background p-3 shadow-[0_4px_20px_rgba(201,168,124,0.06)] transition-all duration-300 focus-within:border-nham-accent/40 focus-within:shadow-[0_4px_20px_rgba(201,168,124,0.12)]">
+      <div className="flex items-center gap-3 rounded-2xl border border-nham-border/40 bg-background p-3 shadow-[0_4px_20px_color-mix(in_srgb,var(--color-nham-accent)_6%,transparent)] transition-all duration-300 focus-within:border-nham-accent/40 focus-within:shadow-[0_4px_20px_color-mix(in_srgb,var(--color-nham-accent)_12%,transparent)]">
         <label htmlFor="meal-input" className="sr-only">
           Describe your meal
         </label>
@@ -133,8 +133,7 @@ export const MealInput = forwardRef<MealInputHandle, MealInputProps>(
           onKeyDown={handleKeyDown}
           placeholder="Describe your meal..."
           disabled={disabled}
-          className="flex-1 resize-none bg-transparent font-normal text-nham-text text-sm leading-5 placeholder:text-nham-text-muted/40 focus:outline-none disabled:opacity-50"
-          style={{ fontFamily: 'DM Sans, sans-serif' }}
+          className="flex-1 resize-none bg-transparent font-[var(--font-dm-sans)] font-normal text-nham-text text-sm leading-5 placeholder:text-nham-text-muted/40 focus:outline-none disabled:opacity-50"
         />
         <button
           type="button"
