@@ -1,17 +1,14 @@
 'use client';
 
-import { Loader2 } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { EmptyState } from '@/components/logging/feed/empty-state';
 import { MacroSummary } from '@/components/logging/feed/macro-summary';
 import { MealEntry } from '@/components/logging/feed/meal-entry';
-import {
-  MealInput,
-  type MealInputHandle,
-} from '@/components/logging/input/meal-input';
-import { useAnalyzeMeal } from '@/hooks/use-analyze-meal';
+import { AnalysisStageBanner } from '@/components/logging/feed/skeletons';
+import { MealInput } from '@/components/logging/input/meal-input';
+import { useStreamAnalysis } from '@/hooks/use-stream-analysis';
 import { recalculateTotals } from '@/lib/meal-utils';
 import type { ChatMessage, MacroBreakdown, ParsedMeal } from '@/lib/types/meal';
 
@@ -27,7 +24,7 @@ export function FeedArea({ targets }: FeedAreaProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const inputRef = useRef<MealInputHandle>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
-  const { mutateAsync, isPending } = useAnalyzeMeal();
+  const stream = useStreamAnalysis();
 
   const scrollToBottom = useCallback(() => {
     requestAnimationFrame(() => {
@@ -60,8 +57,8 @@ export function FeedArea({ targets }: FeedAreaProps) {
   }, [messages]);
 
   const handleSubmit = async () => {
-    const text = inputRef.current?.getText()?.trim() ?? '';
-    if (!text || isPending) return;
+    const text = inputValue.trim();
+    if (!text || stream.isAnalyzing) return;
 
     const userMessage: ChatMessage = {
       id: generateId(),
@@ -74,38 +71,72 @@ export function FeedArea({ targets }: FeedAreaProps) {
     inputRef.current?.clear();
     scrollToBottom();
 
-    try {
-      const parsedMeal: ParsedMeal = await mutateAsync(text);
+    await stream.analyze(text);
+  };
 
+  // When stream completes with a result, append it as a message
+  const lastAnalysisIdRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (
+      stream.status !== 'done' ||
+      !stream.result ||
+      !stream.analysisId ||
+      lastAnalysisIdRef.current === stream.analysisId
+    ) {
+      return;
+    }
+    lastAnalysisIdRef.current = stream.analysisId;
+
+    setMessages((prev) => {
+      const lastUserMsg = [...prev].reverse().find((m) => m.role === 'user');
       const assistantMessage: ChatMessage = {
         id: generateId(),
         role: 'assistant',
         content: '',
-        parsedMeal,
-        userInput: text,
+        parsedMeal: stream.result!,
+        userInput: lastUserMsg?.content,
         timestamp: new Date(),
       };
+      return [...prev, assistantMessage];
+    });
+    stream.reset();
+    scrollToBottom();
+  }, [
+    stream.status,
+    stream.result,
+    stream.analysisId,
+    stream.reset,
+    scrollToBottom,
+  ]);
 
-      setMessages((prev) => [...prev, assistantMessage]);
-      scrollToBottom();
-    } catch (error) {
-      const message =
-        error instanceof Error
-          ? error.message
-          : 'Failed to analyze meal. Please try again.';
-      toast.error(message);
+  // When stream errors, show toast and append error message
+  const lastErrorRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (
+      stream.status !== 'error' ||
+      !stream.error ||
+      lastErrorRef.current === stream.error
+    ) {
+      return;
+    }
+    lastErrorRef.current = stream.error;
 
+    toast.error(stream.error);
+
+    setMessages((prev) => {
+      const lastUserMsg = [...prev].reverse().find((m) => m.role === 'user');
       const errorMessage: ChatMessage = {
         id: generateId(),
         role: 'assistant',
-        content: message,
-        userInput: text,
+        content: stream.error!,
+        userInput: lastUserMsg?.content,
         timestamp: new Date(),
       };
-      setMessages((prev) => [...prev, errorMessage]);
-      scrollToBottom();
-    }
-  };
+      return [...prev, errorMessage];
+    });
+    stream.reset();
+    scrollToBottom();
+  }, [stream.status, stream.error, stream.reset, scrollToBottom]);
 
   const handleConfirmMeal = (messageId: string, meal: ParsedMeal) => {
     setMessages((prev) =>
@@ -126,7 +157,7 @@ export function FeedArea({ targets }: FeedAreaProps) {
         className="flex min-h-0 flex-1 flex-col overflow-y-auto"
       >
         <AnimatePresence mode="wait">
-          {!hasMessages && !isPending && (
+          {!hasMessages && !stream.isAnalyzing && (
             <div className="flex flex-1 items-center justify-center px-4 py-6 sm:px-6">
               <EmptyState
                 onSuggestionClick={(suggestion) => {
@@ -138,7 +169,7 @@ export function FeedArea({ targets }: FeedAreaProps) {
           )}
         </AnimatePresence>
 
-        {(hasMessages || isPending) && (
+        {(hasMessages || stream.isAnalyzing) && (
           <>
             {/* Sticky macro summary */}
             <div className="sticky top-0 z-10 bg-nham-surface px-4 pt-4 pb-3 sm:px-6">
@@ -198,28 +229,18 @@ export function FeedArea({ targets }: FeedAreaProps) {
                     })}
                   </AnimatePresence>
 
-                  {/* Loading indicator */}
+                  {/* Streaming stage indicator */}
                   <AnimatePresence>
-                    {isPending && (
+                    {stream.isAnalyzing && (
                       <motion.div
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -5 }}
-                        className="group relative"
                       >
-                        <div className="absolute top-2 bottom-0 -left-10 w-px bg-nham-border/60 group-last:bg-transparent" />
-                        <div className="absolute top-2 -left-[43px] h-2 w-2 animate-pulse rounded-full border-2 border-nham-accent bg-nham-accent/30" />
-                        <div className="flex items-center gap-2.5 rounded-2xl border border-nham-border/30 bg-white px-4 py-3">
-                          <Loader2 className="h-4 w-4 animate-spin text-nham-accent" />
-                          <span
-                            className="text-nham-text-muted text-sm"
-                            style={{
-                              fontFamily: 'DM Sans, sans-serif',
-                            }}
-                          >
-                            Analyzing your meal...
-                          </span>
-                        </div>
+                        <AnalysisStageBanner
+                          status={stream.status}
+                          items={stream.items}
+                        />
                       </motion.div>
                     )}
                   </AnimatePresence>
@@ -236,7 +257,7 @@ export function FeedArea({ targets }: FeedAreaProps) {
           <MealInput
             ref={inputRef}
             onSubmit={handleSubmit}
-            disabled={isPending}
+            disabled={stream.isAnalyzing}
           />
         </div>
       </div>

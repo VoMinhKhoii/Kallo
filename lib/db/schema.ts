@@ -412,3 +412,26 @@ export const synonymCandidates = pgTable('synonym_candidates', {
     .defaultNow(),
   reviewed: boolean('reviewed').notNull().default(false),
 });
+
+// ---------------------------------------------------------------------------
+// Pending analyses — durable storage for SSE streaming pipeline results
+// ---------------------------------------------------------------------------
+
+export const pendingAnalyses = pgTable(
+  'pending_analyses',
+  {
+    id: uuid('id').primaryKey().default(sql`gen_random_uuid()`),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => authUsers.id, { onDelete: 'cascade' }),
+    pipelineResult: jsonb('pipeline_result').notNull(),
+    rawInput: text('raw_input').notNull(),
+    expiresAt: timestamp('expires_at', { withTimezone: true })
+      .notNull()
+      .default(sql`now() + interval '30 minutes'`),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [index('pending_analyses_expires_idx').on(table.expiresAt)]
+);
