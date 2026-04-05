@@ -64,11 +64,21 @@ export function useStreamAnalysis() {
           case 'item_name':
             return { ...prev, items: [...prev.items, event.name] };
 
-          case 'item_macros':
+          case 'item_macros': {
+            // Upsert: replace if item.id already exists (handles retry re-emit)
+            const existing = prev.completedItems.findIndex(
+              (i) => i.id === event.item.id
+            );
+            if (existing >= 0) {
+              const updated = [...prev.completedItems];
+              updated[existing] = event.item;
+              return { ...prev, completedItems: updated };
+            }
             return {
               ...prev,
               completedItems: [...prev.completedItems, event.item],
             };
+          }
 
           case 'result':
             return { ...prev, result: event.data };

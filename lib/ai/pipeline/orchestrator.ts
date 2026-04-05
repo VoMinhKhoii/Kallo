@@ -305,7 +305,44 @@ async function runPipeline(
     'nutrition'
   );
 
-  // Flush the last meal item (in-progress during streaming, never boundary-detected)
+  // Retry once if nutrition result is implausible (0 total calories)
+  const totalMidKcal = nutritionResult.mealItems.reduce(
+    (sum, mi) =>
+      sum +
+      mi.ingredients.reduce((s, ing) => s + (ing.caloriesKcal?.mid ?? 0), 0),
+    0
+  );
+  if (totalMidKcal === 0) {
+    console.warn(
+      '[pipeline] Implausible 0-calorie result from Call 2, retrying once'
+    );
+    // Reset streaming state so retry re-emits from scratch
+    lastExtractedCount = 0;
+    nutritionResult = await withTimeout(
+      gemini.generateStructuredOutputStream(
+        {
+          schema: nutritionAdjustmentSchema,
+          systemPrompt: buildNutritionPrompt(
+            decomposition.mealItems,
+            matchResult.matched,
+            matchResult.unmatched,
+            userContext
+          ),
+          userMessage:
+            'The previous result had 0 calories. Please recalculate bounded nutrition estimates carefully.',
+          model: NUTRITION_MODEL,
+          temperature: 0.5,
+          topP: 1,
+          topK: 1,
+        },
+        nutritionOnChunk
+      ),
+      LLM_TIMEOUT_MS,
+      'nutrition-retry'
+    );
+  }
+
+  // Flush remaining meal items not emitted during streaming (always includes the last item)
   if (nutritionResult.mealItems.length > lastExtractedCount) {
     for (
       let i = lastExtractedCount;
@@ -326,62 +363,6 @@ async function runPipeline(
       );
       emit({ type: 'item_macros', item: streamItem });
     }
-  }
-
-  // Retry once if nutrition result is implausible (0 total calories)
-  const totalMidKcal = nutritionResult.mealItems.reduce(
-    (sum, mi) =>
-      sum +
-      mi.ingredients.reduce((s, ing) => s + (ing.caloriesKcal?.mid ?? 0), 0),
-    0
-  );
-  if (totalMidKcal === 0) {
-    console.warn(
-      '[pipeline] Implausible 0-calorie result from Call 2, retrying once'
-    );
-    nutritionResult = await withTimeout(
-      gemini.generateStructuredOutputStream(
-        {
-          schema: nutritionAdjustmentSchema,
-          systemPrompt: buildNutritionPrompt(
-            decomposition.mealItems,
-            matchResult.matched,
-            matchResult.unmatched,
-            userContext
-          ),
-          userMessage:
-            'The previous result had 0 calories. Please recalculate bounded nutrition estimates carefully.',
-          model: NUTRITION_MODEL,
-          temperature: 0.5,
-          topP: 1,
-          topK: 1,
-        },
-        // On retry, emit all items as they come (reset counter)
-        (accumulated: string) => {
-          const { items, newCount } = extractCompletedMealItemNutrition(
-            accumulated,
-            lastExtractedCount
-          );
-          lastExtractedCount = newCount;
-          for (const itemNutrition of items) {
-            const quantity =
-              mealItemGrams.get(itemNutrition.mealItemName) ??
-              mealItemGrams.get(capitalizeFirst(itemNutrition.mealItemName)) ??
-              0;
-            const streamItem = computeStreamingMealItem(
-              itemNutrition,
-              quantity,
-              lastExtractedCount - items.length + items.indexOf(itemNutrition),
-              userContext.goal,
-              userContext.aggression
-            );
-            emit({ type: 'item_macros', item: streamItem });
-          }
-        }
-      ),
-      LLM_TIMEOUT_MS,
-      'nutrition-retry'
-    );
   }
   const nutritionMs = Date.now() - t2;
 

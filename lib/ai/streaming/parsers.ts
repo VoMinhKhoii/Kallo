@@ -16,9 +16,11 @@ import type {
  * Meal item names are ALWAYS followed by `,"ingredients":` in the schema,
  * unlike ingredient names which are followed by `,"estimatedGrams":`.
  *
+ * Uses `((?:\\.|[^"\\])*)` to safely match JSON strings with escaped quotes.
  * Hoisted outside the function per js-hoist-regexp rule.
  */
-const MEAL_ITEM_NAME_RE = /"name"\s*:\s*"([^"]+)"\s*,\s*"ingredients"\s*:/g;
+const MEAL_ITEM_NAME_RE =
+  /"name"\s*:\s*"((?:\\.|[^"\\])*)"\s*,\s*"ingredients"\s*:/g;
 
 /**
  * Extract meal item names from a partial decomposition JSON stream.
