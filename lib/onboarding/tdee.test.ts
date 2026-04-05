@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { goalSchema } from '../schemas';
-import { calcBMR, calcDailyTargets, calcMacroGrams, calcTDEE } from '../tdee';
+import { goalSchema } from './schemas';
+import { calcBMR, calcDailyTargets, calcMacroGrams, calcTDEE } from './tdee';
 
 describe('calcBMR', () => {
   it('computes male BMR correctly (70kg/175cm/30y)', () => {

@@ -7,7 +7,10 @@ import { EmptyState } from '@/components/logging/feed/empty-state';
 import { MacroSummary } from '@/components/logging/feed/macro-summary';
 import { MealEntry } from '@/components/logging/feed/meal-entry';
 import { StreamingMealEntry } from '@/components/logging/feed/streaming-meal-entry';
-import { MealInput } from '@/components/logging/input/meal-input';
+import {
+  MealInput,
+  type MealInputHandle,
+} from '@/components/logging/input/meal-input';
 import { useStreamAnalysis } from '@/hooks/use-stream-analysis';
 import { useSubmitGuard } from '@/hooks/use-submit-guard';
 import { recalculateTotals } from '@/lib/meal-utils';
@@ -48,7 +51,7 @@ interface FeedAreaProps {
 
 export function FeedArea({ targets }: FeedAreaProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [inputValue, setInputValue] = useState('');
+  const inputRef = useRef<MealInputHandle>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const stream = useStreamAnalysis();
   const { guard } = useSubmitGuard();
@@ -85,7 +88,7 @@ export function FeedArea({ targets }: FeedAreaProps) {
   }, [messages]);
 
   const handleSubmit = async () => {
-    const text = inputValue.trim();
+    const text = (inputRef.current?.getText() ?? '').trim();
     if (!text || stream.isAnalyzing) return;
 
     await guard(async () => {
@@ -112,7 +115,7 @@ export function FeedArea({ targets }: FeedAreaProps) {
       };
 
       setMessages((prev) => [...prev, userMessage, streamingMessage]);
-      setInputValue('');
+      inputRef.current?.clear();
       scrollToBottom();
 
       await stream.analyze(text);
@@ -261,7 +264,12 @@ export function FeedArea({ targets }: FeedAreaProps) {
         <AnimatePresence mode="wait">
           {!hasMessages && !stream.isAnalyzing && (
             <div className="flex flex-1 items-center justify-center px-4 py-6 sm:px-6">
-              <EmptyState onSuggestionClick={setInputValue} />
+              <EmptyState
+                onSuggestionClick={(suggestion) => {
+                  inputRef.current?.setText(suggestion);
+                  inputRef.current?.focus();
+                }}
+              />
             </div>
           )}
         </AnimatePresence>
@@ -342,8 +350,7 @@ export function FeedArea({ targets }: FeedAreaProps) {
       <div className="px-4 pt-2 pb-4">
         <div className="mx-auto max-w-3xl">
           <MealInput
-            value={inputValue}
-            onChange={setInputValue}
+            ref={inputRef}
             onSubmit={handleSubmit}
             disabled={stream.isAnalyzing}
           />

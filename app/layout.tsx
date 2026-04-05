@@ -8,26 +8,31 @@ const fraunces = Fraunces({
   variable: '--font-fraunces',
   subsets: ['vietnamese', 'latin'],
   axes: ['SOFT', 'WONK', 'opsz'],
+  display: 'optional',
 });
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
   subsets: ['latin'],
+  display: 'swap',
 });
 
 const geistMono = Geist_Mono({
   variable: '--font-geist-mono',
   subsets: ['latin'],
+  display: 'swap',
 });
 
 const lora = Lora({
   variable: '--font-lora',
-  subsets: ['latin'],
+  subsets: ['latin', 'vietnamese'],
+  display: 'swap',
 });
 
 const dmSans = DM_Sans({
   variable: '--font-dm-sans',
   subsets: ['latin'],
+  display: 'swap',
 });
 
 export const metadata: Metadata = {

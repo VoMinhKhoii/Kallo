@@ -1,9 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
-  detectAnomalies,
-  THRESHOLDS,
-  validateNutritionOutput,
-} from '../pipeline/validation';
+  NULL_BOUNDED_NUTRITION,
+  NULL_NUTRITION_VALUES,
+} from '../__tests__/test-helpers';
 import type {
   DecomposedMealItem,
   MatchedIngredient,
@@ -11,7 +10,11 @@ import type {
   PipelineResult,
   UnmatchedIngredient,
 } from '../types';
-import { NULL_BOUNDED_NUTRITION, NULL_NUTRITION_VALUES } from './test-helpers';
+import {
+  detectAnomalies,
+  THRESHOLDS,
+  validateNutritionOutput,
+} from './validation';
 
 // ---------------------------------------------------------------------------
 // Helpers

@@ -245,3 +245,19 @@ At the **end of every session**:
 2. Propose updates to this AGENTS.md with durable rules (not chronological logs)
 3. **Verify** all file paths exist and commands work before adding new rules
 4. Remove redundancy — ensure new knowledge isn't already covered
+
+## 12. Decision Log
+
+Architectural decisions and their rationale. Format: Context → Decision → Tradeoff → Status.
+
+| Context | Decision | Tradeoff | Status |
+|---------|----------|----------|--------|
+| Ingredient search needs fuzzy + semantic matching | pg_trgm trigram as primary, pgvector cosine as fallback | Free/instant trigram vs paid/slower embeddings | Active |
+| Vietnamese diacritics are semantically load-bearing | Auto-route: diacritic → search_text, ASCII → search_text_ascii | More complex query routing but preserves meaning | Active |
+| LLM nutrition estimates need bounds | BoundedNutrition {low, mid, high} stored in JSONB | 3x storage per nutrient but captures uncertainty | Active |
+| Pipeline can't ask clarifying questions | Single-pass analysis, no back-and-forth | May misinterpret ambiguous inputs but faster UX | Active |
+| SSE over WebSocket for streaming | One-shot ReadableStream SSE, not persistent WebSocket | Simpler serverless compat but no server push | Active |
+| TanStack Query not used for SSE | Raw fetch + ReadableStream for SSE consumer | Purpose-built state machine vs fighting TanStack abstraction | Active |
+| Animation library | motion (not Framer Motion) for all animations | Lighter bundle, same API surface | Active |
+| Vector dimensions | 768-dim via gemini-embedding-001 (text-embedding-004 deprecated) | Larger vectors but better multilingual quality | Active |
+| No clarifying questions to user | LLM decides portions/cooking methods autonomously | Faster flow, potentially less accurate for ambiguous inputs | Active |
