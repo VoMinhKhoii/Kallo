@@ -420,9 +420,7 @@ export const synonymCandidates = pgTable('synonym_candidates', {
 export const pendingAnalyses = pgTable(
   'pending_analyses',
   {
-    id: uuid('id')
-      .primaryKey()
-      .default(sql`gen_random_uuid()`),
+    id: uuid('id').primaryKey().default(sql`gen_random_uuid()`),
     userId: uuid('user_id')
       .notNull()
       .references(() => authUsers.id, { onDelete: 'cascade' }),

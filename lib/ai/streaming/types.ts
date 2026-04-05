@@ -69,9 +69,6 @@ export type StreamEvent =
 export type StreamStatus =
   | 'idle'
   | 'connecting'
-  | 'decomposing'
-  | 'matching'
-  | 'estimating'
-  | 'assembling'
+  | PipelineStage
   | 'done'
   | 'error';

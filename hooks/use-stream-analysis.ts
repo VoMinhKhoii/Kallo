@@ -130,7 +130,7 @@ export function useStreamAnalysis() {
           return;
         }
 
-        const decoder = new TextDecoder('utf-8', { stream: true });
+        const decoder = new TextDecoder('utf-8');
         const buffer = { current: '' };
 
         while (true) {

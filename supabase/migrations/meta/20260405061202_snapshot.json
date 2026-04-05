@@ -48,12 +48,8 @@
           "tableFrom": "body_weight_log",
           "tableTo": "users",
           "schemaTo": "auth",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -63,10 +59,7 @@
         "body_weight_log_user_date_uniq": {
           "name": "body_weight_log_user_date_uniq",
           "nullsNotDistinct": false,
-          "columns": [
-            "user_id",
-            "logged_date"
-          ]
+          "columns": ["user_id", "logged_date"]
         }
       },
       "policies": {},
@@ -141,9 +134,7 @@
         "ingredient_sources_code_unique": {
           "name": "ingredient_sources_code_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "code"
-          ]
+          "columns": ["code"]
         }
       },
       "policies": {},
@@ -385,12 +376,8 @@
           "name": "meal_items_meal_id_meals_id_fk",
           "tableFrom": "meal_items",
           "tableTo": "meals",
-          "columnsFrom": [
-            "meal_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["meal_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -398,12 +385,8 @@
           "name": "meal_items_food_composition_id_vietnamese_food_composition_id_fk",
           "tableFrom": "meal_items",
           "tableTo": "vietnamese_food_composition",
-          "columnsFrom": [
-            "food_composition_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["food_composition_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         }
@@ -675,12 +658,8 @@
           "tableFrom": "meals",
           "tableTo": "users",
           "schemaTo": "auth",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -767,12 +746,8 @@
           "tableFrom": "pending_analyses",
           "tableTo": "users",
           "schemaTo": "auth",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -877,12 +852,8 @@
           "name": "unmatched_ingredients_meal_id_meals_id_fk",
           "tableFrom": "unmatched_ingredients",
           "tableTo": "meals",
-          "columnsFrom": [
-            "meal_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["meal_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         }
@@ -1078,12 +1049,8 @@
           "tableFrom": "user_profiles",
           "tableTo": "users",
           "schemaTo": "auth",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1409,12 +1376,8 @@
           "name": "vietnamese_food_composition_source_id_ingredient_sources_id_fk",
           "tableFrom": "vietnamese_food_composition",
           "tableTo": "ingredient_sources",
-          "columnsFrom": [
-            "source_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["source_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
