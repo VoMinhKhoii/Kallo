@@ -138,9 +138,17 @@ export async function matchIngredients(
   try {
     nutritionMap = await batchFetchNutrition(uniqueIds, db);
   } catch (err) {
-    const cause = err instanceof Error ? (err.cause ?? err.message) : err;
-    console.error('[matching] batchFetchNutrition failed:', cause);
-    nutritionMap = new Map();
+    // Single retry for transient DB errors (connection hiccups, timeouts)
+    console.warn('[matching] batchFetchNutrition failed, retrying once:', err);
+    try {
+      nutritionMap = await batchFetchNutrition(uniqueIds, db);
+    } catch (retryErr) {
+      console.error(
+        '[matching] batchFetchNutrition retry also failed:',
+        retryErr
+      );
+      nutritionMap = new Map();
+    }
   }
 
   // Phase 5: Combine MatchInfo + nutrition → MatchedIngredient
