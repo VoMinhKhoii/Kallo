@@ -134,7 +134,22 @@ export async function matchIngredients(
 
   // Phase 4: Batch-fetch nutrition for all matched IDs in a single query
   const uniqueIds = [...new Set(matchInfos.map((m) => m.foodCompositionId))];
-  const nutritionMap = await batchFetchNutrition(uniqueIds, db);
+  let nutritionMap: Map<string, NutritionPer100g>;
+  try {
+    nutritionMap = await batchFetchNutrition(uniqueIds, db);
+  } catch (err) {
+    // Single retry for transient DB errors (connection hiccups, timeouts)
+    console.warn('[matching] batchFetchNutrition failed, retrying once:', err);
+    try {
+      nutritionMap = await batchFetchNutrition(uniqueIds, db);
+    } catch (retryErr) {
+      console.error(
+        '[matching] batchFetchNutrition retry also failed:',
+        retryErr
+      );
+      nutritionMap = new Map();
+    }
+  }
 
   // Phase 5: Combine MatchInfo + nutrition → MatchedIngredient
   for (const info of matchInfos) {
@@ -167,8 +182,12 @@ async function batchFetchNutrition(
   const map = new Map<string, NutritionPer100g>();
   if (ids.length === 0) return map;
 
+  const idList = sql.join(
+    ids.map((id) => sql`${id}`),
+    sql`, `
+  );
   const rows = await db.execute(
-    sql`SELECT * FROM vietnamese_food_composition WHERE id = ANY(${ids})`
+    sql`SELECT * FROM vietnamese_food_composition WHERE id IN (${idList})`
   );
 
   for (const row of rows as unknown as Record<string, unknown>[]) {

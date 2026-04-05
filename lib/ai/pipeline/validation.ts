@@ -193,3 +193,47 @@ export function detectAnomalies(
 
   return anomalies;
 }
+
+// ---------------------------------------------------------------------------
+// Three-state anomaly classification (Stream D — D7)
+// ---------------------------------------------------------------------------
+
+export type AnomalyDecision =
+  | 'proceed'
+  | 'flag_and_proceed'
+  | 'retry_step2'
+  | 'reject';
+
+/**
+ * Classify a list of anomalies into an action decision.
+ *
+ * This function only CLASSIFIES — actual retry orchestration stays in the
+ * orchestrator which will call this after Stream A merges.
+ *
+ * Decision logic:
+ * - No anomalies → `proceed`
+ * - All warnings with some valid data → `flag_and_proceed`
+ * - Zero total calories or negative values (severity=error) → `retry_step2`
+ * - Multiple errors with no recoverable data → `reject`
+ */
+export function classifyAnomalies(
+  anomalies: ValidationAnomaly[]
+): AnomalyDecision {
+  if (anomalies.length === 0) return 'proceed';
+
+  const errors = anomalies.filter((a) => a.severity === 'error');
+  const warnings = anomalies.filter((a) => a.severity === 'warning');
+
+  // Multiple severe errors with no warnings → likely unrecoverable
+  if (errors.length >= 2 && warnings.length === 0) {
+    return 'reject';
+  }
+
+  // Any error (zero calories, LLM failure) → worth a retry
+  if (errors.length > 0) {
+    return 'retry_step2';
+  }
+
+  // Only warnings — data is present but suspicious
+  return 'flag_and_proceed';
+}

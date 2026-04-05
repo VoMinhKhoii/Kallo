@@ -3,11 +3,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { parseSSEChunk } from '@/lib/ai/streaming/encoder';
 import type { StreamEvent, StreamStatus } from '@/lib/ai/streaming/types';
-import type { ParsedMeal } from '@/lib/types/meal';
+import type { MealItem, ParsedMeal } from '@/lib/types/meal';
 
 export interface StreamAnalysisState {
   status: StreamStatus;
   items: string[];
+  completedItems: MealItem[];
   result: ParsedMeal | null;
   analysisId: string | null;
   error: string | null;
@@ -17,6 +18,7 @@ export interface StreamAnalysisState {
 const INITIAL_STATE: StreamAnalysisState = {
   status: 'idle',
   items: [],
+  completedItems: [],
   result: null,
   analysisId: null,
   error: null,
@@ -59,8 +61,24 @@ export function useStreamAnalysis() {
           case 'stage':
             return { ...prev, status: event.stage };
 
-          case 'items_found':
-            return { ...prev, items: event.items };
+          case 'item_name':
+            return { ...prev, items: [...prev.items, event.name] };
+
+          case 'item_macros': {
+            // Upsert: replace if item.id already exists (handles retry re-emit)
+            const existing = prev.completedItems.findIndex(
+              (i) => i.id === event.item.id
+            );
+            if (existing >= 0) {
+              const updated = [...prev.completedItems];
+              updated[existing] = event.item;
+              return { ...prev, completedItems: updated };
+            }
+            return {
+              ...prev,
+              completedItems: [...prev.completedItems, event.item],
+            };
+          }
 
           case 'result':
             return { ...prev, result: event.data };
@@ -116,12 +134,17 @@ export function useStreamAnalysis() {
         if (thisRequestId !== requestIdRef.current) return;
 
         // Non-200 responses come as JSON (pre-stream validation errors)
+        // Error body may be structured { error: { code, message, ... } } or legacy { error: "string" }
         if (!response.ok) {
           const body = await response.json().catch(() => null);
+          const errorMsg =
+            typeof body?.error === 'string'
+              ? body.error
+              : (body?.error?.message ?? `Request failed (${response.status})`);
           setState((prev) => ({
             ...prev,
             status: 'error',
-            error: body?.error ?? `Request failed (${response.status})`,
+            error: errorMsg,
             isAnalyzing: false,
           }));
           return;

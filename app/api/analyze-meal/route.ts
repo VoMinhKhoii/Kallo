@@ -1,104 +1,58 @@
-import { eq } from 'drizzle-orm';
-import { type NextRequest, NextResponse } from 'next/server';
-import { z } from 'zod';
+import type { NextRequest } from 'next/server';
 import { createGeminiClient } from '@/lib/ai/gemini';
 import { buildUserContext, toParsedMeal } from '@/lib/ai/mappers';
 import { logUnmatchedIngredients } from '@/lib/ai/matching';
 import { analyzeMeal } from '@/lib/ai/pipeline';
 import type { StreamEvent } from '@/lib/ai/streaming';
 import { encodeSSE } from '@/lib/ai/streaming';
+import { requireAuthAndProfile } from '@/lib/auth';
 import { db } from '@/lib/db';
-import { pendingAnalyses, userProfiles } from '@/lib/db/schema';
-import { createClient } from '@/lib/supabase/server';
+import { pendingAnalyses } from '@/lib/db/schema';
+import { Errors, serializeError } from '@/lib/errors';
+import { mealMessageSchema } from '@/lib/validation';
 
 export const runtime = 'nodejs';
 export const maxDuration = 30;
 
-const requestBodySchema = z.object({
-  message: z
-    .string()
-    .trim()
-    .min(1, 'Message is required')
-    .max(500, 'Message is too long'),
-});
-
 /**
  * Pre-stream validation: auth, input, profile, config.
- * Returns JSON error responses before SSE starts.
+ * Returns structured JSON error responses before SSE starts.
  * On success, returns the validated context needed for the pipeline.
  */
 async function validateRequest(request: NextRequest) {
-  const supabase = await createClient();
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    return {
-      error: NextResponse.json(
-        { error: 'You must be logged in to analyze meals.' },
-        { status: 401 }
-      ),
-    };
-  }
-
-  let body: unknown;
   try {
-    body = await request.json();
-  } catch {
+    const { user, profile } = await requireAuthAndProfile();
+
+    let body: unknown;
+    try {
+      body = await request.json();
+    } catch {
+      throw Errors.validationFailed('Invalid JSON in request body');
+    }
+
+    const parsed = mealMessageSchema.safeParse(body);
+    if (!parsed.success) {
+      throw Errors.validationFailed(
+        parsed.error.issues[0]?.message ?? 'Invalid input'
+      );
+    }
+
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+      throw Errors.internal();
+    }
+
     return {
-      error: NextResponse.json(
-        { error: 'Invalid JSON in request body' },
-        { status: 400 }
-      ),
+      data: {
+        userId: user.id,
+        message: parsed.data.message,
+        profile,
+        apiKey,
+      },
     };
+  } catch (error) {
+    return { error: serializeError(error) };
   }
-
-  const parsed = requestBodySchema.safeParse(body);
-  if (!parsed.success) {
-    return {
-      error: NextResponse.json(
-        { error: parsed.error.issues[0]?.message ?? 'Invalid input' },
-        { status: 400 }
-      ),
-    };
-  }
-
-  const rows = await db
-    .select()
-    .from(userProfiles)
-    .where(eq(userProfiles.userId, user.id))
-    .limit(1);
-
-  const profile = rows[0];
-  if (!profile?.goal || !profile?.regionalProfile) {
-    return {
-      error: NextResponse.json(
-        { error: 'Please complete onboarding before analyzing meals.' },
-        { status: 400 }
-      ),
-    };
-  }
-
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) {
-    return {
-      error: NextResponse.json(
-        { error: 'AI service is not configured' },
-        { status: 500 }
-      ),
-    };
-  }
-
-  return {
-    data: {
-      userId: user.id,
-      message: parsed.data.message,
-      profile,
-      apiKey,
-    },
-  };
 }
 
 export async function POST(request: NextRequest) {
@@ -131,6 +85,11 @@ export async function POST(request: NextRequest) {
         }
 
         if (!result.success) {
+          console.error(
+            '[analyze-meal] Pipeline returned error:',
+            result.error.type,
+            result.error.message
+          );
           emit({
             type: 'error',
             code: result.error.type,

@@ -123,7 +123,7 @@ describe('analyzeMeal', () => {
   let mockGemini: GeminiClient;
   let mockDb: any;
 
-  /** Mock Call 1 (streaming decomposition) + Call 2 (nutrition) */
+  /** Mock Call 1 (streaming decomposition) + Call 2 (streaming nutrition) */
   function mockLlmCalls(
     decomposition: MealDecomposition,
     nutrition: NutritionAdjustment
@@ -132,7 +132,7 @@ describe('analyzeMeal', () => {
       mockGemini.generateStructuredOutputStream as ReturnType<typeof vi.fn>
     ).mockResolvedValueOnce(decomposition);
     (
-      mockGemini.generateStructuredOutput as ReturnType<typeof vi.fn>
+      mockGemini.generateStructuredOutputStream as ReturnType<typeof vi.fn>
     ).mockResolvedValueOnce(nutrition);
   }
 
@@ -343,7 +343,7 @@ describe('analyzeMeal', () => {
       mockGemini.generateStructuredOutputStream as ReturnType<typeof vi.fn>
     ).mockResolvedValueOnce(decompositionWithTwo);
     (
-      mockGemini.generateStructuredOutput as ReturnType<typeof vi.fn>
+      mockGemini.generateStructuredOutputStream as ReturnType<typeof vi.fn>
     ).mockResolvedValueOnce({
       mealItems: [
         {
@@ -413,7 +413,7 @@ describe('analyzeMeal', () => {
       mockGemini.generateStructuredOutputStream as ReturnType<typeof vi.fn>
     ).mockResolvedValueOnce(decomposition);
     (
-      mockGemini.generateStructuredOutput as ReturnType<typeof vi.fn>
+      mockGemini.generateStructuredOutputStream as ReturnType<typeof vi.fn>
     ).mockResolvedValueOnce({
       mealItems: [
         {
@@ -501,7 +501,7 @@ describe('analyzeMeal', () => {
       mockGemini.generateStructuredOutputStream as ReturnType<typeof vi.fn>
     ).mockResolvedValueOnce(twoItemDecomposition);
     (
-      mockGemini.generateStructuredOutput as ReturnType<typeof vi.fn>
+      mockGemini.generateStructuredOutputStream as ReturnType<typeof vi.fn>
     ).mockResolvedValueOnce(twoItemNutrition);
 
     mockMatchIngredients.mockResolvedValueOnce({
@@ -608,7 +608,7 @@ describe('analyzeMeal', () => {
       mockGemini.generateStructuredOutputStream as ReturnType<typeof vi.fn>
     ).mockResolvedValueOnce(sharedIngDecomposition);
     (
-      mockGemini.generateStructuredOutput as ReturnType<typeof vi.fn>
+      mockGemini.generateStructuredOutputStream as ReturnType<typeof vi.fn>
     ).mockResolvedValueOnce(sharedIngNutrition);
 
     mockMatchIngredients.mockResolvedValueOnce({
@@ -684,7 +684,7 @@ describe('analyzeMeal', () => {
       // Retry succeeds
       .mockResolvedValueOnce(sampleDecomposition);
     (
-      mockGemini.generateStructuredOutput as ReturnType<typeof vi.fn>
+      mockGemini.generateStructuredOutputStream as ReturnType<typeof vi.fn>
     ).mockResolvedValueOnce(sampleNutritionAdjustment);
 
     mockMatchIngredients.mockResolvedValueOnce({
@@ -727,11 +727,11 @@ describe('analyzeMeal', () => {
     ).mockResolvedValueOnce(sampleDecomposition);
     // First Call 2 returns 0 calories → triggers retry
     (
-      mockGemini.generateStructuredOutput as ReturnType<typeof vi.fn>
+      mockGemini.generateStructuredOutputStream as ReturnType<typeof vi.fn>
     ).mockResolvedValueOnce(zeroCalNutrition);
     // Retry Call 2 returns valid result
     (
-      mockGemini.generateStructuredOutput as ReturnType<typeof vi.fn>
+      mockGemini.generateStructuredOutputStream as ReturnType<typeof vi.fn>
     ).mockResolvedValueOnce(sampleNutritionAdjustment);
 
     mockMatchIngredients.mockResolvedValueOnce({
@@ -759,9 +759,9 @@ describe('analyzeMeal', () => {
     if (!result.success) return;
     // Should have used the retry result (350 kcal), not the 0-calorie result
     expect(result.data.displayedNutrition.caloriesKcal).toBeGreaterThan(0);
-    // generateStructuredOutput should have been called twice (original + retry)
+    // generateStructuredOutputStream: 1 (decomp) + 2 (nutrition original + retry) = 3
     expect(
-      mockGemini.generateStructuredOutput as ReturnType<typeof vi.fn>
-    ).toHaveBeenCalledTimes(2);
+      mockGemini.generateStructuredOutputStream as ReturnType<typeof vi.fn>
+    ).toHaveBeenCalledTimes(3);
   });
 });

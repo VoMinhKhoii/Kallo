@@ -6,17 +6,43 @@ import { toast } from 'sonner';
 import { EmptyState } from '@/components/logging/feed/empty-state';
 import { MacroSummary } from '@/components/logging/feed/macro-summary';
 import { MealEntry } from '@/components/logging/feed/meal-entry';
-import { AnalysisStageBanner } from '@/components/logging/feed/skeletons';
+import { StreamingMealEntry } from '@/components/logging/feed/streaming-meal-entry';
 import {
   MealInput,
   type MealInputHandle,
 } from '@/components/logging/input/meal-input';
 import { useStreamAnalysis } from '@/hooks/use-stream-analysis';
+import { useSubmitGuard } from '@/hooks/use-submit-guard';
 import { recalculateTotals } from '@/lib/meal-utils';
-import type { ChatMessage, MacroBreakdown, ParsedMeal } from '@/lib/types/meal';
+import type {
+  ChatMessage,
+  MacroBreakdown,
+  ParsedMeal,
+  StreamingPhase,
+} from '@/lib/types/meal';
 
 function generateId() {
   return `msg-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+}
+
+function toStreamingPhase(status: string): StreamingPhase {
+  switch (status) {
+    case 'decomposing':
+      return 'decomposing';
+    case 'matching':
+      return 'matching';
+    case 'estimating':
+      return 'estimating';
+    case 'assembling':
+      return 'assembling';
+    // Terminal states: keep showing last active phase for one frame
+    // until the terminal effect commits final state
+    case 'done':
+    case 'error':
+      return 'assembling';
+    default:
+      return 'waiting';
+  }
 }
 
 interface FeedAreaProps {
@@ -28,6 +54,8 @@ export function FeedArea({ targets }: FeedAreaProps) {
   const inputRef = useRef<MealInputHandle>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const stream = useStreamAnalysis();
+  const { guard } = useSubmitGuard();
+  const [streamingMsgId, setStreamingMsgId] = useState<string | null>(null);
 
   const scrollToBottom = useCallback(() => {
     requestAnimationFrame(() => {
@@ -42,7 +70,7 @@ export function FeedArea({ targets }: FeedAreaProps) {
 
   const dailyTotals = useMemo<MacroBreakdown>(() => {
     const meals = messages
-      .filter((m) => m.role === 'assistant' && m.parsedMeal)
+      .filter((m) => m.role === 'assistant' && m.parsedMeal && !m.isStreaming)
       .map((m) => m.parsedMeal!);
 
     return meals.reduce<MacroBreakdown>(
@@ -63,45 +91,103 @@ export function FeedArea({ targets }: FeedAreaProps) {
     const text = (inputRef.current?.getText() ?? '').trim();
     if (!text || stream.isAnalyzing) return;
 
-    const userMessage: ChatMessage = {
-      id: generateId(),
-      role: 'user',
-      content: text,
-      timestamp: new Date(),
-    };
+    await guard(async () => {
+      const assistantMsgId = generateId();
+      setStreamingMsgId(assistantMsgId);
+      lastAnalysisIdRef.current = null;
+      lastErrorRef.current = null;
 
-    setMessages((prev) => [...prev, userMessage]);
-    inputRef.current?.clear();
-    scrollToBottom();
+      const userMessage: ChatMessage = {
+        id: generateId(),
+        role: 'user',
+        content: text,
+        timestamp: new Date(),
+      };
 
-    await stream.analyze(text);
+      const streamingMessage: ChatMessage = {
+        id: assistantMsgId,
+        role: 'assistant',
+        content: '',
+        userInput: text,
+        timestamp: new Date(),
+        isStreaming: true,
+        streamingPhase: 'waiting',
+      };
+
+      setMessages((prev) => [...prev, userMessage, streamingMessage]);
+      inputRef.current?.clear();
+      scrollToBottom();
+
+      await stream.analyze(text);
+    });
   };
 
-  // When stream completes with a result, append it as a message
+  // Derive display messages: overlay live streaming state onto the active message.
+  // Gate on streamingMsgId (not isAnalyzing) to avoid flicker when the stream
+  // reaches a terminal state but the commit effect hasn't fired yet.
+  const displayMessages = useMemo(() => {
+    if (!streamingMsgId || stream.status === 'idle') return messages;
+
+    return messages.map((msg) => {
+      if (msg.id !== streamingMsgId) return msg;
+      return {
+        ...msg,
+        isStreaming: true,
+        streamingPhase: toStreamingPhase(stream.status),
+        streamingItems:
+          stream.items.length > 0 ? stream.items : msg.streamingItems,
+        streamingCompletedItems:
+          stream.completedItems.length > 0
+            ? stream.completedItems
+            : msg.streamingCompletedItems,
+      };
+    });
+  }, [
+    messages,
+    streamingMsgId,
+    stream.status,
+    stream.items,
+    stream.completedItems,
+  ]);
+
+  // Auto-scroll when streaming card grows (new items discovered or macros complete)
+  const streamItemCount = stream.items.length + stream.completedItems.length;
+  useEffect(() => {
+    if (stream.isAnalyzing && streamItemCount > 0) {
+      scrollToBottom();
+    }
+  }, [stream.isAnalyzing, streamItemCount, scrollToBottom]);
+
+  // Terminal: stream completed successfully — finalize the streaming message
   const lastAnalysisIdRef = useRef<string | null>(null);
   useEffect(() => {
     if (
       stream.status !== 'done' ||
       !stream.result ||
       !stream.analysisId ||
-      lastAnalysisIdRef.current === stream.analysisId
+      lastAnalysisIdRef.current === stream.analysisId ||
+      !streamingMsgId
     ) {
       return;
     }
     lastAnalysisIdRef.current = stream.analysisId;
+    const msgId = streamingMsgId;
+    setStreamingMsgId(null);
 
-    setMessages((prev) => {
-      const lastUserMsg = [...prev].reverse().find((m) => m.role === 'user');
-      const assistantMessage: ChatMessage = {
-        id: generateId(),
-        role: 'assistant',
-        content: '',
-        parsedMeal: stream.result!,
-        userInput: lastUserMsg?.content,
-        timestamp: new Date(),
-      };
-      return [...prev, assistantMessage];
-    });
+    setMessages((prev) =>
+      prev.map((msg) =>
+        msg.id === msgId
+          ? {
+              ...msg,
+              isStreaming: false,
+              streamingPhase: 'done' as const,
+              streamingItems: undefined,
+              streamingCompletedItems: undefined,
+              parsedMeal: stream.result!,
+            }
+          : msg
+      )
+    );
     stream.reset();
     scrollToBottom();
   }, [
@@ -109,37 +195,51 @@ export function FeedArea({ targets }: FeedAreaProps) {
     stream.result,
     stream.analysisId,
     stream.reset,
+    streamingMsgId,
     scrollToBottom,
   ]);
 
-  // When stream errors, show toast and append error message
+  // Terminal: stream errored — convert streaming message to error display
   const lastErrorRef = useRef<string | null>(null);
   useEffect(() => {
     if (
       stream.status !== 'error' ||
       !stream.error ||
-      lastErrorRef.current === stream.error
+      lastErrorRef.current === stream.error ||
+      !streamingMsgId
     ) {
       return;
     }
     lastErrorRef.current = stream.error;
+    const msgId = streamingMsgId;
+    setStreamingMsgId(null);
 
     toast.error(stream.error);
 
-    setMessages((prev) => {
-      const lastUserMsg = [...prev].reverse().find((m) => m.role === 'user');
-      const errorMessage: ChatMessage = {
-        id: generateId(),
-        role: 'assistant',
-        content: stream.error!,
-        userInput: lastUserMsg?.content,
-        timestamp: new Date(),
-      };
-      return [...prev, errorMessage];
-    });
+    setMessages((prev) =>
+      prev.map((msg) =>
+        msg.id === msgId
+          ? {
+              ...msg,
+              isStreaming: false,
+              streamingPhase: undefined,
+              streamingItems: undefined,
+              streamingCompletedItems: undefined,
+              parsedMeal: undefined,
+              content: stream.error!,
+            }
+          : msg
+      )
+    );
     stream.reset();
     scrollToBottom();
-  }, [stream.status, stream.error, stream.reset, scrollToBottom]);
+  }, [
+    stream.status,
+    stream.error,
+    stream.reset,
+    streamingMsgId,
+    scrollToBottom,
+  ]);
 
   const handleConfirmMeal = (messageId: string, meal: ParsedMeal) => {
     setMessages((prev) =>
@@ -149,7 +249,9 @@ export function FeedArea({ targets }: FeedAreaProps) {
     );
   };
 
-  const assistantMessages = messages.filter((m) => m.role === 'assistant');
+  const assistantMessages = displayMessages.filter(
+    (m) => m.role === 'assistant'
+  );
   const hasMessages = assistantMessages.length > 0;
 
   return (
@@ -172,7 +274,7 @@ export function FeedArea({ targets }: FeedAreaProps) {
           )}
         </AnimatePresence>
 
-        {(hasMessages || stream.isAnalyzing) && (
+        {hasMessages && (
           <>
             {/* Sticky macro summary */}
             <div className="sticky top-0 z-10 bg-nham-surface px-4 pt-4 pb-3 sm:px-6">
@@ -187,6 +289,12 @@ export function FeedArea({ targets }: FeedAreaProps) {
                 <div className="flex flex-col gap-8">
                   <AnimatePresence initial={false}>
                     {assistantMessages.map((msg) => {
+                      if (msg.isStreaming) {
+                        return (
+                          <StreamingMealEntry key={msg.id} message={msg} />
+                        );
+                      }
+
                       if (msg.parsedMeal) {
                         return (
                           <MealEntry
@@ -230,22 +338,6 @@ export function FeedArea({ targets }: FeedAreaProps) {
                         </motion.div>
                       );
                     })}
-                  </AnimatePresence>
-
-                  {/* Streaming stage indicator */}
-                  <AnimatePresence>
-                    {stream.isAnalyzing && (
-                      <motion.div
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -5 }}
-                      >
-                        <AnalysisStageBanner
-                          status={stream.status}
-                          items={stream.items}
-                        />
-                      </motion.div>
-                    )}
                   </AnimatePresence>
                 </div>
               </div>

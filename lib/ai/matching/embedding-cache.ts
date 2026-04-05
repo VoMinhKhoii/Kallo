@@ -44,15 +44,25 @@ export async function resolveQueryEmbedding(
   if (cached) return cached;
 
   // L2: exact match on name_vi only
-  const exactRows = await db.execute(
-    sql`SELECT name_vi, name_en, embedding
-        FROM ingredient_query_embeddings
-        WHERE name_vi = ${normalized}
-        LIMIT 1`
-  );
+  // Treat DB errors as cache misses — the pipeline will generate a fresh embedding
+  try {
+    const exactRows = await db.execute(
+      sql`SELECT name_vi, name_en, embedding
+          FROM ingredient_query_embeddings
+          WHERE name_vi = ${normalized}
+          LIMIT 1`
+    );
 
-  if (exactRows.length > 0) {
-    return promoteToMemoryCache(exactRows[0] as Record<string, unknown>);
+    if (exactRows.length > 0) {
+      return promoteToMemoryCache(exactRows[0] as Record<string, unknown>);
+    }
+  } catch (err) {
+    const cause = err instanceof Error ? (err.cause ?? err.message) : err;
+    console.warn(
+      `[embedding-cache] L2 lookup failed for "${normalized}", treating as miss:`,
+      cause
+    );
+    return null;
   }
 
   // Miss — async: check name_en for synonym candidate logging (fire-and-forget)

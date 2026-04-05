@@ -5,6 +5,11 @@ import { matchIngredients } from '../matching';
 import { applyIngredientAliases } from '../matching/aliases';
 import { createSpeculativeMatcher } from '../matching/speculative';
 import { buildDecompositionPrompt, buildNutritionPrompt } from '../prompts';
+import {
+  computeStreamingMealItem,
+  extractCompletedMealItemNutrition,
+  extractMealItemNames,
+} from '../streaming/parsers';
 import type { StreamEvent } from '../streaming/types';
 import type {
   MealDecomposition,
@@ -23,7 +28,9 @@ import {
 } from './errors';
 import { mealDecompositionSchema, nutritionAdjustmentSchema } from './schemas';
 import {
+  classifyAnomalies,
   detectAnomalies,
+  THRESHOLDS,
   type ValidationAnomaly,
   validateNutritionOutput,
 } from './validation';
@@ -126,11 +133,20 @@ export async function analyzeMeal(
       try {
         return await runPipeline(rawInput, userContext, db, gemini, onEvent);
       } catch (retryError) {
+        const retryMsg =
+          retryError instanceof Error ? retryError.message : String(retryError);
+        console.error('[pipeline] Retry also failed:', retryMsg);
         return handleError(retryError);
       }
     }
 
     // All other errors (API errors, network, etc.) surface immediately
+    const message = error instanceof Error ? error.message : String(error);
+    const cause =
+      error instanceof Error && error.cause
+        ? ` [cause: ${error.cause instanceof Error ? error.cause.message : String(error.cause)}]`
+        : '';
+    console.error(`[pipeline] Unhandled error: ${message}${cause}`);
     return handleError(error);
   }
 }
@@ -146,8 +162,27 @@ async function runPipeline(
   const emit = onEvent ?? (() => {});
 
   // Stage 1: Streaming decomposition with speculative embedding pre-warming
+  // + per-item name detection for progressive UI
   emit({ type: 'stage', stage: 'decomposing' });
   const speculativeMatcher = createSpeculativeMatcher(db, gemini);
+  const mealItemNamesSeen = new Set<string>();
+  let mealItemIndex = 0;
+
+  const composedOnChunk = (accumulated: string) => {
+    // Existing: pre-warm embedding cache for ingredient names
+    speculativeMatcher(accumulated);
+
+    // New: detect meal item names and emit individually for progressive UI
+    const newNames = extractMealItemNames(accumulated, mealItemNamesSeen);
+    for (const name of newNames) {
+      emit({
+        type: 'item_name',
+        name: capitalizeFirst(name),
+        index: mealItemIndex++,
+      });
+    }
+  };
+
   const decomposition: MealDecomposition = await withTimeout(
     gemini.generateStructuredOutputStream(
       {
@@ -159,7 +194,7 @@ async function runPipeline(
         topP: 1,
         topK: 1,
       },
-      speculativeMatcher
+      composedOnChunk
     ),
     LLM_TIMEOUT_MS,
     'decomposition'
@@ -177,9 +212,15 @@ async function runPipeline(
   // Apply ingredient aliases: map common shorthand names to canonical DB names
   applyIngredientAliases(decomposition);
 
-  // Emit discovered items for progressive UI
-  const itemNames = decomposition.mealItems.map((mi) => mi.name);
-  emit({ type: 'items_found', items: itemNames });
+  // Flush: emit any meal item names that weren't detected during streaming
+  for (const mi of decomposition.mealItems) {
+    if (
+      !mealItemNamesSeen.has(mi.name) &&
+      !mealItemNamesSeen.has(mi.name.toLowerCase())
+    ) {
+      emit({ type: 'item_name', name: mi.name, index: mealItemIndex++ });
+    }
+  }
 
   // D6 Layer 1: Check isFood field from LLM
   if (!decomposition.isFood) {
@@ -209,42 +250,47 @@ async function runPipeline(
   );
   const matchMs = Date.now() - t1;
 
-  // Stage 3: LLM nutrition estimation (with timeout)
+  // Stage 3: LLM nutrition estimation (streaming with per-item boundary detection)
   emit({ type: 'stage', stage: 'estimating' });
   const t2 = Date.now();
-  let nutritionResult: NutritionAdjustment = await withTimeout(
-    gemini.generateStructuredOutput({
-      schema: nutritionAdjustmentSchema,
-      systemPrompt: buildNutritionPrompt(
-        decomposition.mealItems,
-        matchResult.matched,
-        matchResult.unmatched,
-        userContext
-      ),
-      userMessage:
-        'Produce bounded nutrition estimates for each ingredient in each meal item based on the reference data provided.',
-      model: NUTRITION_MODEL,
-      temperature: 0.5,
-      topP: 1,
-      topK: 1,
-    }),
-    LLM_TIMEOUT_MS,
-    'nutrition'
-  );
+  let lastExtractedCount = 0;
 
-  // Retry once if nutrition result is implausible (0 total calories)
-  const totalMidKcal = nutritionResult.mealItems.reduce(
-    (sum, mi) =>
-      sum +
-      mi.ingredients.reduce((s, ing) => s + (ing.caloriesKcal?.mid ?? 0), 0),
-    0
-  );
-  if (totalMidKcal === 0) {
-    console.warn(
-      '[pipeline] Implausible 0-calorie result from Call 2, retrying once'
+  // Build a lookup from meal item name → total grams for computeStreamingMealItem
+  const mealItemGrams = new Map<string, number>();
+  for (const mi of decomposition.mealItems) {
+    const totalGrams = mi.ingredients.reduce(
+      (sum, ing) => sum + ing.estimatedGrams,
+      0
     );
-    nutritionResult = await withTimeout(
-      gemini.generateStructuredOutput({
+    mealItemGrams.set(mi.name, totalGrams);
+  }
+
+  const nutritionOnChunk = (accumulated: string) => {
+    const { items, newCount } = extractCompletedMealItemNutrition(
+      accumulated,
+      lastExtractedCount
+    );
+    lastExtractedCount = newCount;
+
+    for (const itemNutrition of items) {
+      const quantity =
+        mealItemGrams.get(itemNutrition.mealItemName) ??
+        mealItemGrams.get(capitalizeFirst(itemNutrition.mealItemName)) ??
+        0;
+      const streamItem = computeStreamingMealItem(
+        itemNutrition,
+        quantity,
+        lastExtractedCount - items.length + items.indexOf(itemNutrition),
+        userContext.goal,
+        userContext.aggression
+      );
+      emit({ type: 'item_macros', item: streamItem });
+    }
+  };
+
+  let nutritionResult: NutritionAdjustment = await withTimeout(
+    gemini.generateStructuredOutputStream(
+      {
         schema: nutritionAdjustmentSchema,
         systemPrompt: buildNutritionPrompt(
           decomposition.mealItems,
@@ -253,15 +299,87 @@ async function runPipeline(
           userContext
         ),
         userMessage:
-          'The previous result had 0 calories. Please recalculate bounded nutrition estimates carefully.',
+          'Produce bounded nutrition estimates for each ingredient in each meal item based on the reference data provided.',
         model: NUTRITION_MODEL,
         temperature: 0.5,
         topP: 1,
         topK: 1,
-      }),
+      },
+      nutritionOnChunk
+    ),
+    LLM_TIMEOUT_MS,
+    'nutrition'
+  );
+
+  // Early anomaly check: classify total calories before flush
+  const totalMidKcal = nutritionResult.mealItems.reduce(
+    (sum, mi) =>
+      sum +
+      mi.ingredients.reduce((s, ing) => s + (ing.caloriesKcal?.mid ?? 0), 0),
+    0
+  );
+  const earlyAnomalies: ValidationAnomaly[] = [];
+  if (totalMidKcal < THRESHOLDS.MIN_TOTAL_KCAL) {
+    earlyAnomalies.push({
+      type: 'total_calories',
+      message:
+        totalMidKcal === 0
+          ? 'Total 0 kcal — likely LLM failure'
+          : `Total ${totalMidKcal.toFixed(0)} kcal < ${THRESHOLDS.MIN_TOTAL_KCAL} — suspiciously low`,
+      severity: totalMidKcal === 0 ? 'error' : 'warning',
+    });
+  }
+
+  const decision = classifyAnomalies(earlyAnomalies);
+  if (decision === 'retry_step2') {
+    console.warn('[pipeline] classifyAnomalies → retry_step2, retrying Call 2');
+    // Reset streaming state so retry re-emits from scratch
+    lastExtractedCount = 0;
+    nutritionResult = await withTimeout(
+      gemini.generateStructuredOutputStream(
+        {
+          schema: nutritionAdjustmentSchema,
+          systemPrompt: buildNutritionPrompt(
+            decomposition.mealItems,
+            matchResult.matched,
+            matchResult.unmatched,
+            userContext
+          ),
+          userMessage:
+            'The previous result had 0 calories. Please recalculate bounded nutrition estimates carefully.',
+          model: NUTRITION_MODEL,
+          temperature: 0.5,
+          topP: 1,
+          topK: 1,
+        },
+        nutritionOnChunk
+      ),
       LLM_TIMEOUT_MS,
       'nutrition-retry'
     );
+  }
+
+  // Flush remaining meal items not emitted during streaming (always includes the last item)
+  if (nutritionResult.mealItems.length > lastExtractedCount) {
+    for (
+      let i = lastExtractedCount;
+      i < nutritionResult.mealItems.length;
+      i++
+    ) {
+      const itemNutrition = nutritionResult.mealItems[i];
+      const quantity =
+        mealItemGrams.get(itemNutrition.mealItemName) ??
+        mealItemGrams.get(capitalizeFirst(itemNutrition.mealItemName)) ??
+        0;
+      const streamItem = computeStreamingMealItem(
+        itemNutrition,
+        quantity,
+        i,
+        userContext.goal,
+        userContext.aggression
+      );
+      emit({ type: 'item_macros', item: streamItem });
+    }
   }
   const nutritionMs = Date.now() - t2;
 
