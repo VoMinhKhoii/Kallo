@@ -189,26 +189,32 @@ describe('POST /api/analyze-meal', () => {
     mockGetUser.mockResolvedValue({ data: { user: null } });
     const res = await POST(createRequest({ message: 'phở bò' }));
     expect(res.status).toBe(401);
+    const json = await res.json();
+    expect(json.error.code).toBe('NOT_AUTHENTICATED');
   });
 
   it('returns 400 when message is missing', async () => {
     const res = await POST(createRequest({}));
     expect(res.status).toBe(400);
+    const json = await res.json();
+    expect(json.error.code).toBe('VALIDATION_FAILED');
   });
 
-  it('returns 400 when profile is incomplete', async () => {
+  it('returns 403 when profile is incomplete', async () => {
     mockSelect.mockResolvedValue([{ goal: null, regionalProfile: null }]);
     const res = await POST(createRequest({ message: 'phở bò' }));
     const json = await res.json();
 
-    expect(res.status).toBe(400);
-    expect(json.error).toContain('onboarding');
+    expect(res.status).toBe(403);
+    expect(json.error.code).toBe('ONBOARDING_INCOMPLETE');
   });
 
   it('returns 500 when GEMINI_API_KEY is missing', async () => {
     delete process.env.GEMINI_API_KEY;
     const res = await POST(createRequest({ message: 'phở bò' }));
     expect(res.status).toBe(500);
+    const json = await res.json();
+    expect(json.error.code).toBe('INTERNAL');
   });
 
   // SSE streaming tests — these return 200 with event stream

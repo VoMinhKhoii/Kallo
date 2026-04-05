@@ -134,12 +134,17 @@ export function useStreamAnalysis() {
         if (thisRequestId !== requestIdRef.current) return;
 
         // Non-200 responses come as JSON (pre-stream validation errors)
+        // Error body may be structured { error: { code, message, ... } } or legacy { error: "string" }
         if (!response.ok) {
           const body = await response.json().catch(() => null);
+          const errorMsg =
+            typeof body?.error === 'string'
+              ? body.error
+              : (body?.error?.message ?? `Request failed (${response.status})`);
           setState((prev) => ({
             ...prev,
             status: 'error',
-            error: body?.error ?? `Request failed (${response.status})`,
+            error: errorMsg,
             isAnalyzing: false,
           }));
           return;
