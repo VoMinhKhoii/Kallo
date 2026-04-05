@@ -1,9 +1,12 @@
 import type { NextRequest } from 'next/server';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { parseSSEChunk } from '@/lib/ai/streaming/encoder';
+import type { StreamEvent } from '@/lib/ai/streaming/types';
 
 const mockGetUser = vi.fn();
 const mockSelect = vi.fn();
 const mockAnalyzeMeal = vi.fn();
+const mockInsert = vi.fn();
 
 vi.mock('@/lib/supabase/server', () => ({
   createClient: () =>
@@ -13,17 +16,28 @@ vi.mock('@/lib/supabase/server', () => ({
 }));
 
 vi.mock('@/lib/db', () => {
-  const chain = {
-    select: () => chain,
-    from: () => chain,
-    where: () => chain,
+  const selectChain = {
+    select: () => selectChain,
+    from: () => selectChain,
+    where: () => selectChain,
     limit: () => mockSelect(),
   };
-  return { db: chain };
+  const insertChain = {
+    insert: () => insertChain,
+    values: () => insertChain,
+    returning: () => mockInsert(),
+  };
+  return {
+    db: {
+      ...selectChain,
+      insert: () => insertChain,
+    },
+  };
 });
 
 vi.mock('@/lib/db/schema', () => ({
   userProfiles: { userId: 'userId' },
+  pendingAnalyses: { id: 'id' },
 }));
 
 vi.mock('@/lib/ai/gemini', () => ({
@@ -34,6 +48,32 @@ vi.mock('@/lib/ai/pipeline', () => ({
   analyzeMeal: (...args: unknown[]) => mockAnalyzeMeal(...args),
 }));
 
+vi.mock('@/lib/ai/matching', () => ({
+  logUnmatchedIngredients: () => Promise.resolve(),
+}));
+
+vi.mock('@/lib/ai/mappers', () => ({
+  buildUserContext: () => ({}),
+  toParsedMeal: (data: any) => ({
+    mealName: data.mealItems?.[0]?.name ?? 'Meal',
+    items: (data.mealItems ?? []).map((mi: any) => ({
+      name: mi.name,
+      macros: {
+        calories: mi.displayedNutrition?.caloriesKcal ?? 0,
+        protein: mi.displayedNutrition?.proteinG ?? 0,
+        carbs: mi.displayedNutrition?.carbohydrateG ?? 0,
+        fat: mi.displayedNutrition?.fatG ?? 0,
+      },
+    })),
+    totalMacros: {
+      calories: data.displayedNutrition?.caloriesKcal ?? 0,
+      protein: data.displayedNutrition?.proteinG ?? 0,
+      carbs: data.displayedNutrition?.carbohydrateG ?? 0,
+      fat: data.displayedNutrition?.fatG ?? 0,
+    },
+  }),
+}));
+
 const { POST } = await import('@/app/api/analyze-meal/route');
 
 function createRequest(body: unknown): NextRequest {
@@ -42,6 +82,18 @@ function createRequest(body: unknown): NextRequest {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
   }) as unknown as NextRequest;
+}
+
+/** Read all SSE events from a streaming Response */
+async function readSSEEvents(res: Response): Promise<StreamEvent[]> {
+  const text = await res.text();
+  const buffer = { current: '' };
+  const events = parseSSEChunk(text, buffer);
+  // Flush any remaining buffered content
+  if (buffer.current.trim()) {
+    events.push(...parseSSEChunk('\n\n', buffer));
+  }
+  return events;
 }
 
 const mockProfile = {
@@ -55,6 +107,47 @@ const mockProfile = {
   brothConsumption: 'some',
 };
 
+const mockPipelineData = {
+  mealItems: [
+    {
+      name: 'Phở bò',
+      ingredients: [
+        {
+          ingredientName: 'Bánh phở',
+          estimatedGrams: 200,
+          cookingMethod: null,
+          userFacingUnit: '1 tô',
+          matchConfidence: 0.8,
+          boundedNutrition: {},
+          displayedNutrition: {
+            caloriesKcal: 300,
+            proteinG: 10,
+            carbohydrateG: 50,
+            fatG: 5,
+          },
+        },
+      ],
+      boundedNutrition: {},
+      displayedNutrition: {
+        caloriesKcal: 300,
+        proteinG: 10,
+        carbohydrateG: 50,
+        fatG: 5,
+      },
+    },
+  ],
+  mealSlot: 'breakfast',
+  confidenceOverall: 'high',
+  boundedNutrition: {},
+  displayedNutrition: {
+    caloriesKcal: 300,
+    proteinG: 10,
+    carbohydrateG: 50,
+    fatG: 5,
+  },
+  unmatchedIngredients: [],
+};
+
 describe('POST /api/analyze-meal', () => {
   const originalEnv = process.env.GEMINI_API_KEY;
 
@@ -63,6 +156,7 @@ describe('POST /api/analyze-meal', () => {
     mockGetUser.mockResolvedValue({ data: { user: { id: 'user-1' } } });
     mockSelect.mockResolvedValue([mockProfile]);
     mockAnalyzeMeal.mockReset();
+    mockInsert.mockResolvedValue([{ id: 'analysis-123' }]);
   });
 
   afterEach(() => {
@@ -73,6 +167,7 @@ describe('POST /api/analyze-meal', () => {
     }
   });
 
+  // Pre-stream validation tests — these return JSON before SSE starts
   it('returns 401 when user is not authenticated', async () => {
     mockGetUser.mockResolvedValue({ data: { user: null } });
     const res = await POST(createRequest({ message: 'phở bò' }));
@@ -99,61 +194,38 @@ describe('POST /api/analyze-meal', () => {
     expect(res.status).toBe(500);
   });
 
-  it('returns parsed meal on pipeline success', async () => {
+  // SSE streaming tests — these return 200 with event stream
+  it('streams result and analysis_complete on pipeline success', async () => {
     mockAnalyzeMeal.mockResolvedValue({
       success: true,
-      data: {
-        mealItems: [
-          {
-            name: 'Phở bò',
-            ingredients: [
-              {
-                ingredientName: 'Bánh phở',
-                estimatedGrams: 200,
-                cookingMethod: null,
-                userFacingUnit: '1 tô',
-                matchConfidence: 0.8,
-                boundedNutrition: {},
-                displayedNutrition: {
-                  caloriesKcal: 300,
-                  proteinG: 10,
-                  carbohydrateG: 50,
-                  fatG: 5,
-                },
-              },
-            ],
-            boundedNutrition: {},
-            displayedNutrition: {
-              caloriesKcal: 300,
-              proteinG: 10,
-              carbohydrateG: 50,
-              fatG: 5,
-            },
-          },
-        ],
-        mealSlot: 'breakfast',
-        confidenceOverall: 'high',
-        boundedNutrition: {},
-        displayedNutrition: {
-          caloriesKcal: 300,
-          proteinG: 10,
-          carbohydrateG: 50,
-          fatG: 5,
-        },
-        unmatchedIngredients: [],
-      },
+      data: mockPipelineData,
     });
 
     const res = await POST(createRequest({ message: 'Phở bò tái' }));
-    const json = await res.json();
-
     expect(res.status).toBe(200);
-    expect(json.mealName).toBe('Phở bò');
-    expect(json.items).toHaveLength(1);
-    expect(json.totalMacros.calories).toBe(300);
+    expect(res.headers.get('Content-Type')).toBe('text/event-stream');
+
+    const events = await readSSEEvents(res);
+    const types = events.map((e) => e.type);
+
+    expect(types).toContain('result');
+    expect(types).toContain('analysis_complete');
+
+    // Terminal event is last
+    const last = events[events.length - 1];
+    expect(last.type).toBe('analysis_complete');
+    if (last.type === 'analysis_complete') {
+      expect(last.analysisId).toBe('analysis-123');
+    }
+
+    // Result contains meal data
+    const resultEvent = events.find((e) => e.type === 'result');
+    if (resultEvent?.type === 'result') {
+      expect(resultEvent.data.mealName).toBe('Phở bò');
+    }
   });
 
-  it('returns error status when pipeline fails', async () => {
+  it('streams error event when pipeline returns failure', async () => {
     mockAnalyzeMeal.mockResolvedValue({
       success: false,
       error: {
@@ -164,19 +236,31 @@ describe('POST /api/analyze-meal', () => {
     });
 
     const res = await POST(createRequest({ message: 'hello world' }));
-    const json = await res.json();
+    expect(res.status).toBe(200);
 
-    expect(res.status).toBe(400);
-    expect(json.error).toBe('Not a food');
+    const events = await readSSEEvents(res);
+    const errorEvent = events.find((e) => e.type === 'error');
+
+    expect(errorEvent).toBeDefined();
+    if (errorEvent?.type === 'error') {
+      expect(errorEvent.code).toBe('non_food_input');
+      expect(errorEvent.message).toBe('Not a food');
+    }
   });
 
-  it('returns 500 on unexpected errors', async () => {
+  it('streams error event on unexpected exceptions', async () => {
     mockAnalyzeMeal.mockRejectedValue(new Error('unexpected'));
 
     const res = await POST(createRequest({ message: 'phở bò' }));
-    const json = await res.json();
+    expect(res.status).toBe(200);
 
-    expect(res.status).toBe(500);
-    expect(json.error).toBe('Failed to process meal');
+    const events = await readSSEEvents(res);
+    const errorEvent = events.find((e) => e.type === 'error');
+
+    expect(errorEvent).toBeDefined();
+    if (errorEvent?.type === 'error') {
+      expect(errorEvent.code).toBe('internal');
+      expect(errorEvent.message).toBe('Failed to process meal');
+    }
   });
 });

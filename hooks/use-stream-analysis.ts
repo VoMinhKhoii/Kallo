@@ -1,0 +1,186 @@
+'use client';
+
+import { useCallback, useRef, useState } from 'react';
+import { parseSSEChunk } from '@/lib/ai/streaming/encoder';
+import type { StreamEvent, StreamStatus } from '@/lib/ai/streaming/types';
+import type { ParsedMeal } from '@/lib/types/meal';
+
+export interface StreamAnalysisState {
+  status: StreamStatus;
+  items: string[];
+  result: ParsedMeal | null;
+  analysisId: string | null;
+  error: string | null;
+  isAnalyzing: boolean;
+}
+
+const INITIAL_STATE: StreamAnalysisState = {
+  status: 'idle',
+  items: [],
+  result: null,
+  analysisId: null,
+  error: null,
+  isAnalyzing: false,
+};
+
+export function useStreamAnalysis() {
+  const [state, setState] = useState<StreamAnalysisState>(INITIAL_STATE);
+  const abortRef = useRef<AbortController | null>(null);
+  const requestIdRef = useRef(0);
+
+  const reset = useCallback(() => {
+    setState(INITIAL_STATE);
+  }, []);
+
+  const cancel = useCallback(() => {
+    abortRef.current?.abort();
+    abortRef.current = null;
+    setState(INITIAL_STATE);
+  }, []);
+
+  const processEvent = useCallback(
+    (
+      event: StreamEvent,
+      thisRequestId: number,
+      reqIdRef: React.RefObject<number>
+    ) => {
+      if (thisRequestId !== reqIdRef.current) return;
+
+      setState((prev) => {
+        switch (event.type) {
+          case 'stage':
+            return { ...prev, status: event.stage };
+
+          case 'items_found':
+            return { ...prev, items: event.items };
+
+          case 'result':
+            return { ...prev, result: event.data };
+
+          case 'analysis_complete':
+            return {
+              ...prev,
+              status: 'done',
+              analysisId: event.analysisId,
+              isAnalyzing: false,
+            };
+
+          case 'error':
+            return {
+              ...prev,
+              status: 'error',
+              error: event.message,
+              isAnalyzing: false,
+            };
+
+          default:
+            return prev;
+        }
+      });
+    },
+    []
+  );
+
+  const analyze = useCallback(
+    async (message: string) => {
+      // Cancel any in-flight request
+      abortRef.current?.abort();
+
+      const controller = new AbortController();
+      abortRef.current = controller;
+      const thisRequestId = ++requestIdRef.current;
+
+      setState({
+        ...INITIAL_STATE,
+        status: 'connecting',
+        isAnalyzing: true,
+      });
+
+      try {
+        const response = await fetch('/api/analyze-meal', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message }),
+          signal: controller.signal,
+        });
+
+        // Stale request check
+        if (thisRequestId !== requestIdRef.current) return;
+
+        // Non-200 responses come as JSON (pre-stream validation errors)
+        if (!response.ok) {
+          const body = await response.json().catch(() => null);
+          setState((prev) => ({
+            ...prev,
+            status: 'error',
+            error: body?.error ?? `Request failed (${response.status})`,
+            isAnalyzing: false,
+          }));
+          return;
+        }
+
+        const reader = response.body?.getReader();
+        if (!reader) {
+          setState((prev) => ({
+            ...prev,
+            status: 'error',
+            error: 'No response stream available',
+            isAnalyzing: false,
+          }));
+          return;
+        }
+
+        const decoder = new TextDecoder('utf-8', { stream: true });
+        const buffer = { current: '' };
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          // Stale request check
+          if (thisRequestId !== requestIdRef.current) {
+            reader.cancel();
+            return;
+          }
+
+          const chunk = decoder.decode(value, { stream: true });
+          const events = parseSSEChunk(chunk, buffer);
+
+          for (const event of events) {
+            processEvent(event, thisRequestId, requestIdRef);
+          }
+        }
+
+        // Flush any remaining data in decoder
+        const finalChunk = decoder.decode();
+        if (finalChunk) {
+          const events = parseSSEChunk(finalChunk, buffer);
+          for (const event of events) {
+            processEvent(event, thisRequestId, requestIdRef);
+          }
+        }
+      } catch (error) {
+        // Stale request or aborted — ignore
+        if (thisRequestId !== requestIdRef.current) return;
+        if (error instanceof DOMException && error.name === 'AbortError')
+          return;
+
+        setState((prev) => ({
+          ...prev,
+          status: 'error',
+          error:
+            error instanceof Error ? error.message : 'Failed to analyze meal',
+          isAnalyzing: false,
+        }));
+      }
+    },
+    [processEvent]
+  );
+
+  return {
+    ...state,
+    analyze,
+    cancel,
+    reset,
+  };
+}
