@@ -12,9 +12,10 @@ interface Violation {
 }
 
 export function shouldExclude(filePath: string): boolean {
-  const parts = filePath.split('/');
+  const normalizedPath = filePath.replaceAll('\\', '/');
+  const parts = normalizedPath.split('/');
   if (parts.some((p) => EXCLUDE_DIRS.has(p))) return true;
-  return EXCLUDE_PATTERNS.some((re) => re.test(filePath));
+  return EXCLUDE_PATTERNS.some((re) => re.test(normalizedPath));
 }
 
 export function countLines(content: string): number {

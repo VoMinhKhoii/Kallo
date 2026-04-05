@@ -45,18 +45,22 @@ function writeDraft(text: string) {
   }
 }
 
+const hasMeaningfulText = (text: string) => text.trim().length > 0;
+
 export const MealInput = forwardRef<MealInputHandle, MealInputProps>(
   function MealInput({ onSubmit, disabled }, ref) {
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const debounceRef = useRef<ReturnType<typeof setTimeout>>(null);
-    const [hasContent, setHasContent] = useState(() => readDraft().length > 0);
+    const [hasContent, setHasContent] = useState(() =>
+      hasMeaningfulText(readDraft())
+    );
 
     const updateText = useCallback((text: string) => {
       const el = textareaRef.current;
       if (el) {
         el.value = text;
       }
-      setHasContent(text.trim().length > 0);
+      setHasContent(hasMeaningfulText(text));
       writeDraft(text);
       if (debounceRef.current) clearTimeout(debounceRef.current);
     }, []);
@@ -77,8 +81,7 @@ export const MealInput = forwardRef<MealInputHandle, MealInputProps>(
       if (!el) return;
 
       const handleInput = () => {
-        const empty = el.value.trim().length === 0;
-        setHasContent(!empty);
+        setHasContent(hasMeaningfulText(el.value));
 
         if (debounceRef.current) clearTimeout(debounceRef.current);
         debounceRef.current = setTimeout(() => {
@@ -109,14 +112,16 @@ export const MealInput = forwardRef<MealInputHandle, MealInputProps>(
       if (e.nativeEvent.isComposing) return;
       if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
-        onSubmit();
+        if (!disabled && hasMeaningfulText(textareaRef.current?.value ?? '')) {
+          onSubmit();
+        }
       }
     };
 
     const canSubmit = hasContent && !disabled;
 
     return (
-      <div className="flex items-center gap-3 rounded-2xl border border-nham-border/40 bg-white p-3 shadow-[0_4px_20px_rgba(201,168,124,0.06)] transition-all duration-300 focus-within:border-nham-accent/40 focus-within:shadow-[0_4px_20px_rgba(201,168,124,0.12)]">
+      <div className="flex items-center gap-3 rounded-2xl border border-nham-border/40 bg-background p-3 shadow-[0_4px_20px_rgba(201,168,124,0.06)] transition-all duration-300 focus-within:border-nham-accent/40 focus-within:shadow-[0_4px_20px_rgba(201,168,124,0.12)]">
         <label htmlFor="meal-input" className="sr-only">
           Describe your meal
         </label>
