@@ -1,7 +1,7 @@
 'use client';
 
 import { AnimatePresence, motion } from 'motion/react';
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { EmptyState } from '@/components/logging/feed/empty-state';
 import { MacroSummary } from '@/components/logging/feed/macro-summary';
@@ -76,55 +76,67 @@ export function FeedArea({ targets }: FeedAreaProps) {
 
   // When stream completes with a result, append it as a message
   const lastAnalysisIdRef = useRef<string | null>(null);
-  if (
-    stream.status === 'done' &&
-    stream.result &&
-    stream.analysisId &&
-    lastAnalysisIdRef.current !== stream.analysisId
-  ) {
+  useEffect(() => {
+    if (
+      stream.status !== 'done' ||
+      !stream.result ||
+      !stream.analysisId ||
+      lastAnalysisIdRef.current === stream.analysisId
+    ) {
+      return;
+    }
     lastAnalysisIdRef.current = stream.analysisId;
 
-    const lastUserMsg = [...messages].reverse().find((m) => m.role === 'user');
-
-    const assistantMessage: ChatMessage = {
-      id: generateId(),
-      role: 'assistant',
-      content: '',
-      parsedMeal: stream.result,
-      userInput: lastUserMsg?.content,
-      timestamp: new Date(),
-    };
-
-    setMessages((prev) => [...prev, assistantMessage]);
+    setMessages((prev) => {
+      const lastUserMsg = [...prev].reverse().find((m) => m.role === 'user');
+      const assistantMessage: ChatMessage = {
+        id: generateId(),
+        role: 'assistant',
+        content: '',
+        parsedMeal: stream.result!,
+        userInput: lastUserMsg?.content,
+        timestamp: new Date(),
+      };
+      return [...prev, assistantMessage];
+    });
     stream.reset();
     scrollToBottom();
-  }
+  }, [
+    stream.status,
+    stream.result,
+    stream.analysisId,
+    stream.reset,
+    scrollToBottom,
+  ]);
 
   // When stream errors, show toast and append error message
   const lastErrorRef = useRef<string | null>(null);
-  if (
-    stream.status === 'error' &&
-    stream.error &&
-    lastErrorRef.current !== stream.error
-  ) {
+  useEffect(() => {
+    if (
+      stream.status !== 'error' ||
+      !stream.error ||
+      lastErrorRef.current === stream.error
+    ) {
+      return;
+    }
     lastErrorRef.current = stream.error;
 
     toast.error(stream.error);
 
-    const lastUserMsg = [...messages].reverse().find((m) => m.role === 'user');
-
-    const errorMessage: ChatMessage = {
-      id: generateId(),
-      role: 'assistant',
-      content: stream.error,
-      userInput: lastUserMsg?.content,
-      timestamp: new Date(),
-    };
-
-    setMessages((prev) => [...prev, errorMessage]);
+    setMessages((prev) => {
+      const lastUserMsg = [...prev].reverse().find((m) => m.role === 'user');
+      const errorMessage: ChatMessage = {
+        id: generateId(),
+        role: 'assistant',
+        content: stream.error!,
+        userInput: lastUserMsg?.content,
+        timestamp: new Date(),
+      };
+      return [...prev, errorMessage];
+    });
     stream.reset();
     scrollToBottom();
-  }
+  }, [stream.status, stream.error, stream.reset, scrollToBottom]);
 
   const handleConfirmMeal = (messageId: string, meal: ParsedMeal) => {
     setMessages((prev) =>

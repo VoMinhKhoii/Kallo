@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { parseSSEChunk } from '@/lib/ai/streaming/encoder';
 import type { StreamEvent, StreamStatus } from '@/lib/ai/streaming/types';
 import type { ParsedMeal } from '@/lib/types/meal';
@@ -36,6 +36,14 @@ export function useStreamAnalysis() {
     abortRef.current?.abort();
     abortRef.current = null;
     setState(INITIAL_STATE);
+  }, []);
+
+  // Abort in-flight request on unmount
+  useEffect(() => {
+    return () => {
+      abortRef.current?.abort();
+      abortRef.current = null;
+    };
   }, []);
 
   const processEvent = useCallback(
@@ -132,6 +140,7 @@ export function useStreamAnalysis() {
 
         const decoder = new TextDecoder('utf-8');
         const buffer = { current: '' };
+        let receivedTerminal = false;
 
         while (true) {
           const { done, value } = await reader.read();
@@ -147,6 +156,9 @@ export function useStreamAnalysis() {
           const events = parseSSEChunk(chunk, buffer);
 
           for (const event of events) {
+            if (event.type === 'analysis_complete' || event.type === 'error') {
+              receivedTerminal = true;
+            }
             processEvent(event, thisRequestId, requestIdRef);
           }
         }
@@ -156,8 +168,25 @@ export function useStreamAnalysis() {
         if (finalChunk) {
           const events = parseSSEChunk(finalChunk, buffer);
           for (const event of events) {
+            if (event.type === 'analysis_complete' || event.type === 'error') {
+              receivedTerminal = true;
+            }
             processEvent(event, thisRequestId, requestIdRef);
           }
+        }
+
+        // If stream ended without a terminal event, treat as error
+        if (
+          !receivedTerminal &&
+          thisRequestId === requestIdRef.current &&
+          !controller.signal.aborted
+        ) {
+          setState((prev) => ({
+            ...prev,
+            status: 'error',
+            error: 'Analysis stream ended unexpectedly',
+            isAnalyzing: false,
+          }));
         }
       } catch (error) {
         // Stale request or aborted — ignore

@@ -52,11 +52,28 @@ vi.mock('@/lib/ai/matching', () => ({
   logUnmatchedIngredients: () => Promise.resolve(),
 }));
 
+interface MockNutrition {
+  caloriesKcal?: number;
+  proteinG?: number;
+  carbohydrateG?: number;
+  fatG?: number;
+}
+
+interface MockMealItem {
+  name: string;
+  displayedNutrition?: MockNutrition;
+}
+
+interface MockPipelineData {
+  mealItems?: MockMealItem[];
+  displayedNutrition?: MockNutrition;
+}
+
 vi.mock('@/lib/ai/mappers', () => ({
   buildUserContext: () => ({}),
-  toParsedMeal: (data: any) => ({
+  toParsedMeal: (data: MockPipelineData) => ({
     mealName: data.mealItems?.[0]?.name ?? 'Meal',
-    items: (data.mealItems ?? []).map((mi: any) => ({
+    items: (data.mealItems ?? []).map((mi: MockMealItem) => ({
       name: mi.name,
       macros: {
         calories: mi.displayedNutrition?.caloriesKcal ?? 0,

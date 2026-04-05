@@ -14,10 +14,13 @@ import { createClient } from '@/lib/supabase/server';
 export const runtime = 'nodejs';
 export const maxDuration = 30;
 
-const messageSchema = z
-  .string()
-  .min(1, 'Message is required')
-  .max(500, 'Message is too long');
+const requestBodySchema = z.object({
+  message: z
+    .string()
+    .trim()
+    .min(1, 'Message is required')
+    .max(500, 'Message is too long'),
+});
 
 /**
  * Pre-stream validation: auth, input, profile, config.
@@ -25,7 +28,7 @@ const messageSchema = z
  * On success, returns the validated context needed for the pipeline.
  */
 async function validateRequest(request: NextRequest) {
-  const [supabase, body] = await Promise.all([createClient(), request.json()]);
+  const supabase = await createClient();
 
   const {
     data: { user },
@@ -40,7 +43,19 @@ async function validateRequest(request: NextRequest) {
     };
   }
 
-  const parsed = messageSchema.safeParse(body?.message);
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    return {
+      error: NextResponse.json(
+        { error: 'Invalid JSON in request body' },
+        { status: 400 }
+      ),
+    };
+  }
+
+  const parsed = requestBodySchema.safeParse(body);
   if (!parsed.success) {
     return {
       error: NextResponse.json(
@@ -79,7 +94,7 @@ async function validateRequest(request: NextRequest) {
   return {
     data: {
       userId: user.id,
-      message: parsed.data,
+      message: parsed.data.message,
       profile,
       apiKey,
     },
@@ -112,7 +127,6 @@ export async function POST(request: NextRequest) {
 
         // Check for abort after pipeline completes
         if (request.signal.aborted) {
-          controller.close();
           return;
         }
 
@@ -123,7 +137,6 @@ export async function POST(request: NextRequest) {
             message: result.error.message,
             retryable: result.error.retryable,
           });
-          controller.close();
           return;
         }
 
@@ -143,7 +156,6 @@ export async function POST(request: NextRequest) {
               'Could not estimate nutrition for this meal. Please try describing it differently.',
             retryable: true,
           });
-          controller.close();
           return;
         }
 

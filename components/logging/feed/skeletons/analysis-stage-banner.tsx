@@ -24,10 +24,15 @@ export function AnalysisStageBanner({
   const label = STAGE_LABELS[status] ?? 'Analyzing...';
 
   return (
-    <div className="group relative">
+    <div
+      className="group relative"
+      role="status"
+      aria-live="polite"
+      aria-atomic="true"
+    >
       <div className="absolute top-2 bottom-0 -left-10 w-px bg-nham-border/60 group-last:bg-transparent" />
       <div className="absolute top-2 -left-[43px] h-2 w-2 animate-pulse rounded-full border-2 border-nham-accent bg-nham-accent/30" />
-      <div className="rounded-2xl border border-nham-border/30 bg-white p-4">
+      <div className="rounded-2xl border border-nham-border/30 bg-nham-surface p-4">
         <div className="flex items-center gap-2.5">
           <div className="h-4 w-4 animate-spin rounded-full border-2 border-nham-accent border-t-transparent" />
           <span className="font-medium text-nham-text-muted text-sm">
