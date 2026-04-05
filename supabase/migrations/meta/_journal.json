@@ -99,6 +99,13 @@
       "when": 1775068812806,
       "tag": "20260401184012_add_ingredient_sources",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1775369522507,
+      "tag": "20260405061202_add_pending_analyses_table",
+      "breakpoints": true
     }
   ]
 }
