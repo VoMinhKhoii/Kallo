@@ -31,7 +31,7 @@ const lora = Lora({
 
 const dmSans = DM_Sans({
   variable: '--font-dm-sans',
-  subsets: ['latin', 'vietnamese'],
+  subsets: ['latin'],
   display: 'swap',
 });
 
