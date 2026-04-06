@@ -20,6 +20,13 @@ import type {
  * before passing to the LLM, since DB values are per 100g RAW.
  */
 
+/**
+ * Collator for deterministic Vietnamese ingredient ordering.
+ * Sorting matched ingredients before building the prompt XML stabilizes
+ * Gemini's prompt cache prefix for repeated similar inputs.
+ */
+const viCollator = new Intl.Collator('vi', { sensitivity: 'base' });
+
 export function buildNutritionPrompt(
   mealItems: DecomposedMealItem[],
   matched: MatchedIngredient[],
@@ -30,11 +37,22 @@ export function buildNutritionPrompt(
 
   const matchedLookup = new Map(matched.map((m) => [m.ingredientName, m]));
 
+  // Sort meal items and their ingredients for a deterministic prompt order.
+  // Same ingredient set → identical XML → Gemini prompt cache hit.
+  const sortedMealItems = [...mealItems]
+    .sort((a, b) => viCollator.compare(a.name, b.name))
+    .map((item) => ({
+      ...item,
+      ingredients: [...item.ingredients].sort((a, b) =>
+        viCollator.compare(a.name, b.name)
+      ),
+    }));
+
   let ingredientData = '<ingredient_data>\n';
   ingredientData +=
     '  <!-- DB values are per 100g RAW uncooked weight. estimatedGrams is also RAW. -->\n\n';
 
-  for (const mealItem of mealItems) {
+  for (const mealItem of sortedMealItems) {
     ingredientData += `  <meal_item name="${mealItem.name}">\n`;
 
     for (const ing of mealItem.ingredients) {
@@ -60,7 +78,7 @@ export function buildNutritionPrompt(
     unmatchedSection +=
       '  <!-- No DB match found. Use your knowledge of Vietnamese cuisine for these. -->\n';
 
-    for (const mealItem of mealItems) {
+    for (const mealItem of sortedMealItems) {
       const unmatchedIngs = mealItem.ingredients.filter((ing) =>
         unmatchedNames.has(ing.name)
       );

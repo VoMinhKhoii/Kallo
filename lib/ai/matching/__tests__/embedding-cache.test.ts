@@ -5,6 +5,7 @@ import {
   getMemoryCacheStats,
   normalizeIngredientKey,
   resolveQueryEmbedding,
+  warmEmbeddingCache,
 } from '../embedding-cache';
 
 // ---------------------------------------------------------------------------
@@ -37,6 +38,7 @@ function extractSqlText(query: unknown): string {
 
 /**
  * Create a routing mock DB that dispatches based on SQL content.
+ * - SELECT from vietnamese_food_composition (warm-up) → warmUpResponse
  * - SELECT from ingredient_query_embeddings WHERE name_vi → exactResponse
  * - SELECT from ingredient_query_embeddings WHERE lower(name_en) → enCheckResponse
  * - INSERT INTO synonym_candidates → []
@@ -45,12 +47,17 @@ function extractSqlText(query: unknown): string {
 function createRoutingMockDb(opts: {
   exactResponse?: unknown[];
   enCheckResponse?: unknown[];
+  warmUpResponse?: unknown[];
   extraResponses?: unknown[][];
 }): any {
   let extraIdx = 0;
   const db = {
     execute: vi.fn().mockImplementation((query: unknown) => {
       const queryStr = extractSqlText(query);
+      // Warm-up: loads from food composition table
+      if (queryStr.includes('vietnamese_food_composition')) {
+        return Promise.resolve(opts.warmUpResponse ?? []);
+      }
       if (
         queryStr.includes('ingredient_query_embeddings') &&
         queryStr.includes('name_vi =')
@@ -62,6 +69,9 @@ function createRoutingMockDb(opts: {
         queryStr.includes('lower(name_en)')
       ) {
         return Promise.resolve(opts.enCheckResponse ?? []);
+      }
+      if (queryStr.includes('ingredient_query_embeddings')) {
+        return Promise.resolve([]);
       }
       if (queryStr.includes('synonym_candidates')) {
         return Promise.resolve([]);
@@ -131,8 +141,8 @@ describe('resolveQueryEmbedding', () => {
     const result = await resolveQueryEmbedding('unknown ingredient', db);
 
     expect(result).toBeNull();
-    // 1 L2 exact query + 1 async name_en check
-    expect(db.execute).toHaveBeenCalledTimes(2);
+    // 1 warm-up scan + 1 L2 exact query + 1 async name_en check
+    expect(db.execute).toHaveBeenCalledTimes(3);
   });
 
   it('returns embedding from exact name_vi match and promotes both names to L1', async () => {
@@ -196,9 +206,9 @@ describe('resolveQueryEmbedding', () => {
     // Wait for fire-and-forget to settle
     await new Promise((r) => setTimeout(r, 10));
 
-    // Verify: L2 exact + name_en check + synonym_candidates insert = 3 calls
-    expect(db.execute).toHaveBeenCalledTimes(3);
-    const lastCall = db.execute.mock.calls[2][0];
+    // Verify: warm-up scan + L2 exact + name_en check + synonym_candidates insert = 4 calls
+    expect(db.execute).toHaveBeenCalledTimes(4);
+    const lastCall = db.execute.mock.calls[3][0];
     const lastSql = extractSqlText(lastCall);
     expect(lastSql).toContain('synonym_candidates');
   });
@@ -241,8 +251,8 @@ describe('resolveQueryEmbedding', () => {
     // Wait for fire-and-forget
     await new Promise((r) => setTimeout(r, 10));
 
-    // Only 2 calls: L2 exact + name_en check (no insert since no match)
-    expect(db.execute).toHaveBeenCalledTimes(2);
+    // Only 3 calls: warm-up scan + L2 exact + name_en check (no insert since no match)
+    expect(db.execute).toHaveBeenCalledTimes(3);
   });
 
   it('returns null safely when DB throws on L2 query', async () => {
@@ -433,5 +443,148 @@ describe('logSynonymCandidateIfEnMatch (via resolveQueryEmbedding)', () => {
       expect.any(Error)
     );
     consoleSpy.mockRestore();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// warmEmbeddingCache
+// ---------------------------------------------------------------------------
+
+describe('warmEmbeddingCache', () => {
+  const EMBEDDING_VEC = [0.1, 0.2, 0.3];
+
+  it('populates L1 cache from VN FCT food items', async () => {
+    const db = {
+      execute: vi.fn().mockResolvedValue([
+        { name_primary: 'gạo', name_en: 'rice', embedding: EMBEDDING_VEC },
+        { name_primary: 'thịt gà', name_en: null, embedding: EMBEDDING_VEC },
+      ]),
+    } as any;
+
+    await warmEmbeddingCache(db);
+
+    expect(getMemoryCacheStats().size).toBe(3); // name_vi × 2 + name_en × 1
+    expect(db.execute).toHaveBeenCalledOnce();
+  });
+
+  it('runs only once per process (boolean flag guard)', async () => {
+    const db = {
+      execute: vi
+        .fn()
+        .mockResolvedValue([
+          { name_primary: 'gạo', name_en: null, embedding: EMBEDDING_VEC },
+        ]),
+    } as any;
+
+    await warmEmbeddingCache(db);
+    await warmEmbeddingCache(db);
+    await warmEmbeddingCache(db);
+
+    expect(db.execute).toHaveBeenCalledOnce();
+  });
+
+  it('warm-up after clearMemoryCache resets flag and allows retry', async () => {
+    const db = {
+      execute: vi
+        .fn()
+        .mockResolvedValueOnce([
+          { name_primary: 'gạo', name_en: null, embedding: EMBEDDING_VEC },
+        ])
+        .mockResolvedValueOnce([
+          {
+            name_primary: 'thịt bò',
+            name_en: 'beef',
+            embedding: EMBEDDING_VEC,
+          },
+        ]),
+    } as any;
+
+    await warmEmbeddingCache(db);
+    expect(getMemoryCacheStats().size).toBe(1);
+
+    clearMemoryCache();
+
+    await warmEmbeddingCache(db);
+    expect(getMemoryCacheStats().size).toBe(2); // name_vi + name_en
+    expect(db.execute).toHaveBeenCalledTimes(2);
+  });
+
+  it('skips rows with invalid embeddings silently', async () => {
+    const db = {
+      execute: vi.fn().mockResolvedValue([
+        { name_primary: 'gạo', name_en: null, embedding: null },
+        { name_primary: 'thịt gà', name_en: null, embedding: EMBEDDING_VEC },
+      ]),
+    } as any;
+
+    await warmEmbeddingCache(db);
+    expect(getMemoryCacheStats().size).toBe(1); // only the valid row
+  });
+
+  it('swallows DB error and resets flag to allow retry on next request', async () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const db = {
+      execute: vi
+        .fn()
+        .mockRejectedValueOnce(new Error('DB connection refused'))
+        .mockResolvedValueOnce([
+          { name_primary: 'gạo', name_en: null, embedding: EMBEDDING_VEC },
+        ]),
+    } as any;
+
+    // First call: DB error → flag reset → cache still empty
+    await warmEmbeddingCache(db);
+    expect(getMemoryCacheStats().size).toBe(0);
+    expect(warnSpy).toHaveBeenCalledWith(
+      expect.stringContaining('Warm-up failed'),
+      expect.any(Error)
+    );
+
+    // Second call: succeeds now that flag was reset
+    await warmEmbeddingCache(db);
+    expect(getMemoryCacheStats().size).toBe(1);
+    warnSpy.mockRestore();
+  });
+
+  it('when DATABASE_URL is absent, DB error is swallowed gracefully', async () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const db = {
+      execute: vi
+        .fn()
+        .mockRejectedValue(new Error('ECONNREFUSED — no DATABASE_URL')),
+    } as any;
+
+    await expect(warmEmbeddingCache(db)).resolves.toBeUndefined();
+    expect(getMemoryCacheStats().size).toBe(0);
+    warnSpy.mockRestore();
+  });
+
+  it('normalizes keys so mixed-case DB names hit L1 on normalized lookup', async () => {
+    const db = {
+      execute: vi.fn().mockResolvedValue([
+        {
+          name_primary: 'Gạo tẻ',
+          name_en: 'Rice',
+          embedding: EMBEDDING_VEC,
+        },
+      ]),
+    } as any;
+
+    await warmEmbeddingCache(db);
+
+    // Lookup uses normalized keys (lowercase + trim)
+    // Warm-up must have stored under normalized keys too
+    expect(getMemoryCacheStats().size).toBe(2); // "gạo tẻ" + "rice"
+
+    // Direct memoryCache check via a resolve call with a routing mock
+    clearMemoryCache();
+    // Re-warm with same data
+    await warmEmbeddingCache(db);
+    // Now resolve should hit L1 without L2
+    const resolveDb = {
+      execute: vi.fn().mockResolvedValue([]),
+    } as any;
+    const result = await resolveQueryEmbedding('Gạo tẻ', resolveDb);
+    expect(result).toEqual(EMBEDDING_VEC);
   });
 });

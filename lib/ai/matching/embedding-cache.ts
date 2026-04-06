@@ -24,6 +24,61 @@ export function getMemoryCacheStats() {
 /** @internal Exported for testing */
 export function clearMemoryCache() {
   memoryCache.clear();
+  warmCacheStarted = false;
+}
+
+/**
+ * Guards one-time warm-up: set to true before the first warm call so
+ * concurrent requests don't all trigger a full table scan simultaneously.
+ * NOT set at module init — DATABASE_URL may be absent at build/test time.
+ */
+let warmCacheStarted = false;
+
+/**
+ * Warm L1 memory cache from the 526 VN FCT food items (source_id = 1).
+ *
+ * Loads directly from `vietnamese_food_composition` — the authoritative source
+ * of pre-computed embeddings — rather than from the query cache table which
+ * only accumulates entries as users search. This ensures L1 is pre-populated
+ * with all common Vietnamese food names from the first request.
+ *
+ * Safe to call concurrently — the boolean guard ensures the DB load runs
+ * exactly once per process. On DB error the warm-up is skipped silently;
+ * individual lookups fall back to L2 (per-query DB fetch) as before.
+ */
+export async function warmEmbeddingCache(
+  db: PostgresJsDatabase<any>
+): Promise<void> {
+  if (warmCacheStarted) return;
+  warmCacheStarted = true;
+
+  try {
+    const rows = await db.execute(
+      sql`SELECT name_primary, name_en, embedding
+          FROM vietnamese_food_composition
+          WHERE source_id = 1 AND embedding IS NOT NULL`
+    );
+
+    let loaded = 0;
+    for (const row of rows as unknown as Record<string, unknown>[]) {
+      const embedding = parseEmbeddingValue(row.embedding);
+      if (!embedding) continue;
+      const nameVi = row.name_primary as string | null;
+      const nameEn = row.name_en as string | null;
+      if (nameVi) {
+        memoryCache.set(normalizeIngredientKey(nameVi), embedding);
+        loaded++;
+      }
+      if (nameEn) {
+        memoryCache.set(normalizeIngredientKey(nameEn), embedding);
+      }
+    }
+
+    console.info(`[embedding-cache] Warm-up: loaded ${loaded} embeddings`);
+  } catch (err) {
+    console.warn('[embedding-cache] Warm-up failed, continuing without:', err);
+    warmCacheStarted = false; // allow retry on next request
+  }
 }
 
 /**
@@ -39,9 +94,12 @@ export async function resolveQueryEmbedding(
 ): Promise<number[] | null> {
   const normalized = normalizeIngredientKey(ingredientName);
 
-  // L1: in-memory cache
+  // L1: in-memory cache — check before warm-up to short-circuit hot requests
   const cached = memoryCache.get(normalized);
   if (cached) return cached;
+
+  // Trigger warm-up on first L1 miss (fire-and-forget — doesn't block this request)
+  warmEmbeddingCache(db);
 
   // L2: exact match on name_vi only
   // Treat DB errors as cache misses — the pipeline will generate a fresh embedding
@@ -112,8 +170,8 @@ function promoteToMemoryCache(row: Record<string, unknown>): number[] | null {
   const nameVi = row.name_vi as string | null;
   const nameEn = row.name_en as string | null;
 
-  if (nameVi) memoryCache.set(nameVi, embedding);
-  if (nameEn) memoryCache.set(nameEn, embedding);
+  if (nameVi) memoryCache.set(normalizeIngredientKey(nameVi), embedding);
+  if (nameEn) memoryCache.set(normalizeIngredientKey(nameEn), embedding);
 
   return embedding;
 }
