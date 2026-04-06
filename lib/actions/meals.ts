@@ -418,9 +418,11 @@ export async function loadMealDates(input: {
   // Use offset (opposite sign from JS getTimezoneOffset) to compute local date
   // JS getTimezoneOffset(): UTC+7 = -420, UTC-5 = +300
   // To convert UTC → local: UTC + offsetMins = local
+  // Use sql.raw() to inline the integer so DISTINCT ON and ORDER BY produce
+  // the same SQL text (Drizzle re-parameterizes the same sql`` object which
+  // causes PostgreSQL 42P10: "DISTINCT ON expressions must match ORDER BY").
   const offsetMins = -parsed.timezoneOffset;
-
-  const dateExpr = sql<string>`DATE(${meals.loggedAt} + (${offsetMins}::integer * INTERVAL '1 minute'))`;
+  const dateExpr = sql<string>`DATE(${meals.loggedAt} + (${sql.raw(String(offsetMins))}::integer * INTERVAL '1 minute'))`;
 
   const rows = await db
     .selectDistinctOn([dateExpr], {

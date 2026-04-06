@@ -164,7 +164,7 @@ export function TimelineSidebar({
             {isMonthExpanded && (
               <>
                 <div className="h-0.5 rounded-sm bg-neutral-100" />
-                <div id={`month-${month.key}`} className="flex flex-col gap-1">
+                <div id={`month-${month.key}`} className="flex flex-col gap-2">
                   {month.weeks.map((week) => {
                     const isWeekExpanded = expandedWeeks.has(week.key);
                     const hasSelectedDay = week.days.includes(selectedDate);
@@ -198,7 +198,10 @@ export function TimelineSidebar({
 
                         {/* Days tree */}
                         {isWeekExpanded && (
-                          <div id={`week-${week.key}`} className="flex pl-3">
+                          <div
+                            id={`week-${week.key}`}
+                            className="mt-1 flex pl-3"
+                          >
                             <div className="w-0.5 shrink-0 bg-nham-accent" />
                             <ul className="-ml-0.5 flex flex-col gap-2">
                               {week.days.map((date) => {
