@@ -5,7 +5,9 @@ import type { NutritionPer100g } from '../types';
 
 /**
  * Module-level singleton nutrition cache.
- * Holds all 526 FAO food composition entries (~500 KB).
+ * Holds VN FCT food composition entries (source_id = 1, ~526 rows, ~126 KB).
+ * USDA rows (source_id = 2) are excluded — they are rarely matched in practice
+ * and fall back to a direct DB query on a miss.
  * Lazy-loaded on first request; persists for the process lifetime.
  * Safe to hold permanently — data is read-only at runtime.
  */
@@ -54,7 +56,9 @@ export async function getNutritionCache(
 }
 
 async function loadAll(db: PostgresJsDatabase<any>): Promise<void> {
-  const rows = await db.execute(sql`SELECT * FROM vietnamese_food_composition`);
+  const rows = await db.execute(
+    sql`SELECT * FROM vietnamese_food_composition WHERE source_id = 1`
+  );
 
   for (const row of rows as unknown as Record<string, unknown>[]) {
     const id = row.id as string;
