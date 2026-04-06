@@ -1,5 +1,6 @@
 import { sql } from 'drizzle-orm';
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
+import type * as schema from '@/lib/db/schema';
 
 /**
  * Normalize an ingredient name for consistent cache keys.
@@ -47,7 +48,7 @@ let warmCacheStarted = false;
  * individual lookups fall back to L2 (per-query DB fetch) as before.
  */
 export async function warmEmbeddingCache(
-  db: PostgresJsDatabase<any>
+  db: PostgresJsDatabase<typeof schema>
 ): Promise<void> {
   if (warmCacheStarted) return;
   warmCacheStarted = true;
@@ -90,7 +91,7 @@ export async function warmEmbeddingCache(
  */
 export async function resolveQueryEmbedding(
   ingredientName: string,
-  db: PostgresJsDatabase<any>
+  db: PostgresJsDatabase<typeof schema>
 ): Promise<number[] | null> {
   const normalized = normalizeIngredientKey(ingredientName);
 
@@ -138,7 +139,7 @@ export async function resolveQueryEmbedding(
 export function cacheQueryEmbedding(
   ingredientName: string,
   embedding: number[],
-  db: PostgresJsDatabase<any>
+  db: PostgresJsDatabase<typeof schema>
 ): void {
   const normalized = normalizeIngredientKey(ingredientName);
 
@@ -183,7 +184,7 @@ function promoteToMemoryCache(row: Record<string, unknown>): number[] | null {
  */
 function logSynonymCandidateIfEnMatch(
   normalizedQuery: string,
-  db: PostgresJsDatabase<any>
+  db: PostgresJsDatabase<typeof schema>
 ): void {
   db.execute(
     sql`SELECT name_vi, name_en

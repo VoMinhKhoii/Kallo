@@ -33,8 +33,12 @@ async function validateRequest(request: NextRequest) {
       request.json() as Promise<unknown>,
     ]);
 
-    // Validate auth
-    if (authResult.status === 'rejected' || !authResult.value.data.user) {
+    // Validate auth — getUser() can resolve with { data: { user: null }, error: AuthError }
+    if (
+      authResult.status === 'rejected' ||
+      authResult.value.error ||
+      !authResult.value.data.user
+    ) {
       throw Errors.notAuthenticated();
     }
     const user = authResult.value.data.user;

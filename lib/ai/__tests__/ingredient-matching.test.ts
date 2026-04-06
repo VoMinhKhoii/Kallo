@@ -295,7 +295,8 @@ describe('matchIngredients', () => {
         // Warm-up: embedding cache loading from food_composition
         if (
           queryStr.includes('vietnamese_food_composition') &&
-          queryStr.includes('source_id')
+          queryStr.includes('source_id') &&
+          queryStr.includes('embedding')
         ) {
           return [];
         }
@@ -418,7 +419,8 @@ describe('matchIngredients', () => {
         // Warm-up: embedding cache loading from food_composition
         if (
           queryStr.includes('vietnamese_food_composition') &&
-          queryStr.includes('source_id')
+          queryStr.includes('source_id') &&
+          queryStr.includes('embedding')
         ) {
           return [];
         }

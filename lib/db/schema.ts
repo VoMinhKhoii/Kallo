@@ -423,7 +423,7 @@ export const pipelineRequests = pgTable(
     id: uuid('id').primaryKey().default(sql`gen_random_uuid()`),
     userId: uuid('user_id')
       .notNull()
-      .references(() => authUsers.id),
+      .references(() => authUsers.id, { onDelete: 'cascade' }),
     rawInput: text('raw_input').notNull(),
     userContextJson: jsonb('user_context_json'),
     status: text('status').notNull().default('pending'),

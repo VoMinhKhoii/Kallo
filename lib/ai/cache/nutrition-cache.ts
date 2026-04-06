@@ -1,5 +1,6 @@
 import { sql } from 'drizzle-orm';
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
+import type * as schema from '@/lib/db/schema';
 import { parseNutritionRow } from '../matching/nutrition-db';
 import type { NutritionPer100g } from '../types';
 
@@ -39,7 +40,7 @@ export function getNutritionCacheStats() {
  * On DB error the cache stays empty and callers fall back to direct queries.
  */
 export async function getNutritionCache(
-  db: PostgresJsDatabase<any>
+  db: PostgresJsDatabase<typeof schema>
 ): Promise<Map<string, NutritionPer100g>> {
   if (initialized) return cache;
 
@@ -47,6 +48,7 @@ export async function getNutritionCache(
   if (!initPromise) {
     initPromise = loadAll(db).catch((err) => {
       console.error('[nutrition-cache] Failed to load nutrition cache:', err);
+      cache.clear(); // ensure retry starts from a clean state
       initPromise = null; // allow retry on next request
     });
   }
@@ -55,7 +57,7 @@ export async function getNutritionCache(
   return cache;
 }
 
-async function loadAll(db: PostgresJsDatabase<any>): Promise<void> {
+async function loadAll(db: PostgresJsDatabase<typeof schema>): Promise<void> {
   const rows = await db.execute(
     sql`SELECT * FROM vietnamese_food_composition WHERE source_id = 1`
   );

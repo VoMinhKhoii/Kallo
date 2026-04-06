@@ -40,7 +40,22 @@ export function buildNutritionPrompt(
   // Sort meal items and their ingredients for a deterministic prompt order.
   // Same ingredient set → identical XML → Gemini prompt cache hit.
   const sortedMealItems = [...mealItems]
-    .sort((a, b) => viCollator.compare(a.name, b.name))
+    .sort((a, b) => {
+      const nameOrder = viCollator.compare(a.name, b.name);
+      if (nameOrder !== 0) return nameOrder;
+      // Tie-breaker: compare sorted ingredient names for fully deterministic ordering.
+      // Prevents same meal-item names with different ingredient sets from producing
+      // different XML across permuted inputs (breaks Gemini prompt cache prefix).
+      const aKey = [...a.ingredients]
+        .map((i) => i.name)
+        .sort()
+        .join('\0');
+      const bKey = [...b.ingredients]
+        .map((i) => i.name)
+        .sort()
+        .join('\0');
+      return aKey < bKey ? -1 : aKey > bKey ? 1 : 0;
+    })
     .map((item) => ({
       ...item,
       ingredients: [...item.ingredients].sort((a, b) =>

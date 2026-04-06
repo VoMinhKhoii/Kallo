@@ -9,10 +9,12 @@ import {
 // Mock DB
 // ---------------------------------------------------------------------------
 
-function createMockDb(rows: Record<string, unknown>[]): any {
+type MockNutritionDb = Parameters<typeof getNutritionCache>[0];
+
+function createMockDb(rows: Record<string, unknown>[]): MockNutritionDb {
   return {
     execute: vi.fn().mockResolvedValue(rows),
-  };
+  } as unknown as MockNutritionDb;
 }
 
 const ROW_CHICKEN: Record<string, unknown> = {
@@ -121,7 +123,7 @@ describe('getNutritionCache', () => {
         .fn()
         .mockRejectedValueOnce(new Error('DB unavailable'))
         .mockResolvedValueOnce([ROW_CHICKEN]),
-    } as any;
+    } as unknown as MockNutritionDb;
 
     // First call — DB error → returns empty cache
     const cache1 = await getNutritionCache(db);

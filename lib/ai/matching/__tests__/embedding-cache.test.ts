@@ -12,10 +12,13 @@ import {
 // Mock DB
 // ---------------------------------------------------------------------------
 
-function createMockDb(): any {
+/** Narrow mock type derived from the actual function signature. */
+type MockDb = Parameters<typeof warmEmbeddingCache>[0];
+
+function createMockDb(): MockDb {
   return {
     execute: vi.fn(),
-  };
+  } as unknown as MockDb;
 }
 
 /** Extract raw SQL text from a drizzle-orm sql`` tagged template object */
@@ -49,7 +52,7 @@ function createRoutingMockDb(opts: {
   enCheckResponse?: unknown[];
   warmUpResponse?: unknown[];
   extraResponses?: unknown[][];
-}): any {
+}): MockDb {
   let extraIdx = 0;
   const db = {
     execute: vi.fn().mockImplementation((query: unknown) => {
@@ -79,7 +82,7 @@ function createRoutingMockDb(opts: {
       return Promise.resolve(opts.extraResponses?.[extraIdx++] ?? []);
     }),
   };
-  return db;
+  return db as unknown as MockDb;
 }
 
 beforeEach(() => {
@@ -401,9 +404,9 @@ describe('logSynonymCandidateIfEnMatch (via resolveQueryEmbedding)', () => {
         }
         return Promise.resolve([]);
       }),
-    };
+    } as unknown as MockDb;
 
-    const result = await resolveQueryEmbedding('test', db as any);
+    const result = await resolveQueryEmbedding('test', db);
     expect(result).toBeNull();
 
     await new Promise((r) => setTimeout(r, 10));
@@ -431,9 +434,9 @@ describe('logSynonymCandidateIfEnMatch (via resolveQueryEmbedding)', () => {
         }
         return Promise.resolve([]);
       }),
-    };
+    } as unknown as MockDb;
 
-    const result = await resolveQueryEmbedding('rice', db as any);
+    const result = await resolveQueryEmbedding('rice', db);
     expect(result).toBeNull();
 
     await new Promise((r) => setTimeout(r, 10));
@@ -459,7 +462,7 @@ describe('warmEmbeddingCache', () => {
         { name_primary: 'gạo', name_en: 'rice', embedding: EMBEDDING_VEC },
         { name_primary: 'thịt gà', name_en: null, embedding: EMBEDDING_VEC },
       ]),
-    } as any;
+    } as unknown as MockDb;
 
     await warmEmbeddingCache(db);
 
@@ -474,7 +477,7 @@ describe('warmEmbeddingCache', () => {
         .mockResolvedValue([
           { name_primary: 'gạo', name_en: null, embedding: EMBEDDING_VEC },
         ]),
-    } as any;
+    } as unknown as MockDb;
 
     await warmEmbeddingCache(db);
     await warmEmbeddingCache(db);
@@ -497,7 +500,7 @@ describe('warmEmbeddingCache', () => {
             embedding: EMBEDDING_VEC,
           },
         ]),
-    } as any;
+    } as unknown as MockDb;
 
     await warmEmbeddingCache(db);
     expect(getMemoryCacheStats().size).toBe(1);
@@ -515,7 +518,7 @@ describe('warmEmbeddingCache', () => {
         { name_primary: 'gạo', name_en: null, embedding: null },
         { name_primary: 'thịt gà', name_en: null, embedding: EMBEDDING_VEC },
       ]),
-    } as any;
+    } as unknown as MockDb;
 
     await warmEmbeddingCache(db);
     expect(getMemoryCacheStats().size).toBe(1); // only the valid row
@@ -530,7 +533,7 @@ describe('warmEmbeddingCache', () => {
         .mockResolvedValueOnce([
           { name_primary: 'gạo', name_en: null, embedding: EMBEDDING_VEC },
         ]),
-    } as any;
+    } as unknown as MockDb;
 
     // First call: DB error → flag reset → cache still empty
     await warmEmbeddingCache(db);
@@ -552,7 +555,7 @@ describe('warmEmbeddingCache', () => {
       execute: vi
         .fn()
         .mockRejectedValue(new Error('ECONNREFUSED — no DATABASE_URL')),
-    } as any;
+    } as unknown as MockDb;
 
     await expect(warmEmbeddingCache(db)).resolves.toBeUndefined();
     expect(getMemoryCacheStats().size).toBe(0);
@@ -568,7 +571,7 @@ describe('warmEmbeddingCache', () => {
           embedding: EMBEDDING_VEC,
         },
       ]),
-    } as any;
+    } as unknown as MockDb;
 
     await warmEmbeddingCache(db);
 
@@ -583,7 +586,7 @@ describe('warmEmbeddingCache', () => {
     // Now resolve should hit L1 without L2
     const resolveDb = {
       execute: vi.fn().mockResolvedValue([]),
-    } as any;
+    } as unknown as MockDb;
     const result = await resolveQueryEmbedding('Gạo tẻ', resolveDb);
     expect(result).toEqual(EMBEDDING_VEC);
   });
