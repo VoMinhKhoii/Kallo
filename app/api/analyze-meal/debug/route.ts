@@ -35,11 +35,12 @@ import type {
   UnmatchedIngredient,
 } from '@/lib/ai/types';
 import { db } from '@/lib/db';
+import type * as schema from '@/lib/db/schema';
 import { userProfiles } from '@/lib/db/schema';
 import { createClient } from '@/lib/supabase/server';
 
 const GEMINI_MODEL = 'gemini-3-flash-preview';
-const untypedDb = db as unknown as PostgresJsDatabase;
+const untypedDb = db as unknown as PostgresJsDatabase<typeof schema>;
 const DEFAULT_USER_ID = '4681f168-e81b-4590-83ce-0f32734f19a9';
 
 /** Extract only the big 4 macros from a nutrition object for debug readability */

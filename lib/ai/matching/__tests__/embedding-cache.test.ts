@@ -1,4 +1,6 @@
+import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import type * as schema from '@/lib/db/schema';
 import {
   cacheQueryEmbedding,
   clearMemoryCache,
@@ -12,13 +14,14 @@ import {
 // Mock DB
 // ---------------------------------------------------------------------------
 
-/** Narrow mock type derived from the actual function signature. */
-type MockDb = Parameters<typeof warmEmbeddingCache>[0];
+type MockDb = {
+  execute: ReturnType<typeof vi.fn>;
+};
 
 function createMockDb(): MockDb {
   return {
     execute: vi.fn(),
-  } as unknown as MockDb;
+  };
 }
 
 /** Extract raw SQL text from a drizzle-orm sql`` tagged template object */
@@ -141,7 +144,10 @@ describe('resolveQueryEmbedding', () => {
   it('returns null when name is not in memory or DB', async () => {
     const db = createRoutingMockDb({ exactResponse: [], enCheckResponse: [] });
 
-    const result = await resolveQueryEmbedding('unknown ingredient', db);
+    const result = await resolveQueryEmbedding(
+      'unknown ingredient',
+      db as unknown as PostgresJsDatabase<typeof schema>
+    );
 
     expect(result).toBeNull();
     // 1 warm-up scan + 1 L2 exact query + 1 async name_en check
@@ -159,7 +165,10 @@ describe('resolveQueryEmbedding', () => {
       ],
     });
 
-    const result = await resolveQueryEmbedding('Gạo tẻ', db);
+    const result = await resolveQueryEmbedding(
+      'Gạo tẻ',
+      db as unknown as PostgresJsDatabase<typeof schema>
+    );
 
     expect(result).toEqual(SAMPLE_EMBEDDING);
     // name_vi ("gạo tẻ") + name_en ("Rice") promoted to L1
@@ -167,7 +176,10 @@ describe('resolveQueryEmbedding', () => {
 
     // Second call with same name (different case) hits L1 — no DB call
     db.execute.mockClear();
-    const result2 = await resolveQueryEmbedding('gạo tẻ', db);
+    const result2 = await resolveQueryEmbedding(
+      'gạo tẻ',
+      db as unknown as PostgresJsDatabase<typeof schema>
+    );
     expect(result2).toEqual(SAMPLE_EMBEDDING);
     expect(db.execute).not.toHaveBeenCalled();
   });
@@ -179,7 +191,10 @@ describe('resolveQueryEmbedding', () => {
       ],
     });
 
-    const result = await resolveQueryEmbedding('Thịt bò', db);
+    const result = await resolveQueryEmbedding(
+      'Thịt bò',
+      db as unknown as PostgresJsDatabase<typeof schema>
+    );
 
     expect(result).toEqual(SAMPLE_EMBEDDING);
     // Only name_vi cached (name_en is null)
@@ -191,7 +206,10 @@ describe('resolveQueryEmbedding', () => {
       exactResponse: [{ name_vi: 'bad', name_en: null, embedding: 12345 }],
     });
 
-    const result = await resolveQueryEmbedding('bad', db);
+    const result = await resolveQueryEmbedding(
+      'bad',
+      db as unknown as PostgresJsDatabase<typeof schema>
+    );
 
     expect(result).toBeNull();
   });
@@ -202,7 +220,10 @@ describe('resolveQueryEmbedding', () => {
       enCheckResponse: [{ name_vi: 'gạo tẻ', name_en: 'Rice' }],
     });
 
-    const result = await resolveQueryEmbedding('Rice', db);
+    const result = await resolveQueryEmbedding(
+      'Rice',
+      db as unknown as PostgresJsDatabase<typeof schema>
+    );
 
     expect(result).toBeNull(); // cache miss — must not return stale embedding
 
@@ -231,12 +252,18 @@ describe('resolveQueryEmbedding', () => {
     });
 
     // First call with NFC form
-    const result1 = await resolveQueryEmbedding(nfc, db);
+    const result1 = await resolveQueryEmbedding(
+      nfc,
+      db as unknown as PostgresJsDatabase<typeof schema>
+    );
     expect(result1).toEqual(SAMPLE_EMBEDDING);
 
     // Second call with NFD form — should hit L1 (same normalized key)
     db.execute.mockClear();
-    const result2 = await resolveQueryEmbedding(nfd, db);
+    const result2 = await resolveQueryEmbedding(
+      nfd,
+      db as unknown as PostgresJsDatabase<typeof schema>
+    );
     expect(result2).toEqual(SAMPLE_EMBEDDING);
     expect(db.execute).not.toHaveBeenCalled();
   });
@@ -247,7 +274,10 @@ describe('resolveQueryEmbedding', () => {
       enCheckResponse: [], // name_en also misses
     });
 
-    const result = await resolveQueryEmbedding('nonexistent', db);
+    const result = await resolveQueryEmbedding(
+      'nonexistent',
+      db as unknown as PostgresJsDatabase<typeof schema>
+    );
 
     expect(result).toBeNull();
 
@@ -262,14 +292,20 @@ describe('resolveQueryEmbedding', () => {
     const db = createMockDb();
     db.execute.mockRejectedValue(new Error('connection timeout'));
 
-    const result = await resolveQueryEmbedding('thịt bò', db);
+    const result = await resolveQueryEmbedding(
+      'thịt bò',
+      db as unknown as PostgresJsDatabase<typeof schema>
+    );
     expect(result).toBeNull();
   });
 
   it('handles empty string input without crashing', async () => {
     const db = createRoutingMockDb({ exactResponse: [], enCheckResponse: [] });
 
-    const result = await resolveQueryEmbedding('', db);
+    const result = await resolveQueryEmbedding(
+      '',
+      db as unknown as PostgresJsDatabase<typeof schema>
+    );
     expect(result).toBeNull();
   });
 });
@@ -283,7 +319,11 @@ describe('cacheQueryEmbedding', () => {
     const db = createMockDb();
     db.execute.mockResolvedValue([]);
 
-    cacheQueryEmbedding('  New Ingredient  ', SAMPLE_EMBEDDING, db);
+    cacheQueryEmbedding(
+      '  New Ingredient  ',
+      SAMPLE_EMBEDDING,
+      db as unknown as PostgresJsDatabase<typeof schema>
+    );
 
     expect(getMemoryCacheStats().size).toBe(1);
   });
@@ -292,7 +332,11 @@ describe('cacheQueryEmbedding', () => {
     const db = createMockDb();
     db.execute.mockResolvedValue([]);
 
-    cacheQueryEmbedding('New Ingredient', SAMPLE_EMBEDDING, db);
+    cacheQueryEmbedding(
+      'New Ingredient',
+      SAMPLE_EMBEDDING,
+      db as unknown as PostgresJsDatabase<typeof schema>
+    );
 
     await new Promise((r) => setTimeout(r, 10));
     expect(db.execute).toHaveBeenCalledOnce();
@@ -307,7 +351,11 @@ describe('cacheQueryEmbedding', () => {
     const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     db.execute.mockRejectedValue(new Error('connection lost'));
 
-    cacheQueryEmbedding('failing ingredient', SAMPLE_EMBEDDING, db);
+    cacheQueryEmbedding(
+      'failing ingredient',
+      SAMPLE_EMBEDDING,
+      db as unknown as PostgresJsDatabase<typeof schema>
+    );
 
     await new Promise((r) => setTimeout(r, 10));
 
@@ -328,8 +376,16 @@ describe('cacheQueryEmbedding', () => {
     const embedding1 = Array(768).fill(0.1);
     const embedding2 = Array(768).fill(0.9);
 
-    cacheQueryEmbedding('Thịt Bò', embedding1, db);
-    cacheQueryEmbedding('thịt bò', embedding2, db);
+    cacheQueryEmbedding(
+      'Thịt Bò',
+      embedding1,
+      db as unknown as PostgresJsDatabase<typeof schema>
+    );
+    cacheQueryEmbedding(
+      'thịt bò',
+      embedding2,
+      db as unknown as PostgresJsDatabase<typeof schema>
+    );
 
     // L1 should have exactly 1 entry (same normalized key), with latest value
     expect(getMemoryCacheStats().size).toBe(1);
@@ -339,7 +395,11 @@ describe('cacheQueryEmbedding', () => {
     const db = createMockDb();
     db.execute.mockResolvedValue([]);
 
-    cacheQueryEmbedding('', SAMPLE_EMBEDDING, db);
+    cacheQueryEmbedding(
+      '',
+      SAMPLE_EMBEDDING,
+      db as unknown as PostgresJsDatabase<typeof schema>
+    );
 
     expect(getMemoryCacheStats().size).toBe(1);
   });
@@ -355,13 +415,20 @@ describe('L1 + L2 integration', () => {
     db.execute.mockResolvedValue([]);
 
     // Cache an embedding
-    cacheQueryEmbedding('Thịt gà', SAMPLE_EMBEDDING, db);
+    cacheQueryEmbedding(
+      'Thịt gà',
+      SAMPLE_EMBEDDING,
+      db as unknown as PostgresJsDatabase<typeof schema>
+    );
 
     // Clear the mock call count from the fire-and-forget insert
     db.execute.mockClear();
 
     // Resolve should hit L1, no DB call
-    const result = await resolveQueryEmbedding('Thịt gà', db);
+    const result = await resolveQueryEmbedding(
+      'Thịt gà',
+      db as unknown as PostgresJsDatabase<typeof schema>
+    );
 
     expect(result).toEqual(SAMPLE_EMBEDDING);
     expect(db.execute).not.toHaveBeenCalled();
@@ -372,12 +439,19 @@ describe('L1 + L2 integration', () => {
     db.execute.mockResolvedValue([]);
 
     // Cache with one casing
-    cacheQueryEmbedding('Thịt Bò', SAMPLE_EMBEDDING, db);
+    cacheQueryEmbedding(
+      'Thịt Bò',
+      SAMPLE_EMBEDDING,
+      db as unknown as PostgresJsDatabase<typeof schema>
+    );
 
     db.execute.mockClear();
 
     // Resolve with different casing — should hit L1 (both normalize to "thịt bò")
-    const result = await resolveQueryEmbedding('thịt bò', db);
+    const result = await resolveQueryEmbedding(
+      'thịt bò',
+      db as unknown as PostgresJsDatabase<typeof schema>
+    );
 
     expect(result).toEqual(SAMPLE_EMBEDDING);
     expect(db.execute).not.toHaveBeenCalled();
@@ -406,7 +480,10 @@ describe('logSynonymCandidateIfEnMatch (via resolveQueryEmbedding)', () => {
       }),
     } as unknown as MockDb;
 
-    const result = await resolveQueryEmbedding('test', db);
+    const result = await resolveQueryEmbedding(
+      'test',
+      db as unknown as PostgresJsDatabase<typeof schema>
+    );
     expect(result).toBeNull();
 
     await new Promise((r) => setTimeout(r, 10));
@@ -436,7 +513,10 @@ describe('logSynonymCandidateIfEnMatch (via resolveQueryEmbedding)', () => {
       }),
     } as unknown as MockDb;
 
-    const result = await resolveQueryEmbedding('rice', db);
+    const result = await resolveQueryEmbedding(
+      'rice',
+      db as unknown as PostgresJsDatabase<typeof schema>
+    );
     expect(result).toBeNull();
 
     await new Promise((r) => setTimeout(r, 10));
@@ -464,7 +544,9 @@ describe('warmEmbeddingCache', () => {
       ]),
     } as unknown as MockDb;
 
-    await warmEmbeddingCache(db);
+    await warmEmbeddingCache(
+      db as unknown as PostgresJsDatabase<typeof schema>
+    );
 
     expect(getMemoryCacheStats().size).toBe(3); // name_vi × 2 + name_en × 1
     expect(db.execute).toHaveBeenCalledOnce();
@@ -479,9 +561,15 @@ describe('warmEmbeddingCache', () => {
         ]),
     } as unknown as MockDb;
 
-    await warmEmbeddingCache(db);
-    await warmEmbeddingCache(db);
-    await warmEmbeddingCache(db);
+    await warmEmbeddingCache(
+      db as unknown as PostgresJsDatabase<typeof schema>
+    );
+    await warmEmbeddingCache(
+      db as unknown as PostgresJsDatabase<typeof schema>
+    );
+    await warmEmbeddingCache(
+      db as unknown as PostgresJsDatabase<typeof schema>
+    );
 
     expect(db.execute).toHaveBeenCalledOnce();
   });
@@ -502,12 +590,16 @@ describe('warmEmbeddingCache', () => {
         ]),
     } as unknown as MockDb;
 
-    await warmEmbeddingCache(db);
+    await warmEmbeddingCache(
+      db as unknown as PostgresJsDatabase<typeof schema>
+    );
     expect(getMemoryCacheStats().size).toBe(1);
 
     clearMemoryCache();
 
-    await warmEmbeddingCache(db);
+    await warmEmbeddingCache(
+      db as unknown as PostgresJsDatabase<typeof schema>
+    );
     expect(getMemoryCacheStats().size).toBe(2); // name_vi + name_en
     expect(db.execute).toHaveBeenCalledTimes(2);
   });
@@ -520,7 +612,9 @@ describe('warmEmbeddingCache', () => {
       ]),
     } as unknown as MockDb;
 
-    await warmEmbeddingCache(db);
+    await warmEmbeddingCache(
+      db as unknown as PostgresJsDatabase<typeof schema>
+    );
     expect(getMemoryCacheStats().size).toBe(1); // only the valid row
   });
 
@@ -536,7 +630,9 @@ describe('warmEmbeddingCache', () => {
     } as unknown as MockDb;
 
     // First call: DB error → flag reset → cache still empty
-    await warmEmbeddingCache(db);
+    await warmEmbeddingCache(
+      db as unknown as PostgresJsDatabase<typeof schema>
+    );
     expect(getMemoryCacheStats().size).toBe(0);
     expect(warnSpy).toHaveBeenCalledWith(
       expect.stringContaining('Warm-up failed'),
@@ -544,7 +640,9 @@ describe('warmEmbeddingCache', () => {
     );
 
     // Second call: succeeds now that flag was reset
-    await warmEmbeddingCache(db);
+    await warmEmbeddingCache(
+      db as unknown as PostgresJsDatabase<typeof schema>
+    );
     expect(getMemoryCacheStats().size).toBe(1);
     warnSpy.mockRestore();
   });
@@ -557,7 +655,9 @@ describe('warmEmbeddingCache', () => {
         .mockRejectedValue(new Error('ECONNREFUSED — no DATABASE_URL')),
     } as unknown as MockDb;
 
-    await expect(warmEmbeddingCache(db)).resolves.toBeUndefined();
+    await expect(
+      warmEmbeddingCache(db as unknown as PostgresJsDatabase<typeof schema>)
+    ).resolves.toBeUndefined();
     expect(getMemoryCacheStats().size).toBe(0);
     warnSpy.mockRestore();
   });
@@ -573,7 +673,9 @@ describe('warmEmbeddingCache', () => {
       ]),
     } as unknown as MockDb;
 
-    await warmEmbeddingCache(db);
+    await warmEmbeddingCache(
+      db as unknown as PostgresJsDatabase<typeof schema>
+    );
 
     // Lookup uses normalized keys (lowercase + trim)
     // Warm-up must have stored under normalized keys too
@@ -582,12 +684,17 @@ describe('warmEmbeddingCache', () => {
     // Direct memoryCache check via a resolve call with a routing mock
     clearMemoryCache();
     // Re-warm with same data
-    await warmEmbeddingCache(db);
+    await warmEmbeddingCache(
+      db as unknown as PostgresJsDatabase<typeof schema>
+    );
     // Now resolve should hit L1 without L2
     const resolveDb = {
       execute: vi.fn().mockResolvedValue([]),
     } as unknown as MockDb;
-    const result = await resolveQueryEmbedding('Gạo tẻ', resolveDb);
+    const result = await resolveQueryEmbedding(
+      'Gạo tẻ',
+      resolveDb as unknown as PostgresJsDatabase<typeof schema>
+    );
     expect(result).toEqual(EMBEDDING_VEC);
   });
 });

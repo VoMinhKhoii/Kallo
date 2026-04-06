@@ -8,9 +8,12 @@ import type {
 import { buildNutritionPrompt } from '../nutrition';
 
 const USER_CONTEXT: UserContext = {
+  goal: 'cutting',
+  aggression: 0.5,
+  regionalProfile: 'mien_nam',
   cookingHabits: {
-    oilUsage: 'medium',
-    sugarBraised: 'medium',
+    oilUsage: 'normal',
+    sugarBraised: 'high',
     defaultRicePortion: 'medium',
     defaultProteinPortion: 'medium',
     brothConsumption: 'some',
@@ -19,7 +22,10 @@ const USER_CONTEXT: UserContext = {
 
 const MATCHED_INGREDIENT: MatchedIngredient = {
   ingredientName: 'gạo',
+  foodCompositionId: 'fc-gao-002',
   matchedName: 'Gạo tẻ',
+  similarity: 0.95,
+  confidence: 'high',
   nutritionPer100g: {
     caloriesKcal: 352,
     proteinG: 6.9,
