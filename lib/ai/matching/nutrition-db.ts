@@ -64,13 +64,14 @@ export async function fetchNutritionPer100g(
 export async function logUnmatchedIngredients(
   items: UnmatchedIngredient[],
   mealId: string | null,
-  db: PostgresJsDatabase<any>
+  db: PostgresJsDatabase<any>,
+  userId?: string
 ): Promise<void> {
   await Promise.all(
     items.map((item) =>
       db.execute(
-        sql`INSERT INTO unmatched_ingredients (query_text, meal_context, meal_id)
-            VALUES (${item.ingredientName}, ${item.mealContext}, ${mealId})`
+        sql`INSERT INTO unmatched_ingredients (query_text, meal_context, meal_id, user_id)
+            VALUES (${item.ingredientName}, ${item.mealContext}, ${mealId}, ${userId ?? null})`
       )
     )
   );

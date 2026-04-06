@@ -380,6 +380,9 @@ export const bodyWeightLog = pgTable(
 
 export const unmatchedIngredients = pgTable('unmatched_ingredients', {
   id: uuid('id').primaryKey().default(sql`gen_random_uuid()`),
+  userId: uuid('user_id').references(() => authUsers.id, {
+    onDelete: 'cascade',
+  }),
   mealId: uuid('meal_id').references(() => meals.id, {
     onDelete: 'set null',
   }),

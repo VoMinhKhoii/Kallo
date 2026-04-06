@@ -2,7 +2,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { ChevronDown, ChevronUp } from 'lucide-react';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { loadMealDates } from '@/lib/actions/meals';
 import { cn } from '@/lib/utils';
 
@@ -79,13 +79,13 @@ export function TimelineSidebar({
     staleTime: 60_000,
   });
 
-  const today = useMemo(() => {
+  const today = (() => {
     const d = new Date();
     const yyyy = d.getFullYear();
     const mm = String(d.getMonth() + 1).padStart(2, '0');
     const dd = String(d.getDate()).padStart(2, '0');
     return `${yyyy}-${mm}-${dd}`;
-  }, []);
+  })();
 
   const allDates = useMemo(() => {
     const set = new Set(dates);
@@ -111,6 +111,12 @@ export function TimelineSidebar({
   const [expandedWeeks, setExpandedWeeks] = useState<Set<string>>(
     () => new Set([selectedWeekKey])
   );
+
+  // Auto-expand the month/week containing the newly selected date
+  useEffect(() => {
+    setExpandedMonths((prev) => new Set(prev).add(selectedMonth));
+    setExpandedWeeks((prev) => new Set(prev).add(selectedWeekKey));
+  }, [selectedMonth, selectedWeekKey]);
 
   const toggleMonth = useCallback((monthKey: string) => {
     setExpandedMonths((prev) => {

@@ -3,7 +3,6 @@ import {
   NULL_BOUNDED_NUTRITION,
   NULL_NUTRITION_VALUES,
 } from '@/lib/ai/__tests__/test-helpers';
-import { NUTRITION_KEYS } from '@/lib/ai/constants';
 import type { BoundedNutrition, PipelineResult } from '@/lib/ai/types';
 
 // ---------------------------------------------------------------------------
@@ -188,7 +187,7 @@ describe('confirmAndSaveMealAction', () => {
     // INSERT meals RETURNING
     const mealReturning = vi.fn().mockResolvedValue([{ id: UUID_MEAL }]);
     const mealValues = vi.fn().mockReturnValue({ returning: mealReturning });
-    mockTxInsert.mockImplementation((table: unknown) => {
+    mockTxInsert.mockImplementation((_table: unknown) => {
       // First call = meals, second call = mealItems
       return { values: mealValues };
     });

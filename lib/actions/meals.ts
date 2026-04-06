@@ -1,6 +1,6 @@
 'use server';
 
-import { and, desc, eq, gt, gte, isNull, lt, sql } from 'drizzle-orm';
+import { and, desc, eq, gt, gte, inArray, isNull, lt, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import { NUTRITION_KEYS } from '@/lib/ai/constants';
 import type {
@@ -191,13 +191,11 @@ export async function confirmAndSaveMealAction(input: {
             .set({ mealId: meal.id })
             .where(
               and(
+                eq(unmatchedIngredients.userId, user.id),
                 eq(unmatchedIngredients.queryText, unmatched.ingredientName),
                 eq(unmatchedIngredients.mealContext, unmatched.mealContext),
                 isNull(unmatchedIngredients.mealId)
               )
-            )
-            .catch((err: unknown) =>
-              console.error('Failed to attach mealId to unmatched:', err)
             )
         )
       );
@@ -296,12 +294,7 @@ export async function loadMealsByDate(input: {
   const itemRows = await db
     .select()
     .from(mealItems)
-    .where(
-      sql`${mealItems.mealId} IN (${sql.join(
-        mealIds.map((id) => sql`${id}`),
-        sql`, `
-      )})`
-    );
+    .where(inArray(mealItems.mealId, mealIds));
 
   // Group items by mealId
   const itemsByMealId = new Map<string, typeof itemRows>();

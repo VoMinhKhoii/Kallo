@@ -64,9 +64,6 @@ export function FeedArea({ selectedDate, profile }: FeedAreaProps) {
   // Mutations
   const confirmMeal = useConfirmMeal();
 
-  // Track which analysisIds have been confirmed (to remove streaming msg)
-  const confirmedAnalysisIds = useRef(new Set<string>());
-
   const scrollToBottom = useCallback(() => {
     requestAnimationFrame(() => {
       if (scrollRef.current) {
@@ -272,8 +269,6 @@ export function FeedArea({ selectedDate, profile }: FeedAreaProps) {
 
   // Handle confirm: persist to DB, remove streaming message
   const handleConfirmMeal = (messageId: string, analysisId: string) => {
-    confirmedAnalysisIds.current.add(analysisId);
-
     confirmMeal.mutate(
       { analysisId },
       {
@@ -286,7 +281,7 @@ export function FeedArea({ selectedDate, profile }: FeedAreaProps) {
     );
   };
 
-  // Unconfirmed streaming messages (exclude user messages and confirmed ones)
+  // Unconfirmed streaming messages (exclude user messages)
   const unconfirmedMessages = displayMessages.filter(
     (m) => m.role === 'assistant'
   );
@@ -352,11 +347,10 @@ export function FeedArea({ selectedDate, profile }: FeedAreaProps) {
                           <MealEntry
                             key={msg.id}
                             message={msg}
-                            onConfirm={() =>
-                              msg.analysisId
-                                ? handleConfirmMeal(msg.id, msg.analysisId)
-                                : undefined
-                            }
+                            onConfirm={() => {
+                              if (msg.analysisId)
+                                handleConfirmMeal(msg.id, msg.analysisId);
+                            }}
                             isConfirming={confirmMeal.isPending}
                           />
                         );
