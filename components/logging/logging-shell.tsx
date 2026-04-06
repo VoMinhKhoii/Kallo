@@ -7,6 +7,7 @@ import { usePrefetchDates } from '@/hooks/use-prefetch-dates';
 import type { Goal } from '@/lib/onboarding/types';
 
 export interface LoggingProfile {
+  userId: string;
   goal: Goal;
   aggression: number;
   calorieTarget: number;
@@ -35,6 +36,7 @@ export function LoggingShell({ profile }: LoggingShellProps) {
   return (
     <>
       <TimelineSidebar
+        userId={profile.userId}
         selectedDate={selectedDate}
         onSelectDate={setSelectedDate}
       />

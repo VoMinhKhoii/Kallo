@@ -314,7 +314,7 @@ describe('loadMealDates', () => {
       }),
     });
 
-    const dates = await loadMealDates();
+    const dates = await loadMealDates({ timezoneOffset: 0 });
     expect(dates).toEqual(['2026-04-06', '2026-04-05']);
   });
 });

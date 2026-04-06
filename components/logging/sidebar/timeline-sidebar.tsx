@@ -7,6 +7,7 @@ import { loadMealDates } from '@/lib/actions/meals';
 import { cn } from '@/lib/utils';
 
 interface TimelineSidebarProps {
+  userId: string;
   selectedDate: string;
   onSelectDate: (date: string) => void;
 }
@@ -42,12 +43,14 @@ function groupByMonth(dates: string[]): MonthSection[] {
 }
 
 export function TimelineSidebar({
+  userId,
   selectedDate,
   onSelectDate,
 }: TimelineSidebarProps) {
+  const timezoneOffset = new Date().getTimezoneOffset();
   const { data: dates = [] } = useQuery({
-    queryKey: ['meal-dates'],
-    queryFn: loadMealDates,
+    queryKey: ['meal-dates', userId],
+    queryFn: () => loadMealDates({ timezoneOffset }),
     staleTime: 60_000,
   });
 
@@ -104,6 +107,8 @@ export function TimelineSidebar({
             <button
               type="button"
               onClick={() => toggleMonth(month.key)}
+              aria-expanded={isExpanded}
+              aria-controls={`month-${month.key}`}
               className="flex items-center gap-2 px-3 transition-colors hover:text-nham-text"
             >
               <span
@@ -122,7 +127,7 @@ export function TimelineSidebar({
             {isExpanded && (
               <>
                 <div className="h-0.5 rounded-sm bg-neutral-100" />
-                <div className="flex flex-col gap-1">
+                <div id={`month-${month.key}`} className="flex flex-col gap-1">
                   {month.days.map((date) => {
                     const isActive = date === selectedDate;
                     const isToday = date === today;
@@ -132,6 +137,7 @@ export function TimelineSidebar({
                         key={date}
                         type="button"
                         onClick={() => onSelectDate(date)}
+                        aria-current={isActive ? 'date' : undefined}
                         className={cn(
                           'flex w-full items-center gap-3 rounded-lg px-3 py-2 transition-colors',
                           isActive && 'bg-nham-accent/30',

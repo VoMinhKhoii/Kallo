@@ -1,6 +1,6 @@
 'use server';
 
-import { and, desc, eq, gt, sql } from 'drizzle-orm';
+import { and, desc, eq, gt, gte, isNull, lt, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import { NUTRITION_KEYS } from '@/lib/ai/constants';
 import type {
@@ -44,6 +44,10 @@ const loadMealsByDateSchema = z.object({
 
 const deleteMealSchema = z.object({
   mealId: z.string().uuid('mealId phải là UUID hợp lệ.'),
+});
+
+const loadMealDatesSchema = z.object({
+  timezoneOffset: z.number().int().min(-720).max(840),
 });
 
 // ---------------------------------------------------------------------------
@@ -134,7 +138,7 @@ export async function confirmAndSaveMealAction(input: {
       }
     }
 
-    const now = new Date();
+    const now = pending.createdAt;
     const mealSlot = pipelineResult.mealSlot ?? inferMealSlot(now);
 
     // Recompute meal-level bounded nutrition from (possibly edited) ingredients
@@ -186,7 +190,8 @@ export async function confirmAndSaveMealAction(input: {
           .where(
             and(
               eq(unmatchedIngredients.queryText, unmatched.ingredientName),
-              eq(unmatchedIngredients.mealId, sql`NULL`)
+              eq(unmatchedIngredients.mealContext, unmatched.mealContext),
+              isNull(unmatchedIngredients.mealId)
             )
           )
           .catch((err: unknown) =>
@@ -275,8 +280,8 @@ export async function loadMealsByDate(input: {
     .where(
       and(
         eq(meals.userId, user.id),
-        gt(meals.loggedAt, dayStart),
-        sql`${meals.loggedAt} <= ${dayEnd}`
+        gte(meals.loggedAt, dayStart),
+        lt(meals.loggedAt, dayEnd)
       )
     )
     .orderBy(desc(meals.loggedAt));
@@ -401,16 +406,33 @@ export async function deleteMealAction(input: { mealId: string }) {
 // C9: Load distinct meal dates for timeline sidebar
 // ---------------------------------------------------------------------------
 
-export async function loadMealDates(): Promise<string[]> {
+export async function loadMealDates(input: {
+  timezoneOffset: number;
+}): Promise<string[]> {
+  const parsed = loadMealDatesSchema.parse(input);
   const { user } = await requireAuthAndProfile();
 
+  // Use offset (opposite sign from JS getTimezoneOffset) to compute local date
+  // JS getTimezoneOffset(): UTC+7 = -420, UTC-5 = +300
+  // To convert UTC → local: UTC + offsetMins = local
+  const offsetMins = -parsed.timezoneOffset;
+
   const rows = await db
-    .selectDistinctOn([sql`DATE(${meals.loggedAt})`], {
-      date: sql<string>`DATE(${meals.loggedAt})`.as('date'),
-    })
+    .selectDistinctOn(
+      [
+        sql`DATE(${meals.loggedAt} + (${offsetMins}::integer * INTERVAL '1 minute'))`,
+      ],
+      {
+        date: sql<string>`DATE(${meals.loggedAt} + (${offsetMins}::integer * INTERVAL '1 minute'))`.as(
+          'date'
+        ),
+      }
+    )
     .from(meals)
     .where(eq(meals.userId, user.id))
-    .orderBy(sql`DATE(${meals.loggedAt}) DESC`);
+    .orderBy(
+      sql`DATE(${meals.loggedAt} + (${offsetMins}::integer * INTERVAL '1 minute')) DESC`
+    );
 
   return rows.map((r) => r.date);
 }
