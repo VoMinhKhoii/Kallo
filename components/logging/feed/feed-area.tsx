@@ -6,20 +6,22 @@ import { toast } from 'sonner';
 import { EmptyState } from '@/components/logging/feed/empty-state';
 import { MacroSummary } from '@/components/logging/feed/macro-summary';
 import { MealEntry } from '@/components/logging/feed/meal-entry';
+import { PersistedMealCard } from '@/components/logging/feed/persisted-meal-card';
 import { StreamingMealEntry } from '@/components/logging/feed/streaming-meal-entry';
 import {
   MealInput,
   type MealInputHandle,
 } from '@/components/logging/input/meal-input';
+import type { LoggingProfile } from '@/components/logging/logging-shell';
+import { useDailyMeals } from '@/hooks/use-daily-meals';
+import { useConfirmMeal, useDeleteMeal } from '@/hooks/use-meal-mutations';
 import { useStreamAnalysis } from '@/hooks/use-stream-analysis';
 import { useSubmitGuard } from '@/hooks/use-submit-guard';
-import { recalculateTotals } from '@/lib/meal-utils';
-import type {
-  ChatMessage,
-  MacroBreakdown,
-  ParsedMeal,
-  StreamingPhase,
-} from '@/lib/types/meal';
+import {
+  goalAdjustNutrition,
+  sumDisplayedNutrition,
+} from '@/lib/ai/pipeline/goal-adjustment';
+import type { ChatMessage, StreamingPhase } from '@/lib/types/meal';
 
 function generateId() {
   return `msg-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
@@ -35,8 +37,6 @@ function toStreamingPhase(status: string): StreamingPhase {
       return 'estimating';
     case 'assembling':
       return 'assembling';
-    // Terminal states: keep showing last active phase for one frame
-    // until the terminal effect commits final state
     case 'done':
     case 'error':
       return 'assembling';
@@ -46,16 +46,27 @@ function toStreamingPhase(status: string): StreamingPhase {
 }
 
 interface FeedAreaProps {
-  targets: MacroBreakdown;
+  selectedDate: string;
+  profile: LoggingProfile;
 }
 
-export function FeedArea({ targets }: FeedAreaProps) {
+export function FeedArea({ selectedDate, profile }: FeedAreaProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const inputRef = useRef<MealInputHandle>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const stream = useStreamAnalysis();
   const { guard } = useSubmitGuard();
   const [streamingMsgId, setStreamingMsgId] = useState<string | null>(null);
+
+  // Persisted meals from DB
+  const { data: persistedMeals = [], isLoading } = useDailyMeals(selectedDate);
+
+  // Mutations
+  const confirmMeal = useConfirmMeal();
+  const deleteMeal = useDeleteMeal();
+
+  // Track which analysisIds have been confirmed (to remove streaming msg)
+  const confirmedAnalysisIds = useRef(new Set<string>());
 
   const scrollToBottom = useCallback(() => {
     requestAnimationFrame(() => {
@@ -68,24 +79,43 @@ export function FeedArea({ targets }: FeedAreaProps) {
     });
   }, []);
 
-  const dailyTotals = useMemo<MacroBreakdown>(() => {
-    const meals = messages
-      .filter((m) => m.role === 'assistant' && m.parsedMeal && !m.isStreaming)
-      .map((m) => m.parsedMeal!);
+  // Compute daily totals from persisted meals using goal adjustment
+  const targets = useMemo(
+    () => ({
+      calories: profile.calorieTarget,
+      protein: profile.proteinTargetG,
+      carbs: profile.carbsTargetG,
+      fat: profile.fatTargetG,
+    }),
+    [
+      profile.calorieTarget,
+      profile.proteinTargetG,
+      profile.carbsTargetG,
+      profile.fatTargetG,
+    ]
+  );
 
-    return meals.reduce<MacroBreakdown>(
-      (acc, meal) => {
-        const totals = recalculateTotals(meal.items);
-        return {
-          calories: acc.calories + totals.calories,
-          protein: acc.protein + totals.protein,
-          carbs: acc.carbs + totals.carbs,
-          fat: acc.fat + totals.fat,
-        };
-      },
-      { calories: 0, protein: 0, carbs: 0, fat: 0 }
+  const dailyTotals = useMemo(() => {
+    if (persistedMeals.length === 0) {
+      return { calories: 0, protein: 0, carbs: 0, fat: 0 };
+    }
+
+    const displayed = persistedMeals.map((meal) =>
+      goalAdjustNutrition(
+        meal.boundedNutrition,
+        profile.goal,
+        profile.aggression
+      )
     );
-  }, [messages]);
+    const total = sumDisplayedNutrition(displayed);
+
+    return {
+      calories: Math.round(total.caloriesKcal ?? 0),
+      protein: Math.round(total.proteinG ?? 0),
+      carbs: Math.round(total.carbohydrateG ?? 0),
+      fat: Math.round(total.fatG ?? 0),
+    };
+  }, [persistedMeals, profile.goal, profile.aggression]);
 
   const handleSubmit = async () => {
     const text = (inputRef.current?.getText() ?? '').trim();
@@ -123,8 +153,6 @@ export function FeedArea({ targets }: FeedAreaProps) {
   };
 
   // Derive display messages: overlay live streaming state onto the active message.
-  // Gate on streamingMsgId (not isAnalyzing) to avoid flicker when the stream
-  // reaches a terminal state but the commit effect hasn't fired yet.
   const displayMessages = useMemo(() => {
     if (!streamingMsgId || stream.status === 'idle') return messages;
 
@@ -150,7 +178,7 @@ export function FeedArea({ targets }: FeedAreaProps) {
     stream.completedItems,
   ]);
 
-  // Auto-scroll when streaming card grows (new items discovered or macros complete)
+  // Auto-scroll when streaming card grows
   const streamItemCount = stream.items.length + stream.completedItems.length;
   useEffect(() => {
     if (stream.isAnalyzing && streamItemCount > 0) {
@@ -158,7 +186,7 @@ export function FeedArea({ targets }: FeedAreaProps) {
     }
   }, [stream.isAnalyzing, streamItemCount, scrollToBottom]);
 
-  // Terminal: stream completed successfully — finalize the streaming message
+  // Terminal: stream completed — finalize streaming message, store analysisId
   const lastAnalysisIdRef = useRef<string | null>(null);
   useEffect(() => {
     if (
@@ -172,6 +200,7 @@ export function FeedArea({ targets }: FeedAreaProps) {
     }
     lastAnalysisIdRef.current = stream.analysisId;
     const msgId = streamingMsgId;
+    const analysisId = stream.analysisId;
     setStreamingMsgId(null);
 
     setMessages((prev) =>
@@ -184,6 +213,7 @@ export function FeedArea({ targets }: FeedAreaProps) {
               streamingItems: undefined,
               streamingCompletedItems: undefined,
               parsedMeal: stream.result!,
+              analysisId,
             }
           : msg
       )
@@ -199,7 +229,7 @@ export function FeedArea({ targets }: FeedAreaProps) {
     scrollToBottom,
   ]);
 
-  // Terminal: stream errored — convert streaming message to error display
+  // Terminal: stream errored
   const lastErrorRef = useRef<string | null>(null);
   useEffect(() => {
     if (
@@ -241,18 +271,33 @@ export function FeedArea({ targets }: FeedAreaProps) {
     scrollToBottom,
   ]);
 
-  const handleConfirmMeal = (messageId: string, meal: ParsedMeal) => {
-    setMessages((prev) =>
-      prev.map((msg) =>
-        msg.id === messageId ? { ...msg, parsedMeal: meal } : msg
-      )
+  // Handle confirm: persist to DB, remove streaming message
+  const handleConfirmMeal = (messageId: string, analysisId: string) => {
+    confirmedAnalysisIds.current.add(analysisId);
+
+    confirmMeal.mutate(
+      { analysisId },
+      {
+        onSuccess: () => {
+          // Remove the streaming message — persisted meal will appear via query
+          setMessages((prev) => prev.filter((m) => m.id !== messageId));
+          toast.success('Đã lưu bữa ăn!');
+        },
+      }
     );
   };
 
-  const assistantMessages = displayMessages.filter(
+  const handleDeleteMeal = (mealId: string) => {
+    deleteMeal.mutate({ mealId });
+  };
+
+  // Unconfirmed streaming messages (exclude user messages and confirmed ones)
+  const unconfirmedMessages = displayMessages.filter(
     (m) => m.role === 'assistant'
   );
-  const hasMessages = assistantMessages.length > 0;
+  const hasPersistedMeals = persistedMeals.length > 0;
+  const hasStreamingMessages = unconfirmedMessages.length > 0;
+  const hasContent = hasPersistedMeals || hasStreamingMessages;
 
   return (
     <main className="flex flex-1 flex-col self-stretch overflow-hidden">
@@ -262,7 +307,7 @@ export function FeedArea({ targets }: FeedAreaProps) {
         className="flex min-h-0 flex-1 flex-col overflow-y-auto"
       >
         <AnimatePresence mode="wait">
-          {!hasMessages && !stream.isAnalyzing && (
+          {!hasContent && !stream.isAnalyzing && !isLoading && (
             <div className="flex flex-1 items-center justify-center px-4 py-6 sm:px-6">
               <EmptyState
                 onSuggestionClick={(suggestion) => {
@@ -274,7 +319,7 @@ export function FeedArea({ targets }: FeedAreaProps) {
           )}
         </AnimatePresence>
 
-        {hasMessages && (
+        {hasContent && (
           <>
             {/* Sticky macro summary */}
             <div className="sticky top-0 z-10 bg-nham-surface px-4 pt-4 pb-3 sm:px-6">
@@ -287,8 +332,21 @@ export function FeedArea({ targets }: FeedAreaProps) {
             <div className="px-4 pb-6 sm:px-6">
               <div className="mx-auto w-full max-w-3xl pl-12">
                 <div className="flex flex-col gap-8">
+                  {/* Persisted meals from DB */}
                   <AnimatePresence initial={false}>
-                    {assistantMessages.map((msg) => {
+                    {persistedMeals.map((meal) => (
+                      <PersistedMealCard
+                        key={meal.id}
+                        meal={meal}
+                        profile={profile}
+                        onDelete={() => handleDeleteMeal(meal.id)}
+                      />
+                    ))}
+                  </AnimatePresence>
+
+                  {/* Streaming / unconfirmed messages */}
+                  <AnimatePresence initial={false}>
+                    {unconfirmedMessages.map((msg) => {
                       if (msg.isStreaming) {
                         return (
                           <StreamingMealEntry key={msg.id} message={msg} />
@@ -300,9 +358,12 @@ export function FeedArea({ targets }: FeedAreaProps) {
                           <MealEntry
                             key={msg.id}
                             message={msg}
-                            onConfirm={(meal) =>
-                              handleConfirmMeal(msg.id, meal)
+                            onConfirm={() =>
+                              msg.analysisId
+                                ? handleConfirmMeal(msg.id, msg.analysisId)
+                                : undefined
                             }
+                            isConfirming={confirmMeal.isPending}
                           />
                         );
                       }

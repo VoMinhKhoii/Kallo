@@ -6,14 +6,19 @@ import { useState } from 'react';
 import { MealEntryActions } from '@/components/logging/feed/meal-entry-actions';
 import { MealEntryItem } from '@/components/logging/feed/meal-entry-item';
 import { applyQuantityChange, recalculateTotals } from '@/lib/meal-utils';
-import type { ChatMessage, MealItem, ParsedMeal } from '@/lib/types/meal';
+import type { ChatMessage, MealItem } from '@/lib/types/meal';
 
 interface MealEntryProps {
   message: ChatMessage;
-  onConfirm?: (meal: ParsedMeal) => void;
+  onConfirm?: () => void;
+  isConfirming?: boolean;
 }
 
-export function MealEntry({ message, onConfirm }: MealEntryProps) {
+export function MealEntry({
+  message,
+  onConfirm,
+  isConfirming: _isConfirming,
+}: MealEntryProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [confirmed, setConfirmed] = useState(false);
   const [savedItems, setSavedItems] = useState<MealItem[]>(
@@ -55,13 +60,7 @@ export function MealEntry({ message, onConfirm }: MealEntryProps) {
     setConfirmed(true);
     setIsEditing(false);
     setIsCollapsed(true);
-    if (onConfirm) {
-      onConfirm({
-        ...meal,
-        items: savedItems,
-        totalMacros: recalculateTotals(savedItems),
-      });
-    }
+    onConfirm?.();
   };
 
   const timeLabel = message.timestamp.toLocaleTimeString([], {
