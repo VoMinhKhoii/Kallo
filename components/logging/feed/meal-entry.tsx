@@ -6,14 +6,19 @@ import { useState } from 'react';
 import { MealEntryActions } from '@/components/logging/feed/meal-entry-actions';
 import { MealEntryItem } from '@/components/logging/feed/meal-entry-item';
 import { applyQuantityChange, recalculateTotals } from '@/lib/meal-utils';
-import type { ChatMessage, MealItem, ParsedMeal } from '@/lib/types/meal';
+import type { ChatMessage, MealItem } from '@/lib/types/meal';
 
 interface MealEntryProps {
   message: ChatMessage;
-  onConfirm?: (meal: ParsedMeal) => void;
+  onConfirm?: () => void;
+  isConfirming?: boolean;
 }
 
-export function MealEntry({ message, onConfirm }: MealEntryProps) {
+export function MealEntry({
+  message,
+  onConfirm,
+  isConfirming: _isConfirming,
+}: MealEntryProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [confirmed, setConfirmed] = useState(false);
   const [savedItems, setSavedItems] = useState<MealItem[]>(
@@ -55,13 +60,7 @@ export function MealEntry({ message, onConfirm }: MealEntryProps) {
     setConfirmed(true);
     setIsEditing(false);
     setIsCollapsed(true);
-    if (onConfirm) {
-      onConfirm({
-        ...meal,
-        items: savedItems,
-        totalMacros: recalculateTotals(savedItems),
-      });
-    }
+    onConfirm?.();
   };
 
   const timeLabel = message.timestamp.toLocaleTimeString([], {
@@ -71,7 +70,6 @@ export function MealEntry({ message, onConfirm }: MealEntryProps) {
 
   return (
     <motion.article
-      layout
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       className="group relative"
@@ -163,67 +161,85 @@ export function MealEntry({ message, onConfirm }: MealEntryProps) {
         </div>
 
         {/* Collapsed summary */}
-        {confirmed && isCollapsed && (
-          <div
-            className="mt-2 flex items-center justify-between"
-            style={{ fontFamily: 'DM Sans, sans-serif' }}
-          >
-            <span className="text-[11px] text-nham-text-muted tabular-nums">
-              P: {Math.round(currentTotals.protein)}g{'  '}C:{' '}
-              {Math.round(currentTotals.carbs)}g{'  '}F:{' '}
-              {Math.round(currentTotals.fat)}g
-            </span>
-            <span className="font-bold text-nham-text text-sm tabular-nums">
-              {Math.round(currentTotals.calories)} kcal
-            </span>
-          </div>
-        )}
+        <AnimatePresence initial={false}>
+          {confirmed && isCollapsed && (
+            <motion.div
+              key="summary"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.15 }}
+              className="mt-2 flex items-center justify-between"
+              style={{ fontFamily: 'DM Sans, sans-serif' }}
+            >
+              <span className="text-[11px] text-nham-text-muted tabular-nums">
+                P: {Math.round(currentTotals.protein)}g{'  '}C:{' '}
+                {Math.round(currentTotals.carbs)}g{'  '}F:{' '}
+                {Math.round(currentTotals.fat)}g
+              </span>
+              <span className="font-bold text-nham-text text-sm tabular-nums">
+                {Math.round(currentTotals.calories)} kcal
+              </span>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Expandable details */}
-        {!isCollapsed && (
-          <div className="mt-5 border-nham-border border-t border-dashed pt-4">
-            {/* Items list */}
-            <div className="mb-4 space-y-1">
-              {currentItems.map((item, idx) => (
-                <MealEntryItem
-                  key={item.id}
-                  item={item}
-                  index={idx}
-                  isEditing={isEditing}
-                  onQuantityChange={handleQuantityChange}
-                />
-              ))}
-            </div>
+        <AnimatePresence initial={false}>
+          {!isCollapsed && (
+            <motion.div
+              key="details"
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.2, ease: 'easeInOut' }}
+              style={{ overflow: 'hidden' }}
+            >
+              <div className="mt-5 border-nham-border border-t border-dashed pt-4">
+                {/* Items list */}
+                <div className="mb-4 space-y-1">
+                  {currentItems.map((item, idx) => (
+                    <MealEntryItem
+                      key={item.id}
+                      item={item}
+                      index={idx}
+                      isEditing={isEditing}
+                      onQuantityChange={handleQuantityChange}
+                    />
+                  ))}
+                </div>
 
-            {/* Totals — flat, no card */}
-            <div className="border-nham-border/50 border-t border-dashed pt-3">
-              <div className="flex items-center justify-between">
-                <span
-                  className="font-bold text-[13px] text-nham-text"
-                  style={{ fontFamily: 'DM Sans, sans-serif' }}
-                >
-                  Total
-                </span>
-                <div className="flex items-center gap-4">
-                  <span
-                    className="text-[11px] text-nham-text-muted tabular-nums"
-                    style={{ fontFamily: 'DM Sans, sans-serif' }}
-                  >
-                    P: {Math.round(currentTotals.protein)}g{'  '}C:{' '}
-                    {Math.round(currentTotals.carbs)}g{'  '}F:{' '}
-                    {Math.round(currentTotals.fat)}g
-                  </span>
-                  <span
-                    className="font-bold text-nham-text tabular-nums"
-                    style={{ fontFamily: 'DM Sans, sans-serif' }}
-                  >
-                    {Math.round(currentTotals.calories)} kcal
-                  </span>
+                {/* Totals — flat, no card */}
+                <div className="border-nham-border/50 border-t border-dashed pt-3">
+                  <div className="flex items-center justify-between">
+                    <span
+                      className="font-bold text-[13px] text-nham-text"
+                      style={{ fontFamily: 'DM Sans, sans-serif' }}
+                    >
+                      Total
+                    </span>
+                    <div className="flex items-center gap-4">
+                      <span
+                        className="text-[11px] text-nham-text-muted tabular-nums"
+                        style={{ fontFamily: 'DM Sans, sans-serif' }}
+                      >
+                        P: {Math.round(currentTotals.protein)}g{'  '}C:{' '}
+                        {Math.round(currentTotals.carbs)}g{'  '}F:{' '}
+                        {Math.round(currentTotals.fat)}g
+                      </span>
+                      <span
+                        className="font-bold text-nham-text tabular-nums"
+                        style={{ fontFamily: 'DM Sans, sans-serif' }}
+                      >
+                        {Math.round(currentTotals.calories)} kcal
+                      </span>
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
-          </div>
-        )}
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
       {/* Action buttons */}

@@ -40,4 +40,5 @@ export interface ChatMessage {
   streamingPhase?: StreamingPhase;
   streamingItems?: string[];
   streamingCompletedItems?: MealItem[];
+  analysisId?: string;
 }

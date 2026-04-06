@@ -1,36 +1,39 @@
-import { FeedArea } from '@/components/logging/feed/feed-area';
-import { TimelineSidebar } from '@/components/logging/sidebar/timeline-sidebar';
-import { getOnboardingProfile } from '@/lib/onboarding/actions';
-import type { MacroBreakdown } from '@/lib/types/meal';
+import { redirect } from 'next/navigation';
+import {
+  type LoggingProfile,
+  LoggingShell,
+} from '@/components/logging/logging-shell';
+import { requireAuthAndProfile } from '@/lib/auth';
 
-const DEFAULT_TARGETS: MacroBreakdown = {
-  calories: 2000,
-  protein: 150,
-  carbs: 250,
-  fat: 65,
+const DEFAULT_PROFILE: LoggingProfile = {
+  userId: '',
+  goal: 'maintaining',
+  aggression: 0,
+  calorieTarget: 2000,
+  proteinTargetG: 150,
+  carbsTargetG: 250,
+  fatTargetG: 65,
 };
 
 export default async function LoggingPage() {
-  let targets = DEFAULT_TARGETS;
+  let profile = DEFAULT_PROFILE;
 
   try {
-    const profile = await getOnboardingProfile();
-    if (profile) {
-      targets = {
-        calories: profile.calorieTarget ?? DEFAULT_TARGETS.calories,
-        protein: profile.proteinTargetG ?? DEFAULT_TARGETS.protein,
-        carbs: profile.carbsTargetG ?? DEFAULT_TARGETS.carbs,
-        fat: profile.fatTargetG ?? DEFAULT_TARGETS.fat,
-      };
-    }
-  } catch (error) {
-    console.error('Failed to load onboarding profile:', error);
+    const { user, profile: row } = await requireAuthAndProfile();
+    profile = {
+      userId: user.id,
+      goal: (row.goal as LoggingProfile['goal']) ?? DEFAULT_PROFILE.goal,
+      aggression: row.aggression
+        ? Number(row.aggression)
+        : DEFAULT_PROFILE.aggression,
+      calorieTarget: row.calorieTarget ?? DEFAULT_PROFILE.calorieTarget,
+      proteinTargetG: row.proteinTargetG ?? DEFAULT_PROFILE.proteinTargetG,
+      carbsTargetG: row.carbsTargetG ?? DEFAULT_PROFILE.carbsTargetG,
+      fatTargetG: row.fatTargetG ?? DEFAULT_PROFILE.fatTargetG,
+    };
+  } catch {
+    redirect('/');
   }
 
-  return (
-    <>
-      <TimelineSidebar />
-      <FeedArea targets={targets} />
-    </>
-  );
+  return <LoggingShell profile={profile} />;
 }
