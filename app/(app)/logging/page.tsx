@@ -1,3 +1,4 @@
+import { redirect } from 'next/navigation';
 import {
   type LoggingProfile,
   LoggingShell,
@@ -30,8 +31,8 @@ export default async function LoggingPage() {
       carbsTargetG: row.carbsTargetG ?? DEFAULT_PROFILE.carbsTargetG,
       fatTargetG: row.fatTargetG ?? DEFAULT_PROFILE.fatTargetG,
     };
-  } catch (error) {
-    console.error('Failed to load profile:', error);
+  } catch {
+    redirect('/');
   }
 
   return <LoggingShell profile={profile} />;

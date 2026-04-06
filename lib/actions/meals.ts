@@ -39,7 +39,7 @@ const loadMealsByDateSchema = z.object({
   date: z
     .string()
     .regex(/^\d{4}-\d{2}-\d{2}$/, 'Ngày phải có dạng YYYY-MM-DD.'),
-  timezoneOffset: z.number().int().min(-720).max(840),
+  timezoneOffset: z.number().int().min(-840).max(720),
 });
 
 const deleteMealSchema = z.object({
@@ -47,7 +47,7 @@ const deleteMealSchema = z.object({
 });
 
 const loadMealDatesSchema = z.object({
-  timezoneOffset: z.number().int().min(-720).max(840),
+  timezoneOffset: z.number().int().min(-840).max(720),
 });
 
 // ---------------------------------------------------------------------------
@@ -182,22 +182,25 @@ export async function confirmAndSaveMealAction(input: {
       await tx.insert(mealItems).values(itemRows);
     }
 
-    // Fire-and-forget: attach mealId to unmatched ingredients
+    // Await all unmatched ingredient updates within the transaction
     if (pipelineResult.unmatchedIngredients.length > 0) {
-      for (const unmatched of pipelineResult.unmatchedIngredients) {
-        tx.update(unmatchedIngredients)
-          .set({ mealId: meal.id })
-          .where(
-            and(
-              eq(unmatchedIngredients.queryText, unmatched.ingredientName),
-              eq(unmatchedIngredients.mealContext, unmatched.mealContext),
-              isNull(unmatchedIngredients.mealId)
+      await Promise.all(
+        pipelineResult.unmatchedIngredients.map((unmatched) =>
+          tx
+            .update(unmatchedIngredients)
+            .set({ mealId: meal.id })
+            .where(
+              and(
+                eq(unmatchedIngredients.queryText, unmatched.ingredientName),
+                eq(unmatchedIngredients.mealContext, unmatched.mealContext),
+                isNull(unmatchedIngredients.mealId)
+              )
             )
-          )
-          .catch((err: unknown) =>
-            console.error('Failed to attach mealId to unmatched:', err)
-          );
-      }
+            .catch((err: unknown) =>
+              console.error('Failed to attach mealId to unmatched:', err)
+            )
+        )
+      );
     }
 
     return { mealId: meal.id };
@@ -417,22 +420,15 @@ export async function loadMealDates(input: {
   // To convert UTC → local: UTC + offsetMins = local
   const offsetMins = -parsed.timezoneOffset;
 
+  const dateExpr = sql<string>`DATE(${meals.loggedAt} + (${offsetMins}::integer * INTERVAL '1 minute'))`;
+
   const rows = await db
-    .selectDistinctOn(
-      [
-        sql`DATE(${meals.loggedAt} + (${offsetMins}::integer * INTERVAL '1 minute'))`,
-      ],
-      {
-        date: sql<string>`DATE(${meals.loggedAt} + (${offsetMins}::integer * INTERVAL '1 minute'))`.as(
-          'date'
-        ),
-      }
-    )
+    .selectDistinctOn([dateExpr], {
+      date: dateExpr.as('date'),
+    })
     .from(meals)
     .where(eq(meals.userId, user.id))
-    .orderBy(
-      sql`DATE(${meals.loggedAt} + (${offsetMins}::integer * INTERVAL '1 minute')) DESC`
-    );
+    .orderBy(desc(dateExpr));
 
   return rows.map((r) => r.date);
 }

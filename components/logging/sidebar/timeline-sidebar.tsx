@@ -12,10 +12,16 @@ interface TimelineSidebarProps {
   onSelectDate: (date: string) => void;
 }
 
-interface MonthSection {
+interface WeekSection {
   key: string;
   label: string;
   days: string[];
+}
+
+interface MonthSection {
+  key: string;
+  label: string;
+  weeks: WeekSection[];
 }
 
 function formatDayLabel(dateStr: string): string {
@@ -26,20 +32,39 @@ function formatDayLabel(dateStr: string): string {
   return `${weekday} - ${day}/${month}`;
 }
 
+function weekOfMonth(dateStr: string): number {
+  const day = Number.parseInt(dateStr.split('-')[2], 10);
+  return Math.ceil(day / 7);
+}
+
 function groupByMonth(dates: string[]): MonthSection[] {
-  const map = new Map<string, string[]>();
+  // Group dates into month → week buckets
+  const monthMap = new Map<string, Map<number, string[]>>();
   for (const date of dates) {
     const [y, m] = date.split('-');
-    const key = `${m}-${y}`;
-    const existing = map.get(key) ?? [];
+    const monthKey = `${m}-${y}`;
+    if (!monthMap.has(monthKey)) monthMap.set(monthKey, new Map());
+    const weekNum = weekOfMonth(date);
+    const weekMap = monthMap.get(monthKey)!;
+    const existing = weekMap.get(weekNum) ?? [];
     existing.push(date);
-    map.set(key, existing);
+    weekMap.set(weekNum, existing);
   }
-  return Array.from(map.entries()).map(([key, days]) => ({
-    key,
-    label: `${Number.parseInt(key, 10)}/${key.split('-')[1]}`,
-    days,
-  }));
+
+  return Array.from(monthMap.entries()).map(([monthKey, weekMap]) => {
+    const weeks: WeekSection[] = Array.from(weekMap.entries())
+      .sort(([a], [b]) => a - b)
+      .map(([weekNum, days]) => ({
+        key: `${monthKey}-w${weekNum}`,
+        label: `Week ${weekNum}`,
+        days,
+      }));
+    return {
+      key: monthKey,
+      label: `${Number.parseInt(monthKey, 10)}/${monthKey.split('-')[1]}`,
+      weeks,
+    };
+  });
 }
 
 export function TimelineSidebar({
@@ -49,12 +74,11 @@ export function TimelineSidebar({
 }: TimelineSidebarProps) {
   const timezoneOffset = new Date().getTimezoneOffset();
   const { data: dates = [] } = useQuery({
-    queryKey: ['meal-dates', userId],
+    queryKey: ['meal-dates', userId, timezoneOffset],
     queryFn: () => loadMealDates({ timezoneOffset }),
     staleTime: 60_000,
   });
 
-  // Add today if not in the list
   const today = useMemo(() => {
     const d = new Date();
     const yyyy = d.getFullYear();
@@ -71,24 +95,37 @@ export function TimelineSidebar({
 
   const months = useMemo(() => groupByMonth(allDates), [allDates]);
 
-  // Expand the month containing selectedDate by default
   const selectedMonth = useMemo(() => {
     const [y, m] = selectedDate.split('-');
     return `${m}-${y}`;
   }, [selectedDate]);
 
+  const selectedWeekKey = useMemo(() => {
+    const [y, m] = selectedDate.split('-');
+    return `${m}-${y}-w${weekOfMonth(selectedDate)}`;
+  }, [selectedDate]);
+
   const [expandedMonths, setExpandedMonths] = useState<Set<string>>(
     () => new Set([selectedMonth])
+  );
+  const [expandedWeeks, setExpandedWeeks] = useState<Set<string>>(
+    () => new Set([selectedWeekKey])
   );
 
   const toggleMonth = useCallback((monthKey: string) => {
     setExpandedMonths((prev) => {
       const next = new Set(prev);
-      if (next.has(monthKey)) {
-        next.delete(monthKey);
-      } else {
-        next.add(monthKey);
-      }
+      if (next.has(monthKey)) next.delete(monthKey);
+      else next.add(monthKey);
+      return next;
+    });
+  }, []);
+
+  const toggleWeek = useCallback((weekKey: string) => {
+    setExpandedWeeks((prev) => {
+      const next = new Set(prev);
+      if (next.has(weekKey)) next.delete(weekKey);
+      else next.add(weekKey);
       return next;
     });
   }, []);
@@ -99,7 +136,7 @@ export function TimelineSidebar({
       aria-label="Timeline navigation"
     >
       {months.map((month) => {
-        const isExpanded = expandedMonths.has(month.key);
+        const isMonthExpanded = expandedMonths.has(month.key);
 
         return (
           <div key={month.key} className="flex flex-col gap-2">
@@ -107,7 +144,7 @@ export function TimelineSidebar({
             <button
               type="button"
               onClick={() => toggleMonth(month.key)}
-              aria-expanded={isExpanded}
+              aria-expanded={isMonthExpanded}
               aria-controls={`month-${month.key}`}
               className="flex items-center gap-2 px-3 transition-colors hover:text-nham-text"
             >
@@ -117,45 +154,97 @@ export function TimelineSidebar({
               >
                 {month.label}
               </span>
-              {isExpanded ? (
+              {isMonthExpanded ? (
                 <ChevronUp className="h-4 w-4 text-muted-foreground" />
               ) : (
                 <ChevronDown className="h-4 w-4 text-muted-foreground" />
               )}
             </button>
 
-            {isExpanded && (
+            {isMonthExpanded && (
               <>
                 <div className="h-0.5 rounded-sm bg-neutral-100" />
                 <div id={`month-${month.key}`} className="flex flex-col gap-1">
-                  {month.days.map((date) => {
-                    const isActive = date === selectedDate;
-                    const isToday = date === today;
+                  {month.weeks.map((week) => {
+                    const isWeekExpanded = expandedWeeks.has(week.key);
+                    const hasSelectedDay = week.days.includes(selectedDate);
 
                     return (
-                      <button
-                        key={date}
-                        type="button"
-                        onClick={() => onSelectDate(date)}
-                        aria-current={isActive ? 'date' : undefined}
-                        className={cn(
-                          'flex w-full items-center gap-3 rounded-lg px-3 py-2 transition-colors',
-                          isActive && 'bg-nham-accent/30',
-                          !isActive && 'hover:bg-nham-hover/40'
-                        )}
-                      >
-                        <span
+                      <div key={week.key}>
+                        {/* Week button */}
+                        <button
+                          type="button"
+                          onClick={() => toggleWeek(week.key)}
+                          aria-expanded={isWeekExpanded}
+                          aria-controls={`week-${week.key}`}
                           className={cn(
-                            'flex-1 text-left font-medium text-xs tracking-tight',
-                            isActive
-                              ? 'text-foreground'
-                              : 'text-muted-foreground'
+                            'flex w-full items-center gap-3 rounded-lg px-3 py-2 transition-colors',
+                            hasSelectedDay && 'bg-nham-accent/30',
+                            !hasSelectedDay && 'hover:bg-nham-hover/40'
                           )}
-                          style={{ fontFamily: 'DM Sans, sans-serif' }}
                         >
-                          {isToday ? 'Today' : formatDayLabel(date)}
-                        </span>
-                      </button>
+                          <span
+                            className="flex-1 text-left font-medium text-foreground text-sm tracking-tight"
+                            style={{ fontFamily: 'DM Sans, sans-serif' }}
+                          >
+                            {week.label}
+                          </span>
+                          {isWeekExpanded ? (
+                            <ChevronUp className="h-4 w-4 text-muted-foreground" />
+                          ) : (
+                            <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                          )}
+                        </button>
+
+                        {/* Days tree */}
+                        {isWeekExpanded && (
+                          <div id={`week-${week.key}`} className="flex pl-3">
+                            <div className="w-0.5 shrink-0 bg-nham-accent" />
+                            <ul className="-ml-0.5 flex flex-col gap-2">
+                              {week.days.map((date) => {
+                                const isActive = date === selectedDate;
+                                const isToday = date === today;
+
+                                return (
+                                  <li
+                                    key={date}
+                                    className="flex w-full items-center"
+                                  >
+                                    <div className="h-2 w-[13px] shrink-0 rounded-bl-lg border-nham-accent border-b-2 border-l-2" />
+                                    <button
+                                      type="button"
+                                      onClick={() => onSelectDate(date)}
+                                      aria-current={
+                                        isActive ? 'date' : undefined
+                                      }
+                                      className={cn(
+                                        'flex flex-1 items-center rounded-lg px-3 py-2',
+                                        isActive && 'bg-nham-accent/30'
+                                      )}
+                                    >
+                                      <span
+                                        className={cn(
+                                          'flex-1 text-left font-medium text-xs tracking-tight',
+                                          isActive
+                                            ? 'text-foreground'
+                                            : 'text-muted-foreground'
+                                        )}
+                                        style={{
+                                          fontFamily: 'DM Sans, sans-serif',
+                                        }}
+                                      >
+                                        {isToday
+                                          ? 'Today'
+                                          : formatDayLabel(date)}
+                                      </span>
+                                    </button>
+                                  </li>
+                                );
+                              })}
+                            </ul>
+                          </div>
+                        )}
+                      </div>
                     );
                   })}
                 </div>
