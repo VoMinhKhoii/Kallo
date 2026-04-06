@@ -26,11 +26,19 @@ vi.mock('@/lib/db', () => {
     insert: () => insertChain,
     values: () => insertChain,
     returning: () => mockInsert(),
+    catch: () => undefined, // fire-and-forget path (pipelineRequests)
+  };
+  const updateChain = {
+    update: () => updateChain,
+    set: () => updateChain,
+    where: () => Promise.resolve(),
+    catch: () => Promise.resolve(),
   };
   return {
     db: {
       ...selectChain,
       insert: () => insertChain,
+      update: () => updateChain,
     },
   };
 });
@@ -38,6 +46,7 @@ vi.mock('@/lib/db', () => {
 vi.mock('@/lib/db/schema', () => ({
   userProfiles: { userId: 'userId' },
   pendingAnalyses: { id: 'id' },
+  pipelineRequests: { id: 'id' },
 }));
 
 vi.mock('@/lib/ai/gemini', () => ({

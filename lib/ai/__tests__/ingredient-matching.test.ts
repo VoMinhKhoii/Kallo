@@ -292,6 +292,14 @@ describe('matchIngredients', () => {
         if (queryStr.includes('ingredient_query_embeddings')) {
           return [];
         }
+        // Warm-up: embedding cache loading from food_composition
+        if (
+          queryStr.includes('vietnamese_food_composition') &&
+          queryStr.includes('source_id') &&
+          queryStr.includes('embedding')
+        ) {
+          return [];
+        }
         callOrder.push('db-call');
         return [];
       }),
@@ -405,6 +413,14 @@ describe('matchIngredients', () => {
         if (
           queryStr.includes('ingredient_query_embeddings') ||
           queryStr.includes('synonym_candidates')
+        ) {
+          return [];
+        }
+        // Warm-up: embedding cache loading from food_composition
+        if (
+          queryStr.includes('vietnamese_food_composition') &&
+          queryStr.includes('source_id') &&
+          queryStr.includes('embedding')
         ) {
           return [];
         }

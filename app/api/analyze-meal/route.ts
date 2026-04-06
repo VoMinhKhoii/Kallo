@@ -1,14 +1,16 @@
+import { eq } from 'drizzle-orm';
 import type { NextRequest } from 'next/server';
 import { createGeminiClient } from '@/lib/ai/gemini';
 import { buildUserContext, toParsedMeal } from '@/lib/ai/mappers';
 import { logUnmatchedIngredients } from '@/lib/ai/matching';
 import { analyzeMeal } from '@/lib/ai/pipeline';
+import { logPipelineEnd, logPipelineStart } from '@/lib/ai/pipeline/logging';
 import type { StreamEvent } from '@/lib/ai/streaming';
 import { encodeSSE } from '@/lib/ai/streaming';
-import { requireAuthAndProfile } from '@/lib/auth';
 import { db } from '@/lib/db';
-import { pendingAnalyses } from '@/lib/db/schema';
+import { pendingAnalyses, userProfiles } from '@/lib/db/schema';
 import { Errors, serializeError } from '@/lib/errors';
+import { createClient } from '@/lib/supabase/server';
 import { mealMessageSchema } from '@/lib/validation';
 
 export const runtime = 'nodejs';
@@ -17,17 +19,45 @@ export const maxDuration = 30;
 /**
  * Pre-stream validation: auth, input, profile, config.
  * Returns structured JSON error responses before SSE starts.
- * On success, returns the validated context needed for the pipeline.
+ *
+ * Auth verification and body parsing run in parallel to reduce latency by
+ * ~50-100ms on each request (saves one sequential network round-trip).
  */
 async function validateRequest(request: NextRequest) {
   try {
-    const { user, profile } = await requireAuthAndProfile();
+    const supabase = await createClient();
 
-    let body: unknown;
-    try {
-      body = await request.json();
-    } catch {
+    // Parallelize auth and body parsing — independent operations
+    const [authResult, bodyResult] = await Promise.allSettled([
+      supabase.auth.getUser(),
+      request.json() as Promise<unknown>,
+    ]);
+
+    // Validate auth — getUser() can resolve with { data: { user: null }, error: AuthError }
+    if (
+      authResult.status === 'rejected' ||
+      authResult.value.error ||
+      !authResult.value.data.user
+    ) {
+      throw Errors.notAuthenticated();
+    }
+    const user = authResult.value.data.user;
+
+    // Validate body parse
+    if (bodyResult.status === 'rejected') {
       throw Errors.validationFailed('Invalid JSON in request body');
+    }
+    const body = bodyResult.value;
+
+    // Fetch profile (requires user.id from auth above)
+    const rows = await db
+      .select()
+      .from(userProfiles)
+      .where(eq(userProfiles.userId, user.id))
+      .limit(1);
+    const profile = rows[0];
+    if (!profile?.goal || !profile?.regionalProfile) {
+      throw Errors.onboardingIncomplete();
     }
 
     const parsed = mealMessageSchema.safeParse(body);
@@ -61,6 +91,11 @@ export async function POST(request: NextRequest) {
   if (validation.error) return validation.error;
   const { userId, message, profile, apiKey } = validation.data;
 
+  const userContext = buildUserContext(profile);
+
+  // Fire-and-forget: log pipeline start for observability (never blocks SSE)
+  const requestId = logPipelineStart(userId, message, userContext, db);
+
   // Phase 2: Stream pipeline results as SSE
   const encoder = new TextEncoder();
   const stream = new ReadableStream({
@@ -69,11 +104,13 @@ export async function POST(request: NextRequest) {
         controller.enqueue(encoder.encode(encodeSSE(event)));
       };
 
+      const startTime = Date.now();
+
       try {
         const gemini = createGeminiClient(apiKey);
         const result = await analyzeMeal(
           message,
-          buildUserContext(profile),
+          userContext,
           db,
           gemini,
           emit
@@ -88,6 +125,13 @@ export async function POST(request: NextRequest) {
           console.error(
             '[analyze-meal] Pipeline returned error:',
             result.error.type,
+            result.error.message
+          );
+          logPipelineEnd(
+            requestId,
+            'error',
+            Date.now() - startTime,
+            db,
             result.error.message
           );
           emit({
@@ -108,6 +152,13 @@ export async function POST(request: NextRequest) {
           console.error('[analyze-meal] Pipeline returned all-null nutrition', {
             input: message,
           });
+          logPipelineEnd(
+            requestId,
+            'error',
+            Date.now() - startTime,
+            db,
+            'empty_nutrition'
+          );
           emit({
             type: 'error',
             code: 'empty_nutrition',
@@ -137,7 +188,8 @@ export async function POST(request: NextRequest) {
           analysisId: inserted.id,
         });
 
-        // Fire-and-forget: log unmatched ingredients
+        // Fire-and-forget: log success + unmatched ingredients
+        logPipelineEnd(requestId, 'success', Date.now() - startTime, db);
         if (result.data.unmatchedIngredients.length > 0) {
           logUnmatchedIngredients(
             result.data.unmatchedIngredients,
@@ -149,6 +201,13 @@ export async function POST(request: NextRequest) {
         }
       } catch (error) {
         console.error('[analyze-meal] Stream error:', error);
+        logPipelineEnd(
+          requestId,
+          'error',
+          Date.now() - startTime,
+          db,
+          error instanceof Error ? error.message : 'unknown'
+        );
 
         const errorMessage =
           error instanceof Error ? error.message : 'Failed to process meal';

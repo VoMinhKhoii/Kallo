@@ -387,3 +387,96 @@ describe('ASSUMPTION_TEXT', () => {
     }
   });
 });
+
+// ---------------------------------------------------------------------------
+// Prompt determinism / sorting (B4)
+// ---------------------------------------------------------------------------
+
+describe('buildNutritionPrompt — deterministic ordering', () => {
+  const makeIngredient = (name: string): MatchedIngredient => ({
+    ingredientName: name,
+    foodCompositionId: `id-${name}`,
+    matchedName: name,
+    similarity: 0.9,
+    confidence: 'high',
+    nutritionPer100g: fullNutrition,
+  });
+
+  const makeMealItem = (
+    name: string,
+    ingredients: string[]
+  ): DecomposedMealItem => ({
+    name,
+    ingredients: ingredients.map((ing) => ({
+      name: ing,
+      estimatedGrams: 100,
+      cookingMethod: null,
+      userFacingUnit: '100g',
+    })),
+  });
+
+  it('produces identical prompt regardless of ingredient array order', () => {
+    const matched = ['gạo', 'thịt gà', 'rau muống'].map(makeIngredient);
+    const matchedReversed = [...matched].reverse();
+
+    const mealItemsA = [
+      makeMealItem('cơm gà', ['gạo', 'thịt gà']),
+      makeMealItem('rau xào', ['rau muống']),
+    ];
+    const mealItemsB = [
+      makeMealItem('rau xào', ['rau muống']),
+      makeMealItem('cơm gà', ['thịt gà', 'gạo']),
+    ];
+
+    const promptA = buildNutritionPrompt(
+      mealItemsA,
+      matched,
+      [],
+      sampleUserContext
+    );
+    const promptB = buildNutritionPrompt(
+      mealItemsB,
+      matchedReversed,
+      [],
+      sampleUserContext
+    );
+
+    // After sorting, both should produce the same XML order
+    expect(promptA).toBe(promptB);
+  });
+
+  it('sorts Vietnamese and English ingredient names stably', () => {
+    const mealItems = [makeMealItem('dish', ['thịt bò', 'bún', 'giá đỗ'])];
+    const matched = ['thịt bò', 'bún', 'giá đỗ'].map(makeIngredient);
+
+    const prompt1 = buildNutritionPrompt(
+      mealItems,
+      matched,
+      [],
+      sampleUserContext
+    );
+    // Shuffle and rebuild
+    const shuffled = [...mealItems];
+    shuffled[0] = makeMealItem('dish', ['giá đỗ', 'thịt bò', 'bún']);
+    const prompt2 = buildNutritionPrompt(
+      shuffled,
+      [...matched].reverse(),
+      [],
+      sampleUserContext
+    );
+
+    expect(prompt1).toBe(prompt2);
+  });
+
+  it('same result for same inputs called multiple times', () => {
+    const mealItems = [makeMealItem('phở', ['thịt bò', 'bánh phở'])];
+    const matched = ['thịt bò', 'bánh phở'].map(makeIngredient);
+
+    const p1 = buildNutritionPrompt(mealItems, matched, [], sampleUserContext);
+    const p2 = buildNutritionPrompt(mealItems, matched, [], sampleUserContext);
+    const p3 = buildNutritionPrompt(mealItems, matched, [], sampleUserContext);
+
+    expect(p1).toBe(p2);
+    expect(p2).toBe(p3);
+  });
+});
