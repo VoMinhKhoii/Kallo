@@ -109,8 +109,8 @@ export function extractSqlText(query: unknown): string {
 
 /**
  * Create a mock DB that routes responses based on SQL query content.
- * Embedding cache and synonym candidate queries return [] automatically.
- * Other queries return the next item from the provided response queue.
+ * Warm-up (embedding), embedding cache, and synonym candidate queries return [] automatically.
+ * Other queries (fuzzy/vector match, nutrition cache) return from the response queue.
  */
 export function createRoutingMockDb(responses: unknown[][]) {
   let idx = 0;
@@ -120,6 +120,14 @@ export function createRoutingMockDb(responses: unknown[][]) {
       if (
         queryStr.includes('ingredient_query_embeddings') ||
         queryStr.includes('synonym_candidates')
+      ) {
+        return Promise.resolve([]);
+      }
+      // Warm-up: embedding cache loading from food_composition with source_id filter
+      if (
+        queryStr.includes('vietnamese_food_composition') &&
+        queryStr.includes('source_id') &&
+        queryStr.includes('embedding')
       ) {
         return Promise.resolve([]);
       }

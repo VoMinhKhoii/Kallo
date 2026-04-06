@@ -1,6 +1,11 @@
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
+import { capitalizeFirst } from '@/lib/utils';
 import type { GeminiClient } from '../gemini';
-import { cacheQueryEmbedding, resolveQueryEmbedding } from './embedding-cache';
+import {
+  cacheQueryEmbedding,
+  normalizeIngredientKey,
+  resolveQueryEmbedding,
+} from './embedding-cache';
 
 /**
  * Extract ingredient names from a partial JSON stream.
@@ -42,12 +47,28 @@ export function createSpeculativeMatcher(
   gemini: GeminiClient
 ) {
   const seen = new Set<string>();
+  /**
+   * In-flight promises keyed by normalized canonical name.
+   * Prevents duplicate Gemini calls when the LLM emits equivalent names
+   * with different capitalization (e.g. "cà rốt" then "Cà rốt" in the same
+   * stream). Both map to the same dedup key after normalizeIngredientKey.
+   * Request-scoped: a new map is created per call to createSpeculativeMatcher.
+   */
+  const inFlight = new Map<string, Promise<void>>();
 
   return (accumulated: string) => {
     const newNames = extractIngredientNames(accumulated, seen);
-    for (const name of newNames) {
-      // Fire-and-forget: pre-warm embedding cache through all tiers
-      resolveQueryEmbedding(name, db)
+    for (const rawName of newNames) {
+      // Match the capitalizeFirst() applied in orchestrator after stream completes
+      // so the embeddingCache key in gemini.ts matches cascade's batch lookup key.
+      const name = capitalizeFirst(rawName);
+
+      // Use the same normalization as resolveQueryEmbedding's internal key for
+      // deduplication — catches equivalent names with different capitalization.
+      const dedupeKey = normalizeIngredientKey(name);
+      if (inFlight.has(dedupeKey)) continue;
+
+      const promise = resolveQueryEmbedding(name, db)
         .then((cached) => {
           if (cached) return; // L1/L2 hit — already warm
           // L3 miss: fire Gemini embed and cache result
@@ -55,7 +76,10 @@ export function createSpeculativeMatcher(
             cacheQueryEmbedding(name, embedding, db);
           });
         })
-        .catch(() => {}); // Silently ignore errors — matching phase will retry
+        .catch(() => {}) // Silently ignore errors — matching phase will retry
+        .finally(() => inFlight.delete(dedupeKey));
+
+      inFlight.set(dedupeKey, promise);
     }
   };
 }
