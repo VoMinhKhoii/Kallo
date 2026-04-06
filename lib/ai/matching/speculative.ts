@@ -1,4 +1,5 @@
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
+import { capitalizeFirst } from '@/lib/utils';
 import type { GeminiClient } from '../gemini';
 import { cacheQueryEmbedding, resolveQueryEmbedding } from './embedding-cache';
 
@@ -45,7 +46,11 @@ export function createSpeculativeMatcher(
 
   return (accumulated: string) => {
     const newNames = extractIngredientNames(accumulated, seen);
-    for (const name of newNames) {
+    for (const rawName of newNames) {
+      // Normalize to match the capitalizeFirst() applied in orchestrator after stream completes.
+      // Without this, speculative embeds "cà rốt" but cascade looks up "Cà rốt" → cache miss
+      // → double Gemini API call for the same ingredient.
+      const name = capitalizeFirst(rawName);
       // Fire-and-forget: pre-warm embedding cache through all tiers
       resolveQueryEmbedding(name, db)
         .then((cached) => {
