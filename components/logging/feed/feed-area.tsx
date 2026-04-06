@@ -14,7 +14,7 @@ import {
 } from '@/components/logging/input/meal-input';
 import type { LoggingProfile } from '@/components/logging/logging-shell';
 import { useDailyMeals } from '@/hooks/use-daily-meals';
-import { useConfirmMeal, useDeleteMeal } from '@/hooks/use-meal-mutations';
+import { useConfirmMeal } from '@/hooks/use-meal-mutations';
 import { useStreamAnalysis } from '@/hooks/use-stream-analysis';
 import { useSubmitGuard } from '@/hooks/use-submit-guard';
 import {
@@ -63,7 +63,6 @@ export function FeedArea({ selectedDate, profile }: FeedAreaProps) {
 
   // Mutations
   const confirmMeal = useConfirmMeal();
-  const deleteMeal = useDeleteMeal();
 
   // Track which analysisIds have been confirmed (to remove streaming msg)
   const confirmedAnalysisIds = useRef(new Set<string>());
@@ -287,10 +286,6 @@ export function FeedArea({ selectedDate, profile }: FeedAreaProps) {
     );
   };
 
-  const handleDeleteMeal = (mealId: string) => {
-    deleteMeal.mutate({ mealId });
-  };
-
   // Unconfirmed streaming messages (exclude user messages and confirmed ones)
   const unconfirmedMessages = displayMessages.filter(
     (m) => m.role === 'assistant'
@@ -339,7 +334,6 @@ export function FeedArea({ selectedDate, profile }: FeedAreaProps) {
                         key={meal.id}
                         meal={meal}
                         profile={profile}
-                        onDelete={() => handleDeleteMeal(meal.id)}
                       />
                     ))}
                   </AnimatePresence>

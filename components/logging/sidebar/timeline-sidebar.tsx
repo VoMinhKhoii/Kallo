@@ -135,16 +135,12 @@ export function TimelineSidebar({
       className="flex h-full w-[212px] shrink-0 flex-col items-start gap-3 overflow-y-auto border-border/40 border-r py-3 pr-3"
       aria-label="Timeline navigation"
     >
-      {months.map((month, index) => {
+      {months.map((month) => {
         const isMonthExpanded = expandedMonths.has(month.key);
 
         return (
-          <div key={month.key} className="contents">
-            {index > 0 && (
-              <div className="h-0.5 w-full rounded-sm bg-neutral-100" />
-            )}
-
-            <div className="flex w-full flex-col items-start gap-2">
+          <div key={month.key} className="flex w-full flex-col gap-3">
+            <div className="flex w-full flex-col gap-2">
               <button
                 type="button"
                 onClick={() => toggleMonth(month.key)}
@@ -184,7 +180,7 @@ export function TimelineSidebar({
                           className={cn(
                             'flex w-full items-center gap-3 rounded-lg px-3 py-2 transition-colors',
                             hasSelectedDay
-                              ? 'bg-nham-accent'
+                              ? 'bg-nham-accent/40'
                               : 'hover:bg-nham-hover/40'
                           )}
                         >
@@ -225,8 +221,8 @@ export function TimelineSidebar({
                                         isActive ? 'date' : undefined
                                       }
                                       className={cn(
-                                        'flex flex-1 items-center self-stretch rounded-lg px-2',
-                                        isActive && 'bg-nham-accent'
+                                        'flex flex-1 items-center self-stretch rounded-lg px-3 py-2 hover:bg-nham-hover/40',
+                                        isActive && 'bg-nham-accent/40'
                                       )}
                                     >
                                       <span
@@ -257,6 +253,8 @@ export function TimelineSidebar({
                 </div>
               )}
             </div>
+
+            <div className="h-px w-full rounded-sm bg-neutral-100" />
           </div>
         );
       })}
