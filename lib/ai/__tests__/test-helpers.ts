@@ -135,3 +135,60 @@ export function createRoutingMockDb(responses: unknown[][]) {
     }),
   };
 }
+
+/**
+ * Create a mock DB that routes source-aware matching responses by query pattern.
+ * Handles Promise.all (parallel FAO + USDA) by matching on function name and source_id.
+ *
+ * @param routes - Map of query pattern → response. Patterns are matched against SQL text.
+ *   Supported patterns:
+ *   - 'fao_vector' → match_ingredients_by_source with source_id=1
+ *   - 'usda_vector' → match_ingredients_by_source with source_id=2
+ *   - 'fao_fuzzy' → fuzzy_match_ingredients_by_source with source_id=1
+ *   - 'usda_fuzzy' → fuzzy_match_ingredients_by_source with source_id=2
+ *   - 'nutrition' → vietnamese_food_composition (non-embedding, non-source queries)
+ */
+export function createSourceAwareMockDb(
+  routes: Partial<{
+    fao_vector: unknown[];
+    usda_vector: unknown[];
+    fao_fuzzy: unknown[];
+    usda_fuzzy: unknown[];
+    nutrition: unknown[];
+  }>
+) {
+  return {
+    execute: vi.fn().mockImplementation((query: unknown) => {
+      const q = extractSqlText(query);
+      if (
+        q.includes('ingredient_query_embeddings') ||
+        q.includes('synonym_candidates')
+      ) {
+        return Promise.resolve([]);
+      }
+      // Warm-up: embedding cache loading
+      if (
+        q.includes('vietnamese_food_composition') &&
+        q.includes('source_id') &&
+        q.includes('embedding')
+      ) {
+        return Promise.resolve([]);
+      }
+      // Source-aware vector matching
+      if (q.includes('match_ingredients_by_source') && !q.includes('fuzzy')) {
+        if (q.includes('1')) return Promise.resolve(routes.fao_vector ?? []);
+        if (q.includes('2')) return Promise.resolve(routes.usda_vector ?? []);
+      }
+      // Source-aware fuzzy matching
+      if (q.includes('fuzzy_match_ingredients_by_source')) {
+        if (q.includes('1')) return Promise.resolve(routes.fao_fuzzy ?? []);
+        if (q.includes('2')) return Promise.resolve(routes.usda_fuzzy ?? []);
+      }
+      // Nutrition batch fetch
+      if (q.includes('vietnamese_food_composition')) {
+        return Promise.resolve(routes.nutrition ?? []);
+      }
+      return Promise.resolve([]);
+    }),
+  };
+}

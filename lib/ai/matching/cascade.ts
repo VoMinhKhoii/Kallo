@@ -10,6 +10,7 @@ import type {
   NutritionPer100g,
   UnmatchedIngredient,
 } from '../types';
+import { resolveAlias, resolvePreMatchAlias } from './aliases';
 import { cacheQueryEmbedding, resolveQueryEmbedding } from './embedding-cache';
 import { parseNutritionRow } from './nutrition-db';
 
@@ -18,14 +19,22 @@ export const CONFIDENCE_THRESHOLDS = {
   medium: 0.3,
 } as const;
 
-/** Minimum similarity to accept a fuzzy (pg_trgm) match (legacy primary threshold) */
-export const FUZZY_SIMILARITY_THRESHOLD = 0.4;
+/** Source IDs for food composition databases */
+export const SOURCE_FAO = 1;
+export const SOURCE_USDA = 2;
 
-/** Minimum similarity to accept a vector (pgvector) match */
-export const VECTOR_SIMILARITY_THRESHOLD = 0.7;
+/** Minimum similarity to accept a FAO vector match (higher bar for curated VN data) */
+export const FAO_VECTOR_THRESHOLD = 0.8;
+
+/** Minimum similarity to accept a USDA vector match */
+export const USDA_VECTOR_THRESHOLD = 0.7;
 
 /** Minimum similarity to accept a fuzzy match when used as fallback after vector miss */
 export const FUZZY_FALLBACK_THRESHOLD = 0.7;
+
+/** Legacy: kept for backward compat in tests */
+export const FUZZY_SIMILARITY_THRESHOLD = 0.4;
+export const VECTOR_SIMILARITY_THRESHOLD = 0.7;
 
 export function classifyConfidence(similarity: number): MatchConfidence {
   if (similarity >= CONFIDENCE_THRESHOLDS.high) return 'high';
@@ -81,9 +90,20 @@ export async function matchIngredients(
   const matched: MatchedIngredient[] = [];
   const unmatched: UnmatchedIngredient[] = [];
 
+  // Pre-step: resolve pre-match aliases to fix known wrong-match cases
+  // (e.g., "cá lóc" → "Cá quả" to avoid USDA's Atlantic bass mistranslation).
+  // Original names are preserved for display; matching uses the alias name.
+  const matchingNames = ingredients.map((ing) => {
+    const alias = resolvePreMatchAlias(ing.name);
+    if (alias !== ing.name) {
+      console.info(`[matching] pre-match alias: "${ing.name}" → "${alias}"`);
+    }
+    return alias;
+  });
+
   // Phase 1: Resolve embeddings (L1/L2 cache) concurrently and collect misses
   const cacheResults = await Promise.all(
-    ingredients.map((ing) => resolveQueryEmbedding(ing.name, db))
+    matchingNames.map((name) => resolveQueryEmbedding(name, db))
   );
   const embeddings: (number[] | null)[] = cacheResults.slice();
   const missIndices: number[] = [];
@@ -93,32 +113,34 @@ export async function matchIngredients(
 
   // Phase 2: Batch embed all L3 misses in a single API call
   if (missIndices.length > 0) {
-    const missNames = missIndices.map((i) => ingredients[i].name);
+    const missNames = missIndices.map((i) => matchingNames[i]);
     console.info(`[matching] batch embedding ${missNames.length} L3 misses`);
     const batchResults = await gemini.generateEmbeddingBatch(missNames);
     for (let j = 0; j < missIndices.length; j++) {
       const idx = missIndices[j];
       embeddings[idx] = batchResults[j];
-      cacheQueryEmbedding(ingredients[idx].name, batchResults[j], db);
+      cacheQueryEmbedding(matchingNames[idx], batchResults[j], db);
     }
   }
 
   // Phase 3: Match each ingredient (returns MatchInfo without nutrition)
   const results = await mapWithConcurrency(
-    ingredients.map((ingredient, i) => ({
-      name: ingredient.name,
-      embedding: embeddings[i]!,
-    })),
+    matchingNames.map((name, i) => ({ name, embedding: embeddings[i]! })),
     (item) => matchSingleIngredientWithEmbedding(item.name, item.embedding, db),
     MATCH_CONCURRENCY
   );
 
-  // Collect successful MatchInfo results and track failures
+  // Collect successful MatchInfo results and track initial failures
   const matchInfos: MatchInfo[] = [];
+  const unmatchedWithIndex: {
+    ingredient: DecomposedIngredient;
+    index: number;
+  }[] = [];
   for (let i = 0; i < ingredients.length; i++) {
     const result = results[i];
     if (result.status === 'fulfilled' && result.value) {
-      matchInfos.push(result.value);
+      // Restore original ingredient name (pre-match alias may have changed it)
+      matchInfos.push({ ...result.value, ingredientName: ingredients[i].name });
     } else {
       if (result.status === 'rejected') {
         console.error(
@@ -126,10 +148,87 @@ export async function matchIngredients(
           result.reason
         );
       }
-      unmatched.push({
-        ingredientName: ingredients[i].name,
-        mealContext,
-      });
+      unmatchedWithIndex.push({ ingredient: ingredients[i], index: i });
+    }
+  }
+
+  // Phase 3b: Alias fallback — retry unmatched ingredients with alias-expanded names
+  if (unmatchedWithIndex.length > 0) {
+    const aliasRetries: {
+      original: DecomposedIngredient;
+      aliasName: string;
+    }[] = [];
+    for (const { ingredient } of unmatchedWithIndex) {
+      const aliasName = resolveAlias(ingredient.name);
+      if (aliasName !== ingredient.name) {
+        aliasRetries.push({ original: ingredient, aliasName });
+      }
+    }
+
+    if (aliasRetries.length > 0) {
+      console.info(
+        `[matching] alias fallback: ${aliasRetries.map((r) => `${r.original.name}→${r.aliasName}`).join(', ')}`
+      );
+      // Resolve embeddings for alias names
+      const aliasCacheResults = await Promise.all(
+        aliasRetries.map((r) => resolveQueryEmbedding(r.aliasName, db))
+      );
+      const aliasEmbeddings: (number[] | null)[] = aliasCacheResults.slice();
+      const aliasMissIndices: number[] = [];
+      for (let i = 0; i < aliasCacheResults.length; i++) {
+        if (!aliasCacheResults[i]) aliasMissIndices.push(i);
+      }
+      if (aliasMissIndices.length > 0) {
+        const missNames = aliasMissIndices.map(
+          (i) => aliasRetries[i].aliasName
+        );
+        const batchResults = await gemini.generateEmbeddingBatch(missNames);
+        for (let j = 0; j < aliasMissIndices.length; j++) {
+          const idx = aliasMissIndices[j];
+          aliasEmbeddings[idx] = batchResults[j];
+          cacheQueryEmbedding(aliasRetries[idx].aliasName, batchResults[j], db);
+        }
+      }
+
+      // Match alias names
+      const aliasResults = await mapWithConcurrency(
+        aliasRetries.map((r, i) => ({
+          name: r.aliasName,
+          embedding: aliasEmbeddings[i]!,
+        })),
+        (item) =>
+          matchSingleIngredientWithEmbedding(item.name, item.embedding, db),
+        MATCH_CONCURRENCY
+      );
+
+      // Track which originals were rescued by alias
+      const rescuedOriginals = new Set<string>();
+      for (let i = 0; i < aliasRetries.length; i++) {
+        const result = aliasResults[i];
+        if (result.status === 'fulfilled' && result.value) {
+          // Preserve original ingredient name in the result for display
+          matchInfos.push({
+            ...result.value,
+            ingredientName: aliasRetries[i].original.name,
+          });
+          rescuedOriginals.add(aliasRetries[i].original.name);
+          console.info(
+            `[matching] alias rescue: "${aliasRetries[i].original.name}" → "${aliasRetries[i].aliasName}" matched ${result.value.matchedName}`
+          );
+        }
+      }
+
+      // Only keep truly unmatched (not rescued by alias)
+      for (const { ingredient } of unmatchedWithIndex) {
+        if (!rescuedOriginals.has(ingredient.name)) {
+          unmatched.push({ ingredientName: ingredient.name, mealContext });
+        }
+      }
+    } else {
+      // No aliases available — all remain unmatched
+      for (const { ingredient } of unmatchedWithIndex) {
+        unmatched.push({ ingredientName: ingredient.name, mealContext });
+      }
     }
   }
 
@@ -222,83 +321,126 @@ async function batchFetchNutrition(
  * Match a single ingredient using a pre-resolved embedding.
  * Returns lightweight MatchInfo (no nutrition data).
  * Nutrition is batch-fetched separately in matchIngredients.
+ *
+ * Source-aware cascade:
+ * 1. Vector search FAO (source_id=1) with high threshold (curated VN data)
+ * 2. Vector search USDA (source_id=2) with standard threshold
+ * 3. Compare: prefer FAO if score is close, otherwise take best
+ * 4. Fuzzy fallback: same source-aware logic
  */
 async function matchSingleIngredientWithEmbedding(
   ingredientName: string,
   embedding: number[],
   db: PostgresJsDatabase<any>
 ): Promise<MatchInfo | null> {
-  // Step 1: Try vector/semantic search (pgvector) — primary
-  const vectorRows = await db.execute(
-    sql`SELECT * FROM match_ingredients(${JSON.stringify(embedding)}::vector, 3, 0.5)`
-  );
-  const vectorTop = (vectorRows as unknown as FuzzyMatchRow[])[0];
-  if (vectorTop) {
-    console.info(
-      `[matching] "${ingredientName}" vector: ${vectorTop.name_primary} (${vectorTop.similarity.toFixed(3)})`
-    );
-  }
-  const vectorResult = buildMatchResult(
-    ingredientName,
-    vectorRows as unknown as FuzzyMatchRow[],
-    VECTOR_SIMILARITY_THRESHOLD
-  );
-  if (vectorResult) return vectorResult;
+  // Step 1: Source-aware vector search — query FAO and USDA separately
+  const [faoVectorRows, usdaVectorRows] = await Promise.all([
+    db.execute(
+      sql`SELECT * FROM match_ingredients_by_source(${JSON.stringify(embedding)}::vector, ${SOURCE_FAO}, 3, 0.5)`
+    ),
+    db.execute(
+      sql`SELECT * FROM match_ingredients_by_source(${JSON.stringify(embedding)}::vector, ${SOURCE_USDA}, 3, 0.5)`
+    ),
+  ]);
 
-  // Step 2: Fall back to fuzzy match (pg_trgm) with stricter threshold
-  const fuzzyRows = await db.execute(
-    sql`SELECT * FROM fuzzy_match_ingredients(${ingredientName}, 3, 0.15)`
+  const faoResult = buildMatchResult(
+    ingredientName,
+    faoVectorRows as unknown as FuzzyMatchRow[],
+    FAO_VECTOR_THRESHOLD
   );
-  const fuzzyTop = (fuzzyRows as unknown as FuzzyMatchRow[])[0];
-  if (fuzzyTop) {
+  const usdaResult = buildMatchResult(
+    ingredientName,
+    usdaVectorRows as unknown as FuzzyMatchRow[],
+    USDA_VECTOR_THRESHOLD
+  );
+
+  if (faoResult) {
     console.info(
-      `[matching] "${ingredientName}" fuzzy fallback: ${fuzzyTop.name_primary} (${fuzzyTop.similarity.toFixed(3)})`
+      `[matching] "${ingredientName}" FAO vector: ${faoResult.matchedName} (${faoResult.similarity.toFixed(3)})`
     );
   }
-  const fuzzyResult = buildMatchResult(
+  if (usdaResult) {
+    console.info(
+      `[matching] "${ingredientName}" USDA vector: ${usdaResult.matchedName} (${usdaResult.similarity.toFixed(3)})`
+    );
+  }
+
+  const vectorWinner = pickBestSource(faoResult, usdaResult);
+  if (vectorWinner) return vectorWinner;
+
+  // Step 2: Fuzzy fallback — source-aware
+  const [faoFuzzyRows, usdaFuzzyRows] = await Promise.all([
+    db.execute(
+      sql`SELECT * FROM fuzzy_match_ingredients_by_source(${ingredientName}, ${SOURCE_FAO}, 3, 0.15)`
+    ),
+    db.execute(
+      sql`SELECT * FROM fuzzy_match_ingredients_by_source(${ingredientName}, ${SOURCE_USDA}, 3, 0.15)`
+    ),
+  ]);
+
+  const faoFuzzy = buildMatchResult(
     ingredientName,
-    fuzzyRows as unknown as FuzzyMatchRow[],
+    faoFuzzyRows as unknown as FuzzyMatchRow[],
     FUZZY_FALLBACK_THRESHOLD
   );
-  if (!fuzzyResult) {
+  const usdaFuzzy = buildMatchResult(
+    ingredientName,
+    usdaFuzzyRows as unknown as FuzzyMatchRow[],
+    FUZZY_FALLBACK_THRESHOLD
+  );
+
+  if (faoFuzzy) {
+    console.info(
+      `[matching] "${ingredientName}" FAO fuzzy: ${faoFuzzy.matchedName} (${faoFuzzy.similarity.toFixed(3)})`
+    );
+  }
+  if (usdaFuzzy) {
+    console.info(
+      `[matching] "${ingredientName}" USDA fuzzy: ${usdaFuzzy.matchedName} (${usdaFuzzy.similarity.toFixed(3)})`
+    );
+  }
+
+  const fuzzyWinner = pickBestSource(faoFuzzy, usdaFuzzy);
+  if (!fuzzyWinner) {
     console.info(`[matching] "${ingredientName}" → unmatched`);
   }
-  return fuzzyResult;
+  return fuzzyWinner;
 }
 
 /**
- * Boost-only re-ranking of DB candidates.
+ * Pick the best match between FAO and USDA candidates.
  *
- * Adjusts similarity scores to prefer entries whose name directly matches
- * the query. No penalties — derived products (Bột, Bánh, Quả, …) are never
- * disadvantaged; they simply don't receive a boost when the query doesn't
- * include their prefix.
+ * Prefer FAO when scores are close (within 0.05 delta) since FAO data is
+ * curated for Vietnamese cuisine. Otherwise pick whichever has the higher
+ * similarity — a significantly better USDA match (e.g., specific cut of meat)
+ * should win over a generic FAO entry.
+ */
+function pickBestSource(
+  fao: MatchInfo | null,
+  usda: MatchInfo | null
+): MatchInfo | null {
+  if (fao && !usda) return fao;
+  if (!fao && usda) return usda;
+  if (!fao && !usda) return null;
+
+  // Both matched — pick the higher scorer
+  // (thresholds already encode the FAO vs USDA quality bar)
+  return fao!.similarity >= usda!.similarity ? fao : usda;
+}
+
+/**
+ * Sort DB candidates by similarity descending.
+ * The DB already returns results in order, but this ensures consistent
+ * ordering when combining candidates from multiple sources.
  */
 /** @internal Exported for testing */
 export function rerankCandidates(
-  query: string,
+  _query: string,
   candidates: FuzzyMatchRow[]
 ): FuzzyMatchRow[] {
   if (candidates.length <= 1) return candidates;
 
-  const q = query.trim().toLowerCase();
-
-  const adjusted = candidates.map((c) => {
-    const name = c.name_primary.trim().toLowerCase();
-    let boost = 0;
-
-    if (q === name) {
-      boost = 0.15; // exact match
-    } else if (name.startsWith(q)) {
-      boost = 0.1; // name starts with query (e.g. "gạo nếp" → "Gạo nếp cái")
-    } else if (q.startsWith(name)) {
-      boost = 0.05; // query starts with name
-    }
-
-    return { ...c, similarity: c.similarity + boost };
-  });
-
-  return adjusted.sort((a, b) => b.similarity - a.similarity);
+  return [...candidates].sort((a, b) => b.similarity - a.similarity);
 }
 
 /**

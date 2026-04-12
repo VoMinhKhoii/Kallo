@@ -32,7 +32,14 @@ function getClient() {
         'DATABASE_URL is not set — cannot connect to the database.'
       );
     }
-    _client = postgres(encodeDbUrl(url));
+    _client = postgres(encodeDbUrl(url), {
+      // Limit pool to avoid exhausting PgBouncer's session-mode max_pool_size.
+      // The matching cascade runs up to 6 parallel queries; pool of 5 caps
+      // concurrency while still allowing fast queuing for remaining queries.
+      max: 5,
+      // Prepared statements are unsupported in PgBouncer transaction mode.
+      prepare: false,
+    });
   }
   return _client;
 }
