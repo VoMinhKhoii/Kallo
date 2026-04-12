@@ -1,5 +1,73 @@
 import { vi } from 'vitest';
 import type { GeminiClient } from '../gemini';
+import type { BoundedNutrition, NutritionValues } from '../types';
+
+/**
+ * Canonical null-filled NutritionValues matching the VTN FCT 2007 schema.
+ * Use this in ALL test files to prevent field name drift.
+ */
+export const NULL_NUTRITION_VALUES: NutritionValues = {
+  caloriesKcal: null,
+  proteinG: null,
+  carbohydrateG: null,
+  fatG: null,
+  fiberG: null,
+  sodiumMg: null,
+  calciumMg: null,
+  ironMg: null,
+  magnesiumMg: null,
+  phosphorusMg: null,
+  potassiumMg: null,
+  zincMg: null,
+  copperMcg: null,
+  manganeseMg: null,
+  betaCaroteneMcg: null,
+  vitaminAMcg: null,
+  vitaminDMcg: null,
+  vitaminEMg: null,
+  vitaminKMcg: null,
+  vitaminCMg: null,
+  vitaminB1Mg: null,
+  vitaminB2Mg: null,
+  vitaminPpMg: null,
+  vitaminB5Mg: null,
+  vitaminB6Mg: null,
+  vitaminB9Mcg: null,
+  vitaminB12Mcg: null,
+  vitaminHMcg: null,
+};
+
+/** Canonical null-filled BoundedNutrition for tests. */
+export const NULL_BOUNDED_NUTRITION: BoundedNutrition = {
+  caloriesKcal: null,
+  proteinG: null,
+  carbohydrateG: null,
+  fatG: null,
+  fiberG: null,
+  sodiumMg: null,
+  calciumMg: null,
+  ironMg: null,
+  magnesiumMg: null,
+  phosphorusMg: null,
+  potassiumMg: null,
+  zincMg: null,
+  copperMcg: null,
+  manganeseMg: null,
+  betaCaroteneMcg: null,
+  vitaminAMcg: null,
+  vitaminDMcg: null,
+  vitaminEMg: null,
+  vitaminKMcg: null,
+  vitaminCMg: null,
+  vitaminB1Mg: null,
+  vitaminB2Mg: null,
+  vitaminPpMg: null,
+  vitaminB5Mg: null,
+  vitaminB6Mg: null,
+  vitaminB9Mcg: null,
+  vitaminB12Mcg: null,
+  vitaminHMcg: null,
+};
 
 /**
  * Create a mock GeminiClient with optional overrides.
@@ -10,7 +78,13 @@ export function createMockGemini(
 ): GeminiClient {
   return {
     generateStructuredOutput: vi.fn(),
+    generateStructuredOutputStream: vi.fn(),
     generateEmbedding: vi.fn().mockResolvedValue(Array(768).fill(0.1)),
+    generateEmbeddingBatch: vi
+      .fn()
+      .mockImplementation((texts: string[]) =>
+        Promise.resolve(texts.map(() => Array(768).fill(0.1)))
+      ),
     ...overrides,
   };
 }
@@ -35,8 +109,8 @@ export function extractSqlText(query: unknown): string {
 
 /**
  * Create a mock DB that routes responses based on SQL query content.
- * Embedding cache and synonym candidate queries return [] automatically.
- * Other queries return the next item from the provided response queue.
+ * Warm-up (embedding), embedding cache, and synonym candidate queries return [] automatically.
+ * Other queries (fuzzy/vector match, nutrition cache) return from the response queue.
  */
 export function createRoutingMockDb(responses: unknown[][]) {
   let idx = 0;
@@ -46,6 +120,14 @@ export function createRoutingMockDb(responses: unknown[][]) {
       if (
         queryStr.includes('ingredient_query_embeddings') ||
         queryStr.includes('synonym_candidates')
+      ) {
+        return Promise.resolve([]);
+      }
+      // Warm-up: embedding cache loading from food_composition with source_id filter
+      if (
+        queryStr.includes('vietnamese_food_composition') &&
+        queryStr.includes('source_id') &&
+        queryStr.includes('embedding')
       ) {
         return Promise.resolve([]);
       }

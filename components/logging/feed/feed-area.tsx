@@ -1,30 +1,68 @@
 'use client';
 
-import { Loader2 } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { EmptyState } from '@/components/logging/feed/empty-state';
 import { MacroSummary } from '@/components/logging/feed/macro-summary';
 import { MealEntry } from '@/components/logging/feed/meal-entry';
-import { MealInput } from '@/components/logging/input/meal-input';
-import { useAnalyzeMeal } from '@/hooks/use-analyze-meal';
-import { recalculateTotals } from '@/lib/meal-utils';
-import type { ChatMessage, MacroBreakdown, ParsedMeal } from '@/lib/types/meal';
+import { PersistedMealCard } from '@/components/logging/feed/persisted-meal-card';
+import { StreamingMealEntry } from '@/components/logging/feed/streaming-meal-entry';
+import {
+  MealInput,
+  type MealInputHandle,
+} from '@/components/logging/input/meal-input';
+import type { LoggingProfile } from '@/components/logging/logging-shell';
+import { useDailyMeals } from '@/hooks/use-daily-meals';
+import { useConfirmMeal } from '@/hooks/use-meal-mutations';
+import { useStreamAnalysis } from '@/hooks/use-stream-analysis';
+import { useSubmitGuard } from '@/hooks/use-submit-guard';
+import {
+  goalAdjustNutrition,
+  sumDisplayedNutrition,
+} from '@/lib/ai/pipeline/goal-adjustment';
+import type { ChatMessage, StreamingPhase } from '@/lib/types/meal';
 
 function generateId() {
   return `msg-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
 }
 
-interface FeedAreaProps {
-  targets: MacroBreakdown;
+function toStreamingPhase(status: string): StreamingPhase {
+  switch (status) {
+    case 'decomposing':
+      return 'decomposing';
+    case 'matching':
+      return 'matching';
+    case 'estimating':
+      return 'estimating';
+    case 'assembling':
+      return 'assembling';
+    case 'done':
+    case 'error':
+      return 'assembling';
+    default:
+      return 'waiting';
+  }
 }
 
-export function FeedArea({ targets }: FeedAreaProps) {
+interface FeedAreaProps {
+  selectedDate: string;
+  profile: LoggingProfile;
+}
+
+export function FeedArea({ selectedDate, profile }: FeedAreaProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [inputValue, setInputValue] = useState('');
+  const inputRef = useRef<MealInputHandle>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
-  const { mutateAsync, isPending } = useAnalyzeMeal();
+  const stream = useStreamAnalysis();
+  const { guard } = useSubmitGuard();
+  const [streamingMsgId, setStreamingMsgId] = useState<string | null>(null);
+
+  // Persisted meals from DB
+  const { data: persistedMeals = [], isLoading } = useDailyMeals(selectedDate);
+
+  // Mutations
+  const confirmMeal = useConfirmMeal();
 
   const scrollToBottom = useCallback(() => {
     requestAnimationFrame(() => {
@@ -37,83 +75,219 @@ export function FeedArea({ targets }: FeedAreaProps) {
     });
   }, []);
 
-  const dailyTotals = useMemo<MacroBreakdown>(() => {
-    const meals = messages
-      .filter((m) => m.role === 'assistant' && m.parsedMeal)
-      .map((m) => m.parsedMeal!);
+  // Compute daily totals from persisted meals using goal adjustment
+  const targets = useMemo(
+    () => ({
+      calories: profile.calorieTarget,
+      protein: profile.proteinTargetG,
+      carbs: profile.carbsTargetG,
+      fat: profile.fatTargetG,
+    }),
+    [
+      profile.calorieTarget,
+      profile.proteinTargetG,
+      profile.carbsTargetG,
+      profile.fatTargetG,
+    ]
+  );
 
-    return meals.reduce<MacroBreakdown>(
-      (acc, meal) => {
-        const totals = recalculateTotals(meal.items);
-        return {
-          calories: acc.calories + totals.calories,
-          protein: acc.protein + totals.protein,
-          carbs: acc.carbs + totals.carbs,
-          fat: acc.fat + totals.fat,
-        };
-      },
-      { calories: 0, protein: 0, carbs: 0, fat: 0 }
-    );
-  }, [messages]);
-
-  const handleSubmit = async () => {
-    const text = inputValue.trim();
-    if (!text || isPending) return;
-
-    const userMessage: ChatMessage = {
-      id: generateId(),
-      role: 'user',
-      content: text,
-      timestamp: new Date(),
-    };
-
-    setMessages((prev) => [...prev, userMessage]);
-    setInputValue('');
-    scrollToBottom();
-
-    try {
-      const parsedMeal: ParsedMeal = await mutateAsync(text);
-
-      const assistantMessage: ChatMessage = {
-        id: generateId(),
-        role: 'assistant',
-        content: '',
-        parsedMeal,
-        userInput: text,
-        timestamp: new Date(),
-      };
-
-      setMessages((prev) => [...prev, assistantMessage]);
-      scrollToBottom();
-    } catch (error) {
-      const message =
-        error instanceof Error
-          ? error.message
-          : 'Failed to analyze meal. Please try again.';
-      toast.error(message);
-
-      const errorMessage: ChatMessage = {
-        id: generateId(),
-        role: 'assistant',
-        content: message,
-        userInput: text,
-        timestamp: new Date(),
-      };
-      setMessages((prev) => [...prev, errorMessage]);
-      scrollToBottom();
+  const dailyTotals = useMemo(() => {
+    if (persistedMeals.length === 0) {
+      return { calories: 0, protein: 0, carbs: 0, fat: 0 };
     }
-  };
 
-  const handleConfirmMeal = (messageId: string, meal: ParsedMeal) => {
-    setMessages((prev) =>
-      prev.map((msg) =>
-        msg.id === messageId ? { ...msg, parsedMeal: meal } : msg
+    const displayed = persistedMeals.map((meal) =>
+      goalAdjustNutrition(
+        meal.boundedNutrition,
+        profile.goal,
+        profile.aggression
       )
     );
+    const total = sumDisplayedNutrition(displayed);
+
+    return {
+      calories: Math.round(total.caloriesKcal ?? 0),
+      protein: Math.round(total.proteinG ?? 0),
+      carbs: Math.round(total.carbohydrateG ?? 0),
+      fat: Math.round(total.fatG ?? 0),
+    };
+  }, [persistedMeals, profile.goal, profile.aggression]);
+
+  const handleSubmit = async () => {
+    const text = (inputRef.current?.getText() ?? '').trim();
+    if (!text || stream.isAnalyzing) return;
+
+    await guard(async () => {
+      const assistantMsgId = generateId();
+      setStreamingMsgId(assistantMsgId);
+      lastAnalysisIdRef.current = null;
+      lastErrorRef.current = null;
+
+      const userMessage: ChatMessage = {
+        id: generateId(),
+        role: 'user',
+        content: text,
+        timestamp: new Date(),
+      };
+
+      const streamingMessage: ChatMessage = {
+        id: assistantMsgId,
+        role: 'assistant',
+        content: '',
+        userInput: text,
+        timestamp: new Date(),
+        isStreaming: true,
+        streamingPhase: 'waiting',
+      };
+
+      setMessages((prev) => [...prev, userMessage, streamingMessage]);
+      inputRef.current?.clear();
+      scrollToBottom();
+
+      await stream.analyze(text);
+    });
   };
 
-  const assistantMessages = messages.filter((m) => m.role === 'assistant');
-  const hasMessages = assistantMessages.length > 0;
+  // Derive display messages: overlay live streaming state onto the active message.
+  const displayMessages = useMemo(() => {
+    if (!streamingMsgId || stream.status === 'idle') return messages;
+
+    return messages.map((msg) => {
+      if (msg.id !== streamingMsgId) return msg;
+      return {
+        ...msg,
+        isStreaming: true,
+        streamingPhase: toStreamingPhase(stream.status),
+        streamingItems:
+          stream.items.length > 0 ? stream.items : msg.streamingItems,
+        streamingCompletedItems:
+          stream.completedItems.length > 0
+            ? stream.completedItems
+            : msg.streamingCompletedItems,
+      };
+    });
+  }, [
+    messages,
+    streamingMsgId,
+    stream.status,
+    stream.items,
+    stream.completedItems,
+  ]);
+
+  // Auto-scroll when streaming card grows
+  const streamItemCount = stream.items.length + stream.completedItems.length;
+  useEffect(() => {
+    if (stream.isAnalyzing && streamItemCount > 0) {
+      scrollToBottom();
+    }
+  }, [stream.isAnalyzing, streamItemCount, scrollToBottom]);
+
+  // Terminal: stream completed — finalize streaming message, store analysisId
+  const lastAnalysisIdRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (
+      stream.status !== 'done' ||
+      !stream.result ||
+      !stream.analysisId ||
+      lastAnalysisIdRef.current === stream.analysisId ||
+      !streamingMsgId
+    ) {
+      return;
+    }
+    lastAnalysisIdRef.current = stream.analysisId;
+    const msgId = streamingMsgId;
+    const analysisId = stream.analysisId;
+    setStreamingMsgId(null);
+
+    setMessages((prev) =>
+      prev.map((msg) =>
+        msg.id === msgId
+          ? {
+              ...msg,
+              isStreaming: false,
+              streamingPhase: 'done' as const,
+              streamingItems: undefined,
+              streamingCompletedItems: undefined,
+              parsedMeal: stream.result!,
+              analysisId,
+            }
+          : msg
+      )
+    );
+    stream.reset();
+    scrollToBottom();
+  }, [
+    stream.status,
+    stream.result,
+    stream.analysisId,
+    stream.reset,
+    streamingMsgId,
+    scrollToBottom,
+  ]);
+
+  // Terminal: stream errored
+  const lastErrorRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (
+      stream.status !== 'error' ||
+      !stream.error ||
+      lastErrorRef.current === stream.error ||
+      !streamingMsgId
+    ) {
+      return;
+    }
+    lastErrorRef.current = stream.error;
+    const msgId = streamingMsgId;
+    setStreamingMsgId(null);
+
+    toast.error(stream.error);
+
+    setMessages((prev) =>
+      prev.map((msg) =>
+        msg.id === msgId
+          ? {
+              ...msg,
+              isStreaming: false,
+              streamingPhase: undefined,
+              streamingItems: undefined,
+              streamingCompletedItems: undefined,
+              parsedMeal: undefined,
+              content: stream.error!,
+            }
+          : msg
+      )
+    );
+    stream.reset();
+    scrollToBottom();
+  }, [
+    stream.status,
+    stream.error,
+    stream.reset,
+    streamingMsgId,
+    scrollToBottom,
+  ]);
+
+  // Handle confirm: persist to DB, remove streaming message
+  const handleConfirmMeal = (messageId: string, analysisId: string) => {
+    confirmMeal.mutate(
+      { analysisId },
+      {
+        onSuccess: () => {
+          // Remove the streaming message — persisted meal will appear via query
+          setMessages((prev) => prev.filter((m) => m.id !== messageId));
+          toast.success('Đã lưu bữa ăn!');
+        },
+      }
+    );
+  };
+
+  // Unconfirmed streaming messages (exclude user messages)
+  const unconfirmedMessages = displayMessages.filter(
+    (m) => m.role === 'assistant'
+  );
+  const hasPersistedMeals = persistedMeals.length > 0;
+  const hasStreamingMessages = unconfirmedMessages.length > 0;
+  const hasContent = hasPersistedMeals || hasStreamingMessages;
 
   return (
     <main className="flex flex-1 flex-col self-stretch overflow-hidden">
@@ -123,14 +297,19 @@ export function FeedArea({ targets }: FeedAreaProps) {
         className="flex min-h-0 flex-1 flex-col overflow-y-auto"
       >
         <AnimatePresence mode="wait">
-          {!hasMessages && !isPending && (
+          {!hasContent && !stream.isAnalyzing && !isLoading && (
             <div className="flex flex-1 items-center justify-center px-4 py-6 sm:px-6">
-              <EmptyState onSuggestionClick={setInputValue} />
+              <EmptyState
+                onSuggestionClick={(suggestion) => {
+                  inputRef.current?.setText(suggestion);
+                  inputRef.current?.focus();
+                }}
+              />
             </div>
           )}
         </AnimatePresence>
 
-        {(hasMessages || isPending) && (
+        {hasContent && (
           <>
             {/* Sticky macro summary */}
             <div className="sticky top-0 z-10 bg-nham-surface px-4 pt-4 pb-3 sm:px-6">
@@ -143,16 +322,36 @@ export function FeedArea({ targets }: FeedAreaProps) {
             <div className="px-4 pb-6 sm:px-6">
               <div className="mx-auto w-full max-w-3xl pl-12">
                 <div className="flex flex-col gap-8">
+                  {/* Persisted meals from DB */}
                   <AnimatePresence initial={false}>
-                    {assistantMessages.map((msg) => {
+                    {persistedMeals.map((meal) => (
+                      <PersistedMealCard
+                        key={meal.id}
+                        meal={meal}
+                        profile={profile}
+                      />
+                    ))}
+                  </AnimatePresence>
+
+                  {/* Streaming / unconfirmed messages */}
+                  <AnimatePresence initial={false}>
+                    {unconfirmedMessages.map((msg) => {
+                      if (msg.isStreaming) {
+                        return (
+                          <StreamingMealEntry key={msg.id} message={msg} />
+                        );
+                      }
+
                       if (msg.parsedMeal) {
                         return (
                           <MealEntry
                             key={msg.id}
                             message={msg}
-                            onConfirm={(meal) =>
-                              handleConfirmMeal(msg.id, meal)
-                            }
+                            onConfirm={() => {
+                              if (msg.analysisId)
+                                handleConfirmMeal(msg.id, msg.analysisId);
+                            }}
+                            isConfirming={confirmMeal.isPending}
                           />
                         );
                       }
@@ -189,32 +388,6 @@ export function FeedArea({ targets }: FeedAreaProps) {
                       );
                     })}
                   </AnimatePresence>
-
-                  {/* Loading indicator */}
-                  <AnimatePresence>
-                    {isPending && (
-                      <motion.div
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -5 }}
-                        className="group relative"
-                      >
-                        <div className="absolute top-2 bottom-0 -left-10 w-px bg-nham-border/60 group-last:bg-transparent" />
-                        <div className="absolute top-2 -left-[43px] h-2 w-2 animate-pulse rounded-full border-2 border-nham-accent bg-nham-accent/30" />
-                        <div className="flex items-center gap-2.5 rounded-2xl border border-nham-border/30 bg-white px-4 py-3">
-                          <Loader2 className="h-4 w-4 animate-spin text-nham-accent" />
-                          <span
-                            className="text-nham-text-muted text-sm"
-                            style={{
-                              fontFamily: 'DM Sans, sans-serif',
-                            }}
-                          >
-                            Analyzing your meal...
-                          </span>
-                        </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
                 </div>
               </div>
             </div>
@@ -226,10 +399,9 @@ export function FeedArea({ targets }: FeedAreaProps) {
       <div className="px-4 pt-2 pb-4">
         <div className="mx-auto max-w-3xl">
           <MealInput
-            value={inputValue}
-            onChange={setInputValue}
+            ref={inputRef}
             onSubmit={handleSubmit}
-            disabled={isPending}
+            disabled={stream.isAnalyzing}
           />
         </div>
       </div>

@@ -21,6 +21,14 @@ export interface ParsedMeal {
 
 export type ChatRole = 'user' | 'assistant';
 
+export type StreamingPhase =
+  | 'waiting'
+  | 'decomposing'
+  | 'matching'
+  | 'estimating'
+  | 'assembling'
+  | 'done';
+
 export interface ChatMessage {
   id: string;
   role: ChatRole;
@@ -28,5 +36,9 @@ export interface ChatMessage {
   parsedMeal?: ParsedMeal;
   userInput?: string;
   timestamp: Date;
-  isLoading?: boolean;
+  isStreaming?: boolean;
+  streamingPhase?: StreamingPhase;
+  streamingItems?: string[];
+  streamingCompletedItems?: MealItem[];
+  analysisId?: string;
 }

@@ -99,6 +99,48 @@
       "when": 1775068812806,
       "tag": "20260401184012_add_ingredient_sources",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1775369522507,
+      "tag": "20260405061202_add_pending_analyses_table",
+      "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "7",
+      "when": 1775446491383,
+      "tag": "20260406033451_add_pipeline_requests_table",
+      "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1775459438992,
+      "tag": "20260406071038_pipeline_requests_user_cascade",
+      "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1775446854648,
+      "tag": "20260406071100_add_meal_item_grouping_columns",
+      "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1775447141119,
+      "tag": "20260406071200_add_meal_items_order_index",
+      "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1775471411897,
+      "tag": "20260406103011_add_unmatched_ingredients_user_id",
+      "breakpoints": true
     }
   ]
 }

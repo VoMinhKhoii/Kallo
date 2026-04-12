@@ -1,119 +1,237 @@
 import { eq } from 'drizzle-orm';
-import { type NextRequest, NextResponse } from 'next/server';
-import { z } from 'zod';
+import type { NextRequest } from 'next/server';
 import { createGeminiClient } from '@/lib/ai/gemini';
 import { buildUserContext, toParsedMeal } from '@/lib/ai/mappers';
+import { logUnmatchedIngredients } from '@/lib/ai/matching';
 import { analyzeMeal } from '@/lib/ai/pipeline';
+import { logPipelineEnd, logPipelineStart } from '@/lib/ai/pipeline/logging';
+import type { StreamEvent } from '@/lib/ai/streaming';
+import { encodeSSE } from '@/lib/ai/streaming';
 import { db } from '@/lib/db';
-import { userProfiles } from '@/lib/db/schema';
+import { pendingAnalyses, userProfiles } from '@/lib/db/schema';
+import { Errors, serializeError } from '@/lib/errors';
 import { createClient } from '@/lib/supabase/server';
+import { mealMessageSchema } from '@/lib/validation';
 
-const messageSchema = z
-  .string()
-  .min(1, 'Message is required')
-  .max(500, 'Message is too long');
+export const runtime = 'nodejs';
+export const maxDuration = 30;
 
-export async function POST(request: NextRequest) {
+/**
+ * Pre-stream validation: auth, input, profile, config.
+ * Returns structured JSON error responses before SSE starts.
+ *
+ * Auth verification and body parsing run in parallel to reduce latency by
+ * ~50-100ms on each request (saves one sequential network round-trip).
+ */
+async function validateRequest(request: NextRequest) {
   try {
     const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
 
-    if (!user) {
-      return NextResponse.json(
-        { error: 'You must be logged in to analyze meals.' },
-        { status: 401 }
-      );
+    // Parallelize auth and body parsing — independent operations
+    const [authResult, bodyResult] = await Promise.allSettled([
+      supabase.auth.getUser(),
+      request.json() as Promise<unknown>,
+    ]);
+
+    // Validate auth — getUser() can resolve with { data: { user: null }, error: AuthError }
+    if (
+      authResult.status === 'rejected' ||
+      authResult.value.error ||
+      !authResult.value.data.user
+    ) {
+      throw Errors.notAuthenticated();
     }
+    const user = authResult.value.data.user;
 
-    const body = await request.json();
-    const parsed = messageSchema.safeParse(body?.message);
-
-    if (!parsed.success) {
-      return NextResponse.json(
-        { error: parsed.error.issues[0]?.message ?? 'Invalid input' },
-        { status: 400 }
-      );
+    // Validate body parse
+    if (bodyResult.status === 'rejected') {
+      throw Errors.validationFailed('Invalid JSON in request body');
     }
+    const body = bodyResult.value;
 
+    // Fetch profile (requires user.id from auth above)
     const rows = await db
       .select()
       .from(userProfiles)
       .where(eq(userProfiles.userId, user.id))
       .limit(1);
-
     const profile = rows[0];
     if (!profile?.goal || !profile?.regionalProfile) {
-      return NextResponse.json(
-        { error: 'Please complete onboarding before analyzing meals.' },
-        { status: 400 }
+      throw Errors.onboardingIncomplete();
+    }
+
+    const parsed = mealMessageSchema.safeParse(body);
+    if (!parsed.success) {
+      throw Errors.validationFailed(
+        parsed.error.issues[0]?.message ?? 'Invalid input'
       );
     }
 
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
-      return NextResponse.json(
-        { error: 'AI service is not configured' },
-        { status: 500 }
-      );
+      throw Errors.internal();
     }
 
-    const gemini = createGeminiClient(apiKey);
-    const result = await analyzeMeal(
-      parsed.data,
-      buildUserContext(profile),
-      db,
-      gemini
-    );
-
-    if (!result.success) {
-      const statusMap: Record<string, number> = {
-        non_food_input: 400,
-        parse_error: 500,
-        api_error: 500,
-      };
-      return NextResponse.json(
-        { error: result.error.message },
-        { status: statusMap[result.error.type] ?? 500 }
-      );
-    }
-
-    const meal = toParsedMeal(result.data);
-
-    const hasNutrition = meal.items?.some(
-      (item) => item.macros.calories !== 0 || item.macros.protein !== 0
-    );
-
-    if (!hasNutrition) {
-      console.error(
-        '[analyze-meal] Pipeline returned all-null nutrition — assembly likely failed',
-        { input: parsed.data, rawResult: result.data }
-      );
-      return NextResponse.json(
-        {
-          error:
-            'Could not estimate nutrition for this meal. Please try describing it differently.',
-        },
-        { status: 500 }
-      );
-    }
-
-    return NextResponse.json(meal);
-  } catch (error) {
-    console.error('Chat API error:', error);
-
-    const errorMessage =
-      error instanceof Error ? error.message : 'Failed to process meal';
-    const isRateLimit = errorMessage.includes('429');
-
-    return NextResponse.json(
-      {
-        error: isRateLimit
-          ? 'Rate limited — please wait a moment and try again'
-          : 'Failed to process meal',
+    return {
+      data: {
+        userId: user.id,
+        message: parsed.data.message,
+        profile,
+        apiKey,
       },
-      { status: isRateLimit ? 429 : 500 }
-    );
+    };
+  } catch (error) {
+    return { error: serializeError(error) };
   }
+}
+
+export async function POST(request: NextRequest) {
+  // Phase 1: Pre-stream validation — errors returned as JSON
+  const validation = await validateRequest(request);
+  if (validation.error) return validation.error;
+  const { userId, message, profile, apiKey } = validation.data;
+
+  const userContext = buildUserContext(profile);
+
+  // Fire-and-forget: log pipeline start for observability (never blocks SSE)
+  const requestId = logPipelineStart(userId, message, userContext, db);
+
+  // Phase 2: Stream pipeline results as SSE
+  const encoder = new TextEncoder();
+  const stream = new ReadableStream({
+    async start(controller) {
+      const emit = (event: StreamEvent) => {
+        controller.enqueue(encoder.encode(encodeSSE(event)));
+      };
+
+      const startTime = Date.now();
+
+      try {
+        const gemini = createGeminiClient(apiKey);
+        const result = await analyzeMeal(
+          message,
+          userContext,
+          db,
+          gemini,
+          emit
+        );
+
+        // Check for abort after pipeline completes
+        if (request.signal.aborted) {
+          return;
+        }
+
+        if (!result.success) {
+          console.error(
+            '[analyze-meal] Pipeline returned error:',
+            result.error.type,
+            result.error.message
+          );
+          logPipelineEnd(
+            requestId,
+            'error',
+            Date.now() - startTime,
+            db,
+            result.error.message
+          );
+          emit({
+            type: 'error',
+            code: result.error.type,
+            message: result.error.message,
+            retryable: result.error.retryable,
+          });
+          return;
+        }
+
+        const meal = toParsedMeal(result.data);
+        const hasNutrition = meal.items?.some(
+          (item) => item.macros.calories !== 0 || item.macros.protein !== 0
+        );
+
+        if (!hasNutrition) {
+          console.error('[analyze-meal] Pipeline returned all-null nutrition', {
+            input: message,
+          });
+          logPipelineEnd(
+            requestId,
+            'error',
+            Date.now() - startTime,
+            db,
+            'empty_nutrition'
+          );
+          emit({
+            type: 'error',
+            code: 'empty_nutrition',
+            message:
+              'Could not estimate nutrition for this meal. Please try describing it differently.',
+            retryable: true,
+          });
+          return;
+        }
+
+        // Emit final display result
+        emit({ type: 'result', data: meal });
+
+        // Store full pipeline result durably for later confirmation
+        const [inserted] = await db
+          .insert(pendingAnalyses)
+          .values({
+            userId,
+            pipelineResult: result.data,
+            rawInput: message,
+          })
+          .returning({ id: pendingAnalyses.id });
+
+        // Terminal event — analysis stored, safe to confirm
+        emit({
+          type: 'analysis_complete',
+          analysisId: inserted.id,
+        });
+
+        // Fire-and-forget: log success + unmatched ingredients
+        logPipelineEnd(requestId, 'success', Date.now() - startTime, db);
+        if (result.data.unmatchedIngredients.length > 0) {
+          logUnmatchedIngredients(
+            result.data.unmatchedIngredients,
+            null,
+            db
+          ).catch((err) =>
+            console.error('Failed to log unmatched ingredients:', err)
+          );
+        }
+      } catch (error) {
+        console.error('[analyze-meal] Stream error:', error);
+        logPipelineEnd(
+          requestId,
+          'error',
+          Date.now() - startTime,
+          db,
+          error instanceof Error ? error.message : 'unknown'
+        );
+
+        const errorMessage =
+          error instanceof Error ? error.message : 'Failed to process meal';
+        const isRateLimit = errorMessage.includes('429');
+
+        emit({
+          type: 'error',
+          code: isRateLimit ? 'rate_limit' : 'internal',
+          message: isRateLimit
+            ? 'Rate limited — please wait a moment and try again'
+            : 'Failed to process meal',
+          retryable: !isRateLimit,
+        });
+      } finally {
+        controller.close();
+      }
+    },
+  });
+
+  return new Response(stream, {
+    headers: {
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache',
+      Connection: 'keep-alive',
+    },
+  });
 }

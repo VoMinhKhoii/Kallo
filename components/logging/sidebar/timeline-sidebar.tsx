@@ -1,192 +1,269 @@
 'use client';
 
+import { useQuery } from '@tanstack/react-query';
 import { ChevronDown, ChevronUp } from 'lucide-react';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { loadMealDates } from '@/lib/actions/meals';
 import { cn } from '@/lib/utils';
 
-interface DayItem {
-  id: string;
-  label: string;
-  active?: boolean;
+interface TimelineSidebarProps {
+  userId: string;
+  selectedDate: string;
+  onSelectDate: (date: string) => void;
 }
 
-interface WeekItem {
-  id: string;
+interface WeekSection {
+  key: string;
   label: string;
-  active?: boolean;
-  expanded?: boolean;
-  days?: DayItem[];
+  days: string[];
 }
 
 interface MonthSection {
-  id: string;
+  key: string;
   label: string;
-  expanded: boolean;
-  weeks?: WeekItem[];
+  weeks: WeekSection[];
 }
 
-const initialMonths: MonthSection[] = [
-  { id: '1-2026', label: '1/2026', expanded: false },
-  {
-    id: '2-2026',
-    label: '2/2026',
-    expanded: true,
-    weeks: [
-      { id: 'week-1', label: 'Week 1' },
-      { id: 'week-2', label: 'Week 2' },
-      { id: 'week-3', label: 'Week 3' },
-      {
-        id: 'week-4',
-        label: 'Week 4',
-        active: true,
-        expanded: true,
-        days: [
-          { id: 'mon-16-2', label: 'Mon - 16/2' },
-          { id: 'tue-17-2', label: 'Tue - 17/2' },
-          {
-            id: 'wed-18-2',
-            label: 'Wed - 18/2',
-            active: true,
-          },
-        ],
-      },
-    ],
-  },
-];
+function formatDayLabel(dateStr: string): string {
+  const d = new Date(`${dateStr}T00:00:00`);
+  const weekday = d.toLocaleDateString('en-US', { weekday: 'short' });
+  const day = d.getDate();
+  const month = d.getMonth() + 1;
+  return `${weekday} - ${day}/${month}`;
+}
 
-export function TimelineSidebar() {
-  const [months, setMonths] = useState<MonthSection[]>(initialMonths);
+function weekOfMonth(dateStr: string): number {
+  const day = Number.parseInt(dateStr.split('-')[2], 10);
+  return Math.ceil(day / 7);
+}
 
-  const toggleMonth = useCallback((monthId: string) => {
-    setMonths((prev) =>
-      prev.map((m) => (m.id === monthId ? { ...m, expanded: !m.expanded } : m))
-    );
+function groupByMonth(dates: string[]): MonthSection[] {
+  // Group dates into month → week buckets
+  const monthMap = new Map<string, Map<number, string[]>>();
+  for (const date of dates) {
+    const [y, m] = date.split('-');
+    const monthKey = `${m}-${y}`;
+    if (!monthMap.has(monthKey)) monthMap.set(monthKey, new Map());
+    const weekNum = weekOfMonth(date);
+    const weekMap = monthMap.get(monthKey)!;
+    const existing = weekMap.get(weekNum) ?? [];
+    existing.push(date);
+    weekMap.set(weekNum, existing);
+  }
+
+  return Array.from(monthMap.entries()).map(([monthKey, weekMap]) => {
+    const weeks: WeekSection[] = Array.from(weekMap.entries())
+      .sort(([a], [b]) => a - b)
+      .map(([weekNum, days]) => ({
+        key: `${monthKey}-w${weekNum}`,
+        label: `Week ${weekNum}`,
+        days,
+      }));
+    return {
+      key: monthKey,
+      label: `${Number.parseInt(monthKey, 10)}/${monthKey.split('-')[1]}`,
+      weeks,
+    };
+  });
+}
+
+export function TimelineSidebar({
+  userId,
+  selectedDate,
+  onSelectDate,
+}: TimelineSidebarProps) {
+  const timezoneOffset = new Date().getTimezoneOffset();
+  const { data: dates = [] } = useQuery({
+    queryKey: ['meal-dates', userId, timezoneOffset],
+    queryFn: () => loadMealDates({ timezoneOffset }),
+    staleTime: 60_000,
+  });
+
+  const today = (() => {
+    const d = new Date();
+    const yyyy = d.getFullYear();
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+    return `${yyyy}-${mm}-${dd}`;
+  })();
+
+  const allDates = useMemo(() => {
+    const set = new Set(dates);
+    set.add(today);
+    return Array.from(set).sort().reverse();
+  }, [dates, today]);
+
+  const months = useMemo(() => groupByMonth(allDates), [allDates]);
+
+  const selectedMonth = useMemo(() => {
+    const [y, m] = selectedDate.split('-');
+    return `${m}-${y}`;
+  }, [selectedDate]);
+
+  const selectedWeekKey = useMemo(() => {
+    const [y, m] = selectedDate.split('-');
+    return `${m}-${y}-w${weekOfMonth(selectedDate)}`;
+  }, [selectedDate]);
+
+  const [expandedMonths, setExpandedMonths] = useState<Set<string>>(
+    () => new Set([selectedMonth])
+  );
+  const [expandedWeeks, setExpandedWeeks] = useState<Set<string>>(
+    () => new Set([selectedWeekKey])
+  );
+
+  // Auto-expand the month/week containing the newly selected date
+  useEffect(() => {
+    setExpandedMonths((prev) => new Set(prev).add(selectedMonth));
+    setExpandedWeeks((prev) => new Set(prev).add(selectedWeekKey));
+  }, [selectedMonth, selectedWeekKey]);
+
+  const toggleMonth = useCallback((monthKey: string) => {
+    setExpandedMonths((prev) => {
+      const next = new Set(prev);
+      if (next.has(monthKey)) next.delete(monthKey);
+      else next.add(monthKey);
+      return next;
+    });
   }, []);
 
-  const toggleWeek = useCallback((monthId: string, weekId: string) => {
-    setMonths((prev) =>
-      prev.map((m) =>
-        m.id === monthId && m.weeks
-          ? {
-              ...m,
-              weeks: m.weeks.map((w) =>
-                w.id === weekId ? { ...w, expanded: !w.expanded } : w
-              ),
-            }
-          : m
-      )
-    );
+  const toggleWeek = useCallback((weekKey: string) => {
+    setExpandedWeeks((prev) => {
+      const next = new Set(prev);
+      if (next.has(weekKey)) next.delete(weekKey);
+      else next.add(weekKey);
+      return next;
+    });
   }, []);
 
   return (
     <nav
-      className="flex h-full w-[212px] shrink-0 flex-col gap-3 overflow-y-auto border-border/40 border-r py-3 pr-3"
+      className="flex h-full w-[212px] shrink-0 flex-col items-start gap-3 overflow-y-auto border-border/40 border-r py-3 pr-3"
       aria-label="Timeline navigation"
     >
-      {months.map((month) => (
-        <div key={month.id} className="flex flex-col gap-2">
-          {/* Month header */}
-          <button
-            type="button"
-            onClick={() => toggleMonth(month.id)}
-            className="flex items-center gap-2 px-3 transition-colors hover:text-nham-text"
-          >
-            <span
-              className="flex-1 text-left font-medium text-[10px] text-muted-foreground uppercase tracking-[0.04em]"
-              style={{
-                fontFamily: 'DM Sans, sans-serif',
-              }}
-            >
-              {month.label}
-            </span>
-            {month.expanded ? (
-              <ChevronUp className="h-4 w-4 text-muted-foreground" />
-            ) : (
-              <ChevronDown className="h-4 w-4 text-muted-foreground" />
-            )}
-          </button>
+      {months.map((month) => {
+        const isMonthExpanded = expandedMonths.has(month.key);
 
-          {month.expanded && month.weeks && (
-            <>
-              <div className="h-0.5 rounded-sm bg-neutral-100" />
-              <div className="flex flex-col gap-1">
-                {month.weeks.map((week) => {
-                  const hasDays = week.days && week.days.length > 0;
-                  const isExpanded = week.expanded ?? false;
+        return (
+          <div key={month.key} className="flex w-full flex-col gap-3">
+            <div className="flex w-full flex-col gap-2">
+              <button
+                type="button"
+                onClick={() => toggleMonth(month.key)}
+                aria-expanded={isMonthExpanded}
+                aria-controls={`month-${month.key}`}
+                className="flex w-full items-center gap-2 px-3 transition-colors hover:text-nham-text"
+              >
+                <span
+                  className="flex flex-1 items-center font-medium text-[10px] text-muted-foreground tracking-[0.04em]"
+                  style={{ fontFamily: 'DM Sans, sans-serif' }}
+                >
+                  {month.label}
+                </span>
+                {isMonthExpanded ? (
+                  <ChevronUp className="h-4 w-4 text-muted-foreground" />
+                ) : (
+                  <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                )}
+              </button>
 
-                  return (
-                    <div key={week.id}>
-                      {/* Week button */}
-                      <button
-                        type="button"
-                        onClick={() => hasDays && toggleWeek(month.id, week.id)}
-                        className={cn(
-                          'flex w-full items-center gap-3 rounded-lg px-3 py-2 transition-colors',
-                          week.active && 'bg-nham-accent/30',
-                          hasDays && 'hover:bg-nham-hover/40'
-                        )}
-                      >
-                        <span
-                          className="flex-1 text-left font-medium text-foreground text-sm tracking-tight"
-                          style={{
-                            fontFamily: 'DM Sans, sans-serif',
-                          }}
+              {isMonthExpanded && (
+                <div
+                  id={`month-${month.key}`}
+                  className="flex w-full flex-col items-start gap-1"
+                >
+                  {month.weeks.map((week) => {
+                    const isWeekExpanded = expandedWeeks.has(week.key);
+                    const hasSelectedDay = week.days.includes(selectedDate);
+
+                    return (
+                      <div key={week.key} className="w-full">
+                        <button
+                          type="button"
+                          onClick={() => toggleWeek(week.key)}
+                          aria-expanded={isWeekExpanded}
+                          aria-controls={`week-${week.key}`}
+                          className={cn(
+                            'flex w-full items-center gap-3 rounded-lg px-3 py-2 transition-colors',
+                            hasSelectedDay
+                              ? 'bg-nham-accent/40'
+                              : 'hover:bg-nham-hover/40'
+                          )}
                         >
-                          {week.label}
-                        </span>
-                        {hasDays &&
-                          (isExpanded ? (
+                          <span
+                            className="flex-1 text-left font-medium text-foreground text-sm leading-5 tracking-tight"
+                            style={{ fontFamily: 'DM Sans, sans-serif' }}
+                          >
+                            {week.label}
+                          </span>
+                          {isWeekExpanded ? (
                             <ChevronUp className="h-4 w-4 text-muted-foreground" />
                           ) : (
                             <ChevronDown className="h-4 w-4 text-muted-foreground" />
-                          ))}
-                      </button>
+                          )}
+                        </button>
 
-                      {/* Days tree */}
-                      {hasDays && isExpanded && (
-                        <div className="flex pl-3">
-                          <div className="w-0.5 shrink-0 bg-nham-accent" />
-                          <ul className="-ml-0.5 flex flex-col gap-2">
-                            {week.days!.map((day) => (
-                              <li
-                                key={day.id}
-                                className="flex w-full items-center"
-                              >
-                                <div className="h-2 w-[13px] shrink-0 rounded-bl-lg border-nham-accent border-b-2 border-l-2" />
-                                <button
-                                  type="button"
-                                  className={cn(
-                                    'flex flex-1 items-center rounded-lg px-3 py-2',
-                                    day.active && 'bg-nham-accent/30'
-                                  )}
-                                >
-                                  <span
-                                    className={cn(
-                                      'flex-1 text-left font-medium text-xs tracking-tight',
-                                      day.active
-                                        ? 'text-foreground'
-                                        : 'text-muted-foreground'
-                                    )}
-                                    style={{
-                                      fontFamily: 'DM Sans, sans-serif',
-                                    }}
+                        {isWeekExpanded && (
+                          <div
+                            id={`week-${week.key}`}
+                            className="flex w-full items-start pl-3"
+                          >
+                            <div className="w-0.5 self-stretch bg-nham-accent" />
+                            <ul className="-ml-0.5 flex flex-1 flex-col items-start gap-2">
+                              {week.days.map((date) => {
+                                const isActive = date === selectedDate;
+                                const isToday = date === today;
+
+                                return (
+                                  <li
+                                    key={date}
+                                    className="flex w-full items-center gap-3 py-2 pr-3"
                                   >
-                                    {day.label}
-                                  </span>
-                                </button>
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            </>
-          )}
-        </div>
-      ))}
+                                    <div className="h-2 w-[13px] shrink-0 rounded-bl-lg border-nham-accent border-b-2 border-l-2" />
+                                    <button
+                                      type="button"
+                                      onClick={() => onSelectDate(date)}
+                                      aria-current={
+                                        isActive ? 'date' : undefined
+                                      }
+                                      className={cn(
+                                        'flex flex-1 items-center self-stretch rounded-lg px-3 py-2 hover:bg-nham-hover/40',
+                                        isActive && 'bg-nham-accent/40'
+                                      )}
+                                    >
+                                      <span
+                                        className={cn(
+                                          'flex-1 text-left font-medium text-sm tracking-tight',
+                                          isActive
+                                            ? 'text-foreground'
+                                            : 'text-muted-foreground'
+                                        )}
+                                        style={{
+                                          fontFamily: 'DM Sans, sans-serif',
+                                        }}
+                                      >
+                                        {isToday
+                                          ? 'Today'
+                                          : formatDayLabel(date)}
+                                      </span>
+                                    </button>
+                                  </li>
+                                );
+                              })}
+                            </ul>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            <div className="h-px w-full rounded-sm bg-neutral-100" />
+          </div>
+        );
+      })}
     </nav>
   );
 }

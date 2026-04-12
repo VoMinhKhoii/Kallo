@@ -39,7 +39,12 @@ interface StructuredOutputParams<T> {
 
 export interface GeminiClient {
   generateStructuredOutput<T>(params: StructuredOutputParams<T>): Promise<T>;
+  generateStructuredOutputStream<T>(
+    params: StructuredOutputParams<T>,
+    onChunk?: (accumulated: string) => void
+  ): Promise<T>;
   generateEmbedding(text: string): Promise<number[]>;
+  generateEmbeddingBatch(texts: string[]): Promise<number[][]>;
 }
 
 function isRateLimitError(error: unknown): boolean {
@@ -138,6 +143,47 @@ export function createGeminiClient(
       }, params.model);
     },
 
+    async generateStructuredOutputStream<T>(
+      params: StructuredOutputParams<T>,
+      onChunk?: (accumulated: string) => void
+    ): Promise<T> {
+      const jsonSchema = toJSONSchema(params.schema);
+      const promptSize = params.systemPrompt.length + params.userMessage.length;
+      console.info(
+        `[gemini] ${params.model} streaming output: prompt=${promptSize} chars (~${Math.round(promptSize / 4)} tokens)`
+      );
+
+      return withRetry(async () => {
+        const response = await ai.models.generateContentStream({
+          model: params.model,
+          contents: params.userMessage,
+          config: {
+            systemInstruction: params.systemPrompt,
+            responseMimeType: 'application/json',
+            responseJsonSchema: jsonSchema,
+            ...(params.temperature != null && {
+              temperature: params.temperature,
+            }),
+            ...(params.topP != null && { topP: params.topP }),
+            ...(params.topK != null && { topK: params.topK }),
+          },
+        });
+
+        let accumulated = '';
+        for await (const chunk of response) {
+          const text = chunk.text ?? '';
+          accumulated += text;
+          if (onChunk && text.length > 0) {
+            onChunk(accumulated);
+          }
+        }
+
+        if (!accumulated)
+          throw new Error('Gemini stream returned empty response');
+        return params.schema.parse(JSON.parse(accumulated));
+      }, `${params.model}-stream`);
+    },
+
     async generateEmbedding(text: string): Promise<number[]> {
       const cached = embeddingCache.get(text);
       if (cached) {
@@ -166,6 +212,59 @@ export function createGeminiClient(
         `[gemini] embedding cache miss: "${text.slice(0, 30)}" (cache size: ${embeddingCache.size})`
       );
       return embedding;
+    },
+
+    async generateEmbeddingBatch(texts: string[]): Promise<number[][]> {
+      if (texts.length === 0) return [];
+
+      // Partition into cached vs uncached
+      const results: (number[] | null)[] = texts.map(
+        (t) => embeddingCache.get(t) ?? null
+      );
+      const uncachedIndices = results
+        .map((r, i) => (r === null ? i : -1))
+        .filter((i) => i >= 0);
+
+      if (uncachedIndices.length === 0) {
+        console.info(`[gemini] batch embed: all ${texts.length} cached`);
+        return results as number[][];
+      }
+
+      const uncachedTexts = uncachedIndices.map((i) => texts[i]);
+      console.info(
+        `[gemini] batch embed: ${uncachedTexts.length} uncached / ${texts.length} total`
+      );
+
+      const embeddings = await withRetry(async () => {
+        const result = await ai.models.embedContent({
+          model: EMBEDDING_MODEL,
+          contents: uncachedTexts,
+          config: { outputDimensionality: EMBEDDING_DIMENSIONS },
+        });
+
+        if (
+          !result.embeddings ||
+          result.embeddings.length !== uncachedTexts.length
+        ) {
+          throw new Error(
+            `Gemini batch returned ${result.embeddings?.length ?? 0} embeddings for ${uncachedTexts.length} texts`
+          );
+        }
+
+        return result.embeddings.map((e) => {
+          if (!e.values) throw new Error('Gemini returned null embedding');
+          return e.values;
+        });
+      }, `batch-embed(${uncachedTexts.length})`);
+
+      // Populate cache and fill results
+      for (let j = 0; j < uncachedIndices.length; j++) {
+        const idx = uncachedIndices[j];
+        results[idx] = embeddings[j];
+        embeddingCache.set(texts[idx], embeddings[j]);
+      }
+
+      return results as number[][];
     },
   };
 }

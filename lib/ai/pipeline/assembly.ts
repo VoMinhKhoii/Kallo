@@ -3,12 +3,6 @@ import {
   GOAL_ADJUSTED_NUTRIENTS,
   NUTRITION_KEYS,
 } from '../constants';
-import {
-  goalAdjustNutrition,
-  sumBoundedNutrition,
-  sumDisplayedNutrition,
-} from '../goal-adjustment';
-import { normalizeBoundedEstimate } from '../schemas';
 import type {
   BoundedEstimate,
   BoundedNutrition,
@@ -24,10 +18,16 @@ import type {
   UnmatchedIngredient,
   UserContext,
 } from '../types';
+import {
+  goalAdjustNutrition,
+  sumBoundedNutrition,
+  sumDisplayedNutrition,
+} from './goal-adjustment';
+import { normalizeBoundedEstimate } from './schemas';
 
 /**
- * D5: Merge LLM's 5 bounded nutrients with DB mid values for remaining 23.
- * The LLM only estimates calories, protein, carbs, fat, fiber.
+ * D5: Merge LLM's 4 bounded macros with DB mid values for remaining 24.
+ * The LLM only estimates calories, protein, carbs, fat.
  * All other nutrients use the DB per-100g value scaled to portion, as {low=mid=high=val}.
  *
  * D2: Apply normalizeBoundedEstimate to re-sort any ordering violations.

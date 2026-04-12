@@ -86,7 +86,8 @@ export async function analyzeMealAction(
       logUnmatchedIngredients(
         result.data.unmatchedIngredients,
         null, // mealId not yet created — Phase 4 handles saving
-        db
+        db,
+        user.id
       ).catch((err) =>
         console.error('Failed to log unmatched ingredients:', err)
       );

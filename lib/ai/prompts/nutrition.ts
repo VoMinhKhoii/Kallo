@@ -13,16 +13,19 @@ import type {
 /**
  * Build the system prompt for LLM Call 2 (cooking-adjusted bounded nutrition).
  *
- * Prompt engineering applied:
- * - XML tags for structural clarity
- * - Few-shot example with explicit worked math (anchors raw→cooked scaling)
- * - Explicit raw-weight contract matching Call 1's output
- * - Cooking-method adjustment instructions with concrete multipliers
- * - Unmatched ingredient section clearly separated from DB-grounded section
+ * V2: Compressed instructions, no hardcoded % — LLM decides bounds.
+ * Dynamic XML data sections kept verbatim.
  *
  * Note: estimatedGrams from Step 1 are COOKED weights. We convert to raw here
  * before passing to the LLM, since DB values are per 100g RAW.
  */
+
+/**
+ * Collator for deterministic Vietnamese ingredient ordering.
+ * Sorting matched ingredients before building the prompt XML stabilizes
+ * Gemini's prompt cache prefix for repeated similar inputs.
+ */
+const viCollator = new Intl.Collator('vi', { sensitivity: 'base' });
 
 export function buildNutritionPrompt(
   mealItems: DecomposedMealItem[],
@@ -34,11 +37,37 @@ export function buildNutritionPrompt(
 
   const matchedLookup = new Map(matched.map((m) => [m.ingredientName, m]));
 
+  // Sort meal items and their ingredients for a deterministic prompt order.
+  // Same ingredient set → identical XML → Gemini prompt cache hit.
+  const sortedMealItems = [...mealItems]
+    .sort((a, b) => {
+      const nameOrder = viCollator.compare(a.name, b.name);
+      if (nameOrder !== 0) return nameOrder;
+      // Tie-breaker: compare sorted ingredient names for fully deterministic ordering.
+      // Prevents same meal-item names with different ingredient sets from producing
+      // different XML across permuted inputs (breaks Gemini prompt cache prefix).
+      const aKey = [...a.ingredients]
+        .map((i) => i.name)
+        .sort()
+        .join('\0');
+      const bKey = [...b.ingredients]
+        .map((i) => i.name)
+        .sort()
+        .join('\0');
+      return aKey < bKey ? -1 : aKey > bKey ? 1 : 0;
+    })
+    .map((item) => ({
+      ...item,
+      ingredients: [...item.ingredients].sort((a, b) =>
+        viCollator.compare(a.name, b.name)
+      ),
+    }));
+
   let ingredientData = '<ingredient_data>\n';
   ingredientData +=
     '  <!-- DB values are per 100g RAW uncooked weight. estimatedGrams is also RAW. -->\n\n';
 
-  for (const mealItem of mealItems) {
+  for (const mealItem of sortedMealItems) {
     ingredientData += `  <meal_item name="${mealItem.name}">\n`;
 
     for (const ing of mealItem.ingredients) {
@@ -64,7 +93,7 @@ export function buildNutritionPrompt(
     unmatchedSection +=
       '  <!-- No DB match found. Use your knowledge of Vietnamese cuisine for these. -->\n';
 
-    for (const mealItem of mealItems) {
+    for (const mealItem of sortedMealItems) {
       const unmatchedIngs = mealItem.ingredients.filter((ing) =>
         unmatchedNames.has(ing.name)
       );
@@ -84,59 +113,36 @@ export function buildNutritionPrompt(
     unmatchedSection += '</unmatched_ingredients>\n';
   }
 
-  return `You are a Vietnamese cuisine nutrition expert. Produce cooking-adjusted, bounded nutrition estimates for each ingredient in a meal.
+  return `You are a Vietnamese cuisine nutrition expert. Produce cooking-adjusted, bounded nutrition estimates.
 
 <instructions>
   <task>
-    For each ingredient in each meal item, produce LOW/MID/HIGH bounded estimates for 4 macros:
-    - caloriesKcal
-    - proteinG
-    - carbohydrateG
-    - fatG
+    For each ingredient in each meal item, produce LOW/MID/HIGH for 4 macros: caloriesKcal, proteinG, carbohydrateG, fatG.
   </task>
 
-  <calculation_steps>
-    Step 1 — Scale from DB values:
-      All estimatedGrams values are RAW uncooked weights. DB values are also per 100g RAW.
-      Base nutrition = (estimatedGrams / 100) × per_100g_raw_value
+  <calculation>
+    1. Scale: base = (estimatedGrams / 100) × per_100g_raw. All values are RAW weights.
+    2. Adjust for cooking method: each ingredient has a "cooking" attribute — use your knowledge of
+       how that cooking method affects macros (e.g., fat absorption in frying, nutrient loss in boiling).
+    3. MID = your best estimate after cooking adjustment.
+  </calculation>
 
-      Example: gạo tẻ, 65g raw, DB: 352 kcal / 100g raw
-        base_calories = (65 / 100) × 352 = 228.8 kcal
-
-    Step 2 — Apply cooking method adjustment to the base:
-      - kho (braising): carbs +10–20% from added sugar/caramel; fat +5–10% from oil; protein unchanged
-      - chiên / xào (frying/stir-fry): fat +15–30% from absorbed oil
-      - luộc (boiling): calories −5% from minor nutrient loss to water; other macros unchanged
-      - nướng (grilling): fat −5–10% from drip; otherwise minimal
-      - hấp (steaming): no significant change from base
-      - nấu (boiling rice): cooked rice weight = raw × 2.6, but nutritional total stays at raw base
-      - null / raw: use base values directly
-
-    Step 3 — Set LOW / MID / HIGH bounds:
-      - MID: base after cooking adjustment, using typical Vietnamese portion and preparation
-      - LOW: base −10–15% (lighter preparation, smaller portion end)
-      - HIGH: base +15–25% (richer preparation, generous portion end)
-
-      Widen the HIGH bound specifically for:
-      - heavy oil_usage → +5% extra fat on HIGH for fried/stir-fried items
-      - high sugar_braised → +5% extra carbs on HIGH for kho items
-      - finish_it broth_consumption → include full broth calories in MID/HIGH for soup ingredients
-  </calculation_steps>
+  <why_three_values>
+    We use LOW/MID/HIGH to power goal-based adjustments for users cutting or bulking.
+    - LOW: conservative lower bound — how low could this realistically be?
+    - HIGH: conservative upper bound — how high could this realistically be?
+    Express genuine uncertainty: widen bounds for uncertain ingredients (unknown oil quantity,
+    variable sugar, unmatched ingredients) and keep them tighter for well-known, DB-matched ones.
+  </why_three_values>
 
   <unmatched_rule>
-    For ingredients in <unmatched_ingredients>: use fallback estimation from your knowledge
-    of Vietnamese food composition, then apply the same Steps 1–3 above.
-    Treat these estimates as inherently wider — set LOW 15% below MID and HIGH 25% above MID.
+    For ingredients in <unmatched_ingredients>: use your Vietnamese food knowledge to estimate.
+    Use wider bounds since we have no DB reference.
 
     IMPORTANT: Each unmatched ingredient is nested under its parent <meal_item>.
-    You MUST use the meal item name as primary context for estimation — do not estimate in isolation.
-
-    Examples:
-    - "nước dùng" in "canh rau lang tôm" → light vegetable broth, near-water composition, ~5–8 kcal/100ml
-    - "nước dùng" in "bún bò Huế" → rich bone broth with shrimp paste, ~30–50 kcal/100ml
-
-    The same ingredient name in different meal items may have very different nutrition —
-    always resolve against the parent dish context first.
+    You MUST use the meal item name as primary context — same ingredient differs by dish:
+    - "nước dùng" in "canh rau lang tôm" → light broth ~5–8 kcal/100ml
+    - "nước dùng" in "bún bò Huế" → rich bone broth ~30–50 kcal/100ml
   </unmatched_rule>
 </instructions>
 
@@ -149,64 +155,17 @@ export function buildNutritionPrompt(
 </user_context>
 
 <example>
-  <input>
-    Meal item: cơm trắng
-    Ingredient: gạo tẻ, raw_grams=65, cooking=nấu
-    DB per 100g raw: calories=352, protein=6.8g, carbs=78.2g, fat=0.5g
-    User context: oil_usage=minimal, sugar_braised=low
-  </input>
-  <output>
-  {
-    "ingredientName": "gạo tẻ",
-    "caloriesKcal": { "low": 204, "mid": 229, "high": 263 },
-    "proteinG": { "low": 3.9, "mid": 4.4, "high": 5.1 },
-    "carbohydrateG": { "low": 44.2, "mid": 50.8, "high": 58.4 },
-    "fatG": { "low": 0.3, "mid": 0.3, "high": 0.4 }
-  }
-  </output>
-  <reasoning>
-    Base: (65/100) × 352 = 228.8 kcal. Cooking = nấu (boiling for rice): nutritional total
-    stays at raw base (water absorption changes weight, not calories). MID ≈ 229 kcal.
-    LOW = 229 × 0.89 ≈ 204 (lighter preparation, smaller end of portion range).
-    HIGH = 229 × 1.15 ≈ 263 (larger end, slightly denser rice). No oil/sugar adjustment
-    needed since this is plain boiled rice and oil_usage=minimal.
-  </reasoning>
-</example>
-
-<example>
-  <input>
-    Meal item: thịt kho trứng
-    Ingredient: thịt lợn ba chỉ, raw_grams=120, cooking=kho
-    DB per 100g raw: calories=258, protein=16.8g, carbs=0g, fat=21.1g
-    User context: oil_usage=normal, sugar_braised=medium
-  </input>
-  <output>
-  {
-    "ingredientName": "thịt lợn ba chỉ",
-    "caloriesKcal": { "low": 268, "mid": 318, "high": 380 },
-    "proteinG": { "low": 17.2, "mid": 20.2, "high": 21.8 },
-    "carbohydrateG": { "low": 2.1, "mid": 3.6, "high": 5.8 },
-    "fatG": { "low": 22.8, "mid": 26.6, "high": 32.1 }
-  }
-  </output>
-  <reasoning>
-    Base: (120/100) × 258 = 309.6 kcal. Cooking = kho (braising): +10% fat from oil, 
-    +medium sugar adds ~3–4g carbs to MID. MID ≈ 318 kcal. LOW is lighter kho with 
-    less sugar/oil (−15%). HIGH is richer kho with more caramelized sugar and oil (+20%).
-    sugar_braised=medium → MID carbs include ~3g added sugar. oil_usage=normal → 
-    standard fat adjustment, no additional widening.
-  </reasoning>
+  gạo tẻ, 65g raw, nấu, DB: 352 kcal/100g → base=(65/100)×352=229 kcal.
+  nấu: no macro change. MID≈229. LOW≈210 (tighter, DB-matched). HIGH≈250.
+  → {"ingredientName":"gạo tẻ","caloriesKcal":{"low":210,"mid":229,"high":250},...}
 </example>
 
 ${ingredientData}
 ${unmatchedSection}
 
 <output_format>
-  Return JSON matching the provided schema.
-  The top-level has "mealItems" array. Each meal item has "mealItemName" and "ingredients" array.
-  Each ingredient has "ingredientName" and 4 nutrient fields (caloriesKcal, proteinG, carbohydrateG, fatG),
-  where each nutrient is an object with "low", "mid", "high" number values.
-  ingredientName must exactly match the name from the decomposition step.
-  All numeric values rounded to 1 decimal place.
+  Return JSON: top-level "mealItems" array. Each has "mealItemName" + "ingredients" array.
+  Each ingredient: "ingredientName" + 4 nutrients {low, mid, high}. Match names from decomposition exactly.
+  Round to 1 decimal place.
 </output_format>`;
 }
