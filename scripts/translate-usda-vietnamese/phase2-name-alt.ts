@@ -8,7 +8,13 @@
 
 import { sql } from 'drizzle-orm';
 import { loadCheckpoint, mergeAndSave } from './checkpoints';
-import { cooldownKey, loadGeminiKeys, pickKey, recordCall } from './keys';
+import {
+  allKeysDailyExhausted,
+  cooldownKey,
+  loadGeminiKeys,
+  pickKey,
+  recordCall,
+} from './keys';
 import {
   type Checkpoint1,
   type Checkpoint2,
@@ -123,6 +129,9 @@ function parseResponse(
   const validItems: NameAltItem[] = [];
   const seenIds = new Set<string>();
   for (const item of parsed) {
+    // Guard against non-object values in malformed LLM output
+    if (item === null || typeof item !== 'object' || Array.isArray(item))
+      continue;
     if (
       !item.fdc_id ||
       !expectedIds.has(item.fdc_id) ||
@@ -131,12 +140,21 @@ function parseResponse(
       continue;
     }
     if (seenIds.has(item.fdc_id)) continue;
-    // Filter to non-empty trimmed strings
-    const alts = item.name_alt
-      .filter((s: unknown) => typeof s === 'string' && s.trim().length > 0)
-      .map((s: string) => s.trim());
+    // Deduplicate, filter empty strings, and cap at 4 variants
+    const alts = [
+      ...new Set(
+        item.name_alt
+          .filter((s: unknown) => typeof s === 'string' && s.trim().length > 0)
+          .map((s: string) => s.trim())
+      ),
+    ];
     if (alts.length === 0) continue;
-    validItems.push({ fdc_id: item.fdc_id, name_alt: alts });
+    if (alts.length > 4) {
+      console.warn(
+        `  ⚠ ${item.fdc_id}: ${alts.length} variants, truncating to 4`
+      );
+    }
+    validItems.push({ fdc_id: item.fdc_id, name_alt: alts.slice(0, 4) });
     seenIds.add(item.fdc_id);
   }
 
@@ -247,6 +265,11 @@ export async function runPhase2(opts: Phase2Options): Promise<Checkpoint2> {
         // Pick an available key — wait outside parse retry budget
         let slot = pickKey(keys, keyIdx);
         while (!slot) {
+          if (allKeysDailyExhausted(keys)) {
+            throw new Error(
+              'All Gemini API keys have reached daily request limit. Re-run tomorrow or add more keys.'
+            );
+          }
           console.warn('  All keys on cooldown, waiting 35s...');
           await sleep(35_000);
           slot = pickKey(keys, keyIdx);
@@ -321,9 +344,21 @@ export async function runPhase2(opts: Phase2Options): Promise<Checkpoint2> {
             errObj.message?.includes('UNAVAILABLE');
 
           if (is429 || is5xx) {
-            // Gemini SDK errors don't expose raw HTTP headers via err.headers,
-            // so we rely on the 35s baseline cooldown (COOLDOWN_MS) in cooldownKey.
-            cooldownKey(slot, 0);
+            // Attempt to extract Retry-After from the SDK error response.
+            // The Gemini SDK may expose response headers via errObj.response?.headers.
+            // Fall back to 0 (uses COOLDOWN_MS baseline) if headers are unavailable.
+            const errWithHeaders = err as {
+              response?: { headers?: Record<string, string> };
+            };
+            const retryAfterHeader =
+              errWithHeaders.response?.headers?.['retry-after'] ??
+              errWithHeaders.response?.headers?.['Retry-After'];
+            let retryAfterMs = 0;
+            if (retryAfterHeader) {
+              const delta = Number(retryAfterHeader);
+              retryAfterMs = Number.isFinite(delta) ? delta * 1000 : 0;
+            }
+            cooldownKey(slot, retryAfterMs);
             keyIdx = (slot.index + 1) % keys.length;
             // Don't burn a parse attempt on rate-limit errors
             const backoff = is5xx ? 10_000 : 5_000;

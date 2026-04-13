@@ -425,7 +425,10 @@ describe('matchIngredients', () => {
         }
         dbCallQueries.push(queryStr);
 
-        // Source-aware vector: return match for FAO, empty for USDA
+        // Source-aware vector: return match for FAO, empty for USDA.
+        // Routing uses queryStr.includes('1') which detects the digit '1'
+        // in the embedded vector JSON (e.g. Array(768).fill(0.1) contains '1').
+        // This is intentional — see createSourceAwareMockDb in test-helpers.ts.
         if (
           queryStr.includes('match_ingredients_by_source') &&
           !queryStr.includes('fuzzy')

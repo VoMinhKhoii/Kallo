@@ -1,3 +1,7 @@
+// TODO: This file is ~471 LOC. Consider splitting into:
+//   - source-matching.ts (matchSingleIngredientWithEmbedding, pickBestSource)
+//   - nutrition-batch.ts (batchFetchNutrition)
+//   - cascade.ts (matchIngredients orchestration, constants, classifyConfidence)
 import { sql } from 'drizzle-orm';
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import { mapWithConcurrency } from '@/lib/utils';

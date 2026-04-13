@@ -175,9 +175,9 @@ Output: "Gà, gà thịt hoặc gà rán, ức, không da, không xương, chỉ
 
 ### Phase 2: Gemini Flash LLM (name_alt Generation)
 
-**Model**: `gemini-3-flash` (free tier: 15 RPM, 1M tokens/day)
+**Model**: `gemini-3-flash-preview` (free tier: 15 RPM/key × up to 10 keys = 150 RPM max)
 **Batching**: By category, ~25 items per prompt (may drop to ~20 for categories with long names like Beef)
-**Estimated calls**: ~190–240 prompts → ~13–16 minutes at 15 RPM
+**Estimated calls**: ~190–240 prompts → ~1–2 minutes at full 10-key rotation (effective throughput limited by cooldowns)
 
 **System Prompt** (abbreviated):
 

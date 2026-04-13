@@ -70,6 +70,14 @@ export function cooldownKey(slot: KeySlot, retryAfterMs = 0) {
   );
 }
 
+/** Returns true if every key has hit its daily request limit. */
+export function allKeysDailyExhausted(
+  slots: KeySlot[],
+  dailyLimit = 1000
+): boolean {
+  return slots.every((s) => s.dailyRequests >= dailyLimit);
+}
+
 /** Record a successful API call on a key. */
 export function recordCall(slot: KeySlot, requestCount = 1) {
   slot.lastCallAt = Date.now();
