@@ -45,9 +45,12 @@ async function embedBatch(texts: string[], slot: KeySlot): Promise<number[][]> {
       return result.embeddings!.map((e) => e.values!);
     } catch (err: any) {
       if (err.message?.includes('429') || err.status === 429) {
-        cooldownKey(slot);
-        if (attempt === MAX_RETRIES) throw err;
         const retryMatch = err.message?.match(/retry in ([\d.]+)s/i);
+        const retryAfterMs = retryMatch
+          ? Math.ceil(Number.parseFloat(retryMatch[1]) * 1000)
+          : 0;
+        cooldownKey(slot, retryAfterMs);
+        if (attempt === MAX_RETRIES) throw err;
         const delay = retryMatch
           ? Math.ceil(Number.parseFloat(retryMatch[1]) * 1000) + 1000
           : 1000 * 2 ** attempt;

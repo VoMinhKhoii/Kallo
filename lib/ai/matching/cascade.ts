@@ -156,12 +156,17 @@ export async function matchIngredients(
   if (unmatchedWithIndex.length > 0) {
     const aliasRetries: {
       original: DecomposedIngredient;
+      originalIndex: number;
       aliasName: string;
     }[] = [];
-    for (const { ingredient } of unmatchedWithIndex) {
+    for (const { ingredient, index } of unmatchedWithIndex) {
       const aliasName = resolveAlias(ingredient.name);
       if (aliasName !== ingredient.name) {
-        aliasRetries.push({ original: ingredient, aliasName });
+        aliasRetries.push({
+          original: ingredient,
+          originalIndex: index,
+          aliasName,
+        });
       }
     }
 
@@ -201,8 +206,8 @@ export async function matchIngredients(
         MATCH_CONCURRENCY
       );
 
-      // Track which originals were rescued by alias
-      const rescuedOriginals = new Set<string>();
+      // Track which originals were rescued by alias (keyed by input index)
+      const rescuedIndices = new Set<number>();
       for (let i = 0; i < aliasRetries.length; i++) {
         const result = aliasResults[i];
         if (result.status === 'fulfilled' && result.value) {
@@ -211,7 +216,7 @@ export async function matchIngredients(
             ...result.value,
             ingredientName: aliasRetries[i].original.name,
           });
-          rescuedOriginals.add(aliasRetries[i].original.name);
+          rescuedIndices.add(aliasRetries[i].originalIndex);
           console.info(
             `[matching] alias rescue: "${aliasRetries[i].original.name}" → "${aliasRetries[i].aliasName}" matched ${result.value.matchedName}`
           );
@@ -219,8 +224,8 @@ export async function matchIngredients(
       }
 
       // Only keep truly unmatched (not rescued by alias)
-      for (const { ingredient } of unmatchedWithIndex) {
-        if (!rescuedOriginals.has(ingredient.name)) {
+      for (const { ingredient, index } of unmatchedWithIndex) {
+        if (!rescuedIndices.has(index)) {
           unmatched.push({ ingredientName: ingredient.name, mealContext });
         }
       }
