@@ -67,9 +67,14 @@ export async function matchIngredients(
     return alias;
   });
 
-  // Phase 1: Resolve embeddings (L1/L2 cache) concurrently and collect misses
-  const cacheResults = await Promise.all(
-    matchingNames.map((name) => resolveQueryEmbedding(name, db))
+  // Phase 1: Resolve embeddings (L1/L2 cache) with bounded concurrency
+  const cacheSettled = await mapWithConcurrency(
+    matchingNames,
+    (name) => resolveQueryEmbedding(name, db),
+    MATCH_CONCURRENCY
+  );
+  const cacheResults = cacheSettled.map((r) =>
+    r.status === 'fulfilled' ? r.value : null
   );
   const embeddings: (number[] | null)[] = cacheResults.slice();
   const missIndices: number[] = [];
@@ -151,9 +156,14 @@ export async function matchIngredients(
         console.info(
           `[matching] alias fallback: ${aliasRetries.map((r) => `${r.original.name}→${r.aliasName}`).join(', ')}`
         );
-        // Resolve embeddings for alias names
-        const aliasCacheResults = await Promise.all(
-          aliasRetries.map((r) => resolveQueryEmbedding(r.aliasName, db))
+        // Resolve embeddings for alias names with bounded concurrency
+        const aliasCacheSettled = await mapWithConcurrency(
+          aliasRetries,
+          (r) => resolveQueryEmbedding(r.aliasName, db),
+          MATCH_CONCURRENCY
+        );
+        const aliasCacheResults = aliasCacheSettled.map((r) =>
+          r.status === 'fulfilled' ? r.value : null
         );
         const aliasEmbeddings: (number[] | null)[] = aliasCacheResults.slice();
         const aliasMissIndices: number[] = [];
@@ -182,8 +192,9 @@ export async function matchIngredients(
         // Match alias names (skip entries still missing an embedding)
         const aliasMatchItems = aliasRetries
           .map((r, i) => ({ r, i, embedding: aliasEmbeddings[i] }))
-          .filter((item): item is typeof item & { embedding: number[] } =>
-            item.embedding != null
+          .filter(
+            (item): item is typeof item & { embedding: number[] } =>
+              item.embedding != null
           );
         const aliasResults = await mapWithConcurrency(
           aliasMatchItems.map(({ r, embedding }) => ({
