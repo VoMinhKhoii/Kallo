@@ -1,10 +1,34 @@
 import type { MealDecomposition } from '../types';
 
 /**
+ * Pre-match aliases: applied BEFORE embedding + DB search to correct known
+ * wrong matches. Use when a natural ingredient name gets matched to the
+ * wrong food item (e.g., USDA translation errors), not just for unmatched ones.
+ *
+ * Keys are lowercased for case-insensitive lookup.
+ */
+export const PRE_MATCH_ALIASES: Record<string, string> = {
+  // "Cá lóc" (Southern VN snakehead) → FAO "Cá quả" (Northern VN name for same fish).
+  // USDA wrongly translates "bass" as "cá lóc" (Atlantic bass ≠ snakehead).
+  'cá lóc': 'Cá quả',
+  // "Đậu ve" (short form) → FAO "Đậu cô ve" (French/green beans).
+  // USDA matches "đậu ve" to yard-long bean seeds — wrong variety.
+  'đậu ve': 'Đậu cô ve',
+};
+
+/**
+ * Resolve a pre-match alias. Returns the canonical search name if a
+ * pre-match alias exists, otherwise the original name unchanged.
+ */
+export function resolvePreMatchAlias(name: string): string {
+  const key = name.toLowerCase().trim();
+  return PRE_MATCH_ALIASES[key] ?? name;
+}
+
+/**
  * Common ingredient aliases: map shorthand Vietnamese names to canonical
- * DB names. Applied after LLM decomposition, before ingredient matching,
- * to improve DB match rate without relying on the LLM to always use
- * canonical names.
+ * DB names. Applied as fallback for unmatched ingredients only.
+ * See PRE_MATCH_ALIASES for aliases that fire before matching.
  *
  * Keys are lowercased for case-insensitive lookup.
  * Expand over time based on `unmatched_ingredients` log analysis.

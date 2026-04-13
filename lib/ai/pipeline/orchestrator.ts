@@ -1,8 +1,7 @@
-import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
+import type { AppDb } from '@/lib/db';
 import { capitalizeFirst } from '@/lib/utils';
 import type { GeminiClient } from '../gemini';
 import { matchIngredients } from '../matching';
-import { applyIngredientAliases } from '../matching/aliases';
 import { createSpeculativeMatcher } from '../matching/speculative';
 import { buildDecompositionPrompt, buildNutritionPrompt } from '../prompts';
 import {
@@ -106,7 +105,7 @@ function withTimeout<T>(
 export async function analyzeMeal(
   rawInput: string,
   userContext: UserContext,
-  db: PostgresJsDatabase<any>,
+  db: AppDb,
   gemini: GeminiClient,
   onEvent?: (event: StreamEvent) => void
 ): Promise<PipelineResponse> {
@@ -154,7 +153,7 @@ export async function analyzeMeal(
 async function runPipeline(
   rawInput: string,
   userContext: UserContext,
-  db: PostgresJsDatabase<any>,
+  db: AppDb,
   gemini: GeminiClient,
   onEvent?: (event: StreamEvent) => void
 ): Promise<PipelineResponse> {
@@ -209,8 +208,8 @@ async function runPipeline(
     }
   }
 
-  // Apply ingredient aliases: map common shorthand names to canonical DB names
-  applyIngredientAliases(decomposition);
+  // Note: alias resolution is now handled inside the matching cascade as a fallback
+  // (try original name first, alias-expanded name second). No pre-match rewrite needed.
 
   // Flush: emit any meal item names that weren't detected during streaming
   for (const mi of decomposition.mealItems) {

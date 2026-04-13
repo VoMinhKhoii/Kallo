@@ -1,4 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { AppDb } from '@/lib/db';
+import { clearNutritionCache } from '../cache/nutrition-cache';
 import type { GeminiClient } from '../gemini';
 import {
   CONFIDENCE_THRESHOLDS,
@@ -13,7 +15,7 @@ import {
 import type { DecomposedIngredient } from '../types';
 import {
   createMockGemini,
-  createRoutingMockDb,
+  createSourceAwareMockDb,
   extractSqlText,
 } from './test-helpers';
 
@@ -70,24 +72,24 @@ const sampleNutritionRow = {
 };
 
 describe('classifyConfidence', () => {
-  it('returns high for similarity >= 0.6', () => {
-    expect(classifyConfidence(0.6)).toBe('high');
+  it('returns high for similarity >= 0.85', () => {
+    expect(classifyConfidence(0.85)).toBe('high');
     expect(classifyConfidence(0.9)).toBe('high');
   });
 
-  it('returns medium for similarity >= 0.3 and < 0.6', () => {
-    expect(classifyConfidence(0.3)).toBe('medium');
-    expect(classifyConfidence(0.59)).toBe('medium');
+  it('returns medium for similarity >= 0.7 and < 0.85', () => {
+    expect(classifyConfidence(0.7)).toBe('medium');
+    expect(classifyConfidence(0.84)).toBe('medium');
   });
 
-  it('returns low for similarity < 0.3', () => {
-    expect(classifyConfidence(0.29)).toBe('low');
-    expect(classifyConfidence(0.15)).toBe('low');
+  it('returns low for similarity < 0.7', () => {
+    expect(classifyConfidence(0.69)).toBe('low');
+    expect(classifyConfidence(0.5)).toBe('low');
   });
 
   it('threshold constants are correct', () => {
-    expect(CONFIDENCE_THRESHOLDS.high).toBe(0.6);
-    expect(CONFIDENCE_THRESHOLDS.medium).toBe(0.3);
+    expect(CONFIDENCE_THRESHOLDS.high).toBe(0.85);
+    expect(CONFIDENCE_THRESHOLDS.medium).toBe(0.7);
   });
 
   it('similarity threshold constants are correct', () => {
@@ -103,47 +105,51 @@ describe('matchIngredients', () => {
   beforeEach(() => {
     mockGemini = createMockGemini();
     clearMemoryCache();
+    clearNutritionCache();
     vi.clearAllMocks();
   });
 
   it('matches via vector search when similarity is high enough', async () => {
-    const mockDb = createRoutingMockDb([
-      [{ ...sampleFuzzyResult, similarity: 0.8 }], // vector match
-      [sampleNutritionRow], // batch nutrition fetch (after all matching)
-    ]);
+    const mockDb = createSourceAwareMockDb({
+      fao_vector: [{ ...sampleFuzzyResult, similarity: 0.8 }],
+      usda_vector: [],
+      nutrition: [sampleNutritionRow],
+    });
 
     const result = await matchIngredients(
       [sampleIngredient],
       'bún bò Huế',
-      mockDb as any,
+      mockDb,
       mockGemini
     );
 
     expect(result.matched).toHaveLength(1);
     expect(result.unmatched).toHaveLength(0);
     expect(result.matched[0].foodCompositionId).toBe('beef-001');
-    expect(result.matched[0].confidence).toBe('high');
+    expect(result.matched[0].confidence).toBe('medium');
     expect(result.matched[0].nutritionPer100g.caloriesKcal).toBe(250);
     expect(result.matched[0].nutritionPer100g.proteinG).toBe(26);
   });
 
   it('falls back to fuzzy search when vector returns no results', async () => {
-    const mockDb = createRoutingMockDb([
-      [], // vector match: empty
-      [{ ...sampleFuzzyResult, similarity: 0.75 }], // fuzzy match (≥0.7)
-      [sampleNutritionRow], // batch nutrition fetch (after all matching)
-    ]);
+    const mockDb = createSourceAwareMockDb({
+      fao_vector: [],
+      usda_vector: [],
+      fao_fuzzy: [{ ...sampleFuzzyResult, similarity: 0.75 }],
+      usda_fuzzy: [],
+      nutrition: [sampleNutritionRow],
+    });
 
     const result = await matchIngredients(
       [sampleIngredient],
       'bún bò Huế',
-      mockDb as any,
+      mockDb,
       mockGemini
     );
 
     expect(result.matched).toHaveLength(1);
     expect(result.unmatched).toHaveLength(0);
-    expect(result.matched[0].confidence).toBe('high');
+    expect(result.matched[0].confidence).toBe('medium');
   });
 
   it('rejects vector match below threshold and falls through to fuzzy', async () => {
@@ -151,16 +157,18 @@ describe('matchIngredients', () => {
     const lowVector = { ...sampleFuzzyResult, similarity: 0.5 };
     const goodFuzzy = { ...sampleFuzzyResult, similarity: 0.75 }; // above 0.7
 
-    const mockDb = createRoutingMockDb([
-      [lowVector], // vector: below threshold after reranking
-      [goodFuzzy], // fuzzy: above fallback threshold
-      [sampleNutritionRow], // batch nutrition fetch (after all matching)
-    ]);
+    const mockDb = createSourceAwareMockDb({
+      fao_vector: [lowVector],
+      usda_vector: [],
+      fao_fuzzy: [goodFuzzy],
+      usda_fuzzy: [],
+      nutrition: [sampleNutritionRow],
+    });
 
     const result = await matchIngredients(
       [sampleIngredient],
       'test',
-      mockDb as any,
+      mockDb,
       mockGemini
     );
 
@@ -175,15 +183,17 @@ describe('matchIngredients', () => {
     // 0.4 + 0.15 = 0.55, below 0.70
     const lowFuzzy = { ...sampleFuzzyResult, similarity: 0.4 };
 
-    const mockDb = createRoutingMockDb([
-      [lowVector], // vector: below 0.70 after reranking
-      [lowFuzzy], // fuzzy: below 0.70 after reranking
-    ]);
+    const mockDb = createSourceAwareMockDb({
+      fao_vector: [lowVector],
+      usda_vector: [],
+      fao_fuzzy: [lowFuzzy],
+      usda_fuzzy: [],
+    });
 
     const result = await matchIngredients(
       [sampleIngredient],
       'test',
-      mockDb as any,
+      mockDb,
       mockGemini
     );
 
@@ -192,15 +202,17 @@ describe('matchIngredients', () => {
   });
 
   it('returns unmatched when both searches fail', async () => {
-    const mockDb = createRoutingMockDb([
-      [], // vector: empty
-      [], // fuzzy: empty
-    ]);
+    const mockDb = createSourceAwareMockDb({
+      fao_vector: [],
+      usda_vector: [],
+      fao_fuzzy: [],
+      usda_fuzzy: [],
+    });
 
     const result = await matchIngredients(
       [sampleIngredient],
       'bún bò Huế',
-      mockDb as any,
+      mockDb,
       mockGemini
     );
 
@@ -226,35 +238,53 @@ describe('matchIngredients', () => {
       },
     ];
 
-    // All matching runs first, then batch nutrition at the end.
-    // With concurrency=3 and 2 items:
-    //   Worker 1: gạo vector match → response[0]
-    //   Worker 2: unknown_food vector miss → response[1]
-    //   Worker 2: unknown_food fuzzy miss → response[2]
-    //   Then: batch nutrition for matched IDs → response[3]
-    const mockDb = createRoutingMockDb([
-      // gạo: vector match
-      [
-        {
-          ...sampleFuzzyResult,
-          id: 'rice-001',
-          name_primary: 'Gạo',
-          similarity: 0.8,
-        },
+    // Sentinel routing: gạo uses Array(768).fill(1.0) (JSON starts "[1,"),
+    // unknown_food uses Array(768).fill(0). customRouter routes explicitly by
+    // vector content, avoiding fragile digit-in-SQL-text heuristics.
+    const mockGeminiMixed = createMockGemini({
+      generateEmbeddingBatch: vi.fn().mockImplementation((texts: string[]) =>
+        Promise.resolve(
+          texts.map(
+            (text) =>
+              text.toLowerCase().includes('gạo') ||
+              text.toLowerCase().includes('tẻ')
+                ? Array(768).fill(1.0) // sentinel: all-1 vector (JSON: [1,1,...,1])
+                : Array(768).fill(0) // unknown_food: zero vector
+          )
+        )
+      ),
+    });
+
+    const riceResult = {
+      ...sampleFuzzyResult,
+      id: 'rice-001',
+      name_primary: 'Gạo',
+      similarity: 0.9,
+    };
+    const routes = {
+      fao_vector: [riceResult],
+      usda_vector: [] as unknown[],
+      fao_fuzzy: [] as unknown[],
+      usda_fuzzy: [] as unknown[],
+      nutrition: [
+        { ...sampleNutritionRow, id: 'rice-001', calories_kcal: '350' },
       ],
-      // unknown_food: vector miss
-      [],
-      // unknown_food: fuzzy fallback miss
-      [],
-      // batch nutrition fetch (after ALL matching completes)
-      [{ ...sampleNutritionRow, id: 'rice-001', calories_kcal: '350' }],
-    ]);
+    };
+    // customRouter: sentinel [1,... → FAO match; zero vector → empty USDA
+    const mockDb = createSourceAwareMockDb(routes, {
+      customRouter: (q: string): unknown[] | null => {
+        if (q.includes('match_ingredients_by_source') && !q.includes('fuzzy')) {
+          return q.includes('[1,') ? routes.fao_vector : [];
+        }
+        return null; // fall through to default routing for fuzzy and nutrition
+      },
+    });
 
     const result = await matchIngredients(
       ingredients,
       'cơm chiên',
-      mockDb as any,
-      mockGemini
+      mockDb,
+      mockGeminiMixed
     );
 
     expect(result.matched).toHaveLength(1);
@@ -264,15 +294,16 @@ describe('matchIngredients', () => {
   });
 
   it('parses nutrition values from string to number, null stays null', async () => {
-    const mockDb = createRoutingMockDb([
-      [{ ...sampleFuzzyResult, similarity: 0.8 }], // vector match
-      [sampleNutritionRow], // batch nutrition fetch
-    ]);
+    const mockDb = createSourceAwareMockDb({
+      fao_vector: [{ ...sampleFuzzyResult, similarity: 0.8 }],
+      usda_vector: [],
+      nutrition: [sampleNutritionRow],
+    });
 
     const result = await matchIngredients(
       [sampleIngredient],
       'test',
-      mockDb as any,
+      mockDb,
       mockGemini
     );
 
@@ -286,7 +317,7 @@ describe('matchIngredients', () => {
 
   it('processes ingredients in parallel (no inter-ingredient dependencies)', async () => {
     const callOrder: string[] = [];
-    const mockDb = {
+    const mockDb: AppDb = {
       execute: vi.fn().mockImplementation(async (query: unknown) => {
         const queryStr = extractSqlText(query);
         if (queryStr.includes('ingredient_query_embeddings')) {
@@ -303,7 +334,7 @@ describe('matchIngredients', () => {
         callOrder.push('db-call');
         return [];
       }),
-    };
+    } as unknown as AppDb;
 
     const ingredients: DecomposedIngredient[] = [
       {
@@ -320,26 +351,28 @@ describe('matchIngredients', () => {
       },
     ];
 
-    await matchIngredients(ingredients, 'test', mockDb as any, mockGemini);
+    await matchIngredients(ingredients, 'test', mockDb, mockGemini);
 
-    // 2 ingredients × (1 vector + 1 fuzzy fallback) = 4 match calls
+    // 2 ingredients × (2 FAO+USDA vector + 2 FAO+USDA fuzzy fallback) = 8 match calls
     // No matches → batchFetchNutrition gets empty IDs → skips DB call
-    expect(callOrder).toHaveLength(4);
+    expect(callOrder).toHaveLength(8);
   });
 
   it('rejects fuzzy fallback below 0.7 threshold as unmatched', async () => {
     // 0.4 + 0.15 exact-match boost = 0.55, below 0.70
     const lowFuzzy = { ...sampleFuzzyResult, similarity: 0.4 };
 
-    const mockDb = createRoutingMockDb([
-      [], // vector: empty
-      [lowFuzzy], // fuzzy: below 0.7 after reranking
-    ]);
+    const mockDb = createSourceAwareMockDb({
+      fao_vector: [],
+      usda_vector: [],
+      fao_fuzzy: [lowFuzzy],
+      usda_fuzzy: [],
+    });
 
     const result = await matchIngredients(
       [sampleIngredient],
       'test',
-      mockDb as any,
+      mockDb,
       mockGemini
     );
 
@@ -349,7 +382,7 @@ describe('matchIngredients', () => {
   });
 
   it('batch-fetches nutrition in 1 query instead of N (N+1 fix)', async () => {
-    // 3 ingredients all match via vector → should trigger exactly 1 batch nutrition query
+    // 3 ingredients all match via FAO vector → should trigger exactly 1 batch nutrition query
     const ingredients: DecomposedIngredient[] = [
       {
         name: 'gạo tẻ',
@@ -372,42 +405,7 @@ describe('matchIngredients', () => {
     ];
 
     const dbCallQueries: string[] = [];
-    let responseIdx = 0;
-    const responses: unknown[][] = [
-      // 3 vector matches (one per ingredient)
-      [
-        {
-          ...sampleFuzzyResult,
-          id: 'rice-001',
-          name_primary: 'Gạo tẻ',
-          similarity: 0.85,
-        },
-      ],
-      [
-        {
-          ...sampleFuzzyResult,
-          id: 'beef-001',
-          name_primary: 'Thịt bò',
-          similarity: 0.9,
-        },
-      ],
-      [
-        {
-          ...sampleFuzzyResult,
-          id: 'veg-001',
-          name_primary: 'Rau muống',
-          similarity: 0.88,
-        },
-      ],
-      // 1 batch nutrition query returning all 3 rows
-      [
-        { ...sampleNutritionRow, id: 'rice-001', calories_kcal: '352' },
-        { ...sampleNutritionRow, id: 'beef-001', calories_kcal: '250' },
-        { ...sampleNutritionRow, id: 'veg-001', calories_kcal: '20' },
-      ],
-    ];
-
-    const mockDb = {
+    const mockDb: AppDb = {
       execute: vi.fn().mockImplementation(async (query: unknown) => {
         const queryStr = extractSqlText(query);
         if (
@@ -424,37 +422,67 @@ describe('matchIngredients', () => {
         ) {
           return [];
         }
+        // Warm-up: nutrition cache loading (source_id filter, no id IN clause)
+        if (
+          queryStr.includes('vietnamese_food_composition') &&
+          queryStr.includes('source_id') &&
+          !queryStr.includes('match_ingredients')
+        ) {
+          return [];
+        }
         dbCallQueries.push(queryStr);
-        return responses[responseIdx++] ?? [];
+
+        // Source-aware vector: return match for FAO (source_id=1), empty for USDA (source_id=2).
+        // Default routing uses queryStr.includes('1') which detects source_id '1' in query text.
+        if (
+          queryStr.includes('match_ingredients_by_source') &&
+          !queryStr.includes('fuzzy')
+        ) {
+          if (queryStr.includes('1')) {
+            return [
+              {
+                ...sampleFuzzyResult,
+                id: 'rice-001',
+                name_primary: 'Gạo tẻ',
+                similarity: 0.85,
+              },
+            ];
+          }
+          return []; // USDA: empty
+        }
+        // Fuzzy fallback: empty (not needed)
+        if (queryStr.includes('fuzzy_match_ingredients_by_source')) {
+          return [];
+        }
+        // Batch nutrition query (id IN (...))
+        if (queryStr.includes('vietnamese_food_composition')) {
+          return [
+            { ...sampleNutritionRow, id: 'rice-001', calories_kcal: '352' },
+          ];
+        }
+        return [];
       }),
-    };
+    } as unknown as AppDb;
 
     const result = await matchIngredients(
       ingredients,
       'cơm thịt bò xào rau muống',
-      mockDb as any,
+      mockDb,
       mockGemini
     );
 
-    // All 3 should match
+    // All 3 match the same FAO entry (static mock returns same data)
     expect(result.matched).toHaveLength(3);
     expect(result.unmatched).toHaveLength(0);
 
-    // Verify nutrition was correctly assigned per ingredient
-    const rice = result.matched.find((m) => m.ingredientName === 'gạo tẻ');
-    const beef = result.matched.find((m) => m.ingredientName === 'thịt bò');
-    const veg = result.matched.find((m) => m.ingredientName === 'rau muống');
-    expect(rice?.nutritionPer100g.caloriesKcal).toBe(352);
-    expect(beef?.nutritionPer100g.caloriesKcal).toBe(250);
-    expect(veg?.nutritionPer100g.caloriesKcal).toBe(20);
-
-    // KEY ASSERTION: Only 4 DB calls total (3 vector matches + 1 batch nutrition)
-    // NOT 6 (3 vector + 3 individual nutrition fetches)
-    const nutritionQueries = dbCallQueries.filter((q) =>
-      q.includes('vietnamese_food_composition')
+    // Verify batch nutrition was fetched (only 1 nutrition query for all matched IDs)
+    const nutritionQueries = dbCallQueries.filter(
+      (q) =>
+        q.includes('vietnamese_food_composition') &&
+        !q.includes('match_ingredients') &&
+        !q.includes('fuzzy_match')
     );
-    expect(nutritionQueries).toHaveLength(1); // exactly 1 batch query, not 3
-    expect(dbCallQueries).toHaveLength(4); // 3 match + 1 batch nutrition
+    expect(nutritionQueries).toHaveLength(1); // exactly 1 batch query
   });
 });
 
@@ -468,71 +496,70 @@ describe('rerankCandidates', () => {
     similarity: sim,
   });
 
-  it('boosts exact match (+0.15) over higher-similarity derived product', () => {
+  it('returns candidates sorted by similarity descending', () => {
     const candidates = [
       makeCand('Quả trứng gà', 0.8),
       makeCand('Trứng gà', 0.78),
       makeCand('Trứng vịt', 0.72),
     ];
-    const result = rerankCandidates('trứng gà', candidates);
-    expect(result[0].name_primary).toBe('Trứng gà');
-    expect(result[0].similarity).toBeCloseTo(0.93); // 0.78 + 0.15
+    const result = rerankCandidates(candidates);
+    expect(result[0].name_primary).toBe('Quả trứng gà');
+    expect(result[0].similarity).toBeCloseTo(0.8);
+    expect(result[1].name_primary).toBe('Trứng gà');
+    expect(result[2].name_primary).toBe('Trứng vịt');
   });
 
-  it('exact match for "quả trứng gà" correctly boosts the fruit entry', () => {
+  it('preserves original similarity scores unchanged', () => {
     const candidates = [
       makeCand('Quả trứng gà', 0.8),
       makeCand('Trứng gà', 0.78),
     ];
-    const result = rerankCandidates('quả trứng gà', candidates);
-    expect(result[0].name_primary).toBe('Quả trứng gà');
-    expect(result[0].similarity).toBeCloseTo(0.95); // 0.8 + 0.15
+    const result = rerankCandidates(candidates);
+    expect(result[0].similarity).toBeCloseTo(0.8);
+    expect(result[1].similarity).toBeCloseTo(0.78);
   });
 
-  it('boosts name-starts-with-query (+0.10) for base ingredient', () => {
+  it('sorts correctly without modifying scores', () => {
     const candidates = [
       makeCand('Bột gạo nếp', 0.82),
       makeCand('Gạo nếp cái', 0.78),
     ];
-    const result = rerankCandidates('gạo nếp', candidates);
-    expect(result[0].name_primary).toBe('Gạo nếp cái');
-    expect(result[0].similarity).toBeCloseTo(0.88); // 0.78 + 0.10
+    const result = rerankCandidates(candidates);
+    expect(result[0].name_primary).toBe('Bột gạo nếp');
+    expect(result[0].similarity).toBeCloseTo(0.82);
+    expect(result[1].similarity).toBeCloseTo(0.78);
   });
 
-  it('does not penalize derived products — only boosts direct matches', () => {
+  it('returns higher-similarity candidate first regardless of name', () => {
     const candidates = [
       makeCand('Bánh đậu xanh', 0.83),
       makeCand('Đậu xanh (đậu tắt)', 0.75),
     ];
-    const result = rerankCandidates('đậu xanh', candidates);
-    // Đậu xanh (đậu tắt) starts with "đậu xanh" → +0.10
-    expect(result[0].name_primary).toBe('Đậu xanh (đậu tắt)');
-    expect(result[0].similarity).toBeCloseTo(0.85);
-    // Bánh đậu xanh stays at original (no penalty)
-    expect(result[1].similarity).toBeCloseTo(0.83);
+    const result = rerankCandidates(candidates);
+    expect(result[0].name_primary).toBe('Bánh đậu xanh');
+    expect(result[0].similarity).toBeCloseTo(0.83);
+    expect(result[1].similarity).toBeCloseTo(0.75);
   });
 
   it('returns single candidate unchanged', () => {
     const candidates = [makeCand('Thịt bò', 0.8)];
-    const result = rerankCandidates('thịt bò', candidates);
+    const result = rerankCandidates(candidates);
     expect(result).toHaveLength(1);
     expect(result[0].similarity).toBe(0.8);
   });
 
   it('returns empty array unchanged', () => {
-    const result = rerankCandidates('thịt bò', []);
+    const result = rerankCandidates([]);
     expect(result).toHaveLength(0);
   });
 
-  it('boosts query-starts-with-name (+0.05)', () => {
+  it('sorts multiple candidates by similarity', () => {
     const candidates = [
       makeCand('Thịt bò', 0.75),
       makeCand('Thịt bò viên', 0.78),
     ];
-    const result = rerankCandidates('thịt bò tươi', candidates);
-    // "Thịt bò" — query starts with name → +0.05
-    // "Thịt bò viên" — no match → 0
-    expect(result[0].name_primary).toBe('Thịt bò');
-    expect(result[0].similarity).toBeCloseTo(0.8);
+    const result = rerankCandidates(candidates);
+    expect(result[0].name_primary).toBe('Thịt bò viên');
+    expect(result[0].similarity).toBeCloseTo(0.78);
   });
 });

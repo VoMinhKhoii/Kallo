@@ -4,7 +4,7 @@ import { NUTRITION_KEYS } from '../constants';
 import type { NutritionPer100g, UnmatchedIngredient } from '../types';
 
 /** Maps NutritionPer100g keys (camelCase) to DB column names (snake_case) */
-const DB_NUTRITION_COLUMNS: Record<keyof NutritionPer100g, string> = {
+export const DB_NUTRITION_COLUMNS: Record<keyof NutritionPer100g, string> = {
   caloriesKcal: 'calories_kcal',
   proteinG: 'protein_g',
   carbohydrateG: 'carbohydrate_g',
@@ -34,6 +34,12 @@ const DB_NUTRITION_COLUMNS: Record<keyof NutritionPer100g, string> = {
   vitaminB12Mcg: 'vitamin_b12_mcg',
   vitaminHMcg: 'vitamin_h_mcg',
 };
+
+/** Columns required by parseNutritionRow — use this to avoid SELECT * */
+export const NUTRITION_SELECT_COLUMNS = [
+  'id',
+  ...Object.values(DB_NUTRITION_COLUMNS),
+] as const;
 
 export function parseNutritionRow(
   row: Record<string, unknown>
