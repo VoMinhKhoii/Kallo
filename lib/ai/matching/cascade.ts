@@ -1,3 +1,4 @@
+import type { GeminiClient } from '@/lib/ai/gemini';
 import { resolveAlias, resolvePreMatchAlias } from '@/lib/ai/matching/aliases';
 import {
   cacheQueryEmbedding,
@@ -8,15 +9,14 @@ import {
   type MatchInfo,
   matchSingleIngredientWithEmbedding,
 } from '@/lib/ai/matching/source-matching';
-import type { AppDb } from '@/lib/db';
-import { mapWithConcurrency } from '@/lib/utils';
-import type { GeminiClient } from '../gemini';
 import type {
   DecomposedIngredient,
   MatchedIngredient,
   NutritionPer100g,
   UnmatchedIngredient,
-} from '../types';
+} from '@/lib/ai/types';
+import type { AppDb } from '@/lib/db';
+import { mapWithConcurrency } from '@/lib/utils';
 
 // Re-export all constants and types for backward compat (index.ts barrel imports from here)
 export {
