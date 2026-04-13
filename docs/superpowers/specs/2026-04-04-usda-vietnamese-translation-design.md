@@ -288,7 +288,7 @@ On resume, the script reads existing checkpoints and skips completed items.
 | Translation API quota exceeded | Phase 1 stalls | Resume next day (checkpoint preserved) |
 | Translation API 5xx | Temporary | Retry with exponential backoff |
 | Gemini Flash rate limit | Phase 2 slows | Built-in delay respects 15 RPM |
-| Gemini Flash parse failure | Item skipped | Retry prompt (max 2); log if still failing |
+| Gemini Flash parse failure | Item skipped | Retry prompt (up to MAX_PARSE_RETRIES = 4; 5 total attempts); log if still failing |
 | DB update failure | Category rolled back | Re-run category from checkpoint data |
 | Embedding quota exceeded | Phase 4 stalls | Resume next day |
 

@@ -1,4 +1,5 @@
 import { vi } from 'vitest';
+import type { AppDb } from '@/lib/db';
 import type { GeminiClient } from '../gemini';
 import type { BoundedNutrition, NutritionValues } from '../types';
 
@@ -147,6 +148,9 @@ export function createRoutingMockDb(responses: unknown[][]) {
  *   - 'fao_fuzzy' → fuzzy_match_ingredients_by_source with source_id=1
  *   - 'usda_fuzzy' → fuzzy_match_ingredients_by_source with source_id=2
  *   - 'nutrition' → vietnamese_food_composition (non-embedding, non-source queries)
+ * @param options.customRouter - Optional function called before default routing.
+ *   Return an array to override the response, or null to fall through to default routing.
+ *   Use this to provide explicit, deterministic routing instead of relying on SQL text heuristics.
  */
 export function createSourceAwareMockDb(
   routes: Partial<{
@@ -155,8 +159,9 @@ export function createSourceAwareMockDb(
     fao_fuzzy: unknown[];
     usda_fuzzy: unknown[];
     nutrition: unknown[];
-  }>
-) {
+  }>,
+  options?: { customRouter?: (q: string) => unknown[] | null }
+): AppDb {
   return {
     execute: vi.fn().mockImplementation((query: unknown) => {
       const q = extractSqlText(query);
@@ -174,6 +179,11 @@ export function createSourceAwareMockDb(
       ) {
         return Promise.resolve([]);
       }
+      // Custom router takes priority over default routing
+      if (options?.customRouter) {
+        const result = options.customRouter(q);
+        if (result !== null) return Promise.resolve(result);
+      }
       // Source-aware vector matching
       if (q.includes('match_ingredients_by_source') && !q.includes('fuzzy')) {
         if (q.includes('1')) return Promise.resolve(routes.fao_vector ?? []);
@@ -190,5 +200,5 @@ export function createSourceAwareMockDb(
       }
       return Promise.resolve([]);
     }),
-  };
+  } as unknown as AppDb;
 }

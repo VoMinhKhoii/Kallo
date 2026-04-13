@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { AppDb } from '@/lib/db';
 import { clearNutritionCache } from '../cache/nutrition-cache';
 import type { GeminiClient } from '../gemini';
 import {
@@ -118,7 +119,7 @@ describe('matchIngredients', () => {
     const result = await matchIngredients(
       [sampleIngredient],
       'bún bò Huế',
-      mockDb as any,
+      mockDb,
       mockGemini
     );
 
@@ -142,7 +143,7 @@ describe('matchIngredients', () => {
     const result = await matchIngredients(
       [sampleIngredient],
       'bún bò Huế',
-      mockDb as any,
+      mockDb,
       mockGemini
     );
 
@@ -167,7 +168,7 @@ describe('matchIngredients', () => {
     const result = await matchIngredients(
       [sampleIngredient],
       'test',
-      mockDb as any,
+      mockDb,
       mockGemini
     );
 
@@ -192,7 +193,7 @@ describe('matchIngredients', () => {
     const result = await matchIngredients(
       [sampleIngredient],
       'test',
-      mockDb as any,
+      mockDb,
       mockGemini
     );
 
@@ -211,7 +212,7 @@ describe('matchIngredients', () => {
     const result = await matchIngredients(
       [sampleIngredient],
       'bún bò Huế',
-      mockDb as any,
+      mockDb,
       mockGemini
     );
 
@@ -237,26 +238,21 @@ describe('matchIngredients', () => {
       },
     ];
 
-    // TODO: Replace string-inspection routing in createSourceAwareMockDb with a more robust
-    // approach (e.g., parsing SQL parameter values directly) when refactoring test helpers.
-    // gạo → 0.1-filled embedding (contains digit '1', triggers createSourceAwareMockDb routing).
-    // unknown_food → 0-filled embedding (no '1', returns [] from all source-aware routes).
-    // This exploits the fact that Drizzle inlines string params (the JSON vector) into the
-    // extracted SQL text, but not number params (source_id). So 'q.includes("1")' in
-    // createSourceAwareMockDb detects gạo's queries by vector content, not source_id.
+    // Sentinel routing: gạo uses Array(768).fill(1.0) (JSON starts "[1,"),
+    // unknown_food uses Array(768).fill(0). customRouter routes explicitly by
+    // vector content, avoiding fragile digit-in-SQL-text heuristics.
     const mockGeminiMixed = createMockGemini({
-      generateEmbeddingBatch: vi
-        .fn()
-        .mockImplementation((texts: string[]) =>
-          Promise.resolve(
-            texts.map((text) =>
+      generateEmbeddingBatch: vi.fn().mockImplementation((texts: string[]) =>
+        Promise.resolve(
+          texts.map(
+            (text) =>
               text.toLowerCase().includes('gạo') ||
               text.toLowerCase().includes('tẻ')
-                ? Array(768).fill(0.1)
-                : Array(768).fill(0)
-            )
+                ? Array(768).fill(1.0) // sentinel: all-1 vector (JSON: [1,1,...,1])
+                : Array(768).fill(0) // unknown_food: zero vector
           )
-        ),
+        )
+      ),
     });
 
     const riceResult = {
@@ -265,20 +261,29 @@ describe('matchIngredients', () => {
       name_primary: 'Gạo',
       similarity: 0.9,
     };
-    const mockDb = createSourceAwareMockDb({
+    const routes = {
       fao_vector: [riceResult],
-      usda_vector: [],
-      fao_fuzzy: [],
-      usda_fuzzy: [],
+      usda_vector: [] as unknown[],
+      fao_fuzzy: [] as unknown[],
+      usda_fuzzy: [] as unknown[],
       nutrition: [
         { ...sampleNutritionRow, id: 'rice-001', calories_kcal: '350' },
       ],
+    };
+    // customRouter: sentinel [1,... → FAO match; zero vector → empty USDA
+    const mockDb = createSourceAwareMockDb(routes, {
+      customRouter: (q: string): unknown[] | null => {
+        if (q.includes('match_ingredients_by_source') && !q.includes('fuzzy')) {
+          return q.includes('[1,') ? routes.fao_vector : [];
+        }
+        return null; // fall through to default routing for fuzzy and nutrition
+      },
     });
 
     const result = await matchIngredients(
       ingredients,
       'cơm chiên',
-      mockDb as any,
+      mockDb,
       mockGeminiMixed
     );
 
@@ -298,7 +303,7 @@ describe('matchIngredients', () => {
     const result = await matchIngredients(
       [sampleIngredient],
       'test',
-      mockDb as any,
+      mockDb,
       mockGemini
     );
 
@@ -312,7 +317,7 @@ describe('matchIngredients', () => {
 
   it('processes ingredients in parallel (no inter-ingredient dependencies)', async () => {
     const callOrder: string[] = [];
-    const mockDb = {
+    const mockDb: AppDb = {
       execute: vi.fn().mockImplementation(async (query: unknown) => {
         const queryStr = extractSqlText(query);
         if (queryStr.includes('ingredient_query_embeddings')) {
@@ -329,7 +334,7 @@ describe('matchIngredients', () => {
         callOrder.push('db-call');
         return [];
       }),
-    };
+    } as unknown as AppDb;
 
     const ingredients: DecomposedIngredient[] = [
       {
@@ -346,7 +351,7 @@ describe('matchIngredients', () => {
       },
     ];
 
-    await matchIngredients(ingredients, 'test', mockDb as any, mockGemini);
+    await matchIngredients(ingredients, 'test', mockDb, mockGemini);
 
     // 2 ingredients × (2 FAO+USDA vector + 2 FAO+USDA fuzzy fallback) = 8 match calls
     // No matches → batchFetchNutrition gets empty IDs → skips DB call
@@ -367,7 +372,7 @@ describe('matchIngredients', () => {
     const result = await matchIngredients(
       [sampleIngredient],
       'test',
-      mockDb as any,
+      mockDb,
       mockGemini
     );
 
@@ -400,7 +405,7 @@ describe('matchIngredients', () => {
     ];
 
     const dbCallQueries: string[] = [];
-    const mockDb = {
+    const mockDb: AppDb = {
       execute: vi.fn().mockImplementation(async (query: unknown) => {
         const queryStr = extractSqlText(query);
         if (
@@ -427,10 +432,8 @@ describe('matchIngredients', () => {
         }
         dbCallQueries.push(queryStr);
 
-        // Source-aware vector: return match for FAO, empty for USDA.
-        // Routing uses queryStr.includes('1') which detects the digit '1'
-        // in the embedded vector JSON (e.g. Array(768).fill(0.1) contains '1').
-        // This is intentional — see createSourceAwareMockDb in test-helpers.ts.
+        // Source-aware vector: return match for FAO (source_id=1), empty for USDA (source_id=2).
+        // Default routing uses queryStr.includes('1') which detects source_id '1' in query text.
         if (
           queryStr.includes('match_ingredients_by_source') &&
           !queryStr.includes('fuzzy')
@@ -459,12 +462,12 @@ describe('matchIngredients', () => {
         }
         return [];
       }),
-    };
+    } as unknown as AppDb;
 
     const result = await matchIngredients(
       ingredients,
       'cơm thịt bò xào rau muống',
-      mockDb as any,
+      mockDb,
       mockGemini
     );
 

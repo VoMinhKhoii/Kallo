@@ -92,7 +92,6 @@ async function updateEmbeddingBatch(
 export async function runPhase4(opts: Phase4Options): Promise<void> {
   console.log('\n═══ Phase 4: Re-embed (gemini-embedding-001) ═══');
 
-  const keys = loadGeminiKeys();
   const db = getDb();
 
   let checkpoint = loadCheckpoint<Checkpoint4>('checkpoint-4.json');
@@ -147,6 +146,9 @@ export async function runPhase4(opts: Phase4Options): Promise<void> {
     return;
   }
 
+  // Keys are loaded only when we actually make model calls
+  const keys = loadGeminiKeys();
+
   const totalBatches = Math.ceil(pending.length / BATCH_SIZE);
   let keyIdx = 0;
   let processed = 0;
@@ -176,7 +178,7 @@ export async function runPhase4(opts: Phase4Options): Promise<void> {
     // Respect per-key rate: 100 req/min → with 50/batch, ~30s between batches on same key
     // With 10 keys round-robin, effective wait is much shorter
     const timeSinceLast = Date.now() - slot.lastCallAt;
-    const minInterval = (BATCH_SIZE / 100) * 60_000; // ms needed for this batch count
+    const minInterval = Math.max((BATCH_SIZE / 100) * 60_000, 35_000); // at least 35s safety window
     if (timeSinceLast < minInterval) {
       await sleep(minInterval - timeSinceLast);
     }

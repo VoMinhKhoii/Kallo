@@ -170,7 +170,6 @@ interface Phase2Options {
 export async function runPhase2(opts: Phase2Options): Promise<Checkpoint2> {
   console.log('\n═══ Phase 2: Gemini Flash (name_alt generation) ═══');
 
-  const keys = loadGeminiKeys();
   const db = getDb();
   let checkpoint = loadCheckpoint<Checkpoint2>('checkpoint-2.json');
   const existingCount = Object.keys(checkpoint).length;
@@ -232,6 +231,9 @@ export async function runPhase2(opts: Phase2Options): Promise<Checkpoint2> {
     }
     return checkpoint;
   }
+
+  // Keys are loaded only when we actually make model calls
+  const keys = loadGeminiKeys();
 
   // Group by category
   const byCategory = new Map<string, typeof pending>();
