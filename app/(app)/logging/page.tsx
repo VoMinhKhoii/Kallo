@@ -1,4 +1,5 @@
 import { redirect } from 'next/navigation';
+import { z } from 'zod';
 import {
   type LoggingProfile,
   LoggingShell,
@@ -15,8 +16,19 @@ const DEFAULT_PROFILE: LoggingProfile = {
   fatTargetG: 65,
 };
 
-export default async function LoggingPage() {
+const loggingSearchParamsSchema = z.object({
+  meal: z.string().trim().min(1).max(300).optional(),
+});
+
+export default async function LoggingPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ meal?: string }>;
+}) {
   let profile = DEFAULT_PROFILE;
+  const rawParams = await searchParams;
+  const parsed = loggingSearchParamsSchema.safeParse(rawParams);
+  const meal = parsed.success ? parsed.data.meal : undefined;
 
   try {
     const { user, profile: row } = await requireAuthAndProfile();
@@ -35,5 +47,5 @@ export default async function LoggingPage() {
     redirect('/');
   }
 
-  return <LoggingShell profile={profile} />;
+  return <LoggingShell profile={profile} initialMeal={meal} />;
 }

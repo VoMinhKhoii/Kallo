@@ -59,6 +59,17 @@
   --color-nham-macro-protein: var(--nham-macro-protein);
   --color-nham-macro-carbs: var(--nham-macro-carbs);
   --color-nham-macro-fat: var(--nham-macro-fat);
+  /* Semantic status tokens */
+  --color-nham-success: var(--nham-success);
+  --color-nham-danger: var(--nham-danger);
+  /* Heatmap gradient tokens */
+  --color-nham-heatmap-on-target: var(--nham-heatmap-on-target);
+  --color-nham-heatmap-close: var(--nham-heatmap-close);
+  --color-nham-heatmap-slight: var(--nham-heatmap-slight);
+  --color-nham-heatmap-moderate: var(--nham-heatmap-moderate);
+  --color-nham-heatmap-far: var(--nham-heatmap-far);
+  /* Bar visualization tokens */
+  --color-nham-bar-miss: var(--nham-bar-miss);
 }
 
 :root {
@@ -108,6 +119,17 @@
   --nham-macro-protein: #c9a87c;
   --nham-macro-carbs: #8b7355;
   --nham-macro-fat: #a8a29e;
+  /* Semantic status tokens */
+  --nham-success: #7ca368;
+  --nham-danger: #d37b69;
+  /* Heatmap gradient tokens */
+  --nham-heatmap-on-target: #7ca368;
+  --nham-heatmap-close: #a6c495;
+  --nham-heatmap-slight: #d4c9ad;
+  --nham-heatmap-moderate: #e09c84;
+  --nham-heatmap-far: #d37b69;
+  /* Bar visualization token */
+  --nham-bar-miss: #d4c9ad;
 }
 
 .dark {
@@ -156,6 +178,17 @@
   --nham-macro-protein: #c9a87c;
   --nham-macro-carbs: #b8a88e;
   --nham-macro-fat: #8a8580;
+  /* Semantic status tokens */
+  --nham-success: #7faf6a;
+  --nham-danger: #e08878;
+  /* Heatmap gradient tokens */
+  --nham-heatmap-on-target: #7faf6a;
+  --nham-heatmap-close: #9bbe8a;
+  --nham-heatmap-slight: #c4b99d;
+  --nham-heatmap-moderate: #cf8b76;
+  --nham-heatmap-far: #e08878;
+  /* Bar visualization token */
+  --nham-bar-miss: #6b6054;
 }
 
 @layer base {

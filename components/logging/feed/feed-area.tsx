@@ -14,18 +14,16 @@ import {
 } from '@/components/logging/input/meal-input';
 import type { LoggingProfile } from '@/components/logging/logging-shell';
 import { useDailyMeals } from '@/hooks/use-daily-meals';
+import { useFeedSubmit } from '@/hooks/use-feed-submit';
 import { useConfirmMeal } from '@/hooks/use-meal-mutations';
 import { useStreamAnalysis } from '@/hooks/use-stream-analysis';
+import { useStreamingTerminalEffects } from '@/hooks/use-streaming-terminal-effects';
 import { useSubmitGuard } from '@/hooks/use-submit-guard';
 import {
   goalAdjustNutrition,
   sumDisplayedNutrition,
 } from '@/lib/ai/pipeline/goal-adjustment';
 import type { ChatMessage, StreamingPhase } from '@/lib/types/meal';
-
-function generateId() {
-  return `msg-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
-}
 
 function toStreamingPhase(status: string): StreamingPhase {
   switch (status) {
@@ -48,15 +46,31 @@ function toStreamingPhase(status: string): StreamingPhase {
 interface FeedAreaProps {
   selectedDate: string;
   profile: LoggingProfile;
+  initialMeal?: string;
 }
 
-export function FeedArea({ selectedDate, profile }: FeedAreaProps) {
+export function FeedArea({
+  selectedDate,
+  profile,
+  initialMeal,
+}: FeedAreaProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const inputRef = useRef<MealInputHandle>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const stream = useStreamAnalysis();
   const { guard } = useSubmitGuard();
   const [streamingMsgId, setStreamingMsgId] = useState<string | null>(null);
+
+  const lastPrefilledMealRef = useRef<string | null>(null);
+
+  // Prefill from dashboard meal trigger; re-runs when initialMeal changes so
+  // repeated dashboard→logging handoffs while the component stays mounted work.
+  useEffect(() => {
+    if (!initialMeal || lastPrefilledMealRef.current === initialMeal) return;
+    lastPrefilledMealRef.current = initialMeal;
+    inputRef.current?.setText(initialMeal);
+    inputRef.current?.focus();
+  }, [initialMeal]);
 
   // Persisted meals from DB
   const { data: persistedMeals = [], isLoading } = useDailyMeals(selectedDate);
@@ -113,39 +127,42 @@ export function FeedArea({ selectedDate, profile }: FeedAreaProps) {
     };
   }, [persistedMeals, profile.goal, profile.aggression]);
 
-  const handleSubmit = async () => {
-    const text = (inputRef.current?.getText() ?? '').trim();
-    if (!text || stream.isAnalyzing) return;
+  const lastAnalysisIdRef = useRef<string | null>(null);
+  const lastErrorRef = useRef<string | null>(null);
 
-    await guard(async () => {
-      const assistantMsgId = generateId();
-      setStreamingMsgId(assistantMsgId);
-      lastAnalysisIdRef.current = null;
-      lastErrorRef.current = null;
+  const { handleSubmit } = useFeedSubmit({
+    stream,
+    inputRef,
+    setMessages,
+    setStreamingMsgId,
+    scrollToBottom,
+    guard,
+    lastAnalysisIdRef,
+    lastErrorRef,
+  });
 
-      const userMessage: ChatMessage = {
-        id: generateId(),
-        role: 'user',
-        content: text,
-        timestamp: new Date(),
-      };
+  useStreamingTerminalEffects({
+    stream,
+    streamingMsgId,
+    setStreamingMsgId,
+    setMessages,
+    scrollToBottom,
+    lastAnalysisIdRef,
+    lastErrorRef,
+  });
 
-      const streamingMessage: ChatMessage = {
-        id: assistantMsgId,
-        role: 'assistant',
-        content: '',
-        userInput: text,
-        timestamp: new Date(),
-        isStreaming: true,
-        streamingPhase: 'waiting',
-      };
-
-      setMessages((prev) => [...prev, userMessage, streamingMessage]);
-      inputRef.current?.clear();
-      scrollToBottom();
-
-      await stream.analyze(text);
-    });
+  // Handle confirm: persist to DB, remove streaming message
+  const handleConfirmMeal = (messageId: string, analysisId: string) => {
+    confirmMeal.mutate(
+      { analysisId },
+      {
+        onSuccess: () => {
+          // Remove the streaming message — persisted meal will appear via query
+          setMessages((prev) => prev.filter((m) => m.id !== messageId));
+          toast.success('Đã lưu bữa ăn!');
+        },
+      }
+    );
   };
 
   // Derive display messages: overlay live streaming state onto the active message.
@@ -181,105 +198,6 @@ export function FeedArea({ selectedDate, profile }: FeedAreaProps) {
       scrollToBottom();
     }
   }, [stream.isAnalyzing, streamItemCount, scrollToBottom]);
-
-  // Terminal: stream completed — finalize streaming message, store analysisId
-  const lastAnalysisIdRef = useRef<string | null>(null);
-  useEffect(() => {
-    if (
-      stream.status !== 'done' ||
-      !stream.result ||
-      !stream.analysisId ||
-      lastAnalysisIdRef.current === stream.analysisId ||
-      !streamingMsgId
-    ) {
-      return;
-    }
-    lastAnalysisIdRef.current = stream.analysisId;
-    const msgId = streamingMsgId;
-    const analysisId = stream.analysisId;
-    setStreamingMsgId(null);
-
-    setMessages((prev) =>
-      prev.map((msg) =>
-        msg.id === msgId
-          ? {
-              ...msg,
-              isStreaming: false,
-              streamingPhase: 'done' as const,
-              streamingItems: undefined,
-              streamingCompletedItems: undefined,
-              parsedMeal: stream.result!,
-              analysisId,
-            }
-          : msg
-      )
-    );
-    stream.reset();
-    scrollToBottom();
-  }, [
-    stream.status,
-    stream.result,
-    stream.analysisId,
-    stream.reset,
-    streamingMsgId,
-    scrollToBottom,
-  ]);
-
-  // Terminal: stream errored
-  const lastErrorRef = useRef<string | null>(null);
-  useEffect(() => {
-    if (
-      stream.status !== 'error' ||
-      !stream.error ||
-      lastErrorRef.current === stream.error ||
-      !streamingMsgId
-    ) {
-      return;
-    }
-    lastErrorRef.current = stream.error;
-    const msgId = streamingMsgId;
-    setStreamingMsgId(null);
-
-    toast.error(stream.error);
-
-    setMessages((prev) =>
-      prev.map((msg) =>
-        msg.id === msgId
-          ? {
-              ...msg,
-              isStreaming: false,
-              streamingPhase: undefined,
-              streamingItems: undefined,
-              streamingCompletedItems: undefined,
-              parsedMeal: undefined,
-              content: stream.error!,
-            }
-          : msg
-      )
-    );
-    stream.reset();
-    scrollToBottom();
-  }, [
-    stream.status,
-    stream.error,
-    stream.reset,
-    streamingMsgId,
-    scrollToBottom,
-  ]);
-
-  // Handle confirm: persist to DB, remove streaming message
-  const handleConfirmMeal = (messageId: string, analysisId: string) => {
-    confirmMeal.mutate(
-      { analysisId },
-      {
-        onSuccess: () => {
-          // Remove the streaming message — persisted meal will appear via query
-          setMessages((prev) => prev.filter((m) => m.id !== messageId));
-          toast.success('Đã lưu bữa ăn!');
-        },
-      }
-    );
-  };
 
   // Unconfirmed streaming messages (exclude user messages)
   const unconfirmedMessages = displayMessages.filter(
