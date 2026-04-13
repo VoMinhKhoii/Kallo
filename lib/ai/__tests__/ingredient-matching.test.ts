@@ -237,18 +237,34 @@ describe('matchIngredients', () => {
       },
     ];
 
-    // gạo matches via FAO vector, unknown_food misses everything.
-    // Note: the mock returns the same FAO vector response for all queries,
-    // so only gạo will match (similarity 0.8 > threshold).
+    // gạo → 0.1-filled embedding (contains digit '1', triggers createSourceAwareMockDb routing).
+    // unknown_food → 0-filled embedding (no '1', returns [] from all source-aware routes).
+    // This exploits the fact that Drizzle inlines string params (the JSON vector) into the
+    // extracted SQL text, but not number params (source_id). So 'q.includes("1")' in
+    // createSourceAwareMockDb detects gạo's queries by vector content, not source_id.
+    const mockGeminiMixed = createMockGemini({
+      generateEmbeddingBatch: vi
+        .fn()
+        .mockImplementation((texts: string[]) =>
+          Promise.resolve(
+            texts.map((text) =>
+              text.toLowerCase().includes('gạo') ||
+              text.toLowerCase().includes('tẻ')
+                ? Array(768).fill(0.1)
+                : Array(768).fill(0)
+            )
+          )
+        ),
+    });
+
+    const riceResult = {
+      ...sampleFuzzyResult,
+      id: 'rice-001',
+      name_primary: 'Gạo',
+      similarity: 0.9,
+    };
     const mockDb = createSourceAwareMockDb({
-      fao_vector: [
-        {
-          ...sampleFuzzyResult,
-          id: 'rice-001',
-          name_primary: 'Gạo',
-          similarity: 0.8,
-        },
-      ],
+      fao_vector: [riceResult],
       usda_vector: [],
       fao_fuzzy: [],
       usda_fuzzy: [],
@@ -261,16 +277,13 @@ describe('matchIngredients', () => {
       ingredients,
       'cơm chiên',
       mockDb as any,
-      mockGemini
+      mockGeminiMixed
     );
 
-    // Both ingredients get the same FAO vector response (Gạo at 0.8).
-    // "gạo" matches Gạo, "unknown_food" also matches Gạo (mock returns same data).
-    // This is a limitation of the static mock — in real DB, unknown_food would have low similarity.
-    // The important thing is the cascade works correctly.
-    expect(result.matched.length).toBeGreaterThanOrEqual(1);
-    const riceMatch = result.matched.find((m) => m.ingredientName === 'gạo');
-    expect(riceMatch).toBeDefined();
+    expect(result.matched).toHaveLength(1);
+    expect(result.matched[0].ingredientName).toBe('gạo');
+    expect(result.unmatched).toHaveLength(1);
+    expect(result.unmatched[0].ingredientName).toBe('unknown_food');
   });
 
   it('parses nutrition values from string to number, null stays null', async () => {
