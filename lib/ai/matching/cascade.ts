@@ -1,3 +1,13 @@
+import { resolveAlias, resolvePreMatchAlias } from '@/lib/ai/matching/aliases';
+import {
+  cacheQueryEmbedding,
+  resolveQueryEmbedding,
+} from '@/lib/ai/matching/embedding-cache';
+import { batchFetchNutrition } from '@/lib/ai/matching/nutrition-batch';
+import {
+  type MatchInfo,
+  matchSingleIngredientWithEmbedding,
+} from '@/lib/ai/matching/source-matching';
 import type { AppDb } from '@/lib/db';
 import { mapWithConcurrency } from '@/lib/utils';
 import type { GeminiClient } from '../gemini';
@@ -7,13 +17,6 @@ import type {
   NutritionPer100g,
   UnmatchedIngredient,
 } from '../types';
-import { resolveAlias, resolvePreMatchAlias } from './aliases';
-import { cacheQueryEmbedding, resolveQueryEmbedding } from './embedding-cache';
-import { batchFetchNutrition } from './nutrition-batch';
-import {
-  type MatchInfo,
-  matchSingleIngredientWithEmbedding,
-} from './source-matching';
 
 // Re-export all constants and types for backward compat (index.ts barrel imports from here)
 export {
@@ -82,29 +85,40 @@ export async function matchIngredients(
     if (!cacheResults[i]) missIndices.push(i);
   }
 
-  // Phase 2: Batch embed all L3 misses in a single API call
+  // Phase 2: Batch embed all L3 misses in a single API call (best-effort)
   if (missIndices.length > 0) {
     const missNames = missIndices.map((i) => matchingNames[i]);
     console.info(`[matching] batch embedding ${missNames.length} L3 misses`);
     const batchResults = await gemini.generateEmbeddingBatch(missNames);
-    if (
-      batchResults.length !== missNames.length ||
-      batchResults.some((embedding) => !embedding)
-    ) {
-      throw new Error(
-        `Expected ${missNames.length} embeddings, received ${batchResults.length}.`
+    if (batchResults.length !== missNames.length) {
+      console.warn(
+        `[matching] embedding batch length mismatch: expected ${missNames.length}, got ${batchResults.length}; unaligned entries left unmatched`
       );
     }
     for (let j = 0; j < missIndices.length; j++) {
+      const embedding = batchResults[j];
+      if (!embedding) {
+        console.warn(
+          `[matching] no embedding returned for "${missNames[j]}", leaving unmatched`
+        );
+        continue;
+      }
       const idx = missIndices[j];
-      embeddings[idx] = batchResults[j];
-      cacheQueryEmbedding(matchingNames[idx], batchResults[j], db);
+      embeddings[idx] = embedding;
+      cacheQueryEmbedding(matchingNames[idx], embedding, db);
     }
   }
 
-  // Phase 3: Match each ingredient (returns MatchInfo without nutrition)
-  const results = await mapWithConcurrency(
-    matchingNames.map((name, i) => ({ name, embedding: embeddings[i]! })),
+  // Phase 3: Match each ingredient that has a resolved embedding
+  // Items without an embedding are enqueued as unmatched directly
+  const matchItems = matchingNames
+    .map((name, i) => ({ name, i, embedding: embeddings[i] }))
+    .filter(
+      (item): item is typeof item & { embedding: number[] } =>
+        item.embedding != null
+    );
+  const matchSettled = await mapWithConcurrency(
+    matchItems,
     (item) => matchSingleIngredientWithEmbedding(item.name, item.embedding, db),
     MATCH_CONCURRENCY
   );
@@ -115,8 +129,18 @@ export async function matchIngredients(
     ingredient: DecomposedIngredient;
     index: number;
   }[] = [];
+
+  // Items with no embedding go directly to unmatched (no API call wasted)
+  const matchedEmbeddingIndices = new Set(matchItems.map((item) => item.i));
   for (let i = 0; i < ingredients.length; i++) {
-    const result = results[i];
+    if (!matchedEmbeddingIndices.has(i)) {
+      unmatchedWithIndex.push({ ingredient: ingredients[i], index: i });
+    }
+  }
+
+  for (let j = 0; j < matchSettled.length; j++) {
+    const result = matchSettled[j];
+    const { i } = matchItems[j];
     if (result.status === 'fulfilled' && result.value) {
       // Restore original ingredient name (pre-match alias may have changed it)
       matchInfos.push({ ...result.value, ingredientName: ingredients[i].name });
