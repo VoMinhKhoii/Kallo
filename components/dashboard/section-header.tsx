@@ -14,7 +14,7 @@ export function SectionHeader({ title, delay = 0.1 }: SectionHeaderProps) {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, delay }}
     >
-      <span className="mb-2 block font-bold text-[#8C857D] text-[12px] uppercase tracking-[0.2em]">
+      <span className="mb-2 block font-bold text-[12px] text-nham-stone uppercase tracking-[0.2em]">
         {title}
       </span>
     </motion.div>

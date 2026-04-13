@@ -12,6 +12,8 @@ import {
   YAxis,
 } from 'recharts';
 import type { TimeRange } from '@/components/dashboard/types';
+import { WeightChartTooltip } from './weight-chart-tooltip';
+import { buildXTicks } from './weight-chart-utils';
 
 interface WeightChartProps {
   data: number[];
@@ -19,73 +21,6 @@ interface WeightChartProps {
   expectedEndWeight: number;
   goalDirection: 'up' | 'down';
   range: TimeRange;
-}
-
-const OFF_TRACK_COLOR = '#D37B69';
-
-const MONTHS_SHORT = [
-  'Jan',
-  'Feb',
-  'Mar',
-  'Apr',
-  'May',
-  'Jun',
-  'Jul',
-  'Aug',
-  'Sep',
-  'Oct',
-  'Nov',
-  'Dec',
-];
-
-function buildXTicks(
-  count: number,
-  range: TimeRange
-): { ticks: number[]; formatter: (v: number, idx: number) => string } {
-  if (range === '30d') {
-    const step = Math.floor(count / 4);
-    const ticks = [0, step, step * 2, step * 3, count - 1];
-    return {
-      ticks,
-      formatter: (_v: number, idx: number) =>
-        idx === ticks.length - 1 ? 'Now' : `W${idx + 1}`,
-    };
-  }
-
-  // 90d — show months
-  const today = new Date();
-  const ticks: number[] = [];
-  const labels: string[] = [];
-  for (let i = 2; i >= 0; i--) {
-    const d = new Date(today);
-    d.setMonth(d.getMonth() - i);
-    const dayIndex = count - 1 - i * 30;
-    ticks.push(Math.max(0, dayIndex));
-    labels.push(MONTHS_SHORT[d.getMonth()]);
-  }
-  ticks.push(count - 1);
-  labels.push('Now');
-  return {
-    ticks,
-    formatter: (_v: number, idx: number) => labels[idx] ?? '',
-  };
-}
-
-function CustomTooltip({
-  active,
-  payload,
-}: {
-  active?: boolean;
-  payload?: Array<{ value: number }>;
-}) {
-  if (!active || !payload?.length) return null;
-  return (
-    <div className="rounded-lg border border-nham-border/60 bg-card px-3 py-1.5 shadow-md">
-      <span className="font-mono text-[12px] text-nham-text">
-        {payload[0].value.toFixed(1)} kg
-      </span>
-    </div>
-  );
 }
 
 export function WeightChart({
@@ -131,8 +66,8 @@ export function WeightChart({
       <div className="mb-1 flex items-center gap-4 text-[10px] text-nham-stone">
         <span className="flex items-center gap-1.5">
           <span
-            className="inline-block h-2 w-3 rounded-sm"
-            style={{ backgroundColor: OFF_TRACK_COLOR, opacity: 0.5 }}
+            className="inline-block h-2 w-3 rounded-sm opacity-50"
+            style={{ backgroundColor: 'var(--nham-danger)' }}
           />
           Off track
         </span>
@@ -146,15 +81,23 @@ export function WeightChart({
           >
             <defs>
               <linearGradient id="lineGrad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#C9A87C" stopOpacity={0.18} />
-                <stop offset="100%" stopColor="#C9A87C" stopOpacity={0} />
+                <stop
+                  offset="0%"
+                  stopColor="var(--nham-accent)"
+                  stopOpacity={0.18}
+                />
+                <stop
+                  offset="100%"
+                  stopColor="var(--nham-accent)"
+                  stopOpacity={0}
+                />
               </linearGradient>
             </defs>
 
             <ReferenceArea
               y1={offTrackBottom}
               y2={offTrackTop}
-              fill={OFF_TRACK_COLOR}
+              fill="var(--nham-danger)"
               fillOpacity={0.08}
               strokeOpacity={0}
             />
@@ -163,7 +106,7 @@ export function WeightChart({
               dataKey="day"
               tickLine={false}
               axisLine={false}
-              tick={{ fontSize: 9, fill: '#A8A29E' }}
+              tick={{ fontSize: 9, fill: 'var(--nham-stone)' }}
               ticks={xTicks}
               tickFormatter={(v: number, i: number) => xFormatter(v, i)}
             />
@@ -171,31 +114,36 @@ export function WeightChart({
               domain={[yMin, yMax]}
               tickLine={false}
               axisLine={false}
-              tick={{ fontSize: 9, fill: '#A8A29E', fontFamily: 'monospace' }}
+              tick={{
+                fontSize: 9,
+                fill: 'var(--nham-stone)',
+                fontFamily: 'monospace',
+              }}
               ticks={[periodStartWeight, expectedEndWeight]}
               tickFormatter={(v: number) => `${v.toFixed(1)}`}
               width={38}
             />
 
-            <Tooltip content={<CustomTooltip />} />
+            <Tooltip content={<WeightChartTooltip />} />
 
             <ReferenceLine
               y={periodStartWeight}
-              stroke={`${OFF_TRACK_COLOR}40`}
+              stroke="var(--nham-danger)"
+              strokeOpacity={0.25}
               strokeWidth={1}
             />
 
             <Area
               type="monotone"
               dataKey="weight"
-              stroke="#C9A87C"
+              stroke="var(--nham-accent)"
               strokeWidth={2}
               fill="url(#lineGrad)"
               fillOpacity={1}
               dot={false}
               activeDot={{
                 r: 4,
-                fill: '#C9A87C',
+                fill: 'var(--nham-accent)',
                 stroke: 'white',
                 strokeWidth: 2,
               }}

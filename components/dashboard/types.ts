@@ -15,7 +15,7 @@ export interface VerdictData {
   status: PaceStatus;
   rollingAvg: { start: number; end: number };
   currentWeight: number;
-  proteinDays: boolean[]; // 7 booleans Mon–Sun, true = hit protein target
+  proteinDays: [boolean, boolean, boolean, boolean, boolean, boolean, boolean]; // Mon–Sun, true = hit protein target
 }
 
 export interface StatsData {
@@ -42,13 +42,13 @@ export interface Micronutrient {
   group: 'mineral' | 'vitamin' | 'other';
 }
 
-// Heatmap domain colors — preserved from design spec
+// Heatmap domain colors — references CSS custom properties for theme support
 export const HEATMAP_COLORS = {
-  onTarget: '#7CA368',
-  close: '#A6C495',
-  slight: '#D4C9AD',
-  moderate: '#E09C84',
-  far: '#D37B69',
+  onTarget: 'var(--nham-heatmap-on-target)',
+  close: 'var(--nham-heatmap-close)',
+  slight: 'var(--nham-heatmap-slight)',
+  moderate: 'var(--nham-heatmap-moderate)',
+  far: 'var(--nham-heatmap-far)',
 } as const;
 
 export function getHeatmapColor(ratio: number | null): {

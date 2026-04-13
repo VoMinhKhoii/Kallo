@@ -5,7 +5,7 @@ import type {
   StatsData,
   TimeRange,
   VerdictData,
-} from './types';
+} from '@/components/dashboard/types';
 
 export function getVerdictData(): VerdictData {
   return {

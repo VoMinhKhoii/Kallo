@@ -1,9 +1,26 @@
 'use client';
 
+import { zodResolver } from '@hookform/resolvers/zod';
 import { Check, Scale } from 'lucide-react';
 import { motion } from 'motion/react';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { toast } from 'sonner';
+import { z } from 'zod';
 import type { StatsData, VerdictData } from '@/components/dashboard/types';
+import { cn } from '@/lib/utils';
+
+const weightSchema = z.object({
+  weight: z
+    .string()
+    .min(1, 'Weight is required')
+    .refine((v) => {
+      const n = Number(v);
+      return !isNaN(n) && n > 0 && n < 500;
+    }, 'Enter a valid weight (0–500 kg)'),
+});
+
+type WeightForm = z.infer<typeof weightSchema>;
 
 interface WeightCardProps {
   stats: StatsData;
@@ -11,17 +28,41 @@ interface WeightCardProps {
 }
 
 export function WeightCard({ stats, verdict }: WeightCardProps) {
-  const [weightInput, setWeightInput] = useState('');
   const [saved, setSaved] = useState(false);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const alreadyLogged = stats.todayWeight !== null;
 
-  const handleSave = () => {
-    if (!weightInput.trim()) return;
+  const {
+    register,
+    handleSubmit,
+    reset,
+    watch,
+    formState: { errors },
+  } = useForm<WeightForm>({
+    resolver: zodResolver(weightSchema),
+    defaultValues: { weight: '' },
+  });
+
+  const watchedWeight = watch('weight');
+
+  // Show validation errors via toast
+  useEffect(() => {
+    if (errors.weight) toast.error(errors.weight.message);
+  }, [errors.weight]);
+
+  // Clear timeout on unmount to prevent memory leak
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
+  }, []);
+
+  const onSubmit = () => {
     setSaved(true);
-    setTimeout(() => {
+    timerRef.current = setTimeout(() => {
       setSaved(false);
-      setWeightInput('');
+      reset();
     }, 1500);
   };
 
@@ -41,14 +82,19 @@ export function WeightCard({ stats, verdict }: WeightCardProps) {
           </span>
         </div>
 
-        <div className="flex items-center gap-2">
+        <form
+          onSubmit={handleSubmit(onSubmit, () =>
+            toast.error('Enter a valid weight (0–500 kg)')
+          )}
+          className="flex items-center gap-2"
+        >
           <div className="relative flex-1">
             <input
+              {...register('weight')}
               type="number"
               step="0.1"
               placeholder={String(stats.weightPlaceholder)}
-              value={alreadyLogged ? String(stats.todayWeight) : weightInput}
-              onChange={(e) => setWeightInput(e.target.value)}
+              value={alreadyLogged ? String(stats.todayWeight) : undefined}
               disabled={alreadyLogged}
               className="w-full rounded-xl border border-nham-border border-dashed bg-nham-surface px-4 py-2 font-mono text-[15px] text-nham-text outline-none transition-all placeholder:text-nham-border focus:border-nham-accent focus:ring-2 focus:ring-nham-accent/20 disabled:cursor-default disabled:border-solid disabled:opacity-70"
             />
@@ -58,21 +104,21 @@ export function WeightCard({ stats, verdict }: WeightCardProps) {
           </div>
           {!alreadyLogged && (
             <button
-              type="button"
-              onClick={handleSave}
-              disabled={!weightInput}
-              className={`rounded-xl px-3 py-2 font-bold text-xs tracking-wide transition-all ${
+              type="submit"
+              disabled={!watchedWeight}
+              className={cn(
+                'rounded-xl px-3 py-2 font-bold text-xs tracking-wide transition-all',
                 saved
-                  ? 'bg-[#7CA368] text-white shadow-sm'
-                  : weightInput
+                  ? 'bg-nham-success text-white shadow-sm'
+                  : watchedWeight
                     ? 'bg-nham-btn text-white shadow-sm hover:bg-nham-btn-hover'
                     : 'cursor-not-allowed bg-nham-hover text-nham-stone'
-              }`}
+              )}
             >
               {saved ? <Check className="h-3.5 w-3.5" /> : 'Save'}
             </button>
           )}
-        </div>
+        </form>
         <div className="flex items-center justify-between">
           {!alreadyLogged && (
             <p className="text-[9px] text-nham-stone">

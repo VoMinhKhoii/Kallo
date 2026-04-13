@@ -12,16 +12,25 @@ const STATUS_CONFIG: Record<
   PaceStatus,
   { label: string; Icon: typeof TrendingDown; color: string }
 > = {
-  on_pace: { label: 'On pace', Icon: TrendingDown, color: '#7CA368' },
-  ahead: { label: 'Ahead', Icon: TrendingDown, color: '#7CA368' },
-  behind: { label: 'Behind', Icon: TrendingUp, color: '#D37B69' },
-  too_early: { label: 'Too early to tell', Icon: Minus, color: '#A8A29E' },
+  on_pace: {
+    label: 'On pace',
+    Icon: TrendingDown,
+    color: 'var(--nham-success)',
+  },
+  ahead: { label: 'Ahead', Icon: TrendingDown, color: 'var(--nham-success)' },
+  behind: { label: 'Behind', Icon: TrendingUp, color: 'var(--nham-danger)' },
+  too_early: {
+    label: 'Too early to tell',
+    Icon: Minus,
+    color: 'var(--nham-stone)',
+  },
 };
 
 function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString('en-US', {
+  return new Date(`${iso}T00:00:00Z`).toLocaleDateString('en-US', {
     month: 'short',
     day: 'numeric',
+    timeZone: 'UTC',
   });
 }
 
@@ -97,7 +106,7 @@ export function DeficitCard({ stats }: DeficitCardProps) {
       <div className="flex items-baseline gap-1">
         <span
           className="font-semibold text-[30px] tabular-nums leading-[0.9] tracking-[-0.03em]"
-          style={{ fontFamily: 'Lora, serif', color: '#695E4E' }}
+          style={{ fontFamily: 'Lora, serif', color: 'var(--nham-btn)' }}
         >
           {Math.abs(stats.avgDeficit)}
         </span>

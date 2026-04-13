@@ -1,6 +1,8 @@
 'use client';
 
+import { useQuery } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
+import { cn } from '@/lib/utils';
 import { CurrentSection } from './current/current-section';
 import {
   getHeatmapData,
@@ -39,14 +41,57 @@ export function DashboardShell() {
   const [timeRange, setTimeRange] = useState<TimeRange>('30d');
   const weekTitle = useMemo(() => getWeekTitle(), []);
 
-  const verdict = getVerdictData();
-  const stats = getStatsData();
-  const weightData = getWeightData(timeRange);
+  const { data: verdict } = useQuery({
+    queryKey: ['dashboard', 'verdict'],
+    queryFn: getVerdictData,
+    initialData: getVerdictData,
+    staleTime: Number.POSITIVE_INFINITY,
+  });
+
+  const { data: stats } = useQuery({
+    queryKey: ['dashboard', 'stats'],
+    queryFn: getStatsData,
+    initialData: getStatsData,
+    staleTime: Number.POSITIVE_INFINITY,
+  });
+
+  const { data: weightData } = useQuery({
+    queryKey: ['dashboard', 'weightData', timeRange],
+    queryFn: () => getWeightData(timeRange),
+    initialData: () => getWeightData(timeRange),
+    staleTime: Number.POSITIVE_INFINITY,
+  });
+
+  const { data: weightChartMeta } = useQuery({
+    queryKey: ['dashboard', 'weightChartMeta', timeRange],
+    queryFn: () => getWeightChartMeta(timeRange),
+    initialData: () => getWeightChartMeta(timeRange),
+    staleTime: Number.POSITIVE_INFINITY,
+  });
+
+  const { data: heatmapData } = useQuery({
+    queryKey: ['dashboard', 'heatmapData', timeRange],
+    queryFn: () => getHeatmapData(timeRange),
+    initialData: () => getHeatmapData(timeRange),
+    staleTime: Number.POSITIVE_INFINITY,
+  });
+
+  const { data: nutrition } = useQuery({
+    queryKey: ['dashboard', 'nutrition'],
+    queryFn: getNutritionData,
+    initialData: getNutritionData,
+    staleTime: Number.POSITIVE_INFINITY,
+  });
+
+  const { data: meals } = useQuery({
+    queryKey: ['dashboard', 'meals'],
+    queryFn: getMealsToday,
+    initialData: getMealsToday,
+    staleTime: Number.POSITIVE_INFINITY,
+  });
+
   const { periodStartWeight, expectedEndWeight, goalDirection } =
-    getWeightChartMeta(timeRange);
-  const heatmapData = getHeatmapData(timeRange);
-  const nutrition = getNutritionData();
-  const meals = getMealsToday();
+    weightChartMeta;
 
   return (
     <main
@@ -67,7 +112,7 @@ export function DashboardShell() {
         {/* ── Section 2: Progress ── */}
         <section className="flex min-h-0 flex-col">
           <div className="mb-1 flex items-center justify-between">
-            <span className="font-bold text-[#8C857D] text-[12px] uppercase tracking-[0.2em]">
+            <span className="font-bold text-[12px] text-nham-stone uppercase tracking-[0.2em]">
               Progress
             </span>
             {/* Time range toggle inline with header */}
@@ -77,11 +122,12 @@ export function DashboardShell() {
                   key={r}
                   type="button"
                   onClick={() => setTimeRange(r)}
-                  className={`rounded-lg px-3 py-1 font-medium text-[11px] transition-all ${
+                  className={cn(
+                    'rounded-lg px-3 py-1 font-medium text-[11px] transition-all',
                     timeRange === r
                       ? 'bg-card text-nham-text shadow-sm'
                       : 'text-nham-stone hover:text-nham-text-muted'
-                  }`}
+                  )}
                 >
                   {r === '30d' ? '30 days' : '90 days'}
                 </button>

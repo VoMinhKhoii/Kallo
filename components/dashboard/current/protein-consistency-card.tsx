@@ -40,7 +40,7 @@ export function ProteinConsistencyCard({
             key={`bar-${DAY_LABELS[i]}-${i}`}
             className="flex flex-col items-center gap-1.5"
           >
-            <div className="relative h-[32px] w-[10px] overflow-hidden rounded-full bg-[#F0EDE7]">
+            <div className="relative h-[32px] w-[10px] overflow-hidden rounded-full bg-nham-hover">
               <motion.div
                 initial={{ height: 0 }}
                 animate={{ height: hit ? '100%' : '25%' }}
@@ -50,7 +50,11 @@ export function ProteinConsistencyCard({
                   ease: 'easeOut',
                 }}
                 className="absolute inset-x-0 bottom-0 rounded-full"
-                style={{ backgroundColor: hit ? '#2C2416' : '#D4C9AD' }}
+                style={{
+                  backgroundColor: hit
+                    ? 'var(--nham-text)'
+                    : 'var(--nham-bar-miss)',
+                }}
               />
             </div>
             <span className="font-bold text-[8px] text-nham-stone uppercase tracking-widest">

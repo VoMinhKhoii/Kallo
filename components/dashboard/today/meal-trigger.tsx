@@ -4,6 +4,7 @@ import { ArrowUp, UtensilsCrossed, X } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { cn } from '@/lib/utils';
 
 export function MealTrigger() {
   const [expanded, setExpanded] = useState(false);
@@ -14,13 +15,12 @@ export function MealTrigger() {
 
   const handleOpen = () => {
     setExpanded(true);
-    setTimeout(() => inputRef.current?.focus(), 60);
   };
 
   const handleClose = useCallback(() => {
     setExpanded(false);
     setText('');
-    setTimeout(() => triggerRef.current?.focus(), 60);
+    triggerRef.current?.focus();
   }, []);
 
   const handleSend = () => {
@@ -64,6 +64,7 @@ export function MealTrigger() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 8, scale: 0.97 }}
             transition={{ duration: 0.18 }}
+            onAnimationComplete={() => inputRef.current?.focus()}
             className="fixed right-6 bottom-20 z-50 flex w-[340px] items-center gap-2 rounded-2xl border border-nham-accent/30 bg-card px-4 py-3 shadow-[0_12px_40px_-8px_rgba(44,36,22,0.2)] ring-2 ring-nham-accent/10"
           >
             <input
@@ -81,11 +82,12 @@ export function MealTrigger() {
               type="button"
               onClick={handleSend}
               aria-label="Send meal"
-              className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full transition-all ${
+              className={cn(
+                'flex h-7 w-7 shrink-0 items-center justify-center rounded-full transition-all',
                 text.length > 0
                   ? 'bg-nham-btn text-white shadow-sm hover:bg-nham-btn-hover'
                   : 'bg-nham-track text-nham-stone'
-              }`}
+              )}
             >
               <ArrowUp className="h-3.5 w-3.5" />
             </button>

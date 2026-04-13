@@ -43,7 +43,7 @@ Keep the existing side-by-side layout with vertical divider. No changes to the i
 
 **Container**: fixed height (~260px) to prevent layout shift when switching ranges.
 
-**Layout**: two-column, fluid width split. The heatmap and weight chart sit side by side. The width ratio adjusts based on time range — heatmap needs more width at 90d. Smooth CSS transition on width changes.
+**Layout**: two-column, fluid-width split. The heatmap and weight chart sit side by side. The width ratio adjusts based on time range — heatmap needs more width at 90d. Smooth CSS transition on width changes.
 
 #### Weight Chart (left)
 

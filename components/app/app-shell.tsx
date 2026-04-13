@@ -2,7 +2,7 @@
 
 import { Menu, X } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { WizardShell } from '@/components/onboarding/wizard-shell';
 import type { getOnboardingProfile } from '@/lib/onboarding/actions';
 import { ONBOARDING_REQUIRED_STEP } from '@/lib/onboarding/constants';
@@ -26,12 +26,20 @@ export function AppShell({
   const isIncomplete = onboardingStep < ONBOARDING_REQUIRED_STEP;
   const [showOnboarding, setShowOnboarding] = useState(isIncomplete);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const overlayRef = useRef<HTMLDivElement>(null);
 
   // Close mobile menu on route change
   // biome-ignore lint/correctness/useExhaustiveDependencies: intentionally re-run on pathname change
   useEffect(() => {
     setMobileMenuOpen(false);
   }, [pathname]);
+
+  // Focus the overlay dialog when it opens for keyboard accessibility
+  useEffect(() => {
+    if (mobileMenuOpen) {
+      overlayRef.current?.focus();
+    }
+  }, [mobileMenuOpen]);
 
   const handleClose = () => {
     setShowOnboarding(false);
@@ -55,13 +63,22 @@ export function AppShell({
 
         {/* Mobile sidebar overlay */}
         {mobileMenuOpen && (
-          <div className="fixed inset-0 z-50 md:hidden">
+          <div
+            ref={overlayRef}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Navigation menu"
+            id="mobile-menu"
+            tabIndex={-1}
+            className="fixed inset-0 z-50 outline-none md:hidden"
+            onKeyDown={(e) => {
+              if (e.key === 'Escape') setMobileMenuOpen(false);
+            }}
+          >
             <div
               className="absolute inset-0 bg-black/20 backdrop-blur-[2px]"
               onClick={() => setMobileMenuOpen(false)}
-              onKeyDown={(e) => {
-                if (e.key === 'Escape') setMobileMenuOpen(false);
-              }}
+              aria-hidden="true"
             />
             <div className="relative h-full w-64 p-3">
               <MainSidebar
@@ -79,8 +96,10 @@ export function AppShell({
             <button
               type="button"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="flex h-8 w-8 items-center justify-center rounded-lg text-nham-text-muted transition-colors hover:bg-nham-hover/60"
               aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
+              aria-expanded={mobileMenuOpen}
+              aria-controls="mobile-menu"
+              className="flex h-8 w-8 items-center justify-center rounded-lg text-nham-text-muted transition-colors hover:bg-nham-hover/60"
             >
               {mobileMenuOpen ? (
                 <X className="h-5 w-5" />

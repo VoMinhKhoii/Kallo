@@ -18,7 +18,8 @@ export function MacroBars({ items }: MacroBarsProps) {
   return (
     <div className="flex flex-1 flex-col justify-center gap-3.5">
       {items.map(({ label, current, target, color, unit = 'g' }, idx) => {
-        const pct = target > 0 ? Math.min((current / target) * 100, 100) : 0;
+        const pct =
+          target > 0 ? Math.max(0, Math.min((current / target) * 100, 100)) : 0;
         return (
           <div key={label} className="flex items-center gap-3">
             <span className="w-12 font-bold text-[9px] text-nham-stone uppercase tracking-widest">
