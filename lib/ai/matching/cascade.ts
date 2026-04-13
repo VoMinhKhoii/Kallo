@@ -82,6 +82,14 @@ export async function matchIngredients(
     const missNames = missIndices.map((i) => matchingNames[i]);
     console.info(`[matching] batch embedding ${missNames.length} L3 misses`);
     const batchResults = await gemini.generateEmbeddingBatch(missNames);
+    if (
+      batchResults.length !== missNames.length ||
+      batchResults.some((embedding) => !embedding)
+    ) {
+      throw new Error(
+        `Expected ${missNames.length} embeddings, received ${batchResults.length}.`
+      );
+    }
     for (let j = 0; j < missIndices.length; j++) {
       const idx = missIndices[j];
       embeddings[idx] = batchResults[j];
@@ -154,6 +162,14 @@ export async function matchIngredients(
           (i) => aliasRetries[i].aliasName
         );
         const batchResults = await gemini.generateEmbeddingBatch(missNames);
+        if (
+          batchResults.length !== missNames.length ||
+          batchResults.some((embedding) => !embedding)
+        ) {
+          throw new Error(
+            `Expected ${missNames.length} embeddings, received ${batchResults.length}.`
+          );
+        }
         for (let j = 0; j < aliasMissIndices.length; j++) {
           const idx = aliasMissIndices[j];
           aliasEmbeddings[idx] = batchResults[j];

@@ -2,7 +2,7 @@ import { sql } from 'drizzle-orm';
 import type { AppDb } from '@/lib/db';
 import { getNutritionCache } from '../cache/nutrition-cache';
 import type { NutritionPer100g } from '../types';
-import { parseNutritionRow } from './nutrition-db';
+import { NUTRITION_SELECT_COLUMNS, parseNutritionRow } from './nutrition-db';
 
 /**
  * Batch-fetch nutrition per 100g for a list of food composition IDs.
@@ -38,7 +38,7 @@ export async function batchFetchNutrition(
       sql`, `
     );
     const rows = await db.execute(
-      sql`SELECT * FROM vietnamese_food_composition WHERE id IN (${idList})`
+      sql`SELECT ${sql.raw(NUTRITION_SELECT_COLUMNS.join(', '))} FROM vietnamese_food_composition WHERE id IN (${idList})`
     );
     for (const row of rows as unknown as Record<string, unknown>[]) {
       const id = row.id as string;
