@@ -26,21 +26,26 @@ function todayDateString(): string {
 
 interface LoggingShellProps {
   profile: LoggingProfile;
+  initialMeal?: string;
 }
 
-export function LoggingShell({ profile }: LoggingShellProps) {
+export function LoggingShell({ profile, initialMeal }: LoggingShellProps) {
   const [selectedDate, setSelectedDate] = useState(todayDateString);
 
   usePrefetchDates(selectedDate);
 
   return (
-    <>
+    <div className="flex min-h-0 flex-1 gap-3">
       <TimelineSidebar
         userId={profile.userId}
         selectedDate={selectedDate}
         onSelectDate={setSelectedDate}
       />
-      <FeedArea selectedDate={selectedDate} profile={profile} />
-    </>
+      <FeedArea
+        selectedDate={selectedDate}
+        profile={profile}
+        initialMeal={initialMeal}
+      />
+    </div>
   );
 }
