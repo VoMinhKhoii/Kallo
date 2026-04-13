@@ -15,8 +15,13 @@ const DEFAULT_PROFILE: LoggingProfile = {
   fatTargetG: 65,
 };
 
-export default async function LoggingPage() {
+export default async function LoggingPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ meal?: string }>;
+}) {
   let profile = DEFAULT_PROFILE;
+  const { meal } = await searchParams;
 
   try {
     const { user, profile: row } = await requireAuthAndProfile();
@@ -35,5 +40,5 @@ export default async function LoggingPage() {
     redirect('/');
   }
 
-  return <LoggingShell profile={profile} />;
+  return <LoggingShell profile={profile} initialMeal={meal} />;
 }

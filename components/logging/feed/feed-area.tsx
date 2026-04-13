@@ -48,15 +48,29 @@ function toStreamingPhase(status: string): StreamingPhase {
 interface FeedAreaProps {
   selectedDate: string;
   profile: LoggingProfile;
+  initialMeal?: string;
 }
 
-export function FeedArea({ selectedDate, profile }: FeedAreaProps) {
+export function FeedArea({
+  selectedDate,
+  profile,
+  initialMeal,
+}: FeedAreaProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const inputRef = useRef<MealInputHandle>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const stream = useStreamAnalysis();
   const { guard } = useSubmitGuard();
   const [streamingMsgId, setStreamingMsgId] = useState<string | null>(null);
+
+  // Prefill from dashboard meal trigger (only on first mount)
+  // biome-ignore lint/correctness/useExhaustiveDependencies: intentionally runs once on mount
+  useEffect(() => {
+    if (initialMeal) {
+      inputRef.current?.setText(initialMeal);
+      inputRef.current?.focus();
+    }
+  }, []);
 
   // Persisted meals from DB
   const { data: persistedMeals = [], isLoading } = useDailyMeals(selectedDate);
