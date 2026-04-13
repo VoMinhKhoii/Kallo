@@ -100,18 +100,19 @@ export async function matchIngredients(
       console.warn(
         `[matching] embedding batch length mismatch: expected ${missNames.length}, got ${batchResults.length}; unaligned entries left unmatched`
       );
-    }
-    for (let j = 0; j < missIndices.length; j++) {
-      const embedding = batchResults[j];
-      if (!embedding) {
-        console.warn(
-          `[matching] no embedding returned for "${missNames[j]}", leaving unmatched`
-        );
-        continue;
+    } else {
+      for (let j = 0; j < missIndices.length; j++) {
+        const embedding = batchResults[j];
+        if (!embedding) {
+          console.warn(
+            `[matching] no embedding returned for "${missNames[j]}", leaving unmatched`
+          );
+          continue;
+        }
+        const idx = missIndices[j];
+        embeddings[idx] = embedding;
+        cacheQueryEmbedding(matchingNames[idx], embedding, db);
       }
-      const idx = missIndices[j];
-      embeddings[idx] = embedding;
-      cacheQueryEmbedding(matchingNames[idx], embedding, db);
     }
   }
 
@@ -211,17 +212,23 @@ export async function matchIngredients(
             (i) => aliasRetries[i].aliasName
           );
           const batchResults = await gemini.generateEmbeddingBatch(missNames);
-          for (let j = 0; j < aliasMissIndices.length; j++) {
-            const embedding = batchResults[j];
-            if (!embedding) {
-              console.warn(
-                `[matching] alias fallback: no embedding returned for "${missNames[j]}", skipping`
-              );
-              continue;
+          if (batchResults.length !== missNames.length) {
+            console.warn(
+              `[matching] alias embedding batch length mismatch: expected ${missNames.length}, got ${batchResults.length}; unresolved aliases remain unmatched`
+            );
+          } else {
+            for (let j = 0; j < aliasMissIndices.length; j++) {
+              const embedding = batchResults[j];
+              if (!embedding) {
+                console.warn(
+                  `[matching] alias fallback: no embedding returned for "${missNames[j]}", skipping`
+                );
+                continue;
+              }
+              const idx = aliasMissIndices[j];
+              aliasEmbeddings[idx] = embedding;
+              cacheQueryEmbedding(aliasRetries[idx].aliasName, embedding, db);
             }
-            const idx = aliasMissIndices[j];
-            aliasEmbeddings[idx] = embedding;
-            cacheQueryEmbedding(aliasRetries[idx].aliasName, embedding, db);
           }
         }
 
