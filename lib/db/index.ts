@@ -52,3 +52,6 @@ export const db = new Proxy({} as ReturnType<typeof drizzle<typeof schema>>, {
     return Reflect.get(_db, prop);
   },
 });
+
+/** Convenience type for the app's Drizzle database instance. */
+export type AppDb = typeof db;

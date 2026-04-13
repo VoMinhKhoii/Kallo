@@ -232,7 +232,7 @@ Rules:
 ```
 
 **Validation**:
-- Parse JSON response; retry on parse failure (max 2 retries)
+- Parse JSON response; retry on parse failure (up to `MAX_PARSE_RETRIES = 4`, i.e. 5 total attempts)
 - Verify each `fdc_id` in response matches input
 - Verify `name_alt` is a non-empty array of strings
 - Log warnings for items with < 2 or > 4 variants
@@ -361,10 +361,10 @@ bun --env-file=.env.local scripts/translate-usda-vietnamese/index.ts
 | Phase | API | Calls | Cost | Time |
 |---|---|---|---|---|
 | Translation | Google Translate v2 | ~37 | Free (380k chars < 500k limit) | ~30 seconds |
-| name_alt LLM | Gemini Flash | ~190–240 | Free (15 RPM tier) | ~13–16 minutes |
+| name_alt LLM | Gemini Flash | ~190–240 | Free (15 RPM/key × up to 10 keys) | ~1–2 minutes |
 | DB Update | — | 4,746 UPDATEs | — | ~2 minutes |
 | Re-embedding | Gemini Embedding | ~95 batches (35s gap) | Free (< 1,000 req/day) | ~55 minutes |
-| **Total** | | | **$0** | **~70–75 minutes** |
+| **Total** | | | **$0** | **~58–60 minutes** |
 
 ## Open Questions
 

@@ -196,7 +196,7 @@ export async function runPhase4(opts: Phase4Options): Promise<void> {
     checkpoint = mergeAndSave('checkpoint-4.json', checkpoint, newEntries);
 
     processed += batch.length;
-    keyIdx = (slot.index + 1) % keys.length;
+    keyIdx = (keys.indexOf(slot) + 1) % keys.length;
 
     if (batchNum % 5 === 0 || batchNum === totalBatches) {
       console.log(

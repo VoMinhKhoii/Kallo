@@ -237,6 +237,8 @@ describe('matchIngredients', () => {
       },
     ];
 
+    // TODO: Replace string-inspection routing in createSourceAwareMockDb with a more robust
+    // approach (e.g., parsing SQL parameter values directly) when refactoring test helpers.
     // gạo → 0.1-filled embedding (contains digit '1', triggers createSourceAwareMockDb routing).
     // unknown_food → 0-filled embedding (no '1', returns [] from all source-aware routes).
     // This exploits the fact that Drizzle inlines string params (the JSON vector) into the

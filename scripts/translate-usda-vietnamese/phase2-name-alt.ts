@@ -293,7 +293,7 @@ export async function runPhase2(opts: Phase2Options): Promise<Checkpoint2> {
           });
 
           recordCall(slot);
-          keyIdx = (slot.index + 1) % keys.length;
+          keyIdx = (keys.indexOf(slot) + 1) % keys.length;
 
           const text = result.text ?? '';
           const parsed = parseResponse(text, expectedIds);
@@ -359,7 +359,7 @@ export async function runPhase2(opts: Phase2Options): Promise<Checkpoint2> {
               retryAfterMs = Number.isFinite(delta) ? delta * 1000 : 0;
             }
             cooldownKey(slot, retryAfterMs);
-            keyIdx = (slot.index + 1) % keys.length;
+            keyIdx = (keys.indexOf(slot) + 1) % keys.length;
             // Don't burn a parse attempt on rate-limit errors
             const backoff = is5xx ? 10_000 : 5_000;
             console.warn(

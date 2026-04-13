@@ -3,7 +3,7 @@
 //   - nutrition-batch.ts (batchFetchNutrition)
 //   - cascade.ts (matchIngredients orchestration, constants, classifyConfidence)
 import { sql } from 'drizzle-orm';
-import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
+import type { AppDb } from '@/lib/db';
 import { mapWithConcurrency } from '@/lib/utils';
 import { getNutritionCache } from '../cache/nutrition-cache';
 import type { GeminiClient } from '../gemini';
@@ -90,7 +90,7 @@ const MATCH_CONCURRENCY = 3;
 export async function matchIngredients(
   ingredients: DecomposedIngredient[],
   mealContext: string,
-  db: PostgresJsDatabase<any>,
+  db: AppDb,
   gemini: GeminiClient
 ): Promise<MatchResult> {
   const matched: MatchedIngredient[] = [];
@@ -291,7 +291,7 @@ export async function matchIngredients(
  */
 async function batchFetchNutrition(
   ids: string[],
-  db: PostgresJsDatabase<any>
+  db: AppDb
 ): Promise<Map<string, NutritionPer100g>> {
   const map = new Map<string, NutritionPer100g>();
   if (ids.length === 0) return map;
@@ -342,7 +342,7 @@ async function batchFetchNutrition(
 async function matchSingleIngredientWithEmbedding(
   ingredientName: string,
   embedding: number[],
-  db: PostgresJsDatabase<any>
+  db: AppDb
 ): Promise<MatchInfo | null> {
   // Step 1: Source-aware vector search — query FAO and USDA separately
   const [faoVectorRows, usdaVectorRows] = await Promise.all([
