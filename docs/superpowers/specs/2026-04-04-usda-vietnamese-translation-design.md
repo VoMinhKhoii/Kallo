@@ -73,7 +73,7 @@ Hybrid pipeline splitting work by what each tool does well:
 
 ### Pipeline Flow
 
-```
+```text
 ┌─────────────────┐     ┌──────────────────┐     ┌──────────────┐     ┌─────────────┐
 │  Phase 1:       │     │  Phase 2:        │     │  Phase 3:    │     │  Phase 4:   │
 │  Google         │────▶│  Gemini Flash    │────▶│  DB Update   │────▶│  Re-embed   │
@@ -110,7 +110,7 @@ embedding: vector('embedding', { dimensions: 768 }),  // Regenerated from new se
 ```
 
 **Before** (USDA chicken breast):
-```
+```text
 name_primary: "Chicken, broilers or fryers, breast, skinless, boneless, meat only, raw"
 name_en:      "Chicken, broilers or fryers, breast, skinless, boneless, meat only, raw"
 name_alt:     null
@@ -119,7 +119,7 @@ search_text:  "Chicken, broilers or fryers, breast, skinless, boneless, meat onl
 ```
 
 **After**:
-```
+```text
 name_primary: "Gà, gà thịt hoặc gà rán, ức, không da, không xương, chỉ thịt, sống"
 name_en:      "Chicken, broilers or fryers, breast, skinless, boneless, meat only, raw"
 name_alt:     ["ức gà không da không xương", "ức gà bỏ da", "ức gà phi lê"]
@@ -138,7 +138,7 @@ function buildEmbeddingText(row): string {
 ```
 
 After translation, this becomes multilingual:
-```
+```text
 "Gà, ức, không da, sống ức gà không da không xương ức gà bỏ da ức gà phi lê Chicken, broilers or fryers, breast, skinless, boneless, meat only, raw Gia cầm Poultry Products"
 ```
 
@@ -163,7 +163,7 @@ This is intentional — the embedding captures both Vietnamese and English terms
 - Free tier: 500,000 characters/month → fits within free tier
 
 **Input/Output**:
-```
+```text
 Input:  "Chicken, broilers or fryers, breast, skinless, boneless, meat only, raw"
 Output: "Gà, gà thịt hoặc gà rán, ức, không da, không xương, chỉ thịt, sống"
 ```
@@ -181,7 +181,7 @@ Output: "Gà, gà thịt hoặc gà rán, ức, không da, không xương, chỉ
 
 **System Prompt** (abbreviated):
 
-```
+```text
 You are a Vietnamese food naming expert. Given USDA food composition entries,
 generate 2-4 Vietnamese alternative names (name_alt) that Vietnamese home cooks
 would actually use when describing this food.
@@ -264,7 +264,7 @@ WHERE id = $3;
 **Delay**: 35s between batches (proven in existing `backfill_embeddings.ts` — matches 100 req/min free tier)
 
 **Embedding input** (multilingual, from `buildEmbeddingText`):
-```
+```text
 {namePrimary} {nameAlt joined by space} {nameEn} {typeVn} {typeEn}
 ```
 

@@ -15,8 +15,10 @@ import { cacheQueryEmbedding, resolveQueryEmbedding } from './embedding-cache';
 import { parseNutritionRow } from './nutrition-db';
 
 export const CONFIDENCE_THRESHOLDS = {
-  high: 0.6,
-  medium: 0.3,
+  /** Similarity well above all per-source floors — strong match */
+  high: 0.85,
+  /** Similarity at or above the lower per-source floor — decent match */
+  medium: 0.7,
 } as const;
 
 /** Source IDs for food composition databases */
@@ -330,7 +332,7 @@ async function batchFetchNutrition(
  * Source-aware cascade:
  * 1. Vector search FAO (source_id=1) with high threshold (curated VN data)
  * 2. Vector search USDA (source_id=2) with standard threshold
- * 3. Compare: prefer FAO if score is close, otherwise take best
+ * 3. Compare: take the higher-similarity passing match
  * 4. Fuzzy fallback: same source-aware logic
  */
 async function matchSingleIngredientWithEmbedding(
@@ -438,10 +440,7 @@ function pickBestSource(
  * ordering when combining candidates from multiple sources.
  */
 /** @internal Exported for testing */
-export function rerankCandidates(
-  _query: string,
-  candidates: FuzzyMatchRow[]
-): FuzzyMatchRow[] {
+export function rerankCandidates(candidates: FuzzyMatchRow[]): FuzzyMatchRow[] {
   if (candidates.length <= 1) return candidates;
 
   return [...candidates].sort((a, b) => b.similarity - a.similarity);
@@ -458,7 +457,7 @@ function buildMatchResult(
 ): MatchInfo | null {
   if (rows.length === 0) return null;
 
-  const reranked = rerankCandidates(ingredientName, rows);
+  const reranked = rerankCandidates(rows);
   const topMatch = reranked[0];
   if (topMatch.similarity < minSimilarity) return null;
 

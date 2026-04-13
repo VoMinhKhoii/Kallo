@@ -43,9 +43,10 @@ async function embedBatch(texts: string[], slot: KeySlot): Promise<number[][]> {
       });
       recordCall(slot, texts.length);
       return result.embeddings!.map((e) => e.values!);
-    } catch (err: any) {
-      if (err.message?.includes('429') || err.status === 429) {
-        const retryMatch = err.message?.match(/retry in ([\d.]+)s/i);
+    } catch (err: unknown) {
+      const errObj = err as { message?: string; status?: number };
+      if (errObj.message?.includes('429') || errObj.status === 429) {
+        const retryMatch = errObj.message?.match(/retry in ([\d.]+)s/i);
         const retryAfterMs = retryMatch
           ? Math.ceil(Number.parseFloat(retryMatch[1]) * 1000)
           : 0;

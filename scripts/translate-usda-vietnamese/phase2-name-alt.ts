@@ -311,22 +311,19 @@ export async function runPhase2(opts: Phase2Options): Promise<Checkpoint2> {
           );
           totalItems += parsed.parsed.length;
           batchDone = true;
-        } catch (err: any) {
-          const is429 = err.message?.includes('429') || err.status === 429;
+        } catch (err: unknown) {
+          const errObj = err as { message?: string; status?: number };
+          const is429 =
+            errObj.message?.includes('429') || errObj.status === 429;
           const is5xx =
-            err.status >= 500 ||
-            err.message?.includes('503') ||
-            err.message?.includes('UNAVAILABLE');
+            (errObj.status ?? 0) >= 500 ||
+            errObj.message?.includes('503') ||
+            errObj.message?.includes('UNAVAILABLE');
 
           if (is429 || is5xx) {
-            // Parse Retry-After header from Gemini 429 responses
-            const retryAfterRaw = err.headers?.get?.('retry-after');
-            let retryAfterMs = 0;
-            if (retryAfterRaw) {
-              const sec = Number.parseInt(retryAfterRaw, 10);
-              retryAfterMs = Number.isNaN(sec) ? 0 : sec * 1000;
-            }
-            cooldownKey(slot, retryAfterMs);
+            // Gemini SDK errors don't expose raw HTTP headers via err.headers,
+            // so we rely on the 35s baseline cooldown (COOLDOWN_MS) in cooldownKey.
+            cooldownKey(slot, 0);
             keyIdx = (slot.index + 1) % keys.length;
             // Don't burn a parse attempt on rate-limit errors
             const backoff = is5xx ? 10_000 : 5_000;

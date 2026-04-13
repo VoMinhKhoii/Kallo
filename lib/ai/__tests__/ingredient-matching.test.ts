@@ -71,24 +71,24 @@ const sampleNutritionRow = {
 };
 
 describe('classifyConfidence', () => {
-  it('returns high for similarity >= 0.6', () => {
-    expect(classifyConfidence(0.6)).toBe('high');
+  it('returns high for similarity >= 0.85', () => {
+    expect(classifyConfidence(0.85)).toBe('high');
     expect(classifyConfidence(0.9)).toBe('high');
   });
 
-  it('returns medium for similarity >= 0.3 and < 0.6', () => {
-    expect(classifyConfidence(0.3)).toBe('medium');
-    expect(classifyConfidence(0.59)).toBe('medium');
+  it('returns medium for similarity >= 0.7 and < 0.85', () => {
+    expect(classifyConfidence(0.7)).toBe('medium');
+    expect(classifyConfidence(0.84)).toBe('medium');
   });
 
-  it('returns low for similarity < 0.3', () => {
-    expect(classifyConfidence(0.29)).toBe('low');
-    expect(classifyConfidence(0.15)).toBe('low');
+  it('returns low for similarity < 0.7', () => {
+    expect(classifyConfidence(0.69)).toBe('low');
+    expect(classifyConfidence(0.5)).toBe('low');
   });
 
   it('threshold constants are correct', () => {
-    expect(CONFIDENCE_THRESHOLDS.high).toBe(0.6);
-    expect(CONFIDENCE_THRESHOLDS.medium).toBe(0.3);
+    expect(CONFIDENCE_THRESHOLDS.high).toBe(0.85);
+    expect(CONFIDENCE_THRESHOLDS.medium).toBe(0.7);
   });
 
   it('similarity threshold constants are correct', () => {
@@ -125,7 +125,7 @@ describe('matchIngredients', () => {
     expect(result.matched).toHaveLength(1);
     expect(result.unmatched).toHaveLength(0);
     expect(result.matched[0].foodCompositionId).toBe('beef-001');
-    expect(result.matched[0].confidence).toBe('high');
+    expect(result.matched[0].confidence).toBe('medium');
     expect(result.matched[0].nutritionPer100g.caloriesKcal).toBe(250);
     expect(result.matched[0].nutritionPer100g.proteinG).toBe(26);
   });
@@ -148,7 +148,7 @@ describe('matchIngredients', () => {
 
     expect(result.matched).toHaveLength(1);
     expect(result.unmatched).toHaveLength(0);
-    expect(result.matched[0].confidence).toBe('high');
+    expect(result.matched[0].confidence).toBe('medium');
   });
 
   it('rejects vector match below threshold and falls through to fuzzy', async () => {
@@ -481,7 +481,7 @@ describe('rerankCandidates', () => {
       makeCand('Trứng gà', 0.78),
       makeCand('Trứng vịt', 0.72),
     ];
-    const result = rerankCandidates('trứng gà', candidates);
+    const result = rerankCandidates(candidates);
     expect(result[0].name_primary).toBe('Quả trứng gà');
     expect(result[0].similarity).toBeCloseTo(0.8);
     expect(result[1].name_primary).toBe('Trứng gà');
@@ -493,7 +493,7 @@ describe('rerankCandidates', () => {
       makeCand('Quả trứng gà', 0.8),
       makeCand('Trứng gà', 0.78),
     ];
-    const result = rerankCandidates('quả trứng gà', candidates);
+    const result = rerankCandidates(candidates);
     expect(result[0].similarity).toBeCloseTo(0.8);
     expect(result[1].similarity).toBeCloseTo(0.78);
   });
@@ -503,7 +503,7 @@ describe('rerankCandidates', () => {
       makeCand('Bột gạo nếp', 0.82),
       makeCand('Gạo nếp cái', 0.78),
     ];
-    const result = rerankCandidates('gạo nếp', candidates);
+    const result = rerankCandidates(candidates);
     expect(result[0].name_primary).toBe('Bột gạo nếp');
     expect(result[0].similarity).toBeCloseTo(0.82);
     expect(result[1].similarity).toBeCloseTo(0.78);
@@ -514,7 +514,7 @@ describe('rerankCandidates', () => {
       makeCand('Bánh đậu xanh', 0.83),
       makeCand('Đậu xanh (đậu tắt)', 0.75),
     ];
-    const result = rerankCandidates('đậu xanh', candidates);
+    const result = rerankCandidates(candidates);
     expect(result[0].name_primary).toBe('Bánh đậu xanh');
     expect(result[0].similarity).toBeCloseTo(0.83);
     expect(result[1].similarity).toBeCloseTo(0.75);
@@ -522,13 +522,13 @@ describe('rerankCandidates', () => {
 
   it('returns single candidate unchanged', () => {
     const candidates = [makeCand('Thịt bò', 0.8)];
-    const result = rerankCandidates('thịt bò', candidates);
+    const result = rerankCandidates(candidates);
     expect(result).toHaveLength(1);
     expect(result[0].similarity).toBe(0.8);
   });
 
   it('returns empty array unchanged', () => {
-    const result = rerankCandidates('thịt bò', []);
+    const result = rerankCandidates([]);
     expect(result).toHaveLength(0);
   });
 
@@ -537,7 +537,7 @@ describe('rerankCandidates', () => {
       makeCand('Thịt bò', 0.75),
       makeCand('Thịt bò viên', 0.78),
     ];
-    const result = rerankCandidates('thịt bò tươi', candidates);
+    const result = rerankCandidates(candidates);
     expect(result[0].name_primary).toBe('Thịt bò viên');
     expect(result[0].similarity).toBeCloseTo(0.78);
   });
