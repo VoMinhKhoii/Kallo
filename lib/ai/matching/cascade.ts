@@ -145,64 +145,81 @@ export async function matchIngredients(
     }
 
     if (aliasRetries.length > 0) {
-      console.info(
-        `[matching] alias fallback: ${aliasRetries.map((r) => `${r.original.name}→${r.aliasName}`).join(', ')}`
-      );
-      // Resolve embeddings for alias names
-      const aliasCacheResults = await Promise.all(
-        aliasRetries.map((r) => resolveQueryEmbedding(r.aliasName, db))
-      );
-      const aliasEmbeddings: (number[] | null)[] = aliasCacheResults.slice();
-      const aliasMissIndices: number[] = [];
-      for (let i = 0; i < aliasCacheResults.length; i++) {
-        if (!aliasCacheResults[i]) aliasMissIndices.push(i);
-      }
-      if (aliasMissIndices.length > 0) {
-        const missNames = aliasMissIndices.map(
-          (i) => aliasRetries[i].aliasName
-        );
-        const batchResults = await gemini.generateEmbeddingBatch(missNames);
-        if (
-          batchResults.length !== missNames.length ||
-          batchResults.some((embedding) => !embedding)
-        ) {
-          throw new Error(
-            `Expected ${missNames.length} embeddings, received ${batchResults.length}.`
-          );
-        }
-        for (let j = 0; j < aliasMissIndices.length; j++) {
-          const idx = aliasMissIndices[j];
-          aliasEmbeddings[idx] = batchResults[j];
-          cacheQueryEmbedding(aliasRetries[idx].aliasName, batchResults[j], db);
-        }
-      }
-
-      // Match alias names
-      const aliasResults = await mapWithConcurrency(
-        aliasRetries.map((r, i) => ({
-          name: r.aliasName,
-          embedding: aliasEmbeddings[i]!,
-        })),
-        (item) =>
-          matchSingleIngredientWithEmbedding(item.name, item.embedding, db),
-        MATCH_CONCURRENCY
-      );
-
-      // Track which originals were rescued by alias (keyed by input index)
+      // Alias fallback is best-effort: failures log + fall through to unmatched
       const rescuedIndices = new Set<number>();
-      for (let i = 0; i < aliasRetries.length; i++) {
-        const result = aliasResults[i];
-        if (result.status === 'fulfilled' && result.value) {
-          // Preserve original ingredient name in the result for display
-          matchInfos.push({
-            ...result.value,
-            ingredientName: aliasRetries[i].original.name,
-          });
-          rescuedIndices.add(aliasRetries[i].originalIndex);
-          console.info(
-            `[matching] alias rescue: "${aliasRetries[i].original.name}" → "${aliasRetries[i].aliasName}" matched ${result.value.matchedName}`
-          );
+      try {
+        console.info(
+          `[matching] alias fallback: ${aliasRetries.map((r) => `${r.original.name}→${r.aliasName}`).join(', ')}`
+        );
+        // Resolve embeddings for alias names
+        const aliasCacheResults = await Promise.all(
+          aliasRetries.map((r) => resolveQueryEmbedding(r.aliasName, db))
+        );
+        const aliasEmbeddings: (number[] | null)[] = aliasCacheResults.slice();
+        const aliasMissIndices: number[] = [];
+        for (let i = 0; i < aliasCacheResults.length; i++) {
+          if (!aliasCacheResults[i]) aliasMissIndices.push(i);
         }
+        if (aliasMissIndices.length > 0) {
+          const missNames = aliasMissIndices.map(
+            (i) => aliasRetries[i].aliasName
+          );
+          const batchResults = await gemini.generateEmbeddingBatch(missNames);
+          for (let j = 0; j < aliasMissIndices.length; j++) {
+            const embedding = batchResults[j];
+            if (!embedding) {
+              console.warn(
+                `[matching] alias fallback: no embedding returned for "${missNames[j]}", skipping`
+              );
+              continue;
+            }
+            const idx = aliasMissIndices[j];
+            aliasEmbeddings[idx] = embedding;
+            cacheQueryEmbedding(aliasRetries[idx].aliasName, embedding, db);
+          }
+        }
+
+        // Match alias names (skip entries still missing an embedding)
+        const aliasMatchItems = aliasRetries
+          .map((r, i) => ({ r, i, embedding: aliasEmbeddings[i] }))
+          .filter((item): item is typeof item & { embedding: number[] } =>
+            item.embedding != null
+          );
+        const aliasResults = await mapWithConcurrency(
+          aliasMatchItems.map(({ r, embedding }) => ({
+            name: r.aliasName,
+            embedding,
+          })),
+          (item) =>
+            matchSingleIngredientWithEmbedding(item.name, item.embedding, db),
+          MATCH_CONCURRENCY
+        );
+
+        // Track which originals were rescued by alias (keyed by input index)
+        for (let j = 0; j < aliasResults.length; j++) {
+          const result = aliasResults[j];
+          const { r: retry } = aliasMatchItems[j];
+          if (result.status === 'fulfilled' && result.value) {
+            matchInfos.push({
+              ...result.value,
+              ingredientName: retry.original.name,
+            });
+            rescuedIndices.add(retry.originalIndex);
+            console.info(
+              `[matching] alias rescue: "${retry.original.name}" → "${retry.aliasName}" matched ${result.value.matchedName}`
+            );
+          } else if (result.status === 'rejected') {
+            console.error(
+              `[matching] alias fallback failed for "${retry.original.name}":`,
+              result.reason
+            );
+          }
+        }
+      } catch (err) {
+        console.warn(
+          '[matching] alias fallback aborted; keeping original ingredients unmatched:',
+          err
+        );
       }
 
       // Only keep truly unmatched (not rescued by alias)
