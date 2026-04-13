@@ -1,4 +1,4 @@
-import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
+import type { AppDb } from '@/lib/db';
 import { capitalizeFirst } from '@/lib/utils';
 import type { GeminiClient } from '../gemini';
 import { matchIngredients } from '../matching';
@@ -105,7 +105,7 @@ function withTimeout<T>(
 export async function analyzeMeal(
   rawInput: string,
   userContext: UserContext,
-  db: PostgresJsDatabase<any>,
+  db: AppDb,
   gemini: GeminiClient,
   onEvent?: (event: StreamEvent) => void
 ): Promise<PipelineResponse> {
@@ -153,7 +153,7 @@ export async function analyzeMeal(
 async function runPipeline(
   rawInput: string,
   userContext: UserContext,
-  db: PostgresJsDatabase<any>,
+  db: AppDb,
   gemini: GeminiClient,
   onEvent?: (event: StreamEvent) => void
 ): Promise<PipelineResponse> {
