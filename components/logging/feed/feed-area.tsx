@@ -61,14 +61,16 @@ export function FeedArea({
   const { guard } = useSubmitGuard();
   const [streamingMsgId, setStreamingMsgId] = useState<string | null>(null);
 
-  // Prefill from dashboard meal trigger (only on first mount)
-  // biome-ignore lint/correctness/useExhaustiveDependencies: intentionally runs once on mount
+  const lastPrefilledMealRef = useRef<string | null>(null);
+
+  // Prefill from dashboard meal trigger; re-runs when initialMeal changes so
+  // repeated dashboard→logging handoffs while the component stays mounted work.
   useEffect(() => {
-    if (initialMeal) {
-      inputRef.current?.setText(initialMeal);
-      inputRef.current?.focus();
-    }
-  }, []);
+    if (!initialMeal || lastPrefilledMealRef.current === initialMeal) return;
+    lastPrefilledMealRef.current = initialMeal;
+    inputRef.current?.setText(initialMeal);
+    inputRef.current?.focus();
+  }, [initialMeal]);
 
   // Persisted meals from DB
   const { data: persistedMeals = [], isLoading } = useDailyMeals(selectedDate);

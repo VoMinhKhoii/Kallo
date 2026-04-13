@@ -33,7 +33,7 @@ export function buildXTicks(
   const today = new Date();
   const ticks: number[] = [];
   const labels: string[] = [];
-  for (let i = 2; i >= 0; i--) {
+  for (let i = 2; i > 0; i--) {
     const d = new Date(today);
     d.setMonth(d.getMonth() - i);
     const dayIndex = count - 1 - i * 30;

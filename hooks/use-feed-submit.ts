@@ -1,8 +1,10 @@
 'use client';
 
 import type { RefObject } from 'react';
+import { toast } from 'sonner';
 import type { StreamAnalysisState } from '@/hooks/use-stream-analysis';
 import type { ChatMessage } from '@/lib/types/meal';
+import { mealTextSchema } from '@/lib/validation';
 
 interface UseFeedSubmitParams {
   stream: StreamAnalysisState & {
@@ -33,8 +35,13 @@ export function useFeedSubmit({
   lastErrorRef,
 }: UseFeedSubmitParams) {
   const handleSubmit = async () => {
-    const text = (inputRef.current?.getText() ?? '').trim();
-    if (!text || stream.isAnalyzing) return;
+    if (stream.isAnalyzing) return;
+    const parsed = mealTextSchema.safeParse(inputRef.current?.getText());
+    if (!parsed.success) {
+      toast.error(parsed.error.issues[0]?.message ?? 'Vui lòng nhập món ăn.');
+      return;
+    }
+    const text = parsed.data;
 
     await guard(async () => {
       const assistantMsgId = generateId();
