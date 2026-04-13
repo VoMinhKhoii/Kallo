@@ -76,9 +76,15 @@ export async function matchIngredients(
     (name) => resolveQueryEmbedding(name, db),
     MATCH_CONCURRENCY
   );
-  const cacheResults = cacheSettled.map((r) =>
-    r.status === 'fulfilled' ? r.value : null
-  );
+  const cacheResults = cacheSettled.map((r, i) => {
+    if (r.status === 'rejected') {
+      console.warn(
+        `[matching] cache lookup failed for "${matchingNames[i]}", treating as cold miss:`,
+        r.reason
+      );
+    }
+    return r.status === 'fulfilled' ? r.value : null;
+  });
   const embeddings: (number[] | null)[] = cacheResults.slice();
   const missIndices: number[] = [];
   for (let i = 0; i < cacheResults.length; i++) {
@@ -186,9 +192,15 @@ export async function matchIngredients(
           (r) => resolveQueryEmbedding(r.aliasName, db),
           MATCH_CONCURRENCY
         );
-        const aliasCacheResults = aliasCacheSettled.map((r) =>
-          r.status === 'fulfilled' ? r.value : null
-        );
+        const aliasCacheResults = aliasCacheSettled.map((r, i) => {
+          if (r.status === 'rejected') {
+            console.warn(
+              `[matching] alias cache lookup failed for "${aliasRetries[i].aliasName}", treating as cold miss:`,
+              r.reason
+            );
+          }
+          return r.status === 'fulfilled' ? r.value : null;
+        });
         const aliasEmbeddings: (number[] | null)[] = aliasCacheResults.slice();
         const aliasMissIndices: number[] = [];
         for (let i = 0; i < aliasCacheResults.length; i++) {
