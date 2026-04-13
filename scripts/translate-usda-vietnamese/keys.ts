@@ -16,7 +16,7 @@ export interface KeySlot {
   dailyRequests: number;
 }
 
-const COOLDOWN_MS = 15_000;
+const COOLDOWN_MS = 35_000;
 
 export function loadGeminiKeys(): KeySlot[] {
   const slots: KeySlot[] = [];
@@ -61,11 +61,12 @@ export function pickKey(
   return null;
 }
 
-/** Mark a key as rate-limited (429). */
-export function cooldownKey(slot: KeySlot, extraMs = 0) {
-  slot.cooldownUntil = Date.now() + COOLDOWN_MS + extraMs;
+/** Mark a key as rate-limited (429). Uses the greater of baseline or retryAfterMs. */
+export function cooldownKey(slot: KeySlot, retryAfterMs = 0) {
+  const cooldownMs = Math.max(COOLDOWN_MS, retryAfterMs);
+  slot.cooldownUntil = Date.now() + cooldownMs;
   console.warn(
-    `  ⚠ Key ${slot.index} rate-limited, cooling down ${((COOLDOWN_MS + extraMs) / 1000).toFixed(0)}s`
+    `  ⚠ Key ${slot.index} rate-limited, cooling down ${(cooldownMs / 1000).toFixed(0)}s`
   );
 }
 

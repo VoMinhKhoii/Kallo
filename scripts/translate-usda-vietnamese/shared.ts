@@ -76,7 +76,10 @@ export function getDb() {
     if (!url) {
       throw new Error('DATABASE_URL is not set');
     }
-    _client = postgres(encodeDbUrl(url));
+    _client = postgres(encodeDbUrl(url), {
+      max: 5,
+      prepare: false,
+    });
     _db = drizzle(_client, { schema });
   }
   return _db;

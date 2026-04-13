@@ -123,7 +123,13 @@ function parseResponse(
   const validItems: NameAltItem[] = [];
   const seenIds = new Set<string>();
   for (const item of parsed) {
-    if (!item.fdc_id || !Array.isArray(item.name_alt)) continue;
+    if (
+      !item.fdc_id ||
+      !expectedIds.has(item.fdc_id) ||
+      !Array.isArray(item.name_alt)
+    ) {
+      continue;
+    }
     if (seenIds.has(item.fdc_id)) continue;
     // Filter to non-empty trimmed strings
     const alts = item.name_alt
@@ -236,13 +242,14 @@ export async function runPhase2(opts: Phase2Options): Promise<Checkpoint2> {
       const expectedIds = new Set(batch.map((r) => r.id));
       const prompt = buildPrompt(category, batch);
 
-      for (let attempt = 0; attempt <= MAX_PARSE_RETRIES; attempt++) {
-        // Pick an available key
-        const slot = pickKey(keys, keyIdx);
-        if (!slot) {
-          console.warn('  All keys on cooldown, waiting 15s...');
-          await sleep(15_000);
-          continue;
+      let batchDone = false;
+      for (let attempt = 0; attempt <= MAX_PARSE_RETRIES && !batchDone; ) {
+        // Pick an available key — wait outside parse retry budget
+        let slot = pickKey(keys, keyIdx);
+        while (!slot) {
+          console.warn('  All keys on cooldown, waiting 35s...');
+          await sleep(35_000);
+          slot = pickKey(keys, keyIdx);
         }
 
         // Respect per-key rate limit
@@ -263,22 +270,21 @@ export async function runPhase2(opts: Phase2Options): Promise<Checkpoint2> {
           });
 
           recordCall(slot);
-          keyIdx = slot.index % keys.length;
+          keyIdx = (slot.index + 1) % keys.length;
 
           const text = result.text ?? '';
           const parsed = parseResponse(text, expectedIds);
 
           if (!parsed) {
-            if (attempt < MAX_PARSE_RETRIES) {
-              console.warn(
-                `    Parse failure (attempt ${attempt + 1}), retrying...`
+            attempt++;
+            if (attempt > MAX_PARSE_RETRIES) {
+              console.error(
+                `    ✗ Parse failed after ${MAX_PARSE_RETRIES + 1} attempts, skipping batch`
               );
-              continue;
+              break;
             }
-            console.error(
-              `    ✗ Parse failed after ${MAX_PARSE_RETRIES + 1} attempts, skipping batch`
-            );
-            break;
+            console.warn(`    Parse failure (attempt ${attempt}), retrying...`);
+            continue;
           }
 
           if (parsed.missing.length > 0) {
@@ -304,7 +310,7 @@ export async function runPhase2(opts: Phase2Options): Promise<Checkpoint2> {
             newEntries
           );
           totalItems += parsed.parsed.length;
-          break;
+          batchDone = true;
         } catch (err: any) {
           const is429 = err.message?.includes('429') || err.status === 429;
           const is5xx =
@@ -313,16 +319,22 @@ export async function runPhase2(opts: Phase2Options): Promise<Checkpoint2> {
             err.message?.includes('UNAVAILABLE');
 
           if (is429 || is5xx) {
-            cooldownKey(slot, is5xx ? 5_000 : 0);
-            keyIdx = (slot.index % keys.length) + 1;
-            if (attempt < MAX_PARSE_RETRIES) {
-              const backoff = is5xx ? 10_000 : 5_000;
-              console.warn(
-                `    ${is5xx ? '503/5xx' : '429'} on key ${slot.index}, retrying in ${backoff / 1000}s...`
-              );
-              await sleep(backoff);
-              continue;
+            // Parse Retry-After header from Gemini 429 responses
+            const retryAfterRaw = err.headers?.get?.('retry-after');
+            let retryAfterMs = 0;
+            if (retryAfterRaw) {
+              const sec = Number.parseInt(retryAfterRaw, 10);
+              retryAfterMs = Number.isNaN(sec) ? 0 : sec * 1000;
             }
+            cooldownKey(slot, retryAfterMs);
+            keyIdx = (slot.index + 1) % keys.length;
+            // Don't burn a parse attempt on rate-limit errors
+            const backoff = is5xx ? 10_000 : 5_000;
+            console.warn(
+              `    ${is5xx ? '503/5xx' : '429'} on key ${slot.index}, retrying in ${backoff / 1000}s...`
+            );
+            await sleep(backoff);
+            continue;
           }
           throw err;
         }

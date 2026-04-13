@@ -1,4 +1,5 @@
 #!/usr/bin/env bun
+
 /**
  * USDA Vietnamese Translation Pipeline
  *
@@ -21,6 +22,7 @@
  *   DATABASE_URL             — Supabase connection string
  */
 
+import { loadCheckpoint, saveCheckpoint } from './checkpoints';
 import { runPhase1 } from './phase1-translate';
 import { runPhase2 } from './phase2-name-alt';
 import { runPhase3 } from './phase3-db-update';
@@ -39,7 +41,14 @@ function getArg(name: string): string | undefined {
   return arg?.slice(prefix.length);
 }
 
-const phase = getArg('phase') ? Number.parseInt(getArg('phase')!, 10) : null;
+const phaseArg = getArg('phase');
+const phase = phaseArg ? Number.parseInt(phaseArg, 10) : null;
+
+if (phaseArg && ![1, 2, 3, 4].includes(phase ?? -1)) {
+  console.error('Invalid --phase. Use --phase=1, 2, 3, or 4.');
+  process.exit(1);
+}
+
 const category = getArg('category');
 const dryRun = args.includes('--dry-run');
 const resume = args.includes('--resume');
@@ -84,6 +93,17 @@ async function main() {
   const startTime = Date.now();
   let updatedIds: string[] = [];
 
+  // Restore Phase 3 → Phase 4 handoff from checkpoint on resume
+  if (resume) {
+    const cp3 = loadCheckpoint<{ updatedIds?: string[] }>(
+      'checkpoint-3-ids.json'
+    );
+    if (cp3.updatedIds && cp3.updatedIds.length > 0) {
+      updatedIds = cp3.updatedIds;
+      console.log(`  Restored ${updatedIds.length} updatedIds from checkpoint`);
+    }
+  }
+
   try {
     // Phase 1: Google Translate
     if (!phase || phase === 1) {
@@ -98,6 +118,10 @@ async function main() {
     // Phase 3: DB Update
     if (!phase || phase === 3) {
       updatedIds = await runPhase3({ dryRun, category });
+      // Persist for --resume handoff to Phase 4
+      if (updatedIds.length > 0) {
+        saveCheckpoint('checkpoint-3-ids.json', { updatedIds });
+      }
     }
 
     // Phase 4: Re-embed

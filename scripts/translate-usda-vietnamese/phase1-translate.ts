@@ -42,9 +42,17 @@ async function translateBatch(
         `Google Translate API error ${res.status} after ${MAX_RETRIES} retries: ${body}`
       );
     }
-    const retryAfter =
-      Number.parseInt(res.headers.get('retry-after') || '5', 10) * 1000;
-    const delay = Math.max(retryAfter, 1000 * 2 ** retries);
+    const retryAfterRaw = res.headers.get('retry-after') || '5';
+    let retryAfterMs: number;
+    const parsed = Number.parseInt(retryAfterRaw, 10);
+    if (!Number.isNaN(parsed) && String(parsed) === retryAfterRaw.trim()) {
+      retryAfterMs = parsed * 1000;
+    } else {
+      // Try HTTP-date format
+      const date = Date.parse(retryAfterRaw);
+      retryAfterMs = Number.isNaN(date) ? 5000 : Math.max(0, date - Date.now());
+    }
+    const delay = Math.max(retryAfterMs, 1000 * 2 ** retries);
     console.warn(
       `  Retry ${retries + 1}/${MAX_RETRIES} in ${(delay / 1000).toFixed(0)}s (status ${res.status})`
     );
@@ -127,10 +135,20 @@ export async function runPhase1(opts: TranslateOptions): Promise<Checkpoint1> {
 
     const translated = await translateBatch(texts, apiKey);
 
+    if (translated.length !== batch.length) {
+      throw new Error(
+        `Translate API returned ${translated.length}/${batch.length} items`
+      );
+    }
+
     // Merge into checkpoint
     const newEntries: Record<string, { name_primary_vi: string }> = {};
     for (let j = 0; j < batch.length; j++) {
-      newEntries[batch[j].id] = { name_primary_vi: translated[j] };
+      const value = translated[j]?.trim();
+      if (!value) {
+        throw new Error(`Missing translation for id=${batch[j].id}`);
+      }
+      newEntries[batch[j].id] = { name_primary_vi: value };
     }
     checkpoint = mergeAndSave('checkpoint-1.json', checkpoint, newEntries);
 

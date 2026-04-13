@@ -410,10 +410,9 @@ async function matchSingleIngredientWithEmbedding(
 /**
  * Pick the best match between FAO and USDA candidates.
  *
- * Prefer FAO when scores are close (within 0.05 delta) since FAO data is
- * curated for Vietnamese cuisine. Otherwise pick whichever has the higher
- * similarity — a significantly better USDA match (e.g., specific cut of meat)
- * should win over a generic FAO entry.
+ * Pick whichever source has the higher similarity. Thresholds already encode
+ * the FAO vs USDA quality bar (FAO: 0.8, USDA: 0.7), so a passing FAO match
+ * implies higher confidence than an equivalent USDA score.
  */
 function pickBestSource(
   fao: MatchInfo | null,

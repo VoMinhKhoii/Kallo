@@ -338,16 +338,16 @@ Sample 5 items per category, review:
 
 ## Script Location & Usage
 
-**File**: `scripts/translate_usda_vietnamese.ts`
+**File**: `scripts/translate-usda-vietnamese/index.ts`
 
 **Environment variables required**:
-- `GOOGLE_TRANSLATE_API_KEY` — Google Cloud Translation API key
-- `GEMINI_API_KEY` — Gemini API key (existing, used for embeddings + LLM)
+- `GOOGLE_TRANSLATE_API_KEY` — Google Cloud Translation API key (Phase 1)
+- `GEMINI_API_KEY_1..10` — 10 Gemini API keys from different GCP projects (Phase 2 & 4)
 - `DATABASE_URL` — Supabase connection string (existing)
 
 **Usage**:
 ```bash
-bun --env-file=.env.local scripts/translate_usda_vietnamese.ts
+bun --env-file=.env.local scripts/translate-usda-vietnamese/index.ts
 ```
 
 **Flags** (optional):
