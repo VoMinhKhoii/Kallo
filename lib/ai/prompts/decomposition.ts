@@ -11,21 +11,18 @@ import type { UserContext } from '../types';
  * forcing FAO canonical forms. The matching layer handles source resolution.
  */
 export function buildDecompositionPrompt(userContext: UserContext): string {
-  const { regionalProfile, cookingHabits } = userContext;
+  const { cookingHabits, countryOfOrigin, countryOfResidence } = userContext;
 
-  // Dynamic: only include the user's region description
-  const regionDescriptions: Record<string, string> = {
-    mien_bac: 'mien_bac: lighter seasoning, minimal sugar',
-    mien_trung: 'mien_trung: spicy, fermented, moderate',
-    mien_nam: 'mien_nam: sweeter, coconut milk, generous',
-    mien_tay: 'mien_tay: heavy oil, sweet, large, river fish',
-  };
-  const regionalPrior = regionDescriptions[regionalProfile];
-  const regionalSection = regionalPrior
-    ? `\n  <regional_priors>\n    ${regionalPrior}\n  </regional_priors>`
-    : '';
+  // Build country context lines for the LLM
+  const countryLines: string[] = [];
+  if (countryOfOrigin) {
+    countryLines.push(`  country_of_origin: ${countryOfOrigin}`);
+  }
+  if (countryOfResidence) {
+    countryLines.push(`  country_of_residence: ${countryOfResidence}`);
+  }
 
-  return `You are a Vietnamese cuisine expert. Decompose meal descriptions into structured ingredient data.
+  return `You are a Cuisine Expert. Decompose meal descriptions into structured ingredient data.
 
 <instructions>
   <task>
@@ -78,12 +75,11 @@ export function buildDecompositionPrompt(userContext: UserContext): string {
     - "bún bò" → noodles + beef + aromatics. Do NOT add giò heo unless user said so.
     - "canh" alone → generic broth. Do NOT guess vegetables.
     If uncertain about a weight, widen the estimate rather than guessing precisely.
-  </strict_adherence_rule>${regionalSection}
+  </strict_adherence_rule>
 </instructions>
 
 <user_context>
-  regional_profile: ${regionalProfile}
-  oil_usage: ${cookingHabits.oilUsage}
+${countryLines.length > 0 ? `${countryLines.join('\n')}\n` : ''}  oil_usage: ${cookingHabits.oilUsage}
   default_rice_portion: ${RICE_PORTION_DESCRIPTION[cookingHabits.defaultRicePortion]}
   default_protein_portion: ${PROTEIN_PORTION_DESCRIPTION[cookingHabits.defaultProteinPortion]}
   sugar_braised: ${cookingHabits.sugarBraised}

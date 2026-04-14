@@ -10,7 +10,8 @@ import { buildNutritionPrompt } from '../nutrition';
 const USER_CONTEXT: UserContext = {
   goal: 'cutting',
   aggression: 0.5,
-  regionalProfile: 'mien_nam',
+  countryOfOrigin: 'Vietnam',
+  countryOfResidence: 'Vietnam',
   cookingHabits: {
     oilUsage: 'normal',
     sugarBraised: 'high',

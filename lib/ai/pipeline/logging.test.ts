@@ -18,7 +18,8 @@ function createMockInsertDb(): any {
 }
 
 const MOCK_USER_CONTEXT: any = {
-  regionalProfile: 'mien_bac',
+  countryOfOrigin: 'Vietnam',
+  countryOfResidence: 'Vietnam',
   goal: 'maintain',
   aggression: 1,
   cookingHabits: '',

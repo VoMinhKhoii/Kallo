@@ -17,12 +17,6 @@ export const carbSplitSchema = z.enum([
   'lower_carb',
   'higher_carb',
 ]);
-export const regionalProfileSchema = z.enum([
-  'mien_bac',
-  'mien_trung',
-  'mien_nam',
-  'mien_tay',
-]);
 export const oilUsageSchema = z.enum(['minimal', 'normal', 'heavy']);
 export const ricePortionSchema = z.enum(['small', 'medium', 'large']);
 export const sugarBraisedSchema = z.enum(['low', 'medium', 'high']);
@@ -37,7 +31,6 @@ export const BIOLOGICAL_SEX_VALUES = biologicalSexSchema.options;
 export const ACTIVITY_LEVEL_VALUES = activityLevelSchema.options;
 export const GOAL_VALUES = goalEnumSchema.options;
 export const CARB_SPLIT_VALUES = carbSplitSchema.options;
-export const REGIONAL_PROFILE_VALUES = regionalProfileSchema.options;
 export const OIL_USAGE_VALUES = oilUsageSchema.options;
 export const RICE_PORTION_VALUES = ricePortionSchema.options;
 export const SUGAR_BRAISED_VALUES = sugarBraisedSchema.options;
@@ -73,8 +66,9 @@ export const goalSchema = z
     }
   });
 
-export const regionalSchema = z.object({
-  regionalProfile: regionalProfileSchema,
+export const countrySchema = z.object({
+  countryOfOrigin: z.string().nullable(),
+  countryOfResidence: z.string().nullable(),
 });
 
 export const cookingHabitsSchema = z.object({
@@ -85,13 +79,7 @@ export const cookingHabitsSchema = z.object({
   brothConsumption: brothConsumptionSchema,
 });
 
-export const portionCalibrationSchema = z.object({
-  handSpanCm: z.number().min(10).max(35).nullable(),
-  knuckleDepthCm: z.number().min(1).max(5).nullable(),
-});
-
 export type BodyMetricsInput = z.infer<typeof bodyMetricsSchema>;
 export type GoalInput = z.infer<typeof goalSchema>;
-export type RegionalInput = z.infer<typeof regionalSchema>;
+export type CountryInput = z.infer<typeof countrySchema>;
 export type CookingHabitsInput = z.infer<typeof cookingHabitsSchema>;
-export type PortionCalibrationInput = z.infer<typeof portionCalibrationSchema>;

@@ -10,26 +10,17 @@ import {
   FormItem,
   FormLabel,
 } from '@/components/ui/form';
-import { REGIONAL_COOKING_DEFAULTS } from '@/lib/onboarding/constants';
+import { NEUTRAL_COOKING_DEFAULTS } from '@/lib/onboarding/constants';
 import {
   type CookingHabitsInput,
   cookingHabitsSchema,
 } from '@/lib/onboarding/schemas';
-import type { CookingHabits, RegionalProfile } from '@/lib/onboarding/types';
+import type { CookingHabits } from '@/lib/onboarding/types';
 
 interface ScreenCookingProps {
   defaultValues: Partial<CookingHabits>;
-  regionalProfile: RegionalProfile | null;
   onChange: (data: CookingHabits) => void;
 }
-
-const NEUTRAL_DEFAULTS: CookingHabits = {
-  oilUsage: 'normal',
-  defaultRicePortion: 'medium',
-  sugarBraised: 'medium',
-  defaultProteinPortion: 'medium',
-  brothConsumption: 'some',
-};
 
 function allCookingFieldsNull(values: Partial<CookingHabits>): boolean {
   return (
@@ -81,22 +72,12 @@ function OptionStrip({
   );
 }
 
-export function ScreenCooking({
-  defaultValues,
-  regionalProfile,
-  onChange,
-}: ScreenCookingProps) {
+export function ScreenCooking({ defaultValues, onChange }: ScreenCookingProps) {
   const hasPrePopulated = useRef(false);
 
-  const initialDefaults = (() => {
-    if (!allCookingFieldsNull(defaultValues)) {
-      return defaultValues as CookingHabits;
-    }
-    if (regionalProfile) {
-      return REGIONAL_COOKING_DEFAULTS[regionalProfile];
-    }
-    return NEUTRAL_DEFAULTS;
-  })();
+  const initialDefaults = allCookingFieldsNull(defaultValues)
+    ? NEUTRAL_COOKING_DEFAULTS
+    : (defaultValues as CookingHabits);
 
   const form = useForm<CookingHabitsInput>({
     resolver: zodResolver(cookingHabitsSchema),
@@ -109,22 +90,17 @@ export function ScreenCooking({
     onChange(v as CookingHabits);
   }, [form, onChange]);
 
-  // One-time pre-population with useRef guard
+  // One-time pre-population with neutral defaults
   useEffect(() => {
-    if (
-      !hasPrePopulated.current &&
-      allCookingFieldsNull(defaultValues) &&
-      regionalProfile
-    ) {
-      const defaults = REGIONAL_COOKING_DEFAULTS[regionalProfile];
-      for (const [key, val] of Object.entries(defaults)) {
+    if (!hasPrePopulated.current && allCookingFieldsNull(defaultValues)) {
+      for (const [key, val] of Object.entries(NEUTRAL_COOKING_DEFAULTS)) {
         form.setValue(key as any, val);
       }
       form.trigger();
-      onChange(defaults);
+      onChange(NEUTRAL_COOKING_DEFAULTS);
       hasPrePopulated.current = true;
     }
-  }, [defaultValues, regionalProfile, form, onChange]);
+  }, [defaultValues, form, onChange]);
 
   return (
     <Form {...form}>
@@ -142,18 +118,8 @@ export function ScreenCooking({
               fontFamily: 'DM Sans, sans-serif',
             }}
           >
-            Pre-populated based on your{' '}
-            <strong className="font-medium text-[#2C2416]">
-              {regionalProfile
-                ? {
-                    mien_bac: 'Northern',
-                    mien_trung: 'Central',
-                    mien_nam: 'Southern',
-                    mien_tay: 'Mekong Delta',
-                  }[regionalProfile]
-                : '—'}
-            </strong>{' '}
-            profile. Adjust your defaults below.
+            Pre-populated with neutral defaults. Adjust to match your cooking
+            style.
           </p>
         </div>
 

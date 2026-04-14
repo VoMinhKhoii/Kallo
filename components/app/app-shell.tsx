@@ -5,7 +5,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import { WizardShell } from '@/components/onboarding/wizard-shell';
 import type { getOnboardingProfile } from '@/lib/onboarding/actions';
-import { ONBOARDING_REQUIRED_STEP } from '@/lib/onboarding/constants';
+import { ONBOARDING_TOTAL_STEPS } from '@/lib/onboarding/constants';
 import { MainSidebar } from './main-sidebar';
 
 type ProfileRow = NonNullable<Awaited<ReturnType<typeof getOnboardingProfile>>>;
@@ -13,18 +13,22 @@ type ProfileRow = NonNullable<Awaited<ReturnType<typeof getOnboardingProfile>>>;
 interface AppShellProps {
   onboardingStep: number;
   initialProfile: ProfileRow | null;
+  isFirstSession: boolean;
   children: React.ReactNode;
 }
 
 export function AppShell({
   onboardingStep,
   initialProfile,
+  isFirstSession,
   children,
 }: AppShellProps) {
   const router = useRouter();
   const pathname = usePathname();
-  const isIncomplete = onboardingStep < ONBOARDING_REQUIRED_STEP;
-  const [showOnboarding, setShowOnboarding] = useState(isIncomplete);
+  const isIncomplete = onboardingStep < ONBOARDING_TOTAL_STEPS;
+  const [showOnboarding, setShowOnboarding] = useState(
+    onboardingStep === 0 && isFirstSession
+  );
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const overlayRef = useRef<HTMLDivElement>(null);
 
@@ -118,7 +122,7 @@ export function AppShell({
 
       {showOnboarding && (
         <WizardShell
-          initialStep={Math.min(onboardingStep + 1, 4)}
+          initialStep={Math.min(onboardingStep + 1, 3)}
           initialProfile={initialProfile}
           onClose={handleClose}
           onComplete={handleComplete}

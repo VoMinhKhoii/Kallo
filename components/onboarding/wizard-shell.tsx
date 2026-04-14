@@ -1,17 +1,15 @@
 'use client';
 
-import { ArrowLeft, ArrowRight, Loader2, X } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Loader2, SkipForward, X } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useRouter } from 'next/navigation';
-import { useCallback, useState, useTransition } from 'react';
+import { useCallback, useEffect, useRef, useState, useTransition } from 'react';
 import type { getOnboardingProfile } from '@/lib/onboarding/actions';
 import { saveOnboardingScreen } from '@/lib/onboarding/actions';
 import { WIZARD_DEFAULTS } from '@/lib/onboarding/constants';
-import type { RegionalProfile } from '@/lib/onboarding/types';
 import { ScreenBodyMetrics, type ScreenOneData } from './screen-body-metrics';
 import { ScreenCooking } from './screen-cooking';
-import { ScreenPortions } from './screen-portions';
-import { ScreenRegional } from './screen-regional';
+import { ScreenOrigin } from './screen-origin';
 import { StepIndicator } from './step-indicator';
 
 type ProfileRow = NonNullable<Awaited<ReturnType<typeof getOnboardingProfile>>>;
@@ -23,7 +21,7 @@ interface WizardShellProps {
   onComplete?: () => void;
 }
 
-const TOTAL_STEPS = 4;
+const TOTAL_STEPS = 3;
 
 function parseAggression(
   raw: string | null | undefined,
@@ -74,6 +72,33 @@ export function WizardShell({
     Record<number, Record<string, unknown>>
   >({});
 
+  // Scroll affordance: fade gradient when content overflows
+  const contentRef = useRef<HTMLDivElement>(null);
+  const [showScrollGradient, setShowScrollGradient] = useState(false);
+
+  const updateScrollGradient = useCallback(() => {
+    const el = contentRef.current;
+    if (!el) return;
+    const hasMoreToScroll =
+      el.scrollHeight > el.clientHeight &&
+      el.scrollTop + el.clientHeight < el.scrollHeight - 10;
+    setShowScrollGradient(hasMoreToScroll);
+  }, []);
+
+  useEffect(() => {
+    updateScrollGradient();
+    const el = contentRef.current;
+    el?.addEventListener('scroll', updateScrollGradient);
+    return () => el?.removeEventListener('scroll', updateScrollGradient);
+  }, [updateScrollGradient]);
+
+  // Re-check gradient when step changes (new screen may have different height)
+  // biome-ignore lint/correctness/useExhaustiveDependencies: re-check after screen transition
+  useEffect(() => {
+    const timer = setTimeout(updateScrollGradient, 150);
+    return () => clearTimeout(timer);
+  }, [currentStep, updateScrollGradient]);
+
   const handleScreenChange = useCallback(
     (step: number, data: Record<string, unknown>) => {
       setScreenData((prev) => ({ ...prev, [step]: data }));
@@ -104,61 +129,91 @@ export function WizardShell({
     });
   };
 
+  const handleSkip = () => {
+    setDirection(1);
+    startTransition(async () => {
+      await saveOnboardingScreen(currentStep, {});
+      if (currentStep >= TOTAL_STEPS) {
+        finishWizard();
+      } else {
+        setCurrentStep((prev) => prev + 1);
+      }
+    });
+  };
+
   const handleBack = () => {
     setDirection(-1);
     setCurrentStep((prev) => prev - 1);
   };
 
-  const handleSkip = () => {
-    startTransition(async () => {
-      await saveOnboardingScreen(3, {
-        handSpanCm: null,
-        knuckleDepthCm: null,
-      });
-      setCurrentStep(4);
-    });
-  };
+  // Merge in-memory screenData (from previous edits) with DB defaults.
+  // This preserves typed inputs when navigating back.
+  const screenOneDefaults = screenData[1]
+    ? {
+        ...buildScreenOneDefaults(initialProfile),
+        ...(screenData[1] as Partial<ScreenOneData>),
+      }
+    : buildScreenOneDefaults(initialProfile);
 
-  const screenOneDefaults = buildScreenOneDefaults(initialProfile);
+  const screenTwoDefaults = screenData[2]
+    ? {
+        countryOfOrigin:
+          (screenData[2].countryOfOrigin as string | null) ?? null,
+        countryOfResidence:
+          (screenData[2].countryOfResidence as string | null) ?? null,
+      }
+    : {
+        countryOfOrigin: initialProfile?.countryOfOrigin ?? null,
+        countryOfResidence: initialProfile?.countryOfResidence ?? null,
+      };
 
-  const screenTwoDefaults = {
-    regionalProfile:
-      (initialProfile?.regionalProfile as RegionalProfile) ?? null,
-  };
+  const screenThreeDefaults = screenData[3]
+    ? {
+        oilUsage:
+          (screenData[3].oilUsage as 'minimal' | 'normal' | 'heavy') ??
+          undefined,
+        defaultRicePortion:
+          (screenData[3].defaultRicePortion as 'small' | 'medium' | 'large') ??
+          undefined,
+        sugarBraised:
+          (screenData[3].sugarBraised as 'low' | 'medium' | 'high') ??
+          undefined,
+        defaultProteinPortion:
+          (screenData[3].defaultProteinPortion as
+            | 'small'
+            | 'medium'
+            | 'large') ?? undefined,
+        brothConsumption:
+          (screenData[3].brothConsumption as
+            | 'leave_it'
+            | 'some'
+            | 'finish_it') ?? undefined,
+      }
+    : {
+        oilUsage:
+          (initialProfile?.oilUsage as 'minimal' | 'normal' | 'heavy') ??
+          undefined,
+        defaultRicePortion:
+          (initialProfile?.defaultRicePortion as
+            | 'small'
+            | 'medium'
+            | 'large') ?? undefined,
+        sugarBraised:
+          (initialProfile?.sugarBraised as 'low' | 'medium' | 'high') ??
+          undefined,
+        defaultProteinPortion:
+          (initialProfile?.defaultProteinPortion as
+            | 'small'
+            | 'medium'
+            | 'large') ?? undefined,
+        brothConsumption:
+          (initialProfile?.brothConsumption as
+            | 'leave_it'
+            | 'some'
+            | 'finish_it') ?? undefined,
+      };
 
-  const screenThreeDefaults = {
-    handSpanCm: initialProfile?.handSpanCm
-      ? Number(initialProfile.handSpanCm)
-      : null,
-    knuckleDepthCm: initialProfile?.knuckleDepthCm
-      ? Number(initialProfile.knuckleDepthCm)
-      : null,
-  };
-
-  const screenFourDefaults = {
-    oilUsage:
-      (initialProfile?.oilUsage as 'minimal' | 'normal' | 'heavy') ?? undefined,
-    defaultRicePortion:
-      (initialProfile?.defaultRicePortion as 'small' | 'medium' | 'large') ??
-      undefined,
-    sugarBraised:
-      (initialProfile?.sugarBraised as 'low' | 'medium' | 'high') ?? undefined,
-    defaultProteinPortion:
-      (initialProfile?.defaultProteinPortion as 'small' | 'medium' | 'large') ??
-      undefined,
-    brothConsumption:
-      (initialProfile?.brothConsumption as 'leave_it' | 'some' | 'finish_it') ??
-      undefined,
-  };
-
-  const currentRegionalProfile =
-    (screenData[2]?.regionalProfile as RegionalProfile) ??
-    screenTwoDefaults.regionalProfile;
-
-  const isNextDisabled =
-    isPending ||
-    !screenData[currentStep] ||
-    (currentStep === 2 && !screenData[2]?.regionalProfile);
+  const isNextDisabled = isPending || !screenData[currentStep];
 
   return (
     <div
@@ -185,80 +240,89 @@ export function WizardShell({
           )}
         </div>
 
-        {/* Content */}
-        <div className="relative flex-1 overflow-y-auto p-6 sm:p-8">
-          <AnimatePresence mode="wait" initial={false}>
-            <motion.div
-              key={currentStep}
-              initial={{ opacity: 0, x: direction * 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: direction * -20 }}
-              transition={{
-                type: 'spring',
-                stiffness: 400,
-                damping: 40,
-              }}
-            >
-              {currentStep === 1 && (
-                <ScreenBodyMetrics
-                  defaultValues={screenOneDefaults}
-                  onChange={(data: ScreenOneData) =>
-                    handleScreenChange(
-                      1,
-                      data as unknown as Record<string, unknown>
-                    )
-                  }
-                />
-              )}
-              {currentStep === 2 && (
-                <ScreenRegional
-                  defaultValues={screenTwoDefaults}
-                  onChange={(data) => handleScreenChange(2, data)}
-                />
-              )}
-              {currentStep === 3 && (
-                <ScreenPortions
-                  defaultValues={screenThreeDefaults}
-                  onChange={(data) =>
-                    handleScreenChange(
-                      3,
-                      data as unknown as Record<string, unknown>
-                    )
-                  }
-                  onSkip={handleSkip}
-                />
-              )}
-              {currentStep === 4 && (
-                <ScreenCooking
-                  defaultValues={screenFourDefaults}
-                  regionalProfile={currentRegionalProfile}
-                  onChange={(data) =>
-                    handleScreenChange(
-                      4,
-                      data as unknown as Record<string, unknown>
-                    )
-                  }
-                />
-              )}
-            </motion.div>
-          </AnimatePresence>
+        {/* Content with scroll affordance */}
+        <div className="relative flex-1 overflow-hidden">
+          <div ref={contentRef} className="h-full overflow-y-auto p-6 sm:p-8">
+            <AnimatePresence mode="wait" initial={false}>
+              <motion.div
+                key={currentStep}
+                initial={{ opacity: 0, x: direction * 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: direction * -20 }}
+                transition={{
+                  type: 'spring',
+                  stiffness: 400,
+                  damping: 40,
+                }}
+              >
+                {currentStep === 1 && (
+                  <ScreenBodyMetrics
+                    defaultValues={screenOneDefaults}
+                    onChange={(data: ScreenOneData) =>
+                      handleScreenChange(
+                        1,
+                        data as unknown as Record<string, unknown>
+                      )
+                    }
+                  />
+                )}
+                {currentStep === 2 && (
+                  <ScreenOrigin
+                    defaultValues={screenTwoDefaults}
+                    onChange={(data) =>
+                      handleScreenChange(
+                        2,
+                        data as unknown as Record<string, unknown>
+                      )
+                    }
+                  />
+                )}
+                {currentStep === 3 && (
+                  <ScreenCooking
+                    defaultValues={screenThreeDefaults}
+                    onChange={(data) =>
+                      handleScreenChange(
+                        3,
+                        data as unknown as Record<string, unknown>
+                      )
+                    }
+                  />
+                )}
+              </motion.div>
+            </AnimatePresence>
+          </div>
+
+          {/* Bottom fade gradient — hints more content below */}
+          {showScrollGradient && (
+            <div className="pointer-events-none absolute right-0 bottom-0 left-0 h-12 bg-gradient-to-t from-[#FDFCF8] to-transparent" />
+          )}
         </div>
 
-        {/* Footer Navigation — hidden on step 3 (Portions has its own CTAs) */}
-        {currentStep !== 3 && (
-          <div className="flex shrink-0 items-center justify-between border-[#EAE7E0]/60 border-t bg-[#F5F4F0]/50 px-6 py-4">
+        {/* Footer Navigation */}
+        <div className="flex shrink-0 items-center justify-between border-[#EAE7E0]/60 border-t bg-[#F5F4F0]/50 px-6 py-4">
+          <button
+            type="button"
+            onClick={handleBack}
+            disabled={currentStep <= 1 || isPending}
+            className={`flex items-center gap-2 font-medium text-[14px] transition-colors ${
+              currentStep === 1
+                ? 'pointer-events-none opacity-0'
+                : 'text-[#8B8682] hover:text-[#2C2416]'
+            }`}
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back
+          </button>
+
+          <div className="flex items-center gap-3">
             <button
               type="button"
-              onClick={handleBack}
-              disabled={currentStep <= 1 || isPending}
-              className={`flex items-center gap-2 font-medium text-[14px] transition-colors ${
-                currentStep === 1
-                  ? 'pointer-events-none opacity-0'
-                  : 'text-[#8B8682] hover:text-[#2C2416]'
-              }`}
+              onClick={handleSkip}
+              disabled={isPending}
+              className="flex items-center gap-1.5 rounded-xl px-4 py-2.5 font-medium text-[#8B8682] text-[14px] transition-colors hover:bg-[#EAE7E0]/50 hover:text-[#2C2416] disabled:opacity-50"
             >
-              <ArrowLeft className="h-4 w-4" />
-              Back
+              Skip
+              <SkipForward className="h-3.5 w-3.5" />
             </button>
             <button
               type="button"
@@ -271,7 +335,7 @@ export function WizardShell({
               <ArrowRight className="h-4 w-4" />
             </button>
           </div>
-        )}
+        </div>
       </motion.div>
     </div>
   );

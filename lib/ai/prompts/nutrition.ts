@@ -147,7 +147,7 @@ export function buildNutritionPrompt(
 </instructions>
 
 <user_context>
-  oil_usage: ${cookingHabits.oilUsage}
+${userContext.countryOfOrigin ? `  country_of_origin: ${userContext.countryOfOrigin}\n` : ''}${userContext.countryOfResidence ? `  country_of_residence: ${userContext.countryOfResidence}\n` : ''}  oil_usage: ${cookingHabits.oilUsage}
   sugar_braised: ${cookingHabits.sugarBraised}
   default_rice_portion: ${RICE_PORTION_DESCRIPTION[cookingHabits.defaultRicePortion]}
   default_protein_portion: ${PROTEIN_PORTION_DESCRIPTION[cookingHabits.defaultProteinPortion]}

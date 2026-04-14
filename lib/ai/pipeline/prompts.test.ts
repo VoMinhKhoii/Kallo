@@ -14,7 +14,8 @@ import type {
 const sampleUserContext: UserContext = {
   goal: 'cutting',
   aggression: 0.5,
-  regionalProfile: 'mien_nam',
+  countryOfOrigin: 'Vietnam',
+  countryOfResidence: 'Vietnam',
   cookingHabits: {
     oilUsage: 'normal',
     defaultRicePortion: 'medium',
@@ -25,9 +26,9 @@ const sampleUserContext: UserContext = {
 };
 
 describe('buildDecompositionPrompt', () => {
-  it('includes regional profile in system prompt', () => {
+  it('includes country context in system prompt', () => {
     const prompt = buildDecompositionPrompt(sampleUserContext);
-    expect(prompt).toContain('mien_nam');
+    expect(prompt).toContain('Vietnam');
   });
 
   it('includes cooking habits in system prompt', () => {
@@ -54,24 +55,21 @@ describe('buildDecompositionPrompt', () => {
     expect(prompt).toContain('isFood');
   });
 
-  it('only includes the user regional prior, not all regions', () => {
+  it('includes country context for users with country set', () => {
     const prompt = buildDecompositionPrompt(sampleUserContext);
-    // mien_nam is in context, should be in regional_priors
-    expect(prompt).toContain('<regional_priors>');
-    expect(prompt).toContain('mien_nam: sweeter');
-    // Other regions should NOT be present
-    expect(prompt).not.toContain('mien_bac');
-    expect(prompt).not.toContain('mien_trung');
-    expect(prompt).not.toContain('mien_tay');
+    expect(prompt).toContain('country_of_origin: Vietnam');
+    expect(prompt).toContain('country_of_residence: Vietnam');
   });
 
-  it('omits regional_priors section for unknown region', () => {
+  it('omits country lines when country is null', () => {
     const ctx: UserContext = {
       ...sampleUserContext,
-      regionalProfile: 'unknown' as UserContext['regionalProfile'],
+      countryOfOrigin: null,
+      countryOfResidence: null,
     };
     const prompt = buildDecompositionPrompt(ctx);
-    expect(prompt).not.toContain('<regional_priors>');
+    expect(prompt).not.toContain('country_of_origin');
+    expect(prompt).not.toContain('country_of_residence');
   });
 });
 
