@@ -10,8 +10,6 @@ import {
   getNutritionData,
   getStatsData,
   getVerdictData,
-  getWeightChartMeta,
-  getWeightData,
 } from './mock-data';
 import { AdherenceHeatmap } from './progress/adherence-heatmap';
 import { ProgressSection } from './progress/progress-section';
@@ -20,6 +18,7 @@ import { SectionHeader } from './section-header';
 import { MealTrigger } from './today/meal-trigger';
 import { TodaySection } from './today/today-section';
 import type { TimeRange } from './types';
+import { useWeightSummary } from '@/hooks/use-weight-summary';
 
 function getWeekTitle(): string {
   const now = new Date();
@@ -40,6 +39,7 @@ function getWeekTitle(): string {
 export function DashboardShell() {
   const [timeRange, setTimeRange] = useState<TimeRange>('30d');
   const weekTitle = useMemo(() => getWeekTitle(), []);
+  const { data: weightSummary } = useWeightSummary(timeRange);
 
   const { data: verdict } = useQuery({
     queryKey: ['dashboard', 'verdict'],
@@ -55,19 +55,12 @@ export function DashboardShell() {
     staleTime: Number.POSITIVE_INFINITY,
   });
 
-  const { data: weightData } = useQuery({
-    queryKey: ['dashboard', 'weightData', timeRange],
-    queryFn: () => getWeightData(timeRange),
-    initialData: () => getWeightData(timeRange),
-    staleTime: Number.POSITIVE_INFINITY,
-  });
-
-  const { data: weightChartMeta } = useQuery({
-    queryKey: ['dashboard', 'weightChartMeta', timeRange],
-    queryFn: () => getWeightChartMeta(timeRange),
-    initialData: () => getWeightChartMeta(timeRange),
-    staleTime: Number.POSITIVE_INFINITY,
-  });
+  const weightData = weightSummary?.weights ?? [];
+  const periodStartWeight =
+    weightSummary?.periodStartWeight ?? weightSummary?.currentWeight ?? 65;
+  const expectedEndWeight =
+    weightSummary?.expectedEndWeight ?? periodStartWeight;
+  const goalDirection = weightSummary?.goalDirection ?? 'down';
 
   const { data: heatmapData } = useQuery({
     queryKey: ['dashboard', 'heatmapData', timeRange],
@@ -90,9 +83,6 @@ export function DashboardShell() {
     staleTime: Number.POSITIVE_INFINITY,
   });
 
-  const { periodStartWeight, expectedEndWeight, goalDirection } =
-    weightChartMeta;
-
   return (
     <main
       className="relative flex-1 overflow-hidden"
@@ -106,6 +96,7 @@ export function DashboardShell() {
             verdict={verdict}
             stats={stats}
             nutrition={nutrition}
+            weightSummary={weightSummary}
           />
         </section>
 

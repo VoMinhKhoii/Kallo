@@ -4,6 +4,7 @@ import type {
   StatsData,
   VerdictData,
 } from '@/components/dashboard/types';
+import type { WeightSummaryData } from '@/lib/types/weight';
 import { DeficitCard, PaceCard } from './pace-deficit-card';
 import { ProteinConsistencyCard } from './protein-consistency-card';
 import { WeightCard } from './weight-streak-card';
@@ -12,12 +13,14 @@ interface CurrentSectionProps {
   verdict: VerdictData;
   stats: StatsData;
   nutrition: NutritionData;
+  weightSummary: WeightSummaryData | undefined;
 }
 
 export function CurrentSection({
   verdict,
   stats,
   nutrition,
+  weightSummary,
 }: CurrentSectionProps) {
   const remaining = Math.max(
     0,
@@ -70,8 +73,8 @@ export function CurrentSection({
       <div className="flex-1" />
 
       {/* Weight Logging */}
-      <div className="w-[340px] shrink-0">
-        <WeightCard stats={stats} verdict={verdict} />
+      <div className="w-85 shrink-0">
+        <WeightCard weightSummary={weightSummary} />
       </div>
     </div>
   );

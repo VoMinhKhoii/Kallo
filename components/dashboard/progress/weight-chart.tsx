@@ -30,6 +30,10 @@ export function WeightChart({
   goalDirection,
   range,
 }: WeightChartProps) {
+  const yTicks = [periodStartWeight, expectedEndWeight].filter(
+    (value, index, array) => array.indexOf(value) === index
+  );
+
   const chartData = useMemo(
     () => data.map((weight, i) => ({ day: i, weight })),
     [data]
@@ -119,7 +123,7 @@ export function WeightChart({
                 fill: 'var(--nham-stone)',
                 fontFamily: 'monospace',
               }}
-              ticks={[periodStartWeight, expectedEndWeight]}
+              ticks={yTicks}
               tickFormatter={(v: number) => `${v.toFixed(1)}`}
               width={38}
             />
