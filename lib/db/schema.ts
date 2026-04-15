@@ -50,26 +50,18 @@ export const userProfiles = pgTable(
     fatTargetG: smallint('fat_target_g'),
     carbSplit: text('carb_split'),
 
-    // Screen 3: Regional Profile
-    regionalProfile: text('regional_profile'),
+    // Screen 2: Country of Origin / Residence
+    countryOfOrigin: text('country_of_origin'),
+    countryOfResidence: text('country_of_residence'),
 
-    // Screen 4: Cooking Habits
+    // Screen 3: Cooking Habits
     oilUsage: text('oil_usage'),
     defaultRicePortion: text('default_rice_portion'),
     sugarBraised: text('sugar_braised'),
     defaultProteinPortion: text('default_protein_portion'),
     brothConsumption: text('broth_consumption'),
 
-    // Screen 5: Portion Calibration
-    bowlSizeMl: smallint('bowl_size_ml').default(200),
-    plateSizeMl: smallint('plate_size_ml').default(400),
-
-    // Hand measurements & onboarding progress
-    handSpanCm: decimal('hand_span_cm', { precision: 4, scale: 1 }),
-    knuckleDepthCm: decimal('knuckle_depth_cm', {
-      precision: 3,
-      scale: 1,
-    }),
+    // Portion defaults & onboarding progress
     onboardingStep: smallint('onboarding_step').notNull().default(0),
     onboardingCompletedAt: timestamp('onboarding_completed_at', {
       withTimezone: true,
@@ -101,8 +93,8 @@ export const userProfiles = pgTable(
       sql`${table.aggression} >= 0.1 AND ${table.aggression} <= 0.8`
     ),
     check(
-      'user_profiles_regional_profile_check',
-      sql`${table.regionalProfile} IN ('mien_bac', 'mien_trung', 'mien_nam', 'mien_tay')`
+      'user_profiles_onboarding_step_check',
+      sql`${table.onboardingStep} >= 0 AND ${table.onboardingStep} <= 3`
     ),
     check(
       'user_profiles_oil_usage_check',
@@ -127,15 +119,6 @@ export const userProfiles = pgTable(
     check(
       'user_profiles_broth_consumption_check',
       sql`${table.brothConsumption} IN ('leave_it', 'some', 'finish_it')`
-    ),
-    check('user_profiles_hand_span_cm_check', sql`${table.handSpanCm} > 0`),
-    check(
-      'user_profiles_knuckle_depth_cm_check',
-      sql`${table.knuckleDepthCm} > 0`
-    ),
-    check(
-      'user_profiles_onboarding_step_check',
-      sql`${table.onboardingStep} >= 0 AND ${table.onboardingStep} <= 5`
     ),
   ]
 );

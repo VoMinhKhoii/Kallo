@@ -2,7 +2,7 @@
 
 import { ArrowRight, X } from 'lucide-react';
 import Link from 'next/link';
-import { ONBOARDING_REQUIRED_STEP } from '@/lib/onboarding/constants';
+import { ONBOARDING_TOTAL_STEPS } from '@/lib/onboarding/constants';
 
 interface OnboardingCardProps {
   onboardingStep: number;
@@ -13,12 +13,12 @@ export function OnboardingCard({
   onboardingStep,
   onDismiss,
 }: OnboardingCardProps) {
-  if (onboardingStep >= ONBOARDING_REQUIRED_STEP) {
+  if (onboardingStep >= ONBOARDING_TOTAL_STEPS) {
     return null;
   }
 
   const stepsCompleted = onboardingStep;
-  const totalSteps = ONBOARDING_REQUIRED_STEP;
+  const totalSteps = ONBOARDING_TOTAL_STEPS;
   const progress = (stepsCompleted / totalSteps) * 100;
 
   return (

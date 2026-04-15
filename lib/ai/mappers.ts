@@ -1,4 +1,5 @@
 import type { userProfiles } from '@/lib/db/schema';
+import { NEUTRAL_COOKING_DEFAULTS } from '@/lib/onboarding/constants';
 import type { MacroBreakdown, MealItem, ParsedMeal } from '@/lib/types/meal';
 import type { PipelineResult, UserContext } from './types';
 
@@ -7,23 +8,44 @@ type ProfileRow = typeof userProfiles.$inferSelect;
 /**
  * Builds UserContext from a user profile DB row.
  * Shared by both the server action and the API route.
+ *
+ * Atomic goal+aggression normalization:
+ * - If goal is null → maintaining + aggression 0
+ * - If goal is non-maintaining but aggression is null → maintaining + aggression 0
+ * This prevents impossible states (e.g. cutting with no aggression).
  */
 export function buildUserContext(profile: ProfileRow): UserContext {
+  const rawGoal = profile.goal as UserContext['goal'] | null;
+  const rawAggression = profile.aggression ? Number(profile.aggression) : null;
+
+  // Atomic: if goal requires aggression but it's missing, fall back to maintaining
+  let goal: UserContext['goal'] = 'maintaining';
+  let aggression = 0;
+  if (rawGoal === 'maintaining') {
+    goal = 'maintaining';
+    aggression = 0;
+  } else if (rawGoal && rawAggression != null) {
+    goal = rawGoal;
+    aggression = rawAggression;
+  }
+  // else: rawGoal is null OR rawGoal is cutting/bulking with null aggression → maintaining+0
+
   return {
-    goal: profile.goal as UserContext['goal'],
-    aggression: profile.aggression ? Number(profile.aggression) : 0,
-    regionalProfile: profile.regionalProfile as UserContext['regionalProfile'],
+    goal,
+    aggression,
+    countryOfOrigin: profile.countryOfOrigin ?? null,
+    countryOfResidence: profile.countryOfResidence ?? null,
     cookingHabits: {
       oilUsage: (profile.oilUsage ??
-        'normal') as UserContext['cookingHabits']['oilUsage'],
+        NEUTRAL_COOKING_DEFAULTS.oilUsage) as UserContext['cookingHabits']['oilUsage'],
       defaultRicePortion: (profile.defaultRicePortion ??
-        'medium') as UserContext['cookingHabits']['defaultRicePortion'],
+        NEUTRAL_COOKING_DEFAULTS.defaultRicePortion) as UserContext['cookingHabits']['defaultRicePortion'],
       sugarBraised: (profile.sugarBraised ??
-        'medium') as UserContext['cookingHabits']['sugarBraised'],
+        NEUTRAL_COOKING_DEFAULTS.sugarBraised) as UserContext['cookingHabits']['sugarBraised'],
       defaultProteinPortion: (profile.defaultProteinPortion ??
-        'medium') as UserContext['cookingHabits']['defaultProteinPortion'],
+        NEUTRAL_COOKING_DEFAULTS.defaultProteinPortion) as UserContext['cookingHabits']['defaultProteinPortion'],
       brothConsumption: (profile.brothConsumption ??
-        'some') as UserContext['cookingHabits']['brothConsumption'],
+        NEUTRAL_COOKING_DEFAULTS.brothConsumption) as UserContext['cookingHabits']['brothConsumption'],
     },
   };
 }

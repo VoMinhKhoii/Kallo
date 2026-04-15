@@ -48,7 +48,7 @@ function mockDb(rows: Record<string, unknown>[]) {
 describe('requireAuthAndProfile', () => {
   it('returns user and profile on success', async () => {
     const user = { id: 'u1', email: 'a@b.com' };
-    const profile = { userId: 'u1', goal: 'cut', regionalProfile: 'northern' };
+    const profile = { userId: 'u1', goal: 'cut' };
 
     const result = await requireAuthAndProfile({
       supabase: mockSupabase(user),
@@ -77,35 +77,7 @@ describe('requireAuthAndProfile', () => {
     ).rejects.toThrow(expect.objectContaining({ code: 'NOT_AUTHENTICATED' }));
   });
 
-  it('throws ONBOARDING_INCOMPLETE when profile has no goal', async () => {
-    const user = { id: 'u1' };
-    const profile = { userId: 'u1', goal: null, regionalProfile: 'northern' };
-
-    await expect(
-      requireAuthAndProfile({
-        supabase: mockSupabase(user),
-        database: mockDb([profile]),
-      })
-    ).rejects.toThrow(
-      expect.objectContaining({ code: 'ONBOARDING_INCOMPLETE' })
-    );
-  });
-
-  it('throws ONBOARDING_INCOMPLETE when profile has no regionalProfile', async () => {
-    const user = { id: 'u1' };
-    const profile = { userId: 'u1', goal: 'maintain', regionalProfile: null };
-
-    await expect(
-      requireAuthAndProfile({
-        supabase: mockSupabase(user),
-        database: mockDb([profile]),
-      })
-    ).rejects.toThrow(
-      expect.objectContaining({ code: 'ONBOARDING_INCOMPLETE' })
-    );
-  });
-
-  it('throws ONBOARDING_INCOMPLETE when no profile row exists', async () => {
+  it('throws PROFILE_NOT_FOUND when no profile row exists', async () => {
     const user = { id: 'u1' };
 
     await expect(
@@ -113,8 +85,6 @@ describe('requireAuthAndProfile', () => {
         supabase: mockSupabase(user),
         database: mockDb([]),
       })
-    ).rejects.toThrow(
-      expect.objectContaining({ code: 'ONBOARDING_INCOMPLETE' })
-    );
+    ).rejects.toThrow(expect.objectContaining({ code: 'PROFILE_NOT_FOUND' }));
   });
 });

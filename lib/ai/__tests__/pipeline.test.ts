@@ -34,7 +34,8 @@ function createMockDb() {
 const userContext: UserContext = {
   goal: 'cutting',
   aggression: 0.5,
-  regionalProfile: 'mien_nam',
+  countryOfOrigin: 'Vietnam',
+  countryOfResidence: 'Vietnam',
   cookingHabits: {
     oilUsage: 'normal',
     defaultRicePortion: 'medium',

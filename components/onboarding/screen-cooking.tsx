@@ -10,26 +10,17 @@ import {
   FormItem,
   FormLabel,
 } from '@/components/ui/form';
-import { REGIONAL_COOKING_DEFAULTS } from '@/lib/onboarding/constants';
+import { NEUTRAL_COOKING_DEFAULTS } from '@/lib/onboarding/constants';
 import {
   type CookingHabitsInput,
   cookingHabitsSchema,
 } from '@/lib/onboarding/schemas';
-import type { CookingHabits, RegionalProfile } from '@/lib/onboarding/types';
+import type { CookingHabits } from '@/lib/onboarding/types';
 
 interface ScreenCookingProps {
   defaultValues: Partial<CookingHabits>;
-  regionalProfile: RegionalProfile | null;
   onChange: (data: CookingHabits) => void;
 }
-
-const NEUTRAL_DEFAULTS: CookingHabits = {
-  oilUsage: 'normal',
-  defaultRicePortion: 'medium',
-  sugarBraised: 'medium',
-  defaultProteinPortion: 'medium',
-  brothConsumption: 'some',
-};
 
 function allCookingFieldsNull(values: Partial<CookingHabits>): boolean {
   return (
@@ -57,13 +48,13 @@ function OptionStrip({
   onChange: (v: string) => void;
 }) {
   return (
-    <div className="flex rounded-xl bg-[#F5F4F0] p-1">
+    <div className="grid grid-cols-3 rounded-xl bg-[#F5F4F0] p-1">
       {options.map((opt) => (
         <button
           key={opt.value}
           type="button"
           onClick={() => onChange(opt.value)}
-          className={`flex flex-1 flex-col items-center rounded-lg py-2 transition-all ${
+          className={`flex min-w-0 flex-col items-center rounded-lg px-2 py-2.5 text-center transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C9A87C]/30 ${
             value === opt.value
               ? 'bg-white text-[#2C2416] shadow-sm'
               : 'text-[#8B8682] hover:text-[#2C2416]'
@@ -71,7 +62,7 @@ function OptionStrip({
         >
           <span className="font-medium text-[13px]">{opt.label}</span>
           {opt.hint && (
-            <span className="mt-0.5 text-center text-[10px] leading-tight opacity-70">
+            <span className="mt-1 line-clamp-2 text-[10px] leading-tight opacity-70 sm:line-clamp-none">
               {opt.hint}
             </span>
           )}
@@ -81,22 +72,12 @@ function OptionStrip({
   );
 }
 
-export function ScreenCooking({
-  defaultValues,
-  regionalProfile,
-  onChange,
-}: ScreenCookingProps) {
+export function ScreenCooking({ defaultValues, onChange }: ScreenCookingProps) {
   const hasPrePopulated = useRef(false);
 
-  const initialDefaults = (() => {
-    if (!allCookingFieldsNull(defaultValues)) {
-      return defaultValues as CookingHabits;
-    }
-    if (regionalProfile) {
-      return REGIONAL_COOKING_DEFAULTS[regionalProfile];
-    }
-    return NEUTRAL_DEFAULTS;
-  })();
+  const initialDefaults = allCookingFieldsNull(defaultValues)
+    ? NEUTRAL_COOKING_DEFAULTS
+    : (defaultValues as CookingHabits);
 
   const form = useForm<CookingHabitsInput>({
     resolver: zodResolver(cookingHabitsSchema),
@@ -109,27 +90,22 @@ export function ScreenCooking({
     onChange(v as CookingHabits);
   }, [form, onChange]);
 
-  // One-time pre-population with useRef guard
+  // One-time pre-population with neutral defaults
   useEffect(() => {
-    if (
-      !hasPrePopulated.current &&
-      allCookingFieldsNull(defaultValues) &&
-      regionalProfile
-    ) {
-      const defaults = REGIONAL_COOKING_DEFAULTS[regionalProfile];
-      for (const [key, val] of Object.entries(defaults)) {
+    if (!hasPrePopulated.current && allCookingFieldsNull(defaultValues)) {
+      for (const [key, val] of Object.entries(NEUTRAL_COOKING_DEFAULTS)) {
         form.setValue(key as any, val);
       }
       form.trigger();
-      onChange(defaults);
+      onChange(NEUTRAL_COOKING_DEFAULTS);
       hasPrePopulated.current = true;
     }
-  }, [defaultValues, regionalProfile, form, onChange]);
+  }, [defaultValues, form, onChange]);
 
   return (
     <Form {...form}>
-      <form className="space-y-8">
-        <div>
+      <form className="space-y-6 lg:space-y-7">
+        <div className="max-w-2xl">
           <h2
             className="mb-2 font-medium text-2xl text-[#2C2416] tracking-tight"
             style={{ fontFamily: 'Lora, serif' }}
@@ -142,28 +118,18 @@ export function ScreenCooking({
               fontFamily: 'DM Sans, sans-serif',
             }}
           >
-            Pre-populated based on your{' '}
-            <strong className="font-medium text-[#2C2416]">
-              {regionalProfile
-                ? {
-                    mien_bac: 'Northern',
-                    mien_trung: 'Central',
-                    mien_nam: 'Southern',
-                    mien_tay: 'Mekong Delta',
-                  }[regionalProfile]
-                : '—'}
-            </strong>{' '}
-            profile. Adjust your defaults below.
+            Pre-populated with neutral defaults. Adjust to match your cooking
+            style.
           </p>
         </div>
 
-        <div className="space-y-6">
+        <div className="space-y-4">
           {/* Oil usage */}
           <FormField
             control={form.control}
             name="oilUsage"
             render={({ field }) => (
-              <FormItem className="rounded-2xl border border-[#EAE7E0] bg-white p-5">
+              <FormItem className="rounded-[24px] border border-[#EAE7E0] bg-white p-5 sm:p-6">
                 <FormLabel className="mb-3 block font-bold text-[#2C2416] text-[13px]">
                   How would you describe your typical cooked dishes?
                 </FormLabel>
@@ -202,7 +168,7 @@ export function ScreenCooking({
             control={form.control}
             name="defaultRicePortion"
             render={({ field }) => (
-              <FormItem className="rounded-2xl border border-[#EAE7E0] bg-white p-5">
+              <FormItem className="rounded-[24px] border border-[#EAE7E0] bg-white p-5 sm:p-6">
                 <FormLabel className="mb-3 block font-bold text-[#2C2416] text-[13px]">
                   How much rice per meal?
                 </FormLabel>
@@ -241,7 +207,7 @@ export function ScreenCooking({
             control={form.control}
             name="sugarBraised"
             render={({ field }) => (
-              <FormItem className="rounded-2xl border border-[#EAE7E0] bg-white p-5">
+              <FormItem className="rounded-[24px] border border-[#EAE7E0] bg-white p-5 sm:p-6">
                 <FormLabel className="mb-3 block font-bold text-[#2C2416] text-[13px]">
                   Sugar in braised dishes
                 </FormLabel>
@@ -268,7 +234,7 @@ export function ScreenCooking({
             control={form.control}
             name="defaultProteinPortion"
             render={({ field }) => (
-              <FormItem className="rounded-2xl border border-[#EAE7E0] bg-white p-5">
+              <FormItem className="rounded-[24px] border border-[#EAE7E0] bg-white p-5 sm:p-6">
                 <FormLabel className="mb-3 block font-bold text-[#2C2416] text-[13px]">
                   How much protein (meat, fish, eggs) per meal?
                 </FormLabel>
@@ -307,7 +273,7 @@ export function ScreenCooking({
             control={form.control}
             name="brothConsumption"
             render={({ field }) => (
-              <FormItem className="rounded-2xl border border-[#EAE7E0] bg-white p-5">
+              <FormItem className="rounded-[24px] border border-[#EAE7E0] bg-white p-5 sm:p-6">
                 <FormLabel className="mb-3 block font-bold text-[#2C2416] text-[13px]">
                   When there&rsquo;s soup, how much broth do you usually drink?
                 </FormLabel>

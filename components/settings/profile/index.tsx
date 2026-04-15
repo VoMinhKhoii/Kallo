@@ -12,8 +12,7 @@ import { saveProfileSettings } from '@/lib/onboarding/actions';
 import {
   bodyMetricsSchema,
   cookingHabitsSchema,
-  portionCalibrationSchema,
-  regionalSchema,
+  countrySchema,
 } from '@/lib/onboarding/schemas';
 import {
   calcBMR,
@@ -28,13 +27,11 @@ import type {
   Goal,
   OilUsage,
   ProteinPortion,
-  RegionalProfile,
   RicePortion,
   SugarBraised,
 } from '@/lib/onboarding/types';
 import { BodyMetrics } from './body-metrics';
 import { Cooking } from './cooking';
-import { Portions } from './portions';
 import { Regional } from './regional';
 
 const profileSchema = bodyMetricsSchema
@@ -45,13 +42,12 @@ const profileSchema = bodyMetricsSchema
       carbSplit: z.enum(['moderate_carb', 'lower_carb', 'higher_carb']),
     })
   )
-  .merge(regionalSchema)
-  .merge(cookingHabitsSchema)
-  .merge(portionCalibrationSchema);
+  .merge(countrySchema)
+  .merge(cookingHabitsSchema);
 
 export type ProfileFormValues = z.infer<typeof profileSchema>;
 
-type SectionId = 'body-metrics' | 'regional' | 'cooking' | 'portions';
+type SectionId = 'body-metrics' | 'regional' | 'cooking';
 
 interface Section {
   id: SectionId;
@@ -67,18 +63,13 @@ const SECTIONS: Section[] = [
   },
   {
     id: 'regional',
-    title: 'Regional Profile',
-    subtitle: 'Vietnamese cooking region for default seasonings',
+    title: 'Country & Region',
+    subtitle: 'Country of origin and current residence',
   },
   {
     id: 'cooking',
     title: 'Cooking Habits',
     subtitle: 'Oil usage, rice, sugar, protein, and broth defaults',
-  },
-  {
-    id: 'portions',
-    title: 'Portion Calibration',
-    subtitle: 'Hand measurements for accurate gram estimates',
   },
 ];
 
@@ -97,14 +88,13 @@ interface ProfileProps {
     proteinTargetG: number | null;
     carbsTargetG: number | null;
     fatTargetG: number | null;
-    regionalProfile: string | null;
+    countryOfOrigin: string | null;
+    countryOfResidence: string | null;
     oilUsage: string | null;
     defaultRicePortion: string | null;
     sugarBraised: string | null;
     defaultProteinPortion: string | null;
     brothConsumption: string | null;
-    handSpanCm: string | null;
-    knuckleDepthCm: string | null;
   };
 }
 
@@ -127,8 +117,8 @@ export function Profile({ profile }: ProfileProps) {
         return Number.isNaN(n) ? 0.5 : n;
       })(),
       carbSplit: (profile.carbSplit as CarbSplit) ?? 'moderate_carb',
-      regionalProfile:
-        (profile.regionalProfile as RegionalProfile) ?? 'mien_bac',
+      countryOfOrigin: profile.countryOfOrigin ?? null,
+      countryOfResidence: profile.countryOfResidence ?? null,
       oilUsage: (profile.oilUsage as OilUsage) ?? 'normal',
       defaultRicePortion:
         (profile.defaultRicePortion as RicePortion) ?? 'medium',
@@ -137,10 +127,6 @@ export function Profile({ profile }: ProfileProps) {
         (profile.defaultProteinPortion as ProteinPortion) ?? 'medium',
       brothConsumption:
         (profile.brothConsumption as BrothConsumption) ?? 'some',
-      handSpanCm: profile.handSpanCm ? Number(profile.handSpanCm) : null,
-      knuckleDepthCm: profile.knuckleDepthCm
-        ? Number(profile.knuckleDepthCm)
-        : null,
     }),
     [profile]
   );
@@ -200,14 +186,13 @@ export function Profile({ profile }: ProfileProps) {
           proteinTargetG: macros.proteinG,
           carbsTargetG: macros.carbsG,
           fatTargetG: macros.fatG,
-          regionalProfile: values.regionalProfile,
+          countryOfOrigin: values.countryOfOrigin,
+          countryOfResidence: values.countryOfResidence,
           oilUsage: values.oilUsage,
           defaultRicePortion: values.defaultRicePortion,
           sugarBraised: values.sugarBraised,
           defaultProteinPortion: values.defaultProteinPortion,
           brothConsumption: values.brothConsumption,
-          handSpanCm: values.handSpanCm,
-          knuckleDepthCm: values.knuckleDepthCm,
         });
         form.reset(values);
         toast.success('Profile settings saved');
@@ -275,7 +260,6 @@ export function Profile({ profile }: ProfileProps) {
                         {section.id === 'body-metrics' && <BodyMetrics />}
                         {section.id === 'regional' && <Regional />}
                         {section.id === 'cooking' && <Cooking />}
-                        {section.id === 'portions' && <Portions />}
                       </div>
                     </motion.div>
                   )}
