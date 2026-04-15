@@ -4,6 +4,7 @@ import { eq } from 'drizzle-orm';
 import { db } from '@/lib/db';
 import { userProfiles } from '@/lib/db/schema';
 import { ONBOARDING_TOTAL_STEPS } from '@/lib/onboarding/constants';
+import { hasSavedOnboardingProfileData } from '@/lib/onboarding/progress';
 import { createClient } from '@/lib/supabase/server';
 
 async function getAuthUser() {
@@ -32,10 +33,7 @@ export async function saveOnboardingScreen(
   const user = await getAuthUser();
 
   const [existing] = await db
-    .select({
-      onboardingStep: userProfiles.onboardingStep,
-      onboardingCompletedAt: userProfiles.onboardingCompletedAt,
-    })
+    .select()
     .from(userProfiles)
     .where(eq(userProfiles.userId, user.id))
     .limit(1);
@@ -74,7 +72,11 @@ export async function saveOnboardingScreen(
   }
 
   // Mark completion when all screens done
-  if (newStep >= ONBOARDING_TOTAL_STEPS) {
+  const nextProfile = { ...existing, ...updateObj };
+  if (
+    newStep >= ONBOARDING_TOTAL_STEPS &&
+    hasSavedOnboardingProfileData(nextProfile)
+  ) {
     if (!existing?.onboardingCompletedAt) {
       updateObj.onboardingCompletedAt = new Date();
     }

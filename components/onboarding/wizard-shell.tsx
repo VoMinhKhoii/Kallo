@@ -71,6 +71,12 @@ export function WizardShell({
   const [screenData, setScreenData] = useState<
     Record<number, Record<string, unknown>>
   >({});
+  const modalMaxWidthClass =
+    currentStep === 1
+      ? 'max-w-6xl'
+      : currentStep === 2
+        ? 'max-w-4xl'
+        : 'max-w-[58rem]';
 
   // Scroll affordance: fade gradient when content overflows
   const contentRef = useRef<HTMLDivElement>(null);
@@ -88,8 +94,10 @@ export function WizardShell({
   useEffect(() => {
     updateScrollGradient();
     const el = contentRef.current;
-    el?.addEventListener('scroll', updateScrollGradient);
-    return () => el?.removeEventListener('scroll', updateScrollGradient);
+    if (!el) return;
+
+    el.addEventListener('scroll', updateScrollGradient, { passive: true });
+    return () => el.removeEventListener('scroll', updateScrollGradient);
   }, [updateScrollGradient]);
 
   // Re-check gradient when step changes (new screen may have different height)
@@ -224,7 +232,10 @@ export function WizardShell({
         initial={{ opacity: 0, scale: 0.95, y: 10 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 10 }}
-        className="flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl bg-[#FDFCF8] shadow-2xl"
+        role="dialog"
+        aria-label={`Onboarding step ${currentStep} of ${TOTAL_STEPS}`}
+        aria-modal="true"
+        className={`flex max-h-[92dvh] w-full ${modalMaxWidthClass} flex-col overflow-hidden rounded-[28px] bg-[#FDFCF8] shadow-2xl`}
       >
         {/* Header */}
         <div className="flex shrink-0 items-center justify-between border-[#EAE7E0]/60 border-b px-6 py-4">
@@ -241,56 +252,58 @@ export function WizardShell({
         </div>
 
         {/* Content with scroll affordance */}
-        <div className="relative flex-1 overflow-hidden">
-          <div ref={contentRef} className="h-full overflow-y-auto p-6 sm:p-8">
-            <AnimatePresence mode="wait" initial={false}>
-              <motion.div
-                key={currentStep}
-                initial={{ opacity: 0, x: direction * 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: direction * -20 }}
-                transition={{
-                  type: 'spring',
-                  stiffness: 400,
-                  damping: 40,
-                }}
-              >
-                {currentStep === 1 && (
-                  <ScreenBodyMetrics
-                    defaultValues={screenOneDefaults}
-                    onChange={(data: ScreenOneData) =>
-                      handleScreenChange(
-                        1,
-                        data as unknown as Record<string, unknown>
-                      )
-                    }
-                  />
-                )}
-                {currentStep === 2 && (
-                  <ScreenOrigin
-                    defaultValues={screenTwoDefaults}
-                    onChange={(data) =>
-                      handleScreenChange(
-                        2,
-                        data as unknown as Record<string, unknown>
-                      )
-                    }
-                  />
-                )}
-                {currentStep === 3 && (
-                  <ScreenCooking
-                    defaultValues={screenThreeDefaults}
-                    onChange={(data) =>
-                      handleScreenChange(
-                        3,
-                        data as unknown as Record<string, unknown>
-                      )
-                    }
-                  />
-                )}
-              </motion.div>
-            </AnimatePresence>
-          </div>
+        <div
+          ref={contentRef}
+          className="relative min-h-0 flex-1 overflow-y-auto overscroll-y-contain p-5 sm:p-6 lg:p-7"
+        >
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.div
+              key={currentStep}
+              className="min-h-full"
+              initial={{ opacity: 0, x: direction * 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: direction * -20 }}
+              transition={{
+                type: 'spring',
+                stiffness: 400,
+                damping: 40,
+              }}
+            >
+              {currentStep === 1 && (
+                <ScreenBodyMetrics
+                  defaultValues={screenOneDefaults}
+                  onChange={(data: ScreenOneData) =>
+                    handleScreenChange(
+                      1,
+                      data as unknown as Record<string, unknown>
+                    )
+                  }
+                />
+              )}
+              {currentStep === 2 && (
+                <ScreenOrigin
+                  defaultValues={screenTwoDefaults}
+                  onChange={(data) =>
+                    handleScreenChange(
+                      2,
+                      data as unknown as Record<string, unknown>
+                    )
+                  }
+                />
+              )}
+              {currentStep === 3 && (
+                <ScreenCooking
+                  defaultValues={screenThreeDefaults}
+                  onChange={(data) =>
+                    handleScreenChange(
+                      3,
+                      data as unknown as Record<string, unknown>
+                    )
+                  }
+                />
+              )}
+            </motion.div>
+          </AnimatePresence>
 
           {/* Bottom fade gradient — hints more content below */}
           {showScrollGradient && (
@@ -299,12 +312,12 @@ export function WizardShell({
         </div>
 
         {/* Footer Navigation */}
-        <div className="flex shrink-0 items-center justify-between border-[#EAE7E0]/60 border-t bg-[#F5F4F0]/50 px-6 py-4">
+        <div className="flex shrink-0 items-center justify-between border-[#EAE7E0]/60 border-t bg-[#F5F4F0]/50 px-5 py-4 sm:px-6">
           <button
             type="button"
             onClick={handleBack}
             disabled={currentStep <= 1 || isPending}
-            className={`flex items-center gap-2 font-medium text-[14px] transition-colors ${
+            className={`flex touch-manipulation items-center gap-2 font-medium text-[14px] transition-colors ${
               currentStep === 1
                 ? 'pointer-events-none opacity-0'
                 : 'text-[#8B8682] hover:text-[#2C2416]'
@@ -319,7 +332,7 @@ export function WizardShell({
               type="button"
               onClick={handleSkip}
               disabled={isPending}
-              className="flex items-center gap-1.5 rounded-xl px-4 py-2.5 font-medium text-[#8B8682] text-[14px] transition-colors hover:bg-[#EAE7E0]/50 hover:text-[#2C2416] disabled:opacity-50"
+              className="flex touch-manipulation items-center gap-1.5 rounded-xl px-4 py-2.5 font-medium text-[#8B8682] text-[14px] transition-colors hover:bg-[#EAE7E0]/50 hover:text-[#2C2416] disabled:opacity-50"
             >
               Skip
               <SkipForward className="h-3.5 w-3.5" />
@@ -328,7 +341,7 @@ export function WizardShell({
               type="button"
               onClick={handleNext}
               disabled={isNextDisabled}
-              className="flex items-center gap-2 rounded-xl bg-[#2C2416] px-5 py-2.5 font-medium text-[#FDFCF8] text-[14px] shadow-sm transition-all hover:bg-[#1C1917] disabled:opacity-50"
+              className="flex touch-manipulation items-center gap-2 rounded-xl bg-[#2C2416] px-5 py-2.5 font-medium text-[#FDFCF8] text-[14px] shadow-sm transition-all hover:bg-[#1C1917] disabled:opacity-50"
             >
               {isPending && <Loader2 className="h-4 w-4 animate-spin" />}
               {currentStep >= TOTAL_STEPS ? 'Finish' : 'Next Step'}

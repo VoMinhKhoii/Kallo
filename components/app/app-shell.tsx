@@ -5,7 +5,10 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import { WizardShell } from '@/components/onboarding/wizard-shell';
 import type { getOnboardingProfile } from '@/lib/onboarding/actions';
-import { ONBOARDING_TOTAL_STEPS } from '@/lib/onboarding/constants';
+import {
+  getOnboardingResumeStep,
+  shouldShowOnboardingResume,
+} from '@/lib/onboarding/progress';
 import { MainSidebar } from './main-sidebar';
 
 type ProfileRow = NonNullable<Awaited<ReturnType<typeof getOnboardingProfile>>>;
@@ -25,25 +28,25 @@ export function AppShell({
 }: AppShellProps) {
   const router = useRouter();
   const pathname = usePathname();
-  const isIncomplete = onboardingStep < ONBOARDING_TOTAL_STEPS;
+  const showResumeOnboarding = shouldShowOnboardingResume(
+    initialProfile,
+    onboardingStep
+  );
+  const resumeStep = getOnboardingResumeStep(initialProfile, onboardingStep);
   const [showOnboarding, setShowOnboarding] = useState(
     onboardingStep === 0 && isFirstSession
   );
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [mobileMenuPath, setMobileMenuPath] = useState(pathname);
   const overlayRef = useRef<HTMLDivElement>(null);
-
-  // Close mobile menu on route change
-  // biome-ignore lint/correctness/useExhaustiveDependencies: intentionally re-run on pathname change
-  useEffect(() => {
-    setMobileMenuOpen(false);
-  }, [pathname]);
+  const isMobileMenuVisible = mobileMenuOpen && mobileMenuPath === pathname;
 
   // Focus the overlay dialog when it opens for keyboard accessibility
   useEffect(() => {
-    if (mobileMenuOpen) {
+    if (isMobileMenuVisible) {
       overlayRef.current?.focus();
     }
-  }, [mobileMenuOpen]);
+  }, [isMobileMenuVisible]);
 
   const handleClose = () => {
     setShowOnboarding(false);
@@ -60,13 +63,13 @@ export function AppShell({
         {/* Desktop sidebar */}
         <div className="hidden md:block">
           <MainSidebar
-            onboardingIncomplete={isIncomplete && !showOnboarding}
+            onboardingIncomplete={showResumeOnboarding && !showOnboarding}
             onResumeOnboarding={() => setShowOnboarding(true)}
           />
         </div>
 
         {/* Mobile sidebar overlay */}
-        {mobileMenuOpen && (
+        {isMobileMenuVisible && (
           <div
             ref={overlayRef}
             role="dialog"
@@ -86,7 +89,7 @@ export function AppShell({
             />
             <div className="relative h-full w-64 p-3">
               <MainSidebar
-                onboardingIncomplete={isIncomplete && !showOnboarding}
+                onboardingIncomplete={showResumeOnboarding && !showOnboarding}
                 onResumeOnboarding={() => setShowOnboarding(true)}
               />
             </div>
@@ -99,13 +102,21 @@ export function AppShell({
           <div className="flex items-center py-2 md:hidden">
             <button
               type="button"
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
-              aria-expanded={mobileMenuOpen}
+              onClick={() => {
+                if (isMobileMenuVisible) {
+                  setMobileMenuOpen(false);
+                  return;
+                }
+
+                setMobileMenuPath(pathname);
+                setMobileMenuOpen(true);
+              }}
+              aria-label={isMobileMenuVisible ? 'Close menu' : 'Open menu'}
+              aria-expanded={isMobileMenuVisible}
               aria-controls="mobile-menu"
               className="flex h-8 w-8 items-center justify-center rounded-lg text-nham-text-muted transition-colors hover:bg-nham-hover/60"
             >
-              {mobileMenuOpen ? (
+              {isMobileMenuVisible ? (
                 <X className="h-5 w-5" />
               ) : (
                 <Menu className="h-5 w-5" />
@@ -122,7 +133,7 @@ export function AppShell({
 
       {showOnboarding && (
         <WizardShell
-          initialStep={Math.min(onboardingStep + 1, 3)}
+          initialStep={resumeStep}
           initialProfile={initialProfile}
           onClose={handleClose}
           onComplete={handleComplete}
