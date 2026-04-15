@@ -149,8 +149,8 @@ function CountryPicker({
           }
         >
           {value
-            ? `${selectedCountry?.flag ?? ''} ${value} (${selectedCountry?.vi ?? ''})`
-            : 'Select a country...'}
+            ? `${value} (${selectedCountry?.vi ?? ''})`
+            : 'Select a country…'}
         </span>
         <svg
           className={`h-4 w-4 text-[#8B8682] transition-transform ${isOpen ? 'rotate-180' : ''}`}
@@ -187,7 +187,7 @@ function CountryPicker({
                 ref={(el) => el?.focus()}
                 onChange={(e) => setSearch(e.target.value)}
                 aria-label={`Search ${label.toLowerCase()}`}
-                placeholder="Search country..."
+                placeholder="Search country…"
                 className="w-full rounded-lg bg-[#F5F4F0] px-3 py-2 text-[#2C2416] text-[13px] outline-none placeholder:text-[#8B8682] focus-visible:ring-2 focus-visible:ring-[#C9A87C]/30"
               />
             </div>
@@ -215,10 +215,7 @@ function CountryPicker({
                         : 'text-[#2C2416] hover:bg-[#F5F4F0]'
                     }`}
                   >
-                    <span className="flex min-w-0 items-center gap-2">
-                      <span>{country.flag}</span>
-                      <span className="truncate">{country.value}</span>
-                    </span>
+                    <span className="truncate">{country.value}</span>
                     <span className="shrink-0 text-[#8B8682] text-[11px]">
                       {country.vi}
                     </span>

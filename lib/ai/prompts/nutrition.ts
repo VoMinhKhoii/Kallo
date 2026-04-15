@@ -9,6 +9,7 @@ import type {
   UnmatchedIngredient,
   UserContext,
 } from '../types';
+import { buildPromptContextLine } from './sanitize';
 
 /**
  * Build the system prompt for LLM Call 2 (cooking-adjusted bounded nutrition).
@@ -34,6 +35,13 @@ export function buildNutritionPrompt(
   userContext: UserContext
 ): string {
   const { cookingHabits } = userContext;
+  const countryLines = [
+    buildPromptContextLine('country_of_origin', userContext.countryOfOrigin),
+    buildPromptContextLine(
+      'country_of_residence',
+      userContext.countryOfResidence
+    ),
+  ].filter((line): line is string => line !== null);
 
   const matchedLookup = new Map(matched.map((m) => [m.ingredientName, m]));
 
@@ -147,7 +155,7 @@ export function buildNutritionPrompt(
 </instructions>
 
 <user_context>
-${userContext.countryOfOrigin ? `  country_of_origin: ${userContext.countryOfOrigin}\n` : ''}${userContext.countryOfResidence ? `  country_of_residence: ${userContext.countryOfResidence}\n` : ''}  oil_usage: ${cookingHabits.oilUsage}
+${countryLines.length > 0 ? `${countryLines.join('\n')}\n` : ''}  oil_usage: ${cookingHabits.oilUsage}
   sugar_braised: ${cookingHabits.sugarBraised}
   default_rice_portion: ${RICE_PORTION_DESCRIPTION[cookingHabits.defaultRicePortion]}
   default_protein_portion: ${PROTEIN_PORTION_DESCRIPTION[cookingHabits.defaultProteinPortion]}

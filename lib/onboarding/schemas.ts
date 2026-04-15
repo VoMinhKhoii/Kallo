@@ -37,6 +37,13 @@ export const SUGAR_BRAISED_VALUES = sugarBraisedSchema.options;
 export const PROTEIN_PORTION_VALUES = proteinPortionSchema.options;
 export const BROTH_CONSUMPTION_VALUES = brothConsumptionSchema.options;
 
+const countryFieldSchema = z
+  .string()
+  .trim()
+  .max(100)
+  .regex(/^[^<>\r\n]*$/, 'Country contains invalid characters')
+  .nullable();
+
 // ---------------------------------------------------------------------------
 // Composite object schemas
 // ---------------------------------------------------------------------------
@@ -67,8 +74,8 @@ export const goalSchema = z
   });
 
 export const countrySchema = z.object({
-  countryOfOrigin: z.string().nullable(),
-  countryOfResidence: z.string().nullable(),
+  countryOfOrigin: countryFieldSchema,
+  countryOfResidence: countryFieldSchema,
 });
 
 export const cookingHabitsSchema = z.object({

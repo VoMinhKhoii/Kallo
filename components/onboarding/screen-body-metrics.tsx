@@ -115,7 +115,7 @@ function CustomSelect({
         {isOpen && (
           <>
             <div
-              className="fixed inset-0 z-110"
+              className="fixed inset-0 z-[110]"
               onClick={() => setIsOpen(false)}
             />
             <motion.div
@@ -123,7 +123,7 @@ function CustomSelect({
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -5, scale: 0.98 }}
               transition={{ duration: 0.15, ease: 'easeOut' }}
-              className="absolute top-full right-0 left-0 z-120 mt-1.5 overflow-hidden rounded-xl border border-[#EAE7E0] bg-white py-1.5 shadow-[0_8px_30px_rgb(0,0,0,0.08)]"
+              className="absolute top-full right-0 left-0 z-[120] mt-1.5 overflow-hidden rounded-xl border border-[#EAE7E0] bg-white py-1.5 shadow-[0_8px_30px_rgb(0,0,0,0.08)]"
             >
               {options.map((opt) => (
                 <button

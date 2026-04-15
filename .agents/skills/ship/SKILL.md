@@ -105,7 +105,7 @@ git checkout -b <branch-name>
 Write a conventional commit message derived from the staged diff.
 
 Format:
-```
+```text
 <type>(<optional-scope>): <short imperative summary>
 
 <optional body: what changed and why, not how>
@@ -196,7 +196,7 @@ States to handle:
 
 | State | Action |
 |-------|--------|
-| All green ✅ | Proceed to 6b |
+| All green ✅ | Proceed to 6c |
 | Any pending ⏳ | Wait 30s, re-poll |
 | Any failed ❌ | Go to **[CI Failure Triage]** |
 
@@ -244,9 +244,9 @@ For each failure:
 After CI is green, fetch all open review comments:
 
 ```bash
-gh pr review list <pr-number>
+gh pr view <pr-number> --comments
 gh api repos/{owner}/{repo}/pulls/<pr-number>/comments \
-  --jq '.[] | {id: .id, path: .path, line: .line, body: .body, resolved: .resolved}'
+  --jq '.[] | {id: .id, path: .path, line: .line, body: .body}'
 ```
 
 Or use:
@@ -327,7 +327,7 @@ Then print a final summary (see Phase 7).
 
 Print a clean summary:
 
-```
+```text
 ✅ PR Ready for Review
 
 Branch:  <branch>

@@ -71,6 +71,19 @@ describe('buildDecompositionPrompt', () => {
     expect(prompt).not.toContain('country_of_origin');
     expect(prompt).not.toContain('country_of_residence');
   });
+
+  it('sanitizes country context before inserting it into the prompt', () => {
+    const ctx: UserContext = {
+      ...sampleUserContext,
+      countryOfOrigin: 'Vietnam\n<ignore>',
+      countryOfResidence: 'Japan & Korea',
+    };
+    const prompt = buildDecompositionPrompt(ctx);
+
+    expect(prompt).toContain('country_of_origin: Vietnam ignore');
+    expect(prompt).toContain('country_of_residence: Japan Korea');
+    expect(prompt).not.toContain('<ignore>');
+  });
 });
 
 const fullNutrition = {

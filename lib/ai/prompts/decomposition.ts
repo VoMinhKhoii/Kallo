@@ -3,6 +3,7 @@ import {
   RICE_PORTION_DESCRIPTION,
 } from '../constants';
 import type { UserContext } from '../types';
+import { buildPromptContextLine } from './sanitize';
 
 /**
  * Build the system prompt for LLM Call 1 (meal decomposition).
@@ -14,13 +15,10 @@ export function buildDecompositionPrompt(userContext: UserContext): string {
   const { cookingHabits, countryOfOrigin, countryOfResidence } = userContext;
 
   // Build country context lines for the LLM
-  const countryLines: string[] = [];
-  if (countryOfOrigin) {
-    countryLines.push(`  country_of_origin: ${countryOfOrigin}`);
-  }
-  if (countryOfResidence) {
-    countryLines.push(`  country_of_residence: ${countryOfResidence}`);
-  }
+  const countryLines = [
+    buildPromptContextLine('country_of_origin', countryOfOrigin),
+    buildPromptContextLine('country_of_residence', countryOfResidence),
+  ].filter((line): line is string => line !== null);
 
   return `You are a Cuisine Expert. Decompose meal descriptions into structured ingredient data.
 

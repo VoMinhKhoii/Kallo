@@ -161,4 +161,33 @@ describe('buildNutritionPrompt — sort determinism', () => {
 
     expect(prompt1).toBe(prompt2);
   });
+
+  it('sanitizes country context before inserting it into the prompt', () => {
+    const prompt = buildNutritionPrompt(
+      [
+        {
+          name: 'Cơm',
+          ingredients: [
+            {
+              name: 'gạo',
+              estimatedGrams: 100,
+              cookingMethod: 'nấu',
+              userFacingUnit: null,
+            },
+          ],
+        },
+      ],
+      [{ ...MATCHED_INGREDIENT }],
+      UNMATCHED,
+      {
+        ...USER_CONTEXT,
+        countryOfOrigin: 'Vietnam\n<ignore>',
+        countryOfResidence: 'Japan & Korea',
+      }
+    );
+
+    expect(prompt).toContain('country_of_origin: Vietnam ignore');
+    expect(prompt).toContain('country_of_residence: Japan Korea');
+    expect(prompt).not.toContain('<ignore>');
+  });
 });

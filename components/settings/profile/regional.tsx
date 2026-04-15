@@ -30,7 +30,9 @@ function CountrySelect({
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className={`flex w-full items-center justify-between rounded-xl border px-4 py-2.5 text-left text-[14px] transition-colors ${
+        aria-haspopup="listbox"
+        aria-expanded={isOpen}
+        className={`flex w-full items-center justify-between rounded-xl border px-4 py-2.5 text-left text-[14px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C9A87C]/30 ${
           isOpen
             ? 'border-[#C9A87C] bg-white'
             : 'border-[#EAE7E0] bg-[#FDFCF8] hover:border-[#C9A87C]/50'
@@ -40,9 +42,9 @@ function CountrySelect({
           {value
             ? (() => {
                 const c = COUNTRIES.find((c) => c.value === value);
-                return `${c?.flag ?? ''} ${value}`;
+                return c ? `${value} (${c.vi})` : value;
               })()
-            : 'Select a country...'}
+            : 'Select a country…'}
         </span>
         {value && (
           <button
@@ -66,8 +68,9 @@ function CountrySelect({
               value={search}
               ref={(el) => el?.focus()}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search..."
-              className="w-full rounded-lg bg-[#F5F4F0] px-3 py-2 text-[13px] outline-none placeholder:text-[#8B8682]"
+              aria-label="Search country"
+              placeholder="Search country…"
+              className="w-full rounded-lg bg-[#F5F4F0] px-3 py-2 text-[13px] outline-none placeholder:text-[#8B8682] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C9A87C]/30"
             />
           </div>
           <div className="max-h-48 overflow-y-auto p-1">
@@ -91,10 +94,7 @@ function CountrySelect({
                       : 'text-[#2C2416] hover:bg-[#F5F4F0]'
                   }`}
                 >
-                  <span className="flex items-center gap-2">
-                    <span>{c.flag}</span>
-                    <span>{c.value}</span>
-                  </span>
+                  <span>{c.value}</span>
                   <span className="text-[#8B8682] text-[11px]">{c.vi}</span>
                 </button>
               ))
