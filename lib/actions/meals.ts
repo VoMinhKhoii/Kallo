@@ -375,7 +375,36 @@ export async function loadMealsByDate(input: {
 
 /** Extract flat NutritionValues from a DB row with numeric columns */
 function extractNutritionValues(row: Record<string, unknown>): NutritionValues {
-  const result = {} as Record<string, number | null>;
+  const result: NutritionValues = {
+    caloriesKcal: null,
+    proteinG: null,
+    carbohydrateG: null,
+    fatG: null,
+    fiberG: null,
+    sodiumMg: null,
+    calciumMg: null,
+    ironMg: null,
+    magnesiumMg: null,
+    phosphorusMg: null,
+    potassiumMg: null,
+    zincMg: null,
+    copperMcg: null,
+    manganeseMg: null,
+    betaCaroteneMcg: null,
+    vitaminAMcg: null,
+    vitaminDMcg: null,
+    vitaminEMg: null,
+    vitaminKMcg: null,
+    vitaminCMg: null,
+    vitaminB1Mg: null,
+    vitaminB2Mg: null,
+    vitaminPpMg: null,
+    vitaminB5Mg: null,
+    vitaminB6Mg: null,
+    vitaminB9Mcg: null,
+    vitaminB12Mcg: null,
+    vitaminHMcg: null,
+  };
   for (const key of NUTRITION_KEYS) {
     const val = row[key];
     if (typeof val === 'number') {
@@ -391,7 +420,7 @@ function extractNutritionValues(row: Record<string, unknown>): NutritionValues {
 
     result[key] = null;
   }
-  return result as NutritionValues;
+  return result;
 }
 
 // ---------------------------------------------------------------------------
