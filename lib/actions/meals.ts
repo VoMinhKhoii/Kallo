@@ -19,6 +19,7 @@ import {
   unmatchedIngredients,
 } from '@/lib/db/schema';
 import { Errors } from '@/lib/errors';
+import type { Goal } from '@/lib/onboarding/types';
 
 // ---------------------------------------------------------------------------
 // Zod schemas for input validation
@@ -154,11 +155,11 @@ export async function confirmAndSaveMealAction(input: {
 
     const now = pending.createdAt;
     const mealSlot = pipelineResult.mealSlot ?? inferMealSlot(now);
-    const goal =
+    const goal: Goal =
       profile.goal === 'maintaining'
         ? 'maintaining'
         : profile.goal && profile.aggression != null
-          ? profile.goal
+          ? (profile.goal as Goal)
           : 'maintaining';
     const aggression = goal === 'maintaining' ? 0 : Number(profile.aggression);
 
