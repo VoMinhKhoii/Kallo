@@ -40,7 +40,13 @@ const {
 });
 
 vi.mock('@/lib/auth', () => ({
-  requireAuthAndProfile: vi.fn().mockResolvedValue({ user: mockUser }),
+  requireAuthAndProfile: vi.fn().mockResolvedValue({
+    user: mockUser,
+    profile: {
+      goal: 'cutting',
+      aggression: '0.5',
+    },
+  }),
 }));
 
 vi.mock('@/lib/db', () => ({
@@ -216,7 +222,7 @@ describe('confirmAndSaveMealAction', () => {
     ).rejects.toThrow();
   });
 
-  it('should scale bounded nutrition when edits provided', async () => {
+  it('should persist goal-adjusted macros as single values', async () => {
     const capturedValues: unknown[] = [];
 
     mockTxDelete.mockReturnValue({
@@ -260,9 +266,69 @@ describe('confirmAndSaveMealAction', () => {
       mid: number;
       high: number;
     };
-    expect(cal.mid).toBe(600); // 300 * 2
-    expect(cal.low).toBe(560); // 280 * 2
-    expect(cal.high).toBe(640); // 320 * 2
+    expect(cal.mid).toBe(620); // cutting @ 0.5 => 600 + 0.5 * (640 - 600)
+    expect(cal.low).toBe(620);
+    expect(cal.high).toBe(620);
+
+    const protein = firstItem.proteinG as {
+      low: number;
+      mid: number;
+      high: number;
+    };
+    expect(protein.mid).toBe(9); // cutting @ 0.5 => 10 + 0.5 * (8 - 10)
+    expect(protein.low).toBe(9);
+    expect(protein.high).toBe(9);
+  });
+
+  it('should persist gram-scaled micros as single values', async () => {
+    const capturedValues: unknown[] = [];
+    const pipelineResult = JSON.parse(
+      JSON.stringify(samplePipelineResult)
+    ) as PipelineResult;
+    pipelineResult.mealItems[0].ingredients[0].boundedNutrition.sodiumMg = {
+      low: 120,
+      mid: 120,
+      high: 120,
+    };
+
+    mockTxDelete.mockReturnValue({
+      where: vi.fn().mockReturnValue({
+        returning: vi.fn().mockResolvedValue([
+          {
+            id: UUID_2,
+            userId: mockUser.id,
+            rawInput: 'Phở bò',
+            pipelineResult,
+          },
+        ]),
+      }),
+    });
+
+    mockTxInsert.mockImplementation(() => ({
+      values: vi.fn().mockImplementation((vals: unknown) => {
+        capturedValues.push(vals);
+        return {
+          returning: vi.fn().mockResolvedValue([{ id: UUID_MEAL }]),
+        };
+      }),
+    }));
+
+    await confirmAndSaveMealAction({
+      analysisId: UUID_2,
+      edits: [{ mealItemOrder: 0, ingredientIndex: 0, newGrams: 400 }],
+    });
+
+    const mealItemRows = capturedValues[1] as Record<string, unknown>[];
+    const firstItem = mealItemRows[0] as Record<string, unknown>;
+    const sodium = firstItem.sodiumMg as {
+      low: number;
+      mid: number;
+      high: number;
+    };
+
+    expect(sodium.mid).toBe(240);
+    expect(sodium.low).toBe(240);
+    expect(sodium.high).toBe(240);
   });
 });
 

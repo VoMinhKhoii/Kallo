@@ -3,9 +3,11 @@
 import { and, desc, eq, gt, gte, inArray, isNull, lt, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import { NUTRITION_KEYS } from '@/lib/ai/constants';
+import { goalAdjustNutrition } from '@/lib/ai/pipeline/goal-adjustment';
 import type {
   BoundedEstimate,
   BoundedNutrition,
+  NutritionValues,
   PipelineResult,
 } from '@/lib/ai/types';
 import { requireAuthAndProfile } from '@/lib/auth';
@@ -54,13 +56,25 @@ const loadMealDatesSchema = z.object({
 // Helpers
 // ---------------------------------------------------------------------------
 
-/** Extract bounded nutrition JSONB values for DB insertion */
-function boundedNutritionToRow(
-  bounded: BoundedNutrition
+/**
+ * Persist a single effective value in the JSONB columns by mirroring it across
+ * low/mid/high. This preserves the existing column shape while making
+ * persisted data reflect the already-resolved nutrition value.
+ */
+function nutritionValuesToRow(
+  nutrition: NutritionValues
 ): Record<string, unknown> {
   const row: Record<string, unknown> = {};
   for (const key of NUTRITION_KEYS) {
-    row[key] = bounded[key];
+    const value = nutrition[key];
+    row[key] =
+      value == null
+        ? null
+        : {
+            low: value,
+            mid: value,
+            high: value,
+          };
   }
   return row;
 }
@@ -87,7 +101,7 @@ export async function confirmAndSaveMealAction(input: {
   }[];
 }) {
   const parsed = confirmAndSaveSchema.parse(input);
-  const { user } = await requireAuthAndProfile();
+  const { user, profile } = await requireAuthAndProfile();
 
   return await db.transaction(async (tx) => {
     // Atomically consume the pending analysis (prevents duplicate confirms)
@@ -140,14 +154,50 @@ export async function confirmAndSaveMealAction(input: {
 
     const now = pending.createdAt;
     const mealSlot = pipelineResult.mealSlot ?? inferMealSlot(now);
+    const goal =
+      profile.goal === 'maintaining'
+        ? 'maintaining'
+        : profile.goal && profile.aggression != null
+          ? profile.goal
+          : 'maintaining';
+    const aggression = goal === 'maintaining' ? 0 : Number(profile.aggression);
 
-    // Recompute meal-level bounded nutrition from (possibly edited) ingredients
-    const allIngredients = pipelineResult.mealItems.flatMap(
-      (mi) => mi.ingredients
-    );
+    const persistedMealItems = pipelineResult.mealItems.map((mealItem) => {
+      const ingredients = mealItem.ingredients.map((ingredient) => {
+        const displayedNutrition = goalAdjustNutrition(
+          ingredient.boundedNutrition,
+          goal,
+          aggression
+        );
+
+        return {
+          ...ingredient,
+          displayedNutrition,
+        };
+      });
+
+      const boundedNutrition = sumBounded(
+        ingredients.map((ingredient) => ingredient.boundedNutrition)
+      );
+      const displayedNutrition = goalAdjustNutrition(
+        boundedNutrition,
+        goal,
+        aggression
+      );
+
+      return {
+        ...mealItem,
+        ingredients,
+        boundedNutrition,
+        displayedNutrition,
+      };
+    });
+
+    const allIngredients = persistedMealItems.flatMap((mi) => mi.ingredients);
     const mealBounded = sumBounded(
-      allIngredients.map((i) => i.boundedNutrition)
+      allIngredients.map((ingredient) => ingredient.boundedNutrition)
     );
+    const mealDisplayed = goalAdjustNutrition(mealBounded, goal, aggression);
 
     // Insert meal
     const [meal] = await tx
@@ -158,12 +208,12 @@ export async function confirmAndSaveMealAction(input: {
         mealSlot,
         confidenceOverall: pipelineResult.confidenceOverall,
         loggedAt: now,
-        ...boundedNutritionToRow(mealBounded),
+        ...nutritionValuesToRow(mealDisplayed),
       })
       .returning({ id: meals.id });
 
     // Insert meal items (ingredients grouped by parent dish)
-    const itemRows = pipelineResult.mealItems.flatMap((mealItem, order) =>
+    const itemRows = persistedMealItems.flatMap((mealItem, order) =>
       mealItem.ingredients.map((ing) => ({
         mealId: meal.id,
         ingredientName: ing.ingredientName,
@@ -174,7 +224,7 @@ export async function confirmAndSaveMealAction(input: {
         userFacingUnit: ing.userFacingUnit,
         cookingMethod: ing.cookingMethod,
         matchConfidence: ing.matchConfidence,
-        ...boundedNutritionToRow(ing.boundedNutrition),
+        ...nutritionValuesToRow(ing.displayedNutrition),
       }))
     );
 
