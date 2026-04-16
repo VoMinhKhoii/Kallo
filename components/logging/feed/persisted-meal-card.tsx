@@ -2,38 +2,33 @@
 
 import { ChevronDown } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
-import { useMemo, useState } from 'react';
-import type { LoggingProfile } from '@/components/logging/logging-shell';
+import { useState } from 'react';
 import type { PersistedMeal } from '@/lib/actions/meals';
-import { goalAdjustNutrition } from '@/lib/ai/pipeline/goal-adjustment';
 
 interface PersistedMealCardProps {
   meal: PersistedMeal;
-  profile: LoggingProfile;
 }
 
-export function PersistedMealCard({ meal, profile }: PersistedMealCardProps) {
-  const [isCollapsed, setIsCollapsed] = useState(true);
+function formatMacro(value: number | null): string {
+  return value == null ? 'N/A' : `${Math.round(value)}g`;
+}
 
-  const displayed = useMemo(
-    () =>
-      goalAdjustNutrition(
-        meal.boundedNutrition,
-        profile.goal,
-        profile.aggression
-      ),
-    [meal.boundedNutrition, profile.goal, profile.aggression]
-  );
+function formatCalories(value: number | null): string {
+  return value == null ? 'N/A' : `${Math.round(value)} kcal`;
+}
+
+export function PersistedMealCard({ meal }: PersistedMealCardProps) {
+  const [isCollapsed, setIsCollapsed] = useState(true);
 
   const timeLabel = new Date(meal.loggedAt).toLocaleTimeString([], {
     hour: '2-digit',
     minute: '2-digit',
   });
 
-  const calories = Math.round(displayed.caloriesKcal ?? 0);
-  const protein = Math.round(displayed.proteinG ?? 0);
-  const carbs = Math.round(displayed.carbohydrateG ?? 0);
-  const fat = Math.round(displayed.fatG ?? 0);
+  const calories = formatCalories(meal.nutrition.caloriesKcal);
+  const protein = formatMacro(meal.nutrition.proteinG);
+  const carbs = formatMacro(meal.nutrition.carbohydrateG);
+  const fat = formatMacro(meal.nutrition.fatG);
 
   return (
     <motion.article
@@ -92,10 +87,12 @@ export function PersistedMealCard({ meal, profile }: PersistedMealCardProps) {
               style={{ fontFamily: 'DM Sans, sans-serif' }}
             >
               <span className="text-[11px] text-nham-text-muted tabular-nums">
-                P: {protein}g{'  '}C: {carbs}g{'  '}F: {fat}g
+                P: {protein}
+                {'  '}C: {carbs}
+                {'  '}F: {fat}
               </span>
               <span className="font-bold text-nham-text text-sm tabular-nums">
-                {calories} kcal
+                {calories}
               </span>
             </motion.div>
           )}
@@ -115,17 +112,10 @@ export function PersistedMealCard({ meal, profile }: PersistedMealCardProps) {
               <div className="mt-5 border-nham-border border-t border-dashed pt-4">
                 <div className="mb-4 space-y-1">
                   {meal.mealItemGroups.map((group) => {
-                    const groupDisplayed = goalAdjustNutrition(
-                      group.boundedNutrition,
-                      profile.goal,
-                      profile.aggression
-                    );
-                    const gProtein = Math.round(groupDisplayed.proteinG ?? 0);
-                    const gCarbs = Math.round(
-                      groupDisplayed.carbohydrateG ?? 0
-                    );
-                    const gFat = Math.round(groupDisplayed.fatG ?? 0);
-                    const gCal = Math.round(groupDisplayed.caloriesKcal ?? 0);
+                    const gProtein = formatMacro(group.nutrition.proteinG);
+                    const gCarbs = formatMacro(group.nutrition.carbohydrateG);
+                    const gFat = formatMacro(group.nutrition.fatG);
+                    const gCal = formatCalories(group.nutrition.caloriesKcal);
                     return (
                       <div
                         key={`${group.order}-${group.name}`}
@@ -137,11 +127,11 @@ export function PersistedMealCard({ meal, profile }: PersistedMealCardProps) {
                         </span>
                         <div className="flex shrink-0 items-center gap-3">
                           <div className="flex gap-2 text-[10px] text-nham-text-muted tabular-nums">
-                            <span className="w-6 text-right">P:{gProtein}</span>
-                            <span className="w-6 text-right">C:{gCarbs}</span>
-                            <span className="w-6 text-right">F:{gFat}</span>
+                            <span className="text-right">P:{gProtein}</span>
+                            <span className="text-right">C:{gCarbs}</span>
+                            <span className="text-right">F:{gFat}</span>
                           </div>
-                          <span className="w-12 text-right font-bold text-nham-text tabular-nums">
+                          <span className="text-right font-bold text-nham-text tabular-nums">
                             {gCal}
                           </span>
                         </div>
@@ -164,13 +154,15 @@ export function PersistedMealCard({ meal, profile }: PersistedMealCardProps) {
                         className="text-[11px] text-nham-text-muted tabular-nums"
                         style={{ fontFamily: 'DM Sans, sans-serif' }}
                       >
-                        P: {protein}g{'  '}C: {carbs}g{'  '}F: {fat}g
+                        P: {protein}
+                        {'  '}C: {carbs}
+                        {'  '}F: {fat}
                       </span>
                       <span
                         className="font-bold text-nham-text tabular-nums"
                         style={{ fontFamily: 'DM Sans, sans-serif' }}
                       >
-                        {calories} kcal
+                        {calories}
                       </span>
                     </div>
                   </div>
