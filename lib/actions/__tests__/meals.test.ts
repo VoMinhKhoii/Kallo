@@ -84,6 +84,7 @@ import {
   loadMealDates,
   loadMealsByDate,
 } from '@/lib/actions/meals';
+import { requireAuthAndProfile } from '@/lib/auth';
 
 // Valid v4 UUIDs (Zod v4 validates version+variant bits)
 const UUID_1 = 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11';
@@ -221,6 +222,34 @@ describe('confirmAndSaveMealAction', () => {
     await expect(
       confirmAndSaveMealAction({ analysisId: 'not-a-uuid' })
     ).rejects.toThrow();
+  });
+
+  it('should reject invalid persisted profile nutrition settings', async () => {
+    vi.mocked(requireAuthAndProfile).mockResolvedValueOnce({
+      user: mockUser,
+      profile: {
+        goal: 'recomp',
+        aggression: '0.5',
+      } as never,
+    } as never);
+
+    mockTxDelete.mockReturnValue({
+      where: vi.fn().mockReturnValue({
+        returning: vi.fn().mockResolvedValue([
+          {
+            id: UUID_1,
+            userId: mockUser.id,
+            rawInput: 'Phở bò',
+            pipelineResult: samplePipelineResult,
+          },
+        ]),
+      }),
+    });
+
+    await expect(
+      confirmAndSaveMealAction({ analysisId: UUID_1 })
+    ).rejects.toThrow();
+    expect(mockTxInsert).not.toHaveBeenCalled();
   });
 
   it('should persist goal-adjusted macros as single values', async () => {
