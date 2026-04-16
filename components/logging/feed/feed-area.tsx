@@ -19,10 +19,7 @@ import { useConfirmMeal } from '@/hooks/use-meal-mutations';
 import { useStreamAnalysis } from '@/hooks/use-stream-analysis';
 import { useStreamingTerminalEffects } from '@/hooks/use-streaming-terminal-effects';
 import { useSubmitGuard } from '@/hooks/use-submit-guard';
-import {
-  goalAdjustNutrition,
-  sumDisplayedNutrition,
-} from '@/lib/ai/pipeline/goal-adjustment';
+import { sumDisplayedNutrition } from '@/lib/ai/pipeline/goal-adjustment';
 import type { ChatMessage, StreamingPhase } from '@/lib/types/meal';
 
 function toStreamingPhase(status: string): StreamingPhase {
@@ -89,7 +86,7 @@ export function FeedArea({
     });
   }, []);
 
-  // Compute daily totals from persisted meals using goal adjustment
+  // Compute daily totals from persisted meals
   const targets = useMemo(
     () => ({
       calories: profile.calorieTarget,
@@ -110,14 +107,9 @@ export function FeedArea({
       return { calories: 0, protein: 0, carbs: 0, fat: 0 };
     }
 
-    const displayed = persistedMeals.map((meal) =>
-      goalAdjustNutrition(
-        meal.boundedNutrition,
-        profile.goal,
-        profile.aggression
-      )
+    const total = sumDisplayedNutrition(
+      persistedMeals.map((meal) => meal.nutrition)
     );
-    const total = sumDisplayedNutrition(displayed);
 
     return {
       calories: Math.round(total.caloriesKcal ?? 0),
@@ -125,7 +117,19 @@ export function FeedArea({
       carbs: Math.round(total.carbohydrateG ?? 0),
       fat: Math.round(total.fatG ?? 0),
     };
-  }, [persistedMeals, profile.goal, profile.aggression]);
+  }, [persistedMeals]);
+
+  const hasUnknownDailyMacros = useMemo(
+    () =>
+      persistedMeals.some(
+        (meal) =>
+          meal.nutrition.caloriesKcal == null ||
+          meal.nutrition.proteinG == null ||
+          meal.nutrition.carbohydrateG == null ||
+          meal.nutrition.fatG == null
+      ),
+    [persistedMeals]
+  );
 
   const lastAnalysisIdRef = useRef<string | null>(null);
   const lastErrorRef = useRef<string | null>(null);
@@ -232,7 +236,17 @@ export function FeedArea({
             {/* Sticky macro summary */}
             <div className="sticky top-0 z-10 bg-nham-surface px-4 pt-4 pb-3 sm:px-6">
               <div className="mx-auto max-w-4xl">
-                <MacroSummary totals={dailyTotals} targets={targets} />
+                {hasUnknownDailyMacros ? (
+                  <div
+                    className="font-medium text-[11px] text-nham-text-muted/80"
+                    style={{ fontFamily: 'DM Sans, sans-serif' }}
+                  >
+                    Daily macro summary unavailable because some legacy meals
+                    have unknown macros.
+                  </div>
+                ) : (
+                  <MacroSummary totals={dailyTotals} targets={targets} />
+                )}
               </div>
             </div>
 
@@ -243,11 +257,7 @@ export function FeedArea({
                   {/* Persisted meals from DB */}
                   <AnimatePresence initial={false}>
                     {persistedMeals.map((meal) => (
-                      <PersistedMealCard
-                        key={meal.id}
-                        meal={meal}
-                        profile={profile}
-                      />
+                      <PersistedMealCard key={meal.id} meal={meal} />
                     ))}
                   </AnimatePresence>
 

@@ -82,6 +82,7 @@ import {
   confirmAndSaveMealAction,
   deleteMealAction,
   loadMealDates,
+  loadMealsByDate,
 } from '@/lib/actions/meals';
 
 // Valid v4 UUIDs (Zod v4 validates version+variant bits)
@@ -261,23 +262,12 @@ describe('confirmAndSaveMealAction', () => {
     expect(Array.isArray(mealItemRows)).toBe(true);
 
     const firstItem = mealItemRows[0] as Record<string, unknown>;
-    const cal = firstItem.caloriesKcal as {
-      low: number;
-      mid: number;
-      high: number;
-    };
-    expect(cal.mid).toBe(620); // cutting @ 0.5 => 600 + 0.5 * (640 - 600)
-    expect(cal.low).toBe(620);
-    expect(cal.high).toBe(620);
+    expect(firstItem.caloriesKcal).toBe(620); // cutting @ 0.5 => 600 + 0.5 * (640 - 600)
+    expect(firstItem.proteinG).toBe(9); // cutting @ 0.5 => 10 + 0.5 * (8 - 10)
 
-    const protein = firstItem.proteinG as {
-      low: number;
-      mid: number;
-      high: number;
-    };
-    expect(protein.mid).toBe(9); // cutting @ 0.5 => 10 + 0.5 * (8 - 10)
-    expect(protein.low).toBe(9);
-    expect(protein.high).toBe(9);
+    const mealRow = capturedValues[0] as Record<string, unknown>;
+    expect(mealRow.caloriesKcal).toBe(830);
+    expect(mealRow.proteinG).toBe(34);
   });
 
   it('should persist gram-scaled micros as single values', async () => {
@@ -320,15 +310,94 @@ describe('confirmAndSaveMealAction', () => {
 
     const mealItemRows = capturedValues[1] as Record<string, unknown>[];
     const firstItem = mealItemRows[0] as Record<string, unknown>;
-    const sodium = firstItem.sodiumMg as {
-      low: number;
-      mid: number;
-      high: number;
-    };
+    expect(firstItem.sodiumMg).toBe(240);
 
-    expect(sodium.mid).toBe(240);
-    expect(sodium.low).toBe(240);
-    expect(sodium.high).toBe(240);
+    const mealRow = capturedValues[0] as Record<string, unknown>;
+    expect(mealRow.sodiumMg).toBe(240);
+  });
+});
+
+describe('loadMealsByDate', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('returns flat persisted nutrition for meals, groups, and ingredients', async () => {
+    mockDbSelect
+      .mockReturnValueOnce({
+        from: vi.fn().mockReturnValue({
+          where: vi.fn().mockReturnValue({
+            orderBy: vi.fn().mockResolvedValue([
+              {
+                id: UUID_MEAL,
+                rawInput: 'Phở bò',
+                mealSlot: 'lunch',
+                confidenceOverall: 'high',
+                loggedAt: new Date('2026-04-06T12:00:00.000Z'),
+                caloriesKcal: 830,
+                proteinG: 34,
+                carbohydrateG: 125,
+                fatG: 18,
+                sodiumMg: 240,
+              },
+            ]),
+          }),
+        }),
+      })
+      .mockReturnValueOnce({
+        from: vi.fn().mockReturnValue({
+          where: vi.fn().mockResolvedValue([
+            {
+              id: UUID_1,
+              mealId: UUID_MEAL,
+              ingredientName: 'Bánh phở',
+              mealItemName: 'Phở bò',
+              mealItemOrder: 0,
+              foodCompositionId: 'fc-1',
+              estimatedGrams: 400,
+              userFacingUnit: '1 tô',
+              cookingMethod: 'luộc',
+              matchConfidence: 0.9,
+              caloriesKcal: 620,
+              proteinG: 9,
+              carbohydrateG: 125,
+              fatG: 5,
+              sodiumMg: 240,
+            },
+            {
+              id: UUID_2,
+              mealId: UUID_MEAL,
+              ingredientName: 'Thịt bò',
+              mealItemName: 'Phở bò',
+              mealItemOrder: 0,
+              foodCompositionId: 'fc-2',
+              estimatedGrams: 100,
+              userFacingUnit: null,
+              cookingMethod: 'luộc',
+              matchConfidence: 0.85,
+              caloriesKcal: 210,
+              proteinG: 25,
+              carbohydrateG: null,
+              fatG: 13,
+              sodiumMg: null,
+            },
+          ]),
+        }),
+      });
+
+    const meals = await loadMealsByDate({
+      date: '2026-04-06',
+      timezoneOffset: 0,
+    });
+
+    expect(meals).toHaveLength(1);
+    expect(meals[0]?.nutrition.caloriesKcal).toBe(830);
+    expect(meals[0]?.nutrition.proteinG).toBe(34);
+    expect(meals[0]?.mealItemGroups[0]?.nutrition.caloriesKcal).toBe(830);
+    expect(meals[0]?.mealItemGroups[0]?.nutrition.sodiumMg).toBe(240);
+    expect(
+      meals[0]?.mealItemGroups[0]?.ingredients[0]?.nutrition.proteinG
+    ).toBe(9);
   });
 });
 

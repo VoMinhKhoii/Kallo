@@ -148,6 +148,13 @@
       "when": 1776184591398,
       "tag": "20260414163631_optional_onboarding_country_fields",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1776356325702,
+      "tag": "20260416161845_flatten_meal_nutrition_values",
+      "breakpoints": true
     }
   ]
 }

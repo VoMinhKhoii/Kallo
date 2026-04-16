@@ -70,8 +70,27 @@ Supabase uses timestamp-based filenames: `YYYYMMDDHHMMSS_description.sql`
 | `20260319083757_add_synonym_candidates.sql` | A (Drizzle) | `synonym_candidates` table for cross-language match logging |
 | `20260319083800_rls_synonym_candidates.sql` | B (Manual) | RLS policies for synonym_candidates (read/write/update for authenticated) |
 | `20260319083900_normalize_query_embeddings_keys.sql` | B (Manual) | Normalize existing `name_vi` PKs to lowercase + NFC (with collision resolution) |
+| `20260416161845_flatten_meal_nutrition_values.sql` | A (Drizzle) | Flatten persisted `meals` and `meal_items` nutrient columns from JSONB bounds to single numeric values |
 
 **Migration ordering matters**: Drizzle migrations that add columns must be timestamped BEFORE manual migrations that reference those columns (e.g., `search_text` column must exist before the trgm migration creates a GIN index on it).
+
+## Meal Persistence Contract
+
+- The analysis pipeline keeps bounded nutrition in memory as
+  `{ low, mid, high }` while LLM adjustment is still in play.
+- Persisted `meals` and `meal_items` rows store **flat numeric nutrient values**.
+- For persisted meal history:
+  - `calories_kcal`, `protein_g`, `carbohydrate_g`, and `fat_g` store the
+    goal-adjusted values shown to the user.
+  - All other nutrient columns store the gram-scaled nutrient totals directly.
+- Legacy rows that still contain true bounded macro objects cannot be
+  reconstructed exactly because meals do not store historical goal/aggression
+  snapshots. The flattening migration only preserves macro rows that were
+  already effectively flat (`low = mid = high`) and leaves ambiguous legacy
+  macro values null instead of inventing new ones from the current profile.
+- The same legacy-nulling rule is applied to child `meal_items` macro columns
+  whenever the parent meal-level macro is ambiguous, so old persisted cards do
+  not show contradictory totals vs item/group subtotals.
 
 ## Ingredient Search Architecture
 
