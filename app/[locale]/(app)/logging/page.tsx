@@ -3,7 +3,7 @@ import {
   type LoggingProfile,
   LoggingShell,
 } from '@/components/logging/logging-shell';
-import { redirect } from '@/i18n/navigation';
+import { redirect } from 'next/navigation';
 import { requireAuthAndProfile } from '@/lib/auth';
 
 const DEFAULT_PROFILE: LoggingProfile = {

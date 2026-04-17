@@ -26,6 +26,9 @@ interface CountryPickerProps {
   icon: React.ReactNode;
   value: string | null;
   onChange: (value: string | null) => void;
+  placeholder: string;
+  searchPlaceholder: string;
+  noResults: string;
 }
 
 interface MenuPosition {
@@ -33,9 +36,6 @@ interface MenuPosition {
   maxHeight: number;
   top: number;
   width: number;
-  placeholder: string;
-  searchPlaceholder: string;
-  noResults: string;
 }
 
 function CountryPicker({
