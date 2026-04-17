@@ -33,7 +33,7 @@ export const userProfiles = pgTable(
       .primaryKey()
       .references(() => authUsers.id, { onDelete: 'cascade' }),
 
-    // Screen 1: Body Metrics
+    // Screen 2: Body Metrics
     weightKg: decimal('weight_kg', { precision: 5, scale: 2 }),
     heightCm: smallint('height_cm'),
     age: smallint('age'),
@@ -50,9 +50,10 @@ export const userProfiles = pgTable(
     fatTargetG: smallint('fat_target_g'),
     carbSplit: text('carb_split'),
 
-    // Screen 2: Country of Origin / Residence
+    // Screen 1: Origin & Language
     countryOfOrigin: text('country_of_origin'),
     countryOfResidence: text('country_of_residence'),
+    preferredLocale: text('preferred_locale').default('en'),
 
     // Screen 3: Cooking Habits
     oilUsage: text('oil_usage'),
@@ -119,6 +120,10 @@ export const userProfiles = pgTable(
     check(
       'user_profiles_broth_consumption_check',
       sql`${table.brothConsumption} IN ('leave_it', 'some', 'finish_it')`
+    ),
+    check(
+      'user_profiles_preferred_locale_check',
+      sql`${table.preferredLocale} IN ('en', 'vi')`
     ),
   ]
 );

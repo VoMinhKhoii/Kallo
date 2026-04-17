@@ -148,6 +148,13 @@
       "when": 1776184591398,
       "tag": "20260414163631_optional_onboarding_country_fields",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1776402838042,
+      "tag": "20260417051358_add_preferred_locale",
+      "breakpoints": true
     }
   ]
 }
