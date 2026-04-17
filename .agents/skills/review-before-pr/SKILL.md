@@ -46,6 +46,18 @@ Use these repo-owned custom agents from `.github/agents/`:
 - `review-maintainability-simplification`
 - `review-ux-quality`
 
+## Preflight Checks
+
+Before orchestration starts:
+
+1. Verify every referenced reviewer file exists under `.github/agents/`.
+2. Verify `bunx` is available on `PATH`.
+3. Verify the Biome CLI is invocable via `bunx @biomejs/biome --version`.
+
+If any reviewer file is missing, or `bunx` / Biome cannot be invoked, stop
+immediately and report a clear error listing the missing files or the missing
+CLI dependency instead of continuing into the review flow.
+
 ## Mode Semantics
 
 ## Flag Precedence
@@ -185,8 +197,15 @@ Always pass the same scope to every reviewer in a single run.
    - When multiple reviewers flag the same issue, keep the finding under the
      reviewer that owns the root cause and suppress duplicates elsewhere.
 
-5. **Apply safe fixes sequentially**
-   - Only after the detect phase is merged should you apply safe fixes.
+5. **Run the pre-edit rule gate before any mutation**
+   - Before any apply-phase edit, invoke the relevant Vercel React skill(s) and
+     review matching repo rules for the files being changed.
+   - If no relevant skill/rule can be identified, or the rule review blocks the
+     proposed edit, escalate with `AskUserQuestion` instead of mutating files.
+
+6. **Apply safe fixes sequentially**
+   - Only after the detect phase is merged and the pre-edit rule gate passes
+     should you apply safe fixes.
    - Apply edits one reviewer at a time, grouped by file, to avoid edit races.
    - For reviewers that are allowed to edit, pass a second canonical payload:
 
@@ -195,22 +214,23 @@ Always pass the same scope to every reviewer in a single run.
       approved_auto_fixes: [...]
       changed_files: [...]
       diff_scope: [...]
+      pre_edit_rule_gate: "Before editing, invoke the relevant Vercel React skill(s), review matching repo rules, and block the apply phase if that review fails or cannot be completed."
       edit_policy: "Apply only the approved low-risk fixes within your boundary. Group report items by file."
       evidence_policy: "Keep citing concrete repo evidence for each applied fix. If a fix depends on current vendor behavior, verify against official docs before editing."
       output_contract: "Return exactly these sections: Reviewer Summary, Auto-Applied Fixes, Escalations, Important Findings, Reminder Notes. Keep Important Findings and Reminder Notes brief in apply phase."
       ```
 
-6. **Handle escalations**
+7. **Handle escalations**
    - If no reviewer escalates, present the merged report directly.
    - If any reviewer escalates, summarize the risky changes first, then use
-     `AskUserQuestion` to get approval or direction before attempting those
-     changes.
+      `AskUserQuestion` to get approval or direction before attempting those
+      changes.
    - Group escalations by reviewer and file so the decision burden stays clear.
 
-7. **Run post-edit validation**
+8. **Run post-edit validation**
    - If any files were edited, run `bunx @biomejs/biome check .`.
    - Run relevant tests when the edits touch executable app behavior and there is
-     a clear existing test target.
+      a clear existing test target.
    - If validation is blocked by a pre-existing repo issue, report that plainly
      instead of pretending validation passed.
 
