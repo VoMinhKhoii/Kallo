@@ -1,9 +1,9 @@
 'use client';
 
 import { User } from 'lucide-react';
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { memo } from 'react';
+import { Link, usePathname } from '@/i18n/navigation';
 import { cn } from '@/lib/utils';
 
 interface NavItem {
@@ -13,17 +13,18 @@ interface NavItem {
   icon: React.ReactNode;
 }
 
-const NAV_ITEMS: NavItem[] = [
-  {
-    id: 'profile',
-    label: 'Profile',
-    href: '/settings/profile',
-    icon: <User className="h-4 w-4 shrink-0" />,
-  },
-];
-
 function SidebarInner() {
   const pathname = usePathname();
+  const t = useTranslations('settings');
+
+  const NAV_ITEMS: NavItem[] = [
+    {
+      id: 'profile',
+      label: t('profile'),
+      href: '/settings/profile',
+      icon: <User className="h-4 w-4 shrink-0" />,
+    },
+  ];
 
   return (
     <aside
@@ -35,7 +36,7 @@ function SidebarInner() {
         className="px-3 font-medium text-[#2C2416] text-lg tracking-tight"
         style={{ fontFamily: 'Lora, serif' }}
       >
-        Settings
+        {t('title')}
       </h2>
 
       <nav>

@@ -3,6 +3,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Check, ChevronDown } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
+import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import type { z } from 'zod';
@@ -34,50 +35,39 @@ interface ScreenBodyMetricsProps {
   onChange: (data: ScreenOneData) => void;
 }
 
-const ACTIVITY_OPTIONS: {
-  value: ActivityLevel;
-  label: string;
-}[] = [
-  {
-    value: 'sedentary',
-    label: 'Sedentary (Office job, little to no exercise)',
-  },
-  {
-    value: 'light',
-    label: 'Lightly active (Light exercise 1-3 days/week)',
-  },
-  {
-    value: 'moderate',
-    label: 'Moderately active (Moderate exercise 3-5 days/week)',
-  },
-  {
-    value: 'very_active',
-    label: 'Very active (Heavy exercise 6-7 days/week)',
-  },
+const ACTIVITY_LEVELS: ActivityLevel[] = [
+  'sedentary',
+  'light',
+  'moderate',
+  'very_active',
 ];
+
+const ACTIVITY_LEVEL_KEYS: Record<ActivityLevel, string> = {
+  sedentary: 'bodyMetrics.sedentary',
+  light: 'bodyMetrics.light',
+  moderate: 'bodyMetrics.moderate',
+  very_active: 'bodyMetrics.veryActive',
+};
 
 const GOALS: Goal[] = ['cutting', 'maintaining', 'bulking'];
 const CARB_SPLITS: CarbSplit[] = ['moderate_carb', 'lower_carb', 'higher_carb'];
 
-const CARB_SPLIT_INFO: Record<CarbSplit, { label: string; desc: string }> = {
-  moderate_carb: {
-    label: 'Moderate Carb',
-    desc: 'Balanced (30/35/35)',
-  },
-  lower_carb: {
-    label: 'Lower Carb',
-    desc: 'High Protein (40/40/20)',
-  },
-  higher_carb: {
-    label: 'Higher Carb',
-    desc: 'Active (30/20/50)',
-  },
+const CARB_SPLIT_KEYS: Record<CarbSplit, string> = {
+  moderate_carb: 'bodyMetrics.moderateCarb',
+  lower_carb: 'bodyMetrics.lowerCarb',
+  higher_carb: 'bodyMetrics.higherCarb',
 };
 
-const GOAL_LABELS: Record<Goal, string> = {
-  maintaining: 'Maintenance',
-  cutting: 'Cutting',
-  bulking: 'Bulking',
+const CARB_SPLIT_DESCS: Record<CarbSplit, string> = {
+  moderate_carb: 'Balanced (30/35/35)',
+  lower_carb: 'High Protein (40/40/20)',
+  higher_carb: 'Active (30/20/50)',
+};
+
+const GOAL_KEYS: Record<Goal, string> = {
+  maintaining: 'bodyMetrics.maintaining',
+  cutting: 'bodyMetrics.cutting',
+  bulking: 'bodyMetrics.bulking',
 };
 
 // Custom dropdown matching the Apple Notes aesthetic
@@ -155,6 +145,7 @@ export function ScreenBodyMetrics({
   defaultValues,
   onChange,
 }: ScreenBodyMetricsProps) {
+  const t = useTranslations('onboarding');
   const onChangeRef = useRef(onChange);
   onChangeRef.current = onChange;
 
@@ -239,15 +230,14 @@ export function ScreenBodyMetrics({
     () =>
       CARB_SPLITS.map((cs) => {
         const macros = calcMacroGrams(targetCalories, cs);
-        const info = CARB_SPLIT_INFO[cs];
         return {
           id: cs,
-          label: info.label,
-          desc: info.desc,
+          label: t(CARB_SPLIT_KEYS[cs]),
+          desc: CARB_SPLIT_DESCS[cs],
           macros,
         };
       }),
-    [targetCalories]
+    [targetCalories, t]
   );
 
   // Report data upstream on discrete changes
@@ -279,11 +269,10 @@ export function ScreenBodyMetrics({
       <form className="space-y-5 lg:space-y-6">
         <div className="max-w-xl">
           <h2 className="mb-1.5 font-medium font-serif text-2xl text-[#2C2416] tracking-tight">
-            Body Metrics &amp; Targets
+            {t('bodyMetrics.title')}
           </h2>
           <p className="text-[#8B8682] text-[14px] leading-relaxed">
-            Fill the basics first. Once they&apos;re complete, your calorie
-            target and macro split unlock beside them on larger screens.
+            {t('bodyMetrics.subtitle')}
           </p>
         </div>
 
@@ -315,7 +304,7 @@ export function ScreenBodyMetrics({
                   render={({ field }) => (
                     <FormItem>
                       <label className="mb-1.5 block font-bold text-[#A8A29E] text-[11px] uppercase tracking-widest">
-                        Sex
+                        {t('bodyMetrics.biologicalSex')}
                       </label>
                       <FormControl>
                         <CustomSelect
@@ -325,8 +314,8 @@ export function ScreenBodyMetrics({
                             reportChange();
                           }}
                           options={[
-                            { label: 'Male', value: 'male' },
-                            { label: 'Female', value: 'female' },
+                            { label: t('bodyMetrics.male'), value: 'male' },
+                            { label: t('bodyMetrics.female'), value: 'female' },
                           ]}
                         />
                       </FormControl>
@@ -341,7 +330,7 @@ export function ScreenBodyMetrics({
                 render={({ field }) => (
                   <FormItem>
                     <label className="mb-1.5 block font-bold text-[#A8A29E] text-[11px] uppercase tracking-widest">
-                      Weight (kg)
+                      {`${t('bodyMetrics.weight')} (${t('bodyMetrics.weightUnit')})`}
                     </label>
                     <FormControl>
                       <input
@@ -370,7 +359,7 @@ export function ScreenBodyMetrics({
                 render={({ field }) => (
                   <FormItem>
                     <label className="mb-1.5 block font-bold text-[#A8A29E] text-[11px] uppercase tracking-widest">
-                      Height (cm)
+                      {`${t('bodyMetrics.height')} (${t('bodyMetrics.heightUnit')})`}
                     </label>
                     <FormControl>
                       <input
@@ -399,7 +388,7 @@ export function ScreenBodyMetrics({
                 render={({ field }) => (
                   <FormItem>
                     <label className="mb-1.5 block font-bold text-[#A8A29E] text-[11px] uppercase tracking-widest">
-                      Age
+                      {t('bodyMetrics.age')}
                     </label>
                     <FormControl>
                       <input
@@ -429,7 +418,7 @@ export function ScreenBodyMetrics({
                   render={({ field }) => (
                     <FormItem>
                       <label className="mb-1.5 block font-bold text-[#A8A29E] text-[11px] uppercase tracking-widest">
-                        Activity Level
+                        {t('bodyMetrics.activityLevel')}
                       </label>
                       <FormControl>
                         <CustomSelect
@@ -438,9 +427,9 @@ export function ScreenBodyMetrics({
                             field.onChange(v);
                             reportChange();
                           }}
-                          options={ACTIVITY_OPTIONS.map((opt) => ({
-                            label: opt.label,
-                            value: opt.value,
+                          options={ACTIVITY_LEVELS.map((level) => ({
+                            label: t(ACTIVITY_LEVEL_KEYS[level]),
+                            value: level,
                           }))}
                         />
                       </FormControl>
@@ -456,19 +445,19 @@ export function ScreenBodyMetrics({
               <div className="flex flex-col gap-4 border-[#EAE7E0]/80 border-b pb-4 xl:flex-row xl:items-end xl:justify-between">
                 <div>
                   <span className="mb-1 block font-bold text-[#A8A29E] text-[11px] uppercase tracking-widest">
-                    Your Estimated TDEE
+                    {t('bodyMetrics.tdee')}
                   </span>
                   <div className="font-normal font-serif text-4xl text-[#2C2416] tracking-tighter">
                     ~{Math.round(tdee).toLocaleString()}{' '}
                     <span className="font-sans text-[#8B8682] text-lg">
-                      kcal
+                      {t('bodyMetrics.kcal')}
                     </span>
                   </div>
                 </div>
 
                 <div className="w-full xl:w-auto">
                   <label className="mb-2 block font-bold text-[#A8A29E] text-[11px] uppercase tracking-widest">
-                    Select Goal
+                    {t('bodyMetrics.goal')}
                   </label>
                   <FormField
                     control={form.control}
@@ -491,7 +480,7 @@ export function ScreenBodyMetrics({
                                     : 'text-[#8B8682] hover:text-[#2C2416]'
                                 }`}
                               >
-                                {GOAL_LABELS[g]}
+                                {t(GOAL_KEYS[g])}
                               </button>
                             ))}
                           </div>
@@ -514,7 +503,7 @@ export function ScreenBodyMetrics({
                           <div className="rounded-2xl border border-[#EAE7E0] bg-white p-4">
                             <div className="mb-3 flex items-end justify-between">
                               <label className="block font-bold text-[#2C2416] text-[13px]">
-                                Pace &amp; Aggression
+                                {t('bodyMetrics.aggression')}
                               </label>
                               <div className="font-medium text-[#2C2416] text-[14px]">
                                 {aggressionKg.toFixed(1)}{' '}
@@ -591,12 +580,12 @@ export function ScreenBodyMetrics({
                 <div>
                   <div className="mb-3 flex items-baseline justify-between">
                     <label className="block font-bold text-[#A8A29E] text-[11px] uppercase tracking-widest">
-                      Daily Target &amp; Macros
+                      {t('bodyMetrics.macroSummary')}
                     </label>
                     <div className="font-normal font-serif text-2xl text-[#2C2416]">
                       {targetCalories}{' '}
                       <span className="font-sans text-[#8B8682] text-sm">
-                        kcal
+                        {t('bodyMetrics.kcal')}
                       </span>
                     </div>
                   </div>
@@ -645,15 +634,15 @@ export function ScreenBodyMetrics({
                                   <div className="space-y-1.5 text-[11px]">
                                     {[
                                       {
-                                        label: 'protein',
+                                        label: t('bodyMetrics.protein'),
                                         value: opt.macros.proteinG,
                                       },
                                       {
-                                        label: 'fats',
+                                        label: t('bodyMetrics.fat'),
                                         value: opt.macros.fatG,
                                       },
                                       {
-                                        label: 'carbs',
+                                        label: t('bodyMetrics.carbs'),
                                         value: opt.macros.carbsG,
                                       },
                                     ].map((macro) => (
@@ -665,7 +654,8 @@ export function ScreenBodyMetrics({
                                           {macro.label}
                                         </span>
                                         <span className="font-semibold text-[#2C2416] text-[12px]">
-                                          {macro.value}g
+                                          {macro.value}
+                                          {t('bodyMetrics.grams')}
                                         </span>
                                       </div>
                                     ))}

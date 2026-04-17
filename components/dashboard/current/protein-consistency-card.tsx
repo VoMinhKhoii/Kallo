@@ -1,6 +1,7 @@
 'use client';
 
 import { motion } from 'motion/react';
+import { useTranslations } from 'next-intl';
 import type { VerdictData } from '@/components/dashboard/types';
 
 interface ProteinConsistencyCardProps {
@@ -12,13 +13,14 @@ const DAY_LABELS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 export function ProteinConsistencyCard({
   verdict,
 }: ProteinConsistencyCardProps) {
+  const t = useTranslations('dashboard');
   const { proteinDays } = verdict;
   const daysHit = proteinDays.filter(Boolean).length;
 
   return (
     <div className="flex h-full flex-col">
       <span className="mb-1 block font-bold text-[9px] text-nham-stone uppercase tracking-[0.2em]">
-        Protein Goal
+        {t('protein')}
       </span>
       <div className="flex items-baseline gap-1.5">
         <span

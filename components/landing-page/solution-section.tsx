@@ -9,11 +9,13 @@ import {
   User,
 } from 'lucide-react';
 import { AnimatePresence, motion, useScroll } from 'motion/react';
+import { useTranslations } from 'next-intl';
 import { useEffect, useRef, useState } from 'react';
 
 // --- Sub-components for the Visualization ---
 
 function ReceiptHeader() {
+  const t = useTranslations('landing');
   return (
     <div className="border-[#E8D5B5] border-b-2 border-dashed bg-[#FAF9F7] p-6 text-center">
       <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-[#2C2416] text-[#FEFBF6] shadow-lg">
@@ -28,7 +30,7 @@ function ReceiptHeader() {
         className="mb-1 text-[#2C2416] text-xl uppercase tracking-widest"
         style={{ fontFamily: 'Lora, serif' }}
       >
-        Analysis Ticket
+        {t('solution.receipt.title')}
       </h3>
       <p className="font-mono text-[#8B7355] text-[10px] tracking-wider">
         ID: #8392-VN • SAIGON • {new Date().toLocaleDateString('en-US')}
@@ -44,6 +46,7 @@ function ReceiptFooter() {
 }
 
 const ReceiptVisual = ({ stage }: { stage: number }) => {
+  const t = useTranslations('landing');
   return (
     <div className="relative mx-auto w-full max-w-[380px] overflow-hidden rounded-lg border-[#2C2416] border-t-4 bg-white shadow-2xl">
       <ReceiptHeader />
@@ -112,7 +115,7 @@ const ReceiptVisual = ({ stage }: { stage: number }) => {
               >
                 <Database className="h-3 w-3 animate-pulse" />
                 <span className="font-mono uppercase tracking-wide">
-                  Querying FAO/WHO Vietnam Table (2007)...
+                  {t('solution.receipt.dbQuery')}
                 </span>
               </motion.div>
             </motion.div>
@@ -129,29 +132,35 @@ const ReceiptVisual = ({ stage }: { stage: number }) => {
             >
               <div className="mb-4 flex items-center justify-between border-[#E8D5B5]/30 border-b pb-2">
                 <span className="font-bold text-[#8B7355] text-xs uppercase tracking-widest">
-                  From Your Profile
+                  {t('solution.receipt.profileTitle')}
                 </span>
                 <User className="h-4 w-4 text-[#C9A87C]" />
               </div>
               <div className="space-y-3 text-[#6B5D4F] text-xs">
                 <div className="flex items-center justify-between">
-                  <span className="font-medium">Region Preference</span>
+                  <span className="font-medium">
+                    {t('solution.receipt.regionPref')}
+                  </span>
                   <span className="rounded border border-[#E8D5B5]/30 bg-white px-2 py-0.5 font-bold text-[#2C2416]">
-                    Southern
+                    {t('solution.receipt.regionValue')}
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="font-medium">Modification</span>
+                  <span className="font-medium">
+                    {t('solution.receipt.modification')}
+                  </span>
                   <span className="rounded border border-red-100 bg-red-50 px-2 py-0.5 font-bold text-red-600">
-                    -150 kcal (Less Oil)
+                    {t('solution.receipt.modificationValue')}
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="font-medium">Goal Strategy</span>
+                  <span className="font-medium">
+                    {t('solution.receipt.goalStrategy')}
+                  </span>
                   <div className="flex items-center gap-1 rounded border border-[#C9A87C]/20 bg-[#C9A87C]/10 px-2 py-0.5 font-bold text-[#2C2416]">
-                    <span>Cutting</span>
+                    <span>{t('solution.receipt.goalCutting')}</span>
                     <ArrowRight className="h-3 w-3" />
-                    <span>Upper Bound</span>
+                    <span>{t('solution.receipt.goalUpperBound')}</span>
                   </div>
                 </div>
               </div>
@@ -175,7 +184,7 @@ const ReceiptVisual = ({ stage }: { stage: number }) => {
                       fontFamily: 'Lora, serif',
                     }}
                   >
-                    Total
+                    {t('solution.receipt.total')}
                   </span>
                   <span className="font-bold font-mono text-4xl text-[#2C2416]">
                     ~845
@@ -185,11 +194,11 @@ const ReceiptVisual = ({ stage }: { stage: number }) => {
                   </span>
                 </div>
                 <div className="mt-1 rounded border border-[#E8D5B5]/50 bg-[#FAF9F7] px-2 py-1 font-mono text-[#8B7355] text-[10px]">
-                  RANGE: 820 – 970 kcal
+                  {t('solution.receipt.range')}
                 </div>
                 <div className="mt-1 flex items-center gap-1 font-medium text-[#C9A87C] text-[10px]">
                   <div className="h-1.5 w-1.5 rounded-full bg-[#C9A87C]" />
-                  Showing upper bound (Cutting Mode)
+                  {t('solution.receipt.upperBoundNote')}
                 </div>
               </div>
               <div className="mt-4 grid grid-cols-3 gap-2">
@@ -215,6 +224,7 @@ const ReceiptVisual = ({ stage }: { stage: number }) => {
 };
 
 export function SolutionSection() {
+  const t = useTranslations('landing');
   const containerRef = useRef<HTMLDivElement>(null);
   const [currentStage, setCurrentStage] = useState(1);
 
@@ -255,98 +265,82 @@ export function SolutionSection() {
           {/* Section 1 */}
           <div className="flex h-screen flex-col justify-center px-10">
             <span className="mb-4 font-mono text-[#C9A87C] text-xs uppercase tracking-widest">
-              01 — Input
+              {t('solution.step1Label')}
             </span>
             <h2
               className="mb-6 text-5xl leading-tight"
               style={{ fontFamily: 'Lora, serif' }}
             >
-              Just say it
-              <br />
-              like a local.
+              {t('solution.step1Title')}
             </h2>
             <p
               className="font-light text-[#6B5D4F] text-lg leading-relaxed"
               style={{ fontFamily: 'DM Sans, sans-serif' }}
             >
-              No drop-down menus. No searching. Just describe your meal exactly
-              as you ordered it or cooked it. Nhẩm understands slang, regional
-              names, and complex combinations.
+              {t('solution.step1Text')}
             </p>
           </div>
 
           {/* Section 2 */}
           <div className="flex h-screen flex-col justify-center px-10">
             <span className="mb-4 font-mono text-[#C9A87C] text-xs uppercase tracking-widest">
-              02 — Extraction
+              {t('solution.step2Label')}
             </span>
             <h2
               className="mb-6 text-5xl leading-tight"
               style={{ fontFamily: 'Lora, serif' }}
             >
-              Real ingredients.
-              <br />
-              Verified numbers.
+              {t('solution.step2Title')}
             </h2>
             <p
               className="font-light text-[#6B5D4F] text-lg leading-relaxed"
               style={{ fontFamily: 'DM Sans, sans-serif' }}
             >
-              Before any calculation, Nhẩm strips your meal down to its raw base
-              ingredients and queries a verified Vietnamese nutritional database
-              — the FAO/WHO Food Composition Table for Vietnam. The AI&apos;s
-              job here is extraction accuracy, not estimation. Numbers come from
-              a database, not a guess.
+              {t('solution.step2Text')}
             </p>
           </div>
 
           {/* Section 3 */}
           <div className="flex h-screen flex-col justify-center px-10">
             <span className="mb-4 font-mono text-[#C9A87C] text-xs uppercase tracking-widest">
-              03 — Context
+              {t('solution.step3Label')}
             </span>
             <h2
               className="mb-6 text-5xl leading-tight"
               style={{ fontFamily: 'Lora, serif' }}
             >
-              Cooking Logic.
+              {t('solution.step3Title')}
             </h2>
             <p
               className="font-light text-[#6B5D4F] text-lg leading-relaxed"
               style={{ fontFamily: 'DM Sans, sans-serif' }}
             >
-              &quot;Less scallion oil&quot; isn&apos;t just text; it&apos;s a
-              mathematical subtraction of fats. &quot;Southern style&quot; means
-              we account for the sugar in the marinade. The AI cooks the data
-              before serving it.
+              {t('solution.step3Text')}
             </p>
           </div>
 
           {/* Section 4 */}
           <div className="flex h-screen flex-col justify-center px-10">
             <span className="mb-4 font-mono text-[#C9A87C] text-xs uppercase tracking-widest">
-              04 — Precision
+              {t('solution.step4Label')}
             </span>
             <h2
               className="mb-6 text-5xl leading-tight"
               style={{ fontFamily: 'Lora, serif' }}
             >
-              The Final Ticket.
+              {t('solution.step4Title')}
             </h2>
             <p
               className="mb-8 font-light text-[#6B5D4F] text-lg leading-relaxed"
               style={{ fontFamily: 'DM Sans, sans-serif' }}
             >
-              Get a macro breakdown that&apos;s honest about what it knows. Nhẩm
-              never pretends certainty it doesn&apos;t have — you see the range,
-              the goal-adjusted estimate, and exactly what assumptions were
-              made.
+              {t('solution.step4Text')}
             </p>
             <button
               type="button"
               className="group flex w-fit items-center gap-2 bg-[#2C2416] px-8 py-4 font-mono text-[#FEFBF6] text-sm uppercase tracking-wider transition-all duration-300 hover:bg-[#4A3F30]"
             >
-              Start Tracking
+              {t('solution.cta')}
               <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
             </button>
           </div>
@@ -358,22 +352,19 @@ export function SolutionSection() {
         {/* Stage 1 */}
         <div className="border-[#E8D5B5]/30 border-b px-6 py-14">
           <span className="mb-4 block font-mono text-[#C9A87C] text-xs uppercase tracking-widest">
-            01 — Input
+            {t('solution.step1Label')}
           </span>
           <h2
             className="mb-4 text-4xl text-[#2C2416] leading-tight"
             style={{ fontFamily: 'Lora, serif' }}
           >
-            Just say it
-            <br />
-            like a local.
+            {t('solution.step1Title')}
           </h2>
           <p
             className="mb-8 font-light text-[#6B5D4F] leading-relaxed"
             style={{ fontFamily: 'DM Sans, sans-serif' }}
           >
-            No drop-down menus. No searching. Just describe your meal exactly as
-            you ordered it.
+            {t('solution.step1TextMobile')}
           </p>
           <ReceiptVisual stage={1} />
         </div>
@@ -381,23 +372,19 @@ export function SolutionSection() {
         {/* Stage 2 */}
         <div className="border-[#E8D5B5]/30 border-b bg-[#FFFDF9] px-6 py-14">
           <span className="mb-4 block font-mono text-[#C9A87C] text-xs uppercase tracking-widest">
-            02 — Extraction
+            {t('solution.step2Label')}
           </span>
           <h2
             className="mb-4 text-4xl text-[#2C2416] leading-tight"
             style={{ fontFamily: 'Lora, serif' }}
           >
-            Real ingredients.
-            <br />
-            Verified numbers.
+            {t('solution.step2Title')}
           </h2>
           <p
             className="mb-8 font-light text-[#6B5D4F] leading-relaxed"
             style={{ fontFamily: 'DM Sans, sans-serif' }}
           >
-            Nhẩm strips your meal down to its raw base ingredients and queries
-            the FAO/WHO Food Composition Table. Numbers come from a database,
-            not a guess.
+            {t('solution.step2TextMobile')}
           </p>
           <ReceiptVisual stage={2} />
         </div>
@@ -405,21 +392,19 @@ export function SolutionSection() {
         {/* Stage 3 */}
         <div className="border-[#E8D5B5]/30 border-b px-6 py-14">
           <span className="mb-4 block font-mono text-[#C9A87C] text-xs uppercase tracking-widest">
-            03 — Context
+            {t('solution.step3Label')}
           </span>
           <h2
             className="mb-4 text-4xl text-[#2C2416] leading-tight"
             style={{ fontFamily: 'Lora, serif' }}
           >
-            Cooking Logic.
+            {t('solution.step3Title')}
           </h2>
           <p
             className="mb-8 font-light text-[#6B5D4F] leading-relaxed"
             style={{ fontFamily: 'DM Sans, sans-serif' }}
           >
-            &quot;Less scallion oil&quot; is a subtraction of fats.
-            &quot;Southern style&quot; adds sugar. We cook the data before
-            serving it.
+            {t('solution.step3TextMobile')}
           </p>
           <ReceiptVisual stage={3} />
         </div>
@@ -427,19 +412,19 @@ export function SolutionSection() {
         {/* Stage 4 */}
         <div className="bg-[#FFFDF9] px-6 py-14">
           <span className="mb-4 block font-mono text-[#C9A87C] text-xs uppercase tracking-widest">
-            04 — Precision
+            {t('solution.step4Label')}
           </span>
           <h2
             className="mb-4 text-4xl text-[#2C2416] leading-tight"
             style={{ fontFamily: 'Lora, serif' }}
           >
-            The Final Ticket.
+            {t('solution.step4Title')}
           </h2>
           <p
             className="mb-8 font-light text-[#6B5D4F] leading-relaxed"
             style={{ fontFamily: 'DM Sans, sans-serif' }}
           >
-            Honest breakdowns with clear ranges and goal-adjusted estimates.
+            {t('solution.step4TextMobile')}
           </p>
           <ReceiptVisual stage={4} />
           <div className="mt-10 text-center">
@@ -447,7 +432,7 @@ export function SolutionSection() {
               type="button"
               className="flex w-full items-center justify-center gap-2 bg-[#2C2416] px-8 py-4 font-mono text-[#FEFBF6] text-sm uppercase tracking-wider transition-all duration-300 hover:bg-[#4A3F30]"
             >
-              Start Tracking
+              {t('solution.cta')}
               <ArrowRight className="h-4 w-4" />
             </button>
           </div>
@@ -464,14 +449,13 @@ export function SolutionSection() {
           className="mb-16 text-center"
         >
           <span className="mb-4 block font-medium text-[#8B7355] text-sm uppercase tracking-widest">
-            Why Nhẩm
+            {t('solution.whyLabel')}
           </span>
           <h2
             className="mb-6 font-normal text-4xl text-[#2C2416] lg:text-5xl"
             style={{ fontFamily: 'Lora, serif' }}
           >
-            Built on principles, <br />
-            not shortcuts.
+            {t('solution.whyTitle')}
           </h2>
         </motion.div>
 
@@ -491,7 +475,7 @@ export function SolutionSection() {
                   className="mb-2 font-medium text-[#2C2416] text-xl"
                   style={{ fontFamily: 'Lora, serif' }}
                 >
-                  It Learns Your Kitchen
+                  {t('solution.feature1Title')}
                 </h3>
                 <p
                   className="text-[#6B5D4F] leading-relaxed"
@@ -499,9 +483,7 @@ export function SolutionSection() {
                     fontFamily: 'DM Sans, sans-serif',
                   }}
                 >
-                  Tell us once whether you remove chicken skin or how sweet your
-                  braised pork runs. Nhẩm remembers your preferences permanently
-                  — no repetition, just accuracy that improves over time.
+                  {t('solution.feature1Text')}
                 </p>
               </div>
             </div>
@@ -515,7 +497,7 @@ export function SolutionSection() {
                   className="mb-2 font-medium text-[#2C2416] text-xl"
                   style={{ fontFamily: 'Lora, serif' }}
                 >
-                  Nothing Hidden
+                  {t('solution.feature2Title')}
                 </h3>
                 <p
                   className="text-[#6B5D4F] leading-relaxed"
@@ -523,12 +505,7 @@ export function SolutionSection() {
                     fontFamily: 'DM Sans, sans-serif',
                   }}
                 >
-                  Every calculation shows its work.{' '}
-                  <i>
-                    &quot;Calculated braised fish with Southern-style sugar
-                    adjustment.&quot;
-                  </i>{' '}
-                  If we assumed wrong, you correct it instantly.
+                  {t('solution.feature2Text')}
                 </p>
               </div>
             </div>
@@ -542,7 +519,7 @@ export function SolutionSection() {
                   className="mb-2 font-medium text-[#2C2416] text-xl"
                   style={{ fontFamily: 'Lora, serif' }}
                 >
-                  Honest Numbers
+                  {t('solution.feature3Title')}
                 </h3>
                 <p
                   className="text-[#6B5D4F] leading-relaxed"
@@ -550,9 +527,7 @@ export function SolutionSection() {
                     fontFamily: 'DM Sans, sans-serif',
                   }}
                 >
-                  We don&apos;t pretend to know &quot;347 kcal.&quot; You get a
-                  confident range (e.g., 340–360 kcal) based on ingredient
-                  variability — because real food isn&apos;t that precise.
+                  {t('solution.feature3Text')}
                 </p>
               </div>
             </div>
@@ -567,41 +542,50 @@ export function SolutionSection() {
           >
             <div className="flex items-center justify-between border-[#E8D5B5]/30 border-b bg-[#F9F6F1] px-6 py-4">
               <span className="font-medium text-[#8B7355] text-sm">
-                Your Regional Profile
+                {t('solution.profile.title')}
               </span>
               <span className="rounded bg-[#E8D5B5]/20 px-2 py-1 text-[#C9A87C] text-xs">
-                Active
+                {t('solution.profile.active')}
               </span>
             </div>
 
             <div className="space-y-6 p-8">
               <div className="flex items-center justify-between border-[#E8D5B5]/20 border-b pb-4">
-                <span className="text-[#6B5D4F]">Region Taste</span>
+                <span className="text-[#6B5D4F]">
+                  {t('solution.profile.regionTaste')}
+                </span>
                 <span className="font-medium text-[#2C2416]">
-                  Southern (Sweet/Savory)
+                  {t('solution.profile.regionTasteValue')}
                 </span>
               </div>
               <div className="flex items-center justify-between border-[#E8D5B5]/20 border-b pb-4">
-                <span className="text-[#6B5D4F]">Braised Dishes</span>
-                <span className="font-medium text-[#2C2416]">High Sugar</span>
-              </div>
-              <div className="flex items-center justify-between border-[#E8D5B5]/20 border-b pb-4">
-                <span className="text-[#6B5D4F]">Chicken Skin</span>
+                <span className="text-[#6B5D4F]">
+                  {t('solution.profile.braisedDishes')}
+                </span>
                 <span className="font-medium text-[#2C2416]">
-                  Always Remove
+                  {t('solution.profile.braisedDishesValue')}
                 </span>
               </div>
               <div className="flex items-center justify-between border-[#E8D5B5]/20 border-b pb-4">
-                <span className="text-[#6B5D4F]">Rice Portion</span>
+                <span className="text-[#6B5D4F]">
+                  {t('solution.profile.chickenSkin')}
+                </span>
                 <span className="font-medium text-[#2C2416]">
-                  1.5 Bowls (Default)
+                  {t('solution.profile.chickenSkinValue')}
+                </span>
+              </div>
+              <div className="flex items-center justify-between border-[#E8D5B5]/20 border-b pb-4">
+                <span className="text-[#6B5D4F]">
+                  {t('solution.profile.ricePortion')}
+                </span>
+                <span className="font-medium text-[#2C2416]">
+                  {t('solution.profile.ricePortionValue')}
                 </span>
               </div>
 
               <div className="mt-6 rounded-xl border border-[#E8D5B5]/30 bg-[#FEFBF6] p-4">
                 <p className="text-[#8B7355] text-sm italic">
-                  &quot;These settings apply to every meal description unless
-                  you specify otherwise.&quot;
+                  {t('solution.profile.disclaimer')}
                 </p>
               </div>
             </div>

@@ -3,6 +3,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Check, Scale } from 'lucide-react';
 import { motion } from 'motion/react';
+import { useTranslations } from 'next-intl';
 import { useEffect, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
@@ -28,6 +29,7 @@ interface WeightCardProps {
 }
 
 export function WeightCard({ stats, verdict }: WeightCardProps) {
+  const tc = useTranslations('common');
   const [saved, setSaved] = useState(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -115,7 +117,7 @@ export function WeightCard({ stats, verdict }: WeightCardProps) {
                     : 'cursor-not-allowed bg-nham-hover text-nham-stone'
               )}
             >
-              {saved ? <Check className="h-3.5 w-3.5" /> : 'Save'}
+              {saved ? <Check className="h-3.5 w-3.5" /> : tc('save')}
             </button>
           )}
         </form>

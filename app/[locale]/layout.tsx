@@ -1,11 +1,11 @@
 import type { Metadata } from 'next';
-import { notFound } from 'next/navigation';
-import { NextIntlClientProvider, hasLocale } from 'next-intl';
-import { getMessages } from 'next-intl/server';
 import { DM_Sans, Fraunces, Geist, Geist_Mono, Lora } from 'next/font/google';
-import { routing } from '@/i18n/navigation';
+import { notFound } from 'next/navigation';
+import { hasLocale, NextIntlClientProvider } from 'next-intl';
+import { getMessages } from 'next-intl/server';
 import { QueryProvider } from '@/components/providers/query-provider';
 import { Toaster } from '@/components/ui/sonner';
+import { routing } from '@/i18n/navigation';
 import '../globals.css';
 
 const fraunces = Fraunces({

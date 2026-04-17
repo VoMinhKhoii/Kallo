@@ -1,6 +1,7 @@
 'use client';
 
 import { Globe, Languages, MapPin } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { COUNTRIES } from '@/lib/onboarding/countries';
@@ -32,6 +33,9 @@ interface MenuPosition {
   maxHeight: number;
   top: number;
   width: number;
+  placeholder: string;
+  searchPlaceholder: string;
+  noResults: string;
 }
 
 function CountryPicker({
@@ -40,6 +44,9 @@ function CountryPicker({
   icon,
   value,
   onChange,
+  placeholder,
+  searchPlaceholder,
+  noResults,
 }: CountryPickerProps) {
   const [search, setSearch] = useState('');
   const [isOpen, setIsOpen] = useState(false);
@@ -151,9 +158,7 @@ function CountryPicker({
               : 'text-[#8B8682] text-[14px]'
           }
         >
-          {value
-            ? `${value} (${selectedCountry?.vi ?? ''})`
-            : 'Select a country…'}
+          {value ? `${value} (${selectedCountry?.vi ?? ''})` : placeholder}
         </span>
         <svg
           className={`h-4 w-4 text-[#8B8682] transition-transform ${isOpen ? 'rotate-180' : ''}`}
@@ -190,7 +195,7 @@ function CountryPicker({
                 ref={(el) => el?.focus()}
                 onChange={(e) => setSearch(e.target.value)}
                 aria-label={`Search ${label.toLowerCase()}`}
-                placeholder="Search country…"
+                placeholder={searchPlaceholder}
                 className="w-full rounded-lg bg-[#F5F4F0] px-3 py-2 text-[#2C2416] text-[13px] outline-none placeholder:text-[#8B8682] focus-visible:ring-2 focus-visible:ring-[#C9A87C]/30"
               />
             </div>
@@ -200,7 +205,7 @@ function CountryPicker({
             >
               {filtered.length === 0 ? (
                 <div className="px-3 py-2 text-center text-[#8B8682] text-[13px]">
-                  No countries found
+                  {noResults}
                 </div>
               ) : (
                 filtered.map((country) => (
@@ -235,20 +240,23 @@ function CountryPicker({
 }
 
 export function ScreenOrigin({ defaultValues, onChange }: ScreenOriginProps) {
+  const t = useTranslations('onboarding');
   const [origin, setOrigin] = useState<string | null>(
     defaultValues.countryOfOrigin
   );
   const [residence, setResidence] = useState<string | null>(
     defaultValues.countryOfResidence
   );
-  const [locale, setLocale] = useState<string>(
-    defaultValues.preferredLocale
-  );
+  const [locale, setLocale] = useState<string>(defaultValues.preferredLocale);
   const hasReported = useRef(false);
 
   const report = useCallback(
     (o: string | null, r: string | null, l: string) => {
-      onChange({ countryOfOrigin: o, countryOfResidence: r, preferredLocale: l });
+      onChange({
+        countryOfOrigin: o,
+        countryOfResidence: r,
+        preferredLocale: l,
+      });
     },
     [onChange]
   );
@@ -268,15 +276,13 @@ export function ScreenOrigin({ defaultValues, onChange }: ScreenOriginProps) {
           className="mb-2 font-medium text-2xl text-[#2C2416] tracking-tight"
           style={{ fontFamily: 'Lora, serif' }}
         >
-          Where are you from?
+          {t('origin.title')}
         </h2>
         <p
           className="text-[#8B8682] text-[15px] leading-relaxed"
           style={{ fontFamily: 'DM Sans, sans-serif' }}
         >
-          Origin helps the AI lean toward the food culture you identify with.
-          Current residence helps it bias toward ingredients that are easier to
-          find around you.
+          {t('origin.subtitle')}
         </p>
       </div>
 
@@ -284,7 +290,7 @@ export function ScreenOrigin({ defaultValues, onChange }: ScreenOriginProps) {
       <div className="rounded-[24px] border border-[#EAE7E0] bg-white p-5 sm:p-6">
         <label className="mb-3 flex items-center gap-2 font-bold text-[#2C2416] text-[13px]">
           <Languages className="h-4 w-4 text-[#C9A87C]" />
-          Preferred language
+          {t('origin.preferredLanguage')}
         </label>
         <LanguageToggle
           value={locale}
@@ -299,31 +305,36 @@ export function ScreenOrigin({ defaultValues, onChange }: ScreenOriginProps) {
       <div className="rounded-[24px] border border-[#EAE7E0] bg-white p-5 sm:p-6">
         <div className="grid gap-4 lg:grid-cols-2">
           <CountryPicker
-            label="Country of origin"
-            hint="Where you grew up or identify with culinarily"
+            label={t('origin.countryOfOrigin')}
+            hint={t('origin.countryOfOriginHint')}
             icon={<Globe className="h-4 w-4 text-[#C9A87C]" />}
             value={origin}
             onChange={(v) => {
               setOrigin(v);
               report(v, residence, locale);
             }}
+            placeholder={t('origin.selectCountry')}
+            searchPlaceholder={t('origin.searchCountry')}
+            noResults={t('origin.noCountries')}
           />
 
           <CountryPicker
-            label="Country of residence"
-            hint="Where you currently live — affects available ingredients"
+            label={t('origin.countryOfResidence')}
+            hint={t('origin.countryOfResidenceHint')}
             icon={<MapPin className="h-4 w-4 text-[#C9A87C]" />}
             value={residence}
             onChange={(v) => {
               setResidence(v);
               report(origin, v, locale);
             }}
+            placeholder={t('origin.selectCountry')}
+            searchPlaceholder={t('origin.searchCountry')}
+            noResults={t('origin.noCountries')}
           />
         </div>
 
         <p className="mt-5 text-[#8B8682] text-[13px] leading-relaxed">
-          Leave one or both empty if you want. The AI will fall back to your
-          photo and meal text only.
+          {t('origin.fallbackNote')}
         </p>
       </div>
     </div>

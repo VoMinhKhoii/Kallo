@@ -3,6 +3,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { ChevronDown, Loader2 } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
+import { useTranslations } from 'next-intl';
 import { useMemo, useState, useTransition } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
@@ -55,24 +56,6 @@ interface Section {
   subtitle: string;
 }
 
-const SECTIONS: Section[] = [
-  {
-    id: 'body-metrics',
-    title: 'Body Metrics & Goals',
-    subtitle: 'Weight, height, activity level, and macro targets',
-  },
-  {
-    id: 'regional',
-    title: 'Country & Region',
-    subtitle: 'Country of origin and current residence',
-  },
-  {
-    id: 'cooking',
-    title: 'Cooking Habits',
-    subtitle: 'Oil usage, rice, sugar, protein, and broth defaults',
-  },
-];
-
 interface ProfileProps {
   profile: {
     weightKg: string | null;
@@ -99,8 +82,28 @@ interface ProfileProps {
 }
 
 export function Profile({ profile }: ProfileProps) {
+  const t = useTranslations('settings');
+  const tc = useTranslations('common');
   const [openSection, setOpenSection] = useState<SectionId>('body-metrics');
   const [isPending, startTransition] = useTransition();
+
+  const SECTIONS: Section[] = [
+    {
+      id: 'body-metrics',
+      title: t('bodyMetrics'),
+      subtitle: 'Weight, height, activity level, and macro targets',
+    },
+    {
+      id: 'regional',
+      title: t('regional'),
+      subtitle: 'Country of origin and current residence',
+    },
+    {
+      id: 'cooking',
+      title: t('cooking'),
+      subtitle: 'Oil usage, rice, sugar, protein, and broth defaults',
+    },
+  ];
 
   const defaultValues: ProfileFormValues = useMemo(
     () => ({
@@ -195,7 +198,7 @@ export function Profile({ profile }: ProfileProps) {
           brothConsumption: values.brothConsumption,
         });
         form.reset(values);
-        toast.success('Profile settings saved');
+        toast.success(t('saved'));
       } catch {
         toast.error('Failed to save settings. Please try again.');
       }
@@ -284,7 +287,7 @@ export function Profile({ profile }: ProfileProps) {
                   disabled={isPending}
                   className="rounded-xl px-5 py-2.5 font-medium text-[#8B8682] text-[14px] transition-colors hover:bg-[#F5F4F0] hover:text-[#2C2416]"
                 >
-                  Cancel
+                  {tc('cancel')}
                 </button>
                 <button
                   type="submit"
@@ -292,7 +295,7 @@ export function Profile({ profile }: ProfileProps) {
                   className="flex items-center gap-2 rounded-xl bg-[#2C2416] px-5 py-2.5 font-medium text-[#FDFCF8] text-[14px] shadow-sm transition-all hover:bg-[#1C1917] disabled:opacity-50"
                 >
                   {isPending && <Loader2 className="h-4 w-4 animate-spin" />}
-                  Save Changes
+                  {t('save')}
                 </button>
               </motion.div>
             )}

@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { useFormContext } from 'react-hook-form';
 import { OptionStrip } from '@/components/settings/option-strip';
 import {
@@ -11,6 +12,7 @@ import {
 import type { ProfileFormValues } from './index';
 
 export function Cooking() {
+  const t = useTranslations('onboarding.cooking');
   const form = useFormContext<ProfileFormValues>();
 
   return (
@@ -22,24 +24,24 @@ export function Cooking() {
         render={({ field }) => (
           <FormItem className="rounded-2xl border border-[#EAE7E0] bg-white p-5">
             <FormLabel className="mb-3 block font-bold text-[#2C2416] text-[13px]">
-              How would you describe your typical cooked dishes?
+              {t('oilUsage')}
             </FormLabel>
             <FormControl>
               <OptionStrip
                 options={[
                   {
                     value: 'minimal',
-                    label: 'Light',
+                    label: t('oilMinimal'),
                     hint: 'Dry, clean taste. Dish looks matte.',
                   },
                   {
                     value: 'normal',
-                    label: 'Moderate',
+                    label: t('oilNormal'),
                     hint: 'Light coating. Slight sheen on food.',
                   },
                   {
                     value: 'heavy',
-                    label: 'Rich',
+                    label: t('oilHeavy'),
                     hint: 'Visibly oily. Sauce pools slightly.',
                   },
                 ]}
@@ -58,14 +60,22 @@ export function Cooking() {
         render={({ field }) => (
           <FormItem className="rounded-2xl border border-[#EAE7E0] bg-white p-5">
             <FormLabel className="mb-3 block font-bold text-[#2C2416] text-[13px]">
-              How much rice per meal?
+              {t('ricePortion')}
             </FormLabel>
             <FormControl>
               <OptionStrip
                 options={[
-                  { value: 'small', label: 'Light', hint: '~1 small bowl' },
-                  { value: 'medium', label: 'Normal', hint: '~1–1.5 bowls' },
-                  { value: 'large', label: 'Heavy', hint: '~2+ bowls' },
+                  {
+                    value: 'small',
+                    label: t('riceSmall'),
+                    hint: '~1 small bowl',
+                  },
+                  {
+                    value: 'medium',
+                    label: t('riceMedium'),
+                    hint: '~1–1.5 bowls',
+                  },
+                  { value: 'large', label: t('riceLarge'), hint: '~2+ bowls' },
                 ]}
                 value={field.value}
                 onChange={field.onChange}
@@ -82,14 +92,14 @@ export function Cooking() {
         render={({ field }) => (
           <FormItem className="rounded-2xl border border-[#EAE7E0] bg-white p-5">
             <FormLabel className="mb-3 block font-bold text-[#2C2416] text-[13px]">
-              Sugar in braised dishes
+              {t('sugar')}
             </FormLabel>
             <FormControl>
               <OptionStrip
                 options={[
-                  { value: 'low', label: 'Low' },
-                  { value: 'medium', label: 'Medium' },
-                  { value: 'high', label: 'High' },
+                  { value: 'low', label: t('sugarLow') },
+                  { value: 'medium', label: t('sugarMedium') },
+                  { value: 'high', label: t('sugarHigh') },
                 ]}
                 value={field.value}
                 onChange={field.onChange}
@@ -106,24 +116,24 @@ export function Cooking() {
         render={({ field }) => (
           <FormItem className="rounded-2xl border border-[#EAE7E0] bg-white p-5">
             <FormLabel className="mb-3 block font-bold text-[#2C2416] text-[13px]">
-              How much protein (meat, fish, eggs) per meal?
+              {t('proteinPortion')}
             </FormLabel>
             <FormControl>
               <OptionStrip
                 options={[
                   {
                     value: 'small',
-                    label: 'Small',
+                    label: t('proteinSmall'),
                     hint: 'Smaller than your palm, e.g. ~2-3 eggs',
                   },
                   {
                     value: 'medium',
-                    label: 'Medium',
+                    label: t('proteinMedium'),
                     hint: 'About palm-sized',
                   },
                   {
                     value: 'large',
-                    label: 'Large',
+                    label: t('proteinLarge'),
                     hint: 'Bigger than your palm, e.g. a chicken thigh or more',
                   },
                 ]}
@@ -142,24 +152,24 @@ export function Cooking() {
         render={({ field }) => (
           <FormItem className="rounded-2xl border border-[#EAE7E0] bg-white p-5">
             <FormLabel className="mb-3 block font-bold text-[#2C2416] text-[13px]">
-              When there&rsquo;s soup, how much broth do you usually drink?
+              {t('broth')}
             </FormLabel>
             <FormControl>
               <OptionStrip
                 options={[
                   {
                     value: 'leave_it',
-                    label: 'Leave it',
+                    label: t('brothLeave'),
                     hint: 'Eat the solids, skip most broth',
                   },
                   {
                     value: 'some',
-                    label: 'Some',
+                    label: t('brothSome'),
                     hint: 'Drink about half the bowl',
                   },
                   {
                     value: 'finish_it',
-                    label: 'Finish it',
+                    label: t('brothFinish'),
                     hint: 'Drink all or most of the broth',
                   },
                 ]}

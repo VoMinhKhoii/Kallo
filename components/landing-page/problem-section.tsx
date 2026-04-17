@@ -1,11 +1,12 @@
-/* eslint-disable react/no-unescaped-entities */
 'use client';
 
 import { AlertCircle, Search, UtensilsCrossed, X } from 'lucide-react';
 import { motion, useScroll, useTransform } from 'motion/react';
+import { useTranslations } from 'next-intl';
 import { useRef } from 'react';
 
 export function ProblemSection() {
+  const t = useTranslations('landing');
   const containerRef = useRef<HTMLDivElement>(null);
   const { scrollYProgress } = useScroll({
     target: containerRef,
@@ -58,7 +59,7 @@ export function ProblemSection() {
             <div className="mb-8 flex items-center gap-3">
               <div className="h-px w-12 bg-[#C9A87C]" />
               <span className="font-mono text-[#C9A87C] text-sm uppercase tracking-widest">
-                The Reality
+                {t('problem.label')}
               </span>
             </div>
 
@@ -66,11 +67,10 @@ export function ProblemSection() {
               className="mb-8 font-normal text-5xl leading-[1.1] lg:text-7xl"
               style={{ fontFamily: 'Lora, serif' }}
             >
-              Not designed
-              <br />
-              for{' '}
+              {t('problem.title')}
+              <br />{' '}
               <span className="bg-gradient-to-r from-[#C9A87C] to-[#E8D5B5] bg-clip-text text-transparent italic">
-                your kitchen.
+                {t('problem.titleHighlight')}
               </span>
             </h2>
 
@@ -78,29 +78,24 @@ export function ProblemSection() {
               className="mb-12 max-w-md font-light text-[#B0A695] text-xl leading-relaxed"
               style={{ fontFamily: 'DM Sans, sans-serif' }}
             >
-              Try logging <i>&quot;Thịt kho trứng&quot;</i> in a standard
-              tracker. You&apos;ll get five different results, none accounting
-              for the sugar in the caramel sauce or the fat rendered from the
-              pork belly.
+              {t('problem.subtitle')}
             </p>
 
             <div className="flex flex-col gap-6 border-[#FEFBF6]/10 border-l pl-8">
               <div className="group">
                 <h3 className="mb-2 font-medium text-[#FEFBF6] text-xl transition-colors group-hover:text-[#C9A87C]">
-                  When the Camera Can&apos;t Taste
+                  {t('problem.card1Title')}
                 </h3>
                 <p className="text-[#8B7355] text-sm">
-                  Visual AI sees &quot;Pork&quot;, not the 300 kcal of marinade
-                  absorbed inside.
+                  {t('problem.card1Text')}
                 </p>
               </div>
               <div className="group">
                 <h3 className="mb-2 font-medium text-[#FEFBF6] text-xl transition-colors group-hover:text-[#C9A87C]">
-                  The Endless Search
+                  {t('problem.card2Title')}
                 </h3>
                 <p className="text-[#8B7355] text-sm">
-                  Searching &quot;Phở&quot; returns 50 entries ranging from 300
-                  to 900 calories.
+                  {t('problem.card2Text')}
                 </p>
               </div>
             </div>
@@ -129,19 +124,21 @@ export function ProblemSection() {
           >
             <div className="mb-3 flex items-center gap-2 border-[#E8D5B5]/30 border-b pb-3">
               <Search className="h-4 w-4 text-[#8B7355]" />
-              <span className="text-[#2C2416] text-sm">Bun cha...</span>
+              <span className="text-[#2C2416] text-sm">
+                {t('problem.visual.searchPlaceholder')}
+              </span>
             </div>
             <div className="space-y-1.5">
               <div className="flex items-center justify-between rounded-lg p-2 text-[#8B7355] text-xs">
-                <span>Bun (Bread)?</span>
+                <span>{t('problem.visual.searchResult1')}</span>
                 <span className="font-mono">120 kcal</span>
               </div>
               <div className="flex items-center justify-between rounded-lg p-2 text-[#8B7355] text-xs">
-                <span>Cha (Tea)?</span>
+                <span>{t('problem.visual.searchResult2')}</span>
                 <span className="font-mono">0 kcal</span>
               </div>
               <div className="flex items-center justify-between rounded-lg bg-red-50 p-2 font-medium text-red-500 text-xs">
-                <span>No exact match found</span>
+                <span>{t('problem.visual.noMatch')}</span>
                 <AlertCircle className="h-3 w-3" />
               </div>
             </div>
@@ -157,9 +154,11 @@ export function ProblemSection() {
                 <UtensilsCrossed className="h-5 w-5 text-[#8B7355]" />
               </div>
               <div>
-                <div className="mb-1 text-[#8B7355] text-xs">Detected</div>
+                <div className="mb-1 text-[#8B7355] text-xs">
+                  {t('problem.visual.detected')}
+                </div>
                 <div className="font-bold text-[#FEFBF6] text-lg">
-                  Braised Pork
+                  {t('problem.visual.braisedPork')}
                 </div>
                 <div className="mt-1 font-mono text-green-400 text-sm">
                   250 kcal
@@ -170,7 +169,7 @@ export function ProblemSection() {
               <div className="absolute inset-0 animate-pulse bg-red-500/5" />
               <div className="relative flex items-center justify-between text-xs">
                 <span className="font-medium text-red-400">
-                  + Sugar & Fish Sauce?
+                  {t('problem.visual.hiddenCalories')}
                 </span>
                 <span className="font-bold font-mono text-red-400">
                   +180 kcal
@@ -187,10 +186,11 @@ export function ProblemSection() {
             <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-full bg-red-50">
               <X className="h-5 w-5 text-red-500" />
             </div>
-            <h4 className="mb-1 font-bold text-[#2C2416]">Entry Failed</h4>
+            <h4 className="mb-1 font-bold text-[#2C2416]">
+              {t('problem.visual.entryFailed')}
+            </h4>
             <p className="text-[#8B7355] text-xs leading-tight">
-              &quot;Canh chua&quot; is too complex to estimate without volume
-              data.
+              {t('problem.visual.entryFailedText')}
             </p>
           </motion.div>
         </div>
@@ -206,19 +206,21 @@ export function ProblemSection() {
           >
             <div className="mb-3 flex items-center gap-2 border-[#E8D5B5]/30 border-b pb-3">
               <Search className="h-4 w-4 text-[#8B7355]" />
-              <span className="text-[#2C2416] text-sm">Bun cha...</span>
+              <span className="text-[#2C2416] text-sm">
+                {t('problem.visual.searchPlaceholder')}
+              </span>
             </div>
             <div className="space-y-1.5">
               <div className="flex items-center justify-between p-2 text-[#8B7355] text-xs">
-                <span>Bun (Bread)?</span>
+                <span>{t('problem.visual.searchResult1')}</span>
                 <span className="font-mono">120 kcal</span>
               </div>
               <div className="flex items-center justify-between p-2 text-[#8B7355] text-xs">
-                <span>Cha (Tea)?</span>
+                <span>{t('problem.visual.searchResult2')}</span>
                 <span className="font-mono">0 kcal</span>
               </div>
               <div className="flex items-center justify-between rounded-lg bg-red-50 p-2 font-medium text-red-500 text-xs">
-                <span>No exact match found</span>
+                <span>{t('problem.visual.noMatch')}</span>
                 <AlertCircle className="h-3 w-3" />
               </div>
             </div>
@@ -236,8 +238,12 @@ export function ProblemSection() {
                 <UtensilsCrossed className="h-5 w-5 text-[#8B7355]" />
               </div>
               <div>
-                <div className="mb-1 text-[#8B7355] text-xs">Detected</div>
-                <div className="font-bold text-[#FEFBF6]">Braised Pork</div>
+                <div className="mb-1 text-[#8B7355] text-xs">
+                  {t('problem.visual.detected')}
+                </div>
+                <div className="font-bold text-[#FEFBF6]">
+                  {t('problem.visual.braisedPork')}
+                </div>
                 <div className="mt-1 font-mono text-green-400 text-sm">
                   250 kcal
                 </div>
@@ -246,7 +252,7 @@ export function ProblemSection() {
             <div className="mt-4 border-[#C9A87C]/10 border-t pt-4">
               <div className="flex items-center justify-between text-xs">
                 <span className="font-medium text-red-400">
-                  + Sugar & Fish Sauce?
+                  {t('problem.visual.hiddenCalories')}
                 </span>
                 <span className="font-bold font-mono text-red-400">
                   +180 kcal
@@ -265,10 +271,11 @@ export function ProblemSection() {
             <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-full bg-red-50">
               <X className="h-5 w-5 text-red-500" />
             </div>
-            <h4 className="mb-1 font-bold text-[#2C2416]">Entry Failed</h4>
+            <h4 className="mb-1 font-bold text-[#2C2416]">
+              {t('problem.visual.entryFailed')}
+            </h4>
             <p className="text-[#8B7355] text-xs leading-tight">
-              &quot;Canh chua&quot; is too complex to estimate without volume
-              data.
+              {t('problem.visual.entryFailedText')}
             </p>
           </motion.div>
         </div>
@@ -287,13 +294,12 @@ export function ProblemSection() {
           </div>
 
           <p className="mx-auto max-w-4xl font-serif text-2xl text-[#E8D5B5] italic leading-normal lg:text-3xl">
-            The only tracking method accurate enough for Vietnamese home cooking
-            is natural language description.
+            {t('problem.quote')}
           </p>
           <div className="mt-6 flex items-center justify-center gap-3">
             <div className="h-px w-8 bg-[#C9A87C]/50" />
             <span className="font-bold text-[#8B7355] text-xs uppercase tracking-widest">
-              Core Philosophy
+              {t('problem.quoteLabel')}
             </span>
             <div className="h-px w-8 bg-[#C9A87C]/50" />
           </div>

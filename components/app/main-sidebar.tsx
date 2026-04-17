@@ -10,9 +10,9 @@ import {
   Settings,
   UtensilsCrossed,
 } from 'lucide-react';
-import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
+import { Link, usePathname, useRouter } from '@/i18n/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { cn } from '@/lib/utils';
 
@@ -22,27 +22,6 @@ interface NavItem {
   href: string;
   icon: React.ReactNode;
 }
-
-const navItems: NavItem[] = [
-  {
-    id: 'dashboard',
-    label: 'Dashboard',
-    href: '/dashboard',
-    icon: <LayoutDashboard className="h-5 w-5 shrink-0" />,
-  },
-  {
-    id: 'tracking',
-    label: 'Tracking',
-    href: '/tracking',
-    icon: <Activity className="h-5 w-5 shrink-0" />,
-  },
-  {
-    id: 'logging',
-    label: 'Logging',
-    href: '/logging',
-    icon: <UtensilsCrossed className="h-5 w-5 shrink-0" />,
-  },
-];
 
 function SectionHeader({
   label,
@@ -81,7 +60,29 @@ export function MainSidebar({
 }) {
   const pathname = usePathname();
   const router = useRouter();
+  const t = useTranslations('nav');
   const [collapsed, setCollapsed] = useState(false);
+
+  const navItems: NavItem[] = [
+    {
+      id: 'dashboard',
+      label: t('dashboard'),
+      href: '/dashboard',
+      icon: <LayoutDashboard className="h-5 w-5 shrink-0" />,
+    },
+    {
+      id: 'tracking',
+      label: 'Tracking',
+      href: '/tracking',
+      icon: <Activity className="h-5 w-5 shrink-0" />,
+    },
+    {
+      id: 'logging',
+      label: t('logging'),
+      href: '/logging',
+      icon: <UtensilsCrossed className="h-5 w-5 shrink-0" />,
+    },
+  ];
 
   const handleSignOut = async () => {
     const supabase = createClient();
@@ -202,10 +203,10 @@ export function MainSidebar({
 
       {/* Settings */}
       <div className="flex flex-1 flex-col gap-2">
-        <SectionHeader label="Settings" collapsed={collapsed} />
+        <SectionHeader label={t('settings')} collapsed={collapsed} />
         <Link
           href="/settings"
-          title={collapsed ? 'Settings' : undefined}
+          title={collapsed ? t('settings') : undefined}
           className={cn(
             'flex items-center rounded-lg px-3 py-2.5 transition-all duration-200',
             pathname.startsWith('/settings')
@@ -223,7 +224,7 @@ export function MainSidebar({
               fontFamily: 'DM Sans, sans-serif',
             }}
           >
-            Settings
+            {t('settings')}
           </span>
         </Link>
       </div>
@@ -268,7 +269,7 @@ export function MainSidebar({
         <button
           type="button"
           onClick={handleSignOut}
-          title="Sign out"
+          title={t('signOut')}
           className={cn(
             'flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-nham-hover/60 hover:text-red-500',
             collapsed ? 'hidden' : ''

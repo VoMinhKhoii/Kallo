@@ -1,10 +1,12 @@
 'use client';
 
 import { motion } from 'motion/react';
+import { useTranslations } from 'next-intl';
 import { useAuthDialog } from '@/components/auth/auth-provider';
 import { Button } from '@/components/ui/button';
 
 export function Header() {
+  const t = useTranslations('landing');
   const { openDialog } = useAuthDialog();
 
   return (
@@ -32,21 +34,21 @@ export function Header() {
             className="text-[#6B5D4F] text-sm transition-colors hover:text-[#2C2416]"
             style={{ fontFamily: 'DM Sans, sans-serif' }}
           >
-            Features
+            {t('header.features')}
           </a>
           <a
             href="#how"
             className="text-[#6B5D4F] text-sm transition-colors hover:text-[#2C2416]"
             style={{ fontFamily: 'DM Sans, sans-serif' }}
           >
-            How it works
+            {t('header.howItWorks')}
           </a>
           <a
             href="#pricing"
             className="text-[#6B5D4F] text-sm transition-colors hover:text-[#2C2416]"
             style={{ fontFamily: 'DM Sans, sans-serif' }}
           >
-            Pricing
+            {t('header.pricing')}
           </a>
         </nav>
 
@@ -58,7 +60,7 @@ export function Header() {
             style={{ fontFamily: 'DM Sans, sans-serif' }}
             onClick={() => openDialog('sign-in')}
           >
-            Sign in
+            {t('header.signIn')}
           </Button>
           <Button
             variant="header-cta"
@@ -66,7 +68,7 @@ export function Header() {
             style={{ fontFamily: 'DM Sans, sans-serif' }}
             onClick={() => openDialog('sign-up')}
           >
-            Get started
+            {t('header.getStarted')}
           </Button>
         </div>
       </div>

@@ -1,5 +1,5 @@
-import { Link } from '@/i18n/navigation';
 import { Profile } from '@/components/settings/profile';
+import { Link } from '@/i18n/navigation';
 import { getOnboardingProfile } from '@/lib/onboarding/actions';
 
 export default async function ProfileSettingsPage() {

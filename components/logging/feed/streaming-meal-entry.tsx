@@ -1,6 +1,7 @@
 'use client';
 
 import { motion } from 'motion/react';
+import { useTranslations } from 'next-intl';
 import {
   MealEntryItemSkeleton,
   MealEntryTotalSkeleton,
@@ -55,6 +56,7 @@ function CompletedItemRow({ item, index }: { item: MealItem; index: number }) {
 }
 
 export function StreamingMealEntry({ message }: StreamingMealEntryProps) {
+  const t = useTranslations('logging');
   const phase = message.streamingPhase ?? 'waiting';
   const namedItems = message.streamingItems ?? [];
   const completedItems = message.streamingCompletedItems ?? [];
@@ -153,7 +155,7 @@ export function StreamingMealEntry({ message }: StreamingMealEntryProps) {
             className="text-[11px] text-nham-text-muted"
             style={{ fontFamily: 'DM Sans, sans-serif' }}
           >
-            {PHASE_LABELS[phase] ?? 'Analyzing...'}
+            {PHASE_LABELS[phase] ?? t('analyzing')}
           </span>
         </div>
       </div>

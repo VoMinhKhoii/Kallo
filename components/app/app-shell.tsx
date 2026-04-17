@@ -1,9 +1,9 @@
 'use client';
 
 import { Menu, X } from 'lucide-react';
-import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import { WizardShell } from '@/components/onboarding/wizard-shell';
+import { usePathname, useRouter } from '@/i18n/navigation';
 import type { getOnboardingProfile } from '@/lib/onboarding/actions';
 import {
   getOnboardingResumeStep,

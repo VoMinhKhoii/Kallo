@@ -2,6 +2,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { ChevronDown, ChevronUp } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { loadMealDates } from '@/lib/actions/meals';
 import { cn } from '@/lib/utils';
@@ -72,6 +73,7 @@ export function TimelineSidebar({
   selectedDate,
   onSelectDate,
 }: TimelineSidebarProps) {
+  const td = useTranslations('dashboard');
   const timezoneOffset = new Date().getTimezoneOffset();
   const { data: dates = [] } = useQuery({
     queryKey: ['meal-dates', userId, timezoneOffset],
@@ -243,7 +245,7 @@ export function TimelineSidebar({
                                         }}
                                       >
                                         {isToday
-                                          ? 'Today'
+                                          ? td('today')
                                           : formatDayLabel(date)}
                                       </span>
                                     </button>

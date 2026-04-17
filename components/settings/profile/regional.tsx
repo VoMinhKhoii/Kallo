@@ -1,6 +1,7 @@
 'use client';
 
 import { Globe, MapPin } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { useFormContext } from 'react-hook-form';
 import { FormControl, FormField, FormItem } from '@/components/ui/form';
@@ -14,6 +15,7 @@ function CountrySelect({
   value: string | null;
   onChange: (v: string | null) => void;
 }) {
+  const tOrigin = useTranslations('onboarding.origin');
   const [search, setSearch] = useState('');
   const [isOpen, setIsOpen] = useState(false);
 
@@ -44,7 +46,7 @@ function CountrySelect({
                 const c = COUNTRIES.find((c) => c.value === value);
                 return c ? `${value} (${c.vi})` : value;
               })()
-            : 'Select a country…'}
+            : tOrigin('selectCountry')}
         </span>
         {value && (
           <button
@@ -69,14 +71,14 @@ function CountrySelect({
               ref={(el) => el?.focus()}
               onChange={(e) => setSearch(e.target.value)}
               aria-label="Search country"
-              placeholder="Search country…"
+              placeholder={tOrigin('searchCountry')}
               className="w-full rounded-lg bg-[#F5F4F0] px-3 py-2 text-[13px] outline-none placeholder:text-[#8B8682] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C9A87C]/30"
             />
           </div>
           <div className="max-h-48 overflow-y-auto p-1">
             {filtered.length === 0 ? (
               <div className="px-3 py-2 text-center text-[#8B8682] text-[13px]">
-                No results
+                {tOrigin('noCountries')}
               </div>
             ) : (
               filtered.map((c) => (
@@ -107,6 +109,7 @@ function CountrySelect({
 }
 
 export function Regional() {
+  const tOrigin = useTranslations('onboarding.origin');
   const form = useFormContext<ProfileFormValues>();
 
   return (
@@ -127,7 +130,7 @@ export function Regional() {
             <FormItem>
               <div className="mb-2 flex items-center gap-2 font-medium text-[#2C2416] text-[13px]">
                 <Globe className="h-4 w-4 text-[#C9A87C]" />
-                Country of origin
+                {tOrigin('countryOfOrigin')}
               </div>
               <FormControl>
                 <CountrySelect value={field.value} onChange={field.onChange} />
@@ -143,7 +146,7 @@ export function Regional() {
             <FormItem>
               <div className="mb-2 flex items-center gap-2 font-medium text-[#2C2416] text-[13px]">
                 <MapPin className="h-4 w-4 text-[#C9A87C]" />
-                Country of residence
+                {tOrigin('countryOfResidence')}
               </div>
               <FormControl>
                 <CountrySelect value={field.value} onChange={field.onChange} />

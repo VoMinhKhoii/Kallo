@@ -1,9 +1,9 @@
-import { redirect } from '@/i18n/navigation';
 import { z } from 'zod';
 import {
   type LoggingProfile,
   LoggingShell,
 } from '@/components/logging/logging-shell';
+import { redirect } from '@/i18n/navigation';
 import { requireAuthAndProfile } from '@/lib/auth';
 
 const DEFAULT_PROFILE: LoggingProfile = {

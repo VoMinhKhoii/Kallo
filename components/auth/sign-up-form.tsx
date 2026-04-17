@@ -2,26 +2,28 @@
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Loader2 } from 'lucide-react';
-import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import * as z from 'zod';
 import { useAuthDialog } from '@/components/auth/auth-provider';
 import { FormInput } from '@/components/auth/form-input';
+import { useRouter } from '@/i18n/navigation';
 import { createClient } from '@/lib/supabase/client';
 
-const signUpSchema = z.object({
-  email: z.email('Enter a valid email'),
-  password: z.string().min(6, 'Password must be at least 6 characters'),
-});
-
-type SignUpValues = z.infer<typeof signUpSchema>;
-
 export function SignUpForm() {
+  const t = useTranslations('auth');
   const { closeDialog } = useAuthDialog();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+
+  const signUpSchema = z.object({
+    email: z.email(t('signUp.emailError')),
+    password: z.string().min(6, t('signUp.passwordError')),
+  });
+
+  type SignUpValues = z.infer<typeof signUpSchema>;
 
   const {
     register,
@@ -52,16 +54,16 @@ export function SignUpForm() {
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
       <FormInput
-        label="Email"
+        label={t('signUp.email')}
         type="email"
-        placeholder="your@email.com"
+        placeholder={t('signUp.emailPlaceholder')}
         error={errors.email?.message}
         {...register('email')}
       />
       <FormInput
-        label="Password"
+        label={t('signUp.password')}
         type="password"
-        placeholder="••••••••"
+        placeholder={t('signUp.passwordPlaceholder')}
         error={errors.password?.message}
         {...register('password')}
       />
@@ -72,7 +74,7 @@ export function SignUpForm() {
         style={{ fontFamily: 'DM Sans, sans-serif' }}
       >
         {loading && <Loader2 className="h-4 w-4 animate-spin" />}
-        Create Account
+        {t('signUp.submit')}
       </button>
     </form>
   );

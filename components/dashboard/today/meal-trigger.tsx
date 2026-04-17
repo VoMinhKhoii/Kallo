@@ -2,11 +2,14 @@
 
 import { ArrowUp, UtensilsCrossed, X } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
-import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useRouter } from '@/i18n/navigation';
 import { cn } from '@/lib/utils';
 
 export function MealTrigger() {
+  const t = useTranslations('dashboard');
+  const tl = useTranslations('logging');
   const [expanded, setExpanded] = useState(false);
   const [text, setText] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
@@ -70,7 +73,7 @@ export function MealTrigger() {
             <input
               ref={inputRef}
               type="text"
-              placeholder="Describe your meal…"
+              placeholder={tl('placeholder')}
               className="min-w-0 flex-1 bg-transparent text-nham-text text-sm outline-none placeholder:text-nham-stone"
               value={text}
               onChange={(e) => setText(e.target.value)}
@@ -100,7 +103,7 @@ export function MealTrigger() {
         ref={triggerRef}
         type="button"
         onClick={expanded ? handleClose : handleOpen}
-        aria-label={expanded ? 'Close meal input' : 'Log meal'}
+        aria-label={expanded ? 'Close' : t('logMeal')}
         animate={{ rotate: expanded ? 45 : 0 }}
         transition={{ duration: 0.2 }}
         className="fixed right-6 bottom-6 z-50 flex h-12 w-12 items-center justify-center rounded-full bg-nham-btn text-white shadow-[0_4px_16px_rgba(44,36,22,0.2)] transition-colors hover:bg-nham-btn-hover"

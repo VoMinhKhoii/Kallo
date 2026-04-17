@@ -2,11 +2,13 @@
 
 import { ArrowRight, Sparkles } from 'lucide-react';
 import { motion, useScroll, useTransform } from 'motion/react';
+import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 import { useAuthDialog } from '@/components/auth/auth-provider';
 import { Button } from '@/components/ui/button';
 
 export function Hero() {
+  const t = useTranslations('landing');
   const { scrollY } = useScroll();
   const y = useTransform(scrollY, [0, 900], [0, 30]);
   const { openDialog } = useAuthDialog();
@@ -51,7 +53,7 @@ export function Hero() {
           >
             <Sparkles className="h-3.5 w-3.5 text-[#C9A87C]" />
             <span className="font-semibold text-[#8B7355] text-xs uppercase tracking-widest">
-              AI-Powered Nutrition
+              {t('hero.badge')}
             </span>
           </motion.div>
 
@@ -62,9 +64,9 @@ export function Hero() {
             className="mb-8 font-normal text-5xl text-[#2C2416] leading-[1.1] lg:text-7xl"
             style={{ fontFamily: 'Lora, serif' }}
           >
-            Track meals in <br />
+            {t('hero.title')} <br />
             <span className="font-light text-[#C9A87C] italic">
-              your own words.
+              {t('hero.titleHighlight')}
             </span>
           </motion.h1>
 
@@ -75,9 +77,7 @@ export function Hero() {
             className="mb-10 max-w-md font-light text-[#6B5D4F] text-lg leading-relaxed"
             style={{ fontFamily: 'DM Sans, sans-serif' }}
           >
-            Forget searching databases. Just describe your meal
-            naturally—Vietnamese style—and let our AI handle the complex macro
-            math.
+            {t('hero.subtitle')}
           </motion.p>
 
           <motion.div
@@ -92,13 +92,11 @@ export function Hero() {
               className="group"
               onClick={() => openDialog('sign-up')}
             >
-              <span className="font-medium tracking-wide">
-                Start Tracking Free
-              </span>
+              <span className="font-medium tracking-wide">{t('hero.cta')}</span>
               <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
             </Button>
             <Button variant="hero-outline" size="hero">
-              View Demo
+              {t('hero.ctaSecondary')}
             </Button>
           </motion.div>
 
@@ -121,7 +119,7 @@ export function Hero() {
               ))}
             </div>
             <div className="h-8 w-px bg-[#E8D5B5]" />
-            <p className="font-medium">Trusted by 10,000+ healthy eaters</p>
+            <p className="font-medium">{t('hero.socialProof')}</p>
           </motion.div>
         </div>
 
@@ -153,10 +151,10 @@ export function Hero() {
                 {/* Date Header */}
                 <div className="text-center">
                   <p className="mb-1 font-medium text-[#8B7355] text-xs uppercase tracking-widest">
-                    Today
+                    {t('hero.demo.today')}
                   </p>
                   <h3 className="font-serif text-[#2C2416] text-xl sm:text-2xl">
-                    Wednesday, 19
+                    {t('hero.demo.date')}
                   </h3>
                 </div>
 
@@ -173,7 +171,7 @@ export function Hero() {
                       </p>
                     </div>
                     <p className="mt-1.5 mr-1 text-right text-[#8B7355] text-[10px] opacity-60">
-                      Just now
+                      {t('hero.demo.justNow')}
                     </p>
                   </div>
 
@@ -196,11 +194,11 @@ export function Hero() {
                               <Sparkles className="h-2.5 w-2.5 text-[#C9A87C]" />
                             </div>
                             <span className="font-bold text-[#2C2416] text-[9px] uppercase tracking-wide sm:text-[10px]">
-                              Analysis
+                              {t('hero.demo.analysis')}
                             </span>
                           </div>
                           <span className="rounded-full bg-[#C9A87C]/10 px-1.5 py-0.5 font-medium text-[#C9A87C] text-[9px] sm:text-[10px]">
-                            High Confidence
+                            {t('hero.demo.highConfidence')}
                           </span>
                         </div>
 
@@ -229,7 +227,7 @@ export function Hero() {
 
                           <div className="mt-1 flex items-center justify-between border-[#F0EAE0] border-t pt-2">
                             <span className="font-medium font-serif text-[#2C2416] text-xs sm:text-sm">
-                              Total Calories
+                              {t('hero.demo.totalCalories')}
                             </span>
                             <span className="font-bold font-mono text-[#C9A87C] text-base sm:text-lg">
                               585
@@ -246,7 +244,7 @@ export function Hero() {
               <div className="absolute right-4 bottom-5 left-4 z-20 sm:right-5 sm:bottom-6 sm:left-5">
                 <div className="flex h-12 items-center justify-between rounded-full border border-[#E8D5B5]/30 bg-white px-2 pl-4 shadow-[0_8px_30px_rgba(0,0,0,0.08)] sm:h-14 sm:pl-5">
                   <span className="text-[#B0A695] text-sm sm:text-base">
-                    Add a meal...
+                    {t('hero.demo.inputPlaceholder')}
                   </span>
                   <div className="flex h-9 w-9 shrink-0 transform items-center justify-center rounded-full bg-[#2C2416] shadow-lg transition-transform active:scale-95 sm:h-10 sm:w-10">
                     <ArrowRight className="h-4 w-4 text-white" />
@@ -269,12 +267,11 @@ export function Hero() {
                 <div className="mb-1.5 flex items-center gap-1.5">
                   <div className="h-1.5 w-1.5 rounded-full bg-[#C9A87C]" />
                   <span className="font-bold text-[#8B7355] text-[9px] uppercase tracking-wider">
-                    Smart Context
+                    {t('hero.demo.smartContext')}
                   </span>
                 </div>
                 <p className="font-medium text-[#2C2416] text-[10px] leading-relaxed">
-                  "Calculated braised squid with Southern style sugar
-                  adjustment."
+                  {t('hero.demo.smartContextText')}
                 </p>
               </motion.div>
             )}
