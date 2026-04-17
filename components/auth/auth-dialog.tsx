@@ -8,7 +8,9 @@ import { SignUpForm } from '@/components/auth/sign-up-form';
 import { TabButton } from '@/components/auth/tab-button';
 
 export function AuthDialog() {
-  const t = useTranslations('auth');
+  const tDialog = useTranslations('auth.dialog');
+  const tSignIn = useTranslations('auth.signIn');
+  const tSignUp = useTranslations('auth.signUp');
   const { open, tab, closeDialog, setTab } = useAuthDialog();
 
   if (!open) return null;
@@ -49,16 +51,16 @@ export function AuthDialog() {
                   style={{ fontFamily: 'Lora, serif' }}
                 >
                   {tab === 'sign-in'
-                    ? t('dialog.signInTitle')
-                    : t('dialog.signUpTitle')}
+                    ? tDialog('signInTitle')
+                    : tDialog('signUpTitle')}
                 </h2>
                 <p
                   className="text-[#8B7355] text-sm"
                   style={{ fontFamily: 'DM Sans, sans-serif' }}
                 >
                   {tab === 'sign-in'
-                    ? t('dialog.signInSubtitle')
-                    : t('dialog.signUpSubtitle')}
+                    ? tDialog('signInSubtitle')
+                    : tDialog('signUpSubtitle')}
                 </p>
               </div>
 
@@ -69,13 +71,13 @@ export function AuthDialog() {
                     active={tab === 'sign-in'}
                     onClick={() => setTab('sign-in')}
                   >
-                    {t('dialog.signInTab')}
+                    {tDialog('signInTab')}
                   </TabButton>
                   <TabButton
                     active={tab === 'sign-up'}
                     onClick={() => setTab('sign-up')}
                   >
-                    {t('dialog.signUpTab')}
+                    {tDialog('signUpTab')}
                   </TabButton>
                 </div>
               </div>
@@ -100,8 +102,8 @@ export function AuthDialog() {
                   style={{ fontFamily: 'DM Sans, sans-serif' }}
                 >
                   {tab === 'sign-in'
-                    ? t('signIn.noAccount')
-                    : t('signUp.hasAccount')}
+                    ? tSignIn('noAccount')
+                    : tSignUp('hasAccount')}
                   <button
                     type="button"
                     onClick={() =>
@@ -110,8 +112,8 @@ export function AuthDialog() {
                     className="font-semibold text-[#C9A87C] transition-colors hover:text-[#A88B63]"
                   >
                     {tab === 'sign-in'
-                      ? t('signIn.signUpLink')
-                      : t('signUp.signInLink')}
+                      ? tSignIn('signUpLink')
+                      : tSignUp('signInLink')}
                   </button>
                 </p>
               </div>

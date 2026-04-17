@@ -6,7 +6,7 @@ import { useTranslations } from 'next-intl';
 import { useRef } from 'react';
 
 export function ProblemSection() {
-  const t = useTranslations('landing');
+  const t = useTranslations('landing.problem');
   const containerRef = useRef<HTMLDivElement>(null);
   const { scrollYProgress } = useScroll({
     target: containerRef,
@@ -59,7 +59,7 @@ export function ProblemSection() {
             <div className="mb-8 flex items-center gap-3">
               <div className="h-px w-12 bg-[#C9A87C]" />
               <span className="font-mono text-[#C9A87C] text-sm uppercase tracking-widest">
-                {t('problem.label')}
+                {t('label')}
               </span>
             </div>
 
@@ -67,10 +67,10 @@ export function ProblemSection() {
               className="mb-8 font-normal text-5xl leading-[1.1] lg:text-7xl"
               style={{ fontFamily: 'Lora, serif' }}
             >
-              {t('problem.title')}
+              {t('title')}
               <br />{' '}
               <span className="bg-gradient-to-r from-[#C9A87C] to-[#E8D5B5] bg-clip-text text-transparent italic">
-                {t('problem.titleHighlight')}
+                {t('titleHighlight')}
               </span>
             </h2>
 
@@ -78,25 +78,21 @@ export function ProblemSection() {
               className="mb-12 max-w-md font-light text-[#B0A695] text-xl leading-relaxed"
               style={{ fontFamily: 'DM Sans, sans-serif' }}
             >
-              {t('problem.subtitle')}
+              {t('subtitle')}
             </p>
 
             <div className="flex flex-col gap-6 border-[#FEFBF6]/10 border-l pl-8">
               <div className="group">
                 <h3 className="mb-2 font-medium text-[#FEFBF6] text-xl transition-colors group-hover:text-[#C9A87C]">
-                  {t('problem.card1Title')}
+                  {t('card1Title')}
                 </h3>
-                <p className="text-[#8B7355] text-sm">
-                  {t('problem.card1Text')}
-                </p>
+                <p className="text-[#8B7355] text-sm">{t('card1Text')}</p>
               </div>
               <div className="group">
                 <h3 className="mb-2 font-medium text-[#FEFBF6] text-xl transition-colors group-hover:text-[#C9A87C]">
-                  {t('problem.card2Title')}
+                  {t('card2Title')}
                 </h3>
-                <p className="text-[#8B7355] text-sm">
-                  {t('problem.card2Text')}
-                </p>
+                <p className="text-[#8B7355] text-sm">{t('card2Text')}</p>
               </div>
             </div>
           </motion.div>
@@ -125,20 +121,20 @@ export function ProblemSection() {
             <div className="mb-3 flex items-center gap-2 border-[#E8D5B5]/30 border-b pb-3">
               <Search className="h-4 w-4 text-[#8B7355]" />
               <span className="text-[#2C2416] text-sm">
-                {t('problem.visual.searchPlaceholder')}
+                {t('visual.searchPlaceholder')}
               </span>
             </div>
             <div className="space-y-1.5">
               <div className="flex items-center justify-between rounded-lg p-2 text-[#8B7355] text-xs">
-                <span>{t('problem.visual.searchResult1')}</span>
+                <span>{t('visual.searchResult1')}</span>
                 <span className="font-mono">120 kcal</span>
               </div>
               <div className="flex items-center justify-between rounded-lg p-2 text-[#8B7355] text-xs">
-                <span>{t('problem.visual.searchResult2')}</span>
+                <span>{t('visual.searchResult2')}</span>
                 <span className="font-mono">0 kcal</span>
               </div>
               <div className="flex items-center justify-between rounded-lg bg-red-50 p-2 font-medium text-red-500 text-xs">
-                <span>{t('problem.visual.noMatch')}</span>
+                <span>{t('visual.noMatch')}</span>
                 <AlertCircle className="h-3 w-3" />
               </div>
             </div>
@@ -155,10 +151,10 @@ export function ProblemSection() {
               </div>
               <div>
                 <div className="mb-1 text-[#8B7355] text-xs">
-                  {t('problem.visual.detected')}
+                  {t('visual.detected')}
                 </div>
                 <div className="font-bold text-[#FEFBF6] text-lg">
-                  {t('problem.visual.braisedPork')}
+                  {t('visual.braisedPork')}
                 </div>
                 <div className="mt-1 font-mono text-green-400 text-sm">
                   250 kcal
@@ -169,7 +165,7 @@ export function ProblemSection() {
               <div className="absolute inset-0 animate-pulse bg-red-500/5" />
               <div className="relative flex items-center justify-between text-xs">
                 <span className="font-medium text-red-400">
-                  {t('problem.visual.hiddenCalories')}
+                  {t('visual.hiddenCalories')}
                 </span>
                 <span className="font-bold font-mono text-red-400">
                   +180 kcal
@@ -187,10 +183,10 @@ export function ProblemSection() {
               <X className="h-5 w-5 text-red-500" />
             </div>
             <h4 className="mb-1 font-bold text-[#2C2416]">
-              {t('problem.visual.entryFailed')}
+              {t('visual.entryFailed')}
             </h4>
             <p className="text-[#8B7355] text-xs leading-tight">
-              {t('problem.visual.entryFailedText')}
+              {t('visual.entryFailedText')}
             </p>
           </motion.div>
         </div>
@@ -207,20 +203,20 @@ export function ProblemSection() {
             <div className="mb-3 flex items-center gap-2 border-[#E8D5B5]/30 border-b pb-3">
               <Search className="h-4 w-4 text-[#8B7355]" />
               <span className="text-[#2C2416] text-sm">
-                {t('problem.visual.searchPlaceholder')}
+                {t('visual.searchPlaceholder')}
               </span>
             </div>
             <div className="space-y-1.5">
               <div className="flex items-center justify-between p-2 text-[#8B7355] text-xs">
-                <span>{t('problem.visual.searchResult1')}</span>
+                <span>{t('visual.searchResult1')}</span>
                 <span className="font-mono">120 kcal</span>
               </div>
               <div className="flex items-center justify-between p-2 text-[#8B7355] text-xs">
-                <span>{t('problem.visual.searchResult2')}</span>
+                <span>{t('visual.searchResult2')}</span>
                 <span className="font-mono">0 kcal</span>
               </div>
               <div className="flex items-center justify-between rounded-lg bg-red-50 p-2 font-medium text-red-500 text-xs">
-                <span>{t('problem.visual.noMatch')}</span>
+                <span>{t('visual.noMatch')}</span>
                 <AlertCircle className="h-3 w-3" />
               </div>
             </div>
@@ -239,10 +235,10 @@ export function ProblemSection() {
               </div>
               <div>
                 <div className="mb-1 text-[#8B7355] text-xs">
-                  {t('problem.visual.detected')}
+                  {t('visual.detected')}
                 </div>
                 <div className="font-bold text-[#FEFBF6]">
-                  {t('problem.visual.braisedPork')}
+                  {t('visual.braisedPork')}
                 </div>
                 <div className="mt-1 font-mono text-green-400 text-sm">
                   250 kcal
@@ -252,7 +248,7 @@ export function ProblemSection() {
             <div className="mt-4 border-[#C9A87C]/10 border-t pt-4">
               <div className="flex items-center justify-between text-xs">
                 <span className="font-medium text-red-400">
-                  {t('problem.visual.hiddenCalories')}
+                  {t('visual.hiddenCalories')}
                 </span>
                 <span className="font-bold font-mono text-red-400">
                   +180 kcal
@@ -272,10 +268,10 @@ export function ProblemSection() {
               <X className="h-5 w-5 text-red-500" />
             </div>
             <h4 className="mb-1 font-bold text-[#2C2416]">
-              {t('problem.visual.entryFailed')}
+              {t('visual.entryFailed')}
             </h4>
             <p className="text-[#8B7355] text-xs leading-tight">
-              {t('problem.visual.entryFailedText')}
+              {t('visual.entryFailedText')}
             </p>
           </motion.div>
         </div>
@@ -294,12 +290,12 @@ export function ProblemSection() {
           </div>
 
           <p className="mx-auto max-w-4xl font-serif text-2xl text-[#E8D5B5] italic leading-normal lg:text-3xl">
-            {t('problem.quote')}
+            {t('quote')}
           </p>
           <div className="mt-6 flex items-center justify-center gap-3">
             <div className="h-px w-8 bg-[#C9A87C]/50" />
             <span className="font-bold text-[#8B7355] text-xs uppercase tracking-widest">
-              {t('problem.quoteLabel')}
+              {t('quoteLabel')}
             </span>
             <div className="h-px w-8 bg-[#C9A87C]/50" />
           </div>

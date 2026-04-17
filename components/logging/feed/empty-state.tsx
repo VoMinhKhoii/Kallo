@@ -11,7 +11,7 @@ interface EmptyStateProps {
 const SUGGESTIONS = ['2 mực kho + cơm', 'Phở bò tái', 'Bún chả Hà Nội'];
 
 export function EmptyState({ onSuggestionClick }: EmptyStateProps) {
-  const t = useTranslations('logging');
+  const t = useTranslations('logging.emptyState');
 
   return (
     <motion.div
@@ -49,7 +49,7 @@ export function EmptyState({ onSuggestionClick }: EmptyStateProps) {
           className="text-nham-text-muted text-sm"
           style={{ fontFamily: 'DM Sans, sans-serif' }}
         >
-          Describe your meal and get a macro breakdown.
+          {t('subtitle')}
         </motion.p>
       </div>
 

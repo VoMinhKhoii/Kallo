@@ -1,8 +1,19 @@
+import type { Metadata } from 'next';
+import { getTranslations } from 'next-intl/server';
 import { Profile } from '@/components/settings/profile';
 import { Link } from '@/i18n/navigation';
 import { getOnboardingProfile } from '@/lib/onboarding/actions';
 
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations('settings.profilePage');
+
+  return {
+    title: t('title'),
+  };
+}
+
 export default async function ProfileSettingsPage() {
+  const t = await getTranslations('settings.profilePage');
   const profile = await getOnboardingProfile();
 
   if (!profile) {
@@ -12,19 +23,19 @@ export default async function ProfileSettingsPage() {
           className="font-semibold text-[#2C2416] text-xl"
           style={{ fontFamily: 'Lora, serif' }}
         >
-          No profile found
+          {t('emptyTitle')}
         </h1>
         <p
           className="text-center text-[#6B5D4F]"
           style={{ fontFamily: 'DM Sans, sans-serif' }}
         >
-          You need to complete the initial setup before editing your settings.
+          {t('emptyDescription')}
         </p>
         <Link
           href="/onboarding"
           className="rounded-lg bg-[#2C2416] px-4 py-2 font-medium text-[#FEFBF6] text-sm"
         >
-          Start setup
+          {t('startSetup')}
         </Link>
       </div>
     );
@@ -37,13 +48,13 @@ export default async function ProfileSettingsPage() {
           className="font-medium text-2xl text-[#2C2416] tracking-tight"
           style={{ fontFamily: 'Lora, serif' }}
         >
-          Profile
+          {t('title')}
         </h1>
         <p
           className="mt-1 text-[#8B8682] text-[14px]"
           style={{ fontFamily: 'DM Sans, sans-serif' }}
         >
-          Manage your body metrics, regional preferences, and cooking habits.
+          {t('description')}
         </p>
       </div>
       <Profile profile={profile} />

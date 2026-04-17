@@ -15,7 +15,7 @@ import { useEffect, useRef, useState } from 'react';
 // --- Sub-components for the Visualization ---
 
 function ReceiptHeader() {
-  const t = useTranslations('landing');
+  const t = useTranslations('landing.solution.receipt');
   return (
     <div className="border-[#E8D5B5] border-b-2 border-dashed bg-[#FAF9F7] p-6 text-center">
       <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-[#2C2416] text-[#FEFBF6] shadow-lg">
@@ -30,7 +30,7 @@ function ReceiptHeader() {
         className="mb-1 text-[#2C2416] text-xl uppercase tracking-widest"
         style={{ fontFamily: 'Lora, serif' }}
       >
-        {t('solution.receipt.title')}
+        {t('title')}
       </h3>
       <p className="font-mono text-[#8B7355] text-[10px] tracking-wider">
         ID: #8392-VN • SAIGON • {new Date().toLocaleDateString('en-US')}
@@ -46,7 +46,7 @@ function ReceiptFooter() {
 }
 
 const ReceiptVisual = ({ stage }: { stage: number }) => {
-  const t = useTranslations('landing');
+  const t = useTranslations('landing.solution.receipt');
   return (
     <div className="relative mx-auto w-full max-w-[380px] overflow-hidden rounded-lg border-[#2C2416] border-t-4 bg-white shadow-2xl">
       <ReceiptHeader />
@@ -115,7 +115,7 @@ const ReceiptVisual = ({ stage }: { stage: number }) => {
               >
                 <Database className="h-3 w-3 animate-pulse" />
                 <span className="font-mono uppercase tracking-wide">
-                  {t('solution.receipt.dbQuery')}
+                  {t('dbQuery')}
                 </span>
               </motion.div>
             </motion.div>
@@ -132,35 +132,29 @@ const ReceiptVisual = ({ stage }: { stage: number }) => {
             >
               <div className="mb-4 flex items-center justify-between border-[#E8D5B5]/30 border-b pb-2">
                 <span className="font-bold text-[#8B7355] text-xs uppercase tracking-widest">
-                  {t('solution.receipt.profileTitle')}
+                  {t('profileTitle')}
                 </span>
                 <User className="h-4 w-4 text-[#C9A87C]" />
               </div>
               <div className="space-y-3 text-[#6B5D4F] text-xs">
                 <div className="flex items-center justify-between">
-                  <span className="font-medium">
-                    {t('solution.receipt.regionPref')}
-                  </span>
+                  <span className="font-medium">{t('regionPref')}</span>
                   <span className="rounded border border-[#E8D5B5]/30 bg-white px-2 py-0.5 font-bold text-[#2C2416]">
-                    {t('solution.receipt.regionValue')}
+                    {t('regionValue')}
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="font-medium">
-                    {t('solution.receipt.modification')}
-                  </span>
+                  <span className="font-medium">{t('modification')}</span>
                   <span className="rounded border border-red-100 bg-red-50 px-2 py-0.5 font-bold text-red-600">
-                    {t('solution.receipt.modificationValue')}
+                    {t('modificationValue')}
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="font-medium">
-                    {t('solution.receipt.goalStrategy')}
-                  </span>
+                  <span className="font-medium">{t('goalStrategy')}</span>
                   <div className="flex items-center gap-1 rounded border border-[#C9A87C]/20 bg-[#C9A87C]/10 px-2 py-0.5 font-bold text-[#2C2416]">
-                    <span>{t('solution.receipt.goalCutting')}</span>
+                    <span>{t('goalCutting')}</span>
                     <ArrowRight className="h-3 w-3" />
-                    <span>{t('solution.receipt.goalUpperBound')}</span>
+                    <span>{t('goalUpperBound')}</span>
                   </div>
                 </div>
               </div>
@@ -184,7 +178,7 @@ const ReceiptVisual = ({ stage }: { stage: number }) => {
                       fontFamily: 'Lora, serif',
                     }}
                   >
-                    {t('solution.receipt.total')}
+                    {t('total')}
                   </span>
                   <span className="font-bold font-mono text-4xl text-[#2C2416]">
                     ~845
@@ -194,11 +188,11 @@ const ReceiptVisual = ({ stage }: { stage: number }) => {
                   </span>
                 </div>
                 <div className="mt-1 rounded border border-[#E8D5B5]/50 bg-[#FAF9F7] px-2 py-1 font-mono text-[#8B7355] text-[10px]">
-                  {t('solution.receipt.range')}
+                  {t('range')}
                 </div>
                 <div className="mt-1 flex items-center gap-1 font-medium text-[#C9A87C] text-[10px]">
                   <div className="h-1.5 w-1.5 rounded-full bg-[#C9A87C]" />
-                  {t('solution.receipt.upperBoundNote')}
+                  {t('upperBoundNote')}
                 </div>
               </div>
               <div className="mt-4 grid grid-cols-3 gap-2">
@@ -224,7 +218,7 @@ const ReceiptVisual = ({ stage }: { stage: number }) => {
 };
 
 export function SolutionSection() {
-  const t = useTranslations('landing');
+  const t = useTranslations('landing.solution');
   const containerRef = useRef<HTMLDivElement>(null);
   const [currentStage, setCurrentStage] = useState(1);
 
@@ -265,82 +259,82 @@ export function SolutionSection() {
           {/* Section 1 */}
           <div className="flex h-screen flex-col justify-center px-10">
             <span className="mb-4 font-mono text-[#C9A87C] text-xs uppercase tracking-widest">
-              {t('solution.step1Label')}
+              {t('step1Label')}
             </span>
             <h2
               className="mb-6 text-5xl leading-tight"
               style={{ fontFamily: 'Lora, serif' }}
             >
-              {t('solution.step1Title')}
+              {t('step1Title')}
             </h2>
             <p
               className="font-light text-[#6B5D4F] text-lg leading-relaxed"
               style={{ fontFamily: 'DM Sans, sans-serif' }}
             >
-              {t('solution.step1Text')}
+              {t('step1Text')}
             </p>
           </div>
 
           {/* Section 2 */}
           <div className="flex h-screen flex-col justify-center px-10">
             <span className="mb-4 font-mono text-[#C9A87C] text-xs uppercase tracking-widest">
-              {t('solution.step2Label')}
+              {t('step2Label')}
             </span>
             <h2
               className="mb-6 text-5xl leading-tight"
               style={{ fontFamily: 'Lora, serif' }}
             >
-              {t('solution.step2Title')}
+              {t('step2Title')}
             </h2>
             <p
               className="font-light text-[#6B5D4F] text-lg leading-relaxed"
               style={{ fontFamily: 'DM Sans, sans-serif' }}
             >
-              {t('solution.step2Text')}
+              {t('step2Text')}
             </p>
           </div>
 
           {/* Section 3 */}
           <div className="flex h-screen flex-col justify-center px-10">
             <span className="mb-4 font-mono text-[#C9A87C] text-xs uppercase tracking-widest">
-              {t('solution.step3Label')}
+              {t('step3Label')}
             </span>
             <h2
               className="mb-6 text-5xl leading-tight"
               style={{ fontFamily: 'Lora, serif' }}
             >
-              {t('solution.step3Title')}
+              {t('step3Title')}
             </h2>
             <p
               className="font-light text-[#6B5D4F] text-lg leading-relaxed"
               style={{ fontFamily: 'DM Sans, sans-serif' }}
             >
-              {t('solution.step3Text')}
+              {t('step3Text')}
             </p>
           </div>
 
           {/* Section 4 */}
           <div className="flex h-screen flex-col justify-center px-10">
             <span className="mb-4 font-mono text-[#C9A87C] text-xs uppercase tracking-widest">
-              {t('solution.step4Label')}
+              {t('step4Label')}
             </span>
             <h2
               className="mb-6 text-5xl leading-tight"
               style={{ fontFamily: 'Lora, serif' }}
             >
-              {t('solution.step4Title')}
+              {t('step4Title')}
             </h2>
             <p
               className="mb-8 font-light text-[#6B5D4F] text-lg leading-relaxed"
               style={{ fontFamily: 'DM Sans, sans-serif' }}
             >
-              {t('solution.step4Text')}
+              {t('step4Text')}
             </p>
             <button
               type="button"
               className="group flex w-fit items-center gap-2 bg-[#2C2416] px-8 py-4 font-mono text-[#FEFBF6] text-sm uppercase tracking-wider transition-all duration-300 hover:bg-[#4A3F30]"
             >
-              {t('solution.cta')}
+              {t('cta')}
               <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
             </button>
           </div>
@@ -352,19 +346,19 @@ export function SolutionSection() {
         {/* Stage 1 */}
         <div className="border-[#E8D5B5]/30 border-b px-6 py-14">
           <span className="mb-4 block font-mono text-[#C9A87C] text-xs uppercase tracking-widest">
-            {t('solution.step1Label')}
+            {t('step1Label')}
           </span>
           <h2
             className="mb-4 text-4xl text-[#2C2416] leading-tight"
             style={{ fontFamily: 'Lora, serif' }}
           >
-            {t('solution.step1Title')}
+            {t('step1Title')}
           </h2>
           <p
             className="mb-8 font-light text-[#6B5D4F] leading-relaxed"
             style={{ fontFamily: 'DM Sans, sans-serif' }}
           >
-            {t('solution.step1TextMobile')}
+            {t('step1TextMobile')}
           </p>
           <ReceiptVisual stage={1} />
         </div>
@@ -372,19 +366,19 @@ export function SolutionSection() {
         {/* Stage 2 */}
         <div className="border-[#E8D5B5]/30 border-b bg-[#FFFDF9] px-6 py-14">
           <span className="mb-4 block font-mono text-[#C9A87C] text-xs uppercase tracking-widest">
-            {t('solution.step2Label')}
+            {t('step2Label')}
           </span>
           <h2
             className="mb-4 text-4xl text-[#2C2416] leading-tight"
             style={{ fontFamily: 'Lora, serif' }}
           >
-            {t('solution.step2Title')}
+            {t('step2Title')}
           </h2>
           <p
             className="mb-8 font-light text-[#6B5D4F] leading-relaxed"
             style={{ fontFamily: 'DM Sans, sans-serif' }}
           >
-            {t('solution.step2TextMobile')}
+            {t('step2TextMobile')}
           </p>
           <ReceiptVisual stage={2} />
         </div>
@@ -392,19 +386,19 @@ export function SolutionSection() {
         {/* Stage 3 */}
         <div className="border-[#E8D5B5]/30 border-b px-6 py-14">
           <span className="mb-4 block font-mono text-[#C9A87C] text-xs uppercase tracking-widest">
-            {t('solution.step3Label')}
+            {t('step3Label')}
           </span>
           <h2
             className="mb-4 text-4xl text-[#2C2416] leading-tight"
             style={{ fontFamily: 'Lora, serif' }}
           >
-            {t('solution.step3Title')}
+            {t('step3Title')}
           </h2>
           <p
             className="mb-8 font-light text-[#6B5D4F] leading-relaxed"
             style={{ fontFamily: 'DM Sans, sans-serif' }}
           >
-            {t('solution.step3TextMobile')}
+            {t('step3TextMobile')}
           </p>
           <ReceiptVisual stage={3} />
         </div>
@@ -412,19 +406,19 @@ export function SolutionSection() {
         {/* Stage 4 */}
         <div className="bg-[#FFFDF9] px-6 py-14">
           <span className="mb-4 block font-mono text-[#C9A87C] text-xs uppercase tracking-widest">
-            {t('solution.step4Label')}
+            {t('step4Label')}
           </span>
           <h2
             className="mb-4 text-4xl text-[#2C2416] leading-tight"
             style={{ fontFamily: 'Lora, serif' }}
           >
-            {t('solution.step4Title')}
+            {t('step4Title')}
           </h2>
           <p
             className="mb-8 font-light text-[#6B5D4F] leading-relaxed"
             style={{ fontFamily: 'DM Sans, sans-serif' }}
           >
-            {t('solution.step4TextMobile')}
+            {t('step4TextMobile')}
           </p>
           <ReceiptVisual stage={4} />
           <div className="mt-10 text-center">
@@ -432,7 +426,7 @@ export function SolutionSection() {
               type="button"
               className="flex w-full items-center justify-center gap-2 bg-[#2C2416] px-8 py-4 font-mono text-[#FEFBF6] text-sm uppercase tracking-wider transition-all duration-300 hover:bg-[#4A3F30]"
             >
-              {t('solution.cta')}
+              {t('cta')}
               <ArrowRight className="h-4 w-4" />
             </button>
           </div>
@@ -449,13 +443,13 @@ export function SolutionSection() {
           className="mb-16 text-center"
         >
           <span className="mb-4 block font-medium text-[#8B7355] text-sm uppercase tracking-widest">
-            {t('solution.whyLabel')}
+            {t('whyLabel')}
           </span>
           <h2
             className="mb-6 font-normal text-4xl text-[#2C2416] lg:text-5xl"
             style={{ fontFamily: 'Lora, serif' }}
           >
-            {t('solution.whyTitle')}
+            {t('whyTitle')}
           </h2>
         </motion.div>
 
@@ -475,7 +469,7 @@ export function SolutionSection() {
                   className="mb-2 font-medium text-[#2C2416] text-xl"
                   style={{ fontFamily: 'Lora, serif' }}
                 >
-                  {t('solution.feature1Title')}
+                  {t('feature1Title')}
                 </h3>
                 <p
                   className="text-[#6B5D4F] leading-relaxed"
@@ -483,7 +477,7 @@ export function SolutionSection() {
                     fontFamily: 'DM Sans, sans-serif',
                   }}
                 >
-                  {t('solution.feature1Text')}
+                  {t('feature1Text')}
                 </p>
               </div>
             </div>
@@ -497,7 +491,7 @@ export function SolutionSection() {
                   className="mb-2 font-medium text-[#2C2416] text-xl"
                   style={{ fontFamily: 'Lora, serif' }}
                 >
-                  {t('solution.feature2Title')}
+                  {t('feature2Title')}
                 </h3>
                 <p
                   className="text-[#6B5D4F] leading-relaxed"
@@ -505,7 +499,7 @@ export function SolutionSection() {
                     fontFamily: 'DM Sans, sans-serif',
                   }}
                 >
-                  {t('solution.feature2Text')}
+                  {t('feature2Text')}
                 </p>
               </div>
             </div>
@@ -519,7 +513,7 @@ export function SolutionSection() {
                   className="mb-2 font-medium text-[#2C2416] text-xl"
                   style={{ fontFamily: 'Lora, serif' }}
                 >
-                  {t('solution.feature3Title')}
+                  {t('feature3Title')}
                 </h3>
                 <p
                   className="text-[#6B5D4F] leading-relaxed"
@@ -527,7 +521,7 @@ export function SolutionSection() {
                     fontFamily: 'DM Sans, sans-serif',
                   }}
                 >
-                  {t('solution.feature3Text')}
+                  {t('feature3Text')}
                 </p>
               </div>
             </div>
@@ -542,50 +536,50 @@ export function SolutionSection() {
           >
             <div className="flex items-center justify-between border-[#E8D5B5]/30 border-b bg-[#F9F6F1] px-6 py-4">
               <span className="font-medium text-[#8B7355] text-sm">
-                {t('solution.profile.title')}
+                {t('profile.title')}
               </span>
               <span className="rounded bg-[#E8D5B5]/20 px-2 py-1 text-[#C9A87C] text-xs">
-                {t('solution.profile.active')}
+                {t('profile.active')}
               </span>
             </div>
 
             <div className="space-y-6 p-8">
               <div className="flex items-center justify-between border-[#E8D5B5]/20 border-b pb-4">
                 <span className="text-[#6B5D4F]">
-                  {t('solution.profile.regionTaste')}
+                  {t('profile.regionTaste')}
                 </span>
                 <span className="font-medium text-[#2C2416]">
-                  {t('solution.profile.regionTasteValue')}
+                  {t('profile.regionTasteValue')}
                 </span>
               </div>
               <div className="flex items-center justify-between border-[#E8D5B5]/20 border-b pb-4">
                 <span className="text-[#6B5D4F]">
-                  {t('solution.profile.braisedDishes')}
+                  {t('profile.braisedDishes')}
                 </span>
                 <span className="font-medium text-[#2C2416]">
-                  {t('solution.profile.braisedDishesValue')}
+                  {t('profile.braisedDishesValue')}
                 </span>
               </div>
               <div className="flex items-center justify-between border-[#E8D5B5]/20 border-b pb-4">
                 <span className="text-[#6B5D4F]">
-                  {t('solution.profile.chickenSkin')}
+                  {t('profile.chickenSkin')}
                 </span>
                 <span className="font-medium text-[#2C2416]">
-                  {t('solution.profile.chickenSkinValue')}
+                  {t('profile.chickenSkinValue')}
                 </span>
               </div>
               <div className="flex items-center justify-between border-[#E8D5B5]/20 border-b pb-4">
                 <span className="text-[#6B5D4F]">
-                  {t('solution.profile.ricePortion')}
+                  {t('profile.ricePortion')}
                 </span>
                 <span className="font-medium text-[#2C2416]">
-                  {t('solution.profile.ricePortionValue')}
+                  {t('profile.ricePortionValue')}
                 </span>
               </div>
 
               <div className="mt-6 rounded-xl border border-[#E8D5B5]/30 bg-[#FEFBF6] p-4">
                 <p className="text-[#8B7355] text-sm italic">
-                  {t('solution.profile.disclaimer')}
+                  {t('profile.disclaimer')}
                 </p>
               </div>
             </div>

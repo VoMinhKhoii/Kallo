@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { DM_Sans, Fraunces, Geist, Geist_Mono, Lora } from 'next/font/google';
 import { notFound } from 'next/navigation';
 import { hasLocale, NextIntlClientProvider } from 'next-intl';
-import { getMessages } from 'next-intl/server';
+import { getMessages, getTranslations } from 'next-intl/server';
 import { QueryProvider } from '@/components/providers/query-provider';
 import { Toaster } from '@/components/ui/sonner';
 import { routing } from '@/i18n/navigation';
@@ -39,10 +39,27 @@ const dmSans = DM_Sans({
   display: 'swap',
 });
 
-export const metadata: Metadata = {
-  title: 'Nhẩm — Vietnamese Meal Tracker',
-  description: 'Track Vietnamese meals with AI-powered nutrition analysis',
-};
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+
+  if (!hasLocale(routing.locales, locale)) {
+    return {};
+  }
+
+  const t = await getTranslations({
+    locale,
+    namespace: 'metadata.root',
+  });
+
+  return {
+    title: t('title'),
+    description: t('description'),
+  };
+}
 
 export function generateStaticParams() {
   return routing.locales.map((locale) => ({ locale }));

@@ -15,7 +15,7 @@ interface NavItem {
 
 function SidebarInner() {
   const pathname = usePathname();
-  const t = useTranslations('settings');
+  const t = useTranslations('settings.sidebar');
 
   const NAV_ITEMS: NavItem[] = [
     {
@@ -29,7 +29,7 @@ function SidebarInner() {
   return (
     <aside
       className="flex w-full flex-col gap-4 md:w-[220px]"
-      aria-label="Settings navigation"
+      aria-label={t('navigationLabel')}
       style={{ fontFamily: 'DM Sans, sans-serif' }}
     >
       <h2

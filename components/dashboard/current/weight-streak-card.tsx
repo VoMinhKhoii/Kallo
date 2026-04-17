@@ -4,24 +4,12 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Check, Scale } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useTranslations } from 'next-intl';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { z } from 'zod';
 import type { StatsData, VerdictData } from '@/components/dashboard/types';
 import { cn } from '@/lib/utils';
-
-const weightSchema = z.object({
-  weight: z
-    .string()
-    .min(1, 'Weight is required')
-    .refine((v) => {
-      const n = Number(v);
-      return !isNaN(n) && n > 0 && n < 500;
-    }, 'Enter a valid weight (0–500 kg)'),
-});
-
-type WeightForm = z.infer<typeof weightSchema>;
 
 interface WeightCardProps {
   stats: StatsData;
@@ -29,9 +17,29 @@ interface WeightCardProps {
 }
 
 export function WeightCard({ stats, verdict }: WeightCardProps) {
+  const t = useTranslations('dashboard.weightCard');
   const tc = useTranslations('common');
   const [saved, setSaved] = useState(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const weightSchema = useMemo(
+    () =>
+      z.object({
+        weight: z
+          .string()
+          .min(1, t('required'))
+          .refine((value) => {
+            const numericValue = Number(value);
+            return (
+              !Number.isNaN(numericValue) &&
+              numericValue > 0 &&
+              numericValue < 500
+            );
+          }, t('invalid')),
+      }),
+    [t]
+  );
+
+  type WeightForm = z.infer<typeof weightSchema>;
 
   const alreadyLogged = stats.todayWeight !== null;
 
@@ -80,14 +88,12 @@ export function WeightCard({ stats, verdict }: WeightCardProps) {
         <div className="flex items-center gap-1.5">
           <Scale className="h-3.5 w-3.5 text-nham-accent" />
           <span className="font-bold text-[9px] text-nham-stone uppercase tracking-[0.15em]">
-            {alreadyLogged ? "Today's Weight" : 'Morning Weight'}
+            {alreadyLogged ? t('todaysWeight') : t('morningWeight')}
           </span>
         </div>
 
         <form
-          onSubmit={handleSubmit(onSubmit, () =>
-            toast.error('Enter a valid weight (0–500 kg)')
-          )}
+          onSubmit={handleSubmit(onSubmit, () => toast.error(t('invalid')))}
           className="flex items-center gap-2"
         >
           <div className="relative flex-1">
@@ -124,14 +130,11 @@ export function WeightCard({ stats, verdict }: WeightCardProps) {
         <div className="flex items-center justify-between">
           {!alreadyLogged && (
             <p className="text-[9px] text-nham-stone">
-              Last: {verdict.currentWeight} kg
+              {t('lastLogged', { weight: verdict.currentWeight })}
             </p>
           )}
           <p className="ml-auto text-[9px] text-nham-stone">
-            <span className="font-semibold text-nham-text">
-              {stats.daysLogged}
-            </span>{' '}
-            of last 30 days logged
+            {t('loggedDays', { count: stats.daysLogged, total: 30 })}
           </p>
         </div>
       </div>

@@ -1,6 +1,7 @@
 'use client';
 
 import { motion } from 'motion/react';
+import { useTranslations } from 'next-intl';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { TimeRange } from '@/components/dashboard/types';
 import { getHeatmapColor, HEATMAP_COLORS } from '@/components/dashboard/types';
@@ -22,6 +23,7 @@ interface AdherenceHeatmapProps {
 }
 
 export function AdherenceHeatmap({ data, range }: AdherenceHeatmapProps) {
+  const t = useTranslations('dashboard.adherenceHeatmap');
   const gridRef = useRef<HTMLDivElement>(null);
   const [sq, setSq] = useState(19);
 
@@ -63,10 +65,7 @@ export function AdherenceHeatmap({ data, range }: AdherenceHeatmapProps) {
         {/* Header */}
         <div className="mb-1.5 flex items-baseline justify-between gap-2">
           <span className="shrink-0 font-mono text-nham-text-muted text-xs">
-            <span className="font-semibold text-nham-text">
-              {adherenceRate}%
-            </span>{' '}
-            on track
+            {t('onTrack', { percent: adherenceRate })}
           </span>
         </div>
 
@@ -98,11 +97,11 @@ export function AdherenceHeatmap({ data, range }: AdherenceHeatmapProps) {
             {Array.from({ length: numWeeks }, (_, wi) =>
               data.map((dayRow, di) => {
                 const val = dayRow[wi] ?? null;
-                const { bg, label } = getHeatmapColor(val);
+                const { bg, labelKey } = getHeatmapColor(val);
                 const isNull = val === null;
                 const tooltipText = isNull
-                  ? 'Not logged'
-                  : `${label} · ${Math.round((val ?? 0) * 100)}%`;
+                  ? t('notLogged')
+                  : `${t(labelKey)} · ${Math.round((val ?? 0) * 100)}%`;
 
                 return (
                   <Tooltip key={`${di}-${wi}`}>
@@ -139,14 +138,14 @@ export function AdherenceHeatmap({ data, range }: AdherenceHeatmapProps) {
 
         {/* Legend */}
         <div className="mt-2 flex items-center gap-2">
-          <span className="text-[9px] text-nham-stone">Off target</span>
+          <span className="text-[9px] text-nham-stone">{t('offTarget')}</span>
           <div
             className="h-1.5 flex-1 rounded-full"
             style={{
               background: `linear-gradient(to right, ${HEATMAP_COLORS.far}, ${HEATMAP_COLORS.moderate}, ${HEATMAP_COLORS.slight}, ${HEATMAP_COLORS.close}, ${HEATMAP_COLORS.onTarget})`,
             }}
           />
-          <span className="text-[9px] text-nham-stone">On target</span>
+          <span className="text-[9px] text-nham-stone">{t('onTarget')}</span>
         </div>
       </div>
     </TooltipProvider>

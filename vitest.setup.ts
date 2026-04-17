@@ -8,7 +8,7 @@ vi.mock('next-intl', () => ({
       if (params) {
         return Object.entries(params).reduce(
           (str, [k, v]) => str.replace(`{${k}}`, String(v)),
-          key,
+          key
         );
       }
       return key;
@@ -29,7 +29,10 @@ vi.mock('@/i18n/navigation', () => ({
     href,
     children,
     ...props
-  }: { href: string; children: React.ReactNode }) => {
+  }: {
+    href: string;
+    children: React.ReactNode;
+  }) => {
     const React = require('react');
     return React.createElement('a', { href, ...props }, children);
   },

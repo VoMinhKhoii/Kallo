@@ -12,7 +12,7 @@ import {
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
-import { Link, usePathname, useRouter } from '@/i18n/navigation';
+import { Link, usePathname } from '@/i18n/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { cn } from '@/lib/utils';
 
@@ -59,8 +59,7 @@ export function MainSidebar({
   onResumeOnboarding?: () => void;
 }) {
   const pathname = usePathname();
-  const router = useRouter();
-  const t = useTranslations('nav');
+  const t = useTranslations('app.mainSidebar');
   const [collapsed, setCollapsed] = useState(false);
 
   const navItems: NavItem[] = [
@@ -72,7 +71,7 @@ export function MainSidebar({
     },
     {
       id: 'tracking',
-      label: 'Tracking',
+      label: t('tracking'),
       href: '/tracking',
       icon: <Activity className="h-5 w-5 shrink-0" />,
     },
@@ -87,14 +86,14 @@ export function MainSidebar({
   const handleSignOut = async () => {
     const supabase = createClient();
     await supabase.auth.signOut();
-    router.push('/');
-    router.refresh();
+    document.cookie = 'NEXT_LOCALE=; Path=/; Max-Age=0; SameSite=Lax';
+    window.location.assign('/');
   };
 
   return (
     <aside
       className="flex h-full shrink-0 flex-col gap-6 rounded-xl border border-border/80 bg-white p-3 transition-all duration-300"
-      aria-label="Main navigation"
+      aria-label={t('navigationLabel')}
     >
       {/* Collapse toggle */}
       <div className="flex items-center justify-end">
@@ -102,7 +101,7 @@ export function MainSidebar({
           type="button"
           onClick={() => setCollapsed(!collapsed)}
           className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-nham-hover/60 hover:text-nham-text"
-          aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          aria-label={collapsed ? t('expandSidebar') : t('collapseSidebar')}
         >
           {collapsed ? (
             <PanelLeftOpen className="h-4 w-4" />
@@ -114,7 +113,7 @@ export function MainSidebar({
 
       {/* Main Nav */}
       <nav className="flex flex-col gap-4">
-        <SectionHeader label="Main" collapsed={collapsed} />
+        <SectionHeader label={t('sectionLabel')} collapsed={collapsed} />
         <ul className="flex flex-col gap-1.5">
           {navItems.map((item) => {
             const isActive = pathname === item.href;
@@ -162,7 +161,7 @@ export function MainSidebar({
             <button
               type="button"
               onClick={onResumeOnboarding}
-              title="Complete profile"
+              title={t('completeProfile')}
               className="flex h-8 w-8 items-center justify-center rounded-lg text-nham-accent transition-colors hover:bg-nham-hover/60"
             >
               <AlertCircle className="h-4 w-4" />
@@ -175,7 +174,7 @@ export function MainSidebar({
                   fontFamily: 'DM Sans, sans-serif',
                 }}
               >
-                Your estimates are using default settings
+                {t('resumeTitle')}
               </p>
               <p
                 className="mb-3 text-[10px] text-nham-text-muted leading-relaxed"
@@ -183,8 +182,7 @@ export function MainSidebar({
                   fontFamily: 'DM Sans, sans-serif',
                 }}
               >
-                Personalize them for your cooking style to get the most accurate
-                calorie and macro extractions from the AI.
+                {t('resumeDescription')}
               </p>
               <button
                 type="button"
@@ -194,7 +192,7 @@ export function MainSidebar({
                   fontFamily: 'DM Sans, sans-serif',
                 }}
               >
-                Complete profile
+                {t('completeProfile')}
               </button>
             </div>
           )}

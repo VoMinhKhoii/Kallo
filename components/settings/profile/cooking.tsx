@@ -32,17 +32,17 @@ export function Cooking() {
                   {
                     value: 'minimal',
                     label: t('oilMinimal'),
-                    hint: 'Dry, clean taste. Dish looks matte.',
+                    hint: t('oilMinimalHint'),
                   },
                   {
                     value: 'normal',
                     label: t('oilNormal'),
-                    hint: 'Light coating. Slight sheen on food.',
+                    hint: t('oilNormalHint'),
                   },
                   {
                     value: 'heavy',
                     label: t('oilHeavy'),
-                    hint: 'Visibly oily. Sauce pools slightly.',
+                    hint: t('oilHeavyHint'),
                   },
                 ]}
                 value={field.value}
@@ -68,14 +68,18 @@ export function Cooking() {
                   {
                     value: 'small',
                     label: t('riceSmall'),
-                    hint: '~1 small bowl',
+                    hint: t('riceSmallHint'),
                   },
                   {
                     value: 'medium',
                     label: t('riceMedium'),
-                    hint: '~1–1.5 bowls',
+                    hint: t('riceMediumHint'),
                   },
-                  { value: 'large', label: t('riceLarge'), hint: '~2+ bowls' },
+                  {
+                    value: 'large',
+                    label: t('riceLarge'),
+                    hint: t('riceLargeHint'),
+                  },
                 ]}
                 value={field.value}
                 onChange={field.onChange}
@@ -124,17 +128,17 @@ export function Cooking() {
                   {
                     value: 'small',
                     label: t('proteinSmall'),
-                    hint: 'Smaller than your palm, e.g. ~2-3 eggs',
+                    hint: t('proteinSmallHint'),
                   },
                   {
                     value: 'medium',
                     label: t('proteinMedium'),
-                    hint: 'About palm-sized',
+                    hint: t('proteinMediumHint'),
                   },
                   {
                     value: 'large',
                     label: t('proteinLarge'),
-                    hint: 'Bigger than your palm, e.g. a chicken thigh or more',
+                    hint: t('proteinLargeHint'),
                   },
                 ]}
                 value={field.value}
@@ -160,17 +164,17 @@ export function Cooking() {
                   {
                     value: 'leave_it',
                     label: t('brothLeave'),
-                    hint: 'Eat the solids, skip most broth',
+                    hint: t('brothLeaveHint'),
                   },
                   {
                     value: 'some',
                     label: t('brothSome'),
-                    hint: 'Drink about half the bowl',
+                    hint: t('brothSomeHint'),
                   },
                   {
                     value: 'finish_it',
                     label: t('brothFinish'),
-                    hint: 'Drink all or most of the broth',
+                    hint: t('brothFinishHint'),
                   },
                 ]}
                 value={field.value}

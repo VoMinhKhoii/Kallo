@@ -1,5 +1,3 @@
-'use client';
-
 import { AuthDialog } from '@/components/auth/auth-dialog';
 import { AuthProvider } from '@/components/auth/auth-provider';
 import {

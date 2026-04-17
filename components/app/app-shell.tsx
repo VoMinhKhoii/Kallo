@@ -1,6 +1,7 @@
 'use client';
 
 import { Menu, X } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { useEffect, useRef, useState } from 'react';
 import { WizardShell } from '@/components/onboarding/wizard-shell';
 import { usePathname, useRouter } from '@/i18n/navigation';
@@ -28,6 +29,7 @@ export function AppShell({
 }: AppShellProps) {
   const router = useRouter();
   const pathname = usePathname();
+  const t = useTranslations('app.shell');
   const showResumeOnboarding = shouldShowOnboardingResume(
     initialProfile,
     onboardingStep
@@ -74,7 +76,7 @@ export function AppShell({
             ref={overlayRef}
             role="dialog"
             aria-modal="true"
-            aria-label="Navigation menu"
+            aria-label={t('navigationMenu')}
             id="mobile-menu"
             tabIndex={-1}
             className="fixed inset-0 z-50 outline-none md:hidden"
@@ -111,7 +113,7 @@ export function AppShell({
                 setMobileMenuPath(pathname);
                 setMobileMenuOpen(true);
               }}
-              aria-label={isMobileMenuVisible ? 'Close menu' : 'Open menu'}
+              aria-label={isMobileMenuVisible ? t('closeMenu') : t('openMenu')}
               aria-expanded={isMobileMenuVisible}
               aria-controls="mobile-menu"
               className="flex h-8 w-8 items-center justify-center rounded-lg text-nham-text-muted transition-colors hover:bg-nham-hover/60"

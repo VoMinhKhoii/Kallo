@@ -7,7 +7,7 @@ import { useAuthDialog } from '@/components/auth/auth-provider';
 import { Button } from '@/components/ui/button';
 
 export function CTASection() {
-  const t = useTranslations('landing');
+  const t = useTranslations('landing.cta');
   const { openDialog } = useAuthDialog();
   return (
     <section className="relative bg-white py-32">
@@ -22,14 +22,14 @@ export function CTASection() {
             className="mb-6 font-normal text-5xl text-[#2C2416] leading-tight lg:text-6xl"
             style={{ fontFamily: 'Lora, serif' }}
           >
-            {t('cta.title')}
+            {t('title')}
           </h2>
 
           <p
             className="mx-auto mb-12 max-w-2xl text-[#6B5D4F] text-xl leading-relaxed"
             style={{ fontFamily: 'DM Sans, sans-serif' }}
           >
-            {t('cta.subtitle')}
+            {t('subtitle')}
           </p>
 
           {/* CTA Buttons */}
@@ -41,7 +41,7 @@ export function CTASection() {
                 style={{ fontFamily: 'DM Sans, sans-serif' }}
                 onClick={() => openDialog('sign-up')}
               >
-                {t('cta.button')}
+                {t('button')}
               </Button>
             </motion.div>
 
@@ -51,7 +51,7 @@ export function CTASection() {
                 size="landing"
                 style={{ fontFamily: 'DM Sans, sans-serif' }}
               >
-                {t('cta.buttonSecondary')}
+                {t('buttonSecondary')}
               </Button>
             </motion.div>
           </div>
@@ -61,19 +61,19 @@ export function CTASection() {
             <div className="flex items-center gap-2">
               <Check className="h-4 w-4 text-[#C9A87C]" />
               <span style={{ fontFamily: 'DM Sans, sans-serif' }}>
-                {t('cta.feature1')}
+                {t('feature1')}
               </span>
             </div>
             <div className="flex items-center gap-2">
               <Check className="h-4 w-4 text-[#C9A87C]" />
               <span style={{ fontFamily: 'DM Sans, sans-serif' }}>
-                {t('cta.feature2')}
+                {t('feature2')}
               </span>
             </div>
             <div className="flex items-center gap-2">
               <Check className="h-4 w-4 text-[#C9A87C]" />
               <span style={{ fontFamily: 'DM Sans, sans-serif' }}>
-                {t('cta.feature3')}
+                {t('feature3')}
               </span>
             </div>
           </div>
@@ -90,7 +90,7 @@ export function CTASection() {
               className="mb-8 text-[#8B7355] text-sm"
               style={{ fontFamily: 'DM Sans, sans-serif' }}
             >
-              {t('cta.socialProof')}
+              {t('socialProof')}
             </p>
             <div className="flex items-center justify-center gap-12">
               <div className="text-center">
@@ -100,9 +100,7 @@ export function CTASection() {
                 >
                   4.9
                 </div>
-                <div className="text-[#8B7355] text-xs">
-                  {t('cta.appStore')}
-                </div>
+                <div className="text-[#8B7355] text-xs">{t('appStore')}</div>
               </div>
               <div className="h-12 w-px bg-[#E8D5B5]" />
               <div className="text-center">
@@ -112,7 +110,7 @@ export function CTASection() {
                 >
                   10k+
                 </div>
-                <div className="text-[#8B7355] text-xs">{t('cta.users')}</div>
+                <div className="text-[#8B7355] text-xs">{t('users')}</div>
               </div>
               <div className="h-12 w-px bg-[#E8D5B5]" />
               <div className="text-center">
@@ -123,7 +121,7 @@ export function CTASection() {
                   2M+
                 </div>
                 <div className="text-[#8B7355] text-xs">
-                  {t('cta.mealsTracked')}
+                  {t('mealsTracked')}
                 </div>
               </div>
             </div>

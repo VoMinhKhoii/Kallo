@@ -9,6 +9,7 @@ import { cn } from '@/lib/utils';
 
 export function MealTrigger() {
   const t = useTranslations('dashboard');
+  const tm = useTranslations('dashboard.mealTrigger');
   const tl = useTranslations('logging');
   const [expanded, setExpanded] = useState(false);
   const [text, setText] = useState('');
@@ -84,7 +85,7 @@ export function MealTrigger() {
             <button
               type="button"
               onClick={handleSend}
-              aria-label="Send meal"
+              aria-label={tm('send')}
               className={cn(
                 'flex h-7 w-7 shrink-0 items-center justify-center rounded-full transition-all',
                 text.length > 0
@@ -103,7 +104,7 @@ export function MealTrigger() {
         ref={triggerRef}
         type="button"
         onClick={expanded ? handleClose : handleOpen}
-        aria-label={expanded ? 'Close' : t('logMeal')}
+        aria-label={expanded ? tm('close') : t('logMeal')}
         animate={{ rotate: expanded ? 45 : 0 }}
         transition={{ duration: 0.2 }}
         className="fixed right-6 bottom-6 z-50 flex h-12 w-12 items-center justify-center rounded-full bg-nham-btn text-white shadow-[0_4px_16px_rgba(44,36,22,0.2)] transition-colors hover:bg-nham-btn-hover"

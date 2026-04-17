@@ -2,7 +2,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { ChevronDown, ChevronUp } from 'lucide-react';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { loadMealDates } from '@/lib/actions/meals';
 import { cn } from '@/lib/utils';
@@ -15,19 +15,20 @@ interface TimelineSidebarProps {
 
 interface WeekSection {
   key: string;
-  label: string;
+  weekNumber: number;
   days: string[];
 }
 
 interface MonthSection {
   key: string;
-  label: string;
+  month: number;
+  year: number;
   weeks: WeekSection[];
 }
 
-function formatDayLabel(dateStr: string): string {
+function formatDayLabel(dateStr: string, locale: string): string {
   const d = new Date(`${dateStr}T00:00:00`);
-  const weekday = d.toLocaleDateString('en-US', { weekday: 'short' });
+  const weekday = d.toLocaleDateString(locale, { weekday: 'short' });
   const day = d.getDate();
   const month = d.getMonth() + 1;
   return `${weekday} - ${day}/${month}`;
@@ -57,12 +58,14 @@ function groupByMonth(dates: string[]): MonthSection[] {
       .sort(([a], [b]) => a - b)
       .map(([weekNum, days]) => ({
         key: `${monthKey}-w${weekNum}`,
-        label: `Week ${weekNum}`,
+        weekNumber: weekNum,
         days,
       }));
+    const [month, year] = monthKey.split('-');
     return {
       key: monthKey,
-      label: `${Number.parseInt(monthKey, 10)}/${monthKey.split('-')[1]}`,
+      month: Number.parseInt(month, 10),
+      year: Number.parseInt(year, 10),
       weeks,
     };
   });
@@ -73,7 +76,9 @@ export function TimelineSidebar({
   selectedDate,
   onSelectDate,
 }: TimelineSidebarProps) {
+  const t = useTranslations('logging.timelineSidebar');
   const td = useTranslations('dashboard');
+  const locale = useLocale();
   const timezoneOffset = new Date().getTimezoneOffset();
   const { data: dates = [] } = useQuery({
     queryKey: ['meal-dates', userId, timezoneOffset],
@@ -141,7 +146,7 @@ export function TimelineSidebar({
   return (
     <nav
       className="flex h-full w-[212px] shrink-0 flex-col items-start gap-3 overflow-y-auto border-border/40 border-r py-3 pr-3"
-      aria-label="Timeline navigation"
+      aria-label={t('navigationLabel')}
     >
       {months.map((month) => {
         const isMonthExpanded = expandedMonths.has(month.key);
@@ -160,7 +165,7 @@ export function TimelineSidebar({
                   className="flex flex-1 items-center font-medium text-[10px] text-muted-foreground tracking-[0.04em]"
                   style={{ fontFamily: 'DM Sans, sans-serif' }}
                 >
-                  {month.label}
+                  {month.month}/{month.year}
                 </span>
                 {isMonthExpanded ? (
                   <ChevronUp className="h-4 w-4 text-muted-foreground" />
@@ -196,7 +201,7 @@ export function TimelineSidebar({
                             className="flex-1 text-left font-medium text-foreground text-sm leading-5 tracking-tight"
                             style={{ fontFamily: 'DM Sans, sans-serif' }}
                           >
-                            {week.label}
+                            {t('week', { number: week.weekNumber })}
                           </span>
                           {isWeekExpanded ? (
                             <ChevronUp className="h-4 w-4 text-muted-foreground" />
@@ -246,7 +251,7 @@ export function TimelineSidebar({
                                       >
                                         {isToday
                                           ? td('today')
-                                          : formatDayLabel(date)}
+                                          : formatDayLabel(date, locale)}
                                       </span>
                                     </button>
                                   </li>

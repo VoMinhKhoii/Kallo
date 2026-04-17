@@ -91,17 +91,17 @@ export function Profile({ profile }: ProfileProps) {
     {
       id: 'body-metrics',
       title: t('bodyMetrics'),
-      subtitle: 'Weight, height, activity level, and macro targets',
+      subtitle: t('profilePanel.bodyMetricsSubtitle'),
     },
     {
       id: 'regional',
       title: t('regional'),
-      subtitle: 'Country of origin and current residence',
+      subtitle: t('profilePanel.regionalSubtitle'),
     },
     {
       id: 'cooking',
       title: t('cooking'),
-      subtitle: 'Oil usage, rice, sugar, protein, and broth defaults',
+      subtitle: t('profilePanel.cookingSubtitle'),
     },
   ];
 
@@ -200,7 +200,7 @@ export function Profile({ profile }: ProfileProps) {
         form.reset(values);
         toast.success(t('saved'));
       } catch {
-        toast.error('Failed to save settings. Please try again.');
+        toast.error(t('profilePanel.saveError'));
       }
     });
   }

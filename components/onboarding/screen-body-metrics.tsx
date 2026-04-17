@@ -59,9 +59,9 @@ const CARB_SPLIT_KEYS: Record<CarbSplit, string> = {
 };
 
 const CARB_SPLIT_DESCS: Record<CarbSplit, string> = {
-  moderate_carb: 'Balanced (30/35/35)',
-  lower_carb: 'High Protein (40/40/20)',
-  higher_carb: 'Active (30/20/50)',
+  moderate_carb: 'bodyMetrics.moderateCarbDescription',
+  lower_carb: 'bodyMetrics.lowerCarbDescription',
+  higher_carb: 'bodyMetrics.higherCarbDescription',
 };
 
 const GOAL_KEYS: Record<Goal, string> = {
@@ -233,7 +233,7 @@ export function ScreenBodyMetrics({
         return {
           id: cs,
           label: t(CARB_SPLIT_KEYS[cs]),
-          desc: CARB_SPLIT_DESCS[cs],
+          desc: t(CARB_SPLIT_DESCS[cs]),
           macros,
         };
       }),
@@ -532,7 +532,7 @@ export function ScreenBodyMetrics({
                                       : ''
                                   }
                                 >
-                                  Gentle
+                                  {t('bodyMetrics.aggressionLow')}
                                 </span>
                                 <span
                                   className={
@@ -550,7 +550,7 @@ export function ScreenBodyMetrics({
                                       : ''
                                   }
                                 >
-                                  Aggressive
+                                  {t('bodyMetrics.aggressionHigh')}
                                 </span>
                               </div>
                             </div>

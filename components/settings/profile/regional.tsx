@@ -16,6 +16,7 @@ function CountrySelect({
   onChange: (v: string | null) => void;
 }) {
   const tOrigin = useTranslations('onboarding.origin');
+  const tRegional = useTranslations('settings.regionalPanel');
   const [search, setSearch] = useState('');
   const [isOpen, setIsOpen] = useState(false);
 
@@ -70,7 +71,7 @@ function CountrySelect({
               value={search}
               ref={(el) => el?.focus()}
               onChange={(e) => setSearch(e.target.value)}
-              aria-label="Search country"
+              aria-label={tRegional('searchCountryLabel')}
               placeholder={tOrigin('searchCountry')}
               className="w-full rounded-lg bg-[#F5F4F0] px-3 py-2 text-[13px] outline-none placeholder:text-[#8B8682] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C9A87C]/30"
             />
@@ -110,6 +111,7 @@ function CountrySelect({
 
 export function Regional() {
   const tOrigin = useTranslations('onboarding.origin');
+  const tRegional = useTranslations('settings.regionalPanel');
   const form = useFormContext<ProfileFormValues>();
 
   return (
@@ -118,8 +120,7 @@ export function Regional() {
         className="text-[#8B8682] text-[14px] leading-relaxed"
         style={{ fontFamily: 'DM Sans, sans-serif' }}
       >
-        AI uses your country info to understand food culture and locally
-        available ingredients.
+        {tRegional('description')}
       </p>
 
       <div className="space-y-4">

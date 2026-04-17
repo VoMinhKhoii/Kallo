@@ -13,14 +13,14 @@ import { useRouter } from '@/i18n/navigation';
 import { createClient } from '@/lib/supabase/client';
 
 export function SignInForm() {
-  const t = useTranslations('auth');
+  const t = useTranslations('auth.signIn');
   const router = useRouter();
   const { closeDialog } = useAuthDialog();
   const [loading, setLoading] = useState(false);
 
   const signInSchema = z.object({
-    email: z.email(t('signIn.emailError')),
-    password: z.string().min(6, t('signIn.passwordError')),
+    email: z.email(t('emailError')),
+    password: z.string().min(6, t('passwordError')),
   });
 
   type SignInValues = z.infer<typeof signInSchema>;
@@ -47,7 +47,7 @@ export function SignInForm() {
       return;
     }
 
-    toast.success(t('signIn.success'));
+    toast.success(t('success'));
     closeDialog();
     router.push('/logging');
     router.refresh();
@@ -56,16 +56,16 @@ export function SignInForm() {
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
       <FormInput
-        label={t('signIn.email')}
+        label={t('email')}
         type="email"
-        placeholder={t('signIn.emailPlaceholder')}
+        placeholder={t('emailPlaceholder')}
         error={errors.email?.message}
         {...register('email')}
       />
       <FormInput
-        label={t('signIn.password')}
+        label={t('password')}
         type="password"
-        placeholder={t('signIn.passwordPlaceholder')}
+        placeholder={t('passwordPlaceholder')}
         error={errors.password?.message}
         {...register('password')}
       />
@@ -76,7 +76,7 @@ export function SignInForm() {
         style={{ fontFamily: 'DM Sans, sans-serif' }}
       >
         {loading && <Loader2 className="h-4 w-4 animate-spin" />}
-        {t('signIn.submit')}
+        {t('submit')}
       </button>
     </form>
   );

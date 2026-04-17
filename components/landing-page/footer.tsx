@@ -1,7 +1,7 @@
 import { getTranslations } from 'next-intl/server';
 
 export async function Footer() {
-  const t = await getTranslations('landing');
+  const t = await getTranslations('landing.footer');
 
   return (
     <footer className="relative border-[#E8D5B5]/30 border-t bg-[#FEFBF6]">
@@ -19,7 +19,7 @@ export async function Footer() {
               className="max-w-sm text-[#6B5D4F] leading-relaxed"
               style={{ fontFamily: 'DM Sans, sans-serif' }}
             >
-              {t('footer.tagline')}
+              {t('tagline')}
             </p>
           </div>
 
@@ -29,7 +29,7 @@ export async function Footer() {
               className="mb-4 font-medium text-[#2C2416]"
               style={{ fontFamily: 'DM Sans, sans-serif' }}
             >
-              {t('footer.product')}
+              {t('product')}
             </h4>
             <ul className="space-y-3">
               <li>
@@ -38,7 +38,7 @@ export async function Footer() {
                   className="text-[#6B5D4F] text-sm transition-colors hover:text-[#2C2416]"
                   style={{ fontFamily: 'DM Sans, sans-serif' }}
                 >
-                  {t('footer.features')}
+                  {t('features')}
                 </a>
               </li>
               <li>
@@ -47,7 +47,7 @@ export async function Footer() {
                   className="text-[#6B5D4F] text-sm transition-colors hover:text-[#2C2416]"
                   style={{ fontFamily: 'DM Sans, sans-serif' }}
                 >
-                  {t('footer.howItWorks')}
+                  {t('howItWorks')}
                 </a>
               </li>
               <li>
@@ -56,7 +56,7 @@ export async function Footer() {
                   className="text-[#6B5D4F] text-sm transition-colors hover:text-[#2C2416]"
                   style={{ fontFamily: 'DM Sans, sans-serif' }}
                 >
-                  {t('footer.pricing')}
+                  {t('pricing')}
                 </a>
               </li>
               <li>
@@ -65,7 +65,7 @@ export async function Footer() {
                   className="text-[#6B5D4F] text-sm transition-colors hover:text-[#2C2416]"
                   style={{ fontFamily: 'DM Sans, sans-serif' }}
                 >
-                  {t('footer.faq')}
+                  {t('faq')}
                 </a>
               </li>
             </ul>
@@ -77,7 +77,7 @@ export async function Footer() {
               className="mb-4 font-medium text-[#2C2416]"
               style={{ fontFamily: 'DM Sans, sans-serif' }}
             >
-              {t('footer.company')}
+              {t('company')}
             </h4>
             <ul className="space-y-3">
               <li>
@@ -86,7 +86,7 @@ export async function Footer() {
                   className="text-[#6B5D4F] text-sm transition-colors hover:text-[#2C2416]"
                   style={{ fontFamily: 'DM Sans, sans-serif' }}
                 >
-                  {t('footer.about')}
+                  {t('about')}
                 </a>
               </li>
               <li>
@@ -95,7 +95,7 @@ export async function Footer() {
                   className="text-[#6B5D4F] text-sm transition-colors hover:text-[#2C2416]"
                   style={{ fontFamily: 'DM Sans, sans-serif' }}
                 >
-                  {t('footer.blog')}
+                  {t('blog')}
                 </a>
               </li>
               <li>
@@ -104,7 +104,7 @@ export async function Footer() {
                   className="text-[#6B5D4F] text-sm transition-colors hover:text-[#2C2416]"
                   style={{ fontFamily: 'DM Sans, sans-serif' }}
                 >
-                  {t('footer.contact')}
+                  {t('contact')}
                 </a>
               </li>
               <li>
@@ -113,7 +113,7 @@ export async function Footer() {
                   className="text-[#6B5D4F] text-sm transition-colors hover:text-[#2C2416]"
                   style={{ fontFamily: 'DM Sans, sans-serif' }}
                 >
-                  {t('footer.privacy')}
+                  {t('privacy')}
                 </a>
               </li>
             </ul>
@@ -126,7 +126,7 @@ export async function Footer() {
             className="text-[#8B7355] text-sm"
             style={{ fontFamily: 'DM Sans, sans-serif' }}
           >
-            {t('footer.copyright', { year: new Date().getFullYear() })}
+            {t('copyright', { year: new Date().getFullYear() })}
           </p>
           <div className="flex gap-6">
             <a
@@ -134,21 +134,21 @@ export async function Footer() {
               className="text-[#8B7355] text-sm transition-colors hover:text-[#2C2416]"
               style={{ fontFamily: 'DM Sans, sans-serif' }}
             >
-              {t('footer.terms')}
+              {t('terms')}
             </a>
             <a
               href="#"
               className="text-[#8B7355] text-sm transition-colors hover:text-[#2C2416]"
               style={{ fontFamily: 'DM Sans, sans-serif' }}
             >
-              {t('footer.privacyLink')}
+              {t('privacyLink')}
             </a>
             <a
               href="#"
               className="text-[#8B7355] text-sm transition-colors hover:text-[#2C2416]"
               style={{ fontFamily: 'DM Sans, sans-serif' }}
             >
-              {t('footer.security')}
+              {t('security')}
             </a>
           </div>
         </div>

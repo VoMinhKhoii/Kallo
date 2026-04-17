@@ -43,10 +43,16 @@ export function BodyMetrics() {
       () => ({
         moderate_carb: {
           label: t('moderateCarb'),
-          desc: 'Balanced (30/35/35)',
+          desc: t('moderateCarbDescription'),
         },
-        lower_carb: { label: t('lowerCarb'), desc: 'High Protein (40/40/20)' },
-        higher_carb: { label: t('higherCarb'), desc: 'Active (30/20/50)' },
+        lower_carb: {
+          label: t('lowerCarb'),
+          desc: t('lowerCarbDescription'),
+        },
+        higher_carb: {
+          label: t('higherCarb'),
+          desc: t('higherCarbDescription'),
+        },
       }),
       [t]
     );
@@ -250,7 +256,9 @@ export function BodyMetrics() {
               </span>
               <div className="font-normal font-serif text-4xl text-[#2C2416] tracking-tighter">
                 ~{Math.round(tdee).toLocaleString()}{' '}
-                <span className="font-sans text-[#8B8682] text-lg">kcal</span>
+                <span className="font-sans text-[#8B8682] text-lg">
+                  {t('kcal')}
+                </span>
               </div>
             </div>
 
@@ -307,7 +315,11 @@ export function BodyMetrics() {
                 return (
                   <FormItem>
                     <label className="mb-2 block font-bold text-[#A8A29E] text-[11px] uppercase tracking-widest">
-                      Pace ({watchGoal === 'cutting' ? 'deficit' : 'surplus'})
+                      {t('aggressionLabel')} (
+                      {watchGoal === 'cutting'
+                        ? t('aggressionDeficit')
+                        : t('aggressionSurplus')}
+                      )
                     </label>
                     <div className="space-y-3 rounded-2xl border border-[#EAE7E0] bg-white p-5">
                       <FormControl>
@@ -324,14 +336,18 @@ export function BodyMetrics() {
                         />
                       </FormControl>
                       <div className="flex items-center justify-between text-[13px]">
-                        <span className="text-[#8B8682]">Gentle</span>
+                        <span className="text-[#8B8682]">
+                          {t('aggressionLow')}
+                        </span>
                         <span className="font-medium text-[#2C2416]">
                           {aggressionKg.toFixed(2)} kg/wk →{' '}
                           {watchGoal === 'cutting' ? '−' : '+'}
                           {Math.round(aggressionKg * AGGRESSION_KCAL_PER_KG)}{' '}
                           kcal/day
                         </span>
-                        <span className="text-[#8B8682]">Aggressive</span>
+                        <span className="text-[#8B8682]">
+                          {t('aggressionHigh')}
+                        </span>
                       </div>
                     </div>
                   </FormItem>
@@ -400,7 +416,7 @@ export function BodyMetrics() {
                   <div className="font-serif text-3xl text-[#2C2416] tracking-tighter">
                     {Math.round(targetCalories).toLocaleString()}{' '}
                     <span className="font-sans text-[#8B8682] text-base">
-                      kcal
+                      {t('kcal')}
                     </span>
                   </div>
                 </div>

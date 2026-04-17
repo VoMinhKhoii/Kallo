@@ -6,15 +6,8 @@ import {
   MealEntryItemSkeleton,
   MealEntryTotalSkeleton,
 } from '@/components/logging/feed/skeletons';
-import type { ChatMessage, MealItem, StreamingPhase } from '@/lib/types/meal';
-
-const PHASE_LABELS: Partial<Record<StreamingPhase, string>> = {
-  waiting: 'Analyzing...',
-  decomposing: 'Breaking down your meal...',
-  matching: 'Matching ingredients...',
-  estimating: 'Estimating nutrition...',
-  assembling: 'Putting it all together...',
-};
+import { getStreamingPhaseLabel } from '@/components/logging/feed/streaming-phase-label';
+import type { ChatMessage, MealItem } from '@/lib/types/meal';
 
 const DEFAULT_SKELETON_COUNT = 3;
 
@@ -56,7 +49,7 @@ function CompletedItemRow({ item, index }: { item: MealItem; index: number }) {
 }
 
 export function StreamingMealEntry({ message }: StreamingMealEntryProps) {
-  const t = useTranslations('logging');
+  const t = useTranslations('logging.streaming');
   const phase = message.streamingPhase ?? 'waiting';
   const namedItems = message.streamingItems ?? [];
   const completedItems = message.streamingCompletedItems ?? [];
@@ -155,7 +148,7 @@ export function StreamingMealEntry({ message }: StreamingMealEntryProps) {
             className="text-[11px] text-nham-text-muted"
             style={{ fontFamily: 'DM Sans, sans-serif' }}
           >
-            {PHASE_LABELS[phase] ?? t('analyzing')}
+            {getStreamingPhaseLabel(t, phase)}
           </span>
         </div>
       </div>

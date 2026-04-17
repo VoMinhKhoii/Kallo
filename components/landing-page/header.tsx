@@ -4,9 +4,10 @@ import { motion } from 'motion/react';
 import { useTranslations } from 'next-intl';
 import { useAuthDialog } from '@/components/auth/auth-provider';
 import { Button } from '@/components/ui/button';
+import { LocaleSwitcher } from './locale-switcher';
 
 export function Header() {
-  const t = useTranslations('landing');
+  const t = useTranslations('landing.header');
   const { openDialog } = useAuthDialog();
 
   return (
@@ -34,33 +35,34 @@ export function Header() {
             className="text-[#6B5D4F] text-sm transition-colors hover:text-[#2C2416]"
             style={{ fontFamily: 'DM Sans, sans-serif' }}
           >
-            {t('header.features')}
+            {t('features')}
           </a>
           <a
             href="#how"
             className="text-[#6B5D4F] text-sm transition-colors hover:text-[#2C2416]"
             style={{ fontFamily: 'DM Sans, sans-serif' }}
           >
-            {t('header.howItWorks')}
+            {t('howItWorks')}
           </a>
           <a
             href="#pricing"
             className="text-[#6B5D4F] text-sm transition-colors hover:text-[#2C2416]"
             style={{ fontFamily: 'DM Sans, sans-serif' }}
           >
-            {t('header.pricing')}
+            {t('pricing')}
           </a>
         </nav>
 
         {/* CTA Buttons */}
         <div className="flex items-center gap-4">
+          <LocaleSwitcher />
           <Button
             variant="landing-ghost"
             className="hidden sm:block"
             style={{ fontFamily: 'DM Sans, sans-serif' }}
             onClick={() => openDialog('sign-in')}
           >
-            {t('header.signIn')}
+            {t('signIn')}
           </Button>
           <Button
             variant="header-cta"
@@ -68,7 +70,7 @@ export function Header() {
             style={{ fontFamily: 'DM Sans, sans-serif' }}
             onClick={() => openDialog('sign-up')}
           >
-            {t('header.getStarted')}
+            {t('getStarted')}
           </Button>
         </div>
       </div>
