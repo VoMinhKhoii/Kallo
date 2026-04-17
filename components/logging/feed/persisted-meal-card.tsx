@@ -2,6 +2,7 @@
 
 import { ChevronDown } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import type { PersistedMeal } from '@/lib/actions/meals';
 
@@ -18,6 +19,7 @@ function formatCalories(value: number | null): string {
 }
 
 export function PersistedMealCard({ meal }: PersistedMealCardProps) {
+  const t = useTranslations('logging.persistedMealCard');
   const [isCollapsed, setIsCollapsed] = useState(true);
 
   const timeLabel = new Date(meal.loggedAt).toLocaleTimeString([], {
@@ -63,7 +65,7 @@ export function PersistedMealCard({ meal }: PersistedMealCardProps) {
           </p>
           <button
             type="button"
-            aria-label="Toggle meal details"
+            aria-label={t('toggleDetails')}
             aria-expanded={!isCollapsed}
             onClick={() => setIsCollapsed((prev) => !prev)}
             className="rounded-full p-1 text-nham-text-muted/60 transition-colors hover:bg-nham-hover/40 hover:text-nham-text"
@@ -147,7 +149,7 @@ export function PersistedMealCard({ meal }: PersistedMealCardProps) {
                       className="font-bold text-[13px] text-nham-text"
                       style={{ fontFamily: 'DM Sans, sans-serif' }}
                     >
-                      Total
+                      {t('total')}
                     </span>
                     <div className="flex items-center gap-4">
                       <span

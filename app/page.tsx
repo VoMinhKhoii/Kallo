@@ -1,28 +1,20 @@
-'use client';
+import { cookies } from 'next/headers';
+import { redirect } from 'next/navigation';
+import { defaultLocale, locales } from '@/i18n/config';
 
-import { AuthDialog } from '@/components/auth/auth-dialog';
-import { AuthProvider } from '@/components/auth/auth-provider';
-import {
-  CTASection,
-  Footer,
-  Header,
-  Hero,
-  ProblemSection,
-  SolutionSection,
-} from '@/components/landing-page';
+export const dynamic = 'force-dynamic';
 
-export default function Home() {
-  return (
-    <AuthProvider>
-      <Header />
-      <main>
-        <Hero />
-        <ProblemSection />
-        <SolutionSection />
-        <CTASection />
-      </main>
-      <Footer />
-      <AuthDialog />
-    </AuthProvider>
-  );
+export default async function RootPage() {
+  const cookieStore = await cookies();
+
+  // Try to get saved locale preference
+  const savedLocale = cookieStore.get('NEXT_LOCALE')?.value;
+
+  // Validate against supported locales, use default if invalid/missing
+  const locale =
+    savedLocale && locales.includes(savedLocale as any)
+      ? savedLocale
+      : defaultLocale;
+
+  redirect(`/${locale}`);
 }

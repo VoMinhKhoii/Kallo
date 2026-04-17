@@ -2,8 +2,9 @@
 
 import { ArrowLeft, ArrowRight, Loader2, SkipForward, X } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
-import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useRef, useState, useTransition } from 'react';
+import { useRouter } from '@/i18n/navigation';
 import type { getOnboardingProfile } from '@/lib/onboarding/actions';
 import { saveOnboardingScreen } from '@/lib/onboarding/actions';
 import { WIZARD_DEFAULTS } from '@/lib/onboarding/constants';
@@ -65,6 +66,8 @@ export function WizardShell({
   onComplete,
 }: WizardShellProps) {
   const router = useRouter();
+  const t = useTranslations('common');
+  const tOnboarding = useTranslations('onboarding');
   const [isPending, startTransition] = useTransition();
   const [currentStep, setCurrentStep] = useState(initialStep);
   const [direction, setDirection] = useState(0);
@@ -73,9 +76,9 @@ export function WizardShell({
   >({});
   const modalMaxWidthClass =
     currentStep === 1
-      ? 'max-w-6xl'
+      ? 'max-w-4xl'
       : currentStep === 2
-        ? 'max-w-4xl'
+        ? 'max-w-6xl'
         : 'max-w-[58rem]';
 
   // Scroll affordance: fade gradient when content overflows
@@ -158,22 +161,24 @@ export function WizardShell({
   // This preserves typed inputs when navigating back.
   const screenOneDefaults = screenData[1]
     ? {
-        ...buildScreenOneDefaults(initialProfile),
-        ...(screenData[1] as Partial<ScreenOneData>),
-      }
-    : buildScreenOneDefaults(initialProfile);
-
-  const screenTwoDefaults = screenData[2]
-    ? {
         countryOfOrigin:
-          (screenData[2].countryOfOrigin as string | null) ?? null,
+          (screenData[1].countryOfOrigin as string | null) ?? null,
         countryOfResidence:
-          (screenData[2].countryOfResidence as string | null) ?? null,
+          (screenData[1].countryOfResidence as string | null) ?? null,
+        preferredLocale: (screenData[1].preferredLocale as string) ?? 'en',
       }
     : {
         countryOfOrigin: initialProfile?.countryOfOrigin ?? null,
         countryOfResidence: initialProfile?.countryOfResidence ?? null,
+        preferredLocale: initialProfile?.preferredLocale ?? 'en',
       };
+
+  const screenTwoDefaults = screenData[2]
+    ? {
+        ...buildScreenOneDefaults(initialProfile),
+        ...(screenData[2] as Partial<ScreenOneData>),
+      }
+    : buildScreenOneDefaults(initialProfile);
 
   const screenThreeDefaults = screenData[3]
     ? {
@@ -233,7 +238,10 @@ export function WizardShell({
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 10 }}
         role="dialog"
-        aria-label={`Onboarding step ${currentStep} of ${TOTAL_STEPS}`}
+        aria-label={tOnboarding('stepOf', {
+          current: currentStep,
+          total: TOTAL_STEPS,
+        })}
         aria-modal="true"
         className={`flex max-h-[92dvh] w-full ${modalMaxWidthClass} flex-col overflow-hidden rounded-[28px] bg-[#FDFCF8] shadow-2xl`}
       >
@@ -270,9 +278,9 @@ export function WizardShell({
               }}
             >
               {currentStep === 1 && (
-                <ScreenBodyMetrics
+                <ScreenOrigin
                   defaultValues={screenOneDefaults}
-                  onChange={(data: ScreenOneData) =>
+                  onChange={(data) =>
                     handleScreenChange(
                       1,
                       data as unknown as Record<string, unknown>
@@ -281,9 +289,9 @@ export function WizardShell({
                 />
               )}
               {currentStep === 2 && (
-                <ScreenOrigin
+                <ScreenBodyMetrics
                   defaultValues={screenTwoDefaults}
-                  onChange={(data) =>
+                  onChange={(data: ScreenOneData) =>
                     handleScreenChange(
                       2,
                       data as unknown as Record<string, unknown>
@@ -324,7 +332,7 @@ export function WizardShell({
             }`}
           >
             <ArrowLeft className="h-4 w-4" />
-            Back
+            {t('back')}
           </button>
 
           <div className="flex items-center gap-3">
@@ -334,7 +342,7 @@ export function WizardShell({
               disabled={isPending}
               className="flex touch-manipulation items-center gap-1.5 rounded-xl px-4 py-2.5 font-medium text-[#8B8682] text-[14px] transition-colors hover:bg-[#EAE7E0]/50 hover:text-[#2C2416] disabled:opacity-50"
             >
-              Skip
+              {t('skip')}
               <SkipForward className="h-3.5 w-3.5" />
             </button>
             <button
@@ -344,7 +352,7 @@ export function WizardShell({
               className="flex touch-manipulation items-center gap-2 rounded-xl bg-[#2C2416] px-5 py-2.5 font-medium text-[#FDFCF8] text-[14px] shadow-sm transition-all hover:bg-[#1C1917] disabled:opacity-50"
             >
               {isPending && <Loader2 className="h-4 w-4 animate-spin" />}
-              {currentStep >= TOTAL_STEPS ? 'Finish' : 'Next Step'}
+              {currentStep >= TOTAL_STEPS ? t('finish') : t('next')}
               <ArrowRight className="h-4 w-4" />
             </button>
           </div>

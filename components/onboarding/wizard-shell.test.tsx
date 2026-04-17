@@ -2,12 +2,6 @@ import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { WizardShell } from './wizard-shell';
 
-vi.mock('next/navigation', () => ({
-  useRouter: () => ({
-    push: vi.fn(),
-  }),
-}));
-
 vi.mock('@/lib/onboarding/actions', () => ({
   saveOnboardingScreen: vi.fn().mockResolvedValue(undefined),
 }));

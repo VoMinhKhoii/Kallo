@@ -2,6 +2,7 @@
 
 import { ChevronDown, Pencil, X } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { MealEntryActions } from '@/components/logging/feed/meal-entry-actions';
 import { MealEntryItem } from '@/components/logging/feed/meal-entry-item';
@@ -19,6 +20,8 @@ export function MealEntry({
   onConfirm,
   isConfirming: _isConfirming,
 }: MealEntryProps) {
+  const t = useTranslations('logging.mealEntry');
+  const tc = useTranslations('common');
   const [isEditing, setIsEditing] = useState(false);
   const [confirmed, setConfirmed] = useState(false);
   const [savedItems, setSavedItems] = useState<MealItem[]>(
@@ -104,7 +107,7 @@ export function MealEntry({
             {confirmed && (
               <button
                 type="button"
-                aria-label="Toggle meal details"
+                aria-label={t('toggleDetails')}
                 aria-expanded={!isCollapsed}
                 onClick={() => setIsCollapsed((prev) => !prev)}
                 className="rounded-full p-1 text-nham-text-muted/60 transition-colors hover:bg-nham-hover/40 hover:text-nham-text"
@@ -132,7 +135,7 @@ export function MealEntry({
                       className="font-medium text-[10px]"
                       style={{ fontFamily: 'DM Sans, sans-serif' }}
                     >
-                      Cancel
+                      {tc('cancel')}
                     </span>
                   </motion.button>
                 ) : (
@@ -151,7 +154,7 @@ export function MealEntry({
                       className="font-medium text-[10px]"
                       style={{ fontFamily: 'DM Sans, sans-serif' }}
                     >
-                      Edit
+                      {t('edit')}
                     </span>
                   </motion.button>
                 )}
@@ -216,7 +219,7 @@ export function MealEntry({
                       className="font-bold text-[13px] text-nham-text"
                       style={{ fontFamily: 'DM Sans, sans-serif' }}
                     >
-                      Total
+                      {t('total')}
                     </span>
                     <div className="flex items-center gap-4">
                       <span

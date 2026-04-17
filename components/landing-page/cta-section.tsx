@@ -2,10 +2,12 @@
 
 import { Check } from 'lucide-react';
 import { motion } from 'motion/react';
+import { useTranslations } from 'next-intl';
 import { useAuthDialog } from '@/components/auth/auth-provider';
 import { Button } from '@/components/ui/button';
 
 export function CTASection() {
+  const t = useTranslations('landing.cta');
   const { openDialog } = useAuthDialog();
   return (
     <section className="relative bg-white py-32">
@@ -20,17 +22,14 @@ export function CTASection() {
             className="mb-6 font-normal text-5xl text-[#2C2416] leading-tight lg:text-6xl"
             style={{ fontFamily: 'Lora, serif' }}
           >
-            Start tracking with
-            <br />
-            precision today
+            {t('title')}
           </h2>
 
           <p
             className="mx-auto mb-12 max-w-2xl text-[#6B5D4F] text-xl leading-relaxed"
             style={{ fontFamily: 'DM Sans, sans-serif' }}
           >
-            No more searching. No more guessing. Just accurate tracking in
-            seconds.
+            {t('subtitle')}
           </p>
 
           {/* CTA Buttons */}
@@ -42,7 +41,7 @@ export function CTASection() {
                 style={{ fontFamily: 'DM Sans, sans-serif' }}
                 onClick={() => openDialog('sign-up')}
               >
-                Start free trial
+                {t('button')}
               </Button>
             </motion.div>
 
@@ -52,7 +51,7 @@ export function CTASection() {
                 size="landing"
                 style={{ fontFamily: 'DM Sans, sans-serif' }}
               >
-                See demo
+                {t('buttonSecondary')}
               </Button>
             </motion.div>
           </div>
@@ -62,19 +61,19 @@ export function CTASection() {
             <div className="flex items-center gap-2">
               <Check className="h-4 w-4 text-[#C9A87C]" />
               <span style={{ fontFamily: 'DM Sans, sans-serif' }}>
-                14-day free trial
+                {t('feature1')}
               </span>
             </div>
             <div className="flex items-center gap-2">
               <Check className="h-4 w-4 text-[#C9A87C]" />
               <span style={{ fontFamily: 'DM Sans, sans-serif' }}>
-                No credit card required
+                {t('feature2')}
               </span>
             </div>
             <div className="flex items-center gap-2">
               <Check className="h-4 w-4 text-[#C9A87C]" />
               <span style={{ fontFamily: 'DM Sans, sans-serif' }}>
-                Cancel anytime
+                {t('feature3')}
               </span>
             </div>
           </div>
@@ -91,7 +90,7 @@ export function CTASection() {
               className="mb-8 text-[#8B7355] text-sm"
               style={{ fontFamily: 'DM Sans, sans-serif' }}
             >
-              Trusted by thousands of athletes and fitness enthusiasts
+              {t('socialProof')}
             </p>
             <div className="flex items-center justify-center gap-12">
               <div className="text-center">
@@ -101,7 +100,7 @@ export function CTASection() {
                 >
                   4.9
                 </div>
-                <div className="text-[#8B7355] text-xs">App Store</div>
+                <div className="text-[#8B7355] text-xs">{t('appStore')}</div>
               </div>
               <div className="h-12 w-px bg-[#E8D5B5]" />
               <div className="text-center">
@@ -111,7 +110,7 @@ export function CTASection() {
                 >
                   10k+
                 </div>
-                <div className="text-[#8B7355] text-xs">Users</div>
+                <div className="text-[#8B7355] text-xs">{t('users')}</div>
               </div>
               <div className="h-12 w-px bg-[#E8D5B5]" />
               <div className="text-center">
@@ -121,7 +120,9 @@ export function CTASection() {
                 >
                   2M+
                 </div>
-                <div className="text-[#8B7355] text-xs">Meals tracked</div>
+                <div className="text-[#8B7355] text-xs">
+                  {t('mealsTracked')}
+                </div>
               </div>
             </div>
           </motion.div>

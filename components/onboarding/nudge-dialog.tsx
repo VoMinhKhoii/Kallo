@@ -1,6 +1,5 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
@@ -11,6 +10,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { useRouter } from '@/i18n/navigation';
 import { ONBOARDING_TOTAL_STEPS } from '@/lib/onboarding/constants';
 
 const NUDGE_DISMISS_KEY = 'onboarding_nudge_dismiss_count';

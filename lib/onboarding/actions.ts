@@ -46,6 +46,10 @@ export async function saveOnboardingScreen(
   // Step-specific field mapping (skip when data is empty — e.g. "Skip" button)
   const hasData = Object.keys(data).length > 0;
   if (step === 1 && hasData) {
+    updateObj.countryOfOrigin = data.countryOfOrigin;
+    updateObj.countryOfResidence = data.countryOfResidence;
+    updateObj.preferredLocale = data.preferredLocale;
+  } else if (step === 2 && hasData) {
     updateObj.weightKg = data.weightKg;
     updateObj.heightCm = data.heightCm;
     updateObj.age = data.age;
@@ -60,9 +64,6 @@ export async function saveOnboardingScreen(
     updateObj.proteinTargetG = data.proteinTargetG;
     updateObj.carbsTargetG = data.carbsTargetG;
     updateObj.fatTargetG = data.fatTargetG;
-  } else if (step === 2 && hasData) {
-    updateObj.countryOfOrigin = data.countryOfOrigin;
-    updateObj.countryOfResidence = data.countryOfResidence;
   } else if (step === 3 && hasData) {
     updateObj.oilUsage = data.oilUsage;
     updateObj.defaultRicePortion = data.defaultRicePortion;
@@ -112,6 +113,7 @@ export async function saveProfileSettings(data: Record<string, unknown>) {
     fatTargetG: data.fatTargetG as number,
     countryOfOrigin: (data.countryOfOrigin as string) ?? null,
     countryOfResidence: (data.countryOfResidence as string) ?? null,
+    preferredLocale: (data.preferredLocale as string) ?? 'en',
     oilUsage: data.oilUsage as string,
     defaultRicePortion: data.defaultRicePortion as string,
     sugarBraised: data.sugarBraised as string,

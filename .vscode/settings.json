@@ -31,5 +31,6 @@
   },
   "[typescriptreact]": {
     "editor.defaultFormatter": "biomejs.biome"
-  }
+  },
+  "i18n-ally.localesPaths": ["i18n", "messages"]
 }

@@ -1,0 +1,2 @@
+ALTER TABLE "user_profiles" ADD COLUMN "preferred_locale" text DEFAULT 'en';--> statement-breakpoint
+ALTER TABLE "user_profiles" ADD CONSTRAINT "user_profiles_preferred_locale_check" CHECK ("user_profiles"."preferred_locale" IN ('en', 'vi'));

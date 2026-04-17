@@ -1,6 +1,7 @@
 'use client';
 
 import { AnimatePresence, motion } from 'motion/react';
+import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { EmptyState } from '@/components/logging/feed/empty-state';
@@ -51,6 +52,7 @@ export function FeedArea({
   profile,
   initialMeal,
 }: FeedAreaProps) {
+  const t = useTranslations('logging.feedArea');
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const inputRef = useRef<MealInputHandle>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -163,7 +165,7 @@ export function FeedArea({
         onSuccess: () => {
           // Remove the streaming message — persisted meal will appear via query
           setMessages((prev) => prev.filter((m) => m.id !== messageId));
-          toast.success('Đã lưu bữa ăn!');
+          toast.success(t('savedMeal'));
         },
       }
     );

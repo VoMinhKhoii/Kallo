@@ -1,6 +1,7 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import {
@@ -73,6 +74,7 @@ function OptionStrip({
 }
 
 export function ScreenCooking({ defaultValues, onChange }: ScreenCookingProps) {
+  const t = useTranslations('onboarding');
   const hasPrePopulated = useRef(false);
 
   const initialDefaults = allCookingFieldsNull(defaultValues)
@@ -110,7 +112,7 @@ export function ScreenCooking({ defaultValues, onChange }: ScreenCookingProps) {
             className="mb-2 font-medium text-2xl text-[#2C2416] tracking-tight"
             style={{ fontFamily: 'Lora, serif' }}
           >
-            Cooking Habits
+            {t('cooking.title')}
           </h2>
           <p
             className="text-[#8B8682] text-[15px] leading-relaxed"
@@ -118,8 +120,7 @@ export function ScreenCooking({ defaultValues, onChange }: ScreenCookingProps) {
               fontFamily: 'DM Sans, sans-serif',
             }}
           >
-            Pre-populated with neutral defaults. Adjust to match your cooking
-            style.
+            {t('cooking.subtitle')}
           </p>
         </div>
 
@@ -131,25 +132,22 @@ export function ScreenCooking({ defaultValues, onChange }: ScreenCookingProps) {
             render={({ field }) => (
               <FormItem className="rounded-[24px] border border-[#EAE7E0] bg-white p-5 sm:p-6">
                 <FormLabel className="mb-3 block font-bold text-[#2C2416] text-[13px]">
-                  How would you describe your typical cooked dishes?
+                  {t('cooking.oilUsage')}
                 </FormLabel>
                 <FormControl>
                   <OptionStrip
                     options={[
                       {
                         value: 'minimal',
-                        label: 'Light',
-                        hint: 'Dry, clean taste. Dish looks matte.',
+                        label: t('cooking.oilMinimal'),
                       },
                       {
                         value: 'normal',
-                        label: 'Moderate',
-                        hint: 'Light coating. Slight sheen on food.',
+                        label: t('cooking.oilNormal'),
                       },
                       {
                         value: 'heavy',
-                        label: 'Rich',
-                        hint: 'Visibly oily. Sauce pools slightly.',
+                        label: t('cooking.oilHeavy'),
                       },
                     ]}
                     value={field.value}
@@ -170,25 +168,22 @@ export function ScreenCooking({ defaultValues, onChange }: ScreenCookingProps) {
             render={({ field }) => (
               <FormItem className="rounded-[24px] border border-[#EAE7E0] bg-white p-5 sm:p-6">
                 <FormLabel className="mb-3 block font-bold text-[#2C2416] text-[13px]">
-                  How much rice per meal?
+                  {t('cooking.ricePortion')}
                 </FormLabel>
                 <FormControl>
                   <OptionStrip
                     options={[
                       {
                         value: 'small',
-                        label: 'Light',
-                        hint: '~1 small bowl',
+                        label: t('cooking.riceSmall'),
                       },
                       {
                         value: 'medium',
-                        label: 'Normal',
-                        hint: '~1–1.5 bowls',
+                        label: t('cooking.riceMedium'),
                       },
                       {
                         value: 'large',
-                        label: 'Heavy',
-                        hint: '~2+ bowls',
+                        label: t('cooking.riceLarge'),
                       },
                     ]}
                     value={field.value}
@@ -209,14 +204,14 @@ export function ScreenCooking({ defaultValues, onChange }: ScreenCookingProps) {
             render={({ field }) => (
               <FormItem className="rounded-[24px] border border-[#EAE7E0] bg-white p-5 sm:p-6">
                 <FormLabel className="mb-3 block font-bold text-[#2C2416] text-[13px]">
-                  Sugar in braised dishes
+                  {t('cooking.sugar')}
                 </FormLabel>
                 <FormControl>
                   <OptionStrip
                     options={[
-                      { value: 'low', label: 'Low' },
-                      { value: 'medium', label: 'Medium' },
-                      { value: 'high', label: 'High' },
+                      { value: 'low', label: t('cooking.sugarLow') },
+                      { value: 'medium', label: t('cooking.sugarMedium') },
+                      { value: 'high', label: t('cooking.sugarHigh') },
                     ]}
                     value={field.value}
                     onChange={(v) => {
@@ -236,25 +231,22 @@ export function ScreenCooking({ defaultValues, onChange }: ScreenCookingProps) {
             render={({ field }) => (
               <FormItem className="rounded-[24px] border border-[#EAE7E0] bg-white p-5 sm:p-6">
                 <FormLabel className="mb-3 block font-bold text-[#2C2416] text-[13px]">
-                  How much protein (meat, fish, eggs) per meal?
+                  {t('cooking.proteinPortion')}
                 </FormLabel>
                 <FormControl>
                   <OptionStrip
                     options={[
                       {
                         value: 'small',
-                        label: 'Small',
-                        hint: 'Smaller than your palm, e.g. ~2-3 eggs',
+                        label: t('cooking.proteinSmall'),
                       },
                       {
                         value: 'medium',
-                        label: 'Medium',
-                        hint: 'About palm-sized',
+                        label: t('cooking.proteinMedium'),
                       },
                       {
                         value: 'large',
-                        label: 'Large',
-                        hint: 'Bigger than your palm, e.g. a chicken thigh or more',
+                        label: t('cooking.proteinLarge'),
                       },
                     ]}
                     value={field.value}
@@ -275,25 +267,22 @@ export function ScreenCooking({ defaultValues, onChange }: ScreenCookingProps) {
             render={({ field }) => (
               <FormItem className="rounded-[24px] border border-[#EAE7E0] bg-white p-5 sm:p-6">
                 <FormLabel className="mb-3 block font-bold text-[#2C2416] text-[13px]">
-                  When there&rsquo;s soup, how much broth do you usually drink?
+                  {t('cooking.broth')}
                 </FormLabel>
                 <FormControl>
                   <OptionStrip
                     options={[
                       {
                         value: 'leave_it',
-                        label: 'Leave it',
-                        hint: 'Eat the solids, skip most broth',
+                        label: t('cooking.brothLeave'),
                       },
                       {
                         value: 'some',
-                        label: 'Some',
-                        hint: 'Drink about half the bowl',
+                        label: t('cooking.brothSome'),
                       },
                       {
                         value: 'finish_it',
-                        label: 'Finish it',
-                        hint: 'Drink all or most of the broth',
+                        label: t('cooking.brothFinish'),
                       },
                     ]}
                     value={field.value}

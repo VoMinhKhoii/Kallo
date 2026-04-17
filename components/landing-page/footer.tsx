@@ -1,4 +1,8 @@
-export function Footer() {
+import { getTranslations } from 'next-intl/server';
+
+export async function Footer() {
+  const t = await getTranslations('landing.footer');
+
   return (
     <footer className="relative border-[#E8D5B5]/30 border-t bg-[#FEFBF6]">
       <div className="mx-auto max-w-7xl px-6 py-16">
@@ -15,8 +19,7 @@ export function Footer() {
               className="max-w-sm text-[#6B5D4F] leading-relaxed"
               style={{ fontFamily: 'DM Sans, sans-serif' }}
             >
-              The macro tracker that learns your habits. Track what you eat, not
-              what you search.
+              {t('tagline')}
             </p>
           </div>
 
@@ -26,7 +29,7 @@ export function Footer() {
               className="mb-4 font-medium text-[#2C2416]"
               style={{ fontFamily: 'DM Sans, sans-serif' }}
             >
-              Product
+              {t('product')}
             </h4>
             <ul className="space-y-3">
               <li>
@@ -35,7 +38,7 @@ export function Footer() {
                   className="text-[#6B5D4F] text-sm transition-colors hover:text-[#2C2416]"
                   style={{ fontFamily: 'DM Sans, sans-serif' }}
                 >
-                  Features
+                  {t('features')}
                 </a>
               </li>
               <li>
@@ -44,7 +47,7 @@ export function Footer() {
                   className="text-[#6B5D4F] text-sm transition-colors hover:text-[#2C2416]"
                   style={{ fontFamily: 'DM Sans, sans-serif' }}
                 >
-                  How it works
+                  {t('howItWorks')}
                 </a>
               </li>
               <li>
@@ -53,7 +56,7 @@ export function Footer() {
                   className="text-[#6B5D4F] text-sm transition-colors hover:text-[#2C2416]"
                   style={{ fontFamily: 'DM Sans, sans-serif' }}
                 >
-                  Pricing
+                  {t('pricing')}
                 </a>
               </li>
               <li>
@@ -62,7 +65,7 @@ export function Footer() {
                   className="text-[#6B5D4F] text-sm transition-colors hover:text-[#2C2416]"
                   style={{ fontFamily: 'DM Sans, sans-serif' }}
                 >
-                  FAQ
+                  {t('faq')}
                 </a>
               </li>
             </ul>
@@ -74,7 +77,7 @@ export function Footer() {
               className="mb-4 font-medium text-[#2C2416]"
               style={{ fontFamily: 'DM Sans, sans-serif' }}
             >
-              Company
+              {t('company')}
             </h4>
             <ul className="space-y-3">
               <li>
@@ -83,7 +86,7 @@ export function Footer() {
                   className="text-[#6B5D4F] text-sm transition-colors hover:text-[#2C2416]"
                   style={{ fontFamily: 'DM Sans, sans-serif' }}
                 >
-                  About
+                  {t('about')}
                 </a>
               </li>
               <li>
@@ -92,7 +95,7 @@ export function Footer() {
                   className="text-[#6B5D4F] text-sm transition-colors hover:text-[#2C2416]"
                   style={{ fontFamily: 'DM Sans, sans-serif' }}
                 >
-                  Blog
+                  {t('blog')}
                 </a>
               </li>
               <li>
@@ -101,7 +104,7 @@ export function Footer() {
                   className="text-[#6B5D4F] text-sm transition-colors hover:text-[#2C2416]"
                   style={{ fontFamily: 'DM Sans, sans-serif' }}
                 >
-                  Contact
+                  {t('contact')}
                 </a>
               </li>
               <li>
@@ -110,7 +113,7 @@ export function Footer() {
                   className="text-[#6B5D4F] text-sm transition-colors hover:text-[#2C2416]"
                   style={{ fontFamily: 'DM Sans, sans-serif' }}
                 >
-                  Privacy
+                  {t('privacy')}
                 </a>
               </li>
             </ul>
@@ -123,7 +126,7 @@ export function Footer() {
             className="text-[#8B7355] text-sm"
             style={{ fontFamily: 'DM Sans, sans-serif' }}
           >
-            © 2026 PrecisionTrack. All rights reserved.
+            {t('copyright', { year: new Date().getFullYear() })}
           </p>
           <div className="flex gap-6">
             <a
@@ -131,21 +134,21 @@ export function Footer() {
               className="text-[#8B7355] text-sm transition-colors hover:text-[#2C2416]"
               style={{ fontFamily: 'DM Sans, sans-serif' }}
             >
-              Terms
+              {t('terms')}
             </a>
             <a
               href="#"
               className="text-[#8B7355] text-sm transition-colors hover:text-[#2C2416]"
               style={{ fontFamily: 'DM Sans, sans-serif' }}
             >
-              Privacy
+              {t('privacyLink')}
             </a>
             <a
               href="#"
               className="text-[#8B7355] text-sm transition-colors hover:text-[#2C2416]"
               style={{ fontFamily: 'DM Sans, sans-serif' }}
             >
-              Security
+              {t('security')}
             </a>
           </div>
         </div>

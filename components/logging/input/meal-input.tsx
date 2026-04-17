@@ -1,6 +1,7 @@
 'use client';
 
 import { ArrowUp } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import {
   forwardRef,
   useCallback,
@@ -49,6 +50,7 @@ const hasMeaningfulText = (text: string) => text.trim().length > 0;
 
 export const MealInput = forwardRef<MealInputHandle, MealInputProps>(
   function MealInput({ onSubmit, disabled }, ref) {
+    const t = useTranslations('logging');
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const debounceRef = useRef<ReturnType<typeof setTimeout>>(null);
     const [hasContent, setHasContent] = useState(() =>
@@ -123,7 +125,7 @@ export const MealInput = forwardRef<MealInputHandle, MealInputProps>(
     return (
       <div className="flex items-center gap-3 rounded-2xl border border-nham-border/40 bg-background p-3 shadow-[0_4px_20px_color-mix(in_srgb,var(--color-nham-accent)_6%,transparent)] transition-all duration-300 focus-within:border-nham-accent/40 focus-within:shadow-[0_4px_20px_color-mix(in_srgb,var(--color-nham-accent)_12%,transparent)]">
         <label htmlFor="meal-input" className="sr-only">
-          Describe your meal
+          {t('placeholder')}
         </label>
         <textarea
           ref={textareaRef}
@@ -131,7 +133,7 @@ export const MealInput = forwardRef<MealInputHandle, MealInputProps>(
           rows={1}
           defaultValue={readDraft()}
           onKeyDown={handleKeyDown}
-          placeholder="Describe your meal..."
+          placeholder={t('placeholder')}
           disabled={disabled}
           className="flex-1 resize-none bg-transparent font-[var(--font-dm-sans)] font-normal text-nham-text text-sm leading-5 placeholder:text-nham-text-muted/40 focus:outline-none disabled:opacity-50"
         />
@@ -140,7 +142,7 @@ export const MealInput = forwardRef<MealInputHandle, MealInputProps>(
           onClick={onSubmit}
           disabled={!canSubmit}
           className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-nham-btn text-white transition-all duration-200 hover:bg-nham-btn-hover active:scale-95 disabled:opacity-30"
-          aria-label="Submit meal"
+          aria-label={t('submit')}
         >
           <ArrowUp className="h-4 w-4" />
         </button>

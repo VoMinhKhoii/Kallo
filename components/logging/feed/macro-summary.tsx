@@ -1,6 +1,7 @@
 'use client';
 
 import { motion } from 'motion/react';
+import { useTranslations } from 'next-intl';
 import type { MacroBreakdown } from '@/lib/types/meal';
 
 interface MacroSummaryProps {
@@ -14,17 +15,24 @@ const RING_SIZE = (RING_RADIUS + RING_STROKE) * 2;
 const RING_CENTER = RING_SIZE / 2;
 const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS;
 
-const MACROS: {
-  key: 'protein' | 'carbs' | 'fat';
-  label: string;
-  color: string;
-}[] = [
-  { key: 'protein', label: 'Protein', color: 'var(--nham-macro-protein)' },
-  { key: 'carbs', label: 'Carbs', color: 'var(--nham-macro-carbs)' },
-  { key: 'fat', label: 'Fat', color: 'var(--nham-macro-fat)' },
-];
+const MACRO_COLORS: Record<'protein' | 'carbs' | 'fat', string> = {
+  protein: 'var(--nham-macro-protein)',
+  carbs: 'var(--nham-macro-carbs)',
+  fat: 'var(--nham-macro-fat)',
+};
 
 export function MacroSummary({ totals, targets }: MacroSummaryProps) {
+  const td = useTranslations('dashboard');
+
+  const MACROS: {
+    key: 'protein' | 'carbs' | 'fat';
+    label: string;
+    color: string;
+  }[] = [
+    { key: 'protein', label: td('protein'), color: MACRO_COLORS.protein },
+    { key: 'carbs', label: td('carbs'), color: MACRO_COLORS.carbs },
+    { key: 'fat', label: td('fat'), color: MACRO_COLORS.fat },
+  ];
   const { calories, protein, carbs, fat } = totals;
 
   if (calories === 0 && protein === 0 && carbs === 0 && fat === 0) {

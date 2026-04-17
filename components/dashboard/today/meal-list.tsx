@@ -1,3 +1,6 @@
+'use client';
+
+import { useTranslations } from 'next-intl';
 import type { MealEntry } from '@/components/dashboard/types';
 
 interface MealListProps {
@@ -5,10 +8,12 @@ interface MealListProps {
 }
 
 export function MealList({ meals }: MealListProps) {
+  const t = useTranslations('dashboard');
+
   if (meals.length === 0) {
     return (
       <div className="flex h-full flex-col items-center justify-center gap-2 py-4">
-        <span className="text-[12px] text-nham-stone">No meals logged yet</span>
+        <span className="text-[12px] text-nham-stone">{t('noMealsToday')}</span>
       </div>
     );
   }
@@ -17,7 +22,7 @@ export function MealList({ meals }: MealListProps) {
     <div className="flex flex-col gap-2.5">
       <div className="flex items-baseline justify-between">
         <span className="font-bold text-[9px] text-nham-stone uppercase tracking-[0.15em]">
-          Meals today
+          {t('recentMeals')}
         </span>
         <span className="text-[9px] text-nham-stone">
           {meals.length} logged

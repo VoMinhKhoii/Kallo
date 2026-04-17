@@ -88,9 +88,7 @@ describe('PersistedMealCard', () => {
     expect(screen.getAllByText('N/A').length).toBeGreaterThan(0);
     expect(screen.queryByText('0 kcal')).not.toBeInTheDocument();
 
-    await user.click(
-      screen.getByRole('button', { name: /toggle meal details/i })
-    );
+    await user.click(screen.getByRole('button', { name: 'toggleDetails' }));
 
     expect(screen.getAllByText(/P:N\/A/).length).toBeGreaterThan(0);
   });
