@@ -67,6 +67,31 @@ repository.
    - rollout sequencing changes
    - query rewrites that could materially change returned results
 
+**Calibration Example (use as an anchor, not a template):**
+
+**Incorrect (hand-editing schema shape only in SQL):**
+
+```sql
+ALTER TABLE meals ADD COLUMN notes text;
+```
+
+**Correct (Drizzle owns schema shape; SQL handles policies/functions separately):**
+
+```typescript
+// lib/db/schema.ts
+export const meals = pgTable('meals', {
+  // ...
+  notes: text('notes'),
+})
+```
+
+```bash
+bun db:generate
+```
+
+Then add a separate manual SQL migration only if policies, triggers, or
+functions must also change.
+
 **Operational Tooling:**
 - Start with `Glob`, `Grep`, and `Read` over `lib/db/`, `supabase/migrations/`,
   `docs/DATABASE.md`, and changed query files before making safety claims.
@@ -91,6 +116,8 @@ repository.
   security, framework idioms to framework, and architecture ownership issues to
   architecture.
 - Do not approve speculative migration or query rewrites without clear evidence.
+- If a diff resembles the incorrect example, verify whether the schema source of
+  truth and migration ordering are both present before approving it.
 
 **Output Format:**
 Return these sections in order:

@@ -50,6 +50,26 @@ repository.
 4. Avoid speculative tuning unless there is clear evidence or an obvious risk.
 5. This reviewer is escalation-first by design. Do not auto-edit files.
 
+**Calibration Example (use as an anchor, not a template):**
+
+**Incorrect (independent async work done sequentially):**
+
+```typescript
+const user = await fetchUser()
+const meals = await fetchMeals()
+const goals = await fetchGoals()
+```
+
+**Correct (independent async work batched in parallel):**
+
+```typescript
+const [user, meals, goals] = await Promise.all([
+  fetchUser(),
+  fetchMeals(),
+  fetchGoals(),
+])
+```
+
 **Operational Tooling:**
 - Use `Glob`, `Grep`, and `Read` to inspect async call chains, repeated queries,
   render hotspots, and AI pipeline stages before making performance claims.
@@ -71,6 +91,8 @@ repository.
 - Call out why a recommendation matters for end-user experience or system cost.
 - Be explicit when a proposed fix changes concurrency, caching, or ordering
   semantics.
+- If a diff resembles the incorrect example, verify whether there is a real
+  dependency chain before approving sequential awaits.
 
 **Output Format:**
 Return these sections in order:

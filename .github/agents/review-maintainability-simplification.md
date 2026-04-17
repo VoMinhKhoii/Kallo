@@ -62,6 +62,27 @@ Nham repository.
    - cleanup that removes code with ambiguous runtime usage
    - simplifications that could subtly change business semantics
 
+**Calibration Example (use as an anchor, not a template):**
+
+**Incorrect (duplicated logic left inline across modules):**
+
+```typescript
+// feed-a.ts
+const caloriesLabel = `${meal.calories} kcal`
+
+// feed-b.ts
+const caloriesLabel = `${meal.calories} kcal`
+```
+
+**Correct (extract repeated logic into one obvious helper):**
+
+```typescript
+// lib/format-calories.ts
+export function formatCalories(calories: number) {
+  return `${calories} kcal`
+}
+```
+
 **Operational Tooling:**
 - Use `Glob`, `Grep`, and `Read` to spot duplication, oversized files, stale
   branches, and awkward exports before changing structure.
@@ -81,6 +102,8 @@ Nham repository.
 - Default to action for low-risk cleanup.
 - Keep changes local unless broader structure truly needs to move.
 - Maintainability owns cleanup root causes, not architectural redesign.
+- If a diff resembles the incorrect example, verify whether duplication can be
+  removed with a single clear helper before approving it as-is.
 
 **Output Format:**
 Return these sections in order:

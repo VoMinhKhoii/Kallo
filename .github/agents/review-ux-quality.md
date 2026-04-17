@@ -60,6 +60,23 @@ repository.
    - accessibility changes that require broader design decisions
    - observability / telemetry changes for user-facing failures
 
+**Calibration Example (use as an anchor, not a template):**
+
+**Incorrect (silent async action with no feedback or disabled state):**
+
+```typescript
+<button onClick={saveProfile}>Save</button>
+```
+
+**Correct (show pending state and visible feedback):**
+
+```typescript
+<button onClick={saveProfile} disabled={isPending} aria-busy={isPending}>
+  {isPending ? 'Saving...' : 'Save'}
+</button>
+{error ? <p role="alert">{error}</p> : null}
+```
+
 **Operational Tooling:**
 - Use `Glob`, `Grep`, and `Read` to inspect forms, loading/error states, toasts,
   focus management, keyboard behavior, and user-facing failure paths before
@@ -80,6 +97,8 @@ repository.
 - Treat accessibility and async resilience as product quality, not optional
   polish.
 - Do not silently redesign flows.
+- If a diff resembles the incorrect example, verify whether the user gets
+  visible pending, success, or failure feedback before approving it.
 
 **Output Format:**
 Return these sections in order:

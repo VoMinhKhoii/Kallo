@@ -60,6 +60,30 @@ repository.
    - dependency-direction changes across major layers
    - folder/package restructuring that changes contributor mental model
 
+**Calibration Example (use as an anchor, not a template):**
+
+**Incorrect (thick route handler owning every layer at once):**
+
+```typescript
+export async function POST(req: Request) {
+  const body = await req.json()
+  const user = await requireUser()
+  const meal = await db.insert(meals).values({ ...body, userId: user.id }).returning()
+  return Response.json({ id: meal[0].id, title: meal[0].title.toUpperCase() })
+}
+```
+
+**Correct (thin boundary delegating validation, domain logic, and shaping):**
+
+```typescript
+export async function POST(req: Request) {
+  const body = await req.json()
+  const input = parseCreateMeal(body)
+  const meal = await createMeal(input)
+  return Response.json(toMealResponse(meal))
+}
+```
+
 **Operational Tooling:**
 - Use `Glob` and `Read` to map feature folders, orchestrators, and boundary files
   before suggesting structural changes.
@@ -81,6 +105,8 @@ repository.
 - Prefer smaller, well-bounded modules over thick orchestrators and hotspot
   files.
 - Do not sneak in broad restructuring under the label of cleanup.
+- If a diff resembles the incorrect example, verify whether logic ownership is
+  actually separated before approving it.
 
 **Output Format:**
 Return these sections in order:

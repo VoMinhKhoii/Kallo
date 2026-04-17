@@ -75,6 +75,32 @@ You are a principal-level security and trust reviewer for the Nham repository.
    they are not yet expected to be implemented, especially if the app is not yet
    live.
 
+**Calibration Example (use as an anchor, not a template):**
+
+**Incorrect (trusting client-provided identity in a server mutation):**
+
+```typescript
+'use server'
+
+export async function updateProfile(input: { userId: string; name: string }) {
+  await db.update(users).set({ name: input.name }).where(eq(users.id, input.userId))
+}
+```
+
+**Correct (validate input and derive identity from trusted server state):**
+
+```typescript
+'use server'
+
+const profileSchema = z.object({ name: z.string().min(1) })
+
+export async function updateProfile(raw: unknown) {
+  const { name } = profileSchema.parse(raw)
+  const session = await getSessionOrThrow()
+  await db.update(users).set({ name }).where(eq(users.id, session.user.id))
+}
+```
+
 **Operational Tooling:**
 - Use `Glob`, `Grep`, and `Read` first to narrow auth, route, middleware,
   Supabase, and env-touching files before making claims.
@@ -100,6 +126,8 @@ You are a principal-level security and trust reviewer for the Nham repository.
   the data reviewer, pure framework idioms to the framework reviewer, and pure
   maintainability cleanup to the maintainability reviewer.
 - Do not invent vulnerabilities without evidence.
+- If a diff resembles the incorrect example, verify whether the code has an
+  equivalent trusted-server guard before approving it.
 
 **Output Format:**
 Return these sections in order:

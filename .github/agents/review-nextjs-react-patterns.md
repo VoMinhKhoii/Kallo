@@ -66,6 +66,35 @@ repository.
    - loading/error boundary changes that alter UX semantics
    - serialization/hydration changes that alter what data reaches the client
 
+**Calibration Example (use as an anchor, not a template):**
+
+**Incorrect (manual client fetch in `useEffect` for primary data):**
+
+```typescript
+function MealList() {
+  const [meals, setMeals] = useState([])
+
+  useEffect(() => {
+    fetch('/api/meals').then((res) => res.json()).then(setMeals)
+  }, [])
+
+  return <MealsTable meals={meals} />
+}
+```
+
+**Correct (use the repo's preferred data layer for the surface):**
+
+```typescript
+function MealList() {
+  const { data: meals = [] } = useQuery({
+    queryKey: ['meals'],
+    queryFn: getMeals,
+  })
+
+  return <MealsTable meals={meals} />
+}
+```
+
 **Operational Tooling:**
 - Use `Glob`, `Grep`, and `Read` to inspect component boundaries, `'use client'`,
   `useEffect`, Server Actions, route handlers, and TanStack Query usage before
@@ -94,6 +123,8 @@ repository.
   fetching, Server Actions for server-side mutation, no native dialogs, use
   `sonner`, use `lucide-react`, and no `useEffect` data fetching.
 - Do not silently switch architectural data-flow choices when semantics change.
+- If a diff resembles the incorrect example, verify whether there is a repo-
+  approved reason to deviate before approving it.
 
 **Output Format:**
 Return these sections in order:

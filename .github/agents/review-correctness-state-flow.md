@@ -63,6 +63,27 @@ repository.
    - cross-step invariant changes
    - AI pipeline stage-order or decision-flow changes
 
+**Calibration Example (use as an anchor, not a template):**
+
+**Incorrect (duplicate side effects allowed on repeated invocation):**
+
+```typescript
+export async function finalizeOrder(orderId: string) {
+  await chargeCard(orderId)
+  await markOrderPaid(orderId)
+}
+```
+
+**Correct (guard or make the side effect idempotent):**
+
+```typescript
+export async function finalizeOrder(orderId: string) {
+  const updated = await markOrderPaidIfPending(orderId)
+  if (!updated) return
+  await chargeCard(orderId)
+}
+```
+
 **Operational Tooling:**
 - Use `Glob`, `Grep`, and `Read` to trace call chains across route handlers,
   server actions, hooks, components, and AI pipeline modules before concluding a
@@ -90,6 +111,8 @@ repository.
 - Treat "works on the happy path" as insufficient evidence of correctness.
 - Prioritize invariant breaks, duplicate side effects, and rollback hazards.
 - Do not silently rewrite user-visible workflow semantics.
+- If a diff resembles the incorrect example, verify whether there is a real
+  guard, idempotency key, or conditional write before approving it.
 
 **Output Format:**
 Return these sections in order:
