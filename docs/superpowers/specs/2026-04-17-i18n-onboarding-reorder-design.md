@@ -125,7 +125,7 @@ export function ScreenOrigin() {
 
 Position: top of Screen 1, before country pickers.
 
-UI: Two-option toggle strip with inline SVG flag icons (GB flag for English, VN flag for Vietnamese). Uses the existing `OptionStrip`-like pattern from the cooking screen. Flag icons are small inline SVGs (not emoji — per AGENTS.md, emoji is prohibited in UI code).
+UI: Two-option toggle strip with country flag icons from the `country-flag-icons` package (GB flag for English, VN flag for Vietnamese). Uses the existing `OptionStrip`-like pattern from the cooking screen. **Exception**: This overrides the AGENTS.md rule against non-Lucide icon libraries — Lucide does not provide country flag icons, and this is the only use case for `country-flag-icons` in the app.
 
 Behavior:
 - Selecting a language uses `router.replace()` (from `next-intl/navigation`) to switch the locale prefix in the URL (e.g., `/en/onboarding` → `/vi/onboarding`)
