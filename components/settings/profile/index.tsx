@@ -3,7 +3,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { ChevronDown, Loader2 } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { useMemo, useState, useTransition } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
@@ -84,6 +84,7 @@ interface ProfileProps {
 export function Profile({ profile }: ProfileProps) {
   const t = useTranslations('settings');
   const tc = useTranslations('common');
+  const locale = useLocale();
   const [openSection, setOpenSection] = useState<SectionId>('body-metrics');
   const [isPending, startTransition] = useTransition();
 
@@ -191,6 +192,7 @@ export function Profile({ profile }: ProfileProps) {
           fatTargetG: macros.fatG,
           countryOfOrigin: values.countryOfOrigin,
           countryOfResidence: values.countryOfResidence,
+          preferredLocale: locale,
           oilUsage: values.oilUsage,
           defaultRicePortion: values.defaultRicePortion,
           sugarBraised: values.sugarBraised,

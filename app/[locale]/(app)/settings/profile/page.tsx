@@ -1,10 +1,16 @@
 import type { Metadata } from 'next';
-import { getTranslations } from 'next-intl/server';
+import { setRequestLocale, getTranslations } from 'next-intl/server';
 import { Profile } from '@/components/settings/profile';
 import { Link } from '@/i18n/navigation';
 import { getOnboardingProfile } from '@/lib/onboarding/actions';
 
-export async function generateMetadata(): Promise<Metadata> {
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  setRequestLocale(locale);
   const t = await getTranslations('settings.profilePage');
 
   return {

@@ -1,3 +1,4 @@
+import React from 'react';
 import '@testing-library/jest-dom/vitest';
 import { vi } from 'vitest';
 
@@ -33,7 +34,6 @@ vi.mock('@/i18n/navigation', () => ({
     href: string;
     children: React.ReactNode;
   }) => {
-    const React = require('react');
     return React.createElement('a', { href, ...props }, children);
   },
   useRouter: () => ({

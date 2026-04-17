@@ -1,6 +1,6 @@
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { defaultLocale } from '@/i18n/config';
+import { defaultLocale, locales } from '@/i18n/config';
 
 export const dynamic = 'force-dynamic';
 
@@ -10,8 +10,10 @@ export default async function RootPage() {
   // Try to get saved locale preference
   const savedLocale = cookieStore.get('NEXT_LOCALE')?.value;
   
-  // Use saved locale or fall back to default
-  const locale = savedLocale || defaultLocale;
+  // Validate against supported locales, use default if invalid/missing
+  const locale = (savedLocale && locales.includes(savedLocale as any)) 
+    ? savedLocale 
+    : defaultLocale;
   
   redirect(`/${locale}`);
 }

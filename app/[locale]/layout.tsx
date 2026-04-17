@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { DM_Sans, Fraunces, Geist, Geist_Mono, Lora } from 'next/font/google';
 import { notFound } from 'next/navigation';
 import { hasLocale, NextIntlClientProvider } from 'next-intl';
-import { getMessages, getTranslations } from 'next-intl/server';
+import { getMessages, getTranslations, setRequestLocale } from 'next-intl/server';
 import { QueryProvider } from '@/components/providers/query-provider';
 import { Toaster } from '@/components/ui/sonner';
 import { routing } from '@/i18n/navigation';
@@ -77,6 +77,9 @@ export default async function LocaleLayout({
   if (!hasLocale(routing.locales, locale)) {
     notFound();
   }
+
+  // Enable static rendering for this locale
+  setRequestLocale(locale);
 
   const messages = await getMessages();
 

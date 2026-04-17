@@ -16,7 +16,6 @@ const PERSONALIZATION_FIELDS = [
   'carbSplit',
   'countryOfOrigin',
   'countryOfResidence',
-  'preferredLocale',
   'oilUsage',
   'defaultRicePortion',
   'sugarBraised',
