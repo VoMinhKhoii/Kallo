@@ -62,25 +62,281 @@ Nham repository.
    - cleanup that removes code with ambiguous runtime usage
    - simplifications that could subtly change business semantics
 
-**Calibration Example (use as an anchor, not a template):**
+**Calibration Anchors (use as anchors, not templates):**
 
-**Incorrect (duplicated logic left inline across modules):**
+### Scope anchors
+
+**Duplication and repeated logic**
+
+**Incorrect:**
 
 ```typescript
-// feed-a.ts
 const caloriesLabel = `${meal.calories} kcal`
-
-// feed-b.ts
-const caloriesLabel = `${meal.calories} kcal`
+const proteinLabel = `${meal.protein} g`
 ```
 
-**Correct (extract repeated logic into one obvious helper):**
+**Correct:**
 
 ```typescript
-// lib/format-calories.ts
-export function formatCalories(calories: number) {
-  return `${calories} kcal`
-}
+const caloriesLabel = formatCalories(meal.calories)
+const proteinLabel = formatGrams(meal.protein)
+```
+
+**Over-complex code that can be simplified without behavior change**
+
+**Incorrect:**
+
+```typescript
+if (isReady === true) return true
+return false
+```
+
+**Correct:**
+
+```typescript
+return isReady === true
+```
+
+**Oversized files/components/hooks that should be split**
+
+**Incorrect:**
+
+```typescript
+// one component owns 250 lines of form, fetch, toast, and layout code
+```
+
+**Correct:**
+
+```typescript
+// split into form-section.tsx, use-submit.ts, and summary-card.tsx
+```
+
+**Naming clarity and intention-revealing APIs**
+
+**Incorrect:**
+
+```typescript
+function doThing(x: Meal) {}
+```
+
+**Correct:**
+
+```typescript
+function formatMealSummary(meal: Meal) {}
+```
+
+**Dead code, stale branches, and obsolete helpers**
+
+**Incorrect:**
+
+```typescript
+if (featureFlag === 'legacy') return runLegacyFlow()
+```
+
+**Correct:**
+
+```typescript
+return runCurrentFlow()
+```
+
+**Incidental complexity and readability problems**
+
+**Incorrect:**
+
+```typescript
+return meals.filter(Boolean).map((m) => ({ ...m, x: true })).filter((m) => m.visible)
+```
+
+**Correct:**
+
+```typescript
+return meals.flatMap((meal) => (meal.visible ? [{ ...meal, x: true }] : []))
+```
+
+**Inconsistent local structure within a feature/module**
+
+**Incorrect:**
+
+```text
+helpers, hooks, and components live in unrelated folders for one feature
+```
+
+**Correct:**
+
+```text
+feature files live under one coherent feature folder with predictable names
+```
+
+**Small refactors that make future changes safer and cheaper**
+
+**Incorrect:**
+
+```typescript
+const meal = data.meal && data.meal.value && data.meal.value.payload
+```
+
+**Correct:**
+
+```typescript
+const meal = data.meal?.value?.payload
+```
+
+### Auto-fix anchors
+
+**Simplifications**
+
+**Incorrect:**
+
+```typescript
+const result = items.length > 0 ? true : false
+```
+
+**Correct:**
+
+```typescript
+const result = items.length > 0
+```
+
+**Splits**
+
+**Incorrect:**
+
+```typescript
+// one file owns rendering, parsing, and actions
+```
+
+**Correct:**
+
+```typescript
+// render.tsx, parse.ts, and actions.ts own separate concerns
+```
+
+**Renames**
+
+**Incorrect:**
+
+```typescript
+function x(a: Meal) {}
+```
+
+**Correct:**
+
+```typescript
+function parseMealInput(meal: Meal) {}
+```
+
+**Dead-code removal**
+
+**Incorrect:**
+
+```typescript
+const unused = buildLegacyPayload(meal)
+```
+
+**Correct:**
+
+```typescript
+// remove unused legacy payload path entirely
+```
+
+**Local reorganizations**
+
+**Incorrect:**
+
+```typescript
+// constants, helpers, and component body are interleaved randomly
+```
+
+**Correct:**
+
+```typescript
+// constants first, helpers second, component last
+```
+
+**Extraction of logic or functions into better-structured files/folders**
+
+**Incorrect:**
+
+```typescript
+function formatMealSummary() {}
+```
+
+**Correct:**
+
+```typescript
+// lib/format-meal-summary.ts exports formatMealSummary()
+```
+
+### Escalation anchors
+
+**Renames or reorganizations that change public/exported API expectations**
+
+**Incorrect to auto-fix silently:**
+
+```typescript
+export { MealCard as Card }
+```
+
+**Correct handling:**
+
+```typescript
+// Escalate before changing an exported API name.
+```
+
+**New shared abstractions across multiple areas**
+
+**Incorrect to auto-fix silently:**
+
+```typescript
+export const globalFormatterRegistry = {}
+```
+
+**Correct handling:**
+
+```typescript
+// Escalate before adding a new shared abstraction.
+```
+
+**Splits or moves that change feature ownership or contributor mental model**
+
+**Incorrect to auto-fix silently:**
+
+```text
+Move feed logic into a cross-product shared package.
+```
+
+**Correct handling:**
+
+```text
+Escalate before changing feature ownership boundaries.
+```
+
+**Cleanup that removes code with ambiguous runtime usage**
+
+**Incorrect to auto-fix silently:**
+
+```typescript
+delete handlers[unknownKey]
+```
+
+**Correct handling:**
+
+```typescript
+// Escalate before removing code with unclear runtime references.
+```
+
+**Simplifications that could subtly change business semantics**
+
+**Incorrect to auto-fix silently:**
+
+```typescript
+if (meal.isDraft || meal.isTemplate) return
+```
+
+**Correct handling:**
+
+```typescript
+// Escalate before collapsing business branches that may encode different meaning.
 ```
 
 **Operational Tooling:**
@@ -102,7 +358,7 @@ export function formatCalories(calories: number) {
 - Default to action for low-risk cleanup.
 - Keep changes local unless broader structure truly needs to move.
 - Maintainability owns cleanup root causes, not architectural redesign.
-- If a diff resembles the incorrect example, verify whether duplication can be
+- If a diff resembles any incorrect anchor, verify whether duplication can be
   removed with a single clear helper before approving it as-is.
 
 **Output Format:**

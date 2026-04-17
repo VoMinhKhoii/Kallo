@@ -60,28 +60,279 @@ repository.
    - dependency-direction changes across major layers
    - folder/package restructuring that changes contributor mental model
 
-**Calibration Example (use as an anchor, not a template):**
+**Calibration Anchors (use as anchors, not templates):**
 
-**Incorrect (thick route handler owning every layer at once):**
+### Scope anchors
+
+**Clear layering between UI, routes/actions, domain logic, and data access**
+
+**Incorrect:**
 
 ```typescript
 export async function POST(req: Request) {
-  const body = await req.json()
-  const user = await requireUser()
-  const meal = await db.insert(meals).values({ ...body, userId: user.id }).returning()
-  return Response.json({ id: meal[0].id, title: meal[0].title.toUpperCase() })
+  await db.insert(meals).values(await req.json())
 }
 ```
 
-**Correct (thin boundary delegating validation, domain logic, and shaping):**
+**Correct:**
 
 ```typescript
 export async function POST(req: Request) {
-  const body = await req.json()
-  const input = parseCreateMeal(body)
-  const meal = await createMeal(input)
-  return Response.json(toMealResponse(meal))
+  const input = parseCreateMeal(await req.json())
+  await createMeal(input)
 }
+```
+
+**File/folder concern separation and ownership boundaries**
+
+**Incorrect:**
+
+```typescript
+// components/feed-card.tsx
+export async function saveMealToDb() {}
+```
+
+**Correct:**
+
+```typescript
+// lib/actions/meals.ts
+export async function saveMealToDb() {}
+```
+
+**Dependency direction and avoiding cross-layer leaks**
+
+**Incorrect:**
+
+```typescript
+// lib/domain/meals.ts
+import { FeedCard } from '@/components/feed-card'
+```
+
+**Correct:**
+
+```typescript
+// components/feed-card.tsx
+import { formatMeal } from '@/lib/domain/meals'
+```
+
+**Keeping orchestration thin and pushing logic into well-bounded modules**
+
+**Incorrect:**
+
+```typescript
+export async function analyzeMeal(req: Request) { /* 200 lines */ }
+```
+
+**Correct:**
+
+```typescript
+export async function analyzeMeal(req: Request) {
+  return runMealAnalysis(parseAnalyzeMeal(await req.json()))
+}
+```
+
+**Hotspot file detection**
+
+**Incorrect:**
+
+```typescript
+// one file owns parsing, fetching, rendering, and persistence
+```
+
+**Correct:**
+
+```typescript
+// separate files own parsing, domain logic, and view concerns
+```
+
+**Shared abstractions and duplicated architectural drift**
+
+**Incorrect:**
+
+```typescript
+export async function fetchMealsA() {}
+export async function fetchMealsB() {}
+```
+
+**Correct:**
+
+```typescript
+export async function fetchMeals() {}
+```
+
+**Public interface design between modules**
+
+**Incorrect:**
+
+```typescript
+export const internalSteps = ['parse', 'match', 'estimate']
+```
+
+**Correct:**
+
+```typescript
+export async function analyzeMeal(input: AnalyzeMealInput) {}
+```
+
+**AI pipeline stage isolation with clear contracts**
+
+**Incorrect:**
+
+```typescript
+const result = await estimateNutrition(await matchIngredients(await normalizeMeal(input)))
+```
+
+**Correct:**
+
+```typescript
+const normalized = await normalizeMeal(input)
+const matched = await matchIngredients(normalized)
+const estimated = await estimateNutrition(matched)
+```
+
+### Auto-fix anchors
+
+**Safe file splits**
+
+**Incorrect:**
+
+```typescript
+// one file contains parser, action, hook, and JSX
+```
+
+**Correct:**
+
+```typescript
+// parser.ts, action.ts, hook.ts, and component.tsx each own one concern
+```
+
+**Helper extraction**
+
+**Incorrect:**
+
+```typescript
+return `${meal.title} (${meal.calories} kcal)`
+```
+
+**Correct:**
+
+```typescript
+return formatMealSummary(meal)
+```
+
+**Module moves that preserve ownership and public behavior**
+
+**Incorrect:**
+
+```typescript
+// helper lives under components/ but is imported by server code
+```
+
+**Correct:**
+
+```typescript
+// helper lives under lib/ and keeps the same public API
+```
+
+**Boundary cleanups that clearly preserve semantics**
+
+**Incorrect:**
+
+```typescript
+return toMealResponse(await createMeal(input))
+```
+
+**Correct:**
+
+```typescript
+const meal = await createMeal(input)
+return toMealResponse(meal)
+```
+
+### Escalation anchors
+
+**Layering changes that alter which module owns business logic**
+
+**Incorrect to auto-fix silently:**
+
+```typescript
+// move validation from domain layer into JSX component
+```
+
+**Correct handling:**
+
+```typescript
+// Escalate before reassigning business logic ownership.
+```
+
+**Module moves that change public API or feature ownership**
+
+**Incorrect to auto-fix silently:**
+
+```typescript
+export { analyzeMeal } from '@/components/feed-card'
+```
+
+**Correct handling:**
+
+```typescript
+// Escalate before moving an exported surface across ownership boundaries.
+```
+
+**New shared abstractions that affect multiple areas**
+
+**Incorrect to auto-fix silently:**
+
+```typescript
+export const globalWorkflowManager = {}
+```
+
+**Correct handling:**
+
+```typescript
+// Escalate before introducing a new shared abstraction.
+```
+
+**Orchestrator or pipeline stage redesign**
+
+**Incorrect to auto-fix silently:**
+
+```typescript
+return estimateNutrition(await normalizeMeal(input))
+```
+
+**Correct handling:**
+
+```typescript
+// Escalate before skipping or merging pipeline stages.
+```
+
+**Dependency-direction changes across major layers**
+
+**Incorrect to auto-fix silently:**
+
+```typescript
+import { FeedCard } from '@/components/feed-card'
+```
+
+**Correct handling:**
+
+```typescript
+// Escalate before reversing dependency direction across layers.
+```
+
+**Folder/package restructuring that changes contributor mental model**
+
+**Incorrect to auto-fix silently:**
+
+```text
+Move lib/, hooks/, and components/ into a new shared runtime package.
+```
+
+**Correct handling:**
+
+```text
+Escalate before changing top-level structure or contributor mental model.
 ```
 
 **Operational Tooling:**
@@ -105,7 +356,7 @@ export async function POST(req: Request) {
 - Prefer smaller, well-bounded modules over thick orchestrators and hotspot
   files.
 - Do not sneak in broad restructuring under the label of cleanup.
-- If a diff resembles the incorrect example, verify whether logic ownership is
+- If a diff resembles any incorrect anchor, verify whether logic ownership is
   actually separated before approving it.
 
 **Output Format:**

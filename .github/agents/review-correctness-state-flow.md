@@ -63,25 +63,277 @@ repository.
    - cross-step invariant changes
    - AI pipeline stage-order or decision-flow changes
 
-**Calibration Example (use as an anchor, not a template):**
+**Calibration Anchors (use as anchors, not templates):**
 
-**Incorrect (duplicate side effects allowed on repeated invocation):**
+### Scope anchors
+
+**Business logic correctness and invalid workflow transitions**
+
+**Incorrect:**
 
 ```typescript
-export async function finalizeOrder(orderId: string) {
-  await chargeCard(orderId)
-  await markOrderPaid(orderId)
+if (meal.status !== 'deleted') await publishMeal(meal.id)
+```
+
+**Correct:**
+
+```typescript
+if (meal.status !== 'draft') throw new Error('Invalid transition')
+await publishMeal(meal.id)
+```
+
+**Async race conditions, double-submit, and stale state issues**
+
+**Incorrect:**
+
+```typescript
+await saveMeal(input)
+await saveMeal(input)
+```
+
+**Correct:**
+
+```typescript
+if (isSubmittingRef.current) return
+isSubmittingRef.current = true
+```
+
+**Server/client state mismatches and optimistic update hazards**
+
+**Incorrect:**
+
+```typescript
+setMeals((current) => current.filter((m) => m.id !== id))
+await deleteMeal(id)
+```
+
+**Correct:**
+
+```typescript
+await deleteMeal(id)
+queryClient.invalidateQueries({ queryKey: ['meals'] })
+```
+
+**Idempotency, retry safety, and duplicate side effects**
+
+**Incorrect:**
+
+```typescript
+await chargeCard(orderId)
+await markOrderPaid(orderId)
+```
+
+**Correct:**
+
+```typescript
+const updated = await markOrderPaidIfPending(orderId)
+if (!updated) return
+await chargeCard(orderId)
+```
+
+**State machine completeness**
+
+**Incorrect:**
+
+```typescript
+switch (meal.status) {
+  case 'draft': return 'Draft'
 }
 ```
 
-**Correct (guard or make the side effect idempotent):**
+**Correct:**
 
 ```typescript
-export async function finalizeOrder(orderId: string) {
-  const updated = await markOrderPaidIfPending(orderId)
-  if (!updated) return
-  await chargeCard(orderId)
+switch (meal.status) {
+  case 'draft': return 'Draft'
+  case 'logged': return 'Logged'
+  default: return assertNever(meal.status)
 }
+```
+
+**Cross-step invariants across route handlers, server actions, and background work**
+
+**Incorrect:**
+
+```typescript
+await enqueueAnalysis(meal.id)
+```
+
+**Correct:**
+
+```typescript
+if (meal.userId !== session.user.id) throw new Error('Forbidden')
+await enqueueAnalysis(meal.id)
+```
+
+**Error-path correctness and rollback / partial-failure handling**
+
+**Incorrect:**
+
+```typescript
+await markMealLogged(id)
+await sendAnalytics(id)
+```
+
+**Correct:**
+
+```typescript
+await db.transaction(async (tx) => {
+  await markMealLoggedTx(tx, id)
+  await queueAnalyticsTx(tx, id)
+})
+```
+
+**AI pipeline sequencing or orchestration correctness**
+
+**Incorrect:**
+
+```typescript
+const match = await normalizeMeal(input)
+return estimateNutrition(match)
+```
+
+**Correct:**
+
+```typescript
+const normalized = await normalizeMeal(input)
+const matched = await matchIngredients(normalized)
+return estimateNutrition(matched)
+```
+
+### Auto-fix anchors
+
+**Guard placement**
+
+**Incorrect:**
+
+```typescript
+await fetchMeal(id)
+if (!id) throw new Error('Missing id')
+```
+
+**Correct:**
+
+```typescript
+if (!id) throw new Error('Missing id')
+await fetchMeal(id)
+```
+
+**Tiny state-flow cleanup that clearly preserves semantics**
+
+**Incorrect:**
+
+```typescript
+if (done === true) return true
+return false
+```
+
+**Correct:**
+
+```typescript
+return done === true
+```
+
+**Obvious duplicate-side-effect prevention**
+
+**Incorrect:**
+
+```typescript
+await publishMeal(id)
+await publishMeal(id)
+```
+
+**Correct:**
+
+```typescript
+if (meal.status === 'published') return
+await publishMeal(id)
+```
+
+### Escalation anchors
+
+**Workflow or state-transition changes that alter user journey or business rules**
+
+**Incorrect to auto-fix silently:**
+
+```typescript
+meal.status = 'published'
+```
+
+**Correct handling:**
+
+```typescript
+// Escalate before changing allowed transition rules.
+```
+
+**Retry or idempotency changes that affect side effects**
+
+**Incorrect to auto-fix silently:**
+
+```typescript
+retry: 3
+```
+
+**Correct handling:**
+
+```typescript
+// Escalate before changing retry semantics for paid or persisted actions.
+```
+
+**Optimistic UI or cache-flow changes that alter user-visible semantics**
+
+**Incorrect to auto-fix silently:**
+
+```typescript
+setMeals((current) => current.filter((m) => m.id !== id))
+```
+
+**Correct handling:**
+
+```typescript
+// Escalate before switching between optimistic and confirmed updates.
+```
+
+**Error-handling or rollback changes that alter failure semantics**
+
+**Incorrect to auto-fix silently:**
+
+```typescript
+catch { return null }
+```
+
+**Correct handling:**
+
+```typescript
+// Escalate before changing rollback or failure visibility behavior.
+```
+
+**Cross-step invariant changes**
+
+**Incorrect to auto-fix silently:**
+
+```typescript
+await enqueueAnalysis(meal.id)
+```
+
+**Correct handling:**
+
+```typescript
+// Escalate before loosening ownership or ordering invariants.
+```
+
+**AI pipeline stage-order or decision-flow changes**
+
+**Incorrect to auto-fix silently:**
+
+```typescript
+return estimateNutrition(await normalizeMeal(input))
+```
+
+**Correct handling:**
+
+```typescript
+// Escalate before skipping or reordering pipeline stages.
 ```
 
 **Operational Tooling:**
@@ -111,7 +363,7 @@ export async function finalizeOrder(orderId: string) {
 - Treat "works on the happy path" as insufficient evidence of correctness.
 - Prioritize invariant breaks, duplicate side effects, and rollback hazards.
 - Do not silently rewrite user-visible workflow semantics.
-- If a diff resembles the incorrect example, verify whether there is a real
+- If a diff resembles any incorrect anchor, verify whether there is a real
   guard, idempotency key, or conditional write before approving it.
 
 **Output Format:**

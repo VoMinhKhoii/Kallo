@@ -67,20 +67,22 @@ repository.
    - rollout sequencing changes
    - query rewrites that could materially change returned results
 
-**Calibration Example (use as an anchor, not a template):**
+**Calibration Anchors (use as anchors, not templates):**
 
-**Incorrect (hand-editing schema shape only in SQL):**
+### Scope anchors
+
+**Drizzle schema changes and migration ordering**
+
+**Incorrect:**
 
 ```sql
 ALTER TABLE meals ADD COLUMN notes text;
 ```
 
-**Correct (Drizzle owns schema shape; SQL handles policies/functions separately):**
+**Correct:**
 
 ```typescript
-// lib/db/schema.ts
 export const meals = pgTable('meals', {
-  // ...
   notes: text('notes'),
 })
 ```
@@ -89,8 +91,279 @@ export const meals = pgTable('meals', {
 bun db:generate
 ```
 
-Then add a separate manual SQL migration only if policies, triggers, or
-functions must also change.
+**Supabase RLS / policy correctness and access boundaries**
+
+**Incorrect:**
+
+```sql
+CREATE POLICY "read all profiles" ON profiles FOR SELECT USING (true);
+```
+
+**Correct:**
+
+```sql
+CREATE POLICY "read own profile" ON profiles FOR SELECT USING (auth.uid() = user_id);
+```
+
+**Server-side query scoping and user-ownership checks**
+
+**Incorrect:**
+
+```typescript
+await db.select().from(meals)
+```
+
+**Correct:**
+
+```typescript
+await db.select().from(meals).where(eq(meals.userId, session.user.id))
+```
+
+**Destructive or irreversible migration risk**
+
+**Incorrect:**
+
+```sql
+DROP COLUMN nutrition_json;
+```
+
+**Correct:**
+
+```sql
+ALTER TABLE meals ADD COLUMN nutrition_json_v2 jsonb;
+```
+
+**Data backfills, repair scripts, and rollout safety**
+
+**Incorrect:**
+
+```typescript
+await db.update(meals).set({ archived: true })
+```
+
+**Correct:**
+
+```typescript
+await backfillMealsInBatches({ dryRun: true, batchSize: 500 })
+```
+
+**SQL function / trigger / `SECURITY DEFINER` safety**
+
+**Incorrect:**
+
+```sql
+CREATE FUNCTION force_delete_meal(id uuid) RETURNS void SECURITY DEFINER ...
+```
+
+**Correct:**
+
+```sql
+CREATE FUNCTION force_delete_meal(id uuid) RETURNS void SECURITY DEFINER
+SET search_path = public
+AS $$ -- validates caller role first $$;
+```
+
+**Data integrity constraints, defaults, and nullability drift**
+
+**Incorrect:**
+
+```typescript
+calories: integer('calories'),
+```
+
+**Correct:**
+
+```typescript
+calories: integer('calories').notNull().default(0),
+```
+
+**Query-shape risks like overfetching, unbounded scans, or missing pagination**
+
+**Incorrect:**
+
+```typescript
+await db.select().from(meals).orderBy(desc(meals.createdAt))
+```
+
+**Correct:**
+
+```typescript
+await db.select({ id: meals.id, title: meals.title }).from(meals).limit(50)
+```
+
+### Auto-fix anchors
+
+**Rename migrations to meaningful names**
+
+**Incorrect:**
+
+```text
+20260417120000_right_maria_hill.sql
+```
+
+**Correct:**
+
+```text
+20260417120000_add_meal_notes.sql
+```
+
+**Extract helpers without changing semantics**
+
+**Incorrect:**
+
+```typescript
+const encoded = encodeDbUrl(process.env.DATABASE_URL!)
+const db = drizzle(postgres(encoded))
+```
+
+**Correct:**
+
+```typescript
+const db = createDbClient()
+```
+
+**Narrow selected columns when the existing intent is obvious**
+
+**Incorrect:**
+
+```typescript
+await db.select().from(profiles)
+```
+
+**Correct:**
+
+```typescript
+await db.select({ id: profiles.id, displayName: profiles.displayName }).from(profiles)
+```
+
+**Perform similarly non-behavioral cleanup**
+
+**Incorrect:**
+
+```typescript
+const rows = await getMeals()
+return rows
+```
+
+**Correct:**
+
+```typescript
+return getMeals()
+```
+
+### Escalation anchors
+
+**RLS or policy logic changes**
+
+**Incorrect to auto-fix silently:**
+
+```sql
+USING (true)
+```
+
+**Correct handling:**
+
+```sql
+-- Escalate before changing policy reach or visibility semantics.
+```
+
+**Schema changes that alter data shape or constraints**
+
+**Incorrect to auto-fix silently:**
+
+```typescript
+title: text('title').notNull(),
+```
+
+**Correct handling:**
+
+```typescript
+// Escalate before changing nullability, uniqueness, or field shape.
+```
+
+**Destructive or irreversible migrations**
+
+**Incorrect to auto-fix silently:**
+
+```sql
+DROP TABLE meal_logs;
+```
+
+**Correct handling:**
+
+```sql
+-- Escalate before removing data or columns permanently.
+```
+
+**Backfills or repair scripts that modify existing data**
+
+**Incorrect to auto-fix silently:**
+
+```typescript
+await db.update(meals).set({ title: sql`upper(title)` })
+```
+
+**Correct handling:**
+
+```typescript
+// Escalate before rewriting production data in bulk.
+```
+
+**`SECURITY DEFINER` / trigger / function behavior changes**
+
+**Incorrect to auto-fix silently:**
+
+```sql
+CREATE TRIGGER sync_profile AFTER INSERT ON users ...
+```
+
+**Correct handling:**
+
+```sql
+-- Escalate before changing trigger timing or function authority.
+```
+
+**Ownership or access-rule changes**
+
+**Incorrect to auto-fix silently:**
+
+```typescript
+await db.select().from(meals)
+```
+
+**Correct handling:**
+
+```typescript
+// Escalate before widening or tightening ownership visibility.
+```
+
+**Rollout sequencing changes**
+
+**Incorrect to auto-fix silently:**
+
+```text
+Deploy code that reads notes before notes column exists.
+```
+
+**Correct handling:**
+
+```text
+Escalate and sequence schema-first, code-second, cleanup-last.
+```
+
+**Query rewrites that could materially change returned results**
+
+**Incorrect to auto-fix silently:**
+
+```typescript
+await db.select().from(meals).limit(10)
+```
+
+**Correct handling:**
+
+```typescript
+// Escalate before changing ordering, filtering, or result-set meaning.
+```
 
 **Operational Tooling:**
 - Start with `Glob`, `Grep`, and `Read` over `lib/db/`, `supabase/migrations/`,
@@ -116,7 +389,7 @@ functions must also change.
   security, framework idioms to framework, and architecture ownership issues to
   architecture.
 - Do not approve speculative migration or query rewrites without clear evidence.
-- If a diff resembles the incorrect example, verify whether the schema source of
+- If a diff resembles any incorrect anchor, verify whether the schema source of
   truth and migration ordering are both present before approving it.
 
 **Output Format:**

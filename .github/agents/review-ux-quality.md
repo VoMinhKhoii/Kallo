@@ -60,21 +60,252 @@ repository.
    - accessibility changes that require broader design decisions
    - observability / telemetry changes for user-facing failures
 
-**Calibration Example (use as an anchor, not a template):**
+**Calibration Anchors (use as anchors, not templates):**
 
-**Incorrect (silent async action with no feedback or disabled state):**
+### Scope anchors
+
+**Loading, empty, and error-state quality**
+
+**Incorrect:**
+
+```typescript
+if (!meals.length) return null
+```
+
+**Correct:**
+
+```typescript
+if (!meals.length) return <EmptyState title="No meals yet" />
+```
+
+**Accessibility and keyboard/focus behavior**
+
+**Incorrect:**
+
+```typescript
+<div onClick={openDialog}>Open</div>
+```
+
+**Correct:**
+
+```typescript
+<button onClick={openDialog}>Open</button>
+```
+
+**User feedback and resilience during async actions**
+
+**Incorrect:**
 
 ```typescript
 <button onClick={saveProfile}>Save</button>
 ```
 
-**Correct (show pending state and visible feedback):**
+**Correct:**
 
 ```typescript
-<button onClick={saveProfile} disabled={isPending} aria-busy={isPending}>
-  {isPending ? 'Saving...' : 'Save'}
-</button>
+<button onClick={saveProfile} disabled={isPending} aria-busy={isPending}>Save</button>
+```
+
+**Forms and validation UX**
+
+**Incorrect:**
+
+```typescript
+{error ? 'Invalid' : null}
+```
+
+**Correct:**
+
+```typescript
 {error ? <p role="alert">{error}</p> : null}
+```
+
+**Consistency with repo UI rules and interaction patterns**
+
+**Incorrect:**
+
+```typescript
+alert('Saved')
+```
+
+**Correct:**
+
+```typescript
+toast.success('Saved')
+```
+
+**Test coverage around risky user flows**
+
+**Incorrect:**
+
+```typescript
+// no test covers failed submit, retry, or empty state
+```
+
+**Correct:**
+
+```typescript
+// test covers submit success, failure, and retry flow
+```
+
+**Observability / debuggability of user-facing failures**
+
+**Incorrect:**
+
+```typescript
+catch { setError('Failed') }
+```
+
+**Correct:**
+
+```typescript
+catch (error) { console.error(error); setError('Failed') }
+```
+
+**Polish issues that materially affect trust or comprehension**
+
+**Incorrect:**
+
+```typescript
+<button>Go</button>
+```
+
+**Correct:**
+
+```typescript
+<button>Save profile</button>
+```
+
+### Auto-fix anchors
+
+**Add missing loading/error states**
+
+**Incorrect:**
+
+```typescript
+return data ? <MealList meals={data} /> : null
+```
+
+**Correct:**
+
+```typescript
+if (isLoading) return <LoadingState />
+if (error) return <ErrorState />
+return <MealList meals={data} />
+```
+
+**Tighten form feedback**
+
+**Incorrect:**
+
+```typescript
+<input aria-invalid={false} />
+```
+
+**Correct:**
+
+```typescript
+<input aria-invalid={Boolean(error)} />
+```
+
+**Improve small accessibility issues**
+
+**Incorrect:**
+
+```typescript
+<button><Icon /></button>
+```
+
+**Correct:**
+
+```typescript
+<button aria-label="Close"><Icon /></button>
+```
+
+**Apply similarly clear UX resilience fixes**
+
+**Incorrect:**
+
+```typescript
+<button onClick={retry}>Retry</button>
+```
+
+**Correct:**
+
+```typescript
+<button onClick={retry} disabled={isPending}>Retry</button>
+```
+
+### Escalation anchors
+
+**Interaction-flow changes that alter user journey or task order**
+
+**Incorrect to auto-fix silently:**
+
+```typescript
+moveConfirmationStepBeforeMealReview()
+```
+
+**Correct handling:**
+
+```typescript
+// Escalate before changing task order or user journey.
+```
+
+**New loading / error / empty states that materially change product behavior**
+
+**Incorrect to auto-fix silently:**
+
+```typescript
+if (error) return <RedirectToHome />
+```
+
+**Correct handling:**
+
+```typescript
+// Escalate before changing product behavior on error or empty state.
+```
+
+**Form UX changes that alter validation timing or submission semantics**
+
+**Incorrect to auto-fix silently:**
+
+```typescript
+validateOnBlur = false
+```
+
+**Correct handling:**
+
+```typescript
+// Escalate before changing validation timing or submit semantics.
+```
+
+**Accessibility changes that require broader design decisions**
+
+**Incorrect to auto-fix silently:**
+
+```typescript
+removeDialogFocusTrap()
+```
+
+**Correct handling:**
+
+```typescript
+// Escalate before changing a broad accessibility contract.
+```
+
+**Observability / telemetry changes for user-facing failures**
+
+**Incorrect to auto-fix silently:**
+
+```typescript
+track('meal_error', { rawError })
+```
+
+**Correct handling:**
+
+```typescript
+// Escalate before changing telemetry payload shape or collection policy.
 ```
 
 **Operational Tooling:**
@@ -97,7 +328,7 @@ repository.
 - Treat accessibility and async resilience as product quality, not optional
   polish.
 - Do not silently redesign flows.
-- If a diff resembles the incorrect example, verify whether the user gets
+- If a diff resembles any incorrect anchor, verify whether the user gets
   visible pending, success, or failure feedback before approving it.
 
 **Output Format:**

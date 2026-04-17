@@ -66,33 +66,278 @@ repository.
    - loading/error boundary changes that alter UX semantics
    - serialization/hydration changes that alter what data reaches the client
 
-**Calibration Example (use as an anchor, not a template):**
+**Calibration Anchors (use as anchors, not templates):**
 
-**Incorrect (manual client fetch in `useEffect` for primary data):**
+### Scope anchors
+
+**Server vs client component boundaries**
+
+**Incorrect:**
 
 ```typescript
-function MealList() {
-  const [meals, setMeals] = useState([])
+'use client'
 
-  useEffect(() => {
-    fetch('/api/meals').then((res) => res.json()).then(setMeals)
-  }, [])
-
-  return <MealsTable meals={meals} />
+export default async function Page() {
+  const meals = await getMeals()
 }
 ```
 
-**Correct (use the repo's preferred data layer for the surface):**
+**Correct:**
 
 ```typescript
-function MealList() {
-  const { data: meals = [] } = useQuery({
-    queryKey: ['meals'],
-    queryFn: getMeals,
-  })
-
-  return <MealsTable meals={meals} />
+export default async function Page() {
+  const meals = await getMeals()
+  return <MealPageClient meals={meals} />
 }
+```
+
+**Server Actions vs route handlers vs TanStack Query usage**
+
+**Incorrect:**
+
+```typescript
+useMutation({ mutationFn: async (input) => fetch('/api/meals', { method: 'POST', body: JSON.stringify(input) }) })
+```
+
+**Correct:**
+
+```typescript
+useMutation({ mutationFn: createMealAction })
+```
+
+**Avoiding `useEffect` / manual fetch anti-patterns**
+
+**Incorrect:**
+
+```typescript
+useEffect(() => {
+  fetch('/api/meals').then((res) => res.json()).then(setMeals)
+}, [])
+```
+
+**Correct:**
+
+```typescript
+const { data: meals = [] } = useQuery({ queryKey: ['meals'], queryFn: getMeals })
+```
+
+**App Router data fetching and loading / error boundary patterns**
+
+**Incorrect:**
+
+```typescript
+if (isLoading) return <Spinner />
+if (error) return <div>Failed</div>
+```
+
+**Correct:**
+
+```typescript
+// Use loading.tsx and error.tsx at the route boundary.
+```
+
+**Serialization / hydration discipline**
+
+**Incorrect:**
+
+```typescript
+return <MealClient meal={mealRow} />
+```
+
+**Correct:**
+
+```typescript
+return <MealClient meal={{ id: mealRow.id, title: mealRow.title }} />
+```
+
+**Hook correctness and React render/state anti-patterns**
+
+**Incorrect:**
+
+```typescript
+const total = useMemo(() => meals.length, [meals])
+```
+
+**Correct:**
+
+```typescript
+const total = meals.length
+```
+
+**Repo-specific UI rules from `AGENTS.md`**
+
+**Incorrect:**
+
+```typescript
+alert('Saved')
+```
+
+**Correct:**
+
+```typescript
+toast.success('Saved')
+```
+
+**React / Next idioms that double as framework-level performance patterns**
+
+**Incorrect:**
+
+```typescript
+import HeavyChart from '@/components/heavy-chart'
+```
+
+**Correct:**
+
+```typescript
+const HeavyChart = dynamic(() => import('@/components/heavy-chart'))
+```
+
+### Auto-fix anchors
+
+**Move fetch logic to the right layer**
+
+**Incorrect:**
+
+```typescript
+fetch('/api/meals').then((res) => res.json())
+```
+
+**Correct:**
+
+```typescript
+getMeals()
+```
+
+**Replace obvious anti-patterns**
+
+**Incorrect:**
+
+```typescript
+useEffect(() => setFullName(`${first} ${last}`), [first, last])
+```
+
+**Correct:**
+
+```typescript
+const fullName = `${first} ${last}`
+```
+
+**Tighten client/server boundaries**
+
+**Incorrect:**
+
+```typescript
+'use client'
+export default function Page({ meals }: { meals: Meal[] }) {}
+```
+
+**Correct:**
+
+```typescript
+export default async function Page() {
+  const meals = await getMeals()
+  return <MealClient meals={meals} />
+}
+```
+
+**Apply similarly clear framework cleanups**
+
+**Incorrect:**
+
+```typescript
+<img src="/logo.png" alt="Logo" />
+```
+
+**Correct:**
+
+```typescript
+<Image src="/logo.png" alt="Logo" width={64} height={64} />
+```
+
+### Escalation anchors
+
+**Data-flow changes between Server Actions, route handlers, and client fetching**
+
+**Incorrect to auto-fix silently:**
+
+```typescript
+useMutation({ mutationFn: createMealAction })
+```
+
+**Correct handling:**
+
+```typescript
+// Escalate before switching mutation transport or invalidation semantics.
+```
+
+**Component-boundary changes that materially move state or interactivity**
+
+**Incorrect to auto-fix silently:**
+
+```typescript
+'use client'
+```
+
+**Correct handling:**
+
+```typescript
+// Escalate before moving interactivity across server/client boundaries.
+```
+
+**Hook/state rewrites that alter behavior or timing**
+
+**Incorrect to auto-fix silently:**
+
+```typescript
+useTransition(() => saveProfile())
+```
+
+**Correct handling:**
+
+```typescript
+// Escalate before changing scheduling or timing semantics.
+```
+
+**Large TanStack Query migrations or cache-model changes**
+
+**Incorrect to auto-fix silently:**
+
+```typescript
+queryKey: ['meals', filters]
+```
+
+**Correct handling:**
+
+```typescript
+// Escalate before rewriting cache key or invalidation strategy.
+```
+
+**Loading/error boundary changes that alter UX semantics**
+
+**Incorrect to auto-fix silently:**
+
+```typescript
+return null
+```
+
+**Correct handling:**
+
+```typescript
+// Escalate before changing loading/error visibility for the route.
+```
+
+**Serialization/hydration changes that alter what data reaches the client**
+
+**Incorrect to auto-fix silently:**
+
+```typescript
+return <MealClient meal={mealRow} />
+```
+
+**Correct handling:**
+
+```typescript
+// Escalate before changing which fields reach the client boundary.
 ```
 
 **Operational Tooling:**
@@ -123,7 +368,7 @@ function MealList() {
   fetching, Server Actions for server-side mutation, no native dialogs, use
   `sonner`, use `lucide-react`, and no `useEffect` data fetching.
 - Do not silently switch architectural data-flow choices when semantics change.
-- If a diff resembles the incorrect example, verify whether there is a repo-
+- If a diff resembles any incorrect anchor, verify whether there is a repo-
   approved reason to deviate before approving it.
 
 **Output Format:**

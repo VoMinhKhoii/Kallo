@@ -50,24 +50,155 @@ repository.
 4. Avoid speculative tuning unless there is clear evidence or an obvious risk.
 5. This reviewer is escalation-first by design. Do not auto-edit files.
 
-**Calibration Example (use as an anchor, not a template):**
+**Calibration Anchors (use as anchors, not templates):**
 
-**Incorrect (independent async work done sequentially):**
+### Scope anchors
+
+**Network / database waterfalls and unnecessary sequential work**
+
+**Incorrect:**
 
 ```typescript
 const user = await fetchUser()
 const meals = await fetchMeals()
-const goals = await fetchGoals()
 ```
 
-**Correct (independent async work batched in parallel):**
+**Correct:**
 
 ```typescript
-const [user, meals, goals] = await Promise.all([
-  fetchUser(),
-  fetchMeals(),
-  fetchGoals(),
-])
+const [user, meals] = await Promise.all([fetchUser(), fetchMeals()])
+```
+
+**Overfetching, repeated queries, and missing caching opportunities**
+
+**Incorrect:**
+
+```typescript
+await db.select().from(meals)
+await db.select().from(meals)
+```
+
+**Correct:**
+
+```typescript
+const meals = await getMealsCached()
+```
+
+**Render churn, expensive recomputation, and avoidable client work**
+
+**Incorrect:**
+
+```typescript
+const filtered = meals.filter(expensivePredicate)
+```
+
+**Correct:**
+
+```typescript
+const filtered = useMemo(() => meals.filter(expensivePredicate), [meals])
+```
+
+**Bundle size and loading-cost issues**
+
+**Incorrect:**
+
+```typescript
+import HeavyChart from '@/components/heavy-chart'
+```
+
+**Correct:**
+
+```typescript
+const HeavyChart = dynamic(() => import('@/components/heavy-chart'))
+```
+
+**Heavy server-side work, blocking operations, or throughput bottlenecks**
+
+**Incorrect:**
+
+```typescript
+await generateEmbeddingForEveryMeal(meals)
+return Response.json({ ok: true })
+```
+
+**Correct:**
+
+```typescript
+queueEmbeddingBackfill(meals)
+return Response.json({ ok: true })
+```
+
+**Unbounded queries, loops, or memory growth risks**
+
+**Incorrect:**
+
+```typescript
+for await (const row of streamAllMeals()) cache.push(row)
+```
+
+**Correct:**
+
+```typescript
+for await (const batch of streamMealsInBatches(200)) await handleBatch(batch)
+```
+
+**AI pipeline latency / cost inefficiencies**
+
+**Incorrect:**
+
+```typescript
+for (const item of items) await embed(item)
+```
+
+**Correct:**
+
+```typescript
+await embedInBatches(items)
+```
+
+### Decision anchors
+
+**Recommend parallelism over sequential work where dependencies do not require ordering**
+
+**Incorrect:**
+
+```typescript
+await fetchGoals()
+await fetchProfile()
+```
+
+**Correct:**
+
+```typescript
+await Promise.all([fetchGoals(), fetchProfile()])
+```
+
+**Avoid speculative tuning unless there is clear evidence or an obvious risk**
+
+**Incorrect:**
+
+```typescript
+memoizeEverything()
+```
+
+**Correct:**
+
+```typescript
+// Only optimize after confirming the render or query is actually hot.
+```
+
+**This reviewer is escalation-first by design**
+
+**Incorrect:**
+
+```typescript
+// silently rewrite caching and concurrency behavior
+```
+
+**Correct:**
+
+```typescript
+// surface the bottleneck and escalate if the fix changes semantics
 ```
 
 **Operational Tooling:**
@@ -91,7 +222,7 @@ const [user, meals, goals] = await Promise.all([
 - Call out why a recommendation matters for end-user experience or system cost.
 - Be explicit when a proposed fix changes concurrency, caching, or ordering
   semantics.
-- If a diff resembles the incorrect example, verify whether there is a real
+- If a diff resembles any incorrect anchor, verify whether there is a real
   dependency chain before approving sequential awaits.
 
 **Output Format:**
