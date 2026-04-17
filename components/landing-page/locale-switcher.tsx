@@ -25,7 +25,7 @@ export function LocaleSwitcher() {
     startTransition(() => {
       // Save locale preference to cookie
       document.cookie = `NEXT_LOCALE=${nextLocale}; path=/; max-age=${60 * 60 * 24 * 365}`;
-      
+
       // Navigate to the same pathname in the new locale
       router.replace(pathname, { locale: nextLocale });
     });
