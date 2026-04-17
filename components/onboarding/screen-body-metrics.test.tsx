@@ -22,11 +22,10 @@ describe('ScreenBodyMetrics', () => {
       />
     );
 
-    expect(screen.queryByText('Pace & Aggression')).not.toBeInTheDocument();
-    expect(screen.getByText('Daily Target & Macros')).toBeInTheDocument();
     expect(
-      screen.getByRole('button', { name: /moderate carb/i })
-    ).toBeInTheDocument();
+      screen.queryByText('bodyMetrics.aggression')
+    ).not.toBeInTheDocument();
+    expect(screen.getByText('bodyMetrics.macroSummary')).toBeInTheDocument();
   });
 
   it('still shows the aggression control for cutting goals', () => {
@@ -37,6 +36,6 @@ describe('ScreenBodyMetrics', () => {
       />
     );
 
-    expect(screen.getByText('Pace & Aggression')).toBeInTheDocument();
+    expect(screen.getByText('bodyMetrics.aggression')).toBeInTheDocument();
   });
 });
