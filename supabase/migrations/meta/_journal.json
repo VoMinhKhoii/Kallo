@@ -152,6 +152,13 @@
     {
       "idx": 21,
       "version": "7",
+      "when": 1776356325702,
+      "tag": "20260416161845_flatten_meal_nutrition_values",
+      "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
       "when": 1776402838042,
       "tag": "20260417051358_add_preferred_locale",
       "breakpoints": true

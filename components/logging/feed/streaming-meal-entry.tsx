@@ -3,6 +3,10 @@
 import { motion } from 'motion/react';
 import { useTranslations } from 'next-intl';
 import {
+  formatCaloriesValue,
+  formatMacroValue,
+} from '@/components/logging/feed/format-inline-nutrition';
+import {
   MealEntryItemSkeleton,
   MealEntryTotalSkeleton,
 } from '@/components/logging/feed/skeletons';
@@ -30,18 +34,18 @@ function CompletedItemRow({ item, index }: { item: MealItem; index: number }) {
       </span>
       <div className="flex shrink-0 items-center gap-3">
         <div className="flex gap-2 text-[10px] text-nham-text-muted tabular-nums">
-          <span className="w-6 text-right">
-            P:{Math.round(item.macros.protein)}
+          <span className="whitespace-nowrap text-right">
+            P:{formatMacroValue(item.macros.protein)}
           </span>
-          <span className="w-6 text-right">
-            C:{Math.round(item.macros.carbs)}
+          <span className="whitespace-nowrap text-right">
+            C:{formatMacroValue(item.macros.carbs)}
           </span>
-          <span className="w-6 text-right">
-            F:{Math.round(item.macros.fat)}
+          <span className="whitespace-nowrap text-right">
+            F:{formatMacroValue(item.macros.fat)}
           </span>
         </div>
-        <span className="w-12 text-right font-bold text-nham-text tabular-nums">
-          {Math.round(item.macros.calories)}
+        <span className="whitespace-nowrap text-right font-bold text-nham-text tabular-nums">
+          {formatCaloriesValue(item.macros.calories)}
         </span>
       </div>
     </motion.div>
