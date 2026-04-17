@@ -2,7 +2,7 @@
 
 import { ArrowLeft, ArrowRight, Loader2, SkipForward, X } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
-import { useRouter } from 'next/navigation';
+import { useRouter } from '@/i18n/navigation';
 import { useCallback, useEffect, useRef, useState, useTransition } from 'react';
 import type { getOnboardingProfile } from '@/lib/onboarding/actions';
 import { saveOnboardingScreen } from '@/lib/onboarding/actions';
@@ -73,9 +73,9 @@ export function WizardShell({
   >({});
   const modalMaxWidthClass =
     currentStep === 1
-      ? 'max-w-6xl'
+      ? 'max-w-4xl'
       : currentStep === 2
-        ? 'max-w-4xl'
+        ? 'max-w-6xl'
         : 'max-w-[58rem]';
 
   // Scroll affordance: fade gradient when content overflows
@@ -158,22 +158,25 @@ export function WizardShell({
   // This preserves typed inputs when navigating back.
   const screenOneDefaults = screenData[1]
     ? {
-        ...buildScreenOneDefaults(initialProfile),
-        ...(screenData[1] as Partial<ScreenOneData>),
-      }
-    : buildScreenOneDefaults(initialProfile);
-
-  const screenTwoDefaults = screenData[2]
-    ? {
         countryOfOrigin:
-          (screenData[2].countryOfOrigin as string | null) ?? null,
+          (screenData[1].countryOfOrigin as string | null) ?? null,
         countryOfResidence:
-          (screenData[2].countryOfResidence as string | null) ?? null,
+          (screenData[1].countryOfResidence as string | null) ?? null,
+        preferredLocale:
+          (screenData[1].preferredLocale as string) ?? 'en',
       }
     : {
         countryOfOrigin: initialProfile?.countryOfOrigin ?? null,
         countryOfResidence: initialProfile?.countryOfResidence ?? null,
+        preferredLocale: initialProfile?.preferredLocale ?? 'en',
       };
+
+  const screenTwoDefaults = screenData[2]
+    ? {
+        ...buildScreenOneDefaults(initialProfile),
+        ...(screenData[2] as Partial<ScreenOneData>),
+      }
+    : buildScreenOneDefaults(initialProfile);
 
   const screenThreeDefaults = screenData[3]
     ? {
@@ -270,9 +273,9 @@ export function WizardShell({
               }}
             >
               {currentStep === 1 && (
-                <ScreenBodyMetrics
+                <ScreenOrigin
                   defaultValues={screenOneDefaults}
-                  onChange={(data: ScreenOneData) =>
+                  onChange={(data) =>
                     handleScreenChange(
                       1,
                       data as unknown as Record<string, unknown>
@@ -281,9 +284,9 @@ export function WizardShell({
                 />
               )}
               {currentStep === 2 && (
-                <ScreenOrigin
+                <ScreenBodyMetrics
                   defaultValues={screenTwoDefaults}
-                  onChange={(data) =>
+                  onChange={(data: ScreenOneData) =>
                     handleScreenChange(
                       2,
                       data as unknown as Record<string, unknown>

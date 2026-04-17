@@ -8,8 +8,8 @@ import type {
 
 // onboarding_step thresholds:
 // 0 = not started
-// 1 = Screen 1 complete (body metrics + goals)
-// 2 = Screen 2 complete (country of origin/residence)
+// 1 = Screen 1 complete (origin + language)
+// 2 = Screen 2 complete (body metrics + goals)
 // 3 = Screen 3 complete (cooking habits) — ALL SCREENS DONE
 export const ONBOARDING_TOTAL_STEPS = 3;
 

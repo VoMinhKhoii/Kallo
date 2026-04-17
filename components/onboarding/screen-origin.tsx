@@ -1,18 +1,21 @@
 'use client';
 
-import { Globe, MapPin } from 'lucide-react';
+import { Globe, Languages, MapPin } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { COUNTRIES } from '@/lib/onboarding/countries';
+import { LanguageToggle } from './language-toggle';
 
 interface ScreenOriginProps {
   defaultValues: {
     countryOfOrigin: string | null;
     countryOfResidence: string | null;
+    preferredLocale: string;
   };
   onChange: (data: {
     countryOfOrigin: string | null;
     countryOfResidence: string | null;
+    preferredLocale: string;
   }) => void;
 }
 
@@ -238,11 +241,14 @@ export function ScreenOrigin({ defaultValues, onChange }: ScreenOriginProps) {
   const [residence, setResidence] = useState<string | null>(
     defaultValues.countryOfResidence
   );
+  const [locale, setLocale] = useState<string>(
+    defaultValues.preferredLocale
+  );
   const hasReported = useRef(false);
 
   const report = useCallback(
-    (o: string | null, r: string | null) => {
-      onChange({ countryOfOrigin: o, countryOfResidence: r });
+    (o: string | null, r: string | null, l: string) => {
+      onChange({ countryOfOrigin: o, countryOfResidence: r, preferredLocale: l });
     },
     [onChange]
   );
@@ -250,10 +256,10 @@ export function ScreenOrigin({ defaultValues, onChange }: ScreenOriginProps) {
   // Report initial values on mount so wizard knows data is valid
   useEffect(() => {
     if (!hasReported.current) {
-      report(origin, residence);
+      report(origin, residence, locale);
       hasReported.current = true;
     }
-  }, [origin, residence, report]);
+  }, [origin, residence, locale, report]);
 
   return (
     <div className="space-y-6 lg:space-y-7">
@@ -274,18 +280,23 @@ export function ScreenOrigin({ defaultValues, onChange }: ScreenOriginProps) {
         </p>
       </div>
 
+      {/* Language preference */}
       <div className="rounded-[24px] border border-[#EAE7E0] bg-white p-5 sm:p-6">
-        {/* <div className="mb-5 rounded-2xl bg-[#F5F4F0] p-4">
-          <p className="font-medium text-[#2C2416] text-[13px]">
-            Why this helps
-          </p>
-          <p className="mt-1 text-[#8B8682] text-[13px] leading-relaxed">
-            Origin helps the AI lean toward the food culture you identify with.
-            Current residence helps it bias toward ingredients that are easier
-            to find around you.
-          </p>
-        </div> */}
+        <label className="mb-3 flex items-center gap-2 font-bold text-[#2C2416] text-[13px]">
+          <Languages className="h-4 w-4 text-[#C9A87C]" />
+          Preferred language
+        </label>
+        <LanguageToggle
+          value={locale}
+          onChange={(v) => {
+            setLocale(v);
+            report(origin, residence, v);
+          }}
+        />
+      </div>
 
+      {/* Country pickers */}
+      <div className="rounded-[24px] border border-[#EAE7E0] bg-white p-5 sm:p-6">
         <div className="grid gap-4 lg:grid-cols-2">
           <CountryPicker
             label="Country of origin"
@@ -294,7 +305,7 @@ export function ScreenOrigin({ defaultValues, onChange }: ScreenOriginProps) {
             value={origin}
             onChange={(v) => {
               setOrigin(v);
-              report(v, residence);
+              report(v, residence, locale);
             }}
           />
 
@@ -305,7 +316,7 @@ export function ScreenOrigin({ defaultValues, onChange }: ScreenOriginProps) {
             value={residence}
             onChange={(v) => {
               setResidence(v);
-              report(origin, v);
+              report(origin, v, locale);
             }}
           />
         </div>
