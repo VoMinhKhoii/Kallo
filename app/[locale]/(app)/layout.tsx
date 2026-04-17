@@ -1,4 +1,4 @@
-import { redirect } from 'next/navigation';
+import { redirect } from '@/i18n/navigation';
 import { AppShell } from '@/components/app/app-shell';
 import { getOnboardingProfile } from '@/lib/onboarding/actions';
 import { createClient } from '@/lib/supabase/server';
