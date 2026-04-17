@@ -40,300 +40,61 @@ repository.
    files, module moves, and cross-layer touches.
 2. Review for the repo's approved v1 architecture scope:
    - clear layering between UI, routes/actions, domain logic, and data access
+     - Incorrect example: `export async function POST(req: Request) { await db.insert(meals).values(await req.json()) }`
+     - Correct example: `export async function POST(req: Request) { const input = parseCreateMeal(await req.json()) await createMeal(input) }`
    - file/folder concern separation and ownership boundaries
+     - Incorrect example: `// components/feed-card.tsx export async function saveMealToDb() {}`
+     - Correct example: `// lib/actions/meals.ts export async function saveMealToDb() {}`
    - dependency direction and avoiding cross-layer leaks
+     - Incorrect example: `// lib/domain/meals.ts import { FeedCard } from '@/components/feed-card'`
+     - Correct example: `// components/feed-card.tsx import { formatMeal } from '@/lib/domain/meals'`
    - keeping orchestration thin and pushing logic into well-bounded modules
+     - Incorrect example: `export async function analyzeMeal(req: Request) { /* 200 lines */ }`
+     - Correct example: `export async function analyzeMeal(req: Request) { return runMealAnalysis(parseAnalyzeMeal(await req.json())) }`
    - hotspot file detection
+     - Incorrect example: `// one file owns parsing, fetching, rendering, and persistence`
+     - Correct example: `// separate files own parsing, domain logic, and view concerns`
    - shared abstractions and duplicated architectural drift
+     - Incorrect example: `export async function fetchMealsA() {} export async function fetchMealsB() {}`
+     - Correct example: `export async function fetchMeals() {}`
    - public interface design between modules
+     - Incorrect example: `export const internalSteps = ['parse', 'match', 'estimate']`
+     - Correct example: `export async function analyzeMeal(input: AnalyzeMealInput) {}`
    - AI pipeline stage isolation with clear contracts
+     - Incorrect example: `const result = await estimateNutrition(await matchIngredients(await normalizeMeal(input)))`
+     - Correct example: `const normalized = await normalizeMeal(input) const matched = await matchIngredients(normalized) const estimated = await estimateNutrition(matched)`
 3. Apply only these approved auto-fixes when confidence is high:
    - safe file splits
+     - Incorrect example: `// one file contains parser, action, hook, and JSX`
+     - Correct example: `// parser.ts, action.ts, hook.ts, and component.tsx each own one concern`
    - helper extraction
+     - Incorrect example: `return \`${meal.title} (${meal.calories} kcal)\``
+     - Correct example: `return formatMealSummary(meal)`
    - module moves that preserve ownership and public behavior
+     - Incorrect example: `// helper lives under components/ but is imported by server code`
+     - Correct example: `// helper lives under lib/ and keeps the same public API`
    - boundary cleanups that clearly preserve semantics
+     - Incorrect example: `return toMealResponse(await createMeal(input))`
+     - Correct example: `const meal = await createMeal(input) return toMealResponse(meal)`
 4. Always escalate:
    - layering changes that alter which module owns business logic
+     - Incorrect example: `// move validation from domain layer into JSX component`
+     - Correct example: `// Escalate before reassigning business logic ownership.`
    - module moves that change public API or feature ownership
+     - Incorrect example: `export { analyzeMeal } from '@/components/feed-card'`
+     - Correct example: `// Escalate before moving an exported surface across ownership boundaries.`
    - new shared abstractions that affect multiple areas
+     - Incorrect example: `export const globalWorkflowManager = {}`
+     - Correct example: `// Escalate before introducing a new shared abstraction.`
    - orchestrator or pipeline stage redesign
+     - Incorrect example: `return estimateNutrition(await normalizeMeal(input))`
+     - Correct example: `// Escalate before skipping or merging pipeline stages.`
    - dependency-direction changes across major layers
+     - Incorrect example: `import { FeedCard } from '@/components/feed-card'`
+     - Correct example: `// Escalate before reversing dependency direction across layers.`
    - folder/package restructuring that changes contributor mental model
-
-**Calibration Anchors (use as anchors, not templates):**
-
-### Scope anchors
-
-**Clear layering between UI, routes/actions, domain logic, and data access**
-
-**Incorrect:**
-
-```typescript
-export async function POST(req: Request) {
-  await db.insert(meals).values(await req.json())
-}
-```
-
-**Correct:**
-
-```typescript
-export async function POST(req: Request) {
-  const input = parseCreateMeal(await req.json())
-  await createMeal(input)
-}
-```
-
-**File/folder concern separation and ownership boundaries**
-
-**Incorrect:**
-
-```typescript
-// components/feed-card.tsx
-export async function saveMealToDb() {}
-```
-
-**Correct:**
-
-```typescript
-// lib/actions/meals.ts
-export async function saveMealToDb() {}
-```
-
-**Dependency direction and avoiding cross-layer leaks**
-
-**Incorrect:**
-
-```typescript
-// lib/domain/meals.ts
-import { FeedCard } from '@/components/feed-card'
-```
-
-**Correct:**
-
-```typescript
-// components/feed-card.tsx
-import { formatMeal } from '@/lib/domain/meals'
-```
-
-**Keeping orchestration thin and pushing logic into well-bounded modules**
-
-**Incorrect:**
-
-```typescript
-export async function analyzeMeal(req: Request) { /* 200 lines */ }
-```
-
-**Correct:**
-
-```typescript
-export async function analyzeMeal(req: Request) {
-  return runMealAnalysis(parseAnalyzeMeal(await req.json()))
-}
-```
-
-**Hotspot file detection**
-
-**Incorrect:**
-
-```typescript
-// one file owns parsing, fetching, rendering, and persistence
-```
-
-**Correct:**
-
-```typescript
-// separate files own parsing, domain logic, and view concerns
-```
-
-**Shared abstractions and duplicated architectural drift**
-
-**Incorrect:**
-
-```typescript
-export async function fetchMealsA() {}
-export async function fetchMealsB() {}
-```
-
-**Correct:**
-
-```typescript
-export async function fetchMeals() {}
-```
-
-**Public interface design between modules**
-
-**Incorrect:**
-
-```typescript
-export const internalSteps = ['parse', 'match', 'estimate']
-```
-
-**Correct:**
-
-```typescript
-export async function analyzeMeal(input: AnalyzeMealInput) {}
-```
-
-**AI pipeline stage isolation with clear contracts**
-
-**Incorrect:**
-
-```typescript
-const result = await estimateNutrition(await matchIngredients(await normalizeMeal(input)))
-```
-
-**Correct:**
-
-```typescript
-const normalized = await normalizeMeal(input)
-const matched = await matchIngredients(normalized)
-const estimated = await estimateNutrition(matched)
-```
-
-### Auto-fix anchors
-
-**Safe file splits**
-
-**Incorrect:**
-
-```typescript
-// one file contains parser, action, hook, and JSX
-```
-
-**Correct:**
-
-```typescript
-// parser.ts, action.ts, hook.ts, and component.tsx each own one concern
-```
-
-**Helper extraction**
-
-**Incorrect:**
-
-```typescript
-return `${meal.title} (${meal.calories} kcal)`
-```
-
-**Correct:**
-
-```typescript
-return formatMealSummary(meal)
-```
-
-**Module moves that preserve ownership and public behavior**
-
-**Incorrect:**
-
-```typescript
-// helper lives under components/ but is imported by server code
-```
-
-**Correct:**
-
-```typescript
-// helper lives under lib/ and keeps the same public API
-```
-
-**Boundary cleanups that clearly preserve semantics**
-
-**Incorrect:**
-
-```typescript
-return toMealResponse(await createMeal(input))
-```
-
-**Correct:**
-
-```typescript
-const meal = await createMeal(input)
-return toMealResponse(meal)
-```
-
-### Escalation anchors
-
-**Layering changes that alter which module owns business logic**
-
-**Incorrect to auto-fix silently:**
-
-```typescript
-// move validation from domain layer into JSX component
-```
-
-**Correct handling:**
-
-```typescript
-// Escalate before reassigning business logic ownership.
-```
-
-**Module moves that change public API or feature ownership**
-
-**Incorrect to auto-fix silently:**
-
-```typescript
-export { analyzeMeal } from '@/components/feed-card'
-```
-
-**Correct handling:**
-
-```typescript
-// Escalate before moving an exported surface across ownership boundaries.
-```
-
-**New shared abstractions that affect multiple areas**
-
-**Incorrect to auto-fix silently:**
-
-```typescript
-export const globalWorkflowManager = {}
-```
-
-**Correct handling:**
-
-```typescript
-// Escalate before introducing a new shared abstraction.
-```
-
-**Orchestrator or pipeline stage redesign**
-
-**Incorrect to auto-fix silently:**
-
-```typescript
-return estimateNutrition(await normalizeMeal(input))
-```
-
-**Correct handling:**
-
-```typescript
-// Escalate before skipping or merging pipeline stages.
-```
-
-**Dependency-direction changes across major layers**
-
-**Incorrect to auto-fix silently:**
-
-```typescript
-import { FeedCard } from '@/components/feed-card'
-```
-
-**Correct handling:**
-
-```typescript
-// Escalate before reversing dependency direction across layers.
-```
-
-**Folder/package restructuring that changes contributor mental model**
-
-**Incorrect to auto-fix silently:**
-
-```text
-Move lib/, hooks/, and components/ into a new shared runtime package.
-```
-
-**Correct handling:**
-
-```text
-Escalate before changing top-level structure or contributor mental model.
-```
+     - Incorrect example: `Move lib/, hooks/, and components/ into a new shared runtime package.`
+     - Correct example: `Escalate before changing top-level structure or contributor mental model.`
 
 **Operational Tooling:**
 - Use `Glob` and `Read` to map feature folders, orchestrators, and boundary files

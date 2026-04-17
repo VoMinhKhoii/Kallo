@@ -41,272 +41,58 @@ repository.
 1. Gather the diff scope from the parent context.
 2. Review for the repo's approved v1 UX scope:
    - loading, empty, and error-state quality
+     - Incorrect example: `if (!meals.length) return null`
+     - Correct example: `if (!meals.length) return <EmptyState title="No meals yet" />`
    - accessibility and keyboard/focus behavior
+     - Incorrect example: `<div onClick={openDialog}>Open</div>`
+     - Correct example: `<button onClick={openDialog}>Open</button>`
    - user feedback and resilience during async actions
+     - Incorrect example: `<button onClick={saveProfile}>Save</button>`
+     - Correct example: `<button onClick={saveProfile} disabled={isPending} aria-busy={isPending}>Save</button>`
    - forms and validation UX
+     - Incorrect example: `{error ? 'Invalid' : null}`
+     - Correct example: `{error ? <p role="alert">{error}</p> : null}`
    - consistency with repo UI rules and interaction patterns
+     - Incorrect example: `alert('Saved')`
+     - Correct example: `toast.success('Saved')`
    - test coverage around risky user flows
+     - Incorrect example: `// no test covers failed submit, retry, or empty state`
+     - Correct example: `// test covers submit success, failure, and retry flow`
    - observability / debuggability of user-facing failures
+     - Incorrect example: `catch { setError('Failed') }`
+     - Correct example: `catch (error) { console.error(error); setError('Failed') }`
    - polish issues that materially affect trust or comprehension
+     - Incorrect example: `<button>Go</button>`
+     - Correct example: `<button>Save profile</button>`
 3. Apply only these approved auto-fixes when confidence is high:
    - add missing loading/error states
+     - Incorrect example: `return data ? <MealList meals={data} /> : null`
+     - Correct example: `if (isLoading) return <LoadingState /> if (error) return <ErrorState /> return <MealList meals={data} />`
    - tighten form feedback
+     - Incorrect example: `<input aria-invalid={false} />`
+     - Correct example: `<input aria-invalid={Boolean(error)} />`
    - improve small accessibility issues
+     - Incorrect example: `<button><Icon /></button>`
+     - Correct example: `<button aria-label="Close"><Icon /></button>`
    - apply similarly clear UX resilience fixes
+     - Incorrect example: `<button onClick={retry}>Retry</button>`
+     - Correct example: `<button onClick={retry} disabled={isPending}>Retry</button>`
 4. Always escalate:
    - interaction-flow changes that alter user journey or task order
+     - Incorrect example: `moveConfirmationStepBeforeMealReview()`
+     - Correct example: `// Escalate before changing task order or user journey.`
    - new loading / error / empty states that materially change product behavior
+     - Incorrect example: `if (error) return <RedirectToHome />`
+     - Correct example: `// Escalate before changing product behavior on error or empty state.`
    - form UX changes that alter validation timing or submission semantics
+     - Incorrect example: `validateOnBlur = false`
+     - Correct example: `// Escalate before changing validation timing or submit semantics.`
    - accessibility changes that require broader design decisions
+     - Incorrect example: `removeDialogFocusTrap()`
+     - Correct example: `// Escalate before changing a broad accessibility contract.`
    - observability / telemetry changes for user-facing failures
-
-**Calibration Anchors (use as anchors, not templates):**
-
-### Scope anchors
-
-**Loading, empty, and error-state quality**
-
-**Incorrect:**
-
-```typescript
-if (!meals.length) return null
-```
-
-**Correct:**
-
-```typescript
-if (!meals.length) return <EmptyState title="No meals yet" />
-```
-
-**Accessibility and keyboard/focus behavior**
-
-**Incorrect:**
-
-```typescript
-<div onClick={openDialog}>Open</div>
-```
-
-**Correct:**
-
-```typescript
-<button onClick={openDialog}>Open</button>
-```
-
-**User feedback and resilience during async actions**
-
-**Incorrect:**
-
-```typescript
-<button onClick={saveProfile}>Save</button>
-```
-
-**Correct:**
-
-```typescript
-<button onClick={saveProfile} disabled={isPending} aria-busy={isPending}>Save</button>
-```
-
-**Forms and validation UX**
-
-**Incorrect:**
-
-```typescript
-{error ? 'Invalid' : null}
-```
-
-**Correct:**
-
-```typescript
-{error ? <p role="alert">{error}</p> : null}
-```
-
-**Consistency with repo UI rules and interaction patterns**
-
-**Incorrect:**
-
-```typescript
-alert('Saved')
-```
-
-**Correct:**
-
-```typescript
-toast.success('Saved')
-```
-
-**Test coverage around risky user flows**
-
-**Incorrect:**
-
-```typescript
-// no test covers failed submit, retry, or empty state
-```
-
-**Correct:**
-
-```typescript
-// test covers submit success, failure, and retry flow
-```
-
-**Observability / debuggability of user-facing failures**
-
-**Incorrect:**
-
-```typescript
-catch { setError('Failed') }
-```
-
-**Correct:**
-
-```typescript
-catch (error) { console.error(error); setError('Failed') }
-```
-
-**Polish issues that materially affect trust or comprehension**
-
-**Incorrect:**
-
-```typescript
-<button>Go</button>
-```
-
-**Correct:**
-
-```typescript
-<button>Save profile</button>
-```
-
-### Auto-fix anchors
-
-**Add missing loading/error states**
-
-**Incorrect:**
-
-```typescript
-return data ? <MealList meals={data} /> : null
-```
-
-**Correct:**
-
-```typescript
-if (isLoading) return <LoadingState />
-if (error) return <ErrorState />
-return <MealList meals={data} />
-```
-
-**Tighten form feedback**
-
-**Incorrect:**
-
-```typescript
-<input aria-invalid={false} />
-```
-
-**Correct:**
-
-```typescript
-<input aria-invalid={Boolean(error)} />
-```
-
-**Improve small accessibility issues**
-
-**Incorrect:**
-
-```typescript
-<button><Icon /></button>
-```
-
-**Correct:**
-
-```typescript
-<button aria-label="Close"><Icon /></button>
-```
-
-**Apply similarly clear UX resilience fixes**
-
-**Incorrect:**
-
-```typescript
-<button onClick={retry}>Retry</button>
-```
-
-**Correct:**
-
-```typescript
-<button onClick={retry} disabled={isPending}>Retry</button>
-```
-
-### Escalation anchors
-
-**Interaction-flow changes that alter user journey or task order**
-
-**Incorrect to auto-fix silently:**
-
-```typescript
-moveConfirmationStepBeforeMealReview()
-```
-
-**Correct handling:**
-
-```typescript
-// Escalate before changing task order or user journey.
-```
-
-**New loading / error / empty states that materially change product behavior**
-
-**Incorrect to auto-fix silently:**
-
-```typescript
-if (error) return <RedirectToHome />
-```
-
-**Correct handling:**
-
-```typescript
-// Escalate before changing product behavior on error or empty state.
-```
-
-**Form UX changes that alter validation timing or submission semantics**
-
-**Incorrect to auto-fix silently:**
-
-```typescript
-validateOnBlur = false
-```
-
-**Correct handling:**
-
-```typescript
-// Escalate before changing validation timing or submit semantics.
-```
-
-**Accessibility changes that require broader design decisions**
-
-**Incorrect to auto-fix silently:**
-
-```typescript
-removeDialogFocusTrap()
-```
-
-**Correct handling:**
-
-```typescript
-// Escalate before changing a broad accessibility contract.
-```
-
-**Observability / telemetry changes for user-facing failures**
-
-**Incorrect to auto-fix silently:**
-
-```typescript
-track('meal_error', { rawError })
-```
-
-**Correct handling:**
-
-```typescript
-// Escalate before changing telemetry payload shape or collection policy.
-```
+     - Incorrect example: `track('meal_error', { rawError })`
+     - Correct example: `// Escalate before changing telemetry payload shape or collection policy.`
 
 **Operational Tooling:**
 - Use `Glob`, `Grep`, and `Read` to inspect forms, loading/error states, toasts,

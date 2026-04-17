@@ -41,303 +41,64 @@ Nham repository.
 1. Gather the diff scope from the parent context.
 2. Review for the repo's approved v1 maintainability scope:
    - duplication and repeated logic
+     - Incorrect example: `const caloriesLabel = \`${meal.calories} kcal\` const proteinLabel = \`${meal.protein} g\``
+     - Correct example: `const caloriesLabel = formatCalories(meal.calories) const proteinLabel = formatGrams(meal.protein)`
    - over-complex code that can be simplified without behavior change
+     - Incorrect example: `if (isReady === true) return true return false`
+     - Correct example: `return isReady === true`
    - oversized files/components/hooks that should be split
+     - Incorrect example: `// one component owns 250 lines of form, fetch, toast, and layout code`
+     - Correct example: `// split into form-section.tsx, use-submit.ts, and summary-card.tsx`
    - naming clarity and intention-revealing APIs
+     - Incorrect example: `function doThing(x: Meal) {}`
+     - Correct example: `function formatMealSummary(meal: Meal) {}`
    - dead code, stale branches, and obsolete helpers
+     - Incorrect example: `if (featureFlag === 'legacy') return runLegacyFlow()`
+     - Correct example: `return runCurrentFlow()`
    - incidental complexity and readability problems
+     - Incorrect example: `return meals.filter(Boolean).map((m) => ({ ...m, x: true })).filter((m) => m.visible)`
+     - Correct example: `return meals.flatMap((meal) => (meal.visible ? [{ ...meal, x: true }] : []))`
    - inconsistent local structure within a feature/module
+     - Incorrect example: `helpers, hooks, and components live in unrelated folders for one feature`
+     - Correct example: `feature files live under one coherent feature folder with predictable names`
    - small refactors that make future changes safer and cheaper
+     - Incorrect example: `const meal = data.meal && data.meal.value && data.meal.value.payload`
+     - Correct example: `const meal = data.meal?.value?.payload`
 3. Aggressively apply approved auto-fixes when behavior preservation is clear:
    - simplifications
+     - Incorrect example: `const result = items.length > 0 ? true : false`
+     - Correct example: `const result = items.length > 0`
    - splits
+     - Incorrect example: `// one file owns rendering, parsing, and actions`
+     - Correct example: `// render.tsx, parse.ts, and actions.ts own separate concerns`
    - renames
+     - Incorrect example: `function x(a: Meal) {}`
+     - Correct example: `function parseMealInput(meal: Meal) {}`
    - dead-code removal
+     - Incorrect example: `const unused = buildLegacyPayload(meal)`
+     - Correct example: `// remove unused legacy payload path entirely`
    - local reorganizations
+     - Incorrect example: `// constants, helpers, and component body are interleaved randomly`
+     - Correct example: `// constants first, helpers second, component last`
    - extraction of logic or functions into better-structured files/folders
+     - Incorrect example: `function formatMealSummary() {}`
+     - Correct example: `// lib/format-meal-summary.ts exports formatMealSummary()`
 4. Always escalate:
    - renames or reorganizations that change public/exported API expectations
+     - Incorrect example: `export { MealCard as Card }`
+     - Correct example: `// Escalate before changing an exported API name.`
    - new shared abstractions across multiple areas
+     - Incorrect example: `export const globalFormatterRegistry = {}`
+     - Correct example: `// Escalate before adding a new shared abstraction.`
    - splits or moves that change feature ownership or contributor mental model
+     - Incorrect example: `Move feed logic into a cross-product shared package.`
+     - Correct example: `Escalate before changing feature ownership boundaries.`
    - cleanup that removes code with ambiguous runtime usage
+     - Incorrect example: `delete handlers[unknownKey]`
+     - Correct example: `// Escalate before removing code with unclear runtime references.`
    - simplifications that could subtly change business semantics
-
-**Calibration Anchors (use as anchors, not templates):**
-
-### Scope anchors
-
-**Duplication and repeated logic**
-
-**Incorrect:**
-
-```typescript
-const caloriesLabel = `${meal.calories} kcal`
-const proteinLabel = `${meal.protein} g`
-```
-
-**Correct:**
-
-```typescript
-const caloriesLabel = formatCalories(meal.calories)
-const proteinLabel = formatGrams(meal.protein)
-```
-
-**Over-complex code that can be simplified without behavior change**
-
-**Incorrect:**
-
-```typescript
-if (isReady === true) return true
-return false
-```
-
-**Correct:**
-
-```typescript
-return isReady === true
-```
-
-**Oversized files/components/hooks that should be split**
-
-**Incorrect:**
-
-```typescript
-// one component owns 250 lines of form, fetch, toast, and layout code
-```
-
-**Correct:**
-
-```typescript
-// split into form-section.tsx, use-submit.ts, and summary-card.tsx
-```
-
-**Naming clarity and intention-revealing APIs**
-
-**Incorrect:**
-
-```typescript
-function doThing(x: Meal) {}
-```
-
-**Correct:**
-
-```typescript
-function formatMealSummary(meal: Meal) {}
-```
-
-**Dead code, stale branches, and obsolete helpers**
-
-**Incorrect:**
-
-```typescript
-if (featureFlag === 'legacy') return runLegacyFlow()
-```
-
-**Correct:**
-
-```typescript
-return runCurrentFlow()
-```
-
-**Incidental complexity and readability problems**
-
-**Incorrect:**
-
-```typescript
-return meals.filter(Boolean).map((m) => ({ ...m, x: true })).filter((m) => m.visible)
-```
-
-**Correct:**
-
-```typescript
-return meals.flatMap((meal) => (meal.visible ? [{ ...meal, x: true }] : []))
-```
-
-**Inconsistent local structure within a feature/module**
-
-**Incorrect:**
-
-```text
-helpers, hooks, and components live in unrelated folders for one feature
-```
-
-**Correct:**
-
-```text
-feature files live under one coherent feature folder with predictable names
-```
-
-**Small refactors that make future changes safer and cheaper**
-
-**Incorrect:**
-
-```typescript
-const meal = data.meal && data.meal.value && data.meal.value.payload
-```
-
-**Correct:**
-
-```typescript
-const meal = data.meal?.value?.payload
-```
-
-### Auto-fix anchors
-
-**Simplifications**
-
-**Incorrect:**
-
-```typescript
-const result = items.length > 0 ? true : false
-```
-
-**Correct:**
-
-```typescript
-const result = items.length > 0
-```
-
-**Splits**
-
-**Incorrect:**
-
-```typescript
-// one file owns rendering, parsing, and actions
-```
-
-**Correct:**
-
-```typescript
-// render.tsx, parse.ts, and actions.ts own separate concerns
-```
-
-**Renames**
-
-**Incorrect:**
-
-```typescript
-function x(a: Meal) {}
-```
-
-**Correct:**
-
-```typescript
-function parseMealInput(meal: Meal) {}
-```
-
-**Dead-code removal**
-
-**Incorrect:**
-
-```typescript
-const unused = buildLegacyPayload(meal)
-```
-
-**Correct:**
-
-```typescript
-// remove unused legacy payload path entirely
-```
-
-**Local reorganizations**
-
-**Incorrect:**
-
-```typescript
-// constants, helpers, and component body are interleaved randomly
-```
-
-**Correct:**
-
-```typescript
-// constants first, helpers second, component last
-```
-
-**Extraction of logic or functions into better-structured files/folders**
-
-**Incorrect:**
-
-```typescript
-function formatMealSummary() {}
-```
-
-**Correct:**
-
-```typescript
-// lib/format-meal-summary.ts exports formatMealSummary()
-```
-
-### Escalation anchors
-
-**Renames or reorganizations that change public/exported API expectations**
-
-**Incorrect to auto-fix silently:**
-
-```typescript
-export { MealCard as Card }
-```
-
-**Correct handling:**
-
-```typescript
-// Escalate before changing an exported API name.
-```
-
-**New shared abstractions across multiple areas**
-
-**Incorrect to auto-fix silently:**
-
-```typescript
-export const globalFormatterRegistry = {}
-```
-
-**Correct handling:**
-
-```typescript
-// Escalate before adding a new shared abstraction.
-```
-
-**Splits or moves that change feature ownership or contributor mental model**
-
-**Incorrect to auto-fix silently:**
-
-```text
-Move feed logic into a cross-product shared package.
-```
-
-**Correct handling:**
-
-```text
-Escalate before changing feature ownership boundaries.
-```
-
-**Cleanup that removes code with ambiguous runtime usage**
-
-**Incorrect to auto-fix silently:**
-
-```typescript
-delete handlers[unknownKey]
-```
-
-**Correct handling:**
-
-```typescript
-// Escalate before removing code with unclear runtime references.
-```
-
-**Simplifications that could subtly change business semantics**
-
-**Incorrect to auto-fix silently:**
-
-```typescript
-if (meal.isDraft || meal.isTemplate) return
-```
-
-**Correct handling:**
-
-```typescript
-// Escalate before collapsing business branches that may encode different meaning.
-```
+     - Incorrect example: `if (meal.isDraft || meal.isTemplate) return`
+     - Correct example: `// Escalate before collapsing business branches that may encode different meaning.`
 
 **Operational Tooling:**
 - Use `Glob`, `Grep`, and `Read` to spot duplication, oversized files, stale

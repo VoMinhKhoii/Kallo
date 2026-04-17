@@ -44,326 +44,68 @@ repository.
    architecture.
 3. Review for the repo's approved v1 data scope:
    - Drizzle schema changes and migration ordering
+     - Incorrect example: `ALTER TABLE meals ADD COLUMN notes text;`
+     - Correct example: `export const meals = pgTable('meals', { notes: text('notes'), }) / bun db:generate`
    - Supabase RLS / policy correctness and access boundaries
+     - Incorrect example: `CREATE POLICY "read all profiles" ON profiles FOR SELECT USING (true);`
+     - Correct example: `CREATE POLICY "read own profile" ON profiles FOR SELECT USING (auth.uid() = user_id);`
    - server-side query scoping and user-ownership checks
+     - Incorrect example: `await db.select().from(meals)`
+     - Correct example: `await db.select().from(meals).where(eq(meals.userId, session.user.id))`
    - destructive or irreversible migration risk
+     - Incorrect example: `DROP COLUMN nutrition_json;`
+     - Correct example: `ALTER TABLE meals ADD COLUMN nutrition_json_v2 jsonb;`
    - data backfills, repair scripts, and rollout safety
+     - Incorrect example: `await db.update(meals).set({ archived: true })`
+     - Correct example: `await backfillMealsInBatches({ dryRun: true, batchSize: 500 })`
    - SQL function / trigger / `SECURITY DEFINER` safety
+     - Incorrect example: `CREATE FUNCTION force_delete_meal(id uuid) RETURNS void SECURITY DEFINER ...`
+     - Correct example: `CREATE FUNCTION force_delete_meal(id uuid) RETURNS void SECURITY DEFINER SET search_path = public AS $$ -- validates caller role first $$;`
    - data integrity constraints, defaults, and nullability drift
+     - Incorrect example: `calories: integer('calories'),`
+     - Correct example: `calories: integer('calories').notNull().default(0),`
    - query-shape risks like overfetching, unbounded scans, or missing
      pagination
+     - Incorrect example: `await db.select().from(meals).orderBy(desc(meals.createdAt))`
+     - Correct example: `await db.select({ id: meals.id, title: meals.title }).from(meals).limit(50)`
 4. Apply only these approved auto-fixes when confidence is high:
    - rename migrations to meaningful names
+     - Incorrect example: `20260417120000_right_maria_hill.sql`
+     - Correct example: `20260417120000_add_meal_notes.sql`
    - extract helpers without changing semantics
+     - Incorrect example: `const encoded = encodeDbUrl(process.env.DATABASE_URL!) const db = drizzle(postgres(encoded))`
+     - Correct example: `const db = createDbClient()`
    - narrow selected columns when the existing intent is obvious
+     - Incorrect example: `await db.select().from(profiles)`
+     - Correct example: `await db.select({ id: profiles.id, displayName: profiles.displayName }).from(profiles)`
    - perform similarly non-behavioral cleanup
+     - Incorrect example: `const rows = await getMeals() return rows`
+     - Correct example: `return getMeals()`
 5. Always escalate:
    - RLS or policy logic changes
+     - Incorrect example: `USING (true)`
+     - Correct example: `-- Escalate before changing policy reach or visibility semantics.`
    - schema changes that alter data shape or constraints
+     - Incorrect example: `title: text('title').notNull(),`
+     - Correct example: `// Escalate before changing nullability, uniqueness, or field shape.`
    - destructive or irreversible migrations
+     - Incorrect example: `DROP TABLE meal_logs;`
+     - Correct example: `-- Escalate before removing data or columns permanently.`
    - backfills or repair scripts that modify existing data
+     - Incorrect example: `await db.update(meals).set({ title: sql\`upper(title)\` })`
+     - Correct example: `// Escalate before rewriting production data in bulk.`
    - `SECURITY DEFINER` / trigger / function behavior changes
+     - Incorrect example: `CREATE TRIGGER sync_profile AFTER INSERT ON users ...`
+     - Correct example: `-- Escalate before changing trigger timing or function authority.`
    - ownership or access-rule changes
+     - Incorrect example: `await db.select().from(meals)`
+     - Correct example: `// Escalate before widening or tightening ownership visibility.`
    - rollout sequencing changes
+     - Incorrect example: `Deploy code that reads notes before notes column exists.`
+     - Correct example: `Escalate and sequence schema-first, code-second, cleanup-last.`
    - query rewrites that could materially change returned results
-
-**Calibration Anchors (use as anchors, not templates):**
-
-### Scope anchors
-
-**Drizzle schema changes and migration ordering**
-
-**Incorrect:**
-
-```sql
-ALTER TABLE meals ADD COLUMN notes text;
-```
-
-**Correct:**
-
-```typescript
-export const meals = pgTable('meals', {
-  notes: text('notes'),
-})
-```
-
-```bash
-bun db:generate
-```
-
-**Supabase RLS / policy correctness and access boundaries**
-
-**Incorrect:**
-
-```sql
-CREATE POLICY "read all profiles" ON profiles FOR SELECT USING (true);
-```
-
-**Correct:**
-
-```sql
-CREATE POLICY "read own profile" ON profiles FOR SELECT USING (auth.uid() = user_id);
-```
-
-**Server-side query scoping and user-ownership checks**
-
-**Incorrect:**
-
-```typescript
-await db.select().from(meals)
-```
-
-**Correct:**
-
-```typescript
-await db.select().from(meals).where(eq(meals.userId, session.user.id))
-```
-
-**Destructive or irreversible migration risk**
-
-**Incorrect:**
-
-```sql
-DROP COLUMN nutrition_json;
-```
-
-**Correct:**
-
-```sql
-ALTER TABLE meals ADD COLUMN nutrition_json_v2 jsonb;
-```
-
-**Data backfills, repair scripts, and rollout safety**
-
-**Incorrect:**
-
-```typescript
-await db.update(meals).set({ archived: true })
-```
-
-**Correct:**
-
-```typescript
-await backfillMealsInBatches({ dryRun: true, batchSize: 500 })
-```
-
-**SQL function / trigger / `SECURITY DEFINER` safety**
-
-**Incorrect:**
-
-```sql
-CREATE FUNCTION force_delete_meal(id uuid) RETURNS void SECURITY DEFINER ...
-```
-
-**Correct:**
-
-```sql
-CREATE FUNCTION force_delete_meal(id uuid) RETURNS void SECURITY DEFINER
-SET search_path = public
-AS $$ -- validates caller role first $$;
-```
-
-**Data integrity constraints, defaults, and nullability drift**
-
-**Incorrect:**
-
-```typescript
-calories: integer('calories'),
-```
-
-**Correct:**
-
-```typescript
-calories: integer('calories').notNull().default(0),
-```
-
-**Query-shape risks like overfetching, unbounded scans, or missing pagination**
-
-**Incorrect:**
-
-```typescript
-await db.select().from(meals).orderBy(desc(meals.createdAt))
-```
-
-**Correct:**
-
-```typescript
-await db.select({ id: meals.id, title: meals.title }).from(meals).limit(50)
-```
-
-### Auto-fix anchors
-
-**Rename migrations to meaningful names**
-
-**Incorrect:**
-
-```text
-20260417120000_right_maria_hill.sql
-```
-
-**Correct:**
-
-```text
-20260417120000_add_meal_notes.sql
-```
-
-**Extract helpers without changing semantics**
-
-**Incorrect:**
-
-```typescript
-const encoded = encodeDbUrl(process.env.DATABASE_URL!)
-const db = drizzle(postgres(encoded))
-```
-
-**Correct:**
-
-```typescript
-const db = createDbClient()
-```
-
-**Narrow selected columns when the existing intent is obvious**
-
-**Incorrect:**
-
-```typescript
-await db.select().from(profiles)
-```
-
-**Correct:**
-
-```typescript
-await db.select({ id: profiles.id, displayName: profiles.displayName }).from(profiles)
-```
-
-**Perform similarly non-behavioral cleanup**
-
-**Incorrect:**
-
-```typescript
-const rows = await getMeals()
-return rows
-```
-
-**Correct:**
-
-```typescript
-return getMeals()
-```
-
-### Escalation anchors
-
-**RLS or policy logic changes**
-
-**Incorrect to auto-fix silently:**
-
-```sql
-USING (true)
-```
-
-**Correct handling:**
-
-```sql
--- Escalate before changing policy reach or visibility semantics.
-```
-
-**Schema changes that alter data shape or constraints**
-
-**Incorrect to auto-fix silently:**
-
-```typescript
-title: text('title').notNull(),
-```
-
-**Correct handling:**
-
-```typescript
-// Escalate before changing nullability, uniqueness, or field shape.
-```
-
-**Destructive or irreversible migrations**
-
-**Incorrect to auto-fix silently:**
-
-```sql
-DROP TABLE meal_logs;
-```
-
-**Correct handling:**
-
-```sql
--- Escalate before removing data or columns permanently.
-```
-
-**Backfills or repair scripts that modify existing data**
-
-**Incorrect to auto-fix silently:**
-
-```typescript
-await db.update(meals).set({ title: sql`upper(title)` })
-```
-
-**Correct handling:**
-
-```typescript
-// Escalate before rewriting production data in bulk.
-```
-
-**`SECURITY DEFINER` / trigger / function behavior changes**
-
-**Incorrect to auto-fix silently:**
-
-```sql
-CREATE TRIGGER sync_profile AFTER INSERT ON users ...
-```
-
-**Correct handling:**
-
-```sql
--- Escalate before changing trigger timing or function authority.
-```
-
-**Ownership or access-rule changes**
-
-**Incorrect to auto-fix silently:**
-
-```typescript
-await db.select().from(meals)
-```
-
-**Correct handling:**
-
-```typescript
-// Escalate before widening or tightening ownership visibility.
-```
-
-**Rollout sequencing changes**
-
-**Incorrect to auto-fix silently:**
-
-```text
-Deploy code that reads notes before notes column exists.
-```
-
-**Correct handling:**
-
-```text
-Escalate and sequence schema-first, code-second, cleanup-last.
-```
-
-**Query rewrites that could materially change returned results**
-
-**Incorrect to auto-fix silently:**
-
-```typescript
-await db.select().from(meals).limit(10)
-```
-
-**Correct handling:**
-
-```typescript
-// Escalate before changing ordering, filtering, or result-set meaning.
-```
+     - Incorrect example: `await db.select().from(meals).limit(10)`
+     - Correct example: `// Escalate before changing ordering, filtering, or result-set meaning.`
 
 **Operational Tooling:**
 - Start with `Glob`, `Grep`, and `Read` over `lib/db/`, `supabase/migrations/`,

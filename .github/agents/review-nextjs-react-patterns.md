@@ -45,300 +45,62 @@ repository.
    pattern guidance.
 3. Review for the repo's approved v1 framework scope:
    - server vs client component boundaries
+     - Incorrect example: `'use client' export default async function Page() { const meals = await getMeals() }`
+     - Correct example: `export default async function Page() { const meals = await getMeals() return <MealPageClient meals={meals} /> }`
    - Server Actions vs route handlers vs TanStack Query usage
+     - Incorrect example: `useMutation({ mutationFn: async (input) => fetch('/api/meals', { method: 'POST', body: JSON.stringify(input) }) })`
+     - Correct example: `useMutation({ mutationFn: createMealAction })`
    - avoiding `useEffect` / manual fetch anti-patterns
+     - Incorrect example: `useEffect(() => { fetch('/api/meals').then((res) => res.json()).then(setMeals) }, [])`
+     - Correct example: `const { data: meals = [] } = useQuery({ queryKey: ['meals'], queryFn: getMeals })`
    - App Router data fetching and loading / error boundary patterns
+     - Incorrect example: `if (isLoading) return <Spinner /> if (error) return <div>Failed</div>`
+     - Correct example: `// Use loading.tsx and error.tsx at the route boundary.`
    - serialization / hydration discipline
+     - Incorrect example: `return <MealClient meal={mealRow} />`
+     - Correct example: `return <MealClient meal={{ id: mealRow.id, title: mealRow.title }} />`
    - hook correctness and React render/state anti-patterns
+     - Incorrect example: `const total = useMemo(() => meals.length, [meals])`
+     - Correct example: `const total = meals.length`
    - repo-specific UI rules from `AGENTS.md`
+     - Incorrect example: `alert('Saved')`
+     - Correct example: `toast.success('Saved')`
    - React / Next idioms that double as framework-level performance patterns
+     - Incorrect example: `import HeavyChart from '@/components/heavy-chart'`
+     - Correct example: `const HeavyChart = dynamic(() => import('@/components/heavy-chart'))`
 4. Apply only these approved auto-fixes when confidence is high:
    - move fetch logic to the right layer
+     - Incorrect example: `fetch('/api/meals').then((res) => res.json())`
+     - Correct example: `getMeals()`
    - replace obvious anti-patterns
+     - Incorrect example: `useEffect(() => setFullName(\`${first} ${last}\`), [first, last])`
+     - Correct example: `const fullName = \`${first} ${last}\``
    - tighten client/server boundaries
+     - Incorrect example: `'use client' export default function Page({ meals }: { meals: Meal[] }) {}`
+     - Correct example: `export default async function Page() { const meals = await getMeals() return <MealClient meals={meals} /> }`
    - apply similarly clear framework cleanups
+     - Incorrect example: `<img src="/logo.png" alt="Logo" />`
+     - Correct example: `<Image src="/logo.png" alt="Logo" width={64} height={64} />`
 5. Always escalate:
    - data-flow changes between Server Actions, route handlers, and client
      fetching
+     - Incorrect example: `useMutation({ mutationFn: createMealAction })`
+     - Correct example: `// Escalate before switching mutation transport or invalidation semantics.`
    - component-boundary changes that materially move state or interactivity
+     - Incorrect example: `'use client'`
+     - Correct example: `// Escalate before moving interactivity across server/client boundaries.`
    - hook/state rewrites that alter behavior or timing
+     - Incorrect example: `useTransition(() => saveProfile())`
+     - Correct example: `// Escalate before changing scheduling or timing semantics.`
    - large TanStack Query migrations or cache-model changes
+     - Incorrect example: `queryKey: ['meals', filters]`
+     - Correct example: `// Escalate before rewriting cache key or invalidation strategy.`
    - loading/error boundary changes that alter UX semantics
+     - Incorrect example: `return null`
+     - Correct example: `// Escalate before changing loading/error visibility for the route.`
    - serialization/hydration changes that alter what data reaches the client
-
-**Calibration Anchors (use as anchors, not templates):**
-
-### Scope anchors
-
-**Server vs client component boundaries**
-
-**Incorrect:**
-
-```typescript
-'use client'
-
-export default async function Page() {
-  const meals = await getMeals()
-}
-```
-
-**Correct:**
-
-```typescript
-export default async function Page() {
-  const meals = await getMeals()
-  return <MealPageClient meals={meals} />
-}
-```
-
-**Server Actions vs route handlers vs TanStack Query usage**
-
-**Incorrect:**
-
-```typescript
-useMutation({ mutationFn: async (input) => fetch('/api/meals', { method: 'POST', body: JSON.stringify(input) }) })
-```
-
-**Correct:**
-
-```typescript
-useMutation({ mutationFn: createMealAction })
-```
-
-**Avoiding `useEffect` / manual fetch anti-patterns**
-
-**Incorrect:**
-
-```typescript
-useEffect(() => {
-  fetch('/api/meals').then((res) => res.json()).then(setMeals)
-}, [])
-```
-
-**Correct:**
-
-```typescript
-const { data: meals = [] } = useQuery({ queryKey: ['meals'], queryFn: getMeals })
-```
-
-**App Router data fetching and loading / error boundary patterns**
-
-**Incorrect:**
-
-```typescript
-if (isLoading) return <Spinner />
-if (error) return <div>Failed</div>
-```
-
-**Correct:**
-
-```typescript
-// Use loading.tsx and error.tsx at the route boundary.
-```
-
-**Serialization / hydration discipline**
-
-**Incorrect:**
-
-```typescript
-return <MealClient meal={mealRow} />
-```
-
-**Correct:**
-
-```typescript
-return <MealClient meal={{ id: mealRow.id, title: mealRow.title }} />
-```
-
-**Hook correctness and React render/state anti-patterns**
-
-**Incorrect:**
-
-```typescript
-const total = useMemo(() => meals.length, [meals])
-```
-
-**Correct:**
-
-```typescript
-const total = meals.length
-```
-
-**Repo-specific UI rules from `AGENTS.md`**
-
-**Incorrect:**
-
-```typescript
-alert('Saved')
-```
-
-**Correct:**
-
-```typescript
-toast.success('Saved')
-```
-
-**React / Next idioms that double as framework-level performance patterns**
-
-**Incorrect:**
-
-```typescript
-import HeavyChart from '@/components/heavy-chart'
-```
-
-**Correct:**
-
-```typescript
-const HeavyChart = dynamic(() => import('@/components/heavy-chart'))
-```
-
-### Auto-fix anchors
-
-**Move fetch logic to the right layer**
-
-**Incorrect:**
-
-```typescript
-fetch('/api/meals').then((res) => res.json())
-```
-
-**Correct:**
-
-```typescript
-getMeals()
-```
-
-**Replace obvious anti-patterns**
-
-**Incorrect:**
-
-```typescript
-useEffect(() => setFullName(`${first} ${last}`), [first, last])
-```
-
-**Correct:**
-
-```typescript
-const fullName = `${first} ${last}`
-```
-
-**Tighten client/server boundaries**
-
-**Incorrect:**
-
-```typescript
-'use client'
-export default function Page({ meals }: { meals: Meal[] }) {}
-```
-
-**Correct:**
-
-```typescript
-export default async function Page() {
-  const meals = await getMeals()
-  return <MealClient meals={meals} />
-}
-```
-
-**Apply similarly clear framework cleanups**
-
-**Incorrect:**
-
-```typescript
-<img src="/logo.png" alt="Logo" />
-```
-
-**Correct:**
-
-```typescript
-<Image src="/logo.png" alt="Logo" width={64} height={64} />
-```
-
-### Escalation anchors
-
-**Data-flow changes between Server Actions, route handlers, and client fetching**
-
-**Incorrect to auto-fix silently:**
-
-```typescript
-useMutation({ mutationFn: createMealAction })
-```
-
-**Correct handling:**
-
-```typescript
-// Escalate before switching mutation transport or invalidation semantics.
-```
-
-**Component-boundary changes that materially move state or interactivity**
-
-**Incorrect to auto-fix silently:**
-
-```typescript
-'use client'
-```
-
-**Correct handling:**
-
-```typescript
-// Escalate before moving interactivity across server/client boundaries.
-```
-
-**Hook/state rewrites that alter behavior or timing**
-
-**Incorrect to auto-fix silently:**
-
-```typescript
-useTransition(() => saveProfile())
-```
-
-**Correct handling:**
-
-```typescript
-// Escalate before changing scheduling or timing semantics.
-```
-
-**Large TanStack Query migrations or cache-model changes**
-
-**Incorrect to auto-fix silently:**
-
-```typescript
-queryKey: ['meals', filters]
-```
-
-**Correct handling:**
-
-```typescript
-// Escalate before rewriting cache key or invalidation strategy.
-```
-
-**Loading/error boundary changes that alter UX semantics**
-
-**Incorrect to auto-fix silently:**
-
-```typescript
-return null
-```
-
-**Correct handling:**
-
-```typescript
-// Escalate before changing loading/error visibility for the route.
-```
-
-**Serialization/hydration changes that alter what data reaches the client**
-
-**Incorrect to auto-fix silently:**
-
-```typescript
-return <MealClient meal={mealRow} />
-```
-
-**Correct handling:**
-
-```typescript
-// Escalate before changing which fields reach the client boundary.
-```
+     - Incorrect example: `return <MealClient meal={mealRow} />`
+     - Correct example: `// Escalate before changing which fields reach the client boundary.`
 
 **Operational Tooling:**
 - Use `Glob`, `Grep`, and `Read` to inspect component boundaries, `'use client'`,

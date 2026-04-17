@@ -39,167 +39,36 @@ repository.
 1. Gather the diff scope from the parent context.
 2. Review for the repo's approved v1 performance scope:
    - network / database waterfalls and unnecessary sequential work
+     - Incorrect example: `const user = await fetchUser() const meals = await fetchMeals()`
+     - Correct example: `const [user, meals] = await Promise.all([fetchUser(), fetchMeals()])`
    - overfetching, repeated queries, and missing caching opportunities
+     - Incorrect example: `await db.select().from(meals) await db.select().from(meals)`
+     - Correct example: `const meals = await getMealsCached()`
    - render churn, expensive recomputation, and avoidable client work
+     - Incorrect example: `const filtered = meals.filter(expensivePredicate)`
+     - Correct example: `const filtered = useMemo(() => meals.filter(expensivePredicate), [meals])`
    - bundle size and loading-cost issues
+     - Incorrect example: `import HeavyChart from '@/components/heavy-chart'`
+     - Correct example: `const HeavyChart = dynamic(() => import('@/components/heavy-chart'))`
    - heavy server-side work, blocking operations, or throughput bottlenecks
+     - Incorrect example: `await generateEmbeddingForEveryMeal(meals) return Response.json({ ok: true })`
+     - Correct example: `queueEmbeddingBackfill(meals) return Response.json({ ok: true })`
    - unbounded queries, loops, or memory growth risks
+     - Incorrect example: `for await (const row of streamAllMeals()) cache.push(row)`
+     - Correct example: `for await (const batch of streamMealsInBatches(200)) await handleBatch(batch)`
    - AI pipeline latency / cost inefficiencies
+     - Incorrect example: `for (const item of items) await embed(item)`
+     - Correct example: `await embedInBatches(items)`
 3. Recommend parallelism over sequential work where dependencies do not require
    ordering.
+  - Incorrect example: `await fetchGoals() await fetchProfile()`
+  - Correct example: `await Promise.all([fetchGoals(), fetchProfile()])`
 4. Avoid speculative tuning unless there is clear evidence or an obvious risk.
+  - Incorrect example: `memoizeEverything()`
+  - Correct example: `// Only optimize after confirming the render or query is actually hot.`
 5. This reviewer is escalation-first by design. Do not auto-edit files.
-
-**Calibration Anchors (use as anchors, not templates):**
-
-### Scope anchors
-
-**Network / database waterfalls and unnecessary sequential work**
-
-**Incorrect:**
-
-```typescript
-const user = await fetchUser()
-const meals = await fetchMeals()
-```
-
-**Correct:**
-
-```typescript
-const [user, meals] = await Promise.all([fetchUser(), fetchMeals()])
-```
-
-**Overfetching, repeated queries, and missing caching opportunities**
-
-**Incorrect:**
-
-```typescript
-await db.select().from(meals)
-await db.select().from(meals)
-```
-
-**Correct:**
-
-```typescript
-const meals = await getMealsCached()
-```
-
-**Render churn, expensive recomputation, and avoidable client work**
-
-**Incorrect:**
-
-```typescript
-const filtered = meals.filter(expensivePredicate)
-```
-
-**Correct:**
-
-```typescript
-const filtered = useMemo(() => meals.filter(expensivePredicate), [meals])
-```
-
-**Bundle size and loading-cost issues**
-
-**Incorrect:**
-
-```typescript
-import HeavyChart from '@/components/heavy-chart'
-```
-
-**Correct:**
-
-```typescript
-const HeavyChart = dynamic(() => import('@/components/heavy-chart'))
-```
-
-**Heavy server-side work, blocking operations, or throughput bottlenecks**
-
-**Incorrect:**
-
-```typescript
-await generateEmbeddingForEveryMeal(meals)
-return Response.json({ ok: true })
-```
-
-**Correct:**
-
-```typescript
-queueEmbeddingBackfill(meals)
-return Response.json({ ok: true })
-```
-
-**Unbounded queries, loops, or memory growth risks**
-
-**Incorrect:**
-
-```typescript
-for await (const row of streamAllMeals()) cache.push(row)
-```
-
-**Correct:**
-
-```typescript
-for await (const batch of streamMealsInBatches(200)) await handleBatch(batch)
-```
-
-**AI pipeline latency / cost inefficiencies**
-
-**Incorrect:**
-
-```typescript
-for (const item of items) await embed(item)
-```
-
-**Correct:**
-
-```typescript
-await embedInBatches(items)
-```
-
-### Decision anchors
-
-**Recommend parallelism over sequential work where dependencies do not require ordering**
-
-**Incorrect:**
-
-```typescript
-await fetchGoals()
-await fetchProfile()
-```
-
-**Correct:**
-
-```typescript
-await Promise.all([fetchGoals(), fetchProfile()])
-```
-
-**Avoid speculative tuning unless there is clear evidence or an obvious risk**
-
-**Incorrect:**
-
-```typescript
-memoizeEverything()
-```
-
-**Correct:**
-
-```typescript
-// Only optimize after confirming the render or query is actually hot.
-```
-
-**This reviewer is escalation-first by design**
-
-**Incorrect:**
-
-```typescript
-// silently rewrite caching and concurrency behavior
-```
-
-**Correct:**
-
-```typescript
-// surface the bottleneck and escalate if the fix changes semantics
-```
+  - Incorrect example: `// silently rewrite caching and concurrency behavior`
+  - Correct example: `// surface the bottleneck and escalate if the fix changes semantics`
 
 **Operational Tooling:**
 - Use `Glob`, `Grep`, and `Read` to inspect async call chains, repeated queries,
