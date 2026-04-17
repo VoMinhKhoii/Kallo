@@ -13,6 +13,11 @@ interface PersistedMealCardProps {
 function formatMacro(value: number | null): string {
   return value == null ? 'N/A' : `${Math.round(value)}g`;
 }
+
+function formatCalories(value: number | null): string {
+  return value == null ? 'N/A' : `${Math.round(value)} kcal`;
+}
+
 export function PersistedMealCard({ meal }: PersistedMealCardProps) {
   const t = useTranslations('logging.persistedMealCard');
   const [isCollapsed, setIsCollapsed] = useState(true);
