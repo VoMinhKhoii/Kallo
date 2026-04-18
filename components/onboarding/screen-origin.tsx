@@ -4,20 +4,18 @@ import { Globe, Languages, MapPin } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { useLocaleSwitch } from '@/hooks/use-locale-switch';
+import type { Locale } from '@/i18n/config';
 import { COUNTRIES } from '@/lib/onboarding/countries';
+import {
+  type StepOneLocaleDraft,
+  writeStepOneLocaleDraft,
+} from '@/lib/onboarding/step-one-locale-draft';
 import { LanguageToggle } from './language-toggle';
 
 interface ScreenOriginProps {
-  defaultValues: {
-    countryOfOrigin: string | null;
-    countryOfResidence: string | null;
-    preferredLocale: string;
-  };
-  onChange: (data: {
-    countryOfOrigin: string | null;
-    countryOfResidence: string | null;
-    preferredLocale: string;
-  }) => void;
+  defaultValues: StepOneLocaleDraft;
+  onChange: (data: StepOneLocaleDraft) => void;
 }
 
 interface CountryPickerProps {
@@ -241,17 +239,18 @@ function CountryPicker({
 
 export function ScreenOrigin({ defaultValues, onChange }: ScreenOriginProps) {
   const t = useTranslations('onboarding');
+  const switchLocale = useLocaleSwitch();
   const [origin, setOrigin] = useState<string | null>(
     defaultValues.countryOfOrigin
   );
   const [residence, setResidence] = useState<string | null>(
     defaultValues.countryOfResidence
   );
-  const [locale, setLocale] = useState<string>(defaultValues.preferredLocale);
+  const [locale, setLocale] = useState<Locale>(defaultValues.preferredLocale);
   const hasReported = useRef(false);
 
   const report = useCallback(
-    (o: string | null, r: string | null, l: string) => {
+    (o: string | null, r: string | null, l: Locale) => {
       onChange({
         countryOfOrigin: o,
         countryOfResidence: r,
@@ -295,8 +294,19 @@ export function ScreenOrigin({ defaultValues, onChange }: ScreenOriginProps) {
         <LanguageToggle
           value={locale}
           onChange={(v) => {
-            setLocale(v);
-            report(origin, residence, v);
+            const nextLocale = v as Locale;
+            if (nextLocale === locale) {
+              return;
+            }
+
+            writeStepOneLocaleDraft({
+              countryOfOrigin: origin,
+              countryOfResidence: residence,
+              preferredLocale: nextLocale,
+            });
+            setLocale(nextLocale);
+            report(origin, residence, nextLocale);
+            switchLocale(nextLocale);
           }}
         />
       </div>

@@ -2,12 +2,19 @@
 
 import { ArrowLeft, ArrowRight, Loader2, SkipForward, X } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { useCallback, useEffect, useRef, useState, useTransition } from 'react';
+import { defaultLocale, type Locale } from '@/i18n/config';
 import { useRouter } from '@/i18n/navigation';
 import type { getOnboardingProfile } from '@/lib/onboarding/actions';
 import { saveOnboardingScreen } from '@/lib/onboarding/actions';
 import { WIZARD_DEFAULTS } from '@/lib/onboarding/constants';
+import { buildStepOneDefaults } from '@/lib/onboarding/step-one-defaults';
+import {
+  clearStepOneLocaleDraft,
+  readStepOneLocaleDraft,
+  type StepOneLocaleDraft,
+} from '@/lib/onboarding/step-one-locale-draft';
 import { ScreenBodyMetrics, type ScreenOneData } from './screen-body-metrics';
 import { ScreenCooking } from './screen-cooking';
 import { ScreenOrigin } from './screen-origin';
@@ -65,6 +72,7 @@ export function WizardShell({
   onClose,
   onComplete,
 }: WizardShellProps) {
+  const activeLocale = useLocale();
   const router = useRouter();
   const t = useTranslations('common');
   const tOnboarding = useTranslations('onboarding');
@@ -74,6 +82,10 @@ export function WizardShell({
   const [screenData, setScreenData] = useState<
     Record<number, Record<string, unknown>>
   >({});
+  const [stepOneDraft, setStepOneDraft] = useState<StepOneLocaleDraft | null>(
+    null
+  );
+  const [hasHydratedStepOneDraft, setHasHydratedStepOneDraft] = useState(false);
   const modalMaxWidthClass =
     currentStep === 1
       ? 'max-w-4xl'
@@ -109,6 +121,15 @@ export function WizardShell({
     const timer = setTimeout(updateScrollGradient, 150);
     return () => clearTimeout(timer);
   }, [currentStep, updateScrollGradient]);
+
+  useEffect(() => {
+    const draft = readStepOneLocaleDraft();
+    setStepOneDraft(draft);
+    if (draft) {
+      clearStepOneLocaleDraft();
+    }
+    setHasHydratedStepOneDraft(true);
+  }, []);
 
   const handleScreenChange = useCallback(
     (step: number, data: Record<string, unknown>) => {
@@ -165,13 +186,17 @@ export function WizardShell({
           (screenData[1].countryOfOrigin as string | null) ?? null,
         countryOfResidence:
           (screenData[1].countryOfResidence as string | null) ?? null,
-        preferredLocale: (screenData[1].preferredLocale as string) ?? 'en',
+        preferredLocale:
+          (screenData[1].preferredLocale as Locale | undefined) ??
+          defaultLocale,
       }
-    : {
+    : buildStepOneDefaults({
+        activeLocale,
         countryOfOrigin: initialProfile?.countryOfOrigin ?? null,
         countryOfResidence: initialProfile?.countryOfResidence ?? null,
-        preferredLocale: initialProfile?.preferredLocale ?? 'en',
-      };
+        draft: stepOneDraft,
+        profilePreferredLocale: initialProfile?.preferredLocale ?? null,
+      });
 
   const screenTwoDefaults = screenData[2]
     ? {
@@ -277,7 +302,7 @@ export function WizardShell({
                 damping: 40,
               }}
             >
-              {currentStep === 1 && (
+              {currentStep === 1 && hasHydratedStepOneDraft && (
                 <ScreenOrigin
                   defaultValues={screenOneDefaults}
                   onChange={(data) =>
