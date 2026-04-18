@@ -38,6 +38,7 @@ This file is the **single source of truth** for agent behavior. Rules here take 
 - **Zod Validation**: Validate all external inputs (API params, form data, URL params) with Zod schemas.
 - **Pre-Read Docs**: Read `docs/DATABASE.md` before any DB/migration work. Read `docs/DATA.md` before food data work.
 - **Context7 MCP**: Use Context7 MCP tool to fetch up-to-date documentation when working with any technology. Training data may be outdated.
+- **Established Pattern Research**: When a task involves a third-party library, framework feature, or product behavior that is already widely solved by other developers, use Context7 early to review the official docs and recommended patterns before locking the design or implementation. Treat this as required research for state ownership, routing, persistence, and other edge-case-heavy behavior so we do not reinvent brittle local patterns.
 - **Conventional Commits**: Use conventional commit format: `feat:`, `fix:`, `chore:`, `refactor:`, `test:`, `docs:`.
 - **Formatting Workflow**: Run `bunx @biomejs/biome check --write .` before making manual formatting fixes.
 - **Proactive Refactoring**: Flag files >400 LOC and components >200 LOC for extraction into smaller units.

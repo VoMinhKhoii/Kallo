@@ -113,11 +113,11 @@ The same alignment rule already applies in profile settings: if the user saves p
 
 ### 5. Restore Screen 3 Hints
 
-`ScreenCooking` should pass the existing translated hint strings back into each `OptionStrip` item:
+`ScreenCooking` should restore the existing translated hint seams:
 
 - oil usage hints
 - rice portion hints
-- sugar hints
+- sugar helper text
 - protein portion hints
 - broth consumption hints
 
