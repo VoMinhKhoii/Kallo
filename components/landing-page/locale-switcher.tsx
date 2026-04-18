@@ -3,8 +3,8 @@
 import { GB, VN } from 'country-flag-icons/react/3x2';
 import { useLocale, useTranslations } from 'next-intl';
 import { useTransition } from 'react';
-import type { Locale } from '@/i18n/config';
 import { useLocaleSwitch } from '@/hooks/use-locale-switch';
+import type { Locale } from '@/i18n/config';
 import { cn } from '@/lib/utils';
 
 const LOCALES = [

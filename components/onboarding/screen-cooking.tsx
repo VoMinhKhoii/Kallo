@@ -7,6 +7,7 @@ import { useForm } from 'react-hook-form';
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -140,14 +141,17 @@ export function ScreenCooking({ defaultValues, onChange }: ScreenCookingProps) {
                       {
                         value: 'minimal',
                         label: t('cooking.oilMinimal'),
+                        hint: t('cooking.oilMinimalHint'),
                       },
                       {
                         value: 'normal',
                         label: t('cooking.oilNormal'),
+                        hint: t('cooking.oilNormalHint'),
                       },
                       {
                         value: 'heavy',
                         label: t('cooking.oilHeavy'),
+                        hint: t('cooking.oilHeavyHint'),
                       },
                     ]}
                     value={field.value}
@@ -176,14 +180,17 @@ export function ScreenCooking({ defaultValues, onChange }: ScreenCookingProps) {
                       {
                         value: 'small',
                         label: t('cooking.riceSmall'),
+                        hint: t('cooking.riceSmallHint'),
                       },
                       {
                         value: 'medium',
                         label: t('cooking.riceMedium'),
+                        hint: t('cooking.riceMediumHint'),
                       },
                       {
                         value: 'large',
                         label: t('cooking.riceLarge'),
+                        hint: t('cooking.riceLargeHint'),
                       },
                     ]}
                     value={field.value}
@@ -206,6 +213,9 @@ export function ScreenCooking({ defaultValues, onChange }: ScreenCookingProps) {
                 <FormLabel className="mb-3 block font-bold text-[#2C2416] text-[13px]">
                   {t('cooking.sugar')}
                 </FormLabel>
+                <FormDescription className="-mt-1 mb-3 text-[#8B8682] text-[12px] leading-relaxed">
+                  {t('cooking.sugarHint')}
+                </FormDescription>
                 <FormControl>
                   <OptionStrip
                     options={[
@@ -239,14 +249,17 @@ export function ScreenCooking({ defaultValues, onChange }: ScreenCookingProps) {
                       {
                         value: 'small',
                         label: t('cooking.proteinSmall'),
+                        hint: t('cooking.proteinSmallHint'),
                       },
                       {
                         value: 'medium',
                         label: t('cooking.proteinMedium'),
+                        hint: t('cooking.proteinMediumHint'),
                       },
                       {
                         value: 'large',
                         label: t('cooking.proteinLarge'),
+                        hint: t('cooking.proteinLargeHint'),
                       },
                     ]}
                     value={field.value}
@@ -275,14 +288,17 @@ export function ScreenCooking({ defaultValues, onChange }: ScreenCookingProps) {
                       {
                         value: 'leave_it',
                         label: t('cooking.brothLeave'),
+                        hint: t('cooking.brothLeaveHint'),
                       },
                       {
                         value: 'some',
                         label: t('cooking.brothSome'),
+                        hint: t('cooking.brothSomeHint'),
                       },
                       {
                         value: 'finish_it',
                         label: t('cooking.brothFinish'),
+                        hint: t('cooking.brothFinishHint'),
                       },
                     ]}
                     value={field.value}

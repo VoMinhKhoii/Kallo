@@ -1,5 +1,5 @@
-import {describe, expect, it} from 'vitest';
-import {resolveRootLocale} from './root-locale';
+import { describe, expect, it } from 'vitest';
+import { resolveRootLocale } from './root-locale';
 
 describe('resolveRootLocale', () => {
   it('prefers authenticated profile locale over cookie', () => {
@@ -8,7 +8,7 @@ describe('resolveRootLocale', () => {
         isAuthenticated: true,
         profileLocale: 'vi',
         cookieLocale: 'en',
-        defaultLocale: 'en'
+        defaultLocale: 'en',
       })
     ).toBe('vi');
   });
@@ -19,7 +19,7 @@ describe('resolveRootLocale', () => {
         isAuthenticated: false,
         profileLocale: 'vi',
         cookieLocale: 'en',
-        defaultLocale: 'en'
+        defaultLocale: 'en',
       })
     ).toBe('en');
   });
@@ -30,7 +30,7 @@ describe('resolveRootLocale', () => {
         isAuthenticated: true,
         profileLocale: null,
         cookieLocale: null,
-        defaultLocale: 'en'
+        defaultLocale: 'en',
       })
     ).toBe('en');
   });
@@ -41,7 +41,7 @@ describe('resolveRootLocale', () => {
         isAuthenticated: true,
         profileLocale: 'fr',
         cookieLocale: 'jp',
-        defaultLocale: 'en'
+        defaultLocale: 'en',
       })
     ).toBe('en');
   });

@@ -1,5 +1,5 @@
-import {locales} from '@/i18n/config';
-import type {Locale} from '@/i18n/config';
+import type { Locale } from '@/i18n/config';
+import { locales } from '@/i18n/config';
 
 interface ResolveRootLocaleArgs {
   isAuthenticated: boolean;
@@ -12,9 +12,13 @@ export function resolveRootLocale({
   isAuthenticated,
   profileLocale,
   cookieLocale,
-  defaultLocale
+  defaultLocale,
 }: ResolveRootLocaleArgs): Locale {
-  if (isAuthenticated && profileLocale && locales.includes(profileLocale as Locale)) {
+  if (
+    isAuthenticated &&
+    profileLocale &&
+    locales.includes(profileLocale as Locale)
+  ) {
     return profileLocale as Locale;
   }
 
