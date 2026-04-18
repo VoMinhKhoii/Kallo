@@ -19,6 +19,10 @@ export function LocaleSwitcher() {
 
   const switchLocale = useLocaleSwitch();
   const handleChange = (nextLocale: Locale) => {
+    if (nextLocale === locale) {
+      return;
+    }
+
     // Save locale preference to cookie
     document.cookie = `NEXT_LOCALE=${nextLocale}; path=/; max-age=${60 * 60 * 24 * 365}`;
     startTransition(() => switchLocale(nextLocale));

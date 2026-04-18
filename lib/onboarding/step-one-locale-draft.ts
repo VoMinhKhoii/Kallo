@@ -14,18 +14,36 @@ function getSessionStorage(): Storage | null {
   return window.sessionStorage;
 }
 
+function clearStoredDraft(storage: Storage) {
+  try {
+    storage.removeItem(KEY);
+  } catch {
+    return;
+  }
+}
+
 export function writeStepOneLocaleDraft(value: StepOneLocaleDraft) {
   const storage = getSessionStorage();
   if (!storage) return;
 
-  storage.setItem(KEY, JSON.stringify(value));
+  try {
+    storage.setItem(KEY, JSON.stringify(value));
+  } catch {
+    return;
+  }
 }
 
 export function readStepOneLocaleDraft(): StepOneLocaleDraft | null {
   const storage = getSessionStorage();
   if (!storage) return null;
 
-  const raw = storage.getItem(KEY);
+  let raw: string | null;
+  try {
+    raw = storage.getItem(KEY);
+  } catch {
+    return null;
+  }
+
   if (!raw) return null;
 
   try {
@@ -40,7 +58,7 @@ export function readStepOneLocaleDraft(): StepOneLocaleDraft | null {
       (parsed.countryOfResidence !== null &&
         typeof parsed.countryOfResidence !== 'string')
     ) {
-      storage.removeItem(KEY);
+      clearStoredDraft(storage);
       return null;
     }
 
@@ -50,7 +68,7 @@ export function readStepOneLocaleDraft(): StepOneLocaleDraft | null {
       preferredLocale: parsed.preferredLocale,
     };
   } catch {
-    storage.removeItem(KEY);
+    clearStoredDraft(storage);
     return null;
   }
 }
@@ -59,5 +77,5 @@ export function clearStepOneLocaleDraft() {
   const storage = getSessionStorage();
   if (!storage) return;
 
-  storage.removeItem(KEY);
+  clearStoredDraft(storage);
 }

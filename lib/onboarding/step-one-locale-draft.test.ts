@@ -7,7 +7,10 @@ import {
 
 describe('step-one locale draft', () => {
   beforeEach(() => sessionStorage.clear());
-  afterEach(() => vi.unstubAllGlobals());
+  afterEach(() => {
+    vi.restoreAllMocks();
+    vi.unstubAllGlobals();
+  });
 
   it('round-trips the onboarding draft', () => {
     writeStepOneLocaleDraft({
@@ -58,6 +61,28 @@ describe('step-one locale draft', () => {
 
   it('returns null and no-ops when window is unavailable', () => {
     vi.stubGlobal('window', undefined);
+
+    expect(() =>
+      writeStepOneLocaleDraft({
+        countryOfOrigin: 'Vietnam',
+        countryOfResidence: 'Australia',
+        preferredLocale: 'vi',
+      })
+    ).not.toThrow();
+    expect(readStepOneLocaleDraft()).toBeNull();
+    expect(() => clearStepOneLocaleDraft()).not.toThrow();
+  });
+
+  it('fails soft when sessionStorage throws', () => {
+    vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+      throw new Error('quota');
+    });
+    vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
+      throw new Error('blocked');
+    });
+    vi.spyOn(Storage.prototype, 'removeItem').mockImplementation(() => {
+      throw new Error('blocked');
+    });
 
     expect(() =>
       writeStepOneLocaleDraft({

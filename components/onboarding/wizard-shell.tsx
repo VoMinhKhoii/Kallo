@@ -74,6 +74,7 @@ export function WizardShell({
 }: WizardShellProps) {
   const activeLocale = useLocale();
   const router = useRouter();
+  const tCommon = useTranslations('common');
   const t = useTranslations('common');
   const tOnboarding = useTranslations('onboarding');
   const [isPending, startTransition] = useTransition();
@@ -277,6 +278,7 @@ export function WizardShell({
             <button
               type="button"
               onClick={onClose}
+              aria-label={tCommon('close')}
               className="-mr-2 rounded-full p-2 text-[#8B8682] transition-colors hover:bg-[#EAE7E0]/50 hover:text-[#2C2416]"
             >
               <X className="h-5 w-5" />
