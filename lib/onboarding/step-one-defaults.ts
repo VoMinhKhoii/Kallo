@@ -25,8 +25,14 @@ export function buildStepOneDefaults({
   profilePreferredLocale,
 }: BuildStepOneDefaultsArgs): StepOneLocaleDraft {
   return {
-    countryOfOrigin: draft?.countryOfOrigin ?? countryOfOrigin ?? null,
-    countryOfResidence: draft?.countryOfResidence ?? countryOfResidence ?? null,
+    countryOfOrigin:
+      draft?.countryOfOrigin !== undefined
+        ? draft.countryOfOrigin
+        : (countryOfOrigin ?? null),
+    countryOfResidence:
+      draft?.countryOfResidence !== undefined
+        ? draft.countryOfResidence
+        : (countryOfResidence ?? null),
     preferredLocale:
       draft?.preferredLocale ??
       toSupportedLocale(activeLocale) ??

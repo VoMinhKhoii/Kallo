@@ -22,6 +22,26 @@ describe('buildStepOneDefaults', () => {
     });
   });
 
+  it('preserves explicit null in draft for countryOfOrigin and countryOfResidence', () => {
+    expect(
+      buildStepOneDefaults({
+        activeLocale: 'en',
+        countryOfOrigin: 'Vietnam',
+        countryOfResidence: 'Australia',
+        draft: {
+          countryOfOrigin: null,
+          countryOfResidence: null,
+          preferredLocale: 'vi',
+        },
+        profilePreferredLocale: 'en',
+      })
+    ).toEqual({
+      countryOfOrigin: null,
+      countryOfResidence: null,
+      preferredLocale: 'vi',
+    });
+  });
+
   it('defaults step 1 locale to the active route locale', () => {
     expect(
       buildStepOneDefaults({
