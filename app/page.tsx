@@ -1,20 +1,35 @@
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { defaultLocale, locales } from '@/i18n/config';
+import { defaultLocale } from '@/i18n/config';
+import { resolveRootLocale } from '@/lib/i18n/root-locale';
+import { getOnboardingProfile } from '@/lib/onboarding/actions';
+import { createClient } from '@/lib/supabase/server';
 
 export const dynamic = 'force-dynamic';
 
 export default async function RootPage() {
   const cookieStore = await cookies();
+  const cookieLocale = cookieStore.get('NEXT_LOCALE')?.value ?? null;
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-  // Try to get saved locale preference
-  const savedLocale = cookieStore.get('NEXT_LOCALE')?.value;
+  let profileLocale: string | null = null;
+  if (user) {
+    try {
+      profileLocale = (await getOnboardingProfile())?.preferredLocale ?? null;
+    } catch (error) {
+      console.error('Failed to load onboarding profile:', error);
+    }
+  }
 
-  // Validate against supported locales, use default if invalid/missing
-  const locale =
-    savedLocale && locales.includes(savedLocale as any)
-      ? savedLocale
-      : defaultLocale;
+  const locale = resolveRootLocale({
+    cookieLocale,
+    defaultLocale,
+    isAuthenticated: Boolean(user),
+    profileLocale,
+  });
 
   redirect(`/${locale}`);
 }

@@ -28,6 +28,6 @@ describe('LocaleSwitcher', () => {
     const user = userEvent.setup();
     await user.click(screen.getByRole('button', { name: 'Tiếng Việt' }));
 
-    expect(replaceMock).toHaveBeenCalledWith('/dashboard', { locale: 'vi' });
+    expect(replaceMock).toHaveBeenCalledWith('/dashboard', { locale: 'vi' }); // shared hook shape
   });
 });

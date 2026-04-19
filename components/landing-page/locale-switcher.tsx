@@ -3,8 +3,8 @@
 import { GB, VN } from 'country-flag-icons/react/3x2';
 import { useLocale, useTranslations } from 'next-intl';
 import { useTransition } from 'react';
+import { useLocaleSwitch } from '@/hooks/use-locale-switch';
 import type { Locale } from '@/i18n/config';
-import { usePathname, useRouter } from '@/i18n/navigation';
 import { cn } from '@/lib/utils';
 
 const LOCALES = [
@@ -15,20 +15,17 @@ const LOCALES = [
 export function LocaleSwitcher() {
   const t = useTranslations('landing.localeSwitcher');
   const locale = useLocale() as Locale;
-  const pathname = usePathname();
-  const router = useRouter();
   const [isPending, startTransition] = useTransition();
 
+  const switchLocale = useLocaleSwitch();
   const handleChange = (nextLocale: Locale) => {
-    if (nextLocale === locale) return;
+    if (nextLocale === locale) {
+      return;
+    }
 
-    startTransition(() => {
-      // Save locale preference to cookie
-      document.cookie = `NEXT_LOCALE=${nextLocale}; path=/; max-age=${60 * 60 * 24 * 365}`;
-
-      // Navigate to the same pathname in the new locale
-      router.replace(pathname, { locale: nextLocale });
-    });
+    // Save locale preference to cookie
+    document.cookie = `NEXT_LOCALE=${nextLocale}; path=/; max-age=${60 * 60 * 24 * 365}`;
+    startTransition(() => switchLocale(nextLocale));
   };
 
   return (

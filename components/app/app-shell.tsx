@@ -10,6 +10,7 @@ import {
   getOnboardingResumeStep,
   shouldShowOnboardingResume,
 } from '@/lib/onboarding/progress';
+import { readStepOneLocaleDraft } from '@/lib/onboarding/step-one-locale-draft';
 import { MainSidebar } from './main-sidebar';
 
 type ProfileRow = NonNullable<Awaited<ReturnType<typeof getOnboardingProfile>>>;
@@ -27,6 +28,7 @@ export function AppShell({
   isFirstSession,
   children,
 }: AppShellProps) {
+  const hasStepOneLocaleDraft = readStepOneLocaleDraft() !== null;
   const router = useRouter();
   const pathname = usePathname();
   const t = useTranslations('app.shell');
@@ -36,7 +38,7 @@ export function AppShell({
   );
   const resumeStep = getOnboardingResumeStep(initialProfile, onboardingStep);
   const [showOnboarding, setShowOnboarding] = useState(
-    onboardingStep === 0 && isFirstSession
+    (onboardingStep === 0 && isFirstSession) || hasStepOneLocaleDraft
   );
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [mobileMenuPath, setMobileMenuPath] = useState(pathname);
@@ -135,7 +137,7 @@ export function AppShell({
 
       {showOnboarding && (
         <WizardShell
-          initialStep={resumeStep}
+          initialStep={hasStepOneLocaleDraft ? 1 : resumeStep}
           initialProfile={initialProfile}
           onClose={handleClose}
           onComplete={handleComplete}
