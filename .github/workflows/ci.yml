@@ -99,6 +99,7 @@ jobs:
 
   container-publish:
     name: Container Publish
+    needs: [lint, typecheck, test, build, migrations]
     if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     env:
