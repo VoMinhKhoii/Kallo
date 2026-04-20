@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+base_url="${1:?base URL required}"
+base_url="${base_url%/}"
+
+for _ in 1 2 3 4 5; do
+  if health_json="$(curl --fail --silent --show-error --connect-timeout 2 --max-time 5 "$base_url/api/healthz" 2>/dev/null)"; then
+    # Explicit validation: check for required JSON fields
+    if echo "$health_json" | grep -q '"ok":true' && \
+       echo "$health_json" | grep -q '"service":"nham"'; then
+      # Health check passed, now check landing page
+      landing_status="$(
+        curl \
+          --silent \
+          --show-error \
+          --connect-timeout 2 \
+          --max-time 5 \
+          --output /dev/null \
+          --write-out '%{http_code}' \
+          "$base_url/en" 2>/dev/null || true
+      )"
+
+      if [ "$landing_status" = "200" ]; then
+        exit 0
+      fi
+    else
+      # Health endpoint returned malformed or unhealthy response
+      echo "Health check returned invalid response: $health_json" >&2
+    fi
+  fi
+
+  sleep 2
+done
+
+echo "Smoke check failed for $base_url" >&2
+exit 1
