@@ -69,6 +69,7 @@ jobs:
           service: ${{ env.SERVICE_NAME }}
           image: ${{ env.IMAGE_URI }}
           region: ${{ vars.GCP_REGION }}
+          skip_default_labels: true
           flags: >-
             --allow-unauthenticated
             --service-account=${{ vars.GCP_RUNTIME_SERVICE_ACCOUNT }}
