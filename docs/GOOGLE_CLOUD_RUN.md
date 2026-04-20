@@ -31,6 +31,10 @@ itself. GitHub only registers and runs `workflow_run` automation that already
 exists on the default branch, so the bootstrap PR must land on `main` before a
 later PR can trigger `Cloud Run Preview`.
 
+The same rule applies when you change `Cloud Run Preview` itself: a PR that
+edits the preview workflow still runs the version currently on `main`. Merge
+workflow fixes first, then use a follow-up PR to validate the updated behavior.
+
 ## Required Google Cloud resources
 
 Create or confirm these resources:
