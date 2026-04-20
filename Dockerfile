@@ -16,6 +16,10 @@ ENV NEXT_TELEMETRY_DISABLED=1
 
 RUN bun run build
 
+# Consolidate standalone assets: copy public/ and .next/static/ into standalone tree
+RUN cp -r public .next/standalone/public && \
+    cp -r .next/static .next/standalone/.next/static
+
 FROM node:20-bookworm-slim AS runner
 WORKDIR /app
 
@@ -25,9 +29,8 @@ ENV NEXT_TELEMETRY_DISABLED=1
 RUN groupadd --system --gid 1001 nodejs && \
     useradd --system --uid 1001 --gid nodejs nextjs
 
+# Copy consolidated standalone tree (includes public/ and .next/static/)
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
-COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 
 USER nextjs
 
