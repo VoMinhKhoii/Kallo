@@ -51,6 +51,11 @@ jobs:
           image: ${{ env.IMAGE_URI }}
           region: ${{ vars.GCP_REGION }}
           skip_default_labels: true
+          labels: |-
+            commit-sha=${{ github.event.workflow_run.head_sha }}
+            pr-number=${{ env.PR_NUMBER }}
+            deployment-target=preview
+            github-run-id=${{ github.run_id }}
           flags: >-
             --allow-unauthenticated
             --service-account=${{ vars.GCP_RUNTIME_SERVICE_ACCOUNT }}
@@ -61,8 +66,6 @@ jobs:
             --min-instances=0
             --max-instances=3
             --set-secrets=DATABASE_URL=nham-nonprod-database-url:latest,GEMINI_API_KEY=nham-nonprod-gemini-api-key:latest
-            --update-labels=commit-sha=${{ github.event.workflow_run.head_sha }},pr-number=${{ env.PR_NUMBER }},deployment-target=preview,github-run-id=${{ github.run_id }}
-            --revision-labels=commit-sha=${{ github.event.workflow_run.head_sha }},pr-number=${{ env.PR_NUMBER }},deployment-target=preview,github-run-id=${{ github.run_id }}
       - id: smoke
         run: ./scripts/cloud-run/smoke-check.sh "${{ steps.deploy.outputs.url }}"
       - name: Record deploy metadata
