@@ -121,7 +121,8 @@ export GCP_RUNTIME_SERVICE_ACCOUNT="$GCP_RUNTIME_SA_ID@$GCP_PROJECT_ID.iam.gserv
 ### Deployer service account
 
 The deployer must be able to push images, create/update/delete Cloud Run
-services, and attach the runtime service account.
+services, attach the runtime service account, and read Secret Manager metadata
+during pre-deploy validation.
 
 ```bash
 gcloud projects add-iam-policy-binding "$GCP_PROJECT_ID" \
@@ -131,6 +132,10 @@ gcloud projects add-iam-policy-binding "$GCP_PROJECT_ID" \
 gcloud projects add-iam-policy-binding "$GCP_PROJECT_ID" \
   --member="serviceAccount:$GCP_DEPLOYER_SERVICE_ACCOUNT" \
   --role="roles/artifactregistry.writer"
+
+gcloud projects add-iam-policy-binding "$GCP_PROJECT_ID" \
+  --member="serviceAccount:$GCP_DEPLOYER_SERVICE_ACCOUNT" \
+  --role="roles/secretmanager.viewer"
 
 gcloud iam service-accounts add-iam-policy-binding \
   "$GCP_RUNTIME_SERVICE_ACCOUNT" \
