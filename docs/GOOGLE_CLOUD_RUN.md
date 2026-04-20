@@ -24,6 +24,13 @@ The workflows in `.github/workflows/` assume:
   `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` are provided as GitHub repo
   variables and baked into the published image at build time
 
+### Bootstrap limitation
+
+The first PR that introduces the Cloud Run preview workflow cannot preview
+itself. GitHub only registers and runs `workflow_run` automation that already
+exists on the default branch, so the bootstrap PR must land on `main` before a
+later PR can trigger `Cloud Run Preview`.
+
 ## Required Google Cloud resources
 
 Create or confirm these resources:
