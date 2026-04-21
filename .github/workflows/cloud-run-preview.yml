@@ -30,33 +30,68 @@ jobs:
       GCS_SEED_BUCKET: ${{ vars.GCS_SEED_BUCKET }}
       GCS_SEED_OBJECT: ${{ vars.GCS_SEED_OBJECT }}
     steps:
+      - id: pr_state
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const pullNumber = Number(process.env.PR_NUMBER);
+            const workflowHeadSha = '${{ github.event.workflow_run.head_sha }}';
+            const { data: pr } = await github.rest.pulls.get({
+              ...context.repo,
+              pull_number: pullNumber,
+            });
+            const isOpen = pr.state === 'open';
+            const currentHeadSha = pr.head.sha;
+            const isFresh = currentHeadSha === workflowHeadSha;
+            const shouldDeploy = isOpen && isFresh;
+
+            core.setOutput('is_open', String(isOpen));
+            core.setOutput('current_head_sha', currentHeadSha);
+            core.setOutput('is_fresh', String(isFresh));
+            core.setOutput('should_deploy', String(shouldDeploy));
+      - name: Skip closed or stale preview deploy
+        if: steps.pr_state.outputs.should_deploy != 'true'
+        run: |
+          echo "Skipping preview deploy."
+          echo "PR open: ${{ steps.pr_state.outputs.is_open }}"
+          echo "Workflow head SHA: ${{ github.event.workflow_run.head_sha }}"
+          echo "Current PR head SHA: ${{ steps.pr_state.outputs.current_head_sha }}"
       - uses: actions/checkout@v4
+        if: steps.pr_state.outputs.should_deploy == 'true'
         with:
           ref: ${{ github.event.workflow_run.head_sha }}
       - uses: oven-sh/setup-bun@v2
+        if: steps.pr_state.outputs.should_deploy == 'true'
       - uses: actions/cache@v4
+        if: steps.pr_state.outputs.should_deploy == 'true'
         with:
           path: ~/.bun/install/cache
           key: ${{ runner.os }}-bun-${{ hashFiles('bun.lock') }}
           restore-keys: ${{ runner.os }}-bun-
       - name: Install dependencies
+        if: steps.pr_state.outputs.should_deploy == 'true'
         run: bun install --frozen-lockfile
       - uses: supabase/setup-cli@v1
+        if: steps.pr_state.outputs.should_deploy == 'true'
         with:
           version: latest
       - uses: google-github-actions/auth@v3
+        if: steps.pr_state.outputs.should_deploy == 'true'
         with:
           workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
           service_account: ${{ vars.GCP_DEPLOYER_SERVICE_ACCOUNT }}
       - uses: google-github-actions/setup-gcloud@v2
+        if: steps.pr_state.outputs.should_deploy == 'true'
         with:
           project_id: ${{ vars.GCP_PROJECT_ID }}
       - name: Pre-deploy validation
+        if: steps.pr_state.outputs.should_deploy == 'true'
         run: |
           gcloud secrets describe nham-nonprod-gemini-api-key
           gcloud iam service-accounts describe "${{ vars.GCP_RUNTIME_SERVICE_ACCOUNT }}"
           [[ "$SERVICE_NAME" =~ ^nham-pr-[0-9]+$ ]]
       - name: Prepare preview branch
+        if: steps.pr_state.outputs.should_deploy == 'true'
         run: >
           bun scripts/cloud-run/preview-db.ts prepare
           --pr "$PR_NUMBER"
@@ -64,11 +99,13 @@ jobs:
           --seed-file "$RUNNER_TEMP/seed_food.sql"
           --github-env "$GITHUB_ENV"
       - name: Remove staged seed file
-        if: always()
+        if: always() && steps.pr_state.outputs.should_deploy == 'true'
         run: rm -f "$RUNNER_TEMP/seed_food.sql"
       - name: Configure Docker authentication
+        if: steps.pr_state.outputs.should_deploy == 'true'
         run: gcloud auth configure-docker "${{ vars.GCP_REGION }}-docker.pkg.dev" --quiet
       - name: Build preview image
+        if: steps.pr_state.outputs.should_deploy == 'true'
         run: >
           docker build
           --build-arg NEXT_PUBLIC_SUPABASE_URL="$SUPABASE_URL"
@@ -76,12 +113,15 @@ jobs:
           -t "$IMAGE_TAG"
           .
       - name: Push preview image
+        if: steps.pr_state.outputs.should_deploy == 'true'
         run: docker push "$IMAGE_TAG"
       - name: Resolve image digest
+        if: steps.pr_state.outputs.should_deploy == 'true'
         run: |
           digest="$(gcloud artifacts docker images describe "$IMAGE_TAG" --format='value(image_summary.digest)')"
           echo "IMAGE_URI=${IMAGE_TAG%:*}@${digest}" >> "$GITHUB_ENV"
       - id: deploy
+        if: steps.pr_state.outputs.should_deploy == 'true'
         uses: google-github-actions/deploy-cloudrun@v3
         with:
           service: ${{ env.SERVICE_NAME }}
@@ -101,19 +141,20 @@ jobs:
             --update-labels=commit-sha=${{ github.event.workflow_run.head_sha }},pr-number=${{ env.PR_NUMBER }},deployment-target=preview,github-run-id=${{ github.run_id }}
             --revision-labels=commit-sha=${{ github.event.workflow_run.head_sha }},pr-number=${{ env.PR_NUMBER }},deployment-target=preview,github-run-id=${{ github.run_id }}
       - id: smoke
+        if: steps.pr_state.outputs.should_deploy == 'true'
         run: ./scripts/cloud-run/smoke-check.sh "${{ steps.deploy.outputs.url }}"
       - name: Record deploy metadata
-        if: always()
+        if: always() && steps.pr_state.outputs.should_deploy == 'true'
         run: |
           revision="$(gcloud run services describe "$SERVICE_NAME" --region="${{ vars.GCP_REGION }}" --format='value(status.latestCreatedRevisionName)' 2>/dev/null || true)"
           echo "{\"service\":\"$SERVICE_NAME\",\"image\":\"$IMAGE_URI\",\"revision\":\"$revision\",\"url\":\"${{ steps.deploy.outputs.url }}\",\"commit_sha\":\"${{ github.event.workflow_run.head_sha }}\",\"smoke\":\"${{ steps.smoke.outcome }}\"}" > deployment-record.json
       - uses: actions/upload-artifact@v4
-        if: always()
+        if: always() && steps.pr_state.outputs.should_deploy == 'true'
         with:
           name: preview-deployment-record-${{ env.PR_NUMBER }}
           path: deployment-record.json
       - uses: actions/github-script@v7
-        if: always()
+        if: always() && steps.pr_state.outputs.should_deploy == 'true'
         with:
           script: |
             const status = '${{ job.status }}';
