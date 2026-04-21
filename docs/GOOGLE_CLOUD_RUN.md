@@ -26,6 +26,17 @@ The workflows in `.github/workflows/` assume:
   `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, but preview deploys rebuild after
   fetching branch env from Supabase
 
+### Bootstrap limitation
+
+The first PR that introduces the Cloud Run preview workflow cannot preview
+itself. GitHub only registers and runs `workflow_run` automation that already
+exists on the default branch, so the bootstrap PR must land on `main` before a
+later PR can trigger `Cloud Run Preview`.
+
+The same rule applies when you change `Cloud Run Preview` itself: a PR that
+edits the preview workflow still runs the version currently on `main`. Merge
+workflow fixes first, then use a follow-up PR to validate the updated behavior.
+
 ## Required Google Cloud resources
 
 Create or confirm these resources:
@@ -162,7 +173,8 @@ export GCP_RUNTIME_SERVICE_ACCOUNT="$GCP_RUNTIME_SA_ID@$GCP_PROJECT_ID.iam.gserv
 ### Deployer service account
 
 The deployer must be able to push images, create/update/delete Cloud Run
-services, and attach the runtime service account.
+services, attach the runtime service account, and read Secret Manager metadata
+during pre-deploy validation.
 
 ```bash
 gcloud projects add-iam-policy-binding "$GCP_PROJECT_ID" \
@@ -172,6 +184,10 @@ gcloud projects add-iam-policy-binding "$GCP_PROJECT_ID" \
 gcloud projects add-iam-policy-binding "$GCP_PROJECT_ID" \
   --member="serviceAccount:$GCP_DEPLOYER_SERVICE_ACCOUNT" \
   --role="roles/artifactregistry.writer"
+
+gcloud projects add-iam-policy-binding "$GCP_PROJECT_ID" \
+  --member="serviceAccount:$GCP_DEPLOYER_SERVICE_ACCOUNT" \
+  --role="roles/secretmanager.viewer"
 
 gcloud iam service-accounts add-iam-policy-binding \
   "$GCP_RUNTIME_SERVICE_ACCOUNT" \
