@@ -95,7 +95,12 @@ const REQUIRED_COLUMNS = [
 
 function getSourceId(row: CsvRow): string {
   const sourceId = row.source_id?.trim();
-  if (sourceId) return sourceId;
+  if (sourceId) {
+    if (/^\d+$/.test(sourceId)) return sourceId;
+    throw new Error(
+      `Invalid source_id "${sourceId}". Expected a numeric ID or omit source_id and provide source.`
+    );
+  }
 
   const source = row.source?.trim();
   if (!source) {
