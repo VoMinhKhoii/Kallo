@@ -99,14 +99,13 @@ jobs:
   container-publish:
     name: Container Publish
     needs: [lint, typecheck, test, build, migrations]
-    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository
+    if: github.event_name == 'push'
     runs-on: ubuntu-latest
     permissions:
       contents: read
       id-token: write
     env:
-      IMAGE_TAG: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
-      IMAGE_URI: ${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/${{ vars.GCP_ARTIFACT_REPO }}/nham:${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+      IMAGE_URI: ${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/${{ vars.GCP_ARTIFACT_REPO }}/nham:${{ github.sha }}
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
       - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.12.0
