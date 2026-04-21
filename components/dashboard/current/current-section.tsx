@@ -77,7 +77,7 @@ export function CurrentSection({
       <div className="flex-1" />
 
       {/* Weight Logging */}
-      <div className="w-85 shrink-0">
+      <div className="w-[340px] shrink-0">
         <WeightCard weightSummary={weightSummary} />
       </div>
     </div>

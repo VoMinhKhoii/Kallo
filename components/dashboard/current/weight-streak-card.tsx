@@ -53,9 +53,13 @@ export function WeightCard({ weightSummary }: WeightCardProps) {
   }, [currentWeight, reset, todayWeight]);
 
   const onSubmit = async (values: WeightLogInput) => {
-    await logWeightMutation.mutateAsync(values);
-    toast.success('Đã lưu cân nặng.');
-    reset(values);
+    try {
+      await logWeightMutation.mutateAsync(values);
+      toast.success('Đã lưu cân nặng.');
+      reset(values);
+    } catch (error) {
+      console.error(error);
+    }
   };
 
   return (
@@ -142,7 +146,12 @@ export function WeightCard({ weightSummary }: WeightCardProps) {
 
         <div className="flex items-center justify-between text-[9px] text-nham-stone">
           <span>
-            Goal line: {weightSummary?.goalDirection === 'up' ? 'up' : 'down'}
+            Goal line:{' '}
+            {weightSummary?.goalDirection === 'up'
+              ? 'up'
+              : weightSummary?.goalDirection === 'down'
+                ? 'down'
+                : 'flat'}
           </span>
           <span>
             Start: {weightSummary?.periodStartWeight ?? currentWeight} kg

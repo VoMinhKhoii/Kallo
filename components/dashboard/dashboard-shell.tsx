@@ -62,7 +62,7 @@ export function DashboardShell() {
     weightSummary?.periodStartWeight ?? weightSummary?.currentWeight ?? 65;
   const expectedEndWeight =
     weightSummary?.expectedEndWeight ?? periodStartWeight;
-  const goalDirection = weightSummary?.goalDirection ?? 'down';
+  const goalDirection = weightSummary?.goalDirection ?? 'flat';
 
   const { data: heatmapData } = useQuery({
     queryKey: ['dashboard', 'heatmapData', timeRange],

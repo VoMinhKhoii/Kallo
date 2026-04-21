@@ -212,4 +212,40 @@ describe('loadWeightSummaryAction', () => {
     expect(result.periodStartWeight).toBe(72.4);
     expect(result.expectedEndWeight).toBeLessThan(result.periodStartWeight);
   });
+
+  it('marks goal direction as flat for maintenance goals', async () => {
+    const rangeRows = [
+      { loggedDate: '2026-04-12', weightKg: '72.0' },
+      { loggedDate: '2026-04-14', weightKg: '72.0' },
+    ];
+    const latestRows = [{ loggedDate: '2026-04-14', weightKg: '72.0' }];
+
+    mockProfile.goal = 'maintaining';
+
+    mockDbSelect
+      .mockReturnValueOnce({
+        from: vi.fn().mockReturnValue({
+          where: vi.fn().mockReturnValue({
+            orderBy: vi.fn().mockResolvedValue(rangeRows),
+          }),
+        }),
+      })
+      .mockReturnValueOnce({
+        from: vi.fn().mockReturnValue({
+          where: vi.fn().mockReturnValue({
+            orderBy: vi.fn().mockReturnValue({
+              limit: vi.fn().mockResolvedValue(latestRows),
+            }),
+          }),
+        }),
+      });
+
+    const result = await loadWeightSummaryAction({
+      range: '30d',
+      timezoneOffset: 0,
+    });
+
+    expect(result.goalDirection).toBe('flat');
+    expect(result.expectedEndWeight).toBe(result.periodStartWeight);
+  });
 });

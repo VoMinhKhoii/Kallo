@@ -1,6 +1,6 @@
 export type WeightRange = '30d' | '90d';
 
-export type WeightGoalDirection = 'up' | 'down';
+export type WeightGoalDirection = 'up' | 'down' | 'flat';
 
 export interface WeightSummaryData {
   range: WeightRange;

@@ -14,6 +14,17 @@ const weightRangeSchema = z.object({
   timezoneOffset: z.number().int().min(-840).max(720),
 });
 
+const dateStringSchema = z
+  .string()
+  .regex(/^\d{4}-\d{2}-\d{2}$/, 'Ngày phải có dạng YYYY-MM-DD.')
+  .refine((value) => {
+    const date = new Date(`${value}T00:00:00.000Z`);
+    return (
+      Number.isFinite(date.getTime()) &&
+      date.toISOString().slice(0, 10) === value
+    );
+  }, 'Ngày không hợp lệ.');
+
 const deleteWeightSchema = z.object({
   loggedDate: z
     .string()
@@ -156,7 +167,12 @@ export async function loadWeightSummaryAction(input: {
   const weeklyRate = getWeeklyRate(profile.goal);
   const weeks = parsed.range === '30d' ? 4.3 : 12.9;
   const expectedEndWeight = periodStartWeight + weeklyRate * weeks;
-  const goalDirection = profile.goal === 'bulking' ? 'up' : 'down';
+  const goalDirection =
+    profile.goal === 'bulking'
+      ? 'up'
+      : profile.goal === 'cutting'
+        ? 'down'
+        : 'flat';
 
   return {
     range: parsed.range,
