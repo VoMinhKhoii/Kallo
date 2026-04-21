@@ -142,7 +142,7 @@ jobs:
             --timeout=60
             --min-instances=0
             --max-instances=3
-            --set-env-vars=DATABASE_URL=${{ env.POSTGRES_URL_NON_POOLING }}
+            --set-env-vars=^@^DATABASE_URL=${{ env.POSTGRES_URL_NON_POOLING }}
             --set-secrets=GEMINI_API_KEY=nham-nonprod-gemini-api-key:latest
       - id: smoke
         if: steps.pr_state.outputs.should_deploy == 'true'
