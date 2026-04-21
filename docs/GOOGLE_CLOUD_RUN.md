@@ -20,9 +20,10 @@ The workflows in `.github/workflows/` assume:
 - GitHub Actions authenticates with `google-github-actions/auth@v3`
   through WIF
 - Cloud Run runtime secrets come from Secret Manager
-- `NEXT_PUBLIC_SUPABASE_URL` and
-  `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` are provided as GitHub repo
-  variables and baked into the published image at build time
+- the shared CI image still uses GitHub repo variables for
+  `NEXT_PUBLIC_SUPABASE_URL` and
+  `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, but preview deploys rebuild after
+  fetching branch env from Supabase
 
 ## Required Google Cloud resources
 
@@ -39,6 +40,51 @@ Create or confirm these resources:
 
 The workflows create Cloud Run services on first deploy, so you do not need to
 pre-create `nham-internal` or preview services manually.
+
+## GCS preview seed bucket setup
+
+Use these commands to create and grant access to the private preview seed
+bucket:
+
+```bash
+export GCP_PROJECT_ID="cal-487315"
+export GCP_REGION="asia-southeast1"
+export GCS_PREVIEW_SEED_BUCKET="nham-preview-seeds"
+export GCP_DEPLOYER_SERVICE_ACCOUNT="github-deployer@cal-487315.iam.gserviceaccount.com"
+
+gcloud storage buckets create "gs://$GCS_PREVIEW_SEED_BUCKET" \
+  --project="$GCP_PROJECT_ID" \
+  --location="$GCP_REGION" \
+  --uniform-bucket-level-access
+
+gcloud storage buckets add-iam-policy-binding "gs://$GCS_PREVIEW_SEED_BUCKET" \
+  --member="serviceAccount:$GCP_DEPLOYER_SERVICE_ACCOUNT" \
+  --role="roles/storage.objectViewer"
+```
+
+## Seed refresh flow and GitHub settings
+
+Refresh the preview seed artifact with:
+
+```bash
+bun scripts/generate-seed-food-sql.ts \
+  --input "Vietnamese Food Composition.csv" \
+  --output "./seed_food.sql"
+
+gcloud storage cp ./seed_food.sql \
+  "gs://$GCS_PREVIEW_SEED_BUCKET/supabase/seed_food.sql"
+
+rm -f ./seed_food.sql
+```
+
+Required GitHub settings:
+
+- Secrets:
+  - `SUPABASE_ACCESS_TOKEN`
+  - `SUPABASE_PROJECT_ID`
+- Variables:
+  - `GCS_SEED_BUCKET`
+  - `GCS_SEED_OBJECT`
 
 ## Recommended naming
 
@@ -238,15 +284,26 @@ authentication, and runtime secrets stay in Secret Manager.
 ## 7. Public config rule
 
 `NEXT_PUBLIC_SUPABASE_URL` and
-`NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` are **build-time inputs** for this repo.
+`NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` are **build-time inputs** for the shared
+CI image.
 
 That means:
 
 - changing them requires a new CI image build
 - changing Cloud Run runtime env vars later will not fix stale client bundle
   config
-- previews and `nham-internal` intentionally share the same non-prod public
-  config for now
+- previews rebuild after branch env is fetched from Supabase, so each PR gets
+  branch-specific public config
+
+### Preview runtime notes
+
+- preview images are built per PR after branch env is fetched
+- `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` come
+  from Supabase branch env
+- `DATABASE_URL` is injected with `--set-env-vars`
+- `GEMINI_API_KEY` remains Secret Manager-backed
+- PR-close and scheduled cleanup remove both Cloud Run services and Supabase
+  branches
 
 ## 8. Cloud Run defaults used by the workflows
 
@@ -272,7 +329,8 @@ That means:
 - Min instances: `0`
 - Max instances: `3`
 - Public URL enabled
-- Same runtime secrets as internal
+- `DATABASE_URL` is injected with `--set-env-vars`
+- `GEMINI_API_KEY` stays Secret Manager-backed
 
 ## 9. Workflow map
 
@@ -281,7 +339,7 @@ That means:
 | `CI` | Validate repo, then build and push SHA-tagged image |
 | `Cloud Run Preview` | Deploy/update same-repo PR previews |
 | `Cloud Run Internal` | Deploy `main` to `nham-internal`, with smoke-triggered rollback |
-| `Cloud Run Preview Cleanup` | Delete preview on PR close and remove orphan previews nightly |
+| `Cloud Run Preview Cleanup` | Delete preview Cloud Run services on PR close, remove matching Supabase branches, and clean up orphan previews nightly |
 | `Cloud Run Ops` | Manual redeploy, rollback, and preview refresh operations |
 
 ## 10. Manual operations
@@ -327,7 +385,7 @@ Run these after setup:
    - `Cloud Run Preview` comments or updates the PR with a preview URL
    - `https://<preview-url>/api/healthz` returns the expected health JSON
 2. Close that PR and confirm:
-   - `Cloud Run Preview Cleanup` deletes `nham-pr-<number>`
+   - `Cloud Run Preview Cleanup` deletes `nham-pr-<number>` and the matching Supabase branch
    - the old preview URL no longer serves the app
 3. Merge a known-good change to `main` and confirm:
    - `Cloud Run Internal` deploys `nham-internal`
