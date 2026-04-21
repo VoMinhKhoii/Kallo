@@ -4,7 +4,8 @@ This repo now ships a Cloud Run deployment path with:
 
 - one shared internal service: `nham-internal`
 - one preview service per PR: `nham-pr-<number>`
-- one immutable Artifact Registry image per commit SHA
+- one shared CI image model for push/internal flows, plus PR-specific preview
+  images tagged `pr-<number>-<sha>`
 - GitHub Actions authentication through Workload Identity Federation (WIF)
 
 The deploy path is meant for internal dogfooding first, but it is structured so we
@@ -396,7 +397,8 @@ gcloud run revisions list \
 Run these after setup:
 
 1. Open a same-repo PR and confirm:
-   - CI publishes an image for the PR head SHA
+   - `Cloud Run Preview` builds and publishes the PR-specific preview image
+     after CI succeeds
    - `Cloud Run Preview` comments or updates the PR with a preview URL
    - `https://<preview-url>/api/healthz` returns the expected health JSON
 2. Close that PR and confirm:
