@@ -25,6 +25,10 @@ jobs:
     env:
       PR_NUMBER: ${{ github.event.workflow_run.pull_requests[0].number }}
       SERVICE_NAME: nham-pr-${{ github.event.workflow_run.pull_requests[0].number }}
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_PROJECT_ID: ${{ secrets.SUPABASE_PROJECT_ID }}
+      GCS_SEED_BUCKET: ${{ vars.GCS_SEED_BUCKET }}
+      GCS_SEED_OBJECT: ${{ vars.GCS_SEED_OBJECT }}
     steps:
       - uses: actions/checkout@v4
         with:
