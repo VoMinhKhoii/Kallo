@@ -109,6 +109,7 @@ gcloud services enable \
   artifactregistry.googleapis.com \
   iam.googleapis.com \
   iamcredentials.googleapis.com \
+  storage.googleapis.com \
   run.googleapis.com \
   secretmanager.googleapis.com
 ```
@@ -357,11 +358,20 @@ The `Cloud Run Ops` workflow supports:
 
 Useful commands for operators:
 
-Find the image digest for a known commit SHA:
+Find the digest for the shared CI image for a known commit SHA:
 
 ```bash
 export IMAGE_TAG="$GCP_REGION-docker.pkg.dev/$GCP_PROJECT_ID/$GCP_ARTIFACT_REPO/nham:<commit-sha>"
 gcloud artifacts docker images describe "$IMAGE_TAG" \
+  --format='value(image_summary.digest)'
+```
+
+For preview refresh, use the preview workflow's PR-specific image tag
+instead:
+
+```bash
+export PREVIEW_IMAGE_TAG="$GCP_REGION-docker.pkg.dev/$GCP_PROJECT_ID/$GCP_ARTIFACT_REPO/nham:<pr-head-sha>"
+gcloud artifacts docker images describe "$PREVIEW_IMAGE_TAG" \
   --format='value(image_summary.digest)'
 ```
 
