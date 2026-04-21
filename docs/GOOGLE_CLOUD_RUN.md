@@ -271,6 +271,8 @@ In **GitHub → Settings → Secrets and variables → Actions → Variables**, 
 | `GCP_RUNTIME_SERVICE_ACCOUNT` | Full runtime SA email |
 | `NEXT_PUBLIC_SUPABASE_URL` | Non-prod public Supabase URL |
 | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Non-prod public Supabase anon key |
+| `GCS_SEED_BUCKET` | Preview seed bucket name |
+| `GCS_SEED_OBJECT` | Preview seed object path |
 
 `GCP_WIF_PROVIDER` must be the full resource name:
 
@@ -304,6 +306,9 @@ That means:
 - `GEMINI_API_KEY` remains Secret Manager-backed
 - PR-close and scheduled cleanup remove both Cloud Run services and Supabase
   branches
+- manual `refresh-preview` redeploys a chosen image digest; it only preserves
+  branch-specific public config when that digest came from the branch-aware
+  preview workflow, not when it points at the shared CI image
 
 ## 8. Cloud Run defaults used by the workflows
 
