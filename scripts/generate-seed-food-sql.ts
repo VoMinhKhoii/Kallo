@@ -2,6 +2,7 @@
 
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
+import { normalizeIngredientKey } from '@/lib/ai/matching/embedding-cache';
 
 type CsvRow = Record<string, string>;
 
@@ -81,6 +82,50 @@ const NUMERIC_COLUMNS = new Set([
   'vitamin_h_mcg',
   'source_id',
 ]);
+
+const REQUIRED_COLUMNS = [
+  'id',
+  'name_primary',
+  'name_en',
+  'type_vn',
+  'type_en',
+  'state',
+  'last_verified',
+] as const;
+
+function getSourceId(row: CsvRow): string {
+  const sourceId = row.source_id?.trim();
+  if (sourceId) return sourceId;
+
+  const source = row.source?.trim();
+  if (!source) {
+    throw new Error(
+      'Missing required source_id/source column. Provide source_id or source in the CSV.'
+    );
+  }
+
+  const normalized = source.toUpperCase();
+  if (normalized === 'FAO_VN_2007' || normalized === '1') return '1';
+  if (normalized === 'USDA_SR' || normalized === '2') return '2';
+
+  throw new Error(`Unsupported source value "${source}".`);
+}
+
+function validateRequiredColumns(rows: CsvRow[]): void {
+  const firstRow = rows[0];
+  if (!firstRow) {
+    throw new Error('CSV contains no data rows.');
+  }
+
+  const missing = REQUIRED_COLUMNS.filter((column) => !(column in firstRow));
+  if (missing.length > 0) {
+    throw new Error(`Missing required CSV columns: ${missing.join(', ')}`);
+  }
+
+  if (!('source_id' in firstRow) && !('source' in firstRow)) {
+    throw new Error('Missing required CSV columns: source_id or source');
+  }
+}
 
 export function escapeSqlString(value: string): string {
   return value.replace(/'/g, "''");
@@ -235,6 +280,9 @@ function toVfcSqlValue(column: string, row: CsvRow): string {
   }
 
   if (NUMERIC_COLUMNS.has(column)) {
+    if (column === 'source_id') {
+      return getSourceId(row);
+    }
     return toSqlNullableNumber(value);
   }
 
@@ -242,8 +290,11 @@ function toVfcSqlValue(column: string, row: CsvRow): string {
 }
 
 function buildVfcInsert(rows: CsvRow[]): string {
+  validateRequiredColumns(rows);
   const tuples = rows.map((row) => {
-    const values = VFC_COLUMNS.map((column) => toVfcSqlValue(column, row));
+    const values = VFC_COLUMNS.map((column) =>
+      column === 'source_id' ? getSourceId(row) : toVfcSqlValue(column, row)
+    );
     return `  (${values.join(', ')})`;
   });
 
@@ -267,7 +318,7 @@ function buildQueryEmbeddingInsert(rows: CsvRow[]): string | null {
       const parsed = parseVectorValue(embedding);
       if (!parsed) return null;
 
-      return `  (${toSqlText(row.name_primary ?? '')}, ${toSqlText(row.name_en ?? '')}, ${formatPgVector(parsed)}::vector(768))`;
+      return `  (${toSqlText(normalizeIngredientKey(row.name_primary ?? ''))}, ${toSqlText(row.name_en ?? '')}, ${formatPgVector(parsed)}::vector(768))`;
     })
     .filter((tuple): tuple is string => tuple !== null);
 
@@ -286,6 +337,7 @@ function buildQueryEmbeddingInsert(rows: CsvRow[]): string | null {
 }
 
 export function buildSeedSql(rows: CsvRow[]): string {
+  validateRequiredColumns(rows);
   const statements = ['BEGIN;', buildVfcInsert(rows)];
   const queryEmbeddingInsert = buildQueryEmbeddingInsert(rows);
   if (queryEmbeddingInsert) {

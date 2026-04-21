@@ -40,16 +40,16 @@ describe('parseCsv', () => {
 });
 
 describe('buildSeedSql', () => {
-  it('generates the expected seed SQL shape', () => {
+  it('supports the documented CSV shape and normalizes query cache keys', () => {
     const sql = buildSeedSql([
       {
         id: 'food-1',
-        name_primary: "Nước mắm 'đậm'",
+        name_primary: "NƯỚC MẮM 'ĐẬM'",
         name_alt: '["một, hai","ba"]',
         name_en: 'Fish sauce',
         type_vn: 'Gia vị, nước chấm',
         type_en: 'Condiments',
-        source_id: '1',
+        source: 'FAO_VN_2007',
         state: 'raw',
         inedible_portion_pct: '',
         calories_kcal: '10',
@@ -89,10 +89,60 @@ describe('buildSeedSql', () => {
 
     expect(sql).toContain('BEGIN;');
     expect(sql).toContain('INSERT INTO vietnamese_food_composition');
-    expect(sql).toContain("Nước mắm ''đậm''");
+    expect(sql).toContain("NƯỚC MẮM ''ĐẬM''");
     expect(sql).toContain("ARRAY['một, hai','ba']");
     expect(sql).toContain('::vector(768)');
     expect(sql).toContain('INSERT INTO ingredient_query_embeddings');
+    expect(sql).toContain(
+      "('nước mắm ''đậm''', 'Fish sauce', '[0.1,0.2,0.3]'::vector(768))"
+    );
+    expect(sql).toContain(', 1, ');
     expect(sql).toContain('COMMIT;');
+  });
+
+  it('fails fast when neither source_id nor source is present', () => {
+    expect(() =>
+      buildSeedSql([
+        {
+          id: 'food-1',
+          name_primary: 'Test',
+          name_alt: '[]',
+          name_en: 'Test',
+          type_vn: 'Test',
+          type_en: 'Test',
+          state: 'raw',
+          inedible_portion_pct: '',
+          calories_kcal: '',
+          protein_g: '',
+          carbohydrate_g: '',
+          fat_g: '',
+          fiber_g: '',
+          sodium_mg: '',
+          calcium_mg: '',
+          iron_mg: '',
+          magnesium_mg: '',
+          phosphorus_mg: '',
+          potassium_mg: '',
+          zinc_mg: '',
+          copper_mcg: '',
+          manganese_mg: '',
+          beta_carotene_mcg: '',
+          vitamin_a_mcg: '',
+          vitamin_d_mcg: '',
+          vitamin_e_mg: '',
+          vitamin_k_mcg: '',
+          vitamin_c_mg: '',
+          vitamin_b1_mg: '',
+          vitamin_b2_mg: '',
+          vitamin_pp_mg: '',
+          vitamin_b5_mg: '',
+          vitamin_b6_mg: '',
+          vitamin_b9_mcg: '',
+          vitamin_b12_mcg: '',
+          vitamin_h_mcg: '',
+          last_verified: '2026-02-26',
+        },
+      ])
+    ).toThrow('Missing required CSV columns: source_id or source');
   });
 });
