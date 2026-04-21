@@ -406,7 +406,7 @@ async function cleanupOrphanPreviewBranches(openPrNumbers: string[]): Promise<{
 
 function printUsage(): void {
   console.error(`Usage:
-  bun scripts/cloud-run/preview-db.ts prepare --pr-number <number> --sha <sha> --seed-file <path>
+  bun scripts/cloud-run/preview-db.ts prepare --pr <number> --sha <sha> --seed-file <path>
   bun scripts/cloud-run/preview-db.ts cleanup --pr-number <number>
   bun scripts/cloud-run/preview-db.ts cleanup-orphans --open-pr <number> [--open-pr <number> ...]
   bun scripts/cloud-run/preview-db.ts cleanup-orphans --open-prs 1,2,3`);
@@ -425,7 +425,8 @@ async function main(): Promise<void> {
   switch (subcommand) {
     case 'prepare': {
       const args = prepareSchema.parse({
-        prNumber: getOption(optionMap, 'pr-number'),
+        prNumber:
+          getOption(optionMap, 'pr') ?? getOption(optionMap, 'pr-number'),
         sha: getOption(optionMap, 'sha'),
         seedFile: getOption(optionMap, 'seed-file'),
         gcsSeedBucket:

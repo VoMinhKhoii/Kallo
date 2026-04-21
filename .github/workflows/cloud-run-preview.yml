@@ -55,7 +55,7 @@ jobs:
       - name: Prepare preview branch
         run: >
           bun scripts/cloud-run/preview-db.ts prepare
-          --pr-number "$PR_NUMBER"
+          --pr "$PR_NUMBER"
           --sha "${{ github.event.workflow_run.head_sha }}"
           --seed-file "$RUNNER_TEMP/seed_food.sql"
           --github-env "$GITHUB_ENV"
