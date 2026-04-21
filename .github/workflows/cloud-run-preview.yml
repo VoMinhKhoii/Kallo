@@ -10,6 +10,10 @@ permissions:
   id-token: write
   pull-requests: write
 
+concurrency:
+  group: cloud-run-preview-pr-${{ github.event.workflow_run.pull_requests[0].number }}
+  cancel-in-progress: false
+
 jobs:
   deploy-preview:
     if: >
@@ -21,11 +25,21 @@ jobs:
     env:
       PR_NUMBER: ${{ github.event.workflow_run.pull_requests[0].number }}
       SERVICE_NAME: nham-pr-${{ github.event.workflow_run.pull_requests[0].number }}
-      IMAGE_TAG: ${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/${{ vars.GCP_ARTIFACT_REPO }}/nham:${{ github.event.workflow_run.head_sha }}
     steps:
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.event.workflow_run.head_sha }}
+      - uses: oven-sh/setup-bun@v2
+      - uses: actions/cache@v4
+        with:
+          path: ~/.bun/install/cache
+          key: ${{ runner.os }}-bun-${{ hashFiles('bun.lock') }}
+          restore-keys: ${{ runner.os }}-bun-
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
       - uses: google-github-actions/auth@v3
         with:
           workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
@@ -35,11 +49,30 @@ jobs:
           project_id: ${{ vars.GCP_PROJECT_ID }}
       - name: Pre-deploy validation
         run: |
-          gcloud artifacts docker images describe "$IMAGE_TAG"
-          gcloud secrets describe nham-nonprod-database-url
           gcloud secrets describe nham-nonprod-gemini-api-key
           gcloud iam service-accounts describe "${{ vars.GCP_RUNTIME_SERVICE_ACCOUNT }}"
           [[ "$SERVICE_NAME" =~ ^nham-pr-[0-9]+$ ]]
+      - name: Prepare preview branch
+        run: >
+          bun scripts/cloud-run/preview-db.ts prepare
+          --pr-number "$PR_NUMBER"
+          --sha "${{ github.event.workflow_run.head_sha }}"
+          --seed-file "$RUNNER_TEMP/seed_food.sql"
+          --github-env "$GITHUB_ENV"
+      - name: Remove staged seed file
+        if: always()
+        run: rm -f "$RUNNER_TEMP/seed_food.sql"
+      - name: Configure Docker authentication
+        run: gcloud auth configure-docker "${{ vars.GCP_REGION }}-docker.pkg.dev" --quiet
+      - name: Build preview image
+        run: >
+          docker build
+          --build-arg NEXT_PUBLIC_SUPABASE_URL="$SUPABASE_URL"
+          --build-arg NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY="$SUPABASE_ANON_KEY"
+          -t "$IMAGE_TAG"
+          .
+      - name: Push preview image
+        run: docker push "$IMAGE_TAG"
       - name: Resolve image digest
         run: |
           digest="$(gcloud artifacts docker images describe "$IMAGE_TAG" --format='value(image_summary.digest)')"
@@ -59,7 +92,8 @@ jobs:
             --timeout=60
             --min-instances=0
             --max-instances=3
-            --set-secrets=DATABASE_URL=nham-nonprod-database-url:latest,GEMINI_API_KEY=nham-nonprod-gemini-api-key:latest
+            --set-env-vars=DATABASE_URL=${{ env.POSTGRES_URL_NON_POOLING }}
+            --set-secrets=GEMINI_API_KEY=nham-nonprod-gemini-api-key:latest
             --update-labels=commit-sha=${{ github.event.workflow_run.head_sha }},pr-number=${{ env.PR_NUMBER }},deployment-target=preview,github-run-id=${{ github.run_id }}
             --revision-labels=commit-sha=${{ github.event.workflow_run.head_sha }},pr-number=${{ env.PR_NUMBER }},deployment-target=preview,github-run-id=${{ github.run_id }}
       - id: smoke
