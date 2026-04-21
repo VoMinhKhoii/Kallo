@@ -179,7 +179,7 @@ function parseOptionMap(args: string[]): Record<string, string[]> {
 
     const key = token.slice(2);
     const next = args[i + 1];
-    if (!next || next.startsWith('--')) {
+    if (next === undefined || next.startsWith('--')) {
       options[key] = [...(options[key] ?? []), 'true'];
       continue;
     }

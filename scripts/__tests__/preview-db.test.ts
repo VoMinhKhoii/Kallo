@@ -55,6 +55,12 @@ describe('parseCleanupOrphansArgs', () => {
       openPrNumbers: ['1', '2', '3'],
     });
   });
+
+  it('treats an empty open-prs value as an empty PR list', () => {
+    expect(parseCleanupOrphansArgs(['--open-prs', ''])).toEqual({
+      openPrNumbers: [],
+    });
+  });
 });
 
 describe('selectOrphanPreviewBranches', () => {
