@@ -48,6 +48,94 @@ describe('selectOrphanPreviewBranches', () => {
 });
 
 describe('preparePreviewBranch', () => {
+  it('does not create a branch when lookup fails for a non-missing reason', async () => {
+    const run = vi.fn().mockImplementationOnce(() => ({
+      exitCode: 1,
+      stdout: '',
+      stderr: 'authentication failed',
+    }));
+
+    await expect(
+      preparePreviewBranch({
+        prNumber: 42,
+        sha: 'abc123',
+        seedFile: resolve('scripts/__tests__/preview-db-seed.sql'),
+        gcsSeedBucket: 'preview-bucket',
+        gcsSeedObject: 'supabase/seed_food.sql',
+        githubEnvPath: '.github-preview-env',
+        run,
+        appendGithubEnv: vi.fn(),
+      })
+    ).rejects.toThrow('authentication failed');
+
+    expect(run).toHaveBeenCalledTimes(1);
+    expect(run).not.toHaveBeenCalledWith('supabase', [
+      '--experimental',
+      'branches',
+      'create',
+      'pr-42',
+    ]);
+  });
+
+  it('deletes a newly created branch when env export fails after create', async () => {
+    const appendGithubEnv = vi.fn(() => {
+      throw new Error('github env write failed');
+    });
+    const run = vi
+      .fn()
+      .mockImplementationOnce(() => ({
+        exitCode: 1,
+        stdout: '',
+        stderr: 'branch not found',
+      }))
+      .mockImplementationOnce(() => ({
+        exitCode: 0,
+        stdout: '',
+        stderr: '',
+      }))
+      .mockImplementationOnce(() => ({
+        exitCode: 0,
+        stdout: [
+          'SUPABASE_URL=https://preview.supabase.co',
+          'SUPABASE_ANON_KEY=anon-key',
+          'POSTGRES_URL_NON_POOLING=postgres://db-url',
+        ].join('\n'),
+        stderr: '',
+      }))
+      .mockImplementationOnce(() => ({
+        exitCode: 0,
+        stdout: '',
+        stderr: '',
+      }));
+
+    await expect(
+      preparePreviewBranch({
+        prNumber: 42,
+        sha: 'abc123',
+        seedFile: resolve('scripts/__tests__/preview-db-seed.sql'),
+        gcsSeedBucket: 'preview-bucket',
+        gcsSeedObject: 'supabase/seed_food.sql',
+        githubEnvPath: '.github-preview-env',
+        run,
+        appendGithubEnv,
+      })
+    ).rejects.toThrow('github env write failed');
+
+    expect(run).toHaveBeenNthCalledWith(2, 'supabase', [
+      '--experimental',
+      'branches',
+      'create',
+      'pr-42',
+    ]);
+    expect(run).toHaveBeenLastCalledWith('supabase', [
+      '--experimental',
+      'branches',
+      'delete',
+      'pr-42',
+      '--yes',
+    ]);
+  });
+
   it('deletes a newly created branch when migration or seed fails', async () => {
     const appendGithubEnv = vi.fn();
     const seedFile = resolve('scripts/__tests__/preview-db-seed.sql');
@@ -58,7 +146,7 @@ describe('preparePreviewBranch', () => {
       .mockImplementationOnce(() => ({
         exitCode: 1,
         stdout: '',
-        stderr: 'missing',
+        stderr: 'branch not found',
       }))
       .mockImplementationOnce(() => ({
         exitCode: 0,

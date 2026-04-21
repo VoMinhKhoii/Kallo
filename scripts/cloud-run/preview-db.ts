@@ -278,6 +278,10 @@ export async function preparePreviewBranch(
   let getResult = run('supabase', getArgs);
 
   if (getResult.exitCode !== 0) {
+    if (!isMissingBranch(getResult)) {
+      throw formatCommandFailure('supabase', getArgs, getResult);
+    }
+
     ensureCommandSucceeded(
       'supabase',
       ['--experimental', 'branches', 'create', branchName],
@@ -290,19 +294,20 @@ export async function preparePreviewBranch(
 
   ensureCommandSucceeded('supabase', getArgs, getResult);
 
-  const branchEnv = parseBranchEnv(getResult.stdout);
-  appendGithubEnv(parsed.githubEnvPath, {
-    SUPABASE_URL: branchEnv.SUPABASE_URL,
-    SUPABASE_ANON_KEY: branchEnv.SUPABASE_ANON_KEY,
-    POSTGRES_URL_NON_POOLING: branchEnv.POSTGRES_URL_NON_POOLING,
-    BRANCH_NAME: branchName,
-    CREATED_BRANCH: String(createdBranch),
-    IMAGE_TAG: imageTag,
-  });
-
   let shouldCleanupSeedFile = false;
+  let branchEnv: BranchEnv | undefined;
 
   try {
+    branchEnv = parseBranchEnv(getResult.stdout);
+    appendGithubEnv(parsed.githubEnvPath, {
+      SUPABASE_URL: branchEnv.SUPABASE_URL,
+      SUPABASE_ANON_KEY: branchEnv.SUPABASE_ANON_KEY,
+      POSTGRES_URL_NON_POOLING: branchEnv.POSTGRES_URL_NON_POOLING,
+      BRANCH_NAME: branchName,
+      CREATED_BRANCH: String(createdBranch),
+      IMAGE_TAG: imageTag,
+    });
+
     ensureCommandSucceeded(
       'supabase',
       ['db', 'push', '--db-url', branchEnv.POSTGRES_URL_NON_POOLING],
@@ -371,7 +376,7 @@ export async function preparePreviewBranch(
     branchName,
     createdBranch,
     imageTag,
-    env: branchEnv,
+    env: branchEnv!,
   };
 }
 
