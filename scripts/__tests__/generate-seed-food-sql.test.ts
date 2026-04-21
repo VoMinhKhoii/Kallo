@@ -190,8 +190,53 @@ describe('buildSeedSql', () => {
           last_verified: '2026-02-26',
         },
       ])
-    ).toThrow(
-      'Invalid source_id "FAO_VN_2007". Expected a numeric ID or omit source_id and provide source.'
-    );
+    ).toThrow('Invalid source_id "FAO_VN_2007". Expected one of: 1, 2.');
+  });
+
+  it('rejects out-of-range numeric source_id values', () => {
+    expect(() =>
+      buildSeedSql([
+        {
+          id: 'food-1',
+          name_primary: 'Test',
+          name_alt: '[]',
+          name_en: 'Test',
+          type_vn: 'Test',
+          type_en: 'Test',
+          source_id: '999',
+          state: 'raw',
+          inedible_portion_pct: '',
+          calories_kcal: '',
+          protein_g: '',
+          carbohydrate_g: '',
+          fat_g: '',
+          fiber_g: '',
+          sodium_mg: '',
+          calcium_mg: '',
+          iron_mg: '',
+          magnesium_mg: '',
+          phosphorus_mg: '',
+          potassium_mg: '',
+          zinc_mg: '',
+          copper_mcg: '',
+          manganese_mg: '',
+          beta_carotene_mcg: '',
+          vitamin_a_mcg: '',
+          vitamin_d_mcg: '',
+          vitamin_e_mg: '',
+          vitamin_k_mcg: '',
+          vitamin_c_mg: '',
+          vitamin_b1_mg: '',
+          vitamin_b2_mg: '',
+          vitamin_pp_mg: '',
+          vitamin_b5_mg: '',
+          vitamin_b6_mg: '',
+          vitamin_b9_mcg: '',
+          vitamin_b12_mcg: '',
+          vitamin_h_mcg: '',
+          last_verified: '2026-02-26',
+        },
+      ])
+    ).toThrow('Invalid source_id "999". Expected one of: 1, 2.');
   });
 });

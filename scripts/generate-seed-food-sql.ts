@@ -93,12 +93,18 @@ const REQUIRED_COLUMNS = [
   'last_verified',
 ] as const;
 
+const ALLOWED_SOURCE_IDS = new Set(['1', '2']);
+const SOURCE_ID_BY_SOURCE = new Map([
+  ['FAO_VN_2007', '1'],
+  ['USDA_SR', '2'],
+]);
+
 function getSourceId(row: CsvRow): string {
   const sourceId = row.source_id?.trim();
   if (sourceId) {
-    if (/^\d+$/.test(sourceId)) return sourceId;
+    if (ALLOWED_SOURCE_IDS.has(sourceId)) return sourceId;
     throw new Error(
-      `Invalid source_id "${sourceId}". Expected a numeric ID or omit source_id and provide source.`
+      `Invalid source_id "${sourceId}". Expected one of: ${Array.from(ALLOWED_SOURCE_IDS).join(', ')}.`
     );
   }
 
@@ -110,8 +116,8 @@ function getSourceId(row: CsvRow): string {
   }
 
   const normalized = source.toUpperCase();
-  if (normalized === 'FAO_VN_2007' || normalized === '1') return '1';
-  if (normalized === 'USDA_SR' || normalized === '2') return '2';
+  const mapped = SOURCE_ID_BY_SOURCE.get(normalized);
+  if (mapped) return mapped;
 
   throw new Error(`Unsupported source value "${source}".`);
 }
