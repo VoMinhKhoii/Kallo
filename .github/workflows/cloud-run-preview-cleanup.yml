@@ -15,7 +15,13 @@ jobs:
   cleanup-closed-pr:
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_PROJECT_ID: ${{ secrets.SUPABASE_PROJECT_ID }}
     steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - uses: supabase/setup-cli@v1
       - uses: google-github-actions/auth@v3
         with:
           workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
@@ -25,11 +31,19 @@ jobs:
           project_id: ${{ vars.GCP_PROJECT_ID }}
       - name: Delete preview service
         run: gcloud run services delete "nham-pr-${{ github.event.pull_request.number }}" --region="${{ vars.GCP_REGION }}" --quiet || true
+      - name: Delete preview database branch
+        run: bun scripts/cloud-run/preview-db.ts cleanup --pr "${{ github.event.pull_request.number }}" || true
 
   cleanup-orphans:
     if: github.event_name == 'schedule'
     runs-on: ubuntu-latest
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_PROJECT_ID: ${{ secrets.SUPABASE_PROJECT_ID }}
     steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - uses: supabase/setup-cli@v1
       - uses: actions/github-script@v7
         id: open-prs
         with:
@@ -56,3 +70,5 @@ jobs:
                 pr="${service#nham-pr-}"
                 [[ "$open_prs" == *",$pr,"* ]] || gcloud run services delete "$service" --region="${{ vars.GCP_REGION }}" --quiet
               done
+      - name: Delete orphaned preview database branches
+        run: bun scripts/cloud-run/preview-db.ts cleanup-orphans --open-prs "${{ steps.open-prs.outputs.numbers }}"

@@ -5,6 +5,8 @@ import {
   buildBranchName,
   buildPreviewImageTag,
   parseBranchEnv,
+  parseCleanupArgs,
+  parseCleanupOrphansArgs,
   preparePreviewBranch,
   selectOrphanPreviewBranches,
 } from '@/scripts/cloud-run/preview-db';
@@ -35,6 +37,22 @@ IGNORED=value
       SUPABASE_ANON_KEY: 'anon-key',
       POSTGRES_URL_NON_POOLING:
         'postgres://postgres:pw@db.example:5432/postgres',
+    });
+  });
+});
+
+describe('parseCleanupArgs', () => {
+  it('accepts the workflow cleanup alias', () => {
+    expect(parseCleanupArgs(['--pr', '42'])).toEqual({
+      prNumber: 42,
+    });
+  });
+});
+
+describe('parseCleanupOrphansArgs', () => {
+  it('accepts comma-separated open PR numbers for orphan cleanup', () => {
+    expect(parseCleanupOrphansArgs(['--open-prs', '1, 2,3'])).toEqual({
+      openPrNumbers: ['1', '2', '3'],
     });
   });
 });

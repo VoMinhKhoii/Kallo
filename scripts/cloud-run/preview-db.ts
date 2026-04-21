@@ -55,6 +55,31 @@ const cleanupOrphansSchema = z.object({
   openPrNumbers: z.array(z.string().regex(/^\d+$/)),
 });
 
+export function parseCleanupArgs(
+  args: string[]
+): z.infer<typeof cleanupSchema> {
+  const optionMap = parseOptionMap(args);
+
+  return cleanupSchema.parse({
+    prNumber: getOption(optionMap, 'pr') ?? getOption(optionMap, 'pr-number'),
+  });
+}
+
+export function parseCleanupOrphansArgs(
+  args: string[]
+): z.infer<typeof cleanupOrphansSchema> {
+  const optionMap = parseOptionMap(args);
+  const csvNumbers =
+    getOption(optionMap, 'open-prs')
+      ?.split(',')
+      .map((value) => value.trim())
+      .filter(Boolean) ?? [];
+
+  return cleanupOrphansSchema.parse({
+    openPrNumbers: [...getOptionValues(optionMap, 'open-pr'), ...csvNumbers],
+  });
+}
+
 function defaultRun(
   command: string,
   args: string[],
@@ -407,7 +432,7 @@ async function cleanupOrphanPreviewBranches(openPrNumbers: string[]): Promise<{
 function printUsage(): void {
   console.error(`Usage:
   bun scripts/cloud-run/preview-db.ts prepare --pr <number> --sha <sha> --seed-file <path>
-  bun scripts/cloud-run/preview-db.ts cleanup --pr-number <number>
+  bun scripts/cloud-run/preview-db.ts cleanup --pr <number>
   bun scripts/cloud-run/preview-db.ts cleanup-orphans --open-pr <number> [--open-pr <number> ...]
   bun scripts/cloud-run/preview-db.ts cleanup-orphans --open-prs 1,2,3`);
 }
@@ -451,26 +476,14 @@ async function main(): Promise<void> {
     }
 
     case 'cleanup': {
-      const args = cleanupSchema.parse({
-        prNumber: getOption(optionMap, 'pr-number'),
-      });
+      const args = parseCleanupArgs(rest);
 
       await cleanupPreviewBranch(args.prNumber);
       return;
     }
 
     case 'cleanup-orphans': {
-      const csvNumbers =
-        getOption(optionMap, 'open-prs')
-          ?.split(',')
-          .map((value) => value.trim())
-          .filter(Boolean) ?? [];
-      const args = cleanupOrphansSchema.parse({
-        openPrNumbers: [
-          ...getOptionValues(optionMap, 'open-pr'),
-          ...csvNumbers,
-        ],
-      });
+      const args = parseCleanupOrphansArgs(rest);
 
       const result = await cleanupOrphanPreviewBranches(args.openPrNumbers);
       console.log(JSON.stringify(result));
