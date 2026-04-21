@@ -176,12 +176,16 @@ committing it to Git.
 **Outputs:**
 
 - preview Supabase branch `pr-<number>`
+- preview container image built specifically for that PR branch config, using an
+  Artifact Registry tag shaped like:
+  `${GCP_REGION}-docker.pkg.dev/${GCP_PROJECT_ID}/${GCP_ARTIFACT_REPO}/nham:pr-<number>-<sha>`
 - preview Cloud Run service `nham-pr-<number>`
 - PR comment with preview URL
 
 ### 5.4 Cleanup workflow
 
-**Purpose:** Reclaim preview infrastructure when a PR closes.
+**Purpose:** Reclaim preview infrastructure when a PR closes and sweep orphaned
+resources that no longer map to an open PR.
 
 **Primary file:** `.github/workflows/cloud-run-preview-cleanup.yml`
 
@@ -189,7 +193,15 @@ committing it to Git.
 
 - delete Cloud Run service `nham-pr-<number>`
 - delete Supabase branch `pr-<number>`
+- keep the scheduled orphan sweep and extend it to Supabase branches, not only
+  Cloud Run services
 - tolerate already-deleted resources
+
+**Inputs:**
+
+- `SUPABASE_ACCESS_TOKEN`
+- `SUPABASE_PROJECT_ID`
+- existing GCP WIF variables
 
 ## 6. Preview Deploy Sequence
 
@@ -202,27 +214,39 @@ final Cloud Run deploy step:
 4. compute:
    - `PR_NUMBER`
    - `BRANCH_NAME=pr-${PR_NUMBER}`
-   - `SERVICE_NAME=nham-pr-${PR_NUMBER}`
-5. check whether the Supabase branch already exists
-6. if missing, create it
-7. fetch branch env with:
+    - `SERVICE_NAME=nham-pr-${PR_NUMBER}`
+   - `PREVIEW_IMAGE_TAG=pr-${PR_NUMBER}-${HEAD_SHA}`
+5. apply workflow-level concurrency keyed by PR number so same-PR preview runs
+   are serialized rather than racing each other
+6. check whether the Supabase branch already exists
+7. if missing, create it and record `CREATED_BRANCH=true`
+8. fetch branch env with:
    `supabase --experimental branches get "$BRANCH_NAME" -o env`
-8. export these values into the job environment:
+9. export these values into the job environment:
    - `SUPABASE_URL`
    - `SUPABASE_ANON_KEY`
    - `POSTGRES_URL_NON_POOLING`
-9. push repo migrations with:
+10. push repo migrations with:
    `supabase db push --db-url "$POSTGRES_URL_NON_POOLING"`
-10. if the branch was newly created:
+11. if the branch was newly created:
     - download `seed_food.sql` from GCS
     - execute it with `psql "$POSTGRES_URL_NON_POOLING" -f seed_food.sql`
-11. delete the local SQL artifact
-12. build the preview image using branch-specific build args:
+12. delete the local SQL artifact in an unconditional cleanup step
+13. build and push a preview-specific image using branch-specific build args:
     - `NEXT_PUBLIC_SUPABASE_URL=$SUPABASE_URL`
     - `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=$SUPABASE_ANON_KEY`
-13. deploy Cloud Run with branch-specific runtime env:
+14. resolve the pushed image digest and deploy Cloud Run from that immutable
+    digest
+15. deploy Cloud Run with branch-specific runtime env:
     - `DATABASE_URL=$POSTGRES_URL_NON_POOLING`
-14. run the existing smoke check and PR comment update path
+    - keep the existing runtime secret contract, including
+      `GEMINI_API_KEY`, from Secret Manager
+16. run the existing smoke check and PR comment update path
+
+The preview workflow becomes the owner of the preview image build/push/digest
+flow. The existing CI-produced shared image path remains valid for the shared
+internal lane, but preview deploys no longer consume that generic image because
+their public Supabase config is PR-specific.
 
 ## 7. Branch Lifecycle Rules
 
@@ -232,6 +256,11 @@ Each PR owns exactly one Supabase branch:
 
 - first successful preview deploy for a PR: create branch + migrate + seed
 - later preview deploys for the same PR: reuse branch + migrate only
+
+If the current run created the branch and later migration or seeding fails
+before deploy, the workflow should best-effort delete that just-created branch
+before exiting. That guarantees the next retry starts from a clean state rather
+than reusing a partially initialized preview DB.
 
 ### 7.2 Seed-once rule
 
@@ -249,6 +278,19 @@ deleted and recreated rather than silently reseeded on every synchronize event.
 | Cloud Run service | `nham-pr-<number>` |
 
 The PR number is the shared join key across both systems.
+
+### 7.4 Concurrency rules
+
+The preview workflow should define a concurrency group keyed on the PR number and
+should **serialize** same-PR runs instead of canceling an in-flight run during
+branch creation or seeding. This avoids two preview jobs racing on:
+
+- branch creation
+- first-run seeding
+- preview deploy ordering
+
+Newer runs may queue behind older ones, but the last successful run still wins by
+deploying the latest commit SHA for that PR.
 
 ## 8. Configuration Contract
 
@@ -272,6 +314,14 @@ Cloud Run must receive the branch-specific direct database URL:
 
 Using the non-pooling connection string keeps DB tooling behavior predictable for
 migrations and direct SQL execution.
+
+The preview deploy must also preserve the rest of the current runtime contract.
+Existing runtime secrets and deploy flags stay in place unless this feature
+explicitly changes them. In particular:
+
+- `GEMINI_API_KEY` should remain Secret Manager-backed
+- the existing service account, resource sizing, labels, and smoke-check behavior
+  should remain intact
 
 ### 8.3 Secrets and variables
 
@@ -298,20 +348,29 @@ The preview job must fail before deploy if any of these steps fail:
 
 This prevents an app deploy against a partially prepared preview database.
 
+If the failing run created the branch in the same job, it should best-effort
+delete that branch before exiting so the next run can recreate and reseed it
+cleanly.
+
 ### 9.2 Seed cleanup behavior
 
 The workflow should delete `seed_food.sql` in an `if: always()` cleanup step so
 the file is removed even on failure.
 
-For runner hygiene, use best-effort secure deletion:
+Because the runner is ephemeral and the seed artifact is read-only data rather
+than an application secret, normal deletion is sufficient:
 
-- `shred -u` when available
-- fallback to `rm -f`
+- `rm -f seed_food.sql`
 
 ### 9.3 Cleanup workflow tolerance
 
 PR-close cleanup should not fail if the preview service or preview branch no
 longer exists. That job is garbage collection, not a correctness gate.
+
+The scheduled orphan sweep should apply the same rule to both systems:
+
+- delete Cloud Run preview services whose PR is no longer open
+- delete Supabase preview branches named `pr-<number>` whose PR is no longer open
 
 ## 10. Validation Expectations
 
@@ -324,6 +383,10 @@ The final implementation should prove these conditions:
 5. Cloud Run deploy receives the branch-specific `DATABASE_URL`
 6. PR-close cleanup targets both the matching Cloud Run service and the matching
    Supabase branch
+7. a failed first-run create/seed path does not leave behind a poisoned branch
+   that later runs would incorrectly reuse
+8. same-PR preview runs do not race each other during branch creation, seeding,
+   and deploy
 
 ## 11. Implementation Notes
 
@@ -332,13 +395,36 @@ The final implementation should prove these conditions:
 The repo already uses Bun and TypeScript. A local Bun script fits existing
 tooling better than introducing a separate Python dependency path.
 
-### 11.2 Why GCS instead of GitHub artifacts
+### 11.2 Exact branch lifecycle CLI pattern
+
+To reduce planner ambiguity, the implementation should follow this shape:
+
+```bash
+if supabase --experimental branches get "$BRANCH_NAME" -o env > branch.env 2>/dev/null; then
+  CREATED_BRANCH=false
+else
+  supabase --experimental branches create "$BRANCH_NAME"
+  supabase --experimental branches get "$BRANCH_NAME" -o env > branch.env
+  CREATED_BRANCH=true
+fi
+
+set -a
+. ./branch.env
+set +a
+```
+
+Then:
+
+- run `supabase db push --db-url "$POSTGRES_URL_NON_POOLING"`
+- if `CREATED_BRANCH=true`, run the seed SQL with `psql`
+
+### 11.3 Why GCS instead of GitHub artifacts
 
 The seed SQL must exist independently of any one workflow run and should be
 downloadable by preview deploy jobs on demand. A private GCS object is a better
 fit than ephemeral workflow artifacts.
 
-### 11.3 Why not shared preview images
+### 11.4 Why not shared preview images
 
 Full branch isolation means public Supabase config is preview-specific. Reusing a
 single generic preview image would point the browser at the wrong Supabase
