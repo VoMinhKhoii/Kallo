@@ -52,6 +52,7 @@ data/usda_sr/
 
 # Translation pipeline checkpoints (generated, resume-safe)
 data/translation-checkpoints/
+seed_food.sql
 
 # Local git worktrees
 .worktrees/
