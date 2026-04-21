@@ -3,6 +3,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { ChevronDown, Loader2 } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
+import { useLocale, useTranslations } from 'next-intl';
 import { useMemo, useState, useTransition } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
@@ -12,8 +13,7 @@ import { saveProfileSettings } from '@/lib/onboarding/actions';
 import {
   bodyMetricsSchema,
   cookingHabitsSchema,
-  portionCalibrationSchema,
-  regionalSchema,
+  countrySchema,
 } from '@/lib/onboarding/schemas';
 import {
   calcBMR,
@@ -28,13 +28,11 @@ import type {
   Goal,
   OilUsage,
   ProteinPortion,
-  RegionalProfile,
   RicePortion,
   SugarBraised,
 } from '@/lib/onboarding/types';
 import { BodyMetrics } from './body-metrics';
 import { Cooking } from './cooking';
-import { Portions } from './portions';
 import { Regional } from './regional';
 
 const profileSchema = bodyMetricsSchema
@@ -45,42 +43,18 @@ const profileSchema = bodyMetricsSchema
       carbSplit: z.enum(['moderate_carb', 'lower_carb', 'higher_carb']),
     })
   )
-  .merge(regionalSchema)
-  .merge(cookingHabitsSchema)
-  .merge(portionCalibrationSchema);
+  .merge(countrySchema)
+  .merge(cookingHabitsSchema);
 
 export type ProfileFormValues = z.infer<typeof profileSchema>;
 
-type SectionId = 'body-metrics' | 'regional' | 'cooking' | 'portions';
+type SectionId = 'body-metrics' | 'regional' | 'cooking';
 
 interface Section {
   id: SectionId;
   title: string;
   subtitle: string;
 }
-
-const SECTIONS: Section[] = [
-  {
-    id: 'body-metrics',
-    title: 'Body Metrics & Goals',
-    subtitle: 'Weight, height, activity level, and macro targets',
-  },
-  {
-    id: 'regional',
-    title: 'Regional Profile',
-    subtitle: 'Vietnamese cooking region for default seasonings',
-  },
-  {
-    id: 'cooking',
-    title: 'Cooking Habits',
-    subtitle: 'Oil usage, rice, sugar, protein, and broth defaults',
-  },
-  {
-    id: 'portions',
-    title: 'Portion Calibration',
-    subtitle: 'Hand measurements for accurate gram estimates',
-  },
-];
 
 interface ProfileProps {
   profile: {
@@ -97,20 +71,40 @@ interface ProfileProps {
     proteinTargetG: number | null;
     carbsTargetG: number | null;
     fatTargetG: number | null;
-    regionalProfile: string | null;
+    countryOfOrigin: string | null;
+    countryOfResidence: string | null;
     oilUsage: string | null;
     defaultRicePortion: string | null;
     sugarBraised: string | null;
     defaultProteinPortion: string | null;
     brothConsumption: string | null;
-    handSpanCm: string | null;
-    knuckleDepthCm: string | null;
   };
 }
 
 export function Profile({ profile }: ProfileProps) {
+  const t = useTranslations('settings');
+  const tc = useTranslations('common');
+  const locale = useLocale();
   const [openSection, setOpenSection] = useState<SectionId>('body-metrics');
   const [isPending, startTransition] = useTransition();
+
+  const SECTIONS: Section[] = [
+    {
+      id: 'body-metrics',
+      title: t('bodyMetrics'),
+      subtitle: t('profilePanel.bodyMetricsSubtitle'),
+    },
+    {
+      id: 'regional',
+      title: t('regional'),
+      subtitle: t('profilePanel.regionalSubtitle'),
+    },
+    {
+      id: 'cooking',
+      title: t('cooking'),
+      subtitle: t('profilePanel.cookingSubtitle'),
+    },
+  ];
 
   const defaultValues: ProfileFormValues = useMemo(
     () => ({
@@ -127,8 +121,8 @@ export function Profile({ profile }: ProfileProps) {
         return Number.isNaN(n) ? 0.5 : n;
       })(),
       carbSplit: (profile.carbSplit as CarbSplit) ?? 'moderate_carb',
-      regionalProfile:
-        (profile.regionalProfile as RegionalProfile) ?? 'mien_bac',
+      countryOfOrigin: profile.countryOfOrigin ?? null,
+      countryOfResidence: profile.countryOfResidence ?? null,
       oilUsage: (profile.oilUsage as OilUsage) ?? 'normal',
       defaultRicePortion:
         (profile.defaultRicePortion as RicePortion) ?? 'medium',
@@ -137,10 +131,6 @@ export function Profile({ profile }: ProfileProps) {
         (profile.defaultProteinPortion as ProteinPortion) ?? 'medium',
       brothConsumption:
         (profile.brothConsumption as BrothConsumption) ?? 'some',
-      handSpanCm: profile.handSpanCm ? Number(profile.handSpanCm) : null,
-      knuckleDepthCm: profile.knuckleDepthCm
-        ? Number(profile.knuckleDepthCm)
-        : null,
     }),
     [profile]
   );
@@ -200,19 +190,19 @@ export function Profile({ profile }: ProfileProps) {
           proteinTargetG: macros.proteinG,
           carbsTargetG: macros.carbsG,
           fatTargetG: macros.fatG,
-          regionalProfile: values.regionalProfile,
+          countryOfOrigin: values.countryOfOrigin,
+          countryOfResidence: values.countryOfResidence,
+          preferredLocale: locale,
           oilUsage: values.oilUsage,
           defaultRicePortion: values.defaultRicePortion,
           sugarBraised: values.sugarBraised,
           defaultProteinPortion: values.defaultProteinPortion,
           brothConsumption: values.brothConsumption,
-          handSpanCm: values.handSpanCm,
-          knuckleDepthCm: values.knuckleDepthCm,
         });
         form.reset(values);
-        toast.success('Profile settings saved');
+        toast.success(t('saved'));
       } catch {
-        toast.error('Failed to save settings. Please try again.');
+        toast.error(t('profilePanel.saveError'));
       }
     });
   }
@@ -275,7 +265,6 @@ export function Profile({ profile }: ProfileProps) {
                         {section.id === 'body-metrics' && <BodyMetrics />}
                         {section.id === 'regional' && <Regional />}
                         {section.id === 'cooking' && <Cooking />}
-                        {section.id === 'portions' && <Portions />}
                       </div>
                     </motion.div>
                   )}
@@ -300,7 +289,7 @@ export function Profile({ profile }: ProfileProps) {
                   disabled={isPending}
                   className="rounded-xl px-5 py-2.5 font-medium text-[#8B8682] text-[14px] transition-colors hover:bg-[#F5F4F0] hover:text-[#2C2416]"
                 >
-                  Cancel
+                  {tc('cancel')}
                 </button>
                 <button
                   type="submit"
@@ -308,7 +297,7 @@ export function Profile({ profile }: ProfileProps) {
                   className="flex items-center gap-2 rounded-xl bg-[#2C2416] px-5 py-2.5 font-medium text-[#FDFCF8] text-[14px] shadow-sm transition-all hover:bg-[#1C1917] disabled:opacity-50"
                 >
                   {isPending && <Loader2 className="h-4 w-4 animate-spin" />}
-                  Save Changes
+                  {t('save')}
                 </button>
               </motion.div>
             )}

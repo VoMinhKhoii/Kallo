@@ -1,6 +1,7 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
+import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
 import { cn } from '@/lib/utils';
 import { CurrentSection } from './current/current-section';
@@ -37,6 +38,7 @@ function getWeekTitle(): string {
 }
 
 export function DashboardShell() {
+  const t = useTranslations('dashboard');
   const [timeRange, setTimeRange] = useState<TimeRange>('30d');
   const weekTitle = useMemo(() => getWeekTitle(), []);
   const { data: weightSummary } = useWeightSummary(timeRange);
@@ -104,7 +106,7 @@ export function DashboardShell() {
         <section className="flex min-h-0 flex-col">
           <div className="mb-1 flex items-center justify-between">
             <span className="font-bold text-[12px] text-nham-stone uppercase tracking-[0.2em]">
-              Progress
+              {t('progress')}
             </span>
             {/* Time range toggle inline with header */}
             <div className="flex rounded-xl bg-nham-hover p-0.5">
@@ -141,7 +143,7 @@ export function DashboardShell() {
 
         {/* ── Section 3: Today ── */}
         <section className="flex min-h-0 flex-col">
-          <SectionHeader title="Today" delay={0.2} />
+          <SectionHeader title={t('today')} delay={0.2} />
           <div className="flex-1">
             <TodaySection nutrition={nutrition} meals={meals} />
           </div>

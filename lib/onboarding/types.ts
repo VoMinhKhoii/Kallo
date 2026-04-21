@@ -9,7 +9,6 @@ import type {
   goalEnumSchema,
   oilUsageSchema,
   proteinPortionSchema,
-  regionalProfileSchema,
   ricePortionSchema,
   sugarBraisedSchema,
 } from './schemas';
@@ -24,7 +23,6 @@ export type Goal = z.infer<typeof goalEnumSchema>;
 /** kg/week rate (0.1–0.8, step 0.1) */
 export type Aggression = number;
 export type CarbSplit = z.infer<typeof carbSplitSchema>;
-export type RegionalProfile = z.infer<typeof regionalProfileSchema>;
 export type OilUsage = z.infer<typeof oilUsageSchema>;
 export type RicePortion = z.infer<typeof ricePortionSchema>;
 export type SugarBraised = z.infer<typeof sugarBraisedSchema>;
@@ -59,10 +57,8 @@ export interface OnboardingProfile {
   deficitOverride: number | null; // TRANSIENT: used to compute targets, not persisted to DB
   dailyTargets: MacroTargets;
   // Screen 2
-  regionalProfile: RegionalProfile;
+  countryOfOrigin: string | null;
+  countryOfResidence: string | null;
   // Screen 3
   cookingHabits: CookingHabits;
-  // Screen 3 (was Screen 4)
-  handSpanCm: number | null;
-  knuckleDepthCm: number | null;
 }

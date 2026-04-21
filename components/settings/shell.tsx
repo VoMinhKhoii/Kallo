@@ -1,8 +1,9 @@
 'use client';
 
 import { ArrowLeft } from 'lucide-react';
-import Link from 'next/link';
 import { useSelectedLayoutSegment } from 'next/navigation';
+import { useTranslations } from 'next-intl';
+import { Link } from '@/i18n/navigation';
 import { Sidebar } from './sidebar';
 
 interface ShellProps {
@@ -10,6 +11,7 @@ interface ShellProps {
 }
 
 export function Shell({ children }: ShellProps) {
+  const t = useTranslations('settings');
   const segment = useSelectedLayoutSegment();
   const hasActiveSection = !!segment;
 
@@ -41,7 +43,7 @@ export function Shell({ children }: ShellProps) {
               className="inline-flex items-center gap-1.5 font-medium text-[#8B8682] text-[14px] transition-colors hover:text-[#2C2416]"
             >
               <ArrowLeft className="h-4 w-4" />
-              Settings
+              {t('title')}
             </Link>
           </div>
         )}

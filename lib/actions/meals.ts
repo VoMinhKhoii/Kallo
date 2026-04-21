@@ -3,11 +3,12 @@
 import { and, desc, eq, gt, gte, inArray, isNull, lt, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import { NUTRITION_KEYS } from '@/lib/ai/constants';
-import type {
-  BoundedEstimate,
-  BoundedNutrition,
-  PipelineResult,
-} from '@/lib/ai/types';
+import {
+  goalAdjustNutrition,
+  sumBoundedNutrition,
+  sumDisplayedNutrition,
+} from '@/lib/ai/pipeline/goal-adjustment';
+import type { NutritionValues, PipelineResult } from '@/lib/ai/types';
 import { requireAuthAndProfile } from '@/lib/auth';
 import { db } from '@/lib/db';
 import {
@@ -17,6 +18,8 @@ import {
   unmatchedIngredients,
 } from '@/lib/db/schema';
 import { Errors } from '@/lib/errors';
+import { goalEnumSchema } from '@/lib/onboarding/schemas';
+import type { Goal } from '@/lib/onboarding/types';
 
 // ---------------------------------------------------------------------------
 // Zod schemas for input validation
@@ -50,17 +53,43 @@ const loadMealDatesSchema = z.object({
   timezoneOffset: z.number().int().min(-840).max(720),
 });
 
+const profileNutritionSettingsSchema = z
+  .object({
+    goal: goalEnumSchema.nullish(),
+    aggression: z
+      .preprocess(
+        (value) => (value === '' ? null : value),
+        z.union([z.coerce.number().min(0).max(0.8), z.null()]).optional()
+      )
+      .optional(),
+  })
+  .superRefine((data, ctx) => {
+    if (
+      data.goal !== 'maintaining' &&
+      data.goal != null &&
+      data.aggression == null
+    ) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['aggression'],
+        message: 'Aggression is required for cutting and bulking goals.',
+      });
+    }
+  });
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
-/** Extract bounded nutrition JSONB values for DB insertion */
-function boundedNutritionToRow(
-  bounded: BoundedNutrition
+/**
+ * Persist a single numeric value per nutrient on meals and meal_items.
+ */
+function nutritionValuesToRow(
+  nutrition: NutritionValues
 ): Record<string, unknown> {
   const row: Record<string, unknown> = {};
   for (const key of NUTRITION_KEYS) {
-    row[key] = bounded[key];
+    row[key] = nutrition[key];
   }
   return row;
 }
@@ -87,7 +116,7 @@ export async function confirmAndSaveMealAction(input: {
   }[];
 }) {
   const parsed = confirmAndSaveSchema.parse(input);
-  const { user } = await requireAuthAndProfile();
+  const { user, profile } = await requireAuthAndProfile();
 
   return await db.transaction(async (tx) => {
     // Atomically consume the pending analysis (prevents duplicate confirms)
@@ -140,14 +169,58 @@ export async function confirmAndSaveMealAction(input: {
 
     const now = pending.createdAt;
     const mealSlot = pipelineResult.mealSlot ?? inferMealSlot(now);
+    const profileNutritionSettings = profileNutritionSettingsSchema.parse({
+      goal: profile.goal,
+      aggression: profile.aggression,
+    });
+    const goal: Goal = profileNutritionSettings.goal ?? 'maintaining';
+    let aggression = 0;
+    if (goal !== 'maintaining') {
+      const validatedAggression = profileNutritionSettings.aggression;
+      if (validatedAggression == null) {
+        throw Errors.validationFailed(
+          'Hồ sơ mục tiêu dinh dưỡng không hợp lệ.'
+        );
+      }
+      aggression = validatedAggression;
+    }
 
-    // Recompute meal-level bounded nutrition from (possibly edited) ingredients
-    const allIngredients = pipelineResult.mealItems.flatMap(
-      (mi) => mi.ingredients
+    const persistedMealItems = pipelineResult.mealItems.map((mealItem) => {
+      const ingredients = mealItem.ingredients.map((ingredient) => {
+        const displayedNutrition = goalAdjustNutrition(
+          ingredient.boundedNutrition,
+          goal,
+          aggression
+        );
+
+        return {
+          ...ingredient,
+          displayedNutrition,
+        };
+      });
+
+      const boundedNutrition = sumBoundedNutrition(
+        ingredients.map((ingredient) => ingredient.boundedNutrition)
+      );
+      const displayedNutrition = goalAdjustNutrition(
+        boundedNutrition,
+        goal,
+        aggression
+      );
+
+      return {
+        ...mealItem,
+        ingredients,
+        boundedNutrition,
+        displayedNutrition,
+      };
+    });
+
+    const allIngredients = persistedMealItems.flatMap((mi) => mi.ingredients);
+    const mealBounded = sumBoundedNutrition(
+      allIngredients.map((ingredient) => ingredient.boundedNutrition)
     );
-    const mealBounded = sumBounded(
-      allIngredients.map((i) => i.boundedNutrition)
-    );
+    const mealDisplayed = goalAdjustNutrition(mealBounded, goal, aggression);
 
     // Insert meal
     const [meal] = await tx
@@ -158,12 +231,12 @@ export async function confirmAndSaveMealAction(input: {
         mealSlot,
         confidenceOverall: pipelineResult.confidenceOverall,
         loggedAt: now,
-        ...boundedNutritionToRow(mealBounded),
+        ...nutritionValuesToRow(mealDisplayed),
       })
       .returning({ id: meals.id });
 
     // Insert meal items (ingredients grouped by parent dish)
-    const itemRows = pipelineResult.mealItems.flatMap((mealItem, order) =>
+    const itemRows = persistedMealItems.flatMap((mealItem, order) =>
       mealItem.ingredients.map((ing) => ({
         mealId: meal.id,
         ingredientName: ing.ingredientName,
@@ -174,7 +247,7 @@ export async function confirmAndSaveMealAction(input: {
         userFacingUnit: ing.userFacingUnit,
         cookingMethod: ing.cookingMethod,
         matchConfidence: ing.matchConfidence,
-        ...boundedNutritionToRow(ing.boundedNutrition),
+        ...nutritionValuesToRow(ing.displayedNutrition),
       }))
     );
 
@@ -205,28 +278,6 @@ export async function confirmAndSaveMealAction(input: {
   });
 }
 
-/** Sum bounded nutrition across multiple items */
-function sumBounded(items: BoundedNutrition[]): BoundedNutrition {
-  const result = {} as Record<string, BoundedEstimate | null>;
-  for (const key of NUTRITION_KEYS) {
-    let low = 0;
-    let mid = 0;
-    let high = 0;
-    let hasAny = false;
-    for (const item of items) {
-      const val = item[key];
-      if (val !== null) {
-        low += val.low;
-        mid += val.mid;
-        high += val.high;
-        hasAny = true;
-      }
-    }
-    result[key] = hasAny ? { low, mid, high } : null;
-  }
-  return result as unknown as BoundedNutrition;
-}
-
 // ---------------------------------------------------------------------------
 // C2: Load Meals by Date
 // ---------------------------------------------------------------------------
@@ -238,7 +289,7 @@ export interface PersistedMeal {
   mealSlot: string | null;
   confidenceOverall: string | null;
   loggedAt: string;
-  boundedNutrition: BoundedNutrition;
+  nutrition: NutritionValues;
   mealItemGroups: PersistedMealItemGroup[];
 }
 
@@ -246,7 +297,7 @@ export interface PersistedMealItemGroup {
   name: string;
   order: number;
   ingredients: PersistedIngredient[];
-  boundedNutrition: BoundedNutrition;
+  nutrition: NutritionValues;
 }
 
 export interface PersistedIngredient {
@@ -257,7 +308,7 @@ export interface PersistedIngredient {
   userFacingUnit: string | null;
   cookingMethod: string | null;
   matchConfidence: number | null;
-  boundedNutrition: BoundedNutrition;
+  nutrition: NutritionValues;
 }
 
 export async function loadMealsByDate(input: {
@@ -317,7 +368,7 @@ export async function loadMealsByDate(input: {
           name: item.mealItemName,
           order: item.mealItemOrder,
           ingredients: [],
-          boundedNutrition: {} as BoundedNutrition,
+          nutrition: {} as NutritionValues,
         };
         groupMap.set(key, group);
       }
@@ -329,17 +380,17 @@ export async function loadMealsByDate(input: {
         userFacingUnit: item.userFacingUnit,
         cookingMethod: item.cookingMethod,
         matchConfidence: item.matchConfidence,
-        boundedNutrition: extractBoundedNutrition(item),
+        nutrition: extractNutritionValues(item),
       });
     }
 
-    // Sort groups by order, compute group-level bounded nutrition
+    // Sort groups by order, compute group-level nutrition
     const groups = Array.from(groupMap.values()).sort(
       (a, b) => a.order - b.order
     );
     for (const group of groups) {
-      group.boundedNutrition = sumBounded(
-        group.ingredients.map((i) => i.boundedNutrition)
+      group.nutrition = sumDisplayedNutrition(
+        group.ingredients.map((ingredient) => ingredient.nutrition)
       );
     }
 
@@ -349,30 +400,60 @@ export async function loadMealsByDate(input: {
       mealSlot: meal.mealSlot,
       confidenceOverall: meal.confidenceOverall,
       loggedAt: meal.loggedAt.toISOString(),
-      boundedNutrition: extractBoundedNutrition(meal),
+      nutrition: extractNutritionValues(meal),
       mealItemGroups: groups,
     };
   });
 }
 
-/** Extract BoundedNutrition from a DB row with JSONB columns */
-function extractBoundedNutrition(
-  row: Record<string, unknown>
-): BoundedNutrition {
-  const result = {} as Record<string, BoundedEstimate | null>;
+/** Extract flat NutritionValues from a DB row with numeric columns */
+function extractNutritionValues(row: Record<string, unknown>): NutritionValues {
+  const result: NutritionValues = {
+    caloriesKcal: null,
+    proteinG: null,
+    carbohydrateG: null,
+    fatG: null,
+    fiberG: null,
+    sodiumMg: null,
+    calciumMg: null,
+    ironMg: null,
+    magnesiumMg: null,
+    phosphorusMg: null,
+    potassiumMg: null,
+    zincMg: null,
+    copperMcg: null,
+    manganeseMg: null,
+    betaCaroteneMcg: null,
+    vitaminAMcg: null,
+    vitaminDMcg: null,
+    vitaminEMg: null,
+    vitaminKMcg: null,
+    vitaminCMg: null,
+    vitaminB1Mg: null,
+    vitaminB2Mg: null,
+    vitaminPpMg: null,
+    vitaminB5Mg: null,
+    vitaminB6Mg: null,
+    vitaminB9Mcg: null,
+    vitaminB12Mcg: null,
+    vitaminHMcg: null,
+  };
   for (const key of NUTRITION_KEYS) {
     const val = row[key];
-    if (
-      val &&
-      typeof val === 'object' &&
-      'mid' in (val as Record<string, unknown>)
-    ) {
-      result[key] = val as BoundedEstimate;
-    } else {
-      result[key] = null;
+    if (typeof val === 'number') {
+      result[key] = Number.isFinite(val) ? val : null;
+      continue;
     }
+
+    if (typeof val === 'string') {
+      const parsed = Number(val);
+      result[key] = Number.isFinite(parsed) ? parsed : null;
+      continue;
+    }
+
+    result[key] = null;
   }
-  return result as unknown as BoundedNutrition;
+  return result;
 }
 
 // ---------------------------------------------------------------------------

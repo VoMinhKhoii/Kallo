@@ -3,31 +3,24 @@ import {
   RICE_PORTION_DESCRIPTION,
 } from '../constants';
 import type { UserContext } from '../types';
+import { buildPromptContextLine } from './sanitize';
 
 /**
  * Build the system prompt for LLM Call 1 (meal decomposition).
  *
- * V2: Compressed from ~7.5K to ~3.5K tokens.
- * - 4 examples → 2 diverse + 1 minimal non-food
- * - Merged overlapping rules into terse instruction blocks
- * - Preserved all critical rules: gram_weight, ingredient_naming, cooking_method, strict_adherence
+ * V3: USDA-aware naming — use natural, specific ingredient names instead of
+ * forcing FAO canonical forms. The matching layer handles source resolution.
  */
 export function buildDecompositionPrompt(userContext: UserContext): string {
-  const { regionalProfile, cookingHabits } = userContext;
+  const { cookingHabits, countryOfOrigin, countryOfResidence } = userContext;
 
-  // Dynamic: only include the user's region description
-  const regionDescriptions: Record<string, string> = {
-    mien_bac: 'mien_bac: lighter seasoning, minimal sugar',
-    mien_trung: 'mien_trung: spicy, fermented, moderate',
-    mien_nam: 'mien_nam: sweeter, coconut milk, generous',
-    mien_tay: 'mien_tay: heavy oil, sweet, large, river fish',
-  };
-  const regionalPrior = regionDescriptions[regionalProfile];
-  const regionalSection = regionalPrior
-    ? `\n  <regional_priors>\n    ${regionalPrior}\n  </regional_priors>`
-    : '';
+  // Build country context lines for the LLM
+  const countryLines = [
+    buildPromptContextLine('country_of_origin', countryOfOrigin),
+    buildPromptContextLine('country_of_residence', countryOfResidence),
+  ].filter((line): line is string => line !== null);
 
-  return `You are a Vietnamese cuisine expert. Decompose meal descriptions into structured ingredient data.
+  return `You are a Cuisine Expert. Decompose meal descriptions into structured ingredient data.
 
 <instructions>
   <task>
@@ -43,16 +36,24 @@ export function buildDecompositionPrompt(userContext: UserContext): string {
   </gram_weight_rule>
 
   <ingredient_naming_rule>
-    Use raw, uncooked Vietnamese ingredient names as they appear in a food composition database.
+    Use natural, specific Vietnamese ingredient names that reflect what the user actually described.
+    Keep ingredient names close to the user's input — do NOT abstract to generic forms.
     cookingMethod captures preparation; ingredientName captures the raw ingredient.
 
-    Key canonical names:
-    - "gạo tẻ" (not cơm/cơm trắng) · "thịt lợn ba chỉ" (not thịt heo kho/ba chỉ heo)
-    - "trứng gà" (chicken egg) · "đậu phụ" (not đậu phụ chiên)
-    - "bún tươi" (fresh vermicelli) · "hạt tiêu đen" (not bare tiêu)
-    - "đường trắng" (not bare đường) · "hành tím" (shallots)
-    - "dầu ăn" (cooking oil) · "nước mắm" · "tỏi" · "rau muống"
-    - "giá đỗ" (not bare giá) · "đậu xanh" (not bare đậu) · "nước dùng" (broth)
+    Specificity rules:
+    - If user says "đùi gà" (chicken thigh) → use "đùi gà", NOT generic "thịt gà"
+    - If user says "ức gà" (chicken breast) → use "ức gà", NOT generic "thịt gà"
+    - If user says "sườn non" (spare ribs) → use "sườn non", NOT generic "thịt lợn"
+    - If user says "cá hồi" (salmon) → use "cá hồi"
+    - If user says "rib eye" or "steak lõi vai" → use "rib eye" or "steak lõi vai"
+    - If user says "cơm" → use "cơm", NOT "gạo tẻ"
+    - If user says "1 chén cơm" → ingredientName: "cơm", userFacingUnit: "1 chén"
+
+    For common seasonings/condiments, use standard Vietnamese names:
+    - "nước mắm" · "dầu ăn" · "đường" · "tỏi" · "hành" · "tiêu"
+
+    For ambiguous single-word items, add just enough context:
+    - "giá đỗ" (not bare "giá") · "đậu xanh" (not bare "đậu") · "nước dùng" (broth)
   </ingredient_naming_rule>
 
   <cooking_method_rule>
@@ -72,12 +73,11 @@ export function buildDecompositionPrompt(userContext: UserContext): string {
     - "bún bò" → noodles + beef + aromatics. Do NOT add giò heo unless user said so.
     - "canh" alone → generic broth. Do NOT guess vegetables.
     If uncertain about a weight, widen the estimate rather than guessing precisely.
-  </strict_adherence_rule>${regionalSection}
+  </strict_adherence_rule>
 </instructions>
 
 <user_context>
-  regional_profile: ${regionalProfile}
-  oil_usage: ${cookingHabits.oilUsage}
+${countryLines.length > 0 ? `${countryLines.join('\n')}\n` : ''}  oil_usage: ${cookingHabits.oilUsage}
   default_rice_portion: ${RICE_PORTION_DESCRIPTION[cookingHabits.defaultRicePortion]}
   default_protein_portion: ${PROTEIN_PORTION_DESCRIPTION[cookingHabits.defaultProteinPortion]}
   sugar_braised: ${cookingHabits.sugarBraised}
@@ -95,15 +95,15 @@ export function buildDecompositionPrompt(userContext: UserContext): string {
         {
           "name": "cơm trắng",
           "ingredients": [
-            { "name": "gạo tẻ", "estimatedGrams": 170, "cookingMethod": "nấu", "userFacingUnit": null }
+            { "name": "cơm", "estimatedGrams": 170, "cookingMethod": "nấu", "userFacingUnit": null }
           ]
         },
         {
           "name": "thịt kho trứng",
           "ingredients": [
-            { "name": "thịt lợn ba chỉ", "estimatedGrams": 100, "cookingMethod": "kho", "userFacingUnit": null },
+            { "name": "thịt ba chỉ", "estimatedGrams": 100, "cookingMethod": "kho", "userFacingUnit": null },
             { "name": "trứng gà", "estimatedGrams": 50, "cookingMethod": null, "userFacingUnit": null },
-            { "name": "đường trắng", "estimatedGrams": 8, "cookingMethod": null, "userFacingUnit": null },
+            { "name": "đường", "estimatedGrams": 8, "cookingMethod": null, "userFacingUnit": null },
             { "name": "nước mắm", "estimatedGrams": 15, "cookingMethod": null, "userFacingUnit": null },
             { "name": "dầu ăn", "estimatedGrams": 5, "cookingMethod": null, "userFacingUnit": null }
           ]
@@ -111,31 +111,64 @@ export function buildDecompositionPrompt(userContext: UserContext): string {
       ]
     }
     </output>
-    <!-- 170g cooked rice on plate. trứng gà cookingMethod=null (egg shell prevents weight change). Seasonings at added weight. -->
+    <!-- 170g cooked rice. trứng gà cookingMethod=null (shell prevents weight change). Seasonings at added weight. -->
   </example>
 
   <example>
-    <input>bún bò Huế 1 tô lớn</input>
+    <input>100gr cơm + 1 đùi góc tư rô ti (bỏ da bỏ mỡ) + cải thìa luộc</input>
     <output>
     {
       "isFood": true,
       "mealSlot": null,
       "mealItems": [
         {
-          "name": "bún bò Huế",
+          "name": "cơm trắng",
           "ingredients": [
-            { "name": "bún tươi", "estimatedGrams": 200, "cookingMethod": null, "userFacingUnit": "1 tô lớn" },
-            { "name": "thịt bò", "estimatedGrams": 80, "cookingMethod": "ninh", "userFacingUnit": null },
-            { "name": "sả", "estimatedGrams": 15, "cookingMethod": null, "userFacingUnit": null },
-            { "name": "mắm ruốc", "estimatedGrams": 10, "cookingMethod": null, "userFacingUnit": null },
-            { "name": "hành tím", "estimatedGrams": 20, "cookingMethod": null, "userFacingUnit": null },
-            { "name": "ớt tươi", "estimatedGrams": 5, "cookingMethod": null, "userFacingUnit": null }
+            { "name": "cơm", "estimatedGrams": 100, "cookingMethod": "nấu", "userFacingUnit": "100gr" }
+          ]
+        },
+        {
+          "name": "đùi gà rô ti",
+          "ingredients": [
+            { "name": "đùi gà", "estimatedGrams": 150, "cookingMethod": "nướng", "userFacingUnit": "1 đùi góc tư" }
+          ]
+        },
+        {
+          "name": "cải thìa luộc",
+          "ingredients": [
+            { "name": "cải thìa", "estimatedGrams": 100, "cookingMethod": "luộc", "userFacingUnit": null }
           ]
         }
       ]
     }
     </output>
-    <!-- "ninh" for slow-simmered broth (NOT "nấu"). bún tươi served fresh (no cooking change). All weights are cooked/as-eaten. -->
+    <!-- "đùi gà" preserved as specific cut (NOT generic "thịt gà"). "bỏ da bỏ mỡ" = skin/fat removed, so lean portion only. -->
+  </example>
+
+  <example>
+    <input>1 miếng steak lõi vai áp chảo + 2d dưa leo</input>
+    <output>
+    {
+      "isFood": true,
+      "mealSlot": null,
+      "mealItems": [
+        {
+          "name": "steak lõi vai",
+          "ingredients": [
+            { "name": "thịt bò lõi vai", "estimatedGrams": 200, "cookingMethod": "chiên", "userFacingUnit": "1 miếng" },
+            { "name": "dầu ăn", "estimatedGrams": 5, "cookingMethod": null, "userFacingUnit": null }
+          ]
+        },
+        {
+          "name": "dưa leo",
+          "ingredients": [
+            { "name": "dưa leo", "estimatedGrams": 60, "cookingMethod": null, "userFacingUnit": "2 đĩa" }
+          ]
+        }
+      ]
+    }
+    </output>
+    <!-- Specific cut "lõi vai" preserved. "áp chảo" → cookingMethod "chiên". -->
   </example>
 
   <example>

@@ -56,8 +56,8 @@ async function validateRequest(request: NextRequest) {
       .where(eq(userProfiles.userId, user.id))
       .limit(1);
     const profile = rows[0];
-    if (!profile?.goal || !profile?.regionalProfile) {
-      throw Errors.onboardingIncomplete();
+    if (!profile) {
+      throw Errors.profileNotFound();
     }
 
     const parsed = mealMessageSchema.safeParse(body);

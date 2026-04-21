@@ -99,10 +99,10 @@ describe('Errors factories', () => {
     expect(err.retryable).toBe(false);
   });
 
-  it('onboardingIncomplete is 403', () => {
-    const err = Errors.onboardingIncomplete();
-    expect(err.status).toBe(403);
-    expect(err.code).toBe('ONBOARDING_INCOMPLETE');
+  it('profileNotFound is 404', () => {
+    const err = Errors.profileNotFound();
+    expect(err.status).toBe(404);
+    expect(err.code).toBe('PROFILE_NOT_FOUND');
   });
 
   it('pipelineTimeout is 504 retryable', () => {

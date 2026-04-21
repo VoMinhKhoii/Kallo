@@ -1,12 +1,8 @@
-import type { StreamStatus } from '@/lib/ai/streaming/types';
+'use client';
 
-const STAGE_LABELS: Record<string, string> = {
-  connecting: 'Connecting...',
-  decomposing: 'Breaking down your meal...',
-  matching: 'Matching ingredients...',
-  estimating: 'Estimating nutrition...',
-  assembling: 'Putting it all together...',
-};
+import { useTranslations } from 'next-intl';
+import { getStreamingPhaseLabel } from '@/components/logging/feed/streaming-phase-label';
+import type { StreamStatus } from '@/lib/ai/streaming/types';
 
 interface AnalysisStageBannerProps {
   status: StreamStatus;
@@ -17,11 +13,13 @@ export function AnalysisStageBanner({
   status,
   items,
 }: AnalysisStageBannerProps) {
+  const t = useTranslations('logging.streaming');
+
   if (status === 'idle' || status === 'done' || status === 'error') {
     return null;
   }
 
-  const label = STAGE_LABELS[status] ?? 'Analyzing...';
+  const label = getStreamingPhaseLabel(t, status);
 
   return (
     <div

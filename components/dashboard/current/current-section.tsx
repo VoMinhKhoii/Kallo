@@ -1,4 +1,7 @@
+'use client';
+
 import { motion } from 'motion/react';
+import { useTranslations } from 'next-intl';
 import type {
   NutritionData,
   StatsData,
@@ -22,6 +25,7 @@ export function CurrentSection({
   nutrition,
   weightSummary,
 }: CurrentSectionProps) {
+  const t = useTranslations('dashboard');
   const remaining = Math.max(
     0,
     nutrition.calories.target - nutrition.calories.current
@@ -37,7 +41,7 @@ export function CurrentSection({
         className="flex shrink-0 flex-col rounded-2xl border border-nham-border/60 bg-card p-4 shadow-[0_4px_24px_rgba(44,36,22,0.04)]"
       >
         <span className="mb-1 block font-bold text-[9px] text-nham-stone uppercase tracking-[0.2em]">
-          Kcal Left
+          {t('caloriesRemaining')}
         </span>
         <div className="flex items-baseline gap-1.5">
           <span

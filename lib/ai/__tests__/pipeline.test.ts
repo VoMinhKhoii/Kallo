@@ -34,7 +34,8 @@ function createMockDb() {
 const userContext: UserContext = {
   goal: 'cutting',
   aggression: 0.5,
-  regionalProfile: 'mien_nam',
+  countryOfOrigin: 'Vietnam',
+  countryOfResidence: 'Vietnam',
   cookingHabits: {
     oilUsage: 'normal',
     defaultRicePortion: 'medium',
@@ -114,7 +115,7 @@ const sampleNutritionAdjustment: NutritionAdjustment = {
   mealItems: [
     {
       mealItemName: 'Cơm',
-      ingredients: [makeLlmNutrition('Gạo tẻ', 350, 7, 78, 0.5)],
+      ingredients: [makeLlmNutrition('Gạo', 350, 7, 78, 0.5)],
     },
   ],
 };
@@ -184,7 +185,7 @@ describe('analyzeMeal', () => {
     mockMatchIngredients.mockResolvedValueOnce({
       matched: [
         {
-          ingredientName: 'Gạo tẻ',
+          ingredientName: 'Gạo',
           foodCompositionId: 'rice-001',
           matchedName: 'Gạo tẻ',
           similarity: 0.85,
@@ -488,11 +489,11 @@ describe('analyzeMeal', () => {
       mealItems: [
         {
           mealItemName: 'Cơm',
-          ingredients: [makeLlmNutrition('Gạo tẻ', 350, 7, 78, 0.5)],
+          ingredients: [makeLlmNutrition('Gạo', 350, 7, 78, 0.5)],
         },
         {
           mealItemName: 'Thịt kho',
-          ingredients: [makeLlmNutrition('Thịt lợn nạc', 250, 26, 5, 15)],
+          ingredients: [makeLlmNutrition('Thịt heo', 250, 26, 5, 15)],
         },
       ],
     };
@@ -507,7 +508,7 @@ describe('analyzeMeal', () => {
     mockMatchIngredients.mockResolvedValueOnce({
       matched: [
         {
-          ingredientName: 'Gạo tẻ',
+          ingredientName: 'Gạo',
           foodCompositionId: 'rice-001',
           matchedName: 'Gạo tẻ',
           similarity: 0.85,
@@ -515,7 +516,7 @@ describe('analyzeMeal', () => {
           nutritionPer100g: nullNutrition,
         },
         {
-          ingredientName: 'Thịt lợn nạc',
+          ingredientName: 'Thịt heo',
           foodCompositionId: 'pork-001',
           matchedName: 'Thịt lợn nạc',
           similarity: 0.8,
@@ -590,15 +591,15 @@ describe('analyzeMeal', () => {
         {
           mealItemName: 'Thịt kho trứng',
           ingredients: [
-            makeLlmNutrition('Thịt lợn nạc', 250, 26, 5, 15),
-            makeLlmNutrition('Dầu đậu nành', 135, 0, 0, 15), // 15g oil in kho
+            makeLlmNutrition('Thịt heo', 250, 26, 5, 15),
+            makeLlmNutrition('Dầu ăn', 135, 0, 0, 15), // 15g oil in kho
           ],
         },
         {
           mealItemName: 'Xào rau',
           ingredients: [
             makeLlmNutrition('Rau cải', 30, 2, 5, 0.5),
-            makeLlmNutrition('Dầu đậu nành', 90, 0, 0, 10), // 10g oil in xào
+            makeLlmNutrition('Dầu ăn', 90, 0, 0, 10), // 10g oil in xào
           ],
         },
       ],
@@ -614,7 +615,7 @@ describe('analyzeMeal', () => {
     mockMatchIngredients.mockResolvedValueOnce({
       matched: [
         {
-          ingredientName: 'Thịt lợn nạc',
+          ingredientName: 'Thịt heo',
           foodCompositionId: 'pork-001',
           matchedName: 'Thịt lợn nạc',
           similarity: 0.85,
@@ -622,7 +623,7 @@ describe('analyzeMeal', () => {
           nutritionPer100g: nullNutrition,
         },
         {
-          ingredientName: 'Dầu đậu nành',
+          ingredientName: 'Dầu ăn',
           foodCompositionId: 'oil-001',
           matchedName: 'Dầu đậu nành',
           similarity: 0.9,
@@ -638,7 +639,7 @@ describe('analyzeMeal', () => {
           nutritionPer100g: nullNutrition,
         },
         {
-          ingredientName: 'Dầu đậu nành',
+          ingredientName: 'Dầu ăn',
           foodCompositionId: 'oil-001',
           matchedName: 'Dầu đậu nành',
           similarity: 0.9,
@@ -661,16 +662,16 @@ describe('analyzeMeal', () => {
 
     expect(result.data.mealItems).toHaveLength(2);
 
-    // "dầu ăn" aliased to "Dầu đậu nành" in thịt kho trứng should have 135 kcal mid
+    // "dầu ăn" in thịt kho trứng should have 135 kcal mid (natural name, not aliased)
     const khoOil = result.data.mealItems[0].ingredients.find(
-      (i) => i.ingredientName === 'Dầu đậu nành'
+      (i) => i.ingredientName === 'Dầu ăn'
     );
     expect(khoOil).toBeDefined();
     expect(khoOil!.boundedNutrition.caloriesKcal!.mid).toBe(135);
 
-    // "dầu ăn" aliased to "Dầu đậu nành" in xào rau should have 90 kcal mid
+    // "dầu ăn" in xào rau should have 90 kcal mid
     const xaoOil = result.data.mealItems[1].ingredients.find(
-      (i) => i.ingredientName === 'Dầu đậu nành'
+      (i) => i.ingredientName === 'Dầu ăn'
     );
     expect(xaoOil).toBeDefined();
     expect(xaoOil!.boundedNutrition.caloriesKcal!.mid).toBe(90);
@@ -690,7 +691,7 @@ describe('analyzeMeal', () => {
     mockMatchIngredients.mockResolvedValueOnce({
       matched: [
         {
-          ingredientName: 'Gạo tẻ',
+          ingredientName: 'Gạo',
           foodCompositionId: 'rice-001',
           matchedName: 'Gạo tẻ',
           similarity: 0.85,
@@ -716,7 +717,7 @@ describe('analyzeMeal', () => {
       mealItems: [
         {
           mealItemName: 'Cơm',
-          ingredients: [makeLlmNutrition('Gạo tẻ', 0, 0, 0, 0)],
+          ingredients: [makeLlmNutrition('Gạo', 0, 0, 0, 0)],
         },
       ],
     };
@@ -737,7 +738,7 @@ describe('analyzeMeal', () => {
     mockMatchIngredients.mockResolvedValueOnce({
       matched: [
         {
-          ingredientName: 'Gạo tẻ',
+          ingredientName: 'Gạo',
           foodCompositionId: 'rice-001',
           matchedName: 'Gạo tẻ',
           similarity: 0.85,

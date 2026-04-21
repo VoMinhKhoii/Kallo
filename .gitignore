@@ -49,3 +49,9 @@ __pycache__/
 
 # USDA download output (large CSV, regenerate with scripts/usda/)
 data/usda_sr/
+
+# Translation pipeline checkpoints (generated, resume-safe)
+data/translation-checkpoints/
+
+# Local git worktrees
+.worktrees/

@@ -1,19 +1,17 @@
 'use client';
 
 import { motion } from 'motion/react';
+import { useTranslations } from 'next-intl';
+import {
+  formatCaloriesValue,
+  formatMacroValue,
+} from '@/components/logging/feed/format-inline-nutrition';
 import {
   MealEntryItemSkeleton,
   MealEntryTotalSkeleton,
 } from '@/components/logging/feed/skeletons';
-import type { ChatMessage, MealItem, StreamingPhase } from '@/lib/types/meal';
-
-const PHASE_LABELS: Partial<Record<StreamingPhase, string>> = {
-  waiting: 'Analyzing...',
-  decomposing: 'Breaking down your meal...',
-  matching: 'Matching ingredients...',
-  estimating: 'Estimating nutrition...',
-  assembling: 'Putting it all together...',
-};
+import { getStreamingPhaseLabel } from '@/components/logging/feed/streaming-phase-label';
+import type { ChatMessage, MealItem } from '@/lib/types/meal';
 
 const DEFAULT_SKELETON_COUNT = 3;
 
@@ -36,18 +34,18 @@ function CompletedItemRow({ item, index }: { item: MealItem; index: number }) {
       </span>
       <div className="flex shrink-0 items-center gap-3">
         <div className="flex gap-2 text-[10px] text-nham-text-muted tabular-nums">
-          <span className="w-6 text-right">
-            P:{Math.round(item.macros.protein)}
+          <span className="whitespace-nowrap text-right">
+            P:{formatMacroValue(item.macros.protein)}
           </span>
-          <span className="w-6 text-right">
-            C:{Math.round(item.macros.carbs)}
+          <span className="whitespace-nowrap text-right">
+            C:{formatMacroValue(item.macros.carbs)}
           </span>
-          <span className="w-6 text-right">
-            F:{Math.round(item.macros.fat)}
+          <span className="whitespace-nowrap text-right">
+            F:{formatMacroValue(item.macros.fat)}
           </span>
         </div>
-        <span className="w-12 text-right font-bold text-nham-text tabular-nums">
-          {Math.round(item.macros.calories)}
+        <span className="whitespace-nowrap text-right font-bold text-nham-text tabular-nums">
+          {formatCaloriesValue(item.macros.calories)}
         </span>
       </div>
     </motion.div>
@@ -55,6 +53,7 @@ function CompletedItemRow({ item, index }: { item: MealItem; index: number }) {
 }
 
 export function StreamingMealEntry({ message }: StreamingMealEntryProps) {
+  const t = useTranslations('logging.streaming');
   const phase = message.streamingPhase ?? 'waiting';
   const namedItems = message.streamingItems ?? [];
   const completedItems = message.streamingCompletedItems ?? [];
@@ -153,7 +152,7 @@ export function StreamingMealEntry({ message }: StreamingMealEntryProps) {
             className="text-[11px] text-nham-text-muted"
             style={{ fontFamily: 'DM Sans, sans-serif' }}
           >
-            {PHASE_LABELS[phase] ?? 'Analyzing...'}
+            {getStreamingPhaseLabel(t, phase)}
           </span>
         </div>
       </div>

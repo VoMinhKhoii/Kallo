@@ -2,7 +2,7 @@
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Loader2 } from 'lucide-react';
-import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
@@ -11,17 +11,17 @@ import { useAuthDialog } from '@/components/auth/auth-provider';
 import { FormInput } from '@/components/auth/form-input';
 import { createClient } from '@/lib/supabase/client';
 
-const signUpSchema = z.object({
-  email: z.email('Enter a valid email'),
-  password: z.string().min(6, 'Password must be at least 6 characters'),
-});
-
-type SignUpValues = z.infer<typeof signUpSchema>;
-
 export function SignUpForm() {
+  const t = useTranslations('auth.signUp');
   const { closeDialog } = useAuthDialog();
-  const router = useRouter();
   const [loading, setLoading] = useState(false);
+
+  const signUpSchema = z.object({
+    email: z.email(t('emailError')),
+    password: z.string().min(6, t('passwordError')),
+  });
+
+  type SignUpValues = z.infer<typeof signUpSchema>;
 
   const {
     register,
@@ -45,23 +45,24 @@ export function SignUpForm() {
       return;
     }
 
+    toast.success(t('success'));
+    setLoading(false);
     closeDialog();
-    router.push('/logging');
   };
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
       <FormInput
-        label="Email"
+        label={t('email')}
         type="email"
-        placeholder="your@email.com"
+        placeholder={t('emailPlaceholder')}
         error={errors.email?.message}
         {...register('email')}
       />
       <FormInput
-        label="Password"
+        label={t('password')}
         type="password"
-        placeholder="••••••••"
+        placeholder={t('passwordPlaceholder')}
         error={errors.password?.message}
         {...register('password')}
       />
@@ -72,7 +73,7 @@ export function SignUpForm() {
         style={{ fontFamily: 'DM Sans, sans-serif' }}
       >
         {loading && <Loader2 className="h-4 w-4 animate-spin" />}
-        Create Account
+        {t('submit')}
       </button>
     </form>
   );
