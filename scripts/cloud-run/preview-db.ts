@@ -4,6 +4,7 @@ import { spawnSync } from 'node:child_process';
 import { appendFileSync, mkdirSync, rmSync } from 'node:fs';
 import { dirname } from 'node:path';
 import { z } from 'zod';
+import { isMainModule } from '@/scripts/runtime';
 
 const PREVIEW_BRANCH_PATTERN = /^pr-(\d+)$/;
 
@@ -496,7 +497,7 @@ async function main(): Promise<void> {
   }
 }
 
-if (import.meta.main) {
+if (isMainModule(import.meta)) {
   main().catch((error) => {
     console.error(error instanceof Error ? error.message : error);
     process.exit(1);

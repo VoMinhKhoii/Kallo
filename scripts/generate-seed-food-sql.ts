@@ -3,6 +3,7 @@
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { normalizeIngredientKey } from '@/lib/ai/matching/embedding-cache';
+import { isMainModule } from '@/scripts/runtime';
 
 type CsvRow = Record<string, string>;
 
@@ -403,7 +404,7 @@ async function main() {
   console.log(`Wrote ${rows.length} rows to ${outputPath}`);
 }
 
-if (import.meta.main) {
+if (isMainModule(import.meta)) {
   main().catch((error) => {
     console.error('Failed to generate seed SQL:', error);
     process.exit(1);
