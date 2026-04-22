@@ -1,10 +1,9 @@
 import { describe, expect, it } from 'vitest';
-
-const {
+import {
   findDisallowedOperations,
   splitStatements,
   stripSqlComments,
-} = require('../check-append-only-migrations.js');
+} from '../check-append-only-migrations.mjs';
 
 describe('stripSqlComments', () => {
   it('removes line and block comments', () => {
@@ -43,15 +42,23 @@ describe('findDisallowedOperations', () => {
     });
   });
 
-  it('flags column renames and type changes', () => {
+  it('flags destructive shorthand ALTER TABLE forms', () => {
     const matches: Array<{ label: string }> = findDisallowedOperations(`
-ALTER TABLE meals RENAME COLUMN recipe_notes TO instructions;
-ALTER TABLE meals ALTER COLUMN calories TYPE numeric;
+ALTER TABLE meals DROP recipe_notes;
+ALTER TABLE meals RENAME recipe_notes TO instructions;
+ALTER TABLE meals ALTER calories TYPE numeric;
 `);
 
     expect(matches.map((match) => match.label)).toEqual([
+      'DROP COLUMN',
       'RENAME COLUMN',
       'ALTER COLUMN TYPE',
     ]);
+  });
+
+  it('flags drop table statements', () => {
+    expect(findDisallowedOperations('DROP TABLE meals;')[0]).toMatchObject({
+      label: 'DROP TABLE',
+    });
   });
 });

@@ -101,17 +101,19 @@ Required GitHub settings for the current shared mode:
 - Variables:
   - `PREVIEW_DATABASE_MODE=shared` (or leave unset)
 
-Additional GitHub settings used by shared mode reset and future branch mode:
+Additional GitHub settings used by the shared reset workflow and future branch
+mode:
 
 - Variables:
   - `GCS_SEED_BUCKET`
   - `GCS_SEED_OBJECT`
-
-Additional GitHub settings required only for future `branch` mode:
-
 - Secrets:
   - `SUPABASE_ACCESS_TOKEN`
   - `SUPABASE_PROJECT_ID`
+
+Additional GitHub settings required only for future `branch` mode:
+
+- No additional variables or secrets beyond the shared reset settings above.
 
 ## Shared staging reset workflow
 
@@ -331,25 +333,26 @@ authentication, and runtime secrets stay in Secret Manager.
 
 `NEXT_PUBLIC_SUPABASE_URL` and
 `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` are **build-time inputs** for the shared
-CI image.
+CI image used by `nham-internal` and by previews while
+`PREVIEW_DATABASE_MODE=shared`.
 
 That means:
 
 - changing them requires a new CI image build
 - changing Cloud Run runtime env vars later will not fix stale client bundle
   config
-- previews rebuild after branch env is fetched from Supabase, so each PR gets
-  branch-specific public config
+- shared-mode previews and `nham-internal` both read the same public Supabase
+  config from GitHub Actions variables
+- if we later switch to `PREVIEW_DATABASE_MODE=branch`, preview images rebuild
+  after branch env is fetched from Supabase, while `nham-internal` keeps using
+  the shared GitHub Actions variables
 
 ### Preview runtime notes
 
-- preview images are built per PR after branch env is fetched
-- `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` come
-  from Supabase branch env
-- `DATABASE_URL` is injected with `--set-env-vars`
-- `GEMINI_API_KEY` remains Secret Manager-backed
-- PR-close and scheduled cleanup remove both Cloud Run services and Supabase
-  branches
+| Mode | Public Supabase config | Server `DATABASE_URL` | Cleanup behavior |
+| --- | --- | --- | --- |
+| `shared` (current default) | Comes from `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` GitHub variables baked into the CI image | Secret Manager-backed `nham-nonprod-database-url` | PR close deletes only the preview Cloud Run service; DB recovery happens through **Reset Staging Database** |
+| `branch` (future Supabase Pro path) | Comes from Supabase branch env fetched during the preview build | Injected with `--update-env-vars=DATABASE_URL=...` for that PR branch | PR close and scheduled cleanup delete both the preview Cloud Run service and the Supabase branch |
 
 ## 8. Cloud Run defaults used by the workflows
 
@@ -375,8 +378,10 @@ That means:
 - Min instances: `0`
 - Max instances: `3`
 - Public URL enabled
-- `DATABASE_URL` is injected with `--set-env-vars`
-- `GEMINI_API_KEY` stays Secret Manager-backed
+- `DATABASE_URL` source depends on `PREVIEW_DATABASE_MODE`:
+  - shared mode uses Secret Manager-backed `nham-nonprod-database-url`
+  - branch mode injects the per-branch URL with `--update-env-vars`
+- `GEMINI_API_KEY` stays Secret Manager-backed in both modes
 
 ## 9. Workflow map
 

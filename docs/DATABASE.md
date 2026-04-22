@@ -37,7 +37,7 @@ the same non-prod Supabase database. To keep that survivable:
   an intentional maintenance pass
 
 CI enforces this append-only rule against newly changed migration files via
-`scripts/check-append-only-migrations.js`.
+`scripts/check-append-only-migrations.mjs`.
 
 If shared staging gets into a bad state, recover it with the manual
 `Reset Staging Database` GitHub Actions workflow. That reset replays the current

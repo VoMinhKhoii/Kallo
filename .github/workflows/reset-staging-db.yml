@@ -15,6 +15,10 @@ permissions:
 jobs:
   reset-staging:
     runs-on: ubuntu-latest
+    environment: staging
+    concurrency:
+      group: reset-staging-db
+      cancel-in-progress: false
     env:
       SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
       SUPABASE_PROJECT_ID: ${{ secrets.SUPABASE_PROJECT_ID }}
@@ -32,7 +36,7 @@ jobs:
           ref: ${{ github.event.repository.default_branch }}
       - uses: supabase/setup-cli@v1
         with:
-          version: latest
+          version: 2.90.0
       - uses: google-github-actions/auth@v3
         with:
           workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
@@ -52,6 +56,7 @@ jobs:
       - name: Read shared staging database URL
         run: |
           db_url="$(gcloud secrets versions access latest --secret=nham-nonprod-database-url)"
+          echo "::add-mask::$db_url"
           {
             echo 'STAGING_DATABASE_URL<<EOF'
             echo "$db_url"

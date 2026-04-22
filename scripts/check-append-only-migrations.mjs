@@ -1,37 +1,53 @@
 #!/usr/bin/env node
 
-const fs = require('node:fs');
-const path = require('node:path');
-const { execFileSync } = require('node:child_process');
+import { execFileSync } from 'node:child_process';
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 const MIGRATIONS_DIR = 'supabase/migrations';
+const IDENTIFIER_PATTERN = '(?:"[^"]+"|[A-Z_][A-Z0-9_$]*)';
 const DISALLOWED_PATTERNS = [
   { label: 'DROP TABLE', regex: /\bDROP\s+TABLE\b/i },
-  { label: 'DROP COLUMN', regex: /\bDROP\s+COLUMN\b/i },
-  { label: 'RENAME COLUMN', regex: /\bRENAME\s+COLUMN\b/i },
+  {
+    label: 'DROP COLUMN',
+    regex: new RegExp(
+      String.raw`^ALTER\s+TABLE(?:\s+IF\s+EXISTS)?[\s\S]*?\bDROP\s+(?:COLUMN\s+)?(?:IF\s+EXISTS\s+)?${IDENTIFIER_PATTERN}(?:\s+(?:CASCADE|RESTRICT))?$`,
+      'i'
+    ),
+  },
+  {
+    label: 'RENAME COLUMN',
+    regex: new RegExp(
+      String.raw`^ALTER\s+TABLE(?:\s+IF\s+EXISTS)?[\s\S]*?\bRENAME\s+(?:COLUMN\s+)?${IDENTIFIER_PATTERN}\s+TO\s+${IDENTIFIER_PATTERN}$`,
+      'i'
+    ),
+  },
   {
     label: 'ALTER COLUMN TYPE',
-    regex:
-      /\bALTER\s+COLUMN\b[\s\S]*?(?:\bSET\s+DATA\s+TYPE\b|\bTYPE\b\s+[A-Z_])/i,
+    regex: new RegExp(
+      String.raw`^ALTER\s+TABLE(?:\s+IF\s+EXISTS)?[\s\S]*?\bALTER\s+(?:COLUMN\s+)?${IDENTIFIER_PATTERN}\s+(?:SET\s+DATA\s+TYPE|TYPE)\b`,
+      'i'
+    ),
   },
 ];
 
-function stripSqlComments(sql) {
+export function stripSqlComments(sql) {
   return sql.replace(/\/\*[\s\S]*?\*\//g, ' ').replace(/--.*$/gm, ' ');
 }
 
-function normalizeStatement(statement) {
+export function normalizeStatement(statement) {
   return statement.replace(/\s+/g, ' ').trim().toUpperCase();
 }
 
-function splitStatements(sql) {
+export function splitStatements(sql) {
   return stripSqlComments(sql)
     .split(';')
     .map((statement) => normalizeStatement(statement))
     .filter(Boolean);
 }
 
-function findDisallowedOperations(sql) {
+export function findDisallowedOperations(sql) {
   const statements = splitStatements(sql);
 
   return statements.flatMap((statement) =>
@@ -72,7 +88,7 @@ function getGitDiffFiles(range) {
     .filter((file) => file.endsWith('.sql'));
 }
 
-function resolveTargetFiles(argv, env) {
+export function resolveTargetFiles(argv, env) {
   if (argv.length > 0) {
     return argv;
   }
@@ -94,7 +110,7 @@ function resolveTargetFiles(argv, env) {
   return listAllMigrationFiles();
 }
 
-function main() {
+export function main() {
   const files = resolveTargetFiles(process.argv.slice(2), process.env);
 
   if (files.length === 0) {
@@ -106,7 +122,14 @@ function main() {
 
   for (const file of files) {
     const absolutePath = path.join(process.cwd(), file);
-    if (!fs.existsSync(absolutePath)) continue;
+    if (!fs.existsSync(absolutePath)) {
+      violations += 1;
+      console.error(`ERROR: Append-only migration violation in ${file}`);
+      console.error(
+        '  - DELETED MIGRATION: migration files must not be removed'
+      );
+      continue;
+    }
 
     const sql = fs.readFileSync(absolutePath, 'utf8');
     const matches = findDisallowedOperations(sql);
@@ -122,7 +145,7 @@ function main() {
 
   if (violations > 0) {
     console.error(
-      '\nAppend-only mode forbids DROP TABLE, DROP COLUMN, RENAME COLUMN, and ALTER COLUMN TYPE in newly changed migrations.'
+      '\nAppend-only mode forbids deleting migrations, DROP TABLE, DROP COLUMN, RENAME COLUMN, and ALTER COLUMN TYPE in newly changed migrations.'
     );
     process.exit(1);
   }
@@ -132,13 +155,8 @@ function main() {
   );
 }
 
-if (require.main === module) {
+const entrypoint = process.argv[1] ? path.resolve(process.argv[1]) : undefined;
+
+if (entrypoint === fileURLToPath(import.meta.url)) {
   main();
 }
-
-module.exports = {
-  findDisallowedOperations,
-  resolveTargetFiles,
-  splitStatements,
-  stripSqlComments,
-};

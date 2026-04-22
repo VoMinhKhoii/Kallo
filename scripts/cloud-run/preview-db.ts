@@ -43,7 +43,12 @@ interface PreparePreviewBranchOptions {
 const prepareSchema = z.object({
   prNumber: z.coerce.number().int().positive(),
   sha: z.string().min(1),
-  imageTag: z.string().optional(),
+  imageTag: z
+    .string()
+    .trim()
+    .min(1)
+    .regex(/^\S+$/, 'imageTag must be a single non-whitespace token')
+    .optional(),
   seedFile: z.string().min(1),
   gcsSeedBucket: z.string().min(1),
   gcsSeedObject: z.string().min(1),

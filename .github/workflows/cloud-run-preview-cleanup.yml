@@ -43,6 +43,8 @@ jobs:
         if: env.PREVIEW_DATABASE_MODE == 'branch'
       - uses: supabase/setup-cli@v1
         if: env.PREVIEW_DATABASE_MODE == 'branch'
+        with:
+          version: 2.90.0
       - name: Delete preview database branch
         if: env.PREVIEW_DATABASE_MODE == 'branch'
         run: bun scripts/cloud-run/preview-db.ts cleanup --pr "${{ github.event.pull_request.number }}"
@@ -95,6 +97,8 @@ jobs:
         if: env.PREVIEW_DATABASE_MODE == 'branch'
       - uses: supabase/setup-cli@v1
         if: env.PREVIEW_DATABASE_MODE == 'branch'
+        with:
+          version: 2.90.0
       - name: Delete orphaned preview database branches
         if: env.PREVIEW_DATABASE_MODE == 'branch'
         run: bun scripts/cloud-run/preview-db.ts cleanup-orphans --open-prs "${{ steps.open-prs.outputs.numbers }}"

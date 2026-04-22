@@ -297,4 +297,18 @@ describe('preparePreviewBranch', () => {
 
     rmSync('.github-preview-env', { force: true });
   });
+
+  it('rejects blank or multiline image tags', async () => {
+    await expect(
+      preparePreviewBranch({
+        prNumber: 42,
+        sha: 'abc123',
+        imageTag: 'bad\ntag',
+        seedFile: resolve('scripts/__tests__/preview-db-seed.sql'),
+        gcsSeedBucket: 'preview-bucket',
+        gcsSeedObject: 'supabase/seed_food.sql',
+        githubEnvPath: '.github-preview-env',
+      })
+    ).rejects.toThrow('imageTag must be a single non-whitespace token');
+  });
 });
