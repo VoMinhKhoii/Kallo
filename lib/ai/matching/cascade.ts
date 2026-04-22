@@ -38,7 +38,7 @@ export interface MatchResult {
 }
 
 /** Max concurrent DB calls to avoid exhausting PgBouncer pool */
-const MATCH_CONCURRENCY = 3;
+const MATCH_CONCURRENCY = 2;
 
 /**
  * Match a list of decomposed ingredients against the food composition DB.
