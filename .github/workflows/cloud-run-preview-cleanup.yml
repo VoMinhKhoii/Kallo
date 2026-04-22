@@ -18,26 +18,33 @@ jobs:
     env:
       SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
       SUPABASE_PROJECT_ID: ${{ secrets.SUPABASE_PROJECT_ID }}
+      PREVIEW_DATABASE_MODE: ${{ vars.PREVIEW_DATABASE_MODE }}
     steps:
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+      - uses: google-github-actions/auth@v3
+        with:
+          workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
+          service_account: ${{ vars.GCP_DEPLOYER_SERVICE_ACCOUNT }}
+      - uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: ${{ vars.GCP_PROJECT_ID }}
+      - name: Delete preview service
+        run: gcloud run services delete "nham-pr-${{ github.event.pull_request.number }}" --region="${{ vars.GCP_REGION }}" --quiet || true
+      - uses: actions/checkout@v4
+        if: env.PREVIEW_DATABASE_MODE == 'branch'
       - uses: oven-sh/setup-bun@v2
+        if: env.PREVIEW_DATABASE_MODE == 'branch'
       - uses: actions/cache@v4
+        if: env.PREVIEW_DATABASE_MODE == 'branch'
         with:
           path: ~/.bun/install/cache
           key: ${{ runner.os }}-bun-${{ hashFiles('bun.lock') }}
           restore-keys: ${{ runner.os }}-bun-
       - run: bun install --frozen-lockfile
+        if: env.PREVIEW_DATABASE_MODE == 'branch'
       - uses: supabase/setup-cli@v1
-      - uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3.0.0
-        with:
-          workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
-          service_account: ${{ vars.GCP_DEPLOYER_SERVICE_ACCOUNT }}
-      - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f # v2.2.1
-        with:
-          project_id: ${{ vars.GCP_PROJECT_ID }}
-      - name: Delete preview service
-        run: gcloud run services delete "nham-pr-${{ github.event.pull_request.number }}" --region="${{ vars.GCP_REGION }}" --quiet || true
+        if: env.PREVIEW_DATABASE_MODE == 'branch'
       - name: Delete preview database branch
+        if: env.PREVIEW_DATABASE_MODE == 'branch'
         run: bun scripts/cloud-run/preview-db.ts cleanup --pr "${{ github.event.pull_request.number }}"
 
   cleanup-orphans:
@@ -46,17 +53,9 @@ jobs:
     env:
       SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
       SUPABASE_PROJECT_ID: ${{ secrets.SUPABASE_PROJECT_ID }}
+      PREVIEW_DATABASE_MODE: ${{ vars.PREVIEW_DATABASE_MODE }}
     steps:
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
-      - uses: oven-sh/setup-bun@v2
-      - uses: actions/cache@v4
-        with:
-          path: ~/.bun/install/cache
-          key: ${{ runner.os }}-bun-${{ hashFiles('bun.lock') }}
-          restore-keys: ${{ runner.os }}-bun-
-      - run: bun install --frozen-lockfile
-      - uses: supabase/setup-cli@v1
-      - uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7.1.0
+      - uses: actions/github-script@v7
         id: open-prs
         with:
           script: |
@@ -66,11 +65,11 @@ jobs:
               per_page: 100,
             });
             core.setOutput('numbers', prs.map((pr) => pr.number).join(','));
-      - uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3.0.0
+      - uses: google-github-actions/auth@v3
         with:
           workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
           service_account: ${{ vars.GCP_DEPLOYER_SERVICE_ACCOUNT }}
-      - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f # v2.2.1
+      - uses: google-github-actions/setup-gcloud@v2
         with:
           project_id: ${{ vars.GCP_PROJECT_ID }}
       - name: Delete orphaned preview services
@@ -82,5 +81,20 @@ jobs:
                 pr="${service#nham-pr-}"
                 [[ "$open_prs" == *",$pr,"* ]] || gcloud run services delete "$service" --region="${{ vars.GCP_REGION }}" --quiet
               done
+      - uses: actions/checkout@v4
+        if: env.PREVIEW_DATABASE_MODE == 'branch'
+      - uses: oven-sh/setup-bun@v2
+        if: env.PREVIEW_DATABASE_MODE == 'branch'
+      - uses: actions/cache@v4
+        if: env.PREVIEW_DATABASE_MODE == 'branch'
+        with:
+          path: ~/.bun/install/cache
+          key: ${{ runner.os }}-bun-${{ hashFiles('bun.lock') }}
+          restore-keys: ${{ runner.os }}-bun-
+      - run: bun install --frozen-lockfile
+        if: env.PREVIEW_DATABASE_MODE == 'branch'
+      - uses: supabase/setup-cli@v1
+        if: env.PREVIEW_DATABASE_MODE == 'branch'
       - name: Delete orphaned preview database branches
+        if: env.PREVIEW_DATABASE_MODE == 'branch'
         run: bun scripts/cloud-run/preview-db.ts cleanup-orphans --open-prs "${{ steps.open-prs.outputs.numbers }}"

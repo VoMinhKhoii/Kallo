@@ -25,13 +25,14 @@ jobs:
     env:
       PR_NUMBER: ${{ github.event.workflow_run.pull_requests[0].number }}
       SERVICE_NAME: nham-pr-${{ github.event.workflow_run.pull_requests[0].number }}
+      IMAGE_TAG: ${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/${{ vars.GCP_ARTIFACT_REPO }}/nham:${{ github.event.workflow_run.head_sha }}
       SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
       SUPABASE_PROJECT_ID: ${{ secrets.SUPABASE_PROJECT_ID }}
       GCS_SEED_BUCKET: ${{ vars.GCS_SEED_BUCKET }}
       GCS_SEED_OBJECT: ${{ vars.GCS_SEED_OBJECT }}
     steps:
       - id: pr_state
-        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7.1.0
+        uses: actions/github-script@v7
         with:
           script: |
             const pullNumber = Number(process.env.PR_NUMBER);
@@ -56,42 +57,70 @@ jobs:
           echo "PR open: ${{ steps.pr_state.outputs.is_open }}"
           echo "Workflow head SHA: ${{ github.event.workflow_run.head_sha }}"
           echo "Current PR head SHA: ${{ steps.pr_state.outputs.current_head_sha }}"
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+      - name: Resolve preview database mode
         if: steps.pr_state.outputs.should_deploy == 'true'
+        env:
+          CONFIGURED_PREVIEW_DATABASE_MODE: ${{ vars.PREVIEW_DATABASE_MODE }}
+        run: |
+          mode="${CONFIGURED_PREVIEW_DATABASE_MODE:-shared}"
+          case "$mode" in
+            shared|branch) ;;
+            *)
+              echo "Unsupported PREVIEW_DATABASE_MODE: $mode" >&2
+              exit 1
+              ;;
+          esac
+
+          echo "PREVIEW_DATABASE_MODE=$mode" >> "$GITHUB_ENV"
+      - uses: google-github-actions/auth@v3
+        if: steps.pr_state.outputs.should_deploy == 'true'
+        with:
+          workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
+          service_account: ${{ vars.GCP_DEPLOYER_SERVICE_ACCOUNT }}
+      - uses: google-github-actions/setup-gcloud@v2
+        if: steps.pr_state.outputs.should_deploy == 'true'
+        with:
+          project_id: ${{ vars.GCP_PROJECT_ID }}
+      - name: Pre-deploy validation (shared DB mode)
+        if: steps.pr_state.outputs.should_deploy == 'true' && env.PREVIEW_DATABASE_MODE == 'shared'
+        run: |
+          gcloud artifacts docker images describe "$IMAGE_TAG"
+          gcloud secrets describe nham-nonprod-database-url
+          gcloud secrets describe nham-nonprod-gemini-api-key
+          gcloud iam service-accounts describe "${{ vars.GCP_RUNTIME_SERVICE_ACCOUNT }}"
+          [[ "$SERVICE_NAME" =~ ^nham-pr-[0-9]+$ ]]
+      - name: Resolve image digest (shared DB mode)
+        if: steps.pr_state.outputs.should_deploy == 'true' && env.PREVIEW_DATABASE_MODE == 'shared'
+        run: |
+          digest="$(gcloud artifacts docker images describe "$IMAGE_TAG" --format='value(image_summary.digest)')"
+          echo "IMAGE_URI=${IMAGE_TAG%:*}@${digest}" >> "$GITHUB_ENV"
+      - uses: actions/checkout@v4
+        if: steps.pr_state.outputs.should_deploy == 'true' && env.PREVIEW_DATABASE_MODE == 'branch'
         with:
           ref: ${{ github.event.workflow_run.head_sha }}
       - uses: oven-sh/setup-bun@v2
-        if: steps.pr_state.outputs.should_deploy == 'true'
+        if: steps.pr_state.outputs.should_deploy == 'true' && env.PREVIEW_DATABASE_MODE == 'branch'
       - uses: actions/cache@v4
-        if: steps.pr_state.outputs.should_deploy == 'true'
+        if: steps.pr_state.outputs.should_deploy == 'true' && env.PREVIEW_DATABASE_MODE == 'branch'
         with:
           path: ~/.bun/install/cache
           key: ${{ runner.os }}-bun-${{ hashFiles('bun.lock') }}
           restore-keys: ${{ runner.os }}-bun-
       - name: Install dependencies
-        if: steps.pr_state.outputs.should_deploy == 'true'
+        if: steps.pr_state.outputs.should_deploy == 'true' && env.PREVIEW_DATABASE_MODE == 'branch'
         run: bun install --frozen-lockfile
       - uses: supabase/setup-cli@v1
-        if: steps.pr_state.outputs.should_deploy == 'true'
+        if: steps.pr_state.outputs.should_deploy == 'true' && env.PREVIEW_DATABASE_MODE == 'branch'
         with:
           version: latest
-      - uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3.0.0
-        if: steps.pr_state.outputs.should_deploy == 'true'
-        with:
-          workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
-          service_account: ${{ vars.GCP_DEPLOYER_SERVICE_ACCOUNT }}
-      - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f # v2.2.1
-        if: steps.pr_state.outputs.should_deploy == 'true'
-        with:
-          project_id: ${{ vars.GCP_PROJECT_ID }}
-      - name: Pre-deploy validation
-        if: steps.pr_state.outputs.should_deploy == 'true'
+      - name: Pre-deploy validation (branch mode)
+        if: steps.pr_state.outputs.should_deploy == 'true' && env.PREVIEW_DATABASE_MODE == 'branch'
         run: |
           gcloud secrets describe nham-nonprod-gemini-api-key
           gcloud iam service-accounts describe "${{ vars.GCP_RUNTIME_SERVICE_ACCOUNT }}"
           [[ "$SERVICE_NAME" =~ ^nham-pr-[0-9]+$ ]]
       - name: Prepare preview branch
-        if: steps.pr_state.outputs.should_deploy == 'true'
+        if: steps.pr_state.outputs.should_deploy == 'true' && env.PREVIEW_DATABASE_MODE == 'branch'
         run: >
           bun scripts/cloud-run/preview-db.ts prepare
           --pr "$PR_NUMBER"
@@ -99,13 +128,13 @@ jobs:
           --seed-file "$RUNNER_TEMP/seed_food.sql"
           --github-env "$GITHUB_ENV"
       - name: Remove staged seed file
-        if: always() && steps.pr_state.outputs.should_deploy == 'true'
+        if: always() && steps.pr_state.outputs.should_deploy == 'true' && env.PREVIEW_DATABASE_MODE == 'branch'
         run: rm -f "$RUNNER_TEMP/seed_food.sql"
       - name: Configure Docker authentication
-        if: steps.pr_state.outputs.should_deploy == 'true'
+        if: steps.pr_state.outputs.should_deploy == 'true' && env.PREVIEW_DATABASE_MODE == 'branch'
         run: gcloud auth configure-docker "${{ vars.GCP_REGION }}-docker.pkg.dev" --quiet
       - name: Build preview image
-        if: steps.pr_state.outputs.should_deploy == 'true'
+        if: steps.pr_state.outputs.should_deploy == 'true' && env.PREVIEW_DATABASE_MODE == 'branch'
         run: >
           docker build
           --build-arg NEXT_PUBLIC_SUPABASE_URL="$SUPABASE_URL"
@@ -113,26 +142,39 @@ jobs:
           -t "$IMAGE_TAG"
           .
       - name: Push preview image
-        if: steps.pr_state.outputs.should_deploy == 'true'
+        if: steps.pr_state.outputs.should_deploy == 'true' && env.PREVIEW_DATABASE_MODE == 'branch'
         run: docker push "$IMAGE_TAG"
-      - name: Resolve image digest
-        if: steps.pr_state.outputs.should_deploy == 'true'
+      - name: Resolve image digest (branch mode)
+        if: steps.pr_state.outputs.should_deploy == 'true' && env.PREVIEW_DATABASE_MODE == 'branch'
         run: |
           digest="$(gcloud artifacts docker images describe "$IMAGE_TAG" --format='value(image_summary.digest)')"
           echo "IMAGE_URI=${IMAGE_TAG%:*}@${digest}" >> "$GITHUB_ENV"
-      - id: deploy
-        if: steps.pr_state.outputs.should_deploy == 'true'
-        uses: google-github-actions/deploy-cloudrun@2028e2d7d30a78c6910e0632e48dd561b064884d # v3.0.1
+      - id: deploy_shared
+        if: steps.pr_state.outputs.should_deploy == 'true' && env.PREVIEW_DATABASE_MODE == 'shared'
+        uses: google-github-actions/deploy-cloudrun@v3
         with:
           service: ${{ env.SERVICE_NAME }}
           image: ${{ env.IMAGE_URI }}
           region: ${{ vars.GCP_REGION }}
-          skip_default_labels: true
-          labels: |-
-            commit-sha=${{ github.event.workflow_run.head_sha }}
-            pr-number=${{ env.PR_NUMBER }}
-            deployment-target=preview
-            github-run-id=${{ github.run_id }}
+          flags: >-
+            --allow-unauthenticated
+            --service-account=${{ vars.GCP_RUNTIME_SERVICE_ACCOUNT }}
+            --memory=1Gi
+            --cpu=1
+            --concurrency=20
+            --timeout=60
+            --min-instances=0
+            --max-instances=3
+            --set-secrets=DATABASE_URL=nham-nonprod-database-url:latest,GEMINI_API_KEY=nham-nonprod-gemini-api-key:latest
+            --update-labels=commit-sha=${{ github.event.workflow_run.head_sha }},pr-number=${{ env.PR_NUMBER }},deployment-target=preview,github-run-id=${{ github.run_id }},database-mode=shared
+            --revision-labels=commit-sha=${{ github.event.workflow_run.head_sha }},pr-number=${{ env.PR_NUMBER }},deployment-target=preview,github-run-id=${{ github.run_id }},database-mode=shared
+      - id: deploy_branch
+        if: steps.pr_state.outputs.should_deploy == 'true' && env.PREVIEW_DATABASE_MODE == 'branch'
+        uses: google-github-actions/deploy-cloudrun@v3
+        with:
+          service: ${{ env.SERVICE_NAME }}
+          image: ${{ env.IMAGE_URI }}
+          region: ${{ vars.GCP_REGION }}
           flags: >-
             --allow-unauthenticated
             --service-account=${{ vars.GCP_RUNTIME_SERVICE_ACCOUNT }}
@@ -144,31 +186,39 @@ jobs:
             --max-instances=3
             --set-env-vars=^@^DATABASE_URL=${{ env.POSTGRES_URL_NON_POOLING }}
             --set-secrets=GEMINI_API_KEY=nham-nonprod-gemini-api-key:latest
+            --update-labels=commit-sha=${{ github.event.workflow_run.head_sha }},pr-number=${{ env.PR_NUMBER }},deployment-target=preview,github-run-id=${{ github.run_id }},database-mode=branch
+            --revision-labels=commit-sha=${{ github.event.workflow_run.head_sha }},pr-number=${{ env.PR_NUMBER }},deployment-target=preview,github-run-id=${{ github.run_id }},database-mode=branch
+      - name: Resolve deploy URL
+        if: steps.pr_state.outputs.should_deploy == 'true'
+        run: |
+          echo "DEPLOY_URL=${{ steps.deploy_branch.outputs.url || steps.deploy_shared.outputs.url }}" >> "$GITHUB_ENV"
       - id: smoke
         if: steps.pr_state.outputs.should_deploy == 'true'
-        run: ./scripts/cloud-run/smoke-check.sh "${{ steps.deploy.outputs.url }}"
+        run: ./scripts/cloud-run/smoke-check.sh "$DEPLOY_URL"
       - name: Record deploy metadata
         if: always() && steps.pr_state.outputs.should_deploy == 'true'
         run: |
           revision="$(gcloud run services describe "$SERVICE_NAME" --region="${{ vars.GCP_REGION }}" --format='value(status.latestCreatedRevisionName)' 2>/dev/null || true)"
-          echo "{\"service\":\"$SERVICE_NAME\",\"image\":\"$IMAGE_URI\",\"revision\":\"$revision\",\"url\":\"${{ steps.deploy.outputs.url }}\",\"commit_sha\":\"${{ github.event.workflow_run.head_sha }}\",\"smoke\":\"${{ steps.smoke.outcome }}\"}" > deployment-record.json
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+          echo "{\"service\":\"$SERVICE_NAME\",\"image\":\"${IMAGE_URI:-}\",\"revision\":\"$revision\",\"url\":\"${DEPLOY_URL:-}\",\"commit_sha\":\"${{ github.event.workflow_run.head_sha }}\",\"smoke\":\"${{ steps.smoke.outcome }}\",\"database_mode\":\"${PREVIEW_DATABASE_MODE:-shared}\"}" > deployment-record.json
+      - uses: actions/upload-artifact@v4
         if: always() && steps.pr_state.outputs.should_deploy == 'true'
         with:
           name: preview-deployment-record-${{ env.PR_NUMBER }}
           path: deployment-record.json
-      - uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7.1.0
+      - uses: actions/github-script@v7
         if: always() && steps.pr_state.outputs.should_deploy == 'true'
         env:
-          DEPLOY_URL: ${{ steps.deploy.outputs.url }}
+          DEPLOY_URL: ${{ env.DEPLOY_URL }}
           HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
           JOB_STATUS: ${{ job.status }}
+          PREVIEW_MODE: ${{ env.PREVIEW_DATABASE_MODE }}
         with:
           script: |
             const status = process.env.JOB_STATUS;
             const deployUrl = process.env.DEPLOY_URL || 'not available';
             const headSha = process.env.HEAD_SHA;
-            const body = `<!-- nham-preview -->\nStatus: ${status}\nPreview URL: ${deployUrl}\nCommit: ${headSha}`;
+            const previewMode = process.env.PREVIEW_MODE || 'shared';
+            const body = `<!-- nham-preview -->\nStatus: ${status}\nPreview URL: ${deployUrl}\nCommit: ${headSha}\nDatabase Mode: ${previewMode}`;
             const comments = await github.paginate(github.rest.issues.listComments, {
               ...context.repo,
               issue_number: Number(process.env.PR_NUMBER),

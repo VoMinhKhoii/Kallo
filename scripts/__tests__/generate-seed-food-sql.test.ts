@@ -4,7 +4,7 @@ import {
   escapeSqlString,
   formatPgVector,
   parseCsv,
-} from '@/scripts/generate-seed-food-sql';
+} from '../generate-seed-food-sql';
 
 describe('formatPgVector', () => {
   it('formats pgvector literals', () => {
@@ -40,16 +40,16 @@ describe('parseCsv', () => {
 });
 
 describe('buildSeedSql', () => {
-  it('supports the documented CSV shape and normalizes query cache keys', () => {
+  it('generates the expected seed SQL shape', () => {
     const sql = buildSeedSql([
       {
         id: 'food-1',
-        name_primary: "NƯỚC MẮM 'ĐẬM'",
+        name_primary: "Nước mắm 'đậm'",
         name_alt: '["một, hai","ba"]',
         name_en: 'Fish sauce',
         type_vn: 'Gia vị, nước chấm',
         type_en: 'Condiments',
-        source: 'FAO_VN_2007',
+        source_id: '1',
         state: 'raw',
         inedible_portion_pct: '',
         calories_kcal: '10',
@@ -89,258 +89,10 @@ describe('buildSeedSql', () => {
 
     expect(sql).toContain('BEGIN;');
     expect(sql).toContain('INSERT INTO vietnamese_food_composition');
-    expect(sql).toContain("NƯỚC MẮM ''ĐẬM''");
+    expect(sql).toContain("Nước mắm ''đậm''");
     expect(sql).toContain("ARRAY['một, hai','ba']");
     expect(sql).toContain('::vector(768)');
     expect(sql).toContain('INSERT INTO ingredient_query_embeddings');
-    expect(sql).toContain(
-      "('nước mắm ''đậm''', 'Fish sauce', '[0.1,0.2,0.3]'::vector(768))"
-    );
-    expect(sql).toContain(', 1, ');
     expect(sql).toContain('COMMIT;');
-  });
-
-  it('fails fast when neither source_id nor source is present', () => {
-    expect(() =>
-      buildSeedSql([
-        {
-          id: 'food-1',
-          name_primary: 'Test',
-          name_alt: '[]',
-          name_en: 'Test',
-          type_vn: 'Test',
-          type_en: 'Test',
-          state: 'raw',
-          inedible_portion_pct: '',
-          calories_kcal: '',
-          protein_g: '',
-          carbohydrate_g: '',
-          fat_g: '',
-          fiber_g: '',
-          sodium_mg: '',
-          calcium_mg: '',
-          iron_mg: '',
-          magnesium_mg: '',
-          phosphorus_mg: '',
-          potassium_mg: '',
-          zinc_mg: '',
-          copper_mcg: '',
-          manganese_mg: '',
-          beta_carotene_mcg: '',
-          vitamin_a_mcg: '',
-          vitamin_d_mcg: '',
-          vitamin_e_mg: '',
-          vitamin_k_mcg: '',
-          vitamin_c_mg: '',
-          vitamin_b1_mg: '',
-          vitamin_b2_mg: '',
-          vitamin_pp_mg: '',
-          vitamin_b5_mg: '',
-          vitamin_b6_mg: '',
-          vitamin_b9_mcg: '',
-          vitamin_b12_mcg: '',
-          vitamin_h_mcg: '',
-          last_verified: '2026-02-26',
-        },
-      ])
-    ).toThrow('Missing required CSV columns: source_id or source');
-  });
-
-  it('rejects malformed non-numeric source_id values', () => {
-    expect(() =>
-      buildSeedSql([
-        {
-          id: 'food-1',
-          name_primary: 'Test',
-          name_alt: '[]',
-          name_en: 'Test',
-          type_vn: 'Test',
-          type_en: 'Test',
-          source_id: 'FAO_VN_2007',
-          state: 'raw',
-          inedible_portion_pct: '',
-          calories_kcal: '',
-          protein_g: '',
-          carbohydrate_g: '',
-          fat_g: '',
-          fiber_g: '',
-          sodium_mg: '',
-          calcium_mg: '',
-          iron_mg: '',
-          magnesium_mg: '',
-          phosphorus_mg: '',
-          potassium_mg: '',
-          zinc_mg: '',
-          copper_mcg: '',
-          manganese_mg: '',
-          beta_carotene_mcg: '',
-          vitamin_a_mcg: '',
-          vitamin_d_mcg: '',
-          vitamin_e_mg: '',
-          vitamin_k_mcg: '',
-          vitamin_c_mg: '',
-          vitamin_b1_mg: '',
-          vitamin_b2_mg: '',
-          vitamin_pp_mg: '',
-          vitamin_b5_mg: '',
-          vitamin_b6_mg: '',
-          vitamin_b9_mcg: '',
-          vitamin_b12_mcg: '',
-          vitamin_h_mcg: '',
-          last_verified: '2026-02-26',
-        },
-      ])
-    ).toThrow('Invalid source_id "FAO_VN_2007". Expected one of: 1, 2.');
-  });
-
-  it('rejects out-of-range numeric source_id values', () => {
-    expect(() =>
-      buildSeedSql([
-        {
-          id: 'food-1',
-          name_primary: 'Test',
-          name_alt: '[]',
-          name_en: 'Test',
-          type_vn: 'Test',
-          type_en: 'Test',
-          source_id: '999',
-          state: 'raw',
-          inedible_portion_pct: '',
-          calories_kcal: '',
-          protein_g: '',
-          carbohydrate_g: '',
-          fat_g: '',
-          fiber_g: '',
-          sodium_mg: '',
-          calcium_mg: '',
-          iron_mg: '',
-          magnesium_mg: '',
-          phosphorus_mg: '',
-          potassium_mg: '',
-          zinc_mg: '',
-          copper_mcg: '',
-          manganese_mg: '',
-          beta_carotene_mcg: '',
-          vitamin_a_mcg: '',
-          vitamin_d_mcg: '',
-          vitamin_e_mg: '',
-          vitamin_k_mcg: '',
-          vitamin_c_mg: '',
-          vitamin_b1_mg: '',
-          vitamin_b2_mg: '',
-          vitamin_pp_mg: '',
-          vitamin_b5_mg: '',
-          vitamin_b6_mg: '',
-          vitamin_b9_mcg: '',
-          vitamin_b12_mcg: '',
-          vitamin_h_mcg: '',
-          last_verified: '2026-02-26',
-        },
-      ])
-    ).toThrow('Invalid source_id "999". Expected one of: 1, 2.');
-  });
-
-  it('deduplicates colliding normalized query keys', () => {
-    const sql = buildSeedSql([
-      {
-        id: 'food-1',
-        name_primary: 'Sữa bò tươi',
-        name_alt: '[]',
-        name_en: 'First milk',
-        type_vn: 'Sữa và sản phẩm chế biến',
-        type_en: 'Milk and products',
-        source: 'FAO_VN_2007',
-        state: 'raw',
-        inedible_portion_pct: '',
-        calories_kcal: '',
-        protein_g: '',
-        carbohydrate_g: '',
-        fat_g: '',
-        fiber_g: '',
-        sodium_mg: '',
-        calcium_mg: '',
-        iron_mg: '',
-        magnesium_mg: '',
-        phosphorus_mg: '',
-        potassium_mg: '',
-        zinc_mg: '',
-        copper_mcg: '',
-        manganese_mg: '',
-        beta_carotene_mcg: '',
-        vitamin_a_mcg: '',
-        vitamin_d_mcg: '',
-        vitamin_e_mg: '',
-        vitamin_k_mcg: '',
-        vitamin_c_mg: '',
-        vitamin_b1_mg: '',
-        vitamin_b2_mg: '',
-        vitamin_pp_mg: '',
-        vitamin_b5_mg: '',
-        vitamin_b6_mg: '',
-        vitamin_b9_mcg: '',
-        vitamin_b12_mcg: '',
-        vitamin_h_mcg: '',
-        last_verified: '2026-02-26',
-        search_text: 'Sữa bò tươi First milk',
-        search_text_ascii: 'sua bo tuoi first milk',
-        embedding: '[0.1,0.2,0.3]',
-      },
-      {
-        id: 'food-2',
-        name_primary: ' sữa bò tươi ',
-        name_alt: '[]',
-        name_en: 'Second milk',
-        type_vn: 'Sữa và sản phẩm chế biến',
-        type_en: 'Milk and products',
-        source: 'FAO_VN_2007',
-        state: 'raw',
-        inedible_portion_pct: '',
-        calories_kcal: '',
-        protein_g: '',
-        carbohydrate_g: '',
-        fat_g: '',
-        fiber_g: '',
-        sodium_mg: '',
-        calcium_mg: '',
-        iron_mg: '',
-        magnesium_mg: '',
-        phosphorus_mg: '',
-        potassium_mg: '',
-        zinc_mg: '',
-        copper_mcg: '',
-        manganese_mg: '',
-        beta_carotene_mcg: '',
-        vitamin_a_mcg: '',
-        vitamin_d_mcg: '',
-        vitamin_e_mg: '',
-        vitamin_k_mcg: '',
-        vitamin_c_mg: '',
-        vitamin_b1_mg: '',
-        vitamin_b2_mg: '',
-        vitamin_pp_mg: '',
-        vitamin_b5_mg: '',
-        vitamin_b6_mg: '',
-        vitamin_b9_mcg: '',
-        vitamin_b12_mcg: '',
-        vitamin_h_mcg: '',
-        last_verified: '2026-02-26',
-        search_text: 'sữa bò tươi Second milk',
-        search_text_ascii: 'sua bo tuoi second milk',
-        embedding: '[0.4,0.5,0.6]',
-      },
-    ]);
-
-    const queryStart = sql.indexOf('INSERT INTO ingredient_query_embeddings');
-    const querySection = sql.slice(
-      queryStart,
-      sql.indexOf('ON CONFLICT (name_vi)')
-    );
-    const valueRows = querySection
-      .split('\n')
-      .filter((line) => line.trim().startsWith('('));
-
-    expect(valueRows).toHaveLength(1);
-    expect(querySection).toContain("'sữa bò tươi'");
-    expect(querySection).not.toContain("'Second milk'");
   });
 });

@@ -2,7 +2,6 @@
 
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
-import { normalizeIngredientKey } from '@/lib/ai/matching/embedding-cache';
 import { isMainModule } from '@/scripts/runtime';
 
 type CsvRow = Record<string, string>;
@@ -83,61 +82,6 @@ const NUMERIC_COLUMNS = new Set([
   'vitamin_h_mcg',
   'source_id',
 ]);
-
-const REQUIRED_COLUMNS = [
-  'id',
-  'name_primary',
-  'name_en',
-  'type_vn',
-  'type_en',
-  'state',
-  'last_verified',
-] as const;
-
-const ALLOWED_SOURCE_IDS = new Set(['1', '2']);
-const SOURCE_ID_BY_SOURCE = new Map([
-  ['FAO_VN_2007', '1'],
-  ['USDA_SR', '2'],
-]);
-
-function getSourceId(row: CsvRow): string {
-  const sourceId = row.source_id?.trim();
-  if (sourceId) {
-    if (ALLOWED_SOURCE_IDS.has(sourceId)) return sourceId;
-    throw new Error(
-      `Invalid source_id "${sourceId}". Expected one of: ${Array.from(ALLOWED_SOURCE_IDS).join(', ')}.`
-    );
-  }
-
-  const source = row.source?.trim();
-  if (!source) {
-    throw new Error(
-      'Missing required source_id/source column. Provide source_id or source in the CSV.'
-    );
-  }
-
-  const normalized = source.toUpperCase();
-  const mapped = SOURCE_ID_BY_SOURCE.get(normalized);
-  if (mapped) return mapped;
-
-  throw new Error(`Unsupported source value "${source}".`);
-}
-
-function validateRequiredColumns(rows: CsvRow[]): void {
-  const firstRow = rows[0];
-  if (!firstRow) {
-    throw new Error('CSV contains no data rows.');
-  }
-
-  const missing = REQUIRED_COLUMNS.filter((column) => !(column in firstRow));
-  if (missing.length > 0) {
-    throw new Error(`Missing required CSV columns: ${missing.join(', ')}`);
-  }
-
-  if (!('source_id' in firstRow) && !('source' in firstRow)) {
-    throw new Error('Missing required CSV columns: source_id or source');
-  }
-}
 
 export function escapeSqlString(value: string): string {
   return value.replace(/'/g, "''");
@@ -292,9 +236,6 @@ function toVfcSqlValue(column: string, row: CsvRow): string {
   }
 
   if (NUMERIC_COLUMNS.has(column)) {
-    if (column === 'source_id') {
-      return getSourceId(row);
-    }
     return toSqlNullableNumber(value);
   }
 
@@ -302,11 +243,8 @@ function toVfcSqlValue(column: string, row: CsvRow): string {
 }
 
 function buildVfcInsert(rows: CsvRow[]): string {
-  validateRequiredColumns(rows);
   const tuples = rows.map((row) => {
-    const values = VFC_COLUMNS.map((column) =>
-      column === 'source_id' ? getSourceId(row) : toVfcSqlValue(column, row)
-    );
+    const values = VFC_COLUMNS.map((column) => toVfcSqlValue(column, row));
     return `  (${values.join(', ')})`;
   });
 
@@ -323,28 +261,14 @@ function buildVfcInsert(rows: CsvRow[]): string {
   ].join('\n');
 }
 
-function uniqueQueryEmbeddingRows(rows: CsvRow[]): CsvRow[] {
-  const uniqueRows: CsvRow[] = [];
-  const seenKeys = new Set<string>();
-
-  for (const row of rows) {
-    const key = normalizeIngredientKey(row.name_primary ?? '');
-    if (seenKeys.has(key)) continue;
-    seenKeys.add(key);
-    uniqueRows.push(row);
-  }
-
-  return uniqueRows;
-}
-
 function buildQueryEmbeddingInsert(rows: CsvRow[]): string | null {
-  const tuples = uniqueQueryEmbeddingRows(rows)
+  const tuples = rows
     .map((row) => {
       const embedding = row.embedding ?? '';
       const parsed = parseVectorValue(embedding);
       if (!parsed) return null;
 
-      return `  (${toSqlText(normalizeIngredientKey(row.name_primary ?? ''))}, ${toSqlText(row.name_en ?? '')}, ${formatPgVector(parsed)}::vector(768))`;
+      return `  (${toSqlText(row.name_primary ?? '')}, ${toSqlText(row.name_en ?? '')}, ${formatPgVector(parsed)}::vector(768))`;
     })
     .filter((tuple): tuple is string => tuple !== null);
 
@@ -363,7 +287,6 @@ function buildQueryEmbeddingInsert(rows: CsvRow[]): string | null {
 }
 
 export function buildSeedSql(rows: CsvRow[]): string {
-  validateRequiredColumns(rows);
   const statements = ['BEGIN;', buildVfcInsert(rows)];
   const queryEmbeddingInsert = buildQueryEmbeddingInsert(rows);
   if (queryEmbeddingInsert) {
