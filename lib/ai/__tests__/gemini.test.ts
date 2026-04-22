@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
 
 const mockGenerateContent = vi.fn();
+const mockGenerateContentStream = vi.fn();
 const mockEmbedContent = vi.fn();
 
 vi.mock('@google/genai', () => ({
@@ -11,6 +12,7 @@ vi.mock('@google/genai', () => ({
     return {
       models: {
         generateContent: mockGenerateContent,
+        generateContentStream: mockGenerateContentStream,
         embedContent: mockEmbedContent,
       },
     };
@@ -99,6 +101,66 @@ describe('GeminiClient', () => {
         })
       );
     });
+
+    it('forwards abortSignal to the API call', async () => {
+      mockGenerateContent.mockResolvedValueOnce({
+        text: JSON.stringify({ name: 'test', value: 1 }),
+      });
+
+      const client = createGeminiClient('test-key');
+      const controller = new AbortController();
+
+      await client.generateStructuredOutput({
+        schema: testSchema,
+        systemPrompt: 'test',
+        userMessage: 'test',
+        model: 'gemini-3-flash-preview',
+        abortSignal: controller.signal,
+      });
+
+      expect(mockGenerateContent).toHaveBeenCalledWith(
+        expect.objectContaining({
+          config: expect.objectContaining({
+            abortSignal: controller.signal,
+          }),
+        })
+      );
+    });
+  });
+
+  describe('generateStructuredOutputStream', () => {
+    const testSchema = z.object({
+      name: z.string(),
+      value: z.number(),
+    });
+
+    it('forwards abortSignal to the streaming API call', async () => {
+      mockGenerateContentStream.mockResolvedValueOnce(
+        (async function* () {
+          yield { text: JSON.stringify({ name: 'test', value: 1 }) };
+        })()
+      );
+
+      const client = createGeminiClient('test-key');
+      const controller = new AbortController();
+
+      const result = await client.generateStructuredOutputStream({
+        schema: testSchema,
+        systemPrompt: 'test',
+        userMessage: 'test',
+        model: 'gemini-3-flash-preview',
+        abortSignal: controller.signal,
+      });
+
+      expect(result).toEqual({ name: 'test', value: 1 });
+      expect(mockGenerateContentStream).toHaveBeenCalledWith(
+        expect.objectContaining({
+          config: expect.objectContaining({
+            abortSignal: controller.signal,
+          }),
+        })
+      );
+    });
   });
 
   describe('generateEmbedding', () => {
@@ -156,6 +218,36 @@ describe('GeminiClient', () => {
       expect(mockGenerateContent).toHaveBeenCalledTimes(3);
     });
 
+    it('retries on 503 unavailable errors for streaming calls', async () => {
+      const error503 = Object.assign(
+        new Error('503 Service Unavailable: UNAVAILABLE'),
+        {
+          status: 503,
+        }
+      );
+      mockGenerateContentStream
+        .mockRejectedValueOnce(error503)
+        .mockResolvedValueOnce(
+          (async function* () {
+            yield { text: JSON.stringify({ name: 'ok', value: 1 }) };
+          })()
+        );
+
+      const client = createGeminiClient('test-key', {
+        maxRetries: 2,
+        baseDelayMs: 10,
+      });
+      const result = await client.generateStructuredOutputStream({
+        schema: z.object({ name: z.string(), value: z.number() }),
+        systemPrompt: 'test',
+        userMessage: 'test',
+        model: 'gemini-2.5-flash-lite',
+      });
+
+      expect(result).toEqual({ name: 'ok', value: 1 });
+      expect(mockGenerateContentStream).toHaveBeenCalledTimes(2);
+    });
+
     it('throws after exhausting retries', async () => {
       const error429 = new Error('429 Too Many Requests');
       mockGenerateContent.mockRejectedValue(error429);
@@ -174,9 +266,9 @@ describe('GeminiClient', () => {
       ).rejects.toThrow('429');
     });
 
-    it('does not retry on non-429 errors', async () => {
+    it('does not retry on non-retryable 4xx errors', async () => {
       mockGenerateContent.mockRejectedValueOnce(
-        new Error('500 Internal Server Error')
+        Object.assign(new Error('400 Bad Request'), { status: 400 })
       );
 
       const client = createGeminiClient('test-key', {
@@ -190,7 +282,7 @@ describe('GeminiClient', () => {
           userMessage: 'test',
           model: 'gemini-3-flash-preview',
         })
-      ).rejects.toThrow('500');
+      ).rejects.toThrow('400');
 
       expect(mockGenerateContent).toHaveBeenCalledTimes(1);
     });

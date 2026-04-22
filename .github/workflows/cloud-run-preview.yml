@@ -72,6 +72,14 @@ jobs:
           esac
 
           echo "PREVIEW_DATABASE_MODE=$mode" >> "$GITHUB_ENV"
+      - uses: actions/checkout@v4
+        if: steps.pr_state.outputs.should_deploy == 'true' && env.PREVIEW_DATABASE_MODE == 'shared'
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+      - uses: actions/checkout@v4
+        if: steps.pr_state.outputs.should_deploy == 'true' && env.PREVIEW_DATABASE_MODE == 'branch'
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
       - uses: google-github-actions/auth@v3
         if: steps.pr_state.outputs.should_deploy == 'true'
         with:
@@ -81,10 +89,6 @@ jobs:
         if: steps.pr_state.outputs.should_deploy == 'true'
         with:
           project_id: ${{ vars.GCP_PROJECT_ID }}
-      - uses: actions/checkout@v4
-        if: steps.pr_state.outputs.should_deploy == 'true' && env.PREVIEW_DATABASE_MODE == 'shared'
-        with:
-          ref: ${{ github.event.workflow_run.head_sha }}
       - name: Read shared staging database URL
         if: steps.pr_state.outputs.should_deploy == 'true' && env.PREVIEW_DATABASE_MODE == 'shared'
         run: |
@@ -110,10 +114,6 @@ jobs:
         run: |
           digest="$(gcloud artifacts docker images describe "$IMAGE_TAG" --format='value(image_summary.digest)')"
           echo "IMAGE_URI=${IMAGE_TAG%:*}@${digest}" >> "$GITHUB_ENV"
-      - uses: actions/checkout@v4
-        if: steps.pr_state.outputs.should_deploy == 'true' && env.PREVIEW_DATABASE_MODE == 'branch'
-        with:
-          ref: ${{ github.event.workflow_run.head_sha }}
       - uses: oven-sh/setup-bun@v2
         if: steps.pr_state.outputs.should_deploy == 'true' && env.PREVIEW_DATABASE_MODE == 'branch'
       - uses: actions/cache@v4

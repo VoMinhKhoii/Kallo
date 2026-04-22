@@ -33,10 +33,10 @@ function getClient() {
       );
     }
     _client = postgres(encodeDbUrl(url), {
-      // Limit pool to avoid exhausting PgBouncer's session-mode max_pool_size.
-      // The matching cascade runs up to 6 parallel queries; pool of 5 caps
-      // concurrency while still allowing fast queuing for remaining queries.
-      max: 5,
+      // Shared staging can have internal + preview services alive at once.
+      // Keep the per-instance session pool small so a second service doesn't
+      // exhaust Supabase's session-mode pooler during cold starts or health checks.
+      max: 2,
       // Prepared statements are unsupported in PgBouncer transaction mode.
       prepare: false,
     });
