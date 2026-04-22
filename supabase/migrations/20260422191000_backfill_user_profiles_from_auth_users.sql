@@ -4,4 +4,5 @@ SELECT auth_user.id
 FROM auth.users AS auth_user
 LEFT JOIN public.user_profiles AS profile
   ON profile.user_id = auth_user.id
-WHERE profile.user_id IS NULL;
+WHERE profile.user_id IS NULL
+ON CONFLICT (user_id) DO NOTHING;

@@ -23,6 +23,14 @@ describe('shared-db helpers', () => {
     ).toBe('abcd1234');
   });
 
+  it('extracts the project ref when the password contains reserved URL characters', () => {
+    expect(
+      extractProjectRefFromDatabaseUrl(
+        'postgresql://postgres:%23weird?p@ss@db.abcd1234.supabase.co:5432/postgres'
+      )
+    ).toBe('abcd1234');
+  });
+
   it('returns null when the project ref cannot be derived', () => {
     expect(
       extractProjectRefFromDatabaseUrl(

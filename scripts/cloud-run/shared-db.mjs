@@ -68,26 +68,22 @@ FROM checks, food, orphans;
 `;
 
 export function extractProjectRefFromDatabaseUrl(databaseUrl) {
-  const parsedUrl = new URL(databaseUrl);
-  const hostnameParts = parsedUrl.hostname.split('.');
+  const directConnectionMatch = databaseUrl.match(
+    /@db\.([a-z0-9]+)\.supabase\.co(?::\d+)?\//i
+  );
 
-  if (
-    hostnameParts.length >= 4 &&
-    hostnameParts[0] === 'db' &&
-    hostnameParts.at(-2) === 'supabase' &&
-    hostnameParts.at(-1) === 'co'
-  ) {
-    return hostnameParts[1];
+  if (directConnectionMatch?.[1]) {
+    return directConnectionMatch[1];
   }
 
-  if (
-    hostnameParts.length >= 4 &&
-    hostnameParts.includes('pooler') &&
-    hostnameParts.at(-2) === 'supabase' &&
-    hostnameParts.at(-1) === 'com'
-  ) {
-    const username = decodeURIComponent(parsedUrl.username);
-    const usernameParts = username.split('.');
+  const poolerConnectionMatch = databaseUrl.match(
+    /^[a-z]+:\/\/([^:]+):.*@[^/]*pooler\.supabase\.com(?::\d+)?\//i
+  );
+
+  if (poolerConnectionMatch?.[1]) {
+    const usernameParts = decodeURIComponent(poolerConnectionMatch[1]).split(
+      '.'
+    );
 
     if (usernameParts.length >= 2) {
       return usernameParts.at(-1);
