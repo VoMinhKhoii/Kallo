@@ -220,24 +220,24 @@ jobs:
             --update-labels=commit-sha=${{ github.event.workflow_run.head_sha }},pr-number=${{ env.PR_NUMBER }},deployment-target=preview,github-run-id=${{ github.run_id }},database-mode=branch
             --revision-labels=commit-sha=${{ github.event.workflow_run.head_sha }},pr-number=${{ env.PR_NUMBER }},deployment-target=preview,github-run-id=${{ github.run_id }},database-mode=branch
       - name: Resolve deploy URL
-        if: steps.pr_state.outputs.should_deploy == 'true'
+        if: steps.pr_state.outputs.should_deploy == 'true' && (env.PREVIEW_DATABASE_MODE != 'branch' || steps.pr_state_recheck.outputs.should_continue_deploy == 'true')
         run: |
           echo "DEPLOY_URL=${{ steps.deploy_branch.outputs.url || steps.deploy_shared.outputs.url }}" >> "$GITHUB_ENV"
       - id: smoke
-        if: steps.pr_state.outputs.should_deploy == 'true'
+        if: steps.pr_state.outputs.should_deploy == 'true' && (env.PREVIEW_DATABASE_MODE != 'branch' || steps.pr_state_recheck.outputs.should_continue_deploy == 'true')
         run: ./scripts/cloud-run/smoke-check.sh "$DEPLOY_URL"
       - name: Record deploy metadata
-        if: always() && steps.pr_state.outputs.should_deploy == 'true'
+        if: always() && steps.pr_state.outputs.should_deploy == 'true' && (env.PREVIEW_DATABASE_MODE != 'branch' || steps.pr_state_recheck.outputs.should_continue_deploy == 'true')
         run: |
           revision="$(gcloud run services describe "$SERVICE_NAME" --region="${{ vars.GCP_REGION }}" --format='value(status.latestCreatedRevisionName)' 2>/dev/null || true)"
           echo "{\"service\":\"$SERVICE_NAME\",\"image\":\"${IMAGE_URI:-}\",\"revision\":\"$revision\",\"url\":\"${DEPLOY_URL:-}\",\"commit_sha\":\"${{ github.event.workflow_run.head_sha }}\",\"smoke\":\"${{ steps.smoke.outcome }}\",\"database_mode\":\"${PREVIEW_DATABASE_MODE:-shared}\"}" > deployment-record.json
       - uses: actions/upload-artifact@v4
-        if: always() && steps.pr_state.outputs.should_deploy == 'true'
+        if: always() && steps.pr_state.outputs.should_deploy == 'true' && (env.PREVIEW_DATABASE_MODE != 'branch' || steps.pr_state_recheck.outputs.should_continue_deploy == 'true')
         with:
           name: preview-deployment-record-${{ env.PR_NUMBER }}
           path: deployment-record.json
       - uses: actions/github-script@v7
-        if: always() && steps.pr_state.outputs.should_deploy == 'true'
+        if: always() && steps.pr_state.outputs.should_deploy == 'true' && (env.PREVIEW_DATABASE_MODE != 'branch' || steps.pr_state_recheck.outputs.should_continue_deploy == 'true')
         env:
           DEPLOY_URL: ${{ env.DEPLOY_URL }}
           HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
