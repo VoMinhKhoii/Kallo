@@ -123,11 +123,17 @@ Use **GitHub → Actions → Reset Staging Database** when staging drifts into a
 state. The workflow:
 
 1. checks out the default branch
-2. runs `supabase db reset --linked --yes`
-3. reapplies the generated `seed_food.sql` from GCS
+2. verifies that `SUPABASE_PROJECT_ID` matches the project behind
+   `nham-nonprod-database-url`
+3. runs `supabase db reset --linked --yes`
+4. reapplies the generated `seed_food.sql` from GCS
+5. verifies that the rebuilt DB has core tables, seeded food rows, the
+   `on_auth_user_created` trigger, and zero orphaned `auth.users` rows
 
 That gives you a one-button rebuild of the shared staging database from the
 latest approved migrations plus the generated search/embedding seed state.
+It also replays a backfill migration so pre-existing `auth.users` rows regain
+their `public.user_profiles` rows after remote resets.
 
 ## Recommended naming
 

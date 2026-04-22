@@ -62,10 +62,19 @@ jobs:
             echo "$db_url"
             echo 'EOF'
           } >> "$GITHUB_ENV"
+      - name: Verify shared staging target alignment
+        run: >
+          node ./scripts/cloud-run/shared-db.mjs assert-target
+          --db-url "$STAGING_DATABASE_URL"
+          --project-ref "$SUPABASE_PROJECT_ID"
       - name: Reset linked Supabase project
         run: supabase db reset --linked --yes
       - name: Reapply generated seed state
         run: psql "$STAGING_DATABASE_URL" -v ON_ERROR_STOP=1 -f "$RUNNER_TEMP/seed_food.sql"
+      - name: Verify shared staging database state
+        run: >
+          node ./scripts/cloud-run/shared-db.mjs assert-state
+          --db-url "$STAGING_DATABASE_URL"
       - name: Remove staged seed file
         if: always()
         run: rm -f "$RUNNER_TEMP/seed_food.sql"
