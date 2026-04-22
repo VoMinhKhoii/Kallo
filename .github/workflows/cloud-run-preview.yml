@@ -125,6 +125,7 @@ jobs:
           bun scripts/cloud-run/preview-db.ts prepare
           --pr "$PR_NUMBER"
           --sha "${{ github.event.workflow_run.head_sha }}"
+          --image-tag "$IMAGE_TAG"
           --seed-file "$RUNNER_TEMP/seed_food.sql"
           --github-env "$GITHUB_ENV"
       - name: Remove staged seed file
@@ -184,7 +185,7 @@ jobs:
             --timeout=60
             --min-instances=0
             --max-instances=3
-            --set-env-vars=^@^DATABASE_URL=${{ env.POSTGRES_URL_NON_POOLING }}
+            --update-env-vars=DATABASE_URL=${{ env.POSTGRES_URL_NON_POOLING }}
             --set-secrets=GEMINI_API_KEY=nham-nonprod-gemini-api-key:latest
             --update-labels=commit-sha=${{ github.event.workflow_run.head_sha }},pr-number=${{ env.PR_NUMBER }},deployment-target=preview,github-run-id=${{ github.run_id }},database-mode=branch
             --revision-labels=commit-sha=${{ github.event.workflow_run.head_sha }},pr-number=${{ env.PR_NUMBER }},deployment-target=preview,github-run-id=${{ github.run_id }},database-mode=branch

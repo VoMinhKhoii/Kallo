@@ -248,4 +248,53 @@ describe('preparePreviewBranch', () => {
 
     rmSync('.github-preview-env', { force: true });
   });
+
+  it('uses provided imageTag instead of computing it', async () => {
+    const appendGithubEnv = vi.fn();
+    const seedFile = resolve('scripts/__tests__/preview-db-seed.sql');
+    rmSync(seedFile, { force: true });
+    rmSync('.github-preview-env', { force: true });
+    const run = vi
+      .fn()
+      .mockImplementationOnce(() => ({
+        exitCode: 0,
+        stdout: [
+          'SUPABASE_URL=https://preview.supabase.co',
+          'SUPABASE_ANON_KEY=anon-key',
+          'POSTGRES_URL_NON_POOLING=postgres://db-url',
+        ].join('\n'),
+        stderr: '',
+      }))
+      .mockImplementationOnce(() => ({
+        exitCode: 0,
+        stdout: '',
+        stderr: '',
+      }));
+
+    const providedTag =
+      'us-central1-docker.pkg.dev/my-project/my-repo/nham:abc123';
+    const result = await preparePreviewBranch({
+      prNumber: 42,
+      sha: 'abc123',
+      imageTag: providedTag,
+      seedFile,
+      gcsSeedBucket: 'preview-bucket',
+      gcsSeedObject: 'supabase/seed_food.sql',
+      githubEnvPath: '.github-preview-env',
+      run,
+      appendGithubEnv,
+    });
+
+    expect(result.imageTag).toBe(providedTag);
+    expect(appendGithubEnv).toHaveBeenCalledWith('.github-preview-env', {
+      SUPABASE_URL: 'https://preview.supabase.co',
+      SUPABASE_ANON_KEY: 'anon-key',
+      POSTGRES_URL_NON_POOLING: 'postgres://db-url',
+      BRANCH_NAME: 'pr-42',
+      CREATED_BRANCH: 'false',
+      IMAGE_TAG: providedTag,
+    });
+
+    rmSync('.github-preview-env', { force: true });
+  });
 });
