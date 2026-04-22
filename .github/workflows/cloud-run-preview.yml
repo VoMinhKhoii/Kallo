@@ -81,6 +81,20 @@ jobs:
         if: steps.pr_state.outputs.should_deploy == 'true'
         with:
           project_id: ${{ vars.GCP_PROJECT_ID }}
+      - uses: actions/checkout@v4
+        if: steps.pr_state.outputs.should_deploy == 'true' && env.PREVIEW_DATABASE_MODE == 'shared'
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+      - name: Read shared staging database URL
+        if: steps.pr_state.outputs.should_deploy == 'true' && env.PREVIEW_DATABASE_MODE == 'shared'
+        run: |
+          db_url="$(gcloud secrets versions access latest --secret=nham-nonprod-database-url)"
+          echo "::add-mask::$db_url"
+          {
+            echo 'STAGING_DATABASE_URL<<EOF'
+            echo "$db_url"
+            echo 'EOF'
+          } >> "$GITHUB_ENV"
       - name: Pre-deploy validation (shared DB mode)
         if: steps.pr_state.outputs.should_deploy == 'true' && env.PREVIEW_DATABASE_MODE == 'shared'
         run: |
@@ -89,6 +103,8 @@ jobs:
           gcloud secrets describe nham-nonprod-gemini-api-key
           gcloud iam service-accounts describe "${{ vars.GCP_RUNTIME_SERVICE_ACCOUNT }}"
           [[ "$SERVICE_NAME" =~ ^nham-pr-[0-9]+$ ]]
+          node ./scripts/cloud-run/shared-db.mjs assert-target --db-url "$STAGING_DATABASE_URL" --project-ref "$SUPABASE_PROJECT_ID"
+          node ./scripts/cloud-run/shared-db.mjs assert-state --db-url "$STAGING_DATABASE_URL"
       - name: Resolve image digest (shared DB mode)
         if: steps.pr_state.outputs.should_deploy == 'true' && env.PREVIEW_DATABASE_MODE == 'shared'
         run: |
