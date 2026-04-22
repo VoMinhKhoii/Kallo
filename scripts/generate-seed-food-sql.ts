@@ -2,6 +2,7 @@
 
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
+import { normalizeIngredientKey } from '@/lib/ai/matching/embedding-cache';
 import { isMainModule } from '@/scripts/runtime';
 
 type CsvRow = Record<string, string>;
@@ -261,14 +262,28 @@ function buildVfcInsert(rows: CsvRow[]): string {
   ].join('\n');
 }
 
+function uniqueQueryEmbeddingRows(rows: CsvRow[]): CsvRow[] {
+  const uniqueRows: CsvRow[] = [];
+  const seenKeys = new Set<string>();
+
+  for (const row of rows) {
+    const key = normalizeIngredientKey(row.name_primary ?? '');
+    if (seenKeys.has(key)) continue;
+    seenKeys.add(key);
+    uniqueRows.push(row);
+  }
+
+  return uniqueRows;
+}
+
 function buildQueryEmbeddingInsert(rows: CsvRow[]): string | null {
-  const tuples = rows
+  const tuples = uniqueQueryEmbeddingRows(rows)
     .map((row) => {
       const embedding = row.embedding ?? '';
       const parsed = parseVectorValue(embedding);
       if (!parsed) return null;
 
-      return `  (${toSqlText(row.name_primary ?? '')}, ${toSqlText(row.name_en ?? '')}, ${formatPgVector(parsed)}::vector(768))`;
+      return `  (${toSqlText(normalizeIngredientKey(row.name_primary ?? ''))}, ${toSqlText(row.name_en ?? '')}, ${formatPgVector(parsed)}::vector(768))`;
     })
     .filter((tuple): tuple is string => tuple !== null);
 

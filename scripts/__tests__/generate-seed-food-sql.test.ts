@@ -95,4 +95,108 @@ describe('buildSeedSql', () => {
     expect(sql).toContain('INSERT INTO ingredient_query_embeddings');
     expect(sql).toContain('COMMIT;');
   });
+
+  it('deduplicates colliding normalized query keys', () => {
+    const sql = buildSeedSql([
+      {
+        id: 'food-1',
+        name_primary: 'Sữa bò tươi',
+        name_alt: '[]',
+        name_en: 'First milk',
+        type_vn: 'Sữa và sản phẩm chế biến',
+        type_en: 'Milk and products',
+        source_id: '1',
+        state: 'raw',
+        inedible_portion_pct: '',
+        calories_kcal: '',
+        protein_g: '',
+        carbohydrate_g: '',
+        fat_g: '',
+        fiber_g: '',
+        sodium_mg: '',
+        calcium_mg: '',
+        iron_mg: '',
+        magnesium_mg: '',
+        phosphorus_mg: '',
+        potassium_mg: '',
+        zinc_mg: '',
+        copper_mcg: '',
+        manganese_mg: '',
+        beta_carotene_mcg: '',
+        vitamin_a_mcg: '',
+        vitamin_d_mcg: '',
+        vitamin_e_mg: '',
+        vitamin_k_mcg: '',
+        vitamin_c_mg: '',
+        vitamin_b1_mg: '',
+        vitamin_b2_mg: '',
+        vitamin_pp_mg: '',
+        vitamin_b5_mg: '',
+        vitamin_b6_mg: '',
+        vitamin_b9_mcg: '',
+        vitamin_b12_mcg: '',
+        vitamin_h_mcg: '',
+        last_verified: '2026-02-26',
+        search_text: 'Sữa bò tươi First milk',
+        search_text_ascii: 'sua bo tuoi first milk',
+        embedding: '[0.1,0.2,0.3]',
+      },
+      {
+        id: 'food-2',
+        name_primary: ' sữa bò tươi ',
+        name_alt: '[]',
+        name_en: 'Second milk',
+        type_vn: 'Sữa và sản phẩm chế biến',
+        type_en: 'Milk and products',
+        source_id: '1',
+        state: 'raw',
+        inedible_portion_pct: '',
+        calories_kcal: '',
+        protein_g: '',
+        carbohydrate_g: '',
+        fat_g: '',
+        fiber_g: '',
+        sodium_mg: '',
+        calcium_mg: '',
+        iron_mg: '',
+        magnesium_mg: '',
+        phosphorus_mg: '',
+        potassium_mg: '',
+        zinc_mg: '',
+        copper_mcg: '',
+        manganese_mg: '',
+        beta_carotene_mcg: '',
+        vitamin_a_mcg: '',
+        vitamin_d_mcg: '',
+        vitamin_e_mg: '',
+        vitamin_k_mcg: '',
+        vitamin_c_mg: '',
+        vitamin_b1_mg: '',
+        vitamin_b2_mg: '',
+        vitamin_pp_mg: '',
+        vitamin_b5_mg: '',
+        vitamin_b6_mg: '',
+        vitamin_b9_mcg: '',
+        vitamin_b12_mcg: '',
+        vitamin_h_mcg: '',
+        last_verified: '2026-02-26',
+        search_text: 'sữa bò tươi Second milk',
+        search_text_ascii: 'sua bo tuoi second milk',
+        embedding: '[0.4,0.5,0.6]',
+      },
+    ]);
+
+    const queryStart = sql.indexOf('INSERT INTO ingredient_query_embeddings');
+    const querySection = sql.slice(
+      queryStart,
+      sql.indexOf('ON CONFLICT (name_vi)')
+    );
+    const valueRows = querySection
+      .split('\n')
+      .filter((line) => line.trim().startsWith('('));
+
+    expect(valueRows).toHaveLength(1);
+    expect(querySection).toContain("'sữa bò tươi'");
+    expect(querySection).not.toContain("'Second milk'");
+  });
 });
