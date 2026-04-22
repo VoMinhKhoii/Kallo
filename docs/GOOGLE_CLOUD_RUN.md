@@ -3,6 +3,7 @@
 This repo now ships a Cloud Run deployment path with:
 
 - one shared internal service: `nham-internal`
+- one manual shared staging service: `nham-staging`
 - one preview service per PR: `nham-pr-<number>`
 - one immutable Artifact Registry image per commit SHA
 - GitHub Actions authentication through Workload Identity Federation (WIF)
@@ -34,6 +35,7 @@ Create or confirm these resources:
 - Workload Identity Provider for GitHub OIDC
 - Deployer service account for GitHub Actions
 - Runtime service account for Cloud Run revisions
+- GCS bucket for staging lease state
 - Secret Manager secrets:
   - `nham-nonprod-database-url`
   - `nham-nonprod-gemini-api-key`
@@ -62,6 +64,25 @@ gcloud storage buckets add-iam-policy-binding "gs://$GCS_PREVIEW_SEED_BUCKET" \
   --role="roles/storage.objectViewer"
 ```
 
+## GCS staging lease bucket setup
+
+Use a separate bucket for the shared staging lease so the GitHub deployer can
+write and delete the lock object without widening access to the seed artifact
+bucket:
+
+```bash
+export GCS_STAGING_LEASE_BUCKET="nham-staging-leases"
+
+gcloud storage buckets create "gs://$GCS_STAGING_LEASE_BUCKET" \
+  --project="$GCP_PROJECT_ID" \
+  --location="$GCP_REGION" \
+  --uniform-bucket-level-access
+
+gcloud storage buckets add-iam-policy-binding "gs://$GCS_STAGING_LEASE_BUCKET" \
+  --member="serviceAccount:$GCP_DEPLOYER_SERVICE_ACCOUNT" \
+  --role="roles/storage.objectAdmin"
+```
+
 ## Seed refresh flow and GitHub settings
 
 Refresh the preview seed artifact with:
@@ -85,6 +106,26 @@ Required GitHub settings:
 - Variables:
   - `GCS_SEED_BUCKET`
   - `GCS_SEED_OBJECT`
+  - `GCS_STAGING_LEASE_BUCKET`
+
+## Manual shared staging deploy flow
+
+Use the **Cloud Run Staging** workflow when you want to deploy a branch to the
+single shared staging environment.
+
+Inputs:
+
+- `ref` — branch, tag, or commit SHA to deploy
+- `reason` — free-form reason shown in the lease payload
+- `force_takeover` — replace an active lease even if it has not expired
+
+The workflow:
+
+1. acquires a GCS-backed staging lease,
+2. pushes local migrations to the shared non-prod database,
+3. deploys the selected commit to `nham-staging`,
+4. runs the standard smoke check,
+5. releases the lease in cleanup.
 
 ## Recommended naming
 
@@ -98,7 +139,9 @@ Use names close to these so the guide and workflows stay easy to map:
 | Deployer service account | `github-deployer` |
 | Runtime service account | `cloud-run-runtime` |
 | Internal Cloud Run service | `nham-internal` |
+| Shared staging Cloud Run service | `nham-staging` |
 | Preview Cloud Run services | `nham-pr-<number>` |
+| Staging lease bucket | `nham-staging-leases` |
 
 ## Required APIs
 
