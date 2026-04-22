@@ -205,7 +205,6 @@ jobs:
             --max-instances=3
             --set-secrets=DATABASE_URL=nham-nonprod-database-url:latest,GEMINI_API_KEY=nham-nonprod-gemini-api-key:latest
             --update-labels=commit-sha=${{ github.event.workflow_run.head_sha }},pr-number=${{ env.PR_NUMBER }},deployment-target=preview,github-run-id=${{ github.run_id }},database-mode=shared
-            --revision-labels=commit-sha=${{ github.event.workflow_run.head_sha }},pr-number=${{ env.PR_NUMBER }},deployment-target=preview,github-run-id=${{ github.run_id }},database-mode=shared
       - id: deploy_branch
         if: steps.pr_state.outputs.should_deploy == 'true' && env.PREVIEW_DATABASE_MODE == 'branch' && steps.pr_state_recheck.outputs.should_continue_deploy == 'true'
         uses: google-github-actions/deploy-cloudrun@v3
@@ -226,7 +225,6 @@ jobs:
             --update-env-vars=^##^DATABASE_URL=${{ env.POSTGRES_URL_NON_POOLING }}
             --set-secrets=GEMINI_API_KEY=nham-nonprod-gemini-api-key:latest
             --update-labels=commit-sha=${{ github.event.workflow_run.head_sha }},pr-number=${{ env.PR_NUMBER }},deployment-target=preview,github-run-id=${{ github.run_id }},database-mode=branch
-            --revision-labels=commit-sha=${{ github.event.workflow_run.head_sha }},pr-number=${{ env.PR_NUMBER }},deployment-target=preview,github-run-id=${{ github.run_id }},database-mode=branch
       - name: Resolve deploy URL
         if: steps.pr_state.outputs.should_deploy == 'true' && steps.pr_state_recheck.outputs.should_continue_deploy == 'true'
         run: |
