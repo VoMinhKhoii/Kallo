@@ -1,8 +1,8 @@
-import { eq } from 'drizzle-orm';
 import { db } from '@/lib/db';
-import { userProfiles } from '@/lib/db/schema';
+import type { userProfiles } from '@/lib/db/schema';
 import { Errors } from '@/lib/errors';
 import { createClient } from '@/lib/supabase/server';
+import { getOrCreateUserProfile } from '@/lib/user-profile';
 
 interface AuthResult {
   user: { id: string; email?: string };
@@ -28,14 +28,10 @@ export async function requireAuthAndProfile(deps?: {
     throw Errors.notAuthenticated();
   }
 
-  const rows = await database
-    .select()
-    .from(userProfiles)
-    .where(eq(userProfiles.userId, data.user.id))
-    .limit(1);
-
-  const profile = rows[0];
-  if (!profile) {
+  let profile: typeof userProfiles.$inferSelect;
+  try {
+    profile = await getOrCreateUserProfile(data.user.id, database);
+  } catch {
     throw Errors.profileNotFound();
   }
 

@@ -1,4 +1,3 @@
-import { eq } from 'drizzle-orm';
 import type { NextRequest } from 'next/server';
 import { createGeminiClient } from '@/lib/ai/gemini';
 import { buildUserContext, toParsedMeal } from '@/lib/ai/mappers';
@@ -8,9 +7,10 @@ import { logPipelineEnd, logPipelineStart } from '@/lib/ai/pipeline/logging';
 import type { StreamEvent } from '@/lib/ai/streaming';
 import { encodeSSE } from '@/lib/ai/streaming';
 import { db } from '@/lib/db';
-import { pendingAnalyses, userProfiles } from '@/lib/db/schema';
+import { pendingAnalyses } from '@/lib/db/schema';
 import { Errors, serializeError } from '@/lib/errors';
 import { createClient } from '@/lib/supabase/server';
+import { getOrCreateUserProfile } from '@/lib/user-profile';
 import { mealMessageSchema } from '@/lib/validation';
 
 export const runtime = 'nodejs';
@@ -50,15 +50,7 @@ async function validateRequest(request: NextRequest) {
     const body = bodyResult.value;
 
     // Fetch profile (requires user.id from auth above)
-    const rows = await db
-      .select()
-      .from(userProfiles)
-      .where(eq(userProfiles.userId, user.id))
-      .limit(1);
-    const profile = rows[0];
-    if (!profile) {
-      throw Errors.profileNotFound();
-    }
+    const profile = await getOrCreateUserProfile(user.id);
 
     const parsed = mealMessageSchema.safeParse(body);
     if (!parsed.success) {

@@ -1,10 +1,9 @@
 'use server';
 
-import { eq } from 'drizzle-orm';
 import { z } from 'zod';
 import { db } from '@/lib/db';
-import { userProfiles } from '@/lib/db/schema';
 import { createClient } from '@/lib/supabase/server';
+import { getOrCreateUserProfile } from '@/lib/user-profile';
 import { createGeminiClient } from './gemini';
 import { buildUserContext } from './mappers';
 import { logUnmatchedIngredients } from './matching';
@@ -49,20 +48,7 @@ export async function analyzeMealAction(
       );
     }
 
-    const rows = await db
-      .select()
-      .from(userProfiles)
-      .where(eq(userProfiles.userId, user.id))
-      .limit(1);
-
-    const profile = rows[0];
-    if (!profile) {
-      return makeErrorResponse(
-        'api_error',
-        'Profile not found. Please log in again.',
-        false
-      );
-    }
+    const profile = await getOrCreateUserProfile(user.id);
 
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {

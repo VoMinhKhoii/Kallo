@@ -1,5 +1,5 @@
 import { GoogleGenAI } from '@google/genai';
-import { eq, sql } from 'drizzle-orm';
+import { sql } from 'drizzle-orm';
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import { type NextRequest, NextResponse } from 'next/server';
 import { toJSONSchema } from 'zod';
@@ -36,8 +36,8 @@ import type {
 } from '@/lib/ai/types';
 import { db } from '@/lib/db';
 import type * as schema from '@/lib/db/schema';
-import { userProfiles } from '@/lib/db/schema';
 import { createClient } from '@/lib/supabase/server';
+import { getOrCreateUserProfile } from '@/lib/user-profile';
 
 const GEMINI_MODEL = 'gemini-3-flash-preview';
 const untypedDb = db as unknown as PostgresJsDatabase<typeof schema>;
@@ -97,18 +97,7 @@ export async function POST(request: NextRequest) {
     // No auth available — use provided or default userId
   }
 
-  const [profile] = await db
-    .select()
-    .from(userProfiles)
-    .where(eq(userProfiles.userId, userId))
-    .limit(1);
-
-  if (!profile) {
-    return NextResponse.json(
-      { error: `No profile found for userId: ${userId}` },
-      { status: 404 }
-    );
-  }
+  const profile = await getOrCreateUserProfile(userId);
 
   const userContext = buildUserContext(profile);
 

@@ -6,6 +6,7 @@ import { userProfiles } from '@/lib/db/schema';
 import { ONBOARDING_TOTAL_STEPS } from '@/lib/onboarding/constants';
 import { hasSavedOnboardingProfileData } from '@/lib/onboarding/progress';
 import { createClient } from '@/lib/supabase/server';
+import { getOrCreateUserProfile } from '@/lib/user-profile';
 
 async function getAuthUser() {
   const supabase = await createClient();
@@ -18,12 +19,7 @@ async function getAuthUser() {
 
 export async function getOnboardingProfile() {
   const user = await getAuthUser();
-  const rows = await db
-    .select()
-    .from(userProfiles)
-    .where(eq(userProfiles.userId, user.id))
-    .limit(1);
-  return rows[0] ?? null;
+  return getOrCreateUserProfile(user.id);
 }
 
 export async function saveOnboardingScreen(
@@ -32,11 +28,7 @@ export async function saveOnboardingScreen(
 ) {
   const user = await getAuthUser();
 
-  const [existing] = await db
-    .select()
-    .from(userProfiles)
-    .where(eq(userProfiles.userId, user.id))
-    .limit(1);
+  const existing = await getOrCreateUserProfile(user.id);
 
   const newStep = Math.max(existing?.onboardingStep ?? 0, step);
   const updateObj: Record<string, unknown> = {
@@ -93,6 +85,7 @@ export async function saveOnboardingScreen(
 
 export async function saveProfileSettings(data: Record<string, unknown>) {
   const user = await getAuthUser();
+  await getOrCreateUserProfile(user.id);
 
   const updateObj = {
     weightKg: String(data.weightKg),

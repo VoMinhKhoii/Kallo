@@ -2,11 +2,12 @@ import type { NextRequest } from 'next/server';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { parseSSEChunk } from '@/lib/ai/streaming/encoder';
 import type { StreamEvent } from '@/lib/ai/streaming/types';
+import { Errors } from '@/lib/errors';
 
 const mockGetUser = vi.fn();
-const mockSelect = vi.fn();
 const mockAnalyzeMeal = vi.fn();
 const mockInsert = vi.fn();
+const mockGetOrCreateUserProfile = vi.fn();
 
 vi.mock('@/lib/supabase/server', () => ({
   createClient: () =>
@@ -16,12 +17,6 @@ vi.mock('@/lib/supabase/server', () => ({
 }));
 
 vi.mock('@/lib/db', () => {
-  const selectChain = {
-    select: () => selectChain,
-    from: () => selectChain,
-    where: () => selectChain,
-    limit: () => mockSelect(),
-  };
   const insertChain = {
     insert: () => insertChain,
     values: () => insertChain,
@@ -36,7 +31,6 @@ vi.mock('@/lib/db', () => {
   };
   return {
     db: {
-      ...selectChain,
       insert: () => insertChain,
       update: () => updateChain,
     },
@@ -59,6 +53,11 @@ vi.mock('@/lib/ai/pipeline', () => ({
 
 vi.mock('@/lib/ai/matching', () => ({
   logUnmatchedIngredients: () => Promise.resolve(),
+}));
+
+vi.mock('@/lib/user-profile', () => ({
+  getOrCreateUserProfile: (...args: unknown[]) =>
+    mockGetOrCreateUserProfile(...args),
 }));
 
 interface MockNutrition {
@@ -181,7 +180,7 @@ describe('POST /api/analyze-meal', () => {
   beforeEach(() => {
     process.env.GEMINI_API_KEY = 'test-api-key';
     mockGetUser.mockResolvedValue({ data: { user: { id: 'user-1' } } });
-    mockSelect.mockResolvedValue([mockProfile]);
+    mockGetOrCreateUserProfile.mockResolvedValue(mockProfile);
     mockAnalyzeMeal.mockReset();
     mockInsert.mockResolvedValue([{ id: 'analysis-123' }]);
   });
@@ -211,7 +210,7 @@ describe('POST /api/analyze-meal', () => {
   });
 
   it('returns 404 when profile row is missing', async () => {
-    mockSelect.mockResolvedValue([]);
+    mockGetOrCreateUserProfile.mockRejectedValueOnce(Errors.profileNotFound());
     const res = await POST(createRequest({ message: 'phở bò' }));
     const json = await res.json();
 
