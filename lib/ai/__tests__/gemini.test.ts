@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
 
 const mockGenerateContent = vi.fn();
+const mockGenerateContentStream = vi.fn();
 const mockEmbedContent = vi.fn();
 
 vi.mock('@google/genai', () => ({
@@ -11,6 +12,7 @@ vi.mock('@google/genai', () => ({
     return {
       models: {
         generateContent: mockGenerateContent,
+        generateContentStream: mockGenerateContentStream,
         embedContent: mockEmbedContent,
       },
     };
@@ -95,6 +97,66 @@ describe('GeminiClient', () => {
         expect.objectContaining({
           config: expect.objectContaining({
             thinkingConfig: { thinkingLevel: 'low' as ThinkingLevel },
+          }),
+        })
+      );
+    });
+
+    it('forwards abortSignal to the API call', async () => {
+      mockGenerateContent.mockResolvedValueOnce({
+        text: JSON.stringify({ name: 'test', value: 1 }),
+      });
+
+      const client = createGeminiClient('test-key');
+      const controller = new AbortController();
+
+      await client.generateStructuredOutput({
+        schema: testSchema,
+        systemPrompt: 'test',
+        userMessage: 'test',
+        model: 'gemini-3-flash-preview',
+        abortSignal: controller.signal,
+      });
+
+      expect(mockGenerateContent).toHaveBeenCalledWith(
+        expect.objectContaining({
+          config: expect.objectContaining({
+            abortSignal: controller.signal,
+          }),
+        })
+      );
+    });
+  });
+
+  describe('generateStructuredOutputStream', () => {
+    const testSchema = z.object({
+      name: z.string(),
+      value: z.number(),
+    });
+
+    it('forwards abortSignal to the streaming API call', async () => {
+      mockGenerateContentStream.mockResolvedValueOnce(
+        (async function* () {
+          yield { text: JSON.stringify({ name: 'test', value: 1 }) };
+        })()
+      );
+
+      const client = createGeminiClient('test-key');
+      const controller = new AbortController();
+
+      const result = await client.generateStructuredOutputStream({
+        schema: testSchema,
+        systemPrompt: 'test',
+        userMessage: 'test',
+        model: 'gemini-3-flash-preview',
+        abortSignal: controller.signal,
+      });
+
+      expect(result).toEqual({ name: 'test', value: 1 });
+      expect(mockGenerateContentStream).toHaveBeenCalledWith(
+        expect.objectContaining({
+          config: expect.objectContaining({
+            abortSignal: controller.signal,
           }),
         })
       );

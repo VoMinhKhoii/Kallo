@@ -35,6 +35,7 @@ interface StructuredOutputParams<T> {
   topP?: number;
   topK?: number;
   thinkingConfig?: { thinkingLevel?: ThinkingLevel };
+  abortSignal?: AbortSignal;
 }
 
 export interface GeminiClient {
@@ -133,6 +134,9 @@ export function createGeminiClient(
             ...(params.thinkingConfig != null && {
               thinkingConfig: params.thinkingConfig,
             }),
+            ...(params.abortSignal != null && {
+              abortSignal: params.abortSignal,
+            }),
           },
         });
 
@@ -166,6 +170,9 @@ export function createGeminiClient(
             }),
             ...(params.topP != null && { topP: params.topP }),
             ...(params.topK != null && { topK: params.topK }),
+            ...(params.abortSignal != null && {
+              abortSignal: params.abortSignal,
+            }),
           },
         });
 

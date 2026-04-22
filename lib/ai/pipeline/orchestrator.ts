@@ -1,4 +1,5 @@
 import type { AppDb } from '@/lib/db';
+import { fetchWithTimeout } from '@/lib/fetch-with-timeout';
 import { capitalizeFirst } from '@/lib/utils';
 import type { GeminiClient } from '../gemini';
 import { matchIngredients } from '../matching';
@@ -41,7 +42,7 @@ const DECOMPOSITION_MODEL = 'gemini-3.1-flash-lite-preview';
 const NUTRITION_MODEL = 'gemini-3.1-flash-lite-preview';
 
 /** Per-call timeout for Gemini API calls (ms) */
-const LLM_TIMEOUT_MS = 15_000;
+const LLM_TIMEOUT_MS = 25_000;
 
 // ---------------------------------------------------------------------------
 // Structured logging
@@ -62,33 +63,6 @@ export interface PipelineMetrics {
 
 function logMetrics(metrics: PipelineMetrics): void {
   console.info('[pipeline] metrics', JSON.stringify(metrics));
-}
-
-// ---------------------------------------------------------------------------
-// Timeout helper
-// ---------------------------------------------------------------------------
-
-function withTimeout<T>(
-  promise: Promise<T>,
-  ms: number,
-  label: string
-): Promise<T> {
-  return new Promise<T>((resolve, reject) => {
-    const timer = setTimeout(
-      () => reject(new Error(`${label} timed out after ${ms}ms`)),
-      ms
-    );
-    promise.then(
-      (v) => {
-        clearTimeout(timer);
-        resolve(v);
-      },
-      (e) => {
-        clearTimeout(timer);
-        reject(e);
-      }
-    );
-  });
 }
 
 /**
@@ -182,19 +156,21 @@ async function runPipeline(
     }
   };
 
-  const decomposition: MealDecomposition = await withTimeout(
-    gemini.generateStructuredOutputStream(
-      {
-        schema: mealDecompositionSchema,
-        systemPrompt: buildDecompositionPrompt(userContext),
-        userMessage: rawInput,
-        model: DECOMPOSITION_MODEL,
-        temperature: 0.3,
-        topP: 1,
-        topK: 1,
-      },
-      composedOnChunk
-    ),
+  const decomposition: MealDecomposition = await fetchWithTimeout(
+    (signal) =>
+      gemini.generateStructuredOutputStream(
+        {
+          schema: mealDecompositionSchema,
+          systemPrompt: buildDecompositionPrompt(userContext),
+          userMessage: rawInput,
+          model: DECOMPOSITION_MODEL,
+          temperature: 0.3,
+          topP: 1,
+          topK: 1,
+          abortSignal: signal,
+        },
+        composedOnChunk
+      ),
     LLM_TIMEOUT_MS,
     'decomposition'
   );
@@ -287,25 +263,27 @@ async function runPipeline(
     }
   };
 
-  let nutritionResult: NutritionAdjustment = await withTimeout(
-    gemini.generateStructuredOutputStream(
-      {
-        schema: nutritionAdjustmentSchema,
-        systemPrompt: buildNutritionPrompt(
-          decomposition.mealItems,
-          matchResult.matched,
-          matchResult.unmatched,
-          userContext
-        ),
-        userMessage:
-          'Produce bounded nutrition estimates for each ingredient in each meal item based on the reference data provided.',
-        model: NUTRITION_MODEL,
-        temperature: 0.5,
-        topP: 1,
-        topK: 1,
-      },
-      nutritionOnChunk
-    ),
+  let nutritionResult: NutritionAdjustment = await fetchWithTimeout(
+    (signal) =>
+      gemini.generateStructuredOutputStream(
+        {
+          schema: nutritionAdjustmentSchema,
+          systemPrompt: buildNutritionPrompt(
+            decomposition.mealItems,
+            matchResult.matched,
+            matchResult.unmatched,
+            userContext
+          ),
+          userMessage:
+            'Produce bounded nutrition estimates for each ingredient in each meal item based on the reference data provided.',
+          model: NUTRITION_MODEL,
+          temperature: 0.5,
+          topP: 1,
+          topK: 1,
+          abortSignal: signal,
+        },
+        nutritionOnChunk
+      ),
     LLM_TIMEOUT_MS,
     'nutrition'
   );
@@ -334,25 +312,27 @@ async function runPipeline(
     console.warn('[pipeline] classifyAnomalies → retry_step2, retrying Call 2');
     // Reset streaming state so retry re-emits from scratch
     lastExtractedCount = 0;
-    nutritionResult = await withTimeout(
-      gemini.generateStructuredOutputStream(
-        {
-          schema: nutritionAdjustmentSchema,
-          systemPrompt: buildNutritionPrompt(
-            decomposition.mealItems,
-            matchResult.matched,
-            matchResult.unmatched,
-            userContext
-          ),
-          userMessage:
-            'The previous result had 0 calories. Please recalculate bounded nutrition estimates carefully.',
-          model: NUTRITION_MODEL,
-          temperature: 0.5,
-          topP: 1,
-          topK: 1,
-        },
-        nutritionOnChunk
-      ),
+    nutritionResult = await fetchWithTimeout(
+      (signal) =>
+        gemini.generateStructuredOutputStream(
+          {
+            schema: nutritionAdjustmentSchema,
+            systemPrompt: buildNutritionPrompt(
+              decomposition.mealItems,
+              matchResult.matched,
+              matchResult.unmatched,
+              userContext
+            ),
+            userMessage:
+              'The previous result had 0 calories. Please recalculate bounded nutrition estimates carefully.',
+            model: NUTRITION_MODEL,
+            temperature: 0.5,
+            topP: 1,
+            topK: 1,
+            abortSignal: signal,
+          },
+          nutritionOnChunk
+        ),
       LLM_TIMEOUT_MS,
       'nutrition-retry'
     );
