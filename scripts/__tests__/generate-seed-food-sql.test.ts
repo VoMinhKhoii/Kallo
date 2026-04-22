@@ -6,6 +6,12 @@ import {
   parseCsv,
 } from '../generate-seed-food-sql';
 
+function make768Vector(seed: number): string {
+  return JSON.stringify(
+    Array.from({ length: 768 }, (_, i) => seed + i * 0.001)
+  );
+}
+
 describe('formatPgVector', () => {
   it('formats pgvector literals', () => {
     expect(formatPgVector([0.1, 0.2, 0.3])).toBe("'[0.1,0.2,0.3]'");
@@ -82,7 +88,7 @@ describe('buildSeedSql', () => {
         vitamin_h_mcg: '',
         last_verified: '2026-02-26',
         search_text: 'Nước mắm đậm Fish sauce',
-        embedding: '[0.1,0.2,0.3]',
+        embedding: make768Vector(0.1),
         search_text_ascii: 'nuoc mam dam fish sauce',
       },
     ]);
@@ -139,7 +145,7 @@ describe('buildSeedSql', () => {
         last_verified: '2026-02-26',
         search_text: 'Sữa bò tươi First milk',
         search_text_ascii: 'sua bo tuoi first milk',
-        embedding: '[0.1,0.2,0.3]',
+        embedding: make768Vector(0.1),
       },
       {
         id: 'food-2',
@@ -182,7 +188,7 @@ describe('buildSeedSql', () => {
         last_verified: '2026-02-26',
         search_text: 'sữa bò tươi Second milk',
         search_text_ascii: 'sua bo tuoi second milk',
-        embedding: '[0.4,0.5,0.6]',
+        embedding: make768Vector(0.4),
       },
     ]);
 
@@ -286,7 +292,7 @@ describe('buildSeedSql', () => {
         last_verified: '2026-02-26',
         search_text: 'Cà phê Valid coffee',
         search_text_ascii: 'ca phe valid coffee',
-        embedding: '[0.7,0.8,0.9]',
+        embedding: make768Vector(0.7),
       },
     ]);
 
@@ -303,5 +309,110 @@ describe('buildSeedSql', () => {
     expect(querySection).toContain("'cà phê'");
     expect(querySection).toContain("'Valid coffee'");
     expect(querySection).not.toContain("'Invalid coffee'");
+  });
+
+  it('skips colliding rows with wrong vector dimensions', () => {
+    const sql = buildSeedSql([
+      {
+        id: 'food-1',
+        name_primary: 'Trà xanh',
+        name_alt: '[]',
+        name_en: 'Wrong dimension tea',
+        type_vn: 'Đồ uống',
+        type_en: 'Beverages',
+        source_id: '1',
+        state: 'raw',
+        inedible_portion_pct: '',
+        calories_kcal: '',
+        protein_g: '',
+        carbohydrate_g: '',
+        fat_g: '',
+        fiber_g: '',
+        sodium_mg: '',
+        calcium_mg: '',
+        iron_mg: '',
+        magnesium_mg: '',
+        phosphorus_mg: '',
+        potassium_mg: '',
+        zinc_mg: '',
+        copper_mcg: '',
+        manganese_mg: '',
+        beta_carotene_mcg: '',
+        vitamin_a_mcg: '',
+        vitamin_d_mcg: '',
+        vitamin_e_mg: '',
+        vitamin_k_mcg: '',
+        vitamin_c_mg: '',
+        vitamin_b1_mg: '',
+        vitamin_b2_mg: '',
+        vitamin_pp_mg: '',
+        vitamin_b5_mg: '',
+        vitamin_b6_mg: '',
+        vitamin_b9_mcg: '',
+        vitamin_b12_mcg: '',
+        vitamin_h_mcg: '',
+        last_verified: '2026-02-26',
+        search_text: 'Trà xanh Wrong dimension tea',
+        search_text_ascii: 'tra xanh wrong dimension tea',
+        embedding: '[0.1,0.2,0.3]',
+      },
+      {
+        id: 'food-2',
+        name_primary: ' Trà xanh ',
+        name_alt: '[]',
+        name_en: 'Correct dimension tea',
+        type_vn: 'Đồ uống',
+        type_en: 'Beverages',
+        source_id: '1',
+        state: 'raw',
+        inedible_portion_pct: '',
+        calories_kcal: '',
+        protein_g: '',
+        carbohydrate_g: '',
+        fat_g: '',
+        fiber_g: '',
+        sodium_mg: '',
+        calcium_mg: '',
+        iron_mg: '',
+        magnesium_mg: '',
+        phosphorus_mg: '',
+        potassium_mg: '',
+        zinc_mg: '',
+        copper_mcg: '',
+        manganese_mg: '',
+        beta_carotene_mcg: '',
+        vitamin_a_mcg: '',
+        vitamin_d_mcg: '',
+        vitamin_e_mg: '',
+        vitamin_k_mcg: '',
+        vitamin_c_mg: '',
+        vitamin_b1_mg: '',
+        vitamin_b2_mg: '',
+        vitamin_pp_mg: '',
+        vitamin_b5_mg: '',
+        vitamin_b6_mg: '',
+        vitamin_b9_mcg: '',
+        vitamin_b12_mcg: '',
+        vitamin_h_mcg: '',
+        last_verified: '2026-02-26',
+        search_text: 'Trà xanh Correct dimension tea',
+        search_text_ascii: 'tra xanh correct dimension tea',
+        embedding: make768Vector(0.5),
+      },
+    ]);
+
+    const queryStart = sql.indexOf('INSERT INTO ingredient_query_embeddings');
+    const querySection = sql.slice(
+      queryStart,
+      sql.indexOf('ON CONFLICT (name_vi)')
+    );
+    const valueRows = querySection
+      .split('\n')
+      .filter((line) => line.trim().startsWith('('));
+
+    expect(valueRows).toHaveLength(1);
+    expect(querySection).toContain("'trà xanh'");
+    expect(querySection).toContain("'Correct dimension tea'");
+    expect(querySection).not.toContain("'Wrong dimension tea'");
   });
 });

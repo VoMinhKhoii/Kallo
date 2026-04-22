@@ -100,6 +100,7 @@ function parseVectorValue(value: string): number[] | null {
     const parsed = JSON.parse(trimmed);
     if (!Array.isArray(parsed)) return null;
     const numbers = parsed.map((entry) => Number(entry));
+    if (numbers.length !== 768) return null;
     return numbers.every((entry) => Number.isFinite(entry)) ? numbers : null;
   } catch {
     return null;
