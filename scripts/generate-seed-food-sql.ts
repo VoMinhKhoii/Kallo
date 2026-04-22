@@ -99,9 +99,15 @@ function parseVectorValue(value: string): number[] | null {
   try {
     const parsed = JSON.parse(trimmed);
     if (!Array.isArray(parsed)) return null;
-    const numbers = parsed.map((entry) => Number(entry));
-    if (numbers.length !== 768) return null;
-    return numbers.every((entry) => Number.isFinite(entry)) ? numbers : null;
+    if (parsed.length !== 768) return null;
+    if (
+      !parsed.every(
+        (entry) => typeof entry === 'number' && Number.isFinite(entry)
+      )
+    ) {
+      return null;
+    }
+    return parsed;
   } catch {
     return null;
   }
