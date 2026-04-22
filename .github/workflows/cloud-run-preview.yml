@@ -229,6 +229,8 @@ jobs:
         if: steps.pr_state.outputs.should_deploy == 'true' && steps.pr_state_recheck.outputs.should_continue_deploy == 'true'
         run: |
           echo "DEPLOY_URL=${{ steps.deploy_branch.outputs.url || steps.deploy_shared.outputs.url }}" >> "$GITHUB_ENV"
+      - uses: actions/checkout@v4
+        if: steps.pr_state.outputs.should_deploy == 'true' && steps.pr_state_recheck.outputs.should_continue_deploy == 'true' && env.PREVIEW_DATABASE_MODE == 'shared'
       - id: smoke
         if: steps.pr_state.outputs.should_deploy == 'true' && steps.pr_state_recheck.outputs.should_continue_deploy == 'true'
         run: ./scripts/cloud-run/smoke-check.sh "$DEPLOY_URL"
