@@ -1,5 +1,7 @@
 # Google Cloud Run Setup
 
+<!-- Shared preview validation trigger branch. -->
+
 This repo now ships a Cloud Run deployment path with:
 
 - one shared internal service: `nham-internal`
