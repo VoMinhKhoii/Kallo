@@ -1,6 +1,6 @@
 # Google Cloud Run Setup
 
-<!-- Shared preview validation trigger branch. -->
+<!-- Shared preview validation trigger branch (retry after workflow hotfix). -->
 
 This repo now ships a Cloud Run deployment path with:
 
