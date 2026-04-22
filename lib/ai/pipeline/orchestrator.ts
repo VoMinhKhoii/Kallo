@@ -35,11 +35,11 @@ import {
   validateNutritionOutput,
 } from './validation';
 
-/** Model for LLM Call 1 (decomposition) — structured extraction, speed-optimized */
-const DECOMPOSITION_MODEL = 'gemini-3.1-flash-lite-preview';
+/** Model for LLM Call 1 (decomposition) — stable low-latency/high-volume tier */
+const DECOMPOSITION_MODEL = 'gemini-2.5-flash-lite';
 
-/** Model for LLM Call 2 (nutrition estimation) — needs domain accuracy */
-const NUTRITION_MODEL = 'gemini-3.1-flash-lite-preview';
+/** Model for LLM Call 2 (nutrition estimation) — stable low-latency/high-volume tier */
+const NUTRITION_MODEL = 'gemini-2.5-flash-lite';
 
 /** Per-call timeout for Gemini API calls (ms) */
 const LLM_TIMEOUT_MS = 25_000;
