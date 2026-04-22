@@ -199,4 +199,109 @@ describe('buildSeedSql', () => {
     expect(querySection).toContain("'sữa bò tươi'");
     expect(querySection).not.toContain("'Second milk'");
   });
+
+  it('keeps first valid embedding when colliding rows have mixed validity', () => {
+    const sql = buildSeedSql([
+      {
+        id: 'food-1',
+        name_primary: 'Cà phê',
+        name_alt: '[]',
+        name_en: 'Invalid coffee',
+        type_vn: 'Đồ uống',
+        type_en: 'Beverages',
+        source_id: '1',
+        state: 'raw',
+        inedible_portion_pct: '',
+        calories_kcal: '',
+        protein_g: '',
+        carbohydrate_g: '',
+        fat_g: '',
+        fiber_g: '',
+        sodium_mg: '',
+        calcium_mg: '',
+        iron_mg: '',
+        magnesium_mg: '',
+        phosphorus_mg: '',
+        potassium_mg: '',
+        zinc_mg: '',
+        copper_mcg: '',
+        manganese_mg: '',
+        beta_carotene_mcg: '',
+        vitamin_a_mcg: '',
+        vitamin_d_mcg: '',
+        vitamin_e_mg: '',
+        vitamin_k_mcg: '',
+        vitamin_c_mg: '',
+        vitamin_b1_mg: '',
+        vitamin_b2_mg: '',
+        vitamin_pp_mg: '',
+        vitamin_b5_mg: '',
+        vitamin_b6_mg: '',
+        vitamin_b9_mcg: '',
+        vitamin_b12_mcg: '',
+        vitamin_h_mcg: '',
+        last_verified: '2026-02-26',
+        search_text: 'Cà phê Invalid coffee',
+        search_text_ascii: 'ca phe invalid coffee',
+        embedding: '',
+      },
+      {
+        id: 'food-2',
+        name_primary: ' Cà phê ',
+        name_alt: '[]',
+        name_en: 'Valid coffee',
+        type_vn: 'Đồ uống',
+        type_en: 'Beverages',
+        source_id: '1',
+        state: 'raw',
+        inedible_portion_pct: '',
+        calories_kcal: '',
+        protein_g: '',
+        carbohydrate_g: '',
+        fat_g: '',
+        fiber_g: '',
+        sodium_mg: '',
+        calcium_mg: '',
+        iron_mg: '',
+        magnesium_mg: '',
+        phosphorus_mg: '',
+        potassium_mg: '',
+        zinc_mg: '',
+        copper_mcg: '',
+        manganese_mg: '',
+        beta_carotene_mcg: '',
+        vitamin_a_mcg: '',
+        vitamin_d_mcg: '',
+        vitamin_e_mg: '',
+        vitamin_k_mcg: '',
+        vitamin_c_mg: '',
+        vitamin_b1_mg: '',
+        vitamin_b2_mg: '',
+        vitamin_pp_mg: '',
+        vitamin_b5_mg: '',
+        vitamin_b6_mg: '',
+        vitamin_b9_mcg: '',
+        vitamin_b12_mcg: '',
+        vitamin_h_mcg: '',
+        last_verified: '2026-02-26',
+        search_text: 'Cà phê Valid coffee',
+        search_text_ascii: 'ca phe valid coffee',
+        embedding: '[0.7,0.8,0.9]',
+      },
+    ]);
+
+    const queryStart = sql.indexOf('INSERT INTO ingredient_query_embeddings');
+    const querySection = sql.slice(
+      queryStart,
+      sql.indexOf('ON CONFLICT (name_vi)')
+    );
+    const valueRows = querySection
+      .split('\n')
+      .filter((line) => line.trim().startsWith('('));
+
+    expect(valueRows).toHaveLength(1);
+    expect(querySection).toContain("'cà phê'");
+    expect(querySection).toContain("'Valid coffee'");
+    expect(querySection).not.toContain("'Invalid coffee'");
+  });
 });

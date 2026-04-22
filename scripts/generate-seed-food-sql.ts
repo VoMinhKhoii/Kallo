@@ -269,6 +269,11 @@ function uniqueQueryEmbeddingRows(rows: CsvRow[]): CsvRow[] {
   for (const row of rows) {
     const key = normalizeIngredientKey(row.name_primary ?? '');
     if (seenKeys.has(key)) continue;
+
+    const embedding = row.embedding ?? '';
+    const parsed = parseVectorValue(embedding);
+    if (!parsed) continue;
+
     seenKeys.add(key);
     uniqueRows.push(row);
   }
