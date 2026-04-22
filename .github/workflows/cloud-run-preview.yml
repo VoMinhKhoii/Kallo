@@ -131,11 +131,41 @@ jobs:
       - name: Remove staged seed file
         if: always() && steps.pr_state.outputs.should_deploy == 'true' && env.PREVIEW_DATABASE_MODE == 'branch'
         run: rm -f "$RUNNER_TEMP/seed_food.sql"
-      - name: Configure Docker authentication
+      - id: pr_state_recheck
+        name: Re-check PR state before deploy
         if: steps.pr_state.outputs.should_deploy == 'true' && env.PREVIEW_DATABASE_MODE == 'branch'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          pr_number="${{ github.event.workflow_run.pull_requests[0].number }}"
+          pr_json="$(gh api "repos/${{ github.repository }}/pulls/${pr_number}")"
+          pr_state="$(echo "$pr_json" | jq -r '.state')"
+          pr_updated_at="$(echo "$pr_json" | jq -r '.updated_at')"
+          workflow_created_at="${{ github.event.workflow_run.created_at }}"
+
+          is_open="false"
+          is_fresh="false"
+
+          if [[ "$pr_state" == "open" ]]; then
+            is_open="true"
+            if [[ "$pr_updated_at" < "$workflow_created_at" || "$pr_updated_at" == "$workflow_created_at" ]]; then
+              is_fresh="true"
+            fi
+          fi
+
+          should_continue_deploy="false"
+          if [[ "$is_open" == "true" && "$is_fresh" == "true" ]]; then
+            should_continue_deploy="true"
+          fi
+
+          echo "is_open=$is_open" >> "$GITHUB_OUTPUT"
+          echo "is_fresh=$is_fresh" >> "$GITHUB_OUTPUT"
+          echo "should_continue_deploy=$should_continue_deploy" >> "$GITHUB_OUTPUT"
+      - name: Configure Docker authentication
+        if: steps.pr_state.outputs.should_deploy == 'true' && env.PREVIEW_DATABASE_MODE == 'branch' && steps.pr_state_recheck.outputs.should_continue_deploy == 'true'
         run: gcloud auth configure-docker "${{ vars.GCP_REGION }}-docker.pkg.dev" --quiet
       - name: Build preview image
-        if: steps.pr_state.outputs.should_deploy == 'true' && env.PREVIEW_DATABASE_MODE == 'branch'
+        if: steps.pr_state.outputs.should_deploy == 'true' && env.PREVIEW_DATABASE_MODE == 'branch' && steps.pr_state_recheck.outputs.should_continue_deploy == 'true'
         run: >
           docker build
           --build-arg NEXT_PUBLIC_SUPABASE_URL="$SUPABASE_URL"
@@ -143,10 +173,10 @@ jobs:
           -t "$IMAGE_TAG"
           .
       - name: Push preview image
-        if: steps.pr_state.outputs.should_deploy == 'true' && env.PREVIEW_DATABASE_MODE == 'branch'
+        if: steps.pr_state.outputs.should_deploy == 'true' && env.PREVIEW_DATABASE_MODE == 'branch' && steps.pr_state_recheck.outputs.should_continue_deploy == 'true'
         run: docker push "$IMAGE_TAG"
       - name: Resolve image digest (branch mode)
-        if: steps.pr_state.outputs.should_deploy == 'true' && env.PREVIEW_DATABASE_MODE == 'branch'
+        if: steps.pr_state.outputs.should_deploy == 'true' && env.PREVIEW_DATABASE_MODE == 'branch' && steps.pr_state_recheck.outputs.should_continue_deploy == 'true'
         run: |
           digest="$(gcloud artifacts docker images describe "$IMAGE_TAG" --format='value(image_summary.digest)')"
           echo "IMAGE_URI=${IMAGE_TAG%:*}@${digest}" >> "$GITHUB_ENV"
@@ -170,7 +200,7 @@ jobs:
             --update-labels=commit-sha=${{ github.event.workflow_run.head_sha }},pr-number=${{ env.PR_NUMBER }},deployment-target=preview,github-run-id=${{ github.run_id }},database-mode=shared
             --revision-labels=commit-sha=${{ github.event.workflow_run.head_sha }},pr-number=${{ env.PR_NUMBER }},deployment-target=preview,github-run-id=${{ github.run_id }},database-mode=shared
       - id: deploy_branch
-        if: steps.pr_state.outputs.should_deploy == 'true' && env.PREVIEW_DATABASE_MODE == 'branch'
+        if: steps.pr_state.outputs.should_deploy == 'true' && env.PREVIEW_DATABASE_MODE == 'branch' && steps.pr_state_recheck.outputs.should_continue_deploy == 'true'
         uses: google-github-actions/deploy-cloudrun@v3
         with:
           service: ${{ env.SERVICE_NAME }}
