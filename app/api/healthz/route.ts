@@ -5,7 +5,7 @@ import { db } from '@/lib/db';
 
 export const runtime = 'nodejs';
 
-interface SharedDatabaseHealthRow {
+interface SharedDatabaseHealthRow extends Record<string, unknown> {
   has_user_profiles: number;
   has_food_table: number;
   has_food_source_id: number;

@@ -1,8 +1,17 @@
 import { spawn } from 'node:child_process';
 import { once } from 'node:events';
-import { createServer } from 'node:http';
+import {
+  createServer,
+  type IncomingMessage,
+  type ServerResponse,
+} from 'node:http';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
+
+type RequestHandler = (
+  request: IncomingMessage,
+  response: ServerResponse<IncomingMessage>
+) => void;
 
 async function runSmokeCheck(baseUrl: string) {
   const child = spawn(
@@ -19,7 +28,7 @@ async function runSmokeCheck(baseUrl: string) {
 }
 
 async function withServer(
-  handler: Parameters<typeof createServer>[0],
+  handler: RequestHandler,
   run: (baseUrl: string) => Promise<void>
 ) {
   const server = createServer(handler);
@@ -33,7 +42,7 @@ async function withServer(
   }
 
   try {
-    run(`http://127.0.0.1:${address.port}`);
+    await run(`http://127.0.0.1:${address.port}`);
   } finally {
     server.close();
     await once(server, 'close');
@@ -111,5 +120,5 @@ describe('smoke-check.sh', () => {
         expect(await runSmokeCheck(baseUrl)).toBe(1);
       }
     );
-  });
+  }, 15000);
 });
