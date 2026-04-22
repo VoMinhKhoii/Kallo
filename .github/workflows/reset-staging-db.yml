@@ -1,0 +1,71 @@
+name: Reset Staging Database
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: 'Type RESET STAGING to wipe and rebuild the shared staging database.'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  reset-staging:
+    runs-on: ubuntu-latest
+    environment: staging
+    concurrency:
+      group: reset-staging-db
+      cancel-in-progress: false
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_PROJECT_ID: ${{ secrets.SUPABASE_PROJECT_ID }}
+      GCS_SEED_BUCKET: ${{ vars.GCS_SEED_BUCKET }}
+      GCS_SEED_OBJECT: ${{ vars.GCS_SEED_OBJECT }}
+    steps:
+      - name: Require explicit confirmation
+        run: |
+          if [ "${{ github.event.inputs.confirm }}" != "RESET STAGING" ]; then
+            echo "Confirmation text mismatch. Refusing to reset staging." >&2
+            exit 1
+          fi
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 2.90.0
+      - uses: google-github-actions/auth@v3
+        with:
+          workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
+          service_account: ${{ vars.GCP_DEPLOYER_SERVICE_ACCOUNT }}
+      - uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: ${{ vars.GCP_PROJECT_ID }}
+      - name: Pre-reset validation
+        run: |
+          gcloud secrets describe nham-nonprod-database-url
+          [[ -n "$SUPABASE_ACCESS_TOKEN" ]]
+          [[ -n "$SUPABASE_PROJECT_ID" ]]
+          [[ -n "$GCS_SEED_BUCKET" ]]
+          [[ -n "$GCS_SEED_OBJECT" ]]
+      - name: Download generated staging seed
+        run: gcloud storage cp "gs://$GCS_SEED_BUCKET/$GCS_SEED_OBJECT" "$RUNNER_TEMP/seed_food.sql"
+      - name: Read shared staging database URL
+        run: |
+          db_url="$(gcloud secrets versions access latest --secret=nham-nonprod-database-url)"
+          echo "::add-mask::$db_url"
+          {
+            echo 'STAGING_DATABASE_URL<<EOF'
+            echo "$db_url"
+            echo 'EOF'
+          } >> "$GITHUB_ENV"
+      - name: Reset linked Supabase project
+        run: supabase db reset --linked --yes
+      - name: Reapply generated seed state
+        run: psql "$STAGING_DATABASE_URL" -v ON_ERROR_STOP=1 -f "$RUNNER_TEMP/seed_food.sql"
+      - name: Remove staged seed file
+        if: always()
+        run: rm -f "$RUNNER_TEMP/seed_food.sql"

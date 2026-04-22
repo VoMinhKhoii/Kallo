@@ -31,6 +31,7 @@ interface BranchEnv {
 interface PreparePreviewBranchOptions {
   prNumber: number | string;
   sha: string;
+  imageTag?: string;
   seedFile: string;
   gcsSeedBucket: string;
   gcsSeedObject: string;
@@ -42,6 +43,12 @@ interface PreparePreviewBranchOptions {
 const prepareSchema = z.object({
   prNumber: z.coerce.number().int().positive(),
   sha: z.string().min(1),
+  imageTag: z
+    .string()
+    .trim()
+    .min(1)
+    .regex(/^\S+$/, 'imageTag must be a single non-whitespace token')
+    .optional(),
   seedFile: z.string().min(1),
   gcsSeedBucket: z.string().min(1),
   gcsSeedObject: z.string().min(1),
@@ -290,7 +297,8 @@ export async function preparePreviewBranch(
   const run = options.run ?? defaultRun;
   const appendGithubEnv = options.appendGithubEnv ?? defaultAppendGithubEnv;
   const branchName = buildBranchName(parsed.prNumber);
-  const imageTag = buildPreviewImageTag(parsed.prNumber, parsed.sha);
+  const imageTag =
+    parsed.imageTag ?? buildPreviewImageTag(parsed.prNumber, parsed.sha);
 
   let createdBranch = false;
   const getArgs = [
@@ -432,7 +440,7 @@ async function cleanupOrphanPreviewBranches(openPrNumbers: string[]): Promise<{
 
 function printUsage(): void {
   console.error(`Usage:
-  bun scripts/cloud-run/preview-db.ts prepare --pr <number> --sha <sha> --seed-file <path>
+  bun scripts/cloud-run/preview-db.ts prepare --pr <number> --sha <sha> [--image-tag <tag>] --seed-file <path>
   bun scripts/cloud-run/preview-db.ts cleanup --pr <number>
   bun scripts/cloud-run/preview-db.ts cleanup-orphans --open-pr <number> [--open-pr <number> ...]
   bun scripts/cloud-run/preview-db.ts cleanup-orphans --open-prs 1,2,3`);
@@ -454,6 +462,7 @@ async function main(): Promise<void> {
         prNumber:
           getOption(optionMap, 'pr') ?? getOption(optionMap, 'pr-number'),
         sha: getOption(optionMap, 'sha'),
+        imageTag: getOption(optionMap, 'image-tag'),
         seedFile: getOption(optionMap, 'seed-file'),
         gcsSeedBucket:
           getOption(optionMap, 'gcs-seed-bucket') ??

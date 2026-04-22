@@ -4,8 +4,7 @@ This repo now ships a Cloud Run deployment path with:
 
 - one shared internal service: `nham-internal`
 - one preview service per PR: `nham-pr-<number>`
-- one shared CI image model for push/internal flows, plus PR-specific preview
-  images tagged `pr-<number>-<sha>`
+- one immutable Artifact Registry image per commit SHA
 - GitHub Actions authentication through Workload Identity Federation (WIF)
 
 The deploy path is meant for internal dogfooding first, but it is structured so we
@@ -21,21 +20,29 @@ The workflows in `.github/workflows/` assume:
 - GitHub Actions authenticates with `google-github-actions/auth@v3`
   through WIF
 - Cloud Run runtime secrets come from Secret Manager
-- the shared CI image still uses GitHub repo variables for
+- the shared CI image uses GitHub repo variables for
   `NEXT_PUBLIC_SUPABASE_URL` and
-  `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, but preview deploys rebuild after
-  fetching branch env from Supabase
+  `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
 
-### Bootstrap limitation
+## Preview database modes
 
-The first PR that introduces the Cloud Run preview workflow cannot preview
-itself. GitHub only registers and runs `workflow_run` automation that already
-exists on the default branch, so the bootstrap PR must land on `main` before a
-later PR can trigger `Cloud Run Preview`.
+Preview deploys support two explicit database modes:
 
-The same rule applies when you change `Cloud Run Preview` itself: a PR that
-edits the preview workflow still runs the version currently on `main`. Merge
-workflow fixes first, then use a follow-up PR to validate the updated behavior.
+| Mode | What preview services use | When to use |
+| --- | --- | --- |
+| `shared` | The shared non-prod Supabase database behind `nham-nonprod-database-url` | Default mode on the current plan |
+| `branch` | A per-PR Supabase branch created via `supabase branches` | Future mode once the project has Supabase branching enabled |
+
+Set GitHub Actions variable `PREVIEW_DATABASE_MODE` to control the behavior.
+Leave it unset or set it to `shared` for the current setup.
+
+When you later upgrade to Supabase Pro, switching is meant to be operationally
+simple:
+
+1. set `PREVIEW_DATABASE_MODE=branch`
+2. add `SUPABASE_ACCESS_TOKEN` and `SUPABASE_PROJECT_ID` GitHub secrets
+3. keep `GCS_SEED_BUCKET` and `GCS_SEED_OBJECT` pointing at the generated seed
+4. rerun a preview PR
 
 ## Required Google Cloud resources
 
@@ -76,7 +83,7 @@ gcloud storage buckets add-iam-policy-binding "gs://$GCS_PREVIEW_SEED_BUCKET" \
 
 ## Seed refresh flow and GitHub settings
 
-Refresh the preview seed artifact with:
+Refresh the generated seed artifact with:
 
 ```bash
 bun scripts/generate-seed-food-sql.ts \
@@ -89,14 +96,38 @@ gcloud storage cp ./seed_food.sql \
 rm -f ./seed_food.sql
 ```
 
-Required GitHub settings:
+Required GitHub settings for the current shared mode:
 
-- Secrets:
-  - `SUPABASE_ACCESS_TOKEN`
-  - `SUPABASE_PROJECT_ID`
+- Variables:
+  - `PREVIEW_DATABASE_MODE=shared` (or leave unset)
+
+Additional GitHub settings used by the shared reset workflow and future branch
+mode:
+
 - Variables:
   - `GCS_SEED_BUCKET`
   - `GCS_SEED_OBJECT`
+- Secrets:
+  - `SUPABASE_ACCESS_TOKEN`
+  - `SUPABASE_PROJECT_ID`
+
+Additional GitHub settings required only for future `branch` mode:
+
+- No additional variables or secrets beyond the shared reset settings above.
+
+## Shared staging reset workflow
+
+The shared preview/internal database is intentionally recoverable.
+
+Use **GitHub → Actions → Reset Staging Database** when staging drifts into a bad
+state. The workflow:
+
+1. checks out the default branch
+2. runs `supabase db reset --linked --yes`
+3. reapplies the generated `seed_food.sql` from GCS
+
+That gives you a one-button rebuild of the shared staging database from the
+latest approved migrations plus the generated search/embedding seed state.
 
 ## Recommended naming
 
@@ -121,7 +152,6 @@ gcloud services enable \
   artifactregistry.googleapis.com \
   iam.googleapis.com \
   iamcredentials.googleapis.com \
-  storage.googleapis.com \
   run.googleapis.com \
   secretmanager.googleapis.com
 ```
@@ -173,8 +203,8 @@ export GCP_RUNTIME_SERVICE_ACCOUNT="$GCP_RUNTIME_SA_ID@$GCP_PROJECT_ID.iam.gserv
 ### Deployer service account
 
 The deployer must be able to push images, create/update/delete Cloud Run
-services, attach the runtime service account, and read Secret Manager metadata
-during pre-deploy validation.
+services, attach the runtime service account, and access Secret Manager for
+pre-deploy validation and database reset operations.
 
 ```bash
 gcloud projects add-iam-policy-binding "$GCP_PROJECT_ID" \
@@ -187,7 +217,7 @@ gcloud projects add-iam-policy-binding "$GCP_PROJECT_ID" \
 
 gcloud projects add-iam-policy-binding "$GCP_PROJECT_ID" \
   --member="serviceAccount:$GCP_DEPLOYER_SERVICE_ACCOUNT" \
-  --role="roles/secretmanager.viewer"
+  --role="roles/secretmanager.secretAccessor"
 
 gcloud iam service-accounts add-iam-policy-binding \
   "$GCP_RUNTIME_SERVICE_ACCOUNT" \
@@ -289,8 +319,6 @@ In **GitHub → Settings → Secrets and variables → Actions → Variables**, 
 | `GCP_RUNTIME_SERVICE_ACCOUNT` | Full runtime SA email |
 | `NEXT_PUBLIC_SUPABASE_URL` | Non-prod public Supabase URL |
 | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Non-prod public Supabase anon key |
-| `GCS_SEED_BUCKET` | Preview seed bucket name |
-| `GCS_SEED_OBJECT` | Preview seed object path |
 
 `GCP_WIF_PROVIDER` must be the full resource name:
 
@@ -305,28 +333,26 @@ authentication, and runtime secrets stay in Secret Manager.
 
 `NEXT_PUBLIC_SUPABASE_URL` and
 `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` are **build-time inputs** for the shared
-CI image.
+CI image used by `nham-internal` and by previews while
+`PREVIEW_DATABASE_MODE=shared`.
 
 That means:
 
 - changing them requires a new CI image build
 - changing Cloud Run runtime env vars later will not fix stale client bundle
   config
-- previews rebuild after branch env is fetched from Supabase, so each PR gets
-  branch-specific public config
+- shared-mode previews and `nham-internal` both read the same public Supabase
+  config from GitHub Actions variables
+- if we later switch to `PREVIEW_DATABASE_MODE=branch`, preview images rebuild
+  after branch env is fetched from Supabase, while `nham-internal` keeps using
+  the shared GitHub Actions variables
 
 ### Preview runtime notes
 
-- preview images are built per PR after branch env is fetched
-- `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` come
-  from Supabase branch env
-- `DATABASE_URL` is injected with `--set-env-vars`
-- `GEMINI_API_KEY` remains Secret Manager-backed
-- PR-close and scheduled cleanup remove both Cloud Run services and Supabase
-  branches
-- manual `refresh-preview` redeploys a chosen image digest; it only preserves
-  branch-specific public config when that digest came from the branch-aware
-  preview workflow, not when it points at the shared CI image
+| Mode | Public Supabase config | Server `DATABASE_URL` | Cleanup behavior |
+| --- | --- | --- | --- |
+| `shared` (current default) | Comes from `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` GitHub variables baked into the CI image | Secret Manager-backed `nham-nonprod-database-url` | PR close deletes only the preview Cloud Run service; DB recovery happens through **Reset Staging Database** |
+| `branch` (future Supabase Pro path) | Comes from Supabase branch env fetched during the preview build | Injected with `--update-env-vars=DATABASE_URL=...` for that PR branch | PR close and scheduled cleanup delete both the preview Cloud Run service and the Supabase branch |
 
 ## 8. Cloud Run defaults used by the workflows
 
@@ -352,8 +378,10 @@ That means:
 - Min instances: `0`
 - Max instances: `3`
 - Public URL enabled
-- `DATABASE_URL` is injected with `--set-env-vars`
-- `GEMINI_API_KEY` stays Secret Manager-backed
+- `DATABASE_URL` source depends on `PREVIEW_DATABASE_MODE`:
+  - shared mode uses Secret Manager-backed `nham-nonprod-database-url`
+  - branch mode injects the per-branch URL with `--update-env-vars`
+- `GEMINI_API_KEY` stays Secret Manager-backed in both modes
 
 ## 9. Workflow map
 
@@ -375,20 +403,11 @@ The `Cloud Run Ops` workflow supports:
 
 Useful commands for operators:
 
-Find the digest for the shared CI image for a known commit SHA:
+Find the image digest for a known commit SHA:
 
 ```bash
 export IMAGE_TAG="$GCP_REGION-docker.pkg.dev/$GCP_PROJECT_ID/$GCP_ARTIFACT_REPO/nham:<commit-sha>"
 gcloud artifacts docker images describe "$IMAGE_TAG" \
-  --format='value(image_summary.digest)'
-```
-
-For preview refresh, use the preview workflow's PR-specific image tag
-instead:
-
-```bash
-export PREVIEW_IMAGE_TAG="$GCP_REGION-docker.pkg.dev/$GCP_PROJECT_ID/$GCP_ARTIFACT_REPO/nham:pr-<number>-<pr-head-sha>"
-gcloud artifacts docker images describe "$PREVIEW_IMAGE_TAG" \
   --format='value(image_summary.digest)'
 ```
 
@@ -413,8 +432,7 @@ gcloud run revisions list \
 Run these after setup:
 
 1. Open a same-repo PR and confirm:
-   - `Cloud Run Preview` builds and publishes the PR-specific preview image
-     after CI succeeds
+   - CI publishes an image for the PR head SHA
    - `Cloud Run Preview` comments or updates the PR with a preview URL
    - `https://<preview-url>/api/healthz` returns the expected health JSON
 2. Close that PR and confirm:
