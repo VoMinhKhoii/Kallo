@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 import { spawnSync } from 'node:child_process';
+import { pathToFileURL } from 'node:url';
 
 export const SHARED_DB_STATE_QUERY = `
 WITH checks AS (
@@ -141,13 +142,25 @@ export function parseSharedDbStateOutput(rawOutput) {
     throw new Error(`Malformed shared DB state row: ${lines[0]}`);
   }
 
+  const parsedSeededFoodRows = Number.parseInt(seededFoodRows, 10);
+  const parsedOrphanedAuthUsers = Number.parseInt(orphanedAuthUsers, 10);
+
+  if (
+    !Number.isFinite(parsedSeededFoodRows) ||
+    !Number.isFinite(parsedOrphanedAuthUsers)
+  ) {
+    throw new Error(
+      `Malformed shared DB state row (non-numeric counts): ${lines[0]}`
+    );
+  }
+
   return {
     hasUserProfiles: hasUserProfiles === '1',
     hasFoodTable: hasFoodTable === '1',
     hasFoodSourceId: hasFoodSourceId === '1',
     hasNewUserTrigger: hasNewUserTrigger === '1',
-    seededFoodRows: Number(seededFoodRows),
-    orphanedAuthUsers: Number(orphanedAuthUsers),
+    seededFoodRows: parsedSeededFoodRows,
+    orphanedAuthUsers: parsedOrphanedAuthUsers,
   };
 }
 
@@ -261,7 +274,10 @@ function main() {
   );
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (
+  process.argv[1] &&
+  import.meta.url === pathToFileURL(process.argv[1]).href
+) {
   try {
     main();
   } catch (error) {

@@ -67,6 +67,8 @@ jobs:
           node ./scripts/cloud-run/shared-db.mjs assert-target
           --db-url "$STAGING_DATABASE_URL"
           --project-ref "$SUPABASE_PROJECT_ID"
+      - name: Link Supabase CLI to staging project
+        run: supabase link --project-ref "$SUPABASE_PROJECT_ID"
       - name: Reset linked Supabase project
         run: supabase db reset --linked --yes
       - name: Reapply generated seed state

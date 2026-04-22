@@ -111,14 +111,13 @@ export async function GET() {
       { status: ok ? 200 : 503 }
     );
   } catch (error) {
+    console.error('Shared database health check failed.', error);
+
     return NextResponse.json(
       {
         ok: false,
         service: 'nham',
-        error:
-          error instanceof Error
-            ? error.message
-            : 'Shared database health check failed.',
+        error: 'Shared database health check failed.',
       },
       { status: 503 }
     );

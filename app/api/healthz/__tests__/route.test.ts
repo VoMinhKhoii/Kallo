@@ -1,6 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const execute = vi.fn();
+const consoleError = vi
+  .spyOn(console, 'error')
+  .mockImplementation(() => undefined);
 
 vi.mock('@/lib/db', () => ({
   db: {
@@ -13,6 +16,7 @@ const { GET } = await import('@/app/api/healthz/route');
 describe('GET /api/healthz', () => {
   beforeEach(() => {
     execute.mockReset();
+    consoleError.mockClear();
   });
 
   it('returns 200 when the shared staging database invariants hold', async () => {
@@ -88,7 +92,8 @@ describe('GET /api/healthz', () => {
     expect(json).toEqual({
       ok: false,
       service: 'nham',
-      error: 'DATABASE_URL is not set.',
+      error: 'Shared database health check failed.',
     });
+    expect(consoleError).toHaveBeenCalled();
   });
 });

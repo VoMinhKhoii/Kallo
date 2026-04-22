@@ -60,4 +60,10 @@ describe('shared-db helpers', () => {
       orphanedAuthUsers: 0,
     });
   });
+
+  it('rejects non-numeric row counts', () => {
+    expect(() => parseSharedDbStateOutput('1|1|1|1|NaN|oops\n')).toThrow(
+      'Malformed shared DB state row (non-numeric counts): 1|1|1|1|NaN|oops'
+    );
+  });
 });

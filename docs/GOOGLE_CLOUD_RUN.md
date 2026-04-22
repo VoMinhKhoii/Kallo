@@ -460,6 +460,12 @@ Run these after setup:
 - Previews and internal share one non-production Supabase backend for now.
 - This setup is intentionally open on the default Cloud Run URL; application auth
   is still the access gate.
-- The workflows do not run destructive DB reset or backfill commands.
+- Normal preview and internal deploy workflows do not run destructive database
+  reset commands.
+- The manual **Reset Staging Database** workflow is the exception: it verifies
+  `SUPABASE_PROJECT_ID` matches the database behind
+  `nham-nonprod-database-url`, then runs `supabase db reset --linked --yes`,
+  reapplies `seed_food.sql`, and replays the `public.user_profiles` backfill so
+  existing `auth.users` rows are restored safely.
 - A later production environment with different `NEXT_PUBLIC_*` values will need
   a separate image build or a different client-config bootstrap strategy.
