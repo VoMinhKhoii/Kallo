@@ -40,9 +40,28 @@ append_summary() {
 }
 
 download_current_lease() {
-  rm -f "$current_lease_file" "$error_file"
+  rm -f "$current_lease_file" "$error_file" "$tmp_dir/current-generation"
+
+  local before_generation
+  before_generation="$(describe_generation 2>"$error_file")" || {
+    if grep -Eq 'No URLs matched|404' "$error_file"; then
+      return 1
+    fi
+    cat "$error_file" >&2
+    return 2
+  }
 
   if gcloud storage cp "$lease_uri" "$current_lease_file" >/dev/null 2>"$error_file"; then
+    local after_generation
+    after_generation="$(describe_generation 2>"$error_file")" || {
+      cat "$error_file" >&2
+      return 2
+    }
+    if [ "$before_generation" != "$after_generation" ]; then
+      echo "Lease changed while being inspected; retry acquisition." >&2
+      return 3
+    fi
+    printf '%s\n' "$after_generation" > "$tmp_dir/current-generation"
     return 0
   fi
 
@@ -161,11 +180,16 @@ acquire() {
       acquire_fresh_lease
       return 0
     fi
+    if [ "$status" -eq 3 ]; then
+      echo "Lease was replaced during inspection. Re-attempting acquisition..." >&2
+      replace_existing_lease
+      return 0
+    fi
     exit 1
   fi
 
   local current_generation current_expires_at now_epoch expires_epoch expired
-  current_generation="$(describe_generation)"
+  current_generation="$(cat "$tmp_dir/current-generation")"
   current_expires_at="$(lease_field '.expires_at')"
   now_epoch="$(date -u +%s)"
   expires_epoch=0
