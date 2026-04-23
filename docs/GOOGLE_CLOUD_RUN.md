@@ -329,6 +329,9 @@ In **GitHub → Settings → Secrets and variables → Actions → Variables**, 
 | `GCP_RUNTIME_SERVICE_ACCOUNT` | Full runtime SA email |
 | `NEXT_PUBLIC_SUPABASE_URL` | Non-prod public Supabase URL |
 | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Non-prod public Supabase anon key |
+| `GCS_SEED_BUCKET` | Private preview seed artifact bucket |
+| `GCS_SEED_OBJECT` | Object path of the seed artifact within the bucket |
+| `GCS_STAGING_LEASE_BUCKET` | GCS bucket used for staging/lease.json atomic lock |
 
 `GCP_WIF_PROVIDER` must be the full resource name:
 

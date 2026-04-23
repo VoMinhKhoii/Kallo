@@ -24,6 +24,7 @@ permissions:
 jobs:
   deploy-staging:
     runs-on: ubuntu-latest
+    timeout-minutes: 110
     env:
       SERVICE_NAME: nham-staging
       LEASE_OBJECT: staging/lease.json
@@ -43,12 +44,18 @@ jobs:
           project_id: ${{ vars.GCP_PROJECT_ID }}
       - uses: supabase/setup-cli@v1
         with:
-          version: 1.157.2
+          version: 1.200.3
       - name: Resolve deploy target
         run: |
           commit_sha="$(git rev-parse HEAD)"
           echo "COMMIT_SHA=$commit_sha" >> "$GITHUB_ENV"
           echo "IMAGE_TAG=${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/${{ vars.GCP_ARTIFACT_REPO }}/nham:${commit_sha}" >> "$GITHUB_ENV"
+      - name: Acquire staging lease
+        env:
+          STAGING_REF: ${{ github.event.inputs.ref }}
+          STAGING_REASON: ${{ github.event.inputs.reason }}
+          STAGING_FORCE_TAKEOVER: ${{ github.event.inputs.force_takeover }}
+        run: STAGING_TARGET_SHA="$COMMIT_SHA" ./scripts/cloud-run/staging-lease.sh acquire
       - name: Pre-deploy validation
         run: |
           [ -n "$LEASE_BUCKET" ]
@@ -57,12 +64,6 @@ jobs:
           gcloud secrets describe nham-nonprod-database-url
           gcloud secrets describe nham-nonprod-gemini-api-key
           gcloud iam service-accounts describe "${{ vars.GCP_RUNTIME_SERVICE_ACCOUNT }}"
-      - name: Acquire staging lease
-        env:
-          STAGING_REF: ${{ github.event.inputs.ref }}
-          STAGING_REASON: ${{ github.event.inputs.reason }}
-          STAGING_FORCE_TAKEOVER: ${{ github.event.inputs.force_takeover }}
-        run: STAGING_TARGET_SHA="$COMMIT_SHA" ./scripts/cloud-run/staging-lease.sh acquire
       - name: Read shared staging database URL
         run: |
           db_url="$(gcloud secrets versions access latest --secret=nham-nonprod-database-url)"
@@ -114,10 +115,24 @@ jobs:
         run: ./scripts/cloud-run/smoke-check.sh "${{ steps.deploy.outputs.url }}"
       - name: Record deploy metadata
         if: always()
+        env:
+          REF: ${{ github.event.inputs.ref }}
+          REASON: ${{ github.event.inputs.reason }}
         run: |
           revision="$(gcloud run services describe "$SERVICE_NAME" --region="${{ vars.GCP_REGION }}" --format='value(status.latestCreatedRevisionName)' 2>/dev/null || true)"
           url="$(gcloud run services describe "$SERVICE_NAME" --region="${{ vars.GCP_REGION }}" --format='value(status.url)' 2>/dev/null || true)"
-          echo "{\"service\":\"$SERVICE_NAME\",\"image\":\"$IMAGE_URI\",\"revision\":\"$revision\",\"url\":\"$url\",\"commit_sha\":\"$COMMIT_SHA\",\"ref\":\"${{ github.event.inputs.ref }}\",\"reason\":\"${{ github.event.inputs.reason }}\",\"smoke\":\"${{ steps.smoke.outcome }}\",\"lease_generation\":\"${LEASE_GENERATION:-}\"}" > deployment-record.json
+          jq -n \
+            --arg service "$SERVICE_NAME" \
+            --arg image "$IMAGE_URI" \
+            --arg revision "$revision" \
+            --arg url "$url" \
+            --arg commit_sha "$COMMIT_SHA" \
+            --arg ref "$REF" \
+            --arg reason "$REASON" \
+            --arg smoke "${{ steps.smoke.outcome }}" \
+            --arg lease_generation "${LEASE_GENERATION:-}" \
+            '{service: $service, image: $image, revision: $revision, url: $url, commit_sha: $commit_sha, ref: $ref, reason: $reason, smoke: $smoke, lease_generation: $lease_generation}' \
+            > deployment-record.json
       - uses: actions/upload-artifact@v4
         if: always()
         with:
