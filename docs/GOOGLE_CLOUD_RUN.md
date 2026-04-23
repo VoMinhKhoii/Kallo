@@ -21,10 +21,29 @@ The workflows in `.github/workflows/` assume:
 - GitHub Actions authenticates with `google-github-actions/auth@v3`
   through WIF
 - Cloud Run runtime secrets come from Secret Manager
-- the shared CI image still uses GitHub repo variables for
+- the shared CI image uses GitHub repo variables for
   `NEXT_PUBLIC_SUPABASE_URL` and
-  `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, but preview deploys rebuild after
-  fetching branch env from Supabase
+  `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
+
+## Preview database modes
+
+Preview deploys support two explicit database modes:
+
+| Mode | What preview services use | When to use |
+| --- | --- | --- |
+| `shared` | The shared non-prod Supabase database behind `nham-nonprod-database-url` | Default mode on the current plan |
+| `branch` | A per-PR Supabase branch created via `supabase branches` | Future mode once the project has Supabase branching enabled |
+
+Set GitHub Actions variable `PREVIEW_DATABASE_MODE` to control the behavior.
+Leave it unset or set it to `shared` for the current setup.
+
+When you later upgrade to Supabase Pro, switching is meant to be operationally
+simple:
+
+1. set `PREVIEW_DATABASE_MODE=branch`
+2. add `SUPABASE_ACCESS_TOKEN` and `SUPABASE_PROJECT_ID` GitHub secrets
+3. keep `GCS_SEED_BUCKET` and `GCS_SEED_OBJECT` pointing at the generated seed
+4. rerun a preview PR
 
 ## Required Google Cloud resources
 
@@ -64,28 +83,9 @@ gcloud storage buckets add-iam-policy-binding "gs://$GCS_PREVIEW_SEED_BUCKET" \
   --role="roles/storage.objectViewer"
 ```
 
-## GCS staging lease bucket setup
-
-Use a separate bucket for the shared staging lease so the GitHub deployer can
-write and delete the lock object without widening access to the seed artifact
-bucket:
-
-```bash
-export GCS_STAGING_LEASE_BUCKET="nham-staging-leases"
-
-gcloud storage buckets create "gs://$GCS_STAGING_LEASE_BUCKET" \
-  --project="$GCP_PROJECT_ID" \
-  --location="$GCP_REGION" \
-  --uniform-bucket-level-access
-
-gcloud storage buckets add-iam-policy-binding "gs://$GCS_STAGING_LEASE_BUCKET" \
-  --member="serviceAccount:$GCP_DEPLOYER_SERVICE_ACCOUNT" \
-  --role="roles/storage.objectAdmin"
-```
-
 ## Seed refresh flow and GitHub settings
 
-Refresh the preview seed artifact with:
+Refresh the generated seed artifact with:
 
 ```bash
 bun scripts/generate-seed-food-sql.ts \
@@ -98,34 +98,44 @@ gcloud storage cp ./seed_food.sql \
 rm -f ./seed_food.sql
 ```
 
-Required GitHub settings:
+Required GitHub settings for the current shared mode:
 
-- Secrets:
-  - `SUPABASE_ACCESS_TOKEN`
-  - `SUPABASE_PROJECT_ID`
+- Variables:
+  - `PREVIEW_DATABASE_MODE=shared` (or leave unset)
+
+Additional GitHub settings used by the shared reset workflow and future branch
+mode:
+
 - Variables:
   - `GCS_SEED_BUCKET`
   - `GCS_SEED_OBJECT`
-  - `GCS_STAGING_LEASE_BUCKET`
+- Secrets:
+  - `SUPABASE_ACCESS_TOKEN`
+  - `SUPABASE_PROJECT_ID`
 
-## Manual shared staging deploy flow
+Additional GitHub settings required only for future `branch` mode:
 
-Use the **Cloud Run Staging** workflow when you want to deploy a branch to the
-single shared staging environment.
+- No additional variables or secrets beyond the shared reset settings above.
 
-Inputs:
+## Shared staging reset workflow
 
-- `ref` — branch, tag, or commit SHA to deploy
-- `reason` — free-form reason shown in the lease payload
-- `force_takeover` — replace an active lease even if it has not expired
+The shared preview/internal database is intentionally recoverable.
 
-The workflow:
+Use **GitHub → Actions → Reset Staging Database** when staging drifts into a bad
+state. The workflow:
 
-1. acquires a GCS-backed staging lease,
-2. pushes local migrations to the shared non-prod database,
-3. deploys the selected commit to `nham-staging`,
-4. runs the standard smoke check,
-5. releases the lease in cleanup.
+1. checks out the default branch
+2. verifies that `SUPABASE_PROJECT_ID` matches the project behind
+   `nham-nonprod-database-url`
+3. runs `supabase db reset --linked --yes`
+4. reapplies the generated `seed_food.sql` from GCS
+5. verifies that the rebuilt DB has core tables, seeded food rows, the
+   `on_auth_user_created` trigger, and zero orphaned `auth.users` rows
+
+That gives you a one-button rebuild of the shared staging database from the
+latest approved migrations plus the generated search/embedding seed state.
+It also replays a backfill migration so pre-existing `auth.users` rows regain
+their `public.user_profiles` rows after remote resets.
 
 ## Recommended naming
 
@@ -203,7 +213,8 @@ export GCP_RUNTIME_SERVICE_ACCOUNT="$GCP_RUNTIME_SA_ID@$GCP_PROJECT_ID.iam.gserv
 ### Deployer service account
 
 The deployer must be able to push images, create/update/delete Cloud Run
-services, and attach the runtime service account.
+services, attach the runtime service account, and access Secret Manager for
+pre-deploy validation and database reset operations.
 
 ```bash
 gcloud projects add-iam-policy-binding "$GCP_PROJECT_ID" \
@@ -213,6 +224,10 @@ gcloud projects add-iam-policy-binding "$GCP_PROJECT_ID" \
 gcloud projects add-iam-policy-binding "$GCP_PROJECT_ID" \
   --member="serviceAccount:$GCP_DEPLOYER_SERVICE_ACCOUNT" \
   --role="roles/artifactregistry.writer"
+
+gcloud projects add-iam-policy-binding "$GCP_PROJECT_ID" \
+  --member="serviceAccount:$GCP_DEPLOYER_SERVICE_ACCOUNT" \
+  --role="roles/secretmanager.secretAccessor"
 
 gcloud iam service-accounts add-iam-policy-binding \
   "$GCP_RUNTIME_SERVICE_ACCOUNT" \
@@ -328,25 +343,26 @@ authentication, and runtime secrets stay in Secret Manager.
 
 `NEXT_PUBLIC_SUPABASE_URL` and
 `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` are **build-time inputs** for the shared
-CI image.
+CI image used by `nham-internal` and by previews while
+`PREVIEW_DATABASE_MODE=shared`.
 
 That means:
 
 - changing them requires a new CI image build
 - changing Cloud Run runtime env vars later will not fix stale client bundle
   config
-- previews rebuild after branch env is fetched from Supabase, so each PR gets
-  branch-specific public config
+- shared-mode previews and `nham-internal` both read the same public Supabase
+  config from GitHub Actions variables
+- if we later switch to `PREVIEW_DATABASE_MODE=branch`, preview images rebuild
+  after branch env is fetched from Supabase, while `nham-internal` keeps using
+  the shared GitHub Actions variables
 
 ### Preview runtime notes
 
-- preview images are built per PR after branch env is fetched
-- `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` come
-  from Supabase branch env
-- `DATABASE_URL` is injected with `--set-env-vars`
-- `GEMINI_API_KEY` remains Secret Manager-backed
-- PR-close and scheduled cleanup remove both Cloud Run services and Supabase
-  branches
+| Mode | Public Supabase config | Server `DATABASE_URL` | Cleanup behavior |
+| --- | --- | --- | --- |
+| `shared` (current default) | Comes from `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` GitHub variables baked into the CI image | Secret Manager-backed `nham-nonprod-database-url` | PR close deletes only the preview Cloud Run service; DB recovery happens through **Reset Staging Database** |
+| `branch` (future Supabase Pro path) | Comes from Supabase branch env fetched during the preview build | Injected with `--update-env-vars=DATABASE_URL=...` for that PR branch | PR close and scheduled cleanup delete both the preview Cloud Run service and the Supabase branch |
 
 ## 8. Cloud Run defaults used by the workflows
 
@@ -372,8 +388,10 @@ That means:
 - Min instances: `0`
 - Max instances: `3`
 - Public URL enabled
-- `DATABASE_URL` is injected with `--set-env-vars`
-- `GEMINI_API_KEY` stays Secret Manager-backed
+- `DATABASE_URL` source depends on `PREVIEW_DATABASE_MODE`:
+  - shared mode uses Secret Manager-backed `nham-nonprod-database-url`
+  - branch mode injects the per-branch URL with `--update-env-vars`
+- `GEMINI_API_KEY` stays Secret Manager-backed in both modes
 
 ## 9. Workflow map
 
@@ -446,6 +464,12 @@ Run these after setup:
 - Previews and internal share one non-production Supabase backend for now.
 - This setup is intentionally open on the default Cloud Run URL; application auth
   is still the access gate.
-- The workflows do not run destructive DB reset or backfill commands.
+- Normal preview and internal deploy workflows do not run destructive database
+  reset commands.
+- The manual **Reset Staging Database** workflow is the exception: it verifies
+  `SUPABASE_PROJECT_ID` matches the database behind
+  `nham-nonprod-database-url`, then runs `supabase db reset --linked --yes`,
+  reapplies `seed_food.sql`, and replays the `public.user_profiles` backfill so
+  existing `auth.users` rows are restored safely.
 - A later production environment with different `NEXT_PUBLIC_*` values will need
   a separate image build or a different client-config bootstrap strategy.

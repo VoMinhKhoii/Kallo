@@ -2,6 +2,8 @@
 
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
+import { normalizeIngredientKey } from '@/lib/ai/matching/embedding-cache';
+import { isMainModule } from '@/scripts/runtime';
 
 type CsvRow = Record<string, string>;
 
@@ -97,8 +99,15 @@ function parseVectorValue(value: string): number[] | null {
   try {
     const parsed = JSON.parse(trimmed);
     if (!Array.isArray(parsed)) return null;
-    const numbers = parsed.map((entry) => Number(entry));
-    return numbers.every((entry) => Number.isFinite(entry)) ? numbers : null;
+    if (parsed.length !== 768) return null;
+    if (
+      !parsed.every(
+        (entry) => typeof entry === 'number' && Number.isFinite(entry)
+      )
+    ) {
+      return null;
+    }
+    return parsed;
   } catch {
     return null;
   }
@@ -260,17 +269,33 @@ function buildVfcInsert(rows: CsvRow[]): string {
   ].join('\n');
 }
 
+function uniqueQueryEmbeddingRows(rows: CsvRow[]): CsvRow[] {
+  const uniqueRows: CsvRow[] = [];
+  const seenKeys = new Set<string>();
+
+  for (const row of rows) {
+    const key = normalizeIngredientKey(row.name_primary ?? '');
+    if (seenKeys.has(key)) continue;
+
+    const embedding = row.embedding ?? '';
+    const parsed = parseVectorValue(embedding);
+    if (!parsed) continue;
+
+    seenKeys.add(key);
+    uniqueRows.push(row);
+  }
+
+  return uniqueRows;
+}
+
 function buildQueryEmbeddingInsert(rows: CsvRow[]): string | null {
-  const tuples = rows
+  const tuples = uniqueQueryEmbeddingRows(rows)
     .map((row) => {
       const embedding = row.embedding ?? '';
       const parsed = parseVectorValue(embedding);
       if (!parsed) return null;
 
-      const nameVi = (row.name_primary ?? '').trim();
-      if (!nameVi) return null;
-
-      return `  (${toSqlText(nameVi)}, ${toSqlText(row.name_en ?? '')}, ${formatPgVector(parsed)}::vector(768))`;
+      return `  (${toSqlText(normalizeIngredientKey(row.name_primary ?? ''))}, ${toSqlText(row.name_en ?? '')}, ${formatPgVector(parsed)}::vector(768))`;
     })
     .filter((tuple): tuple is string => tuple !== null);
 
@@ -329,7 +354,7 @@ async function main() {
   console.log(`Wrote ${rows.length} rows to ${outputPath}`);
 }
 
-if (import.meta.main) {
+if (isMainModule(import.meta)) {
   main().catch((error) => {
     console.error('Failed to generate seed SQL:', error);
     process.exit(1);
