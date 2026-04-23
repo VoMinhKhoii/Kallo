@@ -56,3 +56,4 @@ seed_food.sql
 
 # Local git worktrees
 .worktrees/
+.gstack/

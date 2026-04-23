@@ -1,0 +1,149 @@
+name: Cloud Run Staging
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: Branch, tag, or commit SHA to deploy to shared staging
+        type: string
+        required: true
+      reason:
+        description: Why you are taking over shared staging
+        type: string
+        required: true
+      force_takeover:
+        description: Replace an active lease even if it has not expired
+        type: boolean
+        required: true
+        default: false
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  deploy-staging:
+    runs-on: ubuntu-latest
+    timeout-minutes: 110
+    env:
+      SERVICE_NAME: nham-staging
+      LEASE_OBJECT: staging/lease.json
+      LEASE_BUCKET: ${{ vars.GCS_STAGING_LEASE_BUCKET }}
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_PROJECT_ID: ${{ secrets.SUPABASE_PROJECT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.ref }}
+      - uses: google-github-actions/auth@v3
+        with:
+          workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
+          service_account: ${{ vars.GCP_DEPLOYER_SERVICE_ACCOUNT }}
+      - uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: ${{ vars.GCP_PROJECT_ID }}
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 1.200.3
+      - name: Resolve deploy target
+        run: |
+          commit_sha="$(git rev-parse HEAD)"
+          echo "COMMIT_SHA=$commit_sha" >> "$GITHUB_ENV"
+          echo "IMAGE_TAG=${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/${{ vars.GCP_ARTIFACT_REPO }}/nham:${commit_sha}" >> "$GITHUB_ENV"
+      - name: Acquire staging lease
+        env:
+          STAGING_REF: ${{ github.event.inputs.ref }}
+          STAGING_REASON: ${{ github.event.inputs.reason }}
+          STAGING_FORCE_TAKEOVER: ${{ github.event.inputs.force_takeover }}
+        run: STAGING_TARGET_SHA="$COMMIT_SHA" ./scripts/cloud-run/staging-lease.sh acquire
+      - name: Pre-deploy validation
+        run: |
+          [ -n "$LEASE_BUCKET" ]
+          [[ "$SERVICE_NAME" = "nham-staging" ]]
+          gcloud artifacts docker images describe "$IMAGE_TAG"
+          gcloud secrets describe nham-nonprod-database-url
+          gcloud secrets describe nham-nonprod-gemini-api-key
+          gcloud iam service-accounts describe "${{ vars.GCP_RUNTIME_SERVICE_ACCOUNT }}"
+      - name: Read shared staging database URL
+        run: |
+          db_url="$(gcloud secrets versions access latest --secret=nham-nonprod-database-url)"
+          echo "::add-mask::$db_url"
+          { echo 'STAGING_DATABASE_URL<<EOF'; echo "$db_url"; echo 'EOF'; } >> "$GITHUB_ENV"
+      - name: Record previous revision
+        run: |
+          previous_revision="$(
+            gcloud run services describe "$SERVICE_NAME" \
+              --region="${{ vars.GCP_REGION }}" \
+              --format='json' 2>/dev/null \
+            | jq -r '
+              .status.traffic
+              | if . == null then ""
+                else (
+                  (map(select(.percent == 100)) | .[0].revisionName) //
+                  (sort_by(-.percent) | .[0].revisionName) //
+                  ""
+                )
+                end
+            ' || true
+          )"
+          echo "PREVIOUS_REVISION=$previous_revision" >> "$GITHUB_ENV"
+      - name: Push migrations to shared staging DB
+        run: supabase --yes db push --db-url "$STAGING_DATABASE_URL"
+      - name: Resolve image digest
+        run: |
+          digest="$(gcloud artifacts docker images describe "$IMAGE_TAG" --format='value(image_summary.digest)')"
+          echo "IMAGE_URI=${IMAGE_TAG%:*}@${digest}" >> "$GITHUB_ENV"
+      - id: deploy
+        uses: google-github-actions/deploy-cloudrun@v3
+        with:
+          service: ${{ env.SERVICE_NAME }}
+          image: ${{ env.IMAGE_URI }}
+          region: ${{ vars.GCP_REGION }}
+          flags: >-
+            --allow-unauthenticated
+            --service-account=${{ vars.GCP_RUNTIME_SERVICE_ACCOUNT }}
+            --memory=1Gi
+            --cpu=1
+            --concurrency=20
+            --timeout=60
+            --min-instances=0
+            --max-instances=3
+            --set-secrets=DATABASE_URL=nham-nonprod-database-url:latest,GEMINI_API_KEY=nham-nonprod-gemini-api-key:latest
+            --update-labels=commit-sha=${{ env.COMMIT_SHA }},deployment-target=staging,github-run-id=${{ github.run_id }}
+            --revision-labels=commit-sha=${{ env.COMMIT_SHA }},deployment-target=staging,github-run-id=${{ github.run_id }}
+      - id: smoke
+        run: ./scripts/cloud-run/smoke-check.sh "${{ steps.deploy.outputs.url }}"
+      - name: Record deploy metadata
+        if: always()
+        env:
+          REF: ${{ github.event.inputs.ref }}
+          REASON: ${{ github.event.inputs.reason }}
+        run: |
+          revision="$(gcloud run services describe "$SERVICE_NAME" --region="${{ vars.GCP_REGION }}" --format='value(status.latestCreatedRevisionName)' 2>/dev/null || true)"
+          url="$(gcloud run services describe "$SERVICE_NAME" --region="${{ vars.GCP_REGION }}" --format='value(status.url)' 2>/dev/null || true)"
+          jq -n \
+            --arg service "$SERVICE_NAME" \
+            --arg image "$IMAGE_URI" \
+            --arg revision "$revision" \
+            --arg url "$url" \
+            --arg commit_sha "$COMMIT_SHA" \
+            --arg ref "$REF" \
+            --arg reason "$REASON" \
+            --arg smoke "${{ steps.smoke.outcome }}" \
+            --arg lease_generation "${LEASE_GENERATION:-}" \
+            '{service: $service, image: $image, revision: $revision, url: $url, commit_sha: $commit_sha, ref: $ref, reason: $reason, smoke: $smoke, lease_generation: $lease_generation}' \
+            > deployment-record.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: staging-deployment-record-${{ github.run_id }}
+          path: deployment-record.json
+      - name: Roll back on failed smoke check
+        if: failure() && steps.smoke.outcome == 'failure' && env.PREVIOUS_REVISION != ''
+        run: |
+          gcloud run services update-traffic "$SERVICE_NAME" \
+            --region="${{ vars.GCP_REGION }}" \
+            --to-revisions "${PREVIOUS_REVISION}=100"
+      - name: Release staging lease
+        if: always()
+        run: ./scripts/cloud-run/staging-lease.sh release

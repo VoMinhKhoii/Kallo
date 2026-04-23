@@ -3,6 +3,7 @@
 This repo now ships a Cloud Run deployment path with:
 
 - one shared internal service: `nham-internal`
+- one manual shared staging service: `nham-staging`
 - one preview service per PR: `nham-pr-<number>`
 - one immutable Artifact Registry image per commit SHA
 - GitHub Actions authentication through Workload Identity Federation (WIF)
@@ -53,6 +54,7 @@ Create or confirm these resources:
 - Workload Identity Provider for GitHub OIDC
 - Deployer service account for GitHub Actions
 - Runtime service account for Cloud Run revisions
+- GCS bucket for staging lease state
 - Secret Manager secrets:
   - `nham-nonprod-database-url`
   - `nham-nonprod-gemini-api-key`
@@ -147,7 +149,9 @@ Use names close to these so the guide and workflows stay easy to map:
 | Deployer service account | `github-deployer` |
 | Runtime service account | `cloud-run-runtime` |
 | Internal Cloud Run service | `nham-internal` |
+| Shared staging Cloud Run service | `nham-staging` |
 | Preview Cloud Run services | `nham-pr-<number>` |
+| Staging lease bucket | `nham-staging-leases` |
 
 ## Required APIs
 
@@ -325,6 +329,9 @@ In **GitHub → Settings → Secrets and variables → Actions → Variables**, 
 | `GCP_RUNTIME_SERVICE_ACCOUNT` | Full runtime SA email |
 | `NEXT_PUBLIC_SUPABASE_URL` | Non-prod public Supabase URL |
 | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Non-prod public Supabase anon key |
+| `GCS_SEED_BUCKET` | Private preview seed artifact bucket |
+| `GCS_SEED_OBJECT` | Object path of the seed artifact within the bucket |
+| `GCS_STAGING_LEASE_BUCKET` | GCS bucket used for staging/lease.json atomic lock |
 
 `GCP_WIF_PROVIDER` must be the full resource name:
 
