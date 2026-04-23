@@ -267,7 +267,10 @@ function buildQueryEmbeddingInsert(rows: CsvRow[]): string | null {
       const parsed = parseVectorValue(embedding);
       if (!parsed) return null;
 
-      return `  (${toSqlText(row.name_primary ?? '')}, ${toSqlText(row.name_en ?? '')}, ${formatPgVector(parsed)}::vector(768))`;
+      const nameVi = (row.name_primary ?? '').trim();
+      if (!nameVi) return null;
+
+      return `  (${toSqlText(nameVi)}, ${toSqlText(row.name_en ?? '')}, ${formatPgVector(parsed)}::vector(768))`;
     })
     .filter((tuple): tuple is string => tuple !== null);
 
