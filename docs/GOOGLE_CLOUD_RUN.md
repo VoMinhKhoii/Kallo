@@ -1,15 +1,28 @@
 # Google Cloud Run Setup
 
-This repo now ships a Cloud Run deployment path with:
+This repo uses a **manual-only CI/CD model** for the shared database:
 
-- one shared internal service: `nham-internal`
-- one manual shared staging service: `nham-staging`
-- one preview service per PR: `nham-pr-<number>`
-- one immutable Artifact Registry image per commit SHA
-- GitHub Actions authentication through Workload Identity Federation (WIF)
+- **Internal service** (`nham-internal`): Automatically deploys on main branch merge (no manual gate)
+- **Staging service** (`nham-staging`): Manual deployment only via `workflow_dispatch` (gatekeeper for schema/code changes)
+- **Preview services** (`nham-pr-<number>`): Disabled—no automatic PR preview deployments
+- Artifact Registry: One immutable image per commit SHA
+- Authentication: GitHub Actions via Workload Identity Federation (WIF)
 
-The deploy path is meant for internal dogfooding first, but it is structured so we
-can later split staging and production without redesigning the whole pipeline.
+## Deployment Model
+
+All code and migrations hitting the **shared database** must go through the manual staging workflow:
+
+1. Developer pushes PR → CI runs (build, lint, tests)
+2. CI passes → no automatic deployment (previews disabled)
+3. Developer manually triggers **staging deployment** from GitHub Actions UI
+   - Acquires GCS lease to prevent concurrent deploys
+   - Pushes migrations from the PR branch
+   - Deploys service to `nham-staging`
+   - Posts preview URL as a comment on the PR
+4. Once staging is validated, PR is merged to main
+5. Main merge → `nham-internal` **automatically** deploys with latest schema (already validated on staging)
+
+The deploy path is structured so we can later split staging and production without redesigning the whole pipeline.
 
 ## What the workflows expect
 
@@ -25,13 +38,13 @@ The workflows in `.github/workflows/` assume:
   `NEXT_PUBLIC_SUPABASE_URL` and
   `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
 
-## Preview database modes
+## Preview database modes (Staging Only)
 
-Preview deploys support two explicit database modes:
+When staging deployment is triggered, it supports two database modes:
 
-| Mode | What preview services use | When to use |
+| Mode | What staging services use | When to use |
 | --- | --- | --- |
-| `shared` | The shared non-prod Supabase database behind `nham-nonprod-database-url` | Default mode on the current plan |
+| `shared` | The shared non-prod Supabase database behind `nham-nonprod-database-url` | Current mode (no branching) |
 | `branch` | A per-PR Supabase branch created via `supabase branches` | Future mode once the project has Supabase branching enabled |
 
 Set GitHub Actions variable `PREVIEW_DATABASE_MODE` to control the behavior.
@@ -43,7 +56,7 @@ simple:
 1. set `PREVIEW_DATABASE_MODE=branch`
 2. add `SUPABASE_ACCESS_TOKEN` and `SUPABASE_PROJECT_ID` GitHub secrets
 3. keep `GCS_SEED_BUCKET` and `GCS_SEED_OBJECT` pointing at the generated seed
-4. rerun a preview PR
+4. manually trigger staging deployment for a PR
 
 ## Required Google Cloud resources
 
