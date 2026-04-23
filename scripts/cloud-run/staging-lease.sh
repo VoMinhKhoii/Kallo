@@ -9,6 +9,12 @@ command="${1:?usage: staging-lease.sh <acquire|release>}"
 lease_uri="gs://${LEASE_BUCKET}/${LEASE_OBJECT}"
 lease_ttl_hours="${STAGING_LEASE_TTL_HOURS:-2}"
 
+# Validate lease_ttl_hours is a positive integer
+if ! [[ "$lease_ttl_hours" =~ ^[1-9][0-9]*$ ]]; then
+  echo "STAGING_LEASE_TTL_HOURS must be a positive integer (got: $lease_ttl_hours)" >&2
+  exit 1
+fi
+
 tmp_dir="$(mktemp -d)"
 trap 'rm -rf "$tmp_dir"' EXIT
 
@@ -77,6 +83,11 @@ EOF
 
 write_desired_lease() {
   local started_at expires_at run_url
+  # Re-validate lease_ttl_hours at the point of use
+  if ! [[ "$lease_ttl_hours" =~ ^[1-9][0-9]*$ ]]; then
+    echo "STAGING_LEASE_TTL_HOURS is invalid in write_desired_lease (got: $lease_ttl_hours)" >&2
+    exit 1
+  fi
   started_at="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
   expires_at="$(date -u -d "+${lease_ttl_hours} hours" +%Y-%m-%dT%H:%M:%SZ)"
   run_url="${GITHUB_SERVER_URL:-https://github.com}/${GITHUB_REPOSITORY:-}/actions/runs/${GITHUB_RUN_ID:-}"
@@ -142,8 +153,9 @@ acquire() {
     exit 1
   fi
 
-  if ! download_current_lease; then
-    status=$?
+  local status=0
+  download_current_lease || status=$?
+  if [ "$status" -ne 0 ]; then
     if [ "$status" -eq 1 ]; then
       echo "No existing lease found after initial acquire failed. Retrying once..." >&2
       acquire_fresh_lease

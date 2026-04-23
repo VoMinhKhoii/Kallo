@@ -43,7 +43,7 @@ jobs:
           project_id: ${{ vars.GCP_PROJECT_ID }}
       - uses: supabase/setup-cli@v1
         with:
-          version: latest
+          version: 1.157.2
       - name: Resolve deploy target
         run: |
           commit_sha="$(git rev-parse HEAD)"
