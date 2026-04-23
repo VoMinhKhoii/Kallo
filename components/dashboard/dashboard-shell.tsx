@@ -3,10 +3,11 @@
 import { useQuery } from '@tanstack/react-query';
 import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
+import { loadCalorieAdherenceHeatmap } from '@/lib/actions/dashboard';
+import { buildCalorieAdherenceHeatmap } from '@/lib/dashboard/adherence';
 import { cn } from '@/lib/utils';
 import { CurrentSection } from './current/current-section';
 import {
-  getHeatmapData,
   getMealsToday,
   getNutritionData,
   getStatsData,
@@ -42,6 +43,17 @@ export function DashboardShell() {
   const t = useTranslations('dashboard');
   const [timeRange, setTimeRange] = useState<TimeRange>('30d');
   const weekTitle = useMemo(() => getWeekTitle(), []);
+  const timezoneOffset = useMemo(() => new Date().getTimezoneOffset(), []);
+  const emptyHeatmapData = useMemo(
+    () =>
+      buildCalorieAdherenceHeatmap({
+        range: timeRange,
+        dailyCalories: [],
+        calorieTarget: null,
+        timezoneOffset,
+      }),
+    [timeRange, timezoneOffset]
+  );
 
   const { data: verdict } = useQuery({
     queryKey: ['dashboard', 'verdict'],
@@ -72,10 +84,14 @@ export function DashboardShell() {
   });
 
   const { data: heatmapData } = useQuery({
-    queryKey: ['dashboard', 'heatmapData', timeRange],
-    queryFn: () => getHeatmapData(timeRange),
-    initialData: () => getHeatmapData(timeRange),
-    staleTime: Number.POSITIVE_INFINITY,
+    queryKey: ['dashboard', 'heatmapData', timeRange, timezoneOffset],
+    queryFn: () =>
+      loadCalorieAdherenceHeatmap({
+        range: timeRange,
+        timezoneOffset,
+      }),
+    placeholderData: emptyHeatmapData,
+    staleTime: 60_000,
   });
 
   const { data: nutrition } = useQuery({
@@ -94,6 +110,7 @@ export function DashboardShell() {
 
   const { periodStartWeight, expectedEndWeight, goalDirection } =
     weightChartMeta;
+  const resolvedHeatmapData = heatmapData ?? emptyHeatmapData;
 
   return (
     <main
@@ -146,7 +163,9 @@ export function DashboardShell() {
                 range={timeRange}
               />
             }
-            heatmap={<AdherenceHeatmap data={heatmapData} range={timeRange} />}
+            heatmap={
+              <AdherenceHeatmap data={resolvedHeatmapData} range={timeRange} />
+            }
           />
         </section>
 
