@@ -109,6 +109,13 @@ jobs:
           [[ "$SERVICE_NAME" =~ ^nham-pr-[0-9]+$ ]]
           node ./scripts/cloud-run/shared-db.mjs assert-target --db-url "$STAGING_DATABASE_URL" --project-ref "$SUPABASE_PROJECT_ID"
           node ./scripts/cloud-run/shared-db.mjs assert-state --db-url "$STAGING_DATABASE_URL"
+      - uses: supabase/setup-cli@v1
+        if: steps.pr_state.outputs.should_deploy == 'true' && env.PREVIEW_DATABASE_MODE == 'shared'
+        with:
+          version: 2.90.0
+      - name: Push migrations to shared DB (shared DB mode)
+        if: steps.pr_state.outputs.should_deploy == 'true' && env.PREVIEW_DATABASE_MODE == 'shared'
+        run: supabase --yes db push --db-url "$STAGING_DATABASE_URL"
       - name: Resolve image digest (shared DB mode)
         if: steps.pr_state.outputs.should_deploy == 'true' && env.PREVIEW_DATABASE_MODE == 'shared'
         run: |
