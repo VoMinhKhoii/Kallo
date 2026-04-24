@@ -127,7 +127,7 @@ jobs:
           )"
           echo "PREVIOUS_REVISION=$previous_revision" >> "$GITHUB_ENV"
       - name: Push migrations to shared staging DB
-        run: supabase db push --db-url "$STAGING_DATABASE_URL_ENCODED"
+        run: yes | supabase db push --db-url "$STAGING_DATABASE_URL_ENCODED"
       - name: Resolve image digest
         run: |
           digest="$(gcloud artifacts docker images describe "$IMAGE_TAG" --format='value(image_summary.digest)')"

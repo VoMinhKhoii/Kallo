@@ -26,7 +26,7 @@ describe('Cloud Run staging workflow', () => {
     const workflow = readWorkflow('cloud-run-staging.yml');
 
     expect(workflow).toContain(
-      'run: supabase db push --db-url "$STAGING_DATABASE_URL_ENCODED"'
+      'run: yes | supabase db push --db-url "$STAGING_DATABASE_URL_ENCODED"'
     );
     expect(workflow).not.toContain(
       'run: supabase --yes db push --db-url "$STAGING_DATABASE_URL"'
