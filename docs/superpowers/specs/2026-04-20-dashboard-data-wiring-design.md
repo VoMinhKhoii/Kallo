@@ -278,7 +278,7 @@ return (
 - Shared components in `components/shared/` (CalorieRing, MacroBars — already data-driven via props)
 - Dashboard redesign / layout changes
 - New features not currently in the UI
-- `getWeekTitle()` date formatting — currently hardcodes `en-US` locale; kept as-is for now (cosmetic, not functional)
+- `getWeekTitle()` date formatting — hardcodes the `en-US` locale for now (cosmetic, not functional)
 
 ## 9. Post-Merge Cleanup
 

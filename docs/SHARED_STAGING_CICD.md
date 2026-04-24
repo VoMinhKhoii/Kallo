@@ -6,11 +6,12 @@ shared non-production database.
 ## Services
 
 - `nham-internal` — auto-deployed from `main`
-- `nham-pr-<number>` — auto-deployed preview service for each PR
 - `nham-staging` — **manual** shared staging environment for promoted testing
+- `nham-pr-<number>` — preview service footprint kept only for legacy/manual
+  recovery workflows; automatic PR previews are disabled
 
-All three non-prod deploy targets currently read the same non-prod database URL
-from Secret Manager.
+All non-production deploy targets currently read the same non-prod database URL
+from Secret Manager when they are active.
 
 ## Automatic flows
 
@@ -25,19 +26,17 @@ CI does **not** deploy Cloud Run directly.
 
 ### 2. Preview deploy (`.github/workflows/cloud-run-preview.yml`)
 
-After a successful same-repo PR CI run:
+This workflow is intentionally disabled right now:
 
-- GitHub Actions deploys `nham-pr-<number>`
-- the preview service uses the shared non-prod DB secret
-- a smoke check runs against the deployed preview URL
-- the workflow updates the PR comment with the preview URL
+- the deploy job is gated behind `if: false`
+- CI success does **not** create or refresh `nham-pr-<number>`
+- the shared-db preview logic remains in the repo only for legacy cleanup and
+  future re-enablement work
 
 Important:
 
-- preview deploys are automatic
-- preview deploys are **not** a safe place for long-running shared-db manual QA
-- because previews share the same DB, they should be treated as lightweight
-  validation lanes, not exclusive environments
+- automatic previews are disabled on purpose
+- shared staging is now the only supported pre-merge deployment lane
 
 ### 3. Internal deploy (`.github/workflows/cloud-run-internal.yml`)
 
@@ -68,7 +67,9 @@ The workflow does this:
 4. runs `supabase db push` against the shared non-prod DB
 5. deploys `nham-staging`
 6. runs the normal smoke check
-7. releases the lease in cleanup
+7. comments on the PR with the staging URL when `ref` is `pr-<number>` or ends
+   with `#<number>`
+8. releases the lease in cleanup
 
 ## Why the lease exists
 
@@ -96,7 +97,7 @@ overwriting someone else's test session, unless `force_takeover=true`.
 
 ### 5. Preview cleanup (`.github/workflows/cloud-run-preview-cleanup.yml`)
 
-- deletes preview services when PRs close
+- deletes legacy preview services when PRs close
 - also deletes orphaned preview services on schedule
 
 ### 6. Reset staging database (`.github/workflows/reset-staging-db.yml`)
@@ -108,11 +109,10 @@ the expected baseline.
 
 ## Day-to-day guidance
 
-### Use PR previews for:
+### Use legacy/manual preview services only for:
 
-- checking app boot
-- quick smoke validation
-- lightweight reviewer testing
+- cleanup of older `nham-pr-<number>` services
+- one-off operational recovery while the preview path is disabled
 
 ### Use `nham-staging` for:
 
@@ -142,7 +142,7 @@ Current supporting resources:
 
 ## Summary
 
-- **PR preview:** automatic, convenient, shared DB, lightweight
+- **PR preview:** disabled by default; only legacy/manual operations remain
 - **Internal:** automatic from `main`
 - **Staging:** manual, leased, intended for intentional shared-environment QA
 - **Reset DB:** emergency-only recovery path

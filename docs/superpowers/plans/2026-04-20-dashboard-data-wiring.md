@@ -160,7 +160,7 @@ export async function getCurrentSectionData(): Promise<CurrentSectionData> {
   const avgDailyCalories = daysWithData > 0
     ? dailyCals.reduce((s, c) => s + c, 0) / daysWithData
     : 0;
-  const avgDeficit = Math.round(avgDailyCalories - calorieTarget);
+  const avgDeficit = Math.round(calorieTarget - avgDailyCalories);
 
   const proteinDays = dailyProtein.map((p) => p >= proteinTarget) as [
     boolean, boolean, boolean, boolean, boolean, boolean, boolean,
@@ -888,9 +888,6 @@ In `messages/en.json`, add new keys under `dashboard.progress` — keep the old 
       "offTrack": "Off track"
     },
     "adherenceHeatmap": {
-      "onTrack": "{percent}% on track",
-      "notLogged": "Not logged",
-      "offTarget": "Off target",
       "onTarget": "On target",
       "noData": "No data",
       "close": "Close",
@@ -941,9 +938,6 @@ Similarly in `vi.json`, add new nested keys but keep old keys for now — remove
       "offTrack": "Lệch mục tiêu"
     },
     "adherenceHeatmap": {
-      "onTrack": "{percent}% đúng mục tiêu",
-      "notLogged": "Chưa ghi nhận",
-      "offTarget": "Lệch mục tiêu",
       "onTarget": "Đúng mục tiêu",
       "noData": "Không có dữ liệu",
       "close": "Rất gần",
