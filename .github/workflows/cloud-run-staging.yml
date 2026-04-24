@@ -103,18 +103,7 @@ jobs:
       - name: Read shared staging database URL
         run: |
           db_url="$(gcloud secrets versions access latest --secret=nham-nonprod-database-url)"
-          encoded_db_url="$(
-            python3 -c 'import sys, urllib.parse
-raw = sys.stdin.read().strip()
-proto_end = raw.find("://") + 3
-user_end = raw.find(":", proto_end)
-at_host = raw.rfind("@")
-if user_end == -1 or at_host == -1:
-    print(raw, end="")
-else:
-    password = raw[user_end + 1:at_host]
-    print(raw[:user_end + 1] + urllib.parse.quote(password, safe="") + raw[at_host:], end="")' <<< "$db_url"
-          )"
+          encoded_db_url="$(DB_URL="$db_url" node -e "const raw = process.env.DB_URL || ''; const match = raw.match(/^(.*:\\/\\/[^:]+:)([^@]*)(@.*)$/); process.stdout.write(match ? match[1] + encodeURIComponent(match[2]) + match[3] : raw);")"
           echo "::add-mask::$db_url"
           echo "::add-mask::$encoded_db_url"
           { echo 'STAGING_DATABASE_URL<<EOF'; echo "$db_url"; echo 'EOF'; } >> "$GITHUB_ENV"
