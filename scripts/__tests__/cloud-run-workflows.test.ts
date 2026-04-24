@@ -43,6 +43,8 @@ describe('Cloud Run staging workflow', () => {
     expect(workflow).toContain(
       "const explicitPrNumber = process.env.RESOLVED_PR_NUMBER || '';"
     );
+    expect(workflow).toContain('prNumber,');
+    expect(workflow).toContain('--arg pr_number "$RESOLVED_PR_NUMBER"');
   });
 
   it('disables default deploy-cloudrun labels so target commit labels stay unique', () => {
@@ -53,5 +55,13 @@ describe('Cloud Run staging workflow', () => {
       `--update-labels=commit-sha=\${{ env.COMMIT_SHA }},deployment-target=staging,github-run-id=\${{ github.run_id }}`
     );
     expect(workflow).not.toContain('--revision-labels=');
+  });
+
+  it('writes the PR number into the workflow summary for shared staging runs', () => {
+    const workflow = readWorkflow('cloud-run-staging.yml');
+
+    expect(workflow).toContain('- name: Write staging summary');
+    expect(workflow).toContain("echo '## Shared staging deployment'");
+    expect(workflow).toContain('echo "- PR: #$RESOLVED_PR_NUMBER"');
   });
 });

@@ -157,6 +157,7 @@ jobs:
         env:
           REF: ${{ steps.resolve_target.outputs.raw_input }}
           REASON: ${{ github.event.inputs.reason }}
+          RESOLVED_PR_NUMBER: ${{ steps.resolve_target.outputs.pr_number }}
           RESOLVED_REF: ${{ steps.resolve_target.outputs.resolved_ref }}
         run: |
           revision="$(gcloud run services describe "$SERVICE_NAME" --region="${{ vars.GCP_REGION }}" --format='value(status.latestCreatedRevisionName)' 2>/dev/null || true)"
@@ -168,12 +169,34 @@ jobs:
             --arg url "$url" \
             --arg commit_sha "$COMMIT_SHA" \
             --arg ref "$REF" \
+            --arg pr_number "$RESOLVED_PR_NUMBER" \
             --arg resolved_ref "$RESOLVED_REF" \
             --arg reason "$REASON" \
             --arg smoke "${{ steps.smoke.outcome }}" \
             --arg lease_generation "${LEASE_GENERATION:-}" \
-            '{service: $service, image: $image, revision: $revision, url: $url, commit_sha: $commit_sha, ref: $ref, resolved_ref: $resolved_ref, reason: $reason, smoke: $smoke, lease_generation: $lease_generation}' \
+            '{service: $service, image: $image, revision: $revision, url: $url, commit_sha: $commit_sha, ref: $ref, pr_number: $pr_number, resolved_ref: $resolved_ref, reason: $reason, smoke: $smoke, lease_generation: $lease_generation}' \
             > deployment-record.json
+      - name: Write staging summary
+        if: always()
+        env:
+          DEPLOY_URL: ${{ steps.deploy.outputs.url }}
+          INPUT_REASON: ${{ github.event.inputs.reason }}
+          INPUT_REF: ${{ steps.resolve_target.outputs.raw_input }}
+          RESOLVED_PR_NUMBER: ${{ steps.resolve_target.outputs.pr_number }}
+          RESOLVED_REF: ${{ steps.resolve_target.outputs.resolved_ref }}
+        run: |
+          {
+            echo '## Shared staging deployment'
+            if [ -n "$RESOLVED_PR_NUMBER" ]; then
+              echo
+              echo "- PR: #$RESOLVED_PR_NUMBER"
+            fi
+            echo "- Input: \`$INPUT_REF\`"
+            echo "- Resolved ref: \`$RESOLVED_REF\`"
+            echo "- Commit SHA: \`$COMMIT_SHA\`"
+            echo "- URL: ${DEPLOY_URL:-not deployed}"
+            echo "- Reason: $INPUT_REASON"
+          } >> "$GITHUB_STEP_SUMMARY"
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -217,7 +240,11 @@ jobs:
               return;
             }
 
-            const body = buildStagingPreviewCommentBody({ reason, url });
+            const body = buildStagingPreviewCommentBody({
+              prNumber,
+              reason,
+              url,
+            });
 
             try {
               const comments = await github.paginate(github.rest.issues.listComments, {

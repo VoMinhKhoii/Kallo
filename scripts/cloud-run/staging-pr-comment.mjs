@@ -25,13 +25,16 @@ export function extractPullRequestNumberFromRef(ref) {
 }
 
 export function buildStagingPreviewCommentBody({
+  prNumber = null,
   reason,
   timestamp = new Date().toISOString(),
   url,
 }) {
   return [
     '<!-- nham-staging-preview -->',
-    '**Staging Preview**',
+    prNumber
+      ? `**Staging Preview for PR #${prNumber}**`
+      : '**Staging Preview**',
     '',
     `URL: ${url}`,
     `Deployed at: ${timestamp}`,

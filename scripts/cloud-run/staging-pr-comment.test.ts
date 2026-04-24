@@ -32,6 +32,7 @@ describe('staging PR comment helpers', () => {
   it('builds the staging preview PR comment body', () => {
     expect(
       buildStagingPreviewCommentBody({
+        prNumber: 75,
         reason: 'manual QA',
         timestamp: '2026-04-24T10:00:00.000Z',
         url: 'https://nham-staging.example.com',
@@ -39,7 +40,7 @@ describe('staging PR comment helpers', () => {
     ).toBe(
       [
         '<!-- nham-staging-preview -->',
-        '**Staging Preview**',
+        '**Staging Preview for PR #75**',
         '',
         'URL: https://nham-staging.example.com',
         'Deployed at: 2026-04-24T10:00:00.000Z',
