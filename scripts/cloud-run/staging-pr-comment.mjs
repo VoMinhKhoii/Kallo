@@ -5,6 +5,10 @@ export function extractPullRequestNumberFromRef(ref) {
     return null;
   }
 
+  if (/^\d+$/.test(normalizedRef)) {
+    return Number.parseInt(normalizedRef, 10);
+  }
+
   const directMatch = normalizedRef.match(/^pr-(\d+)$/);
 
   if (directMatch) {
@@ -20,14 +24,25 @@ export function extractPullRequestNumberFromRef(ref) {
   return null;
 }
 
+/**
+ * @param {{
+ *   prNumber?: number | null;
+ *   reason: string;
+ *   timestamp?: string;
+ *   url: string;
+ * }} options
+ */
 export function buildStagingPreviewCommentBody({
+  prNumber = null,
   reason,
   timestamp = new Date().toISOString(),
   url,
 }) {
   return [
     '<!-- nham-staging-preview -->',
-    '**Staging Preview**',
+    prNumber
+      ? `**Staging Preview for PR #${prNumber}**`
+      : '**Staging Preview**',
     '',
     `URL: ${url}`,
     `Deployed at: ${timestamp}`,

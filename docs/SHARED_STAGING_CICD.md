@@ -55,7 +55,7 @@ staging environment for deeper testing.
 
 The workflow is `workflow_dispatch` and asks for:
 
-- `ref` — branch, tag, or commit SHA
+- `ref` — branch, tag, commit SHA, or plain PR number
 - `reason` — why staging is being taken over
 - `force_takeover` — whether to replace an active lease
 
