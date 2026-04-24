@@ -103,8 +103,11 @@ jobs:
       - name: Read shared staging database URL
         run: |
           db_url="$(gcloud secrets versions access latest --secret=nham-nonprod-database-url)"
+          encoded_db_url="$(node ./scripts/cloud-run/shared-db.mjs encode-url --db-url "$db_url")"
           echo "::add-mask::$db_url"
+          echo "::add-mask::$encoded_db_url"
           { echo 'STAGING_DATABASE_URL<<EOF'; echo "$db_url"; echo 'EOF'; } >> "$GITHUB_ENV"
+          { echo 'STAGING_DATABASE_URL_ENCODED<<EOF'; echo "$encoded_db_url"; echo 'EOF'; } >> "$GITHUB_ENV"
       - name: Record previous revision
         run: |
           previous_revision="$(
@@ -124,7 +127,7 @@ jobs:
           )"
           echo "PREVIOUS_REVISION=$previous_revision" >> "$GITHUB_ENV"
       - name: Push migrations to shared staging DB
-        run: supabase db push --db-url "$STAGING_DATABASE_URL"
+        run: supabase db push --db-url "$STAGING_DATABASE_URL_ENCODED"
       - name: Resolve image digest
         run: |
           digest="$(gcloud artifacts docker images describe "$IMAGE_TAG" --format='value(image_summary.digest)')"

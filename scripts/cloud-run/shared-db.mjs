@@ -94,6 +94,24 @@ export function extractProjectRefFromDatabaseUrl(databaseUrl) {
   return null;
 }
 
+export function encodeDatabaseUrl(rawDatabaseUrl) {
+  const protoEnd = rawDatabaseUrl.indexOf('://') + 3;
+  const userEnd = rawDatabaseUrl.indexOf(':', protoEnd);
+  const atHost = rawDatabaseUrl.lastIndexOf('@');
+
+  if (userEnd === -1 || atHost === -1) {
+    return rawDatabaseUrl;
+  }
+
+  const password = rawDatabaseUrl.slice(userEnd + 1, atHost);
+
+  return (
+    rawDatabaseUrl.slice(0, userEnd + 1) +
+    encodeURIComponent(password) +
+    rawDatabaseUrl.slice(atHost)
+  );
+}
+
 export function validateProjectRefAlignment(databaseUrl, expectedProjectRef) {
   const actualProjectRef = extractProjectRefFromDatabaseUrl(databaseUrl);
 
@@ -165,10 +183,12 @@ export function parseSharedDbStateOutput(rawOutput) {
 }
 
 function runPsqlStateCheck(databaseUrl) {
+  const encodedDatabaseUrl = encodeDatabaseUrl(databaseUrl);
+
   const result = spawnSync(
     'psql',
     [
-      databaseUrl,
+      encodedDatabaseUrl,
       '-X',
       '-v',
       'ON_ERROR_STOP=1',
@@ -269,8 +289,14 @@ function main() {
     return;
   }
 
+  if (command === 'encode-url') {
+    const databaseUrl = getRequiredFlag('--db-url');
+    console.log(encodeDatabaseUrl(databaseUrl));
+    return;
+  }
+
   throw new Error(
-    'Usage: node scripts/cloud-run/shared-db.mjs <assert-target|assert-state> [--db-url ...] [--project-ref ...]'
+    'Usage: node scripts/cloud-run/shared-db.mjs <assert-target|assert-state|encode-url> [--db-url ...] [--project-ref ...]'
   );
 }
 

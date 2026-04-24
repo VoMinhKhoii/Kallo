@@ -26,11 +26,12 @@ describe('Cloud Run staging workflow', () => {
     const workflow = readWorkflow('cloud-run-staging.yml');
 
     expect(workflow).toContain(
-      'run: supabase db push --db-url "$STAGING_DATABASE_URL"'
+      'run: supabase db push --db-url "$STAGING_DATABASE_URL_ENCODED"'
     );
     expect(workflow).not.toContain(
       'run: supabase --yes db push --db-url "$STAGING_DATABASE_URL"'
     );
+    expect(workflow).toContain(`STAGING_DATABASE_URL_ENCODED<<EOF`);
   });
 
   it('passes through the resolved PR number for staging comment updates', () => {
