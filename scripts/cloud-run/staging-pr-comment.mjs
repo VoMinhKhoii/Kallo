@@ -24,6 +24,14 @@ export function extractPullRequestNumberFromRef(ref) {
   return null;
 }
 
+/**
+ * @param {{
+ *   prNumber?: number | null;
+ *   reason: string;
+ *   timestamp?: string;
+ *   url: string;
+ * }} options
+ */
 export function buildStagingPreviewCommentBody({
   prNumber = null,
   reason,
