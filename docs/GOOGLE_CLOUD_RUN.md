@@ -24,6 +24,21 @@ All code and migrations hitting the **shared database** must go through the manu
 
 The deploy path is structured so we can later split staging and production without redesigning the whole pipeline.
 
+## Why CI still publishes a container
+
+The `container-publish` job in `.github/workflows/ci.yml` is still required.
+Manual staging did not remove the build artifact; it changed when that artifact
+gets promoted.
+
+- CI still builds and pushes one immutable image per commit SHA.
+- `Cloud Run Staging` promotes that existing SHA-tagged image after manual
+  approval and shared-DB migration checks.
+- `Cloud Run Internal` promotes the existing SHA-tagged image after the merge to
+  `main`.
+- Future Supabase branch-based previews may still build their own branch-specific
+  image in preview mode, but that does not replace the current CI artifact path
+  used by staging and internal.
+
 ## What the workflows expect
 
 The workflows in `.github/workflows/` assume:

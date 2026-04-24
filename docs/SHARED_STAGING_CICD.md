@@ -22,7 +22,10 @@ On PRs and pushes to `main`, CI:
 - runs lint, typecheck, tests, build, and migration validation
 - builds and pushes a container image tagged by commit SHA
 
-CI does **not** deploy Cloud Run directly.
+CI does **not** deploy Cloud Run directly, but it still produces the immutable
+artifact that later gets promoted by manual staging and by the post-merge
+internal deploy. Manual staging removed automatic PR deployment, not the
+build-once artifact step.
 
 ### 2. Preview deploy (`.github/workflows/cloud-run-preview.yml`)
 
