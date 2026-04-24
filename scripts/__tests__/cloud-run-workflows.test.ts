@@ -44,4 +44,13 @@ describe('Cloud Run staging workflow', () => {
       "const explicitPrNumber = process.env.RESOLVED_PR_NUMBER || '';"
     );
   });
+
+  it('disables default deploy-cloudrun labels so target commit labels stay unique', () => {
+    const workflow = readWorkflow('cloud-run-staging.yml');
+
+    expect(workflow).toContain('skip_default_labels: true');
+    expect(workflow).toContain(
+      `--update-labels=commit-sha=\${{ env.COMMIT_SHA }},deployment-target=staging,github-run-id=\${{ github.run_id }}`
+    );
+  });
 });
