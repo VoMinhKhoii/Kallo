@@ -25,6 +25,26 @@ This project enforces a two-domain model. Do not mix responsibilities.
 
 Never hand-write DDL for tables/columns. Never add CHECK constraints directly in SQL files.
 
+### Shared staging preview rule
+
+While `PREVIEW_DATABASE_MODE=shared`, PR previews and `nham-internal` point at
+the same non-prod Supabase database. To keep that survivable:
+
+- prefer append-only migrations for normal feature work
+- do not add new migrations that `DROP TABLE`, `DROP COLUMN`,
+  `RENAME COLUMN`, or `ALTER COLUMN TYPE`
+- add new columns/tables first, migrate application code, and defer cleanup to
+  an intentional maintenance pass
+
+CI enforces this append-only rule against newly changed migration files via
+`scripts/check-append-only-migrations.mjs`.
+
+If shared staging gets into a bad state, recover it with the manual
+`Reset Staging Database` GitHub Actions workflow. That reset replays the current
+migrations from the default branch, runs `supabase/seed.sql`, and then reapplies
+the generated `seed_food.sql` artifact from GCS so search/embedding state is
+restored too.
+
 ### Domain B — Security & Database Logic (Raw SQL owns this)
 
 Supabase-specific features are maintained as hand-authored SQL migration files:

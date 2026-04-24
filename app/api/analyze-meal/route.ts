@@ -14,7 +14,7 @@ import { createClient } from '@/lib/supabase/server';
 import { mealMessageSchema } from '@/lib/validation';
 
 export const runtime = 'nodejs';
-export const maxDuration = 30;
+export const maxDuration = 60;
 
 /**
  * Pre-stream validation: auth, input, profile, config.
