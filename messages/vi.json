@@ -1,0 +1,486 @@
+{
+  "common": {
+    "back": "Quay lại",
+    "next": "Tiếp theo",
+    "skip": "Bỏ qua",
+    "finish": "Hoàn tất",
+    "save": "Lưu",
+    "cancel": "Hủy",
+    "loading": "Đang tải...",
+    "error": "Đã xảy ra lỗi",
+    "retry": "Thử lại",
+    "search": "Tìm kiếm",
+    "noResults": "Không tìm thấy kết quả",
+    "confirm": "Xác nhận",
+    "close": "Đóng",
+    "or": "hoặc",
+    "optional": "Tùy chọn",
+    "notFound": "Không tìm thấy trang"
+  },
+  "nav": {
+    "logging": "Ghi nhận",
+    "dashboard": "Tổng quan",
+    "settings": "Cài đặt",
+    "signOut": "Đăng xuất"
+  },
+  "metadata": {
+    "root": {
+      "title": "Nhẩm — Trình theo dõi bữa ăn Việt",
+      "description": "Theo dõi bữa ăn Việt với phân tích dinh dưỡng bằng AI"
+    },
+    "dashboard": {
+      "title": "Tổng quan — Nhẩm"
+    }
+  },
+  "shared": {
+    "calorieRing": {
+      "left": "còn lại",
+      "ariaLabel": "Còn {remaining} trên tổng {target} calo"
+    }
+  },
+  "app": {
+    "shell": {
+      "navigationMenu": "Menu điều hướng",
+      "openMenu": "Mở menu",
+      "closeMenu": "Đóng menu"
+    },
+    "mainSidebar": {
+      "navigationLabel": "Điều hướng chính",
+      "sectionLabel": "Chính",
+      "dashboard": "Tổng quan",
+      "tracking": "Theo dõi",
+      "logging": "Ghi nhận",
+      "settings": "Cài đặt",
+      "expandSidebar": "Mở rộng thanh bên",
+      "collapseSidebar": "Thu gọn thanh bên",
+      "completeProfile": "Hoàn thiện hồ sơ",
+      "resumeTitle": "Ước tính của bạn đang dùng cài đặt mặc định",
+      "resumeDescription": "Cá nhân hóa theo thói quen nấu ăn của bạn để AI ước tính calo và macro chính xác hơn.",
+      "signOut": "Đăng xuất"
+    }
+  },
+  "onboarding": {
+    "stepOf": "Bước {current} / {total}",
+    "origin": {
+      "title": "Bạn đến từ đâu?",
+      "subtitle": "Quê quán giúp AI hiểu văn hóa ẩm thực bạn gắn bó. Nơi ở hiện tại giúp AI gợi ý nguyên liệu dễ tìm quanh bạn.",
+      "countryOfOrigin": "Quê quán",
+      "countryOfOriginHint": "Nơi bạn lớn lên hoặc gắn bó về ẩm thực",
+      "countryOfResidence": "Nơi ở hiện tại",
+      "countryOfResidenceHint": "Nơi bạn đang sống — ảnh hưởng đến nguyên liệu có sẵn",
+      "selectCountry": "Chọn quốc gia…",
+      "searchCountry": "Tìm quốc gia…",
+      "noCountries": "Không tìm thấy quốc gia",
+      "fallbackNote": "Bỏ trống nếu muốn. AI sẽ chỉ dựa vào ảnh và mô tả bữa ăn của bạn.",
+      "preferredLanguage": "Ngôn ngữ ưa thích",
+      "preferredLanguageHint": "Chọn ngôn ngữ hiển thị cho ứng dụng"
+    },
+    "bodyMetrics": {
+      "title": "Chỉ số cơ thể",
+      "subtitle": "Chúng tôi dùng thông tin này để tính mục tiêu calo và dinh dưỡng hàng ngày.",
+      "biologicalSex": "Giới tính sinh học",
+      "male": "Nam",
+      "female": "Nữ",
+      "weight": "Cân nặng",
+      "weightUnit": "kg",
+      "height": "Chiều cao",
+      "heightUnit": "cm",
+      "age": "Tuổi",
+      "activityLevel": "Mức hoạt động",
+      "sedentary": "Ít vận động (Công việc văn phòng, ít tập thể dục)",
+      "light": "Hoạt động nhẹ (Tập nhẹ 1-3 ngày/tuần)",
+      "moderate": "Hoạt động vừa (Tập vừa 3-5 ngày/tuần)",
+      "veryActive": "Hoạt động nhiều (Tập nặng 6-7 ngày/tuần)",
+      "goal": "Mục tiêu",
+      "cutting": "Giảm cân",
+      "maintaining": "Duy trì",
+      "bulking": "Tăng cân",
+      "aggression": "Mức độ",
+      "aggressionHint": "Tốc độ giảm/tăng cân (kg/tuần)",
+      "aggressionLabel": "Nhịp độ",
+      "aggressionDeficit": "thâm hụt",
+      "aggressionSurplus": "thặng dư",
+      "aggressionLow": "Nhẹ",
+      "aggressionHigh": "Mạnh",
+      "carbSplit": "Tỉ lệ carb",
+      "moderateCarb": "Carb vừa",
+      "moderateCarbDescription": "Cân bằng (30/35/35)",
+      "lowerCarb": "Ít carb",
+      "lowerCarbDescription": "Giàu đạm (40/40/20)",
+      "higherCarb": "Nhiều carb",
+      "higherCarbDescription": "Cho ngày vận động (30/20/50)",
+      "tdee": "TDEE ước tính",
+      "calorieTarget": "Mục tiêu calo hàng ngày",
+      "protein": "Đạm",
+      "carbs": "Carb",
+      "fat": "Chất béo",
+      "macroSummary": "Mục tiêu hàng ngày",
+      "kcal": "kcal",
+      "grams": "g"
+    },
+    "cooking": {
+      "title": "Thói quen nấu ăn",
+      "subtitle": "Giúp AI hiểu cách bạn thường nấu để ước tính calo chính xác hơn.",
+      "oilUsage": "Lượng dầu mỡ",
+      "oilMinimal": "Ít",
+      "oilMinimalHint": "Vị khô, thanh. Món ăn trông ráo.",
+      "oilNormal": "Vừa",
+      "oilNormalHint": "Có lớp áo mỏng. Món ăn hơi bóng.",
+      "oilHeavy": "Nhiều",
+      "oilHeavyHint": "Nhìn thấy rõ dầu mỡ. Nước sốt hơi đọng.",
+      "oilHint": "Lượng dầu/mỡ bạn thường dùng khi nấu",
+      "ricePortion": "Phần cơm mặc định",
+      "riceSmall": "Ít",
+      "riceSmallHint": "~1 chén nhỏ",
+      "riceMedium": "Vừa",
+      "riceMediumHint": "~1–1,5 chén",
+      "riceLarge": "Nhiều",
+      "riceLargeHint": "~2 chén trở lên",
+      "riceHint": "Lượng cơm bạn thường ăn mỗi bữa",
+      "sugar": "Đường trong món kho",
+      "sugarLow": "Ít",
+      "sugarMedium": "Vừa",
+      "sugarHigh": "Nhiều",
+      "sugarHint": "Lượng đường bạn dùng để kho/rim",
+      "proteinPortion": "Phần thịt/cá mặc định",
+      "proteinSmall": "Ít",
+      "proteinSmallHint": "Nhỏ hơn lòng bàn tay, ví dụ ~2-3 quả trứng",
+      "proteinMedium": "Vừa",
+      "proteinMediumHint": "Cỡ khoảng lòng bàn tay",
+      "proteinLarge": "Nhiều",
+      "proteinLargeHint": "Lớn hơn lòng bàn tay, ví dụ một đùi gà hoặc hơn",
+      "proteinHint": "Lượng thịt/cá bạn thường ăn mỗi bữa",
+      "broth": "Uống nước canh",
+      "brothLeave": "Để lại",
+      "brothLeaveHint": "Ăn cái, bỏ lại phần lớn nước",
+      "brothSome": "Uống một ít",
+      "brothSomeHint": "Uống khoảng nửa bát",
+      "brothFinish": "Uống hết",
+      "brothFinishHint": "Uống hết hoặc gần hết nước",
+      "brothHint": "Lượng nước canh/lẩu bạn thường uống"
+    }
+  },
+  "auth": {
+    "signIn": {
+      "title": "Chào mừng trở lại",
+      "email": "Email",
+      "password": "Mật khẩu",
+      "submit": "Đăng nhập",
+      "noAccount": "Chưa có tài khoản?",
+      "signUpLink": "Đăng ký",
+      "forgotPassword": "Quên mật khẩu?",
+      "error": "Email hoặc mật khẩu không đúng",
+      "success": "Đăng nhập thành công",
+      "emailPlaceholder": "ban@example.com",
+      "passwordPlaceholder": "Nhập mật khẩu",
+      "emailError": "Nhập địa chỉ email hợp lệ",
+      "passwordError": "Mật khẩu phải có ít nhất 6 ký tự"
+    },
+    "signUp": {
+      "title": "Tạo tài khoản",
+      "email": "Email",
+      "password": "Mật khẩu",
+      "confirmPassword": "Xác nhận mật khẩu",
+      "submit": "Tạo tài khoản",
+      "hasAccount": "Đã có tài khoản?",
+      "signInLink": "Đăng nhập",
+      "success": "Kiểm tra email để xác nhận tài khoản",
+      "error": "Không thể tạo tài khoản",
+      "emailPlaceholder": "ban@example.com",
+      "passwordPlaceholder": "Tạo mật khẩu",
+      "emailError": "Nhập địa chỉ email hợp lệ",
+      "passwordError": "Mật khẩu phải có ít nhất 6 ký tự"
+    },
+    "dialog": {
+      "signInTitle": "Chào mừng trở lại",
+      "signInSubtitle": "Đăng nhập để tiếp tục theo dõi bữa ăn của bạn.",
+      "signUpTitle": "Tạo tài khoản",
+      "signUpSubtitle": "Bắt đầu theo dõi bữa ăn Việt với phân tích dinh dưỡng bằng AI.",
+      "signInTab": "Đăng nhập",
+      "signUpTab": "Đăng ký"
+    },
+    "otp": {
+      "title": "Kiểm tra email",
+      "subtitle": "Chúng tôi đã gửi mã xác nhận đến {email}",
+      "submit": "Xác nhận",
+      "resend": "Gửi lại mã",
+      "error": "Mã không hợp lệ"
+    }
+  },
+  "landing": {
+    "localeSwitcher": {
+      "label": "Ngôn ngữ trang chào"
+    },
+    "header": {
+      "features": "Tính năng",
+      "howItWorks": "Cách hoạt động",
+      "pricing": "Giá",
+      "signIn": "Đăng nhập",
+      "getStarted": "Bắt đầu"
+    },
+    "hero": {
+      "badge": "Thiết kế cho bữa ăn Việt",
+      "title": "Theo dõi bữa ăn Việt",
+      "titleHighlight": "không cần đoán mò",
+      "subtitle": "Chụp ảnh hoặc mô tả bữa ăn bằng tiếng Việt. AI của chúng tôi nhận biết phở, bánh mì và hơn 500 món Việt — rồi tính dinh dưỡng từ dữ liệu đã được kiểm chứng.",
+      "cta": "Bắt đầu ngay",
+      "ctaSecondary": "Xem cách hoạt động",
+      "socialProof": "Được người dùng beta Việt Nam yêu thích",
+      "demo": {
+        "today": "Hôm nay",
+        "date": "Nhật ký bữa ăn",
+        "justNow": "Vừa xong",
+        "analysis": "Phân tích dinh dưỡng bằng AI",
+        "highConfidence": "Độ tin cậy cao",
+        "totalCalories": "Tổng calo",
+        "inputPlaceholder": "Mô tả bữa ăn của bạn...",
+        "smartContext": "Ngữ cảnh thông minh",
+        "smartContextText": "Dùng vùng miền, thói quen nấu ăn và mô tả bữa ăn để siết chặt ước tính."
+      }
+    },
+    "problem": {
+      "label": "Vì sao app hiện tại thất bại",
+      "title": "Vấn đề của",
+      "titleHighlight": "các app hiện nay",
+      "subtitle": "Được xây dựng cho chế độ ăn phương Tây. Phần lớn app không phân biệt được phở bò với phở gà, hay việc bún bò Huế của bạn có nhiều dầu ớt hơn thường lệ.",
+      "card1Title": "Cơ sở dữ liệu chung chung",
+      "card1Text": "Dữ liệu thực phẩm thiên về phương Tây, khẩu phần sai và thiếu nhiều món Việt.",
+      "card2Title": "Nhập tay rất mệt",
+      "card2Text": "Phải tìm từng nguyên liệu, đoán khẩu phần rồi bỏ cuộc sau vài ngày.",
+      "card3Title": "Thiếu ngữ cảnh nấu nướng",
+      "card3Text": "Xào ít dầu và chiên ngập dầu — cùng nguyên liệu nhưng calo rất khác nhau.",
+      "visual": {
+        "searchPlaceholder": "Tìm món ăn của bạn",
+        "searchResult1": "Mực kho",
+        "searchResult2": "Thịt nạc",
+        "noMatch": "Không có kết quả khớp",
+        "detected": "Món được nhận diện",
+        "braisedPork": "Cơm thịt kho",
+        "hiddenCalories": "Calo ẩn từ dầu và món kèm",
+        "entryFailed": "Ghi tay thất bại",
+        "entryFailedText": "Quá nhiều công sức cho một bữa ăn."
+      },
+      "quote": "Khi cơ sở dữ liệu không hiểu ẩm thực của bạn, mọi mục tiêu calo đều chỉ là phỏng đoán.",
+      "quoteLabel": "Vấn đề người dùng gặp đi gặp lại"
+    },
+    "solution": {
+      "step1Label": "Bước 1",
+      "step1Title": "Mô tả bạn đã ăn gì",
+      "step1Text": "Nhập bữa ăn đúng như cách bạn thường nói — bằng tiếng Việt, tiếng Anh hoặc trộn cả hai.",
+      "step1TextMobile": "Mô tả bữa ăn tự nhiên bằng tiếng Việt, tiếng Anh hoặc cả hai.",
+      "step2Label": "Bước 2",
+      "step2Title": "Chúng tôi tách nó thành nguyên liệu thật",
+      "step2Text": "Nhẩm ánh xạ mô tả của bạn sang nguyên liệu và thành phần món ăn Việt từ bộ dữ liệu dinh dưỡng được tuyển chọn.",
+      "step2TextMobile": "Nhẩm ánh xạ mô tả sang nguyên liệu và thành phần món ăn Việt thật.",
+      "step3Label": "Bước 3",
+      "step3Title": "Ngữ cảnh cá nhân làm ước tính chính xác hơn",
+      "step3Text": "Vùng miền, thói quen nấu ăn và mục tiêu dinh dưỡng giúp AI hiểu calo ẩn và điều chỉnh khẩu phần hợp lý hơn.",
+      "step3TextMobile": "Vùng miền, thói quen nấu ăn và mục tiêu giúp AI siết chặt ước tính.",
+      "step4Label": "Bước 4",
+      "step4Title": "Bạn nhận được kết quả có ích, có biên độ",
+      "step4Text": "Thay vì độ chính xác giả, Nhẩm trả về khoảng calo và macro thực tế để bạn dễ ra quyết định hơn.",
+      "step4TextMobile": "Nhận khoảng calo và macro thực tế thay vì độ chính xác giả.",
+      "cta": "Bắt đầu theo dõi",
+      "whyLabel": "Vì sao Nhẩm tốt hơn",
+      "whyTitle": "Được xây dựng theo cách bữa ăn Việt thực sự diễn ra",
+      "feature1Title": "Khớp nguyên liệu theo ngữ cảnh Việt Nam",
+      "feature1Text": "Đối chiếu món ăn với dữ liệu thành phần thực phẩm Việt thay vì ép sang món thay thế phương Tây.",
+      "feature2Title": "Ước tính có ngữ cảnh",
+      "feature2Text": "Hiểu các chi tiết như ít mỡ hành, thêm nước canh, hay thói quen kho kiểu nhà.",
+      "feature3Title": "Biết nói thật về độ không chắc chắn",
+      "feature3Text": "Trả về ước tính có biên độ để bạn dùng được, thay vì giả vờ dữ liệu chính xác tuyệt đối.",
+      "profile": {
+        "title": "Hồ sơ cá nhân hóa",
+        "active": "Đang áp dụng",
+        "regionTaste": "Khẩu vị vùng miền",
+        "regionTasteValue": "Miền Nam / thiên ngọt",
+        "braisedDishes": "Món kho",
+        "braisedDishesValue": "Thường ngọt hơn",
+        "chickenSkin": "Da gà",
+        "chickenSkinValue": "Thường ăn",
+        "ricePortion": "Phần cơm",
+        "ricePortionValue": "Tô lớn",
+        "disclaimer": "Các tuỳ chọn này giúp siết chặt ước tính mà không bắt bạn phải nhập mọi chi tiết mỗi lần."
+      },
+      "receipt": {
+        "title": "Phiếu phân tích",
+        "dbQuery": "Đang truy vấn cơ sở dữ liệu nguyên liệu Việt",
+        "profileTitle": "Ngữ cảnh cá nhân",
+        "regionPref": "Thiên hướng vùng miền",
+        "regionValue": "Miền Nam",
+        "modification": "Điều chỉnh món ăn",
+        "modificationValue": "Ít mỡ hành",
+        "goalStrategy": "Chiến lược mục tiêu",
+        "goalCutting": "Giảm cân",
+        "goalUpperBound": "Dùng cận trên",
+        "total": "Tổng ước tính",
+        "range": "Khoảng: ~760–845 kcal",
+        "upperBoundNote": "Đang hiển thị cận trên cho mục tiêu giảm cân"
+      }
+    },
+    "cta": {
+      "title": "Sẵn sàng theo dõi thông minh hơn?",
+      "subtitle": "Tham gia beta và bắt đầu theo dõi bữa ăn Việt với độ chính xác thực sự.",
+      "button": "Bắt đầu miễn phí",
+      "buttonSecondary": "Xem ví dụ phân tích",
+      "feature1": "Cơ sở dữ liệu ưu tiên món Việt",
+      "feature2": "AI hiểu ngữ cảnh nấu nướng",
+      "feature3": "Ước tính dinh dưỡng có biên độ",
+      "socialProof": "Được người dùng thử nghiệm sớm tin dùng vì không còn phải đoán mò",
+      "appStore": "Đánh giá App Store",
+      "users": "người dùng beta",
+      "mealsTracked": "bữa ăn đã theo dõi"
+    },
+    "footer": {
+      "tagline": "Theo dõi bữa ăn Việt, được hỗ trợ bởi AI.",
+      "product": "Sản phẩm",
+      "features": "Tính năng",
+      "howItWorks": "Cách hoạt động",
+      "pricing": "Giá",
+      "faq": "Câu hỏi thường gặp",
+      "company": "Công ty",
+      "about": "Giới thiệu",
+      "blog": "Blog",
+      "contact": "Liên hệ",
+      "privacy": "Quyền riêng tư",
+      "copyright": "© {year} Nhẩm. Mọi quyền được bảo lưu.",
+      "terms": "Điều khoản",
+      "privacyLink": "Chính sách riêng tư",
+      "security": "Bảo mật"
+    }
+  },
+  "dashboard": {
+    "title": "Tổng quan",
+    "today": "Hôm nay",
+    "thisWeek": "Tuần này",
+    "caloriesConsumed": "Calo đã nạp",
+    "caloriesRemaining": "Calo còn lại",
+    "protein": "Đạm",
+    "carbs": "Carb",
+    "fat": "Chất béo",
+    "noMealsToday": "Chưa ghi nhận bữa ăn nào hôm nay",
+    "logMeal": "Ghi nhận bữa ăn",
+    "recentMeals": "Bữa ăn gần đây",
+    "viewAll": "Xem tất cả",
+    "progress": "Tiến trình",
+    "weeklyAverage": "Trung bình tuần",
+    "target": "Mục tiêu",
+    "mealTrigger": {
+      "close": "Đóng khung nhập bữa ăn",
+      "send": "Gửi bữa ăn"
+    },
+    "weightCard": {
+      "required": "Vui lòng nhập cân nặng",
+      "invalid": "Nhập cân nặng hợp lệ (0–500 kg)",
+      "todaysWeight": "Cân nặng hôm nay",
+      "morningWeight": "Cân nặng buổi sáng",
+      "lastLogged": "Lần trước: {weight} kg",
+      "loggedDays": "Đã ghi {count}/{total} ngày gần nhất"
+    },
+    "adherenceHeatmap": {
+      "onTrack": "{percent}% đúng mục tiêu",
+      "notLogged": "Chưa ghi nhận",
+      "offTarget": "Lệch mục tiêu",
+      "onTarget": "Đúng mục tiêu",
+      "noData": "Không có dữ liệu",
+      "close": "Rất gần",
+      "slightlyOver": "Hơi vượt",
+      "slightlyUnder": "Hơi thiếu",
+      "over": "Vượt",
+      "under": "Thiếu",
+      "farOver": "Vượt nhiều",
+      "farUnder": "Thiếu nhiều"
+    }
+  },
+  "logging": {
+    "title": "Bạn đã ăn gì?",
+    "placeholder": "Mô tả bữa ăn bằng tiếng Việt hoặc tiếng Anh...",
+    "submit": "Phân tích",
+    "analyzing": "Đang phân tích bữa ăn...",
+    "breakfast": "Sáng",
+    "brunch": "Sáng muộn",
+    "lunch": "Trưa",
+    "dinner": "Tối",
+    "snack": "Ăn vặt",
+    "mealSlot": "Bữa ăn",
+    "confirm": "Lưu bữa ăn",
+    "discard": "Bỏ",
+    "edit": "Sửa",
+    "nutritionSummary": "Tóm tắt dinh dưỡng",
+    "ingredients": "Nguyên liệu",
+    "calories": "Calo",
+    "confidence": "Độ tin cậy",
+    "high": "Cao",
+    "medium": "Trung bình",
+    "low": "Thấp",
+    "portion": "Phần ăn",
+    "cookingMethod": "Cách chế biến",
+    "matched": "Đã khớp",
+    "estimated": "Ước tính",
+    "feedEmpty": "Chưa có bữa ăn hôm nay. Bạn đã ăn gì?",
+    "todaysMeals": "Bữa ăn hôm nay",
+    "emptyState": {
+      "title": "Bạn đã ăn gì?",
+      "subtitle": "Mô tả bữa ăn để nhận phân tích macro."
+    },
+    "feedArea": {
+      "savedMeal": "Đã lưu bữa ăn"
+    },
+    "streaming": {
+      "connecting": "Đang kết nối...",
+      "decomposing": "Đang tách bữa ăn của bạn...",
+      "matching": "Đang khớp nguyên liệu...",
+      "estimating": "Đang ước tính dinh dưỡng...",
+      "assembling": "Đang tổng hợp kết quả...",
+      "analyzing": "Đang phân tích..."
+    },
+    "mealEntry": {
+      "edit": "Sửa",
+      "toggleDetails": "Bật/tắt chi tiết bữa ăn",
+      "total": "Tổng"
+    },
+    "persistedMealCard": {
+      "toggleDetails": "Bật/tắt chi tiết bữa ăn",
+      "total": "Tổng"
+    },
+    "timelineSidebar": {
+      "navigationLabel": "Điều hướng dòng thời gian",
+      "week": "Tuần {number}"
+    }
+  },
+  "settings": {
+    "title": "Cài đặt",
+    "profile": "Hồ sơ",
+    "preferences": "Tùy chỉnh",
+    "bodyMetrics": "Chỉ số cơ thể",
+    "goals": "Mục tiêu",
+    "cooking": "Thói quen nấu ăn",
+    "regional": "Khu vực",
+    "save": "Lưu thay đổi",
+    "saved": "Đã lưu thay đổi",
+    "language": "Ngôn ngữ",
+    "languageHint": "Thay đổi ngôn ngữ ứng dụng",
+    "sidebar": {
+      "title": "Cài đặt",
+      "profile": "Hồ sơ",
+      "navigationLabel": "Điều hướng cài đặt"
+    },
+    "regionalPanel": {
+      "description": "AI dùng thông tin quốc gia của bạn để hiểu văn hóa ẩm thực và nguyên liệu dễ tìm tại nơi bạn sống.",
+      "searchCountryLabel": "Tìm quốc gia"
+    },
+    "profilePage": {
+      "title": "Hồ sơ",
+      "description": "Quản lý chỉ số cơ thể, vùng miền và thói quen nấu ăn của bạn.",
+      "emptyTitle": "Chưa tìm thấy hồ sơ",
+      "emptyDescription": "Bạn cần hoàn tất thiết lập ban đầu trước khi chỉnh sửa cài đặt.",
+      "startSetup": "Bắt đầu thiết lập"
+    },
+    "profilePanel": {
+      "bodyMetricsSubtitle": "Cân nặng, chiều cao, mức hoạt động và mục tiêu macro",
+      "regionalSubtitle": "Quê quán và nơi ở hiện tại",
+      "cookingSubtitle": "Thiết lập dầu mỡ, cơm, đường, đạm và nước dùng mặc định",
+      "saveError": "Không thể lưu cài đặt. Vui lòng thử lại."
+    }
+  }
+}

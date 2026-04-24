@@ -19,9 +19,12 @@ export function buildXTicks(
   count: number,
   range: TimeRange
 ): { ticks: number[]; formatter: (v: number, idx: number) => string } {
+  const uniqueTicks = (values: number[]) =>
+    values.filter((value, index, array) => array.indexOf(value) === index);
+
   if (range === '30d') {
     const step = Math.floor(count / 4);
-    const ticks = [0, step, step * 2, step * 3, count - 1];
+    const ticks = uniqueTicks([0, step, step * 2, step * 3, count - 1]);
     return {
       ticks,
       formatter: (_v: number, idx: number) =>
@@ -43,7 +46,7 @@ export function buildXTicks(
   ticks.push(count - 1);
   labels.push('Now');
   return {
-    ticks,
+    ticks: uniqueTicks(ticks),
     formatter: (_v: number, idx: number) => labels[idx] ?? '',
   };
 }

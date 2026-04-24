@@ -1,10 +1,13 @@
 'use client';
 
 import { motion } from 'motion/react';
+import { useTranslations } from 'next-intl';
 import { useAuthDialog } from '@/components/auth/auth-provider';
 import { Button } from '@/components/ui/button';
+import { LocaleSwitcher } from './locale-switcher';
 
 export function Header() {
+  const t = useTranslations('landing.header');
   const { openDialog } = useAuthDialog();
 
   return (
@@ -32,33 +35,34 @@ export function Header() {
             className="text-[#6B5D4F] text-sm transition-colors hover:text-[#2C2416]"
             style={{ fontFamily: 'DM Sans, sans-serif' }}
           >
-            Features
+            {t('features')}
           </a>
           <a
             href="#how"
             className="text-[#6B5D4F] text-sm transition-colors hover:text-[#2C2416]"
             style={{ fontFamily: 'DM Sans, sans-serif' }}
           >
-            How it works
+            {t('howItWorks')}
           </a>
           <a
             href="#pricing"
             className="text-[#6B5D4F] text-sm transition-colors hover:text-[#2C2416]"
             style={{ fontFamily: 'DM Sans, sans-serif' }}
           >
-            Pricing
+            {t('pricing')}
           </a>
         </nav>
 
         {/* CTA Buttons */}
         <div className="flex items-center gap-4">
+          <LocaleSwitcher />
           <Button
             variant="landing-ghost"
             className="hidden sm:block"
             style={{ fontFamily: 'DM Sans, sans-serif' }}
             onClick={() => openDialog('sign-in')}
           >
-            Sign in
+            {t('signIn')}
           </Button>
           <Button
             variant="header-cta"
@@ -66,7 +70,7 @@ export function Header() {
             style={{ fontFamily: 'DM Sans, sans-serif' }}
             onClick={() => openDialog('sign-up')}
           >
-            Get started
+            {t('getStarted')}
           </Button>
         </div>
       </div>

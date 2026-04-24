@@ -1,0 +1,156 @@
+name: Cloud Run Ops
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        type: choice
+        required: true
+        options: [redeploy-internal, rollback-internal, refresh-preview]
+      image_digest:
+        type: string
+        required: false
+      commit_sha:
+        type: string
+        required: false
+      revision_name:
+        type: string
+        required: false
+      preview_pr_number:
+        type: string
+        required: false
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  run-operation:
+    runs-on: ubuntu-latest
+    env:
+      ACTION_NAME: ${{ github.event.inputs.action }}
+      IMAGE_DIGEST_INPUT: ${{ github.event.inputs.image_digest }}
+      COMMIT_SHA_INPUT: ${{ github.event.inputs.commit_sha }}
+      REVISION_NAME_INPUT: ${{ github.event.inputs.revision_name }}
+      PREVIEW_PR_NUMBER_INPUT: ${{ github.event.inputs.preview_pr_number }}
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+      - uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3.0.0
+        with:
+          workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
+          service_account: ${{ vars.GCP_DEPLOYER_SERVICE_ACCOUNT }}
+      - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f # v2.2.1
+        with:
+          project_id: ${{ vars.GCP_PROJECT_ID }}
+      - name: Validate manual operation target
+        run: |
+          case "$ACTION_NAME" in
+            redeploy-internal)
+              [ -n "$IMAGE_DIGEST_INPUT" ]
+              [ -n "$COMMIT_SHA_INPUT" ]
+              gcloud artifacts docker images describe "${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/${{ vars.GCP_ARTIFACT_REPO }}/nham@$IMAGE_DIGEST_INPUT"
+              gcloud run services describe nham-internal --region="${{ vars.GCP_REGION }}"
+              ;;
+            rollback-internal)
+              [ -n "$REVISION_NAME_INPUT" ]
+              service_name="$(
+                gcloud run revisions describe "$REVISION_NAME_INPUT" --region="${{ vars.GCP_REGION }}" --format='json' \
+                  | jq -r '.metadata.labels["serving.knative.dev/service"] // ""'
+              )"
+              [ "$service_name" = "nham-internal" ]
+              ;;
+            refresh-preview)
+              [ -n "$IMAGE_DIGEST_INPUT" ]
+              [ -n "$COMMIT_SHA_INPUT" ]
+              [ -n "$PREVIEW_PR_NUMBER_INPUT" ]
+              gcloud artifacts docker images describe "${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/${{ vars.GCP_ARTIFACT_REPO }}/nham@$IMAGE_DIGEST_INPUT"
+              gcloud run services describe "nham-pr-$PREVIEW_PR_NUMBER_INPUT" --region="${{ vars.GCP_REGION }}"
+              ;;
+            *)
+              echo "Unsupported action" >&2
+              exit 1
+              ;;
+          esac
+      - name: Redeploy internal from image digest
+        if: github.event.inputs.action == 'redeploy-internal'
+        run: |
+          gcloud run deploy nham-internal \
+            --image "${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/${{ vars.GCP_ARTIFACT_REPO }}/nham@$IMAGE_DIGEST_INPUT" \
+            --update-labels=commit-sha=$COMMIT_SHA_INPUT,deployment-target=internal,github-run-id=${{ github.run_id }} \
+            --region="${{ vars.GCP_REGION }}"
+      - id: smoke_redeploy_internal
+        name: Smoke check redeployed internal service
+        if: github.event.inputs.action == 'redeploy-internal'
+        run: ./scripts/cloud-run/smoke-check.sh "$(gcloud run services describe nham-internal --region="${{ vars.GCP_REGION }}" --format='value(status.url)')"
+      - name: Roll back internal to a revision
+        if: github.event.inputs.action == 'rollback-internal'
+        run: |
+          gcloud run services update-traffic nham-internal \
+            --region="${{ vars.GCP_REGION }}" \
+            --to-revisions "${REVISION_NAME_INPUT}=100"
+      - id: smoke_rollback_internal
+        name: Smoke check rolled-back internal service
+        if: github.event.inputs.action == 'rollback-internal'
+        run: ./scripts/cloud-run/smoke-check.sh "$(gcloud run services describe nham-internal --region="${{ vars.GCP_REGION }}" --format='value(status.url)')"
+      - name: Refresh preview from image digest
+        if: github.event.inputs.action == 'refresh-preview'
+        run: |
+          gcloud run deploy "nham-pr-$PREVIEW_PR_NUMBER_INPUT" \
+            --image "${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/${{ vars.GCP_ARTIFACT_REPO }}/nham@$IMAGE_DIGEST_INPUT" \
+            --update-labels=commit-sha=$COMMIT_SHA_INPUT,pr-number=$PREVIEW_PR_NUMBER_INPUT,deployment-target=preview,github-run-id=${{ github.run_id }} \
+            --region="${{ vars.GCP_REGION }}"
+      - id: smoke_refresh_preview
+        name: Smoke check refreshed preview
+        if: github.event.inputs.action == 'refresh-preview'
+        run: ./scripts/cloud-run/smoke-check.sh "$(gcloud run services describe "nham-pr-$PREVIEW_PR_NUMBER_INPUT" --region="${{ vars.GCP_REGION }}" --format='value(status.url)')"
+      - name: Record manual operation metadata
+        if: always()
+        run: |
+          target_service="nham-internal"
+          if [ "$ACTION_NAME" = "refresh-preview" ]; then
+            target_service="nham-pr-$PREVIEW_PR_NUMBER_INPUT"
+          fi
+          url="$(gcloud run services describe "$target_service" --region="${{ vars.GCP_REGION }}" --format='value(status.url)' 2>/dev/null || true)"
+          revision="$(gcloud run services describe "$target_service" --region="${{ vars.GCP_REGION }}" --format='value(status.latestReadyRevisionName)' 2>/dev/null || true)"
+          if [ "$ACTION_NAME" = "rollback-internal" ]; then
+            # For rollback, resolve the actively serving revision from traffic (100% or highest percent)
+            revision="$(
+              gcloud run services describe "$target_service" \
+                --region="${{ vars.GCP_REGION }}" \
+                --format='json' 2>/dev/null \
+              | jq -r '
+                .status.traffic
+                | if . == null then "" 
+                  else (
+                    (map(select(.percent == 100)) | .[0].revisionName) // 
+                    (sort_by(-.percent) | .[0].revisionName) // 
+                    ""
+                  )
+                  end
+              ' || true
+            )"
+          fi
+          resulting_image="$(gcloud run revisions describe "$revision" --region="${{ vars.GCP_REGION }}" --format='value(spec.containers[0].image)' 2>/dev/null || true)"
+          image_digest="$IMAGE_DIGEST_INPUT"
+          if [ -z "$image_digest" ] && [[ "$resulting_image" == *"@"* ]]; then
+            image_digest="${resulting_image##*@}"
+          fi
+          commit_sha="$COMMIT_SHA_INPUT"
+          if [ "$ACTION_NAME" = "rollback-internal" ] && [ -z "$commit_sha" ]; then
+            commit_sha="$(
+              gcloud run revisions describe "$revision" --region="${{ vars.GCP_REGION }}" --format='json' 2>/dev/null \
+                | jq -r '.metadata.labels["commit-sha"] // ""'
+            )"
+          fi
+          smoke_result="not-run"
+          case "$ACTION_NAME" in
+            redeploy-internal) smoke_result="${{ steps.smoke_redeploy_internal.outcome }}" ;;
+            rollback-internal) smoke_result="${{ steps.smoke_rollback_internal.outcome }}" ;;
+            refresh-preview) smoke_result="${{ steps.smoke_refresh_preview.outcome }}" ;;
+          esac
+          echo "{\"action\":\"$ACTION_NAME\",\"target_service\":\"$target_service\",\"image_digest\":\"$image_digest\",\"image_reference\":\"$resulting_image\",\"revision_name\":\"$revision\",\"requested_revision\":\"$REVISION_NAME_INPUT\",\"commit_sha\":\"$commit_sha\",\"url\":\"$url\",\"smoke\":\"$smoke_result\",\"result\":\"${{ job.status }}\"}" > deployment-record.json
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        if: always()
+        with:
+          name: cloud-run-ops-record-${{ github.run_id }}
+          path: deployment-record.json

@@ -1,17 +1,23 @@
 'use client';
 
-import { ArrowLeft, ArrowRight, Loader2, X } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Loader2, SkipForward, X } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
-import { useRouter } from 'next/navigation';
-import { useCallback, useState, useTransition } from 'react';
+import { useLocale, useTranslations } from 'next-intl';
+import { useCallback, useEffect, useRef, useState, useTransition } from 'react';
+import { defaultLocale, type Locale } from '@/i18n/config';
+import { useRouter } from '@/i18n/navigation';
 import type { getOnboardingProfile } from '@/lib/onboarding/actions';
 import { saveOnboardingScreen } from '@/lib/onboarding/actions';
 import { WIZARD_DEFAULTS } from '@/lib/onboarding/constants';
-import type { RegionalProfile } from '@/lib/onboarding/types';
+import { buildStepOneDefaults } from '@/lib/onboarding/step-one-defaults';
+import {
+  clearStepOneLocaleDraft,
+  readStepOneLocaleDraft,
+  type StepOneLocaleDraft,
+} from '@/lib/onboarding/step-one-locale-draft';
 import { ScreenBodyMetrics, type ScreenOneData } from './screen-body-metrics';
 import { ScreenCooking } from './screen-cooking';
-import { ScreenPortions } from './screen-portions';
-import { ScreenRegional } from './screen-regional';
+import { ScreenOrigin } from './screen-origin';
 import { StepIndicator } from './step-indicator';
 
 type ProfileRow = NonNullable<Awaited<ReturnType<typeof getOnboardingProfile>>>;
@@ -23,7 +29,7 @@ interface WizardShellProps {
   onComplete?: () => void;
 }
 
-const TOTAL_STEPS = 4;
+const TOTAL_STEPS = 3;
 
 function parseAggression(
   raw: string | null | undefined,
@@ -66,13 +72,65 @@ export function WizardShell({
   onClose,
   onComplete,
 }: WizardShellProps) {
+  const activeLocale = useLocale();
   const router = useRouter();
+  const tCommon = useTranslations('common');
+  const t = useTranslations('common');
+  const tOnboarding = useTranslations('onboarding');
   const [isPending, startTransition] = useTransition();
   const [currentStep, setCurrentStep] = useState(initialStep);
   const [direction, setDirection] = useState(0);
   const [screenData, setScreenData] = useState<
     Record<number, Record<string, unknown>>
   >({});
+  const [stepOneDraft, setStepOneDraft] = useState<StepOneLocaleDraft | null>(
+    null
+  );
+  const [hasHydratedStepOneDraft, setHasHydratedStepOneDraft] = useState(false);
+  const modalMaxWidthClass =
+    currentStep === 1
+      ? 'max-w-4xl'
+      : currentStep === 2
+        ? 'max-w-6xl'
+        : 'max-w-[58rem]';
+
+  // Scroll affordance: fade gradient when content overflows
+  const contentRef = useRef<HTMLDivElement>(null);
+  const [showScrollGradient, setShowScrollGradient] = useState(false);
+
+  const updateScrollGradient = useCallback(() => {
+    const el = contentRef.current;
+    if (!el) return;
+    const hasMoreToScroll =
+      el.scrollHeight > el.clientHeight &&
+      el.scrollTop + el.clientHeight < el.scrollHeight - 10;
+    setShowScrollGradient(hasMoreToScroll);
+  }, []);
+
+  useEffect(() => {
+    updateScrollGradient();
+    const el = contentRef.current;
+    if (!el) return;
+
+    el.addEventListener('scroll', updateScrollGradient, { passive: true });
+    return () => el.removeEventListener('scroll', updateScrollGradient);
+  }, [updateScrollGradient]);
+
+  // Re-check gradient when step changes (new screen may have different height)
+  // biome-ignore lint/correctness/useExhaustiveDependencies: re-check after screen transition
+  useEffect(() => {
+    const timer = setTimeout(updateScrollGradient, 150);
+    return () => clearTimeout(timer);
+  }, [currentStep, updateScrollGradient]);
+
+  useEffect(() => {
+    const draft = readStepOneLocaleDraft();
+    setStepOneDraft(draft);
+    if (draft) {
+      clearStepOneLocaleDraft();
+    }
+    setHasHydratedStepOneDraft(true);
+  }, []);
 
   const handleScreenChange = useCallback(
     (step: number, data: Record<string, unknown>) => {
@@ -104,61 +162,97 @@ export function WizardShell({
     });
   };
 
+  const handleSkip = () => {
+    setDirection(1);
+    startTransition(async () => {
+      await saveOnboardingScreen(currentStep, {});
+      if (currentStep >= TOTAL_STEPS) {
+        finishWizard();
+      } else {
+        setCurrentStep((prev) => prev + 1);
+      }
+    });
+  };
+
   const handleBack = () => {
     setDirection(-1);
     setCurrentStep((prev) => prev - 1);
   };
 
-  const handleSkip = () => {
-    startTransition(async () => {
-      await saveOnboardingScreen(3, {
-        handSpanCm: null,
-        knuckleDepthCm: null,
+  // Merge in-memory screenData (from previous edits) with DB defaults.
+  // This preserves typed inputs when navigating back.
+  const screenOneDefaults = screenData[1]
+    ? {
+        countryOfOrigin:
+          (screenData[1].countryOfOrigin as string | null) ?? null,
+        countryOfResidence:
+          (screenData[1].countryOfResidence as string | null) ?? null,
+        preferredLocale:
+          (screenData[1].preferredLocale as Locale | undefined) ??
+          defaultLocale,
+      }
+    : buildStepOneDefaults({
+        activeLocale,
+        countryOfOrigin: initialProfile?.countryOfOrigin ?? null,
+        countryOfResidence: initialProfile?.countryOfResidence ?? null,
+        draft: stepOneDraft,
+        profilePreferredLocale: initialProfile?.preferredLocale ?? null,
       });
-      setCurrentStep(4);
-    });
-  };
 
-  const screenOneDefaults = buildScreenOneDefaults(initialProfile);
+  const screenTwoDefaults = screenData[2]
+    ? {
+        ...buildScreenOneDefaults(initialProfile),
+        ...(screenData[2] as Partial<ScreenOneData>),
+      }
+    : buildScreenOneDefaults(initialProfile);
 
-  const screenTwoDefaults = {
-    regionalProfile:
-      (initialProfile?.regionalProfile as RegionalProfile) ?? null,
-  };
+  const screenThreeDefaults = screenData[3]
+    ? {
+        oilUsage:
+          (screenData[3].oilUsage as 'minimal' | 'normal' | 'heavy') ??
+          undefined,
+        defaultRicePortion:
+          (screenData[3].defaultRicePortion as 'small' | 'medium' | 'large') ??
+          undefined,
+        sugarBraised:
+          (screenData[3].sugarBraised as 'low' | 'medium' | 'high') ??
+          undefined,
+        defaultProteinPortion:
+          (screenData[3].defaultProteinPortion as
+            | 'small'
+            | 'medium'
+            | 'large') ?? undefined,
+        brothConsumption:
+          (screenData[3].brothConsumption as
+            | 'leave_it'
+            | 'some'
+            | 'finish_it') ?? undefined,
+      }
+    : {
+        oilUsage:
+          (initialProfile?.oilUsage as 'minimal' | 'normal' | 'heavy') ??
+          undefined,
+        defaultRicePortion:
+          (initialProfile?.defaultRicePortion as
+            | 'small'
+            | 'medium'
+            | 'large') ?? undefined,
+        sugarBraised:
+          (initialProfile?.sugarBraised as 'low' | 'medium' | 'high') ??
+          undefined,
+        defaultProteinPortion:
+          (initialProfile?.defaultProteinPortion as
+            | 'small'
+            | 'medium'
+            | 'large') ?? undefined,
+        brothConsumption:
+          (initialProfile?.brothConsumption as
+            | 'leave_it'
+            | 'some'
+            | 'finish_it') ?? undefined,
+      };
 
-  const screenThreeDefaults = {
-    handSpanCm: initialProfile?.handSpanCm
-      ? Number(initialProfile.handSpanCm)
-      : null,
-    knuckleDepthCm: initialProfile?.knuckleDepthCm
-      ? Number(initialProfile.knuckleDepthCm)
-      : null,
-  };
-
-  const screenFourDefaults = {
-    oilUsage:
-      (initialProfile?.oilUsage as 'minimal' | 'normal' | 'heavy') ?? undefined,
-    defaultRicePortion:
-      (initialProfile?.defaultRicePortion as 'small' | 'medium' | 'large') ??
-      undefined,
-    sugarBraised:
-      (initialProfile?.sugarBraised as 'low' | 'medium' | 'high') ?? undefined,
-    defaultProteinPortion:
-      (initialProfile?.defaultProteinPortion as 'small' | 'medium' | 'large') ??
-      undefined,
-    brothConsumption:
-      (initialProfile?.brothConsumption as 'leave_it' | 'some' | 'finish_it') ??
-      undefined,
-  };
-
-  const currentRegionalProfile =
-    (screenData[2]?.regionalProfile as RegionalProfile) ??
-    screenTwoDefaults.regionalProfile;
-
-  const isNextDisabled =
-    isPending ||
-    !screenData[currentStep] ||
-    (currentStep === 2 && !screenData[2]?.regionalProfile);
+  const isNextDisabled = isPending || !screenData[currentStep];
 
   return (
     <div
@@ -169,7 +263,13 @@ export function WizardShell({
         initial={{ opacity: 0, scale: 0.95, y: 10 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 10 }}
-        className="flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl bg-[#FDFCF8] shadow-2xl"
+        role="dialog"
+        aria-label={tOnboarding('stepOf', {
+          current: currentStep,
+          total: TOTAL_STEPS,
+        })}
+        aria-modal="true"
+        className={`flex max-h-[92dvh] w-full ${modalMaxWidthClass} flex-col overflow-hidden rounded-[28px] bg-[#FDFCF8] shadow-2xl`}
       >
         {/* Header */}
         <div className="flex shrink-0 items-center justify-between border-[#EAE7E0]/60 border-b px-6 py-4">
@@ -178,6 +278,7 @@ export function WizardShell({
             <button
               type="button"
               onClick={onClose}
+              aria-label={tCommon('close')}
               className="-mr-2 rounded-full p-2 text-[#8B8682] transition-colors hover:bg-[#EAE7E0]/50 hover:text-[#2C2416]"
             >
               <X className="h-5 w-5" />
@@ -185,11 +286,15 @@ export function WizardShell({
           )}
         </div>
 
-        {/* Content */}
-        <div className="relative flex-1 overflow-y-auto p-6 sm:p-8">
+        {/* Content with scroll affordance */}
+        <div
+          ref={contentRef}
+          className="relative min-h-0 flex-1 overflow-y-auto overscroll-y-contain p-5 sm:p-6 lg:p-7"
+        >
           <AnimatePresence mode="wait" initial={false}>
             <motion.div
               key={currentStep}
+              className="min-h-full"
               initial={{ opacity: 0, x: direction * 20 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: direction * -20 }}
@@ -199,10 +304,10 @@ export function WizardShell({
                 damping: 40,
               }}
             >
-              {currentStep === 1 && (
-                <ScreenBodyMetrics
+              {currentStep === 1 && hasHydratedStepOneDraft && (
+                <ScreenOrigin
                   defaultValues={screenOneDefaults}
-                  onChange={(data: ScreenOneData) =>
+                  onChange={(data) =>
                     handleScreenChange(
                       1,
                       data as unknown as Record<string, unknown>
@@ -211,13 +316,18 @@ export function WizardShell({
                 />
               )}
               {currentStep === 2 && (
-                <ScreenRegional
+                <ScreenBodyMetrics
                   defaultValues={screenTwoDefaults}
-                  onChange={(data) => handleScreenChange(2, data)}
+                  onChange={(data: ScreenOneData) =>
+                    handleScreenChange(
+                      2,
+                      data as unknown as Record<string, unknown>
+                    )
+                  }
                 />
               )}
               {currentStep === 3 && (
-                <ScreenPortions
+                <ScreenCooking
                   defaultValues={screenThreeDefaults}
                   onChange={(data) =>
                     handleScreenChange(
@@ -225,53 +335,55 @@ export function WizardShell({
                       data as unknown as Record<string, unknown>
                     )
                   }
-                  onSkip={handleSkip}
-                />
-              )}
-              {currentStep === 4 && (
-                <ScreenCooking
-                  defaultValues={screenFourDefaults}
-                  regionalProfile={currentRegionalProfile}
-                  onChange={(data) =>
-                    handleScreenChange(
-                      4,
-                      data as unknown as Record<string, unknown>
-                    )
-                  }
                 />
               )}
             </motion.div>
           </AnimatePresence>
+
+          {/* Bottom fade gradient — hints more content below */}
+          {showScrollGradient && (
+            <div className="pointer-events-none absolute right-0 bottom-0 left-0 h-12 bg-gradient-to-t from-[#FDFCF8] to-transparent" />
+          )}
         </div>
 
-        {/* Footer Navigation — hidden on step 3 (Portions has its own CTAs) */}
-        {currentStep !== 3 && (
-          <div className="flex shrink-0 items-center justify-between border-[#EAE7E0]/60 border-t bg-[#F5F4F0]/50 px-6 py-4">
+        {/* Footer Navigation */}
+        <div className="flex shrink-0 items-center justify-between border-[#EAE7E0]/60 border-t bg-[#F5F4F0]/50 px-5 py-4 sm:px-6">
+          <button
+            type="button"
+            onClick={handleBack}
+            disabled={currentStep <= 1 || isPending}
+            className={`flex touch-manipulation items-center gap-2 font-medium text-[14px] transition-colors ${
+              currentStep === 1
+                ? 'pointer-events-none opacity-0'
+                : 'text-[#8B8682] hover:text-[#2C2416]'
+            }`}
+          >
+            <ArrowLeft className="h-4 w-4" />
+            {t('back')}
+          </button>
+
+          <div className="flex items-center gap-3">
             <button
               type="button"
-              onClick={handleBack}
-              disabled={currentStep <= 1 || isPending}
-              className={`flex items-center gap-2 font-medium text-[14px] transition-colors ${
-                currentStep === 1
-                  ? 'pointer-events-none opacity-0'
-                  : 'text-[#8B8682] hover:text-[#2C2416]'
-              }`}
+              onClick={handleSkip}
+              disabled={isPending}
+              className="flex touch-manipulation items-center gap-1.5 rounded-xl px-4 py-2.5 font-medium text-[#8B8682] text-[14px] transition-colors hover:bg-[#EAE7E0]/50 hover:text-[#2C2416] disabled:opacity-50"
             >
-              <ArrowLeft className="h-4 w-4" />
-              Back
+              {t('skip')}
+              <SkipForward className="h-3.5 w-3.5" />
             </button>
             <button
               type="button"
               onClick={handleNext}
               disabled={isNextDisabled}
-              className="flex items-center gap-2 rounded-xl bg-[#2C2416] px-5 py-2.5 font-medium text-[#FDFCF8] text-[14px] shadow-sm transition-all hover:bg-[#1C1917] disabled:opacity-50"
+              className="flex touch-manipulation items-center gap-2 rounded-xl bg-[#2C2416] px-5 py-2.5 font-medium text-[#FDFCF8] text-[14px] shadow-sm transition-all hover:bg-[#1C1917] disabled:opacity-50"
             >
               {isPending && <Loader2 className="h-4 w-4 animate-spin" />}
-              {currentStep >= TOTAL_STEPS ? 'Finish' : 'Next Step'}
+              {currentStep >= TOTAL_STEPS ? t('finish') : t('next')}
               <ArrowRight className="h-4 w-4" />
             </button>
           </div>
-        )}
+        </div>
       </motion.div>
     </div>
   );

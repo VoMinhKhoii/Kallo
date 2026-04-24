@@ -1,6 +1,7 @@
 'use client';
 
 import { motion } from 'motion/react';
+import { useTranslations } from 'next-intl';
 
 interface CalorieRingProps {
   current: number;
@@ -15,6 +16,7 @@ export function CalorieRing({
   size = 110,
   strokeWidth = 7,
 }: CalorieRingProps) {
+  const t = useTranslations('shared.calorieRing');
   const remaining = Math.max(0, target - current);
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
@@ -28,7 +30,10 @@ export function CalorieRing({
       <svg
         width={size}
         height={size}
-        aria-label={`${remaining.toLocaleString()} of ${target.toLocaleString()} calories remaining`}
+        aria-label={t('ariaLabel', {
+          remaining: remaining.toLocaleString(),
+          target: target.toLocaleString(),
+        })}
       >
         <circle
           cx={cx}
@@ -62,7 +67,7 @@ export function CalorieRing({
           {remaining.toLocaleString()}
         </span>
         <span className="mt-0.5 font-bold text-[8px] text-nham-stone uppercase tracking-[0.15em]">
-          left
+          {t('left')}
         </span>
         <span className="mt-0.5 text-[9px] text-nham-text-muted tabular-nums">
           / {target.toLocaleString()}

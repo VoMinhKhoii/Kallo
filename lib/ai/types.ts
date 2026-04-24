@@ -1,8 +1,4 @@
-import type {
-  CookingHabits,
-  Goal,
-  RegionalProfile,
-} from '@/lib/onboarding/types';
+import type { CookingHabits, Goal } from '@/lib/onboarding/types';
 
 // ---------------------------------------------------------------------------
 // Primitives
@@ -88,7 +84,8 @@ export type GoalAdjustedNutrient =
 export interface UserContext {
   goal: Goal;
   aggression: number; // 0.1-0.8 for cutting/bulking, 0 for maintaining (null → 0)
-  regionalProfile: RegionalProfile;
+  countryOfOrigin: string | null;
+  countryOfResidence: string | null;
   cookingHabits: CookingHabits;
 }
 

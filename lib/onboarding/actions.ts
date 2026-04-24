@@ -3,10 +3,8 @@
 import { eq } from 'drizzle-orm';
 import { db } from '@/lib/db';
 import { userProfiles } from '@/lib/db/schema';
-import {
-  ONBOARDING_REQUIRED_STEP,
-  SKIP_FALLBACK_DEFAULTS,
-} from '@/lib/onboarding/constants';
+import { ONBOARDING_TOTAL_STEPS } from '@/lib/onboarding/constants';
+import { hasSavedOnboardingProfileData } from '@/lib/onboarding/progress';
 import { createClient } from '@/lib/supabase/server';
 
 async function getAuthUser() {
@@ -34,14 +32,8 @@ export async function saveOnboardingScreen(
 ) {
   const user = await getAuthUser();
 
-  // Fetch current row for max-step logic + fallback defaults
   const [existing] = await db
-    .select({
-      onboardingStep: userProfiles.onboardingStep,
-      onboardingCompletedAt: userProfiles.onboardingCompletedAt,
-      handSpanCm: userProfiles.handSpanCm,
-      knuckleDepthCm: userProfiles.knuckleDepthCm,
-    })
+    .select()
     .from(userProfiles)
     .where(eq(userProfiles.userId, user.id))
     .limit(1);
@@ -51,8 +43,13 @@ export async function saveOnboardingScreen(
     onboardingStep: newStep,
   };
 
-  // Step-specific field mapping
-  if (step === 1) {
+  // Step-specific field mapping (skip when data is empty — e.g. "Skip" button)
+  const hasData = Object.keys(data).length > 0;
+  if (step === 1 && hasData) {
+    updateObj.countryOfOrigin = data.countryOfOrigin;
+    updateObj.countryOfResidence = data.countryOfResidence;
+    updateObj.preferredLocale = data.preferredLocale;
+  } else if (step === 2 && hasData) {
     updateObj.weightKg = data.weightKg;
     updateObj.heightCm = data.heightCm;
     updateObj.age = data.age;
@@ -67,12 +64,7 @@ export async function saveOnboardingScreen(
     updateObj.proteinTargetG = data.proteinTargetG;
     updateObj.carbsTargetG = data.carbsTargetG;
     updateObj.fatTargetG = data.fatTargetG;
-  } else if (step === 2) {
-    updateObj.regionalProfile = data.regionalProfile;
-  } else if (step === 3) {
-    updateObj.handSpanCm = data.handSpanCm;
-    updateObj.knuckleDepthCm = data.knuckleDepthCm;
-  } else if (step === 4) {
+  } else if (step === 3 && hasData) {
     updateObj.oilUsage = data.oilUsage;
     updateObj.defaultRicePortion = data.defaultRicePortion;
     updateObj.sugarBraised = data.sugarBraised;
@@ -80,18 +72,14 @@ export async function saveOnboardingScreen(
     updateObj.brothConsumption = data.brothConsumption;
   }
 
-  // Completion + fallback defaults
-  if (newStep >= ONBOARDING_REQUIRED_STEP) {
+  // Mark completion when all screens done
+  const nextProfile = { ...existing, ...updateObj };
+  if (
+    newStep >= ONBOARDING_TOTAL_STEPS &&
+    hasSavedOnboardingProfileData(nextProfile)
+  ) {
     if (!existing?.onboardingCompletedAt) {
       updateObj.onboardingCompletedAt = new Date();
-    }
-    // Apply SKIP_FALLBACK_DEFAULTS for hand measurements
-    // if still null (user skipped Screen 3)
-    if (!existing?.handSpanCm) {
-      updateObj.handSpanCm = SKIP_FALLBACK_DEFAULTS.handSpanCm;
-    }
-    if (!existing?.knuckleDepthCm) {
-      updateObj.knuckleDepthCm = SKIP_FALLBACK_DEFAULTS.knuckleDepthCm;
     }
   }
 
@@ -123,17 +111,14 @@ export async function saveProfileSettings(data: Record<string, unknown>) {
     proteinTargetG: data.proteinTargetG as number,
     carbsTargetG: data.carbsTargetG as number,
     fatTargetG: data.fatTargetG as number,
-    regionalProfile: data.regionalProfile as string,
+    countryOfOrigin: (data.countryOfOrigin as string) ?? null,
+    countryOfResidence: (data.countryOfResidence as string) ?? null,
+    preferredLocale: (data.preferredLocale as string) ?? 'en',
     oilUsage: data.oilUsage as string,
     defaultRicePortion: data.defaultRicePortion as string,
     sugarBraised: data.sugarBraised as string,
     defaultProteinPortion: data.defaultProteinPortion as string,
     brothConsumption: data.brothConsumption as string,
-    // Null guard: if user clears hand measurements, apply SKIP_FALLBACK_DEFAULTS
-    handSpanCm: String(data.handSpanCm ?? SKIP_FALLBACK_DEFAULTS.handSpanCm),
-    knuckleDepthCm: String(
-      data.knuckleDepthCm ?? SKIP_FALLBACK_DEFAULTS.knuckleDepthCm
-    ),
   };
 
   // Does NOT touch onboardingStep or onboardingCompletedAt

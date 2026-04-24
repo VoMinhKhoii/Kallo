@@ -1,3 +1,4 @@
+import { isAppError } from '@/lib/errors';
 import type { PipelineErrorType, PipelineResponse } from '../types';
 
 const NON_FOOD_MESSAGE =
@@ -63,6 +64,10 @@ export function makeErrorResponse(
 }
 
 export function handleError(error: unknown): PipelineResponse {
+  if (isAppError(error)) {
+    return makeErrorResponse('api_error', error.userMessage, error.retryable);
+  }
+
   if (isNonFoodError(error)) {
     return makeErrorResponse('non_food_input', NON_FOOD_MESSAGE, false);
   }

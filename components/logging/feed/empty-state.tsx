@@ -1,5 +1,8 @@
+'use client';
+
 import { UtensilsCrossed } from 'lucide-react';
 import { motion } from 'motion/react';
+import { useTranslations } from 'next-intl';
 
 interface EmptyStateProps {
   onSuggestionClick: (suggestion: string) => void;
@@ -8,6 +11,8 @@ interface EmptyStateProps {
 const SUGGESTIONS = ['2 mực kho + cơm', 'Phở bò tái', 'Bún chả Hà Nội'];
 
 export function EmptyState({ onSuggestionClick }: EmptyStateProps) {
+  const t = useTranslations('logging.emptyState');
+
   return (
     <motion.div
       key="empty-state"
@@ -35,7 +40,7 @@ export function EmptyState({ onSuggestionClick }: EmptyStateProps) {
           className="font-normal text-nham-text text-xl tracking-tight"
           style={{ fontFamily: 'Lora, serif' }}
         >
-          What are you having?
+          {t('title')}
         </motion.h2>
         <motion.p
           initial={{ opacity: 0, y: 6 }}
@@ -44,7 +49,7 @@ export function EmptyState({ onSuggestionClick }: EmptyStateProps) {
           className="text-nham-text-muted text-sm"
           style={{ fontFamily: 'DM Sans, sans-serif' }}
         >
-          Describe your meal and get a macro breakdown.
+          {t('subtitle')}
         </motion.p>
       </div>
 

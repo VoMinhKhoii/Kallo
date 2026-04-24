@@ -35,8 +35,8 @@ export async function requireAuthAndProfile(deps?: {
     .limit(1);
 
   const profile = rows[0];
-  if (!profile?.goal || !profile?.regionalProfile) {
-    throw Errors.onboardingIncomplete();
+  if (!profile) {
+    throw Errors.profileNotFound();
   }
 
   return { user: data.user, profile };

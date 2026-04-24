@@ -19,7 +19,7 @@ interface WeightChartProps {
   data: number[];
   periodStartWeight: number;
   expectedEndWeight: number;
-  goalDirection: 'up' | 'down';
+  goalDirection: 'up' | 'down' | 'flat';
   range: TimeRange;
 }
 
@@ -30,6 +30,10 @@ export function WeightChart({
   goalDirection,
   range,
 }: WeightChartProps) {
+  const yTicks = [periodStartWeight, expectedEndWeight].filter(
+    (value, index, array) => array.indexOf(value) === index
+  );
+
   const chartData = useMemo(
     () => data.map((weight, i) => ({ day: i, weight })),
     [data]
@@ -56,22 +60,34 @@ export function WeightChart({
   const yMin = Math.min(goalBottom, dataMin) - 0.3;
   const yMax = Math.max(goalTop, dataMax) + 0.3;
 
-  // Off-track zone: above start weight (losing) or below start weight (gaining)
-  const offTrackTop = goalDirection === 'down' ? yMax : periodStartWeight;
-  const offTrackBottom = goalDirection === 'down' ? periodStartWeight : yMin;
+  // Off-track zone: above start weight (losing), below start weight (gaining), none for maintenance
+  const offTrackTop =
+    goalDirection === 'down'
+      ? yMax
+      : goalDirection === 'up'
+        ? periodStartWeight
+        : null;
+  const offTrackBottom =
+    goalDirection === 'down'
+      ? periodStartWeight
+      : goalDirection === 'up'
+        ? yMin
+        : null;
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       {/* Legend — off track only */}
-      <div className="mb-1 flex items-center gap-4 text-[10px] text-nham-stone">
-        <span className="flex items-center gap-1.5">
-          <span
-            className="inline-block h-2 w-3 rounded-sm opacity-50"
-            style={{ backgroundColor: 'var(--nham-danger)' }}
-          />
-          Off track
-        </span>
-      </div>
+      {goalDirection !== 'flat' && (
+        <div className="mb-1 flex items-center gap-4 text-[10px] text-nham-stone">
+          <span className="flex items-center gap-1.5">
+            <span
+              className="inline-block h-2 w-3 rounded-sm opacity-50"
+              style={{ backgroundColor: 'var(--nham-danger)' }}
+            />
+            Off track
+          </span>
+        </div>
+      )}
 
       <div className="min-h-0 flex-1">
         <ResponsiveContainer width="100%" height="100%">
@@ -94,13 +110,15 @@ export function WeightChart({
               </linearGradient>
             </defs>
 
-            <ReferenceArea
-              y1={offTrackBottom}
-              y2={offTrackTop}
-              fill="var(--nham-danger)"
-              fillOpacity={0.08}
-              strokeOpacity={0}
-            />
+            {offTrackTop !== null && offTrackBottom !== null && (
+              <ReferenceArea
+                y1={offTrackBottom}
+                y2={offTrackTop}
+                fill="var(--nham-danger)"
+                fillOpacity={0.08}
+                strokeOpacity={0}
+              />
+            )}
 
             <XAxis
               dataKey="day"
@@ -119,7 +137,7 @@ export function WeightChart({
                 fill: 'var(--nham-stone)',
                 fontFamily: 'monospace',
               }}
-              ticks={[periodStartWeight, expectedEndWeight]}
+              ticks={yTicks}
               tickFormatter={(v: number) => `${v.toFixed(1)}`}
               width={38}
             />

@@ -1,28 +1,35 @@
-'use client';
+import { cookies } from 'next/headers';
+import { redirect } from 'next/navigation';
+import { defaultLocale } from '@/i18n/config';
+import { resolveRootLocale } from '@/lib/i18n/root-locale';
+import { getOnboardingProfile } from '@/lib/onboarding/actions';
+import { createClient } from '@/lib/supabase/server';
 
-import { AuthDialog } from '@/components/auth/auth-dialog';
-import { AuthProvider } from '@/components/auth/auth-provider';
-import {
-  CTASection,
-  Footer,
-  Header,
-  Hero,
-  ProblemSection,
-  SolutionSection,
-} from '@/components/landing-page';
+export const dynamic = 'force-dynamic';
 
-export default function Home() {
-  return (
-    <AuthProvider>
-      <Header />
-      <main>
-        <Hero />
-        <ProblemSection />
-        <SolutionSection />
-        <CTASection />
-      </main>
-      <Footer />
-      <AuthDialog />
-    </AuthProvider>
-  );
+export default async function RootPage() {
+  const cookieStore = await cookies();
+  const cookieLocale = cookieStore.get('NEXT_LOCALE')?.value ?? null;
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  let profileLocale: string | null = null;
+  if (user) {
+    try {
+      profileLocale = (await getOnboardingProfile())?.preferredLocale ?? null;
+    } catch (error) {
+      console.error('Failed to load onboarding profile:', error);
+    }
+  }
+
+  const locale = resolveRootLocale({
+    cookieLocale,
+    defaultLocale,
+    isAuthenticated: Boolean(user),
+    profileLocale,
+  });
+
+  redirect(`/${locale}`);
 }

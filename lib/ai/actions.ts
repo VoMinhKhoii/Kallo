@@ -56,10 +56,10 @@ export async function analyzeMealAction(
       .limit(1);
 
     const profile = rows[0];
-    if (!profile?.goal || !profile?.regionalProfile) {
+    if (!profile) {
       return makeErrorResponse(
         'api_error',
-        'Please complete onboarding before analyzing meals.',
+        'Profile not found. Please log in again.',
         false
       );
     }

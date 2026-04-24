@@ -1,4 +1,4 @@
-import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
+import type { AppDb } from '@/lib/db';
 import { capitalizeFirst } from '@/lib/utils';
 import type { GeminiClient } from '../gemini';
 import {
@@ -42,10 +42,7 @@ export function extractIngredientNames(
  * 2. On L1/L2 miss → Gemini embedding API call (fire-and-forget),
  *    result cached to L1+L2 so the batch phase in cascade.ts finds it.
  */
-export function createSpeculativeMatcher(
-  db: PostgresJsDatabase<any>,
-  gemini: GeminiClient
-) {
+export function createSpeculativeMatcher(db: AppDb, gemini: GeminiClient) {
   const seen = new Set<string>();
   /**
    * In-flight promises keyed by normalized canonical name.

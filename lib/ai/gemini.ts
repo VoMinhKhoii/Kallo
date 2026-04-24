@@ -35,6 +35,7 @@ interface StructuredOutputParams<T> {
   topP?: number;
   topK?: number;
   thinkingConfig?: { thinkingLevel?: ThinkingLevel };
+  abortSignal?: AbortSignal;
 }
 
 export interface GeminiClient {
@@ -47,16 +48,60 @@ export interface GeminiClient {
   generateEmbeddingBatch(texts: string[]): Promise<number[][]>;
 }
 
-function isRateLimitError(error: unknown): boolean {
-  if (error && typeof error === 'object' && 'status' in error) {
-    return (error as { status: number }).status === 429;
+function getErrorStatus(error: unknown): number | null {
+  if (
+    error &&
+    typeof error === 'object' &&
+    'status' in error &&
+    typeof (error as { status?: unknown }).status === 'number'
+  ) {
+    return (error as { status: number }).status;
   }
-  return error instanceof Error && error.message.includes('429');
+
+  if (!(error instanceof Error)) {
+    return null;
+  }
+
+  const statusMatch = error.message.match(/\b(408|429|500|502|503|504)\b/);
+  if (statusMatch) {
+    return Number.parseInt(statusMatch[1], 10);
+  }
+
+  if (error.message.includes('UNAVAILABLE')) {
+    return 503;
+  }
+
+  return null;
 }
 
-function parseRetryDelay(error: Error, baseDelayMs: number): number {
+function isRetryableGeminiError(error: unknown): boolean {
+  if (error instanceof Error && error.name === 'AbortError') {
+    return false;
+  }
+
+  const status = getErrorStatus(error);
+  if (status != null) {
+    return new Set([408, 429, 500, 502, 503, 504]).has(status);
+  }
+
+  if (!(error instanceof Error)) {
+    return false;
+  }
+
+  return /fetch failed|network error|socket hang up|ECONNRESET|ETIMEDOUT|EAI_AGAIN/i.test(
+    error.message
+  );
+}
+
+function parseRetryDelay(
+  error: Error,
+  baseDelayMs: number,
+  attempt: number
+): number {
   const match = error.message.match(/retry in ([\d.]+)s/i);
-  return match ? Number.parseFloat(match[1]) * 1000 : baseDelayMs;
+  return match
+    ? Number.parseFloat(match[1]) * 1000
+    : baseDelayMs * 2 ** (attempt - 1);
 }
 
 function sleep(ms: number): Promise<void> {
@@ -87,17 +132,21 @@ export function createGeminiClient(
       } catch (err) {
         lastError = err instanceof Error ? err : new Error(String(err));
         const elapsed = Date.now() - t0;
+        const status = getErrorStatus(lastError);
 
-        if (!isRateLimitError(lastError) || attempt === retry.maxRetries) {
+        if (
+          !isRetryableGeminiError(lastError) ||
+          attempt === retry.maxRetries
+        ) {
           console.error(
             `[gemini] ${label ?? 'call'} attempt ${attempt}/${retry.maxRetries} failed (${elapsed}ms): ${lastError.message}`
           );
           throw lastError;
         }
 
-        const delay = parseRetryDelay(lastError, retry.baseDelayMs * attempt);
+        const delay = parseRetryDelay(lastError, retry.baseDelayMs, attempt);
         console.warn(
-          `[gemini] ${label ?? 'call'} attempt ${attempt}/${retry.maxRetries} got 429 (${elapsed}ms), retrying in ${delay}ms`
+          `[gemini] ${label ?? 'call'} attempt ${attempt}/${retry.maxRetries} got retryable ${status ?? 'error'} (${elapsed}ms), retrying in ${delay}ms`
         );
         await sleep(delay);
       }
@@ -133,6 +182,9 @@ export function createGeminiClient(
             ...(params.thinkingConfig != null && {
               thinkingConfig: params.thinkingConfig,
             }),
+            ...(params.abortSignal != null && {
+              abortSignal: params.abortSignal,
+            }),
           },
         });
 
@@ -166,6 +218,9 @@ export function createGeminiClient(
             }),
             ...(params.topP != null && { topP: params.topP }),
             ...(params.topK != null && { topK: params.topK }),
+            ...(params.abortSignal != null && {
+              abortSignal: params.abortSignal,
+            }),
           },
         });
 

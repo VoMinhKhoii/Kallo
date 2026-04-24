@@ -1,69 +1,65 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Check, Scale } from 'lucide-react';
+import { Scale } from 'lucide-react';
 import { motion } from 'motion/react';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
-import { z } from 'zod';
-import type { StatsData, VerdictData } from '@/components/dashboard/types';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { useLogWeight } from '@/hooks/use-weight-mutations';
+import type { WeightSummaryData } from '@/lib/types/weight';
 import { cn } from '@/lib/utils';
-
-const weightSchema = z.object({
-  weight: z
-    .string()
-    .min(1, 'Weight is required')
-    .refine((v) => {
-      const n = Number(v);
-      return !isNaN(n) && n > 0 && n < 500;
-    }, 'Enter a valid weight (0–500 kg)'),
-});
-
-type WeightForm = z.infer<typeof weightSchema>;
+import { type WeightLogInput, weightLogSchema } from '@/lib/validation';
 
 interface WeightCardProps {
-  stats: StatsData;
-  verdict: VerdictData;
+  weightSummary: WeightSummaryData | undefined;
 }
 
-export function WeightCard({ stats, verdict }: WeightCardProps) {
-  const [saved, setSaved] = useState(false);
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+function todayDateString(): string {
+  const date = new Date();
+  const yyyy = date.getFullYear();
+  const mm = String(date.getMonth() + 1).padStart(2, '0');
+  const dd = String(date.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
+}
 
-  const alreadyLogged = stats.todayWeight !== null;
+export function WeightCard({ weightSummary }: WeightCardProps) {
+  const logWeightMutation = useLogWeight();
+  const currentWeight = weightSummary?.currentWeight ?? 65;
+  const todayWeight = weightSummary?.todayWeight ?? null;
+  const daysLogged = weightSummary?.daysLogged ?? 0;
+  const rangeLabel = weightSummary?.range === '90d' ? '90 days' : '30 days';
 
   const {
     register,
     handleSubmit,
     reset,
-    watch,
     formState: { errors },
-  } = useForm<WeightForm>({
-    resolver: zodResolver(weightSchema),
-    defaultValues: { weight: '' },
+  } = useForm<WeightLogInput>({
+    resolver: zodResolver(weightLogSchema),
+    defaultValues: {
+      loggedDate: todayDateString(),
+      weightKg: currentWeight,
+    },
   });
 
-  const watchedWeight = watch('weight');
-
-  // Show validation errors via toast
   useEffect(() => {
-    if (errors.weight) toast.error(errors.weight.message);
-  }, [errors.weight]);
+    reset({
+      loggedDate: todayDateString(),
+      weightKg: todayWeight ?? currentWeight,
+    });
+  }, [currentWeight, reset, todayWeight]);
 
-  // Clear timeout on unmount to prevent memory leak
-  useEffect(() => {
-    return () => {
-      if (timerRef.current) clearTimeout(timerRef.current);
-    };
-  }, []);
-
-  const onSubmit = () => {
-    setSaved(true);
-    timerRef.current = setTimeout(() => {
-      setSaved(false);
-      reset();
-    }, 1500);
+  const onSubmit = async (values: WeightLogInput) => {
+    try {
+      await logWeightMutation.mutateAsync(values);
+      toast.success('Đã lưu cân nặng.');
+      reset(values);
+    } catch (error) {
+      console.error(error);
+    }
   };
 
   return (
@@ -73,65 +69,110 @@ export function WeightCard({ stats, verdict }: WeightCardProps) {
       transition={{ duration: 0.5, delay: 0.2 }}
       className="flex h-full flex-col rounded-2xl border border-nham-border/60 bg-card p-4 shadow-[0_4px_24px_rgba(44,36,22,0.04)]"
     >
-      {/* Weight logging */}
-      <div className="flex flex-1 flex-col gap-2">
+      <div className="flex flex-1 flex-col gap-3">
         <div className="flex items-center gap-1.5">
           <Scale className="h-3.5 w-3.5 text-nham-accent" />
           <span className="font-bold text-[9px] text-nham-stone uppercase tracking-[0.15em]">
-            {alreadyLogged ? "Today's Weight" : 'Morning Weight'}
+            Weight Log
           </span>
         </div>
 
         <form
           onSubmit={handleSubmit(onSubmit, () =>
-            toast.error('Enter a valid weight (0–500 kg)')
+            toast.error('Vui lòng kiểm tra lại ngày và cân nặng.')
           )}
-          className="flex items-center gap-2"
+          className="space-y-2"
         >
-          <div className="relative flex-1">
-            <input
-              {...register('weight')}
-              type="number"
-              step="0.1"
-              placeholder={String(stats.weightPlaceholder)}
-              value={alreadyLogged ? String(stats.todayWeight) : undefined}
-              disabled={alreadyLogged}
-              className="w-full rounded-xl border border-nham-border border-dashed bg-nham-surface px-4 py-2 font-mono text-[15px] text-nham-text outline-none transition-all placeholder:text-nham-border focus:border-nham-accent focus:ring-2 focus:ring-nham-accent/20 disabled:cursor-default disabled:border-solid disabled:opacity-70"
+          <div className="grid grid-cols-[1fr_112px_auto] gap-2">
+            <label htmlFor="weight-log-date" className="sr-only">
+              Ngày ghi cân nặng
+            </label>
+            <Input
+              id="weight-log-date"
+              {...register('loggedDate')}
+              type="date"
+              aria-invalid={Boolean(errors.loggedDate)}
+              className={cn(
+                'rounded-xl border-nham-border border-dashed bg-nham-surface px-3 text-[12px] text-nham-text shadow-none',
+                errors.loggedDate && 'border-destructive'
+              )}
             />
-            <span className="absolute top-1/2 right-3 -translate-y-1/2 text-[11px] text-nham-stone">
-              kg
-            </span>
-          </div>
-          {!alreadyLogged && (
-            <button
+
+            <div className="relative">
+              <label htmlFor="weight-log-kg" className="sr-only">
+                Cân nặng (kg)
+              </label>
+              <Input
+                id="weight-log-kg"
+                {...register('weightKg', { valueAsNumber: true })}
+                type="number"
+                step="0.1"
+                min="30"
+                max="300"
+                aria-invalid={Boolean(errors.weightKg)}
+                placeholder={currentWeight.toFixed(1)}
+                className={cn(
+                  'rounded-xl border-nham-border border-dashed bg-nham-surface px-3 pr-8 font-mono text-[14px] text-nham-text shadow-none',
+                  errors.weightKg && 'border-destructive'
+                )}
+              />
+              <span className="absolute top-1/2 right-3 -translate-y-1/2 text-[11px] text-nham-stone">
+                kg
+              </span>
+            </div>
+
+            <Button
               type="submit"
-              disabled={!watchedWeight}
+              size="xs"
+              disabled={logWeightMutation.isPending}
               className={cn(
                 'rounded-xl px-3 py-2 font-bold text-xs tracking-wide transition-all',
-                saved
-                  ? 'bg-nham-success text-white shadow-sm'
-                  : watchedWeight
-                    ? 'bg-nham-btn text-white shadow-sm hover:bg-nham-btn-hover'
-                    : 'cursor-not-allowed bg-nham-hover text-nham-stone'
+                'bg-nham-btn text-white shadow-sm hover:bg-nham-btn-hover'
               )}
             >
-              {saved ? <Check className="h-3.5 w-3.5" /> : 'Save'}
-            </button>
-          )}
-        </form>
-        <div className="flex items-center justify-between">
-          {!alreadyLogged && (
-            <p className="text-[9px] text-nham-stone">
-              Last: {verdict.currentWeight} kg
+              {logWeightMutation.isPending ? 'Saving...' : 'Save'}
+            </Button>
+          </div>
+
+          {(errors.loggedDate || errors.weightKg) && (
+            <p className="text-[10px] text-destructive">
+              {errors.loggedDate?.message ?? errors.weightKg?.message}
             </p>
           )}
-          <p className="ml-auto text-[9px] text-nham-stone">
+        </form>
+
+        <div className="flex items-center justify-between">
+          <p className="text-[9px] text-nham-stone">
             <span className="font-semibold text-nham-text">
-              {stats.daysLogged}
+              {(todayWeight ?? currentWeight).toFixed(1)}
             </span>{' '}
-            of last 30 days logged
+            kg current
+          </p>
+          <p className="text-[9px] text-nham-stone">
+            <span className="font-semibold text-nham-text">{daysLogged}</span>{' '}
+            logs in last {rangeLabel}
           </p>
         </div>
+
+        <div className="flex items-center justify-between text-[9px] text-nham-stone">
+          <span>
+            Goal line:{' '}
+            {weightSummary?.goalDirection === 'up'
+              ? 'up'
+              : weightSummary?.goalDirection === 'down'
+                ? 'down'
+                : 'flat'}
+          </span>
+          <span>
+            Start: {weightSummary?.periodStartWeight ?? currentWeight} kg
+          </span>
+        </div>
+
+        {todayWeight !== null && (
+          <p className="text-[9px] text-nham-stone">
+            Today logged: {todayWeight} kg
+          </p>
+        )}
       </div>
     </motion.div>
   );

@@ -1,0 +1,110 @@
+name: Cloud Run Internal
+
+on:
+  workflow_run:
+    workflows: ['CI']
+    types: [completed]
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  deploy-internal:
+    if: >
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'push' &&
+      github.event.workflow_run.head_repository.full_name == github.repository &&
+      github.event.workflow_run.head_branch == 'main'
+    runs-on: ubuntu-latest
+    env:
+      SERVICE_NAME: nham-internal
+      IMAGE_TAG: ${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/${{ vars.GCP_ARTIFACT_REPO }}/nham:${{ github.event.workflow_run.head_sha }}
+      SUPABASE_PROJECT_ID: ${{ secrets.SUPABASE_PROJECT_ID }}
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+      - uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3.0.0
+        with:
+          workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
+          service_account: ${{ vars.GCP_DEPLOYER_SERVICE_ACCOUNT }}
+      - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f # v2.2.1
+        with:
+          project_id: ${{ vars.GCP_PROJECT_ID }}
+      - name: Pre-deploy validation
+        run: |
+          db_url="$(gcloud secrets versions access latest --secret=nham-nonprod-database-url)"
+          echo "::add-mask::$db_url"
+          gcloud artifacts docker images describe "$IMAGE_TAG"
+          gcloud secrets describe nham-nonprod-database-url
+          gcloud secrets describe nham-nonprod-gemini-api-key
+          gcloud iam service-accounts describe "${{ vars.GCP_RUNTIME_SERVICE_ACCOUNT }}"
+          [[ "$SERVICE_NAME" = "nham-internal" ]]
+          node ./scripts/cloud-run/shared-db.mjs assert-target --db-url "$db_url" --project-ref "$SUPABASE_PROJECT_ID"
+          node ./scripts/cloud-run/shared-db.mjs assert-state --db-url "$db_url"
+      - name: Record previous revision
+        run: |
+          # By contract, the currently serving revision is the last known good one,
+          # because this workflow only leaves a new revision serving after smoke passes.
+          # Select the revision with 100% traffic, or highest percent if traffic is split.
+          previous_revision="$(
+            gcloud run services describe "$SERVICE_NAME" \
+              --region="${{ vars.GCP_REGION }}" \
+              --format='json' 2>/dev/null \
+            | jq -r '
+              .status.traffic
+              | if . == null then "" 
+                else (
+                  (map(select(.percent == 100)) | .[0].revisionName) // 
+                  (sort_by(-.percent) | .[0].revisionName) // 
+                  ""
+                )
+                end
+            ' || true
+          )"
+          echo "PREVIOUS_REVISION=$previous_revision" >> "$GITHUB_ENV"
+      - name: Resolve image digest
+        run: |
+          digest="$(gcloud artifacts docker images describe "$IMAGE_TAG" --format='value(image_summary.digest)')"
+          echo "IMAGE_URI=${IMAGE_TAG%:*}@${digest}" >> "$GITHUB_ENV"
+      - id: deploy
+        uses: google-github-actions/deploy-cloudrun@2028e2d7d30a78c6910e0632e48dd561b064884d # v3.0.1
+        with:
+          service: ${{ env.SERVICE_NAME }}
+          image: ${{ env.IMAGE_URI }}
+          region: ${{ vars.GCP_REGION }}
+          skip_default_labels: true
+          labels: |-
+            commit-sha=${{ github.event.workflow_run.head_sha }}
+            deployment-target=internal
+            github-run-id=${{ github.run_id }}
+          flags: >-
+            --allow-unauthenticated
+            --service-account=${{ vars.GCP_RUNTIME_SERVICE_ACCOUNT }}
+            --memory=1Gi
+            --cpu=1
+            --concurrency=20
+            --timeout=60
+            --min-instances=1
+            --max-instances=10
+            --set-secrets=DATABASE_URL=nham-nonprod-database-url:latest,GEMINI_API_KEY=nham-nonprod-gemini-api-key:latest
+      - id: smoke
+        run: ./scripts/cloud-run/smoke-check.sh "${{ steps.deploy.outputs.url }}"
+      - name: Record deploy metadata
+        if: always()
+        run: |
+          revision="$(gcloud run services describe "$SERVICE_NAME" --region="${{ vars.GCP_REGION }}" --format='value(status.latestCreatedRevisionName)' 2>/dev/null || true)"
+          url="$(gcloud run services describe "$SERVICE_NAME" --region="${{ vars.GCP_REGION }}" --format='value(status.url)' 2>/dev/null || true)"
+          echo "{\"service\":\"$SERVICE_NAME\",\"image\":\"$IMAGE_URI\",\"revision\":\"$revision\",\"url\":\"$url\",\"commit_sha\":\"${{ github.event.workflow_run.head_sha }}\",\"smoke\":\"${{ steps.smoke.outcome }}\"}" > deployment-record.json
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        if: always()
+        with:
+          name: internal-deployment-record-${{ github.event.workflow_run.head_sha }}
+          path: deployment-record.json
+      - name: Roll back on failed smoke check
+        if: failure() && env.PREVIOUS_REVISION != ''
+        run: |
+          gcloud run services update-traffic "$SERVICE_NAME" \
+            --region="${{ vars.GCP_REGION }}" \
+            --to-revisions "${PREVIOUS_REVISION}=100"
