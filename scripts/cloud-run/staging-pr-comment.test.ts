@@ -6,6 +6,10 @@ import {
 } from './staging-pr-comment.mjs';
 
 describe('staging PR comment helpers', () => {
+  it('extracts the PR number from a plain numeric input', () => {
+    expect(extractPullRequestNumberFromRef('76')).toBe(76);
+  });
+
   it('extracts the PR number from pr-<number> refs', () => {
     expect(extractPullRequestNumberFromRef('pr-75')).toBe(75);
   });

@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       ref:
-        description: Branch, tag, or commit SHA to deploy to shared staging
+        description: Branch, tag, commit SHA, or PR number to deploy to shared staging
         type: string
         required: true
       reason:
@@ -34,8 +34,43 @@ jobs:
       SUPABASE_PROJECT_ID: ${{ secrets.SUPABASE_PROJECT_ID }}
     steps:
       - uses: actions/checkout@v4
+      - id: resolve_target
+        uses: actions/github-script@v7
+        env:
+          INPUT_REF: ${{ github.event.inputs.ref }}
         with:
-          ref: ${{ github.event.inputs.ref }}
+          script: |
+            const rawInput = (process.env.INPUT_REF || '').trim();
+
+            if (!rawInput) {
+              core.setFailed('The ref input must not be empty.');
+              return;
+            }
+
+            const isPullRequestNumber = /^\d+$/.test(rawInput);
+            let resolvedRef = rawInput;
+            let prNumber = '';
+
+            if (isPullRequestNumber) {
+              const { data: pullRequest } = await github.rest.pulls.get({
+                ...context.repo,
+                pull_number: Number(rawInput),
+              });
+
+              resolvedRef = pullRequest.head.sha;
+              prNumber = String(pullRequest.number);
+
+              core.info(
+                `Resolved PR #${pullRequest.number} (${pullRequest.head.ref}) to ${pullRequest.head.sha}`
+              );
+            }
+
+            core.setOutput('resolved_ref', resolvedRef);
+            core.setOutput('pr_number', prNumber);
+            core.setOutput('raw_input', rawInput);
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.resolve_target.outputs.resolved_ref }}
       - uses: google-github-actions/auth@v3
         with:
           workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
@@ -53,7 +88,7 @@ jobs:
           echo "IMAGE_TAG=${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/${{ vars.GCP_ARTIFACT_REPO }}/nham:${commit_sha}" >> "$GITHUB_ENV"
       - name: Acquire staging lease
         env:
-          STAGING_REF: ${{ github.event.inputs.ref }}
+          STAGING_REF: ${{ steps.resolve_target.outputs.raw_input }}
           STAGING_REASON: ${{ github.event.inputs.reason }}
           STAGING_FORCE_TAKEOVER: ${{ github.event.inputs.force_takeover }}
         run: STAGING_TARGET_SHA="$COMMIT_SHA" ./scripts/cloud-run/staging-lease.sh acquire
@@ -89,7 +124,7 @@ jobs:
           )"
           echo "PREVIOUS_REVISION=$previous_revision" >> "$GITHUB_ENV"
       - name: Push migrations to shared staging DB
-        run: supabase --yes db push --db-url "$STAGING_DATABASE_URL"
+        run: supabase db push --db-url "$STAGING_DATABASE_URL"
       - name: Resolve image digest
         run: |
           digest="$(gcloud artifacts docker images describe "$IMAGE_TAG" --format='value(image_summary.digest)')"
@@ -117,8 +152,9 @@ jobs:
       - name: Record deploy metadata
         if: always()
         env:
-          REF: ${{ github.event.inputs.ref }}
+          REF: ${{ steps.resolve_target.outputs.raw_input }}
           REASON: ${{ github.event.inputs.reason }}
+          RESOLVED_REF: ${{ steps.resolve_target.outputs.resolved_ref }}
         run: |
           revision="$(gcloud run services describe "$SERVICE_NAME" --region="${{ vars.GCP_REGION }}" --format='value(status.latestCreatedRevisionName)' 2>/dev/null || true)"
           url="$(gcloud run services describe "$SERVICE_NAME" --region="${{ vars.GCP_REGION }}" --format='value(status.url)' 2>/dev/null || true)"
@@ -129,10 +165,11 @@ jobs:
             --arg url "$url" \
             --arg commit_sha "$COMMIT_SHA" \
             --arg ref "$REF" \
+            --arg resolved_ref "$RESOLVED_REF" \
             --arg reason "$REASON" \
             --arg smoke "${{ steps.smoke.outcome }}" \
             --arg lease_generation "${LEASE_GENERATION:-}" \
-            '{service: $service, image: $image, revision: $revision, url: $url, commit_sha: $commit_sha, ref: $ref, reason: $reason, smoke: $smoke, lease_generation: $lease_generation}' \
+            '{service: $service, image: $image, revision: $revision, url: $url, commit_sha: $commit_sha, ref: $ref, resolved_ref: $resolved_ref, reason: $reason, smoke: $smoke, lease_generation: $lease_generation}' \
             > deployment-record.json
       - uses: actions/upload-artifact@v4
         if: always()
@@ -145,7 +182,8 @@ jobs:
         env:
           DEPLOY_URL: ${{ steps.deploy.outputs.url }}
           INPUT_REASON: ${{ github.event.inputs.reason }}
-          INPUT_REF: ${{ github.event.inputs.ref }}
+          INPUT_REF: ${{ steps.resolve_target.outputs.raw_input }}
+          RESOLVED_PR_NUMBER: ${{ steps.resolve_target.outputs.pr_number }}
         with:
           script: |
             const { pathToFileURL } = require('node:url');
@@ -161,7 +199,10 @@ jobs:
             const ref = process.env.INPUT_REF || '';
             const reason = process.env.INPUT_REASON || '';
             const url = process.env.DEPLOY_URL || '';
-            const prNumber = extractPullRequestNumberFromRef(ref);
+            const explicitPrNumber = process.env.RESOLVED_PR_NUMBER || '';
+            const prNumber = explicitPrNumber
+              ? Number.parseInt(explicitPrNumber, 10)
+              : extractPullRequestNumberFromRef(ref);
 
             if (!Number.isInteger(prNumber)) {
               console.log('No PR number found in ref:', ref);

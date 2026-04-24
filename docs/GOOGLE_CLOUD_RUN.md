@@ -15,6 +15,7 @@ All code and migrations hitting the **shared database** must go through the manu
 1. Developer pushes PR → CI runs (build, lint, tests)
 2. CI passes → no automatic deployment (previews disabled)
 3. Developer manually triggers **staging deployment** from GitHub Actions UI
+   - Enters a branch, tag, commit SHA, or plain PR number
    - Acquires GCS lease to prevent concurrent deploys
    - Pushes migrations from the PR branch
    - Deploys service to `nham-staging`

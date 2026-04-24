@@ -5,6 +5,10 @@ export function extractPullRequestNumberFromRef(ref) {
     return null;
   }
 
+  if (/^\d+$/.test(normalizedRef)) {
+    return Number.parseInt(normalizedRef, 10);
+  }
+
   const directMatch = normalizedRef.match(/^pr-(\d+)$/);
 
   if (directMatch) {
