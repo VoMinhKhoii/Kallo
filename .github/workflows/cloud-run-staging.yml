@@ -20,6 +20,7 @@ on:
 permissions:
   contents: read
   id-token: write
+  pull-requests: write
 
 jobs:
   deploy-staging:
@@ -138,6 +139,66 @@ jobs:
         with:
           name: staging-deployment-record-${{ github.run_id }}
           path: deployment-record.json
+      - name: Comment on PR with staging preview URL
+        if: always() && steps.deploy.outcome == 'success'
+        uses: actions/github-script@v7
+        env:
+          DEPLOY_URL: ${{ steps.deploy.outputs.url }}
+          INPUT_REASON: ${{ github.event.inputs.reason }}
+          INPUT_REF: ${{ github.event.inputs.ref }}
+        with:
+          script: |
+            const { pathToFileURL } = require('node:url');
+
+            const helperModuleUrl = pathToFileURL(
+              `${process.env.GITHUB_WORKSPACE}/scripts/cloud-run/staging-pr-comment.mjs`
+            ).href;
+            const {
+              buildStagingPreviewCommentBody,
+              extractPullRequestNumberFromRef,
+            } = await import(helperModuleUrl);
+
+            const ref = process.env.INPUT_REF || '';
+            const reason = process.env.INPUT_REASON || '';
+            const url = process.env.DEPLOY_URL || '';
+            const prNumber = extractPullRequestNumberFromRef(ref);
+
+            if (!Number.isInteger(prNumber)) {
+              console.log('No PR number found in ref:', ref);
+              return;
+            }
+
+            if (!url) {
+              console.log('No deploy URL found. Skipping PR comment.');
+              return;
+            }
+
+            const body = buildStagingPreviewCommentBody({ reason, url });
+
+            try {
+              const comments = await github.paginate(github.rest.issues.listComments, {
+                ...context.repo,
+                issue_number: prNumber,
+                per_page: 100,
+              });
+              const existing = comments.find((comment) => comment.body?.includes('<!-- nham-staging-preview -->'));
+              
+              if (existing) {
+                await github.rest.issues.updateComment({
+                  ...context.repo,
+                  comment_id: existing.id,
+                  body,
+                });
+              } else {
+                await github.rest.issues.createComment({
+                  ...context.repo,
+                  issue_number: prNumber,
+                  body,
+                });
+              }
+            } catch (e) {
+              console.log('Could not comment on PR', prNumber, ':', e.message);
+            }
       - name: Roll back on failed smoke check
         if: failure() && steps.smoke.outcome == 'failure' && env.PREVIOUS_REVISION != ''
         run: |

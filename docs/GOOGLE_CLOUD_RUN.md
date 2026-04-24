@@ -1,15 +1,28 @@
 # Google Cloud Run Setup
 
-This repo now ships a Cloud Run deployment path with:
+This repo uses a **manual-only CI/CD model** for the shared database:
 
-- one shared internal service: `nham-internal`
-- one manual shared staging service: `nham-staging`
-- one preview service per PR: `nham-pr-<number>`
-- one immutable Artifact Registry image per commit SHA
-- GitHub Actions authentication through Workload Identity Federation (WIF)
+- **Internal service** (`nham-internal`): Automatically deploys on main branch merge (no manual gate)
+- **Staging service** (`nham-staging`): Manual deployment only via `workflow_dispatch` (gatekeeper for schema/code changes)
+- **Preview services** (`nham-pr-<number>`): Disabled—no automatic PR preview deployments
+- Artifact Registry: One immutable image per commit SHA
+- Authentication: GitHub Actions via Workload Identity Federation (WIF)
 
-The deploy path is meant for internal dogfooding first, but it is structured so we
-can later split staging and production without redesigning the whole pipeline.
+## Deployment Model
+
+All code and migrations hitting the **shared database** must go through the manual staging workflow:
+
+1. Developer pushes PR → CI runs (build, lint, tests)
+2. CI passes → no automatic deployment (previews disabled)
+3. Developer manually triggers **staging deployment** from GitHub Actions UI
+   - Acquires GCS lease to prevent concurrent deploys
+   - Pushes migrations from the PR branch
+   - Deploys service to `nham-staging`
+   - Posts the staging URL back to the PR when `ref` is `pr-<number>` or ends with `#<number>`
+4. Once staging is validated, PR is merged to main
+5. Main merge → `nham-internal` **automatically** deploys with latest schema (already validated on staging)
+
+The deploy path is structured so we can later split staging and production without redesigning the whole pipeline.
 
 ## What the workflows expect
 
@@ -25,17 +38,19 @@ The workflows in `.github/workflows/` assume:
   `NEXT_PUBLIC_SUPABASE_URL` and
   `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
 
-## Preview database modes
+## Preview database modes (Disabled by default)
 
-Preview deploys support two explicit database modes:
+Automatic PR previews are currently disabled, but the preview workflow still
+retains two database modes for legacy cleanup and future re-enablement:
 
-| Mode | What preview services use | When to use |
+| Mode | What staging services use | When to use |
 | --- | --- | --- |
-| `shared` | The shared non-prod Supabase database behind `nham-nonprod-database-url` | Default mode on the current plan |
+| `shared` | The shared non-prod Supabase database behind `nham-nonprod-database-url` | Current mode (no branching) |
 | `branch` | A per-PR Supabase branch created via `supabase branches` | Future mode once the project has Supabase branching enabled |
 
-Set GitHub Actions variable `PREVIEW_DATABASE_MODE` to control the behavior.
-Leave it unset or set it to `shared` for the current setup.
+Set GitHub Actions variable `PREVIEW_DATABASE_MODE` to control that dormant
+preview behavior if previews are ever re-enabled. Leave it unset or set it to
+`shared` for the current setup.
 
 When you later upgrade to Supabase Pro, switching is meant to be operationally
 simple:
@@ -43,7 +58,7 @@ simple:
 1. set `PREVIEW_DATABASE_MODE=branch`
 2. add `SUPABASE_ACCESS_TOKEN` and `SUPABASE_PROJECT_ID` GitHub secrets
 3. keep `GCS_SEED_BUCKET` and `GCS_SEED_OBJECT` pointing at the generated seed
-4. rerun a preview PR
+4. manually trigger staging deployment for a PR
 
 ## Required Google Cloud resources
 
@@ -382,7 +397,7 @@ That means:
   - `DATABASE_URL`
   - `GEMINI_API_KEY`
 
-### Preview services: `nham-pr-<number>`
+### Preview services: `nham-pr-<number>` (disabled by default)
 
 - CPU: `1`
 - Memory: `1Gi`
@@ -401,10 +416,11 @@ That means:
 | Workflow | Purpose |
 | --- | --- |
 | `CI` | Validate repo, then build and push SHA-tagged image |
-| `Cloud Run Preview` | Deploy/update same-repo PR previews |
+| `Cloud Run Preview` | Disabled automatic preview deploy path retained for future/manual recovery work |
 | `Cloud Run Internal` | Deploy `main` to `nham-internal`, with smoke-triggered rollback |
-| `Cloud Run Preview Cleanup` | Delete preview Cloud Run services on PR close, remove matching Supabase branches, and clean up orphan previews nightly |
-| `Cloud Run Ops` | Manual redeploy, rollback, and preview refresh operations |
+| `Cloud Run Preview Cleanup` | Delete legacy preview Cloud Run services on PR close, remove matching Supabase branches, and clean up orphan previews nightly |
+| `Cloud Run Staging` | Manual shared-staging promotion with lease protection, migrations, smoke check, and PR comment updates |
+| `Cloud Run Ops` | Manual internal ops plus legacy preview refresh operations |
 
 ## 10. Manual operations
 
@@ -412,7 +428,7 @@ The `Cloud Run Ops` workflow supports:
 
 - `redeploy-internal`
 - `rollback-internal`
-- `refresh-preview`
+- `refresh-preview` (legacy/manual preview recovery only while auto-previews stay disabled)
 
 Useful commands for operators:
 
@@ -446,11 +462,12 @@ Run these after setup:
 
 1. Open a same-repo PR and confirm:
    - CI publishes an image for the PR head SHA
-   - `Cloud Run Preview` comments or updates the PR with a preview URL
-   - `https://<preview-url>/api/healthz` returns the expected health JSON
-2. Close that PR and confirm:
-   - `Cloud Run Preview Cleanup` deletes `nham-pr-<number>` and the matching Supabase branch
-   - the old preview URL no longer serves the app
+   - no automatic preview deploy runs after CI succeeds
+2. Manually run `Cloud Run Staging` for that PR and confirm:
+   - the workflow acquires the staging lease
+   - migrations apply against the shared non-prod DB
+   - the PR gets a staging comment when `ref` is `pr-<number>` or ends with `#<number>`
+   - `https://<staging-url>/api/healthz` returns the expected health JSON
 3. Merge a known-good change to `main` and confirm:
    - `Cloud Run Internal` deploys `nham-internal`
    - smoke checks pass without rollback
@@ -459,11 +476,17 @@ Run these after setup:
    - confirm traffic returns to the previously serving revision
 5. Run `Cloud Run Ops` once with a known digest:
    - redeploy internal by digest
-   - refresh one preview by digest
    - confirm deployment-record artifacts are uploaded
+6. If you still have legacy preview services to clean up, close the PR or run the cleanup workflow and confirm:
+   - `Cloud Run Preview Cleanup` deletes `nham-pr-<number>` and the matching Supabase branch
+   - the old preview URL no longer serves the app
 
 ## 12. Known boundaries of the current setup
 
+- Automatic PR previews are disabled; shared staging is the only supported
+  pre-merge deployment lane.
+- Legacy preview services and cleanup workflows still exist for compatibility,
+  recovery, and eventual re-enablement work.
 - Previews and internal share one non-production Supabase backend for now.
 - This setup is intentionally open on the default Cloud Run URL; application auth
   is still the access gate.
