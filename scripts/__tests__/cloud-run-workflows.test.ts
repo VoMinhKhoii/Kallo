@@ -52,5 +52,6 @@ describe('Cloud Run staging workflow', () => {
     expect(workflow).toContain(
       `--update-labels=commit-sha=\${{ env.COMMIT_SHA }},deployment-target=staging,github-run-id=\${{ github.run_id }}`
     );
+    expect(workflow).not.toContain('--revision-labels=');
   });
 });
