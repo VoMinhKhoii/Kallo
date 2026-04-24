@@ -1,25 +1,49 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const mockUser = { id: 'user-123', email: 'test@example.com' };
-const mockProfile = {
-  userId: 'user-123',
-  weightKg: '70.0',
-  goal: 'cutting',
-  regionalProfile: 'mien_bac',
-};
-const mockDbSelect = vi.fn();
-const mockDbInsert = vi.fn();
-const mockDbUpdate = vi.fn();
-const mockTxInsert = vi.fn();
-const mockTxSelect = vi.fn();
-const mockTxDelete = vi.fn();
-const mockTxUpdate = vi.fn();
-const mockTx = {
-  select: mockTxSelect,
-  delete: mockTxDelete,
-  insert: mockTxInsert,
-  update: mockTxUpdate,
-};
+const {
+  mockUser,
+  mockProfile,
+  mockDbSelect,
+  mockDbInsert,
+  mockDbUpdate,
+  mockTxInsert,
+  mockTxSelect,
+  mockTxDelete,
+  mockTxUpdate,
+  mockTx,
+} = vi.hoisted(() => {
+  const mockDbSelect = vi.fn();
+  const mockDbInsert = vi.fn();
+  const mockDbUpdate = vi.fn();
+  const mockTxInsert = vi.fn();
+  const mockTxSelect = vi.fn();
+  const mockTxDelete = vi.fn();
+  const mockTxUpdate = vi.fn();
+  const mockTx = {
+    select: mockTxSelect,
+    delete: mockTxDelete,
+    insert: mockTxInsert,
+    update: mockTxUpdate,
+  };
+
+  return {
+    mockUser: { id: 'user-123', email: 'test@example.com' },
+    mockProfile: {
+      userId: 'user-123',
+      weightKg: '70.0',
+      goal: 'cutting',
+      regionalProfile: 'mien_bac',
+    },
+    mockDbSelect,
+    mockDbInsert,
+    mockDbUpdate,
+    mockTxInsert,
+    mockTxSelect,
+    mockTxDelete,
+    mockTxUpdate,
+    mockTx,
+  };
+});
 
 vi.mock('@/lib/auth', () => ({
   requireAuthAndProfile: vi.fn().mockResolvedValue({

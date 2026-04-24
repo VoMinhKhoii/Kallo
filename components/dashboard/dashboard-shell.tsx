@@ -3,6 +3,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
+import { useWeightSummary } from '@/hooks/use-weight-summary';
 import { cn } from '@/lib/utils';
 import { CurrentSection } from './current/current-section';
 import {
@@ -19,7 +20,6 @@ import { SectionHeader } from './section-header';
 import { MealTrigger } from './today/meal-trigger';
 import { TodaySection } from './today/today-section';
 import type { TimeRange } from './types';
-import { useWeightSummary } from '@/hooks/use-weight-summary';
 
 function getWeekTitle(): string {
   const now = new Date();

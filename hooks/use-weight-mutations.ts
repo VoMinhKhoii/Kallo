@@ -2,11 +2,8 @@
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import {
-  deleteWeightLogAction,
-  logWeightAction,
-} from '@/lib/actions/weight';
 import { weightSummaryKeys } from '@/hooks/use-weight-summary';
+import { deleteWeightLogAction, logWeightAction } from '@/lib/actions/weight';
 
 export function useLogWeight() {
   const queryClient = useQueryClient();
