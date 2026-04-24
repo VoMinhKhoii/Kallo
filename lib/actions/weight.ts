@@ -1,34 +1,21 @@
 'use server';
 
-import { and, desc, eq, gte, lte, sql } from 'drizzle-orm';
+import { and, desc, eq, gte, lte } from 'drizzle-orm';
 import { z } from 'zod';
 import { requireAuthAndProfile } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { bodyWeightLog, userProfiles } from '@/lib/db/schema';
 import { Errors } from '@/lib/errors';
-import { weightLogSchema } from '@/lib/validation';
 import type { WeightRange, WeightSummaryData } from '@/lib/types/weight';
+import { dateStringSchema, weightLogSchema } from '@/lib/validation';
 
 const weightRangeSchema = z.object({
   range: z.enum(['30d', '90d']),
   timezoneOffset: z.number().int().min(-840).max(720),
 });
 
-const dateStringSchema = z
-  .string()
-  .regex(/^\d{4}-\d{2}-\d{2}$/, 'Ngày phải có dạng YYYY-MM-DD.')
-  .refine((value) => {
-    const date = new Date(`${value}T00:00:00.000Z`);
-    return (
-      Number.isFinite(date.getTime()) &&
-      date.toISOString().slice(0, 10) === value
-    );
-  }, 'Ngày không hợp lệ.');
-
 const deleteWeightSchema = z.object({
-  loggedDate: z
-    .string()
-    .regex(/^\d{4}-\d{2}-\d{2}$/, 'Ngày phải có dạng YYYY-MM-DD.'),
+  loggedDate: dateStringSchema,
 });
 
 function toLocalDateString(date: Date, timezoneOffset: number): string {
@@ -79,10 +66,20 @@ export async function logWeightAction(input: {
         weightKg: bodyWeightLog.weightKg,
       });
 
+    const [latestRemaining] = await tx
+      .select({ weightKg: bodyWeightLog.weightKg })
+      .from(bodyWeightLog)
+      .where(eq(bodyWeightLog.userId, user.id))
+      .orderBy(desc(bodyWeightLog.loggedDate), desc(bodyWeightLog.createdAt))
+      .limit(1);
+
     await tx
       .update(userProfiles)
       .set({
-        weightKg: String(parsed.weightKg),
+        weightKg:
+          latestRemaining && latestRemaining.weightKg !== null
+            ? String(latestRemaining.weightKg)
+            : null,
         updatedAt: new Date(),
       })
       .where(eq(userProfiles.userId, user.id));
@@ -99,23 +96,43 @@ export async function deleteWeightLogAction(input: { loggedDate: string }) {
   const parsed = deleteWeightSchema.parse(input);
   const { user } = await requireAuthAndProfile();
 
-  const [deleted] = await db
-    .delete(bodyWeightLog)
-    .where(
-      and(
-        eq(bodyWeightLog.userId, user.id),
-        eq(bodyWeightLog.loggedDate, parsed.loggedDate)
+  return await db.transaction(async (tx) => {
+    const [deleted] = await tx
+      .delete(bodyWeightLog)
+      .where(
+        and(
+          eq(bodyWeightLog.userId, user.id),
+          eq(bodyWeightLog.loggedDate, parsed.loggedDate)
+        )
       )
-    )
-    .returning({ loggedDate: bodyWeightLog.loggedDate });
+      .returning({ loggedDate: bodyWeightLog.loggedDate });
 
-  if (!deleted) {
-    throw Errors.validationFailed(
-      'Không tìm thấy cân nặng của ngày này để xoá.'
-    );
-  }
+    if (!deleted) {
+      throw Errors.validationFailed(
+        'Không tìm thấy cân nặng của ngày này để xoá.'
+      );
+    }
 
-  return { success: true as const, loggedDate: deleted.loggedDate };
+    const [latestRemaining] = await tx
+      .select({ weightKg: bodyWeightLog.weightKg })
+      .from(bodyWeightLog)
+      .where(eq(bodyWeightLog.userId, user.id))
+      .orderBy(desc(bodyWeightLog.loggedDate), desc(bodyWeightLog.createdAt))
+      .limit(1);
+
+    await tx
+      .update(userProfiles)
+      .set({
+        weightKg:
+          latestRemaining && latestRemaining.weightKg !== null
+            ? String(latestRemaining.weightKg)
+            : null,
+        updatedAt: new Date(),
+      })
+      .where(eq(userProfiles.userId, user.id));
+
+    return { success: true as const, loggedDate: deleted.loggedDate };
+  });
 }
 
 export async function loadWeightSummaryAction(input: {

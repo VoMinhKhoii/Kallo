@@ -6,12 +6,12 @@ import { motion } from 'motion/react';
 import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
-import type { WeightSummaryData } from '@/lib/types/weight';
-import { useLogWeight } from '@/hooks/use-weight-mutations';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { useLogWeight } from '@/hooks/use-weight-mutations';
+import type { WeightSummaryData } from '@/lib/types/weight';
 import { cn } from '@/lib/utils';
-import { weightLogSchema, type WeightLogInput } from '@/lib/validation';
+import { type WeightLogInput, weightLogSchema } from '@/lib/validation';
 
 interface WeightCardProps {
   weightSummary: WeightSummaryData | undefined;
@@ -84,9 +84,14 @@ export function WeightCard({ weightSummary }: WeightCardProps) {
           className="space-y-2"
         >
           <div className="grid grid-cols-[1fr_112px_auto] gap-2">
+            <label htmlFor="weight-log-date" className="sr-only">
+              Ngày ghi cân nặng
+            </label>
             <Input
+              id="weight-log-date"
               {...register('loggedDate')}
               type="date"
+              aria-invalid={Boolean(errors.loggedDate)}
               className={cn(
                 'rounded-xl border-nham-border border-dashed bg-nham-surface px-3 text-[12px] text-nham-text shadow-none',
                 errors.loggedDate && 'border-destructive'
@@ -94,12 +99,17 @@ export function WeightCard({ weightSummary }: WeightCardProps) {
             />
 
             <div className="relative">
+              <label htmlFor="weight-log-kg" className="sr-only">
+                Cân nặng (kg)
+              </label>
               <Input
+                id="weight-log-kg"
                 {...register('weightKg', { valueAsNumber: true })}
                 type="number"
                 step="0.1"
                 min="30"
                 max="300"
+                aria-invalid={Boolean(errors.weightKg)}
                 placeholder={currentWeight.toFixed(1)}
                 className={cn(
                   'rounded-xl border-nham-border border-dashed bg-nham-surface px-3 pr-8 font-mono text-[14px] text-nham-text shadow-none',

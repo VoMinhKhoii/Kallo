@@ -1,44 +1,25 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const {
-  mockUser,
-  mockProfile,
-  mockDbSelect,
-  mockDbDelete,
-  mockDbInsert,
-  mockDbUpdate,
-  mockTxInsert,
-  mockTxUpdate,
-  mockTx,
-} = vi.hoisted(() => {
-  const mockDbSelect = vi.fn();
-  const mockDbDelete = vi.fn();
-  const mockDbInsert = vi.fn();
-  const mockDbUpdate = vi.fn();
-  const mockTxInsert = vi.fn();
-  const mockTxUpdate = vi.fn();
-  const mockTx = {
-    insert: mockTxInsert,
-    update: mockTxUpdate,
-  };
-
-  return {
-    mockUser: { id: 'user-123', email: 'test@example.com' },
-    mockProfile: {
-      userId: 'user-123',
-      weightKg: '70.0',
-      goal: 'cutting',
-      regionalProfile: 'mien_bac',
-    },
-    mockDbSelect,
-    mockDbDelete,
-    mockDbInsert,
-    mockDbUpdate,
-    mockTxInsert,
-    mockTxUpdate,
-    mockTx,
-  };
-});
+const mockUser = { id: 'user-123', email: 'test@example.com' };
+const mockProfile = {
+  userId: 'user-123',
+  weightKg: '70.0',
+  goal: 'cutting',
+  regionalProfile: 'mien_bac',
+};
+const mockDbSelect = vi.fn();
+const mockDbInsert = vi.fn();
+const mockDbUpdate = vi.fn();
+const mockTxInsert = vi.fn();
+const mockTxSelect = vi.fn();
+const mockTxDelete = vi.fn();
+const mockTxUpdate = vi.fn();
+const mockTx = {
+  select: mockTxSelect,
+  delete: mockTxDelete,
+  insert: mockTxInsert,
+  update: mockTxUpdate,
+};
 
 vi.mock('@/lib/auth', () => ({
   requireAuthAndProfile: vi.fn().mockResolvedValue({
@@ -53,7 +34,6 @@ vi.mock('@/lib/db', () => ({
       fn(mockTx)
     ),
     select: mockDbSelect,
-    delete: mockDbDelete,
     insert: mockDbInsert,
     update: mockDbUpdate,
   },
@@ -99,6 +79,16 @@ describe('logWeightAction', () => {
       }),
     });
 
+    mockTxSelect.mockReturnValue({
+      from: vi.fn().mockReturnValue({
+        where: vi.fn().mockReturnValue({
+          orderBy: vi.fn().mockReturnValue({
+            limit: vi.fn().mockResolvedValue([{ weightKg: '71.2' }]),
+          }),
+        }),
+      }),
+    });
+
     mockTxUpdate.mockReturnValue({
       set: vi.fn().mockReturnValue({
         where: vi.fn().mockResolvedValue(undefined),
@@ -133,11 +123,25 @@ describe('deleteWeightLogAction', () => {
   });
 
   it('deletes an existing weight log', async () => {
-    mockDbDelete.mockReturnValue({
+    mockTxDelete.mockReturnValue({
       where: vi.fn().mockReturnValue({
-        returning: vi.fn().mockResolvedValue([
-          { loggedDate: '2026-04-14' },
-        ]),
+        returning: vi.fn().mockResolvedValue([{ loggedDate: '2026-04-14' }]),
+      }),
+    });
+
+    mockTxSelect.mockReturnValue({
+      from: vi.fn().mockReturnValue({
+        where: vi.fn().mockReturnValue({
+          orderBy: vi.fn().mockReturnValue({
+            limit: vi.fn().mockResolvedValue([{ weightKg: '70.4' }]),
+          }),
+        }),
+      }),
+    });
+
+    mockTxUpdate.mockReturnValue({
+      set: vi.fn().mockReturnValue({
+        where: vi.fn().mockResolvedValue(undefined),
       }),
     });
 
@@ -150,7 +154,7 @@ describe('deleteWeightLogAction', () => {
   });
 
   it('throws when no log exists for the date', async () => {
-    mockDbDelete.mockReturnValue({
+    mockTxDelete.mockReturnValue({
       where: vi.fn().mockReturnValue({
         returning: vi.fn().mockResolvedValue([]),
       }),
@@ -165,20 +169,20 @@ describe('deleteWeightLogAction', () => {
 describe('loadWeightSummaryAction', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.useFakeTimers();
-    vi.setSystemTime(new Date('2026-04-14T12:00:00.000Z'));
-  });
-
-  afterEach(() => {
-    vi.useRealTimers();
+    mockProfile.goal = 'cutting';
   });
 
   it('loads range rows and computes summary metadata', async () => {
+    const today = new Date().toISOString().slice(0, 10);
+    const twoDaysAgo = new Date(`${today}T00:00:00.000Z`);
+    twoDaysAgo.setUTCDate(twoDaysAgo.getUTCDate() - 2);
+    const twoDaysAgoDate = twoDaysAgo.toISOString().slice(0, 10);
+
     const rangeRows = [
-      { loggedDate: '2026-04-12', weightKg: '72.4' },
-      { loggedDate: '2026-04-14', weightKg: '71.8' },
+      { loggedDate: twoDaysAgoDate, weightKg: '72.4' },
+      { loggedDate: today, weightKg: '71.8' },
     ];
-    const latestRows = [{ loggedDate: '2026-04-14', weightKg: '71.8' }];
+    const latestRows = [{ loggedDate: today, weightKg: '71.8' }];
 
     mockDbSelect
       .mockReturnValueOnce({
@@ -214,11 +218,16 @@ describe('loadWeightSummaryAction', () => {
   });
 
   it('marks goal direction as flat for maintenance goals', async () => {
+    const today = new Date().toISOString().slice(0, 10);
+    const twoDaysAgo = new Date(`${today}T00:00:00.000Z`);
+    twoDaysAgo.setUTCDate(twoDaysAgo.getUTCDate() - 2);
+    const twoDaysAgoDate = twoDaysAgo.toISOString().slice(0, 10);
+
     const rangeRows = [
-      { loggedDate: '2026-04-12', weightKg: '72.0' },
-      { loggedDate: '2026-04-14', weightKg: '72.0' },
+      { loggedDate: twoDaysAgoDate, weightKg: '72.0' },
+      { loggedDate: today, weightKg: '72.0' },
     ];
-    const latestRows = [{ loggedDate: '2026-04-14', weightKg: '72.0' }];
+    const latestRows = [{ loggedDate: today, weightKg: '72.0' }];
 
     mockProfile.goal = 'maintaining';
 
