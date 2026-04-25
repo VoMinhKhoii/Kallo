@@ -44,14 +44,22 @@ The nutrition page should frame macros as period-level patterns, not duplicate d
 
 The page supports `7d`, `30d`, and `90d` ranges.
 
-Initial range is data-aware:
+Initial range is data-aware and resolved by the overview action when the client passes `range: 'auto'`:
 
 | Condition | Initial range |
 |-----------|---------------|
-| Fewer than 14 logged days in recent history | `7d` |
-| 14 or more logged days | `30d` |
+| Fewer than 14 logged days in the last 30 local calendar days | `7d` |
+| 14 or more logged days in the last 30 local calendar days | `30d` |
 
 `90d` remains available for longer-term review, but is not the default.
+
+Definition:
+
+- A logged day is a local calendar day with at least one saved meal whose total calories are greater than `0`.
+- The client passes the browser `timezoneOffset` to the overview action so day bucketing matches the user’s local date, following the existing meal-history pattern.
+- If `timezoneOffset` is unavailable, pass `null`; the server uses UTC and returns metadata indicating UTC bucketing.
+- On first render, the client requests `getNutritionOverview({ range: 'auto', timezoneOffset })`; the server returns the resolved range. User-selected ranges then use explicit `7d`, `30d`, or `90d` values.
+- Ranges include today. `period.startDate` and `period.endDate` are local `YYYY-MM-DD` dates when `timezoneOffset` is provided, or UTC `YYYY-MM-DD` dates when `timezoneOffset` is `null`.
 
 ---
 
@@ -97,6 +105,13 @@ Target source policy:
 Vietnamese context is determined from onboarding country context. If a user is Vietnamese from onboarding, use Vietnam RDA targets; otherwise use WHO/FAO targets.
 
 The UI must show the target source where relevant, for example “Target: Vietnam RDA” or “Target: WHO/FAO.”
+
+Implementation requirement:
+
+- Create a versioned target data module, for example `lib/nutrition/reference-targets.ts`.
+- The module must contain source-labeled Vietnam RDA and WHO/FAO target rows for every scored default nutrient before UI implementation is complete.
+- Do not ship placeholder target values. If a value cannot be sourced for a nutrient, mark that nutrient educational/unsupported rather than approximating.
+- The first implementation task should populate and test this data module so downstream UI work does not hard-code nutrient targets.
 
 ---
 
@@ -145,8 +160,8 @@ Return unmatched-calorie metadata separately so the UI can explain why confidenc
 | Confidence | Display behavior |
 |------------|------------------|
 | `>= 70%` | Show number and trend normally; no warning |
-| `40–70%` | Show number and trend with “limited data” label |
-| `20–40%` | Show number with prominent warning; suppress continuous trend line and show individual daily points |
+| `>= 40%` and `< 70%` | Show number and trend with “limited data” label |
+| `>= 20%` and `< 40%` | Show number with prominent warning; suppress continuous trend line and show individual daily points |
 | `< 20%` | Hide nutrient score/trend and show “insufficient data for this period” |
 
 Confidence affects presentation and summary placement. It does not rewrite the nutrient total.
@@ -166,14 +181,36 @@ Lead with nutrients that are both meaningful for the product and sufficiently de
 - vitamin B1 / thiamin
 - vitamin B2 / riboflavin
 - vitamin PP / niacin
-- beta-carotene / vitamin A context
+- vitamin A with beta-carotene context
 
 ### Limited or Special Nutrients
 
 - Sodium is shown with source-aware caveats when confidence is low or meals are FAO/Vietnamese-condiment heavy.
+- Vitamin A scoring uses `vitamin_a_mcg` only in v1. `beta_carotene_mcg` is shown as contextual supporting data on the Vitamin A card, not converted into Vitamin A equivalents or included in percent-of-target math.
 - Vitamin D is not treated as a normal food-adequacy score. It appears as an education card.
 - Biotin (`vitamin_h_mcg`) is hidden because combined coverage is effectively dead.
 - Lower-confidence nutrients appear in an expandable “More nutrients” section when applicable.
+
+Vitamin A display contract:
+
+- `percentOfTarget` uses only `vitamin_a_mcg`.
+- `beta_carotene_mcg` appears in `contextMetrics` as supporting data.
+- The card copy must explain that beta-carotene is shown for context and is not converted into the Vitamin A score in v1.
+
+Sodium caveat detection:
+
+Show the sodium caveat if any of these are true in the selected period:
+
+- sodium confidence is `< 70%`
+- at least one meal item is matched to an FAO/Vietnamese condiment or sauce food group and that source row has `sodium_mg IS NULL`
+- FAO/Vietnamese-source sodium confidence is `< 70%` while FAO/Vietnamese-source items contribute at least `20%` of logged period calories
+
+FAO/Vietnamese-source items are detected by joining through `ingredient_sources` and requiring `ingredient_sources.code = 'FAO_VN_2007'`.
+
+Within FAO/Vietnamese-source items, condiment or sauce foods are detected from the current canonical food-composition group labels:
+
+- `type_en = 'Condiments, traditional sauces'`
+- `type_vn = 'Gia vị, nước chấm'`
 
 ### Vitamin D Education Card
 
@@ -214,7 +251,7 @@ Summary cards:
 | Most consistent | Nutrients at or above target with confidence `>= 40%` |
 | Needs attention | Nutrients below target with confidence `>= 40%` |
 | Limited data | Nutrients with confidence `< 40%`, including below-target nutrients that cannot safely be called attention items |
-| Macro consistency | Optional card showing period macro consistency if space allows |
+| Macro consistency | Period macro consistency across calories, protein, carbohydrates, and fat |
 
 A nutrient below target with confidence `< 40%` never appears in “Needs attention.” It belongs in “Limited data.”
 
@@ -231,6 +268,23 @@ This section emphasizes period-level patterns:
 - macro distribution over the selected period
 
 Do not use dashboard-style daily bar charts here. Daily progress belongs on `/dashboard`.
+
+Macro consistency is calculated per logged day:
+
+| Macro | “Near target” rule |
+|-------|--------------------|
+| Calories | within `±10%` of target |
+| Protein | at least `90%` of target |
+| Carbohydrates | within `±15%` of target |
+| Fat | within `±15%` of target |
+
+Each macro gets its own consistency percentage:
+
+```text
+days near target for macro / logged calorie-bearing days in range
+```
+
+The summary card shows the average of the four macro consistency percentages plus the weakest macro label.
 
 ### 8.4 Micronutrient Insight Grid
 
@@ -278,6 +332,11 @@ V1 behavior:
 
 - Reads from a curated nutrient-to-food-source table.
 - Returns practical candidates, serving notes, and “why this helps” text.
+- The curated table is a required v1 data artifact, for example `lib/nutrition/food-source-candidates.ts`.
+- The table must cover every default scored nutrient that can appear in “Needs attention.”
+- Each supported nutrient must have at least five candidates before the candidate panel ships.
+- Candidate rows must include nutrient key, localized food name/message keys, serving note, rationale, and optional cautions.
+- If curated candidates are missing for a nutrient, the candidate panel is hidden for that nutrient rather than showing placeholder content.
 
 Future v1.x behavior:
 
@@ -305,6 +364,104 @@ Responsibilities:
 - bucket nutrients into summary groups
 - return period metadata and display-ready nutrient card data
 
+Input:
+
+```ts
+{
+  range: 'auto' | '7d' | '30d' | '90d';
+  timezoneOffset: number | null; // minutes, same sign convention as Date#getTimezoneOffset(); null means UTC fallback
+}
+```
+
+Output DTO shape:
+
+```ts
+interface NutritionOverview {
+  requestedRange: 'auto' | '7d' | '30d' | '90d';
+  resolvedRange: '7d' | '30d' | '90d';
+  bucketTimezone: 'local' | 'utc';
+  loggedDays: number;
+  loggedDaysLast30: number;
+  trendStatus: 'ready' | 'too_few_logged_days';
+  period: { startDate: string; endDate: string };
+  summary: {
+    mostConsistent: NutrientSummaryItem[];
+    needsAttention: NutrientSummaryItem[];
+    limitedDataCount: number;
+    macroConsistency: MacroConsistencySummary;
+  };
+  macros: MacroPattern[];
+  micronutrients: NutrientCardData[];
+  moreNutrients: NutrientCardData[];
+  educationCards: EducationCardData[];
+}
+```
+
+Referenced DTOs:
+
+```ts
+interface NutrientSummaryItem {
+  nutrient: string;
+  labelKey: string;
+  average: number;
+  unit: string;
+  percentOfTarget: number | null;
+  confidence: number;
+  status: 'below_target' | 'adequate' | 'above_target' | 'limited_data';
+}
+
+interface MacroConsistencySummary {
+  averageConsistencyPct: number;
+  weakestMacro: 'calories' | 'protein' | 'carbohydrate' | 'fat' | null;
+}
+
+interface MacroPattern {
+  key: 'calories' | 'protein' | 'carbohydrate' | 'fat' | 'fiber';
+  labelKey: string;
+  averagePerDay: number;
+  target: number | null;
+  unit: string;
+  consistencyPct: number | null;
+}
+
+interface NutrientCardData {
+  nutrient: string;
+  labelKey: string;
+  group: 'mineral' | 'vitamin' | 'other';
+  averagePerDay: number | null;
+  target: number | null;
+  targetSource: 'vietnam_rda' | 'who_fao' | 'unsupported';
+  unit: string;
+  percentOfTarget: number | null;
+  confidence: number;
+  displayState:
+    | 'normal'
+    | 'limited_data'
+    | 'warning_points'
+    | 'insufficient_data';
+  trend: { date: string; value: number | null; confidence: number }[];
+  caveatKey?: string;
+  contextMetrics?: {
+    key: string;
+    labelKey: string;
+    averagePerDay: number | null;
+    unit: string;
+  }[];
+  sourceBreakdown?: {
+    faoVietnamCalorieShare: number;
+    faoVietnamConfidence: number | null;
+    missingSodiumCondimentItems?: number;
+  };
+  supportsCandidates: boolean;
+}
+
+interface EducationCardData {
+  id: 'vitamin_d';
+  titleKey: string;
+  bodyKey: string;
+}
+```
+
 #### `getFoodSourceCandidates({ nutrient })`
 
 Responsibilities:
@@ -314,10 +471,33 @@ Responsibilities:
 - return curated food-source candidates for v1
 - only expose candidates for supported nutrients
 
+Input:
+
+```ts
+{
+  nutrient: SupportedCandidateNutrient;
+}
+```
+
+Output DTO shape:
+
+```ts
+interface FoodSourceCandidates {
+  nutrient: SupportedCandidateNutrient;
+  candidates: {
+    id: string;
+    nameKey: string;
+    servingKey: string;
+    rationaleKey: string;
+    cautionKey?: string;
+  }[];
+}
+```
+
 ### Client Fetching
 
 - Use TanStack Query.
-- Overview query key: `['nutrition', 'overview', range]`.
+- Overview query key: `['nutrition', 'overview', range, timezoneOffset ?? 'utc']`.
 - Candidate query is lazy/enabled only when a user opens a nutrient’s candidates panel.
 - Keep calculations server-side; client components render returned display data.
 
@@ -354,6 +534,16 @@ Do not add a precomputed rollup table in v1. If request-time aggregation becomes
 | Nutrient confidence `< 20%` | Show insufficient-data state instead of score/trend |
 
 All user-facing text must use next-intl messages.
+
+Too-few-logged-days thresholds:
+
+| Resolved range | Trend-ready threshold |
+|----------------|-----------------------|
+| `7d` | at least 3 logged days |
+| `30d` | at least 10 logged days |
+| `90d` | at least 30 logged days |
+
+If the selected range is below its threshold, `trendStatus` is `too_few_logged_days`; the UI may show averages and nutrient cards, but must avoid trend claims in summary copy.
 
 ---
 
@@ -448,8 +638,10 @@ Cover:
 
 ---
 
-## 15. Open Implementation Notes
+## 15. Implementation Requirements
 
 - Exact Vietnam RDA and WHO/FAO target values must be captured as data in code with source labels.
 - Candidate lookup content should be curated for priority nutrients before implementation is considered complete.
 - Existing i18n files must receive all nutrition page labels, caveats, confidence states, and education copy.
+- Do not implement UI placeholders for missing target values or missing food-source candidates.
+- Complete reference target data and curated candidate data before wiring final UI states.
