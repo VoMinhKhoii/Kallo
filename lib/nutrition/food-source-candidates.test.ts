@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import type { FoodSourceCandidate } from './food-source-candidates';
 import { getCuratedFoodSourceCandidates } from './food-source-candidates';
 import { SUPPORTED_CANDIDATE_NUTRIENTS } from './nutrients';
 
@@ -56,5 +57,26 @@ describe('curated food source candidates', () => {
         }
       }
     }
+  });
+
+  it('returns frozen candidate collections and objects', () => {
+    const candidates = getCuratedFoodSourceCandidates('calciumMg');
+
+    expect(Object.isFrozen(candidates)).toBe(true);
+    expect(Object.isFrozen(candidates[0])).toBe(true);
+    expect(() =>
+      (candidates as FoodSourceCandidate[]).push({
+        nutrient: 'calciumMg',
+        id: 'fake',
+        nameKey: 'nutrition.candidates.calciumMg.fake.name',
+        servingKey: 'nutrition.candidates.calciumMg.fake.serving',
+        rationaleKey: 'nutrition.candidates.calciumMg.fake.rationale',
+      })
+    ).toThrow(TypeError);
+    expect(() => Object.assign(candidates[0], { id: 'changed' })).toThrow(
+      TypeError
+    );
+    expect(getCuratedFoodSourceCandidates('calciumMg')).toHaveLength(5);
+    expect(getCuratedFoodSourceCandidates('calciumMg')[0]?.id).toBe('tofu');
   });
 });
