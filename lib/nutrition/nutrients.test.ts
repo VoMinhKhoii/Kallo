@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
   DEFAULT_NUTRIENTS,
+  getNutrientMeta,
   HIDDEN_NUTRIENTS,
   SUPPORTED_CANDIDATE_NUTRIENTS,
-  getNutrientMeta,
 } from './nutrients';
 
 describe('nutrition nutrient metadata', () => {
