@@ -81,6 +81,7 @@
       "macroConsistency": "Độ ổn định macro",
       "confidentOnly": "Chỉ đánh dấu khi đủ tin cậy",
       "coverageHint": "Vi chất có độ phủ mỏng",
+      "averageConfidence": "Độ tin cậy TB: {value}",
       "weakest": "Yếu nhất",
       "none": "Chưa có"
     },

@@ -81,6 +81,7 @@
       "macroConsistency": "Macro consistency",
       "confidentOnly": "Only confident gaps are flagged",
       "coverageHint": "Nutrients with thin coverage",
+      "averageConfidence": "Avg confidence: {value}",
       "weakest": "Weakest",
       "none": "None yet"
     },

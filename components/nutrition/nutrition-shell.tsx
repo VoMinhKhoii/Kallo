@@ -19,6 +19,7 @@ function getTimezoneOffset(): number | null {
 
 export function NutritionShell() {
   const t = useTranslations('nutrition');
+  const tCommon = useTranslations('common');
   const timezoneOffset = useMemo(() => getTimezoneOffset(), []);
   const [range, setRange] = useState<NutritionRangeInput>('auto');
 
@@ -39,7 +40,16 @@ export function NutritionShell() {
           role="alert"
           className="rounded-2xl border border-nham-border/60 bg-card p-4 text-nham-text"
         >
-          {t('errors.overview')}
+          <p>{t('errors.overview')}</p>
+          <button
+            type="button"
+            onClick={() => overviewQuery.refetch()}
+            disabled={overviewQuery.isFetching}
+            aria-busy={overviewQuery.isFetching}
+            className="mt-3 inline-flex touch-manipulation items-center rounded-xl border border-nham-border/60 px-4 py-2 font-medium text-nham-text text-sm transition-colors hover:bg-nham-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent focus-visible:ring-offset-2 focus-visible:ring-offset-nham-surface disabled:opacity-50"
+          >
+            {tCommon('retry')}
+          </button>
         </div>
       </main>
     );
@@ -59,7 +69,11 @@ export function NutritionShell() {
               {t('subtitle')}
             </p>
           </div>
-          <RangeSelector value={resolvedRange} onChange={setRange} />
+          <RangeSelector
+            value={resolvedRange}
+            onChange={setRange}
+            disabled={overviewQuery.isFetching}
+          />
         </header>
 
         {overview.loggedDays === 0 ? (

@@ -15,13 +15,21 @@ function formatPercent(value: number, locale: string): string {
   }).format(value);
 }
 
+function getAverageConfidence(items: Summary['mostConsistent']): number | null {
+  if (items.length === 0) return null;
+
+  return (
+    items.reduce((total, item) => total + item.confidence, 0) / items.length
+  );
+}
+
 export function SummaryStrip({ summary }: SummaryStripProps) {
   const t = useTranslations('nutrition');
   const tRoot = useTranslations();
   const locale = useLocale();
-  const consistent = summary.mostConsistent
-    .slice(0, 2)
-    .map((item) => tRoot(item.labelKey));
+  const consistentItems = summary.mostConsistent.slice(0, 2);
+  const consistent = consistentItems.map((item) => tRoot(item.labelKey));
+  const averageConfidence = getAverageConfidence(consistentItems);
   const attention = summary.needsAttention
     .slice(0, 2)
     .map((item) => tRoot(item.labelKey));
@@ -39,7 +47,13 @@ export function SummaryStrip({ summary }: SummaryStripProps) {
         value={
           consistent.length > 0 ? consistent.join(', ') : t('summary.none')
         }
-        detail={`${formatPercent(summary.macroConsistency.averageConsistencyPct, locale)}%`}
+        detail={
+          averageConfidence === null
+            ? t('summary.none')
+            : t('summary.averageConfidence', {
+                value: `${formatPercent(averageConfidence, locale)}%`,
+              })
+        }
       />
       <SummaryCard
         title={t('summary.needsAttention')}
@@ -72,7 +86,10 @@ function SummaryCard({ title, value, detail }: SummaryCardProps) {
       <h2 className="font-bold text-[10px] text-nham-stone uppercase tracking-[0.16em]">
         {title}
       </h2>
-      <p className="mt-3 truncate font-semibold text-base text-nham-text">
+      <p
+        className="mt-3 truncate font-semibold text-base text-nham-text"
+        title={value}
+      >
         {value}
       </p>
       <p className="mt-1 text-nham-text-muted text-xs">{detail}</p>
