@@ -7,6 +7,7 @@ import { Link } from '@/i18n/navigation';
 import { getNutritionOverview } from '@/lib/nutrition/actions';
 import type { NutritionRangeInput } from '@/lib/nutrition/types';
 import { MacroPatternSection } from './macro-pattern-section';
+import { NutrientGrid } from './nutrient-grid';
 import { NutritionSkeleton } from './nutrition-skeleton';
 import { RangeSelector } from './range-selector';
 import { SummaryStrip } from './summary-strip';
@@ -92,10 +93,19 @@ export function NutritionShell() {
             </Link>
           </section>
         ) : (
-          <>
+          <div
+            aria-live="polite"
+            aria-busy={overviewQuery.isFetching}
+            className="contents"
+          >
             <SummaryStrip summary={overview.summary} />
             <MacroPatternSection macros={overview.macros} />
-          </>
+            <NutrientGrid
+              overview={overview}
+              resolvedRange={resolvedRange}
+              timezoneOffset={timezoneOffset}
+            />
+          </div>
         )}
       </div>
     </main>

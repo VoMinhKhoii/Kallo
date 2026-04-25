@@ -36,7 +36,6 @@ export function RangeSelector({
           aria-pressed={value === range}
           onClick={() => onChange(range)}
           disabled={disabled}
-          aria-busy={disabled && value !== range ? true : undefined}
           className={cn(
             'touch-manipulation rounded-lg px-3 py-1.5 font-medium text-xs transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent focus-visible:ring-offset-2 focus-visible:ring-offset-nham-surface disabled:opacity-60',
             value === range

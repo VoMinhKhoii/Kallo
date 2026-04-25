@@ -98,6 +98,54 @@
       "target": "Target",
       "noTarget": "No target"
     },
+    "grid": {
+      "title": "Micronutrient coverage",
+      "description": "Use these cards to see which nutrients look adequate, which need more data, and which have source-specific caveats."
+    },
+    "more": {
+      "show": "Show more nutrients",
+      "hide": "Hide more nutrients"
+    },
+    "card": {
+      "average": "Average",
+      "target": "Target",
+      "targetProgress": "Target progress",
+      "context": "Context",
+      "noData": "No data",
+      "noTargetClaim": "No target claim",
+      "expand": "View trend",
+      "collapse": "Hide trend"
+    },
+    "confidence": {
+      "normal": "Good confidence",
+      "limitedData": "Limited data",
+      "warningPoints": "Points only",
+      "insufficientData": "Insufficient data"
+    },
+    "targetSources": {
+      "vietnamRda": "Vietnam RDA",
+      "whoFao": "WHO/FAO",
+      "unsupported": "No target source"
+    },
+    "trend": {
+      "loading": "Loading trend…",
+      "error": "Could not load this trend.",
+      "lineMode": "Trend line is available for this nutrient.",
+      "pointMode": "Showing data points only because coverage is limited.",
+      "insufficientData": "Not enough reliable food data for a target claim yet.",
+      "noDataPoint": "No data"
+    },
+    "caveats": {
+      "sodium": "Sodium from dipping sauces, condiments, and traditional seasonings may be undercounted.",
+      "vitaminABetaCarotene": "Vitamin A can overlap with beta-carotene from colorful vegetables."
+    },
+    "education": {
+      "label": "Education",
+      "vitaminD": {
+        "title": "Vitamin D is different",
+        "body": "Food usually contributes little vitamin D. Sun exposure, lifestyle, and clinician-guided testing matter more than this food log."
+      }
+    },
     "nutrients": {
       "fiber": "Fiber",
       "sodium": "Sodium",
