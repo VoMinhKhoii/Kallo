@@ -136,6 +136,9 @@ describe('NutrientCard', () => {
 
     await user.click(screen.getByRole('button', { name: 'card.expand' }));
 
+    expect(
+      screen.getByRole('button', { name: 'card.collapse' })
+    ).toHaveAttribute('aria-controls', 'nutrition-trend-calciumMg');
     await waitFor(() =>
       expect(getNutrientTrendMock).toHaveBeenCalledWith({
         nutrient: 'calciumMg',
@@ -224,11 +227,11 @@ describe('NutrientCard', () => {
     expect(screen.queryByText(/%/)).not.toBeInTheDocument();
   });
 
-  it('uses point-mode language for warning-points trend data', async () => {
+  it('uses point-mode language for warning-points cards', async () => {
     const user = userEvent.setup();
     getNutrientTrendMock.mockResolvedValue({
       ...createTrend(),
-      displayMode: 'points',
+      displayMode: 'line',
     });
 
     renderWithClient(
@@ -243,6 +246,23 @@ describe('NutrientCard', () => {
 
     expect(await screen.findByText('trend.pointMode')).toBeInTheDocument();
     expect(screen.queryByText('trend.lineMode')).not.toBeInTheDocument();
+  });
+
+  it('renders trend error copy when an expanded card trend fails', async () => {
+    const user = userEvent.setup();
+    getNutrientTrendMock.mockRejectedValue(new Error('trend failed'));
+
+    renderWithClient(
+      <NutrientCard
+        card={createCard()}
+        resolvedRange="30d"
+        timezoneOffset={-420}
+      />
+    );
+
+    await user.click(screen.getByRole('button', { name: 'card.expand' }));
+
+    expect(await screen.findByText('trend.error')).toBeInTheDocument();
   });
 });
 
@@ -274,6 +294,10 @@ describe('NutrientGrid', () => {
 
     await user.click(screen.getByRole('button', { name: 'more.show' }));
 
+    expect(screen.getByRole('button', { name: 'more.hide' })).toHaveAttribute(
+      'aria-controls',
+      'more-nutrients-panel'
+    );
     expect(screen.getByText('nutrition.nutrients.sodium')).toBeInTheDocument();
     expect(getNutrientTrendMock).not.toHaveBeenCalled();
 

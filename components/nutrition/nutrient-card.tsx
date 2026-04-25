@@ -62,6 +62,7 @@ export function NutrientCard({
   const tRoot = useTranslations();
   const locale = useLocale();
   const [expanded, setExpanded] = useState(false);
+  const trendPanelId = `nutrition-trend-${card.nutrient}`;
   const trendQuery = useQuery({
     queryKey: [
       'nutrition',
@@ -90,9 +91,9 @@ export function NutrientCard({
     <article className="rounded-3xl border border-nham-border/60 bg-card p-4 shadow-[0_4px_24px_rgba(44,36,22,0.04)]">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <h2 className="truncate font-semibold text-base text-nham-text">
+          <h3 className="truncate font-semibold text-base text-nham-text">
             {tRoot(card.labelKey)}
-          </h2>
+          </h3>
           <p className="mt-1 text-nham-text-muted text-xs">
             {tRoot(card.targetSourceLabelKey)}
           </p>
@@ -164,26 +165,33 @@ export function NutrientCard({
         type="button"
         onClick={() => setExpanded((current) => !current)}
         aria-expanded={expanded}
+        aria-controls={trendPanelId}
         className="mt-4 inline-flex touch-manipulation items-center rounded-xl border border-nham-border/60 px-3 py-2 font-medium text-nham-text text-sm transition-colors hover:bg-nham-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent focus-visible:ring-offset-2 focus-visible:ring-offset-nham-surface"
       >
         {expanded ? t('card.collapse') : t('card.expand')}
       </button>
 
-      {expanded ? (
-        <div className="mt-4" aria-live="polite">
-          {trendQuery.isLoading ? (
-            <p role="status" className="text-nham-text-muted text-sm">
-              {t('trend.loading')}
-            </p>
-          ) : trendQuery.isError ? (
-            <p role="alert" className="text-nham-text-muted text-sm">
-              {t('trend.error')}
-            </p>
-          ) : trendQuery.data ? (
-            <NutrientTrend trend={trendQuery.data} unit={card.unit} />
-          ) : null}
-        </div>
-      ) : null}
+      <div id={trendPanelId} aria-live="polite">
+        {expanded ? (
+          <div className="mt-4">
+            {trendQuery.isLoading ? (
+              <p className="text-nham-text-muted text-sm">
+                {t('trend.loading')}
+              </p>
+            ) : trendQuery.isError ? (
+              <p role="alert" className="text-nham-text-muted text-sm">
+                {t('trend.error')}
+              </p>
+            ) : trendQuery.data ? (
+              <NutrientTrend
+                trend={trendQuery.data}
+                unit={card.unit}
+                forcePointMode={card.displayState === 'warning_points'}
+              />
+            ) : null}
+          </div>
+        ) : null}
+      </div>
     </article>
   );
 }

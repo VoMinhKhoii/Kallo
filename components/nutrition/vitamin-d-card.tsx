@@ -15,9 +15,9 @@ export function VitaminDCard({ card }: VitaminDCardProps) {
       <p className="font-bold text-[10px] text-nham-stone uppercase tracking-[0.16em]">
         {t('nutrition.education.label')}
       </p>
-      <h2 className="mt-2 font-semibold text-lg text-nham-text">
+      <h3 className="mt-2 font-semibold text-lg text-nham-text">
         {t(card.titleKey)}
-      </h2>
+      </h3>
       <p className="mt-2 max-w-3xl text-nham-text-muted text-sm leading-6">
         {t(card.bodyKey)}
       </p>

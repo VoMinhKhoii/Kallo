@@ -19,6 +19,7 @@ export function NutrientGrid({
 }: NutrientGridProps) {
   const t = useTranslations('nutrition');
   const [showMore, setShowMore] = useState(false);
+  const moreNutrientsPanelId = 'more-nutrients-panel';
 
   return (
     <section className="space-y-4" aria-labelledby="nutrient-grid-title">
@@ -51,23 +52,26 @@ export function NutrientGrid({
             type="button"
             onClick={() => setShowMore((current) => !current)}
             aria-expanded={showMore}
+            aria-controls={moreNutrientsPanelId}
             className="inline-flex touch-manipulation items-center rounded-xl border border-nham-border/60 px-4 py-2 font-medium text-nham-text text-sm transition-colors hover:bg-nham-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent focus-visible:ring-offset-2 focus-visible:ring-offset-nham-surface"
           >
             {showMore ? t('more.hide') : t('more.show')}
           </button>
 
-          {showMore ? (
-            <div className="grid gap-3 xl:grid-cols-2">
-              {overview.moreNutrients.map((card) => (
-                <NutrientCard
-                  key={card.nutrient}
-                  card={card}
-                  resolvedRange={resolvedRange}
-                  timezoneOffset={timezoneOffset}
-                />
-              ))}
-            </div>
-          ) : null}
+          <div id={moreNutrientsPanelId}>
+            {showMore ? (
+              <div className="grid gap-3 xl:grid-cols-2">
+                {overview.moreNutrients.map((card) => (
+                  <NutrientCard
+                    key={card.nutrient}
+                    card={card}
+                    resolvedRange={resolvedRange}
+                    timezoneOffset={timezoneOffset}
+                  />
+                ))}
+              </div>
+            ) : null}
+          </div>
         </div>
       ) : null}
 
