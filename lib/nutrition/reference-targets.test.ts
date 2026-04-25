@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { DEFAULT_NUTRIENTS } from './nutrients';
+import { DEFAULT_NUTRIENTS, NUTRIENT_META } from './nutrients';
 import { resolveMicronutrientTargets } from './reference-targets';
 
 const baseProfile = {
@@ -28,6 +28,9 @@ describe('resolveMicronutrientTargets', () => {
   it('returns a target object for every known nutrient key', () => {
     const targets = resolveMicronutrientTargets(baseProfile);
 
+    expect(Object.keys(targets).sort()).toEqual(
+      Object.keys(NUTRIENT_META).sort()
+    );
     expect(targets.sodiumMg).toMatchObject({
       value: null,
       source: 'unsupported',
