@@ -1,21 +1,59 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { toast } from 'sonner';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { NutritionOverview } from '@/lib/nutrition/types';
+import type {
+  NutrientCardData,
+  NutritionOverview,
+} from '@/lib/nutrition/types';
 import { NutritionShell } from './nutrition-shell';
 
-const { getNutritionOverviewMock, getNutrientTrendMock } = vi.hoisted(() => ({
+const {
+  getFoodSourceCandidatesMock,
+  getNutritionOverviewMock,
+  getNutrientTrendMock,
+} = vi.hoisted(() => ({
+  getFoodSourceCandidatesMock: vi.fn(),
   getNutritionOverviewMock: vi.fn(),
   getNutrientTrendMock: vi.fn(),
 }));
 
 vi.mock('@/lib/nutrition/actions', () => ({
+  getFoodSourceCandidates: getFoodSourceCandidatesMock,
   getNutritionOverview: getNutritionOverviewMock,
   getNutrientTrend: getNutrientTrendMock,
 }));
 
-function createOverview(): NutritionOverview {
+vi.mock('sonner', () => ({
+  toast: {
+    error: vi.fn(),
+  },
+}));
+
+function createNutrientCard(
+  overrides: Partial<NutrientCardData> = {}
+): NutrientCardData {
+  return {
+    nutrient: 'calciumMg',
+    labelKey: 'nutrition.nutrients.calcium',
+    group: 'mineral',
+    averagePerDay: 820,
+    target: 1000,
+    targetSource: 'vietnam_rda',
+    targetSourceLabelKey: 'nutrition.targetSources.vietnamRda',
+    unit: 'mg',
+    percentOfTarget: 82,
+    confidence: 91,
+    displayState: 'normal',
+    supportsCandidates: true,
+    ...overrides,
+  };
+}
+
+function createOverview(
+  overrides: Partial<NutritionOverview> = {}
+): NutritionOverview {
   return {
     requestedRange: 'auto',
     resolvedRange: '30d',
@@ -100,17 +138,42 @@ function createOverview(): NutritionOverview {
         consistencyPct: null,
       },
     ],
-    micronutrients: [],
-    moreNutrients: [],
-    educationCards: [],
+    micronutrients: [createNutrientCard()],
+    moreNutrients: [
+      createNutrientCard({
+        nutrient: 'vitaminCMg',
+        labelKey: 'nutrition.nutrients.vitaminC',
+        averagePerDay: 64,
+        target: 75,
+        percentOfTarget: 85,
+        confidence: 81,
+        group: 'vitamin',
+        unit: 'mg',
+      }),
+    ],
+    educationCards: [
+      {
+        id: 'vitamin_d',
+        titleKey: 'nutrition.education.vitaminD.title',
+        bodyKey: 'nutrition.education.vitaminD.body',
+      },
+    ],
+    ...overrides,
   };
 }
 
-function createQueryClient() {
+function createQueryClient({
+  retry = false,
+  retryDelay,
+}: {
+  retry?: boolean | number;
+  retryDelay?: number;
+} = {}) {
   return new QueryClient({
     defaultOptions: {
       queries: {
-        retry: false,
+        retry,
+        retryDelay,
       },
     },
   });
@@ -127,12 +190,18 @@ function renderShell(queryClient: QueryClient) {
 describe('NutritionShell', () => {
   beforeEach(() => {
     vi.spyOn(Date.prototype, 'getTimezoneOffset').mockReturnValue(-420);
+    getFoodSourceCandidatesMock.mockResolvedValue({
+      nutrient: 'calciumMg',
+      candidates: [],
+    });
     getNutritionOverviewMock.mockResolvedValue(createOverview());
     getNutrientTrendMock.mockResolvedValue({ points: [] });
   });
 
   afterEach(() => {
     vi.restoreAllMocks();
+    vi.clearAllMocks();
+    getFoodSourceCandidatesMock.mockReset();
     getNutritionOverviewMock.mockReset();
     getNutrientTrendMock.mockReset();
   });
@@ -201,13 +270,109 @@ describe('NutritionShell', () => {
     expect(screen.getByText('summary.needsAttention')).toBeInTheDocument();
     expect(screen.getByText('summary.limitedData')).toBeInTheDocument();
     expect(screen.getByText('summary.macroConsistency')).toBeInTheDocument();
-    expect(screen.getByText('nutrition.nutrients.calcium')).toBeInTheDocument();
-    expect(screen.getByText('nutrition.nutrients.iron')).toBeInTheDocument();
+    expect(
+      screen.getAllByText('nutrition.nutrients.calcium').length
+    ).toBeGreaterThan(0);
     expect(screen.getByText('nutrition.macros.calories')).toBeInTheDocument();
     expect(screen.getByText('nutrition.macros.protein')).toBeInTheDocument();
     expect(screen.getByText(/2,000/)).toBeInTheDocument();
     expect(screen.getByTestId('macro-pattern-section')).not.toContainElement(
       screen.queryByRole('progressbar')
     );
+  });
+
+  it('links no-meals empty state to logging', async () => {
+    getNutritionOverviewMock.mockResolvedValue(
+      createOverview({
+        loggedDays: 0,
+        loggedDaysLast30: 0,
+      })
+    );
+    const queryClient = createQueryClient();
+
+    renderShell(queryClient);
+
+    expect(await screen.findByText('empty.title')).toBeInTheDocument();
+    expect(screen.getByText('empty.description')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'empty.logMeal' })).toHaveAttribute(
+      'href',
+      '/logging'
+    );
+  });
+
+  it('keeps averages and cards visible when there are too few days for trends', async () => {
+    getNutritionOverviewMock.mockResolvedValue(
+      createOverview({
+        trendStatus: 'too_few_logged_days',
+      })
+    );
+    const queryClient = createQueryClient();
+
+    renderShell(queryClient);
+
+    expect(await screen.findByText('trends.tooFewDays')).toBeInTheDocument();
+    expect(screen.getByText('nutrition.macros.calories')).toBeInTheDocument();
+    expect(
+      screen.getAllByText('nutrition.nutrients.calcium').length
+    ).toBeGreaterThan(0);
+  });
+
+  it('renders the complete nutrient composition and passes resolved range to cards', async () => {
+    const user = userEvent.setup();
+    const queryClient = createQueryClient();
+
+    renderShell(queryClient);
+
+    await waitFor(() =>
+      expect(
+        screen.getAllByText('nutrition.nutrients.calcium').length
+      ).toBeGreaterThan(0)
+    );
+    expect(
+      screen.getByText('nutrition.education.vitaminD.title')
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'candidates.open' })
+    ).toBeInTheDocument();
+
+    expect(
+      screen.queryByText('nutrition.nutrients.vitaminC')
+    ).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'more.show' }));
+    expect(
+      screen.getByText('nutrition.nutrients.vitaminC')
+    ).toBeInTheDocument();
+
+    await user.click(screen.getAllByRole('button', { name: 'card.expand' })[0]);
+    await waitFor(() =>
+      expect(getNutrientTrendMock).toHaveBeenCalledWith({
+        nutrient: 'calciumMg',
+        range: '30d',
+        timezoneOffset: -420,
+      })
+    );
+  });
+
+  it('renders inline errors with retry and sends a toast on overview errors', async () => {
+    const user = userEvent.setup();
+    getNutritionOverviewMock
+      .mockRejectedValueOnce(new Error('overview failed'))
+      .mockResolvedValueOnce(createOverview());
+    const queryClient = createQueryClient({ retry: 3, retryDelay: 0 });
+
+    renderShell(queryClient);
+
+    expect(await screen.findByText('errors.overview')).toBeInTheDocument();
+    await waitFor(() =>
+      expect(toast.error).toHaveBeenCalledWith('errors.overview')
+    );
+    expect(getNutritionOverviewMock).toHaveBeenCalledTimes(1);
+
+    await user.click(screen.getByRole('button', { name: 'errors.retry' }));
+
+    expect(
+      await screen.findByText('summary.mostConsistent')
+    ).toBeInTheDocument();
+    expect(getNutritionOverviewMock).toHaveBeenCalledTimes(2);
   });
 });

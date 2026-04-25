@@ -402,12 +402,16 @@
       "vitaminH": "Biotin"
     },
     "errors": {
-      "overview": "Không tải được tổng quan dinh dưỡng. Hãy làm mới trang hoặc thử lại sau khi ghi nhận thêm bữa ăn."
+      "overview": "Không tải được tổng quan dinh dưỡng. Hãy làm mới trang hoặc thử lại sau khi ghi nhận thêm bữa ăn.",
+      "retry": "Tải lại tổng quan"
     },
     "empty": {
       "title": "Chưa có bữa ăn trong khoảng này",
       "description": "Ghi nhận bữa ăn trong vài ngày để xem xu hướng macro và vi chất.",
       "logMeal": "Ghi nhận bữa ăn"
+    },
+    "trends": {
+      "tooFewDays": "Hãy tiếp tục ghi nhận bữa ăn để tạo đường xu hướng đáng tin cậy. Các mức trung bình hiện có vẫn được hiển thị."
     }
   },
   "onboarding": {

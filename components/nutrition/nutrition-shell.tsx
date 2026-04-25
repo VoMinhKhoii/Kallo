@@ -2,10 +2,12 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { useTranslations } from 'next-intl';
-import { useMemo, useState } from 'react';
-import { Link } from '@/i18n/navigation';
+import { useEffect, useMemo, useState } from 'react';
+import { toast } from 'sonner';
 import { getNutritionOverview } from '@/lib/nutrition/actions';
 import type { NutritionRangeInput } from '@/lib/nutrition/types';
+import { EmptyState } from './empty-state';
+import { InlineError } from './inline-error';
 import { MacroPatternSection } from './macro-pattern-section';
 import { NutrientGrid } from './nutrient-grid';
 import { NutritionSkeleton } from './nutrition-skeleton';
@@ -20,15 +22,22 @@ function getTimezoneOffset(): number | null {
 
 export function NutritionShell() {
   const t = useTranslations('nutrition');
-  const tCommon = useTranslations('common');
   const timezoneOffset = useMemo(() => getTimezoneOffset(), []);
   const [range, setRange] = useState<NutritionRangeInput>('auto');
 
   const overviewQuery = useQuery({
     queryKey: ['nutrition', 'overview', range, timezoneOffset ?? 'utc'],
     queryFn: () => getNutritionOverview({ range, timezoneOffset }),
+    retry: false,
     staleTime: 60_000,
   });
+  const { isError } = overviewQuery;
+
+  useEffect(() => {
+    if (isError) {
+      toast.error(t('errors.overview'));
+    }
+  }, [isError, t]);
 
   const resolvedRange = overviewQuery.data?.resolvedRange ?? '30d';
 
@@ -37,21 +46,12 @@ export function NutritionShell() {
   if (overviewQuery.isError || !overviewQuery.data) {
     return (
       <main className="flex-1 overflow-y-auto px-5 py-4 sm:px-8">
-        <div
-          role="alert"
-          className="rounded-2xl border border-nham-border/60 bg-card p-4 text-nham-text"
-        >
-          <p>{t('errors.overview')}</p>
-          <button
-            type="button"
-            onClick={() => overviewQuery.refetch()}
-            disabled={overviewQuery.isFetching}
-            aria-busy={overviewQuery.isFetching}
-            className="mt-3 inline-flex touch-manipulation items-center rounded-xl border border-nham-border/60 px-4 py-2 font-medium text-nham-text text-sm transition-colors hover:bg-nham-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent focus-visible:ring-offset-2 focus-visible:ring-offset-nham-surface disabled:opacity-50"
-          >
-            {tCommon('retry')}
-          </button>
-        </div>
+        <InlineError
+          isRetrying={overviewQuery.isFetching}
+          onRetry={() => {
+            void overviewQuery.refetch();
+          }}
+        />
       </main>
     );
   }
@@ -78,26 +78,18 @@ export function NutritionShell() {
         </header>
 
         {overview.loggedDays === 0 ? (
-          <section className="rounded-3xl border border-nham-border/60 bg-card p-6">
-            <h2 className="font-semibold text-lg text-nham-text">
-              {t('empty.title')}
-            </h2>
-            <p className="mt-2 max-w-2xl text-nham-text-muted text-sm leading-6">
-              {t('empty.description')}
-            </p>
-            <Link
-              href="/logging"
-              className="mt-4 inline-flex touch-manipulation items-center rounded-xl bg-nham-btn px-4 py-2 font-medium text-card text-sm transition-colors hover:bg-nham-btn-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent focus-visible:ring-offset-2 focus-visible:ring-offset-nham-surface"
-            >
-              {t('empty.logMeal')}
-            </Link>
-          </section>
+          <EmptyState />
         ) : (
           <div
             aria-live="polite"
             aria-busy={overviewQuery.isFetching}
             className="contents"
           >
+            {overview.trendStatus === 'too_few_logged_days' ? (
+              <p className="rounded-2xl border border-nham-border/60 bg-nham-hover/35 p-4 text-nham-text-muted text-sm">
+                {t('trends.tooFewDays')}
+              </p>
+            ) : null}
             <SummaryStrip summary={overview.summary} />
             <MacroPatternSection macros={overview.macros} />
             <NutrientGrid

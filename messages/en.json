@@ -402,12 +402,16 @@
       "vitaminH": "Biotin"
     },
     "errors": {
-      "overview": "Could not load nutrition overview. Refresh the page or try again after logging another meal."
+      "overview": "Could not load nutrition overview. Refresh the page or try again after logging another meal.",
+      "retry": "Retry overview"
     },
     "empty": {
       "title": "No meals in this range",
       "description": "Log meals for a few days to see macro and micronutrient patterns.",
       "logMeal": "Log Meal"
+    },
+    "trends": {
+      "tooFewDays": "Keep logging meals to build reliable trend lines. Averages are still shown for the days available."
     }
   },
   "onboarding": {
