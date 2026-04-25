@@ -30,6 +30,9 @@
     },
     "dashboard": {
       "title": "Dashboard — Nhẩm"
+    },
+    "nutrition": {
+      "title": "Nutrition — Nhẩm"
     }
   },
   "shared": {
@@ -49,6 +52,7 @@
       "sectionLabel": "Main",
       "dashboard": "Dashboard",
       "tracking": "Tracking",
+      "nutrition": "Nutrition",
       "logging": "Logging",
       "settings": "Settings",
       "expandSidebar": "Expand sidebar",

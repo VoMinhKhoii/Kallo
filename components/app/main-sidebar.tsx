@@ -70,9 +70,9 @@ export function MainSidebar({
       icon: <LayoutDashboard className="h-5 w-5 shrink-0" />,
     },
     {
-      id: 'tracking',
-      label: t('tracking'),
-      href: '/tracking',
+      id: 'nutrition',
+      label: t('nutrition'),
+      href: '/nutrition',
       icon: <Activity className="h-5 w-5 shrink-0" />,
     },
     {

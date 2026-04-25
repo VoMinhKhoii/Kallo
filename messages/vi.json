@@ -30,6 +30,9 @@
     },
     "dashboard": {
       "title": "Tổng quan — Nhẩm"
+    },
+    "nutrition": {
+      "title": "Dinh dưỡng — Nhẩm"
     }
   },
   "shared": {
@@ -49,6 +52,7 @@
       "sectionLabel": "Chính",
       "dashboard": "Tổng quan",
       "tracking": "Theo dõi",
+      "nutrition": "Dinh dưỡng",
       "logging": "Ghi nhận",
       "settings": "Cài đặt",
       "expandSidebar": "Mở rộng thanh bên",
