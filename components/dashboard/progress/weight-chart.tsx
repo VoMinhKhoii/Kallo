@@ -47,7 +47,7 @@ export function WeightChart({
   if (data.length < 2) {
     return (
       <div className="flex flex-1 items-center justify-center text-nham-stone text-sm">
-        Not enough data yet
+        Log your weight for at least 2 days to see your trend
       </div>
     );
   }

@@ -28,7 +28,6 @@ function todayDateString(): string {
 export function WeightCard({ weightSummary }: WeightCardProps) {
   const logWeightMutation = useLogWeight();
   const currentWeight = weightSummary?.currentWeight ?? 65;
-  const todayWeight = weightSummary?.todayWeight ?? null;
   const daysLogged = weightSummary?.daysLogged ?? 0;
   const rangeLabel = weightSummary?.range === '90d' ? '90 days' : '30 days';
 
@@ -48,9 +47,9 @@ export function WeightCard({ weightSummary }: WeightCardProps) {
   useEffect(() => {
     reset({
       loggedDate: todayDateString(),
-      weightKg: todayWeight ?? currentWeight,
+      weightKg: currentWeight,
     });
-  }, [currentWeight, reset, todayWeight]);
+  }, [currentWeight, reset]);
 
   const onSubmit = async (values: WeightLogInput) => {
     try {
@@ -83,22 +82,36 @@ export function WeightCard({ weightSummary }: WeightCardProps) {
           )}
           className="space-y-2"
         >
-          <div className="grid grid-cols-[1fr_112px_auto] gap-2">
-            <label htmlFor="weight-log-date" className="sr-only">
-              Ngày ghi cân nặng
-            </label>
-            <Input
-              id="weight-log-date"
-              {...register('loggedDate')}
-              type="date"
-              aria-invalid={Boolean(errors.loggedDate)}
-              className={cn(
-                'rounded-xl border-nham-border border-dashed bg-nham-surface px-3 text-[12px] text-nham-text shadow-none',
-                errors.loggedDate && 'border-destructive'
-              )}
-            />
+          <div className="grid grid-cols-[1fr_112px] gap-2">
+            <div className="space-y-2">
+              <label htmlFor="weight-log-date" className="sr-only">
+                Ngày ghi cân nặng
+              </label>
+              <Input
+                id="weight-log-date"
+                {...register('loggedDate')}
+                type="date"
+                aria-invalid={Boolean(errors.loggedDate)}
+                className={cn(
+                  'rounded-xl border-nham-border border-dashed bg-nham-surface px-3 text-[12px] text-nham-text shadow-none',
+                  errors.loggedDate && 'border-destructive'
+                )}
+              />
 
-            <div className="relative">
+              <Button
+                type="submit"
+                size="xs"
+                disabled={logWeightMutation.isPending}
+                className={cn(
+                  'w-fit rounded-xl px-3 py-2 font-bold text-xs tracking-wide transition-all',
+                  'bg-nham-btn text-white shadow-sm hover:bg-nham-btn-hover'
+                )}
+              >
+                {logWeightMutation.isPending ? 'Saving...' : 'Save'}
+              </Button>
+            </div>
+
+            <div className="relative self-start">
               <label htmlFor="weight-log-kg" className="sr-only">
                 Cân nặng (kg)
               </label>
@@ -120,18 +133,6 @@ export function WeightCard({ weightSummary }: WeightCardProps) {
                 kg
               </span>
             </div>
-
-            <Button
-              type="submit"
-              size="xs"
-              disabled={logWeightMutation.isPending}
-              className={cn(
-                'rounded-xl px-3 py-2 font-bold text-xs tracking-wide transition-all',
-                'bg-nham-btn text-white shadow-sm hover:bg-nham-btn-hover'
-              )}
-            >
-              {logWeightMutation.isPending ? 'Saving...' : 'Save'}
-            </Button>
           </div>
 
           {(errors.loggedDate || errors.weightKg) && (
@@ -141,38 +142,10 @@ export function WeightCard({ weightSummary }: WeightCardProps) {
           )}
         </form>
 
-        <div className="flex items-center justify-between">
-          <p className="text-[9px] text-nham-stone">
-            <span className="font-semibold text-nham-text">
-              {(todayWeight ?? currentWeight).toFixed(1)}
-            </span>{' '}
-            kg current
-          </p>
-          <p className="text-[9px] text-nham-stone">
-            <span className="font-semibold text-nham-text">{daysLogged}</span>{' '}
-            logs in last {rangeLabel}
-          </p>
-        </div>
-
-        <div className="flex items-center justify-between text-[9px] text-nham-stone">
-          <span>
-            Goal line:{' '}
-            {weightSummary?.goalDirection === 'up'
-              ? 'up'
-              : weightSummary?.goalDirection === 'down'
-                ? 'down'
-                : 'flat'}
-          </span>
-          <span>
-            Start: {weightSummary?.periodStartWeight ?? currentWeight} kg
-          </span>
-        </div>
-
-        {todayWeight !== null && (
-          <p className="text-[9px] text-nham-stone">
-            Today logged: {todayWeight} kg
-          </p>
-        )}
+        <p className="text-[9px] text-nham-stone">
+          <span className="font-semibold text-nham-text">{daysLogged}</span>{' '}
+          logs in last {rangeLabel}
+        </p>
       </div>
     </motion.div>
   );
