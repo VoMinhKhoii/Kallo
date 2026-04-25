@@ -147,8 +147,36 @@ function isVietnameseContext(profile: NutritionProfileForTargets): boolean {
     .some((country) => vietnamValues.has(country?.trim().toUpperCase() ?? ''));
 }
 
-function normalizeSex(value: string | null): BiologicalSex {
-  return value === 'female' ? 'female' : 'male';
+function resolveBiologicalSex(value: string | null): BiologicalSex | null {
+  if (value === 'male' || value === 'female') {
+    return value;
+  }
+
+  return null;
+}
+
+function isSexIndependentTarget(targetRow: TargetRow): boolean {
+  return (
+    targetRow.male.value === targetRow.female.value &&
+    targetRow.male.unit === targetRow.female.unit
+  );
+}
+
+function getDefaultUnit(key: NutritionNutrientKey): 'mg' | 'mcg' {
+  return NUTRIENT_META[key].unit === 'mcg' ? 'mcg' : 'mg';
+}
+
+function createUnsupportedTarget(
+  key: NutritionNutrientKey
+): MicronutrientTarget {
+  return {
+    key,
+    value: null,
+    unit: getDefaultUnit(key),
+    source: 'unsupported',
+    sourceLabelKey: 'nutrition.targetSources.unsupported',
+    applicability: 'unsupported',
+  };
 }
 
 export function resolveMicronutrientTargets(
@@ -159,21 +187,11 @@ export function resolveMicronutrientTargets(
   const source: Exclude<TargetSource, 'unsupported'> = vietnameseContext
     ? 'vietnam_rda'
     : 'who_fao';
-  const sex = normalizeSex(profile.biologicalSex);
+  const sex = resolveBiologicalSex(profile.biologicalSex);
   const targets = Object.fromEntries(
     Object.keys(NUTRIENT_META).map((key) => [
       key,
-      {
-        key,
-        value: null,
-        unit:
-          NUTRIENT_META[key as NutritionNutrientKey].unit === 'mcg'
-            ? 'mcg'
-            : 'mg',
-        source: 'unsupported',
-        sourceLabelKey: 'nutrition.targetSources.unsupported',
-        applicability: 'unsupported',
-      },
+      createUnsupportedTarget(key as NutritionNutrientKey),
     ])
   ) as Record<NutritionNutrientKey, MicronutrientTarget>;
 
@@ -202,19 +220,18 @@ export function resolveMicronutrientTargets(
       continue;
     }
 
-    const target = sourceTable[key]?.[sex];
-    if (!target) {
-      targets[key] = {
-        key,
-        value: null,
-        unit: 'mg',
-        source: 'unsupported',
-        sourceLabelKey: 'nutrition.targetSources.unsupported',
-        applicability: 'unsupported',
-      };
+    const targetRow = sourceTable[key];
+    if (!targetRow) {
+      targets[key] = createUnsupportedTarget(key);
       continue;
     }
 
+    if (!sex && !isSexIndependentTarget(targetRow)) {
+      targets[key] = createUnsupportedTarget(key);
+      continue;
+    }
+
+    const target = targetRow[sex ?? 'male'];
     const value =
       key === 'ironMg' &&
       source === 'vietnam_rda' &&

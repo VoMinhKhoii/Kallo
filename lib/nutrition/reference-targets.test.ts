@@ -127,6 +127,27 @@ describe('resolveMicronutrientTargets', () => {
     });
   });
 
+  it('does not score sex-dependent nutrients when biological sex is missing', () => {
+    const targets = resolveMicronutrientTargets({
+      ...baseProfile,
+      biologicalSex: null,
+    });
+
+    expect(targets.ironMg).toMatchObject({
+      value: null,
+      source: 'unsupported',
+      sourceLabelKey: 'nutrition.targetSources.unsupported',
+      applicability: 'unsupported',
+    });
+    expect(targets.vitaminCMg).toMatchObject({
+      value: 70,
+      unit: 'mg',
+      source: 'vietnam_rda',
+      sourceLabelKey: 'nutrition.targetSources.vietnamRda',
+      applicability: 'scored',
+    });
+  });
+
   it('marks unsupported nutrients instead of inventing targets', () => {
     const targets = resolveMicronutrientTargets(baseProfile);
 
