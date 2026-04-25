@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { Errors } from '@/lib/errors';
 import type { GeminiClient } from '../gemini';
 import { analyzeMeal } from '../pipeline';
 import type {
@@ -177,6 +178,28 @@ describe('analyzeMeal', () => {
     expect(result.data.unmatchedIngredients).toHaveLength(0);
     expect(result.data.displayedNutrition.caloriesKcal).toBeDefined();
     expect(result.data.displayedNutrition.proteinG).toBeDefined();
+  });
+
+  it('surfaces pipeline timeout messages as retryable api errors', async () => {
+    (
+      mockGemini.generateStructuredOutputStream as ReturnType<typeof vi.fn>
+    ).mockRejectedValueOnce(Errors.pipelineTimeout());
+
+    const result = await analyzeMeal(
+      'phở bò tái',
+      userContext,
+      mockDb,
+      mockGemini
+    );
+
+    expect(result).toEqual({
+      success: false,
+      error: {
+        type: 'api_error',
+        message: 'Phân tích mất quá lâu. Vui lòng thử lại.',
+        retryable: true,
+      },
+    });
   });
 
   it('D5: merges LLM 5 nutrients with DB mid values for remaining 23', async () => {

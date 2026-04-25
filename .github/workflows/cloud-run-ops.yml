@@ -77,7 +77,6 @@ jobs:
           gcloud run deploy nham-internal \
             --image "${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/${{ vars.GCP_ARTIFACT_REPO }}/nham@$IMAGE_DIGEST_INPUT" \
             --update-labels=commit-sha=$COMMIT_SHA_INPUT,deployment-target=internal,github-run-id=${{ github.run_id }} \
-            --revision-labels=commit-sha=$COMMIT_SHA_INPUT,deployment-target=internal,github-run-id=${{ github.run_id }} \
             --region="${{ vars.GCP_REGION }}"
       - id: smoke_redeploy_internal
         name: Smoke check redeployed internal service
@@ -99,7 +98,6 @@ jobs:
           gcloud run deploy "nham-pr-$PREVIEW_PR_NUMBER_INPUT" \
             --image "${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/${{ vars.GCP_ARTIFACT_REPO }}/nham@$IMAGE_DIGEST_INPUT" \
             --update-labels=commit-sha=$COMMIT_SHA_INPUT,pr-number=$PREVIEW_PR_NUMBER_INPUT,deployment-target=preview,github-run-id=${{ github.run_id }} \
-            --revision-labels=commit-sha=$COMMIT_SHA_INPUT,pr-number=$PREVIEW_PR_NUMBER_INPUT,deployment-target=preview,github-run-id=${{ github.run_id }} \
             --region="${{ vars.GCP_REGION }}"
       - id: smoke_refresh_preview
         name: Smoke check refreshed preview
