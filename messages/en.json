@@ -63,6 +63,75 @@
       "signOut": "Sign out"
     }
   },
+  "nutrition": {
+    "title": "Nutrition",
+    "subtitle": "Review long-term macro and micronutrient patterns, with confidence labels when the food data is incomplete.",
+    "loading": "Loading nutrition overview…",
+    "range": {
+      "label": "Nutrition range",
+      "7d": "7 days",
+      "30d": "30 days",
+      "90d": "90 days"
+    },
+    "summary": {
+      "label": "Nutrition summary",
+      "mostConsistent": "Most consistent",
+      "needsAttention": "Needs attention",
+      "limitedData": "Limited data",
+      "macroConsistency": "Macro consistency",
+      "confidentOnly": "Only confident gaps are flagged",
+      "coverageHint": "Nutrients with thin coverage",
+      "weakest": "Weakest",
+      "none": "None yet"
+    },
+    "macros": {
+      "title": "Macro pattern",
+      "calories": "Calories",
+      "protein": "Protein",
+      "carbohydrate": "Carbs",
+      "fat": "Fat",
+      "fiber": "Fiber",
+      "averagePerDay": "Average per day",
+      "consistency": "Consistency",
+      "weakest": "Weakest",
+      "target": "Target",
+      "noTarget": "No target"
+    },
+    "nutrients": {
+      "fiber": "Fiber",
+      "sodium": "Sodium",
+      "calcium": "Calcium",
+      "iron": "Iron",
+      "magnesium": "Magnesium",
+      "phosphorus": "Phosphorus",
+      "potassium": "Potassium",
+      "zinc": "Zinc",
+      "copper": "Copper",
+      "manganese": "Manganese",
+      "betaCarotene": "Beta-carotene",
+      "vitaminA": "Vitamin A",
+      "vitaminD": "Vitamin D",
+      "vitaminE": "Vitamin E",
+      "vitaminK": "Vitamin K",
+      "vitaminC": "Vitamin C",
+      "vitaminB1": "Vitamin B1",
+      "vitaminB2": "Vitamin B2",
+      "vitaminPp": "Niacin",
+      "vitaminB5": "Vitamin B5",
+      "vitaminB6": "Vitamin B6",
+      "vitaminB9": "Folate",
+      "vitaminB12": "Vitamin B12",
+      "vitaminH": "Biotin"
+    },
+    "errors": {
+      "overview": "Could not load nutrition overview. Refresh the page or try again after logging another meal."
+    },
+    "empty": {
+      "title": "No meals in this range",
+      "description": "Log meals for a few days to see macro and micronutrient patterns.",
+      "logMeal": "Log Meal"
+    }
+  },
   "onboarding": {
     "stepOf": "Step {current} of {total}",
     "origin": {

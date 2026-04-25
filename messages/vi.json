@@ -63,6 +63,75 @@
       "signOut": "Đăng xuất"
     }
   },
+  "nutrition": {
+    "title": "Dinh dưỡng",
+    "subtitle": "Nhìn lại xu hướng macro và vi chất dài hạn, kèm nhãn độ tin cậy khi dữ liệu món ăn còn thiếu.",
+    "loading": "Đang tải tổng quan dinh dưỡng…",
+    "range": {
+      "label": "Khoảng thời gian dinh dưỡng",
+      "7d": "7 ngày",
+      "30d": "30 ngày",
+      "90d": "90 ngày"
+    },
+    "summary": {
+      "label": "Tóm tắt dinh dưỡng",
+      "mostConsistent": "Ổn định nhất",
+      "needsAttention": "Cần chú ý",
+      "limitedData": "Dữ liệu hạn chế",
+      "macroConsistency": "Độ ổn định macro",
+      "confidentOnly": "Chỉ đánh dấu khi đủ tin cậy",
+      "coverageHint": "Vi chất có độ phủ mỏng",
+      "weakest": "Yếu nhất",
+      "none": "Chưa có"
+    },
+    "macros": {
+      "title": "Xu hướng macro",
+      "calories": "Calo",
+      "protein": "Đạm",
+      "carbohydrate": "Carb",
+      "fat": "Chất béo",
+      "fiber": "Chất xơ",
+      "averagePerDay": "Trung bình mỗi ngày",
+      "consistency": "Độ ổn định",
+      "weakest": "Yếu nhất",
+      "target": "Mục tiêu",
+      "noTarget": "Không có mục tiêu"
+    },
+    "nutrients": {
+      "fiber": "Chất xơ",
+      "sodium": "Natri",
+      "calcium": "Canxi",
+      "iron": "Sắt",
+      "magnesium": "Magie",
+      "phosphorus": "Phốt pho",
+      "potassium": "Kali",
+      "zinc": "Kẽm",
+      "copper": "Đồng",
+      "manganese": "Mangan",
+      "betaCarotene": "Beta-carotene",
+      "vitaminA": "Vitamin A",
+      "vitaminD": "Vitamin D",
+      "vitaminE": "Vitamin E",
+      "vitaminK": "Vitamin K",
+      "vitaminC": "Vitamin C",
+      "vitaminB1": "Vitamin B1",
+      "vitaminB2": "Vitamin B2",
+      "vitaminPp": "Niacin",
+      "vitaminB5": "Vitamin B5",
+      "vitaminB6": "Vitamin B6",
+      "vitaminB9": "Folate",
+      "vitaminB12": "Vitamin B12",
+      "vitaminH": "Biotin"
+    },
+    "errors": {
+      "overview": "Không tải được tổng quan dinh dưỡng. Hãy làm mới trang hoặc thử lại sau khi ghi nhận thêm bữa ăn."
+    },
+    "empty": {
+      "title": "Chưa có bữa ăn trong khoảng này",
+      "description": "Ghi nhận bữa ăn trong vài ngày để xem xu hướng macro và vi chất.",
+      "logMeal": "Ghi nhận bữa ăn"
+    }
+  },
   "onboarding": {
     "stepOf": "Bước {current} / {total}",
     "origin": {
