@@ -232,6 +232,16 @@ export function resolveMicronutrientTargets(
     }
 
     const target = targetRow[sex ?? 'male'];
+    if (
+      key === 'ironMg' &&
+      source === 'vietnam_rda' &&
+      sex === 'female' &&
+      (profile.age === null || !Number.isFinite(profile.age))
+    ) {
+      targets[key] = createUnsupportedTarget(key);
+      continue;
+    }
+
     const value =
       key === 'ironMg' &&
       source === 'vietnam_rda' &&

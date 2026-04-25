@@ -108,6 +108,26 @@ describe('resolveMicronutrientTargets', () => {
     });
   });
 
+  it('does not score age-dependent Vietnam iron when female age is missing', () => {
+    const targets = resolveMicronutrientTargets({
+      ...baseProfile,
+      biologicalSex: 'female',
+      age: null,
+    });
+
+    expect(targets.ironMg).toMatchObject({
+      value: null,
+      source: 'unsupported',
+      sourceLabelKey: 'nutrition.targetSources.unsupported',
+      applicability: 'unsupported',
+    });
+    expect(targets.vitaminCMg).toMatchObject({
+      value: 70,
+      source: 'vietnam_rda',
+      applicability: 'scored',
+    });
+  });
+
   it('uses WHO/FAO for non-Vietnam context', () => {
     const targets = resolveMicronutrientTargets({
       ...baseProfile,
