@@ -55,6 +55,7 @@ export function FoodSourceCandidatesPanel({
       return getFoodSourceCandidates({ nutrient: candidateNutrient });
     },
     enabled: open && canShowCandidates,
+    retry: false,
     staleTime: 60_000,
   });
   const isRetrying =

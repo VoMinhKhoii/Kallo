@@ -19,11 +19,18 @@ vi.mock('@/lib/nutrition/actions', () => ({
   getFoodSourceCandidates: getFoodSourceCandidatesMock,
 }));
 
-function createQueryClient() {
+function createQueryClient({
+  retry = false,
+  retryDelay,
+}: {
+  retry?: boolean | number;
+  retryDelay?: number;
+} = {}) {
   return new QueryClient({
     defaultOptions: {
       queries: {
-        retry: false,
+        retry,
+        retryDelay,
       },
     },
   });
@@ -161,6 +168,26 @@ describe('FoodSourceCandidatesPanel', () => {
     expect(
       screen.getByRole('button', { name: 'candidates.retry' })
     ).toBeInTheDocument();
+  });
+
+  it('does not auto-retry failed candidate requests', async () => {
+    const user = userEvent.setup();
+    getFoodSourceCandidatesMock.mockRejectedValue(
+      new Error('candidate failed')
+    );
+
+    render(
+      <QueryClientProvider
+        client={createQueryClient({ retry: 3, retryDelay: 0 })}
+      >
+        <FoodSourceCandidatesPanel card={createCard()} />
+      </QueryClientProvider>
+    );
+
+    await user.click(screen.getByRole('button', { name: 'candidates.open' }));
+
+    expect(await screen.findByText('candidates.error')).toBeInTheDocument();
+    expect(getFoodSourceCandidatesMock).toHaveBeenCalledTimes(1);
   });
 
   it('guards the retry button while a retry is in flight', async () => {
