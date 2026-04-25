@@ -49,10 +49,12 @@ export function localDateSqlExpression(
   columnSql: string,
   timezoneOffset: number | null
 ): string {
+  const utcTimestampSql = `(${columnSql} AT TIME ZONE 'UTC')`;
+
   if (timezoneOffset === null) {
-    return `${columnSql}::date`;
+    return `${utcTimestampSql}::date`;
   }
 
   const offsetMinutes = -timezoneOffset;
-  return `(${columnSql} + (${offsetMinutes} || ' minutes')::interval)::date`;
+  return `(${utcTimestampSql} + (${offsetMinutes} || ' minutes')::interval)::date`;
 }

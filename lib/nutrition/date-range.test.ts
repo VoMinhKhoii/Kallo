@@ -46,13 +46,15 @@ describe('getNutritionPeriod', () => {
 });
 
 describe('localDateSqlExpression', () => {
-  it('returns a shifted SQL date expression for local buckets', () => {
+  it('returns a UTC-normalized shifted SQL date expression for local buckets', () => {
     expect(localDateSqlExpression('logged_at', -420)).toBe(
-      "(logged_at + (420 || ' minutes')::interval)::date"
+      "((logged_at AT TIME ZONE 'UTC') + (420 || ' minutes')::interval)::date"
     );
   });
 
-  it('returns a UTC cast when timezone offset is null', () => {
-    expect(localDateSqlExpression('logged_at', null)).toBe('logged_at::date');
+  it('returns a UTC-normalized cast when timezone offset is null', () => {
+    expect(localDateSqlExpression('logged_at', null)).toBe(
+      "(logged_at AT TIME ZONE 'UTC')::date"
+    );
   });
 });
