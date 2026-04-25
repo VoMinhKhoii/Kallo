@@ -43,7 +43,7 @@ export const SUPPORTED_CANDIDATE_NUTRIENTS = [
   'vitaminB2Mg',
   'vitaminPpMg',
   'vitaminAMcg',
-] as const;
+] as const satisfies readonly DefaultNutrientKey[];
 
 export type DefaultNutrientKey = (typeof DEFAULT_NUTRIENTS)[number];
 export type SupportedCandidateNutrient =
