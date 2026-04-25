@@ -12,11 +12,15 @@ import { NutrientCard } from './nutrient-card';
 import { NutrientGrid } from './nutrient-grid';
 import { VitaminDCard } from './vitamin-d-card';
 
-const { getNutrientTrendMock } = vi.hoisted(() => ({
-  getNutrientTrendMock: vi.fn(),
-}));
+const { getFoodSourceCandidatesMock, getNutrientTrendMock } = vi.hoisted(
+  () => ({
+    getFoodSourceCandidatesMock: vi.fn(),
+    getNutrientTrendMock: vi.fn(),
+  })
+);
 
 vi.mock('@/lib/nutrition/actions', () => ({
+  getFoodSourceCandidates: getFoodSourceCandidatesMock,
   getNutrientTrend: getNutrientTrendMock,
 }));
 
@@ -113,10 +117,15 @@ function createOverview(
 
 describe('NutrientCard', () => {
   beforeEach(() => {
+    getFoodSourceCandidatesMock.mockResolvedValue({
+      nutrient: 'calciumMg',
+      candidates: [],
+    });
     getNutrientTrendMock.mockResolvedValue(createTrend());
   });
 
   afterEach(() => {
+    getFoodSourceCandidatesMock.mockReset();
     getNutrientTrendMock.mockReset();
   });
 
@@ -133,6 +142,7 @@ describe('NutrientCard', () => {
 
     expect(screen.getByText('nutrition.nutrients.calcium')).toBeInTheDocument();
     expect(getNutrientTrendMock).not.toHaveBeenCalled();
+    expect(getFoodSourceCandidatesMock).not.toHaveBeenCalled();
 
     await user.click(screen.getByRole('button', { name: 'card.expand' }));
 
@@ -186,6 +196,27 @@ describe('NutrientCard', () => {
     expect(
       screen.getByText('nutrition.nutrients.betaCarotene')
     ).toBeInTheDocument();
+  });
+
+  it('loads food candidates separately from trend data', async () => {
+    const user = userEvent.setup();
+
+    renderWithClient(
+      <NutrientCard
+        card={createCard()}
+        resolvedRange="30d"
+        timezoneOffset={-420}
+      />
+    );
+
+    await user.click(screen.getByRole('button', { name: 'candidates.open' }));
+
+    await waitFor(() =>
+      expect(getFoodSourceCandidatesMock).toHaveBeenCalledWith({
+        nutrient: 'calciumMg',
+      })
+    );
+    expect(getNutrientTrendMock).not.toHaveBeenCalled();
   });
 
   it.each([

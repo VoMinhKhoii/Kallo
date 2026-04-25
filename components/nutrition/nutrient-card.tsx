@@ -10,6 +10,7 @@ import type {
   NutritionRange,
 } from '@/lib/nutrition/types';
 import { cn } from '@/lib/utils';
+import { FoodSourceCandidatesPanel } from './food-source-candidates-panel';
 import { NutrientTrend } from './nutrient-trend';
 
 const confidenceLabelKeys: Record<ConfidenceDisplayState, string> = {
@@ -192,6 +193,8 @@ export function NutrientCard({
           </div>
         ) : null}
       </div>
+
+      <FoodSourceCandidatesPanel card={card} />
     </article>
   );
 }
