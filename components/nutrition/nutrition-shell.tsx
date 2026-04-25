@@ -2,7 +2,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { useTranslations } from 'next-intl';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { getNutritionOverview } from '@/lib/nutrition/actions';
 import type { NutritionRangeInput } from '@/lib/nutrition/types';
@@ -24,6 +24,7 @@ export function NutritionShell() {
   const t = useTranslations('nutrition');
   const timezoneOffset = useMemo(() => getTimezoneOffset(), []);
   const [range, setRange] = useState<NutritionRangeInput>('auto');
+  const hasShownErrorToast = useRef(false);
 
   const overviewQuery = useQuery({
     queryKey: ['nutrition', 'overview', range, timezoneOffset ?? 'utc'],
@@ -32,12 +33,21 @@ export function NutritionShell() {
     staleTime: 60_000,
   });
   const { isError } = overviewQuery;
+  const overviewErrorMessage = t('errors.overview');
+  const overviewErrorToast = t('errors.overviewToast');
+  const overviewRetryLabel = t('errors.retry');
 
   useEffect(() => {
-    if (isError) {
-      toast.error(t('errors.overview'));
+    if (!isError) {
+      hasShownErrorToast.current = false;
+      return;
     }
-  }, [isError, t]);
+
+    if (hasShownErrorToast.current) return;
+
+    hasShownErrorToast.current = true;
+    toast.error(overviewErrorToast);
+  }, [isError, overviewErrorToast]);
 
   const resolvedRange = overviewQuery.data?.resolvedRange ?? '30d';
 
@@ -48,15 +58,18 @@ export function NutritionShell() {
       <main className="flex-1 overflow-y-auto px-5 py-4 sm:px-8">
         <InlineError
           isRetrying={overviewQuery.isFetching}
+          message={overviewErrorMessage}
           onRetry={() => {
             void overviewQuery.refetch();
           }}
+          retryLabel={overviewRetryLabel}
         />
       </main>
     );
   }
 
   const overview = overviewQuery.data;
+  const hasTooFewLoggedDays = overview.trendStatus === 'too_few_logged_days';
 
   return (
     <main className="flex-1 overflow-y-auto px-5 py-4 sm:px-8">
@@ -85,12 +98,17 @@ export function NutritionShell() {
             aria-busy={overviewQuery.isFetching}
             className="contents"
           >
-            {overview.trendStatus === 'too_few_logged_days' ? (
-              <p className="rounded-2xl border border-nham-border/60 bg-nham-hover/35 p-4 text-nham-text-muted text-sm">
+            {hasTooFewLoggedDays ? (
+              <p
+                role="status"
+                className="rounded-2xl border border-nham-border/60 bg-nham-hover/35 p-4 text-nham-text-muted text-sm"
+              >
                 {t('trends.tooFewDays')}
               </p>
             ) : null}
-            <SummaryStrip summary={overview.summary} />
+            {hasTooFewLoggedDays ? null : (
+              <SummaryStrip summary={overview.summary} />
+            )}
             <MacroPatternSection macros={overview.macros} />
             <NutrientGrid
               overview={overview}

@@ -403,6 +403,7 @@
     },
     "errors": {
       "overview": "Could not load nutrition overview. Refresh the page or try again after logging another meal.",
+      "overviewToast": "Could not load nutrition overview.",
       "retry": "Retry overview"
     },
     "empty": {

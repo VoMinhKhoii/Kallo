@@ -200,10 +200,10 @@ describe('NutritionShell', () => {
 
   afterEach(() => {
     vi.restoreAllMocks();
-    vi.clearAllMocks();
     getFoodSourceCandidatesMock.mockReset();
     getNutritionOverviewMock.mockReset();
     getNutrientTrendMock.mockReset();
+    vi.mocked(toast.error).mockClear();
   });
 
   it('loads the auto overview with a timezone-aware query key and no trend request', async () => {
@@ -311,6 +311,16 @@ describe('NutritionShell', () => {
     renderShell(queryClient);
 
     expect(await screen.findByText('trends.tooFewDays')).toBeInTheDocument();
+    expect(screen.getByRole('status')).toHaveTextContent('trends.tooFewDays');
+    expect(
+      screen.queryByText('summary.mostConsistent')
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByText('summary.needsAttention')
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByText('summary.macroConsistency')
+    ).not.toBeInTheDocument();
     expect(screen.getByText('nutrition.macros.calories')).toBeInTheDocument();
     expect(
       screen.getAllByText('nutrition.nutrients.calcium').length
@@ -358,13 +368,14 @@ describe('NutritionShell', () => {
     getNutritionOverviewMock
       .mockRejectedValueOnce(new Error('overview failed'))
       .mockResolvedValueOnce(createOverview());
+    // Query-level retry:false must override permissive app-level defaults.
     const queryClient = createQueryClient({ retry: 3, retryDelay: 0 });
 
     renderShell(queryClient);
 
     expect(await screen.findByText('errors.overview')).toBeInTheDocument();
     await waitFor(() =>
-      expect(toast.error).toHaveBeenCalledWith('errors.overview')
+      expect(toast.error).toHaveBeenCalledWith('errors.overviewToast')
     );
     expect(getNutritionOverviewMock).toHaveBeenCalledTimes(1);
 

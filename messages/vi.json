@@ -403,6 +403,7 @@
     },
     "errors": {
       "overview": "Không tải được tổng quan dinh dưỡng. Hãy làm mới trang hoặc thử lại sau khi ghi nhận thêm bữa ăn.",
+      "overviewToast": "Không tải được tổng quan dinh dưỡng.",
       "retry": "Tải lại tổng quan"
     },
     "empty": {
