@@ -154,6 +154,8 @@
       "loading": "Loading food ideas…",
       "error": "Could not load food ideas. Try again.",
       "retry": "Retry food ideas",
+      "empty": "No food ideas are available for this nutrient yet.",
+      "cautionLabel": "Note:",
       "calciumMg": {
         "tofu": {
           "name": "Calcium-set tofu",

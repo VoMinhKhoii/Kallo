@@ -147,13 +147,15 @@
       }
     },
     "candidates": {
-      "open": "Món có thể cân nhắc",
+      "open": "Xem gợi ý món",
       "close": "Ẩn gợi ý món",
       "title": "Món có thể cân nhắc",
       "description": "Đây là các món có thể cân nhắc để tăng độ đa dạng và độ phủ dữ liệu. Chúng không phải chẩn đoán, đơn ăn bắt buộc hay lời khuyên dùng thực phẩm bổ sung.",
       "loading": "Đang tải gợi ý món…",
       "error": "Không tải được gợi ý món. Hãy thử lại.",
       "retry": "Tải lại gợi ý món",
+      "empty": "Chưa có gợi ý món cho vi chất này.",
+      "cautionLabel": "Lưu ý:",
       "calciumMg": {
         "tofu": {
           "name": "Đậu phụ kết tủa canxi",

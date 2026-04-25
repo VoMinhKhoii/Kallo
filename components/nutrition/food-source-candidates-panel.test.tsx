@@ -82,6 +82,17 @@ function expectLocalizedCandidateKey(
   ).toBeGreaterThan(0);
 }
 
+function createDeferred<T>() {
+  let resolve!: (value: T) => void;
+  let reject!: (reason?: unknown) => void;
+  const promise = new Promise<T>((promiseResolve, promiseReject) => {
+    resolve = promiseResolve;
+    reject = promiseReject;
+  });
+
+  return { promise, reject, resolve };
+}
+
 describe('FoodSourceCandidatesPanel', () => {
   beforeEach(() => {
     getFoodSourceCandidatesMock.mockResolvedValue({
@@ -150,6 +161,47 @@ describe('FoodSourceCandidatesPanel', () => {
     expect(
       screen.getByRole('button', { name: 'candidates.retry' })
     ).toBeInTheDocument();
+  });
+
+  it('guards the retry button while a retry is in flight', async () => {
+    const user = userEvent.setup();
+    const retry = createDeferred<unknown>();
+    getFoodSourceCandidatesMock
+      .mockRejectedValueOnce(new Error('candidate failed'))
+      .mockReturnValueOnce(retry.promise);
+
+    renderWithClient(<FoodSourceCandidatesPanel card={createCard()} />);
+
+    await user.click(screen.getByRole('button', { name: 'candidates.open' }));
+
+    const retryButton = await screen.findByRole('button', {
+      name: 'candidates.retry',
+    });
+    await user.click(retryButton);
+
+    await waitFor(() => expect(retryButton).toBeDisabled());
+    expect(retryButton).toHaveAttribute('aria-busy', 'true');
+    expect(screen.getByText('candidates.loading')).toBeInTheDocument();
+
+    retry.resolve({
+      nutrient: 'ironMg',
+      candidates: [],
+    });
+    expect(await screen.findByText('candidates.empty')).toBeInTheDocument();
+  });
+
+  it('renders an empty state when no curated foods are returned', async () => {
+    const user = userEvent.setup();
+    getFoodSourceCandidatesMock.mockResolvedValue({
+      nutrient: 'ironMg',
+      candidates: [],
+    });
+
+    renderWithClient(<FoodSourceCandidatesPanel card={createCard()} />);
+
+    await user.click(screen.getByRole('button', { name: 'candidates.open' }));
+
+    expect(await screen.findByText('candidates.empty')).toBeInTheDocument();
   });
 
   it('is hidden for unsupported or low-confidence nutrients', () => {

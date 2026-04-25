@@ -33,6 +33,7 @@ export function FoodSourceCandidatesPanel({
   const t = useTranslations('nutrition');
   const tRoot = useTranslations();
   const [open, setOpen] = useState(false);
+  const [retrying, setRetrying] = useState(false);
   const candidateNutrient = isSupportedCandidateNutrient(card.nutrient)
     ? card.nutrient
     : null;
@@ -43,6 +44,7 @@ export function FoodSourceCandidatesPanel({
     card.percentOfTarget < 90 &&
     candidateNutrient !== null;
   const panelId = `nutrition-candidates-${card.nutrient}`;
+  const panelTitleId = `${panelId}-title`;
   const candidatesQuery = useQuery({
     queryKey: ['nutrition', 'candidates', candidateNutrient],
     queryFn: () => {
@@ -55,6 +57,12 @@ export function FoodSourceCandidatesPanel({
     enabled: open && canShowCandidates,
     staleTime: 60_000,
   });
+  const isRetrying =
+    retrying || (candidatesQuery.isError && candidatesQuery.isFetching);
+  const handleRetry = () => {
+    setRetrying(true);
+    void candidatesQuery.refetch().finally(() => setRetrying(false));
+  };
 
   if (!canShowCandidates) return null;
 
@@ -72,32 +80,45 @@ export function FoodSourceCandidatesPanel({
 
       <div id={panelId} aria-live="polite">
         {open ? (
-          <section className="mt-3 rounded-2xl border border-nham-border/60 bg-nham-hover/35 p-4">
-            <h4 className="font-semibold text-nham-text text-sm">
+          <section
+            aria-labelledby={panelTitleId}
+            className="mt-3 rounded-2xl border border-nham-border/60 bg-nham-hover/35 p-4"
+          >
+            <h4
+              id={panelTitleId}
+              className="font-semibold text-nham-text text-sm"
+            >
               {t('candidates.title')}
             </h4>
             <p className="mt-1 text-nham-text-muted text-xs leading-5">
               {t('candidates.description')}
             </p>
 
-            {candidatesQuery.isLoading ? (
-              <p className="mt-3 text-nham-text-muted text-sm">
-                {t('candidates.loading')}
-              </p>
-            ) : candidatesQuery.isError ? (
+            {candidatesQuery.isError || isRetrying ? (
               <div className="mt-3" role="alert">
                 <p className="text-nham-text-muted text-sm">
                   {t('candidates.error')}
                 </p>
+                {isRetrying ? (
+                  <p className="mt-2 text-nham-text-muted text-sm">
+                    {t('candidates.loading')}
+                  </p>
+                ) : null}
                 <button
                   type="button"
-                  onClick={() => candidatesQuery.refetch()}
-                  className="mt-2 inline-flex touch-manipulation items-center rounded-xl border border-nham-border/60 px-3 py-2 font-medium text-nham-text text-sm transition-colors hover:bg-nham-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent focus-visible:ring-offset-2 focus-visible:ring-offset-nham-surface"
+                  onClick={handleRetry}
+                  disabled={isRetrying}
+                  aria-busy={isRetrying}
+                  className="mt-2 inline-flex touch-manipulation items-center rounded-xl border border-nham-border/60 px-3 py-2 font-medium text-nham-text text-sm transition-colors hover:bg-nham-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent focus-visible:ring-offset-2 focus-visible:ring-offset-nham-surface disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {t('candidates.retry')}
                 </button>
               </div>
-            ) : candidatesQuery.data ? (
+            ) : candidatesQuery.isLoading ? (
+              <p className="mt-3 text-nham-text-muted text-sm">
+                {t('candidates.loading')}
+              </p>
+            ) : candidatesQuery.data?.candidates.length ? (
               <ul className="mt-3 divide-y divide-nham-border/60">
                 {candidatesQuery.data.candidates.map((candidate) => (
                   <li key={candidate.id} className="py-2 first:pt-0 last:pb-0">
@@ -111,13 +132,23 @@ export function FoodSourceCandidatesPanel({
                       {tRoot(candidate.rationaleKey)}
                     </p>
                     {candidate.cautionKey ? (
-                      <p className="mt-1 text-nham-text-muted text-xs leading-5">
+                      <p
+                        role="note"
+                        className="mt-2 rounded-lg bg-nham-accent/10 px-2 py-1.5 text-nham-text text-xs leading-5"
+                      >
+                        <span className="font-medium">
+                          {t('candidates.cautionLabel')}
+                        </span>{' '}
                         {tRoot(candidate.cautionKey)}
                       </p>
                     ) : null}
                   </li>
                 ))}
               </ul>
+            ) : candidatesQuery.data ? (
+              <p className="mt-3 text-nham-text-muted text-sm">
+                {t('candidates.empty')}
+              </p>
             ) : null}
           </section>
         ) : null}

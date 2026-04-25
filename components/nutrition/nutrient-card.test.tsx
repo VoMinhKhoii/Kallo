@@ -299,10 +299,15 @@ describe('NutrientCard', () => {
 
 describe('NutrientGrid', () => {
   beforeEach(() => {
+    getFoodSourceCandidatesMock.mockResolvedValue({
+      nutrient: 'calciumMg',
+      candidates: [],
+    });
     getNutrientTrendMock.mockResolvedValue(createTrend());
   });
 
   afterEach(() => {
+    getFoodSourceCandidatesMock.mockReset();
     getNutrientTrendMock.mockReset();
   });
 
