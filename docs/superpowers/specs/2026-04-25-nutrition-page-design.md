@@ -273,7 +273,7 @@ Macro consistency is calculated per logged day:
 
 | Macro | “Near target” rule |
 |-------|--------------------|
-| Calories | within `±10%` of target |
+| Calories | exactly equals the profile calorie target after rounding daily calories to the nearest kcal |
 | Protein | at least `90%` of target |
 | Carbohydrates | within `±15%` of target |
 | Fat | within `±15%` of target |
@@ -286,6 +286,8 @@ days near target for macro / logged calorie-bearing days in range
 
 The summary card shows the average of the four macro consistency percentages plus the weakest macro label.
 
+Calories intentionally have no tolerance band. They are either on target or not.
+
 ### 8.4 Micronutrient Insight Grid
 
 Each nutrient card shows:
@@ -295,10 +297,10 @@ Each nutrient card shows:
 - percent of target
 - target source
 - confidence label
-- confidence-aware visualization
+- confidence-aware visualization loaded on demand
 - short caveat when needed
 
-Visualization follows the thresholds in Section 6.
+The initial overview response shows aggregate nutrient status only. Daily trend buckets are fetched lazily when a user expands or otherwise requests the chart for a specific nutrient. Visualization follows the thresholds in Section 6 after the trend data is loaded.
 
 ### 8.5 More Nutrients
 
@@ -362,7 +364,8 @@ Responsibilities:
 - compute macro averages and consistency
 - compute micronutrient totals and confidence states
 - bucket nutrients into summary groups
-- return period metadata and display-ready nutrient card data
+- return period metadata and display-ready nutrient card aggregate data
+- do not return per-day nutrient trend arrays
 
 Input:
 
@@ -439,7 +442,6 @@ interface NutrientCardData {
     | 'limited_data'
     | 'warning_points'
     | 'insufficient_data';
-  trend: { date: string; value: number | null; confidence: number }[];
   caveatKey?: string;
   contextMetrics?: {
     key: string;
@@ -459,6 +461,42 @@ interface EducationCardData {
   id: 'vitamin_d';
   titleKey: string;
   bodyKey: string;
+}
+```
+
+#### `getNutrientTrend({ nutrient, range, timezoneOffset })`
+
+Responsibilities:
+
+- validate nutrient key
+- validate range
+- authenticate user
+- bucket one nutrient by local day for the selected range
+- return confidence-aware daily points for chart rendering
+
+Input:
+
+```ts
+{
+  nutrient: string;
+  range: '7d' | '30d' | '90d';
+  timezoneOffset: number | null;
+}
+```
+
+Output DTO shape:
+
+```ts
+interface NutrientTrend {
+  nutrient: string;
+  range: '7d' | '30d' | '90d';
+  bucketTimezone: 'local' | 'utc';
+  displayMode: 'line' | 'points' | 'insufficient_data';
+  points: {
+    date: string;
+    value: number | null;
+    confidence: number;
+  }[];
 }
 ```
 
@@ -499,6 +537,8 @@ interface FoodSourceCandidates {
 - Use TanStack Query.
 - Overview query key: `['nutrition', 'overview', range, timezoneOffset ?? 'utc']`.
 - Candidate query is lazy/enabled only when a user opens a nutrient’s candidates panel.
+- Nutrient trend query key: `['nutrition', 'trend', nutrient, resolvedRange, timezoneOffset ?? 'utc']`.
+- Nutrient trend query is lazy/enabled only when a nutrient card is expanded or otherwise requests the chart.
 - Keep calculations server-side; client components render returned display data.
 
 ---
@@ -508,6 +548,8 @@ interface FoodSourceCandidates {
 Avoid N+1 nutrient queries.
 
 The selected-period overview should use a bounded server-side aggregation over meals and meal items, then compute nutrient totals and confidence states in a single pass/pivot-style flow.
+
+`getNutritionOverview` returns aggregates only. It must not include daily trend arrays for all nutrients. Daily buckets are fetched by `getNutrientTrend` one nutrient at a time.
 
 Expected v1 row count is small:
 
@@ -601,6 +643,15 @@ Cover:
 - above-target and confidence `>= 40%` enters “Most consistent”
 - unsupported/educational nutrients do not enter score buckets
 
+### Macro Consistency Tests
+
+Cover:
+
+- calorie consistency passes when rounded daily calories exactly equal the profile calorie target
+- calorie consistency fails when rounded daily calories differ from target by one kcal
+- no calorie `±10%` tolerance is applied
+- protein, carbohydrates, and fat use their defined non-calorie thresholds
+
 ### Server Action Tests
 
 Cover:
@@ -610,6 +661,8 @@ Cover:
 - aggregation by selected range
 - no cross-user meal leakage
 - candidate nutrient validation
+- nutrient trend action validates one nutrient/range at a time
+- overview action does not return all nutrient daily trend arrays
 
 ### Component Tests
 
@@ -622,6 +675,8 @@ Cover:
 - Vitamin D education card
 - no-meals state
 - lazy candidate panel behavior
+- lazy nutrient trend loading when a card is expanded
+- hidden `moreNutrients` cards do not trigger trend queries until expanded or requested
 
 ---
 
