@@ -1,12 +1,12 @@
 import { getNutrientMeta } from '../catalog/nutrients';
 import { getNutrientType } from '../catalog/reference-targets';
-import { getConfidenceDisplayState } from './confidence';
 import type {
   NutrientCardData,
   NutrientType,
   NutritionNutrientKey,
   TargetSource,
 } from '../types';
+import { getConfidenceDisplayState } from './confidence';
 
 const TARGET_SOURCE_LABEL_KEYS: Record<TargetSource, string> = {
   vietnam_rda: 'nutrition.targetSources.vietnamRda',
