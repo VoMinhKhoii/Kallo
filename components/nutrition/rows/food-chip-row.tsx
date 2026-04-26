@@ -72,10 +72,14 @@ export function FoodChipRow({
     );
   }
 
-  if (!query.data?.candidates.length) {
+  if (query.isSuccess && !query.data.candidates.length) {
     return (
       <p className="text-nham-text-muted text-xs">{t('focus.noFoodIdeas')}</p>
     );
+  }
+
+  if (!query.data?.candidates.length) {
+    return null;
   }
 
   const chips = query.data.candidates.slice(0, limit);

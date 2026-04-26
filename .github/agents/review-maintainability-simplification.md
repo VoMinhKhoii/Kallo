@@ -134,7 +134,7 @@ Nham repository.
      traversal). Keep `vi.mock()` specifiers aligned with how the SUT
      imports its own dependencies (relative ↔ absolute mismatches break
      mocks silently). Smaller subtrees (1–2 test files) may stay
-     co-located.
+     colocated.
    - **Entry stays at the root** so external import paths
      (`@/components/<feature>/<feature>-shell`) don't change.
    - **Use `git mv`** so file history is preserved across the move.
@@ -144,9 +144,10 @@ Nham repository.
      a barrel `index.ts` over breaking imports — or escalate.
    - **Verification gate:** after moving, run `bunx tsc --noEmit`,
      `bunx @biomejs/biome@2.4.2 check .`, and `bun run test`; all three
-     must pass before the apply phase ends. If any fails, revert the moves
-     with `git restore --staged --worktree components/<feature>
-     lib/<feature>` and escalate.
+     must pass before the apply phase ends. If any fails, revert only the
+     files that were renamed in this batch (derived from the current diff,
+     no hardcoded placeholders), then escalate. Example:
+     `git --no-pager diff --name-only --diff-filter=R | xargs -r git restore --staged --worktree --`.
 
 4. Always escalate:
    - renames or reorganizations that change public/exported API expectations

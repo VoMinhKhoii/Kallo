@@ -10,7 +10,7 @@ interface NutrientDataCoverageItem {
   nutrientValue: number | null | undefined;
 }
 
-interface ConfidenceMetadataInput extends NutrientConfidenceInput {}
+type ConfidenceMetadataInput = NutrientConfidenceInput;
 
 export function getNutrientConfidence({
   totalCalories,

@@ -49,13 +49,16 @@ export function getPercentOfTarget(
 export function getNutrientStatus(
   percentOfTarget: number | null,
   confidence: number,
-  // nutrientType is currently informational here; callers explicitly opt in so
-  // downstream consumers (UI, summary buckets) can interpret 'above_target'
-  // correctly per nutrient direction (floor/ceiling/range).
-  _nutrientType: NutrientType = 'floor'
+  nutrientType: NutrientType = 'floor'
 ): 'below_target' | 'adequate' | 'above_target' | 'limited_data' {
   if (confidence < 40 || percentOfTarget === null) {
     return 'limited_data';
+  }
+
+  if (nutrientType === 'ceiling') {
+    // Ceiling nutrients (e.g. sodium): low intake is fine; only exceeding
+    // the cap is a concern. There is no `below_target` state for ceilings.
+    return percentOfTarget > 110 ? 'above_target' : 'adequate';
   }
 
   if (percentOfTarget < 90) {

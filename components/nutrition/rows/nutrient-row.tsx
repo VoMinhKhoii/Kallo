@@ -1,7 +1,7 @@
 'use client';
 
 import { ChevronRight } from 'lucide-react';
-import { AnimatePresence, motion } from 'motion/react';
+import { motion } from 'motion/react';
 import { useTranslations } from 'next-intl';
 import { useId, useState } from 'react';
 import type { NutrientCardData } from '@/lib/nutrition/types';
@@ -122,22 +122,22 @@ export function NutrientRow({ card }: NutrientRowProps) {
         </motion.span>
       </button>
 
-      <AnimatePresence initial={false}>
-        {open ? (
-          <motion.div
-            id={detailId}
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
-            className="overflow-hidden"
-          >
-            <div className="px-4 pb-4 sm:px-5">
-              <NutrientDetail card={card} />
-            </div>
-          </motion.div>
-        ) : null}
-      </AnimatePresence>
+      <motion.div
+        id={detailId}
+        role="region"
+        aria-labelledby={labelId}
+        aria-hidden={!open}
+        initial={false}
+        animate={
+          open ? { height: 'auto', opacity: 1 } : { height: 0, opacity: 0 }
+        }
+        transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+        className="overflow-hidden"
+      >
+        <div inert={!open} className="px-4 pb-4 sm:px-5">
+          <NutrientDetail card={card} />
+        </div>
+      </motion.div>
     </li>
   );
 }

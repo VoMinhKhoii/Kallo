@@ -395,6 +395,8 @@ interface NutritionOverview {
   };
   macros: MacroPattern[];
   micronutrients: NutrientCardData[];
+  spotlight: NutrientCardData[];
+  steady: NutrientCardData[];
   moreNutrients: NutrientCardData[];
   educationCards: EducationCardData[];
 }
@@ -431,9 +433,11 @@ interface NutrientCardData {
   nutrient: string;
   labelKey: string;
   group: 'mineral' | 'vitamin' | 'other';
+  nutrientType: 'floor' | 'ceiling' | 'range';
   averagePerDay: number | null;
   target: number | null;
-  targetSource: 'vietnam_rda' | 'who_fao' | 'unsupported';
+  targetSource: 'vietnam_rda' | 'who_fao' | 'nasem' | 'unsupported';
+  targetSourceLabelKey: string;
   unit: string;
   percentOfTarget: number | null;
   confidence: number;
@@ -461,42 +465,6 @@ interface EducationCardData {
   id: 'vitamin_d';
   titleKey: string;
   bodyKey: string;
-}
-```
-
-#### `getNutrientTrend({ nutrient, range, timezoneOffset })`
-
-Responsibilities:
-
-- validate nutrient key
-- validate range
-- authenticate user
-- bucket one nutrient by local day for the selected range
-- return confidence-aware daily points for chart rendering
-
-Input:
-
-```ts
-{
-  nutrient: string;
-  range: '7d' | '30d' | '90d';
-  timezoneOffset: number | null;
-}
-```
-
-Output DTO shape:
-
-```ts
-interface NutrientTrend {
-  nutrient: string;
-  range: '7d' | '30d' | '90d';
-  bucketTimezone: 'local' | 'utc';
-  displayMode: 'line' | 'points' | 'insufficient_data';
-  points: {
-    date: string;
-    value: number | null;
-    confidence: number;
-  }[];
 }
 ```
 
@@ -536,9 +504,7 @@ interface FoodSourceCandidates {
 
 - Use TanStack Query.
 - Overview query key: `['nutrition', 'overview', range, timezoneOffset ?? 'utc']`.
-- Candidate query is lazy/enabled only when a user opens a nutrient’s candidates panel.
-- Nutrient trend query key: `['nutrition', 'trend', nutrient, resolvedRange, timezoneOffset ?? 'utc']`.
-- Nutrient trend query is lazy/enabled only when a nutrient card is expanded or otherwise requests the chart.
+- Candidate query is lazy/enabled only when a user opens a nutrient's candidates panel.
 - Keep calculations server-side; client components render returned display data.
 
 ---
@@ -549,7 +515,7 @@ Avoid N+1 nutrient queries.
 
 The selected-period overview should use a bounded server-side aggregation over meals and meal items, then compute nutrient totals and confidence states in a single pass/pivot-style flow.
 
-`getNutritionOverview` returns aggregates only. It must not include daily trend arrays for all nutrients. Daily buckets are fetched by `getNutrientTrend` one nutrient at a time.
+`getNutritionOverview` returns aggregates only. It must not include daily trend arrays for all nutrients; daily-level trend rendering is intentionally out of scope for v1 (replaced by the candidates stack).
 
 Expected v1 row count is small:
 
