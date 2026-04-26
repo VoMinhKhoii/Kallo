@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  encodeDatabaseUrl,
   extractProjectRefFromDatabaseUrl,
   parseSharedDbStateOutput,
   validateProjectRefAlignment,
@@ -29,6 +30,16 @@ describe('shared-db helpers', () => {
         'postgresql://postgres:%23weird?p@ss@db.abcd1234.supabase.co:5432/postgres'
       )
     ).toBe('abcd1234');
+  });
+
+  it('encodes reserved characters in the password portion of the URL', () => {
+    expect(
+      encodeDatabaseUrl(
+        'postgresql://postgres:p@ss:word?x#y@db.abcd1234.supabase.co:5432/postgres'
+      )
+    ).toBe(
+      'postgresql://postgres:p%40ss%3Aword%3Fx%23y@db.abcd1234.supabase.co:5432/postgres'
+    );
   });
 
   it('returns null when the project ref cannot be derived', () => {

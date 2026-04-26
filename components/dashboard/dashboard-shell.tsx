@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
 import { loadCalorieAdherenceHeatmap } from '@/lib/actions/dashboard';
 import { buildCalorieAdherenceHeatmap } from '@/lib/dashboard/adherence';
+import { useWeightSummary } from '@/hooks/use-weight-summary';
 import { cn } from '@/lib/utils';
 import { CurrentSection } from './current/current-section';
 import {
@@ -12,8 +13,6 @@ import {
   getNutritionData,
   getStatsData,
   getVerdictData,
-  getWeightChartMeta,
-  getWeightData,
 } from './mock-data';
 import { AdherenceHeatmap } from './progress/adherence-heatmap';
 import { ProgressSection } from './progress/progress-section';
@@ -54,6 +53,7 @@ export function DashboardShell() {
       }),
     [timeRange, timezoneOffset]
   );
+  const { data: weightSummary } = useWeightSummary(timeRange);
 
   const { data: verdict } = useQuery({
     queryKey: ['dashboard', 'verdict'],
@@ -69,19 +69,12 @@ export function DashboardShell() {
     staleTime: Number.POSITIVE_INFINITY,
   });
 
-  const { data: weightData } = useQuery({
-    queryKey: ['dashboard', 'weightData', timeRange],
-    queryFn: () => getWeightData(timeRange),
-    initialData: () => getWeightData(timeRange),
-    staleTime: Number.POSITIVE_INFINITY,
-  });
-
-  const { data: weightChartMeta } = useQuery({
-    queryKey: ['dashboard', 'weightChartMeta', timeRange],
-    queryFn: () => getWeightChartMeta(timeRange),
-    initialData: () => getWeightChartMeta(timeRange),
-    staleTime: Number.POSITIVE_INFINITY,
-  });
+  const weightData = weightSummary?.weights ?? [];
+  const periodStartWeight =
+    weightSummary?.periodStartWeight ?? weightSummary?.currentWeight ?? 65;
+  const expectedEndWeight =
+    weightSummary?.expectedEndWeight ?? periodStartWeight;
+  const goalDirection = weightSummary?.goalDirection ?? 'flat';
 
   const { data: heatmapData } = useQuery({
     queryKey: ['dashboard', 'heatmapData', timeRange, timezoneOffset],
@@ -125,6 +118,7 @@ export function DashboardShell() {
             verdict={verdict}
             stats={stats}
             nutrition={nutrition}
+            weightSummary={weightSummary}
           />
         </section>
 
