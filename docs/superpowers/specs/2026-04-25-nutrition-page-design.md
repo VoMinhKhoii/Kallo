@@ -271,9 +271,9 @@ Do not use dashboard-style daily bar charts here. Daily progress belongs on `/da
 
 Macro consistency is calculated per logged day:
 
-| Macro | “Near target” rule |
+| Macro | "Near target" rule |
 |-------|--------------------|
-| Calories | exactly equals the profile calorie target after rounding daily calories to the nearest kcal |
+| Calories | goal-aware. After rounding daily calories to the nearest kcal: `cutting` profiles count days `≤ target`; `bulking` profiles count days `≥ target`; `maintaining` profiles count days exactly equal to the rounded target. |
 | Protein | at least `90%` of target |
 | Carbohydrates | within `±15%` of target |
 | Fat | within `±15%` of target |
@@ -286,7 +286,7 @@ days near target for macro / logged calorie-bearing days in range
 
 The summary card shows the average of the four macro consistency percentages plus the weakest macro label.
 
-Calories intentionally have no tolerance band. They are either on target or not.
+Calorie consistency is a one-sided check by design: a maintainer who is consistently 200 kcal under target is *not* on plan; a cutter who is consistently 200 kcal under target *is*. Goal comes from `user_profiles.goal` and falls back to `maintaining` when null.
 
 ### 8.4 Micronutrient Insight Grid
 

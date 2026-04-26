@@ -214,12 +214,10 @@ function MacroRow({
   const showExceed = shouldShowExceed(macro.nutrientType, pctOfTarget);
 
   let figure: string;
-  if (macro.target === null) {
+  if (macro.target === null || macro.target <= 0) {
     figure = `${formatLocalizedNumber(macro.averagePerDay, locale)} ${macro.unit}`;
   } else {
-    const pct = Math.round(
-      (macro.averagePerDay / Math.max(macro.target, 0.0001)) * 100
-    );
+    const pct = Math.round((macro.averagePerDay / macro.target) * 100);
     figure = showExceed && pct > 100 ? `+${pct - 100}%` : `${pct}%`;
   }
 

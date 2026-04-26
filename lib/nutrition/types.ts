@@ -42,6 +42,7 @@ export type NutritionNutrientKey =
   | 'vitaminHMcg';
 
 export type MacroKey = 'calories' | 'protein' | 'carbohydrate' | 'fat';
+export type MacroGoal = 'cutting' | 'bulking' | 'maintaining';
 
 export interface NutrientMeta {
   key: NutritionNutrientKey;

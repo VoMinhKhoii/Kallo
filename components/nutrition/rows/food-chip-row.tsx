@@ -67,7 +67,7 @@ export function FoodChipRow({
     );
     return (
       <p className="text-nham-text-muted text-xs">
-        {t('focus.candidatesError')}
+        {t('errors.candidatesError')}
       </p>
     );
   }

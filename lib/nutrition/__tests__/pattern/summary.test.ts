@@ -107,24 +107,47 @@ describe('nutrition summary helpers', () => {
     });
   });
 
-  it('uses a ±10% band for calorie consistency', () => {
-    // ±10% of 2000 = [1800, 2200]; values within band count as on-target.
+  it('calorie consistency is goal-aware: maintaining requires exact equality after rounding', () => {
+    // 2000.4 and 1999.6 both round to 2000; 1800 and 2200 don't.
     expect(
       getMacroConsistency({
         macro: 'calories',
         target: 2000,
         values: [2000.4, 1999.6, 1800, 2200],
+        goal: 'maintaining',
       })
-    ).toBe(100);
+    ).toBe(50);
 
-    // 1799 just outside band, 2201 just outside band, 2000 inside.
+    // No goal supplied → default to maintaining (spec §8.3 fallback).
     expect(
       getMacroConsistency({
         macro: 'calories',
         target: 2000,
-        values: [1799, 2201, 2000],
+        values: [2000, 1999, 2001],
       })
     ).toBe(33);
+  });
+
+  it('calorie consistency is goal-aware: cutting counts days at or under target', () => {
+    expect(
+      getMacroConsistency({
+        macro: 'calories',
+        target: 2000,
+        values: [1500, 1999, 2000, 2001, 2500],
+        goal: 'cutting',
+      })
+    ).toBe(60);
+  });
+
+  it('calorie consistency is goal-aware: bulking counts days at or over target', () => {
+    expect(
+      getMacroConsistency({
+        macro: 'calories',
+        target: 2000,
+        values: [1500, 1999, 2000, 2001, 2500],
+        goal: 'bulking',
+      })
+    ).toBe(60);
   });
 
   it('uses macro-specific thresholds for non-calorie consistency', () => {

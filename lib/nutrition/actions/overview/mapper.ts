@@ -26,6 +26,7 @@ import {
   getTrendStatus,
 } from '../../pattern/summary';
 import type {
+  MacroGoal,
   MacroKey,
   MacroPattern,
   NutrientCardData,
@@ -182,9 +183,15 @@ function buildMacroPatterns(
             macro: input.key,
             target: input.target,
             values: groupDailyValues(rows, input.rowKey),
+            goal: resolveMacroGoal(profile.goal),
           }),
     nutrientType: input.key === 'calories' ? 'range' : 'floor',
   }));
+}
+
+function resolveMacroGoal(rawGoal: string | null): MacroGoal {
+  if (rawGoal === 'cutting' || rawGoal === 'bulking') return rawGoal;
+  return 'maintaining';
 }
 
 function getSodiumSourceStats(

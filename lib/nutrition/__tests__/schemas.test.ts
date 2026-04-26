@@ -61,15 +61,3 @@ describe('timezone offset schema', () => {
     expect(timezoneOffsetSchema.safeParse(721).success).toBe(false);
   });
 });
-
-describe('timezone offset schema', () => {
-  it('accepts documented min and max bounds', () => {
-    expect(timezoneOffsetSchema.parse(-840)).toBe(-840);
-    expect(timezoneOffsetSchema.parse(720)).toBe(720);
-  });
-
-  it('rejects values outside the supported bounds', () => {
-    expect(timezoneOffsetSchema.safeParse(-841).success).toBe(false);
-    expect(timezoneOffsetSchema.safeParse(721).success).toBe(false);
-  });
-});

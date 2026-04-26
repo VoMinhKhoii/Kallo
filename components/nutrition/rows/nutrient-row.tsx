@@ -62,9 +62,11 @@ export function NutrientRow({ card }: NutrientRowProps) {
   const isLimited =
     card.displayState === 'limited_data' ||
     card.displayState === 'insufficient_data';
-  const dotColor = isLimited
-    ? 'var(--nham-stone)'
-    : STATUS_COLORS[statusKeyFor(card)];
+  const hasNoTarget = card.percentOfTarget === null;
+  const dotColor =
+    isLimited || hasNoTarget
+      ? 'var(--nham-stone)'
+      : STATUS_COLORS[statusKeyFor(card)];
 
   const showExceed = shouldShowExceed(card.nutrientType, card.percentOfTarget);
 

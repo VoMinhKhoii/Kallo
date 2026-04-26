@@ -1,5 +1,6 @@
 import type {
   MacroConsistencySummary,
+  MacroGoal,
   MacroKey,
   NutrientSummaryItem,
   NutritionRange,
@@ -9,6 +10,15 @@ interface MacroConsistencyInput {
   macro: MacroKey;
   target: number | null;
   values: number[];
+  /**
+   * Goal-aware calorie consistency:
+   * - `cutting`   → daily calories ≤ target counts as on-target
+   * - `bulking`   → daily calories ≥ target counts as on-target
+   * - `maintaining` (default) → exact equality after rounding to nearest kcal
+   *
+   * Non-calorie macros ignore `goal`; their thresholds come from the design spec.
+   */
+  goal?: MacroGoal | null;
 }
 
 const MINIMUM_LOGGED_DAYS: Record<NutritionRange, number> = {
@@ -18,8 +28,6 @@ const MINIMUM_LOGGED_DAYS: Record<NutritionRange, number> = {
 };
 
 const PERCENT_EPSILON = 1e-9;
-const CALORIE_BAND_LOW = 0.9;
-const CALORIE_BAND_HIGH = 1.1;
 
 interface NutrientBuckets {
   mostConsistent: NutrientSummaryItem[];
@@ -44,16 +52,19 @@ function isMacroMatch({
   macro,
   target,
   value,
+  goal,
 }: {
   macro: MacroKey;
   target: number;
   value: number;
+  goal: MacroGoal;
 }): boolean {
   if (macro === 'calories') {
-    return (
-      value >= CALORIE_BAND_LOW * target - PERCENT_EPSILON &&
-      value <= CALORIE_BAND_HIGH * target + PERCENT_EPSILON
-    );
+    const roundedValue = Math.round(value);
+    const roundedTarget = Math.round(target);
+    if (goal === 'cutting') return roundedValue <= roundedTarget;
+    if (goal === 'bulking') return roundedValue >= roundedTarget;
+    return roundedValue === roundedTarget;
   }
 
   const percentOfTarget = value / target;
@@ -72,13 +83,17 @@ export function getMacroConsistency({
   macro,
   target,
   values,
+  goal,
 }: MacroConsistencyInput): number | null {
-  if (target === null || values.length === 0) {
+  // Reject non-positive targets too: division-by-zero would produce
+  // Infinity/NaN downstream and inflate consistency for protein.
+  if (target === null || target <= 0 || values.length === 0) {
     return null;
   }
 
+  const resolvedGoal: MacroGoal = goal ?? 'maintaining';
   const matches = values.filter((value) =>
-    isMacroMatch({ macro, target, value })
+    isMacroMatch({ macro, target, value, goal: resolvedGoal })
   ).length;
 
   return Math.round((matches / values.length) * 100);

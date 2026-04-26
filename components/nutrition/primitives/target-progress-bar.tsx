@@ -31,7 +31,9 @@ export function TargetProgressBar({
 }: TargetProgressBarProps) {
   const hasValue = percentOfTarget !== null;
   const fillWidth = hasValue ? Math.min(100, Math.max(0, percentOfTarget)) : 0;
-  const valueNow = hasValue ? Math.round(percentOfTarget) : undefined;
+  // aria-valuenow must respect aria-valuemax (=100). The precise overshoot
+  // percentage (e.g. "+87% over") is conveyed via ariaLabel + the figure text.
+  const valueNow = hasValue ? Math.round(fillWidth) : undefined;
 
   return (
     <div

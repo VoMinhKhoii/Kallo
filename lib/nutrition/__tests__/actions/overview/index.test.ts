@@ -35,6 +35,7 @@ const baseProfile = {
   proteinTargetG: 100,
   carbsTargetG: 200,
   fatTargetG: 70,
+  goal: 'maintaining',
 } as typeof userProfiles.$inferSelect;
 
 function row(overrides: Partial<OverviewMealItemRow>): OverviewMealItemRow {
@@ -76,7 +77,7 @@ function row(overrides: Partial<OverviewMealItemRow>): OverviewMealItemRow {
 const threeDayRows = [
   row({
     localDate: '2026-04-23',
-    calories: 1999,
+    calories: 2000,
     proteinG: 90,
     carbohydrateG: 170,
     fatG: 59.5,
@@ -94,7 +95,7 @@ const threeDayRows = [
   }),
   row({
     localDate: '2026-04-25',
-    calories: 2001,
+    calories: 2000,
     proteinG: 100,
     carbohydrateG: 169,
     fatG: 81,
