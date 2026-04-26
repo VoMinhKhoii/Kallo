@@ -1,7 +1,7 @@
 export type NutritionRange = '7d' | '30d' | '90d';
 export type NutritionRangeInput = 'auto' | NutritionRange;
 export type BucketTimezone = 'local' | 'utc';
-export type TargetSource = 'vietnam_rda' | 'who_fao' | 'unsupported';
+export type TargetSource = 'vietnam_rda' | 'who_fao' | 'nasem' | 'unsupported';
 export type NutrientGroup = 'mineral' | 'vitamin' | 'other';
 export type ConfidenceDisplayState =
   | 'normal'
@@ -13,6 +13,7 @@ export type NutritionStatus =
   | 'adequate'
   | 'above_target'
   | 'limited_data';
+export type NutrientType = 'floor' | 'ceiling' | 'range';
 
 export type NutritionNutrientKey =
   | 'fiberG'
@@ -59,6 +60,7 @@ export interface NutrientSummaryItem {
   confidence: number;
   status: NutritionStatus;
   applicability?: 'scored' | 'educational' | 'hidden' | 'unsupported';
+  nutrientType: NutrientType;
 }
 
 export interface MacroConsistencySummary {
@@ -73,6 +75,7 @@ export interface MacroPattern {
   target: number | null;
   unit: string;
   consistencyPct: number | null;
+  nutrientType: NutrientType;
 }
 
 export interface NutrientCardData {
@@ -87,6 +90,7 @@ export interface NutrientCardData {
   percentOfTarget: number | null;
   confidence: number;
   displayState: ConfidenceDisplayState;
+  nutrientType: NutrientType;
   caveatKey?: string;
   contextMetrics?: {
     key: NutritionNutrientKey;
@@ -124,18 +128,10 @@ export interface NutritionOverview {
   };
   macros: MacroPattern[];
   micronutrients: NutrientCardData[];
+  /** Subset of `micronutrients` chosen for headline focus (max 2). */
+  spotlight: NutrientCardData[];
+  /** `micronutrients` minus `spotlight`. */
+  steady: NutrientCardData[];
   moreNutrients: NutrientCardData[];
   educationCards: EducationCardData[];
-}
-
-export interface NutrientTrend {
-  nutrient: NutritionNutrientKey;
-  range: NutritionRange;
-  bucketTimezone: BucketTimezone;
-  displayMode: 'line' | 'points' | 'insufficient_data';
-  points: {
-    date: string;
-    value: number | null;
-    confidence: number;
-  }[];
 }

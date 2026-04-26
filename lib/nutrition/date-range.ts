@@ -1,3 +1,6 @@
+import type { SQL, SQLWrapper } from 'drizzle-orm';
+import { sql } from 'drizzle-orm';
+
 import type { BucketTimezone, NutritionRange } from './types';
 
 const RANGE_DAYS: Record<NutritionRange, number> = {
@@ -46,15 +49,15 @@ export function getNutritionPeriod({
 }
 
 export function localDateSqlExpression(
-  columnSql: string,
+  column: SQL | SQLWrapper,
   timezoneOffset: number | null
-): string {
-  const utcTimestampSql = `(${columnSql} AT TIME ZONE 'UTC')`;
-
+): SQL<string> {
   if (timezoneOffset === null) {
-    return `${utcTimestampSql}::date`;
+    return sql<string>`((${column}) AT TIME ZONE 'UTC')::date`;
   }
 
+  // Postgres interval string built from a numeric literal — safe from
+  // injection because timezoneOffset is a JS number.
   const offsetMinutes = -timezoneOffset;
-  return `(${utcTimestampSql} + (${offsetMinutes} || ' minutes')::interval)::date`;
+  return sql<string>`(((${column}) AT TIME ZONE 'UTC') + (${sql.raw(`'${offsetMinutes} minutes'`)})::interval)::date`;
 }

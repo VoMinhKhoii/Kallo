@@ -18,6 +18,8 @@ const MINIMUM_LOGGED_DAYS: Record<NutritionRange, number> = {
 };
 
 const PERCENT_EPSILON = 1e-9;
+const CALORIE_BAND_LOW = 0.9;
+const CALORIE_BAND_HIGH = 1.1;
 
 interface NutrientBuckets {
   mostConsistent: NutrientSummaryItem[];
@@ -48,7 +50,10 @@ function isMacroMatch({
   value: number;
 }): boolean {
   if (macro === 'calories') {
-    return Math.round(value) === target;
+    return (
+      value >= CALORIE_BAND_LOW * target - PERCENT_EPSILON &&
+      value <= CALORIE_BAND_HIGH * target + PERCENT_EPSILON
+    );
   }
 
   const percentOfTarget = value / target;
@@ -128,7 +133,16 @@ export function bucketNutrients(items: NutrientSummaryItem[]): NutrientBuckets {
       continue;
     }
 
-    if (item.status === 'adequate' || item.status === 'above_target') {
+    if (item.status === 'adequate') {
+      buckets.mostConsistent.push(item);
+      continue;
+    }
+
+    if (item.status === 'above_target' && item.nutrientType === 'floor') {
+      // For floor nutrients (e.g. calcium), exceeding the RDA is fine and
+      // should still count as consistent. For ceiling/range nutrients
+      // (e.g. sodium), exceeding the cap should NOT be celebrated, so we
+      // omit them from `mostConsistent`.
       buckets.mostConsistent.push(item);
     }
   }

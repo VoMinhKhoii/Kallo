@@ -1,3 +1,5 @@
+import { sql } from 'drizzle-orm';
+import { PgDialect } from 'drizzle-orm/pg-core';
 import { describe, expect, it } from 'vitest';
 import { getNutritionPeriod, localDateSqlExpression } from './date-range';
 
@@ -46,15 +48,19 @@ describe('getNutritionPeriod', () => {
 });
 
 describe('localDateSqlExpression', () => {
+  const dialect = new PgDialect();
+
   it('returns a UTC-normalized shifted SQL date expression for local buckets', () => {
-    expect(localDateSqlExpression('logged_at', -420)).toBe(
-      "((logged_at AT TIME ZONE 'UTC') + (420 || ' minutes')::interval)::date"
+    const expr = localDateSqlExpression(sql.raw('logged_at'), -420);
+    expect(dialect.sqlToQuery(expr).sql).toBe(
+      "(((logged_at) AT TIME ZONE 'UTC') + ('420 minutes')::interval)::date"
     );
   });
 
   it('returns a UTC-normalized cast when timezone offset is null', () => {
-    expect(localDateSqlExpression('logged_at', null)).toBe(
-      "(logged_at AT TIME ZONE 'UTC')::date"
+    const expr = localDateSqlExpression(sql.raw('logged_at'), null);
+    expect(dialect.sqlToQuery(expr).sql).toBe(
+      "((logged_at) AT TIME ZONE 'UTC')::date"
     );
   });
 });

@@ -31,17 +31,20 @@ describe('resolveMicronutrientTargets', () => {
     expect(Object.keys(targets).sort()).toEqual(
       Object.keys(NUTRIENT_META).sort()
     );
+    // Sodium is now a scored ceiling target for VN users (DG <2000 mg).
     expect(targets.sodiumMg).toMatchObject({
-      value: null,
-      source: 'unsupported',
-      sourceLabelKey: 'nutrition.targetSources.unsupported',
-      applicability: 'unsupported',
+      value: 2000,
+      unit: 'mg',
+      source: 'vietnam_rda',
+      applicability: 'scored',
+      nutrientType: 'ceiling',
     });
+    // Magnesium VN RDA, adult male 20–29 yr.
     expect(targets.magnesiumMg).toMatchObject({
-      value: null,
-      source: 'unsupported',
-      sourceLabelKey: 'nutrition.targetSources.unsupported',
-      applicability: 'unsupported',
+      value: 340,
+      unit: 'mg',
+      source: 'vietnam_rda',
+      applicability: 'scored',
     });
   });
 
@@ -60,6 +63,18 @@ describe('resolveMicronutrientTargets', () => {
         'nutrition.targetSources.vietnamRda'
       );
       expect(vietnamTargets[nutrient].value).toBeGreaterThan(0);
+
+      // WHO/FAO 2004 does not publish a phosphorus RNI, so non-VN users
+      // fall back to NASEM/IOM 1997 (700 mg) instead of being unsupported.
+      if (nutrient === 'phosphorusMg') {
+        expect(whoTargets[nutrient].applicability).toBe('scored');
+        expect(whoTargets[nutrient].source).toBe('nasem');
+        expect(whoTargets[nutrient].sourceLabelKey).toBe(
+          'nutrition.targetSources.nasem'
+        );
+        expect(whoTargets[nutrient].value).toBeGreaterThan(0);
+        continue;
+      }
 
       expect(whoTargets[nutrient].applicability).toBe('scored');
       expect(whoTargets[nutrient].source).toBe('who_fao');
@@ -171,17 +186,162 @@ describe('resolveMicronutrientTargets', () => {
   it('marks unsupported nutrients instead of inventing targets', () => {
     const targets = resolveMicronutrientTargets(baseProfile);
 
+    // Vitamin D now has a real scored target (15 µg for adults 19–49)
+    // even though the editorial pull-quote also stays in educationCards.
     expect(targets.vitaminDMcg).toMatchObject({
-      value: null,
-      source: 'unsupported',
-      sourceLabelKey: 'nutrition.targetSources.unsupported',
-      applicability: 'educational',
+      value: 15,
+      unit: 'mcg',
+      source: 'vietnam_rda',
+      applicability: 'scored',
     });
     expect(targets.vitaminHMcg).toMatchObject({
       value: null,
       source: 'unsupported',
       sourceLabelKey: 'nutrition.targetSources.unsupported',
       applicability: 'hidden',
+    });
+  });
+
+  describe('expanded micronutrient coverage', () => {
+    const vnMaleAdult = baseProfile;
+    const vnFemaleAdult = {
+      ...baseProfile,
+      biologicalSex: 'female' as const,
+      age: 30,
+    };
+    const usMaleAdult = {
+      ...baseProfile,
+      countryOfOrigin: 'US',
+      countryOfResidence: 'US',
+    };
+    const usFemaleAdult = {
+      ...usMaleAdult,
+      biologicalSex: 'female' as const,
+    };
+
+    it('encodes VN MoH 2016 values for every newly scored nutrient', () => {
+      const m = resolveMicronutrientTargets(vnMaleAdult);
+      const f = resolveMicronutrientTargets(vnFemaleAdult);
+
+      expect(m.zincMg).toMatchObject({ value: 10, unit: 'mg' });
+      expect(f.zincMg).toMatchObject({ value: 8 });
+      expect(m.magnesiumMg).toMatchObject({ value: 340 });
+      expect(f.magnesiumMg).toMatchObject({ value: 270 });
+      expect(m.potassiumMg).toMatchObject({ value: 2500 });
+      expect(f.potassiumMg).toMatchObject({ value: 2000 });
+      expect(m.sodiumMg).toMatchObject({
+        value: 2000,
+        nutrientType: 'ceiling',
+      });
+      expect(m.copperMcg).toMatchObject({ value: 900, unit: 'mcg' });
+      expect(m.manganeseMg).toMatchObject({ value: 2.3 });
+      expect(f.manganeseMg).toMatchObject({ value: 1.8 });
+      expect(m.vitaminEMg).toMatchObject({ value: 6.5 });
+      expect(f.vitaminEMg).toMatchObject({ value: 6.0 });
+      expect(m.vitaminKMcg).toMatchObject({ value: 150 });
+      expect(m.vitaminB5Mg).toMatchObject({ value: 5 });
+      expect(m.vitaminB9Mcg).toMatchObject({ value: 400 });
+      expect(m.vitaminB12Mcg).toMatchObject({ value: 2.4 });
+
+      for (const targets of [m, f]) {
+        for (const [key, target] of Object.entries(targets)) {
+          if (
+            target.applicability === 'scored' &&
+            target.source !== 'vietnam_rda'
+          ) {
+            throw new Error(
+              `VN context returned non-VN source for ${key}: ${target.source}`
+            );
+          }
+        }
+      }
+    });
+
+    it('encodes WHO/FAO 2004 values for non-VN users', () => {
+      const m = resolveMicronutrientTargets(usMaleAdult);
+      const f = resolveMicronutrientTargets(usFemaleAdult);
+
+      expect(m.magnesiumMg).toMatchObject({
+        value: 260,
+        source: 'who_fao',
+      });
+      expect(f.magnesiumMg).toMatchObject({ value: 220, source: 'who_fao' });
+      expect(m.zincMg).toMatchObject({ value: 7.0, source: 'who_fao' });
+      expect(f.zincMg).toMatchObject({ value: 4.9, source: 'who_fao' });
+      expect(m.vitaminEMg).toMatchObject({ value: 10, source: 'who_fao' });
+      expect(f.vitaminEMg).toMatchObject({ value: 7.5, source: 'who_fao' });
+      expect(m.vitaminKMcg).toMatchObject({ value: 65, source: 'who_fao' });
+      expect(f.vitaminKMcg).toMatchObject({ value: 55, source: 'who_fao' });
+      expect(m.vitaminB5Mg).toMatchObject({ value: 5, source: 'who_fao' });
+      expect(m.vitaminB9Mcg).toMatchObject({
+        value: 400,
+        source: 'who_fao',
+      });
+      expect(m.vitaminB12Mcg).toMatchObject({
+        value: 2.4,
+        source: 'who_fao',
+      });
+    });
+
+    it('falls back to NASEM/IOM for nutrients WHO/FAO does not publish', () => {
+      const m = resolveMicronutrientTargets(usMaleAdult);
+      const f = resolveMicronutrientTargets(usFemaleAdult);
+
+      expect(m.copperMcg).toMatchObject({
+        value: 900,
+        source: 'nasem',
+        sourceLabelKey: 'nutrition.targetSources.nasem',
+      });
+      expect(m.manganeseMg).toMatchObject({ value: 2.3, source: 'nasem' });
+      expect(f.manganeseMg).toMatchObject({ value: 1.8, source: 'nasem' });
+      expect(m.phosphorusMg).toMatchObject({ value: 700, source: 'nasem' });
+      expect(m.potassiumMg).toMatchObject({ value: 3400, source: 'nasem' });
+      expect(f.potassiumMg).toMatchObject({ value: 2600, source: 'nasem' });
+      expect(m.sodiumMg).toMatchObject({
+        value: 2300,
+        source: 'nasem',
+        nutrientType: 'ceiling',
+      });
+    });
+
+    it('applies VN vitamin D age split (≥50 → 20 µg)', () => {
+      const young = resolveMicronutrientTargets({ ...baseProfile, age: 30 });
+      const older = resolveMicronutrientTargets({ ...baseProfile, age: 60 });
+      expect(young.vitaminDMcg).toMatchObject({ value: 15 });
+      expect(older.vitaminDMcg).toMatchObject({ value: 20 });
+    });
+
+    it('applies WHO/FAO vitamin D age bands (5/10/15)', () => {
+      const young = resolveMicronutrientTargets({ ...usMaleAdult, age: 30 });
+      const mid = resolveMicronutrientTargets({ ...usMaleAdult, age: 55 });
+      const old = resolveMicronutrientTargets({ ...usMaleAdult, age: 70 });
+      expect(young.vitaminDMcg).toMatchObject({
+        value: 5,
+        source: 'who_fao',
+      });
+      expect(mid.vitaminDMcg).toMatchObject({ value: 10, source: 'who_fao' });
+      expect(old.vitaminDMcg).toMatchObject({ value: 15, source: 'who_fao' });
+    });
+
+    it('applies B6 age split at 50 (1.3 → 1.7 M / 1.5 F)', () => {
+      const young = resolveMicronutrientTargets({
+        ...baseProfile,
+        biologicalSex: 'female',
+        age: 30,
+      });
+      const older = resolveMicronutrientTargets({
+        ...baseProfile,
+        biologicalSex: 'female',
+        age: 55,
+      });
+      const olderMale = resolveMicronutrientTargets({
+        ...baseProfile,
+        biologicalSex: 'male',
+        age: 55,
+      });
+      expect(young.vitaminB6Mg).toMatchObject({ value: 1.3 });
+      expect(older.vitaminB6Mg).toMatchObject({ value: 1.5 });
+      expect(olderMale.vitaminB6Mg).toMatchObject({ value: 1.7 });
     });
   });
 });

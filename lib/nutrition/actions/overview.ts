@@ -10,7 +10,7 @@ import { countLoggedDaysLast30, fetchOverviewRows } from './overview-query';
 
 interface UtcBounds {
   startAt: Date;
-  endAt: Date;
+  exclusiveEndAt: Date;
 }
 
 function localDateMidnightUtc(
@@ -23,7 +23,7 @@ function localDateMidnightUtc(
     : midnightUtc + timezoneOffset * 60_000;
 }
 
-function getInclusiveUtcBounds(
+function getUtcBounds(
   period: { startDate: string; endDate: string },
   timezoneOffset: number | null
 ): UtcBounds {
@@ -35,7 +35,7 @@ function getInclusiveUtcBounds(
 
   return {
     startAt,
-    endAt: new Date(exclusiveEnd - 1),
+    exclusiveEndAt: new Date(exclusiveEnd),
   };
 }
 
@@ -56,35 +56,75 @@ export async function getNutritionOverview(
     range: '30d',
     timezoneOffset: parsed.timezoneOffset,
   });
-  const last30Bounds = getInclusiveUtcBounds(
-    last30Period,
-    parsed.timezoneOffset
-  );
-  const loggedDaysLast30 = await countLoggedDaysLast30({
-    userId: user.id,
-    startDate: last30Period.startDate,
-    endDate: last30Period.endDate,
-    startAt: last30Bounds.startAt,
-    endAt: last30Bounds.endAt,
-    timezoneOffset: parsed.timezoneOffset,
-  });
-  const resolvedRange =
-    parsed.range === 'auto'
-      ? resolveInitialRange(loggedDaysLast30)
-      : parsed.range;
+  const last30Bounds = getUtcBounds(last30Period, parsed.timezoneOffset);
+
+  // When the caller pinned a range, we don't need the last-30 day count to
+  // resolve which range to use — fetch both in parallel. When range='auto',
+  // the count gates the second query so they stay sequential.
+  let loggedDaysLast30: number;
+  let resolvedRange: NutritionOverview['resolvedRange'];
+  let rows: Awaited<ReturnType<typeof fetchOverviewRows>>;
+
+  if (parsed.range === 'auto') {
+    loggedDaysLast30 = await countLoggedDaysLast30({
+      userId: user.id,
+      startDate: last30Period.startDate,
+      endDate: last30Period.endDate,
+      startAt: last30Bounds.startAt,
+      exclusiveEndAt: last30Bounds.exclusiveEndAt,
+      timezoneOffset: parsed.timezoneOffset,
+    });
+    resolvedRange = resolveInitialRange(loggedDaysLast30);
+    const period = getNutritionPeriod({
+      range: resolvedRange,
+      timezoneOffset: parsed.timezoneOffset,
+    });
+    const bounds = getUtcBounds(period, parsed.timezoneOffset);
+    rows = await fetchOverviewRows({
+      userId: user.id,
+      startDate: period.startDate,
+      endDate: period.endDate,
+      startAt: bounds.startAt,
+      exclusiveEndAt: bounds.exclusiveEndAt,
+      timezoneOffset: parsed.timezoneOffset,
+    });
+    const overview = mapOverviewRowsToDto({
+      rows,
+      profile,
+      requestedRange: parsed.range,
+      resolvedRange,
+      loggedDaysLast30,
+      period,
+    });
+    assertOverviewHasNoTrendArrays(overview);
+    return overview;
+  }
+
+  resolvedRange = parsed.range;
   const period = getNutritionPeriod({
     range: resolvedRange,
     timezoneOffset: parsed.timezoneOffset,
   });
-  const bounds = getInclusiveUtcBounds(period, parsed.timezoneOffset);
-  const rows = await fetchOverviewRows({
-    userId: user.id,
-    startDate: period.startDate,
-    endDate: period.endDate,
-    startAt: bounds.startAt,
-    endAt: bounds.endAt,
-    timezoneOffset: parsed.timezoneOffset,
-  });
+  const bounds = getUtcBounds(period, parsed.timezoneOffset);
+  [loggedDaysLast30, rows] = await Promise.all([
+    countLoggedDaysLast30({
+      userId: user.id,
+      startDate: last30Period.startDate,
+      endDate: last30Period.endDate,
+      startAt: last30Bounds.startAt,
+      exclusiveEndAt: last30Bounds.exclusiveEndAt,
+      timezoneOffset: parsed.timezoneOffset,
+    }),
+    fetchOverviewRows({
+      userId: user.id,
+      startDate: period.startDate,
+      endDate: period.endDate,
+      startAt: bounds.startAt,
+      exclusiveEndAt: bounds.exclusiveEndAt,
+      timezoneOffset: parsed.timezoneOffset,
+    }),
+  ]);
+
   const overview = mapOverviewRowsToDto({
     rows,
     profile,

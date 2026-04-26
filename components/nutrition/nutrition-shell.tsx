@@ -1,22 +1,25 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
+import { MotionConfig } from 'motion/react';
 import { useTranslations } from 'next-intl';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { getNutritionOverview } from '@/lib/nutrition/actions';
 import type { NutritionRangeInput } from '@/lib/nutrition/types';
+import { BackgroundSection } from './background-section';
+import { DailyRhythm } from './daily-rhythm';
+import { EditorialHeader } from './editorial-header';
 import { EmptyState } from './empty-state';
+import { FocusSection } from './focus-section';
 import { InlineError } from './inline-error';
-import { MacroPatternSection } from './macro-pattern-section';
-import { NutrientGrid } from './nutrient-grid';
 import { NutritionSkeleton } from './nutrition-skeleton';
-import { RangeSelector } from './range-selector';
-import { SummaryStrip } from './summary-strip';
+import { PullQuote } from './pull-quote';
+import { SteadySection } from './steady-section';
+import { VerdictHero } from './verdict-hero';
 
 function getTimezoneOffset(): number | null {
   if (typeof window === 'undefined') return null;
-
   return new Date().getTimezoneOffset();
 }
 
@@ -30,9 +33,15 @@ export function NutritionShell() {
     queryKey: ['nutrition', 'overview', range, timezoneOffset ?? 'utc'],
     queryFn: () => getNutritionOverview({ range, timezoneOffset }),
     retry: false,
-    staleTime: 60_000,
+    // 5 minutes — overview is computed from the user's logged meals which
+    // change at most once per logging action; a longer staleTime avoids
+    // refetching on every focus/visibility change.
+    staleTime: 5 * 60_000,
+    // Render the previous range's data while a new range fetches so the
+    // editorial layout stays in place rather than collapsing to skeleton.
+    placeholderData: keepPreviousData,
   });
-  const { isError } = overviewQuery;
+  const { isError, error } = overviewQuery;
   const overviewErrorMessage = t('errors.overview');
   const overviewErrorToast = t('errors.overviewToast');
   const overviewRetryLabel = t('errors.retry');
@@ -42,14 +51,11 @@ export function NutritionShell() {
       hasShownErrorToast.current = false;
       return;
     }
-
     if (hasShownErrorToast.current) return;
-
     hasShownErrorToast.current = true;
+    console.error('[nutrition] overview query failed', error);
     toast.error(overviewErrorToast);
-  }, [isError, overviewErrorToast]);
-
-  const resolvedRange = overviewQuery.data?.resolvedRange ?? '30d';
+  }, [isError, error, overviewErrorToast]);
 
   if (overviewQuery.isLoading) return <NutritionSkeleton />;
 
@@ -69,55 +75,55 @@ export function NutritionShell() {
   }
 
   const overview = overviewQuery.data;
-  const hasTooFewLoggedDays = overview.trendStatus === 'too_few_logged_days';
+  const resolvedRange = overview.resolvedRange;
+  const isEmpty = overview.loggedDays === 0;
 
   return (
-    <main className="flex-1 overflow-y-auto px-5 py-4 sm:px-8">
-      <div className="mx-auto flex max-w-7xl flex-col gap-5">
-        <header className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-          <div className="max-w-3xl">
-            <h1 className="text-balance font-bold text-2xl text-nham-text tracking-[-0.02em]">
-              {t('title')}
-            </h1>
-            <p className="mt-2 max-w-2xl text-nham-text-muted text-sm leading-6">
-              {t('subtitle')}
-            </p>
-          </div>
-          <RangeSelector
-            value={resolvedRange}
-            onChange={setRange}
+    <MotionConfig reducedMotion="user">
+      <main className="flex-1 overflow-y-auto px-5 py-6 sm:px-8 lg:px-12">
+        <h1 className="sr-only">{t('title')}</h1>
+        <div className="flex flex-col gap-12">
+          <EditorialHeader
+            resolvedRange={resolvedRange}
+            onRangeChange={setRange}
+            startDate={overview.period.startDate}
+            endDate={overview.period.endDate}
             disabled={overviewQuery.isFetching}
+            verdict={isEmpty ? null : <VerdictHero overview={overview} />}
           />
-        </header>
 
-        {overview.loggedDays === 0 ? (
-          <EmptyState />
-        ) : (
-          <div
-            aria-live="polite"
-            aria-busy={overviewQuery.isFetching}
-            className="contents"
-          >
-            {hasTooFewLoggedDays ? (
-              <p
-                role="status"
-                className="rounded-2xl border border-nham-border/60 bg-nham-hover/35 p-4 text-nham-text-muted text-sm"
-              >
-                {t('trends.tooFewDays')}
-              </p>
-            ) : null}
-            {hasTooFewLoggedDays ? null : (
-              <SummaryStrip summary={overview.summary} />
-            )}
-            <MacroPatternSection macros={overview.macros} />
-            <NutrientGrid
-              overview={overview}
-              resolvedRange={resolvedRange}
-              timezoneOffset={timezoneOffset}
-            />
-          </div>
-        )}
-      </div>
-    </main>
+          {isEmpty ? (
+            <EmptyState />
+          ) : (
+            <div
+              aria-live="polite"
+              aria-busy={overviewQuery.isFetching}
+              className="flex flex-col gap-12"
+            >
+              {overview.spotlight.length > 0 ? (
+                <div className="grid gap-8 lg:grid-cols-12 lg:gap-10">
+                  <div className="lg:col-span-6 xl:col-span-7">
+                    <DailyRhythm macros={overview.macros} />
+                  </div>
+                  <div className="lg:col-span-6 xl:col-span-5">
+                    <FocusSection cards={overview.spotlight} />
+                  </div>
+                </div>
+              ) : (
+                <DailyRhythm macros={overview.macros} />
+              )}
+
+              <SteadySection cards={overview.steady} />
+
+              <BackgroundSection cards={overview.moreNutrients} />
+
+              {overview.educationCards.map((card) => (
+                <PullQuote key={card.id} card={card} />
+              ))}
+            </div>
+          )}
+        </div>
+      </main>
+    </MotionConfig>
   );
 }

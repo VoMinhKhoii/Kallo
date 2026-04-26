@@ -64,6 +64,7 @@
     }
   },
   "nutrition": {
+    "eyebrow": "Pattern analysis",
     "title": "Nutrition",
     "subtitle": "Review long-term macro and micronutrient patterns, with confidence labels when the food data is incomplete.",
     "loading": "Loading nutrition overview…",
@@ -83,9 +84,17 @@
       "coverageHint": "Nutrients with thin coverage",
       "averageConfidence": "Avg confidence: {value}",
       "weakest": "Weakest",
-      "none": "None yet"
+      "none": "None yet",
+      "trustLine": "{days} logged days · {confidence} avg confidence · {range} view",
+      "verdict": {
+        "label": "Pattern verdict",
+        "attention": "{nutrients} need attention",
+        "steady": "{nutrients} look steady",
+        "empty": "Keep logging to build a pattern"
+      }
     },
     "macros": {
+      "eyebrow": "Period rhythm",
       "title": "Macro pattern",
       "calories": "Calories",
       "protein": "Protein",
@@ -99,6 +108,7 @@
       "noTarget": "No target"
     },
     "grid": {
+      "eyebrow": "Micronutrients",
       "title": "Micronutrient coverage",
       "description": "Use these cards to see which nutrients look adequate, which need more data, and which have source-specific caveats."
     },
@@ -113,6 +123,7 @@
       "context": "Context",
       "noData": "No data",
       "noTargetClaim": "No target claim",
+      "averageVsTarget": "{average} avg · {target} target",
       "expand": "View trend",
       "collapse": "Hide trend"
     },
@@ -120,11 +131,13 @@
       "normal": "Good confidence",
       "limitedData": "Limited data",
       "warningPoints": "Points only",
-      "insufficientData": "Insufficient data"
+      "insufficientData": "Insufficient data",
+      "coverage": "Data confidence"
     },
     "targetSources": {
       "vietnamRda": "Vietnam RDA",
       "whoFao": "WHO/FAO",
+      "nasem": "NASEM DRI",
       "unsupported": "No target source"
     },
     "trend": {
@@ -133,7 +146,8 @@
       "lineMode": "Trend line is available for this nutrient.",
       "pointMode": "Showing data points only because coverage is limited.",
       "insufficientData": "Not enough reliable food data for a target claim yet.",
-      "noDataPoint": "No data"
+      "noDataPoint": "No data",
+      "chartLabel": "Nutrient trend chart"
     },
     "caveats": {
       "sodium": "Sodium from dipping sauces, condiments, and traditional seasonings may be undercounted.",
@@ -404,7 +418,8 @@
     "errors": {
       "overview": "Could not load nutrition overview. Refresh the page or try again after logging another meal.",
       "overviewToast": "Could not load nutrition overview.",
-      "retry": "Retry overview"
+      "retry": "Retry overview",
+      "candidatesError": "Couldn't load food ideas right now."
     },
     "empty": {
       "title": "No meals in this range",
@@ -413,6 +428,72 @@
     },
     "trends": {
       "tooFewDays": "Keep logging meals to build reliable trend lines. Averages are still shown for the days available."
+    },
+    "editorial": {
+      "eyebrow": "Pattern",
+      "dateRange": "{start} – {end}"
+    },
+    "verdict": {
+      "both": "{period} felt steady on {consistent}, but {attention} have been thin.",
+      "steadyOnly": "{period} held steady on {consistent}.",
+      "attentionOnly": "{attention} need a closer look {period}.",
+      "quiet": "A quiet stretch. Keep logging to sharpen the pattern.",
+      "gathering": "Gathering your pattern.",
+      "gatheringSub": "{days} logged days so far — keep going and the picture sharpens.",
+      "trustLine": "{days} logged days · {confidence}% avg confidence",
+      "trustLineNoConfidence": "{days} logged days",
+      "period7d": "the last 7 days",
+      "period30d": "the last 30 days",
+      "period90d": "the last 90 days"
+    },
+    "rhythm": {
+      "eyebrow": "The shape of your days",
+      "calories": "kcal",
+      "avgPerLoggedDay": "avg per logged day",
+      "compositionLabel": "{macro} {pct}%",
+      "macroCompositionAria": "Macro composition",
+      "consistency": {
+        "steady": "steady",
+        "rhythmic": "rhythmic",
+        "varies": "varies",
+        "thin": "thin",
+        "noTarget": "no target"
+      },
+      "rowLabel": "{macro}: {average} {unit} per logged day, {label}",
+      "barAria": "{macro} progress toward target"
+    },
+    "focus": {
+      "eyebrow": "Where to focus",
+      "tryLabel": "Try",
+      "percentOfTarget": "{value}% of target",
+      "averageLine": "Avg {value} {unit}/logged day · {source}",
+      "spotlightBarAria": "{label}: {pct}% of target",
+      "noFoodIdeas": "Food ideas coming soon for this nutrient."
+    },
+    "steady": {
+      "eyebrow": "What's holding steady",
+      "hint": "Tap a row to see its trend, foods, and any caveats.",
+      "percent": "{value}%",
+      "limited": "limited data",
+      "noTarget": "no target",
+      "row": {
+        "expand": "Expand {nutrient}",
+        "collapse": "Collapse {nutrient}"
+      }
+    },
+    "background": {
+      "eyebrow": "In the background",
+      "hint": "Less-tracked nutrients, kept quiet on purpose.",
+      "show": "Show {count}",
+      "hide": "Hide"
+    },
+    "pullQuote": {
+      "eyebrow": "An editor's note"
+    },
+    "emptyV2": {
+      "title": "A blank page, for now",
+      "description": "Log a few meals and your weekly pattern will start to take shape here, gently.",
+      "logMeal": "Log a meal"
     }
   },
   "onboarding": {

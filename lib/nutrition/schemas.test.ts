@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
   foodSourceCandidatesInputSchema,
-  nutrientTrendInputSchema,
   nutritionOverviewInputSchema,
   nutritionRangeSchema,
   timezoneOffsetSchema,
@@ -31,20 +30,8 @@ describe('nutrition overview schema', () => {
   });
 });
 
-describe('nutrition trend and candidate schemas', () => {
-  it('accepts supported nutrient keys', () => {
-    expect(
-      nutrientTrendInputSchema.parse({
-        nutrient: 'ironMg',
-        range: '90d',
-        timezoneOffset: -420,
-      })
-    ).toEqual({
-      nutrient: 'ironMg',
-      range: '90d',
-      timezoneOffset: -420,
-    });
-
+describe('food source candidates schema', () => {
+  it('accepts supported candidate nutrient keys', () => {
     expect(
       foodSourceCandidatesInputSchema.parse({
         nutrient: 'ironMg',
@@ -60,6 +47,18 @@ describe('nutrition trend and candidate schemas', () => {
         nutrient: 'magnesiumMg',
       }).success
     ).toBe(false);
+  });
+});
+
+describe('timezone offset schema', () => {
+  it('accepts documented min and max bounds', () => {
+    expect(timezoneOffsetSchema.parse(-840)).toBe(-840);
+    expect(timezoneOffsetSchema.parse(720)).toBe(720);
+  });
+
+  it('rejects values outside the supported bounds', () => {
+    expect(timezoneOffsetSchema.safeParse(-841).success).toBe(false);
+    expect(timezoneOffsetSchema.safeParse(721).success).toBe(false);
   });
 });
 

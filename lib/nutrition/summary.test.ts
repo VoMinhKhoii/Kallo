@@ -21,6 +21,7 @@ function createSummaryItem(
     confidence: 80,
     status: 'adequate',
     applicability: 'scored',
+    nutrientType: 'floor',
     ...overrides,
   };
 }
@@ -61,6 +62,30 @@ describe('nutrition summary helpers', () => {
     expect(buckets.limitedDataCount).toBe(0);
   });
 
+  it('excludes ceiling nutrients above target from most consistent', () => {
+    // Sodium at 200% of cap is "exceeded ceiling" — must NOT be celebrated as
+    // consistent. Range nutrients above target are likewise excluded.
+    const sodium = createSummaryItem({
+      nutrient: 'sodiumMg',
+      confidence: 80,
+      status: 'above_target',
+      percentOfTarget: 200,
+      nutrientType: 'ceiling',
+    });
+    const rangeOver = createSummaryItem({
+      confidence: 80,
+      status: 'above_target',
+      percentOfTarget: 130,
+      nutrientType: 'range',
+    });
+
+    const buckets = bucketNutrients([sodium, rangeOver]);
+
+    expect(buckets.mostConsistent).toEqual([]);
+    expect(buckets.needsAttention).toEqual([]);
+    expect(buckets.limitedDataCount).toBe(0);
+  });
+
   it('excludes educational and unsupported nutrients from all summary buckets', () => {
     const buckets = bucketNutrients([
       createSummaryItem({
@@ -83,22 +108,24 @@ describe('nutrition summary helpers', () => {
     });
   });
 
-  it('uses exact rounded matching for calorie consistency', () => {
+  it('uses a ±10% band for calorie consistency', () => {
+    // ±10% of 2000 = [1800, 2200]; values within band count as on-target.
     expect(
       getMacroConsistency({
         macro: 'calories',
         target: 2000,
-        values: [2000.4, 1999.6],
+        values: [2000.4, 1999.6, 1800, 2200],
       })
     ).toBe(100);
 
+    // 1799 just outside band, 2201 just outside band, 2000 inside.
     expect(
       getMacroConsistency({
         macro: 'calories',
         target: 2000,
-        values: [1999, 2001, 1900],
+        values: [1799, 2201, 2000],
       })
-    ).toBe(0);
+    ).toBe(33);
   });
 
   it('uses macro-specific thresholds for non-calorie consistency', () => {

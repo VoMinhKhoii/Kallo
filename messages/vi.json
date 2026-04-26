@@ -64,6 +64,7 @@
     }
   },
   "nutrition": {
+    "eyebrow": "Phân tích xu hướng",
     "title": "Dinh dưỡng",
     "subtitle": "Nhìn lại xu hướng macro và vi chất dài hạn, kèm nhãn độ tin cậy khi dữ liệu món ăn còn thiếu.",
     "loading": "Đang tải tổng quan dinh dưỡng…",
@@ -83,9 +84,17 @@
       "coverageHint": "Vi chất có độ phủ mỏng",
       "averageConfidence": "Độ tin cậy TB: {value}",
       "weakest": "Yếu nhất",
-      "none": "Chưa có"
+      "none": "Chưa có",
+      "trustLine": "{days} ngày có bữa ăn · độ tin cậy TB {confidence} · chế độ xem {range}",
+      "verdict": {
+        "label": "Kết luận xu hướng",
+        "attention": "{nutrients} cần chú ý",
+        "steady": "{nutrients} đang ổn định",
+        "empty": "Tiếp tục ghi nhận để tạo xu hướng"
+      }
     },
     "macros": {
+      "eyebrow": "Nhịp theo giai đoạn",
       "title": "Xu hướng macro",
       "calories": "Calo",
       "protein": "Đạm",
@@ -99,6 +108,7 @@
       "noTarget": "Không có mục tiêu"
     },
     "grid": {
+      "eyebrow": "Vi chất",
       "title": "Độ phủ vi chất",
       "description": "Dùng các thẻ này để xem vi chất nào có vẻ đủ, vi chất nào cần thêm dữ liệu và vi chất nào có lưu ý theo nguồn món ăn."
     },
@@ -113,6 +123,7 @@
       "context": "Ngữ cảnh",
       "noData": "Chưa có dữ liệu",
       "noTargetClaim": "Chưa kết luận theo mục tiêu",
+      "averageVsTarget": "{average} TB · mục tiêu {target}",
       "expand": "Xem xu hướng",
       "collapse": "Ẩn xu hướng"
     },
@@ -120,11 +131,13 @@
       "normal": "Độ tin cậy tốt",
       "limitedData": "Dữ liệu hạn chế",
       "warningPoints": "Chỉ xem điểm dữ liệu",
-      "insufficientData": "Chưa đủ dữ liệu"
+      "insufficientData": "Chưa đủ dữ liệu",
+      "coverage": "Độ tin cậy dữ liệu"
     },
     "targetSources": {
       "vietnamRda": "RDA Việt Nam",
       "whoFao": "WHO/FAO",
+      "nasem": "DRI NASEM",
       "unsupported": "Chưa có nguồn mục tiêu"
     },
     "trend": {
@@ -133,7 +146,8 @@
       "lineMode": "Có thể xem đường xu hướng cho vi chất này.",
       "pointMode": "Chỉ hiển thị điểm dữ liệu vì độ phủ còn hạn chế.",
       "insufficientData": "Chưa đủ dữ liệu món ăn đáng tin cậy để kết luận theo mục tiêu.",
-      "noDataPoint": "Chưa có dữ liệu"
+      "noDataPoint": "Chưa có dữ liệu",
+      "chartLabel": "Biểu đồ xu hướng vi chất"
     },
     "caveats": {
       "sodium": "Natri từ nước chấm, gia vị và các loại mắm truyền thống có thể bị tính thiếu.",
@@ -404,7 +418,8 @@
     "errors": {
       "overview": "Không tải được tổng quan dinh dưỡng. Hãy làm mới trang hoặc thử lại sau khi ghi nhận thêm bữa ăn.",
       "overviewToast": "Không tải được tổng quan dinh dưỡng.",
-      "retry": "Tải lại tổng quan"
+      "retry": "Tải lại tổng quan",
+      "candidatesError": "Chưa tải được gợi ý món ăn ngay lúc này."
     },
     "empty": {
       "title": "Chưa có bữa ăn trong khoảng này",
@@ -413,6 +428,72 @@
     },
     "trends": {
       "tooFewDays": "Hãy tiếp tục ghi nhận bữa ăn để tạo đường xu hướng đáng tin cậy. Các mức trung bình hiện có vẫn được hiển thị."
+    },
+    "editorial": {
+      "eyebrow": "Xu hướng",
+      "dateRange": "{start} – {end}"
+    },
+    "verdict": {
+      "both": "{period} bạn ăn ổn định ở {consistent}, nhưng {attention} đang khá mỏng.",
+      "steadyOnly": "{period} bạn giữ ổn định ở {consistent}.",
+      "attentionOnly": "{attention} cần để ý hơn trong {period}.",
+      "quiet": "Một giai đoạn yên ả. Tiếp tục ghi nhận để hoàn thiện xu hướng.",
+      "gathering": "Vẫn đang gom dần xu hướng của bạn.",
+      "gatheringSub": "Đã có {days} ngày ghi nhận — cứ tiếp tục, bức tranh sẽ rõ dần.",
+      "trustLine": "{days} ngày có bữa · độ tin cậy TB {confidence}%",
+      "trustLineNoConfidence": "{days} ngày có bữa",
+      "period7d": "7 ngày qua",
+      "period30d": "30 ngày qua",
+      "period90d": "90 ngày qua"
+    },
+    "rhythm": {
+      "eyebrow": "Nhịp ăn mỗi ngày",
+      "calories": "kcal",
+      "avgPerLoggedDay": "trung bình mỗi ngày ghi",
+      "compositionLabel": "{macro} {pct}%",
+      "macroCompositionAria": "Tỷ lệ macro",
+      "consistency": {
+        "steady": "ổn định",
+        "rhythmic": "đều đặn",
+        "varies": "thất thường",
+        "thin": "mỏng",
+        "noTarget": "chưa có mục tiêu"
+      },
+      "rowLabel": "{macro}: {average} {unit} mỗi ngày ghi, {label}",
+      "barAria": "Tiến độ {macro} so với mục tiêu"
+    },
+    "focus": {
+      "eyebrow": "Cần để ý",
+      "tryLabel": "Thử",
+      "percentOfTarget": "{value}% mục tiêu",
+      "averageLine": "TB {value} {unit}/ngày ghi · {source}",
+      "spotlightBarAria": "{label}: {pct}% của mục tiêu",
+      "noFoodIdeas": "Sẽ sớm có gợi ý món cho vi chất này."
+    },
+    "steady": {
+      "eyebrow": "Đang giữ ổn định",
+      "hint": "Chạm vào một dòng để xem xu hướng, gợi ý món và lưu ý.",
+      "percent": "{value}%",
+      "limited": "dữ liệu hạn chế",
+      "noTarget": "chưa có mục tiêu",
+      "row": {
+        "expand": "Mở rộng {nutrient}",
+        "collapse": "Thu gọn {nutrient}"
+      }
+    },
+    "background": {
+      "eyebrow": "Trong nền",
+      "hint": "Những vi chất ít theo dõi hơn, để nhẹ ở đây có chủ đích.",
+      "show": "Xem {count}",
+      "hide": "Ẩn"
+    },
+    "pullQuote": {
+      "eyebrow": "Lời ngỏ của ban biên tập"
+    },
+    "emptyV2": {
+      "title": "Trang giấy còn để trống",
+      "description": "Ghi vài bữa ăn và xu hướng tuần của bạn sẽ dần hiện ra ở đây, nhẹ nhàng thôi.",
+      "logMeal": "Ghi bữa ăn"
     }
   },
   "onboarding": {

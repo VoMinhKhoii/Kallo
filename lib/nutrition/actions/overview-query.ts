@@ -1,4 +1,4 @@
-import { and, eq, gt, gte, lte, sql } from 'drizzle-orm';
+import { and, eq, gt, gte, lt, lte, sql } from 'drizzle-orm';
 import { db } from '@/lib/db';
 import {
   ingredientSources,
@@ -13,7 +13,7 @@ interface OverviewQueryArgs {
   startDate: string;
   endDate: string;
   startAt: Date;
-  endAt: Date;
+  exclusiveEndAt: Date;
   timezoneOffset: number | null;
 }
 
@@ -51,9 +51,7 @@ export interface OverviewMealItemRow {
 }
 
 function getLocalDateSql(timezoneOffset: number | null) {
-  return sql<string>`${sql.raw(
-    localDateSqlExpression('meals.logged_at', timezoneOffset)
-  )}`;
+  return localDateSqlExpression(meals.loggedAt, timezoneOffset);
 }
 
 function getOverviewWhere({
@@ -61,7 +59,7 @@ function getOverviewWhere({
   startDate,
   endDate,
   startAt,
-  endAt,
+  exclusiveEndAt,
   timezoneOffset,
 }: OverviewQueryArgs) {
   const localDate = getLocalDateSql(timezoneOffset);
@@ -71,7 +69,7 @@ function getOverviewWhere({
     where: and(
       eq(meals.userId, userId),
       gte(meals.loggedAt, startAt),
-      lte(meals.loggedAt, endAt),
+      lt(meals.loggedAt, exclusiveEndAt),
       gte(localDate, startDate),
       lte(localDate, endDate)
     ),
@@ -91,7 +89,7 @@ export async function countLoggedDaysLast30(
         eq(meals.userId, args.userId),
         gt(mealItems.caloriesKcal, 0),
         gte(meals.loggedAt, args.startAt),
-        lte(meals.loggedAt, args.endAt),
+        lt(meals.loggedAt, args.exclusiveEndAt),
         gte(localDate, args.startDate),
         lte(localDate, args.endDate)
       )
@@ -108,7 +106,12 @@ export async function fetchOverviewRows(
   return db
     .select({
       localDate,
-      calories: sql<number>`coalesce(${mealItems.caloriesKcal}, 0)`,
+      // mealItems.caloriesKcal is `mode: 'number'` on the column, but Drizzle
+      // does NOT propagate that mode through raw `sql\`\`` wrappers — the
+      // result type is a string at runtime. Cast to float8 in SQL so the
+      // downstream `+` arithmetic in groupDailyValues / sumRows is numeric,
+      // not string concatenation.
+      calories: sql<number>`(coalesce(${mealItems.caloriesKcal}, 0))::float8`,
       proteinG: mealItems.proteinG,
       carbohydrateG: mealItems.carbohydrateG,
       fatG: mealItems.fatG,

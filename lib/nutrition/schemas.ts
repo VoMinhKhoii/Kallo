@@ -1,11 +1,5 @@
 import { z } from 'zod';
-import {
-  DEFAULT_NUTRIENTS,
-  MORE_NUTRIENTS,
-  SUPPORTED_CANDIDATE_NUTRIENTS,
-} from './nutrients';
-
-const TREND_NUTRIENTS = [...DEFAULT_NUTRIENTS, ...MORE_NUTRIENTS] as const;
+import { SUPPORTED_CANDIDATE_NUTRIENTS } from './nutrients';
 
 export const nutritionRangeSchema = z.enum(['7d', '30d', '90d']);
 export const nutritionRangeInputSchema = z.enum(['auto', '7d', '30d', '90d']);
@@ -18,12 +12,6 @@ export const timezoneOffsetSchema = z
 
 export const nutritionOverviewInputSchema = z.object({
   range: nutritionRangeInputSchema,
-  timezoneOffset: timezoneOffsetSchema,
-});
-
-export const nutrientTrendInputSchema = z.object({
-  nutrient: z.enum(TREND_NUTRIENTS),
-  range: nutritionRangeSchema,
   timezoneOffset: timezoneOffsetSchema,
 });
 

@@ -1,7 +1,9 @@
 import { getConfidenceDisplayState } from './confidence';
 import { getNutrientMeta } from './nutrients';
+import { getNutrientType } from './reference-targets';
 import type {
   NutrientCardData,
+  NutrientType,
   NutritionNutrientKey,
   TargetSource,
 } from './types';
@@ -9,6 +11,7 @@ import type {
 const TARGET_SOURCE_LABEL_KEYS: Record<TargetSource, string> = {
   vietnam_rda: 'nutrition.targetSources.vietnamRda',
   who_fao: 'nutrition.targetSources.whoFao',
+  nasem: 'nutrition.targetSources.nasem',
   unsupported: 'nutrition.targetSources.unsupported',
 };
 
@@ -29,6 +32,7 @@ interface BuildNutrientCardInput {
   caveatKey?: string;
   sourceBreakdown?: NutrientCardData['sourceBreakdown'];
   supportsCandidates?: boolean;
+  nutrientType?: NutrientType;
 }
 
 export function getPercentOfTarget(
@@ -44,7 +48,11 @@ export function getPercentOfTarget(
 
 export function getNutrientStatus(
   percentOfTarget: number | null,
-  confidence: number
+  confidence: number,
+  // nutrientType is currently informational here; callers explicitly opt in so
+  // downstream consumers (UI, summary buckets) can interpret 'above_target'
+  // correctly per nutrient direction (floor/ceiling/range).
+  _nutrientType: NutrientType = 'floor'
 ): 'below_target' | 'adequate' | 'above_target' | 'limited_data' {
   if (confidence < 40 || percentOfTarget === null) {
     return 'limited_data';
@@ -96,6 +104,7 @@ export function buildNutrientCard({
   caveatKey,
   sourceBreakdown,
   supportsCandidates = false,
+  nutrientType,
 }: BuildNutrientCardInput): NutrientCardData {
   const nutrientMeta = getNutrientMeta(nutrient);
   const percentOfTarget = getPercentOfTarget(averagePerDay, target);
@@ -112,6 +121,7 @@ export function buildNutrientCard({
     percentOfTarget,
     confidence,
     displayState: getConfidenceDisplayState(confidence),
+    nutrientType: nutrientType ?? getNutrientType(nutrient),
     caveatKey,
     contextMetrics:
       nutrient === 'vitaminAMcg'

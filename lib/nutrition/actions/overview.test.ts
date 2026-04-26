@@ -183,13 +183,13 @@ describe('getNutritionOverview', () => {
       overview.macros.map((macro) => [macro.key, macro])
     );
 
-    expect(macros.calories.consistencyPct).toBe(33);
+    expect(macros.calories.consistencyPct).toBe(100);
     expect(macros.protein.consistencyPct).toBe(67);
     expect(macros.carbohydrate.consistencyPct).toBe(67);
     expect(macros.fat.consistencyPct).toBe(67);
     expect(overview.summary.macroConsistency).toEqual({
-      averageConsistencyPct: 59,
-      weakestMacro: 'calories',
+      averageConsistencyPct: 75,
+      weakestMacro: 'protein',
     });
   });
 });

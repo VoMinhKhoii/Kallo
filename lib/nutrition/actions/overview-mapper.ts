@@ -9,7 +9,12 @@ import {
   getNutrientConfidence,
 } from '../confidence';
 import type { getNutritionPeriod } from '../date-range';
-import { DEFAULT_NUTRIENTS, MORE_NUTRIENTS } from '../nutrients';
+import {
+  DEFAULT_NUTRIENTS,
+  MORE_NUTRIENTS,
+  SUPPORTED_CANDIDATE_NUTRIENT_SET,
+  type SupportedCandidateNutrient,
+} from '../nutrients';
 import {
   type MicronutrientTarget,
   resolveMicronutrientTargets,
@@ -36,6 +41,34 @@ const ALL_CARD_NUTRIENTS = [...DEFAULT_NUTRIENTS, ...MORE_NUTRIENTS];
 const FAO_VIETNAM_SOURCE_CODE = 'FAO_VN_2007';
 const CONDIMENT_TYPE_EN = 'Condiments, traditional sauces';
 const CONDIMENT_TYPE_VN = 'Gia vị, nước chấm';
+const SPOTLIGHT_LIMIT = 2;
+const SPOTLIGHT_MIN_CONFIDENCE = 40;
+const SPOTLIGHT_MAX_PERCENT = 90;
+
+function isSpotlightCandidate(card: NutrientCardData): boolean {
+  return (
+    card.supportsCandidates &&
+    card.confidence >= SPOTLIGHT_MIN_CONFIDENCE &&
+    card.percentOfTarget !== null &&
+    card.percentOfTarget < SPOTLIGHT_MAX_PERCENT &&
+    SUPPORTED_CANDIDATE_NUTRIENT_SET.has(
+      card.nutrient as SupportedCandidateNutrient
+    )
+  );
+}
+
+function partitionSpotlight(cards: NutrientCardData[]): {
+  spotlight: NutrientCardData[];
+  steady: NutrientCardData[];
+} {
+  const spotlight = cards
+    .filter(isSpotlightCandidate)
+    .sort((a, b) => (a.percentOfTarget ?? 999) - (b.percentOfTarget ?? 999))
+    .slice(0, SPOTLIGHT_LIMIT);
+  const spotlightSet = new Set(spotlight.map((card) => card.nutrient));
+  const steady = cards.filter((card) => !spotlightSet.has(card.nutrient));
+  return { spotlight, steady };
+}
 
 type NutritionProfile = typeof userProfiles.$inferSelect;
 type NutritionPeriod = ReturnType<typeof getNutritionPeriod>;
@@ -150,6 +183,7 @@ function buildMacroPatterns(
             target: input.target,
             values: groupDailyValues(rows, input.rowKey),
           }),
+    nutrientType: input.key === 'calories' ? 'range' : 'floor',
   }));
 }
 
@@ -214,8 +248,13 @@ function toSummaryItem(
     unit: card.unit,
     percentOfTarget: card.percentOfTarget,
     confidence: card.confidence,
-    status: getNutrientStatus(card.percentOfTarget, card.confidence),
+    status: getNutrientStatus(
+      card.percentOfTarget,
+      card.confidence,
+      target.nutrientType
+    ),
     applicability: target.applicability,
+    nutrientType: target.nutrientType,
   };
 }
 
@@ -268,6 +307,7 @@ function buildNutrientCards({
         nutrient === 'sodiumMg' ? getSodiumCaveatKey(sodiumStats) : undefined,
       sourceBreakdown,
       supportsCandidates: DEFAULT_NUTRIENT_SET.has(nutrient),
+      nutrientType: target.nutrientType,
     });
   });
 }
@@ -284,7 +324,50 @@ export function mapOverviewRowsToDto({
     rows.filter((row) => row.calories > 0).map((row) => row.localDate)
   );
   const loggedDays = loggedDates.size;
-  const safeLoggedDays = Math.max(1, loggedDays);
+
+  // When the user has no logged days in the period, return a deterministic
+  // zero-state DTO instead of computing averages with a synthetic divisor of
+  // 1 (which would silently leak partial-row sums into the UI). The shell
+  // gates on `loggedDays === 0` for the empty state, so this just removes a
+  // hidden invariant trap from the data layer.
+  if (loggedDays === 0) {
+    return {
+      requestedRange,
+      resolvedRange,
+      bucketTimezone: period.bucketTimezone,
+      loggedDays: 0,
+      loggedDaysLast30,
+      trendStatus: getTrendStatus(resolvedRange, 0),
+      period: {
+        startDate: period.startDate,
+        endDate: period.endDate,
+      },
+      summary: {
+        mostConsistent: [],
+        needsAttention: [],
+        limitedDataCount: 0,
+        macroConsistency: { averageConsistencyPct: 0, weakestMacro: null },
+      },
+      macros: [],
+      micronutrients: [],
+      spotlight: [],
+      steady: [],
+      moreNutrients: [],
+      educationCards: [
+        {
+          id: 'vitamin_d',
+          titleKey: 'nutrition.education.vitaminD.title',
+          bodyKey: 'nutrition.education.vitaminD.body',
+        },
+      ],
+    };
+  }
+
+  // safeLoggedDays divides nutrient sums to produce "average per logged day".
+  // Both numerator (sumRows) and denominator are scoped to the same set of
+  // logged days, so this is NOT inflated for sparse loggers — it intentionally
+  // measures "average intake on days the user actually logged".
+  const safeLoggedDays = loggedDays;
   const totalCalories = rows.reduce(
     (sum, row) => sum + Math.max(0, row.calories),
     0
@@ -311,6 +394,15 @@ export function mapOverviewRowsToDto({
     toSummaryItem(card, targets[card.nutrient])
   );
   const summaryBuckets = bucketNutrients(summaryItems);
+  const micronutrients = cards.filter((card) =>
+    DEFAULT_NUTRIENT_SET.has(card.nutrient)
+  );
+  const moreNutrients = cards.filter(
+    (card) =>
+      !DEFAULT_NUTRIENT_SET.has(card.nutrient) &&
+      targets[card.nutrient].applicability !== 'hidden'
+  );
+  const { spotlight, steady } = partitionSpotlight(micronutrients);
 
   return {
     requestedRange,
@@ -328,12 +420,10 @@ export function mapOverviewRowsToDto({
       macroConsistency,
     },
     macros,
-    micronutrients: cards.filter((card) =>
-      DEFAULT_NUTRIENT_SET.has(card.nutrient)
-    ),
-    moreNutrients: cards.filter(
-      (card) => !DEFAULT_NUTRIENT_SET.has(card.nutrient)
-    ),
+    micronutrients,
+    spotlight,
+    steady,
+    moreNutrients,
     educationCards: [
       {
         id: 'vitamin_d',
