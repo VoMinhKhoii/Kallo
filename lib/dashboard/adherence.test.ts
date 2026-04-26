@@ -1,0 +1,47 @@
+import { describe, expect, it } from 'vitest';
+import {
+  buildCalorieAdherenceHeatmap,
+  getLocalDateKey,
+} from '@/lib/dashboard/adherence';
+
+describe('getLocalDateKey', () => {
+  it('converts UTC instants into the user local date', () => {
+    expect(getLocalDateKey(new Date('2026-04-22T18:00:00.000Z'), -420)).toBe(
+      '2026-04-23'
+    );
+  });
+});
+
+describe('buildCalorieAdherenceHeatmap', () => {
+  it('maps daily calories to target ratios in Monday-first rows', () => {
+    const heatmap = buildCalorieAdherenceHeatmap({
+      range: '30d',
+      timezoneOffset: 0,
+      calorieTarget: 2000,
+      now: new Date('2026-04-23T12:00:00.000Z'),
+      dailyCalories: [
+        { date: '2026-04-21', calories: 1800 },
+        { date: '2026-04-22', calories: 2000 },
+        { date: '2026-04-23', calories: 2400 },
+      ],
+    });
+
+    expect(heatmap).toHaveLength(7);
+    expect(heatmap[0]).toHaveLength(5);
+    expect(heatmap[1][4]).toBe(0.9);
+    expect(heatmap[2][4]).toBe(1);
+    expect(heatmap[3][4]).toBe(1.2);
+  });
+
+  it('leaves missing log days and missing targets empty', () => {
+    const heatmap = buildCalorieAdherenceHeatmap({
+      range: '30d',
+      timezoneOffset: 0,
+      calorieTarget: null,
+      now: new Date('2026-04-23T12:00:00.000Z'),
+      dailyCalories: [{ date: '2026-04-23', calories: 2000 }],
+    });
+
+    expect(heatmap.flat().every((value) => value === null)).toBe(true);
+  });
+});
