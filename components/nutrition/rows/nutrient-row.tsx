@@ -6,7 +6,7 @@ import { useTranslations } from 'next-intl';
 import { useId, useState } from 'react';
 import type { NutrientCardData } from '@/lib/nutrition/types';
 import { cn } from '@/lib/utils';
-import { shouldShowExceed } from './helpers';
+import { shouldShowExceed } from '../primitives/helpers';
 import { NutrientDetail } from './nutrient-detail';
 
 interface NutrientRowProps {

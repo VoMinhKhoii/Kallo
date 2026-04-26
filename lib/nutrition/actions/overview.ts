@@ -1,9 +1,9 @@
 'use server';
 
 import { requireAuthAndProfile } from '@/lib/auth';
-import { getNutritionPeriod } from '../date-range';
+import { getNutritionPeriod } from '../pattern/date-range';
+import { resolveInitialRange } from '../pattern/summary';
 import { nutritionOverviewInputSchema } from '../schemas';
-import { resolveInitialRange } from '../summary';
 import type { NutritionOverview } from '../types';
 import { mapOverviewRowsToDto } from './overview-mapper';
 import { countLoggedDaysLast30, fetchOverviewRows } from './overview-query';

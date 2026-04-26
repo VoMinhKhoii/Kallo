@@ -7,16 +7,16 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { getNutritionOverview } from '@/lib/nutrition/actions';
 import type { NutritionRangeInput } from '@/lib/nutrition/types';
-import { BackgroundSection } from './background-section';
-import { DailyRhythm } from './daily-rhythm';
-import { EditorialHeader } from './editorial-header';
-import { EmptyState } from './empty-state';
-import { FocusSection } from './focus-section';
-import { InlineError } from './inline-error';
 import { NutritionSkeleton } from './nutrition-skeleton';
-import { PullQuote } from './pull-quote';
-import { SteadySection } from './steady-section';
-import { VerdictHero } from './verdict-hero';
+import { BackgroundSection } from './sections/background-section';
+import { DailyRhythm } from './sections/daily-rhythm';
+import { EditorialHeader } from './sections/editorial-header';
+import { FocusSection } from './sections/focus-section';
+import { PullQuote } from './sections/pull-quote';
+import { SteadySection } from './sections/steady-section';
+import { VerdictHero } from './sections/verdict-hero';
+import { EmptyState } from './states/empty-state';
+import { InlineError } from './states/inline-error';
 
 function getTimezoneOffset(): number | null {
   if (typeof window === 'undefined') return null;

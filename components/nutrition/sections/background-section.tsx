@@ -4,8 +4,8 @@ import { AnimatePresence, motion } from 'motion/react';
 import { useTranslations } from 'next-intl';
 import { useId, useState } from 'react';
 import type { NutrientCardData } from '@/lib/nutrition/types';
-import { NutrientRow } from './nutrient-row';
-import { SectionEyebrow } from './section-eyebrow';
+import { SectionEyebrow } from '../primitives/section-eyebrow';
+import { NutrientRow } from '../rows/nutrient-row';
 
 interface BackgroundSectionProps {
   cards: NutrientCardData[];

@@ -2,9 +2,9 @@
 
 import { useLocale, useTranslations } from 'next-intl';
 import type { NutrientCardData } from '@/lib/nutrition/types';
+import { formatLocalizedNumber, shouldShowExceed } from '../primitives/helpers';
+import { TargetProgressBar } from '../primitives/target-progress-bar';
 import { FoodChipRow } from './food-chip-row';
-import { formatLocalizedNumber, shouldShowExceed } from './helpers';
-import { TargetProgressBar } from './target-progress-bar';
 
 interface NutrientDetailProps {
   card: NutrientCardData;

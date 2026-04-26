@@ -1,30 +1,30 @@
 import type { userProfiles } from '@/lib/db/schema';
 import {
-  buildNutrientCard,
-  getNutrientStatus,
-  getSodiumCaveatKey,
-} from '../aggregation';
-import {
-  getCaloriesWithNutrientData,
-  getNutrientConfidence,
-} from '../confidence';
-import type { getNutritionPeriod } from '../date-range';
-import {
   DEFAULT_NUTRIENTS,
   MORE_NUTRIENTS,
   SUPPORTED_CANDIDATE_NUTRIENT_SET,
   type SupportedCandidateNutrient,
-} from '../nutrients';
+} from '../catalog/nutrients';
 import {
   type MicronutrientTarget,
   resolveMicronutrientTargets,
-} from '../reference-targets';
+} from '../catalog/reference-targets';
+import {
+  buildNutrientCard,
+  getNutrientStatus,
+  getSodiumCaveatKey,
+} from '../pattern/aggregation';
+import {
+  getCaloriesWithNutrientData,
+  getNutrientConfidence,
+} from '../pattern/confidence';
+import type { getNutritionPeriod } from '../pattern/date-range';
 import {
   bucketNutrients,
   getMacroConsistency,
   getMacroConsistencySummary,
   getTrendStatus,
-} from '../summary';
+} from '../pattern/summary';
 import type {
   MacroKey,
   MacroPattern,

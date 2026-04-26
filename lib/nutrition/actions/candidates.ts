@@ -1,7 +1,7 @@
 'use server';
 
 import { requireAuthAndProfile } from '@/lib/auth';
-import { getCuratedFoodSourceCandidates } from '../food-source-candidates';
+import { getCuratedFoodSourceCandidates } from '../catalog/food-source-candidates';
 import { foodSourceCandidatesInputSchema } from '../schemas';
 
 export async function getFoodSourceCandidates(input: unknown) {

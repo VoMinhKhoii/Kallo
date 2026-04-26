@@ -8,7 +8,7 @@ import type {
   NutritionRangeInput,
 } from '@/lib/nutrition/types';
 import { cn } from '@/lib/utils';
-import { SectionEyebrow } from './section-eyebrow';
+import { SectionEyebrow } from '../primitives/section-eyebrow';
 
 const RANGES = [
   '7d',

@@ -6,7 +6,7 @@ import { getFoodSourceCandidates } from '@/lib/nutrition/actions';
 import {
   SUPPORTED_CANDIDATE_NUTRIENT_SET,
   type SupportedCandidateNutrient,
-} from '@/lib/nutrition/nutrients';
+} from '@/lib/nutrition/catalog/nutrients';
 import type { NutritionNutrientKey } from '@/lib/nutrition/types';
 import { cn } from '@/lib/utils';
 

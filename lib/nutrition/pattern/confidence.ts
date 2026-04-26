@@ -1,4 +1,4 @@
-import type { ConfidenceDisplayState } from './types';
+import type { ConfidenceDisplayState } from '../types';
 
 interface NutrientConfidenceInput {
   totalCalories: number;

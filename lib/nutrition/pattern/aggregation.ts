@@ -1,6 +1,6 @@
+import { getNutrientMeta } from '../catalog/nutrients';
+import { getNutrientType } from '../catalog/reference-targets';
 import { getConfidenceDisplayState } from './confidence';
-import { getNutrientMeta } from './nutrients';
-import { getNutrientType } from './reference-targets';
 import type {
   NutrientCardData,
   NutrientType,

@@ -2,8 +2,8 @@
 
 import { useTranslations } from 'next-intl';
 import type { NutrientCardData } from '@/lib/nutrition/types';
-import { NutrientRow } from './nutrient-row';
-import { SectionEyebrow } from './section-eyebrow';
+import { SectionEyebrow } from '../primitives/section-eyebrow';
+import { NutrientRow } from '../rows/nutrient-row';
 
 interface SteadySectionProps {
   cards: NutrientCardData[];

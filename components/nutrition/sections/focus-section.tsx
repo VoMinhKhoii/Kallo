@@ -2,8 +2,8 @@
 
 import { useTranslations } from 'next-intl';
 import type { NutrientCardData } from '@/lib/nutrition/types';
-import { SectionEyebrow } from './section-eyebrow';
-import { SpotlightRow } from './spotlight-row';
+import { SectionEyebrow } from '../primitives/section-eyebrow';
+import { SpotlightRow } from '../rows/spotlight-row';
 
 interface FocusSectionProps {
   cards: NutrientCardData[];

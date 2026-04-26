@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-
+import type { NutrientSummaryItem } from '../types';
 import {
   bucketNutrients,
   getMacroConsistency,
@@ -7,7 +7,6 @@ import {
   getTrendStatus,
   resolveInitialRange,
 } from './summary';
-import type { NutrientSummaryItem } from './types';
 
 function createSummaryItem(
   overrides: Partial<NutrientSummaryItem>

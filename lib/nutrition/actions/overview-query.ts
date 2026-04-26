@@ -6,7 +6,7 @@ import {
   meals,
   vietnameseFoodComposition,
 } from '@/lib/db/schema';
-import { localDateSqlExpression } from '../date-range';
+import { localDateSqlExpression } from '../pattern/date-range';
 
 interface OverviewQueryArgs {
   userId: string;

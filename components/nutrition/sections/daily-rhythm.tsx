@@ -4,9 +4,9 @@ import { motion } from 'motion/react';
 import { useLocale, useTranslations } from 'next-intl';
 import type { MacroPattern } from '@/lib/nutrition/types';
 import { cn } from '@/lib/utils';
-import { formatLocalizedNumber, shouldShowExceed } from './helpers';
-import { SectionEyebrow } from './section-eyebrow';
-import { TargetProgressBar } from './target-progress-bar';
+import { formatLocalizedNumber, shouldShowExceed } from '../primitives/helpers';
+import { SectionEyebrow } from '../primitives/section-eyebrow';
+import { TargetProgressBar } from '../primitives/target-progress-bar';
 
 interface DailyRhythmProps {
   macros: MacroPattern[];

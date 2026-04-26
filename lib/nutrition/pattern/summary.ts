@@ -3,7 +3,7 @@ import type {
   MacroKey,
   NutrientSummaryItem,
   NutritionRange,
-} from './types';
+} from '../types';
 
 interface MacroConsistencyInput {
   macro: MacroKey;
