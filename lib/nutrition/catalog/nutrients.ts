@@ -1,4 +1,4 @@
-import type { NutrientMeta, NutritionNutrientKey } from './types';
+import type { NutrientMeta, NutritionNutrientKey } from '../types';
 
 export const DEFAULT_NUTRIENTS = [
   'calciumMg',

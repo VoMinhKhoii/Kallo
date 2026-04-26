@@ -6,7 +6,7 @@ import type {
   NutrientType,
   NutritionNutrientKey,
   TargetSource,
-} from './types';
+} from '../types';
 
 const TARGET_SOURCE_LABEL_KEYS: Record<TargetSource, string> = {
   vietnam_rda: 'nutrition.targetSources.vietnamRda',

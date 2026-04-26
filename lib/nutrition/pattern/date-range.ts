@@ -1,7 +1,7 @@
 import type { SQL, SQLWrapper } from 'drizzle-orm';
 import { sql } from 'drizzle-orm';
 
-import type { BucketTimezone, NutritionRange } from './types';
+import type { BucketTimezone, NutritionRange } from '../types';
 
 const RANGE_DAYS: Record<NutritionRange, number> = {
   '7d': 7,

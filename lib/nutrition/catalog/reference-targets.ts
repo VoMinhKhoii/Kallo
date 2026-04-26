@@ -1,5 +1,5 @@
 import { NUTRIENT_META } from './nutrients';
-import type { NutrientType, NutritionNutrientKey, TargetSource } from './types';
+import type { NutrientType, NutritionNutrientKey, TargetSource } from '../types';
 
 type BiologicalSex = 'male' | 'female';
 
