@@ -61,6 +61,12 @@ Nham repository.
    - inconsistent local structure within a feature/module
      - Incorrect example: `helpers, hooks, and components live in unrelated folders for one feature`
      - Correct example: `feature files live under one coherent feature folder with predictable names`
+   - flat folder dumps that hide the feature's internal structure
+     - Incorrect example: `components/nutrition/{shell, skeleton, header, hero, rhythm, focus, steady, background, pull-quote, empty, error, spotlight-row, nutrient-row, nutrient-detail, food-chip, eyebrow, progress-bar, helpers}.tsx — 18 siblings, no grouping`
+     - Correct example: `components/nutrition/{nutrition-shell, nutrition-skeleton}.tsx + sections/, rows/, states/, primitives/ subfolders that match the dependency layering`
+   - mixed concerns inside a single library folder root
+     - Incorrect example: `lib/nutrition/{aggregation, confidence, summary, date-range, nutrients, reference-targets, food-source-candidates, schemas, types, actions/}.ts — algorithmic, catalog, and contract code intermingled`
+     - Correct example: `lib/nutrition/{types, schemas}.ts at root + actions/ + catalog/ (curated reference data) + pattern/ (analytical transforms over user logs)`
    - small refactors that make future changes safer and cheaper
      - Incorrect example: `const meal = data.meal && data.meal.value && data.meal.value.payload`
      - Correct example: `const meal = data.meal?.value?.payload`
@@ -83,6 +89,66 @@ Nham repository.
    - extraction of logic or functions into better-structured files/folders
      - Incorrect example: `function formatMealSummary() {}`
      - Correct example: `// lib/format-meal-summary.ts exports formatMealSummary()`
+   - feature-folder grouping when a directory has 8+ same-level files that
+     decompose into clear roles (entry, section, row, primitive, state, etc.)
+     - Incorrect example: `components/<feature>/ holds 18 flat .tsx files mixing entry, section, row, primitive, and state concerns`
+     - Correct example: `git mv files into sections/, rows/, primitives/, states/ subfolders that mirror the import layering; entry component stays at root; update relative imports in one batch`
+   - library-folder grouping by concern when a lib root mixes module kinds
+     - Incorrect example: `lib/<feature>/ flat with algorithm modules, curated catalogs, contracts, and actions all as siblings`
+     - Correct example: `keep types/schemas at root; group curated data into catalog/; group analytical transforms into pattern/ (or analytics/, math/); leave actions/ as-is; verify external import surface (@/lib/...) is small before moving`
+   - common-prefix file groups inside any folder (≥2 siblings sharing a prefix)
+     - Incorrect example: `lib/nutrition/actions/{overview, overview-query, overview-mapper}.ts — three files share the "overview" prefix as siblings`
+     - Correct example: `lib/nutrition/actions/overview/{index, query, mapper}.ts — entry collapses to index.ts so external import 'from "./overview"' still resolves; siblings drop the redundant prefix`
+   - tests scattered as siblings of source when the feature is large
+     enough to benefit from a dedicated tree
+     - Incorrect example: `lib/<feature>/{a, a.test, b, b.test, sub/c, sub/c.test}.ts — tests interleave with source across every subfolder`
+     - Correct example: `lib/<feature>/__tests__/<mirrors source layout>.test.ts — single tests tree mirrors source so reading source is uncluttered and tests are easy to enumerate; matches lib/ai/, lib/db/, lib/actions/ convention`
+
+   **File/folder grouping heuristics (apply when safe):**
+   - **Trigger thresholds:** flag any single folder with **8+ siblings of the
+     same file type** (e.g., 8+ `.tsx`, 8+ `.ts`) that can be decomposed by
+     role. Flag any single component file **>200 LOC** or any module file
+     **>400 LOC** for split.
+   - **Subfolder names follow the dependency layer**, not the visual order:
+     - `sections/` — top-level page regions composed by the entry component
+     - `rows/` — reusable row/atom components composed by sections
+     - `primitives/` — leaf UI atoms with no business logic + colocated helpers
+     - `states/` — empty/error/loading state components
+     - `catalog/` — curated reference data (constants, lookup tables)
+     - `pattern/` (or `analytics/`, `math/`) — pure transforms over user data
+     - `hooks/` — feature-local hooks if 3+ exist
+   - **Common-prefix collapse:** whenever **2+ files in the same folder share
+     a non-trivial prefix** (e.g., `overview.ts`, `overview-query.ts`,
+     `overview-mapper.ts`), refactor to a subfolder named after that prefix
+     and rename children to drop the prefix. The entry file becomes
+     `index.ts` so `from './overview'` still resolves with no import-surface
+     change. This rule is recursive — apply it again at any depth where the
+     pattern reappears.
+     - Before: `actions/{overview, overview-query, overview-mapper}.ts`
+     - After:  `actions/overview/{index, query, mapper}.ts`
+   - **Tests folder convention:** for any feature subtree (`lib/<feature>/`,
+     `app/api/<route>/`, `components/<feature>/`) with **3+ test files** OR
+     **tests under 2+ subfolders**, consolidate them into a single
+     `__tests__/` tree at the feature root that **mirrors the source layout**.
+     Use `@/<absolute>` import aliases inside test files (not `'../../'`
+     traversal). Keep `vi.mock()` specifiers aligned with how the SUT
+     imports its own dependencies (relative ↔ absolute mismatches break
+     mocks silently). Smaller subtrees (1–2 test files) may stay
+     colocated.
+   - **Entry stays at the root** so external import paths
+     (`@/components/<feature>/<feature>-shell`) don't change.
+   - **Use `git mv`** so file history is preserved across the move.
+   - **External import surface check:** before moving any `lib/` file,
+     `grep -rn "from '@/lib/<feature>/<file>'"` to enumerate external
+     callsites. If callsites are >10 or live in many features, prefer adding
+     a barrel `index.ts` over breaking imports — or escalate.
+   - **Verification gate:** after moving, run `bunx tsc --noEmit`,
+     `bunx @biomejs/biome@2.4.2 check .`, and `bun run test`; all three
+     must pass before the apply phase ends. If any fails, revert only the
+     files that were renamed in this batch (derived from the current diff,
+     no hardcoded placeholders), then escalate. Example:
+     `git --no-pager diff --name-only --diff-filter=R | xargs -r git restore --staged --worktree --`.
+
 4. Always escalate:
    - renames or reorganizations that change public/exported API expectations
      - Incorrect example: `export { MealCard as Card }`
