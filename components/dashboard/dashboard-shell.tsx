@@ -3,9 +3,9 @@
 import { useQuery } from '@tanstack/react-query';
 import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
+import { useWeightSummary } from '@/hooks/use-weight-summary';
 import { loadCalorieAdherenceHeatmap } from '@/lib/actions/dashboard';
 import { buildCalorieAdherenceHeatmap } from '@/lib/dashboard/adherence';
-import { useWeightSummary } from '@/hooks/use-weight-summary';
 import { cn } from '@/lib/utils';
 import { CurrentSection } from './current/current-section';
 import {
@@ -101,8 +101,6 @@ export function DashboardShell() {
     staleTime: Number.POSITIVE_INFINITY,
   });
 
-  const { periodStartWeight, expectedEndWeight, goalDirection } =
-    weightChartMeta;
   const resolvedHeatmapData = heatmapData ?? emptyHeatmapData;
 
   return (
