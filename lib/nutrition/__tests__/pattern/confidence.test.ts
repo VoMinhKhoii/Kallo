@@ -5,7 +5,7 @@ import {
   getConfidenceDisplayState,
   getConfidenceMetadata,
   getNutrientConfidence,
-} from './confidence';
+} from '@/lib/nutrition/pattern/confidence';
 
 describe('nutrition confidence helpers', () => {
   it('calculates nutrient confidence to one decimal place', () => {

@@ -9,7 +9,7 @@ vi.mock('@/lib/auth', () => ({
 }));
 
 import { requireAuthAndProfile } from '@/lib/auth';
-import { getFoodSourceCandidates } from './candidates';
+import { getFoodSourceCandidates } from '@/lib/nutrition/actions/candidates';
 
 describe('getFoodSourceCandidates', () => {
   beforeEach(() => {

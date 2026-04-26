@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import type { FoodSourceCandidate } from './food-source-candidates';
-import { getCuratedFoodSourceCandidates } from './food-source-candidates';
-import { SUPPORTED_CANDIDATE_NUTRIENTS } from './nutrients';
+import type { FoodSourceCandidate } from '@/lib/nutrition/catalog/food-source-candidates';
+import { getCuratedFoodSourceCandidates } from '@/lib/nutrition/catalog/food-source-candidates';
+import { SUPPORTED_CANDIDATE_NUTRIENTS } from '@/lib/nutrition/catalog/nutrients';
 
 const I18N_KEY_PREFIX = 'nutrition.candidates.';
 

@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { userProfiles } from '@/lib/db/schema';
-import type { OverviewMealItemRow } from './overview-query';
+import type { OverviewMealItemRow } from '@/lib/nutrition/actions/overview/query';
 
 const {
   mockCountLoggedDaysLast30,
@@ -16,14 +16,14 @@ vi.mock('@/lib/auth', () => ({
   requireAuthAndProfile: mockRequireAuthAndProfile,
 }));
 
-vi.mock('./overview-query', () => ({
+vi.mock('@/lib/nutrition/actions/overview/query', () => ({
   countLoggedDaysLast30: mockCountLoggedDaysLast30,
   fetchOverviewRows: mockFetchOverviewRows,
 }));
 
 import { requireAuthAndProfile } from '@/lib/auth';
-import { getNutritionOverview } from './overview';
-import { fetchOverviewRows } from './overview-query';
+import { getNutritionOverview } from '@/lib/nutrition/actions/overview';
+import { fetchOverviewRows } from '@/lib/nutrition/actions/overview/query';
 
 const baseProfile = {
   userId: 'user-1',

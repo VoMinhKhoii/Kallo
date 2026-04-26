@@ -1,7 +1,10 @@
 import { sql } from 'drizzle-orm';
 import { PgDialect } from 'drizzle-orm/pg-core';
 import { describe, expect, it } from 'vitest';
-import { getNutritionPeriod, localDateSqlExpression } from './date-range';
+import {
+  getNutritionPeriod,
+  localDateSqlExpression,
+} from '@/lib/nutrition/pattern/date-range';
 
 describe('getNutritionPeriod', () => {
   it('includes today and returns local dates for local buckets', () => {

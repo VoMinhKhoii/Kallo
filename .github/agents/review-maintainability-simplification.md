@@ -96,6 +96,13 @@ Nham repository.
    - library-folder grouping by concern when a lib root mixes module kinds
      - Incorrect example: `lib/<feature>/ flat with algorithm modules, curated catalogs, contracts, and actions all as siblings`
      - Correct example: `keep types/schemas at root; group curated data into catalog/; group analytical transforms into pattern/ (or analytics/, math/); leave actions/ as-is; verify external import surface (@/lib/...) is small before moving`
+   - common-prefix file groups inside any folder (≥2 siblings sharing a prefix)
+     - Incorrect example: `lib/nutrition/actions/{overview, overview-query, overview-mapper}.ts — three files share the "overview" prefix as siblings`
+     - Correct example: `lib/nutrition/actions/overview/{index, query, mapper}.ts — entry collapses to index.ts so external import 'from "./overview"' still resolves; siblings drop the redundant prefix`
+   - tests scattered as siblings of source when the feature is large
+     enough to benefit from a dedicated tree
+     - Incorrect example: `lib/<feature>/{a, a.test, b, b.test, sub/c, sub/c.test}.ts — tests interleave with source across every subfolder`
+     - Correct example: `lib/<feature>/__tests__/<mirrors source layout>.test.ts — single tests tree mirrors source so reading source is uncluttered and tests are easy to enumerate; matches lib/ai/, lib/db/, lib/actions/ convention`
 
    **File/folder grouping heuristics (apply when safe):**
    - **Trigger thresholds:** flag any single folder with **8+ siblings of the
@@ -110,20 +117,36 @@ Nham repository.
      - `catalog/` — curated reference data (constants, lookup tables)
      - `pattern/` (or `analytics/`, `math/`) — pure transforms over user data
      - `hooks/` — feature-local hooks if 3+ exist
+   - **Common-prefix collapse:** whenever **2+ files in the same folder share
+     a non-trivial prefix** (e.g., `overview.ts`, `overview-query.ts`,
+     `overview-mapper.ts`), refactor to a subfolder named after that prefix
+     and rename children to drop the prefix. The entry file becomes
+     `index.ts` so `from './overview'` still resolves with no import-surface
+     change. This rule is recursive — apply it again at any depth where the
+     pattern reappears.
+     - Before: `actions/{overview, overview-query, overview-mapper}.ts`
+     - After:  `actions/overview/{index, query, mapper}.ts`
+   - **Tests folder convention:** for any feature subtree (`lib/<feature>/`,
+     `app/api/<route>/`, `components/<feature>/`) with **3+ test files** OR
+     **tests under 2+ subfolders**, consolidate them into a single
+     `__tests__/` tree at the feature root that **mirrors the source layout**.
+     Use `@/<absolute>` import aliases inside test files (not `'../../'`
+     traversal). Keep `vi.mock()` specifiers aligned with how the SUT
+     imports its own dependencies (relative ↔ absolute mismatches break
+     mocks silently). Smaller subtrees (1–2 test files) may stay
+     co-located.
    - **Entry stays at the root** so external import paths
      (`@/components/<feature>/<feature>-shell`) don't change.
    - **Use `git mv`** so file history is preserved across the move.
-   - **Test placement matches existing repo convention** for that subtree:
-     co-located `*.test.ts` siblings stay co-located after the move; if the
-     subtree already uses `__tests__/`, keep that pattern.
    - **External import surface check:** before moving any `lib/` file,
      `grep -rn "from '@/lib/<feature>/<file>'"` to enumerate external
      callsites. If callsites are >10 or live in many features, prefer adding
      a barrel `index.ts` over breaking imports — or escalate.
-   - **Verification gate:** after moving, run `bunx @biomejs/biome@2.4.2 check .`
-     and `bun run test`; both must pass before the apply phase ends. If
-     either fails, revert the moves with `git restore --staged --worktree
-     components/<feature> lib/<feature>` and escalate.
+   - **Verification gate:** after moving, run `bunx tsc --noEmit`,
+     `bunx @biomejs/biome@2.4.2 check .`, and `bun run test`; all three
+     must pass before the apply phase ends. If any fails, revert the moves
+     with `git restore --staged --worktree components/<feature>
+     lib/<feature>` and escalate.
 
 4. Always escalate:
    - renames or reorganizations that change public/exported API expectations

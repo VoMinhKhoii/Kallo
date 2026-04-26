@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { userProfiles } from '@/lib/db/schema';
-import { mapOverviewRowsToDto } from './overview-mapper';
-import type { OverviewMealItemRow } from './overview-query';
+import { mapOverviewRowsToDto } from '@/lib/nutrition/actions/overview/mapper';
+import type { OverviewMealItemRow } from '@/lib/nutrition/actions/overview/query';
 
 const baseProfile = {
   biologicalSex: 'male',

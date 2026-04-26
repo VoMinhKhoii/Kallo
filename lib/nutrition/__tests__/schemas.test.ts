@@ -4,7 +4,7 @@ import {
   nutritionOverviewInputSchema,
   nutritionRangeSchema,
   timezoneOffsetSchema,
-} from './schemas';
+} from '@/lib/nutrition/schemas';
 
 describe('nutrition overview schema', () => {
   it('accepts auto range with a nullable timezone offset', () => {

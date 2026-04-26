@@ -5,7 +5,7 @@ import {
   getNutrientStatus,
   getPercentOfTarget,
   getSodiumCaveatKey,
-} from './aggregation';
+} from '@/lib/nutrition/pattern/aggregation';
 
 describe('nutrition aggregation helpers', () => {
   it('builds vitamin A context from beta-carotene without changing score', () => {

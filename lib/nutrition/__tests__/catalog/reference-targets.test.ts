@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { DEFAULT_NUTRIENTS, NUTRIENT_META } from './nutrients';
-import { resolveMicronutrientTargets } from './reference-targets';
+import {
+  DEFAULT_NUTRIENTS,
+  NUTRIENT_META,
+} from '@/lib/nutrition/catalog/nutrients';
+import { resolveMicronutrientTargets } from '@/lib/nutrition/catalog/reference-targets';
 
 const baseProfile = {
   biologicalSex: 'male',

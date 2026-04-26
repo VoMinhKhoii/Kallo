@@ -4,27 +4,27 @@ import {
   MORE_NUTRIENTS,
   SUPPORTED_CANDIDATE_NUTRIENT_SET,
   type SupportedCandidateNutrient,
-} from '../catalog/nutrients';
+} from '../../catalog/nutrients';
 import {
   type MicronutrientTarget,
   resolveMicronutrientTargets,
-} from '../catalog/reference-targets';
+} from '../../catalog/reference-targets';
 import {
   buildNutrientCard,
   getNutrientStatus,
   getSodiumCaveatKey,
-} from '../pattern/aggregation';
+} from '../../pattern/aggregation';
 import {
   getCaloriesWithNutrientData,
   getNutrientConfidence,
-} from '../pattern/confidence';
-import type { getNutritionPeriod } from '../pattern/date-range';
+} from '../../pattern/confidence';
+import type { getNutritionPeriod } from '../../pattern/date-range';
 import {
   bucketNutrients,
   getMacroConsistency,
   getMacroConsistencySummary,
   getTrendStatus,
-} from '../pattern/summary';
+} from '../../pattern/summary';
 import type {
   MacroKey,
   MacroPattern,
@@ -33,8 +33,8 @@ import type {
   NutritionNutrientKey,
   NutritionOverview,
   NutritionRangeInput,
-} from '../types';
-import type { OverviewMealItemRow } from './overview-query';
+} from '../../types';
+import type { OverviewMealItemRow } from './query';
 
 const DEFAULT_NUTRIENT_SET = new Set<NutritionNutrientKey>(DEFAULT_NUTRIENTS);
 const ALL_CARD_NUTRIENTS = [...DEFAULT_NUTRIENTS, ...MORE_NUTRIENTS];

@@ -4,7 +4,7 @@ import {
   getNutrientMeta,
   HIDDEN_NUTRIENTS,
   SUPPORTED_CANDIDATE_NUTRIENTS,
-} from './nutrients';
+} from '@/lib/nutrition/catalog/nutrients';
 
 describe('nutrition nutrient metadata', () => {
   it('keeps biotin hidden', () => {
