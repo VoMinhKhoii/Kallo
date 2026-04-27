@@ -255,7 +255,7 @@ jobs:
         run: |
           revision="$(gcloud run services describe "$SERVICE_NAME" --region="${{ vars.GCP_REGION }}" --format='value(status.latestCreatedRevisionName)' 2>/dev/null || true)"
           echo "{\"service\":\"$SERVICE_NAME\",\"image\":\"${IMAGE_URI:-}\",\"revision\":\"$revision\",\"url\":\"${DEPLOY_URL:-}\",\"commit_sha\":\"${{ github.event.workflow_run.head_sha }}\",\"smoke\":\"${{ steps.smoke.outcome }}\",\"database_mode\":\"${PREVIEW_DATABASE_MODE:-shared}\"}" > deployment-record.json
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always() && steps.pr_state.outputs.should_deploy == 'true' && steps.pr_state_recheck.outputs.should_continue_deploy == 'true'
         with:
           name: preview-deployment-record-${{ env.PR_NUMBER }}
