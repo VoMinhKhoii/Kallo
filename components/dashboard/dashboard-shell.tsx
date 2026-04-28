@@ -1,11 +1,20 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslations } from 'next-intl';
-import { useMemo, useState } from 'react';
-import { loadDashboardSnapshotAction } from '@/lib/actions/dashboard';
+import { useEffect, useMemo, useState } from 'react';
+import { useWeightSummary } from '@/hooks/use-weight-summary';
+import { loadCalorieAdherenceHeatmap } from '@/lib/actions/dashboard';
+import { buildCalorieAdherenceHeatmap } from '@/lib/dashboard/adherence';
+import { getMsUntilNextLocalMidnight } from '@/lib/dashboard/heatmap-rollover';
 import { cn } from '@/lib/utils';
 import { CurrentSection } from './current/current-section';
+import {
+  getMealsToday,
+  getNutritionData,
+  getStatsData,
+  getVerdictData,
+} from './mock-data';
 import { AdherenceHeatmap } from './progress/adherence-heatmap';
 import { ProgressSection } from './progress/progress-section';
 import { WeightChart } from './progress/weight-chart';
@@ -77,17 +86,110 @@ function getEmptyDashboardSnapshot(range: TimeRange): DashboardSnapshot {
 
 export function DashboardShell() {
   const t = useTranslations('dashboard');
+  const queryClient = useQueryClient();
   const [timeRange, setTimeRange] = useState<TimeRange>('30d');
   const weekTitle = useMemo(() => getWeekTitle(), []);
-  const timezoneOffset = useMemo(() => new Date().getTimezoneOffset(), []);
-  const { data: dashboard = getEmptyDashboardSnapshot(timeRange) } = useQuery({
-    queryKey: ['dashboard', timeRange, timezoneOffset],
-    queryFn: () =>
-      loadDashboardSnapshotAction({ range: timeRange, timezoneOffset }),
-    placeholderData: getEmptyDashboardSnapshot(timeRange),
-    staleTime: 30_000,
-    structuralSharing: true,
+  const emptyHeatmapData = useMemo(() => {
+    const timezoneOffset = new Date().getTimezoneOffset();
+
+    return buildCalorieAdherenceHeatmap({
+      range: timeRange,
+      dailyCalories: [],
+      calorieTarget: null,
+      timezoneOffset,
+    });
+  }, [timeRange]);
+  const { data: weightSummary } = useWeightSummary(timeRange);
+
+  const { data: verdict } = useQuery({
+    queryKey: ['dashboard', 'verdict'],
+    queryFn: getVerdictData,
+    initialData: getVerdictData,
+    staleTime: Number.POSITIVE_INFINITY,
   });
+
+  const { data: stats } = useQuery({
+    queryKey: ['dashboard', 'stats'],
+    queryFn: getStatsData,
+    initialData: getStatsData,
+    staleTime: Number.POSITIVE_INFINITY,
+  });
+
+  const weightData = weightSummary?.weights ?? [];
+  const periodStartWeight =
+    weightSummary?.periodStartWeight ?? weightSummary?.currentWeight ?? 65;
+  const expectedEndWeight =
+    weightSummary?.expectedEndWeight ?? periodStartWeight;
+  const goalDirection = weightSummary?.goalDirection ?? 'flat';
+
+  const { data: heatmapData } = useQuery({
+    queryKey: ['dashboard', 'heatmapData', timeRange],
+    queryFn: () => {
+      const timezoneOffset = new Date().getTimezoneOffset();
+
+      return loadCalorieAdherenceHeatmap({
+        range: timeRange,
+        timezoneOffset,
+      });
+    },
+    placeholderData: emptyHeatmapData,
+    staleTime: 60_000,
+  });
+
+  const { data: nutrition } = useQuery({
+    queryKey: ['dashboard', 'nutrition'],
+    queryFn: getNutritionData,
+    initialData: getNutritionData,
+    staleTime: Number.POSITIVE_INFINITY,
+  });
+
+  const { data: meals } = useQuery({
+    queryKey: ['dashboard', 'meals'],
+    queryFn: getMealsToday,
+    initialData: getMealsToday,
+    staleTime: Number.POSITIVE_INFINITY,
+  });
+
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout> | null = null;
+
+    const invalidateHeatmap = () => {
+      void queryClient.invalidateQueries({
+        queryKey: ['dashboard', 'heatmapData'],
+      });
+    };
+
+    const scheduleMidnightRefresh = () => {
+      timer = setTimeout(() => {
+        invalidateHeatmap();
+        scheduleMidnightRefresh();
+      }, getMsUntilNextLocalMidnight());
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        invalidateHeatmap();
+      }
+    };
+
+    const handleWindowFocus = () => {
+      invalidateHeatmap();
+    };
+
+    scheduleMidnightRefresh();
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', handleWindowFocus);
+
+    return () => {
+      if (timer !== null) {
+        clearTimeout(timer);
+      }
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleWindowFocus);
+    };
+  }, [queryClient]);
+
+  const resolvedHeatmapData = heatmapData ?? emptyHeatmapData;
 
   return (
     <main
@@ -142,7 +244,9 @@ export function DashboardShell() {
                 range={timeRange}
               />
             }
-            heatmap={<AdherenceHeatmap data={dashboard.heatmap} range={timeRange} />}
+            heatmap={
+              <AdherenceHeatmap data={resolvedHeatmapData} range={timeRange} />
+            }
           />
         </section>
 

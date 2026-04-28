@@ -301,23 +301,91 @@ After pushing, CI re-runs. Return to **Phase 6a**.
 
 #### Resolving / Dismissing Comments
 
-After pushing fixes, reply to resolved comments via the API or CLI:
+After pushing fixes, every CodeRabbit review thread must end up either
+**resolved** or **left open with an explicit deferral comment** — never
+silently abandoned.
+
+**Step 1 — Discover threads via GraphQL** (REST `pulls/comments` only returns
+individual comments; only GraphQL exposes thread IDs and `isResolved`):
 
 ```bash
-# Reply to a specific review comment
-gh api repos/{owner}/{repo}/pulls/<pr-number>/comments/<comment-id>/replies \
+gh api graphql -f query='
+{
+  repository(owner: "<owner>", name: "<repo>") {
+    pullRequest(number: <pr-number>) {
+      reviewThreads(first: 50) {
+        nodes {
+          id
+          isResolved
+          isOutdated
+          path
+          line
+          comments(first: 5) {
+            nodes { databaseId author { login } body }
+          }
+        }
+      }
+    }
+  }
+}' --jq '.data.repository.pullRequest.reviewThreads.nodes[]
+  | select(.isResolved == false)
+  | {id, path, line, isOutdated,
+     firstCommentDbId: .comments.nodes[0].databaseId,
+     bodyHead: (.comments.nodes[0].body[0:200])}'
+```
+
+**Step 2 — Classify each unresolved thread** into one of three buckets:
+
+| Bucket | When | Required actions |
+|---|---|---|
+| **Fixed** | You acted on the comment and the fix is in the latest commit | (i) reply with the commit SHA; (ii) **resolve** the thread |
+| **Controversial / disagreed** | You chose a different design, or the fix is intentionally deferred | (i) reply with reasoning + commit SHA (if any); (ii) **do NOT resolve yet**; (iii) wait for CodeRabbit's next pass; (iv) re-read the thread after CI re-runs and resolve if CodeRabbit acknowledges or stays silent |
+| **Won't fix** | False positive or pure nitpick conflicting with project conventions | (i) reply with the technical reason; (ii) **resolve** the thread (your call is final) |
+
+**Step 3 — Reply to a thread** (via REST, requires the *first comment's*
+`databaseId`, not the thread ID):
+
+```bash
+gh api repos/<owner>/<repo>/pulls/<pr-number>/comments/<first-comment-db-id>/replies \
   -f body="Fixed in <commit-sha>."
 
-# For dismissed false positives:
-gh api repos/{owner}/{repo}/pulls/<pr-number>/comments/<comment-id>/replies \
-  -f body="Not acting on this: <brief technical reason>."
+# Or, for controversial / deferred:
+gh api repos/<owner>/<repo>/pulls/<pr-number>/comments/<first-comment-db-id>/replies \
+  -f body="Chose a different approach: <reason>. See <commit-sha>. Curious to hear if you still see a concern."
 ```
+
+**Step 4 — Resolve a thread** (via GraphQL `resolveReviewThread` mutation,
+takes the thread ID `PRRT_…`, NOT the comment ID):
+
+```bash
+gh api graphql -f query='
+mutation {
+  resolveReviewThread(input: {threadId: "<thread-id>"}) {
+    thread { id isResolved }
+  }
+}'
+```
+
+**Step 5 — For controversial threads, wait one more cycle.** CodeRabbit
+auto-reviews on every push (~1–3 min). After your reply commit lands and
+CI is green, re-run the GraphQL query from Step 1 to see if CodeRabbit
+posted a follow-up. If it acknowledges, stays silent on the thread, or
+agrees with your reasoning → resolve. If it pushes back with a strong
+new argument → re-evaluate; either fix it or escalate to the user.
+
+**Never silently leave threads open at the end of the loop.** Every thread
+must end either **resolved**, or **explicitly deferred with a comment** that
+the user has been informed about.
 
 ### 6d. Loop Exit Condition
 
-Exit the loop when **both** are true:
+Exit the loop when **all three** are true:
 1. `gh pr checks <pr-number>` shows all checks as `pass`
-2. No unresolved actionable CodeRabbit comments remain
+2. The GraphQL query in 6c Step 1 returns zero unresolved threads, OR all
+   remaining unresolved threads have been **explicitly deferred with a
+   reply comment** AND the user has been told about them
+3. CodeRabbit's most recent review on the latest commit has been read and
+   triaged (no new unaddressed actionable findings)
 
 Then print a final summary (see Phase 7).
 

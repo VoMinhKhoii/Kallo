@@ -9,7 +9,6 @@ import type {
 } from '@/components/dashboard/types';
 import type { WeightSummaryData } from '@/lib/types/weight';
 import { DeficitCard, PaceCard } from './pace-deficit-card';
-import { ProteinConsistencyCard } from './protein-consistency-card';
 import { WeightCard } from './weight-streak-card';
 
 interface CurrentSectionProps {
@@ -68,9 +67,7 @@ export function CurrentSection({
       >
         <PaceCard verdict={verdict} />
         <div className="mt-3 w-px self-stretch bg-nham-border/40" />
-        <DeficitCard stats={stats} weeklyRate={verdict.weeklyRate} />
-        <div className="mt-3 w-px self-stretch bg-nham-border/40" />
-        <ProteinConsistencyCard verdict={verdict} />
+        <DeficitCard stats={stats} />
       </motion.div>
 
       {/* Spacer */}
