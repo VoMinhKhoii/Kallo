@@ -94,6 +94,7 @@ export function DashboardShell() {
       className="relative flex-1 overflow-hidden"
       style={{ fontFamily: 'DM Sans, sans-serif' }}
     >
+      {/* Off-track banner removed — small badge next to Avg Daily Deficit is shown instead */}
       <div className="grid h-full grid-rows-[2fr_3fr_2fr] gap-2 overflow-y-auto px-5 pt-4 pb-3 sm:px-8">
         {/* ── Section 1: Current (week title) ── */}
         <section>
