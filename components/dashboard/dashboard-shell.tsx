@@ -3,23 +3,16 @@
 import { useQuery } from '@tanstack/react-query';
 import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
-import { useWeightSummary } from '@/hooks/use-weight-summary';
+import { loadDashboardSnapshotAction } from '@/lib/actions/dashboard';
 import { cn } from '@/lib/utils';
 import { CurrentSection } from './current/current-section';
-import {
-  getHeatmapData,
-  getMealsToday,
-  getNutritionData,
-  getStatsData,
-  getVerdictData,
-} from './mock-data';
 import { AdherenceHeatmap } from './progress/adherence-heatmap';
 import { ProgressSection } from './progress/progress-section';
 import { WeightChart } from './progress/weight-chart';
 import { SectionHeader } from './section-header';
 import { MealTrigger } from './today/meal-trigger';
 import { TodaySection } from './today/today-section';
-import type { TimeRange } from './types';
+import type { DashboardSnapshot, TimeRange } from './types';
 
 function getWeekTitle(): string {
   const now = new Date();
@@ -37,52 +30,63 @@ function getWeekTitle(): string {
   return `Week of ${fmt(monday)} – ${fmt(sunday)}, ${year}`;
 }
 
+function getEmptyHeatmap(range: TimeRange): (number | null)[][] {
+  const weekCount = range === '30d' ? 4 : 13;
+  return Array.from({ length: 7 }, () => Array.from({ length: weekCount }, () => null));
+}
+
+function getEmptyDashboardSnapshot(range: TimeRange): DashboardSnapshot {
+  return {
+    verdict: {
+      weeklyRate: 0,
+      totalDelta: 0,
+      planStartDate: new Date().toISOString().slice(0, 10),
+      status: 'too_early',
+      rollingAvg: { start: 0, end: 0 },
+      currentWeight: 0,
+      proteinDays: [false, false, false, false, false, false, false],
+    },
+    stats: {
+      streak: 0,
+      daysLogged: 0,
+      avgDeficit: 0,
+      todayWeight: null,
+      weightPlaceholder: 0,
+    },
+    nutrition: {
+      calories: { current: 0, target: 0 },
+      protein: { current: 0, target: 0 },
+      carbs: { current: 0, target: 0 },
+      fat: { current: 0, target: 0 },
+    },
+    meals: [],
+    heatmap: getEmptyHeatmap(range),
+    weightSummary: {
+      range,
+      weights: [],
+      currentWeight: 0,
+      todayWeight: null,
+      weightPlaceholder: 0,
+      daysLogged: 0,
+      periodStartWeight: 0,
+      expectedEndWeight: 0,
+      goalDirection: 'flat',
+    },
+  };
+}
+
 export function DashboardShell() {
   const t = useTranslations('dashboard');
   const [timeRange, setTimeRange] = useState<TimeRange>('30d');
   const weekTitle = useMemo(() => getWeekTitle(), []);
-  const { data: weightSummary } = useWeightSummary(timeRange);
-
-  const { data: verdict } = useQuery({
-    queryKey: ['dashboard', 'verdict'],
-    queryFn: getVerdictData,
-    initialData: getVerdictData,
-    staleTime: Number.POSITIVE_INFINITY,
-  });
-
-  const { data: stats } = useQuery({
-    queryKey: ['dashboard', 'stats'],
-    queryFn: getStatsData,
-    initialData: getStatsData,
-    staleTime: Number.POSITIVE_INFINITY,
-  });
-
-  const weightData = weightSummary?.weights ?? [];
-  const periodStartWeight =
-    weightSummary?.periodStartWeight ?? weightSummary?.currentWeight ?? 65;
-  const expectedEndWeight =
-    weightSummary?.expectedEndWeight ?? periodStartWeight;
-  const goalDirection = weightSummary?.goalDirection ?? 'flat';
-
-  const { data: heatmapData } = useQuery({
-    queryKey: ['dashboard', 'heatmapData', timeRange],
-    queryFn: () => getHeatmapData(timeRange),
-    initialData: () => getHeatmapData(timeRange),
-    staleTime: Number.POSITIVE_INFINITY,
-  });
-
-  const { data: nutrition } = useQuery({
-    queryKey: ['dashboard', 'nutrition'],
-    queryFn: getNutritionData,
-    initialData: getNutritionData,
-    staleTime: Number.POSITIVE_INFINITY,
-  });
-
-  const { data: meals } = useQuery({
-    queryKey: ['dashboard', 'meals'],
-    queryFn: getMealsToday,
-    initialData: getMealsToday,
-    staleTime: Number.POSITIVE_INFINITY,
+  const timezoneOffset = useMemo(() => new Date().getTimezoneOffset(), []);
+  const { data: dashboard = getEmptyDashboardSnapshot(timeRange) } = useQuery({
+    queryKey: ['dashboard', timeRange, timezoneOffset],
+    queryFn: () =>
+      loadDashboardSnapshotAction({ range: timeRange, timezoneOffset }),
+    placeholderData: getEmptyDashboardSnapshot(timeRange),
+    staleTime: 30_000,
+    structuralSharing: true,
   });
 
   return (
@@ -95,10 +99,10 @@ export function DashboardShell() {
         <section>
           <SectionHeader title={weekTitle} />
           <CurrentSection
-            verdict={verdict}
-            stats={stats}
-            nutrition={nutrition}
-            weightSummary={weightSummary}
+            verdict={dashboard.verdict}
+            stats={dashboard.stats}
+            nutrition={dashboard.nutrition}
+            weightSummary={dashboard.weightSummary}
           />
         </section>
 
@@ -130,14 +134,14 @@ export function DashboardShell() {
           <ProgressSection
             weightChart={
               <WeightChart
-                data={weightData}
-                periodStartWeight={periodStartWeight}
-                expectedEndWeight={expectedEndWeight}
-                goalDirection={goalDirection}
+                data={dashboard.weightSummary.weights}
+                periodStartWeight={dashboard.weightSummary.periodStartWeight}
+                expectedEndWeight={dashboard.weightSummary.expectedEndWeight}
+                goalDirection={dashboard.weightSummary.goalDirection}
                 range={timeRange}
               />
             }
-            heatmap={<AdherenceHeatmap data={heatmapData} range={timeRange} />}
+            heatmap={<AdherenceHeatmap data={dashboard.heatmap} range={timeRange} />}
           />
         </section>
 
@@ -145,7 +149,10 @@ export function DashboardShell() {
         <section className="flex min-h-0 flex-col">
           <SectionHeader title={t('today')} delay={0.2} />
           <div className="flex-1">
-            <TodaySection nutrition={nutrition} meals={meals} />
+            <TodaySection
+              nutrition={dashboard.nutrition}
+              meals={dashboard.meals}
+            />
           </div>
         </section>
       </div>
