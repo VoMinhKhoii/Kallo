@@ -62,12 +62,12 @@ export const Errors = {
       'Bạn cần đăng nhập để sử dụng tính năng này.'
     ),
 
-  onboardingIncomplete: () =>
+  profileNotFound: () =>
     new AppError(
-      'ONBOARDING_INCOMPLETE',
-      403,
+      'PROFILE_NOT_FOUND',
+      404,
       false,
-      'Vui lòng hoàn thành thiết lập hồ sơ trước.'
+      'Không tìm thấy hồ sơ. Vui lòng đăng nhập lại.'
     ),
 
   pipelineTimeout: () =>

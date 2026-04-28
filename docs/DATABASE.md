@@ -25,6 +25,26 @@ This project enforces a two-domain model. Do not mix responsibilities.
 
 Never hand-write DDL for tables/columns. Never add CHECK constraints directly in SQL files.
 
+### Shared staging preview rule
+
+While `PREVIEW_DATABASE_MODE=shared`, PR previews and `nham-internal` point at
+the same non-prod Supabase database. To keep that survivable:
+
+- prefer append-only migrations for normal feature work
+- do not add new migrations that `DROP TABLE`, `DROP COLUMN`,
+  `RENAME COLUMN`, or `ALTER COLUMN TYPE`
+- add new columns/tables first, migrate application code, and defer cleanup to
+  an intentional maintenance pass
+
+CI enforces this append-only rule against newly changed migration files via
+`scripts/check-append-only-migrations.mjs`.
+
+If shared staging gets into a bad state, recover it with the manual
+`Reset Staging Database` GitHub Actions workflow. That reset replays the current
+migrations from the default branch, runs `supabase/seed.sql`, and then reapplies
+the generated `seed_food.sql` artifact from GCS so search/embedding state is
+restored too.
+
 ### Domain B — Security & Database Logic (Raw SQL owns this)
 
 Supabase-specific features are maintained as hand-authored SQL migration files:
@@ -70,8 +90,27 @@ Supabase uses timestamp-based filenames: `YYYYMMDDHHMMSS_description.sql`
 | `20260319083757_add_synonym_candidates.sql` | A (Drizzle) | `synonym_candidates` table for cross-language match logging |
 | `20260319083800_rls_synonym_candidates.sql` | B (Manual) | RLS policies for synonym_candidates (read/write/update for authenticated) |
 | `20260319083900_normalize_query_embeddings_keys.sql` | B (Manual) | Normalize existing `name_vi` PKs to lowercase + NFC (with collision resolution) |
+| `20260416161845_flatten_meal_nutrition_values.sql` | A (Drizzle) | Flatten persisted `meals` and `meal_items` nutrient columns from JSONB bounds to single numeric values |
 
 **Migration ordering matters**: Drizzle migrations that add columns must be timestamped BEFORE manual migrations that reference those columns (e.g., `search_text` column must exist before the trgm migration creates a GIN index on it).
+
+## Meal Persistence Contract
+
+- The analysis pipeline keeps bounded nutrition in memory as
+  `{ low, mid, high }` while LLM adjustment is still in play.
+- Persisted `meals` and `meal_items` rows store **flat numeric nutrient values**.
+- For persisted meal history:
+  - `calories_kcal`, `protein_g`, `carbohydrate_g`, and `fat_g` store the
+    goal-adjusted values shown to the user.
+  - All other nutrient columns store the gram-scaled nutrient totals directly.
+- Legacy rows that still contain true bounded macro objects cannot be
+  reconstructed exactly because meals do not store historical goal/aggression
+  snapshots. The flattening migration only preserves macro rows that were
+  already effectively flat (`low = mid = high`) and leaves ambiguous legacy
+  macro values null instead of inventing new ones from the current profile.
+- The same legacy-nulling rule is applied to child `meal_items` macro columns
+  whenever the parent meal-level macro is ambiguous, so old persisted cards do
+  not show contradictory totals vs item/group subtotals.
 
 ## Ingredient Search Architecture
 

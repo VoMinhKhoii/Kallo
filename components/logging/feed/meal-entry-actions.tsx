@@ -1,5 +1,8 @@
+'use client';
+
 import { Check, X } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
+import { useTranslations } from 'next-intl';
 
 interface MealEntryActionsProps {
   isEditing: boolean;
@@ -14,6 +17,9 @@ export function MealEntryActions({
   onSave,
   onConfirm,
 }: MealEntryActionsProps) {
+  const t = useTranslations('logging');
+  const tc = useTranslations('common');
+
   return (
     <div className="mt-3 flex">
       {/* Cancel — slides in from the left */}
@@ -33,7 +39,7 @@ export function MealEntryActions({
             style={{ fontFamily: 'DM Sans, sans-serif' }}
           >
             <X className="h-3.5 w-3.5 shrink-0" />
-            Cancel
+            {tc('cancel')}
           </button>
         </div>
       </motion.div>
@@ -56,7 +62,7 @@ export function MealEntryActions({
               transition={{ duration: 0.15 }}
             >
               <Check className="h-3.5 w-3.5 shrink-0" />
-              Save Changes
+              {tc('save')}
             </motion.span>
           ) : (
             <motion.span
@@ -68,7 +74,7 @@ export function MealEntryActions({
               transition={{ duration: 0.15 }}
             >
               <Check className="h-3.5 w-3.5 shrink-0" />
-              Confirm &amp; Log Meal
+              {t('confirm')}
             </motion.span>
           )}
         </AnimatePresence>

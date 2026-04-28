@@ -125,7 +125,8 @@ async function readSSEEvents(res: Response): Promise<StreamEvent[]> {
 const mockProfile = {
   goal: 'cutting',
   aggression: '0.5',
-  regionalProfile: 'mien_nam',
+  countryOfOrigin: 'Vietnam',
+  countryOfResidence: 'Vietnam',
   oilUsage: 'normal',
   defaultRicePortion: 'medium',
   sugarBraised: 'medium',
@@ -209,13 +210,13 @@ describe('POST /api/analyze-meal', () => {
     expect(json.error.code).toBe('VALIDATION_FAILED');
   });
 
-  it('returns 403 when profile is incomplete', async () => {
-    mockSelect.mockResolvedValue([{ goal: null, regionalProfile: null }]);
+  it('returns 404 when profile row is missing', async () => {
+    mockSelect.mockResolvedValue([]);
     const res = await POST(createRequest({ message: 'phở bò' }));
     const json = await res.json();
 
-    expect(res.status).toBe(403);
-    expect(json.error.code).toBe('ONBOARDING_INCOMPLETE');
+    expect(res.status).toBe(404);
+    expect(json.error.code).toBe('PROFILE_NOT_FOUND');
   });
 
   it('returns 500 when GEMINI_API_KEY is missing', async () => {

@@ -1,8 +1,8 @@
-import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
+import type { AppDb } from '@/lib/db';
+import { fetchWithTimeout } from '@/lib/fetch-with-timeout';
 import { capitalizeFirst } from '@/lib/utils';
 import type { GeminiClient } from '../gemini';
 import { matchIngredients } from '../matching';
-import { applyIngredientAliases } from '../matching/aliases';
 import { createSpeculativeMatcher } from '../matching/speculative';
 import { buildDecompositionPrompt, buildNutritionPrompt } from '../prompts';
 import {
@@ -35,14 +35,14 @@ import {
   validateNutritionOutput,
 } from './validation';
 
-/** Model for LLM Call 1 (decomposition) — structured extraction, speed-optimized */
-const DECOMPOSITION_MODEL = 'gemini-3.1-flash-lite-preview';
+/** Model for LLM Call 1 (decomposition) — stable low-latency/high-volume tier */
+const DECOMPOSITION_MODEL = 'gemini-2.5-flash-lite';
 
-/** Model for LLM Call 2 (nutrition estimation) — needs domain accuracy */
-const NUTRITION_MODEL = 'gemini-3.1-flash-lite-preview';
+/** Model for LLM Call 2 (nutrition estimation) — stable low-latency/high-volume tier */
+const NUTRITION_MODEL = 'gemini-2.5-flash-lite';
 
 /** Per-call timeout for Gemini API calls (ms) */
-const LLM_TIMEOUT_MS = 15_000;
+const LLM_TIMEOUT_MS = 25_000;
 
 // ---------------------------------------------------------------------------
 // Structured logging
@@ -65,33 +65,6 @@ function logMetrics(metrics: PipelineMetrics): void {
   console.info('[pipeline] metrics', JSON.stringify(metrics));
 }
 
-// ---------------------------------------------------------------------------
-// Timeout helper
-// ---------------------------------------------------------------------------
-
-function withTimeout<T>(
-  promise: Promise<T>,
-  ms: number,
-  label: string
-): Promise<T> {
-  return new Promise<T>((resolve, reject) => {
-    const timer = setTimeout(
-      () => reject(new Error(`${label} timed out after ${ms}ms`)),
-      ms
-    );
-    promise.then(
-      (v) => {
-        clearTimeout(timer);
-        resolve(v);
-      },
-      (e) => {
-        clearTimeout(timer);
-        reject(e);
-      }
-    );
-  });
-}
-
 /**
  * Full meal analysis pipeline.
  *
@@ -106,7 +79,7 @@ function withTimeout<T>(
 export async function analyzeMeal(
   rawInput: string,
   userContext: UserContext,
-  db: PostgresJsDatabase<any>,
+  db: AppDb,
   gemini: GeminiClient,
   onEvent?: (event: StreamEvent) => void
 ): Promise<PipelineResponse> {
@@ -154,7 +127,7 @@ export async function analyzeMeal(
 async function runPipeline(
   rawInput: string,
   userContext: UserContext,
-  db: PostgresJsDatabase<any>,
+  db: AppDb,
   gemini: GeminiClient,
   onEvent?: (event: StreamEvent) => void
 ): Promise<PipelineResponse> {
@@ -183,19 +156,21 @@ async function runPipeline(
     }
   };
 
-  const decomposition: MealDecomposition = await withTimeout(
-    gemini.generateStructuredOutputStream(
-      {
-        schema: mealDecompositionSchema,
-        systemPrompt: buildDecompositionPrompt(userContext),
-        userMessage: rawInput,
-        model: DECOMPOSITION_MODEL,
-        temperature: 0.3,
-        topP: 1,
-        topK: 1,
-      },
-      composedOnChunk
-    ),
+  const decomposition: MealDecomposition = await fetchWithTimeout(
+    (signal) =>
+      gemini.generateStructuredOutputStream(
+        {
+          schema: mealDecompositionSchema,
+          systemPrompt: buildDecompositionPrompt(userContext),
+          userMessage: rawInput,
+          model: DECOMPOSITION_MODEL,
+          temperature: 0.3,
+          topP: 1,
+          topK: 1,
+          abortSignal: signal,
+        },
+        composedOnChunk
+      ),
     LLM_TIMEOUT_MS,
     'decomposition'
   );
@@ -209,8 +184,8 @@ async function runPipeline(
     }
   }
 
-  // Apply ingredient aliases: map common shorthand names to canonical DB names
-  applyIngredientAliases(decomposition);
+  // Note: alias resolution is now handled inside the matching cascade as a fallback
+  // (try original name first, alias-expanded name second). No pre-match rewrite needed.
 
   // Flush: emit any meal item names that weren't detected during streaming
   for (const mi of decomposition.mealItems) {
@@ -288,25 +263,27 @@ async function runPipeline(
     }
   };
 
-  let nutritionResult: NutritionAdjustment = await withTimeout(
-    gemini.generateStructuredOutputStream(
-      {
-        schema: nutritionAdjustmentSchema,
-        systemPrompt: buildNutritionPrompt(
-          decomposition.mealItems,
-          matchResult.matched,
-          matchResult.unmatched,
-          userContext
-        ),
-        userMessage:
-          'Produce bounded nutrition estimates for each ingredient in each meal item based on the reference data provided.',
-        model: NUTRITION_MODEL,
-        temperature: 0.5,
-        topP: 1,
-        topK: 1,
-      },
-      nutritionOnChunk
-    ),
+  let nutritionResult: NutritionAdjustment = await fetchWithTimeout(
+    (signal) =>
+      gemini.generateStructuredOutputStream(
+        {
+          schema: nutritionAdjustmentSchema,
+          systemPrompt: buildNutritionPrompt(
+            decomposition.mealItems,
+            matchResult.matched,
+            matchResult.unmatched,
+            userContext
+          ),
+          userMessage:
+            'Produce bounded nutrition estimates for each ingredient in each meal item based on the reference data provided.',
+          model: NUTRITION_MODEL,
+          temperature: 0.5,
+          topP: 1,
+          topK: 1,
+          abortSignal: signal,
+        },
+        nutritionOnChunk
+      ),
     LLM_TIMEOUT_MS,
     'nutrition'
   );
@@ -335,25 +312,27 @@ async function runPipeline(
     console.warn('[pipeline] classifyAnomalies → retry_step2, retrying Call 2');
     // Reset streaming state so retry re-emits from scratch
     lastExtractedCount = 0;
-    nutritionResult = await withTimeout(
-      gemini.generateStructuredOutputStream(
-        {
-          schema: nutritionAdjustmentSchema,
-          systemPrompt: buildNutritionPrompt(
-            decomposition.mealItems,
-            matchResult.matched,
-            matchResult.unmatched,
-            userContext
-          ),
-          userMessage:
-            'The previous result had 0 calories. Please recalculate bounded nutrition estimates carefully.',
-          model: NUTRITION_MODEL,
-          temperature: 0.5,
-          topP: 1,
-          topK: 1,
-        },
-        nutritionOnChunk
-      ),
+    nutritionResult = await fetchWithTimeout(
+      (signal) =>
+        gemini.generateStructuredOutputStream(
+          {
+            schema: nutritionAdjustmentSchema,
+            systemPrompt: buildNutritionPrompt(
+              decomposition.mealItems,
+              matchResult.matched,
+              matchResult.unmatched,
+              userContext
+            ),
+            userMessage:
+              'The previous result had 0 calories. Please recalculate bounded nutrition estimates carefully.',
+            model: NUTRITION_MODEL,
+            temperature: 0.5,
+            topP: 1,
+            topK: 1,
+            abortSignal: signal,
+          },
+          nutritionOnChunk
+        ),
       LLM_TIMEOUT_MS,
       'nutrition-retry'
     );

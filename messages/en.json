@@ -1,0 +1,486 @@
+{
+  "common": {
+    "back": "Back",
+    "next": "Next Step",
+    "skip": "Skip",
+    "finish": "Finish",
+    "save": "Save",
+    "cancel": "Cancel",
+    "loading": "Loading...",
+    "error": "Something went wrong",
+    "retry": "Try again",
+    "search": "Search",
+    "noResults": "No results found",
+    "confirm": "Confirm",
+    "close": "Close",
+    "or": "or",
+    "optional": "Optional",
+    "notFound": "Page not found"
+  },
+  "nav": {
+    "logging": "Logging",
+    "dashboard": "Dashboard",
+    "settings": "Settings",
+    "signOut": "Sign Out"
+  },
+  "metadata": {
+    "root": {
+      "title": "Nhẩm — Vietnamese Meal Tracker",
+      "description": "Track Vietnamese meals with AI-powered nutrition analysis"
+    },
+    "dashboard": {
+      "title": "Dashboard — Nhẩm"
+    }
+  },
+  "shared": {
+    "calorieRing": {
+      "left": "left",
+      "ariaLabel": "{remaining} of {target} calories remaining"
+    }
+  },
+  "app": {
+    "shell": {
+      "navigationMenu": "Navigation menu",
+      "openMenu": "Open menu",
+      "closeMenu": "Close menu"
+    },
+    "mainSidebar": {
+      "navigationLabel": "Main navigation",
+      "sectionLabel": "Main",
+      "dashboard": "Dashboard",
+      "tracking": "Tracking",
+      "logging": "Logging",
+      "settings": "Settings",
+      "expandSidebar": "Expand sidebar",
+      "collapseSidebar": "Collapse sidebar",
+      "completeProfile": "Complete profile",
+      "resumeTitle": "Your estimates are using default settings",
+      "resumeDescription": "Personalize them for your cooking style to get the most accurate calorie and macro extractions from the AI.",
+      "signOut": "Sign out"
+    }
+  },
+  "onboarding": {
+    "stepOf": "Step {current} of {total}",
+    "origin": {
+      "title": "Where are you from?",
+      "subtitle": "Origin helps the AI lean toward the food culture you identify with. Current residence helps it bias toward ingredients that are easier to find around you.",
+      "countryOfOrigin": "Country of origin",
+      "countryOfOriginHint": "Where you grew up or identify with culinarily",
+      "countryOfResidence": "Country of residence",
+      "countryOfResidenceHint": "Where you currently live — affects available ingredients",
+      "selectCountry": "Select a country…",
+      "searchCountry": "Search country…",
+      "noCountries": "No countries found",
+      "fallbackNote": "Leave one or both empty if you want. The AI will fall back to your photo and meal text only.",
+      "preferredLanguage": "Preferred language",
+      "preferredLanguageHint": "Choose your language for the app interface"
+    },
+    "bodyMetrics": {
+      "title": "Your body metrics",
+      "subtitle": "We use these to calculate your daily calorie and macro targets.",
+      "biologicalSex": "Biological sex",
+      "male": "Male",
+      "female": "Female",
+      "weight": "Weight",
+      "weightUnit": "kg",
+      "height": "Height",
+      "heightUnit": "cm",
+      "age": "Age",
+      "activityLevel": "Activity level",
+      "sedentary": "Sedentary (Office job, little to no exercise)",
+      "light": "Lightly active (Light exercise 1-3 days/week)",
+      "moderate": "Moderately active (Moderate exercise 3-5 days/week)",
+      "veryActive": "Very active (Heavy exercise 6-7 days/week)",
+      "goal": "Goal",
+      "cutting": "Cutting",
+      "maintaining": "Maintaining",
+      "bulking": "Bulking",
+      "aggression": "Aggression",
+      "aggressionHint": "How aggressively to cut/bulk (kg/week)",
+      "aggressionLabel": "Pace",
+      "aggressionDeficit": "deficit",
+      "aggressionSurplus": "surplus",
+      "aggressionLow": "Gentle",
+      "aggressionHigh": "Aggressive",
+      "carbSplit": "Carb split",
+      "moderateCarb": "Moderate carb",
+      "moderateCarbDescription": "Balanced (30/35/35)",
+      "lowerCarb": "Lower carb",
+      "lowerCarbDescription": "High protein (40/40/20)",
+      "higherCarb": "Higher carb",
+      "higherCarbDescription": "Active (30/20/50)",
+      "tdee": "Estimated TDEE",
+      "calorieTarget": "Daily calorie target",
+      "protein": "Protein",
+      "carbs": "Carbs",
+      "fat": "Fat",
+      "macroSummary": "Daily targets",
+      "kcal": "kcal",
+      "grams": "g"
+    },
+    "cooking": {
+      "title": "Your cooking habits",
+      "subtitle": "Help the AI understand how you typically cook so it can give more accurate calorie estimates.",
+      "oilUsage": "Oil usage",
+      "oilMinimal": "Minimal",
+      "oilMinimalHint": "Dry, clean taste. Dish looks matte.",
+      "oilNormal": "Normal",
+      "oilNormalHint": "Light coating. Slight sheen on food.",
+      "oilHeavy": "Heavy",
+      "oilHeavyHint": "Visibly oily. Sauce pools slightly.",
+      "oilHint": "How much oil/fat you typically use when cooking",
+      "ricePortion": "Default rice portion",
+      "riceSmall": "Small",
+      "riceSmallHint": "~1 small bowl",
+      "riceMedium": "Medium",
+      "riceMediumHint": "~1–1.5 bowls",
+      "riceLarge": "Large",
+      "riceLargeHint": "~2+ bowls",
+      "riceHint": "Your typical serving of rice per meal",
+      "sugar": "Sugar in braised dishes",
+      "sugarLow": "Low",
+      "sugarMedium": "Medium",
+      "sugarHigh": "High",
+      "sugarHint": "How much sugar you use for caramelizing/braising",
+      "proteinPortion": "Default protein portion",
+      "proteinSmall": "Small",
+      "proteinSmallHint": "Smaller than your palm, e.g. ~2-3 eggs",
+      "proteinMedium": "Medium",
+      "proteinMediumHint": "About palm-sized",
+      "proteinLarge": "Large",
+      "proteinLargeHint": "Bigger than your palm, e.g. a chicken thigh or more",
+      "proteinHint": "Typical amount of meat/fish per meal",
+      "broth": "Broth consumption",
+      "brothLeave": "Leave it",
+      "brothLeaveHint": "Eat the solids, skip most broth",
+      "brothSome": "Drink some",
+      "brothSomeHint": "Drink about half the bowl",
+      "brothFinish": "Finish it",
+      "brothFinishHint": "Drink all or most of the broth",
+      "brothHint": "How much broth you typically drink from soups/stews"
+    }
+  },
+  "auth": {
+    "signIn": {
+      "title": "Welcome back",
+      "email": "Email",
+      "password": "Password",
+      "submit": "Sign In",
+      "noAccount": "Don't have an account?",
+      "signUpLink": "Sign up",
+      "forgotPassword": "Forgot password?",
+      "error": "Invalid email or password",
+      "success": "Signed in successfully",
+      "emailPlaceholder": "you@example.com",
+      "passwordPlaceholder": "Enter your password",
+      "emailError": "Enter a valid email address",
+      "passwordError": "Password must be at least 6 characters"
+    },
+    "signUp": {
+      "title": "Create your account",
+      "email": "Email",
+      "password": "Password",
+      "confirmPassword": "Confirm password",
+      "submit": "Create Account",
+      "hasAccount": "Already have an account?",
+      "signInLink": "Sign in",
+      "success": "Check your email to confirm your account",
+      "error": "Could not create account",
+      "emailPlaceholder": "you@example.com",
+      "passwordPlaceholder": "Create a password",
+      "emailError": "Enter a valid email address",
+      "passwordError": "Password must be at least 6 characters"
+    },
+    "dialog": {
+      "signInTitle": "Welcome back",
+      "signInSubtitle": "Sign in to continue tracking your meals.",
+      "signUpTitle": "Create your account",
+      "signUpSubtitle": "Start tracking Vietnamese meals with AI-powered nutrition analysis.",
+      "signInTab": "Sign in",
+      "signUpTab": "Sign up"
+    },
+    "otp": {
+      "title": "Check your email",
+      "subtitle": "We sent a verification code to {email}",
+      "submit": "Verify",
+      "resend": "Resend code",
+      "error": "Invalid code"
+    }
+  },
+  "landing": {
+    "localeSwitcher": {
+      "label": "Landing page language"
+    },
+    "header": {
+      "features": "Features",
+      "howItWorks": "How it works",
+      "pricing": "Pricing",
+      "signIn": "Sign in",
+      "getStarted": "Get started"
+    },
+    "hero": {
+      "badge": "Built for Vietnamese meals",
+      "title": "Track Vietnamese meals",
+      "titleHighlight": "without the guesswork",
+      "subtitle": "Snap a photo or describe your meal in Vietnamese. Our AI knows phở, bánh mì, and 500+ Vietnamese dishes — and calculates real nutrition from lab-verified data.",
+      "cta": "Get Started",
+      "ctaSecondary": "See How It Works",
+      "socialProof": "Loved by early Vietnamese beta users",
+      "demo": {
+        "today": "Today",
+        "date": "Meal log",
+        "justNow": "Just now",
+        "analysis": "AI nutrition analysis",
+        "highConfidence": "High confidence",
+        "totalCalories": "Total calories",
+        "inputPlaceholder": "Describe your meal...",
+        "smartContext": "Smart context",
+        "smartContextText": "Uses your region, cooking habits, and meal text to tighten estimates."
+      }
+    },
+    "problem": {
+      "label": "Why current apps fail",
+      "title": "The problem with",
+      "titleHighlight": "existing trackers",
+      "subtitle": "Built for Western diets. Most trackers don't know the difference between phở bò and phở gà, or that your bún bò Huế has more chili oil than usual.",
+      "card1Title": "Generic databases",
+      "card1Text": "Western-centric food databases with wrong portions and missing Vietnamese dishes.",
+      "card2Title": "Manual entry is painful",
+      "card2Text": "Searching ingredient by ingredient, guessing portions, and giving up after a few days.",
+      "card3Title": "No cooking context",
+      "card3Text": "A stir-fry with minimal oil vs. deep-fried — same ingredient, very different calories.",
+      "visual": {
+        "searchPlaceholder": "Search for your dish",
+        "searchResult1": "Braised squid",
+        "searchResult2": "Lean pork",
+        "noMatch": "No exact match",
+        "detected": "Detected dish",
+        "braisedPork": "Braised pork bowl",
+        "hiddenCalories": "Hidden calories from oil & extras",
+        "entryFailed": "Manual logging failed",
+        "entryFailedText": "Too much effort for one meal."
+      },
+      "quote": "When the food database doesn't understand your cuisine, every calorie target becomes a guess.",
+      "quoteLabel": "What users keep running into"
+    },
+    "solution": {
+      "step1Label": "Step 1",
+      "step1Title": "Describe what you ate",
+      "step1Text": "Type the meal the way you naturally would — in Vietnamese, English, or a mix of both.",
+      "step1TextMobile": "Describe your meal naturally in Vietnamese, English, or both.",
+      "step2Label": "Step 2",
+      "step2Title": "We break it into real ingredients",
+      "step2Text": "Nhẩm maps your description to Vietnamese ingredients and dish components from a curated nutrition dataset.",
+      "step2TextMobile": "Nhẩm maps your text to real Vietnamese ingredients and dish components.",
+      "step3Label": "Step 3",
+      "step3Title": "Personal context sharpens the estimate",
+      "step3Text": "Region, cooking habits, and nutrition goals help the AI understand hidden calories and likely portion adjustments.",
+      "step3TextMobile": "Region, cooking habits, and goals help the AI tighten the estimate.",
+      "step4Label": "Step 4",
+      "step4Title": "You get a useful, bounded result",
+      "step4Text": "Instead of fake precision, Nhẩm gives a realistic calorie and macro range you can actually use.",
+      "step4TextMobile": "Get a realistic calorie and macro range instead of fake precision.",
+      "cta": "Start tracking now",
+      "whyLabel": "Why Nhẩm works better",
+      "whyTitle": "Built around how Vietnamese meals are actually eaten",
+      "feature1Title": "Vietnamese-first ingredient matching",
+      "feature1Text": "Matches meals against Vietnamese food composition data instead of forcing Western substitutes.",
+      "feature2Title": "Context-aware estimation",
+      "feature2Text": "Understands modifiers like less scallion oil, extra broth, or home-style braising habits.",
+      "feature3Title": "Useful uncertainty, not fake certainty",
+      "feature3Text": "Returns bounded estimates so you can make better decisions without pretending the data is perfect.",
+      "profile": {
+        "title": "Personalization profile",
+        "active": "Active",
+        "regionTaste": "Regional taste",
+        "regionTasteValue": "Southern / sweet-leaning",
+        "braisedDishes": "Braised dishes",
+        "braisedDishesValue": "Usually sweeter",
+        "chickenSkin": "Chicken skin",
+        "chickenSkinValue": "Usually eaten",
+        "ricePortion": "Rice portion",
+        "ricePortionValue": "Large bowl",
+        "disclaimer": "These preferences tighten the estimate without forcing you to log every detail every time."
+      },
+      "receipt": {
+        "title": "Analysis receipt",
+        "dbQuery": "Querying Vietnamese ingredient database",
+        "profileTitle": "Personal context",
+        "regionPref": "Regional preference",
+        "regionValue": "Southern",
+        "modification": "Meal modifier",
+        "modificationValue": "Less scallion oil",
+        "goalStrategy": "Goal strategy",
+        "goalCutting": "Cutting",
+        "goalUpperBound": "Use upper bound",
+        "total": "Estimated total",
+        "range": "Range: ~760–845 kcal",
+        "upperBoundNote": "Upper bound shown for cutting"
+      }
+    },
+    "cta": {
+      "title": "Ready to track smarter?",
+      "subtitle": "Join the beta and start tracking Vietnamese meals with real accuracy.",
+      "button": "Get Started Free",
+      "buttonSecondary": "See a sample analysis",
+      "feature1": "Vietnamese-first database",
+      "feature2": "AI understands cooking context",
+      "feature3": "Bounded nutrition estimates",
+      "socialProof": "Trusted by early testers who were tired of guessing",
+      "appStore": "App Store rating",
+      "users": "beta users",
+      "mealsTracked": "meals tracked"
+    },
+    "footer": {
+      "tagline": "Vietnamese meal tracking, powered by AI.",
+      "product": "Product",
+      "features": "Features",
+      "howItWorks": "How it works",
+      "pricing": "Pricing",
+      "faq": "FAQ",
+      "company": "Company",
+      "about": "About",
+      "blog": "Blog",
+      "contact": "Contact",
+      "privacy": "Privacy",
+      "copyright": "© {year} Nhẩm. All rights reserved.",
+      "terms": "Terms",
+      "privacyLink": "Privacy policy",
+      "security": "Security"
+    }
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "today": "Today",
+    "thisWeek": "This Week",
+    "caloriesConsumed": "Calories consumed",
+    "caloriesRemaining": "Calories remaining",
+    "protein": "Protein",
+    "carbs": "Carbs",
+    "fat": "Fat",
+    "noMealsToday": "No meals logged today",
+    "logMeal": "Log a meal",
+    "recentMeals": "Recent meals",
+    "viewAll": "View all",
+    "progress": "Progress",
+    "weeklyAverage": "Weekly average",
+    "target": "Target",
+    "mealTrigger": {
+      "close": "Close meal composer",
+      "send": "Send meal"
+    },
+    "weightCard": {
+      "required": "Weight is required",
+      "invalid": "Enter a valid weight (0–500 kg)",
+      "todaysWeight": "Today's weight",
+      "morningWeight": "Morning weight",
+      "lastLogged": "Last: {weight} kg",
+      "loggedDays": "{count} of last {total} days logged"
+    },
+    "adherenceHeatmap": {
+      "onTrack": "{percent}% on track",
+      "notLogged": "Not logged",
+      "offTarget": "Off target",
+      "onTarget": "On target",
+      "noData": "No data",
+      "close": "Close",
+      "slightlyOver": "Slightly over",
+      "slightlyUnder": "Slightly under",
+      "over": "Over",
+      "under": "Under",
+      "farOver": "Far over",
+      "farUnder": "Far under"
+    }
+  },
+  "logging": {
+    "title": "What did you eat?",
+    "placeholder": "Describe your meal in Vietnamese or English...",
+    "submit": "Analyze",
+    "analyzing": "Analyzing your meal...",
+    "breakfast": "Breakfast",
+    "brunch": "Brunch",
+    "lunch": "Lunch",
+    "dinner": "Dinner",
+    "snack": "Snack",
+    "mealSlot": "Meal type",
+    "confirm": "Save meal",
+    "discard": "Discard",
+    "edit": "Edit",
+    "nutritionSummary": "Nutrition summary",
+    "ingredients": "Ingredients",
+    "calories": "Calories",
+    "confidence": "Confidence",
+    "high": "High",
+    "medium": "Medium",
+    "low": "Low",
+    "portion": "Portion",
+    "cookingMethod": "Cooking method",
+    "matched": "Matched",
+    "estimated": "Estimated",
+    "feedEmpty": "No meals yet today. What did you eat?",
+    "todaysMeals": "Today's meals",
+    "emptyState": {
+      "title": "What did you eat?",
+      "subtitle": "Describe your meal and get a macro breakdown."
+    },
+    "feedArea": {
+      "savedMeal": "Meal saved"
+    },
+    "streaming": {
+      "connecting": "Connecting...",
+      "decomposing": "Breaking down your meal...",
+      "matching": "Matching ingredients...",
+      "estimating": "Estimating nutrition...",
+      "assembling": "Putting it all together...",
+      "analyzing": "Analyzing..."
+    },
+    "mealEntry": {
+      "edit": "Edit",
+      "toggleDetails": "Toggle meal details",
+      "total": "Total"
+    },
+    "persistedMealCard": {
+      "toggleDetails": "Toggle meal details",
+      "total": "Total"
+    },
+    "timelineSidebar": {
+      "navigationLabel": "Timeline navigation",
+      "week": "Week {number}"
+    }
+  },
+  "settings": {
+    "title": "Settings",
+    "profile": "Profile",
+    "preferences": "Preferences",
+    "bodyMetrics": "Body Metrics",
+    "goals": "Goals & Targets",
+    "cooking": "Cooking Habits",
+    "regional": "Regional",
+    "save": "Save changes",
+    "saved": "Changes saved",
+    "language": "Language",
+    "languageHint": "Change the app language",
+    "sidebar": {
+      "title": "Settings",
+      "profile": "Profile",
+      "navigationLabel": "Settings navigation"
+    },
+    "regionalPanel": {
+      "description": "AI uses your country info to understand food culture and locally available ingredients.",
+      "searchCountryLabel": "Search country"
+    },
+    "profilePage": {
+      "title": "Profile",
+      "description": "Manage your body metrics, regional preferences, and cooking habits.",
+      "emptyTitle": "No profile found",
+      "emptyDescription": "You need to complete the initial setup before editing your settings.",
+      "startSetup": "Start setup"
+    },
+    "profilePanel": {
+      "bodyMetricsSubtitle": "Weight, height, activity level, and macro targets",
+      "regionalSubtitle": "Country of origin and current residence",
+      "cookingSubtitle": "Oil usage, rice, sugar, protein, and broth defaults",
+      "saveError": "Failed to save settings. Please try again."
+    }
+  }
+}

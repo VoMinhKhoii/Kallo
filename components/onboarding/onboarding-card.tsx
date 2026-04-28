@@ -1,8 +1,9 @@
 'use client';
 
 import { ArrowRight, X } from 'lucide-react';
-import Link from 'next/link';
-import { ONBOARDING_REQUIRED_STEP } from '@/lib/onboarding/constants';
+import { useTranslations } from 'next-intl';
+import { Link } from '@/i18n/navigation';
+import { ONBOARDING_TOTAL_STEPS } from '@/lib/onboarding/constants';
 
 interface OnboardingCardProps {
   onboardingStep: number;
@@ -13,12 +14,13 @@ export function OnboardingCard({
   onboardingStep,
   onDismiss,
 }: OnboardingCardProps) {
-  if (onboardingStep >= ONBOARDING_REQUIRED_STEP) {
+  const t = useTranslations('common');
+  if (onboardingStep >= ONBOARDING_TOTAL_STEPS) {
     return null;
   }
 
   const stepsCompleted = onboardingStep;
-  const totalSteps = ONBOARDING_REQUIRED_STEP;
+  const totalSteps = ONBOARDING_TOTAL_STEPS;
   const progress = (stepsCompleted / totalSteps) * 100;
 
   return (
@@ -34,7 +36,7 @@ export function OnboardingCard({
         type="button"
         onClick={onDismiss}
         className="absolute top-4 right-4 z-20 rounded-full p-2 text-[#8B7355] transition-colors hover:bg-[#F0EAE0]/60 hover:text-[#2C2416]"
-        aria-label="Đóng"
+        aria-label={t('close')}
       >
         <X className="h-4 w-4" />
       </button>

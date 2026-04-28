@@ -1,12 +1,16 @@
-export { applyIngredientAliases } from './aliases';
+export { applyIngredientAliases, resolveAlias } from './aliases';
 export {
   CONFIDENCE_THRESHOLDS,
   classifyConfidence,
+  FAO_VECTOR_THRESHOLD,
   FUZZY_FALLBACK_THRESHOLD,
   FUZZY_SIMILARITY_THRESHOLD,
   type MatchResult,
   matchIngredients,
   rerankCandidates,
+  SOURCE_FAO,
+  SOURCE_USDA,
+  USDA_VECTOR_THRESHOLD,
   VECTOR_SIMILARITY_THRESHOLD,
 } from './cascade';
 export {

@@ -1,58 +1,36 @@
-import { sql } from 'drizzle-orm';
-import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
-import { mapWithConcurrency } from '@/lib/utils';
-import { getNutritionCache } from '../cache/nutrition-cache';
-import type { GeminiClient } from '../gemini';
+import type { GeminiClient } from '@/lib/ai/gemini';
+import { resolveAlias, resolvePreMatchAlias } from '@/lib/ai/matching/aliases';
+import {
+  cacheQueryEmbedding,
+  resolveQueryEmbedding,
+} from '@/lib/ai/matching/embedding-cache';
+import { batchFetchNutrition } from '@/lib/ai/matching/nutrition-batch';
+import {
+  type MatchInfo,
+  matchSingleIngredientWithEmbedding,
+} from '@/lib/ai/matching/source-matching';
 import type {
   DecomposedIngredient,
-  MatchConfidence,
   MatchedIngredient,
   NutritionPer100g,
   UnmatchedIngredient,
-} from '../types';
-import { cacheQueryEmbedding, resolveQueryEmbedding } from './embedding-cache';
-import { parseNutritionRow } from './nutrition-db';
+} from '@/lib/ai/types';
+import type { AppDb } from '@/lib/db';
+import { mapWithConcurrency } from '@/lib/utils';
 
-export const CONFIDENCE_THRESHOLDS = {
-  high: 0.6,
-  medium: 0.3,
-} as const;
-
-/** Minimum similarity to accept a fuzzy (pg_trgm) match (legacy primary threshold) */
-export const FUZZY_SIMILARITY_THRESHOLD = 0.4;
-
-/** Minimum similarity to accept a vector (pgvector) match */
-export const VECTOR_SIMILARITY_THRESHOLD = 0.7;
-
-/** Minimum similarity to accept a fuzzy match when used as fallback after vector miss */
-export const FUZZY_FALLBACK_THRESHOLD = 0.7;
-
-export function classifyConfidence(similarity: number): MatchConfidence {
-  if (similarity >= CONFIDENCE_THRESHOLDS.high) return 'high';
-  if (similarity >= CONFIDENCE_THRESHOLDS.medium) return 'medium';
-  return 'low';
-}
-
-interface FuzzyMatchRow {
-  id: string;
-  name_primary: string;
-  name_alt: string[] | null;
-  name_en: string;
-  state: string;
-  similarity: number;
-}
-
-/**
- * Lightweight match result carrying only match metadata (no nutrition).
- * Used internally to decouple matching from nutrition fetching.
- */
-interface MatchInfo {
-  ingredientName: string;
-  foodCompositionId: string;
-  matchedName: string;
-  similarity: number;
-  confidence: MatchConfidence;
-}
+// Re-export all constants and types for backward compat (index.ts barrel imports from here)
+export {
+  CONFIDENCE_THRESHOLDS,
+  classifyConfidence,
+  FAO_VECTOR_THRESHOLD,
+  FUZZY_FALLBACK_THRESHOLD,
+  FUZZY_SIMILARITY_THRESHOLD,
+  rerankCandidates,
+  SOURCE_FAO,
+  SOURCE_USDA,
+  USDA_VECTOR_THRESHOLD,
+  VECTOR_SIMILARITY_THRESHOLD,
+} from './source-matching';
 
 export interface MatchResult {
   matched: MatchedIngredient[];
@@ -60,7 +38,7 @@ export interface MatchResult {
 }
 
 /** Max concurrent DB calls to avoid exhausting PgBouncer pool */
-const MATCH_CONCURRENCY = 3;
+const MATCH_CONCURRENCY = 2;
 
 /**
  * Match a list of decomposed ingredients against the food composition DB.
@@ -75,50 +53,104 @@ const MATCH_CONCURRENCY = 3;
 export async function matchIngredients(
   ingredients: DecomposedIngredient[],
   mealContext: string,
-  db: PostgresJsDatabase<any>,
+  db: AppDb,
   gemini: GeminiClient
 ): Promise<MatchResult> {
   const matched: MatchedIngredient[] = [];
   const unmatched: UnmatchedIngredient[] = [];
 
-  // Phase 1: Resolve embeddings (L1/L2 cache) concurrently and collect misses
-  const cacheResults = await Promise.all(
-    ingredients.map((ing) => resolveQueryEmbedding(ing.name, db))
+  // Pre-step: resolve pre-match aliases to fix known wrong-match cases
+  // (e.g., "cá lóc" → "Cá quả" to avoid USDA's Atlantic bass mistranslation).
+  // Original names are preserved for display; matching uses the alias name.
+  const matchingNames = ingredients.map((ing) => {
+    const alias = resolvePreMatchAlias(ing.name);
+    if (alias !== ing.name) {
+      console.info(`[matching] pre-match alias: "${ing.name}" → "${alias}"`);
+    }
+    return alias;
+  });
+
+  // Phase 1: Resolve embeddings (L1/L2 cache) with bounded concurrency
+  const cacheSettled = await mapWithConcurrency(
+    matchingNames,
+    (name) => resolveQueryEmbedding(name, db),
+    MATCH_CONCURRENCY
   );
+  const cacheResults = cacheSettled.map((r, i) => {
+    if (r.status === 'rejected') {
+      console.warn(
+        `[matching] cache lookup failed for "${matchingNames[i]}", treating as cold miss:`,
+        r.reason
+      );
+    }
+    return r.status === 'fulfilled' ? r.value : null;
+  });
   const embeddings: (number[] | null)[] = cacheResults.slice();
   const missIndices: number[] = [];
   for (let i = 0; i < cacheResults.length; i++) {
     if (!cacheResults[i]) missIndices.push(i);
   }
 
-  // Phase 2: Batch embed all L3 misses in a single API call
+  // Phase 2: Batch embed all L3 misses in a single API call (best-effort)
   if (missIndices.length > 0) {
-    const missNames = missIndices.map((i) => ingredients[i].name);
+    const missNames = missIndices.map((i) => matchingNames[i]);
     console.info(`[matching] batch embedding ${missNames.length} L3 misses`);
     const batchResults = await gemini.generateEmbeddingBatch(missNames);
-    for (let j = 0; j < missIndices.length; j++) {
-      const idx = missIndices[j];
-      embeddings[idx] = batchResults[j];
-      cacheQueryEmbedding(ingredients[idx].name, batchResults[j], db);
+    if (batchResults.length !== missNames.length) {
+      console.warn(
+        `[matching] embedding batch length mismatch: expected ${missNames.length}, got ${batchResults.length}; unaligned entries left unmatched`
+      );
+    } else {
+      for (let j = 0; j < missIndices.length; j++) {
+        const embedding = batchResults[j];
+        if (!embedding) {
+          console.warn(
+            `[matching] no embedding returned for "${missNames[j]}", leaving unmatched`
+          );
+          continue;
+        }
+        const idx = missIndices[j];
+        embeddings[idx] = embedding;
+        cacheQueryEmbedding(matchingNames[idx], embedding, db);
+      }
     }
   }
 
-  // Phase 3: Match each ingredient (returns MatchInfo without nutrition)
-  const results = await mapWithConcurrency(
-    ingredients.map((ingredient, i) => ({
-      name: ingredient.name,
-      embedding: embeddings[i]!,
-    })),
+  // Phase 3: Match each ingredient that has a resolved embedding
+  // Items without an embedding are enqueued as unmatched directly
+  const matchItems = matchingNames
+    .map((name, i) => ({ name, i, embedding: embeddings[i] }))
+    .filter(
+      (item): item is typeof item & { embedding: number[] } =>
+        item.embedding != null
+    );
+  const matchSettled = await mapWithConcurrency(
+    matchItems,
     (item) => matchSingleIngredientWithEmbedding(item.name, item.embedding, db),
     MATCH_CONCURRENCY
   );
 
-  // Collect successful MatchInfo results and track failures
+  // Collect successful MatchInfo results and track initial failures
   const matchInfos: MatchInfo[] = [];
+  const unmatchedWithIndex: {
+    ingredient: DecomposedIngredient;
+    index: number;
+  }[] = [];
+
+  // Items with no embedding go directly to unmatched (no API call wasted)
+  const matchedEmbeddingIndices = new Set(matchItems.map((item) => item.i));
   for (let i = 0; i < ingredients.length; i++) {
-    const result = results[i];
+    if (!matchedEmbeddingIndices.has(i)) {
+      unmatchedWithIndex.push({ ingredient: ingredients[i], index: i });
+    }
+  }
+
+  for (let j = 0; j < matchSettled.length; j++) {
+    const result = matchSettled[j];
+    const { i } = matchItems[j];
     if (result.status === 'fulfilled' && result.value) {
-      matchInfos.push(result.value);
+      // Restore original ingredient name (pre-match alias may have changed it)
+      matchInfos.push({ ...result.value, ingredientName: ingredients[i].name });
     } else {
       if (result.status === 'rejected') {
         console.error(
@@ -126,10 +158,135 @@ export async function matchIngredients(
           result.reason
         );
       }
-      unmatched.push({
-        ingredientName: ingredients[i].name,
-        mealContext,
-      });
+      unmatchedWithIndex.push({ ingredient: ingredients[i], index: i });
+    }
+  }
+
+  // Phase 3b: Alias fallback — retry unmatched ingredients with alias-expanded names
+  if (unmatchedWithIndex.length > 0) {
+    const aliasRetries: {
+      original: DecomposedIngredient;
+      originalIndex: number;
+      aliasName: string;
+    }[] = [];
+    for (const { ingredient, index } of unmatchedWithIndex) {
+      const aliasName = resolveAlias(ingredient.name);
+      if (aliasName !== ingredient.name) {
+        aliasRetries.push({
+          original: ingredient,
+          originalIndex: index,
+          aliasName,
+        });
+      }
+    }
+
+    if (aliasRetries.length > 0) {
+      // Alias fallback is best-effort: failures log + fall through to unmatched
+      const rescuedIndices = new Set<number>();
+      try {
+        console.info(
+          `[matching] alias fallback: ${aliasRetries.map((r) => `${r.original.name}→${r.aliasName}`).join(', ')}`
+        );
+        // Resolve embeddings for alias names with bounded concurrency
+        const aliasCacheSettled = await mapWithConcurrency(
+          aliasRetries,
+          (r) => resolveQueryEmbedding(r.aliasName, db),
+          MATCH_CONCURRENCY
+        );
+        const aliasCacheResults = aliasCacheSettled.map((r, i) => {
+          if (r.status === 'rejected') {
+            console.warn(
+              `[matching] alias cache lookup failed for "${aliasRetries[i].aliasName}", treating as cold miss:`,
+              r.reason
+            );
+          }
+          return r.status === 'fulfilled' ? r.value : null;
+        });
+        const aliasEmbeddings: (number[] | null)[] = aliasCacheResults.slice();
+        const aliasMissIndices: number[] = [];
+        for (let i = 0; i < aliasCacheResults.length; i++) {
+          if (!aliasCacheResults[i]) aliasMissIndices.push(i);
+        }
+        if (aliasMissIndices.length > 0) {
+          const missNames = aliasMissIndices.map(
+            (i) => aliasRetries[i].aliasName
+          );
+          const batchResults = await gemini.generateEmbeddingBatch(missNames);
+          if (batchResults.length !== missNames.length) {
+            console.warn(
+              `[matching] alias embedding batch length mismatch: expected ${missNames.length}, got ${batchResults.length}; unresolved aliases remain unmatched`
+            );
+          } else {
+            for (let j = 0; j < aliasMissIndices.length; j++) {
+              const embedding = batchResults[j];
+              if (!embedding) {
+                console.warn(
+                  `[matching] alias fallback: no embedding returned for "${missNames[j]}", skipping`
+                );
+                continue;
+              }
+              const idx = aliasMissIndices[j];
+              aliasEmbeddings[idx] = embedding;
+              cacheQueryEmbedding(aliasRetries[idx].aliasName, embedding, db);
+            }
+          }
+        }
+
+        // Match alias names (skip entries still missing an embedding)
+        const aliasMatchItems = aliasRetries
+          .map((r, i) => ({ r, i, embedding: aliasEmbeddings[i] }))
+          .filter(
+            (item): item is typeof item & { embedding: number[] } =>
+              item.embedding != null
+          );
+        const aliasResults = await mapWithConcurrency(
+          aliasMatchItems.map(({ r, embedding }) => ({
+            name: r.aliasName,
+            embedding,
+          })),
+          (item) =>
+            matchSingleIngredientWithEmbedding(item.name, item.embedding, db),
+          MATCH_CONCURRENCY
+        );
+
+        // Track which originals were rescued by alias (keyed by input index)
+        for (let j = 0; j < aliasResults.length; j++) {
+          const result = aliasResults[j];
+          const { r: retry } = aliasMatchItems[j];
+          if (result.status === 'fulfilled' && result.value) {
+            matchInfos.push({
+              ...result.value,
+              ingredientName: retry.original.name,
+            });
+            rescuedIndices.add(retry.originalIndex);
+            console.info(
+              `[matching] alias rescue: "${retry.original.name}" → "${retry.aliasName}" matched ${result.value.matchedName}`
+            );
+          } else if (result.status === 'rejected') {
+            console.error(
+              `[matching] alias fallback failed for "${retry.original.name}":`,
+              result.reason
+            );
+          }
+        }
+      } catch (err) {
+        console.warn(
+          '[matching] alias fallback aborted; keeping original ingredients unmatched:',
+          err
+        );
+      }
+
+      // Only keep truly unmatched (not rescued by alias)
+      for (const { ingredient, index } of unmatchedWithIndex) {
+        if (!rescuedIndices.has(index)) {
+          unmatched.push({ ingredientName: ingredient.name, mealContext });
+        }
+      }
+    } else {
+      // No aliases available — all remain unmatched
+      for (const { ingredient } of unmatchedWithIndex) {
+        unmatched.push({ ingredientName: ingredient.name, mealContext });
+      }
     }
   }
 
@@ -169,158 +326,4 @@ export async function matchIngredients(
   }
 
   return { matched, unmatched };
-}
-
-/**
- * Batch-fetch nutrition per 100g for a list of food composition IDs.
- *
- * Checks the in-memory nutrition cache first (loaded once per process from
- * all 526 FAO entries). Falls back to a direct DB query only for IDs that
- * are not in the cache (should not happen in practice once warm, but handles
- * cold-start race conditions gracefully).
- */
-async function batchFetchNutrition(
-  ids: string[],
-  db: PostgresJsDatabase<any>
-): Promise<Map<string, NutritionPer100g>> {
-  const map = new Map<string, NutritionPer100g>();
-  if (ids.length === 0) return map;
-
-  const nutritionCache = await getNutritionCache(db);
-
-  const missIds: string[] = [];
-  for (const id of ids) {
-    const cached = nutritionCache.get(id);
-    if (cached) {
-      map.set(id, cached);
-    } else {
-      missIds.push(id);
-    }
-  }
-
-  if (missIds.length > 0) {
-    // Cache miss — query DB directly for uncached IDs and populate cache
-    const idList = sql.join(
-      missIds.map((id) => sql`${id}`),
-      sql`, `
-    );
-    const rows = await db.execute(
-      sql`SELECT * FROM vietnamese_food_composition WHERE id IN (${idList})`
-    );
-    for (const row of rows as unknown as Record<string, unknown>[]) {
-      const id = row.id as string;
-      const nutrition = parseNutritionRow(row);
-      map.set(id, nutrition);
-      nutritionCache.set(id, nutrition);
-    }
-  }
-
-  return map;
-}
-
-/**
- * Match a single ingredient using a pre-resolved embedding.
- * Returns lightweight MatchInfo (no nutrition data).
- * Nutrition is batch-fetched separately in matchIngredients.
- */
-async function matchSingleIngredientWithEmbedding(
-  ingredientName: string,
-  embedding: number[],
-  db: PostgresJsDatabase<any>
-): Promise<MatchInfo | null> {
-  // Step 1: Try vector/semantic search (pgvector) — primary
-  const vectorRows = await db.execute(
-    sql`SELECT * FROM match_ingredients(${JSON.stringify(embedding)}::vector, 3, 0.5)`
-  );
-  const vectorTop = (vectorRows as unknown as FuzzyMatchRow[])[0];
-  if (vectorTop) {
-    console.info(
-      `[matching] "${ingredientName}" vector: ${vectorTop.name_primary} (${vectorTop.similarity.toFixed(3)})`
-    );
-  }
-  const vectorResult = buildMatchResult(
-    ingredientName,
-    vectorRows as unknown as FuzzyMatchRow[],
-    VECTOR_SIMILARITY_THRESHOLD
-  );
-  if (vectorResult) return vectorResult;
-
-  // Step 2: Fall back to fuzzy match (pg_trgm) with stricter threshold
-  const fuzzyRows = await db.execute(
-    sql`SELECT * FROM fuzzy_match_ingredients(${ingredientName}, 3, 0.15)`
-  );
-  const fuzzyTop = (fuzzyRows as unknown as FuzzyMatchRow[])[0];
-  if (fuzzyTop) {
-    console.info(
-      `[matching] "${ingredientName}" fuzzy fallback: ${fuzzyTop.name_primary} (${fuzzyTop.similarity.toFixed(3)})`
-    );
-  }
-  const fuzzyResult = buildMatchResult(
-    ingredientName,
-    fuzzyRows as unknown as FuzzyMatchRow[],
-    FUZZY_FALLBACK_THRESHOLD
-  );
-  if (!fuzzyResult) {
-    console.info(`[matching] "${ingredientName}" → unmatched`);
-  }
-  return fuzzyResult;
-}
-
-/**
- * Boost-only re-ranking of DB candidates.
- *
- * Adjusts similarity scores to prefer entries whose name directly matches
- * the query. No penalties — derived products (Bột, Bánh, Quả, …) are never
- * disadvantaged; they simply don't receive a boost when the query doesn't
- * include their prefix.
- */
-/** @internal Exported for testing */
-export function rerankCandidates(
-  query: string,
-  candidates: FuzzyMatchRow[]
-): FuzzyMatchRow[] {
-  if (candidates.length <= 1) return candidates;
-
-  const q = query.trim().toLowerCase();
-
-  const adjusted = candidates.map((c) => {
-    const name = c.name_primary.trim().toLowerCase();
-    let boost = 0;
-
-    if (q === name) {
-      boost = 0.15; // exact match
-    } else if (name.startsWith(q)) {
-      boost = 0.1; // name starts with query (e.g. "gạo nếp" → "Gạo nếp cái")
-    } else if (q.startsWith(name)) {
-      boost = 0.05; // query starts with name
-    }
-
-    return { ...c, similarity: c.similarity + boost };
-  });
-
-  return adjusted.sort((a, b) => b.similarity - a.similarity);
-}
-
-/**
- * Build a lightweight MatchInfo from candidate rows.
- * Pure function — no DB calls. Nutrition is fetched separately in batch.
- */
-function buildMatchResult(
-  ingredientName: string,
-  rows: FuzzyMatchRow[],
-  minSimilarity: number
-): MatchInfo | null {
-  if (rows.length === 0) return null;
-
-  const reranked = rerankCandidates(ingredientName, rows);
-  const topMatch = reranked[0];
-  if (topMatch.similarity < minSimilarity) return null;
-
-  return {
-    ingredientName,
-    foodCompositionId: topMatch.id,
-    matchedName: topMatch.name_primary,
-    similarity: topMatch.similarity,
-    confidence: classifyConfidence(topMatch.similarity),
-  };
 }

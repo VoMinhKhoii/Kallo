@@ -1,0 +1,502 @@
+# Google Cloud Run Setup
+
+This repo uses a **manual-only CI/CD model** for the shared database:
+
+- **Internal service** (`nham-internal`): Automatically deploys on main branch merge (no manual gate)
+- **Staging service** (`nham-staging`): Manual deployment only via `workflow_dispatch` (gatekeeper for schema/code changes)
+- **Preview services** (`nham-pr-<number>`): Disabled—no automatic PR preview deployments
+- Artifact Registry: One immutable image per commit SHA
+- Authentication: GitHub Actions via Workload Identity Federation (WIF)
+
+## Deployment Model
+
+All code and migrations hitting the **shared database** must go through the manual staging workflow:
+
+1. Developer pushes PR → CI runs (build, lint, tests)
+2. CI passes → no automatic deployment (previews disabled)
+3. Developer manually triggers **staging deployment** from GitHub Actions UI
+   - Enters a branch, tag, commit SHA, or plain PR number
+   - Acquires GCS lease to prevent concurrent deploys
+   - Pushes migrations from the PR branch
+   - Deploys service to `nham-staging`
+   - Posts the staging URL back to the PR when `ref` is `pr-<number>` or ends with `#<number>`
+4. Once staging is validated, PR is merged to main
+5. Main merge → `nham-internal` **automatically** deploys with latest schema (already validated on staging)
+
+The deploy path is structured so we can later split staging and production without redesigning the whole pipeline.
+
+## What the workflows expect
+
+The workflows in `.github/workflows/` assume:
+
+- Google Cloud project, billing, and APIs are already enabled
+- Artifact Registry stores images in a Docker repo named by
+  `GCP_ARTIFACT_REPO`
+- GitHub Actions authenticates with `google-github-actions/auth@v3`
+  through WIF
+- Cloud Run runtime secrets come from Secret Manager
+- the shared CI image uses GitHub repo variables for
+  `NEXT_PUBLIC_SUPABASE_URL` and
+  `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
+
+## Preview database modes (Disabled by default)
+
+Automatic PR previews are currently disabled, but the preview workflow still
+retains two database modes for legacy cleanup and future re-enablement:
+
+| Mode | What staging services use | When to use |
+| --- | --- | --- |
+| `shared` | The shared non-prod Supabase database behind `nham-nonprod-database-url` | Current mode (no branching) |
+| `branch` | A per-PR Supabase branch created via `supabase branches` | Future mode once the project has Supabase branching enabled |
+
+Set GitHub Actions variable `PREVIEW_DATABASE_MODE` to control that dormant
+preview behavior if previews are ever re-enabled. Leave it unset or set it to
+`shared` for the current setup.
+
+When you later upgrade to Supabase Pro, switching is meant to be operationally
+simple:
+
+1. set `PREVIEW_DATABASE_MODE=branch`
+2. add `SUPABASE_ACCESS_TOKEN` and `SUPABASE_PROJECT_ID` GitHub secrets
+3. keep `GCS_SEED_BUCKET` and `GCS_SEED_OBJECT` pointing at the generated seed
+4. manually trigger staging deployment for a PR
+
+## Required Google Cloud resources
+
+Create or confirm these resources:
+
+- Artifact Registry Docker repository
+- Workload Identity Pool
+- Workload Identity Provider for GitHub OIDC
+- Deployer service account for GitHub Actions
+- Runtime service account for Cloud Run revisions
+- GCS bucket for staging lease state
+- Secret Manager secrets:
+  - `nham-nonprod-database-url`
+  - `nham-nonprod-gemini-api-key`
+
+The workflows create Cloud Run services on first deploy, so you do not need to
+pre-create `nham-internal` or preview services manually.
+
+## GCS preview seed bucket setup
+
+Use these commands to create and grant access to the private preview seed
+bucket:
+
+```bash
+export GCP_PROJECT_ID="cal-487315"
+export GCP_REGION="asia-southeast1"
+export GCS_PREVIEW_SEED_BUCKET="nham-preview-seeds"
+export GCP_DEPLOYER_SERVICE_ACCOUNT="github-deployer@cal-487315.iam.gserviceaccount.com"
+
+gcloud storage buckets create "gs://$GCS_PREVIEW_SEED_BUCKET" \
+  --project="$GCP_PROJECT_ID" \
+  --location="$GCP_REGION" \
+  --uniform-bucket-level-access
+
+gcloud storage buckets add-iam-policy-binding "gs://$GCS_PREVIEW_SEED_BUCKET" \
+  --member="serviceAccount:$GCP_DEPLOYER_SERVICE_ACCOUNT" \
+  --role="roles/storage.objectViewer"
+```
+
+## Seed refresh flow and GitHub settings
+
+Refresh the generated seed artifact with:
+
+```bash
+bun scripts/generate-seed-food-sql.ts \
+  --input "Vietnamese Food Composition.csv" \
+  --output "./seed_food.sql"
+
+gcloud storage cp ./seed_food.sql \
+  "gs://$GCS_PREVIEW_SEED_BUCKET/supabase/seed_food.sql"
+
+rm -f ./seed_food.sql
+```
+
+Required GitHub settings for the current shared mode:
+
+- Variables:
+  - `PREVIEW_DATABASE_MODE=shared` (or leave unset)
+
+Additional GitHub settings used by the shared reset workflow and future branch
+mode:
+
+- Variables:
+  - `GCS_SEED_BUCKET`
+  - `GCS_SEED_OBJECT`
+- Secrets:
+  - `SUPABASE_ACCESS_TOKEN`
+  - `SUPABASE_PROJECT_ID`
+
+Additional GitHub settings required only for future `branch` mode:
+
+- No additional variables or secrets beyond the shared reset settings above.
+
+## Shared staging reset workflow
+
+The shared preview/internal database is intentionally recoverable.
+
+Use **GitHub → Actions → Reset Staging Database** when staging drifts into a bad
+state. The workflow:
+
+1. checks out the default branch
+2. verifies that `SUPABASE_PROJECT_ID` matches the project behind
+   `nham-nonprod-database-url`
+3. runs `supabase db reset --linked --yes`
+4. reapplies the generated `seed_food.sql` from GCS
+5. verifies that the rebuilt DB has core tables, seeded food rows, the
+   `on_auth_user_created` trigger, and zero orphaned `auth.users` rows
+
+That gives you a one-button rebuild of the shared staging database from the
+latest approved migrations plus the generated search/embedding seed state.
+It also replays a backfill migration so pre-existing `auth.users` rows regain
+their `public.user_profiles` rows after remote resets.
+
+## Recommended naming
+
+Use names close to these so the guide and workflows stay easy to map:
+
+| Resource | Suggested name |
+| --- | --- |
+| Artifact Registry repo | `nham` |
+| Workload Identity Pool | `github-actions` |
+| Workload Identity Provider | `github` |
+| Deployer service account | `github-deployer` |
+| Runtime service account | `cloud-run-runtime` |
+| Internal Cloud Run service | `nham-internal` |
+| Shared staging Cloud Run service | `nham-staging` |
+| Preview Cloud Run services | `nham-pr-<number>` |
+| Staging lease bucket | `nham-staging-leases` |
+
+## Required APIs
+
+Enable these APIs in the target project:
+
+```bash
+gcloud services enable \
+  artifactregistry.googleapis.com \
+  iam.googleapis.com \
+  iamcredentials.googleapis.com \
+  run.googleapis.com \
+  secretmanager.googleapis.com
+```
+
+## Bootstrap shell variables
+
+Set these once in your shell before running the setup commands below:
+
+```bash
+export GCP_PROJECT_ID="your-project-id"
+export GCP_PROJECT_NUMBER="your-project-number"
+export GCP_REGION="asia-southeast1"
+export GCP_ARTIFACT_REPO="nham"
+export GCP_WIF_POOL_ID="github-actions"
+export GCP_WIF_PROVIDER_ID="github"
+export GCP_DEPLOYER_SA_ID="github-deployer"
+export GCP_RUNTIME_SA_ID="cloud-run-runtime"
+export GITHUB_REPOSITORY="VoMinhKhoii/Nham"
+```
+
+## 1. Create Artifact Registry
+
+```bash
+gcloud artifacts repositories create "$GCP_ARTIFACT_REPO" \
+  --repository-format=docker \
+  --location="$GCP_REGION" \
+  --description="Nham Cloud Run images"
+```
+
+## 2. Create service accounts
+
+```bash
+gcloud iam service-accounts create "$GCP_DEPLOYER_SA_ID" \
+  --display-name="GitHub Actions deployer"
+
+gcloud iam service-accounts create "$GCP_RUNTIME_SA_ID" \
+  --display-name="Cloud Run runtime"
+```
+
+Resolve the full emails:
+
+```bash
+export GCP_DEPLOYER_SERVICE_ACCOUNT="$GCP_DEPLOYER_SA_ID@$GCP_PROJECT_ID.iam.gserviceaccount.com"
+export GCP_RUNTIME_SERVICE_ACCOUNT="$GCP_RUNTIME_SA_ID@$GCP_PROJECT_ID.iam.gserviceaccount.com"
+```
+
+## 3. Grant IAM roles
+
+### Deployer service account
+
+The deployer must be able to push images, create/update/delete Cloud Run
+services, attach the runtime service account, and access Secret Manager for
+pre-deploy validation and database reset operations.
+
+```bash
+gcloud projects add-iam-policy-binding "$GCP_PROJECT_ID" \
+  --member="serviceAccount:$GCP_DEPLOYER_SERVICE_ACCOUNT" \
+  --role="roles/run.admin"
+
+gcloud projects add-iam-policy-binding "$GCP_PROJECT_ID" \
+  --member="serviceAccount:$GCP_DEPLOYER_SERVICE_ACCOUNT" \
+  --role="roles/artifactregistry.writer"
+
+gcloud projects add-iam-policy-binding "$GCP_PROJECT_ID" \
+  --member="serviceAccount:$GCP_DEPLOYER_SERVICE_ACCOUNT" \
+  --role="roles/secretmanager.secretAccessor"
+
+gcloud iam service-accounts add-iam-policy-binding \
+  "$GCP_RUNTIME_SERVICE_ACCOUNT" \
+  --member="serviceAccount:$GCP_DEPLOYER_SERVICE_ACCOUNT" \
+  --role="roles/iam.serviceAccountUser"
+```
+
+### Runtime service account
+
+The app reads runtime secrets from Secret Manager-backed Cloud Run env
+configuration.
+
+```bash
+gcloud projects add-iam-policy-binding "$GCP_PROJECT_ID" \
+  --member="serviceAccount:$GCP_RUNTIME_SERVICE_ACCOUNT" \
+  --role="roles/secretmanager.secretAccessor"
+```
+
+## 4. Create Secret Manager secrets
+
+Create the secrets if they do not exist:
+
+```bash
+printf '%s' 'postgres://...' | gcloud secrets create nham-nonprod-database-url \
+  --data-file=-
+
+printf '%s' 'your-gemini-api-key' | gcloud secrets create nham-nonprod-gemini-api-key \
+  --data-file=-
+```
+
+If the secrets already exist, add a new version instead:
+
+```bash
+printf '%s' 'postgres://...' | gcloud secrets versions add \
+  nham-nonprod-database-url \
+  --data-file=-
+
+printf '%s' 'your-gemini-api-key' | gcloud secrets versions add \
+  nham-nonprod-gemini-api-key \
+  --data-file=-
+```
+
+## 5. Create Workload Identity Federation
+
+Create the pool:
+
+```bash
+gcloud iam workload-identity-pools create "$GCP_WIF_POOL_ID" \
+  --project="$GCP_PROJECT_ID" \
+  --location="global" \
+  --display-name="GitHub Actions"
+```
+
+Create the GitHub OIDC provider:
+
+```bash
+gcloud iam workload-identity-pools providers create-oidc \
+  "$GCP_WIF_PROVIDER_ID" \
+  --project="$GCP_PROJECT_ID" \
+  --location="global" \
+  --workload-identity-pool="$GCP_WIF_POOL_ID" \
+  --display-name="GitHub" \
+  --issuer-uri="https://token.actions.githubusercontent.com" \
+  --attribute-mapping="google.subject=assertion.sub,attribute.repository=assertion.repository,attribute.repository_owner=assertion.repository_owner,attribute.ref=assertion.ref" \
+  --attribute-condition="attribute.repository == '$GITHUB_REPOSITORY'"
+```
+
+Bind the GitHub repo principal set to the deployer service account:
+
+```bash
+gcloud iam service-accounts add-iam-policy-binding \
+  "$GCP_DEPLOYER_SERVICE_ACCOUNT" \
+  --project="$GCP_PROJECT_ID" \
+  --role="roles/iam.workloadIdentityUser" \
+  --member="principalSet://iam.googleapis.com/projects/$GCP_PROJECT_NUMBER/locations/global/workloadIdentityPools/$GCP_WIF_POOL_ID/attribute.repository/$GITHUB_REPOSITORY"
+```
+
+### WIF notes
+
+- This setup restricts token exchange to this repository.
+- The workflows themselves further restrict deploy lanes:
+  - previews run only for successful same-repo PR CI runs
+  - internal deploys run only for successful `main` push CI runs
+- If we later want stronger separation, split preview/internal/ops into
+  distinct service accounts or providers with narrower attribute conditions.
+
+## 6. Add GitHub repository variables
+
+In **GitHub → Settings → Secrets and variables → Actions → Variables**, add:
+
+| Variable | Purpose |
+| --- | --- |
+| `GCP_PROJECT_ID` | Google Cloud project ID |
+| `GCP_PROJECT_NUMBER` | Google Cloud project number |
+| `GCP_REGION` | Cloud Run and Artifact Registry region |
+| `GCP_ARTIFACT_REPO` | Artifact Registry Docker repo name |
+| `GCP_WIF_PROVIDER` | Full WIF provider resource path |
+| `GCP_DEPLOYER_SERVICE_ACCOUNT` | Full deployer SA email |
+| `GCP_RUNTIME_SERVICE_ACCOUNT` | Full runtime SA email |
+| `NEXT_PUBLIC_SUPABASE_URL` | Non-prod public Supabase URL |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Non-prod public Supabase anon key |
+| `GCS_SEED_BUCKET` | Private preview seed artifact bucket |
+| `GCS_SEED_OBJECT` | Object path of the seed artifact within the bucket |
+| `GCS_STAGING_LEASE_BUCKET` | GCS bucket used for staging/lease.json atomic lock |
+
+`GCP_WIF_PROVIDER` must be the full resource name:
+
+```text
+projects/<project-number>/locations/global/workloadIdentityPools/<pool-id>/providers/<provider-id>
+```
+
+No GitHub secret is required for Google auth in this deploy path. WIF handles
+authentication, and runtime secrets stay in Secret Manager.
+
+## 7. Public config rule
+
+`NEXT_PUBLIC_SUPABASE_URL` and
+`NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` are **build-time inputs** for the shared
+CI image used by `nham-internal` and by previews while
+`PREVIEW_DATABASE_MODE=shared`.
+
+That means:
+
+- changing them requires a new CI image build
+- changing Cloud Run runtime env vars later will not fix stale client bundle
+  config
+- shared-mode previews and `nham-internal` both read the same public Supabase
+  config from GitHub Actions variables
+- if we later switch to `PREVIEW_DATABASE_MODE=branch`, preview images rebuild
+  after branch env is fetched from Supabase, while `nham-internal` keeps using
+  the shared GitHub Actions variables
+
+### Preview runtime notes
+
+| Mode | Public Supabase config | Server `DATABASE_URL` | Cleanup behavior |
+| --- | --- | --- | --- |
+| `shared` (current default) | Comes from `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` GitHub variables baked into the CI image | Secret Manager-backed `nham-nonprod-database-url` | PR close deletes only the preview Cloud Run service; DB recovery happens through **Reset Staging Database** |
+| `branch` (future Supabase Pro path) | Comes from Supabase branch env fetched during the preview build | Injected with `--update-env-vars=DATABASE_URL=...` for that PR branch | PR close and scheduled cleanup delete both the preview Cloud Run service and the Supabase branch |
+
+## 8. Cloud Run defaults used by the workflows
+
+### Internal service: `nham-internal`
+
+- CPU: `1`
+- Memory: `1Gi`
+- Concurrency: `20`
+- Timeout: `60`
+- Min instances: `1`
+- Max instances: `10`
+- Public URL enabled
+- Secret-backed runtime env:
+  - `DATABASE_URL`
+  - `GEMINI_API_KEY`
+
+### Preview services: `nham-pr-<number>` (disabled by default)
+
+- CPU: `1`
+- Memory: `1Gi`
+- Concurrency: `20`
+- Timeout: `60`
+- Min instances: `0`
+- Max instances: `3`
+- Public URL enabled
+- `DATABASE_URL` source depends on `PREVIEW_DATABASE_MODE`:
+  - shared mode uses Secret Manager-backed `nham-nonprod-database-url`
+  - branch mode injects the per-branch URL with `--update-env-vars`
+- `GEMINI_API_KEY` stays Secret Manager-backed in both modes
+
+## 9. Workflow map
+
+| Workflow | Purpose |
+| --- | --- |
+| `CI` | Validate repo, then build and push SHA-tagged image |
+| `Cloud Run Preview` | Disabled automatic preview deploy path retained for future/manual recovery work |
+| `Cloud Run Internal` | Deploy `main` to `nham-internal`, with smoke-triggered rollback |
+| `Cloud Run Preview Cleanup` | Delete legacy preview Cloud Run services on PR close, remove matching Supabase branches, and clean up orphan previews nightly |
+| `Cloud Run Staging` | Manual shared-staging promotion with lease protection, migrations, smoke check, and PR comment updates |
+| `Cloud Run Ops` | Manual internal ops plus legacy preview refresh operations |
+
+## 10. Manual operations
+
+The `Cloud Run Ops` workflow supports:
+
+- `redeploy-internal`
+- `rollback-internal`
+- `refresh-preview` (legacy/manual preview recovery only while auto-previews stay disabled)
+
+Useful commands for operators:
+
+Find the image digest for a known commit SHA:
+
+```bash
+export IMAGE_TAG="$GCP_REGION-docker.pkg.dev/$GCP_PROJECT_ID/$GCP_ARTIFACT_REPO/nham:<commit-sha>"
+gcloud artifacts docker images describe "$IMAGE_TAG" \
+  --format='value(image_summary.digest)'
+```
+
+Inspect current internal traffic:
+
+```bash
+gcloud run services describe nham-internal \
+  --region="$GCP_REGION" \
+  --format='table(status.traffic.revisionName,status.traffic.percent)'
+```
+
+List revisions for rollback selection:
+
+```bash
+gcloud run revisions list \
+  --region="$GCP_REGION" \
+  --service=nham-internal
+```
+
+## 11. Manual verification checklist
+
+Run these after setup:
+
+1. Open a same-repo PR and confirm:
+   - CI publishes an image for the PR head SHA
+   - no automatic preview deploy runs after CI succeeds
+2. Manually run `Cloud Run Staging` for that PR and confirm:
+   - the workflow acquires the staging lease
+   - migrations apply against the shared non-prod DB
+   - the PR gets a staging comment when `ref` is `pr-<number>` or ends with `#<number>`
+   - `https://<staging-url>/api/healthz` returns the expected health JSON
+3. Merge a known-good change to `main` and confirm:
+   - `Cloud Run Internal` deploys `nham-internal`
+   - smoke checks pass without rollback
+4. Run a controlled rollback drill in a non-production window:
+   - force smoke verification to fail once
+   - confirm traffic returns to the previously serving revision
+5. Run `Cloud Run Ops` once with a known digest:
+   - redeploy internal by digest
+   - confirm deployment-record artifacts are uploaded
+6. If you still have legacy preview services to clean up, close the PR or run the cleanup workflow and confirm:
+   - `Cloud Run Preview Cleanup` deletes `nham-pr-<number>` and the matching Supabase branch
+   - the old preview URL no longer serves the app
+
+## 12. Known boundaries of the current setup
+
+- Automatic PR previews are disabled; shared staging is the only supported
+  pre-merge deployment lane.
+- Legacy preview services and cleanup workflows still exist for compatibility,
+  recovery, and eventual re-enablement work.
+- Previews and internal share one non-production Supabase backend for now.
+- This setup is intentionally open on the default Cloud Run URL; application auth
+  is still the access gate.
+- Normal preview and internal deploy workflows do not run destructive database
+  reset commands.
+- The manual **Reset Staging Database** workflow is the exception: it verifies
+  `SUPABASE_PROJECT_ID` matches the database behind
+  `nham-nonprod-database-url`, then runs `supabase db reset --linked --yes`,
+  reapplies `seed_food.sql`, and replays the `public.user_profiles` backfill so
+  existing `auth.users` rows are restored safely.
+- A later production environment with different `NEXT_PUBLIC_*` values will need
+  a separate image build or a different client-config bootstrap strategy.

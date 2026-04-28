@@ -33,7 +33,7 @@ export const userProfiles = pgTable(
       .primaryKey()
       .references(() => authUsers.id, { onDelete: 'cascade' }),
 
-    // Screen 1: Body Metrics
+    // Screen 2: Body Metrics
     weightKg: decimal('weight_kg', { precision: 5, scale: 2 }),
     heightCm: smallint('height_cm'),
     age: smallint('age'),
@@ -50,26 +50,19 @@ export const userProfiles = pgTable(
     fatTargetG: smallint('fat_target_g'),
     carbSplit: text('carb_split'),
 
-    // Screen 3: Regional Profile
-    regionalProfile: text('regional_profile'),
+    // Screen 1: Origin & Language
+    countryOfOrigin: text('country_of_origin'),
+    countryOfResidence: text('country_of_residence'),
+    preferredLocale: text('preferred_locale').default('en'),
 
-    // Screen 4: Cooking Habits
+    // Screen 3: Cooking Habits
     oilUsage: text('oil_usage'),
     defaultRicePortion: text('default_rice_portion'),
     sugarBraised: text('sugar_braised'),
     defaultProteinPortion: text('default_protein_portion'),
     brothConsumption: text('broth_consumption'),
 
-    // Screen 5: Portion Calibration
-    bowlSizeMl: smallint('bowl_size_ml').default(200),
-    plateSizeMl: smallint('plate_size_ml').default(400),
-
-    // Hand measurements & onboarding progress
-    handSpanCm: decimal('hand_span_cm', { precision: 4, scale: 1 }),
-    knuckleDepthCm: decimal('knuckle_depth_cm', {
-      precision: 3,
-      scale: 1,
-    }),
+    // Portion defaults & onboarding progress
     onboardingStep: smallint('onboarding_step').notNull().default(0),
     onboardingCompletedAt: timestamp('onboarding_completed_at', {
       withTimezone: true,
@@ -101,8 +94,8 @@ export const userProfiles = pgTable(
       sql`${table.aggression} >= 0.1 AND ${table.aggression} <= 0.8`
     ),
     check(
-      'user_profiles_regional_profile_check',
-      sql`${table.regionalProfile} IN ('mien_bac', 'mien_trung', 'mien_nam', 'mien_tay')`
+      'user_profiles_onboarding_step_check',
+      sql`${table.onboardingStep} >= 0 AND ${table.onboardingStep} <= 3`
     ),
     check(
       'user_profiles_oil_usage_check',
@@ -128,14 +121,9 @@ export const userProfiles = pgTable(
       'user_profiles_broth_consumption_check',
       sql`${table.brothConsumption} IN ('leave_it', 'some', 'finish_it')`
     ),
-    check('user_profiles_hand_span_cm_check', sql`${table.handSpanCm} > 0`),
     check(
-      'user_profiles_knuckle_depth_cm_check',
-      sql`${table.knuckleDepthCm} > 0`
-    ),
-    check(
-      'user_profiles_onboarding_step_check',
-      sql`${table.onboardingStep} >= 0 AND ${table.onboardingStep} <= 5`
+      'user_profiles_preferred_locale_check',
+      sql`${table.preferredLocale} IN ('en', 'vi')`
     ),
   ]
 );
@@ -240,35 +228,35 @@ export const meals = pgTable(
       .notNull()
       .defaultNow(),
 
-    // Bounded nutrition — JSONB {low, mid, high}
-    caloriesKcal: jsonb('calories_kcal'),
-    proteinG: jsonb('protein_g'),
-    carbohydrateG: jsonb('carbohydrate_g'),
-    fatG: jsonb('fat_g'),
-    fiberG: jsonb('fiber_g'),
-    sodiumMg: jsonb('sodium_mg'),
-    calciumMg: jsonb('calcium_mg'),
-    ironMg: jsonb('iron_mg'),
-    magnesiumMg: jsonb('magnesium_mg'),
-    phosphorusMg: jsonb('phosphorus_mg'),
-    potassiumMg: jsonb('potassium_mg'),
-    zincMg: jsonb('zinc_mg'),
-    copperMcg: jsonb('copper_mcg'),
-    manganeseMg: jsonb('manganese_mg'),
-    betaCaroteneMcg: jsonb('beta_carotene_mcg'),
-    vitaminAMcg: jsonb('vitamin_a_mcg'),
-    vitaminDMcg: jsonb('vitamin_d_mcg'),
-    vitaminEMg: jsonb('vitamin_e_mg'),
-    vitaminKMcg: jsonb('vitamin_k_mcg'),
-    vitaminCMg: jsonb('vitamin_c_mg'),
-    vitaminB1Mg: jsonb('vitamin_b1_mg'),
-    vitaminB2Mg: jsonb('vitamin_b2_mg'),
-    vitaminPpMg: jsonb('vitamin_pp_mg'),
-    vitaminB5Mg: jsonb('vitamin_b5_mg'),
-    vitaminB6Mg: jsonb('vitamin_b6_mg'),
-    vitaminB9Mcg: jsonb('vitamin_b9_mcg'),
-    vitaminB12Mcg: jsonb('vitamin_b12_mcg'),
-    vitaminHMcg: jsonb('vitamin_h_mcg'),
+    // Persisted nutrition — one numeric value per nutrient
+    caloriesKcal: numeric('calories_kcal', { mode: 'number' }),
+    proteinG: numeric('protein_g', { mode: 'number' }),
+    carbohydrateG: numeric('carbohydrate_g', { mode: 'number' }),
+    fatG: numeric('fat_g', { mode: 'number' }),
+    fiberG: numeric('fiber_g', { mode: 'number' }),
+    sodiumMg: numeric('sodium_mg', { mode: 'number' }),
+    calciumMg: numeric('calcium_mg', { mode: 'number' }),
+    ironMg: numeric('iron_mg', { mode: 'number' }),
+    magnesiumMg: numeric('magnesium_mg', { mode: 'number' }),
+    phosphorusMg: numeric('phosphorus_mg', { mode: 'number' }),
+    potassiumMg: numeric('potassium_mg', { mode: 'number' }),
+    zincMg: numeric('zinc_mg', { mode: 'number' }),
+    copperMcg: numeric('copper_mcg', { mode: 'number' }),
+    manganeseMg: numeric('manganese_mg', { mode: 'number' }),
+    betaCaroteneMcg: numeric('beta_carotene_mcg', { mode: 'number' }),
+    vitaminAMcg: numeric('vitamin_a_mcg', { mode: 'number' }),
+    vitaminDMcg: numeric('vitamin_d_mcg', { mode: 'number' }),
+    vitaminEMg: numeric('vitamin_e_mg', { mode: 'number' }),
+    vitaminKMcg: numeric('vitamin_k_mcg', { mode: 'number' }),
+    vitaminCMg: numeric('vitamin_c_mg', { mode: 'number' }),
+    vitaminB1Mg: numeric('vitamin_b1_mg', { mode: 'number' }),
+    vitaminB2Mg: numeric('vitamin_b2_mg', { mode: 'number' }),
+    vitaminPpMg: numeric('vitamin_pp_mg', { mode: 'number' }),
+    vitaminB5Mg: numeric('vitamin_b5_mg', { mode: 'number' }),
+    vitaminB6Mg: numeric('vitamin_b6_mg', { mode: 'number' }),
+    vitaminB9Mcg: numeric('vitamin_b9_mcg', { mode: 'number' }),
+    vitaminB12Mcg: numeric('vitamin_b12_mcg', { mode: 'number' }),
+    vitaminHMcg: numeric('vitamin_h_mcg', { mode: 'number' }),
 
     createdAt: timestamp('created_at', { withTimezone: true })
       .notNull()
@@ -313,35 +301,35 @@ export const mealItems = pgTable(
     cookingMethod: text('cooking_method'),
     matchConfidence: real('match_confidence'),
 
-    // Bounded nutrition — JSONB {low, mid, high}
-    caloriesKcal: jsonb('calories_kcal'),
-    proteinG: jsonb('protein_g'),
-    carbohydrateG: jsonb('carbohydrate_g'),
-    fatG: jsonb('fat_g'),
-    fiberG: jsonb('fiber_g'),
-    sodiumMg: jsonb('sodium_mg'),
-    calciumMg: jsonb('calcium_mg'),
-    ironMg: jsonb('iron_mg'),
-    magnesiumMg: jsonb('magnesium_mg'),
-    phosphorusMg: jsonb('phosphorus_mg'),
-    potassiumMg: jsonb('potassium_mg'),
-    zincMg: jsonb('zinc_mg'),
-    copperMcg: jsonb('copper_mcg'),
-    manganeseMg: jsonb('manganese_mg'),
-    betaCaroteneMcg: jsonb('beta_carotene_mcg'),
-    vitaminAMcg: jsonb('vitamin_a_mcg'),
-    vitaminDMcg: jsonb('vitamin_d_mcg'),
-    vitaminEMg: jsonb('vitamin_e_mg'),
-    vitaminKMcg: jsonb('vitamin_k_mcg'),
-    vitaminCMg: jsonb('vitamin_c_mg'),
-    vitaminB1Mg: jsonb('vitamin_b1_mg'),
-    vitaminB2Mg: jsonb('vitamin_b2_mg'),
-    vitaminPpMg: jsonb('vitamin_pp_mg'),
-    vitaminB5Mg: jsonb('vitamin_b5_mg'),
-    vitaminB6Mg: jsonb('vitamin_b6_mg'),
-    vitaminB9Mcg: jsonb('vitamin_b9_mcg'),
-    vitaminB12Mcg: jsonb('vitamin_b12_mcg'),
-    vitaminHMcg: jsonb('vitamin_h_mcg'),
+    // Persisted nutrition — one numeric value per nutrient
+    caloriesKcal: numeric('calories_kcal', { mode: 'number' }),
+    proteinG: numeric('protein_g', { mode: 'number' }),
+    carbohydrateG: numeric('carbohydrate_g', { mode: 'number' }),
+    fatG: numeric('fat_g', { mode: 'number' }),
+    fiberG: numeric('fiber_g', { mode: 'number' }),
+    sodiumMg: numeric('sodium_mg', { mode: 'number' }),
+    calciumMg: numeric('calcium_mg', { mode: 'number' }),
+    ironMg: numeric('iron_mg', { mode: 'number' }),
+    magnesiumMg: numeric('magnesium_mg', { mode: 'number' }),
+    phosphorusMg: numeric('phosphorus_mg', { mode: 'number' }),
+    potassiumMg: numeric('potassium_mg', { mode: 'number' }),
+    zincMg: numeric('zinc_mg', { mode: 'number' }),
+    copperMcg: numeric('copper_mcg', { mode: 'number' }),
+    manganeseMg: numeric('manganese_mg', { mode: 'number' }),
+    betaCaroteneMcg: numeric('beta_carotene_mcg', { mode: 'number' }),
+    vitaminAMcg: numeric('vitamin_a_mcg', { mode: 'number' }),
+    vitaminDMcg: numeric('vitamin_d_mcg', { mode: 'number' }),
+    vitaminEMg: numeric('vitamin_e_mg', { mode: 'number' }),
+    vitaminKMcg: numeric('vitamin_k_mcg', { mode: 'number' }),
+    vitaminCMg: numeric('vitamin_c_mg', { mode: 'number' }),
+    vitaminB1Mg: numeric('vitamin_b1_mg', { mode: 'number' }),
+    vitaminB2Mg: numeric('vitamin_b2_mg', { mode: 'number' }),
+    vitaminPpMg: numeric('vitamin_pp_mg', { mode: 'number' }),
+    vitaminB5Mg: numeric('vitamin_b5_mg', { mode: 'number' }),
+    vitaminB6Mg: numeric('vitamin_b6_mg', { mode: 'number' }),
+    vitaminB9Mcg: numeric('vitamin_b9_mcg', { mode: 'number' }),
+    vitaminB12Mcg: numeric('vitamin_b12_mcg', { mode: 'number' }),
+    vitaminHMcg: numeric('vitamin_h_mcg', { mode: 'number' }),
 
     createdAt: timestamp('created_at', { withTimezone: true })
       .notNull()

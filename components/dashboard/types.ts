@@ -1,3 +1,5 @@
+import type { WeightSummaryData } from '@/lib/types/weight';
+
 export type TimeRange = '30d' | '90d';
 
 export interface MealEntry {
@@ -33,6 +35,15 @@ export interface NutritionData {
   fat: { current: number; target: number };
 }
 
+export interface DashboardSnapshot {
+  verdict: VerdictData;
+  stats: StatsData;
+  nutrition: NutritionData;
+  meals: MealEntry[];
+  heatmap: (number | null)[][];
+  weightSummary: WeightSummaryData;
+}
+
 export interface Micronutrient {
   key: string;
   name: string;
@@ -53,25 +64,27 @@ export const HEATMAP_COLORS = {
 
 export function getHeatmapColor(ratio: number | null): {
   bg: string;
-  label: string;
+  labelKey: string;
 } {
-  if (ratio === null) return { bg: 'transparent', label: 'No data' };
+  if (ratio === null) return { bg: 'transparent', labelKey: 'noData' };
 
   const dist = Math.abs(ratio - 1.0);
-  if (dist <= 0.05) return { bg: HEATMAP_COLORS.onTarget, label: 'On target' };
-  if (dist <= 0.1) return { bg: HEATMAP_COLORS.close, label: 'Close' };
+  if (dist <= 0.05) {
+    return { bg: HEATMAP_COLORS.onTarget, labelKey: 'onTarget' };
+  }
+  if (dist <= 0.1) return { bg: HEATMAP_COLORS.close, labelKey: 'close' };
   if (dist <= 0.2)
     return {
       bg: HEATMAP_COLORS.slight,
-      label: ratio > 1 ? 'Slightly over' : 'Slightly under',
+      labelKey: ratio > 1 ? 'slightlyOver' : 'slightlyUnder',
     };
   if (dist <= 0.3)
     return {
       bg: HEATMAP_COLORS.moderate,
-      label: ratio > 1 ? 'Over' : 'Under',
+      labelKey: ratio > 1 ? 'over' : 'under',
     };
   return {
     bg: HEATMAP_COLORS.far,
-    label: ratio > 1 ? 'Far over' : 'Far under',
+    labelKey: ratio > 1 ? 'farOver' : 'farUnder',
   };
 }

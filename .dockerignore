@@ -1,0 +1,68 @@
+# Dependencies
+node_modules
+
+# Build outputs
+.next
+out
+dist
+
+# Environment files
+.env*
+!.env.example
+
+# Local development
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# Git
+.git
+.gitignore
+.github
+
+# Testing
+coverage
+.nyc_output
+__tests__/__snapshots__
+
+# Misc
+.DS_Store
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+bun-debug.log*
+
+# Documentation
+README.md
+docs
+*.md
+
+# Data files
+data
+*.pdf
+
+# Scripts (not needed in container)
+scripts
+
+# Config files (handled by copy)
+.dockerignore
+Dockerfile
+docker-compose.yml
+
+# Planning and project management
+.planning
+.gsd
+.agents
+.claude
+.coderabbit.yaml
+
+# Supabase local
+supabase/.temp
+supabase/config.toml
+
+# Vitest
+vitest.config.ts
+vitest.setup.ts

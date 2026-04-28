@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { useMemo } from 'react';
 import { useFormContext, useWatch } from 'react-hook-form';
 import { CustomSelect } from '@/components/settings/custom-select';
@@ -14,42 +15,47 @@ import {
 import type { ActivityLevel, CarbSplit, Goal } from '@/lib/onboarding/types';
 import type { ProfileFormValues } from './index';
 
-const ACTIVITY_OPTIONS = [
-  {
-    value: 'sedentary',
-    label: 'Sedentary (Office job, little to no exercise)',
-  },
-  { value: 'light', label: 'Lightly active (Light exercise 1-3 days/week)' },
-  {
-    value: 'moderate',
-    label: 'Moderately active (Moderate exercise 3-5 days/week)',
-  },
-  {
-    value: 'very_active',
-    label: 'Very active (Heavy exercise 6-7 days/week)',
-  },
-];
-
 const GOALS: Goal[] = ['cutting', 'maintaining', 'bulking'];
 const CARB_SPLITS: CarbSplit[] = ['moderate_carb', 'lower_carb', 'higher_carb'];
-
-const GOAL_LABELS: Record<Goal, string> = {
-  maintaining: 'Maintenance',
-  cutting: 'Cutting',
-  bulking: 'Bulking',
-};
-
-const CARB_SPLIT_INFO: Record<CarbSplit, { label: string; desc: string }> = {
-  moderate_carb: { label: 'Moderate Carb', desc: 'Balanced (30/35/35)' },
-  lower_carb: { label: 'Lower Carb', desc: 'High Protein (40/40/20)' },
-  higher_carb: { label: 'Higher Carb', desc: 'Active (30/20/50)' },
-};
 
 const inputClass =
   'w-full rounded-lg border border-[#EAE7E0] bg-white px-3 py-2 text-[14px] text-[#2C2416] transition-colors focus:outline-none focus:border-[#C9A87C] hover:border-[#C9A87C]/50';
 
 export function BodyMetrics() {
+  const t = useTranslations('onboarding.bodyMetrics');
   const form = useFormContext<ProfileFormValues>();
+
+  const ACTIVITY_OPTIONS = [
+    { value: 'sedentary', label: t('sedentary') },
+    { value: 'light', label: t('light') },
+    { value: 'moderate', label: t('moderate') },
+    { value: 'very_active', label: t('veryActive') },
+  ];
+
+  const GOAL_LABELS: Record<Goal, string> = {
+    maintaining: t('maintaining'),
+    cutting: t('cutting'),
+    bulking: t('bulking'),
+  };
+
+  const CARB_SPLIT_INFO: Record<CarbSplit, { label: string; desc: string }> =
+    useMemo(
+      () => ({
+        moderate_carb: {
+          label: t('moderateCarb'),
+          desc: t('moderateCarbDescription'),
+        },
+        lower_carb: {
+          label: t('lowerCarb'),
+          desc: t('lowerCarbDescription'),
+        },
+        higher_carb: {
+          label: t('higherCarb'),
+          desc: t('higherCarbDescription'),
+        },
+      }),
+      [t]
+    );
 
   const watchSex = useWatch({ name: 'biologicalSex' });
   const watchWeight = useWatch({ name: 'weightKg' });
@@ -101,7 +107,7 @@ export function BodyMetrics() {
         const info = CARB_SPLIT_INFO[cs];
         return { id: cs, label: info.label, desc: info.desc, macros };
       }),
-    [targetCalories]
+    [targetCalories, CARB_SPLIT_INFO]
   );
 
   const macros = useMemo(() => {
@@ -121,15 +127,15 @@ export function BodyMetrics() {
             render={({ field }) => (
               <FormItem>
                 <label className="mb-1.5 block font-bold text-[#A8A29E] text-[11px] uppercase tracking-widest">
-                  Sex
+                  {t('biologicalSex')}
                 </label>
                 <FormControl>
                   <CustomSelect
                     value={field.value ?? ''}
                     onChange={field.onChange}
                     options={[
-                      { label: 'Male', value: 'male' },
-                      { label: 'Female', value: 'female' },
+                      { label: t('male'), value: 'male' },
+                      { label: t('female'), value: 'female' },
                     ]}
                   />
                 </FormControl>
@@ -145,7 +151,7 @@ export function BodyMetrics() {
           render={({ field }) => (
             <FormItem>
               <label className="mb-1.5 block font-bold text-[#A8A29E] text-[11px] uppercase tracking-widest">
-                Weight (kg)
+                {t('weight')} ({t('weightUnit')})
               </label>
               <FormControl>
                 <input
@@ -171,7 +177,7 @@ export function BodyMetrics() {
           render={({ field }) => (
             <FormItem>
               <label className="mb-1.5 block font-bold text-[#A8A29E] text-[11px] uppercase tracking-widest">
-                Height (cm)
+                {t('height')} ({t('heightUnit')})
               </label>
               <FormControl>
                 <input
@@ -197,7 +203,7 @@ export function BodyMetrics() {
           render={({ field }) => (
             <FormItem>
               <label className="mb-1.5 block font-bold text-[#A8A29E] text-[11px] uppercase tracking-widest">
-                Age
+                {t('age')}
               </label>
               <FormControl>
                 <input
@@ -224,7 +230,7 @@ export function BodyMetrics() {
             render={({ field }) => (
               <FormItem>
                 <label className="mb-1.5 block font-bold text-[#A8A29E] text-[11px] uppercase tracking-widest">
-                  Activity Level
+                  {t('activityLevel')}
                 </label>
                 <FormControl>
                   <CustomSelect
@@ -246,17 +252,19 @@ export function BodyMetrics() {
           <div className="flex flex-col items-center justify-between gap-6 sm:flex-row">
             <div className="text-center sm:text-left">
               <span className="mb-1 block font-bold text-[#A8A29E] text-[11px] uppercase tracking-widest">
-                Your Estimated TDEE
+                {t('tdee')}
               </span>
               <div className="font-normal font-serif text-4xl text-[#2C2416] tracking-tighter">
                 ~{Math.round(tdee).toLocaleString()}{' '}
-                <span className="font-sans text-[#8B8682] text-lg">kcal</span>
+                <span className="font-sans text-[#8B8682] text-lg">
+                  {t('kcal')}
+                </span>
               </div>
             </div>
 
             <div className="w-full sm:w-auto">
               <label className="mb-2 block font-bold text-[#A8A29E] text-[11px] uppercase tracking-widest sm:text-right">
-                Select Goal
+                {t('goal')}
               </label>
               <FormField
                 control={form.control}
@@ -307,7 +315,11 @@ export function BodyMetrics() {
                 return (
                   <FormItem>
                     <label className="mb-2 block font-bold text-[#A8A29E] text-[11px] uppercase tracking-widest">
-                      Pace ({watchGoal === 'cutting' ? 'deficit' : 'surplus'})
+                      {t('aggressionLabel')} (
+                      {watchGoal === 'cutting'
+                        ? t('aggressionDeficit')
+                        : t('aggressionSurplus')}
+                      )
                     </label>
                     <div className="space-y-3 rounded-2xl border border-[#EAE7E0] bg-white p-5">
                       <FormControl>
@@ -324,14 +336,18 @@ export function BodyMetrics() {
                         />
                       </FormControl>
                       <div className="flex items-center justify-between text-[13px]">
-                        <span className="text-[#8B8682]">Gentle</span>
+                        <span className="text-[#8B8682]">
+                          {t('aggressionLow')}
+                        </span>
                         <span className="font-medium text-[#2C2416]">
                           {aggressionKg.toFixed(2)} kg/wk →{' '}
                           {watchGoal === 'cutting' ? '−' : '+'}
                           {Math.round(aggressionKg * AGGRESSION_KCAL_PER_KG)}{' '}
                           kcal/day
                         </span>
-                        <span className="text-[#8B8682]">Aggressive</span>
+                        <span className="text-[#8B8682]">
+                          {t('aggressionHigh')}
+                        </span>
                       </div>
                     </div>
                   </FormItem>
@@ -343,7 +359,7 @@ export function BodyMetrics() {
           {/* Carb Split */}
           <div>
             <label className="mb-2 block font-bold text-[#A8A29E] text-[11px] uppercase tracking-widest">
-              Carb Split
+              {t('carbSplit')}
             </label>
             <FormField
               control={form.control}
@@ -395,12 +411,12 @@ export function BodyMetrics() {
               <div className="mb-4 flex flex-col items-center justify-between gap-4 sm:flex-row">
                 <div>
                   <label className="mb-1 block font-bold text-[#A8A29E] text-[11px] uppercase tracking-widest">
-                    Daily Calorie Target
+                    {t('calorieTarget')}
                   </label>
                   <div className="font-serif text-3xl text-[#2C2416] tracking-tighter">
                     {Math.round(targetCalories).toLocaleString()}{' '}
                     <span className="font-sans text-[#8B8682] text-base">
-                      kcal
+                      {t('kcal')}
                     </span>
                   </div>
                 </div>
@@ -408,7 +424,7 @@ export function BodyMetrics() {
               <div className="grid grid-cols-3 gap-4 border-[#EAE7E0] border-t pt-4 text-center">
                 <div>
                   <div className="font-bold text-[#A8A29E] text-[10px] uppercase tracking-widest">
-                    Protein
+                    {t('protein')}
                   </div>
                   <div className="font-medium text-[#2C2416] text-lg">
                     {macros.proteinG}g
@@ -416,7 +432,7 @@ export function BodyMetrics() {
                 </div>
                 <div>
                   <div className="font-bold text-[#A8A29E] text-[10px] uppercase tracking-widest">
-                    Carbs
+                    {t('carbs')}
                   </div>
                   <div className="font-medium text-[#2C2416] text-lg">
                     {macros.carbsG}g
@@ -424,7 +440,7 @@ export function BodyMetrics() {
                 </div>
                 <div>
                   <div className="font-bold text-[#A8A29E] text-[10px] uppercase tracking-widest">
-                    Fat
+                    {t('fat')}
                   </div>
                   <div className="font-medium text-[#2C2416] text-lg">
                     {macros.fatG}g

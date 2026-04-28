@@ -32,7 +32,14 @@ function getClient() {
         'DATABASE_URL is not set — cannot connect to the database.'
       );
     }
-    _client = postgres(encodeDbUrl(url));
+    _client = postgres(encodeDbUrl(url), {
+      // Shared staging can have internal + preview services alive at once.
+      // Keep the per-instance session pool small so a second service doesn't
+      // exhaust Supabase's session-mode pooler during cold starts or health checks.
+      max: 2,
+      // Prepared statements are unsupported in PgBouncer transaction mode.
+      prepare: false,
+    });
   }
   return _client;
 }
@@ -45,3 +52,6 @@ export const db = new Proxy({} as ReturnType<typeof drizzle<typeof schema>>, {
     return Reflect.get(_db, prop);
   },
 });
+
+/** Convenience type for the app's Drizzle database instance. */
+export type AppDb = typeof db;

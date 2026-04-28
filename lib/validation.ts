@@ -1,5 +1,17 @@
 import { z } from 'zod';
 
+export function isValidCalendarDateString(value: string): boolean {
+  const date = new Date(`${value}T00:00:00.000Z`);
+  return (
+    Number.isFinite(date.getTime()) && date.toISOString().slice(0, 10) === value
+  );
+}
+
+export const dateStringSchema = z
+  .string()
+  .regex(/^\d{4}-\d{2}-\d{2}$/, 'Ngày phải có dạng YYYY-MM-DD.')
+  .refine(isValidCalendarDateString, 'Ngày không hợp lệ.');
+
 /** Shared inner schema for a meal description string (used by API + feed submit). */
 export const mealTextSchema = z
   .string()
@@ -15,4 +27,14 @@ export const mealTextSchema = z
  */
 export const mealMessageSchema = z.object({ message: mealTextSchema });
 
+/** Shared schema for a single weight log entry. */
+export const weightLogSchema = z.object({
+  loggedDate: dateStringSchema,
+  weightKg: z
+    .number()
+    .min(30, 'Cân nặng phải lớn hơn hoặc bằng 30 kg.')
+    .max(300, 'Cân nặng phải nhỏ hơn hoặc bằng 300 kg.'),
+});
+
 export type MealMessageInput = z.infer<typeof mealMessageSchema>;
+export type WeightLogInput = z.infer<typeof weightLogSchema>;
