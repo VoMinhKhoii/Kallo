@@ -4,6 +4,7 @@ import {
   check,
   date,
   decimal,
+  foreignKey,
   index,
   integer,
   jsonb,
@@ -431,6 +432,8 @@ export const pipelineRequests = pgTable(
     createdAt: timestamp('created_at', { withTimezone: true })
       .notNull()
       .defaultNow(),
+    promptVersionsUsed: jsonb('prompt_versions_used'),
+    replayOfRequestId: uuid('replay_of_request_id'),
   },
   (table) => [
     check(
@@ -441,6 +444,11 @@ export const pipelineRequests = pgTable(
       table.userId,
       table.createdAt
     ),
+    foreignKey({
+      columns: [table.replayOfRequestId],
+      foreignColumns: [table.id],
+      name: 'pipeline_requests_replay_of_fk',
+    }).onDelete('set null'),
   ]
 );
 
@@ -461,4 +469,91 @@ export const pendingAnalyses = pgTable(
       .defaultNow(),
   },
   (table) => [index('pending_analyses_expires_idx').on(table.expiresAt)]
+);
+
+// ---------------------------------------------------------------------------
+// Admin pipeline dashboard — trace tables (Chunk 1)
+// ---------------------------------------------------------------------------
+
+export const promptVersions = pgTable(
+  'prompt_versions',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    name: text('name').notNull(),
+    codeHash: text('code_hash').notNull(),
+    templateSample: text('template_sample').notNull(),
+    model: text('model').notNull(),
+    gitSha: text('git_sha'),
+    firstSeenAt: timestamp('first_seen_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    unique('prompt_versions_name_hash_uq').on(t.name, t.codeHash),
+    index('prompt_versions_name_first_seen_idx').on(
+      t.name,
+      sql`${t.firstSeenAt} DESC`
+    ),
+  ]
+);
+
+export const pipelineStageLogs = pgTable(
+  'pipeline_stage_logs',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    requestId: uuid('request_id')
+      .notNull()
+      .references(() => pipelineRequests.id, { onDelete: 'cascade' }),
+    stage: text('stage').notNull(),
+    stageIndex: integer('stage_index').notNull(),
+    inputJson: jsonb('input_json'),
+    outputJson: jsonb('output_json'),
+    status: text('status').notNull(),
+    error: text('error'),
+    durationMs: integer('duration_ms').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    check(
+      'pipeline_stage_logs_stage_chk',
+      sql`${t.stage} IN ('decomposition','matching','nutrition','assembly')`
+    ),
+    check(
+      'pipeline_stage_logs_status_chk',
+      sql`${t.status} IN ('success','error','skipped')`
+    ),
+    index('pipeline_stage_logs_req_idx').on(t.requestId, t.stageIndex),
+  ]
+);
+
+export const pipelineLlmCalls = pgTable(
+  'pipeline_llm_calls',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    requestId: uuid('request_id')
+      .notNull()
+      .references(() => pipelineRequests.id, { onDelete: 'cascade' }),
+    stageLogId: uuid('stage_log_id').notNull(), // intentionally NOT a FK; see spec §5.3
+    promptVersionId: uuid('prompt_version_id')
+      .notNull()
+      .references(() => promptVersions.id),
+    model: text('model').notNull(),
+    promptRendered: text('prompt_rendered').notNull(),
+    responseRaw: text('response_raw'),
+    inputTokens: integer('input_tokens'),
+    outputTokens: integer('output_tokens'),
+    latencyMs: integer('latency_ms').notNull(),
+    attempt: integer('attempt').notNull().default(1),
+    error: text('error'),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    index('pipeline_llm_calls_req_idx').on(t.requestId),
+    index('pipeline_llm_calls_pv_idx').on(t.promptVersionId),
+    index('pipeline_llm_calls_stage_log_idx').on(t.stageLogId),
+  ]
 );
