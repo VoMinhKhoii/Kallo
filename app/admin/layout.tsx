@@ -13,7 +13,7 @@ export default async function AdminLayout({
     <div className="flex min-h-screen">
       <AdminSidebar />
       <div className="flex-1">
-        <header className="flex h-12 items-center justify-between border-b px-4 text-sm text-muted-foreground">
+        <header className="flex h-12 items-center justify-between border-b px-4 text-muted-foreground text-sm">
           <span>Admin</span>
           <span>{admin.email}</span>
         </header>
