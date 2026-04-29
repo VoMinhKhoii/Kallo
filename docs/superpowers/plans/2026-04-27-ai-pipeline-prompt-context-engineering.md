@@ -2309,3 +2309,612 @@ After Chunk 2 ships:
 **User-facing behavior change:** the nutrition prompt now produces honest uncertainty bounds rather than goal-shaped framing. The shape of the LLM's output (BoundedNutrition triples) is unchanged. Downstream `goal-adjustment.ts` will receive bounds that better reflect physical uncertainty, so its preference-shaped output may shift slightly — this is intended.
 
 ---
+
+## Chunk 3: §1 Absolute-macro schema + retire `convertCookedToRaw`
+
+**Spec sections:** §1.1 single `IngredientNutrition` shape · §1.2 runtime aggregation · §1.3 macro-consistency invariant · §1.4 density envelope · §1.5 retire `COOKED_TO_RAW_FACTOR` / `convertCookedToRaw`.
+
+**Why next:** Chunk 2 surfaced `dbState` to the prompt without changing scaling behavior — the runtime still pre-converts grams unconditionally. Chunk 3 closes that loop: the LLM now produces final adjusted absolute macros for the as-eaten portion and the runtime stops calling `convertCookedToRaw` on the live path. New validators (`density_envelope`, `macro_inconsistent`) replace the old `factor_envelope` concept and feed the `pipeline_runs` counters added in Chunk 1d.
+
+**Outcome:** `nutrition.ts`'s `<calculation>` block branches on `db_state` and tells the LLM to scale against `as_eaten_grams` instead of `raw_grams` (no runtime pre-conversion). `mergeNutrition` accepts `estimatedGrams` directly. `convertCookedToRaw` remains exported as an instrumented fallback only — every call increments `cooked_to_raw_factor_fires` (Chunk 1d telemetry), with a single legitimate caller during the transition (`validation.ts` DB-deviation check). Two new anomaly types + retry path land. Spec §1.5 retirement gate (`< 5% fire rate over 7 days`) is checked manually post-launch and is **not** part of this chunk.
+
+---
+
+### Task 3.1: Anomaly enum + threshold constants
+
+**Files:**
+- Modify: `lib/ai/pipeline/validation.ts`
+- Modify: `lib/ai/pipeline/validation.test.ts`
+
+- [ ] **Step 1: Write failing tests**
+
+Append to `lib/ai/pipeline/validation.test.ts` a new `describe('density envelope', …)` block:
+
+```ts
+describe('density envelope', () => {
+  it('flags caloriesKcal density above 900 kcal/100g', () => {
+    const anomalies = validateNutritionOutput(
+      buildNutrition({ caloriesKcal: { low: 800, mid: 950, high: 1100 }, grams: 100 }),
+      [buildMatch('cá hồi')],
+      [buildDecomp('cá hồi', 100, null)],
+    );
+    expect(anomalies.find((a) => a.type === 'density_envelope')).toBeDefined();
+  });
+
+  it('flags negative low bound', () => {
+    const anomalies = validateNutritionOutput(
+      buildNutrition({ proteinG: { low: -1, mid: 5, high: 10 }, grams: 100 }),
+      [buildMatch('cá hồi')],
+      [buildDecomp('cá hồi', 100, null)],
+    );
+    expect(anomalies.find((a) => a.type === 'density_envelope')).toBeDefined();
+  });
+
+  it('does not flag legal densities', () => {
+    const anomalies = validateNutritionOutput(
+      buildNutrition({ caloriesKcal: { low: 100, mid: 130, high: 160 }, grams: 100 }),
+      [buildMatch('cá hồi')],
+      [buildDecomp('cá hồi', 100, null)],
+    );
+    expect(anomalies.find((a) => a.type === 'density_envelope')).toBeUndefined();
+  });
+});
+
+describe('macro consistency invariant', () => {
+  it('flags >20% deviation between caloriesKcal.mid and 4P+4C+9F', () => {
+    // 4*5 + 4*30 + 9*10 = 230; deviation from 400 is (170/230) ≈ 74%
+    const anomalies = validateNutritionOutput(
+      buildNutrition({
+        caloriesKcal: { low: 350, mid: 400, high: 450 },
+        proteinG:    { low: 4,   mid: 5,   high: 6  },
+        carbohydrateG:{ low: 28, mid: 30,  high: 32 },
+        fatG:        { low: 9,   mid: 10,  high: 11 },
+        grams: 100,
+      }),
+      [buildMatch('cá hồi')],
+      [buildDecomp('cá hồi', 100, null)],
+    );
+    expect(anomalies.find((a) => a.type === 'macro_inconsistent')).toBeDefined();
+  });
+
+  it('accepts within 20% (fiber/alcohol/rounding)', () => {
+    // 4*5 + 4*30 + 9*10 = 230; tolerate up to 276 ≈ 20% over
+    const anomalies = validateNutritionOutput(
+      buildNutrition({
+        caloriesKcal: { low: 230, mid: 260, high: 290 },
+        proteinG:    { low: 4,   mid: 5,   high: 6  },
+        carbohydrateG:{ low: 28, mid: 30,  high: 32 },
+        fatG:        { low: 9,   mid: 10,  high: 11 },
+        grams: 100,
+      }),
+      [buildMatch('cá hồi')],
+      [buildDecomp('cá hồi', 100, null)],
+    );
+    expect(anomalies.find((a) => a.type === 'macro_inconsistent')).toBeUndefined();
+  });
+});
+```
+
+`buildNutrition`/`buildMatch`/`buildDecomp` are existing helpers in `validation.test.ts`. If they don't yet emit per-ingredient `grams`, extend them — keep the API additive.
+
+- [ ] **Step 2: Run the tests to confirm they fail**
+
+```bash
+bun run test lib/ai/pipeline/validation.test.ts
+```
+
+Expected: FAIL on the new tests — `density_envelope` and `macro_inconsistent` not yet anomaly types.
+
+- [ ] **Step 3: Add the new types + thresholds**
+
+In `lib/ai/pipeline/validation.ts`:
+
+```ts
+export const THRESHOLDS = {
+  // existing thresholds…
+  /** Spec §1.4 — per-100g caps; high bound triggers the envelope. */
+  DENSITY_KCAL_PER_100G_MAX: 900,
+  DENSITY_PROTEIN_PER_100G_MAX: 100,
+  DENSITY_CARB_PER_100G_MAX: 100,
+  DENSITY_FAT_PER_100G_MAX: 100,
+  /** Spec §1.3 — kcal identity tolerance. */
+  MACRO_KCAL_IDENTITY_TOLERANCE: 0.20,
+} as const;
+
+export type AnomalyType =
+  | 'calorie_density'
+  | 'meal_item_cap'
+  | 'weight_implausible'
+  | 'db_deviation'
+  | 'total_calories'
+  | 'unmatched_ratio'
+  | 'density_envelope'   // NEW (§1.4)
+  | 'macro_inconsistent'; // NEW (§1.3)
+```
+
+- [ ] **Step 4: Add the validators**
+
+Inside the existing `validateNutritionOutput` per-ingredient loop (after the `db_deviation` block), add:
+
+```ts
+// §1.4 — density envelope
+const grams = decomposed?.estimatedGrams ?? null;
+if (grams && grams > 0) {
+  const density = (val: number) => (val / grams) * 100;
+  const breaches: string[] = [];
+  if (ing.caloriesKcal.high > 0 &&
+      density(ing.caloriesKcal.high) > THRESHOLDS.DENSITY_KCAL_PER_100G_MAX) {
+    breaches.push(`kcal density ${density(ing.caloriesKcal.high).toFixed(0)}/100g > ${THRESHOLDS.DENSITY_KCAL_PER_100G_MAX}`);
+  }
+  if (ing.proteinG.high      > 0 && density(ing.proteinG.high)      > THRESHOLDS.DENSITY_PROTEIN_PER_100G_MAX) breaches.push(`protein density ${density(ing.proteinG.high).toFixed(0)}/100g`);
+  if (ing.carbohydrateG.high > 0 && density(ing.carbohydrateG.high) > THRESHOLDS.DENSITY_CARB_PER_100G_MAX)    breaches.push(`carb density ${density(ing.carbohydrateG.high).toFixed(0)}/100g`);
+  if (ing.fatG.high          > 0 && density(ing.fatG.high)          > THRESHOLDS.DENSITY_FAT_PER_100G_MAX)     breaches.push(`fat density ${density(ing.fatG.high).toFixed(0)}/100g`);
+  if (ing.caloriesKcal.low < 0 || ing.proteinG.low < 0 || ing.carbohydrateG.low < 0 || ing.fatG.low < 0) {
+    breaches.push('negative low bound');
+  }
+  if (breaches.length > 0) {
+    anomalies.push({
+      type: 'density_envelope',
+      message: `${ing.ingredientName}: ${breaches.join('; ')}`,
+      severity: 'warning',
+    });
+  }
+}
+
+// §1.3 — macro consistency invariant (4P+4C+9F vs caloriesKcal)
+for (const channel of ['low', 'mid', 'high'] as const) {
+  const kcalFromMacros =
+    4 * ing.proteinG[channel] +
+    4 * ing.carbohydrateG[channel] +
+    9 * ing.fatG[channel];
+  const reportedKcal = ing.caloriesKcal[channel];
+  const denom = Math.max(reportedKcal, 1);
+  const deviation = Math.abs(reportedKcal - kcalFromMacros) / denom;
+  if (deviation > THRESHOLDS.MACRO_KCAL_IDENTITY_TOLERANCE) {
+    anomalies.push({
+      type: 'macro_inconsistent',
+      message: `${ing.ingredientName} ${channel}: kcal ${reportedKcal.toFixed(0)} vs 4P+4C+9F=${kcalFromMacros.toFixed(0)} (${(deviation * 100).toFixed(0)}% > ${(THRESHOLDS.MACRO_KCAL_IDENTITY_TOLERANCE * 100).toFixed(0)}%)`,
+      severity: 'warning',
+    });
+    break; // one anomaly per ingredient is enough; channel covered in message
+  }
+}
+```
+
+- [ ] **Step 5: Run lint + tests**
+
+```bash
+bunx @biomejs/biome@2.4.2 check .
+bun run test lib/ai/pipeline/validation.test.ts
+```
+
+Expected: green.
+
+- [ ] **Step 6: Commit**
+
+```bash
+git add lib/ai/pipeline/validation.ts lib/ai/pipeline/validation.test.ts
+git commit -m "feat(ai/validation): add density_envelope and macro_inconsistent anomaly types
+
+Spec §1.3 + §1.4 — per-ingredient density bounds (≤900 kcal, ≤100g
+each macro per 100g) and 4P+4C+9F kcal identity within 20% tolerance.
+Both fire as warnings; retry policy hooks them in Task 3.5.
+
+Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>"
+```
+
+---
+
+### Task 3.2: Hook the new counters into `pipeline_runs`
+
+**Files:**
+- Modify: `lib/ai/pipeline/orchestrator.ts` (the `pipeline_runs` row writer added in Chunk 1d Task 1.13)
+- Modify: `lib/ai/pipeline/orchestrator.test.ts` (or wherever the Chunk 1d row-writer tests live — Task 1.13 placed them next to the orchestrator)
+
+- [ ] **Step 1: Failing test**
+
+Add a test that ends-to-end runs the orchestrator with a Call 2 output that triggers `density_envelope`, then asserts the persisted `pipeline_runs` row has `density_envelope_fires === 1` (and `macro_inconsistent_fires === 1` for a second case).
+
+Re-use the orchestrator harness from Chunk 1d's tests; do not introduce a new fixture surface.
+
+- [ ] **Step 2: Run the test to confirm it fails**
+
+```bash
+bun run test lib/ai/pipeline/orchestrator.test.ts
+```
+
+Expected: FAIL — counters always 0 because the row writer doesn't aggregate the new anomaly types yet.
+
+- [ ] **Step 3: Aggregate counts in the row writer**
+
+In the spot where Chunk 1d's row builder counts anomalies, add:
+
+```ts
+density_envelope_fires:  anomalies.filter((a) => a.type === 'density_envelope').length,
+macro_inconsistent_fires: anomalies.filter((a) => a.type === 'macro_inconsistent').length,
+```
+
+(`anomaly_types: text[]` already lists every type emitted; the integer counts complement it for fast aggregate queries per spec §0.4.)
+
+- [ ] **Step 4: Test green; commit**
+
+```bash
+bunx @biomejs/biome@2.4.2 check .
+bun run test lib/ai/pipeline/orchestrator.test.ts
+git add -u
+git commit -m "feat(ai/pipeline): write density_envelope/macro_inconsistent counters
+
+Spec §0.4 — per-run counts complement anomaly_types[] for KPI rollups.
+
+Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>"
+```
+
+---
+
+### Task 3.3: Stop pre-converting grams in `assembly.ts` (live path)
+
+The runtime currently pre-scales DB nutrition against `rawEquivalentGrams = convertCookedToRaw(estimatedGrams, cookingMethod)` (`assembly.ts:128`). Per spec §1.5 the LLM now produces final adjusted macros for the as-eaten portion, so DB scaling at this layer is only used for the **non-LLM macros** (the 24 nutrients in `mergeNutrition`'s else-branch). Those values were always under the same prior assumption, but with `dbState` flowing through Chunk 1b/2 the correct rule is:
+
+- `dbState === 'cooked'`: scale DB per-100g against `estimatedGrams` directly (no conversion).
+- `dbState === 'raw' | 'unknown'`: keep the legacy `convertCookedToRaw` behavior (instrumented fallback per §1.5) until raw-only DBs catch up.
+
+This is the live-path change. The legacy fallback is intentional — pulling the conversion entirely would silently undercount fiber/iron/etc. on cooked-DB raw food until the broader retirement gate is met.
+
+**Files:**
+- Modify: `lib/ai/pipeline/assembly.ts`
+- Modify: `lib/ai/pipeline/assembly.test.ts` (or the file that exercises `mergeNutrition` — verify location with `grep -l mergeNutrition lib/ai`)
+- Modify: `lib/ai/types.ts` (`ProcessedIngredient.rawEquivalentGrams` is no longer always raw — keep the field for back-compat but document)
+
+- [ ] **Step 1: Write failing tests**
+
+Add to the assembly test file:
+
+```ts
+describe('assembleResult — dbState-aware DB scaling', () => {
+  it('does NOT call convertCookedToRaw when match.dbState === "cooked"', () => {
+    const fired: number[] = [];
+    const spy = vi.spyOn(constants, 'convertCookedToRaw').mockImplementation((g) => {
+      fired.push(g);
+      return g; // identity — easier to assert downstream
+    });
+    const matched: MatchedIngredient[] = [
+      { ...makeMatch('thịt bò bắp'), dbState: 'cooked', ingredientId: 'ing-1' },
+    ];
+    const decomp = makeDecomposition([{ name: 'Phở bò', ingredients: [{
+      ingredientId: 'ing-1', name: 'thịt bò bắp', estimatedGrams: 80, cookingMethod: 'kho',
+    }]}]);
+    const llm = makeLlmNutrition('thịt bò bắp', 'Phở bò', { caloriesKcal: { low: 100, mid: 150, high: 200 } });
+
+    const result = assembleResult(decomp, llm, matched, [], userCtx);
+
+    expect(fired).toEqual([]);
+    // ProcessedIngredient.rawEquivalentGrams equals estimatedGrams for cooked-DB matches
+    expect(result.mealItems[0].ingredients[0].rawEquivalentGrams).toBe(80);
+    spy.mockRestore();
+  });
+
+  it('still calls convertCookedToRaw when match.dbState === "raw"', () => {
+    const fired: number[] = [];
+    const spy = vi.spyOn(constants, 'convertCookedToRaw').mockImplementation((g, m) => {
+      fired.push(g);
+      return Math.round(g * 0.85);
+    });
+    const matched: MatchedIngredient[] = [
+      { ...makeMatch('gạo tẻ'), dbState: 'raw', ingredientId: 'ing-2' },
+    ];
+    const decomp = makeDecomposition([{ name: 'Cơm', ingredients: [{
+      ingredientId: 'ing-2', name: 'gạo tẻ', estimatedGrams: 200, cookingMethod: 'nấu',
+    }]}]);
+    const llm = makeLlmNutrition('gạo tẻ', 'Cơm', { caloriesKcal: { low: 100, mid: 150, high: 200 } });
+
+    assembleResult(decomp, llm, matched, [], userCtx);
+
+    expect(fired).toEqual([200]);
+    spy.mockRestore();
+  });
+
+  it('falls back to convertCookedToRaw when match.dbState is missing', () => {
+    // Equivalent to the legacy code path; instrumented fallback per §1.5.
+    const fired: number[] = [];
+    const spy = vi.spyOn(constants, 'convertCookedToRaw').mockImplementation((g) => {
+      fired.push(g);
+      return g;
+    });
+    const matched: MatchedIngredient[] = [
+      { ...makeMatch('cá'), ingredientId: 'ing-3' /* no dbState */ },
+    ];
+    const decomp = makeDecomposition([{ name: 'Cá kho', ingredients: [{
+      ingredientId: 'ing-3', name: 'cá', estimatedGrams: 100, cookingMethod: 'kho',
+    }]}]);
+    const llm = makeLlmNutrition('cá', 'Cá kho', { caloriesKcal: { low: 100, mid: 120, high: 140 } });
+
+    assembleResult(decomp, llm, matched, [], userCtx);
+
+    expect(fired).toEqual([100]);
+    spy.mockRestore();
+  });
+});
+```
+
+Use stable `ingredientId` keying per Chunk 1c when `assemble` looks up matches/llmNutrition — this should already be in place from Chunk 1c.
+
+- [ ] **Step 2: Run tests to confirm they fail**
+
+```bash
+bun run test lib/ai/pipeline/assembly.test.ts
+```
+
+Expected: FAIL — `convertCookedToRaw` is currently called unconditionally regardless of `dbState`.
+
+- [ ] **Step 3: Make the conversion conditional**
+
+Replace `assembly.ts:128–131` with:
+
+```ts
+const dbState = matchInfo?.dbState ?? 'unknown';
+const dbScalingGrams =
+  dbState === 'cooked'
+    ? ing.estimatedGrams
+    : convertCookedToRaw(ing.estimatedGrams, ing.cookingMethod);
+```
+
+Then pass `dbScalingGrams` into `mergeNutrition` (replacing `rawEquivalentGrams`) and store it on `ProcessedIngredient` keyed under the existing `rawEquivalentGrams` field name (we keep the field name for back-compat with consumers in `mappers.ts`; the field now means "the gram value used for DB-row scaling, after dbState reconciliation").
+
+- [ ] **Step 4: Update the field-level comment in `lib/ai/types.ts`**
+
+```ts
+/**
+ * Grams used internally for DB-row scaling. Equals `estimatedGrams` when the
+ * matched DB row is cooked (no conversion needed). Equals
+ * `convertCookedToRaw(estimatedGrams, cookingMethod)` when the matched row is
+ * raw (or dbState is unknown — instrumented fallback per spec §1.5).
+ * Display layers should use `estimatedGrams` instead.
+ */
+rawEquivalentGrams: number;
+```
+
+- [ ] **Step 5: Increment `cooked_to_raw_factor_fires` per spec §1.5**
+
+In `assembly.ts`, when the conversion fallback fires (i.e., `dbState !== 'cooked'`), increment the counter that the orchestrator's `pipeline_runs` row builder reads. The cleanest path:
+
+- Surface the count as a return-value metric from `assembleResult` (e.g., extend the existing `PipelineResult` with an optional `_internal: { cookedToRawFires: number }` or add a third return). The Chunk 1d row writer aggregates this.
+- Alternatively, hoist the dbState check into the orchestrator, count there, and pass `rawEquivalentGrams` in via the existing `ProcessedIngredient` shape.
+
+Pick whichever matches the Chunk 1d row-writer wiring decision exactly — do not invent a new pattern. If unclear from Chunk 1d as it lands, surface a `cookedToRawFires` integer through the existing instrumentation channel and update the row writer to read it.
+
+- [ ] **Step 6: Lint + tests + commit**
+
+```bash
+bunx @biomejs/biome@2.4.2 check .
+bun run test lib/ai/pipeline/
+git add -u
+git commit -m "feat(ai/assembly): scale DB nutrition by dbState; instrument legacy fallback
+
+Spec §1.5 — when match.dbState === 'cooked' the LLM's macros and the
+DB-scaled non-macros are both anchored to as-eaten grams; no
+convertCookedToRaw call. When dbState is 'raw' or absent, the legacy
+conversion stays as instrumented fallback. cooked_to_raw_factor_fires
+increments on each fallback so the spec-§1.5 retirement gate
+(< 5% over 7 days) is observable.
+
+Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>"
+```
+
+---
+
+### Task 3.4: Replace `<calculation>` instructions in the nutrition prompt
+
+Chunk 2 deferred this. Now that the runtime stops pre-converting on the cooked-DB path (Task 3.3), the prompt must tell the LLM the truth about what `as_eaten_grams` (renamed from `raw_grams`) means per `dbState`.
+
+**Files:**
+- Modify: `lib/ai/prompts/nutrition.ts`
+- Modify: `lib/ai/pipeline/prompts.test.ts`
+
+- [ ] **Step 1: Failing test**
+
+Append:
+
+```ts
+it('emits as_eaten_grams (not raw_grams) and dbState-aware <calculation>', () => {
+  const matched = [
+    { ...makeIngredient('thịt bò bắp'), dbState: 'cooked' as const, ingredientId: 'i1' },
+    { ...makeIngredient('gạo tẻ'),       dbState: 'raw'    as const, ingredientId: 'i2' },
+  ];
+  const mealItems = [makeMealItem('Phở bò', ['thịt bò bắp', 'gạo tẻ'])];
+  const prompt = buildNutritionPrompt(mealItems, matched, [], sampleUserContext);
+
+  expect(prompt).toMatch(/as_eaten_grams="\d+"/);
+  expect(prompt).not.toMatch(/raw_grams=/);
+  expect(prompt).toMatch(/db_state="cooked"/);
+  expect(prompt).toMatch(/db_state="raw"/);
+  // Calculation block instructs branching by db_state
+  expect(prompt).toMatch(/db_state.*"cooked".*as_eaten_grams/s);
+  expect(prompt).toMatch(/db_state.*"raw".*adjust for cooking method/s);
+});
+```
+
+- [ ] **Step 2: Confirm fail**
+
+```bash
+bun run test lib/ai/pipeline/prompts.test.ts
+```
+
+Expected: FAIL — XML still emits `raw_grams=`.
+
+- [ ] **Step 3: Rename XML attributes and rewrite the comment**
+
+In `nutrition.ts`:
+
+```ts
+ingredientData +=
+  '  <!-- as_eaten_grams is the user-facing portion. db_state tells you whether the per_100g values are raw or cooked. -->\n\n';
+
+// matched render line:
+ingredientData += `    <ingredient name="${ing.name}" source="db_matched" db_name="${match.matchedName}" db_state="${dbState}" as_eaten_grams="${ing.estimatedGrams}"${ing.cookingMethod ? ` cooking="${ing.cookingMethod}"` : ''}>\n`;
+ingredientData += `      <per_100g caloriesKcal="${match.nutritionPer100g.caloriesKcal ?? '?'}" proteinG="${match.nutritionPer100g.proteinG ?? '?'}" carbohydrateG="${match.nutritionPer100g.carbohydrateG ?? '?'}" fatG="${match.nutritionPer100g.fatG ?? '?'}" />\n`;
+
+// unmatched render line:
+unmatchedSection += `    <ingredient name="${ing.name}" as_eaten_grams="${ing.estimatedGrams}"${ing.cookingMethod ? ` cooking="${ing.cookingMethod}"` : ''} />\n`;
+```
+
+Drop the `convertCookedToRaw` import from `nutrition.ts` — it's no longer called from this file. The unmatched branch had been calling it too (`nutrition.ts:111-113`); that path also disappears.
+
+- [ ] **Step 4: Replace the `<calculation>` block**
+
+Find the existing `<calculation>` block in the prompt template (it currently asserts "DB values are per 100g RAW"). Replace with:
+
+```
+  <calculation>
+    Each ingredient has db_state: "raw" | "cooked" | "unknown".
+
+    1. db_state="cooked": per_100g values are already cooked.
+       Scale base = (as_eaten_grams / 100) × per_100g, then adjust as needed
+       for the *user's actual cooking style* (e.g., extra oil from "nhiều dầu"
+       cooking habit). No raw/cooked conversion needed — both sides are cooked.
+
+    2. db_state="raw": per_100g values are raw, as_eaten_grams is cooked.
+       Adjust for cooking method using your knowledge:
+         - frying (chiên/rán/xào) absorbs cooking oil → fat goes UP
+         - boiling (luộc/nấu) drives moisture changes; rice absorbs water → mass UP
+         - grilling (nướng) drives moisture out → density UP
+       Produce final macros for the as-eaten portion.
+
+    3. db_state="unknown": treat as "raw" but widen LOW/HIGH bounds — uncertainty
+       is higher because the reference frame is ambiguous.
+
+    For unmatched ingredients (no db row): use your knowledge of Vietnamese
+    cuisine for typical macros at the as-eaten weight. Be wider on bounds.
+
+    MID = your best estimate after cooking adjustment. LOW/HIGH bracket
+    physical-world uncertainty (portion guess + cooking variance).
+  </calculation>
+```
+
+- [ ] **Step 5: Run tests**
+
+```bash
+bunx @biomejs/biome@2.4.2 check .
+bun run test lib/ai/pipeline/ lib/ai/prompts/
+```
+
+Expected: green. The Chunk 2 sentinel test still passes because the new instructions don't reference goal/aggression. The Chunk 2 `db_state="..."` test still passes because the attribute survives.
+
+- [ ] **Step 6: Commit**
+
+```bash
+git add lib/ai/prompts/nutrition.ts lib/ai/pipeline/prompts.test.ts
+git commit -m "refactor(ai/prompts): rename raw_grams → as_eaten_grams; branch <calculation> by db_state
+
+Spec §1.5 — runtime no longer pre-converts grams on cooked-DB matches
+(Task 3.3). Prompt now tells the LLM the truth: as_eaten_grams is the
+user's portion, db_state says which reference frame the per_100g
+values are in. Drops convertCookedToRaw from this file.
+
+Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>"
+```
+
+---
+
+### Task 3.5: Hook new anomalies into the retry policy (§4.2 trigger preview)
+
+Spec §1.4 says: "Any breach → density_envelope_fires++, anomaly type density_envelope, retry/escalation per §4." The full retry/escalation logic (`pickComputePolicy`) is Chunk 5. For now, ensure the existing retry loop in `orchestrator.ts` recognises the two new anomaly types as "should retry" — same triage as today's `db_deviation` warnings, no escalation yet.
+
+**Files:**
+- Modify: `lib/ai/pipeline/orchestrator.ts`
+- Modify: `lib/ai/pipeline/orchestrator.test.ts` (or wherever the retry-loop test lives)
+
+- [ ] **Step 1: Failing test**
+
+Add a test that injects a Call 2 result with one `density_envelope` anomaly and asserts a retry happens (consistent with the existing `db_deviation` retry test).
+
+- [ ] **Step 2: Confirm failure**
+
+```bash
+bun run test lib/ai/pipeline/orchestrator.test.ts
+```
+
+- [ ] **Step 3: Extend the retry condition**
+
+Locate the orchestrator's retry-decider (it tests `anomalies.some((a) => a.severity === 'warning' && /* … */)` or similar). Add `density_envelope` and `macro_inconsistent` to the retry-eligible set. **Do not** add escalation logic — that's Chunk 5.
+
+- [ ] **Step 4: Tests + commit**
+
+```bash
+bunx @biomejs/biome@2.4.2 check .
+bun run test lib/ai/pipeline/
+git add -u
+git commit -m "feat(ai/pipeline): retry on density_envelope and macro_inconsistent anomalies
+
+Spec §1.3/§1.4 — these warnings now trigger the same single-retry path
+as db_deviation. Escalation to ESCALATION_MODEL is intentionally
+deferred to Chunk 5 (§4.2 pickComputePolicy).
+
+Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>"
+```
+
+---
+
+### Task 3.6: Tighten the live `mergeNutrition` signature (optional, scope-permitting)
+
+The §1.1 spec frames `IngredientNutrition` as the unified shape. Today's runtime consumes `IngredientLlmNutrition + DB → BoundedNutrition` via `mergeNutrition`. The shape difference is the 24 non-LLM nutrients that flow through from DB. Per the spec ("single shape — no discriminated union"), these should converge.
+
+**This task is gated.** Only do it if the diff fits the chunk LOC budget. Otherwise defer to a follow-up — the live behaviour is correct without it, and Chunk 4 (eval flywheel) doesn't depend on this convergence.
+
+If you proceed:
+
+- Introduce `IngredientNutrition` in `lib/ai/types.ts` matching the spec §1.1 shape (`ingredientId`, optional `matchedDbId`, four bounded macros, optional `uncertaintyReason`).
+- Have `assembleResult` return `IngredientNutrition[]` alongside the existing `BoundedNutrition` shape (which keeps the 24 DB nutrients).
+- `IngredientNutrition` is the contract for shadow-runner pair records (Chunk 4) and KPI rollups; `BoundedNutrition` stays the runtime detail.
+- Add a unit test covering the conversion.
+
+If it spills past 200 LOC, **stop and ship Task 3.6 as a follow-up chunk**. Note in the chunk-summary review that 3.6 was deferred so the reviewer doesn't flag it as missing.
+
+---
+
+### Task 3.7: Final sweep + outcome verification
+
+- [ ] **Step 1: Lint**
+
+```bash
+bunx @biomejs/biome@2.4.2 check .
+```
+
+- [ ] **Step 2: Test**
+
+```bash
+bun run test
+```
+
+- [ ] **Step 3: Hand-check `convertCookedToRaw` callers**
+
+```bash
+grep -rn "convertCookedToRaw" lib/ai/ | grep -v "lib/ai/constants.ts"
+```
+
+Expected: matches only in `lib/ai/pipeline/assembly.ts` (the gated fallback) and `lib/ai/pipeline/validation.ts` (DB-deviation comparator — Task 3.3 leaves this alone; the validator computes the legacy DB-scaled value as a sanity baseline). No call from `lib/ai/prompts/nutrition.ts`.
+
+- [ ] **Step 4: Hand-check the prompt body**
+
+```bash
+grep -n "raw_grams\|per_100g_raw" lib/ai/prompts/nutrition.ts
+```
+
+Expected: zero hits (renamed to `as_eaten_grams` and `per_100g`).
+
+---
+
+### Chunk 3 — outcome verification
+
+After Chunk 3 ships:
+
+- [ ] `validation.ts` exports `density_envelope` and `macro_inconsistent` as `AnomalyType`s with the §1.3/§1.4 thresholds.
+- [ ] The orchestrator's `pipeline_runs` row writer fills `density_envelope_fires` and `macro_inconsistent_fires` per run.
+- [ ] `assembleResult` no longer calls `convertCookedToRaw` when `match.dbState === 'cooked'`; the as-eaten `estimatedGrams` are used directly for DB scaling. `cooked_to_raw_factor_fires` counts the legacy-fallback path only.
+- [ ] `nutrition.ts` no longer imports `convertCookedToRaw`. The XML emits `as_eaten_grams=` (not `raw_grams=`) and `<per_100g …/>` (not `<per_100g_raw …/>`). The `<calculation>` block branches on `db_state`.
+- [ ] The retry loop fires on `density_envelope` and `macro_inconsistent` warnings without escalating yet.
+- [ ] All Chunk 2 sentinel tests still pass — no preference-shaped strings reintroduced.
+- [ ] `convertCookedToRaw` and `COOKED_TO_RAW_FACTOR` are still exported from `constants.ts` and called only by `assembly.ts` (gated fallback) and `validation.ts` (DB-deviation comparator). Spec §1.5 retirement gate (< 5% fire rate over 7 days) is checked manually post-launch — not part of this chunk.
+
+**User-facing behavior change:** for cooked-DB-row matches (most cooked-rice/cooked-meat rows in FAO Vietnam), the live nutrition values stop being silently undercounted. End-user totals shift upward for those meals — this is the spec §0.2 correctness fix landing.
+
+---
