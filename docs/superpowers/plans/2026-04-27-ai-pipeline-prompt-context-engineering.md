@@ -5600,3 +5600,1006 @@ After all six tasks land, the following must be true:
 
 ---
 
+
+## Chunk 6 — §2 Dish-wrapped decomposition: schema rewrite + state tie-breaker + canonicalName
+
+> **Spec anchors:** §2.1 (lines 273–298) dish-wrapped schema with `mealItemId`, `cookingMethod`, `cuisineNote`, `canonicalName`, per-ingredient `expectedState`. §2.2 (300–304) `COOKING_METHOD_STATE` lookup + `unknown` fallback telemetry. §2.3 (306–318) state-match tie-breaker in `pickBestSource`. §2.5 (331–335) `canonicalName` FCT validation + `pre_match_alias_hits`. §2.6 (337–350) `ambiguityFlags` closed-enum side channel. **§2.4 RRF measurement is Chunk 7.**
+>
+> **Locked decisions for Chunk 6:**
+> - **No `sourcePrior`, no `sourceOverride`** — removed entirely from the schema and from any matching code path. Spec §2.1 line 296.
+> - **State preference is the ONLY tie-breaker** at rank time (after similarity). Source preference is **NOT** a tie-breaker. Spec §2.3 line 318.
+> - **Hard enums only where the DB enforces them** (`expectedState: 'raw' | 'cooked'`). Cuisine and cooking method stay free-form strings; closing those enums fails on edge cases. Spec §2.1 line 294.
+> - **`canonicalName` validation is aggregate-not-per-user** — the failure data feeds `pre_match_alias_hits` for alias-retirement decisions, never per-user behavior tracking. Spec §2.5 line 335.
+> - **`ambiguityFlags` is logged but not a routing input** — Principle B keeps this read-only at decomposition time. Spec §2.6 line 350.
+> - **Stable IDs from §0.1 (Chunk 1a) are a hard prerequisite** — `mealItemId` and `ingredientId` MUST be on the LLM output (not generated server-side) so retry-pass overwrite by `ingredientId` (§4.4 streaming) is correct.
+> - **Schema version bumps** — `DECOMPOSITION_SCHEMA_VERSION` increments. Chunk 1's version table is the single source of truth.
+
+### Task 6.1: Rewrite `decomposedIngredientSchema` and `decomposedMealItemSchema` (Zod)
+
+> **Why this is the largest schema cut in the chunk:** every downstream consumer (orchestrator, prompts, types, tests) keys off these two schemas. Land it first; the rest of the chunk threads it through.
+
+- [ ] **Step 1: Write the failing tests**
+
+`lib/ai/pipeline/__tests__/schemas-decomposition.test.ts` (NEW file — keep separate from existing `schemas.test.ts` so the diff is reviewable):
+
+```ts
+import { describe, expect, it } from 'vitest';
+import {
+  decomposedDishSchema,
+  decomposedIngredientSchema,
+  mealDecompositionSchema,
+  type DecomposedDish,
+  type DecomposedIngredient,
+} from '../schemas';
+
+describe('decomposedIngredientSchema (§2.1)', () => {
+  const valid: DecomposedIngredient = {
+    ingredientId: 'ing_01HX...',
+    rawName: 'cá lóc',
+    canonicalName: 'Cá quả',
+    quantity: 200,
+    unit: 'g',
+    expectedState: 'cooked',
+  };
+
+  it('accepts a fully-populated ingredient', () => {
+    expect(decomposedIngredientSchema.parse(valid)).toEqual(valid);
+  });
+
+  it('makes expectedState optional (derived from cookingMethod when omitted)', () => {
+    const { expectedState, ...rest } = valid;
+    expect(decomposedIngredientSchema.parse(rest)).toEqual(rest);
+  });
+
+  it('rejects expectedState values outside raw/cooked (closed enum, DB-enforced)', () => {
+    expect(() =>
+      decomposedIngredientSchema.parse({ ...valid, expectedState: 'frozen' })
+    ).toThrow();
+  });
+
+  it('rejects missing ingredientId (§0.1 stable IDs are required)', () => {
+    const { ingredientId: _, ...withoutId } = valid;
+    expect(() => decomposedIngredientSchema.parse(withoutId)).toThrow();
+  });
+
+  it('rejects missing canonicalName', () => {
+    const { canonicalName: _, ...rest } = valid;
+    expect(() => decomposedIngredientSchema.parse(rest)).toThrow();
+  });
+
+  it('rejects sourcePrior / sourceOverride (locked: removed entirely)', () => {
+    expect(() =>
+      decomposedIngredientSchema.parse({ ...valid, sourceOverride: 'fao' } as any)
+    ).toThrow();
+  });
+
+  it('requires positive quantity', () => {
+    expect(() =>
+      decomposedIngredientSchema.parse({ ...valid, quantity: 0 })
+    ).toThrow();
+    expect(() =>
+      decomposedIngredientSchema.parse({ ...valid, quantity: -5 })
+    ).toThrow();
+  });
+});
+
+describe('decomposedDishSchema (§2.1)', () => {
+  const valid: DecomposedDish = {
+    mealItemId: 'meal_01HX...',
+    name: 'bún thịt nướng',
+    cookingMethod: 'nướng',
+    cuisineNote: 'southern Vietnamese',
+    ingredients: [
+      {
+        ingredientId: 'ing_01',
+        rawName: 'thịt heo',
+        canonicalName: 'Thịt lợn nạc',
+        quantity: 150,
+        unit: 'g',
+        expectedState: 'cooked',
+      },
+      {
+        ingredientId: 'ing_02',
+        rawName: 'bún',
+        canonicalName: 'Bún tươi',
+        quantity: 200,
+        unit: 'g',
+        // expectedState omitted — derives from dish cookingMethod
+      },
+    ],
+  };
+
+  it('accepts a fully-valid dish', () => {
+    expect(decomposedDishSchema.parse(valid)).toEqual(valid);
+  });
+
+  it('keeps cookingMethod free-form string (not a closed enum)', () => {
+    expect(
+      decomposedDishSchema.parse({ ...valid, cookingMethod: 'xối mỡ áp chảo' })
+    ).toEqual({ ...valid, cookingMethod: 'xối mỡ áp chảo' });
+  });
+
+  it('makes cuisineNote optional', () => {
+    const { cuisineNote: _, ...rest } = valid;
+    expect(decomposedDishSchema.parse(rest)).toEqual(rest);
+  });
+
+  it('requires at least one ingredient', () => {
+    expect(() =>
+      decomposedDishSchema.parse({ ...valid, ingredients: [] })
+    ).toThrow();
+  });
+
+  it('rejects sourcePrior on the dish (locked: removed)', () => {
+    expect(() =>
+      decomposedDishSchema.parse({ ...valid, sourcePrior: 'fao' } as any)
+    ).toThrow();
+  });
+
+  it('allows ingredient-level ambiguityFlags (§2.6 closed enum)', () => {
+    const dish = {
+      ...valid,
+      ingredients: [
+        {
+          ...valid.ingredients[0],
+          ambiguityFlags: ['cross_cuisine_ingredient', 'unspecified_quantity'],
+        },
+        valid.ingredients[1],
+      ],
+    };
+    expect(() => decomposedDishSchema.parse(dish)).not.toThrow();
+  });
+
+  it('rejects unknown ambiguityFlags values (closed enum)', () => {
+    const dish = {
+      ...valid,
+      ingredients: [
+        { ...valid.ingredients[0], ambiguityFlags: ['vibes'] as any },
+        valid.ingredients[1],
+      ],
+    };
+    expect(() => decomposedDishSchema.parse(dish)).toThrow();
+  });
+});
+
+describe('mealDecompositionSchema (top-level)', () => {
+  it('keeps isFood + mealSlot at the top level (unchanged contract)', () => {
+    const decomp = mealDecompositionSchema.parse({
+      isFood: true,
+      mealSlot: 'lunch',
+      mealItems: [
+        {
+          mealItemId: 'meal_01',
+          name: 'phở bò',
+          cookingMethod: 'luộc',
+          ingredients: [
+            {
+              ingredientId: 'ing_01',
+              rawName: 'thịt bò',
+              canonicalName: 'Thịt bò',
+              quantity: 100,
+              unit: 'g',
+              expectedState: 'cooked',
+            },
+          ],
+        },
+      ],
+    });
+    expect(decomp.isFood).toBe(true);
+    expect(decomp.mealSlot).toBe('lunch');
+  });
+
+  it('accepts isFood: false with empty mealItems', () => {
+    expect(() =>
+      mealDecompositionSchema.parse({ isFood: false, mealSlot: null, mealItems: [] })
+    ).not.toThrow();
+  });
+});
+```
+
+Run:
+```bash
+bun run test lib/ai/pipeline/__tests__/schemas-decomposition.test.ts
+```
+Expected: FAIL — `decomposedDishSchema` does not exist; current schema has `name`/`estimatedGrams`/`userFacingUnit` shape.
+
+- [ ] **Step 2: Rewrite `lib/ai/pipeline/schemas.ts`**
+
+Replace the existing decomposition section (lines 1–60) with the dish-wrapped shape:
+
+```ts
+import { z } from 'zod';
+
+// ---------------------------------------------------------------------------
+// LLM Call 1: Dish-wrapped meal decomposition (spec §2.1)
+// ---------------------------------------------------------------------------
+
+const ambiguityFlagSchema = z.enum([
+  'multiple_dish_interpretations',
+  'unspecified_quantity',
+  'cross_cuisine_ingredient',
+  'state_inferred_no_method',
+]);
+
+export const decomposedIngredientSchema = z
+  .object({
+    ingredientId: z
+      .string()
+      .min(1)
+      .describe(
+        'Stable per-ingredient ID emitted by the model. ULID/UUID-shape; used by streaming retry-pass overwrite (§4.4).'
+      ),
+    rawName: z
+      .string()
+      .min(1)
+      .describe(
+        'Exactly what the model saw / inferred from user input (Vietnamese, possibly slang).'
+      ),
+    canonicalName: z
+      .string()
+      .min(1)
+      .describe(
+        'Disambiguated FCT-vocabulary name (e.g., "Cá quả" not "cá lóc"). Validated against FAO+USDA name set (§2.5).'
+      ),
+    quantity: z
+      .number()
+      .positive()
+      .describe('Quantity in `unit` units. Must be > 0.'),
+    unit: z
+      .string()
+      .min(1)
+      .describe('Unit string ("g", "ml", "miếng", "chén", ...). Free-form.'),
+    expectedState: z
+      .enum(['raw', 'cooked'])
+      .optional()
+      .describe(
+        'Per-ingredient state override (§2.2). When omitted, runtime derives from dish cookingMethod via COOKING_METHOD_STATE.'
+      ),
+    ambiguityFlags: z
+      .array(ambiguityFlagSchema)
+      .optional()
+      .describe(
+        '§2.6 closed-enum ambiguity side-channel. Logged for retirement decisions; not a routing input.'
+      ),
+  })
+  .strict(); // Reject sourcePrior / sourceOverride / any other surplus key.
+
+export const decomposedDishSchema = z
+  .object({
+    mealItemId: z
+      .string()
+      .min(1)
+      .describe(
+        'Stable per-meal-item ID emitted by the model. Required for §4.4 retry replacement.'
+      ),
+    name: z
+      .string()
+      .min(1)
+      .describe(
+        'User-facing dish name in Vietnamese (e.g., "bún bò Huế", "thịt kho").'
+      ),
+    cookingMethod: z
+      .string()
+      .min(1)
+      .describe(
+        'Free-form Vietnamese cooking method ("luộc", "kho", "chiên", "nướng", "hấp", "xào", or compound forms like "xối mỡ áp chảo"). Hint, not a determiner — per-ingredient expectedState is the source of truth (§2.2).'
+      ),
+    cuisineNote: z
+      .string()
+      .optional()
+      .describe('Free-form regional/style note (e.g., "Huế-style", "northern beef pho").'),
+    ingredients: z
+      .array(decomposedIngredientSchema)
+      .min(1)
+      .describe('Internal ingredient breakdown. Must have at least one ingredient.'),
+  })
+  .strict();
+
+export const mealDecompositionSchema = z.object({
+  isFood: z
+    .boolean()
+    .describe('Whether the input describes recognizable food. false → empty mealItems.'),
+  mealItems: z
+    .array(decomposedDishSchema)
+    .describe('Decomposed dishes. Empty when isFood is false.'),
+  mealSlot: z
+    .enum(['breakfast', 'brunch', 'lunch', 'dinner', 'snack'])
+    .nullable()
+    .describe(
+      'Classified meal slot (Sáng→breakfast, Trưa→lunch, Tối→dinner, Bữa phụ→snack), null if uncertain.'
+    ),
+});
+
+export type DecomposedIngredient = z.infer<typeof decomposedIngredientSchema>;
+export type DecomposedDish = z.infer<typeof decomposedDishSchema>;
+export type MealDecomposition = z.infer<typeof mealDecompositionSchema>;
+export type AmbiguityFlag = z.infer<typeof ambiguityFlagSchema>;
+```
+
+> **Note on `.strict()`:** Zod's `.strict()` makes parse REJECT unknown keys. This is the runtime guard that backs the "no `sourcePrior` / `sourceOverride`" locked decision — even if a future LLM emits the field, it fails the schema and the parse-retry path kicks in. Combined with the prompt rewrite in Task 6.2, this is belt + suspenders against schema drift.
+
+Run the test. Expected: PASS.
+
+- [ ] **Step 3: Audit + delete consumers of the old shape**
+
+The old schema exposed `name`/`estimatedGrams`/`cookingMethod`/`userFacingUnit` directly on each ingredient. Every consumer needs an update. Run:
+
+```bash
+grep -rn "decomposedIngredientSchema\|decomposedMealItemSchema\|estimatedGrams.*decomposed\|\.cookingMethod\b" lib/ai app components 2>&1 | grep -v __tests__
+```
+
+Update each call site:
+- `name` (ingredient) → `rawName` (display) + `canonicalName` (matching key)
+- `estimatedGrams` → `quantity` + `unit` (with runtime conversion in the matching layer)
+- `userFacingUnit` → `unit` (the schema now has it inline)
+- `decomposedMealItemSchema` → `decomposedDishSchema` (renamed)
+
+> **Important — `quantity`+`unit` is NOT 1:1 replacement for `estimatedGrams`.** The matching/nutrition path expects grams. Add a unit-conversion helper that handles the common Vietnamese units (`g`, `ml`, `kg`, `miếng`, `chén`, `bát`, `lát`, `cái`) and falls back to the LLM's existing implicit "estimatedGrams = quantity when unit=='g'" assumption. The LLM is instructed in the new prompt (Task 6.2) to default `unit: 'g'` when ambiguous, which preserves today's behavior.
+
+- [ ] **Step 4: Run the suite + lint**
+
+```bash
+bun run test
+bunx @biomejs/biome@2.4.2 check .
+```
+
+The full suite WILL fail in places — every consumer update is its own commit (Step 5). Land them in dependency order: types → assembly → orchestrator → prompts (Task 6.2 next) → assertions in existing tests.
+
+- [ ] **Step 5: Commit (schema only)**
+
+```bash
+git add lib/ai/pipeline/schemas.ts \
+        lib/ai/pipeline/__tests__/schemas-decomposition.test.ts
+git commit -m "feat(pipeline/schemas): dish-wrapped decomposition schema (§2.1)
+
+- DecomposedDish wraps ingredients with mealItemId + cookingMethod + cuisineNote.
+- DecomposedIngredient: ingredientId/rawName/canonicalName/quantity/unit/expectedState.
+- AmbiguityFlag closed enum.
+- .strict() rejects sourcePrior/sourceOverride (locked: removed entirely).
+- Bumps DECOMPOSITION_SCHEMA_VERSION (separate commit alongside Task 6.2).
+
+Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>"
+```
+
+---
+
+### Task 6.2: Rewrite `buildDecompositionPrompt` for the new schema
+
+> **Why a separate task:** The Zod schema shape and the prompt body are coupled — the prompt instructs the LLM what to emit. Land them in the same chunk, but in two commits so the schema-only commit is bisectable.
+
+- [ ] **Step 1: Write the failing tests**
+
+Update `lib/ai/prompts/__tests__/decomposition.test.ts` (or add new tests if separation is cleaner):
+
+```ts
+import { describe, expect, it } from 'vitest';
+import { buildDecompositionPrompt } from '../decomposition';
+import type { PromptPersonalizationContext } from '../types';
+
+const ctx: PromptPersonalizationContext = {
+  countryOfOrigin: 'VN',
+  countryOfResidence: 'VN',
+  cookingHabits: { fatLevel: 'medium', spiceLevel: 'high' },
+};
+
+describe('buildDecompositionPrompt — dish-wrapped schema (§2.1, §2.2, §2.5, §2.6)', () => {
+  it('asks for mealItemId and ingredientId on every emitted item', () => {
+    const prompt = buildDecompositionPrompt(ctx);
+    expect(prompt).toMatch(/mealItemId/);
+    expect(prompt).toMatch(/ingredientId/);
+  });
+
+  it('asks for canonicalName separately from rawName', () => {
+    const prompt = buildDecompositionPrompt(ctx);
+    expect(prompt).toMatch(/canonicalName/);
+    expect(prompt).toMatch(/rawName/);
+  });
+
+  it('describes the FCT vocabulary canonicalName guidance', () => {
+    const prompt = buildDecompositionPrompt(ctx);
+    // The exact wording is implementation-defined; the test verifies the
+    // INTENT — that the model is told canonicalName must be a DB-friendly
+    // disambiguated name. We assert one anchor phrase.
+    expect(prompt.toLowerCase()).toMatch(/canonical|fct|disambiguat/);
+  });
+
+  it('asks for per-ingredient expectedState only when it would differ', () => {
+    const prompt = buildDecompositionPrompt(ctx);
+    expect(prompt).toMatch(/expectedState/);
+    // Anchor phrase for "only when it differs from the dish-method default"
+    expect(prompt.toLowerCase()).toMatch(/differ|override|mixed/);
+  });
+
+  it('explicitly enumerates ambiguityFlags closed-enum values', () => {
+    const prompt = buildDecompositionPrompt(ctx);
+    for (const flag of [
+      'multiple_dish_interpretations',
+      'unspecified_quantity',
+      'cross_cuisine_ingredient',
+      'state_inferred_no_method',
+    ]) {
+      expect(prompt).toContain(flag);
+    }
+  });
+
+  it('does NOT mention sourcePrior, sourceOverride, fao, or usda routing (locked)', () => {
+    const prompt = buildDecompositionPrompt(ctx);
+    expect(prompt).not.toMatch(/sourcePrior/);
+    expect(prompt).not.toMatch(/sourceOverride/);
+    // Source names alone could appear in cuisine context; the routing
+    // language is what's forbidden. Anchor on "fao" / "usda" combined
+    // with routing verbs.
+    expect(prompt.toLowerCase()).not.toMatch(/route .*to (fao|usda)|prefer (fao|usda)/);
+  });
+
+  it('does NOT leak goal/aggression/calorieTarget/bodyMetrics (Principle A sentinel)', () => {
+    const ctxWithSecrets = {
+      ...ctx,
+      goal: 'cut',
+      aggression: 'aggressive',
+      calorieTargetKcal: 1500,
+      bodyMetrics: { heightCm: 170, weightKg: 65 },
+    } as PromptPersonalizationContext;
+    const prompt = buildDecompositionPrompt(ctxWithSecrets);
+    expect(prompt).not.toMatch(/cut|bulk|aggressive|calorie target|1500|170|65/i);
+  });
+});
+```
+
+Run: `bun run test lib/ai/prompts/__tests__/decomposition.test.ts`. Expected: FAIL — current prompt lacks the new vocabulary.
+
+- [ ] **Step 2: Rewrite `lib/ai/prompts/decomposition.ts`**
+
+Update the `buildDecompositionPrompt` function to:
+1. Drop any `sourcePrior` / `sourceOverride` / source-routing language entirely.
+2. Document the new `DecomposedDish` / `DecomposedIngredient` shape inline so the LLM emits it.
+3. Add a `<canonical_names>` block describing the FCT vocabulary expectation.
+4. Add an `<expected_state>` block: "When the dish cookingMethod implies one state but a specific ingredient is in another (e.g., `bún` in `bún thịt nướng` is boiled while the meat is grilled), emit `expectedState: 'raw' | 'cooked'` on that ingredient. When the whole dish is uniform, omit it."
+5. Add a `<stable_ids>` block: "Emit `mealItemId` and `ingredientId` as ULIDs you generate. Reuse the same `ingredientId` if you re-emit the same ingredient on a retry. Do NOT use names as IDs."
+6. Add an `<ambiguity_flags>` block enumerating the four allowed values verbatim with one-line descriptions each.
+7. Re-import + re-export `DECOMPOSITION_PROMPT_VERSION` from `../pipeline/versions`. Bump to `'2.1.0'` (Chunk 1's `versions.ts` test will fail when this lands — update both in the same commit; spec versioning is the contract that lets §0.4 telemetry attribute distributional shifts).
+
+> **Sentinel test from Chunk 2.** The Principle A sentinel test (Chunk 2 Task 2.4 plan line ~2185) iterates all `UserContext` keys and asserts none leak into the prompt. That test continues to gate this rewrite.
+
+- [ ] **Step 3: Run the suite + lint**
+
+```bash
+bun run test lib/ai/prompts
+bunx @biomejs/biome@2.4.2 check lib/ai/prompts/decomposition.ts
+```
+
+- [ ] **Step 4: Commit**
+
+```bash
+git add lib/ai/prompts/decomposition.ts \
+        lib/ai/prompts/__tests__/decomposition.test.ts \
+        lib/ai/pipeline/versions.ts \
+        lib/ai/pipeline/__tests__/versions.test.ts
+git commit -m "feat(prompts/decomposition): dish-wrapped schema rewrite (§2.1, §2.2, §2.5, §2.6)
+
+- Asks for mealItemId, ingredientId, canonicalName, expectedState (when
+  it would differ), ambiguityFlags closed enum.
+- Drops sourcePrior/sourceOverride language entirely (locked).
+- Bumps DECOMPOSITION_PROMPT_VERSION to 2.1.0 for telemetry attribution.
+
+Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>"
+```
+
+---
+
+### Task 6.3: `COOKING_METHOD_STATE` lookup + `unknown` telemetry
+
+> **Spec §2.2.** When the LLM omits `expectedState`, runtime derives it from `cookingMethod`. Unknown methods fall through to `unknown` and increment a telemetry counter (rolls into `pipeline_runs` from Chunk 1d).
+
+- [ ] **Step 1: Write the failing tests**
+
+`lib/ai/pipeline/__tests__/cooking-method-state.test.ts` (NEW):
+
+```ts
+import { describe, expect, it } from 'vitest';
+import {
+  COOKING_METHOD_STATE,
+  deriveExpectedState,
+} from '../cooking-method-state';
+
+describe('COOKING_METHOD_STATE lookup', () => {
+  // Spot-check the canonical Vietnamese cooking-method → state mappings.
+  it('maps boiling/steaming/grilling methods to "cooked"', () => {
+    for (const m of ['luộc', 'hấp', 'nướng', 'kho', 'chiên', 'xào', 'chưng']) {
+      expect(COOKING_METHOD_STATE[m]).toBe('cooked');
+    }
+  });
+
+  it('maps explicit raw indicators to "raw"', () => {
+    for (const m of ['sống', 'tươi sống', 'tái']) {
+      expect(COOKING_METHOD_STATE[m]).toBe('raw');
+    }
+  });
+});
+
+describe('deriveExpectedState', () => {
+  it('returns the explicit override when present (§2.2)', () => {
+    expect(deriveExpectedState({ explicit: 'raw', dishMethod: 'luộc' })).toEqual({
+      state: 'raw',
+      source: 'explicit',
+    });
+  });
+
+  it('looks up the dish method in COOKING_METHOD_STATE when no override', () => {
+    expect(deriveExpectedState({ explicit: undefined, dishMethod: 'luộc' })).toEqual({
+      state: 'cooked',
+      source: 'method_lookup',
+    });
+  });
+
+  it('returns unknown source when method is not in the lookup', () => {
+    const out = deriveExpectedState({ explicit: undefined, dishMethod: 'sa tế hỗn hợp' });
+    expect(out.source).toBe('unknown');
+    // The state defaults to "cooked" as the safe assumption (Vietnamese DB
+    // dishes are predominantly cooked) but the source flag drives telemetry.
+    expect(out.state).toBe('cooked');
+  });
+
+  it('is case + whitespace + diacritic tolerant on lookup keys', () => {
+    expect(
+      deriveExpectedState({ explicit: undefined, dishMethod: '  Luộc  ' }).source
+    ).toBe('method_lookup');
+  });
+
+  it('does NOT unaccent the key (diacritics are semantically load-bearing)', () => {
+    // "luoc" without diacritics is NOT the same as "luộc" — must miss the
+    // lookup. Anti-unaccent guard per AGENTS.md §9.
+    expect(
+      deriveExpectedState({ explicit: undefined, dishMethod: 'luoc' }).source
+    ).toBe('unknown');
+  });
+});
+```
+
+Run: `bun run test lib/ai/pipeline/__tests__/cooking-method-state.test.ts`. Expected: FAIL — module does not exist.
+
+- [ ] **Step 2: Implement `cooking-method-state.ts`**
+
+```ts
+// lib/ai/pipeline/cooking-method-state.ts
+//
+// Spec §2.2. Vietnamese cooking-method → expectedState lookup with an
+// `unknown` fallback for telemetry.
+
+export const COOKING_METHOD_STATE: Readonly<Record<string, 'raw' | 'cooked'>> =
+  Object.freeze({
+    // Cooked
+    luộc: 'cooked',     // boil
+    hấp: 'cooked',      // steam
+    chưng: 'cooked',    // long-steam
+    nướng: 'cooked',    // grill
+    quay: 'cooked',     // roast
+    rán: 'cooked',      // pan-fry
+    chiên: 'cooked',    // deep-fry
+    xào: 'cooked',      // stir-fry
+    kho: 'cooked',      // braise / caramel-stew
+    om: 'cooked',       // stew
+    nấu: 'cooked',      // generic cook
+    áp_chảo: 'cooked',  // sear
+    'áp chảo': 'cooked',
+
+    // Raw
+    sống: 'raw',
+    'tươi sống': 'raw',
+    tái: 'raw',         // rare / blanched
+    gỏi: 'raw',         // raw salad
+  });
+
+export interface DeriveStateInput {
+  explicit: 'raw' | 'cooked' | undefined;
+  dishMethod: string | null | undefined;
+}
+
+export interface DeriveStateOutput {
+  state: 'raw' | 'cooked';
+  source: 'explicit' | 'method_lookup' | 'unknown';
+}
+
+/**
+ * Derive expectedState. NEVER unaccents — Vietnamese diacritics are
+ * semantically load-bearing (AGENTS.md §9). Lowercase + trim only.
+ */
+export function deriveExpectedState(input: DeriveStateInput): DeriveStateOutput {
+  if (input.explicit) {
+    return { state: input.explicit, source: 'explicit' };
+  }
+  const key = (input.dishMethod ?? '').trim().toLocaleLowerCase('vi-VN');
+  const hit = COOKING_METHOD_STATE[key];
+  if (hit) return { state: hit, source: 'method_lookup' };
+  // Fallback: assume cooked (vast majority of Vietnamese DB items) but
+  // flag for telemetry as `unknown`.
+  return { state: 'cooked', source: 'unknown' };
+}
+```
+
+Run the test. Expected: PASS.
+
+- [ ] **Step 3: Wire into the orchestrator post-decomposition**
+
+In `lib/ai/pipeline/orchestrator.ts`, after the decomposition parse but before matching, derive `expectedState` for every ingredient and accumulate the `unknown` count for `pipeline_runs.db_state_unknown_fires` (spec line 95) and a new `expected_state_unknown_count` column (Chunk 1d schema; if missing, raise a Chunk 1d update — but the spec text uses `db_state_unknown_fires` as the field name and that already exists).
+
+```ts
+import { deriveExpectedState } from './cooking-method-state';
+
+let dbStateUnknownFires = 0;
+const decoratedItems = decomposition.mealItems.map((dish) => ({
+  ...dish,
+  ingredients: dish.ingredients.map((ing) => {
+    const derived = deriveExpectedState({
+      explicit: ing.expectedState,
+      dishMethod: dish.cookingMethod,
+    });
+    if (derived.source === 'unknown') dbStateUnknownFires++;
+    return { ...ing, expectedState: derived.state, _stateSource: derived.source };
+  }),
+}));
+// Forward dbStateUnknownFires into buildPipelineRunRow.
+```
+
+The `_stateSource` private field flows downstream to the matching layer (Task 6.4) so it can apply the state tie-breaker only when state is HIGH-confidence (i.e., not `unknown`). When `unknown`, the tie-breaker collapses to similarity-only.
+
+- [ ] **Step 4: Run the suite + lint, commit**
+
+```bash
+bun run test
+bunx @biomejs/biome@2.4.2 check .
+git add lib/ai/pipeline/cooking-method-state.ts \
+        lib/ai/pipeline/__tests__/cooking-method-state.test.ts \
+        lib/ai/pipeline/orchestrator.ts
+git commit -m "feat(pipeline): COOKING_METHOD_STATE lookup + unknown telemetry (§2.2)
+
+Vietnamese cooking method → expectedState. Diacritic-preserving (semantically
+load-bearing per AGENTS.md §9). 'unknown' source increments
+db_state_unknown_fires in pipeline_runs.
+
+Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>"
+```
+
+---
+
+### Task 6.4: State-match tie-breaker in `pickBestSource` (§2.3)
+
+> **Spec §2.3 lines 306–318.** Today `pickBestSource` (lib/ai/matching/source-matching.ts:98) tie-breaks by similarity only. Change order to: **state-match > similarity score**. Source preference is intentionally NOT a tie-breaker.
+
+- [ ] **Step 1: Write the failing tests**
+
+`lib/ai/matching/__tests__/pick-best-source-state.test.ts` (NEW — keep separate from existing tests):
+
+```ts
+import { describe, expect, it } from 'vitest';
+import { pickBestSource } from '../source-matching';
+import type { MatchInfo } from '../source-matching';
+
+const fao = (similarity: number, state: 'raw' | 'cooked' | 'unknown'): MatchInfo => ({
+  source: 'fao',
+  similarity,
+  // ... fill in minimal MatchInfo shape from existing type def
+  state,
+} as MatchInfo);
+
+const usda = (similarity: number, state: 'raw' | 'cooked' | 'unknown'): MatchInfo => ({
+  source: 'usda',
+  similarity,
+  state,
+} as MatchInfo);
+
+describe('pickBestSource — state-match tie-breaker (§2.3)', () => {
+  it('prefers state-match over higher similarity', () => {
+    // FAO has 0.92 similarity but state mismatch. USDA has 0.78 similarity
+    // but state matches. State wins.
+    const winner = pickBestSource(
+      fao(0.92, 'raw'),
+      usda(0.78, 'cooked'),
+      { expectedState: 'cooked' }
+    );
+    expect(winner?.source).toBe('usda');
+  });
+
+  it('falls back to similarity when both candidates have the same state', () => {
+    const winner = pickBestSource(
+      fao(0.92, 'cooked'),
+      usda(0.78, 'cooked'),
+      { expectedState: 'cooked' }
+    );
+    expect(winner?.source).toBe('fao');
+  });
+
+  it('falls back to similarity when expectedState is unknown (state-source confidence is low)', () => {
+    // Spec §2.3 line 308: state tie-breaker is meaningful only when we
+    // know the expected state. Unknown collapses to similarity only.
+    const winner = pickBestSource(
+      fao(0.92, 'raw'),
+      usda(0.78, 'cooked'),
+      { expectedState: 'unknown' }
+    );
+    expect(winner?.source).toBe('fao');
+  });
+
+  it('does NOT prefer FAO over USDA on its own (source-preference is NOT a tie-breaker)', () => {
+    // Same state, FAO LOWER similarity. USDA must win.
+    const winner = pickBestSource(
+      fao(0.70, 'cooked'),
+      usda(0.85, 'cooked'),
+      { expectedState: 'cooked' }
+    );
+    expect(winner?.source).toBe('usda');
+  });
+
+  it('handles null candidates exactly as before (no behavioral change in single-source case)', () => {
+    expect(pickBestSource(null, usda(0.8, 'cooked'), { expectedState: 'cooked' })?.source).toBe('usda');
+    expect(pickBestSource(fao(0.8, 'cooked'), null, { expectedState: 'cooked' })?.source).toBe('fao');
+    expect(pickBestSource(null, null, { expectedState: 'cooked' })).toBeNull();
+  });
+});
+```
+
+Run: `bun run test lib/ai/matching/__tests__/pick-best-source-state.test.ts`. Expected: FAIL — `pickBestSource` doesn't accept the third arg.
+
+- [ ] **Step 2: Update `pickBestSource` signature + implementation**
+
+`lib/ai/matching/source-matching.ts` — extend `MatchInfo` to carry the candidate's `state` (it already lives on the DB row but may not surface in the cascade-stage MatchInfo today; add it). Then change `pickBestSource`:
+
+```ts
+export interface PickBestSourceContext {
+  /** Comes from deriveExpectedState. 'unknown' disables the state tie-breaker. */
+  expectedState: 'raw' | 'cooked' | 'unknown';
+}
+
+export function pickBestSource(
+  fao: MatchInfo | null,
+  usda: MatchInfo | null,
+  ctx: PickBestSourceContext
+): MatchInfo | null {
+  if (fao && !usda) return fao;
+  if (!fao && usda) return usda;
+  if (!fao && !usda) return null;
+
+  const a = fao!;
+  const b = usda!;
+
+  // Tie-break order (§2.3): state-match > similarity. No source preference.
+  if (ctx.expectedState !== 'unknown') {
+    const aMatch = a.state === ctx.expectedState;
+    const bMatch = b.state === ctx.expectedState;
+    if (aMatch && !bMatch) return a;
+    if (!aMatch && bMatch) return b;
+    // Both match or both miss → fall through to similarity.
+  }
+  return a.similarity >= b.similarity ? a : b;
+}
+```
+
+> **Note on call-site update:** `pickBestSource` has two existing call sites (line 159 vector winner, line 194 fuzzy winner). Both must be updated to pass `ctx` derived from the per-ingredient `expectedState` carried through from Task 6.3's orchestrator wiring. Thread `expectedState` through `matchSingleIngredientWithEmbedding` as a new arg.
+
+- [ ] **Step 3: Update existing tests + add the new state-aware tests**
+
+The existing tests for `pickBestSource` (likely in `source-matching.test.ts`) call it without a context arg. Update each call to pass `{ expectedState: 'unknown' }` (preserves today's similarity-only behavior).
+
+- [ ] **Step 4: Run the suite + lint, commit**
+
+```bash
+bun run test
+bunx @biomejs/biome@2.4.2 check .
+git add lib/ai/matching/source-matching.ts \
+        lib/ai/matching/__tests__/pick-best-source-state.test.ts \
+        lib/ai/matching/__tests__/source-matching.test.ts \
+        lib/ai/pipeline/orchestrator.ts
+git commit -m "feat(matching): state-match tie-breaker in pickBestSource (§2.3)
+
+Tie-break order: state-match > similarity. Source preference is NOT a
+tie-breaker (locked). Unknown expectedState collapses to similarity-only.
+
+Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>"
+```
+
+---
+
+### Task 6.5: `canonicalName` FCT-vocabulary validation + `pre_match_alias_hits` telemetry
+
+> **Spec §2.5.** The LLM emits `canonicalName`. Runtime validates it against the FAO+USDA name set already loaded for the embedding cache. Misses fire `pre_match_alias_hits` for alias-retirement decisions.
+
+- [ ] **Step 1: Write the failing tests**
+
+`lib/ai/pipeline/__tests__/canonical-name-validator.test.ts` (NEW):
+
+```ts
+import { describe, expect, it, beforeEach } from 'vitest';
+import {
+  createCanonicalNameValidator,
+  type CanonicalNameValidator,
+} from '../canonical-name-validator';
+
+describe('createCanonicalNameValidator (§2.5)', () => {
+  let validator: CanonicalNameValidator;
+
+  beforeEach(() => {
+    validator = createCanonicalNameValidator(
+      new Set(['Cá quả', 'Thịt bò', 'Bún tươi', 'Trứng gà'])
+    );
+  });
+
+  it('returns hit=true when canonicalName is in the set', () => {
+    expect(validator.validate('Cá quả')).toEqual({ hit: true });
+  });
+
+  it('returns hit=false with reason="alias_miss" when not in the set', () => {
+    expect(validator.validate('Cá lóc')).toEqual({
+      hit: false,
+      reason: 'alias_miss',
+      attemptedName: 'Cá lóc',
+    });
+  });
+
+  it('is diacritic-strict — "ca qua" misses "Cá quả"', () => {
+    // Anti-unaccent guard per AGENTS.md §9.
+    expect(validator.validate('ca qua')).toEqual({
+      hit: false,
+      reason: 'alias_miss',
+      attemptedName: 'ca qua',
+    });
+  });
+
+  it('treats empty/null inputs as misses with a distinct reason', () => {
+    expect(validator.validate('')).toEqual({ hit: false, reason: 'empty', attemptedName: '' });
+  });
+
+  it('aggregates miss counts via getMissCounts() and reset()', () => {
+    validator.validate('Cá lóc');
+    validator.validate('Cá lóc');
+    validator.validate('Bún bò Huế');
+    expect(validator.getMissCounts()).toEqual({
+      'Cá lóc': 2,
+      'Bún bò Huế': 1,
+    });
+    validator.reset();
+    expect(validator.getMissCounts()).toEqual({});
+  });
+});
+```
+
+Run: `bun run test lib/ai/pipeline/__tests__/canonical-name-validator.test.ts`. Expected: FAIL.
+
+- [ ] **Step 2: Implement the validator**
+
+```ts
+// lib/ai/pipeline/canonical-name-validator.ts
+//
+// Spec §2.5. Aggregate-not-per-user telemetry. Misses feed
+// pre_match_alias_hits in pipeline_runs.
+
+export interface CanonicalNameValidationHit { hit: true; }
+export interface CanonicalNameValidationMiss {
+  hit: false;
+  reason: 'alias_miss' | 'empty';
+  attemptedName: string;
+}
+export type CanonicalNameValidationResult =
+  | CanonicalNameValidationHit
+  | CanonicalNameValidationMiss;
+
+export interface CanonicalNameValidator {
+  validate: (name: string) => CanonicalNameValidationResult;
+  getMissCounts: () => Record<string, number>;
+  reset: () => void;
+}
+
+export function createCanonicalNameValidator(
+  fctVocabulary: ReadonlySet<string>
+): CanonicalNameValidator {
+  const missCounts = new Map<string, number>();
+  return {
+    validate(name) {
+      if (!name) return { hit: false, reason: 'empty', attemptedName: '' };
+      if (fctVocabulary.has(name)) return { hit: true };
+      missCounts.set(name, (missCounts.get(name) ?? 0) + 1);
+      return { hit: false, reason: 'alias_miss', attemptedName: name };
+    },
+    getMissCounts() { return Object.fromEntries(missCounts); },
+    reset() { missCounts.clear(); },
+  };
+}
+```
+
+- [ ] **Step 3: Wire into orchestrator + emit telemetry**
+
+In `analyzeMeal`, build the validator from the existing FAO+USDA vocabulary set (the one already loaded for the embedding cache; reuse — do not load it again). Validate every `canonicalName` post-decomposition. Forward the per-run miss counts as `preMatchAliasHits` into `buildPipelineRunRow` for `pipeline_runs.pre_match_alias_hits` (this column may need a Chunk 1d schema follow-up; if not present, add it as a JSONB column in this task's commit).
+
+> **Important — vocabulary loading.** If the embedding cache's vocabulary is loaded lazily (only on cache miss), the validator may run before the set is populated. Mitigation: synchronously eager-load the FAO+USDA name set during pipeline init (one-time, cached at module level). Alternative: skip validation when the set is empty and emit a `vocab_not_loaded` telemetry value — but this is a less honest signal. Prefer eager-load.
+
+- [ ] **Step 4: Run the suite + lint, commit**
+
+```bash
+bun run test
+bunx @biomejs/biome@2.4.2 check .
+git add lib/ai/pipeline/canonical-name-validator.ts \
+        lib/ai/pipeline/__tests__/canonical-name-validator.test.ts \
+        lib/ai/pipeline/orchestrator.ts
+git commit -m "feat(pipeline): canonicalName FCT vocabulary validator (§2.5)
+
+Aggregate-not-per-user telemetry. Misses feed pipeline_runs.pre_match_alias_hits.
+Diacritic-strict per AGENTS.md §9 guidance.
+
+Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>"
+```
+
+---
+
+### Task 6.6: `ambiguityFlags` telemetry surface
+
+> **Spec §2.6.** Closed-enum side-channel; not a routing input. Aggregate counts roll into `pipeline_runs`.
+
+- [ ] **Step 1: Write the failing test**
+
+Add to the orchestrator integration tests (existing test file; expand minimally):
+
+```ts
+it('aggregates ambiguityFlags into pipeline_runs telemetry (§2.6)', async () => {
+  // Given a decomposition that emits ambiguityFlags on two ingredients...
+  // ...the pipeline run row's ambiguity_flag_counts should reflect the
+  // aggregate distribution across ingredients of this meal.
+  const result = await analyzeMeal(/* fixture with multiple flags */);
+  // Assert via the buildPipelineRunRow output, not the response — the
+  // flags are telemetry, not user-visible.
+  expect(result._pipelineRunRow.ambiguity_flag_counts).toEqual({
+    multiple_dish_interpretations: 1,
+    cross_cuisine_ingredient: 2,
+  });
+});
+```
+
+> **Open thread for execution time:** the orchestrator does not currently expose `_pipelineRunRow` from `analyzeMeal`. Either add a debug-only return field (test-environment-only) or assert via the persistence layer mock. Decide at execution time; the simpler path is the debug return field gated on `process.env.NODE_ENV === 'test'`.
+
+- [ ] **Step 2: Implement the aggregation**
+
+In the orchestrator, walk every `ingredients[].ambiguityFlags ?? []` and tally into a `Record<AmbiguityFlag, number>`. Forward to `buildPipelineRunRow` as `ambiguityFlagCounts`. The Chunk 1d schema may need a JSONB column `ambiguity_flag_counts`; if missing, add it in this commit.
+
+- [ ] **Step 3: Confirm `ambiguityFlags` is NEVER read by routing code**
+
+Add a grep-based regression check via a small test:
+
+```ts
+it('compute-policy.ts never imports or references ambiguityFlags (Principle B)', async () => {
+  const fs = await import('node:fs/promises');
+  const code = await fs.readFile('lib/ai/pipeline/compute-policy.ts', 'utf-8');
+  expect(code).not.toMatch(/ambiguityFlags/);
+});
+```
+
+- [ ] **Step 4: Run the suite + lint, commit**
+
+```bash
+git add lib/ai/pipeline/orchestrator.ts \
+        lib/ai/pipeline/__tests__/orchestrator-ambiguity.test.ts
+git commit -m "feat(pipeline): aggregate ambiguityFlags into pipeline_runs telemetry (§2.6)
+
+Closed-enum side-channel; never read by routing. Regression test asserts
+compute-policy.ts has no reference.
+
+Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>"
+```
+
+---
+
+### Chunk 6 — outcome verification
+
+After all six tasks land:
+
+- [ ] `lib/ai/pipeline/schemas.ts` exports `decomposedDishSchema`, `decomposedIngredientSchema`, `mealDecompositionSchema` with the spec §2.1 shape. `.strict()` rejects `sourcePrior`/`sourceOverride`.
+- [ ] `DECOMPOSITION_SCHEMA_VERSION` and `DECOMPOSITION_PROMPT_VERSION` both bumped (Chunk 1's `versions.ts` test passes against the new values).
+- [ ] `buildDecompositionPrompt` asks for `mealItemId`/`ingredientId`/`canonicalName`/`expectedState` (when it would differ)/`ambiguityFlags`. Sentinel test passes — no `goal | aggression | calorieTarget | bodyMetrics` leak.
+- [ ] `lib/ai/pipeline/cooking-method-state.ts` exports `COOKING_METHOD_STATE` + `deriveExpectedState`. Diacritic-strict (`'luoc'` misses; `'luộc'` hits).
+- [ ] `pipeline_runs.db_state_unknown_fires` populated for every meal that hits the `unknown` fallback.
+- [ ] `pickBestSource` accepts a `PickBestSourceContext` arg with `expectedState`. Tie-break order: state-match > similarity. Source preference is NOT a tie-breaker — verified by an explicit test that lower-similarity FAO loses to higher-similarity USDA when both states match.
+- [ ] `lib/ai/pipeline/canonical-name-validator.ts` exports `createCanonicalNameValidator`. Misses aggregate into `pipeline_runs.pre_match_alias_hits`.
+- [ ] `ambiguityFlags` aggregated into `pipeline_runs.ambiguity_flag_counts`. Regression test asserts `compute-policy.ts` never references the field (Principle B).
+- [ ] No `sourcePrior` / `sourceOverride` references anywhere in the codebase — `grep -rn "sourcePrior\|sourceOverride" lib/` returns empty.
+- [ ] `bun run test` + `bunx @biomejs/biome@2.4.2 check .` both green.
+- [ ] Six atomic commits with conventional-commit format + `Co-authored-by: Copilot` trailer.
+
+---
+
