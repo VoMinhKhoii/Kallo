@@ -1900,3 +1900,449 @@ After Chunks 1a + 1b + 1c + 1d ship together, the system should:
 **No user-facing behavior change is expected.** The only observable difference for end users is that retry-pass nutrition now overwrites by id, which fixes a latent retry-replacement bug but is not visible until §4.4-style retries fire.
 
 ---
+
+## Chunk 2: §3 Type-safe prompts (single phase)
+
+**Spec sections:** §3.1 type-narrow `PromptPersonalizationContext` · §3.2 remove preference framing from nutrition prompt · §3.3 sentinel-value tests.
+
+**Why next:** §0 closed the data-shape and telemetry foundations. §3 is the first behavior-touching change: it (1) compile-time-prevents preference fields from reaching prompt builders and (2) rewrites the nutrition prompt's "for cutting users…" framing to ask for honest uncertainty bounds. Per Decision 4, this ships as a single phase pre-production — no shadow runner gating.
+
+**Outcome:** `buildDecompositionPrompt` and `buildNutritionPrompt` accept only `PromptPersonalizationContext` (a `Pick` of `UserContext` exposing `countryOfOrigin | countryOfResidence | cookingHabits` only). The nutrition prompt's `<why_three_values>` block no longer mentions cutting/bulking/aggression. Sentinel tests assert the prompts cannot leak `goal | aggression` even when called with a full `UserContext`. `dbState` (from Chunk 1b) and per-100g raw values are explicitly surfaced in the nutrition prompt so the LLM can reason about cooked vs raw correctly. **No factor-schema changes here** — that is Chunk 3.
+
+---
+
+### Task 2.1: Add `PromptPersonalizationContext` type
+
+**Files:**
+- Create: `lib/ai/prompts/types.ts`
+- Create: `lib/ai/prompts/__tests__/types.test-d.ts`
+
+- [ ] **Step 1: Write a failing type-level test**
+
+`lib/ai/prompts/__tests__/types.test-d.ts` (vitest supports `.test-d.ts` for type-only assertions via `expectTypeOf`):
+
+```ts
+import { describe, it, expectTypeOf } from 'vitest';
+import type { PromptPersonalizationContext } from '../types';
+import type { UserContext } from '@/lib/ai/types';
+
+describe('PromptPersonalizationContext', () => {
+  it('exposes only countryOfOrigin, countryOfResidence, cookingHabits', () => {
+    expectTypeOf<keyof PromptPersonalizationContext>().toEqualTypeOf<
+      'countryOfOrigin' | 'countryOfResidence' | 'cookingHabits'
+    >();
+  });
+
+  it('does NOT expose goal', () => {
+    // @ts-expect-error - goal must not be reachable
+    type _ = PromptPersonalizationContext['goal'];
+  });
+
+  it('does NOT expose aggression', () => {
+    // @ts-expect-error - aggression must not be reachable
+    type _ = PromptPersonalizationContext['aggression'];
+  });
+
+  it('is structurally assignable from UserContext', () => {
+    expectTypeOf<UserContext>().toMatchTypeOf<PromptPersonalizationContext>();
+  });
+});
+```
+
+- [ ] **Step 2: Run the type-level test to confirm it fails**
+
+```bash
+bun run test lib/ai/prompts/__tests__/types.test-d.ts
+```
+
+Expected: FAIL (`PromptPersonalizationContext` not yet exported from `lib/ai/prompts/types.ts`).
+
+- [ ] **Step 3: Create the type**
+
+`lib/ai/prompts/types.ts`:
+
+```ts
+import type { UserContext } from '@/lib/ai/types';
+
+/**
+ * Spec §3.1 — the only `UserContext` slice that prompt builders are allowed
+ * to read. Goal, aggression, and any future preference targets are
+ * deliberately excluded so TypeScript prevents preference leakage at compile
+ * time. See Principle A in the design spec:
+ * docs/superpowers/specs/2026-04-27-ai-pipeline-prompt-context-engineering-design.md
+ */
+export type PromptPersonalizationContext = Pick<
+  UserContext,
+  'countryOfOrigin' | 'countryOfResidence' | 'cookingHabits'
+>;
+```
+
+- [ ] **Step 4: Run the test to confirm it passes**
+
+```bash
+bun run test lib/ai/prompts/__tests__/types.test-d.ts
+```
+
+Expected: PASS.
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add lib/ai/prompts/types.ts lib/ai/prompts/__tests__/types.test-d.ts
+git commit -m "feat(ai/prompts): add PromptPersonalizationContext type
+
+Spec §3.1 — Pick<UserContext, 'countryOfOrigin' | 'countryOfResidence'
+| 'cookingHabits'>. Prompt builders cannot reach goal/aggression at
+compile time. Type-level tests assert the narrowing.
+
+Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>"
+```
+
+---
+
+### Task 2.2: Switch `buildDecompositionPrompt` to the narrow type
+
+**Files:**
+- Modify: `lib/ai/prompts/decomposition.ts`
+- Modify: `lib/ai/pipeline/prompts.test.ts` (existing test file — add sentinel test there alongside the existing `buildDecompositionPrompt` block)
+
+- [ ] **Step 1: Write a failing sentinel test**
+
+Append to `lib/ai/pipeline/prompts.test.ts` inside the existing `describe('buildDecompositionPrompt', …)` block:
+
+```ts
+it('does not leak goal/aggression to the decomposition prompt (sentinel)', () => {
+  // Pass a full UserContext with sentinel preference values. The narrowed
+  // type means the function can't read them — assert the strings never
+  // appear in the rendered prompt.
+  const ctx = {
+    ...sampleUserContext,
+    goal: 'cutting' as const,
+    aggression: 0.85,
+  };
+  const prompt = buildDecompositionPrompt(ctx);
+  expect(prompt).not.toMatch(/cutting|bulking|maintaining|aggression/i);
+  expect(prompt).not.toMatch(/0\.85/);
+});
+```
+
+- [ ] **Step 2: Run the test (should still pass today — but freezes the contract)**
+
+```bash
+bun run test lib/ai/pipeline/prompts.test.ts
+```
+
+Expected: PASS (current prompt does not reference goal/aggression). The test is a regression guard for Step 3.
+
+- [ ] **Step 3: Narrow the function signature**
+
+Change `buildDecompositionPrompt(userContext: UserContext)` → `buildDecompositionPrompt(userContext: PromptPersonalizationContext)`.
+
+```ts
+import type { PromptPersonalizationContext } from './types';
+
+export function buildDecompositionPrompt(
+  userContext: PromptPersonalizationContext,
+): string {
+  const { cookingHabits, countryOfOrigin, countryOfResidence } = userContext;
+  // … existing body unchanged
+}
+```
+
+- [ ] **Step 4: Run lint + tests + typecheck**
+
+```bash
+bunx @biomejs/biome@2.4.2 check .
+bun run test lib/ai/pipeline/prompts.test.ts lib/ai/prompts/__tests__/
+```
+
+Expected: 0 lint errors, all tests pass. The orchestrator and debug route call sites still work because `UserContext` is structurally assignable to `PromptPersonalizationContext`.
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add lib/ai/prompts/decomposition.ts lib/ai/pipeline/prompts.test.ts
+git commit -m "refactor(ai/prompts): narrow buildDecompositionPrompt to PromptPersonalizationContext
+
+Spec §3.1/§3.3 — compile-time prevent goal/aggression access in the
+decomposition prompt; sentinel test as runtime regression guard.
+
+Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>"
+```
+
+---
+
+### Task 2.3: Switch `buildNutritionPrompt` to the narrow type
+
+**Files:**
+- Modify: `lib/ai/prompts/nutrition.ts`
+- Modify: `lib/ai/pipeline/prompts.test.ts`
+
+- [ ] **Step 1: Write a failing sentinel test**
+
+Append to the existing `describe('buildNutritionPrompt', …)` block in `lib/ai/pipeline/prompts.test.ts`:
+
+```ts
+it('does not leak goal/aggression to the nutrition prompt (sentinel)', () => {
+  const ctx = {
+    ...sampleUserContext,
+    goal: 'cutting' as const,
+    aggression: 0.85,
+  };
+  const prompt = buildNutritionPrompt(
+    /* mealItems */ [/* fixture from this file's existing test data */],
+    /* matched   */ [],
+    /* unmatched */ [],
+    ctx,
+  );
+  // Today this WILL FAIL — the prompt contains "cutting or bulking".
+  expect(prompt).not.toMatch(/\bcutting\b|\bbulking\b|\bmaintaining\b|aggression/i);
+  expect(prompt).not.toMatch(/0\.85/);
+});
+```
+
+(Re-use the meal-item fixtures already declared above this block — search for `mealItems = [` near `describe('buildNutritionPrompt'`. Do not invent new fixtures.)
+
+- [ ] **Step 2: Run the test to confirm it fails**
+
+```bash
+bun run test lib/ai/pipeline/prompts.test.ts
+```
+
+Expected: FAIL — current prompt contains `goal-based adjustments for users cutting or bulking` (`nutrition.ts:139`).
+
+- [ ] **Step 3: Rewrite the `<why_three_values>` block to remove preference framing**
+
+Edit `lib/ai/prompts/nutrition.ts` lines 138–144. Replace the existing block with:
+
+```ts
+  <why_three_values>
+    Each macro is a triple LOW/MID/HIGH expressing genuine uncertainty about
+    the user's actual portion and cooking behavior — not a preference signal.
+    - MID: your best point estimate after cooking adjustment.
+    - LOW:  conservative lower bound. Tighten when the ingredient is well-known
+            and DB-matched. Widen when you are guessing (unknown oil quantity,
+            ambiguous portion size, unmatched ingredient).
+    - HIGH: conservative upper bound. Same widening rules.
+    These bounds are physical-world uncertainty bounds. Downstream
+    deterministic code applies any preference-shaped adjustment.
+  </why_three_values>
+```
+
+Add the principle comment block at the top of the file (just after the imports, before the existing JSDoc):
+
+```ts
+/**
+ * Principle A (spec §2): the LLM produces honest physical-world estimates
+ * conditioned only on the meal text and the user's cooking identity (country
+ * of origin/residence, cookingHabits). Goal, aggression, and calorie targets
+ * NEVER reach this prompt — TypeScript enforces the boundary via
+ * PromptPersonalizationContext.
+ *
+ * Spec: docs/superpowers/specs/2026-04-27-ai-pipeline-prompt-context-engineering-design.md
+ */
+```
+
+Add the same comment block at the top of `lib/ai/prompts/decomposition.ts` (per spec §3.2 "Same documentation comment block at top of `decomposition.ts`").
+
+- [ ] **Step 4: Narrow the signature**
+
+```ts
+import type { PromptPersonalizationContext } from './types';
+
+export function buildNutritionPrompt(
+  mealItems: DecomposedMealItem[],
+  matched: MatchedIngredient[],
+  unmatched: UnmatchedIngredient[],
+  userContext: PromptPersonalizationContext,
+): string {
+  // existing body — verify only `cookingHabits`, `countryOfOrigin`,
+  // `countryOfResidence` are read. They already are.
+}
+```
+
+- [ ] **Step 5: Run tests**
+
+```bash
+bunx @biomejs/biome@2.4.2 check .
+bun run test lib/ai/pipeline/prompts.test.ts lib/ai/prompts/__tests__/
+```
+
+Expected: 0 lint errors, all tests pass — including the new sentinel test now that the cutting/bulking language is gone.
+
+- [ ] **Step 6: Update existing tests that asserted the old language**
+
+Search for any prompts test that depended on the removed phrasing:
+
+```bash
+grep -n "cutting\|bulking\|goal-based" lib/ai/pipeline/prompts.test.ts lib/ai/prompts/__tests__/
+```
+
+If results appear, update them: those assertions are now positive expectations of preference leakage and must be deleted or inverted to match the new bound-language. Do not silently weaken them — replace them with the sentinel-style "does NOT match" assertions.
+
+- [ ] **Step 7: Commit**
+
+```bash
+git add lib/ai/prompts/nutrition.ts lib/ai/prompts/decomposition.ts \
+  lib/ai/pipeline/prompts.test.ts
+git commit -m "refactor(ai/prompts): remove preference framing; narrow nutrition prompt
+
+Spec §3.1–§3.3 — buildNutritionPrompt accepts PromptPersonalizationContext;
+<why_three_values> block reframed as physical uncertainty bounds with no
+mention of cutting/bulking/aggression. Principle A documentation block
+added to both prompt files. Sentinel test asserts no preference leakage.
+
+Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>"
+```
+
+---
+
+### Task 2.4: Surface `dbState` and per-100g raw context in the nutrition prompt
+
+The current prompt instructs the LLM that DB values are "per 100g RAW" and uses runtime `convertCookedToRaw` to bridge the gap. With Chunk 1b, every `MatchedIngredient` now carries `dbState: 'raw' | 'cooked' | 'unknown'`. Surface that to the LLM so it can reason about each ingredient's reference frame directly. **This is additive to the prompt — it does not retire `convertCookedToRaw` (Chunk 3 owns that).**
+
+**Files:**
+- Modify: `lib/ai/prompts/nutrition.ts`
+- Modify: `lib/ai/pipeline/prompts.test.ts`
+
+- [ ] **Step 1: Write a failing test**
+
+Append to `describe('buildNutritionPrompt', …)`:
+
+```ts
+it('emits db_state per matched ingredient', () => {
+  const matched: MatchedIngredient[] = [
+    {
+      ingredientId: 'ing-1',
+      ingredientName: 'gạo tẻ',
+      // …existing required fields from current MatchedIngredient fixtures…
+      dbState: 'raw',
+    },
+    {
+      ingredientId: 'ing-2',
+      ingredientName: 'thịt bò bắp',
+      dbState: 'cooked',
+    },
+  ];
+  const prompt = buildNutritionPrompt(/* mealItems wrapping these two */, matched, [], sampleUserContext);
+  expect(prompt).toMatch(/db_state="raw"/);
+  expect(prompt).toMatch(/db_state="cooked"/);
+});
+```
+
+(Adapt the matched fixture to satisfy the `MatchedIngredient` shape post-Chunk 1c — `ingredientId` + `dbState` are now required/optional per Tasks 1.8 and 1.5. Use the existing fixture builder in this test file as a starting point.)
+
+- [ ] **Step 2: Run the test to confirm it fails**
+
+```bash
+bun run test lib/ai/pipeline/prompts.test.ts
+```
+
+Expected: FAIL — `db_state` attribute not yet emitted.
+
+- [ ] **Step 3: Render `db_state` on each `<ingredient>` element**
+
+In the section of `buildNutritionPrompt` that builds the per-meal-item `<ingredient>` XML (currently around the area where `matchedLookup` is consumed), add `db_state="${match.dbState}"` to the element attributes. Default to `"unknown"` when `dbState` is missing — defensive, since legacy match paths returned no state until Chunk 1b.
+
+- [ ] **Step 4: Update the `<calculation>` instructions**
+
+Replace the existing single-sentence raw-weight instruction with:
+
+```
+  <calculation>
+    1. Each ingredient has a "db_state" attribute: "raw" | "cooked" | "unknown".
+       - "raw":     the per_100g values are RAW. Scale base = (estimatedGrams / 100) × per_100g.
+                    estimatedGrams is COOKED. The runtime has already converted to raw weight
+                    before the prompt — trust the value.
+       - "cooked":  the per_100g values are COOKED. Scale base directly against estimatedGrams.
+                    No raw/cooked conversion needed.
+       - "unknown": treat as "raw" but widen LOW/HIGH bounds — uncertainty is higher.
+    2. Adjust for cooking method: each ingredient has a "cooking" attribute — apply your
+       knowledge of how that method affects macros (fat absorption in frying, nutrient loss
+       in boiling).
+    3. MID = your best estimate after cooking adjustment.
+  </calculation>
+```
+
+This is consumed by Chunk 3 when `convertCookedToRaw` is retired and the runtime stops pre-converting weights. For now (Chunk 2 only), the runtime still pre-converts when `dbState === 'raw'` — the prompt's "trust the value" framing is correct under that contract.
+
+- [ ] **Step 5: Run tests**
+
+```bash
+bunx @biomejs/biome@2.4.2 check .
+bun run test lib/ai/pipeline/
+```
+
+Expected: green.
+
+- [ ] **Step 6: Commit**
+
+```bash
+git add lib/ai/prompts/nutrition.ts lib/ai/pipeline/prompts.test.ts
+git commit -m "feat(ai/prompts): emit db_state in nutrition prompt
+
+Spec §3.2 — every <ingredient> element carries db_state from the match
+layer (Chunk 1b). LLM can reason about raw vs cooked reference frames
+per ingredient. Chunk 3 will retire convertCookedToRaw and rely on this
+state-aware prompt directly.
+
+Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>"
+```
+
+---
+
+### Task 2.5: Lint + test sweep for Chunk 2
+
+**Files:** none new
+
+- [ ] **Step 1: Lint**
+
+```bash
+bunx @biomejs/biome@2.4.2 check .
+```
+
+Expected: 0 errors.
+
+- [ ] **Step 2: Test (DB-touching subset opt-in)**
+
+```bash
+bun run test
+```
+
+Expected: green.
+
+If you have remote-DB credentials, also run:
+
+```bash
+bun --env-file=.env.local vitest run
+```
+
+- [ ] **Step 3: Verify the sentinel guarantees by hand**
+
+```bash
+grep -nE "goal|aggression|cutting|bulking|maintaining" lib/ai/prompts/nutrition.ts lib/ai/prompts/decomposition.ts
+```
+
+Expected: zero matches in the prompt body strings (matches inside the principle comment block at the top are acceptable — those describe the principle, they don't render to the LLM).
+
+- [ ] **Step 4: No commit (verification only)**
+
+If everything is green, Chunk 2 is complete. Proceed to Chunk 3.
+
+---
+
+### Chunk 2 — outcome verification
+
+After Chunk 2 ships:
+
+- [ ] `PromptPersonalizationContext` is exported from `lib/ai/prompts/types.ts`.
+- [ ] Both prompt builders accept `PromptPersonalizationContext` (not `UserContext`).
+- [ ] Sentinel tests in `lib/ai/pipeline/prompts.test.ts` assert no `goal | aggression | cutting | bulking | maintaining` strings or aggression numbers leak into either prompt.
+- [ ] The `<why_three_values>` block in the nutrition prompt no longer references cutting/bulking; it frames bounds as physical uncertainty.
+- [ ] Each `<ingredient>` element in the nutrition prompt carries `db_state="raw" | "cooked" | "unknown"`.
+- [ ] Principle A documentation comment block is at the top of both `nutrition.ts` and `decomposition.ts`.
+- [ ] All call sites (`orchestrator.ts`, `app/api/analyze-meal/debug/route.ts`) compile because `UserContext` remains structurally assignable to `PromptPersonalizationContext`.
+
+**User-facing behavior change:** the nutrition prompt now produces honest uncertainty bounds rather than goal-shaped framing. The shape of the LLM's output (BoundedNutrition triples) is unchanged. Downstream `goal-adjustment.ts` will receive bounds that better reflect physical uncertainty, so its preference-shaped output may shift slightly — this is intended.
+
+---
