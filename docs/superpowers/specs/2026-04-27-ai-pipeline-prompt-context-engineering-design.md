@@ -141,13 +141,13 @@ This is a real bug today: a cooked FCT row matched against cooked user grams plu
 | `retry_step2_count` | smallint | retry count for streaming-buffer telemetry guard (§4.4) |
 | `prompt_personalization_fields` | text[] | reflective: which keys actually entered the prompt |
 
-**Privacy guard.** `user_id_hash` only. No raw input. No `userContextJson`. The handling of the existing `pipeline_requests.raw_input` is in **Open Decision A** below.
+**Privacy guard.** `user_id_hash` only. No raw input. No `userContextJson`. The handling of the existing `pipeline_requests.raw_input` is in **Decision A** below (resolved: 7-day TTL + service-role-only RLS).
 
 #### §0.5 Existing `pipeline_requests` table — privacy reckoning
 
 **Problem.** `pipeline_requests` (migration `20260406033451`) requires `raw_input` and stores `userContextJson` (which includes `goal`, `aggression`). The clean privacy story for §5 is false until this table changes.
 
-**Change.** See **Open Decision A**.
+**Change.** See **Decision A**.
 
 ---
 
@@ -457,7 +457,7 @@ Built for **future** prompt/model/schema changes. Not a precondition for shippin
   - Primary p95 exceeds threshold over 5-min window → shadow disables itself for 30 min.
   - DB pool wait exceeds threshold → shadow skips run.
   - Embedding API rate-limit error → shadow skips.
-- Records paired output: matched DB IDs, unmatched ingredient names, per-ingredient bounded macros, total-macro `BoundedEstimate`s, anomaly types. **No raw input** in this pair record (it's derivable from `request_id` join with the privacy-controlled debug table — see Open Decision A).
+- Records paired output: matched DB IDs, unmatched ingredient names, per-ingredient bounded macros, total-macro `BoundedEstimate`s, anomaly types. **No raw input** in this pair record (it's derivable from `request_id` join with the privacy-controlled debug table — see Decision A).
 - Divergence detection: macro delta > 30%, ingredient-count delta > ±2, anomaly-type delta. Surfaces in a dedicated query template.
 
 #### §5.3 What is not built
@@ -466,23 +466,24 @@ Reaffirming §3 of this doc: no golden datasets, no LLM-as-judge over labeled pa
 
 ---
 
-## 5. Open Decisions Requiring User Input
+## 5. Resolved Decisions
 
-These have safe defaults but the user should weigh in.
+### Decision A — `pipeline_requests.raw_input` privacy stance — **RESOLVED: Split debug-from-analytics retention**
 
-### Open Decision A — `pipeline_requests.raw_input` privacy stance
+Keep `pipeline_requests` for short-window operational debugging with a **7-day TTL** and restricted access (RLS scoped to service role + ops). New `pipeline_runs` is the analytics/eval source. Raw LLM-output logging is owned by a separate debug-dashboard worktree on its own schedule.
 
-The existing table stores raw meal input and full `userContextJson`. The clean §5 privacy story is false until this is addressed. Three options, ordered by my preference:
+Implementation in §0 phase:
+- Add a 7-day TTL retention policy (cron-driven `DELETE FROM pipeline_requests WHERE created_at < now() - interval '7 days'`)
+- Tighten RLS so `pipeline_requests` is service-role only (no end-user read path)
+- Document access controls in `docs/DATABASE.md`
 
-1. **Split debug-from-analytics retention.** Keep `pipeline_requests` for short-window operational debugging (7-day TTL, restricted access). New `pipeline_runs` is the analytics/eval source. A separate workstream (debug-dashboard worktree) owns raw LLM-output logging on its own schedule. Documented access controls. *Preferred — preserves debuggability with explicit TTL.*
-2. **Scrub raw_input.** Drop the column or store a hash-or-category. Lose ability to reproduce production bugs from raw input. *Cleanest privacy, worst debuggability.*
-3. **Keep status quo, document the leak in this spec.** *Honest but unsatisfying — goes against the privacy claim of §5.*
+### Decision B — Shadow A/B sampling rate — **RESOLVED: Static 5%**
 
-### Open Decision B — Shadow A/B sampling rate
+Static 5% of traffic with abort-on-degradation as the safety valve. Simplest to reason about; isolation guards (primary p95 threshold, DB pool wait, embedding rate limit) handle bursty failure modes.
 
-Default 5% of traffic. With the rubber-duck's #9 isolation requirements, even 5% can be bursty. Options: 1%, 5%, dynamic (autoscale based on primary p95).
-
-I lean static 5% with abort-on-degradation as the safety valve, simplest to reason about.
+Implementation in §5.2 phase:
+- `SHADOW_SAMPLING_RATE = 0.05` constant
+- Per-request decision via deterministic hash of `request_id` (so retries within a request route consistently)
 
 ---
 
@@ -551,4 +552,4 @@ A detailed implementation plan with file-level changes will be produced via the 
 - `lib/ai/constants.ts` — `COOKED_TO_RAW_FACTOR` retirement (§1.5)
 - `lib/db/schema.ts` — DB constraints (`state`, `source_id` FK)
 - `lib/ai/types.ts` — `UserContext`; `PromptPersonalizationContext` derives via `Pick`
-- `supabase/migrations/20260406033451_add_pipeline_requests_table.sql` — Open Decision A target
+- `supabase/migrations/20260406033451_add_pipeline_requests_table.sql` — Decision A target (7-day TTL + service-role RLS)
