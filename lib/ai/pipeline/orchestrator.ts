@@ -169,7 +169,7 @@ async function runPipeline(
           topK: 1,
           abortSignal: signal,
         },
-        composedOnChunk
+        { onChunk: composedOnChunk }
       ),
     LLM_TIMEOUT_MS,
     'decomposition'
@@ -282,7 +282,7 @@ async function runPipeline(
           topK: 1,
           abortSignal: signal,
         },
-        nutritionOnChunk
+        { onChunk: nutritionOnChunk }
       ),
     LLM_TIMEOUT_MS,
     'nutrition'
@@ -331,7 +331,7 @@ async function runPipeline(
             topK: 1,
             abortSignal: signal,
           },
-          nutritionOnChunk
+          { onChunk: nutritionOnChunk }
         ),
       LLM_TIMEOUT_MS,
       'nutrition-retry'
