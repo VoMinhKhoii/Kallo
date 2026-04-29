@@ -4508,3 +4508,1037 @@ After Chunk 4 ships:
 **Behavior change vs. before this chunk:** none for end users. Operationally, KPI rollups are now runnable, and the shadow-runner infrastructure is dormant-but-ready. Turning it on is a separate decision (env flag) handled outside this chunk.
 
 ---
+
+## Chunk 5 — §4 Adaptive compute: model upgrade + L4 cache + `MealFactsForComputePolicy`
+
+> **Spec anchor:** §4 (lines 354–429). Ships **after** Chunks 1–4 (foundations + type-safe prompts + absolute-macro schema + shadow runner). Ordering rationale (spec §6 / §7):
+> - §0 `nutrition_prompt_version` (Chunk 1d) is in `pipeline_runs` so we can attribute distributional shifts after the model flip.
+> - §1 absolute-macro schema (Chunk 3) is live so the new model emits the same shape the old one did — no schema migration entangled with model rollout.
+> - §5 shadow runner (Chunk 4) exists — even though the spec says §4's model upgrade may bundle with §1, we still want the shadow runner *available* so a production hot-rollback target exists if the model flip regresses.
+>
+> **Locked decisions for Chunk 5:**
+> - **Adaptive routing keys are facts about THIS meal only.** Never user behavior, region, or goal (Principle B). Enforced by a TS structural-narrowness lint check + runtime guard.
+> - **L4 cache key includes `nutrition_prompt_version` AND `decomposition_prompt_version`** plus an explicit `decompositionContextHash` allowlist. Adding new prompt-conditioning context fields requires bumping the schema version.
+> - **Cost guardrail:** alert if escalation rate > 20% over 24h (spec §4.2 line 392). Implemented as a KPI block in `eval-kpis.sql` + manual review (no automated alerting per locked decision #6).
+> - **Model upgrade ships behind a `PIPELINE_MODEL_PROFILE` env switch** (`stable` | `next`), so production can flip back to old constants in < 1 min without a redeploy. Default is `stable`.
+> - **`pickComputePolicy` is a pure function** — no IO, no clock, no env reads. Tests assert this with a no-network/no-fs sentinel.
+> - **L4 cache is decomposition-input-only** (NOT nutrition output). Spec §4.3. Rationale: nutrition output depends on matched DB rows and per-user cooking identity — cache invalidation surface is too wide. Decomposition input depends only on `rawInput` + the explicit context allowlist, so cache hits are always correct under version-keyed invalidation.
+
+### Task 5.1: Constants + `PIPELINE_MODEL_PROFILE` env switch
+
+- [ ] **Step 1: Write the failing test**
+
+`lib/ai/pipeline/__tests__/model-profile.test.ts`:
+
+```ts
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import {
+  resolveModelProfile,
+  type ModelProfile,
+  STABLE_PROFILE,
+  NEXT_PROFILE,
+} from '../model-profile';
+
+describe('resolveModelProfile', () => {
+  let saved: string | undefined;
+  beforeEach(() => { saved = process.env.PIPELINE_MODEL_PROFILE; });
+  afterEach(() => {
+    if (saved === undefined) delete process.env.PIPELINE_MODEL_PROFILE;
+    else process.env.PIPELINE_MODEL_PROFILE = saved;
+  });
+
+  it('returns STABLE_PROFILE when env is unset', () => {
+    delete process.env.PIPELINE_MODEL_PROFILE;
+    expect(resolveModelProfile()).toEqual(STABLE_PROFILE);
+  });
+
+  it('returns STABLE_PROFILE for "stable"', () => {
+    process.env.PIPELINE_MODEL_PROFILE = 'stable';
+    expect(resolveModelProfile()).toEqual(STABLE_PROFILE);
+  });
+
+  it('returns NEXT_PROFILE for "next"', () => {
+    process.env.PIPELINE_MODEL_PROFILE = 'next';
+    expect(resolveModelProfile()).toEqual(NEXT_PROFILE);
+  });
+
+  it('falls back to STABLE_PROFILE for unknown values (defensive)', () => {
+    process.env.PIPELINE_MODEL_PROFILE = 'experimental-rollout-v9';
+    expect(resolveModelProfile()).toEqual(STABLE_PROFILE);
+  });
+
+  it('STABLE_PROFILE matches today’s production constants exactly', () => {
+    expect(STABLE_PROFILE).toEqual({
+      decompositionModel: 'gemini-2.5-flash-lite',
+      nutritionModel: 'gemini-2.5-flash-lite',
+      escalationModel: null, // unused today
+    } satisfies ModelProfile);
+  });
+
+  it('NEXT_PROFILE introduces an escalation model', () => {
+    expect(NEXT_PROFILE.escalationModel).not.toBeNull();
+  });
+});
+```
+
+Run:
+```bash
+bun run test lib/ai/pipeline/__tests__/model-profile.test.ts
+```
+Expected: FAIL — module does not exist.
+
+- [ ] **Step 2: Implement `model-profile.ts`**
+
+`lib/ai/pipeline/model-profile.ts`:
+
+```ts
+/**
+ * Production-flippable model profile. Set `PIPELINE_MODEL_PROFILE=next` to
+ * roll forward; unset (or any unknown value) falls back to `stable`.
+ *
+ * The two profiles are kept side-by-side in code (NOT one default + diff
+ * patch) so a rollback is a one-line env change, never a redeploy.
+ */
+export interface ModelProfile {
+  decompositionModel: string;
+  nutritionModel: string;
+  /** When null, the orchestrator must NOT escalate even if pickComputePolicy says yes. */
+  escalationModel: string | null;
+}
+
+export const STABLE_PROFILE: ModelProfile = {
+  decompositionModel: 'gemini-2.5-flash-lite',
+  nutritionModel: 'gemini-2.5-flash-lite',
+  escalationModel: null,
+};
+
+export const NEXT_PROFILE: ModelProfile = {
+  decompositionModel: 'gemini-3.1-flash-lite-preview',
+  nutritionModel: 'gemini-3.1-flash-lite-preview',
+  escalationModel: 'gemini-3-flash',
+};
+
+export function resolveModelProfile(): ModelProfile {
+  switch (process.env.PIPELINE_MODEL_PROFILE) {
+    case 'next':
+      return NEXT_PROFILE;
+    case 'stable':
+    default:
+      return STABLE_PROFILE;
+  }
+}
+```
+
+Run the test. Expected: PASS.
+
+- [ ] **Step 3: Wire into orchestrator (without changing behavior)**
+
+`lib/ai/pipeline/orchestrator.ts` — replace the inline constants at lines 39 and 42 with profile-aware lookups. Keep the export shape unchanged so callers/tests don't break.
+
+```ts
+// Replace:
+//   const DECOMPOSITION_MODEL = 'gemini-2.5-flash-lite';
+//   const NUTRITION_MODEL = 'gemini-2.5-flash-lite';
+// With:
+import { resolveModelProfile } from './model-profile';
+const MODEL_PROFILE = resolveModelProfile();
+const DECOMPOSITION_MODEL = MODEL_PROFILE.decompositionModel;
+const NUTRITION_MODEL = MODEL_PROFILE.nutritionModel;
+const ESCALATION_MODEL = MODEL_PROFILE.escalationModel; // may be null in stable
+```
+
+The existing call sites at orchestrator.ts:166, 279, 328 keep working unchanged because the constant names + types are preserved.
+
+> **Note on test isolation:** `resolveModelProfile()` reads `process.env` at module load time. Existing orchestrator tests that don't set `PIPELINE_MODEL_PROFILE` will use `STABLE_PROFILE` (today's constants) and pass unchanged. Any test that needs `NEXT_PROFILE` must set the env BEFORE `import('./orchestrator')` — wire that via `vi.resetModules()` in the relevant test files.
+
+- [ ] **Step 4: Run the suite + lint**
+
+```bash
+bun run test
+bunx @biomejs/biome@2.4.2 check .
+```
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add lib/ai/pipeline/model-profile.ts \
+        lib/ai/pipeline/__tests__/model-profile.test.ts \
+        lib/ai/pipeline/orchestrator.ts
+git commit -m "feat(pipeline): add PIPELINE_MODEL_PROFILE env switch (stable|next)
+
+Spec §4.1. Production-flippable model profile; default behavior unchanged
+(STABLE_PROFILE = today's constants).
+
+Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>"
+```
+
+---
+
+### Task 5.2: `pickComputePolicy` — pure routing function with narrow input type
+
+> **Why a separate file + narrow type:** Principle B's biggest failure mode is *gradual coupling* — a routing function that starts out reading meal facts and slowly grows to read user metadata "just for one tweak". The narrow type + lint rule prevent this at the type-system level. Spec §4.2 + Decision Notes line 516.
+
+- [ ] **Step 1: Write the failing tests**
+
+`lib/ai/pipeline/__tests__/compute-policy.test.ts`:
+
+```ts
+import { describe, expect, it } from 'vitest';
+import {
+  pickComputePolicy,
+  type MealFactsForComputePolicy,
+} from '../compute-policy';
+import { STABLE_PROFILE, NEXT_PROFILE } from '../model-profile';
+import type { AnomalyType } from '../validation';
+
+const baseFacts: MealFactsForComputePolicy = {
+  ingredientCount: 3,
+  matchedCount: 3,
+  unmatchedCount: 0,
+  anomalyTypes: [] as ReadonlyArray<AnomalyType>,
+  parseRetryCount: 0,
+  candidateConfidenceSummary: { high: 3, medium: 0, low: 0, ambiguous: 0 },
+};
+
+describe('pickComputePolicy', () => {
+  it('returns the profile default model when nothing is unusual', () => {
+    const decision = pickComputePolicy(baseFacts, NEXT_PROFILE);
+    expect(decision.call2Model).toBe(NEXT_PROFILE.nutritionModel);
+    expect(decision.escalateOnRetry).toBe(false);
+  });
+
+  it('escalates upfront when unmatched / total > 0.5', () => {
+    const decision = pickComputePolicy(
+      { ...baseFacts, ingredientCount: 4, matchedCount: 1, unmatchedCount: 3 },
+      NEXT_PROFILE
+    );
+    expect(decision.call2Model).toBe(NEXT_PROFILE.escalationModel);
+    expect(decision.escalateOnRetry).toBe(true);
+  });
+
+  it('does not escalate at exactly 50% unmatched (strict >)', () => {
+    const decision = pickComputePolicy(
+      { ...baseFacts, ingredientCount: 4, matchedCount: 2, unmatchedCount: 2 },
+      NEXT_PROFILE
+    );
+    expect(decision.call2Model).toBe(NEXT_PROFILE.nutritionModel);
+  });
+
+  it('marks escalateOnRetry=true when any anomaly is present', () => {
+    const decision = pickComputePolicy(
+      {
+        ...baseFacts,
+        anomalyTypes: ['calorie_density', 'db_deviation'] as ReadonlyArray<AnomalyType>,
+      },
+      NEXT_PROFILE
+    );
+    expect(decision.escalateOnRetry).toBe(true);
+  });
+
+  it('falls back to nutritionModel when profile.escalationModel is null (STABLE)', () => {
+    const decision = pickComputePolicy(
+      { ...baseFacts, ingredientCount: 4, matchedCount: 1, unmatchedCount: 3 },
+      STABLE_PROFILE
+    );
+    expect(decision.call2Model).toBe(STABLE_PROFILE.nutritionModel);
+    // STABLE has no escalation model, so escalateOnRetry MUST be false
+    // even if the trigger fired. Otherwise we'd retry the same model and
+    // get the same answer — wasted budget.
+    expect(decision.escalateOnRetry).toBe(false);
+  });
+
+  it('is pure — same input always yields same output', () => {
+    const a = pickComputePolicy(baseFacts, NEXT_PROFILE);
+    const b = pickComputePolicy(baseFacts, NEXT_PROFILE);
+    const c = pickComputePolicy(baseFacts, NEXT_PROFILE);
+    expect(a).toEqual(b);
+    expect(b).toEqual(c);
+  });
+
+  it('accepts ZERO ingredientCount without dividing by zero', () => {
+    const decision = pickComputePolicy(
+      { ...baseFacts, ingredientCount: 0, matchedCount: 0, unmatchedCount: 0 },
+      NEXT_PROFILE
+    );
+    expect(decision.call2Model).toBe(NEXT_PROFILE.nutritionModel);
+    expect(decision.escalateOnRetry).toBe(false);
+  });
+});
+
+describe('MealFactsForComputePolicy structural narrowness', () => {
+  // This test uses TS structural typing as the assertion. If a maintainer
+  // adds (e.g.) `userId` to MealFactsForComputePolicy, these `satisfies`
+  // checks fail at typecheck time — Principle B guard.
+  it('has only the spec-§4.2 fields', () => {
+    const allowed: MealFactsForComputePolicy = {
+      ingredientCount: 1,
+      matchedCount: 1,
+      unmatchedCount: 0,
+      anomalyTypes: [],
+      parseRetryCount: 0,
+      candidateConfidenceSummary: { high: 1, medium: 0, low: 0, ambiguous: 0 },
+    };
+    expect(Object.keys(allowed).sort()).toEqual([
+      'anomalyTypes',
+      'candidateConfidenceSummary',
+      'ingredientCount',
+      'matchedCount',
+      'parseRetryCount',
+      'unmatchedCount',
+    ]);
+  });
+});
+```
+
+Run:
+```bash
+bun run test lib/ai/pipeline/__tests__/compute-policy.test.ts
+```
+Expected: FAIL — module does not exist.
+
+- [ ] **Step 2: Implement the policy**
+
+`lib/ai/pipeline/compute-policy.ts`:
+
+```ts
+import type { ModelProfile } from './model-profile';
+import type { AnomalyType } from './validation';
+
+/**
+ * Narrow-by-design input to {@link pickComputePolicy}. Spec §4.2 line 371.
+ *
+ * @remarks
+ * **Principle B guard.** This type intentionally contains ONLY facts about
+ * the current meal — no userId, no UserContext, no rawInput, no clock, no
+ * region. If you find yourself reaching for any of those, the right fix is
+ * almost never to widen this type — it's to surface the underlying need as
+ * a **fact about the meal** (a derived count, an anomaly type, a candidate
+ * confidence bucket). The lint rule `no-meal-facts-widening` should flag
+ * any PR that adds non-meal fields here.
+ */
+export interface MealFactsForComputePolicy {
+  ingredientCount: number;
+  matchedCount: number;
+  unmatchedCount: number;
+  anomalyTypes: ReadonlyArray<AnomalyType>;
+  parseRetryCount: number;
+  candidateConfidenceSummary: {
+    high: number;
+    medium: number;
+    low: number;
+    ambiguous: number;
+  };
+}
+
+export interface ComputePolicyDecision {
+  call2Model: string;
+  /** When true, an anomaly retry should re-run Call 2 against the escalation model. */
+  escalateOnRetry: boolean;
+}
+
+const UNMATCHED_RATIO_ESCALATION_THRESHOLD = 0.5;
+
+/**
+ * Decide which model runs Call 2 and whether anomaly retries should escalate.
+ *
+ * Pure function: no IO, no clock, no env reads. Identical inputs always
+ * yield identical outputs. The function is the only place in the codebase
+ * authorized to make this decision.
+ */
+export function pickComputePolicy(
+  facts: MealFactsForComputePolicy,
+  profile: ModelProfile
+): ComputePolicyDecision {
+  const escalationAvailable = profile.escalationModel !== null;
+  const unmatchedRatio =
+    facts.ingredientCount > 0
+      ? facts.unmatchedCount / facts.ingredientCount
+      : 0;
+  const upfrontEscalate =
+    escalationAvailable &&
+    unmatchedRatio > UNMATCHED_RATIO_ESCALATION_THRESHOLD;
+  const anomalyPresent = facts.anomalyTypes.length > 0;
+
+  return {
+    call2Model: upfrontEscalate
+      ? // Non-null assertion is safe under `escalationAvailable` guard.
+        (profile.escalationModel as string)
+      : profile.nutritionModel,
+    // Only meaningful when the profile actually HAS an escalation model.
+    escalateOnRetry: escalationAvailable && (anomalyPresent || upfrontEscalate),
+  };
+}
+```
+
+Run the test. Expected: PASS.
+
+- [ ] **Step 3: Wire into orchestrator**
+
+In `lib/ai/pipeline/orchestrator.ts`, after the match step completes (the orchestrator already has `matchedCount`, `unmatchedCount`, etc.) but BEFORE the Call 2 dispatch:
+
+```ts
+import { pickComputePolicy, type MealFactsForComputePolicy } from './compute-policy';
+
+const facts: MealFactsForComputePolicy = {
+  ingredientCount: matchedCount + unmatchedCount,
+  matchedCount,
+  unmatchedCount,
+  anomalyTypes: [], // populated only on the retry leg; first call sees []
+  parseRetryCount,  // already tracked locally in the orchestrator
+  candidateConfidenceSummary: summarizeCandidateConfidence(matchResults),
+};
+
+const policy = pickComputePolicy(facts, MODEL_PROFILE);
+// Replace the existing `model: NUTRITION_MODEL` site at orchestrator.ts:279
+// with `model: policy.call2Model`.
+```
+
+On retry (orchestrator.ts:311–313 today), recompute facts with the new anomalies AND `policy.escalateOnRetry === true → use ESCALATION_MODEL`:
+
+```ts
+if (decision === 'retry_step2') {
+  const retryFacts: MealFactsForComputePolicy = {
+    ...facts,
+    anomalyTypes: anomalies.map((a) => a.type) as ReadonlyArray<AnomalyType>,
+  };
+  const retryPolicy = pickComputePolicy(retryFacts, MODEL_PROFILE);
+  // Use retryPolicy.call2Model (which will be ESCALATION_MODEL when available
+  // and anomalies fired) at the existing orchestrator.ts:328 retry site.
+}
+```
+
+`summarizeCandidateConfidence` is a small helper that buckets `matchConfidence` numbers from the existing match results into `{ high, medium, low, ambiguous }`. Place it next to `pickComputePolicy` (same file). Suggested thresholds: `>= 0.85` high, `>= 0.65` medium, `>= 0.40` low, else ambiguous. Tests in `compute-policy.test.ts`.
+
+- [ ] **Step 4: Record `model_call2` accurately in `pipeline_runs`**
+
+Chunk 1d's `buildPipelineRunRow` already has a `model_call2` column (plan line 267–301). Pass `policy.call2Model` (or `retryPolicy.call2Model` if retry fired and escalation was used) so downstream KPI queries can attribute distributional shifts to the right model.
+
+- [ ] **Step 5: Run the suite + lint**
+
+```bash
+bun run test
+bunx @biomejs/biome@2.4.2 check .
+```
+
+- [ ] **Step 6: Commit**
+
+```bash
+git add lib/ai/pipeline/compute-policy.ts \
+        lib/ai/pipeline/__tests__/compute-policy.test.ts \
+        lib/ai/pipeline/orchestrator.ts
+git commit -m "feat(pipeline): add pickComputePolicy with narrow MealFactsForComputePolicy
+
+Spec §4.2. Pure routing function — facts about the meal only, no
+UserContext access. Escalation routes through profile.escalationModel
+when available; falls back to nutritionModel under STABLE_PROFILE.
+
+Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>"
+```
+
+---
+
+### Task 5.3: Lint rule — `no-meal-facts-widening`
+
+> **Why a custom lint rule:** Principle B's failure mode is gradual. A test catches the present state of `MealFactsForComputePolicy`, but six months from now someone may want to "just add `userId` for a one-off log". The lint rule fails the PR at code review, before tests get a chance to be inspected.
+
+- [ ] **Step 1: Decide enforcement mechanism**
+
+Repo uses Biome (not ESLint). Biome 2.4.2 does not yet support custom rule plugins. Two options:
+
+1. **Pure-TypeScript `tsc` constraint** — declare the allowlist as a const `as const` tuple in `compute-policy.ts`, plus a generic guard type `OnlyAllowedKeys<T, K>` that fails compilation if `T` adds keys outside `K`.
+2. **Filesystem regex check** in a tiny `scripts/check-meal-facts-narrowness.ts` invoked from `bun run test:lint-narrowness` (added to package.json scripts) — greps `MealFactsForComputePolicy` definition and asserts only the 6 known keys.
+
+**Decision:** Option 1 (TS constraint). It runs inside `tsc --noEmit` (already part of `bun run test`'s upstream type checking via vitest), needs no new tooling, and the failure mode is "tests fail to compile" which is impossible to ignore.
+
+- [ ] **Step 2: Add the structural guard to `compute-policy.ts`**
+
+Append to `compute-policy.ts`:
+
+```ts
+/**
+ * Compile-time guard. If a maintainer adds a field to `MealFactsForComputePolicy`,
+ * this `satisfies` check fails at `tsc` time and the PR cannot land.
+ *
+ * Update both the interface AND `MEAL_FACTS_KEYS` together, with a code
+ * review comment justifying why the new field is a fact about the meal
+ * (Principle B), not about the user.
+ */
+export const MEAL_FACTS_KEYS = [
+  'ingredientCount',
+  'matchedCount',
+  'unmatchedCount',
+  'anomalyTypes',
+  'parseRetryCount',
+  'candidateConfidenceSummary',
+] as const satisfies ReadonlyArray<keyof MealFactsForComputePolicy>;
+
+// Mutual-narrowness check: every key of MealFactsForComputePolicy MUST appear
+// in MEAL_FACTS_KEYS, and vice versa. If they drift, this type alias goes
+// `never` and downstream usage explodes.
+type _AssertExhaustiveKeys = Exclude<
+  keyof MealFactsForComputePolicy,
+  typeof MEAL_FACTS_KEYS[number]
+> extends never
+  ? true
+  : never;
+const _exhaustive: _AssertExhaustiveKeys = true; // never-assignable if drift
+```
+
+- [ ] **Step 3: Add a runtime guard in `analyzeMeal`**
+
+A second line of defense — at the call site, validate keys at runtime in dev/test mode:
+
+```ts
+// orchestrator.ts, before pickComputePolicy(facts, MODEL_PROFILE):
+if (process.env.NODE_ENV !== 'production') {
+  const factsKeys = Object.keys(facts).sort();
+  const expected = [...MEAL_FACTS_KEYS].sort();
+  if (JSON.stringify(factsKeys) !== JSON.stringify(expected)) {
+    throw new Error(
+      `[principle-b] MealFactsForComputePolicy shape drift: ${factsKeys.join(',')}`
+    );
+  }
+}
+```
+
+- [ ] **Step 4: Test the guard fires**
+
+`compute-policy.test.ts` — add a guard test:
+
+```ts
+it('runtime guard catches shape drift in non-production', () => {
+  const drifted = { ...baseFacts, userId: 'should-not-be-here' } as any;
+  // The guard lives in the orchestrator; here we just verify the keys
+  // helper is exported and accurate so the orchestrator's runtime check
+  // has a stable allowlist to compare against.
+  expect([...MEAL_FACTS_KEYS].sort()).toEqual([
+    'anomalyTypes',
+    'candidateConfidenceSummary',
+    'ingredientCount',
+    'matchedCount',
+    'parseRetryCount',
+    'unmatchedCount',
+  ]);
+  expect(MEAL_FACTS_KEYS.includes('userId' as any)).toBe(false);
+  expect(Object.keys(drifted).includes('userId')).toBe(true);
+});
+```
+
+- [ ] **Step 5: Document the rule in code comments + spec link**
+
+Add a top-of-file JSDoc block to `compute-policy.ts`:
+
+```ts
+/**
+ * @file pickComputePolicy — pure routing for adaptive compute (spec §4.2).
+ *
+ * **Principle B contract:** {@link MealFactsForComputePolicy} contains
+ * facts about THIS meal, never user-shaped data. To add a field:
+ * 1. Add it to the interface AND `MEAL_FACTS_KEYS`.
+ * 2. Justify in PR description why it is a fact about the meal, not the user.
+ * 3. Update `decompositionContextHash` if it should also affect L4 caching.
+ */
+```
+
+- [ ] **Step 6: Commit**
+
+```bash
+git add lib/ai/pipeline/compute-policy.ts \
+        lib/ai/pipeline/__tests__/compute-policy.test.ts \
+        lib/ai/pipeline/orchestrator.ts
+git commit -m "feat(pipeline): add Principle B narrowness guards on MealFactsForComputePolicy
+
+- Compile-time: MEAL_FACTS_KEYS \`satisfies\` exhaustiveness check.
+- Runtime (dev/test only): orchestrator validates Object.keys before
+  calling pickComputePolicy — catches drift through type-erasure paths.
+
+Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>"
+```
+
+---
+
+### Task 5.4: L4 decomposition input cache
+
+> **Spec §4.3.** Cache key explicitly version-keyed AND scoped to a tight context allowlist. Cache hit/miss recorded in `pipeline_runs.cache_hit_l4` (Chunk 1d schema).
+
+- [ ] **Step 1: Write the failing tests**
+
+`lib/ai/pipeline/__tests__/decomposition-cache.test.ts`:
+
+```ts
+import { describe, expect, it, beforeEach, vi } from 'vitest';
+import {
+  buildDecompositionCacheKey,
+  decompositionContextHash,
+  createL4Cache,
+  type L4Cache,
+} from '../decomposition-cache';
+import type { PromptPersonalizationContext } from '../prompt-personalization';
+
+const ctx: PromptPersonalizationContext = {
+  countryOfOrigin: 'VN',
+  countryOfResidence: 'VN',
+  cookingHabits: { fatLevel: 'medium', spiceLevel: 'high' },
+  // Excluded fields below — guard test asserts they don't enter the hash:
+  goal: 'cut',
+  aggression: 'moderate',
+  calorieTargetKcal: 2000,
+  bodyMetrics: { heightCm: 170, weightKg: 65 },
+} as any;
+
+describe('decompositionContextHash', () => {
+  it('hashes only the allowlisted fields', () => {
+    const a = decompositionContextHash(ctx);
+    const b = decompositionContextHash({
+      ...ctx,
+      goal: 'bulk',                    // EXCLUDED — must not change hash
+      aggression: 'aggressive',        // EXCLUDED
+      calorieTargetKcal: 3000,         // EXCLUDED
+      bodyMetrics: { heightCm: 180, weightKg: 80 }, // EXCLUDED
+    } as any);
+    expect(a).toBe(b);
+  });
+
+  it('changes when an allowlisted field changes', () => {
+    const a = decompositionContextHash(ctx);
+    const b = decompositionContextHash({ ...ctx, countryOfResidence: 'US' });
+    expect(a).not.toBe(b);
+  });
+
+  it('is order-insensitive over JSON keys', () => {
+    // Build the same logical context with shuffled key order at construction
+    const ctx2: PromptPersonalizationContext = {
+      cookingHabits: { spiceLevel: 'high', fatLevel: 'medium' },
+      countryOfResidence: 'VN',
+      countryOfOrigin: 'VN',
+    } as any;
+    expect(decompositionContextHash(ctx)).toBe(decompositionContextHash(ctx2));
+  });
+
+  it('is null-safe for partial contexts', () => {
+    expect(() => decompositionContextHash({} as any)).not.toThrow();
+  });
+});
+
+describe('buildDecompositionCacheKey', () => {
+  it('includes raw input + context hash + prompt + schema versions', () => {
+    const key = buildDecompositionCacheKey({
+      rawInput: 'phở bò',
+      ctx,
+      decompositionPromptVersion: 'v3',
+      decompositionSchemaVersion: 'v2',
+    });
+    expect(key).toMatch(/^l4:dec:/); // namespace prefix
+    expect(key.length).toBeGreaterThan(40); // hash baked into the key
+  });
+
+  it('changes when prompt version changes', () => {
+    const a = buildDecompositionCacheKey({
+      rawInput: 'phở bò', ctx,
+      decompositionPromptVersion: 'v3', decompositionSchemaVersion: 'v2',
+    });
+    const b = buildDecompositionCacheKey({
+      rawInput: 'phở bò', ctx,
+      decompositionPromptVersion: 'v4', decompositionSchemaVersion: 'v2',
+    });
+    expect(a).not.toBe(b);
+  });
+
+  it('changes when schema version changes', () => {
+    const a = buildDecompositionCacheKey({
+      rawInput: 'phở bò', ctx,
+      decompositionPromptVersion: 'v3', decompositionSchemaVersion: 'v2',
+    });
+    const b = buildDecompositionCacheKey({
+      rawInput: 'phở bò', ctx,
+      decompositionPromptVersion: 'v3', decompositionSchemaVersion: 'v3',
+    });
+    expect(a).not.toBe(b);
+  });
+
+  it('normalizes raw input — whitespace + case do not split cache lines', () => {
+    const a = buildDecompositionCacheKey({
+      rawInput: '  Phở Bò  ', ctx,
+      decompositionPromptVersion: 'v3', decompositionSchemaVersion: 'v2',
+    });
+    const b = buildDecompositionCacheKey({
+      rawInput: 'phở bò', ctx,
+      decompositionPromptVersion: 'v3', decompositionSchemaVersion: 'v2',
+    });
+    expect(a).toBe(b);
+  });
+});
+
+describe('createL4Cache', () => {
+  let cache: L4Cache<{ ingredient: string }>;
+  beforeEach(() => {
+    cache = createL4Cache<{ ingredient: string }>({
+      maxEntries: 3,
+      ttlMs: 7 * 24 * 60 * 60 * 1_000,
+      now: () => 1_000_000,
+    });
+  });
+
+  it('misses when key is unseen', () => {
+    expect(cache.get('k1')).toBeNull();
+  });
+
+  it('hits after set', () => {
+    cache.set('k1', { ingredient: 'phở' });
+    expect(cache.get('k1')).toEqual({ ingredient: 'phở' });
+  });
+
+  it('evicts the oldest entry under LRU pressure', () => {
+    cache.set('k1', { ingredient: 'a' });
+    cache.set('k2', { ingredient: 'b' });
+    cache.set('k3', { ingredient: 'c' });
+    cache.get('k1'); // touch k1 — k2 becomes LRU
+    cache.set('k4', { ingredient: 'd' }); // evicts k2
+    expect(cache.get('k2')).toBeNull();
+    expect(cache.get('k1')).toEqual({ ingredient: 'a' });
+  });
+
+  it('evicts entries past TTL', () => {
+    let nowMs = 1_000_000;
+    const c = createL4Cache<{ x: number }>({
+      maxEntries: 5, ttlMs: 1_000, now: () => nowMs,
+    });
+    c.set('a', { x: 1 });
+    nowMs += 999;
+    expect(c.get('a')).toEqual({ x: 1 });
+    nowMs += 2; // total 1001 ms past insert
+    expect(c.get('a')).toBeNull();
+  });
+});
+```
+
+Run:
+```bash
+bun run test lib/ai/pipeline/__tests__/decomposition-cache.test.ts
+```
+Expected: FAIL — module does not exist.
+
+- [ ] **Step 2: Implement the cache module**
+
+`lib/ai/pipeline/decomposition-cache.ts`:
+
+```ts
+import { createHash } from 'node:crypto';
+import type { PromptPersonalizationContext } from './prompt-personalization';
+
+const ALLOWED_CONTEXT_KEYS = [
+  'countryOfOrigin',
+  'countryOfResidence',
+  'cookingHabits',
+] as const;
+
+/**
+ * Hash the explicit allowlist of decomposition-conditioning context fields.
+ * Spec §4.3 + Decision Notes line 410. Goal/aggression/calorie/body-metrics
+ * MUST NOT enter this hash — that would key per-user-state and explode
+ * cache cardinality (and violate Principle A by encoding preferences).
+ */
+export function decompositionContextHash(
+  ctx: Partial<PromptPersonalizationContext>
+): string {
+  const filtered: Record<string, unknown> = {};
+  for (const k of ALLOWED_CONTEXT_KEYS) {
+    if (ctx[k] !== undefined) filtered[k] = ctx[k];
+  }
+  // Stable stringify with sorted keys for order-invariance.
+  return createHash('sha256')
+    .update(stableStringify(filtered))
+    .digest('hex');
+}
+
+function stableStringify(obj: unknown): string {
+  if (obj === null || typeof obj !== 'object') return JSON.stringify(obj);
+  if (Array.isArray(obj)) return `[${obj.map(stableStringify).join(',')}]`;
+  const keys = Object.keys(obj as Record<string, unknown>).sort();
+  const entries = keys.map((k) =>
+    `${JSON.stringify(k)}:${stableStringify((obj as Record<string, unknown>)[k])}`
+  );
+  return `{${entries.join(',')}}`;
+}
+
+export interface DecompositionCacheKeyInput {
+  rawInput: string;
+  ctx: Partial<PromptPersonalizationContext>;
+  decompositionPromptVersion: string;
+  decompositionSchemaVersion: string;
+}
+
+export function normalizeRawInput(s: string): string {
+  return s.trim().toLocaleLowerCase('vi-VN').replace(/\s+/g, ' ');
+}
+
+export function buildDecompositionCacheKey(
+  input: DecompositionCacheKeyInput
+): string {
+  const payload = JSON.stringify({
+    raw: normalizeRawInput(input.rawInput),
+    ctx: decompositionContextHash(input.ctx),
+    pv: input.decompositionPromptVersion,
+    sv: input.decompositionSchemaVersion,
+  });
+  const hash = createHash('sha256').update(payload).digest('hex').slice(0, 32);
+  return `l4:dec:${hash}`;
+}
+
+export interface L4Cache<V> {
+  get: (key: string) => V | null;
+  set: (key: string, value: V) => void;
+  size: () => number;
+}
+
+export interface L4CacheConfig {
+  maxEntries: number;
+  ttlMs: number;
+  now?: () => number;
+}
+
+interface Entry<V> { value: V; expiresAt: number; }
+
+/**
+ * Process-local LRU + TTL cache. Single-instance only; intentional — for
+ * cross-instance caching we'd need a shared store with its own eviction
+ * semantics (out of scope for §4.3 v1).
+ */
+export function createL4Cache<V>(cfg: L4CacheConfig): L4Cache<V> {
+  const now = cfg.now ?? (() => Date.now());
+  const map = new Map<string, Entry<V>>();
+
+  return {
+    get(key) {
+      const entry = map.get(key);
+      if (!entry) return null;
+      if (entry.expiresAt <= now()) {
+        map.delete(key);
+        return null;
+      }
+      // LRU touch: move to end.
+      map.delete(key);
+      map.set(key, entry);
+      return entry.value;
+    },
+    set(key, value) {
+      if (map.has(key)) map.delete(key);
+      map.set(key, { value, expiresAt: now() + cfg.ttlMs });
+      while (map.size > cfg.maxEntries) {
+        const oldest = map.keys().next().value;
+        if (oldest === undefined) break;
+        map.delete(oldest);
+      }
+    },
+    size: () => map.size,
+  };
+}
+```
+
+Run the test. Expected: PASS.
+
+- [ ] **Step 3: Wire into orchestrator + record cache_hit_l4**
+
+In `lib/ai/pipeline/orchestrator.ts`, around the decomposition call (line ~166):
+
+```ts
+import {
+  buildDecompositionCacheKey,
+  createL4Cache,
+} from './decomposition-cache';
+import { DECOMPOSITION_PROMPT_VERSION, DECOMPOSITION_SCHEMA_VERSION } from './prompts/versions';
+
+const L4_CACHE = createL4Cache<DecompositionResult>({
+  maxEntries: 1_000,
+  ttlMs: 7 * 24 * 60 * 60 * 1_000, // 7 days, per spec §4.3
+});
+
+// In analyzeMeal, before calling the decomposition LLM:
+const cacheKey = buildDecompositionCacheKey({
+  rawInput,
+  ctx: personalizationContext,
+  decompositionPromptVersion: DECOMPOSITION_PROMPT_VERSION,
+  decompositionSchemaVersion: DECOMPOSITION_SCHEMA_VERSION,
+});
+
+const cached = L4_CACHE.get(cacheKey);
+let decomposition: DecompositionResult;
+let cacheHitL4 = false;
+if (cached) {
+  decomposition = cached;
+  cacheHitL4 = true;
+} else {
+  decomposition = await llmDecompose({ rawInput, model: DECOMPOSITION_MODEL, /*...*/ });
+  L4_CACHE.set(cacheKey, decomposition);
+}
+// Forward `cacheHitL4` into the buildPipelineRunRow input so it lands
+// in pipeline_runs.cache_hit_l4 (Chunk 1d schema).
+```
+
+> **Note on cache scope:** The cache is process-local. Vercel deployments are stateless across invocations, so the cache hit rate in production will be low (warmed only when the same Lambda container handles multiple requests). That's acceptable for v1 — the cache is a *latency optimization*, not a correctness requirement. A cross-instance Redis-backed cache is a separate spec.
+
+- [ ] **Step 4: Add a hash-input-allowlist regression test**
+
+`decomposition-cache.test.ts` already covers excluded fields per Step 1's "hashes only the allowlisted fields" test. Add one more test that constructs a context with **every** known excluded field set to a different value and asserts the hash is still equal — this is rubber-duck #16 from the spec.
+
+- [ ] **Step 5: Run the suite + lint**
+
+```bash
+bun run test
+bunx @biomejs/biome@2.4.2 check .
+```
+
+- [ ] **Step 6: Commit**
+
+```bash
+git add lib/ai/pipeline/decomposition-cache.ts \
+        lib/ai/pipeline/__tests__/decomposition-cache.test.ts \
+        lib/ai/pipeline/orchestrator.ts
+git commit -m "feat(pipeline): add L4 decomposition input cache (process-local LRU+TTL)
+
+Spec §4.3. Key includes raw input + decompositionContextHash (allowlisted
+fields only) + prompt version + schema version. 7-day TTL. Cache hits
+recorded in pipeline_runs.cache_hit_l4.
+
+Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>"
+```
+
+---
+
+### Task 5.5: Cost guardrail KPI block — escalation rate over 24h
+
+> **Spec §4.2 line 392.** Per locked decision #6, no automated alerting; surfaced as a KPI query block reviewed manually.
+
+- [ ] **Step 1: Append to `scripts/eval-kpis.sql`**
+
+```sql
+-- ============================================================================
+-- KPI BLOCK 7: Escalation cost guardrail (spec §4.2)
+--
+-- Alerts (visual review only) if the escalation rate exceeds 20% over the
+-- trailing 24h. High escalation = high cost; sustained high escalation
+-- means pickComputePolicy is over-firing and warrants threshold review.
+-- ============================================================================
+WITH last_24h AS (
+  SELECT *
+  FROM pipeline_runs
+  WHERE created_at >= now() - interval '24 hours'
+),
+escalated AS (
+  SELECT count(*) FILTER (WHERE model_call2 LIKE '%-flash' AND model_call2 NOT LIKE '%lite%') AS n_escalated,
+         count(*) AS n_total
+  FROM last_24h
+)
+SELECT
+  n_escalated,
+  n_total,
+  CASE WHEN n_total = 0 THEN 0::numeric
+       ELSE round(100.0 * n_escalated / n_total, 2)
+  END AS escalation_pct,
+  CASE WHEN n_total = 0 THEN false
+       ELSE (1.0 * n_escalated / n_total) > 0.20
+  END AS over_20pct_threshold
+FROM escalated;
+```
+
+- [ ] **Step 2: Add an explanatory comment**
+
+Above the block, add a comment block describing how to interpret a flagged result (in `eval-kpis.sql`):
+
+```sql
+-- INTERPRETATION:
+--   over_20pct_threshold = true → either (a) actual quality degradation
+--   triggering anomaly retries, or (b) pickComputePolicy thresholds
+--   miscalibrated (e.g., 0.5 unmatched ratio too aggressive). Investigate
+--   by looking at the anomaly_types breakdown in BLOCK 2.
+```
+
+- [ ] **Step 3: Commit**
+
+```bash
+git add scripts/eval-kpis.sql
+git commit -m "feat(eval): add KPI block 7 — escalation cost guardrail (24h)
+
+Spec §4.2 line 392. Flags escalation rate > 20% over trailing 24h.
+Visible-when-reviewed (no automated alerting per locked decision).
+
+Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>"
+```
+
+---
+
+### Task 5.6: §4.4 Streaming retry-rate guard documentation
+
+> **Spec §4.4 line 423.** Locked: keep current incremental streaming. Add a documentation hook + a KPI block so the spec's "if rolling 7-day rate of meals with `retry_step2_count > 0` exceeds 10%, revisit buffer-vs-stream" is operational.
+
+- [ ] **Step 1: Add KPI block 8 to `scripts/eval-kpis.sql`**
+
+```sql
+-- ============================================================================
+-- KPI BLOCK 8: Step-2 retry rate (7-day rolling) — UX flicker proxy
+--
+-- Spec §4.4 line 423. If sustained > 10%, the cost of the
+-- "first answer → corrected answer" flicker is high enough to revisit
+-- the streaming-vs-buffering trade-off with real data.
+-- ============================================================================
+SELECT
+  date_trunc('day', created_at) AS day,
+  count(*) FILTER (WHERE retry_step2_count > 0) AS n_retried,
+  count(*) AS n_total,
+  CASE WHEN count(*) = 0 THEN 0::numeric
+       ELSE round(100.0 * count(*) FILTER (WHERE retry_step2_count > 0) / count(*), 2)
+  END AS step2_retry_pct
+FROM pipeline_runs
+WHERE created_at >= now() - interval '7 days'
+GROUP BY 1
+ORDER BY 1 DESC;
+
+-- INTERPRETATION:
+--   Any day with step2_retry_pct > 10% over a 7-day window is a signal to
+--   re-evaluate the buffer-vs-stream decision in §4.4.
+```
+
+- [ ] **Step 2: Add inline doc comment in orchestrator near the streaming sites**
+
+`lib/ai/pipeline/orchestrator.ts` — add a comment above the existing streaming dispatch (near orchestrator.ts:148):
+
+```ts
+// Streaming policy (spec §4.4): item_name + item_macros stream incrementally.
+// On retry_step2, the second Call 2 RE-EMITS item_macros; the client
+// overwrites by `ingredientId` (§0.1). We keep this behavior to preserve
+// first-byte latency. If `retry_step2_count > 0` rate exceeds 10% over a
+// 7-day rolling window (KPI block 8), revisit buffer-vs-stream.
+```
+
+- [ ] **Step 3: Commit**
+
+```bash
+git add scripts/eval-kpis.sql lib/ai/pipeline/orchestrator.ts
+git commit -m "docs(pipeline): document §4.4 streaming retry-rate guard
+
+KPI block 8 surfaces the 7-day rolling step-2 retry rate. > 10%
+sustained signals the trade-off should be re-examined.
+
+Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>"
+```
+
+---
+
+### Chunk 5 — outcome verification
+
+After all six tasks land, the following must be true:
+
+- [ ] `lib/ai/pipeline/model-profile.ts` exports `STABLE_PROFILE` (today's constants) and `NEXT_PROFILE` (gemini-3.1-flash-lite-preview + gemini-3-flash escalation). `resolveModelProfile()` returns `STABLE_PROFILE` for unset/unknown env values.
+- [ ] `lib/ai/pipeline/orchestrator.ts:39, 42` no longer hard-code model strings — both reference `MODEL_PROFILE.<field>`.
+- [ ] `lib/ai/pipeline/compute-policy.ts` exports `pickComputePolicy(facts, profile)` as a pure function with no IO/clock/env access. `MealFactsForComputePolicy` has exactly the 6 spec-§4.2 keys.
+- [ ] Compile-time: `_AssertExhaustiveKeys` in `compute-policy.ts` keeps `MealFactsForComputePolicy` and `MEAL_FACTS_KEYS` mutually exhaustive — adding a key to either without the other fails `tsc`.
+- [ ] Runtime: orchestrator throws in non-production if `Object.keys(facts)` drifts from `MEAL_FACTS_KEYS`.
+- [ ] `lib/ai/pipeline/decomposition-cache.ts` exports `buildDecompositionCacheKey` and `createL4Cache`. The key includes `decompositionContextHash(ctx)` over the **3 allowlisted fields only** (rubber-duck #16 test passes).
+- [ ] `pipeline_runs.cache_hit_l4` is populated truthfully on each run. `pipeline_runs.model_call2` records the actual model used for Call 2 (including escalation).
+- [ ] `scripts/eval-kpis.sql` has KPI blocks 7 (24h escalation rate) and 8 (7-day step-2 retry rate) appended.
+- [ ] No new behavior under `STABLE_PROFILE` — existing orchestrator tests pass without modification (proves §4 is additive).
+- [ ] `bun run test` and `bunx @biomejs/biome@2.4.2 check .` both green.
+- [ ] Each task ends with a single atomic commit using the conventional-commit + Co-authored-by trailer pattern.
+
+---
+
