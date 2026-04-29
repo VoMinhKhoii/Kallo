@@ -1,7 +1,7 @@
 # AI Pipeline — Prompt / Context / Harness Engineering Design
 
 **Date**: 2026-04-27
-**Status**: Draft (post-rubber-duck, awaiting user review)
+**Status**: Draft (post-pushback review — ready for implementation plan)
 **Predecessor**: `2026-03-31-pipeline-v2-design.md` (latency / USDA / observability)
 **Scope**: Quality, correctness, and reliability layer on top of the v2 latency pipeline.
 
@@ -21,10 +21,13 @@ These two principles are load-bearing. Every theme below derives from them. New 
 
 ### Principle A — *LLM produces facts. Deterministic code applies preferences.*
 
-The model gives honest, unbiased estimates with appropriate uncertainty bounds. Deterministic code (`lib/ai/pipeline/goal-adjustment.ts`) consumes those bounds and applies the user's goal/aggression to compute a **displayed** value. Preferences never enter the prompt.
+The LLM produces estimates conditioned only on physical facts about the meal and the user's **cooking identity** (region, cooking habits, country of origin/residence). Goal, aggression, calorie targets, and behavioral history never enter the prompt. Goal-preference application — the cut/bulk/maintain transformation of bounds into a displayed value — is deterministic code's job (`lib/ai/pipeline/goal-adjustment.ts`).
+
+Note on terminology: "unbiased" is the wrong word for the LLM's output. Cooking identity *is* signal that legitimately conditions the estimate (a "rất ít dầu" user's stir-fry is genuinely lower-fat than a "nhiều dầu" user's). The relevant epistemic guarantee is **no leakage of preference targets**, not statistical unbiasedness.
 
 Operationally:
-- Prompts must not see `goal`, `aggression`, calorie targets, or any field that biases honesty.
+- Prompts must not see `goal`, `aggression`, calorie targets, body metrics, or any preference-shaped field.
+- Cooking identity (`countryOfOrigin`, `countryOfResidence`, `cookingHabits`) IS allowed and intentional.
 - The display layer owns the cut/bulk/maintain transformation.
 - Bounds (`{ low, mid, high }`) survive the whole pipeline; collapsing them before display erases the cut/bulk affordance.
 
@@ -83,17 +86,13 @@ This is a real bug today: a cooked FCT row matched against cooked user grams plu
 **Change.**
 - `MatchInfo` carries `state: 'raw' | 'cooked'` (closed enum, DB-enforced).
 - `MatchedIngredient` carries `dbState`.
-- Call 2 prompt receives `dbState` per ingredient and is told explicitly: "this row is raw" or "this row is cooked".
-- Deterministic scaling in assembly branches on `(dbState, expectedState)`:
-  | DB state | User as-eaten state | Action |
-  |---|---|---|
-  | raw | cooked | apply `yieldFactor` to convert as-eaten → raw-equivalent grams, then scale |
-  | cooked | cooked | scale directly by as-eaten grams |
-  | raw | raw | scale directly |
-  | cooked | raw | rare; apply inverse `yieldFactor` with telemetry, low confidence |
-  | unknown | * | telemetry + low confidence; no silent default |
+- Call 2 prompt receives `dbState` and `per_100g_<dbState>` values per ingredient and is told explicitly: "this DB row is raw, user's grams are as-eaten and cooked — produce final macros for the user's portion." The LLM reconciles `(dbState, expectedState)` internally as part of its cooking adjustment. The pipeline does **not** pre-convert grams (no `convertCookedToRaw` in code).
+- `expectedState` per ingredient is sourced from §2.2 (decomposition emits explicitly when it differs from the dish-method default; otherwise derived from `cookingMethod`).
+- When `dbState` is `unknown`, prompt reflects that ("DB state of this row is unknown") and the ingredient is flagged low-confidence in telemetry.
 
-**Telemetry.** Counter per `(dbState, expectedState)` cell. Rate of `unknown` rows hitting the pipeline.
+**Why this changes vs. prior framing.** The original §0.2 design had runtime apply a `yieldFactor` to convert as-eaten → raw-equivalent grams. With Open Decision (§3 path B) resolved in favor of *LLM emits absolute final macros*, no factor exists in the schema. State reconciliation moves into the LLM's prompt context, where it's already doing cooking adjustment — one decision instead of two coupled ones.
+
+**Telemetry.** Counter per `(dbState, expectedState)` cell. Rate of `unknown` rows hitting the pipeline. Tracked via `db_state_unknown_fires` in `pipeline_runs`.
 
 #### §0.3 Prompt + schema versioning
 
@@ -135,9 +134,11 @@ This is a real bug today: a cooked FCT row matched against cooked user grams plu
 | `unmatched_count` | smallint | |
 | `anomaly_types` | text[] | from `validation.ts.AnomalyType` |
 | `pre_match_alias_hits` | smallint | counter |
-| `cooked_to_raw_factor_fires` | smallint | retirement metric |
-| `factor_envelope_fires` | smallint | §1.4 |
+| `cooked_to_raw_factor_fires` | smallint | retirement metric for legacy `convertCookedToRaw` path |
+| `density_envelope_fires` | smallint | §1.4 — out-of-range macro density on LLM output |
+| `macro_inconsistent_fires` | smallint | §1.3 — 4·P+4·C+9·F kcal identity violation |
 | `db_state_unknown_fires` | smallint | from §0.2 |
+| `retry_step2_count` | smallint | retry count for streaming-buffer telemetry guard (§4.4) |
 | `prompt_personalization_fields` | text[] | reflective: which keys actually entered the prompt |
 
 **Privacy guard.** `user_id_hash` only. No raw input. No `userContextJson`. The handling of the existing `pipeline_requests.raw_input` is in **Open Decision A** below.
@@ -148,11 +149,37 @@ This is a real bug today: a cooked FCT row matched against cooked user grams plu
 
 **Change.** See **Open Decision A**.
 
+#### §0.6 Raw LLM output logging — debug substrate for the future audit dashboard
+
+**Why.** With §1's resolution that the LLM emits absolute final macros (no factors, no audit-friendly intermediate values), the only way to debug a wrong estimate is to inspect the LLM's actual output side-by-side with what we sent it. The team's stated plan is to build a debugging dashboard later that uses domain knowledge to vet outputs against inputs. That dashboard needs durable, structured raw output.
+
+**Change.** New table `pipeline_llm_outputs` (separate from `pipeline_runs` to keep the metrics table lean and to apply distinct retention/access controls):
+
+| Column | Type | Notes |
+|---|---|---|
+| `id` | uuid | |
+| `created_at` | timestamptz | |
+| `request_id` | text | join key — links to `pipeline_runs.request_id` and `pipeline_requests` |
+| `user_id_hash` | text | SHA-256 hashed; never raw |
+| `decomposition_prompt_version` | text | from §0.3 |
+| `nutrition_prompt_version` | text | |
+| `decomposition_output_json` | jsonb | parsed Call 1 output (mealItems, ingredients) |
+| `nutrition_output_json` | jsonb | parsed Call 2 output (per-ingredient bounded macros) |
+| `model_call1` | text | |
+| `model_call2` | text | |
+| `escalated` | boolean | |
+
+**Privacy & retention.** 30-day TTL by default. Access restricted to engineering. The raw user input itself stays in `pipeline_requests` per Open Decision A; this table holds *model outputs* only, but is still subject to the same access controls because outputs can echo input fragments.
+
+**No reverse-feed.** This table feeds the manual debug dashboard only. It is **not** a source for prompts, personalization, or retraining (Principle B).
+
 ---
 
-### §3 — Prompt personalization is type-safe (must ship before §1's prompt rewrite)
+### §3 — Prompt personalization is type-safe (single phase)
 
-Originally framed as "null change." The rubber-duck found `nutrition.ts:138-144` already contains preference-shaped framing in the prompt. Real change required.
+Originally framed as "null change." The prior pushback round found `nutrition.ts:138-144` already contains preference-shaped framing in the prompt. Real change required.
+
+This phase ships as a single unit (no §3a/§3b split). The pre-production status of this spec means there's no live user base to fly blind on; the shadow runner (§5.2) is being built as **post-launch** regression infrastructure for *future* prompt changes, not as a baseline gate for this one.
 
 #### §3.1 Type-narrow `PromptPersonalizationContext`
 
@@ -191,88 +218,75 @@ Brittle string-matching is acceptable here because we want it to fire if the pri
 
 ---
 
-### §1 — Deterministic compute boundary
+### §1 — Deterministic compute boundary (LLM emits absolute macros)
 
-LLM emits factor objects; runtime does the arithmetic. Two material refinements over the original brainstorm framing.
+LLM emits absolute final bounded macros for the user's portion. Runtime aggregates and validates. **No factor decomposition in the schema.**
 
-#### §1.1 Three-factor decomposition (replaces single `cookingFactor`)
+This is a significant pivot from earlier drafts that had the LLM emit `yieldFactor` + per-macro `nutrientFactor`. The pushback rejected that approach for two reasons: (1) yield and nutrient factors are physically coupled (frying drives yield down while driving fat up — independent bounds can drift inconsistent without §1.3 catching it), and (2) the team's debugging strategy is "let LLM do its job, then verify outputs against inputs via a dashboard" — which favors absolute outputs over factor decompositions whose internal coherence is itself another failure mode. Auditability moves from the schema into §0.6 raw-output logging.
 
-The rubber-duck identified that one `cookingFactor` cannot carry both mass-yield and nutrient-retention semantics. Rice example: 150g cooked rice × raw FCT data needs ~0.38 mass factor. If LLM emits `cookingFactor: 1.0` reasoning "cooking doesn't change macros," runtime overcounts ~2.6×.
+This also matches the **current** production prompt at `nutrition.ts:124-169`, which already asks the LLM to produce final adjusted absolute macros. §1 codifies that contract; the work is in tightening validation, not changing the unit.
 
-The schema declares each semantic separately:
+#### §1.1 Schema — single ingredient nutrition shape
 
 ```ts
-type MatchedIngredientFactors = {
-  ingredientId: string;
-  kind: 'matched';
-  // Whose grams these are (decomposition output convention)
-  massBasis: 'as_eaten' | 'raw_equivalent';
-  // Mass conversion: as-eaten grams → DB-state-equivalent grams
-  // (Only meaningful when massBasis !== dbState; otherwise 1.0 with telemetry)
-  yieldFactor: BoundedEstimate; // {low, mid, high}
-  // Nutrient retention/transformation per macro, applied AFTER mass scaling
-  nutrientFactor: {
-    kcal: BoundedEstimate;
-    protein: BoundedEstimate;
-    carbs: BoundedEstimate;
-    fat: BoundedEstimate;
-  };
-  // Optional: explicit added fat/sauce/oil that isn't in DB at all
-  addedFat?: { grams: BoundedEstimate; reason: string };
-};
-
-type UnmatchedIngredientNutrition = {
-  ingredientId: string;
-  kind: 'unmatched';
-  // No DB to scale against; LLM emits absolute bounded macros for the as-eaten portion
-  caloriesKcal: BoundedEstimate;
+type IngredientNutrition = {
+  ingredientId: string;          // §0.1 stable id
+  matchedDbId?: number;          // present iff matched against FAO/USDA row
+  // Absolute final macros for the as-eaten portion this ingredient represents
+  caloriesKcal: BoundedEstimate; // {low, mid, high}
   proteinG: BoundedEstimate;
-  carbsG: BoundedEstimate;
+  carbohydrateG: BoundedEstimate;
   fatG: BoundedEstimate;
-  uncertaintyReason: string;
+  // Required for unmatched, optional for matched (LLM may explain dish-context inferences)
+  uncertaintyReason?: string;
 };
-
-type IngredientNutritionResult = MatchedIngredientFactors | UnmatchedIngredientNutrition;
 ```
 
-Discriminated union is explicit so runtime never silently invents per-100g for an unmatched ingredient.
+Single shape — no discriminated union. Matched vs unmatched is a property of provenance (`matchedDbId` present?), not of the nutrition contract. The runtime treats both identically: sum bounded estimates across ingredients to dish/meal totals.
 
-#### §1.2 Runtime arithmetic in `mergeNutrition`
-
-For matched ingredients:
+#### §1.2 Runtime aggregation in `mergeNutrition`
 
 ```text
-db_equivalent_grams = grams_as_eaten × yieldFactor   // skip if massBasis matches dbState
-base_per100g_for_macro = db.macro_per_100g
-scaled_macro = (db_equivalent_grams / 100) × base_per100g_for_macro × nutrientFactor.macro
-final_macro = scaled_macro + (addedFat → macro contribution if applicable)
+for each ingredient:
+  pass through {low, mid, high} for each macro
+
+dish_total.macro = bounded_sum(ingredient.macro for ingredient in dish.ingredients)
+meal_total.macro = bounded_sum(dish_total.macro for dish in meal.dishes)
 ```
 
-All bounded propagation through `low/mid/high` channels. `final.mid` is the point estimate; bounds enable `goal-adjustment.ts` cut/bulk display.
+`bounded_sum` adds `low`, `mid`, `high` channels independently. No multiplication, no factor application, no state-aware branching at this layer — the LLM produced macros for the as-eaten portion already.
 
-For unmatched ingredients: pass through `BoundedEstimate` directly; no arithmetic.
+#### §1.3 Macro consistency invariant (per ingredient)
 
-#### §1.3 Macro consistency invariant
-
-Independent factor bounds per macro can produce kcal incompatible with protein/carbs/fat. Add a soft validation check:
+The LLM's four bounded macros must satisfy the kcal identity within tolerance:
 
 ```text
-estimated_kcal_from_macros = 4*protein + 4*carbs + 9*fat
-abs(kcal - estimated_kcal_from_macros) / kcal < 0.20  // 20% tolerance for fiber/alcohol/rounding
+estimated_kcal_from_macros.mid = 4 × proteinG.mid + 4 × carbohydrateG.mid + 9 × fatG.mid
+abs(caloriesKcal.mid - estimated_kcal_from_macros.mid) / max(caloriesKcal.mid, 1) < 0.20
 ```
 
-Violation → `factor_envelope_fires` increment, anomaly type `macro_inconsistent`, retry path.
+20% tolerance accounts for fiber, alcohol, rounding. Violation → `macro_inconsistent_fires` increment, anomaly type `macro_inconsistent`, retry path (§4.2).
 
-#### §1.4 Envelope fallback is an anomaly, not a silent clamp
+The same identity is checked on `low` and `high` channels with the same tolerance. Independent low/high inconsistency triggers the same anomaly.
 
-If LLM emits `yieldFactor` outside `[0.2, 5.0]` or any `nutrientFactor` outside `[0.3, 3.0]`:
+#### §1.4 Macro density envelope — out-of-range is an anomaly, not silent clamp
 
-- **First occurrence in run:** mark `factor_envelope_fires++`, treat as anomaly, retry Call 2 with explicit re-prompt about the offending ingredient (escalate per §4).
-- **Repeated occurrence after retry:** clamp to range, set ingredient confidence to `low`, surface in telemetry. Never collapse to `1.0` invisibly.
+Per ingredient, `density = macro / grams × 100` is computed and bounds-checked:
 
-#### §1.5 Retire `COOKED_TO_RAW_FACTOR`
+| Macro | Per-100g cap (high bound) |
+|---|---|
+| caloriesKcal | ≤ 900 (pure fat ≈ 900 kcal/100g) |
+| proteinG | ≤ 100 |
+| carbohydrateG | ≤ 100 |
+| fatG | ≤ 100 |
 
-Now redundant with `yieldFactor`. Stays for one release as instrumented fallback (`cooked_to_raw_factor_fires`). Retire when fire-rate < 5% of meals over 7 days.
+`low` channels must be ≥ 0. Any breach → `density_envelope_fires++`, anomaly type `density_envelope`, retry/escalation per §4. On repeated breach after retry, clamp to envelope and mark ingredient confidence `low` — never silently coerce to a "reasonable" value.
+
+This replaces the prior `factor_envelope_fires` concept. Density envelope is unit-stable across portion sizes and directly observable on the LLM's output.
+
+#### §1.5 Retire `COOKED_TO_RAW_FACTOR` and `convertCookedToRaw`
+
+Both are now redundant: the LLM receives `dbState` and as-eaten grams in its prompt context (§0.2) and produces final adjusted macros without a runtime conversion step. The legacy code path stays for one release as instrumented fallback; `cooked_to_raw_factor_fires` records every time the legacy path is invoked. Retire when fire-rate < 5% of meals over 7 days.
 
 ---
 
@@ -288,7 +302,6 @@ type DecomposedDish = {
   name: string;
   cookingMethod: string;       // free-form (luộc, kho, chiên, nướng, hấp, xào, ...)
   cuisineNote?: string;        // free-form ("Huế-style", "northern beef pho", ...)
-  sourcePrior: 'fao' | 'usda' | 'either';
   ingredients: DecomposedIngredient[];
 };
 
@@ -299,13 +312,14 @@ type DecomposedIngredient = {
   quantity: number;
   unit: string;
   expectedState?: 'raw' | 'cooked';   // explicit override; otherwise derived from cookingMethod
-  sourceOverride?: 'fao' | 'usda';    // explicit override of dish-level sourcePrior
 };
 ```
 
-Hard enums only where DB enforces (`state`, `source_id`). Cuisine/cooking-method stay free-form — closed enums for those are inevitably wrong on edge cases.
+Hard enums only where DB enforces (`state`). Cuisine/cooking-method stay free-form — closed enums for those are inevitably wrong on edge cases.
 
-Token reduction comes from hoisting dish-level fields. No claim about exact percentage until measured against production-like inputs (rubber-duck #19).
+**Why no `sourcePrior` / `sourceOverride`.** Earlier drafts had the LLM emit a per-dish `sourcePrior: 'fao' | 'usda' | 'either'` and per-ingredient `sourceOverride`. Removed: the LLM does not know what is actually in our DB. Its source guess is a training-data prior loosely correlated with our schema, and a wrong guess (e.g., emitting `'fao'` for cá hồi/salmon, which lives in USDA) silently degrades match quality if any code path treats it as a routing hint. The matching layer (§2.3) has DB visibility and applies source preference at rank-time, where the decision is data-driven. Telemetry from §2.5 still captures `canonicalName` agreement, which is a more honest signal than source guesses.
+
+Token reduction comes from hoisting dish-level fields. No claim about exact percentage until measured against production-like inputs.
 
 #### §2.2 Per-ingredient `expectedState` is the source of truth
 
@@ -313,17 +327,19 @@ Mixed-method dishes are common in Vietnamese cuisine (`bún thịt nướng`, `c
 
 If `expectedState` is omitted, runtime derives from `cookingMethod` via a `COOKING_METHOD_STATE` lookup with an `unknown` fallback (telemetry, low confidence).
 
-#### §2.3 Source/state preference as **rank tie-breakers**, not score arithmetic
+#### §2.3 State preference as **rank tie-breaker**, not score arithmetic
 
-The rubber-duck flagged that FAO threshold 0.8 vs USDA 0.7, vector vs fuzzy similarity, are not on comparable scales. A boolean score boost can defeat a much better semantic match.
+The pushback flagged that FAO threshold 0.8 vs USDA 0.7, vector vs fuzzy similarity, are not on comparable scales. A boolean score boost can defeat a much better semantic match. With `sourcePrior` removed (§2.1), the only preference signal at rank time is **state-match**.
 
 `pickBestSource` change:
 
 1. Collect candidates from FAO + USDA, vector + fuzzy.
 2. Each candidate keeps original similarity score and source/vector-or-fuzzy provenance.
 3. Compute primary rank by similarity within source.
-4. Apply tie-breakers in this order: state-match > source-match-with-prior > similarity score.
-5. Telemetry preserves all original scores so calibration decisions are data-driven.
+4. Apply tie-breakers in this order: **state-match > similarity score**.
+5. Telemetry preserves all original scores and per-candidate source so calibration decisions are data-driven.
+
+Source preference is intentionally not a tie-breaker. If you want USDA-Vietnam parity, that is a data-curation problem (add the missing FAO row), not a routing problem.
 
 #### §2.4 RRF fusion is gated behind measurement, not v1 default
 
@@ -419,13 +435,18 @@ function decompositionContextHash(ctx: PromptPersonalizationContext): string {
 
 TTL 7 days. Eviction by LRU + age. `cache_hit_l4` recorded per run.
 
-#### §4.4 Streaming retry — buffered until first validation pass
+#### §4.4 Streaming — keep current incremental behavior with retry-rate guard
 
-Today Call 2 emits per-item nutrition during the chunk stream; if anomaly classifier later forces retry, the UI has already shown bad numbers.
+Today (`orchestrator.ts:148-154, 262, 313-314, 360`) the pipeline streams two event kinds incrementally:
 
-**v1 behavior.** Buffer item-macro events until the parsed Call 2 result passes the basic validation gate (no `total_calories` anomaly, no `factor_envelope_fires` triggered). On retry/escalation, the buffered events are dropped and replaced with the new run's events. Streaming UX becomes "incremental once we know the result will stand."
+- `item_name` — emitted from Call 1's streaming JSON as soon as a meal-item name parses (~1-2s after request start). Names come from decomposition and are not retried for nutrition anomalies, so they are always correct.
+- `item_macros` — emitted per-item from Call 2 as boundaries are detected. On `retry_step2`, `lastExtractedCount` resets and the second Call 2 re-emits `item_macros`; the client overwrites by index. Users see a brief "first answer → corrected answer" flicker on retry-affected meals.
 
-Trade-off: slightly later first-byte for item nutrition. Worth it to avoid showing wrong then corrected numbers, which erodes trust more than a minor delay.
+**Decision: keep this behavior.** Earlier drafts proposed buffering all `item_macros` until a validation gate passed. That would regress happy-path first-byte by 3-5s and retry-path first-byte by 8-10s, against an unverified UX claim that flicker erodes trust more than delay. Without user evidence, the latency cost is not justified.
+
+**Retry-rate telemetry guard.** `pipeline_runs.retry_step2_count` (§0.4) tracks per-meal retry counts. If the rolling 7-day rate of meals with `retry_step2_count > 0` exceeds **10%**, revisit the buffer-vs-stream trade-off with real data on how often the flicker actually fires.
+
+**§0.1 stable IDs make retry replacement safe.** With `ingredientId` keyed events (§0.1), the client can correlate first-pass and retry-pass macros on the *same logical slot* even if ingredient ordering shifts between Call 2 attempts.
 
 #### §4.5 Gemini context caching is **out of scope** for v1
 
@@ -435,7 +456,7 @@ The current `gemini.ts` does not call the cached-content API. Sortable-prefix pr
 
 ### §5 — Eval flywheel (built on §0)
 
-Three pieces. Two ship in v1, one is precondition for §1/§4 rollout.
+Three pieces. KPI rollup and pairing-scaffold ship with §0 foundations; the shadow runner is post-launch regression infrastructure, not a precondition for any phase in this spec.
 
 #### §5.1 KPI rollup queries
 
@@ -444,14 +465,14 @@ Three pieces. Two ship in v1, one is precondition for §1/§4 rollout.
 - p50, p95, p99 latency per (model, prompt version)
 - anomaly rate per `AnomalyType`
 - escalation rate, cache hit rate, retry rate
-- unmatched rate, factor-envelope fire rate, alias hit rate, cooked-to-raw fire rate
+- unmatched rate, density-envelope fire rate, macro-inconsistent fire rate, alias hit rate, cooked-to-raw fire rate
 - DB-state-unknown rate per ingredient
 
 Drift alerting is a query that flags any rate moving >2σ from 7-day baseline. Not paging; visible-when-reviewed. Real alerting deferred until a need is demonstrated.
 
-#### §5.2 Shadow A/B runner — precondition for §1 / §4 rollout
+#### §5.2 Shadow A/B runner — post-launch regression infrastructure
 
-A v2-pipeline change behind a feature flag. The runner:
+Built for **future** prompt/model/schema changes. Not a precondition for shipping §1, §3, or §4 in this spec — those ride on `pipeline_runs` + `pipeline_llm_outputs` telemetry alone, given the pre-production status. A v2-pipeline change behind a feature flag. The runner:
 
 - Sampling: 5% of production traffic by default (configurable).
 - **Best-effort and isolated.** Shadow runs **after** the primary response is sent (queue or post-response continuation). Never blocks user.
@@ -460,7 +481,7 @@ A v2-pipeline change behind a feature flag. The runner:
   - Primary p95 exceeds threshold over 5-min window → shadow disables itself for 30 min.
   - DB pool wait exceeds threshold → shadow skips run.
   - Embedding API rate-limit error → shadow skips.
-- Records paired output: matched DB IDs, unmatched ingredient names, total-macro `BoundedEstimate`s, anomaly types, factor values. **No raw input** in this pair record (it's derivable from `request_id` join with the privacy-controlled debug table — see Open Decision A).
+- Records paired output: matched DB IDs, unmatched ingredient names, per-ingredient bounded macros, total-macro `BoundedEstimate`s, anomaly types. **No raw input** in this pair record (it's derivable from `request_id` join with the privacy-controlled debug table — see Open Decision A).
 - Divergence detection: macro delta > 30%, ingredient-count delta > ±2, anomaly-type delta. Surfaces in a dedicated query template.
 
 #### §5.3 What is not built
@@ -477,21 +498,11 @@ These have safe defaults but the user should weigh in.
 
 The existing table stores raw meal input and full `userContextJson`. The clean §5 privacy story is false until this is addressed. Three options, ordered by my preference:
 
-1. **Split debug-from-analytics retention.** Keep `pipeline_requests` for short-window operational debugging (7-day TTL, restricted access). New `pipeline_runs` is the analytics/eval source. Documented access controls. *Preferred — preserves debuggability with explicit TTL.*
+1. **Split debug-from-analytics retention.** Keep `pipeline_requests` for short-window operational debugging (7-day TTL, restricted access). New `pipeline_runs` is the analytics/eval source, and `pipeline_llm_outputs` (§0.6) is the debug-dashboard source with 30-day TTL. Documented access controls. *Preferred — preserves debuggability with explicit TTL.*
 2. **Scrub raw_input.** Drop the column or store a hash-or-category. Lose ability to reproduce production bugs from raw input. *Cleanest privacy, worst debuggability.*
 3. **Keep status quo, document the leak in this spec.** *Honest but unsatisfying — goes against the privacy claim of §5.*
 
-### Open Decision B — `addedFat` modeling
-
-When LLM detects "stir-fried with added oil" or "drizzled with sauce" not represented by any matched ingredient, should the value:
-
-1. Live as a separate `addedFat: { grams, reason }` field on `MatchedIngredientFactors`. *Most honest; explicit; queryable retirement metric.*
-2. Be folded into `nutrientFactor.fat` and `nutrientFactor.kcal` as a multiplier > 1. *Simpler schema; loses the "added" signal.*
-3. Be split into a synthetic unmatched ingredient ("added cooking oil"). *Cleanest separation; complicates streaming display.*
-
-I lean (1).
-
-### Open Decision C — Shadow A/B sampling rate
+### Open Decision B — Shadow A/B sampling rate
 
 Default 5% of traffic. With the rubber-duck's #9 isolation requirements, even 5% can be bursty. Options: 1%, 5%, dynamic (autoscale based on primary p95).
 
@@ -505,15 +516,15 @@ Each phase ships independently and is reversible. Telemetry must accompany each 
 
 | Phase | Content | Risk | Reversibility |
 |---|---|---|---|
-| **1. §0 Foundations** | Stable IDs, state propagation, prompt/schema versioning, `pipeline_runs` table, Decision A resolution | Low — behavior-neutral plumbing | Drop migration, revert code |
-| **2. §3 Type-safe prompts** | `PromptPersonalizationContext` type, prompt rewrite at `nutrition.ts:138-144`, sentinel tests | Low — prompt change behind versioning, observable via telemetry | Revert; old prompt version still queryable |
-| **3. §5.2 Shadow runner** | Off-by-default infrastructure, abort guards, paired-output store | Low — disabled by default | Feature flag off |
-| **4. §1 Factor schema** | Three-factor split, discriminated union, runtime arithmetic, envelope-as-anomaly | Medium — semantic change to nutrition | Ship behind shadow first; flag-flip rollback |
+| **1. §0 Foundations** | Stable IDs, state propagation (LLM-side reconciliation), prompt/schema versioning, `pipeline_runs` table, `pipeline_llm_outputs` table, Decision A resolution | Low — behavior-neutral plumbing | Drop migration, revert code |
+| **2. §3 Type-safe prompts** | `PromptPersonalizationContext` type, prompt rewrite at `nutrition.ts:138-144`, sentinel tests, `dbState`-aware prompt context (§0.2) | Low (pre-production) — prompt change behind versioning, observable via `pipeline_llm_outputs` | Revert; old prompt version still queryable |
+| **3. §1 Absolute-macro schema + validators** | Single `IngredientNutrition` shape, runtime aggregation, macro-consistency invariant, density envelope, retire `convertCookedToRaw` path | Medium — semantic tightening of nutrition contract | Schema versioning; flag-flip rollback |
+| **4. §5.2 Shadow runner** | Off-by-default infrastructure, abort guards, paired-output store — built for **future** post-launch change validation | Low — disabled by default | Feature flag off |
 | **5. §4 Model upgrade + cache + policy** | New default model, escalation routing, L4 cache, narrow `MealFactsForComputePolicy` | Medium — distributional shift | Constants flip back; cache flushable |
-| **6. §2 Dish-wrapped decomposition** | New schema, `canonicalName`, source/state tie-breakers, `expectedState` per ingredient | Medium — schema change with prompt rewrite | Schema version flips; rollback path through versioning |
+| **6. §2 Dish-wrapped decomposition** | New schema (no `sourcePrior`/`sourceOverride`), `canonicalName`, state-only tie-breaker, `expectedState` per ingredient | Medium — schema change with prompt rewrite | Schema version flips; rollback path through versioning |
 | **7. §2.4 RRF measurement → maybe RRF** | Phase A logging only; Phase B feature-flagged ship-or-no-ship decision | Low (phase A) / Medium (phase B) | Flag controlled |
 
-§4's model upgrade may be **bundled with §1** if shadow A/B shows them stable together. They can also ship independently.
+§4's model upgrade may be **bundled with §1** if pre-launch testing shows them stable together.
 
 ---
 
@@ -522,13 +533,13 @@ Each phase ships independently and is reversible. Telemetry must accompany each 
 These exist to prevent the design from rotting.
 
 - **Hard enums only where DB enforces closed sets.** Cuisine/cooking-method/cuisineNote stay free-form. Adding a closed enum requires a corresponding DB constraint or it doesn't ship.
-- **Validation rejects zero-information overrides.** If decomposition emits `sourceOverride` equal to dish `sourcePrior`, treat it as decomposition noise (telemetry, ignore).
 - **`canonicalName` is validated against FCT vocabulary.** Misses become an alias-retirement signal, not invisible failures.
-- **No silent clamps.** Out-of-envelope factors, unknown DB states, validation breaches are all telemetry events.
-- **Telemetry is structured at the source.** No deriving critical fields from log-string parsing. The `pipeline_runs` schema is the contract.
+- **No silent clamps.** Out-of-envelope densities, unknown DB states, validation breaches are all telemetry events.
+- **Telemetry is structured at the source.** No deriving critical fields from log-string parsing. The `pipeline_runs` and `pipeline_llm_outputs` schemas are the contract.
 - **Pure routing function with narrow input type.** `pickComputePolicy(MealFactsForComputePolicy)` cannot drift into receiving `UserContext`.
 - **Cache keys include `*Version` constants.** Bumping the constant invalidates the cache — no manual flush ritual.
 - **Aggregate-not-per-user telemetry.** Every metric is system-level. No per-user behavioral inference.
+- **Raw LLM outputs are debug substrate, not training input.** `pipeline_llm_outputs` (§0.6) feeds the manual debug dashboard only; it never re-enters the prompt or the personalization layer (Principle B).
 
 ---
 
@@ -536,10 +547,10 @@ These exist to prevent the design from rotting.
 
 Honest, observable signals — not aspirational metrics.
 
-- **Correctness.** `factor_envelope_fires` rate stable and < 2% of meals after week 4. `db_state_unknown_fires` stable and < 5% (most rows have known state). `macro_inconsistent` anomaly rate < 1%.
-- **Performance.** End-to-end p95 not worse than today after §1 + §4 ship. Shadow divergence on macro totals < 30% in 95% of paired runs.
+- **Correctness.** `density_envelope_fires` rate stable and < 2% of meals after week 4. `db_state_unknown_fires` stable and < 5% (most rows have known state). `macro_inconsistent_fires` rate < 1%.
+- **Performance.** End-to-end p95 not worse than today after §1 + §4 ship. `retry_step2` rate < 10% (streaming-flicker guard from §4.4). Shadow divergence on macro totals < 30% in 95% of paired runs once shadow is live.
 - **Tech-debt retirement.** `pre_match_alias_hits` declining quarterly as the LLM internalizes vocabulary. `cooked_to_raw_factor_fires` reaches < 5% (gate for retirement).
-- **Principle adherence.** Sentinel tests pass forever. `prompt_personalization_fields` telemetry never includes `goal` or `aggression`.
+- **Principle adherence.** Sentinel tests pass forever. `prompt_personalization_fields` telemetry never includes `goal` or `aggression`. `pipeline_llm_outputs` access logs show no application-layer reads (debug dashboard only).
 - **Shadow A/B utility.** When a future change ships, divergence query yields actionable signal (real misses, not noise).
 
 What we don't promise: a target accuracy number. Nutrition has fuzzy ground truth; promising a number invites Goodharting.
@@ -555,9 +566,9 @@ A detailed implementation plan with file-level changes will be produced via the 
 ## 10. References
 
 - `lib/ai/pipeline/orchestrator.ts` — central pipeline; touched by §0–§4
-- `lib/ai/pipeline/schemas.ts` — discriminated union (§1), dish-wrapped decomposition (§2)
-- `lib/ai/pipeline/validation.ts` — anomaly thresholds; envelope-as-anomaly (§1.4)
-- `lib/ai/pipeline/assembly.ts` — runtime arithmetic (§1.2), state-branched scaling (§0.2)
+- `lib/ai/pipeline/schemas.ts` — single `IngredientNutrition` shape (§1), dish-wrapped decomposition (§2)
+- `lib/ai/pipeline/validation.ts` — anomaly thresholds; density envelope (§1.4), macro consistency (§1.3)
+- `lib/ai/pipeline/assembly.ts` — runtime bounded aggregation (§1.2); `convertCookedToRaw` retirement (§1.5)
 - `lib/ai/pipeline/goal-adjustment.ts` — the deterministic preference layer (Principle A)
 - `lib/ai/prompts/decomposition.ts`, `lib/ai/prompts/nutrition.ts` — §3 rewrite
 - `lib/ai/matching/cascade.ts`, `lib/ai/matching/source-matching.ts`, `lib/ai/matching/aliases.ts` — §2
