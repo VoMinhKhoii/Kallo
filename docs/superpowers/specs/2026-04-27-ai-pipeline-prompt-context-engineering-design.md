@@ -149,30 +149,6 @@ This is a real bug today: a cooked FCT row matched against cooked user grams plu
 
 **Change.** See **Open Decision A**.
 
-#### §0.6 Raw LLM output logging — debug substrate for the future audit dashboard
-
-**Why.** With §1's resolution that the LLM emits absolute final macros (no factors, no audit-friendly intermediate values), the only way to debug a wrong estimate is to inspect the LLM's actual output side-by-side with what we sent it. The team's stated plan is to build a debugging dashboard later that uses domain knowledge to vet outputs against inputs. That dashboard needs durable, structured raw output.
-
-**Change.** New table `pipeline_llm_outputs` (separate from `pipeline_runs` to keep the metrics table lean and to apply distinct retention/access controls):
-
-| Column | Type | Notes |
-|---|---|---|
-| `id` | uuid | |
-| `created_at` | timestamptz | |
-| `request_id` | text | join key — links to `pipeline_runs.request_id` and `pipeline_requests` |
-| `user_id_hash` | text | SHA-256 hashed; never raw |
-| `decomposition_prompt_version` | text | from §0.3 |
-| `nutrition_prompt_version` | text | |
-| `decomposition_output_json` | jsonb | parsed Call 1 output (mealItems, ingredients) |
-| `nutrition_output_json` | jsonb | parsed Call 2 output (per-ingredient bounded macros) |
-| `model_call1` | text | |
-| `model_call2` | text | |
-| `escalated` | boolean | |
-
-**Privacy & retention.** 30-day TTL by default. Access restricted to engineering. The raw user input itself stays in `pipeline_requests` per Open Decision A; this table holds *model outputs* only, but is still subject to the same access controls because outputs can echo input fragments.
-
-**No reverse-feed.** This table feeds the manual debug dashboard only. It is **not** a source for prompts, personalization, or retraining (Principle B).
-
 ---
 
 ### §3 — Prompt personalization is type-safe (single phase)
@@ -222,7 +198,7 @@ Brittle string-matching is acceptable here because we want it to fire if the pri
 
 LLM emits absolute final bounded macros for the user's portion. Runtime aggregates and validates. **No factor decomposition in the schema.**
 
-This is a significant pivot from earlier drafts that had the LLM emit `yieldFactor` + per-macro `nutrientFactor`. The pushback rejected that approach for two reasons: (1) yield and nutrient factors are physically coupled (frying drives yield down while driving fat up — independent bounds can drift inconsistent without §1.3 catching it), and (2) the team's debugging strategy is "let LLM do its job, then verify outputs against inputs via a dashboard" — which favors absolute outputs over factor decompositions whose internal coherence is itself another failure mode. Auditability moves from the schema into §0.6 raw-output logging.
+This is a significant pivot from earlier drafts that had the LLM emit `yieldFactor` + per-macro `nutrientFactor`. The pushback rejected that approach for two reasons: (1) yield and nutrient factors are physically coupled (frying drives yield down while driving fat up — independent bounds can drift inconsistent without §1.3 catching it), and (2) the team's debugging strategy is "let LLM do its job, then verify outputs against inputs via a dashboard" — which favors absolute outputs over factor decompositions whose internal coherence is itself another failure mode. Auditability lives in raw LLM-output logging owned by a separate workstream (the debug-dashboard worktree), not in this spec.
 
 This also matches the **current** production prompt at `nutrition.ts:124-169`, which already asks the LLM to produce final adjusted absolute macros. §1 codifies that contract; the work is in tightening validation, not changing the unit.
 
@@ -472,7 +448,7 @@ Drift alerting is a query that flags any rate moving >2σ from 7-day baseline. N
 
 #### §5.2 Shadow A/B runner — post-launch regression infrastructure
 
-Built for **future** prompt/model/schema changes. Not a precondition for shipping §1, §3, or §4 in this spec — those ride on `pipeline_runs` + `pipeline_llm_outputs` telemetry alone, given the pre-production status. A v2-pipeline change behind a feature flag. The runner:
+Built for **future** prompt/model/schema changes. Not a precondition for shipping §1, §3, or §4 in this spec — those ride on `pipeline_runs` telemetry alone, given the pre-production status. A v2-pipeline change behind a feature flag. The runner:
 
 - Sampling: 5% of production traffic by default (configurable).
 - **Best-effort and isolated.** Shadow runs **after** the primary response is sent (queue or post-response continuation). Never blocks user.
@@ -498,7 +474,7 @@ These have safe defaults but the user should weigh in.
 
 The existing table stores raw meal input and full `userContextJson`. The clean §5 privacy story is false until this is addressed. Three options, ordered by my preference:
 
-1. **Split debug-from-analytics retention.** Keep `pipeline_requests` for short-window operational debugging (7-day TTL, restricted access). New `pipeline_runs` is the analytics/eval source, and `pipeline_llm_outputs` (§0.6) is the debug-dashboard source with 30-day TTL. Documented access controls. *Preferred — preserves debuggability with explicit TTL.*
+1. **Split debug-from-analytics retention.** Keep `pipeline_requests` for short-window operational debugging (7-day TTL, restricted access). New `pipeline_runs` is the analytics/eval source. A separate workstream (debug-dashboard worktree) owns raw LLM-output logging on its own schedule. Documented access controls. *Preferred — preserves debuggability with explicit TTL.*
 2. **Scrub raw_input.** Drop the column or store a hash-or-category. Lose ability to reproduce production bugs from raw input. *Cleanest privacy, worst debuggability.*
 3. **Keep status quo, document the leak in this spec.** *Honest but unsatisfying — goes against the privacy claim of §5.*
 
@@ -516,8 +492,8 @@ Each phase ships independently and is reversible. Telemetry must accompany each 
 
 | Phase | Content | Risk | Reversibility |
 |---|---|---|---|
-| **1. §0 Foundations** | Stable IDs, state propagation (LLM-side reconciliation), prompt/schema versioning, `pipeline_runs` table, `pipeline_llm_outputs` table, Decision A resolution | Low — behavior-neutral plumbing | Drop migration, revert code |
-| **2. §3 Type-safe prompts** | `PromptPersonalizationContext` type, prompt rewrite at `nutrition.ts:138-144`, sentinel tests, `dbState`-aware prompt context (§0.2) | Low (pre-production) — prompt change behind versioning, observable via `pipeline_llm_outputs` | Revert; old prompt version still queryable |
+| **1. §0 Foundations** | Stable IDs, state propagation (LLM-side reconciliation), prompt/schema versioning, `pipeline_runs` table, Decision A resolution | Low — behavior-neutral plumbing | Drop migration, revert code |
+| **2. §3 Type-safe prompts** | `PromptPersonalizationContext` type, prompt rewrite at `nutrition.ts:138-144`, sentinel tests, `dbState`-aware prompt context (§0.2) | Low (pre-production) — prompt change behind versioning, observable via `pipeline_runs` and the separate debug-dashboard logging workstream | Revert; old prompt version still queryable |
 | **3. §1 Absolute-macro schema + validators** | Single `IngredientNutrition` shape, runtime aggregation, macro-consistency invariant, density envelope, retire `convertCookedToRaw` path | Medium — semantic tightening of nutrition contract | Schema versioning; flag-flip rollback |
 | **4. §5.2 Shadow runner** | Off-by-default infrastructure, abort guards, paired-output store — built for **future** post-launch change validation | Low — disabled by default | Feature flag off |
 | **5. §4 Model upgrade + cache + policy** | New default model, escalation routing, L4 cache, narrow `MealFactsForComputePolicy` | Medium — distributional shift | Constants flip back; cache flushable |
@@ -535,11 +511,11 @@ These exist to prevent the design from rotting.
 - **Hard enums only where DB enforces closed sets.** Cuisine/cooking-method/cuisineNote stay free-form. Adding a closed enum requires a corresponding DB constraint or it doesn't ship.
 - **`canonicalName` is validated against FCT vocabulary.** Misses become an alias-retirement signal, not invisible failures.
 - **No silent clamps.** Out-of-envelope densities, unknown DB states, validation breaches are all telemetry events.
-- **Telemetry is structured at the source.** No deriving critical fields from log-string parsing. The `pipeline_runs` and `pipeline_llm_outputs` schemas are the contract.
+- **Telemetry is structured at the source.** No deriving critical fields from log-string parsing. The `pipeline_runs` schema is the contract.
 - **Pure routing function with narrow input type.** `pickComputePolicy(MealFactsForComputePolicy)` cannot drift into receiving `UserContext`.
 - **Cache keys include `*Version` constants.** Bumping the constant invalidates the cache — no manual flush ritual.
 - **Aggregate-not-per-user telemetry.** Every metric is system-level. No per-user behavioral inference.
-- **Raw LLM outputs are debug substrate, not training input.** `pipeline_llm_outputs` (§0.6) feeds the manual debug dashboard only; it never re-enters the prompt or the personalization layer (Principle B).
+- **Raw LLM outputs are debug substrate, not training input.** Owned by a separate debug-dashboard workstream; never re-enters the prompt or the personalization layer (Principle B). Coordinate retention/access with that worktree's spec.
 
 ---
 
@@ -550,7 +526,7 @@ Honest, observable signals — not aspirational metrics.
 - **Correctness.** `density_envelope_fires` rate stable and < 2% of meals after week 4. `db_state_unknown_fires` stable and < 5% (most rows have known state). `macro_inconsistent_fires` rate < 1%.
 - **Performance.** End-to-end p95 not worse than today after §1 + §4 ship. `retry_step2` rate < 10% (streaming-flicker guard from §4.4). Shadow divergence on macro totals < 30% in 95% of paired runs once shadow is live.
 - **Tech-debt retirement.** `pre_match_alias_hits` declining quarterly as the LLM internalizes vocabulary. `cooked_to_raw_factor_fires` reaches < 5% (gate for retirement).
-- **Principle adherence.** Sentinel tests pass forever. `prompt_personalization_fields` telemetry never includes `goal` or `aggression`. `pipeline_llm_outputs` access logs show no application-layer reads (debug dashboard only).
+- **Principle adherence.** Sentinel tests pass forever. `prompt_personalization_fields` telemetry never includes `goal` or `aggression`. Raw LLM-output logging (separate workstream) shows no application-layer reads (debug dashboard only).
 - **Shadow A/B utility.** When a future change ships, divergence query yields actionable signal (real misses, not noise).
 
 What we don't promise: a target accuracy number. Nutrition has fuzzy ground truth; promising a number invites Goodharting.
