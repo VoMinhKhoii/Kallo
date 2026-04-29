@@ -3483,10 +3483,74 @@ Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>"
 ```ts
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { PipelineResponse } from '../../types';
-import { runShadow, type ShadowRunnerDeps } from '../shadow-runner';
+import {
+  runShadow,
+  runShadowAsync,
+  type ShadowRunnerDeps,
+  type ShadowGuard,
+} from '../shadow-runner';
 
-const primary: PipelineResponse = makePipelineResponse({
-  totalCalories: 500,
+/**
+ * Build a minimally-valid `PipelineResponse` success branch. Returns the full
+ * discriminated-union shape (NOT a flat `{ totalCalories, ingredients }`).
+ * Only `caloriesMid` and one `ingredientName` per item are configurable —
+ * everything else is filled in with neutral defaults so the divergence
+ * summarizer's accessor helpers have something to read.
+ */
+function makePipelineResponse(args: {
+  caloriesMid: number;
+  ingredientNames: string[];
+  success?: true;
+}): PipelineResponse;
+function makePipelineResponse(args: { success: false }): PipelineResponse;
+function makePipelineResponse(args: any): PipelineResponse {
+  if (args.success === false) {
+    return {
+      success: false,
+      error: { type: 'api_error', message: 'fixture failure', retryable: true },
+    };
+  }
+  const cal = args.caloriesMid as number;
+  const ingredientNames = args.ingredientNames as string[];
+  const bn = (mid: number) => ({
+    caloriesKcal: { low: mid * 0.9, mid, high: mid * 1.1 },
+    proteinG: { low: 0, mid: 0, high: 0 },
+    carbsG: { low: 0, mid: 0, high: 0 },
+    fatG: { low: 0, mid: 0, high: 0 },
+  });
+  const nv = { caloriesKcal: cal, proteinG: 0, carbsG: 0, fatG: 0 };
+  return {
+    success: true,
+    data: {
+      mealItems: [
+        {
+          name: 'meal-1',
+          ingredients: ingredientNames.map((n, i) => ({
+            ingredientName: n,
+            foodCompositionId: `id-${i}`,
+            estimatedGrams: 100,
+            rawEquivalentGrams: 100,
+            cookingMethod: null,
+            userFacingUnit: null,
+            matchConfidence: 0.9,
+            boundedNutrition: bn(cal / ingredientNames.length),
+            displayedNutrition: nv,
+          })),
+          boundedNutrition: bn(cal),
+          displayedNutrition: nv,
+        },
+      ],
+      mealSlot: null,
+      confidenceOverall: 'medium',
+      boundedNutrition: bn(cal),
+      displayedNutrition: nv,
+      unmatchedIngredients: [],
+    },
+  };
+}
+
+const primary = makePipelineResponse({
+  caloriesMid: 500,
   ingredientNames: ['thịt bò bắp', 'bánh phở'],
 });
 
@@ -3497,7 +3561,7 @@ describe('runShadow', () => {
     deps = {
       runCandidate: vi.fn().mockResolvedValue(
         makePipelineResponse({
-          totalCalories: 520,
+          caloriesMid: 520,
           ingredientNames: ['thịt bò bắp', 'bánh phở'],
         })
       ),
@@ -3529,7 +3593,7 @@ describe('runShadow', () => {
   it('records macro divergence > 30% when present', async () => {
     deps.runCandidate = vi.fn().mockResolvedValue(
       makePipelineResponse({
-        totalCalories: 800,
+        caloriesMid: 800,
         ingredientNames: ['thịt bò bắp', 'bánh phở'],
       })
     );
@@ -3546,7 +3610,7 @@ describe('runShadow', () => {
   it('records ingredient-count delta', async () => {
     deps.runCandidate = vi.fn().mockResolvedValue(
       makePipelineResponse({
-        totalCalories: 500,
+        caloriesMid: 500,
         ingredientNames: ['thịt bò bắp'], // candidate dropped one.
       })
     );
@@ -3572,6 +3636,33 @@ describe('runShadow', () => {
     expect(row.outcome).toBe('errored');
   });
 
+  it('records candidate failure in divergence (success=false branch)', async () => {
+    deps.runCandidate = vi.fn().mockResolvedValue(
+      makePipelineResponse({ success: false })
+    );
+    await runShadow({
+      requestId: 'req-fail-cand',
+      primary,
+      candidatePromptVersion: 'v3',
+      candidateModel: 'gemini-2.5-pro',
+    }, deps);
+    const row = (deps.persistShadowRun as any).mock.calls[0][0];
+    expect(row.outcome).toBe('completed'); // candidate didn't throw, just returned !success
+    expect(row.divergence.candidateFailed).toBe(true);
+  });
+
+  it('handles a failed primary without throwing', async () => {
+    const failedPrimary = makePipelineResponse({ success: false });
+    await expect(runShadow({
+      requestId: 'req-fail-prim',
+      primary: failedPrimary,
+      candidatePromptVersion: 'v3',
+      candidateModel: 'gemini-2.5-pro',
+    }, deps)).resolves.toBeUndefined();
+    const row = (deps.persistShadowRun as any).mock.calls[0][0];
+    expect(row.divergence.primaryFailed).toBe(true);
+  });
+
   it('never throws — primary user response must not be perturbed', async () => {
     deps.runCandidate = vi.fn().mockRejectedValue(new Error('boom'));
     deps.persistShadowRun = vi.fn().mockRejectedValue(new Error('db down'));
@@ -3583,9 +3674,87 @@ describe('runShadow', () => {
     }, deps)).resolves.toBeUndefined();
   });
 });
+
+describe('runShadowAsync (guard wrapper)', () => {
+  function makeGuard(decision: { run: boolean; reason?: string }): ShadowGuard {
+    return {
+      shouldRun: vi.fn().mockResolvedValue(decision),
+      onPrimaryComplete: vi.fn(),
+    };
+  }
+  let deps: ShadowRunnerDeps;
+  beforeEach(() => {
+    deps = {
+      runCandidate: vi.fn().mockResolvedValue(
+        makePipelineResponse({
+          caloriesMid: 510,
+          ingredientNames: ['thịt bò bắp'],
+        })
+      ),
+      persistShadowRun: vi.fn().mockResolvedValue(undefined),
+      now: () => 0,
+    };
+  });
+
+  it.each([
+    ['aborted_primary_p95'],
+    ['aborted_pool_wait'],
+    ['aborted_embed_rate_limit'],
+  ] as const)('persists outcome=%s when guard returns that reason', async (reason) => {
+    const guard = makeGuard({ run: false, reason });
+    await runShadowAsync(
+      {
+        requestId: 'req-abort',
+        primary,
+        candidatePromptVersion: 'v3',
+        candidateModel: 'gemini-2.5-pro',
+      },
+      deps,
+      guard
+    );
+    expect(deps.runCandidate).not.toHaveBeenCalled();
+    const row = (deps.persistShadowRun as any).mock.calls[0][0];
+    expect(row.outcome).toBe(reason);
+    expect(row.candidateOutput).toBeNull();
+  });
+
+  it('delegates to runShadow when guard says run', async () => {
+    const guard = makeGuard({ run: true });
+    await runShadowAsync(
+      {
+        requestId: 'req-go',
+        primary,
+        candidatePromptVersion: 'v3',
+        candidateModel: 'gemini-2.5-pro',
+      },
+      deps,
+      guard
+    );
+    expect(deps.runCandidate).toHaveBeenCalledOnce();
+    const row = (deps.persistShadowRun as any).mock.calls[0][0];
+    expect(row.outcome).toBe('completed');
+  });
+
+  it('swallows guard.shouldRun() errors and never throws', async () => {
+    const guard: ShadowGuard = {
+      shouldRun: vi.fn().mockRejectedValue(new Error('guard down')),
+      onPrimaryComplete: vi.fn(),
+    };
+    await expect(runShadowAsync(
+      {
+        requestId: 'req-guard-err',
+        primary,
+        candidatePromptVersion: 'v3',
+        candidateModel: 'gemini-2.5-pro',
+      },
+      deps,
+      guard
+    )).resolves.toBeUndefined();
+  });
+});
 ```
 
-`makePipelineResponse` is a small fixture — extend the existing `makePipelineResult` from `validation.test.ts` if a re-export already exists; otherwise add an inline `function makePipelineResponse(args)` at the top of this file using existing top-level fields from `PipelineResponse`. Keep the surface minimal — only `totalCalories` + `ingredientNames` for now (the divergence summarizer only reads those).
+The fixture `makePipelineResponse` is defined inline at the top of the test file (above). It must build a real `PipelineResponse` discriminated-union value — `{ success: true, data: PipelineResult }` for success and `{ success: false, error }` for failure — because the divergence summarizer's accessor helpers branch on `.success`. **Do not** ship the divergence module assuming flat `totalCalories` / `ingredients` fields; those do not exist on `PipelineResponse` (verified at `lib/ai/types.ts:209`).
 
 Run:
 ```bash
@@ -3598,8 +3767,35 @@ Expected: FAIL — module does not exist.
 `lib/ai/pipeline/shadow-runner.ts`:
 
 ```ts
-import { computeDivergence } from './shadow-divergence';
-import type { PipelineResponse } from '../types';
+import { computeDivergence, type ShadowDivergence } from './shadow-divergence';
+import type {
+  PipelineResponse,
+  PipelineResult,
+  ProcessedIngredient,
+} from '../types';
+
+/**
+ * Compact paired-output snapshot persisted into `pipeline_shadow_runs.{primary,candidate}_output`.
+ * Wire format declared in Task 4.2; this is its TS counterpart.
+ */
+export interface ShadowOutputSnapshot {
+  success: boolean;
+  matchedIds: string[];
+  unmatchedNames: string[];
+  perIngredient: Array<{
+    ingredientName: string;
+    foodCompositionId: string | null;
+    estimatedGrams: number;
+    caloriesMid: number;
+  }>;
+  total: {
+    caloriesMid: number;
+    proteinMid: number;
+    carbsMid: number;
+    fatMid: number;
+  };
+  errorType?: string; // populated only when success === false
+}
 
 export interface ShadowRunnerInput {
   requestId: string;
@@ -3609,6 +3805,13 @@ export interface ShadowRunnerInput {
   candidateModel: string;
 }
 
+export type ShadowOutcome =
+  | 'completed'
+  | 'errored'
+  | 'aborted_primary_p95'
+  | 'aborted_pool_wait'
+  | 'aborted_embed_rate_limit';
+
 export interface ShadowRunPersistRow {
   requestId: string;
   primaryRunId: string | null;
@@ -3617,34 +3820,78 @@ export interface ShadowRunPersistRow {
   primaryOutput: ShadowOutputSnapshot;
   candidateOutput: ShadowOutputSnapshot | null;
   divergence: ShadowDivergence;
-  outcome:
-    | 'completed'
-    | 'errored'
-    | 'aborted_primary_p95'
-    | 'aborted_pool_wait'
-    | 'aborted_embed_rate_limit';
+  outcome: ShadowOutcome;
   candidateMs: number;
 }
 
 export interface ShadowRunnerDeps {
-  runCandidate: (
-    requestId: string
-  ) => Promise<PipelineResponse>;
+  runCandidate: (requestId: string) => Promise<PipelineResponse>;
   persistShadowRun: (row: ShadowRunPersistRow) => Promise<void>;
   now: () => number;
 }
 
+export interface ShadowGuard {
+  /**
+   * Resolves immediately before a shadow run. If `run: false`, the wrapper
+   * persists an aborted row and skips the candidate entirely.
+   */
+  shouldRun: () => Promise<
+    | { run: true }
+    | { run: false; reason: 'aborted_primary_p95' | 'aborted_pool_wait' | 'aborted_embed_rate_limit' }
+  >;
+  onPrimaryComplete: (primaryMs: number) => void;
+}
+
+const EMPTY_SNAPSHOT = (errorType: string): ShadowOutputSnapshot => ({
+  success: false,
+  matchedIds: [],
+  unmatchedNames: [],
+  perIngredient: [],
+  total: { caloriesMid: 0, proteinMid: 0, carbsMid: 0, fatMid: 0 },
+  errorType,
+});
+
+function snapshot(r: PipelineResponse): ShadowOutputSnapshot {
+  if (!r.success) {
+    return EMPTY_SNAPSHOT(r.error.type);
+  }
+  const data: PipelineResult = r.data;
+  const allIngredients: ProcessedIngredient[] = data.mealItems.flatMap(
+    (m) => m.ingredients
+  );
+  const matchedIds = allIngredients
+    .map((i) => i.foodCompositionId)
+    .filter((id): id is string => id !== null);
+  const unmatchedNames = data.unmatchedIngredients.map((u) => u.ingredientName);
+  return {
+    success: true,
+    matchedIds,
+    unmatchedNames,
+    perIngredient: allIngredients.map((i) => ({
+      ingredientName: i.ingredientName,
+      foodCompositionId: i.foodCompositionId,
+      estimatedGrams: i.estimatedGrams,
+      caloriesMid: i.boundedNutrition.caloriesKcal.mid,
+    })),
+    total: {
+      caloriesMid: data.boundedNutrition.caloriesKcal.mid,
+      proteinMid: data.boundedNutrition.proteinG.mid,
+      carbsMid: data.boundedNutrition.carbsG.mid,
+      fatMid: data.boundedNutrition.fatG.mid,
+    },
+  };
+}
+
 /**
  * Best-effort, never-throws candidate execution called AFTER the primary
- * response is delivered to the user. Primary path latency must be unchanged
- * by the existence of this function.
+ * response is delivered to the user.
  */
 export async function runShadow(
   input: ShadowRunnerInput,
   deps: ShadowRunnerDeps
 ): Promise<void> {
   const start = deps.now();
-  let outcome: ShadowRunPersistRow['outcome'] = 'completed';
+  let outcome: ShadowOutcome = 'completed';
   let candidate: PipelineResponse | null = null;
   try {
     candidate = await deps.runCandidate(input.requestId);
@@ -3667,8 +3914,6 @@ export async function runShadow(
   try {
     await deps.persistShadowRun(row);
   } catch {
-    // Persistence failures are non-fatal. Surface via console.warn for
-    // ops; never re-throw.
     console.warn(
       '[shadow-runner] persist failed',
       { requestId: input.requestId }
@@ -3676,10 +3921,51 @@ export async function runShadow(
   }
 }
 
-function snapshot(r: PipelineResponse): ShadowOutputSnapshot {
-  // Implementation reads the existing PipelineResponse shape; see
-  // lib/ai/types.ts. Pull only the fields the divergence query needs.
-  // …
+/**
+ * Guard-aware wrapper. If the guard says no, persists an `aborted_*` row
+ * with `candidateOutput: null` and `candidateMs: 0` and skips the candidate
+ * run entirely. Otherwise delegates to {@link runShadow}.
+ *
+ * Like {@link runShadow}, this never throws — primary path latency must be
+ * unaffected by anything in this module.
+ */
+export async function runShadowAsync(
+  input: ShadowRunnerInput,
+  deps: ShadowRunnerDeps,
+  guard: ShadowGuard
+): Promise<void> {
+  let decision: Awaited<ReturnType<ShadowGuard['shouldRun']>>;
+  try {
+    decision = await guard.shouldRun();
+  } catch {
+    // A failing guard MUST NOT poison the user's primary response.
+    return;
+  }
+
+  if (!decision.run) {
+    const row: ShadowRunPersistRow = {
+      requestId: input.requestId,
+      primaryRunId: input.primaryRunId ?? null,
+      candidatePromptVersion: input.candidatePromptVersion,
+      candidateModel: input.candidateModel,
+      primaryOutput: snapshot(input.primary),
+      candidateOutput: null,
+      divergence: computeDivergence(input.primary, null),
+      outcome: decision.reason,
+      candidateMs: 0,
+    };
+    try {
+      await deps.persistShadowRun(row);
+    } catch {
+      console.warn(
+        '[shadow-runner] aborted-row persist failed',
+        { requestId: input.requestId, reason: decision.reason }
+      );
+    }
+    return;
+  }
+
+  return runShadow(input, deps);
 }
 ```
 
@@ -3689,33 +3975,71 @@ function snapshot(r: PipelineResponse): ShadowOutputSnapshot {
 import type { PipelineResponse } from '../types';
 
 export interface ShadowDivergence {
+  /** |candidateCal − primaryCal| / primaryCal (mid values). 0 if either side missing. */
   macroDeltaPct: number;
+  /** candidateIngredientCount − primaryIngredientCount. 0 if either side failed. */
   ingredientCountDelta: number;
+  /** Reserved for §4 anomaly-type set diff once anomalies are reified on PipelineResponse. */
   anomalyTypeDelta: string[];
+  /** Set when primary returned `{ success: false }`. */
+  primaryFailed: boolean;
+  /** Set when candidate returned `{ success: false }` (but did not throw). */
+  candidateFailed: boolean;
+}
+
+/** Total mid calories across the meal, or null if the response failed. */
+function totalCalMid(r: PipelineResponse): number | null {
+  return r.success ? r.data.boundedNutrition.caloriesKcal.mid : null;
+}
+
+/** Sum of ingredients across all meal items, or 0 if the response failed. */
+function ingredientCount(r: PipelineResponse): number {
+  return r.success
+    ? r.data.mealItems.reduce((n, m) => n + m.ingredients.length, 0)
+    : 0;
 }
 
 export function computeDivergence(
   primary: PipelineResponse,
   candidate: PipelineResponse | null
 ): ShadowDivergence {
-  if (!candidate) {
-    return { macroDeltaPct: 0, ingredientCountDelta: 0, anomalyTypeDelta: [] };
+  const primaryFailed = !primary.success;
+  const candidateFailed = candidate !== null && !candidate.success;
+
+  if (candidate === null) {
+    return {
+      macroDeltaPct: 0,
+      ingredientCountDelta: 0,
+      anomalyTypeDelta: [],
+      primaryFailed,
+      candidateFailed: false,
+    };
   }
-  const pCal = primary.totalCalories;
-  const cCal = candidate.totalCalories;
+
+  const pCal = totalCalMid(primary);
+  const cCal = totalCalMid(candidate);
   const macroDeltaPct =
-    pCal === 0 ? 0 : Math.abs(cCal - pCal) / pCal;
-  const ingredientCountDelta =
-    candidate.ingredients.length - primary.ingredients.length;
+    pCal !== null && cCal !== null && pCal > 0
+      ? Math.abs(cCal - pCal) / pCal
+      : 0;
   return {
     macroDeltaPct,
-    ingredientCountDelta,
+    ingredientCountDelta:
+      ingredientCount(candidate) - ingredientCount(primary),
     anomalyTypeDelta: [], // populated when anomaly fields are wired into PipelineResponse
+    primaryFailed,
+    candidateFailed,
   };
 }
 ```
 
-Adjust the field reads (`totalCalories`, `ingredients.length`) to match the actual `PipelineResponse` shape from `lib/ai/types.ts` — verify before implementing. If the field is `mealItems[].nutrition.caloriesKcal.mid`, sum across meal items.
+**Verified field paths against `lib/ai/types.ts:209`:**
+- `PipelineResponse` is a discriminated union: `{ success: true; data: PipelineResult } | { success: false; error: PipelineError }`.
+- `PipelineResult.boundedNutrition.caloriesKcal.{low, mid, high}` is the canonical total-calories accessor.
+- `PipelineResult.mealItems[].ingredients` (`ProcessedIngredient[]`) is where matched ingredients live; `foodCompositionId: string | null` distinguishes matched from unmatched-but-emitted.
+- `PipelineResult.unmatchedIngredients` is the canonical unmatched list — separate from the per-meal ingredient array.
+
+Do **not** read `primary.totalCalories` or `primary.ingredients` — neither exists on `PipelineResponse`.
 
 - [ ] **Step 3: Refine until tests pass**
 
@@ -3760,10 +4084,11 @@ describe('createShadowGuard', () => {
 
   it('blocks for 30 minutes when primary p95 exceeds threshold', async () => {
     const clock = makeClock(0);
+    const p95Source = { value: 5_000 }; // mutable so the test can heal it
     const guard = createShadowGuard({
       clock,
-      primaryP95Ms: () => 5_000,    // observed
-      primaryP95ThresholdMs: 4_000, // limit
+      primaryP95Ms: () => p95Source.value, // observed
+      primaryP95ThresholdMs: 4_000,        // limit
     });
     const a = await guard.shouldRun();
     expect(a).toEqual({ run: false, reason: 'aborted_primary_p95' });
@@ -3773,8 +4098,8 @@ describe('createShadowGuard', () => {
       run: false, reason: 'aborted_primary_p95'
     });
 
-    clock.advance(2 * 60_000); // total 31 min, healed-by-now p95
-    guard.refreshAfterCooldown(() => 3_000);
+    clock.advance(2 * 60_000); // total 31 min, lockout has elapsed
+    p95Source.value = 3_000;   // metric has healed (under threshold)
     expect((await guard.shouldRun()).run).toBe(true);
   });
 
@@ -3882,11 +4207,15 @@ export function createShadowGuard(cfg: ShadowGuardConfig = {}) {
     return Promise.resolve({ run: true });
   }
 
-  function refreshAfterCooldown(_p95Ms: () => number) {
-    primaryP95LockUntil = 0; // simple manual reset for tests; production polls.
+  // Time-based unlock: once `clock.now() >= primaryP95LockUntil`, `shouldRun`
+  // re-reads the metric provider on its next call. No manual refresh needed —
+  // the cooldown auto-expires.
+  function onPrimaryComplete(_primaryMs: number): void {
+    // Reserved for a future `recordPrimaryDuration` integration so the guard
+    // can derive its own rolling p95 instead of receiving one. No-op today.
   }
 
-  return { shouldRun, refreshAfterCooldown };
+  return { shouldRun, onPrimaryComplete };
 }
 ```
 
@@ -3953,8 +4282,11 @@ describe('shadow-runner integration', () => {
     const result = await runOrchestratorWithFixture({
       shadow: { enabled: true, rate: 1.0, persistShadowRun },
     });
-    expect(result.response).toBeDefined();
-    expect(result.response.totalCalories).toBeGreaterThan(0);
+    expect(result.response.success).toBe(true);
+    if (result.response.success) {
+      expect(result.response.data.boundedNutrition.caloriesKcal.mid)
+        .toBeGreaterThan(0);
+    }
   });
 
   it('aborts when the guard says no — outcome reflects reason', async () => {
@@ -3983,31 +4315,72 @@ Expected: FAIL — wiring not in place.
 
 In `lib/ai/pipeline/orchestrator.ts`, immediately after the `runPipeline` call resolves and **before** the function returns to the caller, schedule the shadow run as a microtask. Crucially: do NOT `await` it. The primary response goes back to the user; the shadow fires concurrently against a separate concurrency budget.
 
+The shadow surface is **dependency-injected** so tests can force-sample (rate: 1.0) without flakiness and so production stays off-by-default. Add an optional `analyzeMeal` parameter `shadow?: ShadowConfig`:
+
 ```ts
+// lib/ai/pipeline/orchestrator.ts (additions only)
+import { isShadowSampled, type ShadowSamplingConfig } from './shadow-sampling';
+import { runShadowAsync, type ShadowGuard, type ShadowRunnerDeps } from './shadow-runner';
+
+export interface ShadowConfig {
+  enabled: boolean;
+  /** Optional override of {@link SHADOW_SAMPLING_RATE} for tests. */
+  rate?: number;
+  persistShadowRun: ShadowRunnerDeps['persistShadowRun'];
+  guard?: ShadowGuard;
+  /** Override defaults; production uses module-level `NUTRITION_*_CANDIDATE` constants. */
+  candidatePromptVersion?: string;
+  candidateModel?: string;
+}
+
 // Inside analyzeMeal, after `const response = await runPipeline(...)` and
 // after the `pipeline_runs` row is written:
 
-const requestId = /* the same id generated in logging.ts:18 */;
-const shadowEnabled = process.env.SHADOW_RUNNER_ENABLED === 'true';
-if (shadowEnabled && isShadowSampled(requestId, { enabled: true })) {
-  void runShadowAsync({
-    requestId,
-    primary: response,
-    primaryRunId: pipelineRunRow.id, // from buildPipelineRunRow result
-    candidatePromptVersion: NUTRITION_PROMPT_VERSION_CANDIDATE,
-    candidateModel: NUTRITION_MODEL_CANDIDATE,
-  });
+const shadowCfg = opts?.shadow ?? defaultShadowConfigFromEnv();
+if (
+  shadowCfg.enabled &&
+  isShadowSampled(requestId, {
+    enabled: true,
+    rate: shadowCfg.rate, // undefined → SHADOW_SAMPLING_RATE
+  } satisfies ShadowSamplingConfig)
+) {
+  void runShadowAsync(
+    {
+      requestId,
+      primary: response,
+      primaryRunId: pipelineRunRowId, // see note below on .id availability
+      candidatePromptVersion:
+        shadowCfg.candidatePromptVersion ?? NUTRITION_PROMPT_VERSION_CANDIDATE,
+      candidateModel:
+        shadowCfg.candidateModel ?? NUTRITION_MODEL_CANDIDATE,
+    },
+    {
+      runCandidate: (rid) => runPipelineCandidate(rid, /* uses concurrency: 1 */),
+      persistShadowRun: shadowCfg.persistShadowRun,
+      now: () => Date.now(),
+    },
+    shadowCfg.guard ?? defaultShadowGuard()
+  );
 }
 
 return response;
+
+function defaultShadowConfigFromEnv(): ShadowConfig {
+  return {
+    enabled: process.env.SHADOW_RUNNER_ENABLED === 'true',
+    persistShadowRun: persistShadowRunDefault, // module-local default
+  };
+}
 ```
 
-`runShadowAsync` is a small wrapper that:
-1. Calls `guard.shouldRun()`. If `run: false`, persists a row with `outcome: reason` and returns.
-2. Otherwise calls `runShadow(...)` with a `runCandidate` closure that re-runs the pipeline with the candidate versions/model. The candidate run uses a **separate `MATCH_CONCURRENCY` budget** — pass an explicit `concurrency` option through `matchIngredients` if it doesn't already exist (cascade.ts:41 currently inlines the constant; convert to a defaultable parameter).
-3. Catches everything. Logs warn on failure. Never throws.
+> **Note on `pipelineRunRow.id`** *(advisory follow-up to Chunk 1d)*: the orchestrator needs the `pipeline_runs.id` value available **synchronously after primary response**. If `pipelineRuns.id` is server-generated (`defaultRandom()`), the orchestrator must use `.returning({ id: pipelineRuns.id })` on the insert OR pre-generate `id = crypto.randomUUID()` client-side before calling `buildPipelineRunRow`. Verify the Chunk 1d row-builder shape; if it returns the pre-insert payload only, prefer client-side UUID generation so the shadow run has a stable foreign key without an extra round-trip.
 
-`NUTRITION_PROMPT_VERSION_CANDIDATE` / `NUTRITION_MODEL_CANDIDATE`: env-overridable constants, defaulting to the production values (so a flag-on-but-unconfigured shadow runner is a no-op pair).
+`runShadowAsync` is exported from `lib/ai/pipeline/shadow-runner.ts` (Task 4.4 Step 2). The wrapper:
+1. Calls `guard.shouldRun()`. If `run: false`, persists a row with `outcome: reason`, `candidateOutput: null`, `candidateMs: 0`, and returns. **Concrete code lives in Task 4.4 Step 2 — do not re-implement here.**
+2. Otherwise calls `runShadow(...)` with a `runCandidate` closure that re-runs the pipeline with the candidate versions/model. The candidate run uses a **separate `MATCH_CONCURRENCY` budget** — pass an explicit `concurrency` option through `matchIngredients` (see Step 3 below).
+3. Catches everything (including a failing `guard.shouldRun()`). Logs warn on failure. Never throws.
+
+`NUTRITION_PROMPT_VERSION_CANDIDATE` / `NUTRITION_MODEL_CANDIDATE`: module-local constants, env-overridable, defaulting to the production values (so a flag-on-but-unconfigured shadow runner is a no-op pair). Tests override via `shadowCfg.candidatePromptVersion` / `shadowCfg.candidateModel`.
 
 - [ ] **Step 3: Cascade concurrency parameterization**
 
