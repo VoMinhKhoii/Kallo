@@ -36,7 +36,7 @@ This plan creates and modifies the following files. Files that change together l
 - `scripts/eval-kpis.sql` — manually-run KPI rollup queries over `pipeline_runs` (§5.1).
 - `supabase/migrations/<ts>_add_pipeline_runs_table.sql` — Drizzle-generated; `pipeline_runs` table.
 - `supabase/migrations/<ts>_pipeline_requests_privacy.sql` — hand-written; 7-day TTL retention + service-role-only RLS on `pipeline_requests` (Decision A).
-- `supabase/migrations/<ts>_add_state_to_match_functions.sql` — hand-written; updates `match_ingredients_*` and `fuzzy_match_ingredients_*` SQL to return the existing `state` column (it's already present in the underlying tables; some functions drop it).
+- `supabase/migrations/<ts>_match_functions_return_state.sql` — hand-written; updates `match_ingredients_*` and `fuzzy_match_ingredients_*` SQL to return the existing `state` column (it's already present in the underlying tables; some functions drop it).
 - `lib/ai/pipeline/__tests__/versions.test.ts` — guards version-bump invariant (each is a non-empty semver-ish string).
 - `lib/ai/pipeline/__tests__/ids.test.ts` — UUID format + uniqueness.
 - `lib/ai/pipeline/__tests__/run-telemetry.test.ts` — row-builder shape + privacy hash.
@@ -64,7 +64,7 @@ This plan creates and modifies the following files. Files that change together l
 - `lib/ai/matching/nutrition-batch.ts` — keying by `ingredientId` not name (Chunk 1).
 - `lib/ai/constants.ts` — mark `COOKED_TO_RAW_FACTOR` and `convertCookedToRaw` as deprecated; instrument with `cooked_to_raw_factor_fires` increment (Chunk 3).
 - `lib/db/schema.ts` — add `pipelineRuns` table (Chunk 1).
-- `app/api/meals/analyze/route.ts` (and any other SSE consumers) — accept `ingredientId`/`mealItemId` in event payloads (Chunk 1).
+- `app/api/analyze-meal/route.ts` (and any other SSE consumers) — accept `ingredientId`/`mealItemId` in event payloads (Chunk 1).
 
 ### Verification touchpoints (no edits expected, used in tests)
 
@@ -78,6 +78,7 @@ This plan creates and modifies the following files. Files that change together l
 - **Bun is the runtime.** Use `bun run test`, `bun add`, `bunx @biomejs/biome@2.4.2 check .`. Never `npm`.
 - **Lint pinned.** Always `bunx @biomejs/biome@2.4.2 check .` (project pins Biome version).
 - **Drizzle two-domain rule.** Schema columns/types/FKs: edit `lib/db/schema.ts`, then `bun db:generate`, then *rename the generated migration* in both filename and `meta/_journal.json` to a meaningful name. RLS/policies/functions/triggers: hand-write a separate timestamped migration in `supabase/migrations/`. Drizzle migrations must be timestamped before manual migrations that reference their columns.
+- **Migration timestamps are concrete.** Whenever a task says `<ts>`, `<ts+1>`, etc., produce the value at task time with `date -u +%Y%m%d%H%M%S`. Each subsequent migration's prefix must strictly exceed the previous one's (advance the seconds field manually if you generate two within the same second). Use these concrete prefixes in both the filename and the `meta/_journal.json` `tag` field.
 - **Migrations cite extensions.** Any migration using `pgvector` or `pg_trgm` must start with `SET search_path TO public, extensions;`.
 - **DB tests need env.** Run with `bun --env-file=.env.local vitest run …` for tests that touch the remote DB.
 - **Conventional Commits + Copilot trailer.** Every commit: type prefix (`feat:`, `fix:`, `chore:`, `refactor:`, `test:`, `docs:`) and a `Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>` trailer.
@@ -87,13 +88,13 @@ This plan creates and modifies the following files. Files that change together l
 
 ---
 
-## Chunk 1: §0 Foundations
+## Chunk 1a: §0 Foundations — Part A (versioning, telemetry table, privacy)
 
-**Spec sections:** §0.1 Stable IDs · §0.2 DB state propagation · §0.3 Prompt/schema versioning · §0.4 `pipeline_runs` table · §0.5 / Decision A — `pipeline_requests` privacy reckoning.
+**Spec sections:** §0.3 Prompt/schema versioning · §0.4 `pipeline_runs` table · §0.5 / Decision A — `pipeline_requests` privacy reckoning.
 
-**Why first:** Everything else depends on these. Stable IDs unblock id-keyed retry replacement and dish-wrapping safety. DB state propagation fixes a *current* silent under-counting bug (cooked-row + `convertCookedToRaw` double-application). Versioning is required for L4 cache (Chunk 5) and shadow runner (Chunk 4). The `pipeline_runs` table is the substrate for KPI rollups (Chunk 4) and most downstream telemetry. Decision A closes the privacy story §5 depends on.
+**Why first:** Pure additive infra with no behavior coupling. Versioning constants are required by the L4 cache (Chunk 5) and shadow runner (Chunk 4). The `pipeline_runs` table is the substrate for KPI rollups (Chunk 4). Decision A closes the privacy story §5 depends on.
 
-**Outcome:** Pipeline runs identically to today on the user-facing surface (no behavioral change), but emits stable IDs end-to-end, threads DB state through matching, writes a row to `pipeline_runs` per run with version constants, and `pipeline_requests` is locked down with TTL + service-role RLS.
+**Outcome:** New version constants exported; new `pipeline_runs` table with RLS; `pipeline_requests` locked down with TTL + service-role RLS; no orchestrator behavior change.
 
 ---
 
@@ -194,6 +195,8 @@ Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>"
 ### Task 1.2: Add `pipelineRuns` Drizzle table
 
 Drizzle schema first (Domain A per AGENTS.md). Generates a migration we'll rename.
+
+**Why `prompt_personalization_fields` lives on this table:** It's the audit column for Principle A. We record which user-context fields were actually rendered into Call 1 / Call 2 prompts (e.g. `['countryOfOrigin','cookingHabits']`). The telemetry helper in Task 1.13 will reject any row whose value contains forbidden fields (`goal`, `aggression`, `calorieTarget`, …), making Principle A a hard guardrail rather than a code-review convention. Storing it on `pipeline_runs` means the guarantee survives even if upstream code is refactored.
 
 **Files:**
 - Modify: `lib/db/schema.ts` (append new table)
@@ -298,7 +301,7 @@ export const pipelineRuns = pgTable('pipeline_runs', {
 });
 ```
 
-(If `sql` is not yet imported in `schema.ts`, add `import { sql } from 'drizzle-orm';`.)
+(Verify the imports at the top of `schema.ts` include all of: `pgTable`, `uuid`, `text`, `timestamp`, `boolean`, `smallint`, `integer`, plus `sql` from `drizzle-orm`. Add anything missing — `smallint`/`integer`/`sql` are likely not yet imported.)
 
 - [ ] **Step 5: Generate the migration**
 
@@ -449,9 +452,13 @@ BEGIN
       $$SELECT public.reap_pipeline_requests();$$
     );
   END IF;
-EXCEPTION WHEN others THEN
-  -- pg_cron not granted; daily reap must be invoked externally.
-  NULL;
+EXCEPTION
+  WHEN insufficient_privilege OR undefined_function OR undefined_table THEN
+    -- pg_cron exists but cron schema not granted to this role, or
+    -- cron.schedule signature differs. Daily reap must be invoked
+    -- externally. Any other exception class re-raises so we don't
+    -- silently swallow real schema errors.
+    NULL;
 END $$;
 ```
 
@@ -487,6 +494,30 @@ Spec: Decision A.
 
 Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>"
 ```
+
+---
+
+### Chunk 1a — outcome verification
+
+After Chunk 1a ships:
+
+- [ ] `lib/ai/pipeline/versions.ts` exports the four version constants.
+- [ ] `pipelineRuns` table exists with all §0.4 columns and service-role-only RLS.
+- [ ] `pipeline_requests` has 7-day TTL via `reap_pipeline_requests()` and no user-facing RLS policies.
+- [ ] `bunx @biomejs/biome@2.4.2 check .` passes.
+- [ ] `bun run test lib/ai/pipeline/__tests__/run-telemetry-schema.test.ts` passes.
+
+No orchestrator behavior change. The orchestrator does not yet write to `pipeline_runs` — that wiring lands in Chunk 1b once the row writer exists.
+
+---
+
+## Chunk 1b: §0 Foundations — Part B (DB state propagation)
+
+**Spec sections:** §0.2 DB state propagation.
+
+**Why next:** Fixes a *current* silent under-counting bug — the schema enforces `state IN ('raw','cooked')` but `MatchInfo` drops it, so `convertCookedToRaw` may double-discount cooked rows. Threading `state` through `MatchInfo → MatchedIngredient.dbState` is a precondition for Chunk 2 (Call 2 prompt context references `dbState`) and Chunk 3 (retiring `convertCookedToRaw` with instrumented fallback).
+
+**Outcome:** Every match pathway projects `state`; `MatchInfo.state` and `MatchedIngredient.dbState` are populated end-to-end with `'raw' | 'cooked' | 'unknown'`. No orchestrator behavior change yet — `dbState` is consumed in Chunk 2 (prompt) and Chunk 3 (raw/cooked logic).
 
 ---
 
@@ -610,76 +641,108 @@ Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>"
 
 ---
 
-### Task 1.6: Verify SQL match functions return `state` and patch any that don't
+### Task 1.6: Audit + (conditional) patch SQL match functions to project `state`
 
-`source-matching.ts` reads `state` from the SQL row. Confirm every SQL function we call returns it; patch the ones that don't.
+`source-matching.ts` reads `state` from the SQL row. Confirm every SQL function we call returns it. This task is **audit-driven**: produce an inventory first, then either ship a fix migration with concrete `CREATE OR REPLACE FUNCTION` blocks or close the task with no migration if the audit shows no gaps.
 
 **Files:**
-- Read-only audit: `supabase/migrations/*_match_functions.sql`, `supabase/migrations/*_fuzzy_match*.sql`
-- Maybe create: `supabase/migrations/<ts+3>_match_functions_return_state.sql`
+- Read-only audit: `supabase/migrations/*.sql` (any file matching match function definitions)
+- Conditional create: `supabase/migrations/<ts>_match_functions_return_state.sql` (only if audit finds gaps)
 
-- [ ] **Step 1: Audit existing SQL functions**
+- [ ] **Step 1: Enumerate match SQL functions**
 
-Run: `grep -nl 'CREATE.*FUNCTION.*match' supabase/migrations/ | head -20`
-For each match-related SQL function, confirm `RETURNS TABLE(...)` includes a `state` column and the `SELECT` projects it.
+```bash
+grep -rEn 'CREATE (OR REPLACE )?FUNCTION public\.(fuzzy_match|match_)' supabase/migrations/ \
+  | awk -F: '{print $1}' | sort -u
+```
 
-- [ ] **Step 2: If any function omits `state`, write a fix migration**
+For each function the grep returns, run:
 
-If audit finds gaps, create `supabase/migrations/<ts+3>_match_functions_return_state.sql`:
+```bash
+grep -A 40 'CREATE OR REPLACE FUNCTION public\.<fn_name>' <file>
+```
+
+and inspect the `RETURNS TABLE(...)` declaration plus the final `SELECT`. Record the result in a small table in a scratch buffer:
+
+| function | file | RETURNS includes `state`? | SELECT projects `state`? |
+
+- [ ] **Step 2: Decide branch**
+
+  - **Branch A (no gaps):** All match functions already return `state`. Skip Steps 3–5 entirely. Proceed to Step 6 (close-out commit message).
+  - **Branch B (gaps found):** Continue with Steps 3–5 and write the migration.
+
+- [ ] **Step 3 (Branch B only): Generate migration**
+
+Create `supabase/migrations/<ts>_match_functions_return_state.sql`. For **each** function the audit flagged in Step 1, paste its current full body (from the source migration file) and add `state text` to the `RETURNS TABLE` and `fc.state` to the `SELECT` projection. Do **not** alter the WHERE/ORDER/LIMIT clauses — this migration is purely projection-additive.
+
+Skeleton (replace `<fn_name>` and `<args>` per function; copy the existing body verbatim except for the two additions):
 
 ```sql
 SET search_path TO public, extensions;
 
--- Re-CREATE the matching functions to include the state column.
--- (Replace each CREATE OR REPLACE FUNCTION block with the upstream
--- definition plus state in RETURNS TABLE and SELECT.)
--- Example for fuzzy_match_ingredients_by_source:
-CREATE OR REPLACE FUNCTION public.fuzzy_match_ingredients_by_source(
-  query_text text,
-  source_id_filter int,
-  match_threshold float,
-  match_count int
-)
+CREATE OR REPLACE FUNCTION public.<fn_name>(<args>)
 RETURNS TABLE (
+  -- existing columns, in existing order
   id uuid,
   name_primary text,
   name_alt text[],
   name_en text,
+  -- ADDED: §0.2 requires state in MatchInfo
   state text,
   similarity float
 )
 LANGUAGE sql STABLE
 AS $$
-  -- existing body, unchanged except SELECT now lists state
   SELECT
     fc.id,
     fc.name_primary,
     fc.name_alt,
     fc.name_en,
+    -- ADDED:
     fc.state,
+    -- ... rest of existing SELECT ...
     similarity(fc.name_primary, query_text)
   FROM public.food_compositions fc
-  WHERE fc.source_id = source_id_filter
-    AND similarity(fc.name_primary, query_text) >= match_threshold
-  ORDER BY similarity(fc.name_primary, query_text) DESC
-  LIMIT match_count;
+  -- ... existing WHERE/ORDER/LIMIT, unchanged ...
+  ;
 $$;
-
--- Repeat for any other match-* function the audit found missing state.
 ```
 
-If audit shows all functions already return `state`, **skip this task — do not create an empty migration**, and document the audit result in the commit message of Task 1.5.
-
-- [ ] **Step 3: If migration was needed, commit it**
+- [ ] **Step 4 (Branch B only): Apply locally + run cascade tests**
 
 ```bash
-git add supabase/migrations/<ts+3>_match_functions_return_state.sql
+bun db:migrate
+bun --env-file=.env.local vitest run lib/db/__tests__/
+```
+
+Expected: PASS. If a row mapper now sees `state: undefined`, that means the SQL still doesn't project it — re-check Step 3.
+
+- [ ] **Step 5 (Branch B only): Commit fix migration**
+
+```bash
+git add supabase/migrations/<ts>_match_functions_return_state.sql
 git commit -m "fix(db): match SQL functions project state column
 
-Spec §0.2 — MatchInfo carries DB state, requires every match SQL
-function (vector + fuzzy, per source) to return it. Audited migrations
-found <N> function(s) projecting an incomplete row; this re-creates
-them with state included.
+Spec §0.2 — MatchInfo carries DB state. Audit found <list of fn names>
+projecting an incomplete row; this re-creates them with state in
+RETURNS TABLE and SELECT. Body otherwise unchanged.
+
+Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>"
+```
+
+- [ ] **Step 6: Record audit result**
+
+If Branch A: append a one-line note to the Task 1.5 commit body (or, if 1.5 is already pushed, add an empty commit):
+
+```bash
+git commit --allow-empty -m "chore(db): audit confirms all match SQL functions project state
+
+Spec §0.2 audit per Task 1.6. Functions inspected:
+- fuzzy_match_ingredients_by_source
+- match_ingredients_by_source
+- (etc.)
+All RETURNS TABLE declarations and SELECT projections include state.
+No fix migration required.
 
 Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>"
 ```
@@ -765,6 +828,28 @@ the matching layer drops it. Adds 'unknown' fallback for legacy rows.
 
 Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>"
 ```
+
+---
+
+### Chunk 1b — outcome verification
+
+After Chunk 1b ships:
+
+- [ ] `MatchInfo` (in `lib/ai/matching/source-matching.ts`) carries `state: 'raw' | 'cooked' | 'unknown'`.
+- [ ] `MatchedIngredient` (in `lib/ai/types.ts`) carries `dbState`.
+- [ ] All match SQL functions project `state` (audit logged in commit history).
+- [ ] `bun --env-file=.env.local vitest run lib/ai/matching/__tests__/` passes.
+- [ ] No orchestrator behavior change (the prompt rewrite that consumes `dbState` is Chunk 2; the `convertCookedToRaw` retirement is Chunk 3).
+
+---
+
+## Chunk 1c: §0 Foundations — Part C (stable IDs + id-keyed lookups + SSE)
+
+**Spec sections:** §0.1 Stable IDs.
+
+**Why third in §0:** All the data-shape additions (Zod, TS, matching, SSE) depend on the version constants from Chunk 1a and on `dbState` being plumbed through matching from Chunk 1b. This chunk switches every name-keyed lookup in `assembly.ts`/`validation.ts` to id-keyed and threads ids through SSE for retry replacement (§4.4). The `pipeline_runs` row writer that consumes the version constants lands in Chunk 1d.
+
+**Outcome:** Stable ids flow from Call 1 parse → matching → Call 2 → assembly → SSE → client. Fixes a current silent retry-corruption bug (name-keyed maps collapse repeated ingredient names across dishes). No user-visible behavior change today; the fixes prevent latent corruption that would surface under retry or dish-wrapping (later chunks).
 
 ---
 
@@ -970,39 +1055,93 @@ Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>"
 
 **Files:**
 - Modify: `lib/ai/pipeline/orchestrator.ts`
-- Modify: `lib/ai/pipeline/__tests__/orchestrator.test.ts` (or equivalent integration test)
+- Create: `lib/ai/pipeline/__tests__/ensure-ids-wiring.test.ts` (unit-level test against the helper applied at the parse boundary)
 
 - [ ] **Step 1: Find the Call 1 parse boundary**
 
 Run: `grep -n 'mealDecompositionSchema\|parseCall1\|decomposition' lib/ai/pipeline/orchestrator.ts | head -20`
-Locate where the decomposition is fully parsed (post-Zod validation).
+Locate the line where `mealDecompositionSchema.parse(...)` (or the equivalent `safeParse(...).data`) is called on the raw Call 1 result. Capture the local variable name (the typed decomposition).
 
-- [ ] **Step 2: Write the failing test**
+- [ ] **Step 2: Write the failing unit test**
 
-In `lib/ai/pipeline/__tests__/orchestrator.test.ts` (or a new focused test file), add:
+Create `lib/ai/pipeline/__tests__/ensure-ids-wiring.test.ts`. This is a focused unit test on the parse-boundary contract: given a raw decomposition with overlapping ingredient names and no ids, the wired pipeline produces an output where every meal item and every ingredient has a unique UUID.
 
 ```ts
-it('every meal item and ingredient has a UUID after orchestration', async () => {
-  // ... build a mock orchestrator run with two meal items containing
-  // overlapping ingredient names ("nước dùng" in both).
-  const result = await runPipelineForTest(/* ... */);
-  const mealIds = result.mealItems.map((m) => /* extract */);
-  // Use whatever id field surfaces on the result; if not surfaced yet,
-  // assert via spy on the post-decomposition value handed to matching.
-  // ...
+import { describe, expect, it } from 'vitest';
+import { mealDecompositionSchema } from '@/lib/ai/pipeline/schemas';
+import { ensureIdsOnDecomposition } from '@/lib/ai/pipeline/ids';
+
+const RAW_CALL_1_OUTPUT = {
+  isFood: true,
+  mealSlot: 'dinner',
+  mealItems: [
+    {
+      name: 'phở bò',
+      ingredients: [
+        { name: 'nước dùng', estimatedGrams: 300, cookingMethod: 'luộc',
+          userFacingUnit: '1 tô' },
+        { name: 'bánh phở', estimatedGrams: 180, cookingMethod: 'luộc',
+          userFacingUnit: '1 tô' },
+      ],
+    },
+    {
+      name: 'bún bò Huế',
+      ingredients: [
+        { name: 'nước dùng', estimatedGrams: 280, cookingMethod: 'luộc',
+          userFacingUnit: '1 tô' },
+        { name: 'bún', estimatedGrams: 200, cookingMethod: 'luộc',
+          userFacingUnit: '1 tô' },
+      ],
+    },
+  ],
+};
+
+describe('ensureIdsOnDecomposition at the Call 1 parse boundary', () => {
+  it('assigns a unique UUID to every meal item and ingredient', () => {
+    // Simulate the parse-boundary call as the orchestrator will:
+    const parsed = mealDecompositionSchema.parse(RAW_CALL_1_OUTPUT);
+    const filled = ensureIdsOnDecomposition(parsed);
+
+    const mealIds = filled.mealItems.map((m) => m.mealItemId);
+    expect(new Set(mealIds).size).toBe(mealIds.length);
+    for (const id of mealIds) {
+      expect(id).toMatch(
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+      );
+    }
+
+    const ingredientIds = filled.mealItems.flatMap((m) =>
+      m.ingredients.map((i) => i.ingredientId)
+    );
+    expect(new Set(ingredientIds).size).toBe(ingredientIds.length);
+    for (const id of ingredientIds) {
+      expect(id).toMatch(
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+      );
+    }
+
+    // Two ingredients sharing the display name "nước dùng" must have
+    // distinct ids (the bug §0.1 prevents).
+    const nuocDungIds = filled.mealItems
+      .flatMap((m) => m.ingredients)
+      .filter((i) => i.name === 'nước dùng')
+      .map((i) => i.ingredientId);
+    expect(nuocDungIds.length).toBe(2);
+    expect(nuocDungIds[0]).not.toBe(nuocDungIds[1]);
+  });
 });
 ```
 
-(If an orchestrator integration test doesn't exist, write a unit test that calls a small helper around the parse step instead.)
-
 - [ ] **Step 3: Run test to verify it fails**
 
-Run: `bun run test lib/ai/pipeline/__tests__/orchestrator.test.ts`
-Expected: FAIL — ids are missing or duplicated.
+Run: `bun run test lib/ai/pipeline/__tests__/ensure-ids-wiring.test.ts`
+Expected: FAIL — `ingredientId`/`mealItemId` is `undefined` (Zod schema marks them optional from Task 1.8) and `ensureIdsOnDecomposition` is not yet imported by the production parse path. The test's expectations on UUID presence will fail until the helper is wired in.
 
-- [ ] **Step 4: Wire it in**
+(If the test instead errors at `ensureIdsOnDecomposition` not being exported, complete Task 1.8 first — this task assumes 1.8 is green.)
 
-In the orchestrator, immediately after the Call 1 result is parsed by `mealDecompositionSchema.parse(...)`, wrap it:
+- [ ] **Step 4: Wire the helper into the orchestrator parse boundary**
+
+In `lib/ai/pipeline/orchestrator.ts`, immediately after the Call 1 result is parsed by `mealDecompositionSchema.parse(...)` (or `.safeParse(...).data`), wrap it:
 
 ```ts
 import { ensureIdsOnDecomposition } from './ids';
@@ -1012,16 +1151,18 @@ const decomposition = ensureIdsOnDecomposition(
 );
 ```
 
+All downstream code in the orchestrator now reads `decomposition.mealItems[i].mealItemId` and `decomposition.mealItems[i].ingredients[j].ingredientId`.
+
 - [ ] **Step 5: Run tests**
 
 Run: `bun run test lib/ai/pipeline/__tests__/`
-Expected: PASS.
+Expected: PASS — both the new wiring test and any existing orchestrator tests (which don't yet read ids).
 
 - [ ] **Step 6: Commit**
 
 ```bash
 git add lib/ai/pipeline/orchestrator.ts \
-  lib/ai/pipeline/__tests__/orchestrator.test.ts
+  lib/ai/pipeline/__tests__/ensure-ids-wiring.test.ts
 git commit -m "feat(ai/pipeline): apply ensureIdsOnDecomposition post-Call-1
 
 Runtime fills mealItemId/ingredientId immediately after Call 1 parses.
@@ -1131,11 +1272,17 @@ In `lib/ai/pipeline/assembly.ts`:
 - Replace the composite `${ing.name}::${mi.mealItemName}` map with a `Map<string, IngredientLlmNutrition>` keyed by `ing.ingredientId`.
 - Replace the inner lookups (`matchedLookup.get(ing.name)` → `matchedLookup.get(ing.ingredientId)`; `llmNutritionByKey.get(...)` → `llmNutritionByKey.get(ing.ingredientId)`).
 
-- [ ] **Step 3a: Propagate `ingredientId` from decomposition to MatchedIngredient and IngredientLlmNutrition**
+- [ ] **Step 3a: Propagate `ingredientId` from decomposition to MatchedIngredient and IngredientLlmNutrition (additive only)**
 
 `MatchedIngredient` in `lib/ai/types.ts` needs `ingredientId`. Match builders in `cascade.ts` accept the decomposed ingredient and copy its id onto the match result.
 
-`IngredientLlmNutrition` in `lib/ai/types.ts` and the corresponding Zod schema need `ingredientId` (optional in Zod with runtime fill — but here the runtime sees the ingredient before Call 2 starts, so it's authoritative). Update the Call 2 prompt builder to inject the id alongside the name. (Detailed prompt rewrite happens in Chunk 2; for this task we only thread the id through the data structures.)
+`IngredientLlmNutrition` in `lib/ai/types.ts` and the corresponding Zod schema need `ingredientId`. **Scope guardrail:** in this chunk we only *add* the `ingredientId` field. The full `IngredientLlmNutrition` contract restructure (renaming, removing `ingredientName`, the absolute-macro shape change) is owned by **Chunk 3**. Do not change keying, naming, or required fields here.
+
+**How the runtime fills `ingredientId`** (Chunk 2 still owns the prompt rewrite, so in this chunk Call 2 results still arrive keyed only by `ingredientName`):
+
+- Make `ingredientId` `z.string().uuid().optional()` in the Zod schema for now (Chunk 3 will tighten this to required and remove `ingredientName`).
+- In the Call 2 caller (the function in `lib/ai/pipeline/` that invokes `generateObject` for nutrition — `nutrition.ts` per the spec citation `nutrition.ts:138-144`), after the response parses, reconcile by name lookup against the matched-ingredient list passed into the call. For each result, find the matching `MatchedIngredient` by `ingredientName` and copy its `ingredientId` onto the result. If a name appears in two matched ingredients (the very collision §0.1 fixes), throw with a clear error pointing at this code site — that is the bug we are surfacing, and it must not silently fall back to first-match. The thrown error is acceptable for this chunk because Chunk 2 will switch the prompt to emit ids directly, eliminating the reconciliation path entirely.
+- Add a unit test in `lib/ai/pipeline/__tests__/nutrition-reconcile.test.ts` covering: (a) happy path — name matches one matched ingredient, id is copied; (b) collision path — two matched ingredients with the same name throws; (c) no-match path — Call 2 returned a name that is not in the matched list throws.
 
 - [ ] **Step 4: Run tests**
 
@@ -1180,7 +1327,90 @@ Expected: lines around 64-75 use name-keying.
 
 - [ ] **Step 2: Write the failing test**
 
-Add to `lib/ai/pipeline/validation.test.ts` a case where two ingredients share a name across dishes, asserting validation correctly attributes anomalies to the right ingredient (verify by including/excluding distinct anomaly inputs per id).
+Add to `lib/ai/pipeline/validation.test.ts` (create the file if it doesn't exist; mirror imports of any existing colocated test):
+
+```ts
+import { describe, expect, it } from 'vitest';
+import { validateNutritionResult } from '@/lib/ai/pipeline/validation';
+
+describe('validation — id-keyed anomaly attribution', () => {
+  it('attributes anomalies to the correct ingredient when two share a display name', () => {
+    const decomposition = {
+      isFood: true as const,
+      mealSlot: 'dinner' as const,
+      mealItems: [
+        {
+          mealItemId: 'meal-A',
+          name: 'phở bò',
+          ingredients: [
+            {
+              ingredientId: 'ing-1',
+              name: 'nước dùng',
+              estimatedGrams: 300,
+              cookingMethod: 'luộc',
+              userFacingUnit: '1 tô',
+            },
+          ],
+        },
+        {
+          mealItemId: 'meal-B',
+          name: 'bún bò Huế',
+          ingredients: [
+            {
+              ingredientId: 'ing-2',
+              name: 'nước dùng',
+              estimatedGrams: 280,
+              cookingMethod: 'luộc',
+              userFacingUnit: '1 tô',
+            },
+          ],
+        },
+      ],
+    };
+    // Only ing-2's macros are implausibly high — anomaly must be raised
+    // against ing-2 only, not ing-1.
+    const llmNutrition = {
+      mealItems: [
+        {
+          mealItemId: 'meal-A',
+          mealItemName: 'phở bò',
+          ingredients: [
+            {
+              ingredientId: 'ing-1',
+              ingredientName: 'nước dùng',
+              caloriesKcal: { low: 50, mid: 60, high: 70 },
+              proteinG: { low: 1, mid: 2, high: 3 },
+              carbohydrateG: { low: 1, mid: 2, high: 3 },
+              fatG: { low: 0.5, mid: 1, high: 1.5 },
+            },
+          ],
+        },
+        {
+          mealItemId: 'meal-B',
+          mealItemName: 'bún bò Huế',
+          ingredients: [
+            {
+              ingredientId: 'ing-2',
+              ingredientName: 'nước dùng',
+              caloriesKcal: { low: 9000, mid: 9500, high: 10000 },
+              proteinG: { low: 1, mid: 2, high: 3 },
+              carbohydrateG: { low: 1, mid: 2, high: 3 },
+              fatG: { low: 0.5, mid: 1, high: 1.5 },
+            },
+          ],
+        },
+      ],
+    };
+
+    const result = validateNutritionResult(decomposition, llmNutrition);
+    const anomalyIds = result.anomalies.map((a) => a.ingredientId);
+    expect(anomalyIds).toContain('ing-2');
+    expect(anomalyIds).not.toContain('ing-1');
+  });
+});
+```
+
+(If `validateNutritionResult` exposes a different return shape — e.g. anomalies expressed as `{ ingredientName }` today — the test will fail at the assertion, which is the point: this drives the field rename to `ingredientId` in Step 4.)
 
 - [ ] **Step 3: Run test to verify it fails**
 
@@ -1217,46 +1447,113 @@ Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>"
 
 **Files:**
 - Modify: `lib/ai/pipeline/orchestrator.ts`
-- Modify: `app/api/meals/analyze/route.ts` (SSE serializer)
-- Modify: client consumers (e.g., `hooks/use-meal-analysis.ts` or wherever `item_macros` events are deserialized)
+- Modify: `app/api/analyze-meal/route.ts` (SSE serializer)
+- Modify: client consumers (enumerated in Step 0 below)
+
+- [ ] **Step 0: Enumerate every SSE consumer in the repo**
+
+```bash
+grep -rEn "item_name|item_macros|sse|EventSource|ReadableStream" \
+  app/ hooks/ components/ lib/ \
+  | grep -viE "(test|spec|\.snap)" \
+  | sort
+```
+
+Build the concrete list of files this task must update. Common candidates (verified against repo at plan write-time):
+- `app/api/analyze-meal/route.ts` (SSE writer)
+- `hooks/use-stream-analysis.ts` (SSE event consumer; deserializes the stream into typed events)
+- `hooks/use-analyze-meal.ts` (mutation wrapper; usually only needs type updates if it re-exports event types)
+- A component under `components/` that consumes the hook (only if it indexes events by name/order — find via grep)
+
+Update the **Files** list at the top of this task with the concrete paths discovered. If the grep returns no client-side consumer, that means SSE deserialization happens inline in a page component — record that path instead. **Do not proceed to Step 1 until the file list is concrete.**
 
 - [ ] **Step 1: Locate SSE emit sites**
 
-Run: `grep -n "item_name\|item_macros" lib/ai/pipeline/orchestrator.ts app/api/meals/`
+Run: `grep -n "item_name\|item_macros" lib/ai/pipeline/orchestrator.ts app/api/analyze-meal/`
 Note every location where the events are emitted or consumed.
 
 - [ ] **Step 2: Write the failing test**
 
-Add to `lib/ai/pipeline/__tests__/orchestrator-sse.test.ts` (create if absent):
+Add to `lib/ai/pipeline/__tests__/orchestrator-sse.test.ts` (create if absent). Drive `runPipeline` directly with a minimal in-memory event collector — no HTTP layer needed:
 
 ```ts
+import { describe, it, expect, vi } from 'vitest';
+import { runPipeline } from '@/lib/ai/pipeline/orchestrator';
+// Reuse existing mock helpers (see lib/ai/__tests__/test-helpers.ts) for
+// google-genai + matching mocks. The point is: collect every onEvent payload
+// and assert the SSE invariants on it.
+
 it('item_name SSE events include mealItemId', async () => {
-  const events = await collectSseEvents(/* ... */);
-  for (const e of events.filter((x) => x.type === 'item_name')) {
+  const events: Array<{ type: string; payload: any }> = [];
+  await runPipeline({
+    text: 'Một tô phở bò và rau muống xào',
+    userContext: /* fixture */ {} as any,
+    onEvent: (e) => events.push(e),
+  });
+  const names = events.filter((x) => x.type === 'item_name');
+  expect(names.length).toBeGreaterThan(0);
+  for (const e of names) {
     expect(e.payload.mealItemId).toMatch(/^[0-9a-f-]{36}$/i);
   }
 });
+
 it('item_macros SSE events include ingredientId and mealItemId', async () => {
-  const events = await collectSseEvents(/* ... */);
-  for (const e of events.filter((x) => x.type === 'item_macros')) {
+  const events: Array<{ type: string; payload: any }> = [];
+  await runPipeline({
+    text: 'Một tô phở bò và rau muống xào',
+    userContext: /* fixture */ {} as any,
+    onEvent: (e) => events.push(e),
+  });
+  const macros = events.filter((x) => x.type === 'item_macros');
+  expect(macros.length).toBeGreaterThan(0);
+  for (const e of macros) {
     expect(e.payload.ingredientId).toMatch(/^[0-9a-f-]{36}$/i);
     expect(e.payload.mealItemId).toMatch(/^[0-9a-f-]{36}$/i);
   }
 });
+
+it('item_name and item_macros for the same logical slot share mealItemId', async () => {
+  const events: Array<{ type: string; payload: any }> = [];
+  await runPipeline({
+    text: 'Một tô phở bò',
+    userContext: /* fixture */ {} as any,
+    onEvent: (e) => events.push(e),
+  });
+  const nameIds = new Set(
+    events.filter((x) => x.type === 'item_name').map((e) => e.payload.mealItemId),
+  );
+  const macroIds = new Set(
+    events.filter((x) => x.type === 'item_macros').map((e) => e.payload.mealItemId),
+  );
+  // Every macro mealItemId must have appeared as an item_name first.
+  for (const id of macroIds) {
+    expect(nameIds.has(id)).toBe(true);
+  }
+});
 ```
+
+The third test is the critical one — it enforces that streaming-emitted `item_name` ids match post-parse `item_macros` ids. Step 4 below specifies how to make that hold.
 
 - [ ] **Step 3: Run test to verify it fails**
 
 Run: `bun run test lib/ai/pipeline/__tests__/orchestrator-sse.test.ts`
 Expected: FAIL.
 
-- [ ] **Step 4: Add the ids to event payloads**
+- [ ] **Step 4: Add the ids to event payloads — and resolve the streaming-vs-post-parse ordering gap**
 
-In `orchestrator.ts`, every `controller.enqueue(...)` (or equivalent emitter) for `item_name` and `item_macros` carries `mealItemId` and (for macros) `ingredientId`. Type the SSE event union accordingly.
+The orchestrator emits `item_name` from inside the `composedOnChunk` streaming callback (via `extractMealItemNames(accumulated, …)`) **before** Call 1 parsing finishes — so before `ensureIdsOnDecomposition` (Task 1.9) has assigned `mealItemId`. The fix:
+
+1. Maintain a `Map<string /* mealItemName */, string /* mealItemId */>` inside the orchestrator scope, populated lazily by the streaming callback. When `extractMealItemNames` yields a new name, mint a fresh UUID, store it in the map, and emit `item_name` with that id.
+2. After the Call 1 stream completes and the JSON is parsed, **before** invoking `ensureIdsOnDecomposition`, walk the parsed `mealItems` and copy ids from the streaming map by `mealItemName` (exact match). Only items whose name was not seen during streaming (rare — JSON-parse-only tail) will reach `ensureIdsOnDecomposition` without an id and get one minted there.
+3. `ensureIdsOnDecomposition` MUST preserve any pre-existing `mealItemId` (already its contract per Task 1.9). Add a unit test confirming it does not regenerate ids on items that already have one.
+
+This guarantees the third assertion in Step 2 (`item_name` ids ⊇ `item_macros` ids).
+
+Then, in `orchestrator.ts`, every `controller.enqueue(...)` (or equivalent emitter) for `item_name` and `item_macros` carries `mealItemId` and (for macros) `ingredientId`. Type the SSE event union accordingly.
 
 - [ ] **Step 5: Update SSE route serializer**
 
-`app/api/meals/analyze/route.ts`: ensure the JSON payload passes `mealItemId`/`ingredientId` straight through; no schema change needed if it just stringifies the event object.
+`app/api/analyze-meal/route.ts`: ensure the JSON payload passes `mealItemId`/`ingredientId` straight through; no schema change needed if it just stringifies the event object.
 
 - [ ] **Step 6: Update client consumer types**
 
@@ -1271,8 +1568,8 @@ Expected: PASS.
 
 ```bash
 git add lib/ai/pipeline/orchestrator.ts \
-  app/api/meals/analyze/route.ts \
-  hooks/use-meal-analysis.ts \
+  app/api/analyze-meal/route.ts \
+  <client SSE consumer files from Step 0> \
   lib/ai/pipeline/__tests__/orchestrator-sse.test.ts
 git commit -m "feat(ai/pipeline): id-keyed SSE events for retry replacement
 
@@ -1282,6 +1579,32 @@ same logical slot even if Call 2 ordering shifts on retry.
 
 Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>"
 ```
+
+---
+
+### Chunk 1c — outcome verification
+
+After Chunk 1c ships:
+
+- [ ] Decomposition Zod schema requires `mealItemId` and `ingredientId` (uuid).
+- [ ] `ensureIdsOnDecomposition` mints ids for legacy/missing rows and is idempotent.
+- [ ] `assembly.ts` and `validation.ts` use id-keyed lookups; no `Map<ingredientName, ...>` collisions.
+- [ ] SSE `item_name` and `item_macros` events carry `mealItemId` (and `ingredientId` for macros).
+- [ ] Streaming `item_name` ids match post-parse `item_macros` ids for the same meal item.
+- [ ] `IngredientLlmNutrition` carries optional `ingredientId` (Chunk 3 will tighten).
+- [ ] `bun run test lib/ai/pipeline/__tests__/` passes.
+
+The `pipeline_runs` row writer and Chunk 1 final sweep land in Chunk 1d.
+
+---
+
+## Chunk 1d: §0 Foundations — Part D (telemetry writer + final sweep)
+
+**Spec sections:** §0.4 row writer wiring · final §0 verification.
+
+**Why split out:** Tasks 1.13 and 1.14 close §0 by writing the telemetry row at orchestrator end and running the full lint/test sweep. They're cleanly separable from the id-plumbing in 1c — and splitting keeps every chunk under the 1000-line cap.
+
+**Outcome:** `pipeline_runs` row is written per orchestrator run (success or error path) with the Principle A guardrail enforced at the writer boundary. Full lint + test suite green for the entire §0 Foundations block (Chunks 1a + 1b + 1c + 1d).
 
 ---
 
@@ -1344,9 +1667,26 @@ describe('buildPipelineRunRow', () => {
   it('rejects payload that includes goal/aggression in promptPersonalizationFields', () => {
     expect(() =>
       buildPipelineRunRow({
-        // ...
+        userId: 'u-1',
+        requestId: 'req-1',
+        modelCall1: 'gemini-2.5-flash-lite',
+        modelCall2: 'gemini-2.5-flash-lite',
+        timings: { decompose: 1, match: 1, nutrition: 1, total: 3 },
+        counts: { ingredient: 1, matched: 1, unmatched: 0 },
+        anomalyTypes: [],
+        counters: {
+          preMatchAliasHits: 0,
+          cookedToRawFactorFires: 0,
+          densityEnvelopeFires: 0,
+          macroInconsistentFires: 0,
+          dbStateUnknownFires: 0,
+          retryStep2Count: 0,
+        },
+        escalated: false,
+        cacheHitL4: false,
+        retryCount: 0,
         promptPersonalizationFields: ['goal'],
-      } as any)
+      })
     ).toThrow(/goal|aggression/i);
   });
 });
@@ -1508,44 +1848,53 @@ Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>"
 
 ---
 
-### Task 1.14: Lint + full test sweep for Chunk 1
+### Task 1.14: Lint + full test sweep for §0 Foundations
 
 **Files:** none new
 
 - [ ] **Step 1: Lint**
 
 Run: `bunx @biomejs/biome@2.4.2 check .`
-Expected: 0 errors. Fix any new findings introduced by this chunk.
+Expected: 0 errors. Fix any new findings introduced across Chunks 1a–1d.
 
 - [ ] **Step 2: Test**
 
-Run: `bun --env-file=.env.local vitest run`
-Expected: full suite green. (Tests that touch the remote DB need the env file; non-DB tests would also pass without it but using the env file keeps everything consistent.)
+Run (with remote-DB credentials in `.env.local`): `bun --env-file=.env.local vitest run`
+Expected: full suite green.
+
+If you don't have remote-DB credentials configured locally, run the non-DB suite instead — DB-touching tests live under `lib/db/__tests__/` and `lib/ai/matching/__tests__/cascade*.test.ts` (per AGENTS.md DB-tests gotcha):
+
+```bash
+bun run test  # vitest, all non-DB tests
+```
+
+…then make sure the omitted DB tests pass in CI before merging.
 
 - [ ] **Step 3: Sanity-check the migrations are well-ordered**
 
 Run: `ls supabase/migrations/ | sort | tail -10`
 Confirm the order is:
 1. `<orig>_add_pipeline_requests_table.sql`
-2. `<this chunk>_add_pipeline_runs_table.sql`
-3. `<this chunk>_pipeline_runs_rls.sql`
-4. `<this chunk>_pipeline_requests_privacy.sql`
-5. (optional) `<this chunk>_match_functions_return_state.sql`
+2. `<Chunk 1a ts>_add_pipeline_runs_table.sql`
+3. `<Chunk 1a ts+1>_pipeline_runs_rls.sql`
+4. `<Chunk 1a ts+2>_pipeline_requests_privacy.sql`
+5. (optional, Chunk 1b) `<Chunk 1b ts>_match_functions_return_state.sql`
 
 - [ ] **Step 4: No commit (verification only)**
 
-If everything is green, Chunk 1 is complete. Open a draft PR or proceed to Chunk 2.
+If everything is green, §0 Foundations (Chunks 1a/1b/1c/1d) is complete. Proceed to Chunk 2.
 
 ---
 
-### Chunk 1 — outcome verification
+### Chunk 1d — outcome verification (covers all of §0)
 
-After Chunk 1 ships, the system should:
+After Chunks 1a + 1b + 1c + 1d ship together, the system should:
 
-- Write a `pipeline_runs` row per run with the version constants populated.
+- Write a `pipeline_runs` row per run with the version constants populated and Principle A guardrail enforced.
 - Emit `mealItemId` and `ingredientId` in every SSE `item_name`/`item_macros` event.
 - Carry `dbState` from the matching layer to the `MatchedIngredient` (consumed by Chunk 2).
 - Have `pipeline_requests` retention reduced to 7 days with service-role-only RLS.
+- Use id-keyed lookups in `assembly.ts` and `validation.ts` (no name-keyed collisions).
 - Pass all sentinel-friendly tests (Chunk 2 sentinel tests build on the personalization-field telemetry from this chunk).
 
 **No user-facing behavior change is expected.** The only observable difference for end users is that retry-pass nutrition now overwrites by id, which fixes a latent retry-replacement bug but is not visible until §4.4-style retries fire.
