@@ -1,4 +1,5 @@
 import type { NextRequest } from 'next/server';
+import { NextResponse } from 'next/server';
 import createMiddleware from 'next-intl/middleware';
 import { routing } from '@/i18n/navigation';
 import { updateSession } from '@/lib/supabase/middleware';
@@ -6,9 +7,12 @@ import { updateSession } from '@/lib/supabase/middleware';
 const intlMiddleware = createMiddleware(routing);
 
 export async function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+  if (pathname.startsWith('/admin')) {
+    return await updateSession(request, NextResponse.next());
+  }
   const intlResponse = intlMiddleware(request);
-  const supabaseResponse = await updateSession(request, intlResponse);
-  return supabaseResponse;
+  return await updateSession(request, intlResponse);
 }
 
 export const config = {
