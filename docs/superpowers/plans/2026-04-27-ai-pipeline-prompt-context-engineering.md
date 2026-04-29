@@ -6709,3 +6709,547 @@ After all six tasks land:
 
 ---
 
+
+## Chunk 7 — §2.4 RRF measurement (Phase A logging only; Phase B is post-launch decision)
+
+> **Spec anchors:** §2.4 (lines 320–329). RRF fusion is **gated behind measurement, not v1 default**. This chunk ships only **Phase A** — the logging infrastructure that captures both candidate lists for a sample of meals, the disagreement metric, and the latency cost. Phase B (actually shipping RRF) is a post-launch decision driven by Phase A data, NOT this plan.
+>
+> **Locked decisions for Chunk 7:**
+> - **Production cascade behavior is unchanged.** Today: vector-first-with-early-return at `source-matching.ts:160`. Phase A does NOT change this — it only adds parallel fuzzy execution behind a flag, on a sample, for measurement. If the flag is off (default), zero new behavior.
+> - **Phase A is opt-in via feature flag**, defaulting OFF in production. `RRF_MEASUREMENT_ENABLED=true` + `RRF_SAMPLE_RATE=0.05` (5%) is the recommended initial config for staging or low-traffic windows.
+> - **Sampling is deterministic per-request** (same hash strategy as the shadow runner from Chunk 4). A request either samples for RRF measurement or doesn't — the decision is reproducible from `requestId`.
+> - **Disagreement metric is `% of ingredients where top vector ≠ top fuzzy`** by `(canonical_name, source)` pair (spec §2.4 line 326). The "precision delta on changed matches" requires labeled ground truth — that comes from the eval suite (Chunk 4 §5), not this chunk's logging.
+> - **NO RRF score formula in this chunk.** RRF compute is Phase B. We only log enough data that Phase B can compute scores offline.
+> - **Latency cost** is captured by timing the parallel-fuzzy branch separately; logged to `pipeline_runs` as a new column `rrf_measurement_latency_ms` (nullable when not sampled).
+> - **No PII in the candidate logs** — only `canonicalName`, `source`, `similarity`, `state`. The user's input ingredient name (`rawName`) is already in `pipeline_runs.input_text` per Chunk 1d, so we don't duplicate it here.
+
+### Task 7.1: Sampling decision + feature-flag plumbing
+
+> **Why first:** every other task in this chunk reads `shouldSampleForRrf(requestId)`. Land it before the measurement code paths.
+
+- [ ] **Step 1: Write the failing tests**
+
+`lib/ai/matching/__tests__/rrf-sampling.test.ts` (NEW):
+
+```ts
+import { describe, expect, it, beforeEach, afterEach, vi } from 'vitest';
+import { shouldSampleForRrf, RRF_FLAG_KEY, RRF_RATE_KEY } from '../rrf-sampling';
+
+describe('shouldSampleForRrf — deterministic per-request hash sampling (§2.4)', () => {
+  beforeEach(() => {
+    vi.stubEnv(RRF_FLAG_KEY, 'true');
+    vi.stubEnv(RRF_RATE_KEY, '0.05');
+  });
+  afterEach(() => vi.unstubAllEnvs());
+
+  it('returns false when the flag is off, regardless of rate', () => {
+    vi.stubEnv(RRF_FLAG_KEY, 'false');
+    vi.stubEnv(RRF_RATE_KEY, '1.0');
+    expect(shouldSampleForRrf('req_abc')).toBe(false);
+  });
+
+  it('returns true at rate=1.0 (everything sampled)', () => {
+    vi.stubEnv(RRF_RATE_KEY, '1.0');
+    expect(shouldSampleForRrf('req_abc')).toBe(true);
+    expect(shouldSampleForRrf('req_xyz')).toBe(true);
+  });
+
+  it('returns false at rate=0.0 (nothing sampled)', () => {
+    vi.stubEnv(RRF_RATE_KEY, '0.0');
+    expect(shouldSampleForRrf('req_abc')).toBe(false);
+  });
+
+  it('is deterministic per requestId across calls', () => {
+    const a = shouldSampleForRrf('req_stable');
+    const b = shouldSampleForRrf('req_stable');
+    const c = shouldSampleForRrf('req_stable');
+    expect(a).toBe(b);
+    expect(b).toBe(c);
+  });
+
+  it('produces approximately the configured rate over a large sample (statistical)', () => {
+    vi.stubEnv(RRF_RATE_KEY, '0.05');
+    let hits = 0;
+    const n = 10000;
+    for (let i = 0; i < n; i++) {
+      if (shouldSampleForRrf(`req_${i}`)) hits++;
+    }
+    const observedRate = hits / n;
+    // 95% binomial CI for n=10k, p=0.05 is roughly [0.0457, 0.0543].
+    // Use a generous tolerance to keep the test stable.
+    expect(observedRate).toBeGreaterThan(0.035);
+    expect(observedRate).toBeLessThan(0.065);
+  });
+
+  it('rejects malformed RRF_SAMPLE_RATE (returns false; logs once)', () => {
+    vi.stubEnv(RRF_RATE_KEY, 'not-a-number');
+    expect(shouldSampleForRrf('req_abc')).toBe(false);
+  });
+
+  it('clamps RRF_SAMPLE_RATE > 1.0 to 1.0 and < 0 to 0', () => {
+    vi.stubEnv(RRF_RATE_KEY, '1.5');
+    expect(shouldSampleForRrf('req_abc')).toBe(true);
+    vi.stubEnv(RRF_RATE_KEY, '-0.1');
+    expect(shouldSampleForRrf('req_abc')).toBe(false);
+  });
+});
+```
+
+Run: `bun run test lib/ai/matching/__tests__/rrf-sampling.test.ts`. Expected: FAIL — module does not exist.
+
+- [ ] **Step 2: Implement `rrf-sampling.ts`**
+
+```ts
+// lib/ai/matching/rrf-sampling.ts
+//
+// Spec §2.4. Deterministic per-request hash sampling for RRF Phase A
+// measurement. Same hashing approach as the shadow runner (Chunk 4) so a
+// request that samples for RRF behaves predictably across reruns/replays.
+
+import { createHash } from 'node:crypto';
+
+export const RRF_FLAG_KEY = 'RRF_MEASUREMENT_ENABLED';
+export const RRF_RATE_KEY = 'RRF_SAMPLE_RATE';
+
+function parseRate(raw: string | undefined): number {
+  if (!raw) return 0;
+  const n = Number(raw);
+  if (!Number.isFinite(n)) return 0;
+  if (n < 0) return 0;
+  if (n > 1) return 1;
+  return n;
+}
+
+/**
+ * Hash requestId to a [0, 1) bucket. Stable across processes — uses sha256
+ * (no env-dependent RNG seed). Same approach as Chunk 4's shadow sampling.
+ */
+function bucket(requestId: string): number {
+  const h = createHash('sha256').update(requestId).digest();
+  // Use first 4 bytes as uint32 → divide by 2^32.
+  const u32 = h.readUInt32BE(0);
+  return u32 / 0x1_0000_0000;
+}
+
+export function shouldSampleForRrf(requestId: string): boolean {
+  if (process.env[RRF_FLAG_KEY] !== 'true') return false;
+  const rate = parseRate(process.env[RRF_RATE_KEY]);
+  if (rate === 0) return false;
+  if (rate === 1) return true;
+  return bucket(requestId) < rate;
+}
+```
+
+Run the test. Expected: PASS.
+
+- [ ] **Step 3: Commit**
+
+```bash
+git add lib/ai/matching/rrf-sampling.ts \
+        lib/ai/matching/__tests__/rrf-sampling.test.ts
+git commit -m "feat(matching): RRF Phase A sampling decision (§2.4)
+
+Deterministic per-request hash sampling. Defaults OFF
+(RRF_MEASUREMENT_ENABLED unset). Mirrors Chunk 4 shadow-sampling approach.
+
+Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>"
+```
+
+---
+
+### Task 7.2: Parallel-fuzzy candidate capture (logging only, no behavior change)
+
+> **Goal:** when a request samples for RRF, ALSO run the fuzzy lookup even when vector won, and log both top-k lists. Production cascade still returns the vector winner — fuzzy result is for measurement only.
+
+- [ ] **Step 1: Write the failing tests**
+
+`lib/ai/matching/__tests__/rrf-measurement.test.ts` (NEW):
+
+```ts
+import { describe, expect, it, vi } from 'vitest';
+import { captureRrfCandidates } from '../rrf-measurement';
+import type { FuzzyMatchRow } from '../source-matching';
+
+const row = (
+  canonicalName: string,
+  similarity: number,
+  source: 'fao' | 'usda' = 'fao'
+): FuzzyMatchRow => ({
+  // ... full FuzzyMatchRow shape; canonical_name + similarity + source_id
+  canonical_name: canonicalName,
+  similarity,
+  source_id: source === 'fao' ? 1 : 2,
+} as FuzzyMatchRow);
+
+describe('captureRrfCandidates — Phase A logging shape (§2.4)', () => {
+  it('returns top-k from each list, normalized to {canonicalName, source, similarity, state}', () => {
+    const out = captureRrfCandidates({
+      vectorRows: [row('Cá quả', 0.91), row('Cá lóc', 0.85)],
+      fuzzyRows: [row('Cá quả', 0.78), row('Cá thu', 0.62)],
+      topK: 3,
+    });
+    expect(out.vectorTop[0].canonicalName).toBe('Cá quả');
+    expect(out.vectorTop[0].source).toBe('fao');
+    expect(out.fuzzyTop[0].canonicalName).toBe('Cá quả');
+    // No raw row internals leak through.
+    expect(out.vectorTop[0]).not.toHaveProperty('source_id');
+  });
+
+  it('flags topVectorEqualsTopFuzzy when top-1 of each list match by (canonicalName, source)', () => {
+    const a = captureRrfCandidates({
+      vectorRows: [row('Cá quả', 0.91)],
+      fuzzyRows: [row('Cá quả', 0.78)],
+      topK: 3,
+    });
+    expect(a.topVectorEqualsTopFuzzy).toBe(true);
+
+    const b = captureRrfCandidates({
+      vectorRows: [row('Cá quả', 0.91)],
+      fuzzyRows: [row('Cá thu', 0.78)],
+      topK: 3,
+    });
+    expect(b.topVectorEqualsTopFuzzy).toBe(false);
+  });
+
+  it('considers source as part of the equality check (same name, different source = not equal)', () => {
+    const out = captureRrfCandidates({
+      vectorRows: [row('Cá quả', 0.91, 'fao')],
+      fuzzyRows: [row('Cá quả', 0.78, 'usda')],
+      topK: 3,
+    });
+    expect(out.topVectorEqualsTopFuzzy).toBe(false);
+  });
+
+  it('handles empty lists gracefully (no crash, flag=false)', () => {
+    const out = captureRrfCandidates({ vectorRows: [], fuzzyRows: [], topK: 3 });
+    expect(out.vectorTop).toEqual([]);
+    expect(out.fuzzyTop).toEqual([]);
+    expect(out.topVectorEqualsTopFuzzy).toBe(false);
+  });
+
+  it('truncates each list to topK', () => {
+    const many = Array.from({ length: 10 }, (_, i) => row(`X${i}`, 1 - i * 0.05));
+    const out = captureRrfCandidates({
+      vectorRows: many,
+      fuzzyRows: many,
+      topK: 3,
+    });
+    expect(out.vectorTop).toHaveLength(3);
+    expect(out.fuzzyTop).toHaveLength(3);
+  });
+});
+```
+
+Run: FAIL — module missing.
+
+- [ ] **Step 2: Implement `rrf-measurement.ts`**
+
+```ts
+// lib/ai/matching/rrf-measurement.ts
+//
+// Spec §2.4 Phase A. Logging-only candidate capture. NEVER changes the
+// match winner returned to production.
+
+import type { FuzzyMatchRow } from './source-matching';
+
+export interface RrfCandidate {
+  canonicalName: string;
+  source: 'fao' | 'usda';
+  similarity: number;
+  state: 'raw' | 'cooked' | 'unknown';
+}
+
+export interface RrfCaptureInput {
+  vectorRows: FuzzyMatchRow[];
+  fuzzyRows: FuzzyMatchRow[];
+  topK: number;
+}
+
+export interface RrfCaptureOutput {
+  vectorTop: RrfCandidate[];
+  fuzzyTop: RrfCandidate[];
+  topVectorEqualsTopFuzzy: boolean;
+}
+
+function normalize(rows: FuzzyMatchRow[], topK: number): RrfCandidate[] {
+  return rows.slice(0, topK).map((r) => ({
+    canonicalName: r.canonical_name,
+    source: r.source_id === 1 ? 'fao' : 'usda',
+    similarity: r.similarity,
+    state:
+      r.state === 'raw' ? 'raw' : r.state === 'cooked' ? 'cooked' : 'unknown',
+  }));
+}
+
+export function captureRrfCandidates(input: RrfCaptureInput): RrfCaptureOutput {
+  const vectorTop = normalize(input.vectorRows, input.topK);
+  const fuzzyTop = normalize(input.fuzzyRows, input.topK);
+  const eq =
+    vectorTop.length > 0 &&
+    fuzzyTop.length > 0 &&
+    vectorTop[0].canonicalName === fuzzyTop[0].canonicalName &&
+    vectorTop[0].source === fuzzyTop[0].source;
+  return { vectorTop, fuzzyTop, topVectorEqualsTopFuzzy: eq };
+}
+```
+
+- [ ] **Step 3: Wire into `matchSingleIngredientWithEmbedding`**
+
+In `lib/ai/matching/source-matching.ts`, when `shouldSampleForRrf(requestId)` returns true, ALWAYS run the fuzzy query in parallel with vector — even when vector finds a winner. The fuzzy result is captured for logging but never returned as the winner.
+
+Current cascade (line 160): `if (vectorWinner) return vectorWinner;`. Modified shape:
+
+```ts
+const sampled = shouldSampleForRrf(requestId);
+const fuzzyPromise = sampled
+  ? Promise.all([
+      db.execute(sql`SELECT * FROM fuzzy_match_ingredients_by_source(${ingredientName}, ${SOURCE_FAO}, 3, 0.15)`),
+      db.execute(sql`SELECT * FROM fuzzy_match_ingredients_by_source(${ingredientName}, ${SOURCE_USDA}, 3, 0.15)`),
+    ])
+  : null;
+
+// ... existing vector cascade unchanged ...
+
+if (vectorWinner) {
+  if (sampled) {
+    const t0 = performance.now();
+    const [faoFuzzyRows, usdaFuzzyRows] = await fuzzyPromise!;
+    const fuzzyRowsAll = [
+      ...(faoFuzzyRows as unknown as FuzzyMatchRow[]),
+      ...(usdaFuzzyRows as unknown as FuzzyMatchRow[]),
+    ];
+    const vectorRowsAll = [
+      ...(faoVectorRows as unknown as FuzzyMatchRow[]),
+      ...(usdaVectorRows as unknown as FuzzyMatchRow[]),
+    ];
+    const captured = captureRrfCandidates({
+      vectorRows: vectorRowsAll,
+      fuzzyRows: fuzzyRowsAll,
+      topK: 3,
+    });
+    rrfMeasurements.push({
+      ingredientName,
+      latencyMs: performance.now() - t0,
+      ...captured,
+    });
+  }
+  return vectorWinner;
+}
+```
+
+> **Critical:** the parallel fuzzy execution begins BEFORE the vector cascade so we don't add serial latency for sampled requests. The total wall-time delta is `max(0, fuzzyLatency - vectorLatency)`, captured separately for the latency-cost metric.
+
+Thread `requestId` and a per-request `rrfMeasurements: RrfMeasurement[]` accumulator through `matchSingleIngredientWithEmbedding`'s call signature. Add to the outer `matchIngredients` orchestrator, returned alongside the existing match results.
+
+- [ ] **Step 4: Run the suite + lint**
+
+```bash
+bun run test
+bunx @biomejs/biome@2.4.2 check .
+```
+
+The flag-off path must produce zero behavioral change — assert via the existing matching tests staying green without any modifications.
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add lib/ai/matching/rrf-measurement.ts \
+        lib/ai/matching/__tests__/rrf-measurement.test.ts \
+        lib/ai/matching/source-matching.ts
+git commit -m "feat(matching): RRF Phase A candidate capture (§2.4)
+
+Logging-only. Production cascade unchanged. When sampled, runs fuzzy in
+parallel with vector and captures normalized top-k from each list.
+topVectorEqualsTopFuzzy is the §2.4 disagreement metric.
+
+Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>"
+```
+
+---
+
+### Task 7.3: Aggregate measurements into `pipeline_runs` row
+
+> Per-meal aggregate metrics roll up to `pipeline_runs` (the same telemetry table from Chunk 1d). No per-ingredient row blob — keep the schema flat, queryable, and small.
+
+- [ ] **Step 1: Add Drizzle columns**
+
+Add to `pipelineRuns` in `lib/db/schema.ts`:
+
+```ts
+rrfSampled: boolean('rrf_sampled').notNull().default(false),
+rrfDisagreementCount: smallint('rrf_disagreement_count'),       // null when not sampled
+rrfIngredientsObserved: smallint('rrf_ingredients_observed'),   // null when not sampled
+rrfMeasurementLatencyMs: smallint('rrf_measurement_latency_ms'), // max across ingredients in this run
+```
+
+> **Why nullable, not 0-default:** zero is a meaningful value (sampled, all matched). NULL is the unambiguous "not sampled" signal — easy to filter in SQL: `WHERE rrf_sampled = true`.
+
+```bash
+bun db:generate
+# Rename migration: <ts>_add_pipeline_runs_rrf_phase_a.sql
+# Update meta/_journal.json tag
+```
+
+- [ ] **Step 2: Write the failing test**
+
+`lib/ai/pipeline/__tests__/rrf-aggregation.test.ts` (NEW):
+
+```ts
+import { describe, expect, it } from 'vitest';
+import { aggregateRrfMeasurements } from '../rrf-aggregation';
+
+describe('aggregateRrfMeasurements (§2.4)', () => {
+  it('returns null fields when no measurements (not sampled)', () => {
+    expect(aggregateRrfMeasurements([])).toEqual({
+      rrfSampled: false,
+      rrfDisagreementCount: null,
+      rrfIngredientsObserved: null,
+      rrfMeasurementLatencyMs: null,
+    });
+  });
+
+  it('counts disagreements (top vector ≠ top fuzzy)', () => {
+    const out = aggregateRrfMeasurements([
+      { topVectorEqualsTopFuzzy: true, latencyMs: 12 },
+      { topVectorEqualsTopFuzzy: false, latencyMs: 18 },
+      { topVectorEqualsTopFuzzy: false, latencyMs: 9 },
+    ]);
+    expect(out.rrfSampled).toBe(true);
+    expect(out.rrfDisagreementCount).toBe(2);
+    expect(out.rrfIngredientsObserved).toBe(3);
+    expect(out.rrfMeasurementLatencyMs).toBe(18); // max
+  });
+
+  it('rounds latency to integer milliseconds', () => {
+    const out = aggregateRrfMeasurements([
+      { topVectorEqualsTopFuzzy: false, latencyMs: 14.7 },
+    ]);
+    expect(out.rrfMeasurementLatencyMs).toBe(15);
+  });
+});
+```
+
+- [ ] **Step 3: Implement `rrf-aggregation.ts`**
+
+```ts
+// lib/ai/pipeline/rrf-aggregation.ts
+
+export interface RrfMeasurement {
+  topVectorEqualsTopFuzzy: boolean;
+  latencyMs: number;
+}
+
+export interface RrfAggregate {
+  rrfSampled: boolean;
+  rrfDisagreementCount: number | null;
+  rrfIngredientsObserved: number | null;
+  rrfMeasurementLatencyMs: number | null;
+}
+
+export function aggregateRrfMeasurements(
+  measurements: readonly RrfMeasurement[]
+): RrfAggregate {
+  if (measurements.length === 0) {
+    return {
+      rrfSampled: false,
+      rrfDisagreementCount: null,
+      rrfIngredientsObserved: null,
+      rrfMeasurementLatencyMs: null,
+    };
+  }
+  const disagreements = measurements.filter((m) => !m.topVectorEqualsTopFuzzy).length;
+  const maxLatency = Math.max(...measurements.map((m) => m.latencyMs));
+  return {
+    rrfSampled: true,
+    rrfDisagreementCount: disagreements,
+    rrfIngredientsObserved: measurements.length,
+    rrfMeasurementLatencyMs: Math.round(maxLatency),
+  };
+}
+```
+
+- [ ] **Step 4: Wire aggregate into `buildPipelineRunRow`**
+
+The matching orchestrator returns a `RrfMeasurement[]`. The pipeline orchestrator passes it to `aggregateRrfMeasurements` and spreads the result into `pipelineRunRow`. When the request was not sampled, the array is empty → all four columns are NULL.
+
+- [ ] **Step 5: Run the suite + lint, commit**
+
+```bash
+git add lib/ai/pipeline/rrf-aggregation.ts \
+        lib/ai/pipeline/__tests__/rrf-aggregation.test.ts \
+        lib/db/schema.ts \
+        supabase/migrations/ \
+        lib/ai/pipeline/orchestrator.ts
+git commit -m "feat(pipeline): RRF Phase A aggregate columns on pipeline_runs (§2.4)
+
+rrf_sampled / rrf_disagreement_count / rrf_ingredients_observed /
+rrf_measurement_latency_ms. Nullable when not sampled. NULL is the
+unambiguous 'not sampled' signal.
+
+Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>"
+```
+
+---
+
+### Task 7.4: Phase B gating documentation in the spec versions table + plan README
+
+> Phase B (actually shipping RRF) is a post-launch decision, NOT in this plan. But we owe the future implementer a clear gate so the decision is data-driven, not vibes-driven.
+
+- [ ] **Step 1: Add a `docs/superpowers/notes/rrf-phase-b-gate.md` note**
+
+```md
+# RRF Phase B Gate (§2.4)
+
+Phase A logs candidate disagreement on a sample of meals. Phase B (shipping RRF as the v1 default) requires:
+
+1. **Disagreement rate.** `rrf_disagreement_count / rrf_ingredients_observed` averaged over a 7-day window with at least 1,000 sampled meals. If this rate is < 5%, RRF cannot meaningfully change outcomes — defer.
+2. **Precision lift on changed matches.** Cross-reference the disagreement set against the eval suite's labeled ground truth (Chunk 4 §5). If the changed-match precision delta is < 2 percentage points, defer.
+3. **Latency budget.** `p95(rrf_measurement_latency_ms)` MUST be < 30% of current p95 match latency. If parallel fuzzy meaningfully degrades the cascade, defer or scope down (e.g., fuzzy only when vector confidence < threshold).
+
+When all three pass, Phase B is a separate plan: implement the RRF score formula, change `pickBestSource` to fuse rather than choose, and ramp via the same `RRF_MEASUREMENT_ENABLED` flag with `RRF_PRODUCTION_MODE=fuse`.
+
+Until then: Phase A logging stays on at low sample rate (≤ 5%) so the data set keeps growing.
+```
+
+- [ ] **Step 2: Commit**
+
+```bash
+git add docs/superpowers/notes/rrf-phase-b-gate.md
+git commit -m "docs(rrf): Phase B shipping gate criteria (§2.4)
+
+Three gates: disagreement rate >= 5%, precision lift >= 2pp, latency p95
+<= 30% budget. Until met, Phase A logging continues; no production change.
+
+Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>"
+```
+
+---
+
+### Chunk 7 — outcome verification
+
+After all four tasks land:
+
+- [ ] `lib/ai/matching/rrf-sampling.ts` exports `shouldSampleForRrf(requestId)`. Off by default (`RRF_MEASUREMENT_ENABLED` unset). Deterministic per request. Statistical test passes (5% sample rate produces ~5% hits over 10k draws).
+- [ ] `lib/ai/matching/rrf-measurement.ts` exports `captureRrfCandidates(...)`. Returns normalized top-k of each list and the `topVectorEqualsTopFuzzy` flag. No PII (no `rawName`, `userId`, etc.).
+- [ ] `matchSingleIngredientWithEmbedding` runs fuzzy in parallel with vector ONLY when sampled. When the flag is off, zero behavioral change — verified by existing matching tests staying green without modification.
+- [ ] `pipeline_runs` has four new columns: `rrf_sampled` (bool, default false), `rrf_disagreement_count` (smallint, nullable), `rrf_ingredients_observed` (smallint, nullable), `rrf_measurement_latency_ms` (smallint, nullable). NULL means "not sampled."
+- [ ] `aggregateRrfMeasurements([])` returns `{rrfSampled: false, ...nulls}` so unsampled runs persist NULLs cleanly.
+- [ ] `docs/superpowers/notes/rrf-phase-b-gate.md` documents the three Phase B gates (disagreement >= 5%, precision lift >= 2pp, latency p95 <= 30% budget).
+- [ ] Production cascade behavior unchanged when `RRF_MEASUREMENT_ENABLED` is unset (the default in production).
+- [ ] `bun run test` + `bunx @biomejs/biome@2.4.2 check .` both green.
+- [ ] Four atomic commits with conventional-commit format + `Co-authored-by: Copilot` trailer.
+
+---
+
+## Plan complete
+
+All seven chunks (1a–1d, 2, 3, 4, 5, 6, 7) drafted, reviewed, and locked. Implementation can begin from Chunk 1a (foundations) and proceed in order — each chunk's prerequisites are explicitly the chunks before it.
+
+**Cross-cutting reminders for the implementer:**
+- Bun runtime, lint pinned `bunx @biomejs/biome@2.4.2 check .`, tests `bun run test`.
+- Conventional commits with `Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>` trailer on every commit.
+- TDD: red → green → refactor → commit per task step. Each task is multiple commits; never mix unrelated changes.
+- `bun dbr:push` is user-only — do not run from agent.
+- Vietnamese diacritics are semantically load-bearing — never unaccent.
+- Principle A (no goal/aggression/calorieTarget leak into prompts) and Principle B (no behavior-conditioned routing) are enforced by sentinel and regression tests; never disable them.
+
