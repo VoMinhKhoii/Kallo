@@ -4686,6 +4686,7 @@ Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>"
 import { describe, expect, it } from 'vitest';
 import {
   pickComputePolicy,
+  summarizeCandidateConfidence,
   type MealFactsForComputePolicy,
 } from '../compute-policy';
 import { STABLE_PROFILE, NEXT_PROFILE } from '../model-profile';
@@ -4786,6 +4787,28 @@ describe('MealFactsForComputePolicy structural narrowness', () => {
       'parseRetryCount',
       'unmatchedCount',
     ]);
+  });
+});
+
+describe('summarizeCandidateConfidence', () => {
+  it('buckets confidences by the spec thresholds (>=0.85/0.65/0.40)', () => {
+    const summary = summarizeCandidateConfidence([
+      { matchConfidence: 0.95 },                  // high
+      { matchConfidence: 0.85 },                  // high (boundary)
+      { matchConfidence: 0.84 },                  // medium
+      { matchConfidence: 0.65 },                  // medium (boundary)
+      { matchConfidence: 0.50 },                  // low
+      { matchConfidence: 0.40 },                  // low (boundary)
+      { matchConfidence: 0.39 },                  // ambiguous
+      { matchConfidence: null },                  // ambiguous (null treated as unknown)
+    ] as Array<{ matchConfidence: number | null }>);
+    expect(summary).toEqual({ high: 2, medium: 2, low: 2, ambiguous: 2 });
+  });
+
+  it('returns all-zero buckets for an empty input', () => {
+    expect(summarizeCandidateConfidence([])).toEqual({
+      high: 0, medium: 0, low: 0, ambiguous: 0,
+    });
   });
 });
 ```
@@ -4907,7 +4930,25 @@ if (decision === 'retry_step2') {
 }
 ```
 
-`summarizeCandidateConfidence` is a small helper that buckets `matchConfidence` numbers from the existing match results into `{ high, medium, low, ambiguous }`. Place it next to `pickComputePolicy` (same file). Suggested thresholds: `>= 0.85` high, `>= 0.65` medium, `>= 0.40` low, else ambiguous. Tests in `compute-policy.test.ts`.
+`summarizeCandidateConfidence` is a small helper that buckets `matchConfidence` numbers from the existing match results into `{ high, medium, low, ambiguous }`. Place it next to `pickComputePolicy` in the same file and **export** it (the test imports it). Thresholds: `>= 0.85` high, `>= 0.65` medium, `>= 0.40` low, else ambiguous. `null` confidences fall into `ambiguous`. Tests in `compute-policy.test.ts`.
+
+```ts
+// Append to lib/ai/pipeline/compute-policy.ts
+export function summarizeCandidateConfidence(
+  matchResults: ReadonlyArray<{ matchConfidence: number | null }>
+): MealFactsForComputePolicy['candidateConfidenceSummary'] {
+  const summary = { high: 0, medium: 0, low: 0, ambiguous: 0 };
+  for (const r of matchResults) {
+    const c = r.matchConfidence;
+    if (c === null) summary.ambiguous++;
+    else if (c >= 0.85) summary.high++;
+    else if (c >= 0.65) summary.medium++;
+    else if (c >= 0.40) summary.low++;
+    else summary.ambiguous++;
+  }
+  return summary;
+}
+```
 
 - [ ] **Step 4: Record `model_call2` accurately in `pipeline_runs`**
 
@@ -5073,7 +5114,7 @@ import {
   createL4Cache,
   type L4Cache,
 } from '../decomposition-cache';
-import type { PromptPersonalizationContext } from '../prompt-personalization';
+import type { PromptPersonalizationContext } from '../../prompts/types';
 
 const ctx: PromptPersonalizationContext = {
   countryOfOrigin: 'VN',
@@ -5224,7 +5265,7 @@ Expected: FAIL — module does not exist.
 
 ```ts
 import { createHash } from 'node:crypto';
-import type { PromptPersonalizationContext } from './prompt-personalization';
+import type { PromptPersonalizationContext } from '../prompts/types';
 
 const ALLOWED_CONTEXT_KEYS = [
   'countryOfOrigin',
@@ -5346,7 +5387,7 @@ import {
   buildDecompositionCacheKey,
   createL4Cache,
 } from './decomposition-cache';
-import { DECOMPOSITION_PROMPT_VERSION, DECOMPOSITION_SCHEMA_VERSION } from './prompts/versions';
+import { DECOMPOSITION_PROMPT_VERSION, DECOMPOSITION_SCHEMA_VERSION } from './versions';
 
 const L4_CACHE = createL4Cache<DecompositionResult>({
   maxEntries: 1_000,
@@ -5481,21 +5522,38 @@ Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>"
 -- "first answer → corrected answer" flicker is high enough to revisit
 -- the streaming-vs-buffering trade-off with real data.
 -- ============================================================================
+
+-- 8a) Single rolling 7-day rate — the spec metric.
+SELECT
+  count(*) FILTER (WHERE retry_step2_count > 0) AS n_retried_7d,
+  count(*) AS n_total_7d,
+  CASE WHEN count(*) = 0 THEN 0::numeric
+       ELSE round(100.0 * count(*) FILTER (WHERE retry_step2_count > 0) / count(*), 2)
+  END AS step2_retry_pct_7d_rolling,
+  CASE WHEN count(*) = 0 THEN false
+       ELSE (1.0 * count(*) FILTER (WHERE retry_step2_count > 0) / count(*)) > 0.10
+  END AS over_10pct_threshold
+FROM pipeline_runs
+WHERE created_at >= now() - interval '7 days';
+
+-- 8b) Per-day breakdown — diagnostic only (NOT the spec metric).
 SELECT
   date_trunc('day', created_at) AS day,
   count(*) FILTER (WHERE retry_step2_count > 0) AS n_retried,
   count(*) AS n_total,
   CASE WHEN count(*) = 0 THEN 0::numeric
        ELSE round(100.0 * count(*) FILTER (WHERE retry_step2_count > 0) / count(*), 2)
-  END AS step2_retry_pct
+  END AS step2_retry_pct_daily
 FROM pipeline_runs
 WHERE created_at >= now() - interval '7 days'
 GROUP BY 1
 ORDER BY 1 DESC;
 
 -- INTERPRETATION:
---   Any day with step2_retry_pct > 10% over a 7-day window is a signal to
---   re-evaluate the buffer-vs-stream decision in §4.4.
+--   Block 8a is the spec metric: a single rolling 7-day rate. If
+--   over_10pct_threshold = true, revisit the buffer-vs-stream decision
+--   in §4.4. Block 8b is a diagnostic per-day breakdown to help locate
+--   whether the regression is a sustained shift or a single bad day.
 ```
 
 - [ ] **Step 2: Add inline doc comment in orchestrator near the streaming sites**
