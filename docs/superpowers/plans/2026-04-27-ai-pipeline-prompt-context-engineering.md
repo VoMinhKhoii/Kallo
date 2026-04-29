@@ -3051,3 +3051,1087 @@ After Chunk 3 ships:
 **User-facing behavior change:** for cooked-DB-row matches (most cooked-rice/cooked-meat rows in FAO Vietnam), the live nutrition values stop being silently undercounted. End-user totals shift upward for those meals — this is the spec §0.2 correctness fix landing.
 
 ---
+
+## Chunk 4 — §5 Eval flywheel: KPI rollup + post-launch shadow runner
+
+**Spec sections:** §5.1 KPI rollup queries · §5.2 Shadow A/B runner · Decision B (5% static sampling).
+
+**Why now:** Chunks 1–3 wrote the substrate (`pipeline_runs` rows with versioning, anomaly counters, prompt-personalization audit). Nothing yet *reads* those rows. Chunk 4 ships the read side: a hand-runnable KPI script for ad-hoc review, plus a feature-flagged shadow runner that captures paired primary/candidate output for **future** prompt/model/schema changes. The shadow runner is **off by default**; turning it on is its own decision after this chunk lands.
+
+**Outcome:** `scripts/eval-kpis.sql` runnable via `psql`/Studio; new `pipeline_shadow_runs` table with paired output; `lib/ai/pipeline/shadow-runner.ts` invoked best-effort *after* the primary response is sent; deterministic 5% sampling; abort guards for primary-degradation, DB-pool wait, and embedding rate-limit; divergence query template. No primary-flow latency cost when the flag is off (the post-response hook is a no-op short-circuit). No paired-input store — per Decision A, raw input lives in `pipeline_requests` (separate worktree owns `pipeline_llm_outputs`).
+
+**Out of scope for this chunk (locked decisions):**
+- `pipeline_llm_outputs` raw-LLM-output logging — owned by the debug-dashboard worktree.
+- Adaptive sampling rate — Decision B locked at static 5%.
+- Real alerting / paging — spec §5.1 explicitly defers to "visible-when-reviewed" until a need is demonstrated.
+- Driving any §1/§3 ship decision off shadow output — pre-production status, the runner is **future** regression infrastructure only.
+
+**LOC estimate:** ~700 (new SQL script ~120; new Drizzle table + migration ~60; shadow runner module + tests ~350; orchestrator wiring ~80; abort-guard module + tests ~90).
+
+---
+
+### Task 4.1: `scripts/eval-kpis.sql` — manually-run KPI rollups
+
+- [ ] **Step 1: Create the SQL file with one labeled block per KPI**
+
+Create `scripts/eval-kpis.sql`. The file is a **document**, not a migration — it lives alongside `scripts/backfill_embeddings.ts` and is run by hand against the analytics DB. Each block is independently re-runnable. Use 7-day rolling windows by default; spec §5.1 names them all explicitly.
+
+```sql
+-- scripts/eval-kpis.sql
+--
+-- Manually-run KPI rollups over `pipeline_runs`. Each block is
+-- independent and is intended to be pasted into psql / Drizzle
+-- Studio / Supabase SQL Editor. No alerting; this is a
+-- "visible-when-reviewed" surface per spec §5.1.
+--
+-- Conventions:
+--   - 7-day rolling window unless otherwise noted.
+--   - Group by (model_call2, nutrition_prompt_version) so that
+--     a prompt or model bump is immediately visible.
+--   - All `_fires` columns are smallint counters from §0.4.
+
+-- 1. Latency percentiles per (model, prompt version).
+SELECT
+  model_call2,
+  nutrition_prompt_version,
+  count(*)                                                   AS n,
+  percentile_cont(0.50) WITHIN GROUP (ORDER BY total_ms)     AS p50_ms,
+  percentile_cont(0.95) WITHIN GROUP (ORDER BY total_ms)     AS p95_ms,
+  percentile_cont(0.99) WITHIN GROUP (ORDER BY total_ms)     AS p99_ms
+FROM pipeline_runs
+WHERE created_at >= now() - interval '7 days'
+GROUP BY 1, 2
+ORDER BY 1, 2;
+
+-- 2. Anomaly rate per AnomalyType per (model, prompt version).
+WITH unnested AS (
+  SELECT
+    model_call2,
+    nutrition_prompt_version,
+    unnest(anomaly_types) AS anomaly_type
+  FROM pipeline_runs
+  WHERE created_at >= now() - interval '7 days'
+)
+SELECT
+  model_call2,
+  nutrition_prompt_version,
+  anomaly_type,
+  count(*) AS fires,
+  count(*)::numeric
+    / nullif(
+        (SELECT count(*) FROM pipeline_runs
+         WHERE created_at >= now() - interval '7 days'), 0)
+    AS rate
+FROM unnested
+GROUP BY 1, 2, 3
+ORDER BY 1, 2, 4 DESC;
+
+-- 3. Escalation, cache-hit, retry rates.
+SELECT
+  count(*) AS n,
+  avg(case when escalated then 1 else 0 end)        AS escalation_rate,
+  avg(case when cache_hit_l4 then 1 else 0 end)     AS cache_hit_rate,
+  avg(case when retry_count > 0 then 1 else 0 end)  AS retry_rate,
+  avg(case when retry_step2_count > 0 then 1 else 0 end)
+                                                    AS step2_retry_rate
+FROM pipeline_runs
+WHERE created_at >= now() - interval '7 days';
+
+-- 4. Match-quality rates per ingredient.
+SELECT
+  sum(unmatched_count)::numeric
+    / nullif(sum(ingredient_count), 0)              AS unmatched_rate,
+  sum(pre_match_alias_hits)::numeric
+    / nullif(sum(ingredient_count), 0)              AS alias_hit_rate,
+  sum(cooked_to_raw_factor_fires)::numeric
+    / nullif(sum(matched_count), 0)                 AS cooked_to_raw_fire_rate,
+  sum(density_envelope_fires)::numeric
+    / nullif(sum(ingredient_count), 0)              AS density_envelope_rate,
+  sum(macro_inconsistent_fires)::numeric
+    / nullif(sum(ingredient_count), 0)              AS macro_inconsistent_rate
+FROM pipeline_runs
+WHERE created_at >= now() - interval '7 days';
+
+-- 5. db_state coverage — Principle B / §0.2.
+SELECT
+  sum(db_state_unknown_fires)::numeric
+    / nullif(sum(matched_count), 0)                 AS db_state_unknown_rate
+FROM pipeline_runs
+WHERE created_at >= now() - interval '7 days';
+
+-- 6. Drift watcher — flag any rate moving >2σ from its 7-day baseline.
+--    Pure visibility query; no alerting wired.
+WITH today AS (
+  SELECT
+    avg(case when retry_count > 0 then 1.0 else 0 end) AS retry_rate,
+    avg(case when escalated     then 1.0 else 0 end)   AS escalation_rate,
+    sum(unmatched_count)::numeric / nullif(sum(ingredient_count), 0)
+                                                       AS unmatched_rate
+  FROM pipeline_runs
+  WHERE created_at >= now() - interval '1 day'
+), baseline AS (
+  SELECT
+    avg(case when retry_count > 0 then 1.0 else 0 end)        AS retry_rate_mean,
+    stddev_pop(case when retry_count > 0 then 1.0 else 0 end) AS retry_rate_sd,
+    avg(case when escalated     then 1.0 else 0 end)          AS escalation_rate_mean,
+    stddev_pop(case when escalated     then 1.0 else 0 end)   AS escalation_rate_sd
+  FROM pipeline_runs
+  WHERE created_at >= now() - interval '7 days'
+    AND created_at <  now() - interval '1 day'
+)
+SELECT
+  t.retry_rate,
+  b.retry_rate_mean,
+  b.retry_rate_sd,
+  abs(t.retry_rate - b.retry_rate_mean)
+    > 2 * coalesce(b.retry_rate_sd, 0)        AS retry_rate_drift,
+  t.escalation_rate,
+  b.escalation_rate_mean,
+  b.escalation_rate_sd,
+  abs(t.escalation_rate - b.escalation_rate_mean)
+    > 2 * coalesce(b.escalation_rate_sd, 0)   AS escalation_rate_drift
+FROM today t CROSS JOIN baseline b;
+```
+
+- [ ] **Step 2: Smoke-test the SQL**
+
+```bash
+# Local DB:
+bun run db:studio          # paste each block; confirm no syntax errors
+# Or directly:
+bun --env-file=.env.local -e "
+import postgres from 'postgres';
+import { encodeDbUrl } from './lib/db';
+const sql = postgres(encodeDbUrl(process.env.DATABASE_URL!));
+const text = await Bun.file('scripts/eval-kpis.sql').text();
+// Strip comments so psql-style block separators aren't needed:
+const blocks = text.split(/^-- \\d\\./gm).filter(b => /SELECT|WITH/i.test(b));
+for (const b of blocks) await sql.unsafe(b);
+console.log('all blocks parsed');
+await sql.end();
+"
+```
+
+A fresh DB will return zero rows (empty table is fine). The script must parse without error against the schema landed in Chunk 1.
+
+- [ ] **Step 3: Document in README**
+
+Add a `scripts/README.md` entry (or extend the existing one) under a "KPI rollups" section pointing at `eval-kpis.sql` and noting the 7-day windows and re-runnable design. One paragraph.
+
+- [ ] **Step 4: Commit**
+
+```bash
+git add scripts/eval-kpis.sql scripts/README.md
+git commit -m "feat(scripts): add eval-kpis.sql for manual KPI rollups over pipeline_runs
+
+Implements spec §5.1.
+
+Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>"
+```
+
+---
+
+### Task 4.2: `pipeline_shadow_runs` Drizzle table — paired output store
+
+- [ ] **Step 1: Add the schema**
+
+In `lib/db/schema.ts`, add the new table. Keep it minimal: enough to compute divergence (matched IDs, unmatched names, per-ingredient bounded macros, total-macro bounded estimates, anomaly types) and join back to `pipeline_runs.request_id` for context. **No raw input** — that's in `pipeline_requests`.
+
+```ts
+export const pipelineShadowRuns = pgTable('pipeline_shadow_runs', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  createdAt: timestamp('created_at', { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+  // Joins back to pipeline_runs.request_id to recover input context.
+  requestId: text('request_id').notNull(),
+  // The primary run that this shadow was paired against. Useful for
+  // pinning analyses to a specific primary version.
+  primaryRunId: uuid('primary_run_id'),
+  // Versioning of the *candidate* (shadow) leg.
+  candidatePromptVersion: text('candidate_prompt_version').notNull(),
+  candidateModel: text('candidate_model').notNull(),
+  // Divergence inputs. Both legs are stored as compact JSON so divergence
+  // queries can `jsonb_path_query` instead of a wide column zoo.
+  primaryOutput: jsonb('primary_output').notNull(),
+  candidateOutput: jsonb('candidate_output').notNull(),
+  // Pre-computed divergence summary (so the divergence query template
+  // is a simple SELECT, not a giant CTE). Fields:
+  //   { macroDeltaPct, ingredientCountDelta, anomalyTypeDelta }
+  divergence: jsonb('divergence').notNull(),
+  // Lifecycle outcome. 'completed' | 'aborted_primary_p95' |
+  //   'aborted_pool_wait' | 'aborted_embed_rate_limit' | 'errored'
+  outcome: text('outcome').notNull(),
+  candidateMs: integer('candidate_ms').notNull().default(0),
+});
+```
+
+`primaryOutput` / `candidateOutput` JSON shape (typed via Zod in Task 4.4):
+
+```ts
+{
+  matchedIds: string[];         // canonical DB ingredient IDs that matched
+  unmatchedNames: string[];     // ingredient names that fell through
+  perIngredientMacros: Array<{  // bounded per-ingredient macros
+    ingredientName: string;
+    caloriesKcal: { low: number; mid: number; high: number };
+    proteinG?:    { low: number; mid: number; high: number };
+    carbohydrateG?: { low: number; mid: number; high: number };
+    fatG?:        { low: number; mid: number; high: number };
+  }>;
+  totalMacros: {
+    caloriesKcal: { low: number; mid: number; high: number };
+    proteinG?:    { low: number; mid: number; high: number };
+    carbohydrateG?: { low: number; mid: number; high: number };
+    fatG?:        { low: number; mid: number; high: number };
+  };
+  anomalyTypes: AnomalyType[];
+}
+```
+
+- [ ] **Step 2: Generate, rename, sanity-check the migration**
+
+```bash
+bun db:generate
+# rename the migration filename and meta/_journal.json `tag` to:
+#   <ts>_add_pipeline_shadow_runs_table
+cat supabase/migrations/<ts>_add_pipeline_shadow_runs_table.sql
+```
+
+Expected: `CREATE TABLE "pipeline_shadow_runs"` with all columns. No RLS.
+
+- [ ] **Step 3: Manual RLS migration (service-role only)**
+
+`supabase/migrations/<ts+1>_pipeline_shadow_runs_rls.sql`:
+
+```sql
+-- pipeline_shadow_runs is system regression infrastructure.
+-- Service role only. Never read by the user-facing app.
+BEGIN;
+
+ALTER TABLE public.pipeline_shadow_runs ENABLE ROW LEVEL SECURITY;
+
+REVOKE ALL ON public.pipeline_shadow_runs FROM authenticated, anon;
+GRANT  SELECT, INSERT ON public.pipeline_shadow_runs TO service_role;
+
+CREATE INDEX IF NOT EXISTS idx_pipeline_shadow_runs_created_at
+  ON public.pipeline_shadow_runs (created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_pipeline_shadow_runs_request_id
+  ON public.pipeline_shadow_runs (request_id);
+
+COMMIT;
+```
+
+- [ ] **Step 4: Schema test**
+
+`lib/db/__tests__/schema-shadow-runs.test.ts`:
+
+```ts
+import { describe, expect, it } from 'vitest';
+import { pipelineShadowRuns } from '@/lib/db/schema';
+
+describe('pipelineShadowRuns Drizzle schema', () => {
+  it('has the expected columns', () => {
+    const cols = Object.keys(pipelineShadowRuns);
+    for (const c of [
+      'id', 'createdAt', 'requestId', 'primaryRunId',
+      'candidatePromptVersion', 'candidateModel',
+      'primaryOutput', 'candidateOutput',
+      'divergence', 'outcome', 'candidateMs',
+    ]) {
+      expect(cols).toContain(c);
+    }
+  });
+});
+```
+
+Run:
+```bash
+bun run test lib/db/__tests__/schema-shadow-runs.test.ts
+```
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add lib/db/schema.ts \
+        supabase/migrations/<ts>_add_pipeline_shadow_runs_table.sql \
+        supabase/migrations/<ts+1>_pipeline_shadow_runs_rls.sql \
+        supabase/migrations/meta/_journal.json \
+        lib/db/__tests__/schema-shadow-runs.test.ts
+git commit -m "feat(db): add pipeline_shadow_runs table for paired A/B output
+
+Spec §5.2. Stores primary + candidate outputs and a pre-computed
+divergence summary. RLS service-role only. Joins back to
+pipeline_runs.request_id; contains no raw user input.
+
+Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>"
+```
+
+---
+
+### Task 4.3: Sampling decision — deterministic 5% per `request_id`
+
+- [ ] **Step 1: Write the failing test**
+
+`lib/ai/pipeline/__tests__/shadow-sampling.test.ts`:
+
+```ts
+import { describe, expect, it } from 'vitest';
+import {
+  isShadowSampled,
+  SHADOW_SAMPLING_RATE,
+} from '../shadow-sampling';
+
+describe('isShadowSampled', () => {
+  it('returns false when the feature flag is off', () => {
+    expect(isShadowSampled('any-id', { enabled: false })).toBe(false);
+  });
+
+  it('returns true for ~5% of request IDs at 0.05 sampling rate', () => {
+    let hits = 0;
+    const N = 10_000;
+    for (let i = 0; i < N; i++) {
+      if (isShadowSampled(`req-${i}`, { enabled: true })) hits++;
+    }
+    // Allow a generous tolerance band: 0.05 ± 0.01.
+    expect(hits / N).toBeGreaterThan(0.04);
+    expect(hits / N).toBeLessThan(0.06);
+  });
+
+  it('is deterministic — same requestId always routes the same way', () => {
+    const id = 'req-abc-123';
+    const a = isShadowSampled(id, { enabled: true });
+    const b = isShadowSampled(id, { enabled: true });
+    const c = isShadowSampled(id, { enabled: true });
+    expect(a).toBe(b);
+    expect(b).toBe(c);
+  });
+
+  it('exports the locked 0.05 sampling rate', () => {
+    expect(SHADOW_SAMPLING_RATE).toBe(0.05);
+  });
+});
+```
+
+Run:
+```bash
+bun run test lib/ai/pipeline/__tests__/shadow-sampling.test.ts
+```
+Expected: FAIL — module does not exist.
+
+- [ ] **Step 2: Implement the sampler**
+
+`lib/ai/pipeline/shadow-sampling.ts`:
+
+```ts
+import { createHash } from 'node:crypto';
+
+/** Per Decision B (locked): static 5% of traffic, deterministic per request. */
+export const SHADOW_SAMPLING_RATE = 0.05 as const;
+
+export interface ShadowSamplingConfig {
+  enabled: boolean;
+  /** Override for tests. Production should pass nothing and let it default. */
+  rate?: number;
+}
+
+/**
+ * Deterministic per-`requestId` sampling. SHA-256 the request id, take the
+ * first 4 bytes as an unsigned int, divide by 2^32. Routes consistently
+ * across retries within a single request because the request_id is generated
+ * once at pipeline start (logging.ts).
+ */
+export function isShadowSampled(
+  requestId: string,
+  config: ShadowSamplingConfig
+): boolean {
+  if (!config.enabled) return false;
+  const rate = config.rate ?? SHADOW_SAMPLING_RATE;
+  const hash = createHash('sha256').update(requestId).digest();
+  const u32 = hash.readUInt32BE(0);
+  return u32 / 0x1_0000_0000 < rate;
+}
+```
+
+Run the test again. Expected: PASS.
+
+- [ ] **Step 3: Surface the feature flag**
+
+The flag itself lives in env / runtime config, not a constant. Read it in the orchestrator (Task 4.4) via `process.env.SHADOW_RUNNER_ENABLED === 'true'`. Default off.
+
+- [ ] **Step 4: Commit**
+
+```bash
+git add lib/ai/pipeline/shadow-sampling.ts \
+        lib/ai/pipeline/__tests__/shadow-sampling.test.ts
+git commit -m "feat(pipeline): add deterministic 5% shadow sampling
+
+Per Decision B. SHA-256 of request_id keyed against SHADOW_SAMPLING_RATE.
+Defaults off via SHADOW_RUNNER_ENABLED env flag.
+
+Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>"
+```
+
+---
+
+### Task 4.4: Shadow runner — post-response candidate execution + paired persist
+
+- [ ] **Step 1: Write the failing tests**
+
+`lib/ai/pipeline/__tests__/shadow-runner.test.ts`:
+
+```ts
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { PipelineResponse } from '../../types';
+import { runShadow, type ShadowRunnerDeps } from '../shadow-runner';
+
+const primary: PipelineResponse = makePipelineResponse({
+  totalCalories: 500,
+  ingredientNames: ['thịt bò bắp', 'bánh phở'],
+});
+
+describe('runShadow', () => {
+  let deps: ShadowRunnerDeps;
+
+  beforeEach(() => {
+    deps = {
+      runCandidate: vi.fn().mockResolvedValue(
+        makePipelineResponse({
+          totalCalories: 520,
+          ingredientNames: ['thịt bò bắp', 'bánh phở'],
+        })
+      ),
+      persistShadowRun: vi.fn().mockResolvedValue(undefined),
+      now: () => 1000,
+    };
+  });
+  afterEach(() => vi.restoreAllMocks());
+
+  it('persists a row with outcome="completed" on the happy path', async () => {
+    await runShadow({
+      requestId: 'req-1',
+      primary,
+      candidatePromptVersion: 'v3',
+      candidateModel: 'gemini-2.5-pro',
+      primaryRunId: 'run-1',
+    }, deps);
+
+    expect(deps.persistShadowRun).toHaveBeenCalledOnce();
+    const row = (deps.persistShadowRun as any).mock.calls[0][0];
+    expect(row.outcome).toBe('completed');
+    expect(row.requestId).toBe('req-1');
+    expect(row.primaryRunId).toBe('run-1');
+    // Macro delta = |520 - 500| / 500 = 0.04 → under 30% threshold.
+    expect(row.divergence.macroDeltaPct).toBeCloseTo(0.04, 2);
+    expect(row.divergence.ingredientCountDelta).toBe(0);
+  });
+
+  it('records macro divergence > 30% when present', async () => {
+    deps.runCandidate = vi.fn().mockResolvedValue(
+      makePipelineResponse({
+        totalCalories: 800,
+        ingredientNames: ['thịt bò bắp', 'bánh phở'],
+      })
+    );
+    await runShadow({
+      requestId: 'req-2',
+      primary,
+      candidatePromptVersion: 'v3',
+      candidateModel: 'gemini-2.5-pro',
+    }, deps);
+    const row = (deps.persistShadowRun as any).mock.calls[0][0];
+    expect(row.divergence.macroDeltaPct).toBeGreaterThan(0.30);
+  });
+
+  it('records ingredient-count delta', async () => {
+    deps.runCandidate = vi.fn().mockResolvedValue(
+      makePipelineResponse({
+        totalCalories: 500,
+        ingredientNames: ['thịt bò bắp'], // candidate dropped one.
+      })
+    );
+    await runShadow({
+      requestId: 'req-3',
+      primary,
+      candidatePromptVersion: 'v3',
+      candidateModel: 'gemini-2.5-pro',
+    }, deps);
+    const row = (deps.persistShadowRun as any).mock.calls[0][0];
+    expect(row.divergence.ingredientCountDelta).toBe(-1);
+  });
+
+  it('persists outcome="errored" when the candidate run throws', async () => {
+    deps.runCandidate = vi.fn().mockRejectedValue(new Error('boom'));
+    await expect(runShadow({
+      requestId: 'req-4',
+      primary,
+      candidatePromptVersion: 'v3',
+      candidateModel: 'gemini-2.5-pro',
+    }, deps)).resolves.toBeUndefined();
+    const row = (deps.persistShadowRun as any).mock.calls[0][0];
+    expect(row.outcome).toBe('errored');
+  });
+
+  it('never throws — primary user response must not be perturbed', async () => {
+    deps.runCandidate = vi.fn().mockRejectedValue(new Error('boom'));
+    deps.persistShadowRun = vi.fn().mockRejectedValue(new Error('db down'));
+    await expect(runShadow({
+      requestId: 'req-5',
+      primary,
+      candidatePromptVersion: 'v3',
+      candidateModel: 'gemini-2.5-pro',
+    }, deps)).resolves.toBeUndefined();
+  });
+});
+```
+
+`makePipelineResponse` is a small fixture — extend the existing `makePipelineResult` from `validation.test.ts` if a re-export already exists; otherwise add an inline `function makePipelineResponse(args)` at the top of this file using existing top-level fields from `PipelineResponse`. Keep the surface minimal — only `totalCalories` + `ingredientNames` for now (the divergence summarizer only reads those).
+
+Run:
+```bash
+bun run test lib/ai/pipeline/__tests__/shadow-runner.test.ts
+```
+Expected: FAIL — module does not exist.
+
+- [ ] **Step 2: Implement the shadow runner**
+
+`lib/ai/pipeline/shadow-runner.ts`:
+
+```ts
+import { computeDivergence } from './shadow-divergence';
+import type { PipelineResponse } from '../types';
+
+export interface ShadowRunnerInput {
+  requestId: string;
+  primary: PipelineResponse;
+  primaryRunId?: string;
+  candidatePromptVersion: string;
+  candidateModel: string;
+}
+
+export interface ShadowRunPersistRow {
+  requestId: string;
+  primaryRunId: string | null;
+  candidatePromptVersion: string;
+  candidateModel: string;
+  primaryOutput: ShadowOutputSnapshot;
+  candidateOutput: ShadowOutputSnapshot | null;
+  divergence: ShadowDivergence;
+  outcome:
+    | 'completed'
+    | 'errored'
+    | 'aborted_primary_p95'
+    | 'aborted_pool_wait'
+    | 'aborted_embed_rate_limit';
+  candidateMs: number;
+}
+
+export interface ShadowRunnerDeps {
+  runCandidate: (
+    requestId: string
+  ) => Promise<PipelineResponse>;
+  persistShadowRun: (row: ShadowRunPersistRow) => Promise<void>;
+  now: () => number;
+}
+
+/**
+ * Best-effort, never-throws candidate execution called AFTER the primary
+ * response is delivered to the user. Primary path latency must be unchanged
+ * by the existence of this function.
+ */
+export async function runShadow(
+  input: ShadowRunnerInput,
+  deps: ShadowRunnerDeps
+): Promise<void> {
+  const start = deps.now();
+  let outcome: ShadowRunPersistRow['outcome'] = 'completed';
+  let candidate: PipelineResponse | null = null;
+  try {
+    candidate = await deps.runCandidate(input.requestId);
+  } catch {
+    outcome = 'errored';
+  }
+
+  const row: ShadowRunPersistRow = {
+    requestId: input.requestId,
+    primaryRunId: input.primaryRunId ?? null,
+    candidatePromptVersion: input.candidatePromptVersion,
+    candidateModel: input.candidateModel,
+    primaryOutput: snapshot(input.primary),
+    candidateOutput: candidate ? snapshot(candidate) : null,
+    divergence: computeDivergence(input.primary, candidate),
+    outcome,
+    candidateMs: deps.now() - start,
+  };
+
+  try {
+    await deps.persistShadowRun(row);
+  } catch {
+    // Persistence failures are non-fatal. Surface via console.warn for
+    // ops; never re-throw.
+    console.warn(
+      '[shadow-runner] persist failed',
+      { requestId: input.requestId }
+    );
+  }
+}
+
+function snapshot(r: PipelineResponse): ShadowOutputSnapshot {
+  // Implementation reads the existing PipelineResponse shape; see
+  // lib/ai/types.ts. Pull only the fields the divergence query needs.
+  // …
+}
+```
+
+`lib/ai/pipeline/shadow-divergence.ts`:
+
+```ts
+import type { PipelineResponse } from '../types';
+
+export interface ShadowDivergence {
+  macroDeltaPct: number;
+  ingredientCountDelta: number;
+  anomalyTypeDelta: string[];
+}
+
+export function computeDivergence(
+  primary: PipelineResponse,
+  candidate: PipelineResponse | null
+): ShadowDivergence {
+  if (!candidate) {
+    return { macroDeltaPct: 0, ingredientCountDelta: 0, anomalyTypeDelta: [] };
+  }
+  const pCal = primary.totalCalories;
+  const cCal = candidate.totalCalories;
+  const macroDeltaPct =
+    pCal === 0 ? 0 : Math.abs(cCal - pCal) / pCal;
+  const ingredientCountDelta =
+    candidate.ingredients.length - primary.ingredients.length;
+  return {
+    macroDeltaPct,
+    ingredientCountDelta,
+    anomalyTypeDelta: [], // populated when anomaly fields are wired into PipelineResponse
+  };
+}
+```
+
+Adjust the field reads (`totalCalories`, `ingredients.length`) to match the actual `PipelineResponse` shape from `lib/ai/types.ts` — verify before implementing. If the field is `mealItems[].nutrition.caloriesKcal.mid`, sum across meal items.
+
+- [ ] **Step 3: Refine until tests pass**
+
+```bash
+bun run test lib/ai/pipeline/__tests__/shadow-runner.test.ts
+```
+
+- [ ] **Step 4: Commit**
+
+```bash
+git add lib/ai/pipeline/shadow-runner.ts \
+        lib/ai/pipeline/shadow-divergence.ts \
+        lib/ai/pipeline/__tests__/shadow-runner.test.ts
+git commit -m "feat(pipeline): add shadow runner module + divergence summarizer
+
+Spec §5.2. Best-effort post-response candidate run; never throws;
+divergence summary stored alongside paired output.
+
+Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>"
+```
+
+---
+
+### Task 4.5: Abort guards — primary p95, DB pool wait, embedding rate-limit
+
+- [ ] **Step 1: Write the failing tests**
+
+`lib/ai/pipeline/__tests__/shadow-guards.test.ts`:
+
+```ts
+import { describe, expect, it, vi } from 'vitest';
+import {
+  createShadowGuard,
+  type ShadowGuardClock,
+} from '../shadow-guards';
+
+describe('createShadowGuard', () => {
+  it('admits the first run', async () => {
+    const guard = createShadowGuard({ clock: makeClock(0) });
+    expect(await guard.shouldRun()).toEqual({ run: true });
+  });
+
+  it('blocks for 30 minutes when primary p95 exceeds threshold', async () => {
+    const clock = makeClock(0);
+    const guard = createShadowGuard({
+      clock,
+      primaryP95Ms: () => 5_000,    // observed
+      primaryP95ThresholdMs: 4_000, // limit
+    });
+    const a = await guard.shouldRun();
+    expect(a).toEqual({ run: false, reason: 'aborted_primary_p95' });
+
+    clock.advance(29 * 60_000);
+    expect(await guard.shouldRun()).toMatchObject({
+      run: false, reason: 'aborted_primary_p95'
+    });
+
+    clock.advance(2 * 60_000); // total 31 min, healed-by-now p95
+    guard.refreshAfterCooldown(() => 3_000);
+    expect((await guard.shouldRun()).run).toBe(true);
+  });
+
+  it('skips one run if DB pool wait is high (no cooldown)', async () => {
+    const guard = createShadowGuard({
+      clock: makeClock(0),
+      dbPoolWaitMs: () => 1_500,
+      dbPoolWaitThresholdMs: 1_000,
+    });
+    expect(await guard.shouldRun()).toMatchObject({
+      run: false, reason: 'aborted_pool_wait'
+    });
+    // Subsequent calls re-evaluate (no 30-min lockout).
+    // Simulate pool recovering:
+    const guard2 = createShadowGuard({
+      clock: makeClock(0),
+      dbPoolWaitMs: () => 200,
+      dbPoolWaitThresholdMs: 1_000,
+    });
+    expect((await guard2.shouldRun()).run).toBe(true);
+  });
+
+  it('skips one run on embedding rate-limit error', async () => {
+    const guard = createShadowGuard({
+      clock: makeClock(0),
+      embeddingRateLimited: () => true,
+    });
+    expect(await guard.shouldRun()).toMatchObject({
+      run: false, reason: 'aborted_embed_rate_limit'
+    });
+  });
+});
+
+function makeClock(start: number): ShadowGuardClock & { advance: (ms: number) => void } {
+  let t = start;
+  return {
+    now: () => t,
+    advance: (ms) => { t += ms; },
+  };
+}
+```
+
+Run:
+```bash
+bun run test lib/ai/pipeline/__tests__/shadow-guards.test.ts
+```
+Expected: FAIL.
+
+- [ ] **Step 2: Implement guards**
+
+`lib/ai/pipeline/shadow-guards.ts`:
+
+```ts
+export interface ShadowGuardClock {
+  now: () => number;
+}
+
+export interface ShadowGuardConfig {
+  clock?: ShadowGuardClock;
+  primaryP95Ms?: () => number;
+  primaryP95ThresholdMs?: number;
+  dbPoolWaitMs?: () => number;
+  dbPoolWaitThresholdMs?: number;
+  embeddingRateLimited?: () => boolean;
+}
+
+const PRIMARY_P95_COOLDOWN_MS = 30 * 60_000;
+
+export type ShadowGuardDecision =
+  | { run: true }
+  | { run: false; reason:
+      | 'aborted_primary_p95'
+      | 'aborted_pool_wait'
+      | 'aborted_embed_rate_limit' };
+
+export function createShadowGuard(cfg: ShadowGuardConfig = {}) {
+  const clock = cfg.clock ?? { now: () => Date.now() };
+  let primaryP95LockUntil = 0;
+
+  function shouldRun(): Promise<ShadowGuardDecision> {
+    const t = clock.now();
+    if (t < primaryP95LockUntil) {
+      return Promise.resolve({ run: false, reason: 'aborted_primary_p95' });
+    }
+    const p95 = cfg.primaryP95Ms?.();
+    if (
+      typeof p95 === 'number' &&
+      typeof cfg.primaryP95ThresholdMs === 'number' &&
+      p95 > cfg.primaryP95ThresholdMs
+    ) {
+      primaryP95LockUntil = t + PRIMARY_P95_COOLDOWN_MS;
+      return Promise.resolve({ run: false, reason: 'aborted_primary_p95' });
+    }
+    const pool = cfg.dbPoolWaitMs?.();
+    if (
+      typeof pool === 'number' &&
+      typeof cfg.dbPoolWaitThresholdMs === 'number' &&
+      pool > cfg.dbPoolWaitThresholdMs
+    ) {
+      return Promise.resolve({ run: false, reason: 'aborted_pool_wait' });
+    }
+    if (cfg.embeddingRateLimited?.()) {
+      return Promise.resolve({ run: false, reason: 'aborted_embed_rate_limit' });
+    }
+    return Promise.resolve({ run: true });
+  }
+
+  function refreshAfterCooldown(_p95Ms: () => number) {
+    primaryP95LockUntil = 0; // simple manual reset for tests; production polls.
+  }
+
+  return { shouldRun, refreshAfterCooldown };
+}
+```
+
+- [ ] **Step 3: Where the metrics actually come from**
+
+The guard takes injectable metric providers; it does not implement them. In production wire-up (Task 4.6):
+
+- `primaryP95Ms`: a small in-memory rolling-window aggregator over the last 5 minutes of observed `analyzeMeal` durations. Add a tiny `recordPrimaryDuration(ms)` helper alongside the guard module; the orchestrator calls it after `runPipeline` returns.
+- `dbPoolWaitMs`: read `postgres.js` connection-acquisition wait via the existing `db` client's stats hook if available; otherwise stub to `() => 0` and add a TODO. The guard is correct either way — the worst case is "no abort fires."
+- `embeddingRateLimited`: the cascade matcher already throws on 429. Track a module-level `lastEmbedRateLimitAt: number | null`; reset after 60s. Wire via `setEmbeddingRateLimited(true)` from the embedding client error handler.
+
+The fallback-to-stub posture is intentional — abort guards should be **best-effort additive safety**, never a blocker for shipping the rest of the runner.
+
+- [ ] **Step 4: Commit**
+
+```bash
+git add lib/ai/pipeline/shadow-guards.ts \
+        lib/ai/pipeline/__tests__/shadow-guards.test.ts
+git commit -m "feat(pipeline): add shadow runner abort guards
+
+Spec §5.2. Primary p95 (30-min cooldown), DB pool wait, embedding
+rate-limit. Stub-friendly metric providers — guards are additive safety.
+
+Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>"
+```
+
+---
+
+### Task 4.6: Orchestrator wiring — post-response invocation, never blocks user
+
+- [ ] **Step 1: Write the failing test**
+
+Extend `lib/ai/pipeline/__tests__/run-telemetry.test.ts` (the orchestrator-integration block from Task 3.2) with a new `describe('shadow-runner integration')`:
+
+```ts
+describe('shadow-runner integration', () => {
+  it('does not invoke the shadow runner when SHADOW_RUNNER_ENABLED is unset', async () => {
+    const persistShadowRun = vi.fn();
+    await runOrchestratorWithFixture({
+      // … happy-path fixture …
+      shadow: { enabled: false, persistShadowRun },
+    });
+    expect(persistShadowRun).not.toHaveBeenCalled();
+  });
+
+  it('invokes shadow after primary response when sampled in', async () => {
+    const persistShadowRun = vi.fn().mockResolvedValue(undefined);
+    const onPrimaryResolved = vi.fn();
+    await runOrchestratorWithFixture({
+      shadow: {
+        enabled: true,
+        rate: 1.0,            // force-sample for the test
+        persistShadowRun,
+      },
+      onPrimaryResolved,
+    });
+    // Primary resolves before shadow persists.
+    expect(onPrimaryResolved.mock.invocationCallOrder[0])
+      .toBeLessThan(persistShadowRun.mock.invocationCallOrder[0]);
+  });
+
+  it('shadow failure does not perturb the primary response', async () => {
+    const persistShadowRun = vi.fn().mockRejectedValue(new Error('db down'));
+    const result = await runOrchestratorWithFixture({
+      shadow: { enabled: true, rate: 1.0, persistShadowRun },
+    });
+    expect(result.response).toBeDefined();
+    expect(result.response.totalCalories).toBeGreaterThan(0);
+  });
+
+  it('aborts when the guard says no — outcome reflects reason', async () => {
+    const persistShadowRun = vi.fn().mockResolvedValue(undefined);
+    await runOrchestratorWithFixture({
+      shadow: {
+        enabled: true,
+        rate: 1.0,
+        persistShadowRun,
+        guard: { primaryP95Ms: () => 99_999, primaryP95ThresholdMs: 4_000 },
+      },
+    });
+    const row = persistShadowRun.mock.calls[0]?.[0];
+    expect(row?.outcome).toBe('aborted_primary_p95');
+  });
+});
+```
+
+Run:
+```bash
+bun run test lib/ai/pipeline/__tests__/run-telemetry.test.ts
+```
+Expected: FAIL — wiring not in place.
+
+- [ ] **Step 2: Wire into `analyzeMeal`**
+
+In `lib/ai/pipeline/orchestrator.ts`, immediately after the `runPipeline` call resolves and **before** the function returns to the caller, schedule the shadow run as a microtask. Crucially: do NOT `await` it. The primary response goes back to the user; the shadow fires concurrently against a separate concurrency budget.
+
+```ts
+// Inside analyzeMeal, after `const response = await runPipeline(...)` and
+// after the `pipeline_runs` row is written:
+
+const requestId = /* the same id generated in logging.ts:18 */;
+const shadowEnabled = process.env.SHADOW_RUNNER_ENABLED === 'true';
+if (shadowEnabled && isShadowSampled(requestId, { enabled: true })) {
+  void runShadowAsync({
+    requestId,
+    primary: response,
+    primaryRunId: pipelineRunRow.id, // from buildPipelineRunRow result
+    candidatePromptVersion: NUTRITION_PROMPT_VERSION_CANDIDATE,
+    candidateModel: NUTRITION_MODEL_CANDIDATE,
+  });
+}
+
+return response;
+```
+
+`runShadowAsync` is a small wrapper that:
+1. Calls `guard.shouldRun()`. If `run: false`, persists a row with `outcome: reason` and returns.
+2. Otherwise calls `runShadow(...)` with a `runCandidate` closure that re-runs the pipeline with the candidate versions/model. The candidate run uses a **separate `MATCH_CONCURRENCY` budget** — pass an explicit `concurrency` option through `matchIngredients` if it doesn't already exist (cascade.ts:41 currently inlines the constant; convert to a defaultable parameter).
+3. Catches everything. Logs warn on failure. Never throws.
+
+`NUTRITION_PROMPT_VERSION_CANDIDATE` / `NUTRITION_MODEL_CANDIDATE`: env-overridable constants, defaulting to the production values (so a flag-on-but-unconfigured shadow runner is a no-op pair).
+
+- [ ] **Step 3: Cascade concurrency parameterization**
+
+`lib/ai/matching/cascade.ts:41`:
+
+```ts
+const MATCH_CONCURRENCY_DEFAULT = 2;
+
+export interface MatchOptions {
+  concurrency?: number;
+}
+
+// Replace inline `MATCH_CONCURRENCY` with: opts.concurrency ?? MATCH_CONCURRENCY_DEFAULT.
+```
+
+Thread the option through `matchIngredients` so the shadow runner can pass `concurrency: 1` without contending with primary.
+
+- [ ] **Step 4: Run the suite**
+
+```bash
+bun run test
+bunx @biomejs/biome@2.4.2 check .
+```
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add lib/ai/pipeline/orchestrator.ts \
+        lib/ai/matching/cascade.ts \
+        lib/ai/pipeline/__tests__/run-telemetry.test.ts
+git commit -m "feat(pipeline): wire shadow runner into analyzeMeal post-response
+
+- Microtask-scheduled (never blocks user)
+- Separate MATCH_CONCURRENCY budget via new cascade option
+- Guard short-circuit persists outcome reason
+- Default off via SHADOW_RUNNER_ENABLED env flag
+
+Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>"
+```
+
+---
+
+### Task 4.7: Divergence query template + final sweep
+
+- [ ] **Step 1: Append divergence templates to `eval-kpis.sql`**
+
+Add a new section at the bottom of `scripts/eval-kpis.sql`:
+
+```sql
+-- =====================================================================
+-- §5.2 Shadow runner — divergence query templates.
+-- These are skeletons; tweak windows / thresholds for the question at hand.
+-- =====================================================================
+
+-- 7. Macro-divergence histogram by candidate (model, prompt) pair.
+SELECT
+  candidate_model,
+  candidate_prompt_version,
+  count(*)                                                AS n,
+  avg((divergence->>'macroDeltaPct')::numeric)            AS mean_macro_delta,
+  percentile_cont(0.95) WITHIN GROUP (
+    ORDER BY (divergence->>'macroDeltaPct')::numeric)     AS p95_macro_delta,
+  count(*) FILTER (
+    WHERE (divergence->>'macroDeltaPct')::numeric > 0.30) AS over_30pct
+FROM pipeline_shadow_runs
+WHERE created_at >= now() - interval '7 days'
+  AND outcome = 'completed'
+GROUP BY 1, 2
+ORDER BY 1, 2;
+
+-- 8. Ingredient-count delta distribution.
+SELECT
+  (divergence->>'ingredientCountDelta')::int  AS delta,
+  count(*)                                    AS n
+FROM pipeline_shadow_runs
+WHERE created_at >= now() - interval '7 days'
+  AND outcome = 'completed'
+GROUP BY 1
+ORDER BY 1;
+
+-- 9. Abort-outcome breakdown.
+SELECT outcome, count(*)
+FROM pipeline_shadow_runs
+WHERE created_at >= now() - interval '7 days'
+GROUP BY 1
+ORDER BY 2 DESC;
+```
+
+- [ ] **Step 2: Final lint + test sweep**
+
+```bash
+bun run test
+bunx @biomejs/biome@2.4.2 check .
+```
+
+Both must pass clean. If anything fails, fix before commit.
+
+- [ ] **Step 3: Commit**
+
+```bash
+git add scripts/eval-kpis.sql
+git commit -m "feat(scripts): add shadow-runner divergence query templates
+
+Spec §5.2.
+
+Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>"
+```
+
+---
+
+### Chunk 4 — outcome verification
+
+After Chunk 4 ships:
+
+- [ ] `scripts/eval-kpis.sql` exists and parses against the live schema. All blocks are independently re-runnable.
+- [ ] `pipeline_shadow_runs` table exists with service-role RLS. No end-user code reads it.
+- [ ] `lib/ai/pipeline/shadow-sampling.ts` exports `SHADOW_SAMPLING_RATE = 0.05` and a deterministic `isShadowSampled(requestId, config)`. Unit-tested for ~5% hit rate ± 1% over 10k samples.
+- [ ] `lib/ai/pipeline/shadow-runner.ts` exports `runShadow(input, deps)` that **never throws**, persists a row with `outcome ∈ {completed, errored, aborted_*}`, and computes `divergence: { macroDeltaPct, ingredientCountDelta, anomalyTypeDelta }`.
+- [ ] `lib/ai/pipeline/shadow-guards.ts` exports `createShadowGuard(cfg)` with primary-p95 (30-min cooldown), DB-pool-wait (per-call), and embedding-rate-limit (per-call) abort modes. All metric providers are injectable; production wiring may stub them.
+- [ ] `lib/ai/matching/cascade.ts` accepts an optional `concurrency` option on `matchIngredients`; default unchanged at 2; shadow callers pass an isolated budget.
+- [ ] `analyzeMeal` invokes the shadow runner **only when** `SHADOW_RUNNER_ENABLED === 'true'` AND `isShadowSampled(requestId)` is true. The invocation is microtask-scheduled (never `await`-ed); primary response and `pipeline_runs` row are unchanged whether shadow runs or not.
+- [ ] `pipeline_shadow_runs.request_id` joins back to `pipeline_runs.request_id` (and `pipeline_requests.id` for raw-input recovery during the 7-day TTL window). No raw input is duplicated into `pipeline_shadow_runs`.
+- [ ] All Chunk 1–3 tests still pass. `bunx @biomejs/biome@2.4.2 check .` clean.
+
+**Behavior change vs. before this chunk:** none for end users. Operationally, KPI rollups are now runnable, and the shadow-runner infrastructure is dormant-but-ready. Turning it on is a separate decision (env flag) handled outside this chunk.
+
+---
