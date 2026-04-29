@@ -2328,74 +2328,113 @@ After Chunk 2 ships:
 
 - [ ] **Step 1: Write failing tests**
 
-Append to `lib/ai/pipeline/validation.test.ts` a new `describe('density envelope', …)` block:
+Append to `lib/ai/pipeline/validation.test.ts`. The existing helpers in that file are `makeMatched({ ingredientName, … })`, `makeDecomposition([{ name, ingredients: [{ name, grams, cooking? }] }])`, and `makeNutrition([{ name, ingredients: [{ name, midKcal, lowKcal?, highKcal? }] }])`. `makeNutrition` hard-codes `proteinG/carbohydrateG/fatG` channels — Step 1a extends it (additively) to accept per-channel overrides; Step 1b uses the extended helper.
+
+**Step 1a — extend `makeNutrition` to accept channel overrides** (commit this with the failing tests, since the new tests need the extension):
 
 ```ts
-describe('density envelope', () => {
+function makeNutrition(
+  items: {
+    name: string;
+    ingredients: {
+      name: string;
+      midKcal: number;
+      lowKcal?: number;
+      highKcal?: number;
+      proteinG?: { low: number; mid: number; high: number };
+      carbohydrateG?: { low: number; mid: number; high: number };
+      fatG?: { low: number; mid: number; high: number };
+    }[];
+  }[]
+): NutritionAdjustment {
+  // existing body, but spread the optional overrides over the defaults:
+  // proteinG: ing.proteinG ?? { low: 5, mid: 10, high: 15 }, etc.
+}
+```
+
+**Step 1b — append the new describe blocks**:
+
+```ts
+describe('density envelope (§1.4)', () => {
   it('flags caloriesKcal density above 900 kcal/100g', () => {
     const anomalies = validateNutritionOutput(
-      buildNutrition({ caloriesKcal: { low: 800, mid: 950, high: 1100 }, grams: 100 }),
-      [buildMatch('cá hồi')],
-      [buildDecomp('cá hồi', 100, null)],
+      makeNutrition([{ name: 'M', ingredients: [{ name: 'cá hồi', midKcal: 950, lowKcal: 800, highKcal: 1100 }] }]),
+      [makeMatched({ ingredientName: 'cá hồi' })],
+      makeDecomposition([{ name: 'M', ingredients: [{ name: 'cá hồi', grams: 100 }] }]),
     );
     expect(anomalies.find((a) => a.type === 'density_envelope')).toBeDefined();
   });
 
   it('flags negative low bound', () => {
     const anomalies = validateNutritionOutput(
-      buildNutrition({ proteinG: { low: -1, mid: 5, high: 10 }, grams: 100 }),
-      [buildMatch('cá hồi')],
-      [buildDecomp('cá hồi', 100, null)],
+      makeNutrition([{
+        name: 'M',
+        ingredients: [{ name: 'cá hồi', midKcal: 100, proteinG: { low: -1, mid: 5, high: 10 } }],
+      }]),
+      [makeMatched({ ingredientName: 'cá hồi' })],
+      makeDecomposition([{ name: 'M', ingredients: [{ name: 'cá hồi', grams: 100 }] }]),
+    );
+    expect(anomalies.find((a) => a.type === 'density_envelope')).toBeDefined();
+  });
+
+  it('fires for unmatched ingredients too', () => {
+    // No matchedLookup hit — density check must still run.
+    const anomalies = validateNutritionOutput(
+      makeNutrition([{ name: 'M', ingredients: [{ name: 'mystery sauce', midKcal: 950, lowKcal: 800, highKcal: 1100 }] }]),
+      [], // no matches
+      makeDecomposition([{ name: 'M', ingredients: [{ name: 'mystery sauce', grams: 100 }] }]),
     );
     expect(anomalies.find((a) => a.type === 'density_envelope')).toBeDefined();
   });
 
   it('does not flag legal densities', () => {
     const anomalies = validateNutritionOutput(
-      buildNutrition({ caloriesKcal: { low: 100, mid: 130, high: 160 }, grams: 100 }),
-      [buildMatch('cá hồi')],
-      [buildDecomp('cá hồi', 100, null)],
+      makeNutrition([{ name: 'M', ingredients: [{ name: 'cá hồi', midKcal: 130, lowKcal: 100, highKcal: 160 }] }]),
+      [makeMatched({ ingredientName: 'cá hồi' })],
+      makeDecomposition([{ name: 'M', ingredients: [{ name: 'cá hồi', grams: 100 }] }]),
     );
     expect(anomalies.find((a) => a.type === 'density_envelope')).toBeUndefined();
   });
 });
 
-describe('macro consistency invariant', () => {
+describe('macro consistency invariant (§1.3)', () => {
   it('flags >20% deviation between caloriesKcal.mid and 4P+4C+9F', () => {
-    // 4*5 + 4*30 + 9*10 = 230; deviation from 400 is (170/230) ≈ 74%
+    // macros: 4·5 + 4·30 + 9·10 = 230; reported 400; deviation = 170/400 = 42.5% > 20%.
     const anomalies = validateNutritionOutput(
-      buildNutrition({
-        caloriesKcal: { low: 350, mid: 400, high: 450 },
-        proteinG:    { low: 4,   mid: 5,   high: 6  },
-        carbohydrateG:{ low: 28, mid: 30,  high: 32 },
-        fatG:        { low: 9,   mid: 10,  high: 11 },
-        grams: 100,
-      }),
-      [buildMatch('cá hồi')],
-      [buildDecomp('cá hồi', 100, null)],
+      makeNutrition([{
+        name: 'M',
+        ingredients: [{
+          name: 'cá hồi', midKcal: 400, lowKcal: 350, highKcal: 450,
+          proteinG: { low: 4, mid: 5, high: 6 },
+          carbohydrateG: { low: 28, mid: 30, high: 32 },
+          fatG: { low: 9, mid: 10, high: 11 },
+        }],
+      }]),
+      [makeMatched({ ingredientName: 'cá hồi' })],
+      makeDecomposition([{ name: 'M', ingredients: [{ name: 'cá hồi', grams: 100 }] }]),
     );
     expect(anomalies.find((a) => a.type === 'macro_inconsistent')).toBeDefined();
   });
 
   it('accepts within 20% (fiber/alcohol/rounding)', () => {
-    // 4*5 + 4*30 + 9*10 = 230; tolerate up to 276 ≈ 20% over
+    // macros: 230; reported 260; deviation = 30/260 ≈ 11.5% (denom is reportedKcal per §1.3).
     const anomalies = validateNutritionOutput(
-      buildNutrition({
-        caloriesKcal: { low: 230, mid: 260, high: 290 },
-        proteinG:    { low: 4,   mid: 5,   high: 6  },
-        carbohydrateG:{ low: 28, mid: 30,  high: 32 },
-        fatG:        { low: 9,   mid: 10,  high: 11 },
-        grams: 100,
-      }),
-      [buildMatch('cá hồi')],
-      [buildDecomp('cá hồi', 100, null)],
+      makeNutrition([{
+        name: 'M',
+        ingredients: [{
+          name: 'cá hồi', midKcal: 260, lowKcal: 230, highKcal: 290,
+          proteinG: { low: 4, mid: 5, high: 6 },
+          carbohydrateG: { low: 28, mid: 30, high: 32 },
+          fatG: { low: 9, mid: 10, high: 11 },
+        }],
+      }]),
+      [makeMatched({ ingredientName: 'cá hồi' })],
+      makeDecomposition([{ name: 'M', ingredients: [{ name: 'cá hồi', grams: 100 }] }]),
     );
     expect(anomalies.find((a) => a.type === 'macro_inconsistent')).toBeUndefined();
   });
 });
 ```
-
-`buildNutrition`/`buildMatch`/`buildDecomp` are existing helpers in `validation.test.ts`. If they don't yet emit per-ingredient `grams`, extend them — keep the API additive.
 
 - [ ] **Step 2: Run the tests to confirm they fail**
 
@@ -2407,17 +2446,16 @@ Expected: FAIL on the new tests — `density_envelope` and `macro_inconsistent` 
 
 - [ ] **Step 3: Add the new types + thresholds**
 
-In `lib/ai/pipeline/validation.ts`:
+In `lib/ai/pipeline/validation.ts`. Note: the file already exports `MAX_KCAL_PER_100G = 900` for the existing `calorie_density` check on DB rows. Reuse that constant for the kcal cap and add the three macro caps + the consistency tolerance:
 
 ```ts
 export const THRESHOLDS = {
   // existing thresholds…
-  /** Spec §1.4 — per-100g caps; high bound triggers the envelope. */
-  DENSITY_KCAL_PER_100G_MAX: 900,
+  /** Spec §1.4 — per-100g macro caps; high bound triggers the envelope. */
   DENSITY_PROTEIN_PER_100G_MAX: 100,
   DENSITY_CARB_PER_100G_MAX: 100,
   DENSITY_FAT_PER_100G_MAX: 100,
-  /** Spec §1.3 — kcal identity tolerance. */
+  /** Spec §1.3 — kcal identity tolerance; denominator is reportedKcal. */
   MACRO_KCAL_IDENTITY_TOLERANCE: 0.20,
 } as const;
 
@@ -2434,49 +2472,64 @@ export type AnomalyType =
 
 - [ ] **Step 4: Add the validators**
 
-Inside the existing `validateNutritionOutput` per-ingredient loop (after the `db_deviation` block), add:
+The §1.3 and §1.4 checks must run for **every** ingredient (matched or unmatched) — density and kcal-identity are physical-world invariants on LLM output, not DB-anchored sanity checks. Lift the `decomposed` lookup out of the existing `if (matchInfo)` branch first, then run the two checks unconditionally in the per-ingredient loop:
 
 ```ts
-// §1.4 — density envelope
-const grams = decomposed?.estimatedGrams ?? null;
-if (grams && grams > 0) {
-  const density = (val: number) => (val / grams) * 100;
-  const breaches: string[] = [];
-  if (ing.caloriesKcal.high > 0 &&
-      density(ing.caloriesKcal.high) > THRESHOLDS.DENSITY_KCAL_PER_100G_MAX) {
-    breaches.push(`kcal density ${density(ing.caloriesKcal.high).toFixed(0)}/100g > ${THRESHOLDS.DENSITY_KCAL_PER_100G_MAX}`);
-  }
-  if (ing.proteinG.high      > 0 && density(ing.proteinG.high)      > THRESHOLDS.DENSITY_PROTEIN_PER_100G_MAX) breaches.push(`protein density ${density(ing.proteinG.high).toFixed(0)}/100g`);
-  if (ing.carbohydrateG.high > 0 && density(ing.carbohydrateG.high) > THRESHOLDS.DENSITY_CARB_PER_100G_MAX)    breaches.push(`carb density ${density(ing.carbohydrateG.high).toFixed(0)}/100g`);
-  if (ing.fatG.high          > 0 && density(ing.fatG.high)          > THRESHOLDS.DENSITY_FAT_PER_100G_MAX)     breaches.push(`fat density ${density(ing.fatG.high).toFixed(0)}/100g`);
-  if (ing.caloriesKcal.low < 0 || ing.proteinG.low < 0 || ing.carbohydrateG.low < 0 || ing.fatG.low < 0) {
-    breaches.push('negative low bound');
-  }
-  if (breaches.length > 0) {
-    anomalies.push({
-      type: 'density_envelope',
-      message: `${ing.ingredientName}: ${breaches.join('; ')}`,
-      severity: 'warning',
-    });
-  }
-}
+for (const ing of mealItem.ingredients) {
+  const midKcal = ing.caloriesKcal.mid;
+  mealItemMidKcal += midKcal;
 
-// §1.3 — macro consistency invariant (4P+4C+9F vs caloriesKcal)
-for (const channel of ['low', 'mid', 'high'] as const) {
-  const kcalFromMacros =
-    4 * ing.proteinG[channel] +
-    4 * ing.carbohydrateG[channel] +
-    9 * ing.fatG[channel];
-  const reportedKcal = ing.caloriesKcal[channel];
-  const denom = Math.max(reportedKcal, 1);
-  const deviation = Math.abs(reportedKcal - kcalFromMacros) / denom;
-  if (deviation > THRESHOLDS.MACRO_KCAL_IDENTITY_TOLERANCE) {
-    anomalies.push({
-      type: 'macro_inconsistent',
-      message: `${ing.ingredientName} ${channel}: kcal ${reportedKcal.toFixed(0)} vs 4P+4C+9F=${kcalFromMacros.toFixed(0)} (${(deviation * 100).toFixed(0)}% > ${(THRESHOLDS.MACRO_KCAL_IDENTITY_TOLERANCE * 100).toFixed(0)}%)`,
-      severity: 'warning',
-    });
-    break; // one anomaly per ingredient is enough; channel covered in message
+  // Lift decomposition lookup OUT of `if (matchInfo)` so unmatched ingredients
+  // also get §1.3/§1.4 checks.
+  const decomposed = decomposedLookup.get(ing.ingredientName);
+
+  const matchInfo = matchedLookup.get(ing.ingredientName);
+  if (matchInfo) {
+    // existing calorie_density + db_deviation checks (use `decomposed` here)
+  }
+
+  // §1.4 — density envelope (matched + unmatched)
+  const grams = decomposed?.estimatedGrams ?? null;
+  if (grams && grams > 0) {
+    const density = (val: number) => (val / grams) * 100;
+    const breaches: string[] = [];
+    if (ing.caloriesKcal.high > 0 &&
+        density(ing.caloriesKcal.high) > THRESHOLDS.MAX_KCAL_PER_100G) {
+      breaches.push(`kcal density ${density(ing.caloriesKcal.high).toFixed(0)}/100g > ${THRESHOLDS.MAX_KCAL_PER_100G}`);
+    }
+    if (ing.proteinG.high      > 0 && density(ing.proteinG.high)      > THRESHOLDS.DENSITY_PROTEIN_PER_100G_MAX) breaches.push(`protein density ${density(ing.proteinG.high).toFixed(0)}/100g`);
+    if (ing.carbohydrateG.high > 0 && density(ing.carbohydrateG.high) > THRESHOLDS.DENSITY_CARB_PER_100G_MAX)    breaches.push(`carb density ${density(ing.carbohydrateG.high).toFixed(0)}/100g`);
+    if (ing.fatG.high          > 0 && density(ing.fatG.high)          > THRESHOLDS.DENSITY_FAT_PER_100G_MAX)     breaches.push(`fat density ${density(ing.fatG.high).toFixed(0)}/100g`);
+    if (ing.caloriesKcal.low < 0 || ing.proteinG.low < 0 || ing.carbohydrateG.low < 0 || ing.fatG.low < 0) {
+      breaches.push('negative low bound');
+    }
+    if (breaches.length > 0) {
+      anomalies.push({
+        type: 'density_envelope',
+        message: `${ing.ingredientName}: ${breaches.join('; ')}`,
+        severity: 'warning',
+      });
+    }
+  }
+
+  // §1.3 — macro consistency (matched + unmatched). Denominator is reportedKcal
+  // (max 1) so over-reporting kcal vs macros is symmetric to under-reporting.
+  for (const channel of ['low', 'mid', 'high'] as const) {
+    const kcalFromMacros =
+      4 * ing.proteinG[channel] +
+      4 * ing.carbohydrateG[channel] +
+      9 * ing.fatG[channel];
+    const reportedKcal = ing.caloriesKcal[channel];
+    const denom = Math.max(reportedKcal, 1);
+    const deviation = Math.abs(reportedKcal - kcalFromMacros) / denom;
+    if (deviation > THRESHOLDS.MACRO_KCAL_IDENTITY_TOLERANCE) {
+      anomalies.push({
+        type: 'macro_inconsistent',
+        message: `${ing.ingredientName} ${channel}: kcal ${reportedKcal.toFixed(0)} vs 4P+4C+9F=${kcalFromMacros.toFixed(0)} (${(deviation * 100).toFixed(0)}% > ${(THRESHOLDS.MACRO_KCAL_IDENTITY_TOLERANCE * 100).toFixed(0)}%)`,
+        severity: 'warning',
+      });
+      break; // one anomaly per ingredient
+    }
   }
 }
 ```
@@ -2505,46 +2558,75 @@ Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>"
 
 ---
 
-### Task 3.2: Hook the new counters into `pipeline_runs`
+### Task 3.2: Aggregate counters in the orchestrator + extend `pipeline_runs` row
+
+Chunk 1d landed `buildPipelineRunRow({ counters: { densityEnvelopeFires, macroInconsistentFires, cookedToRawFactorFires, … } })` in `lib/ai/pipeline/run-telemetry.ts`. The builder is **input-driven** — it does not aggregate anomalies itself. The aggregation happens at the orchestrator's `counters: {…}` assembly site, immediately before the `buildPipelineRunRow(…)` call. Tasks 3.2 and 3.3 share that site (3.2 fills `densityEnvelopeFires` + `macroInconsistentFires`; 3.3 fills `cookedToRawFactorFires`).
 
 **Files:**
-- Modify: `lib/ai/pipeline/orchestrator.ts` (the `pipeline_runs` row writer added in Chunk 1d Task 1.13)
-- Modify: `lib/ai/pipeline/orchestrator.test.ts` (or wherever the Chunk 1d row-writer tests live — Task 1.13 placed them next to the orchestrator)
+- Modify: `lib/ai/pipeline/orchestrator.ts` — the block that constructs `counters` for `buildPipelineRunRow`.
+- Modify: `lib/ai/pipeline/__tests__/run-telemetry.test.ts` — already exists from Chunk 1d; extend with the orchestrator-level integration cases below.
 
 - [ ] **Step 1: Failing test**
 
-Add a test that ends-to-end runs the orchestrator with a Call 2 output that triggers `density_envelope`, then asserts the persisted `pipeline_runs` row has `density_envelope_fires === 1` (and `macro_inconsistent_fires === 1` for a second case).
-
-Re-use the orchestrator harness from Chunk 1d's tests; do not introduce a new fixture surface.
-
-- [ ] **Step 2: Run the test to confirm it fails**
-
-```bash
-bun run test lib/ai/pipeline/orchestrator.test.ts
-```
-
-Expected: FAIL — counters always 0 because the row writer doesn't aggregate the new anomaly types yet.
-
-- [ ] **Step 3: Aggregate counts in the row writer**
-
-In the spot where Chunk 1d's row builder counts anomalies, add:
+Append to `__tests__/run-telemetry.test.ts` an integration-level `describe('orchestrator → buildPipelineRunRow', …)` (use the same orchestrator harness Chunk 1d set up there). Two cases:
 
 ```ts
-density_envelope_fires:  anomalies.filter((a) => a.type === 'density_envelope').length,
-macro_inconsistent_fires: anomalies.filter((a) => a.type === 'macro_inconsistent').length,
+it('aggregates density_envelope warnings into counters.densityEnvelopeFires', async () => {
+  // Inject a Call 2 result that breaches kcal density on one ingredient.
+  const { row } = await runOrchestratorWithFixture({
+    nutritionOutput: nutritionWithKcalDensityBreach,
+  });
+  expect(row.densityEnvelopeFires).toBe(1);
+  expect(row.macroInconsistentFires).toBe(0);
+  expect(row.anomalyTypes).toContain('density_envelope');
+});
+
+it('aggregates macro_inconsistent warnings into counters.macroInconsistentFires', async () => {
+  const { row } = await runOrchestratorWithFixture({
+    nutritionOutput: nutritionWithKcalIdentityBreach,
+  });
+  expect(row.macroInconsistentFires).toBe(1);
+  expect(row.densityEnvelopeFires).toBe(0);
+  expect(row.anomalyTypes).toContain('macro_inconsistent');
+});
 ```
 
-(`anomaly_types: text[]` already lists every type emitted; the integer counts complement it for fast aggregate queries per spec §0.4.)
+If `runOrchestratorWithFixture` is not yet a helper in this file (Chunk 1d may have used inline orchestrator calls), inline an equivalent invocation — match Chunk 1d's existing pattern.
+
+- [ ] **Step 2: Confirm fail**
+
+```bash
+bun run test lib/ai/pipeline/__tests__/run-telemetry.test.ts
+```
+
+Expected: FAIL — orchestrator's `counters` block does not yet aggregate the new anomaly types.
+
+- [ ] **Step 3: Aggregate counts at the orchestrator's `counters` site**
+
+Locate the orchestrator block that builds the `counters` argument to `buildPipelineRunRow` (Chunk 1d wired this; grep `buildPipelineRunRow(` in `orchestrator.ts`). Add to the counters object literal (camelCase, matching `BuildPipelineRunRowInput.counters`):
+
+```ts
+counters: {
+  // existing entries from Chunk 1d…
+  densityEnvelopeFires:   allAnomalies.filter((a) => a.type === 'density_envelope').length,
+  macroInconsistentFires: allAnomalies.filter((a) => a.type === 'macro_inconsistent').length,
+  // cookedToRawFactorFires is filled by Task 3.3 — leave the existing 0 for now
+},
+```
+
+`anomaly_types: text[]` is already populated by `buildPipelineRunRow` from the deduplicated anomaly type list — no changes needed there.
 
 - [ ] **Step 4: Test green; commit**
 
 ```bash
 bunx @biomejs/biome@2.4.2 check .
-bun run test lib/ai/pipeline/orchestrator.test.ts
+bun run test lib/ai/pipeline/__tests__/run-telemetry.test.ts
 git add -u
-git commit -m "feat(ai/pipeline): write density_envelope/macro_inconsistent counters
+git commit -m "feat(ai/pipeline): aggregate density_envelope and macro_inconsistent counters
 
-Spec §0.4 — per-run counts complement anomaly_types[] for KPI rollups.
+Spec §0.4 — per-run camelCase counters densityEnvelopeFires and
+macroInconsistentFires fed into buildPipelineRunRow at the orchestrator
+counters site (added in Chunk 1d). cookedToRawFactorFires lands in Task 3.3.
 
 Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>"
 ```
@@ -2567,18 +2649,19 @@ This is the live-path change. The legacy fallback is intentional — pulling the
 
 - [ ] **Step 1: Write failing tests**
 
-Add to the assembly test file:
+Add to the assembly test file. The behaviour we're driving is observational: with `dbState === 'cooked'` and a non-trivial `cookingMethod`, the pre-conversion factor (e.g. `kho` → 0.8) must NOT be applied to the DB-scaled non-LLM nutrients. We assert that downstream by reading the resulting `boundedNutrition` for an LLM-omitted nutrient (e.g. `fiberG`) — those flow straight from `mergeNutrition`'s else-branch with `(per100g * dbScalingGrams) / 100`. Spy-on-named-import is unreliable here (the local binding inside `assembly.ts` does not re-resolve), so we use observational assertions on numeric output instead.
 
 ```ts
 describe('assembleResult — dbState-aware DB scaling', () => {
-  it('does NOT call convertCookedToRaw when match.dbState === "cooked"', () => {
-    const fired: number[] = [];
-    const spy = vi.spyOn(constants, 'convertCookedToRaw').mockImplementation((g) => {
-      fired.push(g);
-      return g; // identity — easier to assert downstream
-    });
+  it('uses estimatedGrams (not raw-converted) for DB scaling when dbState is "cooked"', () => {
     const matched: MatchedIngredient[] = [
-      { ...makeMatch('thịt bò bắp'), dbState: 'cooked', ingredientId: 'ing-1' },
+      // dbState === 'cooked' → no convertCookedToRaw call.
+      {
+        ...makeMatch('thịt bò bắp'),
+        ingredientId: 'ing-1',
+        dbState: 'cooked',
+        nutritionPer100g: { ...NULL_NUTRITION_VALUES, fiberG: 10 },
+      },
     ];
     const decomp = makeDecomposition([{ name: 'Phở bò', ingredients: [{
       ingredientId: 'ing-1', name: 'thịt bò bắp', estimatedGrams: 80, cookingMethod: 'kho',
@@ -2586,57 +2669,89 @@ describe('assembleResult — dbState-aware DB scaling', () => {
     const llm = makeLlmNutrition('thịt bò bắp', 'Phở bò', { caloriesKcal: { low: 100, mid: 150, high: 200 } });
 
     const result = assembleResult(decomp, llm, matched, [], userCtx);
+    const ing = result.mealItems[0].ingredients[0];
 
-    expect(fired).toEqual([]);
-    // ProcessedIngredient.rawEquivalentGrams equals estimatedGrams for cooked-DB matches
-    expect(result.mealItems[0].ingredients[0].rawEquivalentGrams).toBe(80);
-    spy.mockRestore();
+    // dbScalingGrams === estimatedGrams === 80 → fiberG = (10 * 80) / 100 = 8.0
+    expect(ing.boundedNutrition.fiberG?.mid).toBeCloseTo(8.0, 5);
+    // Field surfaces the gram value used: equals estimatedGrams.
+    expect(ing.rawEquivalentGrams).toBe(80);
   });
 
-  it('still calls convertCookedToRaw when match.dbState === "raw"', () => {
-    const fired: number[] = [];
-    const spy = vi.spyOn(constants, 'convertCookedToRaw').mockImplementation((g, m) => {
-      fired.push(g);
-      return Math.round(g * 0.85);
-    });
+  it('applies convertCookedToRaw when dbState === "raw"', () => {
     const matched: MatchedIngredient[] = [
-      { ...makeMatch('gạo tẻ'), dbState: 'raw', ingredientId: 'ing-2' },
+      {
+        ...makeMatch('gạo tẻ'),
+        ingredientId: 'ing-2',
+        dbState: 'raw',
+        nutritionPer100g: { ...NULL_NUTRITION_VALUES, fiberG: 10 },
+      },
     ];
     const decomp = makeDecomposition([{ name: 'Cơm', ingredients: [{
       ingredientId: 'ing-2', name: 'gạo tẻ', estimatedGrams: 200, cookingMethod: 'nấu',
     }]}]);
     const llm = makeLlmNutrition('gạo tẻ', 'Cơm', { caloriesKcal: { low: 100, mid: 150, high: 200 } });
 
-    assembleResult(decomp, llm, matched, [], userCtx);
+    const result = assembleResult(decomp, llm, matched, [], userCtx);
+    const ing = result.mealItems[0].ingredients[0];
 
-    expect(fired).toEqual([200]);
-    spy.mockRestore();
+    // 'nấu' factor is 0.38 → dbScalingGrams = round(200 * 0.38) = 76.
+    // fiberG = (10 * 76) / 100 = 7.6
+    expect(ing.boundedNutrition.fiberG?.mid).toBeCloseTo(7.6, 1);
+    expect(ing.rawEquivalentGrams).toBe(76);
   });
 
-  it('falls back to convertCookedToRaw when match.dbState is missing', () => {
-    // Equivalent to the legacy code path; instrumented fallback per §1.5.
-    const fired: number[] = [];
-    const spy = vi.spyOn(constants, 'convertCookedToRaw').mockImplementation((g) => {
-      fired.push(g);
-      return g;
-    });
+  it('treats dbState === "unknown" as legacy fallback (instrumented per §1.5)', () => {
+    // Per Chunk 1b Task 1.7, dbState is non-optional with 'unknown' as the default.
+    // Behaviour matches the legacy convertCookedToRaw path.
     const matched: MatchedIngredient[] = [
-      { ...makeMatch('cá'), ingredientId: 'ing-3' /* no dbState */ },
+      {
+        ...makeMatch('cá'),
+        ingredientId: 'ing-3',
+        dbState: 'unknown',
+        nutritionPer100g: { ...NULL_NUTRITION_VALUES, fiberG: 10 },
+      },
     ];
     const decomp = makeDecomposition([{ name: 'Cá kho', ingredients: [{
       ingredientId: 'ing-3', name: 'cá', estimatedGrams: 100, cookingMethod: 'kho',
     }]}]);
     const llm = makeLlmNutrition('cá', 'Cá kho', { caloriesKcal: { low: 100, mid: 120, high: 140 } });
 
-    assembleResult(decomp, llm, matched, [], userCtx);
+    const result = assembleResult(decomp, llm, matched, [], userCtx);
+    const ing = result.mealItems[0].ingredients[0];
 
-    expect(fired).toEqual([100]);
-    spy.mockRestore();
+    // 'kho' factor is 0.8 → dbScalingGrams = 80; fiberG = 8.0
+    expect(ing.rawEquivalentGrams).toBe(80);
+    expect(ing.boundedNutrition.fiberG?.mid).toBeCloseTo(8.0, 5);
   });
 });
 ```
 
-Use stable `ingredientId` keying per Chunk 1c when `assemble` looks up matches/llmNutrition — this should already be in place from Chunk 1c.
+For the §1.5 retirement counter, add a parallel test in `__tests__/run-telemetry.test.ts` (the orchestrator-integration `describe` block from Task 3.2):
+
+```ts
+it('increments cookedToRawFactorFires once per non-cooked-DB match', async () => {
+  // 2 matched ingredients: one cooked, one raw, one unknown.
+  const { row } = await runOrchestratorWithFixture({
+    matched: [
+      { ingredientName: 'thịt bò bắp', dbState: 'cooked' },
+      { ingredientName: 'gạo tẻ',      dbState: 'raw' },
+      { ingredientName: 'cá',          dbState: 'unknown' },
+    ],
+  });
+  // raw + unknown trigger the legacy convertCookedToRaw path.
+  expect(row.cookedToRawFactorFires).toBe(2);
+});
+
+it('cookedToRawFactorFires is 0 when every match is cooked-DB', async () => {
+  const { row } = await runOrchestratorWithFixture({
+    matched: [
+      { ingredientName: 'thịt bò bắp', dbState: 'cooked' },
+      { ingredientName: 'rau muống',   dbState: 'cooked' },
+    ],
+  });
+  expect(row.cookedToRawFactorFires).toBe(0);
+});
+```
 
 - [ ] **Step 2: Run tests to confirm they fail**
 
@@ -2658,29 +2773,47 @@ const dbScalingGrams =
     : convertCookedToRaw(ing.estimatedGrams, ing.cookingMethod);
 ```
 
-Then pass `dbScalingGrams` into `mergeNutrition` (replacing `rawEquivalentGrams`) and store it on `ProcessedIngredient` keyed under the existing `rawEquivalentGrams` field name (we keep the field name for back-compat with consumers in `mappers.ts`; the field now means "the gram value used for DB-row scaling, after dbState reconciliation").
+Then pass `dbScalingGrams` into `mergeNutrition` (replacing `rawEquivalentGrams`) and store it on `ProcessedIngredient` keyed under the existing `rawEquivalentGrams` field name. The field name is retained for back-compat with `mappers.ts` consumers; Step 4 documents the new meaning.
 
 - [ ] **Step 4: Update the field-level comment in `lib/ai/types.ts`**
 
 ```ts
 /**
- * Grams used internally for DB-row scaling. Equals `estimatedGrams` when the
- * matched DB row is cooked (no conversion needed). Equals
- * `convertCookedToRaw(estimatedGrams, cookingMethod)` when the matched row is
- * raw (or dbState is unknown — instrumented fallback per spec §1.5).
- * Display layers should use `estimatedGrams` instead.
+ * Grams used internally for DB-row nutrition scaling. Equals `estimatedGrams`
+ * when the matched DB row is cooked. Equals
+ * `convertCookedToRaw(estimatedGrams, cookingMethod)` when the row is raw or
+ * dbState is 'unknown'. Display layers should use `estimatedGrams`.
+ *
+ * @deprecated Field name is misleading post-Chunk 3. Rename to `dbScalingGrams`
+ * in a follow-up once spec §1.5 retirement gate trips and the legacy fallback
+ * is removed entirely.
  */
 rawEquivalentGrams: number;
 ```
 
-- [ ] **Step 5: Increment `cooked_to_raw_factor_fires` per spec §1.5**
+- [ ] **Step 5: Surface `cookedToRawFactorFires` to the orchestrator's counters site**
 
-In `assembly.ts`, when the conversion fallback fires (i.e., `dbState !== 'cooked'`), increment the counter that the orchestrator's `pipeline_runs` row builder reads. The cleanest path:
+The cleanest route given Chunk 1d's `BuildPipelineRunRowInput.counters` shape: extend `assembleResult`'s return with a small instrumentation channel rather than adding a side-effect counter.
 
-- Surface the count as a return-value metric from `assembleResult` (e.g., extend the existing `PipelineResult` with an optional `_internal: { cookedToRawFires: number }` or add a third return). The Chunk 1d row writer aggregates this.
-- Alternatively, hoist the dbState check into the orchestrator, count there, and pass `rawEquivalentGrams` in via the existing `ProcessedIngredient` shape.
+Add to `lib/ai/pipeline/assembly.ts`:
 
-Pick whichever matches the Chunk 1d row-writer wiring decision exactly — do not invent a new pattern. If unclear from Chunk 1d as it lands, surface a `cookedToRawFires` integer through the existing instrumentation channel and update the row writer to read it.
+```ts
+export interface AssemblyMetrics {
+  cookedToRawFactorFires: number;
+}
+
+// Replace the existing `return { mealItems: pipelineMealItems, … };` with:
+return {
+  result: { mealItems: pipelineMealItems, /* … existing fields */ },
+  metrics: { cookedToRawFactorFires } satisfies AssemblyMetrics,
+};
+```
+
+Where `cookedToRawFactorFires` is incremented inside the per-ingredient loop whenever `dbState !== 'cooked'`. Update the orchestrator to destructure `{ result, metrics } = assembleResult(…)` and forward `metrics.cookedToRawFactorFires` into the `counters` object passed to `buildPipelineRunRow` (the same site Task 3.2 touches).
+
+If this return-shape change exceeds the chunk LOC budget, the fallback is a module-scoped `let cookedToRawFactorFires = 0;` reset at the top of `assembleResult` and exported via a sibling getter — but prefer the structured return. Either way, the orchestrator's `counters.cookedToRawFactorFires:` line must be filled with a real source — leaving it `0` after this task is a regression.
+
+Update every existing `assembleResult(…)` caller (orchestrator + tests) to consume the new return shape.
 
 - [ ] **Step 6: Lint + tests + commit**
 
@@ -2743,13 +2876,13 @@ Expected: FAIL — XML still emits `raw_grams=`.
 
 - [ ] **Step 3: Rename XML attributes and rewrite the comment**
 
-In `nutrition.ts`:
+In `nutrition.ts`. The `const dbState = match.dbState ?? 'unknown';` line is already in place from Chunk 2 Task 2.4 — reuse it. Update only the XML emit and the `<calculation>` block.
 
 ```ts
 ingredientData +=
   '  <!-- as_eaten_grams is the user-facing portion. db_state tells you whether the per_100g values are raw or cooked. -->\n\n';
 
-// matched render line:
+// matched render line (dbState already declared above per Chunk 2):
 ingredientData += `    <ingredient name="${ing.name}" source="db_matched" db_name="${match.matchedName}" db_state="${dbState}" as_eaten_grams="${ing.estimatedGrams}"${ing.cookingMethod ? ` cooking="${ing.cookingMethod}"` : ''}>\n`;
 ingredientData += `      <per_100g caloriesKcal="${match.nutritionPer100g.caloriesKcal ?? '?'}" proteinG="${match.nutritionPer100g.proteinG ?? '?'}" carbohydrateG="${match.nutritionPer100g.carbohydrateG ?? '?'}" fatG="${match.nutritionPer100g.fatG ?? '?'}" />\n`;
 
@@ -2907,13 +3040,13 @@ Expected: zero hits (renamed to `as_eaten_grams` and `per_100g`).
 
 After Chunk 3 ships:
 
-- [ ] `validation.ts` exports `density_envelope` and `macro_inconsistent` as `AnomalyType`s with the §1.3/§1.4 thresholds.
-- [ ] The orchestrator's `pipeline_runs` row writer fills `density_envelope_fires` and `macro_inconsistent_fires` per run.
-- [ ] `assembleResult` no longer calls `convertCookedToRaw` when `match.dbState === 'cooked'`; the as-eaten `estimatedGrams` are used directly for DB scaling. `cooked_to_raw_factor_fires` counts the legacy-fallback path only.
-- [ ] `nutrition.ts` no longer imports `convertCookedToRaw`. The XML emits `as_eaten_grams=` (not `raw_grams=`) and `<per_100g …/>` (not `<per_100g_raw …/>`). The `<calculation>` block branches on `db_state`.
-- [ ] The retry loop fires on `density_envelope` and `macro_inconsistent` warnings without escalating yet.
+- [ ] `validation.ts` exports `density_envelope` and `macro_inconsistent` as `AnomalyType`s with the §1.3/§1.4 thresholds. Both run for matched **and** unmatched ingredients (the `decomposed` lookup is hoisted out of the `if (matchInfo)` branch).
+- [ ] The orchestrator's `counters` block (the input to `buildPipelineRunRow` from Chunk 1d) fills `densityEnvelopeFires`, `macroInconsistentFires`, and `cookedToRawFactorFires` from the live anomaly stream and `assembleResult` metrics. Field names are camelCase to match `BuildPipelineRunRowInput.counters`; the underlying snake_case columns (`density_envelope_fires`, `macro_inconsistent_fires`, `cooked_to_raw_factor_fires`) come from the Drizzle schema in Chunk 1d.
+- [ ] `assembleResult` no longer calls `convertCookedToRaw` when `match.dbState === 'cooked'`; the as-eaten `estimatedGrams` is used directly for DB scaling. `assembleResult` returns `{ result, metrics: { cookedToRawFactorFires } }` (or equivalent instrumentation channel matching the Chunk 1d wiring).
+- [ ] `nutrition.ts` no longer imports `convertCookedToRaw`. The XML emits `as_eaten_grams=` (not `raw_grams=`) and `<per_100g …/>` (not `<per_100g_raw …/>`). The `<calculation>` block branches on `db_state ∈ {cooked, raw, unknown}`.
+- [ ] The retry loop fires on `density_envelope` and `macro_inconsistent` warnings without escalating yet (escalation lands in Chunk 5 §4.2).
 - [ ] All Chunk 2 sentinel tests still pass — no preference-shaped strings reintroduced.
-- [ ] `convertCookedToRaw` and `COOKED_TO_RAW_FACTOR` are still exported from `constants.ts` and called only by `assembly.ts` (gated fallback) and `validation.ts` (DB-deviation comparator). Spec §1.5 retirement gate (< 5% fire rate over 7 days) is checked manually post-launch — not part of this chunk.
+- [ ] `convertCookedToRaw` and `COOKED_TO_RAW_FACTOR` are still exported from `constants.ts`. Live callers post-Chunk-3: `assembly.ts` (gated fallback for `dbState !== 'cooked'`) and `validation.ts` line ~105 (DB-deviation comparator — kept as a sanity baseline, retire alongside the spec §1.5 fire-rate gate). `nutrition.ts` no longer calls it.
 
 **User-facing behavior change:** for cooked-DB-row matches (most cooked-rice/cooked-meat rows in FAO Vietnam), the live nutrition values stop being silently undercounted. End-user totals shift upward for those meals — this is the spec §0.2 correctness fix landing.
 
