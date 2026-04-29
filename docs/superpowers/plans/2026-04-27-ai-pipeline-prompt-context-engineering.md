@@ -5920,7 +5920,41 @@ export type AmbiguityFlag = z.infer<typeof ambiguityFlagSchema>;
 
 Run the test. Expected: PASS.
 
-- [ ] **Step 3: Audit + delete consumers of the old shape**
+- [ ] **Step 4: Add a deferred-non-grams unit handler with telemetry**
+
+The schema replaces `estimatedGrams: number` with `quantity + unit: string`. Every nutrition/matching consumer downstream still expects grams. Full Vietnamese unit-conversion is out of scope for this chunk (separate work); for Chunk 6 we lock a **deferred fallback** with telemetry visibility:
+
+`lib/ai/pipeline/unit-conversion.ts` (NEW):
+
+```ts
+export interface UnitConversionResult {
+  grams: number;
+  fellBack: boolean; // true if unit was non-'g' and we treated quantity as grams
+  unit: string;
+}
+
+/**
+ * Vietnamese cooking units. v1 only handles `g`; everything else is a
+ * deferred fallback that increments unit_conversion_fallbacks telemetry.
+ * Future work: full unit table for `ml | kg | miếng | chén | bát | lát | cái`.
+ */
+export function toGrams(quantity: number, unit: string): UnitConversionResult {
+  const normalized = unit.trim().toLocaleLowerCase('vi-VN');
+  if (normalized === 'g' || normalized === 'gram' || normalized === 'grams') {
+    return { grams: quantity, fellBack: false, unit: normalized };
+  }
+  // Fallback: log + treat as grams. The decomposition prompt instructs the
+  // LLM to default `unit: 'g'` when ambiguous, so this path is the
+  // exception, not the norm. Spec §2.1 line 287 keeps unit free-form.
+  return { grams: quantity, fellBack: true, unit: normalized };
+}
+```
+
+Test (`__tests__/unit-conversion.test.ts`): assert `g`/`gram`/`grams` return `fellBack: false`; `miếng`/`chén`/`ml` return `fellBack: true` with `grams === quantity`.
+
+Wire into the orchestrator post-decomposition: convert each ingredient's `quantity`/`unit` to grams, count `fellBack: true` cases, forward as `pipelineRunRow.unitConversionFallbacks` (add `unitConversionFallbacks: integer().notNull().default(0)` to `pipelineRuns` schema in this same commit; same Drizzle migration flow as Task 6.6 Step 2). Downstream code keeps consuming a single `grams` field — no API surface change.
+
+- [ ] **Step 5: Audit + delete consumers of the old shape**
 
 The old schema exposed `name`/`estimatedGrams`/`cookingMethod`/`userFacingUnit` directly on each ingredient. Every consumer needs an update. Run:
 
@@ -5934,28 +5968,33 @@ Update each call site:
 - `userFacingUnit` → `unit` (the schema now has it inline)
 - `decomposedMealItemSchema` → `decomposedDishSchema` (renamed)
 
-> **Important — `quantity`+`unit` is NOT 1:1 replacement for `estimatedGrams`.** The matching/nutrition path expects grams. Add a unit-conversion helper that handles the common Vietnamese units (`g`, `ml`, `kg`, `miếng`, `chén`, `bát`, `lát`, `cái`) and falls back to the LLM's existing implicit "estimatedGrams = quantity when unit=='g'" assumption. The LLM is instructed in the new prompt (Task 6.2) to default `unit: 'g'` when ambiguous, which preserves today's behavior.
+> **Note — `quantity`+`unit` is not 1:1 replacement for `estimatedGrams`.** The matching/nutrition path expects grams. Step 4 above adds the deferred-fallback helper; future work expands the unit table.
 
-- [ ] **Step 4: Run the suite + lint**
+- [ ] **Step 6: Run the suite + lint**
 
 ```bash
 bun run test
 bunx @biomejs/biome@2.4.2 check .
 ```
 
-The full suite WILL fail in places — every consumer update is its own commit (Step 5). Land them in dependency order: types → assembly → orchestrator → prompts (Task 6.2 next) → assertions in existing tests.
+The full suite WILL fail in places — every consumer update is its own commit (Step 7). Land them in dependency order: types → assembly → orchestrator → prompts (Task 6.2 next) → assertions in existing tests.
 
-- [ ] **Step 5: Commit (schema only)**
+- [ ] **Step 7: Commit (schema only)**
 
 ```bash
 git add lib/ai/pipeline/schemas.ts \
-        lib/ai/pipeline/__tests__/schemas-decomposition.test.ts
+        lib/ai/pipeline/__tests__/schemas-decomposition.test.ts \
+        lib/ai/pipeline/unit-conversion.ts \
+        lib/ai/pipeline/__tests__/unit-conversion.test.ts \
+        lib/db/schema.ts \
+        supabase/migrations/
 git commit -m "feat(pipeline/schemas): dish-wrapped decomposition schema (§2.1)
 
 - DecomposedDish wraps ingredients with mealItemId + cookingMethod + cuisineNote.
 - DecomposedIngredient: ingredientId/rawName/canonicalName/quantity/unit/expectedState.
 - AmbiguityFlag closed enum.
 - .strict() rejects sourcePrior/sourceOverride (locked: removed entirely).
+- toGrams() deferred-fallback helper + pipeline_runs.unit_conversion_fallbacks counter.
 - Bumps DECOMPOSITION_SCHEMA_VERSION (separate commit alongside Task 6.2).
 
 Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>"
@@ -6140,7 +6179,7 @@ describe('deriveExpectedState', () => {
     expect(out.state).toBe('cooked');
   });
 
-  it('is case + whitespace + diacritic tolerant on lookup keys', () => {
+  it('is case + whitespace tolerant on lookup keys (diacritic-preserving)', () => {
     expect(
       deriveExpectedState({ explicit: undefined, dishMethod: '  Luộc  ' }).source
     ).toBe('method_lookup');
@@ -6374,7 +6413,33 @@ export function pickBestSource(
 }
 ```
 
-> **Note on call-site update:** `pickBestSource` has two existing call sites (line 159 vector winner, line 194 fuzzy winner). Both must be updated to pass `ctx` derived from the per-ingredient `expectedState` carried through from Task 6.3's orchestrator wiring. Thread `expectedState` through `matchSingleIngredientWithEmbedding` as a new arg.
+> **Note on call-site update:** `pickBestSource` has two existing call sites (line 159 vector winner, line 194 fuzzy winner). Both must be updated to pass `ctx` derived from the per-ingredient `expectedState` AND `_stateSource` carried through from Task 6.3's orchestrator wiring.
+>
+> **Critical: collapse `_stateSource === 'unknown'` to `expectedState: 'unknown'` at the call site.** Task 6.3 always sets `expectedState` to a concrete `'raw' | 'cooked'` (the safe default when the lookup misses). The `'unknown'` literal in `PickBestSourceContext` is what disables the tie-breaker (test at Step 1 enforces this). Threading the field name alone would silently apply the tie-breaker on low-confidence state — losing §2.3 line 308's invariant.
+>
+> Extend `matchSingleIngredientWithEmbedding`'s signature to accept `stateInfo: { expectedState: 'raw' | 'cooked'; stateSource: 'explicit' | 'method_lookup' | 'unknown' }`. Inside the function, build the context once:
+>
+> ```ts
+> const pickCtx: PickBestSourceContext = {
+>   expectedState:
+>     stateInfo.stateSource === 'unknown' ? 'unknown' : stateInfo.expectedState,
+> };
+> // Both call sites:
+> const vectorWinner = pickBestSource(faoResult, usdaResult, pickCtx);
+> // ...
+> const fuzzyWinner = pickBestSource(faoFuzzy, usdaFuzzy, pickCtx);
+> ```
+>
+> **`MatchInfo.state` extension.** `FuzzyMatchRow.state` is a free-text DB column (`source-matching.ts:40`). Extend `MatchInfo` with a narrowed `state: 'raw' | 'cooked' | 'unknown'` field. Inside `buildMatchResult` (around line 71), narrow:
+>
+> ```ts
+> const narrowedState =
+>   topMatch.state === 'raw' ? 'raw'
+>   : topMatch.state === 'cooked' ? 'cooked'
+>   : 'unknown';
+> ```
+>
+> This keeps the test fixture's `state` field type-aligned with the production `MatchInfo` shape.
 
 - [ ] **Step 3: Update existing tests + add the new state-aware tests**
 
@@ -6507,7 +6572,17 @@ export function createCanonicalNameValidator(
 
 - [ ] **Step 3: Wire into orchestrator + emit telemetry**
 
-In `analyzeMeal`, build the validator from the existing FAO+USDA vocabulary set (the one already loaded for the embedding cache; reuse — do not load it again). Validate every `canonicalName` post-decomposition. Forward the per-run miss counts as `preMatchAliasHits` into `buildPipelineRunRow` for `pipeline_runs.pre_match_alias_hits` (this column may need a Chunk 1d schema follow-up; if not present, add it as a JSONB column in this task's commit).
+In `analyzeMeal`, build the validator from the existing FAO+USDA vocabulary set (the one already loaded for the embedding cache; reuse — do not load it again). Validate every `canonicalName` post-decomposition.
+
+The `pipeline_runs.pre_match_alias_hits` column already exists from Chunk 1d as a `smallint('pre_match_alias_hits').notNull().default(0)` (matches spec §0.4 line 136 — scalar counter, not per-name JSONB). Forward the **total** miss count as the integer:
+
+```ts
+const missCounts = canonicalNameValidator.getMissCounts();
+const preMatchAliasHits = Object.values(missCounts).reduce((sum, n) => sum + n, 0);
+// → pipelineRunRow.preMatchAliasHits = preMatchAliasHits;
+```
+
+The per-name miss map is local to one run; if per-name aggregation is wanted later for alias-retirement decisions, do it offline against the application log stream — DO NOT add a per-row JSONB column.
 
 > **Important — vocabulary loading.** If the embedding cache's vocabulary is loaded lazily (only on cache miss), the validator may run before the set is populated. Mitigation: synchronously eager-load the FAO+USDA name set during pipeline init (one-time, cached at module level). Alternative: skip validation when the set is empty and emit a `vocab_not_loaded` telemetry value — but this is a less honest signal. Prefer eager-load.
 
@@ -6533,32 +6608,57 @@ Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>"
 
 > **Spec §2.6.** Closed-enum side-channel; not a routing input. Aggregate counts roll into `pipeline_runs`.
 
-- [ ] **Step 1: Write the failing test**
+- [ ] **Step 1: Lock the test-only telemetry surface**
 
-Add to the orchestrator integration tests (existing test file; expand minimally):
+Add a debug-only return field to `analyzeMeal` so tests can assert against the exact `pipeline_runs` row about to be persisted, without coupling to a mock of the persistence layer:
+
+```ts
+// lib/ai/types.ts (or wherever PipelineResponse lives)
+export type PipelineResponse =
+  | { success: true; data: PipelineResult; __telemetry?: PipelineRunRow }
+  | { success: false; error: PipelineError; __telemetry?: PipelineRunRow };
+
+// In analyzeMeal:
+const out = success ? { success: true, data: result } : { success: false, error };
+if (process.env.NODE_ENV === 'test') {
+  return { ...out, __telemetry: pipelineRunRow };
+}
+return out;
+```
+
+The `__telemetry` field is `undefined` in production. Tests assert on it directly. This keeps Step 2's test concrete:
 
 ```ts
 it('aggregates ambiguityFlags into pipeline_runs telemetry (§2.6)', async () => {
-  // Given a decomposition that emits ambiguityFlags on two ingredients...
-  // ...the pipeline run row's ambiguity_flag_counts should reflect the
-  // aggregate distribution across ingredients of this meal.
   const result = await analyzeMeal(/* fixture with multiple flags */);
-  // Assert via the buildPipelineRunRow output, not the response — the
-  // flags are telemetry, not user-visible.
-  expect(result._pipelineRunRow.ambiguity_flag_counts).toEqual({
+  expect(result.__telemetry?.ambiguityFlagCounts).toEqual({
     multiple_dish_interpretations: 1,
     cross_cuisine_ingredient: 2,
   });
 });
 ```
 
-> **Open thread for execution time:** the orchestrator does not currently expose `_pipelineRunRow` from `analyzeMeal`. Either add a debug-only return field (test-environment-only) or assert via the persistence layer mock. Decide at execution time; the simpler path is the debug return field gated on `process.env.NODE_ENV === 'test'`.
+- [ ] **Step 2: Add the `ambiguity_flag_counts` column (Drizzle schema)**
 
-- [ ] **Step 2: Implement the aggregation**
+This column is **NOT** in Chunk 1d's `pipelineRuns` schema and is owned by Chunk 6. Add to `lib/db/schema.ts` inside the `pipelineRuns` table definition:
 
-In the orchestrator, walk every `ingredients[].ambiguityFlags ?? []` and tally into a `Record<AmbiguityFlag, number>`. Forward to `buildPipelineRunRow` as `ambiguityFlagCounts`. The Chunk 1d schema may need a JSONB column `ambiguity_flag_counts`; if missing, add it in this commit.
+```ts
+ambiguityFlagCounts: jsonb('ambiguity_flag_counts').notNull().default({}),
+```
 
-- [ ] **Step 3: Confirm `ambiguityFlags` is NEVER read by routing code**
+Then:
+
+```bash
+bun db:generate
+```
+
+Rename the generated migration file to a meaningful name (per AGENTS.md §9): `<timestamp>_add_pipeline_runs_ambiguity_flag_counts.sql`. Update the corresponding `meta/_journal.json` `tag` field to match. Update Chunk 1d's outcome list note that `ambiguity_flag_counts` is added by Chunk 6 (no edit to Chunk 1d's plan section needed; this comment lives here).
+
+- [ ] **Step 3: Implement the aggregation**
+
+In the orchestrator, walk every `ingredients[].ambiguityFlags ?? []` and tally into a `Record<AmbiguityFlag, number>`. Forward to `buildPipelineRunRow` as `ambiguityFlagCounts`.
+
+- [ ] **Step 4: Confirm `ambiguityFlags` is NEVER read by routing code**
 
 Add a grep-based regression check via a small test:
 
@@ -6570,15 +6670,19 @@ it('compute-policy.ts never imports or references ambiguityFlags (Principle B)',
 });
 ```
 
-- [ ] **Step 4: Run the suite + lint, commit**
+- [ ] **Step 5: Run the suite + lint, commit**
 
 ```bash
 git add lib/ai/pipeline/orchestrator.ts \
-        lib/ai/pipeline/__tests__/orchestrator-ambiguity.test.ts
+        lib/ai/pipeline/__tests__/orchestrator-ambiguity.test.ts \
+        lib/ai/types.ts \
+        lib/db/schema.ts \
+        supabase/migrations/
 git commit -m "feat(pipeline): aggregate ambiguityFlags into pipeline_runs telemetry (§2.6)
 
 Closed-enum side-channel; never read by routing. Regression test asserts
-compute-policy.ts has no reference.
+compute-policy.ts has no reference. Adds pipeline_runs.ambiguity_flag_counts
+JSONB + __telemetry debug return on analyzeMeal (NODE_ENV==='test' only).
 
 Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>"
 ```
@@ -6594,6 +6698,8 @@ After all six tasks land:
 - [ ] `buildDecompositionPrompt` asks for `mealItemId`/`ingredientId`/`canonicalName`/`expectedState` (when it would differ)/`ambiguityFlags`. Sentinel test passes — no `goal | aggression | calorieTarget | bodyMetrics` leak.
 - [ ] `lib/ai/pipeline/cooking-method-state.ts` exports `COOKING_METHOD_STATE` + `deriveExpectedState`. Diacritic-strict (`'luoc'` misses; `'luộc'` hits).
 - [ ] `pipeline_runs.db_state_unknown_fires` populated for every meal that hits the `unknown` fallback.
+- [ ] `pipeline_runs.unit_conversion_fallbacks` (added by Chunk 6 in Task 6.1) populated for non-`g` units.
+- [ ] `pipeline_runs.ambiguity_flag_counts` JSONB column (added by Chunk 6 in Task 6.6) populated with per-flag counts.
 - [ ] `pickBestSource` accepts a `PickBestSourceContext` arg with `expectedState`. Tie-break order: state-match > similarity. Source preference is NOT a tie-breaker — verified by an explicit test that lower-similarity FAO loses to higher-similarity USDA when both states match.
 - [ ] `lib/ai/pipeline/canonical-name-validator.ts` exports `createCanonicalNameValidator`. Misses aggregate into `pipeline_runs.pre_match_alias_hits`.
 - [ ] `ambiguityFlags` aggregated into `pipeline_runs.ambiguity_flag_counts`. Regression test asserts `compute-policy.ts` never references the field (Principle B).
