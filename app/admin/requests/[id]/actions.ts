@@ -55,7 +55,10 @@ async function buildDryRunGeminiClient(
     async generateStructuredOutput<T>(): Promise<T> {
       return next<T>();
     },
-    async generateStructuredOutputStream<T>(_params, opts): Promise<T> {
+    async generateStructuredOutputStream<T>(
+      _params: unknown,
+      opts?: { onChunk?: (text: string) => void }
+    ): Promise<T> {
       const value = next<T>();
       // Surface the captured raw text via onChunk so streaming consumers
       // observe a coherent (single-shot) accumulated state.
