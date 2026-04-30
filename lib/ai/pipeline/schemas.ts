@@ -5,6 +5,13 @@ import { z } from 'zod';
 // ---------------------------------------------------------------------------
 
 export const decomposedIngredientSchema = z.object({
+  ingredientId: z
+    .string()
+    .uuid()
+    .optional()
+    .describe(
+      'Run-scoped UUID for this ingredient. Runtime fills if missing (§0.1).'
+    ),
   name: z
     .string()
     .describe(
@@ -29,6 +36,13 @@ export const decomposedIngredientSchema = z.object({
 });
 
 export const decomposedMealItemSchema = z.object({
+  mealItemId: z
+    .string()
+    .uuid()
+    .optional()
+    .describe(
+      'Run-scoped UUID for this meal item. Runtime fills if missing (§0.1).'
+    ),
   name: z
     .string()
     .describe(

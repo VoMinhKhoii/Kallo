@@ -95,6 +95,13 @@ export interface UserContext {
 
 /** Single ingredient extracted by LLM from a meal item */
 export interface DecomposedIngredient {
+  /**
+   * Run-scoped stable UUID (§0.1). Optional in this type because Zod
+   * accepts the LLM emitting it or omitting it; the runtime helper
+   * `ensureIdsOnDecomposition` (§0.1) guarantees a valid UUID is
+   * present on every value produced by the orchestrator.
+   */
+  ingredientId?: string;
   name: string;
   estimatedGrams: number;
   cookingMethod: string | null;
@@ -103,6 +110,11 @@ export interface DecomposedIngredient {
 
 /** A user-facing meal item with its internal ingredient breakdown */
 export interface DecomposedMealItem {
+  /**
+   * Run-scoped stable UUID (§0.1). See `DecomposedIngredient.ingredientId`
+   * for the rationale on optionality at the type level.
+   */
+  mealItemId?: string;
   name: string;
   ingredients: DecomposedIngredient[];
 }

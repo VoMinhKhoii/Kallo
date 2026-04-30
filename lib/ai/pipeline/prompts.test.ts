@@ -140,6 +140,7 @@ describe('buildNutritionPrompt', () => {
       similarity: 0.85,
       confidence: 'high',
       nutritionPer100g: fullNutrition,
+      dbState: 'raw',
     },
   ];
 
@@ -247,6 +248,7 @@ describe('buildNutritionPrompt', () => {
         similarity: 0.9,
         confidence: 'high',
         nutritionPer100g: fullNutrition,
+        dbState: 'raw',
       },
       {
         ingredientName: 'bún',
@@ -255,6 +257,7 @@ describe('buildNutritionPrompt', () => {
         similarity: 0.85,
         confidence: 'high',
         nutritionPer100g: fullNutrition,
+        dbState: 'raw',
       },
     ];
 
@@ -364,6 +367,7 @@ describe('buildNutritionPrompt', () => {
         similarity: 0.9,
         confidence: 'high',
         nutritionPer100g: fullNutrition,
+        dbState: 'raw',
       },
     ];
     const prompt = buildNutritionPrompt(

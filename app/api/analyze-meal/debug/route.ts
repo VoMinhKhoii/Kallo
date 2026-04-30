@@ -240,6 +240,7 @@ export async function POST(request: NextRequest) {
                 similarity: top.similarity,
                 confidence,
                 nutritionPer100g: pickMacros(nutrition),
+                dbState: 'raw',
               };
               q.matchStatus = confidence === 'low' ? 'low_confidence' : 'hit';
 
@@ -251,6 +252,7 @@ export async function POST(request: NextRequest) {
                   similarity: top.similarity,
                   confidence,
                   nutritionPer100g: nutrition,
+                  dbState: 'raw',
                 });
               } else {
                 unmatched.push({
@@ -312,6 +314,7 @@ export async function POST(request: NextRequest) {
                     similarity: top.similarity,
                     confidence,
                     nutritionPer100g: pickMacros(nutrition),
+                    dbState: 'raw',
                   };
                   q.matchStatus =
                     confidence === 'low' ? 'low_confidence' : 'hit';
@@ -324,6 +327,7 @@ export async function POST(request: NextRequest) {
                       similarity: top.similarity,
                       confidence,
                       nutritionPer100g: nutrition,
+                      dbState: 'raw',
                     });
                   } else {
                     unmatched.push({
