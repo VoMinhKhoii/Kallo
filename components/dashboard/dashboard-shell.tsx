@@ -3,18 +3,19 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslations } from 'next-intl';
 import { useEffect, useMemo, useState } from 'react';
+import { useDailyMeals } from '@/hooks/use-daily-meals';
 import { useWeightSummary } from '@/hooks/use-weight-summary';
 import { loadCalorieAdherenceHeatmap } from '@/lib/actions/dashboard';
 import { buildCalorieAdherenceHeatmap } from '@/lib/dashboard/adherence';
 import { getMsUntilNextLocalMidnight } from '@/lib/dashboard/heatmap-rollover';
+import {
+  buildTodayNutritionData,
+  getTodayDateString,
+  mapPersistedMealsToMealEntries,
+} from '@/lib/dashboard/today';
 import { cn } from '@/lib/utils';
 import { CurrentSection } from './current/current-section';
-import {
-  getMealsToday,
-  getNutritionData,
-  getStatsData,
-  getVerdictData,
-} from './mock-data';
+import { getStatsData, getVerdictData } from './mock-data';
 import { AdherenceHeatmap } from './progress/adherence-heatmap';
 import { ProgressSection } from './progress/progress-section';
 import { WeightChart } from './progress/weight-chart';
@@ -22,6 +23,13 @@ import { SectionHeader } from './section-header';
 import { MealTrigger } from './today/meal-trigger';
 import { TodaySection } from './today/today-section';
 import type { TimeRange } from './types';
+
+export interface DashboardProfile {
+  calorieTarget: number;
+  proteinTargetG: number;
+  carbsTargetG: number;
+  fatTargetG: number;
+}
 
 function getWeekTitle(): string {
   const now = new Date();
@@ -39,10 +47,15 @@ function getWeekTitle(): string {
   return `Week of ${fmt(monday)} – ${fmt(sunday)}, ${year}`;
 }
 
-export function DashboardShell() {
+interface DashboardShellProps {
+  profile: DashboardProfile;
+}
+
+export function DashboardShell({ profile }: DashboardShellProps) {
   const t = useTranslations('dashboard');
   const queryClient = useQueryClient();
   const [timeRange, setTimeRange] = useState<TimeRange>('30d');
+  const [todayDate, setTodayDate] = useState(() => getTodayDateString());
   const weekTitle = useMemo(() => getWeekTitle(), []);
   const emptyHeatmapData = useMemo(() => {
     const timezoneOffset = new Date().getTimezoneOffset();
@@ -60,13 +73,6 @@ export function DashboardShell() {
     queryKey: ['dashboard', 'verdict'],
     queryFn: getVerdictData,
     initialData: getVerdictData,
-    staleTime: Number.POSITIVE_INFINITY,
-  });
-
-  const { data: stats } = useQuery({
-    queryKey: ['dashboard', 'stats'],
-    queryFn: getStatsData,
-    initialData: getStatsData,
     staleTime: Number.POSITIVE_INFINITY,
   });
 
@@ -90,20 +96,7 @@ export function DashboardShell() {
     placeholderData: emptyHeatmapData,
     staleTime: 60_000,
   });
-
-  const { data: nutrition } = useQuery({
-    queryKey: ['dashboard', 'nutrition'],
-    queryFn: getNutritionData,
-    initialData: getNutritionData,
-    staleTime: Number.POSITIVE_INFINITY,
-  });
-
-  const { data: meals } = useQuery({
-    queryKey: ['dashboard', 'meals'],
-    queryFn: getMealsToday,
-    initialData: getMealsToday,
-    staleTime: Number.POSITIVE_INFINITY,
-  });
+  const { data: persistedMeals = [] } = useDailyMeals(todayDate);
 
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout> | null = null;
@@ -114,8 +107,16 @@ export function DashboardShell() {
       });
     };
 
+    const syncTodayDate = () => {
+      setTodayDate((currentDate) => {
+        const nextDate = getTodayDateString();
+        return currentDate === nextDate ? currentDate : nextDate;
+      });
+    };
+
     const scheduleMidnightRefresh = () => {
       timer = setTimeout(() => {
+        syncTodayDate();
         invalidateHeatmap();
         scheduleMidnightRefresh();
       }, getMsUntilNextLocalMidnight());
@@ -123,11 +124,13 @@ export function DashboardShell() {
 
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
+        syncTodayDate();
         invalidateHeatmap();
       }
     };
 
     const handleWindowFocus = () => {
+      syncTodayDate();
       invalidateHeatmap();
     };
 
@@ -145,6 +148,14 @@ export function DashboardShell() {
   }, [queryClient]);
 
   const resolvedHeatmapData = heatmapData ?? emptyHeatmapData;
+  const todayMeals = useMemo(
+    () => mapPersistedMealsToMealEntries(persistedMeals),
+    [persistedMeals]
+  );
+  const todayNutrition = useMemo(
+    () => buildTodayNutritionData(persistedMeals, profile),
+    [persistedMeals, profile]
+  );
 
   return (
     <main
@@ -157,8 +168,8 @@ export function DashboardShell() {
           <SectionHeader title={weekTitle} />
           <CurrentSection
             verdict={verdict}
-            stats={stats}
-            nutrition={nutrition}
+            stats={getStatsData()}
+            nutrition={todayNutrition}
             weightSummary={weightSummary}
           />
         </section>
@@ -208,7 +219,7 @@ export function DashboardShell() {
         <section className="flex min-h-0 flex-col">
           <SectionHeader title={t('today')} delay={0.2} />
           <div className="flex-1">
-            <TodaySection nutrition={nutrition} meals={meals} />
+            <TodaySection nutrition={todayNutrition} meals={todayMeals} />
           </div>
         </section>
       </div>
