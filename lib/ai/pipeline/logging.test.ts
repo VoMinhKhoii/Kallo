@@ -1,23 +1,23 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { AppDb } from '@/lib/db';
 import { logPipelineEnd, logPipelineStart } from './logging';
 
 // ---------------------------------------------------------------------------
 // Mock DB
 // ---------------------------------------------------------------------------
 
-function createMockInsertDb(): any {
-  const catchFn = vi.fn().mockReturnValue(undefined);
-  const values = vi.fn().mockReturnValue({ catch: catchFn });
+function createMockInsertDb(): AppDb {
+  const values = vi.fn().mockResolvedValue(undefined);
   const insert = vi.fn().mockReturnValue({ values });
   const updateSet = vi.fn().mockResolvedValue(undefined);
   const where = vi.fn().mockReturnValue(updateSet);
   const set = vi.fn().mockReturnValue({ where });
   const update = vi.fn().mockReturnValue({ set });
 
-  return { insert, update, values, set, where, catch: catchFn };
+  return { insert, update, values, set, where } as unknown as AppDb;
 }
 
-const MOCK_USER_CONTEXT: any = {
+const MOCK_USER_CONTEXT = {
   countryOfOrigin: 'Vietnam',
   countryOfResidence: 'Vietnam',
   goal: 'maintain',
@@ -64,20 +64,13 @@ describe('logPipelineStart', () => {
     expect(valuesArg.rawInput).toBe('phở bò');
   });
 
-  it('does not throw on DB error — catches internally', async () => {
+  it('returns null on DB error — does not throw', async () => {
     const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     const db = {
       insert: vi.fn().mockReturnValue({
-        values: vi.fn().mockReturnValue({
-          // Simulate the .catch() chain by invoking the handler immediately
-          // and resolving with undefined (matching real Promise.catch).
-          catch: (fn: (err: Error) => void) => {
-            fn(new Error('DB write failed'));
-            return Promise.resolve(undefined);
-          },
-        }),
+        values: vi.fn().mockRejectedValue(new Error('DB write failed')),
       }),
-    } as any;
+    } as unknown as AppDb;
 
     const id = await logPipelineStart({
       userId: 'user-1',
@@ -86,7 +79,7 @@ describe('logPipelineStart', () => {
       db,
     });
 
-    expect(typeof id).toBe('string');
+    expect(id).toBeNull();
     expect(errorSpy).toHaveBeenCalledWith(
       expect.stringContaining('Failed to create request log'),
       expect.any(Error)
@@ -114,7 +107,7 @@ describe('logPipelineEnd', () => {
           where: vi.fn().mockRejectedValue(new Error('update failed')),
         }),
       }),
-    } as any;
+    } as unknown as AppDb;
 
     // Should not throw synchronously
     expect(() =>
@@ -137,7 +130,7 @@ describe('logPipelineEnd', () => {
           where: vi.fn().mockRejectedValue(new Error('catastrophic')),
         }),
       }),
-    } as any;
+    } as unknown as AppDb;
 
     const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 

@@ -3,12 +3,18 @@ import { eq } from 'drizzle-orm';
 import { redirect } from 'next/navigation';
 import { z } from 'zod';
 import { requireAdmin } from '@/lib/admin/require-admin';
-import { createGeminiClient, type GeminiClient } from '@/lib/ai/gemini';
+import {
+  createGeminiClient,
+  type GeminiClient,
+  type StreamOptions,
+  type StructuredOutputParams,
+} from '@/lib/ai/gemini';
 import {
   logPipelineStart,
   setPipelineFinalState,
 } from '@/lib/ai/pipeline/logging';
 import { analyzeMeal } from '@/lib/ai/pipeline/orchestrator';
+import { logLlmCall } from '@/lib/ai/pipeline/trace';
 import type { UserContext } from '@/lib/ai/types';
 import { db } from '@/lib/db';
 import { pipelineLlmCalls, pipelineRequests } from '@/lib/db/schema';
@@ -56,13 +62,29 @@ async function buildDryRunGeminiClient(
       return next<T>();
     },
     async generateStructuredOutputStream<T>(
-      _params: unknown,
-      opts?: { onChunk?: (text: string) => void }
+      params: StructuredOutputParams<T>,
+      opts?: StreamOptions
     ): Promise<T> {
+      const t0 = Date.now();
       const value = next<T>();
-      // Surface the captured raw text via onChunk so streaming consumers
-      // observe a coherent (single-shot) accumulated state.
-      opts?.onChunk?.(JSON.stringify(value));
+      const responseRaw = JSON.stringify(value);
+      opts?.onChunk?.(responseRaw);
+      if (opts?.trace) {
+        const { trace } = opts;
+        logLlmCall({
+          db: trace.db,
+          requestId: trace.requestId,
+          stageLogId: trace.stageLogId,
+          promptVersionId: trace.promptVersionId,
+          model: params.model,
+          promptRendered: trace.promptRendered,
+          responseRaw,
+          inputTokens: null,
+          outputTokens: null,
+          latencyMs: Date.now() - t0,
+          attempt: 1,
+        });
+      }
       return value;
     },
     async generateEmbedding(): Promise<number[]> {
@@ -108,7 +130,7 @@ export async function replayRequest(
 
   // Reuse original userId (NOT admin.id) — FK to auth.users + correct attribution.
   // Awaited so child trace inserts have a parent row to FK against.
-  await logPipelineStart({
+  const startResult = await logPipelineStart({
     userId: orig.userId,
     rawInput: orig.rawInput,
     userContext: orig.userContextJson as unknown as UserContext,
@@ -117,6 +139,9 @@ export async function replayRequest(
     replayOfRequestId: originalId,
     dryRun,
   });
+  if (startResult === null) {
+    throw new Error('[admin] Failed to create pipeline request log for replay');
+  }
   console.info(
     `[admin] ${admin.email} ${dryRun ? 'dry-run-replayed' : 'replayed'} ${originalId} as ${replayId}`
   );

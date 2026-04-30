@@ -111,7 +111,10 @@ export async function POST(request: NextRequest) {
 
       const startTime = Date.now();
       const promptVersionsUsed = new Map<string, string>();
-      const traceContext = { requestId, db, promptVersionsUsed };
+      // If start logging failed (null), skip child trace logging entirely.
+      const traceContext = requestId
+        ? { requestId, db, promptVersionsUsed }
+        : undefined;
 
       try {
         const gemini = createGeminiClient(apiKey);
