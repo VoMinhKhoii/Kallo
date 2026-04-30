@@ -8,7 +8,7 @@ const intlMiddleware = createMiddleware(routing);
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  if (pathname.startsWith('/admin')) {
+  if (pathname === '/admin' || pathname.startsWith('/admin/')) {
     return await updateSession(request, NextResponse.next());
   }
   const intlResponse = intlMiddleware(request);

@@ -98,7 +98,7 @@ export default async function HealthPage() {
 
         {agg.topErrors30d.length === 0 ? (
           <p className="px-5 py-4 text-muted-foreground text-sm">
-            No errors recorded 🎉
+            No errors recorded.
           </p>
         ) : (
           <table className="w-full text-sm">

@@ -15,7 +15,8 @@ export function AdminSidebar() {
     <nav className="w-48 border-r p-4" aria-label="Admin navigation">
       <ul className="space-y-1 text-sm">
         {items.map((it) => {
-          const active = pathname.startsWith(it.href);
+          const active =
+            pathname === it.href || pathname.startsWith(`${it.href}/`);
           return (
             <li key={it.href}>
               <Link
