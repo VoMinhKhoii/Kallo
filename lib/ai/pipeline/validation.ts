@@ -43,6 +43,15 @@ export interface ValidationAnomaly {
   type: AnomalyType;
   message: string;
   severity: 'warning' | 'error';
+  /**
+   * Run-scoped ingredient UUID (§0.1). Set when the anomaly is attributed
+   * to a specific ingredient row. Anomalies that span a meal item or the
+   * whole pipeline (e.g., `meal_item_cap`, `total_calories`,
+   * `unmatched_ratio`) leave this undefined.
+   */
+  ingredientId?: string;
+  /** Run-scoped meal-item UUID (§0.1) when applicable. */
+  mealItemId?: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -59,7 +68,13 @@ export function validateNutritionOutput(
   decomposition: DecomposedMealItem[]
 ): ValidationAnomaly[] {
   const anomalies: ValidationAnomaly[] = [];
-  const matchedLookup = new Map(matched.map((m) => [m.ingredientName, m]));
+  // §0.1 — id-keyed lookups. When two dishes share an ingredient display
+  // name (e.g., 'nước dùng'), name-keying silently overwrites; id-keying
+  // attributes anomalies to the correct ingredient row.
+  const matchedLookup = new Map<string, MatchedIngredient>();
+  for (const m of matched) {
+    if (m.ingredientId) matchedLookup.set(m.ingredientId, m);
+  }
 
   // Build a lookup for decomposition grams + cooking method per ingredient
   const decomposedLookup = new Map<
@@ -68,7 +83,8 @@ export function validateNutritionOutput(
   >();
   for (const mi of decomposition) {
     for (const ing of mi.ingredients) {
-      decomposedLookup.set(ing.name, {
+      if (!ing.ingredientId) continue;
+      decomposedLookup.set(ing.ingredientId, {
         estimatedGrams: ing.estimatedGrams,
         cookingMethod: ing.cookingMethod,
       });
@@ -82,7 +98,10 @@ export function validateNutritionOutput(
       const midKcal = ing.caloriesKcal.mid;
       mealItemMidKcal += midKcal;
 
-      const matchInfo = matchedLookup.get(ing.ingredientName);
+      const ingredientId = ing.ingredientId;
+      const matchInfo = ingredientId
+        ? matchedLookup.get(ingredientId)
+        : undefined;
       if (matchInfo) {
         const dbKcalPer100g = matchInfo.nutritionPer100g.caloriesKcal;
 
@@ -95,12 +114,16 @@ export function validateNutritionOutput(
             type: 'calorie_density',
             message: `${ing.ingredientName}: DB ${dbKcalPer100g} kcal/100g > ${THRESHOLDS.MAX_KCAL_PER_100G}`,
             severity: 'warning',
+            ingredientId,
+            mealItemId: mealItem.mealItemId,
           });
         }
 
         // DB-anchor deviation: compare LLM mid kcal vs DB-scaled value
         if (dbKcalPer100g != null && dbKcalPer100g > 0 && midKcal > 0) {
-          const decomposed = decomposedLookup.get(ing.ingredientName);
+          const decomposed = ingredientId
+            ? decomposedLookup.get(ingredientId)
+            : undefined;
           if (decomposed) {
             const rawGrams = convertCookedToRaw(
               decomposed.estimatedGrams,
@@ -113,6 +136,8 @@ export function validateNutritionOutput(
                 type: 'db_deviation',
                 message: `${ing.ingredientName} in ${mealItem.mealItemName}: LLM ${midKcal.toFixed(0)} vs DB-scaled ${dbScaledKcal.toFixed(0)} kcal (${(deviation * 100).toFixed(0)}% deviation)`,
                 severity: 'warning',
+                ingredientId,
+                mealItemId: mealItem.mealItemId,
               });
             }
           }
@@ -126,6 +151,7 @@ export function validateNutritionOutput(
         type: 'meal_item_cap',
         message: `${mealItem.mealItemName}: ${mealItemMidKcal.toFixed(0)} kcal > ${THRESHOLDS.MAX_MEAL_ITEM_KCAL}`,
         severity: 'warning',
+        mealItemId: mealItem.mealItemId,
       });
     }
   }

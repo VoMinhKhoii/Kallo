@@ -24,6 +24,7 @@ function makeMatched(
   overrides: Partial<MatchedIngredient> & { ingredientName: string }
 ): MatchedIngredient {
   return {
+    ingredientId: `id-${overrides.ingredientName}`,
     foodCompositionId: 'fc-1',
     matchedName: overrides.ingredientName,
     similarity: 0.9,
@@ -49,6 +50,7 @@ function makeDecomposition(
   return items.map((mi) => ({
     name: mi.name,
     ingredients: mi.ingredients.map((ing) => ({
+      ingredientId: `id-${ing.name}`,
       name: ing.name,
       estimatedGrams: ing.grams,
       cookingMethod: ing.cooking ?? null,
@@ -72,6 +74,7 @@ function makeNutrition(
     mealItems: items.map((item) => ({
       mealItemName: item.name,
       ingredients: item.ingredients.map((ing) => ({
+        ingredientId: `id-${ing.name}`,
         ingredientName: ing.name,
         caloriesKcal: {
           low: ing.lowKcal ?? ing.midKcal * 0.8,
@@ -355,5 +358,96 @@ describe('THRESHOLDS', () => {
     expect(THRESHOLDS.MAX_INGREDIENT_GRAMS).toBe(500);
     expect(THRESHOLDS.UNMATCHED_RATIO).toBe(0.5);
     expect(THRESHOLDS.DB_DEVIATION_RATIO).toBe(0.5);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// id-keyed anomaly attribution (Task 1.11)
+// ---------------------------------------------------------------------------
+
+describe('validateNutritionOutput — id-keyed anomaly attribution', () => {
+  it('attributes anomalies to the correct ingredient when two share a display name', () => {
+    // Two dishes both contain an ingredient called 'nước dùng' with
+    // distinct ingredientIds. Only ing-2's macros are implausibly high
+    // (DB-deviation > 50%). Anomaly must reference ing-2, not ing-1.
+    const decomposition: DecomposedMealItem[] = [
+      {
+        mealItemId: 'meal-A',
+        name: 'phở bò',
+        ingredients: [
+          {
+            ingredientId: 'ing-1',
+            name: 'nước dùng',
+            estimatedGrams: 300,
+            cookingMethod: null,
+            userFacingUnit: '1 tô',
+          },
+        ],
+      },
+      {
+        mealItemId: 'meal-B',
+        name: 'bún bò Huế',
+        ingredients: [
+          {
+            ingredientId: 'ing-2',
+            name: 'nước dùng',
+            estimatedGrams: 280,
+            cookingMethod: null,
+            userFacingUnit: '1 tô',
+          },
+        ],
+      },
+    ];
+
+    const matched: MatchedIngredient[] = [
+      makeMatched({ ingredientId: 'ing-1', ingredientName: 'nước dùng' }),
+      makeMatched({ ingredientId: 'ing-2', ingredientName: 'nước dùng' }),
+    ];
+
+    // ing-1: DB-scaled = (300/100) * 200 = 600 kcal, LLM mid = 600 → ~0% deviation
+    // ing-2: DB-scaled = (280/100) * 200 = 560 kcal, LLM mid = 9500 → ~1596% deviation
+    const nutrition: NutritionAdjustment = {
+      mealItems: [
+        {
+          mealItemId: 'meal-A',
+          mealItemName: 'phở bò',
+          ingredients: [
+            {
+              ingredientId: 'ing-1',
+              ingredientName: 'nước dùng',
+              caloriesKcal: { low: 540, mid: 600, high: 660 },
+              proteinG: { low: 5, mid: 10, high: 15 },
+              carbohydrateG: { low: 20, mid: 30, high: 40 },
+              fatG: { low: 2, mid: 5, high: 8 },
+            },
+          ],
+        },
+        {
+          mealItemId: 'meal-B',
+          mealItemName: 'bún bò Huế',
+          ingredients: [
+            {
+              ingredientId: 'ing-2',
+              ingredientName: 'nước dùng',
+              caloriesKcal: { low: 9000, mid: 9500, high: 10000 },
+              proteinG: { low: 5, mid: 10, high: 15 },
+              carbohydrateG: { low: 20, mid: 30, high: 40 },
+              fatG: { low: 2, mid: 5, high: 8 },
+            },
+          ],
+        },
+      ],
+    };
+
+    const anomalies = validateNutritionOutput(
+      nutrition,
+      matched,
+      decomposition
+    );
+    const dbDeviationIds = anomalies
+      .filter((a) => a.type === 'db_deviation')
+      .map((a) => a.ingredientId);
+    expect(dbDeviationIds).toContain('ing-2');
+    expect(dbDeviationIds).not.toContain('ing-1');
   });
 });
