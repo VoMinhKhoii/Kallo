@@ -3,13 +3,19 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslations } from 'next-intl';
 import { useEffect, useMemo, useState } from 'react';
-import { toast } from 'sonner';
-import { Skeleton } from '@/components/ui/skeleton';
-import { loadDashboardSnapshotAction } from '@/lib/actions/dashboard';
+import { useDailyMeals } from '@/hooks/use-daily-meals';
+import { useWeightSummary } from '@/hooks/use-weight-summary';
+import { loadCalorieAdherenceHeatmap } from '@/lib/actions/dashboard';
 import { buildCalorieAdherenceHeatmap } from '@/lib/dashboard/adherence';
 import { getMsUntilNextLocalMidnight } from '@/lib/dashboard/heatmap-rollover';
+import {
+  buildTodayNutritionData,
+  getTodayDateString,
+  mapPersistedMealsToMealEntries,
+} from '@/lib/dashboard/today';
 import { cn } from '@/lib/utils';
 import { CurrentSection } from './current/current-section';
+import { getStatsData, getVerdictData } from './mock-data';
 import { AdherenceHeatmap } from './progress/adherence-heatmap';
 import { ProgressSection } from './progress/progress-section';
 import { WeightChart } from './progress/weight-chart';
@@ -17,6 +23,13 @@ import { SectionHeader } from './section-header';
 import { MealTrigger } from './today/meal-trigger';
 import { TodaySection } from './today/today-section';
 import type { DashboardSnapshot, TimeRange } from './types';
+
+export interface DashboardProfile {
+  calorieTarget: number;
+  proteinTargetG: number;
+  carbsTargetG: number;
+  fatTargetG: number;
+}
 
 function getWeekTitle(): string {
   const now = new Date();
@@ -34,57 +47,15 @@ function getWeekTitle(): string {
   return `Week of ${fmt(monday)} – ${fmt(sunday)}, ${year}`;
 }
 
-function getEmptyHeatmap(range: TimeRange): (number | null)[][] {
-  const weekCount = range === '30d' ? 4 : 13;
-  return Array.from({ length: 7 }, () =>
-    Array.from({ length: weekCount }, () => null)
-  );
+interface DashboardShellProps {
+  profile: DashboardProfile;
 }
 
-function getEmptyDashboardSnapshot(range: TimeRange): DashboardSnapshot {
-  return {
-    verdict: {
-      weeklyRate: 0,
-      totalDelta: 0,
-      planStartDate: new Date().toISOString().slice(0, 10),
-      status: 'too_early',
-      rollingAvg: { start: 0, end: 0 },
-      currentWeight: 0,
-      proteinDays: [false, false, false, false, false, false, false],
-    },
-    stats: {
-      streak: 0,
-      daysLogged: 0,
-      avgDeficit: 0,
-      todayWeight: null,
-      weightPlaceholder: 0,
-    },
-    nutrition: {
-      calories: { current: 0, target: 0 },
-      protein: { current: 0, target: 0 },
-      carbs: { current: 0, target: 0 },
-      fat: { current: 0, target: 0 },
-    },
-    meals: [],
-    heatmap: getEmptyHeatmap(range),
-    weightSummary: {
-      range,
-      weights: [],
-      currentWeight: 0,
-      todayWeight: null,
-      weightPlaceholder: 0,
-      daysLogged: 0,
-      periodStartWeight: 0,
-      expectedEndWeight: 0,
-      goalDirection: 'flat',
-    },
-  };
-}
-
-export function DashboardShell() {
+export function DashboardShell({ profile }: DashboardShellProps) {
   const t = useTranslations('dashboard');
   const queryClient = useQueryClient();
   const [timeRange, setTimeRange] = useState<TimeRange>('30d');
+  const [todayDate, setTodayDate] = useState(() => getTodayDateString());
   const weekTitle = useMemo(() => getWeekTitle(), []);
   const emptyHeatmapData = useMemo(() => {
     const timezoneOffset = new Date().getTimezoneOffset();
@@ -116,13 +87,27 @@ export function DashboardShell() {
     structuralSharing: true,
   });
 
-  useEffect(() => {
-    if (dashboardError) {
-      toast.error(
-        error instanceof Error ? error.message : 'Failed to load dashboard'
-      );
-    }
-  }, [dashboardError, error]);
+  const weightData = weightSummary?.weights ?? [];
+  const periodStartWeight =
+    weightSummary?.periodStartWeight ?? weightSummary?.currentWeight ?? 65;
+  const expectedEndWeight =
+    weightSummary?.expectedEndWeight ?? periodStartWeight;
+  const goalDirection = weightSummary?.goalDirection ?? 'flat';
+
+  const { data: heatmapData } = useQuery({
+    queryKey: ['dashboard', 'heatmapData', timeRange],
+    queryFn: () => {
+      const timezoneOffset = new Date().getTimezoneOffset();
+
+      return loadCalorieAdherenceHeatmap({
+        range: timeRange,
+        timezoneOffset,
+      });
+    },
+    placeholderData: emptyHeatmapData,
+    staleTime: 60_000,
+  });
+  const { data: persistedMeals = [] } = useDailyMeals(todayDate);
 
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout> | null = null;
@@ -133,21 +118,31 @@ export function DashboardShell() {
       });
     };
 
+    const syncTodayDate = () => {
+      setTodayDate((currentDate) => {
+        const nextDate = getTodayDateString();
+        return currentDate === nextDate ? currentDate : nextDate;
+      });
+    };
+
     const scheduleMidnightRefresh = () => {
       timer = setTimeout(() => {
-        invalidateSnapshot();
+        syncTodayDate();
+        invalidateHeatmap();
         scheduleMidnightRefresh();
       }, getMsUntilNextLocalMidnight());
     };
 
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
-        invalidateSnapshot();
+        syncTodayDate();
+        invalidateHeatmap();
       }
     };
 
     const handleWindowFocus = () => {
-      invalidateSnapshot();
+      syncTodayDate();
+      invalidateHeatmap();
     };
 
     scheduleMidnightRefresh();
@@ -205,7 +200,15 @@ export function DashboardShell() {
     );
   }
 
-  const resolvedHeatmapData = dashboardSnapshot.heatmap ?? emptyHeatmapData;
+  const resolvedHeatmapData = heatmapData ?? emptyHeatmapData;
+  const todayMeals = useMemo(
+    () => mapPersistedMealsToMealEntries(persistedMeals),
+    [persistedMeals]
+  );
+  const todayNutrition = useMemo(
+    () => buildTodayNutritionData(persistedMeals, profile),
+    [persistedMeals, profile]
+  );
 
   return (
     <main
@@ -218,10 +221,10 @@ export function DashboardShell() {
         <section>
           <SectionHeader title={weekTitle} />
           <CurrentSection
-            verdict={dashboardSnapshot.verdict}
-            stats={dashboardSnapshot.stats}
-            nutrition={dashboardSnapshot.nutrition}
-            weightSummary={dashboardSnapshot.weightSummary}
+            verdict={verdict}
+            stats={stats}
+            nutrition={todayNutrition}
+            weightSummary={weightSummary}
           />
         </section>
 
@@ -274,10 +277,7 @@ export function DashboardShell() {
         <section className="flex min-h-0 flex-col">
           <SectionHeader title={t('today')} delay={0.2} />
           <div className="flex-1">
-            <TodaySection
-              nutrition={dashboardSnapshot.nutrition}
-              meals={dashboardSnapshot.meals}
-            />
+            <TodaySection nutrition={todayNutrition} meals={todayMeals} />
           </div>
         </section>
       </div>
