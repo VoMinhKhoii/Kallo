@@ -85,10 +85,7 @@ export function PaceCard({ verdict }: PaceCardProps) {
         </span>
       </div>
       <p className="mt-auto pt-1 text-[11px] text-nham-text-muted">
-        <span
-          className="font-semibold"
-          style={{ color: valueColor }}
-        >
+        <span className="font-semibold" style={{ color: valueColor }}>
           {deltaSign}
           {totalDelta} kg
         </span>{' '}
@@ -107,13 +104,18 @@ export function DeficitCard({ stats, weeklyRate }: DeficitCardProps) {
   const deficit = stats.avgDeficit;
   const EXCESSIVE_DEFICIT_THRESHOLD = 500; // kcal/day
   const isSurplus = deficit < 0;
-  const goalType = weeklyRate < 0 ? 'cutting' : weeklyRate > 0 ? 'bulking' : 'flat';
+  const goalType =
+    weeklyRate < 0 ? 'cutting' : weeklyRate > 0 ? 'bulking' : 'flat';
   const offTrack =
     (goalType === 'cutting' && isSurplus) ||
     (goalType === 'bulking' && deficit > 0) ||
-    (goalType === 'flat' && isSurplus);
+    // For maintenance ('flat'), both sustained surplus and sustained deficit are off-track
+    (goalType === 'flat' && (isSurplus || deficit > 0));
   const isExcessiveDeficit = deficit >= EXCESSIVE_DEFICIT_THRESHOLD;
-  const labelColor = offTrack || isExcessiveDeficit ? 'var(--nham-danger)' : 'var(--nham-success)';
+  const labelColor =
+    offTrack || isExcessiveDeficit
+      ? 'var(--nham-danger)'
+      : 'var(--nham-success)';
   return (
     <div className="flex h-full flex-col justify-end">
       <div className="mb-1 flex items-center gap-2">
@@ -122,7 +124,7 @@ export function DeficitCard({ stats, weeklyRate }: DeficitCardProps) {
         </span>
         {offTrack && (
           <span
-            className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[9px] font-semibold"
+            className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 font-semibold text-[9px]"
             style={{ backgroundColor: `${labelColor}14`, color: labelColor }}
           >
             Off track
@@ -132,9 +134,20 @@ export function DeficitCard({ stats, weeklyRate }: DeficitCardProps) {
       <div className="flex items-baseline gap-1">
         <span
           className="font-semibold text-[30px] tabular-nums leading-[0.9] tracking-[-0.03em]"
-          style={{ fontFamily: 'Lora, serif', color: offTrack || isExcessiveDeficit ? 'var(--nham-danger)' : 'var(--nham-success)' }}
+          style={{
+            fontFamily: 'Lora, serif',
+            color:
+              offTrack || isExcessiveDeficit
+                ? 'var(--nham-danger)'
+                : 'var(--nham-success)',
+          }}
         >
-          {deficit < 0 ? '+' : '-'}{Math.abs(deficit)}
+          {(() => {
+            // Avoid rendering `-0` when deficit === 0
+            if (deficit === 0) return `0`;
+            const sign = deficit < 0 ? '+' : '-';
+            return `${sign}${Math.abs(deficit)}`;
+          })()}
         </span>
         <span
           className="text-nham-text-muted text-xs italic"
