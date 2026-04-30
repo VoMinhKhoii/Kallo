@@ -301,3 +301,12 @@ be invoked from a daily worker.
 
 `pipeline_runs` (this spec, §0.4) is the analytics source — it stores
 `user_id_hash` only, never raw input.
+
+## Task 1.6 audit: SQL match function state projection
+
+`match_ingredients_by_source` and `fuzzy_match_ingredients_by_source`
+(introduced in `20260412143500_add_source_aware_match_functions.sql`)
+already project the `state` column in their `RETURNS TABLE` signature.
+The cascade in `lib/ai/matching/source-matching.ts` exclusively calls
+these `_by_source` variants, so no additional migration is required for
+DB-state propagation.
