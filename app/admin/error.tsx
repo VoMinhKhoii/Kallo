@@ -1,0 +1,35 @@
+'use client';
+
+import { useEffect } from 'react';
+import { Button } from '@/components/ui/button';
+
+export default function AdminError({
+  error,
+  reset,
+}: {
+  error: Error & { digest?: string };
+  reset: () => void;
+}) {
+  useEffect(() => {
+    console.error('[admin] route error', error);
+  }, [error]);
+
+  return (
+    <div
+      className="flex min-h-[40vh] flex-col items-center justify-center gap-3 text-center"
+      role="alert"
+    >
+      <h2 className="font-semibold text-lg">Something went wrong</h2>
+      <p className="max-w-md text-muted-foreground text-sm">
+        {error.message ||
+          'An unexpected error occurred while loading admin data.'}
+      </p>
+      {error.digest && (
+        <p className="text-muted-foreground text-xs">digest: {error.digest}</p>
+      )}
+      <Button onClick={() => reset()} variant="outline" size="sm">
+        Try again
+      </Button>
+    </div>
+  );
+}

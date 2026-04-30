@@ -34,21 +34,29 @@ beforeEach(() => {
 // ---------------------------------------------------------------------------
 
 describe('logPipelineStart', () => {
-  it('returns a UUID synchronously without awaiting DB', () => {
+  it('returns a UUID after awaiting DB write', async () => {
     const db = createMockInsertDb();
-    const id = logPipelineStart('user-1', 'phở bò', MOCK_USER_CONTEXT, db);
+    const id = await logPipelineStart({
+      userId: 'user-1',
+      rawInput: 'phở bò',
+      userContext: MOCK_USER_CONTEXT,
+      db,
+    });
 
-    // Must be a valid UUID (synchronous, no await)
     expect(id).toMatch(
       /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
     );
-    // INSERT was fired
     expect(db.insert).toHaveBeenCalled();
   });
 
-  it('passes the pre-generated id into the INSERT values', () => {
+  it('passes the pre-generated id into the INSERT values', async () => {
     const db = createMockInsertDb();
-    const id = logPipelineStart('user-1', 'phở bò', MOCK_USER_CONTEXT, db);
+    const id = await logPipelineStart({
+      userId: 'user-1',
+      rawInput: 'phở bò',
+      userContext: MOCK_USER_CONTEXT,
+      db,
+    });
 
     const valuesArg = db.values.mock.calls[0][0];
     expect(valuesArg.id).toBe(id);
@@ -58,25 +66,27 @@ describe('logPipelineStart', () => {
 
   it('does not throw on DB error — catches internally', async () => {
     const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-    let catchHandler: ((err: Error) => void) | undefined;
     const db = {
       insert: vi.fn().mockReturnValue({
         values: vi.fn().mockReturnValue({
-          catch: vi.fn().mockImplementation((fn: (err: Error) => void) => {
-            catchHandler = fn;
-          }),
+          // Simulate the .catch() chain by invoking the handler immediately
+          // and resolving with undefined (matching real Promise.catch).
+          catch: (fn: (err: Error) => void) => {
+            fn(new Error('DB write failed'));
+            return Promise.resolve(undefined);
+          },
         }),
       }),
     } as any;
 
-    const id = logPipelineStart('user-1', 'phở bò', MOCK_USER_CONTEXT, db);
+    const id = await logPipelineStart({
+      userId: 'user-1',
+      rawInput: 'phở bò',
+      userContext: MOCK_USER_CONTEXT,
+      db,
+    });
 
-    // Returns synchronously regardless
     expect(typeof id).toBe('string');
-
-    // Simulate DB error via the catch handler
-    catchHandler?.(new Error('DB write failed'));
-
     expect(errorSpy).toHaveBeenCalledWith(
       expect.stringContaining('Failed to create request log'),
       expect.any(Error)

@@ -1,5 +1,7 @@
 import { GoogleGenAI, type ThinkingLevel } from '@google/genai';
 import { toJSONSchema, type ZodType } from 'zod';
+import { logLlmCall } from '@/lib/ai/pipeline/trace';
+import type { AppDb } from '@/lib/db';
 
 const EMBEDDING_MODEL = 'gemini-embedding-001';
 const EMBEDDING_DIMENSIONS = 768;
@@ -38,11 +40,29 @@ interface StructuredOutputParams<T> {
   abortSignal?: AbortSignal;
 }
 
+export interface GeminiCallTrace {
+  db: AppDb;
+  requestId: string;
+  stageLogId: string;
+  /**
+   * The prompt-version id (uuid). Accepts a Promise so callers can fire
+   * the recordPromptVersion insert in parallel with the Gemini call;
+   * logLlmCall awaits it before the FK-bearing insert.
+   */
+  promptVersionId: string | Promise<string | null>;
+  promptRendered: string;
+}
+
+interface StreamOptions {
+  onChunk?: (accumulated: string) => void;
+  trace?: GeminiCallTrace;
+}
+
 export interface GeminiClient {
   generateStructuredOutput<T>(params: StructuredOutputParams<T>): Promise<T>;
   generateStructuredOutputStream<T>(
     params: StructuredOutputParams<T>,
-    onChunk?: (accumulated: string) => void
+    opts?: StreamOptions
   ): Promise<T>;
   generateEmbedding(text: string): Promise<number[]>;
   generateEmbeddingBatch(texts: string[]): Promise<number[][]>;
@@ -116,23 +136,34 @@ export function createGeminiClient(
   const retry = { ...DEFAULT_RETRY, ...retryOptions };
 
   async function withRetry<T>(
-    fn: () => Promise<T>,
-    label?: string
+    fn: (attempt: number) => Promise<T>,
+    opts?: {
+      label?: string;
+      onAttempt?: (
+        attempt: number,
+        t0: number,
+        result: T | null,
+        err: unknown
+      ) => void;
+    }
   ): Promise<T> {
+    const label = opts?.label;
     let lastError: Error | undefined;
 
     for (let attempt = 1; attempt <= retry.maxRetries; attempt++) {
       const t0 = Date.now();
       try {
-        const result = await fn();
+        const result = await fn(attempt);
         console.info(
           `[gemini] ${label ?? 'call'} attempt ${attempt}/${retry.maxRetries}: ${Date.now() - t0}ms`
         );
+        opts?.onAttempt?.(attempt, t0, result, null);
         return result;
       } catch (err) {
         lastError = err instanceof Error ? err : new Error(String(err));
         const elapsed = Date.now() - t0;
         const status = getErrorStatus(lastError);
+        opts?.onAttempt?.(attempt, t0, null, err);
 
         if (
           !isRetryableGeminiError(lastError) ||
@@ -166,77 +197,126 @@ export function createGeminiClient(
         `[gemini] ${params.model} structured output: prompt=${promptSize} chars (~${Math.round(promptSize / 4)} tokens), schema=${schemaSize} chars`
       );
 
-      return withRetry(async () => {
-        const response = await ai.models.generateContent({
-          model: params.model,
-          contents: params.userMessage,
-          config: {
-            systemInstruction: params.systemPrompt,
-            responseMimeType: 'application/json',
-            responseJsonSchema: jsonSchema,
-            ...(params.temperature != null && {
-              temperature: params.temperature,
-            }),
-            ...(params.topP != null && { topP: params.topP }),
-            ...(params.topK != null && { topK: params.topK }),
-            ...(params.thinkingConfig != null && {
-              thinkingConfig: params.thinkingConfig,
-            }),
-            ...(params.abortSignal != null && {
-              abortSignal: params.abortSignal,
-            }),
-          },
-        });
+      return withRetry(
+        async (_attempt) => {
+          const response = await ai.models.generateContent({
+            model: params.model,
+            contents: params.userMessage,
+            config: {
+              systemInstruction: params.systemPrompt,
+              responseMimeType: 'application/json',
+              responseJsonSchema: jsonSchema,
+              ...(params.temperature != null && {
+                temperature: params.temperature,
+              }),
+              ...(params.topP != null && { topP: params.topP }),
+              ...(params.topK != null && { topK: params.topK }),
+              ...(params.thinkingConfig != null && {
+                thinkingConfig: params.thinkingConfig,
+              }),
+              ...(params.abortSignal != null && {
+                abortSignal: params.abortSignal,
+              }),
+            },
+          });
 
-        const text = response.text;
-        if (!text) throw new Error('Gemini returned empty response');
+          const text = response.text;
+          if (!text) throw new Error('Gemini returned empty response');
 
-        return params.schema.parse(JSON.parse(text));
-      }, params.model);
+          return params.schema.parse(JSON.parse(text));
+        },
+        { label: params.model }
+      );
     },
 
     async generateStructuredOutputStream<T>(
       params: StructuredOutputParams<T>,
-      onChunk?: (accumulated: string) => void
+      opts?: StreamOptions
     ): Promise<T> {
+      const { onChunk, trace } = opts ?? {};
       const jsonSchema = toJSONSchema(params.schema);
       const promptSize = params.systemPrompt.length + params.userMessage.length;
       console.info(
         `[gemini] ${params.model} streaming output: prompt=${promptSize} chars (~${Math.round(promptSize / 4)} tokens)`
       );
 
-      return withRetry(async () => {
-        const response = await ai.models.generateContentStream({
-          model: params.model,
-          contents: params.userMessage,
-          config: {
-            systemInstruction: params.systemPrompt,
-            responseMimeType: 'application/json',
-            responseJsonSchema: jsonSchema,
-            ...(params.temperature != null && {
-              temperature: params.temperature,
-            }),
-            ...(params.topP != null && { topP: params.topP }),
-            ...(params.topK != null && { topK: params.topK }),
-            ...(params.abortSignal != null && {
-              abortSignal: params.abortSignal,
-            }),
-          },
-        });
+      // Mutable closure: updated as each chunk is streamed; reset per attempt.
+      let lastAccumulated: string | null = null;
+      let lastUsageMeta: {
+        promptTokenCount?: number;
+        candidatesTokenCount?: number;
+      } | null = null;
 
-        let accumulated = '';
-        for await (const chunk of response) {
-          const text = chunk.text ?? '';
-          accumulated += text;
-          if (onChunk && text.length > 0) {
-            onChunk(accumulated);
+      const onAttempt = trace
+        ? (attempt: number, t0: number, result: T | null, err: unknown) => {
+            logLlmCall({
+              db: trace.db,
+              requestId: trace.requestId,
+              stageLogId: trace.stageLogId,
+              promptVersionId: trace.promptVersionId,
+              model: params.model,
+              promptRendered: trace.promptRendered,
+              responseRaw: result !== null ? lastAccumulated : null,
+              inputTokens: lastUsageMeta?.promptTokenCount ?? null,
+              outputTokens: lastUsageMeta?.candidatesTokenCount ?? null,
+              latencyMs: Date.now() - t0,
+              attempt,
+              error:
+                err instanceof Error
+                  ? err.message
+                  : err != null
+                    ? String(err)
+                    : undefined,
+            });
           }
-        }
+        : undefined;
 
-        if (!accumulated)
-          throw new Error('Gemini stream returned empty response');
-        return params.schema.parse(JSON.parse(accumulated));
-      }, `${params.model}-stream`);
+      return withRetry(
+        async (_attempt) => {
+          // Reset per-attempt state.
+          lastAccumulated = null;
+          lastUsageMeta = null;
+
+          const response = await ai.models.generateContentStream({
+            model: params.model,
+            contents: params.userMessage,
+            config: {
+              systemInstruction: params.systemPrompt,
+              responseMimeType: 'application/json',
+              responseJsonSchema: jsonSchema,
+              ...(params.temperature != null && {
+                temperature: params.temperature,
+              }),
+              ...(params.topP != null && { topP: params.topP }),
+              ...(params.topK != null && { topK: params.topK }),
+              ...(params.abortSignal != null && {
+                abortSignal: params.abortSignal,
+              }),
+            },
+          });
+
+          let accumulated = '';
+          for await (const chunk of response) {
+            const text = chunk.text ?? '';
+            accumulated += text;
+            if (chunk.usageMetadata) {
+              lastUsageMeta = chunk.usageMetadata as {
+                promptTokenCount?: number;
+                candidatesTokenCount?: number;
+              };
+            }
+            if (onChunk && text.length > 0) {
+              onChunk(accumulated);
+            }
+          }
+
+          if (!accumulated)
+            throw new Error('Gemini stream returned empty response');
+          lastAccumulated = accumulated;
+          return params.schema.parse(JSON.parse(accumulated));
+        },
+        { label: `${params.model}-stream`, onAttempt }
+      );
     },
 
     async generateEmbedding(text: string): Promise<number[]> {
@@ -247,7 +327,7 @@ export function createGeminiClient(
       }
 
       const embedding = await withRetry(
-        async () => {
+        async (_attempt) => {
           const result = await ai.models.embedContent({
             model: EMBEDDING_MODEL,
             contents: [{ parts: [{ text }] }],
@@ -259,7 +339,7 @@ export function createGeminiClient(
 
           return emb;
         },
-        `embed("${text.slice(0, 30)}")`
+        { label: `embed("${text.slice(0, 30)}")` }
       );
 
       embeddingCache.set(text, embedding);
@@ -290,27 +370,30 @@ export function createGeminiClient(
         `[gemini] batch embed: ${uncachedTexts.length} uncached / ${texts.length} total`
       );
 
-      const embeddings = await withRetry(async () => {
-        const result = await ai.models.embedContent({
-          model: EMBEDDING_MODEL,
-          contents: uncachedTexts,
-          config: { outputDimensionality: EMBEDDING_DIMENSIONS },
-        });
+      const embeddings = await withRetry(
+        async (_attempt) => {
+          const result = await ai.models.embedContent({
+            model: EMBEDDING_MODEL,
+            contents: uncachedTexts,
+            config: { outputDimensionality: EMBEDDING_DIMENSIONS },
+          });
 
-        if (
-          !result.embeddings ||
-          result.embeddings.length !== uncachedTexts.length
-        ) {
-          throw new Error(
-            `Gemini batch returned ${result.embeddings?.length ?? 0} embeddings for ${uncachedTexts.length} texts`
-          );
-        }
+          if (
+            !result.embeddings ||
+            result.embeddings.length !== uncachedTexts.length
+          ) {
+            throw new Error(
+              `Gemini batch returned ${result.embeddings?.length ?? 0} embeddings for ${uncachedTexts.length} texts`
+            );
+          }
 
-        return result.embeddings.map((e) => {
-          if (!e.values) throw new Error('Gemini returned null embedding');
-          return e.values;
-        });
-      }, `batch-embed(${uncachedTexts.length})`);
+          return result.embeddings.map((e) => {
+            if (!e.values) throw new Error('Gemini returned null embedding');
+            return e.values;
+          });
+        },
+        { label: `batch-embed(${uncachedTexts.length})` }
+      );
 
       // Populate cache and fill results
       for (let j = 0; j < uncachedIndices.length; j++) {

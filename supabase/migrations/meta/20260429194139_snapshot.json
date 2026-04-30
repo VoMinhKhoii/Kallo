@@ -1,6 +1,6 @@
 {
-  "id": "d0b24c8b-77a1-441f-86cc-8b07d3d0b345",
-  "prevId": "d6ab330a-eae9-429b-abbd-068478c302bc",
+  "id": "d67d6cba-ba73-4fa4-9852-8156fcaa8e15",
+  "prevId": "d0b24c8b-77a1-441f-86cc-8b07d3d0b345",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -818,6 +818,173 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
+    "public.pipeline_llm_calls": {
+      "name": "pipeline_llm_calls",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "request_id": {
+          "name": "request_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "stage_log_id": {
+          "name": "stage_log_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "prompt_version_id": {
+          "name": "prompt_version_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "model": {
+          "name": "model",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "prompt_rendered": {
+          "name": "prompt_rendered",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "response_raw": {
+          "name": "response_raw",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "input_tokens": {
+          "name": "input_tokens",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "output_tokens": {
+          "name": "output_tokens",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "latency_ms": {
+          "name": "latency_ms",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "attempt": {
+          "name": "attempt",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 1
+        },
+        "error": {
+          "name": "error",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "pipeline_llm_calls_req_idx": {
+          "name": "pipeline_llm_calls_req_idx",
+          "columns": [
+            {
+              "expression": "request_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "pipeline_llm_calls_pv_idx": {
+          "name": "pipeline_llm_calls_pv_idx",
+          "columns": [
+            {
+              "expression": "prompt_version_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "pipeline_llm_calls_stage_log_idx": {
+          "name": "pipeline_llm_calls_stage_log_idx",
+          "columns": [
+            {
+              "expression": "stage_log_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "pipeline_llm_calls_request_id_pipeline_requests_id_fk": {
+          "name": "pipeline_llm_calls_request_id_pipeline_requests_id_fk",
+          "tableFrom": "pipeline_llm_calls",
+          "tableTo": "pipeline_requests",
+          "columnsFrom": [
+            "request_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "pipeline_llm_calls_prompt_version_id_prompt_versions_id_fk": {
+          "name": "pipeline_llm_calls_prompt_version_id_prompt_versions_id_fk",
+          "tableFrom": "pipeline_llm_calls",
+          "tableTo": "prompt_versions",
+          "columnsFrom": [
+            "prompt_version_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
     "public.pipeline_requests": {
       "name": "pipeline_requests",
       "schema": "",
@@ -872,6 +1039,18 @@
           "primaryKey": false,
           "notNull": true,
           "default": "now()"
+        },
+        "prompt_versions_used": {
+          "name": "prompt_versions_used",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "replay_of_request_id": {
+          "name": "replay_of_request_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
         }
       },
       "indexes": {
@@ -911,6 +1090,19 @@
           ],
           "onDelete": "cascade",
           "onUpdate": "no action"
+        },
+        "pipeline_requests_replay_of_fk": {
+          "name": "pipeline_requests_replay_of_fk",
+          "tableFrom": "pipeline_requests",
+          "tableTo": "pipeline_requests",
+          "columnsFrom": [
+            "replay_of_request_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
@@ -922,6 +1114,214 @@
           "value": "\"pipeline_requests\".\"status\" IN ('pending', 'success', 'error')"
         }
       },
+      "isRLSEnabled": false
+    },
+    "public.pipeline_stage_logs": {
+      "name": "pipeline_stage_logs",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "request_id": {
+          "name": "request_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "stage": {
+          "name": "stage",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "stage_index": {
+          "name": "stage_index",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "input_json": {
+          "name": "input_json",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "output_json": {
+          "name": "output_json",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "error": {
+          "name": "error",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "duration_ms": {
+          "name": "duration_ms",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "pipeline_stage_logs_req_idx": {
+          "name": "pipeline_stage_logs_req_idx",
+          "columns": [
+            {
+              "expression": "request_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "stage_index",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "pipeline_stage_logs_request_id_pipeline_requests_id_fk": {
+          "name": "pipeline_stage_logs_request_id_pipeline_requests_id_fk",
+          "tableFrom": "pipeline_stage_logs",
+          "tableTo": "pipeline_requests",
+          "columnsFrom": [
+            "request_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "pipeline_stage_logs_stage_chk": {
+          "name": "pipeline_stage_logs_stage_chk",
+          "value": "\"pipeline_stage_logs\".\"stage\" IN ('decomposition','matching','nutrition','assembly')"
+        },
+        "pipeline_stage_logs_status_chk": {
+          "name": "pipeline_stage_logs_status_chk",
+          "value": "\"pipeline_stage_logs\".\"status\" IN ('success','error','skipped')"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.prompt_versions": {
+      "name": "prompt_versions",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "code_hash": {
+          "name": "code_hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "template_sample": {
+          "name": "template_sample",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "model": {
+          "name": "model",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "git_sha": {
+          "name": "git_sha",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "first_seen_at": {
+          "name": "first_seen_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "prompt_versions_name_first_seen_idx": {
+          "name": "prompt_versions_name_first_seen_idx",
+          "columns": [
+            {
+              "expression": "name",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "\"first_seen_at\" DESC",
+              "asc": true,
+              "isExpression": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "prompt_versions_name_hash_uq": {
+          "name": "prompt_versions_name_hash_uq",
+          "nullsNotDistinct": false,
+          "columns": [
+            "name",
+            "code_hash"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
       "isRLSEnabled": false
     },
     "public.synonym_candidates": {
@@ -1154,6 +1554,13 @@
           "primaryKey": false,
           "notNull": false
         },
+        "preferred_locale": {
+          "name": "preferred_locale",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "'en'"
+        },
         "oil_usage": {
           "name": "oil_usage",
           "type": "text",
@@ -1210,13 +1617,6 @@
           "primaryKey": false,
           "notNull": true,
           "default": "now()"
-        },
-        "preferred_locale": {
-          "name": "preferred_locale",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "default": "'en'"
         }
       },
       "indexes": {},

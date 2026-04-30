@@ -1,0 +1,1 @@
+ALTER TABLE "pipeline_requests" ADD COLUMN "dry_run" boolean DEFAULT false NOT NULL;

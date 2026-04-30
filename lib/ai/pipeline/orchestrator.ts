@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import type { AppDb } from '@/lib/db';
 import { fetchWithTimeout } from '@/lib/fetch-with-timeout';
 import { capitalizeFirst } from '@/lib/utils';
@@ -27,6 +28,7 @@ import {
   nonFoodResponse,
 } from './errors';
 import { mealDecompositionSchema, nutritionAdjustmentSchema } from './schemas';
+import { buildLlmStageTrace, logStage } from './trace';
 import {
   classifyAnomalies,
   detectAnomalies,
@@ -43,6 +45,65 @@ const NUTRITION_MODEL = 'gemini-2.5-flash-lite';
 
 /** Per-call timeout for Gemini API calls (ms) */
 const LLM_TIMEOUT_MS = 25_000;
+
+// ---------------------------------------------------------------------------
+// Trace context
+// ---------------------------------------------------------------------------
+
+/** Passed in from the API route when request-level pipeline tracing is enabled. */
+export interface AnalyzeMealTraceContext {
+  requestId: string;
+  db: AppDb;
+  /** Mutable holder; populated by each LLM stage as its prompt version resolves. */
+  promptVersionsUsed: Map<string, string>;
+}
+
+type StageName = 'decomposition' | 'matching' | 'nutrition' | 'assembly';
+
+/**
+ * Wraps a pipeline stage with logStage instrumentation. No-op when trace is undefined.
+ */
+async function withStageLog<T>(
+  trace: AnalyzeMealTraceContext | undefined,
+  stage: StageName,
+  stageIndex: number,
+  inputJson: unknown,
+  fn: (ctx: { stageLogId: string }) => Promise<T>
+): Promise<T> {
+  if (!trace) return fn({ stageLogId: '' });
+  const stageLogId = randomUUID();
+  const t0 = Date.now();
+  try {
+    const result = await fn({ stageLogId });
+    logStage({
+      db: trace.db,
+      requestId: trace.requestId,
+      stageLogId,
+      stage,
+      stageIndex,
+      inputJson,
+      outputJson: result,
+      status: 'success',
+      durationMs: Date.now() - t0,
+    });
+    return result;
+  } catch (e) {
+    const message = e instanceof Error ? e.message : String(e);
+    logStage({
+      db: trace.db,
+      requestId: trace.requestId,
+      stageLogId,
+      stage,
+      stageIndex,
+      inputJson,
+      outputJson: null,
+      status: 'error',
+      error: message,
+      durationMs: Date.now() - t0,
+    });
+    throw e;
+  }
+}
 
 // ---------------------------------------------------------------------------
 // Structured logging
@@ -81,10 +142,18 @@ export async function analyzeMeal(
   userContext: UserContext,
   db: AppDb,
   gemini: GeminiClient,
-  onEvent?: (event: StreamEvent) => void
+  onEvent?: (event: StreamEvent) => void,
+  traceContext?: AnalyzeMealTraceContext
 ): Promise<PipelineResponse> {
   try {
-    return await runPipeline(rawInput, userContext, db, gemini, onEvent);
+    return await runPipeline(
+      rawInput,
+      userContext,
+      db,
+      gemini,
+      onEvent,
+      traceContext
+    );
   } catch (error) {
     if (isNonFoodError(error)) {
       return nonFoodResponse();
@@ -104,7 +173,14 @@ export async function analyzeMeal(
       const message = error instanceof Error ? error.message : String(error);
       console.warn('[pipeline] Parse error, retrying pipeline once:', message);
       try {
-        return await runPipeline(rawInput, userContext, db, gemini, onEvent);
+        return await runPipeline(
+          rawInput,
+          userContext,
+          db,
+          gemini,
+          onEvent,
+          traceContext
+        );
       } catch (retryError) {
         const retryMsg =
           retryError instanceof Error ? retryError.message : String(retryError);
@@ -129,7 +205,8 @@ async function runPipeline(
   userContext: UserContext,
   db: AppDb,
   gemini: GeminiClient,
-  onEvent?: (event: StreamEvent) => void
+  onEvent?: (event: StreamEvent) => void,
+  traceContext?: AnalyzeMealTraceContext
 ): Promise<PipelineResponse> {
   const t0 = Date.now();
   const emit = onEvent ?? (() => {});
@@ -156,23 +233,40 @@ async function runPipeline(
     }
   };
 
-  const decomposition: MealDecomposition = await fetchWithTimeout(
-    (signal) =>
-      gemini.generateStructuredOutputStream(
-        {
-          schema: mealDecompositionSchema,
-          systemPrompt: buildDecompositionPrompt(userContext),
-          userMessage: rawInput,
-          model: DECOMPOSITION_MODEL,
-          temperature: 0.3,
-          topP: 1,
-          topK: 1,
-          abortSignal: signal,
-        },
-        composedOnChunk
-      ),
-    LLM_TIMEOUT_MS,
-    'decomposition'
+  const decomposition: MealDecomposition = await withStageLog(
+    traceContext,
+    'decomposition',
+    1,
+    { rawInput },
+    async ({ stageLogId }) => {
+      const systemPrompt = buildDecompositionPrompt(userContext);
+      const callTrace = await buildLlmStageTrace({
+        trace: traceContext,
+        stageLogId,
+        name: 'decomposition',
+        builder: buildDecompositionPrompt as (...a: unknown[]) => string,
+        templateSample: systemPrompt,
+        model: DECOMPOSITION_MODEL,
+      });
+      return fetchWithTimeout(
+        (signal) =>
+          gemini.generateStructuredOutputStream(
+            {
+              schema: mealDecompositionSchema,
+              systemPrompt,
+              userMessage: rawInput,
+              model: DECOMPOSITION_MODEL,
+              temperature: 0.3,
+              topP: 1,
+              topK: 1,
+              abortSignal: signal,
+            },
+            { onChunk: composedOnChunk, trace: callTrace }
+          ),
+        LLM_TIMEOUT_MS,
+        'decomposition'
+      );
+    }
   );
   const decomposeMs = Date.now() - t0;
 
@@ -217,11 +311,12 @@ async function runPipeline(
     (mi) => mi.ingredients
   );
   const t1 = Date.now();
-  const matchResult = await matchIngredients(
-    allIngredients,
-    rawInput,
-    db,
-    gemini
+  const matchResult = await withStageLog(
+    traceContext,
+    'matching',
+    2,
+    { ingredientCount: allIngredients.length },
+    async () => matchIngredients(allIngredients, rawInput, db, gemini)
   );
   const matchMs = Date.now() - t1;
 
@@ -263,80 +358,100 @@ async function runPipeline(
     }
   };
 
-  let nutritionResult: NutritionAdjustment = await fetchWithTimeout(
-    (signal) =>
-      gemini.generateStructuredOutputStream(
-        {
-          schema: nutritionAdjustmentSchema,
-          systemPrompt: buildNutritionPrompt(
-            decomposition.mealItems,
-            matchResult.matched,
-            matchResult.unmatched,
-            userContext
+  const nutritionResult: NutritionAdjustment = await withStageLog(
+    traceContext,
+    'nutrition',
+    3,
+    { mealItemCount: decomposition.mealItems.length },
+    async ({ stageLogId }) => {
+      const systemPrompt = buildNutritionPrompt(
+        decomposition.mealItems,
+        matchResult.matched,
+        matchResult.unmatched,
+        userContext
+      );
+      const callTrace = await buildLlmStageTrace({
+        trace: traceContext,
+        stageLogId,
+        name: 'nutrition',
+        builder: buildNutritionPrompt as (...a: unknown[]) => string,
+        templateSample: systemPrompt,
+        model: NUTRITION_MODEL,
+      });
+
+      let result: NutritionAdjustment = await fetchWithTimeout(
+        (signal) =>
+          gemini.generateStructuredOutputStream(
+            {
+              schema: nutritionAdjustmentSchema,
+              systemPrompt,
+              userMessage:
+                'Produce bounded nutrition estimates for each ingredient in each meal item based on the reference data provided.',
+              model: NUTRITION_MODEL,
+              temperature: 0.5,
+              topP: 1,
+              topK: 1,
+              abortSignal: signal,
+            },
+            { onChunk: nutritionOnChunk, trace: callTrace }
           ),
-          userMessage:
-            'Produce bounded nutrition estimates for each ingredient in each meal item based on the reference data provided.',
-          model: NUTRITION_MODEL,
-          temperature: 0.5,
-          topP: 1,
-          topK: 1,
-          abortSignal: signal,
-        },
-        nutritionOnChunk
-      ),
-    LLM_TIMEOUT_MS,
-    'nutrition'
-  );
+        LLM_TIMEOUT_MS,
+        'nutrition'
+      );
 
-  // Early anomaly check: classify total calories before flush
-  const totalMidKcal = nutritionResult.mealItems.reduce(
-    (sum, mi) =>
-      sum +
-      mi.ingredients.reduce((s, ing) => s + (ing.caloriesKcal?.mid ?? 0), 0),
-    0
-  );
-  const earlyAnomalies: ValidationAnomaly[] = [];
-  if (totalMidKcal < THRESHOLDS.MIN_TOTAL_KCAL) {
-    earlyAnomalies.push({
-      type: 'total_calories',
-      message:
-        totalMidKcal === 0
-          ? 'Total 0 kcal — likely LLM failure'
-          : `Total ${totalMidKcal.toFixed(0)} kcal < ${THRESHOLDS.MIN_TOTAL_KCAL} — suspiciously low`,
-      severity: totalMidKcal === 0 ? 'error' : 'warning',
-    });
-  }
+      // Early anomaly check: classify total calories before flush
+      const totalMidKcal = result.mealItems.reduce(
+        (sum, mi) =>
+          sum +
+          mi.ingredients.reduce(
+            (s, ing) => s + (ing.caloriesKcal?.mid ?? 0),
+            0
+          ),
+        0
+      );
+      const earlyAnomalies: ValidationAnomaly[] = [];
+      if (totalMidKcal < THRESHOLDS.MIN_TOTAL_KCAL) {
+        earlyAnomalies.push({
+          type: 'total_calories',
+          message:
+            totalMidKcal === 0
+              ? 'Total 0 kcal — likely LLM failure'
+              : `Total ${totalMidKcal.toFixed(0)} kcal < ${THRESHOLDS.MIN_TOTAL_KCAL} — suspiciously low`,
+          severity: totalMidKcal === 0 ? 'error' : 'warning',
+        });
+      }
 
-  const decision = classifyAnomalies(earlyAnomalies);
-  if (decision === 'retry_step2') {
-    console.warn('[pipeline] classifyAnomalies → retry_step2, retrying Call 2');
-    // Reset streaming state so retry re-emits from scratch
-    lastExtractedCount = 0;
-    nutritionResult = await fetchWithTimeout(
-      (signal) =>
-        gemini.generateStructuredOutputStream(
-          {
-            schema: nutritionAdjustmentSchema,
-            systemPrompt: buildNutritionPrompt(
-              decomposition.mealItems,
-              matchResult.matched,
-              matchResult.unmatched,
-              userContext
+      const decision = classifyAnomalies(earlyAnomalies);
+      if (decision === 'retry_step2') {
+        console.warn(
+          '[pipeline] classifyAnomalies → retry_step2, retrying Call 2'
+        );
+        // Reset streaming state so retry re-emits from scratch
+        lastExtractedCount = 0;
+        result = await fetchWithTimeout(
+          (signal) =>
+            gemini.generateStructuredOutputStream(
+              {
+                schema: nutritionAdjustmentSchema,
+                systemPrompt,
+                userMessage:
+                  'The previous result had 0 calories. Please recalculate bounded nutrition estimates carefully.',
+                model: NUTRITION_MODEL,
+                temperature: 0.5,
+                topP: 1,
+                topK: 1,
+                abortSignal: signal,
+              },
+              { onChunk: nutritionOnChunk, trace: callTrace }
             ),
-            userMessage:
-              'The previous result had 0 calories. Please recalculate bounded nutrition estimates carefully.',
-            model: NUTRITION_MODEL,
-            temperature: 0.5,
-            topP: 1,
-            topK: 1,
-            abortSignal: signal,
-          },
-          nutritionOnChunk
-        ),
-      LLM_TIMEOUT_MS,
-      'nutrition-retry'
-    );
-  }
+          LLM_TIMEOUT_MS,
+          'nutrition-retry'
+        );
+      }
+
+      return result;
+    }
+  );
 
   // Flush remaining meal items not emitted during streaming (always includes the last item)
   if (nutritionResult.mealItems.length > lastExtractedCount) {
@@ -372,12 +487,19 @@ async function runPipeline(
   // Stage 4: Assembly
   emit({ type: 'stage', stage: 'assembling' });
   const t3 = Date.now();
-  const pipelineResult = assembleResult(
-    decomposition,
-    nutritionResult,
-    matchResult.matched,
-    matchResult.unmatched,
-    userContext
+  const pipelineResult = await withStageLog(
+    traceContext,
+    'assembly',
+    4,
+    { mealItemCount: decomposition.mealItems.length },
+    async () =>
+      assembleResult(
+        decomposition,
+        nutritionResult,
+        matchResult.matched,
+        matchResult.unmatched,
+        userContext
+      )
   );
   const assemblyMs = Date.now() - t3;
 
