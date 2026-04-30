@@ -1,11 +1,17 @@
 import type { Metadata } from 'next';
-import { redirect } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import {
   type DashboardProfile,
   DashboardShell,
 } from '@/components/dashboard/dashboard-shell';
 import { getOnboardingProfile } from '@/lib/onboarding/actions';
+
+const DEFAULT_PROFILE: DashboardProfile = {
+  calorieTarget: 2000,
+  proteinTargetG: 150,
+  carbsTargetG: 250,
+  fatTargetG: 65,
+};
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations('metadata.dashboard');
@@ -18,21 +24,12 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function DashboardPage() {
   const profileRow = await getOnboardingProfile();
 
-  if (
-    !profileRow ||
-    profileRow.calorieTarget === null ||
-    profileRow.proteinTargetG === null ||
-    profileRow.carbsTargetG === null ||
-    profileRow.fatTargetG === null
-  ) {
-    redirect('/onboarding');
-  }
-
   const profile: DashboardProfile = {
-    calorieTarget: profileRow.calorieTarget,
-    proteinTargetG: profileRow.proteinTargetG,
-    carbsTargetG: profileRow.carbsTargetG,
-    fatTargetG: profileRow.fatTargetG,
+    calorieTarget: profileRow?.calorieTarget ?? DEFAULT_PROFILE.calorieTarget,
+    proteinTargetG:
+      profileRow?.proteinTargetG ?? DEFAULT_PROFILE.proteinTargetG,
+    carbsTargetG: profileRow?.carbsTargetG ?? DEFAULT_PROFILE.carbsTargetG,
+    fatTargetG: profileRow?.fatTargetG ?? DEFAULT_PROFILE.fatTargetG,
   };
 
   return <DashboardShell profile={profile} />;
