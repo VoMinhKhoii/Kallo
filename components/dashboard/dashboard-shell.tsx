@@ -5,7 +5,7 @@ import { useTranslations } from 'next-intl';
 import { useEffect, useMemo, useState } from 'react';
 import { useDailyMeals } from '@/hooks/use-daily-meals';
 import { useWeightSummary } from '@/hooks/use-weight-summary';
-import { loadCalorieAdherenceHeatmap } from '@/lib/actions/dashboard';
+import { loadCalorieAdherenceHeatmap, loadVerdictAction } from '@/lib/actions/dashboard';
 import { buildCalorieAdherenceHeatmap } from '@/lib/dashboard/adherence';
 import { getMsUntilNextLocalMidnight } from '@/lib/dashboard/heatmap-rollover';
 import {
@@ -15,7 +15,7 @@ import {
 } from '@/lib/dashboard/today';
 import { cn } from '@/lib/utils';
 import { CurrentSection } from './current/current-section';
-import { getStatsData, getVerdictData } from './mock-data';
+import { getStatsData } from './mock-data';
 import { AdherenceHeatmap } from './progress/adherence-heatmap';
 import { ProgressSection } from './progress/progress-section';
 import { WeightChart } from './progress/weight-chart';
@@ -71,9 +71,8 @@ export function DashboardShell({ profile }: DashboardShellProps) {
 
   const { data: verdict } = useQuery({
     queryKey: ['dashboard', 'verdict'],
-    queryFn: getVerdictData,
-    initialData: getVerdictData,
-    staleTime: Number.POSITIVE_INFINITY,
+    queryFn: () => loadVerdictAction({ timezoneOffset: new Date().getTimezoneOffset() }),
+    staleTime: 60_000,
   });
 
   const weightData = weightSummary?.weights ?? [];
@@ -166,12 +165,14 @@ export function DashboardShell({ profile }: DashboardShellProps) {
         {/* ── Section 1: Current (week title) ── */}
         <section>
           <SectionHeader title={weekTitle} />
-          <CurrentSection
-            verdict={verdict}
-            stats={getStatsData()}
-            nutrition={todayNutrition}
-            weightSummary={weightSummary}
-          />
+          {verdict && (
+            <CurrentSection
+              verdict={verdict}
+              stats={getStatsData()}
+              nutrition={todayNutrition}
+              weightSummary={weightSummary}
+            />
+          )}
         </section>
 
         {/* ── Section 2: Progress ── */}
