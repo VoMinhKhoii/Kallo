@@ -6719,8 +6719,8 @@ After all six tasks land:
 > - **Phase A is opt-in via feature flag**, defaulting OFF in production. `RRF_MEASUREMENT_ENABLED=true` + `RRF_SAMPLE_RATE=0.05` (5%) is the recommended initial config for staging or low-traffic windows.
 > - **Sampling is deterministic per-request** (same hash strategy as the shadow runner from Chunk 4). A request either samples for RRF measurement or doesn't — the decision is reproducible from `requestId`.
 > - **Disagreement metric is `% of ingredients where top vector ≠ top fuzzy`** by `(canonical_name, source)` pair (spec §2.4 line 326). The "precision delta on changed matches" requires labeled ground truth — that comes from the eval suite (Chunk 4 §5), not this chunk's logging.
-> - **NO RRF score formula in this chunk.** RRF compute is Phase B. We only log enough data that Phase B can compute scores offline.
-> - **Latency cost** is captured by timing the parallel-fuzzy branch separately; logged to `pipeline_runs` as a new column `rrf_measurement_latency_ms` (nullable when not sampled).
+> - **NO RRF score formula in this chunk.** RRF compute is Phase B. Phase A persists ONLY scalar metrics (sampled flag, disagreement count, ingredients observed, max latency). The full candidate lists are NOT persisted — they live only in process memory during a sampled request, are used to compute `topVectorEqualsTopFuzzy`, and are then dropped. **Phase B will need its own candidate-persistence work.** Do not claim Phase A "logs enough data to compute RRF offline" — it doesn't.
+> - **Latency cost** is captured by timing the parallel-fuzzy branch separately; logged to `pipeline_runs` as a new column `rrf_measurement_latency_ms` (nullable when not sampled). **Type is `integer`, not `smallint`** — under p99 DB stalls a single fuzzy parallel branch can exceed 32 s, which would silently overflow smallint.
 > - **No PII in the candidate logs** — only `canonicalName`, `source`, `similarity`, `state`. The user's input ingredient name (`rawName`) is already in `pipeline_runs.input_text` per Chunk 1d, so we don't duplicate it here.
 
 ### Task 7.1: Sampling decision + feature-flag plumbing
@@ -6866,46 +6866,90 @@ Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>"
 `lib/ai/matching/__tests__/rrf-measurement.test.ts` (NEW):
 
 ```ts
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { captureRrfCandidates } from '../rrf-measurement';
 import type { FuzzyMatchRow } from '../source-matching';
 
 const row = (
-  canonicalName: string,
+  namePrimary: string,
   similarity: number,
-  source: 'fao' | 'usda' = 'fao'
+  state: 'raw' | 'cooked' | string = 'raw'
 ): FuzzyMatchRow => ({
-  // ... full FuzzyMatchRow shape; canonical_name + similarity + source_id
-  canonical_name: canonicalName,
+  id: `id-${namePrimary}`,
+  name_primary: namePrimary,
+  name_alt: null,
+  name_en: namePrimary,
+  state,
   similarity,
-  source_id: source === 'fao' ? 1 : 2,
-} as FuzzyMatchRow);
+});
 
 describe('captureRrfCandidates — Phase A logging shape (§2.4)', () => {
-  it('returns top-k from each list, normalized to {canonicalName, source, similarity, state}', () => {
+  it('returns top-k from each source, normalized to {canonicalName, source, similarity, state}', () => {
     const out = captureRrfCandidates({
-      vectorRows: [row('Cá quả', 0.91), row('Cá lóc', 0.85)],
-      fuzzyRows: [row('Cá quả', 0.78), row('Cá thu', 0.62)],
+      vectorRowsFao: [row('Cá quả', 0.91), row('Cá lóc', 0.85)],
+      vectorRowsUsda: [],
+      fuzzyRowsFao: [row('Cá quả', 0.78)],
+      fuzzyRowsUsda: [row('Cá thu', 0.62)],
       topK: 3,
     });
     expect(out.vectorTop[0].canonicalName).toBe('Cá quả');
     expect(out.vectorTop[0].source).toBe('fao');
-    expect(out.fuzzyTop[0].canonicalName).toBe('Cá quả');
-    // No raw row internals leak through.
-    expect(out.vectorTop[0]).not.toHaveProperty('source_id');
+    expect(out.fuzzyTop.find((c) => c.source === 'usda')?.canonicalName).toBe('Cá thu');
+  });
+
+  it('candidate shape is locked to exactly four fields (no PII / row internals leak)', () => {
+    const out = captureRrfCandidates({
+      vectorRowsFao: [row('Cá quả', 0.91)],
+      vectorRowsUsda: [],
+      fuzzyRowsFao: [row('Cá quả', 0.78)],
+      fuzzyRowsUsda: [],
+      topK: 1,
+    });
+    expect(Object.keys(out.vectorTop[0]).sort()).toEqual([
+      'canonicalName',
+      'similarity',
+      'source',
+      'state',
+    ]);
+  });
+
+  it('round-trips state into the candidate object', () => {
+    const out = captureRrfCandidates({
+      vectorRowsFao: [row('Thịt bò', 0.9, 'cooked')],
+      vectorRowsUsda: [],
+      fuzzyRowsFao: [],
+      fuzzyRowsUsda: [],
+      topK: 1,
+    });
+    expect(out.vectorTop[0].state).toBe('cooked');
+  });
+
+  it('coerces unknown DB state values to the literal "unknown" (narrowing)', () => {
+    const out = captureRrfCandidates({
+      vectorRowsFao: [row('X', 0.9, 'wholething')],
+      vectorRowsUsda: [],
+      fuzzyRowsFao: [],
+      fuzzyRowsUsda: [],
+      topK: 1,
+    });
+    expect(out.vectorTop[0].state).toBe('unknown');
   });
 
   it('flags topVectorEqualsTopFuzzy when top-1 of each list match by (canonicalName, source)', () => {
     const a = captureRrfCandidates({
-      vectorRows: [row('Cá quả', 0.91)],
-      fuzzyRows: [row('Cá quả', 0.78)],
+      vectorRowsFao: [row('Cá quả', 0.91)],
+      vectorRowsUsda: [],
+      fuzzyRowsFao: [row('Cá quả', 0.78)],
+      fuzzyRowsUsda: [],
       topK: 3,
     });
     expect(a.topVectorEqualsTopFuzzy).toBe(true);
 
     const b = captureRrfCandidates({
-      vectorRows: [row('Cá quả', 0.91)],
-      fuzzyRows: [row('Cá thu', 0.78)],
+      vectorRowsFao: [row('Cá quả', 0.91)],
+      vectorRowsUsda: [],
+      fuzzyRowsFao: [row('Cá thu', 0.78)],
+      fuzzyRowsUsda: [],
       topK: 3,
     });
     expect(b.topVectorEqualsTopFuzzy).toBe(false);
@@ -6913,29 +6957,42 @@ describe('captureRrfCandidates — Phase A logging shape (§2.4)', () => {
 
   it('considers source as part of the equality check (same name, different source = not equal)', () => {
     const out = captureRrfCandidates({
-      vectorRows: [row('Cá quả', 0.91, 'fao')],
-      fuzzyRows: [row('Cá quả', 0.78, 'usda')],
+      vectorRowsFao: [row('Cá quả', 0.91)],
+      vectorRowsUsda: [],
+      fuzzyRowsFao: [],
+      fuzzyRowsUsda: [row('Cá quả', 0.78)],
       topK: 3,
     });
     expect(out.topVectorEqualsTopFuzzy).toBe(false);
   });
 
   it('handles empty lists gracefully (no crash, flag=false)', () => {
-    const out = captureRrfCandidates({ vectorRows: [], fuzzyRows: [], topK: 3 });
+    const out = captureRrfCandidates({
+      vectorRowsFao: [],
+      vectorRowsUsda: [],
+      fuzzyRowsFao: [],
+      fuzzyRowsUsda: [],
+      topK: 3,
+    });
     expect(out.vectorTop).toEqual([]);
     expect(out.fuzzyTop).toEqual([]);
     expect(out.topVectorEqualsTopFuzzy).toBe(false);
   });
 
-  it('truncates each list to topK', () => {
-    const many = Array.from({ length: 10 }, (_, i) => row(`X${i}`, 1 - i * 0.05));
+  it('truncates the merged-and-sorted list to topK (across both sources)', () => {
+    const manyFao = Array.from({ length: 5 }, (_, i) => row(`F${i}`, 0.95 - i * 0.05));
+    const manyUsda = Array.from({ length: 5 }, (_, i) => row(`U${i}`, 0.92 - i * 0.05));
     const out = captureRrfCandidates({
-      vectorRows: many,
-      fuzzyRows: many,
+      vectorRowsFao: manyFao,
+      vectorRowsUsda: manyUsda,
+      fuzzyRowsFao: manyFao,
+      fuzzyRowsUsda: manyUsda,
       topK: 3,
     });
     expect(out.vectorTop).toHaveLength(3);
     expect(out.fuzzyTop).toHaveLength(3);
+    // Sorted by similarity desc: F0 (0.95) > U0 (0.92) > F1 (0.90)
+    expect(out.vectorTop.map((c) => c.canonicalName)).toEqual(['F0', 'U0', 'F1']);
   });
 });
 ```
@@ -6949,6 +7006,10 @@ Run: FAIL — module missing.
 //
 // Spec §2.4 Phase A. Logging-only candidate capture. NEVER changes the
 // match winner returned to production.
+//
+// Source is known at the call site (we query FAO and USDA via separate
+// fuzzy_match_ingredients_by_source RPCs), so the row itself doesn't carry
+// source — capture takes pre-tagged FAO and USDA arrays per side.
 
 import type { FuzzyMatchRow } from './source-matching';
 
@@ -6960,8 +7021,10 @@ export interface RrfCandidate {
 }
 
 export interface RrfCaptureInput {
-  vectorRows: FuzzyMatchRow[];
-  fuzzyRows: FuzzyMatchRow[];
+  vectorRowsFao: FuzzyMatchRow[];
+  vectorRowsUsda: FuzzyMatchRow[];
+  fuzzyRowsFao: FuzzyMatchRow[];
+  fuzzyRowsUsda: FuzzyMatchRow[];
   topK: number;
 }
 
@@ -6971,19 +7034,40 @@ export interface RrfCaptureOutput {
   topVectorEqualsTopFuzzy: boolean;
 }
 
-function normalize(rows: FuzzyMatchRow[], topK: number): RrfCandidate[] {
-  return rows.slice(0, topK).map((r) => ({
-    canonicalName: r.canonical_name,
-    source: r.source_id === 1 ? 'fao' : 'usda',
+function tag(rows: FuzzyMatchRow[], source: 'fao' | 'usda'): RrfCandidate[] {
+  return rows.map((r) => ({
+    // canonicalName uses name_primary (the FCT-canonical Vietnamese name).
+    // name_en is intentionally NOT used — disagreement is measured against
+    // the canonical-name field that downstream code joins on.
+    canonicalName: r.name_primary,
+    source,
     similarity: r.similarity,
     state:
       r.state === 'raw' ? 'raw' : r.state === 'cooked' ? 'cooked' : 'unknown',
   }));
 }
 
+function mergeAndTrunc(
+  fao: RrfCandidate[],
+  usda: RrfCandidate[],
+  topK: number
+): RrfCandidate[] {
+  return [...fao, ...usda]
+    .sort((a, b) => b.similarity - a.similarity)
+    .slice(0, topK);
+}
+
 export function captureRrfCandidates(input: RrfCaptureInput): RrfCaptureOutput {
-  const vectorTop = normalize(input.vectorRows, input.topK);
-  const fuzzyTop = normalize(input.fuzzyRows, input.topK);
+  const vectorTop = mergeAndTrunc(
+    tag(input.vectorRowsFao, 'fao'),
+    tag(input.vectorRowsUsda, 'usda'),
+    input.topK
+  );
+  const fuzzyTop = mergeAndTrunc(
+    tag(input.fuzzyRowsFao, 'fao'),
+    tag(input.fuzzyRowsUsda, 'usda'),
+    input.topK
+  );
   const eq =
     vectorTop.length > 0 &&
     fuzzyTop.length > 0 &&
@@ -6993,53 +7077,108 @@ export function captureRrfCandidates(input: RrfCaptureInput): RrfCaptureOutput {
 }
 ```
 
-- [ ] **Step 3: Wire into `matchSingleIngredientWithEmbedding`**
+- [ ] **Step 3: Wire into `matchSingleIngredientWithEmbedding` (kick fuzzy once, reuse on both branches)**
 
-In `lib/ai/matching/source-matching.ts`, when `shouldSampleForRrf(requestId)` returns true, ALWAYS run the fuzzy query in parallel with vector — even when vector finds a winner. The fuzzy result is captured for logging but never returned as the winner.
-
-Current cascade (line 160): `if (vectorWinner) return vectorWinner;`. Modified shape:
+In `lib/ai/matching/source-matching.ts`, when `shouldSampleForRrf(requestId)` returns true, kick the fuzzy queries in parallel with vector. Critical: the fuzzy promise is consumed by both the vector-winner branch (for measurement only) AND the vector-miss fallback branch (the existing production fallback at line 163), so we MUST NOT issue the fuzzy queries twice. The non-sampled path is byte-identical to today.
 
 ```ts
-const sampled = shouldSampleForRrf(requestId);
-const fuzzyPromise = sampled
+// Sketch — preserve exact existing behavior on the !sampled path.
+const sampled = requestId !== undefined && shouldSampleForRrf(requestId);
+
+// When sampled, kick fuzzy in parallel with vector; otherwise leave it null
+// and let the existing fallback at line 163 issue the queries lazily.
+const fuzzyEarlyPromise = sampled
   ? Promise.all([
       db.execute(sql`SELECT * FROM fuzzy_match_ingredients_by_source(${ingredientName}, ${SOURCE_FAO}, 3, 0.15)`),
       db.execute(sql`SELECT * FROM fuzzy_match_ingredients_by_source(${ingredientName}, ${SOURCE_USDA}, 3, 0.15)`),
-    ])
+    ]).catch((err) => {
+      console.warn('[rrf] early fuzzy failed; falling back to lazy fuzzy', err);
+      return null; // fall through to lazy path on the miss branch
+    })
   : null;
 
 // ... existing vector cascade unchanged ...
 
 if (vectorWinner) {
-  if (sampled) {
+  if (sampled && fuzzyEarlyPromise) {
     const t0 = performance.now();
-    const [faoFuzzyRows, usdaFuzzyRows] = await fuzzyPromise!;
-    const fuzzyRowsAll = [
-      ...(faoFuzzyRows as unknown as FuzzyMatchRow[]),
-      ...(usdaFuzzyRows as unknown as FuzzyMatchRow[]),
-    ];
-    const vectorRowsAll = [
-      ...(faoVectorRows as unknown as FuzzyMatchRow[]),
-      ...(usdaVectorRows as unknown as FuzzyMatchRow[]),
-    ];
-    const captured = captureRrfCandidates({
-      vectorRows: vectorRowsAll,
-      fuzzyRows: fuzzyRowsAll,
-      topK: 3,
-    });
-    rrfMeasurements.push({
-      ingredientName,
-      latencyMs: performance.now() - t0,
-      ...captured,
-    });
+    const earlyRows = await fuzzyEarlyPromise;
+    const latencyMs = performance.now() - t0;
+    if (earlyRows) {
+      const [faoFuzzyRows, usdaFuzzyRows] = earlyRows;
+      const captured = captureRrfCandidates({
+        vectorRowsFao: faoVectorRows as unknown as FuzzyMatchRow[],
+        vectorRowsUsda: usdaVectorRows as unknown as FuzzyMatchRow[],
+        fuzzyRowsFao: faoFuzzyRows as unknown as FuzzyMatchRow[],
+        fuzzyRowsUsda: usdaFuzzyRows as unknown as FuzzyMatchRow[],
+        topK: 3,
+      });
+      rrfMeasurements?.push({
+        ingredientName,
+        latencyMs,
+        topVectorEqualsTopFuzzy: captured.topVectorEqualsTopFuzzy,
+      });
+    }
   }
   return vectorWinner;
 }
+
+// Vector-miss fallback — REUSE the early promise when sampled. This is
+// the fix for the "duplicate fuzzy query" bug B3. When sampled and the
+// early promise resolved, we skip the second Promise.all entirely.
+let faoFuzzyRows: unknown;
+let usdaFuzzyRows: unknown;
+if (sampled && fuzzyEarlyPromise) {
+  const earlyRows = await fuzzyEarlyPromise;
+  if (earlyRows) {
+    [faoFuzzyRows, usdaFuzzyRows] = earlyRows;
+  }
+}
+if (faoFuzzyRows === undefined) {
+  // !sampled OR early promise failed — issue the queries now (existing behavior).
+  [faoFuzzyRows, usdaFuzzyRows] = await Promise.all([
+    db.execute(sql`SELECT * FROM fuzzy_match_ingredients_by_source(${ingredientName}, ${SOURCE_FAO}, 3, 0.15)`),
+    db.execute(sql`SELECT * FROM fuzzy_match_ingredients_by_source(${ingredientName}, ${SOURCE_USDA}, 3, 0.15)`),
+  ]);
+}
+
+// ... continue with existing buildMatchResult / pickBestSource for fuzzyWinner.
+
+if (sampled) {
+  // Capture even on the miss path — disagreement is informative whether or
+  // not vector won. Latency for this branch is the existing fallback time
+  // (no extra cost since we reused the already-running query).
+  const captured = captureRrfCandidates({
+    vectorRowsFao: faoVectorRows as unknown as FuzzyMatchRow[],
+    vectorRowsUsda: usdaVectorRows as unknown as FuzzyMatchRow[],
+    fuzzyRowsFao: faoFuzzyRows as unknown as FuzzyMatchRow[],
+    fuzzyRowsUsda: usdaFuzzyRows as unknown as FuzzyMatchRow[],
+    topK: 3,
+  });
+  rrfMeasurements?.push({
+    ingredientName,
+    latencyMs: 0, // no added latency on miss branch — fuzzy ran in production path
+    topVectorEqualsTopFuzzy: captured.topVectorEqualsTopFuzzy,
+  });
+}
 ```
 
-> **Critical:** the parallel fuzzy execution begins BEFORE the vector cascade so we don't add serial latency for sampled requests. The total wall-time delta is `max(0, fuzzyLatency - vectorLatency)`, captured separately for the latency-cost metric.
+> **Critical:** parallel-fuzzy launches BEFORE `await` on the vector cascade so the wall-time delta on the win branch is `max(0, fuzzyLatency − vectorLatency)`. The non-sampled path issues no extra DB calls at all. The `.catch(...) → null` shape silences unhandled-rejection warnings on the win branch when the early fuzzy fails (the miss branch then falls through to the lazy queries).
 
-Thread `requestId` and a per-request `rrfMeasurements: RrfMeasurement[]` accumulator through `matchSingleIngredientWithEmbedding`'s call signature. Add to the outer `matchIngredients` orchestrator, returned alongside the existing match results.
+**Signature changes — make the new params optional so existing tests stay green:**
+
+`lib/ai/matching/source-matching.ts:122` — `matchSingleIngredientWithEmbedding(name, embedding, db)` becomes:
+
+```ts
+export async function matchSingleIngredientWithEmbedding(
+  ingredientName: string,
+  embedding: number[],
+  db: Database,
+  ctx?: { requestId?: string; rrfMeasurements?: RrfMeasurement[] }
+): Promise<MatchInfo | null>
+```
+
+`lib/ai/matching/cascade.ts:53` — `matchIngredients(ingredients, mealId, db, gemini)` adds the same optional `ctx` param at the end and threads it to both call sites at `cascade.ts:129` and `cascade.ts:248`. The orchestrator at `lib/ai/pipeline/orchestrator.ts` passes `{ requestId: pipelineRunId, rrfMeasurements }` when constructing the call. Existing callers (e.g., `lib/ai/__tests__/ingredient-matching.test.ts` calling `matchIngredients(ingredients, 'test', mockDb, mockGemini)`) work unchanged because `ctx` is optional — the flag-off-zero-behavior-change promise holds.
 
 - [ ] **Step 4: Run the suite + lint**
 
@@ -7079,7 +7218,7 @@ Add to `pipelineRuns` in `lib/db/schema.ts`:
 rrfSampled: boolean('rrf_sampled').notNull().default(false),
 rrfDisagreementCount: smallint('rrf_disagreement_count'),       // null when not sampled
 rrfIngredientsObserved: smallint('rrf_ingredients_observed'),   // null when not sampled
-rrfMeasurementLatencyMs: smallint('rrf_measurement_latency_ms'), // max across ingredients in this run
+rrfMeasurementLatencyMs: integer('rrf_measurement_latency_ms'), // INTEGER not smallint — under p99 DB stalls a single fuzzy call can exceed 32 s, which would silently overflow smallint.
 ```
 
 > **Why nullable, not 0-default:** zero is a meaningful value (sampled, all matched). NULL is the unambiguous "not sampled" signal — easy to filter in SQL: `WHERE rrf_sampled = true`.
@@ -7088,6 +7227,10 @@ rrfMeasurementLatencyMs: smallint('rrf_measurement_latency_ms'), // max across i
 bun db:generate
 # Rename migration: <ts>_add_pipeline_runs_rrf_phase_a.sql
 # Update meta/_journal.json tag
+# Verify the new migration's timestamp sorts AFTER the Chunk 1d
+# `create pipeline_runs` migration AND the Chunk 6 telemetry-columns
+# migration (unit_conversion_fallbacks, ambiguity_flag_counts).
+# Reorder via _journal.json + filename rename if needed.
 ```
 
 - [ ] **Step 2: Write the failing test**
@@ -7200,15 +7343,23 @@ Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>"
 ```md
 # RRF Phase B Gate (§2.4)
 
-Phase A logs candidate disagreement on a sample of meals. Phase B (shipping RRF as the v1 default) requires:
+Phase A logs **scalar disagreement metrics** on a sample of meals. It does
+NOT persist the per-ingredient candidate lists — those are computed
+in-memory during a sampled request and dropped after the disagreement flag
+is captured. Phase B (shipping RRF as the v1 default) requires:
 
 1. **Disagreement rate.** `rrf_disagreement_count / rrf_ingredients_observed` averaged over a 7-day window with at least 1,000 sampled meals. If this rate is < 5%, RRF cannot meaningfully change outcomes — defer.
 2. **Precision lift on changed matches.** Cross-reference the disagreement set against the eval suite's labeled ground truth (Chunk 4 §5). If the changed-match precision delta is < 2 percentage points, defer.
 3. **Latency budget.** `p95(rrf_measurement_latency_ms)` MUST be < 30% of current p95 match latency. If parallel fuzzy meaningfully degrades the cascade, defer or scope down (e.g., fuzzy only when vector confidence < threshold).
 
-When all three pass, Phase B is a separate plan: implement the RRF score formula, change `pickBestSource` to fuse rather than choose, and ramp via the same `RRF_MEASUREMENT_ENABLED` flag with `RRF_PRODUCTION_MODE=fuse`.
+When all three pass, Phase B is a separate plan that MUST include:
 
-Until then: Phase A logging stays on at low sample rate (≤ 5%) so the data set keeps growing.
+- **Candidate persistence**: a new `pipeline_run_rrf_samples` table (or `pipeline_runs.rrf_candidates jsonb` column) holding `[{ingredientName, vectorTop[], fuzzyTop[]}]` for every sampled run. The current scalar metrics are sufficient to gate the *decision*, but RRF score computation needs the candidate ranks.
+- **Score formula**: implement RRF compute (`score(d) = Σ 1/(k + rank_i(d))` across the two candidate lists, typical `k=60`).
+- **Routing change**: modify `pickBestSource` to fuse candidate lists and pick the top-RRF-scored entry rather than the top-similarity entry.
+- **Ramp**: re-use the same `RRF_MEASUREMENT_ENABLED` flag with a new mode `RRF_PRODUCTION_MODE=fuse` (default `measure-only` preserves Phase A behavior).
+
+Until all three Phase A gates pass: Phase A logging stays on at low sample rate (≤ 5%) so the dataset keeps growing.
 ```
 
 - [ ] **Step 2: Commit**
