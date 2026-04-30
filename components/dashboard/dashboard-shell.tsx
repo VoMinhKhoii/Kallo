@@ -104,6 +104,7 @@ export function DashboardShell() {
   // UI appear as if valid data was loaded when it wasn't.
   const {
     data: dashboard,
+    error,
     isLoading: dashboardLoading,
     isError: dashboardError,
     refetch: refetchDashboard,
@@ -113,35 +114,40 @@ export function DashboardShell() {
       loadDashboardSnapshotAction({ range: timeRange, timezoneOffset }),
     staleTime: 30_000,
     structuralSharing: true,
-    onError: () => {
-      toast.error('Failed to load dashboard');
-    },
   });
+
+  useEffect(() => {
+    if (dashboardError) {
+      toast.error(
+        error instanceof Error ? error.message : 'Failed to load dashboard'
+      );
+    }
+  }, [dashboardError, error]);
 
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout> | null = null;
 
-    const invalidateHeatmap = () => {
+    const invalidateSnapshot = () => {
       void queryClient.invalidateQueries({
-        queryKey: ['dashboard', 'heatmapData'],
+        queryKey: ['dashboard', timeRange, timezoneOffset],
       });
     };
 
     const scheduleMidnightRefresh = () => {
       timer = setTimeout(() => {
-        invalidateHeatmap();
+        invalidateSnapshot();
         scheduleMidnightRefresh();
       }, getMsUntilNextLocalMidnight());
     };
 
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
-        invalidateHeatmap();
+        invalidateSnapshot();
       }
     };
 
     const handleWindowFocus = () => {
-      invalidateHeatmap();
+      invalidateSnapshot();
     };
 
     scheduleMidnightRefresh();
@@ -155,7 +161,7 @@ export function DashboardShell() {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       window.removeEventListener('focus', handleWindowFocus);
     };
-  }, [queryClient]);
+  }, [queryClient, timeRange, timezoneOffset]);
 
   const dashboardSnapshot = dashboard ?? getEmptyDashboardSnapshot(timeRange);
 
