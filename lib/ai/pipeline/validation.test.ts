@@ -35,6 +35,7 @@ function makeMatched(
       carbohydrateG: 30,
       fatG: 5,
     },
+    dbState: 'raw',
     ...overrides,
   };
 }

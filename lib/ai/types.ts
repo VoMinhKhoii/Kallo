@@ -129,6 +129,8 @@ export interface MatchedIngredient {
   similarity: number;
   confidence: MatchConfidence;
   nutritionPer100g: NutritionPer100g;
+  /** DB-enforced row state (§0.2). 'unknown' when the row pre-dates the column. */
+  dbState: 'raw' | 'cooked' | 'unknown';
 }
 
 /** An unmatched ingredient — logged for future DB expansion */

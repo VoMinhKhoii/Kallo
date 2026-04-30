@@ -313,7 +313,8 @@ export async function matchIngredients(
   for (const info of matchInfos) {
     const nutrition = nutritionMap.get(info.foodCompositionId);
     if (nutrition) {
-      matched.push({ ...info, nutritionPer100g: nutrition });
+      const { state, ...rest } = info;
+      matched.push({ ...rest, nutritionPer100g: nutrition, dbState: state });
     } else {
       console.warn(
         `[matching] No nutrition data for matched ID "${info.foodCompositionId}" (${info.ingredientName})`

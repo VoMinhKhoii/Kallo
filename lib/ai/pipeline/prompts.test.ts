@@ -411,6 +411,7 @@ describe('buildNutritionPrompt — deterministic ordering', () => {
     similarity: 0.9,
     confidence: 'high',
     nutritionPer100g: fullNutrition,
+    dbState: 'raw',
   });
 
   const makeMealItem = (

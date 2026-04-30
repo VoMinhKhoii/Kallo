@@ -57,6 +57,7 @@ const MATCHED_INGREDIENT: MatchedIngredient = {
     vitaminB12Mcg: null,
     vitaminHMcg: null,
   },
+  dbState: 'raw',
 };
 
 const UNMATCHED: UnmatchedIngredient[] = [];
