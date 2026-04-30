@@ -94,7 +94,12 @@ export async function POST(request: NextRequest) {
   const userContext = buildUserContext(profile);
 
   // Fire-and-forget: log pipeline start for observability (never blocks SSE)
-  const requestId = logPipelineStart(userId, message, userContext, db);
+  const requestId = logPipelineStart({
+    userId,
+    rawInput: message,
+    userContext,
+    db,
+  });
 
   // Phase 2: Stream pipeline results as SSE
   const encoder = new TextEncoder();
