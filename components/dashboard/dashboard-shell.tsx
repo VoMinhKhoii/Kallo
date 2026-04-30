@@ -3,20 +3,25 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslations } from 'next-intl';
 import { useEffect, useMemo, useState } from 'react';
-import { toast } from 'sonner';
-import { Skeleton } from '@/components/ui/skeleton';
-import { loadDashboardSnapshotAction } from '@/lib/actions/dashboard';
+import { useWeightSummary } from '@/hooks/use-weight-summary';
+import { loadCalorieAdherenceHeatmap } from '@/lib/actions/dashboard';
 import { buildCalorieAdherenceHeatmap } from '@/lib/dashboard/adherence';
 import { getMsUntilNextLocalMidnight } from '@/lib/dashboard/heatmap-rollover';
 import { cn } from '@/lib/utils';
 import { CurrentSection } from './current/current-section';
+import {
+  getMealsToday,
+  getNutritionData,
+  getStatsData,
+  getVerdictData,
+} from './mock-data';
 import { AdherenceHeatmap } from './progress/adherence-heatmap';
 import { ProgressSection } from './progress/progress-section';
 import { WeightChart } from './progress/weight-chart';
 import { SectionHeader } from './section-header';
 import { MealTrigger } from './today/meal-trigger';
 import { TodaySection } from './today/today-section';
-import type { DashboardSnapshot, TimeRange } from './types';
+import type { TimeRange } from './types';
 
 function getWeekTitle(): string {
   const now = new Date();
@@ -34,53 +39,6 @@ function getWeekTitle(): string {
   return `Week of ${fmt(monday)} – ${fmt(sunday)}, ${year}`;
 }
 
-function getEmptyHeatmap(range: TimeRange): (number | null)[][] {
-  const weekCount = range === '30d' ? 4 : 13;
-  return Array.from({ length: 7 }, () =>
-    Array.from({ length: weekCount }, () => null)
-  );
-}
-
-function getEmptyDashboardSnapshot(range: TimeRange): DashboardSnapshot {
-  return {
-    verdict: {
-      weeklyRate: 0,
-      totalDelta: 0,
-      planStartDate: new Date().toISOString().slice(0, 10),
-      status: 'too_early',
-      rollingAvg: { start: 0, end: 0 },
-      currentWeight: 0,
-      proteinDays: [false, false, false, false, false, false, false],
-    },
-    stats: {
-      streak: 0,
-      daysLogged: 0,
-      avgDeficit: 0,
-      todayWeight: null,
-      weightPlaceholder: 0,
-    },
-    nutrition: {
-      calories: { current: 0, target: 0 },
-      protein: { current: 0, target: 0 },
-      carbs: { current: 0, target: 0 },
-      fat: { current: 0, target: 0 },
-    },
-    meals: [],
-    heatmap: getEmptyHeatmap(range),
-    weightSummary: {
-      range,
-      weights: [],
-      currentWeight: 0,
-      todayWeight: null,
-      weightPlaceholder: 0,
-      daysLogged: 0,
-      periodStartWeight: 0,
-      expectedEndWeight: 0,
-      goalDirection: 'flat',
-    },
-  };
-}
-
 export function DashboardShell() {
   const t = useTranslations('dashboard');
   const queryClient = useQueryClient();
@@ -96,58 +54,81 @@ export function DashboardShell() {
       timezoneOffset,
     });
   }, [timeRange]);
+  const { data: weightSummary } = useWeightSummary(timeRange);
 
-  const timezoneOffset = useMemo(() => new Date().getTimezoneOffset(), []);
-
-  // Use the single snapshot action to populate the dashboard. Do NOT use
-  // `placeholderData` here — that can mask real load failures and make the
-  // UI appear as if valid data was loaded when it wasn't.
-  const {
-    data: dashboard,
-    error,
-    isLoading: dashboardLoading,
-    isError: dashboardError,
-    refetch: refetchDashboard,
-  } = useQuery({
-    queryKey: ['dashboard', timeRange, timezoneOffset],
-    queryFn: () =>
-      loadDashboardSnapshotAction({ range: timeRange, timezoneOffset }),
-    staleTime: 30_000,
-    structuralSharing: true,
+  const { data: verdict } = useQuery({
+    queryKey: ['dashboard', 'verdict'],
+    queryFn: getVerdictData,
+    initialData: getVerdictData,
+    staleTime: Number.POSITIVE_INFINITY,
   });
 
-  useEffect(() => {
-    if (dashboardError) {
-      toast.error(
-        error instanceof Error ? error.message : 'Failed to load dashboard'
-      );
-    }
-  }, [dashboardError, error]);
+  const { data: stats } = useQuery({
+    queryKey: ['dashboard', 'stats'],
+    queryFn: getStatsData,
+    initialData: getStatsData,
+    staleTime: Number.POSITIVE_INFINITY,
+  });
+
+  const weightData = weightSummary?.weights ?? [];
+  const periodStartWeight =
+    weightSummary?.periodStartWeight ?? weightSummary?.currentWeight ?? 65;
+  const expectedEndWeight =
+    weightSummary?.expectedEndWeight ?? periodStartWeight;
+  const goalDirection = weightSummary?.goalDirection ?? 'flat';
+
+  const { data: heatmapData } = useQuery({
+    queryKey: ['dashboard', 'heatmapData', timeRange],
+    queryFn: () => {
+      const timezoneOffset = new Date().getTimezoneOffset();
+
+      return loadCalorieAdherenceHeatmap({
+        range: timeRange,
+        timezoneOffset,
+      });
+    },
+    placeholderData: emptyHeatmapData,
+    staleTime: 60_000,
+  });
+
+  const { data: nutrition } = useQuery({
+    queryKey: ['dashboard', 'nutrition'],
+    queryFn: getNutritionData,
+    initialData: getNutritionData,
+    staleTime: Number.POSITIVE_INFINITY,
+  });
+
+  const { data: meals } = useQuery({
+    queryKey: ['dashboard', 'meals'],
+    queryFn: getMealsToday,
+    initialData: getMealsToday,
+    staleTime: Number.POSITIVE_INFINITY,
+  });
 
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout> | null = null;
 
-    const invalidateSnapshot = () => {
+    const invalidateHeatmap = () => {
       void queryClient.invalidateQueries({
-        queryKey: ['dashboard', timeRange, timezoneOffset],
+        queryKey: ['dashboard', 'heatmapData'],
       });
     };
 
     const scheduleMidnightRefresh = () => {
       timer = setTimeout(() => {
-        invalidateSnapshot();
+        invalidateHeatmap();
         scheduleMidnightRefresh();
       }, getMsUntilNextLocalMidnight());
     };
 
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
-        invalidateSnapshot();
+        invalidateHeatmap();
       }
     };
 
     const handleWindowFocus = () => {
-      invalidateSnapshot();
+      invalidateHeatmap();
     };
 
     scheduleMidnightRefresh();
@@ -161,67 +142,24 @@ export function DashboardShell() {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       window.removeEventListener('focus', handleWindowFocus);
     };
-  }, [queryClient, timeRange, timezoneOffset]);
+  }, [queryClient]);
 
-  const dashboardSnapshot = dashboard ?? getEmptyDashboardSnapshot(timeRange);
-
-  // If loading, show a skeleton so we don't render zeroed placeholder data.
-  if (dashboardLoading) {
-    return (
-      <main
-        className="relative flex-1 overflow-hidden"
-        style={{ fontFamily: 'DM Sans, sans-serif' }}
-      >
-        <div className="p-5">
-          <Skeleton className="mb-4 h-6 w-1/3" />
-          <div className="grid gap-2">
-            <Skeleton className="h-48 rounded-md" />
-            <Skeleton className="h-48 rounded-md" />
-          </div>
-        </div>
-      </main>
-    );
-  }
-
-  if (dashboardError && !dashboard) {
-    return (
-      <main
-        className="relative flex-1 overflow-hidden"
-        style={{ fontFamily: 'DM Sans, sans-serif' }}
-      >
-        <div className="p-5">
-          <div className="rounded-md border p-4">
-            <p className="mb-2">Unable to load dashboard data.</p>
-            <button
-              type="button"
-              onClick={() => void refetchDashboard()}
-              className="inline-flex items-center rounded-md bg-card px-3 py-1 text-sm"
-            >
-              Retry
-            </button>
-          </div>
-        </div>
-      </main>
-    );
-  }
-
-  const resolvedHeatmapData = dashboardSnapshot.heatmap ?? emptyHeatmapData;
+  const resolvedHeatmapData = heatmapData ?? emptyHeatmapData;
 
   return (
     <main
       className="relative flex-1 overflow-hidden"
       style={{ fontFamily: 'DM Sans, sans-serif' }}
     >
-      {/* Off-track banner removed — small badge next to Avg Daily Deficit is shown instead */}
       <div className="grid h-full grid-rows-[2fr_3fr_2fr] gap-2 overflow-y-auto px-5 pt-4 pb-3 sm:px-8">
         {/* ── Section 1: Current (week title) ── */}
         <section>
           <SectionHeader title={weekTitle} />
           <CurrentSection
-            verdict={dashboardSnapshot.verdict}
-            stats={dashboardSnapshot.stats}
-            nutrition={dashboardSnapshot.nutrition}
-            weightSummary={dashboardSnapshot.weightSummary}
+            verdict={verdict}
+            stats={stats}
+            nutrition={nutrition}
+            weightSummary={weightSummary}
           />
         </section>
 
@@ -253,14 +191,10 @@ export function DashboardShell() {
           <ProgressSection
             weightChart={
               <WeightChart
-                data={dashboardSnapshot.weightSummary.weights}
-                periodStartWeight={
-                  dashboardSnapshot.weightSummary.periodStartWeight
-                }
-                expectedEndWeight={
-                  dashboardSnapshot.weightSummary.expectedEndWeight
-                }
-                goalDirection={dashboardSnapshot.weightSummary.goalDirection}
+                data={weightData}
+                periodStartWeight={periodStartWeight}
+                expectedEndWeight={expectedEndWeight}
+                goalDirection={goalDirection}
                 range={timeRange}
               />
             }
@@ -274,10 +208,7 @@ export function DashboardShell() {
         <section className="flex min-h-0 flex-col">
           <SectionHeader title={t('today')} delay={0.2} />
           <div className="flex-1">
-            <TodaySection
-              nutrition={dashboardSnapshot.nutrition}
-              meals={dashboardSnapshot.meals}
-            />
+            <TodaySection nutrition={nutrition} meals={meals} />
           </div>
         </section>
       </div>
