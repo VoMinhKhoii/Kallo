@@ -27,6 +27,7 @@ import {
   NonFoodError,
   nonFoodResponse,
 } from './errors';
+import { ensureIdsOnDecomposition, type MealDecompositionWithIds } from './ids';
 import { mealDecompositionSchema, nutritionAdjustmentSchema } from './schemas';
 import { buildLlmStageTrace, logStage } from './trace';
 import {
@@ -233,7 +234,7 @@ async function runPipeline(
     }
   };
 
-  const decomposition: MealDecomposition = await withStageLog(
+  const rawDecomposition: MealDecomposition = await withStageLog(
     traceContext,
     'decomposition',
     1,
@@ -268,6 +269,8 @@ async function runPipeline(
       );
     }
   );
+  const decomposition: MealDecompositionWithIds =
+    ensureIdsOnDecomposition(rawDecomposition);
   const decomposeMs = Date.now() - t0;
 
   // Normalize names: capitalize first letter for consistent cache keys and UI display
