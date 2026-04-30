@@ -131,7 +131,7 @@ export async function replayRequest(
       db,
       gemini,
       () => {},
-      { requestId: replayId, db, promptVersionsUsed }
+      { requestId: replayId, db, userId: orig.userId, promptVersionsUsed }
     );
     if (!result.success) {
       finalStatus = 'error';

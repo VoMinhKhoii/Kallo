@@ -36,6 +36,7 @@ import {
   type RawNutritionAdjustment,
   reconcileNutritionIds,
 } from './nutrition';
+import { buildPipelineRunRow, writePipelineRun } from './run-telemetry';
 import { mealDecompositionSchema, nutritionAdjustmentSchema } from './schemas';
 import { buildLlmStageTrace, logStage } from './trace';
 import {
@@ -63,6 +64,8 @@ const LLM_TIMEOUT_MS = 25_000;
 export interface AnalyzeMealTraceContext {
   requestId: string;
   db: AppDb;
+  /** User id of the request initiator; hashed before persistence. */
+  userId: string;
   /** Mutable holder; populated by each LLM stage as its prompt version resolves. */
   promptVersionsUsed: Map<string, string>;
 }
@@ -602,6 +605,53 @@ async function runPipeline(
     mealItemCount: decomposition.mealItems.length,
     anomalies: allAnomalies,
   });
+
+  // Persist a pipeline_runs row when request-level tracing is enabled (§0.4).
+  // Telemetry writes are best-effort and never block the response or throw.
+  if (traceContext) {
+    try {
+      const personalizationFields: string[] = [];
+      if (userContext.countryOfOrigin) {
+        personalizationFields.push('countryOfOrigin');
+      }
+      if (userContext.countryOfResidence) {
+        personalizationFields.push('countryOfResidence');
+      }
+      if (userContext.cookingHabits) {
+        personalizationFields.push('cookingHabits');
+      }
+      const row = buildPipelineRunRow({
+        userId: traceContext.userId,
+        requestId: traceContext.requestId,
+        modelCall1: DECOMPOSITION_MODEL,
+        modelCall2: NUTRITION_MODEL,
+        timings: { total: Date.now() - t0 },
+        counts: {
+          ingredient: allIngredients.length,
+          matched: matchResult.matched.length,
+          unmatched: matchResult.unmatched.length,
+        },
+        anomalyTypes: allAnomalies.map((a) => a.type),
+        counters: {
+          // Counters introduced in later chunks default to 0 here (§0.4 row
+          // shape locked early so query consumers don't break across chunks).
+          preMatchAliasHits: 0,
+          cookedToRawFactorFires: 0,
+          densityEnvelopeFires: 0,
+          macroInconsistentFires: 0,
+          dbStateUnknownFires: 0,
+          retryStep2Count: 0,
+        },
+        escalated: false,
+        cacheHitL4: false,
+        retryCount: 0,
+        promptPersonalizationFields: personalizationFields,
+      });
+      await writePipelineRun(traceContext.db, row);
+    } catch (err) {
+      console.error('[ai/pipeline] failed to write pipeline_runs row', err);
+    }
+  }
 
   return { success: true, data: pipelineResult };
 }

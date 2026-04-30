@@ -171,6 +171,7 @@ describe('analyzeMeal traceContext', () => {
     const traceContext: AnalyzeMealTraceContext = {
       requestId: 'req-001',
       db,
+      userId: 'user-test-1',
       promptVersionsUsed,
     };
 
@@ -235,6 +236,7 @@ describe('analyzeMeal traceContext', () => {
     const traceContext: AnalyzeMealTraceContext = {
       requestId: 'req-err',
       db,
+      userId: 'user-test-1',
       promptVersionsUsed,
     };
 

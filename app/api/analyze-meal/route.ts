@@ -111,7 +111,7 @@ export async function POST(request: NextRequest) {
 
       const startTime = Date.now();
       const promptVersionsUsed = new Map<string, string>();
-      const traceContext = { requestId, db, promptVersionsUsed };
+      const traceContext = { requestId, db, userId, promptVersionsUsed };
 
       try {
         const gemini = createGeminiClient(apiKey);
