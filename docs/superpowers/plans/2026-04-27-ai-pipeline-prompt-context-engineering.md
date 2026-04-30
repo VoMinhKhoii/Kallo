@@ -17,15 +17,46 @@
 
 ---
 
+## Coordination with `feat/admin-pipeline-dashboard` worktree (DESCOPE)
+
+A parallel worktree (`/Users/khoivo/Documents/nham-admin-dashboard`, branch `feat/admin-pipeline-dashboard`) is shipping the prompt-version registry, per-LLM-call audit log, per-stage I/O log, and replay UI. Its schema additions (already implemented and ahead of this branch in commit count) are:
+
+- **`prompt_versions`** — auto-registered on first use, keyed by `(name, code_hash)`, with `template_sample`, `model`, `git_sha`, `first_seen_at`. Hash auto-rolls on any source change → strictly richer than hand-bumped SemVer.
+- **`pipeline_llm_calls`** — per-attempt: `prompt_rendered`, `response_raw`, `tokens_*`, `latency_ms`, `attempt`, FK to `prompt_versions`. This IS the per-call audit trail.
+- **`pipeline_stage_logs`** — per-stage (decomposition / matching / nutrition / assembly): `input`, `output`, `status`, `duration_ms`.
+- **`pipeline_requests.prompt_versions_used` (jsonb)** + **`pipeline_requests.replay_of_request_id` (self-FK)** added by the same migration.
+- Trace plumbing in `lib/ai/pipeline/trace.ts`, `lib/ai/gemini.ts`, and `orchestrator.ts`; admin UI under `/admin/prompts` + `/admin/requests`.
+
+**Therefore the following items are descoped from THIS plan** (do not implement; rely on the admin worktree instead):
+
+| Descoped item | Original location | Replacement |
+|---|---|---|
+| `lib/ai/pipeline/versions.ts` SemVer constants | Task 1.1 | Read prompt version id from admin's `prompt_versions.id` (resolved at call site via `traceContext` from `lib/ai/pipeline/trace.ts`). The L4 cache key (Chunk 5) keys on `prompt_versions.code_hash` instead of a manually-bumped string. |
+| `pipeline_runs.{decomposition,nutrition}_{prompt,schema}_version` columns | Task 1.2 schema, Task 1.13 row builder | Use `pipeline_requests.prompt_versions_used` (jsonb of `{ name → version_id }`). KPI queries in Chunk 4 join `pipeline_runs ↔ pipeline_requests ↔ prompt_versions`. |
+| `pipeline_runs.{decompose,match,nutrition}_ms` per-stage timing columns | Task 1.2 schema, Task 1.13 row builder | Admin's `pipeline_stage_logs.duration_ms` covers per-stage timing. Keep only `total_ms` on `pipeline_runs` for fast end-to-end percentile rollups. |
+| "Observable via telemetry" framing for the Chunk 2 §3 prompt rewrite | Chunk 2 prose | Admin's `pipeline_llm_calls.prompt_rendered + response_raw` is the canonical audit. Remove framing that implies our plan adds the audit; cite admin's tables instead. |
+| Re-export of `DECOMPOSITION_PROMPT_VERSION` from `lib/ai/prompts/decomposition.ts`; "bump to 2.1.0" steps | Chunk 6 Task 6.2 (and any other `versions.ts` references) | Auto-hashing in admin makes manual bumps unnecessary; remove the bump step. The version diff is visible in the admin `/admin/prompts/[name]` UI without our intervention. |
+
+**Items that REMAIN in this plan** (admin worktree does NOT cover):
+- All KPI aggregate counters on `pipeline_runs` (`anomaly_types[]`, `pre_match_alias_hits`, `cooked_to_raw_factor_fires`, `density_envelope_fires`, `macro_inconsistent_fires`, `db_state_unknown_fires`, `retry_step2_count`, `cache_hit_l4`, `escalated`, `ingredient_count`, `matched_count`, `unmatched_count`, `total_ms`, `ambiguity_flag_counts`).
+- `prompt_personalization_fields[]` Principle A hard-fail guardrail (no equivalent in admin).
+- `pipeline_shadow_runs` automatic post-response A/B sampling (Chunk 4) — **distinct** from admin's manual replay.
+- All §0 Foundations work other than Task 1.1 (Chunks 1a–1d are otherwise unaffected): stable IDs, DB-state propagation, id-keyed lookups, SSE id propagation, privacy reckoning.
+- All Chunk 2 / 3 / 5 / 6 / 7 logic.
+
+**Merge ordering.** The admin worktree is ahead in commit count and scope; assume it lands first. Before generating any migration in this plan that touches `lib/db/schema.ts`, **rebase on top of admin's branch** so that `prompt_versions`, `pipeline_stage_logs`, `pipeline_llm_calls`, and the `pipeline_requests` modifications are present. Migration timestamps in this plan must be strictly greater than the admin worktree's `20260429194139_add_admin_pipeline_trace_tables.sql`. Cross-table FKs (e.g. KPI queries joining `pipeline_runs.request_id → pipeline_requests.id → prompt_versions_used`) rely on admin's columns existing.
+
+---
+
 ## File Structure
 
 This plan creates and modifies the following files. Files that change together live together; new responsibilities map to new modules where the existing file would grow unwieldy.
 
 ### Created
 
-- `lib/ai/pipeline/versions.ts` — single source of truth for `DECOMPOSITION_PROMPT_VERSION`, `NUTRITION_PROMPT_VERSION`, `DECOMPOSITION_SCHEMA_VERSION`, `NUTRITION_SCHEMA_VERSION` constants. Imported by prompts, schemas, telemetry, and cache.
+- ~~`lib/ai/pipeline/versions.ts`~~ **(DESCOPED — see Coordination section.)** Version identity is provided by the admin worktree's `prompt_versions` table (auto-registered, hash-keyed); this plan no longer ships hand-bumped SemVer constants.
 - `lib/ai/pipeline/ids.ts` — UUID generators for `mealItemId` and `ingredientId` (run-scoped). Single helper used by orchestrator after Call 1 parses.
-- `lib/ai/pipeline/run-telemetry.ts` — typed builder + writer for `pipeline_runs` rows (replaces ad-hoc `console.info`). Imports `versions.ts` and `db/schema.ts`.
+- `lib/ai/pipeline/run-telemetry.ts` — typed builder + writer for `pipeline_runs` rows (replaces ad-hoc `console.info`). Imports `db/schema.ts`.
 - `lib/ai/pipeline/cooking-method-state.ts` — `COOKING_METHOD_STATE` lookup with `'unknown'` fallback (§2.2 derivation when `expectedState` omitted).
 - `lib/ai/pipeline/macro-consistency.ts` — `checkMacroConsistency(ingredient)` returning `{ ok, reason }` for the 4·P+4·C+9·F kcal identity (§1.3).
 - `lib/ai/pipeline/density-envelope.ts` — `checkDensityEnvelope(ingredient, grams)` returning `{ ok, breaches }` (§1.4).
@@ -37,7 +68,6 @@ This plan creates and modifies the following files. Files that change together l
 - `supabase/migrations/<ts>_add_pipeline_runs_table.sql` — Drizzle-generated; `pipeline_runs` table.
 - `supabase/migrations/<ts>_pipeline_requests_privacy.sql` — hand-written; 7-day TTL retention + service-role-only RLS on `pipeline_requests` (Decision A).
 - `supabase/migrations/<ts>_match_functions_return_state.sql` — hand-written; updates `match_ingredients_*` and `fuzzy_match_ingredients_*` SQL to return the existing `state` column (it's already present in the underlying tables; some functions drop it).
-- `lib/ai/pipeline/__tests__/versions.test.ts` — guards version-bump invariant (each is a non-empty semver-ish string).
 - `lib/ai/pipeline/__tests__/ids.test.ts` — UUID format + uniqueness.
 - `lib/ai/pipeline/__tests__/run-telemetry.test.ts` — row-builder shape + privacy hash.
 - `lib/ai/pipeline/__tests__/cooking-method-state.test.ts` — lookup + fallback to `'unknown'`.
@@ -52,11 +82,11 @@ This plan creates and modifies the following files. Files that change together l
 ### Modified
 
 - `lib/ai/types.ts` — add `dbState` to `MatchedIngredient`; add `mealItemId`/`ingredientId` to `DecomposedMealItem`/`DecomposedIngredient`; add `ambiguityFlags` (§2.6); change `IngredientLlmNutrition` keying contract (Chunk 3).
-- `lib/ai/pipeline/schemas.ts` — add `mealItemId`/`ingredientId` to decomposition Zod schema (Chunk 1); add `expectedState` per-ingredient (Chunk 6); restructure `IngredientLlmNutrition` to single shape with `ingredientId` (Chunk 3); export schema version constants from `versions.ts`.
+- `lib/ai/pipeline/schemas.ts` — add `mealItemId`/`ingredientId` to decomposition Zod schema (Chunk 1); add `expectedState` per-ingredient (Chunk 6); restructure `IngredientLlmNutrition` to single shape with `ingredientId` (Chunk 3).
 - `lib/ai/pipeline/assembly.ts` — replace name-keyed `Map`s with id-keyed (Chunk 1); retire `convertCookedToRaw` call (Chunk 3); rewrite `mergeNutrition` to absolute-macro contract (Chunk 3).
 - `lib/ai/pipeline/validation.ts` — replace name-keyed lookup; add `density_envelope` and `macro_inconsistent` anomaly types; rewrite `cooked_to_raw_factor_fires` legacy counter (Chunks 1, 3).
 - `lib/ai/pipeline/orchestrator.ts` — generate UUIDs after Call 1 parse; emit `ingredientId`/`mealItemId` in SSE events; wire `dbState` through Call 2 prompt context; add `pipeline_runs` row write at end of run; add `compute-policy` decision point (Chunks 1, 5); wire shadow runner (Chunk 4); wire L4 cache (Chunk 5).
-- `lib/ai/prompts/decomposition.ts` — accept `PromptPersonalizationContext` (Chunk 2); export `DECOMPOSITION_PROMPT_VERSION` re-export from `versions.ts`; ask for `mealItemId`/`ingredientId` (Chunk 1); ask for `canonicalName`/`expectedState`/`ambiguityFlags` (Chunk 6); document Principle A inline.
+- `lib/ai/prompts/decomposition.ts` — accept `PromptPersonalizationContext` (Chunk 2); ask for `mealItemId`/`ingredientId` (Chunk 1); ask for `canonicalName`/`expectedState`/`ambiguityFlags` (Chunk 6); document Principle A inline. Prompt version identity is computed from source-hash by the admin worktree's `prompt_versions` registry — no manual SemVer re-export.
 - `lib/ai/prompts/nutrition.ts` — accept `PromptPersonalizationContext` (Chunk 2); rewrite `nutrition.ts:138-144` removing preference-shaped framing (Chunk 2); inject `dbState`/`expectedState`/per-100g values per ingredient (Chunk 2 + Chunk 1 plumbing).
 - `lib/ai/matching/source-matching.ts` — add `state` to `MatchInfo`; add `state` to `FuzzyMatchRow` projection (already present in raw row); thread through `buildMatchResult` and SQL adapters (Chunk 1).
 - `lib/ai/matching/cascade.ts` — propagate `state` from `MatchInfo` into `MatchedIngredient.dbState`; collect both FAO+USDA candidates and apply state-match tie-breaker (Chunk 6); thread `ingredientId` keying.
@@ -98,97 +128,14 @@ This plan creates and modifies the following files. Files that change together l
 
 ---
 
-### Task 1.1: Add prompt/schema version constants
+### Task 1.1: ~~Add prompt/schema version constants~~ — DESCOPED
 
-Pure additive module, no behavior change. Used by every later chunk.
-
-**Files:**
-- Create: `lib/ai/pipeline/versions.ts`
-- Create: `lib/ai/pipeline/__tests__/versions.test.ts`
-
-- [ ] **Step 1: Write the failing test**
-
-`lib/ai/pipeline/__tests__/versions.test.ts`:
-
-```ts
-import { describe, expect, it } from 'vitest';
-import {
-  DECOMPOSITION_PROMPT_VERSION,
-  DECOMPOSITION_SCHEMA_VERSION,
-  NUTRITION_PROMPT_VERSION,
-  NUTRITION_SCHEMA_VERSION,
-} from '../versions';
-
-describe('pipeline version constants', () => {
-  it('exports non-empty semver-shaped strings', () => {
-    for (const v of [
-      DECOMPOSITION_PROMPT_VERSION,
-      DECOMPOSITION_SCHEMA_VERSION,
-      NUTRITION_PROMPT_VERSION,
-      NUTRITION_SCHEMA_VERSION,
-    ]) {
-      expect(v).toMatch(/^\d+\.\d+\.\d+$/);
-    }
-  });
-
-  it('initial values are 2.0.0 (v2 pipeline + this spec)', () => {
-    expect(DECOMPOSITION_PROMPT_VERSION).toBe('2.0.0');
-    expect(NUTRITION_PROMPT_VERSION).toBe('2.0.0');
-    expect(DECOMPOSITION_SCHEMA_VERSION).toBe('2.0.0');
-    expect(NUTRITION_SCHEMA_VERSION).toBe('2.0.0');
-  });
-});
-```
-
-- [ ] **Step 2: Run test to verify it fails**
-
-Run: `bun run test lib/ai/pipeline/__tests__/versions.test.ts`
-Expected: FAIL — module not found.
-
-- [ ] **Step 3: Write minimal implementation**
-
-`lib/ai/pipeline/versions.ts`:
-
-```ts
-/**
- * Single source of truth for prompt and schema versions.
- * Bumping any of these invalidates the L4 cache (see decomposition-cache.ts)
- * and is recorded per run in pipeline_runs.
- *
- * Bump rules:
- * - PATCH: typo fixes, comment changes (no behavior shift)
- * - MINOR: prompt clarification (same contract, behavior may shift slightly)
- * - MAJOR: schema change OR prompt rewrite that changes the LLM's task
- */
-export const DECOMPOSITION_PROMPT_VERSION = '2.0.0';
-export const NUTRITION_PROMPT_VERSION = '2.0.0';
-export const DECOMPOSITION_SCHEMA_VERSION = '2.0.0';
-export const NUTRITION_SCHEMA_VERSION = '2.0.0';
-```
-
-- [ ] **Step 4: Run test to verify it passes**
-
-Run: `bun run test lib/ai/pipeline/__tests__/versions.test.ts`
-Expected: PASS (2 tests).
-
-Run: `bunx @biomejs/biome@2.4.2 check lib/ai/pipeline/versions.ts lib/ai/pipeline/__tests__/versions.test.ts`
-Expected: no errors.
-
-- [ ] **Step 5: Commit**
-
-```bash
-git add lib/ai/pipeline/versions.ts lib/ai/pipeline/__tests__/versions.test.ts
-git commit -m "feat(ai/pipeline): add prompt and schema version constants
-
-Single source of truth for DECOMPOSITION_PROMPT_VERSION,
-NUTRITION_PROMPT_VERSION, DECOMPOSITION_SCHEMA_VERSION,
-NUTRITION_SCHEMA_VERSION. Imported by prompts, schemas, telemetry,
-and the L4 decomposition cache (later chunks).
-
-Spec: §0.3 Prompt + schema versioning.
-
-Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>"
-```
+> **Descoped per the Coordination section above.** The admin worktree (`feat/admin-pipeline-dashboard`) ships a `prompt_versions` table that is auto-registered on first use and keyed by source-hash, which is strictly richer than hand-bumped SemVer. Do not create `lib/ai/pipeline/versions.ts`, do not write `versions.test.ts`, and do not import `DECOMPOSITION_PROMPT_VERSION` / `NUTRITION_PROMPT_VERSION` / `DECOMPOSITION_SCHEMA_VERSION` / `NUTRITION_SCHEMA_VERSION` anywhere.
+>
+> Where downstream chunks previously referenced these constants, use these substitutes:
+> - **Telemetry attribution** (Chunk 1d, Chunk 4): join `pipeline_runs.request_id → pipeline_requests.id`, then read `pipeline_requests.prompt_versions_used` (jsonb of `{ name → prompt_version_id }`). Resolve `prompt_version_id → name + code_hash + git_sha` via the `prompt_versions` table.
+> - **L4 cache key** (Chunk 5): hash `prompt_versions.code_hash` for the relevant prompt(s) into the cache key. The hash is registered automatically the first time the rendered prompt is observed by `lib/ai/pipeline/trace.ts` (admin worktree), so cache invalidation is automatic on any prompt source change.
+> - **Schema version** (parse / retry attribution where it was previously used): not needed — admin's `pipeline_llm_calls.attempt` + `error` and our `pipeline_runs.retry_step2_count` together give the same attribution.
 
 ---
 
@@ -223,18 +170,11 @@ describe('pipelineRuns Drizzle schema', () => {
       'createdAt',
       'userIdHash',
       'requestId',
-      'decompositionPromptVersion',
-      'nutritionPromptVersion',
-      'decompositionSchemaVersion',
-      'nutritionSchemaVersion',
       'modelCall1',
       'modelCall2',
       'escalated',
       'cacheHitL4',
       'retryCount',
-      'decomposeMs',
-      'matchMs',
-      'nutritionMs',
       'totalMs',
       'ingredientCount',
       'matchedCount',
@@ -249,6 +189,25 @@ describe('pipelineRuns Drizzle schema', () => {
       'promptPersonalizationFields',
     ]) {
       expect(cols).toContain(c);
+    }
+  });
+
+  it('does NOT redeclare columns owned by the admin worktree', () => {
+    // Per the Coordination section, prompt/schema versions live in
+    // pipeline_requests.prompt_versions_used (admin worktree) and per-stage
+    // timing lives in pipeline_stage_logs.duration_ms (admin worktree).
+    // pipeline_runs must NOT duplicate those columns.
+    const cols = Object.keys(pipelineRuns);
+    for (const forbidden of [
+      'decompositionPromptVersion',
+      'nutritionPromptVersion',
+      'decompositionSchemaVersion',
+      'nutritionSchemaVersion',
+      'decomposeMs',
+      'matchMs',
+      'nutritionMs',
+    ]) {
+      expect(cols).not.toContain(forbidden);
     }
   });
 });
@@ -271,18 +230,16 @@ export const pipelineRuns = pgTable('pipeline_runs', {
     .defaultNow(),
   userIdHash: text('user_id_hash').notNull(),
   requestId: text('request_id'),
-  decompositionPromptVersion: text('decomposition_prompt_version').notNull(),
-  nutritionPromptVersion: text('nutrition_prompt_version').notNull(),
-  decompositionSchemaVersion: text('decomposition_schema_version').notNull(),
-  nutritionSchemaVersion: text('nutrition_schema_version').notNull(),
+  // Prompt and schema versions are NOT stored here — they live in
+  // pipeline_requests.prompt_versions_used (jsonb), owned by the admin
+  // worktree. Join via pipeline_runs.request_id → pipeline_requests.id.
   modelCall1: text('model_call1').notNull(),
   modelCall2: text('model_call2').notNull(),
   escalated: boolean('escalated').notNull().default(false),
   cacheHitL4: boolean('cache_hit_l4').notNull().default(false),
   retryCount: smallint('retry_count').notNull().default(0),
-  decomposeMs: integer('decompose_ms').notNull().default(0),
-  matchMs: integer('match_ms').notNull().default(0),
-  nutritionMs: integer('nutrition_ms').notNull().default(0),
+  // Per-stage timing is in pipeline_stage_logs.duration_ms (admin worktree).
+  // Only end-to-end total is mirrored here for fast percentile rollups.
   totalMs: integer('total_ms').notNull().default(0),
   ingredientCount: smallint('ingredient_count').notNull().default(0),
   matchedCount: smallint('matched_count').notNull().default(0),
@@ -501,8 +458,8 @@ Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>"
 
 After Chunk 1a ships:
 
-- [ ] `lib/ai/pipeline/versions.ts` exports the four version constants.
-- [ ] `pipelineRuns` table exists with all §0.4 columns and service-role-only RLS.
+- [ ] Task 1.1 is descoped — see Coordination section above; no `versions.ts` is created.
+- [ ] `pipelineRuns` table exists with all §0.4 columns (minus the four `*_prompt_version` / `*_schema_version` columns and the three per-stage `*_ms` columns, all owned by the admin worktree per the Coordination section) and service-role-only RLS.
 - [ ] `pipeline_requests` has 7-day TTL via `reap_pipeline_requests()` and no user-facing RLS policies.
 - [ ] `bunx @biomejs/biome@2.4.2 check .` passes.
 - [ ] `bun run test lib/ai/pipeline/__tests__/run-telemetry-schema.test.ts` passes.
@@ -1649,7 +1606,7 @@ describe('buildPipelineRunRow', () => {
       requestId: 'req-1',
       modelCall1: 'gemini-2.5-flash-lite',
       modelCall2: 'gemini-2.5-flash-lite',
-      timings: { decompose: 1200, match: 800, nutrition: 2400, total: 4500 },
+      timings: { total: 4500 },
       counts: { ingredient: 5, matched: 4, unmatched: 1 },
       anomalyTypes: [],
       counters: {
@@ -1678,7 +1635,7 @@ describe('buildPipelineRunRow', () => {
         requestId: 'req-1',
         modelCall1: 'gemini-2.5-flash-lite',
         modelCall2: 'gemini-2.5-flash-lite',
-        timings: { decompose: 1, match: 1, nutrition: 1, total: 3 },
+        timings: { total: 3 },
         counts: { ingredient: 1, matched: 1, unmatched: 0 },
         anomalyTypes: [],
         counters: {
@@ -1710,12 +1667,6 @@ Expected: FAIL — module not found.
 
 ```ts
 import { createHash } from 'node:crypto';
-import {
-  DECOMPOSITION_PROMPT_VERSION,
-  DECOMPOSITION_SCHEMA_VERSION,
-  NUTRITION_PROMPT_VERSION,
-  NUTRITION_SCHEMA_VERSION,
-} from './versions';
 
 export const hashUserId = (id: string): string =>
   createHash('sha256').update(id).digest('hex');
@@ -1735,12 +1686,10 @@ export interface BuildPipelineRunRowInput {
   requestId: string | null;
   modelCall1: string;
   modelCall2: string;
-  timings: {
-    decompose: number;
-    match: number;
-    nutrition: number;
-    total: number;
-  };
+  // Only end-to-end timing is mirrored on pipeline_runs. Per-stage
+  // (decompose / match / nutrition) timing lives in the admin worktree's
+  // pipeline_stage_logs table; do not duplicate it here.
+  timings: { total: number };
   counts: { ingredient: number; matched: number; unmatched: number };
   anomalyTypes: string[];
   counters: {
@@ -1769,18 +1718,13 @@ export function buildPipelineRunRow(input: BuildPipelineRunRowInput) {
   return {
     userIdHash: hashUserId(input.userId),
     requestId: input.requestId,
-    decompositionPromptVersion: DECOMPOSITION_PROMPT_VERSION,
-    nutritionPromptVersion: NUTRITION_PROMPT_VERSION,
-    decompositionSchemaVersion: DECOMPOSITION_SCHEMA_VERSION,
-    nutritionSchemaVersion: NUTRITION_SCHEMA_VERSION,
+    // Prompt + schema versions intentionally omitted: live in
+    // pipeline_requests.prompt_versions_used (admin worktree).
     modelCall1: input.modelCall1,
     modelCall2: input.modelCall2,
     escalated: input.escalated,
     cacheHitL4: input.cacheHitL4,
     retryCount: input.retryCount,
-    decomposeMs: input.timings.decompose,
-    matchMs: input.timings.match,
-    nutritionMs: input.timings.nutrition,
     totalMs: input.timings.total,
     ingredientCount: input.counts.ingredient,
     matchedCount: input.counts.matched,
@@ -3093,35 +3037,40 @@ Create `scripts/eval-kpis.sql`. The file is a **document**, not a migration — 
 --
 -- Conventions:
 --   - 7-day rolling window unless otherwise noted.
---   - Group by (model_call2, nutrition_prompt_version) so that
---     a prompt or model bump is immediately visible.
+--   - Where a block needs prompt-version attribution, join
+--     `pipeline_runs.request_id` → `pipeline_requests.id` and read
+--     `pipeline_requests.prompt_versions_used ->> 'nutrition'` (admin
+--     worktree's prompt_versions registry — no separate column on
+--     pipeline_runs). Same idea for 'decomposition'.
 --   - All `_fires` columns are smallint counters from §0.4.
 
 -- 1. Latency percentiles per (model, prompt version).
 SELECT
-  model_call2,
-  nutrition_prompt_version,
+  pr.model_call2,
+  pq.prompt_versions_used ->> 'nutrition'                    AS nutrition_prompt_version_id,
   count(*)                                                   AS n,
-  percentile_cont(0.50) WITHIN GROUP (ORDER BY total_ms)     AS p50_ms,
-  percentile_cont(0.95) WITHIN GROUP (ORDER BY total_ms)     AS p95_ms,
-  percentile_cont(0.99) WITHIN GROUP (ORDER BY total_ms)     AS p99_ms
-FROM pipeline_runs
-WHERE created_at >= now() - interval '7 days'
+  percentile_cont(0.50) WITHIN GROUP (ORDER BY pr.total_ms)  AS p50_ms,
+  percentile_cont(0.95) WITHIN GROUP (ORDER BY pr.total_ms)  AS p95_ms,
+  percentile_cont(0.99) WITHIN GROUP (ORDER BY pr.total_ms)  AS p99_ms
+FROM pipeline_runs pr
+LEFT JOIN pipeline_requests pq ON pq.id::text = pr.request_id
+WHERE pr.created_at >= now() - interval '7 days'
 GROUP BY 1, 2
 ORDER BY 1, 2;
 
 -- 2. Anomaly rate per AnomalyType per (model, prompt version).
 WITH unnested AS (
   SELECT
-    model_call2,
-    nutrition_prompt_version,
-    unnest(anomaly_types) AS anomaly_type
-  FROM pipeline_runs
-  WHERE created_at >= now() - interval '7 days'
+    pr.model_call2,
+    pq.prompt_versions_used ->> 'nutrition'                  AS nutrition_prompt_version_id,
+    unnest(pr.anomaly_types) AS anomaly_type
+  FROM pipeline_runs pr
+  LEFT JOIN pipeline_requests pq ON pq.id::text = pr.request_id
+  WHERE pr.created_at >= now() - interval '7 days'
 )
 SELECT
   model_call2,
-  nutrition_prompt_version,
+  nutrition_prompt_version_id,
   anomaly_type,
   count(*) AS fires,
   count(*)::numeric
@@ -4396,7 +4345,7 @@ function defaultShadowConfigFromEnv(): ShadowConfig {
 2. Otherwise calls `runShadow(...)` with a `runCandidate` closure that re-runs the pipeline with the candidate versions/model. The candidate run uses a **separate `MATCH_CONCURRENCY` budget** — pass an explicit `concurrency` option through `matchIngredients` (see Step 3 below).
 3. Catches everything (including a failing `guard.shouldRun()`). Logs warn on failure. Never throws.
 
-`NUTRITION_PROMPT_VERSION_CANDIDATE` / `NUTRITION_MODEL_CANDIDATE`: module-local constants, env-overridable, defaulting to the production values (so a flag-on-but-unconfigured shadow runner is a no-op pair). Tests override via `shadowCfg.candidatePromptVersion` / `shadowCfg.candidateModel`.
+`NUTRITION_PROMPT_VERSION_CANDIDATE` / `NUTRITION_MODEL_CANDIDATE`: module-local **opaque-label** constants, env-overridable, defaulting to the production values (so a flag-on-but-unconfigured shadow runner is a no-op pair). These are free-form strings used only to tag rows in `pipeline_shadow_runs` so a human can identify which candidate produced a row — they are NOT the admin worktree's `prompt_versions.id`. Tests override via `shadowCfg.candidatePromptVersion` / `shadowCfg.candidateModel`.
 
 - [ ] **Step 3: Cascade concurrency parameterization**
 
@@ -4528,13 +4477,13 @@ After Chunk 4 ships:
 ## Chunk 5 — §4 Adaptive compute: model upgrade + L4 cache + `MealFactsForComputePolicy`
 
 > **Spec anchor:** §4 (lines 354–429). Ships **after** Chunks 1–4 (foundations + type-safe prompts + absolute-macro schema + shadow runner). Ordering rationale (spec §6 / §7):
-> - §0 `nutrition_prompt_version` (Chunk 1d) is in `pipeline_runs` so we can attribute distributional shifts after the model flip.
+> - §0 prompt-version attribution (`pipeline_requests.prompt_versions_used`, owned by the admin worktree per the Coordination section) lets us attribute distributional shifts after the model flip without adding a column to `pipeline_runs`.
 > - §1 absolute-macro schema (Chunk 3) is live so the new model emits the same shape the old one did — no schema migration entangled with model rollout.
 > - §5 shadow runner (Chunk 4) exists — even though the spec says §4's model upgrade may bundle with §1, we still want the shadow runner *available* so a production hot-rollback target exists if the model flip regresses.
 >
 > **Locked decisions for Chunk 5:**
 > - **Adaptive routing keys are facts about THIS meal only.** Never user behavior, region, or goal (Principle B). Enforced by a TS structural-narrowness lint check + runtime guard.
-> - **L4 cache key includes `nutrition_prompt_version` AND `decomposition_prompt_version`** plus an explicit `decompositionContextHash` allowlist. Adding new prompt-conditioning context fields requires bumping the schema version.
+> - **L4 cache key includes the decomposition prompt's source hash** (admin worktree's `prompt_versions.code_hash`) plus an explicit `decompositionContextHash` allowlist. Any change to the prompt source — including a schema-shape change reflected in the prompt — auto-rolls the hash and invalidates the cache. Adding new prompt-conditioning context fields still requires extending the allowlist.
 > - **Cost guardrail:** alert if escalation rate > 20% over 24h (spec §4.2 line 392). Implemented as a KPI block in `eval-kpis.sql` + manual review (no automated alerting per locked decision #6).
 > - **Model upgrade ships behind a `PIPELINE_MODEL_PROFILE` env switch** (`stable` | `next`), so production can flip back to old constants in < 1 min without a redeploy. Default is `stable`.
 > - **`pickComputePolicy` is a pure function** — no IO, no clock, no env reads. Tests assert this with a no-network/no-fs sentinel.
@@ -5178,37 +5127,24 @@ describe('decompositionContextHash', () => {
 });
 
 describe('buildDecompositionCacheKey', () => {
-  it('includes raw input + context hash + prompt + schema versions', () => {
+  it('includes raw input + context hash + prompt source hash', () => {
     const key = buildDecompositionCacheKey({
       rawInput: 'phở bò',
       ctx,
-      decompositionPromptVersion: 'v3',
-      decompositionSchemaVersion: 'v2',
+      decompositionPromptHash: 'sha256:abc123',
     });
     expect(key).toMatch(/^l4:dec:/); // namespace prefix
     expect(key.length).toBeGreaterThan(40); // hash baked into the key
   });
 
-  it('changes when prompt version changes', () => {
+  it('changes when the prompt source hash changes', () => {
     const a = buildDecompositionCacheKey({
       rawInput: 'phở bò', ctx,
-      decompositionPromptVersion: 'v3', decompositionSchemaVersion: 'v2',
+      decompositionPromptHash: 'sha256:abc123',
     });
     const b = buildDecompositionCacheKey({
       rawInput: 'phở bò', ctx,
-      decompositionPromptVersion: 'v4', decompositionSchemaVersion: 'v2',
-    });
-    expect(a).not.toBe(b);
-  });
-
-  it('changes when schema version changes', () => {
-    const a = buildDecompositionCacheKey({
-      rawInput: 'phở bò', ctx,
-      decompositionPromptVersion: 'v3', decompositionSchemaVersion: 'v2',
-    });
-    const b = buildDecompositionCacheKey({
-      rawInput: 'phở bò', ctx,
-      decompositionPromptVersion: 'v3', decompositionSchemaVersion: 'v3',
+      decompositionPromptHash: 'sha256:def456',
     });
     expect(a).not.toBe(b);
   });
@@ -5216,11 +5152,11 @@ describe('buildDecompositionCacheKey', () => {
   it('normalizes raw input — whitespace + case do not split cache lines', () => {
     const a = buildDecompositionCacheKey({
       rawInput: '  Phở Bò  ', ctx,
-      decompositionPromptVersion: 'v3', decompositionSchemaVersion: 'v2',
+      decompositionPromptHash: 'sha256:abc123',
     });
     const b = buildDecompositionCacheKey({
       rawInput: 'phở bò', ctx,
-      decompositionPromptVersion: 'v3', decompositionSchemaVersion: 'v2',
+      decompositionPromptHash: 'sha256:abc123',
     });
     expect(a).toBe(b);
   });
@@ -5321,8 +5257,11 @@ function stableStringify(obj: unknown): string {
 export interface DecompositionCacheKeyInput {
   rawInput: string;
   ctx: Partial<PromptPersonalizationContext>;
-  decompositionPromptVersion: string;
-  decompositionSchemaVersion: string;
+  // Admin worktree's prompt_versions.code_hash for the decomposition
+  // prompt. Auto-rolls on any source change (prompt text, schema). No
+  // separate schema-version field needed — the prompt always references
+  // the schema, so any schema change is a source change.
+  decompositionPromptHash: string;
 }
 
 export function normalizeRawInput(s: string): string {
@@ -5335,8 +5274,7 @@ export function buildDecompositionCacheKey(
   const payload = JSON.stringify({
     raw: normalizeRawInput(input.rawInput),
     ctx: decompositionContextHash(input.ctx),
-    pv: input.decompositionPromptVersion,
-    sv: input.decompositionSchemaVersion,
+    pv: input.decompositionPromptHash,
   });
   const hash = createHash('sha256').update(payload).digest('hex').slice(0, 32);
   return `l4:dec:${hash}`;
@@ -5403,7 +5341,11 @@ import {
   buildDecompositionCacheKey,
   createL4Cache,
 } from './decomposition-cache';
-import { DECOMPOSITION_PROMPT_VERSION, DECOMPOSITION_SCHEMA_VERSION } from './versions';
+// The decomposition prompt's source hash is computed once at module load
+// and registered in admin's prompt_versions table the first time we run.
+// `getRegisteredPromptHash('decomposition')` is exported by
+// `lib/ai/pipeline/trace.ts` (admin worktree).
+import { getRegisteredPromptHash } from './trace';
 
 const L4_CACHE = createL4Cache<DecompositionResult>({
   maxEntries: 1_000,
@@ -5414,8 +5356,7 @@ const L4_CACHE = createL4Cache<DecompositionResult>({
 const cacheKey = buildDecompositionCacheKey({
   rawInput,
   ctx: personalizationContext,
-  decompositionPromptVersion: DECOMPOSITION_PROMPT_VERSION,
-  decompositionSchemaVersion: DECOMPOSITION_SCHEMA_VERSION,
+  decompositionPromptHash: getRegisteredPromptHash('decomposition'),
 });
 
 const cached = L4_CACHE.get(cacheKey);
@@ -5628,7 +5569,7 @@ After all six tasks land, the following must be true:
 > - **`canonicalName` validation is aggregate-not-per-user** — the failure data feeds `pre_match_alias_hits` for alias-retirement decisions, never per-user behavior tracking. Spec §2.5 line 335.
 > - **`ambiguityFlags` is logged but not a routing input** — Principle B keeps this read-only at decomposition time. Spec §2.6 line 350.
 > - **Stable IDs from §0.1 (Chunk 1a) are a hard prerequisite** — `mealItemId` and `ingredientId` MUST be on the LLM output (not generated server-side) so retry-pass overwrite by `ingredientId` (§4.4 streaming) is correct.
-> - **Schema version bumps** — `DECOMPOSITION_SCHEMA_VERSION` increments. Chunk 1's version table is the single source of truth.
+> - **Schema-version attribution is automatic** — admin worktree's `prompt_versions` table source-hashes both the prompt text and the schema-derived JSON shape. Any change to `decomposedDishSchema` mutates the prompt's instructions block and rolls the hash, so attribution lands in `pipeline_requests.prompt_versions_used` without a manual bump in this plan. (See Coordination section.)
 
 ### Task 6.1: Rewrite `decomposedIngredientSchema` and `decomposedMealItemSchema` (Zod)
 
@@ -6015,7 +5956,6 @@ git commit -m "feat(pipeline/schemas): dish-wrapped decomposition schema (§2.1)
 - AmbiguityFlag closed enum.
 - .strict() rejects sourcePrior/sourceOverride (locked: removed entirely).
 - implausible_grams anomaly fires when grams<=0; triggers retry path.
-- Bumps DECOMPOSITION_SCHEMA_VERSION (separate commit alongside Task 6.2).
 
 Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>"
 ```
@@ -6117,7 +6057,7 @@ Update the `buildDecompositionPrompt` function to:
 5. Add a `<stable_ids>` block: "Emit `mealItemId` and `ingredientId` as ULIDs you generate. Reuse the same `ingredientId` if you re-emit the same ingredient on a retry. Do NOT use names as IDs."
 6. Add a `<grams_only>` block: "Always emit `grams` as a positive number. Convert colloquial Vietnamese portions ('1 chén cơm' → 200, '1 dĩa rau' → 150, '1 miếng cá' → 60, '1 lát bánh mì' → 30) to grams yourself, using the supplied cooking-habit context (fat level signals serving size; region signals portion priors) and standard Vietnamese serving-size priors. The runtime accepts grams only — there is **no `unit` field**, no unit-conversion layer, and no fallback. When the user is genuinely ambiguous about quantity, set `ambiguityFlags: ['unspecified_quantity']` and emit your best-estimate grams; do not emit `0` (the `implausible_grams` anomaly fires on `grams <= 0` and triggers a retry)."
 7. Add an `<ambiguity_flags>` block enumerating the four allowed values verbatim with one-line descriptions each.
-8. Re-import + re-export `DECOMPOSITION_PROMPT_VERSION` from `../pipeline/versions`. Bump to `'2.1.0'` (Chunk 1's `versions.ts` test will fail when this lands — update both in the same commit; spec versioning is the contract that lets §0.4 telemetry attribute distributional shifts).
+8. **No SemVer bump step.** The admin worktree's `prompt_versions` registry source-hashes the prompt text on first use, so attribution is automatic. Do NOT re-import / re-export `DECOMPOSITION_PROMPT_VERSION` — `lib/ai/pipeline/versions.ts` is descoped (see Coordination section).
 
 > **Sentinel test from Chunk 2.** The Principle A sentinel test (Chunk 2 Task 2.4 plan line ~2185) iterates all `UserContext` keys and asserts none leak into the prompt. That test continues to gate this rewrite.
 
@@ -6132,15 +6072,14 @@ bunx @biomejs/biome@2.4.2 check lib/ai/prompts/decomposition.ts
 
 ```bash
 git add lib/ai/prompts/decomposition.ts \
-        lib/ai/prompts/__tests__/decomposition.test.ts \
-        lib/ai/pipeline/versions.ts \
-        lib/ai/pipeline/__tests__/versions.test.ts
+        lib/ai/prompts/__tests__/decomposition.test.ts
 git commit -m "feat(prompts/decomposition): dish-wrapped schema rewrite (§2.1, §2.2, §2.5, §2.6)
 
 - Asks for mealItemId, ingredientId, canonicalName, expectedState (when
   it would differ), ambiguityFlags closed enum.
 - Drops sourcePrior/sourceOverride language entirely (locked).
-- Bumps DECOMPOSITION_PROMPT_VERSION to 2.1.0 for telemetry attribution.
+- Prompt-version attribution lands automatically via the admin worktree's
+  prompt_versions registry on first use; no manual SemVer bump.
 
 Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>"
 ```
@@ -6722,7 +6661,7 @@ Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>"
 After all six tasks land:
 
 - [ ] `lib/ai/pipeline/schemas.ts` exports `decomposedDishSchema`, `decomposedIngredientSchema`, `mealDecompositionSchema` with the spec §2.1 shape. `.strict()` rejects `sourcePrior`/`sourceOverride`.
-- [ ] `DECOMPOSITION_SCHEMA_VERSION` and `DECOMPOSITION_PROMPT_VERSION` both bumped (Chunk 1's `versions.ts` test passes against the new values).
+- [ ] No SemVer bump in this chunk — admin worktree's `prompt_versions` registry source-hashes the prompt + schema automatically (see Coordination section). Attribution lands in `pipeline_requests.prompt_versions_used` without intervention.
 - [ ] `buildDecompositionPrompt` asks for `mealItemId`/`ingredientId`/`canonicalName`/`expectedState` (when it would differ)/`ambiguityFlags`. Sentinel test passes — no `goal | aggression | calorieTarget | bodyMetrics` leak.
 - [ ] `lib/ai/pipeline/cooking-method-state.ts` exports `COOKING_METHOD_STATE` + `deriveExpectedState`. Diacritic-strict (`'luoc'` misses; `'luộc'` hits).
 - [ ] `pipeline_runs.db_state_unknown_fires` populated for every meal that hits the `unknown` fallback.
