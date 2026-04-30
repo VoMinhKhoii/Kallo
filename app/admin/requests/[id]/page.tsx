@@ -99,6 +99,7 @@ export default async function RequestDetailPage({
   ]);
 
   if (!detail) notFound();
+  if (compareId && !compareDetail) notFound();
 
   const primaryStages = buildStagesWithCalls(detail);
 

@@ -6,6 +6,7 @@ import {
   gte,
   isNotNull,
   isNull,
+  lt,
   lte,
   sql,
 } from 'drizzle-orm';
@@ -20,6 +21,8 @@ import {
 } from '@/lib/db/schema';
 
 // ─── Filters schema ───────────────────────────────────────────────────────────
+
+const uuidSchema = z.string().uuid();
 
 export const requestFiltersSchema = z.object({
   status: z
@@ -73,7 +76,9 @@ export function buildRequestsWhere(
     conditions.push(gte(pipelineRequests.createdAt, filter.dateFrom));
   }
   if (filter.dateTo) {
-    conditions.push(lte(pipelineRequests.createdAt, filter.dateTo));
+    const nextDay = new Date(filter.dateTo);
+    nextDay.setUTCDate(nextDay.getUTCDate() + 1);
+    conditions.push(lt(pipelineRequests.createdAt, nextDay));
   }
 
   return conditions;
@@ -119,6 +124,8 @@ export async function listRequests(
 }
 
 export async function getRequestDetail(db: AppDb, id: string) {
+  if (!uuidSchema.safeParse(id).success) return null;
+
   const [request] = await db
     .select()
     .from(pipelineRequests)
@@ -171,6 +178,8 @@ export async function getRequestsForVersion(
   page = 1,
   pageSize = 50
 ) {
+  if (!uuidSchema.safeParse(versionId).success) return { rows: [], total: 0 };
+
   // pipeline_requests.prompt_versions_used is jsonb; we use a text search
   // via the LLM calls join instead, which has a proper FK.
   const subquery = db
@@ -312,9 +321,9 @@ export async function healthAggregates(db: AppDb): Promise<HealthAggregates> {
     successRate24h: rateFromRow(rate24hRows),
     successRate7d: rateFromRow(rate7dRows),
     successRate30d: rateFromRow(rate30dRows),
-    p50_24h: perc ? Number(perc.p50) : null,
-    p95_24h: perc ? Number(perc.p95) : null,
-    p99_24h: perc ? Number(perc.p99) : null,
+    p50_24h: perc?.p50 != null ? Number(perc.p50) : null,
+    p95_24h: perc?.p95 != null ? Number(perc.p95) : null,
+    p99_24h: perc?.p99 != null ? Number(perc.p99) : null,
     requestsPerDay30d: perDay.map((r) => ({
       date: r.date,
       count: Number(r.count),
