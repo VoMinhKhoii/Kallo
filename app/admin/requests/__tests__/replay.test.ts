@@ -19,7 +19,10 @@ const {
   const selectSpy = vi.fn();
   const llmCallsSelectSpy = vi.fn();
   const startCallOrder: string[] = [];
-  const analyzeMealSpy = vi.fn(async () => {
+  type AnalyzeMealResult =
+    | { success: true; data: unknown }
+    | { success: false; error: { message: string; kind: string } };
+  const analyzeMealSpy = vi.fn<() => Promise<AnalyzeMealResult>>(async () => {
     startCallOrder.push('analyzeMeal');
     return { success: true, data: {} as unknown };
   });
