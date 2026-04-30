@@ -4,7 +4,7 @@
 
 **Goal:** Land the seven-phase quality/correctness/reliability layer described in `docs/superpowers/specs/2026-04-27-ai-pipeline-prompt-context-engineering-design.md` on top of the v2 latency pipeline — without touching `pipeline_llm_outputs` (owned by the debug-dashboard worktree).
 
-**Architecture:** Foundations first (stable IDs, DB-state propagation, prompt/schema versioning, `pipeline_runs` telemetry, privacy reckoning on `pipeline_requests`), then a type-safe prompt rewrite, then absolute-macro schema + validators, then post-launch shadow-runner infra, then adaptive-compute, then dish-wrapped decomposition, then RRF measurement. Each phase is independently shippable and reversible. The LLM emits absolute final macros (no factor schema); deterministic code applies goal/aggression preferences and validates physical-consistency invariants.
+**Architecture:** Foundations first (stable IDs, DB-state propagation, `pipeline_runs` telemetry, privacy reckoning on `pipeline_requests`), then a type-safe prompt rewrite, then absolute-macro schema + validators, then post-launch shadow-runner infra, then adaptive-compute, then dish-wrapped decomposition, then RRF measurement. Each phase is independently shippable and reversible. The LLM emits absolute final macros (no factor schema); deterministic code applies goal/aggression preferences and validates physical-consistency invariants. Prompt/schema versioning is **descoped** — the L4 cache and shadow runner key on source hashes computed via admin's `hashPromptBuilder`, and prompt-version attribution lives in admin's `prompt_versions` registry.
 
 **Tech Stack:** Next.js 15 App Router, Drizzle ORM (`postgres-js`), Supabase (Postgres + RLS + pg_trgm + pgvector), `@google/generative-ai` (Gemini), Vitest, Biome 2.4.2, Zod, Bun runtime/test runner. Conventional commits with `Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>` trailer.
 
@@ -118,13 +118,13 @@ This plan creates and modifies the following files. Files that change together l
 
 ---
 
-## Chunk 1a: §0 Foundations — Part A (versioning, telemetry table, privacy)
+## Chunk 1a: §0 Foundations — Part A (telemetry table, privacy)
 
-**Spec sections:** §0.3 Prompt/schema versioning · §0.4 `pipeline_runs` table · §0.5 / Decision A — `pipeline_requests` privacy reckoning.
+**Spec sections:** §0.4 `pipeline_runs` table · §0.5 / Decision A — `pipeline_requests` privacy reckoning.
 
-**Why first:** Pure additive infra with no behavior coupling. Versioning constants are required by the L4 cache (Chunk 5) and shadow runner (Chunk 4). The `pipeline_runs` table is the substrate for KPI rollups (Chunk 4). Decision A closes the privacy story §5 depends on.
+**Why first:** Pure additive infra with no behavior coupling. The `pipeline_runs` table is the substrate for KPI rollups (Chunk 4). Decision A closes the privacy story §5 depends on. (Prompt/schema versioning has been descoped — see coordination note above; the L4 cache and shadow runner derive source hashes via admin's `hashPromptBuilder`.)
 
-**Outcome:** New version constants exported; new `pipeline_runs` table with RLS; `pipeline_requests` locked down with TTL + service-role RLS; no orchestrator behavior change.
+**Outcome:** New `pipeline_runs` table with RLS; `pipeline_requests` locked down with TTL + service-role RLS; no orchestrator behavior change.
 
 ---
 
@@ -134,7 +134,7 @@ This plan creates and modifies the following files. Files that change together l
 >
 > Where downstream chunks previously referenced these constants, use these substitutes:
 > - **Telemetry attribution** (Chunk 1d, Chunk 4): join `pipeline_runs.request_id → pipeline_requests.id`, then read `pipeline_requests.prompt_versions_used` (jsonb of `{ name → prompt_version_id }`). Resolve `prompt_version_id → name + code_hash + git_sha` via the `prompt_versions` table.
-> - **L4 cache key** (Chunk 5): hash `prompt_versions.code_hash` for the relevant prompt(s) into the cache key. The hash is registered automatically the first time the rendered prompt is observed by `lib/ai/pipeline/trace.ts` (admin worktree), so cache invalidation is automatic on any prompt source change.
+> - **L4 cache key** (Chunk 5): hash the prompt builder *source* + the schema module *source* directly via admin's `hashPromptBuilder(builder)` (synchronous SHA-256 over `builder.toString()`) computed once at module load. **Do not** use a DB-lookup helper — the cache key must be available before admin's `recordPromptVersion` has had a chance to insert a row, so DB-backed lookup would race on the first request after deploy. Schema source must be hashed *separately* from the prompt source because `hashPromptBuilder` only hashes the builder function body — schema-only edits in `lib/ai/pipeline/schemas.ts` do not change the builder string and would otherwise leave the cache key stale.
 > - **Schema version** (parse / retry attribution where it was previously used): not needed — admin's `pipeline_llm_calls.attempt` + `error` and our `pipeline_runs.retry_step2_count` together give the same attribution.
 
 ---
@@ -804,7 +804,7 @@ After Chunk 1b ships:
 
 **Spec sections:** §0.1 Stable IDs.
 
-**Why third in §0:** All the data-shape additions (Zod, TS, matching, SSE) depend on the version constants from Chunk 1a and on `dbState` being plumbed through matching from Chunk 1b. This chunk switches every name-keyed lookup in `assembly.ts`/`validation.ts` to id-keyed and threads ids through SSE for retry replacement (§4.4). The `pipeline_runs` row writer that consumes the version constants lands in Chunk 1d.
+**Why third in §0:** All the data-shape additions (Zod, TS, matching, SSE) depend on `dbState` being plumbed through matching from Chunk 1b. This chunk switches every name-keyed lookup in `assembly.ts`/`validation.ts` to id-keyed and threads ids through SSE for retry replacement (§4.4). The `pipeline_runs` row writer lands in Chunk 1d.
 
 **Outcome:** Stable ids flow from Call 1 parse → matching → Call 2 → assembly → SSE → client. Fixes a current silent retry-corruption bug (name-keyed maps collapse repeated ingredient names across dishes). No user-visible behavior change today; the fixes prevent latent corruption that would surface under retry or dish-wrapping (later chunks).
 
@@ -1841,7 +1841,7 @@ If everything is green, §0 Foundations (Chunks 1a/1b/1c/1d) is complete. Procee
 
 After Chunks 1a + 1b + 1c + 1d ship together, the system should:
 
-- Write a `pipeline_runs` row per run with the version constants populated and Principle A guardrail enforced.
+- Write a `pipeline_runs` row per run with the Principle A guardrail enforced.
 - Emit `mealItemId` and `ingredientId` in every SSE `item_name`/`item_macros` event.
 - Carry `dbState` from the matching layer to the `MatchedIngredient` (consumed by Chunk 2).
 - Have `pipeline_requests` retention reduced to 7 days with service-role-only RLS.
@@ -3007,7 +3007,7 @@ After Chunk 3 ships:
 
 **Spec sections:** §5.1 KPI rollup queries · §5.2 Shadow A/B runner · Decision B (5% static sampling).
 
-**Why now:** Chunks 1–3 wrote the substrate (`pipeline_runs` rows with versioning, anomaly counters, prompt-personalization audit). Nothing yet *reads* those rows. Chunk 4 ships the read side: a hand-runnable KPI script for ad-hoc review, plus a feature-flagged shadow runner that captures paired primary/candidate output for **future** prompt/model/schema changes. The shadow runner is **off by default**; turning it on is its own decision after this chunk lands.
+**Why now:** Chunks 1–3 wrote the substrate (`pipeline_runs` rows with anomaly counters and prompt-personalization audit). Nothing yet *reads* those rows. Chunk 4 ships the read side: a hand-runnable KPI script for ad-hoc review, plus a feature-flagged shadow runner that captures paired primary/candidate output for **future** prompt/model/schema changes. The shadow runner is **off by default**; turning it on is its own decision after this chunk lands.
 
 **Outcome:** `scripts/eval-kpis.sql` runnable via `psql`/Studio; new `pipeline_shadow_runs` table with paired output; `lib/ai/pipeline/shadow-runner.ts` invoked best-effort *after* the primary response is sent; deterministic 5% sampling; abort guards for primary-degradation, DB-pool wait, and embedding rate-limit; divergence query template. No primary-flow latency cost when the flag is off (the post-response hook is a no-op short-circuit). No paired-input store — per Decision A, raw input lives in `pipeline_requests` (separate worktree owns `pipeline_llm_outputs`).
 
@@ -5127,11 +5127,12 @@ describe('decompositionContextHash', () => {
 });
 
 describe('buildDecompositionCacheKey', () => {
-  it('includes raw input + context hash + prompt source hash', () => {
+  it('includes raw input + context hash + prompt + schema source hashes', () => {
     const key = buildDecompositionCacheKey({
       rawInput: 'phở bò',
       ctx,
       decompositionPromptHash: 'sha256:abc123',
+      decompositionSchemaHash: 'sha256:schema-1',
     });
     expect(key).toMatch(/^l4:dec:/); // namespace prefix
     expect(key.length).toBeGreaterThan(40); // hash baked into the key
@@ -5141,10 +5142,30 @@ describe('buildDecompositionCacheKey', () => {
     const a = buildDecompositionCacheKey({
       rawInput: 'phở bò', ctx,
       decompositionPromptHash: 'sha256:abc123',
+      decompositionSchemaHash: 'sha256:schema-1',
     });
     const b = buildDecompositionCacheKey({
       rawInput: 'phở bò', ctx,
       decompositionPromptHash: 'sha256:def456',
+      decompositionSchemaHash: 'sha256:schema-1',
+    });
+    expect(a).not.toBe(b);
+  });
+
+  it('changes when the schema source hash changes (schema-only edit)', () => {
+    // Critical invariant: editing lib/ai/pipeline/schemas.ts without
+    // touching the prompt builder body must still invalidate the cache.
+    // hashPromptBuilder only sees builder.toString(), so we hash schema
+    // source independently and key on both.
+    const a = buildDecompositionCacheKey({
+      rawInput: 'phở bò', ctx,
+      decompositionPromptHash: 'sha256:abc123',
+      decompositionSchemaHash: 'sha256:schema-1',
+    });
+    const b = buildDecompositionCacheKey({
+      rawInput: 'phở bò', ctx,
+      decompositionPromptHash: 'sha256:abc123',
+      decompositionSchemaHash: 'sha256:schema-2',
     });
     expect(a).not.toBe(b);
   });
@@ -5153,10 +5174,12 @@ describe('buildDecompositionCacheKey', () => {
     const a = buildDecompositionCacheKey({
       rawInput: '  Phở Bò  ', ctx,
       decompositionPromptHash: 'sha256:abc123',
+      decompositionSchemaHash: 'sha256:schema-1',
     });
     const b = buildDecompositionCacheKey({
       rawInput: 'phở bò', ctx,
       decompositionPromptHash: 'sha256:abc123',
+      decompositionSchemaHash: 'sha256:schema-1',
     });
     expect(a).toBe(b);
   });
@@ -5257,11 +5280,18 @@ function stableStringify(obj: unknown): string {
 export interface DecompositionCacheKeyInput {
   rawInput: string;
   ctx: Partial<PromptPersonalizationContext>;
-  // Admin worktree's prompt_versions.code_hash for the decomposition
-  // prompt. Auto-rolls on any source change (prompt text, schema). No
-  // separate schema-version field needed — the prompt always references
-  // the schema, so any schema change is a source change.
+  // Source hash of the decomposition prompt builder, computed via admin's
+  // `hashPromptBuilder(buildDecompositionPrompt)` — pure SHA-256 over
+  // `builder.toString()`, no DB dependency, safe at module load.
   decompositionPromptHash: string;
+  // Source hash of `lib/ai/pipeline/schemas.ts` (or whichever module
+  // exports `decomposedIngredientSchema` / `decomposedMealItemSchema`).
+  // Hashed *separately* because `hashPromptBuilder` only sees the builder
+  // function body — a schema-only edit (e.g. tightening a Zod constraint
+  // in schemas.ts) does not change the builder string and would otherwise
+  // leave the L4 cache returning decompositions produced under the old
+  // schema. See Chunk 5 wiring snippet for how this is computed.
+  decompositionSchemaHash: string;
 }
 
 export function normalizeRawInput(s: string): string {
@@ -5275,6 +5305,7 @@ export function buildDecompositionCacheKey(
     raw: normalizeRawInput(input.rawInput),
     ctx: decompositionContextHash(input.ctx),
     pv: input.decompositionPromptHash,
+    sv: input.decompositionSchemaHash,
   });
   const hash = createHash('sha256').update(payload).digest('hex').slice(0, 32);
   return `l4:dec:${hash}`;
@@ -5341,11 +5372,34 @@ import {
   buildDecompositionCacheKey,
   createL4Cache,
 } from './decomposition-cache';
-// The decomposition prompt's source hash is computed once at module load
-// and registered in admin's prompt_versions table the first time we run.
-// `getRegisteredPromptHash('decomposition')` is exported by
-// `lib/ai/pipeline/trace.ts` (admin worktree).
-import { getRegisteredPromptHash } from './trace';
+// `hashPromptBuilder` is admin's pure source-hash helper:
+// `createHash('sha256').update(builder.toString()).digest('hex')`.
+// It is synchronous and has no DB dependency, so we can compute the
+// prompt+schema hashes once at module load and use them as cache-key
+// inputs *before* admin's `recordPromptVersion` has had a chance to
+// insert a row. (DB-backed lookup would race on the first request after
+// deploy.)
+import { hashPromptBuilder } from './trace';
+import { buildDecompositionPrompt } from '@/lib/ai/prompts/decomposition';
+// Hash the schema module source so schema-only edits invalidate the cache
+// even when the prompt builder body is unchanged. `import.meta.url` +
+// readFileSync is fine here because this runs once at module load on the
+// server. If you prefer to avoid filesystem I/O, replace with a
+// build-time-injected constant via a code-gen step — but the runtime
+// read is the simpler v1.
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { createHash } from 'node:crypto';
+
+const DECOMPOSITION_PROMPT_HASH = hashPromptBuilder(buildDecompositionPrompt);
+const DECOMPOSITION_SCHEMA_HASH = createHash('sha256')
+  .update(
+    readFileSync(
+      fileURLToPath(new URL('./schemas.ts', import.meta.url)),
+      'utf8',
+    ),
+  )
+  .digest('hex');
 
 const L4_CACHE = createL4Cache<DecompositionResult>({
   maxEntries: 1_000,
@@ -5356,7 +5410,8 @@ const L4_CACHE = createL4Cache<DecompositionResult>({
 const cacheKey = buildDecompositionCacheKey({
   rawInput,
   ctx: personalizationContext,
-  decompositionPromptHash: getRegisteredPromptHash('decomposition'),
+  decompositionPromptHash: DECOMPOSITION_PROMPT_HASH,
+  decompositionSchemaHash: DECOMPOSITION_SCHEMA_HASH,
 });
 
 const cached = L4_CACHE.get(cacheKey);
@@ -5395,8 +5450,9 @@ git add lib/ai/pipeline/decomposition-cache.ts \
 git commit -m "feat(pipeline): add L4 decomposition input cache (process-local LRU+TTL)
 
 Spec §4.3. Key includes raw input + decompositionContextHash (allowlisted
-fields only) + prompt version + schema version. 7-day TTL. Cache hits
-recorded in pipeline_runs.cache_hit_l4.
+fields only) + prompt source hash + schema source hash (hashed separately
+because hashPromptBuilder only sees builder.toString()). 7-day TTL. Cache
+hits recorded in pipeline_runs.cache_hit_l4.
 
 Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>"
 ```
