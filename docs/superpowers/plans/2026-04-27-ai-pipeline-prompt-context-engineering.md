@@ -5967,7 +5967,7 @@ for (const dish of decomposition.mealItems) {
 }
 ```
 
-> **Locked decision: no upper-bound clamp.** Vietnamese communal eating legitimately produces large per-ingredient grams (a 4-person hot pot can contain 600 g of beef). We do *not* enforce an upper cap; the lower bound (`grams > 0`) is the only structural guard. Outliers are caught by the macro-consistency invariant in §1.3, not here.
+> **Locked decision: no upper-bound clamp.** Vietnamese communal eating legitimately produces large per-ingredient grams (a 4-person hot pot can contain 600 g of beef). We do *not* enforce an upper cap. The schema's only *structural* guard is `.finite()` (rejecting NaN/Infinity at parse-time as `parse_failed`); the `grams <= 0` lower bound is enforced by *anomaly detection* in Step 4 (routing to `implausible_grams` retry), not by the schema. Upper-bound outliers are caught by the macro-consistency invariant in §1.3, not here.
 
 > **No `unit-conversion.ts` module, no `toGrams()` helper, no unit table, no `userFacingUnit`, and no `pipeline_runs.unit_conversion_fallbacks` column.** The LLM owns colloquial-portion → grams conversion, informed by the cooking-habit context wired into Task 6.2's prompt rewrite. The runtime accepts grams only. Display-side unit rendering (e.g., showing "≈ 1 chén" alongside "200 g" in the UI) is a separate UI concern owned by the rendering layer, not the pipeline.
 
