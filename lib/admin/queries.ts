@@ -218,30 +218,30 @@ export async function healthAggregates(db: AppDb): Promise<HealthAggregates> {
 
   const now = new Date();
   const minus24h = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-  const minus7d = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
   const minus30d = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+
+  // Use interval-based bucketing (no date params) to avoid postgres.js
+  // sending JS Date as text inside raw sql templates, and to keep the SELECT
+  // and GROUP BY expressions textually identical (Postgres GROUP BY by
+  // expression requires identical SQL — Drizzle qualifies columns differently
+  // in select vs groupBy contexts, breaking equality).
+  const windowExpr = sql`case
+          when now() - ${pipelineRequests.createdAt} < interval '24 hours' then '24h'
+          when now() - ${pipelineRequests.createdAt} < interval '7 days'  then '7d'
+          else '30d'
+        end`;
 
   const [rates, percentiles, perDay, errors] = await Promise.all([
     // Success rates per window
     db
       .select({
-        window: sql<string>`case
-          when ${pipelineRequests.createdAt} >= ${minus24h} then '24h'
-          when ${pipelineRequests.createdAt} >= ${minus7d}  then '7d'
-          else '30d'
-        end`,
+        window: sql<string>`${windowExpr}`,
         total: count(),
         successes: sql<number>`sum(case when ${pipelineRequests.status} = 'success' then 1 else 0 end)`,
       })
       .from(pipelineRequests)
       .where(and(noReplays, gte(pipelineRequests.createdAt, minus30d)))
-      .groupBy(
-        sql`case
-          when ${pipelineRequests.createdAt} >= ${minus24h} then '24h'
-          when ${pipelineRequests.createdAt} >= ${minus7d}  then '7d'
-          else '30d'
-        end`
-      ),
+      .groupBy(sql`${windowExpr}`),
 
     // Latency percentiles for the last 24h
     db

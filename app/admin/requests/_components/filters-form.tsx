@@ -19,7 +19,7 @@ interface FiltersFormProps {
 export function FiltersForm({ current }: FiltersFormProps) {
   const router = useRouter();
 
-  const [status, setStatus] = useState<string>(current.status ?? '');
+  const [status, setStatus] = useState<string>(current.status ?? 'all');
   const [userId, setUserId] = useState<string>(current.userId ?? '');
   const [dateFrom, setDateFrom] = useState<string>(current.dateFrom ?? '');
   const [dateTo, setDateTo] = useState<string>(current.dateTo ?? '');
@@ -30,7 +30,7 @@ export function FiltersForm({ current }: FiltersFormProps) {
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     const params = new URLSearchParams();
-    if (status) params.set('status', status);
+    if (status && status !== 'all') params.set('status', status);
     if (userId.trim()) params.set('userId', userId.trim());
     if (dateFrom) params.set('dateFrom', dateFrom);
     if (dateTo) params.set('dateTo', dateTo);
@@ -40,7 +40,7 @@ export function FiltersForm({ current }: FiltersFormProps) {
   }
 
   function handleReset() {
-    setStatus('');
+    setStatus('all');
     setUserId('');
     setDateFrom('');
     setDateTo('');
@@ -61,7 +61,7 @@ export function FiltersForm({ current }: FiltersFormProps) {
             <SelectValue placeholder="All" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">All</SelectItem>
+            <SelectItem value="all">All</SelectItem>
             <SelectItem value="pending">Pending</SelectItem>
             <SelectItem value="success">Success</SelectItem>
             <SelectItem value="error">Error</SelectItem>
