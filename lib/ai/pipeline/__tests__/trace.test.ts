@@ -46,7 +46,10 @@ function makeInsertCatchMock() {
 // ── Test setup ────────────────────────────────────────────────────────────────
 
 beforeEach(async () => {
-  // Re-import to pick up env changes and reset module state
+  // Re-import to pick up env changes and reset module state.
+  // Default to opt-in tracing enabled; tests that want disabled behavior
+  // stub PIPELINE_TRACE_ENABLED=false in their own beforeEach.
+  vi.stubEnv('PIPELINE_TRACE_ENABLED', 'true');
   vi.resetModules();
   const mod = await import('@/lib/ai/pipeline/trace');
   recordPromptVersion = mod.recordPromptVersion;
