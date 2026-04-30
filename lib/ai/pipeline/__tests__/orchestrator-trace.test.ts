@@ -24,6 +24,33 @@ vi.mock('@/lib/ai/pipeline/trace', () => ({
   logStage: mockLogStage,
   logLlmCall: mockLogLlmCall,
   recordPromptVersion: mockRecordPromptVersion,
+  buildLlmStageTrace: vi.fn(
+    async (args: {
+      trace?: { promptVersionsUsed: Map<string, string> };
+      stageLogId: string;
+      name: 'decomposition' | 'nutrition';
+      builder: (...a: unknown[]) => string;
+      templateSample: string;
+      model: string;
+    }) => {
+      if (!args.trace) return undefined;
+      const pvId = await mockRecordPromptVersion({
+        name: args.name,
+        builder: args.builder,
+        templateSample: args.templateSample,
+        model: args.model,
+      });
+      if (!pvId) return undefined;
+      args.trace.promptVersionsUsed.set(args.name, pvId);
+      return {
+        db: {} as unknown,
+        requestId: 'test-request-id',
+        stageLogId: args.stageLogId,
+        promptVersionId: pvId,
+        promptRendered: args.templateSample,
+      };
+    }
+  ),
   _resetPromptVersionCacheForTests: vi.fn(),
 }));
 
