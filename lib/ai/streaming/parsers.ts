@@ -44,6 +44,42 @@ export function extractMealItemNames(
   return newNames;
 }
 
+/**
+ * Like {@link extractMealItemNames} but tracks per-name *occurrence counts*
+ * instead of unique names. Each occurrence (1-based) of a duplicate display
+ * name is emitted as a separate event so that two `cơm trắng` meal items
+ * in one meal each get their own streamed announcement and a distinct
+ * `mealItemId` minted by the orchestrator.
+ *
+ * @param emittedCounts In/out — caller-owned map of `name → highest emitted
+ *   occurrence`. Mutated to track progress across streaming chunks.
+ * @returns Newly emitted occurrences in stream order, each with its
+ *   1-based occurrence index for that name.
+ */
+export function extractMealItemNameOccurrences(
+  accumulated: string,
+  emittedCounts: Map<string, number>
+): Array<{ name: string; occurrence: number }> {
+  const totalCounts = new Map<string, number>();
+  const newOccurrences: Array<{ name: string; occurrence: number }> = [];
+  MEAL_ITEM_NAME_RE.lastIndex = 0;
+  let match = MEAL_ITEM_NAME_RE.exec(accumulated);
+  while (match !== null) {
+    const name = match[1];
+    const occ = (totalCounts.get(name) ?? 0) + 1;
+    totalCounts.set(name, occ);
+    if (occ > (emittedCounts.get(name) ?? 0)) {
+      newOccurrences.push({ name, occurrence: occ });
+    }
+    match = MEAL_ITEM_NAME_RE.exec(accumulated);
+  }
+  for (const [name, count] of totalCounts) {
+    const prev = emittedCounts.get(name) ?? 0;
+    if (count > prev) emittedCounts.set(name, count);
+  }
+  return newOccurrences;
+}
+
 // ---------------------------------------------------------------------------
 // Call 2: Extract completed meal item nutrition from partial estimation JSON
 // ---------------------------------------------------------------------------

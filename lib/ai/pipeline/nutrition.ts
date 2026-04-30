@@ -52,52 +52,72 @@ export function reconcileNutritionIds(
   decomposition: MealDecompositionWithIds,
   matched: MatchedIngredient[]
 ): NutritionAdjustment {
-  const mealItemNameCounts = new Map<string, number>();
+  // Build a per-name FIFO queue of decomposition meal items so duplicate
+  // display names ("Cơm trắng" served twice) reconcile to distinct
+  // `mealItemId`s in the same order Call 2 emits them. `.find()` would
+  // collapse both onto the first slot and lose run-scoped id distinctness
+  // required by §0.1.
+  const mealItemQueueByName = new Map<
+    string,
+    MealDecompositionWithIds['mealItems']
+  >();
   for (const mi of decomposition.mealItems) {
-    mealItemNameCounts.set(mi.name, (mealItemNameCounts.get(mi.name) ?? 0) + 1);
+    const list = mealItemQueueByName.get(mi.name) ?? [];
+    list.push(mi);
+    mealItemQueueByName.set(mi.name, list);
   }
+  const mealItemConsumed = new Map<string, number>();
 
   const reconciledMealItems: MealItemNutrition[] = raw.mealItems.map(
     (rawMi) => {
-      const decomposedMi = decomposition.mealItems.find(
-        (mi) => mi.name === rawMi.mealItemName
-      );
+      const queue = mealItemQueueByName.get(rawMi.mealItemName) ?? [];
+      const consumed = mealItemConsumed.get(rawMi.mealItemName) ?? 0;
+      const decomposedMi = queue[consumed] ?? queue[queue.length - 1];
       if (!decomposedMi) {
         throw new Error(
           `[reconcile] Call 2 returned meal item "${rawMi.mealItemName}" not present in decomposition`
         );
       }
-      const collisions = mealItemNameCounts.get(rawMi.mealItemName) ?? 0;
-      if (collisions > 1) {
+      mealItemConsumed.set(rawMi.mealItemName, consumed + 1);
+      const totalForName = queue.length;
+      if (totalForName > 1 && consumed >= totalForName) {
         console.warn(
-          `[reconcile] meal item name collision: "${rawMi.mealItemName}" appears ${collisions}x; first-match used`,
+          `[reconcile] meal item name collision: "${rawMi.mealItemName}" appears ${totalForName}x; Call 2 returned more entries than decomposition — wrapping to last slot`,
           { mealItemId: decomposedMi.mealItemId }
         );
       }
 
-      const ingredientNameCounts = new Map<string, number>();
+      // Per-meal-item ingredient FIFO. Same logic for duplicate ingredient
+      // names within a single meal item.
+      const ingredientQueueByName = new Map<
+        string,
+        (typeof decomposedMi.ingredients)[number][]
+      >();
       for (const ing of decomposedMi.ingredients) {
-        ingredientNameCounts.set(
-          ing.name,
-          (ingredientNameCounts.get(ing.name) ?? 0) + 1
-        );
+        const list = ingredientQueueByName.get(ing.name) ?? [];
+        list.push(ing);
+        ingredientQueueByName.set(ing.name, list);
       }
+      const ingredientConsumed = new Map<string, number>();
 
       const ingredients: IngredientLlmNutrition[] = rawMi.ingredients.map(
         (rawIng) => {
-          const decomposedIng = decomposedMi.ingredients.find(
-            (ing) => ing.name === rawIng.ingredientName
-          );
+          const ingQueue =
+            ingredientQueueByName.get(rawIng.ingredientName) ?? [];
+          const ingConsumed =
+            ingredientConsumed.get(rawIng.ingredientName) ?? 0;
+          const decomposedIng =
+            ingQueue[ingConsumed] ?? ingQueue[ingQueue.length - 1];
           if (!decomposedIng) {
             throw new Error(
               `[reconcile] Call 2 returned ingredient "${rawIng.ingredientName}" not present in meal item "${rawMi.mealItemName}"`
             );
           }
-          const ingCollisions =
-            ingredientNameCounts.get(rawIng.ingredientName) ?? 0;
-          if (ingCollisions > 1) {
+          ingredientConsumed.set(rawIng.ingredientName, ingConsumed + 1);
+          const totalForIngName = ingQueue.length;
+          if (totalForIngName > 1 && ingConsumed >= totalForIngName) {
             console.warn(
-              `[reconcile] ingredient name collision: "${rawIng.ingredientName}" appears ${ingCollisions}x in "${rawMi.mealItemName}"; first-match used`,
+              `[reconcile] ingredient name collision: "${rawIng.ingredientName}" appears ${totalForIngName}x in "${rawMi.mealItemName}" — wrapping to last slot`,
               {
                 ingredientId: decomposedIng.ingredientId,
                 mealItemId: decomposedMi.mealItemId,

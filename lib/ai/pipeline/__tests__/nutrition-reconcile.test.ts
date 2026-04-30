@@ -70,7 +70,7 @@ describe('reconcileNutritionIds', () => {
     expect(out.mealItems[0].ingredients[0].ingredientId).toBe('ing-1');
   });
 
-  it('collision path — first-match used and console.warn called', () => {
+  it('collision path — FIFO peel maps each nutrition entry to a distinct decomposition slot', () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
     const decomposition: MealDecompositionWithIds = {
@@ -107,17 +107,46 @@ describe('reconcileNutritionIds', () => {
     };
 
     const out = reconcileNutritionIds(
-      rawNutrition('phở bò', 'nước dùng', 80),
+      {
+        mealItems: [
+          {
+            mealItemName: 'phở bò',
+            ingredients: [
+              {
+                ingredientName: 'nước dùng',
+                caloriesKcal: { low: 80, mid: 80, high: 80 },
+                proteinG: { low: 8, mid: 8, high: 8 },
+                carbohydrateG: { low: 6, mid: 6, high: 6 },
+                fatG: { low: 2, mid: 2, high: 2 },
+              },
+            ],
+          },
+          {
+            mealItemName: 'phở bò',
+            ingredients: [
+              {
+                ingredientName: 'nước dùng',
+                caloriesKcal: { low: 60, mid: 60, high: 60 },
+                proteinG: { low: 6, mid: 6, high: 6 },
+                carbohydrateG: { low: 4, mid: 4, high: 4 },
+                fatG: { low: 1, mid: 1, high: 1 },
+              },
+            ],
+          },
+        ],
+      },
       decomposition,
       noopMatched
     );
 
-    // First-match: maps to the first decomposed meal item.
+    // Two raw nutrition entries with the same name peel off in order:
+    // first entry → meal-A, second entry → meal-B (NOT both → meal-A).
     expect(out.mealItems[0].mealItemId).toBe('meal-A');
-    expect(warn).toHaveBeenCalledWith(
-      expect.stringContaining('meal item name collision'),
-      expect.objectContaining({ mealItemId: 'meal-A' })
-    );
+    expect(out.mealItems[1].mealItemId).toBe('meal-B');
+    expect(out.mealItems[0].ingredients[0].ingredientId).toBe('ing-1');
+    expect(out.mealItems[1].ingredients[0].ingredientId).toBe('ing-2');
+    // No warning fires when the FIFO has supply available for every demand.
+    expect(warn).not.toHaveBeenCalled();
   });
 
   it('no-match path — throws when raw name not in decomposition', () => {

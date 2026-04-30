@@ -27,11 +27,25 @@ export interface ItemNameEvent {
   type: 'item_name';
   name: string;
   index: number;
+  /**
+   * Run-scoped meal-item UUID (§0.1). Stable across retries so the client
+   * can correlate streamed names to later `item_macros` events for the
+   * same logical slot, even when the same display name appears twice
+   * (e.g., two servings of "cơm trắng" in one meal).
+   */
+  mealItemId: string;
 }
 
 /** Single meal item with macros estimated during nutrition streaming */
 export interface ItemMacrosEvent {
   type: 'item_macros';
+  /**
+   * Run-scoped meal-item UUID (§0.1). Matches the `mealItemId` carried by
+   * the prior `item_name` event for the same logical slot. Used by the
+   * client to upsert macros onto the correct streamed name (§4.4 — retry
+   * replacement safety).
+   */
+  mealItemId: string;
   item: MealItem;
 }
 

@@ -65,18 +65,21 @@ export function useStreamAnalysis() {
             return { ...prev, items: [...prev.items, event.name] };
 
           case 'item_macros': {
-            // Upsert: replace if item.id already exists (handles retry re-emit)
+            // Upsert keyed by run-scoped mealItemId (§0.1, §4.4): retry
+            // re-emits the same logical slot, so replace by id rather
+            // than append.
             const existing = prev.completedItems.findIndex(
-              (i) => i.id === event.item.id
+              (i) => i.id === event.mealItemId
             );
+            const next: MealItem = { ...event.item, id: event.mealItemId };
             if (existing >= 0) {
               const updated = [...prev.completedItems];
-              updated[existing] = event.item;
+              updated[existing] = next;
               return { ...prev, completedItems: updated };
             }
             return {
               ...prev,
-              completedItems: [...prev.completedItems, event.item],
+              completedItems: [...prev.completedItems, next],
             };
           }
 

@@ -9,7 +9,7 @@ import { buildDecompositionPrompt, buildNutritionPrompt } from '../prompts';
 import {
   computeStreamingMealItem,
   extractCompletedMealItemNutrition,
-  extractMealItemNames,
+  extractMealItemNameOccurrences,
 } from '../streaming/parsers';
 import type { StreamEvent } from '../streaming/types';
 import type {
@@ -27,7 +27,11 @@ import {
   NonFoodError,
   nonFoodResponse,
 } from './errors';
-import { ensureIdsOnDecomposition, type MealDecompositionWithIds } from './ids';
+import {
+  ensureIdsOnDecomposition,
+  generateMealItemId,
+  type MealDecompositionWithIds,
+} from './ids';
 import {
   type RawNutritionAdjustment,
   reconcileNutritionIds,
@@ -220,20 +224,34 @@ async function runPipeline(
   // + per-item name detection for progressive UI
   emit({ type: 'stage', stage: 'decomposing' });
   const speculativeMatcher = createSpeculativeMatcher(db, gemini);
-  const mealItemNamesSeen = new Set<string>();
+  // Per-name running counts of meal-item-name occurrences emitted during
+  // streaming; supports duplicate-name dishes (e.g., two `cơm trắng`).
+  const streamEmittedCounts = new Map<string, number>();
+  // Composite key `${name}::${occurrence}` → minted mealItemId. Used after
+  // Call 1 parses to thread streamed UUIDs into the decomposition so
+  // streamed `item_name` ids match post-parse `item_macros` ids (§0.1).
+  const streamMealItemIds = new Map<string, string>();
   let mealItemIndex = 0;
 
   const composedOnChunk = (accumulated: string) => {
     // Existing: pre-warm embedding cache for ingredient names
     speculativeMatcher(accumulated);
 
-    // New: detect meal item names and emit individually for progressive UI
-    const newNames = extractMealItemNames(accumulated, mealItemNamesSeen);
-    for (const name of newNames) {
+    // New: detect meal item name occurrences, mint UUIDs, emit progressively.
+    const newOccurrences = extractMealItemNameOccurrences(
+      accumulated,
+      streamEmittedCounts
+    );
+    for (const { name, occurrence } of newOccurrences) {
+      const displayName = capitalizeFirst(name);
+      const key = `${displayName}::${occurrence}`;
+      const mealItemId = generateMealItemId();
+      streamMealItemIds.set(key, mealItemId);
       emit({
         type: 'item_name',
-        name: capitalizeFirst(name),
+        name: displayName,
         index: mealItemIndex++,
+        mealItemId,
       });
     }
   };
@@ -273,6 +291,21 @@ async function runPipeline(
       );
     }
   );
+  // Thread streamed mealItemIds into the parsed decomposition before
+  // `ensureIdsOnDecomposition` runs. This guarantees streamed `item_name`
+  // ids match `item_macros` ids for the same logical slot (§0.1, §4.4).
+  // Items that didn't appear in the stream (LLM held the whole tail until
+  // close) get fresh UUIDs minted by `ensureIdsOnDecomposition`.
+  const parseCounts = new Map<string, number>();
+  for (const mi of rawDecomposition.mealItems) {
+    const displayName = capitalizeFirst(mi.name);
+    const occ = (parseCounts.get(displayName) ?? 0) + 1;
+    parseCounts.set(displayName, occ);
+    const streamedId = streamMealItemIds.get(`${displayName}::${occ}`);
+    if (streamedId) {
+      mi.mealItemId = streamedId;
+    }
+  }
   const decomposition: MealDecompositionWithIds =
     ensureIdsOnDecomposition(rawDecomposition);
   const decomposeMs = Date.now() - t0;
@@ -288,13 +321,19 @@ async function runPipeline(
   // Note: alias resolution is now handled inside the matching cascade as a fallback
   // (try original name first, alias-expanded name second). No pre-match rewrite needed.
 
-  // Flush: emit any meal item names that weren't detected during streaming
+  // Flush: emit `item_name` for any meal items not already announced by the
+  // streaming extractor. Iterating over `decomposition.mealItems` (post
+  // `ensureIdsOnDecomposition`) guarantees each emit carries a stable
+  // `mealItemId`.
+  const streamedIds = new Set(streamMealItemIds.values());
   for (const mi of decomposition.mealItems) {
-    if (
-      !mealItemNamesSeen.has(mi.name) &&
-      !mealItemNamesSeen.has(mi.name.toLowerCase())
-    ) {
-      emit({ type: 'item_name', name: mi.name, index: mealItemIndex++ });
+    if (!streamedIds.has(mi.mealItemId)) {
+      emit({
+        type: 'item_name',
+        name: mi.name,
+        index: mealItemIndex++,
+        mealItemId: mi.mealItemId,
+      });
     }
   }
 
@@ -342,6 +381,29 @@ async function runPipeline(
     mealItemGrams.set(mi.name, totalGrams);
   }
 
+  // Per-name ordered queue of mealItemIds (§0.1). Two `cơm trắng` dishes
+  // have distinct ids; the nutrition stream encounters them in the same
+  // order as decomposition, so a FIFO peel-off correctly attributes each
+  // streaming macros event to the right logical slot.
+  const mealItemIdQueueByName = new Map<string, string[]>();
+  for (const mi of decomposition.mealItems) {
+    const list = mealItemIdQueueByName.get(mi.name) ?? [];
+    list.push(mi.mealItemId);
+    mealItemIdQueueByName.set(mi.name, list);
+  }
+  const macroEmittedCounts = new Map<string, number>();
+  const resolveMealItemId = (name: string): string => {
+    const ids =
+      mealItemIdQueueByName.get(name) ??
+      mealItemIdQueueByName.get(capitalizeFirst(name)) ??
+      [];
+    const idx = macroEmittedCounts.get(name) ?? 0;
+    macroEmittedCounts.set(name, idx + 1);
+    // Wrap on retry: nutrition retry re-emits the same items, so cycle
+    // through the per-name queue rather than running off the end.
+    return ids[idx % Math.max(ids.length, 1)] ?? generateMealItemId();
+  };
+
   const nutritionOnChunk = (accumulated: string) => {
     const { items, newCount } = extractCompletedMealItemNutrition(
       accumulated,
@@ -361,7 +423,8 @@ async function runPipeline(
         userContext.goal,
         userContext.aggression
       );
-      emit({ type: 'item_macros', item: streamItem });
+      const mealItemId = resolveMealItemId(itemNutrition.mealItemName);
+      emit({ type: 'item_macros', mealItemId, item: streamItem });
     }
   };
 
@@ -435,6 +498,7 @@ async function runPipeline(
         );
         // Reset streaming state so retry re-emits from scratch
         lastExtractedCount = 0;
+        macroEmittedCounts.clear();
         rawNutrition = await fetchWithTimeout(
           (signal) =>
             gemini.generateStructuredOutputStream(
@@ -483,7 +547,10 @@ async function runPipeline(
         userContext.goal,
         userContext.aggression
       );
-      emit({ type: 'item_macros', item: streamItem });
+      const mealItemId =
+        itemNutrition.mealItemId ??
+        resolveMealItemId(itemNutrition.mealItemName);
+      emit({ type: 'item_macros', mealItemId, item: streamItem });
     }
   }
   const nutritionMs = Date.now() - t2;
