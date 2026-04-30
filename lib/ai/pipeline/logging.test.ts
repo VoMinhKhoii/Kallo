@@ -1,12 +1,22 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AppDb } from '@/lib/db';
+import type { UserContext } from '../types';
 import { logPipelineEnd, logPipelineStart } from './logging';
 
 // ---------------------------------------------------------------------------
 // Mock DB
 // ---------------------------------------------------------------------------
 
-function createMockInsertDb(): AppDb {
+interface MockInsertDb {
+  insert: ReturnType<typeof vi.fn>;
+  update: ReturnType<typeof vi.fn>;
+  values: ReturnType<typeof vi.fn>;
+  set: ReturnType<typeof vi.fn>;
+  where: ReturnType<typeof vi.fn>;
+  asAppDb: AppDb;
+}
+
+function createMockInsertDb(): MockInsertDb {
   const values = vi.fn().mockResolvedValue(undefined);
   const insert = vi.fn().mockReturnValue({ values });
   const updateSet = vi.fn().mockResolvedValue(undefined);
@@ -14,15 +24,22 @@ function createMockInsertDb(): AppDb {
   const set = vi.fn().mockReturnValue({ where });
   const update = vi.fn().mockReturnValue({ set });
 
-  return { insert, update, values, set, where } as unknown as AppDb;
+  const asAppDb = { insert, update } as unknown as AppDb;
+  return { insert, update, values, set, where, asAppDb };
 }
 
-const MOCK_USER_CONTEXT = {
+const MOCK_USER_CONTEXT: UserContext = {
   countryOfOrigin: 'Vietnam',
   countryOfResidence: 'Vietnam',
-  goal: 'maintain',
-  aggression: 1,
-  cookingHabits: '',
+  goal: 'maintaining',
+  aggression: 0,
+  cookingHabits: {
+    oilUsage: 'normal',
+    defaultRicePortion: 'medium',
+    sugarBraised: 'medium',
+    defaultProteinPortion: 'medium',
+    brothConsumption: 'finish_it',
+  },
 };
 
 beforeEach(() => {
@@ -40,7 +57,7 @@ describe('logPipelineStart', () => {
       userId: 'user-1',
       rawInput: 'phở bò',
       userContext: MOCK_USER_CONTEXT,
-      db,
+      db: db.asAppDb,
     });
 
     expect(id).toMatch(
@@ -55,7 +72,7 @@ describe('logPipelineStart', () => {
       userId: 'user-1',
       rawInput: 'phở bò',
       userContext: MOCK_USER_CONTEXT,
-      db,
+      db: db.asAppDb,
     });
 
     const valuesArg = db.values.mock.calls[0][0];
@@ -95,7 +112,9 @@ describe('logPipelineEnd', () => {
   it('is a no-op when requestId is null', () => {
     const db = createMockInsertDb();
     // Should not throw
-    expect(() => logPipelineEnd(null, 'success', 1200, db)).not.toThrow();
+    expect(() =>
+      logPipelineEnd(null, 'success', 1200, db.asAppDb)
+    ).not.toThrow();
     expect(db.update).not.toHaveBeenCalled();
   });
 
