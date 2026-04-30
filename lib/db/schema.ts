@@ -558,3 +558,45 @@ export const pipelineLlmCalls = pgTable(
     index('pipeline_llm_calls_stage_log_idx').on(t.stageLogId),
   ]
 );
+
+// pipeline_runs — durable structured telemetry for KPI rollups (§5.1) and
+// shadow A/B comparison (§5.2). user_id_hash only, never raw user id.
+// Prompt/schema versions are NOT stored here — they live in
+// pipeline_requests.prompt_versions_used (jsonb), owned by the admin worktree.
+// Per-stage timing is in pipeline_stage_logs.duration_ms (admin worktree);
+// only the end-to-end total is mirrored here for fast percentile rollups.
+export const pipelineRuns = pgTable('pipeline_runs', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  createdAt: timestamp('created_at', { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+  userIdHash: text('user_id_hash').notNull(),
+  requestId: text('request_id'),
+  modelCall1: text('model_call1').notNull(),
+  modelCall2: text('model_call2').notNull(),
+  escalated: boolean('escalated').notNull().default(false),
+  cacheHitL4: boolean('cache_hit_l4').notNull().default(false),
+  retryCount: smallint('retry_count').notNull().default(0),
+  totalMs: integer('total_ms').notNull().default(0),
+  ingredientCount: smallint('ingredient_count').notNull().default(0),
+  matchedCount: smallint('matched_count').notNull().default(0),
+  unmatchedCount: smallint('unmatched_count').notNull().default(0),
+  anomalyTypes: text('anomaly_types')
+    .array()
+    .notNull()
+    .default(sql`'{}'::text[]`),
+  preMatchAliasHits: smallint('pre_match_alias_hits').notNull().default(0),
+  cookedToRawFactorFires: smallint('cooked_to_raw_factor_fires')
+    .notNull()
+    .default(0),
+  densityEnvelopeFires: smallint('density_envelope_fires').notNull().default(0),
+  macroInconsistentFires: smallint('macro_inconsistent_fires')
+    .notNull()
+    .default(0),
+  dbStateUnknownFires: smallint('db_state_unknown_fires').notNull().default(0),
+  retryStep2Count: smallint('retry_step2_count').notNull().default(0),
+  promptPersonalizationFields: text('prompt_personalization_fields')
+    .array()
+    .notNull()
+    .default(sql`'{}'::text[]`),
+});
