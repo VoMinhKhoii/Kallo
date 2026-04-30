@@ -37,7 +37,10 @@ export async function recordPromptVersion(args: {
         codeHash,
         templateSample: args.templateSample,
         model: args.model,
-        gitSha: process.env.VERCEL_GIT_COMMIT_SHA ?? null,
+        gitSha:
+          process.env.GIT_COMMIT_SHA ??
+          process.env.VERCEL_GIT_COMMIT_SHA ??
+          null,
       })
       .onConflictDoNothing({
         target: [promptVersions.name, promptVersions.codeHash],

@@ -1,5 +1,3 @@
-'use client';
-
 import { diffLines } from 'diff';
 import { cn } from '@/lib/utils';
 

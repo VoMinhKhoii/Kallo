@@ -111,8 +111,8 @@ export default async function HealthPage() {
               </tr>
             </thead>
             <tbody>
-              {agg.topErrors30d.map((e, i) => (
-                <tr key={i} className="border-t">
+              {agg.topErrors30d.map((e) => (
+                <tr key={e.error} className="border-t">
                   <td className="px-5 py-2 font-mono text-xs">{e.error}</td>
                   <td className="px-5 py-2 text-right tabular-nums">
                     {e.count}

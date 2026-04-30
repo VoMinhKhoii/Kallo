@@ -1,6 +1,8 @@
 import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import { z } from 'zod';
+import { formatUtcTimestamp } from '@/lib/admin/format';
 import { getRequestDetail } from '@/lib/admin/queries';
 import { requireAdmin } from '@/lib/admin/require-admin';
 import { db } from '@/lib/db';
@@ -86,8 +88,10 @@ export default async function RequestDetailPage({
   await requireAdmin();
 
   const { id } = await params;
+  if (!z.string().uuid().safeParse(id).success) notFound();
   const sp = await searchParams;
   const compareId = typeof sp.compare === 'string' ? sp.compare : undefined;
+  if (compareId && !z.string().uuid().safeParse(compareId).success) notFound();
 
   const [detail, compareDetail] = await Promise.all([
     getRequestDetail(db, id),
@@ -155,8 +159,7 @@ export default async function RequestDetailPage({
           <div>
             <dt className="text-muted-foreground text-xs">Triggered at</dt>
             <dd className="tabular-nums">
-              {request.createdAt.toISOString().replace('T', ' ').slice(0, 19)}{' '}
-              UTC
+              {formatUtcTimestamp(request.createdAt)}
             </dd>
           </div>
           {request.replayOfRequestId && (

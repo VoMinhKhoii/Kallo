@@ -55,9 +55,14 @@ export function FiltersForm({ current }: FiltersFormProps) {
     >
       {/* Status */}
       <div className="flex flex-col gap-1">
-        <label className="text-muted-foreground text-xs">Status</label>
+        <label
+          htmlFor="filters-status"
+          className="text-muted-foreground text-xs"
+        >
+          Status
+        </label>
         <Select value={status} onValueChange={setStatus}>
-          <SelectTrigger className="w-36">
+          <SelectTrigger id="filters-status" className="w-36">
             <SelectValue placeholder="All" />
           </SelectTrigger>
           <SelectContent>
@@ -71,8 +76,14 @@ export function FiltersForm({ current }: FiltersFormProps) {
 
       {/* User ID */}
       <div className="flex flex-col gap-1">
-        <label className="text-muted-foreground text-xs">User ID (UUID)</label>
+        <label
+          htmlFor="filters-user-id"
+          className="text-muted-foreground text-xs"
+        >
+          User ID (UUID)
+        </label>
         <Input
+          id="filters-user-id"
           className="w-72 font-mono text-xs"
           placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
           value={userId}
@@ -82,8 +93,14 @@ export function FiltersForm({ current }: FiltersFormProps) {
 
       {/* Date range */}
       <div className="flex flex-col gap-1">
-        <label className="text-muted-foreground text-xs">From</label>
+        <label
+          htmlFor="filters-date-from"
+          className="text-muted-foreground text-xs"
+        >
+          From
+        </label>
         <Input
+          id="filters-date-from"
           type="date"
           className="w-36"
           value={dateFrom}
@@ -91,8 +108,14 @@ export function FiltersForm({ current }: FiltersFormProps) {
         />
       </div>
       <div className="flex flex-col gap-1">
-        <label className="text-muted-foreground text-xs">To</label>
+        <label
+          htmlFor="filters-date-to"
+          className="text-muted-foreground text-xs"
+        >
+          To
+        </label>
         <Input
+          id="filters-date-to"
           type="date"
           className="w-36"
           value={dateTo}

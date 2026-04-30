@@ -1,6 +1,8 @@
 import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import { z } from 'zod';
+import { formatUtcTimestamp } from '@/lib/admin/format';
 import { getPromptVersions } from '@/lib/admin/queries';
 import { requireAdmin } from '@/lib/admin/require-admin';
 import { db } from '@/lib/db';
@@ -23,8 +25,11 @@ export default async function PromptDetailPage({
   const sp = await searchParams;
 
   const decodedName = decodeURIComponent(name);
+  if (!decodedName) notFound();
   const compareId = typeof sp.compare === 'string' ? sp.compare : undefined;
+  if (compareId && !z.string().uuid().safeParse(compareId).success) notFound();
   const withId = typeof sp.with === 'string' ? sp.with : undefined;
+  if (withId && !z.string().uuid().safeParse(withId).success) notFound();
 
   const versions = await getPromptVersions(db, decodedName);
 
@@ -105,8 +110,7 @@ export default async function PromptDetailPage({
                     {v.gitSha ? v.gitSha.slice(0, 8) : '—'}
                   </td>
                   <td className="px-4 py-2 text-muted-foreground tabular-nums">
-                    {v.firstSeenAt.toISOString().replace('T', ' ').slice(0, 19)}{' '}
-                    UTC
+                    {formatUtcTimestamp(v.firstSeenAt)}
                   </td>
                   <td className="px-4 py-2">
                     <CompareLink

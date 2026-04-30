@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { listRequests, requestFiltersSchema } from '@/lib/admin/queries';
 import { requireAdmin } from '@/lib/admin/require-admin';
 import { db } from '@/lib/db';
@@ -14,9 +15,14 @@ export default async function RequestsPage({
   await requireAdmin();
 
   const raw = await searchParams;
-  // Flatten arrays to first value for Zod (URLSearchParams shape)
-  const flat = Object.fromEntries(
-    Object.entries(raw).map(([k, v]) => [k, Array.isArray(v) ? v[0] : v])
+  // Flatten arrays to first value for Zod (URLSearchParams shape) and
+  // drop undefined values so the Record is always string-valued.
+  const flat: Record<string, string> = Object.fromEntries(
+    Object.entries(raw)
+      .map(([k, v]) => [k, Array.isArray(v) ? v[0] : v] as const)
+      .filter(
+        (entry): entry is [string, string] => typeof entry[1] === 'string'
+      )
   );
 
   const parsed = requestFiltersSchema.safeParse(flat);
@@ -49,20 +55,22 @@ export default async function RequestsPage({
             Page {filters.page} of {totalPages}
           </span>
           {filters.page > 1 && (
-            <a
+            <Link
               href={`/admin/requests?${new URLSearchParams({ ...flat, page: String(filters.page - 1) }).toString()}`}
+              aria-label="Previous page"
               className="rounded border px-2 py-1 hover:bg-muted"
             >
               ← Prev
-            </a>
+            </Link>
           )}
           {filters.page < totalPages && (
-            <a
+            <Link
               href={`/admin/requests?${new URLSearchParams({ ...flat, page: String(filters.page + 1) }).toString()}`}
+              aria-label="Next page"
               className="rounded border px-2 py-1 hover:bg-muted"
             >
               Next →
-            </a>
+            </Link>
           )}
         </div>
       )}

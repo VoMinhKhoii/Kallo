@@ -1,5 +1,6 @@
 import type { InferSelectModel } from 'drizzle-orm';
 import Link from 'next/link';
+import { formatUtcTimestamp } from '@/lib/admin/format';
 import type { pipelineRequests } from '@/lib/db/schema';
 import { cn } from '@/lib/utils';
 
@@ -80,10 +81,7 @@ export function RequestsTable({ rows }: RequestsTableProps) {
                 {row.rawInput.length > 80 ? '…' : ''}
               </td>
               <td className="px-4 py-2 text-muted-foreground tabular-nums">
-                {new Date(row.createdAt).toLocaleString('en-US', {
-                  dateStyle: 'short',
-                  timeStyle: 'short',
-                })}
+                {formatUtcTimestamp(row.createdAt)}
               </td>
               <td className="px-4 py-2">
                 {row.replayOfRequestId ? (
