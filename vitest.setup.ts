@@ -2,6 +2,9 @@ import React from 'react';
 import '@testing-library/jest-dom/vitest';
 import { vi } from 'vitest';
 
+// server-only throws on import outside RSC; stub it for tests
+vi.mock('server-only', () => ({}));
+
 // Global mock for next-intl — returns translation keys as-is
 vi.mock('next-intl', () => ({
   useTranslations: () => {
