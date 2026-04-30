@@ -53,6 +53,8 @@ function normalizeState(raw: string | null | undefined): DbIngredientState {
 }
 
 export interface MatchInfo {
+  /** Run-scoped ingredient UUID (§0.1). Set by cascade.ts when known. */
+  ingredientId?: string;
   ingredientName: string;
   foodCompositionId: string;
   matchedName: string;

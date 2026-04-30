@@ -135,6 +135,13 @@ export type NutritionPer100g = NutritionValues;
 
 /** A successfully matched ingredient */
 export interface MatchedIngredient {
+  /**
+   * Run-scoped ingredient UUID (§0.1) — propagated from decomposition.
+   * Optional on the shared interface; cascade callers pass post-Task-1.9
+   * `MealDecompositionWithIds` so this is populated at runtime. Test
+   * fixtures may omit this field.
+   */
+  ingredientId?: string;
   ingredientName: string;
   foodCompositionId: string;
   matchedName: string;
@@ -157,6 +164,13 @@ export interface UnmatchedIngredient {
 
 /** Bounded estimates for the 4 LLM-adjusted macros of a single ingredient */
 export interface IngredientLlmNutrition {
+  /**
+   * Run-scoped ingredient UUID (§0.1). Filled by `reconcileNutritionIds`
+   * after Call 2 parses (LLM emits ingredientName today; Chunk 3 will
+   * have it emit ingredientId directly). Optional on the interface; the
+   * post-reconcile shape consumed by assembly always carries it.
+   */
+  ingredientId?: string;
   ingredientName: string;
   caloriesKcal: BoundedEstimate;
   proteinG: BoundedEstimate;
@@ -166,6 +180,11 @@ export interface IngredientLlmNutrition {
 
 /** LLM Call 2 output for a single meal item */
 export interface MealItemNutrition {
+  /**
+   * Run-scoped meal-item UUID (§0.1). Filled by `reconcileNutritionIds`.
+   * Optional on the interface; reconciled output always carries it.
+   */
+  mealItemId?: string;
   mealItemName: string;
   ingredients: IngredientLlmNutrition[];
 }

@@ -150,7 +150,11 @@ export async function matchIngredients(
     const { i } = matchItems[j];
     if (result.status === 'fulfilled' && result.value) {
       // Restore original ingredient name (pre-match alias may have changed it)
-      matchInfos.push({ ...result.value, ingredientName: ingredients[i].name });
+      matchInfos.push({
+        ...result.value,
+        ingredientName: ingredients[i].name,
+        ingredientId: ingredients[i].ingredientId,
+      });
     } else {
       if (result.status === 'rejected') {
         console.error(
@@ -257,6 +261,7 @@ export async function matchIngredients(
             matchInfos.push({
               ...result.value,
               ingredientName: retry.original.name,
+              ingredientId: retry.original.ingredientId,
             });
             rescuedIndices.add(retry.originalIndex);
             console.info(
@@ -313,8 +318,13 @@ export async function matchIngredients(
   for (const info of matchInfos) {
     const nutrition = nutritionMap.get(info.foodCompositionId);
     if (nutrition) {
-      const { state, ...rest } = info;
-      matched.push({ ...rest, nutritionPer100g: nutrition, dbState: state });
+      const { state, ingredientId, ...rest } = info;
+      matched.push({
+        ...rest,
+        ingredientId,
+        nutritionPer100g: nutrition,
+        dbState: state,
+      });
     } else {
       console.warn(
         `[matching] No nutrition data for matched ID "${info.foodCompositionId}" (${info.ingredientName})`

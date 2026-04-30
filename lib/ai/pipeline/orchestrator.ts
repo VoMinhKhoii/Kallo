@@ -28,6 +28,10 @@ import {
   nonFoodResponse,
 } from './errors';
 import { ensureIdsOnDecomposition, type MealDecompositionWithIds } from './ids';
+import {
+  type RawNutritionAdjustment,
+  reconcileNutritionIds,
+} from './nutrition';
 import { mealDecompositionSchema, nutritionAdjustmentSchema } from './schemas';
 import { buildLlmStageTrace, logStage } from './trace';
 import {
@@ -382,7 +386,7 @@ async function runPipeline(
         model: NUTRITION_MODEL,
       });
 
-      let result: NutritionAdjustment = await fetchWithTimeout(
+      let rawNutrition: RawNutritionAdjustment = await fetchWithTimeout(
         (signal) =>
           gemini.generateStructuredOutputStream(
             {
@@ -403,7 +407,7 @@ async function runPipeline(
       );
 
       // Early anomaly check: classify total calories before flush
-      const totalMidKcal = result.mealItems.reduce(
+      const totalMidKcal = rawNutrition.mealItems.reduce(
         (sum, mi) =>
           sum +
           mi.ingredients.reduce(
@@ -431,7 +435,7 @@ async function runPipeline(
         );
         // Reset streaming state so retry re-emits from scratch
         lastExtractedCount = 0;
-        result = await fetchWithTimeout(
+        rawNutrition = await fetchWithTimeout(
           (signal) =>
             gemini.generateStructuredOutputStream(
               {
@@ -452,7 +456,11 @@ async function runPipeline(
         );
       }
 
-      return result;
+      return reconcileNutritionIds(
+        rawNutrition,
+        decomposition,
+        matchResult.matched
+      );
     }
   );
 

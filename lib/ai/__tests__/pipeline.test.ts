@@ -206,20 +206,24 @@ describe('analyzeMeal', () => {
   it('D5: merges LLM 5 nutrients with DB mid values for remaining 23', async () => {
     mockLlmCalls(sampleDecomposition, sampleNutritionAdjustment);
 
-    mockMatchIngredients.mockResolvedValueOnce({
-      matched: [
-        {
-          ingredientName: 'Gạo',
-          foodCompositionId: 'rice-001',
-          matchedName: 'Gạo tẻ',
-          similarity: 0.85,
-          confidence: 'high',
-          nutritionPer100g: nullNutrition,
-          dbState: 'raw',
-        },
-      ],
-      unmatched: [],
-    });
+    mockMatchIngredients.mockImplementationOnce(
+      (ingredients: Array<{ name: string; ingredientId?: string }>) =>
+        Promise.resolve({
+          matched: [
+            {
+              ingredientId: ingredients[0]?.ingredientId,
+              ingredientName: 'Gạo',
+              foodCompositionId: 'rice-001',
+              matchedName: 'Gạo tẻ',
+              similarity: 0.85,
+              confidence: 'high',
+              nutritionPer100g: nullNutrition,
+              dbState: 'raw',
+            },
+          ],
+          unmatched: [],
+        })
+    );
 
     const result = await analyzeMeal(
       'cơm trắng 1 chén',

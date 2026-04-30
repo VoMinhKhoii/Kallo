@@ -114,6 +114,13 @@ export function normalizeBoundedEstimate(raw: {
  * All other nutrients (including fiber) pass through as DB mid values.
  */
 export const ingredientLlmNutritionSchema = z.object({
+  ingredientId: z
+    .string()
+    .uuid()
+    .optional()
+    .describe(
+      'Optional pass-through of the decomposition ingredientId; runtime reconciles by name when omitted.'
+    ),
   ingredientName: z
     .string()
     .describe('Must match the ingredient name from decomposition'),
@@ -124,6 +131,13 @@ export const ingredientLlmNutritionSchema = z.object({
 });
 
 export const mealItemNutritionSchema = z.object({
+  mealItemId: z
+    .string()
+    .uuid()
+    .optional()
+    .describe(
+      'Optional pass-through of the decomposition mealItemId; runtime reconciles by name when omitted.'
+    ),
   mealItemName: z
     .string()
     .describe('Must match the meal item name from decomposition'),

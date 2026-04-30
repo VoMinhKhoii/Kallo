@@ -103,14 +103,21 @@ export function assembleResult(
   userContext: UserContext
 ): PipelineResult {
   const { goal, aggression } = userContext;
-  const matchedLookup = new Map(matched.map((m) => [m.ingredientName, m]));
+  // Id-keyed lookup (§0.1): keying by ingredientName silently overwrites
+  // when the same display name appears in two dishes (e.g. "nước dùng" in
+  // pho and bún bò Huế). Skip entries without an id (interface allows
+  // optional; reconciled runtime output always carries one).
+  const matchedLookup = new Map<string, MatchedIngredient>();
+  for (const m of matched) {
+    if (m.ingredientId) matchedLookup.set(m.ingredientId, m);
+  }
 
-  // Flatten all Step 3 ingredients into a single map keyed by ingredientName::mealItemName.
-  // Composite key prevents last-write-wins when the same ingredient appears in multiple meal items.
+  // Composite key keyed by the run-scoped ingredientId; runtime guarantees
+  // uniqueness so no last-write-wins risk.
   const llmNutritionByKey = new Map<string, IngredientLlmNutrition>();
   for (const mi of nutrition.mealItems) {
     for (const ing of mi.ingredients) {
-      llmNutritionByKey.set(`${ing.ingredientName}::${mi.mealItemName}`, ing);
+      if (ing.ingredientId) llmNutritionByKey.set(ing.ingredientId, ing);
     }
   }
 
@@ -118,10 +125,13 @@ export function assembleResult(
     (decomposedItem) => {
       const ingredients: ProcessedIngredient[] = decomposedItem.ingredients.map(
         (ing) => {
-          const matchInfo = matchedLookup.get(ing.name);
-          const llmData = llmNutritionByKey.get(
-            `${ing.name}::${decomposedItem.name}`
-          );
+          const ingredientId = ing.ingredientId;
+          const matchInfo = ingredientId
+            ? matchedLookup.get(ingredientId)
+            : undefined;
+          const llmData = ingredientId
+            ? llmNutritionByKey.get(ingredientId)
+            : undefined;
 
           // estimatedGrams is the cooked/as-eaten weight (user-facing).
           // rawEquivalentGrams is used for DB nutrition scaling only.
