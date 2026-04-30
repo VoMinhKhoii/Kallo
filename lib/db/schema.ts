@@ -434,6 +434,7 @@ export const pipelineRequests = pgTable(
       .defaultNow(),
     promptVersionsUsed: jsonb('prompt_versions_used'),
     replayOfRequestId: uuid('replay_of_request_id'),
+    dryRun: boolean('dry_run').notNull().default(false),
   },
   (table) => [
     check(

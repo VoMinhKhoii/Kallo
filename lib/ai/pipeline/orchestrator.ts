@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto';
 import type { AppDb } from '@/lib/db';
 import { fetchWithTimeout } from '@/lib/fetch-with-timeout';
 import { capitalizeFirst } from '@/lib/utils';
-import type { GeminiCallTrace, GeminiClient } from '../gemini';
+import type { GeminiClient } from '../gemini';
 import { matchIngredients } from '../matching';
 import { createSpeculativeMatcher } from '../matching/speculative';
 import { buildDecompositionPrompt, buildNutritionPrompt } from '../prompts';
@@ -28,7 +28,7 @@ import {
   nonFoodResponse,
 } from './errors';
 import { mealDecompositionSchema, nutritionAdjustmentSchema } from './schemas';
-import { logStage, recordPromptVersion } from './trace';
+import { buildLlmStageTrace, logStage } from './trace';
 import {
   classifyAnomalies,
   detectAnomalies,
@@ -240,30 +240,14 @@ async function runPipeline(
     { rawInput },
     async ({ stageLogId }) => {
       const systemPrompt = buildDecompositionPrompt(userContext);
-      let promptVersionId = '';
-      if (traceContext) {
-        const pvId = await recordPromptVersion({
-          db: traceContext.db,
-          name: 'decomposition',
-          builder: buildDecompositionPrompt as (...a: unknown[]) => string,
-          templateSample: systemPrompt,
-          model: DECOMPOSITION_MODEL,
-        });
-        if (pvId) {
-          traceContext.promptVersionsUsed.set('decomposition', pvId);
-          promptVersionId = pvId;
-        }
-      }
-      const callTrace: GeminiCallTrace | undefined =
-        traceContext && promptVersionId
-          ? {
-              db: traceContext.db,
-              requestId: traceContext.requestId,
-              stageLogId,
-              promptVersionId,
-              promptRendered: systemPrompt,
-            }
-          : undefined;
+      const callTrace = await buildLlmStageTrace({
+        trace: traceContext,
+        stageLogId,
+        name: 'decomposition',
+        builder: buildDecompositionPrompt as (...a: unknown[]) => string,
+        templateSample: systemPrompt,
+        model: DECOMPOSITION_MODEL,
+      });
       return fetchWithTimeout(
         (signal) =>
           gemini.generateStructuredOutputStream(
@@ -386,30 +370,14 @@ async function runPipeline(
         matchResult.unmatched,
         userContext
       );
-      let promptVersionId = '';
-      if (traceContext) {
-        const pvId = await recordPromptVersion({
-          db: traceContext.db,
-          name: 'nutrition',
-          builder: buildNutritionPrompt as (...a: unknown[]) => string,
-          templateSample: systemPrompt,
-          model: NUTRITION_MODEL,
-        });
-        if (pvId) {
-          traceContext.promptVersionsUsed.set('nutrition', pvId);
-          promptVersionId = pvId;
-        }
-      }
-      const callTrace: GeminiCallTrace | undefined =
-        traceContext && promptVersionId
-          ? {
-              db: traceContext.db,
-              requestId: traceContext.requestId,
-              stageLogId,
-              promptVersionId,
-              promptRendered: systemPrompt,
-            }
-          : undefined;
+      const callTrace = await buildLlmStageTrace({
+        trace: traceContext,
+        stageLogId,
+        name: 'nutrition',
+        builder: buildNutritionPrompt as (...a: unknown[]) => string,
+        templateSample: systemPrompt,
+        model: NUTRITION_MODEL,
+      });
 
       let result: NutritionAdjustment = await fetchWithTimeout(
         (signal) =>

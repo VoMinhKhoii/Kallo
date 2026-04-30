@@ -143,7 +143,16 @@ export default async function RequestDetailPage({
             >
               {request.status}
             </span>
+            {request.dryRun && (
+              <span
+                className="inline-flex rounded bg-amber-100 px-2 py-1 font-medium text-amber-900 text-xs dark:bg-amber-900/30 dark:text-amber-200"
+                title="This request was created by a dry-run replay (mocked Gemini responses)."
+              >
+                DRY-RUN
+              </span>
+            )}
             <ReplayButton requestId={request.id} />
+            <ReplayButton requestId={request.id} dryRun />
           </div>
         </div>
 

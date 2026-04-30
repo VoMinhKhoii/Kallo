@@ -169,6 +169,13 @@
       "when": 1777491699814,
       "tag": "20260429194139_add_admin_pipeline_trace_tables",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1777567419459,
+      "tag": "20260430164339_add_dry_run_to_pipeline_requests",
+      "breakpoints": true
     }
   ]
 }

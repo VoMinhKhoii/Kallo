@@ -12,6 +12,8 @@ export interface LogPipelineStartArgs {
   requestId?: string;
   /** Marks the row as a dry-run replay of the given original request. */
   replayOfRequestId?: string;
+  /** When true, persists the row with dry_run=true (no real Gemini call). */
+  dryRun?: boolean;
 }
 
 /**
@@ -35,6 +37,7 @@ export async function logPipelineStart(
       ...(args.replayOfRequestId
         ? { replayOfRequestId: args.replayOfRequestId }
         : {}),
+      ...(args.dryRun ? { dryRun: true } : {}),
     })
     .catch((err) => {
       console.error('[pipeline-logging] Failed to create request log:', err);

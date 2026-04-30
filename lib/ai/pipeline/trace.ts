@@ -146,3 +146,59 @@ export function logLlmCall(a: LlmCallArgs): void {
 export function _resetPromptVersionCacheForTests() {
   cache.clear();
 }
+
+/**
+ * Minimal trace context shape consumed by buildLlmStageTrace. Mirrors a
+ * subset of orchestrator's AnalyzeMealTraceContext but is declared here to
+ * avoid a circular import.
+ */
+export interface BuildLlmStageTraceContext {
+  requestId: string;
+  db: AppDb;
+  promptVersionsUsed: Map<string, string>;
+}
+
+/**
+ * Build the GeminiCallTrace + matching promptVersionId promise for an LLM
+ * stage. Records the prompt version (cached on code-hash), tracks it in
+ * promptVersionsUsed, and returns the trace shape consumed by
+ * gemini.generateStructuredOutputStream.
+ *
+ * Returns `undefined` when `trace` is undefined OR tracing is disabled —
+ * keeping the call site free of conditional trace plumbing.
+ */
+export async function buildLlmStageTrace(args: {
+  trace: BuildLlmStageTraceContext | undefined;
+  stageLogId: string;
+  name: 'decomposition' | 'nutrition';
+  builder: (...a: unknown[]) => string;
+  templateSample: string;
+  model: string;
+}): Promise<
+  | {
+      db: AppDb;
+      requestId: string;
+      stageLogId: string;
+      promptVersionId: string;
+      promptRendered: string;
+    }
+  | undefined
+> {
+  if (!args.trace || !enabled()) return undefined;
+  const pvId = await recordPromptVersion({
+    db: args.trace.db,
+    name: args.name,
+    builder: args.builder,
+    templateSample: args.templateSample,
+    model: args.model,
+  });
+  if (!pvId) return undefined;
+  args.trace.promptVersionsUsed.set(args.name, pvId);
+  return {
+    db: args.trace.db,
+    requestId: args.trace.requestId,
+    stageLogId: args.stageLogId,
+    promptVersionId: pvId,
+    promptRendered: args.templateSample,
+  };
+}

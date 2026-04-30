@@ -3,7 +3,7 @@ import { eq } from 'drizzle-orm';
 import { redirect } from 'next/navigation';
 import { z } from 'zod';
 import { requireAdmin } from '@/lib/admin/require-admin';
-import { createGeminiClient } from '@/lib/ai/gemini';
+import { createGeminiClient, type GeminiClient } from '@/lib/ai/gemini';
 import {
   logPipelineStart,
   setPipelineFinalState,
@@ -11,13 +11,73 @@ import {
 import { analyzeMeal } from '@/lib/ai/pipeline/orchestrator';
 import type { UserContext } from '@/lib/ai/types';
 import { db } from '@/lib/db';
-import { pipelineRequests } from '@/lib/db/schema';
+import { pipelineLlmCalls, pipelineRequests } from '@/lib/db/schema';
 
 const idSchema = z.string().uuid();
 
-export async function replayRequest(originalIdInput: string) {
+/**
+ * Builds a mock GeminiClient that replays previously captured llm_call
+ * responses for `originalId`, in the order they were emitted (by createdAt).
+ * Used for dry-run replays so admins can re-exercise downstream stages
+ * (parsing, matching, assembly) without spending tokens.
+ *
+ * Embedding methods throw — dry-run is for the LLM-call surface only.
+ */
+async function buildDryRunGeminiClient(
+  originalId: string
+): Promise<GeminiClient> {
+  const captured = await db
+    .select({ responseRaw: pipelineLlmCalls.responseRaw })
+    .from(pipelineLlmCalls)
+    .where(eq(pipelineLlmCalls.requestId, originalId))
+    .orderBy(pipelineLlmCalls.createdAt);
+
+  const responses = captured
+    .map((r) => r.responseRaw)
+    .filter((r): r is string => typeof r === 'string' && r.length > 0);
+
+  if (responses.length === 0) {
+    throw new Error(
+      'dry-run replay requires captured LLM responses on the original request'
+    );
+  }
+
+  let cursor = 0;
+  const next = <T>(): T => {
+    if (cursor >= responses.length) {
+      throw new Error('dry-run replay ran out of captured responses');
+    }
+    const raw = responses[cursor++];
+    return JSON.parse(raw) as T;
+  };
+
+  return {
+    async generateStructuredOutput<T>(): Promise<T> {
+      return next<T>();
+    },
+    async generateStructuredOutputStream<T>(_params, opts): Promise<T> {
+      const value = next<T>();
+      // Surface the captured raw text via onChunk so streaming consumers
+      // observe a coherent (single-shot) accumulated state.
+      opts?.onChunk?.(JSON.stringify(value));
+      return value;
+    },
+    async generateEmbedding(): Promise<number[]> {
+      throw new Error('embeddings are not mocked in dry-run replay');
+    },
+    async generateEmbeddingBatch(): Promise<number[][]> {
+      throw new Error('embeddings are not mocked in dry-run replay');
+    },
+  };
+}
+
+export async function replayRequest(
+  originalIdInput: string,
+  options: { dryRun?: boolean } = {}
+) {
   const originalId = idSchema.parse(originalIdInput);
   const admin = await requireAdmin();
+  const dryRun = options.dryRun === true;
 
   const [orig] = await db
     .select({
@@ -30,10 +90,15 @@ export async function replayRequest(originalIdInput: string) {
     .limit(1);
   if (!orig) throw new Error('original request not found');
 
-  // Validate API key BEFORE creating any DB rows or doing further work
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) throw new Error('GEMINI_API_KEY missing');
-  const gemini = createGeminiClient(apiKey);
+  // Pick the Gemini client BEFORE creating any DB rows. For real replays
+  // this also validates GEMINI_API_KEY up-front.
+  const gemini: GeminiClient = dryRun
+    ? await buildDryRunGeminiClient(originalId)
+    : (() => {
+        const apiKey = process.env.GEMINI_API_KEY;
+        if (!apiKey) throw new Error('GEMINI_API_KEY missing');
+        return createGeminiClient(apiKey);
+      })();
 
   const replayId = crypto.randomUUID();
   const t0 = Date.now();
@@ -47,8 +112,11 @@ export async function replayRequest(originalIdInput: string) {
     db,
     requestId: replayId,
     replayOfRequestId: originalId,
+    dryRun,
   });
-  console.info(`[admin] ${admin.email} replayed ${originalId} as ${replayId}`);
+  console.info(
+    `[admin] ${admin.email} ${dryRun ? 'dry-run-replayed' : 'replayed'} ${originalId} as ${replayId}`
+  );
 
   const promptVersionsUsed = new Map<string, string>();
   let finalStatus: 'success' | 'error' = 'success';
