@@ -210,31 +210,30 @@ describe('error swallowing', () => {
       .spyOn(console, 'error')
       .mockImplementation(() => {});
 
-    const catchFn = vi.fn().mockImplementation((cb) => {
-      cb(new Error('boom'));
-    });
-    const values = vi.fn().mockReturnValue({ catch: catchFn });
+    const values = vi.fn().mockReturnValue(Promise.reject(new Error('boom')));
     const insert = vi.fn().mockReturnValue({ values });
-    const errDb = { insert, values, catch: catchFn } as unknown as AppDb & {
+    const errDb = { insert, values } as unknown as AppDb & {
       insert: MockInstance;
       values: MockInstance;
     };
 
-    expect(() =>
-      logLlmCall({
-        db: errDb,
-        requestId: 'req-1',
-        stageLogId: 'sl-1',
-        promptVersionId: 'pv-1',
-        model: 'gpt-4',
-        promptRendered: 'hello',
-        responseRaw: null,
-        inputTokens: null,
-        outputTokens: null,
-        latencyMs: 100,
-        attempt: 1,
-      })
-    ).not.toThrow();
+    logLlmCall({
+      db: errDb,
+      requestId: 'req-1',
+      stageLogId: 'sl-1',
+      promptVersionId: 'pv-1',
+      model: 'gpt-4',
+      promptRendered: 'hello',
+      responseRaw: null,
+      inputTokens: null,
+      outputTokens: null,
+      latencyMs: 100,
+      attempt: 1,
+    });
+
+    // logLlmCall is fire-and-forget — let the microtask queue drain so the
+    // rejection reaches the .catch() handler.
+    await new Promise((r) => setTimeout(r, 10));
 
     expect(consoleError).toHaveBeenCalledWith(
       '[trace] logLlmCall failed',
