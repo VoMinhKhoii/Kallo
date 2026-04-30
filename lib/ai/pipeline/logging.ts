@@ -35,18 +35,24 @@ export function logPipelineStart(
  * Fire-and-forget UPDATE to record pipeline outcome.
  * No-op if requestId is null (DB write failed during start).
  * Never blocks the response — all errors are caught and logged only.
+ *
+ * @param promptVersionsUsed - When non-null, persisted on the row so replays
+ *   can reproduce the exact prompt versions used in this request.
  */
 export function logPipelineEnd(
   requestId: string | null,
   status: 'success' | 'error',
   durationMs: number,
   db: PostgresJsDatabase<any>,
-  error?: string
+  error?: string,
+  promptVersionsUsed?: Record<string, string> | null
 ): void {
   if (!requestId) return;
 
+  const extra = promptVersionsUsed ? { promptVersionsUsed } : {};
+
   db.update(pipelineRequests)
-    .set({ status, durationMs, error: error ?? null })
+    .set({ status, durationMs, error: error ?? null, ...extra })
     .where(eq(pipelineRequests.id, requestId))
     .catch((err) => {
       console.error('[pipeline-logging] Failed to update request log:', err);
