@@ -1281,8 +1281,8 @@ In `lib/ai/pipeline/assembly.ts`:
 **How the runtime fills `ingredientId`** (Chunk 2 still owns the prompt rewrite, so in this chunk Call 2 results still arrive keyed only by `ingredientName`):
 
 - Make `ingredientId` `z.string().uuid().optional()` in the Zod schema for now (Chunk 3 will tighten this to required and remove `ingredientName`).
-- In the Call 2 caller (the function in `lib/ai/pipeline/` that invokes `generateObject` for nutrition — `nutrition.ts` per the spec citation `nutrition.ts:138-144`), after the response parses, reconcile by name lookup against the matched-ingredient list passed into the call. For each result, find the matching `MatchedIngredient` by `ingredientName` and copy its `ingredientId` onto the result. If a name appears in two matched ingredients (the very collision §0.1 fixes), throw with a clear error pointing at this code site — that is the bug we are surfacing, and it must not silently fall back to first-match. The thrown error is acceptable for this chunk because Chunk 2 will switch the prompt to emit ids directly, eliminating the reconciliation path entirely.
-- Add a unit test in `lib/ai/pipeline/__tests__/nutrition-reconcile.test.ts` covering: (a) happy path — name matches one matched ingredient, id is copied; (b) collision path — two matched ingredients with the same name throws; (c) no-match path — Call 2 returned a name that is not in the matched list throws.
+- In the Call 2 caller (the function in `lib/ai/pipeline/` that invokes `generateObject` for nutrition — `nutrition.ts` per the spec citation `nutrition.ts:138-144`), after the response parses, reconcile by name lookup against the matched-ingredient list passed into the call. For each result, find the matching `MatchedIngredient` by `ingredientName` and copy its `ingredientId` onto the result. If a name appears in two matched ingredients (the very collision §0.1 fixes), **fall back to first-match** and `console.warn` with `{ ingredientName, mealItemIds: [...], collisionCount }` so the collision is observable in logs without breaking the request. **Do not throw in the live request path** — Vietnamese meals legitimately repeat ingredient names across dishes ("nước dùng" in two soups, "dầu ăn" in two stir-fries), and a hard throw between this chunk and Chunk 2 would produce a regression window where valid inputs fail. Chunk 2 dissolves the reconciliation path entirely (the LLM emits `ingredientId` directly), so this transitional first-match is bounded.
+- Add a unit test in `lib/ai/pipeline/__tests__/nutrition-reconcile.test.ts` covering: (a) happy path — name matches one matched ingredient, id is copied; (b) collision path — two matched ingredients with the same name yields first-match + a `console.warn` call (assert via `vi.spyOn(console, 'warn')`); (c) no-match path — Call 2 returned a name that is not in the matched list throws (this *is* an LLM-output bug, not a name-collision, and is fine to throw on).
 
 - [ ] **Step 4: Run tests**
 
@@ -1541,13 +1541,18 @@ Expected: FAIL.
 
 - [ ] **Step 4: Add the ids to event payloads — and resolve the streaming-vs-post-parse ordering gap**
 
-The orchestrator emits `item_name` from inside the `composedOnChunk` streaming callback (via `extractMealItemNames(accumulated, …)`) **before** Call 1 parsing finishes — so before `ensureIdsOnDecomposition` (Task 1.9) has assigned `mealItemId`. The fix:
+The orchestrator emits `item_name` from inside the `composedOnChunk` streaming callback (via `extractMealItemNames(accumulated, …)`) **before** Call 1 parsing finishes — so before `ensureIdsOnDecomposition` (Task 1.9) has assigned `mealItemId`. The fix uses **occurrence-count keying**, not name keying, so duplicate display names across dishes ("cơm trắng" served twice, "rau muống xào" in two servings) each get a distinct id:
 
-1. Maintain a `Map<string /* mealItemName */, string /* mealItemId */>` inside the orchestrator scope, populated lazily by the streaming callback. When `extractMealItemNames` yields a new name, mint a fresh UUID, store it in the map, and emit `item_name` with that id.
-2. After the Call 1 stream completes and the JSON is parsed, **before** invoking `ensureIdsOnDecomposition`, walk the parsed `mealItems` and copy ids from the streaming map by `mealItemName` (exact match). Only items whose name was not seen during streaming (rare — JSON-parse-only tail) will reach `ensureIdsOnDecomposition` without an id and get one minted there.
+1. Maintain two maps in the orchestrator scope:
+   - `streamCounts: Map<string /* mealItemName */, number>` — increments on each *new occurrence* of a name observed in the stream.
+   - `streamIds: Map<string /* "${mealItemName}::${occurrenceIndex}" */, string /* mealItemId */>` — minted UUID per occurrence.
+
+   Each time `extractMealItemNames` reports a name not previously enqueued at the *current* occurrence index, increment `streamCounts[name]`, mint a UUID, store it under the composite key, and emit `item_name` with that id. (The streaming extractor already emits each name exactly once as it appears; the count map turns "second appearance of cơm trắng" into a distinct composite key, not a collision.)
+2. After Call 1 finishes and the JSON is parsed, **before** invoking `ensureIdsOnDecomposition`, walk the parsed `mealItems` in order and assign ids by composite key: for each item, increment a parallel `parseCounts[name]` and look up `streamIds["${name}::${parseCounts[name]}"]`. Hits inherit the streamed id; misses (name appeared only in the post-parse tail) fall through to `ensureIdsOnDecomposition` and get a fresh id.
 3. `ensureIdsOnDecomposition` MUST preserve any pre-existing `mealItemId` (already its contract per Task 1.9). Add a unit test confirming it does not regenerate ids on items that already have one.
+4. Extend the failing test in Step 2 with a *duplicate-name dish* fixture: a meal with two `cơm trắng` items. Assert (a) two distinct `mealItemId` values appear in the streamed `item_name` events, (b) those exact ids appear in the final `item_macros` events, (c) the post-parse `mealItems[]` carries the same two ids in order.
 
-This guarantees the third assertion in Step 2 (`item_name` ids ⊇ `item_macros` ids).
+This guarantees the third assertion in Step 2 (`item_name` ids ⊇ `item_macros` ids) **and** §0.1 invariance (no two distinct dishes ever share a `mealItemId`).
 
 Then, in `orchestrator.ts`, every `controller.enqueue(...)` (or equivalent emitter) for `item_name` and `item_macros` carries `mealItemId` and (for macros) `ingredientId`. Type the SSE event union accordingly.
 
@@ -3515,10 +3520,10 @@ function makePipelineResponse(args: any): PipelineResponse {
   const bn = (mid: number) => ({
     caloriesKcal: { low: mid * 0.9, mid, high: mid * 1.1 },
     proteinG: { low: 0, mid: 0, high: 0 },
-    carbsG: { low: 0, mid: 0, high: 0 },
+    carbohydrateG: { low: 0, mid: 0, high: 0 },
     fatG: { low: 0, mid: 0, high: 0 },
   });
-  const nv = { caloriesKcal: cal, proteinG: 0, carbsG: 0, fatG: 0 };
+  const nv = { caloriesKcal: cal, proteinG: 0, carbohydrateG: 0, fatG: 0 };
   return {
     success: true,
     data: {
@@ -3863,6 +3868,12 @@ function snapshot(r: PipelineResponse): ShadowOutputSnapshot {
     .map((i) => i.foodCompositionId)
     .filter((id): id is string => id !== null);
   const unmatchedNames = data.unmatchedIngredients.map((u) => u.ingredientName);
+  // Type-narrowing pin: `BoundedNutrition` is imported from `lib/ai/types.ts`.
+  // If the canonical field `carbohydrateG` is ever renamed (e.g., to `carbsG`),
+  // this assignment fails to compile, surfacing the typo instead of letting
+  // `bn.carbohydrateG.mid` silently resolve to `undefined.mid` at runtime
+  // (which would zero out every carb-divergence row in `pipeline_run_pairs`).
+  const bn: BoundedNutrition = data.boundedNutrition;
   return {
     success: true,
     matchedIds,
@@ -3876,7 +3887,10 @@ function snapshot(r: PipelineResponse): ShadowOutputSnapshot {
     total: {
       caloriesMid: data.boundedNutrition.caloriesKcal.mid,
       proteinMid: data.boundedNutrition.proteinG.mid,
-      carbsMid: data.boundedNutrition.carbsG.mid,
+      // CRITICAL: canonical field name is `carbohydrateG` (per `lib/ai/types.ts`
+      // `BoundedNutrition`). Pin via type narrowing below so a future rename
+      // breaks the build instead of silently zeroing carb divergence.
+      carbsMid: bn.carbohydrateG.mid,
       fatMid: data.boundedNutrition.fatG.mid,
     },
   };
@@ -5637,8 +5651,7 @@ describe('decomposedIngredientSchema (§2.1)', () => {
     ingredientId: 'ing_01HX...',
     rawName: 'cá lóc',
     canonicalName: 'Cá quả',
-    quantity: 200,
-    unit: 'g',
+    grams: 200,
     expectedState: 'cooked',
   };
 
@@ -5673,12 +5686,18 @@ describe('decomposedIngredientSchema (§2.1)', () => {
     ).toThrow();
   });
 
-  it('requires positive quantity', () => {
+  it('requires positive grams', () => {
     expect(() =>
-      decomposedIngredientSchema.parse({ ...valid, quantity: 0 })
+      decomposedIngredientSchema.parse({ ...valid, grams: 0 })
     ).toThrow();
     expect(() =>
-      decomposedIngredientSchema.parse({ ...valid, quantity: -5 })
+      decomposedIngredientSchema.parse({ ...valid, grams: -5 })
+    ).toThrow();
+  });
+
+  it('rejects a `unit` field (grams-only pipeline; LLM does the conversion)', () => {
+    expect(() =>
+      decomposedIngredientSchema.parse({ ...valid, unit: 'g' } as any)
     ).toThrow();
   });
 });
@@ -5694,16 +5713,14 @@ describe('decomposedDishSchema (§2.1)', () => {
         ingredientId: 'ing_01',
         rawName: 'thịt heo',
         canonicalName: 'Thịt lợn nạc',
-        quantity: 150,
-        unit: 'g',
+        grams: 150,
         expectedState: 'cooked',
       },
       {
         ingredientId: 'ing_02',
         rawName: 'bún',
         canonicalName: 'Bún tươi',
-        quantity: 200,
-        unit: 'g',
+        grams: 200,
         // expectedState omitted — derives from dish cookingMethod
       },
     ],
@@ -5777,8 +5794,7 @@ describe('mealDecompositionSchema (top-level)', () => {
               ingredientId: 'ing_01',
               rawName: 'thịt bò',
               canonicalName: 'Thịt bò',
-              quantity: 100,
-              unit: 'g',
+              grams: 100,
               expectedState: 'cooked',
             },
           ],
@@ -5841,14 +5857,12 @@ export const decomposedIngredientSchema = z
       .describe(
         'Disambiguated FCT-vocabulary name (e.g., "Cá quả" not "cá lóc"). Validated against FAO+USDA name set (§2.5).'
       ),
-    quantity: z
+    grams: z
       .number()
       .positive()
-      .describe('Quantity in `unit` units. Must be > 0.'),
-    unit: z
-      .string()
-      .min(1)
-      .describe('Unit string ("g", "ml", "miếng", "chén", ...). Free-form.'),
+      .describe(
+        'Mass in grams (must be > 0). The LLM is responsible for converting colloquial Vietnamese portions ("1 chén", "1 dĩa", "1 miếng cá", "1 lát bánh mì") to grams itself, using the supplied user cooking-habit context (fat level, region of origin/residence) and standard Vietnamese serving-size priors. The runtime accepts grams only — there is no unit-conversion layer, no `unit` field, and no `userFacingUnit`. Implausible values (`grams <= 0` is the only structural guard) trigger the `implausible_grams` anomaly and the parse-retry path. There is intentionally no upper-bound clamp; Vietnamese communal eating legitimately produces large per-ingredient grams (a 4-person hot pot can contain 600 g of beef).'
+      ),
     expectedState: z
       .enum(['raw', 'cooked'])
       .optional()
@@ -5920,55 +5934,44 @@ export type AmbiguityFlag = z.infer<typeof ambiguityFlagSchema>;
 
 Run the test. Expected: PASS.
 
-- [ ] **Step 4: Add a deferred-non-grams unit handler with telemetry**
+- [ ] **Step 4: Validate `grams` and add `implausible_grams` anomaly type**
 
-The schema replaces `estimatedGrams: number` with `quantity + unit: string`. Every nutrition/matching consumer downstream still expects grams. Full Vietnamese unit-conversion is out of scope for this chunk (separate work); for Chunk 6 we lock a **deferred fallback** with telemetry visibility:
+The schema enforces `grams > 0` via Zod `.positive()` (Step 2). When the model returns a value that fails this — e.g., `0`, a negative — the parse-retry path activates. Add an explicit `implausible_grams` anomaly type to the closed enum maintained by Chunk 1d's anomaly-detection module so the retry decision can attribute the cause distinctly from `parse_failed`.
 
-`lib/ai/pipeline/unit-conversion.ts` (NEW):
+In the anomaly-detection step (after Call 1 parses successfully):
 
 ```ts
-export interface UnitConversionResult {
-  grams: number;
-  fellBack: boolean; // true if unit was non-'g' and we treated quantity as grams
-  unit: string;
-}
-
-/**
- * Vietnamese cooking units. v1 only handles `g`; everything else is a
- * deferred fallback that increments unit_conversion_fallbacks telemetry.
- * Future work: full unit table for `ml | kg | miếng | chén | bát | lát | cái`.
- */
-export function toGrams(quantity: number, unit: string): UnitConversionResult {
-  const normalized = unit.trim().toLocaleLowerCase('vi-VN');
-  if (normalized === 'g' || normalized === 'gram' || normalized === 'grams') {
-    return { grams: quantity, fellBack: false, unit: normalized };
+for (const dish of decomposition.mealItems) {
+  for (const ing of dish.ingredients) {
+    if (ing.grams <= 0) {
+      anomalies.push('implausible_grams');
+      break;
+    }
   }
-  // Fallback: log + treat as grams. The decomposition prompt instructs the
-  // LLM to default `unit: 'g'` when ambiguous, so this path is the
-  // exception, not the norm. Spec §2.1 line 287 keeps unit free-form.
-  return { grams: quantity, fellBack: true, unit: normalized };
 }
 ```
 
-Test (`__tests__/unit-conversion.test.ts`): assert `g`/`gram`/`grams` return `fellBack: false`; `miếng`/`chén`/`ml` return `fellBack: true` with `grams === quantity`.
+> **Locked decision: no upper-bound clamp.** Vietnamese communal eating legitimately produces large per-ingredient grams (a 4-person hot pot can contain 600 g of beef). We do *not* enforce an upper cap; the lower bound (`grams > 0`) is the only structural guard. Outliers are caught by the macro-consistency invariant in §1.3, not here.
 
-Wire into the orchestrator post-decomposition: convert each ingredient's `quantity`/`unit` to grams, count `fellBack: true` cases, forward as `pipelineRunRow.unitConversionFallbacks` (add `unitConversionFallbacks: integer().notNull().default(0)` to `pipelineRuns` schema in this same commit; same Drizzle migration flow as Task 6.6 Step 2). Downstream code keeps consuming a single `grams` field — no API surface change.
+> **No `unit-conversion.ts` module, no `toGrams()` helper, no unit table, no `userFacingUnit`, and no `pipeline_runs.unit_conversion_fallbacks` column.** The LLM owns colloquial-portion → grams conversion, informed by the cooking-habit context wired into Task 6.2's prompt rewrite. The runtime accepts grams only. Display-side unit rendering (e.g., showing "≈ 1 chén" alongside "200 g" in the UI) is a separate UI concern owned by the rendering layer, not the pipeline.
+
+Test (`__tests__/anomaly-detection.test.ts`): assert that a decomposition with `grams: 0` on any ingredient yields `anomalies` containing `'implausible_grams'`; assert positive grams of any size do not.
 
 - [ ] **Step 5: Audit + delete consumers of the old shape**
 
 The old schema exposed `name`/`estimatedGrams`/`cookingMethod`/`userFacingUnit` directly on each ingredient. Every consumer needs an update. Run:
 
 ```bash
-grep -rn "decomposedIngredientSchema\|decomposedMealItemSchema\|estimatedGrams.*decomposed\|\.cookingMethod\b" lib/ai app components 2>&1 | grep -v __tests__
+grep -rn "decomposedIngredientSchema\|decomposedMealItemSchema\|estimatedGrams.*decomposed\|userFacingUnit\|\.cookingMethod\b" lib/ai app components 2>&1 | grep -v __tests__
 ```
 
 Update each call site:
 - `name` (ingredient) → `rawName` (display) + `canonicalName` (matching key)
-- `estimatedGrams` → `quantity` + `unit` (with runtime conversion in the matching layer)
-- `userFacingUnit` → `unit` (the schema now has it inline)
+- `estimatedGrams` → `grams` (single field, identical semantics; mechanical rename)
+- `userFacingUnit` → **remove entirely.** No replacement in the pipeline. Display-side renderings that previously formatted `userFacingUnit` either drop the unit suffix or compute it from a UI-side lookup of standard Vietnamese portion names — that's a UI follow-up tracked outside this chunk, not blocking this commit.
 - `decomposedMealItemSchema` → `decomposedDishSchema` (renamed)
 
-> **Note — `quantity`+`unit` is not 1:1 replacement for `estimatedGrams`.** The matching/nutrition path expects grams. Step 4 above adds the deferred-fallback helper; future work expands the unit table.
+> **Note — `grams` is a 1:1 rename of `estimatedGrams`.** The matching/nutrition path always expected grams. The schema change pushes the conversion responsibility upstream into the LLM (where it has cooking-habit context to inform colloquial-portion → grams) and removes the runtime conversion ambiguity entirely. There is no `unit` field anywhere downstream.
 
 - [ ] **Step 6: Run the suite + lint**
 
@@ -5984,17 +5987,18 @@ The full suite WILL fail in places — every consumer update is its own commit (
 ```bash
 git add lib/ai/pipeline/schemas.ts \
         lib/ai/pipeline/__tests__/schemas-decomposition.test.ts \
-        lib/ai/pipeline/unit-conversion.ts \
-        lib/ai/pipeline/__tests__/unit-conversion.test.ts \
-        lib/db/schema.ts \
-        supabase/migrations/
+        lib/ai/pipeline/anomaly-detection.ts \
+        lib/ai/pipeline/__tests__/anomaly-detection.test.ts
 git commit -m "feat(pipeline/schemas): dish-wrapped decomposition schema (§2.1)
 
 - DecomposedDish wraps ingredients with mealItemId + cookingMethod + cuisineNote.
-- DecomposedIngredient: ingredientId/rawName/canonicalName/quantity/unit/expectedState.
+- DecomposedIngredient: ingredientId/rawName/canonicalName/grams/expectedState.
+  Grams-only — LLM converts colloquial portions ('1 chén', '1 dĩa', '1 miếng')
+  to grams itself, using cooking-habit context. No unit field, no toGrams()
+  helper, no userFacingUnit, no unit_conversion_fallbacks column.
 - AmbiguityFlag closed enum.
 - .strict() rejects sourcePrior/sourceOverride (locked: removed entirely).
-- toGrams() deferred-fallback helper + pipeline_runs.unit_conversion_fallbacks counter.
+- implausible_grams anomaly fires when grams<=0; triggers retry path.
 - Bumps DECOMPOSITION_SCHEMA_VERSION (separate commit alongside Task 6.2).
 
 Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>"
@@ -6095,8 +6099,9 @@ Update the `buildDecompositionPrompt` function to:
 3. Add a `<canonical_names>` block describing the FCT vocabulary expectation.
 4. Add an `<expected_state>` block: "When the dish cookingMethod implies one state but a specific ingredient is in another (e.g., `bún` in `bún thịt nướng` is boiled while the meat is grilled), emit `expectedState: 'raw' | 'cooked'` on that ingredient. When the whole dish is uniform, omit it."
 5. Add a `<stable_ids>` block: "Emit `mealItemId` and `ingredientId` as ULIDs you generate. Reuse the same `ingredientId` if you re-emit the same ingredient on a retry. Do NOT use names as IDs."
-6. Add an `<ambiguity_flags>` block enumerating the four allowed values verbatim with one-line descriptions each.
-7. Re-import + re-export `DECOMPOSITION_PROMPT_VERSION` from `../pipeline/versions`. Bump to `'2.1.0'` (Chunk 1's `versions.ts` test will fail when this lands — update both in the same commit; spec versioning is the contract that lets §0.4 telemetry attribute distributional shifts).
+6. Add a `<grams_only>` block: "Always emit `grams` as a positive number. Convert colloquial Vietnamese portions ('1 chén cơm' → 200, '1 dĩa rau' → 150, '1 miếng cá' → 60, '1 lát bánh mì' → 30) to grams yourself, using the supplied cooking-habit context (fat level signals serving size; region signals portion priors) and standard Vietnamese serving-size priors. The runtime accepts grams only — there is **no `unit` field**, no unit-conversion layer, and no fallback. When the user is genuinely ambiguous about quantity, set `ambiguityFlags: ['unspecified_quantity']` and emit your best-estimate grams; do not emit `0` (the `implausible_grams` anomaly fires on `grams <= 0` and triggers a retry)."
+7. Add an `<ambiguity_flags>` block enumerating the four allowed values verbatim with one-line descriptions each.
+8. Re-import + re-export `DECOMPOSITION_PROMPT_VERSION` from `../pipeline/versions`. Bump to `'2.1.0'` (Chunk 1's `versions.ts` test will fail when this lands — update both in the same commit; spec versioning is the contract that lets §0.4 telemetry attribute distributional shifts).
 
 > **Sentinel test from Chunk 2.** The Principle A sentinel test (Chunk 2 Task 2.4 plan line ~2185) iterates all `UserContext` keys and asserts none leak into the prompt. That test continues to gate this rewrite.
 
@@ -6643,7 +6648,14 @@ it('aggregates ambiguityFlags into pipeline_runs telemetry (§2.6)', async () =>
 This column is **NOT** in Chunk 1d's `pipelineRuns` schema and is owned by Chunk 6. Add to `lib/db/schema.ts` inside the `pipelineRuns` table definition:
 
 ```ts
-ambiguityFlagCounts: jsonb('ambiguity_flag_counts').notNull().default({}),
+ambiguityFlagCounts: jsonb('ambiguity_flag_counts').notNull().default(sql`'{}'::jsonb`),
+// Use an explicit `'{}'::jsonb` cast (matching Chunk 1d's `text[]` default
+// pattern). Drizzle's object-literal default `{}` generates inconsistent SQL
+// across postgres-js adapter versions — sometimes `DEFAULT '{}'` without the
+// jsonb cast, which Supabase's strict parser may reject. The explicit cast is
+// portable and matches the `sql\`'{}'::text[]\`` pattern already used in
+// pipelineRuns. Verify `sql` is imported from `drizzle-orm` at the top of
+// `lib/db/schema.ts` (already required by Chunk 1d's `_fires` defaults).
 ```
 
 Then:
@@ -6698,7 +6710,7 @@ After all six tasks land:
 - [ ] `buildDecompositionPrompt` asks for `mealItemId`/`ingredientId`/`canonicalName`/`expectedState` (when it would differ)/`ambiguityFlags`. Sentinel test passes — no `goal | aggression | calorieTarget | bodyMetrics` leak.
 - [ ] `lib/ai/pipeline/cooking-method-state.ts` exports `COOKING_METHOD_STATE` + `deriveExpectedState`. Diacritic-strict (`'luoc'` misses; `'luộc'` hits).
 - [ ] `pipeline_runs.db_state_unknown_fires` populated for every meal that hits the `unknown` fallback.
-- [ ] `pipeline_runs.unit_conversion_fallbacks` (added by Chunk 6 in Task 6.1) populated for non-`g` units.
+- [ ] `implausible_grams` is a member of the anomaly-types closed enum and fires whenever any decomposed ingredient has `grams <= 0`. **No `unit_conversion_fallbacks` column exists** — the pipeline is grams-only and the LLM owns colloquial-portion → grams conversion (Task 6.2 prompt rewrite).
 - [ ] `pipeline_runs.ambiguity_flag_counts` JSONB column (added by Chunk 6 in Task 6.6) populated with per-flag counts.
 - [ ] `pickBestSource` accepts a `PickBestSourceContext` arg with `expectedState`. Tie-break order: state-match > similarity. Source preference is NOT a tie-breaker — verified by an explicit test that lower-similarity FAO loses to higher-similarity USDA when both states match.
 - [ ] `lib/ai/pipeline/canonical-name-validator.ts` exports `createCanonicalNameValidator`. Misses aggregate into `pipeline_runs.pre_match_alias_hits`.
@@ -7229,7 +7241,7 @@ bun db:generate
 # Update meta/_journal.json tag
 # Verify the new migration's timestamp sorts AFTER the Chunk 1d
 # `create pipeline_runs` migration AND the Chunk 6 telemetry-columns
-# migration (unit_conversion_fallbacks, ambiguity_flag_counts).
+# migration (ambiguity_flag_counts).
 # Reorder via _journal.json + filename rename if needed.
 ```
 
@@ -7383,7 +7395,7 @@ After all four tasks land:
 - [ ] `lib/ai/matching/rrf-sampling.ts` exports `shouldSampleForRrf(requestId)`. Off by default (`RRF_MEASUREMENT_ENABLED` unset). Deterministic per request. Statistical test passes (5% sample rate produces ~5% hits over 10k draws).
 - [ ] `lib/ai/matching/rrf-measurement.ts` exports `captureRrfCandidates(...)`. Returns normalized top-k of each list and the `topVectorEqualsTopFuzzy` flag. No PII (no `rawName`, `userId`, etc.).
 - [ ] `matchSingleIngredientWithEmbedding` runs fuzzy in parallel with vector ONLY when sampled. When the flag is off, zero behavioral change — verified by existing matching tests staying green without modification.
-- [ ] `pipeline_runs` has four new columns: `rrf_sampled` (bool, default false), `rrf_disagreement_count` (smallint, nullable), `rrf_ingredients_observed` (smallint, nullable), `rrf_measurement_latency_ms` (smallint, nullable). NULL means "not sampled."
+- [ ] `pipeline_runs` has four new columns: `rrf_sampled` (bool, default false), `rrf_disagreement_count` (smallint, nullable), `rrf_ingredients_observed` (smallint, nullable), `rrf_measurement_latency_ms` (**integer**, nullable — *not* smallint; under p99 DB stalls a single fuzzy parallel branch can exceed 32 s and would silently overflow smallint, matching the schema definition in Task 7.3 Step 1). NULL means "not sampled."
 - [ ] `aggregateRrfMeasurements([])` returns `{rrfSampled: false, ...nulls}` so unsampled runs persist NULLs cleanly.
 - [ ] `docs/superpowers/notes/rrf-phase-b-gate.md` documents the three Phase B gates (disagreement >= 5%, precision lift >= 2pp, latency p95 <= 30% budget).
 - [ ] Production cascade behavior unchanged when `RRF_MEASUREMENT_ENABLED` is unset (the default in production).
