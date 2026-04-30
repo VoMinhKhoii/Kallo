@@ -31,7 +31,7 @@ A parallel worktree (`/Users/khoivo/Documents/nham-admin-dashboard`, branch `fea
 
 | Descoped item | Original location | Replacement |
 |---|---|---|
-| `lib/ai/pipeline/versions.ts` SemVer constants | Task 1.1 | Read prompt version id from admin's `prompt_versions.id` (resolved at call site via `traceContext` from `lib/ai/pipeline/trace.ts`). The L4 cache key (Chunk 5) keys on `prompt_versions.code_hash` instead of a manually-bumped string. |
+| `lib/ai/pipeline/versions.ts` SemVer constants | Task 1.1 | Read prompt version id from admin's `prompt_versions.id` (resolved at call site via `traceContext` from `lib/ai/pipeline/trace.ts`). The L4 cache key (Chunk 5) keys on a per-request **rendered prompt hash** + a **schema fingerprint** + the **decomposition model id** (all computed locally, bundle-safe — see Chunk 5.4) instead of a manually-bumped string. |
 | `pipeline_runs.{decomposition,nutrition}_{prompt,schema}_version` columns | Task 1.2 schema, Task 1.13 row builder | Use `pipeline_requests.prompt_versions_used` (jsonb of `{ name → version_id }`). KPI queries in Chunk 4 join `pipeline_runs ↔ pipeline_requests ↔ prompt_versions`. |
 | `pipeline_runs.{decompose,match,nutrition}_ms` per-stage timing columns | Task 1.2 schema, Task 1.13 row builder | Admin's `pipeline_stage_logs.duration_ms` covers per-stage timing. Keep only `total_ms` on `pipeline_runs` for fast end-to-end percentile rollups. |
 | "Observable via telemetry" framing for the Chunk 2 §3 prompt rewrite | Chunk 2 prose | Admin's `pipeline_llm_calls.prompt_rendered + response_raw` is the canonical audit. Remove framing that implies our plan adds the audit; cite admin's tables instead. |
@@ -134,7 +134,12 @@ This plan creates and modifies the following files. Files that change together l
 >
 > Where downstream chunks previously referenced these constants, use these substitutes:
 > - **Telemetry attribution** (Chunk 1d, Chunk 4): join `pipeline_runs.request_id → pipeline_requests.id`, then read `pipeline_requests.prompt_versions_used` (jsonb of `{ name → prompt_version_id }`). Resolve `prompt_version_id → name + code_hash + git_sha` via the `prompt_versions` table.
-> - **L4 cache key** (Chunk 5): hash the prompt builder *source* + the schema module *source* directly via admin's `hashPromptBuilder(builder)` (synchronous SHA-256 over `builder.toString()`) computed once at module load. **Do not** use a DB-lookup helper — the cache key must be available before admin's `recordPromptVersion` has had a chance to insert a row, so DB-backed lookup would race on the first request after deploy. Schema source must be hashed *separately* from the prompt source because `hashPromptBuilder` only hashes the builder function body — schema-only edits in `lib/ai/pipeline/schemas.ts` do not change the builder string and would otherwise leave the cache key stale.
+> - **L4 cache key** (Chunk 5): hash four bundle-safe local inputs at the call site:
+>   1. The **rendered** decomposition prompt for the current allowlisted context (`buildDecompositionPrompt(ctx)` → SHA-256). This captures changes to the builder body **and** any imported helpers/constants (e.g. `RICE_PORTION_DESCRIPTION`, `buildPromptContextLine`) that a builder-source-only hash would miss. Per-request cost is negligible (~µs).
+>   2. The **schema fingerprint** computed once at module load via `JSON.stringify(zodToJsonSchema(decomposedMealItemSchema))` → SHA-256. JSON-Schema is bundle-safe (no `node:fs` or `import.meta.url`-relative file reads, which break under `output: 'standalone'`).
+>   3. The active **decomposition model id** (`MODEL_PROFILE.decompositionModel`). The L4 cache MUST partition by model so a `STABLE_PROFILE` → `NEXT_PROFILE` flip can't return decompositions produced by the old model under the new profile (Chunk 5.1).
+>   4. The allowlisted **decompositionContextHash** (existing).
+>   The decision was made in admin's worktree to also expose `hashPromptBuilder(builder)` (synchronous SHA-256 of `builder.toString()`) for prompt-version *attribution* in admin's `prompt_versions.code_hash`. We do NOT use it for the L4 cache key because it does not see imported helpers.
 > - **Schema version** (parse / retry attribution where it was previously used): not needed — admin's `pipeline_llm_calls.attempt` + `error` and our `pipeline_runs.retry_step2_count` together give the same attribution.
 
 ---
@@ -3205,7 +3210,7 @@ export const pipelineShadowRuns = pgTable('pipeline_shadow_runs', {
   // pinning analyses to a specific primary version.
   primaryRunId: uuid('primary_run_id'),
   // Versioning of the *candidate* (shadow) leg.
-  candidatePromptVersion: text('candidate_prompt_version').notNull(),
+  candidatePromptLabel: text('candidate_prompt_label').notNull(),
   candidateModel: text('candidate_model').notNull(),
   // Divergence inputs. Both legs are stored as compact JSON so divergence
   // queries can `jsonb_path_query` instead of a wide column zoo.
@@ -3291,7 +3296,7 @@ describe('pipelineShadowRuns Drizzle schema', () => {
     const cols = Object.keys(pipelineShadowRuns);
     for (const c of [
       'id', 'createdAt', 'requestId', 'primaryRunId',
-      'candidatePromptVersion', 'candidateModel',
+      'candidatePromptLabel', 'candidateModel',
       'primaryOutput', 'candidateOutput',
       'divergence', 'outcome', 'candidateMs',
     ]) {
@@ -3531,7 +3536,7 @@ describe('runShadow', () => {
     await runShadow({
       requestId: 'req-1',
       primary,
-      candidatePromptVersion: 'v3',
+      candidatePromptLabel: 'v3',
       candidateModel: 'gemini-2.5-pro',
       primaryRunId: 'run-1',
     }, deps);
@@ -3556,7 +3561,7 @@ describe('runShadow', () => {
     await runShadow({
       requestId: 'req-2',
       primary,
-      candidatePromptVersion: 'v3',
+      candidatePromptLabel: 'v3',
       candidateModel: 'gemini-2.5-pro',
     }, deps);
     const row = (deps.persistShadowRun as any).mock.calls[0][0];
@@ -3573,7 +3578,7 @@ describe('runShadow', () => {
     await runShadow({
       requestId: 'req-3',
       primary,
-      candidatePromptVersion: 'v3',
+      candidatePromptLabel: 'v3',
       candidateModel: 'gemini-2.5-pro',
     }, deps);
     const row = (deps.persistShadowRun as any).mock.calls[0][0];
@@ -3585,7 +3590,7 @@ describe('runShadow', () => {
     await expect(runShadow({
       requestId: 'req-4',
       primary,
-      candidatePromptVersion: 'v3',
+      candidatePromptLabel: 'v3',
       candidateModel: 'gemini-2.5-pro',
     }, deps)).resolves.toBeUndefined();
     const row = (deps.persistShadowRun as any).mock.calls[0][0];
@@ -3599,7 +3604,7 @@ describe('runShadow', () => {
     await runShadow({
       requestId: 'req-fail-cand',
       primary,
-      candidatePromptVersion: 'v3',
+      candidatePromptLabel: 'v3',
       candidateModel: 'gemini-2.5-pro',
     }, deps);
     const row = (deps.persistShadowRun as any).mock.calls[0][0];
@@ -3612,7 +3617,7 @@ describe('runShadow', () => {
     await expect(runShadow({
       requestId: 'req-fail-prim',
       primary: failedPrimary,
-      candidatePromptVersion: 'v3',
+      candidatePromptLabel: 'v3',
       candidateModel: 'gemini-2.5-pro',
     }, deps)).resolves.toBeUndefined();
     const row = (deps.persistShadowRun as any).mock.calls[0][0];
@@ -3625,7 +3630,7 @@ describe('runShadow', () => {
     await expect(runShadow({
       requestId: 'req-5',
       primary,
-      candidatePromptVersion: 'v3',
+      candidatePromptLabel: 'v3',
       candidateModel: 'gemini-2.5-pro',
     }, deps)).resolves.toBeUndefined();
   });
@@ -3662,7 +3667,7 @@ describe('runShadowAsync (guard wrapper)', () => {
       {
         requestId: 'req-abort',
         primary,
-        candidatePromptVersion: 'v3',
+        candidatePromptLabel: 'v3',
         candidateModel: 'gemini-2.5-pro',
       },
       deps,
@@ -3680,7 +3685,7 @@ describe('runShadowAsync (guard wrapper)', () => {
       {
         requestId: 'req-go',
         primary,
-        candidatePromptVersion: 'v3',
+        candidatePromptLabel: 'v3',
         candidateModel: 'gemini-2.5-pro',
       },
       deps,
@@ -3700,7 +3705,7 @@ describe('runShadowAsync (guard wrapper)', () => {
       {
         requestId: 'req-guard-err',
         primary,
-        candidatePromptVersion: 'v3',
+        candidatePromptLabel: 'v3',
         candidateModel: 'gemini-2.5-pro',
       },
       deps,
@@ -3757,7 +3762,7 @@ export interface ShadowRunnerInput {
   requestId: string;
   primary: PipelineResponse;
   primaryRunId?: string;
-  candidatePromptVersion: string;
+  candidatePromptLabel: string;
   candidateModel: string;
 }
 
@@ -3771,7 +3776,7 @@ export type ShadowOutcome =
 export interface ShadowRunPersistRow {
   requestId: string;
   primaryRunId: string | null;
-  candidatePromptVersion: string;
+  candidatePromptLabel: string;
   candidateModel: string;
   primaryOutput: ShadowOutputSnapshot;
   candidateOutput: ShadowOutputSnapshot | null;
@@ -3867,7 +3872,7 @@ export async function runShadow(
   const row: ShadowRunPersistRow = {
     requestId: input.requestId,
     primaryRunId: input.primaryRunId ?? null,
-    candidatePromptVersion: input.candidatePromptVersion,
+    candidatePromptLabel: input.candidatePromptLabel,
     candidateModel: input.candidateModel,
     primaryOutput: snapshot(input.primary),
     candidateOutput: candidate ? snapshot(candidate) : null,
@@ -3911,7 +3916,7 @@ export async function runShadowAsync(
     const row: ShadowRunPersistRow = {
       requestId: input.requestId,
       primaryRunId: input.primaryRunId ?? null,
-      candidatePromptVersion: input.candidatePromptVersion,
+      candidatePromptLabel: input.candidatePromptLabel,
       candidateModel: input.candidateModel,
       primaryOutput: snapshot(input.primary),
       candidateOutput: null,
@@ -4294,7 +4299,7 @@ export interface ShadowConfig {
   persistShadowRun: ShadowRunnerDeps['persistShadowRun'];
   guard?: ShadowGuard;
   /** Override defaults; production uses module-level `NUTRITION_*_CANDIDATE` constants. */
-  candidatePromptVersion?: string;
+  candidatePromptLabel?: string;
   candidateModel?: string;
 }
 
@@ -4314,8 +4319,8 @@ if (
       requestId,
       primary: response,
       primaryRunId: pipelineRunRowId, // see note below on .id availability
-      candidatePromptVersion:
-        shadowCfg.candidatePromptVersion ?? NUTRITION_PROMPT_VERSION_CANDIDATE,
+      candidatePromptLabel:
+        shadowCfg.candidatePromptLabel ?? NUTRITION_PROMPT_LABEL_CANDIDATE,
       candidateModel:
         shadowCfg.candidateModel ?? NUTRITION_MODEL_CANDIDATE,
     },
@@ -4345,7 +4350,7 @@ function defaultShadowConfigFromEnv(): ShadowConfig {
 2. Otherwise calls `runShadow(...)` with a `runCandidate` closure that re-runs the pipeline with the candidate versions/model. The candidate run uses a **separate `MATCH_CONCURRENCY` budget** — pass an explicit `concurrency` option through `matchIngredients` (see Step 3 below).
 3. Catches everything (including a failing `guard.shouldRun()`). Logs warn on failure. Never throws.
 
-`NUTRITION_PROMPT_VERSION_CANDIDATE` / `NUTRITION_MODEL_CANDIDATE`: module-local **opaque-label** constants, env-overridable, defaulting to the production values (so a flag-on-but-unconfigured shadow runner is a no-op pair). These are free-form strings used only to tag rows in `pipeline_shadow_runs` so a human can identify which candidate produced a row — they are NOT the admin worktree's `prompt_versions.id`. Tests override via `shadowCfg.candidatePromptVersion` / `shadowCfg.candidateModel`.
+`NUTRITION_PROMPT_LABEL_CANDIDATE` / `NUTRITION_MODEL_CANDIDATE`: module-local **opaque-label** constants, env-overridable, defaulting to the production values (so a flag-on-but-unconfigured shadow runner is a no-op pair). These are free-form strings used only to tag rows in `pipeline_shadow_runs` so a human can identify which candidate produced a row — they are NOT the admin worktree's `prompt_versions.id`. Tests override via `shadowCfg.candidatePromptLabel` / `shadowCfg.candidateModel`.
 
 - [ ] **Step 3: Cascade concurrency parameterization**
 
@@ -4403,7 +4408,7 @@ Add a new section at the bottom of `scripts/eval-kpis.sql`:
 -- 7. Macro-divergence histogram by candidate (model, prompt) pair.
 SELECT
   candidate_model,
-  candidate_prompt_version,
+  candidate_prompt_label,
   count(*)                                                AS n,
   avg((divergence->>'macroDeltaPct')::numeric)            AS mean_macro_delta,
   percentile_cont(0.95) WITHIN GROUP (
@@ -4483,7 +4488,7 @@ After Chunk 4 ships:
 >
 > **Locked decisions for Chunk 5:**
 > - **Adaptive routing keys are facts about THIS meal only.** Never user behavior, region, or goal (Principle B). Enforced by a TS structural-narrowness lint check + runtime guard.
-> - **L4 cache key includes the decomposition prompt's source hash** (admin worktree's `prompt_versions.code_hash`) plus an explicit `decompositionContextHash` allowlist. Any change to the prompt source — including a schema-shape change reflected in the prompt — auto-rolls the hash and invalidates the cache. Adding new prompt-conditioning context fields still requires extending the allowlist.
+> - **L4 cache key uses runtime-safe local hashes** of the rendered decomposition prompt (captures builder source AND imported helpers/constants like `RICE_PORTION_DESCRIPTION`), the decomposed-meal Zod schema's JSON-Schema fingerprint, and the active decomposition model id — plus an explicit `decompositionContextHash` allowlist over personalization fields. All four roll independently, so any of (prompt source change, imported helper change, schema-shape change, model swap, allowlisted-context change) invalidates the cache. Filesystem source reads are avoided so the key works in Next.js `output: 'standalone'`. Adding new prompt-conditioning context fields still requires extending the allowlist.
 > - **Cost guardrail:** alert if escalation rate > 20% over 24h (spec §4.2 line 392). Implemented as a KPI block in `eval-kpis.sql` + manual review (no automated alerting per locked decision #6).
 > - **Model upgrade ships behind a `PIPELINE_MODEL_PROFILE` env switch** (`stable` | `next`), so production can flip back to old constants in < 1 min without a redeploy. Default is `stable`.
 > - **`pickComputePolicy` is a pure function** — no IO, no clock, no env reads. Tests assert this with a no-network/no-fs sentinel.
@@ -5127,45 +5132,70 @@ describe('decompositionContextHash', () => {
 });
 
 describe('buildDecompositionCacheKey', () => {
-  it('includes raw input + context hash + prompt + schema source hashes', () => {
+  it('includes raw input + context hash + prompt + schema source hashes + model', () => {
     const key = buildDecompositionCacheKey({
       rawInput: 'phở bò',
       ctx,
       decompositionPromptHash: 'sha256:abc123',
       decompositionSchemaHash: 'sha256:schema-1',
+      decompositionModel: 'gemini-2.5-flash-lite',
     });
     expect(key).toMatch(/^l4:dec:/); // namespace prefix
     expect(key.length).toBeGreaterThan(40); // hash baked into the key
   });
 
-  it('changes when the prompt source hash changes', () => {
+  it('changes when the rendered prompt hash changes (builder source OR imported helpers)', () => {
+    // Captures both `buildDecompositionPrompt` body edits AND changes to
+    // imports it pulls in (e.g. RICE_PORTION_DESCRIPTION). The caller
+    // must hash the *rendered* prompt, not just the builder source.
     const a = buildDecompositionCacheKey({
       rawInput: 'phở bò', ctx,
       decompositionPromptHash: 'sha256:abc123',
       decompositionSchemaHash: 'sha256:schema-1',
+      decompositionModel: 'gemini-2.5-flash-lite',
     });
     const b = buildDecompositionCacheKey({
       rawInput: 'phở bò', ctx,
       decompositionPromptHash: 'sha256:def456',
       decompositionSchemaHash: 'sha256:schema-1',
+      decompositionModel: 'gemini-2.5-flash-lite',
     });
     expect(a).not.toBe(b);
   });
 
-  it('changes when the schema source hash changes (schema-only edit)', () => {
-    // Critical invariant: editing lib/ai/pipeline/schemas.ts without
+  it('changes when the schema fingerprint changes (schema-only edit)', () => {
+    // Critical invariant: editing the decomposed-meal Zod schema without
     // touching the prompt builder body must still invalidate the cache.
-    // hashPromptBuilder only sees builder.toString(), so we hash schema
-    // source independently and key on both.
+    // We hash the schema's JSON-Schema fingerprint independently.
     const a = buildDecompositionCacheKey({
       rawInput: 'phở bò', ctx,
       decompositionPromptHash: 'sha256:abc123',
       decompositionSchemaHash: 'sha256:schema-1',
+      decompositionModel: 'gemini-2.5-flash-lite',
     });
     const b = buildDecompositionCacheKey({
       rawInput: 'phở bò', ctx,
       decompositionPromptHash: 'sha256:abc123',
       decompositionSchemaHash: 'sha256:schema-2',
+      decompositionModel: 'gemini-2.5-flash-lite',
+    });
+    expect(a).not.toBe(b);
+  });
+
+  it('changes when the decomposition model changes (profile flip)', () => {
+    // STABLE_PROFILE → NEXT_PROFILE flip in Chunk 5.1 must NOT serve
+    // decompositions produced under the old model from the L4 cache.
+    const a = buildDecompositionCacheKey({
+      rawInput: 'phở bò', ctx,
+      decompositionPromptHash: 'sha256:abc123',
+      decompositionSchemaHash: 'sha256:schema-1',
+      decompositionModel: 'gemini-2.5-flash-lite',
+    });
+    const b = buildDecompositionCacheKey({
+      rawInput: 'phở bò', ctx,
+      decompositionPromptHash: 'sha256:abc123',
+      decompositionSchemaHash: 'sha256:schema-1',
+      decompositionModel: 'gemini-3.1-flash-lite-preview',
     });
     expect(a).not.toBe(b);
   });
@@ -5175,11 +5205,13 @@ describe('buildDecompositionCacheKey', () => {
       rawInput: '  Phở Bò  ', ctx,
       decompositionPromptHash: 'sha256:abc123',
       decompositionSchemaHash: 'sha256:schema-1',
+      decompositionModel: 'gemini-2.5-flash-lite',
     });
     const b = buildDecompositionCacheKey({
       rawInput: 'phở bò', ctx,
       decompositionPromptHash: 'sha256:abc123',
       decompositionSchemaHash: 'sha256:schema-1',
+      decompositionModel: 'gemini-2.5-flash-lite',
     });
     expect(a).toBe(b);
   });
@@ -5280,18 +5312,29 @@ function stableStringify(obj: unknown): string {
 export interface DecompositionCacheKeyInput {
   rawInput: string;
   ctx: Partial<PromptPersonalizationContext>;
-  // Source hash of the decomposition prompt builder, computed via admin's
-  // `hashPromptBuilder(buildDecompositionPrompt)` — pure SHA-256 over
-  // `builder.toString()`, no DB dependency, safe at module load.
+  // SHA-256 of the *rendered* decomposition prompt for the active
+  // context — `buildDecompositionPrompt(ctx)` then hash. We do NOT use
+  // admin's `hashPromptBuilder(builder)` here: it hashes only
+  // `builder.toString()`, missing changes to imported constants/helpers
+  // (e.g. `RICE_PORTION_DESCRIPTION`, `buildPromptContextLine`) that
+  // affect the rendered output. Hashing the rendered string captures
+  // builder source + transitive imports + applied context simultaneously.
+  // (admin's `hashPromptBuilder` is still used by admin's
+  // `recordPromptVersion` for the `prompt_versions.code_hash` audit
+  // column — different concern, different hash.)
   decompositionPromptHash: string;
-  // Source hash of `lib/ai/pipeline/schemas.ts` (or whichever module
-  // exports `decomposedIngredientSchema` / `decomposedMealItemSchema`).
-  // Hashed *separately* because `hashPromptBuilder` only sees the builder
-  // function body — a schema-only edit (e.g. tightening a Zod constraint
-  // in schemas.ts) does not change the builder string and would otherwise
-  // leave the L4 cache returning decompositions produced under the old
-  // schema. See Chunk 5 wiring snippet for how this is computed.
+  // SHA-256 of the decomposed-meal Zod schema's JSON-Schema fingerprint
+  // (e.g. via `zod-to-json-schema` or zod 4's built-in `.toJSONSchema()`).
+  // We do NOT use a filesystem source read here — `node:fs` +
+  // `import.meta.url` is fragile under Next.js `output: 'standalone'`
+  // (the original `.ts` file is not always present at the resolved
+  // path in the deployed bundle).
   decompositionSchemaHash: string;
+  // Active decomposition model id (e.g. `MODEL_PROFILE.decompositionModel`).
+  // L4 MUST partition by model so a STABLE_PROFILE → NEXT_PROFILE flip
+  // (Chunk 5.1) cannot return decompositions produced by the old model
+  // under the new profile.
+  decompositionModel: string;
 }
 
 export function normalizeRawInput(s: string): string {
@@ -5306,6 +5349,7 @@ export function buildDecompositionCacheKey(
     ctx: decompositionContextHash(input.ctx),
     pv: input.decompositionPromptHash,
     sv: input.decompositionSchemaHash,
+    mv: input.decompositionModel,
   });
   const hash = createHash('sha256').update(payload).digest('hex').slice(0, 32);
   return `l4:dec:${hash}`;
@@ -5372,33 +5416,34 @@ import {
   buildDecompositionCacheKey,
   createL4Cache,
 } from './decomposition-cache';
-// `hashPromptBuilder` is admin's pure source-hash helper:
-// `createHash('sha256').update(builder.toString()).digest('hex')`.
-// It is synchronous and has no DB dependency, so we can compute the
-// prompt+schema hashes once at module load and use them as cache-key
-// inputs *before* admin's `recordPromptVersion` has had a chance to
-// insert a row. (DB-backed lookup would race on the first request after
-// deploy.)
-import { hashPromptBuilder } from './trace';
+// Schema fingerprint computed once at module load via JSON-Schema —
+// bundle-safe (no node:fs / import.meta.url-relative file reads, which
+// break under Next.js `output: 'standalone'`). Use zod 4's built-in
+// `z.toJSONSchema(schema)` if available; otherwise the
+// `zod-to-json-schema` package. Stable JSON.stringify (sorted keys) is
+// important so trivial key-order shifts don't churn the hash.
+import { z } from 'zod';
+import { decomposedMealItemSchema } from './schemas';
 import { buildDecompositionPrompt } from '@/lib/ai/prompts/decomposition';
-// Hash the schema module source so schema-only edits invalidate the cache
-// even when the prompt builder body is unchanged. `import.meta.url` +
-// readFileSync is fine here because this runs once at module load on the
-// server. If you prefer to avoid filesystem I/O, replace with a
-// build-time-injected constant via a code-gen step — but the runtime
-// read is the simpler v1.
-import { readFileSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
+import { MODEL_PROFILE } from './model-profile';
 import { createHash } from 'node:crypto';
 
-const DECOMPOSITION_PROMPT_HASH = hashPromptBuilder(buildDecompositionPrompt);
+function stableStringify(value: unknown): string {
+  // Deterministic key order so JSON-Schema property reordering doesn't
+  // appear as a fingerprint change.
+  return JSON.stringify(value, (_k, v) =>
+    v && typeof v === 'object' && !Array.isArray(v)
+      ? Object.fromEntries(
+          Object.keys(v as Record<string, unknown>).sort().map(
+            (k) => [k, (v as Record<string, unknown>)[k]],
+          ),
+        )
+      : v,
+  );
+}
+
 const DECOMPOSITION_SCHEMA_HASH = createHash('sha256')
-  .update(
-    readFileSync(
-      fileURLToPath(new URL('./schemas.ts', import.meta.url)),
-      'utf8',
-    ),
-  )
+  .update(stableStringify(z.toJSONSchema(decomposedMealItemSchema)))
   .digest('hex');
 
 const L4_CACHE = createL4Cache<DecompositionResult>({
@@ -5407,11 +5452,24 @@ const L4_CACHE = createL4Cache<DecompositionResult>({
 });
 
 // In analyzeMeal, before calling the decomposition LLM:
+//
+// Render the prompt for the *current* allowlisted context, then hash
+// that. This captures changes to the builder body, transitive imports
+// (e.g. RICE_PORTION_DESCRIPTION, buildPromptContextLine), AND the
+// effective context simultaneously. Per-request cost is microseconds.
+const renderedDecompositionPrompt = buildDecompositionPrompt(
+  personalizationContext,
+);
+const decompositionPromptHash = createHash('sha256')
+  .update(renderedDecompositionPrompt)
+  .digest('hex');
+
 const cacheKey = buildDecompositionCacheKey({
   rawInput,
   ctx: personalizationContext,
-  decompositionPromptHash: DECOMPOSITION_PROMPT_HASH,
+  decompositionPromptHash,
   decompositionSchemaHash: DECOMPOSITION_SCHEMA_HASH,
+  decompositionModel: MODEL_PROFILE.decompositionModel,
 });
 
 const cached = L4_CACHE.get(cacheKey);
@@ -5450,9 +5508,11 @@ git add lib/ai/pipeline/decomposition-cache.ts \
 git commit -m "feat(pipeline): add L4 decomposition input cache (process-local LRU+TTL)
 
 Spec §4.3. Key includes raw input + decompositionContextHash (allowlisted
-fields only) + prompt source hash + schema source hash (hashed separately
-because hashPromptBuilder only sees builder.toString()). 7-day TTL. Cache
-hits recorded in pipeline_runs.cache_hit_l4.
+fields only) + rendered prompt hash (captures builder source AND
+imported helpers) + schema JSON-Schema fingerprint (bundle-safe, no fs
+reads) + decomposition model id (so a STABLE → NEXT profile flip
+partitions correctly). 7-day TTL. Cache hits recorded in
+pipeline_runs.cache_hit_l4.
 
 Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>"
 ```
