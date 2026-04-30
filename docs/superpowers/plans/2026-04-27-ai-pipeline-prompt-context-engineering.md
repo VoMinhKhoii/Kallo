@@ -1296,10 +1296,12 @@ Expected: full pipeline test directory passes.
 
 ```bash
 git add lib/ai/pipeline/assembly.ts \
+  lib/ai/pipeline/nutrition.ts \
   lib/ai/types.ts \
   lib/ai/pipeline/schemas.ts \
   lib/ai/matching/cascade.ts \
-  lib/ai/pipeline/__tests__/assembly.test.ts
+  lib/ai/pipeline/__tests__/assembly.test.ts \
+  lib/ai/pipeline/__tests__/nutrition-reconcile.test.ts
 git commit -m "fix(ai/pipeline): id-keyed lookups in assembly
 
 Spec §0.1 — Map<ingredientName, ...> overwrites silently when the same
@@ -3487,7 +3489,7 @@ Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>"
 
 ```ts
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { PipelineResponse } from '../../types';
+import type { BoundedNutrition, PipelineResponse } from '../../types';
 import {
   runShadow,
   runShadowAsync,
@@ -5686,12 +5688,26 @@ describe('decomposedIngredientSchema (§2.1)', () => {
     ).toThrow();
   });
 
-  it('requires positive grams', () => {
+  it('accepts grams: 0 and negatives at parse-time (anomaly layer owns implausibility)', () => {
+    // Locked decision: schema uses `.finite()`, NOT `.positive()`, so 0 and
+    // negative values successfully parse and reach Step 4's anomaly detection
+    // where they are classified as `implausible_grams` distinctly from
+    // `parse_failed`. See `__tests__/anomaly-detection.test.ts` for the
+    // anomaly-classification assertions.
     expect(() =>
       decomposedIngredientSchema.parse({ ...valid, grams: 0 })
-    ).toThrow();
+    ).not.toThrow();
     expect(() =>
       decomposedIngredientSchema.parse({ ...valid, grams: -5 })
+    ).not.toThrow();
+  });
+
+  it('rejects NaN / Infinity grams (structural corruption, parse_failed path)', () => {
+    expect(() =>
+      decomposedIngredientSchema.parse({ ...valid, grams: Number.NaN })
+    ).toThrow();
+    expect(() =>
+      decomposedIngredientSchema.parse({ ...valid, grams: Number.POSITIVE_INFINITY })
     ).toThrow();
   });
 
@@ -5859,9 +5875,9 @@ export const decomposedIngredientSchema = z
       ),
     grams: z
       .number()
-      .positive()
+      .finite()
       .describe(
-        'Mass in grams (must be > 0). The LLM is responsible for converting colloquial Vietnamese portions ("1 chén", "1 dĩa", "1 miếng cá", "1 lát bánh mì") to grams itself, using the supplied user cooking-habit context (fat level, region of origin/residence) and standard Vietnamese serving-size priors. The runtime accepts grams only — there is no unit-conversion layer, no `unit` field, and no `userFacingUnit`. Implausible values (`grams <= 0` is the only structural guard) trigger the `implausible_grams` anomaly and the parse-retry path. There is intentionally no upper-bound clamp; Vietnamese communal eating legitimately produces large per-ingredient grams (a 4-person hot pot can contain 600 g of beef).'
+        'Mass in grams. The LLM is responsible for converting colloquial Vietnamese portions ("1 chén", "1 dĩa", "1 miếng cá", "1 lát bánh mì") to grams itself, using the supplied user cooking-habit context (fat level, region of origin/residence) and standard Vietnamese serving-size priors. The runtime accepts grams only — there is no unit-conversion layer, no `unit` field, and no `userFacingUnit`. **Note on bounds:** the schema deliberately uses `.finite()` (not `.positive()`) so that values of `0` or negative reach Step 4 anomaly detection and route to the `implausible_grams` retry path with a distinct attribution from `parse_failed`. NaN/Infinity are still rejected at parse. There is intentionally no upper-bound clamp; Vietnamese communal eating legitimately produces large per-ingredient grams (a 4-person hot pot can contain 600 g of beef) — outliers are caught downstream by the macro-consistency invariant in §1.3.'
       ),
     expectedState: z
       .enum(['raw', 'cooked'])
@@ -5936,7 +5952,7 @@ Run the test. Expected: PASS.
 
 - [ ] **Step 4: Validate `grams` and add `implausible_grams` anomaly type**
 
-The schema enforces `grams > 0` via Zod `.positive()` (Step 2). When the model returns a value that fails this — e.g., `0`, a negative — the parse-retry path activates. Add an explicit `implausible_grams` anomaly type to the closed enum maintained by Chunk 1d's anomaly-detection module so the retry decision can attribute the cause distinctly from `parse_failed`.
+The schema (Step 2) uses `z.number().finite()` rather than `.positive()` precisely so that `grams <= 0` parses successfully and reaches this anomaly-detection layer with a distinct attribution from `parse_failed`. (NaN / Infinity are still rejected at parse — those are structural-corruption signals, not implausible-value signals, so they correctly route to `parse_failed` retry.) Add an explicit `implausible_grams` anomaly type to the closed enum maintained by Chunk 1d's anomaly-detection module.
 
 In the anomaly-detection step (after Call 1 parses successfully):
 
@@ -5955,7 +5971,7 @@ for (const dish of decomposition.mealItems) {
 
 > **No `unit-conversion.ts` module, no `toGrams()` helper, no unit table, no `userFacingUnit`, and no `pipeline_runs.unit_conversion_fallbacks` column.** The LLM owns colloquial-portion → grams conversion, informed by the cooking-habit context wired into Task 6.2's prompt rewrite. The runtime accepts grams only. Display-side unit rendering (e.g., showing "≈ 1 chén" alongside "200 g" in the UI) is a separate UI concern owned by the rendering layer, not the pipeline.
 
-Test (`__tests__/anomaly-detection.test.ts`): assert that a decomposition with `grams: 0` on any ingredient yields `anomalies` containing `'implausible_grams'`; assert positive grams of any size do not.
+Test (`__tests__/anomaly-detection.test.ts`): assert that a successfully-parsed decomposition with `grams: 0` on any ingredient yields `anomalies` containing `'implausible_grams'` (this is the path that exercises Step 4 — confirms `.finite()` lets 0 through and that anomaly classification fires); assert that `grams: -5` likewise produces `'implausible_grams'`; assert positive grams of any size do not. Add a separate parse-layer test asserting that `grams: NaN` and `grams: Infinity` *fail* Zod parse (those are `parse_failed`, not `implausible_grams`).
 
 - [ ] **Step 5: Audit + delete consumers of the old shape**
 
