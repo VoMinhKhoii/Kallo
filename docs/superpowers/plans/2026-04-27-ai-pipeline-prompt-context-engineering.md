@@ -4,7 +4,7 @@
 
 **Goal:** Land the seven-phase quality/correctness/reliability layer described in `docs/superpowers/specs/2026-04-27-ai-pipeline-prompt-context-engineering-design.md` on top of the v2 latency pipeline — without touching `pipeline_llm_outputs` (owned by the debug-dashboard worktree).
 
-**Architecture:** Foundations first (stable IDs, DB-state propagation, `pipeline_runs` telemetry, privacy reckoning on `pipeline_requests`), then a type-safe prompt rewrite, then absolute-macro schema + validators, then post-launch shadow-runner infra, then adaptive-compute, then dish-wrapped decomposition, then RRF measurement. Each phase is independently shippable and reversible. The LLM emits absolute final macros (no factor schema); deterministic code applies goal/aggression preferences and validates physical-consistency invariants. Prompt/schema versioning is **descoped** — the L4 cache and shadow runner key on source hashes computed via admin's `hashPromptBuilder`, and prompt-version attribution lives in admin's `prompt_versions` registry.
+**Architecture:** Foundations first (stable IDs, DB-state propagation, `pipeline_runs` telemetry, privacy reckoning on `pipeline_requests`), then a type-safe prompt rewrite, then absolute-macro schema + validators, then post-launch shadow-runner infra, then adaptive-compute, then dish-wrapped decomposition, then RRF measurement. Each phase is independently shippable and reversible. The LLM emits absolute final macros (no factor schema); deterministic code applies goal/aggression preferences and validates physical-consistency invariants. Prompt/schema versioning is **descoped** — the L4 cache keys on a per-request rendered-prompt hash + a Zod-derived JSON-Schema fingerprint + the active decomposition model id (all bundle-safe locals; admin's `hashPromptBuilder` is *only* used for `prompt_versions.code_hash` attribution, not cache invalidation), and prompt-version attribution lives in admin's `prompt_versions` registry.
 
 **Tech Stack:** Next.js 15 App Router, Drizzle ORM (`postgres-js`), Supabase (Postgres + RLS + pg_trgm + pgvector), `@google/generative-ai` (Gemini), Vitest, Biome 2.4.2, Zod, Bun runtime/test runner. Conventional commits with `Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>` trailer.
 
@@ -122,7 +122,7 @@ This plan creates and modifies the following files. Files that change together l
 
 **Spec sections:** §0.4 `pipeline_runs` table · §0.5 / Decision A — `pipeline_requests` privacy reckoning.
 
-**Why first:** Pure additive infra with no behavior coupling. The `pipeline_runs` table is the substrate for KPI rollups (Chunk 4). Decision A closes the privacy story §5 depends on. (Prompt/schema versioning has been descoped — see coordination note above; the L4 cache and shadow runner derive source hashes via admin's `hashPromptBuilder`.)
+**Why first:** Pure additive infra with no behavior coupling. The `pipeline_runs` table is the substrate for KPI rollups (Chunk 4). Decision A closes the privacy story §5 depends on. (Prompt/schema versioning has been descoped — see coordination note above; the L4 cache derives invalidation inputs from a per-request rendered-prompt hash + JSON-Schema fingerprint + active model id, and the shadow runner tags rows with an opaque `candidatePromptLabel`.)
 
 **Outcome:** New `pipeline_runs` table with RLS; `pipeline_requests` locked down with TTL + service-role RLS; no orchestrator behavior change.
 
@@ -136,7 +136,7 @@ This plan creates and modifies the following files. Files that change together l
 > - **Telemetry attribution** (Chunk 1d, Chunk 4): join `pipeline_runs.request_id → pipeline_requests.id`, then read `pipeline_requests.prompt_versions_used` (jsonb of `{ name → prompt_version_id }`). Resolve `prompt_version_id → name + code_hash + git_sha` via the `prompt_versions` table.
 > - **L4 cache key** (Chunk 5): hash four bundle-safe local inputs at the call site:
 >   1. The **rendered** decomposition prompt for the current allowlisted context (`buildDecompositionPrompt(ctx)` → SHA-256). This captures changes to the builder body **and** any imported helpers/constants (e.g. `RICE_PORTION_DESCRIPTION`, `buildPromptContextLine`) that a builder-source-only hash would miss. Per-request cost is negligible (~µs).
->   2. The **schema fingerprint** computed once at module load via `JSON.stringify(zodToJsonSchema(decomposedMealItemSchema))` → SHA-256. JSON-Schema is bundle-safe (no `node:fs` or `import.meta.url`-relative file reads, which break under `output: 'standalone'`).
+>   2. The **schema fingerprint** computed once at module load via `stableStringify(z.toJSONSchema(mealDecompositionSchema))` → SHA-256 (Zod 4's built-in JSON-Schema export). We hash the *root* `mealDecompositionSchema` actually passed to Gemini at Call 1 — not just the inner `decomposedMealItemSchema` — so top-level shape changes (e.g. `isFood`, `mealSlot`) also invalidate the cache. JSON-Schema is bundle-safe (no `node:fs` or `import.meta.url`-relative file reads, which break under `output: 'standalone'`).
 >   3. The active **decomposition model id** (`MODEL_PROFILE.decompositionModel`). The L4 cache MUST partition by model so a `STABLE_PROFILE` → `NEXT_PROFILE` flip can't return decompositions produced by the old model under the new profile (Chunk 5.1).
 >   4. The allowlisted **decompositionContextHash** (existing).
 >   The decision was made in admin's worktree to also expose `hashPromptBuilder(builder)` (synchronous SHA-256 of `builder.toString()`) for prompt-version *attribution* in admin's `prompt_versions.code_hash`. We do NOT use it for the L4 cache key because it does not see imported helpers.
@@ -3209,7 +3209,10 @@ export const pipelineShadowRuns = pgTable('pipeline_shadow_runs', {
   // The primary run that this shadow was paired against. Useful for
   // pinning analyses to a specific primary version.
   primaryRunId: uuid('primary_run_id'),
-  // Versioning of the *candidate* (shadow) leg.
+  // Opaque label identifying the candidate prompt/config used for the
+  // shadow leg. Free-form string (e.g. "v3-cooked-state-prompt") — NOT
+  // an admin `prompt_versions.id`. Used only to tag rows for
+  // human-readable filtering in divergence queries.
   candidatePromptLabel: text('candidate_prompt_label').notNull(),
   candidateModel: text('candidate_model').notNull(),
   // Divergence inputs. Both legs are stored as compact JSON so divergence
@@ -5323,12 +5326,15 @@ export interface DecompositionCacheKeyInput {
   // `recordPromptVersion` for the `prompt_versions.code_hash` audit
   // column — different concern, different hash.)
   decompositionPromptHash: string;
-  // SHA-256 of the decomposed-meal Zod schema's JSON-Schema fingerprint
-  // (e.g. via `zod-to-json-schema` or zod 4's built-in `.toJSONSchema()`).
-  // We do NOT use a filesystem source read here — `node:fs` +
-  // `import.meta.url` is fragile under Next.js `output: 'standalone'`
-  // (the original `.ts` file is not always present at the resolved
-  // path in the deployed bundle).
+  // SHA-256 of the *root* `mealDecompositionSchema` (the schema actually
+  // passed to Gemini in `orchestrator.ts:163`) rendered as JSON-Schema
+  // via Zod 4's built-in `z.toJSONSchema(schema)`. We hash the root
+  // schema — not the inner `decomposedMealItemSchema` — so top-level
+  // shape changes (e.g. `isFood`, `mealSlot`, required fields) also
+  // invalidate the cache. We do NOT use a filesystem source read here:
+  // `node:fs` + `import.meta.url` is fragile under Next.js
+  // `output: 'standalone'` (the original `.ts` file is not always
+  // present at the resolved path in the deployed bundle).
   decompositionSchemaHash: string;
   // Active decomposition model id (e.g. `MODEL_PROFILE.decompositionModel`).
   // L4 MUST partition by model so a STABLE_PROFILE → NEXT_PROFILE flip
@@ -5416,14 +5422,18 @@ import {
   buildDecompositionCacheKey,
   createL4Cache,
 } from './decomposition-cache';
-// Schema fingerprint computed once at module load via JSON-Schema —
-// bundle-safe (no node:fs / import.meta.url-relative file reads, which
-// break under Next.js `output: 'standalone'`). Use zod 4's built-in
-// `z.toJSONSchema(schema)` if available; otherwise the
-// `zod-to-json-schema` package. Stable JSON.stringify (sorted keys) is
+// Schema fingerprint computed once at module load via Zod 4's built-in
+// `z.toJSONSchema(schema)` (this repo pins zod ^4.3.6, so the API is
+// available without an extra dependency). Bundle-safe — no node:fs /
+// import.meta.url-relative file reads, which break under Next.js
+// `output: 'standalone'`. Stable JSON.stringify (sorted keys) is
 // important so trivial key-order shifts don't churn the hash.
+//
+// Hash the ROOT `mealDecompositionSchema` (passed to Gemini in
+// orchestrator.ts), NOT just `decomposedMealItemSchema` — top-level
+// fields like `isFood`/`mealSlot` must also invalidate the cache.
 import { z } from 'zod';
-import { decomposedMealItemSchema } from './schemas';
+import { mealDecompositionSchema } from './schemas';
 import { buildDecompositionPrompt } from '@/lib/ai/prompts/decomposition';
 import { MODEL_PROFILE } from './model-profile';
 import { createHash } from 'node:crypto';
@@ -5443,7 +5453,7 @@ function stableStringify(value: unknown): string {
 }
 
 const DECOMPOSITION_SCHEMA_HASH = createHash('sha256')
-  .update(stableStringify(z.toJSONSchema(decomposedMealItemSchema)))
+  .update(stableStringify(z.toJSONSchema(mealDecompositionSchema)))
   .digest('hex');
 
 const L4_CACHE = createL4Cache<DecompositionResult>({
@@ -5665,6 +5675,7 @@ After all six tasks land, the following must be true:
 - [ ] Compile-time: `_AssertExhaustiveKeys` in `compute-policy.ts` keeps `MealFactsForComputePolicy` and `MEAL_FACTS_KEYS` mutually exhaustive — adding a key to either without the other fails `tsc`.
 - [ ] Runtime: orchestrator throws in non-production if `Object.keys(facts)` drifts from `MEAL_FACTS_KEYS`.
 - [ ] `lib/ai/pipeline/decomposition-cache.ts` exports `buildDecompositionCacheKey` and `createL4Cache`. The key includes `decompositionContextHash(ctx)` over the **3 allowlisted fields only** (rubber-duck #16 test passes).
+- [ ] **Orchestrator wiring regression test** (`lib/ai/pipeline/__tests__/orchestrator-l4-wiring.test.ts`): mock `buildDecompositionPrompt(ctx)` to return a known string; run the decomposition path with L4 enabled; assert (a) the value passed as `decompositionPromptHash` to `buildDecompositionCacheKey` equals `sha256(renderedPrompt)` (NOT `sha256(buildDecompositionPrompt.toString())` — pass-2 regression guard), and (b) the same rendered string is what gets sent to Gemini as `systemPrompt` (so the hashed prompt and actually-sent prompt cannot diverge).
 - [ ] `pipeline_runs.cache_hit_l4` is populated truthfully on each run. `pipeline_runs.model_call2` records the actual model used for Call 2 (including escalation).
 - [ ] `scripts/eval-kpis.sql` has KPI blocks 7 (24h escalation rate) and 8 (7-day step-2 retry rate) appended.
 - [ ] No new behavior under `STABLE_PROFILE` — existing orchestrator tests pass without modification (proves §4 is additive).
@@ -5685,7 +5696,7 @@ After all six tasks land, the following must be true:
 > - **`canonicalName` validation is aggregate-not-per-user** — the failure data feeds `pre_match_alias_hits` for alias-retirement decisions, never per-user behavior tracking. Spec §2.5 line 335.
 > - **`ambiguityFlags` is logged but not a routing input** — Principle B keeps this read-only at decomposition time. Spec §2.6 line 350.
 > - **Stable IDs from §0.1 (Chunk 1a) are a hard prerequisite** — `mealItemId` and `ingredientId` MUST be on the LLM output (not generated server-side) so retry-pass overwrite by `ingredientId` (§4.4 streaming) is correct.
-> - **Schema-version attribution is automatic** — admin worktree's `prompt_versions` table source-hashes both the prompt text and the schema-derived JSON shape. Any change to `decomposedDishSchema` mutates the prompt's instructions block and rolls the hash, so attribution lands in `pipeline_requests.prompt_versions_used` without a manual bump in this plan. (See Coordination section.)
+> - **Schema-version attribution is automatic** — admin worktree's `prompt_versions` table source-hashes both the prompt text and the schema-derived JSON shape (via `hashPromptBuilder` of the registered builder). Any change to `decomposedDishSchema` mutates the prompt's instructions block and rolls admin's audit hash, so attribution lands in `pipeline_requests.prompt_versions_used` without a manual bump in this plan. (Note: this is the *audit* hash. The L4 cache uses a separate per-request rendered-prompt hash + JSON-Schema fingerprint + model id — see Chunk 5.4 — because builder-source hashing alone misses imported-helper changes.)
 
 ### Task 6.1: Rewrite `decomposedIngredientSchema` and `decomposedMealItemSchema` (Zod)
 
