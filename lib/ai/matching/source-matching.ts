@@ -45,12 +45,20 @@ export interface FuzzyMatchRow {
  * Lightweight match result carrying only match metadata (no nutrition).
  * Used internally to decouple matching from nutrition fetching.
  */
+export type DbIngredientState = 'raw' | 'cooked' | 'unknown';
+
+function normalizeState(raw: string | null | undefined): DbIngredientState {
+  if (raw === 'raw' || raw === 'cooked') return raw;
+  return 'unknown';
+}
+
 export interface MatchInfo {
   ingredientName: string;
   foodCompositionId: string;
   matchedName: string;
   similarity: number;
   confidence: MatchConfidence;
+  state: DbIngredientState;
 }
 
 /**
@@ -85,6 +93,7 @@ export function buildMatchResult(
     matchedName: topMatch.name_primary,
     similarity: topMatch.similarity,
     confidence: classifyConfidence(topMatch.similarity),
+    state: normalizeState(topMatch.state),
   };
 }
 
