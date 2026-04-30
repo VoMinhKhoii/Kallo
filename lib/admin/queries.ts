@@ -22,7 +22,12 @@ import {
 // ─── Filters schema ───────────────────────────────────────────────────────────
 
 export const requestFiltersSchema = z.object({
-  status: z.enum(['pending', 'success', 'error']).optional(),
+  status: z
+    .union([
+      z.enum(['pending', 'success', 'error']),
+      z.literal('all').transform(() => undefined),
+    ])
+    .optional(),
   userId: z.string().uuid().optional(),
   dateFrom: z.coerce.date().optional(),
   dateTo: z.coerce.date().optional(),
@@ -218,85 +223,85 @@ export async function healthAggregates(db: AppDb): Promise<HealthAggregates> {
 
   const now = new Date();
   const minus24h = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+  const minus7d = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
   const minus30d = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
 
-  // Use interval-based bucketing (no date params) to avoid postgres.js
-  // sending JS Date as text inside raw sql templates, and to keep the SELECT
-  // and GROUP BY expressions textually identical (Postgres GROUP BY by
-  // expression requires identical SQL — Drizzle qualifies columns differently
-  // in select vs groupBy contexts, breaking equality).
-  const windowExpr = sql`case
-          when now() - ${pipelineRequests.createdAt} < interval '24 hours' then '24h'
-          when now() - ${pipelineRequests.createdAt} < interval '7 days'  then '7d'
-          else '30d'
-        end`;
+  // Single-row aggregate per rate window keeps SELECT/GROUP BY simple and
+  // sidesteps Drizzle's qualified-column quirk in groupBy expressions.
+  const rateSelect = {
+    total: count(),
+    successes: sql<number>`sum(case when ${pipelineRequests.status} = 'success' then 1 else 0 end)`,
+  };
 
-  const [rates, percentiles, perDay, errors] = await Promise.all([
-    // Success rates per window
-    db
-      .select({
-        window: sql<string>`${windowExpr}`,
-        total: count(),
-        successes: sql<number>`sum(case when ${pipelineRequests.status} = 'success' then 1 else 0 end)`,
-      })
-      .from(pipelineRequests)
-      .where(and(noReplays, gte(pipelineRequests.createdAt, minus30d)))
-      .groupBy(sql`${windowExpr}`),
+  const [rate24hRows, rate7dRows, rate30dRows, percentiles, perDay, errors] =
+    await Promise.all([
+      db
+        .select(rateSelect)
+        .from(pipelineRequests)
+        .where(and(noReplays, gte(pipelineRequests.createdAt, minus24h))),
+      db
+        .select(rateSelect)
+        .from(pipelineRequests)
+        .where(and(noReplays, gte(pipelineRequests.createdAt, minus7d))),
+      db
+        .select(rateSelect)
+        .from(pipelineRequests)
+        .where(and(noReplays, gte(pipelineRequests.createdAt, minus30d))),
 
-    // Latency percentiles for the last 24h
-    db
-      .select({
-        p50: sql<number>`percentile_cont(0.5) within group (order by ${pipelineRequests.durationMs})`,
-        p95: sql<number>`percentile_cont(0.95) within group (order by ${pipelineRequests.durationMs})`,
-        p99: sql<number>`percentile_cont(0.99) within group (order by ${pipelineRequests.durationMs})`,
-      })
-      .from(pipelineRequests)
-      .where(
-        and(
-          noReplays,
-          gte(pipelineRequests.createdAt, minus24h),
-          eq(pipelineRequests.status, 'success'),
-          isNotNull(pipelineRequests.durationMs)
+      // Latency percentiles for the last 24h
+      db
+        .select({
+          p50: sql<number>`percentile_cont(0.5) within group (order by ${pipelineRequests.durationMs})`,
+          p95: sql<number>`percentile_cont(0.95) within group (order by ${pipelineRequests.durationMs})`,
+          p99: sql<number>`percentile_cont(0.99) within group (order by ${pipelineRequests.durationMs})`,
+        })
+        .from(pipelineRequests)
+        .where(
+          and(
+            noReplays,
+            gte(pipelineRequests.createdAt, minus24h),
+            eq(pipelineRequests.status, 'success'),
+            isNotNull(pipelineRequests.durationMs)
+          )
+        ),
+
+      // Requests per day for the last 30d
+      db
+        .select({
+          date: sql<string>`date_trunc('day', ${pipelineRequests.createdAt})::date::text`,
+          count: count(),
+        })
+        .from(pipelineRequests)
+        .where(and(noReplays, gte(pipelineRequests.createdAt, minus30d)))
+        .groupBy(
+          sql`date_trunc('day', ${pipelineRequests.createdAt})::date::text`
         )
-      ),
+        .orderBy(
+          sql`date_trunc('day', ${pipelineRequests.createdAt})::date::text`
+        ),
 
-    // Requests per day for the last 30d
-    db
-      .select({
-        date: sql<string>`date_trunc('day', ${pipelineRequests.createdAt})::date::text`,
-        count: count(),
-      })
-      .from(pipelineRequests)
-      .where(and(noReplays, gte(pipelineRequests.createdAt, minus30d)))
-      .groupBy(
-        sql`date_trunc('day', ${pipelineRequests.createdAt})::date::text`
-      )
-      .orderBy(
-        sql`date_trunc('day', ${pipelineRequests.createdAt})::date::text`
-      ),
-
-    // Top errors in the last 30d
-    db
-      .select({
-        error: pipelineRequests.error,
-        count: count(),
-      })
-      .from(pipelineRequests)
-      .where(
-        and(
-          noReplays,
-          gte(pipelineRequests.createdAt, minus30d),
-          eq(pipelineRequests.status, 'error'),
-          isNotNull(pipelineRequests.error)
+      // Top errors in the last 30d
+      db
+        .select({
+          error: pipelineRequests.error,
+          count: count(),
+        })
+        .from(pipelineRequests)
+        .where(
+          and(
+            noReplays,
+            gte(pipelineRequests.createdAt, minus30d),
+            eq(pipelineRequests.status, 'error'),
+            isNotNull(pipelineRequests.error)
+          )
         )
-      )
-      .groupBy(pipelineRequests.error)
-      .orderBy(desc(count()))
-      .limit(10),
-  ]);
+        .groupBy(pipelineRequests.error)
+        .orderBy(desc(count()))
+        .limit(10),
+    ]);
 
-  function rateFor(window: string) {
-    const row = rates.find((r) => r.window === window);
+  function rateFromRow(rows: { total: number; successes: number }[]) {
+    const row = rows[0];
     if (!row || Number(row.total) === 0) return null;
     return Number(row.successes) / Number(row.total);
   }
@@ -304,9 +309,9 @@ export async function healthAggregates(db: AppDb): Promise<HealthAggregates> {
   const perc = percentiles[0] ?? null;
 
   return {
-    successRate24h: rateFor('24h'),
-    successRate7d: rateFor('7d'),
-    successRate30d: rateFor('30d'),
+    successRate24h: rateFromRow(rate24hRows),
+    successRate7d: rateFromRow(rate7dRows),
+    successRate30d: rateFromRow(rate30dRows),
     p50_24h: perc ? Number(perc.p50) : null,
     p95_24h: perc ? Number(perc.p95) : null,
     p99_24h: perc ? Number(perc.p99) : null,

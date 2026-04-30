@@ -103,7 +103,11 @@ export interface LlmCallArgs {
   db: AppDb;
   requestId: string;
   stageLogId: string;
-  promptVersionId: string;
+  /**
+   * Accepts a Promise so the caller can fire recordPromptVersion in parallel
+   * with the LLM call; we await it here before inserting (FK requirement).
+   */
+  promptVersionId: string | Promise<string | null>;
   model: string;
   promptRendered: string;
   responseRaw: string | null;
@@ -116,20 +120,24 @@ export interface LlmCallArgs {
 
 export function logLlmCall(a: LlmCallArgs): void {
   if (!enabled()) return;
-  void a.db
-    .insert(pipelineLlmCalls)
-    .values({
-      requestId: a.requestId,
-      stageLogId: a.stageLogId,
-      promptVersionId: a.promptVersionId,
-      model: a.model,
-      promptRendered: a.promptRendered,
-      responseRaw: a.responseRaw,
-      inputTokens: a.inputTokens,
-      outputTokens: a.outputTokens,
-      latencyMs: a.latencyMs,
-      attempt: a.attempt,
-      error: a.error ?? null,
+  void Promise.resolve(a.promptVersionId)
+    .then(async (resolvedId) => {
+      // Skip the insert if the prompt-version row never materialized — the
+      // FK would reject it anyway.
+      if (!resolvedId) return;
+      await a.db.insert(pipelineLlmCalls).values({
+        requestId: a.requestId,
+        stageLogId: a.stageLogId,
+        promptVersionId: resolvedId,
+        model: a.model,
+        promptRendered: a.promptRendered,
+        responseRaw: a.responseRaw,
+        inputTokens: a.inputTokens,
+        outputTokens: a.outputTokens,
+        latencyMs: a.latencyMs,
+        attempt: a.attempt,
+        error: a.error ?? null,
+      });
     })
     .catch((e) => console.error('[trace] logLlmCall failed', e));
 }

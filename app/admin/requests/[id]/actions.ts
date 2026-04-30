@@ -30,11 +30,17 @@ export async function replayRequest(originalIdInput: string) {
     .limit(1);
   if (!orig) throw new Error('original request not found');
 
+  // Validate API key BEFORE creating any DB rows or doing further work
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) throw new Error('GEMINI_API_KEY missing');
+  const gemini = createGeminiClient(apiKey);
+
   const replayId = crypto.randomUUID();
   const t0 = Date.now();
 
-  // Reuse original userId (NOT admin.id) — FK to auth.users + correct attribution
-  logPipelineStart({
+  // Reuse original userId (NOT admin.id) — FK to auth.users + correct attribution.
+  // Awaited so child trace inserts have a parent row to FK against.
+  await logPipelineStart({
     userId: orig.userId,
     rawInput: orig.rawInput,
     userContext: orig.userContextJson as unknown as UserContext,
@@ -44,15 +50,11 @@ export async function replayRequest(originalIdInput: string) {
   });
   console.info(`[admin] ${admin.email} replayed ${originalId} as ${replayId}`);
 
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) throw new Error('GEMINI_API_KEY missing');
-  const gemini = createGeminiClient(apiKey);
-
   const promptVersionsUsed = new Map<string, string>();
   let finalStatus: 'success' | 'error' = 'success';
   let errorMessage: string | undefined;
   try {
-    await analyzeMeal(
+    const result = await analyzeMeal(
       orig.rawInput,
       orig.userContextJson as unknown as UserContext,
       db,
@@ -60,6 +62,10 @@ export async function replayRequest(originalIdInput: string) {
       () => {},
       { requestId: replayId, db, promptVersionsUsed }
     );
+    if (!result.success) {
+      finalStatus = 'error';
+      errorMessage = result.error.message;
+    }
   } catch (e) {
     finalStatus = 'error';
     errorMessage = e instanceof Error ? e.message : String(e);

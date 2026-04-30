@@ -25,8 +25,17 @@ export default async function RequestsPage({
       )
   );
 
-  const parsed = requestFiltersSchema.safeParse(flat);
-  const filters = parsed.success ? parsed.data : requestFiltersSchema.parse({});
+  // Parse field-by-field so a single invalid value (e.g. malformed userId)
+  // doesn't discard valid filters. Each field falls back to undefined.
+  const fieldShape = requestFiltersSchema.shape;
+  const partial: Record<string, unknown> = {};
+  for (const key of Object.keys(fieldShape) as (keyof typeof fieldShape)[]) {
+    const value = flat[key];
+    if (value === undefined) continue;
+    const result = fieldShape[key].safeParse(value);
+    if (result.success) partial[key] = result.data;
+  }
+  const filters = requestFiltersSchema.parse(partial);
 
   const { rows, total } = await listRequests(db, {
     filter: filters,

@@ -254,15 +254,16 @@ async function runPipeline(
           promptVersionId = pvId;
         }
       }
-      const callTrace: GeminiCallTrace | undefined = traceContext
-        ? {
-            db: traceContext.db,
-            requestId: traceContext.requestId,
-            stageLogId,
-            promptVersionId,
-            promptRendered: systemPrompt,
-          }
-        : undefined;
+      const callTrace: GeminiCallTrace | undefined =
+        traceContext && promptVersionId
+          ? {
+              db: traceContext.db,
+              requestId: traceContext.requestId,
+              stageLogId,
+              promptVersionId,
+              promptRendered: systemPrompt,
+            }
+          : undefined;
       return fetchWithTimeout(
         (signal) =>
           gemini.generateStructuredOutputStream(
@@ -399,15 +400,16 @@ async function runPipeline(
           promptVersionId = pvId;
         }
       }
-      const callTrace: GeminiCallTrace | undefined = traceContext
-        ? {
-            db: traceContext.db,
-            requestId: traceContext.requestId,
-            stageLogId,
-            promptVersionId,
-            promptRendered: systemPrompt,
-          }
-        : undefined;
+      const callTrace: GeminiCallTrace | undefined =
+        traceContext && promptVersionId
+          ? {
+              db: traceContext.db,
+              requestId: traceContext.requestId,
+              stageLogId,
+              promptVersionId,
+              promptRendered: systemPrompt,
+            }
+          : undefined;
 
       let result: NutritionAdjustment = await fetchWithTimeout(
         (signal) =>

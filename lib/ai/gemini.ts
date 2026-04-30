@@ -44,7 +44,12 @@ export interface GeminiCallTrace {
   db: AppDb;
   requestId: string;
   stageLogId: string;
-  promptVersionId: string;
+  /**
+   * The prompt-version id (uuid). Accepts a Promise so callers can fire
+   * the recordPromptVersion insert in parallel with the Gemini call;
+   * logLlmCall awaits it before the FK-bearing insert.
+   */
+  promptVersionId: string | Promise<string | null>;
   promptRendered: string;
 }
 

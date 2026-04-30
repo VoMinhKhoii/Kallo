@@ -15,15 +15,17 @@ export interface LogPipelineStartArgs {
 }
 
 /**
- * Fire-and-forget INSERT into pipeline_requests before the pipeline starts.
- * Generates the requestId synchronously (crypto.randomUUID) so the caller
- * never awaits the DB write — the INSERT is fully fire-and-forget.
- * Returns the pre-generated requestId for correlation with logPipelineEnd.
+ * Awaitable INSERT into pipeline_requests before the pipeline starts.
+ * Awaits the DB write so child trace inserts (stage_logs, llm_calls)
+ * have a parent row to FK against.
+ * Returns the requestId for correlation with logPipelineEnd.
  */
-export function logPipelineStart(args: LogPipelineStartArgs): string {
+export async function logPipelineStart(
+  args: LogPipelineStartArgs
+): Promise<string> {
   const id = args.requestId ?? crypto.randomUUID();
 
-  args.db
+  await args.db
     .insert(pipelineRequests)
     .values({
       id,

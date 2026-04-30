@@ -93,8 +93,8 @@ export async function POST(request: NextRequest) {
 
   const userContext = buildUserContext(profile);
 
-  // Fire-and-forget: log pipeline start for observability (never blocks SSE)
-  const requestId = logPipelineStart({
+  // Awaited so child trace inserts have a parent row to FK against
+  const requestId = await logPipelineStart({
     userId,
     rawInput: message,
     userContext,
