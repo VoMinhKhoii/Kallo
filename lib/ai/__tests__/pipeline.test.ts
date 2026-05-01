@@ -380,7 +380,7 @@ describe('analyzeMeal', () => {
           mealItemName: 'Phở bò',
           ingredients: [
             makeLlmNutrition('Bún phở', 200, 5, 45, 0.5),
-            makeLlmNutrition('Rare_herb', 5, 0.5, 1, 0.1),
+            makeLlmNutrition('Rare_herb', 5, 0, 1.25, 0),
           ],
         },
       ],
@@ -451,7 +451,7 @@ describe('analyzeMeal', () => {
           mealItemName: 'Lẩu cá',
           ingredients: [
             makeLlmNutrition('Cá lóc', 80, 18, 0, 1),
-            makeLlmNutrition('Exotic_spice', 2, 0.1, 0.5, 0),
+            makeLlmNutrition('Exotic_spice', 2, 0, 0.5, 0),
           ],
         },
       ],
@@ -625,14 +625,26 @@ describe('analyzeMeal', () => {
           mealItemName: 'Thịt kho trứng',
           ingredients: [
             makeLlmNutrition('Thịt heo', 250, 26, 5, 15),
-            makeLlmNutrition('Dầu ăn', 135, 0, 0, 15), // 15g oil in kho
+            {
+              ingredientName: 'Dầu ăn',
+              caloriesKcal: { low: 135, mid: 135, high: 135 },
+              proteinG: { low: 0, mid: 0, high: 0 },
+              carbohydrateG: { low: 0, mid: 0, high: 0 },
+              fatG: { low: 15, mid: 15, high: 15 },
+            },
           ],
         },
         {
           mealItemName: 'Xào rau',
           ingredients: [
             makeLlmNutrition('Rau cải', 30, 2, 5, 0.5),
-            makeLlmNutrition('Dầu ăn', 90, 0, 0, 10), // 10g oil in xào
+            {
+              ingredientName: 'Dầu ăn',
+              caloriesKcal: { low: 90, mid: 90, high: 90 },
+              proteinG: { low: 0, mid: 0, high: 0 },
+              carbohydrateG: { low: 0, mid: 0, high: 0 },
+              fatG: { low: 10, mid: 10, high: 10 },
+            },
           ],
         },
       ],
