@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  MEAL_FACTS_KEYS,
   type MealFactsForComputePolicy,
   pickComputePolicy,
   summarizeCandidateConfidence,
@@ -107,6 +108,21 @@ describe('MealFactsForComputePolicy structural narrowness', () => {
       'parseRetryCount',
       'unmatchedCount',
     ]);
+  });
+
+  it('exports the runtime allowlist used to reject shape drift', () => {
+    const drifted = { ...baseFacts, userId: 'should-not-be-here' };
+
+    expect([...MEAL_FACTS_KEYS].sort()).toEqual([
+      'anomalyTypes',
+      'candidateConfidenceSummary',
+      'ingredientCount',
+      'matchedCount',
+      'parseRetryCount',
+      'unmatchedCount',
+    ]);
+    expect([...MEAL_FACTS_KEYS]).not.toContain('userId');
+    expect(Object.keys(drifted)).toContain('userId');
   });
 });
 

@@ -1,3 +1,10 @@
+/**
+ * @file pickComputePolicy -- pure routing for adaptive compute (spec §4.2).
+ *
+ * Principle B contract: MealFactsForComputePolicy contains facts about THIS
+ * meal, never user-shaped data. To add a field, add it to the interface and
+ * MEAL_FACTS_KEYS together, and justify why it is a fact about the meal.
+ */
 import type { ModelProfile } from './model-profile';
 import type { AnomalyType } from './validation';
 
@@ -26,6 +33,25 @@ export interface ComputePolicyDecision {
   /** When true, an anomaly retry should re-run Call 2 against escalation. */
   escalateOnRetry: boolean;
 }
+
+export const MEAL_FACTS_KEYS = [
+  'ingredientCount',
+  'matchedCount',
+  'unmatchedCount',
+  'anomalyTypes',
+  'parseRetryCount',
+  'candidateConfidenceSummary',
+] as const satisfies ReadonlyArray<keyof MealFactsForComputePolicy>;
+
+type AssertTrue<T extends true> = T;
+type _AssertExhaustiveMealFactKeys = AssertTrue<
+  Exclude<
+    keyof MealFactsForComputePolicy,
+    (typeof MEAL_FACTS_KEYS)[number]
+  > extends never
+    ? true
+    : false
+>;
 
 const UNMATCHED_RATIO_ESCALATION_THRESHOLD = 0.5;
 

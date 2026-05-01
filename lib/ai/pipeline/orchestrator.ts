@@ -20,6 +20,7 @@ import type {
 } from '../types';
 import { assembleResult } from './assembly';
 import {
+  MEAL_FACTS_KEYS,
   type MealFactsForComputePolicy,
   pickComputePolicy,
   summarizeCandidateConfidence,
@@ -460,6 +461,7 @@ async function runPipeline(
       matchResult.matched.map((m) => ({ matchConfidence: m.similarity }))
     ),
   };
+  assertMealFactsShape(baseComputeFacts);
   let computePolicy = pickComputePolicy(baseComputeFacts, modelProfileForRun);
   let selectedNutritionModel = computePolicy.call2Model;
 
@@ -821,6 +823,20 @@ async function runPipeline(
   }
 
   return { success: true, data: pipelineResult };
+}
+
+function assertMealFactsShape(facts: MealFactsForComputePolicy): void {
+  if (process.env.NODE_ENV === 'production') {
+    return;
+  }
+
+  const actual = Object.keys(facts).sort();
+  const expected = [...MEAL_FACTS_KEYS].sort();
+  if (JSON.stringify(actual) !== JSON.stringify(expected)) {
+    throw new Error(
+      `[principle-b] MealFactsForComputePolicy shape drift: ${actual.join(',')}`
+    );
+  }
 }
 
 function scheduleShadowRun(args: {
