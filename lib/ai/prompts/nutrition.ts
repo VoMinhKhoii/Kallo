@@ -7,9 +7,19 @@ import type {
   DecomposedMealItem,
   MatchedIngredient,
   UnmatchedIngredient,
-  UserContext,
 } from '../types';
 import { buildPromptContextLine } from './sanitize';
+import type { PromptPersonalizationContext } from './types';
+
+/**
+ * Principle A (spec §2): the LLM produces honest physical-world estimates
+ * conditioned only on the meal text and the user's cooking identity (country
+ * of origin/residence, cookingHabits). Goal, aggression, and calorie targets
+ * NEVER reach this prompt — TypeScript enforces the boundary via
+ * PromptPersonalizationContext.
+ *
+ * Spec: docs/superpowers/specs/2026-04-27-ai-pipeline-prompt-context-engineering-design.md
+ */
 
 /**
  * Build the system prompt for LLM Call 2 (cooking-adjusted bounded nutrition).
@@ -32,7 +42,7 @@ export function buildNutritionPrompt(
   mealItems: DecomposedMealItem[],
   matched: MatchedIngredient[],
   unmatched: UnmatchedIngredient[],
-  userContext: UserContext
+  userContext: PromptPersonalizationContext
 ): string {
   const { cookingHabits } = userContext;
   const countryLines = [
@@ -136,11 +146,15 @@ export function buildNutritionPrompt(
   </calculation>
 
   <why_three_values>
-    We use LOW/MID/HIGH to power goal-based adjustments for users cutting or bulking.
-    - LOW: conservative lower bound — how low could this realistically be?
-    - HIGH: conservative upper bound — how high could this realistically be?
-    Express genuine uncertainty: widen bounds for uncertain ingredients (unknown oil quantity,
-    variable sugar, unmatched ingredients) and keep them tighter for well-known, DB-matched ones.
+    Each macro is a triple LOW/MID/HIGH expressing genuine uncertainty about
+    the user's actual portion and cooking behavior — not a preference signal.
+    - MID: your best point estimate after cooking adjustment.
+    - LOW:  conservative lower bound. Tighten when the ingredient is well-known
+            and DB-matched. Widen when you are guessing (unknown oil quantity,
+            ambiguous portion size, unmatched ingredient).
+    - HIGH: conservative upper bound. Same widening rules.
+    These bounds are physical-world uncertainty bounds. Downstream
+    deterministic code applies any preference-shaped adjustment.
   </why_three_values>
 
   <unmatched_rule>

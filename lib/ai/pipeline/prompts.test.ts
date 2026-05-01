@@ -130,6 +130,29 @@ const fullNutrition = {
   vitaminHMcg: null,
 };
 
+const makeIngredient = (name: string): MatchedIngredient => ({
+  ingredientName: name,
+  foodCompositionId: `id-${name}`,
+  matchedName: name,
+  similarity: 0.9,
+  confidence: 'high',
+  nutritionPer100g: fullNutrition,
+  dbState: 'raw',
+});
+
+const makeMealItem = (
+  name: string,
+  ingredients: string[]
+): DecomposedMealItem => ({
+  name,
+  ingredients: ingredients.map((ing) => ({
+    name: ing,
+    estimatedGrams: 100,
+    cookingMethod: null,
+    userFacingUnit: '100g',
+  })),
+});
+
 describe('buildNutritionPrompt', () => {
   const sampleMealItems: DecomposedMealItem[] = [
     {
@@ -346,16 +369,19 @@ describe('buildNutritionPrompt', () => {
     expect(prompt).not.toContain('vitaminB12Mcg');
   });
 
-  it('explains why three values are needed for goal adjustment', () => {
-    const prompt = buildNutritionPrompt(
-      sampleMealItems,
-      sampleMatched,
-      [],
-      sampleUserContext
+  it('does not leak goal/aggression/calorieTarget to the nutrition prompt (sentinel)', () => {
+    const ctx = {
+      ...sampleUserContext,
+      goal: 'cutting' as const,
+      aggression: 0.85,
+    };
+    const mealItems = [makeMealItem('Phở bò', ['gạo tẻ', 'thịt bò bắp'])];
+    const matched = [makeIngredient('gạo tẻ'), makeIngredient('thịt bò bắp')];
+    const prompt = buildNutritionPrompt(mealItems, matched, [], ctx);
+    expect(prompt).not.toMatch(
+      /\bcutting\b|\bbulking\b|\bmaintaining\b|aggression|calorie[_ ]?target|kcal[_ ]?target/i
     );
-    expect(prompt).toContain('<why_three_values>');
-    expect(prompt).toContain('goal-based adjustments');
-    expect(prompt).toContain('genuine uncertainty');
+    expect(prompt).not.toMatch(/0\.85/);
   });
 
   it('includes cooking method attribute in ingredient data', () => {
@@ -421,29 +447,6 @@ describe('ASSUMPTION_TEXT', () => {
 // ---------------------------------------------------------------------------
 
 describe('buildNutritionPrompt — deterministic ordering', () => {
-  const makeIngredient = (name: string): MatchedIngredient => ({
-    ingredientName: name,
-    foodCompositionId: `id-${name}`,
-    matchedName: name,
-    similarity: 0.9,
-    confidence: 'high',
-    nutritionPer100g: fullNutrition,
-    dbState: 'raw',
-  });
-
-  const makeMealItem = (
-    name: string,
-    ingredients: string[]
-  ): DecomposedMealItem => ({
-    name,
-    ingredients: ingredients.map((ing) => ({
-      name: ing,
-      estimatedGrams: 100,
-      cookingMethod: null,
-      userFacingUnit: '100g',
-    })),
-  });
-
   it('produces identical prompt regardless of ingredient array order', () => {
     const matched = ['gạo', 'thịt gà', 'rau muống'].map(makeIngredient);
     const matchedReversed = [...matched].reverse();
