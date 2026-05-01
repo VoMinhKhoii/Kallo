@@ -25,7 +25,13 @@
  */
 
 import postgres from 'postgres';
-import { afterAll, beforeAll, describe as describeBase, expect, it } from 'vitest';
+import {
+  afterAll,
+  beforeAll,
+  describe as describeBase,
+  expect,
+  it,
+} from 'vitest';
 import { encodeDbUrl } from '@/lib/db';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -50,8 +56,50 @@ interface VectorResult {
 
 // ─── Setup ───────────────────────────────────────────────────────────────────
 
-let sql: postgres.Sql | undefined;
-const describe = describeBase.skip;
+async function hasSearchPipelinePrerequisite(databaseUrl: string) {
+  const checkSql = postgres(encodeDbUrl(databaseUrl));
+
+  try {
+    const [row] = await checkSql<{
+      missingSearchText: number;
+      missingEmbeddings: number;
+      missingSearchTextAscii: number;
+    }>`
+      SELECT
+        COUNT(*) FILTER (WHERE search_text IS NULL) AS "missingSearchText",
+        COUNT(*) FILTER (WHERE embedding IS NULL) AS "missingEmbeddings",
+        COUNT(*) FILTER (
+          WHERE search_text_ascii IS NULL
+        ) AS "missingSearchTextAscii"
+      FROM vietnamese_food_composition
+    `;
+
+    return (
+      Number(row.missingSearchText) === 0 &&
+      Number(row.missingEmbeddings) === 0 &&
+      Number(row.missingSearchTextAscii) === 0
+    );
+  } finally {
+    await checkSql.end();
+  }
+}
+
+const databaseUrl = process.env.DATABASE_URL;
+const searchPipelinePrerequisite = databaseUrl
+  ? await hasSearchPipelinePrerequisite(databaseUrl)
+  : false;
+const describe = searchPipelinePrerequisite ? describeBase : describeBase.skip;
+let sql: postgres.Sql;
+
+if (searchPipelinePrerequisite && databaseUrl) {
+  beforeAll(() => {
+    sql = postgres(encodeDbUrl(databaseUrl));
+  });
+
+  afterAll(async () => {
+    await sql.end();
+  });
+}
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -60,7 +108,7 @@ async function fuzzy(
   count = 5,
   threshold = 0.15
 ): Promise<FuzzyResult[]> {
-  return sql!<FuzzyResult[]>`
+  return sql<FuzzyResult[]>`
     SELECT * FROM fuzzy_match_ingredients(
       ${query}, ${count}, ${threshold}
     )
@@ -72,7 +120,7 @@ async function vector(
   count = 5,
   threshold = 0.5
 ): Promise<VectorResult[]> {
-  return sql!<VectorResult[]>`
+  return sql<VectorResult[]>`
     SELECT * FROM match_ingredients(
       (SELECT embedding FROM vietnamese_food_composition
        WHERE id = ${sourceId}),
@@ -484,7 +532,7 @@ describe('match_ingredients (pgvector)', () => {
   describe('edge cases', () => {
     it('null embedding returns empty results', async () => {
       // Use the function directly with a null-safe check
-      const r = await sql!<VectorResult[]>`
+      const r = await sql<VectorResult[]>`
         SELECT * FROM match_ingredients(
           NULL::vector(768), 3, 0.5
         )
@@ -789,7 +837,7 @@ describe('diacritic routing', () => {
 
 describe('search infrastructure integrity', () => {
   it('all rows have search_text populated', async () => {
-    const [r] = await sql!`
+    const [r] = await sql`
       SELECT count(*) as n FROM vietnamese_food_composition
       WHERE search_text IS NULL
     `;
@@ -797,7 +845,7 @@ describe('search infrastructure integrity', () => {
   });
 
   it('all rows have embeddings populated', async () => {
-    const [r] = await sql!`
+    const [r] = await sql`
       SELECT count(*) as n FROM vietnamese_food_composition
       WHERE embedding IS NULL
     `;
@@ -805,7 +853,7 @@ describe('search infrastructure integrity', () => {
   });
 
   it('search_text contains name_primary for every row', async () => {
-    const [r] = await sql!`
+    const [r] = await sql`
       SELECT count(*) as n FROM vietnamese_food_composition
       WHERE search_text NOT ILIKE '%' || name_primary || '%'
     `;
@@ -813,7 +861,7 @@ describe('search infrastructure integrity', () => {
   });
 
   it('search_text contains name_en for every row', async () => {
-    const [r] = await sql!`
+    const [r] = await sql`
       SELECT count(*) as n FROM vietnamese_food_composition
       WHERE search_text NOT ILIKE '%' || name_en || '%'
     `;
@@ -821,7 +869,7 @@ describe('search infrastructure integrity', () => {
   });
 
   it('embedding dimensions are 768', async () => {
-    const [r] = await sql!`
+    const [r] = await sql`
       SELECT vector_dims(embedding) as dims 
       FROM vietnamese_food_composition 
       WHERE embedding IS NOT NULL 
@@ -833,14 +881,14 @@ describe('search infrastructure integrity', () => {
   it('trigger updates search_text on name change', async () => {
     // Create a temp row, verify trigger, clean up
     const testId = `test_trigger_${Date.now()}`;
-    await sql!`
+    await sql`
       INSERT INTO vietnamese_food_composition 
         (id, name_primary, name_en, type_vn, type_en, source_id, state)
       VALUES 
         (${testId}, 'Test Thực Phẩm', 'Test Food', 'Test', 'Test', 1, 'raw')
     `;
 
-    const [row] = await sql!`
+    const [row] = await sql`
       SELECT search_text, search_text_ascii FROM vietnamese_food_composition 
       WHERE id = ${testId}
     `;
@@ -851,13 +899,13 @@ describe('search infrastructure integrity', () => {
     expect(row.search_text_ascii).toContain('test food');
 
     // Clean up
-    await sql!`
+    await sql`
       DELETE FROM vietnamese_food_composition WHERE id = ${testId}
     `;
   });
 
   it('all rows have search_text_ascii populated', async () => {
-    const [r] = await sql!`
+    const [r] = await sql`
       SELECT count(*) as n FROM vietnamese_food_composition
       WHERE search_text_ascii IS NULL
     `;
@@ -866,7 +914,7 @@ describe('search infrastructure integrity', () => {
 
   it('search_text_ascii is lowercase and unaccented', async () => {
     // Verify no uppercase letters and no Vietnamese diacritics
-    const rows = await sql!`
+    const rows = await sql`
       SELECT id, search_text_ascii FROM vietnamese_food_composition
       WHERE search_text_ascii ~ '[A-ZÀÁẢÃẠĂẮẰẲẴẶÂẤẦẨẪẬÈÉẺẼẸÊẾỀỂỄỆÌÍỈĨỊÒÓỎÕỌÔỐỒỔỖỘƠỚỜỞỠỢÙÚỦŨỤƯỨỪỬỮỰỲÝỶỸỴĐ]'
       LIMIT 5

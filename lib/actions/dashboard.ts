@@ -2,6 +2,7 @@
 
 import { and, asc, desc, eq, gte, lt, sql } from 'drizzle-orm';
 import { z } from 'zod';
+import type { VerdictData } from '@/components/dashboard/types';
 import { requireAuthAndProfile } from '@/lib/auth';
 import {
   buildCalorieAdherenceHeatmap,
@@ -10,7 +11,6 @@ import {
 import { db } from '@/lib/db';
 import { bodyWeightLog, meals } from '@/lib/db/schema';
 import { loadWeightSummaryAction } from './weight';
-import type { VerdictData } from '@/components/dashboard/types';
 
 const loadCalorieAdherenceHeatmapSchema = z.object({
   range: z.enum(['30d', '90d']),
@@ -148,15 +148,28 @@ export async function loadVerdictAction(input: {
       ? (lastWeight - firstWeight) / (elapsedDays / 7)
       : 0;
   const actual30DayDelta = weeklyRate * 4.3;
-  const targetDelta = weightSummary.expectedEndWeight - weightSummary.periodStartWeight;
+  const targetDelta =
+    weightSummary.expectedEndWeight - weightSummary.periodStartWeight;
   const rollingAvgStart = average(
-    orderedWeights.slice(0, Math.min(7, orderedWeights.length)).map((row) => Number(row.weightKg))
+    orderedWeights
+      .slice(0, Math.min(7, orderedWeights.length))
+      .map((row) => Number(row.weightKg))
   );
   const rollingAvgEnd = average(
-    orderedWeights.slice(-Math.min(7, orderedWeights.length)).map((row) => Number(row.weightKg))
+    orderedWeights
+      .slice(-Math.min(7, orderedWeights.length))
+      .map((row) => Number(row.weightKg))
   );
 
-  const proteinDays: [boolean, boolean, boolean, boolean, boolean, boolean, boolean] = [false, false, false, false, false, false, false];
+  const proteinDays: [
+    boolean,
+    boolean,
+    boolean,
+    boolean,
+    boolean,
+    boolean,
+    boolean,
+  ] = [false, false, false, false, false, false, false];
   const offsetMins = -timezoneOffset;
   const localDateExpr = sql<string>`DATE(${meals.loggedAt} + (${sql.raw(String(offsetMins))}::integer * INTERVAL '1 minute'))`;
   const weekdayExpr = sql<number>`EXTRACT(ISODOW FROM ${localDateExpr})`;
@@ -190,7 +203,10 @@ export async function loadVerdictAction(input: {
 
   const tooEarlyThreshold = 0.1;
   let status: VerdictData['status'];
-  if (orderedWeights.length < 2 || Math.abs(actual30DayDelta) < tooEarlyThreshold) {
+  if (
+    orderedWeights.length < 2 ||
+    Math.abs(actual30DayDelta) < tooEarlyThreshold
+  ) {
     status = 'too_early';
   } else if (Math.abs(actual30DayDelta - targetDelta) < tooEarlyThreshold) {
     status = 'on_pace';

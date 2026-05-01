@@ -8,7 +8,21 @@ import {
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
-const describeSmokeCheck = describe.skip;
+function hasSmokeCheckPrerequisite(): { enabled: boolean; reason?: string } {
+  if (process.platform === 'win32') {
+    return {
+      enabled: false,
+      reason: 'smoke-check runs via bash and is skipped on Windows workspaces.',
+    };
+  }
+
+  return { enabled: true };
+}
+
+const smokeCheckPrerequisite = hasSmokeCheckPrerequisite();
+const describeSmokeCheck = smokeCheckPrerequisite.enabled
+  ? describe
+  : describe.skip;
 
 type RequestHandler = (
   request: IncomingMessage,

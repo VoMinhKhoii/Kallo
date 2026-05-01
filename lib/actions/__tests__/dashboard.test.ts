@@ -1,17 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const {
-  mockDbSelect,
-  mockBuildCalorieAdherenceHeatmap,
-  mockLoadWeightSummaryAction,
-} = vi.hoisted(() => ({
-  mockDbSelect: vi.fn(),
-  mockBuildCalorieAdherenceHeatmap: vi.fn().mockReturnValue([
-    [1, null],
-    [null, 1],
-  ]),
-  mockLoadWeightSummaryAction: vi.fn(),
-}));
+const mockDbSelect = vi.fn();
+const mockBuildCalorieAdherenceHeatmap = vi.fn().mockReturnValue([
+  [1, null],
+  [null, 1],
+]);
+const mockLoadWeightSummaryAction = vi.fn();
 
 vi.mock('@/lib/auth', () => ({
   requireAuthAndProfile: vi.fn().mockResolvedValue({
