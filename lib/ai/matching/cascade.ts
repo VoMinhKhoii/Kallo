@@ -7,6 +7,7 @@ import {
 import { batchFetchNutrition } from '@/lib/ai/matching/nutrition-batch';
 import {
   type MatchInfo,
+  type MatchStateInfo,
   matchSingleIngredientWithEmbedding,
 } from '@/lib/ai/matching/source-matching';
 import type {
@@ -49,6 +50,11 @@ const ingredientRawName = (ing: DecomposedIngredient): string =>
 
 const ingredientCanonicalName = (ing: DecomposedIngredient): string =>
   ing.canonicalName ?? ing.name ?? ing.rawName ?? '';
+
+const ingredientStateInfo = (ing: DecomposedIngredient): MatchStateInfo => ({
+  expectedState: ing.expectedState ?? 'cooked',
+  stateSource: ing._stateSource ?? 'unknown',
+});
 
 /**
  * Match a list of decomposed ingredients against the food composition DB.
@@ -134,14 +140,25 @@ export async function matchIngredients(
   // Phase 3: Match each ingredient that has a resolved embedding
   // Items without an embedding are enqueued as unmatched directly
   const matchItems = matchingNames
-    .map((name, i) => ({ name, i, embedding: embeddings[i] }))
+    .map((name, i) => ({
+      name,
+      i,
+      embedding: embeddings[i],
+      stateInfo: ingredientStateInfo(ingredients[i]),
+    }))
     .filter(
       (item): item is typeof item & { embedding: number[] } =>
         item.embedding != null
     );
   const matchSettled = await mapWithConcurrency(
     matchItems,
-    (item) => matchSingleIngredientWithEmbedding(item.name, item.embedding, db),
+    (item) =>
+      matchSingleIngredientWithEmbedding(
+        item.name,
+        item.embedding,
+        db,
+        item.stateInfo
+      ),
     matchConcurrency
   );
 
@@ -263,9 +280,15 @@ export async function matchIngredients(
           aliasMatchItems.map(({ r, embedding }) => ({
             name: r.aliasName,
             embedding,
+            stateInfo: ingredientStateInfo(r.original),
           })),
           (item) =>
-            matchSingleIngredientWithEmbedding(item.name, item.embedding, db),
+            matchSingleIngredientWithEmbedding(
+              item.name,
+              item.embedding,
+              db,
+              item.stateInfo
+            ),
           matchConcurrency
         );
 

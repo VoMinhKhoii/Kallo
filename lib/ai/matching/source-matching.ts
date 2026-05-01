@@ -63,6 +63,11 @@ export interface MatchInfo {
   state: DbIngredientState;
 }
 
+export interface PickBestSourceContext {
+  /** 'unknown' disables the state tie-breaker and falls back to similarity. */
+  expectedState: DbIngredientState;
+}
+
 /**
  * Sort DB candidates by similarity descending.
  * The DB already returns results in order, but this ensures consistent
@@ -102,21 +107,38 @@ export function buildMatchResult(
 /**
  * Pick the best match between FAO and USDA candidates.
  *
- * Pick whichever source has the higher similarity. Thresholds already encode
- * the FAO vs USDA quality bar (FAO: 0.8, USDA: 0.7), so a passing FAO match
- * implies higher confidence than an equivalent USDA score.
+ * Tie-break order: expected state match first, then similarity. Source
+ * preference is intentionally not a tie-breaker.
  */
 export function pickBestSource(
   fao: MatchInfo | null,
-  usda: MatchInfo | null
+  usda: MatchInfo | null,
+  ctx: PickBestSourceContext
 ): MatchInfo | null {
   if (fao && !usda) return fao;
   if (!fao && usda) return usda;
   if (!fao && !usda) return null;
 
-  // Both matched — pick the higher scorer
-  // (thresholds already encode the FAO vs USDA quality bar)
+  if (ctx.expectedState !== 'unknown') {
+    const faoStateMatches = fao!.state === ctx.expectedState;
+    const usdaStateMatches = usda!.state === ctx.expectedState;
+    if (faoStateMatches && !usdaStateMatches) return fao;
+    if (!faoStateMatches && usdaStateMatches) return usda;
+  }
+
   return fao!.similarity >= usda!.similarity ? fao : usda;
+}
+
+export interface MatchStateInfo {
+  expectedState: 'raw' | 'cooked';
+  stateSource: 'explicit' | 'method_lookup' | 'unknown';
+}
+
+function buildPickContext(stateInfo: MatchStateInfo): PickBestSourceContext {
+  return {
+    expectedState:
+      stateInfo.stateSource === 'unknown' ? 'unknown' : stateInfo.expectedState,
+  };
 }
 
 /**
@@ -133,8 +155,14 @@ export function pickBestSource(
 export async function matchSingleIngredientWithEmbedding(
   ingredientName: string,
   embedding: number[],
-  db: AppDb
+  db: AppDb,
+  stateInfo: MatchStateInfo = {
+    expectedState: 'cooked',
+    stateSource: 'unknown',
+  }
 ): Promise<MatchInfo | null> {
+  const pickCtx = buildPickContext(stateInfo);
+
   // Step 1: Source-aware vector search — query FAO and USDA separately
   const [faoVectorRows, usdaVectorRows] = await Promise.all([
     db.execute(
@@ -167,7 +195,7 @@ export async function matchSingleIngredientWithEmbedding(
     );
   }
 
-  const vectorWinner = pickBestSource(faoResult, usdaResult);
+  const vectorWinner = pickBestSource(faoResult, usdaResult, pickCtx);
   if (vectorWinner) return vectorWinner;
 
   // Step 2: Fuzzy fallback — source-aware
@@ -202,7 +230,7 @@ export async function matchSingleIngredientWithEmbedding(
     );
   }
 
-  const fuzzyWinner = pickBestSource(faoFuzzy, usdaFuzzy);
+  const fuzzyWinner = pickBestSource(faoFuzzy, usdaFuzzy, pickCtx);
   if (!fuzzyWinner) {
     console.info(`[matching] "${ingredientName}" → unmatched`);
   }
