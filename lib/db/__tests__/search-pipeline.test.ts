@@ -60,11 +60,13 @@ async function hasSearchPipelinePrerequisite(databaseUrl: string) {
   const checkSql = postgres(encodeDbUrl(databaseUrl));
 
   try {
-    const [row] = await checkSql<{
-      missingSearchText: number;
-      missingEmbeddings: number;
-      missingSearchTextAscii: number;
-    }>`
+    const rows = await checkSql<
+      Array<{
+        missingSearchText: number;
+        missingEmbeddings: number;
+        missingSearchTextAscii: number;
+      }>
+    >`
       SELECT
         COUNT(*) FILTER (WHERE search_text IS NULL) AS "missingSearchText",
         COUNT(*) FILTER (WHERE embedding IS NULL) AS "missingEmbeddings",
@@ -73,6 +75,7 @@ async function hasSearchPipelinePrerequisite(databaseUrl: string) {
         ) AS "missingSearchTextAscii"
       FROM vietnamese_food_composition
     `;
+    const [row] = rows;
 
     return (
       Number(row.missingSearchText) === 0 &&

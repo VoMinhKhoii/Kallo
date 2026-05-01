@@ -1,11 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const mockDbSelect = vi.fn();
-const mockBuildCalorieAdherenceHeatmap = vi.fn().mockReturnValue([
-  [1, null],
-  [null, 1],
-]);
-const mockLoadWeightSummaryAction = vi.fn();
+let mockDbSelect: ReturnType<typeof vi.fn>;
+let mockBuildCalorieAdherenceHeatmap: ReturnType<typeof vi.fn>;
+let mockLoadWeightSummaryAction: ReturnType<typeof vi.fn>;
 
 vi.mock('@/lib/auth', () => ({
   requireAuthAndProfile: vi.fn().mockResolvedValue({
@@ -23,17 +20,22 @@ vi.mock('@/lib/auth', () => ({
 
 vi.mock('@/lib/db', () => ({
   db: {
-    select: mockDbSelect,
+    select: (mockDbSelect = vi.fn()),
   },
 }));
 
 vi.mock('@/lib/dashboard/adherence', () => ({
-  buildCalorieAdherenceHeatmap: mockBuildCalorieAdherenceHeatmap,
+  buildCalorieAdherenceHeatmap: (mockBuildCalorieAdherenceHeatmap = vi
+    .fn()
+    .mockReturnValue([
+      [1, null],
+      [null, 1],
+    ])),
   getLocalDateKey: vi.fn(() => '2026-05-01'),
 }));
 
 vi.mock('@/lib/actions/weight', () => ({
-  loadWeightSummaryAction: mockLoadWeightSummaryAction,
+  loadWeightSummaryAction: (mockLoadWeightSummaryAction = vi.fn()),
 }));
 
 import {
