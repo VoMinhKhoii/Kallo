@@ -185,8 +185,26 @@ export function DesktopSidebar({
     onPointerLeave();
   };
 
-  const handleFocusLeave = () => {
+  const handleFocusEnter = (event: React.FocusEvent<HTMLElement>) => {
+    const previousTarget = event.relatedTarget;
+    if (
+      previousTarget instanceof Node &&
+      event.currentTarget.contains(previousTarget)
+    ) {
+      return;
+    }
+    onFocusEnter();
+  };
+
+  const handleFocusLeave = (event: React.FocusEvent<HTMLElement>) => {
     if (userMenuOpen) return;
+    const nextTarget = event.relatedTarget;
+    if (
+      nextTarget instanceof Node &&
+      event.currentTarget.contains(nextTarget)
+    ) {
+      return;
+    }
     onFocusLeave();
   };
 
@@ -217,8 +235,8 @@ export function DesktopSidebar({
       data-collapsed={collapsed ? 'true' : 'false'}
       onPointerEnter={onPointerEnter}
       onPointerLeave={handlePointerLeave}
-      onFocus={onFocusEnter}
-      onBlur={handleFocusLeave}
+      onFocusCapture={handleFocusEnter}
+      onBlurCapture={handleFocusLeave}
       onClick={handleAsideClick}
       className={cn(
         'sticky top-3 flex h-[calc(100vh-1.5rem)] shrink-0 flex-col rounded-xl border border-nham-border/60 bg-white shadow-nham-text/[0.03] shadow-sm transition-[width] duration-[220ms] ease-out',
