@@ -20,6 +20,11 @@ import type {
 } from '../types';
 import { assembleResult } from './assembly';
 import {
+  type MealFactsForComputePolicy,
+  pickComputePolicy,
+  summarizeCandidateConfidence,
+} from './compute-policy';
+import {
   handleError,
   isNonFoodError,
   isParseError,
@@ -441,6 +446,23 @@ async function runPipeline(
   );
   const matchMs = Date.now() - t1;
 
+  const modelProfileForRun =
+    options.nutritionModel === undefined
+      ? MODEL_PROFILE
+      : { ...MODEL_PROFILE, nutritionModel: options.nutritionModel };
+  const baseComputeFacts: MealFactsForComputePolicy = {
+    ingredientCount: allIngredients.length,
+    matchedCount: matchResult.matched.length,
+    unmatchedCount: matchResult.unmatched.length,
+    anomalyTypes: [],
+    parseRetryCount: 0,
+    candidateConfidenceSummary: summarizeCandidateConfidence(
+      matchResult.matched.map((m) => ({ matchConfidence: m.similarity }))
+    ),
+  };
+  let computePolicy = pickComputePolicy(baseComputeFacts, modelProfileForRun);
+  let selectedNutritionModel = computePolicy.call2Model;
+
   // Stage 3: LLM nutrition estimation (streaming with per-item boundary detection)
   emit({ type: 'stage', stage: 'estimating' });
   const t2 = Date.now();
@@ -522,7 +544,7 @@ async function runPipeline(
         name: 'nutrition',
         builder: buildNutritionPrompt as (...a: unknown[]) => string,
         templateSample: systemPrompt,
-        model: options.nutritionModel ?? NUTRITION_MODEL,
+        model: selectedNutritionModel,
       });
 
       let rawNutrition: RawNutritionAdjustment = await fetchWithTimeout(
@@ -533,7 +555,7 @@ async function runPipeline(
               systemPrompt,
               userMessage:
                 'Produce bounded nutrition estimates for each ingredient in each meal item based on the reference data provided.',
-              model: options.nutritionModel ?? NUTRITION_MODEL,
+              model: selectedNutritionModel,
               temperature: 0.5,
               topP: 1,
               topK: 1,
@@ -573,6 +595,19 @@ async function runPipeline(
           '[pipeline] classifyAnomalies → retry_step2, retrying Call 2'
         );
         retryStep2Count += 1;
+        computePolicy = pickComputePolicy(
+          {
+            ...baseComputeFacts,
+            anomalyTypes: earlyAnomalies.map((a) => a.type),
+            parseRetryCount: retryStep2Count,
+          },
+          modelProfileForRun
+        );
+        selectedNutritionModel =
+          computePolicy.escalateOnRetry &&
+          modelProfileForRun.escalationModel !== null
+            ? modelProfileForRun.escalationModel
+            : computePolicy.call2Model;
         // Reset streaming state so retry re-emits from scratch
         lastExtractedCount = 0;
         macroEmittedCounts.clear();
@@ -584,7 +619,7 @@ async function runPipeline(
                 systemPrompt,
                 userMessage:
                   'The previous result had 0 calories. Please recalculate bounded nutrition estimates carefully.',
-                model: options.nutritionModel ?? NUTRITION_MODEL,
+                model: selectedNutritionModel,
                 temperature: 0.5,
                 topP: 1,
                 topK: 1,
@@ -614,6 +649,19 @@ async function runPipeline(
           retryableValidationAnomalies.map((a) => a.type)
         );
         retryStep2Count += 1;
+        computePolicy = pickComputePolicy(
+          {
+            ...baseComputeFacts,
+            anomalyTypes: retryableValidationAnomalies.map((a) => a.type),
+            parseRetryCount: retryStep2Count,
+          },
+          modelProfileForRun
+        );
+        selectedNutritionModel =
+          computePolicy.escalateOnRetry &&
+          modelProfileForRun.escalationModel !== null
+            ? modelProfileForRun.escalationModel
+            : computePolicy.call2Model;
         lastExtractedCount = 0;
         macroEmittedCounts.clear();
         rawNutrition = await fetchWithTimeout(
@@ -624,7 +672,7 @@ async function runPipeline(
                 systemPrompt,
                 userMessage:
                   'The previous result had physically implausible nutrition bounds. Recalculate bounded nutrition estimates carefully and keep calories consistent with protein/carbs/fat.',
-                model: options.nutritionModel ?? NUTRITION_MODEL,
+                model: selectedNutritionModel,
                 temperature: 0.5,
                 topP: 1,
                 topK: 1,
@@ -741,7 +789,7 @@ async function runPipeline(
         userId: traceContext.userId,
         requestId: traceContext.requestId,
         modelCall1: DECOMPOSITION_MODEL,
-        modelCall2: options.nutritionModel ?? NUTRITION_MODEL,
+        modelCall2: selectedNutritionModel,
         timings: { total: Date.now() - t0 },
         counts: {
           ingredient: allIngredients.length,
