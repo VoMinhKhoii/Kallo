@@ -67,6 +67,13 @@ export const userProfiles = pgTable(
     onboardingCompletedAt: timestamp('onboarding_completed_at', {
       withTimezone: true,
     }),
+    // When the user dismisses the onboarding nudge to its minimized pill
+    // form. NULL = full nudge shown. Set = minimized pill shown.
+    // Cleared (back to NULL) when the user clicks the pill to resume,
+    // or implicitly when onboarding completes (the nudge unmounts anyway).
+    onboardingMinimizedAt: timestamp('onboarding_minimized_at', {
+      withTimezone: true,
+    }),
 
     createdAt: timestamp('created_at', { withTimezone: true })
       .notNull()

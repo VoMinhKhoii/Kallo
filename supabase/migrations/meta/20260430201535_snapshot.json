@@ -1,6 +1,6 @@
 {
-  "id": "d0b24c8b-77a1-441f-86cc-8b07d3d0b345",
-  "prevId": "d6ab330a-eae9-429b-abbd-068478c302bc",
+  "id": "46daa7d0-4dfa-4611-94f4-281eeecd7f61",
+  "prevId": "d0b24c8b-77a1-441f-86cc-8b07d3d0b345",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -209,169 +209,169 @@
         },
         "calories_kcal": {
           "name": "calories_kcal",
-          "type": "jsonb",
+          "type": "numeric",
           "primaryKey": false,
           "notNull": false
         },
         "protein_g": {
           "name": "protein_g",
-          "type": "jsonb",
+          "type": "numeric",
           "primaryKey": false,
           "notNull": false
         },
         "carbohydrate_g": {
           "name": "carbohydrate_g",
-          "type": "jsonb",
+          "type": "numeric",
           "primaryKey": false,
           "notNull": false
         },
         "fat_g": {
           "name": "fat_g",
-          "type": "jsonb",
+          "type": "numeric",
           "primaryKey": false,
           "notNull": false
         },
         "fiber_g": {
           "name": "fiber_g",
-          "type": "jsonb",
+          "type": "numeric",
           "primaryKey": false,
           "notNull": false
         },
         "sodium_mg": {
           "name": "sodium_mg",
-          "type": "jsonb",
+          "type": "numeric",
           "primaryKey": false,
           "notNull": false
         },
         "calcium_mg": {
           "name": "calcium_mg",
-          "type": "jsonb",
+          "type": "numeric",
           "primaryKey": false,
           "notNull": false
         },
         "iron_mg": {
           "name": "iron_mg",
-          "type": "jsonb",
+          "type": "numeric",
           "primaryKey": false,
           "notNull": false
         },
         "magnesium_mg": {
           "name": "magnesium_mg",
-          "type": "jsonb",
+          "type": "numeric",
           "primaryKey": false,
           "notNull": false
         },
         "phosphorus_mg": {
           "name": "phosphorus_mg",
-          "type": "jsonb",
+          "type": "numeric",
           "primaryKey": false,
           "notNull": false
         },
         "potassium_mg": {
           "name": "potassium_mg",
-          "type": "jsonb",
+          "type": "numeric",
           "primaryKey": false,
           "notNull": false
         },
         "zinc_mg": {
           "name": "zinc_mg",
-          "type": "jsonb",
+          "type": "numeric",
           "primaryKey": false,
           "notNull": false
         },
         "copper_mcg": {
           "name": "copper_mcg",
-          "type": "jsonb",
+          "type": "numeric",
           "primaryKey": false,
           "notNull": false
         },
         "manganese_mg": {
           "name": "manganese_mg",
-          "type": "jsonb",
+          "type": "numeric",
           "primaryKey": false,
           "notNull": false
         },
         "beta_carotene_mcg": {
           "name": "beta_carotene_mcg",
-          "type": "jsonb",
+          "type": "numeric",
           "primaryKey": false,
           "notNull": false
         },
         "vitamin_a_mcg": {
           "name": "vitamin_a_mcg",
-          "type": "jsonb",
+          "type": "numeric",
           "primaryKey": false,
           "notNull": false
         },
         "vitamin_d_mcg": {
           "name": "vitamin_d_mcg",
-          "type": "jsonb",
+          "type": "numeric",
           "primaryKey": false,
           "notNull": false
         },
         "vitamin_e_mg": {
           "name": "vitamin_e_mg",
-          "type": "jsonb",
+          "type": "numeric",
           "primaryKey": false,
           "notNull": false
         },
         "vitamin_k_mcg": {
           "name": "vitamin_k_mcg",
-          "type": "jsonb",
+          "type": "numeric",
           "primaryKey": false,
           "notNull": false
         },
         "vitamin_c_mg": {
           "name": "vitamin_c_mg",
-          "type": "jsonb",
+          "type": "numeric",
           "primaryKey": false,
           "notNull": false
         },
         "vitamin_b1_mg": {
           "name": "vitamin_b1_mg",
-          "type": "jsonb",
+          "type": "numeric",
           "primaryKey": false,
           "notNull": false
         },
         "vitamin_b2_mg": {
           "name": "vitamin_b2_mg",
-          "type": "jsonb",
+          "type": "numeric",
           "primaryKey": false,
           "notNull": false
         },
         "vitamin_pp_mg": {
           "name": "vitamin_pp_mg",
-          "type": "jsonb",
+          "type": "numeric",
           "primaryKey": false,
           "notNull": false
         },
         "vitamin_b5_mg": {
           "name": "vitamin_b5_mg",
-          "type": "jsonb",
+          "type": "numeric",
           "primaryKey": false,
           "notNull": false
         },
         "vitamin_b6_mg": {
           "name": "vitamin_b6_mg",
-          "type": "jsonb",
+          "type": "numeric",
           "primaryKey": false,
           "notNull": false
         },
         "vitamin_b9_mcg": {
           "name": "vitamin_b9_mcg",
-          "type": "jsonb",
+          "type": "numeric",
           "primaryKey": false,
           "notNull": false
         },
         "vitamin_b12_mcg": {
           "name": "vitamin_b12_mcg",
-          "type": "jsonb",
+          "type": "numeric",
           "primaryKey": false,
           "notNull": false
         },
         "vitamin_h_mcg": {
           "name": "vitamin_h_mcg",
-          "type": "jsonb",
+          "type": "numeric",
           "primaryKey": false,
           "notNull": false
         },
@@ -483,169 +483,169 @@
         },
         "calories_kcal": {
           "name": "calories_kcal",
-          "type": "jsonb",
+          "type": "numeric",
           "primaryKey": false,
           "notNull": false
         },
         "protein_g": {
           "name": "protein_g",
-          "type": "jsonb",
+          "type": "numeric",
           "primaryKey": false,
           "notNull": false
         },
         "carbohydrate_g": {
           "name": "carbohydrate_g",
-          "type": "jsonb",
+          "type": "numeric",
           "primaryKey": false,
           "notNull": false
         },
         "fat_g": {
           "name": "fat_g",
-          "type": "jsonb",
+          "type": "numeric",
           "primaryKey": false,
           "notNull": false
         },
         "fiber_g": {
           "name": "fiber_g",
-          "type": "jsonb",
+          "type": "numeric",
           "primaryKey": false,
           "notNull": false
         },
         "sodium_mg": {
           "name": "sodium_mg",
-          "type": "jsonb",
+          "type": "numeric",
           "primaryKey": false,
           "notNull": false
         },
         "calcium_mg": {
           "name": "calcium_mg",
-          "type": "jsonb",
+          "type": "numeric",
           "primaryKey": false,
           "notNull": false
         },
         "iron_mg": {
           "name": "iron_mg",
-          "type": "jsonb",
+          "type": "numeric",
           "primaryKey": false,
           "notNull": false
         },
         "magnesium_mg": {
           "name": "magnesium_mg",
-          "type": "jsonb",
+          "type": "numeric",
           "primaryKey": false,
           "notNull": false
         },
         "phosphorus_mg": {
           "name": "phosphorus_mg",
-          "type": "jsonb",
+          "type": "numeric",
           "primaryKey": false,
           "notNull": false
         },
         "potassium_mg": {
           "name": "potassium_mg",
-          "type": "jsonb",
+          "type": "numeric",
           "primaryKey": false,
           "notNull": false
         },
         "zinc_mg": {
           "name": "zinc_mg",
-          "type": "jsonb",
+          "type": "numeric",
           "primaryKey": false,
           "notNull": false
         },
         "copper_mcg": {
           "name": "copper_mcg",
-          "type": "jsonb",
+          "type": "numeric",
           "primaryKey": false,
           "notNull": false
         },
         "manganese_mg": {
           "name": "manganese_mg",
-          "type": "jsonb",
+          "type": "numeric",
           "primaryKey": false,
           "notNull": false
         },
         "beta_carotene_mcg": {
           "name": "beta_carotene_mcg",
-          "type": "jsonb",
+          "type": "numeric",
           "primaryKey": false,
           "notNull": false
         },
         "vitamin_a_mcg": {
           "name": "vitamin_a_mcg",
-          "type": "jsonb",
+          "type": "numeric",
           "primaryKey": false,
           "notNull": false
         },
         "vitamin_d_mcg": {
           "name": "vitamin_d_mcg",
-          "type": "jsonb",
+          "type": "numeric",
           "primaryKey": false,
           "notNull": false
         },
         "vitamin_e_mg": {
           "name": "vitamin_e_mg",
-          "type": "jsonb",
+          "type": "numeric",
           "primaryKey": false,
           "notNull": false
         },
         "vitamin_k_mcg": {
           "name": "vitamin_k_mcg",
-          "type": "jsonb",
+          "type": "numeric",
           "primaryKey": false,
           "notNull": false
         },
         "vitamin_c_mg": {
           "name": "vitamin_c_mg",
-          "type": "jsonb",
+          "type": "numeric",
           "primaryKey": false,
           "notNull": false
         },
         "vitamin_b1_mg": {
           "name": "vitamin_b1_mg",
-          "type": "jsonb",
+          "type": "numeric",
           "primaryKey": false,
           "notNull": false
         },
         "vitamin_b2_mg": {
           "name": "vitamin_b2_mg",
-          "type": "jsonb",
+          "type": "numeric",
           "primaryKey": false,
           "notNull": false
         },
         "vitamin_pp_mg": {
           "name": "vitamin_pp_mg",
-          "type": "jsonb",
+          "type": "numeric",
           "primaryKey": false,
           "notNull": false
         },
         "vitamin_b5_mg": {
           "name": "vitamin_b5_mg",
-          "type": "jsonb",
+          "type": "numeric",
           "primaryKey": false,
           "notNull": false
         },
         "vitamin_b6_mg": {
           "name": "vitamin_b6_mg",
-          "type": "jsonb",
+          "type": "numeric",
           "primaryKey": false,
           "notNull": false
         },
         "vitamin_b9_mcg": {
           "name": "vitamin_b9_mcg",
-          "type": "jsonb",
+          "type": "numeric",
           "primaryKey": false,
           "notNull": false
         },
         "vitamin_b12_mcg": {
           "name": "vitamin_b12_mcg",
-          "type": "jsonb",
+          "type": "numeric",
           "primaryKey": false,
           "notNull": false
         },
         "vitamin_h_mcg": {
           "name": "vitamin_h_mcg",
-          "type": "jsonb",
+          "type": "numeric",
           "primaryKey": false,
           "notNull": false
         },
@@ -1163,6 +1163,12 @@
         },
         "onboarding_completed_at": {
           "name": "onboarding_completed_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "onboarding_minimized_at": {
+          "name": "onboarding_minimized_at",
           "type": "timestamp with time zone",
           "primaryKey": false,
           "notNull": false

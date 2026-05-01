@@ -129,3 +129,32 @@ export async function saveProfileSettings(data: Record<string, unknown>) {
 
   return { success: true };
 }
+
+/**
+ * Minimize the onboarding nudge to its compact pill form. Records the
+ * timestamp on the user's profile so the choice survives reloads and
+ * cross-device sessions. Idempotent: setting again just refreshes the ts.
+ */
+export async function minimizeOnboardingNudge() {
+  const user = await getAuthUser();
+  await db
+    .update(userProfiles)
+    .set({ onboardingMinimizedAt: new Date() })
+    .where(eq(userProfiles.userId, user.id));
+  return { success: true };
+}
+
+/**
+ * Restore the onboarding nudge to its full form (clears the minimized
+ * timestamp). Called when the user clicks the pill to resume — the parent
+ * shows the wizard immediately, and the next reload will show the full
+ * card again if the wizard was dismissed without progress.
+ */
+export async function restoreOnboardingNudge() {
+  const user = await getAuthUser();
+  await db
+    .update(userProfiles)
+    .set({ onboardingMinimizedAt: null })
+    .where(eq(userProfiles.userId, user.id));
+  return { success: true };
+}
