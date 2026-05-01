@@ -1,11 +1,12 @@
 import { ArrowLeft } from 'lucide-react';
-import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { z } from 'zod';
+import { Link } from '@/i18n/navigation';
 import { formatUtcTimestamp } from '@/lib/admin/format';
 import { getRequestDetail } from '@/lib/admin/queries';
 import { requireAdmin } from '@/lib/admin/require-admin';
 import { db } from '@/lib/db';
+import { PipelineSummary } from './_components/pipeline-summary';
 import { ReplayButton } from './_components/replay-button';
 import type {
   CompareLabel,
@@ -206,6 +207,13 @@ export default async function RequestDetailPage({
           </div>
         ) : null}
       </div>
+
+      {/* High-signal pipeline summary (always visible — diagnostic-first) */}
+      <PipelineSummary
+        request={detail.request}
+        stageLogs={detail.stageLogs}
+        llmCalls={detail.llmCalls}
+      />
 
       {/* Timeline */}
       {isCompare ? (

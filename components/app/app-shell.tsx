@@ -19,6 +19,9 @@ interface AppShellProps {
   onboardingStep: number;
   initialProfile: ProfileRow | null;
   isFirstSession: boolean;
+  isAdmin?: boolean;
+  userEmail?: string | null;
+  userDisplayName?: string | null;
   children: React.ReactNode;
 }
 
@@ -26,6 +29,9 @@ export function AppShell({
   onboardingStep,
   initialProfile,
   isFirstSession,
+  isAdmin = false,
+  userEmail,
+  userDisplayName,
   children,
 }: AppShellProps) {
   const hasStepOneLocaleDraft = readStepOneLocaleDraft() !== null;
@@ -69,6 +75,9 @@ export function AppShell({
           <MainSidebar
             onboardingIncomplete={showResumeOnboarding && !showOnboarding}
             onResumeOnboarding={() => setShowOnboarding(true)}
+            isAdmin={isAdmin}
+            userEmail={userEmail}
+            userDisplayName={userDisplayName}
           />
         </div>
 
@@ -95,6 +104,9 @@ export function AppShell({
               <MainSidebar
                 onboardingIncomplete={showResumeOnboarding && !showOnboarding}
                 onResumeOnboarding={() => setShowOnboarding(true)}
+                isAdmin={isAdmin}
+                userEmail={userEmail}
+                userDisplayName={userDisplayName}
               />
             </div>
           </div>

@@ -8,6 +8,7 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   Settings,
+  ShieldCheck,
   UtensilsCrossed,
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
@@ -54,13 +55,21 @@ function SectionHeader({
 export function MainSidebar({
   onboardingIncomplete,
   onResumeOnboarding,
+  isAdmin = false,
+  userEmail,
+  userDisplayName,
 }: {
   onboardingIncomplete?: boolean;
   onResumeOnboarding?: () => void;
+  isAdmin?: boolean;
+  userEmail?: string | null;
+  userDisplayName?: string | null;
 }) {
   const pathname = usePathname();
   const t = useTranslations('app.mainSidebar');
   const [collapsed, setCollapsed] = useState(false);
+  const displayName = userDisplayName?.trim() || userEmail || 'Account';
+  const displayInitial = displayName.charAt(0).toUpperCase();
 
   const navItems: NavItem[] = [
     {
@@ -81,6 +90,16 @@ export function MainSidebar({
       href: '/logging',
       icon: <UtensilsCrossed className="h-5 w-5 shrink-0" />,
     },
+    ...(isAdmin
+      ? [
+          {
+            id: 'admin',
+            label: t('admin'),
+            href: '/admin',
+            icon: <ShieldCheck className="h-5 w-5 shrink-0" />,
+          },
+        ]
+      : []),
   ];
 
   const handleSignOut = async () => {
@@ -116,7 +135,8 @@ export function MainSidebar({
         <SectionHeader label={t('sectionLabel')} collapsed={collapsed} />
         <ul className="flex flex-col gap-1.5">
           {navItems.map((item) => {
-            const isActive = pathname === item.href;
+            const isActive =
+              pathname === item.href || pathname.startsWith(`${item.href}/`);
             return (
               <li key={item.id}>
                 <Link
@@ -162,6 +182,7 @@ export function MainSidebar({
               type="button"
               onClick={onResumeOnboarding}
               title={t('completeProfile')}
+              aria-label={t('completeProfile')}
               className="flex h-8 w-8 items-center justify-center rounded-lg text-nham-accent transition-colors hover:bg-nham-hover/60"
             >
               <AlertCircle className="h-4 w-4" />
@@ -237,7 +258,7 @@ export function MainSidebar({
                 fontFamily: 'DM Sans, sans-serif',
               }}
             >
-              V
+              {displayInitial}
             </span>
           </div>
           <div
@@ -252,22 +273,25 @@ export function MainSidebar({
                 fontFamily: 'DM Sans, sans-serif',
               }}
             >
-              VMKHOIII
+              {displayName}
             </span>
-            <span
-              className="whitespace-nowrap font-medium text-foreground text-xs"
-              style={{
-                fontFamily: 'DM Sans, sans-serif',
-              }}
-            >
-              minhkhoitdn@gmail.com
-            </span>
+            {userEmail && (
+              <span
+                className="whitespace-nowrap font-medium text-foreground text-xs"
+                style={{
+                  fontFamily: 'DM Sans, sans-serif',
+                }}
+              >
+                {userEmail}
+              </span>
+            )}
           </div>
         </div>
         <button
           type="button"
           onClick={handleSignOut}
           title={t('signOut')}
+          aria-label={t('signOut')}
           className={cn(
             'flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-nham-hover/60 hover:text-red-500',
             collapsed ? 'hidden' : ''

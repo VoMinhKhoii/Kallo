@@ -1,7 +1,8 @@
 'use server';
 import { eq } from 'drizzle-orm';
-import { redirect } from 'next/navigation';
+import { getLocale } from 'next-intl/server';
 import { z } from 'zod';
+import { redirect } from '@/i18n/navigation';
 import { requireAdmin } from '@/lib/admin/require-admin';
 import {
   createGeminiClient,
@@ -181,5 +182,9 @@ export async function replayRequest(
         : null,
   });
 
-  redirect(`/admin/requests/${replayId}?compare=${originalId}`);
+  const locale = await getLocale();
+  redirect({
+    href: `/admin/requests/${replayId}?compare=${originalId}`,
+    locale,
+  });
 }

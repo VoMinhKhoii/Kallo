@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation';
 import { AppShell } from '@/components/app/app-shell';
+import { isAdminEmail } from '@/lib/admin/is-admin';
 import { getOnboardingProfile } from '@/lib/onboarding/actions';
 import { createClient } from '@/lib/supabase/server';
 
@@ -31,12 +32,18 @@ export default async function AppLayout({
     console.error('Failed to load onboarding profile:', error);
   }
   const onboardingStep = profile?.onboardingStep ?? 0;
+  const isAdmin = isAdminEmail(user.email);
+  const userEmail = user.email ?? null;
+  const userDisplayName = userEmail?.split('@')[0] ?? null;
 
   return (
     <AppShell
       onboardingStep={onboardingStep}
       initialProfile={profile}
       isFirstSession={isFirstSession}
+      isAdmin={isAdmin}
+      userEmail={userEmail}
+      userDisplayName={userDisplayName}
     >
       {children}
     </AppShell>

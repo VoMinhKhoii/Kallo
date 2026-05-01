@@ -257,6 +257,7 @@ export async function matchIngredients(
             matchInfos.push({
               ...result.value,
               ingredientName: retry.original.name,
+              viaAlias: true,
             });
             rescuedIndices.add(retry.originalIndex);
             console.info(

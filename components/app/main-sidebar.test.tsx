@@ -46,4 +46,15 @@ describe('MainSidebar', () => {
       document.querySelector('a[href="/tracking"]')
     ).not.toBeInTheDocument();
   });
+
+  it('renders the current user identity instead of a hard-coded account', () => {
+    render(
+      <MainSidebar userDisplayName="Khoi Vo" userEmail="khoi@example.com" />
+    );
+
+    expect(screen.getByText('Khoi Vo')).toBeInTheDocument();
+    expect(screen.getByText('khoi@example.com')).toBeInTheDocument();
+    expect(screen.queryByText('VMKHOIII')).not.toBeInTheDocument();
+    expect(screen.queryByText('minhkhoitdn@gmail.com')).not.toBeInTheDocument();
+  });
 });

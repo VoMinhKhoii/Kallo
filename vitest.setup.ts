@@ -27,6 +27,18 @@ vi.mock('next-intl', () => ({
     children,
 }));
 
+// Global mock for next-intl server helpers
+vi.mock('next-intl/server', () => ({
+  getLocale: async () => 'en',
+  getTranslations: async () => {
+    const t = (key: string) => key;
+    t.rich = t;
+    t.raw = t;
+    return t;
+  },
+  getMessages: async () => ({}),
+}));
+
 // Global mock for locale-aware navigation
 vi.mock('@/i18n/navigation', () => ({
   Link: ({

@@ -1,6 +1,6 @@
 import { sql } from 'drizzle-orm';
 import type { AppDb } from '@/lib/db';
-import type { MatchConfidence } from '../types';
+import type { MatchConfidence, MatchSource, MatchType } from '../types';
 
 export const CONFIDENCE_THRESHOLDS = {
   /** Similarity well above all per-source floors — strong match */
@@ -51,6 +51,14 @@ export interface MatchInfo {
   matchedName: string;
   similarity: number;
   confidence: MatchConfidence;
+  /** Which strategy produced the winning row (vector vs fuzzy). */
+  matchType?: MatchType;
+  /** Which composition DB the winning row came from. */
+  source?: MatchSource;
+  /** Wall-clock time for the winning match attempt (DB roundtrips only). */
+  latencyMs?: number;
+  /** Set by the cascade when an alias-fallback rescued the original name. */
+  viaAlias?: boolean;
 }
 
 /**
@@ -71,7 +79,9 @@ export function rerankCandidates(candidates: FuzzyMatchRow[]): FuzzyMatchRow[] {
 export function buildMatchResult(
   ingredientName: string,
   rows: FuzzyMatchRow[],
-  minSimilarity: number
+  minSimilarity: number,
+  source?: MatchSource,
+  matchType?: MatchType
 ): MatchInfo | null {
   if (rows.length === 0) return null;
 
@@ -85,6 +95,8 @@ export function buildMatchResult(
     matchedName: topMatch.name_primary,
     similarity: topMatch.similarity,
     confidence: classifyConfidence(topMatch.similarity),
+    ...(source !== undefined ? { source } : {}),
+    ...(matchType !== undefined ? { matchType } : {}),
   };
 }
 
@@ -124,6 +136,7 @@ export async function matchSingleIngredientWithEmbedding(
   embedding: number[],
   db: AppDb
 ): Promise<MatchInfo | null> {
+  const t0 = Date.now();
   // Step 1: Source-aware vector search — query FAO and USDA separately
   const [faoVectorRows, usdaVectorRows] = await Promise.all([
     db.execute(
@@ -137,12 +150,16 @@ export async function matchSingleIngredientWithEmbedding(
   const faoResult = buildMatchResult(
     ingredientName,
     faoVectorRows as unknown as FuzzyMatchRow[],
-    FAO_VECTOR_THRESHOLD
+    FAO_VECTOR_THRESHOLD,
+    'fao',
+    'vector'
   );
   const usdaResult = buildMatchResult(
     ingredientName,
     usdaVectorRows as unknown as FuzzyMatchRow[],
-    USDA_VECTOR_THRESHOLD
+    USDA_VECTOR_THRESHOLD,
+    'usda',
+    'vector'
   );
 
   if (faoResult) {
@@ -157,7 +174,9 @@ export async function matchSingleIngredientWithEmbedding(
   }
 
   const vectorWinner = pickBestSource(faoResult, usdaResult);
-  if (vectorWinner) return vectorWinner;
+  if (vectorWinner) {
+    return { ...vectorWinner, latencyMs: Date.now() - t0 };
+  }
 
   // Step 2: Fuzzy fallback — source-aware
   const [faoFuzzyRows, usdaFuzzyRows] = await Promise.all([
@@ -172,12 +191,16 @@ export async function matchSingleIngredientWithEmbedding(
   const faoFuzzy = buildMatchResult(
     ingredientName,
     faoFuzzyRows as unknown as FuzzyMatchRow[],
-    FUZZY_FALLBACK_THRESHOLD
+    FUZZY_FALLBACK_THRESHOLD,
+    'fao',
+    'fuzzy'
   );
   const usdaFuzzy = buildMatchResult(
     ingredientName,
     usdaFuzzyRows as unknown as FuzzyMatchRow[],
-    FUZZY_FALLBACK_THRESHOLD
+    FUZZY_FALLBACK_THRESHOLD,
+    'usda',
+    'fuzzy'
   );
 
   if (faoFuzzy) {
@@ -194,6 +217,7 @@ export async function matchSingleIngredientWithEmbedding(
   const fuzzyWinner = pickBestSource(faoFuzzy, usdaFuzzy);
   if (!fuzzyWinner) {
     console.info(`[matching] "${ingredientName}" → unmatched`);
+    return null;
   }
-  return fuzzyWinner;
+  return { ...fuzzyWinner, latencyMs: Date.now() - t0 };
 }

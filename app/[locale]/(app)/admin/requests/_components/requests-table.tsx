@@ -1,5 +1,5 @@
 import type { InferSelectModel } from 'drizzle-orm';
-import Link from 'next/link';
+import { Link } from '@/i18n/navigation';
 import { formatUtcTimestamp } from '@/lib/admin/format';
 import type { pipelineRequests } from '@/lib/db/schema';
 import { cn } from '@/lib/utils';

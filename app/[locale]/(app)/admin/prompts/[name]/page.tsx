@@ -1,7 +1,7 @@
 import { ArrowLeft } from 'lucide-react';
-import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { z } from 'zod';
+import { Link } from '@/i18n/navigation';
 import { formatUtcTimestamp } from '@/lib/admin/format';
 import { getPromptVersions } from '@/lib/admin/queries';
 import { requireAdmin } from '@/lib/admin/require-admin';
