@@ -218,6 +218,11 @@ async function runPipeline(
   const mealItemNamesSeen = new Set<string>();
   let mealItemIndex = 0;
 
+  const resetDecompositionStreamState = () => {
+    mealItemNamesSeen.clear();
+    mealItemIndex = 0;
+  };
+
   const composedOnChunk = (accumulated: string) => {
     // Existing: pre-warm embedding cache for ingredient names
     speculativeMatcher(accumulated);
@@ -261,7 +266,11 @@ async function runPipeline(
               topK: 1,
               abortSignal: signal,
             },
-            { onChunk: composedOnChunk, trace: callTrace }
+            {
+              onAttemptStart: resetDecompositionStreamState,
+              onChunk: composedOnChunk,
+              trace: callTrace,
+            }
           ),
         LLM_TIMEOUT_MS,
         'decomposition'
@@ -393,7 +402,13 @@ async function runPipeline(
               topK: 1,
               abortSignal: signal,
             },
-            { onChunk: nutritionOnChunk, trace: callTrace }
+            {
+              onAttemptStart: () => {
+                lastExtractedCount = 0;
+              },
+              onChunk: nutritionOnChunk,
+              trace: callTrace,
+            }
           ),
         LLM_TIMEOUT_MS,
         'nutrition'
@@ -442,7 +457,13 @@ async function runPipeline(
                 topK: 1,
                 abortSignal: signal,
               },
-              { onChunk: nutritionOnChunk, trace: callTrace }
+              {
+                onAttemptStart: () => {
+                  lastExtractedCount = 0;
+                },
+                onChunk: nutritionOnChunk,
+                trace: callTrace,
+              }
             ),
           LLM_TIMEOUT_MS,
           'nutrition-retry'

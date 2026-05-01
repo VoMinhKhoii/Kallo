@@ -21,6 +21,9 @@ import { db } from '@/lib/db';
 import { pipelineLlmCalls, pipelineRequests } from '@/lib/db/schema';
 
 const idSchema = z.string().uuid();
+const replayOptionsSchema = z.object({
+  dryRun: z.boolean().optional(),
+});
 
 /**
  * Builds a mock GeminiClient that replays previously captured llm_call
@@ -69,6 +72,7 @@ async function buildDryRunGeminiClient(
       const t0 = Date.now();
       const value = next<T>();
       const responseRaw = JSON.stringify(value);
+      opts?.onAttemptStart?.(1);
       opts?.onChunk?.(responseRaw);
       if (opts?.trace) {
         const { trace } = opts;
@@ -102,8 +106,8 @@ export async function replayRequest(
   options: { dryRun?: boolean } = {}
 ) {
   const originalId = idSchema.parse(originalIdInput);
+  const { dryRun = false } = replayOptionsSchema.parse(options);
   const admin = await requireAdmin();
-  const dryRun = options.dryRun === true;
 
   const [orig] = await db
     .select({

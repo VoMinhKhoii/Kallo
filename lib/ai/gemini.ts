@@ -54,6 +54,7 @@ export interface GeminiCallTrace {
 }
 
 export interface StreamOptions {
+  onAttemptStart?: (attempt: number) => void;
   onChunk?: (accumulated: string) => void;
   trace?: GeminiCallTrace;
 }
@@ -233,7 +234,7 @@ export function createGeminiClient(
       params: StructuredOutputParams<T>,
       opts?: StreamOptions
     ): Promise<T> {
-      const { onChunk, trace } = opts ?? {};
+      const { onAttemptStart, onChunk, trace } = opts ?? {};
       const jsonSchema = toJSONSchema(params.schema);
       const promptSize = params.systemPrompt.length + params.userMessage.length;
       console.info(
@@ -272,7 +273,8 @@ export function createGeminiClient(
         : undefined;
 
       return withRetry(
-        async (_attempt) => {
+        async (attempt) => {
+          onAttemptStart?.(attempt);
           // Reset per-attempt state.
           lastAccumulated = null;
           lastUsageMeta = null;

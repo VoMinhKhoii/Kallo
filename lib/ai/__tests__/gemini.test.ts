@@ -248,15 +248,21 @@ describe('GeminiClient', () => {
         maxRetries: 2,
         baseDelayMs: 10,
       });
-      const result = await client.generateStructuredOutputStream({
-        schema: z.object({ name: z.string(), value: z.number() }),
-        systemPrompt: 'test',
-        userMessage: 'test',
-        model: 'gemini-2.5-flash-lite',
-      });
+      const onAttemptStart = vi.fn();
+      const result = await client.generateStructuredOutputStream(
+        {
+          schema: z.object({ name: z.string(), value: z.number() }),
+          systemPrompt: 'test',
+          userMessage: 'test',
+          model: 'gemini-2.5-flash-lite',
+        },
+        { onAttemptStart }
+      );
 
       expect(result).toEqual({ name: 'ok', value: 1 });
       expect(mockGenerateContentStream).toHaveBeenCalledTimes(2);
+      expect(onAttemptStart).toHaveBeenNthCalledWith(1, 1);
+      expect(onAttemptStart).toHaveBeenNthCalledWith(2, 2);
     });
 
     it('throws after exhausting retries', async () => {
