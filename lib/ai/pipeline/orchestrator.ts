@@ -26,6 +26,7 @@ import {
   pickComputePolicy,
   summarizeCandidateConfidence,
 } from './compute-policy';
+import { deriveExpectedState } from './cooking-method-state';
 import {
   buildDecompositionCacheKey,
   createL4Cache,
@@ -347,6 +348,7 @@ async function runPipeline(
   const streamMealItemIds = new Map<string, string>();
   let mealItemIndex = 0;
   let cacheHitL4 = false;
+  let dbStateUnknownFires = 0;
 
   // Streaming policy (spec §4.4): item_name + item_macros stream incrementally.
   // On retry_step2, the second Call 2 re-emits item_macros; the client
@@ -463,6 +465,15 @@ async function runPipeline(
       ing.canonicalName = capitalizeFirst(
         decompositionIngredientCanonicalName(ing)
       );
+      const derived = deriveExpectedState({
+        explicit: ing.expectedState,
+        dishMethod: mi.cookingMethod ?? ing.cookingMethod,
+      });
+      ing.expectedState = derived.state;
+      ing._stateSource = derived.source;
+      if (derived.source === 'unknown') {
+        dbStateUnknownFires += 1;
+      }
     }
   }
 
@@ -889,7 +900,7 @@ async function runPipeline(
           macroInconsistentFires: allAnomalies.filter(
             (a) => a.type === 'macro_inconsistent'
           ).length,
-          dbStateUnknownFires: 0,
+          dbStateUnknownFires,
           retryStep2Count,
         },
         escalated: false,

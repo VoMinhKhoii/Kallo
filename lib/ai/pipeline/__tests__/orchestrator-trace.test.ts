@@ -434,6 +434,69 @@ describe('analyzeMeal traceContext', () => {
     expect(mockDbValues.mock.calls[0][0].cookedToRawFactorFires).toBe(2);
   });
 
+  it('records unknown cooking-method state derivations in pipeline_runs counters', async () => {
+    const db = makeDb();
+    const promptVersionsUsed = new Map<string, string>();
+    const traceContext: AnalyzeMealTraceContext = {
+      requestId: 'req-state-unknown',
+      db,
+      userId: 'user-test-1',
+      promptVersionsUsed,
+    };
+
+    const gemini = createMockGemini({
+      generateStructuredOutputStream: vi
+        .fn()
+        .mockResolvedValueOnce({
+          isFood: true,
+          mealItems: [
+            {
+              mealItemId: 'meal-1',
+              name: 'salad lạ',
+              cookingMethod: 'trộn mơ hồ',
+              ingredients: [
+                {
+                  ingredientId: 'ingredient-1',
+                  rawName: 'rau',
+                  canonicalName: 'rau',
+                  grams: 100,
+                },
+              ],
+            },
+          ],
+          mealSlot: null,
+        })
+        .mockResolvedValueOnce({
+          mealItems: [
+            {
+              mealItemName: 'Salad lạ',
+              ingredients: [
+                {
+                  ingredientName: 'Rau',
+                  caloriesKcal: { low: 10, mid: 15, high: 20 },
+                  proteinG: { low: 1, mid: 2, high: 3 },
+                  carbohydrateG: { low: 2, mid: 3, high: 4 },
+                  fatG: { low: 0, mid: 0.2, high: 0.5 },
+                },
+              ],
+            },
+          ],
+        }),
+    });
+
+    await analyzeMeal(
+      'salad lạ',
+      USER_CONTEXT,
+      db,
+      gemini,
+      undefined,
+      traceContext
+    );
+
+    expect(mockDbValues).toHaveBeenCalledTimes(1);
+    expect(mockDbValues.mock.calls[0][0].dbStateUnknownFires).toBe(1);
+  });
+
   it('retries Call 2 when validation returns a density_envelope warning', async () => {
     const db = makeDb();
     const promptVersionsUsed = new Map<string, string>();

@@ -21,6 +21,10 @@ export type MealConfidence = 'high' | 'medium' | 'low';
 export type MealSlot = 'breakfast' | 'brunch' | 'lunch' | 'dinner' | 'snack';
 
 export type ExpectedIngredientState = 'raw' | 'cooked';
+export type ExpectedIngredientStateSource =
+  | 'explicit'
+  | 'method_lookup'
+  | 'unknown';
 
 export type AmbiguityFlag =
   | 'multiple_dish_interpretations'
@@ -115,6 +119,8 @@ export interface DecomposedIngredient {
   expectedState?: ExpectedIngredientState;
   /** Aggregate-only ambiguity side channel; never a routing input. */
   ambiguityFlags?: AmbiguityFlag[];
+  /** Runtime-only derivation source for state tie-breaker confidence. */
+  _stateSource?: ExpectedIngredientStateSource;
   /** @deprecated Transitional support for pre-§2 direct test fixtures only. */
   name?: string;
   /** @deprecated Use `grams`; kept for direct test fixtures during migration. */
