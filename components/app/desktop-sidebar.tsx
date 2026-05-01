@@ -185,6 +185,11 @@ export function DesktopSidebar({
     onPointerLeave();
   };
 
+  const handleFocusLeave = () => {
+    if (userMenuOpen) return;
+    onFocusLeave();
+  };
+
   const navItems: NavItem[] = [
     {
       id: 'dashboard',
@@ -213,7 +218,7 @@ export function DesktopSidebar({
       onPointerEnter={onPointerEnter}
       onPointerLeave={handlePointerLeave}
       onFocus={onFocusEnter}
-      onBlur={onFocusLeave}
+      onBlur={handleFocusLeave}
       onClick={handleAsideClick}
       className={cn(
         'sticky top-3 flex h-[calc(100vh-1.5rem)] shrink-0 flex-col rounded-xl border border-nham-border/60 bg-white shadow-nham-text/[0.03] shadow-sm transition-[width] duration-[220ms] ease-out',

@@ -1,6 +1,8 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
+import { toast } from 'sonner';
 import { WizardShell } from '@/components/onboarding/wizard-shell';
 import { useRouter } from '@/i18n/navigation';
 import {
@@ -40,6 +42,7 @@ export function AppShell({
   initialSidebarExpandMode,
   children,
 }: AppShellProps) {
+  const tNudge = useTranslations('app.onboardingNudge');
   const hasStepOneLocaleDraft = readStepOneLocaleDraft() !== null;
   const router = useRouter();
   const showResumeOnboarding = shouldShowOnboardingResume(
@@ -81,6 +84,7 @@ export function AppShell({
       // the safer default than a UI-only minimize that the server doesn't
       // know about.
       console.error('Failed to minimize onboarding nudge:', error);
+      toast.error(tNudge('saveError'));
       setOnboardingMinimized(false);
     }
   };
@@ -91,6 +95,7 @@ export function AppShell({
       await restoreOnboardingNudge();
     } catch (error) {
       console.error('Failed to restore onboarding nudge:', error);
+      toast.error(tNudge('saveError'));
       setOnboardingMinimized(true);
     }
   };

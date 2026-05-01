@@ -71,7 +71,8 @@
       "cta": "Tiếp tục hồ sơ",
       "minimize": "Thu gọn",
       "minimizedTitle": "Hoàn thiện hồ sơ",
-      "restoreLabel": "Tiếp tục hồ sơ, bước {current} / {total}"
+      "restoreLabel": "Tiếp tục hồ sơ, bước {current} / {total}",
+      "saveError": "Không thể lưu nhắc nhở thiết lập. Vui lòng thử lại."
     },
     "userMenu": {
       "openMenu": "Mở menu tài khoản",

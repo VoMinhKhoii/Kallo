@@ -137,10 +137,14 @@ export async function saveProfileSettings(data: Record<string, unknown>) {
  */
 export async function minimizeOnboardingNudge() {
   const user = await getAuthUser();
-  await db
+  const updated = await db
     .update(userProfiles)
     .set({ onboardingMinimizedAt: new Date() })
-    .where(eq(userProfiles.userId, user.id));
+    .where(eq(userProfiles.userId, user.id))
+    .returning({ userId: userProfiles.userId });
+  if (updated.length === 0) {
+    throw new Error('Profile not found');
+  }
   return { success: true };
 }
 
@@ -152,9 +156,13 @@ export async function minimizeOnboardingNudge() {
  */
 export async function restoreOnboardingNudge() {
   const user = await getAuthUser();
-  await db
+  const updated = await db
     .update(userProfiles)
     .set({ onboardingMinimizedAt: null })
-    .where(eq(userProfiles.userId, user.id));
+    .where(eq(userProfiles.userId, user.id))
+    .returning({ userId: userProfiles.userId });
+  if (updated.length === 0) {
+    throw new Error('Profile not found');
+  }
   return { success: true };
 }

@@ -71,7 +71,8 @@
       "cta": "Resume profile",
       "minimize": "Minimize",
       "minimizedTitle": "Finish your profile",
-      "restoreLabel": "Resume profile setup, step {current} of {total}"
+      "restoreLabel": "Resume profile setup, step {current} of {total}",
+      "saveError": "Could not save setup reminder. Please try again."
     },
     "userMenu": {
       "openMenu": "Open account menu",

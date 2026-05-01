@@ -219,4 +219,19 @@ describe('useSidebarState — FSM transitions', () => {
     expect(result.current.state).toBe('closed');
     expect(result.current.expandMode).toBe('click');
   });
+
+  it('falls back to SSR initial state when a cookie is malformed', () => {
+    setCookie(SIDEBAR_STATE_COOKIE, '%');
+
+    expect(() =>
+      renderHook(() =>
+        useSidebarState({ initialState: 'open', initialExpandMode: 'click' })
+      )
+    ).not.toThrow();
+
+    const { result } = renderHook(() =>
+      useSidebarState({ initialState: 'open', initialExpandMode: 'click' })
+    );
+    expect(result.current.state).toBe('open');
+  });
 });

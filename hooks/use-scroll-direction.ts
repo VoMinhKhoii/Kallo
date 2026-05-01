@@ -12,6 +12,7 @@ export function useScrollDirection(threshold = 8): ScrollDirection {
   const [direction, setDirection] = useState<ScrollDirection>('up');
   const lastYRef = useRef(0);
   const tickingRef = useRef(false);
+  const rafIdRef = useRef<number | null>(null);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -25,16 +26,23 @@ export function useScrollDirection(threshold = 8): ScrollDirection {
         lastYRef.current = currentY;
       }
       tickingRef.current = false;
+      rafIdRef.current = null;
     }
 
     function onScroll() {
       if (tickingRef.current) return;
       tickingRef.current = true;
-      window.requestAnimationFrame(update);
+      rafIdRef.current = window.requestAnimationFrame(update);
     }
 
     window.addEventListener('scroll', onScroll, { passive: true });
-    return () => window.removeEventListener('scroll', onScroll);
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      if (rafIdRef.current !== null) {
+        window.cancelAnimationFrame(rafIdRef.current);
+        rafIdRef.current = null;
+      }
+    };
   }, [threshold]);
 
   return direction;
