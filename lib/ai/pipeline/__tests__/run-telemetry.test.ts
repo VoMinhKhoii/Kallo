@@ -65,4 +65,35 @@ describe('buildPipelineRunRow', () => {
       })
     ).toThrow(/goal|aggression/i);
   });
+
+  it('passes anomaly types and per-run anomaly counters through to the row', () => {
+    const row = buildPipelineRunRow({
+      userId: 'u-1',
+      requestId: 'req-1',
+      modelCall1: 'gemini-2.5-flash-lite',
+      modelCall2: 'gemini-2.5-flash-lite',
+      timings: { total: 4500 },
+      counts: { ingredient: 5, matched: 4, unmatched: 1 },
+      anomalyTypes: ['density_envelope', 'macro_inconsistent'],
+      counters: {
+        preMatchAliasHits: 0,
+        cookedToRawFactorFires: 0,
+        densityEnvelopeFires: 1,
+        macroInconsistentFires: 2,
+        dbStateUnknownFires: 0,
+        retryStep2Count: 0,
+      },
+      escalated: false,
+      cacheHitL4: false,
+      retryCount: 0,
+      promptPersonalizationFields: ['countryOfOrigin', 'cookingHabits'],
+    });
+
+    expect(row.densityEnvelopeFires).toBe(1);
+    expect(row.macroInconsistentFires).toBe(2);
+    expect(row.anomalyTypes).toEqual([
+      'density_envelope',
+      'macro_inconsistent',
+    ]);
+  });
 });

@@ -10,12 +10,20 @@ const {
   mockRecordPromptVersion,
   mockMatchIngredients,
   mockAssembleResult,
+  mockValidateNutritionOutput,
+  mockDetectAnomalies,
+  mockDbInsert,
+  mockDbValues,
 } = vi.hoisted(() => ({
   mockLogStage: vi.fn(),
   mockLogLlmCall: vi.fn(),
   mockRecordPromptVersion: vi.fn().mockResolvedValue('pv-test-id'),
   mockMatchIngredients: vi.fn(),
   mockAssembleResult: vi.fn(),
+  mockValidateNutritionOutput: vi.fn(),
+  mockDetectAnomalies: vi.fn(),
+  mockDbInsert: vi.fn(),
+  mockDbValues: vi.fn(),
 }));
 
 vi.mock('server-only', () => ({}));
@@ -73,8 +81,8 @@ vi.mock('@/lib/ai/pipeline/assembly', () => ({
 }));
 
 vi.mock('@/lib/ai/pipeline/validation', () => ({
-  validateNutritionOutput: vi.fn().mockReturnValue([]),
-  detectAnomalies: vi.fn().mockReturnValue([]),
+  validateNutritionOutput: mockValidateNutritionOutput,
+  detectAnomalies: mockDetectAnomalies,
   classifyAnomalies: vi.fn().mockReturnValue('pass'),
   THRESHOLDS: { MIN_TOTAL_KCAL: 1 },
 }));
@@ -151,7 +159,8 @@ const VALID_NUTRITION = {
 };
 
 function makeDb(): AppDb {
-  return {} as AppDb;
+  mockDbInsert.mockReturnValue({ values: mockDbValues });
+  return { insert: mockDbInsert } as unknown as AppDb;
 }
 
 // ---------------------------------------------------------------------------
@@ -163,6 +172,9 @@ describe('analyzeMeal traceContext', () => {
     mockRecordPromptVersion.mockResolvedValue('pv-test-id');
     mockMatchIngredients.mockResolvedValue({ matched: [], unmatched: [] });
     mockAssembleResult.mockReturnValue({ mealItems: [] });
+    mockValidateNutritionOutput.mockReturnValue([]);
+    mockDetectAnomalies.mockReturnValue([]);
+    mockDbValues.mockResolvedValue(undefined);
   });
 
   it('calls logStage 4 times and recordPromptVersion 2 times when traceContext provided', async () => {
@@ -268,5 +280,57 @@ describe('analyzeMeal traceContext', () => {
     expect(mockLogStage.mock.calls[0][0].status).toBe('success');
     expect(mockLogStage.mock.calls[1][0].stageIndex).toBe(2);
     expect(mockLogStage.mock.calls[1][0].status).toBe('error');
+  });
+
+  it('aggregates density_envelope and macro_inconsistent warnings into pipeline_runs counters', async () => {
+    const db = makeDb();
+    const promptVersionsUsed = new Map<string, string>();
+    const traceContext: AnalyzeMealTraceContext = {
+      requestId: 'req-counters',
+      db,
+      userId: 'user-test-1',
+      promptVersionsUsed,
+    };
+
+    mockValidateNutritionOutput.mockReturnValue([
+      {
+        type: 'density_envelope',
+        message: 'density breach',
+        severity: 'warning',
+      },
+      {
+        type: 'macro_inconsistent',
+        message: 'macro breach',
+        severity: 'warning',
+      },
+      {
+        type: 'macro_inconsistent',
+        message: 'macro breach 2',
+        severity: 'warning',
+      },
+    ]);
+
+    const gemini = createMockGemini({
+      generateStructuredOutputStream: vi
+        .fn()
+        .mockResolvedValueOnce(VALID_DECOMP)
+        .mockResolvedValueOnce(VALID_NUTRITION),
+    });
+
+    await analyzeMeal(
+      'cơm trắng',
+      USER_CONTEXT,
+      db,
+      gemini,
+      undefined,
+      traceContext
+    );
+
+    expect(mockDbValues).toHaveBeenCalledTimes(1);
+    const row = mockDbValues.mock.calls[0][0];
+    expect(row.densityEnvelopeFires).toBe(1);
+    expect(row.macroInconsistentFires).toBe(2);
+    expect(row.anomalyTypes).toContain('density_envelope');
+    expect(row.anomalyTypes).toContain('macro_inconsistent');
   });
 });

@@ -633,12 +633,14 @@ async function runPipeline(
         },
         anomalyTypes: allAnomalies.map((a) => a.type),
         counters: {
-          // Counters introduced in later chunks default to 0 here (§0.4 row
-          // shape locked early so query consumers don't break across chunks).
           preMatchAliasHits: 0,
           cookedToRawFactorFires: 0,
-          densityEnvelopeFires: 0,
-          macroInconsistentFires: 0,
+          densityEnvelopeFires: allAnomalies.filter(
+            (a) => a.type === 'density_envelope'
+          ).length,
+          macroInconsistentFires: allAnomalies.filter(
+            (a) => a.type === 'macro_inconsistent'
+          ).length,
           dbStateUnknownFires: 0,
           retryStep2Count: 0,
         },
