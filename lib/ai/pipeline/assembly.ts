@@ -7,6 +7,7 @@ import type {
   BoundedEstimate,
   BoundedNutrition,
   IngredientLlmNutrition,
+  IngredientNutrition,
   MatchedIngredient,
   MealConfidence,
   MealDecomposition,
@@ -32,6 +33,7 @@ export interface AssemblyMetrics {
 export interface AssemblyOutput {
   result: PipelineResult;
   metrics: AssemblyMetrics;
+  ingredientNutrition: IngredientNutrition[];
 }
 
 /**
@@ -113,6 +115,7 @@ export function assembleResult(
 ): AssemblyOutput {
   const { goal, aggression } = userContext;
   let cookedToRawFactorFires = 0;
+  const ingredientNutrition: IngredientNutrition[] = [];
 
   // Id-keyed lookup (§0.1): keying by ingredientName silently overwrites
   // when the same display name appears in two dishes (e.g. "nước dùng" in
@@ -164,6 +167,17 @@ export function assembleResult(
               )
             : nullBoundedNutrition();
 
+          if (llmData?.ingredientId) {
+            ingredientNutrition.push({
+              ingredientId: llmData.ingredientId,
+              matchedDbId: matchInfo?.foodCompositionId ?? null,
+              caloriesKcal: normalizeBoundedEstimate(llmData.caloriesKcal),
+              proteinG: normalizeBoundedEstimate(llmData.proteinG),
+              carbohydrateG: normalizeBoundedEstimate(llmData.carbohydrateG),
+              fatG: normalizeBoundedEstimate(llmData.fatG),
+            });
+          }
+
           const displayedNutrition = goalAdjustNutrition(
             boundedNutrition,
             goal,
@@ -213,5 +227,6 @@ export function assembleResult(
       unmatchedIngredients: unmatched,
     },
     metrics: { cookedToRawFactorFires },
+    ingredientNutrition,
   };
 }

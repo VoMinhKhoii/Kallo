@@ -178,6 +178,21 @@ export interface IngredientLlmNutrition {
   fatG: BoundedEstimate;
 }
 
+/**
+ * Unified four-macro ingredient nutrition record for eval/shadow consumers.
+ * Runtime `BoundedNutrition` still carries the full 28-nutrient detail; this
+ * shape is the stable spec §1.1 contract for comparing model outputs.
+ */
+export interface IngredientNutrition {
+  ingredientId: string;
+  matchedDbId?: string | null;
+  caloriesKcal: BoundedEstimate;
+  proteinG: BoundedEstimate;
+  carbohydrateG: BoundedEstimate;
+  fatG: BoundedEstimate;
+  uncertaintyReason?: string | null;
+}
+
 /** LLM Call 2 output for a single meal item */
 export interface MealItemNutrition {
   /**

@@ -294,3 +294,45 @@ describe('assembleResult — dbState-aware DB scaling', () => {
     expect(metrics.cookedToRawFactorFires).toBe(1);
   });
 });
+
+describe('assembleResult — IngredientNutrition output', () => {
+  it('returns unified four-macro ingredient nutrition records for shadow/eval consumers', () => {
+    const matched: MatchedIngredient[] = [
+      {
+        ...makeMatch('thịt bò bắp'),
+        ingredientId: 'ing-1',
+        foodCompositionId: 'fc-beef',
+        dbState: 'cooked',
+      },
+    ];
+    const decomp = makeDecomposition([
+      {
+        name: 'Phở bò',
+        ingredients: [
+          {
+            ingredientId: 'ing-1',
+            name: 'thịt bò bắp',
+            estimatedGrams: 80,
+            cookingMethod: 'kho',
+          },
+        ],
+      },
+    ]);
+    const llm = makeLlmNutrition('thịt bò bắp', 'Phở bò', {
+      caloriesKcal: { low: 200, mid: 150, high: 100 },
+    });
+
+    const output = assembleResult(decomp, llm, matched, [], userContext);
+
+    expect(output.ingredientNutrition).toEqual([
+      {
+        ingredientId: 'ing-1',
+        matchedDbId: 'fc-beef',
+        caloriesKcal: { low: 100, mid: 150, high: 200 },
+        proteinG: { low: 5, mid: 10, high: 15 },
+        carbohydrateG: { low: 10, mid: 20, high: 30 },
+        fatG: { low: 1, mid: 2, high: 3 },
+      },
+    ]);
+  });
+});
