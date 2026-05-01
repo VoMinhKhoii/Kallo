@@ -36,6 +36,19 @@ export interface AssemblyOutput {
   ingredientNutrition: IngredientNutrition[];
 }
 
+const ingredientDisplayName = (
+  ing: MealDecomposition['mealItems'][number]['ingredients'][number]
+): string => ing.rawName ?? ing.name ?? ing.canonicalName ?? '';
+
+const ingredientGrams = (
+  ing: MealDecomposition['mealItems'][number]['ingredients'][number]
+): number => ing.grams ?? ing.estimatedGrams ?? 0;
+
+const ingredientCookingMethod = (
+  item: MealDecomposition['mealItems'][number],
+  ing: MealDecomposition['mealItems'][number]['ingredients'][number]
+): string | null => item.cookingMethod ?? ing.cookingMethod ?? null;
+
 /**
  * D5: Merge LLM's 4 bounded macros with DB mid values for remaining 24.
  * The LLM only estimates calories, protein, carbs, fat.
@@ -147,14 +160,16 @@ export function assembleResult(
             ? llmNutritionByKey.get(ingredientId)
             : undefined;
 
-          // estimatedGrams is the cooked/as-eaten weight (user-facing).
+          // grams is the cooked/as-eaten weight (user-facing).
           // rawEquivalentGrams is retained for back-compat but now represents
           // the grams used for DB nutrition scaling.
           const dbState = matchInfo?.dbState ?? 'unknown';
           const usesLegacyRawFallback = dbState !== 'cooked';
+          const grams = ingredientGrams(ing);
+          const cookingMethod = ingredientCookingMethod(decomposedItem, ing);
           const dbScalingGrams = usesLegacyRawFallback
-            ? convertCookedToRaw(ing.estimatedGrams, ing.cookingMethod)
-            : ing.estimatedGrams;
+            ? convertCookedToRaw(grams, cookingMethod)
+            : grams;
           if (usesLegacyRawFallback) {
             cookedToRawFactorFires += 1;
           }
@@ -185,12 +200,12 @@ export function assembleResult(
           );
 
           return {
-            ingredientName: ing.name,
+            ingredientName: ingredientDisplayName(ing),
             foodCompositionId: matchInfo?.foodCompositionId ?? null,
-            estimatedGrams: ing.estimatedGrams,
+            estimatedGrams: grams,
             rawEquivalentGrams: dbScalingGrams,
-            cookingMethod: ing.cookingMethod,
-            userFacingUnit: ing.userFacingUnit,
+            cookingMethod,
+            userFacingUnit: null,
             matchConfidence: matchInfo?.similarity ?? null,
             boundedNutrition,
             displayedNutrition,

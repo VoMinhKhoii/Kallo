@@ -35,8 +35,8 @@ export type MealDecompositionWithIds = Omit<MealDecomposition, 'mealItems'> & {
 };
 
 /**
- * Runtime is authoritative for ids. Even if the LLM emits them, we replace
- * any non-UUID, missing, or duplicate id with a fresh UUID. Spec §0.1.
+ * Runtime is authoritative for ids. Even though the LLM must emit them, we
+ * replace any non-UUID or duplicate id with a fresh UUID. Spec §0.1.
  */
 export function ensureIdsOnDecomposition(
   decomp: MealDecomposition

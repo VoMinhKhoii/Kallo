@@ -20,6 +20,14 @@ export type MealConfidence = 'high' | 'medium' | 'low';
 /** Meal slot classification */
 export type MealSlot = 'breakfast' | 'brunch' | 'lunch' | 'dinner' | 'snack';
 
+export type ExpectedIngredientState = 'raw' | 'cooked';
+
+export type AmbiguityFlag =
+  | 'multiple_dish_interpretations'
+  | 'unspecified_quantity'
+  | 'cross_cuisine_ingredient'
+  | 'state_inferred_no_method';
+
 // ---------------------------------------------------------------------------
 // Nutrition value containers
 // ---------------------------------------------------------------------------
@@ -95,27 +103,35 @@ export interface UserContext {
 
 /** Single ingredient extracted by LLM from a meal item */
 export interface DecomposedIngredient {
-  /**
-   * Run-scoped stable UUID (§0.1). Optional in this type because Zod
-   * accepts the LLM emitting it or omitting it; the runtime helper
-   * `ensureIdsOnDecomposition` (§0.1) guarantees a valid UUID is
-   * present on every value produced by the orchestrator.
-   */
+  /** Stable id emitted by the LLM and normalized by runtime (§0.1). */
   ingredientId?: string;
-  name: string;
-  estimatedGrams: number;
-  cookingMethod: string | null;
-  userFacingUnit: string | null;
+  /** User-facing/input-preserving name. */
+  rawName?: string;
+  /** Food-composition vocabulary name used for matching. */
+  canonicalName?: string;
+  /** As-eaten grams; colloquial unit conversion is owned by the LLM. */
+  grams?: number;
+  /** Optional per-ingredient state override; dish cookingMethod fills gaps. */
+  expectedState?: ExpectedIngredientState;
+  /** Aggregate-only ambiguity side channel; never a routing input. */
+  ambiguityFlags?: AmbiguityFlag[];
+  /** @deprecated Transitional support for pre-§2 direct test fixtures only. */
+  name?: string;
+  /** @deprecated Use `grams`; kept for direct test fixtures during migration. */
+  estimatedGrams?: number;
+  /** @deprecated Use dish-level `cookingMethod` + `expectedState`. */
+  cookingMethod?: string | null;
+  /** @deprecated Runtime no longer accepts or emits user-facing units. */
+  userFacingUnit?: string | null;
 }
 
 /** A user-facing meal item with its internal ingredient breakdown */
 export interface DecomposedMealItem {
-  /**
-   * Run-scoped stable UUID (§0.1). See `DecomposedIngredient.ingredientId`
-   * for the rationale on optionality at the type level.
-   */
+  /** Stable id emitted by the LLM and normalized by runtime (§0.1). */
   mealItemId?: string;
   name: string;
+  cookingMethod?: string;
+  cuisineNote?: string;
   ingredients: DecomposedIngredient[];
 }
 

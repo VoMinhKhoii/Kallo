@@ -13,6 +13,7 @@ import type {
 import {
   detectAnomalies,
   THRESHOLDS,
+  validateDecompositionOutput,
   validateNutritionOutput,
 } from './validation';
 
@@ -167,6 +168,66 @@ function makePipelineResult(
     ...overrides,
   };
 }
+
+// ---------------------------------------------------------------------------
+// validateDecompositionOutput
+// ---------------------------------------------------------------------------
+
+describe('validateDecompositionOutput', () => {
+  const base = {
+    mealItemId: 'meal-1',
+    name: 'Cơm cá',
+    cookingMethod: 'kho',
+    ingredients: [
+      {
+        ingredientId: 'ing-1',
+        rawName: 'cá lóc',
+        canonicalName: 'Cá quả',
+        grams: 100,
+      },
+    ],
+  };
+
+  it('flags zero grams as implausible_grams', () => {
+    const anomalies = validateDecompositionOutput([
+      {
+        ...base,
+        ingredients: [{ ...base.ingredients[0], grams: 0 }],
+      },
+    ]);
+
+    expect(anomalies).toMatchObject([
+      {
+        type: 'implausible_grams',
+        severity: 'warning',
+        ingredientId: 'ing-1',
+        mealItemId: 'meal-1',
+      },
+    ]);
+  });
+
+  it('flags negative grams as implausible_grams', () => {
+    const anomalies = validateDecompositionOutput([
+      {
+        ...base,
+        ingredients: [{ ...base.ingredients[0], grams: -5 }],
+      },
+    ]);
+
+    expect(anomalies.some((a) => a.type === 'implausible_grams')).toBe(true);
+  });
+
+  it('does not flag positive grams of any size', () => {
+    expect(
+      validateDecompositionOutput([
+        {
+          ...base,
+          ingredients: [{ ...base.ingredients[0], grams: 600 }],
+        },
+      ])
+    ).toEqual([]);
+  });
+});
 
 // ---------------------------------------------------------------------------
 // validateNutritionOutput

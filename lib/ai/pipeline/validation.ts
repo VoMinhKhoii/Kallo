@@ -45,7 +45,8 @@ export type AnomalyType =
   | 'total_calories'
   | 'unmatched_ratio'
   | 'density_envelope'
-  | 'macro_inconsistent';
+  | 'macro_inconsistent'
+  | 'implausible_grams';
 
 export interface ValidationAnomaly {
   type: AnomalyType;
@@ -62,9 +63,45 @@ export interface ValidationAnomaly {
   mealItemId?: string;
 }
 
+const ingredientDisplayName = (
+  ing: DecomposedMealItem['ingredients'][number]
+): string => ing.rawName ?? ing.name ?? ing.canonicalName ?? '';
+
+const ingredientGrams = (
+  ing: DecomposedMealItem['ingredients'][number]
+): number => ing.grams ?? ing.estimatedGrams ?? 0;
+
+const ingredientCookingMethod = (
+  mealItem: DecomposedMealItem,
+  ing: DecomposedMealItem['ingredients'][number]
+): string | null => mealItem.cookingMethod ?? ing.cookingMethod ?? null;
+
 // ---------------------------------------------------------------------------
 // Pre-assembly validation (Section 3.2 — after LLM Call 2, before assembly)
 // ---------------------------------------------------------------------------
+
+export function validateDecompositionOutput(
+  decomposition: DecomposedMealItem[]
+): ValidationAnomaly[] {
+  const anomalies: ValidationAnomaly[] = [];
+
+  for (const mealItem of decomposition) {
+    for (const ing of mealItem.ingredients) {
+      const grams = ingredientGrams(ing);
+      if (grams <= 0) {
+        anomalies.push({
+          type: 'implausible_grams',
+          message: `${ingredientDisplayName(ing)}: ${grams}g must be > 0`,
+          severity: 'warning',
+          ingredientId: ing.ingredientId,
+          mealItemId: mealItem.mealItemId,
+        });
+      }
+    }
+  }
+
+  return anomalies;
+}
 
 /**
  * Validate LLM nutrition output for implausible values.
@@ -87,14 +124,14 @@ export function validateNutritionOutput(
   // Build a lookup for decomposition grams + cooking method per ingredient
   const decomposedLookup = new Map<
     string,
-    { estimatedGrams: number; cookingMethod: string | null }
+    { grams: number; cookingMethod: string | null }
   >();
   for (const mi of decomposition) {
     for (const ing of mi.ingredients) {
       if (!ing.ingredientId) continue;
       decomposedLookup.set(ing.ingredientId, {
-        estimatedGrams: ing.estimatedGrams,
-        cookingMethod: ing.cookingMethod,
+        grams: ingredientGrams(ing),
+        cookingMethod: ingredientCookingMethod(mi, ing),
       });
     }
   }
@@ -134,7 +171,7 @@ export function validateNutritionOutput(
         if (dbKcalPer100g != null && dbKcalPer100g > 0 && midKcal > 0) {
           if (decomposed) {
             const rawGrams = convertCookedToRaw(
-              decomposed.estimatedGrams,
+              decomposed.grams,
               decomposed.cookingMethod
             );
             const dbScaledKcal = (rawGrams / 100) * dbKcalPer100g;
@@ -153,7 +190,7 @@ export function validateNutritionOutput(
       }
 
       // §1.4 — density envelope (matched + unmatched)
-      const grams = decomposed?.estimatedGrams ?? null;
+      const grams = decomposed?.grams ?? null;
       if (grams && grams > 0) {
         const density = (val: number) => (val / grams) * 100;
         const breaches: string[] = [];

@@ -13,14 +13,15 @@ import type {
 
 /**
  * Regex to detect meal item names in streaming decomposition JSON.
- * Meal item names are ALWAYS followed by `,"ingredients":` in the schema,
- * unlike ingredient names which are followed by `,"estimatedGrams":`.
+ * Meal item names are followed by either `cookingMethod` in the §2 schema or
+ * `ingredients` in legacy direct test fixtures. Ingredient names in old
+ * fixtures are followed by `estimatedGrams`, so they are ignored.
  *
  * Uses `((?:\\.|[^"\\])*)` to safely match JSON strings with escaped quotes.
  * Hoisted outside the function per js-hoist-regexp rule.
  */
 const MEAL_ITEM_NAME_RE =
-  /"name"\s*:\s*"((?:\\.|[^"\\])*)"\s*,\s*"ingredients"\s*:/g;
+  /"name"\s*:\s*"((?:\\.|[^"\\])*)"\s*,\s*"(?:cookingMethod|ingredients)"\s*:/g;
 
 /**
  * Extract meal item names from a partial decomposition JSON stream.

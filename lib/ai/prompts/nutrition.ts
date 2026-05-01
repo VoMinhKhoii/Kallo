@@ -26,8 +26,8 @@ import type { PromptPersonalizationContext } from './types';
  * V2: Compressed instructions, no hardcoded % — LLM decides bounds.
  * Dynamic XML data sections kept verbatim.
  *
- * Note: estimatedGrams from Step 1 are COOKED weights. We convert to raw here
- * before passing to the LLM, since DB values are per 100g RAW.
+ * Note: grams from Step 1 are as-eaten weights. db_state tells the LLM
+ * whether the DB per-100g row is raw/cooked/unknown.
  */
 
 /**
@@ -36,6 +36,22 @@ import type { PromptPersonalizationContext } from './types';
  * Gemini's prompt cache prefix for repeated similar inputs.
  */
 const viCollator = new Intl.Collator('vi', { sensitivity: 'base' });
+
+type PromptIngredient = DecomposedMealItem['ingredients'][number];
+
+const ingredientDisplayName = (ing: PromptIngredient): string =>
+  ing.rawName ?? ing.name ?? ing.canonicalName ?? '';
+
+const ingredientCanonicalName = (ing: PromptIngredient): string =>
+  ing.canonicalName ?? ing.rawName ?? ing.name ?? '';
+
+const ingredientGrams = (ing: PromptIngredient): number =>
+  ing.grams ?? ing.estimatedGrams ?? 0;
+
+const ingredientCookingMethod = (
+  item: DecomposedMealItem,
+  ing: PromptIngredient
+): string | null => item.cookingMethod ?? ing.cookingMethod ?? null;
 
 export function buildNutritionPrompt(
   mealItems: DecomposedMealItem[],
@@ -52,7 +68,12 @@ export function buildNutritionPrompt(
     ),
   ].filter((line): line is string => line !== null);
 
-  const matchedLookup = new Map(matched.map((m) => [m.ingredientName, m]));
+  const matchedLookup = new Map(
+    matched
+      .filter((m) => m.ingredientId)
+      .map((m) => [m.ingredientId as string, m])
+  );
+  const matchedByName = new Map(matched.map((m) => [m.ingredientName, m]));
 
   // Sort meal items and their ingredients for a deterministic prompt order.
   // Same ingredient set → identical XML → Gemini prompt cache hit.
@@ -64,11 +85,11 @@ export function buildNutritionPrompt(
       // Prevents same meal-item names with different ingredient sets from producing
       // different XML across permuted inputs (breaks Gemini prompt cache prefix).
       const aKey = [...a.ingredients]
-        .map((i) => i.name)
+        .map(ingredientDisplayName)
         .sort()
         .join('\0');
       const bKey = [...b.ingredients]
-        .map((i) => i.name)
+        .map(ingredientDisplayName)
         .sort()
         .join('\0');
       return aKey < bKey ? -1 : aKey > bKey ? 1 : 0;
@@ -76,7 +97,7 @@ export function buildNutritionPrompt(
     .map((item) => ({
       ...item,
       ingredients: [...item.ingredients].sort((a, b) =>
-        viCollator.compare(a.name, b.name)
+        viCollator.compare(ingredientDisplayName(a), ingredientDisplayName(b))
       ),
     }));
 
@@ -88,10 +109,14 @@ export function buildNutritionPrompt(
     ingredientData += `  <meal_item name="${mealItem.name}">\n`;
 
     for (const ing of mealItem.ingredients) {
-      const match = matchedLookup.get(ing.name);
+      const match = ing.ingredientId
+        ? (matchedLookup.get(ing.ingredientId) ??
+          matchedByName.get(ingredientDisplayName(ing)))
+        : matchedByName.get(ingredientDisplayName(ing));
       if (match) {
         const dbState = match.dbState ?? 'unknown';
-        ingredientData += `    <ingredient name="${ing.name}" source="db_matched" db_name="${match.matchedName}" db_state="${dbState}" as_eaten_grams="${ing.estimatedGrams}"${ing.cookingMethod ? ` cooking="${ing.cookingMethod}"` : ''}>\n`;
+        const cookingMethod = ingredientCookingMethod(mealItem, ing);
+        ingredientData += `    <ingredient name="${ingredientDisplayName(ing)}" as_eaten_grams="${ingredientGrams(ing)}" id="${ing.ingredientId ?? ''}" canonicalName="${ingredientCanonicalName(ing)}" source="db_matched" db_name="${match.matchedName}" db_state="${dbState}"${cookingMethod ? ` cooking="${cookingMethod}"` : ''}${ing.expectedState ? ` expected_state="${ing.expectedState}"` : ''}>\n`;
         ingredientData += `      <per_100g caloriesKcal="${match.nutritionPer100g.caloriesKcal ?? '?'}" proteinG="${match.nutritionPer100g.proteinG ?? '?'}" carbohydrateG="${match.nutritionPer100g.carbohydrateG ?? '?'}" fatG="${match.nutritionPer100g.fatG ?? '?'}" />\n`;
         ingredientData += `    </ingredient>\n`;
       }
@@ -109,12 +134,13 @@ export function buildNutritionPrompt(
 
     for (const mealItem of sortedMealItems) {
       const unmatchedIngs = mealItem.ingredients.filter((ing) =>
-        unmatchedNames.has(ing.name)
+        unmatchedNames.has(ingredientDisplayName(ing))
       );
       if (unmatchedIngs.length > 0) {
         unmatchedSection += `  <meal_item name="${mealItem.name}">\n`;
         for (const ing of unmatchedIngs) {
-          unmatchedSection += `    <ingredient name="${ing.name}" as_eaten_grams="${ing.estimatedGrams}"${ing.cookingMethod ? ` cooking="${ing.cookingMethod}"` : ''} />\n`;
+          const cookingMethod = ingredientCookingMethod(mealItem, ing);
+          unmatchedSection += `    <ingredient name="${ingredientDisplayName(ing)}" as_eaten_grams="${ingredientGrams(ing)}" id="${ing.ingredientId ?? ''}" canonicalName="${ingredientCanonicalName(ing)}"${cookingMethod ? ` cooking="${cookingMethod}"` : ''}${ing.expectedState ? ` expected_state="${ing.expectedState}"` : ''} />\n`;
         }
         unmatchedSection += `  </meal_item>\n`;
       }

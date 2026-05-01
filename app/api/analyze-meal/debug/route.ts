@@ -20,6 +20,8 @@ import {
 import { fetchNutritionPer100g } from '@/lib/ai/matching/nutrition-db';
 import { assembleResult } from '@/lib/ai/pipeline/assembly';
 import { NON_FOOD_BLOCKLIST } from '@/lib/ai/pipeline/errors';
+import { ensureIdsOnDecomposition } from '@/lib/ai/pipeline/ids';
+import { reconcileNutritionIds } from '@/lib/ai/pipeline/nutrition';
 import {
   mealDecompositionSchema,
   nutritionAdjustmentSchema,
@@ -42,6 +44,15 @@ import { createClient } from '@/lib/supabase/server';
 const GEMINI_MODEL = 'gemini-3-flash-preview';
 const untypedDb = db as unknown as PostgresJsDatabase<typeof schema>;
 const DEFAULT_USER_ID = '4681f168-e81b-4590-83ce-0f32734f19a9';
+
+type DebugIngredient =
+  MealDecomposition['mealItems'][number]['ingredients'][number];
+
+const ingredientDisplayName = (ingredient: DebugIngredient): string =>
+  ingredient.rawName ?? ingredient.name ?? ingredient.canonicalName ?? '';
+
+const ingredientSearchName = (ingredient: DebugIngredient): string =>
+  ingredient.canonicalName ?? ingredient.rawName ?? ingredient.name ?? '';
 
 /** Extract only the big 4 macros from a nutrition object for debug readability */
 function pickMacros(obj: any) {
@@ -129,7 +140,7 @@ export async function POST(request: NextRequest) {
   };
 
   // ── Step 1: Decomposition ──────────────────────────
-  let decomposition: MealDecomposition | null = null;
+  let decomposition: ReturnType<typeof ensureIdsOnDecomposition> | null = null;
   const s1Start = Date.now();
   const step1: Record<string, any> = {
     prompt: null,
@@ -158,7 +169,9 @@ export async function POST(request: NextRequest) {
     step1.rawResponse = rawText;
 
     if (rawText) {
-      decomposition = mealDecompositionSchema.parse(JSON.parse(rawText));
+      decomposition = ensureIdsOnDecomposition(
+        mealDecompositionSchema.parse(JSON.parse(rawText))
+      );
       step1.parsed = decomposition;
 
       if (!decomposition.isFood) {
@@ -166,7 +179,9 @@ export async function POST(request: NextRequest) {
       }
 
       const blocked = decomposition.mealItems
-        .flatMap((item) => item.ingredients.map((i) => i.name.toLowerCase()))
+        .flatMap((item) =>
+          item.ingredients.map((i) => ingredientDisplayName(i).toLowerCase())
+        )
         .filter((n) => NON_FOOD_BLOCKLIST.has(n));
 
       if (blocked.length > 0) {
@@ -200,8 +215,11 @@ export async function POST(request: NextRequest) {
 
       for (const mealItem of decomposition.mealItems) {
         for (const ingredient of mealItem.ingredients) {
+          const searchName = ingredientSearchName(ingredient);
+          const displayName = ingredientDisplayName(ingredient);
           const q: Record<string, any> = {
-            ingredientName: ingredient.name,
+            ingredientName: displayName,
+            canonicalName: searchName,
             searchMethod: 'none' as const,
             fuzzyMatches: [],
             vectorMatches: [],
@@ -213,7 +231,7 @@ export async function POST(request: NextRequest) {
             // Fuzzy search
             const fuzzyRows = (await db.execute(
               sql`SELECT * FROM fuzzy_match_ingredients(
-                ${ingredient.name}, 3, 0.15
+                ${searchName}, 3, 0.15
               )`
             )) as unknown as FuzzyMatchRow[];
 
@@ -246,7 +264,8 @@ export async function POST(request: NextRequest) {
 
               if (nutrition) {
                 matched.push({
-                  ingredientName: ingredient.name,
+                  ingredientName: displayName,
+                  ingredientId: ingredient.ingredientId,
                   foodCompositionId: top.id,
                   matchedName: top.name,
                   similarity: top.similarity,
@@ -256,7 +275,7 @@ export async function POST(request: NextRequest) {
                 });
               } else {
                 unmatched.push({
-                  ingredientName: ingredient.name,
+                  ingredientName: displayName,
                   mealContext: mealItem.name,
                 });
               }
@@ -265,19 +284,19 @@ export async function POST(request: NextRequest) {
               try {
                 // Use embedding cache (same as production pipeline)
                 let embedding = await resolveQueryEmbedding(
-                  ingredient.name,
+                  searchName,
                   untypedDb
                 );
                 let embeddingSource: 'cache' | 'gemini_api' = 'cache';
 
                 if (!embedding) {
-                  embedding = await gemini.generateEmbedding(ingredient.name);
-                  cacheQueryEmbedding(ingredient.name, embedding, untypedDb);
+                  embedding = await gemini.generateEmbedding(searchName);
+                  cacheQueryEmbedding(searchName, embedding, untypedDb);
                   embeddingSource = 'gemini_api';
                 }
 
                 q.embeddingCache = {
-                  normalizedKey: normalizeIngredientKey(ingredient.name),
+                  normalizedKey: normalizeIngredientKey(searchName),
                   source: embeddingSource,
                 };
                 const vectorRows = (await db.execute(
@@ -321,7 +340,8 @@ export async function POST(request: NextRequest) {
 
                   if (nutrition) {
                     matched.push({
-                      ingredientName: ingredient.name,
+                      ingredientName: displayName,
+                      ingredientId: ingredient.ingredientId,
                       foodCompositionId: top.id,
                       matchedName: top.name,
                       similarity: top.similarity,
@@ -331,23 +351,23 @@ export async function POST(request: NextRequest) {
                     });
                   } else {
                     unmatched.push({
-                      ingredientName: ingredient.name,
+                      ingredientName: displayName,
                       mealContext: mealItem.name,
                     });
                   }
                 } else {
                   unmatched.push({
-                    ingredientName: ingredient.name,
+                    ingredientName: displayName,
                     mealContext: mealItem.name,
                   });
                 }
               } catch (vectorErr) {
                 console.error(
-                  `[debug] Vector search failed for "${ingredient.name}":`,
+                  `[debug] Vector search failed for "${searchName}":`,
                   vectorErr
                 );
                 unmatched.push({
-                  ingredientName: ingredient.name,
+                  ingredientName: displayName,
                   mealContext: mealItem.name,
                 });
               }
@@ -359,7 +379,7 @@ export async function POST(request: NextRequest) {
                 ? ingredientErr.message
                 : String(ingredientErr);
             unmatched.push({
-              ingredientName: ingredient.name,
+              ingredientName: displayName,
               mealContext: mealItem.name,
             });
           }
@@ -417,6 +437,11 @@ export async function POST(request: NextRequest) {
 
       if (rawText) {
         nutritionAdj = nutritionAdjustmentSchema.parse(JSON.parse(rawText));
+        nutritionAdj = reconcileNutritionIds(
+          nutritionAdj,
+          decomposition,
+          matched
+        );
         step3.parsed = nutritionAdj;
       }
     }

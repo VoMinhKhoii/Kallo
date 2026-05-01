@@ -70,6 +70,7 @@ import {
   detectAnomalies,
   THRESHOLDS,
   type ValidationAnomaly,
+  validateDecompositionOutput,
   validateNutritionOutput,
 } from './validation';
 
@@ -110,6 +111,18 @@ const RETRYABLE_NUTRITION_ANOMALIES = new Set<ValidationAnomaly['type']>([
   'density_envelope',
   'macro_inconsistent',
 ]);
+
+const decompositionIngredientName = (
+  ing: MealDecomposition['mealItems'][number]['ingredients'][number]
+): string => ing.rawName ?? ing.name ?? ing.canonicalName ?? '';
+
+const decompositionIngredientCanonicalName = (
+  ing: MealDecomposition['mealItems'][number]['ingredients'][number]
+): string => ing.canonicalName ?? ing.rawName ?? ing.name ?? '';
+
+const decompositionIngredientGrams = (
+  ing: MealDecomposition['mealItems'][number]['ingredients'][number]
+): number => ing.grams ?? ing.estimatedGrams ?? 0;
 
 function shouldRetryNutrition(anomalies: ValidationAnomaly[]): boolean {
   return anomalies.some(
@@ -446,7 +459,10 @@ async function runPipeline(
   for (const mi of decomposition.mealItems) {
     mi.name = capitalizeFirst(mi.name);
     for (const ing of mi.ingredients) {
-      ing.name = capitalizeFirst(ing.name);
+      ing.rawName = capitalizeFirst(decompositionIngredientName(ing));
+      ing.canonicalName = capitalizeFirst(
+        decompositionIngredientCanonicalName(ing)
+      );
     }
   }
 
@@ -477,11 +493,18 @@ async function runPipeline(
   // D6 Layer 2: Post-parse blocklist sanity check
   for (const mi of decomposition.mealItems) {
     for (const ing of mi.ingredients) {
-      if (NON_FOOD_BLOCKLIST.has(ing.name.toLowerCase().trim())) {
-        throw new NonFoodError(`Non-food ingredient detected: "${ing.name}"`);
+      const ingredientName = decompositionIngredientName(ing);
+      if (NON_FOOD_BLOCKLIST.has(ingredientName.toLowerCase().trim())) {
+        throw new NonFoodError(
+          `Non-food ingredient detected: "${ingredientName}"`
+        );
       }
     }
   }
+
+  const decompositionAnomalies = validateDecompositionOutput(
+    decomposition.mealItems
+  );
 
   // Stage 2: Ingredient matching
   emit({ type: 'stage', stage: 'matching' });
@@ -529,7 +552,7 @@ async function runPipeline(
   const mealItemGrams = new Map<string, number>();
   for (const mi of decomposition.mealItems) {
     const totalGrams = mi.ingredients.reduce(
-      (sum, ing) => sum + ing.estimatedGrams,
+      (sum, ing) => sum + decompositionIngredientGrams(ing),
       0
     );
     mealItemGrams.set(mi.name, totalGrams);
@@ -813,7 +836,11 @@ async function runPipeline(
   );
 
   // Emit structured metrics
-  const allAnomalies = [...nutritionAnomalies, ...resultAnomalies];
+  const allAnomalies = [
+    ...decompositionAnomalies,
+    ...nutritionAnomalies,
+    ...resultAnomalies,
+  ];
   logMetrics({
     decomposeMs,
     matchMs,

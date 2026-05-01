@@ -81,6 +81,7 @@ vi.mock('@/lib/ai/pipeline/assembly', () => ({
 }));
 
 vi.mock('@/lib/ai/pipeline/validation', () => ({
+  validateDecompositionOutput: vi.fn().mockReturnValue([]),
   validateNutritionOutput: mockValidateNutritionOutput,
   detectAnomalies: mockDetectAnomalies,
   classifyAnomalies: vi.fn().mockReturnValue('pass'),

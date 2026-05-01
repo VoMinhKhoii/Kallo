@@ -44,6 +44,12 @@ export interface MatchOptions {
   concurrency?: number;
 }
 
+const ingredientRawName = (ing: DecomposedIngredient): string =>
+  ing.rawName ?? ing.name ?? ing.canonicalName ?? '';
+
+const ingredientCanonicalName = (ing: DecomposedIngredient): string =>
+  ing.canonicalName ?? ing.name ?? ing.rawName ?? '';
+
 /**
  * Match a list of decomposed ingredients against the food composition DB.
  *
@@ -69,9 +75,12 @@ export async function matchIngredients(
   // (e.g., "cá lóc" → "Cá quả" to avoid USDA's Atlantic bass mistranslation).
   // Original names are preserved for display; matching uses the alias name.
   const matchingNames = ingredients.map((ing) => {
-    const alias = resolvePreMatchAlias(ing.name);
-    if (alias !== ing.name) {
-      console.info(`[matching] pre-match alias: "${ing.name}" → "${alias}"`);
+    const canonicalName = ingredientCanonicalName(ing);
+    const alias = resolvePreMatchAlias(canonicalName);
+    if (alias !== canonicalName) {
+      console.info(
+        `[matching] pre-match alias: "${canonicalName}" → "${alias}"`
+      );
     }
     return alias;
   });
@@ -158,13 +167,13 @@ export async function matchIngredients(
       // Restore original ingredient name (pre-match alias may have changed it)
       matchInfos.push({
         ...result.value,
-        ingredientName: ingredients[i].name,
+        ingredientName: ingredientRawName(ingredients[i]),
         ingredientId: ingredients[i].ingredientId,
       });
     } else {
       if (result.status === 'rejected') {
         console.error(
-          `[matching] Failed to match "${ingredients[i].name}":`,
+          `[matching] Failed to match "${ingredientRawName(ingredients[i])}":`,
           result.reason
         );
       }
@@ -180,8 +189,9 @@ export async function matchIngredients(
       aliasName: string;
     }[] = [];
     for (const { ingredient, index } of unmatchedWithIndex) {
-      const aliasName = resolveAlias(ingredient.name);
-      if (aliasName !== ingredient.name) {
+      const canonicalName = ingredientCanonicalName(ingredient);
+      const aliasName = resolveAlias(canonicalName);
+      if (aliasName !== canonicalName) {
         aliasRetries.push({
           original: ingredient,
           originalIndex: index,
@@ -195,7 +205,7 @@ export async function matchIngredients(
       const rescuedIndices = new Set<number>();
       try {
         console.info(
-          `[matching] alias fallback: ${aliasRetries.map((r) => `${r.original.name}→${r.aliasName}`).join(', ')}`
+          `[matching] alias fallback: ${aliasRetries.map((r) => `${ingredientCanonicalName(r.original)}→${r.aliasName}`).join(', ')}`
         );
         // Resolve embeddings for alias names with bounded concurrency
         const aliasCacheSettled = await mapWithConcurrency(
@@ -266,16 +276,16 @@ export async function matchIngredients(
           if (result.status === 'fulfilled' && result.value) {
             matchInfos.push({
               ...result.value,
-              ingredientName: retry.original.name,
+              ingredientName: ingredientRawName(retry.original),
               ingredientId: retry.original.ingredientId,
             });
             rescuedIndices.add(retry.originalIndex);
             console.info(
-              `[matching] alias rescue: "${retry.original.name}" → "${retry.aliasName}" matched ${result.value.matchedName}`
+              `[matching] alias rescue: "${ingredientCanonicalName(retry.original)}" → "${retry.aliasName}" matched ${result.value.matchedName}`
             );
           } else if (result.status === 'rejected') {
             console.error(
-              `[matching] alias fallback failed for "${retry.original.name}":`,
+              `[matching] alias fallback failed for "${ingredientCanonicalName(retry.original)}":`,
               result.reason
             );
           }
@@ -290,13 +300,19 @@ export async function matchIngredients(
       // Only keep truly unmatched (not rescued by alias)
       for (const { ingredient, index } of unmatchedWithIndex) {
         if (!rescuedIndices.has(index)) {
-          unmatched.push({ ingredientName: ingredient.name, mealContext });
+          unmatched.push({
+            ingredientName: ingredientRawName(ingredient),
+            mealContext,
+          });
         }
       }
     } else {
       // No aliases available — all remain unmatched
       for (const { ingredient } of unmatchedWithIndex) {
-        unmatched.push({ ingredientName: ingredient.name, mealContext });
+        unmatched.push({
+          ingredientName: ingredientRawName(ingredient),
+          mealContext,
+        });
       }
     }
   }

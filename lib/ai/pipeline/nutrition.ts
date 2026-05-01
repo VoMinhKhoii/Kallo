@@ -6,6 +6,10 @@ import type {
 } from '../types';
 import type { MealDecompositionWithIds } from './ids';
 
+const ingredientDisplayName = (
+  ing: MealDecompositionWithIds['mealItems'][number]['ingredients'][number]
+): string => ing.rawName ?? ing.name ?? ing.canonicalName ?? '';
+
 /**
  * Raw shape that comes out of `nutritionAdjustmentSchema.parse()` before
  * reconciliation: `ingredientId` / `mealItemId` are optional (Zod accepts
@@ -87,16 +91,17 @@ export function reconcileNutritionIds(
         );
       }
 
-      // Per-meal-item ingredient FIFO. Same logic for duplicate ingredient
+      // Per-meal-item ingredient FIFO. Same logic for duplicate raw ingredient
       // names within a single meal item.
       const ingredientQueueByName = new Map<
         string,
         (typeof decomposedMi.ingredients)[number][]
       >();
       for (const ing of decomposedMi.ingredients) {
-        const list = ingredientQueueByName.get(ing.name) ?? [];
+        const name = ingredientDisplayName(ing);
+        const list = ingredientQueueByName.get(name) ?? [];
         list.push(ing);
-        ingredientQueueByName.set(ing.name, list);
+        ingredientQueueByName.set(name, list);
       }
       const ingredientConsumed = new Map<string, number>();
 

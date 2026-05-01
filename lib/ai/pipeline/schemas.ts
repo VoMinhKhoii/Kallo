@@ -1,58 +1,89 @@
 import { z } from 'zod';
 
 // ---------------------------------------------------------------------------
-// LLM Call 1: Meal decomposition schema
+// LLM Call 1: Dish-wrapped meal decomposition schema
 // ---------------------------------------------------------------------------
 
-export const decomposedIngredientSchema = z.object({
-  ingredientId: z
-    .string()
-    .uuid()
-    .optional()
-    .describe(
-      'Run-scoped UUID for this ingredient. Runtime fills if missing (§0.1).'
-    ),
-  name: z
-    .string()
-    .describe(
-      'Vietnamese ingredient name (e.g., "bún", "thịt bò", "nước dùng")'
-    ),
-  estimatedGrams: z
-    .number()
-    .positive()
-    .describe('Estimated weight in grams for the portion described'),
-  cookingMethod: z
-    .string()
-    .nullable()
-    .describe(
-      'Cooking method if identifiable (e.g., "luộc", "chiên", "kho", "nướng"), null if raw or unclear'
-    ),
-  userFacingUnit: z
-    .string()
-    .nullable()
-    .describe(
-      'Original unit from user input for display (e.g., "1 chén", "2 miếng"), null if not specified'
-    ),
-});
+export const ambiguityFlagSchema = z.enum([
+  'multiple_dish_interpretations',
+  'unspecified_quantity',
+  'cross_cuisine_ingredient',
+  'state_inferred_no_method',
+]);
 
-export const decomposedMealItemSchema = z.object({
-  mealItemId: z
-    .string()
-    .uuid()
-    .optional()
-    .describe(
-      'Run-scoped UUID for this meal item. Runtime fills if missing (§0.1).'
-    ),
-  name: z
-    .string()
-    .describe(
-      'User-facing meal item name (e.g., "bún bò Huế", "cơm", "thịt kho")'
-    ),
-  ingredients: z
-    .array(decomposedIngredientSchema)
-    .min(1)
-    .describe('Internal ingredient breakdown for DB matching'),
-});
+export const decomposedIngredientSchema = z
+  .object({
+    ingredientId: z
+      .string()
+      .min(1)
+      .describe(
+        'Stable per-ingredient ID emitted by the model. Runtime normalizes invalid or duplicate values (§0.1).'
+      ),
+    rawName: z
+      .string()
+      .min(1)
+      .describe(
+        'Ingredient name as written or inferred from the user input, preserving Vietnamese phrasing.'
+      ),
+    canonicalName: z
+      .string()
+      .min(1)
+      .describe(
+        'Disambiguated food-composition vocabulary name used for DB matching.'
+      ),
+    grams: z
+      .number()
+      .finite()
+      .describe(
+        'As-eaten mass in grams. The model converts colloquial portions to grams; runtime has no unit field.'
+      ),
+    expectedState: z
+      .enum(['raw', 'cooked'])
+      .optional()
+      .describe(
+        'Optional per-ingredient raw/cooked state. Runtime derives from dish cookingMethod when omitted.'
+      ),
+    ambiguityFlags: z
+      .array(ambiguityFlagSchema)
+      .optional()
+      .describe(
+        'Closed-enum ambiguity side channel for aggregate logging; not a routing input.'
+      ),
+  })
+  .strict();
+
+export const decomposedDishSchema = z
+  .object({
+    mealItemId: z
+      .string()
+      .min(1)
+      .describe(
+        'Stable per-meal-item ID emitted by the model. Runtime normalizes invalid or duplicate values (§0.1).'
+      ),
+    name: z
+      .string()
+      .min(1)
+      .describe(
+        'User-facing dish name (e.g., "bún bò Huế", "cơm", "thịt kho").'
+      ),
+    cookingMethod: z
+      .string()
+      .min(1)
+      .describe(
+        'Free-form Vietnamese cooking method for the dish; per-ingredient expectedState is the source of truth when present.'
+      ),
+    cuisineNote: z
+      .string()
+      .optional()
+      .describe('Optional regional/style note for disambiguation.'),
+    ingredients: z
+      .array(decomposedIngredientSchema)
+      .min(1)
+      .describe('Internal ingredient breakdown for DB matching'),
+  })
+  .strict();
+
+export const decomposedMealItemSchema = decomposedDishSchema;
 
 export const mealDecompositionSchema = z.object({
   isFood: z
@@ -61,7 +92,7 @@ export const mealDecompositionSchema = z.object({
       'Whether the input describes recognizable food or meal items. false for gibberish, non-food, or unrelated text.'
     ),
   mealItems: z
-    .array(decomposedMealItemSchema)
+    .array(decomposedDishSchema)
     .describe(
       'Meal decomposed into user-facing items with ingredient breakdown. Empty array when isFood is false.'
     ),
@@ -72,6 +103,11 @@ export const mealDecompositionSchema = z.object({
       'Classified meal slot if confident (Sáng→breakfast, Trưa→lunch, Tối→dinner, Bữa phụ→snack, Brunch→brunch), null if uncertain'
     ),
 });
+
+export type AmbiguityFlag = z.infer<typeof ambiguityFlagSchema>;
+export type DecomposedIngredient = z.infer<typeof decomposedIngredientSchema>;
+export type DecomposedDish = z.infer<typeof decomposedDishSchema>;
+export type MealDecomposition = z.infer<typeof mealDecompositionSchema>;
 
 // ---------------------------------------------------------------------------
 // LLM Call 2: Cooking-adjusted bounded nutrition schema (4 macros only)

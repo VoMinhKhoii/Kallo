@@ -76,7 +76,11 @@ export function resolveAlias(name: string): string {
 export function applyIngredientAliases(decomposition: MealDecomposition): void {
   for (const mealItem of decomposition.mealItems) {
     for (const ingredient of mealItem.ingredients) {
-      ingredient.name = resolveAlias(ingredient.name);
+      if (ingredient.canonicalName) {
+        ingredient.canonicalName = resolveAlias(ingredient.canonicalName);
+      } else if (ingredient.name) {
+        ingredient.name = resolveAlias(ingredient.name);
+      }
     }
   }
 }

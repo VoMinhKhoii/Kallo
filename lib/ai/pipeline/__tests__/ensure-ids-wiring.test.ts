@@ -7,36 +7,44 @@ const RAW_CALL_1_OUTPUT = {
   mealSlot: 'dinner',
   mealItems: [
     {
+      mealItemId: 'not-a-uuid-meal-1',
       name: 'phở bò',
+      cookingMethod: 'luộc',
       ingredients: [
         {
-          name: 'nước dùng',
-          estimatedGrams: 300,
-          cookingMethod: 'luộc',
-          userFacingUnit: '1 tô',
+          ingredientId: 'not-a-uuid-ing-1',
+          rawName: 'nước dùng',
+          canonicalName: 'Nước dùng',
+          grams: 300,
+          expectedState: 'cooked',
         },
         {
-          name: 'bánh phở',
-          estimatedGrams: 180,
-          cookingMethod: 'luộc',
-          userFacingUnit: '1 tô',
+          ingredientId: 'not-a-uuid-ing-2',
+          rawName: 'bánh phở',
+          canonicalName: 'Bánh phở',
+          grams: 180,
+          expectedState: 'cooked',
         },
       ],
     },
     {
+      mealItemId: 'not-a-uuid-meal-2',
       name: 'bún bò Huế',
+      cookingMethod: 'luộc',
       ingredients: [
         {
-          name: 'nước dùng',
-          estimatedGrams: 280,
-          cookingMethod: 'luộc',
-          userFacingUnit: '1 tô',
+          ingredientId: 'not-a-uuid-ing-3',
+          rawName: 'nước dùng',
+          canonicalName: 'Nước dùng',
+          grams: 280,
+          expectedState: 'cooked',
         },
         {
-          name: 'bún',
-          estimatedGrams: 200,
-          cookingMethod: 'luộc',
-          userFacingUnit: '1 tô',
+          ingredientId: 'not-a-uuid-ing-4',
+          rawName: 'bún',
+          canonicalName: 'Bún',
+          grams: 200,
+          expectedState: 'cooked',
         },
       ],
     },
@@ -68,7 +76,7 @@ describe('ensureIdsOnDecomposition at the Call 1 parse boundary', () => {
 
     const nuocDungIds = filled.mealItems
       .flatMap((m) => m.ingredients)
-      .filter((i) => i.name === 'nước dùng')
+      .filter((i) => i.rawName === 'nước dùng')
       .map((i) => i.ingredientId);
     expect(nuocDungIds.length).toBe(2);
     expect(nuocDungIds[0]).not.toBe(nuocDungIds[1]);
