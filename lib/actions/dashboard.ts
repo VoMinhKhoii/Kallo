@@ -17,6 +17,10 @@ const loadCalorieAdherenceHeatmapSchema = z.object({
   timezoneOffset: z.number().int().min(-840).max(720),
 });
 
+const loadVerdictSchema = z.object({
+  timezoneOffset: z.number().int().min(-1440).max(1440),
+});
+
 const RANGE_DAYS = {
   '30d': 30,
   '90d': 90,
@@ -39,6 +43,11 @@ function getUtcBoundaryForLocalDate(
   const boundary = dateKeyToUtcDate(dateKey);
   boundary.setTime(boundary.getTime() + timezoneOffset * 60 * 1000);
   return boundary;
+}
+
+function average(values: number[]): number {
+  if (values.length === 0) return 0;
+  return values.reduce((sum, value) => sum + value, 0) / values.length;
 }
 
 export async function loadCalorieAdherenceHeatmap(input: {
@@ -92,84 +101,109 @@ export async function loadCalorieAdherenceHeatmap(input: {
 export async function loadVerdictAction(input: {
   timezoneOffset: number;
 }): Promise<VerdictData> {
+  const parsed = loadVerdictSchema.parse(input);
   const { user, profile } = await requireAuthAndProfile();
-  const timezoneOffset = input.timezoneOffset;
+  const timezoneOffset = parsed.timezoneOffset;
 
-  // Get weight summary for 30d range to calculate verdict
   const weightSummary = await loadWeightSummaryAction({
     range: '30d',
     timezoneOffset,
   });
 
-  // Calculate weekly rate from weights array
-  const weights = weightSummary.weights;
-  const weeklyRate =
-    weights.length >= 7
-      ? (weights[weights.length - 1] - weights[0]) / (weights.length / 7)
-      : 0;
+  const now = new Date();
+  const endKey = getLocalDateKey(now, timezoneOffset);
+  const endDate = dateKeyToUtcDate(endKey);
+  const startDate = addDays(endDate, -6);
+  const startKey = startDate.toISOString().slice(0, 10);
+  const nextEndKey = addDays(endDate, 1).toISOString().slice(0, 10);
+  const utcStart = getUtcBoundaryForLocalDate(startKey, timezoneOffset);
+  const utcEnd = getUtcBoundaryForLocalDate(nextEndKey, timezoneOffset);
 
-  // Get first weight entry to determine plan start date
-  const firstWeight = await db
-    .select({ loggedDate: bodyWeightLog.loggedDate })
+  const weightRows = await db
+    .select({
+      loggedDate: bodyWeightLog.loggedDate,
+      weightKg: bodyWeightLog.weightKg,
+    })
     .from(bodyWeightLog)
     .where(eq(bodyWeightLog.userId, user.id))
-    .orderBy(asc(bodyWeightLog.loggedDate))
-    .limit(1);
+    .orderBy(desc(bodyWeightLog.loggedDate), desc(bodyWeightLog.createdAt))
+    .limit(14);
 
-  const planStartDate = firstWeight[0]?.loggedDate ?? new Date().toISOString().slice(0, 10);
+  const orderedWeights = [...weightRows].reverse();
+  const firstWeightRow = orderedWeights[0];
+  const lastWeightRow = orderedWeights[orderedWeights.length - 1];
+  const currentWeight = weightSummary.currentWeight;
+  const firstWeight = Number(firstWeightRow?.weightKg ?? currentWeight);
+  const lastWeight = Number(lastWeightRow?.weightKg ?? currentWeight);
+  const totalDelta =
+    orderedWeights.length > 0 ? currentWeight - firstWeight : 0;
+  const elapsedDays =
+    firstWeightRow && lastWeightRow
+      ? (dateKeyToUtcDate(lastWeightRow.loggedDate).getTime() -
+          dateKeyToUtcDate(firstWeightRow.loggedDate).getTime()) /
+        MS_PER_DAY
+      : 0;
+  const weeklyRate =
+    orderedWeights.length > 1 && elapsedDays > 0
+      ? (lastWeight - firstWeight) / (elapsedDays / 7)
+      : 0;
+  const actual30DayDelta = weeklyRate * 4.3;
+  const targetDelta = weightSummary.expectedEndWeight - weightSummary.periodStartWeight;
+  const rollingAvgStart = average(
+    orderedWeights.slice(0, Math.min(7, orderedWeights.length)).map((row) => Number(row.weightKg))
+  );
+  const rollingAvgEnd = average(
+    orderedWeights.slice(-Math.min(7, orderedWeights.length)).map((row) => Number(row.weightKg))
+  );
 
-  // Calculate total delta from first weight to current
-  const totalDelta = weightSummary.weights[0] ? weightSummary.currentWeight - weightSummary.weights[0] : 0;
-
-  // Determine status based on pace
-  const expectedDelta = weeklyRate > 0 ? weeklyRate * 4.3 : weeklyRate * 4.3; // 4.3 weeks in 30 days
-  const status =
-    Math.abs(weeklyRate) < 0.1
-      ? ('too_early' as const)
-      : weeklyRate < expectedDelta
-        ? ('behind' as const)
-        : weeklyRate > expectedDelta
-          ? ('ahead' as const)
-          : ('on_pace' as const);
-
-  // Calculate rolling average (first 7 vs last 7 days)
-  const rollingAvgStart = weights.slice(0, 7).reduce((a, b) => a + b, 0) / Math.min(7, weights.length);
-  const rollingAvgEnd = weights.slice(-7).reduce((a, b) => a + b, 0) / Math.min(7, weights.length);
-
-  // Calculate protein days (last 7 days)
-  const now = new Date();
-  const todayDate = new Date(now.getTime() + timezoneOffset * 60 * 1000).toISOString().slice(0, 10);
   const proteinDays: [boolean, boolean, boolean, boolean, boolean, boolean, boolean] = [false, false, false, false, false, false, false];
-
-  const last7DaysStart = new Date(now.getTime() - 6 * 24 * 60 * 60 * 1000);
   const offsetMins = -timezoneOffset;
   const localDateExpr = sql<string>`DATE(${meals.loggedAt} + (${sql.raw(String(offsetMins))}::integer * INTERVAL '1 minute'))`;
+  const weekdayExpr = sql<number>`EXTRACT(ISODOW FROM ${localDateExpr})`;
   const proteinExpr = sql<number>`COALESCE(SUM(${meals.proteinG}), 0)`;
 
   const dailyProtein = await db
     .select({
       date: localDateExpr.as('date'),
+      weekday: weekdayExpr.as('weekday'),
       protein: proteinExpr.as('protein'),
     })
     .from(meals)
     .where(
       and(
         eq(meals.userId, user.id),
-        gte(meals.loggedAt, last7DaysStart)
+        gte(meals.loggedAt, utcStart),
+        lt(meals.loggedAt, utcEnd)
       )
     )
-    .groupBy(localDateExpr)
+    .groupBy(localDateExpr, weekdayExpr)
     .orderBy(asc(localDateExpr));
 
-  // Mark protein hits for each day
   const proteinTarget = profile.proteinTargetG ?? 100; // Default to 100g if not set
   dailyProtein.forEach((day) => {
-    const dayIndex = new Date(day.date).getDay(); // 0=Sun, 1=Mon...
-    const adjustedIndex = dayIndex === 0 ? 6 : dayIndex - 1; // Convert to Mon-Sun (0-6)
+    const adjustedIndex = Number(day.weekday) - 1;
+    if (adjustedIndex < 0 || adjustedIndex > 6) return;
     if (Number(day.protein) >= proteinTarget) {
       proteinDays[adjustedIndex] = true;
     }
   });
+
+  const tooEarlyThreshold = 0.1;
+  let status: VerdictData['status'];
+  if (orderedWeights.length < 2 || Math.abs(actual30DayDelta) < tooEarlyThreshold) {
+    status = 'too_early';
+  } else if (Math.abs(actual30DayDelta - targetDelta) < tooEarlyThreshold) {
+    status = 'on_pace';
+  } else if (
+    (targetDelta < 0 && actual30DayDelta < targetDelta) ||
+    (targetDelta > 0 && actual30DayDelta > targetDelta)
+  ) {
+    status = 'ahead';
+  } else {
+    status = 'behind';
+  }
+
+  const planStartDate = firstWeightRow?.loggedDate ?? endKey;
 
   return {
     weeklyRate,
@@ -177,7 +211,7 @@ export async function loadVerdictAction(input: {
     planStartDate,
     status,
     rollingAvg: { start: rollingAvgStart, end: rollingAvgEnd },
-    currentWeight: weightSummary.currentWeight,
+    currentWeight,
     proteinDays,
   };
 }

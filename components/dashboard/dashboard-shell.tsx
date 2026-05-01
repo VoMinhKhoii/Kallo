@@ -15,7 +15,6 @@ import {
 } from '@/lib/dashboard/today';
 import { cn } from '@/lib/utils';
 import { CurrentSection } from './current/current-section';
-import { getStatsData } from './mock-data';
 import { AdherenceHeatmap } from './progress/adherence-heatmap';
 import { ProgressSection } from './progress/progress-section';
 import { WeightChart } from './progress/weight-chart';
@@ -81,6 +80,16 @@ export function DashboardShell({ profile }: DashboardShellProps) {
   const expectedEndWeight =
     weightSummary?.expectedEndWeight ?? periodStartWeight;
   const goalDirection = weightSummary?.goalDirection ?? 'flat';
+  const stats = verdict
+    ? {
+        streak: weightSummary?.daysLogged ?? 0,
+        daysLogged: weightSummary?.daysLogged ?? 0,
+        avgDeficit: Math.round((-verdict.weeklyRate * 7700) / 7),
+        todayWeight: weightSummary?.todayWeight ?? null,
+        weightPlaceholder:
+          weightSummary?.weightPlaceholder ?? verdict.currentWeight,
+      }
+    : undefined;
 
   const { data: heatmapData } = useQuery({
     queryKey: ['dashboard', 'heatmapData', timeRange],
@@ -165,10 +174,10 @@ export function DashboardShell({ profile }: DashboardShellProps) {
         {/* ── Section 1: Current (week title) ── */}
         <section>
           <SectionHeader title={weekTitle} />
-          {verdict && (
+          {verdict && stats && (
             <CurrentSection
               verdict={verdict}
-              stats={getStatsData()}
+              stats={stats}
               nutrition={todayNutrition}
               weightSummary={weightSummary}
             />

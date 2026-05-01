@@ -1,10 +1,17 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const mockDbSelect = vi.fn();
-const mockBuildCalorieAdherenceHeatmap = vi.fn().mockReturnValue([
-  [1, null],
-  [null, 1],
-]);
+const {
+  mockDbSelect,
+  mockBuildCalorieAdherenceHeatmap,
+  mockLoadWeightSummaryAction,
+} = vi.hoisted(() => ({
+  mockDbSelect: vi.fn(),
+  mockBuildCalorieAdherenceHeatmap: vi.fn().mockReturnValue([
+    [1, null],
+    [null, 1],
+  ]),
+  mockLoadWeightSummaryAction: vi.fn(),
+}));
 
 vi.mock('@/lib/auth', () => ({
   requireAuthAndProfile: vi.fn().mockResolvedValue({
@@ -30,8 +37,6 @@ vi.mock('@/lib/dashboard/adherence', () => ({
   buildCalorieAdherenceHeatmap: mockBuildCalorieAdherenceHeatmap,
   getLocalDateKey: vi.fn(() => '2026-05-01'),
 }));
-
-const mockLoadWeightSummaryAction = vi.fn();
 
 vi.mock('@/lib/actions/weight', () => ({
   loadWeightSummaryAction: mockLoadWeightSummaryAction,
@@ -112,50 +117,74 @@ describe('loadVerdictAction', () => {
       goalDirection: 'down',
     });
 
-    // Set up mock for first query (weight with just orderBy)
-    const weightOrderBy = vi.fn().mockReturnValue({
-      limit: vi.fn().mockResolvedValue([{ loggedDate: '2026-03-01' }]),
+    // Mock rows in descending order (most recent first) to match DB orderBy(desc(...))
+    const weightQueryOrderBy = vi.fn().mockReturnValue({
+      limit: vi.fn().mockResolvedValue([
+        { loggedDate: '2026-05-01', weightKg: '68.7' },
+        { loggedDate: '2026-04-30', weightKg: '68.8' },
+        { loggedDate: '2026-04-29', weightKg: '68.9' },
+        { loggedDate: '2026-04-28', weightKg: '69.0' },
+        { loggedDate: '2026-04-27', weightKg: '69.1' },
+        { loggedDate: '2026-04-26', weightKg: '69.2' },
+        { loggedDate: '2026-04-25', weightKg: '69.3' },
+        { loggedDate: '2026-04-24', weightKg: '69.4' },
+        { loggedDate: '2026-04-23', weightKg: '69.5' },
+        { loggedDate: '2026-04-22', weightKg: '69.6' },
+        { loggedDate: '2026-04-21', weightKg: '69.7' },
+        { loggedDate: '2026-04-20', weightKg: '69.8' },
+        { loggedDate: '2026-04-19', weightKg: '69.9' },
+        { loggedDate: '2026-04-18', weightKg: '70.0' },
+      ]),
     });
 
-    // Set up mock for second query (protein with groupBy)
-    const proteinOrderBy = vi
-      .fn()
-      .mockResolvedValue([{ date: '2026-05-01', protein: '120' }]);
+    const proteinQueryOrderBy = vi.fn().mockResolvedValue([
+      { date: '2026-04-25', weekday: 6, protein: '120' },
+      { date: '2026-04-26', weekday: 7, protein: '80' },
+      { date: '2026-04-27', weekday: 1, protein: '110' },
+      { date: '2026-04-28', weekday: 2, protein: '90' },
+      { date: '2026-04-29', weekday: 3, protein: '130' },
+      { date: '2026-04-30', weekday: 4, protein: '70' },
+      { date: '2026-05-01', weekday: 5, protein: '100' },
+    ]);
 
-    const mockFrom = vi.fn();
-    const mockWhere = vi.fn();
-
-    mockFrom.mockReturnValue({
-      where: mockWhere,
-    });
-
-    mockWhere
+    mockDbSelect
       .mockReturnValueOnce({
-        orderBy: weightOrderBy,
+        from: vi.fn().mockReturnValue({
+          where: vi.fn().mockReturnValue({
+            orderBy: weightQueryOrderBy,
+          }),
+        }),
       })
       .mockReturnValueOnce({
-        groupBy: vi.fn().mockReturnValue({
-          orderBy: proteinOrderBy,
+        from: vi.fn().mockReturnValue({
+          where: vi.fn().mockReturnValue({
+            groupBy: vi.fn().mockReturnValue({
+              orderBy: proteinQueryOrderBy,
+            }),
+          }),
         }),
       });
-
-    mockDbSelect.mockReturnValue({
-      from: mockFrom,
-    });
 
     const verdict = await loadVerdictAction({
       timezoneOffset: 0,
     });
 
-    expect(verdict).toMatchObject({
-      weeklyRate: expect.any(Number),
-      totalDelta: expect.any(Number),
-      planStartDate: expect.any(String),
-      status: expect.any(String),
-      rollingAvg: expect.any(Object),
-      currentWeight: 68.8,
-      proteinDays: expect.any(Array),
-    });
+    // Assert numeric values with tolerance to avoid floating-point precision
+    expect(verdict.planStartDate).toEqual('2026-04-18');
+    expect(verdict.status).toEqual('ahead');
+    expect(verdict.currentWeight).toEqual(68.8);
+    expect(verdict.proteinDays).toEqual([
+      true,
+      false,
+      true,
+      false,
+      true,
+      true,
+      false,
+    ]);
+    expect(verdict.rollingAvg).toEqual({ start: 69.7, end: 69 });
+    expect(verdict.weeklyRate).toBeCloseTo(-0.7, 6);
+    expect(verdict.totalDelta).toBeCloseTo(-1.2, 6);
     expect(mockLoadWeightSummaryAction).toHaveBeenCalledWith({
       range: '30d',
       timezoneOffset: 0,
