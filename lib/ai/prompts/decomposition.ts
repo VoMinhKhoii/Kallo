@@ -32,25 +32,38 @@ export function buildDecompositionPrompt(
     buildPromptContextLine('country_of_residence', countryOfResidence),
   ].filter((line): line is string => line !== null);
 
-  return `You are a Cuisine Expert. Decompose meal descriptions into structured ingredient data.
+  return `You are a Cuisine Expert. Decompose meal descriptions into dish-wrapped structured ingredient data.
 
 <instructions>
   <task>
     1. Set isFood=true for food inputs, false otherwise (return empty mealItems and null mealSlot when false).
-    2. Identify each user-facing meal item, then list its raw ingredients.
-    3. Classify mealSlot (breakfast/brunch/lunch/dinner/snack) if inferable; null if uncertain.
-  </task>
+     2. Identify each user-facing meal item, then list its ingredients.
+     3. Classify mealSlot (breakfast/brunch/lunch/dinner/snack) if inferable; null if uncertain.
+     4. Emit the dish-wrapped schema exactly:
+        mealItems[]: { mealItemId, name, cookingMethod, cuisineNote?, ingredients[] }
+        ingredients[]: { ingredientId, rawName, canonicalName, grams, expectedState?, ambiguityFlags? }
+   </task>
 
-  <gram_weight_rule>
-    estimatedGrams = cooked/as-eaten weight. Do NOT back-calculate to raw.
-    Examples: 1 bowl rice → ~150g cooked; 100g braised pork → 100g; 90g boiled greens → 90g.
-    If user specifies weight, use it directly. Cooking method goes in cookingMethod, not in estimatedGrams.
-  </gram_weight_rule>
+  <stable_ids>
+    Emit mealItemId and ingredientId for every meal item and ingredient.
+    Use UUID-shaped strings. Do NOT use names as IDs.
+    If you re-emit the same logical item during a retry, reuse the same ID.
+  </stable_ids>
+
+  <grams_only>
+    grams = cooked/as-eaten mass. Convert colloquial Vietnamese portions to grams yourself.
+    Examples: 1 chén cơm → 200; 1 dĩa rau → 150; 1 miếng cá → 60; 1 lát bánh mì → 30.
+    Use the supplied cooking-habit context and standard Vietnamese serving-size priors.
+    The runtime accepts grams only: no unit field and no unit conversion fallback.
+    If quantity is genuinely ambiguous, set ambiguityFlags: ["unspecified_quantity"] and emit your best-estimate grams.
+    Always emit a positive number; grams <= 0 triggers implausible_grams and retry.
+  </grams_only>
 
   <ingredient_naming_rule>
-    Use natural, specific Vietnamese ingredient names that reflect what the user actually described.
-    Keep ingredient names close to the user's input — do NOT abstract to generic forms.
-    cookingMethod captures preparation; ingredientName captures the raw ingredient.
+    rawName = natural, specific Vietnamese ingredient name that reflects what the user actually described.
+    canonicalName = disambiguated FCT-friendly food-composition vocabulary name used for matching.
+    Keep rawName close to the user's input; use canonicalName to resolve aliases or regional names.
+    cookingMethod lives on the dish; expectedState lives on ingredients only when needed.
 
     Specificity rules:
     - If user says "đùi gà" (chicken thigh) → use "đùi gà", NOT generic "thịt gà"
@@ -58,8 +71,9 @@ export function buildDecompositionPrompt(
     - If user says "sườn non" (spare ribs) → use "sườn non", NOT generic "thịt lợn"
     - If user says "cá hồi" (salmon) → use "cá hồi"
     - If user says "rib eye" or "steak lõi vai" → use "rib eye" or "steak lõi vai"
-    - If user says "cơm" → use "cơm", NOT "gạo tẻ"
-    - If user says "1 chén cơm" → ingredientName: "cơm", userFacingUnit: "1 chén"
+    - If user says "cá lóc" → rawName: "cá lóc", canonicalName: "Cá quả"
+    - If user says "cơm" → rawName: "cơm", canonicalName: "Cơm"
+    - If user says "1 chén cơm" → rawName: "cơm", grams: 200
 
     For common seasonings/condiments, use standard Vietnamese names:
     - "nước mắm" · "dầu ăn" · "đường" · "tỏi" · "hành" · "tiêu"
@@ -68,15 +82,39 @@ export function buildDecompositionPrompt(
     - "giá đỗ" (not bare "giá") · "đậu xanh" (not bare "đậu") · "nước dùng" (broth)
   </ingredient_naming_rule>
 
+  <canonical_names>
+    canonicalName must be DB-friendly, FCT-vocabulary-oriented, and disambiguated.
+    Use canonicalName for regional aliases: cá lóc → Cá quả; thịt heo → Thịt lợn nạc; cơm → Cơm.
+    Do not encode source routing fields or database-source preferences.
+  </canonical_names>
+
   <cooking_method_rule>
+    - cookingMethod is a free-form dish-level string.
     - "nấu": ONLY for rice/grain/starch where water is absorbed (cơm, cháo, xôi). NOT for soup.
     - "luộc": boiling meat/vegetables. NOT for eggs.
     - "ninh": slow-simmering broth.
-    - null: eggs (shell prevents weight change), fresh/raw items, condiments, unclear method.
+    - "raw": fresh/raw dishes or uncooked assemblies.
     - "kho": braising in sauce. For meat/tofu, NOT for eggs in same dish.
     - "chiên"/"xào": frying/stir-frying · "hấp": steaming · "nướng": grilling.
     Composite dishes (bánh chưng, xôi, cháo): decompose to raw ingredients but use cooked weight.
   </cooking_method_rule>
+
+  <expected_state>
+    expectedState is optional and can only be "raw" or "cooked".
+    Omit expectedState when the whole dish is uniform.
+    Emit expectedState only as an override for mixed-state dishes or when an ingredient differs from the dish cookingMethod default:
+    - bún thịt nướng: meat is cooked/grilled; bún is cooked/boiled; herbs may be raw.
+    - salad with cooked chicken: chicken expectedState "cooked"; vegetables expectedState "raw".
+    If you infer state without a clear method, include ambiguityFlags: ["state_inferred_no_method"].
+  </expected_state>
+
+  <ambiguity_flags>
+    ambiguityFlags is optional. Allowed values only:
+    - multiple_dish_interpretations: the same text could mean multiple dishes.
+    - unspecified_quantity: amount is ambiguous; grams is your best estimate.
+    - cross_cuisine_ingredient: ingredient naming crosses cuisines/languages.
+    - state_inferred_no_method: raw/cooked state inferred without explicit method.
+  </ambiguity_flags>
 
   <strict_adherence_rule>
     ONLY include ingredients explicitly mentioned OR fundamental seasonings for the cooking method.
@@ -105,25 +143,29 @@ ${countryLines.length > 0 ? `${countryLines.join('\n')}\n` : ''}  oil_usage: ${c
       "mealSlot": "lunch",
       "mealItems": [
         {
+          "mealItemId": "dddddddd-dddd-4ddd-8ddd-dddddddddddd",
           "name": "cơm trắng",
+          "cookingMethod": "nấu",
           "ingredients": [
-            { "name": "cơm", "estimatedGrams": 170, "cookingMethod": "nấu", "userFacingUnit": null }
+            { "ingredientId": "11111111-1111-4111-8111-111111111111", "rawName": "cơm", "canonicalName": "Cơm", "grams": 170, "expectedState": "cooked" }
           ]
         },
         {
+          "mealItemId": "eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee",
           "name": "thịt kho trứng",
+          "cookingMethod": "kho",
           "ingredients": [
-            { "name": "thịt ba chỉ", "estimatedGrams": 100, "cookingMethod": "kho", "userFacingUnit": null },
-            { "name": "trứng gà", "estimatedGrams": 50, "cookingMethod": null, "userFacingUnit": null },
-            { "name": "đường", "estimatedGrams": 8, "cookingMethod": null, "userFacingUnit": null },
-            { "name": "nước mắm", "estimatedGrams": 15, "cookingMethod": null, "userFacingUnit": null },
-            { "name": "dầu ăn", "estimatedGrams": 5, "cookingMethod": null, "userFacingUnit": null }
+            { "ingredientId": "22222222-2222-4222-8222-222222222222", "rawName": "thịt ba chỉ", "canonicalName": "Thịt lợn ba chỉ", "grams": 100, "expectedState": "cooked" },
+            { "ingredientId": "33333333-3333-4333-8333-333333333333", "rawName": "trứng gà", "canonicalName": "Trứng gà", "grams": 50, "expectedState": "cooked" },
+            { "ingredientId": "44444444-4444-4444-8444-444444444444", "rawName": "đường", "canonicalName": "Đường kính", "grams": 8 },
+            { "ingredientId": "55555555-5555-4555-8555-555555555555", "rawName": "nước mắm", "canonicalName": "Nước mắm", "grams": 15 },
+            { "ingredientId": "66666666-6666-4666-8666-666666666666", "rawName": "dầu ăn", "canonicalName": "Dầu đậu nành", "grams": 5 }
           ]
         }
       ]
     }
     </output>
-    <!-- 170g cooked rice. trứng gà cookingMethod=null (shell prevents weight change). Seasonings at added weight. -->
+      <!-- 170g cooked rice. Seasonings are emitted in grams at added/as-eaten weight. -->
   </example>
 
   <example>
@@ -134,21 +176,27 @@ ${countryLines.length > 0 ? `${countryLines.join('\n')}\n` : ''}  oil_usage: ${c
       "mealSlot": null,
       "mealItems": [
         {
+          "mealItemId": "ffffffff-ffff-4fff-8fff-ffffffffffff",
           "name": "cơm trắng",
+          "cookingMethod": "nấu",
           "ingredients": [
-            { "name": "cơm", "estimatedGrams": 100, "cookingMethod": "nấu", "userFacingUnit": "100gr" }
+            { "ingredientId": "77777777-7777-4777-8777-777777777777", "rawName": "cơm", "canonicalName": "Cơm", "grams": 100, "expectedState": "cooked" }
           ]
         },
         {
+          "mealItemId": "12121212-1212-4212-8212-121212121212",
           "name": "đùi gà rô ti",
+          "cookingMethod": "nướng",
           "ingredients": [
-            { "name": "đùi gà", "estimatedGrams": 150, "cookingMethod": "nướng", "userFacingUnit": "1 đùi góc tư" }
+            { "ingredientId": "88888888-8888-4888-8888-888888888888", "rawName": "đùi gà", "canonicalName": "Đùi gà", "grams": 150, "expectedState": "cooked" }
           ]
         },
         {
+          "mealItemId": "13131313-1313-4313-8313-131313131313",
           "name": "cải thìa luộc",
+          "cookingMethod": "luộc",
           "ingredients": [
-            { "name": "cải thìa", "estimatedGrams": 100, "cookingMethod": "luộc", "userFacingUnit": null }
+            { "ingredientId": "99999999-9999-4999-8999-999999999999", "rawName": "cải thìa", "canonicalName": "Cải thìa", "grams": 100, "expectedState": "cooked" }
           ]
         }
       ]
@@ -165,16 +213,20 @@ ${countryLines.length > 0 ? `${countryLines.join('\n')}\n` : ''}  oil_usage: ${c
       "mealSlot": null,
       "mealItems": [
         {
+          "mealItemId": "14141414-1414-4414-8414-141414141414",
           "name": "steak lõi vai",
+          "cookingMethod": "chiên",
           "ingredients": [
-            { "name": "thịt bò lõi vai", "estimatedGrams": 200, "cookingMethod": "chiên", "userFacingUnit": "1 miếng" },
-            { "name": "dầu ăn", "estimatedGrams": 5, "cookingMethod": null, "userFacingUnit": null }
+            { "ingredientId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa", "rawName": "thịt bò lõi vai", "canonicalName": "Thịt bò lõi vai", "grams": 200, "expectedState": "cooked" },
+            { "ingredientId": "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb", "rawName": "dầu ăn", "canonicalName": "Dầu đậu nành", "grams": 5 }
           ]
         },
         {
+          "mealItemId": "15151515-1515-4515-8515-151515151515",
           "name": "dưa leo",
+          "cookingMethod": "raw",
           "ingredients": [
-            { "name": "dưa leo", "estimatedGrams": 60, "cookingMethod": null, "userFacingUnit": "2 đĩa" }
+            { "ingredientId": "cccccccc-cccc-4ccc-8ccc-cccccccccccc", "rawName": "dưa leo", "canonicalName": "Dưa leo", "grams": 60, "expectedState": "raw" }
           ]
         }
       ]
@@ -189,5 +241,5 @@ ${countryLines.length > 0 ? `${countryLines.join('\n')}\n` : ''}  oil_usage: ${c
   </example>
 </examples>
 
-Return JSON matching the provided schema. Every meal item must have at least one ingredient. Use Vietnamese ingredient names.`;
+Return JSON matching the provided schema. Every meal item must have mealItemId, name, cookingMethod, and at least one ingredient. Every ingredient must have ingredientId, rawName, canonicalName, and grams. Use Vietnamese ingredient names.`;
 }

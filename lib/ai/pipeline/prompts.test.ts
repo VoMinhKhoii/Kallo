@@ -42,7 +42,8 @@ describe('buildDecompositionPrompt', () => {
     const prompt = buildDecompositionPrompt(sampleUserContext);
     expect(prompt).toContain('meal item');
     expect(prompt).toContain('ingredients');
-    expect(prompt).toContain('estimatedGrams');
+    expect(prompt).toContain('grams');
+    expect(prompt).not.toContain('estimatedGrams');
   });
 
   it('includes meal slot classification instruction', () => {
@@ -96,6 +97,45 @@ describe('buildDecompositionPrompt', () => {
       /\bcutting\b|\bbulking\b|\bmaintaining\b|aggression|calorie[_ ]?target|kcal[_ ]?target/i
     );
     expect(prompt).not.toMatch(/0\.85/);
+  });
+
+  it('asks for stable ids on every emitted item', () => {
+    const prompt = buildDecompositionPrompt(sampleUserContext);
+    expect(prompt).toMatch(/mealItemId/);
+    expect(prompt).toMatch(/ingredientId/);
+  });
+
+  it('asks for canonicalName separately from rawName', () => {
+    const prompt = buildDecompositionPrompt(sampleUserContext);
+    expect(prompt).toMatch(/canonicalName/);
+    expect(prompt).toMatch(/rawName/);
+    expect(prompt.toLowerCase()).toMatch(/canonical|fct|disambiguat/);
+  });
+
+  it('documents expectedState as an override for mixed-state dishes', () => {
+    const prompt = buildDecompositionPrompt(sampleUserContext);
+    expect(prompt).toMatch(/expectedState/);
+    expect(prompt.toLowerCase()).toMatch(/differ|override|mixed/);
+  });
+
+  it('enumerates ambiguityFlags closed-enum values', () => {
+    const prompt = buildDecompositionPrompt(sampleUserContext);
+    for (const flag of [
+      'multiple_dish_interpretations',
+      'unspecified_quantity',
+      'cross_cuisine_ingredient',
+      'state_inferred_no_method',
+    ]) {
+      expect(prompt).toContain(flag);
+    }
+  });
+
+  it('does not mention source-priority routing fields', () => {
+    const prompt = buildDecompositionPrompt(sampleUserContext);
+    expect(prompt).not.toMatch(/sourcePrior|sourceOverride/);
+    expect(prompt.toLowerCase()).not.toMatch(
+      /route .*to (fao|usda)|prefer (fao|usda)/
+    );
   });
 });
 
