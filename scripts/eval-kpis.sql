@@ -158,3 +158,43 @@ FROM pipeline_shadow_runs
 WHERE created_at >= now() - interval '7 days'
 GROUP BY 1
 ORDER BY 2 DESC;
+
+-- ============================================================================
+-- KPI BLOCK 7: Escalation cost guardrail (spec §4.2).
+--
+-- Alerts (visual review only) if escalation rate exceeds 20% over trailing 24h.
+-- High escalation = high cost; sustained high escalation means
+-- pickComputePolicy is over-firing and warrants threshold review.
+--
+-- INTERPRETATION:
+--   over_20pct_threshold = true means either actual quality degradation is
+--   triggering anomaly retries, or pickComputePolicy thresholds are
+--   miscalibrated (e.g. 0.5 unmatched ratio too aggressive). Investigate by
+--   looking at the anomaly_types breakdown in block 2.
+-- ============================================================================
+WITH last_24h AS (
+  SELECT *
+  FROM pipeline_runs
+  WHERE created_at >= now() - interval '24 hours'
+),
+escalated AS (
+  SELECT
+    count(*) FILTER (
+      WHERE model_call2 LIKE '%-flash'
+        AND model_call2 NOT LIKE '%lite%'
+    ) AS n_escalated,
+    count(*) AS n_total
+  FROM last_24h
+)
+SELECT
+  n_escalated,
+  n_total,
+  CASE
+    WHEN n_total = 0 THEN 0::numeric
+    ELSE round(100.0 * n_escalated / n_total, 2)
+  END AS escalation_pct,
+  CASE
+    WHEN n_total = 0 THEN false
+    ELSE (1.0 * n_escalated / n_total) > 0.20
+  END AS over_20pct_threshold
+FROM escalated;
