@@ -1,3 +1,5 @@
+import type { WeightSummaryData } from '@/lib/types/weight';
+
 export type TimeRange = '30d' | '90d';
 
 export interface MealEntry {
@@ -31,6 +33,15 @@ export interface NutritionData {
   protein: { current: number; target: number };
   carbs: { current: number; target: number };
   fat: { current: number; target: number };
+}
+
+export interface DashboardSnapshot {
+  verdict: VerdictData;
+  stats: StatsData;
+  nutrition: NutritionData;
+  meals: MealEntry[];
+  heatmap: (number | null)[][];
+  weightSummary: WeightSummaryData;
 }
 
 export interface Micronutrient {

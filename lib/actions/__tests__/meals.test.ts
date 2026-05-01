@@ -6,7 +6,7 @@ import {
 import type { BoundedNutrition, PipelineResult } from '@/lib/ai/types';
 
 // ---------------------------------------------------------------------------
-// Mocks — vi.hoisted ensures these exist before vi.mock factories run
+// Mocks
 // ---------------------------------------------------------------------------
 
 const {
