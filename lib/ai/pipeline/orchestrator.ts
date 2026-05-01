@@ -14,6 +14,7 @@ import {
 } from '../streaming/parsers';
 import type { StreamEvent } from '../streaming/types';
 import type {
+  AmbiguityFlag,
   MealDecomposition,
   NutritionAdjustment,
   PipelineResponse,
@@ -875,6 +876,9 @@ async function runPipeline(
     anomalies: allAnomalies,
   });
 
+  const ambiguityFlagCounts = countAmbiguityFlags(allIngredients);
+  let pipelineRunRow: ReturnType<typeof buildPipelineRunRow> | undefined;
+
   // Persist a pipeline_runs row when request-level tracing is enabled (§0.4).
   // Telemetry writes are best-effort and never block the response or throw.
   if (traceContext) {
@@ -901,6 +905,7 @@ async function runPipeline(
           unmatched: matchResult.unmatched.length,
         },
         anomalyTypes: allAnomalies.map((a) => a.type),
+        ambiguityFlagCounts,
         counters: {
           preMatchAliasHits,
           cookedToRawFactorFires: assemblyMetrics.cookedToRawFactorFires,
@@ -918,13 +923,30 @@ async function runPipeline(
         retryCount: 0,
         promptPersonalizationFields: personalizationFields,
       });
+      pipelineRunRow = row;
       await writePipelineRun(traceContext.db, row);
     } catch (err) {
       console.error('[ai/pipeline] failed to write pipeline_runs row', err);
     }
   }
 
-  return { success: true, data: pipelineResult };
+  const response: PipelineResponse = { success: true, data: pipelineResult };
+  if (process.env.NODE_ENV === 'test' && pipelineRunRow) {
+    return { ...response, __telemetry: pipelineRunRow };
+  }
+  return response;
+}
+
+function countAmbiguityFlags(
+  ingredients: { ambiguityFlags?: AmbiguityFlag[] }[]
+): Partial<Record<AmbiguityFlag, number>> {
+  const counts: Partial<Record<AmbiguityFlag, number>> = {};
+  for (const ingredient of ingredients) {
+    for (const flag of ingredient.ambiguityFlags ?? []) {
+      counts[flag] = (counts[flag] ?? 0) + 1;
+    }
+  }
+  return counts;
 }
 
 function assertMealFactsShape(facts: MealFactsForComputePolicy): void {

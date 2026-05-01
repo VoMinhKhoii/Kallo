@@ -552,6 +552,93 @@ describe('analyzeMeal traceContext', () => {
     expect(mockDbValues.mock.calls[0][0].preMatchAliasHits).toBe(1);
   });
 
+  it('aggregates ambiguityFlags into pipeline_runs telemetry', async () => {
+    const db = makeDb();
+    const promptVersionsUsed = new Map<string, string>();
+    const traceContext: AnalyzeMealTraceContext = {
+      requestId: 'req-ambiguity',
+      db,
+      userId: 'user-test-1',
+      promptVersionsUsed,
+    };
+
+    const gemini = createMockGemini({
+      generateStructuredOutputStream: vi
+        .fn()
+        .mockResolvedValueOnce({
+          isFood: true,
+          mealItems: [
+            {
+              mealItemId: 'meal-1',
+              name: 'bún trộn',
+              cookingMethod: 'trộn',
+              ingredients: [
+                {
+                  ingredientId: 'ingredient-1',
+                  rawName: 'bún',
+                  canonicalName: 'Bún tươi',
+                  grams: 100,
+                  ambiguityFlags: [
+                    'multiple_dish_interpretations',
+                    'cross_cuisine_ingredient',
+                  ],
+                },
+                {
+                  ingredientId: 'ingredient-2',
+                  rawName: 'rau thơm',
+                  canonicalName: 'Rau thơm',
+                  grams: 20,
+                  ambiguityFlags: ['cross_cuisine_ingredient'],
+                },
+              ],
+            },
+          ],
+          mealSlot: null,
+        })
+        .mockResolvedValueOnce({
+          mealItems: [
+            {
+              mealItemName: 'Bún trộn',
+              ingredients: [
+                {
+                  ingredientName: 'Bún',
+                  caloriesKcal: { low: 100, mid: 120, high: 140 },
+                  proteinG: { low: 1, mid: 2, high: 3 },
+                  carbohydrateG: { low: 20, mid: 25, high: 30 },
+                  fatG: { low: 0, mid: 0.2, high: 0.5 },
+                },
+                {
+                  ingredientName: 'Rau thơm',
+                  caloriesKcal: { low: 1, mid: 2, high: 3 },
+                  proteinG: { low: 0, mid: 0.2, high: 0.5 },
+                  carbohydrateG: { low: 0, mid: 0.5, high: 1 },
+                  fatG: { low: 0, mid: 0, high: 0.1 },
+                },
+              ],
+            },
+          ],
+        }),
+    });
+
+    const result = await analyzeMeal(
+      'bún trộn',
+      USER_CONTEXT,
+      db,
+      gemini,
+      undefined,
+      traceContext
+    );
+
+    expect(result.__telemetry?.ambiguityFlagCounts).toEqual({
+      multiple_dish_interpretations: 1,
+      cross_cuisine_ingredient: 2,
+    });
+    expect(mockDbValues.mock.calls[0][0].ambiguityFlagCounts).toEqual({
+      multiple_dish_interpretations: 1,
+      cross_cuisine_ingredient: 2,
+    });
+  });
+
   it('retries Call 2 when validation returns a density_envelope warning', async () => {
     const db = makeDb();
     const promptVersionsUsed = new Map<string, string>();

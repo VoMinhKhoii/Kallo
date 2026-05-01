@@ -21,6 +21,7 @@ describe('buildPipelineRunRow', () => {
       timings: { total: 4500 },
       counts: { ingredient: 5, matched: 4, unmatched: 1 },
       anomalyTypes: [],
+      ambiguityFlagCounts: {},
       counters: {
         preMatchAliasHits: 0,
         cookedToRawFactorFires: 0,
@@ -50,6 +51,7 @@ describe('buildPipelineRunRow', () => {
         timings: { total: 3 },
         counts: { ingredient: 1, matched: 1, unmatched: 0 },
         anomalyTypes: [],
+        ambiguityFlagCounts: {},
         counters: {
           preMatchAliasHits: 0,
           cookedToRawFactorFires: 0,
@@ -75,6 +77,9 @@ describe('buildPipelineRunRow', () => {
       timings: { total: 4500 },
       counts: { ingredient: 5, matched: 4, unmatched: 1 },
       anomalyTypes: ['density_envelope', 'macro_inconsistent'],
+      ambiguityFlagCounts: {
+        cross_cuisine_ingredient: 2,
+      },
       counters: {
         preMatchAliasHits: 0,
         cookedToRawFactorFires: 2,
@@ -96,5 +101,8 @@ describe('buildPipelineRunRow', () => {
       'density_envelope',
       'macro_inconsistent',
     ]);
+    expect(row.ambiguityFlagCounts).toEqual({
+      cross_cuisine_ingredient: 2,
+    });
   });
 });

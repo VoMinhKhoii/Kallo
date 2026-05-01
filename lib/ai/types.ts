@@ -287,5 +287,13 @@ export interface PipelineError {
 
 /** Discriminated union result type */
 export type PipelineResponse =
-  | { success: true; data: PipelineResult }
-  | { success: false; error: PipelineError };
+  | {
+      success: true;
+      data: PipelineResult;
+      __telemetry?: import('./pipeline/run-telemetry').PipelineRunRow;
+    }
+  | {
+      success: false;
+      error: PipelineError;
+      __telemetry?: import('./pipeline/run-telemetry').PipelineRunRow;
+    };

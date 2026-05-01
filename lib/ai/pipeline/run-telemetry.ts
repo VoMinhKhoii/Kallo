@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto';
+import type { AmbiguityFlag } from '@/lib/ai/types';
 import type { AppDb } from '@/lib/db';
 
 export const hashUserId = (id: string): string =>
@@ -22,6 +23,7 @@ export interface BuildPipelineRunRowInput {
   timings: { total: number };
   counts: { ingredient: number; matched: number; unmatched: number };
   anomalyTypes: string[];
+  ambiguityFlagCounts: Partial<Record<AmbiguityFlag, number>>;
   counters: {
     preMatchAliasHits: number;
     cookedToRawFactorFires: number;
@@ -58,6 +60,7 @@ export function buildPipelineRunRow(input: BuildPipelineRunRowInput) {
     matchedCount: input.counts.matched,
     unmatchedCount: input.counts.unmatched,
     anomalyTypes: input.anomalyTypes,
+    ambiguityFlagCounts: input.ambiguityFlagCounts,
     preMatchAliasHits: input.counters.preMatchAliasHits,
     cookedToRawFactorFires: input.counters.cookedToRawFactorFires,
     densityEnvelopeFires: input.counters.densityEnvelopeFires,
@@ -68,9 +71,11 @@ export function buildPipelineRunRow(input: BuildPipelineRunRowInput) {
   };
 }
 
+export type PipelineRunRow = ReturnType<typeof buildPipelineRunRow>;
+
 export async function writePipelineRun(
   db: AppDb,
-  row: ReturnType<typeof buildPipelineRunRow>
+  row: PipelineRunRow
 ): Promise<void> {
   const { pipelineRuns } = await import('@/lib/db/schema');
   await db.insert(pipelineRuns).values(row);

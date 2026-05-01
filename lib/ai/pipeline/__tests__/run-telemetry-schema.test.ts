@@ -19,6 +19,7 @@ describe('pipelineRuns Drizzle schema', () => {
       'matchedCount',
       'unmatchedCount',
       'anomalyTypes',
+      'ambiguityFlagCounts',
       'preMatchAliasHits',
       'cookedToRawFactorFires',
       'densityEnvelopeFires',
