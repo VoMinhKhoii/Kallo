@@ -20,6 +20,7 @@ import type {
   UserContext,
 } from '../types';
 import { assembleResult } from './assembly';
+import { countCanonicalNameMisses } from './canonical-name-validator';
 import {
   MEAL_FACTS_KEYS,
   type MealFactsForComputePolicy,
@@ -349,6 +350,7 @@ async function runPipeline(
   let mealItemIndex = 0;
   let cacheHitL4 = false;
   let dbStateUnknownFires = 0;
+  let preMatchAliasHits = 0;
 
   // Streaming policy (spec §4.4): item_name + item_macros stream incrementally.
   // On retry_step2, the second Call 2 re-emits item_macros; the client
@@ -528,10 +530,18 @@ async function runPipeline(
     'matching',
     2,
     { ingredientCount: allIngredients.length },
-    async () =>
-      matchIngredients(allIngredients, rawInput, db, gemini, {
+    async () => {
+      if (traceContext) {
+        preMatchAliasHits = await countCanonicalNameMisses(
+          allIngredients.map((ing) => ing.canonicalName ?? ''),
+          db
+        );
+      }
+
+      return matchIngredients(allIngredients, rawInput, db, gemini, {
         concurrency: options.matchingConcurrency,
-      })
+      });
+    }
   );
   const matchMs = Date.now() - t1;
 
@@ -892,7 +902,7 @@ async function runPipeline(
         },
         anomalyTypes: allAnomalies.map((a) => a.type),
         counters: {
-          preMatchAliasHits: 0,
+          preMatchAliasHits,
           cookedToRawFactorFires: assemblyMetrics.cookedToRawFactorFires,
           densityEnvelopeFires: allAnomalies.filter(
             (a) => a.type === 'density_envelope'

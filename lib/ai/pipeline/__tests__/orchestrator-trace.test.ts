@@ -497,6 +497,61 @@ describe('analyzeMeal traceContext', () => {
     expect(mockDbValues.mock.calls[0][0].dbStateUnknownFires).toBe(1);
   });
 
+  it('records canonicalName vocabulary misses in preMatchAliasHits', async () => {
+    const db = {
+      ...makeDb(),
+      execute: vi
+        .fn()
+        .mockResolvedValue([
+          { name_primary: 'Gạo tẻ', name_en: null, name_alt: null },
+        ]),
+    } as unknown as AppDb;
+    const promptVersionsUsed = new Map<string, string>();
+    const traceContext: AnalyzeMealTraceContext = {
+      requestId: 'req-canonical-miss',
+      db,
+      userId: 'user-test-1',
+      promptVersionsUsed,
+    };
+
+    const gemini = createMockGemini({
+      generateStructuredOutputStream: vi
+        .fn()
+        .mockResolvedValueOnce({
+          isFood: true,
+          mealItems: [
+            {
+              mealItemId: 'meal-1',
+              name: 'cơm',
+              cookingMethod: 'nấu',
+              ingredients: [
+                {
+                  ingredientId: 'ingredient-1',
+                  rawName: 'gạo',
+                  canonicalName: 'Gạo lứt lạ',
+                  grams: 100,
+                },
+              ],
+            },
+          ],
+          mealSlot: null,
+        })
+        .mockResolvedValueOnce(VALID_NUTRITION),
+    });
+
+    await analyzeMeal(
+      'cơm trắng',
+      USER_CONTEXT,
+      db,
+      gemini,
+      undefined,
+      traceContext
+    );
+
+    expect(mockDbValues).toHaveBeenCalledTimes(1);
+    expect(mockDbValues.mock.calls[0][0].preMatchAliasHits).toBe(1);
+  });
+
   it('retries Call 2 when validation returns a density_envelope warning', async () => {
     const db = makeDb();
     const promptVersionsUsed = new Map<string, string>();
