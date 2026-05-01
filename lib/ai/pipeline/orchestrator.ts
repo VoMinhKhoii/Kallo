@@ -32,6 +32,7 @@ import {
   generateMealItemId,
   type MealDecompositionWithIds,
 } from './ids';
+import { resolveModelProfile } from './model-profile';
 import {
   type RawNutritionAdjustment,
   reconcileNutritionIds,
@@ -59,11 +60,15 @@ import {
   validateNutritionOutput,
 } from './validation';
 
-/** Model for LLM Call 1 (decomposition) — stable low-latency/high-volume tier */
-const DECOMPOSITION_MODEL = 'gemini-2.5-flash-lite';
+const MODEL_PROFILE = resolveModelProfile();
 
-/** Model for LLM Call 2 (nutrition estimation) — stable low-latency/high-volume tier */
-const NUTRITION_MODEL = 'gemini-2.5-flash-lite';
+/** Model for LLM Call 1 (decomposition). */
+const DECOMPOSITION_MODEL = MODEL_PROFILE.decompositionModel;
+
+/** Model for LLM Call 2 (nutrition estimation). */
+const NUTRITION_MODEL = MODEL_PROFILE.nutritionModel;
+
+export const ESCALATION_MODEL = MODEL_PROFILE.escalationModel;
 
 const NUTRITION_PROMPT_LABEL_CANDIDATE =
   process.env.SHADOW_CANDIDATE_PROMPT_LABEL ?? 'production';
