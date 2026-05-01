@@ -315,9 +315,9 @@ describe('buildNutritionPrompt', () => {
     expect(prompt).toContain('<meal_item name="canh rau lang tôm">');
     expect(prompt).toContain('<meal_item name="bún bò Huế">');
 
-    // Each should contain nước dùng with the correct raw_grams
-    expect(prompt).toContain('name="nước dùng" raw_grams="200"');
-    expect(prompt).toContain('name="nước dùng" raw_grams="300"');
+    // Each should contain nước dùng with the correct as-eaten grams.
+    expect(prompt).toContain('name="nước dùng" as_eaten_grams="200"');
+    expect(prompt).toContain('name="nước dùng" as_eaten_grams="300"');
   });
 
   it('unmatched_rule instructs LLM to use meal item context', () => {
@@ -413,6 +413,37 @@ describe('buildNutritionPrompt', () => {
       sampleUserContext
     );
     expect(prompt).toMatch(/db_state="unknown"/);
+  });
+
+  it('emits as_eaten_grams (not raw_grams) and dbState-aware <calculation>', () => {
+    const matched = [
+      {
+        ...makeIngredient('thịt bò bắp'),
+        dbState: 'cooked' as const,
+        ingredientId: 'i1',
+      },
+      {
+        ...makeIngredient('gạo tẻ'),
+        dbState: 'raw' as const,
+        ingredientId: 'i2',
+      },
+    ];
+    const mealItems = [makeMealItem('Phở bò', ['thịt bò bắp', 'gạo tẻ'])];
+    const prompt = buildNutritionPrompt(
+      mealItems,
+      matched,
+      [],
+      sampleUserContext
+    );
+
+    expect(prompt).toMatch(/as_eaten_grams="\d+"/);
+    expect(prompt).not.toMatch(/raw_grams=/);
+    expect(prompt).toMatch(/db_state="cooked"/);
+    expect(prompt).toMatch(/db_state="raw"/);
+    expect(prompt).toMatch(/db_state[\s\S]*"cooked"[\s\S]*as_eaten_grams/);
+    expect(prompt).toMatch(
+      /db_state[\s\S]*"raw"[\s\S]*adjust for cooking method/
+    );
   });
 
   it('includes cooking method attribute in ingredient data', () => {

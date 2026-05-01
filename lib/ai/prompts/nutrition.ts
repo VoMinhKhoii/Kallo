@@ -1,5 +1,4 @@
 import {
-  convertCookedToRaw,
   PROTEIN_PORTION_DESCRIPTION,
   RICE_PORTION_DESCRIPTION,
 } from '../constants';
@@ -83,7 +82,7 @@ export function buildNutritionPrompt(
 
   let ingredientData = '<ingredient_data>\n';
   ingredientData +=
-    '  <!-- DB values are per 100g RAW uncooked weight. estimatedGrams is also RAW. -->\n\n';
+    '  <!-- as_eaten_grams is the user-facing portion. db_state tells you whether the per_100g values are raw or cooked. -->\n\n';
 
   for (const mealItem of sortedMealItems) {
     ingredientData += `  <meal_item name="${mealItem.name}">\n`;
@@ -91,13 +90,9 @@ export function buildNutritionPrompt(
     for (const ing of mealItem.ingredients) {
       const match = matchedLookup.get(ing.name);
       if (match) {
-        const rawGrams = convertCookedToRaw(
-          ing.estimatedGrams,
-          ing.cookingMethod
-        );
         const dbState = match.dbState ?? 'unknown';
-        ingredientData += `    <ingredient name="${ing.name}" source="db_matched" db_name="${match.matchedName}" db_state="${dbState}" raw_grams="${rawGrams}"${ing.cookingMethod ? ` cooking="${ing.cookingMethod}"` : ''}>\n`;
-        ingredientData += `      <per_100g_raw calories="${match.nutritionPer100g.caloriesKcal ?? '?'}" protein="${match.nutritionPer100g.proteinG ?? '?'}g" carbs="${match.nutritionPer100g.carbohydrateG ?? '?'}g" fat="${match.nutritionPer100g.fatG ?? '?'}g" />\n`;
+        ingredientData += `    <ingredient name="${ing.name}" source="db_matched" db_name="${match.matchedName}" db_state="${dbState}" as_eaten_grams="${ing.estimatedGrams}"${ing.cookingMethod ? ` cooking="${ing.cookingMethod}"` : ''}>\n`;
+        ingredientData += `      <per_100g caloriesKcal="${match.nutritionPer100g.caloriesKcal ?? '?'}" proteinG="${match.nutritionPer100g.proteinG ?? '?'}" carbohydrateG="${match.nutritionPer100g.carbohydrateG ?? '?'}" fatG="${match.nutritionPer100g.fatG ?? '?'}" />\n`;
         ingredientData += `    </ingredient>\n`;
       }
     }
@@ -119,11 +114,7 @@ export function buildNutritionPrompt(
       if (unmatchedIngs.length > 0) {
         unmatchedSection += `  <meal_item name="${mealItem.name}">\n`;
         for (const ing of unmatchedIngs) {
-          const rawGrams = convertCookedToRaw(
-            ing.estimatedGrams,
-            ing.cookingMethod
-          );
-          unmatchedSection += `    <ingredient name="${ing.name}" raw_grams="${rawGrams}"${ing.cookingMethod ? ` cooking="${ing.cookingMethod}"` : ''} />\n`;
+          unmatchedSection += `    <ingredient name="${ing.name}" as_eaten_grams="${ing.estimatedGrams}"${ing.cookingMethod ? ` cooking="${ing.cookingMethod}"` : ''} />\n`;
         }
         unmatchedSection += `  </meal_item>\n`;
       }
@@ -140,10 +131,28 @@ export function buildNutritionPrompt(
   </task>
 
   <calculation>
-    1. Scale: base = (estimatedGrams / 100) × per_100g_raw. All values are RAW weights.
-    2. Adjust for cooking method: each ingredient has a "cooking" attribute — use your knowledge of
-       how that cooking method affects macros (e.g., fat absorption in frying, nutrient loss in boiling).
-    3. MID = your best estimate after cooking adjustment.
+    Each ingredient has db_state: "raw" | "cooked" | "unknown".
+
+    1. db_state="cooked": per_100g values are already cooked.
+       Scale base = (as_eaten_grams / 100) × per_100g, then adjust as needed
+       for the *user's actual cooking style* (e.g., extra oil from "nhiều dầu"
+       cooking habit). No raw/cooked conversion needed — both sides are cooked.
+
+    2. db_state="raw": per_100g values are raw, as_eaten_grams is cooked.
+       adjust for cooking method using your knowledge:
+         - frying (chiên/rán/xào) absorbs cooking oil → fat goes UP
+         - boiling (luộc/nấu) drives moisture changes; rice absorbs water → mass UP
+         - grilling (nướng) drives moisture out → density UP
+       Produce final macros for the as-eaten portion.
+
+    3. db_state="unknown": treat as "raw" but widen LOW/HIGH bounds — uncertainty
+       is higher because the reference frame is ambiguous.
+
+    For unmatched ingredients (no db row): use your knowledge of Vietnamese
+    cuisine for typical macros at the as-eaten weight. Be wider on bounds.
+
+    MID = your best estimate after cooking adjustment. LOW/HIGH bracket
+    physical-world uncertainty (portion guess + cooking variance).
   </calculation>
 
   <why_three_values>
