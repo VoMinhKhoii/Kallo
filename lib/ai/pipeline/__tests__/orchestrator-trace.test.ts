@@ -104,7 +104,10 @@ import { createMockGemini } from '@/lib/ai/__tests__/test-helpers';
 import type { UserContext } from '@/lib/ai/types';
 import type { AnalyzeMealTraceContext } from '../orchestrator';
 // Import after mocks
-import { analyzeMeal } from '../orchestrator';
+import {
+  _resetL4DecompositionCacheForTests,
+  analyzeMeal,
+} from '../orchestrator';
 
 // ---------------------------------------------------------------------------
 // Test data
@@ -227,6 +230,7 @@ function makeDb(): AppDb {
 describe('analyzeMeal traceContext', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    _resetL4DecompositionCacheForTests();
     mockRecordPromptVersion.mockResolvedValue('pv-test-id');
     mockMatchIngredients.mockResolvedValue({ matched: [], unmatched: [] });
     mockAssembleResult.mockReturnValue({
@@ -467,11 +471,57 @@ describe('analyzeMeal traceContext', () => {
     expect(result.success).toBe(true);
     expect(generateStructuredOutputStream).toHaveBeenCalledTimes(3);
   });
+
+  it('records cacheHitL4=true when decomposition comes from cache', async () => {
+    const db = makeDb();
+    const promptVersionsUsed = new Map<string, string>();
+    const traceContext: AnalyzeMealTraceContext = {
+      requestId: 'req-cache-1',
+      db,
+      userId: 'user-test-1',
+      promptVersionsUsed,
+    };
+    const secondTraceContext: AnalyzeMealTraceContext = {
+      requestId: 'req-cache-2',
+      db,
+      userId: 'user-test-1',
+      promptVersionsUsed: new Map(),
+    };
+    const generateStructuredOutputStream = vi
+      .fn()
+      .mockResolvedValueOnce(VALID_DECOMP)
+      .mockResolvedValueOnce(VALID_NUTRITION)
+      .mockResolvedValueOnce(VALID_NUTRITION);
+    const gemini = createMockGemini({ generateStructuredOutputStream });
+
+    await analyzeMeal(
+      'cơm trắng',
+      USER_CONTEXT,
+      db,
+      gemini,
+      undefined,
+      traceContext
+    );
+    await analyzeMeal(
+      '  Cơm   Trắng ',
+      USER_CONTEXT,
+      db,
+      gemini,
+      undefined,
+      secondTraceContext
+    );
+
+    expect(mockDbValues).toHaveBeenCalledTimes(2);
+    expect(mockDbValues.mock.calls[0][0].cacheHitL4).toBe(false);
+    expect(mockDbValues.mock.calls[1][0].cacheHitL4).toBe(true);
+    expect(generateStructuredOutputStream).toHaveBeenCalledTimes(3);
+  });
 });
 
 describe('shadow-runner integration', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    _resetL4DecompositionCacheForTests();
     mockRecordPromptVersion.mockResolvedValue('pv-test-id');
     mockMatchIngredients.mockResolvedValue({ matched: [], unmatched: [] });
     mockAssembleResult.mockReturnValue({

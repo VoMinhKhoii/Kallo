@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto';
+import { toJSONSchema } from 'zod';
 import type { AppDb } from '@/lib/db';
 import { fetchWithTimeout } from '@/lib/fetch-with-timeout';
 import { capitalizeFirst } from '@/lib/utils';
@@ -25,6 +26,12 @@ import {
   pickComputePolicy,
   summarizeCandidateConfidence,
 } from './compute-policy';
+import {
+  buildDecompositionCacheKey,
+  createL4Cache,
+  sha256Hex,
+  stableStringify,
+} from './decomposition-cache';
 import {
   handleError,
   isNonFoodError,
@@ -85,6 +92,18 @@ const SHADOW_DB_POOL_WAIT_THRESHOLD_MS = 1000;
 
 /** Per-call timeout for Gemini API calls (ms) */
 const LLM_TIMEOUT_MS = 25_000;
+const L4_CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+const DECOMPOSITION_SCHEMA_HASH = sha256Hex(
+  stableStringify(toJSONSchema(mealDecompositionSchema))
+);
+const L4_DECOMPOSITION_CACHE = createL4Cache<MealDecomposition>({
+  maxEntries: 1000,
+  ttlMs: L4_CACHE_TTL_MS,
+});
+
+export function _resetL4DecompositionCacheForTests(): void {
+  L4_DECOMPOSITION_CACHE.clear();
+}
 
 const RETRYABLE_NUTRITION_ANOMALIES = new Set<ValidationAnomaly['type']>([
   'db_deviation',
@@ -310,6 +329,7 @@ async function runPipeline(
   // streamed `item_name` ids match post-parse `item_macros` ids (§0.1).
   const streamMealItemIds = new Map<string, string>();
   let mealItemIndex = 0;
+  let cacheHitL4 = false;
 
   const composedOnChunk = (accumulated: string) => {
     // Existing: pre-warm embedding cache for ingredient names
@@ -334,13 +354,28 @@ async function runPipeline(
     }
   };
 
+  const renderedDecompositionPrompt = buildDecompositionPrompt(userContext);
+  const decompositionCacheKey = buildDecompositionCacheKey({
+    rawInput,
+    ctx: userContext,
+    decompositionPromptHash: sha256Hex(renderedDecompositionPrompt),
+    decompositionSchemaHash: DECOMPOSITION_SCHEMA_HASH,
+    decompositionModel: DECOMPOSITION_MODEL,
+  });
+
   const rawDecomposition: MealDecomposition = await withStageLog(
     traceContext,
     'decomposition',
     1,
     { rawInput },
     async ({ stageLogId }) => {
-      const systemPrompt = buildDecompositionPrompt(userContext);
+      const cached = L4_DECOMPOSITION_CACHE.get(decompositionCacheKey);
+      if (cached) {
+        cacheHitL4 = true;
+        return structuredClone(cached);
+      }
+
+      const systemPrompt = renderedDecompositionPrompt;
       const callTrace = await buildLlmStageTrace({
         trace: traceContext,
         stageLogId,
@@ -349,7 +384,7 @@ async function runPipeline(
         templateSample: systemPrompt,
         model: DECOMPOSITION_MODEL,
       });
-      return fetchWithTimeout(
+      const decomposed = await fetchWithTimeout(
         (signal) =>
           gemini.generateStructuredOutputStream(
             {
@@ -367,6 +402,11 @@ async function runPipeline(
         LLM_TIMEOUT_MS,
         'decomposition'
       );
+      L4_DECOMPOSITION_CACHE.set(
+        decompositionCacheKey,
+        structuredClone(decomposed)
+      );
+      return decomposed;
     }
   );
   // Thread streamed mealItemIds into the parsed decomposition before
@@ -812,7 +852,7 @@ async function runPipeline(
           retryStep2Count,
         },
         escalated: false,
-        cacheHitL4: false,
+        cacheHitL4,
         retryCount: 0,
         promptPersonalizationFields: personalizationFields,
       });
