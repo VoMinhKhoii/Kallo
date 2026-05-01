@@ -116,3 +116,45 @@ SELECT
     > 2 * coalesce(b.escalation_rate_sd, 0) AS escalation_rate_drift
 FROM today t
 CROSS JOIN baseline b;
+
+-- =====================================================================
+-- §5.2 Shadow runner -- divergence query templates.
+-- These are skeletons; tweak windows / thresholds for the question at hand.
+-- =====================================================================
+
+-- 7. Macro-divergence histogram by candidate (model, prompt) pair.
+SELECT
+  candidate_model,
+  candidate_prompt_label,
+  count(*) AS n,
+  avg((divergence ->> 'macroDeltaPct')::numeric) AS mean_macro_delta,
+  percentile_cont(0.95) WITHIN GROUP (
+    ORDER BY (divergence ->> 'macroDeltaPct')::numeric
+  ) AS p95_macro_delta,
+  count(*) FILTER (
+    WHERE (divergence ->> 'macroDeltaPct')::numeric > 0.30
+  ) AS over_30pct
+FROM pipeline_shadow_runs
+WHERE created_at >= now() - interval '7 days'
+  AND outcome = 'completed'
+GROUP BY 1, 2
+ORDER BY 1, 2;
+
+-- 8. Ingredient-count delta distribution.
+SELECT
+  (divergence ->> 'ingredientCountDelta')::int AS delta,
+  count(*) AS n
+FROM pipeline_shadow_runs
+WHERE created_at >= now() - interval '7 days'
+  AND outcome = 'completed'
+GROUP BY 1
+ORDER BY 1;
+
+-- 9. Abort-outcome breakdown.
+SELECT
+  outcome,
+  count(*)
+FROM pipeline_shadow_runs
+WHERE created_at >= now() - interval '7 days'
+GROUP BY 1
+ORDER BY 2 DESC;
