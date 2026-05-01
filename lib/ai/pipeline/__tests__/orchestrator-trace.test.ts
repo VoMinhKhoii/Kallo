@@ -295,7 +295,7 @@ describe('analyzeMeal traceContext', () => {
       promptVersionsUsed,
     };
 
-    mockValidateNutritionOutput.mockReturnValue([
+    mockValidateNutritionOutput.mockReturnValueOnce([]).mockReturnValue([
       {
         type: 'density_envelope',
         message: 'density breach',
@@ -369,5 +369,44 @@ describe('analyzeMeal traceContext', () => {
 
     expect(mockDbValues).toHaveBeenCalledTimes(1);
     expect(mockDbValues.mock.calls[0][0].cookedToRawFactorFires).toBe(2);
+  });
+
+  it('retries Call 2 when validation returns a density_envelope warning', async () => {
+    const db = makeDb();
+    const promptVersionsUsed = new Map<string, string>();
+    const traceContext: AnalyzeMealTraceContext = {
+      requestId: 'req-density-retry',
+      db,
+      userId: 'user-test-1',
+      promptVersionsUsed,
+    };
+    mockValidateNutritionOutput
+      .mockReturnValueOnce([
+        {
+          type: 'density_envelope',
+          message: 'density breach',
+          severity: 'warning',
+        },
+      ])
+      .mockReturnValue([]);
+
+    const generateStructuredOutputStream = vi
+      .fn()
+      .mockResolvedValueOnce(VALID_DECOMP)
+      .mockResolvedValueOnce(VALID_NUTRITION)
+      .mockResolvedValueOnce(VALID_NUTRITION);
+    const gemini = createMockGemini({ generateStructuredOutputStream });
+
+    const result = await analyzeMeal(
+      'cơm trắng',
+      USER_CONTEXT,
+      db,
+      gemini,
+      undefined,
+      traceContext
+    );
+
+    expect(result.success).toBe(true);
+    expect(generateStructuredOutputStream).toHaveBeenCalledTimes(3);
   });
 });

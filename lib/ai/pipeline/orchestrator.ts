@@ -56,6 +56,18 @@ const NUTRITION_MODEL = 'gemini-2.5-flash-lite';
 /** Per-call timeout for Gemini API calls (ms) */
 const LLM_TIMEOUT_MS = 25_000;
 
+const RETRYABLE_NUTRITION_ANOMALIES = new Set<ValidationAnomaly['type']>([
+  'db_deviation',
+  'density_envelope',
+  'macro_inconsistent',
+]);
+
+function shouldRetryNutrition(anomalies: ValidationAnomaly[]): boolean {
+  return anomalies.some(
+    (a) => a.severity === 'warning' && RETRYABLE_NUTRITION_ANOMALIES.has(a.type)
+  );
+}
+
 // ---------------------------------------------------------------------------
 // Trace context
 // ---------------------------------------------------------------------------
@@ -373,6 +385,7 @@ async function runPipeline(
   emit({ type: 'stage', stage: 'estimating' });
   const t2 = Date.now();
   let lastExtractedCount = 0;
+  let retryStep2Count = 0;
 
   // Build a lookup from meal item name → total grams for computeStreamingMealItem
   const mealItemGrams = new Map<string, number>();
@@ -499,6 +512,7 @@ async function runPipeline(
         console.warn(
           '[pipeline] classifyAnomalies → retry_step2, retrying Call 2'
         );
+        retryStep2Count += 1;
         // Reset streaming state so retry re-emits from scratch
         lastExtractedCount = 0;
         macroEmittedCounts.clear();
@@ -523,11 +537,52 @@ async function runPipeline(
         );
       }
 
-      return reconcileNutritionIds(
+      let reconciledNutrition = reconcileNutritionIds(
         rawNutrition,
         decomposition,
         matchResult.matched
       );
+
+      const retryableValidationAnomalies = validateNutritionOutput(
+        reconciledNutrition,
+        matchResult.matched,
+        decomposition.mealItems
+      );
+      if (shouldRetryNutrition(retryableValidationAnomalies)) {
+        console.warn(
+          '[pipeline] validation anomaly → retrying Call 2',
+          retryableValidationAnomalies.map((a) => a.type)
+        );
+        retryStep2Count += 1;
+        lastExtractedCount = 0;
+        macroEmittedCounts.clear();
+        rawNutrition = await fetchWithTimeout(
+          (signal) =>
+            gemini.generateStructuredOutputStream(
+              {
+                schema: nutritionAdjustmentSchema,
+                systemPrompt,
+                userMessage:
+                  'The previous result had physically implausible nutrition bounds. Recalculate bounded nutrition estimates carefully and keep calories consistent with protein/carbs/fat.',
+                model: NUTRITION_MODEL,
+                temperature: 0.5,
+                topP: 1,
+                topK: 1,
+                abortSignal: signal,
+              },
+              { onChunk: nutritionOnChunk, trace: callTrace }
+            ),
+          LLM_TIMEOUT_MS,
+          'nutrition-retry'
+        );
+        reconciledNutrition = reconcileNutritionIds(
+          rawNutrition,
+          decomposition,
+          matchResult.matched
+        );
+      }
+
+      return reconciledNutrition;
     }
   );
 
@@ -644,7 +699,7 @@ async function runPipeline(
             (a) => a.type === 'macro_inconsistent'
           ).length,
           dbStateUnknownFires: 0,
-          retryStep2Count: 0,
+          retryStep2Count,
         },
         escalated: false,
         cacheHitL4: false,
