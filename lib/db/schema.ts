@@ -600,3 +600,21 @@ export const pipelineRuns = pgTable('pipeline_runs', {
     .notNull()
     .default(sql`'{}'::text[]`),
 });
+
+export const pipelineShadowRuns = pgTable('pipeline_shadow_runs', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  createdAt: timestamp('created_at', { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+  // Joins back to pipeline_runs.request_id to recover input context.
+  requestId: text('request_id').notNull(),
+  // The primary run that this shadow was paired against.
+  primaryRunId: uuid('primary_run_id'),
+  candidatePromptLabel: text('candidate_prompt_label').notNull(),
+  candidateModel: text('candidate_model').notNull(),
+  primaryOutput: jsonb('primary_output').notNull(),
+  candidateOutput: jsonb('candidate_output').notNull(),
+  divergence: jsonb('divergence').notNull(),
+  outcome: text('outcome').notNull(),
+  candidateMs: integer('candidate_ms').notNull().default(0),
+});

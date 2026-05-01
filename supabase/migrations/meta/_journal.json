@@ -183,6 +183,13 @@
       "when": 1777573226545,
       "tag": "20260430182026_add_pipeline_runs_table",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1777659436241,
+      "tag": "20260501181716_add_pipeline_shadow_runs_table",
+      "breakpoints": true
     }
   ]
 }
