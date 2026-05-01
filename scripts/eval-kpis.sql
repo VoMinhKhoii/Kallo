@@ -198,3 +198,53 @@ SELECT
     ELSE (1.0 * n_escalated / n_total) > 0.20
   END AS over_20pct_threshold
 FROM escalated;
+
+-- ============================================================================
+-- KPI BLOCK 8: Step-2 retry rate (7-day rolling) -- UX flicker proxy.
+--
+-- Spec §4.4 line 423. If sustained > 10%, the cost of the
+-- "first answer -> corrected answer" flicker is high enough to revisit the
+-- streaming-vs-buffering trade-off with real data.
+-- ============================================================================
+
+-- 8a) Single rolling 7-day rate -- the spec metric.
+SELECT
+  count(*) FILTER (WHERE retry_step2_count > 0) AS n_retried_7d,
+  count(*) AS n_total_7d,
+  CASE
+    WHEN count(*) = 0 THEN 0::numeric
+    ELSE round(
+      100.0 * count(*) FILTER (WHERE retry_step2_count > 0) / count(*),
+      2
+    )
+  END AS step2_retry_pct_7d_rolling,
+  CASE
+    WHEN count(*) = 0 THEN false
+    ELSE (1.0 * count(*) FILTER (WHERE retry_step2_count > 0) / count(*))
+      > 0.10
+  END AS over_10pct_threshold
+FROM pipeline_runs
+WHERE created_at >= now() - interval '7 days';
+
+-- 8b) Per-day breakdown -- diagnostic only (NOT the spec metric).
+SELECT
+  date_trunc('day', created_at) AS day,
+  count(*) FILTER (WHERE retry_step2_count > 0) AS n_retried,
+  count(*) AS n_total,
+  CASE
+    WHEN count(*) = 0 THEN 0::numeric
+    ELSE round(
+      100.0 * count(*) FILTER (WHERE retry_step2_count > 0) / count(*),
+      2
+    )
+  END AS step2_retry_pct_daily
+FROM pipeline_runs
+WHERE created_at >= now() - interval '7 days'
+GROUP BY 1
+ORDER BY 1 DESC;
+
+-- INTERPRETATION:
+--   Block 8a is the spec metric: a single rolling 7-day rate. If
+--   over_10pct_threshold = true, revisit the buffer-vs-stream decision in
+--   §4.4. Block 8b is a diagnostic per-day breakdown to help locate whether
+--   the regression is a sustained shift or a single bad day.

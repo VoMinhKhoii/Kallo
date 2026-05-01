@@ -331,6 +331,10 @@ async function runPipeline(
   let mealItemIndex = 0;
   let cacheHitL4 = false;
 
+  // Streaming policy (spec §4.4): item_name + item_macros stream incrementally.
+  // On retry_step2, the second Call 2 re-emits item_macros; the client
+  // overwrites by stable ids (§0.1). If retry_step2_count > 0 exceeds 10%
+  // over a 7-day window (KPI block 8), revisit buffer-vs-stream.
   const composedOnChunk = (accumulated: string) => {
     // Existing: pre-warm embedding cache for ingredient names
     speculativeMatcher(accumulated);
