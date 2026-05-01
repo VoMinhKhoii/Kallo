@@ -613,7 +613,7 @@ export const pipelineShadowRuns = pgTable('pipeline_shadow_runs', {
   candidatePromptLabel: text('candidate_prompt_label').notNull(),
   candidateModel: text('candidate_model').notNull(),
   primaryOutput: jsonb('primary_output').notNull(),
-  candidateOutput: jsonb('candidate_output').notNull(),
+  candidateOutput: jsonb('candidate_output'),
   divergence: jsonb('divergence').notNull(),
   outcome: text('outcome').notNull(),
   candidateMs: integer('candidate_ms').notNull().default(0),

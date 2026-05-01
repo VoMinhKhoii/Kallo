@@ -92,7 +92,7 @@ vi.mock('@/lib/ai/streaming/parsers', () => ({
   extractCompletedMealItemNutrition: vi
     .fn()
     .mockReturnValue({ items: [], newCount: 0 }),
-  extractMealItemNames: vi.fn().mockReturnValue([]),
+  extractMealItemNameOccurrences: vi.fn().mockReturnValue([]),
 }));
 
 vi.mock('@/lib/ai/prompts', () => ({
@@ -156,6 +156,64 @@ const VALID_NUTRITION = {
       ],
     },
   ],
+};
+
+const FULL_PIPELINE_RESULT = {
+  mealItems: [
+    {
+      name: 'Cơm',
+      ingredients: [
+        {
+          ingredientName: 'Gạo',
+          foodCompositionId: 'food-1',
+          estimatedGrams: 200,
+          rawEquivalentGrams: 200,
+          cookingMethod: null,
+          userFacingUnit: null,
+          matchConfidence: 0.9,
+          boundedNutrition: {
+            caloriesKcal: { low: 250, mid: 300, high: 360 },
+            proteinG: { low: 5, mid: 6, high: 8 },
+            carbohydrateG: { low: 50, mid: 65, high: 80 },
+            fatG: { low: 0.3, mid: 0.5, high: 1 },
+          },
+          displayedNutrition: {
+            caloriesKcal: 300,
+            proteinG: 6,
+            carbohydrateG: 65,
+            fatG: 0.5,
+          },
+        },
+      ],
+      boundedNutrition: {
+        caloriesKcal: { low: 250, mid: 300, high: 360 },
+        proteinG: { low: 5, mid: 6, high: 8 },
+        carbohydrateG: { low: 50, mid: 65, high: 80 },
+        fatG: { low: 0.3, mid: 0.5, high: 1 },
+      },
+      displayedNutrition: {
+        caloriesKcal: 300,
+        proteinG: 6,
+        carbohydrateG: 65,
+        fatG: 0.5,
+      },
+    },
+  ],
+  mealSlot: null,
+  confidenceOverall: 'medium',
+  boundedNutrition: {
+    caloriesKcal: { low: 250, mid: 300, high: 360 },
+    proteinG: { low: 5, mid: 6, high: 8 },
+    carbohydrateG: { low: 50, mid: 65, high: 80 },
+    fatG: { low: 0.3, mid: 0.5, high: 1 },
+  },
+  displayedNutrition: {
+    caloriesKcal: 300,
+    proteinG: 6,
+    carbohydrateG: 65,
+    fatG: 0.5,
+  },
+  unmatchedIngredients: [],
 };
 
 function makeDb(): AppDb {
@@ -408,5 +466,126 @@ describe('analyzeMeal traceContext', () => {
 
     expect(result.success).toBe(true);
     expect(generateStructuredOutputStream).toHaveBeenCalledTimes(3);
+  });
+});
+
+describe('shadow-runner integration', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockRecordPromptVersion.mockResolvedValue('pv-test-id');
+    mockMatchIngredients.mockResolvedValue({ matched: [], unmatched: [] });
+    mockAssembleResult.mockReturnValue({
+      result: FULL_PIPELINE_RESULT,
+      metrics: { cookedToRawFactorFires: 0 },
+    });
+    mockValidateNutritionOutput.mockReturnValue([]);
+    mockDetectAnomalies.mockReturnValue([]);
+    mockDbValues.mockResolvedValue(undefined);
+  });
+
+  function makeTrace(db: AppDb): AnalyzeMealTraceContext {
+    return {
+      requestId: 'shadow-request-id',
+      db,
+      userId: 'user-test-1',
+      promptVersionsUsed: new Map(),
+    };
+  }
+
+  function makeGemini() {
+    return createMockGemini({
+      generateStructuredOutputStream: vi
+        .fn()
+        .mockResolvedValueOnce(VALID_DECOMP)
+        .mockResolvedValueOnce(VALID_NUTRITION)
+        .mockResolvedValueOnce(VALID_DECOMP)
+        .mockResolvedValueOnce(VALID_NUTRITION),
+    });
+  }
+
+  it('does not invoke the shadow runner when disabled', async () => {
+    const db = makeDb();
+    const persistShadowRun = vi.fn().mockResolvedValue(undefined);
+
+    await analyzeMeal(
+      'cơm trắng',
+      USER_CONTEXT,
+      db,
+      makeGemini(),
+      undefined,
+      makeTrace(db),
+      { shadow: { enabled: false, persistShadowRun } }
+    );
+    await Promise.resolve();
+
+    expect(persistShadowRun).not.toHaveBeenCalled();
+  });
+
+  it('invokes shadow after the primary response when sampled in', async () => {
+    const db = makeDb();
+    let primaryReturned = false;
+    const persistShadowRun = vi.fn().mockImplementation(async () => {
+      expect(primaryReturned).toBe(true);
+    });
+
+    const response = await analyzeMeal(
+      'cơm trắng',
+      USER_CONTEXT,
+      db,
+      makeGemini(),
+      undefined,
+      makeTrace(db),
+      { shadow: { enabled: true, rate: 1, persistShadowRun } }
+    );
+    primaryReturned = true;
+
+    expect(response.success).toBe(true);
+    await vi.waitFor(() => expect(persistShadowRun).toHaveBeenCalledOnce());
+    expect(mockMatchIngredients.mock.calls[1]?.[4]).toEqual({
+      concurrency: 1,
+    });
+  });
+
+  it('shadow failure does not perturb the primary response', async () => {
+    const db = makeDb();
+    const persistShadowRun = vi.fn().mockRejectedValue(new Error('db down'));
+
+    const response = await analyzeMeal(
+      'cơm trắng',
+      USER_CONTEXT,
+      db,
+      makeGemini(),
+      undefined,
+      makeTrace(db),
+      { shadow: { enabled: true, rate: 1, persistShadowRun } }
+    );
+
+    expect(response.success).toBe(true);
+  });
+
+  it('aborts when the guard says no and persists the reason', async () => {
+    const db = makeDb();
+    const persistShadowRun = vi.fn().mockResolvedValue(undefined);
+    const guard = {
+      shouldRun: vi
+        .fn()
+        .mockResolvedValue({ run: false, reason: 'aborted_primary_p95' }),
+      onPrimaryComplete: vi.fn(),
+    };
+
+    await analyzeMeal(
+      'cơm trắng',
+      USER_CONTEXT,
+      db,
+      makeGemini(),
+      undefined,
+      makeTrace(db),
+      { shadow: { enabled: true, rate: 1, persistShadowRun, guard } }
+    );
+
+    await vi.waitFor(() => expect(persistShadowRun).toHaveBeenCalledOnce());
+    expect(persistShadowRun.mock.calls[0][0].outcome).toBe(
+      'aborted_primary_p95'
+    );
   });
 });

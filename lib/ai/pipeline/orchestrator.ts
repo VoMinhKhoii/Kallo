@@ -38,6 +38,18 @@ import {
 } from './nutrition';
 import { buildPipelineRunRow, writePipelineRun } from './run-telemetry';
 import { mealDecompositionSchema, nutritionAdjustmentSchema } from './schemas';
+import {
+  createShadowGuard,
+  getPrimaryP95Ms,
+  isEmbeddingRateLimited,
+} from './shadow-guards';
+import {
+  runShadowAsync,
+  type ShadowGuard,
+  type ShadowRunnerDeps,
+  type ShadowRunPersistRow,
+} from './shadow-runner';
+import { isShadowSampled } from './shadow-sampling';
 import { buildLlmStageTrace, logStage } from './trace';
 import {
   classifyAnomalies,
@@ -52,6 +64,13 @@ const DECOMPOSITION_MODEL = 'gemini-2.5-flash-lite';
 
 /** Model for LLM Call 2 (nutrition estimation) — stable low-latency/high-volume tier */
 const NUTRITION_MODEL = 'gemini-2.5-flash-lite';
+
+const NUTRITION_PROMPT_LABEL_CANDIDATE =
+  process.env.SHADOW_CANDIDATE_PROMPT_LABEL ?? 'production';
+const NUTRITION_MODEL_CANDIDATE =
+  process.env.SHADOW_CANDIDATE_MODEL ?? NUTRITION_MODEL;
+const SHADOW_PRIMARY_P95_THRESHOLD_MS = 4000;
+const SHADOW_DB_POOL_WAIT_THRESHOLD_MS = 1000;
 
 /** Per-call timeout for Gemini API calls (ms) */
 const LLM_TIMEOUT_MS = 25_000;
@@ -80,6 +99,25 @@ export interface AnalyzeMealTraceContext {
   userId: string;
   /** Mutable holder; populated by each LLM stage as its prompt version resolves. */
   promptVersionsUsed: Map<string, string>;
+}
+
+export interface ShadowConfig {
+  enabled: boolean;
+  /** Optional override of the locked 5% sampling rate for tests. */
+  rate?: number;
+  persistShadowRun?: ShadowRunnerDeps['persistShadowRun'];
+  guard?: ShadowGuard;
+  candidatePromptLabel?: string;
+  candidateModel?: string;
+}
+
+export interface AnalyzeMealOptions {
+  shadow?: ShadowConfig;
+}
+
+interface RunPipelineOptions {
+  matchingConcurrency?: number;
+  nutritionModel?: string;
 }
 
 type StageName = 'decomposition' | 'matching' | 'nutrition' | 'assembly';
@@ -167,10 +205,12 @@ export async function analyzeMeal(
   db: AppDb,
   gemini: GeminiClient,
   onEvent?: (event: StreamEvent) => void,
-  traceContext?: AnalyzeMealTraceContext
+  traceContext?: AnalyzeMealTraceContext,
+  options?: AnalyzeMealOptions
 ): Promise<PipelineResponse> {
+  const analyzeStart = Date.now();
   try {
-    return await runPipeline(
+    const response = await runPipeline(
       rawInput,
       userContext,
       db,
@@ -178,6 +218,17 @@ export async function analyzeMeal(
       onEvent,
       traceContext
     );
+    scheduleShadowRun({
+      rawInput,
+      userContext,
+      db,
+      gemini,
+      traceContext,
+      response,
+      primaryMs: Date.now() - analyzeStart,
+      shadow: options?.shadow,
+    });
+    return response;
   } catch (error) {
     if (isNonFoodError(error)) {
       return nonFoodResponse();
@@ -230,7 +281,8 @@ async function runPipeline(
   db: AppDb,
   gemini: GeminiClient,
   onEvent?: (event: StreamEvent) => void,
-  traceContext?: AnalyzeMealTraceContext
+  traceContext?: AnalyzeMealTraceContext,
+  options: RunPipelineOptions = {}
 ): Promise<PipelineResponse> {
   const t0 = Date.now();
   const emit = onEvent ?? (() => {});
@@ -377,7 +429,10 @@ async function runPipeline(
     'matching',
     2,
     { ingredientCount: allIngredients.length },
-    async () => matchIngredients(allIngredients, rawInput, db, gemini)
+    async () =>
+      matchIngredients(allIngredients, rawInput, db, gemini, {
+        concurrency: options.matchingConcurrency,
+      })
   );
   const matchMs = Date.now() - t1;
 
@@ -462,7 +517,7 @@ async function runPipeline(
         name: 'nutrition',
         builder: buildNutritionPrompt as (...a: unknown[]) => string,
         templateSample: systemPrompt,
-        model: NUTRITION_MODEL,
+        model: options.nutritionModel ?? NUTRITION_MODEL,
       });
 
       let rawNutrition: RawNutritionAdjustment = await fetchWithTimeout(
@@ -473,7 +528,7 @@ async function runPipeline(
               systemPrompt,
               userMessage:
                 'Produce bounded nutrition estimates for each ingredient in each meal item based on the reference data provided.',
-              model: NUTRITION_MODEL,
+              model: options.nutritionModel ?? NUTRITION_MODEL,
               temperature: 0.5,
               topP: 1,
               topK: 1,
@@ -524,7 +579,7 @@ async function runPipeline(
                 systemPrompt,
                 userMessage:
                   'The previous result had 0 calories. Please recalculate bounded nutrition estimates carefully.',
-                model: NUTRITION_MODEL,
+                model: options.nutritionModel ?? NUTRITION_MODEL,
                 temperature: 0.5,
                 topP: 1,
                 topK: 1,
@@ -564,7 +619,7 @@ async function runPipeline(
                 systemPrompt,
                 userMessage:
                   'The previous result had physically implausible nutrition bounds. Recalculate bounded nutrition estimates carefully and keep calories consistent with protein/carbs/fat.',
-                model: NUTRITION_MODEL,
+                model: options.nutritionModel ?? NUTRITION_MODEL,
                 temperature: 0.5,
                 topP: 1,
                 topK: 1,
@@ -681,7 +736,7 @@ async function runPipeline(
         userId: traceContext.userId,
         requestId: traceContext.requestId,
         modelCall1: DECOMPOSITION_MODEL,
-        modelCall2: NUTRITION_MODEL,
+        modelCall2: options.nutritionModel ?? NUTRITION_MODEL,
         timings: { total: Date.now() - t0 },
         counts: {
           ingredient: allIngredients.length,
@@ -713,4 +768,101 @@ async function runPipeline(
   }
 
   return { success: true, data: pipelineResult };
+}
+
+function scheduleShadowRun(args: {
+  rawInput: string;
+  userContext: UserContext;
+  db: AppDb;
+  gemini: GeminiClient;
+  traceContext?: AnalyzeMealTraceContext;
+  response: PipelineResponse;
+  primaryMs: number;
+  shadow?: ShadowConfig;
+}): void {
+  if (!args.traceContext) {
+    return;
+  }
+
+  const shadowCfg = args.shadow ?? defaultShadowConfigFromEnv(args.db);
+  const guard = shadowCfg.guard ?? defaultShadowGuard();
+  guard.onPrimaryComplete(args.primaryMs);
+
+  if (
+    !shadowCfg.enabled ||
+    !isShadowSampled(args.traceContext.requestId, {
+      enabled: true,
+      rate: shadowCfg.rate,
+    })
+  ) {
+    return;
+  }
+
+  queueMicrotask(() => {
+    void runShadowAsync(
+      {
+        requestId: args.traceContext?.requestId ?? '',
+        primary: args.response,
+        candidatePromptLabel:
+          shadowCfg.candidatePromptLabel ?? NUTRITION_PROMPT_LABEL_CANDIDATE,
+        candidateModel: shadowCfg.candidateModel ?? NUTRITION_MODEL_CANDIDATE,
+      },
+      {
+        runCandidate: () =>
+          runPipeline(
+            args.rawInput,
+            args.userContext,
+            args.db,
+            args.gemini,
+            undefined,
+            undefined,
+            {
+              matchingConcurrency: 1,
+              nutritionModel:
+                shadowCfg.candidateModel ?? NUTRITION_MODEL_CANDIDATE,
+            }
+          ),
+        persistShadowRun:
+          shadowCfg.persistShadowRun ?? persistShadowRunDefault(args.db),
+        now: () => Date.now(),
+      },
+      guard
+    );
+  });
+}
+
+function defaultShadowConfigFromEnv(db: AppDb): ShadowConfig {
+  return {
+    enabled: process.env.SHADOW_RUNNER_ENABLED === 'true',
+    persistShadowRun: persistShadowRunDefault(db),
+  };
+}
+
+function defaultShadowGuard(): ShadowGuard {
+  return createShadowGuard({
+    primaryP95Ms: getPrimaryP95Ms,
+    primaryP95ThresholdMs: SHADOW_PRIMARY_P95_THRESHOLD_MS,
+    dbPoolWaitMs: () => 0,
+    dbPoolWaitThresholdMs: SHADOW_DB_POOL_WAIT_THRESHOLD_MS,
+    embeddingRateLimited: isEmbeddingRateLimited,
+  });
+}
+
+function persistShadowRunDefault(
+  db: AppDb
+): ShadowRunnerDeps['persistShadowRun'] {
+  return async (row: ShadowRunPersistRow) => {
+    const { pipelineShadowRuns } = await import('@/lib/db/schema');
+    await db.insert(pipelineShadowRuns).values({
+      requestId: row.requestId,
+      primaryRunId: row.primaryRunId,
+      candidatePromptLabel: row.candidatePromptLabel,
+      candidateModel: row.candidateModel,
+      primaryOutput: row.primaryOutput,
+      candidateOutput: row.candidateOutput,
+      divergence: row.divergence,
+      outcome: row.outcome,
+      candidateMs: row.candidateMs,
+    });
+  };
 }

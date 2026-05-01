@@ -38,7 +38,11 @@ export interface MatchResult {
 }
 
 /** Max concurrent DB calls to avoid exhausting PgBouncer pool */
-const MATCH_CONCURRENCY = 2;
+const MATCH_CONCURRENCY_DEFAULT = 2;
+
+export interface MatchOptions {
+  concurrency?: number;
+}
 
 /**
  * Match a list of decomposed ingredients against the food composition DB.
@@ -54,10 +58,12 @@ export async function matchIngredients(
   ingredients: DecomposedIngredient[],
   mealContext: string,
   db: AppDb,
-  gemini: GeminiClient
+  gemini: GeminiClient,
+  opts: MatchOptions = {}
 ): Promise<MatchResult> {
   const matched: MatchedIngredient[] = [];
   const unmatched: UnmatchedIngredient[] = [];
+  const matchConcurrency = opts.concurrency ?? MATCH_CONCURRENCY_DEFAULT;
 
   // Pre-step: resolve pre-match aliases to fix known wrong-match cases
   // (e.g., "cá lóc" → "Cá quả" to avoid USDA's Atlantic bass mistranslation).
@@ -74,7 +80,7 @@ export async function matchIngredients(
   const cacheSettled = await mapWithConcurrency(
     matchingNames,
     (name) => resolveQueryEmbedding(name, db),
-    MATCH_CONCURRENCY
+    matchConcurrency
   );
   const cacheResults = cacheSettled.map((r, i) => {
     if (r.status === 'rejected') {
@@ -127,7 +133,7 @@ export async function matchIngredients(
   const matchSettled = await mapWithConcurrency(
     matchItems,
     (item) => matchSingleIngredientWithEmbedding(item.name, item.embedding, db),
-    MATCH_CONCURRENCY
+    matchConcurrency
   );
 
   // Collect successful MatchInfo results and track initial failures
@@ -195,7 +201,7 @@ export async function matchIngredients(
         const aliasCacheSettled = await mapWithConcurrency(
           aliasRetries,
           (r) => resolveQueryEmbedding(r.aliasName, db),
-          MATCH_CONCURRENCY
+          matchConcurrency
         );
         const aliasCacheResults = aliasCacheSettled.map((r, i) => {
           if (r.status === 'rejected') {
@@ -250,7 +256,7 @@ export async function matchIngredients(
           })),
           (item) =>
             matchSingleIngredientWithEmbedding(item.name, item.embedding, db),
-          MATCH_CONCURRENCY
+          matchConcurrency
         );
 
         // Track which originals were rescued by alias (keyed by input index)

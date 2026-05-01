@@ -190,6 +190,13 @@
       "when": 1777659436241,
       "tag": "20260501181716_add_pipeline_shadow_runs_table",
       "breakpoints": true
+    },
+    {
+      "idx": 27,
+      "version": "7",
+      "when": 1777659985529,
+      "tag": "20260501182625_allow_nullable_shadow_candidate_output",
+      "breakpoints": true
     }
   ]
 }
