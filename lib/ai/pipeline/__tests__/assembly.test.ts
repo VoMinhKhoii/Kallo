@@ -214,7 +214,7 @@ describe('assembleResult — dbState-aware DB scaling', () => {
     expect(metrics.cookedToRawFactorFires).toBe(0);
   });
 
-  it('applies convertCookedToRaw when dbState === "raw"', () => {
+  it('applies the legacy raw fallback when dbState === "raw"', () => {
     const matched: MatchedIngredient[] = [
       {
         ...makeMatch('gạo tẻ'),
