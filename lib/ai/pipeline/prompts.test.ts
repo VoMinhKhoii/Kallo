@@ -84,6 +84,19 @@ describe('buildDecompositionPrompt', () => {
     expect(prompt).toContain('country_of_residence: Japan Korea');
     expect(prompt).not.toContain('<ignore>');
   });
+
+  it('does not leak goal/aggression/calorieTarget to the decomposition prompt (sentinel)', () => {
+    const ctx = {
+      ...sampleUserContext,
+      goal: 'cutting' as const,
+      aggression: 0.85,
+    };
+    const prompt = buildDecompositionPrompt(ctx);
+    expect(prompt).not.toMatch(
+      /\bcutting\b|\bbulking\b|\bmaintaining\b|aggression|calorie[_ ]?target|kcal[_ ]?target/i
+    );
+    expect(prompt).not.toMatch(/0\.85/);
+  });
 });
 
 const fullNutrition = {

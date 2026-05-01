@@ -2,8 +2,18 @@ import {
   PROTEIN_PORTION_DESCRIPTION,
   RICE_PORTION_DESCRIPTION,
 } from '../constants';
-import type { UserContext } from '../types';
 import { buildPromptContextLine } from './sanitize';
+import type { PromptPersonalizationContext } from './types';
+
+/**
+ * Principle A (spec §2): the LLM produces honest physical-world estimates
+ * conditioned only on the meal text and the user's cooking identity (country
+ * of origin/residence, cookingHabits). Goal, aggression, and calorie targets
+ * NEVER reach this prompt — TypeScript enforces the boundary via
+ * PromptPersonalizationContext.
+ *
+ * Spec: docs/superpowers/specs/2026-04-27-ai-pipeline-prompt-context-engineering-design.md
+ */
 
 /**
  * Build the system prompt for LLM Call 1 (meal decomposition).
@@ -11,7 +21,9 @@ import { buildPromptContextLine } from './sanitize';
  * V3: USDA-aware naming — use natural, specific ingredient names instead of
  * forcing FAO canonical forms. The matching layer handles source resolution.
  */
-export function buildDecompositionPrompt(userContext: UserContext): string {
+export function buildDecompositionPrompt(
+  userContext: PromptPersonalizationContext
+): string {
   const { cookingHabits, countryOfOrigin, countryOfResidence } = userContext;
 
   // Build country context lines for the LLM
