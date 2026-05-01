@@ -384,6 +384,41 @@ describe('buildNutritionPrompt', () => {
     expect(prompt).not.toMatch(/0\.85/);
   });
 
+  it('emits db_state per matched ingredient when present', () => {
+    const matched = [
+      { ...makeIngredient('gạo tẻ'), dbState: 'raw' as const },
+      { ...makeIngredient('thịt bò bắp'), dbState: 'cooked' as const },
+    ];
+    const mealItems = [makeMealItem('Phở bò', ['gạo tẻ', 'thịt bò bắp'])];
+    const prompt = buildNutritionPrompt(
+      mealItems,
+      matched,
+      [],
+      sampleUserContext
+    );
+    expect(prompt).toMatch(/db_state="raw"/);
+    expect(prompt).toMatch(/db_state="cooked"/);
+  });
+
+  it('defaults db_state to "unknown" when omitted from the match', () => {
+    const ingNoDbState: MatchedIngredient = {
+      ingredientName: 'gạo tẻ',
+      foodCompositionId: 'id-gạo tẻ',
+      matchedName: 'gạo tẻ',
+      similarity: 0.9,
+      confidence: 'high',
+      nutritionPer100g: fullNutrition,
+    };
+    const mealItems = [makeMealItem('Cơm trắng', ['gạo tẻ'])];
+    const prompt = buildNutritionPrompt(
+      mealItems,
+      [ingNoDbState],
+      [],
+      sampleUserContext
+    );
+    expect(prompt).toMatch(/db_state="unknown"/);
+  });
+
   it('includes cooking method attribute in ingredient data', () => {
     const khoMealItems: DecomposedMealItem[] = [
       {
