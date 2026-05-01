@@ -400,19 +400,15 @@ describe('buildNutritionPrompt', () => {
     expect(prompt).toMatch(/db_state="cooked"/);
   });
 
-  it('defaults db_state to "unknown" when omitted from the match', () => {
-    const ingNoDbState: MatchedIngredient = {
-      ingredientName: 'gạo tẻ',
-      foodCompositionId: 'id-gạo tẻ',
-      matchedName: 'gạo tẻ',
-      similarity: 0.9,
-      confidence: 'high',
-      nutritionPer100g: fullNutrition,
+  it('emits db_state="unknown" for unknown-state matches', () => {
+    const unknownStateMatch = {
+      ...makeIngredient('gạo tẻ'),
+      dbState: 'unknown' as const,
     };
     const mealItems = [makeMealItem('Cơm trắng', ['gạo tẻ'])];
     const prompt = buildNutritionPrompt(
       mealItems,
-      [ingNoDbState],
+      [unknownStateMatch],
       [],
       sampleUserContext
     );
