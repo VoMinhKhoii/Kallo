@@ -67,7 +67,7 @@ export function CurrentSection({
       >
         <PaceCard verdict={verdict} />
         <div className="mt-3 w-px self-stretch bg-nham-border/40" />
-        <DeficitCard stats={stats} />
+        <DeficitCard stats={stats} weeklyRate={verdict.weeklyRate} />
       </motion.div>
 
       {/* Spacer */}
