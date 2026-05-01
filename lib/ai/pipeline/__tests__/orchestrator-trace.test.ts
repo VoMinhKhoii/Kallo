@@ -500,7 +500,8 @@ describe('analyzeMeal traceContext', () => {
       db,
       gemini,
       undefined,
-      traceContext
+      traceContext,
+      { l4Cache: { enabled: true } }
     );
     await analyzeMeal(
       '  Cơm   Trắng ',
@@ -508,7 +509,8 @@ describe('analyzeMeal traceContext', () => {
       db,
       gemini,
       undefined,
-      secondTraceContext
+      secondTraceContext,
+      { l4Cache: { enabled: true } }
     );
 
     expect(mockDbValues).toHaveBeenCalledTimes(2);

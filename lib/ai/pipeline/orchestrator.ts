@@ -143,11 +143,13 @@ export interface ShadowConfig {
 
 export interface AnalyzeMealOptions {
   shadow?: ShadowConfig;
+  l4Cache?: { enabled?: boolean };
 }
 
 interface RunPipelineOptions {
   matchingConcurrency?: number;
   nutritionModel?: string;
+  l4Cache?: AnalyzeMealOptions['l4Cache'];
 }
 
 type StageName = 'decomposition' | 'matching' | 'nutrition' | 'assembly';
@@ -246,7 +248,8 @@ export async function analyzeMeal(
       db,
       gemini,
       onEvent,
-      traceContext
+      traceContext,
+      options
     );
     scheduleShadowRun({
       rawInput,
@@ -284,7 +287,8 @@ export async function analyzeMeal(
           db,
           gemini,
           onEvent,
-          traceContext
+          traceContext,
+          options
         );
       } catch (retryError) {
         const retryMsg =
@@ -359,6 +363,8 @@ async function runPipeline(
   };
 
   const renderedDecompositionPrompt = buildDecompositionPrompt(userContext);
+  const l4CacheEnabled =
+    options.l4Cache?.enabled ?? process.env.NODE_ENV !== 'test';
   const decompositionCacheKey = buildDecompositionCacheKey({
     rawInput,
     ctx: userContext,
@@ -373,10 +379,12 @@ async function runPipeline(
     1,
     { rawInput },
     async ({ stageLogId }) => {
-      const cached = L4_DECOMPOSITION_CACHE.get(decompositionCacheKey);
-      if (cached) {
-        cacheHitL4 = true;
-        return structuredClone(cached);
+      if (l4CacheEnabled) {
+        const cached = L4_DECOMPOSITION_CACHE.get(decompositionCacheKey);
+        if (cached) {
+          cacheHitL4 = true;
+          return structuredClone(cached);
+        }
       }
 
       const systemPrompt = renderedDecompositionPrompt;
@@ -406,10 +414,12 @@ async function runPipeline(
         LLM_TIMEOUT_MS,
         'decomposition'
       );
-      L4_DECOMPOSITION_CACHE.set(
-        decompositionCacheKey,
-        structuredClone(decomposed)
-      );
+      if (l4CacheEnabled) {
+        L4_DECOMPOSITION_CACHE.set(
+          decompositionCacheKey,
+          structuredClone(decomposed)
+        );
+      }
       return decomposed;
     }
   );
