@@ -77,7 +77,7 @@ describe('buildPipelineRunRow', () => {
       anomalyTypes: ['density_envelope', 'macro_inconsistent'],
       counters: {
         preMatchAliasHits: 0,
-        cookedToRawFactorFires: 0,
+        cookedToRawFactorFires: 2,
         densityEnvelopeFires: 1,
         macroInconsistentFires: 2,
         dbStateUnknownFires: 0,
@@ -91,6 +91,7 @@ describe('buildPipelineRunRow', () => {
 
     expect(row.densityEnvelopeFires).toBe(1);
     expect(row.macroInconsistentFires).toBe(2);
+    expect(row.cookedToRawFactorFires).toBe(2);
     expect(row.anomalyTypes).toEqual([
       'density_envelope',
       'macro_inconsistent',

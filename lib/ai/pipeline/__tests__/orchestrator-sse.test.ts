@@ -157,7 +157,10 @@ describe('analyzeMeal SSE id threading', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockMatchIngredients.mockResolvedValue({ matched: [], unmatched: [] });
-    mockAssembleResult.mockReturnValue({ mealItems: [] });
+    mockAssembleResult.mockReturnValue({
+      result: { mealItems: [] },
+      metrics: { cookedToRawFactorFires: 0 },
+    });
   });
 
   it('emits a UUID mealItemId on every item_name event', async () => {

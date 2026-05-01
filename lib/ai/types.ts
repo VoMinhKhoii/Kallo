@@ -203,6 +203,16 @@ export interface ProcessedIngredient {
   ingredientName: string;
   foodCompositionId: string | null;
   estimatedGrams: number;
+  /**
+   * Grams used internally for DB-row nutrition scaling. Equals
+   * `estimatedGrams` when the matched DB row is cooked. Equals
+   * `convertCookedToRaw(estimatedGrams, cookingMethod)` when the row is raw or
+   * dbState is 'unknown'. Display layers should use `estimatedGrams`.
+   *
+   * @deprecated Field name is misleading post-Chunk 3. Rename to
+   * `dbScalingGrams` in a follow-up once spec §1.5 retirement gate trips and
+   * the legacy fallback is removed entirely.
+   */
   rawEquivalentGrams: number;
   cookingMethod: string | null;
   userFacingUnit: string | null;

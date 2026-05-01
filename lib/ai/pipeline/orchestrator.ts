@@ -568,7 +568,7 @@ async function runPipeline(
   // Stage 4: Assembly
   emit({ type: 'stage', stage: 'assembling' });
   const t3 = Date.now();
-  const pipelineResult = await withStageLog(
+  const assemblyOutput = await withStageLog(
     traceContext,
     'assembly',
     4,
@@ -582,6 +582,8 @@ async function runPipeline(
         userContext
       )
   );
+  const pipelineResult = assemblyOutput.result;
+  const assemblyMetrics = assemblyOutput.metrics;
   const assemblyMs = Date.now() - t3;
 
   // Post-assembly anomaly detection
@@ -634,7 +636,7 @@ async function runPipeline(
         anomalyTypes: allAnomalies.map((a) => a.type),
         counters: {
           preMatchAliasHits: 0,
-          cookedToRawFactorFires: 0,
+          cookedToRawFactorFires: assemblyMetrics.cookedToRawFactorFires,
           densityEnvelopeFires: allAnomalies.filter(
             (a) => a.type === 'density_envelope'
           ).length,

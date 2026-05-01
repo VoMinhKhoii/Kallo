@@ -171,7 +171,10 @@ describe('analyzeMeal traceContext', () => {
     vi.clearAllMocks();
     mockRecordPromptVersion.mockResolvedValue('pv-test-id');
     mockMatchIngredients.mockResolvedValue({ matched: [], unmatched: [] });
-    mockAssembleResult.mockReturnValue({ mealItems: [] });
+    mockAssembleResult.mockReturnValue({
+      result: { mealItems: [] },
+      metrics: { cookedToRawFactorFires: 0 },
+    });
     mockValidateNutritionOutput.mockReturnValue([]);
     mockDetectAnomalies.mockReturnValue([]);
     mockDbValues.mockResolvedValue(undefined);
@@ -332,5 +335,39 @@ describe('analyzeMeal traceContext', () => {
     expect(row.macroInconsistentFires).toBe(2);
     expect(row.anomalyTypes).toContain('density_envelope');
     expect(row.anomalyTypes).toContain('macro_inconsistent');
+  });
+
+  it('forwards assembly cookedToRawFactorFires into pipeline_runs counters', async () => {
+    const db = makeDb();
+    const promptVersionsUsed = new Map<string, string>();
+    const traceContext: AnalyzeMealTraceContext = {
+      requestId: 'req-cooked-factors',
+      db,
+      userId: 'user-test-1',
+      promptVersionsUsed,
+    };
+    mockAssembleResult.mockReturnValueOnce({
+      result: { mealItems: [] },
+      metrics: { cookedToRawFactorFires: 2 },
+    });
+
+    const gemini = createMockGemini({
+      generateStructuredOutputStream: vi
+        .fn()
+        .mockResolvedValueOnce(VALID_DECOMP)
+        .mockResolvedValueOnce(VALID_NUTRITION),
+    });
+
+    await analyzeMeal(
+      'cơm trắng',
+      USER_CONTEXT,
+      db,
+      gemini,
+      undefined,
+      traceContext
+    );
+
+    expect(mockDbValues).toHaveBeenCalledTimes(1);
+    expect(mockDbValues.mock.calls[0][0].cookedToRawFactorFires).toBe(2);
   });
 });

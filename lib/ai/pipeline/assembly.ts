@@ -25,6 +25,15 @@ import {
 } from './goal-adjustment';
 import { normalizeBoundedEstimate } from './schemas';
 
+export interface AssemblyMetrics {
+  cookedToRawFactorFires: number;
+}
+
+export interface AssemblyOutput {
+  result: PipelineResult;
+  metrics: AssemblyMetrics;
+}
+
 /**
  * D5: Merge LLM's 4 bounded macros with DB mid values for remaining 24.
  * The LLM only estimates calories, protein, carbs, fat.
@@ -101,8 +110,10 @@ export function assembleResult(
   matched: MatchedIngredient[],
   unmatched: UnmatchedIngredient[],
   userContext: UserContext
-): PipelineResult {
+): AssemblyOutput {
   const { goal, aggression } = userContext;
+  let cookedToRawFactorFires = 0;
+
   // Id-keyed lookup (§0.1): keying by ingredientName silently overwrites
   // when the same display name appears in two dishes (e.g. "nước dùng" in
   // pho and bún bò Huế). Skip entries without an id (interface allows
@@ -134,17 +145,22 @@ export function assembleResult(
             : undefined;
 
           // estimatedGrams is the cooked/as-eaten weight (user-facing).
-          // rawEquivalentGrams is used for DB nutrition scaling only.
-          const rawEquivalentGrams = convertCookedToRaw(
-            ing.estimatedGrams,
-            ing.cookingMethod
-          );
+          // rawEquivalentGrams is retained for back-compat but now represents
+          // the grams used for DB nutrition scaling.
+          const dbState = matchInfo?.dbState ?? 'unknown';
+          const usesLegacyRawFallback = dbState !== 'cooked';
+          const dbScalingGrams = usesLegacyRawFallback
+            ? convertCookedToRaw(ing.estimatedGrams, ing.cookingMethod)
+            : ing.estimatedGrams;
+          if (usesLegacyRawFallback) {
+            cookedToRawFactorFires += 1;
+          }
 
           const boundedNutrition = llmData
             ? mergeNutrition(
                 llmData,
                 matchInfo?.nutritionPer100g ?? null,
-                rawEquivalentGrams
+                dbScalingGrams
               )
             : nullBoundedNutrition();
 
@@ -158,7 +174,7 @@ export function assembleResult(
             ingredientName: ing.name,
             foodCompositionId: matchInfo?.foodCompositionId ?? null,
             estimatedGrams: ing.estimatedGrams,
-            rawEquivalentGrams,
+            rawEquivalentGrams: dbScalingGrams,
             cookingMethod: ing.cookingMethod,
             userFacingUnit: ing.userFacingUnit,
             matchConfidence: matchInfo?.similarity ?? null,
@@ -184,15 +200,18 @@ export function assembleResult(
   const allIngredients = pipelineMealItems.flatMap((mi) => mi.ingredients);
 
   return {
-    mealItems: pipelineMealItems,
-    mealSlot: decomposition.mealSlot,
-    confidenceOverall: computeOverallConfidence(matched, unmatched),
-    boundedNutrition: sumBoundedNutrition(
-      allIngredients.map((i) => i.boundedNutrition)
-    ),
-    displayedNutrition: sumDisplayedNutrition(
-      allIngredients.map((i) => i.displayedNutrition)
-    ),
-    unmatchedIngredients: unmatched,
+    result: {
+      mealItems: pipelineMealItems,
+      mealSlot: decomposition.mealSlot,
+      confidenceOverall: computeOverallConfidence(matched, unmatched),
+      boundedNutrition: sumBoundedNutrition(
+        allIngredients.map((i) => i.boundedNutrition)
+      ),
+      displayedNutrition: sumDisplayedNutrition(
+        allIngredients.map((i) => i.displayedNutrition)
+      ),
+      unmatchedIngredients: unmatched,
+    },
+    metrics: { cookedToRawFactorFires },
   };
 }

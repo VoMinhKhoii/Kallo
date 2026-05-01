@@ -441,7 +441,7 @@ export async function POST(request: NextRequest) {
     if (!decomposition || !nutritionAdj) {
       step4.error = 'Skipped: missing decomposition or nutrition';
     } else {
-      const result = assembleResult(
+      const { result } = assembleResult(
         decomposition,
         nutritionAdj,
         matched,
