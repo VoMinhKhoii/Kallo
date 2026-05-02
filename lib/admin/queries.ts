@@ -43,6 +43,16 @@ export const requestFiltersSchema = z.object({
 
 export type RequestFilters = z.output<typeof requestFiltersSchema>;
 
+export type RequestListRow = Pick<
+  typeof pipelineRequests.$inferSelect,
+  | 'id'
+  | 'status'
+  | 'durationMs'
+  | 'rawInput'
+  | 'createdAt'
+  | 'replayOfRequestId'
+>;
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 /**
@@ -106,7 +116,14 @@ export async function listRequests(
 
   const [rows, [{ value: total }]] = await Promise.all([
     db
-      .select()
+      .select({
+        id: pipelineRequests.id,
+        status: pipelineRequests.status,
+        durationMs: pipelineRequests.durationMs,
+        rawInput: pipelineRequests.rawInput,
+        createdAt: pipelineRequests.createdAt,
+        replayOfRequestId: pipelineRequests.replayOfRequestId,
+      })
       .from(pipelineRequests)
       .where(whereClause)
       .orderBy(desc(pipelineRequests.createdAt))
@@ -115,7 +132,7 @@ export async function listRequests(
     db.select({ value: count() }).from(pipelineRequests).where(whereClause),
   ]);
 
-  return { rows, total: Number(total) };
+  return { rows: rows satisfies RequestListRow[], total: Number(total) };
 }
 
 export async function getRequestDetail(db: AppDb, id: string) {

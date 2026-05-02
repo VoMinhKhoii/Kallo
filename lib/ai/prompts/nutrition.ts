@@ -39,6 +39,14 @@ const viCollator = new Intl.Collator('vi', { sensitivity: 'base' });
 
 type PromptIngredient = DecomposedMealItem['ingredients'][number];
 
+const escapeXmlAttribute = (value: string): string =>
+  value
+    .replace(/&/g, '&amp;')
+    .replace(/"/g, '&quot;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/'/g, '&apos;');
+
 const ingredientDisplayName = (ing: PromptIngredient): string =>
   ing.rawName ?? ing.name ?? ing.canonicalName ?? '';
 
@@ -106,7 +114,7 @@ export function buildNutritionPrompt(
     '  <!-- as_eaten_grams is the user-facing portion. db_state tells you whether the per_100g values are raw or cooked. -->\n\n';
 
   for (const mealItem of sortedMealItems) {
-    ingredientData += `  <meal_item name="${mealItem.name}">\n`;
+    ingredientData += `  <meal_item name="${escapeXmlAttribute(mealItem.name)}">\n`;
 
     for (const ing of mealItem.ingredients) {
       const match = ing.ingredientId
@@ -116,7 +124,7 @@ export function buildNutritionPrompt(
       if (match) {
         const dbState = match.dbState ?? 'unknown';
         const cookingMethod = ingredientCookingMethod(mealItem, ing);
-        ingredientData += `    <ingredient name="${ingredientDisplayName(ing)}" as_eaten_grams="${ingredientGrams(ing)}" id="${ing.ingredientId ?? ''}" canonicalName="${ingredientCanonicalName(ing)}" source="db_matched" db_name="${match.matchedName}" db_state="${dbState}"${cookingMethod ? ` cooking="${cookingMethod}"` : ''}${ing.expectedState ? ` expected_state="${ing.expectedState}"` : ''}>\n`;
+        ingredientData += `    <ingredient name="${escapeXmlAttribute(ingredientDisplayName(ing))}" as_eaten_grams="${ingredientGrams(ing)}" id="${escapeXmlAttribute(ing.ingredientId ?? '')}" canonicalName="${escapeXmlAttribute(ingredientCanonicalName(ing))}" source="db_matched" db_name="${escapeXmlAttribute(match.matchedName)}" db_state="${escapeXmlAttribute(dbState)}"${cookingMethod ? ` cooking="${escapeXmlAttribute(cookingMethod)}"` : ''}${ing.expectedState ? ` expected_state="${escapeXmlAttribute(ing.expectedState)}"` : ''}>\n`;
         ingredientData += `      <per_100g caloriesKcal="${match.nutritionPer100g.caloriesKcal ?? '?'}" proteinG="${match.nutritionPer100g.proteinG ?? '?'}" carbohydrateG="${match.nutritionPer100g.carbohydrateG ?? '?'}" fatG="${match.nutritionPer100g.fatG ?? '?'}" />\n`;
         ingredientData += `    </ingredient>\n`;
       }
@@ -137,10 +145,10 @@ export function buildNutritionPrompt(
         unmatchedNames.has(ingredientDisplayName(ing))
       );
       if (unmatchedIngs.length > 0) {
-        unmatchedSection += `  <meal_item name="${mealItem.name}">\n`;
+        unmatchedSection += `  <meal_item name="${escapeXmlAttribute(mealItem.name)}">\n`;
         for (const ing of unmatchedIngs) {
           const cookingMethod = ingredientCookingMethod(mealItem, ing);
-          unmatchedSection += `    <ingredient name="${ingredientDisplayName(ing)}" as_eaten_grams="${ingredientGrams(ing)}" id="${ing.ingredientId ?? ''}" canonicalName="${ingredientCanonicalName(ing)}"${cookingMethod ? ` cooking="${cookingMethod}"` : ''}${ing.expectedState ? ` expected_state="${ing.expectedState}"` : ''} />\n`;
+          unmatchedSection += `    <ingredient name="${escapeXmlAttribute(ingredientDisplayName(ing))}" as_eaten_grams="${ingredientGrams(ing)}" id="${escapeXmlAttribute(ing.ingredientId ?? '')}" canonicalName="${escapeXmlAttribute(ingredientCanonicalName(ing))}"${cookingMethod ? ` cooking="${escapeXmlAttribute(cookingMethod)}"` : ''}${ing.expectedState ? ` expected_state="${escapeXmlAttribute(ing.expectedState)}"` : ''} />\n`;
         }
         unmatchedSection += `  </meal_item>\n`;
       }

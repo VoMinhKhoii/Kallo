@@ -234,6 +234,48 @@ describe('buildNutritionPrompt', () => {
     expect(prompt).toContain('200'); // estimatedGrams
   });
 
+  it('escapes dynamic XML attribute values in ingredient data', () => {
+    const prompt = buildNutritionPrompt(
+      [
+        {
+          name: 'bún "đặc biệt" & rau',
+          ingredients: [
+            {
+              name: 'tôm <sông>',
+              rawName: 'tôm "sông" & biển',
+              canonicalName: "tôm 'sông'",
+              estimatedGrams: 80,
+              cookingMethod: 'áp chảo "nhẹ"',
+              userFacingUnit: '1 phần',
+              ingredientId: 'ing-1&2',
+              expectedState: 'cooked',
+            },
+          ],
+        },
+      ],
+      [
+        {
+          ingredientName: 'tôm "sông" & biển',
+          foodCompositionId: 'shrimp-001',
+          matchedName: 'Tôm <đồng> & biển',
+          similarity: 0.91,
+          confidence: 'high',
+          nutritionPer100g: fullNutrition,
+          dbState: 'cooked',
+        },
+      ],
+      [],
+      sampleUserContext
+    );
+
+    expect(prompt).toContain('name="bún &quot;đặc biệt&quot; &amp; rau"');
+    expect(prompt).toContain('name="tôm &quot;sông&quot; &amp; biển"');
+    expect(prompt).toContain('id="ing-1&amp;2"');
+    expect(prompt).toContain('canonicalName="tôm &apos;sông&apos;"');
+    expect(prompt).toContain('db_name="Tôm &lt;đồng&gt; &amp; biển"');
+    expect(prompt).toContain('cooking="áp chảo &quot;nhẹ&quot;"');
+  });
+
   it('includes cooking habits context', () => {
     const prompt = buildNutritionPrompt(
       sampleMealItems,

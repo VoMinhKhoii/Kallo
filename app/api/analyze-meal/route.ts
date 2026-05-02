@@ -164,7 +164,7 @@ export async function POST(request: NextRequest) {
 
         if (!hasNutrition) {
           console.error('[analyze-meal] Pipeline returned all-null nutrition', {
-            input: message,
+            inputLength: message.length,
           });
           logPipelineEnd(
             requestId,

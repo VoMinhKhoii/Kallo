@@ -1,13 +1,10 @@
-import type { InferSelectModel } from 'drizzle-orm';
 import Link from 'next/link';
 import { formatUtcTimestamp } from '@/lib/admin/format';
-import type { pipelineRequests } from '@/lib/db/schema';
+import type { RequestListRow } from '@/lib/admin/queries';
 import { cn } from '@/lib/utils';
 
-type RequestRow = InferSelectModel<typeof pipelineRequests>;
-
 interface RequestsTableProps {
-  rows: RequestRow[];
+  rows: RequestListRow[];
 }
 
 const STATUS_STYLES: Record<string, string> = {
