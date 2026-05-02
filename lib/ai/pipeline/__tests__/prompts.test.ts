@@ -3,13 +3,13 @@ import {
   ASSUMPTION_TEXT,
   buildDecompositionPrompt,
   buildNutritionPrompt,
-} from '../prompts';
+} from '@/lib/ai/prompts';
 import type {
   DecomposedMealItem,
   MatchedIngredient,
   UnmatchedIngredient,
   UserContext,
-} from '../types';
+} from '@/lib/ai/types';
 
 const sampleUserContext: UserContext = {
   goal: 'cutting',

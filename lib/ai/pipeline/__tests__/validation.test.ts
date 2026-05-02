@@ -2,20 +2,20 @@ import { describe, expect, it } from 'vitest';
 import {
   NULL_BOUNDED_NUTRITION,
   NULL_NUTRITION_VALUES,
-} from '../__tests__/test-helpers';
+} from '@/lib/ai/__tests__/test-helpers';
+import {
+  detectAnomalies,
+  THRESHOLDS,
+  validateDecompositionOutput,
+  validateNutritionOutput,
+} from '@/lib/ai/pipeline/validation';
 import type {
   DecomposedMealItem,
   MatchedIngredient,
   NutritionAdjustment,
   PipelineResult,
   UnmatchedIngredient,
-} from '../types';
-import {
-  detectAnomalies,
-  THRESHOLDS,
-  validateDecompositionOutput,
-  validateNutritionOutput,
-} from './validation';
+} from '@/lib/ai/types';
 
 // ---------------------------------------------------------------------------
 // Helpers

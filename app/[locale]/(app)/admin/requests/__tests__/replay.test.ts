@@ -82,12 +82,12 @@ vi.mock('next/navigation', () => ({ redirect: vi.fn() }));
 // ---------------------------------------------------------------------------
 // Imports (after mocks)
 // ---------------------------------------------------------------------------
+import { replayRequest } from '@/app/[locale]/(app)/admin/requests/[id]/actions';
 import {
   pendingAnalyses,
   pipelineRequestReplayAuditLogs,
   pipelineRequests,
 } from '@/lib/db/schema';
-import { replayRequest } from '../[id]/actions';
 
 // ---------------------------------------------------------------------------
 // Tests

@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { logPipelineEnd, logPipelineStart } from '@/lib/ai/pipeline/logging';
+import type { UserContext } from '@/lib/ai/types';
 import type { AppDb } from '@/lib/db';
-import type { UserContext } from '../types';
-import { logPipelineEnd, logPipelineStart } from './logging';
 
 // ---------------------------------------------------------------------------
 // Mock DB

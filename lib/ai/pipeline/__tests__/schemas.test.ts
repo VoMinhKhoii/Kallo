@@ -9,7 +9,7 @@ import {
   mealDecompositionSchema,
   normalizeBoundedEstimate,
   nutritionAdjustmentSchema,
-} from './schemas';
+} from '@/lib/ai/pipeline/schemas';
 
 describe('decomposedIngredientSchema', () => {
   const validIngredient = {

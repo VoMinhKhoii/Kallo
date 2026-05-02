@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { PipelineSummary } from './pipeline-summary';
+import { PipelineSummary } from '@/app/[locale]/(app)/admin/requests/[id]/_components/pipeline-summary';
 
 describe('PipelineSummary', () => {
   it('keeps matched-stage status textual and avoids duplicating meal-level unmatched rows', () => {
