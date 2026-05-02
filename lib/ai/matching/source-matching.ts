@@ -1,6 +1,8 @@
 import { sql } from 'drizzle-orm';
 import type { AppDb } from '@/lib/db';
 import type { MatchConfidence } from '../types';
+import { captureRrfCandidates, type RrfMeasurement } from './rrf-measurement';
+import { shouldSampleForRrf } from './rrf-sampling';
 
 export const CONFIDENCE_THRESHOLDS = {
   /** Similarity well above all per-source floors — strong match */
@@ -134,6 +136,11 @@ export interface MatchStateInfo {
   stateSource: 'explicit' | 'method_lookup' | 'unknown';
 }
 
+export interface MatchMeasurementContext {
+  requestId?: string;
+  rrfMeasurements?: RrfMeasurement[];
+}
+
 function buildPickContext(stateInfo: MatchStateInfo): PickBestSourceContext {
   return {
     expectedState:
@@ -159,9 +166,23 @@ export async function matchSingleIngredientWithEmbedding(
   stateInfo: MatchStateInfo = {
     expectedState: 'cooked',
     stateSource: 'unknown',
-  }
+  },
+  measurementContext: MatchMeasurementContext = {}
 ): Promise<MatchInfo | null> {
   const pickCtx = buildPickContext(stateInfo);
+  const sampled =
+    measurementContext.requestId !== undefined &&
+    shouldSampleForRrf(measurementContext.requestId);
+  const fuzzyStartedAt = performance.now();
+  const fuzzyEarlyPromise = sampled
+    ? runFuzzySourceQueries(ingredientName, db).catch((err) => {
+        console.warn(
+          '[rrf] early fuzzy failed; falling back to lazy fuzzy',
+          err
+        );
+        return null;
+      })
+    : null;
 
   // Step 1: Source-aware vector search — query FAO and USDA separately
   const [faoVectorRows, usdaVectorRows] = await Promise.all([
@@ -196,17 +217,30 @@ export async function matchSingleIngredientWithEmbedding(
   }
 
   const vectorWinner = pickBestSource(faoResult, usdaResult, pickCtx);
-  if (vectorWinner) return vectorWinner;
+  if (vectorWinner) {
+    if (sampled && fuzzyEarlyPromise) {
+      const earlyRows = await fuzzyEarlyPromise;
+      if (earlyRows) {
+        pushRrfMeasurement({
+          rrfMeasurements: measurementContext.rrfMeasurements,
+          ingredientName,
+          vectorRowsFao: faoVectorRows as unknown as FuzzyMatchRow[],
+          vectorRowsUsda: usdaVectorRows as unknown as FuzzyMatchRow[],
+          fuzzyRowsFao: earlyRows[0] as unknown as FuzzyMatchRow[],
+          fuzzyRowsUsda: earlyRows[1] as unknown as FuzzyMatchRow[],
+          latencyMs: Math.max(0, performance.now() - fuzzyStartedAt),
+        });
+      }
+    }
+    return vectorWinner;
+  }
 
   // Step 2: Fuzzy fallback — source-aware
-  const [faoFuzzyRows, usdaFuzzyRows] = await Promise.all([
-    db.execute(
-      sql`SELECT * FROM fuzzy_match_ingredients_by_source(${ingredientName}, ${SOURCE_FAO}, 3, 0.15)`
-    ),
-    db.execute(
-      sql`SELECT * FROM fuzzy_match_ingredients_by_source(${ingredientName}, ${SOURCE_USDA}, 3, 0.15)`
-    ),
-  ]);
+  let fuzzyRows = sampled && fuzzyEarlyPromise ? await fuzzyEarlyPromise : null;
+  if (!fuzzyRows) {
+    fuzzyRows = await runFuzzySourceQueries(ingredientName, db);
+  }
+  const [faoFuzzyRows, usdaFuzzyRows] = fuzzyRows;
 
   const faoFuzzy = buildMatchResult(
     ingredientName,
@@ -231,8 +265,52 @@ export async function matchSingleIngredientWithEmbedding(
   }
 
   const fuzzyWinner = pickBestSource(faoFuzzy, usdaFuzzy, pickCtx);
+  if (sampled) {
+    pushRrfMeasurement({
+      rrfMeasurements: measurementContext.rrfMeasurements,
+      ingredientName,
+      vectorRowsFao: faoVectorRows as unknown as FuzzyMatchRow[],
+      vectorRowsUsda: usdaVectorRows as unknown as FuzzyMatchRow[],
+      fuzzyRowsFao: faoFuzzyRows as unknown as FuzzyMatchRow[],
+      fuzzyRowsUsda: usdaFuzzyRows as unknown as FuzzyMatchRow[],
+      latencyMs: 0,
+    });
+  }
   if (!fuzzyWinner) {
     console.info(`[matching] "${ingredientName}" → unmatched`);
   }
   return fuzzyWinner;
+}
+
+function runFuzzySourceQueries(ingredientName: string, db: AppDb) {
+  return Promise.all([
+    db.execute(
+      sql`SELECT * FROM fuzzy_match_ingredients_by_source(${ingredientName}, ${SOURCE_FAO}, 3, 0.15)`
+    ),
+    db.execute(
+      sql`SELECT * FROM fuzzy_match_ingredients_by_source(${ingredientName}, ${SOURCE_USDA}, 3, 0.15)`
+    ),
+  ]);
+}
+
+function pushRrfMeasurement(args: {
+  rrfMeasurements: RrfMeasurement[] | undefined;
+  ingredientName: string;
+  vectorRowsFao: FuzzyMatchRow[];
+  vectorRowsUsda: FuzzyMatchRow[];
+  fuzzyRowsFao: FuzzyMatchRow[];
+  fuzzyRowsUsda: FuzzyMatchRow[];
+  latencyMs: number;
+}) {
+  const captured = captureRrfCandidates({
+    vectorRowsFao: args.vectorRowsFao,
+    vectorRowsUsda: args.vectorRowsUsda,
+    fuzzyRowsFao: args.fuzzyRowsFao,
+    fuzzyRowsUsda: args.fuzzyRowsUsda,
+    topK: 3,
+  });
+  args.rrfMeasurements?.push({
+    topVectorEqualsTopFuzzy: captured.topVectorEqualsTopFuzzy,
+    latencyMs: args.latencyMs,
+  });
 }

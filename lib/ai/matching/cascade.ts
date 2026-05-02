@@ -7,6 +7,7 @@ import {
 import { batchFetchNutrition } from '@/lib/ai/matching/nutrition-batch';
 import {
   type MatchInfo,
+  type MatchMeasurementContext,
   type MatchStateInfo,
   matchSingleIngredientWithEmbedding,
 } from '@/lib/ai/matching/source-matching';
@@ -43,6 +44,7 @@ const MATCH_CONCURRENCY_DEFAULT = 2;
 
 export interface MatchOptions {
   concurrency?: number;
+  measurementContext?: MatchMeasurementContext;
 }
 
 const ingredientRawName = (ing: DecomposedIngredient): string =>
@@ -157,7 +159,8 @@ export async function matchIngredients(
         item.name,
         item.embedding,
         db,
-        item.stateInfo
+        item.stateInfo,
+        opts.measurementContext
       ),
     matchConcurrency
   );
@@ -287,7 +290,8 @@ export async function matchIngredients(
               item.name,
               item.embedding,
               db,
-              item.stateInfo
+              item.stateInfo,
+              opts.measurementContext
             ),
           matchConcurrency
         );
