@@ -25,6 +25,7 @@ interface AppShellProps {
   onboardingStep: number;
   initialProfile: ProfileRow | null;
   isFirstSession: boolean;
+  isAdmin?: boolean;
   user?: UserMenuUser;
   initialSidebarState?: 'closed' | 'open';
   initialSidebarExpandMode?: 'click' | 'hover';
@@ -37,6 +38,7 @@ export function AppShell({
   onboardingStep,
   initialProfile,
   isFirstSession,
+  isAdmin = false,
   user = FALLBACK_USER,
   initialSidebarState,
   initialSidebarExpandMode,
@@ -107,6 +109,7 @@ export function AppShell({
         <div className="hidden md:block">
           <DesktopSidebar
             user={user}
+            isAdmin={isAdmin}
             onboardingIncomplete={showOnboardingNudge}
             onboardingStep={onboardingStep}
             onResumeOnboarding={handleResume}
@@ -125,6 +128,7 @@ export function AppShell({
       {/* Mobile bottom tab bar */}
       <BottomTabBar
         user={user}
+        isAdmin={isAdmin}
         onboardingIncomplete={showOnboardingNudge}
         onboardingStep={onboardingStep}
         onResumeOnboarding={handleResume}

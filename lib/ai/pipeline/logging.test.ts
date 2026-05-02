@@ -1,28 +1,45 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { AppDb } from '@/lib/db';
+import type { UserContext } from '../types';
 import { logPipelineEnd, logPipelineStart } from './logging';
 
 // ---------------------------------------------------------------------------
 // Mock DB
 // ---------------------------------------------------------------------------
 
-function createMockInsertDb(): any {
-  const catchFn = vi.fn().mockReturnValue(undefined);
-  const values = vi.fn().mockReturnValue({ catch: catchFn });
+interface MockInsertDb {
+  insert: ReturnType<typeof vi.fn>;
+  update: ReturnType<typeof vi.fn>;
+  values: ReturnType<typeof vi.fn>;
+  set: ReturnType<typeof vi.fn>;
+  where: ReturnType<typeof vi.fn>;
+  asAppDb: AppDb;
+}
+
+function createMockInsertDb(): MockInsertDb {
+  const values = vi.fn().mockResolvedValue(undefined);
   const insert = vi.fn().mockReturnValue({ values });
   const updateSet = vi.fn().mockResolvedValue(undefined);
   const where = vi.fn().mockReturnValue(updateSet);
   const set = vi.fn().mockReturnValue({ where });
   const update = vi.fn().mockReturnValue({ set });
 
-  return { insert, update, values, set, where, catch: catchFn };
+  const asAppDb = { insert, update } as unknown as AppDb;
+  return { insert, update, values, set, where, asAppDb };
 }
 
-const MOCK_USER_CONTEXT: any = {
+const MOCK_USER_CONTEXT: UserContext = {
   countryOfOrigin: 'Vietnam',
   countryOfResidence: 'Vietnam',
-  goal: 'maintain',
-  aggression: 1,
-  cookingHabits: '',
+  goal: 'maintaining',
+  aggression: 0,
+  cookingHabits: {
+    oilUsage: 'normal',
+    defaultRicePortion: 'medium',
+    sugarBraised: 'medium',
+    defaultProteinPortion: 'medium',
+    brothConsumption: 'finish_it',
+  },
 };
 
 beforeEach(() => {
@@ -34,21 +51,29 @@ beforeEach(() => {
 // ---------------------------------------------------------------------------
 
 describe('logPipelineStart', () => {
-  it('returns a UUID synchronously without awaiting DB', () => {
+  it('returns a UUID after awaiting DB write', async () => {
     const db = createMockInsertDb();
-    const id = logPipelineStart('user-1', 'phở bò', MOCK_USER_CONTEXT, db);
+    const id = await logPipelineStart({
+      userId: 'user-1',
+      rawInput: 'phở bò',
+      userContext: MOCK_USER_CONTEXT,
+      db: db.asAppDb,
+    });
 
-    // Must be a valid UUID (synchronous, no await)
     expect(id).toMatch(
       /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
     );
-    // INSERT was fired
     expect(db.insert).toHaveBeenCalled();
   });
 
-  it('passes the pre-generated id into the INSERT values', () => {
+  it('passes the pre-generated id into the INSERT values', async () => {
     const db = createMockInsertDb();
-    const id = logPipelineStart('user-1', 'phở bò', MOCK_USER_CONTEXT, db);
+    const id = await logPipelineStart({
+      userId: 'user-1',
+      rawInput: 'phở bò',
+      userContext: MOCK_USER_CONTEXT,
+      db: db.asAppDb,
+    });
 
     const valuesArg = db.values.mock.calls[0][0];
     expect(valuesArg.id).toBe(id);
@@ -56,27 +81,22 @@ describe('logPipelineStart', () => {
     expect(valuesArg.rawInput).toBe('phở bò');
   });
 
-  it('does not throw on DB error — catches internally', async () => {
+  it('returns null on DB error — does not throw', async () => {
     const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-    let catchHandler: ((err: Error) => void) | undefined;
     const db = {
       insert: vi.fn().mockReturnValue({
-        values: vi.fn().mockReturnValue({
-          catch: vi.fn().mockImplementation((fn: (err: Error) => void) => {
-            catchHandler = fn;
-          }),
-        }),
+        values: vi.fn().mockRejectedValue(new Error('DB write failed')),
       }),
-    } as any;
+    } as unknown as AppDb;
 
-    const id = logPipelineStart('user-1', 'phở bò', MOCK_USER_CONTEXT, db);
+    const id = await logPipelineStart({
+      userId: 'user-1',
+      rawInput: 'phở bò',
+      userContext: MOCK_USER_CONTEXT,
+      db,
+    });
 
-    // Returns synchronously regardless
-    expect(typeof id).toBe('string');
-
-    // Simulate DB error via the catch handler
-    catchHandler?.(new Error('DB write failed'));
-
+    expect(id).toBeNull();
     expect(errorSpy).toHaveBeenCalledWith(
       expect.stringContaining('Failed to create request log'),
       expect.any(Error)
@@ -92,7 +112,9 @@ describe('logPipelineEnd', () => {
   it('is a no-op when requestId is null', () => {
     const db = createMockInsertDb();
     // Should not throw
-    expect(() => logPipelineEnd(null, 'success', 1200, db)).not.toThrow();
+    expect(() =>
+      logPipelineEnd(null, 'success', 1200, db.asAppDb)
+    ).not.toThrow();
     expect(db.update).not.toHaveBeenCalled();
   });
 
@@ -104,7 +126,7 @@ describe('logPipelineEnd', () => {
           where: vi.fn().mockRejectedValue(new Error('update failed')),
         }),
       }),
-    } as any;
+    } as unknown as AppDb;
 
     // Should not throw synchronously
     expect(() =>
@@ -127,7 +149,7 @@ describe('logPipelineEnd', () => {
           where: vi.fn().mockRejectedValue(new Error('catastrophic')),
         }),
       }),
-    } as any;
+    } as unknown as AppDb;
 
     const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 

@@ -48,8 +48,12 @@
           "tableFrom": "body_weight_log",
           "tableTo": "users",
           "schemaTo": "auth",
-          "columnsFrom": ["user_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -59,7 +63,10 @@
         "body_weight_log_user_date_uniq": {
           "name": "body_weight_log_user_date_uniq",
           "nullsNotDistinct": false,
-          "columns": ["user_id", "logged_date"]
+          "columns": [
+            "user_id",
+            "logged_date"
+          ]
         }
       },
       "policies": {},
@@ -134,7 +141,9 @@
         "ingredient_sources_code_unique": {
           "name": "ingredient_sources_code_unique",
           "nullsNotDistinct": false,
-          "columns": ["code"]
+          "columns": [
+            "code"
+          ]
         }
       },
       "policies": {},
@@ -209,169 +218,169 @@
         },
         "calories_kcal": {
           "name": "calories_kcal",
-          "type": "jsonb",
+          "type": "numeric",
           "primaryKey": false,
           "notNull": false
         },
         "protein_g": {
           "name": "protein_g",
-          "type": "jsonb",
+          "type": "numeric",
           "primaryKey": false,
           "notNull": false
         },
         "carbohydrate_g": {
           "name": "carbohydrate_g",
-          "type": "jsonb",
+          "type": "numeric",
           "primaryKey": false,
           "notNull": false
         },
         "fat_g": {
           "name": "fat_g",
-          "type": "jsonb",
+          "type": "numeric",
           "primaryKey": false,
           "notNull": false
         },
         "fiber_g": {
           "name": "fiber_g",
-          "type": "jsonb",
+          "type": "numeric",
           "primaryKey": false,
           "notNull": false
         },
         "sodium_mg": {
           "name": "sodium_mg",
-          "type": "jsonb",
+          "type": "numeric",
           "primaryKey": false,
           "notNull": false
         },
         "calcium_mg": {
           "name": "calcium_mg",
-          "type": "jsonb",
+          "type": "numeric",
           "primaryKey": false,
           "notNull": false
         },
         "iron_mg": {
           "name": "iron_mg",
-          "type": "jsonb",
+          "type": "numeric",
           "primaryKey": false,
           "notNull": false
         },
         "magnesium_mg": {
           "name": "magnesium_mg",
-          "type": "jsonb",
+          "type": "numeric",
           "primaryKey": false,
           "notNull": false
         },
         "phosphorus_mg": {
           "name": "phosphorus_mg",
-          "type": "jsonb",
+          "type": "numeric",
           "primaryKey": false,
           "notNull": false
         },
         "potassium_mg": {
           "name": "potassium_mg",
-          "type": "jsonb",
+          "type": "numeric",
           "primaryKey": false,
           "notNull": false
         },
         "zinc_mg": {
           "name": "zinc_mg",
-          "type": "jsonb",
+          "type": "numeric",
           "primaryKey": false,
           "notNull": false
         },
         "copper_mcg": {
           "name": "copper_mcg",
-          "type": "jsonb",
+          "type": "numeric",
           "primaryKey": false,
           "notNull": false
         },
         "manganese_mg": {
           "name": "manganese_mg",
-          "type": "jsonb",
+          "type": "numeric",
           "primaryKey": false,
           "notNull": false
         },
         "beta_carotene_mcg": {
           "name": "beta_carotene_mcg",
-          "type": "jsonb",
+          "type": "numeric",
           "primaryKey": false,
           "notNull": false
         },
         "vitamin_a_mcg": {
           "name": "vitamin_a_mcg",
-          "type": "jsonb",
+          "type": "numeric",
           "primaryKey": false,
           "notNull": false
         },
         "vitamin_d_mcg": {
           "name": "vitamin_d_mcg",
-          "type": "jsonb",
+          "type": "numeric",
           "primaryKey": false,
           "notNull": false
         },
         "vitamin_e_mg": {
           "name": "vitamin_e_mg",
-          "type": "jsonb",
+          "type": "numeric",
           "primaryKey": false,
           "notNull": false
         },
         "vitamin_k_mcg": {
           "name": "vitamin_k_mcg",
-          "type": "jsonb",
+          "type": "numeric",
           "primaryKey": false,
           "notNull": false
         },
         "vitamin_c_mg": {
           "name": "vitamin_c_mg",
-          "type": "jsonb",
+          "type": "numeric",
           "primaryKey": false,
           "notNull": false
         },
         "vitamin_b1_mg": {
           "name": "vitamin_b1_mg",
-          "type": "jsonb",
+          "type": "numeric",
           "primaryKey": false,
           "notNull": false
         },
         "vitamin_b2_mg": {
           "name": "vitamin_b2_mg",
-          "type": "jsonb",
+          "type": "numeric",
           "primaryKey": false,
           "notNull": false
         },
         "vitamin_pp_mg": {
           "name": "vitamin_pp_mg",
-          "type": "jsonb",
+          "type": "numeric",
           "primaryKey": false,
           "notNull": false
         },
         "vitamin_b5_mg": {
           "name": "vitamin_b5_mg",
-          "type": "jsonb",
+          "type": "numeric",
           "primaryKey": false,
           "notNull": false
         },
         "vitamin_b6_mg": {
           "name": "vitamin_b6_mg",
-          "type": "jsonb",
+          "type": "numeric",
           "primaryKey": false,
           "notNull": false
         },
         "vitamin_b9_mcg": {
           "name": "vitamin_b9_mcg",
-          "type": "jsonb",
+          "type": "numeric",
           "primaryKey": false,
           "notNull": false
         },
         "vitamin_b12_mcg": {
           "name": "vitamin_b12_mcg",
-          "type": "jsonb",
+          "type": "numeric",
           "primaryKey": false,
           "notNull": false
         },
         "vitamin_h_mcg": {
           "name": "vitamin_h_mcg",
-          "type": "jsonb",
+          "type": "numeric",
           "primaryKey": false,
           "notNull": false
         },
@@ -411,8 +420,12 @@
           "name": "meal_items_meal_id_meals_id_fk",
           "tableFrom": "meal_items",
           "tableTo": "meals",
-          "columnsFrom": ["meal_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "meal_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -420,8 +433,12 @@
           "name": "meal_items_food_composition_id_vietnamese_food_composition_id_fk",
           "tableFrom": "meal_items",
           "tableTo": "vietnamese_food_composition",
-          "columnsFrom": ["food_composition_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "food_composition_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "set null",
           "onUpdate": "no action"
         }
@@ -483,169 +500,169 @@
         },
         "calories_kcal": {
           "name": "calories_kcal",
-          "type": "jsonb",
+          "type": "numeric",
           "primaryKey": false,
           "notNull": false
         },
         "protein_g": {
           "name": "protein_g",
-          "type": "jsonb",
+          "type": "numeric",
           "primaryKey": false,
           "notNull": false
         },
         "carbohydrate_g": {
           "name": "carbohydrate_g",
-          "type": "jsonb",
+          "type": "numeric",
           "primaryKey": false,
           "notNull": false
         },
         "fat_g": {
           "name": "fat_g",
-          "type": "jsonb",
+          "type": "numeric",
           "primaryKey": false,
           "notNull": false
         },
         "fiber_g": {
           "name": "fiber_g",
-          "type": "jsonb",
+          "type": "numeric",
           "primaryKey": false,
           "notNull": false
         },
         "sodium_mg": {
           "name": "sodium_mg",
-          "type": "jsonb",
+          "type": "numeric",
           "primaryKey": false,
           "notNull": false
         },
         "calcium_mg": {
           "name": "calcium_mg",
-          "type": "jsonb",
+          "type": "numeric",
           "primaryKey": false,
           "notNull": false
         },
         "iron_mg": {
           "name": "iron_mg",
-          "type": "jsonb",
+          "type": "numeric",
           "primaryKey": false,
           "notNull": false
         },
         "magnesium_mg": {
           "name": "magnesium_mg",
-          "type": "jsonb",
+          "type": "numeric",
           "primaryKey": false,
           "notNull": false
         },
         "phosphorus_mg": {
           "name": "phosphorus_mg",
-          "type": "jsonb",
+          "type": "numeric",
           "primaryKey": false,
           "notNull": false
         },
         "potassium_mg": {
           "name": "potassium_mg",
-          "type": "jsonb",
+          "type": "numeric",
           "primaryKey": false,
           "notNull": false
         },
         "zinc_mg": {
           "name": "zinc_mg",
-          "type": "jsonb",
+          "type": "numeric",
           "primaryKey": false,
           "notNull": false
         },
         "copper_mcg": {
           "name": "copper_mcg",
-          "type": "jsonb",
+          "type": "numeric",
           "primaryKey": false,
           "notNull": false
         },
         "manganese_mg": {
           "name": "manganese_mg",
-          "type": "jsonb",
+          "type": "numeric",
           "primaryKey": false,
           "notNull": false
         },
         "beta_carotene_mcg": {
           "name": "beta_carotene_mcg",
-          "type": "jsonb",
+          "type": "numeric",
           "primaryKey": false,
           "notNull": false
         },
         "vitamin_a_mcg": {
           "name": "vitamin_a_mcg",
-          "type": "jsonb",
+          "type": "numeric",
           "primaryKey": false,
           "notNull": false
         },
         "vitamin_d_mcg": {
           "name": "vitamin_d_mcg",
-          "type": "jsonb",
+          "type": "numeric",
           "primaryKey": false,
           "notNull": false
         },
         "vitamin_e_mg": {
           "name": "vitamin_e_mg",
-          "type": "jsonb",
+          "type": "numeric",
           "primaryKey": false,
           "notNull": false
         },
         "vitamin_k_mcg": {
           "name": "vitamin_k_mcg",
-          "type": "jsonb",
+          "type": "numeric",
           "primaryKey": false,
           "notNull": false
         },
         "vitamin_c_mg": {
           "name": "vitamin_c_mg",
-          "type": "jsonb",
+          "type": "numeric",
           "primaryKey": false,
           "notNull": false
         },
         "vitamin_b1_mg": {
           "name": "vitamin_b1_mg",
-          "type": "jsonb",
+          "type": "numeric",
           "primaryKey": false,
           "notNull": false
         },
         "vitamin_b2_mg": {
           "name": "vitamin_b2_mg",
-          "type": "jsonb",
+          "type": "numeric",
           "primaryKey": false,
           "notNull": false
         },
         "vitamin_pp_mg": {
           "name": "vitamin_pp_mg",
-          "type": "jsonb",
+          "type": "numeric",
           "primaryKey": false,
           "notNull": false
         },
         "vitamin_b5_mg": {
           "name": "vitamin_b5_mg",
-          "type": "jsonb",
+          "type": "numeric",
           "primaryKey": false,
           "notNull": false
         },
         "vitamin_b6_mg": {
           "name": "vitamin_b6_mg",
-          "type": "jsonb",
+          "type": "numeric",
           "primaryKey": false,
           "notNull": false
         },
         "vitamin_b9_mcg": {
           "name": "vitamin_b9_mcg",
-          "type": "jsonb",
+          "type": "numeric",
           "primaryKey": false,
           "notNull": false
         },
         "vitamin_b12_mcg": {
           "name": "vitamin_b12_mcg",
-          "type": "jsonb",
+          "type": "numeric",
           "primaryKey": false,
           "notNull": false
         },
         "vitamin_h_mcg": {
           "name": "vitamin_h_mcg",
-          "type": "jsonb",
+          "type": "numeric",
           "primaryKey": false,
           "notNull": false
         },
@@ -693,8 +710,12 @@
           "tableFrom": "meals",
           "tableTo": "users",
           "schemaTo": "auth",
-          "columnsFrom": ["user_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -781,8 +802,12 @@
           "tableFrom": "pending_analyses",
           "tableTo": "users",
           "schemaTo": "auth",
-          "columnsFrom": ["user_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -878,8 +903,12 @@
           "tableFrom": "pipeline_requests",
           "tableTo": "users",
           "schemaTo": "auth",
-          "columnsFrom": ["user_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -996,8 +1025,12 @@
           "tableFrom": "unmatched_ingredients",
           "tableTo": "users",
           "schemaTo": "auth",
-          "columnsFrom": ["user_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -1005,8 +1038,12 @@
           "name": "unmatched_ingredients_meal_id_meals_id_fk",
           "tableFrom": "unmatched_ingredients",
           "tableTo": "meals",
-          "columnsFrom": ["meal_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "meal_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "set null",
           "onUpdate": "no action"
         }
@@ -1117,13 +1154,6 @@
           "primaryKey": false,
           "notNull": false
         },
-        "preferred_locale": {
-          "name": "preferred_locale",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "default": "'en'"
-        },
         "oil_usage": {
           "name": "oil_usage",
           "type": "text",
@@ -1180,6 +1210,13 @@
           "primaryKey": false,
           "notNull": true,
           "default": "now()"
+        },
+        "preferred_locale": {
+          "name": "preferred_locale",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "'en'"
         }
       },
       "indexes": {},
@@ -1189,8 +1226,12 @@
           "tableFrom": "user_profiles",
           "tableTo": "users",
           "schemaTo": "auth",
-          "columnsFrom": ["user_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1508,8 +1549,12 @@
           "name": "vietnamese_food_composition_source_id_ingredient_sources_id_fk",
           "tableFrom": "vietnamese_food_composition",
           "tableTo": "ingredient_sources",
-          "columnsFrom": ["source_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "source_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         }

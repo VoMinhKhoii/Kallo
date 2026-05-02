@@ -5,6 +5,7 @@ import {
   LayoutDashboard,
   LogOut,
   Settings,
+  ShieldCheck,
   UtensilsCrossed,
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
@@ -58,6 +59,7 @@ function deriveLabel(user: UserMenuUser): string {
  */
 export function BottomTabBar({
   user,
+  isAdmin = false,
   onboardingIncomplete = false,
   onboardingStep = 0,
   onResumeOnboarding,
@@ -66,6 +68,7 @@ export function BottomTabBar({
   onRestoreOnboarding,
 }: {
   user: UserMenuUser;
+  isAdmin?: boolean;
   onboardingIncomplete?: boolean;
   onboardingStep?: number;
   onResumeOnboarding?: () => void;
@@ -105,6 +108,7 @@ export function BottomTabBar({
 
   const initial = deriveInitial(user);
   const label = deriveLabel(user);
+  const adminActive = isActiveRoute(pathname, '/admin');
   const settingsActive = isActiveRoute(pathname, '/settings');
 
   const handleSignOut = async () => {
@@ -238,6 +242,25 @@ export function BottomTabBar({
                       onResumeOnboarding();
                     }}
                   />
+                )}
+
+                {isAdmin && (
+                  <Link
+                    href="/admin"
+                    onClick={() => setSheetOpen(false)}
+                    aria-current={adminActive ? 'page' : undefined}
+                    className={cn(
+                      'flex items-center gap-3 rounded-xl px-3 py-3 transition-colors',
+                      adminActive
+                        ? 'bg-nham-btn text-white'
+                        : 'bg-white text-nham-text hover:bg-nham-hover/60'
+                    )}
+                  >
+                    <ShieldCheck className="h-4 w-4" aria-hidden="true" />
+                    <span className="font-medium font-sans-display text-[13px]">
+                      {tNav('admin')}
+                    </span>
+                  </Link>
                 )}
 
                 <Link

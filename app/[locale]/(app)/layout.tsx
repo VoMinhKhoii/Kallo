@@ -1,6 +1,7 @@
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { AppShell } from '@/components/app/app-shell';
+import { isAdminEmail } from '@/lib/admin/is-admin';
 import { getOnboardingProfile } from '@/lib/onboarding/actions';
 import {
   parseSidebarExpandMode,
@@ -38,6 +39,7 @@ export default async function AppLayout({
     console.error('Failed to load onboarding profile:', error);
   }
   const onboardingStep = profile?.onboardingStep ?? 0;
+  const isAdmin = isAdminEmail(user.email);
 
   const displayName =
     typeof user.user_metadata?.display_name === 'string'
@@ -62,6 +64,7 @@ export default async function AppLayout({
       onboardingStep={onboardingStep}
       initialProfile={profile}
       isFirstSession={isFirstSession}
+      isAdmin={isAdmin}
       user={{ email: user.email ?? null, displayName }}
       initialSidebarState={initialSidebarState}
       initialSidebarExpandMode={initialSidebarExpandMode}

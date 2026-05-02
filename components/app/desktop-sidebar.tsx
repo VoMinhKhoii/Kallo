@@ -6,6 +6,7 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   Settings,
+  ShieldCheck,
   UtensilsCrossed,
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
@@ -27,6 +28,7 @@ interface NavItem {
 
 export interface DesktopSidebarProps {
   user: UserMenuUser;
+  isAdmin?: boolean;
   onboardingIncomplete?: boolean;
   onboardingStep?: number;
   onResumeOnboarding?: () => void;
@@ -133,6 +135,7 @@ function SidebarNavLink({
  */
 export function DesktopSidebar({
   user,
+  isAdmin = false,
   onboardingIncomplete = false,
   onboardingStep = 0,
   onResumeOnboarding,
@@ -227,6 +230,16 @@ export function DesktopSidebar({
       href: '/logging',
       icon: <UtensilsCrossed className="h-5 w-5" />,
     },
+    ...(isAdmin
+      ? [
+          {
+            id: 'admin',
+            label: t('admin'),
+            href: '/admin',
+            icon: <ShieldCheck className="h-5 w-5" />,
+          },
+        ]
+      : []),
   ];
 
   return (

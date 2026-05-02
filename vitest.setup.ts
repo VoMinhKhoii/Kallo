@@ -2,6 +2,9 @@ import React from 'react';
 import '@testing-library/jest-dom/vitest';
 import { vi } from 'vitest';
 
+// server-only throws on import outside RSC; stub it for tests
+vi.mock('server-only', () => ({}));
+
 // Global mock for next-intl — returns translation keys as-is
 vi.mock('next-intl', () => ({
   useTranslations: () => {
@@ -22,6 +25,18 @@ vi.mock('next-intl', () => ({
   useMessages: () => ({}),
   NextIntlClientProvider: ({ children }: { children: React.ReactNode }) =>
     children,
+}));
+
+// Global mock for next-intl server helpers
+vi.mock('next-intl/server', () => ({
+  getLocale: async () => 'en',
+  getTranslations: async () => {
+    const t = (key: string) => key;
+    t.rich = t;
+    t.raw = t;
+    return t;
+  },
+  getMessages: async () => ({}),
 }));
 
 // Global mock for locale-aware navigation

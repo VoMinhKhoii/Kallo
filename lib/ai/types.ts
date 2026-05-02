@@ -121,6 +121,12 @@ export interface MealDecomposition {
 /** Nutrition per 100g from the food composition DB */
 export type NutritionPer100g = NutritionValues;
 
+/** Strategy that produced the winning match (vector pgvector vs fuzzy pg_trgm) */
+export type MatchType = 'vector' | 'fuzzy';
+
+/** Food-composition source the winning match came from */
+export type MatchSource = 'fao' | 'usda';
+
 /** A successfully matched ingredient */
 export interface MatchedIngredient {
   ingredientName: string;
@@ -129,6 +135,14 @@ export interface MatchedIngredient {
   similarity: number;
   confidence: MatchConfidence;
   nutritionPer100g: NutritionPer100g;
+  /** Diagnostic: which strategy produced the match. Optional for backward-compat with mocks. */
+  matchType?: MatchType;
+  /** Diagnostic: which DB source the match came from. */
+  source?: MatchSource;
+  /** Diagnostic: wall-clock time for the winning match attempt (DB roundtrips). */
+  latencyMs?: number;
+  /** Diagnostic: true when the original name failed and the alias-fallback rescued it. */
+  viaAlias?: boolean;
 }
 
 /** An unmatched ingredient — logged for future DB expansion */

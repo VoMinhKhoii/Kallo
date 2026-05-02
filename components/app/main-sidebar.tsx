@@ -11,10 +11,19 @@ const FALLBACK_USER: UserMenuUser = { email: null, displayName: null };
  * `desktop-sidebar.tsx`.
  */
 export function MainSidebar({
-  user = FALLBACK_USER,
+  user,
+  userEmail,
+  userDisplayName,
   ...props
 }: Omit<DesktopSidebarProps, 'user'> & {
   user?: UserMenuUser;
+  userEmail?: string | null;
+  userDisplayName?: string | null;
 }) {
-  return <DesktopSidebar user={user} {...props} />;
+  const effectiveUser = user ?? {
+    email: userEmail ?? null,
+    displayName: userDisplayName ?? null,
+  };
+
+  return <DesktopSidebar user={effectiveUser ?? FALLBACK_USER} {...props} />;
 }

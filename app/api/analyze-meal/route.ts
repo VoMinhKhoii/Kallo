@@ -93,8 +93,13 @@ export async function POST(request: NextRequest) {
 
   const userContext = buildUserContext(profile);
 
-  // Fire-and-forget: log pipeline start for observability (never blocks SSE)
-  const requestId = logPipelineStart(userId, message, userContext, db);
+  // Awaited so child trace inserts have a parent row to FK against
+  const requestId = await logPipelineStart({
+    userId,
+    rawInput: message,
+    userContext,
+    db,
+  });
 
   // Phase 2: Stream pipeline results as SSE
   const encoder = new TextEncoder();
@@ -105,6 +110,11 @@ export async function POST(request: NextRequest) {
       };
 
       const startTime = Date.now();
+      const promptVersionsUsed = new Map<string, string>();
+      // If start logging failed (null), skip child trace logging entirely.
+      const traceContext = requestId
+        ? { requestId, db, promptVersionsUsed }
+        : undefined;
 
       try {
         const gemini = createGeminiClient(apiKey);
@@ -113,13 +123,19 @@ export async function POST(request: NextRequest) {
           userContext,
           db,
           gemini,
-          emit
+          emit,
+          traceContext
         );
 
         // Check for abort after pipeline completes
         if (request.signal.aborted) {
           return;
         }
+
+        const pvu =
+          promptVersionsUsed.size > 0
+            ? Object.fromEntries(promptVersionsUsed)
+            : null;
 
         if (!result.success) {
           console.error(
@@ -132,7 +148,8 @@ export async function POST(request: NextRequest) {
             'error',
             Date.now() - startTime,
             db,
-            result.error.message
+            result.error.message,
+            pvu
           );
           emit({
             type: 'error',
@@ -157,7 +174,8 @@ export async function POST(request: NextRequest) {
             'error',
             Date.now() - startTime,
             db,
-            'empty_nutrition'
+            'empty_nutrition',
+            pvu
           );
           emit({
             type: 'error',
@@ -189,7 +207,14 @@ export async function POST(request: NextRequest) {
         });
 
         // Fire-and-forget: log success + unmatched ingredients
-        logPipelineEnd(requestId, 'success', Date.now() - startTime, db);
+        logPipelineEnd(
+          requestId,
+          'success',
+          Date.now() - startTime,
+          db,
+          undefined,
+          pvu
+        );
         if (result.data.unmatchedIngredients.length > 0) {
           logUnmatchedIngredients(
             result.data.unmatchedIngredients,
@@ -201,12 +226,17 @@ export async function POST(request: NextRequest) {
         }
       } catch (error) {
         console.error('[analyze-meal] Stream error:', error);
+        const pvu =
+          promptVersionsUsed.size > 0
+            ? Object.fromEntries(promptVersionsUsed)
+            : null;
         logPipelineEnd(
           requestId,
           'error',
           Date.now() - startTime,
           db,
-          error instanceof Error ? error.message : 'unknown'
+          error instanceof Error ? error.message : 'unknown',
+          pvu
         );
 
         const errorMessage =

@@ -1,52 +1,97 @@
 import { eq } from 'drizzle-orm';
-import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
+import type { AppDb } from '@/lib/db';
 import { pipelineRequests } from '@/lib/db/schema';
 import type { UserContext } from '../types';
 
+export interface LogPipelineStartArgs {
+  userId: string;
+  rawInput: string;
+  userContext: UserContext;
+  db: AppDb;
+  /** When set, caller controls the requestId (used by replay). */
+  requestId?: string;
+  /** Marks the row as a dry-run replay of the given original request. */
+  replayOfRequestId?: string;
+  /** When true, persists the row with dry_run=true (no real Gemini call). */
+  dryRun?: boolean;
+}
+
 /**
- * Fire-and-forget INSERT into pipeline_requests before the pipeline starts.
- * Generates the requestId synchronously (crypto.randomUUID) so the caller
- * never awaits the DB write — the INSERT is fully fire-and-forget.
- * Returns the pre-generated requestId for correlation with logPipelineEnd.
+ * Awaitable INSERT into pipeline_requests before the pipeline starts.
+ * Awaits the DB write so child trace inserts (stage_logs, llm_calls)
+ * have a parent row to FK against.
+ * Returns the requestId for correlation with logPipelineEnd, or null if
+ * the INSERT failed (callers must skip child trace logging in that case).
  */
-export function logPipelineStart(
-  userId: string,
-  rawInput: string,
-  userContext: UserContext,
-  db: PostgresJsDatabase<any>
-): string {
-  const requestId = crypto.randomUUID();
+export async function logPipelineStart(
+  args: LogPipelineStartArgs
+): Promise<string | null> {
+  const id = args.requestId ?? crypto.randomUUID();
 
-  db.insert(pipelineRequests)
-    .values({
-      id: requestId,
-      userId,
-      rawInput,
-      userContextJson: userContext as unknown as Record<string, unknown>,
-    })
-    .catch((err) => {
-      console.error('[pipeline-logging] Failed to create request log:', err);
+  try {
+    await args.db.insert(pipelineRequests).values({
+      id,
+      userId: args.userId,
+      rawInput: args.rawInput,
+      userContextJson: args.userContext as unknown as Record<string, unknown>,
+      ...(args.replayOfRequestId
+        ? { replayOfRequestId: args.replayOfRequestId }
+        : {}),
+      ...(args.dryRun ? { dryRun: true } : {}),
     });
+    return id;
+  } catch (err) {
+    console.error('[pipeline-logging] Failed to create request log:', err);
+    return null;
+  }
+}
 
-  return requestId;
+/**
+ * Awaitable UPDATE to record pipeline final state.
+ * Use on the replay path where the redirect MUST land on a terminal-state row.
+ * The production path keeps using the fire-and-forget logPipelineEnd.
+ */
+export async function setPipelineFinalState(args: {
+  db: AppDb;
+  requestId: string;
+  status: 'success' | 'error';
+  durationMs: number;
+  errorMessage?: string;
+  promptVersionsUsed?: Record<string, string> | null;
+}): Promise<void> {
+  await args.db
+    .update(pipelineRequests)
+    .set({
+      status: args.status,
+      durationMs: args.durationMs,
+      error: args.errorMessage ?? null,
+      promptVersionsUsed: args.promptVersionsUsed ?? null,
+    })
+    .where(eq(pipelineRequests.id, args.requestId));
 }
 
 /**
  * Fire-and-forget UPDATE to record pipeline outcome.
  * No-op if requestId is null (DB write failed during start).
  * Never blocks the response — all errors are caught and logged only.
+ *
+ * @param promptVersionsUsed - When non-null, persisted on the row so replays
+ *   can reproduce the exact prompt versions used in this request.
  */
 export function logPipelineEnd(
   requestId: string | null,
   status: 'success' | 'error',
   durationMs: number,
-  db: PostgresJsDatabase<any>,
-  error?: string
+  db: AppDb,
+  error?: string,
+  promptVersionsUsed?: Record<string, string> | null
 ): void {
   if (!requestId) return;
 
+  const extra = promptVersionsUsed ? { promptVersionsUsed } : {};
+
   db.update(pipelineRequests)
-    .set({ status, durationMs, error: error ?? null })
+    .set({ status, durationMs, error: error ?? null, ...extra })
     .where(eq(pipelineRequests.id, requestId))
     .catch((err) => {
       console.error('[pipeline-logging] Failed to update request log:', err);
