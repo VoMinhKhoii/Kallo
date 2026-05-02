@@ -51,35 +51,39 @@ export function buildDecompositionPrompt(
   </stable_ids>
 
   <grams_only>
-    grams = cooked/as-eaten mass. Convert colloquial Vietnamese portions to grams yourself.
-    Examples: 1 chén cơm → 200; 1 dĩa rau → 150; 1 miếng cá → 60; 1 lát bánh mì → 30.
-    Use the supplied cooking-habit context and standard Vietnamese serving-size priors.
+    grams = cooked/as-eaten mass. Convert colloquial portions to grams based on the user's cuisine and serving-size norms.
+    Examples (Vietnamese): 1 chén cơm → 200; 1 dĩa rau → 150; 1 miếng cá → 60; 1 lát bánh mì → 30.
+    Use the supplied cooking-habit context and regional serving-size priors from the user's cuisine context.
     The runtime accepts grams only: no unit field and no unit conversion fallback.
     If quantity is genuinely ambiguous, set ambiguityFlags: ["unspecified_quantity"] and emit your best-estimate grams.
     Always emit a positive number; grams <= 0 triggers implausible_grams and retry.
   </grams_only>
 
   <ingredient_naming_rule>
-    rawName = natural, specific Vietnamese ingredient name that reflects what the user actually described.
-    canonicalName = disambiguated FCT-friendly food-composition vocabulary name used for matching.
+    rawName = natural, specific ingredient name in the user's language that reflects what the user actually described.
+    canonicalName = disambiguated FCT/USDA-friendly food-composition vocabulary name used for matching.
+    Adapt to the user's cuisine based on the cuisine context provided in <user_context>.
     Keep rawName close to the user's input; use canonicalName to resolve aliases or regional names.
     cookingMethod lives on the dish; expectedState lives on ingredients only when needed.
 
-    Specificity rules:
+    Specificity rules (Vietnamese examples — apply the same principle to any cuisine):
     - If user says "đùi gà" (chicken thigh) → use "đùi gà", NOT generic "thịt gà"
     - If user says "ức gà" (chicken breast) → use "ức gà", NOT generic "thịt gà"
     - If user says "sườn non" (spare ribs) → use "sườn non", NOT generic "thịt lợn"
-    - If user says "cá hồi" (salmon) → use "cá hồi"
+    - If user says "chicken thigh" → rawName: "chicken thigh", canonicalName: "chicken thigh, meat only"
+    - If user says "cá hồi" (salmon) → use "cá hồi" / canonicalName: "salmon"
     - If user says "rib eye" or "steak lõi vai" → use "rib eye" or "steak lõi vai"
     - If user says "cá lóc" → rawName: "cá lóc", canonicalName: "Cá quả"
     - If user says "cơm" → rawName: "cơm", canonicalName: "Cơm"
     - If user says "1 chén cơm" → rawName: "cơm", grams: 200
 
-    For common seasonings/condiments, use standard Vietnamese names:
-    - "nước mắm" · "dầu ăn" · "đường" · "tỏi" · "hành" · "tiêu"
+    For common seasonings/condiments, use standard names in the user's cuisine:
+    - Vietnamese: "nước mắm" · "dầu ăn" · "đường" · "tỏi" · "hành" · "tiêu"
+    - English: "fish sauce" · "cooking oil" · "sugar" · "garlic" · "onion" · "pepper"
 
     For ambiguous single-word items, add just enough context:
     - "giá đỗ" (not bare "giá") · "đậu xanh" (not bare "đậu") · "nước dùng" (broth)
+    - "bean sprouts" (not bare "sprouts") · "chicken broth" (not bare "broth")
   </ingredient_naming_rule>
 
   <canonical_names>
@@ -89,14 +93,14 @@ export function buildDecompositionPrompt(
   </canonical_names>
 
   <cooking_method_rule>
-    - cookingMethod is a free-form dish-level string.
-    - "nấu": ONLY for rice/grain/starch where water is absorbed (cơm, cháo, xôi). NOT for soup.
-    - "luộc": boiling meat/vegetables. NOT for eggs.
-    - "ninh": slow-simmering broth.
+    - cookingMethod is a free-form dish-level string in the user's language.
+    - "nấu" (cook/absorb): ONLY for rice/grain/starch where water is absorbed. NOT for soup.
+    - "luộc" (boil): boiling meat/vegetables. NOT for eggs.
+    - "ninh" (slow-simmer): slow-simmering broth.
     - "raw": fresh/raw dishes or uncooked assemblies.
-    - "kho": braising in sauce. For meat/tofu, NOT for eggs in same dish.
-    - "chiên"/"xào": frying/stir-frying · "hấp": steaming · "nướng": grilling.
-    Composite dishes (bánh chưng, xôi, cháo): decompose to raw ingredients but use cooked weight.
+    - "kho" (braise): braising in sauce. For meat/tofu, NOT for eggs in same dish.
+    - "chiên"/"rán" (pan-fry/deep-fry) · "xào" (stir-fry) · "hấp" (steam) · "nướng" (grill/roast).
+    Composite dishes (bánh chưng, xôi, cháo, rice cakes, porridge): decompose to raw ingredients but use cooked weight.
   </cooking_method_rule>
 
   <expected_state>
@@ -241,5 +245,5 @@ ${countryLines.length > 0 ? `${countryLines.join('\n')}\n` : ''}  oil_usage: ${c
   </example>
 </examples>
 
-Return JSON matching the provided schema. Every meal item must have mealItemId, name, cookingMethod, and at least one ingredient. Every ingredient must have ingredientId, rawName, canonicalName, and grams. Use Vietnamese ingredient names.`;
+Return JSON matching the provided schema. Every meal item must have mealItemId, name, cookingMethod, and at least one ingredient. Every ingredient must have ingredientId, rawName, canonicalName, and grams. Use ingredient names in the user's language, following the naming specificity rules above.`;
 }

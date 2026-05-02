@@ -138,7 +138,7 @@ export function buildNutritionPrompt(
     const unmatchedNames = new Set(unmatched.map((u) => u.ingredientName));
     unmatchedSection = '\n<unmatched_ingredients>\n';
     unmatchedSection +=
-      '  <!-- No DB match found. Use your knowledge of Vietnamese cuisine for these. -->\n';
+      "  <!-- No DB match found. Use your culinary knowledge of the user's cuisine and FAO/USDA food composition data for estimates. -->\n";
 
     for (const mealItem of sortedMealItems) {
       const unmatchedIngs = mealItem.ingredients.filter((ing) =>
@@ -157,7 +157,7 @@ export function buildNutritionPrompt(
     unmatchedSection += '</unmatched_ingredients>\n';
   }
 
-  return `You are a Vietnamese cuisine nutrition expert. Produce cooking-adjusted, bounded nutrition estimates.
+  return `You are a nutrition expert. Produce cooking-adjusted, bounded nutrition estimates based on the user's cuisine and cooking context.
 
 <instructions>
   <task>
@@ -182,8 +182,9 @@ export function buildNutritionPrompt(
     3. db_state="unknown": treat as "raw" but widen LOW/HIGH bounds — uncertainty
        is higher because the reference frame is ambiguous.
 
-    For unmatched ingredients (no db row): use your knowledge of Vietnamese
-    cuisine for typical macros at the as-eaten weight. Be wider on bounds.
+    For unmatched ingredients (no db row): use your culinary knowledge of the user's cuisine and region
+    (informed by the user's origin and residence context in <user_context>, plus FAO/USDA food composition data)
+    for typical macros at the as-eaten weight. Be wider on bounds.
 
     MID = your best estimate after cooking adjustment. LOW/HIGH bracket
     physical-world uncertainty (portion guess + cooking variance).
@@ -202,7 +203,8 @@ export function buildNutritionPrompt(
   </why_three_values>
 
   <unmatched_rule>
-    For ingredients in <unmatched_ingredients>: use your Vietnamese food knowledge to estimate.
+    For ingredients in <unmatched_ingredients>: use your culinary knowledge of the user's cuisine and region
+    (informed by the user's origin and residence context in <user_context>, plus FAO/USDA food composition data) to estimate.
     Use wider bounds since we have no DB reference.
 
     IMPORTANT: Each unmatched ingredient is nested under its parent <meal_item>.

@@ -23,7 +23,7 @@ export const decomposedIngredientSchema = z
       .string()
       .min(1)
       .describe(
-        'Ingredient name as written or inferred from the user input, preserving Vietnamese phrasing.'
+        'Ingredient name in the user\'s language as written or inferred from the user input (e.g., "bún", "chicken breast", "nước dùng").'
       ),
     canonicalName: z
       .string()
@@ -70,7 +70,7 @@ export const decomposedDishSchema = z
       .string()
       .min(1)
       .describe(
-        'Free-form Vietnamese cooking method for the dish; per-ingredient expectedState is the source of truth when present.'
+        "Free-form cooking method for the dish in the user's language; per-ingredient expectedState is the source of truth when present."
       ),
     cuisineNote: z
       .string()

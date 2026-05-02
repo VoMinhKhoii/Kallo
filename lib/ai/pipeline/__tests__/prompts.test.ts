@@ -319,7 +319,7 @@ describe('buildNutritionPrompt', () => {
     );
     expect(prompt).toContain('nước mắm đặc biệt');
     expect(prompt).toContain('<meal_item name="cơm">');
-    expect(prompt).toContain('Vietnamese food knowledge');
+    expect(prompt).toContain("culinary knowledge of the user's cuisine");
   });
 
   it('groups unmatched ingredients under their parent meal items', () => {
