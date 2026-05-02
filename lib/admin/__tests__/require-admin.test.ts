@@ -2,7 +2,10 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('server-only', () => ({}));
 
-const getUser = vi.fn();
+const { getUser } = vi.hoisted(() => ({
+  getUser: vi.fn(),
+}));
+
 vi.mock('@/lib/supabase/server', () => ({
   createClient: () => ({ auth: { getUser } }),
 }));

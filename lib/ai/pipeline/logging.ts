@@ -21,15 +21,15 @@ export interface LogPipelineStartArgs {
  * Awaits the DB write so child trace inserts (stage_logs, llm_calls)
  * have a parent row to FK against.
  * Returns the requestId for correlation with logPipelineEnd.
+ * Throws if the parent row cannot be created.
  */
 export async function logPipelineStart(
   args: LogPipelineStartArgs
 ): Promise<string> {
   const id = args.requestId ?? crypto.randomUUID();
 
-  await args.db
-    .insert(pipelineRequests)
-    .values({
+  try {
+    await args.db.insert(pipelineRequests).values({
       id,
       userId: args.userId,
       rawInput: args.rawInput,
@@ -38,10 +38,11 @@ export async function logPipelineStart(
         ? { replayOfRequestId: args.replayOfRequestId }
         : {}),
       ...(args.dryRun ? { dryRun: true } : {}),
-    })
-    .catch((err) => {
-      console.error('[pipeline-logging] Failed to create request log:', err);
     });
+  } catch (err) {
+    console.error('[pipeline-logging] Failed to create request log:', err);
+    throw err;
+  }
 
   return id;
 }

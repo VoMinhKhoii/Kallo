@@ -18,7 +18,7 @@ export const STABLE_PROFILE: ModelProfile = {
 export const NEXT_PROFILE: ModelProfile = {
   decompositionModel: 'gemini-3.1-flash-lite-preview',
   nutritionModel: 'gemini-3.1-flash-lite-preview',
-  escalationModel: 'gemini-3-flash',
+  escalationModel: 'gemini-3-flash-preview',
 };
 
 export function resolveModelProfile(): ModelProfile {

@@ -64,32 +64,27 @@ describe('logPipelineStart', () => {
     expect(valuesArg.rawInput).toBe('phở bò');
   });
 
-  it('does not throw on DB error — catches internally', async () => {
+  it('logs and rethrows DB errors', async () => {
     const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const error = new Error('DB write failed');
     const db = {
       insert: vi.fn().mockReturnValue({
-        values: vi.fn().mockReturnValue({
-          // Simulate the .catch() chain by invoking the handler immediately
-          // and resolving with undefined (matching real Promise.catch).
-          catch: (fn: (err: Error) => void) => {
-            fn(new Error('DB write failed'));
-            return Promise.resolve(undefined);
-          },
-        }),
+        values: vi.fn().mockRejectedValue(error),
       }),
     } as any;
 
-    const id = await logPipelineStart({
-      userId: 'user-1',
-      rawInput: 'phở bò',
-      userContext: MOCK_USER_CONTEXT,
-      db,
-    });
+    await expect(
+      logPipelineStart({
+        userId: 'user-1',
+        rawInput: 'phở bò',
+        userContext: MOCK_USER_CONTEXT,
+        db,
+      })
+    ).rejects.toThrow('DB write failed');
 
-    expect(typeof id).toBe('string');
     expect(errorSpy).toHaveBeenCalledWith(
       expect.stringContaining('Failed to create request log'),
-      expect.any(Error)
+      error
     );
   });
 });

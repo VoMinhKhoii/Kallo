@@ -47,7 +47,7 @@ describe('buildPipelineRunRow', () => {
     expect(row.promptPersonalizationFields).not.toContain('goal');
   });
 
-  it('rejects payload that includes goal/aggression in promptPersonalizationFields', () => {
+  it('rejects payload that includes goal/aggression/calorie target in promptPersonalizationFields', () => {
     expect(() =>
       buildPipelineRunRow({
         userId: 'u-1',
@@ -75,9 +75,9 @@ describe('buildPipelineRunRow', () => {
         escalated: false,
         cacheHitL4: false,
         retryCount: 0,
-        promptPersonalizationFields: ['goal'],
+        promptPersonalizationFields: ['calorieTargetKcal'],
       })
-    ).toThrow(/goal|aggression/i);
+    ).toThrow(/goal|aggression|calorieTarget/i);
   });
 
   it('passes anomaly types and per-run anomaly counters through to the row', () => {

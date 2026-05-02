@@ -10,6 +10,7 @@ const FORBIDDEN_PERSONALIZATION_FIELDS = new Set([
   'goal',
   'aggression',
   'calorieTarget',
+  'calorieTargetKcal',
   'macroTargets',
   'bodyMetrics',
   'weightKg',

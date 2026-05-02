@@ -79,7 +79,7 @@ export async function replayRequest(
   options: { dryRun?: boolean } = {}
 ) {
   const originalId = idSchema.parse(originalIdInput);
-  const admin = await requireAdmin();
+  await requireAdmin();
   const dryRun = options.dryRun === true;
 
   const [orig] = await db
@@ -106,7 +106,7 @@ export async function replayRequest(
   const replayId = crypto.randomUUID();
   const t0 = Date.now();
 
-  // Reuse original userId (NOT admin.id) — FK to auth.users + correct attribution.
+  // Reuse original userId — FK to auth.users + correct attribution.
   // Awaited so child trace inserts have a parent row to FK against.
   await logPipelineStart({
     userId: orig.userId,
@@ -118,7 +118,7 @@ export async function replayRequest(
     dryRun,
   });
   console.info(
-    `[admin] ${admin.email} ${dryRun ? 'dry-run-replayed' : 'replayed'} ${originalId} as ${replayId}`
+    `[admin] ${dryRun ? 'dry-run-replayed' : 'replayed'} ${originalId} as ${replayId}`
   );
 
   const promptVersionsUsed = new Map<string, string>();

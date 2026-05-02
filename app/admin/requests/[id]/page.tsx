@@ -28,6 +28,22 @@ const STATUS_STYLES: Record<string, string> = {
     'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400',
 };
 
+function sortJsonKeys(value: unknown): unknown {
+  if (value === null || typeof value !== 'object') return value;
+  if (Array.isArray(value)) return value.map(sortJsonKeys);
+
+  const record = value as Record<string, unknown>;
+  return Object.keys(record)
+    .sort()
+    .reduce<Record<string, unknown>>((sorted, key) => {
+      sorted[key] = sortJsonKeys(record[key]);
+      return sorted;
+    }, {});
+}
+
+const stableJsonString = (value: unknown): string =>
+  JSON.stringify(sortJsonKeys(value));
+
 /** Align two stage arrays by stageIndex and compute compare labels. */
 function computeCompareDiff(
   leftStages: StageWithCalls[],
@@ -58,8 +74,8 @@ function computeCompareDiff(
       label = 'only-here';
     } else {
       label =
-        JSON.stringify(l.stage.outputJson) ===
-        JSON.stringify(r.stage.outputJson)
+        stableJsonString(l.stage.outputJson) ===
+        stableJsonString(r.stage.outputJson)
           ? 'unchanged'
           : 'changed';
     }
