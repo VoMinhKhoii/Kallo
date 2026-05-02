@@ -166,15 +166,22 @@
     {
       "idx": 23,
       "version": "7",
-      "when": 1777491699814,
-      "tag": "20260429194139_add_admin_pipeline_trace_tables",
+      "when": 1777580135880,
+      "tag": "20260430201535_add_onboarding_minimized_at",
       "breakpoints": true
     },
     {
       "idx": 24,
       "version": "7",
+      "when": 1777491699814,
+      "tag": "20260430201536_add_admin_pipeline_trace_tables",
+      "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
       "when": 1777567419459,
-      "tag": "20260430164339_add_dry_run_to_pipeline_requests",
+      "tag": "20260430201539_add_dry_run_to_pipeline_requests",
       "breakpoints": true
     }
   ]

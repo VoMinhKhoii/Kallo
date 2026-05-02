@@ -41,6 +41,8 @@ interface PaceCardProps {
 export function PaceCard({ verdict }: PaceCardProps) {
   const { weeklyRate, totalDelta, planStartDate, status } = verdict;
   const { label, Icon, color } = STATUS_CONFIG[status];
+  const isBehind = status === 'behind';
+  const valueColor = isBehind ? 'var(--nham-danger)' : 'var(--nham-text)';
 
   const rateSign = weeklyRate >= 0 ? '+' : '';
   const deltaSign = totalDelta >= 0 ? '+' : '';
@@ -69,8 +71,8 @@ export function PaceCard({ verdict }: PaceCardProps) {
       </div>
       <div className="flex flex-wrap items-baseline gap-1.5">
         <span
-          className="font-semibold text-[56px] text-nham-text leading-[0.9] tracking-[-0.03em]"
-          style={{ fontFamily: 'Lora, serif' }}
+          className="font-semibold text-[56px] leading-[0.9] tracking-[-0.03em]"
+          style={{ fontFamily: 'Lora, serif', color: valueColor }}
         >
           {rateSign}
           {weeklyRate}
@@ -83,7 +85,7 @@ export function PaceCard({ verdict }: PaceCardProps) {
         </span>
       </div>
       <p className="mt-auto pt-1 text-[11px] text-nham-text-muted">
-        <span className="font-semibold text-nham-text">
+        <span className="font-semibold" style={{ color: valueColor }}>
           {deltaSign}
           {totalDelta} kg
         </span>{' '}
@@ -95,20 +97,57 @@ export function PaceCard({ verdict }: PaceCardProps) {
 
 interface DeficitCardProps {
   stats: StatsData;
+  weeklyRate: number;
 }
 
-export function DeficitCard({ stats }: DeficitCardProps) {
+export function DeficitCard({ stats, weeklyRate }: DeficitCardProps) {
+  const deficit = stats.avgDeficit;
+  const EXCESSIVE_DEFICIT_THRESHOLD = 500; // kcal/day
+  const isSurplus = deficit < 0;
+  const goalType =
+    weeklyRate < 0 ? 'cutting' : weeklyRate > 0 ? 'bulking' : 'flat';
+  const offTrack =
+    (goalType === 'cutting' && isSurplus) ||
+    (goalType === 'bulking' && deficit > 0) ||
+    // For maintenance ('flat'), both sustained surplus and sustained deficit are off-track
+    (goalType === 'flat' && (isSurplus || deficit > 0));
+  const isExcessiveDeficit = deficit >= EXCESSIVE_DEFICIT_THRESHOLD;
+  const labelColor =
+    offTrack || isExcessiveDeficit
+      ? 'var(--nham-danger)'
+      : 'var(--nham-success)';
   return (
     <div className="flex h-full flex-col justify-end">
-      <span className="mb-1 block font-bold text-[9px] text-nham-stone uppercase tracking-[0.2em]">
-        Avg Daily Deficit
-      </span>
+      <div className="mb-1 flex items-center gap-2">
+        <span className="block font-bold text-[9px] text-nham-stone uppercase tracking-[0.2em]">
+          Avg Daily Deficit
+        </span>
+        {offTrack && (
+          <span
+            className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 font-semibold text-[9px]"
+            style={{ backgroundColor: `${labelColor}14`, color: labelColor }}
+          >
+            Off track
+          </span>
+        )}
+      </div>
       <div className="flex items-baseline gap-1">
         <span
           className="font-semibold text-[30px] tabular-nums leading-[0.9] tracking-[-0.03em]"
-          style={{ fontFamily: 'Lora, serif', color: 'var(--nham-btn)' }}
+          style={{
+            fontFamily: 'Lora, serif',
+            color:
+              offTrack || isExcessiveDeficit
+                ? 'var(--nham-danger)'
+                : 'var(--nham-success)',
+          }}
         >
-          {Math.abs(stats.avgDeficit)}
+          {(() => {
+            // Avoid rendering `-0` when deficit === 0
+            if (deficit === 0) return `0`;
+            const sign = deficit < 0 ? '+' : '-';
+            return `${sign}${Math.abs(deficit)}`;
+          })()}
         </span>
         <span
           className="text-nham-text-muted text-xs italic"

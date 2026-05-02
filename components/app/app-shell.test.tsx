@@ -1,11 +1,21 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AppShell } from './app-shell';
 
-const { readStepOneLocaleDraftMock, wizardShellPropsSpy } = vi.hoisted(() => ({
+const {
+  readStepOneLocaleDraftMock,
+  restoreOnboardingNudgeMock,
+  wizardShellPropsSpy,
+} = vi.hoisted(() => ({
   readStepOneLocaleDraftMock: vi.fn(),
+  restoreOnboardingNudgeMock: vi.fn(),
   wizardShellPropsSpy: vi.fn(),
+}));
+
+vi.mock('@/lib/onboarding/actions', () => ({
+  minimizeOnboardingNudge: vi.fn(),
+  restoreOnboardingNudge: restoreOnboardingNudgeMock,
 }));
 
 vi.mock('@/lib/onboarding/step-one-locale-draft', () => ({
@@ -24,16 +34,24 @@ vi.mock('@/components/onboarding/wizard-shell', () => ({
   },
 }));
 
-vi.mock('./main-sidebar', () => ({
-  MainSidebar: ({
+vi.mock('./desktop-sidebar', () => ({
+  DesktopSidebar: ({
     onboardingIncomplete,
+    isOnboardingMinimized,
+    onRestoreOnboarding,
     onResumeOnboarding,
   }: {
     onboardingIncomplete: boolean;
+    isOnboardingMinimized: boolean;
+    onRestoreOnboarding: () => Promise<void>;
     onResumeOnboarding: () => void;
   }) => (
     <div>
       <div>{String(onboardingIncomplete)}</div>
+      <div data-testid="minimized-state">{String(isOnboardingMinimized)}</div>
+      <button type="button" onClick={onRestoreOnboarding}>
+        Restore nudge
+      </button>
       <button type="button" onClick={onResumeOnboarding}>
         Resume onboarding
       </button>
@@ -41,10 +59,16 @@ vi.mock('./main-sidebar', () => ({
   ),
 }));
 
+vi.mock('./bottom-tab-bar', () => ({
+  BottomTabBar: () => <div data-testid="bottom-tabs" />,
+}));
+
 describe('AppShell', () => {
   beforeEach(() => {
     readStepOneLocaleDraftMock.mockReset();
     readStepOneLocaleDraftMock.mockReturnValue(null);
+    restoreOnboardingNudgeMock.mockReset();
+    restoreOnboardingNudgeMock.mockResolvedValue(undefined);
     wizardShellPropsSpy.mockReset();
   });
 
@@ -104,5 +128,34 @@ describe('AppShell', () => {
         initialStep: 3,
       })
     );
+  });
+
+  it('rolls the minimized nudge back when restore persistence fails', async () => {
+    const user = userEvent.setup();
+    restoreOnboardingNudgeMock.mockRejectedValue(new Error('network'));
+
+    render(
+      <AppShell
+        onboardingStep={2}
+        initialProfile={
+          {
+            countryOfOrigin: 'Vietnam',
+            onboardingMinimizedAt: new Date('2026-05-01T00:00:00Z'),
+            onboardingStep: 2,
+          } as never
+        }
+        isFirstSession={false}
+      >
+        <div>Content</div>
+      </AppShell>
+    );
+
+    expect(screen.getByTestId('minimized-state')).toHaveTextContent('true');
+
+    await user.click(screen.getByRole('button', { name: 'Restore nudge' }));
+
+    await waitFor(() => {
+      expect(screen.getByTestId('minimized-state')).toHaveTextContent('true');
+    });
   });
 });

@@ -62,6 +62,30 @@
       "resumeTitle": "Ước tính của bạn đang dùng cài đặt mặc định",
       "resumeDescription": "Cá nhân hóa theo thói quen nấu ăn của bạn để AI ước tính calo và macro chính xác hơn.",
       "signOut": "Đăng xuất"
+    },
+    "onboardingNudge": {
+      "regionLabel": "Tiến độ thiết lập hồ sơ",
+      "title": "Cá nhân hóa ước tính dinh dưỡng",
+      "description": "Hoàn tất hồ sơ ngắn để AI tinh chỉnh calo và đa lượng theo cách nấu của bạn.",
+      "stepCounter": "Bước {current} / {total}",
+      "progressLabel": "Tiến độ thiết lập",
+      "cta": "Tiếp tục hồ sơ",
+      "minimize": "Thu gọn",
+      "minimizedTitle": "Hoàn thiện hồ sơ",
+      "restoreLabel": "Tiếp tục hồ sơ, bước {current} / {total}",
+      "saveError": "Không thể lưu nhắc nhở thiết lập. Vui lòng thử lại."
+    },
+    "userMenu": {
+      "openMenu": "Mở menu tài khoản",
+      "profile": "Hồ sơ",
+      "settings": "Cài đặt",
+      "signOut": "Đăng xuất",
+      "signOutError": "Không thể đăng xuất. Vui lòng thử lại.",
+      "account": "Tài khoản",
+      "expandOnHover": "Mở rộng khi di chuột"
+    },
+    "bottomTabs": {
+      "label": "Điều hướng chính"
     }
   },
   "nutrition": {

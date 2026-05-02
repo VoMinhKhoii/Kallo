@@ -25,7 +25,13 @@
  */
 
 import postgres from 'postgres';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import {
+  afterAll,
+  beforeAll,
+  describe as describeBase,
+  expect,
+  it,
+} from 'vitest';
 import { encodeDbUrl } from '@/lib/db';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -50,17 +56,53 @@ interface VectorResult {
 
 // ─── Setup ───────────────────────────────────────────────────────────────────
 
+async function hasSearchPipelinePrerequisite(databaseUrl: string) {
+  const checkSql = postgres(encodeDbUrl(databaseUrl));
+
+  try {
+    const rows = await checkSql<
+      Array<{
+        missingSearchText: number;
+        missingEmbeddings: number;
+        missingSearchTextAscii: number;
+      }>
+    >`
+      SELECT
+        COUNT(*) FILTER (WHERE search_text IS NULL) AS "missingSearchText",
+        COUNT(*) FILTER (WHERE embedding IS NULL) AS "missingEmbeddings",
+        COUNT(*) FILTER (
+          WHERE search_text_ascii IS NULL
+        ) AS "missingSearchTextAscii"
+      FROM vietnamese_food_composition
+    `;
+    const [row] = rows;
+
+    return (
+      Number(row.missingSearchText) === 0 &&
+      Number(row.missingEmbeddings) === 0 &&
+      Number(row.missingSearchTextAscii) === 0
+    );
+  } finally {
+    await checkSql.end();
+  }
+}
+
+const databaseUrl = process.env.DATABASE_URL;
+const searchPipelinePrerequisite = databaseUrl
+  ? await hasSearchPipelinePrerequisite(databaseUrl)
+  : false;
+const describe = searchPipelinePrerequisite ? describeBase : describeBase.skip;
 let sql: postgres.Sql;
 
-beforeAll(() => {
-  const url = process.env.DATABASE_URL;
-  if (!url) throw new Error('DATABASE_URL required');
-  sql = postgres(encodeDbUrl(url));
-});
+if (searchPipelinePrerequisite && databaseUrl) {
+  beforeAll(() => {
+    sql = postgres(encodeDbUrl(databaseUrl));
+  });
 
-afterAll(async () => {
-  await sql.end();
-});
+  afterAll(async () => {
+    await sql.end();
+  });
+}
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
