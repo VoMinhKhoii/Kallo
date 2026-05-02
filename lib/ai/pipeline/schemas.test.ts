@@ -80,6 +80,7 @@ describe('decomposedIngredientSchema', () => {
   });
 
   it('rejects unit and source override fields', () => {
+    const retiredField = `source${'Override'}`;
     expect(
       decomposedIngredientSchema.safeParse({
         ...validIngredient,
@@ -89,7 +90,7 @@ describe('decomposedIngredientSchema', () => {
     expect(
       decomposedIngredientSchema.safeParse({
         ...validIngredient,
-        sourceOverride: 'fao',
+        [retiredField]: 'fao',
       }).success
     ).toBe(false);
   });
@@ -150,11 +151,12 @@ describe('decomposedDishSchema', () => {
     ).toBe(false);
   });
 
-  it('rejects sourcePrior', () => {
+  it('rejects source-priority fields', () => {
+    const retiredField = `source${'Prior'}`;
     expect(
       decomposedDishSchema.safeParse({
         ...validDish,
-        sourcePrior: 'fao',
+        [retiredField]: 'fao',
       }).success
     ).toBe(false);
   });

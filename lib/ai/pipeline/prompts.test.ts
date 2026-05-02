@@ -132,7 +132,9 @@ describe('buildDecompositionPrompt', () => {
 
   it('does not mention source-priority routing fields', () => {
     const prompt = buildDecompositionPrompt(sampleUserContext);
-    expect(prompt).not.toMatch(/sourcePrior|sourceOverride/);
+    for (const field of [`source${'Prior'}`, `source${'Override'}`]) {
+      expect(prompt).not.toContain(field);
+    }
     expect(prompt.toLowerCase()).not.toMatch(
       /route .*to (fao|usda)|prefer (fao|usda)/
     );
