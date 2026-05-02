@@ -5,6 +5,7 @@ import { fetchWithTimeout } from '@/lib/fetch-with-timeout';
 import { capitalizeFirst } from '@/lib/utils';
 import type { GeminiClient } from '../gemini';
 import { matchIngredients } from '../matching';
+import type { RrfMeasurement } from '../matching/rrf-measurement';
 import { createSpeculativeMatcher } from '../matching/speculative';
 import { buildDecompositionPrompt, buildNutritionPrompt } from '../prompts';
 import {
@@ -53,6 +54,7 @@ import {
   type RawNutritionAdjustment,
   reconcileNutritionIds,
 } from './nutrition';
+import { aggregateRrfMeasurements } from './rrf-aggregation';
 import { buildPipelineRunRow, writePipelineRun } from './run-telemetry';
 import { mealDecompositionSchema, nutritionAdjustmentSchema } from './schemas';
 import {
@@ -352,6 +354,7 @@ async function runPipeline(
   let cacheHitL4 = false;
   let dbStateUnknownFires = 0;
   let preMatchAliasHits = 0;
+  const rrfMeasurements: RrfMeasurement[] = [];
 
   // Streaming policy (spec §4.4): item_name + item_macros stream incrementally.
   // On retry_step2, the second Call 2 re-emits item_macros; the client
@@ -541,6 +544,10 @@ async function runPipeline(
 
       return matchIngredients(allIngredients, rawInput, db, gemini, {
         concurrency: options.matchingConcurrency,
+        measurementContext: {
+          requestId: traceContext?.requestId,
+          rrfMeasurements,
+        },
       });
     }
   );
@@ -877,6 +884,7 @@ async function runPipeline(
   });
 
   const ambiguityFlagCounts = countAmbiguityFlags(allIngredients);
+  const rrf = aggregateRrfMeasurements(rrfMeasurements);
   let pipelineRunRow: ReturnType<typeof buildPipelineRunRow> | undefined;
 
   // Persist a pipeline_runs row when request-level tracing is enabled (§0.4).
@@ -906,6 +914,7 @@ async function runPipeline(
         },
         anomalyTypes: allAnomalies.map((a) => a.type),
         ambiguityFlagCounts,
+        rrf,
         counters: {
           preMatchAliasHits,
           cookedToRawFactorFires: assemblyMetrics.cookedToRawFactorFires,

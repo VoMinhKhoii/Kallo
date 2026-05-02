@@ -639,6 +639,63 @@ describe('analyzeMeal traceContext', () => {
     });
   });
 
+  it('persists RRF Phase A aggregate metrics when matching records measurements', async () => {
+    const db = makeDb();
+    const promptVersionsUsed = new Map<string, string>();
+    const traceContext: AnalyzeMealTraceContext = {
+      requestId: 'req-rrf',
+      db,
+      userId: 'user-test-1',
+      promptVersionsUsed,
+    };
+    mockMatchIngredients.mockImplementationOnce(
+      async (
+        _ingredients: unknown,
+        _mealContext: unknown,
+        _db: unknown,
+        _gemini: unknown,
+        opts: {
+          measurementContext?: {
+            rrfMeasurements?: {
+              topVectorEqualsTopFuzzy: boolean;
+              latencyMs: number;
+            }[];
+          };
+        }
+      ) => {
+        opts.measurementContext?.rrfMeasurements?.push(
+          { topVectorEqualsTopFuzzy: true, latencyMs: 4.4 },
+          { topVectorEqualsTopFuzzy: false, latencyMs: 12.7 }
+        );
+        return { matched: [], unmatched: [] };
+      }
+    );
+
+    const gemini = createMockGemini({
+      generateStructuredOutputStream: vi
+        .fn()
+        .mockResolvedValueOnce(VALID_DECOMP)
+        .mockResolvedValueOnce(VALID_NUTRITION),
+    });
+
+    await analyzeMeal(
+      'cơm trắng',
+      USER_CONTEXT,
+      db,
+      gemini,
+      undefined,
+      traceContext
+    );
+
+    expect(mockDbValues).toHaveBeenCalledTimes(1);
+    expect(mockDbValues.mock.calls[0][0]).toMatchObject({
+      rrfSampled: true,
+      rrfDisagreementCount: 1,
+      rrfIngredientsObserved: 2,
+      rrfMeasurementLatencyMs: 13,
+    });
+  });
+
   it('retries Call 2 when validation returns a density_envelope warning', async () => {
     const db = makeDb();
     const promptVersionsUsed = new Map<string, string>();
@@ -799,7 +856,7 @@ describe('shadow-runner integration', () => {
 
     expect(response.success).toBe(true);
     await vi.waitFor(() => expect(persistShadowRun).toHaveBeenCalledOnce());
-    expect(mockMatchIngredients.mock.calls[1]?.[4]).toEqual({
+    expect(mockMatchIngredients.mock.calls[1]?.[4]).toMatchObject({
       concurrency: 1,
     });
   });

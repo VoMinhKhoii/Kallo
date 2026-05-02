@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 import type { AmbiguityFlag } from '@/lib/ai/types';
 import type { AppDb } from '@/lib/db';
+import type { RrfAggregate } from './rrf-aggregation';
 
 export const hashUserId = (id: string): string =>
   createHash('sha256').update(id).digest('hex');
@@ -24,6 +25,7 @@ export interface BuildPipelineRunRowInput {
   counts: { ingredient: number; matched: number; unmatched: number };
   anomalyTypes: string[];
   ambiguityFlagCounts: Partial<Record<AmbiguityFlag, number>>;
+  rrf: RrfAggregate;
   counters: {
     preMatchAliasHits: number;
     cookedToRawFactorFires: number;
@@ -61,6 +63,10 @@ export function buildPipelineRunRow(input: BuildPipelineRunRowInput) {
     unmatchedCount: input.counts.unmatched,
     anomalyTypes: input.anomalyTypes,
     ambiguityFlagCounts: input.ambiguityFlagCounts,
+    rrfSampled: input.rrf.rrfSampled,
+    rrfDisagreementCount: input.rrf.rrfDisagreementCount,
+    rrfIngredientsObserved: input.rrf.rrfIngredientsObserved,
+    rrfMeasurementLatencyMs: input.rrf.rrfMeasurementLatencyMs,
     preMatchAliasHits: input.counters.preMatchAliasHits,
     cookedToRawFactorFires: input.counters.cookedToRawFactorFires,
     densityEnvelopeFires: input.counters.densityEnvelopeFires,

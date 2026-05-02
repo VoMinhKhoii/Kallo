@@ -589,6 +589,10 @@ export const pipelineRuns = pgTable('pipeline_runs', {
     .$type<Record<string, number>>()
     .notNull()
     .default(sql`'{}'::jsonb`),
+  rrfSampled: boolean('rrf_sampled').notNull().default(false),
+  rrfDisagreementCount: smallint('rrf_disagreement_count'),
+  rrfIngredientsObserved: smallint('rrf_ingredients_observed'),
+  rrfMeasurementLatencyMs: integer('rrf_measurement_latency_ms'),
   preMatchAliasHits: smallint('pre_match_alias_hits').notNull().default(0),
   cookedToRawFactorFires: smallint('cooked_to_raw_factor_fires')
     .notNull()

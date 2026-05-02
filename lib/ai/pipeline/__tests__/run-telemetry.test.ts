@@ -22,6 +22,12 @@ describe('buildPipelineRunRow', () => {
       counts: { ingredient: 5, matched: 4, unmatched: 1 },
       anomalyTypes: [],
       ambiguityFlagCounts: {},
+      rrf: {
+        rrfSampled: false,
+        rrfDisagreementCount: null,
+        rrfIngredientsObserved: null,
+        rrfMeasurementLatencyMs: null,
+      },
       counters: {
         preMatchAliasHits: 0,
         cookedToRawFactorFires: 0,
@@ -52,6 +58,12 @@ describe('buildPipelineRunRow', () => {
         counts: { ingredient: 1, matched: 1, unmatched: 0 },
         anomalyTypes: [],
         ambiguityFlagCounts: {},
+        rrf: {
+          rrfSampled: false,
+          rrfDisagreementCount: null,
+          rrfIngredientsObserved: null,
+          rrfMeasurementLatencyMs: null,
+        },
         counters: {
           preMatchAliasHits: 0,
           cookedToRawFactorFires: 0,
@@ -80,6 +92,12 @@ describe('buildPipelineRunRow', () => {
       ambiguityFlagCounts: {
         cross_cuisine_ingredient: 2,
       },
+      rrf: {
+        rrfSampled: true,
+        rrfDisagreementCount: 2,
+        rrfIngredientsObserved: 5,
+        rrfMeasurementLatencyMs: 18,
+      },
       counters: {
         preMatchAliasHits: 0,
         cookedToRawFactorFires: 2,
@@ -104,5 +122,9 @@ describe('buildPipelineRunRow', () => {
     expect(row.ambiguityFlagCounts).toEqual({
       cross_cuisine_ingredient: 2,
     });
+    expect(row.rrfSampled).toBe(true);
+    expect(row.rrfDisagreementCount).toBe(2);
+    expect(row.rrfIngredientsObserved).toBe(5);
+    expect(row.rrfMeasurementLatencyMs).toBe(18);
   });
 });
