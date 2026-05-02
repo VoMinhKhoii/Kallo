@@ -43,7 +43,7 @@ BEGIN
     PERFORM cron.schedule(
       'reap-pipeline-requests-daily',
       '17 3 * * *',
-      $$SELECT public.reap_pipeline_requests();$$
+      $cron$SELECT public.reap_pipeline_requests();$cron$
     );
   END IF;
 EXCEPTION
