@@ -162,6 +162,13 @@
       "when": 1776402838042,
       "tag": "20260417051358_add_preferred_locale",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1777580135880,
+      "tag": "20260430201535_add_onboarding_minimized_at",
+      "breakpoints": true
     }
   ]
 }

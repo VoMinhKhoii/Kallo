@@ -1,17 +1,23 @@
 'use client';
 
-import { Menu, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
+import { toast } from 'sonner';
 import { WizardShell } from '@/components/onboarding/wizard-shell';
-import { usePathname, useRouter } from '@/i18n/navigation';
-import type { getOnboardingProfile } from '@/lib/onboarding/actions';
+import { useRouter } from '@/i18n/navigation';
+import {
+  type getOnboardingProfile,
+  minimizeOnboardingNudge,
+  restoreOnboardingNudge,
+} from '@/lib/onboarding/actions';
 import {
   getOnboardingResumeStep,
   shouldShowOnboardingResume,
 } from '@/lib/onboarding/progress';
 import { readStepOneLocaleDraft } from '@/lib/onboarding/step-one-locale-draft';
-import { MainSidebar } from './main-sidebar';
+import { BottomTabBar } from './bottom-tab-bar';
+import { DesktopSidebar } from './desktop-sidebar';
+import type { UserMenuUser } from './user-menu';
 
 type ProfileRow = NonNullable<Awaited<ReturnType<typeof getOnboardingProfile>>>;
 
@@ -19,19 +25,26 @@ interface AppShellProps {
   onboardingStep: number;
   initialProfile: ProfileRow | null;
   isFirstSession: boolean;
+  user?: UserMenuUser;
+  initialSidebarState?: 'closed' | 'open';
+  initialSidebarExpandMode?: 'click' | 'hover';
   children: React.ReactNode;
 }
+
+const FALLBACK_USER: UserMenuUser = { email: null, displayName: null };
 
 export function AppShell({
   onboardingStep,
   initialProfile,
   isFirstSession,
+  user = FALLBACK_USER,
+  initialSidebarState,
+  initialSidebarExpandMode,
   children,
 }: AppShellProps) {
+  const tNudge = useTranslations('app.onboardingNudge');
   const hasStepOneLocaleDraft = readStepOneLocaleDraft() !== null;
   const router = useRouter();
-  const pathname = usePathname();
-  const t = useTranslations('app.shell');
   const showResumeOnboarding = shouldShowOnboardingResume(
     initialProfile,
     onboardingStep
@@ -40,17 +53,6 @@ export function AppShell({
   const [showOnboarding, setShowOnboarding] = useState(
     (onboardingStep === 0 && isFirstSession) || hasStepOneLocaleDraft
   );
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [mobileMenuPath, setMobileMenuPath] = useState(pathname);
-  const overlayRef = useRef<HTMLDivElement>(null);
-  const isMobileMenuVisible = mobileMenuOpen && mobileMenuPath === pathname;
-
-  // Focus the overlay dialog when it opens for keyboard accessibility
-  useEffect(() => {
-    if (isMobileMenuVisible) {
-      overlayRef.current?.focus();
-    }
-  }, [isMobileMenuVisible]);
 
   const handleClose = () => {
     setShowOnboarding(false);
@@ -61,79 +63,75 @@ export function AppShell({
     router.refresh();
   };
 
+  const handleResume = () => setShowOnboarding(true);
+  const showOnboardingNudge = showResumeOnboarding && !showOnboarding;
+
+  // Onboarding minimized state: server-truth from `initialProfile`, with
+  // optimistic local override so the UI is snappy. The server actions
+  // persist the choice in `user_profiles.onboarding_minimized_at`. We
+  // intentionally don't use localStorage — the choice should sync across
+  // the user's devices and the server should know about it for SSR.
+  const [isOnboardingMinimized, setOnboardingMinimized] = useState(
+    Boolean(initialProfile?.onboardingMinimizedAt)
+  );
+
+  const handleMinimizeNudge = async () => {
+    setOnboardingMinimized(true);
+    try {
+      await minimizeOnboardingNudge();
+    } catch (error) {
+      // Roll back on failure — user sees the full nudge again, which is
+      // the safer default than a UI-only minimize that the server doesn't
+      // know about.
+      console.error('Failed to minimize onboarding nudge:', error);
+      toast.error(tNudge('saveError'));
+      setOnboardingMinimized(false);
+    }
+  };
+
+  const handleRestoreNudge = async () => {
+    setOnboardingMinimized(false);
+    try {
+      await restoreOnboardingNudge();
+    } catch (error) {
+      console.error('Failed to restore onboarding nudge:', error);
+      toast.error(tNudge('saveError'));
+      setOnboardingMinimized(true);
+    }
+  };
+
   return (
-    <div className="flex h-screen bg-nham-surface">
-      <div className="flex min-h-0 flex-1 gap-3 p-3">
-        {/* Desktop sidebar */}
+    <div className="flex min-h-screen bg-nham-surface">
+      <div className="flex min-h-0 flex-1 gap-3 p-3 pb-[calc(env(safe-area-inset-bottom)+72px)] md:pb-3">
+        {/* Desktop sidebar — hidden on mobile */}
         <div className="hidden md:block">
-          <MainSidebar
-            onboardingIncomplete={showResumeOnboarding && !showOnboarding}
-            onResumeOnboarding={() => setShowOnboarding(true)}
+          <DesktopSidebar
+            user={user}
+            onboardingIncomplete={showOnboardingNudge}
+            onboardingStep={onboardingStep}
+            onResumeOnboarding={handleResume}
+            isOnboardingMinimized={isOnboardingMinimized}
+            onMinimizeOnboarding={handleMinimizeNudge}
+            onRestoreOnboarding={handleRestoreNudge}
+            initialState={initialSidebarState}
+            initialExpandMode={initialSidebarExpandMode}
           />
         </div>
 
-        {/* Mobile sidebar overlay */}
-        {isMobileMenuVisible && (
-          <div
-            ref={overlayRef}
-            role="dialog"
-            aria-modal="true"
-            aria-label={t('navigationMenu')}
-            id="mobile-menu"
-            tabIndex={-1}
-            className="fixed inset-0 z-50 outline-none md:hidden"
-            onKeyDown={(e) => {
-              if (e.key === 'Escape') setMobileMenuOpen(false);
-            }}
-          >
-            <div
-              className="absolute inset-0 bg-black/20 backdrop-blur-[2px]"
-              onClick={() => setMobileMenuOpen(false)}
-              aria-hidden="true"
-            />
-            <div className="relative h-full w-64 p-3">
-              <MainSidebar
-                onboardingIncomplete={showResumeOnboarding && !showOnboarding}
-                onResumeOnboarding={() => setShowOnboarding(true)}
-              />
-            </div>
-          </div>
-        )}
-
-        {/* Main content area */}
-        <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
-          {/* Mobile header bar */}
-          <div className="flex items-center py-2 md:hidden">
-            <button
-              type="button"
-              onClick={() => {
-                if (isMobileMenuVisible) {
-                  setMobileMenuOpen(false);
-                  return;
-                }
-
-                setMobileMenuPath(pathname);
-                setMobileMenuOpen(true);
-              }}
-              aria-label={isMobileMenuVisible ? t('closeMenu') : t('openMenu')}
-              aria-expanded={isMobileMenuVisible}
-              aria-controls="mobile-menu"
-              className="flex h-8 w-8 items-center justify-center rounded-lg text-nham-text-muted transition-colors hover:bg-nham-hover/60"
-            >
-              {isMobileMenuVisible ? (
-                <X className="h-5 w-5" />
-              ) : (
-                <Menu className="h-5 w-5" />
-              )}
-            </button>
-          </div>
-
-          {/* Page content */}
-          <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-            {children}
-          </div>
-        </div>
+        {/* Page content */}
+        <div className="flex min-h-0 flex-1 flex-col">{children}</div>
       </div>
+
+      {/* Mobile bottom tab bar */}
+      <BottomTabBar
+        user={user}
+        onboardingIncomplete={showOnboardingNudge}
+        onboardingStep={onboardingStep}
+        onResumeOnboarding={handleResume}
+        isOnboardingMinimized={isOnboardingMinimized}
+        onMinimizeOnboarding={handleMinimizeNudge}
+        onRestoreOnboarding={handleRestoreNudge}
+      />
 
       {showOnboarding && (
         <WizardShell

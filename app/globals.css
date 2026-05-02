@@ -205,4 +205,31 @@
     background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
     background-repeat: repeat;
   }
+
+  /* DM Sans display utility — replaces inline `style={{ fontFamily }}`
+     repeated across the sidebar and shell. */
+  .font-sans-display {
+    font-family: var(--font-dm-sans), ui-sans-serif, system-ui, sans-serif;
+  }
+
+  /* Subtle pulse used for the onboarding-incomplete dot. */
+  @keyframes nham-pulse-dot {
+    0%,
+    100% {
+      transform: scale(1);
+      opacity: 1;
+    }
+    50% {
+      transform: scale(1.18);
+      opacity: 0.7;
+    }
+  }
+  .animate-pulse-dot {
+    animation: nham-pulse-dot 1.8s ease-in-out infinite;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .animate-pulse-dot {
+      animation: none;
+    }
+  }
 }

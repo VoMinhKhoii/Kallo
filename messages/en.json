@@ -61,6 +61,30 @@
       "resumeTitle": "Your estimates are using default settings",
       "resumeDescription": "Personalize them for your cooking style to get the most accurate calorie and macro extractions from the AI.",
       "signOut": "Sign out"
+    },
+    "onboardingNudge": {
+      "regionLabel": "Profile setup progress",
+      "title": "Personalize your nutrition estimates",
+      "description": "Finish a quick profile so the AI tailors calories and macros to your cooking style.",
+      "stepCounter": "Step {current} of {total}",
+      "progressLabel": "Onboarding progress",
+      "cta": "Resume profile",
+      "minimize": "Minimize",
+      "minimizedTitle": "Finish your profile",
+      "restoreLabel": "Resume profile setup, step {current} of {total}",
+      "saveError": "Could not save setup reminder. Please try again."
+    },
+    "userMenu": {
+      "openMenu": "Open account menu",
+      "profile": "Profile",
+      "settings": "Settings",
+      "signOut": "Sign out",
+      "signOutError": "Could not sign out. Please try again.",
+      "account": "Account",
+      "expandOnHover": "Expand on hover"
+    },
+    "bottomTabs": {
+      "label": "Primary navigation"
     }
   },
   "nutrition": {
