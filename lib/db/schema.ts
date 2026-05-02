@@ -68,6 +68,13 @@ export const userProfiles = pgTable(
     onboardingCompletedAt: timestamp('onboarding_completed_at', {
       withTimezone: true,
     }),
+    // When the user dismisses the onboarding nudge to its minimized pill
+    // form. NULL = full nudge shown. Set = minimized pill shown.
+    // Cleared (back to NULL) when the user clicks the pill to resume,
+    // or implicitly when onboarding completes (the nudge unmounts anyway).
+    onboardingMinimizedAt: timestamp('onboarding_minimized_at', {
+      withTimezone: true,
+    }),
 
     createdAt: timestamp('created_at', { withTimezone: true })
       .notNull()
@@ -453,6 +460,28 @@ export const pipelineRequests = pgTable(
   ]
 );
 
+export const pipelineRequestReplayAuditLogs = pgTable(
+  'pipeline_request_replay_audit_logs',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    adminUserIdHash: text('admin_user_id_hash').notNull(),
+    originalRequestId: uuid('original_request_id').notNull(),
+    replayRequestId: uuid('replay_request_id').notNull(),
+    dryRun: boolean('dry_run').notNull().default(false),
+  },
+  (table) => [
+    index('pipeline_replay_audit_original_idx').on(table.originalRequestId),
+    index('pipeline_replay_audit_replay_idx').on(table.replayRequestId),
+    index('pipeline_replay_audit_admin_created_idx').on(
+      table.adminUserIdHash,
+      table.createdAt
+    ),
+  ]
+);
+
 export const pendingAnalyses = pgTable(
   'pending_analyses',
   {
@@ -609,20 +638,28 @@ export const pipelineRuns = pgTable('pipeline_runs', {
     .default(sql`'{}'::text[]`),
 });
 
-export const pipelineShadowRuns = pgTable('pipeline_shadow_runs', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  createdAt: timestamp('created_at', { withTimezone: true })
-    .notNull()
-    .defaultNow(),
-  // Joins back to pipeline_runs.request_id to recover input context.
-  requestId: text('request_id').notNull(),
-  // The primary run that this shadow was paired against.
-  primaryRunId: uuid('primary_run_id'),
-  candidatePromptLabel: text('candidate_prompt_label').notNull(),
-  candidateModel: text('candidate_model').notNull(),
-  primaryOutput: jsonb('primary_output').notNull(),
-  candidateOutput: jsonb('candidate_output'),
-  divergence: jsonb('divergence').notNull(),
-  outcome: text('outcome').notNull(),
-  candidateMs: integer('candidate_ms').notNull().default(0),
-});
+export const pipelineShadowRuns = pgTable(
+  'pipeline_shadow_runs',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    // Joins back to pipeline_runs.request_id to recover input context.
+    requestId: text('request_id').notNull(),
+    // The primary run that this shadow was paired against.
+    primaryRunId: uuid('primary_run_id').references(() => pipelineRuns.id, {
+      onDelete: 'set null',
+    }),
+    candidatePromptLabel: text('candidate_prompt_label').notNull(),
+    candidateModel: text('candidate_model').notNull(),
+    primaryOutput: jsonb('primary_output').notNull(),
+    candidateOutput: jsonb('candidate_output'),
+    divergence: jsonb('divergence').notNull(),
+    outcome: text('outcome').notNull(),
+    candidateMs: integer('candidate_ms').notNull().default(0),
+  },
+  (table) => [
+    index('pipeline_shadow_runs_primary_run_idx').on(table.primaryRunId),
+  ]
+);

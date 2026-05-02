@@ -305,6 +305,7 @@ export async function matchIngredients(
               ...result.value,
               ingredientName: ingredientRawName(retry.original),
               ingredientId: retry.original.ingredientId,
+              viaAlias: true,
             });
             rescuedIndices.add(retry.originalIndex);
             console.info(

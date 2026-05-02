@@ -222,6 +222,7 @@ jobs:
             --min-instances=0
             --max-instances=3
             --set-secrets=DATABASE_URL=nham-nonprod-database-url:latest,GEMINI_API_KEY=nham-nonprod-gemini-api-key:latest
+            --set-env-vars=ADMIN_EMAILS=${{ vars.ADMIN_EMAILS }}
             --update-labels=commit-sha=${{ github.event.workflow_run.head_sha }},pr-number=${{ env.PR_NUMBER }},deployment-target=preview,github-run-id=${{ github.run_id }},database-mode=shared
       - id: deploy_branch
         if: steps.pr_state.outputs.should_deploy == 'true' && env.PREVIEW_DATABASE_MODE == 'branch' && steps.pr_state_recheck.outputs.should_continue_deploy == 'true'
@@ -240,7 +241,7 @@ jobs:
             --timeout=60
             --min-instances=0
             --max-instances=3
-            --update-env-vars=^##^DATABASE_URL=${{ env.POSTGRES_URL_NON_POOLING }}
+            --update-env-vars=^##^DATABASE_URL=${{ env.POSTGRES_URL_NON_POOLING }}##ADMIN_EMAILS=${{ vars.ADMIN_EMAILS }}
             --set-secrets=GEMINI_API_KEY=nham-nonprod-gemini-api-key:latest
             --update-labels=commit-sha=${{ github.event.workflow_run.head_sha }},pr-number=${{ env.PR_NUMBER }},deployment-target=preview,github-run-id=${{ github.run_id }},database-mode=branch
       - name: Resolve deploy URL

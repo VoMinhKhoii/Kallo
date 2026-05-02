@@ -1,4 +1,4 @@
-import { createHash } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import type { AmbiguityFlag } from '@/lib/ai/types';
 import type { AppDb } from '@/lib/db';
 import type { RrfAggregate } from './rrf-aggregation';
@@ -51,6 +51,7 @@ export function buildPipelineRunRow(input: BuildPipelineRunRowInput) {
     }
   }
   return {
+    id: randomUUID(),
     userIdHash: hashUserId(input.userId),
     requestId: input.requestId,
     modelCall1: input.modelCall1,

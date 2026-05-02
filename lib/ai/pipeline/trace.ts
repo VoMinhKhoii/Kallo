@@ -8,7 +8,7 @@ import {
   promptVersions,
 } from '@/lib/db/schema';
 
-const enabled = () => process.env.PIPELINE_TRACE_ENABLED !== 'false';
+const enabled = () => process.env.PIPELINE_TRACE_ENABLED === 'true';
 const cache = new Map<string, string>(); // `${name}:${hash}` -> id
 
 export function hashPromptBuilder(

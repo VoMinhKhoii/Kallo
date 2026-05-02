@@ -11,7 +11,6 @@ import { buildDecompositionPrompt, buildNutritionPrompt } from '../prompts';
 import {
   computeStreamingMealItem,
   extractCompletedMealItemNutrition,
-  extractMealItemNameOccurrences,
 } from '../streaming/parsers';
 import type { StreamEvent } from '../streaming/types';
 import type {
@@ -36,6 +35,7 @@ import {
   sha256Hex,
   stableStringify,
 } from './decomposition-cache';
+import { createDecompositionStreamController } from './decomposition-stream';
 import {
   handleError,
   isNonFoodError,
@@ -343,14 +343,10 @@ async function runPipeline(
   // + per-item name detection for progressive UI
   emit({ type: 'stage', stage: 'decomposing' });
   const speculativeMatcher = createSpeculativeMatcher(db, gemini);
-  // Per-name running counts of meal-item-name occurrences emitted during
-  // streaming; supports duplicate-name dishes (e.g., two `cơm trắng`).
-  const streamEmittedCounts = new Map<string, number>();
-  // Composite key `${name}::${occurrence}` → minted mealItemId. Used after
-  // Call 1 parses to thread streamed UUIDs into the decomposition so
-  // streamed `item_name` ids match post-parse `item_macros` ids (§0.1).
-  const streamMealItemIds = new Map<string, string>();
-  let mealItemIndex = 0;
+  const decompositionStream = createDecompositionStreamController({
+    emit,
+    prewarm: speculativeMatcher,
+  });
   let cacheHitL4 = false;
   let dbStateUnknownFires = 0;
   let preMatchAliasHits = 0;
@@ -360,29 +356,6 @@ async function runPipeline(
   // On retry_step2, the second Call 2 re-emits item_macros; the client
   // overwrites by stable ids (§0.1). If retry_step2_count > 0 exceeds 10%
   // over a 7-day window (KPI block 8), revisit buffer-vs-stream.
-  const composedOnChunk = (accumulated: string) => {
-    // Existing: pre-warm embedding cache for ingredient names
-    speculativeMatcher(accumulated);
-
-    // New: detect meal item name occurrences, mint UUIDs, emit progressively.
-    const newOccurrences = extractMealItemNameOccurrences(
-      accumulated,
-      streamEmittedCounts
-    );
-    for (const { name, occurrence } of newOccurrences) {
-      const displayName = capitalizeFirst(name);
-      const key = `${displayName}::${occurrence}`;
-      const mealItemId = generateMealItemId();
-      streamMealItemIds.set(key, mealItemId);
-      emit({
-        type: 'item_name',
-        name: displayName,
-        index: mealItemIndex++,
-        mealItemId,
-      });
-    }
-  };
-
   const renderedDecompositionPrompt = buildDecompositionPrompt(userContext);
   const l4CacheEnabled =
     options.l4Cache?.enabled ?? process.env.NODE_ENV !== 'test';
@@ -430,7 +403,11 @@ async function runPipeline(
               topK: 1,
               abortSignal: signal,
             },
-            { onChunk: composedOnChunk, trace: callTrace }
+            {
+              onAttemptStart: decompositionStream.resetAttempt,
+              onChunk: decompositionStream.handleChunk,
+              trace: callTrace,
+            }
           ),
         LLM_TIMEOUT_MS,
         'decomposition'
@@ -449,16 +426,7 @@ async function runPipeline(
   // ids match `item_macros` ids for the same logical slot (§0.1, §4.4).
   // Items that didn't appear in the stream (LLM held the whole tail until
   // close) get fresh UUIDs minted by `ensureIdsOnDecomposition`.
-  const parseCounts = new Map<string, number>();
-  for (const mi of rawDecomposition.mealItems) {
-    const displayName = capitalizeFirst(mi.name);
-    const occ = (parseCounts.get(displayName) ?? 0) + 1;
-    parseCounts.set(displayName, occ);
-    const streamedId = streamMealItemIds.get(`${displayName}::${occ}`);
-    if (streamedId) {
-      mi.mealItemId = streamedId;
-    }
-  }
+  decompositionStream.applyParsedIds(rawDecomposition);
   const decomposition: MealDecompositionWithIds =
     ensureIdsOnDecomposition(rawDecomposition);
   const decomposeMs = Date.now() - t0;
@@ -490,17 +458,7 @@ async function runPipeline(
   // streaming extractor. Iterating over `decomposition.mealItems` (post
   // `ensureIdsOnDecomposition`) guarantees each emit carries a stable
   // `mealItemId`.
-  const streamedIds = new Set(streamMealItemIds.values());
-  for (const mi of decomposition.mealItems) {
-    if (!streamedIds.has(mi.mealItemId)) {
-      emit({
-        type: 'item_name',
-        name: mi.name,
-        index: mealItemIndex++,
-        mealItemId: mi.mealItemId,
-      });
-    }
-  }
+  decompositionStream.emitUnstreamed(decomposition);
 
   // D6 Layer 1: Check isFood field from LLM
   if (!decomposition.isFood) {
@@ -669,7 +627,13 @@ async function runPipeline(
               topK: 1,
               abortSignal: signal,
             },
-            { onChunk: nutritionOnChunk, trace: callTrace }
+            {
+              onAttemptStart: () => {
+                lastExtractedCount = 0;
+              },
+              onChunk: nutritionOnChunk,
+              trace: callTrace,
+            }
           ),
         LLM_TIMEOUT_MS,
         'nutrition'
@@ -733,7 +697,13 @@ async function runPipeline(
                 topK: 1,
                 abortSignal: signal,
               },
-              { onChunk: nutritionOnChunk, trace: callTrace }
+              {
+                onAttemptStart: () => {
+                  lastExtractedCount = 0;
+                },
+                onChunk: nutritionOnChunk,
+                trace: callTrace,
+              }
             ),
           LLM_TIMEOUT_MS,
           'nutrition-retry'
@@ -886,6 +856,7 @@ async function runPipeline(
   const ambiguityFlagCounts = countAmbiguityFlags(allIngredients);
   const rrf = aggregateRrfMeasurements(rrfMeasurements);
   let pipelineRunRow: ReturnType<typeof buildPipelineRunRow> | undefined;
+  let pipelineRunId: string | undefined;
 
   // Persist a pipeline_runs row when request-level tracing is enabled (§0.4).
   // Telemetry writes are best-effort and never block the response or throw.
@@ -927,19 +898,26 @@ async function runPipeline(
           dbStateUnknownFires,
           retryStep2Count,
         },
-        escalated: false,
+        escalated:
+          modelProfileForRun.escalationModel !== null &&
+          selectedNutritionModel === modelProfileForRun.escalationModel,
         cacheHitL4,
-        retryCount: 0,
+        retryCount: retryStep2Count,
         promptPersonalizationFields: personalizationFields,
       });
       pipelineRunRow = row;
+      pipelineRunId = row.id;
       await writePipelineRun(traceContext.db, row);
     } catch (err) {
       console.error('[ai/pipeline] failed to write pipeline_runs row', err);
     }
   }
 
-  const response: PipelineResponse = { success: true, data: pipelineResult };
+  const response: PipelineResponse = {
+    success: true,
+    data: pipelineResult,
+    __telemetryRunId: pipelineRunId,
+  };
   if (process.env.NODE_ENV === 'test' && pipelineRunRow) {
     return { ...response, __telemetry: pipelineRunRow };
   }
@@ -1005,6 +983,7 @@ function scheduleShadowRun(args: {
       {
         requestId: args.traceContext?.requestId ?? '',
         primary: args.response,
+        primaryRunId: args.response.__telemetryRunId,
         candidatePromptLabel:
           shadowCfg.candidatePromptLabel ?? NUTRITION_PROMPT_LABEL_CANDIDATE,
         candidateModel: shadowCfg.candidateModel ?? NUTRITION_MODEL_CANDIDATE,

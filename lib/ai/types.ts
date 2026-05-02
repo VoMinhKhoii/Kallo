@@ -155,6 +155,12 @@ export interface MealDecomposition {
 /** Nutrition per 100g from the food composition DB */
 export type NutritionPer100g = NutritionValues;
 
+/** Strategy that produced the winning match (vector pgvector vs fuzzy pg_trgm) */
+export type MatchType = 'vector' | 'fuzzy';
+
+/** Food-composition source the winning match came from */
+export type MatchSource = 'fao' | 'usda';
+
 /** A successfully matched ingredient */
 export interface MatchedIngredient {
   /**
@@ -172,6 +178,14 @@ export interface MatchedIngredient {
   nutritionPer100g: NutritionPer100g;
   /** DB-enforced row state (§0.2). 'unknown' when the row pre-dates the column. */
   dbState: 'raw' | 'cooked' | 'unknown';
+  /** Diagnostic: which strategy produced the match. Optional for backward-compat with mocks. */
+  matchType?: MatchType;
+  /** Diagnostic: which DB source the match came from. */
+  source?: MatchSource;
+  /** Diagnostic: wall-clock time for the winning match attempt (DB roundtrips). */
+  latencyMs?: number;
+  /** Diagnostic: true when the original name failed and the alias-fallback rescued it. */
+  viaAlias?: boolean;
 }
 
 /** An unmatched ingredient — logged for future DB expansion */
@@ -291,9 +305,11 @@ export type PipelineResponse =
       success: true;
       data: PipelineResult;
       __telemetry?: import('./pipeline/run-telemetry').PipelineRunRow;
+      __telemetryRunId?: string;
     }
   | {
       success: false;
       error: PipelineError;
       __telemetry?: import('./pipeline/run-telemetry').PipelineRunRow;
+      __telemetryRunId?: string;
     };

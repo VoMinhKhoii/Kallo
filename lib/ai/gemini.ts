@@ -28,7 +28,7 @@ const DEFAULT_RETRY: RetryOptions = {
   baseDelayMs: 1000,
 };
 
-interface StructuredOutputParams<T> {
+export interface StructuredOutputParams<T> {
   schema: ZodType<T>;
   systemPrompt: string;
   userMessage: string;
@@ -53,7 +53,8 @@ export interface GeminiCallTrace {
   promptRendered: string;
 }
 
-interface StreamOptions {
+export interface StreamOptions {
+  onAttemptStart?: (attempt: number) => void;
   onChunk?: (accumulated: string) => void;
   trace?: GeminiCallTrace;
 }
@@ -233,7 +234,7 @@ export function createGeminiClient(
       params: StructuredOutputParams<T>,
       opts?: StreamOptions
     ): Promise<T> {
-      const { onChunk, trace } = opts ?? {};
+      const { onAttemptStart, onChunk, trace } = opts ?? {};
       const jsonSchema = toJSONSchema(params.schema);
       const promptSize = params.systemPrompt.length + params.userMessage.length;
       console.info(
@@ -248,7 +249,7 @@ export function createGeminiClient(
       } | null = null;
 
       const onAttempt = trace
-        ? (attempt: number, t0: number, result: T | null, err: unknown) => {
+        ? (attempt: number, t0: number, _result: T | null, err: unknown) => {
             logLlmCall({
               db: trace.db,
               requestId: trace.requestId,
@@ -256,7 +257,7 @@ export function createGeminiClient(
               promptVersionId: trace.promptVersionId,
               model: params.model,
               promptRendered: trace.promptRendered,
-              responseRaw: result !== null ? lastAccumulated : null,
+              responseRaw: lastAccumulated,
               inputTokens: lastUsageMeta?.promptTokenCount ?? null,
               outputTokens: lastUsageMeta?.candidatesTokenCount ?? null,
               latencyMs: Date.now() - t0,
@@ -272,7 +273,8 @@ export function createGeminiClient(
         : undefined;
 
       return withRetry(
-        async (_attempt) => {
+        async (attempt) => {
+          onAttemptStart?.(attempt);
           // Reset per-attempt state.
           lastAccumulated = null;
           lastUsageMeta = null;
@@ -299,6 +301,7 @@ export function createGeminiClient(
           for await (const chunk of response) {
             const text = chunk.text ?? '';
             accumulated += text;
+            lastAccumulated = accumulated; // preserve partial text on failure
             if (chunk.usageMetadata) {
               lastUsageMeta = chunk.usageMetadata as {
                 promptTokenCount?: number;
@@ -312,7 +315,6 @@ export function createGeminiClient(
 
           if (!accumulated)
             throw new Error('Gemini stream returned empty response');
-          lastAccumulated = accumulated;
           return params.schema.parse(JSON.parse(accumulated));
         },
         { label: `${params.model}-stream`, onAttempt }

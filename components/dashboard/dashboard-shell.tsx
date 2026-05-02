@@ -2,10 +2,15 @@
 
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslations } from 'next-intl';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { toast } from 'sonner';
+import { Skeleton } from '@/components/ui/skeleton';
 import { useDailyMeals } from '@/hooks/use-daily-meals';
 import { useWeightSummary } from '@/hooks/use-weight-summary';
-import { loadCalorieAdherenceHeatmap } from '@/lib/actions/dashboard';
+import {
+  loadCalorieAdherenceHeatmap,
+  loadVerdictAction,
+} from '@/lib/actions/dashboard';
 import { buildCalorieAdherenceHeatmap } from '@/lib/dashboard/adherence';
 import { getMsUntilNextLocalMidnight } from '@/lib/dashboard/heatmap-rollover';
 import {
@@ -15,7 +20,6 @@ import {
 } from '@/lib/dashboard/today';
 import { cn } from '@/lib/utils';
 import { CurrentSection } from './current/current-section';
-import { getStatsData, getVerdictData } from './mock-data';
 import { AdherenceHeatmap } from './progress/adherence-heatmap';
 import { ProgressSection } from './progress/progress-section';
 import { WeightChart } from './progress/weight-chart';
@@ -47,6 +51,81 @@ function getWeekTitle(): string {
   return `Week of ${fmt(monday)} – ${fmt(sunday)}, ${year}`;
 }
 
+function CurrentSectionSkeleton() {
+  return (
+    <div
+      role="status"
+      aria-live="polite"
+      aria-label="Loading dashboard summary"
+      className="flex items-stretch gap-5"
+    >
+      <div className="flex shrink-0 flex-col rounded-2xl border border-nham-border/60 bg-card p-4 shadow-[0_4px_24px_rgba(44,36,22,0.04)]">
+        <Skeleton className="mb-1 h-3 w-28 rounded-full bg-nham-track" />
+        <Skeleton className="h-[84px] w-[168px] rounded-2xl bg-nham-track" />
+      </div>
+
+      <div className="flex shrink-0 items-start gap-4">
+        <div className="flex h-full flex-col gap-2 rounded-2xl border border-nham-border/60 bg-card p-4 shadow-[0_4px_24px_rgba(44,36,22,0.04)]">
+          <Skeleton className="h-3 w-24 rounded-full bg-nham-track" />
+          <Skeleton className="h-[76px] w-[138px] rounded-xl bg-nham-track" />
+        </div>
+        <div className="mt-3 h-full w-px self-stretch bg-nham-border/40" />
+        <div className="flex h-full flex-col gap-2 rounded-2xl border border-nham-border/60 bg-card p-4 shadow-[0_4px_24px_rgba(44,36,22,0.04)]">
+          <Skeleton className="h-3 w-28 rounded-full bg-nham-track" />
+          <Skeleton className="h-7 w-24 rounded-full bg-nham-track" />
+          <Skeleton className="h-3 w-32 rounded-full bg-nham-track" />
+        </div>
+      </div>
+
+      <div className="flex-1" />
+
+      <div className="w-[340px] shrink-0 rounded-2xl border border-nham-border/60 bg-card p-4 shadow-[0_4px_24px_rgba(44,36,22,0.04)]">
+        <Skeleton className="mb-2 h-3 w-24 rounded-full bg-nham-track" />
+        <Skeleton className="h-[120px] w-full rounded-xl bg-nham-track" />
+      </div>
+    </div>
+  );
+}
+
+function ProgressSectionSkeleton({ range }: { range: TimeRange }) {
+  const heatmapSquares = range === '30d' ? 35 : 70;
+
+  return (
+    <div className="flex h-full gap-3">
+      <div className="flex flex-1 flex-col rounded-2xl border border-nham-border/60 bg-card p-3 shadow-[0_4px_24px_rgba(44,36,22,0.04)]">
+        <Skeleton className="mb-1 h-3 w-28 rounded-full bg-nham-track" />
+        <Skeleton className="min-h-[220px] w-full flex-1 rounded-xl bg-nham-track" />
+      </div>
+      <div className="flex shrink-0 flex-col rounded-2xl border border-nham-border/60 bg-card px-3 pt-3 pb-2 shadow-[0_4px_24px_rgba(44,36,22,0.04)]">
+        <Skeleton className="mb-1.5 h-3 w-28 rounded-full bg-nham-track" />
+        <div className="flex flex-1 items-center gap-1">
+          <div className="flex shrink-0 flex-col gap-1" aria-hidden="true">
+            {Array.from({ length: 7 }, (_, index) => (
+              <Skeleton
+                key={index}
+                className="h-[19px] w-3 rounded-sm bg-nham-track"
+              />
+            ))}
+          </div>
+          <div className="grid flex-1 gap-1" aria-hidden="true">
+            {Array.from({ length: heatmapSquares }, (_, index) => (
+              <Skeleton
+                key={index}
+                className="h-[19px] w-[19px] rounded-[3px] bg-nham-track"
+              />
+            ))}
+          </div>
+        </div>
+        <div className="mt-2 flex items-center gap-2">
+          <Skeleton className="h-2 w-12 rounded-full bg-nham-track" />
+          <Skeleton className="h-1.5 flex-1 rounded-full bg-nham-track" />
+          <Skeleton className="h-2 w-12 rounded-full bg-nham-track" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 interface DashboardShellProps {
   profile: DashboardProfile;
 }
@@ -56,6 +135,8 @@ export function DashboardShell({ profile }: DashboardShellProps) {
   const queryClient = useQueryClient();
   const [timeRange, setTimeRange] = useState<TimeRange>('30d');
   const [todayDate, setTodayDate] = useState(() => getTodayDateString());
+  const verdictErrorShown = useRef(false);
+  const heatmapErrorShown = useRef(false);
   const weekTitle = useMemo(() => getWeekTitle(), []);
   const emptyHeatmapData = useMemo(() => {
     const timezoneOffset = new Date().getTimezoneOffset();
@@ -69,19 +150,27 @@ export function DashboardShell({ profile }: DashboardShellProps) {
   }, [timeRange]);
   const { data: weightSummary } = useWeightSummary(timeRange);
 
-  const { data: verdict } = useQuery({
+  const verdictQuery = useQuery({
     queryKey: ['dashboard', 'verdict'],
-    queryFn: getVerdictData,
-    initialData: getVerdictData,
-    staleTime: Number.POSITIVE_INFINITY,
+    queryFn: () =>
+      loadVerdictAction({ timezoneOffset: new Date().getTimezoneOffset() }),
+    staleTime: 60_000,
   });
 
-  const { data: stats } = useQuery({
-    queryKey: ['dashboard', 'stats'],
-    queryFn: getStatsData,
-    initialData: getStatsData,
-    staleTime: Number.POSITIVE_INFINITY,
-  });
+  useEffect(() => {
+    if (!verdictQuery.isError) {
+      verdictErrorShown.current = false;
+      return;
+    }
+
+    if (verdictErrorShown.current) return;
+
+    verdictErrorShown.current = true;
+    console.error('[dashboard] verdict query failed', verdictQuery.error);
+    toast.error('Unable to load the Current section. Please try again.');
+  }, [verdictQuery.error, verdictQuery.isError]);
+
+  const verdict = verdictQuery.data;
 
   const weightData = weightSummary?.weights ?? [];
   const periodStartWeight =
@@ -89,8 +178,18 @@ export function DashboardShell({ profile }: DashboardShellProps) {
   const expectedEndWeight =
     weightSummary?.expectedEndWeight ?? periodStartWeight;
   const goalDirection = weightSummary?.goalDirection ?? 'flat';
+  const stats = verdict
+    ? {
+        streak: weightSummary?.daysLogged ?? 0,
+        daysLogged: weightSummary?.daysLogged ?? 0,
+        avgDeficit: Math.round((-verdict.weeklyRate * 7700) / 7),
+        todayWeight: weightSummary?.todayWeight ?? null,
+        weightPlaceholder:
+          weightSummary?.weightPlaceholder ?? verdict.currentWeight,
+      }
+    : undefined;
 
-  const { data: heatmapData } = useQuery({
+  const heatmapQuery = useQuery({
     queryKey: ['dashboard', 'heatmapData', timeRange],
     queryFn: () => {
       const timezoneOffset = new Date().getTimezoneOffset();
@@ -100,17 +199,34 @@ export function DashboardShell({ profile }: DashboardShellProps) {
         timezoneOffset,
       });
     },
-    placeholderData: emptyHeatmapData,
     staleTime: 60_000,
   });
+
+  useEffect(() => {
+    if (!heatmapQuery.isError) {
+      heatmapErrorShown.current = false;
+      return;
+    }
+
+    if (heatmapErrorShown.current) return;
+
+    heatmapErrorShown.current = true;
+    console.error('[dashboard] heatmap query failed', heatmapQuery.error);
+    toast.error('Unable to load the progress section. Please try again.');
+  }, [heatmapQuery.error, heatmapQuery.isError]);
+
+  const heatmapData = heatmapQuery.data;
   const { data: persistedMeals = [] } = useDailyMeals(todayDate);
 
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout> | null = null;
 
-    const invalidateHeatmap = () => {
+    const invalidateDashboardQueries = () => {
       void queryClient.invalidateQueries({
         queryKey: ['dashboard', 'heatmapData'],
+      });
+      void queryClient.invalidateQueries({
+        queryKey: ['dashboard', 'verdict'],
       });
     };
 
@@ -124,7 +240,7 @@ export function DashboardShell({ profile }: DashboardShellProps) {
     const scheduleMidnightRefresh = () => {
       timer = setTimeout(() => {
         syncTodayDate();
-        invalidateHeatmap();
+        invalidateDashboardQueries();
         scheduleMidnightRefresh();
       }, getMsUntilNextLocalMidnight());
     };
@@ -132,13 +248,13 @@ export function DashboardShell({ profile }: DashboardShellProps) {
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
         syncTodayDate();
-        invalidateHeatmap();
+        invalidateDashboardQueries();
       }
     };
 
     const handleWindowFocus = () => {
       syncTodayDate();
-      invalidateHeatmap();
+      invalidateDashboardQueries();
     };
 
     scheduleMidnightRefresh();
@@ -173,12 +289,16 @@ export function DashboardShell({ profile }: DashboardShellProps) {
         {/* ── Section 1: Current (week title) ── */}
         <section>
           <SectionHeader title={weekTitle} />
-          <CurrentSection
-            verdict={verdict}
-            stats={stats}
-            nutrition={todayNutrition}
-            weightSummary={weightSummary}
-          />
+          {!verdict || !stats ? (
+            <CurrentSectionSkeleton />
+          ) : (
+            <CurrentSection
+              verdict={verdict}
+              stats={stats}
+              nutrition={todayNutrition}
+              weightSummary={weightSummary}
+            />
+          )}
         </section>
 
         {/* ── Section 2: Progress ── */}
@@ -206,20 +326,27 @@ export function DashboardShell({ profile }: DashboardShellProps) {
               ))}
             </div>
           </div>
-          <ProgressSection
-            weightChart={
-              <WeightChart
-                data={weightData}
-                periodStartWeight={periodStartWeight}
-                expectedEndWeight={expectedEndWeight}
-                goalDirection={goalDirection}
-                range={timeRange}
-              />
-            }
-            heatmap={
-              <AdherenceHeatmap data={resolvedHeatmapData} range={timeRange} />
-            }
-          />
+          {!heatmapData ? (
+            <ProgressSectionSkeleton range={timeRange} />
+          ) : (
+            <ProgressSection
+              weightChart={
+                <WeightChart
+                  data={weightData}
+                  periodStartWeight={periodStartWeight}
+                  expectedEndWeight={expectedEndWeight}
+                  goalDirection={goalDirection}
+                  range={timeRange}
+                />
+              }
+              heatmap={
+                <AdherenceHeatmap
+                  data={resolvedHeatmapData}
+                  range={timeRange}
+                />
+              }
+            />
+          )}
         </section>
 
         {/* ── Section 3: Today ── */}

@@ -1,18 +1,24 @@
 'use server';
 
-import { and, asc, eq, gte, lt, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, gte, lt, sql } from 'drizzle-orm';
 import { z } from 'zod';
+import type { VerdictData } from '@/components/dashboard/types';
 import { requireAuthAndProfile } from '@/lib/auth';
 import {
   buildCalorieAdherenceHeatmap,
   getLocalDateKey,
 } from '@/lib/dashboard/adherence';
 import { db } from '@/lib/db';
-import { meals } from '@/lib/db/schema';
+import { bodyWeightLog, meals } from '@/lib/db/schema';
+import { loadWeightSummaryAction } from './weight';
 
 const loadCalorieAdherenceHeatmapSchema = z.object({
   range: z.enum(['30d', '90d']),
   timezoneOffset: z.number().int().min(-840).max(720),
+});
+
+const loadVerdictSchema = z.object({
+  timezoneOffset: z.number().int().min(-1440).max(1440),
 });
 
 const RANGE_DAYS = {
@@ -37,6 +43,11 @@ function getUtcBoundaryForLocalDate(
   const boundary = dateKeyToUtcDate(dateKey);
   boundary.setTime(boundary.getTime() + timezoneOffset * 60 * 1000);
   return boundary;
+}
+
+function average(values: number[]): number {
+  if (values.length === 0) return 0;
+  return values.reduce((sum, value) => sum + value, 0) / values.length;
 }
 
 export async function loadCalorieAdherenceHeatmap(input: {
@@ -85,4 +96,138 @@ export async function loadCalorieAdherenceHeatmap(input: {
     timezoneOffset: parsed.timezoneOffset,
     now,
   });
+}
+
+export async function loadVerdictAction(input: {
+  timezoneOffset: number;
+}): Promise<VerdictData> {
+  const parsed = loadVerdictSchema.parse(input);
+  const { user, profile } = await requireAuthAndProfile();
+  const timezoneOffset = parsed.timezoneOffset;
+
+  const weightSummary = await loadWeightSummaryAction({
+    range: '30d',
+    timezoneOffset,
+  });
+
+  const now = new Date();
+  const endKey = getLocalDateKey(now, timezoneOffset);
+  const endDate = dateKeyToUtcDate(endKey);
+  const startDate = addDays(endDate, -6);
+  const startKey = startDate.toISOString().slice(0, 10);
+  const nextEndKey = addDays(endDate, 1).toISOString().slice(0, 10);
+  const utcStart = getUtcBoundaryForLocalDate(startKey, timezoneOffset);
+  const utcEnd = getUtcBoundaryForLocalDate(nextEndKey, timezoneOffset);
+
+  const weightRows = await db
+    .select({
+      loggedDate: bodyWeightLog.loggedDate,
+      weightKg: bodyWeightLog.weightKg,
+    })
+    .from(bodyWeightLog)
+    .where(eq(bodyWeightLog.userId, user.id))
+    .orderBy(desc(bodyWeightLog.loggedDate), desc(bodyWeightLog.createdAt))
+    .limit(14);
+
+  const orderedWeights = [...weightRows].reverse();
+  const firstWeightRow = orderedWeights[0];
+  const lastWeightRow = orderedWeights[orderedWeights.length - 1];
+  const currentWeight = weightSummary.currentWeight;
+  const firstWeight = Number(firstWeightRow?.weightKg ?? currentWeight);
+  const lastWeight = Number(lastWeightRow?.weightKg ?? currentWeight);
+  const totalDelta =
+    orderedWeights.length > 0 ? currentWeight - firstWeight : 0;
+  const elapsedDays =
+    firstWeightRow && lastWeightRow
+      ? (dateKeyToUtcDate(lastWeightRow.loggedDate).getTime() -
+          dateKeyToUtcDate(firstWeightRow.loggedDate).getTime()) /
+        MS_PER_DAY
+      : 0;
+  const weeklyRate =
+    orderedWeights.length > 1 && elapsedDays > 0
+      ? (lastWeight - firstWeight) / (elapsedDays / 7)
+      : 0;
+  const actual30DayDelta = weeklyRate * 4.3;
+  const targetDelta =
+    weightSummary.expectedEndWeight - weightSummary.periodStartWeight;
+  const rollingAvgStart = average(
+    orderedWeights
+      .slice(0, Math.min(7, orderedWeights.length))
+      .map((row) => Number(row.weightKg))
+  );
+  const rollingAvgEnd = average(
+    orderedWeights
+      .slice(-Math.min(7, orderedWeights.length))
+      .map((row) => Number(row.weightKg))
+  );
+
+  const proteinDays: [
+    boolean,
+    boolean,
+    boolean,
+    boolean,
+    boolean,
+    boolean,
+    boolean,
+  ] = [false, false, false, false, false, false, false];
+  const offsetMins = -timezoneOffset;
+  const localDateExpr = sql<string>`DATE(${meals.loggedAt} + (${sql.raw(String(offsetMins))}::integer * INTERVAL '1 minute'))`;
+  const weekdayExpr = sql<number>`EXTRACT(ISODOW FROM ${localDateExpr})`;
+  const proteinExpr = sql<number>`COALESCE(SUM(${meals.proteinG}), 0)`;
+
+  const dailyProtein = await db
+    .select({
+      date: localDateExpr.as('date'),
+      weekday: weekdayExpr.as('weekday'),
+      protein: proteinExpr.as('protein'),
+    })
+    .from(meals)
+    .where(
+      and(
+        eq(meals.userId, user.id),
+        gte(meals.loggedAt, utcStart),
+        lt(meals.loggedAt, utcEnd)
+      )
+    )
+    .groupBy(localDateExpr, weekdayExpr)
+    .orderBy(asc(localDateExpr));
+
+  const proteinTarget = profile.proteinTargetG ?? 100; // Default to 100g if not set
+  dailyProtein.forEach((day) => {
+    const adjustedIndex = Number(day.weekday) - 1;
+    if (adjustedIndex < 0 || adjustedIndex > 6) return;
+    if (Number(day.protein) >= proteinTarget) {
+      proteinDays[adjustedIndex] = true;
+    }
+  });
+
+  const tooEarlyThreshold = 0.1;
+  let status: VerdictData['status'];
+  if (
+    orderedWeights.length < 2 ||
+    Math.abs(actual30DayDelta) < tooEarlyThreshold
+  ) {
+    status = 'too_early';
+  } else if (Math.abs(actual30DayDelta - targetDelta) < tooEarlyThreshold) {
+    status = 'on_pace';
+  } else if (
+    (targetDelta < 0 && actual30DayDelta < targetDelta) ||
+    (targetDelta > 0 && actual30DayDelta > targetDelta)
+  ) {
+    status = 'ahead';
+  } else {
+    status = 'behind';
+  }
+
+  const planStartDate = firstWeightRow?.loggedDate ?? endKey;
+
+  return {
+    weeklyRate,
+    totalDelta,
+    planStartDate,
+    status,
+    rollingAvg: { start: rollingAvgStart, end: rollingAvgEnd },
+    currentWeight,
+    proteinDays,
+  };
 }

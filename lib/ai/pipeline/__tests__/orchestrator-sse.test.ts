@@ -260,4 +260,55 @@ describe('analyzeMeal SSE id threading', () => {
       new Set(names.map((n) => n.mealItemId))
     );
   });
+
+  it('reuses mealItemIds when decomposition streaming retries', async () => {
+    const decompJson = makeDecompJson(['cơm trắng']);
+    const decompParsed = JSON.parse(decompJson);
+    const nutritionJson = makeNutritionJson(['cơm trắng']);
+    const nutritionParsed = JSON.parse(nutritionJson);
+    const stream = vi
+      .fn()
+      .mockImplementationOnce(
+        async (
+          _args: unknown,
+          opts?: {
+            onAttemptStart?: (attempt: number) => void;
+            onChunk?: (acc: string) => void;
+          }
+        ) => {
+          opts?.onAttemptStart?.(1);
+          opts?.onChunk?.(decompJson);
+          opts?.onAttemptStart?.(2);
+          opts?.onChunk?.(decompJson);
+          return decompParsed;
+        }
+      )
+      .mockImplementationOnce(
+        async (_args: unknown, opts?: { onChunk?: (acc: string) => void }) => {
+          opts?.onChunk?.(nutritionJson);
+          return nutritionParsed;
+        }
+      );
+    const events: StreamEvent[] = [];
+
+    await analyzeMeal(
+      'cơm trắng',
+      USER_CONTEXT,
+      {} as AppDb,
+      {
+        generateStructuredOutput: vi.fn(),
+        generateStructuredOutputStream: stream,
+        generateEmbedding: vi.fn().mockResolvedValue(Array(768).fill(0.1)),
+        generateEmbeddingBatch: vi.fn().mockResolvedValue([]),
+      },
+      (e) => events.push(e)
+    );
+
+    const names = events.filter(
+      (e): e is Extract<StreamEvent, { type: 'item_name' }> =>
+        e.type === 'item_name'
+    );
+    expect(names).toHaveLength(2);
+    expect(names[0].mealItemId).toBe(names[1].mealItemId);
+  });
 });
