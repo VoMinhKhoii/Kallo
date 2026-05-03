@@ -4,6 +4,21 @@ import { describe, expect, it, vi } from 'vitest';
 import { TimelineSidebar } from './timeline-sidebar';
 
 describe('TimelineSidebar', () => {
+  /**
+   * Helper to find a button by its aria-controls attribute.
+   * Necessary because multiple week buttons can have the same accessible name
+   * with the next-intl mock.
+   */
+  function getButtonByControls(controls: string): HTMLButtonElement {
+    const button = screen
+      .getAllByRole('button')
+      .find(
+        (candidate) => candidate.getAttribute('aria-controls') === controls
+      );
+    expect(button).toBeInstanceOf(HTMLButtonElement);
+    return button as HTMLButtonElement;
+  }
+
   const baseProps = {
     dates: ['2026-05-03', '2026-05-01'],
     allDates: ['2026-05-03', '2026-05-02', '2026-05-01'],
@@ -34,12 +49,8 @@ describe('TimelineSidebar', () => {
     expect(monthButton).toHaveAttribute('aria-expanded', 'true');
 
     // Find week button for week 1 of May 2026 by its aria-controls attribute
-    // The button's accessible name is the literal translation key "week"
-    const weekButton = screen.getByRole('button', {
-      name: 'week',
-    });
+    const weekButton = getButtonByControls('week-05-2026-w1');
     expect(weekButton).toHaveAttribute('aria-expanded', 'true');
-    expect(weekButton).toHaveAttribute('aria-controls', 'week-05-2026-w1');
   });
 
   it('calls onSelectDate with correct date when date button is clicked', async () => {
@@ -179,10 +190,8 @@ describe('TimelineSidebar', () => {
 
     render(<TimelineSidebar {...baseProps} />);
 
-    // Find week button for week 1 of May 2026 by accessible name and aria-controls
-    const weekButton = screen.getByRole('button', {
-      name: 'week',
-    });
+    // Find week button for week 1 of May 2026 by aria-controls
+    const weekButton = getButtonByControls('week-05-2026-w1');
 
     // Initially expanded (contains selected date)
     expect(weekButton).toHaveAttribute('aria-expanded', 'true');
@@ -192,5 +201,54 @@ describe('TimelineSidebar', () => {
 
     // Now collapsed
     expect(weekButton).toHaveAttribute('aria-expanded', 'false');
+  });
+
+  it('handles multiple weeks with ambiguous names correctly using aria-controls', () => {
+    // Test data with dates spanning multiple weeks to prove selector is robust
+    const multiWeekProps = {
+      ...baseProps,
+      dates: [
+        '2026-05-24',
+        '2026-05-20',
+        '2026-05-10',
+        '2026-05-03',
+        '2026-05-01',
+      ],
+      allDates: [
+        '2026-05-24',
+        '2026-05-20',
+        '2026-05-10',
+        '2026-05-03',
+        '2026-05-02',
+        '2026-05-01',
+      ],
+      selectedDate: '2026-05-10',
+    };
+
+    render(<TimelineSidebar {...multiWeekProps} />);
+
+    // All week buttons have the same accessible name "week" due to next-intl mock
+    // but we can distinguish them by aria-controls
+
+    // Week 1 (days 1-7)
+    const week1Button = getButtonByControls('week-05-2026-w1');
+    expect(week1Button).toHaveAttribute('aria-expanded', 'false'); // Not selected
+
+    // Week 2 (days 8-14) - contains selected date (May 10)
+    const week2Button = getButtonByControls('week-05-2026-w2');
+    expect(week2Button).toHaveAttribute('aria-expanded', 'true'); // Selected
+
+    // Week 3 (days 15-21)
+    const week3Button = getButtonByControls('week-05-2026-w3');
+    expect(week3Button).toHaveAttribute('aria-expanded', 'false'); // Not selected
+
+    // Week 4 (days 22-28)
+    const week4Button = getButtonByControls('week-05-2026-w4');
+    expect(week4Button).toHaveAttribute('aria-expanded', 'false'); // Not selected
+
+    // All buttons are distinct despite having the same accessible name
+    expect(week1Button).not.toBe(week2Button);
+    expect(week2Button).not.toBe(week3Button);
+    expect(week3Button).not.toBe(week4Button);
   });
 });
