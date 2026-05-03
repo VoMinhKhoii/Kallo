@@ -50,7 +50,10 @@ export function chooseRenderedHeatmapRange({
     return range90Cell >= RANGE_90_MIN_CELL ? '90d' : '30d';
   }
 
-  const yearCell = cellSizeFor(availableWidth, weekCount.year, 'year');
+  const yearCell = Math.min(
+    cellSizeFor(availableWidth, weekCount.year, 'year'),
+    heightCell
+  );
 
   if (yearCell >= YEAR_MIN_CELL) return 'year';
   if (range90Cell >= RANGE_90_MIN_CELL) return '90d';

@@ -72,7 +72,7 @@ export function TodayDock({ nutrition, meals }: TodayDockProps) {
             </span>
           </div>
           <p className="mt-1 text-nham-stone text-xs">
-            {nutrition.calories.current.toLocaleString()} kcal logged
+            {nutrition.calories.current.toLocaleString()} {t('caloriesLogged')}
           </p>
         </div>
 

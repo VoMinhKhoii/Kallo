@@ -837,7 +837,9 @@
       "todaysWeight": "Cân nặng hôm nay",
       "morningWeight": "Cân nặng buổi sáng",
       "lastLogged": "Lần trước: {weight} kg",
-      "loggedDays": "Đã ghi {count}/{total} ngày gần nhất"
+      "loggedDays": "Đã ghi {count}/{total} ngày gần nhất",
+      "saved": "Lưu cân nặng",
+      "invalidValue": "Kiểm tra giá trị cân nặng trước khi lưu"
     },
     "adherenceHeatmap": {
       "onTrack": "{percent}% đúng mục tiêu",
@@ -854,6 +856,30 @@
       "under": "Thiếu",
       "farOver": "Vượt nhiều",
       "farUnder": "Thiếu nhiều"
+    },
+    "caloriesLogged": "kcal đã ghi",
+    "mealReceiptsHint": "Những bữa ăn sẽ hiển thị ở đây",
+    "progressStatus": {
+      "insufficient": {
+        "label": "Đang tạo tín hiệu",
+        "detail": "Ghi thêm vài lần cân sẽ làm xu hướng ổn định."
+      },
+      "on_pace": {
+        "label": "Đúng kế hoạch",
+        "detail": "Tốc độ hiện tại của bạn phù hợp với kế hoạch."
+      },
+      "ahead": {
+        "label": "Vượt kế hoạch",
+        "detail": "Tiến độ nhanh hơn dự kiến."
+      },
+      "behind": {
+        "label": "Cần chú ý",
+        "detail": "Xu hướng hiện tại yếu hơn kế hoạch."
+      },
+      "stable": {
+        "label": "Ổn định",
+        "detail": "Cân nặng của bạn đang ổn định ở mức duy trì."
+      }
     }
   },
   "logging": {

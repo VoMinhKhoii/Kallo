@@ -2,6 +2,7 @@
 
 import { TrendingDown, TrendingUp } from 'lucide-react';
 import { useMemo } from 'react';
+import { useTranslations } from 'next-intl';
 import { CompactWeightLog } from '@/components/dashboard/current/compact-weight-log';
 import { WeightChart } from '@/components/dashboard/progress/weight-chart';
 import type { TimeRange } from '@/components/dashboard/types';
@@ -14,30 +15,8 @@ interface ProgressStoryProps {
   range: TimeRange;
 }
 
-const STATUS_COPY = {
-  insufficient: {
-    label: 'Building signal',
-    detail: 'Log a few more weigh-ins and the trend will settle.',
-  },
-  on_pace: {
-    label: 'On pace',
-    detail: 'Your current pace is matching the plan.',
-  },
-  ahead: {
-    label: 'Ahead of plan',
-    detail: 'Progress is moving faster than expected.',
-  },
-  behind: {
-    label: 'Needs attention',
-    detail: 'The trend is softer than the plan right now.',
-  },
-  stable: {
-    label: 'Stable',
-    detail: 'Your weight is staying within a quiet maintenance band.',
-  },
-};
-
 export function ProgressStory({ weightSummary, range }: ProgressStoryProps) {
+  const t = useTranslations('dashboard');
   const summary = useMemo(() => {
     if (!weightSummary) return null;
 
@@ -61,7 +40,7 @@ export function ProgressStory({ weightSummary, range }: ProgressStoryProps) {
     );
   }
 
-  const copy = STATUS_COPY[summary.status];
+  const copy = t.raw(`progressStatus.${summary.status}`);
   const delta = summary.currentWeight - summary.startWeight;
   const Icon = delta <= 0 ? TrendingDown : TrendingUp;
 

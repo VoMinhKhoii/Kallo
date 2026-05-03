@@ -837,7 +837,9 @@
       "todaysWeight": "Today's weight",
       "morningWeight": "Morning weight",
       "lastLogged": "Last: {weight} kg",
-      "loggedDays": "{count} of last {total} days logged"
+      "loggedDays": "{count} of last {total} days logged",
+      "saved": "Weight saved",
+      "invalidValue": "Check the weight value before saving"
     },
     "adherenceHeatmap": {
       "onTrack": "{percent}% on track",
@@ -854,6 +856,30 @@
       "under": "Under",
       "farOver": "Far over",
       "farUnder": "Far under"
+    },
+    "caloriesLogged": "kcal logged",
+    "mealReceiptsHint": "Your meal receipts will show up here",
+    "progressStatus": {
+      "insufficient": {
+        "label": "Building signal",
+        "detail": "Log a few more weigh-ins and the trend will settle."
+      },
+      "on_pace": {
+        "label": "On pace",
+        "detail": "Your current pace is matching the plan."
+      },
+      "ahead": {
+        "label": "Ahead of plan",
+        "detail": "Progress is moving faster than expected."
+      },
+      "behind": {
+        "label": "Needs attention",
+        "detail": "The trend is softer than the plan right now."
+      },
+      "stable": {
+        "label": "Stable",
+        "detail": "Your weight is staying within a quiet maintenance band."
+      }
     }
   },
   "logging": {

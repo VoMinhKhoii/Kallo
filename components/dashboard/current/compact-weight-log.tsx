@@ -5,6 +5,7 @@ import { Scale } from 'lucide-react';
 import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
+import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useLogWeight } from '@/hooks/use-weight-mutations';
@@ -28,13 +29,14 @@ export function CompactWeightLog({
   currentWeight,
   todayWeight,
 }: CompactWeightLogProps) {
+  const t = useTranslations('dashboard');
   const logWeightMutation = useLogWeight();
   const hasTodayWeight = typeof todayWeight === 'number';
   const {
     register,
     handleSubmit,
     reset,
-    formState: { errors },
+    formState: { errors, isDirty },
   } = useForm<WeightLogInput>({
     resolver: zodResolver(weightLogSchema),
     defaultValues: {
@@ -44,16 +46,18 @@ export function CompactWeightLog({
   });
 
   useEffect(() => {
-    reset({
-      loggedDate: todayDateString(),
-      weightKg: todayWeight ?? currentWeight,
-    });
-  }, [currentWeight, reset, todayWeight]);
+    if (!isDirty) {
+      reset({
+        loggedDate: todayDateString(),
+        weightKg: todayWeight ?? currentWeight,
+      });
+    }
+  }, [currentWeight, reset, todayWeight, isDirty]);
 
   const onSubmit = async (values: WeightLogInput) => {
     try {
       await logWeightMutation.mutateAsync(values);
-      toast.success('Weight saved.');
+      toast.success(t('weightCard.saved'));
       reset(values);
     } catch (error) {
       console.error('[dashboard] compact weight log failed', error);
@@ -63,14 +67,14 @@ export function CompactWeightLog({
   return (
     <form
       onSubmit={handleSubmit(onSubmit, () =>
-        toast.error('Check the weight value before saving.')
+        toast.error(t('weightCard.invalidValue'))
       )}
       className="flex min-h-0 flex-col justify-center rounded-[1.25rem] border border-nham-border/60 bg-nham-surface/70 p-2"
     >
       <div className="mb-1.5 flex items-center gap-2">
         <Scale className="h-3.5 w-3.5 text-nham-accent" />
         <span className="font-bold text-[9px] text-nham-stone uppercase tracking-[0.15em]">
-          {hasTodayWeight ? 'Today logged' : 'Log weight'}
+          {hasTodayWeight ? t('weightCard.todaysWeight') : t('logMeal')}
         </span>
       </div>
       <div className="flex items-center gap-2">

@@ -17,7 +17,7 @@ export function MealList({ meals }: MealListProps) {
           {t('noMealsToday')}
         </span>
         <span className="text-[11px] text-nham-stone">
-          Your meal receipts will show up here.
+          {t('mealReceiptsHint')}
         </span>
       </div>
     );

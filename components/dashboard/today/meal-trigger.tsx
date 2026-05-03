@@ -129,6 +129,7 @@ export function FloatingMealTrigger() {
         type="button"
         onClick={expanded ? handleClose : () => setExpanded(true)}
         aria-label={expanded ? tm('close') : t('logMeal')}
+        aria-expanded={expanded}
         className="fixed right-4 bottom-5 z-50 flex h-11 w-11 items-center justify-center rounded-2xl bg-nham-btn text-white shadow-[0_4px_16px_rgba(44,36,22,0.18)] transition-colors hover:bg-nham-btn-hover"
       >
         {expanded ? (
