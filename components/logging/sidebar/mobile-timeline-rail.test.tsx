@@ -186,6 +186,10 @@ describe('MobileTimelineRail', () => {
     });
     expect(todayButton).toBeInTheDocument();
 
+    // Error message should be visible
+    const errorMessage = screen.getByText(/failedToLoadDates/i);
+    expect(errorMessage).toBeInTheDocument();
+
     // Retry button
     const retryButton = screen.getByRole('button', {
       name: /retryDates/i,

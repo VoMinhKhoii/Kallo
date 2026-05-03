@@ -102,7 +102,7 @@ export function MobileTimelineRail({
             <AlertCircle className="mt-0.5 size-4 shrink-0 text-nham-destructive" />
             <div className="flex-1 space-y-2">
               <p className="text-nham-text-muted text-xs">
-                Failed to load meal dates.
+                {t('failedToLoadDates')}
               </p>
               <button
                 type="button"

@@ -912,7 +912,9 @@
       "historyNavigationLabel": "Điều hướng lịch sử bữa ăn",
       "retryDates": "Thử tải lại ngày",
       "loadingDates": "Đang tải ngày",
-      "noPreviousMeals": "Chưa có bữa ăn nào được ghi nhận"
+      "noPreviousMeals": "Chưa có bữa ăn nào được ghi nhận",
+      "failedToLoadDates": "Không thể tải ngày bữa ăn.",
+      "failedToLoadHistory": "Không thể tải lịch sử bữa ăn."
     }
   },
   "settings": {

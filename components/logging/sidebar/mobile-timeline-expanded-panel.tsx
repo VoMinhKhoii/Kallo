@@ -81,7 +81,7 @@ export function MobileTimelineExpandedPanel({
           <AlertCircle className="mt-0.5 size-5 shrink-0 text-nham-destructive" />
           <div className="flex-1 space-y-3">
             <p className="text-nham-text-muted text-sm">
-              Failed to load meal history.
+              {t('failedToLoadHistory')}
             </p>
             <button
               type="button"

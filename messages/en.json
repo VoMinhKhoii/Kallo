@@ -912,7 +912,9 @@
       "historyNavigationLabel": "Meal history navigation",
       "retryDates": "Retry loading dates",
       "loadingDates": "Loading dates",
-      "noPreviousMeals": "No previous meals logged"
+      "noPreviousMeals": "No previous meals logged",
+      "failedToLoadDates": "Failed to load meal dates.",
+      "failedToLoadHistory": "Failed to load meal history."
     }
   },
   "settings": {
