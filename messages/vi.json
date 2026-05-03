@@ -907,7 +907,12 @@
     },
     "timelineSidebar": {
       "navigationLabel": "Điều hướng dòng thời gian",
-      "week": "Tuần {number}"
+      "week": "Tuần {number}",
+      "history": "Lịch sử",
+      "historyNavigationLabel": "Điều hướng lịch sử bữa ăn",
+      "retryDates": "Thử tải lại ngày",
+      "loadingDates": "Đang tải ngày",
+      "noPreviousMeals": "Chưa có bữa ăn nào được ghi nhận"
     }
   },
   "settings": {

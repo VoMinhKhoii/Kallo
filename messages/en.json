@@ -907,7 +907,12 @@
     },
     "timelineSidebar": {
       "navigationLabel": "Timeline navigation",
-      "week": "Week {number}"
+      "week": "Week {number}",
+      "history": "History",
+      "historyNavigationLabel": "Meal history navigation",
+      "retryDates": "Retry loading dates",
+      "loadingDates": "Loading dates",
+      "noPreviousMeals": "No previous meals logged"
     }
   },
   "settings": {
