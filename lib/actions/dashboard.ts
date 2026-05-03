@@ -2,10 +2,14 @@
 
 import { and, asc, desc, eq, gte, lt, sql } from 'drizzle-orm';
 import { z } from 'zod';
-import type { VerdictData } from '@/components/dashboard/types';
+import type {
+  HeatmapData,
+  HeatmapRange,
+  VerdictData,
+} from '@/components/dashboard/types';
 import { requireAuthAndProfile } from '@/lib/auth';
 import {
-  buildCalorieAdherenceHeatmap,
+  buildCalorieAdherenceHeatmapData,
   getLocalDateKey,
 } from '@/lib/dashboard/adherence';
 import { db } from '@/lib/db';
@@ -13,7 +17,7 @@ import { bodyWeightLog, meals } from '@/lib/db/schema';
 import { loadWeightSummaryAction } from './weight';
 
 const loadCalorieAdherenceHeatmapSchema = z.object({
-  range: z.enum(['30d', '90d']),
+  range: z.enum(['30d', '90d', 'year']),
   timezoneOffset: z.number().int().min(-840).max(720),
 });
 
@@ -51,18 +55,25 @@ function average(values: number[]): number {
 }
 
 export async function loadCalorieAdherenceHeatmap(input: {
-  range: '30d' | '90d';
+  range: HeatmapRange;
   timezoneOffset: number;
-}): Promise<(number | null)[][]> {
+}): Promise<HeatmapData> {
   const parsed = loadCalorieAdherenceHeatmapSchema.parse(input);
   const { user, profile } = await requireAuthAndProfile();
 
   const now = new Date();
   const endKey = getLocalDateKey(now, parsed.timezoneOffset);
   const endDate = dateKeyToUtcDate(endKey);
-  const startDate = addDays(endDate, -(RANGE_DAYS[parsed.range] - 1));
+  const startDate =
+    parsed.range === 'year'
+      ? new Date(Date.UTC(Number(endKey.slice(0, 4)), 0, 1))
+      : addDays(endDate, -(RANGE_DAYS[parsed.range] - 1));
+  const rangeEndDate =
+    parsed.range === 'year'
+      ? new Date(Date.UTC(Number(endKey.slice(0, 4)) + 1, 0, 1))
+      : addDays(endDate, 1);
   const startKey = startDate.toISOString().slice(0, 10);
-  const nextEndKey = addDays(endDate, 1).toISOString().slice(0, 10);
+  const nextEndKey = rangeEndDate.toISOString().slice(0, 10);
 
   const utcStart = getUtcBoundaryForLocalDate(startKey, parsed.timezoneOffset);
   const utcEnd = getUtcBoundaryForLocalDate(nextEndKey, parsed.timezoneOffset);
@@ -86,7 +97,7 @@ export async function loadCalorieAdherenceHeatmap(input: {
     .groupBy(localDateExpr)
     .orderBy(asc(localDateExpr));
 
-  return buildCalorieAdherenceHeatmap({
+  return buildCalorieAdherenceHeatmapData({
     range: parsed.range,
     dailyCalories: dailyCalories.map((day) => ({
       date: day.date,

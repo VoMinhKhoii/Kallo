@@ -842,6 +842,8 @@
     "adherenceHeatmap": {
       "onTrack": "{percent}% đúng mục tiêu",
       "notLogged": "Chưa ghi nhận",
+      "future": "Ngày trong tương lai",
+      "outside": "Ngoài khoảng đang xem",
       "offTarget": "Lệch mục tiêu",
       "onTarget": "Đúng mục tiêu",
       "noData": "Không có dữ liệu",

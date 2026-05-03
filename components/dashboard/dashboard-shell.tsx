@@ -7,26 +7,21 @@ import { toast } from 'sonner';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useDailyMeals } from '@/hooks/use-daily-meals';
 import { useWeightSummary } from '@/hooks/use-weight-summary';
-import {
-  loadCalorieAdherenceHeatmap,
-  loadVerdictAction,
-} from '@/lib/actions/dashboard';
-import { buildCalorieAdherenceHeatmap } from '@/lib/dashboard/adherence';
+import { loadCalorieAdherenceHeatmap } from '@/lib/actions/dashboard';
+import { buildCalorieAdherenceHeatmapData } from '@/lib/dashboard/adherence';
+import { chooseRenderedHeatmapRange } from '@/lib/dashboard/heatmap-range';
 import { getMsUntilNextLocalMidnight } from '@/lib/dashboard/heatmap-rollover';
 import {
   buildTodayNutritionData,
   getTodayDateString,
   mapPersistedMealsToMealEntries,
 } from '@/lib/dashboard/today';
-import { cn } from '@/lib/utils';
-import { CurrentSection } from './current/current-section';
 import { AdherenceHeatmap } from './progress/adherence-heatmap';
-import { ProgressSection } from './progress/progress-section';
-import { WeightChart } from './progress/weight-chart';
+import { ProgressStory } from './progress/progress-story';
 import { SectionHeader } from './section-header';
-import { MealTrigger } from './today/meal-trigger';
-import { TodaySection } from './today/today-section';
-import type { TimeRange } from './types';
+import { FloatingMealTrigger } from './today/meal-trigger';
+import { TodayDock } from './today/today-dock';
+import type { HeatmapRange, TimeRange } from './types';
 
 export interface DashboardProfile {
   calorieTarget: number;
@@ -51,44 +46,8 @@ function getWeekTitle(): string {
   return `Week of ${fmt(monday)} – ${fmt(sunday)}, ${year}`;
 }
 
-function CurrentSectionSkeleton() {
-  return (
-    <div
-      role="status"
-      aria-live="polite"
-      aria-label="Loading dashboard summary"
-      className="flex items-stretch gap-5"
-    >
-      <div className="flex shrink-0 flex-col rounded-2xl border border-nham-border/60 bg-card p-4 shadow-[0_4px_24px_rgba(44,36,22,0.04)]">
-        <Skeleton className="mb-1 h-3 w-28 rounded-full bg-nham-track" />
-        <Skeleton className="h-[84px] w-[168px] rounded-2xl bg-nham-track" />
-      </div>
-
-      <div className="flex shrink-0 items-start gap-4">
-        <div className="flex h-full flex-col gap-2 rounded-2xl border border-nham-border/60 bg-card p-4 shadow-[0_4px_24px_rgba(44,36,22,0.04)]">
-          <Skeleton className="h-3 w-24 rounded-full bg-nham-track" />
-          <Skeleton className="h-[76px] w-[138px] rounded-xl bg-nham-track" />
-        </div>
-        <div className="mt-3 h-full w-px self-stretch bg-nham-border/40" />
-        <div className="flex h-full flex-col gap-2 rounded-2xl border border-nham-border/60 bg-card p-4 shadow-[0_4px_24px_rgba(44,36,22,0.04)]">
-          <Skeleton className="h-3 w-28 rounded-full bg-nham-track" />
-          <Skeleton className="h-7 w-24 rounded-full bg-nham-track" />
-          <Skeleton className="h-3 w-32 rounded-full bg-nham-track" />
-        </div>
-      </div>
-
-      <div className="flex-1" />
-
-      <div className="w-[340px] shrink-0 rounded-2xl border border-nham-border/60 bg-card p-4 shadow-[0_4px_24px_rgba(44,36,22,0.04)]">
-        <Skeleton className="mb-2 h-3 w-24 rounded-full bg-nham-track" />
-        <Skeleton className="h-[120px] w-full rounded-xl bg-nham-track" />
-      </div>
-    </div>
-  );
-}
-
-function ProgressSectionSkeleton({ range }: { range: TimeRange }) {
-  const heatmapSquares = range === '30d' ? 35 : 70;
+function ProgressSectionSkeleton({ range }: { range: HeatmapRange }) {
+  const heatmapSquares = range === '30d' ? 35 : range === '90d' ? 70 : 182;
 
   return (
     <div className="flex h-full gap-3">
@@ -133,69 +92,42 @@ interface DashboardShellProps {
 export function DashboardShell({ profile }: DashboardShellProps) {
   const t = useTranslations('dashboard');
   const queryClient = useQueryClient();
-  const [timeRange, setTimeRange] = useState<TimeRange>('30d');
+  const [progressWidth, setProgressWidth] = useState(900);
+  const [heatmapSize, setHeatmapSize] = useState({
+    width: 1200,
+    height: 280,
+  });
   const [todayDate, setTodayDate] = useState(() => getTodayDateString());
-  const verdictErrorShown = useRef(false);
   const heatmapErrorShown = useRef(false);
+  const progressContainerRef = useRef<HTMLDivElement>(null);
+  const heatmapContainerRef = useRef<HTMLDivElement>(null);
   const weekTitle = useMemo(() => getWeekTitle(), []);
+  const weightRange: TimeRange = progressWidth >= 620 ? '90d' : '30d';
+  const renderedHeatmapRange = chooseRenderedHeatmapRange({
+    preferredRange: 'year',
+    availableWidth: heatmapSize.width,
+    availableHeight: heatmapSize.height,
+    weekCount: { '30d': 5, '90d': 14, year: 53 },
+  });
   const emptyHeatmapData = useMemo(() => {
     const timezoneOffset = new Date().getTimezoneOffset();
 
-    return buildCalorieAdherenceHeatmap({
-      range: timeRange,
+    return buildCalorieAdherenceHeatmapData({
+      range: renderedHeatmapRange,
       dailyCalories: [],
       calorieTarget: null,
       timezoneOffset,
     });
-  }, [timeRange]);
-  const { data: weightSummary } = useWeightSummary(timeRange);
-
-  const verdictQuery = useQuery({
-    queryKey: ['dashboard', 'verdict'],
-    queryFn: () =>
-      loadVerdictAction({ timezoneOffset: new Date().getTimezoneOffset() }),
-    staleTime: 60_000,
-  });
-
-  useEffect(() => {
-    if (!verdictQuery.isError) {
-      verdictErrorShown.current = false;
-      return;
-    }
-
-    if (verdictErrorShown.current) return;
-
-    verdictErrorShown.current = true;
-    console.error('[dashboard] verdict query failed', verdictQuery.error);
-    toast.error('Unable to load the Current section. Please try again.');
-  }, [verdictQuery.error, verdictQuery.isError]);
-
-  const verdict = verdictQuery.data;
-
-  const weightData = weightSummary?.weights ?? [];
-  const periodStartWeight =
-    weightSummary?.periodStartWeight ?? weightSummary?.currentWeight ?? 65;
-  const expectedEndWeight =
-    weightSummary?.expectedEndWeight ?? periodStartWeight;
-  const goalDirection = weightSummary?.goalDirection ?? 'flat';
-  const stats = verdict
-    ? {
-        streak: weightSummary?.daysLogged ?? 0,
-        daysLogged: weightSummary?.daysLogged ?? 0,
-        avgDeficit: Math.round((-verdict.weeklyRate * 7700) / 7),
-        todayWeight: weightSummary?.todayWeight ?? null,
-        weightPlaceholder:
-          weightSummary?.weightPlaceholder ?? verdict.currentWeight,
-      }
-    : undefined;
+  }, [renderedHeatmapRange]);
+  const { data: weightSummary } = useWeightSummary(weightRange);
 
   const heatmapQuery = useQuery({
-    queryKey: ['dashboard', 'heatmapData', timeRange],
+    queryKey: ['dashboard', 'heatmapData', renderedHeatmapRange],
     queryFn: () => {
       const timezoneOffset = new Date().getTimezoneOffset();
 
       return loadCalorieAdherenceHeatmap({
-        range: timeRange,
+        range: renderedHeatmapRange,
         timezoneOffset,
       });
     },
@@ -215,6 +147,29 @@ export function DashboardShell({ profile }: DashboardShellProps) {
     toast.error('Unable to load the progress section. Please try again.');
   }, [heatmapQuery.error, heatmapQuery.isError]);
 
+  useEffect(() => {
+    const progressNode = progressContainerRef.current;
+    const heatmapNode = heatmapContainerRef.current;
+    const observer = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        if (entry.target === progressNode) {
+          const width = entry.contentRect.width;
+          if (width > 0) setProgressWidth(width);
+          continue;
+        }
+
+        if (entry.target === heatmapNode) {
+          const { width, height } = entry.contentRect;
+          if (width > 0 && height > 0) setHeatmapSize({ width, height });
+        }
+      }
+    });
+
+    if (progressNode) observer.observe(progressNode);
+    if (heatmapNode) observer.observe(heatmapNode);
+    return () => observer.disconnect();
+  }, []);
+
   const heatmapData = heatmapQuery.data;
   const { data: persistedMeals = [] } = useDailyMeals(todayDate);
 
@@ -224,9 +179,6 @@ export function DashboardShell({ profile }: DashboardShellProps) {
     const invalidateDashboardQueries = () => {
       void queryClient.invalidateQueries({
         queryKey: ['dashboard', 'heatmapData'],
-      });
-      void queryClient.invalidateQueries({
-        queryKey: ['dashboard', 'verdict'],
       });
     };
 
@@ -282,84 +234,69 @@ export function DashboardShell({ profile }: DashboardShellProps) {
 
   return (
     <main
-      className="relative flex-1 overflow-hidden"
+      className="relative min-h-[calc(100dvh-5.25rem)] overflow-x-hidden bg-nham-surface/30 xl:h-[calc(100dvh-1.5rem)] xl:min-h-0 xl:overflow-hidden"
       style={{ fontFamily: 'DM Sans, sans-serif' }}
     >
-      <div className="grid h-full grid-rows-[2fr_3fr_2fr] gap-2 overflow-y-auto px-5 pt-4 pb-3 sm:px-8">
-        {/* ── Section 1: Current (week title) ── */}
-        <section>
-          <SectionHeader title={weekTitle} />
-          {!verdict || !stats ? (
-            <CurrentSectionSkeleton />
-          ) : (
-            <CurrentSection
-              verdict={verdict}
-              stats={stats}
-              nutrition={todayNutrition}
-              weightSummary={weightSummary}
-            />
-          )}
-        </section>
-
-        {/* ── Section 2: Progress ── */}
-        <section className="flex min-h-0 flex-col">
-          <div className="mb-1 flex items-center justify-between">
-            <span className="font-bold text-[12px] text-nham-stone uppercase tracking-[0.2em]">
-              {t('progress')}
-            </span>
-            {/* Time range toggle inline with header */}
-            <div className="flex rounded-xl bg-nham-hover p-0.5">
-              {(['30d', '90d'] as const).map((r) => (
-                <button
-                  key={r}
-                  type="button"
-                  onClick={() => setTimeRange(r)}
-                  className={cn(
-                    'rounded-lg px-3 py-1 font-medium text-[11px] transition-all',
-                    timeRange === r
-                      ? 'bg-card text-nham-text shadow-sm'
-                      : 'text-nham-stone hover:text-nham-text-muted'
-                  )}
-                >
-                  {r === '30d' ? '30 days' : '90 days'}
-                </button>
-              ))}
+      <div className="min-h-full px-3 py-3 pb-24 sm:px-5 sm:py-4 lg:px-8 xl:h-full xl:min-h-0 xl:overflow-hidden xl:py-3 xl:pb-3">
+        <div className="mx-auto grid max-w-[1440px] gap-4 sm:gap-5 xl:h-full xl:min-h-0 xl:grid-rows-[minmax(150px,0.78fr)_minmax(220px,1.1fr)_minmax(240px,1.12fr)] xl:gap-3">
+          <section className="flex min-h-0 flex-col gap-1.5">
+            <SectionHeader title={weekTitle} />
+            <div className="xl:min-h-0 xl:flex-1">
+              <TodayDock nutrition={todayNutrition} meals={todayMeals} />
             </div>
-          </div>
-          {!heatmapData ? (
-            <ProgressSectionSkeleton range={timeRange} />
-          ) : (
-            <ProgressSection
-              weightChart={
-                <WeightChart
-                  data={weightData}
-                  periodStartWeight={periodStartWeight}
-                  expectedEndWeight={expectedEndWeight}
-                  goalDirection={goalDirection}
-                  range={timeRange}
-                />
-              }
-              heatmap={
+          </section>
+
+          <section
+            ref={progressContainerRef}
+            className="flex min-w-0 flex-col gap-1.5 xl:min-h-0"
+          >
+            <div className="flex items-center justify-between gap-3">
+              <span className="font-bold text-[12px] text-nham-stone uppercase tracking-[0.2em]">
+                {t('progress')}
+              </span>
+              <span className="font-medium text-[11px] text-nham-stone">
+                {weightRange === '90d' ? '90 days' : '30 days'}
+              </span>
+            </div>
+            <div className="xl:min-h-0 xl:flex-1">
+              <ProgressStory
+                weightSummary={weightSummary}
+                range={weightRange}
+              />
+            </div>
+          </section>
+
+          <section className="flex min-w-0 flex-col gap-1.5 xl:min-h-0">
+            <div className="flex items-center justify-between gap-3">
+              <span className="font-bold text-[12px] text-nham-stone uppercase tracking-[0.2em]">
+                Consistency
+              </span>
+              <span className="font-medium text-[11px] text-nham-stone">
+                {renderedHeatmapRange === 'year'
+                  ? 'Year'
+                  : renderedHeatmapRange === '90d'
+                    ? '90 days'
+                    : '30 days'}
+              </span>
+            </div>
+            <div
+              ref={heatmapContainerRef}
+              className="min-h-[310px] rounded-[1.5rem] border border-nham-border/60 bg-card p-3 shadow-[0_10px_32px_rgba(44,36,22,0.05)] sm:min-h-[340px] md:min-h-[360px] xl:min-h-0 xl:flex-1 xl:p-4"
+            >
+              {!heatmapData ? (
+                <ProgressSectionSkeleton range={renderedHeatmapRange} />
+              ) : (
                 <AdherenceHeatmap
                   data={resolvedHeatmapData}
-                  range={timeRange}
+                  range={renderedHeatmapRange}
                 />
-              }
-            />
-          )}
-        </section>
-
-        {/* ── Section 3: Today ── */}
-        <section className="flex min-h-0 flex-col">
-          <SectionHeader title={t('today')} delay={0.2} />
-          <div className="flex-1">
-            <TodaySection nutrition={todayNutrition} meals={todayMeals} />
-          </div>
-        </section>
+              )}
+            </div>
+          </section>
+        </div>
       </div>
 
-      {/* Floating meal trigger — rendered at viewport level */}
-      <MealTrigger />
+      <FloatingMealTrigger />
     </main>
   );
 }

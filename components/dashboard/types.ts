@@ -1,6 +1,26 @@
 import type { WeightSummaryData } from '@/lib/types/weight';
 
-export type TimeRange = '30d' | '90d';
+export type WeightRange = '30d' | '90d';
+export type TimeRange = WeightRange;
+export type HeatmapRange = '30d' | '90d' | 'year';
+export type HeatmapCellStatus = 'logged' | 'unlogged' | 'future' | 'outside';
+
+export interface HeatmapCell {
+  date: string;
+  ratio: number | null;
+  status: HeatmapCellStatus;
+}
+
+export interface HeatmapMonthHeader {
+  month: string;
+  startColumn: number;
+  span: number;
+}
+
+export interface HeatmapData {
+  cells: HeatmapCell[][];
+  monthHeaders: HeatmapMonthHeader[];
+}
 
 export interface MealEntry {
   id: string;
@@ -40,7 +60,7 @@ export interface DashboardSnapshot {
   stats: StatsData;
   nutrition: NutritionData;
   meals: MealEntry[];
-  heatmap: (number | null)[][];
+  heatmap: HeatmapData;
   weightSummary: WeightSummaryData;
 }
 

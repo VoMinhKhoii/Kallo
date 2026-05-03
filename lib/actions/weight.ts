@@ -30,6 +30,15 @@ function shiftDate(dateString: string, deltaDays: number): string {
   return date.toISOString().slice(0, 10);
 }
 
+function daysBetween(startDate: string, endDate: string): number {
+  const start = new Date(`${startDate}T00:00:00.000Z`);
+  const end = new Date(`${endDate}T00:00:00.000Z`);
+  return Math.max(
+    1,
+    Math.round((end.getTime() - start.getTime()) / (24 * 60 * 60 * 1000))
+  );
+}
+
 function toNumber(value: string | number | null | undefined): number | null {
   if (value === null || value === undefined) return null;
   const parsed = typeof value === 'number' ? value : Number(value);
@@ -181,6 +190,12 @@ export async function loadWeightSummaryAction(input: {
     .filter((value): value is number => value !== null);
 
   const periodStartWeight = weights[0] ?? currentWeight;
+  const firstRangeRow = rows[0];
+  const lastRangeRow = rows[rows.length - 1];
+  const periodElapsedDays =
+    firstRangeRow && lastRangeRow
+      ? daysBetween(firstRangeRow.loggedDate, lastRangeRow.loggedDate)
+      : null;
   const weeklyRate = getWeeklyRate(profile.goal);
   const weeks = parsed.range === '30d' ? 4.3 : 12.9;
   const expectedEndWeight = periodStartWeight + weeklyRate * weeks;
@@ -201,5 +216,6 @@ export async function loadWeightSummaryAction(input: {
     periodStartWeight,
     expectedEndWeight,
     goalDirection,
+    periodElapsedDays,
   };
 }

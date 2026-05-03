@@ -132,14 +132,9 @@ export function WeightChart({
               domain={[yMin, yMax]}
               tickLine={false}
               axisLine={false}
-              tick={{
-                fontSize: 9,
-                fill: 'var(--nham-stone)',
-                fontFamily: 'monospace',
-              }}
+              tick={false}
               ticks={yTicks}
-              tickFormatter={(v: number) => `${v.toFixed(1)}`}
-              width={38}
+              width={8}
             />
 
             <Tooltip content={<WeightChartTooltip />} />

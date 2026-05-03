@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   buildCalorieAdherenceHeatmap,
+  buildCalorieAdherenceHeatmapData,
   getLocalDateKey,
 } from '@/lib/dashboard/adherence';
 
@@ -43,5 +44,30 @@ describe('buildCalorieAdherenceHeatmap', () => {
     });
 
     expect(heatmap.flat().every((value) => value === null)).toBe(true);
+  });
+
+  it('builds year heatmap data with future and outside padding cells', () => {
+    const heatmap = buildCalorieAdherenceHeatmapData({
+      range: 'year',
+      timezoneOffset: 0,
+      calorieTarget: 2000,
+      now: new Date('2026-04-23T12:00:00.000Z'),
+      dailyCalories: [{ date: '2026-04-23', calories: 2000 }],
+    });
+
+    expect(heatmap.cells).toHaveLength(7);
+    expect(heatmap.monthHeaders.at(0)?.month).toBe('Jan');
+    expect(heatmap.monthHeaders.some((header) => header.month === 'Apr')).toBe(
+      true
+    );
+    expect(heatmap.cells[0][0].status).toBe('outside');
+    expect(heatmap.cells[3][16]).toMatchObject({
+      date: '2026-04-23',
+      ratio: 1,
+      status: 'logged',
+    });
+    expect(heatmap.cells.flat().some((cell) => cell.status === 'future')).toBe(
+      true
+    );
   });
 });

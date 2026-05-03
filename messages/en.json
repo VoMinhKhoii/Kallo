@@ -842,6 +842,8 @@
     "adherenceHeatmap": {
       "onTrack": "{percent}% on track",
       "notLogged": "Not logged",
+      "future": "Future day",
+      "outside": "Outside selected range",
       "offTarget": "Off target",
       "onTarget": "On target",
       "noData": "No data",
