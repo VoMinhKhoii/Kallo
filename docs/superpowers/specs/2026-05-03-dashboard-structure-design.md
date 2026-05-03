@@ -243,7 +243,7 @@ Inputs:
 Supporting types:
 
 ```ts
-type HeatmapCellStatus = 'logged' | 'unlogged' | 'future';
+type HeatmapCellStatus = 'logged' | 'unlogged' | 'future' | 'outside';
 
 interface HeatmapCell {
   date: string;
@@ -259,6 +259,8 @@ interface HeatmapMonthHeader {
 ```
 
 Month headers align to week columns. A month header starts at the first week column containing any day in that month and spans through the last week column containing that month.
+
+Cells before the rendered date range that exist only to complete the first Monday-start week use `outside`. They are disabled, visually quiet, and excluded from adherence totals.
 
 ## 7. Data Flow
 
@@ -306,6 +308,7 @@ New user-facing copy must be added to both `messages/en.json` and `messages/vi.j
 - desktop meal action copy
 - heatmap range labels
 - heatmap future-date cell labels
+- heatmap outside-range cell labels
 - Today Dock empty meal state
 
 ## 8. Empty and Error States
