@@ -1,8 +1,8 @@
 'use client';
 
 import { TrendingDown, TrendingUp } from 'lucide-react';
-import { useMemo } from 'react';
 import { useTranslations } from 'next-intl';
+import { useMemo } from 'react';
 import { CompactWeightLog } from '@/components/dashboard/current/compact-weight-log';
 import { WeightChart } from '@/components/dashboard/progress/weight-chart';
 import type { TimeRange } from '@/components/dashboard/types';
