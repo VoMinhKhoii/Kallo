@@ -217,7 +217,7 @@ export function FeedArea({
   const hasContent = hasPersistedMeals || hasStreamingMessages;
 
   return (
-    <main className="flex flex-1 flex-col self-stretch overflow-hidden">
+    <main className="flex min-w-0 flex-1 flex-col self-stretch overflow-hidden">
       {/* Scrollable feed */}
       <div
         ref={scrollRef}
