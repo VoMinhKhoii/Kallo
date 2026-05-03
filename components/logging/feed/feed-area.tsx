@@ -45,12 +45,14 @@ interface FeedAreaProps {
   selectedDate: string;
   profile: LoggingProfile;
   initialMeal?: string;
+  onInitialMealApplied?: () => void;
 }
 
 export function FeedArea({
   selectedDate,
   profile,
   initialMeal,
+  onInitialMealApplied,
 }: FeedAreaProps) {
   const t = useTranslations('logging.feedArea');
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -69,7 +71,8 @@ export function FeedArea({
     lastPrefilledMealRef.current = initialMeal;
     inputRef.current?.setText(initialMeal);
     inputRef.current?.focus();
-  }, [initialMeal]);
+    onInitialMealApplied?.();
+  }, [initialMeal, onInitialMealApplied]);
 
   // Persisted meals from DB
   const { data: persistedMeals = [], isLoading } = useDailyMeals(selectedDate);

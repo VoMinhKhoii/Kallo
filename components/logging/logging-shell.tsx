@@ -1,10 +1,22 @@
 'use client';
 
-import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { useSearchParams } from 'next/navigation';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { FeedArea } from '@/components/logging/feed/feed-area';
+import { MobileTimelineRail } from '@/components/logging/sidebar/mobile-timeline-rail';
 import { TimelineSidebar } from '@/components/logging/sidebar/timeline-sidebar';
+import {
+  buildAllTimelineDates,
+  buildMobileRailDates,
+  todayDateString,
+} from '@/components/logging/sidebar/timeline-utils';
 import { usePrefetchDates } from '@/hooks/use-prefetch-dates';
+import { usePathname, useRouter } from '@/i18n/navigation';
+import { loadMealDates } from '@/lib/actions/meals';
 import type { Goal } from '@/lib/onboarding/types';
+
+const MOBILE_RAIL_DATE_LIMIT = 14;
 
 export interface LoggingProfile {
   userId: string;
@@ -14,14 +26,6 @@ export interface LoggingProfile {
   proteinTargetG: number;
   carbsTargetG: number;
   fatTargetG: number;
-}
-
-function todayDateString(): string {
-  const d = new Date();
-  const yyyy = d.getFullYear();
-  const mm = String(d.getMonth() + 1).padStart(2, '0');
-  const dd = String(d.getDate()).padStart(2, '0');
-  return `${yyyy}-${mm}-${dd}`;
 }
 
 interface LoggingShellProps {
@@ -35,23 +39,104 @@ export function LoggingShell({
   initialMeal,
   initialDate,
 }: LoggingShellProps) {
-  const [selectedDate, setSelectedDate] = useState(
-    () => initialDate ?? todayDateString()
-  );
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  const today = useMemo(() => todayDateString(), []);
+  const [selectedDate, setSelectedDate] = useState(() => initialDate ?? today);
+
+  const timezoneOffset = useMemo(() => new Date().getTimezoneOffset(), []);
+
+  const {
+    data: dates = [],
+    isPending,
+    isError,
+    refetch,
+  } = useQuery({
+    queryKey: ['meal-dates', profile.userId, timezoneOffset],
+    queryFn: () => loadMealDates({ timezoneOffset }),
+    staleTime: 60_000,
+  });
 
   usePrefetchDates(selectedDate);
 
+  const allDates = useMemo(
+    () => buildAllTimelineDates({ dates, today, selectedDate }),
+    [dates, selectedDate, today]
+  );
+
+  const { mobileDates, hasHiddenDates } = useMemo(
+    () =>
+      buildMobileRailDates({
+        allDates,
+        selectedDate,
+        today,
+        limit: MOBILE_RAIL_DATE_LIMIT,
+      }),
+    [allDates, selectedDate, today]
+  );
+
+  const updateSearchParams = useCallback(
+    (nextDate: string, options?: { clearMeal?: boolean }) => {
+      const params = new URLSearchParams(searchParams.toString());
+      params.set('date', nextDate);
+      if (options?.clearMeal) {
+        params.delete('meal');
+      }
+      router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+    },
+    [pathname, router, searchParams]
+  );
+
+  const handleSelectDate = useCallback(
+    (date: string) => {
+      setSelectedDate(date);
+      updateSearchParams(date);
+    },
+    [updateSearchParams]
+  );
+
+  const handleInitialMealApplied = useCallback(() => {
+    updateSearchParams(selectedDate, { clearMeal: true });
+  }, [selectedDate, updateSearchParams]);
+
+  // Reconcile browser back/forward/external URL changes
+  useEffect(() => {
+    const urlDate = searchParams.get('date');
+    if (urlDate && /^\d{4}-\d{2}-\d{2}$/.test(urlDate)) {
+      setSelectedDate(urlDate);
+    }
+  }, [searchParams]);
+
+  const timelineState = {
+    dates,
+    allDates,
+    today,
+    selectedDate,
+    isPending,
+    isError,
+    onRetry: () => {
+      void refetch();
+    },
+    onSelectDate: handleSelectDate,
+  };
+
   return (
-    <div className="flex min-h-0 flex-1 gap-3">
-      <TimelineSidebar
-        userId={profile.userId}
-        selectedDate={selectedDate}
-        onSelectDate={setSelectedDate}
+    <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden md:flex-row">
+      <MobileTimelineRail
+        {...timelineState}
+        mobileDates={mobileDates}
+        hasHiddenDates={hasHiddenDates}
       />
+      <TimelineSidebar {...timelineState} />
       <FeedArea
         selectedDate={selectedDate}
         profile={profile}
         initialMeal={initialMeal}
+        onInitialMealApplied={
+          initialMeal ? handleInitialMealApplied : undefined
+        }
       />
     </div>
   );
