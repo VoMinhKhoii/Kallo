@@ -27,9 +27,14 @@ function todayDateString(): string {
 interface LoggingShellProps {
   profile: LoggingProfile;
   initialMeal?: string;
+  initialDate?: string;
 }
 
-export function LoggingShell({ profile, initialMeal }: LoggingShellProps) {
+export function LoggingShell({
+  profile,
+  initialMeal,
+  initialDate,
+}: LoggingShellProps) {
   const [selectedDate, setSelectedDate] = useState(todayDateString);
 
   usePrefetchDates(selectedDate);
