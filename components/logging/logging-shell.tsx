@@ -104,10 +104,14 @@ export function LoggingShell({
   // Reconcile browser back/forward/external URL changes
   useEffect(() => {
     const urlDate = searchParams.get('date');
-    if (urlDate && /^\d{4}-\d{2}-\d{2}$/.test(urlDate)) {
+    if (
+      urlDate &&
+      /^\d{4}-\d{2}-\d{2}$/.test(urlDate) &&
+      urlDate !== selectedDate
+    ) {
       setSelectedDate(urlDate);
     }
-  }, [searchParams]);
+  }, [searchParams, selectedDate]);
 
   const timelineState = {
     dates,

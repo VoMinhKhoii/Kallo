@@ -268,4 +268,33 @@ describe('LoggingShell', () => {
       );
     });
   });
+
+  it('does not trigger state changes when URL date matches current selectedDate', async () => {
+    mockSearchParams.set('date', '2026-05-03');
+
+    const { rerender } = renderShell({ initialDate: '2026-05-03' });
+
+    await waitFor(() => {
+      expect(screen.getByTestId('sidebar-selected-date')).toHaveTextContent(
+        '2026-05-03'
+      );
+    });
+
+    const initialSidebarElement = screen.getByTestId('sidebar-selected-date');
+
+    // Re-render with same URL date - should not cause state update
+    rerender(
+      <QueryClientProvider client={queryClient}>
+        <LoggingShell profile={mockProfile} initialDate="2026-05-03" />
+      </QueryClientProvider>
+    );
+
+    // selectedDate should remain the same
+    expect(screen.getByTestId('sidebar-selected-date')).toHaveTextContent(
+      '2026-05-03'
+    );
+    expect(screen.getByTestId('sidebar-selected-date')).toBe(
+      initialSidebarElement
+    );
+  });
 });
