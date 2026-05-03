@@ -35,7 +35,9 @@ export function LoggingShell({
   initialMeal,
   initialDate,
 }: LoggingShellProps) {
-  const [selectedDate, setSelectedDate] = useState(todayDateString);
+  const [selectedDate, setSelectedDate] = useState(
+    () => initialDate ?? todayDateString()
+  );
 
   usePrefetchDates(selectedDate);
 
