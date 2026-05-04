@@ -4,19 +4,16 @@ import { useQuery } from '@tanstack/react-query';
 import { useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { FeedArea } from '@/components/logging/feed/feed-area';
-import { MobileTimelineRail } from '@/components/logging/sidebar/mobile-timeline-rail';
+import { MobileTimelinePicker } from '@/components/logging/sidebar/mobile-timeline-picker';
 import { TimelineSidebar } from '@/components/logging/sidebar/timeline-sidebar';
 import {
   buildAllTimelineDates,
-  buildMobileRailDates,
   todayDateString,
 } from '@/components/logging/sidebar/timeline-utils';
 import { usePrefetchDates } from '@/hooks/use-prefetch-dates';
 import { usePathname, useRouter } from '@/i18n/navigation';
 import { loadMealDates } from '@/lib/actions/meals';
 import type { Goal } from '@/lib/onboarding/types';
-
-const MOBILE_RAIL_DATE_LIMIT = 14;
 
 export interface LoggingProfile {
   userId: string;
@@ -64,17 +61,6 @@ export function LoggingShell({
   const allDates = useMemo(
     () => buildAllTimelineDates({ dates, today, selectedDate }),
     [dates, selectedDate, today]
-  );
-
-  const { mobileDates, hasHiddenDates } = useMemo(
-    () =>
-      buildMobileRailDates({
-        allDates,
-        selectedDate,
-        today,
-        limit: MOBILE_RAIL_DATE_LIMIT,
-      }),
-    [allDates, selectedDate, today]
   );
 
   const updateSearchParams = useCallback(
@@ -128,11 +114,7 @@ export function LoggingShell({
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden md:flex-row">
-      <MobileTimelineRail
-        {...timelineState}
-        mobileDates={mobileDates}
-        hasHiddenDates={hasHiddenDates}
-      />
+      <MobileTimelinePicker {...timelineState} />
       <TimelineSidebar {...timelineState} />
       <FeedArea
         selectedDate={selectedDate}

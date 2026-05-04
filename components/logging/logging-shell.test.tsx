@@ -46,22 +46,22 @@ vi.mock('@/components/logging/sidebar/timeline-sidebar', () => ({
   ),
 }));
 
-vi.mock('@/components/logging/sidebar/mobile-timeline-rail', () => ({
-  MobileTimelineRail: ({
+vi.mock('@/components/logging/sidebar/mobile-timeline-picker', () => ({
+  MobileTimelinePicker: ({
     selectedDate,
     onSelectDate,
-    mobileDates,
-    hasHiddenDates,
+    dates,
+    allDates,
   }: {
     selectedDate: string;
     onSelectDate: (date: string) => void;
-    mobileDates: string[];
-    hasHiddenDates: boolean;
+    dates: string[];
+    allDates: string[];
   }) => (
-    <div data-testid="mobile-timeline-rail">
+    <div data-testid="mobile-timeline-picker">
       <div data-testid="mobile-selected-date">{selectedDate}</div>
-      <div data-testid="mobile-dates">{mobileDates.join(',')}</div>
-      <div data-testid="mobile-hidden-dates">{String(hasHiddenDates)}</div>
+      <div data-testid="mobile-dates">{dates.join(',')}</div>
+      <div data-testid="mobile-all-dates">{allDates.join(',')}</div>
       <button
         type="button"
         data-testid="mobile-select-btn"
@@ -172,7 +172,7 @@ describe('LoggingShell', () => {
     expect(screen.getByTestId('mobile-selected-date')).toHaveTextContent(
       '2026-05-03'
     );
-    expect(screen.getByTestId('mobile-timeline-rail')).toBeInTheDocument();
+    expect(screen.getByTestId('mobile-timeline-picker')).toBeInTheDocument();
     expect(screen.getByTestId('feed-area')).toBeInTheDocument();
   });
 
@@ -189,6 +189,15 @@ describe('LoggingShell', () => {
     expect(sidebarDate).toBe('2026-05-03');
     expect(mobileDate).toBe('2026-05-03');
     expect(sidebarDate).toBe(mobileDate);
+
+    await waitFor(() => {
+      expect(screen.getByTestId('mobile-dates')).toHaveTextContent(
+        '2026-05-01,2026-05-02,2026-05-03'
+      );
+    });
+    expect(screen.getByTestId('mobile-all-dates')).toHaveTextContent(
+      '2026-05-03'
+    );
   });
 
   it('updates ?date= with router.replace and scroll false when date changes', async () => {
@@ -202,6 +211,21 @@ describe('LoggingShell', () => {
     await user.click(screen.getByTestId('sidebar-select-btn'));
 
     expect(mockReplace).toHaveBeenCalledWith('/logging?date=2026-05-01', {
+      scroll: false,
+    });
+  });
+
+  it('updates ?date= when mobile picker selects a date', async () => {
+    const user = userEvent.setup();
+    renderShell({ initialDate: '2026-05-03' });
+
+    await waitFor(() => {
+      expect(screen.getByTestId('mobile-select-btn')).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByTestId('mobile-select-btn'));
+
+    expect(mockReplace).toHaveBeenCalledWith('/logging?date=2026-05-02', {
       scroll: false,
     });
   });
