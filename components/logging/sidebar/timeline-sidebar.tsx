@@ -252,9 +252,9 @@ export function TimelineSidebar({
                                       className="pointer-events-none absolute z-[2] w-0.5 bg-nham-accent"
                                       style={{
                                         left: '-15px',
-                                        top: isFirst ? '-1.25rem' : '-3px',
+                                        top: isFirst ? '-0.25rem' : '-3px',
                                         height: isFirst
-                                          ? 'calc(50% - 10px + 1.25rem)'
+                                          ? 'calc(50% - 10px + 0.25rem)'
                                           : 'calc(50% - 7px)',
                                       }}
                                     />
