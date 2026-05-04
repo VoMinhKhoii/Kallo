@@ -2,8 +2,12 @@ import { describe, expect, it } from 'vitest';
 import {
   buildAllTimelineDates,
   buildMobileRailDates,
+  dateStringToDate,
+  dateToDateString,
   formatCompactDayLabel,
   formatDayLabel,
+  formatMobileChipDate,
+  getMobileChipRelativeLabel,
   getSelectedMonthKey,
   getSelectedWeekKey,
   groupByMonth,
@@ -12,6 +16,33 @@ import {
 } from './timeline-utils';
 
 describe('timeline-utils', () => {
+  describe('dateStringToDate', () => {
+    it('converts YYYY-MM-DD to local Date at midnight', () => {
+      const result = dateStringToDate('2026-05-03');
+      expect(result.getFullYear()).toBe(2026);
+      expect(result.getMonth()).toBe(4); // 0-indexed
+      expect(result.getDate()).toBe(3);
+      expect(result.getHours()).toBe(0);
+      expect(result.getMinutes()).toBe(0);
+      expect(result.getSeconds()).toBe(0);
+    });
+  });
+
+  describe('dateToDateString', () => {
+    it('converts Date to YYYY-MM-DD using local time', () => {
+      const date = new Date('2026-05-03T12:00:00');
+      const result = dateToDateString(date);
+      expect(result).toBe('2026-05-03');
+    });
+
+    it('round-trips with dateStringToDate', () => {
+      const original = '2026-05-03';
+      const date = dateStringToDate(original);
+      const result = dateToDateString(date);
+      expect(result).toBe(original);
+    });
+  });
+
   describe('todayDateString', () => {
     it('returns date in YYYY-MM-DD format', () => {
       const result = todayDateString();
@@ -35,6 +66,83 @@ describe('timeline-utils', () => {
     it('includes weekday in the compact label', () => {
       const label = formatCompactDayLabel('2026-05-03', 'en');
       expect(label).toContain('Sun');
+    });
+  });
+
+  describe('formatMobileChipDate', () => {
+    it('formats with weekday, month, and day', () => {
+      const label = formatMobileChipDate('2026-05-03', 'en');
+      expect(label).toContain('Sun');
+      expect(label).toContain('May');
+      expect(label).toContain('3');
+    });
+
+    it('is locale-aware', () => {
+      const labelEn = formatMobileChipDate('2026-05-03', 'en');
+      const labelVi = formatMobileChipDate('2026-05-03', 'vi');
+      expect(labelEn).not.toBe(labelVi);
+    });
+  });
+
+  describe('getMobileChipRelativeLabel', () => {
+    it('returns today when date matches today', () => {
+      const result = getMobileChipRelativeLabel({
+        date: '2026-05-03',
+        today: '2026-05-03',
+        locale: 'en',
+      });
+      expect(result).toEqual({ kind: 'today' });
+    });
+
+    it('returns yesterday when date is 1 day before today', () => {
+      const result = getMobileChipRelativeLabel({
+        date: '2026-05-02',
+        today: '2026-05-03',
+        locale: 'en',
+      });
+      expect(result).toEqual({ kind: 'yesterday' });
+    });
+
+    it('returns lastWeekday for dates 2-6 days ago', () => {
+      const result = getMobileChipRelativeLabel({
+        date: '2026-05-01',
+        today: '2026-05-03',
+        locale: 'en',
+      });
+      expect(result.kind).toBe('lastWeekday');
+      if (result.kind === 'lastWeekday') {
+        expect(result.weekday).toContain('Fri');
+      }
+    });
+
+    it('returns date for dates older than 6 days', () => {
+      const result = getMobileChipRelativeLabel({
+        date: '2026-04-26',
+        today: '2026-05-03',
+        locale: 'en',
+      });
+      expect(result).toEqual({ kind: 'date' });
+    });
+
+    it('returns date for future dates', () => {
+      const result = getMobileChipRelativeLabel({
+        date: '2026-05-04',
+        today: '2026-05-03',
+        locale: 'en',
+      });
+      expect(result).toEqual({ kind: 'date' });
+    });
+
+    it('returns localized weekday for lastWeekday', () => {
+      const result = getMobileChipRelativeLabel({
+        date: '2026-05-01',
+        today: '2026-05-03',
+        locale: 'vi',
+      });
+      expect(result.kind).toBe('lastWeekday');
+      if (result.kind === 'lastWeekday') {
+        expect(result.weekday).toBeTruthy();
+      }
     });
   });
 

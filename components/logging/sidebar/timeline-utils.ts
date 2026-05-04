@@ -29,6 +29,26 @@ export interface MobileRailDates {
   hasHiddenDates: boolean;
 }
 
+export type MobileChipRelativeLabel =
+  | { kind: 'today' }
+  | { kind: 'yesterday' }
+  | { kind: 'lastWeekday'; weekday: string }
+  | { kind: 'date' };
+
+/**
+ * Converts a YYYY-MM-DD date string to a local Date object at midnight.
+ */
+export function dateStringToDate(dateStr: string): Date {
+  return new Date(`${dateStr}T00:00:00`);
+}
+
+/**
+ * Converts a Date object to YYYY-MM-DD format using local time.
+ */
+export function dateToDateString(date: Date): string {
+  return todayDateString(date);
+}
+
 /**
  * Returns a date string in YYYY-MM-DD format.
  */
@@ -159,6 +179,56 @@ export function groupByMonth(dates: string[]): MonthSection[] {
   }
 
   return sections;
+}
+
+/**
+ * Formats a compact date for the mobile chip (e.g., "Mon, May 4").
+ */
+export function formatMobileChipDate(dateStr: string, locale: string): string {
+  const date = dateStringToDate(dateStr);
+  return new Intl.DateTimeFormat(locale, {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+  }).format(date);
+}
+
+/**
+ * Returns a structured relative label for the mobile chip.
+ * - today: selected date is today
+ * - yesterday: selected date is yesterday
+ * - lastWeekday: selected date is 2-6 days ago (returns localized weekday)
+ * - date: all other cases (future or older than 6 days)
+ */
+export function getMobileChipRelativeLabel(input: {
+  date: string;
+  today: string;
+  locale: string;
+}): MobileChipRelativeLabel {
+  const selectedTime = dateStringToDate(input.date).getTime();
+  const todayTime = dateStringToDate(input.today).getTime();
+
+  const dayDiff = Math.floor(
+    (todayTime - selectedTime) / (1000 * 60 * 60 * 24)
+  );
+
+  if (dayDiff === 0) {
+    return { kind: 'today' };
+  }
+
+  if (dayDiff === 1) {
+    return { kind: 'yesterday' };
+  }
+
+  if (dayDiff >= 2 && dayDiff <= 6) {
+    const date = dateStringToDate(input.date);
+    const weekday = new Intl.DateTimeFormat(input.locale, {
+      weekday: 'short',
+    }).format(date);
+    return { kind: 'lastWeekday', weekday };
+  }
+
+  return { kind: 'date' };
 }
 
 /**
