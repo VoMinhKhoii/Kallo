@@ -118,7 +118,7 @@ describe('LoggingShell', () => {
   let queryClient: QueryClient;
   const mockProfile: LoggingProfile = {
     userId: 'user-123',
-    goal: 'lose_weight',
+    goal: 'cutting',
     aggression: 0.5,
     calorieTarget: 2000,
     proteinTargetG: 150,
