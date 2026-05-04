@@ -3,6 +3,7 @@
 import { AlertCircle, Calendar as CalendarIcon } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useState } from 'react';
+import { enUS, vi } from 'react-day-picker/locale';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import {
@@ -48,6 +49,8 @@ export function MobileTimelinePicker({
   const locale = useLocale();
   const [open, setOpen] = useState(false);
 
+  const selectedDateValue = dateStringToDate(selectedDate);
+  const dayPickerLocale = locale === 'vi' ? vi : enUS;
   const hasMeal = dates.includes(selectedDate);
   const relativeLabel = getMobileChipRelativeLabel({
     date: selectedDate,
@@ -152,8 +155,10 @@ export function MobileTimelinePicker({
         <div className="px-4 pb-6">
           <Calendar
             mode="single"
-            selected={dateStringToDate(selectedDate)}
+            selected={selectedDateValue}
+            defaultMonth={selectedDateValue}
             onSelect={handleSelectDate}
+            locale={dayPickerLocale}
             modifiers={{
               hasMeal: dates.map(dateStringToDate),
             }}

@@ -3,6 +3,8 @@ import userEvent from '@testing-library/user-event';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { MobileTimelinePicker } from './mobile-timeline-picker';
 
+const calendarRenderSpy = vi.hoisted(() => vi.fn());
+
 // Mock window.matchMedia for Vaul drawer
 beforeAll(() => {
   Object.defineProperty(window, 'matchMedia', {
@@ -58,11 +60,17 @@ beforeEach(() => {
 vi.mock('@/components/ui/calendar', () => ({
   Calendar: ({
     selected,
+    defaultMonth,
+    locale,
     onSelect,
   }: {
     selected: Date;
+    defaultMonth: Date;
+    locale: { code?: string };
     onSelect: (date: Date | undefined) => void;
   }) => {
+    calendarRenderSpy({ selected, defaultMonth, locale });
+
     const handleClick = () => {
       const newDate = new Date(2026, 4, 5);
       onSelect(newDate);
@@ -176,6 +184,23 @@ describe('MobileTimelinePicker', () => {
 
     expect(screen.getByText('datePickerTitle')).toBeInTheDocument();
     expect(screen.getByText('datePickerDescription')).toBeInTheDocument();
+  });
+
+  it('passes the selected date as the calendar default month with locale', async () => {
+    const user = userEvent.setup();
+    calendarRenderSpy.mockClear();
+
+    render(
+      <MobileTimelinePicker {...defaultProps} selectedDate="2026-04-20" />
+    );
+
+    await user.click(screen.getByLabelText('selectDate'));
+
+    const lastCall = calendarRenderSpy.mock.lastCall?.[0];
+    expect(lastCall.defaultMonth.getFullYear()).toBe(2026);
+    expect(lastCall.defaultMonth.getMonth()).toBe(3);
+    expect(lastCall.defaultMonth.getDate()).toBe(20);
+    expect(lastCall.locale.code).toBe('en-US');
   });
 
   it('calls onSelectDate with YYYY-MM-DD format and closes drawer when date is selected', async () => {

@@ -376,6 +376,19 @@ describe('timeline-utils', () => {
       expect(result.mobileDates).toContain('2026-05-07');
     });
 
+    it('prefers newer tied dates by calendar day across DST fallback', () => {
+      const result = buildMobileRailDates({
+        allDates: ['2024-11-02', '2024-11-04'],
+        selectedDate: '2024-11-03',
+        today: '2024-11-03',
+        limit: 2,
+      });
+
+      expect(result.mobileDates).toContain('2024-11-03');
+      expect(result.mobileDates).toContain('2024-11-04');
+      expect(result.mobileDates).not.toContain('2024-11-02');
+    });
+
     it('returns dates sorted in descending order', () => {
       const result = buildMobileRailDates({
         allDates: ['2026-05-01', '2026-05-05', '2026-05-10'],

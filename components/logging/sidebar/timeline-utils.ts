@@ -50,6 +50,11 @@ export function dateToDateString(date: Date): string {
   return todayDateString(date);
 }
 
+function dateStringToUtcDayNumber(dateStr: string): number {
+  const [year, month, day] = dateStr.split('-').map(Number);
+  return Date.UTC(year, month - 1, day) / (1000 * 60 * 60 * 24);
+}
+
 /**
  * Returns a date string in YYYY-MM-DD format.
  */
@@ -206,12 +211,9 @@ export function getMobileChipRelativeLabel(input: {
   today: string;
   locale: string;
 }): MobileChipRelativeLabel {
-  const selectedTime = dateStringToDate(input.date).getTime();
-  const todayTime = dateStringToDate(input.today).getTime();
-
-  const dayDiff = Math.round(
-    (todayTime - selectedTime) / (1000 * 60 * 60 * 24)
-  );
+  const dayDiff =
+    dateStringToUtcDayNumber(input.today) -
+    dateStringToUtcDayNumber(input.date);
 
   if (dayDiff === 0) {
     return { kind: 'today' };
@@ -255,14 +257,11 @@ export function buildMobileRailDates(
   const effectiveLimit = Math.max(limit, requiredDates.size);
 
   // Step 4: Rank remaining dates by distance from selectedDate
-  const selectedTime = dateStringToDate(selectedDate).getTime();
+  const selectedDayNumber = dateStringToUtcDayNumber(selectedDate);
 
   remainingDates.sort((a, b) => {
-    const aTime = dateStringToDate(a).getTime();
-    const bTime = dateStringToDate(b).getTime();
-
-    const aDist = Math.abs(aTime - selectedTime);
-    const bDist = Math.abs(bTime - selectedTime);
+    const aDist = Math.abs(dateStringToUtcDayNumber(a) - selectedDayNumber);
+    const bDist = Math.abs(dateStringToUtcDayNumber(b) - selectedDayNumber);
 
     if (aDist !== bDist) {
       return aDist - bDist;
