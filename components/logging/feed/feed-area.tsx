@@ -218,14 +218,34 @@ export function FeedArea({
 
   return (
     <main className="flex min-w-0 flex-1 flex-col self-stretch overflow-hidden">
-      {/* Scrollable feed */}
+      <div
+        className="shrink-0 bg-nham-surface px-4 pt-4 pb-3 sm:px-6"
+        data-testid="macro-summary-region"
+      >
+        <div className="mx-auto max-w-4xl">
+          {hasUnknownDailyMacros ? (
+            <div
+              className="font-medium text-[11px] text-nham-text-muted/80"
+              style={{ fontFamily: 'DM Sans, sans-serif' }}
+            >
+              Daily macro summary unavailable because some legacy meals have
+              unknown macros.
+            </div>
+          ) : (
+            <MacroSummary totals={dailyTotals} targets={targets} />
+          )}
+        </div>
+      </div>
+
+      {/* Scrollable meal cards only */}
       <div
         ref={scrollRef}
-        className="flex min-h-0 flex-1 flex-col overflow-y-auto"
+        className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain px-4 py-4 sm:px-6"
+        data-testid="meal-card-scroll"
       >
         <AnimatePresence mode="wait">
           {!hasContent && !stream.isAnalyzing && !isLoading && (
-            <div className="flex flex-1 items-center justify-center px-4 py-6 sm:px-6">
+            <div className="flex flex-1 items-center justify-center py-6">
               <EmptyState
                 onSuggestionClick={(suggestion) => {
                   inputRef.current?.setText(suggestion);
@@ -237,99 +257,75 @@ export function FeedArea({
         </AnimatePresence>
 
         {hasContent && (
-          <>
-            {/* Sticky macro summary */}
-            <div className="sticky top-0 z-10 bg-nham-surface px-4 pt-4 pb-3 sm:px-6">
-              <div className="mx-auto max-w-4xl">
-                {hasUnknownDailyMacros ? (
-                  <div
-                    className="font-medium text-[11px] text-nham-text-muted/80"
-                    style={{ fontFamily: 'DM Sans, sans-serif' }}
-                  >
-                    Daily macro summary unavailable because some legacy meals
-                    have unknown macros.
-                  </div>
-                ) : (
-                  <MacroSummary totals={dailyTotals} targets={targets} />
-                )}
-              </div>
-            </div>
+          <div className="mx-auto w-full max-w-3xl pl-12">
+            <div className="flex flex-col gap-8">
+              {/* Persisted meals from DB */}
+              <AnimatePresence initial={false}>
+                {persistedMeals.map((meal) => (
+                  <PersistedMealCard key={meal.id} meal={meal} />
+                ))}
+              </AnimatePresence>
 
-            {/* Meal entries */}
-            <div className="px-4 pb-6 sm:px-6">
-              <div className="mx-auto w-full max-w-3xl pl-12">
-                <div className="flex flex-col gap-8">
-                  {/* Persisted meals from DB */}
-                  <AnimatePresence initial={false}>
-                    {persistedMeals.map((meal) => (
-                      <PersistedMealCard key={meal.id} meal={meal} />
-                    ))}
-                  </AnimatePresence>
+              {/* Streaming / unconfirmed messages */}
+              <AnimatePresence initial={false}>
+                {unconfirmedMessages.map((msg) => {
+                  if (msg.isStreaming) {
+                    return <StreamingMealEntry key={msg.id} message={msg} />;
+                  }
 
-                  {/* Streaming / unconfirmed messages */}
-                  <AnimatePresence initial={false}>
-                    {unconfirmedMessages.map((msg) => {
-                      if (msg.isStreaming) {
-                        return (
-                          <StreamingMealEntry key={msg.id} message={msg} />
-                        );
-                      }
+                  if (msg.parsedMeal) {
+                    return (
+                      <MealEntry
+                        key={msg.id}
+                        message={msg}
+                        onConfirm={() => {
+                          if (msg.analysisId)
+                            handleConfirmMeal(msg.id, msg.analysisId);
+                        }}
+                        isConfirming={confirmMeal.isPending}
+                      />
+                    );
+                  }
 
-                      if (msg.parsedMeal) {
-                        return (
-                          <MealEntry
-                            key={msg.id}
-                            message={msg}
-                            onConfirm={() => {
-                              if (msg.analysisId)
-                                handleConfirmMeal(msg.id, msg.analysisId);
-                            }}
-                            isConfirming={confirmMeal.isPending}
-                          />
-                        );
-                      }
-
-                      // Error message display
-                      return (
-                        <motion.div
-                          key={msg.id}
-                          initial={{ opacity: 0, y: 10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          className="group relative"
+                  // Error message display
+                  return (
+                    <motion.div
+                      key={msg.id}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="group relative"
+                    >
+                      <div className="absolute top-2 bottom-0 -left-10 w-px bg-nham-border/60 group-last:bg-transparent" />
+                      <div className="absolute top-2 -left-[43px] h-2 w-2 rounded-full border-2 border-rose-400 bg-white" />
+                      <div className="rounded-2xl border border-rose-200/60 bg-rose-50/50 p-4">
+                        {msg.userInput && (
+                          <p
+                            className="mb-2 text-[13px] text-nham-text-muted"
+                            style={{ fontFamily: 'Lora, serif' }}
+                          >
+                            &ldquo;{msg.userInput}&rdquo;
+                          </p>
+                        )}
+                        <p
+                          className="text-rose-600 text-sm"
+                          style={{
+                            fontFamily: 'DM Sans, sans-serif',
+                          }}
                         >
-                          <div className="absolute top-2 bottom-0 -left-10 w-px bg-nham-border/60 group-last:bg-transparent" />
-                          <div className="absolute top-2 -left-[43px] h-2 w-2 rounded-full border-2 border-rose-400 bg-white" />
-                          <div className="rounded-2xl border border-rose-200/60 bg-rose-50/50 p-4">
-                            {msg.userInput && (
-                              <p
-                                className="mb-2 text-[13px] text-nham-text-muted"
-                                style={{ fontFamily: 'Lora, serif' }}
-                              >
-                                &ldquo;{msg.userInput}&rdquo;
-                              </p>
-                            )}
-                            <p
-                              className="text-rose-600 text-sm"
-                              style={{
-                                fontFamily: 'DM Sans, sans-serif',
-                              }}
-                            >
-                              {msg.content}
-                            </p>
-                          </div>
-                        </motion.div>
-                      );
-                    })}
-                  </AnimatePresence>
-                </div>
-              </div>
+                          {msg.content}
+                        </p>
+                      </div>
+                    </motion.div>
+                  );
+                })}
+              </AnimatePresence>
             </div>
-          </>
+          </div>
         )}
       </div>
 
       {/* Input area */}
-      <div className="px-4 pt-2 pb-4">
+      <div className="shrink-0 px-4 pt-2 pb-4">
         <div className="mx-auto max-w-3xl">
           <MealInput
             ref={inputRef}

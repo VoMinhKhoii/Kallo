@@ -113,7 +113,7 @@ export function LoggingShell({
   };
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden md:flex-row">
+    <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden md:h-[calc(100vh-1.5rem)] md:flex-row">
       <MobileTimelinePicker {...timelineState} />
       <TimelineSidebar {...timelineState} />
       <FeedArea
