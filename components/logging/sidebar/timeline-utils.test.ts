@@ -105,6 +105,20 @@ describe('timeline-utils', () => {
       expect(result[0].weeks).toHaveLength(1);
       expect(result[0].weeks[0].days).toHaveLength(3);
     });
+
+    it('sorts days within each week in descending order regardless of input order', () => {
+      const dates = ['2026-05-01', '2026-05-05', '2026-05-03', '2026-05-02'];
+      const result = groupByMonth(dates);
+
+      expect(result).toHaveLength(1);
+      expect(result[0].weeks).toHaveLength(1);
+      expect(result[0].weeks[0].days).toEqual([
+        '2026-05-05',
+        '2026-05-03',
+        '2026-05-02',
+        '2026-05-01',
+      ]);
+    });
   });
 
   describe('buildAllTimelineDates', () => {

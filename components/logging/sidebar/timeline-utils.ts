@@ -153,6 +153,9 @@ export function groupByMonth(dates: string[]): MonthSection[] {
 
   for (const section of sections) {
     section.weeks.sort((a, b) => a.weekNumber - b.weekNumber);
+    for (const week of section.weeks) {
+      week.days.sort((a, b) => b.localeCompare(a));
+    }
   }
 
   return sections;
