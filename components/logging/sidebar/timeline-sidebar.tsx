@@ -224,7 +224,7 @@ export function TimelineSidebar({
                         {isWeekExpanded && (
                           <div
                             id={`week-${week.key}`}
-                            className="relative mt-1 ml-3 min-w-0 pl-4"
+                            className="relative mt-1 ml-3 min-w-0 pl-8"
                           >
                             {/* Days list */}
                             <ul className="flex min-w-0 flex-1 flex-col gap-1.5">
@@ -244,16 +244,17 @@ export function TimelineSidebar({
                                     key={date}
                                     className="relative flex w-full min-w-0 items-center"
                                   >
-                                    {/* Upper vertical segment: starts just below the week row
-                                        so the connector never crosses the week label. */}
+                                    {/* Upper vertical segment: for the first item it
+                                        reaches up to the vertical midpoint of the Week
+                                        row above (row height ~32px + mt-1 gap = ~20px). */}
                                     <div
                                       aria-hidden="true"
                                       className="pointer-events-none absolute z-[2] w-0.5 bg-nham-accent"
                                       style={{
                                         left: '-15px',
-                                        top: isFirst ? '-0.25rem' : '-3px',
+                                        top: isFirst ? '-1.25rem' : '-3px',
                                         height: isFirst
-                                          ? 'calc(50% - 10px + 0.25rem)'
+                                          ? 'calc(50% - 10px + 1.25rem)'
                                           : 'calc(50% - 7px)',
                                       }}
                                     />
