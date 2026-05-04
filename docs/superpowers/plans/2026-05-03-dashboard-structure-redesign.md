@@ -390,7 +390,8 @@ Expected: FAIL because helper file does not exist.
 Use this public shape:
 
 ```ts
-import type { WeightGoalDirection, WeightRange } from '@/lib/types/weight';
+import type { WeightRange } from '@/lib/types/dashboard';
+import type { WeightGoalDirection } from '@/lib/types/weight';
 
 export type WeightTrendStatus =
   | 'insufficient'

@@ -15,19 +15,13 @@ import { type WeightLogInput, weightLogSchema } from '@/lib/validation';
 interface CompactWeightLogProps {
   currentWeight: number;
   todayWeight: number | null | undefined;
-}
-
-function todayDateString(): string {
-  const date = new Date();
-  const yyyy = date.getFullYear();
-  const mm = String(date.getMonth() + 1).padStart(2, '0');
-  const dd = String(date.getDate()).padStart(2, '0');
-  return `${yyyy}-${mm}-${dd}`;
+  todayDate: string;
 }
 
 export function CompactWeightLog({
   currentWeight,
   todayWeight,
+  todayDate,
 }: CompactWeightLogProps) {
   const t = useTranslations('dashboard');
   const logWeightMutation = useLogWeight();
@@ -41,7 +35,7 @@ export function CompactWeightLog({
   } = useForm<WeightLogInput>({
     resolver: zodResolver(weightLogSchema),
     defaultValues: {
-      loggedDate: todayDateString(),
+      loggedDate: todayDate,
       weightKg: todayWeight ?? currentWeight,
     },
   });
@@ -49,11 +43,11 @@ export function CompactWeightLog({
   useEffect(() => {
     if (!isDirty) {
       reset({
-        loggedDate: todayDateString(),
+        loggedDate: todayDate,
         weightKg: todayWeight ?? currentWeight,
       });
     }
-  }, [currentWeight, reset, todayWeight, isDirty]);
+  }, [currentWeight, reset, todayDate, todayWeight, isDirty]);
 
   const onSubmit = async (values: WeightLogInput) => {
     try {

@@ -2,7 +2,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import type { HeatmapRange } from '@/lib/types/dashboard';
 
 export function ProgressSectionSkeleton({ range }: { range: HeatmapRange }) {
-  const heatmapSquares = range === '30d' ? 35 : range === '90d' ? 70 : 182;
+  const heatmapSquares =
+    range === '30d' ? 5 * 7 : range === '90d' ? 14 * 7 : 53 * 7;
 
   return (
     <div className="flex h-full gap-3">

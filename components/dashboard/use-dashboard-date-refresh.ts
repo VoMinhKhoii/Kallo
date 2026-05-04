@@ -15,6 +15,9 @@ export function useDashboardDateRefresh(queryClient: QueryClient) {
       void queryClient.invalidateQueries({
         queryKey: ['dashboard', 'heatmapData'],
       });
+      void queryClient.invalidateQueries({
+        queryKey: ['weight-summary'],
+      });
     };
 
     const syncTodayDate = () => {

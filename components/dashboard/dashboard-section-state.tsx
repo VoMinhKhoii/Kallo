@@ -1,3 +1,5 @@
+'use client';
+
 interface DashboardSectionStateProps {
   message: string;
   actionLabel?: string;
@@ -10,7 +12,7 @@ export function DashboardSectionState({
   onAction,
 }: DashboardSectionStateProps) {
   return (
-    <div className="flex h-full min-h-[180px] flex-col items-center justify-center gap-3 rounded-[1.5rem] border border-nham-border/60 bg-card p-4 text-center text-nham-stone text-sm shadow-[0_10px_32px_rgba(44,36,22,0.05)]">
+    <div className="flex h-full min-h-[180px] flex-col items-center justify-center gap-3 rounded-[1.5rem] border border-nham-border/60 bg-card p-4 text-center text-nham-stone text-sm shadow-[0_10px_32px_rgba(44,36,22,0.05)] dark:shadow-[0_10px_32px_rgba(0,0,0,0.15)]">
       <p className="max-w-sm">{message}</p>
       {actionLabel && onAction ? (
         <button

@@ -62,6 +62,7 @@ function MealInputForm({
         ref={inputRef}
         type="text"
         placeholder={tl('placeholder')}
+        maxLength={300}
         className="min-w-0 flex-1 bg-transparent text-nham-text text-sm outline-none placeholder:text-nham-stone"
         value={text}
         onChange={(event) => setText(event.target.value)}

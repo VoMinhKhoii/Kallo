@@ -13,9 +13,14 @@ import { cn } from '@/lib/utils';
 interface ProgressStoryProps {
   weightSummary: WeightSummaryData | undefined;
   range: TimeRange;
+  todayDate: string;
 }
 
-export function ProgressStory({ weightSummary, range }: ProgressStoryProps) {
+export function ProgressStory({
+  weightSummary,
+  range,
+  todayDate,
+}: ProgressStoryProps) {
   const t = useTranslations('dashboard');
   const summary = useMemo(() => {
     if (!weightSummary) return null;
@@ -52,11 +57,11 @@ export function ProgressStory({ weightSummary, range }: ProgressStoryProps) {
             className={cn(
               'mb-2 inline-flex items-center gap-2 rounded-full px-2.5 py-1 font-semibold text-xs',
               summary.status === 'behind'
-                ? 'bg-red-500/10 text-red-700'
+                ? 'bg-destructive/10 text-destructive'
                 : 'bg-nham-accent/10 text-nham-accent'
             )}
           >
-            <Icon className="h-3.5 w-3.5" />
+            <Icon className="h-3.5 w-3.5" aria-hidden="true" />
             {copy.label}
           </div>
           <div className="flex items-end justify-between gap-3">
@@ -70,7 +75,12 @@ export function ProgressStory({ weightSummary, range }: ProgressStoryProps) {
               </h2>
               <p className="mt-1 text-nham-stone text-xs">{copy.detail}</p>
             </div>
-            <div className="grid grid-cols-2 gap-2 text-sm">
+            <div
+              className={cn(
+                'grid gap-2 text-sm',
+                summary.canProject ? 'grid-cols-2' : 'grid-cols-1'
+              )}
+            >
               <div className="rounded-xl bg-card/80 px-2.5 py-2">
                 <span className="block text-[9px] text-nham-stone uppercase tracking-[0.14em]">
                   {t('now')}
@@ -79,14 +89,16 @@ export function ProgressStory({ weightSummary, range }: ProgressStoryProps) {
                   {summary.currentWeight.toFixed(1)} {t('units.kg')}
                 </strong>
               </div>
-              <div className="rounded-xl bg-card/80 px-2.5 py-2">
-                <span className="block text-[9px] text-nham-stone uppercase tracking-[0.14em]">
-                  {t('projected')}
-                </span>
-                <strong className="font-mono text-nham-text text-xs">
-                  {summary.projectedEndWeight.toFixed(1)} {t('units.kg')}
-                </strong>
-              </div>
+              {summary.canProject && (
+                <div className="rounded-xl bg-card/80 px-2.5 py-2">
+                  <span className="block text-[9px] text-nham-stone uppercase tracking-[0.14em]">
+                    {t('projected')}
+                  </span>
+                  <strong className="font-mono text-nham-text text-xs">
+                    {summary.projectedEndWeight.toFixed(1)} {t('units.kg')}
+                  </strong>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -94,6 +106,7 @@ export function ProgressStory({ weightSummary, range }: ProgressStoryProps) {
         <CompactWeightLog
           currentWeight={weightSummary.currentWeight}
           todayWeight={weightSummary.todayWeight}
+          todayDate={todayDate}
         />
       </div>
 

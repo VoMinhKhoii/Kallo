@@ -134,7 +134,11 @@ export function DashboardShell({ profile }: DashboardShellProps) {
             </div>
             <div className="xl:min-h-0 xl:flex-1">
               {!hasMeasuredProgress || weightSummaryQuery.isPending ? (
-                <ProgressStory weightSummary={undefined} range={weightRange} />
+                <ProgressStory
+                  weightSummary={undefined}
+                  range={weightRange}
+                  todayDate={todayDate}
+                />
               ) : weightSummaryQuery.isError ? (
                 <DashboardSectionState
                   message={t('progressLoadError')}
@@ -147,6 +151,7 @@ export function DashboardShell({ profile }: DashboardShellProps) {
                 <ProgressStory
                   weightSummary={weightSummary}
                   range={weightRange}
+                  todayDate={todayDate}
                 />
               )}
             </div>
