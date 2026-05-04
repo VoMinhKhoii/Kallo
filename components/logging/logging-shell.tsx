@@ -2,7 +2,14 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { useSearchParams } from 'next/navigation';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useTransition,
+} from 'react';
 import { FeedArea } from '@/components/logging/feed/feed-area';
 import { MobileTimelinePicker } from '@/components/logging/sidebar/mobile-timeline-picker';
 import { TimelineSidebar } from '@/components/logging/sidebar/timeline-sidebar';
@@ -42,6 +49,9 @@ export function LoggingShell({
 
   const today = useMemo(() => todayDateString(), []);
   const [selectedDate, setSelectedDate] = useState(() => initialDate ?? today);
+  const lastUrlDateRef = useRef(initialDate ?? today);
+  const [isDateNavigationPending, startDateNavigationTransition] =
+    useTransition();
 
   const timezoneOffset = useMemo(() => new Date().getTimezoneOffset(), []);
 
@@ -78,7 +88,9 @@ export function LoggingShell({
   const handleSelectDate = useCallback(
     (date: string) => {
       setSelectedDate(date);
-      updateSearchParams(date);
+      startDateNavigationTransition(() => {
+        updateSearchParams(date);
+      });
     },
     [updateSearchParams]
   );
@@ -87,17 +99,18 @@ export function LoggingShell({
     updateSearchParams(selectedDate, { clearMeal: true });
   }, [selectedDate, updateSearchParams]);
 
-  // Reconcile browser back/forward/external URL changes
+  // Reconcile browser back/forward/external URL changes. This intentionally
+  // runs only when the URL changes; otherwise a local click can be reverted by
+  // the still-stale searchParams value before router.replace completes.
   useEffect(() => {
     const urlDate = searchParams.get('date');
-    if (
-      urlDate &&
-      /^\d{4}-\d{2}-\d{2}$/.test(urlDate) &&
-      urlDate !== selectedDate
-    ) {
-      setSelectedDate(urlDate);
-    }
-  }, [searchParams, selectedDate]);
+    if (!urlDate || !/^\d{4}-\d{2}-\d{2}$/.test(urlDate)) return;
+
+    if (urlDate === lastUrlDateRef.current) return;
+
+    lastUrlDateRef.current = urlDate;
+    setSelectedDate(urlDate);
+  }, [searchParams]);
 
   const timelineState = {
     dates,
@@ -120,6 +133,7 @@ export function LoggingShell({
         selectedDate={selectedDate}
         profile={profile}
         initialMeal={initialMeal}
+        isDateNavigationPending={isDateNavigationPending}
         onInitialMealApplied={
           initialMeal ? handleInitialMealApplied : undefined
         }

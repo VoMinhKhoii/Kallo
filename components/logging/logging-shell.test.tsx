@@ -7,11 +7,14 @@ import { type LoggingProfile, LoggingShell } from './logging-shell';
 // Mock child components
 vi.mock('@/components/logging/feed/feed-area', () => ({
   FeedArea: ({
+    selectedDate,
     onInitialMealApplied,
   }: {
+    selectedDate: string;
     onInitialMealApplied?: () => void;
   }) => (
     <div data-testid="feed-area">
+      <div data-testid="feed-selected-date">{selectedDate}</div>
       {onInitialMealApplied && (
         <button
           type="button"
@@ -212,6 +215,28 @@ describe('LoggingShell', () => {
 
     expect(mockReplace).toHaveBeenCalledWith('/logging?date=2026-05-01', {
       scroll: false,
+    });
+  });
+
+  it('keeps the clicked date selected while router.replace catches up', async () => {
+    const user = userEvent.setup();
+    mockSearchParams.set('date', '2026-05-03');
+
+    renderShell({ initialDate: '2026-05-03' });
+
+    await waitFor(() => {
+      expect(screen.getByTestId('sidebar-select-btn')).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByTestId('sidebar-select-btn'));
+
+    await waitFor(() => {
+      expect(screen.getByTestId('sidebar-selected-date')).toHaveTextContent(
+        '2026-05-01'
+      );
+      expect(screen.getByTestId('feed-selected-date')).toHaveTextContent(
+        '2026-05-01'
+      );
     });
   });
 

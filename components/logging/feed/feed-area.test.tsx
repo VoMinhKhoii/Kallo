@@ -163,4 +163,22 @@ describe('FeedArea', () => {
     );
     expect(within(scrollRegion).queryByTestId('empty-state')).toBeNull();
   });
+
+  it('shows a day loading skeleton instead of stale or empty card content', () => {
+    mockUseLoggingDay.mockReturnValue({
+      data: undefined,
+      isLoading: true,
+    });
+
+    render(<FeedArea selectedDate="2026-05-05" profile={profile} />);
+
+    const scrollRegion = screen.getByTestId('meal-card-scroll');
+    expect(
+      within(scrollRegion).getByTestId('logging-day-skeleton')
+    ).toBeInTheDocument();
+    expect(within(scrollRegion).queryByTestId('empty-state')).toBeNull();
+    expect(
+      within(scrollRegion).queryByTestId('persisted-meal-card')
+    ).toBeNull();
+  });
 });

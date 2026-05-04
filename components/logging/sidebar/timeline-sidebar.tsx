@@ -244,17 +244,16 @@ export function TimelineSidebar({
                                     key={date}
                                     className="relative flex w-full min-w-0 items-center"
                                   >
-                                    {/* Upper vertical segment: connects from the week
-                                        header (first item) or from the previous item's
-                                        lower segment to the top of this L-connector */}
+                                    {/* Upper vertical segment: starts just below the week row
+                                        so the connector never crosses the week label. */}
                                     <div
                                       aria-hidden="true"
                                       className="pointer-events-none absolute z-[2] w-0.5 bg-nham-accent"
                                       style={{
-                                        left: '-9px',
-                                        top: isFirst ? '-1.375rem' : '-3px',
+                                        left: '-15px',
+                                        top: isFirst ? '-0.25rem' : '-3px',
                                         height: isFirst
-                                          ? 'calc(50% - 10px + 1.375rem)'
+                                          ? 'calc(50% - 10px + 0.25rem)'
                                           : 'calc(50% - 7px)',
                                       }}
                                     />
@@ -267,7 +266,7 @@ export function TimelineSidebar({
                                         aria-hidden="true"
                                         className="pointer-events-none absolute z-[2] w-0.5 bg-nham-accent"
                                         style={{
-                                          left: '-9px',
+                                          left: '-15px',
                                           top: '50%',
                                           height: 'calc(50% + 3px)',
                                         }}
@@ -280,10 +279,10 @@ export function TimelineSidebar({
                                       aria-hidden="true"
                                       className="pointer-events-none absolute z-[2] -translate-y-full rounded-bl-lg border-nham-accent border-b-2 border-l-2"
                                       style={{
-                                        left: '-9px',
+                                        left: '-15px',
                                         top: '50%',
                                         height: '10px',
-                                        width: '13px',
+                                        width: '15px',
                                       }}
                                     />
 

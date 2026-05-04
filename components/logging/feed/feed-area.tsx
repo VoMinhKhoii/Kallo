@@ -46,13 +46,69 @@ interface FeedAreaProps {
   selectedDate: string;
   profile: LoggingProfile;
   initialMeal?: string;
+  isDateNavigationPending?: boolean;
   onInitialMealApplied?: () => void;
+}
+
+function MacroSummarySkeleton() {
+  return (
+    <div
+      aria-hidden="true"
+      className="grid animate-pulse grid-cols-2 gap-3 sm:grid-cols-4"
+    >
+      {[64, 52, 58, 48].map((width, index) => (
+        <div
+          key={index}
+          className="rounded-2xl border border-nham-border/50 bg-nham-hover/25 p-3"
+        >
+          <div
+            className="mb-2 h-3 rounded-full bg-nham-border/70"
+            style={{ width }}
+          />
+          <div className="h-5 w-16 rounded-full bg-nham-accent/25" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function LoggingDaySkeleton() {
+  return (
+    <div
+      aria-busy="true"
+      data-testid="logging-day-skeleton"
+      className="mx-auto w-full max-w-3xl pl-12"
+    >
+      <div className="flex animate-pulse flex-col gap-8">
+        {[0, 1].map((item) => (
+          <div key={item} className="group relative">
+            <div className="absolute top-2 bottom-0 -left-10 w-px bg-nham-border/50 group-last:bg-transparent" />
+            <div className="absolute top-2 -left-[43px] h-2 w-2 rounded-full border-2 border-nham-accent/70 bg-nham-surface" />
+            <div className="mb-2 h-3 w-16 rounded-full bg-nham-border/70" />
+            <div className="rounded-2xl border border-nham-border/60 bg-nham-hover/20 p-5 shadow-sm">
+              <div className="mb-4 h-5 w-2/3 rounded-full bg-nham-border/70" />
+              <div className="space-y-2">
+                <div className="h-3 w-full rounded-full bg-nham-border/60" />
+                <div className="h-3 w-5/6 rounded-full bg-nham-border/50" />
+                <div className="h-3 w-3/5 rounded-full bg-nham-border/40" />
+              </div>
+              <div className="mt-5 flex items-center justify-between border-nham-border/50 border-t border-dashed pt-3">
+                <div className="h-3 w-28 rounded-full bg-nham-border/50" />
+                <div className="h-4 w-16 rounded-full bg-nham-accent/25" />
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 }
 
 export function FeedArea({
   selectedDate,
   profile,
   initialMeal,
+  isDateNavigationPending = false,
   onInitialMealApplied,
 }: FeedAreaProps) {
   const t = useTranslations('logging.feedArea');
@@ -80,6 +136,7 @@ export function FeedArea({
     profile.userId,
     selectedDate
   );
+  const isDayLoading = isLoading || isDateNavigationPending;
   const persistedMeals = loggingDay?.persistedMeals ?? [];
   const pendingConfirmations = loggingDay?.pendingConfirmations ?? [];
 
@@ -276,7 +333,9 @@ export function FeedArea({
         data-testid="macro-summary-region"
       >
         <div className="mx-auto max-w-4xl">
-          {hasUnknownDailyMacros ? (
+          {isDayLoading ? (
+            <MacroSummarySkeleton />
+          ) : hasUnknownDailyMacros ? (
             <div
               className="font-medium text-[11px] text-nham-text-muted/80"
               style={{ fontFamily: 'DM Sans, sans-serif' }}
@@ -297,7 +356,7 @@ export function FeedArea({
         data-testid="meal-card-scroll"
       >
         <AnimatePresence mode="wait">
-          {!hasContent && !stream.isAnalyzing && !isLoading && (
+          {!hasContent && !stream.isAnalyzing && !isDayLoading && (
             <div className="flex flex-1 items-center justify-center py-6">
               <EmptyState
                 onSuggestionClick={(suggestion) => {
@@ -309,7 +368,9 @@ export function FeedArea({
           )}
         </AnimatePresence>
 
-        {hasContent && (
+        {isDayLoading && <LoggingDaySkeleton />}
+
+        {!isDayLoading && hasContent && (
           <div className="mx-auto w-full max-w-3xl pl-12">
             <div className="flex flex-col gap-8">
               {/* Persisted meals from DB */}
