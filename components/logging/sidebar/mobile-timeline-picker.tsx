@@ -72,28 +72,6 @@ export function MobileTimelinePicker({
     );
   }
 
-  if (isError) {
-    return (
-      <div
-        className="flex items-center gap-2 md:hidden"
-        data-testid="mobile-picker-error"
-      >
-        <div className="flex items-center gap-2 text-destructive text-sm">
-          <AlertCircle className="size-4" aria-hidden="true" />
-          <span>{t('failedToLoadDates')}</span>
-        </div>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={onRetry}
-          aria-label={t('retryDates')}
-        >
-          {t('retryDates')}
-        </Button>
-      </div>
-    );
-  }
-
   let relativeLabelText = '';
   switch (relativeLabel.kind) {
     case 'today':
@@ -114,7 +92,7 @@ export function MobileTimelinePicker({
 
   return (
     <Drawer open={open} onOpenChange={setOpen} direction="top">
-      <div className="md:hidden">
+      <div className="flex flex-col gap-2 md:hidden">
         <DrawerTrigger asChild>
           <button
             type="button"
@@ -144,6 +122,26 @@ export function MobileTimelinePicker({
             />
           </button>
         </DrawerTrigger>
+
+        {isError && (
+          <div
+            className="flex items-center gap-2 rounded-lg border border-destructive/50 bg-destructive/5 px-3 py-2"
+            data-testid="mobile-picker-error"
+          >
+            <div className="flex flex-1 items-center gap-2 text-destructive text-sm">
+              <AlertCircle className="size-4 shrink-0" aria-hidden="true" />
+              <span>{t('failedToLoadDates')}</span>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onRetry}
+              aria-label={t('retryDates')}
+            >
+              {t('retryDates')}
+            </Button>
+          </div>
+        )}
       </div>
 
       <DrawerContent>
