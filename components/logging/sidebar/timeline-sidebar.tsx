@@ -86,10 +86,10 @@ export function TimelineSidebar({
   if (isPending) {
     return (
       <nav
-        className="hidden h-full w-[232px] shrink-0 flex-col overflow-hidden rounded-2xl border border-nham-border/60 bg-white/70 shadow-nham-text/[0.03] shadow-sm md:flex"
+        className="hidden h-full w-[212px] shrink-0 flex-col border-border/40 border-r py-3 pr-3 md:flex"
         aria-label={t('navigationLabel')}
       >
-        <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-3">
+        <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto">
           {[1, 2, 3].map((i) => (
             <div
               key={i}
@@ -104,13 +104,13 @@ export function TimelineSidebar({
 
   return (
     <nav
-      className="hidden h-full w-[232px] shrink-0 flex-col overflow-hidden rounded-2xl border border-nham-border/60 bg-white/70 shadow-nham-text/[0.03] shadow-sm md:flex"
+      className="hidden h-full w-[212px] shrink-0 flex-col border-border/40 border-r py-3 pr-3 md:flex"
       aria-label={t('navigationLabel')}
     >
-      <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-3">
+      <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto">
         {/* Error state */}
         {isError && (
-          <div className="flex flex-col gap-2 rounded-lg border border-red-200/60 bg-red-50/80 p-3">
+          <div className="ml-3 flex flex-col gap-2 rounded-lg border border-red-200/60 bg-red-50/80 p-3">
             <div className="flex items-center gap-2 text-red-900 text-sm">
               <AlertCircle className="h-4 w-4" aria-hidden="true" />
               <span className="flex-1 font-medium">
@@ -129,79 +129,88 @@ export function TimelineSidebar({
 
         {/* Empty state */}
         {!hasSavedMeals && (
-          <div className="rounded-lg border border-nham-border/40 bg-nham-hover/30 p-3 text-center text-nham-text-muted text-sm">
+          <div className="ml-3 rounded-lg border border-nham-border/40 bg-nham-hover/30 p-3 text-center text-nham-text-muted text-sm">
             {t('noPreviousMeals')}
           </div>
         )}
 
         {/* Timeline */}
-        {months.map((month, monthIndex) => {
+        {months.map((month) => {
           const isMonthExpanded = expandedMonths.has(month.key);
 
           return (
-            <div key={month.key} className="flex w-full flex-col gap-3">
-              <div className="flex w-full flex-col gap-2">
-                <button
-                  type="button"
-                  onClick={() => toggleMonth(month.key)}
-                  aria-expanded={isMonthExpanded}
-                  aria-controls={`month-${month.key}`}
-                  className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-nham-text-muted transition-[background-color,color] hover:bg-nham-hover/40 hover:text-nham-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent focus-visible:ring-offset-2"
+            <div key={month.key} className="flex w-full flex-col gap-2">
+              {/* Month header */}
+              <button
+                type="button"
+                onClick={() => toggleMonth(month.key)}
+                aria-expanded={isMonthExpanded}
+                aria-controls={`month-${month.key}`}
+                className="ml-3 flex w-full items-center gap-2 text-muted-foreground transition-colors hover:text-nham-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent focus-visible:ring-offset-2"
+              >
+                <span className="flex-1 text-left font-medium font-sans-display text-[10px] uppercase tracking-[0.04em]">
+                  {month.month}/{month.year}
+                </span>
+                {isMonthExpanded ? (
+                  <ChevronUp className="h-3.5 w-3.5" aria-hidden="true" />
+                ) : (
+                  <ChevronDown className="h-3.5 w-3.5" aria-hidden="true" />
+                )}
+              </button>
+
+              {/* Month content */}
+              {isMonthExpanded && (
+                <div
+                  id={`month-${month.key}`}
+                  className="flex w-full flex-col gap-2"
                 >
-                  <span className="flex-1 text-left font-medium font-sans-display text-[10px] uppercase tracking-[0.04em]">
-                    {month.month}/{month.year}
-                  </span>
-                  {isMonthExpanded ? (
-                    <ChevronUp className="h-4 w-4" aria-hidden="true" />
-                  ) : (
-                    <ChevronDown className="h-4 w-4" aria-hidden="true" />
-                  )}
-                </button>
+                  {/* Month separator */}
+                  <div className="ml-3 h-0.5 rounded-sm bg-neutral-100" />
 
-                {isMonthExpanded && (
-                  <div
-                    id={`month-${month.key}`}
-                    className="flex w-full flex-col gap-2"
-                  >
-                    {month.weeks.map((week) => {
-                      const isWeekExpanded = expandedWeeks.has(week.key);
-                      const hasSelectedDay = week.days.includes(selectedDate);
+                  {/* Weeks */}
+                  {month.weeks.map((week) => {
+                    const isWeekExpanded = expandedWeeks.has(week.key);
+                    const hasSelectedDay = week.days.includes(selectedDate);
 
-                      return (
-                        <div key={week.key} className="w-full">
-                          <button
-                            type="button"
-                            onClick={() => toggleWeek(week.key)}
-                            aria-expanded={isWeekExpanded}
-                            aria-controls={`week-${week.key}`}
-                            className={cn(
-                              'flex w-full items-center gap-3 rounded-lg px-3 py-2 transition-[background-color,color] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent focus-visible:ring-offset-2',
-                              hasSelectedDay
-                                ? 'bg-nham-accent/35 text-nham-text'
-                                : 'text-nham-text-muted hover:bg-nham-hover/40 hover:text-nham-text'
-                            )}
+                    return (
+                      <div key={week.key} className="w-full">
+                        {/* Week button */}
+                        <button
+                          type="button"
+                          onClick={() => toggleWeek(week.key)}
+                          aria-expanded={isWeekExpanded}
+                          aria-controls={`week-${week.key}`}
+                          className={cn(
+                            'ml-3 flex w-full items-center gap-3 rounded-lg px-3 py-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent focus-visible:ring-offset-2',
+                            hasSelectedDay
+                              ? 'bg-[#C9A87C]/30 text-nham-text'
+                              : 'text-nham-text-muted hover:bg-[#F0EAE0]/40 hover:text-nham-text'
+                          )}
+                        >
+                          <span className="flex-1 text-left font-medium font-sans-display text-sm leading-5 tracking-tight">
+                            {t('week', { number: week.weekNumber })}
+                          </span>
+                          {isWeekExpanded ? (
+                            <ChevronUp className="h-4 w-4" aria-hidden="true" />
+                          ) : (
+                            <ChevronDown
+                              className="h-4 w-4"
+                              aria-hidden="true"
+                            />
+                          )}
+                        </button>
+
+                        {/* Day tree */}
+                        {isWeekExpanded && (
+                          <div
+                            id={`week-${week.key}`}
+                            className="mt-2 flex pl-3"
                           >
-                            <span className="flex-1 text-left font-medium font-sans-display text-sm leading-5 tracking-tight">
-                              {t('week', { number: week.weekNumber })}
-                            </span>
-                            {isWeekExpanded ? (
-                              <ChevronUp
-                                className="h-4 w-4"
-                                aria-hidden="true"
-                              />
-                            ) : (
-                              <ChevronDown
-                                className="h-4 w-4"
-                                aria-hidden="true"
-                              />
-                            )}
-                          </button>
+                            {/* Vertical golden line */}
+                            <div className="w-0.5 shrink-0 bg-[#C9A87C]" />
 
-                          {isWeekExpanded && (
-                            <div
-                              id={`week-${week.key}`}
-                              className="mt-2 flex w-full flex-col gap-1.5"
-                            >
+                            {/* Days list */}
+                            <ul className="-ml-0.5 flex flex-1 flex-col gap-2">
                               {week.days.map((date) => {
                                 const isActive = date === selectedDate;
                                 const isToday = date === today;
@@ -211,29 +220,33 @@ export function TimelineSidebar({
                                   : formatDayLabel(date, locale);
 
                                 return (
-                                  <TimelineDateButton
+                                  <li
                                     key={date}
-                                    date={date}
-                                    label={label}
-                                    isActive={isActive}
-                                    isToday={isToday}
-                                    hasMeal={hasMeal}
-                                    variant="desktop"
-                                    onSelectDate={onSelectDate}
-                                  />
+                                    className="flex w-full items-center"
+                                  >
+                                    {/* L-shaped connector */}
+                                    <div className="h-2 w-[13px] shrink-0 rounded-bl-lg border-[#C9A87C] border-b-2 border-l-2" />
+
+                                    {/* Date button */}
+                                    <TimelineDateButton
+                                      date={date}
+                                      label={label}
+                                      isActive={isActive}
+                                      isToday={isToday}
+                                      hasMeal={hasMeal}
+                                      variant="desktop"
+                                      onSelectDate={onSelectDate}
+                                    />
+                                  </li>
                                 );
                               })}
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-
-              {monthIndex < months.length - 1 && (
-                <div className="h-px w-full rounded-sm bg-nham-border/30" />
+                            </ul>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
               )}
             </div>
           );
