@@ -1,10 +1,6 @@
 import { eq } from 'drizzle-orm';
 import { db } from '@/lib/db';
 import { userProfiles } from '@/lib/db/schema';
-import {
-  compatibleUserProfileSelection,
-  withCompatibleUserProfileFields,
-} from '@/lib/db/user-profile-select';
 import { Errors } from '@/lib/errors';
 import { createClient } from '@/lib/supabase/server';
 
@@ -33,14 +29,12 @@ export async function requireAuthAndProfile(deps?: {
   }
 
   const rows = await database
-    .select(compatibleUserProfileSelection)
+    .select()
     .from(userProfiles)
     .where(eq(userProfiles.userId, data.user.id))
     .limit(1);
 
-  const profile = rows[0]
-    ? withCompatibleUserProfileFields(rows[0])
-    : undefined;
+  const profile = rows[0];
   if (!profile) {
     throw Errors.profileNotFound();
   }

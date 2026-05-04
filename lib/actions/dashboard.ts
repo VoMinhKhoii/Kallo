@@ -2,11 +2,6 @@
 
 import { and, asc, desc, eq, gte, lt, sql } from 'drizzle-orm';
 import { z } from 'zod';
-import type {
-  HeatmapData,
-  HeatmapRange,
-  VerdictData,
-} from '@/components/dashboard/types';
 import { requireAuthAndProfile } from '@/lib/auth';
 import {
   buildCalorieAdherenceHeatmapData,
@@ -14,6 +9,11 @@ import {
 } from '@/lib/dashboard/adherence';
 import { db } from '@/lib/db';
 import { bodyWeightLog, meals } from '@/lib/db/schema';
+import type {
+  HeatmapData,
+  HeatmapRange,
+  VerdictData,
+} from '@/lib/types/dashboard';
 import { loadWeightSummaryAction } from './weight';
 
 const loadCalorieAdherenceHeatmapSchema = z.object({

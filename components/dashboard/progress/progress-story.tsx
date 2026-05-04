@@ -5,8 +5,8 @@ import { useTranslations } from 'next-intl';
 import { useMemo } from 'react';
 import { CompactWeightLog } from '@/components/dashboard/current/compact-weight-log';
 import { WeightChart } from '@/components/dashboard/progress/weight-chart';
-import type { TimeRange } from '@/components/dashboard/types';
 import { buildWeightTrendSummary } from '@/lib/dashboard/weight-trend';
+import type { TimeRange } from '@/lib/types/dashboard';
 import type { WeightSummaryData } from '@/lib/types/weight';
 import { cn } from '@/lib/utils';
 
@@ -34,7 +34,7 @@ export function ProgressStory({ weightSummary, range }: ProgressStoryProps) {
     return (
       <section className="flex min-h-[420px] flex-col rounded-[1.5rem] border border-nham-border/60 bg-card p-4 shadow-[0_10px_32px_rgba(44,36,22,0.05)] xl:h-full xl:min-h-0">
         <div className="flex flex-1 items-center justify-center text-nham-stone text-sm">
-          Loading weight trend
+          {t('loadingWeightTrend')}
         </div>
       </section>
     );
@@ -66,25 +66,25 @@ export function ProgressStory({ weightSummary, range }: ProgressStoryProps) {
                 style={{ fontFamily: 'Lora, serif' }}
               >
                 {delta > 0 ? '+' : ''}
-                {delta.toFixed(1)} kg
+                {delta.toFixed(1)} {t('units.kg')}
               </h2>
               <p className="mt-1 text-nham-stone text-xs">{copy.detail}</p>
             </div>
             <div className="grid grid-cols-2 gap-2 text-sm">
               <div className="rounded-xl bg-card/80 px-2.5 py-2">
                 <span className="block text-[9px] text-nham-stone uppercase tracking-[0.14em]">
-                  Now
+                  {t('now')}
                 </span>
                 <strong className="font-mono text-nham-text text-xs">
-                  {summary.currentWeight.toFixed(1)} kg
+                  {summary.currentWeight.toFixed(1)} {t('units.kg')}
                 </strong>
               </div>
               <div className="rounded-xl bg-card/80 px-2.5 py-2">
                 <span className="block text-[9px] text-nham-stone uppercase tracking-[0.14em]">
-                  Projected
+                  {t('projected')}
                 </span>
                 <strong className="font-mono text-nham-text text-xs">
-                  {summary.projectedEndWeight.toFixed(1)} kg
+                  {summary.projectedEndWeight.toFixed(1)} {t('units.kg')}
                 </strong>
               </div>
             </div>

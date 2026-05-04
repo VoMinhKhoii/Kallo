@@ -1,7 +1,7 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import type { MealEntry } from '@/components/dashboard/types';
+import type { MealEntry } from '@/lib/types/dashboard';
 
 interface MealListProps {
   meals: MealEntry[];
@@ -30,7 +30,7 @@ export function MealList({ meals }: MealListProps) {
           {t('recentMeals')}
         </span>
         <span className="text-[9px] text-nham-stone">
-          {meals.length} logged
+          {t('mealsLogged', { count: meals.length })}
         </span>
       </div>
 

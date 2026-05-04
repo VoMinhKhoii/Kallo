@@ -1,4 +1,4 @@
-import type { HeatmapRange } from '@/components/dashboard/types';
+import type { HeatmapRange } from '@/lib/types/dashboard';
 
 interface ChooseRenderedHeatmapRangeInput {
   preferredRange: HeatmapRange;

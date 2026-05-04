@@ -3,18 +3,18 @@
 import { motion } from 'motion/react';
 import { useTranslations } from 'next-intl';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import type {
-  HeatmapCell,
-  HeatmapData,
-  HeatmapRange,
-} from '@/components/dashboard/types';
-import { getHeatmapColor, HEATMAP_COLORS } from '@/components/dashboard/types';
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
+import type {
+  HeatmapCell,
+  HeatmapData,
+  HeatmapRange,
+} from '@/lib/types/dashboard';
+import { getHeatmapColor, HEATMAP_COLORS } from './heatmap-colors';
 
 const DAY_LABELS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 
@@ -142,6 +142,7 @@ export function AdherenceHeatmap({ data, range }: AdherenceHeatmapProps) {
                   const isLogged = cell?.status === 'logged' && ratio !== null;
                   const isMuted =
                     cell?.status === 'future' || cell?.status === 'outside';
+                  const isFocusable = isLogged && !isMuted;
                   const tooltipText = cell
                     ? getTooltipText(cell)
                     : t('notLogged');
@@ -152,7 +153,8 @@ export function AdherenceHeatmap({ data, range }: AdherenceHeatmapProps) {
                         <motion.button
                           type="button"
                           aria-label={tooltipText}
-                          aria-disabled={isMuted}
+                          aria-disabled={!isFocusable}
+                          tabIndex={isFocusable ? 0 : -1}
                           initial={{ opacity: 0, scale: 0.6 }}
                           animate={{ opacity: 1, scale: 1 }}
                           transition={{

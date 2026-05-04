@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { chooseRenderedHeatmapRange } from './heatmap-range';
+import { chooseRenderedHeatmapRange } from '@/lib/dashboard/heatmap-range';
 
 const WEEK_COUNT = { '30d': 5, '90d': 14, year: 53 };
 

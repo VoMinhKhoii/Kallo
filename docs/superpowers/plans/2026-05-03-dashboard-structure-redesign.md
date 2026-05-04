@@ -14,12 +14,12 @@
 
 ### Files and responsibilities
 
-- Modify: `components/dashboard/types.ts` — add explicit heatmap range/cell/header types and keep weight range separate from heatmap range.
+- Modify: `lib/types/dashboard.ts` — add explicit heatmap range/cell/header types and keep weight range separate from heatmap range.
 - Modify: `lib/dashboard/adherence.ts` — add `year` support, date-aware cell output, and month header construction while preserving current ratio matrix compatibility until UI migration is complete.
-- Modify: `lib/dashboard/adherence.test.ts` — test year cells, future cells, month headers, and adaptive range selection.
+- Modify: `lib/dashboard/__tests__/adherence.test.ts` — test year cells, future cells, month headers, and adaptive range selection.
 - Create: `lib/dashboard/heatmap-range.ts` — pure helper for choosing `renderedHeatmapRange`.
 - Create: `lib/dashboard/weight-trend.ts` — pure helper for Progress Story summary and verdict copy keys.
-- Create: `lib/dashboard/weight-trend.test.ts` — test insufficient data, on pace, ahead, behind, flat, and small-rate tolerance.
+- Create: `lib/dashboard/__tests__/weight-trend.test.ts` — test insufficient data, on pace, ahead, behind, flat, and small-rate tolerance.
 - Modify: `lib/types/weight.ts` — add optional elapsed-day metadata for projection.
 - Modify: `lib/actions/weight.ts` — populate elapsed-day metadata from first/latest logged dates in the selected range.
 - Modify: `lib/actions/__tests__/weight.test.ts` — verify elapsed-day metadata from mocked weight rows.
@@ -27,7 +27,7 @@
 ### Task 1: Add heatmap range and cell types
 
 **Files:**
-- Modify: `components/dashboard/types.ts`
+- Modify: `lib/types/dashboard.ts`
 
 - [ ] **Step 1: Add explicit heatmap types**
 
@@ -68,14 +68,14 @@ Expected: existing dashboard code still compiles while new heatmap code can use 
 
 - [ ] **Step 3: Run type-adjacent tests**
 
-Run: `bun run test lib/dashboard/adherence.test.ts`
+Run: `bun run test lib/dashboard/__tests__/adherence.test.ts`
 
 Expected: existing adherence tests still pass.
 
 - [ ] **Step 4: Commit**
 
 ```bash
-git add components/dashboard/types.ts
+git add lib/types/dashboard.ts
 git commit -m "feat: add dashboard heatmap range types"
 ```
 
@@ -83,7 +83,7 @@ git commit -m "feat: add dashboard heatmap range types"
 
 **Files:**
 - Modify: `lib/dashboard/adherence.ts`
-- Modify: `lib/dashboard/adherence.test.ts`
+- Modify: `lib/dashboard/__tests__/adherence.test.ts`
 
 - [ ] **Step 1: Write failing tests for year cells and future status**
 
@@ -140,7 +140,7 @@ it('builds month headers aligned to week columns', () => {
 
 - [ ] **Step 3: Run tests to verify failure**
 
-Run: `bun run test lib/dashboard/adherence.test.ts`
+Run: `bun run test lib/dashboard/__tests__/adherence.test.ts`
 
 Expected: FAIL because `buildCalorieAdherenceHeatmapData` does not exist.
 
@@ -282,7 +282,7 @@ Expected: FAIL because helper file does not exist.
 - [ ] **Step 3: Implement helper**
 
 ```ts
-import type { HeatmapRange } from '@/components/dashboard/types';
+import type { HeatmapRange } from '@/lib/types/dashboard';
 
 interface ChooseRenderedHeatmapRangeInput {
   preferredRange: HeatmapRange;

@@ -3,7 +3,7 @@ import type {
   HeatmapData,
   HeatmapMonthHeader,
   HeatmapRange,
-} from '@/components/dashboard/types';
+} from '@/lib/types/dashboard';
 
 export type DashboardTimeRange = HeatmapRange;
 

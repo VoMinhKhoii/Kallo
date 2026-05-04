@@ -1,10 +1,8 @@
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
-import {
-  type DashboardProfile,
-  DashboardShell,
-} from '@/components/dashboard/dashboard-shell';
+import { DashboardShell } from '@/components/dashboard/dashboard-shell';
 import { getOnboardingProfile } from '@/lib/onboarding/actions';
+import type { DashboardProfile } from '@/lib/types/dashboard';
 
 const DEFAULT_PROFILE: DashboardProfile = {
   calorieTarget: 2000,

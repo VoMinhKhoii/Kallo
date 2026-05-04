@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildWeightTrendSummary } from './weight-trend';
+import { buildWeightTrendSummary } from '@/lib/dashboard/weight-trend';
 
 describe('buildWeightTrendSummary', () => {
   it('projects the end weight from elapsed logged days', () => {

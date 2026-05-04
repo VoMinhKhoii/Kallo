@@ -352,7 +352,7 @@ Likely files to modify during implementation:
 - `components/dashboard/today/today-section.tsx`
 - `components/dashboard/today/meal-list.tsx`
 - `components/dashboard/today/meal-trigger.tsx`
-- `components/dashboard/types.ts`
+- `lib/types/dashboard.ts`
 - related dashboard tests
 
 Implementation should preserve the approved hierarchy and functionality while making the page feel more connected, more readable on mobile, and more useful as an everyday logging surface.

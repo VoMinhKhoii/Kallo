@@ -3,9 +3,9 @@
 import { Flame } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useTranslations } from 'next-intl';
-import type { MealEntry, NutritionData } from '@/components/dashboard/types';
 import { CalorieRing } from '@/components/shared/calorie-ring';
 import { MacroBars } from '@/components/shared/macro-bars';
+import type { MealEntry, NutritionData } from '@/lib/types/dashboard';
 import { MealList } from './meal-list';
 import { InlineMealTrigger } from './meal-trigger';
 

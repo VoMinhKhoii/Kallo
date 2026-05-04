@@ -56,10 +56,7 @@ describe('requireAuthAndProfile', () => {
     });
 
     expect(result.user).toEqual(user);
-    expect(result.profile).toEqual({
-      ...profile,
-      onboardingMinimizedAt: null,
-    });
+    expect(result.profile).toEqual(profile);
   });
 
   it('throws NOT_AUTHENTICATED when auth returns error', async () => {

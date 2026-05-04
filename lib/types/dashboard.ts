@@ -24,7 +24,7 @@ export interface HeatmapData {
 
 export interface MealEntry {
   id: string;
-  label: string; // user input text
+  label: string;
   calories: number;
 }
 
@@ -37,15 +37,7 @@ export interface VerdictData {
   status: PaceStatus;
   rollingAvg: { start: number; end: number };
   currentWeight: number;
-  proteinDays: [boolean, boolean, boolean, boolean, boolean, boolean, boolean]; // Mon–Sun, true = hit protein target
-}
-
-export interface StatsData {
-  streak: number;
-  daysLogged: number;
-  avgDeficit: number;
-  todayWeight: number | null;
-  weightPlaceholder: number;
+  proteinDays: [boolean, boolean, boolean, boolean, boolean, boolean, boolean];
 }
 
 export interface NutritionData {
@@ -55,9 +47,15 @@ export interface NutritionData {
   fat: { current: number; target: number };
 }
 
+export interface DashboardProfile {
+  calorieTarget: number;
+  proteinTargetG: number;
+  carbsTargetG: number;
+  fatTargetG: number;
+}
+
 export interface DashboardSnapshot {
   verdict: VerdictData;
-  stats: StatsData;
   nutrition: NutritionData;
   meals: MealEntry[];
   heatmap: HeatmapData;
@@ -71,40 +69,4 @@ export interface Micronutrient {
   current: number;
   target: number;
   group: 'mineral' | 'vitamin' | 'other';
-}
-
-// Heatmap domain colors — references CSS custom properties for theme support
-export const HEATMAP_COLORS = {
-  onTarget: 'var(--nham-heatmap-on-target)',
-  close: 'var(--nham-heatmap-close)',
-  slight: 'var(--nham-heatmap-slight)',
-  moderate: 'var(--nham-heatmap-moderate)',
-  far: 'var(--nham-heatmap-far)',
-} as const;
-
-export function getHeatmapColor(ratio: number | null): {
-  bg: string;
-  labelKey: string;
-} {
-  if (ratio === null) return { bg: 'transparent', labelKey: 'noData' };
-
-  const dist = Math.abs(ratio - 1.0);
-  if (dist <= 0.05) {
-    return { bg: HEATMAP_COLORS.onTarget, labelKey: 'onTarget' };
-  }
-  if (dist <= 0.1) return { bg: HEATMAP_COLORS.close, labelKey: 'close' };
-  if (dist <= 0.2)
-    return {
-      bg: HEATMAP_COLORS.slight,
-      labelKey: ratio > 1 ? 'slightlyOver' : 'slightlyUnder',
-    };
-  if (dist <= 0.3)
-    return {
-      bg: HEATMAP_COLORS.moderate,
-      labelKey: ratio > 1 ? 'over' : 'under',
-    };
-  return {
-    bg: HEATMAP_COLORS.far,
-    labelKey: ratio > 1 ? 'farOver' : 'farUnder',
-  };
 }

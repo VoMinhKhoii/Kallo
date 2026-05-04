@@ -1,5 +1,6 @@
 'use client';
 
+import { useLocale, useTranslations } from 'next-intl';
 import { useMemo } from 'react';
 import {
   Area,
@@ -11,7 +12,7 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
-import type { TimeRange } from '@/components/dashboard/types';
+import type { TimeRange } from '@/lib/types/dashboard';
 import { WeightChartTooltip } from './weight-chart-tooltip';
 import { buildXTicks } from './weight-chart-utils';
 
@@ -30,6 +31,8 @@ export function WeightChart({
   goalDirection,
   range,
 }: WeightChartProps) {
+  const locale = useLocale();
+  const t = useTranslations('dashboard');
   const yTicks = [periodStartWeight, expectedEndWeight].filter(
     (value, index, array) => array.indexOf(value) === index
   );
@@ -40,14 +43,14 @@ export function WeightChart({
   );
 
   const { ticks: xTicks, formatter: xFormatter } = useMemo(
-    () => buildXTicks(data.length, range),
-    [data.length, range]
+    () => buildXTicks(data.length, range, locale, t('now'), t('weekPrefix')),
+    [data.length, locale, range, t]
   );
 
   if (data.length < 2) {
     return (
       <div className="flex flex-1 items-center justify-center text-nham-stone text-sm">
-        Log your weight for at least 2 days to see your trend
+        {t('insufficientWeightData')}
       </div>
     );
   }
@@ -84,7 +87,7 @@ export function WeightChart({
               className="inline-block h-2 w-3 rounded-sm opacity-50"
               style={{ backgroundColor: 'var(--nham-danger)' }}
             />
-            Off track
+            {t('offTrack')}
           </span>
         </div>
       )}

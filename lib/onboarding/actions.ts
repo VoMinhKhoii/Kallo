@@ -3,10 +3,6 @@
 import { eq } from 'drizzle-orm';
 import { db } from '@/lib/db';
 import { userProfiles } from '@/lib/db/schema';
-import {
-  compatibleUserProfileSelection,
-  withCompatibleUserProfileFields,
-} from '@/lib/db/user-profile-select';
 import { ONBOARDING_TOTAL_STEPS } from '@/lib/onboarding/constants';
 import { hasSavedOnboardingProfileData } from '@/lib/onboarding/progress';
 import { createClient } from '@/lib/supabase/server';
@@ -23,11 +19,11 @@ async function getAuthUser() {
 export async function getOnboardingProfile() {
   const user = await getAuthUser();
   const rows = await db
-    .select(compatibleUserProfileSelection)
+    .select()
     .from(userProfiles)
     .where(eq(userProfiles.userId, user.id))
     .limit(1);
-  return rows[0] ? withCompatibleUserProfileFields(rows[0]) : null;
+  return rows[0] ?? null;
 }
 
 export async function saveOnboardingScreen(
@@ -37,13 +33,11 @@ export async function saveOnboardingScreen(
   const user = await getAuthUser();
 
   const [existing] = await db
-    .select(compatibleUserProfileSelection)
+    .select()
     .from(userProfiles)
     .where(eq(userProfiles.userId, user.id))
     .limit(1);
-  const existingProfile = existing
-    ? withCompatibleUserProfileFields(existing)
-    : undefined;
+  const existingProfile = existing;
 
   const newStep = Math.max(existingProfile?.onboardingStep ?? 0, step);
   const updateObj: Record<string, unknown> = {

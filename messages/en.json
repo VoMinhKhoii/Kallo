@@ -825,8 +825,32 @@
     "recentMeals": "Recent meals",
     "viewAll": "View all",
     "progress": "Progress",
+    "consistency": "Consistency",
     "weeklyAverage": "Weekly average",
     "target": "Target",
+    "weekOf": "Week of",
+    "save": "Save",
+    "saving": "Saving…",
+    "retry": "Try again",
+    "todayLoading": "Loading today's meals…",
+    "todayLoadError": "Unable to load today's meals. Please try again.",
+    "progressLoadError": "Unable to load the weight trend. Please try again.",
+    "heatmapLoadError": "Unable to load the consistency section. Please try again.",
+    "loadingWeightTrend": "Loading weight trend…",
+    "now": "Now",
+    "weekPrefix": "W",
+    "projected": "Projected",
+    "insufficientWeightData": "Log your weight for at least 2 days to see your trend",
+    "offTrack": "Off track",
+    "mealsLogged": "{count} logged",
+    "ranges": {
+      "thirtyDays": "30 days",
+      "ninetyDays": "90 days",
+      "year": "Year"
+    },
+    "units": {
+      "kg": "kg"
+    },
     "mealTrigger": {
       "close": "Close meal composer",
       "send": "Send meal"
@@ -839,7 +863,9 @@
       "lastLogged": "Last: {weight} kg",
       "loggedDays": "{count} of last {total} days logged",
       "saved": "Weight saved",
-      "invalidValue": "Check the weight value before saving"
+      "invalidValue": "Check the weight value before saving",
+      "inputLabel": "Weight in kilograms",
+      "logWeight": "Log weight"
     },
     "adherenceHeatmap": {
       "onTrack": "{percent}% on track",
