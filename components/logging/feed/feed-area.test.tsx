@@ -98,7 +98,10 @@ describe('FeedArea', () => {
         persistedMeals: [],
         pendingConfirmations: [],
       },
+      isError: false,
+      isFetching: false,
       isLoading: false,
+      refetch: vi.fn(),
     });
     mockUseStreamAnalysis.mockReturnValue({
       status: 'idle',
@@ -152,7 +155,10 @@ describe('FeedArea', () => {
           },
         ],
       },
+      isError: false,
+      isFetching: false,
       isLoading: false,
+      refetch: vi.fn(),
     });
 
     render(<FeedArea selectedDate="2026-05-04" profile={profile} />);
@@ -167,7 +173,10 @@ describe('FeedArea', () => {
   it('shows a day loading skeleton instead of stale or empty card content', () => {
     mockUseLoggingDay.mockReturnValue({
       data: undefined,
+      isError: false,
+      isFetching: false,
       isLoading: true,
+      refetch: vi.fn(),
     });
 
     render(<FeedArea selectedDate="2026-05-05" profile={profile} />);
@@ -180,5 +189,44 @@ describe('FeedArea', () => {
     expect(
       within(scrollRegion).queryByTestId('persisted-meal-card')
     ).toBeNull();
+  });
+
+  it('shows a retryable error state instead of an empty state when day loading fails', async () => {
+    const refetch = vi.fn();
+
+    mockUseLoggingDay.mockReturnValue({
+      data: undefined,
+      isError: true,
+      isFetching: false,
+      isLoading: false,
+      refetch,
+    });
+
+    render(<FeedArea selectedDate="2026-05-05" profile={profile} />);
+
+    const scrollRegion = screen.getByTestId('meal-card-scroll');
+    expect(within(scrollRegion).getByRole('alert')).toHaveTextContent(
+      'loadErrorTitle'
+    );
+    expect(within(scrollRegion).queryByTestId('empty-state')).toBeNull();
+
+    await screen.getByRole('button', { name: /retryDay/i }).click();
+    expect(refetch).toHaveBeenCalled();
+  });
+
+  it('disables day retry while refetching after an error', () => {
+    mockUseLoggingDay.mockReturnValue({
+      data: undefined,
+      isError: true,
+      isFetching: true,
+      isLoading: false,
+      refetch: vi.fn(),
+    });
+
+    render(<FeedArea selectedDate="2026-05-05" profile={profile} />);
+
+    const retryButton = screen.getByRole('button', { name: /retryDay/i });
+    expect(retryButton).toBeDisabled();
+    expect(retryButton).toHaveAttribute('aria-busy', 'true');
   });
 });

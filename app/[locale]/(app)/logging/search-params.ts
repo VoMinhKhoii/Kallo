@@ -1,7 +1,7 @@
 import { z } from 'zod';
+import { dateStringSchema } from '@/lib/validation';
 
 const mealSchema = z.string().trim().min(1).max(300);
-const dateSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
 
 export interface LoggingSearchParams {
   meal?: string;
@@ -23,7 +23,7 @@ export function parseLoggingSearchParams(
 
   // Parse date independently
   if (rawParams.date !== undefined) {
-    const dateParsed = dateSchema.safeParse(rawParams.date);
+    const dateParsed = dateStringSchema.safeParse(rawParams.date);
     if (dateParsed.success) {
       result.date = dateParsed.data;
     }

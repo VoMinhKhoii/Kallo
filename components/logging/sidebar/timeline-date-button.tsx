@@ -7,6 +7,7 @@ interface TimelineDateButtonProps {
   label: string;
   isActive: boolean;
   isToday?: boolean;
+  todayLabel?: string;
   hasMeal?: boolean;
   variant: 'desktop' | 'mobile';
   onSelectDate: (date: string) => void;
@@ -17,6 +18,7 @@ export function TimelineDateButton({
   label,
   isActive,
   isToday = false,
+  todayLabel,
   hasMeal = false,
   variant,
   onSelectDate,
@@ -43,7 +45,7 @@ export function TimelineDateButton({
         {isToday && variant === 'desktop' && (
           <span className="ml-1 font-normal text-[11px] text-nham-text-muted/70">
             {' '}
-            (Today)
+            ({todayLabel})
           </span>
         )}
       </span>

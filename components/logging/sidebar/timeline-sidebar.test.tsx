@@ -178,11 +178,11 @@ describe('TimelineSidebar', () => {
       .filter((button) => button.hasAttribute('data-has-meal'));
 
     // Days are sorted ascending (less recent first).
-    // May 3 is today so it gets the "(Today)" suffix.
+    // May 3 is today so it gets the localized today suffix.
     expect(dateButtons.map((button) => button.textContent)).toEqual([
       'Fri - May 1',
       'Sat - May 2',
-      'Sun - May 3 (Today)',
+      'Sun - May 3 (todayLabel)',
     ]);
   });
 

@@ -28,6 +28,7 @@ function generateId() {
   return `msg-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
 }
 
+// Pure factory: keep this free of React hooks so callers can unit-test it directly.
 export function useFeedSubmit({
   stream,
   selectedDate,

@@ -1,6 +1,7 @@
 'use client';
 
 import { useQueryClient } from '@tanstack/react-query';
+import { AlertCircle, RefreshCw } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -23,6 +24,7 @@ import { useStreamingTerminalEffects } from '@/hooks/use-streaming-terminal-effe
 import { useSubmitGuard } from '@/hooks/use-submit-guard';
 import { sumDisplayedNutrition } from '@/lib/ai/pipeline/goal-adjustment';
 import type { ChatMessage, StreamingPhase } from '@/lib/types/meal';
+import { cn } from '@/lib/utils';
 
 function toStreamingPhase(status: string): StreamingPhase {
   switch (status) {
@@ -104,6 +106,53 @@ function LoggingDaySkeleton() {
   );
 }
 
+interface LoggingDayErrorStateProps {
+  onRetry: () => void;
+  isRetrying: boolean;
+}
+
+function LoggingDayErrorState({
+  onRetry,
+  isRetrying,
+}: LoggingDayErrorStateProps) {
+  const t = useTranslations('logging.feedArea');
+
+  return (
+    <div className="flex flex-1 items-center justify-center py-6">
+      <div
+        role="alert"
+        className="w-full max-w-md rounded-2xl border border-red-200/70 bg-red-50/80 p-4 text-red-950 shadow-sm"
+      >
+        <div className="flex gap-3">
+          <AlertCircle
+            className="mt-0.5 h-5 w-5 shrink-0 text-red-600"
+            aria-hidden="true"
+          />
+          <div className="min-w-0 flex-1">
+            <p className="font-semibold text-sm">{t('loadErrorTitle')}</p>
+            <p className="mt-1 text-red-900/80 text-sm">
+              {t('loadErrorDescription')}
+            </p>
+            <button
+              type="button"
+              onClick={onRetry}
+              disabled={isRetrying}
+              aria-busy={isRetrying}
+              className="mt-3 inline-flex min-h-9 items-center gap-2 rounded-full bg-red-100 px-3.5 py-2 font-medium text-red-950 text-sm transition-colors hover:bg-red-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <RefreshCw
+                className={cn('h-4 w-4', isRetrying && 'animate-spin')}
+                aria-hidden="true"
+              />
+              {t('retryDay')}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function FeedArea({
   selectedDate,
   profile,
@@ -132,11 +181,15 @@ export function FeedArea({
     onInitialMealApplied?.();
   }, [initialMeal, onInitialMealApplied]);
 
-  const { data: loggingDay, isLoading } = useLoggingDay(
-    profile.userId,
-    selectedDate
-  );
+  const {
+    data: loggingDay,
+    isError: isDayError,
+    isFetching,
+    isLoading,
+    refetch: refetchLoggingDay,
+  } = useLoggingDay(profile.userId, selectedDate);
   const isDayLoading = isLoading || isDateNavigationPending;
+  const isDayRetrying = isFetching && !isLoading;
   const persistedMeals = loggingDay?.persistedMeals ?? [];
   const pendingConfirmations = loggingDay?.pendingConfirmations ?? [];
 
@@ -335,13 +388,12 @@ export function FeedArea({
         <div className="mx-auto max-w-4xl">
           {isDayLoading ? (
             <MacroSummarySkeleton />
-          ) : hasUnknownDailyMacros ? (
+          ) : isDayError ? null : hasUnknownDailyMacros ? (
             <div
               className="font-medium text-[11px] text-nham-text-muted/80"
               style={{ fontFamily: 'DM Sans, sans-serif' }}
             >
-              Daily macro summary unavailable because some legacy meals have
-              unknown macros.
+              {t('legacyMacroWarning')}
             </div>
           ) : (
             <MacroSummary totals={dailyTotals} targets={targets} />
@@ -356,21 +408,33 @@ export function FeedArea({
         data-testid="meal-card-scroll"
       >
         <AnimatePresence mode="wait">
-          {!hasContent && !stream.isAnalyzing && !isDayLoading && (
-            <div className="flex flex-1 items-center justify-center py-6">
-              <EmptyState
-                onSuggestionClick={(suggestion) => {
-                  inputRef.current?.setText(suggestion);
-                  inputRef.current?.focus();
-                }}
-              />
-            </div>
-          )}
+          {!hasContent &&
+            !stream.isAnalyzing &&
+            !isDayLoading &&
+            !isDayError && (
+              <div className="flex flex-1 items-center justify-center py-6">
+                <EmptyState
+                  onSuggestionClick={(suggestion) => {
+                    inputRef.current?.setText(suggestion);
+                    inputRef.current?.focus();
+                  }}
+                />
+              </div>
+            )}
         </AnimatePresence>
 
         {isDayLoading && <LoggingDaySkeleton />}
 
-        {!isDayLoading && hasContent && (
+        {!isDayLoading && isDayError && (
+          <LoggingDayErrorState
+            isRetrying={isDayRetrying}
+            onRetry={() => {
+              void refetchLoggingDay();
+            }}
+          />
+        )}
+
+        {!isDayLoading && !isDayError && hasContent && (
           <div className="mx-auto w-full max-w-3xl pl-10 sm:pl-12">
             <div className="flex flex-col gap-8">
               {/* Persisted meals from DB */}
@@ -439,7 +503,7 @@ export function FeedArea({
       </div>
 
       {/* Input area */}
-      <div className="shrink-0 px-4 sm:px-6 pt-2 pb-4">
+      <div className="shrink-0 px-4 pt-2 pb-4 sm:px-6">
         <div className="mx-auto max-w-3xl">
           <MealInput
             ref={inputRef}

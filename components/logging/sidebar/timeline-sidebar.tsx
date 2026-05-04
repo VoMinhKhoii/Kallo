@@ -293,6 +293,7 @@ export function TimelineSidebar({
                                       label={label}
                                       isActive={isActive}
                                       isToday={isToday}
+                                      todayLabel={t('todayLabel')}
                                       hasMeal={hasMeal}
                                       variant="desktop"
                                       onSelectDate={onSelectDate}

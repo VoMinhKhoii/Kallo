@@ -17,6 +17,15 @@ describe('parseLoggingSearchParams', () => {
     });
   });
 
+  it('drops impossible calendar dates', () => {
+    expect(
+      parseLoggingSearchParams({ meal: 'bún', date: '2026-02-30' })
+    ).toEqual({
+      meal: 'bún',
+      date: undefined,
+    });
+  });
+
   it('drops empty meal params', () => {
     expect(parseLoggingSearchParams({ meal: '', date: '2026-05-03' })).toEqual({
       meal: undefined,

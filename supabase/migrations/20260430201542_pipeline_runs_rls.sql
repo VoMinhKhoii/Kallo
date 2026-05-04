@@ -3,6 +3,9 @@ SET search_path TO public, extensions;
 
 ALTER TABLE public.pipeline_runs ENABLE ROW LEVEL SECURITY;
 
+REVOKE ALL ON public.pipeline_runs FROM authenticated, anon;
+GRANT SELECT, INSERT ON public.pipeline_runs TO service_role;
+
 -- No policies for authenticated/anon = no access.
 -- The service role bypasses RLS by design; that's the only writer/reader.
 

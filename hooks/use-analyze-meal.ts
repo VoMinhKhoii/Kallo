@@ -1,11 +1,12 @@
 import { useMutation } from '@tanstack/react-query';
 import type { ParsedMeal } from '@/lib/types/meal';
+import type { MealMessageInput } from '@/lib/validation';
 
-async function analyzeMeal(message: string): Promise<ParsedMeal> {
+async function analyzeMeal(input: MealMessageInput): Promise<ParsedMeal> {
   const response = await fetch('/api/analyze-meal', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ message }),
+    body: JSON.stringify(input),
   });
 
   if (!response.ok) {
