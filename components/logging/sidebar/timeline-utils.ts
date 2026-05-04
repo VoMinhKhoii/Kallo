@@ -23,6 +23,11 @@ export type MobileChipRelativeLabel =
   | { kind: 'lastWeekday'; weekday: string }
   | { kind: 'date' };
 
+export interface WeekDateRange {
+  start: string;
+  end: string;
+}
+
 /**
  * Converts a YYYY-MM-DD date string to a local Date object at midnight.
  */
@@ -66,6 +71,19 @@ export function formatDayLabel(dateStr: string, locale: string): string {
   }).format(date);
 }
 
+export function formatTimelineDayLabel(dateStr: string, locale: string): string {
+  const date = dateStringToDate(dateStr);
+  const weekday = new Intl.DateTimeFormat(locale, {
+    weekday: 'short',
+  }).format(date);
+  const day = new Intl.DateTimeFormat(locale, {
+    month: 'short',
+    day: 'numeric',
+  }).format(date);
+
+  return `${weekday} - ${day}`;
+}
+
 /**
  * Returns the week number within a month (1-5) using Math.ceil(day / 7).
  */
@@ -94,6 +112,42 @@ export function getSelectedWeekKey(dateStr: string): string {
   const monthKey = getSelectedMonthKey(dateStr);
   const week = weekOfMonth(dateStr);
   return `${monthKey}-w${week}`;
+}
+
+export function getWeekDateRange(input: {
+  year: number;
+  month: number;
+  weekNumber: number;
+}): WeekDateRange {
+  const monthIndex = input.month - 1;
+  const firstDay = (input.weekNumber - 1) * 7 + 1;
+  const lastDay = Math.min(
+    input.weekNumber * 7,
+    new Date(input.year, input.month, 0).getDate()
+  );
+
+  return {
+    start: dateToDateString(new Date(input.year, monthIndex, firstDay)),
+    end: dateToDateString(new Date(input.year, monthIndex, lastDay)),
+  };
+}
+
+export function formatWeekDateRange(
+  range: WeekDateRange,
+  locale: string
+): string {
+  const formatter = new Intl.DateTimeFormat(locale, {
+    month: 'short',
+    day: 'numeric',
+  });
+
+  return `${formatter.format(dateStringToDate(range.start))} - ${formatter.format(
+    dateStringToDate(range.end)
+  )}`;
+}
+
+export function sortTimelineDaysAscending(days: string[]): string[] {
+  return [...days].sort((a, b) => a.localeCompare(b));
 }
 
 /**

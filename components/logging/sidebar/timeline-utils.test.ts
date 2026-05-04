@@ -5,10 +5,14 @@ import {
   dateToDateString,
   formatDayLabel,
   formatMobileChipDate,
+  formatTimelineDayLabel,
+  formatWeekDateRange,
   getMobileChipRelativeLabel,
   getSelectedMonthKey,
   getSelectedWeekKey,
+  getWeekDateRange,
   groupByMonth,
+  sortTimelineDaysAscending,
   todayDateString,
   weekOfMonth,
 } from './timeline-utils';
@@ -64,6 +68,20 @@ describe('timeline-utils', () => {
     it('includes weekday in the label', () => {
       const label = formatDayLabel('2026-05-03', 'en');
       expect(label).toContain('Sun');
+    });
+  });
+
+  describe('formatTimelineDayLabel', () => {
+    it('formats desktop day labels as weekday dash date', () => {
+      expect(formatTimelineDayLabel('2026-05-03', 'en')).toBe('Sun - May 3');
+    });
+
+    it('is locale-aware', () => {
+      const labelEn = formatTimelineDayLabel('2026-05-03', 'en');
+      const labelVi = formatTimelineDayLabel('2026-05-03', 'vi');
+
+      expect(labelEn).not.toBe(labelVi);
+      expect(labelVi).toContain('3');
     });
   });
 
@@ -208,6 +226,49 @@ describe('timeline-utils', () => {
 
     it('calculates week correctly for end of month', () => {
       expect(getSelectedWeekKey('2026-05-31')).toBe('05-2026-w5');
+    });
+  });
+
+  describe('getWeekDateRange', () => {
+    it('returns the first through seventh for week 1', () => {
+      expect(
+        getWeekDateRange({ year: 2026, month: 5, weekNumber: 1 })
+      ).toEqual({
+        start: '2026-05-01',
+        end: '2026-05-07',
+      });
+    });
+
+    it('clamps the final week to the end of the month', () => {
+      expect(
+        getWeekDateRange({ year: 2026, month: 5, weekNumber: 5 })
+      ).toEqual({
+        start: '2026-05-29',
+        end: '2026-05-31',
+      });
+    });
+  });
+
+  describe('formatWeekDateRange', () => {
+    it('formats a compact week range', () => {
+      expect(
+        formatWeekDateRange(
+          { start: '2026-05-08', end: '2026-05-14' },
+          'en'
+        )
+      ).toBe('May 8 - May 14');
+    });
+  });
+
+  describe('sortTimelineDaysAscending', () => {
+    it('sorts less recent days before more recent days', () => {
+      expect(
+        sortTimelineDaysAscending([
+          '2026-05-05',
+          '2026-05-01',
+          '2026-05-03',
+        ])
+      ).toEqual(['2026-05-01', '2026-05-03', '2026-05-05']);
     });
   });
 
