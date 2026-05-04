@@ -111,7 +111,7 @@ describe('MobileTimelinePicker', () => {
     const chip = screen.getByLabelText('selectDate');
     expect(chip).toBeInTheDocument();
 
-    expect(screen.getByText('todayLabel')).toBeInTheDocument();
+    expect(screen.getByText('Sun - May 3')).toBeInTheDocument();
 
     const mealIndicator = screen.getByLabelText('hasMealIndicator');
     expect(mealIndicator).toBeInTheDocument();
@@ -129,13 +129,13 @@ describe('MobileTimelinePicker', () => {
     expect(screen.queryByLabelText('hasMealIndicator')).not.toBeInTheDocument();
   });
 
-  it('renders "Today" label when selected date is today', () => {
+  it('renders weekday and date when selected date is today', () => {
     render(<MobileTimelinePicker {...defaultProps} />);
 
-    expect(screen.getByText('todayLabel')).toBeInTheDocument();
+    expect(screen.getByText('Sun - May 3')).toBeInTheDocument();
   });
 
-  it('renders "Yesterday" label when selected date is yesterday', () => {
+  it('renders weekday and date when selected date is yesterday', () => {
     render(
       <MobileTimelinePicker
         {...defaultProps}
@@ -144,10 +144,10 @@ describe('MobileTimelinePicker', () => {
       />
     );
 
-    expect(screen.getByText('yesterdayLabel')).toBeInTheDocument();
+    expect(screen.getByText('Sat - May 2')).toBeInTheDocument();
   });
 
-  it('renders "Last {weekday}" label when selected date is 2-6 days ago', () => {
+  it('renders weekday and date for logged days earlier in the week', () => {
     render(
       <MobileTimelinePicker
         {...defaultProps}
@@ -156,10 +156,10 @@ describe('MobileTimelinePicker', () => {
       />
     );
 
-    expect(screen.getByText(/lastWeekdayLabel/)).toBeInTheDocument();
+    expect(screen.getByText('Fri - May 1')).toBeInTheDocument();
   });
 
-  it('renders fallback label when selected date is older than 6 days or future', () => {
+  it('renders weekday and date for older selected dates', () => {
     render(
       <MobileTimelinePicker
         {...defaultProps}
@@ -168,7 +168,7 @@ describe('MobileTimelinePicker', () => {
       />
     );
 
-    expect(screen.getByText('selectedDateLabel')).toBeInTheDocument();
+    expect(screen.getByText('Mon - Apr 20')).toBeInTheDocument();
   });
 
   it('opens drawer when chip is clicked', async () => {
@@ -298,12 +298,12 @@ describe('MobileTimelinePicker', () => {
     expect(onRetry).toHaveBeenCalledTimes(1);
   });
 
-  it('renders formatted date in chip subtitle', () => {
+  it('renders the compact date in the chip', () => {
     render(<MobileTimelinePicker {...defaultProps} />);
 
     const chip = screen.getByLabelText('selectDate');
     const chipContent = within(chip);
 
-    expect(chipContent.getByText(/sat|sun/i)).toBeInTheDocument();
+    expect(chipContent.getByText('Sun - May 3')).toBeInTheDocument();
   });
 });

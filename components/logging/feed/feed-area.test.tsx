@@ -18,7 +18,11 @@ vi.mock('@/components/logging/feed/persisted-meal-card', () => ({
 }));
 
 vi.mock('@/components/logging/feed/meal-entry', () => ({
-  MealEntry: () => <div data-testid="meal-entry" />,
+  MealEntry: ({
+    message,
+  }: {
+    message: { userInput?: string; analysisId?: string };
+  }) => <div data-testid="meal-entry">{message.userInput}</div>,
 }));
 
 vi.mock('@/components/logging/feed/streaming-meal-entry', () => ({
@@ -38,13 +42,22 @@ vi.mock('@/components/logging/input/meal-input', () => ({
   }),
 }));
 
-const { mockUseDailyMeals, mockUseStreamAnalysis } = vi.hoisted(() => ({
-  mockUseDailyMeals: vi.fn(),
-  mockUseStreamAnalysis: vi.fn(),
+const { mockInvalidateQueries, mockUseLoggingDay, mockUseStreamAnalysis } =
+  vi.hoisted(() => ({
+    mockInvalidateQueries: vi.fn(),
+    mockUseLoggingDay: vi.fn(),
+    mockUseStreamAnalysis: vi.fn(),
+  }));
+
+vi.mock('@tanstack/react-query', () => ({
+  useQueryClient: () => ({ invalidateQueries: mockInvalidateQueries }),
 }));
 
-vi.mock('@/hooks/use-daily-meals', () => ({
-  useDailyMeals: mockUseDailyMeals,
+vi.mock('@/hooks/use-logging-day', () => ({
+  loggingDayKeys: {
+    byUserDate: (userId: string, date: string) => ['logging-day', userId, date],
+  },
+  useLoggingDay: mockUseLoggingDay,
 }));
 
 vi.mock('@/hooks/use-feed-submit', () => ({
@@ -80,8 +93,11 @@ const profile = {
 describe('FeedArea', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockUseDailyMeals.mockReturnValue({
-      data: [],
+    mockUseLoggingDay.mockReturnValue({
+      data: {
+        persistedMeals: [],
+        pendingConfirmations: [],
+      },
       isLoading: false,
     });
     mockUseStreamAnalysis.mockReturnValue({
@@ -105,10 +121,46 @@ describe('FeedArea', () => {
     const scrollRegion = screen.getByTestId('meal-card-scroll');
     const input = screen.getByTestId('meal-input');
 
-    expect(within(macroRegion).getByTestId('macro-summary')).toBeInTheDocument();
+    expect(
+      within(macroRegion).getByTestId('macro-summary')
+    ).toBeInTheDocument();
     expect(within(scrollRegion).getByTestId('empty-state')).toBeInTheDocument();
     expect(within(scrollRegion).queryByTestId('macro-summary')).toBeNull();
     expect(within(scrollRegion).queryByTestId('meal-input')).toBeNull();
     expect(input).toBeInTheDocument();
+  });
+
+  it('renders server-backed pending confirmations in the card scroller', () => {
+    mockUseLoggingDay.mockReturnValue({
+      data: {
+        persistedMeals: [],
+        pendingConfirmations: [
+          {
+            id: 'pending-1',
+            rawInput: 'Phở bò',
+            loggedAt: '2026-05-04T05:30:00.000Z',
+            parsedMeal: {
+              mealName: 'Phở bò',
+              items: [],
+              totalMacros: {
+                calories: 300,
+                protein: 20,
+                carbs: 40,
+                fat: 8,
+              },
+            },
+          },
+        ],
+      },
+      isLoading: false,
+    });
+
+    render(<FeedArea selectedDate="2026-05-04" profile={profile} />);
+
+    const scrollRegion = screen.getByTestId('meal-card-scroll');
+    expect(within(scrollRegion).getByTestId('meal-entry')).toHaveTextContent(
+      'Phở bò'
+    );
+    expect(within(scrollRegion).queryByTestId('empty-state')).toBeNull();
   });
 });

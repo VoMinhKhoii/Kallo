@@ -71,7 +71,10 @@ export function formatDayLabel(dateStr: string, locale: string): string {
   }).format(date);
 }
 
-export function formatTimelineDayLabel(dateStr: string, locale: string): string {
+export function formatTimelineDayLabel(
+  dateStr: string,
+  locale: string
+): string {
   const date = dateStringToDate(dateStr);
   const weekday = new Intl.DateTimeFormat(locale, {
     weekday: 'short',

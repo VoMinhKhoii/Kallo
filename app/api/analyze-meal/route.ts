@@ -7,6 +7,7 @@ import { analyzeMeal } from '@/lib/ai/pipeline';
 import { logPipelineEnd, logPipelineStart } from '@/lib/ai/pipeline/logging';
 import type { StreamEvent } from '@/lib/ai/streaming';
 import { encodeSSE } from '@/lib/ai/streaming';
+import { getUtcInstantForLocalDate } from '@/lib/date/local-day';
 import { db } from '@/lib/db';
 import { pendingAnalyses, userProfiles } from '@/lib/db/schema';
 import { Errors, serializeError } from '@/lib/errors';
@@ -76,6 +77,10 @@ async function validateRequest(request: NextRequest) {
       data: {
         userId: user.id,
         message: parsed.data.message,
+        loggedAt: getUtcInstantForLocalDate(
+          parsed.data.loggedDate,
+          parsed.data.timezoneOffset
+        ),
         profile,
         apiKey,
       },
@@ -89,7 +94,7 @@ export async function POST(request: NextRequest) {
   // Phase 1: Pre-stream validation — errors returned as JSON
   const validation = await validateRequest(request);
   if (validation.error) return validation.error;
-  const { userId, message, profile, apiKey } = validation.data;
+  const { userId, message, loggedAt, profile, apiKey } = validation.data;
 
   const userContext = buildUserContext(profile);
 
@@ -197,6 +202,7 @@ export async function POST(request: NextRequest) {
             userId,
             pipelineResult: result.data,
             rawInput: message,
+            loggedAt,
           })
           .returning({ id: pendingAnalyses.id });
 

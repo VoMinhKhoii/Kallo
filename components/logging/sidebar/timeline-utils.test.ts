@@ -231,31 +231,28 @@ describe('timeline-utils', () => {
 
   describe('getWeekDateRange', () => {
     it('returns the first through seventh for week 1', () => {
-      expect(
-        getWeekDateRange({ year: 2026, month: 5, weekNumber: 1 })
-      ).toEqual({
-        start: '2026-05-01',
-        end: '2026-05-07',
-      });
+      expect(getWeekDateRange({ year: 2026, month: 5, weekNumber: 1 })).toEqual(
+        {
+          start: '2026-05-01',
+          end: '2026-05-07',
+        }
+      );
     });
 
     it('clamps the final week to the end of the month', () => {
-      expect(
-        getWeekDateRange({ year: 2026, month: 5, weekNumber: 5 })
-      ).toEqual({
-        start: '2026-05-29',
-        end: '2026-05-31',
-      });
+      expect(getWeekDateRange({ year: 2026, month: 5, weekNumber: 5 })).toEqual(
+        {
+          start: '2026-05-29',
+          end: '2026-05-31',
+        }
+      );
     });
   });
 
   describe('formatWeekDateRange', () => {
     it('formats a compact week range', () => {
       expect(
-        formatWeekDateRange(
-          { start: '2026-05-08', end: '2026-05-14' },
-          'en'
-        )
+        formatWeekDateRange({ start: '2026-05-08', end: '2026-05-14' }, 'en')
       ).toBe('May 8 - May 14');
     });
   });
@@ -263,11 +260,7 @@ describe('timeline-utils', () => {
   describe('sortTimelineDaysAscending', () => {
     it('sorts less recent days before more recent days', () => {
       expect(
-        sortTimelineDaysAscending([
-          '2026-05-05',
-          '2026-05-01',
-          '2026-05-03',
-        ])
+        sortTimelineDaysAscending(['2026-05-05', '2026-05-01', '2026-05-03'])
       ).toEqual(['2026-05-01', '2026-05-03', '2026-05-05']);
     });
   });

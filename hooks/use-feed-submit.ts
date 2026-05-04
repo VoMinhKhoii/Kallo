@@ -2,15 +2,19 @@
 
 import type { RefObject } from 'react';
 import { toast } from 'sonner';
-import type { StreamAnalysisState } from '@/hooks/use-stream-analysis';
+import type {
+  StreamAnalysisState,
+  StreamAnalyzeInput,
+} from '@/hooks/use-stream-analysis';
 import type { ChatMessage } from '@/lib/types/meal';
 import { mealTextSchema } from '@/lib/validation';
 
 interface UseFeedSubmitParams {
   stream: StreamAnalysisState & {
-    analyze: (text: string) => Promise<void>;
+    analyze: (input: StreamAnalyzeInput) => Promise<void>;
     reset: () => void;
   };
+  selectedDate: string;
   inputRef: RefObject<{ getText: () => string; clear: () => void } | null>;
   setMessages: React.Dispatch<React.SetStateAction<ChatMessage[]>>;
   setStreamingMsgId: (id: string | null) => void;
@@ -26,6 +30,7 @@ function generateId() {
 
 export function useFeedSubmit({
   stream,
+  selectedDate,
   inputRef,
   setMessages,
   setStreamingMsgId,
@@ -53,6 +58,7 @@ export function useFeedSubmit({
         id: generateId(),
         role: 'user',
         content: text,
+        loggedDate: selectedDate,
         timestamp: new Date(),
       };
 
@@ -61,6 +67,7 @@ export function useFeedSubmit({
         role: 'assistant',
         content: '',
         userInput: text,
+        loggedDate: selectedDate,
         timestamp: new Date(),
         isStreaming: true,
         streamingPhase: 'waiting',
@@ -70,7 +77,11 @@ export function useFeedSubmit({
       inputRef.current?.clear();
       scrollToBottom();
 
-      await stream.analyze(text);
+      await stream.analyze({
+        message: text,
+        loggedDate: selectedDate,
+        timezoneOffset: new Date().getTimezoneOffset(),
+      });
     });
   };
 

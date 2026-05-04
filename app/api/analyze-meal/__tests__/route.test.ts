@@ -7,6 +7,7 @@ const mockGetUser = vi.fn();
 const mockSelect = vi.fn();
 const mockAnalyzeMeal = vi.fn();
 const mockInsert = vi.fn();
+const mockInsertValues = vi.fn();
 
 vi.mock('@/lib/supabase/server', () => ({
   createClient: () =>
@@ -24,7 +25,10 @@ vi.mock('@/lib/db', () => {
   };
   const insertChain = {
     insert: () => insertChain,
-    values: () => insertChain,
+    values: (values: unknown) => {
+      mockInsertValues(values);
+      return insertChain;
+    },
     returning: () => mockInsert(),
     catch: () => undefined, // fire-and-forget path (pipelineRequests)
   };
@@ -45,7 +49,7 @@ vi.mock('@/lib/db', () => {
 
 vi.mock('@/lib/db/schema', () => ({
   userProfiles: { userId: 'userId' },
-  pendingAnalyses: { id: 'id' },
+  pendingAnalyses: { id: 'id', loggedAt: 'loggedAt' },
   pipelineRequests: { id: 'id' },
 }));
 
@@ -108,6 +112,14 @@ function createRequest(body: unknown): NextRequest {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
   }) as unknown as NextRequest;
+}
+
+function mealRequestBody(message: string) {
+  return {
+    message,
+    loggedDate: '2026-04-06',
+    timezoneOffset: -420,
+  };
 }
 
 /** Read all SSE events from a streaming Response */
@@ -184,6 +196,7 @@ describe('POST /api/analyze-meal', () => {
     mockSelect.mockResolvedValue([mockProfile]);
     mockAnalyzeMeal.mockReset();
     mockInsert.mockResolvedValue([{ id: 'analysis-123' }]);
+    mockInsertValues.mockClear();
   });
 
   afterEach(() => {
@@ -197,14 +210,16 @@ describe('POST /api/analyze-meal', () => {
   // Pre-stream validation tests — these return JSON before SSE starts
   it('returns 401 when user is not authenticated', async () => {
     mockGetUser.mockResolvedValue({ data: { user: null } });
-    const res = await POST(createRequest({ message: 'phở bò' }));
+    const res = await POST(createRequest(mealRequestBody('phở bò')));
     expect(res.status).toBe(401);
     const json = await res.json();
     expect(json.error.code).toBe('NOT_AUTHENTICATED');
   });
 
   it('returns 400 when message is missing', async () => {
-    const res = await POST(createRequest({}));
+    const res = await POST(
+      createRequest({ loggedDate: '2026-04-06', timezoneOffset: -420 })
+    );
     expect(res.status).toBe(400);
     const json = await res.json();
     expect(json.error.code).toBe('VALIDATION_FAILED');
@@ -212,7 +227,7 @@ describe('POST /api/analyze-meal', () => {
 
   it('returns 404 when profile row is missing', async () => {
     mockSelect.mockResolvedValue([]);
-    const res = await POST(createRequest({ message: 'phở bò' }));
+    const res = await POST(createRequest(mealRequestBody('phở bò')));
     const json = await res.json();
 
     expect(res.status).toBe(404);
@@ -221,7 +236,7 @@ describe('POST /api/analyze-meal', () => {
 
   it('returns 500 when GEMINI_API_KEY is missing', async () => {
     delete process.env.GEMINI_API_KEY;
-    const res = await POST(createRequest({ message: 'phở bò' }));
+    const res = await POST(createRequest(mealRequestBody('phở bò')));
     expect(res.status).toBe(500);
     const json = await res.json();
     expect(json.error.code).toBe('INTERNAL');
@@ -234,7 +249,7 @@ describe('POST /api/analyze-meal', () => {
       data: mockPipelineData,
     });
 
-    const res = await POST(createRequest({ message: 'Phở bò tái' }));
+    const res = await POST(createRequest(mealRequestBody('Phở bò tái')));
     expect(res.status).toBe(200);
     expect(res.headers.get('Content-Type')).toBe('text/event-stream');
 
@@ -256,6 +271,13 @@ describe('POST /api/analyze-meal', () => {
     if (resultEvent?.type === 'result') {
       expect(resultEvent.data.mealName).toBe('Phở bò');
     }
+
+    expect(mockInsertValues).toHaveBeenCalledWith(
+      expect.objectContaining({
+        rawInput: 'Phở bò tái',
+        loggedAt: expect.any(Date),
+      })
+    );
   });
 
   it('streams error event when pipeline returns failure', async () => {
@@ -268,7 +290,7 @@ describe('POST /api/analyze-meal', () => {
       },
     });
 
-    const res = await POST(createRequest({ message: 'hello world' }));
+    const res = await POST(createRequest(mealRequestBody('hello world')));
     expect(res.status).toBe(200);
 
     const events = await readSSEEvents(res);
@@ -284,7 +306,7 @@ describe('POST /api/analyze-meal', () => {
   it('streams error event on unexpected exceptions', async () => {
     mockAnalyzeMeal.mockRejectedValue(new Error('unexpected'));
 
-    const res = await POST(createRequest({ message: 'phở bò' }));
+    const res = await POST(createRequest(mealRequestBody('phở bò')));
     expect(res.status).toBe(200);
 
     const events = await readSSEEvents(res);

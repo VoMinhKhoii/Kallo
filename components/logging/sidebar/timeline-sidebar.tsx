@@ -109,7 +109,7 @@ export function TimelineSidebar({
       className="hidden h-full w-[212px] shrink-0 flex-col overflow-hidden border-border/40 border-r py-3 pr-3 md:flex"
       aria-label={t('navigationLabel')}
     >
-      <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-x-hidden overflow-y-auto">
+      <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto overflow-x-hidden">
         {/* Error state */}
         {isError && (
           <div className="ml-3 flex flex-col gap-2 rounded-lg border border-red-200/60 bg-red-50/80 p-3">

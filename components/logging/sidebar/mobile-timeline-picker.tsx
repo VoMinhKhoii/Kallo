@@ -19,8 +19,7 @@ import { cn } from '@/lib/utils';
 import {
   dateStringToDate,
   dateToDateString,
-  formatMobileChipDate,
-  getMobileChipRelativeLabel,
+  formatTimelineDayLabel,
 } from './timeline-utils';
 
 export interface MobileTimelinePickerProps {
@@ -38,7 +37,7 @@ export function MobileTimelinePicker({
   dates,
   // allDates is kept for future use (calendar bounds/indicators)
   allDates: _allDates,
-  today,
+  today: _today,
   selectedDate,
   isPending,
   isError,
@@ -52,12 +51,7 @@ export function MobileTimelinePicker({
   const selectedDateValue = dateStringToDate(selectedDate);
   const dayPickerLocale = locale === 'vi' ? vi : enUS;
   const hasMeal = dates.includes(selectedDate);
-  const relativeLabel = getMobileChipRelativeLabel({
-    date: selectedDate,
-    today,
-    locale,
-  });
-  const formattedDate = formatMobileChipDate(selectedDate, locale);
+  const formattedDate = formatTimelineDayLabel(selectedDate, locale);
 
   const handleSelectDate = (date: Date | undefined) => {
     if (date) {
@@ -69,70 +63,48 @@ export function MobileTimelinePicker({
 
   if (isPending) {
     return (
-      <div className="md:hidden">
-        <Skeleton className="h-12 w-48" data-testid="mobile-picker-skeleton" />
+      <div className="flex justify-center md:hidden">
+        <Skeleton
+          className="h-9 w-44 rounded-full"
+          data-testid="mobile-picker-skeleton"
+        />
       </div>
     );
   }
 
-  let relativeLabelText = '';
-  switch (relativeLabel.kind) {
-    case 'today':
-      relativeLabelText = t('todayLabel');
-      break;
-    case 'yesterday':
-      relativeLabelText = t('yesterdayLabel');
-      break;
-    case 'lastWeekday':
-      relativeLabelText = t('lastWeekdayLabel', {
-        weekday: relativeLabel.weekday,
-      });
-      break;
-    case 'date':
-      relativeLabelText = t('selectedDateLabel');
-      break;
-  }
-
   return (
     <Drawer open={open} onOpenChange={setOpen} direction="top">
-      <div className="flex flex-col gap-2 md:hidden">
+      <div className="flex flex-col items-center gap-2 md:hidden">
         <DrawerTrigger asChild>
           <button
             type="button"
             className={cn(
-              'flex items-center gap-2 rounded-lg border border-input bg-background px-3 py-2.5 text-left shadow-xs outline-none transition-colors hover:bg-accent focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50'
+              'inline-flex h-9 max-w-[min(18rem,calc(100vw-2rem))] items-center gap-2 rounded-full border border-nham-border/70 bg-nham-surface px-3.5 font-semibold text-[12px] text-nham-text shadow-sm outline-none transition-colors hover:border-nham-accent/40 hover:bg-nham-hover/50 focus-visible:border-nham-accent focus-visible:ring-[3px] focus-visible:ring-nham-accent/20'
             )}
             aria-label={t('selectDate')}
           >
-            <div className="flex flex-1 flex-col">
-              <div className="flex items-center gap-1.5">
-                <span className="font-medium text-sm">{relativeLabelText}</span>
-                {hasMeal && (
-                  <span
-                    className="inline-block size-1.5 rounded-full bg-primary"
-                    role="status"
-                    aria-label={t('hasMealIndicator')}
-                  />
-                )}
-              </div>
-              <span className="text-muted-foreground text-xs">
-                {formattedDate}
-              </span>
-            </div>
             <CalendarIcon
-              className="size-4 text-muted-foreground"
+              className="size-3.5 shrink-0 text-nham-accent"
               aria-hidden="true"
             />
+            <span className="min-w-0 truncate">{formattedDate}</span>
+            {hasMeal && (
+              <span
+                className="inline-block size-1.5 shrink-0 rounded-full bg-nham-accent"
+                role="status"
+                aria-label={t('hasMealIndicator')}
+              />
+            )}
           </button>
         </DrawerTrigger>
 
         {isError && (
           <div
-            className="flex items-center gap-2 rounded-lg border border-destructive/50 bg-destructive/5 px-3 py-2"
+            className="flex max-w-[min(22rem,calc(100vw-2rem))] items-center gap-2 rounded-full border border-destructive/30 bg-destructive/5 px-3 py-1.5"
             data-testid="mobile-picker-error"
           >
-            <div className="flex flex-1 items-center gap-2 text-destructive text-sm">
-              <AlertCircle className="size-4 shrink-0" aria-hidden="true" />
+            <div className="flex flex-1 items-center gap-1.5 text-destructive text-xs">
+              <AlertCircle className="size-3.5 shrink-0" aria-hidden="true" />
               <span>{t('failedToLoadDates')}</span>
             </div>
             <Button
@@ -147,26 +119,32 @@ export function MobileTimelinePicker({
         )}
       </div>
 
-      <DrawerContent>
-        <DrawerHeader>
-          <DrawerTitle>{t('datePickerTitle')}</DrawerTitle>
-          <DrawerDescription>{t('datePickerDescription')}</DrawerDescription>
+      <DrawerContent className="rounded-b-3xl border-nham-border bg-nham-surface shadow-xl">
+        <DrawerHeader className="items-center px-5 pt-5 pb-2">
+          <DrawerTitle className="font-semibold text-[15px] text-nham-text">
+            {t('datePickerTitle')}
+          </DrawerTitle>
+          <DrawerDescription className="max-w-xs text-center text-nham-text-muted text-xs">
+            {t('datePickerDescription')}
+          </DrawerDescription>
         </DrawerHeader>
-        <div className="px-4 pb-6">
-          <Calendar
-            mode="single"
-            selected={selectedDateValue}
-            defaultMonth={selectedDateValue}
-            onSelect={handleSelectDate}
-            locale={dayPickerLocale}
-            modifiers={{
-              hasMeal: dates.map(dateStringToDate),
-            }}
-            modifiersClassNames={{
-              hasMeal:
-                'relative after:absolute after:bottom-1 after:left-1/2 after:-translate-x-1/2 after:size-1 after:rounded-full after:bg-primary',
-            }}
-          />
+        <div className="flex justify-center px-4 pb-6">
+          <div className="w-full max-w-[22rem] rounded-3xl border border-nham-border/60 bg-background p-2 shadow-sm">
+            <Calendar
+              mode="single"
+              selected={selectedDateValue}
+              defaultMonth={selectedDateValue}
+              onSelect={handleSelectDate}
+              locale={dayPickerLocale}
+              modifiers={{
+                hasMeal: dates.map(dateStringToDate),
+              }}
+              modifiersClassNames={{
+                hasMeal:
+                  'relative after:absolute after:bottom-1 after:left-1/2 after:-translate-x-1/2 after:size-1 after:rounded-full after:bg-nham-accent',
+              }}
+            />
+          </div>
         </div>
       </DrawerContent>
     </Drawer>

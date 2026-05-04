@@ -1,5 +1,6 @@
 'use client';
 
+import { useQueryClient } from '@tanstack/react-query';
 import { AnimatePresence, motion } from 'motion/react';
 import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -14,8 +15,8 @@ import {
   type MealInputHandle,
 } from '@/components/logging/input/meal-input';
 import type { LoggingProfile } from '@/components/logging/logging-shell';
-import { useDailyMeals } from '@/hooks/use-daily-meals';
 import { useFeedSubmit } from '@/hooks/use-feed-submit';
+import { loggingDayKeys, useLoggingDay } from '@/hooks/use-logging-day';
 import { useConfirmMeal } from '@/hooks/use-meal-mutations';
 import { useStreamAnalysis } from '@/hooks/use-stream-analysis';
 import { useStreamingTerminalEffects } from '@/hooks/use-streaming-terminal-effects';
@@ -59,6 +60,7 @@ export function FeedArea({
   const inputRef = useRef<MealInputHandle>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const stream = useStreamAnalysis();
+  const queryClient = useQueryClient();
   const { guard } = useSubmitGuard();
   const [streamingMsgId, setStreamingMsgId] = useState<string | null>(null);
 
@@ -74,11 +76,15 @@ export function FeedArea({
     onInitialMealApplied?.();
   }, [initialMeal, onInitialMealApplied]);
 
-  // Persisted meals from DB
-  const { data: persistedMeals = [], isLoading } = useDailyMeals(selectedDate);
+  const { data: loggingDay, isLoading } = useLoggingDay(
+    profile.userId,
+    selectedDate
+  );
+  const persistedMeals = loggingDay?.persistedMeals ?? [];
+  const pendingConfirmations = loggingDay?.pendingConfirmations ?? [];
 
   // Mutations
-  const confirmMeal = useConfirmMeal();
+  const confirmMeal = useConfirmMeal(profile.userId);
 
   const scrollToBottom = useCallback(() => {
     requestAnimationFrame(() => {
@@ -141,6 +147,7 @@ export function FeedArea({
 
   const { handleSubmit } = useFeedSubmit({
     stream,
+    selectedDate,
     inputRef,
     setMessages,
     setStreamingMsgId,
@@ -150,6 +157,17 @@ export function FeedArea({
     lastErrorRef,
   });
 
+  const handleAnalysisComplete = useCallback(() => {
+    const originDate =
+      messages.find((message) => message.id === streamingMsgId)?.loggedDate ??
+      selectedDate;
+
+    queryClient.invalidateQueries({
+      queryKey: loggingDayKeys.byUserDate(profile.userId, originDate),
+    });
+    queryClient.invalidateQueries({ queryKey: ['meal-dates'] });
+  }, [messages, profile.userId, queryClient, selectedDate, streamingMsgId]);
+
   useStreamingTerminalEffects({
     stream,
     streamingMsgId,
@@ -158,12 +176,13 @@ export function FeedArea({
     scrollToBottom,
     lastAnalysisIdRef,
     lastErrorRef,
+    onAnalysisComplete: handleAnalysisComplete,
   });
 
   // Handle confirm: persist to DB, remove streaming message
   const handleConfirmMeal = (messageId: string, analysisId: string) => {
     confirmMeal.mutate(
-      { analysisId },
+      { analysisId, originDate: selectedDate },
       {
         onSuccess: () => {
           // Remove the streaming message — persisted meal will appear via query
@@ -176,9 +195,13 @@ export function FeedArea({
 
   // Derive display messages: overlay live streaming state onto the active message.
   const displayMessages = useMemo(() => {
-    if (!streamingMsgId || stream.status === 'idle') return messages;
+    const selectedMessages = messages.filter(
+      (message) => message.loggedDate === selectedDate
+    );
 
-    return messages.map((msg) => {
+    if (!streamingMsgId || stream.status === 'idle') return selectedMessages;
+
+    return selectedMessages.map((msg) => {
       if (msg.id !== streamingMsgId) return msg;
       return {
         ...msg,
@@ -194,6 +217,7 @@ export function FeedArea({
     });
   }, [
     messages,
+    selectedDate,
     streamingMsgId,
     stream.status,
     stream.items,
@@ -209,12 +233,41 @@ export function FeedArea({
   }, [stream.isAnalyzing, streamItemCount, scrollToBottom]);
 
   // Unconfirmed streaming messages (exclude user messages)
-  const unconfirmedMessages = displayMessages.filter(
-    (m) => m.role === 'assistant'
+  const pendingIds = useMemo(
+    () => new Set(pendingConfirmations.map((pending) => pending.id)),
+    [pendingConfirmations]
+  );
+
+  const pendingMessages = useMemo<ChatMessage[]>(
+    () =>
+      pendingConfirmations.map((pending) => ({
+        id: `pending-${pending.id}`,
+        role: 'assistant',
+        content: '',
+        parsedMeal: pending.parsedMeal,
+        userInput: pending.rawInput,
+        timestamp: new Date(pending.loggedAt),
+        loggedDate: selectedDate,
+        analysisId: pending.id,
+      })),
+    [pendingConfirmations, selectedDate]
+  );
+
+  const unconfirmedMessages = [
+    ...pendingMessages,
+    ...displayMessages.filter(
+      (m) =>
+        m.role === 'assistant' &&
+        (!m.analysisId || !pendingIds.has(m.analysisId))
+    ),
+  ];
+  const hasPendingMessages = pendingMessages.length > 0;
+  const hasStreamingMessages = unconfirmedMessages.some(
+    (message) => !pendingIds.has(message.analysisId ?? '')
   );
   const hasPersistedMeals = persistedMeals.length > 0;
-  const hasStreamingMessages = unconfirmedMessages.length > 0;
-  const hasContent = hasPersistedMeals || hasStreamingMessages;
+  const hasContent =
+    hasPersistedMeals || hasPendingMessages || hasStreamingMessages;
 
   return (
     <main className="flex min-w-0 flex-1 flex-col self-stretch overflow-hidden">
