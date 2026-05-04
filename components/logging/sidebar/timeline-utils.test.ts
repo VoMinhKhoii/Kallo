@@ -26,11 +26,18 @@ describe('timeline-utils', () => {
       expect(result.getMinutes()).toBe(0);
       expect(result.getSeconds()).toBe(0);
     });
+
+    it('handles single-digit months and days', () => {
+      const result = dateStringToDate('2026-01-05');
+      expect(result.getFullYear()).toBe(2026);
+      expect(result.getMonth()).toBe(0);
+      expect(result.getDate()).toBe(5);
+    });
   });
 
   describe('dateToDateString', () => {
     it('converts Date to YYYY-MM-DD using local time', () => {
-      const date = new Date('2026-05-03T12:00:00');
+      const date = new Date(2026, 4, 3, 12, 0, 0);
       const result = dateToDateString(date);
       expect(result).toBe('2026-05-03');
     });
@@ -50,7 +57,7 @@ describe('timeline-utils', () => {
     });
 
     it('formats a specific date correctly', () => {
-      const date = new Date('2026-05-03T12:00:00');
+      const date = new Date(2026, 4, 3, 12, 0, 0);
       expect(todayDateString(date)).toBe('2026-05-03');
     });
   });
@@ -143,6 +150,39 @@ describe('timeline-utils', () => {
       if (result.kind === 'lastWeekday') {
         expect(result.weekday).toBeTruthy();
       }
+    });
+
+    it('handles DST transition correctly for yesterday (spring forward)', () => {
+      // 2024-03-10 was spring DST in US (2am -> 3am)
+      const result = getMobileChipRelativeLabel({
+        date: '2024-03-09',
+        today: '2024-03-10',
+        locale: 'en',
+      });
+      expect(result).toEqual({ kind: 'yesterday' });
+    });
+
+    it('handles DST transition correctly for lastWeekday (spring forward)', () => {
+      // 2024-03-10 was spring DST in US
+      const result = getMobileChipRelativeLabel({
+        date: '2024-03-08',
+        today: '2024-03-10',
+        locale: 'en',
+      });
+      expect(result.kind).toBe('lastWeekday');
+      if (result.kind === 'lastWeekday') {
+        expect(result.weekday).toBeTruthy();
+      }
+    });
+
+    it('handles DST transition correctly for yesterday (fall back)', () => {
+      // 2024-11-03 was fall DST in US (2am -> 1am)
+      const result = getMobileChipRelativeLabel({
+        date: '2024-11-02',
+        today: '2024-11-03',
+        locale: 'en',
+      });
+      expect(result).toEqual({ kind: 'yesterday' });
     });
   });
 

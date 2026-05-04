@@ -39,7 +39,8 @@ export type MobileChipRelativeLabel =
  * Converts a YYYY-MM-DD date string to a local Date object at midnight.
  */
 export function dateStringToDate(dateStr: string): Date {
-  return new Date(`${dateStr}T00:00:00`);
+  const [year, month, day] = dateStr.split('-').map(Number);
+  return new Date(year, month - 1, day);
 }
 
 /**
@@ -64,7 +65,7 @@ export function todayDateString(date = new Date()): string {
  * Example: "Sun, May 3"
  */
 export function formatDayLabel(dateStr: string, locale: string): string {
-  const date = new Date(`${dateStr}T00:00:00`);
+  const date = dateStringToDate(dateStr);
   return new Intl.DateTimeFormat(locale, {
     weekday: 'short',
     month: 'short',
@@ -77,7 +78,7 @@ export function formatDayLabel(dateStr: string, locale: string): string {
  * Example: "Sun 3"
  */
 export function formatCompactDayLabel(dateStr: string, locale: string): string {
-  const date = new Date(`${dateStr}T00:00:00`);
+  const date = dateStringToDate(dateStr);
   return new Intl.DateTimeFormat(locale, {
     weekday: 'short',
     day: 'numeric',
@@ -88,7 +89,7 @@ export function formatCompactDayLabel(dateStr: string, locale: string): string {
  * Returns the week number within a month (1-5) using Math.ceil(day / 7).
  */
 export function weekOfMonth(dateStr: string): number {
-  const date = new Date(`${dateStr}T00:00:00`);
+  const date = dateStringToDate(dateStr);
   const day = date.getDate();
   return Math.ceil(day / 7);
 }
@@ -98,7 +99,7 @@ export function weekOfMonth(dateStr: string): number {
  * Example: "05-2026"
  */
 export function getSelectedMonthKey(dateStr: string): string {
-  const date = new Date(`${dateStr}T00:00:00`);
+  const date = dateStringToDate(dateStr);
   const month = String(date.getMonth() + 1).padStart(2, '0');
   const year = date.getFullYear();
   return `${month}-${year}`;
@@ -139,7 +140,7 @@ export function groupByMonth(dates: string[]): MonthSection[] {
   for (const dateStr of dates) {
     const monthKey = getSelectedMonthKey(dateStr);
     const weekKey = getSelectedWeekKey(dateStr);
-    const date = new Date(`${dateStr}T00:00:00`);
+    const date = dateStringToDate(dateStr);
     const month = date.getMonth() + 1;
     const year = date.getFullYear();
     const week = weekOfMonth(dateStr);
@@ -208,7 +209,7 @@ export function getMobileChipRelativeLabel(input: {
   const selectedTime = dateStringToDate(input.date).getTime();
   const todayTime = dateStringToDate(input.today).getTime();
 
-  const dayDiff = Math.floor(
+  const dayDiff = Math.round(
     (todayTime - selectedTime) / (1000 * 60 * 60 * 24)
   );
 
@@ -254,11 +255,11 @@ export function buildMobileRailDates(
   const effectiveLimit = Math.max(limit, requiredDates.size);
 
   // Step 4: Rank remaining dates by distance from selectedDate
-  const selectedTime = new Date(`${selectedDate}T00:00:00`).getTime();
+  const selectedTime = dateStringToDate(selectedDate).getTime();
 
   remainingDates.sort((a, b) => {
-    const aTime = new Date(`${a}T00:00:00`).getTime();
-    const bTime = new Date(`${b}T00:00:00`).getTime();
+    const aTime = dateStringToDate(a).getTime();
+    const bTime = dateStringToDate(b).getTime();
 
     const aDist = Math.abs(aTime - selectedTime);
     const bDist = Math.abs(bTime - selectedTime);
