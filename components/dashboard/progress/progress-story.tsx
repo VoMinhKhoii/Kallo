@@ -45,6 +45,34 @@ export function ProgressStory({
     );
   }
 
+  if (summary.status === 'insufficient') {
+    return (
+      <section className="grid min-h-[420px] gap-2.5 rounded-[1.5rem] border border-nham-border/60 bg-card p-3 shadow-[0_10px_32px_rgba(44,36,22,0.05)] xl:h-full xl:min-h-0 xl:grid-cols-[minmax(240px,0.32fr)_minmax(0,0.68fr)] xl:p-3">
+        <div className="grid min-h-0 gap-2.5 xl:grid-rows-[auto_1fr]">
+          <div className="rounded-[1.25rem] bg-nham-surface/70 p-2.5">
+            <p className="text-nham-stone text-sm">
+              {t('insufficientWeightData')}
+            </p>
+          </div>
+          <CompactWeightLog
+            currentWeight={weightSummary.currentWeight}
+            todayWeight={weightSummary.todayWeight}
+            todayDate={todayDate}
+          />
+        </div>
+        <div className="min-h-[220px] xl:min-h-0">
+          <WeightChart
+            data={weightSummary.weights}
+            periodStartWeight={weightSummary.periodStartWeight}
+            expectedEndWeight={weightSummary.expectedEndWeight}
+            goalDirection={weightSummary.goalDirection}
+            range={range}
+          />
+        </div>
+      </section>
+    );
+  }
+
   const copy = t.raw(`progressStatus.${summary.status}`);
   const delta = summary.currentWeight - summary.startWeight;
   const Icon = delta <= 0 ? TrendingDown : TrendingUp;

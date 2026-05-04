@@ -56,6 +56,7 @@ export function CompactWeightLog({
       reset(values);
     } catch (error) {
       console.error('[dashboard] compact weight log failed', error);
+      toast.error(t('weightCard.saveFailed'));
     }
   };
   const errorMessage = errors.loggedDate?.message ?? errors.weightKg?.message;

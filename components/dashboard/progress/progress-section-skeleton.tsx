@@ -1,9 +1,48 @@
 import { Skeleton } from '@/components/ui/skeleton';
 import type { HeatmapRange } from '@/lib/types/dashboard';
 
+export function HeatmapSkeleton({ range }: { range: HeatmapRange }) {
+  const cols = range === '30d' ? 5 : range === '90d' ? 14 : 53;
+
+  return (
+    <div className="flex h-full flex-col gap-2">
+      <div className="flex flex-1 items-center gap-1">
+        <div className="flex shrink-0 flex-col gap-1" aria-hidden="true">
+          {Array.from({ length: 7 }, (_, i) => (
+            <Skeleton
+              key={i}
+              className="h-[19px] w-3 rounded-sm bg-nham-track"
+            />
+          ))}
+        </div>
+        <div
+          className="grid flex-1 gap-1"
+          style={{
+            gridTemplateRows: 'repeat(7, 19px)',
+            gridAutoFlow: 'column',
+            gridAutoColumns: '19px',
+          }}
+          aria-hidden="true"
+        >
+          {Array.from({ length: cols * 7 }, (_, i) => (
+            <Skeleton
+              key={i}
+              className="h-[19px] w-[19px] rounded-[3px] bg-nham-track"
+            />
+          ))}
+        </div>
+      </div>
+      <div className="flex items-center gap-2">
+        <Skeleton className="h-2 w-12 rounded-full bg-nham-track" />
+        <Skeleton className="h-1.5 flex-1 rounded-full bg-nham-track" />
+        <Skeleton className="h-2 w-12 rounded-full bg-nham-track" />
+      </div>
+    </div>
+  );
+}
+
 export function ProgressSectionSkeleton({ range }: { range: HeatmapRange }) {
-  const heatmapSquares =
-    range === '30d' ? 5 * 7 : range === '90d' ? 14 * 7 : 53 * 7;
+  const cols = range === '30d' ? 5 : range === '90d' ? 14 : 53;
 
   return (
     <div className="flex h-full gap-3">
@@ -22,8 +61,16 @@ export function ProgressSectionSkeleton({ range }: { range: HeatmapRange }) {
               />
             ))}
           </div>
-          <div className="grid flex-1 gap-1" aria-hidden="true">
-            {Array.from({ length: heatmapSquares }, (_, index) => (
+          <div
+            className="grid flex-1 gap-1"
+            style={{
+              gridTemplateRows: 'repeat(7, 19px)',
+              gridAutoFlow: 'column',
+              gridAutoColumns: '19px',
+            }}
+            aria-hidden="true"
+          >
+            {Array.from({ length: cols * 7 }, (_, index) => (
               <Skeleton
                 key={index}
                 className="h-[19px] w-[19px] rounded-[3px] bg-nham-track"

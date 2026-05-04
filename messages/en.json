@@ -865,7 +865,8 @@
       "saved": "Weight saved",
       "invalidValue": "Check the weight value before saving",
       "inputLabel": "Weight in kilograms",
-      "logWeight": "Log weight"
+      "logWeight": "Log weight",
+      "saveFailed": "Failed to save weight"
     },
     "adherenceHeatmap": {
       "onTrack": "{percent}% on track",

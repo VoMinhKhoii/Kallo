@@ -11,7 +11,7 @@ import type {
 } from '@/lib/types/dashboard';
 import { DashboardSectionState } from './dashboard-section-state';
 import { AdherenceHeatmap } from './progress/adherence-heatmap';
-import { ProgressSectionSkeleton } from './progress/progress-section-skeleton';
+import { HeatmapSkeleton } from './progress/progress-section-skeleton';
 import { ProgressStory } from './progress/progress-story';
 import { SectionHeader } from './section-header';
 import { FloatingMealTrigger } from './today/meal-trigger';
@@ -20,11 +20,11 @@ import { useDashboardDateRefresh } from './use-dashboard-date-refresh';
 import { useDashboardMeasurements } from './use-dashboard-measurements';
 import { useDashboardQueries } from './use-dashboard-queries';
 
-function getWeekTitle(locale: string, label: string): string {
-  const now = new Date();
+function getWeekTitle(locale: string, label: string, today: string): string {
+  const now = new Date(today);
   const day = now.getDay(); // 0=Sun, 1=Mon...
   const diffToMon = day === 0 ? -6 : 1 - day;
-  const monday = new Date(now);
+  const monday = new Date(today);
   monday.setDate(now.getDate() + diffToMon);
   const sunday = new Date(monday);
   sunday.setDate(monday.getDate() + 6);
@@ -62,8 +62,8 @@ export function DashboardShell({ profile }: DashboardShellProps) {
     hasMeasuredHeatmap,
   } = useDashboardMeasurements();
   const weekTitle = useMemo(
-    () => getWeekTitle(locale, t('weekOf')),
-    [locale, t]
+    () => getWeekTitle(locale, t('weekOf'), todayDate),
+    [locale, t, todayDate]
   );
   const weightRange: TimeRange =
     progressWidth !== null && progressWidth >= 620 ? '90d' : '30d';
@@ -171,7 +171,7 @@ export function DashboardShell({ profile }: DashboardShellProps) {
               className="min-h-[310px] rounded-[1.5rem] border border-nham-border/60 bg-card p-3 shadow-[0_10px_32px_rgba(44,36,22,0.05)] sm:min-h-[340px] md:min-h-[360px] xl:min-h-0 xl:flex-1 xl:p-4"
             >
               {!hasMeasuredHeatmap || heatmapQuery.isPending ? (
-                <ProgressSectionSkeleton range={renderedHeatmapRange} />
+                <HeatmapSkeleton range={renderedHeatmapRange} />
               ) : heatmapQuery.isError ? (
                 <DashboardSectionState
                   message={t('heatmapLoadError')}
@@ -181,7 +181,7 @@ export function DashboardShell({ profile }: DashboardShellProps) {
                   }}
                 />
               ) : !heatmapData ? (
-                <ProgressSectionSkeleton range={renderedHeatmapRange} />
+                <HeatmapSkeleton range={renderedHeatmapRange} />
               ) : (
                 <AdherenceHeatmap
                   data={resolvedHeatmapData}

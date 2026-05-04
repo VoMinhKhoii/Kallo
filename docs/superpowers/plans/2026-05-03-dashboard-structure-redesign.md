@@ -196,14 +196,14 @@ export function buildCalorieAdherenceHeatmap(input: BuildCalorieAdherenceHeatmap
 
 - [ ] **Step 7: Run adherence tests**
 
-Run: `bun run test lib/dashboard/adherence.test.ts`
+Run: `bun run test lib/dashboard/__tests__/adherence.test.ts`
 
 Expected: PASS.
 
 - [ ] **Step 8: Commit**
 
 ```bash
-git add lib/dashboard/adherence.ts lib/dashboard/adherence.test.ts
+git add lib/dashboard/adherence.ts lib/dashboard/__tests__/adherence.test.ts
 git commit -m "feat: add date-aware dashboard heatmap data"
 ```
 
@@ -211,11 +211,11 @@ git commit -m "feat: add date-aware dashboard heatmap data"
 
 **Files:**
 - Create: `lib/dashboard/heatmap-range.ts`
-- Modify: `lib/dashboard/adherence.test.ts`
+- Modify: `lib/dashboard/__tests__/adherence.test.ts`
 
 - [ ] **Step 1: Write failing tests**
 
-Add to `lib/dashboard/adherence.test.ts`:
+Add to `lib/dashboard/__tests__/adherence.test.ts`:
 
 ```ts
 import { chooseRenderedHeatmapRange } from '@/lib/dashboard/heatmap-range';
@@ -275,7 +275,7 @@ describe('chooseRenderedHeatmapRange', () => {
 
 - [ ] **Step 2: Run tests to verify failure**
 
-Run: `bun run test lib/dashboard/adherence.test.ts`
+Run: `bun run test lib/dashboard/__tests__/adherence.test.ts`
 
 Expected: FAIL because helper file does not exist.
 
@@ -324,14 +324,14 @@ export function chooseRenderedHeatmapRange({
 
 - [ ] **Step 4: Run tests**
 
-Run: `bun run test lib/dashboard/adherence.test.ts`
+Run: `bun run test lib/dashboard/__tests__/adherence.test.ts`
 
 Expected: PASS.
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add lib/dashboard/heatmap-range.ts lib/dashboard/adherence.test.ts
+git add lib/dashboard/heatmap-range.ts lib/dashboard/__tests__/adherence.test.ts
 git commit -m "feat: add adaptive heatmap range helper"
 ```
 
@@ -1072,7 +1072,7 @@ Do not commit after this component-only step. `AdherenceHeatmap` now expects `He
 
 - [ ] **Step 6: Run heatmap tests**
 
-Run: `bun run test components/dashboard/progress/adherence-heatmap.test.tsx lib/dashboard/adherence.test.ts`
+Run: `bun run test components/dashboard/progress/adherence-heatmap.test.tsx lib/dashboard/__tests__/adherence.test.ts`
 
 Expected: PASS.
 
@@ -1082,7 +1082,7 @@ Expected: PASS.
 - Modify: `lib/actions/dashboard.ts`
 - Modify: `lib/dashboard/adherence.ts`
 - Modify: `components/dashboard/dashboard-shell.tsx`
-- Modify: `lib/dashboard/adherence.test.ts` if action-facing types need adjustment
+- Modify: `lib/dashboard/__tests__/adherence.test.ts` if action-facing types need adjustment
 - Modify: `components/dashboard/progress/adherence-heatmap.tsx`
 - Create: `components/dashboard/progress/adherence-heatmap.test.tsx`
 - Modify: `messages/en.json`
@@ -1125,7 +1125,7 @@ Do not leave mixed expectations where the action returns `HeatmapData` but compo
 Run:
 
 ```bash
-bun run test lib/dashboard/adherence.test.ts components/dashboard/progress/adherence-heatmap.test.tsx app/[locale]/\(app\)/dashboard/page.test.tsx
+bun run test lib/dashboard/__tests__/adherence.test.ts components/dashboard/progress/adherence-heatmap.test.tsx app/[locale]/\(app\)/dashboard/page.test.tsx
 ```
 
 Expected: PASS.
@@ -1133,7 +1133,7 @@ Expected: PASS.
 - [ ] **Step 6: Commit**
 
 ```bash
-git add lib/actions/dashboard.ts lib/dashboard/adherence.ts lib/dashboard/adherence.test.ts components/dashboard/dashboard-shell.tsx components/dashboard/progress/adherence-heatmap.tsx components/dashboard/progress/adherence-heatmap.test.tsx messages/en.json messages/vi.json
+git add lib/actions/dashboard.ts lib/dashboard/adherence.ts lib/dashboard/__tests__/adherence.test.ts components/dashboard/dashboard-shell.tsx components/dashboard/progress/adherence-heatmap.tsx components/dashboard/progress/adherence-heatmap.test.tsx messages/en.json messages/vi.json
 git commit -m "feat: load yearly dashboard heatmap data"
 ```
 
@@ -1288,7 +1288,7 @@ git commit -m "fix: complete dashboard cockpit copy"
 Run:
 
 ```bash
-bun run test lib/dashboard/adherence.test.ts lib/dashboard/weight-trend.test.ts components/dashboard/today/today-dock.test.tsx components/dashboard/progress/progress-story.test.tsx components/dashboard/progress/adherence-heatmap.test.tsx app/[locale]/\(app\)/dashboard/page.test.tsx
+bun run test lib/dashboard/__tests__/adherence.test.ts lib/dashboard/weight-trend.test.ts components/dashboard/today/today-dock.test.tsx components/dashboard/progress/progress-story.test.tsx components/dashboard/progress/adherence-heatmap.test.tsx app/[locale]/\(app\)/dashboard/page.test.tsx
 ```
 
 Expected: PASS.

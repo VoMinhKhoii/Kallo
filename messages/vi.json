@@ -865,7 +865,8 @@
       "saved": "Đã lưu cân nặng",
       "invalidValue": "Kiểm tra giá trị cân nặng trước khi lưu",
       "inputLabel": "Cân nặng theo kilogram",
-      "logWeight": "Ghi cân nặng"
+      "logWeight": "Ghi cân nặng",
+      "saveFailed": "Không thể lưu cân nặng"
     },
     "adherenceHeatmap": {
       "onTrack": "{percent}% đúng mục tiêu",
