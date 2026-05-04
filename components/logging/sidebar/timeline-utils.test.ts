@@ -230,20 +230,44 @@ describe('timeline-utils', () => {
   });
 
   describe('getWeekDateRange', () => {
-    it('returns the first through seventh for week 1', () => {
+    it('returns partial first week up to the day before first Monday', () => {
+      // May 2026: May 1 = Friday, first Monday = May 4
+      // Week 1 = May 1–3
       expect(getWeekDateRange({ year: 2026, month: 5, weekNumber: 1 })).toEqual(
         {
           start: '2026-05-01',
-          end: '2026-05-07',
+          end: '2026-05-03',
+        }
+      );
+    });
+
+    it('returns the full Mon–Sun range for a middle week', () => {
+      // Week 2 = May 4–10
+      expect(getWeekDateRange({ year: 2026, month: 5, weekNumber: 2 })).toEqual(
+        {
+          start: '2026-05-04',
+          end: '2026-05-10',
         }
       );
     });
 
     it('clamps the final week to the end of the month', () => {
+      // Week 5 = May 25–31
       expect(getWeekDateRange({ year: 2026, month: 5, weekNumber: 5 })).toEqual(
         {
-          start: '2026-05-29',
+          start: '2026-05-25',
           end: '2026-05-31',
+        }
+      );
+    });
+
+    it('handles a month starting on Monday (no partial first week)', () => {
+      // June 2026: June 1 = Monday → daysBeforeFirstMonday = 0 → pure 7-day weeks
+      // Week 1 = June 1–7
+      expect(getWeekDateRange({ year: 2026, month: 6, weekNumber: 1 })).toEqual(
+        {
+          start: '2026-06-01',
+          end: '2026-06-07',
         }
       );
     });
@@ -300,7 +324,8 @@ describe('timeline-utils', () => {
     });
 
     it('groups multiple dates in the same week', () => {
-      const dates = ['2026-05-01', '2026-05-03', '2026-05-05'];
+      // May 4, 7, 9 all fall in week 2 of May 2026 (Mon 4 – Sun 10)
+      const dates = ['2026-05-04', '2026-05-07', '2026-05-09'];
       const result = groupByMonth(dates);
 
       expect(result).toHaveLength(1);
@@ -309,16 +334,17 @@ describe('timeline-utils', () => {
     });
 
     it('sorts days within each week in descending order regardless of input order', () => {
-      const dates = ['2026-05-01', '2026-05-05', '2026-05-03', '2026-05-02'];
+      // All in week 2 of May 2026 (May 4–10)
+      const dates = ['2026-05-04', '2026-05-08', '2026-05-06', '2026-05-05'];
       const result = groupByMonth(dates);
 
       expect(result).toHaveLength(1);
       expect(result[0].weeks).toHaveLength(1);
       expect(result[0].weeks[0].days).toEqual([
+        '2026-05-08',
+        '2026-05-06',
         '2026-05-05',
-        '2026-05-03',
-        '2026-05-02',
-        '2026-05-01',
+        '2026-05-04',
       ]);
     });
   });

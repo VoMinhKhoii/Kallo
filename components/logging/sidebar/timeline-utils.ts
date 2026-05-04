@@ -88,12 +88,26 @@ export function formatTimelineDayLabel(
 }
 
 /**
- * Returns the week number within a month (1-5) using Math.ceil(day / 7).
+ * Returns the week number within a month (1-5) using Monday-based calendar weeks.
+ * The first partial week (days before the first Monday) is Week 1.
+ * Each subsequent Monday starts a new week.
  */
 export function weekOfMonth(dateStr: string): number {
   const date = dateStringToDate(dateStr);
   const day = date.getDate();
-  return Math.ceil(day / 7);
+  const firstOfMonth = new Date(date.getFullYear(), date.getMonth(), 1);
+  const firstDayOfWeek = firstOfMonth.getDay(); // 0=Sun … 6=Sat
+  // Number of days in the partial first week (before the first Monday).
+  // When the month starts on Monday (firstDayOfWeek===1), this is 0 → full weeks only.
+  const daysBeforeFirstMonday = (8 - firstDayOfWeek) % 7;
+
+  if (daysBeforeFirstMonday === 0) {
+    return Math.ceil(day / 7);
+  }
+  if (day <= daysBeforeFirstMonday) {
+    return 1;
+  }
+  return Math.ceil((day - daysBeforeFirstMonday) / 7) + 1;
 }
 
 /**
@@ -123,15 +137,34 @@ export function getWeekDateRange(input: {
   weekNumber: number;
 }): WeekDateRange {
   const monthIndex = input.month - 1;
-  const firstDay = (input.weekNumber - 1) * 7 + 1;
-  const lastDay = Math.min(
-    input.weekNumber * 7,
-    new Date(input.year, input.month, 0).getDate()
-  );
+  const firstOfMonth = new Date(input.year, monthIndex, 1);
+  const firstDayOfWeek = firstOfMonth.getDay();
+  const daysBeforeFirstMonday = (8 - firstDayOfWeek) % 7;
+  const daysInMonth = new Date(input.year, input.month, 0).getDate();
+
+  let startDay: number;
+  let endDay: number;
+
+  if (daysBeforeFirstMonday === 0) {
+    // Month starts on Monday — pure 7-day weeks
+    startDay = (input.weekNumber - 1) * 7 + 1;
+    endDay = Math.min(input.weekNumber * 7, daysInMonth);
+  } else if (input.weekNumber === 1) {
+    // Partial first week: day 1 through the day before the first Monday
+    startDay = 1;
+    endDay = daysBeforeFirstMonday;
+  } else {
+    // Full week starting from the first Monday
+    startDay = daysBeforeFirstMonday + (input.weekNumber - 2) * 7 + 1;
+    endDay = Math.min(
+      daysBeforeFirstMonday + (input.weekNumber - 1) * 7,
+      daysInMonth
+    );
+  }
 
   return {
-    start: dateToDateString(new Date(input.year, monthIndex, firstDay)),
-    end: dateToDateString(new Date(input.year, monthIndex, lastDay)),
+    start: dateToDateString(new Date(input.year, monthIndex, startDay)),
+    end: dateToDateString(new Date(input.year, monthIndex, endDay)),
   };
 }
 

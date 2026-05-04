@@ -170,16 +170,19 @@ describe('TimelineSidebar', () => {
     render(<TimelineSidebar {...baseProps} />);
 
     const weekButton = getButtonByControls('week-05-2026-w1');
-    expect(weekButton).toHaveTextContent('May 1 - May 7');
+    // May 2026: week 1 = May 1–3 (days before the first Monday, May 4)
+    expect(weekButton).toHaveTextContent('May 1 - May 3');
 
     const dateButtons = screen
       .getAllByRole('button')
       .filter((button) => button.hasAttribute('data-has-meal'));
 
+    // Days are sorted ascending (less recent first).
+    // May 3 is today so it gets the "(Today)" suffix.
     expect(dateButtons.map((button) => button.textContent)).toEqual([
       'Fri - May 1',
       'Sat - May 2',
-      'Sun - May 3',
+      'Sun - May 3 (Today)',
     ]);
   });
 
@@ -222,12 +225,14 @@ describe('TimelineSidebar', () => {
   });
 
   it('handles multiple weeks with ambiguous names correctly using aria-controls', () => {
-    // Test data with dates spanning multiple weeks to prove selector is robust
+    // Test data with dates spanning multiple weeks to prove selector is robust.
+    // May 2026: week 1 = May 1–3, week 2 = May 4–10, week 3 = May 11–17, week 4 = May 18–24
     const multiWeekProps = {
       ...baseProps,
       dates: [
         '2026-05-24',
         '2026-05-20',
+        '2026-05-14',
         '2026-05-10',
         '2026-05-03',
         '2026-05-01',
@@ -235,6 +240,7 @@ describe('TimelineSidebar', () => {
       allDates: [
         '2026-05-24',
         '2026-05-20',
+        '2026-05-14',
         '2026-05-10',
         '2026-05-03',
         '2026-05-02',
@@ -248,19 +254,19 @@ describe('TimelineSidebar', () => {
     // All week buttons have the same accessible name "week" due to next-intl mock
     // but we can distinguish them by aria-controls
 
-    // Week 1 (days 1-7)
+    // Week 1 (May 1–3)
     const week1Button = getButtonByControls('week-05-2026-w1');
     expect(week1Button).toHaveAttribute('aria-expanded', 'false'); // Not selected
 
-    // Week 2 (days 8-14) - contains selected date (May 10)
+    // Week 2 (May 4–10) - contains selected date (May 10)
     const week2Button = getButtonByControls('week-05-2026-w2');
     expect(week2Button).toHaveAttribute('aria-expanded', 'true'); // Selected
 
-    // Week 3 (days 15-21)
+    // Week 3 (May 11–17)
     const week3Button = getButtonByControls('week-05-2026-w3');
     expect(week3Button).toHaveAttribute('aria-expanded', 'false'); // Not selected
 
-    // Week 4 (days 22-28)
+    // Week 4 (May 18–24)
     const week4Button = getButtonByControls('week-05-2026-w4');
     expect(week4Button).toHaveAttribute('aria-expanded', 'false'); // Not selected
 

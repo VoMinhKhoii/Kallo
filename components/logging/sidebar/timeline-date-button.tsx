@@ -34,19 +34,25 @@ export function TimelineDateButton({
           ? 'flex min-h-11 min-w-[4.5rem] shrink-0 flex-col items-center justify-center gap-0.5 px-3 py-2 text-[11px]'
           : 'flex min-h-9 min-w-0 flex-1 items-center px-2.5 py-1.5 text-sm',
         isActive
-          ? 'bg-nham-btn text-white shadow-nham-btn/15 shadow-sm'
-          : isToday
-            ? 'bg-nham-accent/35 text-nham-text hover:bg-nham-accent/50'
-            : 'text-nham-text-muted hover:bg-nham-hover/50 hover:text-nham-text'
+          ? 'bg-nham-accent/35 text-nham-text hover:bg-nham-accent/50'
+          : 'text-nham-text-muted hover:bg-nham-hover/50 hover:text-nham-text'
       )}
     >
-      <span className="min-w-0 truncate">{label}</span>
-      {hasMeal && (
+      <span className="min-w-0 truncate">
+        {label}
+        {isToday && variant === 'desktop' && (
+          <span className="ml-1 font-normal text-[11px] text-nham-text-muted/70">
+            {' '}
+            (Today)
+          </span>
+        )}
+      </span>
+      {hasMeal && variant === 'mobile' && (
         <span
           aria-hidden="true"
           className={cn(
             'h-1.5 w-1.5 rounded-full',
-            isActive ? 'bg-white/80' : 'bg-nham-accent'
+            isActive ? 'bg-nham-text/50' : 'bg-nham-accent'
           )}
         />
       )}

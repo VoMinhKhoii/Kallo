@@ -88,7 +88,7 @@ export function TimelineSidebar({
   if (isPending) {
     return (
       <nav
-        className="hidden h-full w-[212px] shrink-0 flex-col overflow-hidden border-border/40 border-r py-3 pr-3 md:flex"
+        className="hidden h-full w-[252px] shrink-0 flex-col overflow-hidden border-border/40 border-r py-3 pr-3 md:flex"
         aria-label={t('navigationLabel')}
       >
         <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto">
@@ -106,7 +106,7 @@ export function TimelineSidebar({
 
   return (
     <nav
-      className="hidden h-full w-[212px] shrink-0 flex-col overflow-hidden border-border/40 border-r py-3 pr-3 md:flex"
+      className="hidden h-full w-[252px] shrink-0 flex-col overflow-hidden border-border/40 border-r py-3 pr-3 md:flex"
       aria-label={t('navigationLabel')}
     >
       <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto overflow-x-hidden">
@@ -199,11 +199,11 @@ export function TimelineSidebar({
                               : 'text-nham-text-muted hover:text-nham-text'
                           )}
                         >
-                          <span className="min-w-0 flex-1 text-left font-sans-display leading-4 tracking-tight">
-                            <span className="block truncate font-semibold text-[13px]">
+                          <span className="flex min-w-0 flex-1 items-baseline gap-2 text-left font-sans-display tracking-tight">
+                            <span className="shrink-0 font-semibold text-[13px]">
                               {t('week', { number: week.weekNumber })}
                             </span>
-                            <span className="block truncate font-medium text-[10px] text-nham-text-muted/75">
+                            <span className="min-w-0 truncate font-medium text-[11px] text-nham-text-muted/75">
                               {weekRangeLabel}
                             </span>
                           </span>
@@ -226,14 +226,11 @@ export function TimelineSidebar({
                             id={`week-${week.key}`}
                             className="relative mt-1 ml-3 min-w-0 pl-4"
                           >
-                            <div
-                              className="absolute top-[-1.375rem] bottom-4 left-[7px] w-px bg-[#C9A87C]"
-                              aria-hidden="true"
-                            />
-
                             {/* Days list */}
                             <ul className="flex min-w-0 flex-1 flex-col gap-1.5">
-                              {sortedDays.map((date) => {
+                              {sortedDays.map((date, index) => {
+                                const isFirst = index === 0;
+                                const isLast = index === sortedDays.length - 1;
                                 const isActive = date === selectedDate;
                                 const isToday = date === today;
                                 const hasMeal = dates.includes(date);
@@ -247,10 +244,47 @@ export function TimelineSidebar({
                                     key={date}
                                     className="relative flex w-full min-w-0 items-center"
                                   >
-                                    {/* L-shaped connector */}
+                                    {/* Upper vertical segment: connects from the week
+                                        header (first item) or from the previous item's
+                                        lower segment to the top of this L-connector */}
                                     <div
-                                      className="absolute top-1/2 left-[-0.5625rem] h-2 w-[13px] -translate-y-full rounded-bl-lg border-[#C9A87C] border-b border-l"
                                       aria-hidden="true"
+                                      className="pointer-events-none absolute z-[2] w-0.5 bg-nham-accent"
+                                      style={{
+                                        left: '-9px',
+                                        top: isFirst ? '-1.375rem' : '-3px',
+                                        height: isFirst
+                                          ? 'calc(50% - 10px + 1.375rem)'
+                                          : 'calc(50% - 7px)',
+                                      }}
+                                    />
+
+                                    {/* Lower vertical segment: connects this item to
+                                        the next (omitted on the last item so the line
+                                        ends exactly at the final L-connector) */}
+                                    {!isLast && (
+                                      <div
+                                        aria-hidden="true"
+                                        className="pointer-events-none absolute z-[2] w-0.5 bg-nham-accent"
+                                        style={{
+                                          left: '-9px',
+                                          top: '50%',
+                                          height: 'calc(50% + 3px)',
+                                        }}
+                                      />
+                                    )}
+
+                                    {/* L-shaped connector curving from the vertical
+                                        line into the day button */}
+                                    <div
+                                      aria-hidden="true"
+                                      className="pointer-events-none absolute z-[2] -translate-y-full rounded-bl-lg border-nham-accent border-b-2 border-l-2"
+                                      style={{
+                                        left: '-9px',
+                                        top: '50%',
+                                        height: '10px',
+                                        width: '13px',
+                                      }}
                                     />
 
                                     {/* Date button */}
