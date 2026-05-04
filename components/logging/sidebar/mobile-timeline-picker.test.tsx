@@ -1,233 +1,216 @@
-import { render, screen, within } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { MobileTimelinePicker } from './mobile-timeline-picker';
-
-const calendarRenderSpy = vi.hoisted(() => vi.fn());
-
-// Mock window.matchMedia for Vaul drawer
-beforeAll(() => {
-  Object.defineProperty(window, 'matchMedia', {
-    writable: true,
-    value: vi.fn().mockImplementation((query) => ({
-      matches: false,
-      media: query,
-      onchange: null,
-      addListener: vi.fn(),
-      removeListener: vi.fn(),
-      addEventListener: vi.fn(),
-      removeEventListener: vi.fn(),
-      dispatchEvent: vi.fn(),
-    })),
-  });
-
-  // Mock HTMLElement pointer capture methods for Vaul
-  HTMLElement.prototype.setPointerCapture = vi.fn();
-  HTMLElement.prototype.releasePointerCapture = vi.fn();
-  HTMLElement.prototype.hasPointerCapture = vi.fn();
-
-  // Mock getComputedStyle for Vaul's transform parsing
-  const originalGetComputedStyle = window.getComputedStyle;
-  window.getComputedStyle = (element) => {
-    const style = originalGetComputedStyle(element);
-    return new Proxy(style, {
-      get(target, prop) {
-        if (prop === 'transform') {
-          return 'none';
-        }
-        return target[prop as keyof CSSStyleDeclaration];
-      },
-    });
-  };
-});
-
-// Suppress Vaul pointer handling errors that occur after tests complete
-beforeEach(() => {
-  const originalConsoleError = console.error;
-  console.error = (...args) => {
-    const message = args[0]?.toString() || '';
-    if (
-      message.includes('getTranslate') ||
-      message.includes('setPointerCapture')
-    ) {
-      return;
-    }
-    originalConsoleError(...args);
-  };
-});
-
-// Mock the Calendar component for simpler testing
-vi.mock('@/components/ui/calendar', () => ({
-  Calendar: ({
-    selected,
-    defaultMonth,
-    locale,
-    onSelect,
-  }: {
-    selected: Date;
-    defaultMonth: Date;
-    locale: { code?: string };
-    onSelect: (date: Date | undefined) => void;
-  }) => {
-    calendarRenderSpy({ selected, defaultMonth, locale });
-
-    const handleClick = () => {
-      const newDate = new Date(2026, 4, 5);
-      onSelect(newDate);
-    };
-
-    return (
-      <div data-testid="mock-calendar">
-        <div>Selected: {selected.toLocaleDateString()}</div>
-        <button type="button" onClick={handleClick}>
-          Select 2026-05-05
-        </button>
-      </div>
-    );
-  },
-}));
 
 describe('MobileTimelinePicker', () => {
   const defaultProps = {
-    dates: ['2026-05-03', '2026-05-02', '2026-05-01'],
-    allDates: [
-      '2026-05-03',
-      '2026-05-02',
-      '2026-05-01',
-      '2026-04-30',
-      '2026-04-29',
-    ],
-    today: '2026-05-03',
-    selectedDate: '2026-05-03',
+    dates: ['2026-05-06', '2026-05-02', '2026-05-01'],
+    allDates: ['2026-05-06', '2026-05-02', '2026-05-01'],
+    today: '2026-05-06',
+    selectedDate: '2026-05-06',
     isPending: false,
     isError: false,
     onRetry: vi.fn(),
     onSelectDate: vi.fn(),
   };
 
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  function getDateButton(accessibleDate: string) {
+    return screen.getByRole('button', {
+      name: new RegExp(accessibleDate),
+    });
+  }
+
   it('renders selected date chip with meal indicator when date has saved meal', () => {
     render(<MobileTimelinePicker {...defaultProps} />);
 
     const chip = screen.getByLabelText('selectDate');
     expect(chip).toBeInTheDocument();
-
-    expect(screen.getByText('Sun - May 3')).toBeInTheDocument();
-
-    const mealIndicator = screen.getByLabelText('hasMealIndicator');
-    expect(mealIndicator).toBeInTheDocument();
+    expect(within(chip).getByText('Wed - May 6')).toBeInTheDocument();
+    expect(screen.getByLabelText('hasMealIndicator')).toBeInTheDocument();
   });
 
   it('does not show meal indicator when selected date has no meal', () => {
     render(
       <MobileTimelinePicker
         {...defaultProps}
-        selectedDate="2026-04-30"
-        dates={['2026-05-03']}
+        selectedDate="2026-05-05"
+        dates={['2026-05-06']}
       />
     );
 
     expect(screen.queryByLabelText('hasMealIndicator')).not.toBeInTheDocument();
   });
 
-  it('renders weekday and date when selected date is today', () => {
+  it('opens the current week slider from the chip', async () => {
+    const user = userEvent.setup();
     render(<MobileTimelinePicker {...defaultProps} />);
 
-    expect(screen.getByText('Sun - May 3')).toBeInTheDocument();
+    await user.click(screen.getByLabelText('selectDate'));
+
+    expect(screen.getByTestId('mobile-week-slider')).toBeInTheDocument();
+    expect(getDateButton('May 4, 2026')).toBeInTheDocument();
+    expect(getDateButton('May 10, 2026')).toBeInTheDocument();
+    expect(screen.getByLabelText('nextWeek')).toBeDisabled();
   });
 
-  it('renders weekday and date when selected date is yesterday', () => {
-    render(
-      <MobileTimelinePicker
-        {...defaultProps}
-        selectedDate="2026-05-02"
-        today="2026-05-03"
-      />
-    );
-
-    expect(screen.getByText('Sat - May 2')).toBeInTheDocument();
-  });
-
-  it('renders weekday and date for logged days earlier in the week', () => {
-    render(
-      <MobileTimelinePicker
-        {...defaultProps}
-        selectedDate="2026-05-01"
-        today="2026-05-03"
-      />
-    );
-
-    expect(screen.getByText('Fri - May 1')).toBeInTheDocument();
-  });
-
-  it('renders weekday and date for older selected dates', () => {
-    render(
-      <MobileTimelinePicker
-        {...defaultProps}
-        selectedDate="2026-04-20"
-        today="2026-05-03"
-      />
-    );
-
-    expect(screen.getByText('Mon - Apr 20')).toBeInTheDocument();
-  });
-
-  it('opens drawer when chip is clicked', async () => {
+  it('navigates one week into the past with the previous chevron', async () => {
     const user = userEvent.setup();
-
     render(<MobileTimelinePicker {...defaultProps} />);
 
-    const chip = screen.getByLabelText('selectDate');
+    await user.click(screen.getByLabelText('selectDate'));
+    await user.click(screen.getByLabelText('previousWeek'));
 
-    expect(screen.queryByTestId('mock-calendar')).not.toBeInTheDocument();
-
-    await user.click(chip);
-
-    expect(screen.getByText('datePickerTitle')).toBeInTheDocument();
-    expect(screen.getByText('datePickerDescription')).toBeInTheDocument();
+    expect(getDateButton('April 27, 2026')).toBeInTheDocument();
+    expect(getDateButton('May 3, 2026')).toBeInTheDocument();
+    expect(screen.getByLabelText('nextWeek')).not.toBeDisabled();
   });
 
-  it('passes the selected date as the calendar default month with locale', async () => {
+  it('can keep generating older weeks beyond the logged meal date range', async () => {
     const user = userEvent.setup();
-    calendarRenderSpy.mockClear();
-
     render(
-      <MobileTimelinePicker {...defaultProps} selectedDate="2026-04-20" />
+      <MobileTimelinePicker
+        {...defaultProps}
+        allDates={['2026-05-06']}
+        dates={['2026-05-06']}
+      />
+    );
+
+    await user.click(screen.getByLabelText('selectDate'));
+    await user.click(screen.getByLabelText('previousWeek'));
+    await user.click(screen.getByLabelText('previousWeek'));
+
+    expect(getDateButton('April 20, 2026')).toBeInTheDocument();
+    expect(getDateButton('April 26, 2026')).toBeInTheDocument();
+  });
+
+  it('navigates back toward the current week with the next chevron', async () => {
+    const user = userEvent.setup();
+    render(<MobileTimelinePicker {...defaultProps} />);
+
+    await user.click(screen.getByLabelText('selectDate'));
+    await user.click(screen.getByLabelText('previousWeek'));
+
+    expect(screen.getByLabelText('nextWeek')).not.toBeDisabled();
+
+    await user.click(screen.getByLabelText('nextWeek'));
+
+    expect(screen.getByLabelText('nextWeek')).toBeDisabled();
+  });
+
+  it('opens to the selected date week when the selected date is older', async () => {
+    const user = userEvent.setup();
+    render(
+      <MobileTimelinePicker
+        {...defaultProps}
+        selectedDate="2026-04-22"
+        dates={['2026-05-06']}
+      />
     );
 
     await user.click(screen.getByLabelText('selectDate'));
 
-    const lastCall = calendarRenderSpy.mock.lastCall?.[0];
-    expect(lastCall.defaultMonth.getFullYear()).toBe(2026);
-    expect(lastCall.defaultMonth.getMonth()).toBe(3);
-    expect(lastCall.defaultMonth.getDate()).toBe(20);
-    expect(lastCall.locale.code).toBe('en-US');
+    expect(getDateButton('April 20, 2026')).toBeInTheDocument();
+    expect(getDateButton('April 26, 2026')).toBeInTheDocument();
+    expect(screen.getByLabelText('nextWeek')).not.toBeDisabled();
   });
 
-  it('calls onSelectDate with YYYY-MM-DD format and closes drawer when date is selected', async () => {
+  it('selects future days inside the current week and collapses to the chip', async () => {
     const user = userEvent.setup();
     const onSelectDate = vi.fn();
-
     render(
       <MobileTimelinePicker {...defaultProps} onSelectDate={onSelectDate} />
     );
 
-    const chip = screen.getByLabelText('selectDate');
-    await user.click(chip);
+    await user.click(screen.getByLabelText('selectDate'));
+    await user.click(getDateButton('May 10, 2026'));
 
-    // Verify drawer is open
-    expect(screen.getByText('datePickerTitle')).toBeInTheDocument();
+    expect(onSelectDate).toHaveBeenCalledWith('2026-05-10');
+    expect(screen.queryByTestId('mobile-week-slider')).not.toBeInTheDocument();
+    expect(screen.getByLabelText('selectDate')).toBeInTheDocument();
+  });
 
-    const selectButton = screen.getByRole('button', {
-      name: /select 2026-05-05/i,
-    });
-    await user.click(selectButton);
+  it('does not call onSelectDate again when selecting the already selected day', async () => {
+    const user = userEvent.setup();
+    const onSelectDate = vi.fn();
+    render(
+      <MobileTimelinePicker {...defaultProps} onSelectDate={onSelectDate} />
+    );
 
-    expect(onSelectDate).toHaveBeenCalledWith('2026-05-05');
+    await user.click(screen.getByLabelText('selectDate'));
+    await user.click(getDateButton('May 6, 2026'));
 
-    // Verify drawer content is no longer in document (drawer closed)
-    // Note: In test environment, drawer may not animate out immediately
-    // but content should be removed from accessible tree
-    await screen.findByLabelText('selectDate');
+    expect(onSelectDate).not.toHaveBeenCalled();
+    expect(screen.queryByTestId('mobile-week-slider')).not.toBeInTheDocument();
+  });
+
+  it('keeps only adjacent weeks in the slider DOM for deep past dates', async () => {
+    const user = userEvent.setup();
+    render(
+      <MobileTimelinePicker
+        {...defaultProps}
+        today="2026-05-06"
+        selectedDate="2020-01-01"
+        dates={[]}
+      />
+    );
+
+    await user.click(screen.getByLabelText('selectDate'));
+
+    const slider = screen.getByTestId('mobile-week-slider');
+    expect(slider.querySelectorAll('[data-week-start]')).toHaveLength(3);
+    expect(slider.querySelectorAll('button')).toHaveLength(21);
+    expect(getDateButton('January 1, 2020')).toHaveAttribute(
+      'aria-current',
+      'date'
+    );
+  });
+
+  it('does not select or collapse when a horizontal swipe starts on a day', async () => {
+    const user = userEvent.setup();
+    const onSelectDate = vi.fn();
+    render(
+      <MobileTimelinePicker {...defaultProps} onSelectDate={onSelectDate} />
+    );
+
+    await user.click(screen.getByLabelText('selectDate'));
+
+    const day = getDateButton('May 4, 2026');
+    fireEvent.pointerDown(day, { clientX: 100 });
+    fireEvent.pointerUp(day, { clientX: 180 });
+    fireEvent.click(day);
+
+    expect(onSelectDate).not.toHaveBeenCalled();
+    expect(screen.getByTestId('mobile-week-slider')).toBeInTheDocument();
+    expect(getDateButton('April 27, 2026')).toBeInTheDocument();
+  });
+
+  it('keeps inactive week buttons out of the tab order', async () => {
+    const user = userEvent.setup();
+    render(<MobileTimelinePicker {...defaultProps} />);
+
+    await user.click(screen.getByLabelText('selectDate'));
+
+    const slider = screen.getByTestId('mobile-week-slider');
+    const selectedDay = getDateButton('May 6, 2026');
+    const hiddenSlides = slider.querySelectorAll(
+      '[data-week-start][aria-hidden="true"]'
+    );
+
+    expect(selectedDay).toHaveAttribute('aria-current', 'date');
+    expect(hiddenSlides).toHaveLength(2);
+    for (const hiddenSlide of hiddenSlides) {
+      for (const button of within(hiddenSlide as HTMLElement).getAllByRole(
+        'button',
+        { hidden: true }
+      )) {
+        expect(button).toHaveAttribute('tabIndex', '-1');
+      }
+    }
   });
 
   it('renders loading skeleton when isPending is true', () => {
@@ -238,46 +221,24 @@ describe('MobileTimelinePicker', () => {
   });
 
   it('renders error banner below chip while keeping chip usable', () => {
-    const onRetry = vi.fn();
+    render(<MobileTimelinePicker {...defaultProps} isError={true} />);
 
-    render(
-      <MobileTimelinePicker
-        {...defaultProps}
-        isError={true}
-        onRetry={onRetry}
-      />
+    expect(screen.getByLabelText('selectDate')).toBeInTheDocument();
+    expect(screen.getByTestId('mobile-picker-error')).toHaveAttribute(
+      'role',
+      'alert'
     );
-
-    // Chip should still be rendered
-    const chip = screen.getByLabelText('selectDate');
-    expect(chip).toBeInTheDocument();
-
-    // Error banner should be visible below chip
-    expect(screen.getByTestId('mobile-picker-error')).toBeInTheDocument();
     expect(screen.getByText('failedToLoadDates')).toBeInTheDocument();
-
-    const retryButton = screen.getByLabelText('retryDates');
-    expect(retryButton).toBeInTheDocument();
+    expect(screen.getByLabelText('retryDates')).toBeInTheDocument();
   });
 
-  it('allows opening drawer in error state', async () => {
+  it('allows opening the week slider in error state', async () => {
     const user = userEvent.setup();
-    const onRetry = vi.fn();
+    render(<MobileTimelinePicker {...defaultProps} isError={true} />);
 
-    render(
-      <MobileTimelinePicker
-        {...defaultProps}
-        isError={true}
-        onRetry={onRetry}
-      />
-    );
+    await user.click(screen.getByLabelText('selectDate'));
 
-    const chip = screen.getByLabelText('selectDate');
-    await user.click(chip);
-
-    // Drawer should open
-    expect(screen.getByText('datePickerTitle')).toBeInTheDocument();
-    expect(screen.getByText('datePickerDescription')).toBeInTheDocument();
+    expect(screen.getByTestId('mobile-week-slider')).toBeInTheDocument();
   });
 
   it('calls onRetry when retry button is clicked in error state', async () => {
@@ -292,18 +253,24 @@ describe('MobileTimelinePicker', () => {
       />
     );
 
-    const retryButton = screen.getByLabelText('retryDates');
-    await user.click(retryButton);
+    await user.click(screen.getByLabelText('retryDates'));
 
     expect(onRetry).toHaveBeenCalledTimes(1);
   });
 
-  it('renders the compact date in the chip', () => {
-    render(<MobileTimelinePicker {...defaultProps} />);
+  it('disables retry while dates are refetching', () => {
+    render(
+      <MobileTimelinePicker
+        {...defaultProps}
+        isError={true}
+        isRetrying={true}
+      />
+    );
 
-    const chip = screen.getByLabelText('selectDate');
-    const chipContent = within(chip);
-
-    expect(chipContent.getByText('Sun - May 3')).toBeInTheDocument();
+    expect(screen.getByLabelText('retryDates')).toBeDisabled();
+    expect(screen.getByLabelText('retryDates')).toHaveAttribute(
+      'aria-busy',
+      'true'
+    );
   });
 });

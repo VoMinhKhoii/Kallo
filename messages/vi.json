@@ -922,7 +922,10 @@
       "yesterdayLabel": "Hôm qua",
       "lastWeekdayLabel": "{weekday} tuần trước",
       "selectedDateLabel": "Ngày đã chọn",
-      "hasMealIndicator": "Đã có bữa ăn lưu trong ngày này"
+      "hasMealIndicator": "Đã có bữa ăn lưu trong ngày này",
+      "previousWeek": "Tuần trước",
+      "nextWeek": "Tuần sau",
+      "openCalendar": "Mở lịch"
     }
   },
   "settings": {

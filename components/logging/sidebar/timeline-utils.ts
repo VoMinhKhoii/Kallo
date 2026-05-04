@@ -1,3 +1,7 @@
+export interface WeekStrip {
+  days: string[];
+}
+
 export interface WeekSection {
   key: string;
   weekNumber: number;
@@ -46,6 +50,12 @@ export function dateToDateString(date: Date): string {
 function dateStringToUtcDayNumber(dateStr: string): number {
   const [year, month, day] = dateStr.split('-').map(Number);
   return Date.UTC(year, month - 1, day) / (1000 * 60 * 60 * 24);
+}
+
+function addDays(dateStr: string, days: number): string {
+  const date = dateStringToDate(dateStr);
+  date.setDate(date.getDate() + days);
+  return dateToDateString(date);
 }
 
 /**
@@ -186,6 +196,47 @@ export function sortTimelineDaysAscending(days: string[]): string[] {
   return [...days].sort((a, b) => a.localeCompare(b));
 }
 
+export function getWeekStart(dateStr: string): string {
+  const date = dateStringToDate(dateStr);
+  const dayOfWeek = date.getDay();
+  const daysSinceMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+  date.setDate(date.getDate() - daysSinceMonday);
+  return dateToDateString(date);
+}
+
+export function addWeeks(weekStart: string, weeks: number): string {
+  return addDays(weekStart, weeks * 7);
+}
+
+export function weekDistanceInWeeks(
+  olderWeekStart: string,
+  newerWeekStart: string
+) {
+  return Math.round(
+    (dateStringToUtcDayNumber(newerWeekStart) -
+      dateStringToUtcDayNumber(olderWeekStart)) /
+      7
+  );
+}
+
+export function clampWeekStartToCurrent(
+  weekStart: string,
+  currentWeekStart: string
+): string {
+  return weekStart > currentWeekStart ? currentWeekStart : weekStart;
+}
+
+export function buildWeekStripFromStart(weekStart: string): WeekStrip {
+  const start = getWeekStart(weekStart);
+  const days: string[] = [];
+
+  for (let i = 0; i < 7; i++) {
+    days.push(addDays(start, i));
+  }
+
+  return { days };
+}
+
 /**
  * Builds a de-duplicated, descending-sorted list of all timeline dates,
  * including saved dates, today, and selected date.
@@ -200,6 +251,26 @@ export function buildAllTimelineDates(
   ]);
 
   return Array.from(uniqueDates).sort((a, b) => b.localeCompare(a));
+}
+
+/**
+ * Builds consecutive Monday–Sunday week strips spanning the full range of the
+ * provided dates. The returned strips are sorted oldest-first.
+ */
+export function buildWeekStrips(allDates: string[]): WeekStrip[] {
+  if (allDates.length === 0) return [];
+
+  const sorted = [...allDates].sort();
+  const minWeekStart = getWeekStart(sorted[0]);
+  const maxWeekStart = getWeekStart(sorted[sorted.length - 1]);
+  const weekCount = weekDistanceInWeeks(minWeekStart, maxWeekStart);
+  const strips: WeekStrip[] = [];
+
+  for (let i = 0; i <= weekCount; i++) {
+    strips.push(buildWeekStripFromStart(addWeeks(minWeekStart, i)));
+  }
+
+  return strips;
 }
 
 /**

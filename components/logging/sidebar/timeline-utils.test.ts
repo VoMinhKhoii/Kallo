@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import {
+  addWeeks,
   buildAllTimelineDates,
+  buildWeekStripFromStart,
+  buildWeekStrips,
+  clampWeekStartToCurrent,
   dateStringToDate,
   dateToDateString,
   formatDayLabel,
@@ -11,9 +15,11 @@ import {
   getSelectedMonthKey,
   getSelectedWeekKey,
   getWeekDateRange,
+  getWeekStart,
   groupByMonth,
   sortTimelineDaysAscending,
   todayDateString,
+  weekDistanceInWeeks,
   weekOfMonth,
 } from './timeline-utils';
 
@@ -384,6 +390,58 @@ describe('timeline-utils', () => {
       });
 
       expect(result).toEqual(['2026-05-02', '2026-05-01']);
+    });
+  });
+
+  describe('week strip navigation helpers', () => {
+    it('returns the Monday week start for any day in a week', () => {
+      expect(getWeekStart('2026-05-03')).toBe('2026-04-27');
+      expect(getWeekStart('2026-05-04')).toBe('2026-05-04');
+      expect(getWeekStart('2026-05-10')).toBe('2026-05-04');
+    });
+
+    it('adds weeks across month and year boundaries', () => {
+      expect(addWeeks('2026-01-05', -1)).toBe('2025-12-29');
+      expect(addWeeks('2025-12-29', 1)).toBe('2026-01-05');
+    });
+
+    it('measures whole-week distance between week starts', () => {
+      expect(weekDistanceInWeeks('2026-04-20', '2026-05-04')).toBe(2);
+      expect(weekDistanceInWeeks('2026-05-04', '2026-05-04')).toBe(0);
+    });
+
+    it('clamps week starts to the current week', () => {
+      expect(clampWeekStartToCurrent('2026-05-11', '2026-05-04')).toBe(
+        '2026-05-04'
+      );
+      expect(clampWeekStartToCurrent('2026-04-27', '2026-05-04')).toBe(
+        '2026-04-27'
+      );
+    });
+
+    it('builds a Monday-Sunday week strip from any date in that week', () => {
+      expect(buildWeekStripFromStart('2026-05-07').days).toEqual([
+        '2026-05-04',
+        '2026-05-05',
+        '2026-05-06',
+        '2026-05-07',
+        '2026-05-08',
+        '2026-05-09',
+        '2026-05-10',
+      ]);
+    });
+
+    it('builds week strips for every week spanned by available dates', () => {
+      expect(
+        buildWeekStrips(['2026-05-03', '2026-05-15']).map(
+          (week) => week.days[0]
+        )
+      ).toEqual(['2026-04-27', '2026-05-04', '2026-05-11']);
+    });
+
+    it('handles DST-adjacent week math using calendar days', () => {
+      expect(getWeekStart('2024-03-10')).toBe('2024-03-04');
+      expect(addWeeks('2024-03-04', 1)).toBe('2024-03-11');
     });
   });
 });

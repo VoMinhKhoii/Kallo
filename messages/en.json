@@ -922,7 +922,10 @@
       "yesterdayLabel": "Yesterday",
       "lastWeekdayLabel": "Last {weekday}",
       "selectedDateLabel": "Selected date",
-      "hasMealIndicator": "Meal saved on this date"
+      "hasMealIndicator": "Meal saved on this date",
+      "previousWeek": "Previous week",
+      "nextWeek": "Next week",
+      "openCalendar": "Open calendar"
     }
   },
   "settings": {

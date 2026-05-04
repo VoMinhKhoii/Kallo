@@ -59,6 +59,7 @@ export function LoggingShell({
     data: dates = [],
     isPending,
     isError,
+    isFetching,
     refetch,
   } = useQuery({
     queryKey: ['meal-dates', profile.userId, timezoneOffset],
@@ -126,8 +127,11 @@ export function LoggingShell({
   };
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden md:h-[calc(100vh-1.5rem)] md:flex-row">
-      <MobileTimelinePicker {...timelineState} />
+    <div className="flex min-h-0 w-full min-w-0 max-w-full flex-1 flex-col gap-3 overflow-hidden md:h-[calc(100vh-1.5rem)] md:flex-row">
+      <MobileTimelinePicker
+        {...timelineState}
+        isRetrying={isFetching && !isPending}
+      />
       <TimelineSidebar {...timelineState} />
       <FeedArea
         selectedDate={selectedDate}

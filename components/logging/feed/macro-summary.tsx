@@ -52,7 +52,7 @@ export function MacroSummary({ totals, targets }: MacroSummaryProps) {
       initial={{ opacity: 0, y: -8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.35, ease: 'easeOut' }}
-      className="flex items-center gap-6"
+      className="flex items-center gap-4 sm:gap-6"
     >
       {/* Circular calorie progress */}
       <div className="flex shrink-0 flex-col items-center gap-1">
@@ -115,7 +115,7 @@ export function MacroSummary({ totals, targets }: MacroSummaryProps) {
       <div className="h-12 w-px bg-nham-border/30" aria-hidden="true" />
 
       {/* Macro progress bars */}
-      <div className="flex flex-1 flex-col gap-3">
+      <div className="flex flex-1 flex-col gap-2 sm:gap-3">
         {MACROS.map(({ key, label, color }) => {
           const current = totals[key];
           const target = targets[key];
