@@ -914,7 +914,15 @@
       "loadingDates": "Loading dates",
       "noPreviousMeals": "No previous meals logged",
       "failedToLoadDates": "Failed to load meal dates.",
-      "failedToLoadHistory": "Failed to load meal history."
+      "failedToLoadHistory": "Failed to load meal history.",
+      "selectDate": "Select date",
+      "datePickerTitle": "Select a date",
+      "datePickerDescription": "Choose a date to view your meals",
+      "todayLabel": "Today",
+      "yesterdayLabel": "Yesterday",
+      "lastWeekdayLabel": "Last {weekday}",
+      "selectedDateLabel": "Selected date",
+      "hasMealIndicator": "Meal saved on this date"
     }
   },
   "settings": {

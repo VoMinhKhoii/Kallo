@@ -914,7 +914,15 @@
       "loadingDates": "Đang tải ngày",
       "noPreviousMeals": "Chưa có bữa ăn nào được ghi nhận",
       "failedToLoadDates": "Không thể tải ngày bữa ăn.",
-      "failedToLoadHistory": "Không thể tải lịch sử bữa ăn."
+      "failedToLoadHistory": "Không thể tải lịch sử bữa ăn.",
+      "selectDate": "Chọn ngày",
+      "datePickerTitle": "Chọn một ngày",
+      "datePickerDescription": "Chọn ngày để xem các bữa ăn của bạn",
+      "todayLabel": "Hôm nay",
+      "yesterdayLabel": "Hôm qua",
+      "lastWeekdayLabel": "{weekday} tuần trước",
+      "selectedDateLabel": "Ngày đã chọn",
+      "hasMealIndicator": "Đã có bữa ăn lưu trong ngày này"
     }
   },
   "settings": {
