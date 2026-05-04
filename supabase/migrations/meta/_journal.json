@@ -183,6 +183,13 @@
       "when": 1777567419459,
       "tag": "20260430201539_add_dry_run_to_pipeline_requests",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1777888119142,
+      "tag": "20260504094839_add_pending_analysis_logged_at",
+      "breakpoints": true
     }
   ]
 }

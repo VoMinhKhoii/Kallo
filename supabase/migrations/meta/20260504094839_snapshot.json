@@ -1,6 +1,6 @@
 {
-  "id": "d67d6cba-ba73-4fa4-9852-8156fcaa8e15",
-  "prevId": "46daa7d0-4dfa-4611-94f4-281eeecd7f61",
+  "id": "f740c4c5-adaf-488a-b473-cff29e939dde",
+  "prevId": "99b7a782-ff7f-4579-9ea3-af90357eb93d",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -764,6 +764,13 @@
           "primaryKey": false,
           "notNull": true
         },
+        "logged_at": {
+          "name": "logged_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
         "expires_at": {
           "name": "expires_at",
           "type": "timestamp with time zone",
@@ -785,6 +792,27 @@
           "columns": [
             {
               "expression": "expires_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "pending_analyses_user_logged_at_idx": {
+          "name": "pending_analyses_user_logged_at_idx",
+          "columns": [
+            {
+              "expression": "user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "logged_at",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -1051,6 +1079,13 @@
           "type": "uuid",
           "primaryKey": false,
           "notNull": false
+        },
+        "dry_run": {
+          "name": "dry_run",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
         }
       },
       "indexes": {
@@ -1600,6 +1635,12 @@
         },
         "onboarding_completed_at": {
           "name": "onboarding_completed_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "onboarding_minimized_at": {
+          "name": "onboarding_minimized_at",
           "type": "timestamp with time zone",
           "primaryKey": false,
           "notNull": false
