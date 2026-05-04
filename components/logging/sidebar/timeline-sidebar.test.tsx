@@ -62,7 +62,7 @@ describe('TimelineSidebar', () => {
     // Find date button for May 1 (2026-05-01) by its exact formatted label
     // formatDayLabel returns "Fri, May 1" for 2026-05-01
     const mayFirstButton = screen.getByRole('button', {
-      name: 'Fri, May 1',
+      name: 'Fri - May 1',
     });
 
     await user.click(mayFirstButton);
@@ -145,7 +145,8 @@ describe('TimelineSidebar', () => {
     // May 3 (2026-05-03) is today and in dates array
     const may3Button = dateButtonsWithMealData.find(
       (btn) =>
-        btn.textContent?.includes('today') && btn.dataset.hasMeal === 'true'
+        btn.textContent?.includes('Sun - May 3') &&
+        btn.dataset.hasMeal === 'true'
     );
     expect(may3Button).toBeInTheDocument();
 
@@ -163,6 +164,23 @@ describe('TimelineSidebar', () => {
         btn.textContent?.includes('May 1') && btn.dataset.hasMeal === 'true'
     );
     expect(may1Button).toBeInTheDocument();
+  });
+
+  it('renders week date ranges and day labels in less-recent-first order', () => {
+    render(<TimelineSidebar {...baseProps} />);
+
+    const weekButton = getButtonByControls('week-05-2026-w1');
+    expect(weekButton).toHaveTextContent('May 1 - May 7');
+
+    const dateButtons = screen
+      .getAllByRole('button')
+      .filter((button) => button.hasAttribute('data-has-meal'));
+
+    expect(dateButtons.map((button) => button.textContent)).toEqual([
+      'Fri - May 1',
+      'Sat - May 2',
+      'Sun - May 3',
+    ]);
   });
 
   it('collapses the selected month when its toggle button is clicked', async () => {

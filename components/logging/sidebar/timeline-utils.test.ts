@@ -297,6 +297,15 @@ describe('timeline-utils', () => {
       expect(result[1].key).toBe('04-2026');
     });
 
+    it('sorts months chronologically descending across year boundaries', () => {
+      const result = groupByMonth(['2026-01-02', '2025-12-31']);
+
+      expect(result.map((section) => section.key)).toEqual([
+        '01-2026',
+        '12-2025',
+      ]);
+    });
+
     it('groups multiple dates in the same week', () => {
       const dates = ['2026-05-01', '2026-05-03', '2026-05-05'];
       const result = groupByMonth(dates);

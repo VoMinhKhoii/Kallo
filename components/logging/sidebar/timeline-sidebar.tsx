@@ -6,10 +6,13 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { cn } from '@/lib/utils';
 import { TimelineDateButton } from './timeline-date-button';
 import {
-  formatDayLabel,
+  formatTimelineDayLabel,
+  formatWeekDateRange,
   getSelectedMonthKey,
   getSelectedWeekKey,
+  getWeekDateRange,
   groupByMonth,
+  sortTimelineDaysAscending,
 } from './timeline-utils';
 
 interface TimelineSidebarProps {
@@ -34,7 +37,6 @@ export function TimelineSidebar({
   onSelectDate,
 }: TimelineSidebarProps) {
   const t = useTranslations('logging.timelineSidebar');
-  const td = useTranslations('dashboard');
   const locale = useLocale();
 
   const months = useMemo(() => groupByMonth(allDates), [allDates]);
@@ -86,7 +88,7 @@ export function TimelineSidebar({
   if (isPending) {
     return (
       <nav
-        className="hidden h-full w-[212px] shrink-0 flex-col border-border/40 border-r py-3 pr-3 md:flex"
+        className="hidden h-full w-[212px] shrink-0 flex-col overflow-hidden border-border/40 border-r py-3 pr-3 md:flex"
         aria-label={t('navigationLabel')}
       >
         <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto">
@@ -104,10 +106,10 @@ export function TimelineSidebar({
 
   return (
     <nav
-      className="hidden h-full w-[212px] shrink-0 flex-col border-border/40 border-r py-3 pr-3 md:flex"
+      className="hidden h-full w-[212px] shrink-0 flex-col overflow-hidden border-border/40 border-r py-3 pr-3 md:flex"
       aria-label={t('navigationLabel')}
     >
-      <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto">
+      <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-x-hidden overflow-y-auto">
         {/* Error state */}
         {isError && (
           <div className="ml-3 flex flex-col gap-2 rounded-lg border border-red-200/60 bg-red-50/80 p-3">
@@ -146,9 +148,9 @@ export function TimelineSidebar({
                 onClick={() => toggleMonth(month.key)}
                 aria-expanded={isMonthExpanded}
                 aria-controls={`month-${month.key}`}
-                className="ml-3 flex w-full items-center gap-2 text-muted-foreground transition-colors hover:text-nham-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent focus-visible:ring-offset-2"
+                className="ml-3 flex w-[calc(100%-0.75rem)] min-w-0 items-center gap-2 text-muted-foreground transition-colors hover:text-nham-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent focus-visible:ring-offset-2"
               >
-                <span className="flex-1 text-left font-medium font-sans-display text-[10px] uppercase tracking-[0.04em]">
+                <span className="min-w-0 flex-1 truncate text-left font-medium font-sans-display text-[10px] uppercase tracking-[0.04em]">
                   {month.month}/{month.year}
                 </span>
                 {isMonthExpanded ? (
@@ -171,9 +173,19 @@ export function TimelineSidebar({
                   {month.weeks.map((week) => {
                     const isWeekExpanded = expandedWeeks.has(week.key);
                     const hasSelectedDay = week.days.includes(selectedDate);
+                    const weekRange = getWeekDateRange({
+                      year: month.year,
+                      month: month.month,
+                      weekNumber: week.weekNumber,
+                    });
+                    const weekRangeLabel = formatWeekDateRange(
+                      weekRange,
+                      locale
+                    );
+                    const sortedDays = sortTimelineDaysAscending(week.days);
 
                     return (
-                      <div key={week.key} className="w-full">
+                      <div key={week.key} className="w-full min-w-0">
                         {/* Week button */}
                         <button
                           type="button"
@@ -181,20 +193,28 @@ export function TimelineSidebar({
                           aria-expanded={isWeekExpanded}
                           aria-controls={`week-${week.key}`}
                           className={cn(
-                            'ml-3 flex w-full items-center gap-3 rounded-lg px-3 py-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent focus-visible:ring-offset-2',
+                            'ml-3 flex w-[calc(100%-0.75rem)] min-w-0 items-center gap-2 rounded-md px-1 py-1.5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent focus-visible:ring-offset-2',
                             hasSelectedDay
-                              ? 'bg-[#C9A87C]/30 text-nham-text'
-                              : 'text-nham-text-muted hover:bg-[#F0EAE0]/40 hover:text-nham-text'
+                              ? 'text-nham-text'
+                              : 'text-nham-text-muted hover:text-nham-text'
                           )}
                         >
-                          <span className="flex-1 text-left font-medium font-sans-display text-sm leading-5 tracking-tight">
-                            {t('week', { number: week.weekNumber })}
+                          <span className="min-w-0 flex-1 text-left font-sans-display leading-4 tracking-tight">
+                            <span className="block truncate font-semibold text-[13px]">
+                              {t('week', { number: week.weekNumber })}
+                            </span>
+                            <span className="block truncate font-medium text-[10px] text-nham-text-muted/75">
+                              {weekRangeLabel}
+                            </span>
                           </span>
                           {isWeekExpanded ? (
-                            <ChevronUp className="h-4 w-4" aria-hidden="true" />
+                            <ChevronUp
+                              className="h-3.5 w-3.5 shrink-0"
+                              aria-hidden="true"
+                            />
                           ) : (
                             <ChevronDown
-                              className="h-4 w-4"
+                              className="h-3.5 w-3.5 shrink-0"
                               aria-hidden="true"
                             />
                           )}
@@ -204,28 +224,34 @@ export function TimelineSidebar({
                         {isWeekExpanded && (
                           <div
                             id={`week-${week.key}`}
-                            className="mt-2 flex pl-3"
+                            className="relative mt-1 ml-3 min-w-0 pl-4"
                           >
-                            {/* Vertical golden line */}
-                            <div className="w-0.5 shrink-0 bg-[#C9A87C]" />
+                            <div
+                              className="absolute top-[-1.375rem] bottom-4 left-[7px] w-px bg-[#C9A87C]"
+                              aria-hidden="true"
+                            />
 
                             {/* Days list */}
-                            <ul className="-ml-0.5 flex flex-1 flex-col gap-2">
-                              {week.days.map((date) => {
+                            <ul className="flex min-w-0 flex-1 flex-col gap-1.5">
+                              {sortedDays.map((date) => {
                                 const isActive = date === selectedDate;
                                 const isToday = date === today;
                                 const hasMeal = dates.includes(date);
-                                const label = isToday
-                                  ? td('today')
-                                  : formatDayLabel(date, locale);
+                                const label = formatTimelineDayLabel(
+                                  date,
+                                  locale
+                                );
 
                                 return (
                                   <li
                                     key={date}
-                                    className="flex w-full items-center"
+                                    className="relative flex w-full min-w-0 items-center"
                                   >
                                     {/* L-shaped connector */}
-                                    <div className="h-2 w-[13px] shrink-0 rounded-bl-lg border-[#C9A87C] border-b-2 border-l-2" />
+                                    <div
+                                      className="absolute top-1/2 left-[-0.5625rem] h-2 w-[13px] -translate-y-full rounded-bl-lg border-[#C9A87C] border-b border-l"
+                                      aria-hidden="true"
+                                    />
 
                                     {/* Date button */}
                                     <TimelineDateButton

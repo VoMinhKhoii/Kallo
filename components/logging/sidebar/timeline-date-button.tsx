@@ -32,7 +32,7 @@ export function TimelineDateButton({
         'group/date relative touch-manipulation rounded-xl font-medium font-sans-display tracking-tight transition-[background-color,color,transform,box-shadow] duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent focus-visible:ring-offset-2 focus-visible:ring-offset-nham-surface active:scale-[0.98]',
         variant === 'mobile'
           ? 'flex min-h-11 min-w-[4.5rem] shrink-0 flex-col items-center justify-center gap-0.5 px-3 py-2 text-[11px]'
-          : 'flex min-h-10 flex-1 items-center px-3 py-2 text-sm',
+          : 'flex min-h-9 min-w-0 flex-1 items-center px-2.5 py-1.5 text-sm',
         isActive
           ? 'bg-nham-btn text-white shadow-nham-btn/15 shadow-sm'
           : isToday

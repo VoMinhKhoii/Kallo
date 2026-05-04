@@ -205,7 +205,7 @@ export function groupByMonth(dates: string[]): MonthSection[] {
   }
 
   const sections = Array.from(monthMap.values());
-  sections.sort((a, b) => b.key.localeCompare(a.key));
+  sections.sort((a, b) => b.year - a.year || b.month - a.month);
 
   for (const section of sections) {
     section.weeks.sort((a, b) => a.weekNumber - b.weekNumber);
