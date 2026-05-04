@@ -17,18 +17,6 @@ export interface BuildAllTimelineDatesInput {
   selectedDate: string;
 }
 
-export interface BuildMobileRailDatesInput {
-  allDates: string[];
-  selectedDate: string;
-  today: string;
-  limit: number;
-}
-
-export interface MobileRailDates {
-  mobileDates: string[];
-  hasHiddenDates: boolean;
-}
-
 export type MobileChipRelativeLabel =
   | { kind: 'today' }
   | { kind: 'yesterday' }
@@ -74,18 +62,6 @@ export function formatDayLabel(dateStr: string, locale: string): string {
   return new Intl.DateTimeFormat(locale, {
     weekday: 'short',
     month: 'short',
-    day: 'numeric',
-  }).format(date);
-}
-
-/**
- * Formats a compact date label with weekday.
- * Example: "Sun 3"
- */
-export function formatCompactDayLabel(dateStr: string, locale: string): string {
-  const date = dateStringToDate(dateStr);
-  return new Intl.DateTimeFormat(locale, {
-    weekday: 'short',
     day: 'numeric',
   }).format(date);
 }
@@ -232,59 +208,4 @@ export function getMobileChipRelativeLabel(input: {
   }
 
   return { kind: 'date' };
-}
-
-/**
- * Builds mobile rail dates with required dates (selectedDate, today) always preserved,
- * then fills remaining slots with closest dates by calendar distance (preferring newer on ties).
- * Returns dates sorted descending and a flag indicating if dates were hidden.
- */
-export function buildMobileRailDates(
-  input: BuildMobileRailDatesInput
-): MobileRailDates {
-  const { allDates, selectedDate, today, limit } = input;
-
-  // Step 1: Build unique set including required dates
-  const uniqueDates = new Set<string>([...allDates, selectedDate, today]);
-
-  // Step 2: Separate required dates from remaining dates
-  const requiredDates = new Set<string>([selectedDate, today]);
-  const remainingDates = Array.from(uniqueDates).filter(
-    (date) => !requiredDates.has(date)
-  );
-
-  // Step 3: Calculate effective limit
-  const effectiveLimit = Math.max(limit, requiredDates.size);
-
-  // Step 4: Rank remaining dates by distance from selectedDate
-  const selectedDayNumber = dateStringToUtcDayNumber(selectedDate);
-
-  remainingDates.sort((a, b) => {
-    const aDist = Math.abs(dateStringToUtcDayNumber(a) - selectedDayNumber);
-    const bDist = Math.abs(dateStringToUtcDayNumber(b) - selectedDayNumber);
-
-    if (aDist !== bDist) {
-      return aDist - bDist;
-    }
-
-    // Ties: prefer newer dates (descending)
-    return b.localeCompare(a);
-  });
-
-  // Step 5: Select dates up to effective limit
-  const slotsForRemaining = effectiveLimit - requiredDates.size;
-  const selectedRemaining = remainingDates.slice(0, slotsForRemaining);
-
-  // Step 6: Combine required + selected remaining
-  const mobileDates = [...Array.from(requiredDates), ...selectedRemaining].sort(
-    (a, b) => b.localeCompare(a)
-  );
-
-  // Step 7: Determine if dates were hidden
-  const hasHiddenDates = uniqueDates.size > mobileDates.length;
-
-  return {
-    mobileDates,
-    hasHiddenDates,
-  };
 }

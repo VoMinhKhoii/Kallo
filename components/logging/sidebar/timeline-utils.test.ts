@@ -1,10 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
   buildAllTimelineDates,
-  buildMobileRailDates,
   dateStringToDate,
   dateToDateString,
-  formatCompactDayLabel,
   formatDayLabel,
   formatMobileChipDate,
   getMobileChipRelativeLabel,
@@ -65,13 +63,6 @@ describe('timeline-utils', () => {
   describe('formatDayLabel', () => {
     it('includes weekday in the label', () => {
       const label = formatDayLabel('2026-05-03', 'en');
-      expect(label).toContain('Sun');
-    });
-  });
-
-  describe('formatCompactDayLabel', () => {
-    it('includes weekday in the compact label', () => {
-      const label = formatCompactDayLabel('2026-05-03', 'en');
       expect(label).toContain('Sun');
     });
   });
@@ -304,103 +295,6 @@ describe('timeline-utils', () => {
       });
 
       expect(result).toEqual(['2026-05-02', '2026-05-01']);
-    });
-  });
-
-  describe('buildMobileRailDates', () => {
-    it('keeps selected date and today when limiting dates', () => {
-      const result = buildMobileRailDates({
-        allDates: ['2026-05-01', '2026-05-02', '2026-05-03', '2026-05-04'],
-        selectedDate: '2026-05-01',
-        today: '2026-05-04',
-        limit: 2,
-      });
-
-      expect(result.mobileDates).toContain('2026-05-01');
-      expect(result.mobileDates).toContain('2026-05-04');
-      expect(result.hasHiddenDates).toBe(true);
-    });
-
-    it('adds selected date and today even when missing from allDates', () => {
-      const result = buildMobileRailDates({
-        allDates: ['2026-05-05', '2026-05-06'],
-        selectedDate: '2026-05-01',
-        today: '2026-05-10',
-        limit: 4,
-      });
-
-      expect(result.mobileDates).toContain('2026-05-01');
-      expect(result.mobileDates).toContain('2026-05-10');
-    });
-
-    it('does not report hidden dates when all dates fit within the limit', () => {
-      const result = buildMobileRailDates({
-        allDates: ['2026-05-01', '2026-05-02', '2026-05-03'],
-        selectedDate: '2026-05-02',
-        today: '2026-05-03',
-        limit: 5,
-      });
-
-      expect(result.mobileDates).toHaveLength(3);
-      expect(result.hasHiddenDates).toBe(false);
-    });
-
-    it('ranks remaining dates by calendar distance from selected date', () => {
-      const result = buildMobileRailDates({
-        allDates: [
-          '2026-05-01',
-          '2026-05-02',
-          '2026-05-05',
-          '2026-05-08',
-          '2026-05-15',
-        ],
-        selectedDate: '2026-05-05',
-        today: '2026-05-05',
-        limit: 3,
-      });
-
-      expect(result.mobileDates).toContain('2026-05-05');
-      expect(result.mobileDates).toContain('2026-05-02');
-      expect(result.mobileDates).toContain('2026-05-08');
-    });
-
-    it('prefers newer dates when distances are tied', () => {
-      const result = buildMobileRailDates({
-        allDates: ['2026-05-03', '2026-05-07', '2026-05-10'],
-        selectedDate: '2026-05-05',
-        today: '2026-05-05',
-        limit: 2,
-      });
-
-      expect(result.mobileDates).toContain('2026-05-05');
-      expect(result.mobileDates).toContain('2026-05-07');
-    });
-
-    it('prefers newer tied dates by calendar day across DST fallback', () => {
-      const result = buildMobileRailDates({
-        allDates: ['2024-11-02', '2024-11-04'],
-        selectedDate: '2024-11-03',
-        today: '2024-11-03',
-        limit: 2,
-      });
-
-      expect(result.mobileDates).toContain('2024-11-03');
-      expect(result.mobileDates).toContain('2024-11-04');
-      expect(result.mobileDates).not.toContain('2024-11-02');
-    });
-
-    it('returns dates sorted in descending order', () => {
-      const result = buildMobileRailDates({
-        allDates: ['2026-05-01', '2026-05-05', '2026-05-10'],
-        selectedDate: '2026-05-05',
-        today: '2026-05-05',
-        limit: 3,
-      });
-
-      expect(result.mobileDates[0]).toBe('2026-05-10');
-      expect(result.mobileDates[result.mobileDates.length - 1]).toBe(
-        '2026-05-01'
-      );
     });
   });
 });
