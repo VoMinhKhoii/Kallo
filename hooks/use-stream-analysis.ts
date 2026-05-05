@@ -15,6 +15,12 @@ export interface StreamAnalysisState {
   isAnalyzing: boolean;
 }
 
+export interface StreamAnalyzeInput {
+  message: string;
+  loggedDate: string;
+  timezoneOffset: number;
+}
+
 const INITIAL_STATE: StreamAnalysisState = {
   status: 'idle',
   items: [],
@@ -108,7 +114,7 @@ export function useStreamAnalysis() {
   );
 
   const analyze = useCallback(
-    async (message: string) => {
+    async (input: StreamAnalyzeInput) => {
       // Cancel any in-flight request
       abortRef.current?.abort();
 
@@ -126,7 +132,7 @@ export function useStreamAnalysis() {
         const response = await fetch('/api/analyze-meal', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ message }),
+          body: JSON.stringify(input),
           signal: controller.signal,
         });
 

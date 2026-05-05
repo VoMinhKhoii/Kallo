@@ -1,0 +1,1 @@
+ALTER TABLE "pipeline_shadow_runs" ALTER COLUMN "candidate_output" DROP NOT NULL;

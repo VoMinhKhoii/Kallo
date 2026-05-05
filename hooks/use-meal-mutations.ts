@@ -3,6 +3,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { dailyMealsKeys } from '@/hooks/use-daily-meals';
+import { loggingDayKeys } from '@/hooks/use-logging-day';
 import type { PersistedMeal } from '@/lib/actions/meals';
 import {
   confirmAndSaveMealAction,
@@ -17,19 +18,26 @@ function todayDateString(): string {
   return `${yyyy}-${mm}-${dd}`;
 }
 
-export function useConfirmMeal() {
+export function useConfirmMeal(userId: string) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: confirmAndSaveMealAction,
-    onSuccess: () => {
-      // Invalidate today's meals to refetch from DB
-      const today = todayDateString();
-      queryClient.invalidateQueries({
-        queryKey: dailyMealsKeys.byDate(today),
-      });
-      // Also invalidate the meal dates list for timeline
-      queryClient.invalidateQueries({ queryKey: ['meal-dates'] });
+    mutationFn: ({
+      originDate: _originDate,
+      ...input
+    }: Parameters<typeof confirmAndSaveMealAction>[0] & {
+      originDate: string;
+    }) => confirmAndSaveMealAction(input),
+    onSuccess: async (_data, variables) => {
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: dailyMealsKeys.byDate(variables.originDate),
+        }),
+        queryClient.invalidateQueries({
+          queryKey: loggingDayKeys.byUserDate(userId, variables.originDate),
+        }),
+        queryClient.invalidateQueries({ queryKey: ['meal-dates'] }),
+      ]);
     },
     onError: (error) => {
       toast.error(

@@ -36,6 +36,7 @@ export interface ChatMessage {
   parsedMeal?: ParsedMeal;
   userInput?: string;
   timestamp: Date;
+  loggedDate?: string;
   isStreaming?: boolean;
   streamingPhase?: StreamingPhase;
   streamingItems?: string[];

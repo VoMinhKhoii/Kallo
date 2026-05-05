@@ -1,5 +1,7 @@
 'use client';
 
+import { useQueryClient } from '@tanstack/react-query';
+import { AlertCircle, RefreshCw } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -14,14 +16,15 @@ import {
   type MealInputHandle,
 } from '@/components/logging/input/meal-input';
 import type { LoggingProfile } from '@/components/logging/logging-shell';
-import { useDailyMeals } from '@/hooks/use-daily-meals';
 import { useFeedSubmit } from '@/hooks/use-feed-submit';
+import { loggingDayKeys, useLoggingDay } from '@/hooks/use-logging-day';
 import { useConfirmMeal } from '@/hooks/use-meal-mutations';
 import { useStreamAnalysis } from '@/hooks/use-stream-analysis';
 import { useStreamingTerminalEffects } from '@/hooks/use-streaming-terminal-effects';
 import { useSubmitGuard } from '@/hooks/use-submit-guard';
 import { sumDisplayedNutrition } from '@/lib/ai/pipeline/goal-adjustment';
 import type { ChatMessage, StreamingPhase } from '@/lib/types/meal';
+import { cn } from '@/lib/utils';
 
 function toStreamingPhase(status: string): StreamingPhase {
   switch (status) {
@@ -45,18 +48,124 @@ interface FeedAreaProps {
   selectedDate: string;
   profile: LoggingProfile;
   initialMeal?: string;
+  isDateNavigationPending?: boolean;
+  onInitialMealApplied?: () => void;
+}
+
+function MacroSummarySkeleton() {
+  return (
+    <div
+      aria-hidden="true"
+      className="grid animate-pulse grid-cols-2 gap-3 sm:grid-cols-4"
+    >
+      {[64, 52, 58, 48].map((width, index) => (
+        <div
+          key={index}
+          className="rounded-2xl border border-nham-border/50 bg-nham-hover/25 p-3"
+        >
+          <div
+            className="mb-2 h-3 rounded-full bg-nham-border/70"
+            style={{ width }}
+          />
+          <div className="h-5 w-16 rounded-full bg-nham-accent/25" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function LoggingDaySkeleton() {
+  return (
+    <div
+      aria-busy="true"
+      data-testid="logging-day-skeleton"
+      className="mx-auto w-full max-w-3xl pl-10 sm:pl-12"
+    >
+      <div className="flex animate-pulse flex-col gap-8">
+        {[0, 1].map((item) => (
+          <div key={item} className="group relative">
+            <div className="absolute top-2 bottom-0 -left-10 w-px bg-nham-border/50 group-last:bg-transparent" />
+            <div className="absolute top-2 -left-[43px] h-2 w-2 rounded-full border-2 border-nham-accent/70 bg-nham-surface" />
+            <div className="mb-2 h-3 w-16 rounded-full bg-nham-border/70" />
+            <div className="rounded-2xl border border-nham-border/60 bg-nham-hover/20 p-5 shadow-sm">
+              <div className="mb-4 h-5 w-2/3 rounded-full bg-nham-border/70" />
+              <div className="space-y-2">
+                <div className="h-3 w-full rounded-full bg-nham-border/60" />
+                <div className="h-3 w-5/6 rounded-full bg-nham-border/50" />
+                <div className="h-3 w-3/5 rounded-full bg-nham-border/40" />
+              </div>
+              <div className="mt-5 flex items-center justify-between border-nham-border/50 border-t border-dashed pt-3">
+                <div className="h-3 w-28 rounded-full bg-nham-border/50" />
+                <div className="h-4 w-16 rounded-full bg-nham-accent/25" />
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+interface LoggingDayErrorStateProps {
+  onRetry: () => void;
+  isRetrying: boolean;
+}
+
+function LoggingDayErrorState({
+  onRetry,
+  isRetrying,
+}: LoggingDayErrorStateProps) {
+  const t = useTranslations('logging.feedArea');
+
+  return (
+    <div className="flex flex-1 items-center justify-center py-6">
+      <div
+        role="alert"
+        className="w-full max-w-md rounded-2xl border border-red-200/70 bg-red-50/80 p-4 text-red-950 shadow-sm"
+      >
+        <div className="flex gap-3">
+          <AlertCircle
+            className="mt-0.5 h-5 w-5 shrink-0 text-red-600"
+            aria-hidden="true"
+          />
+          <div className="min-w-0 flex-1">
+            <p className="font-semibold text-sm">{t('loadErrorTitle')}</p>
+            <p className="mt-1 text-red-900/80 text-sm">
+              {t('loadErrorDescription')}
+            </p>
+            <button
+              type="button"
+              onClick={onRetry}
+              disabled={isRetrying}
+              aria-busy={isRetrying}
+              className="mt-3 inline-flex min-h-9 items-center gap-2 rounded-full bg-red-100 px-3.5 py-2 font-medium text-red-950 text-sm transition-colors hover:bg-red-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <RefreshCw
+                className={cn('h-4 w-4', isRetrying && 'animate-spin')}
+                aria-hidden="true"
+              />
+              {t('retryDay')}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 export function FeedArea({
   selectedDate,
   profile,
   initialMeal,
+  isDateNavigationPending = false,
+  onInitialMealApplied,
 }: FeedAreaProps) {
   const t = useTranslations('logging.feedArea');
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const inputRef = useRef<MealInputHandle>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const stream = useStreamAnalysis();
+  const queryClient = useQueryClient();
   const { guard } = useSubmitGuard();
   const [streamingMsgId, setStreamingMsgId] = useState<string | null>(null);
 
@@ -69,13 +178,23 @@ export function FeedArea({
     lastPrefilledMealRef.current = initialMeal;
     inputRef.current?.setText(initialMeal);
     inputRef.current?.focus();
-  }, [initialMeal]);
+    onInitialMealApplied?.();
+  }, [initialMeal, onInitialMealApplied]);
 
-  // Persisted meals from DB
-  const { data: persistedMeals = [], isLoading } = useDailyMeals(selectedDate);
+  const {
+    data: loggingDay,
+    isError: isDayError,
+    isFetching,
+    isLoading,
+    refetch: refetchLoggingDay,
+  } = useLoggingDay(profile.userId, selectedDate);
+  const isDayLoading = isLoading || isDateNavigationPending;
+  const isDayRetrying = isFetching && !isLoading;
+  const persistedMeals = loggingDay?.persistedMeals ?? [];
+  const pendingConfirmations = loggingDay?.pendingConfirmations ?? [];
 
   // Mutations
-  const confirmMeal = useConfirmMeal();
+  const confirmMeal = useConfirmMeal(profile.userId);
 
   const scrollToBottom = useCallback(() => {
     requestAnimationFrame(() => {
@@ -138,6 +257,7 @@ export function FeedArea({
 
   const { handleSubmit } = useFeedSubmit({
     stream,
+    selectedDate,
     inputRef,
     setMessages,
     setStreamingMsgId,
@@ -147,6 +267,17 @@ export function FeedArea({
     lastErrorRef,
   });
 
+  const handleAnalysisComplete = useCallback(() => {
+    const originDate =
+      messages.find((message) => message.id === streamingMsgId)?.loggedDate ??
+      selectedDate;
+
+    queryClient.invalidateQueries({
+      queryKey: loggingDayKeys.byUserDate(profile.userId, originDate),
+    });
+    queryClient.invalidateQueries({ queryKey: ['meal-dates'] });
+  }, [messages, profile.userId, queryClient, selectedDate, streamingMsgId]);
+
   useStreamingTerminalEffects({
     stream,
     streamingMsgId,
@@ -155,12 +286,13 @@ export function FeedArea({
     scrollToBottom,
     lastAnalysisIdRef,
     lastErrorRef,
+    onAnalysisComplete: handleAnalysisComplete,
   });
 
   // Handle confirm: persist to DB, remove streaming message
   const handleConfirmMeal = (messageId: string, analysisId: string) => {
     confirmMeal.mutate(
-      { analysisId },
+      { analysisId, originDate: selectedDate },
       {
         onSuccess: () => {
           // Remove the streaming message — persisted meal will appear via query
@@ -173,9 +305,13 @@ export function FeedArea({
 
   // Derive display messages: overlay live streaming state onto the active message.
   const displayMessages = useMemo(() => {
-    if (!streamingMsgId || stream.status === 'idle') return messages;
+    const selectedMessages = messages.filter(
+      (message) => message.loggedDate === selectedDate
+    );
 
-    return messages.map((msg) => {
+    if (!streamingMsgId || stream.status === 'idle') return selectedMessages;
+
+    return selectedMessages.map((msg) => {
       if (msg.id !== streamingMsgId) return msg;
       return {
         ...msg,
@@ -191,6 +327,7 @@ export function FeedArea({
     });
   }, [
     messages,
+    selectedDate,
     streamingMsgId,
     stream.status,
     stream.items,
@@ -206,127 +343,167 @@ export function FeedArea({
   }, [stream.isAnalyzing, streamItemCount, scrollToBottom]);
 
   // Unconfirmed streaming messages (exclude user messages)
-  const unconfirmedMessages = displayMessages.filter(
-    (m) => m.role === 'assistant'
+  const pendingIds = useMemo(
+    () => new Set(pendingConfirmations.map((pending) => pending.id)),
+    [pendingConfirmations]
+  );
+
+  const pendingMessages = useMemo<ChatMessage[]>(
+    () =>
+      pendingConfirmations.map((pending) => ({
+        id: `pending-${pending.id}`,
+        role: 'assistant',
+        content: '',
+        parsedMeal: pending.parsedMeal,
+        userInput: pending.rawInput,
+        timestamp: new Date(pending.loggedAt),
+        loggedDate: selectedDate,
+        analysisId: pending.id,
+      })),
+    [pendingConfirmations, selectedDate]
+  );
+
+  const unconfirmedMessages = [
+    ...pendingMessages,
+    ...displayMessages.filter(
+      (m) =>
+        m.role === 'assistant' &&
+        (!m.analysisId || !pendingIds.has(m.analysisId))
+    ),
+  ];
+  const hasPendingMessages = pendingMessages.length > 0;
+  const hasStreamingMessages = unconfirmedMessages.some(
+    (message) => !pendingIds.has(message.analysisId ?? '')
   );
   const hasPersistedMeals = persistedMeals.length > 0;
-  const hasStreamingMessages = unconfirmedMessages.length > 0;
-  const hasContent = hasPersistedMeals || hasStreamingMessages;
+  const hasContent =
+    hasPersistedMeals || hasPendingMessages || hasStreamingMessages;
 
   return (
-    <main className="flex flex-1 flex-col self-stretch overflow-hidden">
-      {/* Scrollable feed */}
+    <main className="flex min-w-0 flex-1 flex-col self-stretch overflow-hidden">
+      <div
+        className="shrink-0 bg-nham-surface px-4 pt-4 pb-3 sm:px-6"
+        data-testid="macro-summary-region"
+      >
+        <div className="mx-auto max-w-4xl">
+          {isDayLoading ? (
+            <MacroSummarySkeleton />
+          ) : isDayError ? null : hasUnknownDailyMacros ? (
+            <div
+              className="font-medium text-[11px] text-nham-text-muted/80"
+              style={{ fontFamily: 'DM Sans, sans-serif' }}
+            >
+              {t('legacyMacroWarning')}
+            </div>
+          ) : (
+            <MacroSummary totals={dailyTotals} targets={targets} />
+          )}
+        </div>
+      </div>
+
+      {/* Scrollable meal cards only */}
       <div
         ref={scrollRef}
-        className="flex min-h-0 flex-1 flex-col overflow-y-auto"
+        className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain px-4 py-4 sm:px-6"
+        data-testid="meal-card-scroll"
       >
         <AnimatePresence mode="wait">
-          {!hasContent && !stream.isAnalyzing && !isLoading && (
-            <div className="flex flex-1 items-center justify-center px-4 py-6 sm:px-6">
-              <EmptyState
-                onSuggestionClick={(suggestion) => {
-                  inputRef.current?.setText(suggestion);
-                  inputRef.current?.focus();
-                }}
-              />
-            </div>
-          )}
+          {!hasContent &&
+            !stream.isAnalyzing &&
+            !isDayLoading &&
+            !isDayError && (
+              <div className="flex flex-1 items-center justify-center py-6">
+                <EmptyState
+                  onSuggestionClick={(suggestion) => {
+                    inputRef.current?.setText(suggestion);
+                    inputRef.current?.focus();
+                  }}
+                />
+              </div>
+            )}
         </AnimatePresence>
 
-        {hasContent && (
-          <>
-            {/* Sticky macro summary */}
-            <div className="sticky top-0 z-10 bg-nham-surface px-4 pt-4 pb-3 sm:px-6">
-              <div className="mx-auto max-w-4xl">
-                {hasUnknownDailyMacros ? (
-                  <div
-                    className="font-medium text-[11px] text-nham-text-muted/80"
-                    style={{ fontFamily: 'DM Sans, sans-serif' }}
-                  >
-                    Daily macro summary unavailable because some legacy meals
-                    have unknown macros.
-                  </div>
-                ) : (
-                  <MacroSummary totals={dailyTotals} targets={targets} />
-                )}
-              </div>
-            </div>
+        {isDayLoading && <LoggingDaySkeleton />}
 
-            {/* Meal entries */}
-            <div className="px-4 pb-6 sm:px-6">
-              <div className="mx-auto w-full max-w-3xl pl-12">
-                <div className="flex flex-col gap-8">
-                  {/* Persisted meals from DB */}
-                  <AnimatePresence initial={false}>
-                    {persistedMeals.map((meal) => (
-                      <PersistedMealCard key={meal.id} meal={meal} />
-                    ))}
-                  </AnimatePresence>
+        {!isDayLoading && isDayError && (
+          <LoggingDayErrorState
+            isRetrying={isDayRetrying}
+            onRetry={() => {
+              void refetchLoggingDay();
+            }}
+          />
+        )}
 
-                  {/* Streaming / unconfirmed messages */}
-                  <AnimatePresence initial={false}>
-                    {unconfirmedMessages.map((msg) => {
-                      if (msg.isStreaming) {
-                        return (
-                          <StreamingMealEntry key={msg.id} message={msg} />
-                        );
-                      }
+        {!isDayLoading && !isDayError && hasContent && (
+          <div className="mx-auto w-full max-w-3xl pl-10 sm:pl-12">
+            <div className="flex flex-col gap-8">
+              {/* Persisted meals from DB */}
+              <AnimatePresence initial={false}>
+                {persistedMeals.map((meal) => (
+                  <PersistedMealCard key={meal.id} meal={meal} />
+                ))}
+              </AnimatePresence>
 
-                      if (msg.parsedMeal) {
-                        return (
-                          <MealEntry
-                            key={msg.id}
-                            message={msg}
-                            onConfirm={() => {
-                              if (msg.analysisId)
-                                handleConfirmMeal(msg.id, msg.analysisId);
-                            }}
-                            isConfirming={confirmMeal.isPending}
-                          />
-                        );
-                      }
+              {/* Streaming / unconfirmed messages */}
+              <AnimatePresence initial={false}>
+                {unconfirmedMessages.map((msg) => {
+                  if (msg.isStreaming) {
+                    return <StreamingMealEntry key={msg.id} message={msg} />;
+                  }
 
-                      // Error message display
-                      return (
-                        <motion.div
-                          key={msg.id}
-                          initial={{ opacity: 0, y: 10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          className="group relative"
+                  if (msg.parsedMeal) {
+                    return (
+                      <MealEntry
+                        key={msg.id}
+                        message={msg}
+                        onConfirm={() => {
+                          if (msg.analysisId)
+                            handleConfirmMeal(msg.id, msg.analysisId);
+                        }}
+                        isConfirming={confirmMeal.isPending}
+                      />
+                    );
+                  }
+
+                  // Error message display
+                  return (
+                    <motion.div
+                      key={msg.id}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="group relative"
+                    >
+                      <div className="absolute top-2 bottom-0 -left-10 w-px bg-nham-border/60 group-last:bg-transparent" />
+                      <div className="absolute top-2 -left-[43px] h-2 w-2 rounded-full border-2 border-rose-400 bg-white" />
+                      <div className="rounded-2xl border border-rose-200/60 bg-rose-50/50 p-4">
+                        {msg.userInput && (
+                          <p
+                            className="mb-2 text-[13px] text-nham-text-muted"
+                            style={{ fontFamily: 'Lora, serif' }}
+                          >
+                            &ldquo;{msg.userInput}&rdquo;
+                          </p>
+                        )}
+                        <p
+                          className="text-rose-600 text-sm"
+                          style={{
+                            fontFamily: 'DM Sans, sans-serif',
+                          }}
                         >
-                          <div className="absolute top-2 bottom-0 -left-10 w-px bg-nham-border/60 group-last:bg-transparent" />
-                          <div className="absolute top-2 -left-[43px] h-2 w-2 rounded-full border-2 border-rose-400 bg-white" />
-                          <div className="rounded-2xl border border-rose-200/60 bg-rose-50/50 p-4">
-                            {msg.userInput && (
-                              <p
-                                className="mb-2 text-[13px] text-nham-text-muted"
-                                style={{ fontFamily: 'Lora, serif' }}
-                              >
-                                &ldquo;{msg.userInput}&rdquo;
-                              </p>
-                            )}
-                            <p
-                              className="text-rose-600 text-sm"
-                              style={{
-                                fontFamily: 'DM Sans, sans-serif',
-                              }}
-                            >
-                              {msg.content}
-                            </p>
-                          </div>
-                        </motion.div>
-                      );
-                    })}
-                  </AnimatePresence>
-                </div>
-              </div>
+                          {msg.content}
+                        </p>
+                      </div>
+                    </motion.div>
+                  );
+                })}
+              </AnimatePresence>
             </div>
-          </>
+          </div>
         )}
       </div>
 
       {/* Input area */}
-      <div className="px-4 pt-2 pb-4">
+      <div className="shrink-0 px-4 pt-2 pb-4 sm:px-6">
         <div className="mx-auto max-w-3xl">
           <MealInput
             ref={inputRef}

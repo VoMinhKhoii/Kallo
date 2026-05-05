@@ -941,7 +941,11 @@
       "subtitle": "Mô tả bữa ăn để nhận phân tích macro."
     },
     "feedArea": {
-      "savedMeal": "Đã lưu bữa ăn"
+      "savedMeal": "Đã lưu bữa ăn",
+      "legacyMacroWarning": "Không thể hiển thị tổng macro trong ngày vì một số bữa ăn cũ thiếu macro.",
+      "loadErrorTitle": "Không thể tải ngày này",
+      "loadErrorDescription": "Các bữa ăn đã lưu cho ngày này chưa tải được. Hãy thử lại trước khi ghi thêm món.",
+      "retryDay": "Tải lại ngày"
     },
     "streaming": {
       "connecting": "Đang kết nối...",
@@ -962,7 +966,25 @@
     },
     "timelineSidebar": {
       "navigationLabel": "Điều hướng dòng thời gian",
-      "week": "Tuần {number}"
+      "week": "Tuần {number}",
+      "history": "Lịch sử",
+      "historyNavigationLabel": "Điều hướng lịch sử bữa ăn",
+      "retryDates": "Thử tải lại ngày",
+      "loadingDates": "Đang tải ngày",
+      "noPreviousMeals": "Chưa có bữa ăn nào được ghi nhận",
+      "failedToLoadDates": "Không thể tải ngày bữa ăn.",
+      "failedToLoadHistory": "Không thể tải lịch sử bữa ăn.",
+      "selectDate": "Chọn ngày",
+      "datePickerTitle": "Chọn một ngày",
+      "datePickerDescription": "Chọn ngày để xem các bữa ăn của bạn",
+      "todayLabel": "Hôm nay",
+      "yesterdayLabel": "Hôm qua",
+      "lastWeekdayLabel": "{weekday} tuần trước",
+      "selectedDateLabel": "Ngày đã chọn",
+      "hasMealIndicator": "Đã có bữa ăn lưu trong ngày này",
+      "previousWeek": "Tuần trước",
+      "nextWeek": "Tuần sau",
+      "openCalendar": "Mở lịch"
     }
   },
   "settings": {

@@ -14,6 +14,7 @@ interface UseStreamingTerminalEffectsParams {
   scrollToBottom: () => void;
   lastAnalysisIdRef: RefObject<string | null>;
   lastErrorRef: RefObject<string | null>;
+  onAnalysisComplete?: (analysisId: string) => void;
 }
 
 export function useStreamingTerminalEffects({
@@ -24,6 +25,7 @@ export function useStreamingTerminalEffects({
   scrollToBottom,
   lastAnalysisIdRef,
   lastErrorRef,
+  onAnalysisComplete,
 }: UseStreamingTerminalEffectsParams) {
   // Terminal: stream completed — finalize streaming message, store analysisId
   useEffect(() => {
@@ -56,6 +58,7 @@ export function useStreamingTerminalEffects({
           : msg
       )
     );
+    onAnalysisComplete?.(analysisId);
     stream.reset();
     scrollToBottom();
   }, [
@@ -66,6 +69,7 @@ export function useStreamingTerminalEffects({
     streamingMsgId,
     scrollToBottom,
     lastAnalysisIdRef,
+    onAnalysisComplete,
     setStreamingMsgId,
     setMessages,
   ]);

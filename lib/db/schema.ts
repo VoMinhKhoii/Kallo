@@ -469,6 +469,9 @@ export const pendingAnalyses = pgTable(
       .references(() => authUsers.id, { onDelete: 'cascade' }),
     pipelineResult: jsonb('pipeline_result').notNull(),
     rawInput: text('raw_input').notNull(),
+    loggedAt: timestamp('logged_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
     expiresAt: timestamp('expires_at', { withTimezone: true })
       .notNull()
       .default(sql`now() + interval '30 minutes'`),
@@ -476,7 +479,13 @@ export const pendingAnalyses = pgTable(
       .notNull()
       .defaultNow(),
   },
-  (table) => [index('pending_analyses_expires_idx').on(table.expiresAt)]
+  (table) => [
+    index('pending_analyses_expires_idx').on(table.expiresAt),
+    index('pending_analyses_user_logged_at_idx').on(
+      table.userId,
+      table.loggedAt
+    ),
+  ]
 );
 
 // ---------------------------------------------------------------------------

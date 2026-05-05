@@ -1,0 +1,1 @@
+ALTER TABLE "pipeline_runs" ADD COLUMN "ambiguity_flag_counts" jsonb DEFAULT '{}'::jsonb NOT NULL;
