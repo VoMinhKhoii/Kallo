@@ -238,6 +238,7 @@ describe('loadWeightSummaryAction', () => {
     expect(result.daysLogged).toBe(2);
     expect(result.goalDirection).toBe('down');
     expect(result.periodStartWeight).toBe(72.4);
+    expect(result.periodElapsedDays).toBe(2);
     expect(result.expectedEndWeight).toBeLessThan(result.periodStartWeight);
   });
 
@@ -279,6 +280,7 @@ describe('loadWeightSummaryAction', () => {
     });
 
     expect(result.goalDirection).toBe('flat');
+    expect(result.periodElapsedDays).toBe(2);
     expect(result.expectedEndWeight).toBe(result.periodStartWeight);
   });
 });

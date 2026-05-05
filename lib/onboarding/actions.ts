@@ -37,8 +37,9 @@ export async function saveOnboardingScreen(
     .from(userProfiles)
     .where(eq(userProfiles.userId, user.id))
     .limit(1);
+  const existingProfile = existing;
 
-  const newStep = Math.max(existing?.onboardingStep ?? 0, step);
+  const newStep = Math.max(existingProfile?.onboardingStep ?? 0, step);
   const updateObj: Record<string, unknown> = {
     onboardingStep: newStep,
   };
@@ -73,12 +74,12 @@ export async function saveOnboardingScreen(
   }
 
   // Mark completion when all screens done
-  const nextProfile = { ...existing, ...updateObj };
+  const nextProfile = { ...existingProfile, ...updateObj };
   if (
     newStep >= ONBOARDING_TOTAL_STEPS &&
     hasSavedOnboardingProfileData(nextProfile)
   ) {
-    if (!existing?.onboardingCompletedAt) {
+    if (!existingProfile?.onboardingCompletedAt) {
       updateObj.onboardingCompletedAt = new Date();
     }
   }

@@ -89,6 +89,7 @@ jobs:
             --min-instances=1
             --max-instances=10
             --set-secrets=DATABASE_URL=nham-nonprod-database-url:latest,GEMINI_API_KEY=nham-nonprod-gemini-api-key:latest
+            --set-env-vars=ADMIN_EMAILS=${{ vars.ADMIN_EMAILS }}
       - id: smoke
         run: ./scripts/cloud-run/smoke-check.sh "${{ steps.deploy.outputs.url }}"
       - name: Record deploy metadata

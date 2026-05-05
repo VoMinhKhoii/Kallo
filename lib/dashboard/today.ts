@@ -1,5 +1,5 @@
-import type { MealEntry, NutritionData } from '@/components/dashboard/types';
 import type { PersistedMeal } from '@/lib/actions/meals';
+import type { MealEntry, NutritionData } from '@/lib/types/dashboard';
 
 export interface DashboardTodayTargets {
   calorieTarget: number;
