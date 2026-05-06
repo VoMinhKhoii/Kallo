@@ -507,6 +507,69 @@ export const analysisGuardEvents = pgTable(
   ]
 );
 
+export const analysisRateLimitWindows = pgTable(
+  'analysis_rate_limit_windows',
+  {
+    keyKind: text('key_kind').notNull(),
+    keyHash: text('key_hash').notNull(),
+    route: text('route').notNull(),
+    windowKind: text('window_kind').notNull(),
+    windowStart: timestamp('window_start', { withTimezone: true }).notNull(),
+    count: integer('count').notNull().default(0),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    unique('analysis_rate_limit_windows_key_uniq').on(
+      table.keyKind,
+      table.keyHash,
+      table.route,
+      table.windowKind,
+      table.windowStart
+    ),
+    index('analysis_rate_limit_windows_updated_idx').on(table.updatedAt),
+    check(
+      'analysis_rate_limit_windows_key_kind_check',
+      sql`${table.keyKind} IN ('user', 'ip')`
+    ),
+    check(
+      'analysis_rate_limit_windows_window_kind_check',
+      sql`${table.windowKind} IN ('minute', 'hour', 'day')`
+    ),
+    check('analysis_rate_limit_windows_count_check', sql`${table.count} >= 0`),
+  ]
+);
+
+export const analysisInFlightLimits = pgTable(
+  'analysis_in_flight_limits',
+  {
+    keyKind: text('key_kind').notNull(),
+    keyHash: text('key_hash').notNull(),
+    route: text('route').notNull(),
+    count: integer('count').notNull().default(0),
+    updatedAt: timestamp('updated_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    unique('analysis_in_flight_limits_key_uniq').on(
+      table.keyKind,
+      table.keyHash,
+      table.route
+    ),
+    index('analysis_in_flight_limits_updated_idx').on(table.updatedAt),
+    check(
+      'analysis_in_flight_limits_key_kind_check',
+      sql`${table.keyKind} IN ('user')`
+    ),
+    check('analysis_in_flight_limits_count_check', sql`${table.count} >= 0`),
+  ]
+);
+
 export const pendingAnalyses = pgTable(
   'pending_analyses',
   {

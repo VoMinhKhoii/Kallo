@@ -232,6 +232,13 @@
       "when": 1778084699999,
       "tag": "20260506162459_add_analysis_guard_events",
       "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1778088958565,
+      "tag": "20260506173558_add_analysis_rate_limits",
+      "breakpoints": true
     }
   ]
 }

@@ -1,14 +1,278 @@
 import { createHmac } from 'node:crypto';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { AppDb } from '@/lib/db';
 import {
+  analysisInFlightLimits,
+  analysisRateLimitWindows,
+} from '@/lib/db/schema';
+import {
+  type AnalysisGuardLimits,
+  type AnalysisRateLimitWindowKind,
   type BuildAnalysisGuardEventInput,
   buildAnalysisGuardEvent,
+  checkAnalysisGuards,
+  getAnalysisWindowRetryAfterSeconds,
+  getAnalysisWindowStart,
 } from '../analysis-guards';
 
 const hashSecret = 'analysis-guard-unit-test-secret';
+const analyzeMealRoute = '/api/analyze-meal';
+const fixedNow = new Date('2026-05-07T12:34:15.250Z');
+
+const generousLimits = {
+  perUserMinute: 100,
+  perUserHour: 100,
+  perUserDay: 100,
+  concurrentUser: 100,
+  concurrentRetryAfterSeconds: 12,
+} satisfies AnalysisGuardLimits;
 
 function hmacHex(payload: string) {
   return createHmac('sha256', hashSecret).update(payload).digest('hex');
+}
+
+function hashedUser(userId: string) {
+  return hmacHex(`user:${userId}`);
+}
+
+interface WindowRow {
+  keyKind: 'user';
+  keyHash: string;
+  route: string;
+  windowKind: AnalysisRateLimitWindowKind;
+  windowStart: Date;
+  count: number;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+interface InFlightRow {
+  keyKind: 'user';
+  keyHash: string;
+  route: string;
+  count: number;
+  updatedAt: Date;
+}
+
+interface GuardState {
+  windows: Map<string, WindowRow>;
+  inFlight: Map<string, InFlightRow>;
+}
+
+class InMemoryAnalysisGuardDb {
+  private state: GuardState = {
+    windows: new Map(),
+    inFlight: new Map(),
+  };
+
+  private transactionQueue = Promise.resolve();
+
+  readonly client = {
+    transaction: async <T>(
+      callback: (transactionClient: AppDb) => Promise<T> | T
+    ) => {
+      const runAfter = this.transactionQueue.catch(() => undefined);
+      let releaseQueue!: () => void;
+      this.transactionQueue = new Promise<void>((resolve) => {
+        releaseQueue = resolve;
+      });
+
+      await runAfter;
+
+      const nextState = this.cloneState(this.state);
+
+      try {
+        const result = await callback(this.createClient(nextState));
+        this.state = nextState;
+        return result;
+      } finally {
+        releaseQueue();
+      }
+    },
+    insert: (table: unknown) => this.createInsertBuilder(this.state, table),
+  } as unknown as AppDb;
+
+  getWindowCount(
+    userId: string,
+    route: string,
+    windowKind: AnalysisRateLimitWindowKind,
+    now: Date
+  ) {
+    return (
+      this.state.windows.get(
+        this.windowKey({
+          keyKind: 'user',
+          keyHash: hashedUser(userId),
+          route,
+          windowKind,
+          windowStart: getAnalysisWindowStart(now, windowKind),
+        })
+      )?.count ?? 0
+    );
+  }
+
+  getInFlightCount(userId: string, route: string) {
+    return (
+      this.state.inFlight.get(
+        this.inFlightKey({
+          keyKind: 'user',
+          keyHash: hashedUser(userId),
+          route,
+        })
+      )?.count ?? 0
+    );
+  }
+
+  private createClient(state: GuardState) {
+    return {
+      insert: (table: unknown) => this.createInsertBuilder(state, table),
+    } as unknown as AppDb;
+  }
+
+  private createInsertBuilder(state: GuardState, table: unknown) {
+    let rowValues: unknown;
+
+    return {
+      values: (values: unknown) => {
+        rowValues = values;
+        return this.createInsertBuilderMethods(state, table, () => rowValues);
+      },
+    };
+  }
+
+  private createInsertBuilderMethods(
+    state: GuardState,
+    table: unknown,
+    getRowValues: () => unknown
+  ) {
+    return {
+      onConflictDoUpdate: () =>
+        this.createInsertBuilderMethods(state, table, getRowValues),
+      returning: () => this.applyInsert(state, table, getRowValues()),
+    };
+  }
+
+  private applyInsert(state: GuardState, table: unknown, values: unknown) {
+    if (table === analysisRateLimitWindows) {
+      return this.applyWindowInsert(state, values as WindowRow);
+    }
+
+    if (table === analysisInFlightLimits) {
+      return this.applyInFlightInsert(state, values as InFlightRow);
+    }
+
+    throw new Error('Unexpected table in analysis guard test DB');
+  }
+
+  private applyWindowInsert(state: GuardState, values: WindowRow) {
+    const key = this.windowKey(values);
+    const current = state.windows.get(key);
+    const count = (current?.count ?? 0) + values.count;
+
+    state.windows.set(key, {
+      ...values,
+      count,
+      createdAt: current?.createdAt ?? values.createdAt,
+      updatedAt: values.updatedAt,
+    });
+
+    return Promise.resolve([{ count }]);
+  }
+
+  private applyInFlightInsert(state: GuardState, values: InFlightRow) {
+    const key = this.inFlightKey(values);
+    const current = state.inFlight.get(key);
+    const count =
+      values.count === 0
+        ? Math.max(0, (current?.count ?? 0) - 1)
+        : (current?.count ?? 0) + values.count;
+
+    state.inFlight.set(key, {
+      ...values,
+      count,
+      updatedAt: values.updatedAt,
+    });
+
+    return Promise.resolve([{ count }]);
+  }
+
+  private cloneState(state: GuardState): GuardState {
+    return {
+      windows: new Map(
+        Array.from(state.windows.entries(), ([key, value]) => [
+          key,
+          {
+            ...value,
+            windowStart: new Date(value.windowStart),
+            createdAt: new Date(value.createdAt),
+            updatedAt: new Date(value.updatedAt),
+          },
+        ])
+      ),
+      inFlight: new Map(
+        Array.from(state.inFlight.entries(), ([key, value]) => [
+          key,
+          { ...value, updatedAt: new Date(value.updatedAt) },
+        ])
+      ),
+    };
+  }
+
+  private windowKey(
+    values: Pick<
+      WindowRow,
+      'keyKind' | 'keyHash' | 'route' | 'windowKind' | 'windowStart'
+    >
+  ) {
+    return [
+      values.keyKind,
+      values.keyHash,
+      values.route,
+      values.windowKind,
+      values.windowStart.toISOString(),
+    ].join('|');
+  }
+
+  private inFlightKey(
+    values: Pick<InFlightRow, 'keyKind' | 'keyHash' | 'route'>
+  ) {
+    return [values.keyKind, values.keyHash, values.route].join('|');
+  }
+}
+
+async function checkMealAnalysisGuard(
+  store: InMemoryAnalysisGuardDb,
+  overrides: Partial<AnalysisGuardLimits> = {},
+  userId = 'user-1'
+) {
+  return await checkAnalysisGuards({
+    userId,
+    ip: '203.0.113.24',
+    route: analyzeMealRoute,
+    db: store.client,
+    limits: { ...generousLimits, ...overrides },
+    now: () => fixedNow,
+  });
+}
+
+function expectAllowed(
+  result: Awaited<ReturnType<typeof checkMealAnalysisGuard>>
+) {
+  expect(result.allowed).toBe(true);
+  if (!result.allowed)
+    throw new Error(`Expected allowed, got ${result.reason}`);
+
+  expect(result.release).toBeTypeOf('function');
+  return result;
+}
+
+function expectBlocked(
+  result: Awaited<ReturnType<typeof checkMealAnalysisGuard>>
+) {
+  expect(result.allowed).toBe(false);
+  if (result.allowed) throw new Error('Expected blocked, got allowed');
+
+  return result;
 }
 
 describe('buildAnalysisGuardEvent', () => {
@@ -118,5 +382,191 @@ describe('buildAnalysisGuardEvent', () => {
         reason: 'per_user_hour',
       })
     ).toThrow(/ANALYSIS_GUARD_HASH_SECRET/);
+  });
+});
+
+describe('checkAnalysisGuards', () => {
+  beforeEach(() => {
+    vi.stubEnv('ANALYSIS_GUARD_HASH_SECRET', hashSecret);
+    vi.stubEnv('NODE_ENV', 'test');
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it('creates and increments counters for allowed meal analysis requests', async () => {
+    const store = new InMemoryAnalysisGuardDb();
+
+    const first = expectAllowed(await checkMealAnalysisGuard(store));
+    await first.release?.();
+    const second = expectAllowed(await checkMealAnalysisGuard(store));
+
+    expect(
+      store.getWindowCount('user-1', analyzeMealRoute, 'minute', fixedNow)
+    ).toBe(2);
+    expect(
+      store.getWindowCount('user-1', analyzeMealRoute, 'hour', fixedNow)
+    ).toBe(2);
+    expect(
+      store.getWindowCount('user-1', analyzeMealRoute, 'day', fixedNow)
+    ).toBe(2);
+    expect(store.getInFlightCount('user-1', analyzeMealRoute)).toBe(1);
+
+    await second.release?.();
+    expect(store.getInFlightCount('user-1', analyzeMealRoute)).toBe(0);
+  });
+
+  it('prevents concurrent allowed meal analysis requests from exceeding quota under race', async () => {
+    const store = new InMemoryAnalysisGuardDb();
+    const results = await Promise.all(
+      Array.from({ length: 5 }, () =>
+        checkMealAnalysisGuard(store, {
+          perUserMinute: 2,
+          perUserHour: 2,
+          perUserDay: 2,
+          concurrentUser: 10,
+        })
+      )
+    );
+
+    const allowedResults = results.filter((result) => result.allowed);
+    const blockedResults = results.filter((result) => !result.allowed);
+
+    expect(allowedResults).toHaveLength(2);
+    expect(blockedResults).toHaveLength(3);
+    for (const blockedResult of blockedResults) {
+      const blockedGuard = expectBlocked(blockedResult);
+      expect(blockedGuard.reason).toBe('per_user_minute');
+    }
+    expect(
+      store.getWindowCount('user-1', analyzeMealRoute, 'minute', fixedNow)
+    ).toBe(2);
+    expect(store.getInFlightCount('user-1', analyzeMealRoute)).toBe(2);
+
+    for (const allowedResult of allowedResults) {
+      const allowedGuard = expectAllowed(allowedResult);
+      await allowedGuard.release?.();
+    }
+  });
+
+  it('blocks per-user minute quota with retry-after', async () => {
+    const store = new InMemoryAnalysisGuardDb();
+    expectAllowed(await checkMealAnalysisGuard(store, { perUserMinute: 1 }));
+
+    const blockedGuard = expectBlocked(
+      await checkMealAnalysisGuard(store, { perUserMinute: 1 })
+    );
+
+    expect(blockedGuard.status).toBe(429);
+    expect(blockedGuard.reason).toBe('per_user_minute');
+    expect(blockedGuard.retryAfterSeconds).toBe(
+      getAnalysisWindowRetryAfterSeconds(
+        fixedNow,
+        getAnalysisWindowStart(fixedNow, 'minute'),
+        'minute'
+      )
+    );
+    expect(
+      store.getWindowCount('user-1', analyzeMealRoute, 'minute', fixedNow)
+    ).toBe(1);
+  });
+
+  it('blocks per-user hour quota', async () => {
+    const store = new InMemoryAnalysisGuardDb();
+    expectAllowed(await checkMealAnalysisGuard(store, { perUserHour: 1 }));
+
+    const blockedGuard = expectBlocked(
+      await checkMealAnalysisGuard(store, { perUserHour: 1 })
+    );
+
+    expect(blockedGuard.reason).toBe('per_user_hour');
+    expect(blockedGuard.retryAfterSeconds).toBe(
+      getAnalysisWindowRetryAfterSeconds(
+        fixedNow,
+        getAnalysisWindowStart(fixedNow, 'hour'),
+        'hour'
+      )
+    );
+    expect(
+      store.getWindowCount('user-1', analyzeMealRoute, 'hour', fixedNow)
+    ).toBe(1);
+  });
+
+  it('blocks per-user day quota', async () => {
+    const store = new InMemoryAnalysisGuardDb();
+    expectAllowed(await checkMealAnalysisGuard(store, { perUserDay: 1 }));
+
+    const blockedGuard = expectBlocked(
+      await checkMealAnalysisGuard(store, { perUserDay: 1 })
+    );
+
+    expect(blockedGuard.reason).toBe('per_user_day');
+    expect(blockedGuard.retryAfterSeconds).toBe(
+      getAnalysisWindowRetryAfterSeconds(
+        fixedNow,
+        getAnalysisWindowStart(fixedNow, 'day'),
+        'day'
+      )
+    );
+    expect(
+      store.getWindowCount('user-1', analyzeMealRoute, 'day', fixedNow)
+    ).toBe(1);
+  });
+
+  it('blocks in-flight concurrency when a user already has a running analysis', async () => {
+    const store = new InMemoryAnalysisGuardDb();
+    const runningGuard = expectAllowed(
+      await checkMealAnalysisGuard(store, {
+        concurrentUser: 1,
+        concurrentRetryAfterSeconds: 9,
+      })
+    );
+
+    const blockedGuard = expectBlocked(
+      await checkMealAnalysisGuard(store, {
+        concurrentUser: 1,
+        concurrentRetryAfterSeconds: 9,
+      })
+    );
+
+    expect(blockedGuard.reason).toBe('concurrent_user');
+    expect(blockedGuard.retryAfterSeconds).toBe(9);
+    expect(store.getInFlightCount('user-1', analyzeMealRoute)).toBe(1);
+    expect(
+      store.getWindowCount('user-1', analyzeMealRoute, 'minute', fixedNow)
+    ).toBe(1);
+
+    await runningGuard.release?.();
+  });
+
+  it('decrements in-flight count exactly once per release handle', async () => {
+    const store = new InMemoryAnalysisGuardDb();
+    const first = expectAllowed(
+      await checkMealAnalysisGuard(store, { concurrentUser: 2 })
+    );
+    const second = expectAllowed(
+      await checkMealAnalysisGuard(store, { concurrentUser: 2 })
+    );
+
+    expect(store.getInFlightCount('user-1', analyzeMealRoute)).toBe(2);
+
+    await first.release?.();
+    await first.release?.();
+
+    expect(store.getInFlightCount('user-1', analyzeMealRoute)).toBe(1);
+
+    await second.release?.();
+  });
+
+  it('does not let repeated release drive in-flight count below zero', async () => {
+    const store = new InMemoryAnalysisGuardDb();
+    const guard = expectAllowed(await checkMealAnalysisGuard(store));
+
+    await guard.release?.();
+    await guard.release?.();
+    await guard.release?.();
+
+    expect(store.getInFlightCount('user-1', analyzeMealRoute)).toBe(0);
   });
 });
