@@ -7,6 +7,33 @@ const mockGetUser = vi.fn();
 const mockSelect = vi.fn();
 const mockAnalyzeMeal = vi.fn();
 const mockInsert = vi.fn();
+const mockCreateGeminiClient = vi.fn(() => ({}));
+const mockCheckAnalysisGuards = vi.fn();
+const mockLogPipelineStart = vi.fn();
+const mockLogPipelineEnd = vi.fn();
+const mockDbInsert = vi.fn();
+const mockDbInsertValues = vi.fn();
+const mockAnalysisGuardEvents = { table: 'analysis_guard_events' };
+const mockPendingAnalyses = { table: 'pending_analyses', id: 'id' };
+const mockPipelineRequests = { table: 'pipeline_requests', id: 'id' };
+
+interface MockBuildAnalysisGuardEventInput {
+  userId?: string | null;
+  ip?: string | null;
+  route: string;
+  reason: string;
+  retryAfterSeconds?: number | null;
+}
+
+const mockBuildAnalysisGuardEvent = vi.fn(
+  (input: MockBuildAnalysisGuardEventInput) => ({
+    userIdHash: input.userId ? `hashed-user:${input.userId}` : null,
+    ipHash: input.ip ? `hashed-ip:${input.ip}` : null,
+    route: input.route,
+    reason: input.reason,
+    retryAfterSeconds: input.retryAfterSeconds ?? null,
+  })
+);
 
 vi.mock('@/lib/supabase/server', () => ({
   createClient: () =>
@@ -23,8 +50,14 @@ vi.mock('@/lib/db', () => {
     limit: () => mockSelect(),
   };
   const insertChain = {
-    insert: () => insertChain,
-    values: () => insertChain,
+    insert: (table?: unknown) => {
+      mockDbInsert(table);
+      return insertChain;
+    },
+    values: (values?: unknown) => {
+      mockDbInsertValues(values);
+      return insertChain;
+    },
     returning: () => mockInsert(),
     catch: () => undefined, // fire-and-forget path (pipelineRequests)
   };
@@ -37,7 +70,10 @@ vi.mock('@/lib/db', () => {
   return {
     db: {
       ...selectChain,
-      insert: () => insertChain,
+      insert: (table?: unknown) => {
+        mockDbInsert(table);
+        return insertChain;
+      },
       update: () => updateChain,
     },
   };
@@ -45,12 +81,24 @@ vi.mock('@/lib/db', () => {
 
 vi.mock('@/lib/db/schema', () => ({
   userProfiles: { userId: 'userId' },
-  pendingAnalyses: { id: 'id' },
-  pipelineRequests: { id: 'id' },
+  analysisGuardEvents: mockAnalysisGuardEvents,
+  pendingAnalyses: mockPendingAnalyses,
+  pipelineRequests: mockPipelineRequests,
 }));
 
 vi.mock('@/lib/ai/gemini', () => ({
-  createGeminiClient: () => ({}),
+  createGeminiClient: (...args: unknown[]) => mockCreateGeminiClient(...args),
+}));
+
+vi.mock('@/lib/rate-limit/analysis-guards', () => ({
+  buildAnalysisGuardEvent: (input: MockBuildAnalysisGuardEventInput) =>
+    mockBuildAnalysisGuardEvent(input),
+  checkAnalysisGuards: (...args: unknown[]) => mockCheckAnalysisGuards(...args),
+}));
+
+vi.mock('@/lib/ai/pipeline/logging', () => ({
+  logPipelineStart: (...args: unknown[]) => mockLogPipelineStart(...args),
+  logPipelineEnd: (...args: unknown[]) => mockLogPipelineEnd(...args),
 }));
 
 vi.mock('@/lib/ai/pipeline', () => ({
@@ -102,10 +150,13 @@ vi.mock('@/lib/ai/mappers', () => ({
 
 const { POST } = await import('@/app/api/analyze-meal/route');
 
-function createRequest(body: unknown): NextRequest {
+function createRequest(
+  body: unknown,
+  headers: Record<string, string> = {}
+): NextRequest {
   return new Request('http://localhost/api/analyze-meal', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...headers },
     body: JSON.stringify(body),
   }) as unknown as NextRequest;
 }
@@ -183,6 +234,16 @@ describe('POST /api/analyze-meal', () => {
     mockGetUser.mockResolvedValue({ data: { user: { id: 'user-1' } } });
     mockSelect.mockResolvedValue([mockProfile]);
     mockAnalyzeMeal.mockReset();
+    mockCreateGeminiClient.mockReset();
+    mockCreateGeminiClient.mockReturnValue({});
+    mockCheckAnalysisGuards.mockReset();
+    mockCheckAnalysisGuards.mockResolvedValue({ allowed: true });
+    mockBuildAnalysisGuardEvent.mockClear();
+    mockLogPipelineStart.mockReset();
+    mockLogPipelineStart.mockResolvedValue('request-123');
+    mockLogPipelineEnd.mockClear();
+    mockDbInsert.mockClear();
+    mockDbInsertValues.mockClear();
     mockInsert.mockResolvedValue([{ id: 'analysis-123' }]);
   });
 
@@ -225,6 +286,92 @@ describe('POST /api/analyze-meal', () => {
     expect(res.status).toBe(500);
     const json = await res.json();
     expect(json.error.code).toBe('INTERNAL');
+  });
+
+  it('returns JSON 429 before SSE when analysis guards block', async () => {
+    const rawMealText = 'Phở bò tái';
+    const retryAfterSeconds = 45;
+
+    mockCheckAnalysisGuards.mockResolvedValue({
+      allowed: false,
+      status: 429,
+      reason: 'per_user_minute',
+      retryAfterSeconds,
+    });
+
+    const res = await POST(
+      createRequest(
+        { message: rawMealText },
+        { 'x-forwarded-for': '203.0.113.24, 10.0.0.7' }
+      )
+    );
+
+    expect(res.status).toBe(429);
+    expect(res.headers.get('Retry-After')).toBe(String(retryAfterSeconds));
+    expect(res.headers.get('Content-Type')).toContain('application/json');
+    expect(res.headers.get('Content-Type')).not.toContain('text/event-stream');
+
+    const json = await res.json();
+    expect(json.error.code).toBe('RATE_LIMITED');
+
+    expect(mockCreateGeminiClient).not.toHaveBeenCalled();
+    expect(mockLogPipelineStart).not.toHaveBeenCalled();
+    expect(mockDbInsert).toHaveBeenCalledWith(mockAnalysisGuardEvents);
+    expect(mockDbInsert).not.toHaveBeenCalledWith(mockPipelineRequests);
+
+    const guardContext = mockCheckAnalysisGuards.mock.calls[0]?.[0] as {
+      db?: unknown;
+      [key: string]: unknown;
+    };
+    const { db: _db, ...guardContextWithoutDb } = guardContext;
+    expect(guardContextWithoutDb).toEqual({
+      userId: 'user-1',
+      ip: '203.0.113.24',
+      route: '/api/analyze-meal',
+    });
+    expect(guardContextWithoutDb).not.toHaveProperty('message');
+    expect(guardContextWithoutDb).not.toHaveProperty('rawInput');
+    expect(JSON.stringify(guardContextWithoutDb)).not.toContain(rawMealText);
+
+    expect(mockBuildAnalysisGuardEvent).toHaveBeenCalledTimes(1);
+    const guardEventInput = mockBuildAnalysisGuardEvent.mock.calls[0]?.[0];
+    expect(guardEventInput).toEqual({
+      userId: 'user-1',
+      ip: '203.0.113.24',
+      route: '/api/analyze-meal',
+      reason: 'per_user_minute',
+      retryAfterSeconds,
+    });
+    expect(guardEventInput).not.toHaveProperty('rawMealText');
+    expect(guardEventInput).not.toHaveProperty('message');
+    expect(guardEventInput).not.toHaveProperty('rawInput');
+    expect(JSON.stringify(guardEventInput)).not.toContain(rawMealText);
+
+    const insertedGuardEvent = mockDbInsertValues.mock.calls[0]?.[0];
+    expect(insertedGuardEvent).toEqual({
+      userIdHash: 'hashed-user:user-1',
+      ipHash: 'hashed-ip:203.0.113.24',
+      route: '/api/analyze-meal',
+      reason: 'per_user_minute',
+      retryAfterSeconds,
+    });
+    expect(insertedGuardEvent).not.toHaveProperty('rawMealText');
+    expect(insertedGuardEvent).not.toHaveProperty('message');
+    expect(insertedGuardEvent).not.toHaveProperty('rawInput');
+    expect(JSON.stringify(insertedGuardEvent)).not.toContain(rawMealText);
+  });
+
+  it('releases an allowed guard when pipeline logging fails before SSE starts', async () => {
+    const release = vi.fn();
+    mockCheckAnalysisGuards.mockResolvedValue({ allowed: true, release });
+    mockLogPipelineStart.mockRejectedValue(new Error('log start failed'));
+
+    await expect(POST(createRequest({ message: 'phở bò' }))).rejects.toThrow(
+      'log start failed'
+    );
+
+    expect(release).toHaveBeenCalledTimes(1);
+    expect(mockCreateGeminiClient).not.toHaveBeenCalled();
   });
 
   // SSE streaming tests — these return 200 with event stream

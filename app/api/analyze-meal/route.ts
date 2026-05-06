@@ -8,13 +8,46 @@ import { logPipelineEnd, logPipelineStart } from '@/lib/ai/pipeline/logging';
 import type { StreamEvent } from '@/lib/ai/streaming';
 import { encodeSSE } from '@/lib/ai/streaming';
 import { db } from '@/lib/db';
-import { pendingAnalyses, userProfiles } from '@/lib/db/schema';
+import {
+  analysisGuardEvents,
+  pendingAnalyses,
+  userProfiles,
+} from '@/lib/db/schema';
 import { Errors, serializeError } from '@/lib/errors';
+import {
+  type AnalysisGuardAllowedResult,
+  buildAnalysisGuardEvent,
+  checkAnalysisGuards,
+} from '@/lib/rate-limit/analysis-guards';
 import { createClient } from '@/lib/supabase/server';
 import { mealMessageSchema } from '@/lib/validation';
 
 export const runtime = 'nodejs';
 export const maxDuration = 60;
+
+const analyzeMealRoute = '/api/analyze-meal';
+
+function getRequestIp(request: NextRequest) {
+  const forwardedFor = request.headers.get('x-forwarded-for');
+  const forwardedIp = forwardedFor?.split(',')[0]?.trim();
+
+  return forwardedIp || request.headers.get('x-real-ip');
+}
+
+function createGuardRelease(release: AnalysisGuardAllowedResult['release']) {
+  let released = false;
+
+  return async () => {
+    if (!release || released) return;
+    released = true;
+
+    try {
+      await release();
+    } catch (error) {
+      console.error('[analyze-meal] Failed to release analysis guard:', error);
+    }
+  };
+}
 
 /**
  * Pre-stream validation: auth, input, profile, config.
@@ -92,14 +125,47 @@ export async function POST(request: NextRequest) {
   const { userId, message, profile, apiKey } = validation.data;
 
   const userContext = buildUserContext(profile);
+  const ip = getRequestIp(request);
 
-  // Awaited so child trace inserts have a parent row to FK against
-  const requestId = await logPipelineStart({
+  const guard = await checkAnalysisGuards({
     userId,
-    rawInput: message,
-    userContext,
+    ip,
+    route: analyzeMealRoute,
     db,
   });
+
+  if (!guard.allowed) {
+    await db.insert(analysisGuardEvents).values(
+      buildAnalysisGuardEvent({
+        userId,
+        ip,
+        route: analyzeMealRoute,
+        reason: guard.reason,
+        retryAfterSeconds: guard.retryAfterSeconds,
+      })
+    );
+
+    return Response.json(Errors.rateLimited().toJSON(), {
+      status: guard.status,
+      headers: { 'Retry-After': String(guard.retryAfterSeconds) },
+    });
+  }
+
+  const releaseGuard = createGuardRelease(guard.release);
+
+  // Awaited so child trace inserts have a parent row to FK against
+  let requestId: string;
+  try {
+    requestId = await logPipelineStart({
+      userId,
+      rawInput: message,
+      userContext,
+      db,
+    });
+  } catch (error) {
+    await releaseGuard();
+    throw error;
+  }
 
   // Phase 2: Stream pipeline results as SSE
   const encoder = new TextEncoder();
@@ -112,8 +178,17 @@ export async function POST(request: NextRequest) {
       const startTime = Date.now();
       const promptVersionsUsed = new Map<string, string>();
       const traceContext = { requestId, db, userId, promptVersionsUsed };
+      const releaseOnAbort = () => {
+        void releaseGuard();
+      };
+
+      request.signal.addEventListener('abort', releaseOnAbort, { once: true });
 
       try {
+        if (request.signal.aborted) {
+          return;
+        }
+
         const gemini = createGeminiClient(apiKey);
         const result = await analyzeMeal(
           message,
@@ -249,6 +324,8 @@ export async function POST(request: NextRequest) {
           retryable: !isRateLimit,
         });
       } finally {
+        request.signal.removeEventListener('abort', releaseOnAbort);
+        await releaseGuard();
         controller.close();
       }
     },

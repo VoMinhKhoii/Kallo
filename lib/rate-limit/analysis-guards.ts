@@ -1,4 +1,5 @@
 import { createHmac } from 'node:crypto';
+import type { AppDb } from '@/lib/db';
 
 export const analysisGuardReasons = [
   'per_user_minute',
@@ -13,6 +14,29 @@ export const analysisGuardReasons = [
 ] as const;
 
 export type AnalysisGuardReason = (typeof analysisGuardReasons)[number];
+
+export interface CheckAnalysisGuardsInput {
+  userId: string;
+  ip?: string | null;
+  route: string;
+  db?: AppDb;
+}
+
+export type AnalysisGuardAllowedResult = {
+  allowed: true;
+  release?: () => Promise<void> | void;
+};
+
+export type AnalysisGuardBlockedResult = {
+  allowed: false;
+  status: 429;
+  reason: AnalysisGuardReason;
+  retryAfterSeconds: number;
+};
+
+export type AnalysisGuardResult =
+  | AnalysisGuardAllowedResult
+  | AnalysisGuardBlockedResult;
 
 export interface BuildAnalysisGuardEventInput {
   userId?: string | null;
@@ -67,4 +91,12 @@ export function buildAnalysisGuardEvent(
     reason: input.reason,
     retryAfterSeconds: input.retryAfterSeconds ?? null,
   };
+}
+
+export async function checkAnalysisGuards(
+  input: CheckAnalysisGuardsInput
+): Promise<AnalysisGuardResult> {
+  void input;
+
+  return { allowed: true };
 }
