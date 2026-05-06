@@ -152,12 +152,14 @@ const { POST } = await import('@/app/api/analyze-meal/route');
 
 function createRequest(
   body: unknown,
-  headers: Record<string, string> = {}
+  headers: Record<string, string> = {},
+  signal?: AbortSignal
 ): NextRequest {
   return new Request('http://localhost/api/analyze-meal', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...headers },
     body: JSON.stringify(body),
+    signal,
   }) as unknown as NextRequest;
 }
 
@@ -361,6 +363,38 @@ describe('POST /api/analyze-meal', () => {
     expect(JSON.stringify(insertedGuardEvent)).not.toContain(rawMealText);
   });
 
+  it('still returns JSON 429 when blocked-request telemetry fails', async () => {
+    const retryAfterSeconds = 30;
+    const consoleErrorSpy = vi
+      .spyOn(console, 'error')
+      .mockImplementation(() => undefined);
+
+    mockCheckAnalysisGuards.mockResolvedValue({
+      allowed: false,
+      status: 429,
+      reason: 'provider_pressure',
+      retryAfterSeconds,
+    });
+    mockDbInsertValues.mockImplementationOnce(() => {
+      throw new Error('telemetry failed');
+    });
+
+    const res = await POST(createRequest({ message: 'phở bò' }));
+
+    expect(res.status).toBe(429);
+    expect(res.headers.get('Retry-After')).toBe(String(retryAfterSeconds));
+    const json = await res.json();
+    expect(json.error.code).toBe('RATE_LIMITED');
+    expect(mockCreateGeminiClient).not.toHaveBeenCalled();
+    expect(mockLogPipelineStart).not.toHaveBeenCalled();
+    expect(consoleErrorSpy).toHaveBeenCalledWith(
+      '[analyze-meal] Failed to log analysis guard event:',
+      expect.any(Error)
+    );
+
+    consoleErrorSpy.mockRestore();
+  });
+
   it('releases an allowed guard when pipeline logging fails before SSE starts', async () => {
     const release = vi.fn();
     mockCheckAnalysisGuards.mockResolvedValue({ allowed: true, release });
@@ -372,6 +406,47 @@ describe('POST /api/analyze-meal', () => {
 
     expect(release).toHaveBeenCalledTimes(1);
     expect(mockCreateGeminiClient).not.toHaveBeenCalled();
+  });
+
+  it('awaits an abort-started guard release during stream cleanup', async () => {
+    const abortController = new AbortController();
+    let resolveRelease!: () => void;
+    let notifyReleaseStarted!: () => void;
+    const releaseStarted = new Promise<void>((resolve) => {
+      notifyReleaseStarted = resolve;
+    });
+    const releaseFinished = new Promise<void>((resolve) => {
+      resolveRelease = resolve;
+    });
+    const release = vi.fn(() => {
+      notifyReleaseStarted();
+      return releaseFinished;
+    });
+    mockCheckAnalysisGuards.mockResolvedValue({ allowed: true, release });
+    mockAnalyzeMeal.mockImplementation(async () => {
+      abortController.abort();
+      return { success: true, data: mockPipelineData };
+    });
+
+    const res = await POST(
+      createRequest({ message: 'phở bò' }, {}, abortController.signal)
+    );
+    let streamCompleted = false;
+    const readPromise = res.text().then(() => {
+      streamCompleted = true;
+    });
+
+    await releaseStarted;
+    await Promise.resolve();
+
+    expect(release).toHaveBeenCalledTimes(1);
+    expect(streamCompleted).toBe(false);
+
+    resolveRelease();
+    await readPromise;
+
+    expect(streamCompleted).toBe(true);
+    expect(release).toHaveBeenCalledTimes(1);
   });
 
   // SSE streaming tests — these return 200 with event stream

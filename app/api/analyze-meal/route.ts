@@ -35,17 +35,23 @@ function getRequestIp(request: NextRequest) {
 }
 
 function createGuardRelease(release: AnalysisGuardAllowedResult['release']) {
-  let released = false;
+  let releasePromise: Promise<void> | undefined;
 
-  return async () => {
-    if (!release || released) return;
-    released = true;
+  return () => {
+    if (!release) return Promise.resolve();
 
-    try {
-      await release();
-    } catch (error) {
-      console.error('[analyze-meal] Failed to release analysis guard:', error);
-    }
+    releasePromise ??= (async () => {
+      try {
+        await release();
+      } catch (error) {
+        console.error(
+          '[analyze-meal] Failed to release analysis guard:',
+          error
+        );
+      }
+    })();
+
+    return releasePromise;
   };
 }
 
@@ -135,15 +141,22 @@ export async function POST(request: NextRequest) {
   });
 
   if (!guard.allowed) {
-    await db.insert(analysisGuardEvents).values(
-      buildAnalysisGuardEvent({
-        userId,
-        ip,
-        route: analyzeMealRoute,
-        reason: guard.reason,
-        retryAfterSeconds: guard.retryAfterSeconds,
-      })
-    );
+    try {
+      await db.insert(analysisGuardEvents).values(
+        buildAnalysisGuardEvent({
+          userId,
+          ip,
+          route: analyzeMealRoute,
+          reason: guard.reason,
+          retryAfterSeconds: guard.retryAfterSeconds,
+        })
+      );
+    } catch (error) {
+      console.error(
+        '[analyze-meal] Failed to log analysis guard event:',
+        error
+      );
+    }
 
     return Response.json(Errors.rateLimited().toJSON(), {
       status: guard.status,
