@@ -81,6 +81,15 @@ describe('mealMessageSchema', () => {
     expect(result.success).toBe(false);
   });
 
+  it.each([
+    'https://',
+    'http://',
+    'www.',
+  ])('rejects URL-like garbage: %s', (message) => {
+    const result = mealMessageSchema.safeParse({ message });
+    expect(result.success).toBe(false);
+  });
+
   it('accepts string with mixed letters and numbers', () => {
     const result = mealMessageSchema.safeParse({ message: '2 tô phở' });
     expect(result.success).toBe(true);

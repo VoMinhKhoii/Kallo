@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-const urlOnlyPattern = /^(?:https?:\/\/|www\.)\S+$/iu;
+const urlOnlyPattern = /^(?:https?:\/\/\S*|www\.\S*)$/iu;
 
 function isHighlyRepetitiveSingleToken(value: string): boolean {
   if (/\s/u.test(value)) {
