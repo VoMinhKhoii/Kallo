@@ -9,16 +9,30 @@ export interface ShadowGuardConfig {
   dbPoolWaitMs?: () => number | null;
   dbPoolWaitThresholdMs?: number;
   embeddingRateLimited?: () => boolean;
+  nonessentialGuard?: () => Promise<NonessentialShadowGuardDecision>;
 }
+
+export type NonessentialShadowGuardDecision =
+  | { allowed: true }
+  | {
+      allowed: false;
+      reason: 'shadow_quota' | 'global_budget' | 'provider_pressure';
+      retryAfterSeconds: number;
+    };
+
+export type ShadowGuardAbortReason =
+  | 'aborted_primary_p95'
+  | 'aborted_pool_wait'
+  | 'aborted_embed_rate_limit'
+  | 'aborted_shadow_quota'
+  | 'aborted_global_budget'
+  | 'aborted_provider_pressure';
 
 export type ShadowGuardDecision =
   | { run: true }
   | {
       run: false;
-      reason:
-        | 'aborted_primary_p95'
-        | 'aborted_pool_wait'
-        | 'aborted_embed_rate_limit';
+      reason: ShadowGuardAbortReason;
     };
 
 export interface PrimaryLatencyTracker {
@@ -30,6 +44,14 @@ const DEFAULT_CLOCK: ShadowGuardClock = { now: () => Date.now() };
 const PRIMARY_P95_COOLDOWN_MS = 30 * 60_000;
 const DEFAULT_PRIMARY_LATENCY_WINDOW_MS = 5 * 60_000;
 const EMBEDDING_RATE_LIMIT_WINDOW_MS = 60_000;
+const nonessentialAbortReasons = {
+  shadow_quota: 'aborted_shadow_quota',
+  global_budget: 'aborted_global_budget',
+  provider_pressure: 'aborted_provider_pressure',
+} as const satisfies Record<
+  Exclude<NonessentialShadowGuardDecision, { allowed: true }>['reason'],
+  ShadowGuardAbortReason
+>;
 
 export function createPrimaryLatencyTracker(
   cfg: { clock?: ShadowGuardClock; windowMs?: number } = {}
@@ -124,6 +146,14 @@ export function createShadowGuard(cfg: ShadowGuardConfig = {}) {
 
     if (cfg.embeddingRateLimited?.()) {
       return { run: false, reason: 'aborted_embed_rate_limit' };
+    }
+
+    const nonessentialDecision = await cfg.nonessentialGuard?.();
+    if (nonessentialDecision && !nonessentialDecision.allowed) {
+      return {
+        run: false,
+        reason: nonessentialAbortReasons[nonessentialDecision.reason],
+      };
     }
 
     return { run: true };

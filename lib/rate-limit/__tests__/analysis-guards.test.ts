@@ -3,20 +3,25 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AppDb } from '@/lib/db';
 import {
   analysisInFlightLimits,
+  analysisModelBudgetEvents,
   analysisRateLimitWindows,
 } from '@/lib/db/schema';
 import {
   type AdminReplayGuardLimits,
   type AnalysisGuardLimits,
   type AnalysisGuardResult,
+  type AnalysisModelBudgetSource,
   type AnalysisRateLimitWindowKind,
   adminReplayGuardRoute,
   type BuildAnalysisGuardEventInput,
   buildAnalysisGuardEvent,
   checkAdminReplayGuard,
   checkAnalysisGuards,
+  checkNonessentialAnalysisGuards,
   getAnalysisWindowRetryAfterSeconds,
   getAnalysisWindowStart,
+  type NonessentialAnalysisGuardLimits,
+  recordAnalysisModelBudgetEvent,
 } from '../analysis-guards';
 
 const hashSecret = 'analysis-guard-unit-test-secret';
@@ -30,6 +35,15 @@ const generousLimits = {
   concurrentUser: 100,
   concurrentRetryAfterSeconds: 12,
 } satisfies AnalysisGuardLimits;
+
+const generousNonessentialLimits = {
+  shadowDailyRequestLimit: 100,
+  globalDailyRequestLimit: 1000,
+  globalDailyTokenLimit: 1_000_000,
+  providerErrorWindowSeconds: 300,
+  providerErrorThreshold: 5,
+  providerPressureRetryAfterSeconds: 60,
+} satisfies NonessentialAnalysisGuardLimits;
 
 function hmacHex(payload: string) {
   return createHmac('sha256', hashSecret).update(payload).digest('hex');
@@ -62,15 +76,31 @@ interface InFlightRow {
   updatedAt: Date;
 }
 
+interface BudgetEventRow {
+  id?: string;
+  createdAt: Date;
+  requestId: string | null;
+  route: string;
+  workKind: 'primary' | 'shadow' | 'nonessential';
+  provider: string;
+  model: string | null;
+  requestCount: number;
+  inputTokens: number;
+  outputTokens: number;
+  errorCategory: string | null;
+}
+
 interface GuardState {
   windows: Map<string, WindowRow>;
   inFlight: Map<string, InFlightRow>;
+  budgetEvents: BudgetEventRow[];
 }
 
 class InMemoryAnalysisGuardDb {
   private state: GuardState = {
     windows: new Map(),
     inFlight: new Map(),
+    budgetEvents: [],
   };
 
   private transactionQueue = Promise.resolve();
@@ -145,6 +175,10 @@ class InMemoryAnalysisGuardDb {
     );
   }
 
+  getBudgetEvents() {
+    return this.state.budgetEvents.map((event) => ({ ...event }));
+  }
+
   private createClient(state: GuardState) {
     return {
       insert: (table: unknown) => this.createInsertBuilder(state, table),
@@ -183,6 +217,10 @@ class InMemoryAnalysisGuardDb {
       return this.applyInFlightInsert(state, values as InFlightRow);
     }
 
+    if (table === analysisModelBudgetEvents) {
+      return this.applyBudgetEventInsert(state, values as BudgetEventRow);
+    }
+
     throw new Error('Unexpected table in analysis guard test DB');
   }
 
@@ -218,6 +256,12 @@ class InMemoryAnalysisGuardDb {
     return Promise.resolve([{ count }]);
   }
 
+  private applyBudgetEventInsert(state: GuardState, values: BudgetEventRow) {
+    state.budgetEvents.push({ ...values });
+
+    return Promise.resolve([{ id: values.id ?? 'budget-event-1' }]);
+  }
+
   private cloneState(state: GuardState): GuardState {
     return {
       windows: new Map(
@@ -237,6 +281,10 @@ class InMemoryAnalysisGuardDb {
           { ...value, updatedAt: new Date(value.updatedAt) },
         ])
       ),
+      budgetEvents: state.budgetEvents.map((event) => ({
+        ...event,
+        createdAt: new Date(event.createdAt),
+      })),
     };
   }
 
@@ -311,6 +359,36 @@ function expectBlocked(result: AnalysisGuardResult) {
   if (result.allowed) throw new Error('Expected blocked, got allowed');
 
   return result;
+}
+
+function makeBudgetSource(args: {
+  globalRequests?: number;
+  shadowRequests?: number;
+  globalTokens?: number;
+  providerErrors?: number;
+}): AnalysisModelBudgetSource {
+  return {
+    getDailyUsage: vi.fn().mockResolvedValue({
+      globalRequests: args.globalRequests ?? 0,
+      shadowRequests: args.shadowRequests ?? 0,
+      globalTokens: args.globalTokens ?? 0,
+    }),
+    getProviderErrorCount: vi.fn().mockResolvedValue(args.providerErrors ?? 0),
+  };
+}
+
+async function checkShadowNonessentialGuard(
+  source: AnalysisModelBudgetSource,
+  limits: Partial<NonessentialAnalysisGuardLimits> = {}
+) {
+  return await checkNonessentialAnalysisGuards({
+    source,
+    route: analyzeMealRoute,
+    workKind: 'shadow',
+    provider: 'gemini',
+    now: () => fixedNow,
+    limits: { ...generousNonessentialLimits, ...limits },
+  });
 }
 
 describe('buildAnalysisGuardEvent', () => {
@@ -665,5 +743,156 @@ describe('checkAdminReplayGuard', () => {
     const blockedGuard = expectBlocked(await checkReplayGuard(store, {}));
 
     expect(blockedGuard.reason).toBe('admin_replay');
+  });
+});
+
+describe('model budget events', () => {
+  beforeEach(() => {
+    vi.stubEnv('NODE_ENV', 'test');
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it('records only operational budget metadata', async () => {
+    const store = new InMemoryAnalysisGuardDb();
+
+    await recordAnalysisModelBudgetEvent({
+      db: store.client,
+      now: () => fixedNow,
+      requestId: 'request-1',
+      route: analyzeMealRoute,
+      workKind: 'shadow',
+      provider: 'gemini',
+      model: 'gemini-2.5-flash-lite',
+      requestCount: 1,
+      inputTokens: 120,
+      outputTokens: 80,
+      errorCategory: null,
+      rawInput: 'phở bò tái chín',
+      userId: 'user-1',
+    } as Parameters<typeof recordAnalysisModelBudgetEvent>[0] & {
+      rawInput: string;
+      userId: string;
+    });
+
+    const [event] = store.getBudgetEvents();
+    expect(event).toMatchObject({
+      createdAt: fixedNow,
+      requestId: 'request-1',
+      route: analyzeMealRoute,
+      workKind: 'shadow',
+      provider: 'gemini',
+      model: 'gemini-2.5-flash-lite',
+      requestCount: 1,
+      inputTokens: 120,
+      outputTokens: 80,
+      errorCategory: null,
+    });
+    expect(event).not.toHaveProperty('rawInput');
+    expect(event).not.toHaveProperty('userId');
+    expect(JSON.stringify(event)).not.toContain('phở bò tái chín');
+    expect(JSON.stringify(event)).not.toContain('user-1');
+  });
+});
+
+describe('checkNonessentialAnalysisGuards', () => {
+  beforeEach(() => {
+    vi.stubEnv('NODE_ENV', 'test');
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it('blocks shadow work when the daily shadow quota is exhausted', async () => {
+    const source = makeBudgetSource({ shadowRequests: 2 });
+
+    const result = await checkShadowNonessentialGuard(source, {
+      shadowDailyRequestLimit: 2,
+    });
+
+    expect(result).toEqual({
+      allowed: false,
+      reason: 'shadow_quota',
+      retryAfterSeconds: getAnalysisWindowRetryAfterSeconds(
+        fixedNow,
+        getAnalysisWindowStart(fixedNow, 'day'),
+        'day'
+      ),
+    });
+  });
+
+  it('blocks nonessential work when the global daily request budget is exhausted', async () => {
+    const source = makeBudgetSource({ globalRequests: 10 });
+
+    const result = await checkShadowNonessentialGuard(source, {
+      globalDailyRequestLimit: 10,
+    });
+
+    expect(result.allowed).toBe(false);
+    if (result.allowed) throw new Error('Expected global request budget block');
+    expect(result.reason).toBe('global_budget');
+  });
+
+  it('blocks nonessential work when the global daily token budget is exhausted', async () => {
+    const source = makeBudgetSource({ globalTokens: 1_000 });
+
+    const result = await checkShadowNonessentialGuard(source, {
+      globalDailyTokenLimit: 1_000,
+    });
+
+    expect(result.allowed).toBe(false);
+    if (result.allowed) throw new Error('Expected global token budget block');
+    expect(result.reason).toBe('global_budget');
+  });
+
+  it('blocks nonessential work when provider pressure is forced on by env', async () => {
+    vi.stubEnv('ANALYSIS_PROVIDER_PRESSURE_OVERRIDE', 'on');
+    const source = makeBudgetSource({});
+
+    const result = await checkShadowNonessentialGuard(source);
+
+    expect(result.allowed).toBe(false);
+    if (result.allowed) throw new Error('Expected provider pressure block');
+    expect(result.reason).toBe('provider_pressure');
+  });
+
+  it('blocks nonessential work during a recent provider error window', async () => {
+    const source = makeBudgetSource({ providerErrors: 5 });
+
+    const result = await checkShadowNonessentialGuard(source, {
+      providerErrorThreshold: 5,
+    });
+
+    expect(result.allowed).toBe(false);
+    if (result.allowed) throw new Error('Expected provider pressure block');
+    expect(result.reason).toBe('provider_pressure');
+  });
+
+  it('uses the always-on event source when tracing is disabled and pipeline_llm_calls is empty', async () => {
+    vi.stubEnv('PIPELINE_TRACE_ENABLED', 'false');
+    const source = makeBudgetSource({ globalRequests: 1, globalTokens: 250 });
+
+    const result = await checkShadowNonessentialGuard(source, {
+      globalDailyRequestLimit: 2,
+      globalDailyTokenLimit: 500,
+    });
+
+    expect(result).toEqual({ allowed: true });
+    expect(source.getDailyUsage).toHaveBeenCalledOnce();
+    expect(source.getProviderErrorCount).toHaveBeenCalledOnce();
+  });
+
+  it('allows env to force provider pressure off while keeping budgets active', async () => {
+    vi.stubEnv('ANALYSIS_PROVIDER_PRESSURE_OVERRIDE', 'off');
+    const source = makeBudgetSource({ providerErrors: 99 });
+
+    const result = await checkShadowNonessentialGuard(source, {
+      providerErrorThreshold: 1,
+    });
+
+    expect(result).toEqual({ allowed: true });
   });
 });

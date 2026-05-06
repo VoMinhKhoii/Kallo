@@ -3,6 +3,7 @@ import { sql } from 'drizzle-orm';
 import { type AppDb, db as appDb } from '@/lib/db';
 import {
   analysisInFlightLimits,
+  analysisModelBudgetEvents,
   analysisRateLimitWindows,
 } from '@/lib/db/schema';
 
@@ -82,6 +83,96 @@ export interface AdminReplayGuardLimits {
   perAdminHour: number;
 }
 
+export type AnalysisModelBudgetWorkKind = 'primary' | 'shadow' | 'nonessential';
+
+export type AnalysisModelProviderErrorCategory =
+  | 'rate_limit'
+  | 'quota'
+  | 'server_error'
+  | 'timeout'
+  | 'network'
+  | 'unknown';
+
+export interface RecordAnalysisModelBudgetEventInput {
+  db?: AppDb;
+  now?: () => Date;
+  requestId?: string | null;
+  route: string;
+  workKind: AnalysisModelBudgetWorkKind;
+  provider: string;
+  model?: string | null;
+  requestCount?: number | null;
+  inputTokens?: number | null;
+  outputTokens?: number | null;
+  errorCategory?: AnalysisModelProviderErrorCategory | null;
+}
+
+export interface NonessentialAnalysisGuardLimits {
+  shadowDailyRequestLimit: number;
+  globalDailyRequestLimit: number;
+  globalDailyTokenLimit: number;
+  providerErrorWindowSeconds: number;
+  providerErrorThreshold: number;
+  providerPressureRetryAfterSeconds: number;
+}
+
+export type NonessentialAnalysisGuardReason =
+  | 'shadow_quota'
+  | 'global_budget'
+  | 'provider_pressure';
+
+export type NonessentialAnalysisGuardResult =
+  | { allowed: true }
+  | {
+      allowed: false;
+      reason: NonessentialAnalysisGuardReason;
+      retryAfterSeconds: number;
+    };
+
+export interface AnalysisModelDailyUsage {
+  globalRequests: number;
+  shadowRequests: number;
+  globalTokens: number;
+}
+
+export interface AnalysisModelBudgetSourceInput {
+  db?: AppDb;
+  route: string;
+  workKind: AnalysisModelBudgetWorkKind;
+  provider: string;
+  now: Date;
+  dayStart: Date;
+}
+
+export interface AnalysisModelProviderErrorSourceInput {
+  db?: AppDb;
+  provider: string;
+  now: Date;
+  windowStart: Date;
+}
+
+export interface AnalysisModelBudgetSource {
+  getDailyUsage: (
+    input: AnalysisModelBudgetSourceInput
+  ) => Promise<AnalysisModelDailyUsage>;
+  getProviderErrorCount: (
+    input: AnalysisModelProviderErrorSourceInput
+  ) => Promise<number>;
+}
+
+export interface CheckNonessentialAnalysisGuardsInput {
+  db?: AppDb;
+  source?: AnalysisModelBudgetSource;
+  route: string;
+  workKind: AnalysisModelBudgetWorkKind;
+  provider: string;
+  model?: string | null;
+  requestId?: string | null;
+  limits?: Partial<NonessentialAnalysisGuardLimits>;
+  now?: () => Date;
+  reserve?: boolean;
+}
+
 export const defaultAnalysisGuardLimits: AnalysisGuardLimits = {
   perUserMinute: 3,
   perUserHour: 30,
@@ -93,6 +184,16 @@ export const defaultAnalysisGuardLimits: AnalysisGuardLimits = {
 export const defaultAdminReplayGuardLimits: AdminReplayGuardLimits = {
   perAdminHour: 5,
 };
+
+export const defaultNonessentialAnalysisGuardLimits: NonessentialAnalysisGuardLimits =
+  {
+    shadowDailyRequestLimit: 100,
+    globalDailyRequestLimit: 5000,
+    globalDailyTokenLimit: 5_000_000,
+    providerErrorWindowSeconds: 300,
+    providerErrorThreshold: 5,
+    providerPressureRetryAfterSeconds: 60,
+  };
 
 export const adminReplayGuardRoute = '/admin/pipeline-replay/live';
 
@@ -144,6 +245,89 @@ function readPositiveInteger(
   const parsed = typeof value === 'number' ? value : Number(value);
 
   return Number.isInteger(parsed) && parsed > 0 ? parsed : fallback;
+}
+
+function readNonNegativeInteger(
+  value: string | number | null | undefined,
+  fallback: number
+) {
+  if (value == null) return fallback;
+
+  const parsed = typeof value === 'number' ? value : Number(value);
+
+  return Number.isInteger(parsed) && parsed >= 0 ? parsed : fallback;
+}
+
+function resolveNonessentialAnalysisGuardLimits(
+  overrides: Partial<NonessentialAnalysisGuardLimits> = {}
+): NonessentialAnalysisGuardLimits {
+  const envLimits = {
+    shadowDailyRequestLimit: readPositiveInteger(
+      process.env.ANALYSIS_SHADOW_DAILY_REQUEST_LIMIT,
+      defaultNonessentialAnalysisGuardLimits.shadowDailyRequestLimit
+    ),
+    globalDailyRequestLimit: readPositiveInteger(
+      process.env.ANALYSIS_GLOBAL_DAILY_REQUEST_LIMIT,
+      defaultNonessentialAnalysisGuardLimits.globalDailyRequestLimit
+    ),
+    globalDailyTokenLimit: readPositiveInteger(
+      process.env.ANALYSIS_GLOBAL_DAILY_TOKEN_LIMIT,
+      defaultNonessentialAnalysisGuardLimits.globalDailyTokenLimit
+    ),
+    providerErrorWindowSeconds: readPositiveInteger(
+      process.env.ANALYSIS_PROVIDER_ERROR_WINDOW_SECONDS,
+      defaultNonessentialAnalysisGuardLimits.providerErrorWindowSeconds
+    ),
+    providerErrorThreshold: readPositiveInteger(
+      process.env.ANALYSIS_PROVIDER_ERROR_THRESHOLD,
+      defaultNonessentialAnalysisGuardLimits.providerErrorThreshold
+    ),
+    providerPressureRetryAfterSeconds: readPositiveInteger(
+      process.env.ANALYSIS_PROVIDER_PRESSURE_RETRY_AFTER_SECONDS,
+      defaultNonessentialAnalysisGuardLimits.providerPressureRetryAfterSeconds
+    ),
+  };
+
+  return {
+    shadowDailyRequestLimit: readPositiveInteger(
+      overrides.shadowDailyRequestLimit,
+      envLimits.shadowDailyRequestLimit
+    ),
+    globalDailyRequestLimit: readPositiveInteger(
+      overrides.globalDailyRequestLimit,
+      envLimits.globalDailyRequestLimit
+    ),
+    globalDailyTokenLimit: readPositiveInteger(
+      overrides.globalDailyTokenLimit,
+      envLimits.globalDailyTokenLimit
+    ),
+    providerErrorWindowSeconds: readPositiveInteger(
+      overrides.providerErrorWindowSeconds,
+      envLimits.providerErrorWindowSeconds
+    ),
+    providerErrorThreshold: readPositiveInteger(
+      overrides.providerErrorThreshold,
+      envLimits.providerErrorThreshold
+    ),
+    providerPressureRetryAfterSeconds: readPositiveInteger(
+      overrides.providerPressureRetryAfterSeconds,
+      envLimits.providerPressureRetryAfterSeconds
+    ),
+  };
+}
+
+function normalizeProviderPressureOverride() {
+  const value = process.env.ANALYSIS_PROVIDER_PRESSURE_OVERRIDE?.toLowerCase();
+
+  if (value === 'on' || value === 'true' || value === 'force_on') {
+    return 'on' as const;
+  }
+
+  if (value === 'off' || value === 'false' || value === 'force_off') {
+    return 'off' as const;
+  }
+
+  return 'auto' as const;
 }
 
 function resolveAnalysisGuardLimits(
@@ -408,6 +592,155 @@ const userWindowGuards = [
   >;
   reason: AnalysisGuardReason;
 }[];
+
+function nonessentialBlocked(
+  reason: NonessentialAnalysisGuardReason,
+  retryAfterSeconds: number
+): NonessentialAnalysisGuardResult {
+  return { allowed: false, reason, retryAfterSeconds };
+}
+
+function toInteger(value: unknown) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+export const drizzleAnalysisModelBudgetSource: AnalysisModelBudgetSource = {
+  async getDailyUsage(input) {
+    const budgetDb = input.db ?? appDb;
+    const [row] = await budgetDb
+      .select({
+        globalRequests: sql<number>`coalesce(sum(${analysisModelBudgetEvents.requestCount}), 0)::int`,
+        shadowRequests: sql<number>`coalesce(sum(${analysisModelBudgetEvents.requestCount}) filter (where ${analysisModelBudgetEvents.workKind} = 'shadow'), 0)::int`,
+        globalTokens: sql<number>`coalesce(sum(${analysisModelBudgetEvents.inputTokens} + ${analysisModelBudgetEvents.outputTokens}), 0)::int`,
+      })
+      .from(analysisModelBudgetEvents)
+      .where(
+        sql`${analysisModelBudgetEvents.createdAt} >= ${input.dayStart} AND ${analysisModelBudgetEvents.createdAt} <= ${input.now}`
+      );
+
+    return {
+      globalRequests: toInteger(row?.globalRequests),
+      shadowRequests: toInteger(row?.shadowRequests),
+      globalTokens: toInteger(row?.globalTokens),
+    };
+  },
+  async getProviderErrorCount(input) {
+    const budgetDb = input.db ?? appDb;
+    const [row] = await budgetDb
+      .select({
+        providerErrors: sql<number>`count(*)::int`,
+      })
+      .from(analysisModelBudgetEvents)
+      .where(
+        sql`${analysisModelBudgetEvents.createdAt} >= ${input.windowStart} AND ${analysisModelBudgetEvents.createdAt} <= ${input.now} AND ${analysisModelBudgetEvents.provider} = ${input.provider} AND ${analysisModelBudgetEvents.errorCategory} IS NOT NULL`
+      );
+
+    return toInteger(row?.providerErrors);
+  },
+};
+
+export async function recordAnalysisModelBudgetEvent(
+  input: RecordAnalysisModelBudgetEventInput
+): Promise<void> {
+  const eventDb = input.db ?? appDb;
+  const now = input.now?.() ?? new Date();
+
+  await eventDb
+    .insert(analysisModelBudgetEvents)
+    .values({
+      createdAt: now,
+      requestId: input.requestId ?? null,
+      route: input.route,
+      workKind: input.workKind,
+      provider: input.provider,
+      model: input.model ?? null,
+      requestCount: readNonNegativeInteger(input.requestCount, 1),
+      inputTokens: readNonNegativeInteger(input.inputTokens, 0),
+      outputTokens: readNonNegativeInteger(input.outputTokens, 0),
+      errorCategory: input.errorCategory ?? null,
+    })
+    .returning({ id: analysisModelBudgetEvents.id });
+}
+
+export async function checkNonessentialAnalysisGuards(
+  input: CheckNonessentialAnalysisGuardsInput
+): Promise<NonessentialAnalysisGuardResult> {
+  const now = input.now?.() ?? new Date();
+  const limits = resolveNonessentialAnalysisGuardLimits(input.limits);
+  const source = input.source ?? drizzleAnalysisModelBudgetSource;
+  const dayStart = getAnalysisWindowStart(now, 'day');
+  const dailyUsage = await source.getDailyUsage({
+    db: input.db,
+    route: input.route,
+    workKind: input.workKind,
+    provider: input.provider,
+    now,
+    dayStart,
+  });
+  const dailyRetryAfterSeconds = getAnalysisWindowRetryAfterSeconds(
+    now,
+    dayStart,
+    'day'
+  );
+
+  if (
+    input.workKind === 'shadow' &&
+    dailyUsage.shadowRequests >= limits.shadowDailyRequestLimit
+  ) {
+    return nonessentialBlocked('shadow_quota', dailyRetryAfterSeconds);
+  }
+
+  if (dailyUsage.globalRequests >= limits.globalDailyRequestLimit) {
+    return nonessentialBlocked('global_budget', dailyRetryAfterSeconds);
+  }
+
+  if (dailyUsage.globalTokens >= limits.globalDailyTokenLimit) {
+    return nonessentialBlocked('global_budget', dailyRetryAfterSeconds);
+  }
+
+  const providerOverride = normalizeProviderPressureOverride();
+  if (providerOverride === 'on') {
+    return nonessentialBlocked(
+      'provider_pressure',
+      limits.providerPressureRetryAfterSeconds
+    );
+  }
+
+  if (providerOverride !== 'off') {
+    const providerWindowStart = new Date(
+      now.getTime() - limits.providerErrorWindowSeconds * 1000
+    );
+    const providerErrorCount = await source.getProviderErrorCount({
+      db: input.db,
+      provider: input.provider,
+      now,
+      windowStart: providerWindowStart,
+    });
+
+    if (providerErrorCount >= limits.providerErrorThreshold) {
+      return nonessentialBlocked(
+        'provider_pressure',
+        limits.providerPressureRetryAfterSeconds
+      );
+    }
+  }
+
+  if (input.reserve) {
+    await recordAnalysisModelBudgetEvent({
+      db: input.db,
+      now: () => now,
+      requestId: input.requestId ?? null,
+      route: input.route,
+      workKind: input.workKind,
+      provider: input.provider,
+      model: input.model ?? null,
+      requestCount: 1,
+    });
+  }
+
+  return { allowed: true };
+}
 
 export async function checkAnalysisGuards(
   input: CheckAnalysisGuardsInput

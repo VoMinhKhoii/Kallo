@@ -2,6 +2,12 @@ import { randomUUID } from 'node:crypto';
 import { toJSONSchema } from 'zod';
 import type { AppDb } from '@/lib/db';
 import { fetchWithTimeout } from '@/lib/fetch-with-timeout';
+import {
+  type AnalysisModelProviderErrorCategory,
+  checkNonessentialAnalysisGuards,
+  type RecordAnalysisModelBudgetEventInput,
+  recordAnalysisModelBudgetEvent,
+} from '@/lib/rate-limit/analysis-guards';
 import { capitalizeFirst } from '@/lib/utils';
 import type { GeminiClient } from '../gemini';
 import { matchIngredients } from '../matching';
@@ -93,6 +99,8 @@ const NUTRITION_PROMPT_LABEL_CANDIDATE =
   process.env.SHADOW_CANDIDATE_PROMPT_LABEL ?? 'production';
 const NUTRITION_MODEL_CANDIDATE =
   process.env.SHADOW_CANDIDATE_MODEL ?? NUTRITION_MODEL;
+const ANALYSIS_MODEL_BUDGET_ROUTE = '/api/analyze-meal';
+const ANALYSIS_MODEL_PROVIDER = 'gemini';
 const SHADOW_PRIMARY_P95_THRESHOLD_MS = 4000;
 const SHADOW_DB_POOL_WAIT_THRESHOLD_MS = 1000;
 
@@ -238,6 +246,65 @@ function logMetrics(metrics: PipelineMetrics): void {
   console.info('[pipeline] metrics', JSON.stringify(metrics));
 }
 
+function recordAnalysisModelBudgetEventBestEffort(
+  input: RecordAnalysisModelBudgetEventInput
+): void {
+  void recordAnalysisModelBudgetEvent(input).catch((error) => {
+    console.error('[ai/pipeline] failed to write model budget event', error);
+  });
+}
+
+function getErrorStatus(error: unknown): number | null {
+  if (
+    error &&
+    typeof error === 'object' &&
+    'status' in error &&
+    typeof (error as { status?: unknown }).status === 'number'
+  ) {
+    return (error as { status: number }).status;
+  }
+
+  if (!(error instanceof Error)) {
+    return null;
+  }
+
+  const statusMatch = error.message.match(/\b(408|429|500|502|503|504)\b/);
+  return statusMatch ? Number.parseInt(statusMatch[1], 10) : null;
+}
+
+function classifyProviderError(
+  error: unknown
+): AnalysisModelProviderErrorCategory | null {
+  const message = error instanceof Error ? error.message : String(error);
+  const status = getErrorStatus(error);
+
+  if (/quota/i.test(message)) {
+    return 'quota';
+  }
+
+  if (status === 429) {
+    return 'rate_limit';
+  }
+
+  if (status === 408 || /timeout|timed out|AbortError/i.test(message)) {
+    return 'timeout';
+  }
+
+  if (status != null && status >= 500) {
+    return 'server_error';
+  }
+
+  if (
+    /fetch failed|network error|socket hang up|ECONNRESET|EAI_AGAIN/i.test(
+      message
+    )
+  ) {
+    return 'network';
+  }
+
+  return null;
+}
+
 /**
  * Full meal analysis pipeline.
  *
@@ -259,6 +326,16 @@ export async function analyzeMeal(
   options?: AnalyzeMealOptions
 ): Promise<PipelineResponse> {
   const analyzeStart = Date.now();
+  recordAnalysisModelBudgetEventBestEffort({
+    db,
+    requestId: traceContext?.requestId ?? null,
+    route: ANALYSIS_MODEL_BUDGET_ROUTE,
+    workKind: 'primary',
+    provider: ANALYSIS_MODEL_PROVIDER,
+    model: NUTRITION_MODEL,
+    requestCount: 1,
+  });
+
   try {
     const response = await runPipeline(
       rawInput,
@@ -281,6 +358,20 @@ export async function analyzeMeal(
     });
     return response;
   } catch (error) {
+    const providerErrorCategory = classifyProviderError(error);
+    if (providerErrorCategory) {
+      recordAnalysisModelBudgetEventBestEffort({
+        db,
+        requestId: traceContext?.requestId ?? null,
+        route: ANALYSIS_MODEL_BUDGET_ROUTE,
+        workKind: 'primary',
+        provider: ANALYSIS_MODEL_PROVIDER,
+        model: NUTRITION_MODEL,
+        requestCount: 0,
+        errorCategory: providerErrorCategory,
+      });
+    }
+
     if (isNonFoodError(error)) {
       return nonFoodResponse();
     }
@@ -965,7 +1056,14 @@ function scheduleShadowRun(args: {
   }
 
   const shadowCfg = args.shadow ?? defaultShadowConfigFromEnv(args.db);
-  const guard = shadowCfg.guard ?? defaultShadowGuard();
+  const candidateModel = shadowCfg.candidateModel ?? NUTRITION_MODEL_CANDIDATE;
+  const guard =
+    shadowCfg.guard ??
+    defaultShadowGuard({
+      db: args.db,
+      requestId: args.traceContext.requestId,
+      candidateModel,
+    });
   guard.onPrimaryComplete(args.primaryMs);
 
   if (
@@ -986,7 +1084,7 @@ function scheduleShadowRun(args: {
         primaryRunId: args.response.__telemetryRunId,
         candidatePromptLabel:
           shadowCfg.candidatePromptLabel ?? NUTRITION_PROMPT_LABEL_CANDIDATE,
-        candidateModel: shadowCfg.candidateModel ?? NUTRITION_MODEL_CANDIDATE,
+        candidateModel,
       },
       {
         runCandidate: () =>
@@ -999,8 +1097,7 @@ function scheduleShadowRun(args: {
             undefined,
             {
               matchingConcurrency: 1,
-              nutritionModel:
-                shadowCfg.candidateModel ?? NUTRITION_MODEL_CANDIDATE,
+              nutritionModel: candidateModel,
             }
           ),
         persistShadowRun:
@@ -1019,13 +1116,27 @@ function defaultShadowConfigFromEnv(db: AppDb): ShadowConfig {
   };
 }
 
-function defaultShadowGuard(): ShadowGuard {
+function defaultShadowGuard(args: {
+  db: AppDb;
+  requestId: string;
+  candidateModel: string;
+}): ShadowGuard {
   return createShadowGuard({
     primaryP95Ms: getPrimaryP95Ms,
     primaryP95ThresholdMs: SHADOW_PRIMARY_P95_THRESHOLD_MS,
     dbPoolWaitMs: () => 0,
     dbPoolWaitThresholdMs: SHADOW_DB_POOL_WAIT_THRESHOLD_MS,
     embeddingRateLimited: isEmbeddingRateLimited,
+    nonessentialGuard: () =>
+      checkNonessentialAnalysisGuards({
+        db: args.db,
+        requestId: args.requestId,
+        route: ANALYSIS_MODEL_BUDGET_ROUTE,
+        workKind: 'shadow',
+        provider: ANALYSIS_MODEL_PROVIDER,
+        model: args.candidateModel,
+        reserve: true,
+      }),
   });
 }
 

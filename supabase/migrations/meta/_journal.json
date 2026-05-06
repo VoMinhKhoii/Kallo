@@ -239,6 +239,13 @@
       "when": 1778088958565,
       "tag": "20260506173558_add_analysis_rate_limits",
       "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1778092525568,
+      "tag": "20260506183525_add_analysis_model_budget_events",
+      "breakpoints": true
     }
   ]
 }

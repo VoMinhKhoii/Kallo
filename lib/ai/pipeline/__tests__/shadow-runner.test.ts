@@ -272,6 +272,9 @@ describe('runShadowAsync (guard wrapper)', () => {
     ['aborted_primary_p95'],
     ['aborted_pool_wait'],
     ['aborted_embed_rate_limit'],
+    ['aborted_shadow_quota'],
+    ['aborted_global_budget'],
+    ['aborted_provider_pressure'],
   ] as const)('persists outcome=%s when guard returns that reason', async (reason) => {
     const guard = makeGuard({ run: false, reason });
 

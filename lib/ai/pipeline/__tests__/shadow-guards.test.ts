@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import {
   createPrimaryLatencyTracker,
   createShadowGuard,
@@ -65,6 +65,79 @@ describe('createShadowGuard', () => {
       run: false,
       reason: 'aborted_embed_rate_limit',
     });
+  });
+
+  it('blocks shadow work when the shadow quota is exhausted', async () => {
+    const guard = createShadowGuard({
+      clock: makeClock(0),
+      nonessentialGuard: async () => ({
+        allowed: false,
+        reason: 'shadow_quota',
+        retryAfterSeconds: 60,
+      }),
+    });
+
+    expect(await guard.shouldRun()).toEqual({
+      run: false,
+      reason: 'aborted_shadow_quota',
+    });
+  });
+
+  it('blocks shadow work when the global budget is exhausted', async () => {
+    const guard = createShadowGuard({
+      clock: makeClock(0),
+      nonessentialGuard: async () => ({
+        allowed: false,
+        reason: 'global_budget',
+        retryAfterSeconds: 60,
+      }),
+    });
+
+    expect(await guard.shouldRun()).toEqual({
+      run: false,
+      reason: 'aborted_global_budget',
+    });
+  });
+
+  it('blocks shadow work during provider pressure', async () => {
+    const guard = createShadowGuard({
+      clock: makeClock(0),
+      nonessentialGuard: async () => ({
+        allowed: false,
+        reason: 'provider_pressure',
+        retryAfterSeconds: 60,
+      }),
+    });
+
+    expect(await guard.shouldRun()).toEqual({
+      run: false,
+      reason: 'aborted_provider_pressure',
+    });
+  });
+
+  it('runs only after the nonessential guard admits the shadow run', async () => {
+    const guard = createShadowGuard({
+      clock: makeClock(0),
+      nonessentialGuard: async () => ({ allowed: true }),
+    });
+
+    expect(await guard.shouldRun()).toEqual({ run: true });
+  });
+
+  it('does not call the async nonessential guard when cheap latency guards block first', async () => {
+    const nonessentialGuard = vi.fn().mockResolvedValue({ allowed: true });
+    const guard = createShadowGuard({
+      clock: makeClock(0),
+      primaryP95Ms: () => 5000,
+      primaryP95ThresholdMs: 4000,
+      nonessentialGuard,
+    });
+
+    expect(await guard.shouldRun()).toMatchObject({
+      run: false,
+      reason: 'aborted_primary_p95',
+    });
+    expect(nonessentialGuard).not.toHaveBeenCalled();
   });
 });
 

@@ -570,6 +570,57 @@ export const analysisInFlightLimits = pgTable(
   ]
 );
 
+export const analysisModelBudgetEvents = pgTable(
+  'analysis_model_budget_events',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    requestId: text('request_id'),
+    route: text('route').notNull(),
+    workKind: text('work_kind').notNull(),
+    provider: text('provider').notNull(),
+    model: text('model'),
+    requestCount: integer('request_count').notNull().default(1),
+    inputTokens: integer('input_tokens').notNull().default(0),
+    outputTokens: integer('output_tokens').notNull().default(0),
+    errorCategory: text('error_category'),
+  },
+  (table) => [
+    index('analysis_model_budget_events_created_idx').on(table.createdAt),
+    index('analysis_model_budget_events_work_created_idx').on(
+      table.workKind,
+      table.createdAt
+    ),
+    index('analysis_model_budget_events_provider_error_idx').on(
+      table.provider,
+      table.errorCategory,
+      table.createdAt
+    ),
+    check(
+      'analysis_model_budget_events_work_kind_check',
+      sql`${table.workKind} IN ('primary', 'shadow', 'nonessential')`
+    ),
+    check(
+      'analysis_model_budget_events_request_count_check',
+      sql`${table.requestCount} >= 0`
+    ),
+    check(
+      'analysis_model_budget_events_input_tokens_check',
+      sql`${table.inputTokens} >= 0`
+    ),
+    check(
+      'analysis_model_budget_events_output_tokens_check',
+      sql`${table.outputTokens} >= 0`
+    ),
+    check(
+      'analysis_model_budget_events_error_category_check',
+      sql`${table.errorCategory} IS NULL OR ${table.errorCategory} IN ('rate_limit', 'quota', 'server_error', 'timeout', 'network', 'unknown')`
+    ),
+  ]
+);
+
 export const pendingAnalyses = pgTable(
   'pending_analyses',
   {

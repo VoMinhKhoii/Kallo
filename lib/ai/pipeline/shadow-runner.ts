@@ -4,6 +4,7 @@ import type {
   ProcessedIngredient,
 } from '../types';
 import { computeDivergence, type ShadowDivergence } from './shadow-divergence';
+import type { ShadowGuardAbortReason } from './shadow-guards';
 
 export interface ShadowOutputSnapshot {
   success: boolean;
@@ -32,12 +33,7 @@ export interface ShadowRunnerInput {
   candidateModel: string;
 }
 
-export type ShadowOutcome =
-  | 'completed'
-  | 'errored'
-  | 'aborted_primary_p95'
-  | 'aborted_pool_wait'
-  | 'aborted_embed_rate_limit';
+export type ShadowOutcome = 'completed' | 'errored' | ShadowGuardAbortReason;
 
 export interface ShadowRunPersistRow {
   requestId: string;
@@ -62,10 +58,7 @@ export interface ShadowGuard {
     | { run: true }
     | {
         run: false;
-        reason:
-          | 'aborted_primary_p95'
-          | 'aborted_pool_wait'
-          | 'aborted_embed_rate_limit';
+        reason: ShadowGuardAbortReason;
       }
   >;
   onPrimaryComplete: (primaryMs: number) => void;
