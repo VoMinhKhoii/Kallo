@@ -225,6 +225,13 @@
       "when": 1777742281258,
       "tag": "20260502171801_add_replay_audit_and_shadow_fk",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1778084699999,
+      "tag": "20260506162459_add_analysis_guard_events",
+      "breakpoints": true
     }
   ]
 }

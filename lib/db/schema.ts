@@ -482,6 +482,31 @@ export const pipelineRequestReplayAuditLogs = pgTable(
   ]
 );
 
+export const analysisGuardEvents = pgTable(
+  'analysis_guard_events',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    userIdHash: text('user_id_hash'),
+    ipHash: text('ip_hash'),
+    route: text('route').notNull(),
+    reason: text('reason').notNull(),
+    retryAfterSeconds: integer('retry_after_seconds'),
+  },
+  (table) => [
+    index('analysis_guard_events_reason_created_idx').on(
+      table.reason,
+      table.createdAt
+    ),
+    index('analysis_guard_events_user_created_idx').on(
+      table.userIdHash,
+      table.createdAt
+    ),
+  ]
+);
+
 export const pendingAnalyses = pgTable(
   'pending_analyses',
   {
