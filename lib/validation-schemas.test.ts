@@ -17,6 +17,13 @@ describe('mealMessageSchema', () => {
     expect(result.success).toBe(true);
   });
 
+  it('accepts a normal meal description', () => {
+    const result = mealMessageSchema.safeParse({
+      message: 'chicken breast with rice',
+    });
+    expect(result.success).toBe(true);
+  });
+
   it('trims whitespace', () => {
     const result = mealMessageSchema.safeParse({ message: '  Bún bò Huế  ' });
     expect(result.success).toBe(true);
@@ -57,6 +64,20 @@ describe('mealMessageSchema', () => {
 
   it('rejects string with only symbols', () => {
     const result = mealMessageSchema.safeParse({ message: '!@#$%' });
+    expect(result.success).toBe(false);
+  });
+
+  it('rejects repeated-character garbage', () => {
+    const result = mealMessageSchema.safeParse({
+      message: 'aaaaaaaaaaaaaaaaaaaaaaaa',
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it('rejects URL-only input', () => {
+    const result = mealMessageSchema.safeParse({
+      message: 'https://example.com',
+    });
     expect(result.success).toBe(false);
   });
 

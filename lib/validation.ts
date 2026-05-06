@@ -1,5 +1,16 @@
 import { z } from 'zod';
 
+const urlOnlyPattern = /^(?:https?:\/\/|www\.)\S+$/iu;
+
+function isHighlyRepetitiveSingleToken(value: string): boolean {
+  if (/\s/u.test(value)) {
+    return false;
+  }
+
+  const characters = Array.from(value.toLowerCase());
+  return characters.length >= 8 && new Set(characters).size === 1;
+}
+
 export function isValidCalendarDateString(value: string): boolean {
   const date = new Date(`${value}T00:00:00.000Z`);
   return (
@@ -19,7 +30,12 @@ export const mealTextSchema = z
   .min(1, 'Vui lòng nhập món ăn.')
   .max(500, 'Tin nhắn quá dài (tối đa 500 ký tự).')
   .transform((s) => s.normalize('NFC'))
-  .refine((s) => /\p{L}/u.test(s), 'Tin nhắn phải chứa ít nhất một chữ cái.');
+  .refine((s) => /\p{L}/u.test(s), 'Tin nhắn phải chứa ít nhất một chữ cái.')
+  .refine((s) => !urlOnlyPattern.test(s), 'Vui lòng nhập mô tả món ăn.')
+  .refine(
+    (s) => !isHighlyRepetitiveSingleToken(s),
+    'Vui lòng nhập mô tả món ăn.'
+  );
 
 /**
  * Schema for the meal analysis request body.
