@@ -67,7 +67,10 @@ export function ReplayButton({ requestId, dryRun = false }: ReplayButtonProps) {
               setOpen(false);
               start(async () => {
                 try {
-                  await replayRequest(requestId, { dryRun });
+                  const result = await replayRequest(requestId, { dryRun });
+                  if (result?.ok === false) {
+                    toast.error(result.error.message);
+                  }
                 } catch (e) {
                   if (
                     (e as { digest?: string })?.digest?.startsWith?.(

@@ -205,14 +205,19 @@ describe('replayRequest', () => {
       retryAfterSeconds: 120,
     });
 
-    await expect(
-      replayRequest('11111111-1111-4111-a111-111111111111')
-    ).rejects.toMatchObject({
-      code: 'RATE_LIMITED',
-      status: 429,
-      retryable: true,
-      reason: 'admin_replay',
-      retryAfterSeconds: 120,
+    const result = await replayRequest('11111111-1111-4111-a111-111111111111');
+
+    expect(result).toEqual({
+      ok: false,
+      error: {
+        code: 'RATE_LIMITED',
+        status: 429,
+        retryable: true,
+        message:
+          'Admin replay quota exhausted. Please wait before replaying again.',
+        reason: 'admin_replay',
+        retryAfterSeconds: 120,
+      },
     });
 
     expect(checkAdminReplayGuardSpy).toHaveBeenCalledWith({
@@ -234,9 +239,12 @@ describe('replayRequest', () => {
       retryAfterSeconds: 90,
     });
 
-    await expect(
-      replayRequest('11111111-1111-4111-a111-111111111111')
-    ).rejects.toMatchObject({ reason: 'admin_replay' });
+    const result = await replayRequest('11111111-1111-4111-a111-111111111111');
+
+    expect(result?.ok).toBe(false);
+    if (result?.ok === false) {
+      expect(result.error.reason).toBe('admin_replay');
+    }
 
     const guardInsertIdx = insertedTables.indexOf(analysisGuardEvents);
     expect(guardInsertIdx).toBeGreaterThanOrEqual(0);

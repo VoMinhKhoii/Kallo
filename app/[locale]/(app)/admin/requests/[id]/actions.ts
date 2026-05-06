@@ -25,25 +25,41 @@ import {
   pipelineRequestReplayAuditLogs,
   pipelineRequests,
 } from '@/lib/db/schema';
-import { AppError } from '@/lib/errors';
 import {
   adminReplayGuardRoute,
   buildAnalysisGuardEvent,
   checkAdminReplayGuard,
 } from '@/lib/rate-limit/analysis-guards';
 
-class AdminReplayRateLimitError extends AppError {
-  readonly reason = 'admin_replay';
+type ReplayRequestResult =
+  | {
+      ok: false;
+      error: {
+        code: 'RATE_LIMITED';
+        status: 429;
+        retryable: true;
+        message: string;
+        reason: 'admin_replay';
+        retryAfterSeconds: number;
+      };
+    }
+  | undefined;
 
-  constructor(readonly retryAfterSeconds: number) {
-    super(
-      'RATE_LIMITED',
-      429,
-      true,
-      'Admin replay quota exhausted. Please wait before replaying again.'
-    );
-    this.name = 'AdminReplayRateLimitError';
-  }
+function adminReplayRateLimitResult(
+  retryAfterSeconds: number
+): ReplayRequestResult {
+  return {
+    ok: false,
+    error: {
+      code: 'RATE_LIMITED',
+      status: 429,
+      retryable: true,
+      message:
+        'Admin replay quota exhausted. Please wait before replaying again.',
+      reason: 'admin_replay',
+      retryAfterSeconds,
+    },
+  };
 }
 
 const idSchema = z.string().uuid();
@@ -130,7 +146,7 @@ async function buildDryRunGeminiClient(
 export async function replayRequest(
   originalIdInput: string,
   options: { dryRun?: boolean } = {}
-) {
+): Promise<ReplayRequestResult> {
   const originalId = idSchema.parse(originalIdInput);
   const { dryRun = false } = replayOptionsSchema.parse(options);
   const admin = await requireAdmin();
@@ -164,7 +180,7 @@ export async function replayRequest(
         console.error('[admin] Failed to log replay guard event:', error);
       }
 
-      throw new AdminReplayRateLimitError(guard.retryAfterSeconds);
+      return adminReplayRateLimitResult(guard.retryAfterSeconds);
     }
   }
 
