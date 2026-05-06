@@ -29,6 +29,13 @@ export interface CheckAnalysisGuardsInput {
   now?: () => Date;
 }
 
+export interface CheckAdminReplayGuardInput {
+  adminId: string;
+  db?: AppDb;
+  limits?: Partial<AdminReplayGuardLimits>;
+  now?: () => Date;
+}
+
 export type AnalysisGuardAllowedResult = {
   allowed: true;
   release?: () => Promise<void> | void;
@@ -71,6 +78,10 @@ export interface AnalysisGuardLimits {
   concurrentRetryAfterSeconds: number;
 }
 
+export interface AdminReplayGuardLimits {
+  perAdminHour: number;
+}
+
 export const defaultAnalysisGuardLimits: AnalysisGuardLimits = {
   perUserMinute: 3,
   perUserHour: 30,
@@ -78,6 +89,14 @@ export const defaultAnalysisGuardLimits: AnalysisGuardLimits = {
   concurrentUser: 1,
   concurrentRetryAfterSeconds: 15,
 };
+
+export const defaultAdminReplayGuardLimits: AdminReplayGuardLimits = {
+  perAdminHour: 5,
+};
+
+export const adminReplayGuardRoute = '/admin/pipeline-replay/live';
+
+const adminReplayWindowKind = 'hour' satisfies AnalysisRateLimitWindowKind;
 
 const testHashSecret = 'analysis-guard-event-test-secret';
 
@@ -170,6 +189,24 @@ function resolveAnalysisGuardLimits(
     concurrentRetryAfterSeconds: readPositiveInteger(
       overrides.concurrentRetryAfterSeconds,
       envLimits.concurrentRetryAfterSeconds
+    ),
+  };
+}
+
+function resolveAdminReplayGuardLimits(
+  overrides: Partial<AdminReplayGuardLimits> = {}
+): AdminReplayGuardLimits {
+  const envLimits = {
+    perAdminHour: readPositiveInteger(
+      process.env.ANALYSIS_ADMIN_REPLAY_HOUR_LIMIT,
+      defaultAdminReplayGuardLimits.perAdminHour
+    ),
+  };
+
+  return {
+    perAdminHour: readPositiveInteger(
+      overrides.perAdminHour,
+      envLimits.perAdminHour
     ),
   };
 }
@@ -441,4 +478,51 @@ export async function checkAnalysisGuards(
   };
 
   return { allowed: true, release };
+}
+
+export async function checkAdminReplayGuard(
+  input: CheckAdminReplayGuardInput
+): Promise<AnalysisGuardResult> {
+  const guardDb = input.db ?? appDb;
+  const now = input.now?.() ?? new Date();
+  const limits = resolveAdminReplayGuardLimits(input.limits);
+  const secret = getAnalysisGuardHashSecret();
+  const guardKey = {
+    keyKind: 'user',
+    keyHash: hashIdentifier(secret, `admin_replay_user:${input.adminId}`),
+    route: adminReplayGuardRoute,
+  } satisfies AnalysisGuardKey;
+  const windowStart = getAnalysisWindowStart(now, adminReplayWindowKind);
+
+  try {
+    await guardDb.transaction(async (tx) => {
+      const count = await incrementWindowCounter(tx, {
+        ...guardKey,
+        windowKind: adminReplayWindowKind,
+        windowStart,
+        now,
+      });
+
+      if (count > limits.perAdminHour) {
+        throw new AnalysisGuardBlockedError(
+          blocked(
+            'admin_replay',
+            getAnalysisWindowRetryAfterSeconds(
+              now,
+              windowStart,
+              adminReplayWindowKind
+            )
+          )
+        );
+      }
+    });
+  } catch (error) {
+    if (error instanceof AnalysisGuardBlockedError) {
+      return error.result;
+    }
+
+    throw error;
+  }
+
+  return { allowed: true };
 }

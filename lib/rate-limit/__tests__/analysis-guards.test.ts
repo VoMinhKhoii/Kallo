@@ -6,10 +6,14 @@ import {
   analysisRateLimitWindows,
 } from '@/lib/db/schema';
 import {
+  type AdminReplayGuardLimits,
   type AnalysisGuardLimits,
+  type AnalysisGuardResult,
   type AnalysisRateLimitWindowKind,
+  adminReplayGuardRoute,
   type BuildAnalysisGuardEventInput,
   buildAnalysisGuardEvent,
+  checkAdminReplayGuard,
   checkAnalysisGuards,
   getAnalysisWindowRetryAfterSeconds,
   getAnalysisWindowStart,
@@ -33,6 +37,10 @@ function hmacHex(payload: string) {
 
 function hashedUser(userId: string) {
   return hmacHex(`user:${userId}`);
+}
+
+function hashedAdminReplayUser(adminId: string) {
+  return hmacHex(`admin_replay_user:${adminId}`);
 }
 
 interface WindowRow {
@@ -106,6 +114,20 @@ class InMemoryAnalysisGuardDb {
           route,
           windowKind,
           windowStart: getAnalysisWindowStart(now, windowKind),
+        })
+      )?.count ?? 0
+    );
+  }
+
+  getAdminReplayWindowCount(adminId: string, now: Date) {
+    return (
+      this.state.windows.get(
+        this.windowKey({
+          keyKind: 'user',
+          keyHash: hashedAdminReplayUser(adminId),
+          route: adminReplayGuardRoute,
+          windowKind: 'hour',
+          windowStart: getAnalysisWindowStart(now, 'hour'),
         })
       )?.count ?? 0
     );
@@ -255,20 +277,36 @@ async function checkMealAnalysisGuard(
   });
 }
 
-function expectAllowed(
-  result: Awaited<ReturnType<typeof checkMealAnalysisGuard>>
+async function checkReplayGuard(
+  store: InMemoryAnalysisGuardDb,
+  overrides?: Partial<AdminReplayGuardLimits>,
+  adminId = 'admin-1'
 ) {
+  const input = {
+    adminId,
+    db: store.client,
+    now: () => fixedNow,
+  } satisfies Parameters<typeof checkAdminReplayGuard>[0];
+
+  return await checkAdminReplayGuard(
+    overrides ? { ...input, limits: overrides } : input
+  );
+}
+
+function expectAllowed(result: AnalysisGuardResult) {
   expect(result.allowed).toBe(true);
   if (!result.allowed)
     throw new Error(`Expected allowed, got ${result.reason}`);
-
-  expect(result.release).toBeTypeOf('function');
   return result;
 }
 
-function expectBlocked(
-  result: Awaited<ReturnType<typeof checkMealAnalysisGuard>>
-) {
+function expectAllowedMealGuard(result: AnalysisGuardResult) {
+  const guard = expectAllowed(result);
+  expect(guard.release).toBeTypeOf('function');
+  return guard;
+}
+
+function expectBlocked(result: AnalysisGuardResult) {
   expect(result.allowed).toBe(false);
   if (result.allowed) throw new Error('Expected blocked, got allowed');
 
@@ -398,9 +436,9 @@ describe('checkAnalysisGuards', () => {
   it('creates and increments counters for allowed meal analysis requests', async () => {
     const store = new InMemoryAnalysisGuardDb();
 
-    const first = expectAllowed(await checkMealAnalysisGuard(store));
+    const first = expectAllowedMealGuard(await checkMealAnalysisGuard(store));
     await first.release?.();
-    const second = expectAllowed(await checkMealAnalysisGuard(store));
+    const second = expectAllowedMealGuard(await checkMealAnalysisGuard(store));
 
     expect(
       store.getWindowCount('user-1', analyzeMealRoute, 'minute', fixedNow)
@@ -445,14 +483,16 @@ describe('checkAnalysisGuards', () => {
     expect(store.getInFlightCount('user-1', analyzeMealRoute)).toBe(2);
 
     for (const allowedResult of allowedResults) {
-      const allowedGuard = expectAllowed(allowedResult);
+      const allowedGuard = expectAllowedMealGuard(allowedResult);
       await allowedGuard.release?.();
     }
   });
 
   it('blocks per-user minute quota with retry-after', async () => {
     const store = new InMemoryAnalysisGuardDb();
-    expectAllowed(await checkMealAnalysisGuard(store, { perUserMinute: 1 }));
+    expectAllowedMealGuard(
+      await checkMealAnalysisGuard(store, { perUserMinute: 1 })
+    );
 
     const blockedGuard = expectBlocked(
       await checkMealAnalysisGuard(store, { perUserMinute: 1 })
@@ -474,7 +514,9 @@ describe('checkAnalysisGuards', () => {
 
   it('blocks per-user hour quota', async () => {
     const store = new InMemoryAnalysisGuardDb();
-    expectAllowed(await checkMealAnalysisGuard(store, { perUserHour: 1 }));
+    expectAllowedMealGuard(
+      await checkMealAnalysisGuard(store, { perUserHour: 1 })
+    );
 
     const blockedGuard = expectBlocked(
       await checkMealAnalysisGuard(store, { perUserHour: 1 })
@@ -495,7 +537,9 @@ describe('checkAnalysisGuards', () => {
 
   it('blocks per-user day quota', async () => {
     const store = new InMemoryAnalysisGuardDb();
-    expectAllowed(await checkMealAnalysisGuard(store, { perUserDay: 1 }));
+    expectAllowedMealGuard(
+      await checkMealAnalysisGuard(store, { perUserDay: 1 })
+    );
 
     const blockedGuard = expectBlocked(
       await checkMealAnalysisGuard(store, { perUserDay: 1 })
@@ -516,7 +560,7 @@ describe('checkAnalysisGuards', () => {
 
   it('blocks in-flight concurrency when a user already has a running analysis', async () => {
     const store = new InMemoryAnalysisGuardDb();
-    const runningGuard = expectAllowed(
+    const runningGuard = expectAllowedMealGuard(
       await checkMealAnalysisGuard(store, {
         concurrentUser: 1,
         concurrentRetryAfterSeconds: 9,
@@ -542,10 +586,10 @@ describe('checkAnalysisGuards', () => {
 
   it('decrements in-flight count exactly once per release handle', async () => {
     const store = new InMemoryAnalysisGuardDb();
-    const first = expectAllowed(
+    const first = expectAllowedMealGuard(
       await checkMealAnalysisGuard(store, { concurrentUser: 2 })
     );
-    const second = expectAllowed(
+    const second = expectAllowedMealGuard(
       await checkMealAnalysisGuard(store, { concurrentUser: 2 })
     );
 
@@ -561,12 +605,65 @@ describe('checkAnalysisGuards', () => {
 
   it('does not let repeated release drive in-flight count below zero', async () => {
     const store = new InMemoryAnalysisGuardDb();
-    const guard = expectAllowed(await checkMealAnalysisGuard(store));
+    const guard = expectAllowedMealGuard(await checkMealAnalysisGuard(store));
 
     await guard.release?.();
     await guard.release?.();
     await guard.release?.();
 
     expect(store.getInFlightCount('user-1', analyzeMealRoute)).toBe(0);
+  });
+});
+
+describe('checkAdminReplayGuard', () => {
+  beforeEach(() => {
+    vi.stubEnv('ANALYSIS_GUARD_HASH_SECRET', hashSecret);
+    vi.stubEnv('NODE_ENV', 'test');
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it('uses an admin replay route and hash domain separate from meal analysis quotas', async () => {
+    const store = new InMemoryAnalysisGuardDb();
+
+    expectAllowed(await checkReplayGuard(store));
+
+    expect(store.getAdminReplayWindowCount('admin-1', fixedNow)).toBe(1);
+    expect(
+      store.getWindowCount('admin-1', analyzeMealRoute, 'hour', fixedNow)
+    ).toBe(0);
+    expect(store.getInFlightCount('admin-1', analyzeMealRoute)).toBe(0);
+  });
+
+  it('blocks live admin replays when the per-admin hour quota is exhausted', async () => {
+    const store = new InMemoryAnalysisGuardDb();
+    expectAllowed(await checkReplayGuard(store, { perAdminHour: 1 }));
+
+    const blockedGuard = expectBlocked(
+      await checkReplayGuard(store, { perAdminHour: 1 })
+    );
+
+    expect(blockedGuard.status).toBe(429);
+    expect(blockedGuard.reason).toBe('admin_replay');
+    expect(blockedGuard.retryAfterSeconds).toBe(
+      getAnalysisWindowRetryAfterSeconds(
+        fixedNow,
+        getAnalysisWindowStart(fixedNow, 'hour'),
+        'hour'
+      )
+    );
+    expect(store.getAdminReplayWindowCount('admin-1', fixedNow)).toBe(1);
+  });
+
+  it('uses the admin replay environment limit when no override is provided', async () => {
+    vi.stubEnv('ANALYSIS_ADMIN_REPLAY_HOUR_LIMIT', '1');
+    const store = new InMemoryAnalysisGuardDb();
+
+    expectAllowed(await checkReplayGuard(store, {}));
+    const blockedGuard = expectBlocked(await checkReplayGuard(store, {}));
+
+    expect(blockedGuard.reason).toBe('admin_replay');
   });
 });

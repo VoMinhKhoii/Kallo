@@ -20,10 +20,31 @@ import { logLlmCall } from '@/lib/ai/pipeline/trace';
 import type { UserContext } from '@/lib/ai/types';
 import { db } from '@/lib/db';
 import {
+  analysisGuardEvents,
   pipelineLlmCalls,
   pipelineRequestReplayAuditLogs,
   pipelineRequests,
 } from '@/lib/db/schema';
+import { AppError } from '@/lib/errors';
+import {
+  adminReplayGuardRoute,
+  buildAnalysisGuardEvent,
+  checkAdminReplayGuard,
+} from '@/lib/rate-limit/analysis-guards';
+
+class AdminReplayRateLimitError extends AppError {
+  readonly reason = 'admin_replay';
+
+  constructor(readonly retryAfterSeconds: number) {
+    super(
+      'RATE_LIMITED',
+      429,
+      true,
+      'Admin replay quota exhausted. Please wait before replaying again.'
+    );
+    this.name = 'AdminReplayRateLimitError';
+  }
+}
 
 const idSchema = z.string().uuid();
 const replayOptionsSchema = z.object({
@@ -125,8 +146,30 @@ export async function replayRequest(
     .limit(1);
   if (!orig) throw new Error('original request not found');
 
-  // Pick the Gemini client BEFORE creating any DB rows. For real replays
-  // this also validates GEMINI_API_KEY up-front.
+  if (!dryRun) {
+    const guard = await checkAdminReplayGuard({ adminId: admin.id, db });
+
+    if (!guard.allowed) {
+      try {
+        await db.insert(analysisGuardEvents).values(
+          buildAnalysisGuardEvent({
+            userId: admin.id,
+            ip: null,
+            route: adminReplayGuardRoute,
+            reason: 'admin_replay',
+            retryAfterSeconds: guard.retryAfterSeconds,
+          })
+        );
+      } catch (error) {
+        console.error('[admin] Failed to log replay guard event:', error);
+      }
+
+      throw new AdminReplayRateLimitError(guard.retryAfterSeconds);
+    }
+  }
+
+  // Pick the Gemini client BEFORE creating replay rows. For real replays
+  // this also validates GEMINI_API_KEY after the admin replay quota passes.
   const gemini: GeminiClient = dryRun
     ? await buildDryRunGeminiClient(originalId)
     : (() => {
