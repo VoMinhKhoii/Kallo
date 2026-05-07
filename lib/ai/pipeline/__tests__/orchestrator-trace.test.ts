@@ -442,6 +442,48 @@ describe('analyzeMeal traceContext', () => {
     );
   });
 
+  it('classifies 504 model attempt failures as timeout budget events', async () => {
+    vi.stubEnv('PIPELINE_TRACE_ENABLED', 'false');
+    const db = makeDb();
+    const timeoutError = Object.assign(new Error('Gateway Timeout'), {
+      status: 504,
+    });
+    const generateStructuredOutputStream = vi
+      .fn()
+      .mockImplementationOnce((_params, opts) => {
+        opts?.onAttemptComplete?.({
+          attempt: 1,
+          model: 'decomposition-model',
+          inputTokens: null,
+          outputTokens: null,
+          error: timeoutError,
+        });
+        return Promise.resolve(VALID_DECOMP);
+      })
+      .mockResolvedValueOnce(VALID_NUTRITION);
+    const gemini = createMockGemini({ generateStructuredOutputStream });
+
+    const result = await analyzeMeal(
+      'cơm trắng',
+      USER_CONTEXT,
+      db,
+      gemini,
+      undefined
+    );
+
+    expect(result.success).toBe(true);
+    expect(budgetEventRows()).toContainEqual(
+      expect.objectContaining({
+        workKind: 'primary',
+        requestCount: 0,
+        model: 'decomposition-model',
+        inputTokens: 0,
+        outputTokens: 0,
+        errorCategory: 'timeout',
+      })
+    );
+  });
+
   it('logs stage 1 success and stage 2 error when matching throws', async () => {
     const db = makeDb();
     const promptVersionsUsed = new Map<string, string>();

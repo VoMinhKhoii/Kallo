@@ -327,7 +327,11 @@ function classifyProviderError(
     return 'rate_limit';
   }
 
-  if (status === 408 || /timeout|timed out|AbortError/i.test(message)) {
+  if (
+    status === 408 ||
+    status === 504 ||
+    /timeout|timed out|AbortError/i.test(message)
+  ) {
     return 'timeout';
   }
 
