@@ -8,7 +8,7 @@ const mockSelect = vi.fn();
 const mockAnalyzeMeal = vi.fn();
 const mockBuildUserContext = vi.fn();
 const mockInsert = vi.fn();
-const mockCreateGeminiClient = vi.fn(() => ({}));
+const mockCreateGeminiClient = vi.fn((..._args: unknown[]) => ({}));
 const mockCheckAnalysisGuards = vi.fn();
 const mockLogPipelineStart = vi.fn();
 const mockLogPipelineEnd = vi.fn();

@@ -28,7 +28,17 @@ const {
     return { success: true, data: {} as unknown };
   });
   const createGeminiClientSpy = vi.fn(() => ({}));
-  const checkAdminReplayGuardSpy = vi.fn(async () => ({ allowed: true }));
+  const checkAdminReplayGuardSpy = vi.fn(
+    async (): Promise<
+      | { allowed: true }
+      | {
+          allowed: false;
+          status: 429;
+          reason: string;
+          retryAfterSeconds: number;
+        }
+    > => ({ allowed: true })
+  );
   return {
     insertedTables,
     insertValuesSpy,

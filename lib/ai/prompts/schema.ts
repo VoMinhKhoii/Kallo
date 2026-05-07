@@ -53,10 +53,14 @@ export function getProviderJsonSchemaMode(
   return env[PROVIDER_SCHEMA_MODE_ENV] === 'slim' ? 'slim' : 'full';
 }
 
+export type ProviderJsonSchema = ReturnType<
+  typeof toJSONSchema<ZodType<unknown>>
+>;
+
 export function toProviderJsonSchema<T>(
   schema: ZodType<T>,
   options?: { mode?: ProviderJsonSchemaMode }
-): ReturnType<typeof toJSONSchema> {
+): ProviderJsonSchema {
   const jsonSchema = toJSONSchema(schema);
   const mode = options?.mode ?? getProviderJsonSchemaMode();
 
@@ -66,5 +70,5 @@ export function toProviderJsonSchema<T>(
 
   return stripDescriptionAndRuntimeIdKeys(
     jsonSchema as JsonValue
-  ) as ReturnType<typeof toJSONSchema>;
+  ) as ProviderJsonSchema;
 }

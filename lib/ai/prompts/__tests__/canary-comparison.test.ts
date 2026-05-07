@@ -85,19 +85,50 @@ const SAMPLE_DECOMPOSITION_NO_IDS = {
   ],
 };
 
+const NUTRITION_FIELDS = [
+  'caloriesKcal',
+  'proteinG',
+  'carbohydrateG',
+  'fatG',
+  'fiberG',
+  'sodiumMg',
+  'calciumMg',
+  'ironMg',
+  'magnesiumMg',
+  'phosphorusMg',
+  'potassiumMg',
+  'zincMg',
+  'copperMcg',
+  'manganeseMg',
+  'betaCaroteneMcg',
+  'vitaminAMcg',
+  'vitaminDMcg',
+  'vitaminEMg',
+  'vitaminKMcg',
+  'vitaminCMg',
+  'vitaminB1Mg',
+  'vitaminB2Mg',
+  'vitaminPpMg',
+  'vitaminB5Mg',
+  'vitaminB6Mg',
+  'vitaminB9Mcg',
+  'vitaminB12Mcg',
+  'vitaminHMcg',
+] as const;
+
+const NUTRITION_PER_100G = Object.fromEntries(
+  NUTRITION_FIELDS.map((key) => [key, key === 'caloriesKcal' ? 130 : null])
+) as unknown as MatchedIngredient['nutritionPer100g'];
+
 const MATCHED_INGREDIENT: MatchedIngredient = {
   ingredientName: 'Gạo',
   ingredientId: 'i1',
   matchedName: 'Gạo tẻ',
   foodCompositionId: 'food-1',
   similarity: 0.92,
-  matchSource: 'fao',
-  nutritionPer100g: {
-    caloriesKcal: 130,
-    proteinG: 2.7,
-    carbohydrateG: 28.2,
-    fatG: 0.3,
-  },
+  confidence: 'high',
+  source: 'fao',
+  nutritionPer100g: NUTRITION_PER_100G,
   dbState: 'cooked',
 };
 
@@ -223,15 +254,36 @@ describe('nutrition prompt canary parity', () => {
   });
 
   it('both variants are deterministic for identical inputs', () => {
-    const args = [
-      NUTRITION_DECOMPOSITION_INPUT,
-      [MATCHED_INGREDIENT],
-      [],
-      USER_CONTEXT_VI,
-    ] as const;
-    expect(buildNutritionPrompt(...args)).toBe(buildNutritionPrompt(...args));
-    expect(buildCompressedNutritionPrompt(...args)).toBe(
-      buildCompressedNutritionPrompt(...args)
+    const matched = [MATCHED_INGREDIENT];
+    expect(
+      buildNutritionPrompt(
+        NUTRITION_DECOMPOSITION_INPUT,
+        matched,
+        [],
+        USER_CONTEXT_VI
+      )
+    ).toBe(
+      buildNutritionPrompt(
+        NUTRITION_DECOMPOSITION_INPUT,
+        matched,
+        [],
+        USER_CONTEXT_VI
+      )
+    );
+    expect(
+      buildCompressedNutritionPrompt(
+        NUTRITION_DECOMPOSITION_INPUT,
+        matched,
+        [],
+        USER_CONTEXT_VI
+      )
+    ).toBe(
+      buildCompressedNutritionPrompt(
+        NUTRITION_DECOMPOSITION_INPUT,
+        matched,
+        [],
+        USER_CONTEXT_VI
+      )
     );
   });
 });

@@ -149,13 +149,17 @@ describe('buildDecompositionPrompt', () => {
 
 describe('buildCompressedDecompositionPrompt', () => {
   it('keeps the compressed prompt contract without leaking excluded context', () => {
+    // Pass forbidden fields via a structural-typed object: the prompt builder
+    // accepts only PromptPersonalizationContext, so we cast through unknown
+    // to verify that even if a malformed call sneaks past the type system,
+    // goal/aggression don't leak into the rendered output.
     const prompt = buildCompressedDecompositionPrompt({
       ...sampleUserContext,
       inputLanguage: 'en',
       outputLanguage: 'vi',
       goal: 'cutting',
       aggression: 0.85,
-    });
+    } as unknown as Parameters<typeof buildCompressedDecompositionPrompt>[0]);
 
     expect(prompt).toContain('output_language: vi');
     for (const field of [

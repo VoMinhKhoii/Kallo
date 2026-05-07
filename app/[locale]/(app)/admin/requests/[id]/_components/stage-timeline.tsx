@@ -176,7 +176,7 @@ function getVisibleMetadataItems(
 ): MetadataItem[] {
   if (!metadata) return [];
 
-  return [
+  const items: MetadataItem[] = [
     { label: 'Provider', value: metadata.provider },
     { label: 'Region', value: metadata.region },
     { label: 'Cache', value: metadata.cacheStatus },
@@ -198,7 +198,10 @@ function getVisibleMetadataItems(
     { label: 'Thought', value: metadata.thoughtTokens, unit: 'tokens' },
     { label: 'Prompt', value: metadata.promptChars, unit: 'chars' },
     { label: 'Schema', value: metadata.schemaChars, unit: 'chars' },
-  ].filter((item) => item.value !== null && item.value !== undefined);
+  ];
+  return items.filter(
+    (item) => item.value !== null && item.value !== undefined
+  );
 }
 
 function MetadataChips({ items }: { items: MetadataItem[] }) {

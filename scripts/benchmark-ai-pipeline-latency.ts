@@ -386,7 +386,9 @@ async function runBenchmarkMeal(
 
   let currentStage: 'decomposing' | 'matching' | 'estimating' | 'assembling' =
     'decomposing';
-  let metrics: PipelineMetricsLog | null = null;
+  // Closure assignment fools TS narrowing; the explicit container keeps the
+  // type as PipelineMetricsLog | null at every read site.
+  const metricsRef: { current: PipelineMetricsLog | null } = { current: null };
   let retryStep2Count = 0;
   const providerAttempts = { decomposition: 0, nutrition: 0 };
   const originalInfo = console.info;
@@ -410,7 +412,7 @@ async function runBenchmarkMeal(
   console.info = (...args: unknown[]) => {
     const parsedMetrics = parsePipelineMetricsLog(args);
     if (parsedMetrics) {
-      metrics = parsedMetrics;
+      metricsRef.current = parsedMetrics;
     }
 
     recordProviderAttempt(args);
@@ -471,13 +473,13 @@ async function runBenchmarkMeal(
       success: result.success,
       totalMs: Date.now() - startedAt,
       stages: {
-        decompositionMs: metrics?.decomposeMs ?? null,
-        matchingMs: metrics?.matchMs ?? null,
-        nutritionMs: metrics?.nutritionMs ?? null,
+        decompositionMs: metricsRef.current?.decomposeMs ?? null,
+        matchingMs: metricsRef.current?.matchMs ?? null,
+        nutritionMs: metricsRef.current?.nutritionMs ?? null,
       },
       providerAttempts,
       retryStep2Count,
-      unmatchedCount: metrics?.unmatchedCount ?? 0,
+      unmatchedCount: metricsRef.current?.unmatchedCount ?? 0,
       ...(result.success ? {} : { error: result.error.message }),
     };
   } catch (error) {
@@ -487,13 +489,13 @@ async function runBenchmarkMeal(
       success: false,
       totalMs: Date.now() - startedAt,
       stages: {
-        decompositionMs: metrics?.decomposeMs ?? null,
-        matchingMs: metrics?.matchMs ?? null,
-        nutritionMs: metrics?.nutritionMs ?? null,
+        decompositionMs: metricsRef.current?.decomposeMs ?? null,
+        matchingMs: metricsRef.current?.matchMs ?? null,
+        nutritionMs: metricsRef.current?.nutritionMs ?? null,
       },
       providerAttempts,
       retryStep2Count,
-      unmatchedCount: metrics?.unmatchedCount ?? 0,
+      unmatchedCount: metricsRef.current?.unmatchedCount ?? 0,
       error: error instanceof Error ? error.message : String(error),
     };
   } finally {
