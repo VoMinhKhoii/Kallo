@@ -396,9 +396,7 @@ describe('analyzeMeal traceContext', () => {
   it('records provider-pressure errors from recovered model attempts without trace logging', async () => {
     vi.stubEnv('PIPELINE_TRACE_ENABLED', 'false');
     const db = makeDb();
-    const recoveredError = Object.assign(new Error('503 UNAVAILABLE'), {
-      status: 503,
-    });
+    const recoveredError = new Error('UNAVAILABLE: backend overloaded');
     const generateStructuredOutputStream = vi
       .fn()
       .mockImplementationOnce((_params, opts) => {

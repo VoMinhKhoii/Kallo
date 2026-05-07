@@ -335,6 +335,10 @@ function classifyProviderError(
     return 'server_error';
   }
 
+  if (/UNAVAILABLE/i.test(message)) {
+    return 'server_error';
+  }
+
   if (
     /fetch failed|network error|socket hang up|ECONNRESET|EAI_AGAIN/i.test(
       message
