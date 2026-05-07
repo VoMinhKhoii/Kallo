@@ -9,5 +9,9 @@ import type { UserContext } from '@/lib/ai/types';
  */
 export type PromptPersonalizationContext = Pick<
   UserContext,
-  'countryOfOrigin' | 'countryOfResidence' | 'cookingHabits'
+  | 'countryOfOrigin'
+  | 'countryOfResidence'
+  | 'cookingHabits'
+  | 'inputLanguage'
+  | 'outputLanguage'
 >;

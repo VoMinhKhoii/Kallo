@@ -1,4 +1,8 @@
 import type { CookingHabits, Goal } from '@/lib/onboarding/types';
+import type {
+  MealInputLanguage,
+  SupportedOutputLanguage,
+} from './language/detect';
 
 // ---------------------------------------------------------------------------
 // Primitives
@@ -98,6 +102,8 @@ export interface UserContext {
   aggression: number; // 0.1-0.8 for cutting/bulking, 0 for maintaining (null → 0)
   countryOfOrigin: string | null;
   countryOfResidence: string | null;
+  inputLanguage?: MealInputLanguage;
+  outputLanguage?: SupportedOutputLanguage;
   cookingHabits: CookingHabits;
 }
 
