@@ -1,35 +1,40 @@
-import { GoogleGenAI } from '@google/genai';
 import { eq, sql } from 'drizzle-orm';
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import { type NextRequest, NextResponse } from 'next/server';
-import { toJSONSchema } from 'zod';
 
-import { createGeminiClient } from '@/lib/ai/gemini';
+import {
+  createGeminiClient,
+  type GeminiAttemptMetadata,
+} from '@/lib/ai/gemini';
 import { buildUserContext, toParsedMeal } from '@/lib/ai/mappers';
 import {
   classifyConfidence,
   FUZZY_SIMILARITY_THRESHOLD,
-  normalizeIngredientKey,
   VECTOR_SIMILARITY_THRESHOLD,
 } from '@/lib/ai/matching';
 import {
   cacheQueryEmbedding,
   getMemoryCacheStats,
+  normalizeIngredientKey,
   resolveQueryEmbedding,
 } from '@/lib/ai/matching/embedding-cache';
 import { fetchNutritionPer100g } from '@/lib/ai/matching/nutrition-db';
 import { assembleResult } from '@/lib/ai/pipeline/assembly';
 import { NON_FOOD_BLOCKLIST } from '@/lib/ai/pipeline/errors';
 import { ensureIdsOnDecomposition } from '@/lib/ai/pipeline/ids';
+import { resolveModelProfile } from '@/lib/ai/pipeline/model-profile';
 import { reconcileNutritionIds } from '@/lib/ai/pipeline/nutrition';
 import {
   mealDecompositionSchema,
   nutritionAdjustmentSchema,
 } from '@/lib/ai/pipeline/schemas';
 import {
-  buildDecompositionPrompt,
-  buildNutritionPrompt,
+  getDecompositionPromptBuilder,
+  getDecompositionPromptLabel,
+  getNutritionPromptBuilder,
+  getNutritionPromptLabel,
 } from '@/lib/ai/prompts';
+import { getProviderJsonSchemaMode } from '@/lib/ai/prompts/schema';
 import type {
   MatchedIngredient,
   MealDecomposition,
@@ -39,11 +44,12 @@ import type {
 import { db } from '@/lib/db';
 import type * as schema from '@/lib/db/schema';
 import { userProfiles } from '@/lib/db/schema';
+import { fetchWithTimeout } from '@/lib/fetch-with-timeout';
 import { createClient } from '@/lib/supabase/server';
 
-const GEMINI_MODEL = 'gemini-3-flash-preview';
 const untypedDb = db as unknown as PostgresJsDatabase<typeof schema>;
 const DEFAULT_USER_ID = '4681f168-e81b-4590-83ce-0f32734f19a9';
+const DEBUG_LLM_TIMEOUT_MS = 25_000;
 
 type DebugIngredient =
   MealDecomposition['mealItems'][number]['ingredients'][number];
@@ -62,6 +68,21 @@ function pickMacros(obj: any) {
     proteinG: obj.proteinG ?? null,
     carbohydrateG: obj.carbohydrateG ?? null,
     fatG: obj.fatG ?? null,
+  };
+}
+
+function serializeAttempt(metadata: GeminiAttemptMetadata) {
+  return {
+    attempt: metadata.attempt,
+    model: metadata.model,
+    inputTokens: metadata.inputTokens,
+    outputTokens: metadata.outputTokens,
+    error:
+      metadata.error instanceof Error
+        ? metadata.error.message
+        : metadata.error != null
+          ? String(metadata.error)
+          : null,
   };
 }
 
@@ -131,12 +152,23 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const ai = new GoogleGenAI({ apiKey });
   const gemini = createGeminiClient(apiKey);
+  const modelProfile = resolveModelProfile();
+  const decompositionPromptLabel = getDecompositionPromptLabel();
+  const nutritionPromptLabel = getNutritionPromptLabel();
+  const providerSchemaMode = getProviderJsonSchemaMode();
 
   const trace: Record<string, any> = {
     input,
     userProfile: userContext,
+    pipelineConfig: {
+      decompositionModel: modelProfile.decompositionModel,
+      nutritionModel: modelProfile.nutritionModel,
+      escalationModel: modelProfile.escalationModel,
+      decompositionPromptLabel,
+      nutritionPromptLabel,
+      providerSchemaMode,
+    },
   };
 
   // ── Step 1: Decomposition ──────────────────────────
@@ -146,47 +178,58 @@ export async function POST(request: NextRequest) {
     prompt: null,
     rawResponse: null,
     parsed: null,
+    attempts: [],
     durationMs: 0,
     error: null,
   };
 
   try {
-    const systemPrompt = buildDecompositionPrompt(userContext);
+    const decompositionPromptBuilder = getDecompositionPromptBuilder();
+    const systemPrompt = decompositionPromptBuilder(userContext);
     step1.prompt = systemPrompt;
 
-    const response = await ai.models.generateContent({
-      model: GEMINI_MODEL,
-      contents: input,
-      config: {
-        systemInstruction: systemPrompt,
-        responseMimeType: 'application/json',
-        responseJsonSchema: toJSONSchema(mealDecompositionSchema),
-        temperature: 0.1,
-      },
-    });
+    let rawResponse = '';
+    const parsed = await fetchWithTimeout(
+      (signal) =>
+        gemini.generateStructuredOutputStream(
+          {
+            schema: mealDecompositionSchema,
+            systemPrompt,
+            userMessage: input,
+            model: modelProfile.decompositionModel,
+            temperature: 0.3,
+            topP: 1,
+            topK: 1,
+            abortSignal: signal,
+          },
+          {
+            onChunk: (accumulated) => {
+              rawResponse = accumulated;
+            },
+            onAttemptComplete: (metadata) => {
+              step1.attempts.push(serializeAttempt(metadata));
+            },
+          }
+        ),
+      DEBUG_LLM_TIMEOUT_MS,
+      'debug-decomposition'
+    );
+    step1.rawResponse = rawResponse;
+    decomposition = ensureIdsOnDecomposition(parsed);
+    step1.parsed = decomposition;
 
-    const rawText = response.text ?? null;
-    step1.rawResponse = rawText;
+    if (!decomposition.isFood) {
+      step1.error = 'LLM classified input as non-food (isFood=false)';
+    }
 
-    if (rawText) {
-      decomposition = ensureIdsOnDecomposition(
-        mealDecompositionSchema.parse(JSON.parse(rawText))
-      );
-      step1.parsed = decomposition;
+    const blocked = decomposition.mealItems
+      .flatMap((item) =>
+        item.ingredients.map((i) => ingredientDisplayName(i).toLowerCase())
+      )
+      .filter((n) => NON_FOOD_BLOCKLIST.has(n));
 
-      if (!decomposition.isFood) {
-        step1.error = 'LLM classified input as non-food (isFood=false)';
-      }
-
-      const blocked = decomposition.mealItems
-        .flatMap((item) =>
-          item.ingredients.map((i) => ingredientDisplayName(i).toLowerCase())
-        )
-        .filter((n) => NON_FOOD_BLOCKLIST.has(n));
-
-      if (blocked.length > 0) {
-        step1.error = `Blocklisted terms found: ${blocked.join(', ')}`;
-      }
+    if (blocked.length > 0) {
+      step1.error = `Blocklisted terms found: ${blocked.join(', ')}`;
     }
   } catch (err) {
     step1.error = err instanceof Error ? err.message : String(err);
@@ -406,6 +449,7 @@ export async function POST(request: NextRequest) {
     prompt: null,
     rawResponse: null,
     parsed: null,
+    attempts: [],
     durationMs: 0,
     error: null,
   };
@@ -414,7 +458,8 @@ export async function POST(request: NextRequest) {
     if (!decomposition || !decomposition.isFood) {
       step3.error = 'Skipped: no valid decomposition from step 1';
     } else {
-      const systemPrompt = buildNutritionPrompt(
+      const nutritionPromptBuilder = getNutritionPromptBuilder();
+      const systemPrompt = nutritionPromptBuilder(
         decomposition.mealItems,
         matched,
         unmatched,
@@ -422,28 +467,37 @@ export async function POST(request: NextRequest) {
       );
       step3.prompt = systemPrompt;
 
-      const response = await ai.models.generateContent({
-        model: GEMINI_MODEL,
-        contents: input,
-        config: {
-          systemInstruction: systemPrompt,
-          responseMimeType: 'application/json',
-          responseJsonSchema: toJSONSchema(nutritionAdjustmentSchema),
-        },
-      });
+      let rawResponse = '';
+      const parsed = await fetchWithTimeout(
+        (signal) =>
+          gemini.generateStructuredOutputStream(
+            {
+              schema: nutritionAdjustmentSchema,
+              systemPrompt,
+              userMessage:
+                'Produce bounded nutrition estimates for each ingredient in each meal item based on the reference data provided.',
+              model: modelProfile.nutritionModel,
+              temperature: 0.5,
+              topP: 1,
+              topK: 1,
+              abortSignal: signal,
+            },
+            {
+              onChunk: (accumulated) => {
+                rawResponse = accumulated;
+              },
+              onAttemptComplete: (metadata) => {
+                step3.attempts.push(serializeAttempt(metadata));
+              },
+            }
+          ),
+        DEBUG_LLM_TIMEOUT_MS,
+        'debug-nutrition'
+      );
 
-      const rawText = response.text ?? null;
-      step3.rawResponse = rawText;
-
-      if (rawText) {
-        nutritionAdj = nutritionAdjustmentSchema.parse(JSON.parse(rawText));
-        nutritionAdj = reconcileNutritionIds(
-          nutritionAdj,
-          decomposition,
-          matched
-        );
-        step3.parsed = nutritionAdj;
-      }
+      step3.rawResponse = rawResponse;
+      nutritionAdj = reconcileNutritionIds(parsed, decomposition, matched);
+      step3.parsed = nutritionAdj;
     }
   } catch (err) {
     step3.error = err instanceof Error ? err.message : String(err);
