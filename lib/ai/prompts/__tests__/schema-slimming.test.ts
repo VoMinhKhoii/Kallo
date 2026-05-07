@@ -12,9 +12,18 @@ describe('toProviderJsonSchema', () => {
     description: z.string().describe('User-provided description field'),
     nested: z
       .object({
+        ingredientId: z.string().optional().describe('Runtime-owned ID'),
         grams: z.number().describe('Estimated grams'),
       })
       .describe('Nested object metadata'),
+    mealItems: z
+      .array(
+        z.object({
+          mealItemId: z.string().optional().describe('Runtime-owned ID'),
+          name: z.string(),
+        })
+      )
+      .describe('Meal items'),
   });
 
   it('keeps full Zod JSON schema by default', () => {
@@ -36,7 +45,7 @@ describe('toProviderJsonSchema', () => {
 
     expect(jsonSchema).toEqual(
       expect.objectContaining({
-        required: ['name', 'status', 'description', 'nested'],
+        required: ['name', 'status', 'description', 'nested', 'mealItems'],
       })
     );
     expect(jsonSchema.properties).toEqual(
@@ -51,6 +60,16 @@ describe('toProviderJsonSchema', () => {
     );
   });
 
+  it('removes runtime-owned IDs in slim mode', () => {
+    const jsonSchema = toProviderJsonSchema(schema, { mode: 'slim' });
+    const serialized = JSON.stringify(jsonSchema);
+
+    expect(serialized).not.toContain('mealItemId');
+    expect(serialized).not.toContain('ingredientId');
+    expect(serialized).toContain('mealItems');
+    expect(serialized).toContain('grams');
+  });
+
   it('does not alter runtime Zod parsing', () => {
     toProviderJsonSchema(schema, { mode: 'slim' });
 
@@ -58,14 +77,16 @@ describe('toProviderJsonSchema', () => {
       name: 'rice bowl',
       status: 'ok',
       description: 'with fish sauce',
-      nested: { grams: 120 },
+      nested: { ingredientId: 'i1', grams: 120 },
+      mealItems: [{ mealItemId: 'm1', name: 'rice bowl' }],
     });
 
     expect(parsed).toEqual({
       name: 'rice bowl',
       status: 'ok',
       description: 'with fish sauce',
-      nested: { grams: 120 },
+      nested: { ingredientId: 'i1', grams: 120 },
+      mealItems: [{ mealItemId: 'm1', name: 'rice bowl' }],
     });
     expect(() =>
       schema.parse({
@@ -73,6 +94,7 @@ describe('toProviderJsonSchema', () => {
         status: 'invalid',
         description: 'with fish sauce',
         nested: { grams: 120 },
+        mealItems: [{ name: 'rice bowl' }],
       })
     ).toThrow();
   });

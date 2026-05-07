@@ -12,9 +12,22 @@ function isJsonObject(value: JsonValue): value is JsonObject {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
-function stripDescriptionKeys(value: JsonValue, parentKey?: string): JsonValue {
+const RUNTIME_OWNED_ID_KEYS = new Set(['mealItemId', 'ingredientId']);
+
+function stripDescriptionAndRuntimeIdKeys(
+  value: JsonValue,
+  parentKey?: string
+): JsonValue {
   if (Array.isArray(value)) {
-    return value.map((item) => stripDescriptionKeys(item, parentKey));
+    const items = value
+      .filter(
+        (item) =>
+          parentKey !== 'required' ||
+          typeof item !== 'string' ||
+          !RUNTIME_OWNED_ID_KEYS.has(item)
+      )
+      .map((item) => stripDescriptionAndRuntimeIdKeys(item, parentKey));
+    return items;
   }
 
   if (!isJsonObject(value)) {
@@ -26,7 +39,10 @@ function stripDescriptionKeys(value: JsonValue, parentKey?: string): JsonValue {
     if (key === 'description' && parentKey !== 'properties') {
       continue;
     }
-    result[key] = stripDescriptionKeys(child, key);
+    if (parentKey === 'properties' && RUNTIME_OWNED_ID_KEYS.has(key)) {
+      continue;
+    }
+    result[key] = stripDescriptionAndRuntimeIdKeys(child, key);
   }
   return result;
 }
@@ -48,7 +64,7 @@ export function toProviderJsonSchema<T>(
     return jsonSchema;
   }
 
-  return stripDescriptionKeys(jsonSchema as JsonValue) as ReturnType<
-    typeof toJSONSchema
-  >;
+  return stripDescriptionAndRuntimeIdKeys(
+    jsonSchema as JsonValue
+  ) as ReturnType<typeof toJSONSchema>;
 }

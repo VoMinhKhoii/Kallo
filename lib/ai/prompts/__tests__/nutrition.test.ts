@@ -198,7 +198,7 @@ describe('buildNutritionPrompt — sort determinism', () => {
 });
 
 describe('buildCompressedNutritionPrompt', () => {
-  it('includes compact ids, language contract, and exact echo instructions', () => {
+  it('omits runtime ids while keeping language contract and exact name echo instructions', () => {
     const prompt = buildCompressedNutritionPrompt(
       [
         {
@@ -222,22 +222,23 @@ describe('buildCompressedNutritionPrompt', () => {
         ...USER_CONTEXT,
         inputLanguage: 'en',
         outputLanguage: 'vi',
-        goal: 'cutting',
-        aggression: 0.85,
       }
     );
 
     expect(prompt).toContain('output_language: vi');
-    expect(prompt).toContain('m1');
-    expect(prompt).toContain('i1');
-    expect(prompt).toMatch(/Echo .*mealItemId.*ingredientId.*exactly/i);
+    expect(prompt).not.toContain('m1');
+    expect(prompt).not.toContain('i1');
+    expect(prompt).not.toMatch(/mealItemId|ingredientId/i);
     expect(prompt).toMatch(/Echo .*mealItemName.*ingredientName.*exactly/i);
     expect(prompt).toContain('LOW/MID/HIGH');
     expect(prompt).toContain('db_state');
+    expect(prompt).toContain('low <= mid <= high');
+    expect(prompt).toContain('non-negative');
+    expect(prompt).toContain('4*protein + 4*carbs + 9*fat');
+    expect(prompt).toContain('high kcal <= 900/100g');
     expect(prompt).not.toMatch(
       /\bcutting\b|\bbulking\b|\bmaintaining\b|aggression|calorie[_ ]?target|kcal[_ ]?target/i
     );
-    expect(prompt).not.toMatch(/0\.85/);
   });
 
   it('defaults the nutrition prompt label to production', () => {

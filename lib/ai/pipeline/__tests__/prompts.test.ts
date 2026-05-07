@@ -330,7 +330,7 @@ describe('buildNutritionPrompt', () => {
 
     expect(prompt).toContain('name="bún &quot;đặc biệt&quot; &amp; rau"');
     expect(prompt).toContain('name="tôm &quot;sông&quot; &amp; biển"');
-    expect(prompt).toContain('id="ing-1&amp;2"');
+    expect(prompt).not.toContain('id="ing-1&amp;2"');
     expect(prompt).toContain('canonicalName="tôm &apos;sông&apos;"');
     expect(prompt).toContain('db_name="Tôm &lt;đồng&gt; &amp; biển"');
     expect(prompt).toContain('cooking="áp chảo &quot;nhẹ&quot;"');
