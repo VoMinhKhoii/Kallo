@@ -38,7 +38,7 @@ import type {
 import { assembleResult } from './assembly';
 import { countCanonicalNameMisses } from './canonical-name-validator';
 import {
-  MEAL_FACTS_KEYS,
+  assertMealFactsShape,
   type MealFactsForComputePolicy,
   pickComputePolicy,
   summarizeCandidateConfidence,
@@ -59,6 +59,7 @@ import {
   NonFoodError,
   nonFoodResponse,
 } from './errors';
+import { readBooleanEnv } from './feature-flags';
 import { createCompactIdSequence } from './id-sequence';
 import { ensureIdsOnDecomposition, type MealDecompositionWithIds } from './ids';
 import { resolveModelProfile } from './model-profile';
@@ -264,6 +265,9 @@ function logMetrics(metrics: PipelineMetrics): void {
 function recordAnalysisModelBudgetEventBestEffort(
   input: RecordAnalysisModelBudgetEventInput
 ): void {
+  // ANALYSIS_BUDGET_EVENTS_ENABLED=false silences the always-on telemetry
+  // table writes (3/request) when chasing pool contention or DB cost spikes.
+  if (!readBooleanEnv('ANALYSIS_BUDGET_EVENTS_ENABLED', true)) return;
   void recordAnalysisModelBudgetEvent(input).catch((error) => {
     console.error('[ai/pipeline] failed to write model budget event', error);
   });
@@ -503,11 +507,24 @@ async function runPipeline(
   // Stage 1: Streaming decomposition with speculative embedding pre-warming
   // + per-item name detection for progressive UI
   emit({ type: 'stage', stage: 'decomposing' });
-  const speculativeMatcher = createSpeculativeMatcher(db, gemini);
+  const speculativePrewarmEnabled = readBooleanEnv(
+    'PIPELINE_SPECULATIVE_PREWARM_ENABLED',
+    true
+  );
+  const itemNameBufferEnabled = readBooleanEnv(
+    'PIPELINE_ITEM_NAME_BUFFER_ENABLED',
+    true
+  );
+  const speculativeMatcher = speculativePrewarmEnabled
+    ? createSpeculativeMatcher(db, gemini)
+    : () => undefined;
   const bufferedItemNameEvents: Extract<StreamEvent, { type: 'item_name' }>[] =
     [];
-  const bufferItemNames = (event: StreamEvent) => {
-    if (event.type === 'item_name') {
+  // When buffering is disabled, item_name events stream directly. When
+  // enabled, they are held until the language guard passes (or a retry
+  // resets the buffer).
+  const streamItemNames = (event: StreamEvent) => {
+    if (itemNameBufferEnabled && event.type === 'item_name') {
       bufferedItemNameEvents.push(event);
       return;
     }
@@ -515,13 +532,13 @@ async function runPipeline(
     emit(event);
   };
   let decompositionStream = createDecompositionStreamController({
-    emit: bufferItemNames,
+    emit: streamItemNames,
     prewarm: speculativeMatcher,
   });
   const resetBufferedDecompositionStream = () => {
     bufferedItemNameEvents.length = 0;
     decompositionStream = createDecompositionStreamController({
-      emit: bufferItemNames,
+      emit: streamItemNames,
       prewarm: speculativeMatcher,
     });
   };
@@ -542,8 +559,13 @@ async function runPipeline(
   // over a 7-day window (KPI block 8), revisit buffer-vs-stream.
   const decompositionPromptBuilder = getDecompositionPromptBuilder();
   const renderedDecompositionPrompt = decompositionPromptBuilder(userContext);
+  // Default ON outside tests; PIPELINE_L4_DECOMPOSITION_CACHE_ENABLED=false
+  // forces a cold-path decomposition without redeploying.
   const l4CacheEnabled =
-    options.l4Cache?.enabled ?? process.env.NODE_ENV !== 'test';
+    options.l4Cache?.enabled ??
+    (process.env.NODE_ENV === 'test'
+      ? false
+      : readBooleanEnv('PIPELINE_L4_DECOMPOSITION_CACHE_ENABLED', true));
   const decompositionCacheKey = buildDecompositionCacheKey({
     rawInput,
     ctx: userContext,
@@ -627,20 +649,34 @@ async function runPipeline(
       let decomposed = await runDecompositionAttempt(rawInput, stageLogId);
       let languageGuard = checkDecompositionLanguage(decomposed, userContext);
       if (!languageGuard.ok) {
-        console.warn('[pipeline] decomposition language mismatch; retrying', {
-          expected: userContext.outputLanguage,
-          actual: languageGuard.reason,
-        });
-        languageRetryCount += 1;
-        resetBufferedDecompositionStream();
-        decomposed = await runDecompositionAttempt(
-          buildLanguageCorrectionMessage(rawInput, userContext),
-          stageLogId
+        const retryEnabled = readBooleanEnv(
+          'PIPELINE_LANGUAGE_GUARD_RETRY_ENABLED',
+          true
         );
-        languageGuard = checkDecompositionLanguage(decomposed, userContext);
-        if (!languageGuard.ok) {
+        if (retryEnabled) {
+          console.warn('[pipeline] decomposition language mismatch; retrying', {
+            expected: userContext.outputLanguage,
+            actual: languageGuard.reason,
+          });
+          languageRetryCount += 1;
+          resetBufferedDecompositionStream();
+          decomposed = await runDecompositionAttempt(
+            buildLanguageCorrectionMessage(rawInput, userContext),
+            stageLogId
+          );
+          languageGuard = checkDecompositionLanguage(decomposed, userContext);
+          if (!languageGuard.ok) {
+            console.warn(
+              '[pipeline] decomposition language mismatch remained after retry',
+              {
+                expected: userContext.outputLanguage,
+                actual: languageGuard.reason,
+              }
+            );
+          }
+        } else {
           console.warn(
-            '[pipeline] decomposition language mismatch remained after retry',
+            '[pipeline] decomposition language mismatch; retry disabled by flag',
             {
               expected: userContext.outputLanguage,
               actual: languageGuard.reason,
@@ -1149,20 +1185,6 @@ function countAmbiguityFlags(
   return counts;
 }
 
-function assertMealFactsShape(facts: MealFactsForComputePolicy): void {
-  if (process.env.NODE_ENV === 'production') {
-    return;
-  }
-
-  const actual = Object.keys(facts).sort();
-  const expected = [...MEAL_FACTS_KEYS].sort();
-  if (JSON.stringify(actual) !== JSON.stringify(expected)) {
-    throw new Error(
-      `[principle-b] MealFactsForComputePolicy shape drift: ${actual.join(',')}`
-    );
-  }
-}
-
 function scheduleShadowRun(args: {
   rawInput: string;
   userContext: UserContext;
@@ -1237,7 +1259,7 @@ function scheduleShadowRun(args: {
 
 function defaultShadowConfigFromEnv(db: AppDb): ShadowConfig {
   return {
-    enabled: process.env.SHADOW_RUNNER_ENABLED === 'true',
+    enabled: readBooleanEnv('SHADOW_RUNNER_ENABLED', false),
     persistShadowRun: persistShadowRunDefault(db),
   };
 }

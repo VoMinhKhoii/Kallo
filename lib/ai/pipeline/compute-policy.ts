@@ -98,3 +98,23 @@ export function summarizeCandidateConfidence(
 
   return summary;
 }
+
+/**
+ * Dev/test-only invariant: every property the orchestrator builds for
+ * `pickComputePolicy` must appear in `MEAL_FACTS_KEYS`. Production skips this
+ * check — it exists to catch silent type drift when a Principle B field is
+ * added in one place but not the other.
+ */
+export function assertMealFactsShape(facts: MealFactsForComputePolicy): void {
+  if (process.env.NODE_ENV === 'production') {
+    return;
+  }
+
+  const actual = Object.keys(facts).sort();
+  const expected = [...MEAL_FACTS_KEYS].sort();
+  if (JSON.stringify(actual) !== JSON.stringify(expected)) {
+    throw new Error(
+      `[principle-b] MealFactsForComputePolicy shape drift: ${actual.join(',')}`
+    );
+  }
+}

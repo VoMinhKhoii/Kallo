@@ -11,6 +11,7 @@ import {
   type MatchStateInfo,
   matchSingleIngredientWithEmbedding,
 } from '@/lib/ai/matching/source-matching';
+import { readBooleanEnv } from '@/lib/ai/pipeline/feature-flags';
 import type {
   DecomposedIngredient,
   MatchedIngredient,
@@ -82,8 +83,15 @@ export async function matchIngredients(
   // Pre-step: resolve pre-match aliases to fix known wrong-match cases
   // (e.g., "cá lóc" → "Cá quả" to avoid USDA's Atlantic bass mistranslation).
   // Original names are preserved for display; matching uses the alias name.
+  // Gated by PIPELINE_PREMATCH_ALIAS_ENABLED so operators can disable a
+  // misbehaving alias rewrite without a deploy.
+  const preMatchAliasEnabled = readBooleanEnv(
+    'PIPELINE_PREMATCH_ALIAS_ENABLED',
+    true
+  );
   const matchingNames = ingredients.map((ing) => {
     const canonicalName = ingredientCanonicalName(ing);
+    if (!preMatchAliasEnabled) return canonicalName;
     const alias = resolvePreMatchAlias(canonicalName);
     if (alias !== canonicalName) {
       console.info(
@@ -201,8 +209,23 @@ export async function matchIngredients(
     }
   }
 
-  // Phase 3b: Alias fallback — retry unmatched ingredients with alias-expanded names
-  if (unmatchedWithIndex.length > 0) {
+  // Phase 3b: Alias fallback — retry unmatched ingredients with alias-expanded names.
+  // Gated by PIPELINE_ALIAS_FALLBACK_ENABLED so operators can disable the
+  // extra Gemini batch + DB lookup if it ever becomes a latency liability.
+  const aliasFallbackEnabled = readBooleanEnv(
+    'PIPELINE_ALIAS_FALLBACK_ENABLED',
+    true
+  );
+  if (unmatchedWithIndex.length > 0 && !aliasFallbackEnabled) {
+    // Flag is off — surface the original unmatched list directly with no
+    // alias-rescue attempt. Skips the rest of the alias-fallback branch.
+    for (const { ingredient } of unmatchedWithIndex) {
+      unmatched.push({
+        ingredientName: ingredientRawName(ingredient),
+        mealContext,
+      });
+    }
+  } else if (unmatchedWithIndex.length > 0) {
     const aliasRetries: {
       original: DecomposedIngredient;
       originalIndex: number;

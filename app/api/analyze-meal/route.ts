@@ -8,6 +8,7 @@ import {
 } from '@/lib/ai/mappers';
 import { logUnmatchedIngredients } from '@/lib/ai/matching';
 import { analyzeMeal } from '@/lib/ai/pipeline';
+import { readBooleanEnv } from '@/lib/ai/pipeline/feature-flags';
 import { logPipelineEnd, logPipelineStart } from '@/lib/ai/pipeline/logging';
 import type { StreamEvent } from '@/lib/ai/streaming';
 import { encodeSSE } from '@/lib/ai/streaming';
@@ -156,21 +157,23 @@ export async function POST(request: NextRequest) {
   });
 
   if (!guard.allowed) {
-    try {
-      await db.insert(analysisGuardEvents).values(
-        buildAnalysisGuardEvent({
-          userId,
-          ip,
-          route: analyzeMealRoute,
-          reason: guard.reason,
-          retryAfterSeconds: guard.retryAfterSeconds,
-        })
-      );
-    } catch (error) {
-      console.error(
-        '[analyze-meal] Failed to log analysis guard event:',
-        error
-      );
+    if (readBooleanEnv('ANALYSIS_GUARD_EVENT_LOGGING_ENABLED', true)) {
+      try {
+        await db.insert(analysisGuardEvents).values(
+          buildAnalysisGuardEvent({
+            userId,
+            ip,
+            route: analyzeMealRoute,
+            reason: guard.reason,
+            retryAfterSeconds: guard.retryAfterSeconds,
+          })
+        );
+      } catch (error) {
+        console.error(
+          '[analyze-meal] Failed to log analysis guard event:',
+          error
+        );
+      }
     }
 
     return Response.json(Errors.rateLimited().toJSON(), {

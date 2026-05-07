@@ -437,6 +437,53 @@ describe('POST /api/analyze-meal', () => {
     consoleErrorSpy.mockRestore();
   });
 
+  it('skips analysis_guard_events insert when ANALYSIS_GUARD_EVENT_LOGGING_ENABLED=false', async () => {
+    vi.stubEnv('ANALYSIS_GUARD_EVENT_LOGGING_ENABLED', 'false');
+    mockCheckAnalysisGuards.mockResolvedValue({
+      allowed: false,
+      status: 429,
+      reason: 'per_user_minute',
+      retryAfterSeconds: 30,
+    });
+
+    const res = await POST(createRequest(mealRequestBody('phở bò')));
+    expect(res.status).toBe(429);
+    expect(res.headers.get('Retry-After')).toBe('30');
+
+    expect(mockBuildAnalysisGuardEvent).not.toHaveBeenCalled();
+    expect(mockDbInsert).not.toHaveBeenCalledWith(mockAnalysisGuardEvents);
+
+    vi.unstubAllEnvs();
+  });
+
+  it('releases an allowed guard exactly once on pipeline success', async () => {
+    const release = vi.fn();
+    mockCheckAnalysisGuards.mockResolvedValue({ allowed: true, release });
+    mockAnalyzeMeal.mockResolvedValue({
+      success: true,
+      data: mockPipelineData,
+    });
+
+    const res = await POST(createRequest(mealRequestBody('phở bò')));
+    await res.text();
+
+    expect(release).toHaveBeenCalledTimes(1);
+  });
+
+  it('releases an allowed guard exactly once when the pipeline throws inside the stream', async () => {
+    const release = vi.fn();
+    mockCheckAnalysisGuards.mockResolvedValue({ allowed: true, release });
+    mockAnalyzeMeal.mockRejectedValue(new Error('mid-stream failure'));
+
+    const res = await POST(createRequest(mealRequestBody('phở bò')));
+    const events = await readSSEEvents(res);
+
+    // The route catches the throw and emits an error event rather than
+    // failing the stream — assert that and that the guard still released.
+    expect(events.some((e) => e.type === 'error')).toBe(true);
+    expect(release).toHaveBeenCalledTimes(1);
+  });
+
   it('releases an allowed guard when pipeline logging fails before SSE starts', async () => {
     const release = vi.fn();
     mockCheckAnalysisGuards.mockResolvedValue({ allowed: true, release });

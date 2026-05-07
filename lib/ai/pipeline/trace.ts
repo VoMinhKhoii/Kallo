@@ -8,8 +8,9 @@ import {
   pipelineStageLogs,
   promptVersions,
 } from '@/lib/db/schema';
+import { readBooleanEnv } from './feature-flags';
 
-const enabled = () => process.env.PIPELINE_TRACE_ENABLED === 'true';
+const enabled = () => readBooleanEnv('PIPELINE_TRACE_ENABLED', false);
 const cache = new Map<string, string>(); // `${name}:${hash}` -> id
 
 export function hashPromptBuilder(

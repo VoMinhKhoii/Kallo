@@ -1,5 +1,6 @@
 import { sql } from 'drizzle-orm';
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
+import { readBooleanEnv } from '@/lib/ai/pipeline/feature-flags';
 import type * as schema from '@/lib/db/schema';
 
 /**
@@ -35,6 +36,11 @@ export function clearMemoryCache() {
  */
 let warmCacheStarted = false;
 
+const isEmbeddingCacheEnabled = () =>
+  readBooleanEnv('PIPELINE_EMBEDDING_CACHE_ENABLED', true);
+const isEmbeddingCacheWarmupEnabled = () =>
+  readBooleanEnv('PIPELINE_EMBEDDING_CACHE_WARMUP_ENABLED', true);
+
 /**
  * Warm L1 memory cache from the 526 VN FCT food items (source_id = 1).
  *
@@ -51,6 +57,7 @@ export async function warmEmbeddingCache(
   db: PostgresJsDatabase<typeof schema>
 ): Promise<void> {
   if (warmCacheStarted) return;
+  if (!isEmbeddingCacheEnabled() || !isEmbeddingCacheWarmupEnabled()) return;
   warmCacheStarted = true;
 
   try {
@@ -93,6 +100,8 @@ export async function resolveQueryEmbedding(
   ingredientName: string,
   db: PostgresJsDatabase<typeof schema>
 ): Promise<number[] | null> {
+  if (!isEmbeddingCacheEnabled()) return null;
+
   const normalized = normalizeIngredientKey(ingredientName);
 
   // L1: in-memory cache — check before warm-up to short-circuit hot requests
@@ -141,6 +150,8 @@ export function cacheQueryEmbedding(
   embedding: number[],
   db: PostgresJsDatabase<typeof schema>
 ): void {
+  if (!isEmbeddingCacheEnabled()) return;
+
   const normalized = normalizeIngredientKey(ingredientName);
 
   // L1: always populate memory cache synchronously

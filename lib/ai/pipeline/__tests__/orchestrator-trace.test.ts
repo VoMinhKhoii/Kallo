@@ -1049,6 +1049,250 @@ describe('analyzeMeal traceContext', () => {
     expect(rows[1].cacheHitL4).toBe(true);
     expect(generateStructuredOutputStream).toHaveBeenCalledTimes(3);
   });
+
+  it('skips Call 1 retry on language mismatch when PIPELINE_LANGUAGE_GUARD_RETRY_ENABLED=false', async () => {
+    vi.stubEnv('PIPELINE_LANGUAGE_GUARD_RETRY_ENABLED', 'false');
+    const db = makeDb();
+    const promptVersionsUsed = new Map<string, string>();
+    const traceContext: AnalyzeMealTraceContext = {
+      requestId: 'req-lang-no-retry',
+      db,
+      userId: 'user-test-1',
+      promptVersionsUsed,
+    };
+    // First call returns Vietnamese-named items even though context expects English.
+    // Without the flag this would trigger a second decomposition call; with it off
+    // the orchestrator must accept the bad-language output and proceed.
+    const generateStructuredOutputStream = vi
+      .fn()
+      .mockResolvedValueOnce(VALID_DECOMP)
+      .mockResolvedValueOnce(VALID_NUTRITION);
+    const gemini = createMockGemini({ generateStructuredOutputStream });
+
+    await analyzeMeal(
+      'rice',
+      { ...USER_CONTEXT, inputLanguage: 'en', outputLanguage: 'en' },
+      db,
+      gemini,
+      undefined,
+      traceContext
+    );
+
+    expect(generateStructuredOutputStream).toHaveBeenCalledTimes(2);
+    const decompositionStageArg = mockLogStage.mock.calls.find(
+      ([arg]) => arg.stage === 'decomposition'
+    )?.[0];
+    expect(
+      (
+        decompositionStageArg?.outputJson as {
+          languageMetadata: { retryCount: number };
+        }
+      ).languageMetadata.retryCount
+    ).toBe(0);
+    expect(pipelineRunRows()[0].retryCount).toBe(0);
+  });
+
+  it('silences model budget event writes when ANALYSIS_BUDGET_EVENTS_ENABLED=false', async () => {
+    vi.stubEnv('ANALYSIS_BUDGET_EVENTS_ENABLED', 'false');
+    const db = makeDb();
+    const generateStructuredOutputStream = vi
+      .fn()
+      .mockImplementationOnce((_params, opts) => {
+        opts?.onAttemptComplete?.({
+          attempt: 1,
+          model: 'decomposition-model',
+          inputTokens: 10,
+          outputTokens: 20,
+          error: null,
+        });
+        return Promise.resolve(VALID_DECOMP);
+      })
+      .mockImplementationOnce((_params, opts) => {
+        opts?.onAttemptComplete?.({
+          attempt: 1,
+          model: 'nutrition-model',
+          inputTokens: 30,
+          outputTokens: 40,
+          error: null,
+        });
+        return Promise.resolve(VALID_NUTRITION);
+      });
+    const gemini = createMockGemini({ generateStructuredOutputStream });
+
+    await analyzeMeal('cơm trắng', USER_CONTEXT, db, gemini, undefined);
+
+    expect(budgetEventRows()).toHaveLength(0);
+  });
+});
+
+describe('analyzeMeal trace cross-table consistency', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    _resetL4DecompositionCacheForTests();
+    mockRecordPromptVersion.mockResolvedValue('pv-test-id');
+    mockMatchIngredients.mockResolvedValue({ matched: [], unmatched: [] });
+    mockAssembleResult.mockReturnValue({
+      result: { mealItems: [] },
+      metrics: { cookedToRawFactorFires: 0 },
+    });
+    mockValidateNutritionOutput.mockReturnValue([]);
+    mockDetectAnomalies.mockReturnValue([]);
+    mockDbValues.mockResolvedValue(undefined);
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it('binds pipeline_runs, stage logs, and budget events to one requestId', async () => {
+    const db = makeDb();
+    const promptVersionsUsed = new Map<string, string>();
+    const requestId = 'req-trace-consistency';
+    const traceContext: AnalyzeMealTraceContext = {
+      requestId,
+      db,
+      userId: 'user-trace-consistency',
+      promptVersionsUsed,
+    };
+    const generateStructuredOutputStream = vi
+      .fn()
+      .mockImplementationOnce((_params, opts) => {
+        opts?.onAttemptComplete?.({
+          attempt: 1,
+          model: 'decomposition-model',
+          inputTokens: 11,
+          outputTokens: 22,
+          error: null,
+        });
+        return Promise.resolve(VALID_DECOMP);
+      })
+      .mockImplementationOnce((_params, opts) => {
+        opts?.onAttemptComplete?.({
+          attempt: 1,
+          model: 'nutrition-model',
+          inputTokens: 33,
+          outputTokens: 44,
+          error: null,
+        });
+        return Promise.resolve(VALID_NUTRITION);
+      });
+    const gemini = createMockGemini({ generateStructuredOutputStream });
+
+    await analyzeMeal(
+      'cơm trắng',
+      USER_CONTEXT,
+      db,
+      gemini,
+      undefined,
+      traceContext
+    );
+
+    const runs = pipelineRunRows();
+    expect(runs).toHaveLength(1);
+    expect(runs[0].requestId).toBe(requestId);
+
+    // Each logStage call must reference the same requestId, and stage indices
+    // must form the canonical 1..4 sequence (decomposition → assembly).
+    const stageCalls = mockLogStage.mock.calls.map(([arg]) => arg);
+    expect(stageCalls).toHaveLength(4);
+    expect(stageCalls.map((arg) => arg.requestId)).toEqual([
+      requestId,
+      requestId,
+      requestId,
+      requestId,
+    ]);
+    expect(stageCalls.map((arg) => arg.stageIndex)).toEqual([1, 2, 3, 4]);
+    expect(stageCalls.every((arg) => arg.status === 'success')).toBe(true);
+
+    // Each stageLogId must be unique — distinct rows for distinct stages.
+    const stageLogIds = stageCalls.map((arg) => arg.stageLogId);
+    expect(new Set(stageLogIds).size).toBe(4);
+
+    // Budget events: one start for the request + one per LLM attempt.
+    // Production currently emits start + 2 attempts = 3 rows.
+    const budgetRows = budgetEventRows();
+    expect(budgetRows.length).toBeGreaterThanOrEqual(3);
+    for (const row of budgetRows) {
+      expect(row.requestId).toBe(requestId);
+      expect(row.route).toBe('/api/analyze-meal');
+      expect(row.workKind).toBe('primary');
+      expect(row.provider).toBe('gemini');
+    }
+
+    // Total request duration must envelope each stage duration — telemetry
+    // rows would be incoherent if a stage logged a duration that exceeded
+    // the run's total elapsed time.
+    const totalMs = runs[0].totalMs as number;
+    for (const stage of stageCalls) {
+      expect(stage.durationMs).toBeLessThanOrEqual(totalMs + 1);
+    }
+  });
+
+  it('records non-null token counts on attempt budget events', async () => {
+    const db = makeDb();
+    const traceContext: AnalyzeMealTraceContext = {
+      requestId: 'req-trace-tokens',
+      db,
+      userId: 'user-trace-tokens',
+      promptVersionsUsed: new Map(),
+    };
+    const generateStructuredOutputStream = vi
+      .fn()
+      .mockImplementationOnce((_params, opts) => {
+        opts?.onAttemptComplete?.({
+          attempt: 1,
+          model: 'decomposition-model',
+          inputTokens: 100,
+          outputTokens: 200,
+          error: null,
+        });
+        return Promise.resolve(VALID_DECOMP);
+      })
+      .mockImplementationOnce((_params, opts) => {
+        opts?.onAttemptComplete?.({
+          attempt: 1,
+          model: 'nutrition-model',
+          inputTokens: 300,
+          outputTokens: 400,
+          error: null,
+        });
+        return Promise.resolve(VALID_NUTRITION);
+      });
+    const gemini = createMockGemini({ generateStructuredOutputStream });
+
+    await analyzeMeal(
+      'cơm trắng',
+      USER_CONTEXT,
+      db,
+      gemini,
+      undefined,
+      traceContext
+    );
+
+    // Attempt rows are recorded per LLM call (requestCount=0). The start
+    // event uses requestCount=1 and lacks per-attempt token counts.
+    const attemptRows = budgetEventRows().filter(
+      (row) => row.requestCount === 0
+    );
+    expect(attemptRows).toHaveLength(2);
+    const totalsByModel = new Map(
+      attemptRows.map((row) => [
+        row.model as string,
+        {
+          inputTokens: row.inputTokens as number,
+          outputTokens: row.outputTokens as number,
+        },
+      ])
+    );
+    expect(totalsByModel.get('decomposition-model')).toEqual({
+      inputTokens: 100,
+      outputTokens: 200,
+    });
+    expect(totalsByModel.get('nutrition-model')).toEqual({
+      inputTokens: 300,
+      outputTokens: 400,
+    });
+  });
 });
 
 describe('shadow-runner integration', () => {
