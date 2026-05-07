@@ -40,6 +40,22 @@ describe('fetchWithTimeout', () => {
     await expect(promise).rejects.toMatchObject({ code: 'PIPELINE_TIMEOUT' });
   });
 
+  it('throws PIPELINE_TIMEOUT even when fn ignores AbortSignal', async () => {
+    const startedAt = Date.now();
+    const promise = fetchWithTimeout(
+      async () =>
+        new Promise((resolve) => {
+          setTimeout(() => resolve('late'), 5000);
+        }),
+      50,
+      'test-non-abort-aware'
+    );
+
+    await expect(promise).rejects.toThrow(AppError);
+    await expect(promise).rejects.toMatchObject({ code: 'PIPELINE_TIMEOUT' });
+    expect(Date.now() - startedAt).toBeLessThan(1000);
+  });
+
   it('propagates non-abort errors as-is', async () => {
     const original = new Error('network failure');
     await expect(
