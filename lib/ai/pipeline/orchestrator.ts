@@ -125,12 +125,6 @@ export function _resetL4DecompositionCacheForTests(): void {
   L4_DECOMPOSITION_CACHE.clear();
 }
 
-const RETRYABLE_NUTRITION_ANOMALIES = new Set<ValidationAnomaly['type']>([
-  'db_deviation',
-  'density_envelope',
-  'macro_inconsistent',
-]);
-
 const decompositionIngredientName = (
   ing: MealDecomposition['mealItems'][number]['ingredients'][number]
 ): string => ing.rawName ?? ing.name ?? ing.canonicalName ?? '';
@@ -142,12 +136,6 @@ const decompositionIngredientCanonicalName = (
 const decompositionIngredientGrams = (
   ing: MealDecomposition['mealItems'][number]['ingredients'][number]
 ): number => ing.grams ?? ing.estimatedGrams ?? 0;
-
-function shouldRetryNutrition(anomalies: ValidationAnomaly[]): boolean {
-  return anomalies.some(
-    (a) => a.severity === 'warning' && RETRYABLE_NUTRITION_ANOMALIES.has(a.type)
-  );
-}
 
 // ---------------------------------------------------------------------------
 // Trace context
@@ -987,73 +975,11 @@ async function runPipeline(
         );
       }
 
-      let reconciledNutrition = reconcileNutritionIds(
+      const reconciledNutrition = reconcileNutritionIds(
         rawNutrition,
         decomposition,
         matchResult.matched
       );
-
-      const retryableValidationAnomalies = validateNutritionOutput(
-        reconciledNutrition,
-        matchResult.matched,
-        decomposition.mealItems
-      );
-      if (shouldRetryNutrition(retryableValidationAnomalies)) {
-        console.warn(
-          '[pipeline] validation anomaly → retrying Call 2',
-          retryableValidationAnomalies.map((a) => a.type)
-        );
-        retryStep2Count += 1;
-        computePolicy = pickComputePolicy(
-          {
-            ...baseComputeFacts,
-            anomalyTypes: retryableValidationAnomalies.map((a) => a.type),
-            parseRetryCount: retryStep2Count,
-          },
-          modelProfileForRun
-        );
-        selectedNutritionModel =
-          computePolicy.escalateOnRetry &&
-          modelProfileForRun.escalationModel !== null
-            ? modelProfileForRun.escalationModel
-            : computePolicy.call2Model;
-        lastExtractedCount = 0;
-        macroEmittedCounts.clear();
-        rawNutrition = await fetchWithTimeout(
-          (signal) =>
-            gemini.generateStructuredOutputStream(
-              {
-                schema: nutritionAdjustmentSchema,
-                systemPrompt,
-                userMessage:
-                  'The previous result had physically implausible nutrition bounds. Recalculate bounded nutrition estimates carefully and keep calories consistent with protein/carbs/fat.',
-                model: selectedNutritionModel,
-                temperature: 0.5,
-                topP: 1,
-                topK: 1,
-                abortSignal: signal,
-              },
-              {
-                onAttemptComplete: createBudgetAttemptRecorder({
-                  db,
-                  requestId: budget.requestId ?? null,
-                  workKind: budget.workKind,
-                  model: selectedNutritionModel,
-                  providerErrorState: budget.providerErrorState,
-                }),
-                onChunk: nutritionOnChunk,
-                trace: callTrace,
-              }
-            ),
-          LLM_TIMEOUT_MS,
-          'nutrition-retry'
-        );
-        reconciledNutrition = reconcileNutritionIds(
-          rawNutrition,
-          decomposition,
-          matchResult.matched
-        );
-      }
 
       return reconciledNutrition;
     }

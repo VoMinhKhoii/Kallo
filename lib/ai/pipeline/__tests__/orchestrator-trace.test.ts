@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AppDb } from '@/lib/db';
 
 // ---------------------------------------------------------------------------
@@ -271,6 +271,10 @@ describe('analyzeMeal traceContext', () => {
     mockValidateNutritionOutput.mockReturnValue([]);
     mockDetectAnomalies.mockReturnValue([]);
     mockDbValues.mockResolvedValue(undefined);
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
   });
 
   it('calls logStage 4 times and recordPromptVersion 2 times when traceContext provided', async () => {
@@ -614,7 +618,7 @@ describe('analyzeMeal traceContext', () => {
       promptVersionsUsed,
     };
 
-    mockValidateNutritionOutput.mockReturnValueOnce([]).mockReturnValue([
+    mockValidateNutritionOutput.mockReturnValue([
       {
         type: 'density_envelope',
         message: 'density breach',
@@ -959,7 +963,7 @@ describe('analyzeMeal traceContext', () => {
     });
   });
 
-  it('retries Call 2 when validation returns a density_envelope warning', async () => {
+  it('does not retry Call 2 for density_envelope warnings', async () => {
     const db = makeDb();
     const promptVersionsUsed = new Map<string, string>();
     const traceContext: AnalyzeMealTraceContext = {
@@ -995,7 +999,7 @@ describe('analyzeMeal traceContext', () => {
     );
 
     expect(result.success).toBe(true);
-    expect(generateStructuredOutputStream).toHaveBeenCalledTimes(3);
+    expect(generateStructuredOutputStream).toHaveBeenCalledTimes(2);
   });
 
   it('records cacheHitL4=true when decomposition comes from cache', async () => {
