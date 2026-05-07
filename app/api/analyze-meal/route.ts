@@ -1,7 +1,11 @@
 import { eq } from 'drizzle-orm';
 import type { NextRequest } from 'next/server';
 import { createGeminiClient } from '@/lib/ai/gemini';
-import { buildUserContext, toParsedMeal } from '@/lib/ai/mappers';
+import {
+  buildAiRequestContext,
+  buildUserContext,
+  toParsedMeal,
+} from '@/lib/ai/mappers';
 import { logUnmatchedIngredients } from '@/lib/ai/matching';
 import { analyzeMeal } from '@/lib/ai/pipeline';
 import { logPipelineEnd, logPipelineStart } from '@/lib/ai/pipeline/logging';
@@ -115,6 +119,7 @@ async function validateRequest(request: NextRequest) {
       data: {
         userId: user.id,
         message: parsed.data.message,
+        locale: parsed.data.locale,
         profile,
         apiKey,
       },
@@ -128,9 +133,13 @@ export async function POST(request: NextRequest) {
   // Phase 1: Pre-stream validation — errors returned as JSON
   const validation = await validateRequest(request);
   if (validation.error) return validation.error;
-  const { userId, message, profile, apiKey } = validation.data;
+  const { userId, message, locale, profile, apiKey } = validation.data;
 
-  const userContext = buildUserContext(profile);
+  const userContext = buildAiRequestContext(buildUserContext(profile), {
+    mealText: message,
+    requestLocale: locale,
+    profileLocale: profile.preferredLocale,
+  });
   const ip = getRequestIp(request);
 
   const guard = await checkAnalysisGuards({

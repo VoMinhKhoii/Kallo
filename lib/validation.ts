@@ -39,9 +39,12 @@ export const mealTextSchema = z
 
 /**
  * Schema for the meal analysis request body.
- * Validates the full `{ message }` payload — not just the string.
+ * Validates the full `{ message, locale? }` payload — not just the string.
  */
-export const mealMessageSchema = z.object({ message: mealTextSchema });
+export const mealMessageSchema = z.object({
+  message: mealTextSchema,
+  locale: z.enum(['en', 'vi']).optional(),
+});
 
 /** Shared schema for a single weight log entry. */
 export const weightLogSchema = z.object({

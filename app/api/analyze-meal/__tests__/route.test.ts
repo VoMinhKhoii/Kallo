@@ -6,6 +6,7 @@ import type { StreamEvent } from '@/lib/ai/streaming/types';
 const mockGetUser = vi.fn();
 const mockSelect = vi.fn();
 const mockAnalyzeMeal = vi.fn();
+const mockBuildUserContext = vi.fn();
 const mockInsert = vi.fn();
 const mockCreateGeminiClient = vi.fn(() => ({}));
 const mockCheckAnalysisGuards = vi.fn();
@@ -126,27 +127,32 @@ interface MockPipelineData {
   displayedNutrition?: MockNutrition;
 }
 
-vi.mock('@/lib/ai/mappers', () => ({
-  buildUserContext: () => ({}),
-  toParsedMeal: (data: MockPipelineData) => ({
-    mealName: data.mealItems?.[0]?.name ?? 'Meal',
-    items: (data.mealItems ?? []).map((mi: MockMealItem) => ({
-      name: mi.name,
-      macros: {
-        calories: mi.displayedNutrition?.caloriesKcal ?? 0,
-        protein: mi.displayedNutrition?.proteinG ?? 0,
-        carbs: mi.displayedNutrition?.carbohydrateG ?? 0,
-        fat: mi.displayedNutrition?.fatG ?? 0,
+vi.mock('@/lib/ai/mappers', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/lib/ai/mappers')>();
+
+  return {
+    ...actual,
+    buildUserContext: (...args: unknown[]) => mockBuildUserContext(...args),
+    toParsedMeal: (data: MockPipelineData) => ({
+      mealName: data.mealItems?.[0]?.name ?? 'Meal',
+      items: (data.mealItems ?? []).map((mi: MockMealItem) => ({
+        name: mi.name,
+        macros: {
+          calories: mi.displayedNutrition?.caloriesKcal ?? 0,
+          protein: mi.displayedNutrition?.proteinG ?? 0,
+          carbs: mi.displayedNutrition?.carbohydrateG ?? 0,
+          fat: mi.displayedNutrition?.fatG ?? 0,
+        },
+      })),
+      totalMacros: {
+        calories: data.displayedNutrition?.caloriesKcal ?? 0,
+        protein: data.displayedNutrition?.proteinG ?? 0,
+        carbs: data.displayedNutrition?.carbohydrateG ?? 0,
+        fat: data.displayedNutrition?.fatG ?? 0,
       },
-    })),
-    totalMacros: {
-      calories: data.displayedNutrition?.caloriesKcal ?? 0,
-      protein: data.displayedNutrition?.proteinG ?? 0,
-      carbs: data.displayedNutrition?.carbohydrateG ?? 0,
-      fat: data.displayedNutrition?.fatG ?? 0,
-    },
-  }),
-}));
+    }),
+  };
+});
 
 const { POST } = await import('@/app/api/analyze-meal/route');
 
@@ -185,6 +191,7 @@ const mockProfile = {
   sugarBraised: 'medium',
   defaultProteinPortion: 'medium',
   brothConsumption: 'some',
+  preferredLocale: 'en',
 };
 
 const mockPipelineData = {
@@ -236,6 +243,20 @@ describe('POST /api/analyze-meal', () => {
     mockGetUser.mockResolvedValue({ data: { user: { id: 'user-1' } } });
     mockSelect.mockResolvedValue([mockProfile]);
     mockAnalyzeMeal.mockReset();
+    mockBuildUserContext.mockReset();
+    mockBuildUserContext.mockImplementation((profile) => ({
+      goal: 'maintaining',
+      aggression: 0,
+      countryOfOrigin: profile.countryOfOrigin,
+      countryOfResidence: profile.countryOfResidence,
+      cookingHabits: {
+        oilUsage: profile.oilUsage,
+        defaultRicePortion: profile.defaultRicePortion,
+        sugarBraised: profile.sugarBraised,
+        defaultProteinPortion: profile.defaultProteinPortion,
+        brothConsumption: profile.brothConsumption,
+      },
+    }));
     mockCreateGeminiClient.mockReset();
     mockCreateGeminiClient.mockReturnValue({});
     mockCheckAnalysisGuards.mockReset();
@@ -271,6 +292,14 @@ describe('POST /api/analyze-meal', () => {
     expect(res.status).toBe(400);
     const json = await res.json();
     expect(json.error.code).toBe('VALIDATION_FAILED');
+  });
+
+  it('returns 400 when locale is unsupported', async () => {
+    const res = await POST(createRequest({ message: 'phở bò', locale: 'fr' }));
+    expect(res.status).toBe(400);
+    const json = await res.json();
+    expect(json.error.code).toBe('VALIDATION_FAILED');
+    expect(mockCreateGeminiClient).not.toHaveBeenCalled();
   });
 
   it('returns 404 when profile row is missing', async () => {
@@ -478,6 +507,62 @@ describe('POST /api/analyze-meal', () => {
     if (resultEvent?.type === 'result') {
       expect(resultEvent.data.mealName).toBe('Phở bò');
     }
+  });
+
+  it('passes request locale as fallback for mixed-language meal input', async () => {
+    mockAnalyzeMeal.mockResolvedValue({
+      success: true,
+      data: mockPipelineData,
+    });
+
+    const res = await POST(
+      createRequest({ message: 'pho bo with extra beef', locale: 'vi' })
+    );
+    await res.text();
+
+    const userContext = mockAnalyzeMeal.mock.calls[0]?.[1];
+    expect(userContext).toMatchObject({
+      inputLanguage: 'mixed',
+      outputLanguage: 'vi',
+    });
+  });
+
+  it('uses profile locale fallback when request locale is omitted', async () => {
+    mockSelect.mockResolvedValue([{ ...mockProfile, preferredLocale: 'vi' }]);
+    mockAnalyzeMeal.mockResolvedValue({
+      success: true,
+      data: mockPipelineData,
+    });
+
+    const res = await POST(
+      createRequest({ message: 'pho bo with extra beef' })
+    );
+    await res.text();
+
+    const userContext = mockAnalyzeMeal.mock.calls[0]?.[1];
+    expect(userContext).toMatchObject({
+      inputLanguage: 'mixed',
+      outputLanguage: 'vi',
+    });
+  });
+
+  it('keeps clear English input in English despite Vietnamese profile locale', async () => {
+    mockSelect.mockResolvedValue([{ ...mockProfile, preferredLocale: 'vi' }]);
+    mockAnalyzeMeal.mockResolvedValue({
+      success: true,
+      data: mockPipelineData,
+    });
+
+    const res = await POST(
+      createRequest({ message: 'grilled chicken with rice' })
+    );
+    await res.text();
+
+    const userContext = mockAnalyzeMeal.mock.calls[0]?.[1];
+    expect(userContext).toMatchObject({
+      inputLanguage: 'en',
+      outputLanguage: 'en',
+    });
   });
 
   it('streams error event when pipeline returns failure', async () => {

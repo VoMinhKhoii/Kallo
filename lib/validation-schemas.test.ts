@@ -24,6 +24,25 @@ describe('mealMessageSchema', () => {
     expect(result.success).toBe(true);
   });
 
+  it.each(['en', 'vi'] as const)('accepts optional locale %s', (locale) => {
+    const result = mealMessageSchema.safeParse({
+      message: 'chicken breast with rice',
+      locale,
+    });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.locale).toBe(locale);
+    }
+  });
+
+  it('rejects unsupported locale values', () => {
+    const result = mealMessageSchema.safeParse({
+      message: 'chicken breast with rice',
+      locale: 'fr',
+    });
+    expect(result.success).toBe(false);
+  });
+
   it('trims whitespace', () => {
     const result = mealMessageSchema.safeParse({ message: '  Bún bò Huế  ' });
     expect(result.success).toBe(true);
