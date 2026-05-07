@@ -58,6 +58,13 @@ export const INGREDIENT_ALIASES: Record<string, string> = {
   tiêu: 'Hạt tiêu',
   gạo: 'Gạo tẻ',
   sữa: 'Sữa bò tươi',
+  'fish sauce': 'Nước mắm',
+  'vegetable oil': 'Dầu đậu nành',
+  'cooking oil': 'Dầu đậu nành',
+  sugar: 'Đường kính',
+  squid: 'Mực ống',
+  'steamed white rice': 'Cơm',
+  rice: 'Cơm',
 };
 
 /**
