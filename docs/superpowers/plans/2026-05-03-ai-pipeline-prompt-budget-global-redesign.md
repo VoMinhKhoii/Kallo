@@ -640,7 +640,7 @@ Run: `bun run test lib/ai/language/__tests__/detect.test.ts lib/ai/pipeline/__te
 
 Expected: PASS after updating fixtures as needed.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add lib/ai/language lib/ai/types.ts lib/ai/prompts/types.ts lib/ai/pipeline/__tests__/prompts.test.ts
@@ -912,33 +912,39 @@ the compressed prompt. The production prompt remains the default.
 - Modify: `lib/ai/prompts/nutrition.ts`
 - Modify: `lib/ai/prompts/__tests__/nutrition.test.ts`
 - Modify: `lib/ai/pipeline/__tests__/prompts.test.ts`
+- Modify: `lib/ai/prompts/index.ts`
+- Modify: `lib/ai/pipeline/orchestrator.ts`
 
-- [ ] **Step 1: Add tests for ID echo and language echo**
+- [x] **Step 1: Add tests for ID echo and language echo**
 
 Assert compact IDs appear in dynamic ingredient facts and prompt says names/IDs must be echoed exactly.
 
-- [ ] **Step 2: Run tests**
+- [x] **Step 2: Run tests**
 
 Run prompt tests and expect failures until prompt is changed.
 
-- [ ] **Step 3: Add compressed nutrition prompt variant behind a label**
+- [x] **Step 3: Add compressed nutrition prompt variant behind a label**
 
 Keep the current nutrition prompt as the default. Add a compressed variant behind a prompt label/config. Remove redundant cooking tutorial text in the variant, keep bounded macro contract, DB state guidance, unmatched grouping, ID/name echo, and no preference leakage.
 
-- [ ] **Step 4: Run tests**
+- [x] **Step 4: Run tests**
 
 Run: `bun run test lib/ai/prompts/__tests__/nutrition.test.ts lib/ai/pipeline/__tests__/prompts.test.ts`
 
-- [ ] **Step 5: Confirm threshold checklist entry exists**
+- [x] **Step 5: Confirm threshold checklist entry exists**
 
 Before enabling canary traffic, fill the nutrition prompt row in `docs/superpowers/plans/2026-05-03-ai-pipeline-prompt-budget-global-redesign-rollout-thresholds.md`.
 
 - [ ] **Step 6: Commit**
 
 ```bash
-git add lib/ai/prompts/nutrition.ts lib/ai/prompts/__tests__/nutrition.test.ts lib/ai/pipeline/__tests__/prompts.test.ts
+git add lib/ai/prompts/nutrition.ts lib/ai/prompts/index.ts lib/ai/prompts/__tests__/nutrition.test.ts lib/ai/pipeline/orchestrator.ts lib/ai/pipeline/__tests__/orchestrator-sse.test.ts lib/ai/pipeline/__tests__/orchestrator-trace.test.ts docs/superpowers/plans/2026-05-03-ai-pipeline-prompt-budget-global-redesign.md
 git commit -m "feat: add compressed nutrition prompt variant"
 ```
+
+Implementation note: `PIPELINE_NUTRITION_PROMPT_LABEL=compressed` selects the
+compressed nutrition prompt. The production prompt remains the default, while
+dynamic nutrition facts now include meal item IDs when available.
 
 ### Task 3.4: Add Compact Dynamic Nutrition Facts Packet Variant
 

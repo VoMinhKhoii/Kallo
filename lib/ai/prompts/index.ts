@@ -5,4 +5,9 @@ export {
   getDecompositionPromptBuilder,
   getDecompositionPromptLabel,
 } from './decomposition';
-export { buildNutritionPrompt } from './nutrition';
+export {
+  buildCompressedNutritionPrompt,
+  buildNutritionPrompt,
+  getNutritionPromptBuilder,
+  getNutritionPromptLabel,
+} from './nutrition';

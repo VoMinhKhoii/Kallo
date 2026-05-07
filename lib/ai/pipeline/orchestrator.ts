@@ -20,8 +20,8 @@ import { matchIngredients } from '../matching';
 import type { RrfMeasurement } from '../matching/rrf-measurement';
 import { createSpeculativeMatcher } from '../matching/speculative';
 import {
-  buildNutritionPrompt,
   getDecompositionPromptBuilder,
+  getNutritionPromptBuilder,
 } from '../prompts';
 import {
   computeStreamingMealItem,
@@ -860,7 +860,8 @@ async function runPipeline(
     3,
     { mealItemCount: decomposition.mealItems.length },
     async ({ stageLogId }) => {
-      const systemPrompt = buildNutritionPrompt(
+      const nutritionPromptBuilder = getNutritionPromptBuilder();
+      const systemPrompt = nutritionPromptBuilder(
         decomposition.mealItems,
         matchResult.matched,
         matchResult.unmatched,
@@ -870,7 +871,7 @@ async function runPipeline(
         trace: traceContext,
         stageLogId,
         name: 'nutrition',
-        builder: buildNutritionPrompt as (...a: unknown[]) => string,
+        builder: nutritionPromptBuilder as (...a: unknown[]) => string,
         templateSample: systemPrompt,
         model: selectedNutritionModel,
       });

@@ -39,6 +39,16 @@ const viCollator = new Intl.Collator('vi', { sensitivity: 'base' });
 
 type PromptIngredient = DecomposedMealItem['ingredients'][number];
 
+export const NUTRITION_PROMPT_LABEL_ENV = 'PIPELINE_NUTRITION_PROMPT_LABEL';
+
+export type NutritionPromptLabel = 'production' | 'compressed';
+export type NutritionPromptBuilder = (
+  mealItems: DecomposedMealItem[],
+  matched: MatchedIngredient[],
+  unmatched: UnmatchedIngredient[],
+  userContext: PromptPersonalizationContext
+) => string;
+
 const escapeXmlAttribute = (value: string): string =>
   value
     .replace(/&/g, '&amp;')
@@ -61,12 +71,35 @@ const ingredientCookingMethod = (
   ing: PromptIngredient
 ): string | null => item.cookingMethod ?? ing.cookingMethod ?? null;
 
-export function buildNutritionPrompt(
+interface NutritionPromptParts {
+  cookingHabits: PromptPersonalizationContext['cookingHabits'];
+  countryLines: string[];
+  ingredientData: string;
+  unmatchedSection: string;
+}
+
+export function getNutritionPromptLabel(
+  env: Record<string, string | undefined> = process.env
+): NutritionPromptLabel {
+  return env[NUTRITION_PROMPT_LABEL_ENV] === 'compressed'
+    ? 'compressed'
+    : 'production';
+}
+
+export function getNutritionPromptBuilder(
+  label: NutritionPromptLabel = getNutritionPromptLabel()
+): NutritionPromptBuilder {
+  return label === 'compressed'
+    ? buildCompressedNutritionPrompt
+    : buildNutritionPrompt;
+}
+
+function buildNutritionPromptParts(
   mealItems: DecomposedMealItem[],
   matched: MatchedIngredient[],
   unmatched: UnmatchedIngredient[],
   userContext: PromptPersonalizationContext
-): string {
+): NutritionPromptParts {
   const { cookingHabits } = userContext;
   const countryLines = [
     buildPromptContextLine('country_of_origin', userContext.countryOfOrigin),
@@ -114,7 +147,7 @@ export function buildNutritionPrompt(
     '  <!-- as_eaten_grams is the user-facing portion. db_state tells you whether the per_100g values are raw or cooked. -->\n\n';
 
   for (const mealItem of sortedMealItems) {
-    ingredientData += `  <meal_item name="${escapeXmlAttribute(mealItem.name)}">\n`;
+    ingredientData += `  <meal_item name="${escapeXmlAttribute(mealItem.name)}"${mealItem.mealItemId ? ` id="${escapeXmlAttribute(mealItem.mealItemId)}"` : ''}>\n`;
 
     for (const ing of mealItem.ingredients) {
       const match = ing.ingredientId
@@ -145,7 +178,7 @@ export function buildNutritionPrompt(
         unmatchedNames.has(ingredientDisplayName(ing))
       );
       if (unmatchedIngs.length > 0) {
-        unmatchedSection += `  <meal_item name="${escapeXmlAttribute(mealItem.name)}">\n`;
+        unmatchedSection += `  <meal_item name="${escapeXmlAttribute(mealItem.name)}"${mealItem.mealItemId ? ` id="${escapeXmlAttribute(mealItem.mealItemId)}"` : ''}>\n`;
         for (const ing of unmatchedIngs) {
           const cookingMethod = ingredientCookingMethod(mealItem, ing);
           unmatchedSection += `    <ingredient name="${escapeXmlAttribute(ingredientDisplayName(ing))}" as_eaten_grams="${ingredientGrams(ing)}" id="${escapeXmlAttribute(ing.ingredientId ?? '')}" canonicalName="${escapeXmlAttribute(ingredientCanonicalName(ing))}"${cookingMethod ? ` cooking="${escapeXmlAttribute(cookingMethod)}"` : ''}${ing.expectedState ? ` expected_state="${escapeXmlAttribute(ing.expectedState)}"` : ''} />\n`;
@@ -156,6 +189,65 @@ export function buildNutritionPrompt(
 
     unmatchedSection += '</unmatched_ingredients>\n';
   }
+
+  return { cookingHabits, countryLines, ingredientData, unmatchedSection };
+}
+
+export function buildCompressedNutritionPrompt(
+  mealItems: DecomposedMealItem[],
+  matched: MatchedIngredient[],
+  unmatched: UnmatchedIngredient[],
+  userContext: PromptPersonalizationContext
+): string {
+  const { cookingHabits, countryLines, ingredientData, unmatchedSection } =
+    buildNutritionPromptParts(mealItems, matched, unmatched, userContext);
+  const outputLanguage = userContext.outputLanguage ?? 'match_user_input';
+
+  return `You are a nutrition estimator. Return JSON only.
+
+<contract>
+  output_language: ${outputLanguage}
+  Produce LOW/MID/HIGH for caloriesKcal, proteinG, carbohydrateG, fatG.
+  Echo mealItemId and ingredientId exactly when present in the input facts.
+  Echo mealItemName and ingredientName exactly from the input facts.
+  Keep output names in output_language unless exact echo fields are provided.
+</contract>
+
+<calculation_rules>
+  Scale per_100g values by as_eaten_grams.
+  db_state="cooked": no raw/cooked conversion; adjust only for actual cooking style.
+  db_state="raw": account for cooking method, moisture, and oil absorption.
+  db_state="unknown" or unmatched: estimate from cuisine knowledge with wider bounds.
+  Bounds express physical uncertainty, not user goals or preferences.
+</calculation_rules>
+
+<user_context>
+${countryLines.length > 0 ? `${countryLines.join('\n')}\n` : ''}  oil_usage: ${cookingHabits.oilUsage}
+  sugar_braised: ${cookingHabits.sugarBraised}
+  default_rice_portion: ${RICE_PORTION_DESCRIPTION[cookingHabits.defaultRicePortion]}
+  default_protein_portion: ${PROTEIN_PORTION_DESCRIPTION[cookingHabits.defaultProteinPortion]}
+  broth_consumption: ${cookingHabits.brothConsumption}
+</user_context>
+
+${ingredientData}
+${unmatchedSection}
+
+<output_format>
+  Return top-level mealItems[].
+  Each meal item: mealItemId? + mealItemName + ingredients[].
+  Each ingredient: ingredientId? + ingredientName + 4 macro triples {low, mid, high}.
+  Round to 1 decimal place.
+</output_format>`;
+}
+
+export function buildNutritionPrompt(
+  mealItems: DecomposedMealItem[],
+  matched: MatchedIngredient[],
+  unmatched: UnmatchedIngredient[],
+  userContext: PromptPersonalizationContext
+): string {
+  const { cookingHabits, countryLines, ingredientData, unmatchedSection } =
+    buildNutritionPromptParts(mealItems, matched, unmatched, userContext);
 
   return `You are a nutrition expert. Produce cooking-adjusted, bounded nutrition estimates based on the user's cuisine and cooking context.
 

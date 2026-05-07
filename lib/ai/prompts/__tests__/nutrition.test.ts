@@ -5,7 +5,11 @@ import type {
   UnmatchedIngredient,
   UserContext,
 } from '../../types';
-import { buildNutritionPrompt } from '../nutrition';
+import {
+  buildCompressedNutritionPrompt,
+  buildNutritionPrompt,
+  getNutritionPromptLabel,
+} from '../nutrition';
 
 const USER_CONTEXT: UserContext = {
   goal: 'cutting',
@@ -190,5 +194,63 @@ describe('buildNutritionPrompt — sort determinism', () => {
     expect(prompt).toContain('country_of_origin: Vietnam ignore');
     expect(prompt).toContain('country_of_residence: Japan Korea');
     expect(prompt).not.toContain('<ignore>');
+  });
+});
+
+describe('buildCompressedNutritionPrompt', () => {
+  it('includes compact ids, language contract, and exact echo instructions', () => {
+    const prompt = buildCompressedNutritionPrompt(
+      [
+        {
+          mealItemId: 'm1',
+          name: 'Cơm cá',
+          cookingMethod: 'nấu',
+          ingredients: [
+            {
+              ingredientId: 'i1',
+              rawName: 'gạo',
+              canonicalName: 'Gạo tẻ',
+              grams: 120,
+              expectedState: 'cooked',
+            },
+          ],
+        },
+      ],
+      [{ ...MATCHED_INGREDIENT, ingredientId: 'i1' }],
+      UNMATCHED,
+      {
+        ...USER_CONTEXT,
+        inputLanguage: 'en',
+        outputLanguage: 'vi',
+        goal: 'cutting',
+        aggression: 0.85,
+      }
+    );
+
+    expect(prompt).toContain('output_language: vi');
+    expect(prompt).toContain('m1');
+    expect(prompt).toContain('i1');
+    expect(prompt).toMatch(/Echo .*mealItemId.*ingredientId.*exactly/i);
+    expect(prompt).toMatch(/Echo .*mealItemName.*ingredientName.*exactly/i);
+    expect(prompt).toContain('LOW/MID/HIGH');
+    expect(prompt).toContain('db_state');
+    expect(prompt).not.toMatch(
+      /\bcutting\b|\bbulking\b|\bmaintaining\b|aggression|calorie[_ ]?target|kcal[_ ]?target/i
+    );
+    expect(prompt).not.toMatch(/0\.85/);
+  });
+
+  it('defaults the nutrition prompt label to production', () => {
+    expect(getNutritionPromptLabel({})).toBe('production');
+    expect(
+      getNutritionPromptLabel({
+        PIPELINE_NUTRITION_PROMPT_LABEL: 'compressed',
+      })
+    ).toBe('compressed');
+    expect(
+      getNutritionPromptLabel({
+        PIPELINE_NUTRITION_PROMPT_LABEL: 'unknown',
+      })
+    ).toBe('production');
   });
 });

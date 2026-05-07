@@ -102,6 +102,9 @@ vi.mock('@/lib/ai/prompts', () => ({
     .fn()
     .mockReturnValue(vi.fn().mockReturnValue('decomp-system-prompt')),
   buildNutritionPrompt: vi.fn().mockReturnValue('nutrition-system-prompt'),
+  getNutritionPromptBuilder: vi
+    .fn()
+    .mockReturnValue(vi.fn().mockReturnValue('nutrition-system-prompt')),
 }));
 
 import { createMockGemini } from '@/lib/ai/__tests__/test-helpers';
