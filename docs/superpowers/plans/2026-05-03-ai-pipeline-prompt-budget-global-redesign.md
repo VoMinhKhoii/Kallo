@@ -849,7 +849,7 @@ In `gemini.ts` or provider wrapper, choose full vs slim schema by config. Defaul
 
 - [ ] **Step 5: Confirm threshold checklist entry exists before canary**
 
-Slim schema rollout cannot start until the schema-format row in the rollout threshold checklist is filled with parse error ceiling, schema validation failure ceiling, token reduction target, p95 latency ceiling, retry rate ceiling, and quality drift review criteria.
+Slim schema rollout cannot start until the schema-format row in `docs/superpowers/plans/2026-05-03-ai-pipeline-prompt-budget-global-redesign-rollout-thresholds.md` is filled with parse error ceiling, schema validation failure ceiling, token reduction target, p95 latency ceiling, retry rate ceiling, and quality drift review criteria.
 
 - [ ] **Step 6: Run tests**
 
@@ -887,7 +887,7 @@ Run focused tests. Record before/after budget in test output or comments only if
 
 - [ ] **Step 5: Confirm threshold checklist entry exists**
 
-Before enabling any canary traffic, fill the decomposition prompt row in the rollout threshold checklist.
+Before enabling any canary traffic, fill the decomposition prompt row in `docs/superpowers/plans/2026-05-03-ai-pipeline-prompt-budget-global-redesign-rollout-thresholds.md`.
 
 - [ ] **Step 6: Commit**
 
@@ -921,7 +921,7 @@ Run: `bun run test lib/ai/prompts/__tests__/nutrition.test.ts lib/ai/pipeline/__
 
 - [ ] **Step 5: Confirm threshold checklist entry exists**
 
-Before enabling canary traffic, fill the nutrition prompt row in the rollout threshold checklist.
+Before enabling canary traffic, fill the nutrition prompt row in `docs/superpowers/plans/2026-05-03-ai-pipeline-prompt-budget-global-redesign-rollout-thresholds.md`.
 
 - [ ] **Step 6: Commit**
 
@@ -960,7 +960,7 @@ Record the data packet label with prompt/provider metadata so canary comparison 
 
 - [ ] **Step 6: Confirm threshold checklist entry exists**
 
-Before enabling canary traffic, fill the dynamic packet row in the rollout threshold checklist.
+Before enabling canary traffic, fill the dynamic packet row in `docs/superpowers/plans/2026-05-03-ai-pipeline-prompt-budget-global-redesign-rollout-thresholds.md`.
 
 - [ ] **Step 7: Run tests**
 
@@ -1023,7 +1023,7 @@ Use Context7 for `@google/genai` provider patterns before changing SDK usage.
 
 - [ ] **Step 2: Confirm threshold checklist entry exists**
 
-Provider canary rollout cannot start until the provider row in the rollout threshold checklist is filled.
+Provider canary rollout cannot start until the provider row in `docs/superpowers/plans/2026-05-03-ai-pipeline-prompt-budget-global-redesign-rollout-thresholds.md` is filled.
 
 - [ ] **Step 3: Write interface tests**
 
@@ -1157,7 +1157,7 @@ Run: `bun run test lib/ai/provider/__tests__/vertex.test.ts lib/ai/provider/__te
 
 - [ ] **Step 6: Confirm threshold checklist entry exists**
 
-Before routing any non-local traffic to Vertex, fill the Vertex provider row in the rollout threshold checklist.
+Before routing any non-local traffic to Vertex, fill the Vertex provider row in `docs/superpowers/plans/2026-05-03-ai-pipeline-prompt-budget-global-redesign-rollout-thresholds.md`.
 
 - [ ] **Step 7: Commit**
 
@@ -1220,7 +1220,7 @@ Run provider cache tests.
 
 - [ ] **Step 6: Confirm threshold checklist entry exists**
 
-Before enabling explicit caching, fill the cache row in the rollout threshold checklist.
+Before enabling explicit caching, fill the cache row in `docs/superpowers/plans/2026-05-03-ai-pipeline-prompt-budget-global-redesign-rollout-thresholds.md`.
 
 - [ ] **Step 7: Commit**
 
