@@ -103,6 +103,7 @@ vi.mock('@/lib/ai/prompts', () => ({
 
 import { createMockGemini } from '@/lib/ai/__tests__/test-helpers';
 import type { UserContext } from '@/lib/ai/types';
+import { analysisModelBudgetEvents, pipelineRuns } from '@/lib/db/schema';
 import type { AnalyzeMealTraceContext } from '../orchestrator';
 // Import after mocks
 import {
@@ -221,8 +222,31 @@ const FULL_PIPELINE_RESULT = {
 };
 
 function makeDb(): AppDb {
-  mockDbInsert.mockReturnValue({ values: mockDbValues });
+  mockDbInsert.mockReturnValue({
+    values: (row: unknown) => {
+      mockDbValues(row);
+      return { returning: vi.fn().mockResolvedValue([{ id: 'inserted-id' }]) };
+    },
+  });
   return { insert: mockDbInsert } as unknown as AppDb;
+}
+
+function insertedRowsFor(table: unknown) {
+  return mockDbValues.mock.calls
+    .map((call, index) => ({
+      row: call[0],
+      table: mockDbInsert.mock.calls[index]?.[0],
+    }))
+    .filter((entry) => entry.table === table)
+    .map((entry) => entry.row as Record<string, unknown>);
+}
+
+function pipelineRunRows() {
+  return insertedRowsFor(pipelineRuns);
+}
+
+function budgetEventRows() {
+  return insertedRowsFor(analysisModelBudgetEvents);
 }
 
 // ---------------------------------------------------------------------------
@@ -306,6 +330,118 @@ describe('analyzeMeal traceContext', () => {
 
     expect(mockLogStage).not.toHaveBeenCalled();
     expect(mockRecordPromptVersion).not.toHaveBeenCalled();
+  });
+
+  it('records always-on model token budget events when trace logging is disabled', async () => {
+    vi.stubEnv('PIPELINE_TRACE_ENABLED', 'false');
+    const db = makeDb();
+    const generateStructuredOutputStream = vi
+      .fn()
+      .mockImplementationOnce((_params, opts) => {
+        opts?.onAttemptComplete?.({
+          attempt: 1,
+          model: 'decomposition-model',
+          inputTokens: 10,
+          outputTokens: 20,
+          error: null,
+        });
+        return Promise.resolve(VALID_DECOMP);
+      })
+      .mockImplementationOnce((_params, opts) => {
+        opts?.onAttemptComplete?.({
+          attempt: 1,
+          model: 'nutrition-model',
+          inputTokens: 30,
+          outputTokens: 40,
+          error: null,
+        });
+        return Promise.resolve(VALID_NUTRITION);
+      });
+    const gemini = createMockGemini({ generateStructuredOutputStream });
+
+    await analyzeMeal('cơm trắng', USER_CONTEXT, db, gemini, undefined);
+
+    expect(mockLogStage).not.toHaveBeenCalled();
+    expect(mockRecordPromptVersion).not.toHaveBeenCalled();
+    expect(pipelineRunRows()).toHaveLength(0);
+    expect(budgetEventRows()).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          workKind: 'primary',
+          requestCount: 1,
+          inputTokens: 0,
+          outputTokens: 0,
+          errorCategory: null,
+        }),
+        expect.objectContaining({
+          workKind: 'primary',
+          requestCount: 0,
+          model: 'decomposition-model',
+          inputTokens: 10,
+          outputTokens: 20,
+          errorCategory: null,
+        }),
+        expect.objectContaining({
+          workKind: 'primary',
+          requestCount: 0,
+          model: 'nutrition-model',
+          inputTokens: 30,
+          outputTokens: 40,
+          errorCategory: null,
+        }),
+      ])
+    );
+  });
+
+  it('records provider-pressure errors from recovered model attempts without trace logging', async () => {
+    vi.stubEnv('PIPELINE_TRACE_ENABLED', 'false');
+    const db = makeDb();
+    const recoveredError = Object.assign(new Error('503 UNAVAILABLE'), {
+      status: 503,
+    });
+    const generateStructuredOutputStream = vi
+      .fn()
+      .mockImplementationOnce((_params, opts) => {
+        opts?.onAttemptComplete?.({
+          attempt: 1,
+          model: 'decomposition-model',
+          inputTokens: null,
+          outputTokens: null,
+          error: recoveredError,
+        });
+        opts?.onAttemptComplete?.({
+          attempt: 2,
+          model: 'decomposition-model',
+          inputTokens: 11,
+          outputTokens: 22,
+          error: null,
+        });
+        return Promise.resolve(VALID_DECOMP);
+      })
+      .mockResolvedValueOnce(VALID_NUTRITION);
+    const gemini = createMockGemini({ generateStructuredOutputStream });
+
+    const result = await analyzeMeal(
+      'cơm trắng',
+      USER_CONTEXT,
+      db,
+      gemini,
+      undefined
+    );
+
+    expect(result.success).toBe(true);
+    expect(mockLogStage).not.toHaveBeenCalled();
+    expect(mockRecordPromptVersion).not.toHaveBeenCalled();
+    expect(budgetEventRows()).toContainEqual(
+      expect.objectContaining({
+        workKind: 'primary',
+        requestCount: 0,
+        model: 'decomposition-model',
+        inputTokens: 0,
+        outputTokens: 0,
+        errorCategory: 'server_error',
+      })
+    );
   });
 
   it('logs stage 1 success and stage 2 error when matching throws', async () => {
@@ -392,8 +528,9 @@ describe('analyzeMeal traceContext', () => {
       traceContext
     );
 
-    expect(mockDbValues).toHaveBeenCalledTimes(1);
-    const row = mockDbValues.mock.calls[0][0];
+    const rows = pipelineRunRows();
+    expect(rows).toHaveLength(1);
+    const row = rows[0];
     expect(row.densityEnvelopeFires).toBe(1);
     expect(row.macroInconsistentFires).toBe(2);
     expect(row.anomalyTypes).toContain('density_envelope');
@@ -430,8 +567,9 @@ describe('analyzeMeal traceContext', () => {
       traceContext
     );
 
-    expect(mockDbValues).toHaveBeenCalledTimes(1);
-    expect(mockDbValues.mock.calls[0][0].cookedToRawFactorFires).toBe(2);
+    const rows = pipelineRunRows();
+    expect(rows).toHaveLength(1);
+    expect(rows[0].cookedToRawFactorFires).toBe(2);
   });
 
   it('records unknown cooking-method state derivations in pipeline_runs counters', async () => {
@@ -493,8 +631,9 @@ describe('analyzeMeal traceContext', () => {
       traceContext
     );
 
-    expect(mockDbValues).toHaveBeenCalledTimes(1);
-    expect(mockDbValues.mock.calls[0][0].dbStateUnknownFires).toBe(1);
+    const rows = pipelineRunRows();
+    expect(rows).toHaveLength(1);
+    expect(rows[0].dbStateUnknownFires).toBe(1);
   });
 
   it('records canonicalName vocabulary misses in preMatchAliasHits', async () => {
@@ -548,8 +687,9 @@ describe('analyzeMeal traceContext', () => {
       traceContext
     );
 
-    expect(mockDbValues).toHaveBeenCalledTimes(1);
-    expect(mockDbValues.mock.calls[0][0].preMatchAliasHits).toBe(1);
+    const rows = pipelineRunRows();
+    expect(rows).toHaveLength(1);
+    expect(rows[0].preMatchAliasHits).toBe(1);
   });
 
   it('aggregates ambiguityFlags into pipeline_runs telemetry', async () => {
@@ -633,7 +773,9 @@ describe('analyzeMeal traceContext', () => {
       multiple_dish_interpretations: 1,
       cross_cuisine_ingredient: 2,
     });
-    expect(mockDbValues.mock.calls[0][0].ambiguityFlagCounts).toEqual({
+    const rows = pipelineRunRows();
+    expect(rows).toHaveLength(1);
+    expect(rows[0].ambiguityFlagCounts).toEqual({
       multiple_dish_interpretations: 1,
       cross_cuisine_ingredient: 2,
     });
@@ -687,8 +829,9 @@ describe('analyzeMeal traceContext', () => {
       traceContext
     );
 
-    expect(mockDbValues).toHaveBeenCalledTimes(1);
-    expect(mockDbValues.mock.calls[0][0]).toMatchObject({
+    const rows = pipelineRunRows();
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({
       rrfSampled: true,
       rrfDisagreementCount: 1,
       rrfIngredientsObserved: 2,
@@ -776,9 +919,10 @@ describe('analyzeMeal traceContext', () => {
       { l4Cache: { enabled: true } }
     );
 
-    expect(mockDbValues).toHaveBeenCalledTimes(2);
-    expect(mockDbValues.mock.calls[0][0].cacheHitL4).toBe(false);
-    expect(mockDbValues.mock.calls[1][0].cacheHitL4).toBe(true);
+    const rows = pipelineRunRows();
+    expect(rows).toHaveLength(2);
+    expect(rows[0].cacheHitL4).toBe(false);
+    expect(rows[1].cacheHitL4).toBe(true);
     expect(generateStructuredOutputStream).toHaveBeenCalledTimes(3);
   });
 });
@@ -842,6 +986,10 @@ describe('shadow-runner integration', () => {
     const persistShadowRun = vi.fn().mockImplementation(async () => {
       expect(primaryReturned).toBe(true);
     });
+    const guard = {
+      shouldRun: vi.fn().mockResolvedValue({ run: true }),
+      onPrimaryComplete: vi.fn(),
+    };
 
     const response = await analyzeMeal(
       'cơm trắng',
@@ -850,7 +998,7 @@ describe('shadow-runner integration', () => {
       makeGemini(),
       undefined,
       makeTrace(db),
-      { shadow: { enabled: true, rate: 1, persistShadowRun } }
+      { shadow: { enabled: true, rate: 1, persistShadowRun, guard } }
     );
     primaryReturned = true;
 
@@ -864,6 +1012,10 @@ describe('shadow-runner integration', () => {
   it('shadow failure does not perturb the primary response', async () => {
     const db = makeDb();
     const persistShadowRun = vi.fn().mockRejectedValue(new Error('db down'));
+    const guard = {
+      shouldRun: vi.fn().mockResolvedValue({ run: true }),
+      onPrimaryComplete: vi.fn(),
+    };
 
     const response = await analyzeMeal(
       'cơm trắng',
@@ -872,7 +1024,7 @@ describe('shadow-runner integration', () => {
       makeGemini(),
       undefined,
       makeTrace(db),
-      { shadow: { enabled: true, rate: 1, persistShadowRun } }
+      { shadow: { enabled: true, rate: 1, persistShadowRun, guard } }
     );
 
     expect(response.success).toBe(true);

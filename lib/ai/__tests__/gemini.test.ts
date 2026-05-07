@@ -450,5 +450,90 @@ describe('GeminiClient', () => {
 
       expect(mockLogLlmCall).not.toHaveBeenCalled();
     });
+
+    it('emits attempt token metadata when trace is disabled', async () => {
+      mockGenerateContentStream.mockResolvedValueOnce(
+        streamChunks([
+          { text: '{"items":["d"]}' },
+          { usageMetadata: { promptTokenCount: 12, candidatesTokenCount: 34 } },
+        ])
+      );
+
+      const client = createGeminiClient('test-key', {
+        maxRetries: 2,
+        baseDelayMs: 10,
+      });
+      const onAttemptComplete = vi.fn();
+
+      const result = await client.generateStructuredOutputStream(
+        {
+          schema: traceSchema,
+          systemPrompt: 'sys',
+          userMessage: 'user',
+          model: 'gemini-test',
+        },
+        { onAttemptComplete }
+      );
+
+      expect(result).toEqual({ items: ['d'] });
+      expect(mockLogLlmCall).not.toHaveBeenCalled();
+      expect(onAttemptComplete).toHaveBeenCalledWith({
+        attempt: 1,
+        model: 'gemini-test',
+        inputTokens: 12,
+        outputTokens: 34,
+        error: null,
+      });
+    });
+
+    it('emits retryable attempt errors even when a later attempt succeeds', async () => {
+      const retryableError = Object.assign(new Error('503 UNAVAILABLE'), {
+        status: 503,
+      });
+      mockGenerateContentStream
+        .mockRejectedValueOnce(retryableError)
+        .mockResolvedValueOnce(
+          streamChunks([
+            { text: '{"items":["e"]}' },
+            {
+              usageMetadata: { promptTokenCount: 7, candidatesTokenCount: 11 },
+            },
+          ])
+        );
+
+      const client = createGeminiClient('test-key', {
+        maxRetries: 2,
+        baseDelayMs: 10,
+      });
+      const onAttemptComplete = vi.fn();
+
+      const result = await client.generateStructuredOutputStream(
+        {
+          schema: traceSchema,
+          systemPrompt: 'sys',
+          userMessage: 'user',
+          model: 'gemini-test',
+        },
+        { onAttemptComplete }
+      );
+
+      expect(result).toEqual({ items: ['e'] });
+      expect(mockLogLlmCall).not.toHaveBeenCalled();
+      expect(onAttemptComplete).toHaveBeenCalledTimes(2);
+      expect(onAttemptComplete).toHaveBeenNthCalledWith(1, {
+        attempt: 1,
+        model: 'gemini-test',
+        inputTokens: null,
+        outputTokens: null,
+        error: retryableError,
+      });
+      expect(onAttemptComplete).toHaveBeenNthCalledWith(2, {
+        attempt: 2,
+        model: 'gemini-test',
+        inputTokens: 7,
+        outputTokens: 11,
+        error: null,
+      });
+    });
   });
 });

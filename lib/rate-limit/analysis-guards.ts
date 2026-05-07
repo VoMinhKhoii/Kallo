@@ -646,21 +646,30 @@ export async function recordAnalysisModelBudgetEvent(
   const eventDb = input.db ?? appDb;
   const now = input.now?.() ?? new Date();
 
-  await eventDb
-    .insert(analysisModelBudgetEvents)
-    .values({
-      createdAt: now,
-      requestId: input.requestId ?? null,
-      route: input.route,
-      workKind: input.workKind,
-      provider: input.provider,
-      model: input.model ?? null,
-      requestCount: readNonNegativeInteger(input.requestCount, 1),
-      inputTokens: readNonNegativeInteger(input.inputTokens, 0),
-      outputTokens: readNonNegativeInteger(input.outputTokens, 0),
-      errorCategory: input.errorCategory ?? null,
-    })
-    .returning({ id: analysisModelBudgetEvents.id });
+  const insertResult = eventDb.insert(analysisModelBudgetEvents).values({
+    createdAt: now,
+    requestId: input.requestId ?? null,
+    route: input.route,
+    workKind: input.workKind,
+    provider: input.provider,
+    model: input.model ?? null,
+    requestCount: readNonNegativeInteger(input.requestCount, 1),
+    inputTokens: readNonNegativeInteger(input.inputTokens, 0),
+    outputTokens: readNonNegativeInteger(input.outputTokens, 0),
+    errorCategory: input.errorCategory ?? null,
+  });
+
+  if (
+    insertResult &&
+    typeof insertResult === 'object' &&
+    'returning' in insertResult &&
+    typeof insertResult.returning === 'function'
+  ) {
+    await insertResult.returning({ id: analysisModelBudgetEvents.id });
+    return;
+  }
+
+  await insertResult;
 }
 
 export async function checkNonessentialAnalysisGuards(

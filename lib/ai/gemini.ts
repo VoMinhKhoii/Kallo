@@ -53,8 +53,17 @@ export interface GeminiCallTrace {
   promptRendered: string;
 }
 
+export interface GeminiAttemptMetadata {
+  attempt: number;
+  model: string;
+  inputTokens: number | null;
+  outputTokens: number | null;
+  error: unknown;
+}
+
 export interface StreamOptions {
   onAttemptStart?: (attempt: number) => void;
+  onAttemptComplete?: (metadata: GeminiAttemptMetadata) => void;
   onChunk?: (accumulated: string) => void;
   trace?: GeminiCallTrace;
 }
@@ -234,7 +243,7 @@ export function createGeminiClient(
       params: StructuredOutputParams<T>,
       opts?: StreamOptions
     ): Promise<T> {
-      const { onAttemptStart, onChunk, trace } = opts ?? {};
+      const { onAttemptComplete, onAttemptStart, onChunk, trace } = opts ?? {};
       const jsonSchema = toJSONSchema(params.schema);
       const promptSize = params.systemPrompt.length + params.userMessage.length;
       console.info(
@@ -248,29 +257,45 @@ export function createGeminiClient(
         candidatesTokenCount?: number;
       } | null = null;
 
-      const onAttempt = trace
-        ? (attempt: number, t0: number, _result: T | null, err: unknown) => {
-            logLlmCall({
-              db: trace.db,
-              requestId: trace.requestId,
-              stageLogId: trace.stageLogId,
-              promptVersionId: trace.promptVersionId,
-              model: params.model,
-              promptRendered: trace.promptRendered,
-              responseRaw: lastAccumulated,
-              inputTokens: lastUsageMeta?.promptTokenCount ?? null,
-              outputTokens: lastUsageMeta?.candidatesTokenCount ?? null,
-              latencyMs: Date.now() - t0,
-              attempt,
-              error:
-                err instanceof Error
-                  ? err.message
-                  : err != null
-                    ? String(err)
-                    : undefined,
-            });
-          }
-        : undefined;
+      const onAttempt = (
+        attempt: number,
+        t0: number,
+        _result: T | null,
+        err: unknown
+      ) => {
+        const inputTokens = lastUsageMeta?.promptTokenCount ?? null;
+        const outputTokens = lastUsageMeta?.candidatesTokenCount ?? null;
+
+        if (trace) {
+          logLlmCall({
+            db: trace.db,
+            requestId: trace.requestId,
+            stageLogId: trace.stageLogId,
+            promptVersionId: trace.promptVersionId,
+            model: params.model,
+            promptRendered: trace.promptRendered,
+            responseRaw: lastAccumulated,
+            inputTokens,
+            outputTokens,
+            latencyMs: Date.now() - t0,
+            attempt,
+            error:
+              err instanceof Error
+                ? err.message
+                : err != null
+                  ? String(err)
+                  : undefined,
+          });
+        }
+
+        onAttemptComplete?.({
+          attempt,
+          model: params.model,
+          inputTokens,
+          outputTokens,
+          error: err,
+        });
+      };
 
       return withRetry(
         async (attempt) => {

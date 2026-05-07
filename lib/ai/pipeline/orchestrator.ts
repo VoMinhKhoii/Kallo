@@ -3,13 +3,14 @@ import { toJSONSchema } from 'zod';
 import type { AppDb } from '@/lib/db';
 import { fetchWithTimeout } from '@/lib/fetch-with-timeout';
 import {
+  type AnalysisModelBudgetWorkKind,
   type AnalysisModelProviderErrorCategory,
   checkNonessentialAnalysisGuards,
   type RecordAnalysisModelBudgetEventInput,
   recordAnalysisModelBudgetEvent,
 } from '@/lib/rate-limit/analysis-guards';
 import { capitalizeFirst } from '@/lib/utils';
-import type { GeminiClient } from '../gemini';
+import type { GeminiClient, StreamOptions } from '../gemini';
 import { matchIngredients } from '../matching';
 import type { RrfMeasurement } from '../matching/rrf-measurement';
 import { createSpeculativeMatcher } from '../matching/speculative';
@@ -176,6 +177,11 @@ interface RunPipelineOptions {
   matchingConcurrency?: number;
   nutritionModel?: string;
   l4Cache?: AnalyzeMealOptions['l4Cache'];
+  budget?: {
+    workKind: AnalysisModelBudgetWorkKind;
+    requestId?: string | null;
+    providerErrorState?: { recorded: boolean };
+  };
 }
 
 type StageName = 'decomposition' | 'matching' | 'nutrition' | 'assembly';
@@ -254,6 +260,41 @@ function recordAnalysisModelBudgetEventBestEffort(
   });
 }
 
+function createBudgetAttemptRecorder(args: {
+  db: AppDb;
+  requestId: string | null;
+  workKind: AnalysisModelBudgetWorkKind;
+  model: string;
+  providerErrorState?: { recorded: boolean };
+}): NonNullable<StreamOptions['onAttemptComplete']> {
+  return ({ error, inputTokens, model, outputTokens }) => {
+    const errorCategory = error == null ? null : classifyProviderError(error);
+
+    if (inputTokens == null && outputTokens == null && errorCategory == null) {
+      return;
+    }
+
+    if (errorCategory) {
+      if (args.providerErrorState) {
+        args.providerErrorState.recorded = true;
+      }
+    }
+
+    recordAnalysisModelBudgetEventBestEffort({
+      db: args.db,
+      requestId: args.requestId,
+      route: ANALYSIS_MODEL_BUDGET_ROUTE,
+      workKind: args.workKind,
+      provider: ANALYSIS_MODEL_PROVIDER,
+      model: model || args.model,
+      requestCount: 0,
+      inputTokens,
+      outputTokens,
+      errorCategory,
+    });
+  };
+}
+
 function getErrorStatus(error: unknown): number | null {
   if (
     error &&
@@ -326,6 +367,7 @@ export async function analyzeMeal(
   options?: AnalyzeMealOptions
 ): Promise<PipelineResponse> {
   const analyzeStart = Date.now();
+  const providerErrorState = { recorded: false };
   recordAnalysisModelBudgetEventBestEffort({
     db,
     requestId: traceContext?.requestId ?? null,
@@ -344,7 +386,14 @@ export async function analyzeMeal(
       gemini,
       onEvent,
       traceContext,
-      options
+      {
+        ...options,
+        budget: {
+          workKind: 'primary',
+          requestId: traceContext?.requestId ?? null,
+          providerErrorState,
+        },
+      }
     );
     scheduleShadowRun({
       rawInput,
@@ -359,7 +408,7 @@ export async function analyzeMeal(
     return response;
   } catch (error) {
     const providerErrorCategory = classifyProviderError(error);
-    if (providerErrorCategory) {
+    if (providerErrorCategory && !providerErrorState.recorded) {
       recordAnalysisModelBudgetEventBestEffort({
         db,
         requestId: traceContext?.requestId ?? null,
@@ -429,6 +478,10 @@ async function runPipeline(
 ): Promise<PipelineResponse> {
   const t0 = Date.now();
   const emit = onEvent ?? (() => {});
+  const budget = options.budget ?? {
+    workKind: 'primary' as const,
+    requestId: traceContext?.requestId ?? null,
+  };
 
   // Stage 1: Streaming decomposition with speculative embedding pre-warming
   // + per-item name detection for progressive UI
@@ -496,6 +549,13 @@ async function runPipeline(
             },
             {
               onAttemptStart: decompositionStream.resetAttempt,
+              onAttemptComplete: createBudgetAttemptRecorder({
+                db,
+                requestId: budget.requestId ?? null,
+                workKind: budget.workKind,
+                model: DECOMPOSITION_MODEL,
+                providerErrorState: budget.providerErrorState,
+              }),
               onChunk: decompositionStream.handleChunk,
               trace: callTrace,
             }
@@ -722,6 +782,13 @@ async function runPipeline(
               onAttemptStart: () => {
                 lastExtractedCount = 0;
               },
+              onAttemptComplete: createBudgetAttemptRecorder({
+                db,
+                requestId: budget.requestId ?? null,
+                workKind: budget.workKind,
+                model: selectedNutritionModel,
+                providerErrorState: budget.providerErrorState,
+              }),
               onChunk: nutritionOnChunk,
               trace: callTrace,
             }
@@ -792,6 +859,13 @@ async function runPipeline(
                 onAttemptStart: () => {
                   lastExtractedCount = 0;
                 },
+                onAttemptComplete: createBudgetAttemptRecorder({
+                  db,
+                  requestId: budget.requestId ?? null,
+                  workKind: budget.workKind,
+                  model: selectedNutritionModel,
+                  providerErrorState: budget.providerErrorState,
+                }),
                 onChunk: nutritionOnChunk,
                 trace: callTrace,
               }
@@ -847,7 +921,17 @@ async function runPipeline(
                 topK: 1,
                 abortSignal: signal,
               },
-              { onChunk: nutritionOnChunk, trace: callTrace }
+              {
+                onAttemptComplete: createBudgetAttemptRecorder({
+                  db,
+                  requestId: budget.requestId ?? null,
+                  workKind: budget.workKind,
+                  model: selectedNutritionModel,
+                  providerErrorState: budget.providerErrorState,
+                }),
+                onChunk: nutritionOnChunk,
+                trace: callTrace,
+              }
             ),
           LLM_TIMEOUT_MS,
           'nutrition-retry'
@@ -1098,6 +1182,10 @@ function scheduleShadowRun(args: {
             {
               matchingConcurrency: 1,
               nutritionModel: candidateModel,
+              budget: {
+                workKind: 'shadow',
+                requestId: args.traceContext?.requestId ?? null,
+              },
             }
           ),
         persistShadowRun:
