@@ -40,14 +40,13 @@ export function buildDecompositionPrompt(
      2. Identify each user-facing meal item, then list its ingredients.
      3. Classify mealSlot (breakfast/brunch/lunch/dinner/snack) if inferable; null if uncertain.
      4. Emit the dish-wrapped schema exactly:
-        mealItems[]: { mealItemId, name, cookingMethod, cuisineNote?, ingredients[] }
-        ingredients[]: { ingredientId, rawName, canonicalName, grams, expectedState?, ambiguityFlags? }
+        mealItems[]: { name, cookingMethod, cuisineNote?, ingredients[] }
+        ingredients[]: { rawName, canonicalName, grams, expectedState?, ambiguityFlags? }
    </task>
 
   <stable_ids>
-    Emit mealItemId and ingredientId for every meal item and ingredient.
-    Use UUID-shaped strings. Do NOT use names as IDs.
-    If you re-emit the same logical item during a retry, reuse the same ID.
+    Do not emit mealItemId or ingredientId. Runtime assigns compact run-scoped
+    IDs (m1, m2, i1, i2) after parsing so duplicate display names remain safe.
   </stable_ids>
 
   <grams_only>
@@ -147,23 +146,21 @@ ${countryLines.length > 0 ? `${countryLines.join('\n')}\n` : ''}  oil_usage: ${c
       "mealSlot": "lunch",
       "mealItems": [
         {
-          "mealItemId": "dddddddd-dddd-4ddd-8ddd-dddddddddddd",
           "name": "cơm trắng",
           "cookingMethod": "nấu",
           "ingredients": [
-            { "ingredientId": "11111111-1111-4111-8111-111111111111", "rawName": "cơm", "canonicalName": "Cơm", "grams": 170, "expectedState": "cooked" }
+            { "rawName": "cơm", "canonicalName": "Cơm", "grams": 170, "expectedState": "cooked" }
           ]
         },
         {
-          "mealItemId": "eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee",
           "name": "thịt kho trứng",
           "cookingMethod": "kho",
           "ingredients": [
-            { "ingredientId": "22222222-2222-4222-8222-222222222222", "rawName": "thịt ba chỉ", "canonicalName": "Thịt lợn ba chỉ", "grams": 100, "expectedState": "cooked" },
-            { "ingredientId": "33333333-3333-4333-8333-333333333333", "rawName": "trứng gà", "canonicalName": "Trứng gà", "grams": 50, "expectedState": "cooked" },
-            { "ingredientId": "44444444-4444-4444-8444-444444444444", "rawName": "đường", "canonicalName": "Đường kính", "grams": 8 },
-            { "ingredientId": "55555555-5555-4555-8555-555555555555", "rawName": "nước mắm", "canonicalName": "Nước mắm", "grams": 15 },
-            { "ingredientId": "66666666-6666-4666-8666-666666666666", "rawName": "dầu ăn", "canonicalName": "Dầu đậu nành", "grams": 5 }
+            { "rawName": "thịt ba chỉ", "canonicalName": "Thịt lợn ba chỉ", "grams": 100, "expectedState": "cooked" },
+            { "rawName": "trứng gà", "canonicalName": "Trứng gà", "grams": 50, "expectedState": "cooked" },
+            { "rawName": "đường", "canonicalName": "Đường kính", "grams": 8 },
+            { "rawName": "nước mắm", "canonicalName": "Nước mắm", "grams": 15 },
+            { "rawName": "dầu ăn", "canonicalName": "Dầu đậu nành", "grams": 5 }
           ]
         }
       ]
@@ -180,27 +177,24 @@ ${countryLines.length > 0 ? `${countryLines.join('\n')}\n` : ''}  oil_usage: ${c
       "mealSlot": null,
       "mealItems": [
         {
-          "mealItemId": "ffffffff-ffff-4fff-8fff-ffffffffffff",
           "name": "cơm trắng",
           "cookingMethod": "nấu",
           "ingredients": [
-            { "ingredientId": "77777777-7777-4777-8777-777777777777", "rawName": "cơm", "canonicalName": "Cơm", "grams": 100, "expectedState": "cooked" }
+            { "rawName": "cơm", "canonicalName": "Cơm", "grams": 100, "expectedState": "cooked" }
           ]
         },
         {
-          "mealItemId": "12121212-1212-4212-8212-121212121212",
           "name": "đùi gà rô ti",
           "cookingMethod": "nướng",
           "ingredients": [
-            { "ingredientId": "88888888-8888-4888-8888-888888888888", "rawName": "đùi gà", "canonicalName": "Đùi gà", "grams": 150, "expectedState": "cooked" }
+            { "rawName": "đùi gà", "canonicalName": "Đùi gà", "grams": 150, "expectedState": "cooked" }
           ]
         },
         {
-          "mealItemId": "13131313-1313-4313-8313-131313131313",
           "name": "cải thìa luộc",
           "cookingMethod": "luộc",
           "ingredients": [
-            { "ingredientId": "99999999-9999-4999-8999-999999999999", "rawName": "cải thìa", "canonicalName": "Cải thìa", "grams": 100, "expectedState": "cooked" }
+            { "rawName": "cải thìa", "canonicalName": "Cải thìa", "grams": 100, "expectedState": "cooked" }
           ]
         }
       ]
@@ -217,20 +211,18 @@ ${countryLines.length > 0 ? `${countryLines.join('\n')}\n` : ''}  oil_usage: ${c
       "mealSlot": null,
       "mealItems": [
         {
-          "mealItemId": "14141414-1414-4414-8414-141414141414",
           "name": "steak lõi vai",
           "cookingMethod": "chiên",
           "ingredients": [
-            { "ingredientId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa", "rawName": "thịt bò lõi vai", "canonicalName": "Thịt bò lõi vai", "grams": 200, "expectedState": "cooked" },
-            { "ingredientId": "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb", "rawName": "dầu ăn", "canonicalName": "Dầu đậu nành", "grams": 5 }
+            { "rawName": "thịt bò lõi vai", "canonicalName": "Thịt bò lõi vai", "grams": 200, "expectedState": "cooked" },
+            { "rawName": "dầu ăn", "canonicalName": "Dầu đậu nành", "grams": 5 }
           ]
         },
         {
-          "mealItemId": "15151515-1515-4515-8515-151515151515",
           "name": "dưa leo",
           "cookingMethod": "raw",
           "ingredients": [
-            { "ingredientId": "cccccccc-cccc-4ccc-8ccc-cccccccccccc", "rawName": "dưa leo", "canonicalName": "Dưa leo", "grams": 60, "expectedState": "raw" }
+            { "rawName": "dưa leo", "canonicalName": "Dưa leo", "grams": 60, "expectedState": "raw" }
           ]
         }
       ]
@@ -245,5 +237,5 @@ ${countryLines.length > 0 ? `${countryLines.join('\n')}\n` : ''}  oil_usage: ${c
   </example>
 </examples>
 
-Return JSON matching the provided schema. Every meal item must have mealItemId, name, cookingMethod, and at least one ingredient. Every ingredient must have ingredientId, rawName, canonicalName, and grams. Use ingredient names in the user's language, following the naming specificity rules above.`;
+Return JSON matching the provided schema. Every meal item must have name, cookingMethod, and at least one ingredient. Every ingredient must have rawName, canonicalName, and grams. Do not emit IDs. Use ingredient names in the user's language, following the naming specificity rules above.`;
 }

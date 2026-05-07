@@ -2,7 +2,8 @@ import { extractMealItemNameOccurrences } from '@/lib/ai/streaming/parsers';
 import type { StreamEvent } from '@/lib/ai/streaming/types';
 import type { MealDecomposition } from '@/lib/ai/types';
 import { capitalizeFirst } from '@/lib/utils';
-import { generateMealItemId, type MealDecompositionWithIds } from './ids';
+import { createCompactIdSequence } from './id-sequence';
+import type { MealDecompositionWithIds } from './ids';
 
 interface DecompositionStreamControllerInput {
   emit: (event: StreamEvent) => void;
@@ -15,6 +16,7 @@ export function createDecompositionStreamController({
 }: DecompositionStreamControllerInput) {
   const emittedCounts = new Map<string, number>();
   const mealItemIds = new Map<string, string>();
+  const idSequence = createCompactIdSequence();
   let mealItemIndex = 0;
 
   const resetAttempt = () => {
@@ -32,7 +34,7 @@ export function createDecompositionStreamController({
     for (const { name, occurrence } of newOccurrences) {
       const displayName = capitalizeFirst(name);
       const key = `${displayName}::${occurrence}`;
-      const mealItemId = mealItemIds.get(key) ?? generateMealItemId();
+      const mealItemId = mealItemIds.get(key) ?? idSequence.nextMealItemId();
       mealItemIds.set(key, mealItemId);
       emit({
         type: 'item_name',

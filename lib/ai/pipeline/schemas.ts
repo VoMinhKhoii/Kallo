@@ -16,8 +16,9 @@ export const decomposedIngredientSchema = z
     ingredientId: z
       .string()
       .min(1)
+      .optional()
       .describe(
-        'Stable per-ingredient ID emitted by the model. Runtime normalizes invalid or duplicate values (§0.1).'
+        'Optional legacy per-ingredient ID. Runtime owns and normalizes compact run-scoped IDs (§0.1).'
       ),
     rawName: z
       .string()
@@ -57,8 +58,9 @@ export const decomposedDishSchema = z
     mealItemId: z
       .string()
       .min(1)
+      .optional()
       .describe(
-        'Stable per-meal-item ID emitted by the model. Runtime normalizes invalid or duplicate values (§0.1).'
+        'Optional legacy per-meal-item ID. Runtime owns and normalizes compact run-scoped IDs (§0.1).'
       ),
     name: z
       .string()
@@ -152,7 +154,7 @@ export function normalizeBoundedEstimate(raw: {
 export const ingredientLlmNutritionSchema = z.object({
   ingredientId: z
     .string()
-    .uuid()
+    .min(1)
     .optional()
     .describe(
       'Optional pass-through of the decomposition ingredientId; runtime reconciles by name when omitted.'
@@ -169,7 +171,7 @@ export const ingredientLlmNutritionSchema = z.object({
 export const mealItemNutritionSchema = z.object({
   mealItemId: z
     .string()
-    .uuid()
+    .min(1)
     .optional()
     .describe(
       'Optional pass-through of the decomposition mealItemId; runtime reconciles by name when omitted.'

@@ -52,27 +52,19 @@ const RAW_CALL_1_OUTPUT = {
 };
 
 describe('ensureIdsOnDecomposition at the Call 1 parse boundary', () => {
-  it('assigns a unique UUID to every meal item and ingredient', () => {
+  it('assigns a unique compact ID to every meal item and ingredient', () => {
     const parsed = mealDecompositionSchema.parse(RAW_CALL_1_OUTPUT);
     const filled = ensureIdsOnDecomposition(parsed);
 
     const mealIds = filled.mealItems.map((m) => m.mealItemId);
+    expect(mealIds).toEqual(['m1', 'm2']);
     expect(new Set(mealIds).size).toBe(mealIds.length);
-    for (const id of mealIds) {
-      expect(id).toMatch(
-        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
-      );
-    }
 
     const ingredientIds = filled.mealItems.flatMap((m) =>
       m.ingredients.map((i) => i.ingredientId)
     );
+    expect(ingredientIds).toEqual(['i1', 'i2', 'i3', 'i4']);
     expect(new Set(ingredientIds).size).toBe(ingredientIds.length);
-    for (const id of ingredientIds) {
-      expect(id).toMatch(
-        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
-      );
-    }
 
     const nuocDungIds = filled.mealItems
       .flatMap((m) => m.ingredients)

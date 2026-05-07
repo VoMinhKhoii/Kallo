@@ -58,8 +58,7 @@ import type { UserContext } from '@/lib/ai/types';
 // Imported after mocks
 import { analyzeMeal } from '../orchestrator';
 
-const UUID_RE =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const COMPACT_MEAL_ID_RE = /^m[1-9]\d*$/;
 
 const USER_CONTEXT: UserContext = {
   goal: 'maintaining',
@@ -164,7 +163,7 @@ describe('analyzeMeal SSE id threading', () => {
     });
   });
 
-  it('emits a UUID mealItemId on every item_name event', async () => {
+  it('emits a compact mealItemId on every item_name event', async () => {
     const events: StreamEvent[] = [];
     const result = await analyzeMeal(
       'cơm trắng',
@@ -180,11 +179,11 @@ describe('analyzeMeal SSE id threading', () => {
     for (const e of nameEvents) {
       // Narrow for TS
       if (e.type !== 'item_name') continue;
-      expect(e.mealItemId).toMatch(UUID_RE);
+      expect(e.mealItemId).toMatch(COMPACT_MEAL_ID_RE);
     }
   });
 
-  it('emits a UUID mealItemId on every item_macros event', async () => {
+  it('emits a compact mealItemId on every item_macros event', async () => {
     const events: StreamEvent[] = [];
     await analyzeMeal(
       'cơm trắng',
@@ -198,7 +197,7 @@ describe('analyzeMeal SSE id threading', () => {
     expect(macroEvents.length).toBeGreaterThan(0);
     for (const e of macroEvents) {
       if (e.type !== 'item_macros') continue;
-      expect(e.mealItemId).toMatch(UUID_RE);
+      expect(e.mealItemId).toMatch(COMPACT_MEAL_ID_RE);
     }
   });
 
@@ -246,8 +245,8 @@ describe('analyzeMeal SSE id threading', () => {
     );
     expect(names.length).toBe(2);
     expect(names[0].mealItemId).not.toBe(names[1].mealItemId);
-    expect(names[0].mealItemId).toMatch(UUID_RE);
-    expect(names[1].mealItemId).toMatch(UUID_RE);
+    expect(names[0].mealItemId).toMatch(COMPACT_MEAL_ID_RE);
+    expect(names[1].mealItemId).toMatch(COMPACT_MEAL_ID_RE);
 
     const macros = events.filter(
       (e): e is Extract<StreamEvent, { type: 'item_macros' }> =>

@@ -51,11 +51,8 @@ import {
   NonFoodError,
   nonFoodResponse,
 } from './errors';
-import {
-  ensureIdsOnDecomposition,
-  generateMealItemId,
-  type MealDecompositionWithIds,
-} from './ids';
+import { createCompactIdSequence } from './id-sequence';
+import { ensureIdsOnDecomposition, type MealDecompositionWithIds } from './ids';
 import { resolveModelProfile } from './model-profile';
 import {
   type RawNutritionAdjustment,
@@ -584,7 +581,7 @@ async function runPipeline(
   // `ensureIdsOnDecomposition` runs. This guarantees streamed `item_name`
   // ids match `item_macros` ids for the same logical slot (§0.1, §4.4).
   // Items that didn't appear in the stream (LLM held the whole tail until
-  // close) get fresh UUIDs minted by `ensureIdsOnDecomposition`.
+  // close) get fresh compact ids minted by `ensureIdsOnDecomposition`.
   decompositionStream.applyParsedIds(rawDecomposition);
   const decomposition: MealDecompositionWithIds =
     ensureIdsOnDecomposition(rawDecomposition);
@@ -709,10 +706,13 @@ async function runPipeline(
   // order as decomposition, so a FIFO peel-off correctly attributes each
   // streaming macros event to the right logical slot.
   const mealItemIdQueueByName = new Map<string, string[]>();
+  const nutritionFallbackIds = createCompactIdSequence();
+  const allMealItemIds = new Set<string>();
   for (const mi of decomposition.mealItems) {
     const list = mealItemIdQueueByName.get(mi.name) ?? [];
     list.push(mi.mealItemId);
     mealItemIdQueueByName.set(mi.name, list);
+    allMealItemIds.add(mi.mealItemId);
   }
   const macroEmittedCounts = new Map<string, number>();
   const resolveMealItemId = (name: string): string => {
@@ -724,7 +724,10 @@ async function runPipeline(
     macroEmittedCounts.set(name, idx + 1);
     // Wrap on retry: nutrition retry re-emits the same items, so cycle
     // through the per-name queue rather than running off the end.
-    return ids[idx % Math.max(ids.length, 1)] ?? generateMealItemId();
+    return (
+      ids[idx % Math.max(ids.length, 1)] ??
+      nutritionFallbackIds.nextMealItemId(allMealItemIds)
+    );
   };
 
   const nutritionOnChunk = (accumulated: string) => {

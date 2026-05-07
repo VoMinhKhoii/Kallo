@@ -99,10 +99,14 @@ describe('buildDecompositionPrompt', () => {
     expect(prompt).not.toMatch(/0\.85/);
   });
 
-  it('asks for stable ids on every emitted item', () => {
+  it('keeps IDs runtime-owned instead of asking the model for UUIDs', () => {
     const prompt = buildDecompositionPrompt(sampleUserContext);
-    expect(prompt).toMatch(/mealItemId/);
-    expect(prompt).toMatch(/ingredientId/);
+    expect(prompt).toContain('Do not emit mealItemId or ingredientId');
+    expect(prompt).toContain('Runtime assigns compact run-scoped');
+    expect(prompt).not.toContain('Use UUID-shaped strings');
+    expect(prompt).not.toMatch(
+      /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i
+    );
   });
 
   it('asks for canonicalName separately from rawName', () => {

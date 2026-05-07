@@ -53,13 +53,13 @@ export interface ValidationAnomaly {
   message: string;
   severity: 'warning' | 'error';
   /**
-   * Run-scoped ingredient UUID (§0.1). Set when the anomaly is attributed
+   * Run-scoped compact ingredient ID (§0.1). Set when the anomaly is attributed
    * to a specific ingredient row. Anomalies that span a meal item or the
    * whole pipeline (e.g., `meal_item_cap`, `total_calories`,
    * `unmatched_ratio`) leave this undefined.
    */
   ingredientId?: string;
-  /** Run-scoped meal-item UUID (§0.1) when applicable. */
+  /** Run-scoped compact meal-item ID (§0.1) when applicable. */
   mealItemId?: string;
 }
 

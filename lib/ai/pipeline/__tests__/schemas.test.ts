@@ -25,6 +25,12 @@ describe('decomposedIngredientSchema', () => {
     expect(result.success).toBe(true);
   });
 
+  it('accepts omitted runtime-owned ingredientId', () => {
+    const { ingredientId, ...withoutId } = validIngredient;
+    const result = decomposedIngredientSchema.safeParse(withoutId);
+    expect(result.success).toBe(true);
+  });
+
   it('accepts omitted expectedState', () => {
     const { expectedState, ...withoutState } = validIngredient;
     const result = decomposedIngredientSchema.safeParse(withoutState);
@@ -115,6 +121,11 @@ describe('decomposedDishSchema', () => {
 
   it('accepts a valid dish', () => {
     expect(decomposedDishSchema.safeParse(validDish).success).toBe(true);
+  });
+
+  it('accepts omitted runtime-owned mealItemId', () => {
+    const { mealItemId, ...withoutId } = validDish;
+    expect(decomposedDishSchema.safeParse(withoutId).success).toBe(true);
   });
 
   it('keeps cookingMethod free-form', () => {
@@ -337,6 +348,19 @@ describe('nutritionAdjustmentSchema', () => {
         {
           mealItemName: 'cơm',
           ingredients: [validIngredient],
+        },
+      ],
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it('accepts compact optional nutrition IDs', () => {
+    const result = nutritionAdjustmentSchema.safeParse({
+      mealItems: [
+        {
+          mealItemId: 'm1',
+          mealItemName: 'cơm',
+          ingredients: [{ ...validIngredient, ingredientId: 'i1' }],
         },
       ],
     });
