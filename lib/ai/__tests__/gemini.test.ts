@@ -1,6 +1,6 @@
 import type { ThinkingLevel } from '@google/genai';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { z } from 'zod';
+import { toJSONSchema, z } from 'zod';
 
 // ── hoisted mocks (must run before module imports) ───────────────────────────
 const { mockLogLlmCall } = vi.hoisted(() => ({
@@ -382,6 +382,10 @@ describe('GeminiClient', () => {
       expect(call.requestId).toBe('req-1');
       expect(call.stageLogId).toBe('stage-1');
       expect(call.promptVersionId).toBe('pv-1');
+      expect(call.metadata).toEqual({
+        promptChars: 'sys'.length + 'user'.length,
+        schemaChars: JSON.stringify(toJSONSchema(traceSchema)).length,
+      });
     });
 
     it('logs 2 inserts when stream throws once then succeeds (attempt 1 error, attempt 2 success)', async () => {

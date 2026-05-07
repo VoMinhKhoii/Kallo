@@ -1,6 +1,7 @@
 import { GoogleGenAI, type ThinkingLevel } from '@google/genai';
 import { toJSONSchema, type ZodType } from 'zod';
 import { logLlmCall } from '@/lib/ai/pipeline/trace';
+import { measurePromptBudget } from '@/lib/ai/prompts/budget';
 import type { AppDb } from '@/lib/db';
 
 const EMBEDDING_MODEL = 'gemini-embedding-001';
@@ -201,10 +202,13 @@ export function createGeminiClient(
       params: StructuredOutputParams<T>
     ): Promise<T> {
       const jsonSchema = toJSONSchema(params.schema);
-      const schemaSize = JSON.stringify(jsonSchema).length;
-      const promptSize = params.systemPrompt.length + params.userMessage.length;
+      const promptBudget = measurePromptBudget({
+        systemPrompt: params.systemPrompt,
+        userMessage: params.userMessage,
+        schema: jsonSchema,
+      });
       console.info(
-        `[gemini] ${params.model} structured output: prompt=${promptSize} chars (~${Math.round(promptSize / 4)} tokens), schema=${schemaSize} chars`
+        `[gemini] ${params.model} structured output: prompt=${promptBudget.systemChars + promptBudget.userChars} chars (~${promptBudget.approxTokens} tokens incl schema), schema=${promptBudget.schemaChars} chars`
       );
 
       return withRetry(
@@ -245,9 +249,13 @@ export function createGeminiClient(
     ): Promise<T> {
       const { onAttemptComplete, onAttemptStart, onChunk, trace } = opts ?? {};
       const jsonSchema = toJSONSchema(params.schema);
-      const promptSize = params.systemPrompt.length + params.userMessage.length;
+      const promptBudget = measurePromptBudget({
+        systemPrompt: params.systemPrompt,
+        userMessage: params.userMessage,
+        schema: jsonSchema,
+      });
       console.info(
-        `[gemini] ${params.model} streaming output: prompt=${promptSize} chars (~${Math.round(promptSize / 4)} tokens)`
+        `[gemini] ${params.model} streaming output: prompt=${promptBudget.systemChars + promptBudget.userChars} chars (~${promptBudget.approxTokens} tokens incl schema), schema=${promptBudget.schemaChars} chars`
       );
 
       // Mutable closure: updated as each chunk is streamed; reset per attempt.
@@ -285,6 +293,10 @@ export function createGeminiClient(
                 : err != null
                   ? String(err)
                   : undefined,
+            metadata: {
+              promptChars: promptBudget.systemChars + promptBudget.userChars,
+              schemaChars: promptBudget.schemaChars,
+            },
           });
         }
 

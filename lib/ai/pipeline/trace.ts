@@ -128,7 +128,9 @@ export interface LlmCallMetadataArgs {
   outputTokens?: number | null;
   cachedTokens?: number | null;
   thoughtTokens?: number | null;
+  /** Rendered system + user message characters measured before provider call. */
   promptChars?: number | null;
+  /** Serialized response JSON schema characters measured before provider call. */
   schemaChars?: number | null;
 }
 
