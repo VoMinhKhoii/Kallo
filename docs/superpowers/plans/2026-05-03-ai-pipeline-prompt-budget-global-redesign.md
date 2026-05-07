@@ -787,38 +787,39 @@ git commit -m "feat: enforce meal output language"
 ### Task 2.5: Surface Language Metadata In Admin
 
 **Files:**
-- Modify: `lib/ai/pipeline/trace.ts`
-- Modify: `lib/ai/pipeline/run-telemetry.ts`
-- Modify: `lib/admin/queries.ts`
-- Modify: `app/[locale]/(app)/admin/requests/[id]/_components/stage-timeline.tsx`
+- Modify: `lib/ai/pipeline/orchestrator.ts`
 - Modify: `app/[locale]/(app)/admin/requests/[id]/_components/pipeline-summary.tsx`
 
-- [ ] **Step 1: Write failing metadata tests**
+- [x] **Step 1: Write failing metadata tests**
 
 Assert a request with language detection records input language, output language, fallback reason, mismatch result, and retry count.
 
-- [ ] **Step 2: Run focused tests**
+- [x] **Step 2: Run focused tests**
 
 Run trace/admin tests and expect failure until metadata is wired.
 
-- [ ] **Step 3: Attach language metadata to trace/run telemetry**
+- [x] **Step 3: Attach language metadata to trace/run telemetry**
 
 Store language metadata on the existing request/LLM metadata surface from Task 1.7. Prefer additive metadata rows over duplicating columns in multiple tables.
 
-- [ ] **Step 4: Render language metadata in admin**
+- [x] **Step 4: Render language metadata in admin**
 
 Show concise language fields in request detail. Include retry count only when non-zero.
 
-- [ ] **Step 5: Run tests**
+- [x] **Step 5: Run tests**
 
 Run: `bun run test lib/ai/language/__tests__/detect.test.ts lib/ai/language/__tests__/guard.test.ts lib/ai/pipeline/__tests__/trace.test.ts`
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
-git add lib/ai/pipeline/trace.ts lib/ai/pipeline/run-telemetry.ts lib/admin/queries.ts app/[locale]/(app)/admin/requests/[id]/_components
+git add lib/ai/pipeline/orchestrator.ts lib/ai/pipeline/__tests__/orchestrator-trace.test.ts app/[locale]/(app)/admin/requests/[id]/_components/pipeline-summary.tsx app/[locale]/(app)/admin/requests/__tests__/[id]/_components/pipeline-summary.test.tsx docs/superpowers/plans/2026-05-03-ai-pipeline-prompt-budget-global-redesign.md
 git commit -m "feat: show meal language metadata in admin"
 ```
+
+Implementation note: language metadata is persisted in the decomposition stage
+`output_json.languageMetadata`, and language retries are included in
+`pipeline_runs.retry_count`. No new DB columns were required.
 
 ---
 

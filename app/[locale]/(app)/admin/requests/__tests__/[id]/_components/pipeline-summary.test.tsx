@@ -23,6 +23,14 @@ describe('PipelineSummary', () => {
               outputJson: {
                 isFood: true,
                 mealSlot: 'lunch',
+                languageMetadata: {
+                  inputLanguage: 'en',
+                  outputLanguage: 'vi',
+                  guardReason: 'matches_output_language',
+                  guardSeverity: 'info',
+                  guardPassed: true,
+                  retryCount: 1,
+                },
                 mealItems: [
                   {
                     name: 'rice bowl',
@@ -67,6 +75,8 @@ describe('PipelineSummary', () => {
     );
 
     expect(screen.getAllByText('success').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('en → vi')).not.toHaveLength(0);
+    expect(screen.getByText('1 lang retry')).toBeInTheDocument();
     expect(screen.getByText('no match')).toBeInTheDocument();
     expect(screen.queryByText(/Unmatched output/)).not.toBeInTheDocument();
   });

@@ -317,6 +317,80 @@ describe('analyzeMeal traceContext', () => {
     expect(promptVersionsUsed.get('nutrition')).toBe('pv-test-id');
   });
 
+  it('records decomposition language metadata and language retry count', async () => {
+    const db = makeDb();
+    const promptVersionsUsed = new Map<string, string>();
+    const traceContext: AnalyzeMealTraceContext = {
+      requestId: 'req-language-metadata',
+      db,
+      userId: 'user-test-1',
+      promptVersionsUsed,
+    };
+    const generateStructuredOutputStream = vi
+      .fn()
+      .mockResolvedValueOnce(VALID_DECOMP)
+      .mockResolvedValueOnce({
+        isFood: true,
+        mealItems: [
+          {
+            name: 'rice',
+            ingredients: [
+              {
+                name: 'rice',
+                estimatedGrams: 200,
+                cookingMethod: null,
+                userFacingUnit: null,
+              },
+            ],
+          },
+        ],
+        mealSlot: null,
+      })
+      .mockResolvedValueOnce({
+        mealItems: [
+          {
+            mealItemName: 'Rice',
+            ingredients: [
+              {
+                ingredientName: 'Rice',
+                caloriesKcal: { low: 250, mid: 300, high: 360 },
+                proteinG: { low: 5, mid: 6, high: 8 },
+                carbohydrateG: { low: 50, mid: 65, high: 80 },
+                fatG: { low: 0.3, mid: 0.5, high: 1 },
+              },
+            ],
+          },
+        ],
+      });
+    const gemini = createMockGemini({ generateStructuredOutputStream });
+
+    await analyzeMeal(
+      'rice',
+      { ...USER_CONTEXT, inputLanguage: 'en', outputLanguage: 'en' },
+      db,
+      gemini,
+      undefined,
+      traceContext
+    );
+
+    const decompositionStageArg = mockLogStage.mock.calls.find(
+      ([arg]) => arg.stage === 'decomposition'
+    )?.[0];
+    expect(decompositionStageArg?.outputJson).toEqual(
+      expect.objectContaining({
+        languageMetadata: {
+          inputLanguage: 'en',
+          outputLanguage: 'en',
+          guardReason: 'matches_output_language',
+          guardSeverity: 'info',
+          guardPassed: true,
+          retryCount: 1,
+        },
+      })
+    );
+    expect(pipelineRunRows()[0].retryCount).toBe(1);
+  });
+
   it('does not call logStage or recordPromptVersion when no traceContext', async () => {
     const db = makeDb();
     const gemini = createMockGemini({

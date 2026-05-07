@@ -14,6 +14,7 @@ import type { GeminiClient, StreamOptions } from '../gemini';
 import {
   buildLanguageCorrectionMessage,
   checkDecompositionLanguage,
+  type LanguageGuardResult,
 } from '../language/guard';
 import { matchIngredients } from '../matching';
 import type { RrfMeasurement } from '../matching/rrf-measurement';
@@ -186,6 +187,22 @@ interface RunPipelineOptions {
 }
 
 type StageName = 'decomposition' | 'matching' | 'nutrition' | 'assembly';
+
+type DecompositionLanguageMetadata = {
+  inputLanguage: UserContext['inputLanguage'] | null;
+  outputLanguage: UserContext['outputLanguage'] | null;
+  guardReason: LanguageGuardResult['reason'];
+  guardSeverity: LanguageGuardResult['severity'];
+  guardPassed: boolean;
+  retryCount: number;
+};
+
+function attachLanguageMetadata(
+  decomposition: MealDecomposition,
+  metadata: DecompositionLanguageMetadata
+): MealDecomposition & { languageMetadata: DecompositionLanguageMetadata } {
+  return { ...decomposition, languageMetadata: metadata };
+}
 
 /**
  * Wraps a pipeline stage with logStage instrumentation. No-op when trace is undefined.
@@ -542,6 +559,7 @@ async function runPipeline(
     decompositionSchemaHash: DECOMPOSITION_SCHEMA_HASH,
     decompositionModel: DECOMPOSITION_MODEL,
   });
+  let languageRetryCount = 0;
 
   const runDecompositionAttempt = async (
     userMessage: string,
@@ -598,22 +616,45 @@ async function runPipeline(
         const cached = L4_DECOMPOSITION_CACHE.get(decompositionCacheKey);
         if (cached) {
           cacheHitL4 = true;
-          return structuredClone(cached);
+          const cachedDecomposition = structuredClone(cached);
+          const cachedLanguageGuard = checkDecompositionLanguage(
+            cachedDecomposition,
+            userContext
+          );
+          return attachLanguageMetadata(cachedDecomposition, {
+            inputLanguage: userContext.inputLanguage ?? null,
+            outputLanguage: userContext.outputLanguage ?? null,
+            guardReason: cachedLanguageGuard.reason,
+            guardSeverity: cachedLanguageGuard.severity,
+            guardPassed: cachedLanguageGuard.ok,
+            retryCount: 0,
+          });
         }
       }
 
       let decomposed = await runDecompositionAttempt(rawInput, stageLogId);
-      const languageGuard = checkDecompositionLanguage(decomposed, userContext);
+      let languageGuard = checkDecompositionLanguage(decomposed, userContext);
       if (!languageGuard.ok) {
         console.warn('[pipeline] decomposition language mismatch; retrying', {
           expected: userContext.outputLanguage,
           actual: languageGuard.reason,
         });
+        languageRetryCount += 1;
         resetBufferedDecompositionStream();
         decomposed = await runDecompositionAttempt(
           buildLanguageCorrectionMessage(rawInput, userContext),
           stageLogId
         );
+        languageGuard = checkDecompositionLanguage(decomposed, userContext);
+        if (!languageGuard.ok) {
+          console.warn(
+            '[pipeline] decomposition language mismatch remained after retry',
+            {
+              expected: userContext.outputLanguage,
+              actual: languageGuard.reason,
+            }
+          );
+        }
       }
       if (l4CacheEnabled) {
         L4_DECOMPOSITION_CACHE.set(
@@ -621,7 +662,14 @@ async function runPipeline(
           structuredClone(decomposed)
         );
       }
-      return decomposed;
+      return attachLanguageMetadata(decomposed, {
+        inputLanguage: userContext.inputLanguage ?? null,
+        outputLanguage: userContext.outputLanguage ?? null,
+        guardReason: languageGuard.reason,
+        guardSeverity: languageGuard.severity,
+        guardPassed: languageGuard.ok,
+        retryCount: languageRetryCount,
+      });
     }
   );
   // Thread streamed mealItemIds into the parsed decomposition before
@@ -1136,7 +1184,7 @@ async function runPipeline(
           modelProfileForRun.escalationModel !== null &&
           selectedNutritionModel === modelProfileForRun.escalationModel,
         cacheHitL4,
-        retryCount: retryStep2Count,
+        retryCount: languageRetryCount + retryStep2Count,
         promptPersonalizationFields: personalizationFields,
       });
       pipelineRunRow = row;
