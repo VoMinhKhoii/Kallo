@@ -43,7 +43,7 @@ export function MealEntryItem({
               aria-label={`Decrease ${item.name} quantity`}
               disabled={item.quantity <= 0}
               onClick={() => onQuantityChange(item.id, getDelta(-1))}
-              className="flex h-5 w-5 items-center justify-center rounded-md border border-nham-border/60 bg-white text-nham-text-muted transition-colors hover:bg-nham-hover disabled:opacity-40"
+              className="flex h-7 w-7 items-center justify-center rounded-md border border-nham-border/60 bg-white text-nham-text-muted transition-colors hover:bg-nham-hover disabled:opacity-40"
             >
               <Minus className="h-2.5 w-2.5" />
             </button>
@@ -54,7 +54,7 @@ export function MealEntryItem({
               type="button"
               aria-label={`Increase ${item.name} quantity`}
               onClick={() => onQuantityChange(item.id, getDelta(1))}
-              className="flex h-5 w-5 items-center justify-center rounded-md border border-nham-border/60 bg-white text-nham-text-muted transition-colors hover:bg-nham-hover"
+              className="flex h-7 w-7 items-center justify-center rounded-md border border-nham-border/60 bg-white text-nham-text-muted transition-colors hover:bg-nham-hover"
             >
               <Plus className="h-2.5 w-2.5" />
             </button>

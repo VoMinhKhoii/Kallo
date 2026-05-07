@@ -1,7 +1,7 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import type { MealEntry } from '@/components/dashboard/types';
+import type { MealEntry } from '@/lib/types/dashboard';
 
 interface MealListProps {
   meals: MealEntry[];
@@ -12,28 +12,33 @@ export function MealList({ meals }: MealListProps) {
 
   if (meals.length === 0) {
     return (
-      <div className="flex h-full flex-col items-center justify-center gap-2 py-4">
-        <span className="text-[12px] text-nham-stone">{t('noMealsToday')}</span>
+      <div className="flex h-full min-h-0 flex-col items-center justify-center gap-1.5 rounded-2xl border border-nham-border/60 border-dashed bg-card/40 px-3 py-3 text-center">
+        <span className="font-semibold text-nham-text text-sm">
+          {t('noMealsToday')}
+        </span>
+        <span className="text-[11px] text-nham-stone">
+          {t('mealReceiptsHint')}
+        </span>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col gap-2.5">
+    <div className="flex h-full min-h-0 flex-col gap-2">
       <div className="flex items-baseline justify-between">
         <span className="font-bold text-[9px] text-nham-stone uppercase tracking-[0.15em]">
           {t('recentMeals')}
         </span>
         <span className="text-[9px] text-nham-stone">
-          {meals.length} logged
+          {t('mealsLogged', { count: meals.length })}
         </span>
       </div>
 
-      <div className="flex flex-col gap-1.5">
+      <div className="flex min-h-0 flex-col gap-1.5 overflow-y-auto pr-1">
         {meals.map((meal, idx) => (
           <div
             key={meal.id}
-            className="flex items-start justify-between gap-2 rounded-lg px-2.5 py-2 transition-colors hover:bg-nham-hover/60"
+            className="flex items-start justify-between gap-2 rounded-xl border border-transparent px-2.5 py-1.5 transition-colors hover:border-nham-border/60 hover:bg-card/80"
           >
             <div className="flex min-w-0 items-start gap-2">
               <span

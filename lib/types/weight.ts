@@ -12,4 +12,5 @@ export interface WeightSummaryData {
   periodStartWeight: number;
   expectedEndWeight: number;
   goalDirection: WeightGoalDirection;
+  periodElapsedDays: number | null;
 }

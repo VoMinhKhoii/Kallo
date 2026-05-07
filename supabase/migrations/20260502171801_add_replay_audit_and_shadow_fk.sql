@@ -1,3 +1,5 @@
+SET search_path TO public, extensions;
+
 CREATE TABLE "pipeline_request_replay_audit_logs" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
@@ -6,6 +8,7 @@ CREATE TABLE "pipeline_request_replay_audit_logs" (
 	"replay_request_id" uuid NOT NULL,
 	"dry_run" boolean DEFAULT false NOT NULL
 );
+ALTER TABLE "pipeline_request_replay_audit_logs" ENABLE ROW LEVEL SECURITY;
 --> statement-breakpoint
 CREATE INDEX "pipeline_replay_audit_original_idx" ON "pipeline_request_replay_audit_logs" USING btree ("original_request_id");--> statement-breakpoint
 CREATE INDEX "pipeline_replay_audit_replay_idx" ON "pipeline_request_replay_audit_logs" USING btree ("replay_request_id");--> statement-breakpoint

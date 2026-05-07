@@ -194,61 +194,96 @@
     {
       "idx": 27,
       "version": "7",
-      "when": 1777659436241,
-      "tag": "20260501181716_add_pipeline_shadow_runs_table",
+      "when": 1777580142000,
+      "tag": "20260430201542_pipeline_runs_rls",
       "breakpoints": true
     },
     {
       "idx": 28,
       "version": "7",
-      "when": 1777659985529,
-      "tag": "20260501182625_allow_nullable_shadow_candidate_output",
+      "when": 1777580143000,
+      "tag": "20260430201543_pipeline_requests_privacy",
       "breakpoints": true
     },
     {
       "idx": 29,
       "version": "7",
-      "when": 1777662365397,
-      "tag": "20260501190605_add_pipeline_runs_ambiguity_flag_counts",
+      "when": 1777659436000,
+      "tag": "20260501181716_add_pipeline_shadow_runs_table",
       "breakpoints": true
     },
     {
       "idx": 30,
       "version": "7",
-      "when": 1777692977964,
-      "tag": "20260502033617_add_pipeline_runs_rrf_phase_a",
+      "when": 1777659437000,
+      "tag": "20260501181717_pipeline_shadow_runs_rls",
       "breakpoints": true
     },
     {
       "idx": 31,
       "version": "7",
-      "when": 1777742281258,
-      "tag": "20260502171801_add_replay_audit_and_shadow_fk",
+      "when": 1777659985000,
+      "tag": "20260501182625_allow_nullable_shadow_candidate_output",
       "breakpoints": true
     },
     {
       "idx": 32,
+      "version": "7",
+      "when": 1777662365000,
+      "tag": "20260501190605_add_pipeline_runs_ambiguity_flag_counts",
+      "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1777692977000,
+      "tag": "20260502033617_add_pipeline_runs_rrf_phase_a",
+      "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1777742281000,
+      "tag": "20260502171801_add_replay_audit_and_shadow_fk",
+      "breakpoints": true
+    },
+    {
+      "idx": 35,
+      "version": "7",
+      "when": 1777742282000,
+      "tag": "20260502171802_pipeline_replay_audit_rls",
+      "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "7",
+      "when": 1777888119142,
+      "tag": "20260504094839_add_pending_analysis_logged_at",
+      "breakpoints": true
+    },
+    {
+      "idx": 37,
       "version": "7",
       "when": 1778084699999,
       "tag": "20260506162459_add_analysis_guard_events",
       "breakpoints": true
     },
     {
-      "idx": 33,
+      "idx": 38,
       "version": "7",
       "when": 1778088958565,
       "tag": "20260506173558_add_analysis_rate_limits",
       "breakpoints": true
     },
     {
-      "idx": 34,
+      "idx": 39,
       "version": "7",
       "when": 1778092525568,
       "tag": "20260506183525_add_analysis_model_budget_events",
       "breakpoints": true
     },
     {
-      "idx": 35,
+      "idx": 40,
       "version": "7",
       "when": 1778129452821,
       "tag": "20260507045052_add_pipeline_llm_call_metadata",

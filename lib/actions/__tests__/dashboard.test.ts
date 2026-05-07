@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 var mockDbSelect: ReturnType<typeof vi.fn>;
-var mockBuildCalorieAdherenceHeatmap: ReturnType<typeof vi.fn>;
+var mockBuildCalorieAdherenceHeatmapData: ReturnType<typeof vi.fn>;
 var mockLoadWeightSummaryAction: ReturnType<typeof vi.fn>;
 
 vi.mock('@/lib/auth', () => ({
@@ -29,10 +29,10 @@ vi.mock('@/lib/db', () => {
 });
 
 vi.mock('@/lib/dashboard/adherence', () => {
-  mockBuildCalorieAdherenceHeatmap = vi.fn();
+  mockBuildCalorieAdherenceHeatmapData = vi.fn();
 
   return {
-    buildCalorieAdherenceHeatmap: mockBuildCalorieAdherenceHeatmap,
+    buildCalorieAdherenceHeatmapData: mockBuildCalorieAdherenceHeatmapData,
     getLocalDateKey: vi.fn(() => '2026-05-01'),
   };
 });
@@ -53,10 +53,15 @@ import {
 describe('loadCalorieAdherenceHeatmap', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockBuildCalorieAdherenceHeatmap.mockReturnValue([
-      [1, null],
-      [null, 1],
-    ]);
+    mockBuildCalorieAdherenceHeatmapData.mockReturnValue({
+      cells: [
+        [
+          { date: '2026-04-30', ratio: 0.6, status: 'logged' },
+          { date: '2026-05-01', ratio: 0.9, status: 'logged' },
+        ],
+      ],
+      monthHeaders: [{ month: 'May', startColumn: 0, span: 2 }],
+    });
   });
 
   it('loads meal rows and builds the heatmap snapshot', async () => {
@@ -78,12 +83,12 @@ describe('loadCalorieAdherenceHeatmap', () => {
       timezoneOffset: 0,
     });
 
-    expect(heatmap).toEqual([
-      [1, null],
-      [null, 1],
+    expect(heatmap.cells[0]).toHaveLength(2);
+    expect(heatmap.monthHeaders).toEqual([
+      { month: 'May', startColumn: 0, span: 2 },
     ]);
     expect(mockDbSelect).toHaveBeenCalledTimes(1);
-    expect(mockBuildCalorieAdherenceHeatmap).toHaveBeenCalledWith(
+    expect(mockBuildCalorieAdherenceHeatmapData).toHaveBeenCalledWith(
       expect.objectContaining({
         range: '30d',
         calorieTarget: 2000,
@@ -122,6 +127,7 @@ describe('loadVerdictAction', () => {
       periodStartWeight: 70,
       expectedEndWeight: 68.8,
       goalDirection: 'down',
+      periodElapsedDays: 6,
     });
 
     // Mock rows in descending order (most recent first) to match DB orderBy(desc(...))

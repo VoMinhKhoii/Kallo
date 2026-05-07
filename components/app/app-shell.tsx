@@ -103,8 +103,8 @@ export function AppShell({
   };
 
   return (
-    <div className="flex min-h-screen bg-nham-surface">
-      <div className="flex min-h-0 flex-1 gap-3 p-3 pb-[calc(env(safe-area-inset-bottom)+72px)] md:pb-3">
+    <div className="flex min-h-screen min-w-0 bg-nham-surface">
+      <div className="flex min-h-0 min-w-0 flex-1 gap-3 overflow-x-hidden p-3 pb-[calc(env(safe-area-inset-bottom)+72px)] md:pb-3">
         {/* Desktop sidebar — hidden on mobile */}
         <div className="hidden md:block">
           <DesktopSidebar
@@ -122,7 +122,9 @@ export function AppShell({
         </div>
 
         {/* Page content */}
-        <div className="flex min-h-0 flex-1 flex-col">{children}</div>
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-x-hidden">
+          {children}
+        </div>
       </div>
 
       {/* Mobile bottom tab bar */}

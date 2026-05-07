@@ -825,8 +825,32 @@
     "recentMeals": "Recent meals",
     "viewAll": "View all",
     "progress": "Progress",
+    "consistency": "Consistency",
     "weeklyAverage": "Weekly average",
     "target": "Target",
+    "weekOf": "Week of",
+    "save": "Save",
+    "saving": "Saving…",
+    "retry": "Try again",
+    "todayLoading": "Loading today's meals…",
+    "todayLoadError": "Unable to load today's meals. Please try again.",
+    "progressLoadError": "Unable to load the weight trend. Please try again.",
+    "heatmapLoadError": "Unable to load the consistency section. Please try again.",
+    "loadingWeightTrend": "Loading weight trend…",
+    "now": "Now",
+    "weekPrefix": "W",
+    "projected": "Projected",
+    "insufficientWeightData": "Log your weight for at least 2 days to see your trend",
+    "offTrack": "Off track",
+    "mealsLogged": "{count} logged",
+    "ranges": {
+      "thirtyDays": "30 days",
+      "ninetyDays": "90 days",
+      "year": "Year"
+    },
+    "units": {
+      "kg": "kg"
+    },
     "mealTrigger": {
       "close": "Close meal composer",
       "send": "Send meal"
@@ -837,11 +861,18 @@
       "todaysWeight": "Today's weight",
       "morningWeight": "Morning weight",
       "lastLogged": "Last: {weight} kg",
-      "loggedDays": "{count} of last {total} days logged"
+      "loggedDays": "{count} of last {total} days logged",
+      "saved": "Weight saved",
+      "invalidValue": "Check the weight value before saving",
+      "inputLabel": "Weight in kilograms",
+      "logWeight": "Log weight",
+      "saveFailed": "Failed to save weight"
     },
     "adherenceHeatmap": {
       "onTrack": "{percent}% on track",
       "notLogged": "Not logged",
+      "future": "Future day",
+      "outside": "Outside selected range",
       "offTarget": "Off target",
       "onTarget": "On target",
       "noData": "No data",
@@ -852,6 +883,30 @@
       "under": "Under",
       "farOver": "Far over",
       "farUnder": "Far under"
+    },
+    "caloriesLogged": "kcal logged",
+    "mealReceiptsHint": "Your meal receipts will show up here",
+    "progressStatus": {
+      "insufficient": {
+        "label": "Building signal",
+        "detail": "Log a few more weigh-ins and the trend will settle."
+      },
+      "on_pace": {
+        "label": "On pace",
+        "detail": "Your current pace is matching the plan."
+      },
+      "ahead": {
+        "label": "Ahead of plan",
+        "detail": "Progress is moving faster than expected."
+      },
+      "behind": {
+        "label": "Needs attention",
+        "detail": "The trend is softer than the plan right now."
+      },
+      "stable": {
+        "label": "Stable",
+        "detail": "Your weight is staying within a quiet maintenance band."
+      }
     }
   },
   "logging": {
@@ -886,7 +941,11 @@
       "subtitle": "Describe your meal and get a macro breakdown."
     },
     "feedArea": {
-      "savedMeal": "Meal saved"
+      "savedMeal": "Meal saved",
+      "legacyMacroWarning": "Daily macro summary unavailable because some legacy meals have unknown macros.",
+      "loadErrorTitle": "Could not load this day",
+      "loadErrorDescription": "Your saved meals for this date did not load. Try again before logging more food.",
+      "retryDay": "Retry day"
     },
     "streaming": {
       "connecting": "Connecting...",
@@ -907,7 +966,25 @@
     },
     "timelineSidebar": {
       "navigationLabel": "Timeline navigation",
-      "week": "Week {number}"
+      "week": "Week {number}",
+      "history": "History",
+      "historyNavigationLabel": "Meal history navigation",
+      "retryDates": "Retry loading dates",
+      "loadingDates": "Loading dates",
+      "noPreviousMeals": "No previous meals logged",
+      "failedToLoadDates": "Failed to load meal dates.",
+      "failedToLoadHistory": "Failed to load meal history.",
+      "selectDate": "Select date",
+      "datePickerTitle": "Select a date",
+      "datePickerDescription": "Choose a date to view your meals",
+      "todayLabel": "Today",
+      "yesterdayLabel": "Yesterday",
+      "lastWeekdayLabel": "Last {weekday}",
+      "selectedDateLabel": "Selected date",
+      "hasMealIndicator": "Meal saved on this date",
+      "previousWeek": "Previous week",
+      "nextWeek": "Next week",
+      "openCalendar": "Open calendar"
     }
   },
   "settings": {

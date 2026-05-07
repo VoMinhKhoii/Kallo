@@ -67,6 +67,7 @@ vi.mock('@/lib/db/schema', () => ({
     id: 'pendingAnalyses.id',
     userId: 'pendingAnalyses.userId',
     expiresAt: 'pendingAnalyses.expiresAt',
+    loggedAt: 'pendingAnalyses.loggedAt',
   },
   unmatchedIngredients: {
     queryText: 'unmatchedIngredients.queryText',
@@ -83,6 +84,7 @@ import {
   deleteMealAction,
   loadMealDates,
   loadMealsByDate,
+  loadPendingAnalysesByDate,
 } from '@/lib/actions/meals';
 import { requireAuthAndProfile } from '@/lib/auth';
 
@@ -90,6 +92,7 @@ import { requireAuthAndProfile } from '@/lib/auth';
 const UUID_1 = 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11';
 const UUID_2 = 'b1ffcd00-ad1c-4ff9-8c7e-7ccace491b22';
 const UUID_MEAL = 'c2aade11-be2d-4aa0-8d8f-8ddbdf502c33';
+const LOGGED_AT = new Date('2026-04-05T17:30:00.000Z');
 
 // ---------------------------------------------------------------------------
 // Fixtures
@@ -187,6 +190,7 @@ describe('confirmAndSaveMealAction', () => {
             userId: mockUser.id,
             rawInput: 'Phở bò',
             pipelineResult: samplePipelineResult,
+            loggedAt: LOGGED_AT,
           },
         ]),
       }),
@@ -241,6 +245,7 @@ describe('confirmAndSaveMealAction', () => {
             userId: mockUser.id,
             rawInput: 'Phở bò',
             pipelineResult: samplePipelineResult,
+            loggedAt: LOGGED_AT,
           },
         ]),
       }),
@@ -263,6 +268,7 @@ describe('confirmAndSaveMealAction', () => {
             userId: mockUser.id,
             rawInput: 'Phở bò',
             pipelineResult: JSON.parse(JSON.stringify(samplePipelineResult)),
+            loggedAt: LOGGED_AT,
           },
         ]),
       }),
@@ -295,6 +301,7 @@ describe('confirmAndSaveMealAction', () => {
     expect(firstItem.proteinG).toBe(9); // cutting @ 0.5 => 10 + 0.5 * (8 - 10)
 
     const mealRow = capturedValues[0] as Record<string, unknown>;
+    expect(mealRow.loggedAt).toBe(LOGGED_AT);
     expect(mealRow.caloriesKcal).toBe(830);
     expect(mealRow.proteinG).toBe(34);
   });
@@ -318,6 +325,7 @@ describe('confirmAndSaveMealAction', () => {
             userId: mockUser.id,
             rawInput: 'Phở bò',
             pipelineResult,
+            loggedAt: LOGGED_AT,
           },
         ]),
       }),
@@ -430,6 +438,40 @@ describe('loadMealsByDate', () => {
   });
 });
 
+describe('loadPendingAnalysesByDate', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('returns pending confirmations scoped to the selected local day', async () => {
+    mockDbSelect.mockReturnValueOnce({
+      from: vi.fn().mockReturnValue({
+        where: vi.fn().mockReturnValue({
+          orderBy: vi.fn().mockResolvedValue([
+            {
+              id: UUID_1,
+              rawInput: 'Phở bò',
+              loggedAt: LOGGED_AT,
+              pipelineResult: samplePipelineResult,
+            },
+          ]),
+        }),
+      }),
+    });
+
+    const pending = await loadPendingAnalysesByDate({
+      date: '2026-04-06',
+      timezoneOffset: -420,
+    });
+
+    expect(pending).toHaveLength(1);
+    expect(pending[0]?.id).toBe(UUID_1);
+    expect(pending[0]?.rawInput).toBe('Phở bò');
+    expect(pending[0]?.loggedAt).toBe(LOGGED_AT.toISOString());
+    expect(pending[0]?.parsedMeal.mealName).toBe('Phở bò');
+  });
+});
+
 describe('deleteMealAction', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -466,18 +508,35 @@ describe('deleteMealAction', () => {
 });
 
 describe('loadMealDates', () => {
-  it('should query and return dates', async () => {
+  it('returns merged confirmed and pending dates', async () => {
     const { db } = await import('@/lib/db');
-    const mockRows = [{ date: '2026-04-06' }, { date: '2026-04-05' }];
-    (db.selectDistinctOn as ReturnType<typeof vi.fn>).mockReturnValue({
-      from: vi.fn().mockReturnValue({
-        where: vi.fn().mockReturnValue({
-          orderBy: vi.fn().mockResolvedValue(mockRows),
+    (db.selectDistinctOn as ReturnType<typeof vi.fn>)
+      .mockReturnValueOnce({
+        from: vi.fn().mockReturnValue({
+          where: vi.fn().mockReturnValue({
+            orderBy: vi
+              .fn()
+              .mockResolvedValue([
+                { date: '2026-04-06' },
+                { date: '2026-04-05' },
+              ]),
+          }),
         }),
-      }),
-    });
+      })
+      .mockReturnValueOnce({
+        from: vi.fn().mockReturnValue({
+          where: vi.fn().mockReturnValue({
+            orderBy: vi
+              .fn()
+              .mockResolvedValue([
+                { date: '2026-04-07' },
+                { date: '2026-04-06' },
+              ]),
+          }),
+        }),
+      });
 
     const dates = await loadMealDates({ timezoneOffset: 0 });
-    expect(dates).toEqual(['2026-04-06', '2026-04-05']);
+    expect(dates).toEqual(['2026-04-07', '2026-04-06', '2026-04-05']);
   });
 });

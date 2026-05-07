@@ -2,12 +2,14 @@
 
 import { motion } from 'motion/react';
 import { useTranslations } from 'next-intl';
+import type { ReactNode } from 'react';
 
 interface CalorieRingProps {
   current: number;
   target: number;
   size?: number;
   strokeWidth?: number;
+  center?: ReactNode;
 }
 
 export function CalorieRing({
@@ -15,6 +17,7 @@ export function CalorieRing({
   target,
   size = 110,
   strokeWidth = 7,
+  center,
 }: CalorieRingProps) {
   const t = useTranslations('shared.calorieRing');
   const remaining = Math.max(0, target - current);
@@ -60,18 +63,22 @@ export function CalorieRing({
         />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span
-          className="font-semibold text-[22px] text-nham-text tabular-nums leading-none"
-          style={{ fontFamily: 'Lora, serif' }}
-        >
-          {remaining.toLocaleString()}
-        </span>
-        <span className="mt-0.5 font-bold text-[8px] text-nham-stone uppercase tracking-[0.15em]">
-          {t('left')}
-        </span>
-        <span className="mt-0.5 text-[9px] text-nham-text-muted tabular-nums">
-          / {target.toLocaleString()}
-        </span>
+        {center ?? (
+          <>
+            <span
+              className="font-semibold text-[22px] text-nham-text tabular-nums leading-none"
+              style={{ fontFamily: 'Lora, serif' }}
+            >
+              {remaining.toLocaleString()}
+            </span>
+            <span className="mt-0.5 font-bold text-[8px] text-nham-stone uppercase tracking-[0.15em]">
+              {t('left')}
+            </span>
+            <span className="mt-0.5 text-[9px] text-nham-text-muted tabular-nums">
+              / {target.toLocaleString()}
+            </span>
+          </>
+        )}
       </div>
     </div>
   );

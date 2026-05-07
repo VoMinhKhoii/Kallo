@@ -1,23 +1,11 @@
-import type { TimeRange } from '@/components/dashboard/types';
-
-const MONTHS_SHORT = [
-  'Jan',
-  'Feb',
-  'Mar',
-  'Apr',
-  'May',
-  'Jun',
-  'Jul',
-  'Aug',
-  'Sep',
-  'Oct',
-  'Nov',
-  'Dec',
-];
+import type { TimeRange } from '@/lib/types/dashboard';
 
 export function buildXTicks(
   count: number,
-  range: TimeRange
+  range: TimeRange,
+  locale: string,
+  nowLabel: string,
+  weekPrefix: string
 ): { ticks: number[]; formatter: (v: number, idx: number) => string } {
   const uniqueTicks = (values: number[]) =>
     values.filter((value, index, array) => array.indexOf(value) === index);
@@ -28,12 +16,13 @@ export function buildXTicks(
     return {
       ticks,
       formatter: (_v: number, idx: number) =>
-        idx === ticks.length - 1 ? 'Now' : `W${idx + 1}`,
+        idx === ticks.length - 1 ? nowLabel : `${weekPrefix}${idx + 1}`,
     };
   }
 
   // 90d — show months
   const today = new Date();
+  const monthFormatter = new Intl.DateTimeFormat(locale, { month: 'short' });
   const ticks: number[] = [];
   const labels: string[] = [];
   for (let i = 2; i > 0; i--) {
@@ -41,10 +30,10 @@ export function buildXTicks(
     d.setMonth(d.getMonth() - i);
     const dayIndex = count - 1 - i * 30;
     ticks.push(Math.max(0, dayIndex));
-    labels.push(MONTHS_SHORT[d.getMonth()]);
+    labels.push(monthFormatter.format(d));
   }
   ticks.push(count - 1);
-  labels.push('Now');
+  labels.push(nowLabel);
   return {
     ticks: uniqueTicks(ticks),
     formatter: (_v: number, idx: number) => labels[idx] ?? '',

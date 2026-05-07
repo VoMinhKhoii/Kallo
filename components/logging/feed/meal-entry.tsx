@@ -92,7 +92,7 @@ export function MealEntry({
       </div>
 
       {/* Card */}
-      <div className="rounded-2xl border border-nham-border/60 bg-white p-5 shadow-sm transition-shadow hover:shadow-md">
+      <div className="rounded-2xl border border-nham-border/60 bg-white p-4 shadow-sm transition-shadow hover:shadow-md sm:p-5">
         {/* Header: quoted input + controls */}
         <div className="flex items-start justify-between gap-3">
           {message.userInput && (

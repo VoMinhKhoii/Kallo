@@ -1,8 +1,9 @@
 'use server';
 
-import { and, desc, eq, gt, gte, inArray, isNull, lt, sql } from 'drizzle-orm';
+import { and, desc, eq, gte, inArray, isNull, lt, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import { NUTRITION_KEYS } from '@/lib/ai/constants';
+import { toParsedMeal } from '@/lib/ai/mappers';
 import {
   goalAdjustNutrition,
   sumBoundedNutrition,
@@ -10,6 +11,7 @@ import {
 } from '@/lib/ai/pipeline/goal-adjustment';
 import type { NutritionValues, PipelineResult } from '@/lib/ai/types';
 import { requireAuthAndProfile } from '@/lib/auth';
+import { getUtcDayRangeForLocalDate } from '@/lib/date/local-day';
 import { db } from '@/lib/db';
 import {
   mealItems,
@@ -20,6 +22,7 @@ import {
 import { Errors } from '@/lib/errors';
 import { goalEnumSchema } from '@/lib/onboarding/schemas';
 import type { Goal } from '@/lib/onboarding/types';
+import { dateStringSchema, timezoneOffsetSchema } from '@/lib/validation';
 
 // ---------------------------------------------------------------------------
 // Zod schemas for input validation
@@ -39,18 +42,17 @@ const confirmAndSaveSchema = z.object({
 });
 
 const loadMealsByDateSchema = z.object({
-  date: z
-    .string()
-    .regex(/^\d{4}-\d{2}-\d{2}$/, 'Ngày phải có dạng YYYY-MM-DD.'),
-  timezoneOffset: z.number().int().min(-840).max(720),
+  date: dateStringSchema,
+  timezoneOffset: timezoneOffsetSchema,
 });
+type LoadMealsByDateInput = z.infer<typeof loadMealsByDateSchema>;
 
 const deleteMealSchema = z.object({
   mealId: z.string().uuid('mealId phải là UUID hợp lệ.'),
 });
 
 const loadMealDatesSchema = z.object({
-  timezoneOffset: z.number().int().min(-840).max(720),
+  timezoneOffset: timezoneOffsetSchema,
 });
 
 const profileNutritionSettingsSchema = z
@@ -125,15 +127,14 @@ export async function confirmAndSaveMealAction(input: {
       .where(
         and(
           eq(pendingAnalyses.id, parsed.analysisId),
-          eq(pendingAnalyses.userId, user.id),
-          gt(pendingAnalyses.expiresAt, sql`now()`)
+          eq(pendingAnalyses.userId, user.id)
         )
       )
       .returning();
 
     if (!pending) {
       throw Errors.validationFailed(
-        'Phân tích không tồn tại, đã hết hạn, hoặc đã được lưu.'
+        'Phân tích không tồn tại hoặc đã được lưu.'
       );
     }
 
@@ -167,8 +168,8 @@ export async function confirmAndSaveMealAction(input: {
       }
     }
 
-    const now = pending.createdAt;
-    const mealSlot = pipelineResult.mealSlot ?? inferMealSlot(now);
+    const loggedAt = pending.loggedAt;
+    const mealSlot = pipelineResult.mealSlot ?? inferMealSlot(loggedAt);
     const profileNutritionSettings = profileNutritionSettingsSchema.parse({
       goal: profile.goal,
       aggression: profile.aggression,
@@ -230,7 +231,7 @@ export async function confirmAndSaveMealAction(input: {
         rawInput: pending.rawInput,
         mealSlot,
         confidenceOverall: pipelineResult.confidenceOverall,
-        loggedAt: now,
+        loggedAt,
         ...nutritionValuesToRow(mealDisplayed),
       })
       .returning({ id: meals.id });
@@ -311,6 +312,18 @@ export interface PersistedIngredient {
   nutrition: NutritionValues;
 }
 
+export interface PendingMealConfirmation {
+  id: string;
+  rawInput: string;
+  loggedAt: string;
+  parsedMeal: ReturnType<typeof toParsedMeal>;
+}
+
+export interface LoggingDayData {
+  persistedMeals: PersistedMeal[];
+  pendingConfirmations: PendingMealConfirmation[];
+}
+
 export async function loadMealsByDate(input: {
   date: string;
   timezoneOffset: number;
@@ -318,12 +331,17 @@ export async function loadMealsByDate(input: {
   const parsed = loadMealsByDateSchema.parse(input);
   const { user } = await requireAuthAndProfile();
 
-  // Compute UTC range for the given date in the user's timezone
-  // timezoneOffset is in minutes (e.g. UTC+7 = -420)
-  const offsetMs = parsed.timezoneOffset * 60 * 1000;
-  const dayStart = new Date(`${parsed.date}T00:00:00.000Z`);
-  dayStart.setTime(dayStart.getTime() + offsetMs);
-  const dayEnd = new Date(dayStart.getTime() + 24 * 60 * 60 * 1000);
+  return loadMealsByDateForUser(user.id, parsed);
+}
+
+async function loadMealsByDateForUser(
+  userId: string,
+  parsed: LoadMealsByDateInput
+): Promise<PersistedMeal[]> {
+  const { dayStart, dayEnd } = getUtcDayRangeForLocalDate(
+    parsed.date,
+    parsed.timezoneOffset
+  );
 
   // Fetch meals in date range
   const mealRows = await db
@@ -331,7 +349,7 @@ export async function loadMealsByDate(input: {
     .from(meals)
     .where(
       and(
-        eq(meals.userId, user.id),
+        eq(meals.userId, userId),
         gte(meals.loggedAt, dayStart),
         lt(meals.loggedAt, dayEnd)
       )
@@ -404,6 +422,62 @@ export async function loadMealsByDate(input: {
       mealItemGroups: groups,
     };
   });
+}
+
+export async function loadPendingAnalysesByDate(input: {
+  date: string;
+  timezoneOffset: number;
+}): Promise<PendingMealConfirmation[]> {
+  const parsed = loadMealsByDateSchema.parse(input);
+  const { user } = await requireAuthAndProfile();
+
+  return loadPendingAnalysesByDateForUser(user.id, parsed);
+}
+
+async function loadPendingAnalysesByDateForUser(
+  userId: string,
+  parsed: LoadMealsByDateInput
+): Promise<PendingMealConfirmation[]> {
+  const { dayStart, dayEnd } = getUtcDayRangeForLocalDate(
+    parsed.date,
+    parsed.timezoneOffset
+  );
+
+  const rows = await db
+    .select()
+    .from(pendingAnalyses)
+    .where(
+      and(
+        eq(pendingAnalyses.userId, userId),
+        gte(pendingAnalyses.loggedAt, dayStart),
+        lt(pendingAnalyses.loggedAt, dayEnd)
+      )
+    )
+    .orderBy(desc(pendingAnalyses.loggedAt));
+
+  return rows.map((row) => {
+    const pipelineResult = row.pipelineResult as PipelineResult;
+    return {
+      id: row.id,
+      rawInput: row.rawInput,
+      loggedAt: row.loggedAt.toISOString(),
+      parsedMeal: toParsedMeal(pipelineResult),
+    };
+  });
+}
+
+export async function loadLoggingDay(input: {
+  date: string;
+  timezoneOffset: number;
+}): Promise<LoggingDayData> {
+  const parsed = loadMealsByDateSchema.parse(input);
+  const { user } = await requireAuthAndProfile();
+  const [persistedMeals, pendingConfirmations] = await Promise.all([
+    loadMealsByDateForUser(user.id, parsed),
+    loadPendingAnalysesByDateForUser(user.id, parsed),
+  ]);
+
+  return { persistedMeals, pendingConfirmations };
 }
 
 /** Extract flat NutritionValues from a DB row with numeric columns */
@@ -496,15 +570,30 @@ export async function loadMealDates(input: {
   // the same SQL text (Drizzle re-parameterizes the same sql`` object which
   // causes PostgreSQL 42P10: "DISTINCT ON expressions must match ORDER BY").
   const offsetMins = -parsed.timezoneOffset;
-  const dateExpr = sql<string>`DATE(${meals.loggedAt} + (${sql.raw(String(offsetMins))}::integer * INTERVAL '1 minute'))`;
+  const mealDateExpr = sql<string>`DATE(${meals.loggedAt} + (${sql.raw(String(offsetMins))}::integer * INTERVAL '1 minute'))`;
+  const pendingDateExpr = sql<string>`DATE(${pendingAnalyses.loggedAt} + (${sql.raw(String(offsetMins))}::integer * INTERVAL '1 minute'))`;
 
-  const rows = await db
-    .selectDistinctOn([dateExpr], {
-      date: dateExpr.as('date'),
-    })
-    .from(meals)
-    .where(eq(meals.userId, user.id))
-    .orderBy(desc(dateExpr));
+  const [mealRows, pendingRows] = await Promise.all([
+    db
+      .selectDistinctOn([mealDateExpr], {
+        date: mealDateExpr.as('date'),
+      })
+      .from(meals)
+      .where(eq(meals.userId, user.id))
+      .orderBy(desc(mealDateExpr)),
+    db
+      .selectDistinctOn([pendingDateExpr], {
+        date: pendingDateExpr.as('date'),
+      })
+      .from(pendingAnalyses)
+      .where(eq(pendingAnalyses.userId, user.id))
+      .orderBy(desc(pendingDateExpr)),
+  ]);
 
-  return rows.map((r) => r.date);
+  return Array.from(
+    new Set([
+      ...mealRows.map((row) => row.date),
+      ...pendingRows.map((row) => row.date),
+    ])
+  ).sort((a, b) => b.localeCompare(a));
 }

@@ -825,8 +825,32 @@
     "recentMeals": "Bữa ăn gần đây",
     "viewAll": "Xem tất cả",
     "progress": "Tiến trình",
+    "consistency": "Độ đều đặn",
     "weeklyAverage": "Trung bình tuần",
     "target": "Mục tiêu",
+    "weekOf": "Tuần",
+    "save": "Lưu",
+    "saving": "Đang lưu…",
+    "retry": "Thử lại",
+    "todayLoading": "Đang tải bữa ăn hôm nay…",
+    "todayLoadError": "Không tải được bữa ăn hôm nay. Vui lòng thử lại.",
+    "progressLoadError": "Không tải được xu hướng cân nặng. Vui lòng thử lại.",
+    "heatmapLoadError": "Không tải được phần độ đều đặn. Vui lòng thử lại.",
+    "loadingWeightTrend": "Đang tải xu hướng cân nặng…",
+    "now": "Hiện tại",
+    "weekPrefix": "T",
+    "projected": "Dự kiến",
+    "insufficientWeightData": "Ghi cân nặng ít nhất 2 ngày để xem xu hướng",
+    "offTrack": "Lệch kế hoạch",
+    "mealsLogged": "Đã ghi {count}",
+    "ranges": {
+      "thirtyDays": "30 ngày",
+      "ninetyDays": "90 ngày",
+      "year": "Năm"
+    },
+    "units": {
+      "kg": "kg"
+    },
     "mealTrigger": {
       "close": "Đóng khung nhập bữa ăn",
       "send": "Gửi bữa ăn"
@@ -837,11 +861,18 @@
       "todaysWeight": "Cân nặng hôm nay",
       "morningWeight": "Cân nặng buổi sáng",
       "lastLogged": "Lần trước: {weight} kg",
-      "loggedDays": "Đã ghi {count}/{total} ngày gần nhất"
+      "loggedDays": "Đã ghi {count}/{total} ngày gần nhất",
+      "saved": "Đã lưu cân nặng",
+      "invalidValue": "Kiểm tra giá trị cân nặng trước khi lưu",
+      "inputLabel": "Cân nặng theo kilogram",
+      "logWeight": "Ghi cân nặng",
+      "saveFailed": "Không thể lưu cân nặng"
     },
     "adherenceHeatmap": {
       "onTrack": "{percent}% đúng mục tiêu",
       "notLogged": "Chưa ghi nhận",
+      "future": "Ngày trong tương lai",
+      "outside": "Ngoài khoảng đang xem",
       "offTarget": "Lệch mục tiêu",
       "onTarget": "Đúng mục tiêu",
       "noData": "Không có dữ liệu",
@@ -852,6 +883,30 @@
       "under": "Thiếu",
       "farOver": "Vượt nhiều",
       "farUnder": "Thiếu nhiều"
+    },
+    "caloriesLogged": "kcal đã ghi",
+    "mealReceiptsHint": "Những bữa ăn sẽ hiển thị ở đây",
+    "progressStatus": {
+      "insufficient": {
+        "label": "Đang tạo tín hiệu",
+        "detail": "Ghi thêm vài lần cân sẽ làm xu hướng ổn định."
+      },
+      "on_pace": {
+        "label": "Đúng kế hoạch",
+        "detail": "Tốc độ hiện tại của bạn phù hợp với kế hoạch."
+      },
+      "ahead": {
+        "label": "Vượt kế hoạch",
+        "detail": "Tiến độ nhanh hơn dự kiến."
+      },
+      "behind": {
+        "label": "Cần chú ý",
+        "detail": "Xu hướng hiện tại yếu hơn kế hoạch."
+      },
+      "stable": {
+        "label": "Ổn định",
+        "detail": "Cân nặng của bạn đang ổn định ở mức duy trì."
+      }
     }
   },
   "logging": {
@@ -886,7 +941,11 @@
       "subtitle": "Mô tả bữa ăn để nhận phân tích macro."
     },
     "feedArea": {
-      "savedMeal": "Đã lưu bữa ăn"
+      "savedMeal": "Đã lưu bữa ăn",
+      "legacyMacroWarning": "Không thể hiển thị tổng macro trong ngày vì một số bữa ăn cũ thiếu macro.",
+      "loadErrorTitle": "Không thể tải ngày này",
+      "loadErrorDescription": "Các bữa ăn đã lưu cho ngày này chưa tải được. Hãy thử lại trước khi ghi thêm món.",
+      "retryDay": "Tải lại ngày"
     },
     "streaming": {
       "connecting": "Đang kết nối...",
@@ -907,7 +966,25 @@
     },
     "timelineSidebar": {
       "navigationLabel": "Điều hướng dòng thời gian",
-      "week": "Tuần {number}"
+      "week": "Tuần {number}",
+      "history": "Lịch sử",
+      "historyNavigationLabel": "Điều hướng lịch sử bữa ăn",
+      "retryDates": "Thử tải lại ngày",
+      "loadingDates": "Đang tải ngày",
+      "noPreviousMeals": "Chưa có bữa ăn nào được ghi nhận",
+      "failedToLoadDates": "Không thể tải ngày bữa ăn.",
+      "failedToLoadHistory": "Không thể tải lịch sử bữa ăn.",
+      "selectDate": "Chọn ngày",
+      "datePickerTitle": "Chọn một ngày",
+      "datePickerDescription": "Chọn ngày để xem các bữa ăn của bạn",
+      "todayLabel": "Hôm nay",
+      "yesterdayLabel": "Hôm qua",
+      "lastWeekdayLabel": "{weekday} tuần trước",
+      "selectedDateLabel": "Ngày đã chọn",
+      "hasMealIndicator": "Đã có bữa ăn lưu trong ngày này",
+      "previousWeek": "Tuần trước",
+      "nextWeek": "Tuần sau",
+      "openCalendar": "Mở lịch"
     }
   },
   "settings": {

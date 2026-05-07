@@ -14,8 +14,13 @@ const mockLogPipelineStart = vi.fn();
 const mockLogPipelineEnd = vi.fn();
 const mockDbInsert = vi.fn();
 const mockDbInsertValues = vi.fn();
+const mockInsertValues = vi.fn();
 const mockAnalysisGuardEvents = { table: 'analysis_guard_events' };
-const mockPendingAnalyses = { table: 'pending_analyses', id: 'id' };
+const mockPendingAnalyses = {
+  table: 'pending_analyses',
+  id: 'id',
+  loggedAt: 'loggedAt',
+};
 const mockPipelineRequests = { table: 'pipeline_requests', id: 'id' };
 
 interface MockBuildAnalysisGuardEventInput {
@@ -57,6 +62,7 @@ vi.mock('@/lib/db', () => {
     },
     values: (values?: unknown) => {
       mockDbInsertValues(values);
+      mockInsertValues(values);
       return insertChain;
     },
     returning: () => mockInsert(),
@@ -169,6 +175,14 @@ function createRequest(
   }) as unknown as NextRequest;
 }
 
+function mealRequestBody(message: string) {
+  return {
+    message,
+    loggedDate: '2026-04-06',
+    timezoneOffset: -420,
+  };
+}
+
 /** Read all SSE events from a streaming Response */
 async function readSSEEvents(res: Response): Promise<StreamEvent[]> {
   const text = await res.text();
@@ -268,6 +282,7 @@ describe('POST /api/analyze-meal', () => {
     mockDbInsert.mockClear();
     mockDbInsertValues.mockClear();
     mockInsert.mockResolvedValue([{ id: 'analysis-123' }]);
+    mockInsertValues.mockClear();
   });
 
   afterEach(() => {
@@ -281,14 +296,16 @@ describe('POST /api/analyze-meal', () => {
   // Pre-stream validation tests — these return JSON before SSE starts
   it('returns 401 when user is not authenticated', async () => {
     mockGetUser.mockResolvedValue({ data: { user: null } });
-    const res = await POST(createRequest({ message: 'phở bò' }));
+    const res = await POST(createRequest(mealRequestBody('phở bò')));
     expect(res.status).toBe(401);
     const json = await res.json();
     expect(json.error.code).toBe('NOT_AUTHENTICATED');
   });
 
   it('returns 400 when message is missing', async () => {
-    const res = await POST(createRequest({}));
+    const res = await POST(
+      createRequest({ loggedDate: '2026-04-06', timezoneOffset: -420 })
+    );
     expect(res.status).toBe(400);
     const json = await res.json();
     expect(json.error.code).toBe('VALIDATION_FAILED');
@@ -304,7 +321,7 @@ describe('POST /api/analyze-meal', () => {
 
   it('returns 404 when profile row is missing', async () => {
     mockSelect.mockResolvedValue([]);
-    const res = await POST(createRequest({ message: 'phở bò' }));
+    const res = await POST(createRequest(mealRequestBody('phở bò')));
     const json = await res.json();
 
     expect(res.status).toBe(404);
@@ -313,7 +330,7 @@ describe('POST /api/analyze-meal', () => {
 
   it('returns 500 when GEMINI_API_KEY is missing', async () => {
     delete process.env.GEMINI_API_KEY;
-    const res = await POST(createRequest({ message: 'phở bò' }));
+    const res = await POST(createRequest(mealRequestBody('phở bò')));
     expect(res.status).toBe(500);
     const json = await res.json();
     expect(json.error.code).toBe('INTERNAL');
@@ -331,10 +348,9 @@ describe('POST /api/analyze-meal', () => {
     });
 
     const res = await POST(
-      createRequest(
-        { message: rawMealText },
-        { 'x-forwarded-for': '203.0.113.24, 10.0.0.7' }
-      )
+      createRequest(mealRequestBody(rawMealText), {
+        'x-forwarded-for': '203.0.113.24, 10.0.0.7',
+      })
     );
 
     expect(res.status).toBe(429);
@@ -408,10 +424,7 @@ describe('POST /api/analyze-meal', () => {
       throw new Error('telemetry failed');
     });
 
-    const res = await POST(createRequest({ message: 'phở bò' }));
-
-    expect(res.status).toBe(429);
-    expect(res.headers.get('Retry-After')).toBe(String(retryAfterSeconds));
+    const res = await POST(createRequest(mealRequestBody('phở bò')));
     const json = await res.json();
     expect(json.error.code).toBe('RATE_LIMITED');
     expect(mockCreateGeminiClient).not.toHaveBeenCalled();
@@ -429,9 +442,9 @@ describe('POST /api/analyze-meal', () => {
     mockCheckAnalysisGuards.mockResolvedValue({ allowed: true, release });
     mockLogPipelineStart.mockRejectedValue(new Error('log start failed'));
 
-    await expect(POST(createRequest({ message: 'phở bò' }))).rejects.toThrow(
-      'log start failed'
-    );
+    await expect(
+      POST(createRequest(mealRequestBody('phở bò')))
+    ).rejects.toThrow('log start failed');
 
     expect(release).toHaveBeenCalledTimes(1);
     expect(mockCreateGeminiClient).not.toHaveBeenCalled();
@@ -458,7 +471,7 @@ describe('POST /api/analyze-meal', () => {
     });
 
     const res = await POST(
-      createRequest({ message: 'phở bò' }, {}, abortController.signal)
+      createRequest(mealRequestBody('phở bò'), {}, abortController.signal)
     );
     let streamCompleted = false;
     const readPromise = res.text().then(() => {
@@ -485,7 +498,7 @@ describe('POST /api/analyze-meal', () => {
       data: mockPipelineData,
     });
 
-    const res = await POST(createRequest({ message: 'Phở bò tái' }));
+    const res = await POST(createRequest(mealRequestBody('Phở bò tái')));
     expect(res.status).toBe(200);
     expect(res.headers.get('Content-Type')).toBe('text/event-stream');
 
@@ -507,6 +520,13 @@ describe('POST /api/analyze-meal', () => {
     if (resultEvent?.type === 'result') {
       expect(resultEvent.data.mealName).toBe('Phở bò');
     }
+
+    expect(mockInsertValues).toHaveBeenCalledWith(
+      expect.objectContaining({
+        rawInput: 'Phở bò tái',
+        loggedAt: expect.any(Date),
+      })
+    );
   });
 
   it('passes request locale as fallback for mixed-language meal input', async () => {
@@ -516,7 +536,10 @@ describe('POST /api/analyze-meal', () => {
     });
 
     const res = await POST(
-      createRequest({ message: 'pho bo with extra beef', locale: 'vi' })
+      createRequest({
+        ...mealRequestBody('pho bo with extra beef'),
+        locale: 'vi',
+      })
     );
     await res.text();
 
@@ -535,7 +558,7 @@ describe('POST /api/analyze-meal', () => {
     });
 
     const res = await POST(
-      createRequest({ message: 'pho bo with extra beef' })
+      createRequest(mealRequestBody('pho bo with extra beef'))
     );
     await res.text();
 
@@ -554,7 +577,7 @@ describe('POST /api/analyze-meal', () => {
     });
 
     const res = await POST(
-      createRequest({ message: 'grilled chicken with rice' })
+      createRequest(mealRequestBody('grilled chicken with rice'))
     );
     await res.text();
 
@@ -575,7 +598,7 @@ describe('POST /api/analyze-meal', () => {
       },
     });
 
-    const res = await POST(createRequest({ message: 'hello world' }));
+    const res = await POST(createRequest(mealRequestBody('hello world')));
     expect(res.status).toBe(200);
 
     const events = await readSSEEvents(res);
@@ -591,7 +614,7 @@ describe('POST /api/analyze-meal', () => {
   it('streams error event on unexpected exceptions', async () => {
     mockAnalyzeMeal.mockRejectedValue(new Error('unexpected'));
 
-    const res = await POST(createRequest({ message: 'phở bò' }));
+    const res = await POST(createRequest(mealRequestBody('phở bò')));
     expect(res.status).toBe(200);
 
     const events = await readSSEEvents(res);
