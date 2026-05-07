@@ -16,6 +16,23 @@ metrics, and a decision owner.
 | Current prompt/schema budget | `docs/superpowers/plans/2026-05-03-ai-pipeline-prompt-budget-baseline.md` |
 | Admin comparison surface | `/admin/requests/[id]` LLM call and stage metadata |
 | Shadow comparison path | Existing pipeline shadow-run/admin replay infrastructure |
+| Latency benchmark harness | `docs/superpowers/plans/2026-05-08-ai-pipeline-latency-regression.md` and `scripts/benchmark-ai-pipeline-latency.ts` |
+| Production env contract | `.env.example` |
+
+## Default State (must be OFF until thresholds filled)
+
+Every canary below ships with the production path as its source-side default. Setting any of these env vars in `.env.local`, `.env`, or any deployed environment counts as "rolling out" — even on a single dev machine — and is the very thing this checklist exists to gate. **Do not flip a default until the corresponding row below has concrete thresholds, observed metrics, and a `go` decision in the Decision Log.**
+
+| Canary | Env var | Source default (unset) | Enable value |
+| --- | --- | --- | --- |
+| Schema format (slim) | `PIPELINE_PROVIDER_SCHEMA_MODE` | `full` (descriptions kept) | `slim` |
+| Decomposition prompt (compressed) | `PIPELINE_DECOMPOSITION_PROMPT_LABEL` | `production` | `compressed` |
+| Nutrition prompt (compressed) | `PIPELINE_NUTRITION_PROMPT_LABEL` | `production` | `compressed` |
+| Dynamic nutrition facts packet | `PIPELINE_NUTRITION_PACKET_LABEL` (TBD) | `xml` | `compact` (TBD; see Chunk 4) |
+| Provider (Vertex) | `AI_PROVIDER` (TBD) | `developer` | `vertex` |
+| Vertex context cache | Provider-side config | disabled | enabled per spec |
+| Model profile (next) | `PIPELINE_MODEL_PROFILE` | `stable` | `next` |
+| Shadow runner | `SHADOW_RUNNER_ENABLED` | unset (off) | `true` |
 
 ## Required Decision Fields
 
