@@ -418,7 +418,7 @@ Call the admin replay guard before creating the real replay Gemini client. Block
 
 Run the replay and guard tests again.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add lib/rate-limit/analysis-guards.ts app/[locale]/(app)/admin/requests/[id]/actions.ts app/[locale]/(app)/admin/requests/__tests__/replay.test.ts
@@ -874,33 +874,37 @@ Runtime validation still uses the original Zod schema.
 - Modify: `lib/ai/prompts/decomposition.ts`
 - Modify: `lib/ai/pipeline/__tests__/prompts.test.ts`
 - Modify: prompt budget tests
+- Modify: `lib/ai/pipeline/orchestrator.ts`
 
-- [ ] **Step 1: Add tests for compressed prompt contract**
+- [x] **Step 1: Add tests for compressed prompt contract**
 
 Assert prompt includes output language, required fields, no UUID examples, no source routing, no goal/aggression, and no large example block.
 
-- [ ] **Step 2: Run tests**
+- [x] **Step 2: Run tests**
 
 Run: `bun run test lib/ai/pipeline/__tests__/prompts.test.ts lib/ai/prompts/__tests__/budget.test.ts`
 
-- [ ] **Step 3: Add compressed prompt variant behind a label**
+- [x] **Step 3: Add compressed prompt variant behind a label**
 
 Keep the current decomposition prompt as the default. Add a compressed variant behind a prompt label/config. Remove UUID examples and most cuisine-specific examples in the variant. Keep concise global rules, language contract, and compact ID note: IDs are runtime-provided, not model-generated.
 
-- [ ] **Step 4: Run tests and inspect budget output**
+- [x] **Step 4: Run tests and inspect budget output**
 
 Run focused tests. Record before/after budget in test output or comments only if useful.
 
-- [ ] **Step 5: Confirm threshold checklist entry exists**
+- [x] **Step 5: Confirm threshold checklist entry exists**
 
 Before enabling any canary traffic, fill the decomposition prompt row in `docs/superpowers/plans/2026-05-03-ai-pipeline-prompt-budget-global-redesign-rollout-thresholds.md`.
 
 - [ ] **Step 6: Commit**
 
 ```bash
-git add lib/ai/prompts/decomposition.ts lib/ai/pipeline/__tests__/prompts.test.ts lib/ai/prompts/__tests__/budget.test.ts
+git add lib/ai/prompts/decomposition.ts lib/ai/prompts/index.ts lib/ai/pipeline/orchestrator.ts lib/ai/pipeline/__tests__/prompts.test.ts lib/ai/pipeline/__tests__/orchestrator-sse.test.ts lib/ai/pipeline/__tests__/orchestrator-trace.test.ts docs/superpowers/plans/2026-05-03-ai-pipeline-prompt-budget-global-redesign.md
 git commit -m "feat: add compressed decomposition prompt variant"
 ```
+
+Implementation note: `PIPELINE_DECOMPOSITION_PROMPT_LABEL=compressed` selects
+the compressed prompt. The production prompt remains the default.
 
 ### Task 3.3: Add Compressed Nutrition Prompt Variant
 

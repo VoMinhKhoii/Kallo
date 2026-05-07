@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import {
   ASSUMPTION_TEXT,
+  buildCompressedDecompositionPrompt,
   buildDecompositionPrompt,
   buildNutritionPrompt,
+  getDecompositionPromptLabel,
 } from '@/lib/ai/prompts';
 import type {
   DecomposedMealItem,
@@ -142,6 +144,60 @@ describe('buildDecompositionPrompt', () => {
     expect(prompt.toLowerCase()).not.toMatch(
       /route .*to (fao|usda)|prefer (fao|usda)/
     );
+  });
+});
+
+describe('buildCompressedDecompositionPrompt', () => {
+  it('keeps the compressed prompt contract without leaking excluded context', () => {
+    const prompt = buildCompressedDecompositionPrompt({
+      ...sampleUserContext,
+      inputLanguage: 'en',
+      outputLanguage: 'vi',
+      goal: 'cutting',
+      aggression: 0.85,
+    });
+
+    expect(prompt).toContain('output_language: vi');
+    for (const field of [
+      'isFood',
+      'mealSlot',
+      'mealItems',
+      'rawName',
+      'canonicalName',
+      'grams',
+      'cookingMethod',
+    ]) {
+      expect(prompt).toContain(field);
+    }
+    expect(prompt).toContain('Do not emit mealItemId or ingredientId');
+    expect(prompt).not.toMatch(
+      /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i
+    );
+    expect(prompt.toLowerCase()).not.toMatch(
+      /route .*to (fao|usda)|prefer (fao|usda)/
+    );
+    expect(prompt).not.toMatch(
+      /\bcutting\b|\bbulking\b|\bmaintaining\b|aggression|calorie[_ ]?target|kcal[_ ]?target/i
+    );
+    expect(prompt).not.toMatch(/0\.85/);
+    expect(prompt).not.toContain('<examples>');
+    expect(prompt.length).toBeLessThan(
+      buildDecompositionPrompt(sampleUserContext).length
+    );
+  });
+
+  it('defaults the decomposition prompt label to production', () => {
+    expect(getDecompositionPromptLabel({})).toBe('production');
+    expect(
+      getDecompositionPromptLabel({
+        PIPELINE_DECOMPOSITION_PROMPT_LABEL: 'compressed',
+      })
+    ).toBe('compressed');
+    expect(
+      getDecompositionPromptLabel({
+        PIPELINE_DECOMPOSITION_PROMPT_LABEL: 'unknown',
+      })
+    ).toBe('production');
   });
 });
 

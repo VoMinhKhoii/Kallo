@@ -49,6 +49,9 @@ vi.mock('@/lib/ai/pipeline/validation', () => ({
 
 vi.mock('@/lib/ai/prompts', () => ({
   buildDecompositionPrompt: vi.fn().mockReturnValue('decomp-system-prompt'),
+  getDecompositionPromptBuilder: vi
+    .fn()
+    .mockReturnValue(vi.fn().mockReturnValue('decomp-system-prompt')),
   buildNutritionPrompt: vi.fn().mockReturnValue('nutrition-system-prompt'),
 }));
 

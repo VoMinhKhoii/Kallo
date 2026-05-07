@@ -19,7 +19,10 @@ import {
 import { matchIngredients } from '../matching';
 import type { RrfMeasurement } from '../matching/rrf-measurement';
 import { createSpeculativeMatcher } from '../matching/speculative';
-import { buildDecompositionPrompt, buildNutritionPrompt } from '../prompts';
+import {
+  buildNutritionPrompt,
+  getDecompositionPromptBuilder,
+} from '../prompts';
 import {
   computeStreamingMealItem,
   extractCompletedMealItemNutrition,
@@ -549,7 +552,8 @@ async function runPipeline(
   // On retry_step2, the second Call 2 re-emits item_macros; the client
   // overwrites by stable ids (§0.1). If retry_step2_count > 0 exceeds 10%
   // over a 7-day window (KPI block 8), revisit buffer-vs-stream.
-  const renderedDecompositionPrompt = buildDecompositionPrompt(userContext);
+  const decompositionPromptBuilder = getDecompositionPromptBuilder();
+  const renderedDecompositionPrompt = decompositionPromptBuilder(userContext);
   const l4CacheEnabled =
     options.l4Cache?.enabled ?? process.env.NODE_ENV !== 'test';
   const decompositionCacheKey = buildDecompositionCacheKey({
@@ -570,7 +574,7 @@ async function runPipeline(
       trace: traceContext,
       stageLogId,
       name: 'decomposition',
-      builder: buildDecompositionPrompt as (...a: unknown[]) => string,
+      builder: decompositionPromptBuilder as (...a: unknown[]) => string,
       templateSample: systemPrompt,
       model: DECOMPOSITION_MODEL,
     });

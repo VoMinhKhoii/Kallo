@@ -15,6 +15,84 @@ import type { PromptPersonalizationContext } from './types';
  * Spec: docs/superpowers/specs/2026-04-27-ai-pipeline-prompt-context-engineering-design.md
  */
 
+export const DECOMPOSITION_PROMPT_LABEL_ENV =
+  'PIPELINE_DECOMPOSITION_PROMPT_LABEL';
+
+export type DecompositionPromptLabel = 'production' | 'compressed';
+export type DecompositionPromptBuilder = (
+  userContext: PromptPersonalizationContext
+) => string;
+
+export function getDecompositionPromptLabel(
+  env: Record<string, string | undefined> = process.env
+): DecompositionPromptLabel {
+  return env[DECOMPOSITION_PROMPT_LABEL_ENV] === 'compressed'
+    ? 'compressed'
+    : 'production';
+}
+
+export function getDecompositionPromptBuilder(
+  label: DecompositionPromptLabel = getDecompositionPromptLabel()
+): DecompositionPromptBuilder {
+  return label === 'compressed'
+    ? buildCompressedDecompositionPrompt
+    : buildDecompositionPrompt;
+}
+
+function buildCountryContextLines(
+  userContext: PromptPersonalizationContext
+): string[] {
+  return [
+    buildPromptContextLine('country_of_origin', userContext.countryOfOrigin),
+    buildPromptContextLine(
+      'country_of_residence',
+      userContext.countryOfResidence
+    ),
+  ].filter((line): line is string => line !== null);
+}
+
+export function buildCompressedDecompositionPrompt(
+  userContext: PromptPersonalizationContext
+): string {
+  const { cookingHabits } = userContext;
+  const countryLines = buildCountryContextLines(userContext);
+  const outputLanguage = userContext.outputLanguage ?? 'match_user_input';
+
+  return `You are a cuisine-aware meal decomposition engine. Return JSON only.
+
+<contract>
+  output_language: ${outputLanguage}
+  Use output_language for mealItems[].name, mealItems[].cookingMethod, ingredients[].rawName, and cuisineNote.
+  Keep canonicalName DB-friendly and disambiguated for food-composition matching.
+  Do not emit mealItemId or ingredientId; runtime assigns compact IDs.
+</contract>
+
+<schema_fields>
+  Root: isFood, mealSlot, mealItems.
+  mealItems[]: name, cookingMethod, cuisineNote?, ingredients[].
+  ingredients[]: rawName, canonicalName, grams, expectedState?, ambiguityFlags?.
+  expectedState is optional and only "raw" or "cooked".
+  ambiguityFlags values: multiple_dish_interpretations, unspecified_quantity, cross_cuisine_ingredient, state_inferred_no_method.
+</schema_fields>
+
+<rules>
+  Set isFood=false, mealSlot=null, mealItems=[] for non-food input.
+  grams is cooked/as-eaten mass and must be a positive number.
+  Preserve explicit cuts, species, brands, and regional names from the user's text.
+  Add only explicitly mentioned ingredients plus fundamental seasonings for the cooking method.
+  Use cookingMethod at dish level; use expectedState only for mixed-state ingredients.
+  If quantity or interpretation is unclear, choose best-estimate grams and add the relevant ambiguityFlags.
+</rules>
+
+<user_context>
+${countryLines.length > 0 ? `${countryLines.join('\n')}\n` : ''}  oil_usage: ${cookingHabits.oilUsage}
+  default_rice_portion: ${RICE_PORTION_DESCRIPTION[cookingHabits.defaultRicePortion]}
+  default_protein_portion: ${PROTEIN_PORTION_DESCRIPTION[cookingHabits.defaultProteinPortion]}
+  sugar_braised: ${cookingHabits.sugarBraised}
+  broth_consumption: ${cookingHabits.brothConsumption}
+</user_context>`;
+}
+
 /**
  * Build the system prompt for LLM Call 1 (meal decomposition).
  *
@@ -24,13 +102,8 @@ import type { PromptPersonalizationContext } from './types';
 export function buildDecompositionPrompt(
   userContext: PromptPersonalizationContext
 ): string {
-  const { cookingHabits, countryOfOrigin, countryOfResidence } = userContext;
-
-  // Build country context lines for the LLM
-  const countryLines = [
-    buildPromptContextLine('country_of_origin', countryOfOrigin),
-    buildPromptContextLine('country_of_residence', countryOfResidence),
-  ].filter((line): line is string => line !== null);
+  const { cookingHabits } = userContext;
+  const countryLines = buildCountryContextLines(userContext);
 
   return `You are a Cuisine Expert. Decompose meal descriptions into dish-wrapped structured ingredient data.
 
