@@ -13,6 +13,7 @@ import { z } from 'zod';
 
 import type { AppDb } from '@/lib/db';
 import {
+  pipelineLlmCallMetadata,
   pipelineLlmCalls,
   pipelineRequests,
   pipelineStageLogs,
@@ -54,6 +55,23 @@ export type RequestListRow = Pick<
   | 'createdAt'
   | 'replayOfRequestId'
 >;
+
+export type RequestDetailLlmCallMetadata = Pick<
+  typeof pipelineLlmCallMetadata.$inferSelect,
+  | 'provider'
+  | 'region'
+  | 'cacheStatus'
+  | 'inputTokens'
+  | 'outputTokens'
+  | 'cachedTokens'
+  | 'thoughtTokens'
+  | 'promptChars'
+  | 'schemaChars'
+>;
+
+export type RequestDetailLlmCall = typeof pipelineLlmCalls.$inferSelect & {
+  metadata: RequestDetailLlmCallMetadata | null;
+};
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -150,18 +168,55 @@ export async function getRequestDetail(db: AppDb, id: string) {
 
   if (!request) return null;
 
-  const [stageLogs, llmCalls] = await Promise.all([
+  const [stageLogs, llmCallRows] = await Promise.all([
     db
       .select()
       .from(pipelineStageLogs)
       .where(eq(pipelineStageLogs.requestId, id))
       .orderBy(pipelineStageLogs.stageIndex),
     db
-      .select()
+      .select({
+        call: pipelineLlmCalls,
+        metadata: {
+          llmCallId: pipelineLlmCallMetadata.llmCallId,
+          provider: pipelineLlmCallMetadata.provider,
+          region: pipelineLlmCallMetadata.region,
+          cacheStatus: pipelineLlmCallMetadata.cacheStatus,
+          inputTokens: pipelineLlmCallMetadata.inputTokens,
+          outputTokens: pipelineLlmCallMetadata.outputTokens,
+          cachedTokens: pipelineLlmCallMetadata.cachedTokens,
+          thoughtTokens: pipelineLlmCallMetadata.thoughtTokens,
+          promptChars: pipelineLlmCallMetadata.promptChars,
+          schemaChars: pipelineLlmCallMetadata.schemaChars,
+        },
+      })
       .from(pipelineLlmCalls)
+      .leftJoin(
+        pipelineLlmCallMetadata,
+        eq(pipelineLlmCallMetadata.llmCallId, pipelineLlmCalls.id)
+      )
       .where(eq(pipelineLlmCalls.requestId, id))
       .orderBy(pipelineLlmCalls.createdAt),
   ]);
+
+  const llmCalls: RequestDetailLlmCall[] = llmCallRows.map(
+    ({ call, metadata }) => ({
+      ...call,
+      metadata: metadata?.llmCallId
+        ? {
+            provider: metadata.provider,
+            region: metadata.region,
+            cacheStatus: metadata.cacheStatus,
+            inputTokens: metadata.inputTokens,
+            outputTokens: metadata.outputTokens,
+            cachedTokens: metadata.cachedTokens,
+            thoughtTokens: metadata.thoughtTokens,
+            promptChars: metadata.promptChars,
+            schemaChars: metadata.schemaChars,
+          }
+        : null,
+    })
+  );
 
   return { request, stageLogs, llmCalls };
 }

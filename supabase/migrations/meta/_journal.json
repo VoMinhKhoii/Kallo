@@ -246,6 +246,13 @@
       "when": 1778092525568,
       "tag": "20260506183525_add_analysis_model_budget_events",
       "breakpoints": true
+    },
+    {
+      "idx": 35,
+      "version": "7",
+      "when": 1778129452821,
+      "tag": "20260507045052_add_pipeline_llm_call_metadata",
+      "breakpoints": true
     }
   ]
 }

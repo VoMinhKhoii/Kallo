@@ -43,6 +43,15 @@ function makeInsertCatchMock() {
   };
 }
 
+function makeInsertResolvingMock() {
+  const values = vi.fn().mockResolvedValue(undefined);
+  const insert = vi.fn().mockReturnValue({ values });
+  return { insert, values } as unknown as AppDb & {
+    insert: MockInstance;
+    values: MockInstance;
+  };
+}
+
 // ── Test setup ────────────────────────────────────────────────────────────────
 
 beforeEach(async () => {
@@ -245,7 +254,108 @@ describe('error swallowing', () => {
   });
 });
 
-// ── 5. PIPELINE_TRACE_ENABLED=false → no-op ───────────────────────────────────
+// ── 5. logLlmCall metadata placeholders ──────────────────────────────────────
+
+describe('logLlmCall metadata', () => {
+  it('writes nullable metadata placeholders keyed by the LLM call id', async () => {
+    const mock = makeInsertResolvingMock();
+
+    logLlmCall({
+      db: mock,
+      requestId: 'req-1',
+      stageLogId: 'sl-1',
+      promptVersionId: 'pv-1',
+      model: 'gpt-4',
+      promptRendered: 'hello',
+      responseRaw: null,
+      inputTokens: 12,
+      outputTokens: 34,
+      latencyMs: 100,
+      attempt: 1,
+    });
+
+    await new Promise((r) => setTimeout(r, 10));
+
+    expect(mock.insert).toHaveBeenCalledTimes(2);
+
+    const baseValues = mock.values.mock.calls[0][0];
+    const metadataValues = mock.values.mock.calls[1][0];
+
+    expect(baseValues).toEqual(
+      expect.objectContaining({
+        id: expect.any(String),
+        inputTokens: 12,
+        outputTokens: 34,
+      })
+    );
+    expect(metadataValues).toEqual({
+      llmCallId: baseValues.id,
+      provider: null,
+      region: null,
+      cacheStatus: null,
+      inputTokens: null,
+      outputTokens: null,
+      cachedTokens: null,
+      thoughtTokens: null,
+      promptChars: null,
+      schemaChars: null,
+    });
+  });
+
+  it('persists supplied nullable metadata without changing base token counts', async () => {
+    const mock = makeInsertResolvingMock();
+
+    logLlmCall({
+      db: mock,
+      requestId: 'req-1',
+      stageLogId: 'sl-1',
+      promptVersionId: 'pv-1',
+      model: 'gpt-4',
+      promptRendered: 'hello',
+      responseRaw: null,
+      inputTokens: 12,
+      outputTokens: 34,
+      latencyMs: 100,
+      attempt: 1,
+      metadata: {
+        provider: 'google',
+        region: null,
+        cacheStatus: 'miss',
+        inputTokens: 10,
+        outputTokens: 30,
+        cachedTokens: 0,
+        thoughtTokens: null,
+        promptChars: 1200,
+        schemaChars: 450,
+      },
+    });
+
+    await new Promise((r) => setTimeout(r, 10));
+
+    const baseValues = mock.values.mock.calls[0][0];
+    const metadataValues = mock.values.mock.calls[1][0];
+
+    expect(baseValues).toEqual(
+      expect.objectContaining({ inputTokens: 12, outputTokens: 34 })
+    );
+    expect(metadataValues).toEqual(
+      expect.objectContaining({
+        llmCallId: baseValues.id,
+        provider: 'google',
+        region: null,
+        cacheStatus: 'miss',
+        inputTokens: 10,
+        outputTokens: 30,
+        cachedTokens: 0,
+        thoughtTokens: null,
+        promptChars: 1200,
+        schemaChars: 450,
+      })
+    );
+  });
+});
+
+// ── 6. PIPELINE_TRACE_ENABLED=false → no-op ───────────────────────────────────
 
 describe('PIPELINE_TRACE_ENABLED=false', () => {
   beforeEach(async () => {
@@ -309,7 +419,7 @@ describe('PIPELINE_TRACE_ENABLED=false', () => {
   });
 });
 
-// ── 6. Cache keyed by (name, hash) ────────────────────────────────────────────
+// ── 7. Cache keyed by (name, hash) ────────────────────────────────────────────
 
 describe('recordPromptVersion — cache keyed by (name, hash)', () => {
   it('different builders for same name yield different ids', async () => {

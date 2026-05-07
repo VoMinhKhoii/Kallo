@@ -1,8 +1,9 @@
 import 'server-only';
-import { createHash } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import { and, eq } from 'drizzle-orm';
 import type { AppDb } from '@/lib/db';
 import {
+  pipelineLlmCallMetadata,
   pipelineLlmCalls,
   pipelineStageLogs,
   promptVersions,
@@ -116,6 +117,19 @@ export interface LlmCallArgs {
   latencyMs: number;
   attempt: number;
   error?: string;
+  metadata?: LlmCallMetadataArgs;
+}
+
+export interface LlmCallMetadataArgs {
+  provider?: string | null;
+  region?: string | null;
+  cacheStatus?: string | null;
+  inputTokens?: number | null;
+  outputTokens?: number | null;
+  cachedTokens?: number | null;
+  thoughtTokens?: number | null;
+  promptChars?: number | null;
+  schemaChars?: number | null;
 }
 
 export function logLlmCall(a: LlmCallArgs): void {
@@ -125,7 +139,9 @@ export function logLlmCall(a: LlmCallArgs): void {
       // Skip the insert if the prompt-version row never materialized — the
       // FK would reject it anyway.
       if (!resolvedId) return;
+      const llmCallId = randomUUID();
       await a.db.insert(pipelineLlmCalls).values({
+        id: llmCallId,
         requestId: a.requestId,
         stageLogId: a.stageLogId,
         promptVersionId: resolvedId,
@@ -137,6 +153,18 @@ export function logLlmCall(a: LlmCallArgs): void {
         latencyMs: a.latencyMs,
         attempt: a.attempt,
         error: a.error ?? null,
+      });
+      await a.db.insert(pipelineLlmCallMetadata).values({
+        llmCallId,
+        provider: a.metadata?.provider ?? null,
+        region: a.metadata?.region ?? null,
+        cacheStatus: a.metadata?.cacheStatus ?? null,
+        inputTokens: a.metadata?.inputTokens ?? null,
+        outputTokens: a.metadata?.outputTokens ?? null,
+        cachedTokens: a.metadata?.cachedTokens ?? null,
+        thoughtTokens: a.metadata?.thoughtTokens ?? null,
+        promptChars: a.metadata?.promptChars ?? null,
+        schemaChars: a.metadata?.schemaChars ?? null,
       });
     })
     .catch((e) => console.error('[trace] logLlmCall failed', e));

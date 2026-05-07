@@ -727,6 +727,24 @@ export const pipelineLlmCalls = pgTable(
   ]
 );
 
+export const pipelineLlmCallMetadata = pgTable('pipeline_llm_call_metadata', {
+  llmCallId: uuid('llm_call_id')
+    .primaryKey()
+    .references(() => pipelineLlmCalls.id, { onDelete: 'cascade' }),
+  provider: text('provider'),
+  region: text('region'),
+  cacheStatus: text('cache_status'),
+  inputTokens: integer('input_tokens'),
+  outputTokens: integer('output_tokens'),
+  cachedTokens: integer('cached_tokens'),
+  thoughtTokens: integer('thought_tokens'),
+  promptChars: integer('prompt_chars'),
+  schemaChars: integer('schema_chars'),
+  createdAt: timestamp('created_at', { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+
 // pipeline_runs — durable structured telemetry for KPI rollups (§5.1) and
 // shadow A/B comparison (§5.2). user_id_hash only, never raw user id.
 // Prompt/schema versions are NOT stored here — they live in
