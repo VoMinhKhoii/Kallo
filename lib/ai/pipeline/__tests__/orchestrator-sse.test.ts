@@ -310,4 +310,62 @@ describe('analyzeMeal SSE id threading', () => {
     expect(names).toHaveLength(2);
     expect(names[0].mealItemId).toBe(names[1].mealItemId);
   });
+
+  it('buffers item_name events until a language-guard retry passes', async () => {
+    const firstDecompJson = makeDecompJson(['cơm gà']);
+    const secondDecompJson = makeDecompJson(['chicken rice']);
+    const nutritionJson = makeNutritionJson(['chicken rice']);
+    const stream = vi
+      .fn()
+      .mockImplementationOnce(
+        async (_args: unknown, opts?: { onChunk?: (acc: string) => void }) => {
+          opts?.onChunk?.(firstDecompJson);
+          return JSON.parse(firstDecompJson);
+        }
+      )
+      .mockImplementationOnce(
+        async (_args: unknown, opts?: { onChunk?: (acc: string) => void }) => {
+          opts?.onChunk?.(secondDecompJson);
+          return JSON.parse(secondDecompJson);
+        }
+      )
+      .mockImplementationOnce(
+        async (_args: unknown, opts?: { onChunk?: (acc: string) => void }) => {
+          opts?.onChunk?.(nutritionJson);
+          return JSON.parse(nutritionJson);
+        }
+      );
+    const events: StreamEvent[] = [];
+
+    await analyzeMeal(
+      'grilled chicken with rice',
+      { ...USER_CONTEXT, inputLanguage: 'en', outputLanguage: 'en' },
+      {} as AppDb,
+      {
+        generateStructuredOutput: vi.fn(),
+        generateStructuredOutputStream: stream,
+        generateEmbedding: vi.fn().mockResolvedValue(Array(768).fill(0.1)),
+        generateEmbeddingBatch: vi.fn().mockResolvedValue([]),
+      },
+      (e) => events.push(e)
+    );
+
+    const names = events.filter(
+      (e): e is Extract<StreamEvent, { type: 'item_name' }> =>
+        e.type === 'item_name'
+    );
+    expect(stream).toHaveBeenCalledTimes(3);
+    expect(names).toHaveLength(1);
+    expect(names[0]).toMatchObject({
+      name: 'Chicken rice',
+      mealItemId: 'm1',
+    });
+    expect(events.some((e) => JSON.stringify(e).includes('cơm gà'))).toBe(
+      false
+    );
+
+    const retryArgs = stream.mock.calls[1]?.[0] as { userMessage?: string };
+    expect(retryArgs.userMessage).toContain('wrong display language');
+    expect(retryArgs.userMessage).toContain('English');
+  });
 });

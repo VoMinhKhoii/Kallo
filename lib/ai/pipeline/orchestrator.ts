@@ -11,6 +11,10 @@ import {
 } from '@/lib/rate-limit/analysis-guards';
 import { capitalizeFirst } from '@/lib/utils';
 import type { GeminiClient, StreamOptions } from '../gemini';
+import {
+  buildLanguageCorrectionMessage,
+  checkDecompositionLanguage,
+} from '../language/guard';
 import { matchIngredients } from '../matching';
 import type { RrfMeasurement } from '../matching/rrf-measurement';
 import { createSpeculativeMatcher } from '../matching/speculative';
@@ -492,10 +496,33 @@ async function runPipeline(
   // + per-item name detection for progressive UI
   emit({ type: 'stage', stage: 'decomposing' });
   const speculativeMatcher = createSpeculativeMatcher(db, gemini);
-  const decompositionStream = createDecompositionStreamController({
-    emit,
+  const bufferedItemNameEvents: Extract<StreamEvent, { type: 'item_name' }>[] =
+    [];
+  const bufferItemNames = (event: StreamEvent) => {
+    if (event.type === 'item_name') {
+      bufferedItemNameEvents.push(event);
+      return;
+    }
+
+    emit(event);
+  };
+  let decompositionStream = createDecompositionStreamController({
+    emit: bufferItemNames,
     prewarm: speculativeMatcher,
   });
+  const resetBufferedDecompositionStream = () => {
+    bufferedItemNameEvents.length = 0;
+    decompositionStream = createDecompositionStreamController({
+      emit: bufferItemNames,
+      prewarm: speculativeMatcher,
+    });
+  };
+  const flushBufferedItemNames = () => {
+    for (const event of bufferedItemNameEvents) {
+      emit(event);
+    }
+    bufferedItemNameEvents.length = 0;
+  };
   let cacheHitL4 = false;
   let dbStateUnknownFires = 0;
   let preMatchAliasHits = 0;
@@ -516,6 +543,51 @@ async function runPipeline(
     decompositionModel: DECOMPOSITION_MODEL,
   });
 
+  const runDecompositionAttempt = async (
+    userMessage: string,
+    stageLogId: string
+  ): Promise<MealDecomposition> => {
+    const systemPrompt = renderedDecompositionPrompt;
+    const callTrace = await buildLlmStageTrace({
+      trace: traceContext,
+      stageLogId,
+      name: 'decomposition',
+      builder: buildDecompositionPrompt as (...a: unknown[]) => string,
+      templateSample: systemPrompt,
+      model: DECOMPOSITION_MODEL,
+    });
+
+    return fetchWithTimeout(
+      (signal) =>
+        gemini.generateStructuredOutputStream(
+          {
+            schema: mealDecompositionSchema,
+            systemPrompt,
+            userMessage,
+            model: DECOMPOSITION_MODEL,
+            temperature: 0.3,
+            topP: 1,
+            topK: 1,
+            abortSignal: signal,
+          },
+          {
+            onAttemptStart: decompositionStream.resetAttempt,
+            onAttemptComplete: createBudgetAttemptRecorder({
+              db,
+              requestId: budget.requestId ?? null,
+              workKind: budget.workKind,
+              model: DECOMPOSITION_MODEL,
+              providerErrorState: budget.providerErrorState,
+            }),
+            onChunk: decompositionStream.handleChunk,
+            trace: callTrace,
+          }
+        ),
+      LLM_TIMEOUT_MS,
+      'decomposition'
+    );
+  };
+
   const rawDecomposition: MealDecomposition = await withStageLog(
     traceContext,
     'decomposition',
@@ -530,44 +602,19 @@ async function runPipeline(
         }
       }
 
-      const systemPrompt = renderedDecompositionPrompt;
-      const callTrace = await buildLlmStageTrace({
-        trace: traceContext,
-        stageLogId,
-        name: 'decomposition',
-        builder: buildDecompositionPrompt as (...a: unknown[]) => string,
-        templateSample: systemPrompt,
-        model: DECOMPOSITION_MODEL,
-      });
-      const decomposed = await fetchWithTimeout(
-        (signal) =>
-          gemini.generateStructuredOutputStream(
-            {
-              schema: mealDecompositionSchema,
-              systemPrompt,
-              userMessage: rawInput,
-              model: DECOMPOSITION_MODEL,
-              temperature: 0.3,
-              topP: 1,
-              topK: 1,
-              abortSignal: signal,
-            },
-            {
-              onAttemptStart: decompositionStream.resetAttempt,
-              onAttemptComplete: createBudgetAttemptRecorder({
-                db,
-                requestId: budget.requestId ?? null,
-                workKind: budget.workKind,
-                model: DECOMPOSITION_MODEL,
-                providerErrorState: budget.providerErrorState,
-              }),
-              onChunk: decompositionStream.handleChunk,
-              trace: callTrace,
-            }
-          ),
-        LLM_TIMEOUT_MS,
-        'decomposition'
-      );
+      let decomposed = await runDecompositionAttempt(rawInput, stageLogId);
+      const languageGuard = checkDecompositionLanguage(decomposed, userContext);
+      if (!languageGuard.ok) {
+        console.warn('[pipeline] decomposition language mismatch; retrying', {
+          expected: userContext.outputLanguage,
+          actual: languageGuard.reason,
+        });
+        resetBufferedDecompositionStream();
+        decomposed = await runDecompositionAttempt(
+          buildLanguageCorrectionMessage(rawInput, userContext),
+          stageLogId
+        );
+      }
       if (l4CacheEnabled) {
         L4_DECOMPOSITION_CACHE.set(
           decompositionCacheKey,
@@ -615,6 +662,7 @@ async function runPipeline(
   // `ensureIdsOnDecomposition`) guarantees each emit carries a stable
   // `mealItemId`.
   decompositionStream.emitUnstreamed(decomposition);
+  flushBufferedItemNames();
 
   // D6 Layer 1: Check isFood field from LLM
   if (!decomposition.isFood) {
