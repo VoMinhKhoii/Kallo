@@ -1,5 +1,5 @@
 import type { ThinkingLevel } from '@google/genai';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { toJSONSchema, z } from 'zod';
 
 // ── hoisted mocks (must run before module imports) ───────────────────────────
@@ -35,6 +35,10 @@ import { createGeminiClient } from '../gemini';
 describe('GeminiClient', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
   });
 
   describe('generateStructuredOutput', () => {
@@ -137,6 +141,69 @@ describe('GeminiClient', () => {
         })
       );
     });
+
+    it('uses the full provider JSON schema by default', async () => {
+      const describedSchema = z.object({
+        name: z.string().describe('Name to return'),
+      });
+      mockGenerateContent.mockResolvedValueOnce({
+        text: JSON.stringify({ name: 'test' }),
+      });
+
+      const client = createGeminiClient('test-key');
+      await client.generateStructuredOutput({
+        schema: describedSchema,
+        systemPrompt: 'test',
+        userMessage: 'test',
+        model: 'gemini-3-flash-preview',
+      });
+
+      expect(mockGenerateContent).toHaveBeenCalledWith(
+        expect.objectContaining({
+          config: expect.objectContaining({
+            responseJsonSchema: expect.objectContaining({
+              properties: expect.objectContaining({
+                name: expect.objectContaining({
+                  description: 'Name to return',
+                }),
+              }),
+            }),
+          }),
+        })
+      );
+    });
+
+    it('uses slim provider JSON schema only when explicitly enabled', async () => {
+      vi.stubEnv('PIPELINE_PROVIDER_SCHEMA_MODE', 'slim');
+      const describedSchema = z.object({
+        name: z.string().describe('Name to return'),
+      });
+      mockGenerateContent.mockResolvedValueOnce({
+        text: JSON.stringify({ name: 'test' }),
+      });
+
+      const client = createGeminiClient('test-key');
+      await client.generateStructuredOutput({
+        schema: describedSchema,
+        systemPrompt: 'test',
+        userMessage: 'test',
+        model: 'gemini-3-flash-preview',
+      });
+
+      expect(mockGenerateContent).toHaveBeenCalledWith(
+        expect.objectContaining({
+          config: expect.objectContaining({
+            responseJsonSchema: expect.objectContaining({
+              properties: expect.objectContaining({
+                name: expect.not.objectContaining({
+                  description: 'Name to return',
+                }),
+              }),
+            }),
+          }),
+        })
+      );
+    });
   });
 
   describe('generateStructuredOutputStream', () => {
@@ -168,6 +235,41 @@ describe('GeminiClient', () => {
         expect.objectContaining({
           config: expect.objectContaining({
             abortSignal: controller.signal,
+          }),
+        })
+      );
+    });
+
+    it('applies slim provider JSON schema to streaming calls', async () => {
+      vi.stubEnv('PIPELINE_PROVIDER_SCHEMA_MODE', 'slim');
+      const describedSchema = z.object({
+        name: z.string().describe('Name to stream'),
+        value: z.number(),
+      });
+      mockGenerateContentStream.mockResolvedValueOnce(
+        (async function* () {
+          yield { text: JSON.stringify({ name: 'test', value: 1 }) };
+        })()
+      );
+
+      const client = createGeminiClient('test-key');
+      await client.generateStructuredOutputStream({
+        schema: describedSchema,
+        systemPrompt: 'test',
+        userMessage: 'test',
+        model: 'gemini-3-flash-preview',
+      });
+
+      expect(mockGenerateContentStream).toHaveBeenCalledWith(
+        expect.objectContaining({
+          config: expect.objectContaining({
+            responseJsonSchema: expect.objectContaining({
+              properties: expect.objectContaining({
+                name: expect.not.objectContaining({
+                  description: 'Name to stream',
+                }),
+              }),
+            }),
           }),
         })
       );

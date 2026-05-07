@@ -1,7 +1,11 @@
 import { GoogleGenAI, type ThinkingLevel } from '@google/genai';
-import { toJSONSchema, type ZodType } from 'zod';
+import type { ZodType } from 'zod';
 import { logLlmCall } from '@/lib/ai/pipeline/trace';
 import { measurePromptBudget } from '@/lib/ai/prompts/budget';
+import {
+  getProviderJsonSchemaMode,
+  toProviderJsonSchema,
+} from '@/lib/ai/prompts/schema';
 import type { AppDb } from '@/lib/db';
 
 const EMBEDDING_MODEL = 'gemini-embedding-001';
@@ -201,7 +205,9 @@ export function createGeminiClient(
     async generateStructuredOutput<T>(
       params: StructuredOutputParams<T>
     ): Promise<T> {
-      const jsonSchema = toJSONSchema(params.schema);
+      const jsonSchema = toProviderJsonSchema(params.schema, {
+        mode: getProviderJsonSchemaMode(),
+      });
       const promptBudget = measurePromptBudget({
         systemPrompt: params.systemPrompt,
         userMessage: params.userMessage,
@@ -248,7 +254,9 @@ export function createGeminiClient(
       opts?: StreamOptions
     ): Promise<T> {
       const { onAttemptComplete, onAttemptStart, onChunk, trace } = opts ?? {};
-      const jsonSchema = toJSONSchema(params.schema);
+      const jsonSchema = toProviderJsonSchema(params.schema, {
+        mode: getProviderJsonSchemaMode(),
+      });
       const promptBudget = measurePromptBudget({
         systemPrompt: params.systemPrompt,
         userMessage: params.userMessage,

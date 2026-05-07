@@ -313,7 +313,7 @@ Run: `bun run test app/api/analyze-meal/__tests__/route.test.ts lib/rate-limit/_
 
 Expected: PASS.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add app/api/analyze-meal/route.ts app/api/analyze-meal/__tests__/route.test.ts lib/rate-limit/analysis-guards.ts lib/rate-limit/__tests__/analysis-guards.test.ts
@@ -831,37 +831,42 @@ Implementation note: language metadata is persisted in the decomposition stage
 - Create: `lib/ai/prompts/schema.ts`
 - Create: `lib/ai/prompts/__tests__/schema-slimming.test.ts`
 - Modify: `lib/ai/gemini.ts`
+- Modify: `lib/ai/__tests__/gemini.test.ts`
 
-- [ ] **Step 1: Write schema slimming tests**
+- [x] **Step 1: Write schema slimming tests**
 
 Assert descriptions are removed, required fields/enums remain, and runtime Zod parse is unchanged.
 
-- [ ] **Step 2: Run failing tests**
+- [x] **Step 2: Run failing tests**
 
 Run: `bun run test lib/ai/prompts/__tests__/schema-slimming.test.ts`
 
-- [ ] **Step 3: Implement `toProviderJsonSchema`**
+- [x] **Step 3: Implement `toProviderJsonSchema`**
 
 Use Zod 4's `z.toJSONSchema(schema)` output and recursively strip `description` keys unless a keep-list is needed.
 
-- [ ] **Step 4: Wire behind flag/label**
+- [x] **Step 4: Wire behind flag/label**
 
 In `gemini.ts` or provider wrapper, choose full vs slim schema by config. Default to full until canary.
 
-- [ ] **Step 5: Confirm threshold checklist entry exists before canary**
+- [x] **Step 5: Confirm threshold checklist entry exists before canary**
 
 Slim schema rollout cannot start until the schema-format row in `docs/superpowers/plans/2026-05-03-ai-pipeline-prompt-budget-global-redesign-rollout-thresholds.md` is filled with parse error ceiling, schema validation failure ceiling, token reduction target, p95 latency ceiling, retry rate ceiling, and quality drift review criteria.
 
-- [ ] **Step 6: Run tests**
+- [x] **Step 6: Run tests**
 
 Run: `bun run test lib/ai/prompts/__tests__/schema-slimming.test.ts lib/ai/__tests__/gemini.test.ts`
 
 - [ ] **Step 7: Commit**
 
 ```bash
-git add lib/ai/prompts/schema.ts lib/ai/prompts/__tests__/schema-slimming.test.ts lib/ai/gemini.ts
+git add lib/ai/prompts/schema.ts lib/ai/prompts/__tests__/schema-slimming.test.ts lib/ai/gemini.ts lib/ai/__tests__/gemini.test.ts docs/superpowers/plans/2026-05-03-ai-pipeline-prompt-budget-global-redesign.md
 git commit -m "feat: add slim provider schemas"
 ```
+
+Implementation note: `PIPELINE_PROVIDER_SCHEMA_MODE=slim` strips provider
+schema `description` metadata while keeping the default full schema output.
+Runtime validation still uses the original Zod schema.
 
 ### Task 3.2: Add Compressed Decomposition Prompt Variant
 
