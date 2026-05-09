@@ -5,10 +5,7 @@ import type {
   NutritionAdjustment,
 } from '../types';
 import type { MealDecompositionWithIds } from './ids';
-
-const ingredientDisplayName = (
-  ing: MealDecompositionWithIds['mealItems'][number]['ingredients'][number]
-): string => ing.rawName ?? ing.name ?? ing.canonicalName ?? '';
+import { ingredientDisplayName } from './ingredient-accessors';
 
 /**
  * Raw shape that comes out of `nutritionAdjustmentSchema.parse()` before

@@ -62,6 +62,11 @@ import {
 import { readBooleanEnv } from './feature-flags';
 import { createCompactIdSequence } from './id-sequence';
 import { ensureIdsOnDecomposition, type MealDecompositionWithIds } from './ids';
+import {
+  ingredientCanonicalName as decompositionIngredientCanonicalName,
+  ingredientGrams as decompositionIngredientGrams,
+  ingredientDisplayName as decompositionIngredientName,
+} from './ingredient-accessors';
 import { resolveModelProfile } from './model-profile';
 import {
   type RawNutritionAdjustment,
@@ -100,8 +105,6 @@ const DECOMPOSITION_MODEL = MODEL_PROFILE.decompositionModel;
 /** Model for LLM Call 2 (nutrition estimation). */
 const NUTRITION_MODEL = MODEL_PROFILE.nutritionModel;
 
-export const ESCALATION_MODEL = MODEL_PROFILE.escalationModel;
-
 const NUTRITION_PROMPT_LABEL_CANDIDATE =
   process.env.SHADOW_CANDIDATE_PROMPT_LABEL ?? 'production';
 const NUTRITION_MODEL_CANDIDATE =
@@ -111,8 +114,39 @@ const ANALYSIS_MODEL_PROVIDER = 'gemini';
 const SHADOW_PRIMARY_P95_THRESHOLD_MS = 4000;
 const SHADOW_DB_POOL_WAIT_THRESHOLD_MS = 1000;
 
-/** Per-call timeout for Gemini API calls (ms) */
-const LLM_TIMEOUT_MS = 25_000;
+/**
+ * Per-stage Gemini timeout (ms).
+ *
+ * Phase B baseline (2026-05-08) showed:
+ *   - decomposition cold p95: 10707 ms (lightweight prompt, smaller output)
+ *   - nutrition cold p95:     24377 ms (full-meal output, more variance)
+ *
+ * A single ceiling either aborts legitimate slow nutrition runs (too tight)
+ * or wastes ~10 s of recovery time when decomposition genuinely hangs (too
+ * loose). Splitting the budget gives each stage a value derived from its
+ * own observed p95 + headroom.
+ *
+ * Defaults:
+ *   - decomposition: 20 s  (≈ p95 × 1.9, leaves room for transient 5xx)
+ *   - nutrition:     30 s  (≈ p95 × 1.25, the realistic worst case)
+ *
+ * `LLM_TIMEOUT_MS` is honoured as a global fallback for both when set; the
+ * stage-specific envs override it when present.
+ */
+function readStageTimeoutMs(envKey: string, fallbackMs: number): number {
+  const raw = process.env[envKey] ?? process.env.LLM_TIMEOUT_MS;
+  if (!raw) return fallbackMs;
+  const parsed = Number(raw);
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : fallbackMs;
+}
+const DECOMPOSITION_TIMEOUT_MS = readStageTimeoutMs(
+  'PIPELINE_DECOMPOSITION_TIMEOUT_MS',
+  20_000
+);
+const NUTRITION_TIMEOUT_MS = readStageTimeoutMs(
+  'PIPELINE_NUTRITION_TIMEOUT_MS',
+  30_000
+);
 const L4_CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 const DECOMPOSITION_SCHEMA_HASH = sha256Hex(
   stableStringify(toJSONSchema(mealDecompositionSchema))
@@ -125,18 +159,6 @@ const L4_DECOMPOSITION_CACHE = createL4Cache<MealDecomposition>({
 export function _resetL4DecompositionCacheForTests(): void {
   L4_DECOMPOSITION_CACHE.clear();
 }
-
-const decompositionIngredientName = (
-  ing: MealDecomposition['mealItems'][number]['ingredients'][number]
-): string => ing.rawName ?? ing.name ?? ing.canonicalName ?? '';
-
-const decompositionIngredientCanonicalName = (
-  ing: MealDecomposition['mealItems'][number]['ingredients'][number]
-): string => ing.canonicalName ?? ing.rawName ?? ing.name ?? '';
-
-const decompositionIngredientGrams = (
-  ing: MealDecomposition['mealItems'][number]['ingredients'][number]
-): number => ing.grams ?? ing.estimatedGrams ?? 0;
 
 // ---------------------------------------------------------------------------
 // Trace context
@@ -256,6 +278,21 @@ export interface PipelineMetrics {
   unmatchedCount: number;
   mealItemCount: number;
   anomalies: ValidationAnomaly[];
+  /** Phase A substage fire-rate signals (Phase A.4). */
+  cacheHitL4: boolean;
+  languageRetryCount: number;
+  nutritionAnomalyRetry: boolean;
+  nutritionEscalated: boolean;
+  aliasFallbackFired: boolean;
+  /**
+   * Per-chunk extractor cost (Phase A.7 / C8). Sums sync regex+JSON-parse
+   * time across every stream chunk per stage. Lets us decide whether
+   * deferring extraction off the chunk-loop is worth doing.
+   */
+  decomposeChunkExtractMs: number;
+  decomposeChunkCount: number;
+  nutritionChunkExtractMs: number;
+  nutritionChunkCount: number;
 }
 
 function logMetrics(metrics: PipelineMetrics): void {
@@ -580,7 +617,7 @@ async function runPipeline(
     stageLogId: string
   ): Promise<MealDecomposition> => {
     const systemPrompt = renderedDecompositionPrompt;
-    const callTrace = await buildLlmStageTrace({
+    const callTrace = buildLlmStageTrace({
       trace: traceContext,
       stageLogId,
       name: 'decomposition',
@@ -615,7 +652,7 @@ async function runPipeline(
             trace: callTrace,
           }
         ),
-      LLM_TIMEOUT_MS,
+      DECOMPOSITION_TIMEOUT_MS,
       'decomposition'
     );
   };
@@ -626,23 +663,37 @@ async function runPipeline(
     1,
     { rawInput },
     async ({ stageLogId }) => {
+      const l4LogKey = decompositionCacheKey.slice(0, 12);
       if (l4CacheEnabled) {
         const cached = L4_DECOMPOSITION_CACHE.get(decompositionCacheKey);
         if (cached) {
-          cacheHitL4 = true;
           const cachedDecomposition = structuredClone(cached);
           const cachedLanguageGuard = checkDecompositionLanguage(
             cachedDecomposition,
             userContext
           );
-          return attachLanguageMetadata(cachedDecomposition, {
-            inputLanguage: userContext.inputLanguage ?? null,
-            outputLanguage: userContext.outputLanguage ?? null,
-            guardReason: cachedLanguageGuard.reason,
-            guardSeverity: cachedLanguageGuard.severity,
-            guardPassed: cachedLanguageGuard.ok,
-            retryCount: 0,
-          });
+          if (cachedLanguageGuard.ok) {
+            cacheHitL4 = true;
+            console.info(`[pipeline] L4 HIT (key=${l4LogKey}…)`);
+            return attachLanguageMetadata(cachedDecomposition, {
+              inputLanguage: userContext.inputLanguage ?? null,
+              outputLanguage: userContext.outputLanguage ?? null,
+              guardReason: cachedLanguageGuard.reason,
+              guardSeverity: cachedLanguageGuard.severity,
+              guardPassed: cachedLanguageGuard.ok,
+              retryCount: 0,
+            });
+          }
+          // Cache poisoned with wrong-language output — drop and refetch.
+          console.warn(
+            `[pipeline] L4 HIT but language guard failed; treating as MISS (key=${l4LogKey}…)`,
+            {
+              expected: userContext.outputLanguage,
+              actual: cachedLanguageGuard.reason,
+            }
+          );
+        } else {
+          console.info(`[pipeline] L4 MISS (key=${l4LogKey}…)`);
         }
       }
 
@@ -684,10 +735,15 @@ async function runPipeline(
           );
         }
       }
-      if (l4CacheEnabled) {
+      if (l4CacheEnabled && languageGuard.ok) {
         L4_DECOMPOSITION_CACHE.set(
           decompositionCacheKey,
           structuredClone(decomposed)
+        );
+        console.info(`[pipeline] L4 STORE (key=${l4LogKey}…)`);
+      } else if (l4CacheEnabled) {
+        console.info(
+          `[pipeline] L4 SKIP STORE (language guard failed) (key=${l4LogKey}…)`
         );
       }
       return attachLanguageMetadata(decomposed, {
@@ -854,11 +910,16 @@ async function runPipeline(
     );
   };
 
+  let nutritionExtractAccumMs = 0;
+  let nutritionChunkCount = 0;
   const nutritionOnChunk = (accumulated: string) => {
+    const t0 = performance.now();
     const { items, newCount } = extractCompletedMealItemNutrition(
       accumulated,
       lastExtractedCount
     );
+    nutritionExtractAccumMs += performance.now() - t0;
+    nutritionChunkCount += 1;
     lastExtractedCount = newCount;
 
     for (const itemNutrition of items) {
@@ -891,7 +952,7 @@ async function runPipeline(
         matchResult.unmatched,
         userContext
       );
-      const callTrace = await buildLlmStageTrace({
+      const callTrace = buildLlmStageTrace({
         trace: traceContext,
         stageLogId,
         name: 'nutrition',
@@ -929,7 +990,7 @@ async function runPipeline(
               trace: callTrace,
             }
           ),
-        LLM_TIMEOUT_MS,
+        NUTRITION_TIMEOUT_MS,
         'nutrition'
       );
 
@@ -1006,7 +1067,7 @@ async function runPipeline(
                 trace: callTrace,
               }
             ),
-          LLM_TIMEOUT_MS,
+          NUTRITION_TIMEOUT_MS,
           'nutrition-retry'
         );
       }
@@ -1100,12 +1161,26 @@ async function runPipeline(
     unmatchedCount: matchResult.unmatched.length,
     mealItemCount: decomposition.mealItems.length,
     anomalies: allAnomalies,
+    cacheHitL4,
+    languageRetryCount,
+    nutritionAnomalyRetry: retryStep2Count > 0,
+    nutritionEscalated:
+      modelProfileForRun.escalationModel !== null &&
+      selectedNutritionModel === modelProfileForRun.escalationModel,
+    aliasFallbackFired: matchResult.aliasFallbackFired ?? false,
+    decomposeChunkExtractMs: Math.round(
+      decompositionStream.getStreamTimings().extractAccumMs
+    ),
+    decomposeChunkCount: decompositionStream.getStreamTimings().chunkCount,
+    nutritionChunkExtractMs: Math.round(nutritionExtractAccumMs),
+    nutritionChunkCount: nutritionChunkCount,
   });
 
   const ambiguityFlagCounts = countAmbiguityFlags(allIngredients);
   const rrf = aggregateRrfMeasurements(rrfMeasurements);
   let pipelineRunRow: ReturnType<typeof buildPipelineRunRow> | undefined;
   let pipelineRunId: string | undefined;
+  let pipelineRunPersisted: Promise<void> | undefined;
 
   // Persist a pipeline_runs row when request-level tracing is enabled (§0.4).
   // Telemetry writes are best-effort and never block the response or throw.
@@ -1152,13 +1227,36 @@ async function runPipeline(
           selectedNutritionModel === modelProfileForRun.escalationModel,
         cacheHitL4,
         retryCount: languageRetryCount + retryStep2Count,
+        languageGuardMisfire: languageRetryCount > 0,
+        languageRetryCount,
+        aliasFallbackFired: matchResult.aliasFallbackFired ?? false,
         promptPersonalizationFields: personalizationFields,
       });
       pipelineRunRow = row;
       pipelineRunId = row.id;
-      await writePipelineRun(traceContext.db, row);
+      // Production: fire-and-forget. Telemetry writes must not block the
+      // user-visible response — the row id is generated locally so callers
+      // that need it (SSE complete event, harness) get it immediately.
+      // (Phase C3: was a 5-100 ms blocker per latency audit.)
+      // Tests: stay awaited so the mocked insert is observed by assertions.
+      // We expose the persist promise on the response so the shadow runner
+      // can await it before referencing pipelineRunId via FK and avoid
+      // racing the parent insert.
+      if (process.env.NODE_ENV === 'test') {
+        await writePipelineRun(traceContext.db, row);
+        pipelineRunPersisted = Promise.resolve();
+      } else {
+        pipelineRunPersisted = writePipelineRun(traceContext.db, row).catch(
+          (err) => {
+            console.error(
+              '[ai/pipeline] failed to write pipeline_runs row',
+              err
+            );
+          }
+        );
+      }
     } catch (err) {
-      console.error('[ai/pipeline] failed to write pipeline_runs row', err);
+      console.error('[ai/pipeline] failed to build pipeline_runs row', err);
     }
   }
 
@@ -1166,6 +1264,7 @@ async function runPipeline(
     success: true,
     data: pipelineResult,
     __telemetryRunId: pipelineRunId,
+    __telemetryRunPersisted: pipelineRunPersisted,
   };
   if (process.env.NODE_ENV === 'test' && pipelineRunRow) {
     return { ...response, __telemetry: pipelineRunRow };
@@ -1220,7 +1319,22 @@ function scheduleShadowRun(args: {
     return;
   }
 
-  queueMicrotask(() => {
+  // Defer to a microtask so the response can stream to the client first.
+  // We also wait for the parent pipeline_runs row to persist before kicking
+  // off the shadow path: pipeline_shadow_runs.primary_run_id is an FK to
+  // pipeline_runs.id, and the parent insert is fire-and-forget. Without this
+  // await the shadow row could race the parent and either drop its FK link
+  // (set null) or fail the insert outright.
+  queueMicrotask(async () => {
+    if (args.response.__telemetryRunPersisted) {
+      try {
+        await args.response.__telemetryRunPersisted;
+      } catch {
+        // The parent write already logged its own error. Continue: the
+        // shadow row will simply land with primary_run_id=null and the
+        // outcome captured below, which still gives us divergence data.
+      }
+    }
     void runShadowAsync(
       {
         requestId: args.traceContext?.requestId ?? '',

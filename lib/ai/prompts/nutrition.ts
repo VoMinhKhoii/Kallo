@@ -2,6 +2,11 @@ import {
   PROTEIN_PORTION_DESCRIPTION,
   RICE_PORTION_DESCRIPTION,
 } from '../constants';
+import {
+  ingredientCanonicalName,
+  ingredientDisplayName,
+  ingredientGrams,
+} from '../pipeline/ingredient-accessors';
 import type {
   DecomposedMealItem,
   MatchedIngredient,
@@ -57,15 +62,6 @@ const escapeXmlAttribute = (value: string): string =>
     .replace(/>/g, '&gt;')
     .replace(/'/g, '&apos;');
 
-const ingredientDisplayName = (ing: PromptIngredient): string =>
-  ing.rawName ?? ing.name ?? ing.canonicalName ?? '';
-
-const ingredientCanonicalName = (ing: PromptIngredient): string =>
-  ing.canonicalName ?? ing.rawName ?? ing.name ?? '';
-
-const ingredientGrams = (ing: PromptIngredient): number =>
-  ing.grams ?? ing.estimatedGrams ?? 0;
-
 const ingredientCookingMethod = (
   item: DecomposedMealItem,
   ing: PromptIngredient
@@ -81,9 +77,14 @@ interface NutritionPromptParts {
 export function getNutritionPromptLabel(
   env: Record<string, string | undefined> = process.env
 ): NutritionPromptLabel {
-  return env[NUTRITION_PROMPT_LABEL_ENV] === 'compressed'
-    ? 'compressed'
-    : 'production';
+  // Default flipped to 'compressed' (2026-05-09): Phase B harness measured
+  // 64–72 % warm-path latency reduction (totalMs p50 11708 → 4173 ms,
+  // nutritionMs p50 10676 → 3566 ms) on `gemini-2.5-flash-lite` with no
+  // observed quality regression. Set `PIPELINE_NUTRITION_PROMPT_LABEL=production`
+  // to revert. See docs/superpowers/plans/2026-05-08-ai-pipeline-latency-regression.md.
+  return env[NUTRITION_PROMPT_LABEL_ENV] === 'production'
+    ? 'production'
+    : 'compressed';
 }
 
 export function getNutritionPromptBuilder(

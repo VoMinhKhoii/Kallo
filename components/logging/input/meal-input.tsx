@@ -1,6 +1,6 @@
 'use client';
 
-import { ArrowUp } from 'lucide-react';
+import { ArrowUp, Square } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import {
   forwardRef,
@@ -23,6 +23,9 @@ export interface MealInputHandle {
 
 interface MealInputProps {
   onSubmit: () => void;
+  /** When provided and the input is disabled (analysis in flight), the
+   * submit button is replaced with a stop button that calls this. */
+  onCancel?: () => void;
   disabled?: boolean;
 }
 
@@ -49,7 +52,7 @@ function writeDraft(text: string) {
 const hasMeaningfulText = (text: string) => text.trim().length > 0;
 
 export const MealInput = forwardRef<MealInputHandle, MealInputProps>(
-  function MealInput({ onSubmit, disabled }, ref) {
+  function MealInput({ onSubmit, onCancel, disabled }, ref) {
     const t = useTranslations('logging');
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const debounceRef = useRef<ReturnType<typeof setTimeout>>(null);
@@ -121,6 +124,7 @@ export const MealInput = forwardRef<MealInputHandle, MealInputProps>(
     };
 
     const canSubmit = hasContent && !disabled;
+    const showStopButton = Boolean(disabled && onCancel);
 
     return (
       <div className="flex items-center gap-3 rounded-2xl border border-nham-border/40 bg-background p-3 shadow-[0_4px_20px_color-mix(in_srgb,var(--color-nham-accent)_6%,transparent)] transition-all duration-300 focus-within:border-nham-accent/40 focus-within:shadow-[0_4px_20px_color-mix(in_srgb,var(--color-nham-accent)_12%,transparent)]">
@@ -137,15 +141,26 @@ export const MealInput = forwardRef<MealInputHandle, MealInputProps>(
           disabled={disabled}
           className="flex-1 resize-none bg-transparent font-[var(--font-dm-sans)] font-normal text-nham-text text-sm leading-5 placeholder:text-nham-text-muted/40 focus:outline-none disabled:opacity-50"
         />
-        <button
-          type="button"
-          onClick={onSubmit}
-          disabled={!canSubmit}
-          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-nham-btn text-white transition-all duration-200 hover:bg-nham-btn-hover active:scale-95 disabled:opacity-30"
-          aria-label={t('submit')}
-        >
-          <ArrowUp className="h-4 w-4" />
-        </button>
+        {showStopButton ? (
+          <button
+            type="button"
+            onClick={onCancel}
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-nham-btn text-white transition-all duration-200 hover:bg-nham-btn-hover active:scale-95"
+            aria-label={t('stopAnalyzing')}
+          >
+            <Square className="h-3.5 w-3.5 fill-current" />
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={onSubmit}
+            disabled={!canSubmit}
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-nham-btn text-white transition-all duration-200 hover:bg-nham-btn-hover active:scale-95 disabled:opacity-30"
+            aria-label={t('submit')}
+          >
+            <ArrowUp className="h-4 w-4" />
+          </button>
+        )}
       </div>
     );
   }

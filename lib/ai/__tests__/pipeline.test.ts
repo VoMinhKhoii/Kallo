@@ -197,7 +197,7 @@ describe('analyzeMeal', () => {
       success: false,
       error: {
         type: 'api_error',
-        message: 'Phân tích mất quá lâu. Vui lòng thử lại.',
+        message: 'Analysis took too long. Please try again.',
         retryable: true,
       },
     });

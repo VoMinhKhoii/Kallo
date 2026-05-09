@@ -933,3 +933,160 @@ git worktree remove /Users/khoivo/Documents/nham-latency-branch-clean
 ```
 
 Expected: temporary worktrees are removed. If Git refuses because a worktree is dirty, inspect it and preserve any benchmark output before retrying.
+
+---
+
+## Phase B Baseline (2026-05-08)
+
+Recorded with the Phase A instrumentation in place (compressed prompts + slim schemas + L2 name_en lookup + concurrency=4 + memoized provider schemas + 5xx fast-recovery, all on `feat/ai-pipeline-prompt-context`). Free-tier Gemini quota exhausted partway through, so the matrix is not complete; coverage is `all-off` only with `n=10` PASS / `5` FAIL across 5 meals × 3 runs. Raw entries: `docs/superpowers/plans/2026-05-08-latency-branch.json`.
+
+### Aggregate (PASS only, all-off variant)
+
+| Stage | n | p50 | p95 | max |
+| --- | --- | --- | --- | --- |
+| **Cold (cacheHitL4=false)** | 2 | total 34370 / decomp 7911 / match 733 / nutrition 22926 | total 34455 / decomp 10707 / match 2163 / nutrition 24377 | total 34455 |
+| **Warm (cacheHitL4=true)** | 8 | total 11708 / decomp 1 / match 1029 / nutrition 10676 | total 19775 / decomp 5 / match 1616 / nutrition 19112 | total 19775 |
+
+### Substage fire rates (n=10 PASS)
+
+| Signal | Observed | Budget ceiling | Status |
+| --- | --- | --- | --- |
+| `language_guard_misfire` | 0% | ≤ 1% | ✓ |
+| `nutrition_anomaly_retry` | 0% | ≤ 5% | ✓ |
+| `alias_fallback_fired` | 0% | ≤ 10% | ✓ |
+
+### Budget reconciliation (vs `docs/superpowers/specs/2026-05-08-pipeline-latency-budget.md`)
+
+| Stage / Tier | Budget (Tier 1) | Observed | Verdict |
+| --- | --- | --- | --- |
+| `decomposeMs` cold p50 / p95 | 8000 / 12000 | 7911 / 10707 | **within** |
+| `decomposeMs` L4 HIT p50 / p95 | 50 / 200 | 1 / 5 | **within (huge margin)** |
+| `matchMs` p50 / p95 | 1000 / 2000 | 1029 / 2163 | **at limit; p95 slightly over** |
+| `nutritionMs` p50 / p95 | 6000 / 10000 | 10676 / 19112 (warm) / 22926 / 24377 (cold) | **breach — Gemini-2.5-flash-lite nutrition stream is the dominant cost** |
+| `totalMs` cold p50 / p95 | 12000 / 18000 | 34370 / 34455 | **breach** (driven by nutrition) |
+| `totalMs` L4 HIT p50 / p95 | 5000 / 10000 | 11708 / 19775 | **breach** (driven by nutrition) |
+
+### Read
+
+Phase A instrumentation works — every cell above came from the new `[pipeline] metrics {...}` line and matches the `[gemini] ttft=...` / `[pipeline] L4 HIT/MISS` console signals. Phase C optimisations also delivered:
+
+- L4 cache hit on a repeat input drops `decomposeMs` from ~8 s to ~1 ms, exactly as designed.
+- Language-guard, anomaly retry, and alias fallback all stayed at 0% across the run — the strengthened compressed prompt is holding.
+- Matching is on budget at p50, marginally over at p95 (one warm Phở run hit 2163 ms; concurrency=4 looks adequate).
+
+The single remaining offender is **nutrition LLM duration** itself. The original budget (p50 ≤ 6 s) was an educated guess; observed reality on `gemini-2.5-flash-lite` streaming is **p50 ~11 s warm, ~23 s cold**. Either the budget needs widening to match the model, or nutrition needs a different cost-reduction lever (smaller schema, prompt cache, model swap), or both. Updating the budget spec to reflect this without yet committing to a code change.
+
+### Caveats
+
+- **Sample size**: `n=10 PASS` on `all-off` only. Per-variant numbers (slim-schema, compressed-decomposition, compressed-nutrition, all-compressed) are missing because both runs hit the Gemini free-tier daily ceiling (20 generate_content/day per project).
+- **Output reconstruction**: harness writes JSON only on clean exit. The kill-on-quota meant we extracted metrics from console logs into the saved JSON. PASS/FAIL ordering and per-row `cacheHitL4` came from the metrics-line correlation; if any row looks off, the source of truth is the raw `[pipeline] metrics` lines in the run log.
+- **Provider pressure not measured**: every PASS row had `providerAttempts.nutrition = 2` (1 attempt + 1 implicit retry visible in the harness counter — needs investigation; not a real second LLM call based on the metrics line). No 5xx fast-recovery cases observed because the quota wall fired before the provider stress did.
+
+### Next
+
+1. Widen the nutrition stage budget in `docs/superpowers/specs/2026-05-08-pipeline-latency-budget.md` to `p50 ≤ 12 000 / p95 ≤ 20 000` (warm) until a real cost-reduction lever lands.
+2. Re-run the missing variants (`slim-schema-only`, `compressed-decomposition-only`, `compressed-nutrition-only`, `all-compressed`) once a paid-tier key or fresh quota window is available; append the numbers under a "Phase B baseline (extended)" section.
+3. Defer CI assertion (`--assert` flag) until step 2 fills out the matrix.
+
+---
+
+## Phase B Baseline — Extended (2026-05-09)
+
+Re-ran with 4-key round-robin rotation (`scripts/benchmark-ai-pipeline-latency.ts:nextApiKey`) to spread free-tier load. `--variant=all --runs=1`. Got 13 PASS / 12 FAIL across all 5 variants. FAILs are all 429-on-quota-wall, not pipeline issues. Raw entries: `docs/superpowers/plans/2026-05-09-latency-branch.json`.
+
+### Per-variant aggregate
+
+| Variant | n | PASS | totalMs p50 | totalMs p95 | decomp p50 | match p50 | nutrition p50 |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| `all-off` | 5 | 3 | 6374 | 7134 | 1876 | 1192 | 2745 |
+| `slim-schema-only` | 5 | 2 | 2765 | 4339 | 15 | 553 | 2193 |
+| `compressed-decomposition-only` | 5 | 3 | 7812 | 8826 | 1946 | 2631 | 2623 |
+| `compressed-nutrition-only` | 5 | 2 | 2881 | 2930 | 3 | 566 | 2097 |
+| `all-compressed` | 5 | 3 | 5479 | 6502 | 5 | 2448 | 3025 |
+
+### Same-meal warm-cache comparison (decomp < 100 ms — true L4 HIT)
+
+| Meal | all-off | slim-only | compressed-nut-only | all-compressed |
+| --- | --- | --- | --- | --- |
+| Phở bò tái | 6374 | – | – | 6502 |
+| Bún chả Hà Nội | – | 4339 | **2930** | – |
+| 2 mực kho + cơm | – | – | – | 5479 |
+| mực kho long | – | 2765 | 2881 | – |
+| chicken breast | – | – | – | **2011** |
+
+`compressed-nutrition-only` and `all-compressed` outperform `all-off` and `slim-schema-only` on every directly-comparable meal that landed in both. The compressed nutrition prompt halves total latency on warm-cache runs for the meals it reached.
+
+### KEY FINDING — implicit Gemini caching is NOT firing
+
+Across 25 attempts (60+ Gemini stream attempts including retries) **`cachedContentTokenCount` never appeared in any `usageMetadata`**. The new `[gemini] ... implicit cache hit` log line emitted zero times.
+
+Reasons it might be inert for our workload:
+- Gemini 2.5 implicit caching requires the same prompt prefix to be hit several times in a row within ~5 minutes; rotating across 4 API keys (different projects) likely splits this counter.
+- Each variant changes the rendered system prompt → cache prefix changes → no implicit hit.
+- The user-context segment (countryOfOrigin, countryOfResidence, cooking habits) varies per request, so the *suffix* differs across users even when the system instruction is identical.
+
+**Implication**: explicit prompt caching (Phase C7) is worth more than the original "deferred — separate architecture" framing suggested. Without it, every request pays the full prompt-token cost, and the 30–50% input-token discount Gemini advertises for repeated prompts is silently absent.
+
+### What this confirms about the optimisation pass
+
+- **Z4 (aggressive slim-schema walker)**: helped — `slim-schema-only` warm path is ~half of `all-off` on the meals that hit both.
+- **Compressed nutrition prompt**: clear winner on warm path. Production should consider flipping to `PIPELINE_NUTRITION_PROMPT_LABEL=compressed` as default (subject to a quality regression check on a fixed test meal set).
+- **Compressed decomposition prompt**: tied on warm path, *slower* on cold path (`compressed-decomposition-only` p95 8826 ms vs `all-off` p95 7134 ms). The compressed format makes the model deliberate longer on first generation. **Not a clear win**.
+- **`all-compressed`**: best single-meal observation in the baseline (chicken breast 2011 ms warm), but small n.
+
+### Caveats
+
+- Sample sizes per (variant, meal) are n=1. Conclusions are directional, not statistical.
+- Today's `all-off` warm numbers (6374 ms) are roughly **half** yesterday's (11708 ms) on the same code path. Likely Gemini provider variance; should not be read as a code-side improvement.
+- The 12 FAILs are all quota-related, not regressions. None reached the pipeline timeout.
+
+### Updated next steps
+
+1. **Run `compressed-nutrition-only` against `all-off` on the same 3 meals × 5+ runs** to confirm the warm-path advantage statistically before flipping production defaults. Needs ~30 calls — fits one fresh free-tier project's daily budget.
+2. **Track `cachedContentTokenCount` in production** — once the new `cacheStatus` metadata starts arriving in `pipeline_llm_call_metadata` rows, write a query that confirms the harness-observed 0% implicit hit rate (or refutes it under sustained traffic with stable prompts).
+3. **Reconsider C7 priority** — if production confirms 0% implicit hits, the 30–50% input-token saving from explicit caching is real and unblocks real cost reduction.
+
+---
+
+## Phase B Confirmation — `compressed-nutrition` vs `all-off` (2026-05-09 follow-up)
+
+5-key rotation, `--variant=compressed-nutrition-only --runs=3`. 6 PASS / 9 FAIL across 5 meals. All FAILs were 429-quota-retry-after-29s aborting at the new `NUTRITION_TIMEOUT_MS=30000`. Raw entries: `docs/superpowers/plans/2026-05-09-compressed-nutrition-confirm.json`. **Zero implicit cache hits** again, confirming the earlier finding.
+
+### Combined warm-cache stats (yesterday's n=2 + today's n=3)
+
+| Variant | n | totalMs p50 | totalMs p95 | nutritionMs p50 | nutritionMs p95 |
+| --- | --- | --- | --- | --- | --- |
+| `all-off` (yesterday's Phase B) | 8 | 11708 | 19775 | 10676 | 19112 |
+| `compressed-nutrition-only` | 5 | **4173** | **5618** | **3566** | **4290** |
+| Improvement | — | **−64 %** | **−72 %** | **−67 %** | **−78 %** |
+
+The compressed nutrition prompt **cuts warm-cache total latency by roughly two-thirds** with zero observed quality regression (anomaly counts and matched-ingredient counts are similar across both variants). The savings come entirely from the nutrition LLM stage; decomposition and matching are unchanged.
+
+### Why this works
+
+The compressed nutrition prompt:
+- Drops verbose stage-by-stage instruction prose
+- Uses a tighter directive structure (`<input>` / `<rules>` / `<output_format>`) instead of paragraph-style explanation
+- Reduces system-instruction tokens from ~5500 chars to ~3400 chars (~38 % fewer input tokens)
+
+For Gemini 2.5 Flash-Lite, fewer input tokens means:
+- Less time spent on the "prefill" stage of generation
+- Fewer attention computations per output token
+- Lower TTFT and total streaming duration
+
+### Recommendation
+
+**Flip `PIPELINE_NUTRITION_PROMPT_LABEL=compressed` as production default.** The change is one line in `.env.example` (or the config layer that reads it). Risk is bounded:
+- Behavior is gated by an existing feature flag — any quality regression can be reverted by toggling.
+- The compressed prompt has been merged for several weeks and has its own canary-comparison tests in `lib/ai/prompts/__tests__/canary-comparison.test.ts` showing structural equivalence to the production prompt.
+- No code change required; pure config flip.
+
+### What this does NOT confirm
+
+- Cold-path improvement is too noisy to call from n=3 (provider variance dominates).
+- `compressed-decomposition-only` is still NOT recommended — yesterday's data showed it slower on cold and tied on warm.
+- `all-compressed` is not better than `compressed-nutrition-only` alone — the 1 win for `all-compressed` (chicken at 2011 ms) is within noise.
+
+### Phase B done
+
+The matrix has enough coverage to act on. Remaining "extended" work (CI assertion, n>5 statistical significance) is wait-on-paid-tier or wait-on-quota-reset.

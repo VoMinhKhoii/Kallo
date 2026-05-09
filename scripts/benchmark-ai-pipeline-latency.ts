@@ -367,6 +367,34 @@ function compareBenchmarkFiles(compare: string) {
   console.log('Right summary:', summarizeBenchmarkResults(right));
 }
 
+/**
+ * Round-robin key rotation for free-tier benchmarking. Each Google Cloud
+ * project's free tier caps `generate_content` at 20 requests/day. With
+ * `GEMINI_API_KEY_1..N` set, this cycles through them so a single full
+ * variant matrix (~75 calls) can fit across multiple free-tier projects
+ * (4 keys × 20 = 80 calls).
+ *
+ * Falls back to `GEMINI_API_KEY` when the numbered slots are empty.
+ */
+let keyRotationIndex = 0;
+function nextApiKey(): string {
+  const numbered: string[] = [];
+  for (let i = 1; i <= 8; i++) {
+    const k = process.env[`GEMINI_API_KEY_${i}`];
+    if (k) numbered.push(k);
+  }
+  const pool =
+    numbered.length > 0 ? numbered : [process.env.GEMINI_API_KEY ?? ''];
+  const key = pool[keyRotationIndex % pool.length];
+  keyRotationIndex += 1;
+  if (!key) {
+    throw new Error(
+      'No Gemini API key available. Set GEMINI_API_KEY or GEMINI_API_KEY_1..N.'
+    );
+  }
+  return key;
+}
+
 async function runBenchmarkMeal(
   meal: string,
   variant: BenchmarkVariant
@@ -379,10 +407,7 @@ async function runBenchmarkMeal(
     import('@/lib/db'),
   ]);
 
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) {
-    throw new Error('GEMINI_API_KEY is required for real benchmark execution');
-  }
+  const apiKey = nextApiKey();
 
   let currentStage: 'decomposing' | 'matching' | 'estimating' | 'assembling' =
     'decomposing';

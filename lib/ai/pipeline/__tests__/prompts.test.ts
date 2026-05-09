@@ -161,7 +161,7 @@ describe('buildCompressedDecompositionPrompt', () => {
       aggression: 0.85,
     } as unknown as Parameters<typeof buildCompressedDecompositionPrompt>[0]);
 
-    expect(prompt).toContain('output_language: vi');
+    expect(prompt).toContain('output_language=vi');
     for (const field of [
       'isFood',
       'mealSlot',

@@ -127,7 +127,7 @@ describe('buildDecompositionCacheKey', () => {
   it('changes when the decomposition model changes', () => {
     const a = makeKey({ decompositionModel: 'gemini-2.5-flash-lite' });
     const b = makeKey({
-      decompositionModel: 'gemini-3.1-flash-lite-preview',
+      decompositionModel: 'gemini-3.1-flash-lite',
     });
 
     expect(a).not.toBe(b);

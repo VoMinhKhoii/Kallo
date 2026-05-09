@@ -312,10 +312,15 @@ export type PipelineResponse =
       data: PipelineResult;
       __telemetry?: import('./pipeline/run-telemetry').PipelineRunRow;
       __telemetryRunId?: string;
+      /** Resolves once the pipeline_runs row insert has committed.
+       * Consumers that need the row to exist before referencing it via FK
+       * (e.g. pipeline_shadow_runs.primary_run_id) must await this. */
+      __telemetryRunPersisted?: Promise<void>;
     }
   | {
       success: false;
       error: PipelineError;
       __telemetry?: import('./pipeline/run-telemetry').PipelineRunRow;
       __telemetryRunId?: string;
+      __telemetryRunPersisted?: Promise<void>;
     };

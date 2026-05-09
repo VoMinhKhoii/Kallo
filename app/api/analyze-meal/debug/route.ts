@@ -1,7 +1,7 @@
 import { eq, sql } from 'drizzle-orm';
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import { type NextRequest, NextResponse } from 'next/server';
-
+import { isAdminEmail } from '@/lib/admin/is-admin';
 import {
   createGeminiClient,
   type GeminiAttemptMetadata,
@@ -22,6 +22,10 @@ import { fetchNutritionPer100g } from '@/lib/ai/matching/nutrition-db';
 import { assembleResult } from '@/lib/ai/pipeline/assembly';
 import { NON_FOOD_BLOCKLIST } from '@/lib/ai/pipeline/errors';
 import { ensureIdsOnDecomposition } from '@/lib/ai/pipeline/ids';
+import {
+  ingredientDisplayName,
+  ingredientCanonicalName as ingredientSearchName,
+} from '@/lib/ai/pipeline/ingredient-accessors';
 import { resolveModelProfile } from '@/lib/ai/pipeline/model-profile';
 import { reconcileNutritionIds } from '@/lib/ai/pipeline/nutrition';
 import {
@@ -37,7 +41,6 @@ import {
 import { getProviderJsonSchemaMode } from '@/lib/ai/prompts/schema';
 import type {
   MatchedIngredient,
-  MealDecomposition,
   NutritionAdjustment,
   UnmatchedIngredient,
 } from '@/lib/ai/types';
@@ -48,17 +51,7 @@ import { fetchWithTimeout } from '@/lib/fetch-with-timeout';
 import { createClient } from '@/lib/supabase/server';
 
 const untypedDb = db as unknown as PostgresJsDatabase<typeof schema>;
-const DEFAULT_USER_ID = '4681f168-e81b-4590-83ce-0f32734f19a9';
 const DEBUG_LLM_TIMEOUT_MS = 25_000;
-
-type DebugIngredient =
-  MealDecomposition['mealItems'][number]['ingredients'][number];
-
-const ingredientDisplayName = (ingredient: DebugIngredient): string =>
-  ingredient.rawName ?? ingredient.name ?? ingredient.canonicalName ?? '';
-
-const ingredientSearchName = (ingredient: DebugIngredient): string =>
-  ingredient.canonicalName ?? ingredient.rawName ?? ingredient.name ?? '';
 
 /** Extract only the big 4 macros from a nutrition object for debug readability */
 function pickMacros(obj: any) {
@@ -96,11 +89,22 @@ interface FuzzyMatchRow {
 }
 
 export async function POST(request: NextRequest) {
-  if (process.env.NODE_ENV === 'production') {
-    return NextResponse.json(
-      { error: 'Debug endpoint disabled in production' },
-      { status: 403 }
-    );
+  // Hard admin gate. The route runs the live pipeline against arbitrary input
+  // and burns Gemini tokens, so it must require an authenticated admin in
+  // every environment — not just non-production.
+  let userId: string;
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    const email = user?.email?.toLowerCase();
+    if (!user || !isAdminEmail(email)) {
+      return NextResponse.json({ error: 'Not found' }, { status: 404 });
+    }
+    userId = user.id;
+  } catch {
+    return NextResponse.json({ error: 'Not found' }, { status: 404 });
   }
 
   const totalStart = Date.now();
@@ -113,20 +117,6 @@ export async function POST(request: NextRequest) {
       { error: 'Missing or invalid "input" field' },
       { status: 400 }
     );
-  }
-
-  // Resolve user: auth > body.userId > default
-  let userId: string = body.userId ?? DEFAULT_USER_ID;
-  try {
-    const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (user) {
-      userId = user.id;
-    }
-  } catch {
-    // No auth available — use provided or default userId
   }
 
   const [profile] = await db

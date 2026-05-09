@@ -5,6 +5,8 @@ const ALLOWED_CONTEXT_KEYS = [
   'countryOfOrigin',
   'countryOfResidence',
   'cookingHabits',
+  'inputLanguage',
+  'outputLanguage',
 ] as const;
 
 export function stableStringify(obj: unknown): string {

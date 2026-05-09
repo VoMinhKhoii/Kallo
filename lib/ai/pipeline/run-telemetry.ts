@@ -38,6 +38,10 @@ export interface BuildPipelineRunRowInput {
   escalated: boolean;
   cacheHitL4: boolean;
   retryCount: number;
+  /** Phase A.6 substage signals. */
+  languageGuardMisfire?: boolean;
+  languageRetryCount?: number;
+  aliasFallbackFired?: boolean;
   promptPersonalizationFields: string[];
 }
 
@@ -75,6 +79,9 @@ export function buildPipelineRunRow(input: BuildPipelineRunRowInput) {
     macroInconsistentFires: input.counters.macroInconsistentFires,
     dbStateUnknownFires: input.counters.dbStateUnknownFires,
     retryStep2Count: input.counters.retryStep2Count,
+    languageGuardMisfire: input.languageGuardMisfire ?? false,
+    languageRetryCount: input.languageRetryCount ?? 0,
+    aliasFallbackFired: input.aliasFallbackFired ?? false,
     promptPersonalizationFields: input.promptPersonalizationFields,
   };
 }

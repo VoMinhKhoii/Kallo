@@ -70,6 +70,31 @@ describe('toProviderJsonSchema', () => {
     expect(serialized).toContain('grams');
   });
 
+  it('strips additional non-enforced metadata keys', () => {
+    const noisy = z.object({
+      a: z
+        .string()
+        .meta({ title: 'A title', examples: ['ex1'], description: 'desc-a' }),
+      b: z.number().default(42).meta({ description: 'desc-b' }),
+    });
+
+    const slim = toProviderJsonSchema(noisy, { mode: 'slim' });
+    const serialized = JSON.stringify(slim);
+
+    expect(serialized).not.toContain('title');
+    expect(serialized).not.toContain('examples');
+    expect(serialized).not.toContain('default');
+    expect(serialized).not.toContain('$schema');
+    expect(serialized).not.toContain('desc-a');
+    expect(serialized).not.toContain('desc-b');
+    // Type/required metadata still preserved.
+    expect(slim).toEqual(
+      expect.objectContaining({
+        type: 'object',
+      })
+    );
+  });
+
   it('does not alter runtime Zod parsing', () => {
     toProviderJsonSchema(schema, { mode: 'slim' });
 

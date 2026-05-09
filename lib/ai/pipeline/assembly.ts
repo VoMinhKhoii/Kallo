@@ -24,6 +24,7 @@ import {
   sumBoundedNutrition,
   sumDisplayedNutrition,
 } from './goal-adjustment';
+import { ingredientDisplayName, ingredientGrams } from './ingredient-accessors';
 import { normalizeBoundedEstimate } from './schemas';
 
 export interface AssemblyMetrics {
@@ -35,14 +36,6 @@ export interface AssemblyOutput {
   metrics: AssemblyMetrics;
   ingredientNutrition: IngredientNutrition[];
 }
-
-const ingredientDisplayName = (
-  ing: MealDecomposition['mealItems'][number]['ingredients'][number]
-): string => ing.rawName ?? ing.name ?? ing.canonicalName ?? '';
-
-const ingredientGrams = (
-  ing: MealDecomposition['mealItems'][number]['ingredients'][number]
-): number => ing.grams ?? ing.estimatedGrams ?? 0;
 
 const ingredientCookingMethod = (
   item: MealDecomposition['mealItems'][number],

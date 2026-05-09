@@ -6,6 +6,7 @@ import type {
   PipelineResult,
   UnmatchedIngredient,
 } from '../types';
+import { ingredientDisplayName, ingredientGrams } from './ingredient-accessors';
 
 // ---------------------------------------------------------------------------
 // Thresholds (exported for test assertions)
@@ -62,14 +63,6 @@ export interface ValidationAnomaly {
   /** Run-scoped compact meal-item ID (§0.1) when applicable. */
   mealItemId?: string;
 }
-
-const ingredientDisplayName = (
-  ing: DecomposedMealItem['ingredients'][number]
-): string => ing.rawName ?? ing.name ?? ing.canonicalName ?? '';
-
-const ingredientGrams = (
-  ing: DecomposedMealItem['ingredients'][number]
-): number => ing.grams ?? ing.estimatedGrams ?? 0;
 
 const ingredientCookingMethod = (
   mealItem: DecomposedMealItem,

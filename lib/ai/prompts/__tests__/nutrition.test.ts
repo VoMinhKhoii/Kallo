@@ -241,17 +241,18 @@ describe('buildCompressedNutritionPrompt', () => {
     );
   });
 
-  it('defaults the nutrition prompt label to production', () => {
-    expect(getNutritionPromptLabel({})).toBe('production');
+  it('defaults the nutrition prompt label to compressed', () => {
+    // Default flipped 2026-05-09 — see lib/ai/prompts/nutrition.ts:84.
+    expect(getNutritionPromptLabel({})).toBe('compressed');
     expect(
       getNutritionPromptLabel({
-        PIPELINE_NUTRITION_PROMPT_LABEL: 'compressed',
+        PIPELINE_NUTRITION_PROMPT_LABEL: 'production',
       })
-    ).toBe('compressed');
+    ).toBe('production');
     expect(
       getNutritionPromptLabel({
         PIPELINE_NUTRITION_PROMPT_LABEL: 'unknown',
       })
-    ).toBe('production');
+    ).toBe('compressed');
   });
 });

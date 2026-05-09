@@ -760,49 +760,71 @@ export const pipelineLlmCallMetadata = pgTable('pipeline_llm_call_metadata', {
 // pipeline_requests.prompt_versions_used (jsonb), owned by the admin worktree.
 // Per-stage timing is in pipeline_stage_logs.duration_ms (admin worktree);
 // only the end-to-end total is mirrored here for fast percentile rollups.
-export const pipelineRuns = pgTable('pipeline_runs', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  createdAt: timestamp('created_at', { withTimezone: true })
-    .notNull()
-    .defaultNow(),
-  userIdHash: text('user_id_hash').notNull(),
-  requestId: text('request_id'),
-  modelCall1: text('model_call1').notNull(),
-  modelCall2: text('model_call2').notNull(),
-  escalated: boolean('escalated').notNull().default(false),
-  cacheHitL4: boolean('cache_hit_l4').notNull().default(false),
-  retryCount: smallint('retry_count').notNull().default(0),
-  totalMs: integer('total_ms').notNull().default(0),
-  ingredientCount: smallint('ingredient_count').notNull().default(0),
-  matchedCount: smallint('matched_count').notNull().default(0),
-  unmatchedCount: smallint('unmatched_count').notNull().default(0),
-  anomalyTypes: text('anomaly_types')
-    .array()
-    .notNull()
-    .default(sql`'{}'::text[]`),
-  ambiguityFlagCounts: jsonb('ambiguity_flag_counts')
-    .$type<Record<string, number>>()
-    .notNull()
-    .default(sql`'{}'::jsonb`),
-  rrfSampled: boolean('rrf_sampled').notNull().default(false),
-  rrfDisagreementCount: smallint('rrf_disagreement_count'),
-  rrfIngredientsObserved: smallint('rrf_ingredients_observed'),
-  rrfMeasurementLatencyMs: integer('rrf_measurement_latency_ms'),
-  preMatchAliasHits: smallint('pre_match_alias_hits').notNull().default(0),
-  cookedToRawFactorFires: smallint('cooked_to_raw_factor_fires')
-    .notNull()
-    .default(0),
-  densityEnvelopeFires: smallint('density_envelope_fires').notNull().default(0),
-  macroInconsistentFires: smallint('macro_inconsistent_fires')
-    .notNull()
-    .default(0),
-  dbStateUnknownFires: smallint('db_state_unknown_fires').notNull().default(0),
-  retryStep2Count: smallint('retry_step2_count').notNull().default(0),
-  promptPersonalizationFields: text('prompt_personalization_fields')
-    .array()
-    .notNull()
-    .default(sql`'{}'::text[]`),
-});
+export const pipelineRuns = pgTable(
+  'pipeline_runs',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    userIdHash: text('user_id_hash').notNull(),
+    requestId: text('request_id'),
+    modelCall1: text('model_call1').notNull(),
+    modelCall2: text('model_call2').notNull(),
+    escalated: boolean('escalated').notNull().default(false),
+    cacheHitL4: boolean('cache_hit_l4').notNull().default(false),
+    retryCount: smallint('retry_count').notNull().default(0),
+    totalMs: integer('total_ms').notNull().default(0),
+    ingredientCount: smallint('ingredient_count').notNull().default(0),
+    matchedCount: smallint('matched_count').notNull().default(0),
+    unmatchedCount: smallint('unmatched_count').notNull().default(0),
+    anomalyTypes: text('anomaly_types')
+      .array()
+      .notNull()
+      .default(sql`'{}'::text[]`),
+    ambiguityFlagCounts: jsonb('ambiguity_flag_counts')
+      .$type<Record<string, number>>()
+      .notNull()
+      .default(sql`'{}'::jsonb`),
+    rrfSampled: boolean('rrf_sampled').notNull().default(false),
+    rrfDisagreementCount: smallint('rrf_disagreement_count'),
+    rrfIngredientsObserved: smallint('rrf_ingredients_observed'),
+    rrfMeasurementLatencyMs: integer('rrf_measurement_latency_ms'),
+    preMatchAliasHits: smallint('pre_match_alias_hits').notNull().default(0),
+    cookedToRawFactorFires: smallint('cooked_to_raw_factor_fires')
+      .notNull()
+      .default(0),
+    densityEnvelopeFires: smallint('density_envelope_fires')
+      .notNull()
+      .default(0),
+    macroInconsistentFires: smallint('macro_inconsistent_fires')
+      .notNull()
+      .default(0),
+    dbStateUnknownFires: smallint('db_state_unknown_fires')
+      .notNull()
+      .default(0),
+    retryStep2Count: smallint('retry_step2_count').notNull().default(0),
+    languageGuardMisfire: boolean('language_guard_misfire')
+      .notNull()
+      .default(false),
+    languageRetryCount: smallint('language_retry_count').notNull().default(0),
+    aliasFallbackFired: boolean('alias_fallback_fired')
+      .notNull()
+      .default(false),
+    promptPersonalizationFields: text('prompt_personalization_fields')
+      .array()
+      .notNull()
+      .default(sql`'{}'::text[]`),
+  },
+  (table) => [
+    index('pipeline_runs_language_guard_misfire_idx')
+      .on(table.languageGuardMisfire)
+      .where(sql`language_guard_misfire = true`),
+    index('pipeline_runs_alias_fallback_fired_idx')
+      .on(table.aliasFallbackFired)
+      .where(sql`alias_fallback_fired = true`),
+  ]
+);
 
 export const pipelineShadowRuns = pgTable(
   'pipeline_shadow_runs',

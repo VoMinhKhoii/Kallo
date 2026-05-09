@@ -71,7 +71,7 @@ function MealInputForm({
         type="submit"
         aria-label={tm('send')}
         disabled={text.trim().length === 0}
-        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-nham-btn text-white transition-colors hover:bg-nham-btn-hover disabled:bg-nham-track disabled:text-nham-stone"
+        className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-nham-btn text-white transition-colors before:absolute before:-inset-1.5 before:content-[''] hover:bg-nham-btn-hover disabled:bg-nham-track disabled:text-nham-stone"
       >
         <ArrowUp className="h-4 w-4" />
       </button>

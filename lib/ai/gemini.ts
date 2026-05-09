@@ -128,15 +128,41 @@ function isRetryableGeminiError(error: unknown): boolean {
   );
 }
 
+/**
+ * Compute the retry backoff for the next attempt.
+ *
+ * Priority order:
+ *   1. Honor `retry in Xs` hints in the error message (Gemini 429 quota).
+ *   2. **5xx fast recovery (Phase C6)**: if the previous attempt aborted in
+ *      under `FAST_RECOVERY_THRESHOLD_MS` with a 5xx/UNAVAILABLE, drop to a
+ *      250 ms floor instead of the 1000 ms exponential start. Only applies to
+ *      the first retry (attempt=2); subsequent retries use full exponential.
+ *      This shaves ~750 ms off transient provider-pressure recovery.
+ *   3. Standard exponential: baseDelayMs * 2^(attempt-1).
+ */
+const FAST_RECOVERY_THRESHOLD_MS = 5000;
+const FAST_RECOVERY_DELAY_MS = 250;
 function parseRetryDelay(
   error: Error,
   baseDelayMs: number,
-  attempt: number
+  attempt: number,
+  status: number | null,
+  attemptElapsedMs: number
 ): number {
   const match = error.message.match(/retry in ([\d.]+)s/i);
-  return match
-    ? Number.parseFloat(match[1]) * 1000
-    : baseDelayMs * 2 ** (attempt - 1);
+  if (match) {
+    return Number.parseFloat(match[1]) * 1000;
+  }
+  const isFastRecoverableStatus =
+    status === 500 || status === 502 || status === 503 || status === 504;
+  if (
+    attempt === 1 &&
+    isFastRecoverableStatus &&
+    attemptElapsedMs < FAST_RECOVERY_THRESHOLD_MS
+  ) {
+    return FAST_RECOVERY_DELAY_MS;
+  }
+  return baseDelayMs * 2 ** (attempt - 1);
 }
 
 function sleep(ms: number): Promise<void> {
@@ -190,7 +216,13 @@ export function createGeminiClient(
           throw lastError;
         }
 
-        const delay = parseRetryDelay(lastError, retry.baseDelayMs, attempt);
+        const delay = parseRetryDelay(
+          lastError,
+          retry.baseDelayMs,
+          attempt,
+          status,
+          elapsed
+        );
         console.warn(
           `[gemini] ${label ?? 'call'} attempt ${attempt}/${retry.maxRetries} got retryable ${status ?? 'error'} (${elapsed}ms), retrying in ${delay}ms`
         );
@@ -218,7 +250,8 @@ export function createGeminiClient(
       );
 
       return withRetry(
-        async (_attempt) => {
+        async (attempt) => {
+          const callStart = Date.now();
           const response = await ai.models.generateContent({
             model: params.model,
             contents: params.userMessage,
@@ -239,6 +272,11 @@ export function createGeminiClient(
               }),
             },
           });
+
+          // Non-streaming has no TTFT split — total is the whole call.
+          console.info(
+            `[gemini] ${params.model} attempt ${attempt}/${retry.maxRetries}: total=${Date.now() - callStart}ms`
+          );
 
           const text = response.text;
           if (!text) throw new Error('Gemini returned empty response');
@@ -271,6 +309,7 @@ export function createGeminiClient(
       let lastUsageMeta: {
         promptTokenCount?: number;
         candidatesTokenCount?: number;
+        cachedContentTokenCount?: number;
       } | null = null;
 
       const onAttempt = (
@@ -281,6 +320,17 @@ export function createGeminiClient(
       ) => {
         const inputTokens = lastUsageMeta?.promptTokenCount ?? null;
         const outputTokens = lastUsageMeta?.candidatesTokenCount ?? null;
+        const cachedTokens = lastUsageMeta?.cachedContentTokenCount ?? null;
+
+        // Visibility: when Gemini's implicit cache hits (model 2.5+ caches
+        // prompts ≥ 1024 tokens automatically), the response carries
+        // cachedContentTokenCount > 0. Without this log we have no signal
+        // that caching is even working.
+        if (cachedTokens != null && cachedTokens > 0) {
+          console.info(
+            `[gemini] ${params.model}-stream attempt ${attempt}/${retry.maxRetries}: implicit cache hit (cached=${cachedTokens}/${inputTokens ?? '?'} prompt tokens)`
+          );
+        }
 
         if (trace) {
           logLlmCall({
@@ -304,6 +354,9 @@ export function createGeminiClient(
             metadata: {
               promptChars: promptBudget.systemChars + promptBudget.userChars,
               schemaChars: promptBudget.schemaChars,
+              ...(cachedTokens != null && cachedTokens > 0
+                ? { cachedTokens, cacheStatus: 'implicit_hit' }
+                : {}),
             },
           });
         }
@@ -323,6 +376,9 @@ export function createGeminiClient(
           // Reset per-attempt state.
           lastAccumulated = null;
           lastUsageMeta = null;
+
+          const streamStart = Date.now();
+          let firstChunkAt: number | null = null;
 
           const response = await ai.models.generateContentStream({
             model: params.model,
@@ -344,6 +400,9 @@ export function createGeminiClient(
 
           let accumulated = '';
           for await (const chunk of response) {
+            if (firstChunkAt == null) {
+              firstChunkAt = Date.now();
+            }
             const text = chunk.text ?? '';
             accumulated += text;
             lastAccumulated = accumulated; // preserve partial text on failure
@@ -351,12 +410,22 @@ export function createGeminiClient(
               lastUsageMeta = chunk.usageMetadata as {
                 promptTokenCount?: number;
                 candidatesTokenCount?: number;
+                cachedContentTokenCount?: number;
               };
             }
             if (onChunk && text.length > 0) {
               onChunk(accumulated);
             }
           }
+
+          // Emit one combined ttft/total line per attempt — easier to grep
+          // than two separate ttft/total lines and avoids implying the stream
+          // can finish without ever having produced a chunk.
+          const total = Date.now() - streamStart;
+          const ttft = firstChunkAt != null ? firstChunkAt - streamStart : null;
+          console.info(
+            `[gemini] ${params.model}-stream attempt ${attempt}/${retry.maxRetries}: ttft=${ttft ?? 'n/a'}ms total=${total}ms`
+          );
 
           if (!accumulated)
             throw new Error('Gemini stream returned empty response');

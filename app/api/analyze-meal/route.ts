@@ -1,5 +1,6 @@
 import { eq } from 'drizzle-orm';
 import type { NextRequest } from 'next/server';
+import { getTranslations } from 'next-intl/server';
 import { createGeminiClient } from '@/lib/ai/gemini';
 import {
   buildAiRequestContext,
@@ -176,7 +177,11 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    return Response.json(Errors.rateLimited().toJSON(), {
+    const t = await getTranslations({
+      locale: locale ?? profile.preferredLocale ?? 'en',
+      namespace: 'errors',
+    });
+    return Response.json(Errors.rateLimited(t('rateLimited')).toJSON(), {
       status: guard.status,
       headers: { 'Retry-After': String(guard.retryAfterSeconds) },
     });
@@ -290,10 +295,10 @@ export async function POST(request: NextRequest) {
           return;
         }
 
-        // Emit final display result
-        emit({ type: 'result', data: meal });
-
-        // Store full pipeline result durably for later confirmation
+        // Persist the analysis BEFORE telling the client the meal is ready,
+        // so a failed insert produces an error path with no half-state. If
+        // we emit `result` first and then the insert throws, the client has
+        // a populated meal preview with no `analysisId` to confirm it.
         const [inserted] = await db
           .insert(pendingAnalyses)
           .values({
@@ -304,7 +309,10 @@ export async function POST(request: NextRequest) {
           })
           .returning({ id: pendingAnalyses.id });
 
-        // Terminal event — analysis stored, safe to confirm
+        // Now safe to surface the meal — durable row exists.
+        emit({ type: 'result', data: meal });
+
+        // Terminal event — analysis stored, safe to confirm.
         emit({
           type: 'analysis_complete',
           analysisId: inserted.id,

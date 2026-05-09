@@ -163,12 +163,24 @@ describe('decomposition prompt canary parity', () => {
     const productionVi = buildDecompositionPrompt(PROMPT_CONTEXT_VI);
     const compressedVi = buildCompressedDecompositionPrompt(PROMPT_CONTEXT_VI);
     expect(productionVi.toLowerCase()).toContain('vi');
-    expect(compressedVi).toContain('output_language: vi');
+    expect(compressedVi).toContain('output_language=vi');
 
     const productionEn = buildDecompositionPrompt(PROMPT_CONTEXT_EN);
     const compressedEn = buildCompressedDecompositionPrompt(PROMPT_CONTEXT_EN);
     expect(productionEn.toLowerCase()).toContain('en');
-    expect(compressedEn).toContain('output_language: en');
+    expect(compressedEn).toContain('output_language=en');
+  });
+
+  it('compressed variant has imperative language directive that overrides country bias', () => {
+    const compressed = buildCompressedDecompositionPrompt(PROMPT_CONTEXT_VI);
+    // Imperative phrasing
+    expect(compressed).toContain('Always emit');
+    // Explicit country-fields-do-not-override clause
+    expect(compressed).toContain('country_of_origin');
+    expect(compressed).toContain('Never let them override output_language');
+    // Bilingual examples (anchors output regardless of input language)
+    expect(compressed).toContain('"Cơm" → "rice"');
+    expect(compressed).toContain('"rice" → "cơm"');
   });
 
   it('both variants forbid emitting runtime-owned IDs', () => {

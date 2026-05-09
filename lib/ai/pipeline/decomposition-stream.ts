@@ -18,19 +18,27 @@ export function createDecompositionStreamController({
   const mealItemIds = new Map<string, string>();
   const idSequence = createCompactIdSequence();
   let mealItemIndex = 0;
+  // Phase A.7 instrumentation: per-chunk extraction cost. Reported on flush.
+  let extractAccumMs = 0;
+  let chunkCount = 0;
 
   const resetAttempt = () => {
     emittedCounts.clear();
     mealItemIndex = 0;
+    extractAccumMs = 0;
+    chunkCount = 0;
   };
 
   const handleChunk = (accumulated: string) => {
     prewarm(accumulated);
 
+    const t0 = performance.now();
     const newOccurrences = extractMealItemNameOccurrences(
       accumulated,
       emittedCounts
     );
+    extractAccumMs += performance.now() - t0;
+    chunkCount += 1;
     for (const { name, occurrence } of newOccurrences) {
       const displayName = capitalizeFirst(name);
       const key = `${displayName}::${occurrence}`;
@@ -44,6 +52,11 @@ export function createDecompositionStreamController({
       });
     }
   };
+
+  const getStreamTimings = () => ({
+    extractAccumMs,
+    chunkCount,
+  });
 
   const applyParsedIds = (decomposition: MealDecomposition) => {
     const parseCounts = new Map<string, number>();
@@ -77,5 +90,6 @@ export function createDecompositionStreamController({
     handleChunk,
     applyParsedIds,
     emitUnstreamed,
+    getStreamTimings,
   };
 }

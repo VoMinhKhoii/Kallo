@@ -60,10 +60,15 @@ export function buildCompressedDecompositionPrompt(
 
   return `You are a cuisine-aware meal decomposition engine. Return JSON only.
 
+<language>
+  output_language=${outputLanguage}. Always emit mealItems[].name, mealItems[].cookingMethod, ingredients[].rawName, and cuisineNote in output_language.
+  country_of_origin and country_of_residence in <user_context> calibrate portion sizes and cuisine, NOT display language. Never let them override output_language.
+  Examples (output_language=en): "Cơm" → "rice"; "đùi gà" → "chicken thigh"; "trứng gà" → "chicken egg"; "mộc nhĩ" → "wood ear mushroom"; "bún" → "rice vermicelli"; "thịt lợn nạc" → "lean pork".
+  Examples (output_language=vi): "rice" → "cơm"; "chicken thigh" → "đùi gà"; "wood ear mushroom" → "mộc nhĩ".
+  Keep canonicalName DB-friendly and disambiguated for food-composition matching (canonicalName is allowed to stay in its source language for vocabulary matching).
+</language>
+
 <contract>
-  output_language: ${outputLanguage}
-  Use output_language for mealItems[].name, mealItems[].cookingMethod, ingredients[].rawName, and cuisineNote.
-  Keep canonicalName DB-friendly and disambiguated for food-composition matching.
   Do not emit mealItemId or ingredientId; runtime assigns compact IDs.
 </contract>
 

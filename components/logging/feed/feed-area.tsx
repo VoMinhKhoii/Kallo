@@ -508,6 +508,15 @@ export function FeedArea({
           <MealInput
             ref={inputRef}
             onSubmit={handleSubmit}
+            onCancel={() => {
+              stream.cancel();
+              if (streamingMsgId) {
+                setMessages((prev) =>
+                  prev.filter((m) => m.id !== streamingMsgId)
+                );
+              }
+              setStreamingMsgId(null);
+            }}
             disabled={stream.isAnalyzing}
           />
         </div>

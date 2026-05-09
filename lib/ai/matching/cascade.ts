@@ -12,6 +12,10 @@ import {
   matchSingleIngredientWithEmbedding,
 } from '@/lib/ai/matching/source-matching';
 import { readBooleanEnv } from '@/lib/ai/pipeline/feature-flags';
+import {
+  ingredientCanonicalName,
+  ingredientDisplayName as ingredientRawName,
+} from '@/lib/ai/pipeline/ingredient-accessors';
 import type {
   DecomposedIngredient,
   MatchedIngredient,
@@ -38,21 +42,35 @@ export {
 export interface MatchResult {
   matched: MatchedIngredient[];
   unmatched: UnmatchedIngredient[];
+  /** True iff Phase 3b alias-fallback executed (regardless of rescue outcome). */
+  aliasFallbackFired?: boolean;
 }
 
-/** Max concurrent DB calls to avoid exhausting PgBouncer pool */
-const MATCH_CONCURRENCY_DEFAULT = 2;
+/**
+ * Max concurrent DB calls during matching cascade (Phase 1 cache resolve,
+ * Phase 3 vector/fuzzy match, Phase 3b alias fallback). Bumping above 2
+ * collapses sequential per-ingredient round-trips: with N=6 ingredients,
+ * concurrency=2 yields 3 rounds vs concurrency=4 yields ~2 rounds, saving
+ * ~30 ms per round on a typical pgvector query path. Cap is bounded by the
+ * Postgres connection pool (PgBouncer transaction pool size).
+ *
+ * Phase C5: env-tunable so operators can roll forward without redeploying.
+ * Default 4; previous default was 2 (overly conservative for the current pool).
+ */
+const MATCH_CONCURRENCY_DEFAULT_FALLBACK = 4;
+function readMatchConcurrencyDefault(): number {
+  const raw = process.env.PIPELINE_MATCH_CONCURRENCY;
+  if (!raw) return MATCH_CONCURRENCY_DEFAULT_FALLBACK;
+  const parsed = Number(raw);
+  return Number.isInteger(parsed) && parsed > 0
+    ? parsed
+    : MATCH_CONCURRENCY_DEFAULT_FALLBACK;
+}
 
 export interface MatchOptions {
   concurrency?: number;
   measurementContext?: MatchMeasurementContext;
 }
-
-const ingredientRawName = (ing: DecomposedIngredient): string =>
-  ing.rawName ?? ing.name ?? ing.canonicalName ?? '';
-
-const ingredientCanonicalName = (ing: DecomposedIngredient): string =>
-  ing.canonicalName ?? ing.name ?? ing.rawName ?? '';
 
 const ingredientStateInfo = (ing: DecomposedIngredient): MatchStateInfo => ({
   expectedState: ing.expectedState ?? 'cooked',
@@ -78,7 +96,8 @@ export async function matchIngredients(
 ): Promise<MatchResult> {
   const matched: MatchedIngredient[] = [];
   const unmatched: UnmatchedIngredient[] = [];
-  const matchConcurrency = opts.concurrency ?? MATCH_CONCURRENCY_DEFAULT;
+  let aliasFallbackFired = false;
+  const matchConcurrency = opts.concurrency ?? readMatchConcurrencyDefault();
 
   // Pre-step: resolve pre-match aliases to fix known wrong-match cases
   // (e.g., "cá lóc" → "Cá quả" to avoid USDA's Atlantic bass mistranslation).
@@ -244,6 +263,7 @@ export async function matchIngredients(
     }
 
     if (aliasRetries.length > 0) {
+      aliasFallbackFired = true;
       // Alias fallback is best-effort: failures log + fall through to unmatched
       const rescuedIndices = new Set<number>();
       try {
@@ -409,5 +429,5 @@ export async function matchIngredients(
     }
   }
 
-  return { matched, unmatched };
+  return { matched, unmatched, aliasFallbackFired };
 }

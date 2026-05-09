@@ -190,46 +190,51 @@ export interface BuildLlmStageTraceContext {
 }
 
 /**
- * Build the GeminiCallTrace + matching promptVersionId promise for an LLM
- * stage. Records the prompt version (cached on code-hash), tracks it in
- * promptVersionsUsed, and returns the trace shape consumed by
- * gemini.generateStructuredOutputStream.
+ * Build the GeminiCallTrace for an LLM stage. Returns synchronously with
+ * `promptVersionId` as a Promise so the recordPromptVersion DB roundtrip
+ * runs in parallel with the Gemini call instead of blocking it
+ * (~30-100 ms saved on cold-start before the in-process cache warms up).
+ * `logLlmCall` already accepts `string | Promise<string | null>` and awaits
+ * internally before its FK-bearing insert.
  *
  * Returns `undefined` when `trace` is undefined OR tracing is disabled —
  * keeping the call site free of conditional trace plumbing.
  */
-export async function buildLlmStageTrace(args: {
+export function buildLlmStageTrace(args: {
   trace: BuildLlmStageTraceContext | undefined;
   stageLogId: string;
   name: 'decomposition' | 'nutrition';
   builder: (...a: unknown[]) => string;
   templateSample: string;
   model: string;
-}): Promise<
+}):
   | {
       db: AppDb;
       requestId: string;
       stageLogId: string;
-      promptVersionId: string;
+      promptVersionId: Promise<string | null>;
       promptRendered: string;
     }
-  | undefined
-> {
+  | undefined {
   if (!args.trace || !enabled()) return undefined;
-  const pvId = await recordPromptVersion({
-    db: args.trace.db,
+  const traceCtx = args.trace;
+  const pvIdPromise = recordPromptVersion({
+    db: traceCtx.db,
     name: args.name,
     builder: args.builder,
     templateSample: args.templateSample,
     model: args.model,
+  }).then((pvId) => {
+    if (pvId) {
+      traceCtx.promptVersionsUsed.set(args.name, pvId);
+    }
+    return pvId;
   });
-  if (!pvId) return undefined;
-  args.trace.promptVersionsUsed.set(args.name, pvId);
   return {
-    db: args.trace.db,
-    requestId: args.trace.requestId,
+    db: traceCtx.db,
+    requestId: traceCtx.requestId,
     stageLogId: args.stageLogId,
-    promptVersionId: pvId,
+    promptVersionId: pvIdPromise,
     promptRendered: args.templateSample,
   };
 }

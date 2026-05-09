@@ -913,6 +913,7 @@
     "title": "Bạn đã ăn gì?",
     "placeholder": "Mô tả bữa ăn bằng tiếng Việt hoặc tiếng Anh...",
     "submit": "Phân tích",
+    "stopAnalyzing": "Dừng phân tích",
     "analyzing": "Đang phân tích bữa ăn...",
     "breakfast": "Sáng",
     "brunch": "Sáng muộn",
@@ -1021,5 +1022,12 @@
       "cookingSubtitle": "Thiết lập dầu mỡ, cơm, đường, đạm và nước dùng mặc định",
       "saveError": "Không thể lưu cài đặt. Vui lòng thử lại."
     }
+  },
+  "errors": {
+    "notAuthenticated": "Bạn cần đăng nhập để sử dụng tính năng này.",
+    "profileNotFound": "Không tìm thấy hồ sơ. Vui lòng đăng nhập lại.",
+    "pipelineTimeout": "Phân tích mất quá lâu. Vui lòng thử lại.",
+    "rateLimited": "Hệ thống đang bận. Vui lòng đợi một chút rồi thử lại.",
+    "internal": "Đã xảy ra lỗi. Vui lòng thử lại."
   }
 }
