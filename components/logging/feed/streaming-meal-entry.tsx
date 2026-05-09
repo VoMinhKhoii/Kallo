@@ -103,7 +103,7 @@ export function StreamingMealEntry({ message }: StreamingMealEntryProps) {
       </div>
 
       {/* Card */}
-      <div className="rounded-2xl border border-nham-border/60 bg-nham-surface p-4 sm:p-5 shadow-sm">
+      <div className="rounded-2xl border border-nham-border/60 bg-nham-surface p-4 shadow-sm sm:p-5">
         {/* Header: quoted input */}
         {message.userInput && (
           <p
@@ -145,10 +145,19 @@ export function StreamingMealEntry({ message }: StreamingMealEntryProps) {
           <MealEntryTotalSkeleton />
         </div>
 
-        {/* Stage indicator */}
+        {/* Stage indicator. aria-live=polite so screen readers announce
+            phase transitions (decompose → match → nutrition → finalize)
+            without interrupting whatever is being read. The visible spinner
+            is decorative — aria-hidden it so the live region only announces
+            the phase text once per change. */}
         <div className="mt-3 flex items-center gap-2">
-          <div className="h-3 w-3 animate-spin rounded-full border-[1.5px] border-nham-accent border-t-transparent" />
+          <div
+            aria-hidden="true"
+            className="h-3 w-3 animate-spin rounded-full border-[1.5px] border-nham-accent border-t-transparent"
+          />
           <span
+            aria-live="polite"
+            aria-atomic="true"
             className="text-[11px] text-nham-text-muted"
             style={{ fontFamily: 'DM Sans, sans-serif' }}
           >

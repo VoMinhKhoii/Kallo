@@ -913,6 +913,7 @@
     "title": "What did you eat?",
     "placeholder": "Describe your meal in Vietnamese or English...",
     "submit": "Analyze",
+    "stopAnalyzing": "Stop analyzing",
     "analyzing": "Analyzing your meal...",
     "breakfast": "Breakfast",
     "brunch": "Brunch",
@@ -1021,5 +1022,12 @@
       "cookingSubtitle": "Oil usage, rice, sugar, protein, and broth defaults",
       "saveError": "Failed to save settings. Please try again."
     }
+  },
+  "errors": {
+    "notAuthenticated": "You need to sign in to use this feature.",
+    "profileNotFound": "Profile not found. Please sign in again.",
+    "pipelineTimeout": "Analysis took too long. Please try again.",
+    "rateLimited": "The service is busy. Please wait a moment and try again.",
+    "internal": "Something went wrong. Please try again."
   }
 }

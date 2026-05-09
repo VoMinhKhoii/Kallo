@@ -1,7 +1,7 @@
 'use client';
 
 import { ChevronDown, ChevronRight } from 'lucide-react';
-import { useState } from 'react';
+import { useId, useState } from 'react';
 import { cn } from '@/lib/utils';
 
 interface JsonViewerProps {
@@ -16,6 +16,7 @@ export function JsonViewer({
   defaultOpen = false,
 }: JsonViewerProps) {
   const [open, setOpen] = useState(defaultOpen);
+  const contentId = useId();
 
   if (value === null || value === undefined) {
     return (
@@ -31,6 +32,8 @@ export function JsonViewer({
     <div className="rounded border text-xs">
       <button
         type="button"
+        aria-controls={open ? contentId : undefined}
+        aria-expanded={open}
         onClick={() => setOpen((o) => !o)}
         className={cn(
           'flex w-full items-center gap-1 px-2 py-1 text-left',
@@ -39,9 +42,15 @@ export function JsonViewer({
         )}
       >
         {open ? (
-          <ChevronDown className="h-3 w-3 shrink-0 text-muted-foreground" />
+          <ChevronDown
+            aria-hidden="true"
+            className="h-3 w-3 shrink-0 text-muted-foreground"
+          />
         ) : (
-          <ChevronRight className="h-3 w-3 shrink-0 text-muted-foreground" />
+          <ChevronRight
+            aria-hidden="true"
+            className="h-3 w-3 shrink-0 text-muted-foreground"
+          />
         )}
         <span className="font-medium">{label}</span>
         {!open && (
@@ -53,7 +62,10 @@ export function JsonViewer({
       </button>
 
       {open && (
-        <pre className="max-h-64 overflow-auto p-2 font-mono text-xs leading-relaxed">
+        <pre
+          id={contentId}
+          className="max-h-64 overflow-auto p-2 font-mono text-xs leading-relaxed"
+        >
           {formatted}
         </pre>
       )}

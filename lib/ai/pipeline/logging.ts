@@ -20,12 +20,12 @@ export interface LogPipelineStartArgs {
  * Awaitable INSERT into pipeline_requests before the pipeline starts.
  * Awaits the DB write so child trace inserts (stage_logs, llm_calls)
  * have a parent row to FK against.
- * Returns the requestId for correlation with logPipelineEnd, or null if
- * the INSERT failed (callers must skip child trace logging in that case).
+ * Returns the requestId for correlation with logPipelineEnd.
+ * Throws if the parent row cannot be created.
  */
 export async function logPipelineStart(
   args: LogPipelineStartArgs
-): Promise<string | null> {
+): Promise<string> {
   const id = args.requestId ?? crypto.randomUUID();
 
   try {
@@ -39,11 +39,12 @@ export async function logPipelineStart(
         : {}),
       ...(args.dryRun ? { dryRun: true } : {}),
     });
-    return id;
   } catch (err) {
     console.error('[pipeline-logging] Failed to create request log:', err);
-    return null;
+    throw err;
   }
+
+  return id;
 }
 
 /**

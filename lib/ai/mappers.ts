@@ -1,9 +1,25 @@
 import type { userProfiles } from '@/lib/db/schema';
 import { NEUTRAL_COOKING_DEFAULTS } from '@/lib/onboarding/constants';
 import type { MacroBreakdown, MealItem, ParsedMeal } from '@/lib/types/meal';
+import {
+  decideMealLanguage,
+  type SupportedOutputLanguage,
+} from './language/detect';
 import type { PipelineResult, UserContext } from './types';
 
 type ProfileRow = typeof userProfiles.$inferSelect;
+
+interface AiRequestContextInput {
+  mealText: string;
+  requestLocale?: SupportedOutputLanguage;
+  profileLocale?: string | null;
+}
+
+function toSupportedOutputLanguage(
+  locale: string | null | undefined
+): SupportedOutputLanguage | undefined {
+  return locale === 'en' || locale === 'vi' ? locale : undefined;
+}
 
 /**
  * Builds UserContext from a user profile DB row.
@@ -47,6 +63,22 @@ export function buildUserContext(profile: ProfileRow): UserContext {
       brothConsumption: (profile.brothConsumption ??
         NEUTRAL_COOKING_DEFAULTS.brothConsumption) as UserContext['cookingHabits']['brothConsumption'],
     },
+  };
+}
+
+export function buildAiRequestContext(
+  userContext: UserContext,
+  input: AiRequestContextInput
+): UserContext {
+  const language = decideMealLanguage(input.mealText, {
+    localeFallback:
+      input.requestLocale ?? toSupportedOutputLanguage(input.profileLocale),
+  });
+
+  return {
+    ...userContext,
+    inputLanguage: language.inputLanguage,
+    outputLanguage: language.outputLanguage,
   };
 }
 

@@ -94,6 +94,7 @@ beforeEach(() => {
 
 afterEach(() => {
   vi.restoreAllMocks();
+  vi.unstubAllEnvs();
 });
 
 const SAMPLE_EMBEDDING = Array(768).fill(0.1);
@@ -696,5 +697,50 @@ describe('warmEmbeddingCache', () => {
       resolveDb as unknown as PostgresJsDatabase<typeof schema>
     );
     expect(result).toEqual(EMBEDDING_VEC);
+  });
+});
+
+describe('PIPELINE_EMBEDDING_CACHE_ENABLED', () => {
+  it('resolveQueryEmbedding returns null without touching DB when disabled', async () => {
+    vi.stubEnv('PIPELINE_EMBEDDING_CACHE_ENABLED', 'false');
+    const db = createMockDb();
+    const result = await resolveQueryEmbedding(
+      'gạo',
+      db as unknown as PostgresJsDatabase<typeof schema>
+    );
+    expect(result).toBeNull();
+    expect(db.execute).not.toHaveBeenCalled();
+  });
+
+  it('cacheQueryEmbedding skips L1 + DB write when disabled', () => {
+    vi.stubEnv('PIPELINE_EMBEDDING_CACHE_ENABLED', 'false');
+    const db = createMockDb();
+    cacheQueryEmbedding(
+      'gạo',
+      Array(768).fill(0.1),
+      db as unknown as PostgresJsDatabase<typeof schema>
+    );
+    expect(getMemoryCacheStats().size).toBe(0);
+    expect(db.execute).not.toHaveBeenCalled();
+  });
+
+  it('warmEmbeddingCache short-circuits when disabled', async () => {
+    vi.stubEnv('PIPELINE_EMBEDDING_CACHE_ENABLED', 'false');
+    const db = createMockDb();
+    await warmEmbeddingCache(
+      db as unknown as PostgresJsDatabase<typeof schema>
+    );
+    expect(db.execute).not.toHaveBeenCalled();
+  });
+});
+
+describe('PIPELINE_EMBEDDING_CACHE_WARMUP_ENABLED', () => {
+  it('warmEmbeddingCache skips DB scan when warmup-only flag is off', async () => {
+    vi.stubEnv('PIPELINE_EMBEDDING_CACHE_WARMUP_ENABLED', 'false');
+    const db = createMockDb();
+    await warmEmbeddingCache(
+      db as unknown as PostgresJsDatabase<typeof schema>
+    );
+    expect(db.execute).not.toHaveBeenCalled();
   });
 });

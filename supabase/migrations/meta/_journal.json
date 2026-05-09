@@ -260,6 +260,48 @@
       "when": 1777888119142,
       "tag": "20260504094839_add_pending_analysis_logged_at",
       "breakpoints": true
+    },
+    {
+      "idx": 37,
+      "version": "7",
+      "when": 1778084699999,
+      "tag": "20260506162459_add_analysis_guard_events",
+      "breakpoints": true
+    },
+    {
+      "idx": 38,
+      "version": "7",
+      "when": 1778088958565,
+      "tag": "20260506173558_add_analysis_rate_limits",
+      "breakpoints": true
+    },
+    {
+      "idx": 39,
+      "version": "7",
+      "when": 1778092525568,
+      "tag": "20260506183525_add_analysis_model_budget_events",
+      "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "7",
+      "when": 1778129452821,
+      "tag": "20260507045052_add_pipeline_llm_call_metadata",
+      "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "7",
+      "when": 1778246400000,
+      "tag": "20260508120000_pipeline_runs_substage_signals",
+      "breakpoints": true
+    },
+    {
+      "idx": 42,
+      "version": "7",
+      "when": 1778338800000,
+      "tag": "20260509130000_ingredient_query_embeddings_lower_name_en_idx",
+      "breakpoints": true
     }
   ]
 }

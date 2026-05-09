@@ -1,15 +1,15 @@
 import { describe, expect, it } from 'vitest';
-import type {
-  BoundedEstimate,
-  BoundedNutrition,
-  NutritionValues,
-} from '../types';
 import {
   goalAdjust,
   goalAdjustNutrition,
   sumBoundedNutrition,
   sumDisplayedNutrition,
-} from './goal-adjustment';
+} from '@/lib/ai/pipeline/goal-adjustment';
+import type {
+  BoundedEstimate,
+  BoundedNutrition,
+  NutritionValues,
+} from '@/lib/ai/types';
 
 // ---------------------------------------------------------------------------
 // Helper: create a bounded estimate

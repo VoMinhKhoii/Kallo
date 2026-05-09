@@ -1,6 +1,6 @@
 import type { ThinkingLevel } from '@google/genai';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { z } from 'zod';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { toJSONSchema, z } from 'zod';
 
 // ── hoisted mocks (must run before module imports) ───────────────────────────
 const { mockLogLlmCall } = vi.hoisted(() => ({
@@ -35,6 +35,10 @@ import { createGeminiClient } from '../gemini';
 describe('GeminiClient', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
   });
 
   describe('generateStructuredOutput', () => {
@@ -137,6 +141,69 @@ describe('GeminiClient', () => {
         })
       );
     });
+
+    it('uses the full provider JSON schema by default', async () => {
+      const describedSchema = z.object({
+        name: z.string().describe('Name to return'),
+      });
+      mockGenerateContent.mockResolvedValueOnce({
+        text: JSON.stringify({ name: 'test' }),
+      });
+
+      const client = createGeminiClient('test-key');
+      await client.generateStructuredOutput({
+        schema: describedSchema,
+        systemPrompt: 'test',
+        userMessage: 'test',
+        model: 'gemini-3-flash-preview',
+      });
+
+      expect(mockGenerateContent).toHaveBeenCalledWith(
+        expect.objectContaining({
+          config: expect.objectContaining({
+            responseJsonSchema: expect.objectContaining({
+              properties: expect.objectContaining({
+                name: expect.objectContaining({
+                  description: 'Name to return',
+                }),
+              }),
+            }),
+          }),
+        })
+      );
+    });
+
+    it('uses slim provider JSON schema only when explicitly enabled', async () => {
+      vi.stubEnv('PIPELINE_PROVIDER_SCHEMA_MODE', 'slim');
+      const describedSchema = z.object({
+        name: z.string().describe('Name to return'),
+      });
+      mockGenerateContent.mockResolvedValueOnce({
+        text: JSON.stringify({ name: 'test' }),
+      });
+
+      const client = createGeminiClient('test-key');
+      await client.generateStructuredOutput({
+        schema: describedSchema,
+        systemPrompt: 'test',
+        userMessage: 'test',
+        model: 'gemini-3-flash-preview',
+      });
+
+      expect(mockGenerateContent).toHaveBeenCalledWith(
+        expect.objectContaining({
+          config: expect.objectContaining({
+            responseJsonSchema: expect.objectContaining({
+              properties: expect.objectContaining({
+                name: expect.not.objectContaining({
+                  description: 'Name to return',
+                }),
+              }),
+            }),
+          }),
+        })
+      );
+    });
   });
 
   describe('generateStructuredOutputStream', () => {
@@ -168,6 +235,41 @@ describe('GeminiClient', () => {
         expect.objectContaining({
           config: expect.objectContaining({
             abortSignal: controller.signal,
+          }),
+        })
+      );
+    });
+
+    it('applies slim provider JSON schema to streaming calls', async () => {
+      vi.stubEnv('PIPELINE_PROVIDER_SCHEMA_MODE', 'slim');
+      const describedSchema = z.object({
+        name: z.string().describe('Name to stream'),
+        value: z.number(),
+      });
+      mockGenerateContentStream.mockResolvedValueOnce(
+        (async function* () {
+          yield { text: JSON.stringify({ name: 'test', value: 1 }) };
+        })()
+      );
+
+      const client = createGeminiClient('test-key');
+      await client.generateStructuredOutputStream({
+        schema: describedSchema,
+        systemPrompt: 'test',
+        userMessage: 'test',
+        model: 'gemini-3-flash-preview',
+      });
+
+      expect(mockGenerateContentStream).toHaveBeenCalledWith(
+        expect.objectContaining({
+          config: expect.objectContaining({
+            responseJsonSchema: expect.objectContaining({
+              properties: expect.objectContaining({
+                name: expect.not.objectContaining({
+                  description: 'Name to stream',
+                }),
+              }),
+            }),
           }),
         })
       );
@@ -382,6 +484,10 @@ describe('GeminiClient', () => {
       expect(call.requestId).toBe('req-1');
       expect(call.stageLogId).toBe('stage-1');
       expect(call.promptVersionId).toBe('pv-1');
+      expect(call.metadata).toEqual({
+        promptChars: 'sys'.length + 'user'.length,
+        schemaChars: JSON.stringify(toJSONSchema(traceSchema)).length,
+      });
     });
 
     it('logs 2 inserts when stream throws once then succeeds (attempt 1 error, attempt 2 success)', async () => {
@@ -449,6 +555,91 @@ describe('GeminiClient', () => {
       });
 
       expect(mockLogLlmCall).not.toHaveBeenCalled();
+    });
+
+    it('emits attempt token metadata when trace is disabled', async () => {
+      mockGenerateContentStream.mockResolvedValueOnce(
+        streamChunks([
+          { text: '{"items":["d"]}' },
+          { usageMetadata: { promptTokenCount: 12, candidatesTokenCount: 34 } },
+        ])
+      );
+
+      const client = createGeminiClient('test-key', {
+        maxRetries: 2,
+        baseDelayMs: 10,
+      });
+      const onAttemptComplete = vi.fn();
+
+      const result = await client.generateStructuredOutputStream(
+        {
+          schema: traceSchema,
+          systemPrompt: 'sys',
+          userMessage: 'user',
+          model: 'gemini-test',
+        },
+        { onAttemptComplete }
+      );
+
+      expect(result).toEqual({ items: ['d'] });
+      expect(mockLogLlmCall).not.toHaveBeenCalled();
+      expect(onAttemptComplete).toHaveBeenCalledWith({
+        attempt: 1,
+        model: 'gemini-test',
+        inputTokens: 12,
+        outputTokens: 34,
+        error: null,
+      });
+    });
+
+    it('emits retryable attempt errors even when a later attempt succeeds', async () => {
+      const retryableError = Object.assign(new Error('503 UNAVAILABLE'), {
+        status: 503,
+      });
+      mockGenerateContentStream
+        .mockRejectedValueOnce(retryableError)
+        .mockResolvedValueOnce(
+          streamChunks([
+            { text: '{"items":["e"]}' },
+            {
+              usageMetadata: { promptTokenCount: 7, candidatesTokenCount: 11 },
+            },
+          ])
+        );
+
+      const client = createGeminiClient('test-key', {
+        maxRetries: 2,
+        baseDelayMs: 10,
+      });
+      const onAttemptComplete = vi.fn();
+
+      const result = await client.generateStructuredOutputStream(
+        {
+          schema: traceSchema,
+          systemPrompt: 'sys',
+          userMessage: 'user',
+          model: 'gemini-test',
+        },
+        { onAttemptComplete }
+      );
+
+      expect(result).toEqual({ items: ['e'] });
+      expect(mockLogLlmCall).not.toHaveBeenCalled();
+      expect(onAttemptComplete).toHaveBeenCalledTimes(2);
+      expect(onAttemptComplete).toHaveBeenNthCalledWith(1, {
+        attempt: 1,
+        model: 'gemini-test',
+        inputTokens: null,
+        outputTokens: null,
+        error: retryableError,
+      });
+      expect(onAttemptComplete).toHaveBeenNthCalledWith(2, {
+        attempt: 2,
+        model: 'gemini-test',
+        inputTokens: 7,
+        outputTokens: 11,
+        error: null,
+      });
     });
   });
 });

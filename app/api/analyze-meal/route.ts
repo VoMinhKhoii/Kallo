@@ -1,21 +1,66 @@
 import { eq } from 'drizzle-orm';
 import type { NextRequest } from 'next/server';
+import { getTranslations } from 'next-intl/server';
 import { createGeminiClient } from '@/lib/ai/gemini';
-import { buildUserContext, toParsedMeal } from '@/lib/ai/mappers';
+import {
+  buildAiRequestContext,
+  buildUserContext,
+  toParsedMeal,
+} from '@/lib/ai/mappers';
 import { logUnmatchedIngredients } from '@/lib/ai/matching';
 import { analyzeMeal } from '@/lib/ai/pipeline';
+import { readBooleanEnv } from '@/lib/ai/pipeline/feature-flags';
 import { logPipelineEnd, logPipelineStart } from '@/lib/ai/pipeline/logging';
 import type { StreamEvent } from '@/lib/ai/streaming';
 import { encodeSSE } from '@/lib/ai/streaming';
 import { getUtcInstantForLocalDate } from '@/lib/date/local-day';
 import { db } from '@/lib/db';
-import { pendingAnalyses, userProfiles } from '@/lib/db/schema';
+import {
+  analysisGuardEvents,
+  pendingAnalyses,
+  userProfiles,
+} from '@/lib/db/schema';
 import { Errors, serializeError } from '@/lib/errors';
+import {
+  type AnalysisGuardAllowedResult,
+  buildAnalysisGuardEvent,
+  checkAnalysisGuards,
+} from '@/lib/rate-limit/analysis-guards';
 import { createClient } from '@/lib/supabase/server';
 import { mealMessageSchema } from '@/lib/validation';
 
 export const runtime = 'nodejs';
 export const maxDuration = 60;
+
+const analyzeMealRoute = '/api/analyze-meal';
+
+function getRequestIp(request: NextRequest) {
+  const forwardedFor = request.headers.get('x-forwarded-for');
+  const forwardedIp = forwardedFor?.split(',')[0]?.trim();
+
+  return forwardedIp || request.headers.get('x-real-ip');
+}
+
+function createGuardRelease(release: AnalysisGuardAllowedResult['release']) {
+  let releasePromise: Promise<void> | undefined;
+
+  return () => {
+    if (!release) return Promise.resolve();
+
+    releasePromise ??= (async () => {
+      try {
+        await release();
+      } catch (error) {
+        console.error(
+          '[analyze-meal] Failed to release analysis guard:',
+          error
+        );
+      }
+    })();
+
+    return releasePromise;
+  };
+}
 
 /**
  * Pre-stream validation: auth, input, profile, config.
@@ -77,6 +122,7 @@ async function validateRequest(request: NextRequest) {
       data: {
         userId: user.id,
         message: parsed.data.message,
+        locale: parsed.data.locale,
         loggedAt: getUtcInstantForLocalDate(
           parsed.data.loggedDate,
           parsed.data.timezoneOffset
@@ -94,17 +140,68 @@ export async function POST(request: NextRequest) {
   // Phase 1: Pre-stream validation — errors returned as JSON
   const validation = await validateRequest(request);
   if (validation.error) return validation.error;
-  const { userId, message, loggedAt, profile, apiKey } = validation.data;
+  const { userId, message, locale, loggedAt, profile, apiKey } =
+    validation.data;
 
-  const userContext = buildUserContext(profile);
+  const userContext = buildAiRequestContext(buildUserContext(profile), {
+    mealText: message,
+    requestLocale: locale,
+    profileLocale: profile.preferredLocale,
+  });
+  const ip = getRequestIp(request);
 
-  // Awaited so child trace inserts have a parent row to FK against
-  const requestId = await logPipelineStart({
+  const guard = await checkAnalysisGuards({
     userId,
-    rawInput: message,
-    userContext,
+    ip,
+    route: analyzeMealRoute,
     db,
   });
+
+  if (!guard.allowed) {
+    if (readBooleanEnv('ANALYSIS_GUARD_EVENT_LOGGING_ENABLED', true)) {
+      try {
+        await db.insert(analysisGuardEvents).values(
+          buildAnalysisGuardEvent({
+            userId,
+            ip,
+            route: analyzeMealRoute,
+            reason: guard.reason,
+            retryAfterSeconds: guard.retryAfterSeconds,
+          })
+        );
+      } catch (error) {
+        console.error(
+          '[analyze-meal] Failed to log analysis guard event:',
+          error
+        );
+      }
+    }
+
+    const t = await getTranslations({
+      locale: locale ?? profile.preferredLocale ?? 'en',
+      namespace: 'errors',
+    });
+    return Response.json(Errors.rateLimited(t('rateLimited')).toJSON(), {
+      status: guard.status,
+      headers: { 'Retry-After': String(guard.retryAfterSeconds) },
+    });
+  }
+
+  const releaseGuard = createGuardRelease(guard.release);
+
+  // Awaited so child trace inserts have a parent row to FK against
+  let requestId: string;
+  try {
+    requestId = await logPipelineStart({
+      userId,
+      rawInput: message,
+      userContext,
+      db,
+    });
+  } catch (error) {
+    await releaseGuard();
+    throw error;
+  }
 
   // Phase 2: Stream pipeline results as SSE
   const encoder = new TextEncoder();
@@ -116,12 +213,18 @@ export async function POST(request: NextRequest) {
 
       const startTime = Date.now();
       const promptVersionsUsed = new Map<string, string>();
-      // If start logging failed (null), skip child trace logging entirely.
-      const traceContext = requestId
-        ? { requestId, db, promptVersionsUsed }
-        : undefined;
+      const traceContext = { requestId, db, userId, promptVersionsUsed };
+      const releaseOnAbort = () => {
+        void releaseGuard();
+      };
+
+      request.signal.addEventListener('abort', releaseOnAbort, { once: true });
 
       try {
+        if (request.signal.aborted) {
+          return;
+        }
+
         const gemini = createGeminiClient(apiKey);
         const result = await analyzeMeal(
           message,
@@ -172,7 +275,7 @@ export async function POST(request: NextRequest) {
 
         if (!hasNutrition) {
           console.error('[analyze-meal] Pipeline returned all-null nutrition', {
-            input: message,
+            inputLength: message.length,
           });
           logPipelineEnd(
             requestId,
@@ -192,10 +295,10 @@ export async function POST(request: NextRequest) {
           return;
         }
 
-        // Emit final display result
-        emit({ type: 'result', data: meal });
-
-        // Store full pipeline result durably for later confirmation
+        // Persist the analysis BEFORE telling the client the meal is ready,
+        // so a failed insert produces an error path with no half-state. If
+        // we emit `result` first and then the insert throws, the client has
+        // a populated meal preview with no `analysisId` to confirm it.
         const [inserted] = await db
           .insert(pendingAnalyses)
           .values({
@@ -206,7 +309,10 @@ export async function POST(request: NextRequest) {
           })
           .returning({ id: pendingAnalyses.id });
 
-        // Terminal event — analysis stored, safe to confirm
+        // Now safe to surface the meal — durable row exists.
+        emit({ type: 'result', data: meal });
+
+        // Terminal event — analysis stored, safe to confirm.
         emit({
           type: 'analysis_complete',
           analysisId: inserted.id,
@@ -258,6 +364,8 @@ export async function POST(request: NextRequest) {
           retryable: !isRateLimit,
         });
       } finally {
+        request.signal.removeEventListener('abort', releaseOnAbort);
+        await releaseGuard();
         controller.close();
       }
     },

@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { PipelineSummary } from './pipeline-summary';
+import { PipelineSummary } from '@/app/[locale]/(app)/admin/requests/[id]/_components/pipeline-summary';
 
 describe('PipelineSummary', () => {
   it('keeps matched-stage status textual and avoids duplicating meal-level unmatched rows', () => {
@@ -23,6 +23,14 @@ describe('PipelineSummary', () => {
               outputJson: {
                 isFood: true,
                 mealSlot: 'lunch',
+                languageMetadata: {
+                  inputLanguage: 'en',
+                  outputLanguage: 'vi',
+                  guardReason: 'matches_output_language',
+                  guardSeverity: 'info',
+                  guardPassed: true,
+                  retryCount: 1,
+                },
                 mealItems: [
                   {
                     name: 'rice bowl',
@@ -67,6 +75,8 @@ describe('PipelineSummary', () => {
     );
 
     expect(screen.getAllByText('success').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('en → vi')).not.toHaveLength(0);
+    expect(screen.getByText('1 lang retry')).toBeInTheDocument();
     expect(screen.getByText('no match')).toBeInTheDocument();
     expect(screen.queryByText(/Unmatched output/)).not.toBeInTheDocument();
   });

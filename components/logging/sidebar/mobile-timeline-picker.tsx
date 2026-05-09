@@ -304,7 +304,7 @@ export function MobileTimelinePicker({
             type="button"
             onClick={scrollPrev}
             className={cn(
-              'flex h-12 w-9 shrink-0 touch-manipulation items-center justify-center rounded-full transition-[background-color,color,transform] duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent focus-visible:ring-offset-1 active:scale-[0.96] motion-reduce:transition-none',
+              'flex h-12 w-11 shrink-0 touch-manipulation items-center justify-center rounded-full transition-[background-color,color,transform] duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent focus-visible:ring-offset-1 active:scale-[0.96] motion-reduce:transition-none',
               'text-nham-text hover:bg-nham-hover/50'
             )}
             aria-label={t('previousWeek')}
@@ -360,7 +360,7 @@ export function MobileTimelinePicker({
             onClick={scrollNext}
             disabled={!canNavigateNext}
             className={cn(
-              'flex h-12 w-9 shrink-0 touch-manipulation items-center justify-center rounded-full transition-[background-color,color,transform] duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent focus-visible:ring-offset-1 active:scale-[0.96] disabled:active:scale-100 motion-reduce:transition-none',
+              'flex h-12 w-11 shrink-0 touch-manipulation items-center justify-center rounded-full transition-[background-color,color,transform] duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent focus-visible:ring-offset-1 active:scale-[0.96] disabled:active:scale-100 motion-reduce:transition-none',
               canNavigateNext
                 ? 'text-nham-text hover:bg-nham-hover/50'
                 : 'text-nham-text-muted/30'

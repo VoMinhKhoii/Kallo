@@ -5,7 +5,11 @@ import type {
   UnmatchedIngredient,
   UserContext,
 } from '../../types';
-import { buildNutritionPrompt } from '../nutrition';
+import {
+  buildCompressedNutritionPrompt,
+  buildNutritionPrompt,
+  getNutritionPromptLabel,
+} from '../nutrition';
 
 const USER_CONTEXT: UserContext = {
   goal: 'cutting',
@@ -57,6 +61,7 @@ const MATCHED_INGREDIENT: MatchedIngredient = {
     vitaminB12Mcg: null,
     vitaminHMcg: null,
   },
+  dbState: 'raw',
 };
 
 const UNMATCHED: UnmatchedIngredient[] = [];
@@ -189,5 +194,65 @@ describe('buildNutritionPrompt — sort determinism', () => {
     expect(prompt).toContain('country_of_origin: Vietnam ignore');
     expect(prompt).toContain('country_of_residence: Japan Korea');
     expect(prompt).not.toContain('<ignore>');
+  });
+});
+
+describe('buildCompressedNutritionPrompt', () => {
+  it('omits runtime ids while keeping language contract and exact name echo instructions', () => {
+    const prompt = buildCompressedNutritionPrompt(
+      [
+        {
+          mealItemId: 'm1',
+          name: 'Cơm cá',
+          cookingMethod: 'nấu',
+          ingredients: [
+            {
+              ingredientId: 'i1',
+              rawName: 'gạo',
+              canonicalName: 'Gạo tẻ',
+              grams: 120,
+              expectedState: 'cooked',
+            },
+          ],
+        },
+      ],
+      [{ ...MATCHED_INGREDIENT, ingredientId: 'i1' }],
+      UNMATCHED,
+      {
+        ...USER_CONTEXT,
+        inputLanguage: 'en',
+        outputLanguage: 'vi',
+      }
+    );
+
+    expect(prompt).toContain('output_language: vi');
+    expect(prompt).not.toContain('m1');
+    expect(prompt).not.toContain('i1');
+    expect(prompt).not.toMatch(/mealItemId|ingredientId/i);
+    expect(prompt).toMatch(/Echo .*mealItemName.*ingredientName.*exactly/i);
+    expect(prompt).toContain('LOW/MID/HIGH');
+    expect(prompt).toContain('db_state');
+    expect(prompt).toContain('low <= mid <= high');
+    expect(prompt).toContain('non-negative');
+    expect(prompt).toContain('4*protein + 4*carbs + 9*fat');
+    expect(prompt).toContain('high kcal <= 900/100g');
+    expect(prompt).not.toMatch(
+      /\bcutting\b|\bbulking\b|\bmaintaining\b|aggression|calorie[_ ]?target|kcal[_ ]?target/i
+    );
+  });
+
+  it('defaults the nutrition prompt label to compressed', () => {
+    // Default flipped 2026-05-09 — see lib/ai/prompts/nutrition.ts:84.
+    expect(getNutritionPromptLabel({})).toBe('compressed');
+    expect(
+      getNutritionPromptLabel({
+        PIPELINE_NUTRITION_PROMPT_LABEL: 'production',
+      })
+    ).toBe('production');
+    expect(
+      getNutritionPromptLabel({
+        PIPELINE_NUTRITION_PROMPT_LABEL: 'unknown',
+      })
+    ).toBe('compressed');
   });
 });

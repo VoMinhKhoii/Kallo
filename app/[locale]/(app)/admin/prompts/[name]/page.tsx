@@ -24,7 +24,12 @@ export default async function PromptDetailPage({
   const { name } = await params;
   const sp = await searchParams;
 
-  const decodedName = decodeURIComponent(name);
+  let decodedName: string;
+  try {
+    decodedName = decodeURIComponent(name);
+  } catch {
+    notFound();
+  }
   if (!decodedName) notFound();
   const compareId = typeof sp.compare === 'string' ? sp.compare : undefined;
   if (compareId && !z.string().uuid().safeParse(compareId).success) notFound();

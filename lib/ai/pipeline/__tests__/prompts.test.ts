@@ -1,15 +1,17 @@
 import { describe, expect, it } from 'vitest';
 import {
   ASSUMPTION_TEXT,
+  buildCompressedDecompositionPrompt,
   buildDecompositionPrompt,
   buildNutritionPrompt,
-} from '../prompts';
+  getDecompositionPromptLabel,
+} from '@/lib/ai/prompts';
 import type {
   DecomposedMealItem,
   MatchedIngredient,
   UnmatchedIngredient,
   UserContext,
-} from '../types';
+} from '@/lib/ai/types';
 
 const sampleUserContext: UserContext = {
   goal: 'cutting',
@@ -42,7 +44,8 @@ describe('buildDecompositionPrompt', () => {
     const prompt = buildDecompositionPrompt(sampleUserContext);
     expect(prompt).toContain('meal item');
     expect(prompt).toContain('ingredients');
-    expect(prompt).toContain('estimatedGrams');
+    expect(prompt).toContain('grams');
+    expect(prompt).not.toContain('estimatedGrams');
   });
 
   it('includes meal slot classification instruction', () => {
@@ -84,6 +87,122 @@ describe('buildDecompositionPrompt', () => {
     expect(prompt).toContain('country_of_residence: Japan Korea');
     expect(prompt).not.toContain('<ignore>');
   });
+
+  it('does not leak goal/aggression/calorieTarget to the decomposition prompt (sentinel)', () => {
+    const ctx = {
+      ...sampleUserContext,
+      goal: 'cutting' as const,
+      aggression: 0.85,
+    };
+    const prompt = buildDecompositionPrompt(ctx);
+    expect(prompt).not.toMatch(
+      /\bcutting\b|\bbulking\b|\bmaintaining\b|aggression|calorie[_ ]?target|kcal[_ ]?target/i
+    );
+    expect(prompt).not.toMatch(/0\.85/);
+  });
+
+  it('keeps IDs runtime-owned instead of asking the model for UUIDs', () => {
+    const prompt = buildDecompositionPrompt(sampleUserContext);
+    expect(prompt).toContain('Do not emit mealItemId or ingredientId');
+    expect(prompt).toContain('Runtime assigns compact run-scoped');
+    expect(prompt).not.toContain('Use UUID-shaped strings');
+    expect(prompt).not.toMatch(
+      /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i
+    );
+  });
+
+  it('asks for canonicalName separately from rawName', () => {
+    const prompt = buildDecompositionPrompt(sampleUserContext);
+    expect(prompt).toMatch(/canonicalName/);
+    expect(prompt).toMatch(/rawName/);
+    expect(prompt.toLowerCase()).toMatch(/canonical|fct|disambiguat/);
+  });
+
+  it('documents expectedState as an override for mixed-state dishes', () => {
+    const prompt = buildDecompositionPrompt(sampleUserContext);
+    expect(prompt).toMatch(/expectedState/);
+    expect(prompt.toLowerCase()).toMatch(/differ|override|mixed/);
+  });
+
+  it('enumerates ambiguityFlags closed-enum values', () => {
+    const prompt = buildDecompositionPrompt(sampleUserContext);
+    for (const flag of [
+      'multiple_dish_interpretations',
+      'unspecified_quantity',
+      'cross_cuisine_ingredient',
+      'state_inferred_no_method',
+    ]) {
+      expect(prompt).toContain(flag);
+    }
+  });
+
+  it('does not mention source-priority routing fields', () => {
+    const prompt = buildDecompositionPrompt(sampleUserContext);
+    for (const field of [`source${'Prior'}`, `source${'Override'}`]) {
+      expect(prompt).not.toContain(field);
+    }
+    expect(prompt.toLowerCase()).not.toMatch(
+      /route .*to (fao|usda)|prefer (fao|usda)/
+    );
+  });
+});
+
+describe('buildCompressedDecompositionPrompt', () => {
+  it('keeps the compressed prompt contract without leaking excluded context', () => {
+    // Pass forbidden fields via a structural-typed object: the prompt builder
+    // accepts only PromptPersonalizationContext, so we cast through unknown
+    // to verify that even if a malformed call sneaks past the type system,
+    // goal/aggression don't leak into the rendered output.
+    const prompt = buildCompressedDecompositionPrompt({
+      ...sampleUserContext,
+      inputLanguage: 'en',
+      outputLanguage: 'vi',
+      goal: 'cutting',
+      aggression: 0.85,
+    } as unknown as Parameters<typeof buildCompressedDecompositionPrompt>[0]);
+
+    expect(prompt).toContain('output_language=vi');
+    for (const field of [
+      'isFood',
+      'mealSlot',
+      'mealItems',
+      'rawName',
+      'canonicalName',
+      'grams',
+      'cookingMethod',
+    ]) {
+      expect(prompt).toContain(field);
+    }
+    expect(prompt).toContain('Do not emit mealItemId or ingredientId');
+    expect(prompt).not.toMatch(
+      /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i
+    );
+    expect(prompt.toLowerCase()).not.toMatch(
+      /route .*to (fao|usda)|prefer (fao|usda)/
+    );
+    expect(prompt).not.toMatch(
+      /\bcutting\b|\bbulking\b|\bmaintaining\b|aggression|calorie[_ ]?target|kcal[_ ]?target/i
+    );
+    expect(prompt).not.toMatch(/0\.85/);
+    expect(prompt).not.toContain('<examples>');
+    expect(prompt.length).toBeLessThan(
+      buildDecompositionPrompt(sampleUserContext).length
+    );
+  });
+
+  it('defaults the decomposition prompt label to production', () => {
+    expect(getDecompositionPromptLabel({})).toBe('production');
+    expect(
+      getDecompositionPromptLabel({
+        PIPELINE_DECOMPOSITION_PROMPT_LABEL: 'compressed',
+      })
+    ).toBe('compressed');
+    expect(
+      getDecompositionPromptLabel({
+        PIPELINE_DECOMPOSITION_PROMPT_LABEL: 'unknown',
+      })
+    ).toBe('production');
+  });
 });
 
 const fullNutrition = {
@@ -117,6 +236,29 @@ const fullNutrition = {
   vitaminHMcg: null,
 };
 
+const makeIngredient = (name: string): MatchedIngredient => ({
+  ingredientName: name,
+  foodCompositionId: `id-${name}`,
+  matchedName: name,
+  similarity: 0.9,
+  confidence: 'high',
+  nutritionPer100g: fullNutrition,
+  dbState: 'raw',
+});
+
+const makeMealItem = (
+  name: string,
+  ingredients: string[]
+): DecomposedMealItem => ({
+  name,
+  ingredients: ingredients.map((ing) => ({
+    name: ing,
+    estimatedGrams: 100,
+    cookingMethod: null,
+    userFacingUnit: '100g',
+  })),
+});
+
 describe('buildNutritionPrompt', () => {
   const sampleMealItems: DecomposedMealItem[] = [
     {
@@ -140,6 +282,7 @@ describe('buildNutritionPrompt', () => {
       similarity: 0.85,
       confidence: 'high',
       nutritionPer100g: fullNutrition,
+      dbState: 'raw',
     },
   ];
 
@@ -153,6 +296,48 @@ describe('buildNutritionPrompt', () => {
     expect(prompt).toContain('350'); // caloriesKcal per 100g
     expect(prompt).toContain('gạo');
     expect(prompt).toContain('200'); // estimatedGrams
+  });
+
+  it('escapes dynamic XML attribute values in ingredient data', () => {
+    const prompt = buildNutritionPrompt(
+      [
+        {
+          name: 'bún "đặc biệt" & rau',
+          ingredients: [
+            {
+              name: 'tôm <sông>',
+              rawName: 'tôm "sông" & biển',
+              canonicalName: "tôm 'sông'",
+              estimatedGrams: 80,
+              cookingMethod: 'áp chảo "nhẹ"',
+              userFacingUnit: '1 phần',
+              ingredientId: 'ing-1&2',
+              expectedState: 'cooked',
+            },
+          ],
+        },
+      ],
+      [
+        {
+          ingredientName: 'tôm "sông" & biển',
+          foodCompositionId: 'shrimp-001',
+          matchedName: 'Tôm <đồng> & biển',
+          similarity: 0.91,
+          confidence: 'high',
+          nutritionPer100g: fullNutrition,
+          dbState: 'cooked',
+        },
+      ],
+      [],
+      sampleUserContext
+    );
+
+    expect(prompt).toContain('name="bún &quot;đặc biệt&quot; &amp; rau"');
+    expect(prompt).toContain('name="tôm &quot;sông&quot; &amp; biển"');
+    expect(prompt).not.toContain('id="ing-1&amp;2"');
+    expect(prompt).toContain('canonicalName="tôm &apos;sông&apos;"');
+    expect(prompt).toContain('db_name="Tôm &lt;đồng&gt; &amp; biển"');
+    expect(prompt).toContain('cooking="áp chảo &quot;nhẹ&quot;"');
   });
 
   it('includes cooking habits context', () => {
@@ -198,7 +383,7 @@ describe('buildNutritionPrompt', () => {
     );
     expect(prompt).toContain('nước mắm đặc biệt');
     expect(prompt).toContain('<meal_item name="cơm">');
-    expect(prompt).toContain('Vietnamese food knowledge');
+    expect(prompt).toContain("culinary knowledge of the user's cuisine");
   });
 
   it('groups unmatched ingredients under their parent meal items', () => {
@@ -247,6 +432,7 @@ describe('buildNutritionPrompt', () => {
         similarity: 0.9,
         confidence: 'high',
         nutritionPer100g: fullNutrition,
+        dbState: 'raw',
       },
       {
         ingredientName: 'bún',
@@ -255,6 +441,7 @@ describe('buildNutritionPrompt', () => {
         similarity: 0.85,
         confidence: 'high',
         nutritionPer100g: fullNutrition,
+        dbState: 'raw',
       },
     ];
 
@@ -276,9 +463,9 @@ describe('buildNutritionPrompt', () => {
     expect(prompt).toContain('<meal_item name="canh rau lang tôm">');
     expect(prompt).toContain('<meal_item name="bún bò Huế">');
 
-    // Each should contain nước dùng with the correct raw_grams
-    expect(prompt).toContain('name="nước dùng" raw_grams="200"');
-    expect(prompt).toContain('name="nước dùng" raw_grams="300"');
+    // Each should contain nước dùng with the correct as-eaten grams.
+    expect(prompt).toContain('name="nước dùng" as_eaten_grams="200"');
+    expect(prompt).toContain('name="nước dùng" as_eaten_grams="300"');
   });
 
   it('unmatched_rule instructs LLM to use meal item context', () => {
@@ -330,16 +517,81 @@ describe('buildNutritionPrompt', () => {
     expect(prompt).not.toContain('vitaminB12Mcg');
   });
 
-  it('explains why three values are needed for goal adjustment', () => {
+  it('does not leak goal/aggression/calorieTarget to the nutrition prompt (sentinel)', () => {
+    const ctx = {
+      ...sampleUserContext,
+      goal: 'cutting' as const,
+      aggression: 0.85,
+    };
+    const mealItems = [makeMealItem('Phở bò', ['gạo tẻ', 'thịt bò bắp'])];
+    const matched = [makeIngredient('gạo tẻ'), makeIngredient('thịt bò bắp')];
+    const prompt = buildNutritionPrompt(mealItems, matched, [], ctx);
+    expect(prompt).not.toMatch(
+      /\bcutting\b|\bbulking\b|\bmaintaining\b|aggression|calorie[_ ]?target|kcal[_ ]?target/i
+    );
+    expect(prompt).not.toMatch(/0\.85/);
+  });
+
+  it('emits db_state per matched ingredient when present', () => {
+    const matched = [
+      { ...makeIngredient('gạo tẻ'), dbState: 'raw' as const },
+      { ...makeIngredient('thịt bò bắp'), dbState: 'cooked' as const },
+    ];
+    const mealItems = [makeMealItem('Phở bò', ['gạo tẻ', 'thịt bò bắp'])];
     const prompt = buildNutritionPrompt(
-      sampleMealItems,
-      sampleMatched,
+      mealItems,
+      matched,
       [],
       sampleUserContext
     );
-    expect(prompt).toContain('<why_three_values>');
-    expect(prompt).toContain('goal-based adjustments');
-    expect(prompt).toContain('genuine uncertainty');
+    expect(prompt).toMatch(/db_state="raw"/);
+    expect(prompt).toMatch(/db_state="cooked"/);
+  });
+
+  it('emits db_state="unknown" for unknown-state matches', () => {
+    const unknownStateMatch = {
+      ...makeIngredient('gạo tẻ'),
+      dbState: 'unknown' as const,
+    };
+    const mealItems = [makeMealItem('Cơm trắng', ['gạo tẻ'])];
+    const prompt = buildNutritionPrompt(
+      mealItems,
+      [unknownStateMatch],
+      [],
+      sampleUserContext
+    );
+    expect(prompt).toMatch(/db_state="unknown"/);
+  });
+
+  it('emits as_eaten_grams (not raw_grams) and dbState-aware <calculation>', () => {
+    const matched = [
+      {
+        ...makeIngredient('thịt bò bắp'),
+        dbState: 'cooked' as const,
+        ingredientId: 'i1',
+      },
+      {
+        ...makeIngredient('gạo tẻ'),
+        dbState: 'raw' as const,
+        ingredientId: 'i2',
+      },
+    ];
+    const mealItems = [makeMealItem('Phở bò', ['thịt bò bắp', 'gạo tẻ'])];
+    const prompt = buildNutritionPrompt(
+      mealItems,
+      matched,
+      [],
+      sampleUserContext
+    );
+
+    expect(prompt).toMatch(/as_eaten_grams="\d+"/);
+    expect(prompt).not.toMatch(/raw_grams=/);
+    expect(prompt).toMatch(/db_state="cooked"/);
+    expect(prompt).toMatch(/db_state="raw"/);
+    expect(prompt).toMatch(/db_state[\s\S]*"cooked"[\s\S]*as_eaten_grams/);
+    expect(prompt).toMatch(
+      /db_state[\s\S]*"raw"[\s\S]*adjust for cooking method/
+    );
   });
 
   it('includes cooking method attribute in ingredient data', () => {
@@ -364,6 +616,7 @@ describe('buildNutritionPrompt', () => {
         similarity: 0.9,
         confidence: 'high',
         nutritionPer100g: fullNutrition,
+        dbState: 'raw',
       },
     ];
     const prompt = buildNutritionPrompt(
@@ -404,28 +657,6 @@ describe('ASSUMPTION_TEXT', () => {
 // ---------------------------------------------------------------------------
 
 describe('buildNutritionPrompt — deterministic ordering', () => {
-  const makeIngredient = (name: string): MatchedIngredient => ({
-    ingredientName: name,
-    foodCompositionId: `id-${name}`,
-    matchedName: name,
-    similarity: 0.9,
-    confidence: 'high',
-    nutritionPer100g: fullNutrition,
-  });
-
-  const makeMealItem = (
-    name: string,
-    ingredients: string[]
-  ): DecomposedMealItem => ({
-    name,
-    ingredients: ingredients.map((ing) => ({
-      name: ing,
-      estimatedGrams: 100,
-      cookingMethod: null,
-      userFacingUnit: '100g',
-    })),
-  });
-
   it('produces identical prompt regardless of ingredient array order', () => {
     const matched = ['gạo', 'thịt gà', 'rau muống'].map(makeIngredient);
     const matchedReversed = [...matched].reverse();

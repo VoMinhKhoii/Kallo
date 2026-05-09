@@ -6,6 +6,7 @@ import type {
   PipelineResult,
   UnmatchedIngredient,
 } from '../types';
+import { ingredientDisplayName, ingredientGrams } from './ingredient-accessors';
 
 // ---------------------------------------------------------------------------
 // Thresholds (exported for test assertions)
@@ -14,6 +15,12 @@ import type {
 export const THRESHOLDS = {
   /** No ingredient can exceed pure fat energy density */
   MAX_KCAL_PER_100G: 900,
+  /** Spec §1.4 — per-100g macro caps; high bound triggers the envelope. */
+  DENSITY_PROTEIN_PER_100G_MAX: 100,
+  DENSITY_CARB_PER_100G_MAX: 100,
+  DENSITY_FAT_PER_100G_MAX: 100,
+  /** Spec §1.3 — kcal identity tolerance; denominator is reportedKcal. */
+  MACRO_KCAL_IDENTITY_TOLERANCE: 0.2,
   /** Single meal item calorie cap */
   MAX_MEAL_ITEM_KCAL: 1500,
   /** Flag if LLM mid kcal deviates > this ratio from DB-scaled value */
@@ -37,17 +44,57 @@ export type AnomalyType =
   | 'weight_implausible'
   | 'db_deviation'
   | 'total_calories'
-  | 'unmatched_ratio';
+  | 'unmatched_ratio'
+  | 'density_envelope'
+  | 'macro_inconsistent'
+  | 'implausible_grams';
 
 export interface ValidationAnomaly {
   type: AnomalyType;
   message: string;
   severity: 'warning' | 'error';
+  /**
+   * Run-scoped compact ingredient ID (§0.1). Set when the anomaly is attributed
+   * to a specific ingredient row. Anomalies that span a meal item or the
+   * whole pipeline (e.g., `meal_item_cap`, `total_calories`,
+   * `unmatched_ratio`) leave this undefined.
+   */
+  ingredientId?: string;
+  /** Run-scoped compact meal-item ID (§0.1) when applicable. */
+  mealItemId?: string;
 }
+
+const ingredientCookingMethod = (
+  mealItem: DecomposedMealItem,
+  ing: DecomposedMealItem['ingredients'][number]
+): string | null => mealItem.cookingMethod ?? ing.cookingMethod ?? null;
 
 // ---------------------------------------------------------------------------
 // Pre-assembly validation (Section 3.2 — after LLM Call 2, before assembly)
 // ---------------------------------------------------------------------------
+
+export function validateDecompositionOutput(
+  decomposition: DecomposedMealItem[]
+): ValidationAnomaly[] {
+  const anomalies: ValidationAnomaly[] = [];
+
+  for (const mealItem of decomposition) {
+    for (const ing of mealItem.ingredients) {
+      const grams = ingredientGrams(ing);
+      if (grams <= 0) {
+        anomalies.push({
+          type: 'implausible_grams',
+          message: `${ingredientDisplayName(ing)}: ${grams}g must be > 0`,
+          severity: 'warning',
+          ingredientId: ing.ingredientId,
+          mealItemId: mealItem.mealItemId,
+        });
+      }
+    }
+  }
+
+  return anomalies;
+}
 
 /**
  * Validate LLM nutrition output for implausible values.
@@ -59,18 +106,25 @@ export function validateNutritionOutput(
   decomposition: DecomposedMealItem[]
 ): ValidationAnomaly[] {
   const anomalies: ValidationAnomaly[] = [];
-  const matchedLookup = new Map(matched.map((m) => [m.ingredientName, m]));
+  // §0.1 — id-keyed lookups. When two dishes share an ingredient display
+  // name (e.g., 'nước dùng'), name-keying silently overwrites; id-keying
+  // attributes anomalies to the correct ingredient row.
+  const matchedLookup = new Map<string, MatchedIngredient>();
+  for (const m of matched) {
+    if (m.ingredientId) matchedLookup.set(m.ingredientId, m);
+  }
 
   // Build a lookup for decomposition grams + cooking method per ingredient
   const decomposedLookup = new Map<
     string,
-    { estimatedGrams: number; cookingMethod: string | null }
+    { grams: number; cookingMethod: string | null }
   >();
   for (const mi of decomposition) {
     for (const ing of mi.ingredients) {
-      decomposedLookup.set(ing.name, {
-        estimatedGrams: ing.estimatedGrams,
-        cookingMethod: ing.cookingMethod,
+      if (!ing.ingredientId) continue;
+      decomposedLookup.set(ing.ingredientId, {
+        grams: ingredientGrams(ing),
+        cookingMethod: ingredientCookingMethod(mi, ing),
       });
     }
   }
@@ -82,7 +136,13 @@ export function validateNutritionOutput(
       const midKcal = ing.caloriesKcal.mid;
       mealItemMidKcal += midKcal;
 
-      const matchInfo = matchedLookup.get(ing.ingredientName);
+      const ingredientId = ing.ingredientId;
+      const decomposed = ingredientId
+        ? decomposedLookup.get(ingredientId)
+        : undefined;
+      const matchInfo = ingredientId
+        ? matchedLookup.get(ingredientId)
+        : undefined;
       if (matchInfo) {
         const dbKcalPer100g = matchInfo.nutritionPer100g.caloriesKcal;
 
@@ -95,15 +155,16 @@ export function validateNutritionOutput(
             type: 'calorie_density',
             message: `${ing.ingredientName}: DB ${dbKcalPer100g} kcal/100g > ${THRESHOLDS.MAX_KCAL_PER_100G}`,
             severity: 'warning',
+            ingredientId,
+            mealItemId: mealItem.mealItemId,
           });
         }
 
         // DB-anchor deviation: compare LLM mid kcal vs DB-scaled value
         if (dbKcalPer100g != null && dbKcalPer100g > 0 && midKcal > 0) {
-          const decomposed = decomposedLookup.get(ing.ingredientName);
           if (decomposed) {
             const rawGrams = convertCookedToRaw(
-              decomposed.estimatedGrams,
+              decomposed.grams,
               decomposed.cookingMethod
             );
             const dbScaledKcal = (rawGrams / 100) * dbKcalPer100g;
@@ -113,9 +174,94 @@ export function validateNutritionOutput(
                 type: 'db_deviation',
                 message: `${ing.ingredientName} in ${mealItem.mealItemName}: LLM ${midKcal.toFixed(0)} vs DB-scaled ${dbScaledKcal.toFixed(0)} kcal (${(deviation * 100).toFixed(0)}% deviation)`,
                 severity: 'warning',
+                ingredientId,
+                mealItemId: mealItem.mealItemId,
               });
             }
           }
+        }
+      }
+
+      // §1.4 — density envelope (matched + unmatched)
+      const grams = decomposed?.grams ?? null;
+      if (grams && grams > 0) {
+        const density = (val: number) => (val / grams) * 100;
+        const breaches: string[] = [];
+
+        const kcalDensity = density(ing.caloriesKcal.high);
+        if (
+          ing.caloriesKcal.high > 0 &&
+          kcalDensity > THRESHOLDS.MAX_KCAL_PER_100G
+        ) {
+          breaches.push(
+            `kcal density ${kcalDensity.toFixed(0)}/100g > ${THRESHOLDS.MAX_KCAL_PER_100G}`
+          );
+        }
+
+        const proteinDensity = density(ing.proteinG.high);
+        if (
+          ing.proteinG.high > 0 &&
+          proteinDensity > THRESHOLDS.DENSITY_PROTEIN_PER_100G_MAX
+        ) {
+          breaches.push(`protein density ${proteinDensity.toFixed(0)}/100g`);
+        }
+
+        const carbDensity = density(ing.carbohydrateG.high);
+        if (
+          ing.carbohydrateG.high > 0 &&
+          carbDensity > THRESHOLDS.DENSITY_CARB_PER_100G_MAX
+        ) {
+          breaches.push(`carb density ${carbDensity.toFixed(0)}/100g`);
+        }
+
+        const fatDensity = density(ing.fatG.high);
+        if (
+          ing.fatG.high > 0 &&
+          fatDensity > THRESHOLDS.DENSITY_FAT_PER_100G_MAX
+        ) {
+          breaches.push(`fat density ${fatDensity.toFixed(0)}/100g`);
+        }
+
+        if (
+          ing.caloriesKcal.low < 0 ||
+          ing.proteinG.low < 0 ||
+          ing.carbohydrateG.low < 0 ||
+          ing.fatG.low < 0
+        ) {
+          breaches.push('negative low bound');
+        }
+
+        if (breaches.length > 0) {
+          anomalies.push({
+            type: 'density_envelope',
+            message: `${ing.ingredientName}: ${breaches.join('; ')}`,
+            severity: 'warning',
+            ingredientId,
+            mealItemId: mealItem.mealItemId,
+          });
+        }
+      }
+
+      // §1.3 — macro consistency (matched + unmatched). Denominator is
+      // reportedKcal (max 1) so over-reporting and under-reporting are symmetric.
+      for (const channel of ['low', 'mid', 'high'] as const) {
+        const kcalFromMacros =
+          4 * ing.proteinG[channel] +
+          4 * ing.carbohydrateG[channel] +
+          9 * ing.fatG[channel];
+        const reportedKcal = ing.caloriesKcal[channel];
+        const denom = Math.max(reportedKcal, 1);
+        const deviation = Math.abs(reportedKcal - kcalFromMacros) / denom;
+
+        if (deviation > THRESHOLDS.MACRO_KCAL_IDENTITY_TOLERANCE) {
+          anomalies.push({
+            type: 'macro_inconsistent',
+            message: `${ing.ingredientName} ${channel}: kcal ${reportedKcal.toFixed(0)} vs 4P+4C+9F=${kcalFromMacros.toFixed(0)} (${(deviation * 100).toFixed(0)}% > ${(THRESHOLDS.MACRO_KCAL_IDENTITY_TOLERANCE * 100).toFixed(0)}%)`,
+            severity: 'warning',
+            ingredientId,
+            mealItemId: mealItem.mealItemId,
+          });
+          break;
         }
       }
     }
@@ -126,6 +272,7 @@ export function validateNutritionOutput(
         type: 'meal_item_cap',
         message: `${mealItem.mealItemName}: ${mealItemMidKcal.toFixed(0)} kcal > ${THRESHOLDS.MAX_MEAL_ITEM_KCAL}`,
         severity: 'warning',
+        mealItemId: mealItem.mealItemId,
       });
     }
   }

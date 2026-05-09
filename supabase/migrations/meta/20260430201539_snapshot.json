@@ -1611,6 +1611,12 @@
           "primaryKey": false,
           "notNull": false
         },
+        "onboarding_minimized_at": {
+          "name": "onboarding_minimized_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
         "created_at": {
           "name": "created_at",
           "type": "timestamp with time zone",

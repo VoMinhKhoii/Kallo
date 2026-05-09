@@ -5,6 +5,7 @@ export {
   FAO_VECTOR_THRESHOLD,
   FUZZY_FALLBACK_THRESHOLD,
   FUZZY_SIMILARITY_THRESHOLD,
+  type MatchOptions,
   type MatchResult,
   matchIngredients,
   rerankCandidates,

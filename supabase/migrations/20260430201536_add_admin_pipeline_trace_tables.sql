@@ -42,6 +42,9 @@ CREATE TABLE "prompt_versions" (
 --> statement-breakpoint
 ALTER TABLE "pipeline_requests" ADD COLUMN "prompt_versions_used" jsonb;--> statement-breakpoint
 ALTER TABLE "pipeline_requests" ADD COLUMN "replay_of_request_id" uuid;--> statement-breakpoint
+ALTER TABLE "pipeline_llm_calls" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
+ALTER TABLE "pipeline_stage_logs" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
+ALTER TABLE "prompt_versions" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
 ALTER TABLE "pipeline_llm_calls" ADD CONSTRAINT "pipeline_llm_calls_request_id_pipeline_requests_id_fk" FOREIGN KEY ("request_id") REFERENCES "public"."pipeline_requests"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "pipeline_llm_calls" ADD CONSTRAINT "pipeline_llm_calls_prompt_version_id_prompt_versions_id_fk" FOREIGN KEY ("prompt_version_id") REFERENCES "public"."prompt_versions"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "pipeline_stage_logs" ADD CONSTRAINT "pipeline_stage_logs_request_id_pipeline_requests_id_fk" FOREIGN KEY ("request_id") REFERENCES "public"."pipeline_requests"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint

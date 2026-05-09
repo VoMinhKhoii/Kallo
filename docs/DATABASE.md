@@ -290,3 +290,23 @@ The seed file inserts all 526 VTN FCT 2007 records into `vietnamese_food_composi
 - **Free tier**: 100 requests/minute, 1000 requests/day **per project** (not per key).
 - Each text in a batch counts as a separate request.
 - The backfill script uses 35s delay between batches of 50 to stay under limits.
+
+## pipeline_requests retention (Decision A)
+
+`pipeline_requests` stores raw meal input + `userContextJson` for short-window
+operational debugging only. Access is service-role-only (RLS with no policies).
+Retention is 7 days enforced by `public.reap_pipeline_requests()`, scheduled
+daily via `pg_cron` when the extension is granted; otherwise the function must
+be invoked from a daily worker.
+
+`pipeline_runs` (this spec, §0.4) is the analytics source — it stores
+`user_id_hash` only, never raw input.
+
+## Task 1.6 audit: SQL match function state projection
+
+`match_ingredients_by_source` and `fuzzy_match_ingredients_by_source`
+(introduced in `20260412143500_add_source_aware_match_functions.sql`)
+already project the `state` column in their `RETURNS TABLE` signature.
+The cascade in `lib/ai/matching/source-matching.ts` exclusively calls
+these `_by_source` variants, so no additional migration is required for
+DB-state propagation.

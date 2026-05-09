@@ -58,6 +58,13 @@ export const INGREDIENT_ALIASES: Record<string, string> = {
   tiêu: 'Hạt tiêu',
   gạo: 'Gạo tẻ',
   sữa: 'Sữa bò tươi',
+  'fish sauce': 'Nước mắm',
+  'vegetable oil': 'Dầu đậu nành',
+  'cooking oil': 'Dầu đậu nành',
+  sugar: 'Đường kính',
+  squid: 'Mực ống',
+  'steamed white rice': 'Cơm',
+  rice: 'Cơm',
 };
 
 /**
@@ -76,7 +83,11 @@ export function resolveAlias(name: string): string {
 export function applyIngredientAliases(decomposition: MealDecomposition): void {
   for (const mealItem of decomposition.mealItems) {
     for (const ingredient of mealItem.ingredients) {
-      ingredient.name = resolveAlias(ingredient.name);
+      if (ingredient.canonicalName) {
+        ingredient.canonicalName = resolveAlias(ingredient.canonicalName);
+      } else if (ingredient.name) {
+        ingredient.name = resolveAlias(ingredient.name);
+      }
     }
   }
 }

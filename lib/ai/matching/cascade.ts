@@ -7,8 +7,15 @@ import {
 import { batchFetchNutrition } from '@/lib/ai/matching/nutrition-batch';
 import {
   type MatchInfo,
+  type MatchMeasurementContext,
+  type MatchStateInfo,
   matchSingleIngredientWithEmbedding,
 } from '@/lib/ai/matching/source-matching';
+import { readBooleanEnv } from '@/lib/ai/pipeline/feature-flags';
+import {
+  ingredientCanonicalName,
+  ingredientDisplayName as ingredientRawName,
+} from '@/lib/ai/pipeline/ingredient-accessors';
 import type {
   DecomposedIngredient,
   MatchedIngredient,
@@ -35,10 +42,40 @@ export {
 export interface MatchResult {
   matched: MatchedIngredient[];
   unmatched: UnmatchedIngredient[];
+  /** True iff Phase 3b alias-fallback executed (regardless of rescue outcome). */
+  aliasFallbackFired?: boolean;
 }
 
-/** Max concurrent DB calls to avoid exhausting PgBouncer pool */
-const MATCH_CONCURRENCY = 2;
+/**
+ * Max concurrent DB calls during matching cascade (Phase 1 cache resolve,
+ * Phase 3 vector/fuzzy match, Phase 3b alias fallback). Bumping above 2
+ * collapses sequential per-ingredient round-trips: with N=6 ingredients,
+ * concurrency=2 yields 3 rounds vs concurrency=4 yields ~2 rounds, saving
+ * ~30 ms per round on a typical pgvector query path. Cap is bounded by the
+ * Postgres connection pool (PgBouncer transaction pool size).
+ *
+ * Phase C5: env-tunable so operators can roll forward without redeploying.
+ * Default 4; previous default was 2 (overly conservative for the current pool).
+ */
+const MATCH_CONCURRENCY_DEFAULT_FALLBACK = 4;
+function readMatchConcurrencyDefault(): number {
+  const raw = process.env.PIPELINE_MATCH_CONCURRENCY;
+  if (!raw) return MATCH_CONCURRENCY_DEFAULT_FALLBACK;
+  const parsed = Number(raw);
+  return Number.isInteger(parsed) && parsed > 0
+    ? parsed
+    : MATCH_CONCURRENCY_DEFAULT_FALLBACK;
+}
+
+export interface MatchOptions {
+  concurrency?: number;
+  measurementContext?: MatchMeasurementContext;
+}
+
+const ingredientStateInfo = (ing: DecomposedIngredient): MatchStateInfo => ({
+  expectedState: ing.expectedState ?? 'cooked',
+  stateSource: ing._stateSource ?? 'unknown',
+});
 
 /**
  * Match a list of decomposed ingredients against the food composition DB.
@@ -54,18 +91,31 @@ export async function matchIngredients(
   ingredients: DecomposedIngredient[],
   mealContext: string,
   db: AppDb,
-  gemini: GeminiClient
+  gemini: GeminiClient,
+  opts: MatchOptions = {}
 ): Promise<MatchResult> {
   const matched: MatchedIngredient[] = [];
   const unmatched: UnmatchedIngredient[] = [];
+  let aliasFallbackFired = false;
+  const matchConcurrency = opts.concurrency ?? readMatchConcurrencyDefault();
 
   // Pre-step: resolve pre-match aliases to fix known wrong-match cases
   // (e.g., "cá lóc" → "Cá quả" to avoid USDA's Atlantic bass mistranslation).
   // Original names are preserved for display; matching uses the alias name.
+  // Gated by PIPELINE_PREMATCH_ALIAS_ENABLED so operators can disable a
+  // misbehaving alias rewrite without a deploy.
+  const preMatchAliasEnabled = readBooleanEnv(
+    'PIPELINE_PREMATCH_ALIAS_ENABLED',
+    true
+  );
   const matchingNames = ingredients.map((ing) => {
-    const alias = resolvePreMatchAlias(ing.name);
-    if (alias !== ing.name) {
-      console.info(`[matching] pre-match alias: "${ing.name}" → "${alias}"`);
+    const canonicalName = ingredientCanonicalName(ing);
+    if (!preMatchAliasEnabled) return canonicalName;
+    const alias = resolvePreMatchAlias(canonicalName);
+    if (alias !== canonicalName) {
+      console.info(
+        `[matching] pre-match alias: "${canonicalName}" → "${alias}"`
+      );
     }
     return alias;
   });
@@ -74,7 +124,7 @@ export async function matchIngredients(
   const cacheSettled = await mapWithConcurrency(
     matchingNames,
     (name) => resolveQueryEmbedding(name, db),
-    MATCH_CONCURRENCY
+    matchConcurrency
   );
   const cacheResults = cacheSettled.map((r, i) => {
     if (r.status === 'rejected') {
@@ -119,15 +169,27 @@ export async function matchIngredients(
   // Phase 3: Match each ingredient that has a resolved embedding
   // Items without an embedding are enqueued as unmatched directly
   const matchItems = matchingNames
-    .map((name, i) => ({ name, i, embedding: embeddings[i] }))
+    .map((name, i) => ({
+      name,
+      i,
+      embedding: embeddings[i],
+      stateInfo: ingredientStateInfo(ingredients[i]),
+    }))
     .filter(
       (item): item is typeof item & { embedding: number[] } =>
         item.embedding != null
     );
   const matchSettled = await mapWithConcurrency(
     matchItems,
-    (item) => matchSingleIngredientWithEmbedding(item.name, item.embedding, db),
-    MATCH_CONCURRENCY
+    (item) =>
+      matchSingleIngredientWithEmbedding(
+        item.name,
+        item.embedding,
+        db,
+        item.stateInfo,
+        opts.measurementContext
+      ),
+    matchConcurrency
   );
 
   // Collect successful MatchInfo results and track initial failures
@@ -150,11 +212,15 @@ export async function matchIngredients(
     const { i } = matchItems[j];
     if (result.status === 'fulfilled' && result.value) {
       // Restore original ingredient name (pre-match alias may have changed it)
-      matchInfos.push({ ...result.value, ingredientName: ingredients[i].name });
+      matchInfos.push({
+        ...result.value,
+        ingredientName: ingredientRawName(ingredients[i]),
+        ingredientId: ingredients[i].ingredientId,
+      });
     } else {
       if (result.status === 'rejected') {
         console.error(
-          `[matching] Failed to match "${ingredients[i].name}":`,
+          `[matching] Failed to match "${ingredientRawName(ingredients[i])}":`,
           result.reason
         );
       }
@@ -162,16 +228,32 @@ export async function matchIngredients(
     }
   }
 
-  // Phase 3b: Alias fallback — retry unmatched ingredients with alias-expanded names
-  if (unmatchedWithIndex.length > 0) {
+  // Phase 3b: Alias fallback — retry unmatched ingredients with alias-expanded names.
+  // Gated by PIPELINE_ALIAS_FALLBACK_ENABLED so operators can disable the
+  // extra Gemini batch + DB lookup if it ever becomes a latency liability.
+  const aliasFallbackEnabled = readBooleanEnv(
+    'PIPELINE_ALIAS_FALLBACK_ENABLED',
+    true
+  );
+  if (unmatchedWithIndex.length > 0 && !aliasFallbackEnabled) {
+    // Flag is off — surface the original unmatched list directly with no
+    // alias-rescue attempt. Skips the rest of the alias-fallback branch.
+    for (const { ingredient } of unmatchedWithIndex) {
+      unmatched.push({
+        ingredientName: ingredientRawName(ingredient),
+        mealContext,
+      });
+    }
+  } else if (unmatchedWithIndex.length > 0) {
     const aliasRetries: {
       original: DecomposedIngredient;
       originalIndex: number;
       aliasName: string;
     }[] = [];
     for (const { ingredient, index } of unmatchedWithIndex) {
-      const aliasName = resolveAlias(ingredient.name);
-      if (aliasName !== ingredient.name) {
+      const canonicalName = ingredientCanonicalName(ingredient);
+      const aliasName = resolveAlias(canonicalName);
+      if (aliasName !== canonicalName) {
         aliasRetries.push({
           original: ingredient,
           originalIndex: index,
@@ -181,17 +263,18 @@ export async function matchIngredients(
     }
 
     if (aliasRetries.length > 0) {
+      aliasFallbackFired = true;
       // Alias fallback is best-effort: failures log + fall through to unmatched
       const rescuedIndices = new Set<number>();
       try {
         console.info(
-          `[matching] alias fallback: ${aliasRetries.map((r) => `${r.original.name}→${r.aliasName}`).join(', ')}`
+          `[matching] alias fallback: ${aliasRetries.map((r) => `${ingredientCanonicalName(r.original)}→${r.aliasName}`).join(', ')}`
         );
         // Resolve embeddings for alias names with bounded concurrency
         const aliasCacheSettled = await mapWithConcurrency(
           aliasRetries,
           (r) => resolveQueryEmbedding(r.aliasName, db),
-          MATCH_CONCURRENCY
+          matchConcurrency
         );
         const aliasCacheResults = aliasCacheSettled.map((r, i) => {
           if (r.status === 'rejected') {
@@ -243,10 +326,17 @@ export async function matchIngredients(
           aliasMatchItems.map(({ r, embedding }) => ({
             name: r.aliasName,
             embedding,
+            stateInfo: ingredientStateInfo(r.original),
           })),
           (item) =>
-            matchSingleIngredientWithEmbedding(item.name, item.embedding, db),
-          MATCH_CONCURRENCY
+            matchSingleIngredientWithEmbedding(
+              item.name,
+              item.embedding,
+              db,
+              item.stateInfo,
+              opts.measurementContext
+            ),
+          matchConcurrency
         );
 
         // Track which originals were rescued by alias (keyed by input index)
@@ -256,16 +346,17 @@ export async function matchIngredients(
           if (result.status === 'fulfilled' && result.value) {
             matchInfos.push({
               ...result.value,
-              ingredientName: retry.original.name,
+              ingredientName: ingredientRawName(retry.original),
+              ingredientId: retry.original.ingredientId,
               viaAlias: true,
             });
             rescuedIndices.add(retry.originalIndex);
             console.info(
-              `[matching] alias rescue: "${retry.original.name}" → "${retry.aliasName}" matched ${result.value.matchedName}`
+              `[matching] alias rescue: "${ingredientCanonicalName(retry.original)}" → "${retry.aliasName}" matched ${result.value.matchedName}`
             );
           } else if (result.status === 'rejected') {
             console.error(
-              `[matching] alias fallback failed for "${retry.original.name}":`,
+              `[matching] alias fallback failed for "${ingredientCanonicalName(retry.original)}":`,
               result.reason
             );
           }
@@ -280,13 +371,19 @@ export async function matchIngredients(
       // Only keep truly unmatched (not rescued by alias)
       for (const { ingredient, index } of unmatchedWithIndex) {
         if (!rescuedIndices.has(index)) {
-          unmatched.push({ ingredientName: ingredient.name, mealContext });
+          unmatched.push({
+            ingredientName: ingredientRawName(ingredient),
+            mealContext,
+          });
         }
       }
     } else {
       // No aliases available — all remain unmatched
       for (const { ingredient } of unmatchedWithIndex) {
-        unmatched.push({ ingredientName: ingredient.name, mealContext });
+        unmatched.push({
+          ingredientName: ingredientRawName(ingredient),
+          mealContext,
+        });
       }
     }
   }
@@ -314,7 +411,13 @@ export async function matchIngredients(
   for (const info of matchInfos) {
     const nutrition = nutritionMap.get(info.foodCompositionId);
     if (nutrition) {
-      matched.push({ ...info, nutritionPer100g: nutrition });
+      const { state, ingredientId, ...rest } = info;
+      matched.push({
+        ...rest,
+        ingredientId,
+        nutritionPer100g: nutrition,
+        dbState: state,
+      });
     } else {
       console.warn(
         `[matching] No nutrition data for matched ID "${info.foodCompositionId}" (${info.ingredientName})`
@@ -326,5 +429,5 @@ export async function matchIngredients(
     }
   }
 
-  return { matched, unmatched };
+  return { matched, unmatched, aliasFallbackFired };
 }

@@ -2,19 +2,20 @@ import { describe, expect, it } from 'vitest';
 import {
   NULL_BOUNDED_NUTRITION,
   NULL_NUTRITION_VALUES,
-} from '../__tests__/test-helpers';
+} from '@/lib/ai/__tests__/test-helpers';
+import {
+  detectAnomalies,
+  THRESHOLDS,
+  validateDecompositionOutput,
+  validateNutritionOutput,
+} from '@/lib/ai/pipeline/validation';
 import type {
   DecomposedMealItem,
   MatchedIngredient,
   NutritionAdjustment,
   PipelineResult,
   UnmatchedIngredient,
-} from '../types';
-import {
-  detectAnomalies,
-  THRESHOLDS,
-  validateNutritionOutput,
-} from './validation';
+} from '@/lib/ai/types';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -24,6 +25,7 @@ function makeMatched(
   overrides: Partial<MatchedIngredient> & { ingredientName: string }
 ): MatchedIngredient {
   return {
+    ingredientId: `id-${overrides.ingredientName}`,
     foodCompositionId: 'fc-1',
     matchedName: overrides.ingredientName,
     similarity: 0.9,
@@ -35,6 +37,7 @@ function makeMatched(
       carbohydrateG: 30,
       fatG: 5,
     },
+    dbState: 'raw',
     ...overrides,
   };
 }
@@ -48,6 +51,7 @@ function makeDecomposition(
   return items.map((mi) => ({
     name: mi.name,
     ingredients: mi.ingredients.map((ing) => ({
+      ingredientId: `id-${ing.name}`,
       name: ing.name,
       estimatedGrams: ing.grams,
       cookingMethod: ing.cooking ?? null,
@@ -64,23 +68,34 @@ function makeNutrition(
       midKcal: number;
       lowKcal?: number;
       highKcal?: number;
+      proteinG?: { low: number; mid: number; high: number };
+      carbohydrateG?: { low: number; mid: number; high: number };
+      fatG?: { low: number; mid: number; high: number };
     }[];
   }[]
 ): NutritionAdjustment {
   return {
     mealItems: items.map((item) => ({
       mealItemName: item.name,
-      ingredients: item.ingredients.map((ing) => ({
-        ingredientName: ing.name,
-        caloriesKcal: {
+      ingredients: item.ingredients.map((ing) => {
+        const caloriesKcal = {
           low: ing.lowKcal ?? ing.midKcal * 0.8,
           mid: ing.midKcal,
           high: ing.highKcal ?? ing.midKcal * 1.2,
-        },
-        proteinG: { low: 5, mid: 10, high: 15 },
-        carbohydrateG: { low: 20, mid: 30, high: 40 },
-        fatG: { low: 2, mid: 5, high: 8 },
-      })),
+        };
+        return {
+          ingredientId: `id-${ing.name}`,
+          ingredientName: ing.name,
+          caloriesKcal,
+          proteinG: ing.proteinG ?? { low: 0, mid: 0, high: 0 },
+          carbohydrateG: ing.carbohydrateG ?? {
+            low: caloriesKcal.low / 4,
+            mid: caloriesKcal.mid / 4,
+            high: caloriesKcal.high / 4,
+          },
+          fatG: ing.fatG ?? { low: 0, mid: 0, high: 0 },
+        };
+      }),
     })),
   };
 }
@@ -153,6 +168,66 @@ function makePipelineResult(
     ...overrides,
   };
 }
+
+// ---------------------------------------------------------------------------
+// validateDecompositionOutput
+// ---------------------------------------------------------------------------
+
+describe('validateDecompositionOutput', () => {
+  const base = {
+    mealItemId: 'meal-1',
+    name: 'Cơm cá',
+    cookingMethod: 'kho',
+    ingredients: [
+      {
+        ingredientId: 'ing-1',
+        rawName: 'cá lóc',
+        canonicalName: 'Cá quả',
+        grams: 100,
+      },
+    ],
+  };
+
+  it('flags zero grams as implausible_grams', () => {
+    const anomalies = validateDecompositionOutput([
+      {
+        ...base,
+        ingredients: [{ ...base.ingredients[0], grams: 0 }],
+      },
+    ]);
+
+    expect(anomalies).toMatchObject([
+      {
+        type: 'implausible_grams',
+        severity: 'warning',
+        ingredientId: 'ing-1',
+        mealItemId: 'meal-1',
+      },
+    ]);
+  });
+
+  it('flags negative grams as implausible_grams', () => {
+    const anomalies = validateDecompositionOutput([
+      {
+        ...base,
+        ingredients: [{ ...base.ingredients[0], grams: -5 }],
+      },
+    ]);
+
+    expect(anomalies.some((a) => a.type === 'implausible_grams')).toBe(true);
+  });
+
+  it('does not flag positive grams of any size', () => {
+    expect(
+      validateDecompositionOutput([
+        {
+          ...base,
+          ingredients: [{ ...base.ingredients[0], grams: 600 }],
+        },
+      ])
+    ).toEqual([]);
+  });
+});
 
 // ---------------------------------------------------------------------------
 // validateNutritionOutput
@@ -255,6 +330,174 @@ describe('validateNutritionOutput', () => {
     const anomalies = validateNutritionOutput(nutrition, matched, decomp);
     expect(anomalies.some((a) => a.type === 'db_deviation')).toBe(false);
   });
+
+  describe('density envelope (§1.4)', () => {
+    // density_envelope is triggered by per-100g protein/carb/fat density,
+    // not by caloriesKcal. With highKcal=1100 and grams=100, makeNutrition
+    // defaults carbohydrateG.high = 1100/4 = 275 → 275 g/100g, which
+    // exceeds DENSITY_CARB_PER_100G_MAX (100). Naming the test after the
+    // input we set (kcal) hid which guard was actually firing.
+    it('fires when default-derived carbohydrateG density exceeds 100g/100g', () => {
+      const anomalies = validateNutritionOutput(
+        makeNutrition([
+          {
+            name: 'M',
+            ingredients: [
+              {
+                name: 'cá hồi',
+                midKcal: 950,
+                lowKcal: 800,
+                highKcal: 1100,
+              },
+            ],
+          },
+        ]),
+        [makeMatched({ ingredientName: 'cá hồi' })],
+        makeDecomposition([
+          { name: 'M', ingredients: [{ name: 'cá hồi', grams: 100 }] },
+        ])
+      );
+
+      expect(
+        anomalies.find((a) => a.type === 'density_envelope')
+      ).toBeDefined();
+    });
+
+    it('flags negative low bound', () => {
+      const anomalies = validateNutritionOutput(
+        makeNutrition([
+          {
+            name: 'M',
+            ingredients: [
+              {
+                name: 'cá hồi',
+                midKcal: 100,
+                proteinG: { low: -1, mid: 5, high: 10 },
+              },
+            ],
+          },
+        ]),
+        [makeMatched({ ingredientName: 'cá hồi' })],
+        makeDecomposition([
+          { name: 'M', ingredients: [{ name: 'cá hồi', grams: 100 }] },
+        ])
+      );
+
+      expect(
+        anomalies.find((a) => a.type === 'density_envelope')
+      ).toBeDefined();
+    });
+
+    it('fires for unmatched ingredients too via default-derived carb density', () => {
+      const anomalies = validateNutritionOutput(
+        makeNutrition([
+          {
+            name: 'M',
+            ingredients: [
+              {
+                name: 'mystery sauce',
+                midKcal: 950,
+                lowKcal: 800,
+                highKcal: 1100,
+              },
+            ],
+          },
+        ]),
+        [],
+        makeDecomposition([
+          {
+            name: 'M',
+            ingredients: [{ name: 'mystery sauce', grams: 100 }],
+          },
+        ])
+      );
+
+      expect(
+        anomalies.find((a) => a.type === 'density_envelope')
+      ).toBeDefined();
+    });
+
+    it('does not flag legal densities', () => {
+      const anomalies = validateNutritionOutput(
+        makeNutrition([
+          {
+            name: 'M',
+            ingredients: [
+              { name: 'cá hồi', midKcal: 130, lowKcal: 100, highKcal: 160 },
+            ],
+          },
+        ]),
+        [makeMatched({ ingredientName: 'cá hồi' })],
+        makeDecomposition([
+          { name: 'M', ingredients: [{ name: 'cá hồi', grams: 100 }] },
+        ])
+      );
+
+      expect(
+        anomalies.find((a) => a.type === 'density_envelope')
+      ).toBeUndefined();
+    });
+  });
+
+  describe('macro consistency invariant (§1.3)', () => {
+    it('flags >20% deviation between caloriesKcal.mid and 4P+4C+9F', () => {
+      const anomalies = validateNutritionOutput(
+        makeNutrition([
+          {
+            name: 'M',
+            ingredients: [
+              {
+                name: 'cá hồi',
+                midKcal: 400,
+                lowKcal: 350,
+                highKcal: 450,
+                proteinG: { low: 4, mid: 5, high: 6 },
+                carbohydrateG: { low: 28, mid: 30, high: 32 },
+                fatG: { low: 9, mid: 10, high: 11 },
+              },
+            ],
+          },
+        ]),
+        [makeMatched({ ingredientName: 'cá hồi' })],
+        makeDecomposition([
+          { name: 'M', ingredients: [{ name: 'cá hồi', grams: 100 }] },
+        ])
+      );
+
+      expect(
+        anomalies.find((a) => a.type === 'macro_inconsistent')
+      ).toBeDefined();
+    });
+
+    it('accepts within 20% (fiber/alcohol/rounding)', () => {
+      const anomalies = validateNutritionOutput(
+        makeNutrition([
+          {
+            name: 'M',
+            ingredients: [
+              {
+                name: 'cá hồi',
+                midKcal: 260,
+                lowKcal: 230,
+                highKcal: 290,
+                proteinG: { low: 4, mid: 5, high: 6 },
+                carbohydrateG: { low: 28, mid: 30, high: 32 },
+                fatG: { low: 9, mid: 10, high: 11 },
+              },
+            ],
+          },
+        ]),
+        [makeMatched({ ingredientName: 'cá hồi' })],
+        makeDecomposition([
+          { name: 'M', ingredients: [{ name: 'cá hồi', grams: 100 }] },
+        ])
+      );
+
+      expect(
+        anomalies.find((a) => a.type === 'macro_inconsistent')
+      ).toBeUndefined();
+    });
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -354,5 +597,100 @@ describe('THRESHOLDS', () => {
     expect(THRESHOLDS.MAX_INGREDIENT_GRAMS).toBe(500);
     expect(THRESHOLDS.UNMATCHED_RATIO).toBe(0.5);
     expect(THRESHOLDS.DB_DEVIATION_RATIO).toBe(0.5);
+    expect(THRESHOLDS.DENSITY_PROTEIN_PER_100G_MAX).toBe(100);
+    expect(THRESHOLDS.DENSITY_CARB_PER_100G_MAX).toBe(100);
+    expect(THRESHOLDS.DENSITY_FAT_PER_100G_MAX).toBe(100);
+    expect(THRESHOLDS.MACRO_KCAL_IDENTITY_TOLERANCE).toBe(0.2);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// id-keyed anomaly attribution (Task 1.11)
+// ---------------------------------------------------------------------------
+
+describe('validateNutritionOutput — id-keyed anomaly attribution', () => {
+  it('attributes anomalies to the correct ingredient when two share a display name', () => {
+    // Two dishes both contain an ingredient called 'nước dùng' with
+    // distinct ingredientIds. Only ing-2's macros are implausibly high
+    // (DB-deviation > 50%). Anomaly must reference ing-2, not ing-1.
+    const decomposition: DecomposedMealItem[] = [
+      {
+        mealItemId: 'meal-A',
+        name: 'phở bò',
+        ingredients: [
+          {
+            ingredientId: 'ing-1',
+            name: 'nước dùng',
+            estimatedGrams: 300,
+            cookingMethod: null,
+            userFacingUnit: '1 tô',
+          },
+        ],
+      },
+      {
+        mealItemId: 'meal-B',
+        name: 'bún bò Huế',
+        ingredients: [
+          {
+            ingredientId: 'ing-2',
+            name: 'nước dùng',
+            estimatedGrams: 280,
+            cookingMethod: null,
+            userFacingUnit: '1 tô',
+          },
+        ],
+      },
+    ];
+
+    const matched: MatchedIngredient[] = [
+      makeMatched({ ingredientId: 'ing-1', ingredientName: 'nước dùng' }),
+      makeMatched({ ingredientId: 'ing-2', ingredientName: 'nước dùng' }),
+    ];
+
+    // ing-1: DB-scaled = (300/100) * 200 = 600 kcal, LLM mid = 600 → ~0% deviation
+    // ing-2: DB-scaled = (280/100) * 200 = 560 kcal, LLM mid = 9500 → ~1596% deviation
+    const nutrition: NutritionAdjustment = {
+      mealItems: [
+        {
+          mealItemId: 'meal-A',
+          mealItemName: 'phở bò',
+          ingredients: [
+            {
+              ingredientId: 'ing-1',
+              ingredientName: 'nước dùng',
+              caloriesKcal: { low: 540, mid: 600, high: 660 },
+              proteinG: { low: 5, mid: 10, high: 15 },
+              carbohydrateG: { low: 20, mid: 30, high: 40 },
+              fatG: { low: 2, mid: 5, high: 8 },
+            },
+          ],
+        },
+        {
+          mealItemId: 'meal-B',
+          mealItemName: 'bún bò Huế',
+          ingredients: [
+            {
+              ingredientId: 'ing-2',
+              ingredientName: 'nước dùng',
+              caloriesKcal: { low: 9000, mid: 9500, high: 10000 },
+              proteinG: { low: 5, mid: 10, high: 15 },
+              carbohydrateG: { low: 20, mid: 30, high: 40 },
+              fatG: { low: 2, mid: 5, high: 8 },
+            },
+          ],
+        },
+      ],
+    };
+
+    const anomalies = validateNutritionOutput(
+      nutrition,
+      matched,
+      decomposition
+    );
+    const dbDeviationIds = anomalies
+      .filter((a) => a.type === 'db_deviation')
+      .map((a) => a.ingredientId);
+    expect(dbDeviationIds).toContain('ing-2');
+    expect(dbDeviationIds).not.toContain('ing-1');
   });
 });

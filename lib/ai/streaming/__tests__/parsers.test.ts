@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   computeStreamingMealItem,
   extractCompletedMealItemNutrition,
+  extractMealItemNameOccurrences,
   extractMealItemNames,
 } from '../parsers';
 
@@ -194,5 +195,34 @@ describe('computeStreamingMealItem', () => {
     expect(result.macros.protein).toBe(24);
     expect(result.macros.carbs).toBe(45);
     expect(result.macros.fat).toBe(9);
+  });
+});
+
+describe('extractMealItemNameOccurrences', () => {
+  it('emits each duplicate-name occurrence as a distinct event', () => {
+    const accumulated =
+      '{"mealItems":[' +
+      '{"name":"Cơm trắng","ingredients":[{"name":"Gạo tẻ"}]},' +
+      '{"name":"Cơm trắng","ingredients":[{"name":"Gạo tẻ"}]}]}';
+    const counts = new Map<string, number>();
+    const occurrences = extractMealItemNameOccurrences(accumulated, counts);
+
+    expect(occurrences).toEqual([
+      { name: 'Cơm trắng', occurrence: 1 },
+      { name: 'Cơm trắng', occurrence: 2 },
+    ]);
+    expect(counts.get('Cơm trắng')).toBe(2);
+  });
+
+  it('only emits new occurrences across chunks', () => {
+    const counts = new Map<string, number>();
+    const chunk1 =
+      '{"mealItems":[{"name":"Cơm trắng","ingredients":[{"name":"Gạo tẻ"}]}';
+    const first = extractMealItemNameOccurrences(chunk1, counts);
+    expect(first).toEqual([{ name: 'Cơm trắng', occurrence: 1 }]);
+
+    const chunk2 = `${chunk1},{"name":"Cơm trắng","ingredients":[`;
+    const second = extractMealItemNameOccurrences(chunk2, counts);
+    expect(second).toEqual([{ name: 'Cơm trắng', occurrence: 2 }]);
   });
 });

@@ -6,8 +6,40 @@ import type { StreamEvent } from '@/lib/ai/streaming/types';
 const mockGetUser = vi.fn();
 const mockSelect = vi.fn();
 const mockAnalyzeMeal = vi.fn();
+const mockBuildUserContext = vi.fn();
 const mockInsert = vi.fn();
+const mockCreateGeminiClient = vi.fn((..._args: unknown[]) => ({}));
+const mockCheckAnalysisGuards = vi.fn();
+const mockLogPipelineStart = vi.fn();
+const mockLogPipelineEnd = vi.fn();
+const mockDbInsert = vi.fn();
+const mockDbInsertValues = vi.fn();
 const mockInsertValues = vi.fn();
+const mockAnalysisGuardEvents = { table: 'analysis_guard_events' };
+const mockPendingAnalyses = {
+  table: 'pending_analyses',
+  id: 'id',
+  loggedAt: 'loggedAt',
+};
+const mockPipelineRequests = { table: 'pipeline_requests', id: 'id' };
+
+interface MockBuildAnalysisGuardEventInput {
+  userId?: string | null;
+  ip?: string | null;
+  route: string;
+  reason: string;
+  retryAfterSeconds?: number | null;
+}
+
+const mockBuildAnalysisGuardEvent = vi.fn(
+  (input: MockBuildAnalysisGuardEventInput) => ({
+    userIdHash: input.userId ? `hashed-user:${input.userId}` : null,
+    ipHash: input.ip ? `hashed-ip:${input.ip}` : null,
+    route: input.route,
+    reason: input.reason,
+    retryAfterSeconds: input.retryAfterSeconds ?? null,
+  })
+);
 
 vi.mock('@/lib/supabase/server', () => ({
   createClient: () =>
@@ -24,8 +56,12 @@ vi.mock('@/lib/db', () => {
     limit: () => mockSelect(),
   };
   const insertChain = {
-    insert: () => insertChain,
-    values: (values: unknown) => {
+    insert: (table?: unknown) => {
+      mockDbInsert(table);
+      return insertChain;
+    },
+    values: (values?: unknown) => {
+      mockDbInsertValues(values);
       mockInsertValues(values);
       return insertChain;
     },
@@ -41,7 +77,10 @@ vi.mock('@/lib/db', () => {
   return {
     db: {
       ...selectChain,
-      insert: () => insertChain,
+      insert: (table?: unknown) => {
+        mockDbInsert(table);
+        return insertChain;
+      },
       update: () => updateChain,
     },
   };
@@ -49,12 +88,24 @@ vi.mock('@/lib/db', () => {
 
 vi.mock('@/lib/db/schema', () => ({
   userProfiles: { userId: 'userId' },
-  pendingAnalyses: { id: 'id', loggedAt: 'loggedAt' },
-  pipelineRequests: { id: 'id' },
+  analysisGuardEvents: mockAnalysisGuardEvents,
+  pendingAnalyses: mockPendingAnalyses,
+  pipelineRequests: mockPipelineRequests,
 }));
 
 vi.mock('@/lib/ai/gemini', () => ({
-  createGeminiClient: () => ({}),
+  createGeminiClient: (...args: unknown[]) => mockCreateGeminiClient(...args),
+}));
+
+vi.mock('@/lib/rate-limit/analysis-guards', () => ({
+  buildAnalysisGuardEvent: (input: MockBuildAnalysisGuardEventInput) =>
+    mockBuildAnalysisGuardEvent(input),
+  checkAnalysisGuards: (...args: unknown[]) => mockCheckAnalysisGuards(...args),
+}));
+
+vi.mock('@/lib/ai/pipeline/logging', () => ({
+  logPipelineStart: (...args: unknown[]) => mockLogPipelineStart(...args),
+  logPipelineEnd: (...args: unknown[]) => mockLogPipelineEnd(...args),
 }));
 
 vi.mock('@/lib/ai/pipeline', () => ({
@@ -82,35 +133,45 @@ interface MockPipelineData {
   displayedNutrition?: MockNutrition;
 }
 
-vi.mock('@/lib/ai/mappers', () => ({
-  buildUserContext: () => ({}),
-  toParsedMeal: (data: MockPipelineData) => ({
-    mealName: data.mealItems?.[0]?.name ?? 'Meal',
-    items: (data.mealItems ?? []).map((mi: MockMealItem) => ({
-      name: mi.name,
-      macros: {
-        calories: mi.displayedNutrition?.caloriesKcal ?? 0,
-        protein: mi.displayedNutrition?.proteinG ?? 0,
-        carbs: mi.displayedNutrition?.carbohydrateG ?? 0,
-        fat: mi.displayedNutrition?.fatG ?? 0,
+vi.mock('@/lib/ai/mappers', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/lib/ai/mappers')>();
+
+  return {
+    ...actual,
+    buildUserContext: (...args: unknown[]) => mockBuildUserContext(...args),
+    toParsedMeal: (data: MockPipelineData) => ({
+      mealName: data.mealItems?.[0]?.name ?? 'Meal',
+      items: (data.mealItems ?? []).map((mi: MockMealItem) => ({
+        name: mi.name,
+        macros: {
+          calories: mi.displayedNutrition?.caloriesKcal ?? 0,
+          protein: mi.displayedNutrition?.proteinG ?? 0,
+          carbs: mi.displayedNutrition?.carbohydrateG ?? 0,
+          fat: mi.displayedNutrition?.fatG ?? 0,
+        },
+      })),
+      totalMacros: {
+        calories: data.displayedNutrition?.caloriesKcal ?? 0,
+        protein: data.displayedNutrition?.proteinG ?? 0,
+        carbs: data.displayedNutrition?.carbohydrateG ?? 0,
+        fat: data.displayedNutrition?.fatG ?? 0,
       },
-    })),
-    totalMacros: {
-      calories: data.displayedNutrition?.caloriesKcal ?? 0,
-      protein: data.displayedNutrition?.proteinG ?? 0,
-      carbs: data.displayedNutrition?.carbohydrateG ?? 0,
-      fat: data.displayedNutrition?.fatG ?? 0,
-    },
-  }),
-}));
+    }),
+  };
+});
 
 const { POST } = await import('@/app/api/analyze-meal/route');
 
-function createRequest(body: unknown): NextRequest {
+function createRequest(
+  body: unknown,
+  headers: Record<string, string> = {},
+  signal?: AbortSignal
+): NextRequest {
   return new Request('http://localhost/api/analyze-meal', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...headers },
     body: JSON.stringify(body),
+    signal,
   }) as unknown as NextRequest;
 }
 
@@ -144,6 +205,7 @@ const mockProfile = {
   sugarBraised: 'medium',
   defaultProteinPortion: 'medium',
   brothConsumption: 'some',
+  preferredLocale: 'en',
 };
 
 const mockPipelineData = {
@@ -195,6 +257,30 @@ describe('POST /api/analyze-meal', () => {
     mockGetUser.mockResolvedValue({ data: { user: { id: 'user-1' } } });
     mockSelect.mockResolvedValue([mockProfile]);
     mockAnalyzeMeal.mockReset();
+    mockBuildUserContext.mockReset();
+    mockBuildUserContext.mockImplementation((profile) => ({
+      goal: 'maintaining',
+      aggression: 0,
+      countryOfOrigin: profile.countryOfOrigin,
+      countryOfResidence: profile.countryOfResidence,
+      cookingHabits: {
+        oilUsage: profile.oilUsage,
+        defaultRicePortion: profile.defaultRicePortion,
+        sugarBraised: profile.sugarBraised,
+        defaultProteinPortion: profile.defaultProteinPortion,
+        brothConsumption: profile.brothConsumption,
+      },
+    }));
+    mockCreateGeminiClient.mockReset();
+    mockCreateGeminiClient.mockReturnValue({});
+    mockCheckAnalysisGuards.mockReset();
+    mockCheckAnalysisGuards.mockResolvedValue({ allowed: true });
+    mockBuildAnalysisGuardEvent.mockClear();
+    mockLogPipelineStart.mockReset();
+    mockLogPipelineStart.mockResolvedValue('request-123');
+    mockLogPipelineEnd.mockClear();
+    mockDbInsert.mockClear();
+    mockDbInsertValues.mockClear();
     mockInsert.mockResolvedValue([{ id: 'analysis-123' }]);
     mockInsertValues.mockClear();
   });
@@ -225,6 +311,14 @@ describe('POST /api/analyze-meal', () => {
     expect(json.error.code).toBe('VALIDATION_FAILED');
   });
 
+  it('returns 400 when locale is unsupported', async () => {
+    const res = await POST(createRequest({ message: 'phở bò', locale: 'fr' }));
+    expect(res.status).toBe(400);
+    const json = await res.json();
+    expect(json.error.code).toBe('VALIDATION_FAILED');
+    expect(mockCreateGeminiClient).not.toHaveBeenCalled();
+  });
+
   it('returns 404 when profile row is missing', async () => {
     mockSelect.mockResolvedValue([]);
     const res = await POST(createRequest(mealRequestBody('phở bò')));
@@ -240,6 +334,208 @@ describe('POST /api/analyze-meal', () => {
     expect(res.status).toBe(500);
     const json = await res.json();
     expect(json.error.code).toBe('INTERNAL');
+  });
+
+  it('returns JSON 429 before SSE when analysis guards block', async () => {
+    const rawMealText = 'Phở bò tái';
+    const retryAfterSeconds = 45;
+
+    mockCheckAnalysisGuards.mockResolvedValue({
+      allowed: false,
+      status: 429,
+      reason: 'per_user_minute',
+      retryAfterSeconds,
+    });
+
+    const res = await POST(
+      createRequest(mealRequestBody(rawMealText), {
+        'x-forwarded-for': '203.0.113.24, 10.0.0.7',
+      })
+    );
+
+    expect(res.status).toBe(429);
+    expect(res.headers.get('Retry-After')).toBe(String(retryAfterSeconds));
+    expect(res.headers.get('Content-Type')).toContain('application/json');
+    expect(res.headers.get('Content-Type')).not.toContain('text/event-stream');
+
+    const json = await res.json();
+    expect(json.error.code).toBe('RATE_LIMITED');
+
+    expect(mockCreateGeminiClient).not.toHaveBeenCalled();
+    expect(mockLogPipelineStart).not.toHaveBeenCalled();
+    expect(mockDbInsert).toHaveBeenCalledWith(mockAnalysisGuardEvents);
+    expect(mockDbInsert).not.toHaveBeenCalledWith(mockPipelineRequests);
+
+    const guardContext = mockCheckAnalysisGuards.mock.calls[0]?.[0] as {
+      db?: unknown;
+      [key: string]: unknown;
+    };
+    const { db: _db, ...guardContextWithoutDb } = guardContext;
+    expect(guardContextWithoutDb).toEqual({
+      userId: 'user-1',
+      ip: '203.0.113.24',
+      route: '/api/analyze-meal',
+    });
+    expect(guardContextWithoutDb).not.toHaveProperty('message');
+    expect(guardContextWithoutDb).not.toHaveProperty('rawInput');
+    expect(JSON.stringify(guardContextWithoutDb)).not.toContain(rawMealText);
+
+    expect(mockBuildAnalysisGuardEvent).toHaveBeenCalledTimes(1);
+    const guardEventInput = mockBuildAnalysisGuardEvent.mock.calls[0]?.[0];
+    expect(guardEventInput).toEqual({
+      userId: 'user-1',
+      ip: '203.0.113.24',
+      route: '/api/analyze-meal',
+      reason: 'per_user_minute',
+      retryAfterSeconds,
+    });
+    expect(guardEventInput).not.toHaveProperty('rawMealText');
+    expect(guardEventInput).not.toHaveProperty('message');
+    expect(guardEventInput).not.toHaveProperty('rawInput');
+    expect(JSON.stringify(guardEventInput)).not.toContain(rawMealText);
+
+    const insertedGuardEvent = mockDbInsertValues.mock.calls[0]?.[0];
+    expect(insertedGuardEvent).toEqual({
+      userIdHash: 'hashed-user:user-1',
+      ipHash: 'hashed-ip:203.0.113.24',
+      route: '/api/analyze-meal',
+      reason: 'per_user_minute',
+      retryAfterSeconds,
+    });
+    expect(insertedGuardEvent).not.toHaveProperty('rawMealText');
+    expect(insertedGuardEvent).not.toHaveProperty('message');
+    expect(insertedGuardEvent).not.toHaveProperty('rawInput');
+    expect(JSON.stringify(insertedGuardEvent)).not.toContain(rawMealText);
+  });
+
+  it('still returns JSON 429 when blocked-request telemetry fails', async () => {
+    const retryAfterSeconds = 30;
+    const consoleErrorSpy = vi
+      .spyOn(console, 'error')
+      .mockImplementation(() => undefined);
+
+    mockCheckAnalysisGuards.mockResolvedValue({
+      allowed: false,
+      status: 429,
+      reason: 'provider_pressure',
+      retryAfterSeconds,
+    });
+    mockDbInsertValues.mockImplementationOnce(() => {
+      throw new Error('telemetry failed');
+    });
+
+    const res = await POST(createRequest(mealRequestBody('phở bò')));
+    const json = await res.json();
+    expect(json.error.code).toBe('RATE_LIMITED');
+    expect(mockCreateGeminiClient).not.toHaveBeenCalled();
+    expect(mockLogPipelineStart).not.toHaveBeenCalled();
+    expect(consoleErrorSpy).toHaveBeenCalledWith(
+      '[analyze-meal] Failed to log analysis guard event:',
+      expect.any(Error)
+    );
+
+    consoleErrorSpy.mockRestore();
+  });
+
+  it('skips analysis_guard_events insert when ANALYSIS_GUARD_EVENT_LOGGING_ENABLED=false', async () => {
+    vi.stubEnv('ANALYSIS_GUARD_EVENT_LOGGING_ENABLED', 'false');
+    mockCheckAnalysisGuards.mockResolvedValue({
+      allowed: false,
+      status: 429,
+      reason: 'per_user_minute',
+      retryAfterSeconds: 30,
+    });
+
+    const res = await POST(createRequest(mealRequestBody('phở bò')));
+    expect(res.status).toBe(429);
+    expect(res.headers.get('Retry-After')).toBe('30');
+
+    expect(mockBuildAnalysisGuardEvent).not.toHaveBeenCalled();
+    expect(mockDbInsert).not.toHaveBeenCalledWith(mockAnalysisGuardEvents);
+
+    vi.unstubAllEnvs();
+  });
+
+  it('releases an allowed guard exactly once on pipeline success', async () => {
+    const release = vi.fn();
+    mockCheckAnalysisGuards.mockResolvedValue({ allowed: true, release });
+    mockAnalyzeMeal.mockResolvedValue({
+      success: true,
+      data: mockPipelineData,
+    });
+
+    const res = await POST(createRequest(mealRequestBody('phở bò')));
+    await res.text();
+
+    expect(release).toHaveBeenCalledTimes(1);
+  });
+
+  it('releases an allowed guard exactly once when the pipeline throws inside the stream', async () => {
+    const release = vi.fn();
+    mockCheckAnalysisGuards.mockResolvedValue({ allowed: true, release });
+    mockAnalyzeMeal.mockRejectedValue(new Error('mid-stream failure'));
+
+    const res = await POST(createRequest(mealRequestBody('phở bò')));
+    const events = await readSSEEvents(res);
+
+    // The route catches the throw and emits an error event rather than
+    // failing the stream — assert that and that the guard still released.
+    expect(events.some((e) => e.type === 'error')).toBe(true);
+    expect(release).toHaveBeenCalledTimes(1);
+  });
+
+  it('releases an allowed guard when pipeline logging fails before SSE starts', async () => {
+    const release = vi.fn();
+    mockCheckAnalysisGuards.mockResolvedValue({ allowed: true, release });
+    mockLogPipelineStart.mockRejectedValue(new Error('log start failed'));
+
+    await expect(
+      POST(createRequest(mealRequestBody('phở bò')))
+    ).rejects.toThrow('log start failed');
+
+    expect(release).toHaveBeenCalledTimes(1);
+    expect(mockCreateGeminiClient).not.toHaveBeenCalled();
+  });
+
+  it('awaits an abort-started guard release during stream cleanup', async () => {
+    const abortController = new AbortController();
+    let resolveRelease!: () => void;
+    let notifyReleaseStarted!: () => void;
+    const releaseStarted = new Promise<void>((resolve) => {
+      notifyReleaseStarted = resolve;
+    });
+    const releaseFinished = new Promise<void>((resolve) => {
+      resolveRelease = resolve;
+    });
+    const release = vi.fn(() => {
+      notifyReleaseStarted();
+      return releaseFinished;
+    });
+    mockCheckAnalysisGuards.mockResolvedValue({ allowed: true, release });
+    mockAnalyzeMeal.mockImplementation(async () => {
+      abortController.abort();
+      return { success: true, data: mockPipelineData };
+    });
+
+    const res = await POST(
+      createRequest(mealRequestBody('phở bò'), {}, abortController.signal)
+    );
+    let streamCompleted = false;
+    const readPromise = res.text().then(() => {
+      streamCompleted = true;
+    });
+
+    await releaseStarted;
+    await Promise.resolve();
+
+    expect(release).toHaveBeenCalledTimes(1);
+    expect(streamCompleted).toBe(false);
+
+    resolveRelease();
+    await readPromise;
+
+    expect(streamCompleted).toBe(true);
+    expect(release).toHaveBeenCalledTimes(1);
   });
 
   // SSE streaming tests — these return 200 with event stream
@@ -278,6 +574,65 @@ describe('POST /api/analyze-meal', () => {
         loggedAt: expect.any(Date),
       })
     );
+  });
+
+  it('passes request locale as fallback for mixed-language meal input', async () => {
+    mockAnalyzeMeal.mockResolvedValue({
+      success: true,
+      data: mockPipelineData,
+    });
+
+    const res = await POST(
+      createRequest({
+        ...mealRequestBody('pho bo with extra beef'),
+        locale: 'vi',
+      })
+    );
+    await res.text();
+
+    const userContext = mockAnalyzeMeal.mock.calls[0]?.[1];
+    expect(userContext).toMatchObject({
+      inputLanguage: 'mixed',
+      outputLanguage: 'vi',
+    });
+  });
+
+  it('uses profile locale fallback when request locale is omitted', async () => {
+    mockSelect.mockResolvedValue([{ ...mockProfile, preferredLocale: 'vi' }]);
+    mockAnalyzeMeal.mockResolvedValue({
+      success: true,
+      data: mockPipelineData,
+    });
+
+    const res = await POST(
+      createRequest(mealRequestBody('pho bo with extra beef'))
+    );
+    await res.text();
+
+    const userContext = mockAnalyzeMeal.mock.calls[0]?.[1];
+    expect(userContext).toMatchObject({
+      inputLanguage: 'mixed',
+      outputLanguage: 'vi',
+    });
+  });
+
+  it('keeps clear English input in English despite Vietnamese profile locale', async () => {
+    mockSelect.mockResolvedValue([{ ...mockProfile, preferredLocale: 'vi' }]);
+    mockAnalyzeMeal.mockResolvedValue({
+      success: true,
+      data: mockPipelineData,
+    });
+
+    const res = await POST(
+      createRequest(mealRequestBody('grilled chicken with rice'))
+    );
+    await res.text();
+
+    const userContext = mockAnalyzeMeal.mock.calls[0]?.[1];
+    expect(userContext).toMatchObject({
+      inputLanguage: 'en',
+      outputLanguage: 'en',
+    });
   });
 
   it('streams error event when pipeline returns failure', async () => {

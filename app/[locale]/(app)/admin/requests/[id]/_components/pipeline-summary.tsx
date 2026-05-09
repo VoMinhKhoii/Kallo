@@ -23,6 +23,16 @@ import { cn } from '@/lib/utils';
 const decompositionSchema = z.object({
   isFood: z.boolean().optional(),
   mealSlot: z.string().nullable().optional(),
+  languageMetadata: z
+    .object({
+      inputLanguage: z.enum(['en', 'vi', 'mixed', 'unknown']).nullable(),
+      outputLanguage: z.enum(['en', 'vi']).nullable(),
+      guardReason: z.string(),
+      guardSeverity: z.enum(['info', 'warning', 'error']),
+      guardPassed: z.boolean(),
+      retryCount: z.number().int().min(0),
+    })
+    .optional(),
   mealItems: z
     .array(
       z.object({
@@ -237,6 +247,9 @@ export function PipelineSummary({
   );
 
   const mealItems = decomp.success ? decomp.data.mealItems : [];
+  const languageMetadata = decomp.success
+    ? (decomp.data.languageMetadata ?? null)
+    : null;
 
   const matched = matching.success ? matching.data.matched : [];
   const unmatched = matching.success ? matching.data.unmatched : [];
@@ -342,6 +355,19 @@ export function PipelineSummary({
           value={String(unmatched.length)}
           tone={unmatched.length === 0 ? 'good' : 'warn'}
         />
+        {languageMetadata ? (
+          <Metric
+            label="Language"
+            value={formatLanguagePair(languageMetadata)}
+            tone={
+              languageMetadata.guardPassed
+                ? languageMetadata.retryCount > 0
+                  ? 'warn'
+                  : 'neutral'
+                : 'bad'
+            }
+          />
+        ) : null}
       </div>
 
       {/* Error banner — always points to the failing stage */}
@@ -403,14 +429,19 @@ export function PipelineSummary({
             status={normalizeStageStatus(stagesByName.decomposition?.status)}
             title="Decomposition"
             meta={
-              <span className="text-muted-foreground text-xs tabular-nums">
-                {stagesByName.decomposition?.durationMs ?? '—'} ms
-                {' · '}
-                {mealItems.length} item{mealItems.length === 1 ? '' : 's'}
-                {' · '}
-                {totalIngredients} ingredient
-                {totalIngredients === 1 ? '' : 's'}
-              </span>
+              <div className="flex flex-wrap items-center justify-end gap-1.5">
+                <span className="text-muted-foreground text-xs tabular-nums">
+                  {stagesByName.decomposition?.durationMs ?? '—'} ms
+                  {' · '}
+                  {mealItems.length} item{mealItems.length === 1 ? '' : 's'}
+                  {' · '}
+                  {totalIngredients} ingredient
+                  {totalIngredients === 1 ? '' : 's'}
+                </span>
+                {languageMetadata ? (
+                  <LanguageMetadataChips metadata={languageMetadata} />
+                ) : null}
+              </div>
             }
           >
             {!decomp.success ? (
@@ -620,6 +651,32 @@ function Metric({
         {value}
       </span>
     </div>
+  );
+}
+
+type LanguageMetadata = NonNullable<
+  z.infer<typeof decompositionSchema>['languageMetadata']
+>;
+
+function formatLanguagePair(metadata: LanguageMetadata): string {
+  const input = metadata.inputLanguage ?? 'unknown';
+  const output = metadata.outputLanguage ?? 'unknown';
+  return `${input} → ${output}`;
+}
+
+function LanguageMetadataChips({ metadata }: { metadata: LanguageMetadata }) {
+  return (
+    <span className="flex min-w-0 flex-wrap items-center gap-1.5">
+      <Chip>
+        <span translate="no">{formatLanguagePair(metadata)}</span>
+      </Chip>
+      {metadata.retryCount > 0 ? (
+        <Chip>
+          <span className="tabular-nums">{metadata.retryCount} lang retry</span>
+        </Chip>
+      ) : null}
+      {!metadata.guardPassed ? <Chip>language mismatch</Chip> : null}
+    </span>
   );
 }
 

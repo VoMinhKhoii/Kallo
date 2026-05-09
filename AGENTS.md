@@ -99,6 +99,7 @@ This file is the **single source of truth** for agent behavior. Rules here take 
 - `docs/DATA.md` — VTN FCT 2007 food data documentation
 - `docs/PRD.md` — Product requirements
 - `docs/DESIGN.md` — Design specifications
+- `docs/superpowers/specs/2026-05-08-pipeline-latency-budget.md` — **Pipeline latency budgets per stage + observability signals.** Read before changing `analyzeMeal`, the matching cascade, or the Gemini wrapper.
 - `biome.json` — Biome linter/formatter config (disabled rules documented here)
 
 ### Import Aliases

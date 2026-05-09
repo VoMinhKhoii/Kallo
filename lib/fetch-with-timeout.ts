@@ -19,17 +19,34 @@ export async function fetchWithTimeout<T>(
   _label: string
 ): Promise<T> {
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  let timedOut = false;
+  let timer: ReturnType<typeof setTimeout> | undefined;
+
+  const operation = Promise.resolve().then(() => fn(controller.signal));
+  const timeout = new Promise<never>((_resolve, reject) => {
+    timer = setTimeout(() => {
+      timedOut = true;
+      controller.abort();
+      reject(Errors.pipelineTimeout());
+    }, timeoutMs);
+  });
 
   try {
-    const result = await fn(controller.signal);
-    return result;
+    return await Promise.race([operation, timeout]);
   } catch (error) {
+    if (timedOut) {
+      operation.catch(() => {
+        // The caller has already received PIPELINE_TIMEOUT. The underlying
+        // provider may still reject later if it ignored AbortSignal.
+      });
+      throw Errors.pipelineTimeout();
+    }
+
     if (error instanceof DOMException && error.name === 'AbortError') {
       throw Errors.pipelineTimeout();
     }
     throw error;
   } finally {
-    clearTimeout(timer);
+    if (timer) clearTimeout(timer);
   }
 }

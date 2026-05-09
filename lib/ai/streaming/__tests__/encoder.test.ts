@@ -17,6 +17,7 @@ describe('encodeSSE', () => {
       type: 'item_name',
       name: 'Phở bò',
       index: 0,
+      mealItemId: 'm1',
     };
     const encoded = encodeSSE(event);
 
@@ -29,6 +30,7 @@ describe('encodeSSE', () => {
   it('formats an item_macros event', () => {
     const event: StreamEvent = {
       type: 'item_macros',
+      mealItemId: 'm2',
       item: {
         id: 'item-1',
         name: 'Cơm trắng',

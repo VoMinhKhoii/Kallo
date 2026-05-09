@@ -1,4 +1,8 @@
 import type { CookingHabits, Goal } from '@/lib/onboarding/types';
+import type {
+  MealInputLanguage,
+  SupportedOutputLanguage,
+} from './language/detect';
 
 // ---------------------------------------------------------------------------
 // Primitives
@@ -19,6 +23,18 @@ export type MealConfidence = 'high' | 'medium' | 'low';
 
 /** Meal slot classification */
 export type MealSlot = 'breakfast' | 'brunch' | 'lunch' | 'dinner' | 'snack';
+
+export type ExpectedIngredientState = 'raw' | 'cooked';
+export type ExpectedIngredientStateSource =
+  | 'explicit'
+  | 'method_lookup'
+  | 'unknown';
+
+export type AmbiguityFlag =
+  | 'multiple_dish_interpretations'
+  | 'unspecified_quantity'
+  | 'cross_cuisine_ingredient'
+  | 'state_inferred_no_method';
 
 // ---------------------------------------------------------------------------
 // Nutrition value containers
@@ -86,6 +102,8 @@ export interface UserContext {
   aggression: number; // 0.1-0.8 for cutting/bulking, 0 for maintaining (null → 0)
   countryOfOrigin: string | null;
   countryOfResidence: string | null;
+  inputLanguage?: MealInputLanguage;
+  outputLanguage?: SupportedOutputLanguage;
   cookingHabits: CookingHabits;
 }
 
@@ -95,15 +113,37 @@ export interface UserContext {
 
 /** Single ingredient extracted by LLM from a meal item */
 export interface DecomposedIngredient {
-  name: string;
-  estimatedGrams: number;
-  cookingMethod: string | null;
-  userFacingUnit: string | null;
+  /** Stable id emitted by the LLM and normalized by runtime (§0.1). */
+  ingredientId?: string;
+  /** User-facing/input-preserving name. */
+  rawName?: string;
+  /** Food-composition vocabulary name used for matching. */
+  canonicalName?: string;
+  /** As-eaten grams; colloquial unit conversion is owned by the LLM. */
+  grams?: number;
+  /** Optional per-ingredient state override; dish cookingMethod fills gaps. */
+  expectedState?: ExpectedIngredientState;
+  /** Aggregate-only ambiguity side channel; never a routing input. */
+  ambiguityFlags?: AmbiguityFlag[];
+  /** Runtime-only derivation source for state tie-breaker confidence. */
+  _stateSource?: ExpectedIngredientStateSource;
+  /** @deprecated Transitional support for pre-§2 direct test fixtures only. */
+  name?: string;
+  /** @deprecated Use `grams`; kept for direct test fixtures during migration. */
+  estimatedGrams?: number;
+  /** @deprecated Use dish-level `cookingMethod` + `expectedState`. */
+  cookingMethod?: string | null;
+  /** @deprecated Runtime no longer accepts or emits user-facing units. */
+  userFacingUnit?: string | null;
 }
 
 /** A user-facing meal item with its internal ingredient breakdown */
 export interface DecomposedMealItem {
+  /** Stable id emitted by the LLM and normalized by runtime (§0.1). */
+  mealItemId?: string;
   name: string;
+  cookingMethod?: string;
+  cuisineNote?: string;
   ingredients: DecomposedIngredient[];
 }
 
@@ -129,12 +169,21 @@ export type MatchSource = 'fao' | 'usda';
 
 /** A successfully matched ingredient */
 export interface MatchedIngredient {
+  /**
+   * Run-scoped compact ingredient ID (§0.1) — propagated from decomposition.
+   * Optional on the shared interface; cascade callers pass post-Task-1.9
+   * `MealDecompositionWithIds` so this is populated at runtime. Test
+   * fixtures may omit this field.
+   */
+  ingredientId?: string;
   ingredientName: string;
   foodCompositionId: string;
   matchedName: string;
   similarity: number;
   confidence: MatchConfidence;
   nutritionPer100g: NutritionPer100g;
+  /** DB-enforced row state (§0.2). 'unknown' when the row pre-dates the column. */
+  dbState: 'raw' | 'cooked' | 'unknown';
   /** Diagnostic: which strategy produced the match. Optional for backward-compat with mocks. */
   matchType?: MatchType;
   /** Diagnostic: which DB source the match came from. */
@@ -157,6 +206,13 @@ export interface UnmatchedIngredient {
 
 /** Bounded estimates for the 4 LLM-adjusted macros of a single ingredient */
 export interface IngredientLlmNutrition {
+  /**
+   * Run-scoped compact ingredient ID (§0.1). Filled by `reconcileNutritionIds`
+   * after Call 2 parses (LLM emits ingredientName today; Chunk 3 will
+   * have it emit ingredientId directly). Optional on the interface; the
+   * post-reconcile shape consumed by assembly always carries it.
+   */
+  ingredientId?: string;
   ingredientName: string;
   caloriesKcal: BoundedEstimate;
   proteinG: BoundedEstimate;
@@ -164,8 +220,28 @@ export interface IngredientLlmNutrition {
   fatG: BoundedEstimate;
 }
 
+/**
+ * Unified four-macro ingredient nutrition record for eval/shadow consumers.
+ * Runtime `BoundedNutrition` still carries the full 28-nutrient detail; this
+ * shape is the stable spec §1.1 contract for comparing model outputs.
+ */
+export interface IngredientNutrition {
+  ingredientId: string;
+  matchedDbId?: string | null;
+  caloriesKcal: BoundedEstimate;
+  proteinG: BoundedEstimate;
+  carbohydrateG: BoundedEstimate;
+  fatG: BoundedEstimate;
+  uncertaintyReason?: string | null;
+}
+
 /** LLM Call 2 output for a single meal item */
 export interface MealItemNutrition {
+  /**
+   * Run-scoped compact meal-item ID (§0.1). Filled by `reconcileNutritionIds`.
+   * Optional on the interface; reconciled output always carries it.
+   */
+  mealItemId?: string;
   mealItemName: string;
   ingredients: IngredientLlmNutrition[];
 }
@@ -184,6 +260,16 @@ export interface ProcessedIngredient {
   ingredientName: string;
   foodCompositionId: string | null;
   estimatedGrams: number;
+  /**
+   * Grams used internally for DB-row nutrition scaling. Equals
+   * `estimatedGrams` when the matched DB row is cooked. Equals
+   * the legacy cooked-to-raw fallback when the row is raw or dbState is
+   * 'unknown'. Display layers should use `estimatedGrams`.
+   *
+   * @deprecated Field name is misleading post-Chunk 3. Rename to
+   * `dbScalingGrams` in a follow-up once spec §1.5 retirement gate trips and
+   * the legacy fallback is removed entirely.
+   */
   rawEquivalentGrams: number;
   cookingMethod: string | null;
   userFacingUnit: string | null;
@@ -221,5 +307,20 @@ export interface PipelineError {
 
 /** Discriminated union result type */
 export type PipelineResponse =
-  | { success: true; data: PipelineResult }
-  | { success: false; error: PipelineError };
+  | {
+      success: true;
+      data: PipelineResult;
+      __telemetry?: import('./pipeline/run-telemetry').PipelineRunRow;
+      __telemetryRunId?: string;
+      /** Resolves once the pipeline_runs row insert has committed.
+       * Consumers that need the row to exist before referencing it via FK
+       * (e.g. pipeline_shadow_runs.primary_run_id) must await this. */
+      __telemetryRunPersisted?: Promise<void>;
+    }
+  | {
+      success: false;
+      error: PipelineError;
+      __telemetry?: import('./pipeline/run-telemetry').PipelineRunRow;
+      __telemetryRunId?: string;
+      __telemetryRunPersisted?: Promise<void>;
+    };

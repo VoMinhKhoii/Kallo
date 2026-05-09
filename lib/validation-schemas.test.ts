@@ -23,6 +23,32 @@ describe('mealMessageSchema', () => {
     expect(result.success).toBe(true);
   });
 
+  it('accepts a normal meal description', () => {
+    const result = mealMessageSchema.safeParse(
+      mealBody('chicken breast with rice')
+    );
+    expect(result.success).toBe(true);
+  });
+
+  it.each(['en', 'vi'] as const)('accepts optional locale %s', (locale) => {
+    const result = mealMessageSchema.safeParse({
+      ...mealBody('chicken breast with rice'),
+      locale,
+    });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.locale).toBe(locale);
+    }
+  });
+
+  it('rejects unsupported locale values', () => {
+    const result = mealMessageSchema.safeParse({
+      message: 'chicken breast with rice',
+      locale: 'fr',
+    });
+    expect(result.success).toBe(false);
+  });
+
   it('trims whitespace', () => {
     const result = mealMessageSchema.safeParse(mealBody('  Bún bò Huế  '));
     expect(result.success).toBe(true);
@@ -63,6 +89,29 @@ describe('mealMessageSchema', () => {
 
   it('rejects string with only symbols', () => {
     const result = mealMessageSchema.safeParse(mealBody('!@#$%'));
+    expect(result.success).toBe(false);
+  });
+
+  it('rejects repeated-character garbage', () => {
+    const result = mealMessageSchema.safeParse({
+      message: 'aaaaaaaaaaaaaaaaaaaaaaaa',
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it('rejects URL-only input', () => {
+    const result = mealMessageSchema.safeParse({
+      message: 'https://example.com',
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it.each([
+    'https://',
+    'http://',
+    'www.',
+  ])('rejects URL-like garbage: %s', (message) => {
+    const result = mealMessageSchema.safeParse({ message });
     expect(result.success).toBe(false);
   });
 

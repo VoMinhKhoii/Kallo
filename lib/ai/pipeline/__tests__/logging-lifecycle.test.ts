@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { logPipelineEnd, logPipelineStart } from '@/lib/ai/pipeline/logging';
+import type { UserContext } from '@/lib/ai/types';
 import type { AppDb } from '@/lib/db';
-import type { UserContext } from '../types';
-import { logPipelineEnd, logPipelineStart } from './logging';
 
 // ---------------------------------------------------------------------------
 // Mock DB
@@ -81,25 +81,27 @@ describe('logPipelineStart', () => {
     expect(valuesArg.rawInput).toBe('phở bò');
   });
 
-  it('returns null on DB error — does not throw', async () => {
+  it('logs and rethrows DB errors', async () => {
     const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const error = new Error('DB write failed');
     const db = {
       insert: vi.fn().mockReturnValue({
-        values: vi.fn().mockRejectedValue(new Error('DB write failed')),
+        values: vi.fn().mockRejectedValue(error),
       }),
     } as unknown as AppDb;
 
-    const id = await logPipelineStart({
-      userId: 'user-1',
-      rawInput: 'phở bò',
-      userContext: MOCK_USER_CONTEXT,
-      db,
-    });
+    await expect(
+      logPipelineStart({
+        userId: 'user-1',
+        rawInput: 'phở bò',
+        userContext: MOCK_USER_CONTEXT,
+        db,
+      })
+    ).rejects.toThrow('DB write failed');
 
-    expect(id).toBeNull();
     expect(errorSpy).toHaveBeenCalledWith(
       expect.stringContaining('Failed to create request log'),
-      expect.any(Error)
+      error
     );
   });
 });

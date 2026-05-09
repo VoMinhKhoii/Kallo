@@ -1,6 +1,6 @@
 'use client';
 
-import { motion } from 'motion/react';
+import { motion, useReducedMotion } from 'motion/react';
 import { useTranslations } from 'next-intl';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
@@ -31,6 +31,10 @@ export function AdherenceHeatmap({ data, range }: AdherenceHeatmapProps) {
   const t = useTranslations('dashboard.adherenceHeatmap');
   const gridRef = useRef<HTMLDivElement>(null);
   const [sq, setSq] = useState(19);
+  // The 'year' range stagger fires up to 371 cells. Honour the OS-level
+  // reduced-motion preference so users with vestibular-motion sensitivity
+  // don't get a wall of moving cells. They still see the final state.
+  const prefersReducedMotion = useReducedMotion();
 
   const adherenceRate = useMemo(() => {
     let onTarget = 0;
@@ -155,12 +159,20 @@ export function AdherenceHeatmap({ data, range }: AdherenceHeatmapProps) {
                           aria-label={tooltipText}
                           aria-disabled={!isFocusable}
                           tabIndex={isFocusable ? 0 : -1}
-                          initial={{ opacity: 0, scale: 0.6 }}
+                          initial={
+                            prefersReducedMotion
+                              ? false
+                              : { opacity: 0, scale: 0.6 }
+                          }
                           animate={{ opacity: 1, scale: 1 }}
-                          transition={{
-                            duration: 0.16,
-                            delay: wi * 0.01 + di * 0.005,
-                          }}
+                          transition={
+                            prefersReducedMotion
+                              ? { duration: 0 }
+                              : {
+                                  duration: 0.16,
+                                  delay: wi * 0.01 + di * 0.005,
+                                }
+                          }
                           className="relative cursor-default rounded-[3px] transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent/60"
                           style={{ backgroundColor: isLogged ? bg : undefined }}
                         >

@@ -1,14 +1,16 @@
 import 'server-only';
-import { createHash } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import { and, eq } from 'drizzle-orm';
 import type { AppDb } from '@/lib/db';
 import {
+  pipelineLlmCallMetadata,
   pipelineLlmCalls,
   pipelineStageLogs,
   promptVersions,
 } from '@/lib/db/schema';
+import { readBooleanEnv } from './feature-flags';
 
-const enabled = () => process.env.PIPELINE_TRACE_ENABLED === 'true';
+const enabled = () => readBooleanEnv('PIPELINE_TRACE_ENABLED', false);
 const cache = new Map<string, string>(); // `${name}:${hash}` -> id
 
 export function hashPromptBuilder(
@@ -116,6 +118,21 @@ export interface LlmCallArgs {
   latencyMs: number;
   attempt: number;
   error?: string;
+  metadata?: LlmCallMetadataArgs;
+}
+
+export interface LlmCallMetadataArgs {
+  provider?: string | null;
+  region?: string | null;
+  cacheStatus?: string | null;
+  inputTokens?: number | null;
+  outputTokens?: number | null;
+  cachedTokens?: number | null;
+  thoughtTokens?: number | null;
+  /** Rendered system + user message characters measured before provider call. */
+  promptChars?: number | null;
+  /** Serialized response JSON schema characters measured before provider call. */
+  schemaChars?: number | null;
 }
 
 export function logLlmCall(a: LlmCallArgs): void {
@@ -125,7 +142,9 @@ export function logLlmCall(a: LlmCallArgs): void {
       // Skip the insert if the prompt-version row never materialized — the
       // FK would reject it anyway.
       if (!resolvedId) return;
+      const llmCallId = randomUUID();
       await a.db.insert(pipelineLlmCalls).values({
+        id: llmCallId,
         requestId: a.requestId,
         stageLogId: a.stageLogId,
         promptVersionId: resolvedId,
@@ -137,6 +156,18 @@ export function logLlmCall(a: LlmCallArgs): void {
         latencyMs: a.latencyMs,
         attempt: a.attempt,
         error: a.error ?? null,
+      });
+      await a.db.insert(pipelineLlmCallMetadata).values({
+        llmCallId,
+        provider: a.metadata?.provider ?? null,
+        region: a.metadata?.region ?? null,
+        cacheStatus: a.metadata?.cacheStatus ?? null,
+        inputTokens: a.metadata?.inputTokens ?? null,
+        outputTokens: a.metadata?.outputTokens ?? null,
+        cachedTokens: a.metadata?.cachedTokens ?? null,
+        thoughtTokens: a.metadata?.thoughtTokens ?? null,
+        promptChars: a.metadata?.promptChars ?? null,
+        schemaChars: a.metadata?.schemaChars ?? null,
       });
     })
     .catch((e) => console.error('[trace] logLlmCall failed', e));
@@ -159,46 +190,51 @@ export interface BuildLlmStageTraceContext {
 }
 
 /**
- * Build the GeminiCallTrace + matching promptVersionId promise for an LLM
- * stage. Records the prompt version (cached on code-hash), tracks it in
- * promptVersionsUsed, and returns the trace shape consumed by
- * gemini.generateStructuredOutputStream.
+ * Build the GeminiCallTrace for an LLM stage. Returns synchronously with
+ * `promptVersionId` as a Promise so the recordPromptVersion DB roundtrip
+ * runs in parallel with the Gemini call instead of blocking it
+ * (~30-100 ms saved on cold-start before the in-process cache warms up).
+ * `logLlmCall` already accepts `string | Promise<string | null>` and awaits
+ * internally before its FK-bearing insert.
  *
  * Returns `undefined` when `trace` is undefined OR tracing is disabled —
  * keeping the call site free of conditional trace plumbing.
  */
-export async function buildLlmStageTrace(args: {
+export function buildLlmStageTrace(args: {
   trace: BuildLlmStageTraceContext | undefined;
   stageLogId: string;
   name: 'decomposition' | 'nutrition';
   builder: (...a: unknown[]) => string;
   templateSample: string;
   model: string;
-}): Promise<
+}):
   | {
       db: AppDb;
       requestId: string;
       stageLogId: string;
-      promptVersionId: string;
+      promptVersionId: Promise<string | null>;
       promptRendered: string;
     }
-  | undefined
-> {
+  | undefined {
   if (!args.trace || !enabled()) return undefined;
-  const pvId = await recordPromptVersion({
-    db: args.trace.db,
+  const traceCtx = args.trace;
+  const pvIdPromise = recordPromptVersion({
+    db: traceCtx.db,
     name: args.name,
     builder: args.builder,
     templateSample: args.templateSample,
     model: args.model,
+  }).then((pvId) => {
+    if (pvId) {
+      traceCtx.promptVersionsUsed.set(args.name, pvId);
+    }
+    return pvId;
   });
-  if (!pvId) return undefined;
-  args.trace.promptVersionsUsed.set(args.name, pvId);
   return {
-    db: args.trace.db,
-    requestId: args.trace.requestId,
+    db: traceCtx.db,
+    requestId: traceCtx.requestId,
     stageLogId: args.stageLogId,
-    promptVersionId: pvId,
+    promptVersionId: pvIdPromise,
     promptRendered: args.templateSample,
   };
 }

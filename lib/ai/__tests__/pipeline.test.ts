@@ -156,6 +156,7 @@ describe('analyzeMeal', () => {
           similarity: 0.85,
           confidence: 'high',
           nutritionPer100g: nullNutrition,
+          dbState: 'raw',
         },
       ],
       unmatched: [],
@@ -196,7 +197,7 @@ describe('analyzeMeal', () => {
       success: false,
       error: {
         type: 'api_error',
-        message: 'Phân tích mất quá lâu. Vui lòng thử lại.',
+        message: 'Analysis took too long. Please try again.',
         retryable: true,
       },
     });
@@ -205,19 +206,24 @@ describe('analyzeMeal', () => {
   it('D5: merges LLM 5 nutrients with DB mid values for remaining 23', async () => {
     mockLlmCalls(sampleDecomposition, sampleNutritionAdjustment);
 
-    mockMatchIngredients.mockResolvedValueOnce({
-      matched: [
-        {
-          ingredientName: 'Gạo',
-          foodCompositionId: 'rice-001',
-          matchedName: 'Gạo tẻ',
-          similarity: 0.85,
-          confidence: 'high',
-          nutritionPer100g: nullNutrition,
-        },
-      ],
-      unmatched: [],
-    });
+    mockMatchIngredients.mockImplementationOnce(
+      (ingredients: Array<{ name: string; ingredientId?: string }>) =>
+        Promise.resolve({
+          matched: [
+            {
+              ingredientId: ingredients[0]?.ingredientId,
+              ingredientName: 'Gạo',
+              foodCompositionId: 'rice-001',
+              matchedName: 'Gạo tẻ',
+              similarity: 0.85,
+              confidence: 'high',
+              nutritionPer100g: nullNutrition,
+              dbState: 'raw',
+            },
+          ],
+          unmatched: [],
+        })
+    );
 
     const result = await analyzeMeal(
       'cơm trắng 1 chén',
@@ -374,7 +380,7 @@ describe('analyzeMeal', () => {
           mealItemName: 'Phở bò',
           ingredients: [
             makeLlmNutrition('Bún phở', 200, 5, 45, 0.5),
-            makeLlmNutrition('Rare_herb', 5, 0.5, 1, 0.1),
+            makeLlmNutrition('Rare_herb', 5, 0, 1.25, 0),
           ],
         },
       ],
@@ -389,6 +395,7 @@ describe('analyzeMeal', () => {
           similarity: 0.7,
           confidence: 'high',
           nutritionPer100g: nullNutrition,
+          dbState: 'raw',
         },
       ],
       unmatched: [{ ingredientName: 'Rare_herb', mealContext: 'Phở bò' }],
@@ -444,7 +451,7 @@ describe('analyzeMeal', () => {
           mealItemName: 'Lẩu cá',
           ingredients: [
             makeLlmNutrition('Cá lóc', 80, 18, 0, 1),
-            makeLlmNutrition('Exotic_spice', 2, 0.1, 0.5, 0),
+            makeLlmNutrition('Exotic_spice', 2, 0, 0.5, 0),
           ],
         },
       ],
@@ -459,6 +466,7 @@ describe('analyzeMeal', () => {
           similarity: 0.2,
           confidence: 'low',
           nutritionPer100g: nullNutrition,
+          dbState: 'raw',
         },
       ],
       unmatched: [{ ingredientName: 'Exotic_spice', mealContext: 'Lẩu cá' }],
@@ -537,6 +545,7 @@ describe('analyzeMeal', () => {
           similarity: 0.85,
           confidence: 'high',
           nutritionPer100g: nullNutrition,
+          dbState: 'raw',
         },
         {
           ingredientName: 'Thịt heo',
@@ -545,6 +554,7 @@ describe('analyzeMeal', () => {
           similarity: 0.8,
           confidence: 'high',
           nutritionPer100g: nullNutrition,
+          dbState: 'raw',
         },
       ],
       unmatched: [],
@@ -615,14 +625,26 @@ describe('analyzeMeal', () => {
           mealItemName: 'Thịt kho trứng',
           ingredients: [
             makeLlmNutrition('Thịt heo', 250, 26, 5, 15),
-            makeLlmNutrition('Dầu ăn', 135, 0, 0, 15), // 15g oil in kho
+            {
+              ingredientName: 'Dầu ăn',
+              caloriesKcal: { low: 135, mid: 135, high: 135 },
+              proteinG: { low: 0, mid: 0, high: 0 },
+              carbohydrateG: { low: 0, mid: 0, high: 0 },
+              fatG: { low: 15, mid: 15, high: 15 },
+            },
           ],
         },
         {
           mealItemName: 'Xào rau',
           ingredients: [
             makeLlmNutrition('Rau cải', 30, 2, 5, 0.5),
-            makeLlmNutrition('Dầu ăn', 90, 0, 0, 10), // 10g oil in xào
+            {
+              ingredientName: 'Dầu ăn',
+              caloriesKcal: { low: 90, mid: 90, high: 90 },
+              proteinG: { low: 0, mid: 0, high: 0 },
+              carbohydrateG: { low: 0, mid: 0, high: 0 },
+              fatG: { low: 10, mid: 10, high: 10 },
+            },
           ],
         },
       ],
@@ -644,6 +666,7 @@ describe('analyzeMeal', () => {
           similarity: 0.85,
           confidence: 'high',
           nutritionPer100g: nullNutrition,
+          dbState: 'raw',
         },
         {
           ingredientName: 'Dầu ăn',
@@ -652,6 +675,7 @@ describe('analyzeMeal', () => {
           similarity: 0.9,
           confidence: 'high',
           nutritionPer100g: nullNutrition,
+          dbState: 'raw',
         },
         {
           ingredientName: 'Rau cải',
@@ -660,6 +684,7 @@ describe('analyzeMeal', () => {
           similarity: 0.8,
           confidence: 'high',
           nutritionPer100g: nullNutrition,
+          dbState: 'raw',
         },
         {
           ingredientName: 'Dầu ăn',
@@ -668,6 +693,7 @@ describe('analyzeMeal', () => {
           similarity: 0.9,
           confidence: 'high',
           nutritionPer100g: nullNutrition,
+          dbState: 'raw',
         },
       ],
       unmatched: [],
@@ -720,6 +746,7 @@ describe('analyzeMeal', () => {
           similarity: 0.85,
           confidence: 'high',
           nutritionPer100g: nullNutrition,
+          dbState: 'raw',
         },
       ],
       unmatched: [],
@@ -767,6 +794,7 @@ describe('analyzeMeal', () => {
           similarity: 0.85,
           confidence: 'high',
           nutritionPer100g: nullNutrition,
+          dbState: 'raw',
         },
       ],
       unmatched: [],

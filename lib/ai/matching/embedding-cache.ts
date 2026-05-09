@@ -1,5 +1,6 @@
 import { sql } from 'drizzle-orm';
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
+import { readBooleanEnv } from '@/lib/ai/pipeline/feature-flags';
 import type * as schema from '@/lib/db/schema';
 
 /**
@@ -35,6 +36,11 @@ export function clearMemoryCache() {
  */
 let warmCacheStarted = false;
 
+const isEmbeddingCacheEnabled = () =>
+  readBooleanEnv('PIPELINE_EMBEDDING_CACHE_ENABLED', true);
+const isEmbeddingCacheWarmupEnabled = () =>
+  readBooleanEnv('PIPELINE_EMBEDDING_CACHE_WARMUP_ENABLED', true);
+
 /**
  * Warm L1 memory cache from the 526 VN FCT food items (source_id = 1).
  *
@@ -51,6 +57,7 @@ export async function warmEmbeddingCache(
   db: PostgresJsDatabase<typeof schema>
 ): Promise<void> {
   if (warmCacheStarted) return;
+  if (!isEmbeddingCacheEnabled() || !isEmbeddingCacheWarmupEnabled()) return;
   warmCacheStarted = true;
 
   try {
@@ -83,36 +90,48 @@ export async function warmEmbeddingCache(
 }
 
 /**
- * Tiered embedding lookup: L1 memory → L2 exact (name_vi only) → null.
+ * Tiered embedding lookup: L1 memory → L2 exact (name_vi OR name_en) → null.
  *
  * Input is normalized (NFC + lowercase + trim) before any tier is checked.
- * L2 matches on name_vi only — name_en is not used in the live lookup.
- * On miss, asynchronously checks name_en for synonym candidate logging.
+ * L2 matches on either name_vi or lower(name_en) — both columns hold cached
+ * embeddings, so an English ingredient name like "rice" can hit a row whose
+ * name_vi is "cơm" via its name_en="rice" entry without a live API call
+ * (Phase C4: was a ~600 ms cliff per English ingredient).
+ * On miss, fire-and-forget logs a synonym candidate for review.
  */
 export async function resolveQueryEmbedding(
   ingredientName: string,
   db: PostgresJsDatabase<typeof schema>
 ): Promise<number[] | null> {
+  if (!isEmbeddingCacheEnabled()) return null;
+
   const normalized = normalizeIngredientKey(ingredientName);
+  const logName = normalized.slice(0, 30);
 
   // L1: in-memory cache — check before warm-up to short-circuit hot requests
   const cached = memoryCache.get(normalized);
-  if (cached) return cached;
+  if (cached) {
+    console.info(`[embedding-cache] L1 HIT: "${logName}"`);
+    return cached;
+  }
 
   // Trigger warm-up on first L1 miss (fire-and-forget — doesn't block this request)
   warmEmbeddingCache(db);
 
-  // L2: exact match on name_vi only
+  // L2: exact match on name_vi OR lower(name_en).
+  // Both columns hold the cached embedding for the same row, so either match
+  // returns the same vector. promoteToMemoryCache then caches under both keys.
   // Treat DB errors as cache misses — the pipeline will generate a fresh embedding
   try {
     const exactRows = await db.execute(
       sql`SELECT name_vi, name_en, embedding
           FROM ingredient_query_embeddings
-          WHERE name_vi = ${normalized}
+          WHERE name_vi = ${normalized} OR lower(name_en) = ${normalized}
           LIMIT 1`
     );
 
     if (exactRows.length > 0) {
+      console.info(`[embedding-cache] L2 HIT: "${logName}"`);
       return promoteToMemoryCache(exactRows[0] as Record<string, unknown>);
     }
   } catch (err) {
@@ -124,7 +143,11 @@ export async function resolveQueryEmbedding(
     return null;
   }
 
-  // Miss — async: check name_en for synonym candidate logging (fire-and-forget)
+  console.info(`[embedding-cache] L1+L2 MISS: "${logName}" (will live-embed)`);
+
+  // Miss — async: check name_en for synonym candidate logging (fire-and-forget).
+  // Note: this only fires when L2 didn't match either column above, so the
+  // synonym-logger now serves the residual English-with-no-DB-row case.
   logSynonymCandidateIfEnMatch(normalized, db);
 
   return null;
@@ -141,6 +164,8 @@ export function cacheQueryEmbedding(
   embedding: number[],
   db: PostgresJsDatabase<typeof schema>
 ): void {
+  if (!isEmbeddingCacheEnabled()) return;
+
   const normalized = normalizeIngredientKey(ingredientName);
 
   // L1: always populate memory cache synchronously

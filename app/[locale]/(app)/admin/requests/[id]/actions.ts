@@ -15,10 +15,52 @@ import {
   setPipelineFinalState,
 } from '@/lib/ai/pipeline/logging';
 import { analyzeMeal } from '@/lib/ai/pipeline/orchestrator';
+import { hashUserId } from '@/lib/ai/pipeline/run-telemetry';
 import { logLlmCall } from '@/lib/ai/pipeline/trace';
 import type { UserContext } from '@/lib/ai/types';
 import { db } from '@/lib/db';
-import { pipelineLlmCalls, pipelineRequests } from '@/lib/db/schema';
+import {
+  analysisGuardEvents,
+  pipelineLlmCalls,
+  pipelineRequestReplayAuditLogs,
+  pipelineRequests,
+} from '@/lib/db/schema';
+import {
+  adminReplayGuardRoute,
+  buildAnalysisGuardEvent,
+  checkAdminReplayGuard,
+} from '@/lib/rate-limit/analysis-guards';
+
+type ReplayRequestResult =
+  | {
+      ok: false;
+      error: {
+        code: 'RATE_LIMITED';
+        status: 429;
+        retryable: true;
+        message: string;
+        reason: 'admin_replay';
+        retryAfterSeconds: number;
+      };
+    }
+  | undefined;
+
+function adminReplayRateLimitResult(
+  retryAfterSeconds: number
+): ReplayRequestResult {
+  return {
+    ok: false,
+    error: {
+      code: 'RATE_LIMITED',
+      status: 429,
+      retryable: true,
+      message:
+        'Admin replay quota exhausted. Please wait before replaying again.',
+      reason: 'admin_replay',
+      retryAfterSeconds,
+    },
+  };
+}
 
 const idSchema = z.string().uuid();
 const replayOptionsSchema = z.object({
@@ -104,7 +146,7 @@ async function buildDryRunGeminiClient(
 export async function replayRequest(
   originalIdInput: string,
   options: { dryRun?: boolean } = {}
-) {
+): Promise<ReplayRequestResult> {
   const originalId = idSchema.parse(originalIdInput);
   const { dryRun = false } = replayOptionsSchema.parse(options);
   const admin = await requireAdmin();
@@ -120,8 +162,30 @@ export async function replayRequest(
     .limit(1);
   if (!orig) throw new Error('original request not found');
 
-  // Pick the Gemini client BEFORE creating any DB rows. For real replays
-  // this also validates GEMINI_API_KEY up-front.
+  if (!dryRun) {
+    const guard = await checkAdminReplayGuard({ adminId: admin.id, db });
+
+    if (!guard.allowed) {
+      try {
+        await db.insert(analysisGuardEvents).values(
+          buildAnalysisGuardEvent({
+            userId: admin.id,
+            ip: null,
+            route: adminReplayGuardRoute,
+            reason: 'admin_replay',
+            retryAfterSeconds: guard.retryAfterSeconds,
+          })
+        );
+      } catch (error) {
+        console.error('[admin] Failed to log replay guard event:', error);
+      }
+
+      return adminReplayRateLimitResult(guard.retryAfterSeconds);
+    }
+  }
+
+  // Pick the Gemini client BEFORE creating replay rows. For real replays
+  // this also validates GEMINI_API_KEY after the admin replay quota passes.
   const gemini: GeminiClient = dryRun
     ? await buildDryRunGeminiClient(originalId)
     : (() => {
@@ -133,8 +197,12 @@ export async function replayRequest(
   const replayId = crypto.randomUUID();
   const t0 = Date.now();
 
-  // Reuse original userId (NOT admin.id) — FK to auth.users + correct attribution.
+  // Reuse original userId — FK to auth.users + correct attribution.
   // Awaited so child trace inserts have a parent row to FK against.
+  // The audit-log insert below references replayId via FK, so we have to
+  // create the pipeline_requests row FIRST: writing the audit row before
+  // logPipelineStart leaves an orphaned audit entry whenever pipeline-start
+  // throws (no FK target).
   const startResult = await logPipelineStart({
     userId: orig.userId,
     rawInput: orig.rawInput,
@@ -147,8 +215,15 @@ export async function replayRequest(
   if (startResult === null) {
     throw new Error('[admin] Failed to create pipeline request log for replay');
   }
+
+  await db.insert(pipelineRequestReplayAuditLogs).values({
+    adminUserIdHash: hashUserId(admin.id),
+    originalRequestId: originalId,
+    replayRequestId: replayId,
+    dryRun,
+  });
   console.info(
-    `[admin] ${admin.email} ${dryRun ? 'dry-run-replayed' : 'replayed'} ${originalId} as ${replayId}`
+    `[admin] ${dryRun ? 'dry-run-replayed' : 'replayed'} ${originalId} as ${replayId}`
   );
 
   const promptVersionsUsed = new Map<string, string>();
@@ -161,7 +236,7 @@ export async function replayRequest(
       db,
       gemini,
       () => {},
-      { requestId: replayId, db, promptVersionsUsed }
+      { requestId: replayId, db, userId: orig.userId, promptVersionsUsed }
     );
     if (!result.success) {
       finalStatus = 'error';

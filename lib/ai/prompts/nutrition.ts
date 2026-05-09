@@ -1,15 +1,29 @@
 import {
-  convertCookedToRaw,
   PROTEIN_PORTION_DESCRIPTION,
   RICE_PORTION_DESCRIPTION,
 } from '../constants';
+import {
+  ingredientCanonicalName,
+  ingredientDisplayName,
+  ingredientGrams,
+} from '../pipeline/ingredient-accessors';
 import type {
   DecomposedMealItem,
   MatchedIngredient,
   UnmatchedIngredient,
-  UserContext,
 } from '../types';
 import { buildPromptContextLine } from './sanitize';
+import type { PromptPersonalizationContext } from './types';
+
+/**
+ * Principle A (spec §2): the LLM produces honest physical-world estimates
+ * conditioned only on the meal text and the user's cooking identity (country
+ * of origin/residence, cookingHabits). Goal, aggression, and calorie targets
+ * NEVER reach this prompt — TypeScript enforces the boundary via
+ * PromptPersonalizationContext.
+ *
+ * Spec: docs/superpowers/specs/2026-04-27-ai-pipeline-prompt-context-engineering-design.md
+ */
 
 /**
  * Build the system prompt for LLM Call 2 (cooking-adjusted bounded nutrition).
@@ -17,8 +31,8 @@ import { buildPromptContextLine } from './sanitize';
  * V2: Compressed instructions, no hardcoded % — LLM decides bounds.
  * Dynamic XML data sections kept verbatim.
  *
- * Note: estimatedGrams from Step 1 are COOKED weights. We convert to raw here
- * before passing to the LLM, since DB values are per 100g RAW.
+ * Note: grams from Step 1 are as-eaten weights. db_state tells the LLM
+ * whether the DB per-100g row is raw/cooked/unknown.
  */
 
 /**
@@ -28,12 +42,65 @@ import { buildPromptContextLine } from './sanitize';
  */
 const viCollator = new Intl.Collator('vi', { sensitivity: 'base' });
 
-export function buildNutritionPrompt(
+type PromptIngredient = DecomposedMealItem['ingredients'][number];
+
+export const NUTRITION_PROMPT_LABEL_ENV = 'PIPELINE_NUTRITION_PROMPT_LABEL';
+
+export type NutritionPromptLabel = 'production' | 'compressed';
+export type NutritionPromptBuilder = (
   mealItems: DecomposedMealItem[],
   matched: MatchedIngredient[],
   unmatched: UnmatchedIngredient[],
-  userContext: UserContext
-): string {
+  userContext: PromptPersonalizationContext
+) => string;
+
+const escapeXmlAttribute = (value: string): string =>
+  value
+    .replace(/&/g, '&amp;')
+    .replace(/"/g, '&quot;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/'/g, '&apos;');
+
+const ingredientCookingMethod = (
+  item: DecomposedMealItem,
+  ing: PromptIngredient
+): string | null => item.cookingMethod ?? ing.cookingMethod ?? null;
+
+interface NutritionPromptParts {
+  cookingHabits: PromptPersonalizationContext['cookingHabits'];
+  countryLines: string[];
+  ingredientData: string;
+  unmatchedSection: string;
+}
+
+export function getNutritionPromptLabel(
+  env: Record<string, string | undefined> = process.env
+): NutritionPromptLabel {
+  // Default flipped to 'compressed' (2026-05-09): Phase B harness measured
+  // 64–72 % warm-path latency reduction (totalMs p50 11708 → 4173 ms,
+  // nutritionMs p50 10676 → 3566 ms) on `gemini-2.5-flash-lite` with no
+  // observed quality regression. Set `PIPELINE_NUTRITION_PROMPT_LABEL=production`
+  // to revert. See docs/superpowers/plans/2026-05-08-ai-pipeline-latency-regression.md.
+  return env[NUTRITION_PROMPT_LABEL_ENV] === 'production'
+    ? 'production'
+    : 'compressed';
+}
+
+export function getNutritionPromptBuilder(
+  label: NutritionPromptLabel = getNutritionPromptLabel()
+): NutritionPromptBuilder {
+  return label === 'compressed'
+    ? buildCompressedNutritionPrompt
+    : buildNutritionPrompt;
+}
+
+function buildNutritionPromptParts(
+  mealItems: DecomposedMealItem[],
+  matched: MatchedIngredient[],
+  unmatched: UnmatchedIngredient[],
+  userContext: PromptPersonalizationContext
+): NutritionPromptParts {
   const { cookingHabits } = userContext;
   const countryLines = [
     buildPromptContextLine('country_of_origin', userContext.countryOfOrigin),
@@ -43,7 +110,12 @@ export function buildNutritionPrompt(
     ),
   ].filter((line): line is string => line !== null);
 
-  const matchedLookup = new Map(matched.map((m) => [m.ingredientName, m]));
+  const matchedLookup = new Map(
+    matched
+      .filter((m) => m.ingredientId)
+      .map((m) => [m.ingredientId as string, m])
+  );
+  const matchedByName = new Map(matched.map((m) => [m.ingredientName, m]));
 
   // Sort meal items and their ingredients for a deterministic prompt order.
   // Same ingredient set → identical XML → Gemini prompt cache hit.
@@ -55,11 +127,11 @@ export function buildNutritionPrompt(
       // Prevents same meal-item names with different ingredient sets from producing
       // different XML across permuted inputs (breaks Gemini prompt cache prefix).
       const aKey = [...a.ingredients]
-        .map((i) => i.name)
+        .map(ingredientDisplayName)
         .sort()
         .join('\0');
       const bKey = [...b.ingredients]
-        .map((i) => i.name)
+        .map(ingredientDisplayName)
         .sort()
         .join('\0');
       return aKey < bKey ? -1 : aKey > bKey ? 1 : 0;
@@ -67,26 +139,27 @@ export function buildNutritionPrompt(
     .map((item) => ({
       ...item,
       ingredients: [...item.ingredients].sort((a, b) =>
-        viCollator.compare(a.name, b.name)
+        viCollator.compare(ingredientDisplayName(a), ingredientDisplayName(b))
       ),
     }));
 
   let ingredientData = '<ingredient_data>\n';
   ingredientData +=
-    '  <!-- DB values are per 100g RAW uncooked weight. estimatedGrams is also RAW. -->\n\n';
+    '  <!-- as_eaten_grams is the user-facing portion. db_state tells you whether the per_100g values are raw or cooked. -->\n\n';
 
   for (const mealItem of sortedMealItems) {
-    ingredientData += `  <meal_item name="${mealItem.name}">\n`;
+    ingredientData += `  <meal_item name="${escapeXmlAttribute(mealItem.name)}">\n`;
 
     for (const ing of mealItem.ingredients) {
-      const match = matchedLookup.get(ing.name);
+      const match = ing.ingredientId
+        ? (matchedLookup.get(ing.ingredientId) ??
+          matchedByName.get(ingredientDisplayName(ing)))
+        : matchedByName.get(ingredientDisplayName(ing));
       if (match) {
-        const rawGrams = convertCookedToRaw(
-          ing.estimatedGrams,
-          ing.cookingMethod
-        );
-        ingredientData += `    <ingredient name="${ing.name}" source="db_matched" db_name="${match.matchedName}" raw_grams="${rawGrams}"${ing.cookingMethod ? ` cooking="${ing.cookingMethod}"` : ''}>\n`;
-        ingredientData += `      <per_100g_raw calories="${match.nutritionPer100g.caloriesKcal ?? '?'}" protein="${match.nutritionPer100g.proteinG ?? '?'}g" carbs="${match.nutritionPer100g.carbohydrateG ?? '?'}g" fat="${match.nutritionPer100g.fatG ?? '?'}g" />\n`;
+        const dbState = match.dbState ?? 'unknown';
+        const cookingMethod = ingredientCookingMethod(mealItem, ing);
+        ingredientData += `    <ingredient name="${escapeXmlAttribute(ingredientDisplayName(ing))}" as_eaten_grams="${ingredientGrams(ing)}" canonicalName="${escapeXmlAttribute(ingredientCanonicalName(ing))}" source="db_matched" db_name="${escapeXmlAttribute(match.matchedName)}" db_state="${escapeXmlAttribute(dbState)}"${cookingMethod ? ` cooking="${escapeXmlAttribute(cookingMethod)}"` : ''}${ing.expectedState ? ` expected_state="${escapeXmlAttribute(ing.expectedState)}"` : ''}>\n`;
+        ingredientData += `      <per_100g caloriesKcal="${match.nutritionPer100g.caloriesKcal ?? '?'}" proteinG="${match.nutritionPer100g.proteinG ?? '?'}" carbohydrateG="${match.nutritionPer100g.carbohydrateG ?? '?'}" fatG="${match.nutritionPer100g.fatG ?? '?'}" />\n`;
         ingredientData += `    </ingredient>\n`;
       }
     }
@@ -99,20 +172,17 @@ export function buildNutritionPrompt(
     const unmatchedNames = new Set(unmatched.map((u) => u.ingredientName));
     unmatchedSection = '\n<unmatched_ingredients>\n';
     unmatchedSection +=
-      '  <!-- No DB match found. Use your knowledge of Vietnamese cuisine for these. -->\n';
+      "  <!-- No DB match found. Use your culinary knowledge of the user's cuisine and FAO/USDA food composition data for estimates. -->\n";
 
     for (const mealItem of sortedMealItems) {
       const unmatchedIngs = mealItem.ingredients.filter((ing) =>
-        unmatchedNames.has(ing.name)
+        unmatchedNames.has(ingredientDisplayName(ing))
       );
       if (unmatchedIngs.length > 0) {
-        unmatchedSection += `  <meal_item name="${mealItem.name}">\n`;
+        unmatchedSection += `  <meal_item name="${escapeXmlAttribute(mealItem.name)}">\n`;
         for (const ing of unmatchedIngs) {
-          const rawGrams = convertCookedToRaw(
-            ing.estimatedGrams,
-            ing.cookingMethod
-          );
-          unmatchedSection += `    <ingredient name="${ing.name}" raw_grams="${rawGrams}"${ing.cookingMethod ? ` cooking="${ing.cookingMethod}"` : ''} />\n`;
+          const cookingMethod = ingredientCookingMethod(mealItem, ing);
+          unmatchedSection += `    <ingredient name="${escapeXmlAttribute(ingredientDisplayName(ing))}" as_eaten_grams="${ingredientGrams(ing)}" canonicalName="${escapeXmlAttribute(ingredientCanonicalName(ing))}"${cookingMethod ? ` cooking="${escapeXmlAttribute(cookingMethod)}"` : ''}${ing.expectedState ? ` expected_state="${escapeXmlAttribute(ing.expectedState)}"` : ''} />\n`;
         }
         unmatchedSection += `  </meal_item>\n`;
       }
@@ -121,7 +191,68 @@ export function buildNutritionPrompt(
     unmatchedSection += '</unmatched_ingredients>\n';
   }
 
-  return `You are a Vietnamese cuisine nutrition expert. Produce cooking-adjusted, bounded nutrition estimates.
+  return { cookingHabits, countryLines, ingredientData, unmatchedSection };
+}
+
+export function buildCompressedNutritionPrompt(
+  mealItems: DecomposedMealItem[],
+  matched: MatchedIngredient[],
+  unmatched: UnmatchedIngredient[],
+  userContext: PromptPersonalizationContext
+): string {
+  const { cookingHabits, countryLines, ingredientData, unmatchedSection } =
+    buildNutritionPromptParts(mealItems, matched, unmatched, userContext);
+  const outputLanguage = userContext.outputLanguage ?? 'match_user_input';
+
+  return `You are a nutrition estimator. Return JSON only.
+
+<contract>
+  output_language: ${outputLanguage}
+  Produce LOW/MID/HIGH for caloriesKcal, proteinG, carbohydrateG, fatG.
+  Echo mealItemName and ingredientName exactly from the input facts.
+  Keep output names in output_language unless exact echo fields are provided.
+</contract>
+
+<calculation_rules>
+   Scale per_100g values by as_eaten_grams.
+   db_state="cooked": no raw/cooked conversion; adjust only for actual cooking style.
+   db_state="raw": account for cooking method, moisture, and oil absorption.
+   db_state="unknown" or unmatched: estimate from cuisine knowledge with wider bounds.
+   Bounds express physical uncertainty, not user goals or preferences.
+   Keep every triple ordered low <= mid <= high and non-negative.
+   Keep calories consistent with macros: kcal ~= 4*protein + 4*carbs + 9*fat.
+   Do not exceed physical density: high kcal <= 900/100g and high protein/carbs/fat <= 100g/100g.
+</calculation_rules>
+
+<user_context>
+${countryLines.length > 0 ? `${countryLines.join('\n')}\n` : ''}  oil_usage: ${cookingHabits.oilUsage}
+  sugar_braised: ${cookingHabits.sugarBraised}
+  default_rice_portion: ${RICE_PORTION_DESCRIPTION[cookingHabits.defaultRicePortion]}
+  default_protein_portion: ${PROTEIN_PORTION_DESCRIPTION[cookingHabits.defaultProteinPortion]}
+  broth_consumption: ${cookingHabits.brothConsumption}
+</user_context>
+
+${ingredientData}
+${unmatchedSection}
+
+<output_format>
+  Return top-level mealItems[].
+  Each meal item: mealItemName + ingredients[].
+  Each ingredient: ingredientName + 4 macro triples {low, mid, high}.
+  Round to 1 decimal place.
+</output_format>`;
+}
+
+export function buildNutritionPrompt(
+  mealItems: DecomposedMealItem[],
+  matched: MatchedIngredient[],
+  unmatched: UnmatchedIngredient[],
+  userContext: PromptPersonalizationContext
+): string {
+  const { cookingHabits, countryLines, ingredientData, unmatchedSection } =
+    buildNutritionPromptParts(mealItems, matched, unmatched, userContext);
+
+  return `You are a nutrition expert. Produce cooking-adjusted, bounded nutrition estimates based on the user's cuisine and cooking context.
 
 <instructions>
   <task>
@@ -129,22 +260,46 @@ export function buildNutritionPrompt(
   </task>
 
   <calculation>
-    1. Scale: base = (estimatedGrams / 100) × per_100g_raw. All values are RAW weights.
-    2. Adjust for cooking method: each ingredient has a "cooking" attribute — use your knowledge of
-       how that cooking method affects macros (e.g., fat absorption in frying, nutrient loss in boiling).
-    3. MID = your best estimate after cooking adjustment.
+    Each ingredient has db_state: "raw" | "cooked" | "unknown".
+
+    1. db_state="cooked": per_100g values are already cooked.
+       Scale base = (as_eaten_grams / 100) × per_100g, then adjust as needed
+       for the *user's actual cooking style* (e.g., extra oil from "nhiều dầu"
+       cooking habit). No raw/cooked conversion needed — both sides are cooked.
+
+    2. db_state="raw": per_100g values are raw, as_eaten_grams is cooked.
+       adjust for cooking method using your knowledge:
+         - frying (chiên/rán/xào) absorbs cooking oil → fat goes UP
+         - boiling (luộc/nấu) drives moisture changes; rice absorbs water → mass UP
+         - grilling (nướng) drives moisture out → density UP
+       Produce final macros for the as-eaten portion.
+
+    3. db_state="unknown": treat as "raw" but widen LOW/HIGH bounds — uncertainty
+       is higher because the reference frame is ambiguous.
+
+    For unmatched ingredients (no db row): use your culinary knowledge of the user's cuisine and region
+    (informed by the user's origin and residence context in <user_context>, plus FAO/USDA food composition data)
+    for typical macros at the as-eaten weight. Be wider on bounds.
+
+    MID = your best estimate after cooking adjustment. LOW/HIGH bracket
+    physical-world uncertainty (portion guess + cooking variance).
   </calculation>
 
   <why_three_values>
-    We use LOW/MID/HIGH to power goal-based adjustments for users cutting or bulking.
-    - LOW: conservative lower bound — how low could this realistically be?
-    - HIGH: conservative upper bound — how high could this realistically be?
-    Express genuine uncertainty: widen bounds for uncertain ingredients (unknown oil quantity,
-    variable sugar, unmatched ingredients) and keep them tighter for well-known, DB-matched ones.
+    Each macro is a triple LOW/MID/HIGH expressing genuine uncertainty about
+    the user's actual portion and cooking behavior — not a preference signal.
+    - MID: your best point estimate after cooking adjustment.
+    - LOW:  conservative lower bound. Tighten when the ingredient is well-known
+            and DB-matched. Widen when you are guessing (unknown oil quantity,
+            ambiguous portion size, unmatched ingredient).
+    - HIGH: conservative upper bound. Same widening rules.
+    These bounds are physical-world uncertainty bounds. Downstream
+    deterministic code applies any preference-shaped adjustment.
   </why_three_values>
 
   <unmatched_rule>
-    For ingredients in <unmatched_ingredients>: use your Vietnamese food knowledge to estimate.
+    For ingredients in <unmatched_ingredients>: use your culinary knowledge of the user's cuisine and region
+    (informed by the user's origin and residence context in <user_context>, plus FAO/USDA food composition data) to estimate.
     Use wider bounds since we have no DB reference.
 
     IMPORTANT: Each unmatched ingredient is nested under its parent <meal_item>.

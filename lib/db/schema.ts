@@ -460,6 +460,167 @@ export const pipelineRequests = pgTable(
   ]
 );
 
+export const pipelineRequestReplayAuditLogs = pgTable(
+  'pipeline_request_replay_audit_logs',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    adminUserIdHash: text('admin_user_id_hash').notNull(),
+    originalRequestId: uuid('original_request_id').notNull(),
+    replayRequestId: uuid('replay_request_id').notNull(),
+    dryRun: boolean('dry_run').notNull().default(false),
+  },
+  (table) => [
+    index('pipeline_replay_audit_original_idx').on(table.originalRequestId),
+    index('pipeline_replay_audit_replay_idx').on(table.replayRequestId),
+    index('pipeline_replay_audit_admin_created_idx').on(
+      table.adminUserIdHash,
+      table.createdAt
+    ),
+  ]
+);
+
+export const analysisGuardEvents = pgTable(
+  'analysis_guard_events',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    userIdHash: text('user_id_hash'),
+    ipHash: text('ip_hash'),
+    route: text('route').notNull(),
+    reason: text('reason').notNull(),
+    retryAfterSeconds: integer('retry_after_seconds'),
+  },
+  (table) => [
+    index('analysis_guard_events_reason_created_idx').on(
+      table.reason,
+      table.createdAt
+    ),
+    index('analysis_guard_events_user_created_idx').on(
+      table.userIdHash,
+      table.createdAt
+    ),
+  ]
+);
+
+export const analysisRateLimitWindows = pgTable(
+  'analysis_rate_limit_windows',
+  {
+    keyKind: text('key_kind').notNull(),
+    keyHash: text('key_hash').notNull(),
+    route: text('route').notNull(),
+    windowKind: text('window_kind').notNull(),
+    windowStart: timestamp('window_start', { withTimezone: true }).notNull(),
+    count: integer('count').notNull().default(0),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    unique('analysis_rate_limit_windows_key_uniq').on(
+      table.keyKind,
+      table.keyHash,
+      table.route,
+      table.windowKind,
+      table.windowStart
+    ),
+    index('analysis_rate_limit_windows_updated_idx').on(table.updatedAt),
+    check(
+      'analysis_rate_limit_windows_key_kind_check',
+      sql`${table.keyKind} IN ('user', 'ip')`
+    ),
+    check(
+      'analysis_rate_limit_windows_window_kind_check',
+      sql`${table.windowKind} IN ('minute', 'hour', 'day')`
+    ),
+    check('analysis_rate_limit_windows_count_check', sql`${table.count} >= 0`),
+  ]
+);
+
+export const analysisInFlightLimits = pgTable(
+  'analysis_in_flight_limits',
+  {
+    keyKind: text('key_kind').notNull(),
+    keyHash: text('key_hash').notNull(),
+    route: text('route').notNull(),
+    count: integer('count').notNull().default(0),
+    updatedAt: timestamp('updated_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    unique('analysis_in_flight_limits_key_uniq').on(
+      table.keyKind,
+      table.keyHash,
+      table.route
+    ),
+    index('analysis_in_flight_limits_updated_idx').on(table.updatedAt),
+    check(
+      'analysis_in_flight_limits_key_kind_check',
+      sql`${table.keyKind} IN ('user')`
+    ),
+    check('analysis_in_flight_limits_count_check', sql`${table.count} >= 0`),
+  ]
+);
+
+export const analysisModelBudgetEvents = pgTable(
+  'analysis_model_budget_events',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    requestId: text('request_id'),
+    route: text('route').notNull(),
+    workKind: text('work_kind').notNull(),
+    provider: text('provider').notNull(),
+    model: text('model'),
+    requestCount: integer('request_count').notNull().default(1),
+    inputTokens: integer('input_tokens').notNull().default(0),
+    outputTokens: integer('output_tokens').notNull().default(0),
+    errorCategory: text('error_category'),
+  },
+  (table) => [
+    index('analysis_model_budget_events_created_idx').on(table.createdAt),
+    index('analysis_model_budget_events_work_created_idx').on(
+      table.workKind,
+      table.createdAt
+    ),
+    index('analysis_model_budget_events_provider_error_idx').on(
+      table.provider,
+      table.errorCategory,
+      table.createdAt
+    ),
+    check(
+      'analysis_model_budget_events_work_kind_check',
+      sql`${table.workKind} IN ('primary', 'shadow', 'nonessential')`
+    ),
+    check(
+      'analysis_model_budget_events_request_count_check',
+      sql`${table.requestCount} >= 0`
+    ),
+    check(
+      'analysis_model_budget_events_input_tokens_check',
+      sql`${table.inputTokens} >= 0`
+    ),
+    check(
+      'analysis_model_budget_events_output_tokens_check',
+      sql`${table.outputTokens} >= 0`
+    ),
+    check(
+      'analysis_model_budget_events_error_category_check',
+      sql`${table.errorCategory} IS NULL OR ${table.errorCategory} IN ('rate_limit', 'quota', 'server_error', 'timeout', 'network', 'unknown')`
+    ),
+  ]
+);
+
 export const pendingAnalyses = pgTable(
   'pending_analyses',
   {
@@ -572,5 +733,121 @@ export const pipelineLlmCalls = pgTable(
     index('pipeline_llm_calls_req_idx').on(t.requestId),
     index('pipeline_llm_calls_pv_idx').on(t.promptVersionId),
     index('pipeline_llm_calls_stage_log_idx').on(t.stageLogId),
+  ]
+);
+
+export const pipelineLlmCallMetadata = pgTable('pipeline_llm_call_metadata', {
+  llmCallId: uuid('llm_call_id')
+    .primaryKey()
+    .references(() => pipelineLlmCalls.id, { onDelete: 'cascade' }),
+  provider: text('provider'),
+  region: text('region'),
+  cacheStatus: text('cache_status'),
+  inputTokens: integer('input_tokens'),
+  outputTokens: integer('output_tokens'),
+  cachedTokens: integer('cached_tokens'),
+  thoughtTokens: integer('thought_tokens'),
+  promptChars: integer('prompt_chars'),
+  schemaChars: integer('schema_chars'),
+  createdAt: timestamp('created_at', { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+
+// pipeline_runs — durable structured telemetry for KPI rollups (§5.1) and
+// shadow A/B comparison (§5.2). user_id_hash only, never raw user id.
+// Prompt/schema versions are NOT stored here — they live in
+// pipeline_requests.prompt_versions_used (jsonb), owned by the admin worktree.
+// Per-stage timing is in pipeline_stage_logs.duration_ms (admin worktree);
+// only the end-to-end total is mirrored here for fast percentile rollups.
+export const pipelineRuns = pgTable(
+  'pipeline_runs',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    userIdHash: text('user_id_hash').notNull(),
+    requestId: text('request_id'),
+    modelCall1: text('model_call1').notNull(),
+    modelCall2: text('model_call2').notNull(),
+    escalated: boolean('escalated').notNull().default(false),
+    cacheHitL4: boolean('cache_hit_l4').notNull().default(false),
+    retryCount: smallint('retry_count').notNull().default(0),
+    totalMs: integer('total_ms').notNull().default(0),
+    ingredientCount: smallint('ingredient_count').notNull().default(0),
+    matchedCount: smallint('matched_count').notNull().default(0),
+    unmatchedCount: smallint('unmatched_count').notNull().default(0),
+    anomalyTypes: text('anomaly_types')
+      .array()
+      .notNull()
+      .default(sql`'{}'::text[]`),
+    ambiguityFlagCounts: jsonb('ambiguity_flag_counts')
+      .$type<Record<string, number>>()
+      .notNull()
+      .default(sql`'{}'::jsonb`),
+    rrfSampled: boolean('rrf_sampled').notNull().default(false),
+    rrfDisagreementCount: smallint('rrf_disagreement_count'),
+    rrfIngredientsObserved: smallint('rrf_ingredients_observed'),
+    rrfMeasurementLatencyMs: integer('rrf_measurement_latency_ms'),
+    preMatchAliasHits: smallint('pre_match_alias_hits').notNull().default(0),
+    cookedToRawFactorFires: smallint('cooked_to_raw_factor_fires')
+      .notNull()
+      .default(0),
+    densityEnvelopeFires: smallint('density_envelope_fires')
+      .notNull()
+      .default(0),
+    macroInconsistentFires: smallint('macro_inconsistent_fires')
+      .notNull()
+      .default(0),
+    dbStateUnknownFires: smallint('db_state_unknown_fires')
+      .notNull()
+      .default(0),
+    retryStep2Count: smallint('retry_step2_count').notNull().default(0),
+    languageGuardMisfire: boolean('language_guard_misfire')
+      .notNull()
+      .default(false),
+    languageRetryCount: smallint('language_retry_count').notNull().default(0),
+    aliasFallbackFired: boolean('alias_fallback_fired')
+      .notNull()
+      .default(false),
+    promptPersonalizationFields: text('prompt_personalization_fields')
+      .array()
+      .notNull()
+      .default(sql`'{}'::text[]`),
+  },
+  (table) => [
+    index('pipeline_runs_language_guard_misfire_idx')
+      .on(table.languageGuardMisfire)
+      .where(sql`language_guard_misfire = true`),
+    index('pipeline_runs_alias_fallback_fired_idx')
+      .on(table.aliasFallbackFired)
+      .where(sql`alias_fallback_fired = true`),
+  ]
+);
+
+export const pipelineShadowRuns = pgTable(
+  'pipeline_shadow_runs',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    // Joins back to pipeline_runs.request_id to recover input context.
+    requestId: text('request_id').notNull(),
+    // The primary run that this shadow was paired against.
+    primaryRunId: uuid('primary_run_id').references(() => pipelineRuns.id, {
+      onDelete: 'set null',
+    }),
+    candidatePromptLabel: text('candidate_prompt_label').notNull(),
+    candidateModel: text('candidate_model').notNull(),
+    primaryOutput: jsonb('primary_output').notNull(),
+    candidateOutput: jsonb('candidate_output'),
+    divergence: jsonb('divergence').notNull(),
+    outcome: text('outcome').notNull(),
+    candidateMs: integer('candidate_ms').notNull().default(0),
+  },
+  (table) => [
+    index('pipeline_shadow_runs_primary_run_idx').on(table.primaryRunId),
   ]
 );

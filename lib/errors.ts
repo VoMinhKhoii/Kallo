@@ -50,51 +50,65 @@ export function serializeError(e: unknown): NextResponse {
 }
 
 // ---------------------------------------------------------------------------
-// Error factories — Vietnamese user-facing messages
+// Error factories
+//
+// Defaults are English. Call sites that have access to the user's locale
+// (the analyze-meal route, [locale] server actions) should resolve the
+// translation via next-intl `getTranslations('errors')` and pass it in via
+// the optional `message` argument. Call sites without a locale context fall
+// back to the English default — which matches `defaultLocale: 'en'`.
 // ---------------------------------------------------------------------------
 
+const DEFAULT_MESSAGES = {
+  notAuthenticated: 'You need to sign in to use this feature.',
+  profileNotFound: 'Profile not found. Please sign in again.',
+  pipelineTimeout: 'Analysis took too long. Please try again.',
+  rateLimited: 'The service is busy. Please wait a moment and try again.',
+  internal: 'Something went wrong. Please try again.',
+} as const;
+
 export const Errors = {
-  notAuthenticated: () =>
+  notAuthenticated: (message?: string) =>
     new AppError(
       'NOT_AUTHENTICATED',
       401,
       false,
-      'Bạn cần đăng nhập để sử dụng tính năng này.'
+      message ?? DEFAULT_MESSAGES.notAuthenticated
     ),
 
-  profileNotFound: () =>
+  profileNotFound: (message?: string) =>
     new AppError(
       'PROFILE_NOT_FOUND',
       404,
       false,
-      'Không tìm thấy hồ sơ. Vui lòng đăng nhập lại.'
+      message ?? DEFAULT_MESSAGES.profileNotFound
     ),
 
-  pipelineTimeout: () =>
+  pipelineTimeout: (message?: string) =>
     new AppError(
       'PIPELINE_TIMEOUT',
       504,
       true,
-      'Phân tích mất quá lâu. Vui lòng thử lại.'
+      message ?? DEFAULT_MESSAGES.pipelineTimeout
     ),
 
   validationFailed: (detail: string) =>
     new AppError('VALIDATION_FAILED', 400, false, detail),
 
-  rateLimited: () =>
+  rateLimited: (message?: string) =>
     new AppError(
       'RATE_LIMITED',
       429,
       true,
-      'Hệ thống đang bận. Vui lòng đợi một chút rồi thử lại.'
+      message ?? DEFAULT_MESSAGES.rateLimited
     ),
 
-  internal: (cause?: unknown) =>
+  internal: (cause?: unknown, message?: string) =>
     new AppError(
       'INTERNAL',
       500,
       true,
-      'Đã xảy ra lỗi. Vui lòng thử lại.',
+      message ?? DEFAULT_MESSAGES.internal,
       cause
     ),
 };
