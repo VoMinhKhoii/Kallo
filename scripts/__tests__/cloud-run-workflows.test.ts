@@ -7,11 +7,13 @@ function readWorkflow(name: string): string {
 }
 
 describe('Cloud Run staging workflow', () => {
-  it('accepts workflow-dispatch input and resolves it before deploy checkout', () => {
+  it('accepts workflow-dispatch input or staging branch push and resolves it before deploy checkout', () => {
     const workflow = readWorkflow('cloud-run-staging.yml');
 
     expect(workflow).toContain('id: resolve_target');
-    expect(workflow).toContain(`INPUT_REF: \${{ github.event.inputs.ref }}`);
+    expect(workflow).toContain(
+      `INPUT_REF: \${{ github.event.inputs.ref || github.ref_name }}`
+    );
     expect(workflow).toContain(
       `const isPullRequestNumber = /^\\d+$/.test(rawInput);`
     );
@@ -19,6 +21,28 @@ describe('Cloud Run staging workflow', () => {
     expect(workflow).toContain(`core.setOutput('pr_number', prNumber);`);
     expect(workflow).toContain(
       `ref: \${{ steps.resolve_target.outputs.resolved_ref }}`
+    );
+  });
+
+  it('auto-triggers on push to the staging branch', () => {
+    const workflow = readWorkflow('cloud-run-staging.yml');
+
+    expect(workflow).toContain('push:');
+    expect(workflow).toContain('branches: [staging]');
+    expect(workflow).toContain('workflow_dispatch:');
+  });
+
+  it('falls back to a generated reason and force_takeover=false when no dispatch inputs are provided', () => {
+    const workflow = readWorkflow('cloud-run-staging.yml');
+
+    // The reason fallback is defined once at the job level as DEPLOY_REASON
+    // and reused across the lease, metadata, and summary steps.
+    expect(workflow).toContain(
+      `DEPLOY_REASON: \${{ github.event.inputs.reason || format('Auto-deploy from staging branch (commit {0})', github.sha) }}`
+    );
+    expect(workflow).toContain(`STAGING_REASON: \${{ env.DEPLOY_REASON }}`);
+    expect(workflow).toContain(
+      `STAGING_FORCE_TAKEOVER: \${{ github.event.inputs.force_takeover || 'false' }}`
     );
   });
 
@@ -63,5 +87,15 @@ describe('Cloud Run staging workflow', () => {
     expect(workflow).toContain('- name: Write staging summary');
     expect(workflow).toContain("echo '## Shared staging deployment'");
     expect(workflow).toContain('echo "- PR: #$RESOLVED_PR_NUMBER"');
+  });
+});
+
+describe('Cloud Run internal workflow', () => {
+  it('asserts that all local migrations are applied before deploying', () => {
+    const workflow = readWorkflow('cloud-run-internal.yml');
+
+    expect(workflow).toContain(
+      'node ./scripts/cloud-run/shared-db.mjs assert-migrations-applied --db-url "$db_url" --migrations-dir ./supabase/migrations'
+    );
   });
 });
