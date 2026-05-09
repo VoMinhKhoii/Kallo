@@ -197,15 +197,12 @@ export async function replayRequest(
   const replayId = crypto.randomUUID();
   const t0 = Date.now();
 
-  await db.insert(pipelineRequestReplayAuditLogs).values({
-    adminUserIdHash: hashUserId(admin.id),
-    originalRequestId: originalId,
-    replayRequestId: replayId,
-    dryRun,
-  });
-
   // Reuse original userId — FK to auth.users + correct attribution.
   // Awaited so child trace inserts have a parent row to FK against.
+  // The audit-log insert below references replayId via FK, so we have to
+  // create the pipeline_requests row FIRST: writing the audit row before
+  // logPipelineStart leaves an orphaned audit entry whenever pipeline-start
+  // throws (no FK target).
   const startResult = await logPipelineStart({
     userId: orig.userId,
     rawInput: orig.rawInput,
@@ -218,6 +215,13 @@ export async function replayRequest(
   if (startResult === null) {
     throw new Error('[admin] Failed to create pipeline request log for replay');
   }
+
+  await db.insert(pipelineRequestReplayAuditLogs).values({
+    adminUserIdHash: hashUserId(admin.id),
+    originalRequestId: originalId,
+    replayRequestId: replayId,
+    dryRun,
+  });
   console.info(
     `[admin] ${dryRun ? 'dry-run-replayed' : 'replayed'} ${originalId} as ${replayId}`
   );

@@ -2,12 +2,19 @@ import { describe, expect, it } from 'vitest';
 import { buildPipelineRunRow, hashUserId } from '../run-telemetry';
 
 describe('hashUserId', () => {
-  it('returns SHA-256 hex of user id', () => {
+  it('returns HMAC-SHA256 hex of user id', () => {
     const h = hashUserId('user-123');
     expect(h).toMatch(/^[0-9a-f]{64}$/);
   });
-  it('is deterministic', () => {
+  it('is deterministic for the same pepper', () => {
     expect(hashUserId('u')).toBe(hashUserId('u'));
+  });
+  it('differs from raw SHA-256 (proves pepper is applied)', () => {
+    // If hashUserId regressed to plain SHA-256, this would fail because the
+    // unkeyed digest of 'user-123' is well-known.
+    const sha256OfUser123 =
+      '36b362ad259b88beb14e0e94f4f0fbb4d04eebe8e6cdce6df17e53cb7c2adf2c';
+    expect(hashUserId('user-123')).not.toBe(sha256OfUser123);
   });
 });
 

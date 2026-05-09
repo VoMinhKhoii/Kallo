@@ -33,8 +33,11 @@ export const decomposedIngredientSchema = z
         'Disambiguated food-composition vocabulary name used for DB matching.'
       ),
     grams: z
+      // Zod v4 z.number() already rejects Infinity by default — .finite() is
+      // a no-op there. We deliberately allow zero/negative grams through
+      // parse so Step 4 anomaly detection (validation.ts) can attribute
+      // them as `implausible_grams` instead of a generic parse_error.
       .number()
-      .finite()
       .describe(
         'As-eaten mass in grams. The model converts colloquial portions to grams; runtime has no unit field.'
       ),

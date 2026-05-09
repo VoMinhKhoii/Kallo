@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { resolveAlias } from '../aliases';
+import { resolveAlias } from '@/lib/ai/matching/aliases';
 
 describe('resolveAlias', () => {
   it.each([

@@ -1,10 +1,26 @@
-import { createHash, randomUUID } from 'node:crypto';
+import { createHmac, randomUUID } from 'node:crypto';
 import type { AmbiguityFlag } from '@/lib/ai/types';
 import type { AppDb } from '@/lib/db';
 import type { RrfAggregate } from './rrf-aggregation';
 
+// In-test default pepper so unit tests can run without mutating process.env.
+// Production / preview / staging supply ANALYSIS_GUARD_HASH_SECRET via the
+// Cloud Run --set-secrets bindings, same pepper the rate-limit guard uses.
+const TEST_HASH_SECRET = 'pipeline-telemetry-test-secret';
+
+function getTelemetryPepper(): string {
+  const secret = process.env.ANALYSIS_GUARD_HASH_SECRET;
+  if (secret) return secret;
+  if (process.env.NODE_ENV === 'test') return TEST_HASH_SECRET;
+  // Production must supply a pepper. Plain SHA-256 leaves user_id_hash
+  // re-identifiable from the raw UUID anywhere in the stack — fail closed.
+  throw new Error(
+    'ANALYSIS_GUARD_HASH_SECRET is required for pipeline telemetry hashing'
+  );
+}
+
 export const hashUserId = (id: string): string =>
-  createHash('sha256').update(id).digest('hex');
+  createHmac('sha256', getTelemetryPepper()).update(`user:${id}`).digest('hex');
 
 const FORBIDDEN_PERSONALIZATION_FIELDS = new Set([
   'goal',

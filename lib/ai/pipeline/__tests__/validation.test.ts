@@ -332,7 +332,12 @@ describe('validateNutritionOutput', () => {
   });
 
   describe('density envelope (§1.4)', () => {
-    it('flags caloriesKcal density above 900 kcal/100g', () => {
+    // density_envelope is triggered by per-100g protein/carb/fat density,
+    // not by caloriesKcal. With highKcal=1100 and grams=100, makeNutrition
+    // defaults carbohydrateG.high = 1100/4 = 275 → 275 g/100g, which
+    // exceeds DENSITY_CARB_PER_100G_MAX (100). Naming the test after the
+    // input we set (kcal) hid which guard was actually firing.
+    it('fires when default-derived carbohydrateG density exceeds 100g/100g', () => {
       const anomalies = validateNutritionOutput(
         makeNutrition([
           {
@@ -383,7 +388,7 @@ describe('validateNutritionOutput', () => {
       ).toBeDefined();
     });
 
-    it('fires for unmatched ingredients too', () => {
+    it('fires for unmatched ingredients too via default-derived carb density', () => {
       const anomalies = validateNutritionOutput(
         makeNutrition([
           {
