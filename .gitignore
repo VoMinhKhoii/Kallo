@@ -48,6 +48,12 @@ next-env.d.ts
 supabase/.temp/
 __pycache__/
 
+# Claude Code: share team-wide config (.claude/agents, .claude/commands)
+# but not per-session runtime state.
+.claude/scheduled_tasks.lock
+.claude/scheduled_tasks/
+.claude/_runtime/
+
 # USDA download output (large CSV, regenerate with scripts/usda/)
 data/usda_sr/
 
