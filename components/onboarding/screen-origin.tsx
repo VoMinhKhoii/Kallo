@@ -132,14 +132,6 @@ function CountryPicker({
     };
   }, [isOpen, updateMenuPosition]);
 
-  // Reflow the menu when the filter shrinks/grows the list — keeps placement
-  // glued to the trigger as the menu's intrinsic height changes while typing.
-  useEffect(() => {
-    if (isOpen) {
-      updateMenuPosition();
-    }
-  }, [search, isOpen, updateMenuPosition]);
-
   return (
     <div ref={containerRef} className="relative min-w-0">
       <label className="mb-2 flex items-center gap-2 font-bold text-[#2C2416] text-[13px]">
