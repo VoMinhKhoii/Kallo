@@ -34,7 +34,7 @@ jobs:
       GCS_SEED_OBJECT: ${{ vars.GCS_SEED_OBJECT }}
     steps:
       - id: pr_state
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         with:
           script: |
             const pullNumber = Number(process.env.PR_NUMBER);
@@ -261,7 +261,7 @@ jobs:
         with:
           name: preview-deployment-record-${{ env.PR_NUMBER }}
           path: deployment-record.json
-      - uses: actions/github-script@v7
+      - uses: actions/github-script@v9
         if: always() && steps.pr_state.outputs.should_deploy == 'true' && steps.pr_state_recheck.outputs.should_continue_deploy == 'true'
         env:
           DEPLOY_URL: ${{ env.DEPLOY_URL }}
