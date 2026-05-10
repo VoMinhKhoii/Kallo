@@ -83,7 +83,7 @@ jobs:
         run: node scripts/check-append-only-migrations.mjs
       - name: Validate migration timestamps
         run: node scripts/check-migration-timestamps.js
-      - uses: supabase/setup-cli@v1
+      - uses: supabase/setup-cli@v2
         with:
           version: 2.90.0
       - name: Start local Supabase (Postgres only)
