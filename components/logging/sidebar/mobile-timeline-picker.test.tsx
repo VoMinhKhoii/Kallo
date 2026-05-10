@@ -79,12 +79,7 @@ describe('MobileTimelinePicker', () => {
 
   it('can keep generating older windows beyond the logged meal date range', async () => {
     const user = userEvent.setup();
-    render(
-      <MobileTimelinePicker
-        {...defaultProps}
-        dates={['2026-05-06']}
-      />
-    );
+    render(<MobileTimelinePicker {...defaultProps} dates={['2026-05-06']} />);
 
     await user.click(screen.getByLabelText('selectDate'));
     await user.click(screen.getByLabelText('previousWeek'));
@@ -140,9 +135,7 @@ describe('MobileTimelinePicker', () => {
 
     expect(onSelectDate).toHaveBeenCalledWith('2026-05-09');
     await waitFor(() =>
-      expect(
-        screen.queryByTestId('mobile-week-slider')
-      ).not.toBeInTheDocument()
+      expect(screen.queryByTestId('mobile-week-slider')).not.toBeInTheDocument()
     );
     expect(screen.getByLabelText('selectDate')).toBeInTheDocument();
   });
@@ -159,9 +152,7 @@ describe('MobileTimelinePicker', () => {
 
     expect(onSelectDate).not.toHaveBeenCalled();
     await waitFor(() =>
-      expect(
-        screen.queryByTestId('mobile-week-slider')
-      ).not.toBeInTheDocument()
+      expect(screen.queryByTestId('mobile-week-slider')).not.toBeInTheDocument()
     );
   });
 
