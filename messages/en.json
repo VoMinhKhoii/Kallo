@@ -83,9 +83,6 @@
       "signOutError": "Could not sign out. Please try again.",
       "account": "Account",
       "expandOnHover": "Expand on hover"
-    },
-    "bottomTabs": {
-      "label": "Primary navigation"
     }
   },
   "nutrition": {

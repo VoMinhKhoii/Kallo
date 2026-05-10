@@ -1,18 +1,11 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { BottomTabBar } from './bottom-tab-bar';
+import { MobileNav } from './mobile-nav';
 
-const { createClientMock, scrollDirectionMock, toastErrorMock } = vi.hoisted(
-  () => ({
-    createClientMock: vi.fn(),
-    scrollDirectionMock: vi.fn(),
-    toastErrorMock: vi.fn(),
-  })
-);
-
-vi.mock('@/hooks/use-scroll-direction', () => ({
-  useScrollDirection: scrollDirectionMock,
+const { createClientMock, toastErrorMock } = vi.hoisted(() => ({
+  createClientMock: vi.fn(),
+  toastErrorMock: vi.fn(),
 }));
 
 vi.mock('@/lib/supabase/client', () => ({
@@ -25,6 +18,8 @@ vi.mock('sonner', () => ({
   },
 }));
 
+// Render Sheet primitives inline so the drawer content is queryable without
+// having to drive the trigger through Radix's portal-based open animation.
 vi.mock('@/components/ui/sheet', () => ({
   Sheet: ({ children }: { children: React.ReactNode }) => <>{children}</>,
   SheetContent: ({ children }: { children: React.ReactNode }) => (
@@ -44,39 +39,54 @@ vi.mock('@/components/ui/sheet', () => ({
   ),
 }));
 
-describe('BottomTabBar', () => {
+const baseUser = { email: 'minh@example.com', displayName: 'Minh' };
+
+describe('MobileNav', () => {
   beforeEach(() => {
     createClientMock.mockReset();
-    scrollDirectionMock.mockReset();
-    scrollDirectionMock.mockReturnValue('up');
     toastErrorMock.mockReset();
   });
 
-  it('keeps the bottom navigation visible while keyboard focus is inside', () => {
-    scrollDirectionMock.mockReturnValue('down');
+  it('renders the hamburger button and the standard nav destinations', () => {
+    render(<MobileNav user={baseUser} />);
 
-    render(
-      <BottomTabBar user={{ email: 'minh@example.com', displayName: 'Minh' }} />
+    expect(
+      screen.getByRole('button', { name: 'openMenu' })
+    ).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'dashboard' })).toHaveAttribute(
+      'href',
+      '/dashboard'
     );
-
-    const nav = screen.getByRole('navigation', { name: 'label' });
-    expect(nav).toHaveAttribute('data-hidden', 'true');
-
-    fireEvent.focus(screen.getByRole('link', { name: 'dashboard' }));
-
-    expect(nav).toHaveAttribute('data-hidden', 'false');
+    expect(screen.getByRole('link', { name: 'nutrition' })).toHaveAttribute(
+      'href',
+      '/nutrition'
+    );
+    expect(screen.getByRole('link', { name: 'logging' })).toHaveAttribute(
+      'href',
+      '/logging'
+    );
+    expect(
+      screen.queryByRole('link', { name: 'admin' })
+    ).not.toBeInTheDocument();
   });
 
-  it('shows an error and re-enables sign-out when Supabase sign-out fails', async () => {
+  it('shows the admin destination only when isAdmin is true', () => {
+    render(<MobileNav user={baseUser} isAdmin />);
+
+    expect(screen.getByRole('link', { name: 'admin' })).toHaveAttribute(
+      'href',
+      '/admin'
+    );
+  });
+
+  it('reports a sign-out failure via toast and re-enables the button', async () => {
     const user = userEvent.setup();
     const signOutMock = vi
       .fn()
       .mockResolvedValue({ error: new Error('sign-out failed') });
     createClientMock.mockReturnValue({ auth: { signOut: signOutMock } });
 
-    render(
-      <BottomTabBar user={{ email: 'minh@example.com', displayName: 'Minh' }} />
-    );
+    render(<MobileNav user={baseUser} />);
 
     const signOutButton = screen.getByRole('button', { name: 'signOut' });
     await user.click(signOutButton);
