@@ -129,7 +129,7 @@ export default async function RequestDetailPage({
   const { request } = detail;
 
   return (
-    <div className="mx-auto max-w-6xl space-y-6 p-6">
+    <div className="mx-auto max-w-6xl space-y-6">
       {/* Back link */}
       <div>
         <Link

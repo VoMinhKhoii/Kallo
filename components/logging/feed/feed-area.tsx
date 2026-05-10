@@ -382,7 +382,7 @@ export function FeedArea({
   return (
     <main className="flex min-w-0 flex-1 flex-col self-stretch overflow-hidden">
       <div
-        className="shrink-0 bg-nham-surface px-4 pt-4 pb-3 sm:px-6"
+        className="shrink-0 bg-nham-surface px-3 pt-3 pb-2 sm:px-6 sm:pt-4 sm:pb-3"
         data-testid="macro-summary-region"
       >
         <div className="mx-auto max-w-4xl">
@@ -404,7 +404,7 @@ export function FeedArea({
       {/* Scrollable meal cards only */}
       <div
         ref={scrollRef}
-        className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain px-4 py-4 sm:px-6"
+        className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain px-3 py-3 sm:px-6 sm:py-4"
         data-testid="meal-card-scroll"
       >
         <AnimatePresence mode="wait">
@@ -436,7 +436,7 @@ export function FeedArea({
 
         {!isDayLoading && !isDayError && hasContent && (
           <div className="mx-auto w-full max-w-3xl pl-10 sm:pl-12">
-            <div className="flex flex-col gap-8">
+            <div className="flex flex-col gap-5 sm:gap-8">
               {/* Persisted meals from DB */}
               <AnimatePresence initial={false}>
                 {persistedMeals.map((meal) => (
@@ -503,7 +503,7 @@ export function FeedArea({
       </div>
 
       {/* Input area */}
-      <div className="shrink-0 px-4 pt-2 pb-4 sm:px-6">
+      <div className="shrink-0 px-3 pt-2 pb-3 sm:px-6 sm:pb-4">
         <div className="mx-auto max-w-3xl">
           <MealInput
             ref={inputRef}

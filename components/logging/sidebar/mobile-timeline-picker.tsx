@@ -6,10 +6,12 @@ import {
   ChevronLeft,
   ChevronRight,
 } from 'lucide-react';
+import { AnimatePresence, motion } from 'motion/react';
 import { useLocale, useTranslations } from 'next-intl';
 import {
   type PointerEvent,
   useCallback,
+  useEffect,
   useMemo,
   useRef,
   useState,
@@ -18,12 +20,10 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import {
-  addWeeks,
-  buildWeekStripFromStart,
-  clampWeekStartToCurrent,
+  addDays,
+  buildCenteredStripFromAnchor,
   dateStringToDate,
   formatTimelineDayLabel,
-  getWeekStart,
 } from './timeline-utils';
 
 const SWIPE_THRESHOLD_PX = 40;
@@ -32,7 +32,6 @@ const WEEK_SLIDER_ID = 'mobile-week-slider';
 
 export interface MobileTimelinePickerProps {
   dates: string[];
-  allDates: string[];
   today: string;
   selectedDate: string;
   isPending: boolean;
@@ -97,11 +96,11 @@ function DayCell({
       type="button"
       onClick={() => onSelect(date)}
       className={cn(
-        'flex min-h-12 min-w-0 flex-1 touch-manipulation flex-col items-center justify-center gap-0.5 overflow-hidden rounded-[0.9rem] px-0.5 py-1 transition-[background-color,color,box-shadow,transform] duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent focus-visible:ring-offset-1 active:scale-[0.97] motion-reduce:transition-none',
+        'flex min-h-12 min-w-0 flex-1 touch-manipulation flex-col items-center justify-center gap-0.5 overflow-hidden rounded-[0.9rem] px-0.5 py-1 transition-[background-color,color,transform] duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent focus-visible:ring-offset-1 active:scale-[0.97] motion-reduce:transition-none',
         isSelected
-          ? 'bg-nham-text text-nham-surface shadow-sm'
-          : 'text-nham-text-muted hover:bg-nham-hover/60',
-        isToday && !isSelected && 'bg-nham-accent/15 text-nham-text'
+          ? 'bg-nham-accent/20 text-nham-text'
+          : 'text-nham-text-muted hover:bg-nham-hover/40',
+        isToday && !isSelected && 'bg-nham-accent/10 text-nham-text'
       )}
       aria-label={accessibleDateLabel}
       aria-current={isSelected ? 'date' : undefined}
@@ -110,14 +109,7 @@ function DayCell({
       <span className="font-semibold text-[10px] uppercase leading-none tracking-tight">
         {dayName}
       </span>
-      <span
-        className={cn(
-          'font-semibold text-[13px] leading-none',
-          isToday && !isSelected && 'text-nham-accent'
-        )}
-      >
-        {dayNum}
-      </span>
+      <span className="font-semibold text-[13px] leading-none">{dayNum}</span>
       {isFuture ? (
         <span className="h-1.5 w-1.5" aria-hidden="true" />
       ) : hasMeal ? (
@@ -140,7 +132,6 @@ function DayCell({
 
 export function MobileTimelinePicker({
   dates,
-  allDates: _allDates,
   today,
   selectedDate,
   isPending,
@@ -152,9 +143,49 @@ export function MobileTimelinePicker({
   const t = useTranslations('logging.timelineSidebar');
   const locale = useLocale();
   const [mode, setMode] = useState<'chip' | 'strip'>('chip');
+  const wrapperRef = useRef<HTMLDivElement>(null);
   const pointerStartXRef = useRef<number | null>(null);
   const didSwipeRef = useRef(false);
   const lastSwipeAtRef = useRef(0);
+
+  // Click anywhere outside the picker, or press Escape, collapses back to the
+  // chip without forcing a date selection.
+  useEffect(() => {
+    if (mode !== 'strip') return;
+
+    const handlePointerDown = (event: globalThis.PointerEvent) => {
+      const wrapper = wrapperRef.current;
+      if (!wrapper) return;
+      if (!wrapper.contains(event.target as Node)) {
+        setMode('chip');
+      }
+    };
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setMode('chip');
+      }
+    };
+
+    document.addEventListener('pointerdown', handlePointerDown);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('pointerdown', handlePointerDown);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [mode]);
+
+  // When the strip mounts, move focus to the selected day cell so keyboard
+  // users can immediately arrow-tab through dates instead of starting at body.
+  useEffect(() => {
+    if (mode !== 'strip') return;
+    const wrapper = wrapperRef.current;
+    if (!wrapper) return;
+    const selectedCell = wrapper.querySelector<HTMLButtonElement>(
+      '[aria-current="date"]'
+    );
+    selectedCell?.focus({ preventScroll: true });
+  }, [mode]);
 
   const mealDates = useMemo(() => new Set(dates), [dates]);
   const hasMeal = mealDates.has(selectedDate);
@@ -168,29 +199,35 @@ export function MobileTimelinePicker({
     [t]
   );
 
-  const currentWeekStart = useMemo(() => getWeekStart(today), [today]);
-  const selectedWeekStart = useMemo(
-    () => clampWeekStartToCurrent(getWeekStart(selectedDate), currentWeekStart),
-    [currentWeekStart, selectedDate]
+  // Anchor = visual center of the 7-day strip. The most-recent allowed anchor
+  // is `today` so we never page into a window that's entirely in the future.
+  const currentAnchor = today;
+  const selectedAnchor = useMemo(
+    () => (selectedDate > currentAnchor ? currentAnchor : selectedDate),
+    [currentAnchor, selectedDate]
   );
-  const [visibleWeekStart, setVisibleWeekStart] = useState(selectedWeekStart);
+  const [visibleAnchor, setVisibleAnchor] = useState(selectedAnchor);
 
   const weekStrips = useMemo(
     () =>
       [
-        addWeeks(visibleWeekStart, -1),
-        visibleWeekStart,
-        addWeeks(visibleWeekStart, 1),
-      ].map((weekStart) => buildWeekStripFromStart(weekStart)),
-    [visibleWeekStart]
+        addDays(visibleAnchor, -7),
+        visibleAnchor,
+        addDays(visibleAnchor, 7),
+      ].map((anchor) => buildCenteredStripFromAnchor(anchor)),
+    [visibleAnchor]
   );
 
-  const canNavigateNext = visibleWeekStart < currentWeekStart;
+  const canNavigateNext = visibleAnchor < currentAnchor;
+  const visibleStripStart = useMemo(
+    () => addDays(visibleAnchor, -3),
+    [visibleAnchor]
+  );
 
   const handleOpenStrip = useCallback(() => {
-    setVisibleWeekStart(selectedWeekStart);
+    setVisibleAnchor(selectedAnchor);
     setMode('strip');
-  }, [selectedWeekStart]);
+  }, [selectedAnchor]);
 
   const handleSelectDay = useCallback(
     (date: string) => {
@@ -207,27 +244,24 @@ export function MobileTimelinePicker({
     [onSelectDate, selectedDate]
   );
 
-  const navigateToWeek = useCallback(
-    (weekStart: string) => {
-      const nextWeekStart = clampWeekStartToCurrent(
-        weekStart,
-        currentWeekStart
-      );
-      setVisibleWeekStart((currentWeek) =>
-        nextWeekStart === currentWeek ? currentWeek : nextWeekStart
+  const navigateToAnchor = useCallback(
+    (anchor: string) => {
+      const nextAnchor = anchor > currentAnchor ? currentAnchor : anchor;
+      setVisibleAnchor((current) =>
+        nextAnchor === current ? current : nextAnchor
       );
     },
-    [currentWeekStart]
+    [currentAnchor]
   );
 
   const scrollPrev = useCallback(() => {
-    navigateToWeek(addWeeks(visibleWeekStart, -1));
-  }, [navigateToWeek, visibleWeekStart]);
+    navigateToAnchor(addDays(visibleAnchor, -7));
+  }, [navigateToAnchor, visibleAnchor]);
 
   const scrollNext = useCallback(() => {
     if (!canNavigateNext) return;
-    navigateToWeek(addWeeks(visibleWeekStart, 1));
-  }, [canNavigateNext, navigateToWeek, visibleWeekStart]);
+    navigateToAnchor(addDays(visibleAnchor, 7));
+  }, [canNavigateNext, navigateToAnchor, visibleAnchor]);
 
   const handlePointerDown = useCallback(
     (event: PointerEvent<HTMLDivElement>) => {
@@ -273,104 +307,134 @@ export function MobileTimelinePicker({
   }
 
   return (
-    <div className="flex w-full min-w-0 max-w-full flex-col items-center gap-2 overflow-hidden md:hidden">
-      {mode === 'chip' ? (
-        <button
-          type="button"
-          onClick={handleOpenStrip}
-          className={cn(
-            'inline-flex h-11 max-w-[min(18rem,calc(100vw-2rem))] touch-manipulation items-center gap-2 rounded-full border border-nham-border/70 bg-nham-surface px-4 font-semibold text-[12px] text-nham-text shadow-sm outline-none transition-[background-color,border-color] hover:border-nham-accent/40 hover:bg-nham-hover/50 focus-visible:border-nham-accent focus-visible:ring-[3px] focus-visible:ring-nham-accent/20'
-          )}
-          aria-label={t('selectDate')}
-          aria-controls={WEEK_SLIDER_ID}
-          aria-expanded={false}
-        >
-          <CalendarIcon
-            className="size-3.5 shrink-0 text-nham-accent"
-            aria-hidden="true"
-          />
-          <span className="min-w-0 truncate">{formattedDate}</span>
-          {hasMeal && (
-            <span
-              className="inline-block size-1.5 shrink-0 rounded-full bg-nham-accent"
-              role="status"
-              aria-label={t('hasMealIndicator')}
-            />
-          )}
-        </button>
-      ) : (
-        <div className="flex w-full min-w-0 max-w-full items-center gap-1 overflow-hidden rounded-[1.15rem] border border-nham-border/70 bg-nham-surface/95 p-1 shadow-[0_10px_28px_-22px_rgba(44,36,22,0.55)]">
-          <button
-            type="button"
-            onClick={scrollPrev}
-            className={cn(
-              'flex h-12 w-11 shrink-0 touch-manipulation items-center justify-center rounded-full transition-[background-color,color,transform] duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent focus-visible:ring-offset-1 active:scale-[0.96] motion-reduce:transition-none',
-              'text-nham-text hover:bg-nham-hover/50'
-            )}
-            aria-label={t('previousWeek')}
-          >
-            <ChevronLeft className="size-4" aria-hidden="true" />
-          </button>
-
-          <div
-            className="min-w-0 flex-1 touch-pan-y overflow-hidden"
-            id={WEEK_SLIDER_ID}
-            data-testid="mobile-week-slider"
-            role="group"
-            aria-label={t('selectDate')}
-            tabIndex={-1}
-            onPointerDown={handlePointerDown}
-            onPointerUp={handlePointerUp}
-          >
-            <div
-              className="flex touch-manipulation transition-transform duration-200 ease-out motion-reduce:transition-none"
-              style={{ transform: 'translateX(-100%)' }}
+    <div
+      ref={wrapperRef}
+      className="flex w-full min-w-0 max-w-full flex-col items-center gap-2 md:hidden"
+    >
+      <motion.div
+        layout
+        transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
+        className={cn(
+          'flex min-w-0 max-w-full items-center overflow-hidden',
+          mode === 'chip'
+            ? 'h-11 max-w-[min(18rem,calc(100vw-2rem))] gap-2 rounded-full border border-nham-border/50 bg-nham-surface px-4'
+            : 'h-12 w-full gap-1'
+        )}
+      >
+        <AnimatePresence mode="popLayout" initial={false}>
+          {mode === 'chip' ? (
+            <motion.button
+              key="chip-content"
+              type="button"
+              onClick={handleOpenStrip}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.15, ease: 'easeOut' }}
+              className="inline-flex h-full w-full touch-manipulation items-center gap-2 font-medium text-[12px] text-nham-text outline-none focus-visible:rounded-full focus-visible:ring-[3px] focus-visible:ring-nham-accent/30"
+              aria-label={t('selectDate')}
+              aria-controls={WEEK_SLIDER_ID}
+              aria-expanded={false}
             >
-              {weekStrips.map((week) => {
-                const isVisibleWeek = week.days[0] === visibleWeekStart;
+              <CalendarIcon
+                className="size-3.5 shrink-0 text-nham-accent"
+                aria-hidden="true"
+              />
+              <span className="min-w-0 truncate">{formattedDate}</span>
+              {hasMeal && (
+                <span
+                  className="inline-block size-1.5 shrink-0 rounded-full bg-nham-accent"
+                  role="status"
+                  aria-label={t('hasMealIndicator')}
+                />
+              )}
+            </motion.button>
+          ) : (
+            <motion.div
+              key="strip-content"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{
+                duration: 0.18,
+                delay: 0.05,
+                ease: 'easeOut',
+              }}
+              className="flex h-full w-full min-w-0 items-center gap-1"
+            >
+              <button
+                type="button"
+                onClick={scrollPrev}
+                className={cn(
+                  'flex h-10 w-9 shrink-0 touch-manipulation items-center justify-center rounded-full transition-[background-color,color,transform] duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent focus-visible:ring-offset-1 active:scale-[0.96] motion-reduce:transition-none',
+                  'text-nham-text-muted hover:bg-nham-hover/40 hover:text-nham-text'
+                )}
+                aria-label={t('previousWeek')}
+              >
+                <ChevronLeft className="size-4" aria-hidden="true" />
+              </button>
 
-                return (
-                  <div
-                    key={week.days[0]}
-                    className="flex min-w-0 flex-[0_0_100%] gap-1 px-0.5"
-                    data-week-start={week.days[0]}
-                    aria-hidden={!isVisibleWeek}
-                  >
-                    {week.days.map((date) => (
-                      <DayCell
-                        key={date}
-                        date={date}
-                        today={today}
-                        selectedDate={selectedDate}
-                        hasMeal={mealDates.has(date)}
-                        isVisible={isVisibleWeek}
-                        locale={locale}
-                        labels={dayCellLabels}
-                        onSelect={handleSelectDay}
-                      />
-                    ))}
-                  </div>
-                );
-              })}
-            </div>
-          </div>
+              <div
+                className="min-w-0 flex-1 touch-pan-y overflow-hidden"
+                id={WEEK_SLIDER_ID}
+                data-testid="mobile-week-slider"
+                role="group"
+                aria-label={t('selectDate')}
+                tabIndex={-1}
+                onPointerDown={handlePointerDown}
+                onPointerUp={handlePointerUp}
+              >
+                <div
+                  className="flex touch-manipulation transition-transform duration-200 ease-out motion-reduce:transition-none"
+                  style={{ transform: 'translateX(-100%)' }}
+                >
+                  {weekStrips.map((week) => {
+                    const isVisibleWeek = week.days[0] === visibleStripStart;
 
-          <button
-            type="button"
-            onClick={scrollNext}
-            disabled={!canNavigateNext}
-            className={cn(
-              'flex h-12 w-11 shrink-0 touch-manipulation items-center justify-center rounded-full transition-[background-color,color,transform] duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent focus-visible:ring-offset-1 active:scale-[0.96] disabled:active:scale-100 motion-reduce:transition-none',
-              canNavigateNext
-                ? 'text-nham-text hover:bg-nham-hover/50'
-                : 'text-nham-text-muted/30'
-            )}
-            aria-label={t('nextWeek')}
-          >
-            <ChevronRight className="size-4" aria-hidden="true" />
-          </button>
-        </div>
-      )}
+                    return (
+                      <div
+                        key={week.days[0]}
+                        className="flex min-w-0 flex-[0_0_100%] gap-1"
+                        data-week-start={week.days[0]}
+                        aria-hidden={!isVisibleWeek}
+                      >
+                        {week.days.map((date) => (
+                          <DayCell
+                            key={date}
+                            date={date}
+                            today={today}
+                            selectedDate={selectedDate}
+                            hasMeal={mealDates.has(date)}
+                            isVisible={isVisibleWeek}
+                            locale={locale}
+                            labels={dayCellLabels}
+                            onSelect={handleSelectDay}
+                          />
+                        ))}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={scrollNext}
+                disabled={!canNavigateNext}
+                className={cn(
+                  'flex h-10 w-9 shrink-0 touch-manipulation items-center justify-center rounded-full transition-[background-color,color,transform] duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent focus-visible:ring-offset-1 active:scale-[0.96] disabled:active:scale-100 motion-reduce:transition-none',
+                  canNavigateNext
+                    ? 'text-nham-text-muted hover:bg-nham-hover/40 hover:text-nham-text'
+                    : 'text-nham-text-muted/30'
+                )}
+                aria-label={t('nextWeek')}
+              >
+                <ChevronRight className="size-4" aria-hidden="true" />
+              </button>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </motion.div>
 
       {isError && (
         <div

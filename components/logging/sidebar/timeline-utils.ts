@@ -52,7 +52,7 @@ function dateStringToUtcDayNumber(dateStr: string): number {
   return Date.UTC(year, month - 1, day) / (1000 * 60 * 60 * 24);
 }
 
-function addDays(dateStr: string, days: number): string {
+export function addDays(dateStr: string, days: number): string {
   const date = dateStringToDate(dateStr);
   date.setDate(date.getDate() + days);
   return dateToDateString(date);
@@ -228,6 +228,22 @@ export function clampWeekStartToCurrent(
 
 export function buildWeekStripFromStart(weekStart: string): WeekStrip {
   const start = getWeekStart(weekStart);
+  const days: string[] = [];
+
+  for (let i = 0; i < 7; i++) {
+    days.push(addDays(start, i));
+  }
+
+  return { days };
+}
+
+/**
+ * Builds a 7-day strip with `anchor` placed at index 3 (the visual center).
+ * Used by the mobile chip so a double-tap on the chip's old position lands on
+ * the currently selected date instead of an adjacent day.
+ */
+export function buildCenteredStripFromAnchor(anchor: string): WeekStrip {
+  const start = addDays(anchor, -3);
   const days: string[] = [];
 
   for (let i = 0; i < 7; i++) {
