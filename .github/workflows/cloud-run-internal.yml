@@ -42,6 +42,7 @@ jobs:
           gcloud iam service-accounts describe "${{ vars.GCP_RUNTIME_SERVICE_ACCOUNT }}"
           [[ "$SERVICE_NAME" = "nham-internal" ]]
           node ./scripts/cloud-run/shared-db.mjs assert-target --db-url "$db_url" --project-ref "$SUPABASE_PROJECT_ID"
+          node ./scripts/cloud-run/shared-db.mjs assert-migrations-applied --db-url "$db_url" --migrations-dir ./supabase/migrations
           node ./scripts/cloud-run/shared-db.mjs assert-state --db-url "$db_url"
       - name: Record previous revision
         run: |
