@@ -96,7 +96,7 @@ export function DashboardShell({ profile }: DashboardShellProps) {
 
   return (
     <main
-      className="relative min-h-[calc(100dvh-5.25rem)] overflow-x-hidden bg-nham-surface/30 xl:h-[calc(100dvh-1.5rem)] xl:min-h-0 xl:overflow-hidden"
+      className="relative flex min-h-0 flex-1 flex-col overflow-y-auto overflow-x-hidden bg-nham-surface/30 xl:overflow-hidden"
       style={{ fontFamily: 'DM Sans, sans-serif' }}
     >
       <div className="min-h-full px-3 py-3 pb-24 sm:px-5 sm:py-4 lg:px-8 xl:h-full xl:min-h-0 xl:overflow-hidden xl:py-3 xl:pb-3">
