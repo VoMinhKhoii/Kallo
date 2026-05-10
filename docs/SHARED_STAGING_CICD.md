@@ -8,8 +8,9 @@ shared non-production database.
 - `nham-internal` — auto-deployed from `main`. This is the dogfood environment.
   Refuses to deploy if any local migration is missing from the shared non-prod DB
   (see "Migration drift guard" below).
-- `nham-staging` — auto-deployed on push to the `staging` branch, also available
-  as a manual `workflow_dispatch` for ad-hoc deploys of arbitrary refs/PRs.
+- `nham-staging` — auto-deployed when CI completes successfully on the
+  `staging` branch (via `workflow_run`); also available as a manual
+  `workflow_dispatch` for ad-hoc deploys of arbitrary refs/PRs.
 - `nham-pr-<number>` — preview service footprint kept only for legacy/manual
   recovery workflows; automatic PR previews are disabled
 
@@ -18,9 +19,11 @@ from Secret Manager when they are active.
 
 ## Branch model
 
-- `staging` — long-lived branch. Pushes here auto-deploy `nham-staging`,
-  applying any new migrations to the shared non-prod DB along the way.
-  Use this branch to validate schema changes before merging to `main`.
+- `staging` — long-lived branch. Pushes here run CI; once CI is green,
+  `nham-staging` auto-deploys via a `workflow_run` trigger that applies any
+  new migrations to the shared non-prod DB along the way. Use this branch to
+  validate schema changes before merging to `main`. CI failures on `staging`
+  block the auto-deploy entirely (no lease acquired, no `db push`).
 - `main` — feeds `nham-internal` (dogfooding). Also the future source of
   `nham-prod` once the prod environment is provisioned (see
   "Future production environment" below).
@@ -85,9 +88,12 @@ the migrations, then re-run the internal deploy.
 
 This workflow has two trigger paths:
 
-- **Auto:** `push` to the `staging` branch. Reason and `force_takeover` are
-  filled in automatically (`Auto-deploy from staging branch (commit <sha>)` and
-  `false`). Use this for the normal flow: merge or push to `staging`, then wait.
+- **Auto:** `workflow_run` from a successful CI run on the `staging` branch.
+  This guarantees CI's container publish has already finished (so the deploy
+  can find the image) and that a failing CI on `staging` blocks the deploy
+  before any lease is acquired or migration is applied. Reason and
+  `force_takeover` are filled in automatically
+  (`Auto-deploy from staging branch (commit <sha>)` and `false`).
 - **Manual:** `workflow_dispatch` with three inputs — `ref` (branch, tag, commit
   SHA, or plain PR number), `reason`, `force_takeover`. Use this to deploy an
   arbitrary ref (e.g. a PR being reviewed) without merging it to `staging`
@@ -95,11 +101,12 @@ This workflow has two trigger paths:
 
 In both cases, the workflow does this:
 
-1. resolves the target ref (`ref` input for manual, `staging` branch tip for
+1. resolves the target ref (`ref` input for manual, `workflow_run.head_sha` for
    auto)
 2. checks out the resolved ref
 3. acquires a **GCS-backed lease**
-4. reads the shared DB secret
+4. validates the migrations are append-only (defense in depth — manual
+   dispatches may target refs CI hasn't yet validated)
 5. runs `supabase db push` against the shared non-prod DB
 6. deploys `nham-staging`
 7. runs the normal smoke check
@@ -212,7 +219,8 @@ exist yet.
 - **PR preview:** disabled by default; only legacy/manual operations remain
 - **Internal:** automatic from `main`; refuses to deploy if migrations are
   pending on the shared non-prod DB
-- **Staging:** automatic on push to `staging`, manual via `workflow_dispatch`
-  for arbitrary refs; leased and intended for intentional shared-environment QA
+- **Staging:** automatic on successful CI from `staging`, manual via
+  `workflow_dispatch` for arbitrary refs; leased and intended for intentional
+  shared-environment QA
 - **Reset DB:** emergency-only recovery path
 - **Prod:** not yet provisioned (see "Future production environment")

@@ -1,8 +1,13 @@
 name: Cloud Run Staging
 
 on:
-  push:
-    branches: [staging]
+  # Auto-deploy when CI completes successfully on the staging branch. Using
+  # workflow_run (instead of `push: branches: [staging]`) ensures CI's container
+  # publish step has already finished before this workflow tries to find the
+  # image, and ensures a failed CI on staging blocks the deploy.
+  workflow_run:
+    workflows: ['CI']
+    types: [completed]
   workflow_dispatch:
     inputs:
       ref:
@@ -26,6 +31,16 @@ permissions:
 
 jobs:
   deploy-staging:
+    # Manual dispatches always run; workflow_run dispatches only run for
+    # successful pushes to the staging branch in this repository.
+    if: |
+      github.event_name == 'workflow_dispatch' || (
+        github.event_name == 'workflow_run' &&
+        github.event.workflow_run.conclusion == 'success' &&
+        github.event.workflow_run.event == 'push' &&
+        github.event.workflow_run.head_repository.full_name == github.repository &&
+        github.event.workflow_run.head_branch == 'staging'
+      )
     runs-on: ubuntu-latest
     timeout-minutes: 110
     env:
@@ -37,13 +52,13 @@ jobs:
       # Single source of truth for the deploy reason. Manual dispatches supply
       # an explicit reason; auto-deploys from the staging branch fall back to a
       # generated label so downstream steps can rely on a non-empty value.
-      DEPLOY_REASON: ${{ github.event.inputs.reason || format('Auto-deploy from staging branch (commit {0})', github.sha) }}
+      DEPLOY_REASON: ${{ github.event.inputs.reason || format('Auto-deploy from staging branch (commit {0})', github.event.workflow_run.head_sha) }}
     steps:
       - uses: actions/checkout@v4
       - id: resolve_target
         uses: actions/github-script@v7
         env:
-          INPUT_REF: ${{ github.event.inputs.ref || github.ref_name }}
+          INPUT_REF: ${{ github.event.inputs.ref || github.event.workflow_run.head_sha }}
         with:
           script: |
             const rawInput = (process.env.INPUT_REF || '').trim();
