@@ -99,3 +99,27 @@ describe('Cloud Run internal workflow', () => {
     );
   });
 });
+
+describe('Reset staging database workflow', () => {
+  it('replays migrations from the staging branch by default', () => {
+    const workflow = readWorkflow('reset-staging-db.yml');
+
+    // Default ref is `staging` (the canonical pre-prod source of truth), with
+    // an optional override input for emergency recovery.
+    expect(workflow).toContain('default: staging');
+    expect(workflow).toContain('ref: ${{ github.event.inputs.ref }}');
+    // Must not silently fall back to the repo default branch — that would
+    // replay `main`'s migrations and miss anything already applied to staging.
+    expect(workflow).not.toContain(
+      'ref: ${{ github.event.repository.default_branch }}'
+    );
+  });
+});
+
+describe('CI workflow', () => {
+  it('runs on pushes and PRs targeting both main and staging', () => {
+    const workflow = readWorkflow('ci.yml');
+
+    expect(workflow).toContain('branches: [main, staging]');
+  });
+});

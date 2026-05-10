@@ -29,12 +29,18 @@ from Secret Manager when they are active.
 
 ### 1. CI (`.github/workflows/ci.yml`)
 
-On PRs and pushes to `main`, CI:
+On PRs and pushes to `main` **or** `staging`, CI:
 
 - runs lint, typecheck, tests, build, and migration validation
 - builds and pushes a container image tagged by commit SHA
 
-CI does **not** deploy Cloud Run directly.
+CI does **not** deploy Cloud Run directly. The `staging` trigger was added so
+that PRs targeting `staging` (and direct pushes to `staging`) get the same
+validation gate as PRs to `main` — without it, a push to `staging` would only
+get checked by the deploy workflow itself, which is too late to be a useful
+gate. The internal-deploy workflow has an explicit `head_branch == 'main'`
+guard, so CI completing on `staging` will not accidentally deploy
+`nham-internal`.
 
 ### 2. Preview deploy (`.github/workflows/cloud-run-preview.yml`)
 
@@ -137,6 +143,14 @@ This is an **emergency fallback**, not a normal step.
 
 Use it only when shared non-prod DB state is dirty and needs to be restored to
 the expected baseline.
+
+The reset replays migrations from a chosen ref (defaults to `staging`, which is
+the canonical pre-prod source of truth). The optional `ref` workflow input
+exists for emergency recovery — for example, if `staging` itself contains a
+broken migration, an operator can override with `main` or any other branch/SHA
+that has known-good migrations. After the reset, `nham-internal` will see the
+chosen ref's schema (since it shares the same DB), so the override should match
+or precede whatever's currently merged to `main`.
 
 ## Day-to-day guidance
 
