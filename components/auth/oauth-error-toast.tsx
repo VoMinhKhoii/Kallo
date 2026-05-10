@@ -25,11 +25,13 @@ export function OAuthErrorToast() {
     fired.current = true;
     toast.error(t('googleError'));
 
-    // Strip the param so a refresh doesn't replay the toast.
+    // Strip the param so a refresh doesn't replay the toast. Preserve
+    // existing history.state — Next's App Router stores routing metadata
+    // there and replacing it with `{}` desyncs back/forward navigation.
     if (typeof window !== 'undefined') {
       const url = new URL(window.location.href);
       url.searchParams.delete('error');
-      window.history.replaceState({}, '', url.toString());
+      window.history.replaceState(window.history.state, '', url.toString());
     }
   }, [params, t]);
 
