@@ -59,8 +59,8 @@ vi.mock('./desktop-sidebar', () => ({
   ),
 }));
 
-vi.mock('./bottom-tab-bar', () => ({
-  BottomTabBar: () => <div data-testid="bottom-tabs" />,
+vi.mock('./mobile-nav', () => ({
+  MobileNav: () => <div data-testid="mobile-nav" />,
 }));
 
 describe('AppShell', () => {
