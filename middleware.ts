@@ -12,6 +12,11 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    '/((?!_next/static|_next/image|favicon.ico|api|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    // `auth/callback` is excluded so the OAuth code-exchange route is not
+    // rewritten to /{locale}/auth/callback by next-intl. The handler is
+    // intentionally locale-agnostic and reads the locale from the `next`
+    // query parameter. New /auth/* routes must opt out individually here so
+    // they keep getting locale rewriting + Supabase session refresh.
+    '/((?!_next/static|_next/image|favicon.ico|api|auth/callback|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 };
