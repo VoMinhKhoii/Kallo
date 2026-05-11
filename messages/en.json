@@ -656,7 +656,10 @@
       "signUpTitle": "Create your account",
       "signUpSubtitle": "Start tracking Vietnamese meals with AI-powered nutrition analysis.",
       "signInTab": "Sign in",
-      "signUpTab": "Sign up"
+      "signUpTab": "Sign up",
+      "continueWithGoogle": "Continue with Google",
+      "orContinueWithEmail": "or continue with email",
+      "googleError": "Google sign-in failed. Please try again."
     },
     "otp": {
       "title": "Check your email",
