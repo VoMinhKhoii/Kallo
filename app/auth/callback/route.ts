@@ -33,6 +33,27 @@ function localeFromNext(next: string | null): string {
 }
 
 /**
+ * Build a URL using the externally-facing host. Behind a reverse proxy
+ * (Cloud Run, Vercel, etc.) `request.url`'s host reflects the container's
+ * internal listen address (e.g. `0.0.0.0:8080`), not the public hostname.
+ * Prefer `x-forwarded-host` / `x-forwarded-proto` when present so the
+ * `Location` header points the browser at a reachable origin.
+ */
+export function publicUrl(
+  request: NextRequest,
+  path: string,
+  fallbackOrigin: string
+): URL {
+  const forwardedHost = request.headers.get('x-forwarded-host');
+  const forwardedProto = request.headers.get('x-forwarded-proto');
+  if (forwardedHost) {
+    const proto = forwardedProto ?? 'https';
+    return new URL(path, `${proto}://${forwardedHost}`);
+  }
+  return new URL(path, fallbackOrigin);
+}
+
+/**
  * Handles the OAuth code-exchange and computes the redirect. Exported as a
  * plain helper so tests can inject a mocked Supabase client without leaking
  * the seam through the route handler's public contract (Next 16's `RouteContext`
@@ -49,7 +70,7 @@ export async function handleAuthCallback(
 
   if (!code) {
     return NextResponse.redirect(
-      new URL(`/${locale}/?error=oauth_missing_code`, url.origin)
+      publicUrl(request, `/${locale}/?error=oauth_missing_code`, url.origin)
     );
   }
 
@@ -58,12 +79,12 @@ export async function handleAuthCallback(
 
   if (error) {
     return NextResponse.redirect(
-      new URL(`/${locale}/?error=oauth_exchange`, url.origin)
+      publicUrl(request, `/${locale}/?error=oauth_exchange`, url.origin)
     );
   }
 
   const target = next ?? `/${locale}/logging`;
-  return NextResponse.redirect(new URL(target, url.origin));
+  return NextResponse.redirect(publicUrl(request, target, url.origin));
 }
 
 export async function GET(request: NextRequest) {
