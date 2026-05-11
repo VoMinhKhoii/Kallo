@@ -176,6 +176,15 @@ jobs:
             --update-labels=commit-sha=${{ env.COMMIT_SHA }},deployment-target=staging,github-run-id=${{ github.run_id }}
       - id: smoke
         run: ./scripts/cloud-run/smoke-check.sh "${{ steps.deploy.outputs.url }}"
+      - name: Promote latest revision after smoke pass
+        # Re-assert traffic-to-latest so the spec is `latestRevision: true`
+        # rather than name-pinned. A prior failed deploy's rollback step
+        # pins by revision name; without this, every subsequent successful
+        # deploy creates a Ready revision that never receives traffic.
+        run: |
+          gcloud run services update-traffic "$SERVICE_NAME" \
+            --region="${{ vars.GCP_REGION }}" \
+            --to-latest
       - name: Record deploy metadata
         if: always()
         env:
