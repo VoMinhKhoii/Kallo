@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import type { PromptPersonalizationContext } from '../types';
 import {
   buildCompressedDecompositionPrompt,
   buildDecompositionPrompt,
   getDecompositionPromptLabel,
 } from '../decomposition';
+import type { PromptPersonalizationContext } from '../types';
 
 const USER_CONTEXT: PromptPersonalizationContext = {
   countryOfOrigin: 'Vietnam',

@@ -89,19 +89,14 @@ export function computeMacroBaseMap(
       const dbState = match.dbState ?? 'unknown';
       const cookingMethod = ingredientCookingMethod(mealItem, ing);
       const dbScalingGrams =
-        dbState === 'cooked'
-          ? grams
-          : convertCookedToRaw(grams, cookingMethod);
+        dbState === 'cooked' ? grams : convertCookedToRaw(grams, cookingMethod);
       baseMap.set(id, scalePer100g(match.nutritionPer100g, dbScalingGrams));
     }
   }
   return baseMap;
 }
 
-function scalePer100g(
-  per100g: NutritionPer100g,
-  grams: number
-): MacroBase {
+function scalePer100g(per100g: NutritionPer100g, grams: number): MacroBase {
   return {
     caloriesKcal: (per100g.caloriesKcal ?? 0) * (grams / 100),
     proteinG: (per100g.proteinG ?? 0) * (grams / 100),
@@ -273,9 +268,7 @@ function resolveIngredientMacros(
  */
 export function resolveStreamingMealItem(
   rawItem: RawNutritionAdjustment['mealItems'][number],
-  decomposedMealItem:
-    | MealDecompositionWithIds['mealItems'][number]
-    | undefined,
+  decomposedMealItem: MealDecompositionWithIds['mealItems'][number] | undefined,
   baseMap: Map<string, MacroBase>
 ): MealItemNutrition {
   const ingredients: IngredientLlmNutrition[] = rawItem.ingredients.map(

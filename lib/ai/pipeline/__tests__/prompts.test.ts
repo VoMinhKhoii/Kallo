@@ -591,9 +591,7 @@ describe('buildNutritionPrompt', () => {
     expect(prompt).toMatch(/db_state="raw"/);
     expect(prompt).toMatch(/db_state[\s\S]*"cooked"[\s\S]*as_eaten_grams/);
     // db_state="raw" guidance now lives in <calculation>: "base.fatG reflects raw mass; apply the cooking-method adjustment".
-    expect(prompt).toMatch(
-      /db_state[\s\S]*"raw"[\s\S]*cooking[- ]method/i
-    );
+    expect(prompt).toMatch(/db_state[\s\S]*"raw"[\s\S]*cooking[- ]method/i);
   });
 
   it('includes cooking method attribute in ingredient data', () => {

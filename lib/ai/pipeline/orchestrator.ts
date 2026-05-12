@@ -69,8 +69,8 @@ import {
 } from './ingredient-accessors';
 import { resolveModelProfile } from './model-profile';
 import {
-  type RawNutritionAdjustment,
   computeMacroBaseMap,
+  type RawNutritionAdjustment,
   reconcileNutritionIds,
   resolveStreamingMealItem,
 } from './nutrition';

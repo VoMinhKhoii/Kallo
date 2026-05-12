@@ -169,7 +169,9 @@ function buildNutritionPromptParts(
       if (match) {
         const dbState = match.dbState ?? 'unknown';
         const cookingMethod = ingredientCookingMethod(mealItem, ing);
-        const base = ing.ingredientId ? baseMap.get(ing.ingredientId) : undefined;
+        const base = ing.ingredientId
+          ? baseMap.get(ing.ingredientId)
+          : undefined;
         ingredientData += `    <ingredient name="${escapeXmlAttribute(ingredientDisplayName(ing))}" as_eaten_grams="${ingredientGrams(ing)}" canonicalName="${escapeXmlAttribute(ingredientCanonicalName(ing))}" source="db_matched" db_name="${escapeXmlAttribute(match.matchedName)}" db_state="${escapeXmlAttribute(dbState)}"${cookingMethod ? ` cooking="${escapeXmlAttribute(cookingMethod)}"` : ''}${ing.expectedState ? ` expected_state="${escapeXmlAttribute(ing.expectedState)}"` : ''}>\n`;
         ingredientData += `      <per_100g caloriesKcal="${match.nutritionPer100g.caloriesKcal ?? '?'}" proteinG="${match.nutritionPer100g.proteinG ?? '?'}" carbohydrateG="${match.nutritionPer100g.carbohydrateG ?? '?'}" fatG="${match.nutritionPer100g.fatG ?? '?'}" />\n`;
         if (base) {
@@ -187,7 +189,7 @@ function buildNutritionPromptParts(
     const unmatchedNames = new Set(unmatched.map((u) => u.ingredientName));
     unmatchedSection = '\n<unmatched_ingredients>\n';
     unmatchedSection +=
-      "  <!-- No DB match found. For each ingredient below, emit ABSOLUTE LOW/MID/HIGH triples (NOT per-100g) for caloriesKcal, proteinG, carbohydrateG, fatG, scaled to the listed as_eaten_grams. Internally: think in per-100g density (using your culinary knowledge + FAO/USDA priors), then multiply by as_eaten_grams/100. Real-world per-100g density anchors for common Vietnamese street foods: nem lụi (grilled pork) ~250–290 kcal/100g; chả giò (fried spring roll) ~250–320 kcal/100g; bún tươi (cooked rice vermicelli) ~100–130 kcal/100g; nước dùng (broth) ~5–50 kcal/100g depending on the dish; sốt đậu phộng (peanut sauce) ~250–350 kcal/100g; sốt tương đậu (fermented soybean sauce) ~120–180 kcal/100g. Stay within the physical-density ceilings below — if your kcal.mid/100g > 900, you are hallucinating; recompute. -->\n";
+      '  <!-- No DB match found. For each ingredient below, emit ABSOLUTE LOW/MID/HIGH triples (NOT per-100g) for caloriesKcal, proteinG, carbohydrateG, fatG, scaled to the listed as_eaten_grams. Internally: think in per-100g density (using your culinary knowledge + FAO/USDA priors), then multiply by as_eaten_grams/100. Real-world per-100g density anchors for common Vietnamese street foods: nem lụi (grilled pork) ~250–290 kcal/100g; chả giò (fried spring roll) ~250–320 kcal/100g; bún tươi (cooked rice vermicelli) ~100–130 kcal/100g; nước dùng (broth) ~5–50 kcal/100g depending on the dish; sốt đậu phộng (peanut sauce) ~250–350 kcal/100g; sốt tương đậu (fermented soybean sauce) ~120–180 kcal/100g. Stay within the physical-density ceilings below — if your kcal.mid/100g > 900, you are hallucinating; recompute. -->\n';
 
     for (const mealItem of sortedMealItems) {
       const unmatchedIngs = mealItem.ingredients.filter((ing) =>

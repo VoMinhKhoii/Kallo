@@ -573,8 +573,15 @@ describe('analyzeMeal', () => {
     expect(result.data.mealItems).toHaveLength(2);
     expect(result.data.boundedNutrition.caloriesKcal).toBeDefined();
     expect(result.data.displayedNutrition.caloriesKcal).toBeDefined();
-    // Sum: 350 + 250 = 600 for mid calories
-    expect(result.data.boundedNutrition.caloriesKcal!.mid).toBe(600);
+    // Post-2026-05-13 contract: caloriesKcal is derived from the macro identity
+    // 4P + 4C + 9F per bound (not echoed from the LLM). For these fixtures:
+    //   Gạo:     4×7  + 4×78 + 9×0.5 = 344.5
+    //   Thịt heo: 4×26 + 4×5  + 9×15  = 259
+    //   Total:   603.5
+    expect(result.data.boundedNutrition.caloriesKcal!.mid).toBeCloseTo(
+      603.5,
+      1
+    );
   });
 
   it('Fix 2: same ingredient in multiple meal items gets per-meal-item LLM bounds', async () => {
