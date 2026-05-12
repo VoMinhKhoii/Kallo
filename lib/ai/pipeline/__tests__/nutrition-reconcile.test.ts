@@ -254,17 +254,24 @@ describe('reconcileNutritionIds — server-anchored P/C, LLM-only F, derived kca
 
     const out = reconcileNutritionIds(raw, decomposition, matched);
     const ing = out.mealItems[0].ingredients[0];
-    // P and C come from base ± 15%; LLM values for them are ignored.
+    // P and C are flat triples at the DB-anchored base; LLM values ignored.
     expect(ing.proteinG.mid).toBeCloseTo(13.5, 5);
-    expect(ing.proteinG.low).toBeCloseTo(13.5 * 0.85, 5);
-    expect(ing.proteinG.high).toBeCloseTo(13.5 * 1.15, 5);
+    expect(ing.proteinG.low).toBeCloseTo(13.5, 5);
+    expect(ing.proteinG.high).toBeCloseTo(13.5, 5);
     expect(ing.carbohydrateG.mid).toBeCloseTo(33, 5);
-    // Fat from LLM (within 3× of base.fatG=9.75).
+    expect(ing.carbohydrateG.low).toBeCloseTo(33, 5);
+    expect(ing.carbohydrateG.high).toBeCloseTo(33, 5);
+    // Fat from LLM (within 3× of base.fatG=9.75) — its spread is the only
+    // signal driving downstream goal-adjustment for matched ingredients.
     expect(ing.fatG.mid).toBe(11);
     expect(ing.fatG.low).toBe(9);
     expect(ing.fatG.high).toBe(14);
-    // Kcal derived: 4×13.5 + 4×33 + 9×11 = 54 + 132 + 99 = 285.
+    // Kcal derived per bound. mid = 4×13.5 + 4×33 + 9×11 = 285.
     expect(ing.caloriesKcal.mid).toBeCloseTo(285, 5);
+    // low = 4×13.5 + 4×33 + 9×9 = 54 + 132 + 81 = 267 (only fat's low varies)
+    expect(ing.caloriesKcal.low).toBeCloseTo(267, 5);
+    // high = 4×13.5 + 4×33 + 9×14 = 54 + 132 + 126 = 312
+    expect(ing.caloriesKcal.high).toBeCloseTo(312, 5);
   });
 
   it('matched: discards the carb anomaly (hủ tíu C=137 → server-anchored to base)', () => {
@@ -321,9 +328,13 @@ describe('reconcileNutritionIds — server-anchored P/C, LLM-only F, derived kca
 
     const out = reconcileNutritionIds(raw, decomposition, matched);
     const ing = out.mealItems[0].ingredients[0];
+    // Flat triple at DB-anchored base — no artificial spread on a known value.
     expect(ing.carbohydrateG.mid).toBeCloseTo(54, 5);
-    expect(ing.carbohydrateG.high).toBeCloseTo(54 * 1.15, 5);
+    expect(ing.carbohydrateG.low).toBeCloseTo(54, 5);
+    expect(ing.carbohydrateG.high).toBeCloseTo(54, 5);
     expect(ing.proteinG.mid).toBeCloseTo(4, 5);
+    expect(ing.proteinG.low).toBeCloseTo(4, 5);
+    expect(ing.proteinG.high).toBeCloseTo(4, 5);
     // Fat stays from LLM (0.8 is within 3× of base 0.8).
     expect(ing.fatG.mid).toBeCloseTo(0.8, 5);
   });
@@ -862,21 +873,19 @@ describe('__testing.isStructurallyInvalidTriple', () => {
   });
 });
 
-describe('__testing.serverAnchoredBand', () => {
-  it('produces a ±SERVER_PC_BAND triple around mid', () => {
-    const out = __testing.serverAnchoredBand(20);
-    expect(out.mid).toBe(20);
-    expect(out.low).toBeCloseTo(20 * (1 - __testing.SERVER_PC_BAND), 5);
-    expect(out.high).toBeCloseTo(20 * (1 + __testing.SERVER_PC_BAND), 5);
+describe('__testing.flatTriple', () => {
+  it('produces a flat triple at the supplied value (no artificial spread)', () => {
+    const out = __testing.flatTriple(20);
+    expect(out).toEqual({ low: 20, mid: 20, high: 20 });
   });
 
-  it('clamps low at zero when mid is zero', () => {
-    const out = __testing.serverAnchoredBand(0);
+  it('returns all zeros for a zero input', () => {
+    const out = __testing.flatTriple(0);
     expect(out).toEqual({ low: 0, mid: 0, high: 0 });
   });
 
   it('coerces negative input to zero (defensive: DB values are non-negative)', () => {
-    const out = __testing.serverAnchoredBand(-5);
+    const out = __testing.flatTriple(-5);
     expect(out).toEqual({ low: 0, mid: 0, high: 0 });
   });
 });

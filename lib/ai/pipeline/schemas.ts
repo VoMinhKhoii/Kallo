@@ -119,12 +119,16 @@ export type MealDecomposition = z.infer<typeof mealDecompositionSchema>;
 // ---------------------------------------------------------------------------
 //
 // Contract (2026-05-13): the LLM emits absolute {low, mid, high} per macro,
-// but only `fatG` actually flows downstream for **matched** ingredients —
-// `resolveIngredientMacros` in `lib/ai/pipeline/nutrition.ts` server-anchors
-// proteinG and carbohydrateG to `base ± SERVER_PC_BAND` (DB per-100g × grams)
-// and derives caloriesKcal from the macro identity 4P + 4C + 9F. The LLM's
-// emitted P/C/kcal for matched ingredients are accepted by the schema (so the
-// model isn't forced to think about them) but silently overridden server-side.
+// but only `fatG` actually flows downstream for **matched** ingredients.
+// `resolveIngredientMacros` in `lib/ai/pipeline/nutrition.ts`:
+//   - emits flat triples (low=mid=high) at the DB-anchored base for proteinG
+//     and carbohydrateG;
+//   - keeps the LLM's fatG triple subject to a 3× hallucination guard
+//     (falls back to a flat triple at base.fatG when the guard fires);
+//   - derives caloriesKcal from the macro identity 4P + 4C + 9F, so only
+//     fat's spread (when present) drives goal-adjustment.
+// The LLM's emitted P/C/kcal for matched ingredients are accepted by the
+// schema (so the model isn't forced to think about them) but server-overridden.
 //
 // For **unmatched** ingredients (no DB row): the LLM's P/C/F triples flow
 // through verbatim, kcal is derived from the macro identity, and a hard

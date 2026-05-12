@@ -48,9 +48,10 @@ const ingredientCookingMethod = (
  *
  * Post-2026-05-13 contract: the 4 macros in `llmNutrition` have already been
  * passed through `nutrition.ts:resolveIngredientMacros`, so:
- *   - matched ingredients: P and C are server-anchored to `base ± SERVER_PC_BAND`,
- *     fat is LLM-mid with the hallucination guard, kcal is derived from
- *     `4P + 4C + 9F`. The LLM's raw P/C/kcal output is already discarded.
+ *   - matched ingredients: P and C are flat triples at the DB-anchored base,
+ *     fat is LLM-mid with the hallucination guard (falls back to a flat
+ *     triple at base.fatG when the guard fires), kcal is derived from
+ *     4P + 4C + 9F. Only fat's spread (when present) drives goal-adjustment.
  *   - unmatched ingredients: P/C/F flow through from the LLM, kcal is derived
  *     from the macro identity, and a density clamp scales the triple if
  *     `kcal/100g > MAX_KCAL_PER_100G`.

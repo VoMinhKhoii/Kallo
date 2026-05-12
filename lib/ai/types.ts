@@ -207,11 +207,12 @@ export interface UnmatchedIngredient {
 // Contract (2026-05-13): the LLM emits absolute {low, mid, high} per macro,
 // but only `fatG` flows downstream for matched ingredients. At resolve time
 // (`lib/ai/pipeline/nutrition.ts`):
-//   - matched P and C are server-anchored to `base ± SERVER_PC_BAND`;
-//   - matched fat keeps the LLM mid subject to the hallucination guard
-//     (which now also catches structurally-invalid triples and falls back
-//     to the same `base ± band`);
-//   - matched kcal is derived from the macro identity 4P + 4C + 9F;
+//   - matched P and C are flat triples at the DB-anchored base value;
+//   - matched fat keeps the LLM triple subject to the 3× hallucination guard
+//     (which also catches structurally-invalid triples and falls back to a
+//     flat triple at base.fatG);
+//   - matched kcal is derived from the macro identity 4P + 4C + 9F, so only
+//     fat's spread (when present) drives goal-adjustment;
 //   - unmatched ingredients flow through P/C/F verbatim, kcal is derived,
 //     and a density clamp (`MAX_KCAL_PER_100G`) scales the triple if it
 //     exceeds the physical ceiling.
