@@ -191,6 +191,11 @@ export function FeedArea({
   const isDayLoading = isLoading || isDateNavigationPending;
   const isDayRetrying = isFetching && !isLoading;
   const persistedMeals = loggingDay?.persistedMeals ?? [];
+  const orderedPersistedMeals = useMemo(
+    () =>
+      persistedMeals.toSorted((a, b) => a.loggedAt.localeCompare(b.loggedAt)),
+    [persistedMeals]
+  );
   const pendingConfirmations = loggingDay?.pendingConfirmations ?? [];
 
   // Mutations
@@ -289,14 +294,16 @@ export function FeedArea({
     onAnalysisComplete: handleAnalysisComplete,
   });
 
-  // Handle confirm: persist to DB, remove streaming message
   const handleConfirmMeal = (messageId: string, analysisId: string) => {
+    // Drop the local copy before mutate so the optimistic cache update in
+    // useConfirmMeal does not briefly expose it as an unsaved card.
+    setMessages((prev) =>
+      prev.filter((m) => m.id !== messageId && m.analysisId !== analysisId)
+    );
     confirmMeal.mutate(
       { analysisId, originDate: selectedDate },
       {
         onSuccess: () => {
-          // Remove the streaming message — persisted meal will appear via query
-          setMessages((prev) => prev.filter((m) => m.id !== messageId));
           toast.success(t('savedMeal'));
         },
       }
@@ -439,7 +446,7 @@ export function FeedArea({
             <div className="flex flex-col gap-5 sm:gap-8">
               {/* Persisted meals from DB */}
               <AnimatePresence initial={false}>
-                {persistedMeals.map((meal) => (
+                {orderedPersistedMeals.map((meal) => (
                   <PersistedMealCard key={meal.id} meal={meal} />
                 ))}
               </AnimatePresence>
