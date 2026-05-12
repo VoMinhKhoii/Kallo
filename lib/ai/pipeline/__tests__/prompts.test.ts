@@ -495,7 +495,7 @@ describe('buildNutritionPrompt', () => {
     );
 
     expect(prompt).toContain('parent <meal_item>');
-    expect(prompt).toContain('MUST use the meal item name as primary context');
+    expect(prompt).toContain('meal item name as primary context');
     expect(prompt).toContain('canh rau lang tôm');
     expect(prompt).toContain('bún bò Huế');
   });
@@ -590,7 +590,7 @@ describe('buildNutritionPrompt', () => {
     expect(prompt).toMatch(/db_state="raw"/);
     expect(prompt).toMatch(/db_state[\s\S]*"cooked"[\s\S]*as_eaten_grams/);
     expect(prompt).toMatch(
-      /db_state[\s\S]*"raw"[\s\S]*adjust for cooking method/
+      /db_state[\s\S]*"raw"[\s\S]*[Aa]djust.*for cooking method/
     );
   });
 

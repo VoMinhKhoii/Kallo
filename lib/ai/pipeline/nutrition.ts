@@ -1,17 +1,20 @@
+import { convertCookedToRaw } from '../constants';
 import type {
+  BoundedEstimate,
   IngredientLlmNutrition,
+  MacroBase,
   MatchedIngredient,
   MealItemNutrition,
   NutritionAdjustment,
+  NutritionPer100g,
 } from '../types';
 import type { MealDecompositionWithIds } from './ids';
-import { ingredientDisplayName } from './ingredient-accessors';
+import { ingredientDisplayName, ingredientGrams } from './ingredient-accessors';
 
 /**
  * Raw shape that comes out of `nutritionAdjustmentSchema.parse()` before
- * reconciliation: `ingredientId` / `mealItemId` are optional (Zod accepts
- * the LLM emitting them or omitting them; today's prompt does not request
- * them, so they are typically absent).
+ * reconciliation: `ingredientId` / `mealItemId` are optional (today's prompt
+ * does not request them). Macros are absolute `{low, mid, high}` triples.
  */
 export type RawNutritionAdjustment = {
   mealItems: Array<{
@@ -20,44 +23,233 @@ export type RawNutritionAdjustment = {
     ingredients: Array<{
       ingredientId?: string;
       ingredientName: string;
-      caloriesKcal: IngredientLlmNutrition['caloriesKcal'];
-      proteinG: IngredientLlmNutrition['proteinG'];
-      carbohydrateG: IngredientLlmNutrition['carbohydrateG'];
-      fatG: IngredientLlmNutrition['fatG'];
+      caloriesKcal: BoundedEstimate;
+      proteinG: BoundedEstimate;
+      carbohydrateG: BoundedEstimate;
+      fatG: BoundedEstimate;
     }>;
   }>;
 };
 
+const MACRO_KEYS = [
+  'caloriesKcal',
+  'proteinG',
+  'carbohydrateG',
+  'fatG',
+] as const;
+
+/**
+ * If the LLM `mid` deviates from `base` by more than this multiplicative
+ * factor (or its inverse), treat it as a hallucination and snap to base.
+ * Realistic cooking adjustments stay well within 1.5–2× (frying-in-oil
+ * roughly doubles fat at most). The 2026-05-12 sườn non case had `mid` =
+ * 5511 vs base ≈ 270 — a 20× deviation, two orders of magnitude beyond
+ * any plausible cooking factor.
+ */
+const HALLUCINATION_GUARD_RATIO = 3;
+
+const ingredientCookingMethod = (
+  mealItem: MealDecompositionWithIds['mealItems'][number],
+  ing: MealDecompositionWithIds['mealItems'][number]['ingredients'][number]
+): string | null => mealItem.cookingMethod ?? ing.cookingMethod ?? null;
+
+/**
+ * Compute the per-ingredient macro base map. For each matched ingredient,
+ * `base = (per_100g × dbScalingGrams) / 100` using the same dbState-aware
+ * `convertCookedToRaw` logic that `assembly.ts` applies to the 24 non-macro
+ * nutrients. Unmatched ingredients are absent from the map.
+ *
+ * Keyed by run-scoped ingredientId; collision-safe across dishes that share
+ * an ingredient display name (e.g. `nước dùng` in two dishes).
+ */
+export function computeMacroBaseMap(
+  decomposition: MealDecompositionWithIds,
+  matched: MatchedIngredient[]
+): Map<string, MacroBase> {
+  const matchedById = new Map<string, MatchedIngredient>();
+  for (const m of matched) {
+    if (m.ingredientId) matchedById.set(m.ingredientId, m);
+  }
+
+  const baseMap = new Map<string, MacroBase>();
+  for (const mealItem of decomposition.mealItems) {
+    for (const ing of mealItem.ingredients) {
+      const id = ing.ingredientId;
+      if (!id) continue;
+      const match = matchedById.get(id);
+      if (!match) continue;
+      const grams = ingredientGrams(ing);
+      const dbState = match.dbState ?? 'unknown';
+      const cookingMethod = ingredientCookingMethod(mealItem, ing);
+      const dbScalingGrams =
+        dbState === 'cooked'
+          ? grams
+          : convertCookedToRaw(grams, cookingMethod);
+      baseMap.set(id, scalePer100g(match.nutritionPer100g, dbScalingGrams));
+    }
+  }
+  return baseMap;
+}
+
+function scalePer100g(
+  per100g: NutritionPer100g,
+  grams: number
+): MacroBase {
+  return {
+    caloriesKcal: (per100g.caloriesKcal ?? 0) * (grams / 100),
+    proteinG: (per100g.proteinG ?? 0) * (grams / 100),
+    carbohydrateG: (per100g.carbohydrateG ?? 0) * (grams / 100),
+    fatG: (per100g.fatG ?? 0) * (grams / 100),
+  };
+}
+
+/**
+ * Apply the hallucination guard: keep the LLM's mid only if it's within
+ * `HALLUCINATION_GUARD_RATIO`× of `base` (in either direction). Otherwise
+ * snap mid back to `base` and log so we can monitor how often it fires.
+ *
+ * `low` and `high` are also kept in range so the triple stays ordered after
+ * any snap (`low ≤ mid ≤ high`). This is the load-bearing fix for the
+ * 2026-05-12 regression — at most a 3× deviation is permitted; the original
+ * 5511 vs 270 (20×) was two orders of magnitude beyond that.
+ */
+function guardMacro(
+  raw: BoundedEstimate,
+  base: number,
+  ingredientName: string,
+  macroName: string
+): BoundedEstimate {
+  if (base <= 0) {
+    // Base is 0 (e.g., pepper has no kcal). Trust the LLM since the guard
+    // ratio is undefined — but downstream density clamps still apply.
+    return raw;
+  }
+  const ratio = raw.mid / base;
+  const overshoot = ratio > HALLUCINATION_GUARD_RATIO;
+  const undershoot = ratio < 1 / HALLUCINATION_GUARD_RATIO;
+  if (!overshoot && !undershoot) {
+    // LLM mid is in plausible cooking-adjusted range; trust it as-is.
+    return raw;
+  }
+  console.warn(
+    `[nutrition] hallucination_guard: snapped ${macroName} of "${ingredientName}" from mid=${raw.mid.toFixed(1)} to base=${base.toFixed(1)} (ratio ${ratio.toFixed(2)}× vs ${HALLUCINATION_GUARD_RATIO}× threshold)`
+  );
+  // Snap mid to base; rebuild low/high so the triple is ordered. We preserve
+  // the LLM's *relative* spread by re-anchoring around base.
+  const spread = raw.high - raw.low;
+  const halfSpread = Math.max(spread / 2, base * 0.05);
+  return {
+    low: Math.max(0, base - halfSpread),
+    mid: base,
+    high: base + halfSpread,
+  };
+}
+
+/**
+ * Resolve a single raw ingredient's macros against the precomputed base map.
+ * For matched ingredients, the LLM is the source of truth for cooking
+ * adjustments (frying-in-oil raises fat, rice absorbs water, etc.); the
+ * guard only fires if `mid` deviates from `base` beyond physical plausibility.
+ * For unmatched ingredients (no base), the LLM triple is kept; density
+ * clamping happens in `validateNutritionOutput`.
+ */
+function resolveIngredientMacros(
+  rawIng: RawNutritionAdjustment['mealItems'][number]['ingredients'][number],
+  base: MacroBase | undefined
+): {
+  caloriesKcal: BoundedEstimate;
+  proteinG: BoundedEstimate;
+  carbohydrateG: BoundedEstimate;
+  fatG: BoundedEstimate;
+} {
+  if (!base) {
+    return {
+      caloriesKcal: rawIng.caloriesKcal,
+      proteinG: rawIng.proteinG,
+      carbohydrateG: rawIng.carbohydrateG,
+      fatG: rawIng.fatG,
+    };
+  }
+  return {
+    caloriesKcal: guardMacro(
+      rawIng.caloriesKcal,
+      base.caloriesKcal,
+      rawIng.ingredientName,
+      'caloriesKcal'
+    ),
+    proteinG: guardMacro(
+      rawIng.proteinG,
+      base.proteinG,
+      rawIng.ingredientName,
+      'proteinG'
+    ),
+    carbohydrateG: guardMacro(
+      rawIng.carbohydrateG,
+      base.carbohydrateG,
+      rawIng.ingredientName,
+      'carbohydrateG'
+    ),
+    fatG: guardMacro(rawIng.fatG, base.fatG, rawIng.ingredientName, 'fatG'),
+  };
+}
+
+/**
+ * Public helper for the streaming path: resolve a single raw meal item to
+ * the bounded shape downstream consumers expect, applying the hallucination
+ * guard per matched ingredient. Match raw → decomposed by ingredient name
+ * within the meal item (first-match-on-collision).
+ */
+export function resolveStreamingMealItem(
+  rawItem: RawNutritionAdjustment['mealItems'][number],
+  decomposedMealItem:
+    | MealDecompositionWithIds['mealItems'][number]
+    | undefined,
+  baseMap: Map<string, MacroBase>
+): MealItemNutrition {
+  const ingredients: IngredientLlmNutrition[] = rawItem.ingredients.map(
+    (rawIng) => {
+      const decIng = decomposedMealItem?.ingredients.find(
+        (ing) => ingredientDisplayName(ing) === rawIng.ingredientName
+      );
+      const ingredientId = decIng?.ingredientId ?? '';
+      const base = ingredientId ? baseMap.get(ingredientId) : undefined;
+      const resolved = resolveIngredientMacros(rawIng, base);
+      return {
+        ingredientId,
+        ingredientName: rawIng.ingredientName,
+        ...resolved,
+      };
+    }
+  );
+
+  return {
+    mealItemId: decomposedMealItem?.mealItemId,
+    mealItemName: rawItem.mealItemName,
+    ingredients,
+  };
+}
+
 /**
  * Reconcile Call 2 nutrition output with the run-scoped ids assigned by
- * `ensureIdsOnDecomposition`. Today's Call 2 prompt does not yet request
- * ids (Chunk 2 owns that prompt rewrite); the LLM emits names only.
+ * `ensureIdsOnDecomposition`, applying the hallucination guard in the same
+ * pass.
  *
  * Strategy:
- *   1. For each meal item in the LLM result, find the matching meal item
- *      in the decomposition by `name`. On collision (two meal items with
- *      the same display name) fall back to first-match and warn — Vietnamese
- *      meals legitimately repeat names, and a hard throw would create a
- *      regression window between this chunk and Chunk 2.
- *   2. For each ingredient inside that meal item, find the corresponding
- *      `MatchedIngredient` (or `DecomposedIngredient`) by name within the
- *      same meal item's ingredient set. Same first-match-on-collision rule.
- *   3. If a name is not found at all, throw — that's a Call 2 hallucination,
- *      not a name-collision artifact.
- *
- * The function does not mutate the original; it returns a new
- * `NutritionAdjustment` whose ids are guaranteed strings.
+ *   1. Match meal items by name (FIFO queue for duplicate display names).
+ *   2. Match ingredients by name within the meal item (same FIFO policy).
+ *   3. For each matched ingredient with a DB-anchored base: keep the LLM's
+ *      mid if it's within `HALLUCINATION_GUARD_RATIO`× of base (so cooking
+ *      adjustments survive); otherwise snap mid to base.
+ *   4. For unmatched ingredients: keep the LLM triple; physical-density
+ *      clamping happens in `validateNutritionOutput`.
  */
 export function reconcileNutritionIds(
   raw: RawNutritionAdjustment,
   decomposition: MealDecompositionWithIds,
   matched: MatchedIngredient[]
 ): NutritionAdjustment {
-  // Build a per-name FIFO queue of decomposition meal items so duplicate
-  // display names ("Cơm trắng" served twice) reconcile to distinct
-  // `mealItemId`s in the same order Call 2 emits them. `.find()` would
-  // collapse both onto the first slot and lose run-scoped id distinctness
-  // required by §0.1.
+  const baseMap = computeMacroBaseMap(decomposition, matched);
+
   const mealItemQueueByName = new Map<
     string,
     MealDecompositionWithIds['mealItems']
@@ -88,8 +280,6 @@ export function reconcileNutritionIds(
         );
       }
 
-      // Per-meal-item ingredient FIFO. Same logic for duplicate raw ingredient
-      // names within a single meal item.
       const ingredientQueueByName = new Map<
         string,
         (typeof decomposedMi.ingredients)[number][]
@@ -129,13 +319,13 @@ export function reconcileNutritionIds(
               }
             );
           }
+          const ingredientId = decomposedIng.ingredientId;
+          const base = baseMap.get(ingredientId);
+          const resolved = resolveIngredientMacros(rawIng, base);
           return {
-            ingredientId: decomposedIng.ingredientId,
+            ingredientId,
             ingredientName: rawIng.ingredientName,
-            caloriesKcal: rawIng.caloriesKcal,
-            proteinG: rawIng.proteinG,
-            carbohydrateG: rawIng.carbohydrateG,
-            fatG: rawIng.fatG,
+            ...resolved,
           };
         }
       );
@@ -150,3 +340,12 @@ export function reconcileNutritionIds(
 
   return { mealItems: reconciledMealItems };
 }
+
+// Internal export for tests that want to assert on individual helpers.
+export const __testing = {
+  scalePer100g,
+  guardMacro,
+  resolveIngredientMacros,
+  HALLUCINATION_GUARD_RATIO,
+  MACRO_KEYS,
+};

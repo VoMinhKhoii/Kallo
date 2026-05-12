@@ -203,14 +203,37 @@ export interface UnmatchedIngredient {
 // ---------------------------------------------------------------------------
 // LLM Call 2 output: Cooking-adjusted bounded estimates (4 macros only)
 // ---------------------------------------------------------------------------
+//
+// Contract (2026-05-12): the LLM emits absolute {low, mid, high} per macro
+// (same shape as before). The server overrides `mid` with
+// `MacroBase[macro]` (DB-anchored) for matched ingredients at resolve time
+// and defensively clamps low ≤ base ≤ high. The 2026-05-12 5511 kcal
+// regression class is closed: even if the LLM echoes per_100g as the
+// "portion" value, `mid = base = server-anchored DB truth`. Unmatched
+// ingredients have no DB anchor so the LLM's `mid` is kept; physical
+// density is clamped in `validateNutritionOutput`.
 
-/** Bounded estimates for the 4 LLM-adjusted macros of a single ingredient */
+/**
+ * Server-computed base values per macro, keyed by run-scoped ingredient ID.
+ * Built from `nutritionPer100g × dbScalingGrams / 100` using the same
+ * `convertCookedToRaw` logic that `assembly.ts` applies to the 24 non-macro
+ * nutrients. Passed to the nutrition prompt (rendered as `<base>` per
+ * matched ingredient) and to the resolve step that overrides `mid`.
+ * Absent entries (= unmatched ingredients) mean the LLM owns `mid` as well.
+ */
+export interface MacroBase {
+  caloriesKcal: number;
+  proteinG: number;
+  carbohydrateG: number;
+  fatG: number;
+}
+
+/** Bounded estimates for the 4 LLM-adjusted macros of a single ingredient. */
 export interface IngredientLlmNutrition {
   /**
    * Run-scoped compact ingredient ID (§0.1). Filled by `reconcileNutritionIds`
-   * after Call 2 parses (LLM emits ingredientName today; Chunk 3 will
-   * have it emit ingredientId directly). Optional on the interface; the
-   * post-reconcile shape consumed by assembly always carries it.
+   * after Call 2 parses. Optional on the interface; the post-reconcile shape
+   * consumed by assembly always carries it.
    */
   ingredientId?: string;
   ingredientName: string;

@@ -9,6 +9,7 @@ import {
 } from '../pipeline/ingredient-accessors';
 import type {
   DecomposedMealItem,
+  MacroBase,
   MatchedIngredient,
   UnmatchedIngredient,
 } from '../types';
@@ -51,7 +52,10 @@ export type NutritionPromptBuilder = (
   mealItems: DecomposedMealItem[],
   matched: MatchedIngredient[],
   unmatched: UnmatchedIngredient[],
-  userContext: PromptPersonalizationContext
+  userContext: PromptPersonalizationContext,
+  // Optional in the type so test/fixture callers without DB context can still
+  // render the prompt; the orchestrator always supplies a populated map.
+  baseMap?: Map<string, MacroBase>
 ) => string;
 
 const escapeXmlAttribute = (value: string): string =>
@@ -77,11 +81,16 @@ interface NutritionPromptParts {
 export function getNutritionPromptLabel(
   env: Record<string, string | undefined> = process.env
 ): NutritionPromptLabel {
-  // Default flipped to 'compressed' (2026-05-09): Phase B harness measured
-  // 64–72 % warm-path latency reduction (totalMs p50 11708 → 4173 ms,
-  // nutritionMs p50 10676 → 3566 ms) on `gemini-2.5-flash-lite` with no
-  // observed quality regression. Set `PIPELINE_NUTRITION_PROMPT_LABEL=production`
-  // to revert. See docs/superpowers/plans/2026-05-08-ai-pipeline-latency-regression.md.
+  // Default 'compressed' (set 2026-05-09). The original Phase B harness on
+  // gemini-3.1-flash-lite showed 64–72 % warm-path latency reduction with no
+  // quality regression — but the harness only validated against 3.1. When
+  // STABLE_PROFILE falls back to gemini-2.5-flash-lite (today's prod default
+  // when PIPELINE_MODEL_PROFILE is unset), 2.5 cannot reproduce the original
+  // prompt's "scale per_100g by as_eaten_grams" arithmetic reliably and
+  // returns physically impossible macros. The 2026-05-12 factors-only
+  // refactor removes this dependency entirely: server multiplies, LLM only
+  // bounds. Set `PIPELINE_NUTRITION_PROMPT_LABEL=production` to revert to
+  // the verbose pre-factor prompt for debugging.
   return env[NUTRITION_PROMPT_LABEL_ENV] === 'production'
     ? 'production'
     : 'compressed';
@@ -95,11 +104,17 @@ export function getNutritionPromptBuilder(
     : buildNutritionPrompt;
 }
 
+function fmtBase(value: number): string {
+  // 1 decimal place is enough for the prompt; avoid trailing zeros.
+  return (Math.round(value * 10) / 10).toString();
+}
+
 function buildNutritionPromptParts(
   mealItems: DecomposedMealItem[],
   matched: MatchedIngredient[],
   unmatched: UnmatchedIngredient[],
-  userContext: PromptPersonalizationContext
+  userContext: PromptPersonalizationContext,
+  baseMap: Map<string, MacroBase> = new Map()
 ): NutritionPromptParts {
   const { cookingHabits } = userContext;
   const countryLines = [
@@ -145,7 +160,7 @@ function buildNutritionPromptParts(
 
   let ingredientData = '<ingredient_data>\n';
   ingredientData +=
-    '  <!-- as_eaten_grams is the user-facing portion. db_state tells you whether the per_100g values are raw or cooked. -->\n\n';
+    '  <!-- The server has already computed base = per_100g × as_eaten_grams / 100 for each macro. You return ONLY {lowFactor, highFactor} per macro; the server multiplies base × factor to get final low/high. mid = base, always. -->\n\n';
 
   for (const mealItem of sortedMealItems) {
     ingredientData += `  <meal_item name="${escapeXmlAttribute(mealItem.name)}">\n`;
@@ -158,8 +173,12 @@ function buildNutritionPromptParts(
       if (match) {
         const dbState = match.dbState ?? 'unknown';
         const cookingMethod = ingredientCookingMethod(mealItem, ing);
+        const base = ing.ingredientId ? baseMap.get(ing.ingredientId) : undefined;
         ingredientData += `    <ingredient name="${escapeXmlAttribute(ingredientDisplayName(ing))}" as_eaten_grams="${ingredientGrams(ing)}" canonicalName="${escapeXmlAttribute(ingredientCanonicalName(ing))}" source="db_matched" db_name="${escapeXmlAttribute(match.matchedName)}" db_state="${escapeXmlAttribute(dbState)}"${cookingMethod ? ` cooking="${escapeXmlAttribute(cookingMethod)}"` : ''}${ing.expectedState ? ` expected_state="${escapeXmlAttribute(ing.expectedState)}"` : ''}>\n`;
         ingredientData += `      <per_100g caloriesKcal="${match.nutritionPer100g.caloriesKcal ?? '?'}" proteinG="${match.nutritionPer100g.proteinG ?? '?'}" carbohydrateG="${match.nutritionPer100g.carbohydrateG ?? '?'}" fatG="${match.nutritionPer100g.fatG ?? '?'}" />\n`;
+        if (base) {
+          ingredientData += `      <base caloriesKcal="${fmtBase(base.caloriesKcal)}" proteinG="${fmtBase(base.proteinG)}" carbohydrateG="${fmtBase(base.carbohydrateG)}" fatG="${fmtBase(base.fatG)}" />\n`;
+        }
         ingredientData += `    </ingredient>\n`;
       }
     }
@@ -172,7 +191,7 @@ function buildNutritionPromptParts(
     const unmatchedNames = new Set(unmatched.map((u) => u.ingredientName));
     unmatchedSection = '\n<unmatched_ingredients>\n';
     unmatchedSection +=
-      "  <!-- No DB match found. Use your culinary knowledge of the user's cuisine and FAO/USDA food composition data for estimates. -->\n";
+      "  <!-- No DB match found. For these ingredients ONLY, provide a per100gEstimate {caloriesKcal, proteinG, carbohydrateG, fatG} using your culinary knowledge of the user's cuisine and FAO/USDA food composition data. The server multiplies by as_eaten_grams to derive base, then applies your factor bounds. Do NOT multiply by grams yourself. -->\n";
 
     for (const mealItem of sortedMealItems) {
       const unmatchedIngs = mealItem.ingredients.filter((ing) =>
@@ -198,10 +217,17 @@ export function buildCompressedNutritionPrompt(
   mealItems: DecomposedMealItem[],
   matched: MatchedIngredient[],
   unmatched: UnmatchedIngredient[],
-  userContext: PromptPersonalizationContext
+  userContext: PromptPersonalizationContext,
+  baseMap: Map<string, MacroBase> = new Map()
 ): string {
   const { cookingHabits, countryLines, ingredientData, unmatchedSection } =
-    buildNutritionPromptParts(mealItems, matched, unmatched, userContext);
+    buildNutritionPromptParts(
+      mealItems,
+      matched,
+      unmatched,
+      userContext,
+      baseMap
+    );
   const outputLanguage = userContext.outputLanguage ?? 'match_user_input';
 
   return `You are a nutrition estimator. Return JSON only.
@@ -214,14 +240,20 @@ export function buildCompressedNutritionPrompt(
 </contract>
 
 <calculation_rules>
-   Scale per_100g values by as_eaten_grams.
-   db_state="cooked": no raw/cooked conversion; adjust only for actual cooking style.
-   db_state="raw": account for cooking method, moisture, and oil absorption.
-   db_state="unknown" or unmatched: estimate from cuisine knowledge with wider bounds.
-   Bounds express physical uncertainty, not user goals or preferences.
+   For each matched ingredient, the server has precomputed and SHOWN you base = per_100g × as_eaten_grams / 100 under <base>. Treat base as your starting anchor for MID, NOT your output verbatim. Then adjust MID upward or downward using your cooking knowledge:
+     - chiên/rán/xào (frying): absorbed oil raises fat (and kcal) by 20–80%.
+     - luộc rice (boiling): rice mass roughly triples from water absorption; per the parent meal item context, the as_eaten_grams may already reflect cooked rice.
+     - nướng (grilling): moisture loss raises kcal density by 10–30%.
+     - kho (simmer with sugar/soy): added sugar/oil raises kcal modestly.
+   Realistic cooking adjustments stay within ~0.5–2× of base. Going beyond that is treated as a hallucination and the server snaps MID back to base; do not try.
+   db_state="cooked": base already reflects cooked food; small adjustments only.
+   db_state="raw": base reflects raw mass; apply cooking adjustment as above.
+   db_state="unknown": widen LOW/HIGH but keep MID near base.
+   For unmatched ingredients (no DB row, no <base>): estimate ABSOLUTE LOW/MID/HIGH for the as-eaten portion from cuisine knowledge. The meal item name is your primary context.
+   Bounds express physical uncertainty (portion guess + cooking variance), never user goals or preferences.
    Keep every triple ordered low <= mid <= high and non-negative.
-   Keep calories consistent with macros: kcal ~= 4*protein + 4*carbs + 9*fat.
-   Do not exceed physical density: high kcal <= 900/100g and high protein/carbs/fat <= 100g/100g.
+   Macro identity should hold: kcal ~= 4*protein + 4*carbs + 9*fat.
+   Physical density ceiling: high kcal <= 900/100g; high protein/carbs/fat <= 100g/100g.
 </calculation_rules>
 
 <user_context>
@@ -247,10 +279,17 @@ export function buildNutritionPrompt(
   mealItems: DecomposedMealItem[],
   matched: MatchedIngredient[],
   unmatched: UnmatchedIngredient[],
-  userContext: PromptPersonalizationContext
+  userContext: PromptPersonalizationContext,
+  baseMap: Map<string, MacroBase> = new Map()
 ): string {
   const { cookingHabits, countryLines, ingredientData, unmatchedSection } =
-    buildNutritionPromptParts(mealItems, matched, unmatched, userContext);
+    buildNutritionPromptParts(
+      mealItems,
+      matched,
+      unmatched,
+      userContext,
+      baseMap
+    );
 
   return `You are a nutrition expert. Produce cooking-adjusted, bounded nutrition estimates based on the user's cuisine and cooking context.
 
@@ -259,53 +298,44 @@ export function buildNutritionPrompt(
     For each ingredient in each meal item, produce LOW/MID/HIGH for 4 macros: caloriesKcal, proteinG, carbohydrateG, fatG.
   </task>
 
+  <base_reference>
+    For each MATCHED ingredient, the server has precomputed and shown you a <base> element with base.caloriesKcal / proteinG / carbohydrateG / fatG. base = (per_100g × as_eaten_grams) / 100, using raw-or-cooked grams depending on db_state.
+    Use base as your anchor for MID. Then adjust MID using cooking knowledge (e.g., +25–40% for chiên/rán with oil; +0–10% for nướng moisture loss; +0% for db_state="cooked"). Then set LOW and HIGH around the adjusted MID to reflect physical uncertainty.
+    Do NOT echo per_100g as MID; do NOT multiply per_100g by 100; the server has already done the multiplication for you.
+  </base_reference>
+
   <calculation>
     Each ingredient has db_state: "raw" | "cooked" | "unknown".
 
-    1. db_state="cooked": per_100g values are already cooked.
-       Scale base = (as_eaten_grams / 100) × per_100g, then adjust as needed
-       for the *user's actual cooking style* (e.g., extra oil from "nhiều dầu"
-       cooking habit). No raw/cooked conversion needed — both sides are cooked.
+    1. db_state="cooked": <base> already reflects cooked food. MID ≈ base unless the user's cooking style adds extra oil/sugar.
 
-    2. db_state="raw": per_100g values are raw, as_eaten_grams is cooked.
-       adjust for cooking method using your knowledge:
-         - frying (chiên/rán/xào) absorbs cooking oil → fat goes UP
-         - boiling (luộc/nấu) drives moisture changes; rice absorbs water → mass UP
-         - grilling (nướng) drives moisture out → density UP
-       Produce final macros for the as-eaten portion.
+    2. db_state="raw": <base> reflects raw mass × per_100g. Adjust MID for cooking method using your knowledge:
+         - frying (chiên/rán/xào) absorbs cooking oil → fat goes UP, kcal goes UP.
+         - boiling (luộc/nấu) drives moisture changes; rice absorbs water.
+         - grilling (nướng) drives moisture out → density UP.
 
-    3. db_state="unknown": treat as "raw" but widen LOW/HIGH bounds — uncertainty
-       is higher because the reference frame is ambiguous.
+    3. db_state="unknown": treat like "raw" but widen LOW/HIGH bounds.
 
-    For unmatched ingredients (no db row): use your culinary knowledge of the user's cuisine and region
-    (informed by the user's origin and residence context in <user_context>, plus FAO/USDA food composition data)
-    for typical macros at the as-eaten weight. Be wider on bounds.
+    For UNMATCHED ingredients (no <base> shown): estimate absolute LOW/MID/HIGH for the as-eaten portion from cuisine knowledge. The meal item name is the primary context.
 
-    MID = your best estimate after cooking adjustment. LOW/HIGH bracket
-    physical-world uncertainty (portion guess + cooking variance).
+    Realistic cooking adjustments stay within ~0.5–2× of base. Numbers beyond that are treated as hallucinations and the server snaps MID back to base — do not try.
+
+    Macro identity: kcal ~= 4*protein + 4*carbs + 9*fat.
+    Physical density ceiling: high kcal <= 900/100g; high protein/carbs/fat <= 100g/100g.
   </calculation>
 
   <why_three_values>
     Each macro is a triple LOW/MID/HIGH expressing genuine uncertainty about
     the user's actual portion and cooking behavior — not a preference signal.
-    - MID: your best point estimate after cooking adjustment.
-    - LOW:  conservative lower bound. Tighten when the ingredient is well-known
-            and DB-matched. Widen when you are guessing (unknown oil quantity,
-            ambiguous portion size, unmatched ingredient).
+    - MID: your best point estimate after cooking adjustment (start from base, adjust).
+    - LOW:  conservative lower bound. Tighten for DB-matched + standard portion; widen for fried-in-oil or ambiguous portion.
     - HIGH: conservative upper bound. Same widening rules.
-    These bounds are physical-world uncertainty bounds. Downstream
-    deterministic code applies any preference-shaped adjustment.
   </why_three_values>
 
   <unmatched_rule>
-    For ingredients in <unmatched_ingredients>: use your culinary knowledge of the user's cuisine and region
-    (informed by the user's origin and residence context in <user_context>, plus FAO/USDA food composition data) to estimate.
-    Use wider bounds since we have no DB reference.
-
-    IMPORTANT: Each unmatched ingredient is nested under its parent <meal_item>.
-    You MUST use the meal item name as primary context — same ingredient differs by dish:
-    - "nước dùng" in "canh rau lang tôm" → light broth ~5–8 kcal/100ml
-    - "nước dùng" in "bún bò Huế" → rich bone broth ~30–50 kcal/100ml
+    Each unmatched ingredient is nested under its parent <meal_item>. Use the meal item name as primary context — same ingredient differs by dish:
+    - "nước dùng" in "canh rau lang tôm" → light broth ~5–8 kcal/100g
+    - "nước dùng" in "bún bò Huế" → rich bone broth ~30–50 kcal/100g
   </unmatched_rule>
 </instructions>
 
@@ -318,9 +348,18 @@ ${countryLines.length > 0 ? `${countryLines.join('\n')}\n` : ''}  oil_usage: ${c
 </user_context>
 
 <example>
-  gạo tẻ, 65g raw, nấu, DB: 352 kcal/100g → base=(65/100)×352=229 kcal.
-  nấu: no macro change. MID≈229. LOW≈210 (tighter, DB-matched). HIGH≈250.
+  Matched: gạo tẻ, 65g raw, nấu, DB: 352 kcal/100g.
+  Server has computed and shown you base.caloriesKcal=229.
+  Cooking is "nấu" — no macro change from cooked DB row.
   → {"ingredientName":"gạo tẻ","caloriesKcal":{"low":210,"mid":229,"high":250},...}
+
+  Matched, frying: chả giò tôm, 150g chiên, DB cooked: 180 kcal/100g.
+  Server has computed base.caloriesKcal=270.
+  Frying adds oil — adjust MID upward, say +20–30%.
+  → caloriesKcal {low: 280, mid: 330, high: 400}.
+
+  Unmatched: nem lụi, 80g grilled. No DB row.
+  → {"ingredientName":"nem lụi","caloriesKcal":{"low":170,"mid":200,"high":240},...}
 </example>
 
 ${ingredientData}

@@ -43,11 +43,19 @@ const ingredientCookingMethod = (
 ): string | null => item.cookingMethod ?? ing.cookingMethod ?? null;
 
 /**
- * D5: Merge LLM's 4 bounded macros with DB mid values for remaining 24.
- * The LLM only estimates calories, protein, carbs, fat.
- * All other nutrients use the DB per-100g value scaled to portion, as {low=mid=high=val}.
+ * D5: Merge LLM-bounded macros with DB mid values for the remaining 24
+ * nutrients.
  *
- * D2: Apply normalizeBoundedEstimate to re-sort any ordering violations.
+ * Post-2026-05-12 contract (factors-only): the `llmNutrition` triples are
+ * already DB-anchored — `nutrition.ts:resolveFactorsToBoundedIngredient`
+ * produced them as `{low: base × lowFactor, mid: base, high: base × highFactor}`
+ * where `base = per_100g × dbScalingGrams / 100`. The LLM never multiplies.
+ * That makes the 4-macro branch *consistent* with the 24-nutrient branch
+ * below, which has always scaled `(per100g × estimatedGrams) / 100`.
+ *
+ * `normalizeBoundedEstimate` is kept as defence-in-depth — the resolve step
+ * guarantees ordering (lowFactor ≤ 1 ≤ highFactor; base ≥ 0), so this is a
+ * no-op in the happy path but cheap insurance against future drift.
  */
 export function mergeNutrition(
   llmNutrition: IngredientLlmNutrition,
