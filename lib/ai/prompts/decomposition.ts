@@ -87,6 +87,7 @@ export function buildCompressedDecompositionPrompt(
   Add only explicitly mentioned ingredients plus fundamental seasonings for the cooking method.
   Use cookingMethod at dish level; use expectedState only for mixed-state ingredients.
   If quantity or interpretation is unclear, choose best-estimate grams and add the relevant ambiguityFlags.
+  Explicit quantifiers (counts, units, weights — "3 fried eggs", "8 cây nem lụi", "5 oz steak", "1 bowl", "200g bún", "1 phần", etc.) ALWAYS take precedence over default_rice_portion and default_protein_portion. Estimate per-unit grams and multiply by the count. Default portions are fallbacks for items with no quantifier — never a fixed pivot to be split or scaled by an explicit count. Size/amount modifiers ("nhỏ"/"small", "nhiều"/"lots", "ít"/"a little", "to"/"large") refine the per-unit estimate; they do not override the count.
 </rules>
 
 <user_context>
@@ -135,6 +136,23 @@ export function buildDecompositionPrompt(
     If quantity is genuinely ambiguous, set ambiguityFlags: ["unspecified_quantity"] and emit your best-estimate grams.
     Always emit a positive number; grams <= 0 triggers implausible_grams and retry.
   </grams_only>
+
+  <quantity_precedence>
+    Explicit quantifiers ALWAYS take precedence over the default portion sizes in <user_context>. When the user gives a count, unit, or weight, estimate per-unit grams from cuisine + cooking-method context and multiply by the count.
+
+    Quantifiers come in many shapes across cuisines and personas:
+      - Vietnamese counts/units: "3 ốp la", "8 cây nem lụi", "5 miếng cá", "2 lát bánh mì", "1 ổ bánh mì", "1 tô", "1 dĩa", "1 phần", "2 viên", "1 cái", "4 cuốn".
+      - English counts/units: "3 fried eggs", "2 chicken thighs", "8 dumplings", "1 slice of pizza", "2 cups of rice", "1 bowl of pho", "1 scoop of protein", "5 oz steak", "200g pasta".
+      - Mixed: "1 serving of nasi lemak", "2 onigiri", "3 tacos", "1 plate of biryani".
+      - Weight is itself a quantifier: "100g cơm", "250g bún", "1.5 oz cheese" — pass the user-given mass through (no need to re-estimate).
+      - "1 X" still counts as an explicit quantifier; do not collapse it into default_protein_portion.
+
+    default_rice_portion and default_protein_portion are fallbacks — apply them ONLY when no quantifier, weight, or portion cue is present for that item. Never treat them as a fixed pivot to be split, multiplied, or "averaged" by an explicit count.
+
+    Size and amount modifiers refine the per-unit or per-portion estimate; they do not override the count:
+      - Vietnamese: "nhỏ" / "to" / "vừa" / "nhiều" / "ít" / "đầy" / "đầy bát".
+      - English: "small" / "large" / "regular" / "lots of" / "a little" / "a handful" / "generous" / "double portion".
+  </quantity_precedence>
 
   <ingredient_naming_rule>
     rawName = natural, specific ingredient name in the user's language that reflects what the user actually described.

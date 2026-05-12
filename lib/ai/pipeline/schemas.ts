@@ -117,15 +117,38 @@ export type MealDecomposition = z.infer<typeof mealDecompositionSchema>;
 // ---------------------------------------------------------------------------
 // LLM Call 2: Cooking-adjusted bounded nutrition schema (4 macros only)
 // ---------------------------------------------------------------------------
+//
+// Contract (2026-05-13): the LLM emits absolute {low, mid, high} per macro,
+// but only `fatG` actually flows downstream for **matched** ingredients.
+// `resolveIngredientMacros` in `lib/ai/pipeline/nutrition.ts`:
+//   - emits flat triples (low=mid=high) at the DB-anchored base for proteinG
+//     and carbohydrateG;
+//   - keeps the LLM's fatG triple subject to a 3× hallucination guard
+//     (falls back to a flat triple at base.fatG when the guard fires);
+//   - derives caloriesKcal from the macro identity 4P + 4C + 9F, so only
+//     fat's spread (when present) drives goal-adjustment.
+// The LLM's emitted P/C/kcal for matched ingredients are accepted by the
+// schema (so the model isn't forced to think about them) but server-overridden.
+//
+// For **unmatched** ingredients (no DB row): the LLM's P/C/F triples flow
+// through verbatim, kcal is derived from the macro identity, and a hard
+// density clamp (`MAX_KCAL_PER_100G` from `lib/ai/constants.ts`) scales the
+// whole triple down if it exceeds the physical ceiling.
 
 /**
- * Bounded estimate shape — used for both JSON schema generation and runtime parsing.
- * Note: Gemini's responseJsonSchema cannot include transforms, so we use a plain
- * object schema for JSON schema generation and normalize after parsing.
+ * Bounded estimate shape — used for both JSON schema generation and runtime
+ * parsing. Note: Gemini's responseJsonSchema cannot include transforms, so
+ * we use a plain object schema for JSON schema generation and normalize
+ * after parsing.
  */
 export const boundedEstimateSchema = z.object({
   low: z.number().min(0).describe('Conservative lower bound'),
-  mid: z.number().min(0).describe('Most likely estimate'),
+  mid: z
+    .number()
+    .min(0)
+    .describe(
+      'Most likely estimate. For DB-matched ingredients the server overrides this with the DB-anchored base.'
+    ),
   high: z.number().min(0).describe('Conservative upper bound'),
 });
 
@@ -165,10 +188,18 @@ export const ingredientLlmNutritionSchema = z.object({
   ingredientName: z
     .string()
     .describe('Must match the ingredient name from decomposition'),
-  caloriesKcal: boundedEstimateSchema.describe('Calories in kcal'),
-  proteinG: boundedEstimateSchema.describe('Protein in grams'),
-  carbohydrateG: boundedEstimateSchema.describe('Carbohydrates in grams'),
-  fatG: boundedEstimateSchema.describe('Fat in grams'),
+  caloriesKcal: boundedEstimateSchema.describe(
+    'Calories in kcal for the as-eaten portion (NOT per 100g).'
+  ),
+  proteinG: boundedEstimateSchema.describe(
+    'Protein in grams for the as-eaten portion (NOT per 100g).'
+  ),
+  carbohydrateG: boundedEstimateSchema.describe(
+    'Carbohydrates in grams for the as-eaten portion (NOT per 100g).'
+  ),
+  fatG: boundedEstimateSchema.describe(
+    'Fat in grams for the as-eaten portion (NOT per 100g).'
+  ),
 });
 
 export const mealItemNutritionSchema = z.object({

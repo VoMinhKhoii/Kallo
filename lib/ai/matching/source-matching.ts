@@ -24,6 +24,17 @@ export const USDA_VECTOR_THRESHOLD = 0.7;
 /** Minimum similarity to accept a fuzzy match when used as fallback after vector miss */
 export const FUZZY_FALLBACK_THRESHOLD = 0.7;
 
+/**
+ * Effective-similarity penalty applied to candidates whose state doesn't match
+ * the ingredient's `expectedState`. Pushes barely-above-threshold cross-state
+ * matches (e.g., "Bún tươi" cooked at 0.709 vs USDA "Noodles, japanese, somen,
+ * dry" raw) below the acceptance bar so they fall through to the unmatched
+ * path instead of corrupting downstream macros with the wrong state's per-100g
+ * values. Only applies when both `expectedState` and the candidate state are
+ * known (not 'unknown').
+ */
+export const STATE_MISMATCH_PENALTY = 0.05;
+
 /** Legacy: kept for backward compat in tests */
 export const FUZZY_SIMILARITY_THRESHOLD = 0.4;
 export const VECTOR_SIMILARITY_THRESHOLD = 0.7;
@@ -92,27 +103,46 @@ export function rerankCandidates(candidates: FuzzyMatchRow[]): FuzzyMatchRow[] {
 /**
  * Build a lightweight MatchInfo from candidate rows.
  * Pure function — no DB calls. Nutrition is fetched separately in batch.
+ *
+ * When `expectedState` is supplied, each candidate's effective threshold is
+ * `minSimilarity + STATE_MISMATCH_PENALTY` if its state differs from
+ * `expectedState` (both known, i.e. not 'unknown'). We scan the reranked list
+ * and accept the first candidate clearing its own threshold — so a marginal
+ * cross-state top candidate doesn't shadow a same-state runner-up that would
+ * otherwise be a valid match.
  */
 export function buildMatchResult(
   ingredientName: string,
   rows: FuzzyMatchRow[],
   minSimilarity: number,
   source?: MatchSource,
-  matchType?: MatchType
+  matchType?: MatchType,
+  expectedState?: DbIngredientState
 ): MatchInfo | null {
   if (rows.length === 0) return null;
 
   const reranked = rerankCandidates(rows);
-  const topMatch = reranked[0];
-  if (topMatch.similarity < minSimilarity) return null;
+  const accepted = reranked.find((candidate) => {
+    const candidateState = normalizeState(candidate.state);
+    const stateMismatch =
+      expectedState !== undefined &&
+      expectedState !== 'unknown' &&
+      candidateState !== 'unknown' &&
+      candidateState !== expectedState;
+    const effectiveMin =
+      minSimilarity + (stateMismatch ? STATE_MISMATCH_PENALTY : 0);
+    return candidate.similarity >= effectiveMin;
+  });
+  if (!accepted) return null;
+  const acceptedState = normalizeState(accepted.state);
 
   return {
     ingredientName,
-    foodCompositionId: topMatch.id,
-    matchedName: topMatch.name_primary,
-    similarity: topMatch.similarity,
-    confidence: classifyConfidence(topMatch.similarity),
-    state: normalizeState(topMatch.state),
+    foodCompositionId: accepted.id,
+    matchedName: accepted.name_primary,
+    similarity: accepted.similarity,
+    confidence: classifyConfidence(accepted.similarity),
+    state: acceptedState,
     ...(source !== undefined ? { source } : {}),
     ...(matchType !== undefined ? { matchType } : {}),
   };
@@ -207,19 +237,22 @@ export async function matchSingleIngredientWithEmbedding(
     ),
   ]);
 
+  const matchExpectedState = pickCtx.expectedState;
   const faoResult = buildMatchResult(
     ingredientName,
     faoVectorRows as unknown as FuzzyMatchRow[],
     FAO_VECTOR_THRESHOLD,
     'fao',
-    'vector'
+    'vector',
+    matchExpectedState
   );
   const usdaResult = buildMatchResult(
     ingredientName,
     usdaVectorRows as unknown as FuzzyMatchRow[],
     USDA_VECTOR_THRESHOLD,
     'usda',
-    'vector'
+    'vector',
+    matchExpectedState
   );
 
   if (faoResult) {
@@ -264,14 +297,16 @@ export async function matchSingleIngredientWithEmbedding(
     faoFuzzyRows as unknown as FuzzyMatchRow[],
     FUZZY_FALLBACK_THRESHOLD,
     'fao',
-    'fuzzy'
+    'fuzzy',
+    matchExpectedState
   );
   const usdaFuzzy = buildMatchResult(
     ingredientName,
     usdaFuzzyRows as unknown as FuzzyMatchRow[],
     FUZZY_FALLBACK_THRESHOLD,
     'usda',
-    'fuzzy'
+    'fuzzy',
+    matchExpectedState
   );
 
   if (faoFuzzy) {

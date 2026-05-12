@@ -69,8 +69,10 @@ import {
 } from './ingredient-accessors';
 import { resolveModelProfile } from './model-profile';
 import {
+  computeMacroBaseMap,
   type RawNutritionAdjustment,
   reconcileNutritionIds,
+  resolveStreamingMealItem,
 } from './nutrition';
 import { aggregateRrfMeasurements } from './rrf-aggregation';
 import { buildPipelineRunRow, writePipelineRun } from './run-telemetry';
@@ -881,6 +883,22 @@ async function runPipeline(
     mealItemGrams.set(mi.name, totalGrams);
   }
 
+  // Server-side macro base map (per ingredientId). Passed to the nutrition
+  // prompt builder so the LLM sees `<base ... />` per matched ingredient,
+  // and to the streaming/reconcile path so `mid = base` and
+  // `low/high = base × factor`. LLM never multiplies — this is what closes
+  // the per-100g-echo loophole that produced 5511 kcal sườn non etc.
+  const macroBaseMap = computeMacroBaseMap(decomposition, matchResult.matched);
+  const decomposedItemByName = new Map<
+    string,
+    (typeof decomposition.mealItems)[number]
+  >();
+  for (const mi of decomposition.mealItems) {
+    if (!decomposedItemByName.has(mi.name)) {
+      decomposedItemByName.set(mi.name, mi);
+    }
+  }
+
   // Per-name ordered queue of mealItemIds (§0.1). Two `cơm trắng` dishes
   // have distinct ids; the nutrition stream encounters them in the same
   // order as decomposition, so a FIFO peel-off correctly attributes each
@@ -922,19 +940,32 @@ async function runPipeline(
     nutritionChunkCount += 1;
     lastExtractedCount = newCount;
 
-    for (const itemNutrition of items) {
+    for (const rawItemNutrition of items) {
       const quantity =
-        mealItemGrams.get(itemNutrition.mealItemName) ??
-        mealItemGrams.get(capitalizeFirst(itemNutrition.mealItemName)) ??
+        mealItemGrams.get(rawItemNutrition.mealItemName) ??
+        mealItemGrams.get(capitalizeFirst(rawItemNutrition.mealItemName)) ??
         0;
+      // Streaming preview: resolve raw triples against the server-computed
+      // base map so the SSE event matches the final shape. The authoritative
+      // reconcile pass runs after the full stream completes (below).
+      const decomposedMi =
+        decomposedItemByName.get(rawItemNutrition.mealItemName) ??
+        decomposedItemByName.get(
+          capitalizeFirst(rawItemNutrition.mealItemName)
+        );
+      const itemNutrition = resolveStreamingMealItem(
+        rawItemNutrition,
+        decomposedMi,
+        macroBaseMap
+      );
       const streamItem = computeStreamingMealItem(
         itemNutrition,
         quantity,
-        lastExtractedCount - items.length + items.indexOf(itemNutrition),
+        lastExtractedCount - items.length + items.indexOf(rawItemNutrition),
         userContext.goal,
         userContext.aggression
       );
-      const mealItemId = resolveMealItemId(itemNutrition.mealItemName);
+      const mealItemId = resolveMealItemId(rawItemNutrition.mealItemName);
       emit({ type: 'item_macros', mealItemId, item: streamItem });
     }
   };
@@ -950,7 +981,8 @@ async function runPipeline(
         decomposition.mealItems,
         matchResult.matched,
         matchResult.unmatched,
-        userContext
+        userContext,
+        macroBaseMap
       );
       const callTrace = buildLlmStageTrace({
         trace: traceContext,
@@ -994,8 +1026,21 @@ async function runPipeline(
         'nutrition'
       );
 
-      // Early anomaly check: classify total calories before flush
-      const totalMidKcal = rawNutrition.mealItems.reduce(
+      // Reconcile raw LLM triples → server-anchored bounded estimates that
+      // every downstream consumer (validation, assembly, streaming flush)
+      // expects.
+      let reconciledNutrition = reconcileNutritionIds(
+        rawNutrition,
+        decomposition,
+        matchResult.matched
+      );
+
+      // Early anomaly check on the resolved bounded triple. 0-kcal is
+      // essentially impossible for matched ingredients (P/C are server-anchored
+      // and kcal is derived from the macro identity). It can still happen if
+      // every ingredient is unmatched AND the LLM emits all-zero macros —
+      // that's the only genuine error path we want to retry on.
+      const totalMidKcal = reconciledNutrition.mealItems.reduce(
         (sum, mi) =>
           sum +
           mi.ingredients.reduce(
@@ -1070,13 +1115,12 @@ async function runPipeline(
           NUTRITION_TIMEOUT_MS,
           'nutrition-retry'
         );
+        reconciledNutrition = reconcileNutritionIds(
+          rawNutrition,
+          decomposition,
+          matchResult.matched
+        );
       }
-
-      const reconciledNutrition = reconcileNutritionIds(
-        rawNutrition,
-        decomposition,
-        matchResult.matched
-      );
 
       return reconciledNutrition;
     }

@@ -45,6 +45,15 @@ export const GOAL_ADJUSTED_NUTRIENTS = [
 ] as const;
 
 /**
+ * Physical kcal-per-100g ceiling for any food. Pure fat is ~900 kcal/100g — no
+ * real ingredient exceeds it. Used by `pipeline/validation.ts` as an anomaly
+ * envelope AND by `pipeline/nutrition.ts` as a hard clamp for unmatched
+ * ingredients. Single source of truth so the clamp and the validator can never
+ * drift apart.
+ */
+export const MAX_KCAL_PER_100G = 900;
+
+/**
  * Cooked-to-raw weight conversion factors by cooking method.
  * Multiplied by cooked weight to get raw equivalent weight.
  * E.g., 150g cooked rice × 0.38 = 57g raw rice.

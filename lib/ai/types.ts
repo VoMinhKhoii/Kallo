@@ -203,14 +203,41 @@ export interface UnmatchedIngredient {
 // ---------------------------------------------------------------------------
 // LLM Call 2 output: Cooking-adjusted bounded estimates (4 macros only)
 // ---------------------------------------------------------------------------
+//
+// Contract (2026-05-13): the LLM emits absolute {low, mid, high} per macro,
+// but only `fatG` flows downstream for matched ingredients. At resolve time
+// (`lib/ai/pipeline/nutrition.ts`):
+//   - matched P and C are flat triples at the DB-anchored base value;
+//   - matched fat keeps the LLM triple subject to the 3× hallucination guard
+//     (which also catches structurally-invalid triples and falls back to a
+//     flat triple at base.fatG);
+//   - matched kcal is derived from the macro identity 4P + 4C + 9F, so only
+//     fat's spread (when present) drives goal-adjustment;
+//   - unmatched ingredients flow through P/C/F verbatim, kcal is derived,
+//     and a density clamp (`MAX_KCAL_PER_100G`) scales the triple if it
+//     exceeds the physical ceiling.
 
-/** Bounded estimates for the 4 LLM-adjusted macros of a single ingredient */
+/**
+ * Server-computed base values per macro, keyed by run-scoped ingredient ID.
+ * Built from `nutritionPer100g × dbScalingGrams / 100` using the same
+ * `convertCookedToRaw` logic that `assembly.ts` applies to the 24 non-macro
+ * nutrients. Passed to the nutrition prompt (rendered as `<base>` per matched
+ * ingredient) and to `resolveIngredientMacros` for server anchoring.
+ * Absent entries (unmatched ingredients) mean the LLM owns all four macros.
+ */
+export interface MacroBase {
+  caloriesKcal: number;
+  proteinG: number;
+  carbohydrateG: number;
+  fatG: number;
+}
+
+/** Bounded estimates for the 4 LLM-adjusted macros of a single ingredient. */
 export interface IngredientLlmNutrition {
   /**
    * Run-scoped compact ingredient ID (§0.1). Filled by `reconcileNutritionIds`
-   * after Call 2 parses (LLM emits ingredientName today; Chunk 3 will
-   * have it emit ingredientId directly). Optional on the interface; the
-   * post-reconcile shape consumed by assembly always carries it.
+   * after Call 2 parses. Optional on the interface; the post-reconcile shape
+   * consumed by assembly always carries it.
    */
   ingredientId?: string;
   ingredientName: string;
