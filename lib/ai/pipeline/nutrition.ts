@@ -271,6 +271,16 @@ export function resolveStreamingMealItem(
       const ingredientId = decIng?.ingredientId ?? '';
       const base = ingredientId ? baseMap.get(ingredientId) : undefined;
       const grams = decIng ? ingredientGrams(decIng) : undefined;
+      if (!base && (typeof grams !== 'number' || grams <= 0)) {
+        // No matched base AND no grams to drive the unmatched density clamp.
+        // The streaming preview will pass the LLM triple through unclamped.
+        // The authoritative `reconcileNutritionIds` runs after the full stream
+        // completes and re-resolves with the FIFO-matched decomposition entry,
+        // so persisted data is unaffected — only the live SSE preview is.
+        console.warn(
+          `[nutrition] streaming_unmatched_no_grams: density clamp skipped for "${rawIng.ingredientName}" in "${rawItem.mealItemName}" (no decomposition match yet)`
+        );
+      }
       const resolved = resolveIngredientMacros(rawIng, base, grams);
       return {
         ingredientId,

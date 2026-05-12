@@ -104,11 +104,12 @@ export function rerankCandidates(candidates: FuzzyMatchRow[]): FuzzyMatchRow[] {
  * Build a lightweight MatchInfo from candidate rows.
  * Pure function — no DB calls. Nutrition is fetched separately in batch.
  *
- * When `expectedState` is supplied AND it differs from the top candidate's
- * state (and both are known, i.e. not 'unknown'), the candidate must clear
- * `minSimilarity + STATE_MISMATCH_PENALTY` instead of just `minSimilarity`.
- * That filters out marginal cross-state matches whose per-100g nutrition is
- * physically wrong for the user's ingredient (cooked vs. dry, etc.).
+ * When `expectedState` is supplied, each candidate's effective threshold is
+ * `minSimilarity + STATE_MISMATCH_PENALTY` if its state differs from
+ * `expectedState` (both known, i.e. not 'unknown'). We scan the reranked list
+ * and accept the first candidate clearing its own threshold — so a marginal
+ * cross-state top candidate doesn't shadow a same-state runner-up that would
+ * otherwise be a valid match.
  */
 export function buildMatchResult(
   ingredientName: string,
@@ -121,24 +122,27 @@ export function buildMatchResult(
   if (rows.length === 0) return null;
 
   const reranked = rerankCandidates(rows);
-  const topMatch = reranked[0];
-  const topState = normalizeState(topMatch.state);
-  const stateMismatch =
-    expectedState !== undefined &&
-    expectedState !== 'unknown' &&
-    topState !== 'unknown' &&
-    topState !== expectedState;
-  const effectiveMin =
-    minSimilarity + (stateMismatch ? STATE_MISMATCH_PENALTY : 0);
-  if (topMatch.similarity < effectiveMin) return null;
+  const accepted = reranked.find((candidate) => {
+    const candidateState = normalizeState(candidate.state);
+    const stateMismatch =
+      expectedState !== undefined &&
+      expectedState !== 'unknown' &&
+      candidateState !== 'unknown' &&
+      candidateState !== expectedState;
+    const effectiveMin =
+      minSimilarity + (stateMismatch ? STATE_MISMATCH_PENALTY : 0);
+    return candidate.similarity >= effectiveMin;
+  });
+  if (!accepted) return null;
+  const acceptedState = normalizeState(accepted.state);
 
   return {
     ingredientName,
-    foodCompositionId: topMatch.id,
-    matchedName: topMatch.name_primary,
-    similarity: topMatch.similarity,
-    confidence: classifyConfidence(topMatch.similarity),
-    state: topState,
+    foodCompositionId: accepted.id,
+    matchedName: accepted.name_primary,
+    similarity: accepted.similarity,
+    confidence: classifyConfidence(accepted.similarity),
+    state: acceptedState,
     ...(source !== undefined ? { source } : {}),
     ...(matchType !== undefined ? { matchType } : {}),
   };

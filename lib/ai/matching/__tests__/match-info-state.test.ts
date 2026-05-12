@@ -166,4 +166,40 @@ describe('buildMatchResult — state-mismatch penalty', () => {
     expect(withState).not.toBeNull();
     expect(withState?.similarity).toBe(0.85);
   });
+
+  it('falls back to a same-state runner-up when the top candidate fails the penalty', () => {
+    // Top candidate is cross-state and barely above the bare threshold (so it
+    // fails 0.7 + 0.05). A lower-ranked same-state candidate passes the bare
+    // threshold and should win — the previous top-only check would have
+    // returned null here.
+    const rows: FuzzyMatchRow[] = [
+      {
+        id: 'fc-top-cross',
+        name_primary: 'Cross-state top',
+        name_alt: null,
+        name_en: 'cross-state',
+        state: 'raw',
+        similarity: 0.71,
+      },
+      {
+        id: 'fc-runner-up-same',
+        name_primary: 'Same-state runner-up',
+        name_alt: null,
+        name_en: 'same-state',
+        state: 'cooked',
+        similarity: 0.7,
+      },
+    ];
+    const result = buildMatchResult(
+      'cooked ingredient',
+      rows,
+      0.7,
+      undefined,
+      undefined,
+      'cooked'
+    );
+    expect(result).not.toBeNull();
+    expect(result?.foodCompositionId).toBe('fc-runner-up-same');
+    expect(result?.state).toBe('cooked');
+  });
 });
