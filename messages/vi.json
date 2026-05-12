@@ -83,9 +83,6 @@
       "signOutError": "Không thể đăng xuất. Vui lòng thử lại.",
       "account": "Tài khoản",
       "expandOnHover": "Mở rộng khi di chuột"
-    },
-    "bottomTabs": {
-      "label": "Điều hướng chính"
     }
   },
   "nutrition": {
@@ -659,7 +656,10 @@
       "signUpTitle": "Tạo tài khoản",
       "signUpSubtitle": "Bắt đầu theo dõi bữa ăn Việt với phân tích dinh dưỡng bằng AI.",
       "signInTab": "Đăng nhập",
-      "signUpTab": "Đăng ký"
+      "signUpTab": "Đăng ký",
+      "continueWithGoogle": "Tiếp tục với Google",
+      "orContinueWithEmail": "hoặc tiếp tục với email",
+      "googleError": "Đăng nhập bằng Google thất bại. Vui lòng thử lại."
     },
     "otp": {
       "title": "Kiểm tra email",

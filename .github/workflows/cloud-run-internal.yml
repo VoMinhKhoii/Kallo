@@ -42,6 +42,7 @@ jobs:
           gcloud iam service-accounts describe "${{ vars.GCP_RUNTIME_SERVICE_ACCOUNT }}"
           [[ "$SERVICE_NAME" = "nham-internal" ]]
           node ./scripts/cloud-run/shared-db.mjs assert-target --db-url "$db_url" --project-ref "$SUPABASE_PROJECT_ID"
+          node ./scripts/cloud-run/shared-db.mjs assert-migrations-applied --db-url "$db_url" --migrations-dir ./supabase/migrations
           node ./scripts/cloud-run/shared-db.mjs assert-state --db-url "$db_url"
       - name: Record previous revision
         run: |
@@ -84,14 +85,23 @@ jobs:
             --service-account=${{ vars.GCP_RUNTIME_SERVICE_ACCOUNT }}
             --memory=1Gi
             --cpu=1
-            --concurrency=20
+            --concurrency=80
             --timeout=60
-            --min-instances=1
+            --min-instances=0
             --max-instances=10
             --set-secrets=DATABASE_URL=nham-nonprod-database-url:latest,GEMINI_API_KEY=nham-nonprod-gemini-api-key:latest,ANALYSIS_GUARD_HASH_SECRET=nham-nonprod-analysis-guard-hash-secret:latest
-            --set-env-vars=ADMIN_EMAILS=${{ vars.ADMIN_EMAILS }}
+            --set-env-vars=^|^ADMIN_EMAILS=${{ vars.ADMIN_EMAILS }}|PIPELINE_TRACE_ENABLED=${{ vars.PIPELINE_TRACE_ENABLED }}
       - id: smoke
         run: ./scripts/cloud-run/smoke-check.sh "${{ steps.deploy.outputs.url }}"
+      - name: Promote latest revision after smoke pass
+        # Re-assert traffic-to-latest so the spec is `latestRevision: true`
+        # rather than name-pinned. A prior failed deploy's rollback step
+        # pins by revision name; without this, every subsequent successful
+        # deploy creates a Ready revision that never receives traffic.
+        run: |
+          gcloud run services update-traffic "$SERVICE_NAME" \
+            --region="${{ vars.GCP_REGION }}" \
+            --to-latest
       - name: Record deploy metadata
         if: always()
         run: |

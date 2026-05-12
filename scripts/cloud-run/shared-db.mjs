@@ -1,5 +1,9 @@
 import { spawnSync } from 'node:child_process';
+import { readdirSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
+
+export const SHARED_DB_APPLIED_MIGRATIONS_QUERY =
+  'SELECT version FROM supabase_migrations.schema_migrations ORDER BY version';
 
 export const SHARED_DB_STATE_QUERY = `
 WITH checks AS (
@@ -180,7 +184,16 @@ export function parseSharedDbStateOutput(rawOutput) {
   };
 }
 
-function runPsqlStateCheck(databaseUrl) {
+/**
+ * Run a one-shot psql query against `databaseUrl` and return `{ status,
+ * stdout, stderr }`. Always uses the unaligned (`-A`) tuples-only (`-t`)
+ * mode with `ON_ERROR_STOP=1` so callers get predictable, parseable output
+ * and a non-zero exit on SQL errors. Pass `extraArgs` for query-specific
+ * formatting (e.g. `['-F', '|']` for pipe-delimited rows). Error
+ * classification is left to the caller so each query can produce a tailored
+ * remediation message.
+ */
+function runPsqlQuery(databaseUrl, query, extraArgs = []) {
   const encodedDatabaseUrl = encodeDatabaseUrl(databaseUrl);
 
   const result = spawnSync(
@@ -191,11 +204,10 @@ function runPsqlStateCheck(databaseUrl) {
       '-v',
       'ON_ERROR_STOP=1',
       '-A',
-      '-F',
-      '|',
       '-t',
+      ...extraArgs,
       '-c',
-      SHARED_DB_STATE_QUERY,
+      query,
     ],
     {
       encoding: 'utf8',
@@ -203,10 +215,18 @@ function runPsqlStateCheck(databaseUrl) {
     }
   );
 
+  return {
+    status: result.status,
+    stdout: result.stdout,
+    stderr: result.stderr.trim(),
+  };
+}
+
+function runPsqlStateCheck(databaseUrl) {
+  const result = runPsqlQuery(databaseUrl, SHARED_DB_STATE_QUERY, ['-F', '|']);
+
   if (result.status !== 0) {
-    throw new Error(
-      result.stderr.trim() || 'psql shared DB validation failed.'
-    );
+    throw new Error(result.stderr || 'psql shared DB validation failed.');
   }
 
   return parseSharedDbStateOutput(result.stdout);
@@ -252,6 +272,66 @@ function assertSharedDbState(databaseUrl) {
   return state;
 }
 
+export function readLocalMigrationVersions(migrationsDir) {
+  const entries = readdirSync(migrationsDir, { withFileTypes: true });
+  const versions = new Set();
+
+  for (const entry of entries) {
+    if (!entry.isFile() || !entry.name.endsWith('.sql')) continue;
+
+    const match = entry.name.match(/^(\d+)_/);
+    if (match) versions.add(match[1]);
+  }
+
+  return [...versions].sort();
+}
+
+export function parseAppliedMigrationVersions(rawOutput) {
+  return rawOutput
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean);
+}
+
+export function findPendingMigrations(localVersions, appliedVersions) {
+  const applied = new Set(appliedVersions);
+  return localVersions.filter((version) => !applied.has(version));
+}
+
+function runPsqlMigrationsCheck(databaseUrl) {
+  const result = runPsqlQuery(databaseUrl, SHARED_DB_APPLIED_MIGRATIONS_QUERY);
+
+  if (result.status !== 0) {
+    if (/relation .*schema_migrations.* does not exist/i.test(result.stderr)) {
+      throw new Error(
+        'Shared non-prod DB has no supabase_migrations.schema_migrations table. ' +
+          'Run the "Cloud Run Staging" workflow against this commit to bootstrap migrations.'
+      );
+    }
+    throw new Error(result.stderr || 'psql migrations check failed.');
+  }
+
+  return parseAppliedMigrationVersions(result.stdout);
+}
+
+function assertMigrationsApplied(databaseUrl, migrationsDir) {
+  const localVersions = readLocalMigrationVersions(migrationsDir);
+  const appliedVersions = runPsqlMigrationsCheck(databaseUrl);
+  const pending = findPendingMigrations(localVersions, appliedVersions);
+
+  if (pending.length > 0) {
+    throw new Error(
+      `Shared non-prod DB is missing ${pending.length} migration(s): ${pending.join(', ')}. ` +
+        'Run the "Cloud Run Staging" workflow on this commit (or push to the staging branch) to apply migrations via supabase db push, then re-run this deploy.'
+    );
+  }
+
+  return {
+    localCount: localVersions.length,
+    appliedCount: appliedVersions.length,
+  };
+}
+
 function getRequiredFlag(flagName) {
   const flagIndex = process.argv.indexOf(flagName);
 
@@ -287,6 +367,16 @@ function main() {
     return;
   }
 
+  if (command === 'assert-migrations-applied') {
+    const databaseUrl = getRequiredFlag('--db-url');
+    const migrationsDir = getRequiredFlag('--migrations-dir');
+    const counts = assertMigrationsApplied(databaseUrl, migrationsDir);
+    console.log(
+      `Shared non-prod DB has all local migrations applied (local=${counts.localCount}, applied=${counts.appliedCount}).`
+    );
+    return;
+  }
+
   if (command === 'encode-url') {
     const databaseUrl = getRequiredFlag('--db-url');
     console.log(encodeDatabaseUrl(databaseUrl));
@@ -294,7 +384,7 @@ function main() {
   }
 
   throw new Error(
-    'Usage: node scripts/cloud-run/shared-db.mjs <assert-target|assert-state|encode-url> [--db-url ...] [--project-ref ...]'
+    'Usage: node scripts/cloud-run/shared-db.mjs <assert-target|assert-state|assert-migrations-applied|encode-url> [--db-url ...] [--project-ref ...] [--migrations-dir ...]'
   );
 }
 

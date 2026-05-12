@@ -3,6 +3,7 @@
 import { AnimatePresence, motion } from 'motion/react';
 import { useTranslations } from 'next-intl';
 import { useAuthDialog } from '@/components/auth/auth-provider';
+import { GoogleSignInButton } from '@/components/auth/google-sign-in-button';
 import { SignInForm } from '@/components/auth/sign-in-form';
 import { SignUpForm } from '@/components/auth/sign-up-form';
 import { TabButton } from '@/components/auth/tab-button';
@@ -79,6 +80,21 @@ export function AuthDialog() {
                   >
                     {tDialog('signUpTab')}
                   </TabButton>
+                </div>
+              </div>
+
+              {/* Google + divider — same for both tabs */}
+              <div className="space-y-3 px-8 pt-4">
+                <GoogleSignInButton />
+                <div className="flex items-center gap-3">
+                  <div className="h-px flex-1 bg-[#E8D5B5]/60" />
+                  <span
+                    className="text-[#8B7355] text-xs"
+                    style={{ fontFamily: 'DM Sans, sans-serif' }}
+                  >
+                    {tDialog('orContinueWithEmail')}
+                  </span>
+                  <div className="h-px flex-1 bg-[#E8D5B5]/60" />
                 </div>
               </div>
 

@@ -13,6 +13,21 @@ import {
 
 const STORAGE_KEY = 'nham:meal-input-draft';
 const DEBOUNCE_MS = 500;
+// Single-line height matches the submit button (h-8 = 32px) so the placeholder
+// sits on the button's vertical centerline. Above MAX, textarea scrolls itself.
+const MIN_INPUT_HEIGHT_PX = 32;
+const MAX_INPUT_HEIGHT_PX = 200;
+
+function autoResize(el: HTMLTextAreaElement) {
+  el.style.height = '0px';
+  const measured = el.scrollHeight;
+  const next = Math.max(
+    MIN_INPUT_HEIGHT_PX,
+    Math.min(measured, MAX_INPUT_HEIGHT_PX)
+  );
+  el.style.height = `${next}px`;
+  el.style.overflowY = measured > MAX_INPUT_HEIGHT_PX ? 'auto' : 'hidden';
+}
 
 export interface MealInputHandle {
   getText: () => string;
@@ -64,46 +79,42 @@ export const MealInput = forwardRef<MealInputHandle, MealInputProps>(
       const el = textareaRef.current;
       if (el) {
         el.value = text;
+        autoResize(el);
       }
       setHasContent(hasMeaningfulText(text));
       writeDraft(text);
       if (debounceRef.current) clearTimeout(debounceRef.current);
     }, []);
 
-    useImperativeHandle(ref, () => ({
-      getText: () => textareaRef.current?.value ?? '',
-      clear: () => {
-        updateText('');
-      },
-      focus: () => textareaRef.current?.focus(),
-      setText: (text: string) => {
-        updateText(text);
-      },
-    }));
+    useImperativeHandle(
+      ref,
+      () => ({
+        getText: () => textareaRef.current?.value ?? '',
+        clear: () => {
+          updateText('');
+        },
+        focus: () => textareaRef.current?.focus(),
+        setText: (text: string) => {
+          updateText(text);
+        },
+      }),
+      [updateText]
+    );
 
     useEffect(() => {
       const el = textareaRef.current;
       if (!el) return;
 
-      const handleInput = () => {
-        setHasContent(hasMeaningfulText(el.value));
-
-        if (debounceRef.current) clearTimeout(debounceRef.current);
-        debounceRef.current = setTimeout(() => {
-          writeDraft(el.value);
-        }, DEBOUNCE_MS);
-      };
+      autoResize(el);
 
       const flushDraft = () => {
         if (debounceRef.current) clearTimeout(debounceRef.current);
         writeDraft(el.value);
       };
 
-      el.addEventListener('input', handleInput);
       window.addEventListener('beforeunload', flushDraft);
 
       return () => {
-        el.removeEventListener('input', handleInput);
         window.removeEventListener('beforeunload', flushDraft);
         // Flush on unmount (covers in-app navigation)
         if (debounceRef.current) {
@@ -112,6 +123,17 @@ export const MealInput = forwardRef<MealInputHandle, MealInputProps>(
         }
       };
     }, []);
+
+    const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+      const el = e.currentTarget;
+      autoResize(el);
+      setHasContent(hasMeaningfulText(el.value));
+
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+      debounceRef.current = setTimeout(() => {
+        writeDraft(el.value);
+      }, DEBOUNCE_MS);
+    };
 
     const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
       if (e.nativeEvent.isComposing) return;
@@ -127,7 +149,7 @@ export const MealInput = forwardRef<MealInputHandle, MealInputProps>(
     const showStopButton = Boolean(disabled && onCancel);
 
     return (
-      <div className="flex items-center gap-3 rounded-2xl border border-nham-border/40 bg-background p-3 shadow-[0_4px_20px_color-mix(in_srgb,var(--color-nham-accent)_6%,transparent)] transition-all duration-300 focus-within:border-nham-accent/40 focus-within:shadow-[0_4px_20px_color-mix(in_srgb,var(--color-nham-accent)_12%,transparent)]">
+      <div className="flex items-end gap-3 rounded-2xl border border-nham-border/40 bg-background p-3 shadow-[0_4px_20px_color-mix(in_srgb,var(--color-nham-accent)_6%,transparent)] transition-all duration-300 focus-within:border-nham-accent/40 focus-within:shadow-[0_4px_20px_color-mix(in_srgb,var(--color-nham-accent)_12%,transparent)]">
         <label htmlFor="meal-input" className="sr-only">
           {t('placeholder')}
         </label>
@@ -136,10 +158,11 @@ export const MealInput = forwardRef<MealInputHandle, MealInputProps>(
           id="meal-input"
           rows={1}
           defaultValue={readDraft()}
+          onChange={handleChange}
           onKeyDown={handleKeyDown}
           placeholder={t('placeholder')}
           disabled={disabled}
-          className="flex-1 resize-none bg-transparent font-[var(--font-dm-sans)] font-normal text-nham-text text-sm leading-5 placeholder:text-nham-text-muted/40 focus:outline-none disabled:opacity-50"
+          className="flex-1 resize-none bg-transparent py-1.5 font-[var(--font-dm-sans)] font-normal text-nham-text text-sm leading-5 placeholder:text-nham-text-muted/40 focus:outline-none disabled:opacity-50"
         />
         {showStopButton ? (
           <button

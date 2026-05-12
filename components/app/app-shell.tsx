@@ -15,8 +15,8 @@ import {
   shouldShowOnboardingResume,
 } from '@/lib/onboarding/progress';
 import { readStepOneLocaleDraft } from '@/lib/onboarding/step-one-locale-draft';
-import { BottomTabBar } from './bottom-tab-bar';
 import { DesktopSidebar } from './desktop-sidebar';
+import { MobileNav } from './mobile-nav';
 import type { UserMenuUser } from './user-menu';
 
 type ProfileRow = NonNullable<Awaited<ReturnType<typeof getOnboardingProfile>>>;
@@ -103,8 +103,8 @@ export function AppShell({
   };
 
   return (
-    <div className="flex min-h-screen min-w-0 bg-nham-surface">
-      <div className="flex min-h-0 min-w-0 flex-1 gap-3 overflow-x-hidden p-3 pb-[calc(env(safe-area-inset-bottom)+72px)] md:pb-3">
+    <div className="flex h-dvh min-w-0 overflow-hidden bg-nham-surface">
+      <div className="flex min-h-0 min-w-0 flex-1 gap-3 overflow-x-hidden p-3">
         {/* Desktop sidebar — hidden on mobile */}
         <div className="hidden md:block">
           <DesktopSidebar
@@ -121,23 +121,21 @@ export function AppShell({
           />
         </div>
 
-        {/* Page content */}
+        {/* Page content (mobile gets a hamburger header reserving space above) */}
         <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-x-hidden">
+          <MobileNav
+            user={user}
+            isAdmin={isAdmin}
+            onboardingIncomplete={showOnboardingNudge}
+            onboardingStep={onboardingStep}
+            onResumeOnboarding={handleResume}
+            isOnboardingMinimized={isOnboardingMinimized}
+            onMinimizeOnboarding={handleMinimizeNudge}
+            onRestoreOnboarding={handleRestoreNudge}
+          />
           {children}
         </div>
       </div>
-
-      {/* Mobile bottom tab bar */}
-      <BottomTabBar
-        user={user}
-        isAdmin={isAdmin}
-        onboardingIncomplete={showOnboardingNudge}
-        onboardingStep={onboardingStep}
-        onResumeOnboarding={handleResume}
-        isOnboardingMinimized={isOnboardingMinimized}
-        onMinimizeOnboarding={handleMinimizeNudge}
-        onRestoreOnboarding={handleRestoreNudge}
-      />
 
       {showOnboarding && (
         <WizardShell

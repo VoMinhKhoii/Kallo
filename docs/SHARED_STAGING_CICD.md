@@ -5,24 +5,45 @@ shared non-production database.
 
 ## Services
 
-- `nham-internal` — auto-deployed from `main`
-- `nham-staging` — **manual** shared staging environment for promoted testing
+- `nham-internal` — auto-deployed from `main`. This is the dogfood environment.
+  Refuses to deploy if any local migration is missing from the shared non-prod DB
+  (see "Migration drift guard" below).
+- `nham-staging` — auto-deployed when CI completes successfully on the
+  `staging` branch (via `workflow_run`); also available as a manual
+  `workflow_dispatch` for ad-hoc deploys of arbitrary refs/PRs.
 - `nham-pr-<number>` — preview service footprint kept only for legacy/manual
   recovery workflows; automatic PR previews are disabled
 
 All non-production deploy targets currently read the same non-prod database URL
 from Secret Manager when they are active.
 
+## Branch model
+
+- `staging` — long-lived branch. Pushes here run CI; once CI is green,
+  `nham-staging` auto-deploys via a `workflow_run` trigger that applies any
+  new migrations to the shared non-prod DB along the way. Use this branch to
+  validate schema changes before merging to `main`. CI failures on `staging`
+  block the auto-deploy entirely (no lease acquired, no `db push`).
+- `main` — feeds `nham-internal` (dogfooding). Also the future source of
+  `nham-prod` once the prod environment is provisioned (see
+  "Future production environment" below).
+
 ## Automatic flows
 
 ### 1. CI (`.github/workflows/ci.yml`)
 
-On PRs and pushes to `main`, CI:
+On PRs and pushes to `main` **or** `staging`, CI:
 
 - runs lint, typecheck, tests, build, and migration validation
 - builds and pushes a container image tagged by commit SHA
 
-CI does **not** deploy Cloud Run directly.
+CI does **not** deploy Cloud Run directly. The `staging` trigger was added so
+that PRs targeting `staging` (and direct pushes to `staging`) get the same
+validation gate as PRs to `main` — without it, a push to `staging` would only
+get checked by the deploy workflow itself, which is too late to be a useful
+gate. The internal-deploy workflow has an explicit `head_branch == 'main'`
+guard, so CI completing on `staging` will not accidentally deploy
+`nham-internal`.
 
 ### 2. Preview deploy (`.github/workflows/cloud-run-preview.yml`)
 
@@ -42,34 +63,57 @@ Important:
 
 After a successful `main` CI run:
 
-- GitHub Actions deploys `nham-internal`
-- smoke checks run automatically
-- failed smoke checks roll traffic back to the previous revision
+- GitHub Actions runs pre-deploy validation, including the **migration drift
+  guard** (`assert-migrations-applied`): the deploy fails fast if any
+  `supabase/migrations/*.sql` version is missing from
+  `supabase_migrations.schema_migrations` on the shared non-prod DB.
+- If the guard passes, GitHub Actions deploys `nham-internal`.
+- Smoke checks run automatically.
+- Failed smoke checks roll traffic back to the previous revision.
 
-## Manual shared staging flow
+#### Migration drift guard
+
+`nham-internal` and `nham-staging` share the same non-prod database. To prevent
+the dogfood environment from running with stale schema, internal deploys assert
+that every local migration is already applied. If you merge a PR that adds new
+migrations without first deploying via `staging` (or the manual staging
+workflow), the internal deploy will fail with an error naming the pending
+versions. The fix is always: push the same commit to the `staging` branch (or
+trigger the staging workflow manually), wait for `supabase db push` to apply
+the migrations, then re-run the internal deploy.
+
+## Shared staging flow
 
 ### 4. Shared staging deploy (`.github/workflows/cloud-run-staging.yml`)
 
-Use this when someone wants to intentionally promote a branch/ref to a shared
-staging environment for deeper testing.
+This workflow has two trigger paths:
 
-The workflow is `workflow_dispatch` and asks for:
+- **Auto:** `workflow_run` from a successful CI run on the `staging` branch.
+  This guarantees CI's container publish has already finished (so the deploy
+  can find the image) and that a failing CI on `staging` blocks the deploy
+  before any lease is acquired or migration is applied. Reason and
+  `force_takeover` are filled in automatically
+  (`Auto-deploy from staging branch (commit <sha>)` and `false`).
+- **Manual:** `workflow_dispatch` with three inputs — `ref` (branch, tag, commit
+  SHA, or plain PR number), `reason`, `force_takeover`. Use this to deploy an
+  arbitrary ref (e.g. a PR being reviewed) without merging it to `staging`
+  first.
 
-- `ref` — branch, tag, commit SHA, or plain PR number
-- `reason` — why staging is being taken over
-- `force_takeover` — whether to replace an active lease
+In both cases, the workflow does this:
 
-The workflow does this:
-
-1. checks out the requested ref
-2. acquires a **GCS-backed lease**
-3. reads the shared DB secret
-4. runs `supabase db push` against the shared non-prod DB
-5. deploys `nham-staging`
-6. runs the normal smoke check
-7. comments on the PR with the staging URL when `ref` is `pr-<number>` or ends
-   with `#<number>`
-8. releases the lease in cleanup
+1. resolves the target ref (`ref` input for manual, `workflow_run.head_sha` for
+   auto)
+2. checks out the resolved ref
+3. acquires a **GCS-backed lease**
+4. validates the migrations are append-only (defense in depth — manual
+   dispatches may target refs CI hasn't yet validated)
+5. runs `supabase db push` against the shared non-prod DB
+6. deploys `nham-staging`
+7. runs the normal smoke check
+8. comments on the PR with the staging URL when the manual `ref` is
+   `pr-<number>` or ends with `#<number>` (auto deploys never have a PR
+   number — they happen post-merge)
+9. releases the lease in cleanup
 
 ## Why the lease exists
 
@@ -107,6 +151,14 @@ This is an **emergency fallback**, not a normal step.
 Use it only when shared non-prod DB state is dirty and needs to be restored to
 the expected baseline.
 
+The reset replays migrations from a chosen ref (defaults to `staging`, which is
+the canonical pre-prod source of truth). The optional `ref` workflow input
+exists for emergency recovery — for example, if `staging` itself contains a
+broken migration, an operator can override with `main` or any other branch/SHA
+that has known-good migrations. After the reset, `nham-internal` will see the
+chosen ref's schema (since it shares the same DB), so the override should match
+or precede whatever's currently merged to `main`.
+
 ## Day-to-day guidance
 
 ### Use legacy/manual preview services only for:
@@ -140,9 +192,35 @@ Current supporting resources:
 - GCS bucket:
   - `gs://nham-staging-leases`
 
+## Future production environment
+
+Currently `main` only feeds `nham-internal`. There is no production environment
+yet — both internal and staging point at the same shared non-prod Supabase
+project (`[INTERNAL] Nhẩm`). When we are ready to run a real production
+service, the plan is:
+
+- New Supabase project (`[PROD] Nhẩm`) with its own database URL, stored as a
+  separate Secret Manager secret (`nham-prod-database-url`).
+- New Cloud Run service `nham-prod` with prod-only runtime config (memory,
+  scaling, secrets).
+- New workflow `cloud-run-prod.yml` triggered on `push: branches: [main]`,
+  mirroring the staging workflow's lease + `supabase db push` + deploy +
+  smoke-check pattern, but against its own lease bucket
+  (`gs://nham-prod-leases`) so prod and staging cannot block each other.
+- Internal continues to deploy from `main` against the non-prod DB for
+  dogfooding. Once prod exists, internal becomes "production-shape, non-prod
+  data" — unchanged.
+
+This section is intentionally a plan, not a runbook. None of these resources
+exist yet.
+
 ## Summary
 
 - **PR preview:** disabled by default; only legacy/manual operations remain
-- **Internal:** automatic from `main`
-- **Staging:** manual, leased, intended for intentional shared-environment QA
+- **Internal:** automatic from `main`; refuses to deploy if migrations are
+  pending on the shared non-prod DB
+- **Staging:** automatic on successful CI from `staging`, manual via
+  `workflow_dispatch` for arbitrary refs; leased and intended for intentional
+  shared-environment QA
 - **Reset DB:** emergency-only recovery path
+- **Prod:** not yet provisioned (see "Future production environment")

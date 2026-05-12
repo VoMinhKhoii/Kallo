@@ -1,4 +1,10 @@
-import { fireEvent, render, screen, within } from '@testing-library/react';
+import {
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { MobileTimelinePicker } from './mobile-timeline-picker';
@@ -6,7 +12,6 @@ import { MobileTimelinePicker } from './mobile-timeline-picker';
 describe('MobileTimelinePicker', () => {
   const defaultProps = {
     dates: ['2026-05-06', '2026-05-02', '2026-05-01'],
-    allDates: ['2026-05-06', '2026-05-02', '2026-05-01'],
     today: '2026-05-06',
     selectedDate: '2026-05-06',
     isPending: false,
@@ -46,46 +51,43 @@ describe('MobileTimelinePicker', () => {
     expect(screen.queryByLabelText('hasMealIndicator')).not.toBeInTheDocument();
   });
 
-  it('opens the current week slider from the chip', async () => {
+  it('opens with the selected date centered in the visible strip', async () => {
     const user = userEvent.setup();
     render(<MobileTimelinePicker {...defaultProps} />);
 
     await user.click(screen.getByLabelText('selectDate'));
 
+    // Selected = today = 2026-05-06 → centered window spans May 3 to May 9
     expect(screen.getByTestId('mobile-week-slider')).toBeInTheDocument();
-    expect(getDateButton('May 4, 2026')).toBeInTheDocument();
-    expect(getDateButton('May 10, 2026')).toBeInTheDocument();
+    expect(getDateButton('May 3, 2026')).toBeInTheDocument();
+    expect(getDateButton('May 9, 2026')).toBeInTheDocument();
     expect(screen.getByLabelText('nextWeek')).toBeDisabled();
   });
 
-  it('navigates one week into the past with the previous chevron', async () => {
+  it('navigates seven days into the past with the previous chevron', async () => {
     const user = userEvent.setup();
     render(<MobileTimelinePicker {...defaultProps} />);
 
     await user.click(screen.getByLabelText('selectDate'));
     await user.click(screen.getByLabelText('previousWeek'));
 
-    expect(getDateButton('April 27, 2026')).toBeInTheDocument();
-    expect(getDateButton('May 3, 2026')).toBeInTheDocument();
+    // Anchor 2026-05-06 → 2026-04-29; centered window April 26 to May 2.
+    expect(getDateButton('April 26, 2026')).toBeInTheDocument();
+    expect(getDateButton('May 2, 2026')).toBeInTheDocument();
     expect(screen.getByLabelText('nextWeek')).not.toBeDisabled();
   });
 
-  it('can keep generating older weeks beyond the logged meal date range', async () => {
+  it('can keep generating older windows beyond the logged meal date range', async () => {
     const user = userEvent.setup();
-    render(
-      <MobileTimelinePicker
-        {...defaultProps}
-        allDates={['2026-05-06']}
-        dates={['2026-05-06']}
-      />
-    );
+    render(<MobileTimelinePicker {...defaultProps} dates={['2026-05-06']} />);
 
     await user.click(screen.getByLabelText('selectDate'));
     await user.click(screen.getByLabelText('previousWeek'));
     await user.click(screen.getByLabelText('previousWeek'));
 
-    expect(getDateButton('April 20, 2026')).toBeInTheDocument();
-    expect(getDateButton('April 26, 2026')).toBeInTheDocument();
+    // Two prev chevrons from anchor 2026-05-06 → 2026-04-22; window April 19 to April 25.
+    expect(getDateButton('April 19, 2026')).toBeInTheDocument();
+    expect(getDateButton('April 25, 2026')).toBeInTheDocument();
   });
 
   it('navigates back toward the current week with the next chevron', async () => {
@@ -102,7 +104,7 @@ describe('MobileTimelinePicker', () => {
     expect(screen.getByLabelText('nextWeek')).toBeDisabled();
   });
 
-  it('opens to the selected date week when the selected date is older', async () => {
+  it('centers the selected date when it is older than today', async () => {
     const user = userEvent.setup();
     render(
       <MobileTimelinePicker
@@ -114,12 +116,13 @@ describe('MobileTimelinePicker', () => {
 
     await user.click(screen.getByLabelText('selectDate'));
 
-    expect(getDateButton('April 20, 2026')).toBeInTheDocument();
-    expect(getDateButton('April 26, 2026')).toBeInTheDocument();
+    // Centered on 2026-04-22 → window April 19 to April 25.
+    expect(getDateButton('April 19, 2026')).toBeInTheDocument();
+    expect(getDateButton('April 25, 2026')).toBeInTheDocument();
     expect(screen.getByLabelText('nextWeek')).not.toBeDisabled();
   });
 
-  it('selects future days inside the current week and collapses to the chip', async () => {
+  it('selects future days inside the visible window and collapses to the chip', async () => {
     const user = userEvent.setup();
     const onSelectDate = vi.fn();
     render(
@@ -127,10 +130,13 @@ describe('MobileTimelinePicker', () => {
     );
 
     await user.click(screen.getByLabelText('selectDate'));
-    await user.click(getDateButton('May 10, 2026'));
+    // May 9 is selected+3 (the right edge of the centered window from today=May 6).
+    await user.click(getDateButton('May 9, 2026'));
 
-    expect(onSelectDate).toHaveBeenCalledWith('2026-05-10');
-    expect(screen.queryByTestId('mobile-week-slider')).not.toBeInTheDocument();
+    expect(onSelectDate).toHaveBeenCalledWith('2026-05-09');
+    await waitFor(() =>
+      expect(screen.queryByTestId('mobile-week-slider')).not.toBeInTheDocument()
+    );
     expect(screen.getByLabelText('selectDate')).toBeInTheDocument();
   });
 
@@ -145,7 +151,9 @@ describe('MobileTimelinePicker', () => {
     await user.click(getDateButton('May 6, 2026'));
 
     expect(onSelectDate).not.toHaveBeenCalled();
-    expect(screen.queryByTestId('mobile-week-slider')).not.toBeInTheDocument();
+    await waitFor(() =>
+      expect(screen.queryByTestId('mobile-week-slider')).not.toBeInTheDocument()
+    );
   });
 
   it('keeps only adjacent weeks in the slider DOM for deep past dates', async () => {

@@ -29,11 +29,15 @@ interface CountryPickerProps {
   noResults: string;
 }
 
+// When opening downward we pin the menu's TOP to the trigger's bottom; when
+// opening upward we pin the menu's BOTTOM to the trigger's top. Pinning by
+// `top` while flipping up would leave a gap whenever the menu's actual height
+// is smaller than `maxHeight` — the menu would visually detach from the field.
 interface MenuPosition {
   left: number;
   maxHeight: number;
-  top: number;
   width: number;
+  anchor: { kind: 'top'; top: number } | { kind: 'bottom'; bottom: number };
 }
 
 function CountryPicker({
@@ -70,15 +74,20 @@ function CountryPicker({
     const viewportPadding = 16;
     const spaceBelow = window.innerHeight - rect.bottom - viewportPadding;
     const spaceAbove = rect.top - viewportPadding;
-    const openUpward = spaceBelow < 260 && spaceAbove > spaceBelow;
+    // Bias toward opening below; only flip when there is truly no room below
+    // and meaningfully more space above. Otherwise rely on maxHeight to
+    // shrink the menu so it never appears to "fly above" the trigger.
+    const openUpward = spaceBelow < 180 && spaceAbove > spaceBelow + 40;
     const availableSpace = openUpward ? spaceAbove : spaceBelow;
-    const maxHeight = Math.max(180, Math.min(320, availableSpace - 8));
+    const maxHeight = Math.max(160, Math.min(320, availableSpace - 8));
 
     setMenuPosition({
       left: rect.left,
       maxHeight,
-      top: openUpward ? rect.top - maxHeight - 8 : rect.bottom + 8,
       width: rect.width,
+      anchor: openUpward
+        ? { kind: 'bottom', bottom: window.innerHeight - rect.top + 8 }
+        : { kind: 'top', top: rect.bottom + 8 },
     });
   }, []);
 
@@ -181,10 +190,12 @@ function CountryPicker({
             ref={menuRef}
             style={{
               left: menuPosition.left,
-              top: menuPosition.top,
               width: menuPosition.width,
+              ...(menuPosition.anchor.kind === 'top'
+                ? { top: menuPosition.anchor.top }
+                : { bottom: menuPosition.anchor.bottom }),
             }}
-            className="fixed z-[140] overflow-hidden rounded-2xl border border-[#EAE7E0] bg-white shadow-[0_20px_60px_rgba(44,36,22,0.18)]"
+            className="fixed z-[140] flex flex-col overflow-hidden rounded-2xl border border-[#EAE7E0] bg-white shadow-[0_20px_60px_rgba(44,36,22,0.18)]"
           >
             <div className="border-[#EAE7E0] border-b p-2">
               <input
@@ -232,7 +243,6 @@ function CountryPicker({
           </div>,
           document.body
         )}
-      {isOpen && <div className="h-2" />}
     </div>
   );
 }

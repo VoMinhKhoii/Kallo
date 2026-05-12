@@ -1,20 +1,13 @@
 'use client';
 
-import {
-  Activity,
-  LayoutDashboard,
-  PanelLeftClose,
-  PanelLeftOpen,
-  Settings,
-  ShieldCheck,
-  UtensilsCrossed,
-} from 'lucide-react';
+import { PanelLeftClose, PanelLeftOpen, Settings } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import type * as React from 'react';
 import { useState } from 'react';
 import { useSidebarState } from '@/hooks/use-sidebar-state';
 import { Link, usePathname } from '@/i18n/navigation';
 import { cn } from '@/lib/utils';
+import { isActiveRoute, visibleNavItems } from './nav-items';
 import { OnboardingNudge } from './onboarding-nudge';
 import { SidebarTooltip } from './sidebar-tooltip';
 import { UserMenu, type UserMenuUser } from './user-menu';
@@ -41,11 +34,6 @@ export interface DesktopSidebarProps {
 
 const EXPANDED_WIDTH = 'w-[260px]';
 const COLLAPSED_WIDTH = 'w-[68px]';
-
-function isActiveRoute(pathname: string, href: string): boolean {
-  if (pathname === href) return true;
-  return pathname.startsWith(`${href}/`);
-}
 
 function SectionHeader({
   label,
@@ -211,36 +199,15 @@ export function DesktopSidebar({
     onFocusLeave();
   };
 
-  const navItems: NavItem[] = [
-    {
-      id: 'dashboard',
-      label: t('dashboard'),
-      href: '/dashboard',
-      icon: <LayoutDashboard className="h-5 w-5" />,
-    },
-    {
-      id: 'nutrition',
-      label: t('nutrition'),
-      href: '/nutrition',
-      icon: <Activity className="h-5 w-5" />,
-    },
-    {
-      id: 'logging',
-      label: t('logging'),
-      href: '/logging',
-      icon: <UtensilsCrossed className="h-5 w-5" />,
-    },
-    ...(isAdmin
-      ? [
-          {
-            id: 'admin',
-            label: t('admin'),
-            href: '/admin',
-            icon: <ShieldCheck className="h-5 w-5" />,
-          },
-        ]
-      : []),
-  ];
+  const navItems: NavItem[] = visibleNavItems(isAdmin).map((item) => {
+    const Icon = item.icon;
+    return {
+      id: item.id,
+      label: t(item.labelKey),
+      href: item.href,
+      icon: <Icon className="h-5 w-5" />,
+    };
+  });
 
   return (
     <aside
