@@ -204,22 +204,25 @@ export interface UnmatchedIngredient {
 // LLM Call 2 output: Cooking-adjusted bounded estimates (4 macros only)
 // ---------------------------------------------------------------------------
 //
-// Contract (2026-05-12): the LLM emits absolute {low, mid, high} per macro
-// (same shape as before). The server overrides `mid` with
-// `MacroBase[macro]` (DB-anchored) for matched ingredients at resolve time
-// and defensively clamps low ≤ base ≤ high. The 2026-05-12 5511 kcal
-// regression class is closed: even if the LLM echoes per_100g as the
-// "portion" value, `mid = base = server-anchored DB truth`. Unmatched
-// ingredients have no DB anchor so the LLM's `mid` is kept; physical
-// density is clamped in `validateNutritionOutput`.
+// Contract (2026-05-13): the LLM emits absolute {low, mid, high} per macro,
+// but only `fatG` flows downstream for matched ingredients. At resolve time
+// (`lib/ai/pipeline/nutrition.ts`):
+//   - matched P and C are server-anchored to `base ± SERVER_PC_BAND`;
+//   - matched fat keeps the LLM mid subject to the hallucination guard
+//     (which now also catches structurally-invalid triples and falls back
+//     to the same `base ± band`);
+//   - matched kcal is derived from the macro identity 4P + 4C + 9F;
+//   - unmatched ingredients flow through P/C/F verbatim, kcal is derived,
+//     and a density clamp (`MAX_KCAL_PER_100G`) scales the triple if it
+//     exceeds the physical ceiling.
 
 /**
  * Server-computed base values per macro, keyed by run-scoped ingredient ID.
  * Built from `nutritionPer100g × dbScalingGrams / 100` using the same
  * `convertCookedToRaw` logic that `assembly.ts` applies to the 24 non-macro
- * nutrients. Passed to the nutrition prompt (rendered as `<base>` per
- * matched ingredient) and to the resolve step that overrides `mid`.
- * Absent entries (= unmatched ingredients) mean the LLM owns `mid` as well.
+ * nutrients. Passed to the nutrition prompt (rendered as `<base>` per matched
+ * ingredient) and to `resolveIngredientMacros` for server anchoring.
+ * Absent entries (unmatched ingredients) mean the LLM owns all four macros.
  */
 export interface MacroBase {
   caloriesKcal: number;

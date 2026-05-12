@@ -46,16 +46,20 @@ const ingredientCookingMethod = (
  * D5: Merge LLM-bounded macros with DB mid values for the remaining 24
  * nutrients.
  *
- * Post-2026-05-12 contract (factors-only): the `llmNutrition` triples are
- * already DB-anchored — `nutrition.ts:resolveFactorsToBoundedIngredient`
- * produced them as `{low: base × lowFactor, mid: base, high: base × highFactor}`
- * where `base = per_100g × dbScalingGrams / 100`. The LLM never multiplies.
- * That makes the 4-macro branch *consistent* with the 24-nutrient branch
- * below, which has always scaled `(per100g × estimatedGrams) / 100`.
+ * Post-2026-05-13 contract: the 4 macros in `llmNutrition` have already been
+ * passed through `nutrition.ts:resolveIngredientMacros`, so:
+ *   - matched ingredients: P and C are server-anchored to `base ± SERVER_PC_BAND`,
+ *     fat is LLM-mid with the hallucination guard, kcal is derived from
+ *     `4P + 4C + 9F`. The LLM's raw P/C/kcal output is already discarded.
+ *   - unmatched ingredients: P/C/F flow through from the LLM, kcal is derived
+ *     from the macro identity, and a density clamp scales the triple if
+ *     `kcal/100g > MAX_KCAL_PER_100G`.
+ * The 24-nutrient branch below has always scaled `(per100g × estimatedGrams) / 100`
+ * deterministically; it stays unchanged.
  *
  * `normalizeBoundedEstimate` is kept as defence-in-depth — the resolve step
- * guarantees ordering (lowFactor ≤ 1 ≤ highFactor; base ≥ 0), so this is a
- * no-op in the happy path but cheap insurance against future drift.
+ * guarantees ordering, so this is a no-op in the happy path but cheap insurance
+ * against future drift.
  */
 export function mergeNutrition(
   llmNutrition: IngredientLlmNutrition,

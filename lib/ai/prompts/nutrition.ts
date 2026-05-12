@@ -81,16 +81,12 @@ interface NutritionPromptParts {
 export function getNutritionPromptLabel(
   env: Record<string, string | undefined> = process.env
 ): NutritionPromptLabel {
-  // Default 'compressed' (set 2026-05-09). The original Phase B harness on
-  // gemini-3.1-flash-lite showed 64–72 % warm-path latency reduction with no
-  // quality regression — but the harness only validated against 3.1. When
-  // STABLE_PROFILE falls back to gemini-2.5-flash-lite (today's prod default
-  // when PIPELINE_MODEL_PROFILE is unset), 2.5 cannot reproduce the original
-  // prompt's "scale per_100g by as_eaten_grams" arithmetic reliably and
-  // returns physically impossible macros. The 2026-05-12 factors-only
-  // refactor removes this dependency entirely: server multiplies, LLM only
-  // bounds. Set `PIPELINE_NUTRITION_PROMPT_LABEL=production` to revert to
-  // the verbose pre-factor prompt for debugging.
+  // Default 'compressed' (set 2026-05-09). The 2026-05-12 macro-anchor fix
+  // and the 2026-05-13 fat-only contract together make this safe under any
+  // STABLE_PROFILE model: the server does all P/C/kcal math for matched
+  // ingredients and only the fat triple actually flows downstream. Set
+  // `PIPELINE_NUTRITION_PROMPT_LABEL=production` to render the verbose prompt
+  // for debugging.
   return env[NUTRITION_PROMPT_LABEL_ENV] === 'production'
     ? 'production'
     : 'compressed';
@@ -160,7 +156,7 @@ function buildNutritionPromptParts(
 
   let ingredientData = '<ingredient_data>\n';
   ingredientData +=
-    '  <!-- The server has already computed base = per_100g × as_eaten_grams / 100 for each macro. You return ONLY {lowFactor, highFactor} per macro; the server multiplies base × factor to get final low/high. mid = base, always. -->\n\n';
+    '  <!-- The server has already computed base = per_100g × as_eaten_grams / 100 for each macro. For matched ingredients, the server uses base directly for protein, carb, and calories — you only need to reason about fatG (cooking-method adjustment). Your other macros are logged for QA but discarded. For unmatched ingredients (no <base> element), provide LOW/MID/HIGH for all four macros. -->\n\n';
 
   for (const mealItem of sortedMealItems) {
     ingredientData += `  <meal_item name="${escapeXmlAttribute(mealItem.name)}">\n`;
@@ -191,7 +187,7 @@ function buildNutritionPromptParts(
     const unmatchedNames = new Set(unmatched.map((u) => u.ingredientName));
     unmatchedSection = '\n<unmatched_ingredients>\n';
     unmatchedSection +=
-      "  <!-- No DB match found. For these ingredients ONLY, provide a per100gEstimate {caloriesKcal, proteinG, carbohydrateG, fatG} using your culinary knowledge of the user's cuisine and FAO/USDA food composition data. The server multiplies by as_eaten_grams to derive base, then applies your factor bounds. Do NOT multiply by grams yourself. -->\n";
+      "  <!-- No DB match found. For each ingredient below, emit ABSOLUTE LOW/MID/HIGH triples (NOT per-100g) for caloriesKcal, proteinG, carbohydrateG, fatG, scaled to the listed as_eaten_grams. Internally: think in per-100g density (using your culinary knowledge + FAO/USDA priors), then multiply by as_eaten_grams/100. Real-world per-100g density anchors for common Vietnamese street foods: nem lụi (grilled pork) ~250–290 kcal/100g; chả giò (fried spring roll) ~250–320 kcal/100g; bún tươi (cooked rice vermicelli) ~100–130 kcal/100g; nước dùng (broth) ~5–50 kcal/100g depending on the dish; sốt đậu phộng (peanut sauce) ~250–350 kcal/100g; sốt tương đậu (fermented soybean sauce) ~120–180 kcal/100g. Stay within the physical-density ceilings below — if your kcal.mid/100g > 900, you are hallucinating; recompute. -->\n";
 
     for (const mealItem of sortedMealItems) {
       const unmatchedIngs = mealItem.ingredients.filter((ing) =>
@@ -240,19 +236,22 @@ export function buildCompressedNutritionPrompt(
 </contract>
 
 <calculation_rules>
-   For each matched ingredient, the server has precomputed and SHOWN you base = per_100g × as_eaten_grams / 100 under <base>. Treat base as your starting anchor for MID, NOT your output verbatim. Then adjust MID upward or downward using your cooking knowledge:
-     - chiên/rán/xào (frying): absorbed oil raises fat (and kcal) by 20–80%.
-     - luộc rice (boiling): rice mass roughly triples from water absorption; per the parent meal item context, the as_eaten_grams may already reflect cooked rice.
-     - nướng (grilling): moisture loss raises kcal density by 10–30%.
-     - kho (simmer with sugar/soy): added sugar/oil raises kcal modestly.
-   Realistic cooking adjustments stay within ~0.5–2× of base. Going beyond that is treated as a hallucination and the server snaps MID back to base; do not try.
-   db_state="cooked": base already reflects cooked food; small adjustments only.
-   db_state="raw": base reflects raw mass; apply cooking adjustment as above.
-   db_state="unknown": widen LOW/HIGH but keep MID near base.
-   For unmatched ingredients (no DB row, no <base>): estimate ABSOLUTE LOW/MID/HIGH for the as-eaten portion from cuisine knowledge. The meal item name is your primary context.
+   For each MATCHED ingredient (those with a <base> element), the server uses base for protein, carb, and calories directly — it overrides your output for those three. You ONLY need to reason about fatG:
+     - fatG.mid: adjust base.fatG for cooking method.
+         · chiên/rán/xào (frying): absorbed oil raises fat by ~30–80% over base.
+         · luộc/hấp (boiling/steaming) with no added oil: fat stays near base.
+         · nướng (grilling) without basting/oil: fat near base; light moisture loss only.
+         · kho (simmer with sugar/soy/oil): fat raised modestly by added oil.
+     - fatG.low / fatG.high: portion + cooking uncertainty around your fatG.mid (typically ±15–25%).
+     - Fat adjustments stay within ~0.5–2× of base.fatG. Going beyond that is treated as a hallucination and the server snaps fatG.mid back to base.fatG; do not try.
+     - Cooking method does NOT physically change protein or carb per gram — the server discards your output for those macros. You may emit them (the schema requires it), but they will not be used. Spend your reasoning on fatG.
+   db_state="cooked": base already reflects cooked food.
+   db_state="raw": base.fatG reflects raw mass; apply cooking adjustment when oil is added.
+   db_state="unknown": widen fatG.low / fatG.high but keep fatG.mid near base.fatG.
+   For UNMATCHED ingredients (no DB row, no <base>): estimate ABSOLUTE LOW/MID/HIGH for all four macros for the as-eaten portion from cuisine knowledge. The meal item name is your primary context.
    Bounds express physical uncertainty (portion guess + cooking variance), never user goals or preferences.
    Keep every triple ordered low <= mid <= high and non-negative.
-   Macro identity should hold: kcal ~= 4*protein + 4*carbs + 9*fat.
+   Macro identity holds for unmatched: kcal ~= 4*protein + 4*carbs + 9*fat. The server derives kcal from this identity for matched ingredients.
    Physical density ceiling: high kcal <= 900/100g; high protein/carbs/fat <= 100g/100g.
 </calculation_rules>
 
@@ -300,35 +299,41 @@ export function buildNutritionPrompt(
 
   <base_reference>
     For each MATCHED ingredient, the server has precomputed and shown you a <base> element with base.caloriesKcal / proteinG / carbohydrateG / fatG. base = (per_100g × as_eaten_grams) / 100, using raw-or-cooked grams depending on db_state.
-    Use base as your anchor for MID. Then adjust MID using cooking knowledge (e.g., +25–40% for chiên/rán with oil; +0–10% for nướng moisture loss; +0% for db_state="cooked"). Then set LOW and HIGH around the adjusted MID to reflect physical uncertainty.
+    The server uses base directly for protein, carb, and calories — it OVERRIDES your output for those three macros. You only need to reason about fatG for matched ingredients. The schema requires you to emit all four macros (so emit any reasonable value for the others), but only fatG affects downstream nutrition.
     Do NOT echo per_100g as MID; do NOT multiply per_100g by 100; the server has already done the multiplication for you.
   </base_reference>
 
   <calculation>
-    Each ingredient has db_state: "raw" | "cooked" | "unknown".
+    For MATCHED ingredients (those with a <base> element), focus on fatG only:
 
-    1. db_state="cooked": <base> already reflects cooked food. MID ≈ base unless the user's cooking style adds extra oil/sugar.
+    1. fatG.mid: adjust base.fatG using cooking knowledge.
+         - chiên/rán/xào (frying with oil) absorbs cooking oil → fat raised by ~30–80% over base.
+         - luộc/hấp (boiling/steaming) without added oil → fat near base.
+         - nướng (grilling) without basting/oil → fat near base; light moisture loss only.
+         - kho (simmer with sugar/soy/oil) → fat raised modestly by added oil.
 
-    2. db_state="raw": <base> reflects raw mass × per_100g. Adjust MID for cooking method using your knowledge:
-         - frying (chiên/rán/xào) absorbs cooking oil → fat goes UP, kcal goes UP.
-         - boiling (luộc/nấu) drives moisture changes; rice absorbs water.
-         - grilling (nướng) drives moisture out → density UP.
+    2. fatG.low / fatG.high: portion + cooking uncertainty around your fatG.mid (typically ±15–25%).
 
-    3. db_state="unknown": treat like "raw" but widen LOW/HIGH bounds.
+    3. db_state="cooked": base.fatG already reflects cooked food.
+       db_state="raw": base.fatG reflects raw mass; apply the cooking-method adjustment.
+       db_state="unknown": widen fatG.low / fatG.high but keep fatG.mid near base.fatG.
 
-    For UNMATCHED ingredients (no <base> shown): estimate absolute LOW/MID/HIGH for the as-eaten portion from cuisine knowledge. The meal item name is the primary context.
+    4. proteinG, carbohydrateG, caloriesKcal for matched ingredients: emit any reasonable value (the schema requires it). The server discards these and recomputes from base + your fatG via the macro identity 4P + 4C + 9F. Do not spend reasoning budget on them.
 
-    Realistic cooking adjustments stay within ~0.5–2× of base. Numbers beyond that are treated as hallucinations and the server snaps MID back to base — do not try.
+    For UNMATCHED ingredients (no <base> shown): estimate absolute LOW/MID/HIGH for all four macros for the as-eaten portion from cuisine knowledge. The meal item name is the primary context.
 
-    Macro identity: kcal ~= 4*protein + 4*carbs + 9*fat.
+    Realistic fat adjustments stay within ~0.5–2× of base.fatG. Numbers beyond that are treated as hallucinations and the server snaps fatG.mid back to base.fatG — do not try.
+
+    Macro identity (for unmatched): kcal ~= 4*protein + 4*carbs + 9*fat.
     Physical density ceiling: high kcal <= 900/100g; high protein/carbs/fat <= 100g/100g.
   </calculation>
 
   <why_three_values>
-    Each macro is a triple LOW/MID/HIGH expressing genuine uncertainty about
+    For matched ingredients, only fatG's triple matters — protein/carb/kcal are server-anchored.
+    For unmatched, each macro is a triple LOW/MID/HIGH expressing genuine uncertainty about
     the user's actual portion and cooking behavior — not a preference signal.
-    - MID: your best point estimate after cooking adjustment (start from base, adjust).
-    - LOW:  conservative lower bound. Tighten for DB-matched + standard portion; widen for fried-in-oil or ambiguous portion.
+    - MID: your best point estimate after cooking adjustment.
+    - LOW: conservative lower bound. Tighten for DB-matched + standard portion; widen for fried-in-oil or ambiguous portion.
     - HIGH: conservative upper bound. Same widening rules.
   </why_three_values>
 
@@ -348,18 +353,16 @@ ${countryLines.length > 0 ? `${countryLines.join('\n')}\n` : ''}  oil_usage: ${c
 </user_context>
 
 <example>
-  Matched: gạo tẻ, 65g raw, nấu, DB: 352 kcal/100g.
-  Server has computed and shown you base.caloriesKcal=229.
-  Cooking is "nấu" — no macro change from cooked DB row.
-  → {"ingredientName":"gạo tẻ","caloriesKcal":{"low":210,"mid":229,"high":250},...}
+  Matched: gạo tẻ, 65g raw, nấu, DB: 352 kcal/100g raw. Server shows base.fatG=0.3.
+  Cooking is "nấu" (boiling) with no added oil → fat stays near base.
+  → fatG {low: 0.2, mid: 0.3, high: 0.5}. Other macros: emit any reasonable value (e.g., copy base) — server overrides.
 
-  Matched, frying: chả giò tôm, 150g chiên, DB cooked: 180 kcal/100g.
-  Server has computed base.caloriesKcal=270.
-  Frying adds oil — adjust MID upward, say +20–30%.
-  → caloriesKcal {low: 280, mid: 330, high: 400}.
+  Matched, frying: chả giò tôm, 150g chiên, DB cooked: 180 kcal/100g, fatG/100g=6.5. Server shows base.fatG=9.75.
+  Frying adds absorbed oil — raise fatG.mid ~30–60% over base.
+  → fatG {low: 11, mid: 14, high: 18}. Server derives kcal from 4P + 4C + 9F using DB-anchored P/C and your fat.
 
-  Unmatched: nem lụi, 80g grilled. No DB row.
-  → {"ingredientName":"nem lụi","caloriesKcal":{"low":170,"mid":200,"high":240},...}
+  Unmatched: nem lụi, 80g grilled. No DB row, no <base>.
+  → all four macros from cuisine knowledge: caloriesKcal {low: 170, mid: 200, high: 240}, proteinG {low: 13, mid: 14, high: 16}, carbohydrateG {low: 2, mid: 2.5, high: 3}, fatG {low: 12, mid: 14, high: 17}.
 </example>
 
 ${ingredientData}

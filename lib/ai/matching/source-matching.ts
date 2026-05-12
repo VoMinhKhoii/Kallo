@@ -24,6 +24,17 @@ export const USDA_VECTOR_THRESHOLD = 0.7;
 /** Minimum similarity to accept a fuzzy match when used as fallback after vector miss */
 export const FUZZY_FALLBACK_THRESHOLD = 0.7;
 
+/**
+ * Effective-similarity penalty applied to candidates whose state doesn't match
+ * the ingredient's `expectedState`. Pushes barely-above-threshold cross-state
+ * matches (e.g., "Bún tươi" cooked at 0.709 vs USDA "Noodles, japanese, somen,
+ * dry" raw) below the acceptance bar so they fall through to the unmatched
+ * path instead of corrupting downstream macros with the wrong state's per-100g
+ * values. Only applies when both `expectedState` and the candidate state are
+ * known (not 'unknown').
+ */
+export const STATE_MISMATCH_PENALTY = 0.05;
+
 /** Legacy: kept for backward compat in tests */
 export const FUZZY_SIMILARITY_THRESHOLD = 0.4;
 export const VECTOR_SIMILARITY_THRESHOLD = 0.7;
@@ -92,19 +103,34 @@ export function rerankCandidates(candidates: FuzzyMatchRow[]): FuzzyMatchRow[] {
 /**
  * Build a lightweight MatchInfo from candidate rows.
  * Pure function — no DB calls. Nutrition is fetched separately in batch.
+ *
+ * When `expectedState` is supplied AND it differs from the top candidate's
+ * state (and both are known, i.e. not 'unknown'), the candidate must clear
+ * `minSimilarity + STATE_MISMATCH_PENALTY` instead of just `minSimilarity`.
+ * That filters out marginal cross-state matches whose per-100g nutrition is
+ * physically wrong for the user's ingredient (cooked vs. dry, etc.).
  */
 export function buildMatchResult(
   ingredientName: string,
   rows: FuzzyMatchRow[],
   minSimilarity: number,
   source?: MatchSource,
-  matchType?: MatchType
+  matchType?: MatchType,
+  expectedState?: DbIngredientState
 ): MatchInfo | null {
   if (rows.length === 0) return null;
 
   const reranked = rerankCandidates(rows);
   const topMatch = reranked[0];
-  if (topMatch.similarity < minSimilarity) return null;
+  const topState = normalizeState(topMatch.state);
+  const stateMismatch =
+    expectedState !== undefined &&
+    expectedState !== 'unknown' &&
+    topState !== 'unknown' &&
+    topState !== expectedState;
+  const effectiveMin =
+    minSimilarity + (stateMismatch ? STATE_MISMATCH_PENALTY : 0);
+  if (topMatch.similarity < effectiveMin) return null;
 
   return {
     ingredientName,
@@ -112,7 +138,7 @@ export function buildMatchResult(
     matchedName: topMatch.name_primary,
     similarity: topMatch.similarity,
     confidence: classifyConfidence(topMatch.similarity),
-    state: normalizeState(topMatch.state),
+    state: topState,
     ...(source !== undefined ? { source } : {}),
     ...(matchType !== undefined ? { matchType } : {}),
   };
@@ -207,19 +233,22 @@ export async function matchSingleIngredientWithEmbedding(
     ),
   ]);
 
+  const matchExpectedState = pickCtx.expectedState;
   const faoResult = buildMatchResult(
     ingredientName,
     faoVectorRows as unknown as FuzzyMatchRow[],
     FAO_VECTOR_THRESHOLD,
     'fao',
-    'vector'
+    'vector',
+    matchExpectedState
   );
   const usdaResult = buildMatchResult(
     ingredientName,
     usdaVectorRows as unknown as FuzzyMatchRow[],
     USDA_VECTOR_THRESHOLD,
     'usda',
-    'vector'
+    'vector',
+    matchExpectedState
   );
 
   if (faoResult) {
@@ -264,14 +293,16 @@ export async function matchSingleIngredientWithEmbedding(
     faoFuzzyRows as unknown as FuzzyMatchRow[],
     FUZZY_FALLBACK_THRESHOLD,
     'fao',
-    'fuzzy'
+    'fuzzy',
+    matchExpectedState
   );
   const usdaFuzzy = buildMatchResult(
     ingredientName,
     usdaFuzzyRows as unknown as FuzzyMatchRow[],
     FUZZY_FALLBACK_THRESHOLD,
     'usda',
-    'fuzzy'
+    'fuzzy',
+    matchExpectedState
   );
 
   if (faoFuzzy) {

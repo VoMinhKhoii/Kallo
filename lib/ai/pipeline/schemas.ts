@@ -118,18 +118,18 @@ export type MealDecomposition = z.infer<typeof mealDecompositionSchema>;
 // LLM Call 2: Cooking-adjusted bounded nutrition schema (4 macros only)
 // ---------------------------------------------------------------------------
 //
-// Contract (2026-05-12): the LLM emits absolute {low, mid, high} per macro as
-// before, but the server overrides `mid` with the precomputed `base` value
-// (DB per-100g × grams / 100 for matched ingredients) at resolve time —
-// see `applyBaseOverride` in `lib/ai/pipeline/nutrition.ts`. The prompt
-// surfaces `<base>` per matched ingredient and tells the LLM that `mid` is
-// fixed. The LLM's only job is to pick a sensible low/high spread around
-// `base`. Even if the model echoes an absurd `mid` (the 2026-05-12 5511 kcal
-// regression), the server-anchored `mid = base` always reflects DB truth.
+// Contract (2026-05-13): the LLM emits absolute {low, mid, high} per macro,
+// but only `fatG` actually flows downstream for **matched** ingredients —
+// `resolveIngredientMacros` in `lib/ai/pipeline/nutrition.ts` server-anchors
+// proteinG and carbohydrateG to `base ± SERVER_PC_BAND` (DB per-100g × grams)
+// and derives caloriesKcal from the macro identity 4P + 4C + 9F. The LLM's
+// emitted P/C/kcal for matched ingredients are accepted by the schema (so the
+// model isn't forced to think about them) but silently overridden server-side.
 //
-// Unmatched ingredients have no DB anchor; the LLM provides absolute
-// {low, mid, high} for the portion. `validateNutritionOutput` clamps
-// physically impossible values (kcal/100g > 900 etc.) before assembly.
+// For **unmatched** ingredients (no DB row): the LLM's P/C/F triples flow
+// through verbatim, kcal is derived from the macro identity, and a hard
+// density clamp (`MAX_KCAL_PER_100G` from `lib/ai/constants.ts`) scales the
+// whole triple down if it exceeds the physical ceiling.
 
 /**
  * Bounded estimate shape — used for both JSON schema generation and runtime

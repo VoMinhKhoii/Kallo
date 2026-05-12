@@ -383,7 +383,8 @@ describe('buildNutritionPrompt', () => {
     );
     expect(prompt).toContain('nước mắm đặc biệt');
     expect(prompt).toContain('<meal_item name="cơm">');
-    expect(prompt).toContain("culinary knowledge of the user's cuisine");
+    // Post-2026-05-13 wording: "using your culinary knowledge + FAO/USDA priors".
+    expect(prompt).toMatch(/culinary knowledge/);
   });
 
   it('groups unmatched ingredients under their parent meal items', () => {
@@ -589,8 +590,9 @@ describe('buildNutritionPrompt', () => {
     expect(prompt).toMatch(/db_state="cooked"/);
     expect(prompt).toMatch(/db_state="raw"/);
     expect(prompt).toMatch(/db_state[\s\S]*"cooked"[\s\S]*as_eaten_grams/);
+    // db_state="raw" guidance now lives in <calculation>: "base.fatG reflects raw mass; apply the cooking-method adjustment".
     expect(prompt).toMatch(
-      /db_state[\s\S]*"raw"[\s\S]*[Aa]djust.*for cooking method/
+      /db_state[\s\S]*"raw"[\s\S]*cooking[- ]method/i
     );
   });
 
@@ -626,7 +628,8 @@ describe('buildNutritionPrompt', () => {
       sampleUserContext
     );
     expect(prompt).toContain('cooking="kho"');
-    expect(prompt).toContain('cooking method');
+    // The prompt should mention cooking-method reasoning somewhere in the guidance.
+    expect(prompt).toMatch(/cooking[- ]method/i);
   });
 });
 

@@ -945,10 +945,9 @@ async function runPipeline(
         mealItemGrams.get(rawItemNutrition.mealItemName) ??
         mealItemGrams.get(capitalizeFirst(rawItemNutrition.mealItemName)) ??
         0;
-      // Resolve factor-based raw output to bounded estimates using the
-      // server-computed base map. Streaming sees the same shape downstream
-      // consumers see; the authoritative reconcile pass runs after the
-      // full stream completes (line ~1075).
+      // Streaming preview: resolve raw triples against the server-computed
+      // base map so the SSE event matches the final shape. The authoritative
+      // reconcile pass runs after the full stream completes (below).
       const decomposedMi =
         decomposedItemByName.get(rawItemNutrition.mealItemName) ??
         decomposedItemByName.get(
@@ -1027,19 +1026,20 @@ async function runPipeline(
         'nutrition'
       );
 
-      // Resolve raw factor-based output → bounded; this is the shape every
-      // downstream consumer (validation, assembly, streaming flush) expects.
+      // Reconcile raw LLM triples → server-anchored bounded estimates that
+      // every downstream consumer (validation, assembly, streaming flush)
+      // expects.
       let reconciledNutrition = reconcileNutritionIds(
         rawNutrition,
         decomposition,
         matchResult.matched
       );
 
-      // Early anomaly check on the resolved bounded triple. The factors-only
-      // contract makes 0-kcal essentially impossible for matched ingredients
-      // (base is server-computed). It can still happen if every ingredient
-      // is unmatched AND the LLM returns zero per100gEstimate — that's the
-      // only genuine error path we want to retry on.
+      // Early anomaly check on the resolved bounded triple. 0-kcal is
+      // essentially impossible for matched ingredients (P/C are server-anchored
+      // and kcal is derived from the macro identity). It can still happen if
+      // every ingredient is unmatched AND the LLM emits all-zero macros —
+      // that's the only genuine error path we want to retry on.
       const totalMidKcal = reconciledNutrition.mealItems.reduce(
         (sum, mi) =>
           sum +

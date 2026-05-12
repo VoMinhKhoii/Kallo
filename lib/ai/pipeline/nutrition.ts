@@ -1,4 +1,4 @@
-import { convertCookedToRaw } from '../constants';
+import { convertCookedToRaw, MAX_KCAL_PER_100G } from '../constants';
 import type {
   BoundedEstimate,
   IngredientLlmNutrition,
@@ -31,22 +31,29 @@ export type RawNutritionAdjustment = {
   }>;
 };
 
-const MACRO_KEYS = [
-  'caloriesKcal',
-  'proteinG',
-  'carbohydrateG',
-  'fatG',
-] as const;
-
 /**
- * If the LLM `mid` deviates from `base` by more than this multiplicative
- * factor (or its inverse), treat it as a hallucination and snap to base.
- * Realistic cooking adjustments stay well within 1.5–2× (frying-in-oil
- * roughly doubles fat at most). The 2026-05-12 sườn non case had `mid` =
- * 5511 vs base ≈ 270 — a 20× deviation, two orders of magnitude beyond
- * any plausible cooking factor.
+ * Cooking-adjustment ratio above which the LLM's fat mid is treated as a
+ * hallucination and snapped to base. Realistic frying-in-oil roughly doubles
+ * fat; 3× is the outer envelope. Protein and carb are server-anchored, so
+ * this guard fires only on fat.
  */
 const HALLUCINATION_GUARD_RATIO = 3;
+
+/**
+ * ±band applied to server-anchored protein and carb for matched ingredients.
+ * Represents portion-grams uncertainty inherited from decomposition, not LLM
+ * uncertainty (the LLM no longer touches P/C for matched ingredients).
+ * Tune to ±0.10 or ±0.20 if downstream goal-bound display feels off.
+ */
+const SERVER_PC_BAND = 0.15;
+
+/**
+ * Hard density ceiling for unmatched ingredients: kcal/100g cannot exceed pure
+ * fat. If the LLM emits a per-100g density above this, we scale all four
+ * macros down so the triple becomes physically plausible. Aliased from
+ * `MAX_KCAL_PER_100G` in `lib/ai/constants.ts` (single source of truth).
+ */
+const UNMATCHED_DENSITY_CEILING = MAX_KCAL_PER_100G;
 
 const ingredientCookingMethod = (
   mealItem: MealDecompositionWithIds['mealItems'][number],
@@ -104,14 +111,37 @@ function scalePer100g(
 }
 
 /**
- * Apply the hallucination guard: keep the LLM's mid only if it's within
- * `HALLUCINATION_GUARD_RATIO`× of `base` (in either direction). Otherwise
- * snap mid back to `base` and log so we can monitor how often it fires.
- *
- * `low` and `high` are also kept in range so the triple stays ordered after
- * any snap (`low ≤ mid ≤ high`). This is the load-bearing fix for the
- * 2026-05-12 regression — at most a 3× deviation is permitted; the original
- * 5511 vs 270 (20×) was two orders of magnitude beyond that.
+ * Server-anchored band for protein/carb on matched ingredients (also reused
+ * as the fat fallback when `guardMacro` rejects the LLM triple). Low/high are
+ * ±SERVER_PC_BAND around mid.
+ */
+function serverAnchoredBand(midGrams: number): BoundedEstimate {
+  const mid = Math.max(0, midGrams);
+  return {
+    low: Math.max(0, mid * (1 - SERVER_PC_BAND)),
+    mid,
+    high: mid * (1 + SERVER_PC_BAND),
+  };
+}
+
+/**
+ * Detect a structurally-invalid bounded triple from the LLM: NaN/Infinity,
+ * negative, or unordered (low > mid, mid > high, low > high). Used by the
+ * fat guard to fall back to base when the LLM emits garbage.
+ */
+function isStructurallyInvalidTriple(t: BoundedEstimate): boolean {
+  for (const v of [t.low, t.mid, t.high]) {
+    if (!Number.isFinite(v) || v < 0) return true;
+  }
+  return t.low > t.mid || t.mid > t.high || t.low > t.high;
+}
+
+/**
+ * Apply the hallucination guard to fat. Fall back to the server-anchored band
+ * around `base` whenever the LLM triple is either out of the
+ * `HALLUCINATION_GUARD_RATIO` cooking-adjustment envelope OR structurally
+ * invalid (unordered/negative/non-finite). Logs once per fallback so we can
+ * monitor frequency.
  */
 function guardMacro(
   raw: BoundedEstimate,
@@ -120,42 +150,78 @@ function guardMacro(
   macroName: string
 ): BoundedEstimate {
   if (base <= 0) {
-    // Base is 0 (e.g., pepper has no kcal). Trust the LLM since the guard
-    // ratio is undefined — but downstream density clamps still apply.
-    return raw;
+    // No DB anchor for this nutrient (e.g., pepper has no kcal). Trust the
+    // LLM if it's at least structurally sane; otherwise return a zero triple.
+    return isStructurallyInvalidTriple(raw) ? { low: 0, mid: 0, high: 0 } : raw;
   }
-  const ratio = raw.mid / base;
-  const overshoot = ratio > HALLUCINATION_GUARD_RATIO;
-  const undershoot = ratio < 1 / HALLUCINATION_GUARD_RATIO;
-  if (!overshoot && !undershoot) {
-    // LLM mid is in plausible cooking-adjusted range; trust it as-is.
-    return raw;
+  const structurallyInvalid = isStructurallyInvalidTriple(raw);
+  let reason: 'invalid' | 'overshoot' | 'undershoot' | null = null;
+  if (structurallyInvalid) {
+    reason = 'invalid';
+  } else {
+    const ratio = raw.mid / base;
+    if (ratio > HALLUCINATION_GUARD_RATIO) reason = 'overshoot';
+    else if (ratio < 1 / HALLUCINATION_GUARD_RATIO) reason = 'undershoot';
   }
+  if (reason === null) return raw;
   console.warn(
-    `[nutrition] hallucination_guard: snapped ${macroName} of "${ingredientName}" from mid=${raw.mid.toFixed(1)} to base=${base.toFixed(1)} (ratio ${ratio.toFixed(2)}× vs ${HALLUCINATION_GUARD_RATIO}× threshold)`
+    `[nutrition] hallucination_guard: snapped ${macroName} of "${ingredientName}" to base=${base.toFixed(1)} (reason=${reason}, raw mid=${raw.mid}, low=${raw.low}, high=${raw.high})`
   );
-  // Snap mid to base; rebuild low/high so the triple is ordered. We preserve
-  // the LLM's *relative* spread by re-anchoring around base.
-  const spread = raw.high - raw.low;
-  const halfSpread = Math.max(spread / 2, base * 0.05);
+  return serverAnchoredBand(base);
+}
+
+/**
+ * Derive calories from the macro identity 4P + 4C + 9F, per bound. Always
+ * preferred over the LLM's caloriesKcal mid because the macros themselves
+ * are now structurally consistent (P/C server-anchored, F LLM-adjusted with
+ * 3× guard) — keeping kcal in lockstep eliminates the macro_inconsistent
+ * anomaly class entirely for matched ingredients.
+ */
+function deriveCaloriesFromMacros(
+  protein: BoundedEstimate,
+  carb: BoundedEstimate,
+  fat: BoundedEstimate
+): BoundedEstimate {
   return {
-    low: Math.max(0, base - halfSpread),
-    mid: base,
-    high: base + halfSpread,
+    low: 4 * protein.low + 4 * carb.low + 9 * fat.low,
+    mid: 4 * protein.mid + 4 * carb.mid + 9 * fat.mid,
+    high: 4 * protein.high + 4 * carb.high + 9 * fat.high,
+  };
+}
+
+function scaleBounded(b: BoundedEstimate, factor: number): BoundedEstimate {
+  return {
+    low: Math.max(0, b.low * factor),
+    mid: Math.max(0, b.mid * factor),
+    high: Math.max(0, b.high * factor),
   };
 }
 
 /**
  * Resolve a single raw ingredient's macros against the precomputed base map.
- * For matched ingredients, the LLM is the source of truth for cooking
- * adjustments (frying-in-oil raises fat, rice absorbs water, etc.); the
- * guard only fires if `mid` deviates from `base` beyond physical plausibility.
- * For unmatched ingredients (no base), the LLM triple is kept; density
- * clamping happens in `validateNutritionOutput`.
+ *
+ * For MATCHED ingredients (has `MacroBase`):
+ *   - protein and carb: server-anchored mid = base, low/high = ±SERVER_PC_BAND.
+ *     LLM output for these macros is discarded (cooking method does not
+ *     physically change P or C per gram).
+ *   - fat: LLM owns mid (cooking-method adjustment — frying/oil-absorption is
+ *     a real physical effect); the 3× hallucination guard catches gross errors.
+ *   - calories: derived from the macro identity (4P + 4C + 9F).
+ *
+ * For UNMATCHED ingredients (no `MacroBase`):
+ *   - protein, carb, fat: from the LLM verbatim (no DB anchor to override).
+ *   - calories: derived from 4P + 4C + 9F so the per-ingredient triple is
+ *     structurally consistent — eliminates the meal_total kcal vs macro-identity
+ *     gap (the 4410-vs-2983 anomaly).
+ *   - density clamp: if `kcal.mid / grams × 100` exceeds
+ *     `UNMATCHED_DENSITY_CEILING`, scale all four macros by the inverse so the
+ *     triple is forced back under the physical ceiling and the LLM's worst
+ *     hallucinations (e.g., nem lụi 1200 kcal/100g) become impossible.
  */
 function resolveIngredientMacros(
   rawIng: RawNutritionAdjustment['mealItems'][number]['ingredients'][number],
-  base: MacroBase | undefined
+  base: MacroBase | undefined,
+  grams?: number
 ): {
   caloriesKcal: BoundedEstimate;
   proteinG: BoundedEstimate;
@@ -163,34 +229,40 @@ function resolveIngredientMacros(
   fatG: BoundedEstimate;
 } {
   if (!base) {
-    return {
-      caloriesKcal: rawIng.caloriesKcal,
-      proteinG: rawIng.proteinG,
-      carbohydrateG: rawIng.carbohydrateG,
-      fatG: rawIng.fatG,
-    };
+    let proteinG = rawIng.proteinG;
+    let carbohydrateG = rawIng.carbohydrateG;
+    let fatG = rawIng.fatG;
+    let caloriesKcal = deriveCaloriesFromMacros(proteinG, carbohydrateG, fatG);
+    if (typeof grams === 'number' && grams > 0) {
+      // Inspect BOTH mid and high density — a triple where mid is plausible but
+      // high is inflated would otherwise pass through and leak >900 kcal/100g
+      // into the upper bound.
+      const densityMid = (caloriesKcal.mid / grams) * 100;
+      const densityHigh = (caloriesKcal.high / grams) * 100;
+      const worstDensity = Math.max(densityMid, densityHigh);
+      if (worstDensity > UNMATCHED_DENSITY_CEILING) {
+        const scaleFactor = UNMATCHED_DENSITY_CEILING / worstDensity;
+        proteinG = scaleBounded(proteinG, scaleFactor);
+        carbohydrateG = scaleBounded(carbohydrateG, scaleFactor);
+        fatG = scaleBounded(fatG, scaleFactor);
+        caloriesKcal = deriveCaloriesFromMacros(proteinG, carbohydrateG, fatG);
+        console.warn(
+          `[nutrition] density_clamp: scaled "${rawIng.ingredientName}" by ${scaleFactor.toFixed(2)}× (worst density ${worstDensity.toFixed(0)} kcal/100g, ceiling ${UNMATCHED_DENSITY_CEILING})`
+        );
+      }
+    }
+    return { caloriesKcal, proteinG, carbohydrateG, fatG };
   }
-  return {
-    caloriesKcal: guardMacro(
-      rawIng.caloriesKcal,
-      base.caloriesKcal,
-      rawIng.ingredientName,
-      'caloriesKcal'
-    ),
-    proteinG: guardMacro(
-      rawIng.proteinG,
-      base.proteinG,
-      rawIng.ingredientName,
-      'proteinG'
-    ),
-    carbohydrateG: guardMacro(
-      rawIng.carbohydrateG,
-      base.carbohydrateG,
-      rawIng.ingredientName,
-      'carbohydrateG'
-    ),
-    fatG: guardMacro(rawIng.fatG, base.fatG, rawIng.ingredientName, 'fatG'),
-  };
+  const proteinG = serverAnchoredBand(base.proteinG);
+  const carbohydrateG = serverAnchoredBand(base.carbohydrateG);
+  const fatG = guardMacro(
+    rawIng.fatG,
+    base.fatG,
+    rawIng.ingredientName,
+    'fatG'
+  );
+  const caloriesKcal = deriveCaloriesFromMacros(proteinG, carbohydrateG, fatG);
+  return { caloriesKcal, proteinG, carbohydrateG, fatG };
 }
 
 /**
@@ -213,7 +285,8 @@ export function resolveStreamingMealItem(
       );
       const ingredientId = decIng?.ingredientId ?? '';
       const base = ingredientId ? baseMap.get(ingredientId) : undefined;
-      const resolved = resolveIngredientMacros(rawIng, base);
+      const grams = decIng ? ingredientGrams(decIng) : undefined;
+      const resolved = resolveIngredientMacros(rawIng, base, grams);
       return {
         ingredientId,
         ingredientName: rawIng.ingredientName,
@@ -231,17 +304,22 @@ export function resolveStreamingMealItem(
 
 /**
  * Reconcile Call 2 nutrition output with the run-scoped ids assigned by
- * `ensureIdsOnDecomposition`, applying the hallucination guard in the same
- * pass.
+ * `ensureIdsOnDecomposition`, resolving macros against the base map in the
+ * same pass.
  *
  * Strategy:
  *   1. Match meal items by name (FIFO queue for duplicate display names).
  *   2. Match ingredients by name within the meal item (same FIFO policy).
- *   3. For each matched ingredient with a DB-anchored base: keep the LLM's
- *      mid if it's within `HALLUCINATION_GUARD_RATIO`× of base (so cooking
- *      adjustments survive); otherwise snap mid to base.
- *   4. For unmatched ingredients: keep the LLM triple; physical-density
- *      clamping happens in `validateNutritionOutput`.
+ *   3. For each matched ingredient with a DB-anchored base:
+ *      - protein and carb come from base ± `SERVER_PC_BAND` (LLM ignored);
+ *      - fat keeps the LLM mid subject to the 3× hallucination guard;
+ *      - calories are derived from the macro identity (4P + 4C + 9F).
+ *   4. For unmatched ingredients:
+ *      - protein, carb, fat come from the LLM verbatim (no DB anchor);
+ *      - calories are derived from 4P + 4C + 9F (structural identity);
+ *      - if kcal.mid / grams × 100 > `UNMATCHED_DENSITY_CEILING`, all four
+ *        macros are scaled down proportionally so the triple stays under the
+ *        physical ceiling.
  */
 export function reconcileNutritionIds(
   raw: RawNutritionAdjustment,
@@ -321,7 +399,8 @@ export function reconcileNutritionIds(
           }
           const ingredientId = decomposedIng.ingredientId;
           const base = baseMap.get(ingredientId);
-          const resolved = resolveIngredientMacros(rawIng, base);
+          const grams = ingredientGrams(decomposedIng);
+          const resolved = resolveIngredientMacros(rawIng, base, grams);
           return {
             ingredientId,
             ingredientName: rawIng.ingredientName,
@@ -344,8 +423,13 @@ export function reconcileNutritionIds(
 // Internal export for tests that want to assert on individual helpers.
 export const __testing = {
   scalePer100g,
+  scaleBounded,
   guardMacro,
+  isStructurallyInvalidTriple,
+  serverAnchoredBand,
+  deriveCaloriesFromMacros,
   resolveIngredientMacros,
   HALLUCINATION_GUARD_RATIO,
-  MACRO_KEYS,
+  SERVER_PC_BAND,
+  UNMATCHED_DENSITY_CEILING,
 };

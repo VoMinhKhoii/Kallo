@@ -1,4 +1,4 @@
-import { convertCookedToRaw } from '../constants';
+import { convertCookedToRaw, MAX_KCAL_PER_100G } from '../constants';
 import type {
   DecomposedMealItem,
   MatchedIngredient,
@@ -13,8 +13,9 @@ import { ingredientDisplayName, ingredientGrams } from './ingredient-accessors';
 // ---------------------------------------------------------------------------
 
 export const THRESHOLDS = {
-  /** No ingredient can exceed pure fat energy density */
-  MAX_KCAL_PER_100G: 900,
+  /** No ingredient can exceed pure fat energy density. Re-exported from
+   *  `lib/ai/constants.ts` so the validator and the resolver share one value. */
+  MAX_KCAL_PER_100G,
   /** Spec §1.4 — per-100g macro caps; high bound triggers the envelope. */
   DENSITY_PROTEIN_PER_100G_MAX: 100,
   DENSITY_CARB_PER_100G_MAX: 100,
