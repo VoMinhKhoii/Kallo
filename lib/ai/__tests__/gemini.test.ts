@@ -52,7 +52,10 @@ describe('GeminiClient', () => {
         text: JSON.stringify({ name: 'test', value: 42 }),
       });
 
-      const client = createGeminiClient({ provider: 'ai-studio', apiKey: 'test-key' });
+      const client = createGeminiClient({
+        provider: 'ai-studio',
+        apiKey: 'test-key',
+      });
       const result = await client.generateStructuredOutput({
         schema: testSchema,
         systemPrompt: 'You are a test assistant.',
@@ -67,7 +70,10 @@ describe('GeminiClient', () => {
     it('throws on null response text', async () => {
       mockGenerateContent.mockResolvedValueOnce({ text: null });
 
-      const client = createGeminiClient({ provider: 'ai-studio', apiKey: 'test-key' });
+      const client = createGeminiClient({
+        provider: 'ai-studio',
+        apiKey: 'test-key',
+      });
       await expect(
         client.generateStructuredOutput({
           schema: testSchema,
@@ -83,7 +89,10 @@ describe('GeminiClient', () => {
         text: JSON.stringify({ name: 'test', value: 'not-a-number' }),
       });
 
-      const client = createGeminiClient({ provider: 'ai-studio', apiKey: 'test-key' });
+      const client = createGeminiClient({
+        provider: 'ai-studio',
+        apiKey: 'test-key',
+      });
       await expect(
         client.generateStructuredOutput({
           schema: testSchema,
@@ -99,7 +108,10 @@ describe('GeminiClient', () => {
         text: JSON.stringify({ name: 'test', value: 1 }),
       });
 
-      const client = createGeminiClient({ provider: 'ai-studio', apiKey: 'test-key' });
+      const client = createGeminiClient({
+        provider: 'ai-studio',
+        apiKey: 'test-key',
+      });
       await client.generateStructuredOutput({
         schema: testSchema,
         systemPrompt: 'test',
@@ -122,7 +134,10 @@ describe('GeminiClient', () => {
         text: JSON.stringify({ name: 'test', value: 1 }),
       });
 
-      const client = createGeminiClient({ provider: 'ai-studio', apiKey: 'test-key' });
+      const client = createGeminiClient({
+        provider: 'ai-studio',
+        apiKey: 'test-key',
+      });
       const controller = new AbortController();
 
       await client.generateStructuredOutput({
@@ -150,7 +165,10 @@ describe('GeminiClient', () => {
         text: JSON.stringify({ name: 'test' }),
       });
 
-      const client = createGeminiClient({ provider: 'ai-studio', apiKey: 'test-key' });
+      const client = createGeminiClient({
+        provider: 'ai-studio',
+        apiKey: 'test-key',
+      });
       await client.generateStructuredOutput({
         schema: describedSchema,
         systemPrompt: 'test',
@@ -182,7 +200,10 @@ describe('GeminiClient', () => {
         text: JSON.stringify({ name: 'test' }),
       });
 
-      const client = createGeminiClient({ provider: 'ai-studio', apiKey: 'test-key' });
+      const client = createGeminiClient({
+        provider: 'ai-studio',
+        apiKey: 'test-key',
+      });
       await client.generateStructuredOutput({
         schema: describedSchema,
         systemPrompt: 'test',
@@ -219,7 +240,10 @@ describe('GeminiClient', () => {
         })()
       );
 
-      const client = createGeminiClient({ provider: 'ai-studio', apiKey: 'test-key' });
+      const client = createGeminiClient({
+        provider: 'ai-studio',
+        apiKey: 'test-key',
+      });
       const controller = new AbortController();
 
       const result = await client.generateStructuredOutputStream({
@@ -252,7 +276,10 @@ describe('GeminiClient', () => {
         })()
       );
 
-      const client = createGeminiClient({ provider: 'ai-studio', apiKey: 'test-key' });
+      const client = createGeminiClient({
+        provider: 'ai-studio',
+        apiKey: 'test-key',
+      });
       await client.generateStructuredOutputStream({
         schema: describedSchema,
         systemPrompt: 'test',
@@ -283,7 +310,10 @@ describe('GeminiClient', () => {
         embeddings: [{ values: fakeEmbedding }],
       });
 
-      const client = createGeminiClient({ provider: 'ai-studio', apiKey: 'test-key' });
+      const client = createGeminiClient({
+        provider: 'ai-studio',
+        apiKey: 'test-key',
+      });
       const result = await client.generateEmbedding('thịt bò');
 
       expect(result).toEqual(fakeEmbedding);
@@ -299,7 +329,10 @@ describe('GeminiClient', () => {
     it('throws when embedding is missing', async () => {
       mockEmbedContent.mockResolvedValueOnce({ embeddings: [] });
 
-      const client = createGeminiClient({ provider: 'ai-studio', apiKey: 'test-key' });
+      const client = createGeminiClient({
+        provider: 'ai-studio',
+        apiKey: 'test-key',
+      });
       await expect(client.generateEmbedding('test')).rejects.toThrow(
         'Gemini returned no embedding'
       );
@@ -316,10 +349,13 @@ describe('GeminiClient', () => {
           text: JSON.stringify({ name: 'ok', value: 1 }),
         });
 
-      const client = createGeminiClient({ provider: 'ai-studio', apiKey: 'test-key' }, {
-        maxRetries: 3,
-        baseDelayMs: 10,
-      });
+      const client = createGeminiClient(
+        { provider: 'ai-studio', apiKey: 'test-key' },
+        {
+          maxRetries: 3,
+          baseDelayMs: 10,
+        }
+      );
       const result = await client.generateStructuredOutput({
         schema: z.object({ name: z.string(), value: z.number() }),
         systemPrompt: 'test',
@@ -346,10 +382,13 @@ describe('GeminiClient', () => {
           })()
         );
 
-      const client = createGeminiClient({ provider: 'ai-studio', apiKey: 'test-key' }, {
-        maxRetries: 2,
-        baseDelayMs: 10,
-      });
+      const client = createGeminiClient(
+        { provider: 'ai-studio', apiKey: 'test-key' },
+        {
+          maxRetries: 2,
+          baseDelayMs: 10,
+        }
+      );
       const onAttemptStart = vi.fn();
       const result = await client.generateStructuredOutputStream(
         {
@@ -371,10 +410,13 @@ describe('GeminiClient', () => {
       const error429 = new Error('429 Too Many Requests');
       mockGenerateContent.mockRejectedValue(error429);
 
-      const client = createGeminiClient({ provider: 'ai-studio', apiKey: 'test-key' }, {
-        maxRetries: 2,
-        baseDelayMs: 10,
-      });
+      const client = createGeminiClient(
+        { provider: 'ai-studio', apiKey: 'test-key' },
+        {
+          maxRetries: 2,
+          baseDelayMs: 10,
+        }
+      );
       await expect(
         client.generateStructuredOutput({
           schema: z.object({ name: z.string() }),
@@ -390,10 +432,13 @@ describe('GeminiClient', () => {
         Object.assign(new Error('400 Bad Request'), { status: 400 })
       );
 
-      const client = createGeminiClient({ provider: 'ai-studio', apiKey: 'test-key' }, {
-        maxRetries: 3,
-        baseDelayMs: 10,
-      });
+      const client = createGeminiClient(
+        { provider: 'ai-studio', apiKey: 'test-key' },
+        {
+          maxRetries: 3,
+          baseDelayMs: 10,
+        }
+      );
       await expect(
         client.generateStructuredOutput({
           schema: z.object({ name: z.string() }),
@@ -458,10 +503,13 @@ describe('GeminiClient', () => {
       );
 
       const { db } = makeDb();
-      const client = createGeminiClient({ provider: 'ai-studio', apiKey: 'test-key' }, {
-        maxRetries: 2,
-        baseDelayMs: 10,
-      });
+      const client = createGeminiClient(
+        { provider: 'ai-studio', apiKey: 'test-key' },
+        {
+          maxRetries: 2,
+          baseDelayMs: 10,
+        }
+      );
 
       const result = await client.generateStructuredOutputStream(
         {
@@ -506,10 +554,13 @@ describe('GeminiClient', () => {
         );
 
       const { db } = makeDb();
-      const client = createGeminiClient({ provider: 'ai-studio', apiKey: 'test-key' }, {
-        maxRetries: 3,
-        baseDelayMs: 10,
-      });
+      const client = createGeminiClient(
+        { provider: 'ai-studio', apiKey: 'test-key' },
+        {
+          maxRetries: 3,
+          baseDelayMs: 10,
+        }
+      );
 
       const result = await client.generateStructuredOutputStream(
         {
@@ -542,10 +593,13 @@ describe('GeminiClient', () => {
         streamChunks([{ text: '{"items":["c"]}' }])
       );
 
-      const client = createGeminiClient({ provider: 'ai-studio', apiKey: 'test-key' }, {
-        maxRetries: 2,
-        baseDelayMs: 10,
-      });
+      const client = createGeminiClient(
+        { provider: 'ai-studio', apiKey: 'test-key' },
+        {
+          maxRetries: 2,
+          baseDelayMs: 10,
+        }
+      );
 
       await client.generateStructuredOutputStream({
         schema: traceSchema,
@@ -565,10 +619,13 @@ describe('GeminiClient', () => {
         ])
       );
 
-      const client = createGeminiClient({ provider: 'ai-studio', apiKey: 'test-key' }, {
-        maxRetries: 2,
-        baseDelayMs: 10,
-      });
+      const client = createGeminiClient(
+        { provider: 'ai-studio', apiKey: 'test-key' },
+        {
+          maxRetries: 2,
+          baseDelayMs: 10,
+        }
+      );
       const onAttemptComplete = vi.fn();
 
       const result = await client.generateStructuredOutputStream(
@@ -607,10 +664,13 @@ describe('GeminiClient', () => {
           ])
         );
 
-      const client = createGeminiClient({ provider: 'ai-studio', apiKey: 'test-key' }, {
-        maxRetries: 2,
-        baseDelayMs: 10,
-      });
+      const client = createGeminiClient(
+        { provider: 'ai-studio', apiKey: 'test-key' },
+        {
+          maxRetries: 2,
+          baseDelayMs: 10,
+        }
+      );
       const onAttemptComplete = vi.fn();
 
       const result = await client.generateStructuredOutputStream(
@@ -646,9 +706,10 @@ describe('GeminiClient', () => {
 
 describe('resolveGeminiProvider', () => {
   it('defaults to ai-studio when AI_PROVIDER is unset', () => {
-    expect(
-      resolveGeminiProvider({ GEMINI_API_KEY: 'sk-test' })
-    ).toEqual({ provider: 'ai-studio', apiKey: 'sk-test' });
+    expect(resolveGeminiProvider({ GEMINI_API_KEY: 'sk-test' })).toEqual({
+      provider: 'ai-studio',
+      apiKey: 'sk-test',
+    });
   });
 
   it('returns vertex config when AI_PROVIDER=vertex with project + location', () => {
@@ -681,9 +742,7 @@ describe('resolveGeminiProvider', () => {
   });
 
   it('throws when ai-studio is selected but GEMINI_API_KEY is missing', () => {
-    expect(() =>
-      resolveGeminiProvider({})
-    ).toThrow(/GEMINI_API_KEY/);
+    expect(() => resolveGeminiProvider({})).toThrow(/GEMINI_API_KEY/);
   });
 
   it('throws on an unknown AI_PROVIDER value', () => {

@@ -4,8 +4,9 @@ import { type NextRequest, NextResponse } from 'next/server';
 import { isAdminEmail } from '@/lib/admin/is-admin';
 import {
   createGeminiClient,
-  resolveGeminiProvider,
   type GeminiAttemptMetadata,
+  type GeminiClient,
+  resolveGeminiProvider,
 } from '@/lib/ai/gemini';
 import { buildUserContext, toParsedMeal } from '@/lib/ai/mappers';
 import {
@@ -135,7 +136,7 @@ export async function POST(request: NextRequest) {
 
   const userContext = buildUserContext(profile);
 
-  let gemini;
+  let gemini: GeminiClient;
   try {
     gemini = createGeminiClient(resolveGeminiProvider());
   } catch (error) {

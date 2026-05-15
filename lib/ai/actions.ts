@@ -5,7 +5,11 @@ import { z } from 'zod';
 import { db } from '@/lib/db';
 import { userProfiles } from '@/lib/db/schema';
 import { createClient } from '@/lib/supabase/server';
-import { createGeminiClient, resolveGeminiProvider } from './gemini';
+import {
+  createGeminiClient,
+  type GeminiClient,
+  resolveGeminiProvider,
+} from './gemini';
 import { buildUserContext } from './mappers';
 import { logUnmatchedIngredients } from './matching';
 import { analyzeMeal } from './pipeline';
@@ -64,7 +68,7 @@ export async function analyzeMealAction(
       );
     }
 
-    let gemini;
+    let gemini: GeminiClient;
     try {
       gemini = createGeminiClient(resolveGeminiProvider());
     } catch (error) {
