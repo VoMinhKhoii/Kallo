@@ -86,6 +86,11 @@ vi.mock('@/lib/ai/pipeline/orchestrator', () => ({
 }));
 vi.mock('@/lib/ai/gemini', () => ({
   createGeminiClient: createGeminiClientSpy,
+  resolveGeminiProvider: () => {
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) throw new Error('GEMINI_API_KEY missing');
+    return { provider: 'ai-studio' as const, apiKey };
+  },
 }));
 vi.mock('@/lib/admin/require-admin', () => ({
   requireAdmin: async () => ({ id: 'admin-1', email: 'a@x.com' }),

@@ -5,7 +5,7 @@ import { z } from 'zod';
 import { db } from '@/lib/db';
 import { userProfiles } from '@/lib/db/schema';
 import { createClient } from '@/lib/supabase/server';
-import { createGeminiClient } from './gemini';
+import { createGeminiClient, resolveGeminiProvider } from './gemini';
 import { buildUserContext } from './mappers';
 import { logUnmatchedIngredients } from './matching';
 import { analyzeMeal } from './pipeline';
@@ -64,16 +64,17 @@ export async function analyzeMealAction(
       );
     }
 
-    const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) {
+    let gemini;
+    try {
+      gemini = createGeminiClient(resolveGeminiProvider());
+    } catch (error) {
+      console.error('[analyzeMealAction] AI provider misconfigured:', error);
       return makeErrorResponse(
         'api_error',
         'AI service is not configured.',
         false
       );
     }
-
-    const gemini = createGeminiClient(apiKey);
     const result = await analyzeMeal(
       parsed.data,
       buildUserContext(profile),

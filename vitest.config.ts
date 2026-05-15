@@ -7,6 +7,7 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': resolve(__dirname, '.'),
+      'server-only': resolve(__dirname, 'lib/__test-utils__/server-only-shim.ts'),
     },
   },
   test: {

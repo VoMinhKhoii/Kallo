@@ -1,7 +1,11 @@
 import { eq } from 'drizzle-orm';
 import type { NextRequest } from 'next/server';
 import { getTranslations } from 'next-intl/server';
-import { createGeminiClient } from '@/lib/ai/gemini';
+import {
+  createGeminiClient,
+  type GeminiProviderConfig,
+  resolveGeminiProvider,
+} from '@/lib/ai/gemini';
 import {
   buildAiRequestContext,
   buildUserContext,
@@ -113,8 +117,11 @@ async function validateRequest(request: NextRequest) {
       );
     }
 
-    const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) {
+    let geminiConfig: GeminiProviderConfig;
+    try {
+      geminiConfig = resolveGeminiProvider();
+    } catch (error) {
+      console.error('[analyze-meal] AI provider misconfigured:', error);
       throw Errors.internal();
     }
 
@@ -128,7 +135,7 @@ async function validateRequest(request: NextRequest) {
           parsed.data.timezoneOffset
         ),
         profile,
-        apiKey,
+        geminiConfig,
       },
     };
   } catch (error) {
@@ -140,7 +147,7 @@ export async function POST(request: NextRequest) {
   // Phase 1: Pre-stream validation — errors returned as JSON
   const validation = await validateRequest(request);
   if (validation.error) return validation.error;
-  const { userId, message, locale, loggedAt, profile, apiKey } =
+  const { userId, message, locale, loggedAt, profile, geminiConfig } =
     validation.data;
 
   const userContext = buildAiRequestContext(buildUserContext(profile), {
@@ -225,7 +232,7 @@ export async function POST(request: NextRequest) {
           return;
         }
 
-        const gemini = createGeminiClient(apiKey);
+        const gemini = createGeminiClient(geminiConfig);
         const result = await analyzeMeal(
           message,
           userContext,
