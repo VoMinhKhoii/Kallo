@@ -779,6 +779,7 @@ async function runPipeline(
       const derived = deriveExpectedState({
         explicit: ing.expectedState,
         dishMethod: mi.cookingMethod ?? ing.cookingMethod,
+        weightBasis: ing.weightBasis,
       });
       ing.expectedState = derived.state;
       ing._stateSource = derived.source;

@@ -75,14 +75,26 @@ export function buildCompressedDecompositionPrompt(
 <schema_fields>
   Root: isFood, mealSlot, mealItems.
   mealItems[]: name, cookingMethod, cuisineNote?, ingredients[].
-  ingredients[]: rawName, canonicalName, grams, expectedState?, ambiguityFlags?.
+  ingredients[]: rawName, canonicalName, grams, expectedState?, weightBasis?, prepNotes?, ambiguityFlags?.
   expectedState is optional and only "raw" or "cooked".
+  weightBasis is optional and only "raw" or "as_eaten" — omit when as_eaten.
+  prepNotes is optional, max 6 short strings (≤60 chars each), preserve user's language and diacritics.
   ambiguityFlags values: multiple_dish_interpretations, unspecified_quantity, cross_cuisine_ingredient, state_inferred_no_method.
 </schema_fields>
 
+<modifier_routing>
+  When the user types extra qualifiers on an ingredient, route them to the right field. Each qualifier belongs in EXACTLY ONE bucket — never duplicate into prepNotes once routed elsewhere:
+    1. Quantity cues ("nhiều cơm", "ít thịt", "extra protein", "nửa phần", "double", "light"): adjust grams. NOT prepNotes.
+    2. Identity changes — modifier names a different DB food ("chỉ lòng trắng" → egg white; "chỉ phần thịt nạc" on pork belly → lean pork; "boneless skinless chicken thigh" when a distinct cut exists): change canonicalName. NOT prepNotes.
+    3. Ingredient removal/addition at the dish level ("không kèm cơm", "không hành", "no rice", "hold the onion", "thêm trứng" as a separate ingredient): edit the ingredients[] array. NOT prepNotes.
+    4. Weight basis ("cân sống", "cân lúc sống", "trước khi nấu", "trọng lượng sống", "raw weight", "weighed raw", "pre-cooked weight", "before cooking"): emit weightBasis="raw" and keep grams EXACTLY as the user gave (do NOT convert to cooked-equivalent). NOT prepNotes.
+    5. Same-food density tweaks — what's left ("bỏ da", "bỏ mỡ", "skinless", "lean only", "trimmed", "nước trong", "nước đậm", "không dầu", "extra oil", "thêm bơ", "dry-fried", "low-fat", "ít béo", "low-sugar", "không đường", and flavor-only notes like "ít muối", "no MSG", "extra spicy"): emit prepNotes as short verbatim strings.
+  Keep each prepNote concise (one phrase). If the user wrote a long sentence, split it into the smallest meaningful chunks.
+</modifier_routing>
+
 <rules>
   Set isFood=false, mealSlot=null, mealItems=[] for non-food input.
-  grams is cooked/as-eaten mass and must be a positive number.
+  grams is cooked/as-eaten mass and must be a positive number — UNLESS weightBasis="raw", in which case grams is the user's raw weight (no conversion).
   Preserve explicit cuts, species, brands, and regional names from the user's text.
   Add only explicitly mentioned ingredients plus fundamental seasonings for the cooking method.
   Use cookingMethod at dish level; use expectedState only for mixed-state ingredients.
@@ -120,7 +132,7 @@ export function buildDecompositionPrompt(
      3. Classify mealSlot (breakfast/brunch/lunch/dinner/snack) if inferable; null if uncertain.
      4. Emit the dish-wrapped schema exactly:
         mealItems[]: { name, cookingMethod, cuisineNote?, ingredients[] }
-        ingredients[]: { rawName, canonicalName, grams, expectedState?, ambiguityFlags? }
+        ingredients[]: { rawName, canonicalName, grams, expectedState?, weightBasis?, prepNotes?, ambiguityFlags? }
    </task>
 
   <stable_ids>
@@ -129,12 +141,13 @@ export function buildDecompositionPrompt(
   </stable_ids>
 
   <grams_only>
-    grams = cooked/as-eaten mass. Convert colloquial portions to grams based on the user's cuisine and serving-size norms.
+    grams = cooked/as-eaten mass by default. Convert colloquial portions to grams based on the user's cuisine and serving-size norms.
     Examples (Vietnamese): 1 chén cơm → 200; 1 dĩa rau → 150; 1 miếng cá → 60; 1 lát bánh mì → 30.
     Use the supplied cooking-habit context and regional serving-size priors from the user's cuisine context.
     The runtime accepts grams only: no unit field and no unit conversion fallback.
     If quantity is genuinely ambiguous, set ambiguityFlags: ["unspecified_quantity"] and emit your best-estimate grams.
     Always emit a positive number; grams <= 0 triggers implausible_grams and retry.
+    EXCEPTION: when the user explicitly says the weight was measured raw / pre-cooking ("cân sống", "trước khi nấu", "raw weight", "weighed raw", "pre-cooked weight", "before cooking"), keep grams EXACTLY as given and set weightBasis="raw". Do NOT convert to a cooked equivalent — the runtime scales raw grams 1:1 against the raw DB row.
   </grams_only>
 
   <quantity_precedence>
@@ -206,6 +219,30 @@ export function buildDecompositionPrompt(
     - salad with cooked chicken: chicken expectedState "cooked"; vegetables expectedState "raw".
     If you infer state without a clear method, include ambiguityFlags: ["state_inferred_no_method"].
   </expected_state>
+
+  <modifier_routing>
+    When the user types extra qualifiers on an ingredient (in parentheses, after "with"/"không"/"bỏ"/etc., or any free-form annotation), route them to EXACTLY ONE field. Never duplicate a qualifier into prepNotes once it has been routed elsewhere.
+
+    1. Quantity cues — "nhiều cơm", "ít thịt", "extra protein", "nửa phần", "double protein", "light portion", "đầy bát", "ăn ít" → adjust grams. NOT prepNotes.
+    2. Identity changes — modifier names a different DB food entity:
+       - "chỉ lòng trắng" / "egg whites only" → canonicalName: egg white (not whole egg)
+       - "chỉ lòng đỏ" / "yolk only" → canonicalName: egg yolk
+       - "chỉ phần thịt nạc" on ba chỉ → canonicalName: lean pork
+       - "boneless skinless chicken thigh" when a distinct cut exists → use that cut
+       Change canonicalName. NOT prepNotes.
+    3. Ingredient removal / addition at the dish level — "không kèm cơm", "không hành", "no rice", "hold the onion", "thêm một quả trứng" as a SEPARATE ingredient → edit the ingredients[] array. NOT prepNotes.
+    4. Weight basis — "cân sống", "cân lúc sống", "cân khi sống", "trước khi nấu", "trọng lượng sống", "raw weight", "weighed raw", "pre-cooked weight", "before cooking" → emit weightBasis="raw" and keep grams as-is. NOT prepNotes.
+    5. Same-food density tweaks — everything else that modifies how the SAME food is prepared:
+       - Fat/skin removal: "bỏ da", "bỏ mỡ", "skinless", "lean only", "trimmed", "fat trimmed", "no rind"
+       - Added fat: "thêm dầu", "nhiều mỡ", "extra oil", "with butter", "thêm bơ", "phết bơ", "tossed in oil"
+       - Cooking-style refinement: "không dầu", "no oil", "chiên ít dầu", "dry-fried", "air-fried", "nướng khô"
+       - Sauce / broth density: "nước trong", "nước đậm", "loãng", "đặc", "rich broth", "clear broth"
+       - Health variants: "low-fat", "ít béo", "low-sugar", "không đường", "sugar-free", "diet"
+       - Flavor / sodium / spice only (these don't move macros but still belong here): "ít muối", "no MSG", "không bột ngọt", "extra spicy", "cay nhiều", "no salt added"
+       → emit prepNotes as short verbatim strings preserving the user's language and diacritics.
+
+    Keep each prepNote concise — one phrase. If the user wrote a long sentence, split it into the smallest meaningful chunks. Maximum 6 entries.
+  </modifier_routing>
 
   <ambiguity_flags>
     ambiguityFlags is optional. Allowed values only:
@@ -283,7 +320,7 @@ ${countryLines.length > 0 ? `${countryLines.join('\n')}\n` : ''}  oil_usage: ${c
           "name": "đùi gà rô ti",
           "cookingMethod": "nướng",
           "ingredients": [
-            { "rawName": "đùi gà", "canonicalName": "Đùi gà", "grams": 150, "expectedState": "cooked" }
+            { "rawName": "đùi gà", "canonicalName": "Đùi gà", "grams": 150, "expectedState": "cooked", "prepNotes": ["bỏ da", "bỏ mỡ"] }
           ]
         },
         {
@@ -296,7 +333,56 @@ ${countryLines.length > 0 ? `${countryLines.join('\n')}\n` : ''}  oil_usage: ${c
       ]
     }
     </output>
-    <!-- "đùi gà" preserved as specific cut (NOT generic "thịt gà"). "bỏ da bỏ mỡ" = skin/fat removed, so lean portion only. -->
+    <!-- "bỏ da bỏ mỡ" goes in prepNotes (split into two short entries), NOT folded into grams. Call 2 will lower fat and slightly raise protein/gram for the matched đùi gà row. -->
+  </example>
+
+  <example>
+    <input>300gr ức gà nấu chậm (cân sống)</input>
+    <output>
+    {
+      "isFood": true,
+      "mealSlot": null,
+      "mealItems": [
+        {
+          "name": "ức gà nấu chậm",
+          "cookingMethod": "nấu",
+          "ingredients": [
+            { "rawName": "ức gà", "canonicalName": "Ức gà", "grams": 300, "expectedState": "raw", "weightBasis": "raw" }
+          ]
+        }
+      ]
+    }
+    </output>
+    <!-- "cân sống" = weighed raw → weightBasis="raw", grams stays at 300 (no cooked-conversion). expectedState forced to "raw" so the matcher prefers the raw chicken DB row and the server scales 300g against raw per-100g density 1:1. -->
+  </example>
+
+  <example>
+    <input>200g cơm nhiều thịt heo kho không kèm trứng</input>
+    <output>
+    {
+      "isFood": true,
+      "mealSlot": null,
+      "mealItems": [
+        {
+          "name": "cơm trắng",
+          "cookingMethod": "nấu",
+          "ingredients": [
+            { "rawName": "cơm", "canonicalName": "Cơm", "grams": 200, "expectedState": "cooked" }
+          ]
+        },
+        {
+          "name": "thịt heo kho",
+          "cookingMethod": "kho",
+          "ingredients": [
+            { "rawName": "thịt ba chỉ", "canonicalName": "Thịt lợn ba chỉ", "grams": 150, "expectedState": "cooked" },
+            { "rawName": "nước mắm", "canonicalName": "Nước mắm", "grams": 15 },
+            { "rawName": "đường", "canonicalName": "Đường kính", "grams": 8 }
+          ]
+        }
+      ]
+    }
+    </output>
+    <!-- "nhiều thịt" → adjust grams (150g instead of default ~100g), NOT prepNotes. "không kèm trứng" → drop the egg ingredient entirely. Pure routing: no prepNotes/weightBasis needed. -->
   </example>
 
   <example>

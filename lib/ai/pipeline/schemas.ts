@@ -47,6 +47,19 @@ export const decomposedIngredientSchema = z
       .describe(
         'Optional per-ingredient raw/cooked state. Runtime derives from dish cookingMethod when omitted.'
       ),
+    weightBasis: z
+      .enum(['raw', 'as_eaten'])
+      .optional()
+      .describe(
+        'Optional weighing reference for `grams`. Emit "raw" ONLY when the user explicitly says the weight was taken before cooking (e.g. "cân sống", "raw weight", "before cooking", "pre-cooked weight"). Omit otherwise; runtime treats absent as "as_eaten".'
+      ),
+    prepNotes: z
+      .array(z.string().min(1).max(60))
+      .max(6)
+      .optional()
+      .describe(
+        'Optional short user-typed preparation modifiers that change macro density for the SAME food (NOT identity changes, NOT quantity, NOT weight basis, NOT ingredient removals). Keep verbatim, preserve diacritics. Examples: ["bỏ da", "bỏ mỡ"], ["nước trong"], ["không dầu"], ["extra oil"], ["low-fat"], ["dry-fried"]. Omit when there is nothing to add.'
+      ),
     ambiguityFlags: z
       .array(ambiguityFlagSchema)
       .optional()
