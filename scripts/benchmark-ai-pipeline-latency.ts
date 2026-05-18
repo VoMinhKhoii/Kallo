@@ -484,7 +484,7 @@ async function runBenchmarkMeal(
       meal,
       userContext,
       db,
-      createGeminiClient(apiKey),
+      createGeminiClient({ provider: 'ai-studio', apiKey }),
       (event) => {
         if (event.type === 'stage') {
           currentStage = event.stage as typeof currentStage;

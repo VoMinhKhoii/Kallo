@@ -95,6 +95,11 @@ vi.mock('@/lib/db/schema', () => ({
 
 vi.mock('@/lib/ai/gemini', () => ({
   createGeminiClient: (...args: unknown[]) => mockCreateGeminiClient(...args),
+  resolveGeminiProvider: () => {
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) throw new Error('GEMINI_API_KEY missing');
+    return { provider: 'ai-studio' as const, apiKey };
+  },
 }));
 
 vi.mock('@/lib/rate-limit/analysis-guards', () => ({

@@ -175,6 +175,7 @@ Enable these APIs in the target project:
 
 ```bash
 gcloud services enable \
+  aiplatform.googleapis.com \
   artifactregistry.googleapis.com \
   iam.googleapis.com \
   iamcredentials.googleapis.com \
@@ -254,12 +255,18 @@ gcloud iam service-accounts add-iam-policy-binding \
 ### Runtime service account
 
 The app reads runtime secrets from Secret Manager-backed Cloud Run env
-configuration.
+configuration, and calls Vertex AI through Application Default Credentials
+when `AI_PROVIDER=vertex` (the default for deployed environments — see the
+"Vertex AI provider" section below).
 
 ```bash
 gcloud projects add-iam-policy-binding "$GCP_PROJECT_ID" \
   --member="serviceAccount:$GCP_RUNTIME_SERVICE_ACCOUNT" \
   --role="roles/secretmanager.secretAccessor"
+
+gcloud projects add-iam-policy-binding "$GCP_PROJECT_ID" \
+  --member="serviceAccount:$GCP_RUNTIME_SERVICE_ACCOUNT" \
+  --role="roles/aiplatform.user"
 ```
 
 ## 4. Create Secret Manager secrets
@@ -396,7 +403,11 @@ That means:
 - Public URL enabled
 - Secret-backed runtime env:
   - `DATABASE_URL`
-  - `GEMINI_API_KEY`
+  - `GEMINI_API_KEY` (kept during the Vertex AI rollout as a rollback fallback;
+    see "Vertex AI provider" below)
+- Plain runtime env:
+  - `AI_PROVIDER=vertex`
+  - `GOOGLE_CLOUD_PROJECT`, `GOOGLE_CLOUD_LOCATION`
 
 ### Preview services: `nham-pr-<number>` (disabled by default)
 
@@ -411,6 +422,37 @@ That means:
   - shared mode uses Secret Manager-backed `nham-nonprod-database-url`
   - branch mode injects the per-branch URL with `--update-env-vars`
 - `GEMINI_API_KEY` stays Secret Manager-backed in both modes
+
+### Vertex AI provider
+
+Deployed services (`nham-internal`, `nham-staging`) call Gemini through **Vertex
+AI** via Application Default Credentials. Local dev and the helper scripts in
+`scripts/` continue to use the Google AI Studio API key from `GEMINI_API_KEY`.
+
+The selection is controlled by `AI_PROVIDER` in `lib/ai/gemini.ts:resolveGeminiProvider`:
+
+| `AI_PROVIDER` | Auth | Required env |
+| --- | --- | --- |
+| unset or `ai-studio` | API key | `GEMINI_API_KEY` |
+| `vertex` | ADC (service account on Cloud Run) | `GOOGLE_CLOUD_PROJECT`, `GOOGLE_CLOUD_LOCATION` |
+
+Prerequisites the Cloud Run service account needs **before** flipping
+`AI_PROVIDER=vertex`:
+
+1. Vertex AI API enabled on the project: `gcloud services enable aiplatform.googleapis.com`.
+2. `roles/aiplatform.user` granted to the runtime service account (see
+   "Runtime service account" above).
+3. `GOOGLE_CLOUD_LOCATION=global`. The Cloud Run services run in
+   `asia-southeast3` (Saigon), but Vertex AI has no regional endpoint there and
+   `gemini-3.1-flash-lite` is currently only published on the `global` endpoint.
+   Using `global` also avoids per-region model-availability skew across our two
+   STABLE models (`gemini-3.1-flash-lite`, `gemini-2.5-flash-lite`,
+   `gemini-embedding-001`).
+
+Rollback is a single env-var flip: set `AI_PROVIDER=ai-studio` on the Cloud Run
+service and redeploy (or `gcloud run services update --update-env-vars`). The
+`GEMINI_API_KEY` secret is intentionally retained in `--set-secrets` so this
+fallback works without re-issuing the secret.
 
 ## 9. Workflow map
 

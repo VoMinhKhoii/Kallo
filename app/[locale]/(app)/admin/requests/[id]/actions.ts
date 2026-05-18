@@ -7,6 +7,7 @@ import { requireAdmin } from '@/lib/admin/require-admin';
 import {
   createGeminiClient,
   type GeminiClient,
+  resolveGeminiProvider,
   type StreamOptions,
   type StructuredOutputParams,
 } from '@/lib/ai/gemini';
@@ -185,14 +186,18 @@ export async function replayRequest(
   }
 
   // Pick the Gemini client BEFORE creating replay rows. For real replays
-  // this also validates GEMINI_API_KEY after the admin replay quota passes.
-  const gemini: GeminiClient = dryRun
-    ? await buildDryRunGeminiClient(originalId)
-    : (() => {
-        const apiKey = process.env.GEMINI_API_KEY;
-        if (!apiKey) throw new Error('GEMINI_API_KEY missing');
-        return createGeminiClient(apiKey);
-      })();
+  // this also validates the AI provider config after the admin replay quota passes.
+  let gemini: GeminiClient;
+  if (dryRun) {
+    gemini = await buildDryRunGeminiClient(originalId);
+  } else {
+    try {
+      gemini = createGeminiClient(resolveGeminiProvider());
+    } catch (error) {
+      console.error('[admin] AI provider misconfigured:', error);
+      throw new Error('AI provider is not configured for replay');
+    }
+  }
 
   const replayId = crypto.randomUUID();
   const t0 = Date.now();

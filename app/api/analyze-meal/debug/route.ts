@@ -5,6 +5,8 @@ import { isAdminEmail } from '@/lib/admin/is-admin';
 import {
   createGeminiClient,
   type GeminiAttemptMetadata,
+  type GeminiClient,
+  resolveGeminiProvider,
 } from '@/lib/ai/gemini';
 import { buildUserContext, toParsedMeal } from '@/lib/ai/mappers';
 import {
@@ -134,15 +136,17 @@ export async function POST(request: NextRequest) {
 
   const userContext = buildUserContext(profile);
 
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) {
+  let gemini: GeminiClient;
+  try {
+    gemini = createGeminiClient(resolveGeminiProvider());
+  } catch (error) {
     return NextResponse.json(
-      { error: 'GEMINI_API_KEY not set' },
+      {
+        error: `AI provider misconfigured: ${error instanceof Error ? error.message : String(error)}`,
+      },
       { status: 500 }
     );
   }
-
-  const gemini = createGeminiClient(apiKey);
   const modelProfile = resolveModelProfile();
   const decompositionPromptLabel = getDecompositionPromptLabel();
   const nutritionPromptLabel = getNutritionPromptLabel();
