@@ -55,11 +55,17 @@ describe('decomposition-v2 prompt', () => {
     expect(out).toMatch(/bỏ mỡ/);
   });
 
-  it('user_context block reflects supplied cookingHabits', () => {
+  it('user_context block carries country info only (cookingHabits moved to Call 2)', () => {
     const out = buildCompressedDecompositionV2Prompt(baseUserContext);
-    expect(out).toMatch(/oil_usage: normal/);
-    expect(out).toMatch(/sugar_braised: medium/);
-    expect(out).toMatch(/broth_consumption: some/);
+    expect(out).toMatch(/country_of_origin: Vietnam/);
+    expect(out).toMatch(/country_of_residence: Vietnam/);
+    // Portion / cooking-habit knobs are NOT load-bearing for decomposition
+    // (Call 1 doesn't emit grams). They belong only in Call 2.
+    expect(out).not.toMatch(/oil_usage/);
+    expect(out).not.toMatch(/default_rice_portion/);
+    expect(out).not.toMatch(/default_protein_portion/);
+    expect(out).not.toMatch(/sugar_braised/);
+    expect(out).not.toMatch(/broth_consumption/);
   });
 
   it('label resolution defaults to compressed; production opt-in via env', () => {

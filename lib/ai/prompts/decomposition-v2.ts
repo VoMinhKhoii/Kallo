@@ -1,7 +1,3 @@
-import {
-  PROTEIN_PORTION_DESCRIPTION,
-  RICE_PORTION_DESCRIPTION,
-} from '../constants';
 import { buildPromptContextLine } from './sanitize';
 import type { PromptPersonalizationContext } from './types';
 
@@ -61,7 +57,6 @@ function buildCountryContextLines(
 export function buildCompressedDecompositionV2Prompt(
   userContext: PromptPersonalizationContext
 ): string {
-  const { cookingHabits } = userContext;
   const countryLines = buildCountryContextLines(userContext);
   const outputLanguage = userContext.outputLanguage ?? 'match_user_input';
 
@@ -109,18 +104,13 @@ export function buildCompressedDecompositionV2Prompt(
 </modifier_routing>
 
 <user_context>
-${countryLines.length > 0 ? `${countryLines.join('\n')}\n` : ''}  oil_usage: ${cookingHabits.oilUsage}
-  default_rice_portion: ${RICE_PORTION_DESCRIPTION[cookingHabits.defaultRicePortion]}
-  default_protein_portion: ${PROTEIN_PORTION_DESCRIPTION[cookingHabits.defaultProteinPortion]}
-  sugar_braised: ${cookingHabits.sugarBraised}
-  broth_consumption: ${cookingHabits.brothConsumption}
+${countryLines.length > 0 ? countryLines.join('\n') : '  country: unspecified'}
 </user_context>`;
 }
 
 export function buildDecompositionV2Prompt(
   userContext: PromptPersonalizationContext
 ): string {
-  const { cookingHabits } = userContext;
   const countryLines = buildCountryContextLines(userContext);
 
   return `You are a Cuisine Expert. Decompose meal descriptions into dish-wrapped structured ingredient data. This is the FIRST of two LLM calls — a later step handles weight estimation with the matched database row in hand, so you do NOT emit grams.
@@ -197,11 +187,7 @@ export function buildDecompositionV2Prompt(
 </instructions>
 
 <user_context>
-${countryLines.length > 0 ? `${countryLines.join('\n')}\n` : ''}  oil_usage: ${cookingHabits.oilUsage}
-  default_rice_portion: ${RICE_PORTION_DESCRIPTION[cookingHabits.defaultRicePortion]}
-  default_protein_portion: ${PROTEIN_PORTION_DESCRIPTION[cookingHabits.defaultProteinPortion]}
-  sugar_braised: ${cookingHabits.sugarBraised}
-  broth_consumption: ${cookingHabits.brothConsumption}
+${countryLines.length > 0 ? countryLines.join('\n') : '  country: unspecified'}
 </user_context>
 
 <examples>

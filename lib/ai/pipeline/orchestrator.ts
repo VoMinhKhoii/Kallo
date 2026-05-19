@@ -429,14 +429,14 @@ export async function analyzeMeal(
   options?: AnalyzeMealOptions
 ): Promise<PipelineResponse> {
   // V2 dispatch: when PIPELINE_V2_ENABLED=true, route to the v2 orchestrator
-  // (pure-decompose + CRAG-grounded). v1 stays intact behind the flag. The
-  // v2 path emits the same `stage`/`result`/`analysis_complete` SSE events
-  // so existing clients don't need changes, just `item_name` and
-  // `item_macros` incremental streams aren't wired yet (follow-up).
+  // (pure-decompose + CRAG-grounded). v1 stays intact behind the flag. Both
+  // paths emit the same `stage` / `item_name` / `item_macros` / `result` /
+  // `analysis_complete` SSE events so existing clients need no changes.
   if (isPipelineV2Enabled()) {
     console.info('[pipeline] dispatching to v2 (PIPELINE_V2_ENABLED=true)');
     return analyzeMealV2(rawInput, userContext, db, gemini, onEvent);
   }
+  console.info('[pipeline] running v1 (PIPELINE_V2_ENABLED unset/false)');
 
   const analyzeStart = Date.now();
   const providerErrorState = { recorded: false };

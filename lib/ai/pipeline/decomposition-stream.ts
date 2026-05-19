@@ -58,6 +58,15 @@ export function createDecompositionStreamController({
     chunkCount,
   });
 
+  /**
+   * Snapshot of the streamed `${displayName}::${occurrence}` → mealItemId
+   * map. Used by v2's Call 2 streaming to look up the mealItemId for each
+   * completed meal item (so `item_macros` events use the same id as the
+   * `item_name` events that streamed during Call 1).
+   */
+  const getStreamedMealItemIds = (): Map<string, string> =>
+    new Map(mealItemIds);
+
   const applyParsedIds = (decomposition: MealDecomposition) => {
     const parseCounts = new Map<string, number>();
     for (const mealItem of decomposition.mealItems) {
@@ -91,5 +100,6 @@ export function createDecompositionStreamController({
     applyParsedIds,
     emitUnstreamed,
     getStreamTimings,
+    getStreamedMealItemIds,
   };
 }
