@@ -341,8 +341,8 @@ describe('analyzeMealV2 — Call 2 item_macros streaming', () => {
     const itemMacrosEvents = events.filter((e) => e.type === 'item_macros');
     expect(itemMacrosEvents).toHaveLength(2);
     // Stream order: first item_macros is for the meal item that completed first.
-    expect(itemMacrosEvents[0].item.name).toBe('cơm trắng');
-    expect(itemMacrosEvents[1].item.name).toBe('đùi gà nướng');
+    expect(itemMacrosEvents[0].item.name).toBe('Cơm trắng');
+    expect(itemMacrosEvents[1].item.name).toBe('Đùi gà nướng');
     // Macros must be non-zero (resolved from LLM unmatched verbatim).
     expect(itemMacrosEvents[0].item.macros.calories).toBeGreaterThan(0);
     expect(itemMacrosEvents[1].item.macros.calories).toBeGreaterThan(0);
@@ -465,7 +465,7 @@ describe('analyzeMealV2 — Call 2 item_macros streaming', () => {
 
     const itemMacrosEvents = events.filter((e) => e.type === 'item_macros');
     expect(itemMacrosEvents).toHaveLength(1);
-    expect(itemMacrosEvents[0].item.name).toBe('nem lụi');
+    expect(itemMacrosEvents[0].item.name).toBe('Nem lụi');
     // 8P + 9F = 32×4 + 5×4 + 34×9 = 128 + 20 + 306 = 454 — matches macro
     // identity from the LLM triples.
     expect(itemMacrosEvents[0].item.macros.calories).toBeCloseTo(454, 0);

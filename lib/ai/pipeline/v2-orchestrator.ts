@@ -46,6 +46,8 @@ import { createDecompositionStreamController } from './decomposition-stream';
 import { handleError, nonFoodResponse } from './errors';
 import { resolveModelProfile } from './model-profile';
 import { reconcileNutritionIds } from './nutrition';
+import type { AnalyzeMealTraceContext } from './orchestrator';
+import { buildPipelineRunRow, writePipelineRun } from './run-telemetry';
 import {
   type GroundedEstimation,
   groundedEstimationSchema,
@@ -61,6 +63,13 @@ export interface AnalyzeMealV2Options {
   matchConcurrency?: number;
   /** Optional Call 2 temperature (default 0.4 — slightly lower than v1's 0.5 because Call 2 in v2 also owns grams). */
   call2Temperature?: number;
+  /**
+   * Request-level trace context (user id, request id, db handle). When
+   * present, the v2 orchestrator persists a `pipeline_runs` row so the
+   * admin/audit dashboards and shadow-runner infrastructure observe v2
+   * runs alongside v1.
+   */
+  traceContext?: AnalyzeMealTraceContext;
 }
 
 /**
@@ -81,28 +90,18 @@ export async function analyzeMealV2(
   const topK = options.topK ?? 3;
   const matchConcurrency = options.matchConcurrency ?? 4;
   const call2Temperature = options.call2Temperature ?? 0.4;
+  const traceContext = options.traceContext;
   const profile = resolveModelProfile();
   const promptCtx = toPromptPersonalizationContext(userContext);
+  const t0 = Date.now();
 
-  // Buffer item_name events until isFood=true is confirmed (avoids
-  // streaming names for a non-food input that ends up rejected).
-  const bufferedItemNameEvents: Array<
-    Extract<StreamEvent, { type: 'item_name' }>
-  > = [];
-  const bufferingNameEmit = (event: StreamEvent) => {
-    if (event.type === 'item_name') {
-      bufferedItemNameEvents.push(event);
-    } else {
-      emit(event);
-    }
-  };
-  const flushBufferedItemNames = () => {
-    for (const ev of bufferedItemNameEvents) emit(ev);
-    bufferedItemNameEvents.length = 0;
-  };
-
+  // v2 streams item_name events directly as the LLM emits meal item names
+  // in partial JSON — no buffering. The decomposition v2 schema rejects
+  // mealItems for non-food input, so the regex never matches anything to
+  // leak (no buffer needed for that case). v1's buffer existed for the
+  // language-guard retry path, which v2 doesn't have yet.
   const decompStream = createDecompositionStreamController({
-    emit: bufferingNameEmit,
+    emit,
     prewarm: () => {},
   });
 
@@ -129,12 +128,19 @@ export async function analyzeMealV2(
       );
 
     if (!decomposition.isFood || decomposition.mealItems.length === 0) {
-      // Don't flush buffered names — input was non-food, no UI to update.
-      bufferedItemNameEvents.length = 0;
       return nonFoodResponse();
     }
 
-    flushBufferedItemNames();
+    // Capitalize meal-item and ingredient display names in place — same
+    // pattern v1 uses (orchestrator.ts:785-788) so the UI always shows
+    // titlecase regardless of how the user typed the input.
+    for (const mi of decomposition.mealItems) {
+      mi.name = capitalizeFirst(mi.name);
+      for (const ing of mi.ingredients) {
+        ing.rawName = capitalizeFirst(ing.rawName);
+        ing.canonicalName = capitalizeFirst(ing.canonicalName);
+      }
+    }
 
     // ---- Stage 2: Match top-K per ingredient ----------------------------
     emit({ type: 'stage', stage: 'matching' });
@@ -197,6 +203,7 @@ export async function analyzeMealV2(
           userContext.goal,
           userContext.aggression
         );
+        streamItem.name = capitalizeFirst(streamItem.name);
         const mealItemId =
           streamedMealItemIds.get(
             `${capitalizeFirst(rawItem.mealItemName)}::1`
@@ -271,6 +278,20 @@ export async function analyzeMealV2(
       promptCharsCall2,
     });
 
+    // Persist a pipeline_runs row when request-level tracing is enabled,
+    // mirroring v1's observability surface so admin/audit dashboards and
+    // the shadow-runner pick up v2 requests too. Best-effort, never blocks.
+    void persistV2PipelineRun({
+      traceContext,
+      userContext,
+      profile,
+      decomposition,
+      matched: bridged.matched,
+      unmatched: bridged.unmatched,
+      verdicts: bridged.verdicts,
+      totalMs: Date.now() - t0,
+    });
+
     return { success: true, data: assembly.result };
   } catch (error) {
     return handleError(error);
@@ -329,6 +350,7 @@ function flushUnstreamedItemMacros(args: {
       goal,
       aggression
     );
+    streamItem.name = capitalizeFirst(streamItem.name);
     emit({ type: 'item_macros', mealItemId, item: streamItem });
   });
 }
@@ -413,4 +435,104 @@ function logV2Telemetry(input: V2TelemetryInput): void {
     promptCharsCall1: input.promptCharsCall1,
     promptCharsCall2: input.promptCharsCall2,
   });
+}
+
+/**
+ * Persist a `pipeline_runs` row for an observed v2 run so admin / audit /
+ * shadow-runner queries surface v2 alongside v1.
+ *
+ * Schema reuse: the v1 `buildPipelineRunRow` fields cover most of what we
+ * want to report. v2-specific signals (verdict counts, overturnedTopOne,
+ * prompt sizes) ride along in `anomalyTypes` as marker strings prefixed
+ * `v2_*` until a dedicated column exists. Best-effort write.
+ */
+async function persistV2PipelineRun(args: {
+  traceContext: AnalyzeMealTraceContext | undefined;
+  userContext: UserContext;
+  profile: ReturnType<typeof resolveModelProfile>;
+  decomposition: MealDecompositionV2;
+  matched: ReturnType<typeof bridgeV2ToV1>['matched'];
+  unmatched: ReturnType<typeof bridgeV2ToV1>['unmatched'];
+  verdicts: ReturnType<typeof bridgeV2ToV1>['verdicts'];
+  totalMs: number;
+}): Promise<void> {
+  const trace = args.traceContext;
+  if (!trace) return;
+  try {
+    const ingredientCount = args.verdicts.length;
+    const matched = args.matched.length;
+    const unmatched = args.unmatched.length;
+    const rejected = args.verdicts.filter(
+      (v) => v.verdict === 'rejected'
+    ).length;
+    const overturnedTopOne = args.verdicts.filter(
+      (v) =>
+        v.verdict === 'accepted' &&
+        v.selectedCandidateIdx !== null &&
+        v.selectedCandidateIdx > 0
+    ).length;
+
+    const personalizationFields: string[] = [];
+    if (args.userContext.countryOfOrigin) {
+      personalizationFields.push('countryOfOrigin');
+    }
+    if (args.userContext.countryOfResidence) {
+      personalizationFields.push('countryOfResidence');
+    }
+    if (args.userContext.cookingHabits) {
+      personalizationFields.push('cookingHabits');
+    }
+
+    const anomalyMarkers: string[] = ['v2_run'];
+    if (rejected > 0) anomalyMarkers.push(`v2_rejected_${rejected}`);
+    if (overturnedTopOne > 0)
+      anomalyMarkers.push(`v2_overturned_${overturnedTopOne}`);
+
+    const row = buildPipelineRunRow({
+      userId: trace.userId,
+      requestId: trace.requestId,
+      modelCall1: args.profile.decompositionModel,
+      modelCall2: args.profile.nutritionModel,
+      timings: { total: args.totalMs },
+      counts: { ingredient: ingredientCount, matched, unmatched },
+      anomalyTypes: anomalyMarkers,
+      ambiguityFlagCounts: {},
+      rrf: {
+        rrfSampled: false,
+        rrfDisagreementCount: null,
+        rrfIngredientsObserved: null,
+        rrfMeasurementLatencyMs: null,
+      },
+      counters: {
+        preMatchAliasHits: 0,
+        // v2 doesn't use the cooked-to-raw factor table; the LLM emits
+        // grams already scoped to the matched candidate's state.
+        cookedToRawFactorFires: 0,
+        densityEnvelopeFires: 0,
+        macroInconsistentFires: 0,
+        dbStateUnknownFires: 0,
+        retryStep2Count: 0,
+      },
+      escalated: false,
+      cacheHitL4: false,
+      retryCount: 0,
+      languageGuardMisfire: false,
+      languageRetryCount: 0,
+      aliasFallbackFired: false,
+      promptPersonalizationFields: personalizationFields,
+    });
+
+    if (process.env.NODE_ENV === 'test') {
+      await writePipelineRun(trace.db, row);
+    } else {
+      writePipelineRun(trace.db, row).catch((err) => {
+        console.error(
+          '[ai/pipeline] v2 failed to write pipeline_runs row',
+          err
+        );
+      });
+    }
+  } catch (err) {
+    console.error('[ai/pipeline] v2 failed to build pipeline_runs row', err);
+  }
 }

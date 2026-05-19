@@ -5,8 +5,8 @@ import {
 } from '../v2-feature-flag';
 
 describe('isPipelineV2Enabled', () => {
-  it('defaults to false', () => {
-    expect(isPipelineV2Enabled({})).toBe(false);
+  it('defaults to true (v2 is the production default)', () => {
+    expect(isPipelineV2Enabled({})).toBe(true);
   });
 
   it('honors truthy values', () => {
@@ -15,13 +15,13 @@ describe('isPipelineV2Enabled', () => {
     expect(isPipelineV2Enabled({ PIPELINE_V2_ENABLED: 'on' })).toBe(true);
   });
 
-  it('honors falsy values explicitly', () => {
+  it('honors falsy values explicitly (v1 fallback)', () => {
     expect(isPipelineV2Enabled({ PIPELINE_V2_ENABLED: 'false' })).toBe(false);
     expect(isPipelineV2Enabled({ PIPELINE_V2_ENABLED: '0' })).toBe(false);
   });
 
-  it('falls back to false on unknown values', () => {
-    expect(isPipelineV2Enabled({ PIPELINE_V2_ENABLED: 'garbage' })).toBe(false);
+  it('falls back to the default (true) on unknown values', () => {
+    expect(isPipelineV2Enabled({ PIPELINE_V2_ENABLED: 'garbage' })).toBe(true);
   });
 });
 

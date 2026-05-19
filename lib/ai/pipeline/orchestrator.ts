@@ -428,15 +428,18 @@ export async function analyzeMeal(
   traceContext?: AnalyzeMealTraceContext,
   options?: AnalyzeMealOptions
 ): Promise<PipelineResponse> {
-  // V2 dispatch: when PIPELINE_V2_ENABLED=true, route to the v2 orchestrator
-  // (pure-decompose + CRAG-grounded). v1 stays intact behind the flag. Both
-  // paths emit the same `stage` / `item_name` / `item_macros` / `result` /
-  // `analysis_complete` SSE events so existing clients need no changes.
+  // V2 dispatch: default ON. v2 (pure-decompose + CRAG-grounded) handles
+  // the request unless `PIPELINE_V2_ENABLED=false` is set for a v1
+  // fallback. Both paths emit the same `stage` / `item_name` /
+  // `item_macros` / `result` / `analysis_complete` SSE events so existing
+  // clients need no changes.
   if (isPipelineV2Enabled()) {
-    console.info('[pipeline] dispatching to v2 (PIPELINE_V2_ENABLED=true)');
-    return analyzeMealV2(rawInput, userContext, db, gemini, onEvent);
+    console.info('[pipeline] dispatching to v2 (default)');
+    return analyzeMealV2(rawInput, userContext, db, gemini, onEvent, {
+      traceContext,
+    });
   }
-  console.info('[pipeline] running v1 (PIPELINE_V2_ENABLED unset/false)');
+  console.info('[pipeline] running v1 (PIPELINE_V2_ENABLED=false fallback)');
 
   const analyzeStart = Date.now();
   const providerErrorState = { recorded: false };

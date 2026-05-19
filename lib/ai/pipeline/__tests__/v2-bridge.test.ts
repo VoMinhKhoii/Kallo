@@ -256,3 +256,51 @@ describe('bridgeV2ToV1 — selectedCandidateId out of range', () => {
     expect(out.unmatched).toHaveLength(1);
   });
 });
+
+describe('bridgeV2ToV1 — case-insensitive name matching', () => {
+  it('pairs v2 decomp (capitalized) with grounded output (lowercase) correctly', () => {
+    // Mimics what happens in production: the orchestrator capitalizes
+    // decomposition names before sending to Call 2, but the LLM may echo
+    // back lowercase. The bridge must still find each grounded ingredient.
+    const v2: MealDecompositionV2 = {
+      isFood: true,
+      mealSlot: 'lunch',
+      mealItems: [
+        {
+          name: 'Đùi gà nướng', // capitalized in v2 decomp
+          cookingMethod: 'nướng',
+          ingredients: [
+            { rawName: 'Đùi gà', canonicalName: 'Đùi gà' }, // capitalized
+          ],
+        },
+      ],
+    };
+    const grounded: GroundedEstimation = {
+      mealItems: [
+        {
+          mealItemName: 'đùi gà nướng', // LLM echoed back lowercase
+          ingredients: [
+            {
+              ingredientName: 'đùi gà', // lowercase
+              selectedCandidateId: 'c1',
+              grams: 150,
+              caloriesKcal: { low: 270, mid: 290, high: 310 },
+              proteinG: { low: 38, mid: 40, high: 42 },
+              carbohydrateG: { low: 0, mid: 0, high: 0 },
+              fatG: { low: 10, mid: 12, high: 14 },
+            },
+          ],
+        },
+      ],
+    };
+    const out = bridgeV2ToV1({
+      v2,
+      matches: matchResultWithCandidate(),
+      grounded,
+      mealContext: 'm',
+    });
+    expect(out.verdicts[0].verdict).toBe('accepted');
+    expect(out.matched).toHaveLength(1);
+    expect(out.matched[0].foodCompositionId).toBe('fc-thigh');
+  });
+});

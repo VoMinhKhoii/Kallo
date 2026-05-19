@@ -2,6 +2,14 @@ import React from 'react';
 import '@testing-library/jest-dom/vitest';
 import { vi } from 'vitest';
 
+// V2 pipeline defaults to ON in production (see lib/ai/pipeline/v2-feature-flag.ts).
+// Most of the existing test suite was written for v1, so default to v1
+// in tests. V2-specific tests call `analyzeMealV2` directly and aren't
+// affected by this flag.
+if (process.env.PIPELINE_V2_ENABLED === undefined) {
+  process.env.PIPELINE_V2_ENABLED = 'false';
+}
+
 // server-only throws on import outside RSC; stub it for tests
 vi.mock('server-only', () => ({}));
 
