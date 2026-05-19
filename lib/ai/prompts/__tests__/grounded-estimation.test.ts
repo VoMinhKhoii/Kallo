@@ -5,24 +5,24 @@ import type {
 } from '../../pipeline/schemas';
 import {
   buildGroundedEstimationPrompt,
-  type IngredientWithCandidates,
   type MatchCandidate,
   type MealItemWithCandidates,
 } from '../grounded-estimation';
+import type { PromptPersonalizationContext } from '../types';
 
-const baseUserContext = {
+const baseUserContext: PromptPersonalizationContext = {
   countryOfOrigin: 'Vietnam',
   countryOfResidence: 'Vietnam',
-  inputLanguage: 'auto-detect' as const,
-  outputLanguage: 'match_user_input' as const,
+  inputLanguage: 'vi',
+  outputLanguage: 'vi',
   cookingHabits: {
-    oilUsage: 'moderate',
+    oilUsage: 'normal',
     defaultRicePortion: 'medium',
     defaultProteinPortion: 'medium',
-    sugarBraised: 'moderate',
-    brothConsumption: 'occasional',
+    sugarBraised: 'medium',
+    brothConsumption: 'some',
   },
-} as const;
+};
 
 function ing(
   args: Partial<DecomposedIngredientV2> = {}

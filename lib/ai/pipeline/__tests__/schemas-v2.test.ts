@@ -23,7 +23,6 @@ describe('decomposedIngredientV2Schema', () => {
       decomposedIngredientV2Schema.parse({
         rawName: 'cơm',
         canonicalName: 'Cơm',
-        // @ts-expect-error grams is intentionally not in v2
         grams: 200,
       })
     ).toThrow();
@@ -34,7 +33,6 @@ describe('decomposedIngredientV2Schema', () => {
       decomposedIngredientV2Schema.parse({
         rawName: 'ức gà',
         canonicalName: 'Ức gà',
-        // @ts-expect-error weightBasis is not in v2
         weightBasis: 'raw',
       })
     ).toThrow();
@@ -45,7 +43,6 @@ describe('decomposedIngredientV2Schema', () => {
       decomposedIngredientV2Schema.parse({
         rawName: 'thịt bò',
         canonicalName: 'Thịt bò',
-        // @ts-expect-error expectedState is not in v2
         expectedState: 'cooked',
       })
     ).toThrow();

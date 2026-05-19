@@ -90,6 +90,8 @@ import {
 } from './shadow-runner';
 import { isShadowSampled } from './shadow-sampling';
 import { buildLlmStageTrace, logStage } from './trace';
+import { isPipelineV2Enabled } from './v2-feature-flag';
+import { analyzeMealV2 } from './v2-orchestrator';
 import {
   classifyAnomalies,
   detectAnomalies,
@@ -426,6 +428,16 @@ export async function analyzeMeal(
   traceContext?: AnalyzeMealTraceContext,
   options?: AnalyzeMealOptions
 ): Promise<PipelineResponse> {
+  // V2 dispatch: when PIPELINE_V2_ENABLED=true, route to the v2 orchestrator
+  // (pure-decompose + CRAG-grounded). v1 stays intact behind the flag. The
+  // v2 path emits the same `stage`/`result`/`analysis_complete` SSE events
+  // so existing clients don't need changes, just `item_name` and
+  // `item_macros` incremental streams aren't wired yet (follow-up).
+  if (isPipelineV2Enabled()) {
+    console.info('[pipeline] dispatching to v2 (PIPELINE_V2_ENABLED=true)');
+    return analyzeMealV2(rawInput, userContext, db, gemini, onEvent);
+  }
+
   const analyzeStart = Date.now();
   const providerErrorState = { recorded: false };
   recordAnalysisModelBudgetEventBestEffort({

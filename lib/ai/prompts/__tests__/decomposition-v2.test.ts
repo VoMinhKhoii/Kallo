@@ -5,20 +5,21 @@ import {
   getDecompositionV2PromptBuilder,
   getDecompositionV2PromptLabel,
 } from '../decomposition-v2';
+import type { PromptPersonalizationContext } from '../types';
 
-const baseUserContext = {
+const baseUserContext: PromptPersonalizationContext = {
   countryOfOrigin: 'Vietnam',
   countryOfResidence: 'Vietnam',
-  inputLanguage: 'auto-detect' as const,
-  outputLanguage: 'match_user_input' as const,
+  inputLanguage: 'vi',
+  outputLanguage: 'vi',
   cookingHabits: {
-    oilUsage: 'moderate',
+    oilUsage: 'normal',
     defaultRicePortion: 'medium',
     defaultProteinPortion: 'medium',
-    sugarBraised: 'moderate',
-    brothConsumption: 'occasional',
+    sugarBraised: 'medium',
+    brothConsumption: 'some',
   },
-} as const;
+};
 
 describe('decomposition-v2 prompt', () => {
   it('compressed builder does NOT mention grams as a required field', () => {
@@ -56,9 +57,9 @@ describe('decomposition-v2 prompt', () => {
 
   it('user_context block reflects supplied cookingHabits', () => {
     const out = buildCompressedDecompositionV2Prompt(baseUserContext);
-    expect(out).toMatch(/oil_usage: moderate/);
-    expect(out).toMatch(/sugar_braised: moderate/);
-    expect(out).toMatch(/broth_consumption: occasional/);
+    expect(out).toMatch(/oil_usage: normal/);
+    expect(out).toMatch(/sugar_braised: medium/);
+    expect(out).toMatch(/broth_consumption: some/);
   });
 
   it('label resolution defaults to compressed; production opt-in via env', () => {
