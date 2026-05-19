@@ -48,7 +48,7 @@ describe('resolveModelProfile', () => {
   it('STABLE_PROFILE matches today’s production constants exactly', () => {
     expect(STABLE_PROFILE).toEqual({
       decompositionModel: 'gemini-3.1-flash-lite',
-      nutritionModel: 'gemini-2.5-flash-lite',
+      nutritionModel: 'gemini-3.1-flash-lite',
       escalationModel: null,
     } satisfies ModelProfile);
   });

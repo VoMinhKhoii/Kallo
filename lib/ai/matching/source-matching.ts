@@ -149,6 +149,72 @@ export function buildMatchResult(
 }
 
 /**
+ * Build up to `k` top MatchInfo candidates from a single source's raw rows.
+ * Applies the same state-mismatch threshold logic as `buildMatchResult` but
+ * returns ALL passing candidates (sorted by similarity desc), not just the
+ * first one.
+ *
+ * V2 pipeline use: feed both FAO and USDA top-K candidates to Call 2 so the
+ * LLM can pick the right one via CRAG-style judgment instead of relying on
+ * the server's similarity tie-break.
+ */
+export function buildMatchTopK(
+  ingredientName: string,
+  rows: FuzzyMatchRow[],
+  k: number,
+  minSimilarity: number,
+  source?: MatchSource,
+  matchType?: MatchType,
+  expectedState?: DbIngredientState
+): MatchInfo[] {
+  if (rows.length === 0 || k <= 0) return [];
+
+  const reranked = rerankCandidates(rows);
+  const accepted: MatchInfo[] = [];
+  for (const candidate of reranked) {
+    if (accepted.length >= k) break;
+    const candidateState = normalizeState(candidate.state);
+    const stateMismatch =
+      expectedState !== undefined &&
+      expectedState !== 'unknown' &&
+      candidateState !== 'unknown' &&
+      candidateState !== expectedState;
+    const effectiveMin =
+      minSimilarity + (stateMismatch ? STATE_MISMATCH_PENALTY : 0);
+    if (candidate.similarity < effectiveMin) continue;
+    accepted.push({
+      ingredientName,
+      foodCompositionId: candidate.id,
+      matchedName: candidate.name_primary,
+      similarity: candidate.similarity,
+      confidence: classifyConfidence(candidate.similarity),
+      state: candidateState,
+      ...(source !== undefined ? { source } : {}),
+      ...(matchType !== undefined ? { matchType } : {}),
+    });
+  }
+  return accepted;
+}
+
+/**
+ * Merge top-K results from multiple sources into one similarity-desc list,
+ * capped at `k`. Stable order on ties (FAO before USDA when similarity
+ * matches, mirroring the v1 tie-break preference for curated VN data).
+ */
+export function mergeTopKAcrossSources(
+  perSource: Array<MatchInfo[]>,
+  k: number
+): MatchInfo[] {
+  if (k <= 0) return [];
+  const merged: MatchInfo[] = [];
+  for (const list of perSource) {
+    for (const m of list) merged.push(m);
+  }
+  merged.sort((a, b) => b.similarity - a.similarity);
+  return merged.slice(0, k);
+}
+
+/**
  * Pick the best match between FAO and USDA candidates.
  *
  * Tie-break order: expected state match first, then similarity. Source
