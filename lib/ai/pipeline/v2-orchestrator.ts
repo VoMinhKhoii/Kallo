@@ -20,9 +20,14 @@
  *   - No shadow runner (shadow-runner.ts compares two v1 calls; v2-shadow
  *     comparison is a separate file).
  */
+import { randomUUID } from 'node:crypto';
 import type { AppDb } from '@/lib/db';
 import { capitalizeFirst } from '@/lib/utils';
 import type { GeminiClient } from '../gemini';
+import {
+  buildLanguageCorrectionMessage,
+  checkDecompositionLanguage,
+} from '../language/guard';
 import {
   type IngredientV2MatchResult,
   matchTopKPerIngredient,
@@ -40,7 +45,11 @@ import {
   resolveStreamingV2MealItem,
 } from '../streaming/parsers-v2';
 import type { StreamEvent } from '../streaming/types';
-import type { PipelineResponse, UserContext } from '../types';
+import type {
+  MealDecomposition,
+  PipelineResponse,
+  UserContext,
+} from '../types';
 import { assembleResult } from './assembly';
 import { createDecompositionStreamController } from './decomposition-stream';
 import { handleError, nonFoodResponse } from './errors';
@@ -54,6 +63,7 @@ import {
   type MealDecompositionV2,
   mealDecompositionV2Schema,
 } from './schemas';
+import { logStage } from './trace';
 import { bridgeV2ToV1 } from './v2-bridge';
 
 export interface AnalyzeMealV2Options {
@@ -107,25 +117,88 @@ export async function analyzeMealV2(
 
   let promptCharsCall1 = 0;
   let promptCharsCall2 = 0;
+  let decomposeChunkCount = 0;
+  let nutritionChunkCount = 0;
+  let languageRetryCount = 0;
 
   try {
     // ---- Stage 1: Call 1 — pure decomposition with item_name streaming --
-    emit({ type: 'stage', stage: 'decomposing' });
     const decompSystemPrompt = buildDecompositionV2Prompt(promptCtx);
     promptCharsCall1 = decompSystemPrompt.length + rawInput.length;
-    const decomposition: MealDecompositionV2 =
-      await gemini.generateStructuredOutputStream(
+
+    const runDecompositionAttempt = async (
+      userMessage: string
+    ): Promise<MealDecompositionV2> => {
+      return gemini.generateStructuredOutputStream(
         {
           schema: mealDecompositionV2Schema,
           systemPrompt: decompSystemPrompt,
-          userMessage: rawInput,
+          userMessage,
           model: profile.decompositionModel,
           temperature: 0.3,
           topP: 1,
           topK: 1,
         },
-        { onChunk: (accumulated) => decompStream.handleChunk(accumulated) }
+        {
+          onChunk: (accumulated) => {
+            decomposeChunkCount++;
+            decompStream.handleChunk(accumulated);
+          },
+        }
       );
+    };
+
+    let decomposition: MealDecompositionV2 = await withStageLogV2(
+      traceContext,
+      'decomposition',
+      1,
+      { rawInputLength: rawInput.length, model: profile.decompositionModel },
+      () => {
+        emit({ type: 'stage', stage: 'decomposing' });
+        return runDecompositionAttempt(rawInput);
+      }
+    );
+
+    // Language guard — mirrors v1 (orchestrator.ts:716-754). Retries once
+    // when the LLM emits Vietnamese for an English user (or vice versa)
+    // and resets the streaming controller so we don't double-fire
+    // item_name events from the failed attempt.
+    let languageGuard = checkDecompositionLanguage(
+      decomposition as unknown as MealDecomposition,
+      userContext
+    );
+    if (!languageGuard.ok) {
+      console.warn('[v2-pipeline] decomposition language mismatch; retrying', {
+        expected: userContext.outputLanguage,
+        actual: languageGuard.reason,
+      });
+      languageRetryCount += 1;
+      decompStream.resetAttempt();
+      decomposition = await withStageLogV2(
+        traceContext,
+        'decomposition',
+        1,
+        {
+          rawInputLength: rawInput.length,
+          model: profile.decompositionModel,
+          languageRetry: true,
+        },
+        () =>
+          runDecompositionAttempt(
+            buildLanguageCorrectionMessage(rawInput, userContext)
+          )
+      );
+      languageGuard = checkDecompositionLanguage(
+        decomposition as unknown as MealDecomposition,
+        userContext
+      );
+      if (!languageGuard.ok) {
+        console.warn(
+          '[v2-pipeline] decomposition language mismatch remained after retry',
+          { expected: userContext.outputLanguage, actual: languageGuard.reason }
+        );
+      }
+    }
 
     if (!decomposition.isFood || decomposition.mealItems.length === 0) {
       return nonFoodResponse();
@@ -143,24 +216,30 @@ export async function analyzeMealV2(
     }
 
     // ---- Stage 2: Match top-K per ingredient ----------------------------
-    emit({ type: 'stage', stage: 'matching' });
     const flatIngredients = decomposition.mealItems.flatMap((mi) =>
       mi.ingredients.map((ing) => ({
         ingredient: ing,
         dishCookingMethod: mi.cookingMethod,
       }))
     );
-    const matchResults: IngredientV2MatchResult[] =
-      await matchTopKPerIngredient(
-        flatIngredients.map((f) => f.ingredient),
-        flatIngredients.map((f) => f.dishCookingMethod),
-        db,
-        gemini,
-        { k: topK, concurrency: matchConcurrency }
-      );
+    const matchResults: IngredientV2MatchResult[] = await withStageLogV2(
+      traceContext,
+      'matching',
+      2,
+      { ingredientCount: flatIngredients.length, topK },
+      async () => {
+        emit({ type: 'stage', stage: 'matching' });
+        return matchTopKPerIngredient(
+          flatIngredients.map((f) => f.ingredient),
+          flatIngredients.map((f) => f.dishCookingMethod),
+          db,
+          gemini,
+          { k: topK, concurrency: matchConcurrency }
+        );
+      }
+    );
 
     // ---- Stage 3: Call 2 — grounded estimation with item_macros stream --
-    emit({ type: 'stage', stage: 'estimating' });
     const mealItemsWithCandidates: MealItemWithCandidates[] =
       buildCallTwoPayload(decomposition, matchResults);
     const call2SystemPrompt = buildGroundedEstimationPrompt({
@@ -216,44 +295,74 @@ export async function analyzeMealV2(
       }
     };
 
-    const grounded: GroundedEstimation =
-      await gemini.generateStructuredOutputStream(
-        {
-          schema: groundedEstimationSchema,
-          systemPrompt: call2SystemPrompt,
-          userMessage:
-            'Verify each candidate (CRAG verdict), estimate grams scoped to the selected candidate state, and emit bounded macros per the rules above.',
-          model: profile.nutritionModel,
-          temperature: call2Temperature,
-          topP: 1,
-          topK: 1,
-        },
-        { onChunk: handleCall2Chunk }
-      );
-
-    // ---- Stage 4: Bridge v2 → v1 shapes ---------------------------------
-    emit({ type: 'stage', stage: 'assembling' });
-    const bridged = bridgeV2ToV1({
-      v2: decomposition,
-      matches: matchResults,
-      grounded,
-      mealContext: rawInput,
-      preMintedMealItemIds: streamedMealItemIds,
-    });
-
-    // ---- Stage 5: Reconcile macros + assemble ---------------------------
-    const reconciled = reconcileNutritionIds(
-      bridged.rawNutrition,
-      bridged.decomposition,
-      bridged.matched
+    const grounded: GroundedEstimation = await withStageLogV2(
+      traceContext,
+      'nutrition',
+      3,
+      {
+        mealItemCount: decomposition.mealItems.length,
+        matchedCount: matchResults.filter((m) => m.candidates.length > 0)
+          .length,
+        unmatchedCount: matchResults.filter((m) => m.candidates.length === 0)
+          .length,
+        model: profile.nutritionModel,
+      },
+      async () => {
+        emit({ type: 'stage', stage: 'estimating' });
+        return gemini.generateStructuredOutputStream(
+          {
+            schema: groundedEstimationSchema,
+            systemPrompt: call2SystemPrompt,
+            userMessage:
+              'Verify each candidate (CRAG verdict), estimate grams scoped to the selected candidate state, and emit bounded macros per the rules above.',
+            model: profile.nutritionModel,
+            temperature: call2Temperature,
+            topP: 1,
+            topK: 1,
+          },
+          {
+            onChunk: (accumulated) => {
+              nutritionChunkCount++;
+              handleCall2Chunk(accumulated);
+            },
+          }
+        );
+      }
     );
-    const assembly = assembleResult(
-      bridged.decomposition,
-      reconciled,
-      bridged.matched,
-      bridged.unmatched,
-      userContext
+
+    // ---- Stage 4: Bridge + Reconcile + Assemble (single trace stage) ---
+    const assembly = await withStageLogV2(
+      traceContext,
+      'assembly',
+      4,
+      { ingredientCount: flatIngredients.length },
+      async () => {
+        emit({ type: 'stage', stage: 'assembling' });
+        const bridged = bridgeV2ToV1({
+          v2: decomposition,
+          matches: matchResults,
+          grounded,
+          mealContext: rawInput,
+          preMintedMealItemIds: streamedMealItemIds,
+        });
+        const reconciled = reconcileNutritionIds(
+          bridged.rawNutrition,
+          bridged.decomposition,
+          bridged.matched
+        );
+        return {
+          bridged,
+          ...assembleResult(
+            bridged.decomposition,
+            reconciled,
+            bridged.matched,
+            bridged.unmatched,
+            userContext
+          ),
+        };
+      }
     );
+    const bridged = assembly.bridged;
 
     // Flush any meal items whose macros didn't stream (e.g., final closing
     // brace arrived without a separator marker, so the regex didn't catch
@@ -276,6 +385,9 @@ export async function analyzeMealV2(
       verdicts: bridged.verdicts,
       promptCharsCall1,
       promptCharsCall2,
+      decomposeChunkCount,
+      nutritionChunkCount,
+      languageRetryCount,
     });
 
     // Persist a pipeline_runs row when request-level tracing is enabled,
@@ -290,11 +402,63 @@ export async function analyzeMealV2(
       unmatched: bridged.unmatched,
       verdicts: bridged.verdicts,
       totalMs: Date.now() - t0,
+      languageRetryCount,
     });
 
     return { success: true, data: assembly.result };
   } catch (error) {
     return handleError(error);
+  }
+}
+
+/**
+ * Wrap a v2 stage with optional `pipeline_stage_logs` persistence. When
+ * `traceContext` is present, mirrors v1's `withStageLog` semantics so the
+ * admin requests/[id] timeline populates for v2 runs. When absent, the fn
+ * runs without any DB overhead.
+ *
+ * Errors are logged with status='error' before re-throwing so the parent
+ * handler can map to a non-food / parse_error response.
+ */
+async function withStageLogV2<T>(
+  trace: AnalyzeMealTraceContext | undefined,
+  stage: 'decomposition' | 'matching' | 'nutrition' | 'assembly',
+  stageIndex: number,
+  inputJson: unknown,
+  fn: () => Promise<T>
+): Promise<T> {
+  if (!trace) return fn();
+  const stageLogId = randomUUID();
+  const t0 = Date.now();
+  try {
+    const result = await fn();
+    logStage({
+      db: trace.db,
+      requestId: trace.requestId,
+      stageLogId,
+      stage,
+      stageIndex,
+      inputJson,
+      outputJson: result,
+      status: 'success',
+      durationMs: Date.now() - t0,
+    });
+    return result;
+  } catch (e) {
+    const message = e instanceof Error ? e.message : String(e);
+    logStage({
+      db: trace.db,
+      requestId: trace.requestId,
+      stageLogId,
+      stage,
+      stageIndex,
+      inputJson,
+      outputJson: null,
+      status: 'error',
+      error: message,
+      durationMs: Date.now() - t0,
+    });
+    throw e;
   }
 }
 
@@ -404,6 +568,13 @@ interface V2TelemetryInput {
   verdicts: ReturnType<typeof bridgeV2ToV1>['verdicts'];
   promptCharsCall1: number;
   promptCharsCall2: number;
+  /** Number of `onChunk` callbacks fired during Call 1 streaming. Tells us
+   *  whether item_name events ought to have streamed progressively or
+   *  arrived as one batch (single-chunk = no perceived streaming). */
+  decomposeChunkCount: number;
+  /** Same probe for Call 2 / item_macros. */
+  nutritionChunkCount: number;
+  languageRetryCount: number;
 }
 
 function logV2Telemetry(input: V2TelemetryInput): void {
@@ -434,6 +605,9 @@ function logV2Telemetry(input: V2TelemetryInput): void {
     mealItems: input.decomposition.mealItems.length,
     promptCharsCall1: input.promptCharsCall1,
     promptCharsCall2: input.promptCharsCall2,
+    decomposeChunkCount: input.decomposeChunkCount,
+    nutritionChunkCount: input.nutritionChunkCount,
+    languageRetryCount: input.languageRetryCount,
   });
 }
 
@@ -455,6 +629,7 @@ async function persistV2PipelineRun(args: {
   unmatched: ReturnType<typeof bridgeV2ToV1>['unmatched'];
   verdicts: ReturnType<typeof bridgeV2ToV1>['verdicts'];
   totalMs: number;
+  languageRetryCount: number;
 }): Promise<void> {
   const trace = args.traceContext;
   if (!trace) return;
@@ -515,9 +690,9 @@ async function persistV2PipelineRun(args: {
       },
       escalated: false,
       cacheHitL4: false,
-      retryCount: 0,
-      languageGuardMisfire: false,
-      languageRetryCount: 0,
+      retryCount: args.languageRetryCount,
+      languageGuardMisfire: args.languageRetryCount > 0,
+      languageRetryCount: args.languageRetryCount,
       aliasFallbackFired: false,
       promptPersonalizationFields: personalizationFields,
     });
