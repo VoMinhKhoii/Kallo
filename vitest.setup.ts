@@ -2,7 +2,7 @@ import React from 'react';
 import '@testing-library/jest-dom/vitest';
 import { vi } from 'vitest';
 
-// V2 pipeline defaults to ON in production (see lib/ai/pipeline/v2-feature-flag.ts).
+// V2 pipeline defaults to ON in production (see lib/ai/pipeline/pipeline-feature-flag.ts).
 // Most of the existing test suite was written for v1, so default to v1
 // in tests. V2-specific tests call `analyzeMealV2` directly and aren't
 // affected by this flag.

@@ -17,6 +17,21 @@ import { StageTimeline } from './_components/stage-timeline';
 
 export const dynamic = 'force-dynamic';
 
+/**
+ * Validate the `pipeline_requests.prompt_versions_used` JSONB blob before
+ * passing it to the version badge. The DB column is typed `unknown` after
+ * Drizzle's `$type<>()`; an unexpected shape (legacy rows, manual SQL
+ * edits, or a future schema change) must not crash the admin page.
+ *
+ * Per repo guidelines: validate all external inputs with Zod schemas.
+ */
+const promptVersionsUsedSchema = z.record(z.string(), z.string()).nullable();
+
+function parsePromptVersionsUsed(raw: unknown): Record<string, string> | null {
+  const result = promptVersionsUsedSchema.safeParse(raw ?? null);
+  return result.success ? result.data : null;
+}
+
 interface PageProps {
   params: Promise<{ id: string }>;
   searchParams: Promise<Record<string, string | string[] | undefined>>;
@@ -163,12 +178,9 @@ export default async function RequestDetailPage({
               {request.status}
             </span>
             <PipelineVersionBadge
-              promptVersionsUsed={
-                (request.promptVersionsUsed ?? null) as Record<
-                  string,
-                  string
-                > | null
-              }
+              promptVersionsUsed={parsePromptVersionsUsed(
+                request.promptVersionsUsed
+              )}
             />
             {request.dryRun && (
               <span

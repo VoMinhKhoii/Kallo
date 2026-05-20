@@ -42,4 +42,15 @@ describe('PipelineVersionBadge', () => {
     render(<PipelineVersionBadge promptVersionsUsed={{}} />);
     expect(screen.getByText('PIPELINE: ?')).toBeInTheDocument();
   });
+
+  it('renders ? badge when promptVersionsUsed has only unknown keys', () => {
+    // Future or partial trace formats must NOT be mislabeled as v1 just
+    // because they happen to be non-empty.
+    render(
+      <PipelineVersionBadge
+        promptVersionsUsed={{ 'some-future-stage': 'pv-x' }}
+      />
+    );
+    expect(screen.getByText('PIPELINE: ?')).toBeInTheDocument();
+  });
 });

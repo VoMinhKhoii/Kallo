@@ -24,6 +24,15 @@ export function createDecompositionStreamController({
 
   const resetAttempt = () => {
     emittedCounts.clear();
+    // NOTE: mealItemIds is deliberately preserved across attempts. v1's
+    // gemini-SDK-internal retry path (e.g., on transient 5xx) calls this
+    // between stream attempts of the SAME logical decomposition; clients
+    // expect the same logical meal item to keep the same mealItemId so
+    // partially-streamed event sequences from attempt 1 still reconcile
+    // with the final result. v2's language-guard retry — which IS a fresh
+    // semantic attempt — recreates the entire controller instead (see
+    // recreateDecompStream() in grounded-orchestrator.ts) so stale IDs
+    // can't leak there either.
     mealItemIndex = 0;
     extractAccumMs = 0;
     chunkCount = 0;

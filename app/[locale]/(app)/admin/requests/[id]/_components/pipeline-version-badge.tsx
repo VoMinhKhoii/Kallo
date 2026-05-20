@@ -19,6 +19,9 @@ interface Props {
 
 type Version = 'v2' | 'v1' | 'unknown';
 
+const V2_MARKER_KEYS = ['decomposition-grounded', 'grounded-estimation'];
+const V1_MARKER_KEYS = ['decomposition', 'nutrition'];
+
 function classify(
   promptVersionsUsed: Record<string, string> | null | undefined
 ): Version {
@@ -26,13 +29,11 @@ function classify(
     return 'unknown';
   }
   const keys = Object.keys(promptVersionsUsed);
-  if (
-    keys.includes('decomposition-grounded') ||
-    keys.includes('grounded-estimation')
-  ) {
-    return 'v2';
-  }
-  return 'v1';
+  if (V2_MARKER_KEYS.some((k) => keys.includes(k))) return 'v2';
+  if (V1_MARKER_KEYS.some((k) => keys.includes(k))) return 'v1';
+  // Future / partial trace formats fall through to 'unknown' rather than
+  // being mislabeled as v1.
+  return 'unknown';
 }
 
 const STYLES: Record<Version, { bg: string; label: string; title: string }> = {

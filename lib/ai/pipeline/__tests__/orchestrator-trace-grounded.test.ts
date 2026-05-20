@@ -33,8 +33,19 @@ vi.mock('../run-telemetry', async () => {
 
 const { analyzeMealV2 } = await import('../grounded-orchestrator');
 
+// Save process.env state once so afterEach can restore each mutation. The
+// first test in this file sets PIPELINE_TRACE_ENABLED='true'; without this
+// restore, later files in the same vitest run would inherit that mutation
+// and become order-dependent.
+const prevPipelineTraceEnabled = process.env.PIPELINE_TRACE_ENABLED;
+
 afterEach(() => {
   vi.clearAllMocks();
+  if (prevPipelineTraceEnabled === undefined) {
+    delete process.env.PIPELINE_TRACE_ENABLED;
+  } else {
+    process.env.PIPELINE_TRACE_ENABLED = prevPipelineTraceEnabled;
+  }
 });
 
 const userContext: UserContext = {

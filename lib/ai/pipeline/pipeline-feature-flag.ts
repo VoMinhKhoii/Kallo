@@ -12,8 +12,6 @@ import { readBooleanEnv } from './feature-flags';
  *
  * Shadow mode: `PIPELINE_V2_SHADOW=true` runs the OTHER path in the
  * background for divergence measurement (independent of the master flag).
- *
- * See: /root/.claude/plans/i-need-the-ai-sorted-tome.md
  */
 export const PIPELINE_V2_ENABLED_ENV = 'PIPELINE_V2_ENABLED';
 export const PIPELINE_V2_SHADOW_ENV = 'PIPELINE_V2_SHADOW';

@@ -107,8 +107,11 @@ function findGroundedFor(
   const mealOccurrences = index.get(mealKey);
   if (!mealOccurrences || mealOccurrences.length === 0) return null;
   const consumed = mealItemQueueConsumed.get(mealKey) ?? 0;
-  const ingredients =
-    mealOccurrences[Math.min(consumed, mealOccurrences.length - 1)];
+  // FIFO exhaustion: return null rather than clamping to the last
+  // occurrence — clamping would silently mis-attach macros/verdicts to a
+  // duplicate slot when Call 2 emits fewer occurrences than decomposition.
+  if (consumed >= mealOccurrences.length) return null;
+  const ingredients = mealOccurrences[consumed];
   // Find the first un-consumed ingredient with the matching name (case-insensitive).
   const ingQueueKey = `${mealKey}::${ingKeyNorm}`;
   const ingConsumed = ingredientQueueConsumed.get(ingQueueKey) ?? 0;
@@ -116,7 +119,8 @@ function findGroundedFor(
     (i) => nameKey(i.ingredientName) === ingKeyNorm
   );
   if (candidates.length === 0) return null;
-  const pick = candidates[Math.min(ingConsumed, candidates.length - 1)];
+  if (ingConsumed >= candidates.length) return null;
+  const pick = candidates[ingConsumed];
   ingredientQueueConsumed.set(ingQueueKey, ingConsumed + 1);
   return pick;
 }
