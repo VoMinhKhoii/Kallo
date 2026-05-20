@@ -5,8 +5,8 @@ import {
 } from '../../__tests__/test-helpers';
 import type { StreamEvent } from '../../streaming/types';
 import type { UserContext } from '../../types';
+import { analyzeMealV2 } from '../grounded-orchestrator';
 import type { GroundedEstimation, MealDecompositionV2 } from '../schemas';
-import { analyzeMealV2 } from '../v2-orchestrator';
 
 afterEach(() => {
   vi.restoreAllMocks();
@@ -254,6 +254,19 @@ describe('analyzeMealV2 — Call 1 item_name streaming', () => {
     const itemNameEvents = events.filter((e) => e.type === 'item_name');
     expect(itemNameEvents).toHaveLength(2);
     expect(itemNameEvents[0].mealItemId).not.toBe(itemNameEvents[1].mealItemId);
+
+    // Regression: previously, handleCall2Chunk hardcoded `::1` for occurrence
+    // lookup, so the SECOND duplicate-name item resolved to the FIRST item's
+    // mealItemId, hit itemMacrosStreamed.has(), and was silently skipped —
+    // its macros only surfaced via flushUnstreamedItemMacros at the very
+    // end, defeating progressive streaming. Both item_macros events MUST
+    // arrive with distinct mealItemIds matching the item_name pair.
+    const itemMacrosEvents = events.filter((e) => e.type === 'item_macros');
+    expect(itemMacrosEvents).toHaveLength(2);
+    const macroIds = new Set(itemMacrosEvents.map((e) => e.mealItemId));
+    expect(macroIds.size).toBe(2);
+    const nameIds = new Set(itemNameEvents.map((e) => e.mealItemId));
+    expect(macroIds).toEqual(nameIds);
   });
 });
 

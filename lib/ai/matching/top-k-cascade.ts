@@ -2,7 +2,8 @@ import { sql } from 'drizzle-orm';
 import type { AppDb } from '@/lib/db';
 import { mapWithConcurrency } from '@/lib/utils';
 import type { GeminiClient } from '../gemini';
-import type { DecomposedIngredientV2, StateHint } from '../pipeline/schemas';
+import { deriveExpectedState } from '../pipeline/cooking-method-state';
+import type { DecomposedIngredientV2 } from '../pipeline/schemas';
 import type { NutritionPer100g } from '../types';
 import { cacheQueryEmbedding, resolveQueryEmbedding } from './embedding-cache';
 import { batchFetchNutrition } from './nutrition-batch';
@@ -53,22 +54,28 @@ const DEFAULT_SOURCE_LIMIT = 5;
  * Coarse implicit-state inference from the v2 decomposition input. The
  * matcher uses this only to apply STATE_MISMATCH_PENALTY; the LLM in Call 2
  * still owns the final state interpretation via CRAG verdict + grams.
+ *
+ * Routes through the canonical `deriveExpectedState` helper so the raw-method
+ * vocabulary stays single-sourced (`COOKING_METHOD_STATE`).
  */
 function deriveExpectedStateFromV2(
   ingredient: DecomposedIngredientV2,
   dishCookingMethod: string | null | undefined
 ): DbIngredientState {
-  const hint: StateHint | undefined = ingredient.stateHint;
-  if (hint === 'raw_weight') return 'raw';
-  if (hint === 'cooked_weight') return 'cooked';
-  const method = (ingredient.cookingMethod ?? dishCookingMethod ?? '')
-    .trim()
-    .toLocaleLowerCase('vi-VN');
-  if (method === '') return 'unknown';
-  if (['sống', 'tươi sống', 'tái', 'gỏi', 'raw'].includes(method)) {
-    return 'raw';
-  }
-  return 'cooked';
+  const weightBasis =
+    ingredient.stateHint === 'raw_weight'
+      ? 'raw'
+      : ingredient.stateHint === 'cooked_weight'
+        ? 'as_eaten'
+        : undefined;
+  const { state, source } = deriveExpectedState({
+    explicit: undefined,
+    dishMethod: ingredient.cookingMethod ?? dishCookingMethod ?? null,
+    weightBasis,
+  });
+  // Preserve v2's prior "unknown when method is empty" semantics so the
+  // STATE_MISMATCH_PENALTY does not fire for genuinely-unknown ingredients.
+  return source === 'unknown' ? 'unknown' : state;
 }
 
 interface IngredientWithContext {

@@ -31,19 +31,19 @@ import {
 import {
   type IngredientV2MatchResult,
   matchTopKPerIngredient,
-} from '../matching/v2-cascade';
+} from '../matching/top-k-cascade';
 import { buildDecompositionV2Prompt } from '../prompts/decomposition-v2';
 import {
   buildGroundedEstimationPrompt,
   type MealItemWithCandidates,
 } from '../prompts/grounded-estimation';
 import type { PromptPersonalizationContext } from '../prompts/types';
-import { computeStreamingMealItem } from '../streaming/parsers';
 import {
   buildPerMealItemOffsetMap,
   extractCompletedGroundedMealItems,
   resolveStreamingV2MealItem,
-} from '../streaming/parsers-v2';
+} from '../streaming/grounded-parsers';
+import { computeStreamingMealItem } from '../streaming/parsers';
 import type { StreamEvent } from '../streaming/types';
 import type {
   MealDecomposition,
@@ -51,6 +51,7 @@ import type {
   UserContext,
 } from '../types';
 import { assembleResult } from './assembly';
+import { bridgeV2ToV1 } from './bridge';
 import { createDecompositionStreamController } from './decomposition-stream';
 import { handleError, nonFoodResponse } from './errors';
 import { resolveModelProfile } from './model-profile';
@@ -63,8 +64,7 @@ import {
   type MealDecompositionV2,
   mealDecompositionV2Schema,
 } from './schemas';
-import { logStage } from './trace';
-import { bridgeV2ToV1 } from './v2-bridge';
+import { buildLlmStageTrace, logStage } from './trace';
 
 export interface AnalyzeMealV2Options {
   /** Top-K candidates to pass to Call 2 per ingredient. Default 3. */
@@ -105,15 +105,36 @@ export async function analyzeMealV2(
   const promptCtx = toPromptPersonalizationContext(userContext);
   const t0 = Date.now();
 
-  // v2 streams item_name events directly as the LLM emits meal item names
-  // in partial JSON — no buffering. The decomposition v2 schema rejects
-  // mealItems for non-food input, so the regex never matches anything to
-  // leak (no buffer needed for that case). v1's buffer existed for the
-  // language-guard retry path, which v2 doesn't have yet.
-  const decompStream = createDecompositionStreamController({
-    emit,
+  // Buffer item_name events until the language guard passes — same pattern
+  // as v1 (orchestrator.ts:573-589). Without this, a language-mismatch
+  // retry would leak attempt-1's names to the client, and the client's
+  // useStreamAnalysis appends item_name events without dedupe → visible
+  // duplicate skeleton rows and React key-collision warnings.
+  const bufferedItemNameEvents: Array<
+    Extract<StreamEvent, { type: 'item_name' }>
+  > = [];
+  const itemNameBufferingEmit = (event: StreamEvent) => {
+    if (event.type === 'item_name') {
+      bufferedItemNameEvents.push(event);
+      return;
+    }
+    emit(event);
+  };
+  const flushBufferedItemNames = () => {
+    for (const ev of bufferedItemNameEvents) emit(ev);
+    bufferedItemNameEvents.length = 0;
+  };
+  let decompStream = createDecompositionStreamController({
+    emit: itemNameBufferingEmit,
     prewarm: () => {},
   });
+  const recreateDecompStream = () => {
+    bufferedItemNameEvents.length = 0;
+    decompStream = createDecompositionStreamController({
+      emit: itemNameBufferingEmit,
+      prewarm: () => {},
+    });
+  };
 
   let promptCharsCall1 = 0;
   let promptCharsCall2 = 0;
@@ -127,8 +148,17 @@ export async function analyzeMealV2(
     promptCharsCall1 = decompSystemPrompt.length + rawInput.length;
 
     const runDecompositionAttempt = async (
-      userMessage: string
+      userMessage: string,
+      stageLogId: string
     ): Promise<MealDecompositionV2> => {
+      const callTrace = buildLlmStageTrace({
+        trace: traceContext,
+        stageLogId,
+        name: 'decomposition-grounded',
+        builder: buildDecompositionV2Prompt as (...a: unknown[]) => string,
+        templateSample: decompSystemPrompt,
+        model: profile.decompositionModel,
+      });
       return gemini.generateStructuredOutputStream(
         {
           schema: mealDecompositionV2Schema,
@@ -144,6 +174,7 @@ export async function analyzeMealV2(
             decomposeChunkCount++;
             decompStream.handleChunk(accumulated);
           },
+          ...(callTrace ? { trace: callTrace } : {}),
         }
       );
     };
@@ -153,16 +184,16 @@ export async function analyzeMealV2(
       'decomposition',
       1,
       { rawInputLength: rawInput.length, model: profile.decompositionModel },
-      () => {
+      ({ stageLogId }) => {
         emit({ type: 'stage', stage: 'decomposing' });
-        return runDecompositionAttempt(rawInput);
+        return runDecompositionAttempt(rawInput, stageLogId);
       }
     );
 
     // Language guard — mirrors v1 (orchestrator.ts:716-754). Retries once
-    // when the LLM emits Vietnamese for an English user (or vice versa)
-    // and resets the streaming controller so we don't double-fire
-    // item_name events from the failed attempt.
+    // when the LLM emits Vietnamese for an English user (or vice versa).
+    // Recreate the stream controller (NOT just resetAttempt) so the failed
+    // attempt's mealItemIds + buffered events are fully discarded.
     let languageGuard = checkDecompositionLanguage(
       decomposition as unknown as MealDecomposition,
       userContext
@@ -173,7 +204,10 @@ export async function analyzeMealV2(
         actual: languageGuard.reason,
       });
       languageRetryCount += 1;
-      decompStream.resetAttempt();
+      recreateDecompStream();
+      // Reset the telemetry probes so "decomposeChunkCount" reflects the
+      // final (post-retry) attempt only.
+      decomposeChunkCount = 0;
       decomposition = await withStageLogV2(
         traceContext,
         'decomposition',
@@ -183,9 +217,10 @@ export async function analyzeMealV2(
           model: profile.decompositionModel,
           languageRetry: true,
         },
-        () =>
+        ({ stageLogId }) =>
           runDecompositionAttempt(
-            buildLanguageCorrectionMessage(rawInput, userContext)
+            buildLanguageCorrectionMessage(rawInput, userContext),
+            stageLogId
           )
       );
       languageGuard = checkDecompositionLanguage(
@@ -201,8 +236,13 @@ export async function analyzeMealV2(
     }
 
     if (!decomposition.isFood || decomposition.mealItems.length === 0) {
+      // Discard buffered item_name events — non-food input has no UI to update.
+      bufferedItemNameEvents.length = 0;
       return nonFoodResponse();
     }
+
+    // Language guard passed — release buffered item_name events to the client.
+    flushBufferedItemNames();
 
     // Capitalize meal-item and ingredient display names in place — same
     // pattern v1 uses (orchestrator.ts:785-788) so the UI always shows
@@ -227,7 +267,7 @@ export async function analyzeMealV2(
       'matching',
       2,
       { ingredientCount: flatIngredients.length, topK },
-      async () => {
+      async (_ctx) => {
         emit({ type: 'stage', stage: 'matching' });
         return matchTopKPerIngredient(
           flatIngredients.map((f) => f.ingredient),
@@ -252,6 +292,23 @@ export async function analyzeMealV2(
     const streamedMealItemIds = decompStream.getStreamedMealItemIds();
     const perItemOffsets = buildPerMealItemOffsetMap(decomposition.mealItems);
     const itemMacrosStreamed = new Set<string>();
+    // Per-display-name occurrence counter shared by the chunk handler AND
+    // the post-Call-2 flush so duplicate names ("Cơm trắng" × 2) resolve
+    // to distinct mealItemIds (`::1`, `::2`, …) minted by Call 1's stream
+    // controller. Without this, the second duplicate landed on `::1`,
+    // collided in `itemMacrosStreamed`, and was silently skipped here —
+    // only emerging via `flushUnstreamedItemMacros` at the end of Call 2.
+    const itemMacrosNameOcc = new Map<string, number>();
+    const resolveMealItemId = (rawName: string, fallbackId: string): string => {
+      const cap = capitalizeFirst(rawName);
+      const occ = (itemMacrosNameOcc.get(cap) ?? 0) + 1;
+      itemMacrosNameOcc.set(cap, occ);
+      return (
+        streamedMealItemIds.get(`${cap}::${occ}`) ??
+        streamedMealItemIds.get(`${rawName}::${occ}`) ??
+        fallbackId
+      );
+    };
     let lastExtractedCount = 0;
 
     const handleCall2Chunk = (accumulated: string) => {
@@ -283,12 +340,10 @@ export async function analyzeMealV2(
           userContext.aggression
         );
         streamItem.name = capitalizeFirst(streamItem.name);
-        const mealItemId =
-          streamedMealItemIds.get(
-            `${capitalizeFirst(rawItem.mealItemName)}::1`
-          ) ??
-          streamedMealItemIds.get(`${rawItem.mealItemName}::1`) ??
-          streamItem.id;
+        const mealItemId = resolveMealItemId(
+          rawItem.mealItemName,
+          streamItem.id
+        );
         if (itemMacrosStreamed.has(mealItemId)) continue;
         itemMacrosStreamed.add(mealItemId);
         emit({ type: 'item_macros', mealItemId, item: streamItem });
@@ -307,8 +362,16 @@ export async function analyzeMealV2(
           .length,
         model: profile.nutritionModel,
       },
-      async () => {
+      async ({ stageLogId }) => {
         emit({ type: 'stage', stage: 'estimating' });
+        const callTrace = buildLlmStageTrace({
+          trace: traceContext,
+          stageLogId,
+          name: 'grounded-estimation',
+          builder: buildGroundedEstimationPrompt as (...a: unknown[]) => string,
+          templateSample: call2SystemPrompt,
+          model: profile.nutritionModel,
+        });
         return gemini.generateStructuredOutputStream(
           {
             schema: groundedEstimationSchema,
@@ -325,6 +388,7 @@ export async function analyzeMealV2(
               nutritionChunkCount++;
               handleCall2Chunk(accumulated);
             },
+            ...(callTrace ? { trace: callTrace } : {}),
           }
         );
       }
@@ -336,7 +400,7 @@ export async function analyzeMealV2(
       'assembly',
       4,
       { ingredientCount: flatIngredients.length },
-      async () => {
+      async (_ctx) => {
         emit({ type: 'stage', stage: 'assembling' });
         const bridged = bridgeV2ToV1({
           v2: decomposition,
@@ -393,7 +457,11 @@ export async function analyzeMealV2(
     // Persist a pipeline_runs row when request-level tracing is enabled,
     // mirroring v1's observability surface so admin/audit dashboards and
     // the shadow-runner pick up v2 requests too. Best-effort, never blocks.
-    void persistV2PipelineRun({
+    // In tests, await persistence so assertions on pipeline_runs aren't racy.
+    // In prod, fire-and-forget — pipeline_runs writes never block the
+    // user-visible response. persistV2PipelineRun internally swallows errors
+    // either way so the outer pipeline result is never affected.
+    const persistPromise = persistV2PipelineRun({
       traceContext,
       userContext,
       profile,
@@ -404,6 +472,11 @@ export async function analyzeMealV2(
       totalMs: Date.now() - t0,
       languageRetryCount,
     });
+    if (process.env.NODE_ENV === 'test') {
+      await persistPromise;
+    } else {
+      void persistPromise;
+    }
 
     return { success: true, data: assembly.result };
   } catch (error) {
@@ -425,13 +498,13 @@ async function withStageLogV2<T>(
   stage: 'decomposition' | 'matching' | 'nutrition' | 'assembly',
   stageIndex: number,
   inputJson: unknown,
-  fn: () => Promise<T>
+  fn: (ctx: { stageLogId: string }) => Promise<T>
 ): Promise<T> {
-  if (!trace) return fn();
+  if (!trace) return fn({ stageLogId: '' });
   const stageLogId = randomUUID();
   const t0 = Date.now();
   try {
-    const result = await fn();
+    const result = await fn({ stageLogId });
     logStage({
       db: trace.db,
       requestId: trace.requestId,
@@ -519,7 +592,12 @@ function flushUnstreamedItemMacros(args: {
   });
 }
 
-/** Build the per-meal-item payload for the grounded-estimation prompt. */
+/** Build the per-meal-item payload for the grounded-estimation prompt.
+ *
+ * `matchResults` is built in flat-ingredient order by `matchTopKPerIngredient`
+ * (one entry per ingredient with `ingredientIndex === position`), so direct
+ * indexing is correct and avoids an O(N²) scan.
+ */
 function buildCallTwoPayload(
   decomposition: MealDecompositionV2,
   matchResults: IngredientV2MatchResult[]
@@ -528,9 +606,7 @@ function buildCallTwoPayload(
   return decomposition.mealItems.map((mi) => ({
     mealItem: mi,
     ingredients: mi.ingredients.map((ing) => {
-      const matchResult = matchResults.find(
-        (m) => m.ingredientIndex === flatIdx
-      );
+      const matchResult = matchResults[flatIdx];
       flatIdx++;
       const candidates = (matchResult?.candidates ?? []).map((c, i) => ({
         id: `c${i + 1}`,

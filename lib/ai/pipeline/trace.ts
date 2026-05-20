@@ -203,7 +203,17 @@ export interface BuildLlmStageTraceContext {
 export function buildLlmStageTrace(args: {
   trace: BuildLlmStageTraceContext | undefined;
   stageLogId: string;
-  name: 'decomposition' | 'nutrition';
+  /**
+   * Prompt name as recorded in `prompt_versions` (and surfaced in the admin
+   * /prompts catalog). v1 uses `decomposition` / `nutrition`; v2 (the
+   * grounded pipeline) uses `decomposition-grounded` / `grounded-estimation`
+   * so admin can distinguish which prompt version each request used.
+   */
+  name:
+    | 'decomposition'
+    | 'nutrition'
+    | 'decomposition-grounded'
+    | 'grounded-estimation';
   builder: (...a: unknown[]) => string;
   templateSample: string;
   model: string;

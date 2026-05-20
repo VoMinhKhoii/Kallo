@@ -7,6 +7,7 @@ import { getRequestDetail } from '@/lib/admin/queries';
 import { requireAdmin } from '@/lib/admin/require-admin';
 import { db } from '@/lib/db';
 import { PipelineSummary } from './_components/pipeline-summary';
+import { PipelineVersionBadge } from './_components/pipeline-version-badge';
 import { ReplayButton } from './_components/replay-button';
 import type {
   CompareLabel,
@@ -161,6 +162,14 @@ export default async function RequestDetailPage({
             >
               {request.status}
             </span>
+            <PipelineVersionBadge
+              promptVersionsUsed={
+                (request.promptVersionsUsed ?? null) as Record<
+                  string,
+                  string
+                > | null
+              }
+            />
             {request.dryRun && (
               <span
                 className="inline-flex rounded bg-amber-100 px-2 py-1 font-medium text-amber-900 text-xs dark:bg-amber-900/30 dark:text-amber-200"

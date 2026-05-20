@@ -14,7 +14,7 @@
  *      existing `computeStreamingMealItem` (goal-adjusted display sum) can
  *      run unchanged.
  */
-import type { IngredientV2MatchResult } from '../matching/v2-cascade';
+import type { IngredientV2MatchResult } from '../matching/top-k-cascade';
 import type { RawNutritionAdjustment } from '../pipeline/nutrition';
 import { __testing as nutritionTesting } from '../pipeline/nutrition';
 import type {
@@ -27,8 +27,6 @@ import type {
   MacroBase,
   MealItemNutrition,
 } from '../types';
-
-const ZERO_TRIPLE = { low: 0, mid: 0, high: 0 } as const;
 
 /**
  * Same partial-JSON marker as v1's nutrition stream. Each `{"mealItemName":`
@@ -120,7 +118,9 @@ export function resolveStreamingV2MealItem(
 
   rawItem.ingredients.forEach((rawIng, localIdx) => {
     const flatIdx = flatIngredientStart + localIdx;
-    const matchResult = matchResults.find((m) => m.ingredientIndex === flatIdx);
+    // matchResults is built in flat-ingredient order by matchTopKPerIngredient,
+    // so direct indexing avoids an O(N²) scan in this hot streaming loop.
+    const matchResult = matchResults[flatIdx];
     const candidates = matchResult?.candidates ?? [];
     const decompForName = decomposedIngredients.find(
       (d) => d.rawName === rawIng.ingredientName
@@ -220,6 +220,3 @@ export function buildPerMealItemOffsetMap(
     return entry;
   });
 }
-
-// Re-export the zero triple for tests that need a deterministic placeholder.
-export const __testingV2Stream = { ZERO_TRIPLE };

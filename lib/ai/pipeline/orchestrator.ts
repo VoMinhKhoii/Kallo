@@ -60,6 +60,7 @@ import {
   nonFoodResponse,
 } from './errors';
 import { readBooleanEnv } from './feature-flags';
+import { analyzeMealV2 } from './grounded-orchestrator';
 import { createCompactIdSequence } from './id-sequence';
 import { ensureIdsOnDecomposition, type MealDecompositionWithIds } from './ids';
 import {
@@ -74,6 +75,7 @@ import {
   reconcileNutritionIds,
   resolveStreamingMealItem,
 } from './nutrition';
+import { isPipelineV2Enabled } from './pipeline-feature-flag';
 import { aggregateRrfMeasurements } from './rrf-aggregation';
 import { buildPipelineRunRow, writePipelineRun } from './run-telemetry';
 import { mealDecompositionSchema, nutritionAdjustmentSchema } from './schemas';
@@ -90,8 +92,6 @@ import {
 } from './shadow-runner';
 import { isShadowSampled } from './shadow-sampling';
 import { buildLlmStageTrace, logStage } from './trace';
-import { isPipelineV2Enabled } from './v2-feature-flag';
-import { analyzeMealV2 } from './v2-orchestrator';
 import {
   classifyAnomalies,
   detectAnomalies,

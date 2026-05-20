@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { NULL_NUTRITION_VALUES } from '../../__tests__/test-helpers';
-import type { IngredientV2MatchResult } from '../../matching/v2-cascade';
+import type { IngredientV2MatchResult } from '../../matching/top-k-cascade';
+import { bridgeV2ToV1 } from '../bridge';
 import type { GroundedEstimation, MealDecompositionV2 } from '../schemas';
-import { bridgeV2ToV1 } from '../v2-bridge';
 
 function v2Decomp(): MealDecompositionV2 {
   return {

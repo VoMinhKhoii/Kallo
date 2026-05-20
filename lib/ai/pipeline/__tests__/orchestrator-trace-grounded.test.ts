@@ -7,10 +7,15 @@ import type { UserContext } from '../../types';
 import type { GroundedEstimation, MealDecompositionV2 } from '../schemas';
 
 // Capture logStage calls — v2 must populate the same admin/audit timeline
-// v1 populates so requests/[id] shows stages.
+// v1 populates so requests/[id] shows stages. buildLlmStageTrace is also
+// imported by the orchestrator (used to record prompt versions for the
+// admin prompts page); the mock returns undefined so the trace plumbing
+// short-circuits without DB calls.
 const mockLogStage = vi.fn();
+const mockBuildLlmStageTrace = vi.fn().mockReturnValue(undefined);
 vi.mock('../trace', () => ({
   logStage: mockLogStage,
+  buildLlmStageTrace: mockBuildLlmStageTrace,
 }));
 
 // Stub run-telemetry's writePipelineRun so we capture it without DB.
@@ -26,7 +31,7 @@ vi.mock('../run-telemetry', async () => {
   };
 });
 
-const { analyzeMealV2 } = await import('../v2-orchestrator');
+const { analyzeMealV2 } = await import('../grounded-orchestrator');
 
 afterEach(() => {
   vi.clearAllMocks();

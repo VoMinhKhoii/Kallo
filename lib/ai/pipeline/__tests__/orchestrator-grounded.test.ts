@@ -4,8 +4,8 @@ import {
   createSourceAwareMockDb,
 } from '../../__tests__/test-helpers';
 import type { UserContext } from '../../types';
+import { analyzeMealV2 } from '../grounded-orchestrator';
 import type { GroundedEstimation, MealDecompositionV2 } from '../schemas';
-import { analyzeMealV2 } from '../v2-orchestrator';
 
 afterEach(() => {
   vi.restoreAllMocks();

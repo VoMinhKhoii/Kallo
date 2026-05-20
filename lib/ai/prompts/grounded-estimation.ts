@@ -21,14 +21,20 @@ import type { PromptPersonalizationContext } from './types';
  *   3. Macros — bounded triples, server-anchored for matched-without-prep-notes,
  *      LLM-driven within tight bands when prep_notes is non-empty.
  *
- * Prompt layout (deliberate for Vertex implicit context caching, min 2,048
- * tokens):
- *   STATIC PREFIX (universal rules — fully cacheable across ALL users)
+ * Prompt layout:
+ *   STATIC PREFIX (universal rules — same bytes across all users / requests)
  *       ↓
- *   PER-USER BLOCK (<user_context> — cacheable per user)
+ *   PER-USER BLOCK (<user_context> — same bytes within a user's session)
  *       ↓
  *   DYNAMIC SUFFIX (<original_prompt> + <ingredient_data> with candidates —
  *                   request-specific)
+ *
+ * Note: the original intent of this layout was to clear Vertex's implicit
+ * context-cache threshold (≥2,048 tokens for Gemini 2.5; ≥4,096 for 3+).
+ * Measured prefix today: ~1,341 tokens (compressed) / ~1,915 tokens
+ * (production), both below the 2.5 floor. Implicit caching may not fire
+ * unless padded; treat the layout as "ready to benefit when prefix grows"
+ * rather than "actively cached".
  *
  * Output schema: groundedEstimationSchema in `pipeline/schemas.ts`.
  */
