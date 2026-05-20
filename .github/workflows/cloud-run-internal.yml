@@ -90,7 +90,7 @@ jobs:
             --min-instances=0
             --max-instances=10
             --set-secrets=DATABASE_URL=nham-nonprod-database-url:latest,GEMINI_API_KEY=nham-nonprod-gemini-api-key:latest,ANALYSIS_GUARD_HASH_SECRET=nham-nonprod-analysis-guard-hash-secret:latest
-            --update-env-vars=^|^AI_PROVIDER=vertex|GOOGLE_CLOUD_PROJECT=${{ vars.GCP_PROJECT_ID }}|GOOGLE_CLOUD_LOCATION=global
+            --update-env-vars=^|^AI_PROVIDER=vertex|GOOGLE_CLOUD_PROJECT=${{ vars.GCP_PROJECT_ID }}|GOOGLE_CLOUD_LOCATION=global|PIPELINE_V2_ENABLED=true
       - id: smoke
         run: ./scripts/cloud-run/smoke-check.sh "${{ steps.deploy.outputs.url }}"
       - name: Promote latest revision after smoke pass
