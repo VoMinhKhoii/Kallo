@@ -1,0 +1,29 @@
+Nham Source-Available License (based on the Business Source License 1.1)
+
+Licensor:        Vo Minh Khoi
+Licensed Work:   Nham (the source code in this repository)
+Change Date:     2030-05-21
+Change License:  Apache License, Version 2.0
+Additional Use Grant: None
+
+The Licensed Work is made source-available under the terms of the Business
+Source License 1.1, the full text of which is published at
+https://mariadb.com/bsl11/ and is incorporated by reference into this file.
+
+Summary of what this means (for convenience only — the linked BSL 1.1 text
+governs in case of conflict):
+
+  - You may view, fork, build, and run the Licensed Work for non-production
+    use such as study, evaluation, and contribution.
+  - You may not use the Licensed Work, in whole or in part, to provide a
+    commercial product or service to third parties, or to host it as a
+    managed service, without a separate commercial agreement with the
+    Licensor.
+  - On the Change Date listed above, or four years after a given version is
+    first publicly released (whichever comes first), the Licensed Work for
+    that version automatically becomes available under the Change License.
+
+To inquire about a commercial license, contact: pkhoa1331@gmail.com
+
+Copyright (c) 2026 Vo Minh Khoi. All rights reserved unless otherwise
+granted above.

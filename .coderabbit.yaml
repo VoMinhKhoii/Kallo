@@ -16,6 +16,9 @@ reviews:
     base_branches:
       - main
       - staging
+    ignore_title_keywords:
+      - "chore(main): release"
+      - "chore: release"
   path_instructions:
     - path: "lib/db/**"
       instructions: >
