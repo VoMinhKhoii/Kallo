@@ -60,6 +60,7 @@ import {
   nonFoodResponse,
 } from './errors';
 import { readBooleanEnv } from './feature-flags';
+import { analyzeMealV2 } from './grounded-orchestrator';
 import { createCompactIdSequence } from './id-sequence';
 import { ensureIdsOnDecomposition, type MealDecompositionWithIds } from './ids';
 import {
@@ -74,6 +75,7 @@ import {
   reconcileNutritionIds,
   resolveStreamingMealItem,
 } from './nutrition';
+import { isPipelineV2Enabled } from './pipeline-feature-flag';
 import { aggregateRrfMeasurements } from './rrf-aggregation';
 import { buildPipelineRunRow, writePipelineRun } from './run-telemetry';
 import { mealDecompositionSchema, nutritionAdjustmentSchema } from './schemas';
@@ -426,6 +428,19 @@ export async function analyzeMeal(
   traceContext?: AnalyzeMealTraceContext,
   options?: AnalyzeMealOptions
 ): Promise<PipelineResponse> {
+  // V2 dispatch: default ON. v2 (pure-decompose + CRAG-grounded) handles
+  // the request unless `PIPELINE_V2_ENABLED=false` is set for a v1
+  // fallback. Both paths emit the same `stage` / `item_name` /
+  // `item_macros` / `result` / `analysis_complete` SSE events so existing
+  // clients need no changes.
+  if (isPipelineV2Enabled()) {
+    console.info('[pipeline] dispatching to v2 (default)');
+    return analyzeMealV2(rawInput, userContext, db, gemini, onEvent, {
+      traceContext,
+    });
+  }
+  console.info('[pipeline] running v1 (PIPELINE_V2_ENABLED=false fallback)');
+
   const analyzeStart = Date.now();
   const providerErrorState = { recorded: false };
   recordAnalysisModelBudgetEventBestEffort({
@@ -779,6 +794,7 @@ async function runPipeline(
       const derived = deriveExpectedState({
         explicit: ing.expectedState,
         dishMethod: mi.cookingMethod ?? ing.cookingMethod,
+        weightBasis: ing.weightBasis,
       });
       ing.expectedState = derived.state;
       ing._stateSource = derived.source;

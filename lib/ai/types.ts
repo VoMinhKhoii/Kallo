@@ -123,6 +123,19 @@ export interface DecomposedIngredient {
   grams?: number;
   /** Optional per-ingredient state override; dish cookingMethod fills gaps. */
   expectedState?: ExpectedIngredientState;
+  /**
+   * Weighing reference for `grams`. 'raw' means the user gave the pre-cooking
+   * mass (e.g. "cân sống", "raw weight"); runtime then uses grams directly
+   * against a raw DB row and skips `convertCookedToRaw`. Absent ≡ 'as_eaten'.
+   */
+  weightBasis?: 'raw' | 'as_eaten';
+  /**
+   * Short verbatim user-typed preparation modifiers (e.g. ["bỏ da", "bỏ mỡ"],
+   * ["nước trong"]) that change macro density for the SAME matched food.
+   * Non-empty unlocks a widened — but tightly bounded — guard band in
+   * `resolveIngredientMacros`. Absent / empty ≡ default DB anchoring.
+   */
+  prepNotes?: string[];
   /** Aggregate-only ambiguity side channel; never a routing input. */
   ambiguityFlags?: AmbiguityFlag[];
   /** Runtime-only derivation source for state tie-breaker confidence. */

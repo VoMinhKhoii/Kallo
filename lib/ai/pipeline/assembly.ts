@@ -1,8 +1,4 @@
-import {
-  convertCookedToRaw,
-  GOAL_ADJUSTED_NUTRIENTS,
-  NUTRITION_KEYS,
-} from '../constants';
+import { GOAL_ADJUSTED_NUTRIENTS, NUTRITION_KEYS } from '../constants';
 import type {
   BoundedEstimate,
   BoundedNutrition,
@@ -25,6 +21,7 @@ import {
   sumDisplayedNutrition,
 } from './goal-adjustment';
 import { ingredientDisplayName, ingredientGrams } from './ingredient-accessors';
+import { computeDbScalingGrams } from './nutrition';
 import { normalizeBoundedEstimate } from './schemas';
 
 export interface AssemblyMetrics {
@@ -166,17 +163,25 @@ export function assembleResult(
             ? llmNutritionByKey.get(ingredientId)
             : undefined;
 
-          // grams is the cooked/as-eaten weight (user-facing).
-          // rawEquivalentGrams is retained for back-compat but now represents
-          // the grams used for DB nutrition scaling.
+          // grams is the cooked/as-eaten weight (user-facing) unless the user
+          // explicitly weighed raw (weightBasis='raw'), in which case it's the
+          // pre-cooking mass and scales 1:1 against the raw DB row.
           const dbState = matchInfo?.dbState ?? 'unknown';
-          const usesLegacyRawFallback = dbState !== 'cooked';
           const grams = ingredientGrams(ing);
           const cookingMethod = ingredientCookingMethod(decomposedItem, ing);
-          const dbScalingGrams = usesLegacyRawFallback
-            ? convertCookedToRaw(grams, cookingMethod)
-            : grams;
-          if (usesLegacyRawFallback) {
+          const dbScalingGrams = computeDbScalingGrams({
+            grams,
+            dbState,
+            cookingMethod,
+            weightBasis: ing.weightBasis,
+          });
+          // Telemetry: count cooked→raw fudge invocations (skipped when the
+          // user gave a raw weight).
+          if (
+            dbState !== 'cooked' &&
+            ing.weightBasis !== 'raw' &&
+            dbScalingGrams !== grams
+          ) {
             cookedToRawFactorFires += 1;
           }
 

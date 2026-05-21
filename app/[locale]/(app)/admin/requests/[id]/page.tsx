@@ -7,6 +7,7 @@ import { getRequestDetail } from '@/lib/admin/queries';
 import { requireAdmin } from '@/lib/admin/require-admin';
 import { db } from '@/lib/db';
 import { PipelineSummary } from './_components/pipeline-summary';
+import { PipelineVersionBadge } from './_components/pipeline-version-badge';
 import { ReplayButton } from './_components/replay-button';
 import type {
   CompareLabel,
@@ -15,6 +16,21 @@ import type {
 import { StageTimeline } from './_components/stage-timeline';
 
 export const dynamic = 'force-dynamic';
+
+/**
+ * Validate the `pipeline_requests.prompt_versions_used` JSONB blob before
+ * passing it to the version badge. The DB column is typed `unknown` after
+ * Drizzle's `$type<>()`; an unexpected shape (legacy rows, manual SQL
+ * edits, or a future schema change) must not crash the admin page.
+ *
+ * Per repo guidelines: validate all external inputs with Zod schemas.
+ */
+const promptVersionsUsedSchema = z.record(z.string(), z.string()).nullable();
+
+function parsePromptVersionsUsed(raw: unknown): Record<string, string> | null {
+  const result = promptVersionsUsedSchema.safeParse(raw ?? null);
+  return result.success ? result.data : null;
+}
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -161,6 +177,11 @@ export default async function RequestDetailPage({
             >
               {request.status}
             </span>
+            <PipelineVersionBadge
+              promptVersionsUsed={parsePromptVersionsUsed(
+                request.promptVersionsUsed
+              )}
+            />
             {request.dryRun && (
               <span
                 className="inline-flex rounded bg-amber-100 px-2 py-1 font-medium text-amber-900 text-xs dark:bg-amber-900/30 dark:text-amber-200"

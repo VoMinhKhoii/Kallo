@@ -32,12 +32,27 @@ export type RawNutritionAdjustment = {
 };
 
 /**
- * Cooking-adjustment ratio above which the LLM's fat mid is treated as a
- * hallucination and snapped to base. Realistic frying-in-oil roughly doubles
- * fat; 3× is the outer envelope. Protein and carb are server-anchored, so
- * this guard fires only on fat.
+ * Default cooking-adjustment ratio for fat when no `prepNotes` are present.
+ * Realistic frying-in-oil roughly doubles fat; 3× is the outer envelope.
+ * Protein and carb are server-anchored in this path, so the guard fires
+ * only on fat.
  */
 const HALLUCINATION_GUARD_RATIO = 3;
+
+/**
+ * Tighter, prep-notes-aware bands used when the user typed verbatim
+ * preparation modifiers (e.g. "bỏ da", "bỏ mỡ", "nước trong", "extra oil").
+ *
+ * Rationale (see plan): prep notes describe *minor* macro tweaks on the SAME
+ * matched food. Quantity goes to `grams`; identity changes go to
+ * `canonicalName`; ingredient removals go to the ingredients list. So a
+ * sensible prep-note swing tops out around 2× fat (omelette w/ or w/o oil)
+ * and ~1.4× P/C. The fat band is asymmetric in spirit but configured as a
+ * symmetric ratio of 2 (covers both `bỏ da bỏ mỡ` → 0.5× and `extra oil`
+ * → 2×). Worst-case kcal swing ≈ (P×1.4 + C×1.4 + F×2) / base ≈ 1.5–1.7×.
+ */
+const PREP_NOTES_FAT_MAX_RATIO = 2;
+const PREP_NOTES_PC_MAX_RATIO = 1.4;
 
 /**
  * Hard density ceiling for unmatched ingredients: kcal/100g cannot exceed pure
@@ -60,6 +75,10 @@ const ingredientCookingMethod = (
  *
  * Keyed by run-scoped ingredientId; collision-safe across dishes that share
  * an ingredient display name (e.g. `nước dùng` in two dishes).
+ *
+ * `weightBasis === 'raw'` short-circuits the cooked→raw conversion: the user
+ * already gave the pre-cooking mass, so grams scales 1:1 against the (raw)
+ * DB row that the matcher was steered toward.
  */
 export function computeMacroBaseMap(
   decomposition: MealDecompositionWithIds,
@@ -80,12 +99,39 @@ export function computeMacroBaseMap(
       const grams = ingredientGrams(ing);
       const dbState = match.dbState ?? 'unknown';
       const cookingMethod = ingredientCookingMethod(mealItem, ing);
-      const dbScalingGrams =
-        dbState === 'cooked' ? grams : convertCookedToRaw(grams, cookingMethod);
+      const dbScalingGrams = computeDbScalingGrams({
+        grams,
+        dbState,
+        cookingMethod,
+        weightBasis: ing.weightBasis,
+      });
       baseMap.set(id, scalePer100g(match.nutritionPer100g, dbScalingGrams));
     }
   }
   return baseMap;
+}
+
+/**
+ * Resolve the grams used to scale a DB per-100g row against the user's
+ * portion. Centralizes the cooked→raw conversion rule for both
+ * `computeMacroBaseMap` (macros) and `assembly.ts` (24 micronutrients):
+ *
+ * 1. `weightBasis === 'raw'`: user gave pre-cooking mass → use `grams` as-is.
+ *    The matcher is biased to raw rows via `deriveExpectedState`, so the
+ *    1:1 scaling is the physically correct answer regardless of dish method.
+ * 2. DB row is cooked: `grams` already reflects cooked mass → use as-is.
+ * 3. DB row is raw (or unknown) and weight is as-eaten: convert cooked grams
+ *    to raw equivalent via the cooking-method yield factor.
+ */
+export function computeDbScalingGrams(input: {
+  grams: number;
+  dbState: 'raw' | 'cooked' | 'unknown';
+  cookingMethod: string | null;
+  weightBasis: 'raw' | 'as_eaten' | undefined;
+}): number {
+  if (input.weightBasis === 'raw') return input.grams;
+  if (input.dbState === 'cooked') return input.grams;
+  return convertCookedToRaw(input.grams, input.cookingMethod);
 }
 
 function scalePer100g(per100g: NutritionPer100g, grams: number): MacroBase {
@@ -124,17 +170,22 @@ function isStructurallyInvalidTriple(t: BoundedEstimate): boolean {
 }
 
 /**
- * Apply the hallucination guard to fat. Fall back to the server-anchored band
- * around `base` whenever the LLM triple is either out of the
- * `HALLUCINATION_GUARD_RATIO` cooking-adjustment envelope OR structurally
- * invalid (unordered/negative/non-finite). Logs once per fallback so we can
- * monitor frequency.
+ * Apply the hallucination guard to a macro. Fall back to the server-anchored
+ * band around `base` whenever the LLM triple is either outside the
+ * `maxRatio` envelope (raw.mid > base × maxRatio OR raw.mid < base / maxRatio)
+ * OR structurally invalid (unordered/negative/non-finite). Logs once per
+ * fallback so we can monitor frequency.
+ *
+ * `maxRatio` defaults to `HALLUCINATION_GUARD_RATIO` (3) for the legacy
+ * fat-only path; callers pass tighter prep-notes ratios when applying the
+ * guard to protein/carb/fat under user-typed modifiers.
  */
 function guardMacro(
   raw: BoundedEstimate,
   base: number,
   ingredientName: string,
-  macroName: string
+  macroName: string,
+  maxRatio: number = HALLUCINATION_GUARD_RATIO
 ): BoundedEstimate {
   if (base <= 0) {
     // No DB anchor for this nutrient (e.g., pepper has no kcal). Trust the
@@ -147,12 +198,12 @@ function guardMacro(
     reason = 'invalid';
   } else {
     const ratio = raw.mid / base;
-    if (ratio > HALLUCINATION_GUARD_RATIO) reason = 'overshoot';
-    else if (ratio < 1 / HALLUCINATION_GUARD_RATIO) reason = 'undershoot';
+    if (ratio > maxRatio) reason = 'overshoot';
+    else if (ratio < 1 / maxRatio) reason = 'undershoot';
   }
   if (reason === null) return raw;
   console.warn(
-    `[nutrition] hallucination_guard: snapped ${macroName} of "${ingredientName}" to base=${base.toFixed(1)} (reason=${reason}, raw mid=${raw.mid}, low=${raw.low}, high=${raw.high})`
+    `[nutrition] hallucination_guard: snapped ${macroName} of "${ingredientName}" to base=${base.toFixed(1)} (reason=${reason}, raw mid=${raw.mid}, low=${raw.low}, high=${raw.high}, maxRatio=${maxRatio})`
   );
   return flatTriple(base);
 }
@@ -188,13 +239,15 @@ function scaleBounded(b: BoundedEstimate, factor: number): BoundedEstimate {
  * Resolve a single raw ingredient's macros against the precomputed base map.
  *
  * For MATCHED ingredients (has `MacroBase`):
- *   - protein and carb: flat triple at the DB-anchored base value. LLM output
- *     is discarded (cooking method does not physically change P or C per gram).
- *   - fat: LLM owns mid (cooking-method adjustment — frying/oil-absorption is
- *     a real physical effect). The 3× hallucination guard catches gross errors
- *     and structural invalidity; when it fires, fat snaps to a flat triple at
- *     base.fatG.
- *   - calories: derived from the macro identity (4P + 4C + 9F).
+ *   - Default path (no prep notes): protein/carb are flat triples at the
+ *     DB-anchored base value (LLM ignored). Fat keeps the LLM triple subject
+ *     to the 3× hallucination guard; calories derive from 4P + 4C + 9F.
+ *   - Prep-notes path (`prepNotesPresent === true`): the user typed a
+ *     verbatim preparation modifier (e.g. "bỏ da", "extra oil"). Protein,
+ *     carb, and fat are all kept from the LLM under tighter guard bands
+ *     (P/C ≤ 1.4× / ≥ 0.71× base, F ≤ 2× / ≥ 0.5× base). Calories still
+ *     derive from 4P + 4C + 9F so the per-ingredient triple stays
+ *     structurally consistent.
  *
  * For UNMATCHED ingredients (no `MacroBase`):
  *   - protein, carb, fat: from the LLM verbatim (no DB anchor to override).
@@ -208,7 +261,8 @@ function scaleBounded(b: BoundedEstimate, factor: number): BoundedEstimate {
 function resolveIngredientMacros(
   rawIng: RawNutritionAdjustment['mealItems'][number]['ingredients'][number],
   base: MacroBase | undefined,
-  grams?: number
+  grams?: number,
+  prepNotesPresent: boolean = false
 ): {
   caloriesKcal: BoundedEstimate;
   proteinG: BoundedEstimate;
@@ -240,13 +294,30 @@ function resolveIngredientMacros(
     }
     return { caloriesKcal, proteinG, carbohydrateG, fatG };
   }
-  const proteinG = flatTriple(base.proteinG);
-  const carbohydrateG = flatTriple(base.carbohydrateG);
+  const proteinG = prepNotesPresent
+    ? guardMacro(
+        rawIng.proteinG,
+        base.proteinG,
+        rawIng.ingredientName,
+        'proteinG',
+        PREP_NOTES_PC_MAX_RATIO
+      )
+    : flatTriple(base.proteinG);
+  const carbohydrateG = prepNotesPresent
+    ? guardMacro(
+        rawIng.carbohydrateG,
+        base.carbohydrateG,
+        rawIng.ingredientName,
+        'carbohydrateG',
+        PREP_NOTES_PC_MAX_RATIO
+      )
+    : flatTriple(base.carbohydrateG);
   const fatG = guardMacro(
     rawIng.fatG,
     base.fatG,
     rawIng.ingredientName,
-    'fatG'
+    'fatG',
+    prepNotesPresent ? PREP_NOTES_FAT_MAX_RATIO : HALLUCINATION_GUARD_RATIO
   );
   const caloriesKcal = deriveCaloriesFromMacros(proteinG, carbohydrateG, fatG);
   return { caloriesKcal, proteinG, carbohydrateG, fatG };
@@ -281,7 +352,13 @@ export function resolveStreamingMealItem(
           `[nutrition] streaming_unmatched_no_grams: density clamp skipped for "${rawIng.ingredientName}" in "${rawItem.mealItemName}" (no decomposition match yet)`
         );
       }
-      const resolved = resolveIngredientMacros(rawIng, base, grams);
+      const prepNotesPresent = hasPrepNotes(decIng?.prepNotes);
+      const resolved = resolveIngredientMacros(
+        rawIng,
+        base,
+        grams,
+        prepNotesPresent
+      );
       return {
         ingredientId,
         ingredientName: rawIng.ingredientName,
@@ -295,6 +372,12 @@ export function resolveStreamingMealItem(
     mealItemName: rawItem.mealItemName,
     ingredients,
   };
+}
+
+/** True iff the ingredient carries at least one non-empty prepNote. */
+function hasPrepNotes(notes: string[] | undefined): boolean {
+  if (!notes || notes.length === 0) return false;
+  return notes.some((n) => typeof n === 'string' && n.trim().length > 0);
 }
 
 /**
@@ -397,7 +480,13 @@ export function reconcileNutritionIds(
           const ingredientId = decomposedIng.ingredientId;
           const base = baseMap.get(ingredientId);
           const grams = ingredientGrams(decomposedIng);
-          const resolved = resolveIngredientMacros(rawIng, base, grams);
+          const prepNotesPresent = hasPrepNotes(decomposedIng.prepNotes);
+          const resolved = resolveIngredientMacros(
+            rawIng,
+            base,
+            grams,
+            prepNotesPresent
+          );
           return {
             ingredientId,
             ingredientName: rawIng.ingredientName,

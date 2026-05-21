@@ -69,4 +69,24 @@ describe('deriveExpectedState', () => {
       deriveExpectedState({ explicit: undefined, dishMethod: 'luoc' }).source
     ).toBe('unknown');
   });
+
+  it('weightBasis="raw" forces raw and beats both explicit and dish method', () => {
+    expect(
+      deriveExpectedState({
+        explicit: 'cooked',
+        dishMethod: 'nấu',
+        weightBasis: 'raw',
+      })
+    ).toEqual({ state: 'raw', source: 'explicit' });
+  });
+
+  it('weightBasis="as_eaten" is a no-op (legacy behavior preserved)', () => {
+    expect(
+      deriveExpectedState({
+        explicit: undefined,
+        dishMethod: 'luộc',
+        weightBasis: 'as_eaten',
+      })
+    ).toEqual({ state: 'cooked', source: 'method_lookup' });
+  });
 });

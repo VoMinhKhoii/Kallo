@@ -71,6 +71,30 @@ const ingredientCookingMethod = (
   ing: PromptIngredient
 ): string | null => item.cookingMethod ?? ing.cookingMethod ?? null;
 
+/**
+ * Render prep notes as a `prep_notes` XML attribute fragment when the
+ * ingredient carries at least one non-empty entry, otherwise emit nothing.
+ * Multiple notes are joined with " | " to keep the attribute single-line
+ * and trivially LLM-parseable. Empty / absent ⇒ no attribute ⇒ identical
+ * XML to the pre-feature baseline (preserves Gemini prompt-cache prefix).
+ */
+const prepNotesAttr = (ing: PromptIngredient): string => {
+  const notes = ing.prepNotes;
+  if (!notes || notes.length === 0) return '';
+  const cleaned = notes
+    .map((n) => (typeof n === 'string' ? n.trim() : ''))
+    .filter((n) => n.length > 0);
+  if (cleaned.length === 0) return '';
+  return ` prep_notes="${escapeXmlAttribute(cleaned.join(' | '))}"`;
+};
+
+/**
+ * Render the weight_basis attribute when the user explicitly weighed raw.
+ * Default (as_eaten) emits nothing so XML matches the pre-feature baseline.
+ */
+const weightBasisAttr = (ing: PromptIngredient): string =>
+  ing.weightBasis === 'raw' ? ` weight_basis="raw"` : '';
+
 interface NutritionPromptParts {
   cookingHabits: PromptPersonalizationContext['cookingHabits'];
   countryLines: string[];
@@ -172,7 +196,7 @@ function buildNutritionPromptParts(
         const base = ing.ingredientId
           ? baseMap.get(ing.ingredientId)
           : undefined;
-        ingredientData += `    <ingredient name="${escapeXmlAttribute(ingredientDisplayName(ing))}" as_eaten_grams="${ingredientGrams(ing)}" canonicalName="${escapeXmlAttribute(ingredientCanonicalName(ing))}" source="db_matched" db_name="${escapeXmlAttribute(match.matchedName)}" db_state="${escapeXmlAttribute(dbState)}"${cookingMethod ? ` cooking="${escapeXmlAttribute(cookingMethod)}"` : ''}${ing.expectedState ? ` expected_state="${escapeXmlAttribute(ing.expectedState)}"` : ''}>\n`;
+        ingredientData += `    <ingredient name="${escapeXmlAttribute(ingredientDisplayName(ing))}" as_eaten_grams="${ingredientGrams(ing)}" canonicalName="${escapeXmlAttribute(ingredientCanonicalName(ing))}" source="db_matched" db_name="${escapeXmlAttribute(match.matchedName)}" db_state="${escapeXmlAttribute(dbState)}"${cookingMethod ? ` cooking="${escapeXmlAttribute(cookingMethod)}"` : ''}${ing.expectedState ? ` expected_state="${escapeXmlAttribute(ing.expectedState)}"` : ''}${weightBasisAttr(ing)}${prepNotesAttr(ing)}>\n`;
         ingredientData += `      <per_100g caloriesKcal="${match.nutritionPer100g.caloriesKcal ?? '?'}" proteinG="${match.nutritionPer100g.proteinG ?? '?'}" carbohydrateG="${match.nutritionPer100g.carbohydrateG ?? '?'}" fatG="${match.nutritionPer100g.fatG ?? '?'}" />\n`;
         if (base) {
           ingredientData += `      <base caloriesKcal="${fmtBase(base.caloriesKcal)}" proteinG="${fmtBase(base.proteinG)}" carbohydrateG="${fmtBase(base.carbohydrateG)}" fatG="${fmtBase(base.fatG)}" />\n`;
@@ -199,7 +223,7 @@ function buildNutritionPromptParts(
         unmatchedSection += `  <meal_item name="${escapeXmlAttribute(mealItem.name)}">\n`;
         for (const ing of unmatchedIngs) {
           const cookingMethod = ingredientCookingMethod(mealItem, ing);
-          unmatchedSection += `    <ingredient name="${escapeXmlAttribute(ingredientDisplayName(ing))}" as_eaten_grams="${ingredientGrams(ing)}" canonicalName="${escapeXmlAttribute(ingredientCanonicalName(ing))}"${cookingMethod ? ` cooking="${escapeXmlAttribute(cookingMethod)}"` : ''}${ing.expectedState ? ` expected_state="${escapeXmlAttribute(ing.expectedState)}"` : ''} />\n`;
+          unmatchedSection += `    <ingredient name="${escapeXmlAttribute(ingredientDisplayName(ing))}" as_eaten_grams="${ingredientGrams(ing)}" canonicalName="${escapeXmlAttribute(ingredientCanonicalName(ing))}"${cookingMethod ? ` cooking="${escapeXmlAttribute(cookingMethod)}"` : ''}${ing.expectedState ? ` expected_state="${escapeXmlAttribute(ing.expectedState)}"` : ''}${weightBasisAttr(ing)}${prepNotesAttr(ing)} />\n`;
         }
         unmatchedSection += `  </meal_item>\n`;
       }
@@ -238,7 +262,7 @@ export function buildCompressedNutritionPrompt(
 </contract>
 
 <calculation_rules>
-   For each MATCHED ingredient (those with a <base> element), the server uses base for protein, carb, and calories directly — it overrides your output for those three. You ONLY need to reason about fatG:
+   For each MATCHED ingredient (those with a <base> element), the server uses base for protein, carb, and calories directly — it overrides your output for those three. You ONLY need to reason about fatG, UNLESS the ingredient has a prep_notes attribute (see prep_notes_rule below):
      - fatG.mid: adjust base.fatG for cooking method.
          · chiên/rán/xào (frying): absorbed oil raises fat by ~30–80% over base.
          · luộc/hấp (boiling/steaming) with no added oil: fat stays near base.
@@ -250,12 +274,29 @@ export function buildCompressedNutritionPrompt(
    db_state="cooked": base already reflects cooked food.
    db_state="raw": base.fatG reflects raw mass; apply cooking adjustment when oil is added.
    db_state="unknown": widen fatG.low / fatG.high but keep fatG.mid near base.fatG.
+   weight_basis="raw" (when present): the server already used the user's raw weight to scale base 1:1 against a raw DB row. Do NOT add a second cooking-yield adjustment on top — base is correct as given. Apply oil/fat adjustments only if cooking adds oil.
    For UNMATCHED ingredients (no DB row, no <base>): estimate ABSOLUTE LOW/MID/HIGH for all four macros for the as-eaten portion from cuisine knowledge. The meal item name is your primary context.
    Bounds express physical uncertainty (portion guess + cooking variance), never user goals or preferences.
    Keep every triple ordered low <= mid <= high and non-negative.
    Macro identity holds for unmatched: kcal ~= 4*protein + 4*carbs + 9*fat. The server derives kcal from this identity for matched ingredients.
    Physical density ceiling: high kcal <= 900/100g; high protein/carbs/fat <= 100g/100g.
 </calculation_rules>
+
+<prep_notes_rule>
+   When an ingredient has a prep_notes attribute (e.g. prep_notes="bỏ da | bỏ mỡ", prep_notes="extra oil", prep_notes="nước trong"), the user typed a verbatim preparation modifier that should MOVE the macros for that ingredient on top of normal cooking adjustment.
+   - For MATCHED ingredients with prep_notes, the server unlocks protein and carb (in addition to fat) so you can reflect the modifier. Move only what the note physically implies; calories are still derived from 4P + 4C + 9F.
+   - Bounded swings — the server enforces these caps and will snap back to base if you exceed them:
+       · proteinG, carbohydrateG: stay within 0.71× to 1.4× of base.
+       · fatG: stay within 0.5× to 2× of base.
+   - Typical patterns (use cuisine knowledge to interpret others):
+       · "bỏ da", "bỏ mỡ", "skinless", "lean only", "trimmed": fat down ~30–50% of base, protein up ~10–20% per gram of remaining tissue.
+       · "extra oil", "thêm dầu", "with butter", "phết bơ": fat up ~50–100% of base.
+       · "không dầu", "no oil", "dry-fried", "air-fried": fat near base or slightly below (no added oil absorption).
+       · "nước trong" (clear broth), "low-fat", "ít béo": fat/calories down modestly.
+       · "extra sauce", "sốt đậm", "thêm đường": carb up modestly if sweet.
+       · Flavor / sodium / spice only ("ít muối", "no MSG", "extra spicy", "cay nhiều"): keep all macros at base — no adjustment.
+   - If a prep_notes value would imply a swing larger than the band allows, you are probably misreading it as a prep modifier — it likely belongs in a different field; emit values at the boundary of the band rather than further.
+</prep_notes_rule>
 
 <user_context>
 ${countryLines.length > 0 ? `${countryLines.join('\n')}\n` : ''}  oil_usage: ${cookingHabits.oilUsage}
@@ -306,7 +347,7 @@ export function buildNutritionPrompt(
   </base_reference>
 
   <calculation>
-    For MATCHED ingredients (those with a <base> element), focus on fatG only:
+    For MATCHED ingredients (those with a <base> element), focus on fatG only — UNLESS the ingredient has a prep_notes attribute (see <prep_notes_rule> below):
 
     1. fatG.mid: adjust base.fatG using cooking knowledge.
          - chiên/rán/xào (frying with oil) absorbs cooking oil → fat raised by ~30–80% over base.
@@ -320,7 +361,9 @@ export function buildNutritionPrompt(
        db_state="raw": base.fatG reflects raw mass; apply the cooking-method adjustment.
        db_state="unknown": widen fatG.low / fatG.high but keep fatG.mid near base.fatG.
 
-    4. proteinG, carbohydrateG, caloriesKcal for matched ingredients: emit any reasonable value (the schema requires it). The server discards these and recomputes from base + your fatG via the macro identity 4P + 4C + 9F. Do not spend reasoning budget on them.
+    4. weight_basis="raw" (when present): the server already used the user's raw weight to scale base 1:1 against a raw DB row. Do NOT add a second cooking-yield adjustment on top — base is correct as given. Apply oil/fat adjustments only if cooking adds oil.
+
+    5. proteinG, carbohydrateG, caloriesKcal for matched ingredients (no prep_notes): emit any reasonable value (the schema requires it). The server discards these and recomputes from base + your fatG via the macro identity 4P + 4C + 9F. Do not spend reasoning budget on them.
 
     For UNMATCHED ingredients (no <base> shown): estimate absolute LOW/MID/HIGH for all four macros for the as-eaten portion from cuisine knowledge. The meal item name is the primary context.
 
@@ -329,6 +372,26 @@ export function buildNutritionPrompt(
     Macro identity (for unmatched): kcal ~= 4*protein + 4*carbs + 9*fat.
     Physical density ceiling: high kcal <= 900/100g; high protein/carbs/fat <= 100g/100g.
   </calculation>
+
+  <prep_notes_rule>
+    When an ingredient has a prep_notes attribute (e.g. prep_notes="bỏ da | bỏ mỡ", prep_notes="extra oil", prep_notes="nước trong"), the user typed a verbatim preparation modifier that should MOVE the macros for that ingredient on top of normal cooking adjustment.
+
+    For MATCHED ingredients with prep_notes, the server unlocks protein and carb (in addition to fat) so you can reflect the modifier. Move only what the note physically implies; calories are still derived from 4P + 4C + 9F.
+
+    Bounded swings — the server enforces these caps and will snap back to base if you exceed them:
+      - proteinG, carbohydrateG: stay within 0.71× to 1.4× of base.
+      - fatG: stay within 0.5× to 2× of base.
+
+    Typical patterns (use cuisine knowledge to interpret others):
+      - "bỏ da", "bỏ mỡ", "skinless", "lean only", "trimmed": fat down ~30–50% of base; protein up ~10–20% per gram of remaining tissue.
+      - "extra oil", "thêm dầu", "with butter", "phết bơ": fat up ~50–100% of base.
+      - "không dầu", "no oil", "dry-fried", "air-fried": fat near base or slightly below (no added oil absorption).
+      - "nước trong" (clear broth), "low-fat", "ít béo": fat / kcal down modestly.
+      - "extra sauce", "sốt đậm", "thêm đường": carb up modestly if sweet.
+      - Flavor / sodium / spice only ("ít muối", "no MSG", "extra spicy", "cay nhiều"): keep all macros at base — no adjustment.
+
+    If a prep_notes value would imply a swing larger than the band allows, you are probably misreading it as a prep modifier — emit values at the boundary of the band rather than further.
+  </prep_notes_rule>
 
   <why_three_values>
     For matched ingredients, only fatG's triple matters — protein/carb/kcal are server-anchored.
