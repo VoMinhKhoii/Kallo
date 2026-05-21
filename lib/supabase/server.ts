@@ -8,6 +8,12 @@ export async function createClient() {
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
     {
+      cookieOptions: {
+        maxAge: 60 * 60 * 24 * 365,
+        sameSite: 'lax',
+        secure: true,
+        path: '/',
+      },
       cookies: {
         getAll() {
           return cookieStore.getAll();
