@@ -41,6 +41,15 @@ This file is the **single source of truth** for agent behavior. Rules here take 
 - **Established Pattern Research**: When a task involves a third-party library, framework feature, or product behavior that is already widely solved by other developers, use Context7 early to review the official docs and recommended patterns before locking the design or implementation. Treat this as required research for state ownership, routing, persistence, and other edge-case-heavy behavior so we do not reinvent brittle local patterns.
 - **Conventional Commits**: Use conventional commit format: `feat:`, `fix:`, `chore:`, `refactor:`, `test:`, `docs:`.
 - **Branch Naming**: Use `<type>/<short-slug>` where type matches Conventional Commits (`feat`, `fix`, `chore`, `refactor`, `docs`, `test`, `perf`, `ci`). Slug is kebab-case, ≤ 40 chars, describes the change (e.g. `feat/jwt-user-auth`, `fix/null-payment-pointer`, `chore/release-please-scaffolding`). When `EnterWorktree` creates a branch, pass an explicit `name` matching this pattern instead of accepting the auto-generated `worktree-*` default.
+- **Version Bumping (release-please)**: This repo releases via [release-please](https://github.com/googleapis/release-please) (config in `release-please-config.json`). Conventional Commit types drive version bumps — pick the prefix to match the intended bump:
+
+  | Intended bump | Use case | Commit prefix |
+  |---------------|----------|---------------|
+  | **Major** (e.g. 1.x → 2.0.0) | True rewrite, deliberate breaking change, framework shift | `feat!:` *or* a `BREAKING CHANGE:` footer |
+  | **Minor** (e.g. 1.0.x → 1.1.0) | New user-facing feature or significant capability | `feat:` |
+  | **Patch** (e.g. 1.0.0 → 1.0.1) | Bug fixes, perf, refactors, deps, dev-only changes | `fix:`, `perf:`, `refactor:`, `chore:`, `docs:`, `test:`, `ci:` |
+
+  Be conservative: **major bumps are rare** — most "big" features are still minor. If unsure, downgrade (use `feat:` instead of `feat!:`; use `fix:` instead of `feat:`). To override release-please's auto-computed version on a given release, either (a) add `Release-As: x.y.z` as a footer in any commit on the release, or (b) edit the open Release PR (title + `package.json` + `CHANGELOG.md`) before merging — release-please honors whatever ships in the PR.
 - **Formatting Workflow**: Run `bunx @biomejs/biome check --write .` before making manual formatting fixes.
 - **Proactive Refactoring**: Flag files >400 LOC and components >200 LOC for extraction into smaller units.
 - **Session Retrospective**: At the end of every session, review mistakes/edge cases encountered and propose AGENTS.md updates. Verify all file paths and commands exist before adding new rules.
