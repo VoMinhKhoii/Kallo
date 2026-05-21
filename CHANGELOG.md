@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.1](https://github.com/VoMinhKhoii/Nham/compare/v1.0.0...v1.0.1) (2026-05-21)
+
+
+### Bug Fixes
+
+* **ci:** restore single-line array formatting in package.json ([#116](https://github.com/VoMinhKhoii/Nham/issues/116)) ([2d0a37c](https://github.com/VoMinhKhoii/Nham/commit/2d0a37cc8cae196c864e1f35551fcf3140140f76))
+
 ## 1.0.0 (2026-05-21)
 
 
