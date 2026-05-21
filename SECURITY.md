@@ -8,7 +8,7 @@ receive security fixes.
 ## Reporting a Vulnerability
 
 Please report suspected security issues privately by email to
-**pkhoa1331@gmail.com**. Do not open a public GitHub issue, discussion, or
+**minhkhoitdn@gmail.com**. Do not open a public GitHub issue, discussion, or
 pull request describing the vulnerability.
 
 When reporting, include:
