@@ -1,39 +1,56 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Nham
 
-## Getting Started
+> The only tracking method accurate enough for Vietnamese home cooking is natural language description.
 
-First, run the development server:
+Nham turns a sentence about what you ate into a structured breakdown of
+ingredients, weights, and macros — built around how Vietnamese meals are
+actually composed, not how Western food trackers expect them to be.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+[![Latest release](https://img.shields.io/github/v/release/VoMinhKhoii/Nham?display_name=tag&sort=semver)](https://github.com/VoMinhKhoii/Nham/releases)
+[![CI](https://github.com/VoMinhKhoii/Nham/actions/workflows/ci.yml/badge.svg)](https://github.com/VoMinhKhoii/Nham/actions/workflows/ci.yml)
+[![License: Source-Available](https://img.shields.io/badge/license-source--available-blue.svg)](./LICENSE)
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## What it does
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- **Natural-language meal logging** — describe a meal the way you'd tell a
+  friend; Nham extracts ingredients, preparation, and portions.
+- **Vietnamese-first ingredient recognition** — a two-stage AI pipeline
+  (decompose then ground) matches local foods and dishes that generic
+  trackers miss.
+- **Macros you can trust** — server-anchored protein and carbs, with
+  weight-basis and prep modifiers honored from the original phrasing.
+- **Logging UI built for repeat use** — fast input, mode-aware empty
+  states, and history that's easy to scan.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Status
 
-## Learn More
+Nham is in active development. Versions follow
+[Semantic Versioning](https://semver.org/spec/v2.0.0.html); see
+[`CHANGELOG.md`](./CHANGELOG.md) for what shipped in each release.
 
-To learn more about Next.js, take a look at the following resources:
+## Source availability
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+This repository is published under a **source-available** license
+(see [`LICENSE`](./LICENSE)). You may read, fork, build, and run the code
+for non-production use. Commercial use, redistribution, or hosting Nham as
+a managed service requires a separate agreement — please get in touch.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Security
 
-## Deploy on Vercel
+Please report suspected vulnerabilities privately — see
+[`SECURITY.md`](./SECURITY.md). Do not file public issues for security
+problems.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Contributing
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Issues and pull requests are welcome. By submitting code you agree it can
+ship under the project's source-available license. Use
+[Conventional Commit](https://www.conventionalcommits.org/) messages
+(`feat:`, `fix:`, `perf:`, etc.) — they drive the automated changelog.
 
-For this repo's internal Google Cloud Run deployment path, see
-[`docs/GOOGLE_CLOUD_RUN.md`](docs/GOOGLE_CLOUD_RUN.md).
+## Acknowledgements
+
+Nutrient reference data derives in part from the Vietnam National Food
+Composition Table (2007). Bootstrapped with
+[`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app)
+on Next.js 16 and React 19.
