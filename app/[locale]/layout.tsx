@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { DM_Sans, Fraunces, Geist, Geist_Mono, Lora } from 'next/font/google';
 import { notFound } from 'next/navigation';
 import { hasLocale, NextIntlClientProvider } from 'next-intl';
@@ -43,6 +43,14 @@ const dmSans = DM_Sans({
   display: 'swap',
 });
 
+export const viewport: Viewport = {
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#ffffff' },
+    { media: '(prefers-color-scheme: dark)', color: '#121214' },
+  ],
+  viewportFit: 'cover',
+};
+
 export async function generateMetadata({
   params,
 }: {
@@ -62,6 +70,19 @@ export async function generateMetadata({
   return {
     title: t('title'),
     description: t('description'),
+    manifest: '/manifest.webmanifest',
+    appleWebApp: {
+      capable: true,
+      statusBarStyle: 'default',
+      title: 'Nhẩm',
+    },
+    icons: {
+      icon: [
+        { url: '/icon-192.png', sizes: '192x192', type: 'image/png' },
+        { url: '/icon-512.png', sizes: '512x512', type: 'image/png' },
+      ],
+      apple: [{ url: '/apple-icon.png', sizes: '180x180', type: 'image/png' }],
+    },
   };
 }
 
