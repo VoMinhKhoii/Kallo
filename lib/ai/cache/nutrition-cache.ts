@@ -6,13 +6,19 @@ import type { NutritionPer100g } from '../types';
 
 /**
  * Module-level singleton nutrition cache.
- * Holds VN FCT food composition entries (source_id = 1, ~526 rows, ~126 KB).
- * USDA rows (source_id = 2) are excluded — they are rarely matched in practice
- * and fall back to a direct DB query on a miss.
  * Lazy-loaded on first request; persists for the process lifetime.
  * Safe to hold permanently — data is read-only at runtime.
+ *
+ * `cache` is seeded from VN FCT (source_id=1, ~526 rows, ~126 KB) by
+ * `loadAll`, and may additionally accumulate USDA (source_id=2) rows when
+ * `batchFetchNutrition` backfills on a miss.
+ *
+ * `inedibleCache` is strictly VN-FCT — populated only from the same
+ * `loadAll` pass, never widened on miss. Absence in the map means "no
+ * inedible data" by design (USDA imports leave `inedible_portion_pct` NULL).
  */
 const cache = new Map<string, NutritionPer100g>();
+const inedibleCache = new Map<string, number>();
 
 /** True only after loadAll() finishes successfully */
 let initialized = false;
@@ -23,13 +29,18 @@ let initPromise: Promise<void> | null = null;
 /** @internal Exported for testing */
 export function clearNutritionCache(): void {
   cache.clear();
+  inedibleCache.clear();
   initialized = false;
   initPromise = null;
 }
 
 /** @internal Exported for testing */
 export function getNutritionCacheStats() {
-  return { size: cache.size, initialized };
+  return {
+    size: cache.size,
+    inedibleSize: inedibleCache.size,
+    initialized,
+  };
 }
 
 /**
@@ -42,19 +53,39 @@ export function getNutritionCacheStats() {
 export async function getNutritionCache(
   db: PostgresJsDatabase<typeof schema>
 ): Promise<Map<string, NutritionPer100g>> {
-  if (initialized) return cache;
+  await ensureInitialized(db);
+  return cache;
+}
 
-  // Deduplicate concurrent initializations
+/**
+ * Return the in-memory inedible-portion-pct cache, sharing initialization
+ * with `getNutritionCache` so callers that need both pay one DB load.
+ *
+ * Only ids with a numeric `inedible_portion_pct` land in the map — absent
+ * rows are deliberately missing so callers can treat `.get(id) === undefined`
+ * as "no inedible data".
+ */
+export async function getInedibleCache(
+  db: PostgresJsDatabase<typeof schema>
+): Promise<Map<string, number>> {
+  await ensureInitialized(db);
+  return inedibleCache;
+}
+
+async function ensureInitialized(
+  db: PostgresJsDatabase<typeof schema>
+): Promise<void> {
+  if (initialized) return;
   if (!initPromise) {
     initPromise = loadAll(db).catch((err) => {
       console.error('[nutrition-cache] Failed to load nutrition cache:', err);
-      cache.clear(); // ensure retry starts from a clean state
-      initPromise = null; // allow retry on next request
+      cache.clear();
+      inedibleCache.clear();
+      initialized = false;
+      initPromise = null;
     });
   }
-
   await initPromise;
-  return cache;
 }
 
 async function loadAll(db: PostgresJsDatabase<typeof schema>): Promise<void> {
@@ -65,8 +96,17 @@ async function loadAll(db: PostgresJsDatabase<typeof schema>): Promise<void> {
   for (const row of rows as unknown as Record<string, unknown>[]) {
     const id = row.id as string;
     cache.set(id, parseNutritionRow(row));
+    // Postgres `numeric` columns arrive as strings from postgres-js, but tests
+    // pass numbers; `Number()` normalizes both. Skip NaN (null/missing/junk).
+    const inedible = row.inedible_portion_pct;
+    if (inedible != null) {
+      const parsed = Number(inedible);
+      if (Number.isFinite(parsed)) inedibleCache.set(id, parsed);
+    }
   }
 
   initialized = true;
-  console.info(`[nutrition-cache] Loaded ${cache.size} entries`);
+  console.info(
+    `[nutrition-cache] Loaded ${cache.size} entries (${inedibleCache.size} with inedible_portion_pct)`
+  );
 }

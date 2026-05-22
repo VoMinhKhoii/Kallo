@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   clearNutritionCache,
+  getInedibleCache,
   getNutritionCache,
   getNutritionCacheStats,
 } from './nutrition-cache';
@@ -136,11 +137,56 @@ describe('getNutritionCache', () => {
   });
 
   it('getNutritionCacheStats reflects loaded state', async () => {
-    expect(getNutritionCacheStats()).toEqual({ size: 0, initialized: false });
+    expect(getNutritionCacheStats()).toEqual({
+      size: 0,
+      inedibleSize: 0,
+      initialized: false,
+    });
 
     const db = createMockDb([ROW_CHICKEN, ROW_RICE]);
     await getNutritionCache(db);
 
-    expect(getNutritionCacheStats()).toEqual({ size: 2, initialized: true });
+    expect(getNutritionCacheStats()).toEqual({
+      size: 2,
+      inedibleSize: 0,
+      initialized: true,
+    });
+  });
+});
+
+describe('getInedibleCache', () => {
+  it('populates inediblePct only for rows with a numeric value', async () => {
+    const rowWithInedible = { ...ROW_CHICKEN, inedible_portion_pct: 25 };
+    const rowWithoutInedible = { ...ROW_RICE };
+    const rowWithStringInedible = {
+      ...ROW_CHICKEN,
+      id: 'fc-003',
+      inedible_portion_pct: '10.5',
+    };
+    const db = createMockDb([
+      rowWithInedible,
+      rowWithoutInedible,
+      rowWithStringInedible,
+    ]);
+
+    const inedible = await getInedibleCache(db);
+
+    expect(inedible.get('fc-001')).toBe(25);
+    expect(inedible.has('fc-002')).toBe(false);
+    expect(inedible.get('fc-003')).toBe(10.5);
+  });
+
+  it('shares initialization with getNutritionCache (one DB load)', async () => {
+    const rowWithInedible = { ...ROW_CHICKEN, inedible_portion_pct: 30 };
+    const db = createMockDb([rowWithInedible]);
+
+    const [nutrition, inedible] = await Promise.all([
+      getNutritionCache(db),
+      getInedibleCache(db),
+    ]);
+
+    expect(db.execute).toHaveBeenCalledOnce();
+    expect(nutrition.size).toBe(1);
+    expect(inedible.get('fc-001')).toBe(30);
   });
 });

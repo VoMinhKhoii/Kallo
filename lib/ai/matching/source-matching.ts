@@ -293,13 +293,15 @@ export async function matchSingleIngredientWithEmbedding(
       })
     : null;
 
-  // Step 1: Source-aware vector search — query FAO and USDA separately
+  // Step 1: Source-aware vector search — query FAO and USDA separately.
+  // Stringify the embedding once (~15-20KB of JSON, previously done twice).
+  const embeddingLiteral = JSON.stringify(embedding);
   const [faoVectorRows, usdaVectorRows] = await Promise.all([
     db.execute(
-      sql`SELECT * FROM match_ingredients_by_source(${JSON.stringify(embedding)}::vector, ${SOURCE_FAO}, 3, 0.5)`
+      sql`SELECT * FROM match_ingredients_by_source(${embeddingLiteral}::vector, ${SOURCE_FAO}, 3, 0.5)`
     ),
     db.execute(
-      sql`SELECT * FROM match_ingredients_by_source(${JSON.stringify(embedding)}::vector, ${SOURCE_USDA}, 3, 0.5)`
+      sql`SELECT * FROM match_ingredients_by_source(${embeddingLiteral}::vector, ${SOURCE_USDA}, 3, 0.5)`
     ),
   ]);
 

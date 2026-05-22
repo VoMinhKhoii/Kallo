@@ -1,6 +1,7 @@
 import { sql } from 'drizzle-orm';
 import type { AppDb } from '@/lib/db';
 import { mapWithConcurrency } from '@/lib/utils';
+import { getInedibleCache } from '../cache/nutrition-cache';
 import type { GeminiClient } from '../gemini';
 import { deriveExpectedState } from '../pipeline/cooking-method-state';
 import type { DecomposedIngredientV2 } from '../pipeline/schemas';
@@ -40,15 +41,16 @@ export interface MatchTopKOptions {
   k?: number;
   concurrency?: number;
   /**
-   * Per-row hard limit returned by the SQL functions. We over-fetch a bit so
-   * that after the state-mismatch penalty filter we still have K candidates.
+   * Per-row hard limit returned by the SQL match functions, per source.
+   * Matches v1's stable default of 3; the state-penalty filter rarely empties
+   * the top-K in practice, so over-fetch headroom isn't worth the extra cost.
    */
   sourceLimit?: number;
 }
 
 const DEFAULT_K = 3;
-const DEFAULT_CONCURRENCY = 4;
-const DEFAULT_SOURCE_LIMIT = 5;
+export const DEFAULT_MATCH_CONCURRENCY = 4;
+const DEFAULT_SOURCE_LIMIT = 3;
 
 /**
  * Coarse implicit-state inference from the v2 decomposition input. The
@@ -108,7 +110,7 @@ export async function matchTopKPerIngredient(
   options: MatchTopKOptions = {}
 ): Promise<IngredientV2MatchResult[]> {
   const k = options.k ?? DEFAULT_K;
-  const concurrency = options.concurrency ?? DEFAULT_CONCURRENCY;
+  const concurrency = options.concurrency ?? DEFAULT_MATCH_CONCURRENCY;
   const sourceLimit = options.sourceLimit ?? DEFAULT_SOURCE_LIMIT;
 
   if (ingredients.length === 0) return [];
@@ -168,13 +170,15 @@ export async function matchTopKPerIngredient(
       const embedding = embeddings[c.index];
       if (!embedding) return { ingredientIndex: c.index, candidates: [] };
 
-      // Vector search: query FAO + USDA in parallel.
+      // Vector search: query FAO + USDA in parallel. Stringify the embedding
+      // once — it's ~768 floats (~15-20KB) and was previously serialized twice.
+      const embeddingLiteral = JSON.stringify(embedding);
       const [faoRows, usdaRows] = await Promise.all([
         db.execute(
-          sql`SELECT * FROM match_ingredients_by_source(${JSON.stringify(embedding)}::vector, ${SOURCE_FAO}, ${sourceLimit}, 0.5)`
+          sql`SELECT * FROM match_ingredients_by_source(${embeddingLiteral}::vector, ${SOURCE_FAO}, ${sourceLimit}, 0.5)`
         ),
         db.execute(
-          sql`SELECT * FROM match_ingredients_by_source(${JSON.stringify(embedding)}::vector, ${SOURCE_USDA}, ${sourceLimit}, 0.5)`
+          sql`SELECT * FROM match_ingredients_by_source(${embeddingLiteral}::vector, ${SOURCE_USDA}, ${sourceLimit}, 0.5)`
         ),
       ]);
 
@@ -247,6 +251,9 @@ export async function matchTopKPerIngredient(
   );
 
   // Phase 5: batch-fetch nutrition + inedible pct for all unique candidate ids.
+  // USDA rows are intentionally not back-filled: `inedible_portion_pct` is
+  // VN-FCT–specific and USDA imports leave it NULL, so they stay `null` by
+  // design rather than paying a roundtrip that returns nothing.
   const uniqueIds = new Set<string>();
   for (const r of results) {
     for (const c of r.candidates) uniqueIds.add(c.info.foodCompositionId);
@@ -255,36 +262,16 @@ export async function matchTopKPerIngredient(
     const ids = Array.from(uniqueIds);
     const [nutritionMap, inedibleMap] = await Promise.all([
       batchFetchNutrition(ids, db),
-      fetchInediblePcts(ids, db),
+      getInedibleCache(db),
     ]);
     for (const r of results) {
       for (const c of r.candidates) {
-        c.nutrition = nutritionMap.get(c.info.foodCompositionId) ?? null;
-        c.inediblePct = inedibleMap.get(c.info.foodCompositionId) ?? null;
+        const id = c.info.foodCompositionId;
+        c.nutrition = nutritionMap.get(id) ?? null;
+        c.inediblePct = inedibleMap.get(id) ?? null;
       }
     }
   }
 
   return results;
-}
-
-async function fetchInediblePcts(
-  ids: string[],
-  db: AppDb
-): Promise<Map<string, number>> {
-  const map = new Map<string, number>();
-  if (ids.length === 0) return map;
-  const idList = sql.join(
-    ids.map((id) => sql`${id}`),
-    sql`, `
-  );
-  const rows = (await db.execute(
-    sql`SELECT id, inedible_portion_pct FROM vietnamese_food_composition WHERE id IN (${idList})`
-  )) as unknown as Array<{ id: string; inedible_portion_pct: number | null }>;
-  for (const r of rows) {
-    if (typeof r.inedible_portion_pct === 'number') {
-      map.set(r.id, r.inedible_portion_pct);
-    }
-  }
-  return map;
 }
