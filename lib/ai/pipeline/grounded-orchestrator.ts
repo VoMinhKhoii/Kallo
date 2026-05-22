@@ -29,6 +29,7 @@ import {
   checkDecompositionLanguage,
 } from '../language/guard';
 import {
+  DEFAULT_MATCH_CONCURRENCY,
   type IngredientV2MatchResult,
   matchTopKPerIngredient,
 } from '../matching/top-k-cascade';
@@ -98,7 +99,8 @@ export async function analyzeMealV2(
 ): Promise<PipelineResponse> {
   const emit = onEvent ?? (() => {});
   const topK = options.topK ?? 3;
-  const matchConcurrency = options.matchConcurrency ?? 4;
+  const matchConcurrency =
+    options.matchConcurrency ?? DEFAULT_MATCH_CONCURRENCY;
   const call2Temperature = options.call2Temperature ?? 0.4;
   const traceContext = options.traceContext;
   const profile = resolveModelProfile();
