@@ -288,16 +288,24 @@ export async function matchTopKPerIngredient(
   }
   const phase5Ms = Date.now() - tPhase5;
 
-  console.info('[v2-matching] phase timings', {
-    ingredients: ingredients.length,
-    l3MissCount,
-    fuzzyFallbackFires,
-    phase1_cacheLookupMs: phase1Ms,
-    phase2_geminiBatchMs: phase2Ms,
-    phase3_vectorAndFuzzyMs: phase3Ms,
-    phase5_nutritionAndInedibleMs: phase5Ms,
-    totalMs: Date.now() - t0,
-  });
+  // Gated to keep Cloud Logging ingest cheap in prod — set
+  // PIPELINE_V2_LOG_TIMINGS=1 to opt in for production debugging.
+  // On in dev/test by default (NODE_ENV !== 'production').
+  if (
+    process.env.PIPELINE_V2_LOG_TIMINGS === '1' ||
+    process.env.NODE_ENV !== 'production'
+  ) {
+    console.info('[v2-matching] phase timings', {
+      ingredients: ingredients.length,
+      l3MissCount,
+      fuzzyFallbackFires,
+      phase1_cacheLookupMs: phase1Ms,
+      phase2_geminiBatchMs: phase2Ms,
+      phase3_vectorAndFuzzyMs: phase3Ms,
+      phase5_nutritionAndInedibleMs: phase5Ms,
+      totalMs: Date.now() - t0,
+    });
+  }
 
   return results;
 }

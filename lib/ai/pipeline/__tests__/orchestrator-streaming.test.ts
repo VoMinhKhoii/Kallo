@@ -130,7 +130,7 @@ describe('analyzeMealV2 — Call 1 item_name streaming', () => {
     };
     const call2Chunks = [
       '{"mealItems":[',
-      JSON.stringify(call2Final.mealItems[0]) + ',',
+      `${JSON.stringify(call2Final.mealItems[0])},`,
       JSON.stringify(call2Final.mealItems[1]),
       ']}',
     ];
@@ -240,7 +240,7 @@ describe('analyzeMealV2 — Call 1 item_name streaming', () => {
       {
         chunks: [
           '{"mealItems":[',
-          JSON.stringify(call2Final.mealItems[0]) + ',',
+          `${JSON.stringify(call2Final.mealItems[0])},`,
           JSON.stringify(call2Final.mealItems[1]),
           ']}',
         ],
@@ -324,7 +324,7 @@ describe('analyzeMealV2 — Call 2 item_macros streaming', () => {
       {
         chunks: [
           '{"isFood":true,"mealSlot":"lunch","mealItems":[',
-          JSON.stringify(call1Final.mealItems[0]) + ',',
+          `${JSON.stringify(call1Final.mealItems[0])},`,
           JSON.stringify(call1Final.mealItems[1]),
           ']}',
         ],
@@ -333,7 +333,7 @@ describe('analyzeMealV2 — Call 2 item_macros streaming', () => {
       {
         chunks: [
           '{"mealItems":[',
-          JSON.stringify(call2Final.mealItems[0]) + ',',
+          `${JSON.stringify(call2Final.mealItems[0])},`,
           JSON.stringify(call2Final.mealItems[1]),
           ']}',
         ],

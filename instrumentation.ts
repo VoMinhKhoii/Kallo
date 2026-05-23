@@ -27,5 +27,7 @@ export async function register() {
 
   const t0 = Date.now();
   await getNutritionCache(db);
-  console.info(`[instrumentation] matching caches warm in ${Date.now() - t0}ms`);
+  console.info(
+    `[instrumentation] matching caches warm in ${Date.now() - t0}ms`
+  );
 }
