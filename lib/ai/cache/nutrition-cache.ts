@@ -1,6 +1,7 @@
 import { sql } from 'drizzle-orm';
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import type * as schema from '@/lib/db/schema';
+import { primeEmbeddingCacheFromRows } from '../matching/embedding-cache';
 import { parseNutritionRow } from '../matching/nutrition-db';
 import type { NutritionPer100g } from '../types';
 
@@ -79,10 +80,9 @@ async function ensureInitialized(
   if (!initPromise) {
     initPromise = loadAll(db).catch((err) => {
       console.error('[nutrition-cache] Failed to load nutrition cache:', err);
-      cache.clear();
-      inedibleCache.clear();
-      initialized = false;
-      initPromise = null;
+      // Same reset semantics as the test helper: drop both maps and re-arm
+      // `initPromise` so the next caller can retry.
+      clearNutritionCache();
     });
   }
   await initPromise;
@@ -92,8 +92,9 @@ async function loadAll(db: PostgresJsDatabase<typeof schema>): Promise<void> {
   const rows = await db.execute(
     sql`SELECT * FROM vietnamese_food_composition WHERE source_id = 1`
   );
+  const allRows = rows as unknown as Record<string, unknown>[];
 
-  for (const row of rows as unknown as Record<string, unknown>[]) {
+  for (const row of allRows) {
     const id = row.id as string;
     cache.set(id, parseNutritionRow(row));
     // Postgres `numeric` columns arrive as strings from postgres-js, but tests
@@ -104,6 +105,11 @@ async function loadAll(db: PostgresJsDatabase<typeof schema>): Promise<void> {
       if (Number.isFinite(parsed)) inedibleCache.set(id, parsed);
     }
   }
+
+  // Same SELECT * already pulled `embedding` + `name_primary` + `name_en`,
+  // so prime the embedding L1 cache here too instead of running a second
+  // identical query from `warmEmbeddingCache`.
+  primeEmbeddingCacheFromRows(allRows);
 
   initialized = true;
   console.info(
