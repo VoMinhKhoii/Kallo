@@ -29,6 +29,7 @@ import {
   checkDecompositionLanguage,
 } from '../language/guard';
 import {
+  DEFAULT_K,
   DEFAULT_MATCH_CONCURRENCY,
   type IngredientV2MatchResult,
   matchTopKPerIngredient,
@@ -98,7 +99,7 @@ export async function analyzeMealV2(
   options: AnalyzeMealV2Options = {}
 ): Promise<PipelineResponse> {
   const emit = onEvent ?? (() => {});
-  const topK = options.topK ?? 3;
+  const topK = options.topK ?? DEFAULT_K;
   const matchConcurrency =
     options.matchConcurrency ?? DEFAULT_MATCH_CONCURRENCY;
   const call2Temperature = options.call2Temperature ?? 0.4;
