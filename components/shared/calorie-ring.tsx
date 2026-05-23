@@ -52,10 +52,7 @@ export function CalorieRing({
   };
 
   return (
-    <div
-      className={cn('relative shrink-0', className)}
-      style={wrapperStyle}
-    >
+    <div className={cn('relative shrink-0', className)} style={wrapperStyle}>
       <svg
         viewBox={`0 0 ${VIEWBOX} ${VIEWBOX}`}
         width="100%"
