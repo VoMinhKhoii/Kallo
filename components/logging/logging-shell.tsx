@@ -127,7 +127,7 @@ export function LoggingShell({
   };
 
   return (
-    <div className="flex min-h-0 w-full min-w-0 max-w-full flex-1 flex-col gap-3 overflow-hidden md:h-[calc(100vh-1.5rem)] md:flex-row">
+    <div className="flex min-h-0 w-full min-w-0 max-w-full flex-1 flex-col gap-0 overflow-hidden md:h-[calc(100vh-1.5rem)] md:flex-row md:gap-3">
       <MobileTimelinePicker
         {...timelineState}
         isRetrying={isFetching && !isPending}

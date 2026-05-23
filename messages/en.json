@@ -911,7 +911,7 @@
   },
   "logging": {
     "title": "What did you eat?",
-    "placeholder": "Describe your meal in Vietnamese or English...",
+    "placeholder": "Describe your meal...",
     "submit": "Analyze",
     "stopAnalyzing": "Stop analyzing",
     "analyzing": "Analyzing your meal...",

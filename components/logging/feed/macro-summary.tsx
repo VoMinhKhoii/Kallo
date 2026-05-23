@@ -3,7 +3,6 @@
 import { motion } from 'motion/react';
 import { useTranslations } from 'next-intl';
 import { CalorieRing } from '@/components/shared/calorie-ring';
-import { useIsMobile } from '@/hooks/use-mobile';
 import type { MacroBreakdown } from '@/lib/types/meal';
 
 interface MacroSummaryProps {
@@ -20,7 +19,6 @@ const MACRO_COLORS: Record<'protein' | 'carbs' | 'fat', string> = {
 export function MacroSummary({ totals, targets }: MacroSummaryProps) {
   const td = useTranslations('dashboard');
   const tRing = useTranslations('shared.calorieRing');
-  const isMobile = useIsMobile();
 
   const MACROS: {
     key: 'protein' | 'carbs' | 'fat';
@@ -33,8 +31,6 @@ export function MacroSummary({ totals, targets }: MacroSummaryProps) {
   ];
   const { calories } = totals;
   const remaining = Math.max(0, targets.calories - calories);
-  const ringSize = isMobile ? 78 : 86;
-  const ringStroke = isMobile ? 3 : 4;
 
   return (
     <motion.div
@@ -48,12 +44,14 @@ export function MacroSummary({ totals, targets }: MacroSummaryProps) {
         <CalorieRing
           current={calories}
           target={targets.calories}
-          size={ringSize}
-          strokeWidth={ringStroke}
+          // Size + stroke driven by CSS media queries (no JS hook, no
+          // hydration flash). Stroke value reaches CalorieRing via the
+          // `--calorie-ring-stroke` CSS variable.
+          className="size-[78px] [--calorie-ring-stroke:3px] sm:size-[86px] sm:[--calorie-ring-stroke:4px]"
           center={
             <>
               <span
-                className="font-semibold text-[20px] text-nham-text tabular-nums leading-none sm:text-[22px]"
+                className="font-semibold text-[17px] text-nham-text tabular-nums leading-none sm:text-[19px]"
                 style={{ fontFamily: 'Lora, serif' }}
               >
                 {remaining.toLocaleString()}

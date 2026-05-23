@@ -911,7 +911,7 @@
   },
   "logging": {
     "title": "Bạn đã ăn gì?",
-    "placeholder": "Mô tả bữa ăn bằng tiếng Việt hoặc tiếng Anh...",
+    "placeholder": "Mô tả bữa ăn...",
     "submit": "Phân tích",
     "stopAnalyzing": "Dừng phân tích",
     "analyzing": "Đang phân tích bữa ăn...",
