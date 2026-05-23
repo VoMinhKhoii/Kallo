@@ -90,6 +90,37 @@ export async function warmEmbeddingCache(
 }
 
 /**
+ * Prime L1 from rows already fetched by another caller — used by
+ * `nutrition-cache.loadAll` so the boot-time `SELECT * FROM
+ * vietnamese_food_composition WHERE source_id = 1` runs once instead of twice.
+ * Marks the cache as warmed so the lazy `warmEmbeddingCache` call from the
+ * L1-miss path becomes a no-op.
+ */
+export function primeEmbeddingCacheFromRows(
+  rows: Iterable<Record<string, unknown>>
+): void {
+  if (!isEmbeddingCacheEnabled() || !isEmbeddingCacheWarmupEnabled()) return;
+  let loaded = 0;
+  for (const row of rows) {
+    const embedding = parseEmbeddingValue(row.embedding);
+    if (!embedding) continue;
+    const nameVi = row.name_primary as string | null;
+    const nameEn = row.name_en as string | null;
+    if (nameVi) {
+      memoryCache.set(normalizeIngredientKey(nameVi), embedding);
+      loaded++;
+    }
+    if (nameEn) {
+      memoryCache.set(normalizeIngredientKey(nameEn), embedding);
+    }
+  }
+  warmCacheStarted = true;
+  console.info(
+    `[embedding-cache] primed ${loaded} embeddings from co-loaded rows`
+  );
+}
+
+/**
  * Tiered embedding lookup: L1 memory → L2 exact (name_vi OR name_en) → null.
  *
  * Input is normalized (NFC + lowercase + trim) before any tier is checked.

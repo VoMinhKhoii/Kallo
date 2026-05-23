@@ -48,7 +48,7 @@ export interface MatchTopKOptions {
   sourceLimit?: number;
 }
 
-const DEFAULT_K = 3;
+export const DEFAULT_K = 3;
 export const DEFAULT_MATCH_CONCURRENCY = 4;
 const DEFAULT_SOURCE_LIMIT = 3;
 
@@ -115,6 +115,9 @@ export async function matchTopKPerIngredient(
 
   if (ingredients.length === 0) return [];
 
+  const t0 = Date.now();
+  let fuzzyFallbackFires = 0;
+
   const ctxs: IngredientWithContext[] = ingredients.map((ing, i) => ({
     ingredient: ing,
     index: i,
@@ -124,11 +127,13 @@ export async function matchTopKPerIngredient(
   }));
 
   // Phase 1: resolve embeddings via the existing cache layer.
+  const tPhase1 = Date.now();
   const cacheSettled = await mapWithConcurrency(
     ctxs,
     (c) => resolveQueryEmbedding(c.matchingName, db),
     concurrency
   );
+  const phase1Ms = Date.now() - tPhase1;
   const embeddings: (number[] | null)[] = cacheSettled.map((r, i) => {
     if (r.status === 'rejected') {
       console.warn(
@@ -141,9 +146,11 @@ export async function matchTopKPerIngredient(
   });
 
   // Phase 2: batch-embed L3 misses.
+  const tPhase2 = Date.now();
   const missIndices = embeddings
     .map((e, i) => (e ? -1 : i))
     .filter((i) => i >= 0);
+  const l3MissCount = missIndices.length;
   if (missIndices.length > 0) {
     const missNames = missIndices.map((i) => ctxs[i].matchingName);
     console.info(`[v2-matching] batch embedding ${missNames.length} L3 misses`);
@@ -163,7 +170,10 @@ export async function matchTopKPerIngredient(
     }
   }
 
+  const phase2Ms = Date.now() - tPhase2;
+
   // Phase 3: per-ingredient top-K cascade with bounded concurrency.
+  const tPhase3 = Date.now();
   const settled = await mapWithConcurrency(
     ctxs,
     async (c) => {
@@ -204,6 +214,7 @@ export async function matchTopKPerIngredient(
       let merged = mergeTopKAcrossSources([faoTop, usdaTop], k);
 
       if (merged.length === 0) {
+        fuzzyFallbackFires++;
         // Fuzzy fallback.
         const [faoFuzzy, usdaFuzzy] = await Promise.all([
           db.execute(
@@ -246,6 +257,8 @@ export async function matchTopKPerIngredient(
     concurrency
   );
 
+  const phase3Ms = Date.now() - tPhase3;
+
   const results: IngredientV2MatchResult[] = settled.map((r, i) =>
     r.status === 'fulfilled' ? r.value : { ingredientIndex: i, candidates: [] }
   );
@@ -254,6 +267,7 @@ export async function matchTopKPerIngredient(
   // USDA rows are intentionally not back-filled: `inedible_portion_pct` is
   // VN-FCT–specific and USDA imports leave it NULL, so they stay `null` by
   // design rather than paying a roundtrip that returns nothing.
+  const tPhase5 = Date.now();
   const uniqueIds = new Set<string>();
   for (const r of results) {
     for (const c of r.candidates) uniqueIds.add(c.info.foodCompositionId);
@@ -271,6 +285,26 @@ export async function matchTopKPerIngredient(
         c.inediblePct = inedibleMap.get(id) ?? null;
       }
     }
+  }
+  const phase5Ms = Date.now() - tPhase5;
+
+  // Gated to keep Cloud Logging ingest cheap in prod — set
+  // PIPELINE_V2_LOG_TIMINGS=1 to opt in for production debugging.
+  // On in dev/test by default (NODE_ENV !== 'production').
+  if (
+    process.env.PIPELINE_V2_LOG_TIMINGS === '1' ||
+    process.env.NODE_ENV !== 'production'
+  ) {
+    console.info('[v2-matching] phase timings', {
+      ingredients: ingredients.length,
+      l3MissCount,
+      fuzzyFallbackFires,
+      phase1_cacheLookupMs: phase1Ms,
+      phase2_geminiBatchMs: phase2Ms,
+      phase3_vectorAndFuzzyMs: phase3Ms,
+      phase5_nutritionAndInedibleMs: phase5Ms,
+      totalMs: Date.now() - t0,
+    });
   }
 
   return results;
