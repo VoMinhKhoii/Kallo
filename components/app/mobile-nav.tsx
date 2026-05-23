@@ -88,7 +88,7 @@ export function MobileNav({
   };
 
   return (
-    <header className="mb-1 flex items-center md:hidden">
+    <header className="group/mobileheader mb-1 flex items-center gap-2 md:hidden">
       <Sheet open={open} onOpenChange={setOpen}>
         <SheetTrigger asChild>
           <button
@@ -96,7 +96,7 @@ export function MobileNav({
             aria-label={tShell('openMenu')}
             aria-haspopup="dialog"
             aria-expanded={open}
-            className="relative inline-flex size-11 items-center justify-center rounded-md text-nham-text transition-colors hover:bg-nham-hover/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent"
+            className="relative inline-flex size-11 shrink-0 items-center justify-center rounded-md text-nham-text transition-colors hover:bg-nham-hover/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent group-has-[[data-strip-mode=true]]/mobileheader:hidden"
           >
             <Menu className="h-5 w-5" aria-hidden="true" />
             {onboardingIncomplete ? (
@@ -220,6 +220,23 @@ export function MobileNav({
           </div>
         </SheetContent>
       </Sheet>
+      {/* Mobile header right-slot. Currently filled (single filler) by
+          MobileTimelinePicker via React portal — see mobile-timeline-picker.tsx.
+          Strip-mode contract: when the picker enters strip mode it sets
+          `data-strip-mode="true"` on its portaled root, and the hamburger +
+          spacer below match via `group-has-[[data-strip-mode=true]]/mobileheader`
+          to drop out so the strip can use the full row width. */}
+      <div
+        id="app-mobile-header-slot"
+        className="flex min-w-0 flex-1 items-center justify-center"
+      />
+      {/* Mirror the hamburger width so the slot's center aligns with the
+          screen center in chip mode. Hidden in strip mode (paired with the
+          hamburger) so the strip can use the full row width. */}
+      <div
+        aria-hidden="true"
+        className="size-11 shrink-0 group-has-[[data-strip-mode=true]]/mobileheader:hidden"
+      />
     </header>
   );
 }

@@ -40,8 +40,8 @@ export function PersistedMealCard({ meal }: PersistedMealCardProps) {
       className="group relative"
     >
       {/* Timeline dot & line */}
-      <div className="absolute top-2 bottom-0 -left-10 w-px bg-nham-border/60 group-last:bg-transparent" />
-      <div className="absolute top-2 -left-[43px] h-2 w-2 rounded-full border-2 border-nham-accent bg-white" />
+      <div className="absolute top-2 bottom-0 -left-4 w-px bg-nham-border/60 group-last:bg-transparent sm:-left-10" />
+      <div className="absolute top-2 -left-5 h-2 w-2 rounded-full border-2 border-nham-accent bg-white sm:-left-[43px]" />
 
       {/* Time label */}
       <div className="mb-2">
@@ -58,10 +58,10 @@ export function PersistedMealCard({ meal }: PersistedMealCardProps) {
         {/* Header */}
         <div className="flex items-start justify-between gap-3">
           <p
-            className="text-[17px] text-nham-text leading-relaxed"
+            className="text-[17px] text-nham-text leading-relaxed sm:text-[19px]"
             style={{ fontFamily: 'Lora, serif' }}
           >
-            &ldquo;{meal.rawInput}&rdquo;
+            {meal.rawInput}
           </p>
           <button
             type="button"

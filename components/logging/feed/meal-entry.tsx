@@ -97,10 +97,10 @@ export function MealEntry({
         <div className="flex items-start justify-between gap-3">
           {message.userInput && (
             <p
-              className="text-[17px] text-nham-text leading-relaxed"
+              className="text-[17px] text-nham-text leading-relaxed sm:text-[19px]"
               style={{ fontFamily: 'Lora, serif' }}
             >
-              &ldquo;{message.userInput}&rdquo;
+              {message.userInput}
             </p>
           )}
           <div className="flex shrink-0 items-center gap-2">

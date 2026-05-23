@@ -3,66 +3,97 @@
 import { motion } from 'motion/react';
 import { useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';
+import { cn } from '@/lib/utils';
 
 interface CalorieRingProps {
   current: number;
   target: number;
+  /**
+   * Render size in CSS pixels. Optional — when omitted, the consumer is
+   * expected to size the wrapper via `className` (e.g. responsive Tailwind
+   * classes) so the size can change with media queries without a JS flash.
+   */
   size?: number;
+  /**
+   * Stroke width in CSS pixels. Optional — when omitted, falls back to the
+   * `--calorie-ring-stroke` CSS variable (default 7px). Consumers can set
+   * the var per breakpoint via Tailwind arbitrary properties.
+   */
   strokeWidth?: number;
   center?: ReactNode;
+  className?: string;
 }
+
+// The SVG is drawn in a normalized viewBox so size/stroke can be controlled
+// from CSS without re-computing the geometry. `vector-effect: non-scaling-stroke`
+// keeps the stroke at the requested CSS px width regardless of the SVG's
+// rendered size, so a single declarative ring scales cleanly across breakpoints.
+const VIEWBOX = 100;
+const RADIUS = 46;
+const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
+const CENTER = VIEWBOX / 2;
 
 export function CalorieRing({
   current,
   target,
-  size = 110,
-  strokeWidth = 7,
+  size,
+  strokeWidth,
   center,
+  className,
 }: CalorieRingProps) {
   const t = useTranslations('shared.calorieRing');
   const remaining = Math.max(0, target - current);
-  const radius = (size - strokeWidth) / 2;
-  const circumference = 2 * Math.PI * radius;
   const pct = target > 0 ? Math.min(remaining / target, 1) : 0;
-  const dashOffset = circumference * (1 - pct);
-  const cx = size / 2;
-  const cy = size / 2;
+  const dashOffset = CIRCUMFERENCE * (1 - pct);
+
+  const wrapperStyle = size ? { width: size, height: size } : undefined;
+  const strokeStyle = {
+    strokeWidth: strokeWidth ?? 'var(--calorie-ring-stroke, 7px)',
+  };
 
   return (
-    <div className="relative shrink-0" style={{ width: size, height: size }}>
+    <div className={cn('relative shrink-0', className)} style={wrapperStyle}>
       <svg
-        width={size}
-        height={size}
+        viewBox={`0 0 ${VIEWBOX} ${VIEWBOX}`}
+        width="100%"
+        height="100%"
+        overflow="visible"
+        role="img"
         aria-label={t('ariaLabel', {
           remaining: remaining.toLocaleString(),
           target: target.toLocaleString(),
         })}
       >
         <circle
-          cx={cx}
-          cy={cy}
-          r={radius}
+          cx={CENTER}
+          cy={CENTER}
+          r={RADIUS}
           fill="none"
-          strokeWidth={strokeWidth}
-          className="text-nham-track"
           stroke="currentColor"
+          vectorEffect="non-scaling-stroke"
+          className="text-nham-track"
+          style={strokeStyle}
         />
         <motion.circle
-          cx={cx}
-          cy={cy}
-          r={radius}
+          cx={CENTER}
+          cy={CENTER}
+          r={RADIUS}
           fill="none"
           stroke="var(--nham-accent)"
-          strokeWidth={strokeWidth}
           strokeLinecap="round"
-          strokeDasharray={circumference}
-          initial={{ strokeDashoffset: circumference }}
+          strokeDasharray={CIRCUMFERENCE}
+          initial={{ strokeDashoffset: CIRCUMFERENCE }}
           animate={{ strokeDashoffset: dashOffset }}
           transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
-          transform={`rotate(-90 ${cx} ${cy})`}
+          transform={`rotate(-90 ${CENTER} ${CENTER})`}
+          vectorEffect="non-scaling-stroke"
+          style={strokeStyle}
         />
       </svg>
-      <div className="absolute inset-0 flex flex-col items-center justify-center">
+      <div
+        aria-hidden="true"
+        className="absolute inset-0 flex flex-col items-center justify-center"
+      >
         {center ?? (
           <>
             <span

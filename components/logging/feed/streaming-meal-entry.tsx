@@ -107,10 +107,10 @@ export function StreamingMealEntry({ message }: StreamingMealEntryProps) {
         {/* Header: quoted input */}
         {message.userInput && (
           <p
-            className="text-[17px] text-nham-text leading-relaxed"
+            className="text-[17px] text-nham-text leading-relaxed sm:text-[19px]"
             style={{ fontFamily: 'Lora, serif' }}
           >
-            &ldquo;{message.userInput}&rdquo;
+            {message.userInput}
           </p>
         )}
 

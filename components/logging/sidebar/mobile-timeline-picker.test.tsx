@@ -64,6 +64,26 @@ describe('MobileTimelinePicker', () => {
     expect(screen.getByLabelText('nextWeek')).toBeDisabled();
   });
 
+  // Anchors the cross-file contract with mobile-nav.tsx: the hamburger uses
+  // `group-has-[[data-strip-mode=true]]/mobileheader:hidden` to drop out, so
+  // the attribute must actually flip when the picker toggles modes.
+  it('flips data-strip-mode on its root when the chip is expanded', async () => {
+    const user = userEvent.setup();
+    render(<MobileTimelinePicker {...defaultProps} />);
+
+    const chip = screen.getByLabelText('selectDate');
+    expect(chip.closest('[data-strip-mode]')).toHaveAttribute(
+      'data-strip-mode',
+      'false'
+    );
+
+    await user.click(chip);
+
+    expect(
+      screen.getByTestId('mobile-week-slider').closest('[data-strip-mode]')
+    ).toHaveAttribute('data-strip-mode', 'true');
+  });
+
   it('navigates seven days into the past with the previous chevron', async () => {
     const user = userEvent.setup();
     render(<MobileTimelinePicker {...defaultProps} />);

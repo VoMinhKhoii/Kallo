@@ -79,7 +79,7 @@ function LoggingDaySkeleton() {
     <div
       aria-busy="true"
       data-testid="logging-day-skeleton"
-      className="mx-auto w-full max-w-3xl pl-10 sm:pl-12"
+      className="mx-auto w-full max-w-3xl pl-6 sm:pl-12"
     >
       <div className="flex animate-pulse flex-col gap-8">
         {[0, 1].map((item) => (
@@ -442,7 +442,7 @@ export function FeedArea({
         )}
 
         {!isDayLoading && !isDayError && hasContent && (
-          <div className="mx-auto w-full max-w-3xl pl-10 sm:pl-12">
+          <div className="mx-auto w-full max-w-3xl pl-6 sm:pl-12">
             <div className="flex flex-col gap-5 sm:gap-8">
               {/* Persisted meals from DB */}
               <AnimatePresence initial={false}>
@@ -488,7 +488,7 @@ export function FeedArea({
                             className="mb-2 text-[13px] text-nham-text-muted"
                             style={{ fontFamily: 'Lora, serif' }}
                           >
-                            &ldquo;{msg.userInput}&rdquo;
+                            {msg.userInput}
                           </p>
                         )}
                         <p
