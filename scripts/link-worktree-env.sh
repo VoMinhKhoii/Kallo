@@ -15,7 +15,9 @@ repo_root="${cwd%/.claude/worktrees/*}"
 src="$repo_root/.env.local"
 dst="$cwd/.env.local"
 
-[ -e "$dst" ] && exit 0
+if [ -e "$dst" ] || [ -L "$dst" ]; then
+  exit 0
+fi
 [ -f "$src" ] || exit 0
 
 ln -s "$src" "$dst"

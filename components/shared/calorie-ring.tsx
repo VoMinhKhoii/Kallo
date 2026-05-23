@@ -90,7 +90,10 @@ export function CalorieRing({
           style={strokeStyle}
         />
       </svg>
-      <div className="absolute inset-0 flex flex-col items-center justify-center">
+      <div
+        aria-hidden="true"
+        className="absolute inset-0 flex flex-col items-center justify-center"
+      >
         {center ?? (
           <>
             <span
