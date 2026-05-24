@@ -45,41 +45,14 @@ export function ProgressStory({
     );
   }
 
-  if (summary.status === 'insufficient') {
-    return (
-      <section className="grid min-h-[420px] gap-2.5 rounded-[1.5rem] border border-nham-border/60 bg-card p-3 shadow-[0_10px_32px_rgba(44,36,22,0.05)] xl:h-full xl:min-h-0 xl:grid-cols-[minmax(240px,0.32fr)_minmax(0,0.68fr)] xl:p-3">
-        <div className="grid min-h-0 gap-2.5 xl:grid-rows-[auto_1fr]">
-          <div className="rounded-[1.25rem] bg-nham-surface/70 p-2.5">
-            <p className="text-nham-stone text-sm">
-              {t('insufficientWeightData')}
-            </p>
-          </div>
-          <CompactWeightLog
-            currentWeight={weightSummary.currentWeight}
-            todayWeight={weightSummary.todayWeight}
-            todayDate={todayDate}
-          />
-        </div>
-        <div className="min-h-[220px] xl:min-h-0">
-          <WeightChart
-            data={weightSummary.weights}
-            periodStartWeight={weightSummary.periodStartWeight}
-            expectedEndWeight={weightSummary.expectedEndWeight}
-            goalDirection={weightSummary.goalDirection}
-            range={range}
-          />
-        </div>
-      </section>
-    );
-  }
-
   const copy = t.raw(`progressStatus.${summary.status}`);
+  const isInsufficient = summary.status === 'insufficient';
   const delta = summary.currentWeight - summary.startWeight;
   const Icon = delta <= 0 ? TrendingDown : TrendingUp;
 
   return (
-    <section className="grid min-h-[500px] gap-2.5 rounded-[1.5rem] border border-nham-border/60 bg-card p-3 shadow-[0_10px_32px_rgba(44,36,22,0.05)] xl:h-full xl:min-h-0 xl:grid-cols-[minmax(240px,0.32fr)_minmax(0,0.68fr)] xl:p-3">
-      <div className="grid min-h-0 gap-2.5 xl:grid-rows-[auto_1fr]">
+    <section className="grid min-h-[360px] gap-2 rounded-[1.5rem] border border-nham-border/60 bg-card p-2.5 shadow-[0_10px_32px_rgba(44,36,22,0.05)] xl:h-full xl:min-h-0 xl:grid-cols-[minmax(240px,0.32fr)_minmax(0,0.68fr)]">
+      <div className="grid min-h-0 gap-2 xl:grid-rows-[auto_auto] xl:content-start">
         <div className="rounded-[1.25rem] bg-nham-surface/70 p-2.5">
           <div
             className={cn(
@@ -94,40 +67,51 @@ export function ProgressStory({
           </div>
           <div className="flex items-end justify-between gap-3">
             <div>
-              <h2
-                className="font-semibold text-3xl text-nham-text tracking-[-0.04em]"
-                style={{ fontFamily: 'Lora, serif' }}
-              >
-                {delta > 0 ? '+' : ''}
-                {delta.toFixed(1)} {t('units.kg')}
-              </h2>
+              {isInsufficient ? (
+                <h2
+                  className="font-semibold text-3xl text-nham-text tracking-[-0.04em]"
+                  style={{ fontFamily: 'Lora, serif' }}
+                >
+                  {summary.currentWeight.toFixed(1)} {t('units.kg')}
+                </h2>
+              ) : (
+                <h2
+                  className="font-semibold text-3xl text-nham-text tracking-[-0.04em]"
+                  style={{ fontFamily: 'Lora, serif' }}
+                >
+                  {delta > 0 ? '+' : ''}
+                  {delta.toFixed(1)} {t('units.kg')}
+                </h2>
+              )}
               <p className="mt-1 text-nham-stone text-xs">{copy.detail}</p>
             </div>
-            <div
-              className={cn(
-                'grid gap-2 text-sm',
-                summary.canProject ? 'grid-cols-2' : 'grid-cols-1'
-              )}
-            >
-              <div className="rounded-xl bg-card/80 px-2.5 py-2">
-                <span className="block text-[9px] text-nham-stone uppercase tracking-[0.14em]">
-                  {t('now')}
-                </span>
-                <strong className="font-mono text-nham-text text-xs">
-                  {summary.currentWeight.toFixed(1)} {t('units.kg')}
-                </strong>
-              </div>
-              {summary.canProject && (
+            {!isInsufficient && (
+              <div
+                className={cn(
+                  'grid gap-2 text-sm',
+                  summary.canProject ? 'grid-cols-2' : 'grid-cols-1'
+                )}
+              >
                 <div className="rounded-xl bg-card/80 px-2.5 py-2">
                   <span className="block text-[9px] text-nham-stone uppercase tracking-[0.14em]">
-                    {t('projected')}
+                    {t('now')}
                   </span>
                   <strong className="font-mono text-nham-text text-xs">
-                    {summary.projectedEndWeight.toFixed(1)} {t('units.kg')}
+                    {summary.currentWeight.toFixed(1)} {t('units.kg')}
                   </strong>
                 </div>
-              )}
-            </div>
+                {summary.canProject && (
+                  <div className="rounded-xl bg-card/80 px-2.5 py-2">
+                    <span className="block text-[9px] text-nham-stone uppercase tracking-[0.14em]">
+                      {t('projected')}
+                    </span>
+                    <strong className="font-mono text-nham-text text-xs">
+                      {summary.projectedEndWeight.toFixed(1)} {t('units.kg')}
+                    </strong>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
 
@@ -138,7 +122,7 @@ export function ProgressStory({
         />
       </div>
 
-      <div className="min-h-[220px] xl:min-h-0">
+      <div className="min-h-[200px] xl:min-h-0">
         <WeightChart
           data={weightSummary.weights}
           periodStartWeight={weightSummary.periodStartWeight}

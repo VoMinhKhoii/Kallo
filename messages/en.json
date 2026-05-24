@@ -838,9 +838,11 @@
     "heatmapLoadError": "Unable to load the consistency section. Please try again.",
     "loadingWeightTrend": "Loading weight trend…",
     "now": "Now",
+    "start": "Start",
     "weekPrefix": "W",
     "projected": "Projected",
-    "insufficientWeightData": "Log your weight for at least 2 days to see your trend",
+    "insufficientWeightData": "First entry in — log again tomorrow to draw your trend.",
+    "noWeightData": "Log your first weight to start tracking your trend.",
     "offTrack": "Off track",
     "mealsLogged": "{count} logged",
     "ranges": {
@@ -866,6 +868,8 @@
       "invalidValue": "Check the weight value before saving",
       "inputLabel": "Weight in kilograms",
       "logWeight": "Log weight",
+      "update": "Update",
+      "editHint": "Editing today's entry — saves overwrite the previous value.",
       "saveFailed": "Failed to save weight"
     },
     "adherenceHeatmap": {
@@ -888,8 +892,8 @@
     "mealReceiptsHint": "Your meal receipts will show up here",
     "progressStatus": {
       "insufficient": {
-        "label": "Building signal",
-        "detail": "Log a few more weigh-ins and the trend will settle."
+        "label": "Tracking started",
+        "detail": "Log tomorrow to see your trend."
       },
       "on_pace": {
         "label": "On pace",
