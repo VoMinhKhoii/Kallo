@@ -239,7 +239,7 @@
    viewports so desktop sizing (md:text-sm) is preserved. Kept unlayered so
    it overrides Tailwind utilities like `text-sm`. */
 @media screen and (max-width: 767px) {
-  input,
+  input:not([type="range"]):not([type="checkbox"]):not([type="radio"]):not([type="color"]):not([type="file"]),
   textarea,
   select {
     font-size: 16px;
