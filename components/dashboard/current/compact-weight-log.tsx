@@ -73,7 +73,7 @@ export function CompactWeightLog({
         toast.error(t('weightCard.invalidValue'));
       })}
       aria-busy={logWeightMutation.isPending}
-      className="flex min-h-0 flex-col justify-center rounded-[1.25rem] border border-nham-border/60 bg-nham-surface/70 p-2"
+      className="flex flex-col rounded-[1.25rem] border border-nham-border/60 bg-nham-surface/70 p-3"
     >
       <div className="mb-1.5 flex items-center gap-2">
         <Scale className="h-3.5 w-3.5 text-nham-accent" />
@@ -116,9 +116,18 @@ export function CompactWeightLog({
           aria-busy={logWeightMutation.isPending}
           className="h-9 rounded-xl bg-nham-btn px-3 text-white hover:bg-nham-btn-hover"
         >
-          {logWeightMutation.isPending ? t('saving') : t('save')}
+          {logWeightMutation.isPending
+            ? t('saving')
+            : hasTodayWeight
+              ? t('weightCard.update')
+              : t('save')}
         </Button>
       </div>
+      {hasTodayWeight && !errorMessage && (
+        <p className="mt-1 text-[10px] text-nham-stone">
+          {t('weightCard.editHint')}
+        </p>
+      )}
       {errorMessage && (
         <p
           id="compact-weight-error"
