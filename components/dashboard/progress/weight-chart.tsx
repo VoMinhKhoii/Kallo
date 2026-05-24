@@ -128,8 +128,9 @@ export function WeightChart({
 
             <XAxis
               dataKey="day"
-              type="number"
-              domain={isSinglePoint ? [0, 1] : ['dataMin', 'dataMax']}
+              {...(isSinglePoint
+                ? { type: 'number' as const, domain: [0, 1] }
+                : {})}
               tickLine={false}
               axisLine={false}
               tick={{ fontSize: 9, fill: 'var(--nham-stone)' }}
