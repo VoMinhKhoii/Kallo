@@ -233,3 +233,15 @@
     }
   }
 }
+
+/* Prevent iOS Safari (and some Android browsers) from auto-zooming when a
+   form control with font-size < 16px receives focus. Applied only on narrow
+   viewports so desktop sizing (md:text-sm) is preserved. Kept unlayered so
+   it overrides Tailwind utilities like `text-sm`. */
+@media screen and (max-width: 767px) {
+  input,
+  textarea,
+  select {
+    font-size: 16px;
+  }
+}
