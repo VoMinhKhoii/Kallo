@@ -240,8 +240,8 @@
    it overrides Tailwind utilities like `text-sm`. */
 @media screen and (max-width: 767px) {
   input:not([type="range"]):not([type="checkbox"]):not([type="radio"]):not(
-    [type="color"]
-  ):not([type="file"]),
+      [type="color"]
+    ):not([type="file"]),
   textarea,
   select {
     font-size: 16px;
