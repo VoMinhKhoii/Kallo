@@ -840,7 +840,7 @@
     "now": "Hiện tại",
     "weekPrefix": "T",
     "projected": "Dự kiến",
-    "insufficientWeightData": "Ghi cân nặng ít nhất 2 ngày để xem xu hướng",
+    "insufficientWeightData": "Đã ghi ngày đầu tiên — ghi lại vào ngày mai để vẽ xu hướng.",
     "offTrack": "Lệch kế hoạch",
     "mealsLogged": "Đã ghi {count}",
     "ranges": {
@@ -866,6 +866,8 @@
       "invalidValue": "Kiểm tra giá trị cân nặng trước khi lưu",
       "inputLabel": "Cân nặng theo kilogram",
       "logWeight": "Ghi cân nặng",
+      "update": "Cập nhật",
+      "editHint": "Đang sửa số liệu hôm nay — lần lưu sau sẽ ghi đè giá trị trước.",
       "saveFailed": "Không thể lưu cân nặng"
     },
     "adherenceHeatmap": {
@@ -888,8 +890,8 @@
     "mealReceiptsHint": "Những bữa ăn sẽ hiển thị ở đây",
     "progressStatus": {
       "insufficient": {
-        "label": "Đang tạo tín hiệu",
-        "detail": "Ghi thêm vài lần cân sẽ làm xu hướng ổn định."
+        "label": "Đã bắt đầu theo dõi",
+        "detail": "Ghi cân nặng vào ngày mai để thấy xu hướng."
       },
       "on_pace": {
         "label": "Đúng kế hoạch",

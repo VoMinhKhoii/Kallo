@@ -6,6 +6,7 @@ import {
   Area,
   AreaChart,
   ReferenceArea,
+  ReferenceDot,
   ReferenceLine,
   ResponsiveContainer,
   Tooltip,
@@ -47,13 +48,15 @@ export function WeightChart({
     [data.length, locale, range, t]
   );
 
-  if (data.length < 2) {
+  if (data.length === 0) {
     return (
       <div className="flex flex-1 items-center justify-center text-nham-stone text-sm">
         {t('insufficientWeightData')}
       </div>
     );
   }
+
+  const isSinglePoint = data.length === 1;
 
   // Y-axis clamped to goal range, expanding if data exceeds it
   const goalTop = Math.max(periodStartWeight, expectedEndWeight);
@@ -125,6 +128,8 @@ export function WeightChart({
 
             <XAxis
               dataKey="day"
+              type="number"
+              domain={isSinglePoint ? [0, 1] : ['dataMin', 'dataMax']}
               tickLine={false}
               axisLine={false}
               tick={{ fontSize: 9, fill: 'var(--nham-stone)' }}
@@ -149,21 +154,32 @@ export function WeightChart({
               strokeWidth={1}
             />
 
-            <Area
-              type="monotone"
-              dataKey="weight"
-              stroke="var(--nham-accent)"
-              strokeWidth={2}
-              fill="url(#lineGrad)"
-              fillOpacity={1}
-              dot={false}
-              activeDot={{
-                r: 4,
-                fill: 'var(--nham-accent)',
-                stroke: 'white',
-                strokeWidth: 2,
-              }}
-            />
+            {isSinglePoint ? (
+              <ReferenceDot
+                x={0}
+                y={data[0]}
+                r={4}
+                fill="var(--nham-accent)"
+                stroke="white"
+                strokeWidth={2}
+              />
+            ) : (
+              <Area
+                type="monotone"
+                dataKey="weight"
+                stroke="var(--nham-accent)"
+                strokeWidth={2}
+                fill="url(#lineGrad)"
+                fillOpacity={1}
+                dot={false}
+                activeDot={{
+                  r: 4,
+                  fill: 'var(--nham-accent)',
+                  stroke: 'white',
+                  strokeWidth: 2,
+                }}
+              />
+            )}
           </AreaChart>
         </ResponsiveContainer>
       </div>

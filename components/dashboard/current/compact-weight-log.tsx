@@ -116,9 +116,18 @@ export function CompactWeightLog({
           aria-busy={logWeightMutation.isPending}
           className="h-9 rounded-xl bg-nham-btn px-3 text-white hover:bg-nham-btn-hover"
         >
-          {logWeightMutation.isPending ? t('saving') : t('save')}
+          {logWeightMutation.isPending
+            ? t('saving')
+            : hasTodayWeight
+              ? t('weightCard.update')
+              : t('save')}
         </Button>
       </div>
+      {hasTodayWeight && !errorMessage && (
+        <p className="mt-1 text-[10px] text-nham-stone">
+          {t('weightCard.editHint')}
+        </p>
+      )}
       {errorMessage && (
         <p
           id="compact-weight-error"

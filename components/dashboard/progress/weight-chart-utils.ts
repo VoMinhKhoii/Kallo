@@ -10,6 +10,13 @@ export function buildXTicks(
   const uniqueTicks = (values: number[]) =>
     values.filter((value, index, array) => array.indexOf(value) === index);
 
+  if (count < 2) {
+    return {
+      ticks: [0],
+      formatter: () => nowLabel,
+    };
+  }
+
   if (range === '30d') {
     const step = Math.floor(count / 4);
     const ticks = uniqueTicks([0, step, step * 2, step * 3, count - 1]);
