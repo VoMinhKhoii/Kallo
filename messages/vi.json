@@ -838,9 +838,11 @@
     "heatmapLoadError": "Không tải được phần độ đều đặn. Vui lòng thử lại.",
     "loadingWeightTrend": "Đang tải xu hướng cân nặng…",
     "now": "Hiện tại",
+    "start": "Bắt đầu",
     "weekPrefix": "T",
     "projected": "Dự kiến",
     "insufficientWeightData": "Đã ghi ngày đầu tiên — ghi lại vào ngày mai để vẽ xu hướng.",
+    "noWeightData": "Ghi cân nặng đầu tiên để bắt đầu theo dõi xu hướng.",
     "offTrack": "Lệch kế hoạch",
     "mealsLogged": "Đã ghi {count}",
     "ranges": {

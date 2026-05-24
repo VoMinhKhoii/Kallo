@@ -51,8 +51,8 @@ export function ProgressStory({
   const Icon = delta <= 0 ? TrendingDown : TrendingUp;
 
   return (
-    <section className="grid min-h-[500px] gap-2.5 rounded-[1.5rem] border border-nham-border/60 bg-card p-3 shadow-[0_10px_32px_rgba(44,36,22,0.05)] xl:h-full xl:min-h-0 xl:grid-cols-[minmax(240px,0.32fr)_minmax(0,0.68fr)] xl:p-3">
-      <div className="grid min-h-0 gap-2.5 xl:grid-rows-[auto_1fr]">
+    <section className="grid min-h-[360px] gap-2 rounded-[1.5rem] border border-nham-border/60 bg-card p-2.5 shadow-[0_10px_32px_rgba(44,36,22,0.05)] xl:h-full xl:min-h-0 xl:grid-cols-[minmax(240px,0.32fr)_minmax(0,0.68fr)]">
+      <div className="grid min-h-0 gap-2 xl:grid-rows-[auto_auto] xl:content-start">
         <div className="rounded-[1.25rem] bg-nham-surface/70 p-2.5">
           <div
             className={cn(
@@ -122,7 +122,7 @@ export function ProgressStory({
         />
       </div>
 
-      <div className="min-h-[220px] xl:min-h-0">
+      <div className="min-h-[200px] xl:min-h-0">
         <WeightChart
           data={weightSummary.weights}
           periodStartWeight={weightSummary.periodStartWeight}

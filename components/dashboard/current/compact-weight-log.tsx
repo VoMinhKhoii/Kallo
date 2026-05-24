@@ -73,7 +73,7 @@ export function CompactWeightLog({
         toast.error(t('weightCard.invalidValue'));
       })}
       aria-busy={logWeightMutation.isPending}
-      className="flex min-h-0 flex-col justify-center rounded-[1.25rem] border border-nham-border/60 bg-nham-surface/70 p-2"
+      className="flex flex-col rounded-[1.25rem] border border-nham-border/60 bg-nham-surface/70 p-3"
     >
       <div className="mb-1.5 flex items-center gap-2">
         <Scale className="h-3.5 w-3.5 text-nham-accent" />

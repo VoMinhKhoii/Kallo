@@ -838,9 +838,11 @@
     "heatmapLoadError": "Unable to load the consistency section. Please try again.",
     "loadingWeightTrend": "Loading weight trend…",
     "now": "Now",
+    "start": "Start",
     "weekPrefix": "W",
     "projected": "Projected",
     "insufficientWeightData": "First entry in — log again tomorrow to draw your trend.",
+    "noWeightData": "Log your first weight to start tracking your trend.",
     "offTrack": "Off track",
     "mealsLogged": "{count} logged",
     "ranges": {

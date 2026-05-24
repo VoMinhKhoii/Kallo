@@ -6,7 +6,6 @@ import {
   Area,
   AreaChart,
   ReferenceArea,
-  ReferenceDot,
   ReferenceLine,
   ResponsiveContainer,
   Tooltip,
@@ -38,25 +37,34 @@ export function WeightChart({
     (value, index, array) => array.indexOf(value) === index
   );
 
+  const isSinglePoint = data.length === 1;
+  const rangeDays = range === '30d' ? 30 : 90;
+
   const chartData = useMemo(
-    () => data.map((weight, i) => ({ day: i, weight })),
-    [data]
+    () =>
+      isSinglePoint
+        ? [{ day: 0, weight: data[0] }]
+        : data.map((weight, i) => ({ day: i, weight })),
+    [data, isSinglePoint]
   );
 
-  const { ticks: xTicks, formatter: xFormatter } = useMemo(
-    () => buildXTicks(data.length, range, locale, t('now'), t('weekPrefix')),
-    [data.length, locale, range, t]
-  );
+  const { ticks: xTicks, formatter: xFormatter } = useMemo(() => {
+    if (isSinglePoint) {
+      return {
+        ticks: [0],
+        formatter: () => t('start'),
+      };
+    }
+    return buildXTicks(data.length, range, locale, t('now'), t('weekPrefix'));
+  }, [isSinglePoint, data.length, range, locale, t]);
 
   if (data.length === 0) {
     return (
-      <div className="flex flex-1 items-center justify-center text-nham-stone text-sm">
-        {t('insufficientWeightData')}
+      <div className="flex h-full min-h-[200px] items-center justify-center text-nham-stone text-sm">
+        {t('noWeightData')}
       </div>
     );
   }
-
-  const isSinglePoint = data.length === 1;
 
   // Y-axis clamped to goal range, expanding if data exceeds it
   const goalTop = Math.max(periodStartWeight, expectedEndWeight);
@@ -81,10 +89,10 @@ export function WeightChart({
         : null;
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col">
+    <div className="flex h-full min-h-[200px] flex-col">
       {/* Legend — off track only */}
       {goalDirection !== 'flat' && (
-        <div className="mb-1 flex items-center gap-4 text-[10px] text-nham-stone">
+        <div className="mb-0.5 flex items-center gap-4 text-[10px] text-nham-stone">
           <span className="flex items-center gap-1.5">
             <span
               className="inline-block h-2 w-3 rounded-sm opacity-50"
@@ -99,7 +107,7 @@ export function WeightChart({
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart
             data={chartData}
-            margin={{ top: 4, right: 8, bottom: 0, left: -8 }}
+            margin={{ top: 4, right: 12, bottom: 4, left: 0 }}
           >
             <defs>
               <linearGradient id="lineGrad" x1="0" y1="0" x2="0" y2="1">
@@ -129,10 +137,10 @@ export function WeightChart({
             <XAxis
               dataKey="day"
               {...(isSinglePoint
-                ? { type: 'number' as const, domain: [0, 1] }
+                ? { type: 'number' as const, domain: [0, rangeDays - 1] }
                 : {})}
               tickLine={false}
-              axisLine={false}
+              axisLine={{ stroke: 'var(--nham-border)' }}
               tick={{ fontSize: 9, fill: 'var(--nham-stone)' }}
               ticks={xTicks}
               tickFormatter={(v: number, i: number) => xFormatter(v, i)}
@@ -140,10 +148,11 @@ export function WeightChart({
             <YAxis
               domain={[yMin, yMax]}
               tickLine={false}
-              axisLine={false}
-              tick={false}
+              axisLine={{ stroke: 'var(--nham-border)' }}
+              tick={{ fontSize: 9, fill: 'var(--nham-stone)' }}
               ticks={yTicks}
-              width={8}
+              tickFormatter={(v: number) => v.toFixed(1)}
+              width={36}
             />
 
             <Tooltip content={<WeightChartTooltip />} />
@@ -155,32 +164,30 @@ export function WeightChart({
               strokeWidth={1}
             />
 
-            {isSinglePoint ? (
-              <ReferenceDot
-                x={0}
-                y={data[0]}
-                r={4}
-                fill="var(--nham-accent)"
-                stroke="white"
-                strokeWidth={2}
-              />
-            ) : (
-              <Area
-                type="monotone"
-                dataKey="weight"
-                stroke="var(--nham-accent)"
-                strokeWidth={2}
-                fill="url(#lineGrad)"
-                fillOpacity={1}
-                dot={false}
-                activeDot={{
-                  r: 4,
-                  fill: 'var(--nham-accent)',
-                  stroke: 'white',
-                  strokeWidth: 2,
-                }}
-              />
-            )}
+            <Area
+              type="monotone"
+              dataKey="weight"
+              stroke="var(--nham-accent)"
+              strokeWidth={2}
+              fill="url(#lineGrad)"
+              fillOpacity={1}
+              dot={
+                isSinglePoint
+                  ? {
+                      r: 4,
+                      fill: 'var(--nham-accent)',
+                      stroke: 'white',
+                      strokeWidth: 2,
+                    }
+                  : false
+              }
+              activeDot={{
+                r: 4,
+                fill: 'var(--nham-accent)',
+                stroke: 'white',
+                strokeWidth: 2,
+              }}
+            />
           </AreaChart>
         </ResponsiveContainer>
       </div>
