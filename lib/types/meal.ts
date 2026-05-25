@@ -19,6 +19,12 @@ export interface ParsedMeal {
   totalMacros: MacroBreakdown;
 }
 
+/** A user override of a dish's total cooked weight, sent to the server on confirm. */
+export interface MealQuantityEdit {
+  mealItemOrder: number;
+  newGrams: number;
+}
+
 export type ChatRole = 'user' | 'assistant';
 
 export type StreamingPhase =

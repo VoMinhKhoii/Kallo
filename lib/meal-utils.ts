@@ -1,4 +1,14 @@
-import type { MacroBreakdown, MealItem } from '@/lib/types/meal';
+import type {
+  MacroBreakdown,
+  MealItem,
+  MealQuantityEdit,
+} from '@/lib/types/meal';
+
+/**
+ * Floor for the quantity stepper: the minus button is disabled at/below this,
+ * so a dish can never be stepped down to 0g (which would silently drop the edit).
+ */
+export const MIN_DISH_GRAMS = 10;
 
 export function recalculateTotals(items: MealItem[]): MacroBreakdown {
   return items.reduce(
@@ -37,5 +47,21 @@ export function applyQuantityChange(
         fat: originalItem.macros.fat * ratio,
       },
     };
+  });
+}
+
+/**
+ * Build the dish-level quantity overrides to send on confirm: one entry per
+ * item whose quantity differs from the original AI estimate. Positional order
+ * is the server's `mealItemOrder`.
+ */
+export function deriveQuantityEdits(
+  items: MealItem[],
+  originalItems: MealItem[]
+): MealQuantityEdit[] {
+  return items.flatMap((item, order) => {
+    const original = originalItems[order];
+    if (!original || item.quantity === original.quantity) return [];
+    return [{ mealItemOrder: order, newGrams: item.quantity }];
   });
 }

@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { applyQuantityChange, recalculateTotals } from '@/lib/meal-utils';
+import {
+  applyQuantityChange,
+  deriveQuantityEdits,
+  recalculateTotals,
+} from '@/lib/meal-utils';
 import type { MealItem } from '@/lib/types/meal';
 
 const sampleItems: MealItem[] = [
@@ -111,5 +115,18 @@ describe('totals after quantity change', () => {
 
     expect(totals.calories).toBe(650); // 400 + 250
     expect(totals.protein).toBe(28); // 8 + 20
+  });
+});
+
+describe('deriveQuantityEdits', () => {
+  it('emits an edit only for changed dishes, keyed by positional order', () => {
+    const changed = applyQuantityChange(sampleItems, sampleItems, 'item-2', 1);
+    expect(deriveQuantityEdits(changed, sampleItems)).toEqual([
+      { mealItemOrder: 1, newGrams: 2 },
+    ]);
+  });
+
+  it('returns no edits when nothing changed', () => {
+    expect(deriveQuantityEdits(sampleItems, sampleItems)).toEqual([]);
   });
 });

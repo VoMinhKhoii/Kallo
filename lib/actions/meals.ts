@@ -40,9 +40,10 @@ const confirmAndSaveSchema = z.object({
       z.object({
         mealItemOrder: z.number().int().min(0),
         ingredientIndex: z.number().int().min(0).optional(),
-        newGrams: z.number().positive(),
+        newGrams: z.number().positive().finite().max(100_000),
       })
     )
+    .max(50)
     .optional(),
 });
 
