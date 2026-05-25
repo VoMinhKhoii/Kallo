@@ -352,6 +352,52 @@ describe('confirmAndSaveMealAction', () => {
     const mealRow = capturedValues[0] as Record<string, unknown>;
     expect(mealRow.sodiumMg).toBe(240);
   });
+
+  it('scales every ingredient when a whole-dish edit omits ingredientIndex', async () => {
+    const capturedValues: unknown[] = [];
+
+    mockTxDelete.mockReturnValue({
+      where: vi.fn().mockReturnValue({
+        returning: vi.fn().mockResolvedValue([
+          {
+            id: UUID_2,
+            userId: mockUser.id,
+            rawInput: 'Phở bò',
+            pipelineResult: JSON.parse(JSON.stringify(samplePipelineResult)),
+            loggedAt: LOGGED_AT,
+          },
+        ]),
+      }),
+    });
+
+    mockTxInsert.mockImplementation(() => ({
+      values: vi.fn().mockImplementation((vals: unknown) => {
+        capturedValues.push(vals);
+        return {
+          returning: vi.fn().mockResolvedValue([{ id: UUID_MEAL }]),
+        };
+      }),
+    }));
+
+    // Dish total is 200g + 100g = 300g; doubling to 600g should scale both
+    // ingredients by 2x (goal adjustment is linear, so outputs double too).
+    await confirmAndSaveMealAction({
+      analysisId: UUID_2,
+      edits: [{ mealItemOrder: 0, newGrams: 600 }],
+    });
+
+    const mealItemRows = capturedValues[1] as Record<string, unknown>[];
+    const [first, second] = mealItemRows;
+
+    // Both ingredients scaled (the second proves it's a whole-dish edit).
+    expect(first.estimatedGrams).toBe(400);
+    expect(second.estimatedGrams).toBe(200);
+    expect(first.caloriesKcal).toBe(620); // baseline 310 → 2x
+    expect(second.caloriesKcal).toBe(420); // baseline 210 → 2x
+
+    const mealRow = capturedValues[0] as Record<string, unknown>;
+    expect(mealRow.caloriesKcal).toBe(1040); // baseline 520 → 2x
+  });
 });
 
 describe('loadMealsByDate', () => {

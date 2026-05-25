@@ -30,11 +30,13 @@ import { dateStringSchema, timezoneOffsetSchema } from '@/lib/validation';
 
 const confirmAndSaveSchema = z.object({
   analysisId: z.string().uuid('analysisId phải là UUID hợp lệ.'),
+  // Quantity overrides. Omitting `ingredientIndex` scales the whole dish
+  // (every ingredient) so `newGrams` is the new total cooked weight.
   edits: z
     .array(
       z.object({
         mealItemOrder: z.number().int().min(0),
-        ingredientIndex: z.number().int().min(0),
+        ingredientIndex: z.number().int().min(0).optional(),
         newGrams: z.number().positive(),
       })
     )
@@ -113,7 +115,7 @@ export async function confirmAndSaveMealAction(input: {
   analysisId: string;
   edits?: {
     mealItemOrder: number;
-    ingredientIndex: number;
+    ingredientIndex?: number;
     newGrams: number;
   }[];
 }) {
@@ -142,19 +144,11 @@ export async function confirmAndSaveMealAction(input: {
 
     // Apply user edits (quantity overrides) if provided
     if (parsed.edits?.length) {
-      for (const edit of parsed.edits) {
-        const mealItem = pipelineResult.mealItems[edit.mealItemOrder];
-        if (!mealItem) continue;
-        const ingredient = mealItem.ingredients[edit.ingredientIndex];
-        if (!ingredient) continue;
-
-        const ratio =
-          ingredient.estimatedGrams > 0
-            ? edit.newGrams / ingredient.estimatedGrams
-            : 0;
-        ingredient.estimatedGrams = edit.newGrams;
-
-        // Scale bounded nutrition proportionally
+      // Scale an ingredient's bounded nutrition ranges in place.
+      const scaleIngredient = (
+        ingredient: (typeof pipelineResult.mealItems)[number]['ingredients'][number],
+        ratio: number
+      ) => {
         for (const key of NUTRITION_KEYS) {
           const bounded = ingredient.boundedNutrition[key];
           if (bounded) {
@@ -165,6 +159,36 @@ export async function confirmAndSaveMealAction(input: {
             };
           }
         }
+      };
+
+      for (const edit of parsed.edits) {
+        const mealItem = pipelineResult.mealItems[edit.mealItemOrder];
+        if (!mealItem) continue;
+
+        // Whole-dish edit: newGrams is the new total weight, so scale every
+        // ingredient by the dish-level ratio.
+        if (edit.ingredientIndex === undefined) {
+          const totalGrams = mealItem.ingredients.reduce(
+            (sum, ing) => sum + ing.estimatedGrams,
+            0
+          );
+          const ratio = totalGrams > 0 ? edit.newGrams / totalGrams : 0;
+          for (const ingredient of mealItem.ingredients) {
+            ingredient.estimatedGrams *= ratio;
+            scaleIngredient(ingredient, ratio);
+          }
+          continue;
+        }
+
+        const ingredient = mealItem.ingredients[edit.ingredientIndex];
+        if (!ingredient) continue;
+
+        const ratio =
+          ingredient.estimatedGrams > 0
+            ? edit.newGrams / ingredient.estimatedGrams
+            : 0;
+        ingredient.estimatedGrams = edit.newGrams;
+        scaleIngredient(ingredient, ratio);
       }
     }
 

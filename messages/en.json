@@ -962,6 +962,7 @@
     },
     "mealEntry": {
       "edit": "Edit",
+      "done": "Done",
       "toggleDetails": "Toggle meal details",
       "total": "Total"
     },

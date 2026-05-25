@@ -1,6 +1,6 @@
 'use client';
 
-import { ChevronDown, Pencil, X } from 'lucide-react';
+import { Check, ChevronDown, Pencil } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
@@ -9,9 +9,14 @@ import { MealEntryItem } from '@/components/logging/feed/meal-entry-item';
 import { applyQuantityChange, recalculateTotals } from '@/lib/meal-utils';
 import type { ChatMessage, MealItem } from '@/lib/types/meal';
 
+export interface MealQuantityEdit {
+  mealItemOrder: number;
+  newGrams: number;
+}
+
 interface MealEntryProps {
   message: ChatMessage;
-  onConfirm?: () => void;
+  onConfirm?: (edits: MealQuantityEdit[]) => void;
   isConfirming?: boolean;
 }
 
@@ -21,13 +26,9 @@ export function MealEntry({
   isConfirming: _isConfirming,
 }: MealEntryProps) {
   const t = useTranslations('logging.mealEntry');
-  const tc = useTranslations('common');
   const [isEditing, setIsEditing] = useState(false);
   const [confirmed, setConfirmed] = useState(false);
-  const [savedItems, setSavedItems] = useState<MealItem[]>(
-    message.parsedMeal?.items ?? []
-  );
-  const [editedItems, setEditedItems] = useState<MealItem[]>(
+  const [items, setItems] = useState<MealItem[]>(
     message.parsedMeal?.items ?? []
   );
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -35,35 +36,31 @@ export function MealEntry({
   const meal = message.parsedMeal;
   if (!meal) return null;
 
-  const currentItems = isEditing ? editedItems : savedItems;
+  const currentItems = items;
   const currentTotals = recalculateTotals(currentItems);
 
+  // Edits apply live to `items` — no separate save step. Quantities scale
+  // against the original AI estimate so repeated +/- stays proportional.
   const handleQuantityChange = (itemId: string, delta: number) => {
-    setEditedItems((prev) =>
-      applyQuantityChange(prev, meal.items, itemId, delta)
-    );
-  };
-
-  const handleEdit = () => {
-    setEditedItems([...savedItems]);
-    setIsEditing(true);
-  };
-
-  const handleCancelEdit = () => {
-    setIsEditing(false);
-    setEditedItems(savedItems);
-  };
-
-  const handleSaveEdit = () => {
-    setSavedItems(editedItems);
-    setIsEditing(false);
+    setItems((prev) => applyQuantityChange(prev, meal.items, itemId, delta));
   };
 
   const handleConfirm = () => {
+    const edits = items.flatMap<MealQuantityEdit>((item, order) => {
+      const original = meal.items[order];
+      if (
+        !original ||
+        item.quantity === original.quantity ||
+        item.quantity <= 0
+      ) {
+        return [];
+      }
+      return [{ mealItemOrder: order, newGrams: item.quantity }];
+    });
     setConfirmed(true);
     setIsEditing(false);
     setIsCollapsed(true);
-    onConfirm?.();
+    onConfirm?.(edits);
   };
 
   const timeLabel = message.timestamp.toLocaleTimeString([], {
@@ -121,28 +118,28 @@ export function MealEntry({
               <AnimatePresence mode="wait" initial={false}>
                 {isEditing ? (
                   <motion.button
-                    key="cancel"
+                    key="done"
                     type="button"
-                    onClick={handleCancelEdit}
+                    onClick={() => setIsEditing(false)}
                     initial={{ opacity: 0, scale: 0.85 }}
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.85 }}
                     transition={{ duration: 0.15 }}
-                    className="flex items-center gap-1.5 rounded-full border border-rose-200/60 bg-rose-50/60 px-2.5 py-1 text-rose-500 transition-colors hover:border-rose-300/60 hover:bg-rose-50"
+                    className="flex items-center gap-1.5 rounded-full border border-nham-accent/50 bg-nham-accent/10 px-2.5 py-1 text-nham-accent transition-colors hover:bg-nham-accent/20"
                   >
-                    <X className="h-3 w-3" />
+                    <Check className="h-3 w-3" />
                     <span
                       className="font-medium text-[10px]"
                       style={{ fontFamily: 'DM Sans, sans-serif' }}
                     >
-                      {tc('cancel')}
+                      {t('done')}
                     </span>
                   </motion.button>
                 ) : (
                   <motion.button
                     key="edit"
                     type="button"
-                    onClick={handleEdit}
+                    onClick={() => setIsEditing(true)}
                     initial={{ opacity: 0, scale: 0.85 }}
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.85 }}
@@ -246,14 +243,7 @@ export function MealEntry({
       </div>
 
       {/* Action buttons */}
-      {!confirmed && (
-        <MealEntryActions
-          isEditing={isEditing}
-          onCancel={handleCancelEdit}
-          onSave={handleSaveEdit}
-          onConfirm={handleConfirm}
-        />
-      )}
+      {!confirmed && <MealEntryActions onConfirm={handleConfirm} />}
     </motion.article>
   );
 }
