@@ -3,7 +3,7 @@
 import { Check, ChevronDown, Pencil } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useTranslations } from 'next-intl';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { MealEntryActions } from '@/components/logging/feed/meal-entry-actions';
 import { MealEntryItem } from '@/components/logging/feed/meal-entry-item';
 import { applyQuantityChange, recalculateTotals } from '@/lib/meal-utils';
@@ -13,6 +13,10 @@ export interface MealQuantityEdit {
   mealItemOrder: number;
   newGrams: number;
 }
+
+// Briefly block Confirm after a quantity tap so a fast double-tap on a
+// stepper can't slip through and save before the user is done adjusting.
+const CONFIRM_DEBOUNCE_MS = 300;
 
 interface MealEntryProps {
   message: ChatMessage;
@@ -32,6 +36,14 @@ export function MealEntry({
     message.parsedMeal?.items ?? []
   );
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [confirmCoolingDown, setConfirmCoolingDown] = useState(false);
+  const confirmTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (confirmTimerRef.current) clearTimeout(confirmTimerRef.current);
+    };
+  }, []);
 
   const meal = message.parsedMeal;
   if (!meal) return null;
@@ -43,6 +55,12 @@ export function MealEntry({
   // against the original AI estimate so repeated +/- stays proportional.
   const handleQuantityChange = (itemId: string, delta: number) => {
     setItems((prev) => applyQuantityChange(prev, meal.items, itemId, delta));
+    setConfirmCoolingDown(true);
+    if (confirmTimerRef.current) clearTimeout(confirmTimerRef.current);
+    confirmTimerRef.current = setTimeout(
+      () => setConfirmCoolingDown(false),
+      CONFIRM_DEBOUNCE_MS
+    );
   };
 
   const handleConfirm = () => {
@@ -243,7 +261,13 @@ export function MealEntry({
       </div>
 
       {/* Action buttons */}
-      {!confirmed && <MealEntryActions onConfirm={handleConfirm} />}
+      {!confirmed && (
+        <MealEntryActions
+          isEditing={isEditing}
+          disabled={isEditing && confirmCoolingDown}
+          onConfirm={handleConfirm}
+        />
+      )}
     </motion.article>
   );
 }
