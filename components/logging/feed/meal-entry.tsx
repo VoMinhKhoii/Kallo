@@ -6,13 +6,12 @@ import { useTranslations } from 'next-intl';
 import { useEffect, useRef, useState } from 'react';
 import { MealEntryActions } from '@/components/logging/feed/meal-entry-actions';
 import { MealEntryItem } from '@/components/logging/feed/meal-entry-item';
-import { applyQuantityChange, recalculateTotals } from '@/lib/meal-utils';
-import type { ChatMessage, MealItem } from '@/lib/types/meal';
-
-export interface MealQuantityEdit {
-  mealItemOrder: number;
-  newGrams: number;
-}
+import {
+  applyQuantityChange,
+  deriveQuantityEdits,
+  recalculateTotals,
+} from '@/lib/meal-utils';
+import type { ChatMessage, MealItem, MealQuantityEdit } from '@/lib/types/meal';
 
 // Briefly block Confirm after a quantity tap so a fast double-tap on a
 // stepper can't slip through and save before the user is done adjusting.
@@ -21,14 +20,9 @@ const CONFIRM_DEBOUNCE_MS = 300;
 interface MealEntryProps {
   message: ChatMessage;
   onConfirm?: (edits: MealQuantityEdit[]) => void;
-  isConfirming?: boolean;
 }
 
-export function MealEntry({
-  message,
-  onConfirm,
-  isConfirming: _isConfirming,
-}: MealEntryProps) {
+export function MealEntry({ message, onConfirm }: MealEntryProps) {
   const t = useTranslations('logging.mealEntry');
   const [isEditing, setIsEditing] = useState(false);
   const [confirmed, setConfirmed] = useState(false);
@@ -48,8 +42,7 @@ export function MealEntry({
   const meal = message.parsedMeal;
   if (!meal) return null;
 
-  const currentItems = items;
-  const currentTotals = recalculateTotals(currentItems);
+  const currentTotals = recalculateTotals(items);
 
   // Edits apply live to `items` — no separate save step. Quantities scale
   // against the original AI estimate so repeated +/- stays proportional.
@@ -64,17 +57,7 @@ export function MealEntry({
   };
 
   const handleConfirm = () => {
-    const edits = items.flatMap<MealQuantityEdit>((item, order) => {
-      const original = meal.items[order];
-      if (
-        !original ||
-        item.quantity === original.quantity ||
-        item.quantity <= 0
-      ) {
-        return [];
-      }
-      return [{ mealItemOrder: order, newGrams: item.quantity }];
-    });
+    const edits = deriveQuantityEdits(items, meal.items);
     setConfirmed(true);
     setIsEditing(false);
     setIsCollapsed(true);
@@ -216,7 +199,7 @@ export function MealEntry({
               <div className="mt-5 border-nham-border border-t border-dashed pt-4">
                 {/* Items list */}
                 <div className="mb-4 space-y-1">
-                  {currentItems.map((item, idx) => (
+                  {items.map((item, idx) => (
                     <MealEntryItem
                       key={item.id}
                       item={item}

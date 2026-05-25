@@ -34,6 +34,33 @@ describe('MealEntryItem', () => {
     expect(screen.getByText('304 kcal')).toBeInTheDocument();
   });
 
+  it('disables the decrease button at the minimum dish weight', () => {
+    render(
+      <MealEntryItem
+        item={{ ...item, quantity: 10 }}
+        index={0}
+        isEditing={true}
+        onQuantityChange={() => {}}
+      />
+    );
+
+    expect(screen.getByLabelText('decreaseQuantity')).toBeDisabled();
+    expect(screen.getByLabelText('increaseQuantity')).toBeEnabled();
+  });
+
+  it('allows decreasing above the minimum dish weight', () => {
+    render(
+      <MealEntryItem
+        item={{ ...item, quantity: 100 }}
+        index={0}
+        isEditing={true}
+        onQuantityChange={() => {}}
+      />
+    );
+
+    expect(screen.getByLabelText('decreaseQuantity')).toBeEnabled();
+  });
+
   it('renders macro and calorie units for streaming completed rows', () => {
     const message: ChatMessage = {
       id: 'message-1',

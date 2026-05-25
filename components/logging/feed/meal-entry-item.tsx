@@ -1,9 +1,13 @@
+'use client';
+
 import { Minus, Plus } from 'lucide-react';
 import { motion } from 'motion/react';
+import { useTranslations } from 'next-intl';
 import {
   formatCaloriesValue,
   formatMacroValue,
 } from '@/components/logging/feed/format-inline-nutrition';
+import { MIN_DISH_GRAMS } from '@/lib/meal-utils';
 import type { MealItem } from '@/lib/types/meal';
 import { cn } from '@/lib/utils';
 
@@ -20,6 +24,7 @@ export function MealEntryItem({
   isEditing,
   onQuantityChange,
 }: MealEntryItemProps) {
+  const t = useTranslations('logging.mealEntry');
   const getDelta = (sign: 1 | -1) =>
     (item.unit === 'g' || item.unit === 'ml' ? 10 : 1) * sign;
 
@@ -40,8 +45,8 @@ export function MealEntryItem({
           <div className="flex shrink-0 items-center gap-0.5">
             <button
               type="button"
-              aria-label={`Decrease ${item.name} quantity`}
-              disabled={item.quantity <= 0}
+              aria-label={t('decreaseQuantity', { name: item.name })}
+              disabled={item.quantity <= MIN_DISH_GRAMS}
               onClick={() => onQuantityChange(item.id, getDelta(-1))}
               className="flex h-7 w-7 items-center justify-center rounded-md border border-nham-border/60 bg-white text-nham-text-muted transition-colors hover:bg-nham-hover disabled:opacity-40"
             >
@@ -52,7 +57,7 @@ export function MealEntryItem({
             </span>
             <button
               type="button"
-              aria-label={`Increase ${item.name} quantity`}
+              aria-label={t('increaseQuantity', { name: item.name })}
               onClick={() => onQuantityChange(item.id, getDelta(1))}
               className="flex h-7 w-7 items-center justify-center rounded-md border border-nham-border/60 bg-white text-nham-text-muted transition-colors hover:bg-nham-hover"
             >

@@ -963,6 +963,8 @@
     "mealEntry": {
       "edit": "Edit",
       "done": "Done",
+      "decreaseQuantity": "Decrease {name} quantity",
+      "increaseQuantity": "Increase {name} quantity",
       "toggleDetails": "Toggle meal details",
       "total": "Total"
     },

@@ -8,10 +8,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { EmptyState } from '@/components/logging/feed/empty-state';
 import { MacroSummary } from '@/components/logging/feed/macro-summary';
-import {
-  MealEntry,
-  type MealQuantityEdit,
-} from '@/components/logging/feed/meal-entry';
+import { MealEntry } from '@/components/logging/feed/meal-entry';
 import { PersistedMealCard } from '@/components/logging/feed/persisted-meal-card';
 import { StreamingMealEntry } from '@/components/logging/feed/streaming-meal-entry';
 import {
@@ -26,7 +23,11 @@ import { useStreamAnalysis } from '@/hooks/use-stream-analysis';
 import { useStreamingTerminalEffects } from '@/hooks/use-streaming-terminal-effects';
 import { useSubmitGuard } from '@/hooks/use-submit-guard';
 import { sumDisplayedNutrition } from '@/lib/ai/pipeline/goal-adjustment';
-import type { ChatMessage, StreamingPhase } from '@/lib/types/meal';
+import type {
+  ChatMessage,
+  MealQuantityEdit,
+  StreamingPhase,
+} from '@/lib/types/meal';
 import { cn } from '@/lib/utils';
 
 function toStreamingPhase(status: string): StreamingPhase {
@@ -307,10 +308,14 @@ export function FeedArea({
     setMessages((prev) =>
       prev.filter((m) => m.id !== messageId && m.analysisId !== analysisId)
     );
+    // Client-minted id: doubles as the persisted row's PK and an idempotency
+    // key, so the optimistic card and the refetched row share one stable React
+    // key (no remount/re-fade after save).
+    const mealId = crypto.randomUUID();
     confirmMeal.mutate(
       {
         analysisId,
-        mealId: crypto.randomUUID(),
+        mealId,
         originDate: selectedDate,
         edits: edits.length > 0 ? edits : undefined,
       },
@@ -479,7 +484,6 @@ export function FeedArea({
                           if (msg.analysisId)
                             handleConfirmMeal(msg.id, msg.analysisId, edits);
                         }}
-                        isConfirming={confirmMeal.isPending}
                       />
                     );
                   }
