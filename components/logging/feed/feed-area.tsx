@@ -8,7 +8,10 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { EmptyState } from '@/components/logging/feed/empty-state';
 import { MacroSummary } from '@/components/logging/feed/macro-summary';
-import { MealEntry } from '@/components/logging/feed/meal-entry';
+import {
+  MealEntry,
+  type MealQuantityEdit,
+} from '@/components/logging/feed/meal-entry';
 import { PersistedMealCard } from '@/components/logging/feed/persisted-meal-card';
 import { StreamingMealEntry } from '@/components/logging/feed/streaming-meal-entry';
 import {
@@ -294,14 +297,22 @@ export function FeedArea({
     onAnalysisComplete: handleAnalysisComplete,
   });
 
-  const handleConfirmMeal = (messageId: string, analysisId: string) => {
+  const handleConfirmMeal = (
+    messageId: string,
+    analysisId: string,
+    edits: MealQuantityEdit[]
+  ) => {
     // Drop the local copy before mutate so the optimistic cache update in
     // useConfirmMeal does not briefly expose it as an unsaved card.
     setMessages((prev) =>
       prev.filter((m) => m.id !== messageId && m.analysisId !== analysisId)
     );
     confirmMeal.mutate(
-      { analysisId, originDate: selectedDate },
+      {
+        analysisId,
+        originDate: selectedDate,
+        edits: edits.length > 0 ? edits : undefined,
+      },
       {
         onSuccess: () => {
           toast.success(t('savedMeal'));
@@ -463,9 +474,9 @@ export function FeedArea({
                       <MealEntry
                         key={msg.id}
                         message={msg}
-                        onConfirm={() => {
+                        onConfirm={(edits) => {
                           if (msg.analysisId)
-                            handleConfirmMeal(msg.id, msg.analysisId);
+                            handleConfirmMeal(msg.id, msg.analysisId, edits);
                         }}
                         isConfirming={confirmMeal.isPending}
                       />
