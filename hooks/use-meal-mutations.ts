@@ -79,6 +79,7 @@ function applyEditsToItems(
 
 function pendingToOptimisticMeal(
   pending: PendingMealConfirmation,
+  mealId: string,
   edits?: QuantityEdit[]
 ): PersistedMeal {
   const items = applyEditsToItems(pending.parsedMeal.items, edits);
@@ -92,7 +93,9 @@ function pendingToOptimisticMeal(
     ? recalculateTotals(items)
     : pending.parsedMeal.totalMacros;
   return {
-    id: `optimistic-${pending.id}`,
+    // Same id the server will persist, so the card keeps one stable React key
+    // from optimistic insert through the post-save refetch (no re-fade).
+    id: mealId,
     rawInput: pending.rawInput,
     mealSlot: null,
     confidenceOverall: null,
@@ -124,10 +127,11 @@ export function useConfirmMeal(userId: string) {
           (p) => p.id === variables.analysisId
         );
         if (!pending) return old;
+        const mealId = variables.mealId ?? `optimistic-${variables.analysisId}`;
         return {
           persistedMeals: [
             ...old.persistedMeals,
-            pendingToOptimisticMeal(pending, variables.edits),
+            pendingToOptimisticMeal(pending, mealId, variables.edits),
           ],
           pendingConfirmations: old.pendingConfirmations.filter(
             (p) => p.id !== variables.analysisId
@@ -135,24 +139,6 @@ export function useConfirmMeal(userId: string) {
         };
       });
       return { snapshots };
-    },
-    onSuccess: (data, variables) => {
-      // Swap the optimistic id for the real meal id so the refetch triggered
-      // in onSettled reuses the same React key. Without this the card unmounts
-      // and remounts, replaying its fade-in animation right after saving.
-      queryClient.setQueriesData<LoggingDayData>(
-        { queryKey: loggingDayKeys.byUserDate(userId, variables.originDate) },
-        (old) => {
-          if (!old) return old;
-          const optimisticId = `optimistic-${variables.analysisId}`;
-          return {
-            ...old,
-            persistedMeals: old.persistedMeals.map((meal) =>
-              meal.id === optimisticId ? { ...meal, id: data.mealId } : meal
-            ),
-          };
-        }
-      );
     },
     onError: (error, _vars, context) => {
       if (context?.snapshots) {

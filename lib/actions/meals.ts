@@ -30,6 +30,9 @@ import { dateStringSchema, timezoneOffsetSchema } from '@/lib/validation';
 
 const confirmAndSaveSchema = z.object({
   analysisId: z.string().uuid('analysisId phải là UUID hợp lệ.'),
+  // Client-generated id so the optimistic card and the persisted row share a
+  // stable React key (avoids a remount/re-fade once the refetch lands).
+  mealId: z.string().uuid('mealId phải là UUID hợp lệ.').optional(),
   // Quantity overrides. Omitting `ingredientIndex` scales the whole dish
   // (every ingredient) so `newGrams` is the new total cooked weight.
   edits: z
@@ -113,6 +116,7 @@ function inferMealSlot(date: Date): string {
 
 export async function confirmAndSaveMealAction(input: {
   analysisId: string;
+  mealId?: string;
   edits?: {
     mealItemOrder: number;
     ingredientIndex?: number;
@@ -251,6 +255,7 @@ export async function confirmAndSaveMealAction(input: {
     const [meal] = await tx
       .insert(meals)
       .values({
+        ...(parsed.mealId ? { id: parsed.mealId } : {}),
         userId: user.id,
         rawInput: pending.rawInput,
         mealSlot,
