@@ -16,7 +16,12 @@ import {
 } from '@/lib/actions/meals';
 import { NUTRITION_KEYS } from '@/lib/ai/constants';
 import type { NutritionValues } from '@/lib/ai/types';
-import type { MacroBreakdown } from '@/lib/types/meal';
+import { recalculateTotals } from '@/lib/meal-utils';
+import type { MacroBreakdown, MealItem } from '@/lib/types/meal';
+
+type QuantityEdit = NonNullable<
+  Parameters<typeof confirmAndSaveMealAction>[0]['edits']
+>[number];
 
 function todayDateString(): string {
   const d = new Date();
@@ -40,24 +45,59 @@ function macrosToNutrition(macros: MacroBreakdown): NutritionValues {
   };
 }
 
+// Apply dish-level quantity edits so the optimistic card shows the user's
+// adjusted values immediately, instead of the original AI estimate until the
+// refetch lands. Per-ingredient edits are left to the server-backed refetch.
+function applyEditsToItems(
+  items: MealItem[],
+  edits: QuantityEdit[] | undefined
+): MealItem[] {
+  const newGramsByOrder = new Map<number, number>();
+  for (const edit of edits ?? []) {
+    if (edit.ingredientIndex === undefined) {
+      newGramsByOrder.set(edit.mealItemOrder, edit.newGrams);
+    }
+  }
+  if (newGramsByOrder.size === 0) return items;
+
+  return items.map((item, order) => {
+    const newGrams = newGramsByOrder.get(order);
+    if (newGrams === undefined || item.quantity <= 0) return item;
+    const ratio = newGrams / item.quantity;
+    return {
+      ...item,
+      quantity: newGrams,
+      macros: {
+        calories: item.macros.calories * ratio,
+        protein: item.macros.protein * ratio,
+        carbs: item.macros.carbs * ratio,
+        fat: item.macros.fat * ratio,
+      },
+    };
+  });
+}
+
 function pendingToOptimisticMeal(
-  pending: PendingMealConfirmation
+  pending: PendingMealConfirmation,
+  edits?: QuantityEdit[]
 ): PersistedMeal {
-  const groups: PersistedMealItemGroup[] = pending.parsedMeal.items.map(
-    (item, order) => ({
-      name: item.name,
-      order,
-      ingredients: [],
-      nutrition: macrosToNutrition(item.macros),
-    })
-  );
+  const items = applyEditsToItems(pending.parsedMeal.items, edits);
+  const groups: PersistedMealItemGroup[] = items.map((item, order) => ({
+    name: item.name,
+    order,
+    ingredients: [],
+    nutrition: macrosToNutrition(item.macros),
+  }));
+  const total = edits?.length
+    ? recalculateTotals(items)
+    : pending.parsedMeal.totalMacros;
   return {
     id: `optimistic-${pending.id}`,
     rawInput: pending.rawInput,
     mealSlot: null,
     confidenceOverall: null,
     loggedAt: pending.loggedAt,
-    nutrition: macrosToNutrition(pending.parsedMeal.totalMacros),
+    nutrition: macrosToNutrition(total),
     mealItemGroups: groups,
   };
 }
@@ -87,7 +127,7 @@ export function useConfirmMeal(userId: string) {
         return {
           persistedMeals: [
             ...old.persistedMeals,
-            pendingToOptimisticMeal(pending),
+            pendingToOptimisticMeal(pending, variables.edits),
           ],
           pendingConfirmations: old.pendingConfirmations.filter(
             (p) => p.id !== variables.analysisId
