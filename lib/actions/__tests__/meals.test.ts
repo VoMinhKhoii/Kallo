@@ -222,6 +222,38 @@ describe('confirmAndSaveMealAction', () => {
     expect(mockTxInsert).toHaveBeenCalledTimes(2);
   });
 
+  it('persists the client-provided meal id when supplied', async () => {
+    const capturedValues: unknown[] = [];
+
+    mockTxDelete.mockReturnValue({
+      where: vi.fn().mockReturnValue({
+        returning: vi.fn().mockResolvedValue([
+          {
+            id: UUID_2,
+            userId: mockUser.id,
+            rawInput: 'Phở bò',
+            pipelineResult: JSON.parse(JSON.stringify(samplePipelineResult)),
+            loggedAt: LOGGED_AT,
+          },
+        ]),
+      }),
+    });
+
+    mockTxInsert.mockImplementation(() => ({
+      values: vi.fn().mockImplementation((vals: unknown) => {
+        capturedValues.push(vals);
+        return {
+          returning: vi.fn().mockResolvedValue([{ id: UUID_MEAL }]),
+        };
+      }),
+    }));
+
+    await confirmAndSaveMealAction({ analysisId: UUID_2, mealId: UUID_MEAL });
+
+    const mealRow = capturedValues[0] as Record<string, unknown>;
+    expect(mealRow.id).toBe(UUID_MEAL);
+  });
+
   it('should reject invalid UUID', async () => {
     await expect(
       confirmAndSaveMealAction({ analysisId: 'not-a-uuid' })

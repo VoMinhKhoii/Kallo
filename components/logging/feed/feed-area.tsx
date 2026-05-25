@@ -310,6 +310,7 @@ export function FeedArea({
     confirmMeal.mutate(
       {
         analysisId,
+        mealId: crypto.randomUUID(),
         originDate: selectedDate,
         edits: edits.length > 0 ? edits : undefined,
       },
