@@ -96,6 +96,24 @@ export function useConfirmMeal(userId: string) {
       });
       return { snapshots };
     },
+    onSuccess: (data, variables) => {
+      // Swap the optimistic id for the real meal id so the refetch triggered
+      // in onSettled reuses the same React key. Without this the card unmounts
+      // and remounts, replaying its fade-in animation right after saving.
+      queryClient.setQueriesData<LoggingDayData>(
+        { queryKey: loggingDayKeys.byUserDate(userId, variables.originDate) },
+        (old) => {
+          if (!old) return old;
+          const optimisticId = `optimistic-${variables.analysisId}`;
+          return {
+            ...old,
+            persistedMeals: old.persistedMeals.map((meal) =>
+              meal.id === optimisticId ? { ...meal, id: data.mealId } : meal
+            ),
+          };
+        }
+      );
+    },
     onError: (error, _vars, context) => {
       if (context?.snapshots) {
         for (const [key, data] of context.snapshots) {
