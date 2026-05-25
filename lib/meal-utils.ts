@@ -5,8 +5,10 @@ import type {
 } from '@/lib/types/meal';
 
 /**
- * Floor for the quantity stepper: the minus button is disabled at/below this,
- * so a dish can never be stepped down to 0g (which would silently drop the edit).
+ * Minimum weight a gram/ml dish can be stepped down to. Enforced both in the
+ * stepper (minus disabled at/below this) and in `applyQuantityChange`, so a
+ * gram/ml dish can never drop below it — and never to 0g, which would silently
+ * drop the edit. Non-weight units (e.g. servings) are unaffected.
  */
 export const MIN_DISH_GRAMS = 10;
 
@@ -33,7 +35,9 @@ export function applyQuantityChange(
     const originalItem = originalItems.find((i) => i.id === itemId);
     if (!originalItem) return item;
 
-    const newQuantity = Math.max(0, item.quantity + delta);
+    const minQuantity =
+      item.unit === 'g' || item.unit === 'ml' ? MIN_DISH_GRAMS : 0;
+    const newQuantity = Math.max(minQuantity, item.quantity + delta);
     const ratio =
       originalItem.quantity > 0 ? newQuantity / originalItem.quantity : 0;
 

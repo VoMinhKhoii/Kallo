@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   applyQuantityChange,
   deriveQuantityEdits,
+  MIN_DISH_GRAMS,
   recalculateTotals,
 } from '@/lib/meal-utils';
 import type { MealItem } from '@/lib/types/meal';
@@ -105,6 +106,20 @@ describe('applyQuantityChange', () => {
     const updated = applyQuantityChange(sampleItems, [], 'item-1', 1);
     const rice = updated.find((i) => i.id === 'item-1')!;
     expect(rice.quantity).toBe(1); // unchanged
+  });
+
+  it('clamps gram/ml dishes at MIN_DISH_GRAMS instead of dropping to 0', () => {
+    const gramItem: MealItem[] = [
+      {
+        id: 'g-1',
+        name: 'Ức gà',
+        quantity: 15,
+        unit: 'g',
+        macros: { calories: 30, protein: 6, carbs: 0, fat: 0.5 },
+      },
+    ];
+    const [updated] = applyQuantityChange(gramItem, gramItem, 'g-1', -10);
+    expect(updated.quantity).toBe(MIN_DISH_GRAMS); // 15 → 10, not 5
   });
 });
 
