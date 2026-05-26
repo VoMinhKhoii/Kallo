@@ -2,7 +2,6 @@
 
 import { AlertCircle, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { useEffect, useState } from 'react';
 import { useLoggingDay } from '@/hooks/use-logging-day';
 import { sumDisplayedNutrition } from '@/lib/ai/pipeline/goal-adjustment';
 import { isLikelyPartialDay } from '@/lib/nutrition/pattern/completeness';
@@ -12,27 +11,7 @@ interface PartialYesterdayPromptProps {
   yesterday: string;
   calorieTarget: number;
   onOpenDay: (date: string) => void;
-}
-
-function dismissKey(date: string): string {
-  return `nham:partial-day-dismissed:${date}`;
-}
-
-function readDismissed(date: string): boolean {
-  try {
-    return localStorage.getItem(dismissKey(date)) === '1';
-  } catch {
-    return false;
-  }
-}
-
-function writeDismissed(date: string): void {
-  try {
-    localStorage.setItem(dismissKey(date), '1');
-  } catch {
-    // localStorage throws in incognito/private browsing or when quota is
-    // exceeded; dismissal is best-effort, so swallow and continue.
-  }
+  onDismiss: () => void;
 }
 
 export function PartialYesterdayPrompt({
@@ -40,14 +19,10 @@ export function PartialYesterdayPrompt({
   yesterday,
   calorieTarget,
   onOpenDay,
+  onDismiss,
 }: PartialYesterdayPromptProps) {
   const t = useTranslations('logging.feedArea.partialYesterdayPrompt');
   const { data } = useLoggingDay(userId, yesterday);
-  const [dismissed, setDismissed] = useState(false);
-
-  useEffect(() => {
-    setDismissed(readDismissed(yesterday));
-  }, [yesterday]);
 
   const meals = data?.persistedMeals ?? [];
   const hasMeals = meals.length > 0;
@@ -61,18 +36,12 @@ export function PartialYesterdayPrompt({
   );
 
   if (
-    dismissed ||
     !hasMeals ||
     hasUnknownCalories ||
     !isLikelyPartialDay(calories, calorieTarget)
   ) {
     return null;
   }
-
-  const handleDismiss = () => {
-    writeDismissed(yesterday);
-    setDismissed(true);
-  };
 
   return (
     <div className="shrink-0 px-3 pt-3 sm:px-6 sm:pt-4">
@@ -100,7 +69,7 @@ export function PartialYesterdayPrompt({
           </div>
           <button
             type="button"
-            onClick={handleDismiss}
+            onClick={onDismiss}
             aria-label={t('dismiss')}
             className="-m-1 flex size-8 shrink-0 items-center justify-center rounded-full p-1 text-amber-700/80 transition-colors hover:bg-amber-100 hover:text-amber-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-600 focus-visible:ring-offset-2"
           >

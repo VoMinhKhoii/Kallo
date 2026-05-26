@@ -180,6 +180,11 @@ export function FeedArea({
   const queryClient = useQueryClient();
   const { guard } = useSubmitGuard();
   const [streamingMsgId, setStreamingMsgId] = useState<string | null>(null);
+  // Session-scoped dismissal for the "yesterday under-logged" prompt. FeedArea
+  // stays mounted across date navigation, so this survives clicking through to
+  // yesterday and back; a hard reload re-arms the once-daily nudge.
+  const [yesterdayPromptDismissed, setYesterdayPromptDismissed] =
+    useState(false);
 
   const lastPrefilledMealRef = useRef<string | null>(null);
 
@@ -289,6 +294,10 @@ export function FeedArea({
       messages.find((message) => message.id === streamingMsgId)?.loggedDate ??
       selectedDate;
 
+    // byUserDate is a 3-element key; the actual query uses byUserDateOffset
+    // (4 elements, including the tz offset). This relies on TanStack Query's
+    // default prefix matching to invalidate it — do not add `exact: true` here
+    // or the yesterday-prompt/day view will show stale totals after a re-log.
     queryClient.invalidateQueries({
       queryKey: loggingDayKeys.byUserDate(profile.userId, originDate),
     });
@@ -425,12 +434,13 @@ export function FeedArea({
 
   return (
     <main className="flex min-w-0 flex-1 flex-col self-stretch overflow-hidden">
-      {isToday && (
+      {isToday && !yesterdayPromptDismissed && (
         <PartialYesterdayPrompt
           userId={profile.userId}
           yesterday={addDays(today, -1)}
           calorieTarget={profile.calorieTarget}
           onOpenDay={onSelectDate}
+          onDismiss={() => setYesterdayPromptDismissed(true)}
         />
       )}
 

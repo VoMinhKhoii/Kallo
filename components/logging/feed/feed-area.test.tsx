@@ -1,6 +1,7 @@
-import { render, screen, within } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import { forwardRef, useImperativeHandle } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { NUTRITION_KEYS } from '@/lib/ai/constants';
 import { FeedArea } from './feed-area';
 
 vi.mock('@/components/logging/feed/empty-state', () => ({
@@ -91,6 +92,33 @@ const profile = {
 };
 
 const TODAY = '2026-05-31';
+
+// A persisted meal with the four primary macros set (so the day is not flagged
+// as "unknown macros") and a given calorie total.
+function makeMeal(calories: number, id = 'meal-1') {
+  const base = Object.fromEntries(NUTRITION_KEYS.map((key) => [key, null]));
+  return {
+    id,
+    loggedAt: '2026-05-04T08:00:00.000Z',
+    nutrition: {
+      ...base,
+      caloriesKcal: calories,
+      proteinG: 20,
+      carbohydrateG: 40,
+      fatG: 10,
+    },
+  };
+}
+
+function dayWithMeals(meals: ReturnType<typeof makeMeal>[]) {
+  mockUseLoggingDay.mockReturnValue({
+    data: { persistedMeals: meals, pendingConfirmations: [] },
+    isError: false,
+    isFetching: false,
+    isLoading: false,
+    refetch: vi.fn(),
+  });
+}
 
 describe('FeedArea', () => {
   beforeEach(() => {
@@ -265,5 +293,59 @@ describe('FeedArea', () => {
     const retryButton = screen.getByRole('button', { name: /retryDay/i });
     expect(retryButton).toBeDisabled();
     expect(retryButton).toHaveAttribute('aria-busy', 'true');
+  });
+
+  it('shows the in-context partial-day notice on a past under-logged day', () => {
+    dayWithMeals([makeMeal(400)]); // 400 < 50% of the 2000 target
+
+    render(
+      <FeedArea
+        selectedDate="2026-05-04"
+        today={TODAY}
+        profile={profile}
+        onSelectDate={vi.fn()}
+      />
+    );
+
+    // The notice (role="status") shows; it has no "open" action — that belongs
+    // to the proactive yesterday prompt, which does not render on a past day.
+    expect(screen.getByRole('status')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'open' })).toBeNull();
+  });
+
+  it('does not show the in-context notice on a past day at/above target', () => {
+    dayWithMeals([makeMeal(1800)]);
+
+    render(
+      <FeedArea
+        selectedDate="2026-05-04"
+        today={TODAY}
+        profile={profile}
+        onSelectDate={vi.fn()}
+      />
+    );
+
+    expect(screen.queryByRole('status')).toBeNull();
+  });
+
+  it('shows the yesterday prompt on today and hides it after dismiss', () => {
+    dayWithMeals([makeMeal(400)]);
+
+    render(
+      <FeedArea
+        selectedDate={TODAY}
+        today={TODAY}
+        profile={profile}
+        onSelectDate={vi.fn()}
+      />
+    );
+
+    expect(
+      screen.getByRole('button', { name: 'open' })
+    ).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'dismiss' }));
+
+    expect(screen.queryByRole('button', { name: 'open' })).toBeNull();
   });
 });
