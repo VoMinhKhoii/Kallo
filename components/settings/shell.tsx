@@ -17,13 +17,15 @@ export function Shell({ children }: ShellProps) {
 
   return (
     <div
-      className="flex flex-1 flex-col overflow-hidden md:flex-row md:gap-6"
+      className="flex min-h-0 w-full min-w-0 max-w-full flex-1 flex-col overflow-hidden md:h-[calc(100vh-1.5rem)] md:flex-row md:gap-3"
       style={{ fontFamily: 'DM Sans, sans-serif' }}
     >
-      {/* Sidebar — always visible on desktop, hidden on mobile when section is active */}
+      {/* Category nav — sits where the logging timeline sidebar sits on
+          desktop; on mobile it's the master list, hidden once a category
+          is open (Claude-style drill-in). */}
       <div
-        className={`shrink-0 py-6 pl-4 md:block md:py-8 md:pl-6 ${
-          hasActiveSection ? 'hidden' : 'block'
+        className={`min-h-0 shrink-0 overflow-y-auto md:block md:w-[252px] md:border-border/40 md:border-r md:py-3 md:pr-3 ${
+          hasActiveSection ? 'hidden' : 'block w-full px-1 py-3'
         }`}
       >
         <Sidebar />
@@ -31,16 +33,16 @@ export function Shell({ children }: ShellProps) {
 
       {/* Content area */}
       <div
-        className={`flex-1 overflow-y-auto ${
-          hasActiveSection ? 'block' : 'hidden md:block'
+        className={`min-h-0 min-w-0 flex-1 flex-col overflow-y-auto ${
+          hasActiveSection ? 'flex' : 'hidden md:flex'
         }`}
       >
-        {/* Mobile back button */}
+        {/* Mobile back header */}
         {hasActiveSection && (
-          <div className="px-4 pt-4 md:hidden">
+          <div className="sticky top-0 z-10 flex items-center gap-2 border-[#EAE7E0] border-b bg-[#FDFCF8]/90 px-4 py-3 backdrop-blur-sm md:hidden">
             <Link
               href="/settings"
-              className="inline-flex items-center gap-1.5 font-medium text-[#8B8682] text-[14px] transition-colors hover:text-[#2C2416]"
+              className="inline-flex items-center gap-1.5 font-medium text-[#8B8682] text-[14px] transition-colors hover:text-[#2C2416] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C9A87C]/40"
             >
               <ArrowLeft className="h-4 w-4" />
               {t('title')}

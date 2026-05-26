@@ -569,6 +569,9 @@
       "higherCarb": "Higher carb",
       "higherCarbDescription": "Active (30/20/50)",
       "tdee": "Estimated TDEE",
+      "basedOnTdee": "Based on TDEE",
+      "perDay": "kcal/day",
+      "maintenance": "at maintenance",
       "calorieTarget": "Daily calorie target",
       "protein": "Protein",
       "carbs": "Carbs",
@@ -1014,7 +1017,8 @@
     },
     "regionalPanel": {
       "description": "AI uses your country info to understand food culture and locally available ingredients.",
-      "searchCountryLabel": "Search country"
+      "searchCountryLabel": "Search country",
+      "clearLabel": "Clear selection"
     },
     "profilePage": {
       "title": "Profile",

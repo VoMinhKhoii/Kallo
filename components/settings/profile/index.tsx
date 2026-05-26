@@ -1,14 +1,15 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { ChevronDown, Loader2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useLocale, useTranslations } from 'next-intl';
-import { useMemo, useState, useTransition } from 'react';
+import { useMemo, useTransition } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { z } from 'zod';
 import { Form } from '@/components/ui/form';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { saveProfileSettings } from '@/lib/onboarding/actions';
 import {
   bodyMetricsSchema,
@@ -85,7 +86,6 @@ export function Profile({ profile }: ProfileProps) {
   const t = useTranslations('settings');
   const tc = useTranslations('common');
   const locale = useLocale();
-  const [openSection, setOpenSection] = useState<SectionId>('body-metrics');
   const [isPending, startTransition] = useTransition();
 
   const SECTIONS: Section[] = [
@@ -142,10 +142,6 @@ export function Profile({ profile }: ProfileProps) {
   });
 
   const isDirty = form.formState.isDirty;
-
-  function toggleSection(id: SectionId) {
-    setOpenSection((prev) => (prev === id ? prev : id));
-  }
 
   function handleCancel() {
     form.reset(defaultValues);
@@ -217,61 +213,34 @@ export function Profile({ profile }: ProfileProps) {
           }}
           className="space-y-3"
         >
-          {SECTIONS.map((section) => {
-            const isOpen = openSection === section.id;
-            return (
-              <div
-                key={section.id}
-                className="overflow-hidden rounded-2xl border border-[#EAE7E0] bg-[#FDFCF8] transition-shadow hover:shadow-sm"
-              >
-                {/* Accordion header */}
-                <button
-                  type="button"
-                  onClick={() => toggleSection(section.id)}
-                  className="flex w-full items-center justify-between px-6 py-4 text-left"
+          <Tabs defaultValue="body-metrics" className="w-full gap-0">
+            <TabsList className="mb-2 h-auto w-full justify-start gap-1 overflow-x-auto rounded-xl bg-[#EAE7E0]/40 p-1">
+              {SECTIONS.map((section) => (
+                <TabsTrigger
+                  key={section.id}
+                  value={section.id}
+                  className="flex-1 whitespace-nowrap rounded-lg px-3 py-1.5 font-medium text-[#8B8682] text-[14px] focus-visible:ring-2 focus-visible:ring-[#C9A87C]/40 data-[state=active]:bg-white data-[state=active]:text-[#2C2416] data-[state=active]:shadow-sm"
                 >
-                  <div>
-                    <h3
-                      className="font-medium text-[#2C2416] text-[16px] tracking-tight"
-                      style={{ fontFamily: 'Lora, serif' }}
-                    >
-                      {section.title}
-                    </h3>
-                    <p className="mt-0.5 text-[#8B8682] text-[13px]">
-                      {section.subtitle}
-                    </p>
-                  </div>
-                  <ChevronDown
-                    className={`h-5 w-5 shrink-0 text-[#8B8682] transition-transform duration-300 ${
-                      isOpen ? 'rotate-180' : ''
-                    }`}
-                  />
-                </button>
+                  {section.title}
+                </TabsTrigger>
+              ))}
+            </TabsList>
 
-                {/* Accordion content */}
-                <AnimatePresence initial={false}>
-                  {isOpen && (
-                    <motion.div
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: 'auto', opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      transition={{
-                        height: { duration: 0.3, ease: 'easeInOut' },
-                        opacity: { duration: 0.2 },
-                      }}
-                      className="overflow-hidden"
-                    >
-                      <div className="border-[#EAE7E0] border-t px-6 py-6">
-                        {section.id === 'body-metrics' && <BodyMetrics />}
-                        {section.id === 'regional' && <Regional />}
-                        {section.id === 'cooking' && <Cooking />}
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-            );
-          })}
+            {SECTIONS.map((section) => (
+              <TabsContent
+                key={section.id}
+                value={section.id}
+                className="rounded-2xl border border-[#EAE7E0] bg-[#FDFCF8] p-6 focus-visible:outline-none"
+              >
+                <p className="mb-6 text-[#8B8682] text-[13px]">
+                  {section.subtitle}
+                </p>
+                {section.id === 'body-metrics' && <BodyMetrics />}
+                {section.id === 'regional' && <Regional />}
+                {section.id === 'cooking' && <Cooking />}
+              </TabsContent>
+            ))}
+          </Tabs>
 
           {/* Sticky Save/Cancel bar */}
           <AnimatePresence>

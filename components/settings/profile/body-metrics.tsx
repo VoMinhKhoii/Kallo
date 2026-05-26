@@ -19,7 +19,7 @@ const GOALS: Goal[] = ['cutting', 'maintaining', 'bulking'];
 const CARB_SPLITS: CarbSplit[] = ['moderate_carb', 'lower_carb', 'higher_carb'];
 
 const inputClass =
-  'w-full rounded-lg border border-[#EAE7E0] bg-white px-3 py-2 text-[14px] text-[#2C2416] transition-colors focus:outline-none focus:border-[#C9A87C] hover:border-[#C9A87C]/50';
+  'w-full rounded-lg border border-[#EAE7E0] bg-white px-3 py-2 text-[14px] text-[#2C2416] transition-colors hover:border-[#C9A87C]/50 focus:border-[#C9A87C] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C9A87C]/40';
 
 export function BodyMetrics() {
   const t = useTranslations('onboarding.bodyMetrics');
@@ -245,65 +245,49 @@ export function BodyMetrics() {
         </div>
       </div>
 
-      {/* TDEE + Goal + Targets */}
+      {/* Goal → pace → split → target (only once metrics produce a TDEE) */}
       {tdee !== null && (
         <div className="space-y-8 border-[#EAE7E0] border-t pt-6">
-          {/* TDEE + Goal */}
-          <div className="flex flex-col items-center justify-between gap-6 sm:flex-row">
-            <div className="text-center sm:text-left">
-              <span className="mb-1 block font-bold text-[#A8A29E] text-[11px] uppercase tracking-widest">
-                {t('tdee')}
-              </span>
-              <div className="font-normal font-serif text-4xl text-[#2C2416] tracking-tighter">
-                ~{Math.round(tdee).toLocaleString()}{' '}
-                <span className="font-sans text-[#8B8682] text-lg">
-                  {t('kcal')}
-                </span>
-              </div>
-            </div>
-
-            <div className="w-full sm:w-auto">
-              <label className="mb-2 block font-bold text-[#A8A29E] text-[11px] uppercase tracking-widest sm:text-right">
-                {t('goal')}
-              </label>
-              <FormField
-                control={form.control}
-                name="goal"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormControl>
-                      <div className="flex rounded-xl bg-[#EAE7E0]/40 p-1">
-                        {GOALS.map((g) => (
-                          <button
-                            key={g}
-                            type="button"
-                            onClick={() => {
-                              field.onChange(g);
-                              if (
-                                g !== 'maintaining' &&
-                                !form.getValues('aggression')
-                              ) {
-                                form.setValue('aggression', 0.5, {
-                                  shouldDirty: true,
-                                });
-                              }
-                            }}
-                            className={`rounded-lg px-4 py-2 font-medium text-[14px] transition-all ${
-                              field.value === g
-                                ? 'bg-white text-[#2C2416] shadow-sm'
-                                : 'text-[#8B8682] hover:text-[#2C2416]'
-                            }`}
-                          >
-                            {GOAL_LABELS[g]}
-                          </button>
-                        ))}
-                      </div>
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
-            </div>
-          </div>
+          {/* Goal */}
+          <FormField
+            control={form.control}
+            name="goal"
+            render={({ field }) => (
+              <FormItem>
+                <label className="mb-2 block font-bold text-[#A8A29E] text-[11px] uppercase tracking-widest">
+                  {t('goal')}
+                </label>
+                <FormControl>
+                  <div className="flex w-full gap-1 rounded-xl bg-[#EAE7E0]/40 p-1">
+                    {GOALS.map((g) => (
+                      <button
+                        key={g}
+                        type="button"
+                        onClick={() => {
+                          field.onChange(g);
+                          if (
+                            g !== 'maintaining' &&
+                            !form.getValues('aggression')
+                          ) {
+                            form.setValue('aggression', 0.5, {
+                              shouldDirty: true,
+                            });
+                          }
+                        }}
+                        className={`flex-1 rounded-lg px-2 py-2 text-center font-medium text-[14px] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C9A87C]/40 ${
+                          field.value === g
+                            ? 'bg-white text-[#2C2416] shadow-sm'
+                            : 'text-[#8B8682] hover:text-[#2C2416]'
+                        }`}
+                      >
+                        {GOAL_LABELS[g]}
+                      </button>
+                    ))}
+                  </div>
+                </FormControl>
+              </FormItem>
+            )}
+          />
 
           {/* Aggression */}
           {watchGoal !== 'maintaining' && (
@@ -312,6 +296,9 @@ export function BodyMetrics() {
               name="aggression"
               render={({ field }) => {
                 const aggressionKg = field.value ?? 0.5;
+                const kcalDelta = Math.round(
+                  aggressionKg * AGGRESSION_KCAL_PER_KG
+                );
                 return (
                   <FormItem>
                     <label className="mb-2 block font-bold text-[#A8A29E] text-[11px] uppercase tracking-widest">
@@ -322,6 +309,13 @@ export function BodyMetrics() {
                       )
                     </label>
                     <div className="space-y-3 rounded-2xl border border-[#EAE7E0] bg-white p-5">
+                      {/* Readout on its own line so it never collides with the end labels */}
+                      <div className="text-center font-medium text-[#2C2416] text-[15px]">
+                        {aggressionKg.toFixed(2)} {t('weightUnit')}/wk
+                        <span className="text-[#8B8682]"> · </span>
+                        {watchGoal === 'cutting' ? '−' : '+'}
+                        {kcalDelta} {t('perDay')}
+                      </div>
                       <FormControl>
                         <input
                           type="range"
@@ -332,22 +326,13 @@ export function BodyMetrics() {
                           onChange={(e) =>
                             field.onChange(Number(e.target.value))
                           }
-                          className="w-full accent-[#C9A87C]"
+                          aria-label={t('aggressionLabel')}
+                          className="w-full accent-[#C9A87C] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C9A87C]/40"
                         />
                       </FormControl>
-                      <div className="flex items-center justify-between text-[13px]">
-                        <span className="text-[#8B8682]">
-                          {t('aggressionLow')}
-                        </span>
-                        <span className="font-medium text-[#2C2416]">
-                          {aggressionKg.toFixed(2)} kg/wk →{' '}
-                          {watchGoal === 'cutting' ? '−' : '+'}
-                          {Math.round(aggressionKg * AGGRESSION_KCAL_PER_KG)}{' '}
-                          kcal/day
-                        </span>
-                        <span className="text-[#8B8682]">
-                          {t('aggressionHigh')}
-                        </span>
+                      <div className="flex items-center justify-between text-[#8B8682] text-[12px]">
+                        <span>{t('aggressionLow')}</span>
+                        <span>{t('aggressionHigh')}</span>
                       </div>
                     </div>
                   </FormItem>
@@ -373,7 +358,7 @@ export function BodyMetrics() {
                           key={opt.id}
                           type="button"
                           onClick={() => field.onChange(opt.id)}
-                          className={`flex flex-col gap-1 rounded-2xl border p-4 text-left transition-all ${
+                          className={`flex flex-col gap-1 rounded-2xl border p-4 text-left transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C9A87C]/40 ${
                             field.value === opt.id
                               ? 'border-[#C9A87C] bg-[#C9A87C]/5 shadow-sm'
                               : 'border-[#EAE7E0] bg-white hover:border-[#C9A87C]/50'
@@ -405,23 +390,38 @@ export function BodyMetrics() {
             />
           </div>
 
-          {/* Calorie Target + Macros */}
+          {/* Hero: daily target is the headline; TDEE is the supporting caption */}
           {macros && (
-            <div className="rounded-2xl border border-[#EAE7E0] bg-white p-5">
-              <div className="mb-4 flex flex-col items-center justify-between gap-4 sm:flex-row">
-                <div>
-                  <label className="mb-1 block font-bold text-[#A8A29E] text-[11px] uppercase tracking-widest">
-                    {t('calorieTarget')}
-                  </label>
-                  <div className="font-serif text-3xl text-[#2C2416] tracking-tighter">
-                    {Math.round(targetCalories).toLocaleString()}{' '}
-                    <span className="font-sans text-[#8B8682] text-base">
-                      {t('kcal')}
-                    </span>
-                  </div>
-                </div>
+            <div className="rounded-2xl border border-[#C9A87C]/40 bg-gradient-to-b from-[#C9A87C]/[0.07] to-transparent p-6 text-center">
+              <span className="block font-bold text-[#A8A29E] text-[11px] uppercase tracking-widest">
+                {t('calorieTarget')}
+              </span>
+              <div className="mt-1 font-serif text-4xl text-[#2C2416] tracking-tighter sm:text-5xl">
+                {Math.round(targetCalories).toLocaleString()}{' '}
+                <span className="font-sans text-[#8B8682] text-lg">
+                  {t('kcal')}
+                </span>
               </div>
-              <div className="grid grid-cols-3 gap-4 border-[#EAE7E0] border-t pt-4 text-center">
+              <p className="mt-1.5 text-[#8B8682] text-[12px]">
+                {t('basedOnTdee')} ~{Math.round(tdee).toLocaleString()}{' '}
+                {t('kcal')}
+                {watchGoal === 'maintaining' ? (
+                  <> · {t('maintenance')}</>
+                ) : (
+                  <>
+                    {' · '}
+                    {watchGoal === 'cutting' ? '−' : '+'}
+                    {Math.abs(
+                      Math.round(tdee) - Math.round(targetCalories)
+                    ).toLocaleString()}{' '}
+                    {t('perDay')}{' '}
+                    {watchGoal === 'cutting'
+                      ? t('aggressionDeficit')
+                      : t('aggressionSurplus')}
+                  </>
+                )}
+              </p>
+              <div className="mt-5 grid grid-cols-3 gap-4 border-[#C9A87C]/20 border-t pt-4">
                 <div>
                   <div className="font-bold text-[#A8A29E] text-[10px] uppercase tracking-widest">
                     {t('protein')}
