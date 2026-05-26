@@ -135,12 +135,14 @@ export function LoggingShell({
       <TimelineSidebar {...timelineState} />
       <FeedArea
         selectedDate={selectedDate}
+        today={today}
         profile={profile}
         initialMeal={initialMeal}
         isDateNavigationPending={isDateNavigationPending}
         onInitialMealApplied={
           initialMeal ? handleInitialMealApplied : undefined
         }
+        onSelectDate={handleSelectDate}
       />
     </div>
   );

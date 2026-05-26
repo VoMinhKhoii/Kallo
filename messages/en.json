@@ -955,7 +955,17 @@
       "legacyMacroWarning": "Daily macro summary unavailable because some legacy meals have unknown macros.",
       "loadErrorTitle": "Could not load this day",
       "loadErrorDescription": "Your saved meals for this date did not load. Try again before logging more food.",
-      "retryDay": "Retry day"
+      "retryDay": "Retry day",
+      "partialDayNotice": {
+        "title": "This day may be under-logged",
+        "body": "Only {calories, number} of your {target, number} kcal target is logged, so it's set aside from your trends. Add anything you missed to fold it back in."
+      },
+      "partialYesterdayPrompt": {
+        "title": "Yesterday looks under-logged",
+        "body": "Only {calories, number} of your {target, number} kcal target is logged.",
+        "open": "Open yesterday",
+        "dismiss": "Dismiss"
+      }
     },
     "streaming": {
       "connecting": "Connecting...",
