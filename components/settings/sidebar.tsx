@@ -49,7 +49,7 @@ function SidebarInner() {
                   href={item.href}
                   aria-current={isActive ? 'page' : undefined}
                   className={cn(
-                    'flex items-center gap-2.5 rounded-lg px-3 py-2.5 font-medium text-[14px] transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C9A87C]/40 md:py-2',
+                    'flex items-center gap-2.5 rounded-lg px-3 py-2.5 font-medium text-[14px] transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C9A87C]/40 lg:py-2',
                     isActive
                       ? 'bg-[#695e4e] text-white shadow-[#695e4e]/20 shadow-sm'
                       : 'text-[#8B8682] hover:bg-[#F0EAE0]/60 hover:text-[#2C2416]'
@@ -57,10 +57,10 @@ function SidebarInner() {
                 >
                   {item.icon}
                   <span className="flex-1">{item.label}</span>
-                  {/* Drill-in affordance on mobile only */}
+                  {/* Drill-in affordance until the side-by-side layout kicks in */}
                   <ChevronRight
                     className={cn(
-                      'h-4 w-4 shrink-0 md:hidden',
+                      'h-4 w-4 shrink-0 lg:hidden',
                       isActive ? 'text-white/70' : 'text-[#C4BCB0]'
                     )}
                   />

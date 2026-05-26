@@ -308,7 +308,7 @@ export function BodyMetrics() {
                         : t('aggressionSurplus')}
                       )
                     </label>
-                    <div className="space-y-3 rounded-2xl border border-[#EAE7E0] bg-white p-5">
+                    <div className="space-y-3 rounded-2xl border border-[#EAE7E0] bg-white p-4 sm:p-5">
                       {/* Readout on its own line so it never collides with the end labels */}
                       <div className="text-center font-medium text-[#2C2416] text-[15px]">
                         {aggressionKg.toFixed(2)} {t('weightUnit')}/wk
@@ -392,7 +392,7 @@ export function BodyMetrics() {
 
           {/* Hero: daily target is the headline; TDEE is the supporting caption */}
           {macros && (
-            <div className="rounded-2xl border border-[#C9A87C]/40 bg-gradient-to-b from-[#C9A87C]/[0.07] to-transparent p-6 text-center">
+            <div className="rounded-2xl border border-[#C9A87C]/40 bg-gradient-to-b from-[#C9A87C]/[0.07] to-transparent p-5 text-center sm:p-6">
               <span className="block font-bold text-[#A8A29E] text-[11px] uppercase tracking-widest">
                 {t('calorieTarget')}
               </span>

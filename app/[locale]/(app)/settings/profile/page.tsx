@@ -48,8 +48,8 @@ export default async function ProfileSettingsPage() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-2xl px-4 py-8">
-      <div className="mb-6">
+    <div className="mx-auto w-full max-w-2xl px-4 py-5 sm:px-5 sm:py-8">
+      <div className="mb-5 sm:mb-6">
         <h1
           className="font-medium text-2xl text-[#2C2416] tracking-tight"
           style={{ fontFamily: 'Lora, serif' }}
