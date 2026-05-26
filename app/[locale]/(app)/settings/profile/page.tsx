@@ -48,8 +48,8 @@ export default async function ProfileSettingsPage() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-2xl px-4 py-8">
-      <div className="mb-6">
+    <div className="mx-auto w-full max-w-2xl px-3 py-4 sm:px-5 sm:py-8">
+      <div className="mb-4 sm:mb-6">
         <h1
           className="font-medium text-2xl text-[#2C2416] tracking-tight"
           style={{ fontFamily: 'Lora, serif' }}
@@ -57,7 +57,7 @@ export default async function ProfileSettingsPage() {
           {t('title')}
         </h1>
         <p
-          className="mt-1 text-[#8B8682] text-[14px]"
+          className="mt-1 text-[#7B6F62] text-[14px]"
           style={{ fontFamily: 'DM Sans, sans-serif' }}
         >
           {t('description')}

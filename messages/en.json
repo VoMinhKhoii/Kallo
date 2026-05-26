@@ -570,6 +570,9 @@
       "higherCarb": "Higher carb",
       "higherCarbDescription": "Active (30/20/50)",
       "tdee": "Estimated TDEE",
+      "basedOnTdee": "Based on TDEE",
+      "perDay": "kcal/day",
+      "maintenance": "at maintenance",
       "calorieTarget": "Daily calorie target",
       "protein": "Protein",
       "carbs": "Carbs",
@@ -1026,7 +1029,8 @@
     },
     "regionalPanel": {
       "description": "AI uses your country info to understand food culture and locally available ingredients.",
-      "searchCountryLabel": "Search country"
+      "searchCountryLabel": "Search country",
+      "clearLabel": "Clear selection"
     },
     "profilePage": {
       "title": "Profile",
@@ -1039,7 +1043,8 @@
       "bodyMetricsSubtitle": "Weight, height, activity level, and macro targets",
       "regionalSubtitle": "Country of origin and current residence",
       "cookingSubtitle": "Oil usage, rice, sugar, protein, and broth defaults",
-      "saveError": "Failed to save settings. Please try again."
+      "saveError": "Failed to save settings. Please try again.",
+      "invalidError": "Some entries are invalid — please review your body metrics."
     }
   },
   "errors": {
