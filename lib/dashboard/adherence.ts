@@ -158,7 +158,10 @@ export function buildCalorieAdherenceHeatmapData({
   const hasTarget = calorieTarget !== null && calorieTarget > 0;
   // Days under-logged relative to the target are marked 'partial' so they are
   // neither colour-graded as a low-intake day nor counted toward adherence.
-  const { partialDates } = classifyDayCompleteness(dailyCalories, calorieTarget);
+  const { partialDates } = classifyDayCompleteness(
+    dailyCalories,
+    calorieTarget
+  );
 
   for (
     let current = startDate;
