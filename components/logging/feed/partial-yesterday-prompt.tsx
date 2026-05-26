@@ -51,7 +51,9 @@ export function PartialYesterdayPrompt({
 
   const meals = data?.persistedMeals ?? [];
   const hasMeals = meals.length > 0;
-  const unknownMacros = meals.some(
+  // The partial-day check is calorie-based, so a meal with unknown calories
+  // makes the day's total untrustworthy; suppress the prompt in that case.
+  const hasUnknownCalories = meals.some(
     (meal) => meal.nutrition.caloriesKcal == null
   );
   const calories = Math.round(
@@ -61,7 +63,7 @@ export function PartialYesterdayPrompt({
   if (
     dismissed ||
     !hasMeals ||
-    unknownMacros ||
+    hasUnknownCalories ||
     !isLikelyPartialDay(calories, calorieTarget)
   ) {
     return null;
