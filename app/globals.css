@@ -246,4 +246,16 @@
   select {
     font-size: 16px;
   }
+
+  /* Hide scrollbars on mobile (scrolling still works) — the OS overlays its
+     own indicator, so visible track/thumb chrome just adds clutter. */
+  * {
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* legacy Edge/IE */
+  }
+  *::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+    display: none; /* WebKit (Safari/Chrome) */
+  }
 }

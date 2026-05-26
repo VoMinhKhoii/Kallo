@@ -230,7 +230,7 @@ export function Profile({ profile }: ProfileProps) {
               <TabsContent
                 key={section.id}
                 value={section.id}
-                className="rounded-2xl border border-[#EAE7E0] bg-[#FDFCF8] p-4 focus-visible:outline-none sm:p-5 lg:p-6"
+                className="rounded-2xl border border-[#EAE7E0] bg-[#FDFCF8] p-3 focus-visible:outline-none sm:p-5 lg:p-6"
               >
                 <p className="mb-5 text-[#8B8682] text-[13px] sm:mb-6">
                   {section.subtitle}
@@ -242,7 +242,8 @@ export function Profile({ profile }: ProfileProps) {
             ))}
           </Tabs>
 
-          {/* Sticky Save/Cancel bar */}
+          {/* Pinned save bar — rests above the bottom edge while content
+              scrolls behind it and dissolves into a soft fade. */}
           <AnimatePresence>
             {isDirty && (
               <motion.div
@@ -250,24 +251,30 @@ export function Profile({ profile }: ProfileProps) {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: 20 }}
                 transition={{ duration: 0.2, ease: 'easeOut' }}
-                className="sticky bottom-0 z-10 flex items-center justify-end gap-3 rounded-2xl border border-[#EAE7E0] bg-[#FDFCF8]/95 px-6 py-4 shadow-lg backdrop-blur-sm"
+                className="sticky inset-x-0 bottom-0 z-20 pb-3 sm:pb-4"
               >
-                <button
-                  type="button"
-                  onClick={handleCancel}
-                  disabled={isPending}
-                  className="rounded-xl px-5 py-2.5 font-medium text-[#8B8682] text-[14px] transition-colors hover:bg-[#F5F4F0] hover:text-[#2C2416]"
-                >
-                  {tc('cancel')}
-                </button>
-                <button
-                  type="submit"
-                  disabled={isPending}
-                  className="flex items-center gap-2 rounded-xl bg-[#2C2416] px-5 py-2.5 font-medium text-[#FDFCF8] text-[14px] shadow-sm transition-all hover:bg-[#1C1917] disabled:opacity-50"
-                >
-                  {isPending && <Loader2 className="h-4 w-4 animate-spin" />}
-                  {t('save')}
-                </button>
+                <div
+                  aria-hidden="true"
+                  className="-top-8 pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-nham-surface from-55% to-transparent"
+                />
+                <div className="relative flex items-center justify-end gap-3 rounded-2xl border border-[#EAE7E0] bg-[#FDFCF8]/95 px-5 py-3.5 shadow-lg backdrop-blur-sm sm:px-6 sm:py-4">
+                  <button
+                    type="button"
+                    onClick={handleCancel}
+                    disabled={isPending}
+                    className="rounded-xl px-5 py-2.5 font-medium text-[#8B8682] text-[14px] transition-colors hover:bg-[#F5F4F0] hover:text-[#2C2416] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C9A87C]/40"
+                  >
+                    {tc('cancel')}
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isPending}
+                    className="flex items-center gap-2 rounded-xl bg-[#2C2416] px-5 py-2.5 font-medium text-[#FDFCF8] text-[14px] shadow-sm transition-all hover:bg-[#1C1917] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C9A87C]/60 disabled:opacity-50"
+                  >
+                    {isPending && <Loader2 className="h-4 w-4 animate-spin" />}
+                    {t('save')}
+                  </button>
+                </div>
               </motion.div>
             )}
           </AnimatePresence>
