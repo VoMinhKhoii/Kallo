@@ -230,9 +230,9 @@ export function Profile({ profile }: ProfileProps) {
               <TabsContent
                 key={section.id}
                 value={section.id}
-                className="rounded-2xl border border-[#EAE7E0] bg-[#FDFCF8] p-6 focus-visible:outline-none"
+                className="rounded-2xl border border-[#EAE7E0] bg-[#FDFCF8] p-4 focus-visible:outline-none sm:p-5 lg:p-6"
               >
-                <p className="mb-6 text-[#8B8682] text-[13px]">
+                <p className="mb-5 text-[#8B8682] text-[13px] sm:mb-6">
                   {section.subtitle}
                 </p>
                 {section.id === 'body-metrics' && <BodyMetrics />}
