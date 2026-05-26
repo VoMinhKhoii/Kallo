@@ -3,7 +3,12 @@ import type { WeightSummaryData } from '@/lib/types/weight';
 export type WeightRange = '30d' | '90d';
 export type TimeRange = WeightRange;
 export type HeatmapRange = '30d' | '90d' | 'year';
-export type HeatmapCellStatus = 'logged' | 'unlogged' | 'future' | 'outside';
+export type HeatmapCellStatus =
+  | 'logged'
+  | 'partial'
+  | 'unlogged'
+  | 'future'
+  | 'outside';
 
 export interface HeatmapCell {
   date: string;

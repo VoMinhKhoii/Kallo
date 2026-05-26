@@ -118,6 +118,10 @@ export interface NutritionOverview {
   resolvedRange: NutritionRange;
   bucketTimezone: BucketTimezone;
   loggedDays: number;
+  /** Logged days deemed complete enough to count toward long-span metrics. */
+  completeDays: number;
+  /** Logged days set aside as partial (under-logged) — surfaced, not counted. */
+  partialDays: number;
   loggedDaysLast30: number;
   trendStatus: 'ready' | 'too_few_logged_days';
   period: { startDate: string; endDate: string };

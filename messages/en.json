@@ -461,9 +461,10 @@
       "attentionOnly": "{attention} need a closer look {period}.",
       "quiet": "A quiet stretch. Keep logging to sharpen the pattern.",
       "gathering": "Gathering your pattern.",
-      "gatheringSub": "{days} logged days so far — keep going and the picture sharpens.",
-      "trustLine": "{days} logged days · {confidence}% avg confidence",
-      "trustLineNoConfidence": "{days} logged days",
+      "gatheringSub": "{days} complete days so far — keep going and the picture sharpens.",
+      "trustLine": "{days} complete days · {confidence}% avg confidence",
+      "trustLineNoConfidence": "{days} complete days",
+      "partialNote": "· {count, plural, one {# partial day set aside} other {# partial days set aside}}",
       "period7d": "the last 7 days",
       "period30d": "the last 30 days",
       "period90d": "the last 90 days"
@@ -471,7 +472,7 @@
     "rhythm": {
       "eyebrow": "The shape of your days",
       "calories": "kcal",
-      "avgPerLoggedDay": "avg per logged day",
+      "avgPerLoggedDay": "avg per complete day",
       "compositionLabel": "{macro} {pct}%",
       "macroCompositionAria": "Macro composition",
       "consistency": {
@@ -878,6 +879,7 @@
     "adherenceHeatmap": {
       "onTrack": "{percent}% on track",
       "notLogged": "Not logged",
+      "partial": "Partial day (under-logged)",
       "future": "Future day",
       "outside": "Outside selected range",
       "offTarget": "Off target",

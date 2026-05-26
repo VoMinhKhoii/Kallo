@@ -46,6 +46,30 @@ describe('buildCalorieAdherenceHeatmap', () => {
     expect(heatmap.flat().every((value) => value === null)).toBe(true);
   });
 
+  it('marks under-logged days as partial and leaves their ratio empty', () => {
+    const data = buildCalorieAdherenceHeatmapData({
+      range: '30d',
+      timezoneOffset: 0,
+      calorieTarget: 2000,
+      now: new Date('2026-04-23T12:00:00.000Z'),
+      dailyCalories: [
+        { date: '2026-04-22', calories: 2000 },
+        { date: '2026-04-23', calories: 400 }, // < 50% of target
+      ],
+    });
+
+    expect(data.cells[2][4]).toMatchObject({
+      date: '2026-04-22',
+      status: 'logged',
+      ratio: 1,
+    });
+    expect(data.cells[3][4]).toMatchObject({
+      date: '2026-04-23',
+      status: 'partial',
+      ratio: null,
+    });
+  });
+
   it('builds year heatmap data with future and outside padding cells', () => {
     const heatmap = buildCalorieAdherenceHeatmapData({
       range: 'year',
