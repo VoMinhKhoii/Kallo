@@ -147,9 +147,7 @@ export function Profile({ profile }: ProfileProps) {
     form.reset(defaultValues);
   }
 
-  function handleSave() {
-    const values = form.getValues();
-
+  function handleSave(values: ProfileFormValues) {
     // Compute TDEE and macros for persistence
     const bmr = calcBMR({
       biologicalSex: values.biologicalSex,
@@ -207,10 +205,9 @@ export function Profile({ profile }: ProfileProps) {
     <div style={{ fontFamily: 'DM Sans, sans-serif' }}>
       <Form {...form}>
         <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            handleSave();
-          }}
+          onSubmit={form.handleSubmit(handleSave, () =>
+            toast.error(t('profilePanel.invalidError'))
+          )}
           className="space-y-3"
         >
           <Tabs defaultValue="body-metrics" className="w-full gap-0">
@@ -219,7 +216,7 @@ export function Profile({ profile }: ProfileProps) {
                 <TabsTrigger
                   key={section.id}
                   value={section.id}
-                  className="flex-1 whitespace-nowrap rounded-lg px-3 py-1.5 font-medium text-[#8B8682] text-[14px] focus-visible:ring-2 focus-visible:ring-[#C9A87C]/40 data-[state=active]:bg-white data-[state=active]:text-[#2C2416] data-[state=active]:shadow-sm"
+                  className="flex-1 whitespace-nowrap rounded-lg px-3 py-1.5 font-medium text-[#7B6F62] text-[14px] focus-visible:ring-2 focus-visible:ring-[#C9A87C]/40 data-[state=active]:bg-white data-[state=active]:text-[#2C2416] data-[state=active]:shadow-sm"
                 >
                   {section.title}
                 </TabsTrigger>
@@ -232,7 +229,7 @@ export function Profile({ profile }: ProfileProps) {
                 value={section.id}
                 className="rounded-2xl border border-[#EAE7E0] bg-[#FDFCF8] p-3 focus-visible:outline-none sm:p-5 lg:p-6"
               >
-                <p className="mb-5 text-[#8B8682] text-[13px] sm:mb-6">
+                <p className="mb-5 text-[#7B6F62] text-[13px] sm:mb-6">
                   {section.subtitle}
                 </p>
                 {section.id === 'body-metrics' && <BodyMetrics />}
@@ -262,7 +259,7 @@ export function Profile({ profile }: ProfileProps) {
                     type="button"
                     onClick={handleCancel}
                     disabled={isPending}
-                    className="rounded-xl px-5 py-2.5 font-medium text-[#8B8682] text-[14px] transition-colors hover:bg-[#F5F4F0] hover:text-[#2C2416] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C9A87C]/40"
+                    className="rounded-xl px-5 py-2.5 font-medium text-[#7B6F62] text-[14px] transition-colors hover:bg-[#F5F4F0] hover:text-[#2C2416] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C9A87C]/40"
                   >
                     {tc('cancel')}
                   </button>

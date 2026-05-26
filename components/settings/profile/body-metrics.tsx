@@ -84,14 +84,7 @@ export function BodyMetrics() {
       activityLevel: watchActivity as ActivityLevel,
     });
     return calcTDEE(bmr, watchActivity as ActivityLevel);
-  }, [
-    watchSex,
-    watchWeight,
-    watchHeight,
-    watchAge,
-    watchActivity,
-    allMetricsFilled,
-  ]);
+  }, [watchSex, watchWeight, watchHeight, watchAge, watchActivity]);
 
   const finalTargets = useMemo(() => {
     if (tdee === null) return null;
@@ -126,7 +119,7 @@ export function BodyMetrics() {
             name="biologicalSex"
             render={({ field }) => (
               <FormItem>
-                <label className="mb-1.5 block font-bold text-[#A8A29E] text-[11px] uppercase tracking-widest">
+                <label className="mb-1.5 block font-bold text-[#6B5D4F] text-[11px] uppercase tracking-widest">
                   {t('biologicalSex')}
                 </label>
                 <FormControl>
@@ -150,7 +143,7 @@ export function BodyMetrics() {
           name="weightKg"
           render={({ field }) => (
             <FormItem>
-              <label className="mb-1.5 block font-bold text-[#A8A29E] text-[11px] uppercase tracking-widest">
+              <label className="mb-1.5 block font-bold text-[#6B5D4F] text-[11px] uppercase tracking-widest">
                 {t('weight')} ({t('weightUnit')})
               </label>
               <FormControl>
@@ -176,7 +169,7 @@ export function BodyMetrics() {
           name="heightCm"
           render={({ field }) => (
             <FormItem>
-              <label className="mb-1.5 block font-bold text-[#A8A29E] text-[11px] uppercase tracking-widest">
+              <label className="mb-1.5 block font-bold text-[#6B5D4F] text-[11px] uppercase tracking-widest">
                 {t('height')} ({t('heightUnit')})
               </label>
               <FormControl>
@@ -202,7 +195,7 @@ export function BodyMetrics() {
           name="age"
           render={({ field }) => (
             <FormItem>
-              <label className="mb-1.5 block font-bold text-[#A8A29E] text-[11px] uppercase tracking-widest">
+              <label className="mb-1.5 block font-bold text-[#6B5D4F] text-[11px] uppercase tracking-widest">
                 {t('age')}
               </label>
               <FormControl>
@@ -229,7 +222,7 @@ export function BodyMetrics() {
             name="activityLevel"
             render={({ field }) => (
               <FormItem>
-                <label className="mb-1.5 block font-bold text-[#A8A29E] text-[11px] uppercase tracking-widest">
+                <label className="mb-1.5 block font-bold text-[#6B5D4F] text-[11px] uppercase tracking-widest">
                   {t('activityLevel')}
                 </label>
                 <FormControl>
@@ -254,7 +247,7 @@ export function BodyMetrics() {
             name="goal"
             render={({ field }) => (
               <FormItem>
-                <label className="mb-2 block font-bold text-[#A8A29E] text-[11px] uppercase tracking-widest">
+                <label className="mb-2 block font-bold text-[#6B5D4F] text-[11px] uppercase tracking-widest">
                   {t('goal')}
                 </label>
                 <FormControl>
@@ -263,6 +256,7 @@ export function BodyMetrics() {
                       <button
                         key={g}
                         type="button"
+                        aria-pressed={field.value === g}
                         onClick={() => {
                           field.onChange(g);
                           if (
@@ -277,7 +271,7 @@ export function BodyMetrics() {
                         className={`flex-1 rounded-lg px-2 py-2 text-center font-medium text-[14px] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C9A87C]/40 ${
                           field.value === g
                             ? 'bg-white text-[#2C2416] shadow-sm'
-                            : 'text-[#8B8682] hover:text-[#2C2416]'
+                            : 'text-[#7B6F62] hover:text-[#2C2416]'
                         }`}
                       >
                         {GOAL_LABELS[g]}
@@ -301,7 +295,7 @@ export function BodyMetrics() {
                 );
                 return (
                   <FormItem>
-                    <label className="mb-2 block font-bold text-[#A8A29E] text-[11px] uppercase tracking-widest">
+                    <label className="mb-2 block font-bold text-[#6B5D4F] text-[11px] uppercase tracking-widest">
                       {t('aggressionLabel')} (
                       {watchGoal === 'cutting'
                         ? t('aggressionDeficit')
@@ -312,7 +306,7 @@ export function BodyMetrics() {
                       {/* Readout on its own line so it never collides with the end labels */}
                       <div className="text-center font-medium text-[#2C2416] text-[15px]">
                         {aggressionKg.toFixed(2)} {t('weightUnit')}/wk
-                        <span className="text-[#8B8682]"> · </span>
+                        <span className="text-[#7B6F62]"> · </span>
                         {watchGoal === 'cutting' ? '−' : '+'}
                         {kcalDelta} {t('perDay')}
                       </div>
@@ -327,10 +321,13 @@ export function BodyMetrics() {
                             field.onChange(Number(e.target.value))
                           }
                           aria-label={t('aggressionLabel')}
+                          aria-valuetext={`${aggressionKg.toFixed(2)} ${t('weightUnit')}/wk, ${
+                            watchGoal === 'cutting' ? '−' : '+'
+                          }${kcalDelta} ${t('perDay')}`}
                           className="w-full accent-[#C9A87C] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C9A87C]/40"
                         />
                       </FormControl>
-                      <div className="flex items-center justify-between text-[#8B8682] text-[12px]">
+                      <div className="flex items-center justify-between text-[#7B6F62] text-[12px]">
                         <span>{t('aggressionLow')}</span>
                         <span>{t('aggressionHigh')}</span>
                       </div>
@@ -343,7 +340,7 @@ export function BodyMetrics() {
 
           {/* Carb Split */}
           <div>
-            <label className="mb-2 block font-bold text-[#A8A29E] text-[11px] uppercase tracking-widest">
+            <label className="mb-2 block font-bold text-[#6B5D4F] text-[11px] uppercase tracking-widest">
               {t('carbSplit')}
             </label>
             <FormField
@@ -357,6 +354,7 @@ export function BodyMetrics() {
                         <button
                           key={opt.id}
                           type="button"
+                          aria-pressed={field.value === opt.id}
                           onClick={() => field.onChange(opt.id)}
                           className={`flex flex-col gap-1 rounded-2xl border p-4 text-left transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C9A87C]/40 ${
                             field.value === opt.id
@@ -367,17 +365,17 @@ export function BodyMetrics() {
                           <span className="font-medium text-[#2C2416] text-[14px]">
                             {opt.label}
                           </span>
-                          <span className="text-[#8B8682] text-[11px]">
+                          <span className="text-[#7B6F62] text-[11px]">
                             {opt.desc}
                           </span>
                           <div className="mt-1 flex gap-3 text-[11px]">
-                            <span className="text-[#8B8682]">
+                            <span className="text-[#7B6F62]">
                               P {opt.macros.proteinG}g
                             </span>
-                            <span className="text-[#8B8682]">
+                            <span className="text-[#7B6F62]">
                               C {opt.macros.carbsG}g
                             </span>
-                            <span className="text-[#8B8682]">
+                            <span className="text-[#7B6F62]">
                               F {opt.macros.fatG}g
                             </span>
                           </div>
@@ -393,16 +391,16 @@ export function BodyMetrics() {
           {/* Hero: daily target is the headline; TDEE is the supporting caption */}
           {macros && (
             <div className="rounded-2xl border border-[#C9A87C]/40 bg-gradient-to-b from-[#C9A87C]/[0.07] to-transparent p-5 text-center sm:p-6">
-              <span className="block font-bold text-[#A8A29E] text-[11px] uppercase tracking-widest">
+              <span className="block font-bold text-[#6B5D4F] text-[11px] uppercase tracking-widest">
                 {t('calorieTarget')}
               </span>
               <div className="mt-1 font-serif text-4xl text-[#2C2416] tracking-tighter sm:text-5xl">
                 {Math.round(targetCalories).toLocaleString()}{' '}
-                <span className="font-sans text-[#8B8682] text-lg">
+                <span className="font-sans text-[#7B6F62] text-lg">
                   {t('kcal')}
                 </span>
               </div>
-              <p className="mt-1.5 text-[#8B8682] text-[12px]">
+              <p className="mt-1.5 text-[#7B6F62] text-[12px]">
                 {t('basedOnTdee')} ~{Math.round(tdee).toLocaleString()}{' '}
                 {t('kcal')}
                 {watchGoal === 'maintaining' ? (
@@ -423,7 +421,7 @@ export function BodyMetrics() {
               </p>
               <div className="mt-5 grid grid-cols-3 gap-4 border-[#C9A87C]/20 border-t pt-4">
                 <div>
-                  <div className="font-bold text-[#A8A29E] text-[10px] uppercase tracking-widest">
+                  <div className="font-bold text-[#6B5D4F] text-[10px] uppercase tracking-widest">
                     {t('protein')}
                   </div>
                   <div className="font-medium text-[#2C2416] text-lg">
@@ -431,7 +429,7 @@ export function BodyMetrics() {
                   </div>
                 </div>
                 <div>
-                  <div className="font-bold text-[#A8A29E] text-[10px] uppercase tracking-widest">
+                  <div className="font-bold text-[#6B5D4F] text-[10px] uppercase tracking-widest">
                     {t('carbs')}
                   </div>
                   <div className="font-medium text-[#2C2416] text-lg">
@@ -439,7 +437,7 @@ export function BodyMetrics() {
                   </div>
                 </div>
                 <div>
-                  <div className="font-bold text-[#A8A29E] text-[10px] uppercase tracking-widest">
+                  <div className="font-bold text-[#6B5D4F] text-[10px] uppercase tracking-widest">
                     {t('fat')}
                   </div>
                   <div className="font-medium text-[#2C2416] text-lg">

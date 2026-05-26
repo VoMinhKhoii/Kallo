@@ -42,7 +42,7 @@ export function Shell({ children }: ShellProps) {
           <div className="sticky top-0 z-10 flex items-center gap-2 border-[#EAE7E0] border-b bg-[#FDFCF8]/90 px-4 py-3 backdrop-blur-sm lg:hidden">
             <Link
               href="/settings"
-              className="inline-flex items-center gap-1.5 font-medium text-[#8B8682] text-[14px] transition-colors hover:text-[#2C2416] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C9A87C]/40"
+              className="inline-flex items-center gap-1.5 font-medium text-[#7B6F62] text-[14px] transition-colors hover:text-[#2C2416] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C9A87C]/40"
             >
               <ArrowLeft className="h-4 w-4" />
               {t('title')}

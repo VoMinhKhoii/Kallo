@@ -57,7 +57,7 @@ export default async function ProfileSettingsPage() {
           {t('title')}
         </h1>
         <p
-          className="mt-1 text-[#8B8682] text-[14px]"
+          className="mt-1 text-[#7B6F62] text-[14px]"
           style={{ fontFamily: 'DM Sans, sans-serif' }}
         >
           {t('description')}
