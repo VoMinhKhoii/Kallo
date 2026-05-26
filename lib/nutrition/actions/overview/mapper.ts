@@ -14,6 +14,7 @@ import {
   getNutrientStatus,
   getSodiumCaveatKey,
 } from '../../pattern/aggregation';
+import { classifyDayCompleteness } from '../../pattern/completeness';
 import {
   getCaloriesWithNutrientData,
   getNutrientConfidence,
@@ -343,6 +344,8 @@ export function mapOverviewRowsToDto({
       resolvedRange,
       bucketTimezone: period.bucketTimezone,
       loggedDays: 0,
+      completeDays: 0,
+      partialDays: 0,
       loggedDaysLast30,
       trendStatus: getTrendStatus(resolvedRange, 0),
       period: {
@@ -370,17 +373,37 @@ export function mapOverviewRowsToDto({
     };
   }
 
-  // safeLoggedDays divides nutrient sums to produce "average per logged day".
-  // Both numerator (sumRows) and denominator are scoped to the same set of
-  // logged days, so this is NOT inflated for sparse loggers — it intentionally
-  // measures "average intake on days the user actually logged".
-  const safeLoggedDays = loggedDays;
-  const totalCalories = rows.reduce(
+  // Days where the user logged only a meal or two then forgot drag averages
+  // down and read as consistency "misses". Classify each logged day and scope
+  // every long-span metric to complete days only; partial days are surfaced
+  // via the count below rather than silently skewing the numbers.
+  const dayCalories = new Map<string, number>();
+  for (const row of rows) {
+    if (row.calories <= 0) {
+      continue;
+    }
+    dayCalories.set(
+      row.localDate,
+      (dayCalories.get(row.localDate) ?? 0) + row.calories
+    );
+  }
+  const { completeDates, completeDays, partialDays } = classifyDayCompleteness(
+    [...dayCalories].map(([date, calories]) => ({ date, calories })),
+    nullableNumber(profile.calorieTarget)
+  );
+  const completeRows = rows.filter((row) => completeDates.has(row.localDate));
+
+  // safeLoggedDays divides nutrient sums to produce "average per complete day".
+  // Both numerator (sumRows over completeRows) and denominator (completeDays)
+  // are scoped to the same set of complete days, so half-logged days neither
+  // inflate the divisor nor leak their partial sums into the average.
+  const safeLoggedDays = completeDays;
+  const totalCalories = completeRows.reduce(
     (sum, row) => sum + Math.max(0, row.calories),
     0
   );
   const targets = resolveMicronutrientTargets(profile);
-  const macros = buildMacroPatterns(rows, safeLoggedDays, profile);
+  const macros = buildMacroPatterns(completeRows, safeLoggedDays, profile);
   const macroConsistency = getMacroConsistencySummary({
     calories:
       macros.find((macro) => macro.key === 'calories')?.consistencyPct ?? null,
@@ -392,7 +415,7 @@ export function mapOverviewRowsToDto({
     fat: macros.find((macro) => macro.key === 'fat')?.consistencyPct ?? null,
   });
   const cards = buildNutrientCards({
-    rows,
+    rows: completeRows,
     targets,
     totalCalories,
     safeLoggedDays,
@@ -416,8 +439,10 @@ export function mapOverviewRowsToDto({
     resolvedRange,
     bucketTimezone: period.bucketTimezone,
     loggedDays,
+    completeDays,
+    partialDays,
     loggedDaysLast30,
-    trendStatus: getTrendStatus(resolvedRange, loggedDays),
+    trendStatus: getTrendStatus(resolvedRange, completeDays),
     period: {
       startDate: period.startDate,
       endDate: period.endDate,

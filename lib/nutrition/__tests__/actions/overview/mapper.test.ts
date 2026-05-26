@@ -102,6 +102,28 @@ describe('mapOverviewRowsToDto', () => {
     });
   });
 
+  it('excludes partial (under-logged) days from averages and consistency', () => {
+    const overview = mapRows([
+      row({ localDate: '2026-04-22', calories: 2000, proteinG: 100 }),
+      row({ localDate: '2026-04-23', calories: 2000, proteinG: 100 }),
+      row({ localDate: '2026-04-24', calories: 2000, proteinG: 100 }),
+      // Breakfast-only day: < 50% of the 2000 kcal target.
+      row({ localDate: '2026-04-25', calories: 400, proteinG: 10 }),
+    ]);
+
+    expect(overview.completeDays).toBe(3);
+    expect(overview.partialDays).toBe(1);
+
+    const calories = overview.macros.find((m) => m.key === 'calories');
+    // Averaged over the 3 complete days only — not dragged down to 1600 by
+    // the partial day ((2000*3 + 400) / 4).
+    expect(calories?.averagePerDay).toBe(2000);
+    // The partial day is not counted as a calorie/protein consistency miss.
+    expect(calories?.consistencyPct).toBe(100);
+    const protein = overview.macros.find((m) => m.key === 'protein');
+    expect(protein?.consistencyPct).toBe(100);
+  });
+
   it('does not include trend arrays in overview nutrient cards', () => {
     const overview = mapRows([row({})]);
 
