@@ -18,6 +18,23 @@ function dismissKey(date: string): string {
   return `nham:partial-day-dismissed:${date}`;
 }
 
+function readDismissed(date: string): boolean {
+  try {
+    return localStorage.getItem(dismissKey(date)) === '1';
+  } catch {
+    return false;
+  }
+}
+
+function writeDismissed(date: string): void {
+  try {
+    localStorage.setItem(dismissKey(date), '1');
+  } catch {
+    // localStorage throws in incognito/private browsing or when quota is
+    // exceeded; dismissal is best-effort, so swallow and continue.
+  }
+}
+
 export function PartialYesterdayPrompt({
   userId,
   yesterday,
@@ -29,7 +46,7 @@ export function PartialYesterdayPrompt({
   const [dismissed, setDismissed] = useState(false);
 
   useEffect(() => {
-    setDismissed(localStorage.getItem(dismissKey(yesterday)) === '1');
+    setDismissed(readDismissed(yesterday));
   }, [yesterday]);
 
   const meals = data?.persistedMeals ?? [];
@@ -51,7 +68,7 @@ export function PartialYesterdayPrompt({
   }
 
   const handleDismiss = () => {
-    localStorage.setItem(dismissKey(yesterday), '1');
+    writeDismissed(yesterday);
     setDismissed(true);
   };
 
@@ -83,7 +100,7 @@ export function PartialYesterdayPrompt({
             type="button"
             onClick={handleDismiss}
             aria-label={t('dismiss')}
-            className="shrink-0 rounded-full p-1 text-amber-700/80 transition-colors hover:bg-amber-100 hover:text-amber-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-600 focus-visible:ring-offset-2"
+            className="-m-1 flex size-8 shrink-0 items-center justify-center rounded-full p-1 text-amber-700/80 transition-colors hover:bg-amber-100 hover:text-amber-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-600 focus-visible:ring-offset-2"
           >
             <X className="size-4" aria-hidden="true" />
           </button>

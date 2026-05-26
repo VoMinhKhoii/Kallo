@@ -183,12 +183,10 @@ export function AdherenceHeatmap({ data, range }: AdherenceHeatmapProps) {
                             <div
                               className={cn(
                                 'absolute inset-0 rounded-[3px]',
-                                isMuted && 'bg-nham-track/55 opacity-70',
-                                isPartial &&
-                                  'border border-nham-border bg-nham-track/30',
-                                !isMuted &&
-                                  !isPartial &&
-                                  'bg-nham-track/30'
+                                isMuted
+                                  ? 'bg-nham-track/55 opacity-70'
+                                  : 'bg-nham-track/30',
+                                isPartial && 'border border-nham-border'
                               )}
                             />
                           )}
