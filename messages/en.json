@@ -1031,7 +1031,8 @@
       "bodyMetricsSubtitle": "Weight, height, activity level, and macro targets",
       "regionalSubtitle": "Country of origin and current residence",
       "cookingSubtitle": "Oil usage, rice, sugar, protein, and broth defaults",
-      "saveError": "Failed to save settings. Please try again."
+      "saveError": "Failed to save settings. Please try again.",
+      "invalidError": "Some entries are invalid — please review your body metrics."
     }
   },
   "errors": {

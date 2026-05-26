@@ -11,6 +11,8 @@ import {
 } from '@/components/ui/form';
 import type { ProfileFormValues } from './index';
 
+const cardClass = 'rounded-2xl border border-[#EAE7E0] bg-white p-4 sm:p-5';
+
 export function Cooking() {
   const t = useTranslations('onboarding.cooking');
   const form = useFormContext<ProfileFormValues>();
@@ -22,7 +24,7 @@ export function Cooking() {
         control={form.control}
         name="oilUsage"
         render={({ field }) => (
-          <FormItem className="rounded-2xl border border-[#EAE7E0] bg-white p-4 sm:p-5">
+          <FormItem className={cardClass}>
             <FormLabel className="mb-3 block font-bold text-[#2C2416] text-[13px]">
               {t('oilUsage')}
             </FormLabel>
@@ -58,7 +60,7 @@ export function Cooking() {
         control={form.control}
         name="defaultRicePortion"
         render={({ field }) => (
-          <FormItem className="rounded-2xl border border-[#EAE7E0] bg-white p-4 sm:p-5">
+          <FormItem className={cardClass}>
             <FormLabel className="mb-3 block font-bold text-[#2C2416] text-[13px]">
               {t('ricePortion')}
             </FormLabel>
@@ -94,7 +96,7 @@ export function Cooking() {
         control={form.control}
         name="sugarBraised"
         render={({ field }) => (
-          <FormItem className="rounded-2xl border border-[#EAE7E0] bg-white p-4 sm:p-5">
+          <FormItem className={cardClass}>
             <FormLabel className="mb-3 block font-bold text-[#2C2416] text-[13px]">
               {t('sugar')}
             </FormLabel>
@@ -118,7 +120,7 @@ export function Cooking() {
         control={form.control}
         name="defaultProteinPortion"
         render={({ field }) => (
-          <FormItem className="rounded-2xl border border-[#EAE7E0] bg-white p-4 sm:p-5">
+          <FormItem className={cardClass}>
             <FormLabel className="mb-3 block font-bold text-[#2C2416] text-[13px]">
               {t('proteinPortion')}
             </FormLabel>
@@ -154,7 +156,7 @@ export function Cooking() {
         control={form.control}
         name="brothConsumption"
         render={({ field }) => (
-          <FormItem className="rounded-2xl border border-[#EAE7E0] bg-white p-4 sm:p-5">
+          <FormItem className={cardClass}>
             <FormLabel className="mb-3 block font-bold text-[#2C2416] text-[13px]">
               {t('broth')}
             </FormLabel>

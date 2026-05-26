@@ -1031,7 +1031,8 @@
       "bodyMetricsSubtitle": "Cân nặng, chiều cao, mức hoạt động và mục tiêu macro",
       "regionalSubtitle": "Quê quán và nơi ở hiện tại",
       "cookingSubtitle": "Thiết lập dầu mỡ, cơm, đường, đạm và nước dùng mặc định",
-      "saveError": "Không thể lưu cài đặt. Vui lòng thử lại."
+      "saveError": "Không thể lưu cài đặt. Vui lòng thử lại.",
+      "invalidError": "Một số giá trị không hợp lệ — vui lòng kiểm tra lại chỉ số cơ thể."
     }
   },
   "errors": {
