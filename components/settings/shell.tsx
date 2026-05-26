@@ -33,7 +33,7 @@ export function Shell({ children }: ShellProps) {
 
       {/* Content area */}
       <div
-        className={`min-h-0 min-w-0 flex-1 flex-col overflow-y-auto ${
+        className={`min-h-0 min-w-0 flex-1 flex-col overflow-y-auto overflow-x-hidden ${
           hasActiveSection ? 'flex' : 'hidden lg:flex'
         }`}
       >

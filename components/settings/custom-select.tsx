@@ -45,7 +45,7 @@ export function CustomSelect({ options, value, onChange }: CustomSelectProps) {
   }, [isOpen]);
 
   return (
-    <div className="relative" ref={containerRef}>
+    <div className="relative min-w-0" ref={containerRef}>
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
@@ -57,9 +57,9 @@ export function CustomSelect({ options, value, onChange }: CustomSelectProps) {
             : 'border-[#EAE7E0] hover:border-[#C9A87C]/50'
         }`}
       >
-        <span className="truncate pr-2">{selectedOption?.label}</span>
+        <span className="min-w-0 truncate pr-2">{selectedOption?.label}</span>
         <ChevronDown
-          className={`h-4 w-4 text-[#8B8682] transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`}
+          className={`h-4 w-4 shrink-0 text-[#8B8682] transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`}
         />
       </button>
       <AnimatePresence>
