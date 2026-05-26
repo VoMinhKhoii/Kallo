@@ -90,6 +90,8 @@ const profile = {
   fatTargetG: 65,
 };
 
+const TODAY = '2026-05-31';
+
 describe('FeedArea', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -118,7 +120,14 @@ describe('FeedArea', () => {
   });
 
   it('keeps macro summary and input outside the meal-card scroll region', () => {
-    render(<FeedArea selectedDate="2026-05-04" profile={profile} />);
+    render(
+      <FeedArea
+        selectedDate="2026-05-04"
+        today={TODAY}
+        profile={profile}
+        onSelectDate={vi.fn()}
+      />
+    );
 
     const macroRegion = screen.getByTestId('macro-summary-region');
     const scrollRegion = screen.getByTestId('meal-card-scroll');
@@ -161,7 +170,14 @@ describe('FeedArea', () => {
       refetch: vi.fn(),
     });
 
-    render(<FeedArea selectedDate="2026-05-04" profile={profile} />);
+    render(
+      <FeedArea
+        selectedDate="2026-05-04"
+        today={TODAY}
+        profile={profile}
+        onSelectDate={vi.fn()}
+      />
+    );
 
     const scrollRegion = screen.getByTestId('meal-card-scroll');
     expect(within(scrollRegion).getByTestId('meal-entry')).toHaveTextContent(
@@ -179,7 +195,14 @@ describe('FeedArea', () => {
       refetch: vi.fn(),
     });
 
-    render(<FeedArea selectedDate="2026-05-05" profile={profile} />);
+    render(
+      <FeedArea
+        selectedDate="2026-05-05"
+        today={TODAY}
+        profile={profile}
+        onSelectDate={vi.fn()}
+      />
+    );
 
     const scrollRegion = screen.getByTestId('meal-card-scroll');
     expect(
@@ -202,7 +225,14 @@ describe('FeedArea', () => {
       refetch,
     });
 
-    render(<FeedArea selectedDate="2026-05-05" profile={profile} />);
+    render(
+      <FeedArea
+        selectedDate="2026-05-05"
+        today={TODAY}
+        profile={profile}
+        onSelectDate={vi.fn()}
+      />
+    );
 
     const scrollRegion = screen.getByTestId('meal-card-scroll');
     expect(within(scrollRegion).getByRole('alert')).toHaveTextContent(
@@ -223,7 +253,14 @@ describe('FeedArea', () => {
       refetch: vi.fn(),
     });
 
-    render(<FeedArea selectedDate="2026-05-05" profile={profile} />);
+    render(
+      <FeedArea
+        selectedDate="2026-05-05"
+        today={TODAY}
+        profile={profile}
+        onSelectDate={vi.fn()}
+      />
+    );
 
     const retryButton = screen.getByRole('button', { name: /retryDay/i });
     expect(retryButton).toBeDisabled();

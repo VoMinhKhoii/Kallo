@@ -952,7 +952,17 @@
       "legacyMacroWarning": "Không thể hiển thị tổng macro trong ngày vì một số bữa ăn cũ thiếu macro.",
       "loadErrorTitle": "Không thể tải ngày này",
       "loadErrorDescription": "Các bữa ăn đã lưu cho ngày này chưa tải được. Hãy thử lại trước khi ghi thêm món.",
-      "retryDay": "Tải lại ngày"
+      "retryDay": "Tải lại ngày",
+      "partialDayNotice": {
+        "title": "Ngày này có thể ghi chưa đủ",
+        "body": "Mới ghi {calories, number}/{target, number} kcal mục tiêu, nên ngày này tạm bị bỏ khỏi xu hướng. Thêm những gì bạn bỏ sót để tính lại ngày này."
+      },
+      "partialYesterdayPrompt": {
+        "title": "Hôm qua có vẻ ghi chưa đủ",
+        "body": "Mới ghi {calories, number}/{target, number} kcal mục tiêu.",
+        "open": "Mở hôm qua",
+        "dismiss": "Bỏ qua"
+      }
     },
     "streaming": {
       "connecting": "Đang kết nối...",

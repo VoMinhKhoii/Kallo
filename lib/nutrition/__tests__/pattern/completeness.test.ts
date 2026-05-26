@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   classifyDayCompleteness,
+  isLikelyPartialDay,
   medianOf,
   PARTIAL_DAY_FRACTION,
 } from '@/lib/nutrition/pattern/completeness';
@@ -98,5 +99,35 @@ describe('classifyDayCompleteness', () => {
 
     expect(result.completeDates).toEqual(new Set(['a']));
     expect(result.partialDates).toEqual(new Set(['b']));
+  });
+});
+
+describe('isLikelyPartialDay', () => {
+  it('flags a day below the target floor', () => {
+    expect(isLikelyPartialDay(400, 2000)).toBe(true); // 400 < 1000
+  });
+
+  it('flags a lone partial day (no safety valve unlike the classifier)', () => {
+    // classifyDayCompleteness would flip this single under-logged day back to
+    // complete; the per-day check keeps it partial.
+    expect(isLikelyPartialDay(300, 2000)).toBe(true);
+    expect(
+      classifyDayCompleteness([{ date: 'a', calories: 300 }], 2000).partialDays
+    ).toBe(0);
+  });
+
+  it('keeps a day at or above the floor as complete', () => {
+    const floor = PARTIAL_DAY_FRACTION * 2000;
+    expect(isLikelyPartialDay(floor, 2000)).toBe(false);
+    expect(isLikelyPartialDay(floor - 1, 2000)).toBe(true);
+  });
+
+  it('returns false when no target is set', () => {
+    expect(isLikelyPartialDay(400, null)).toBe(false);
+    expect(isLikelyPartialDay(400, 0)).toBe(false);
+  });
+
+  it('returns false for an empty day', () => {
+    expect(isLikelyPartialDay(0, 2000)).toBe(false);
   });
 });

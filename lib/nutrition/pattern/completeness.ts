@@ -17,6 +17,26 @@ export interface DayCompleteness {
   partialDays: number;
 }
 
+/**
+ * Whether one specific day looks under-logged in isolation: it has calories but
+ * falls below `PARTIAL_DAY_FRACTION` of the target. Unlike
+ * `classifyDayCompleteness` there is no median fallback or safety valve, so a
+ * lone partial day stays partial. Requires a target; returns false when none is
+ * set or the day is empty (an empty day is "unlogged", not "partial").
+ */
+export function isLikelyPartialDay(
+  calories: number,
+  calorieTarget: number | null
+): boolean {
+  if (calorieTarget === null || calorieTarget <= 0) {
+    return false;
+  }
+  if (calories <= 0) {
+    return false;
+  }
+  return calories < PARTIAL_DAY_FRACTION * calorieTarget;
+}
+
 export function medianOf(values: number[]): number {
   if (values.length === 0) {
     return 0;
