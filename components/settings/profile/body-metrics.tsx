@@ -84,7 +84,14 @@ export function BodyMetrics() {
       activityLevel: watchActivity as ActivityLevel,
     });
     return calcTDEE(bmr, watchActivity as ActivityLevel);
-  }, [watchSex, watchWeight, watchHeight, watchAge, watchActivity]);
+  }, [
+    watchSex,
+    watchWeight,
+    watchHeight,
+    watchAge,
+    watchActivity,
+    allMetricsFilled,
+  ]);
 
   const finalTargets = useMemo(() => {
     if (tdee === null) return null;

@@ -252,7 +252,7 @@ export function Profile({ profile }: ProfileProps) {
               >
                 <div
                   aria-hidden="true"
-                  className="-top-8 pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-nham-surface from-55% to-transparent"
+                  className="pointer-events-none absolute inset-x-0 -top-8 bottom-0 bg-gradient-to-t from-55% from-nham-surface to-transparent"
                 />
                 <div className="relative flex items-center justify-end gap-3 rounded-2xl border border-[#EAE7E0] bg-[#FDFCF8]/95 px-5 py-3.5 shadow-lg backdrop-blur-sm sm:px-6 sm:py-4">
                   <button

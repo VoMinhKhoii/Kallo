@@ -58,7 +58,7 @@ function CountrySelect({
           type="button"
           onClick={() => onChange(null)}
           aria-label={tRegional('clearLabel')}
-          className="-translate-y-1/2 absolute top-1/2 right-2.5 rounded-md p-1 text-[#7B6F62] leading-none transition-colors hover:text-[#2C2416] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C9A87C]/30"
+          className="absolute top-1/2 right-2.5 -translate-y-1/2 rounded-md p-1 text-[#7B6F62] leading-none transition-colors hover:text-[#2C2416] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C9A87C]/30"
         >
           ×
         </button>
