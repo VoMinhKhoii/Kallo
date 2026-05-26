@@ -340,9 +340,7 @@ describe('FeedArea', () => {
       />
     );
 
-    expect(
-      screen.getByRole('button', { name: 'open' })
-    ).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'open' })).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'dismiss' }));
 
