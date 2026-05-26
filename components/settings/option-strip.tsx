@@ -20,7 +20,7 @@ export function OptionStrip({ options, value, onChange }: OptionStripProps) {
           key={opt.value}
           type="button"
           onClick={() => onChange(opt.value)}
-          className={`flex flex-1 flex-col items-center rounded-lg py-2 transition-all ${
+          className={`flex flex-1 flex-col items-center rounded-lg py-2 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C9A87C]/40 ${
             value === opt.value
               ? 'bg-white text-[#2C2416] shadow-sm'
               : 'text-[#8B8682] hover:text-[#2C2416]'

@@ -569,6 +569,9 @@
       "higherCarb": "Nhiều carb",
       "higherCarbDescription": "Cho ngày vận động (30/20/50)",
       "tdee": "TDEE ước tính",
+      "basedOnTdee": "Dựa trên TDEE",
+      "perDay": "kcal/ngày",
+      "maintenance": "để duy trì",
       "calorieTarget": "Mục tiêu calo hàng ngày",
       "protein": "Đạm",
       "carbs": "Carb",
@@ -1014,7 +1017,8 @@
     },
     "regionalPanel": {
       "description": "AI dùng thông tin quốc gia của bạn để hiểu văn hóa ẩm thực và nguyên liệu dễ tìm tại nơi bạn sống.",
-      "searchCountryLabel": "Tìm quốc gia"
+      "searchCountryLabel": "Tìm quốc gia",
+      "clearLabel": "Xóa lựa chọn"
     },
     "profilePage": {
       "title": "Hồ sơ",
