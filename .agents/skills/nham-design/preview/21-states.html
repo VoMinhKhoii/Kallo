@@ -1,0 +1,97 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><link rel="stylesheet" href="_shared.css"></head>
+<body><div class="card">
+  <script src="https://unpkg.com/lucide@0.483.0"></script>
+  <style>
+    .lane { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .col { padding: 14px; border-radius: var(--radius-xl); border: 1px solid var(--border-soft); background: #fff; min-height: 0;}
+    .col.bad { border-color: rgba(211, 123, 105, 0.35); background: color-mix(in srgb, var(--nham-danger) 4%, #fff); }
+    .col.good { border-color: rgba(124, 163, 104, 0.35); background: color-mix(in srgb, var(--nham-success) 4%, #fff); }
+    .col .head { display: flex; align-items: center; gap: 8px; font-family: var(--font-ui); font-weight: 700; font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase; margin-bottom: 10px; }
+    .col.bad .head { color: var(--nham-danger); }
+    .col.good .head { color: var(--nham-success); }
+    .col .head::before { content: ""; width: 6px; height: 6px; border-radius: 999px; background: currentColor; }
+    .caption { font-family: var(--font-mono); font-size: 10px; color: var(--fg-stone); margin-top: 8px; line-height: 1.4; }
+
+    .state-card { padding: 18px; border-radius: var(--radius-2xl); border: 1px solid var(--border-soft); background: #fff; }
+  </style>
+
+  <!-- Pair 1: empty state -->
+  <div class="lane">
+    <div class="col bad">
+      <div class="head">DON'T — barren empty</div>
+      <div class="state-card" style="text-align:center; padding: 30px 18px;">
+        <i data-lucide="inbox" style="width:36px;height:36px;color:var(--fg-stone);margin-bottom:8px;"></i>
+        <p style="margin:0; font-family: var(--font-ui); font-size: 13px; color: var(--fg-stone);">No data yet.</p>
+      </div>
+      <div class="caption">Generic illustration + "No data" reads like a forgotten feature.</div>
+    </div>
+    <div class="col good">
+      <div class="head">DO — empty as a prompt</div>
+      <div class="state-card" style="text-align: center; display:flex; flex-direction: column; align-items: center; gap: 14px; padding: 24px 18px;">
+        <div style="width: 40px; height: 40px; border-radius: var(--radius-xl); background: rgba(232,213,181,0.3); display:flex; align-items:center; justify-content:center;">
+          <i data-lucide="utensils-crossed" style="width: 20px; height: 20px; color: var(--fg-muted);"></i>
+        </div>
+        <div>
+          <h3 style="margin: 0; font-family: var(--font-display); font-weight: 400; font-size: 18px; color: var(--fg); letter-spacing: -0.01em;">What did you eat?</h3>
+          <p style="margin: 4px 0 0; font-family: var(--font-ui); font-size: 12px; color: var(--fg-muted);">Describe your meal and get a macro breakdown.</p>
+        </div>
+        <div style="display:flex; gap: 6px; flex-wrap: wrap; justify-content: center;">
+          <span style="border:1px solid var(--border-soft); background: rgba(255,255,255,0.8); border-radius: 999px; padding: 4px 12px; font-family: var(--font-ui); font-size: 11px; color: var(--fg-muted); font-weight: 500;">2 mực kho + cơm</span>
+          <span style="border:1px solid var(--border-soft); background: rgba(255,255,255,0.8); border-radius: 999px; padding: 4px 12px; font-family: var(--font-ui); font-size: 11px; color: var(--fg-muted); font-weight: 500;">Phở bò tái</span>
+        </div>
+      </div>
+      <div class="caption">Question-as-heading, soft icon tile, 2–3 suggestion chips. Empty is opportunity.</div>
+    </div>
+  </div>
+
+  <!-- Pair 2: loading -->
+  <div class="lane">
+    <div class="col bad">
+      <div class="head">DON'T — spinner-in-card</div>
+      <div class="state-card" style="display:flex; align-items: center; justify-content: center; padding: 36px;">
+        <div style="width: 28px; height: 28px; border: 3px solid var(--border); border-top-color: var(--nham-accent); border-radius: 999px; animation: nham-spin 1s linear infinite;"></div>
+      </div>
+      <style>@keyframes nham-spin { to { transform: rotate(360deg); } }</style>
+      <div class="caption">Empty-shaped + spinner = jarring layout shift when content arrives.</div>
+    </div>
+    <div class="col good">
+      <div class="head">DO — shape-matched skeleton</div>
+      <div class="state-card" style="display:flex; flex-direction: column; gap: 10px; padding: 18px; animation: nham-pulse-card 1.6s ease-in-out infinite;">
+        <div style="height: 12px; width: 60%; background: rgba(232,213,181,0.5); border-radius: 999px;"></div>
+        <div style="height: 10px; width: 90%; background: rgba(232,213,181,0.4); border-radius: 999px;"></div>
+        <div style="height: 10px; width: 70%; background: rgba(232,213,181,0.4); border-radius: 999px;"></div>
+        <div style="display:flex; justify-content: space-between; align-items:center; padding-top: 8px; border-top: 1px dashed rgba(232,213,181,0.6); margin-top: 4px;">
+          <div style="height: 8px; width: 80px; background: rgba(232,213,181,0.4); border-radius: 999px;"></div>
+          <div style="height: 12px; width: 50px; background: color-mix(in srgb, var(--nham-accent) 25%, transparent); border-radius: 999px;"></div>
+        </div>
+      </div>
+      <style>@keyframes nham-pulse-card { 0%,100% { opacity: 1 } 50% { opacity: 0.55 } }</style>
+      <div class="caption">Replicates the meal-card shape. No layout shift on load.</div>
+    </div>
+  </div>
+
+  <!-- Pair 3: error -->
+  <div class="lane">
+    <div class="col bad">
+      <div class="head">DON'T — toast or red banner</div>
+      <div style="background: oklch(0.577 0.245 27.325 / 0.1); border: 1px solid oklch(0.577 0.245 27.325 / 0.3); padding: 12px 14px; border-radius: var(--radius-xl); display:flex; align-items: center; gap: 10px;">
+        <i data-lucide="alert-triangle" style="width: 16px; height: 16px; color: oklch(0.577 0.245 27.325);"></i>
+        <span style="font-family: var(--font-ui); font-size: 12px; color: oklch(0.577 0.245 27.325); font-weight: 600;">Error: Failed to load meals (500)</span>
+      </div>
+      <div class="caption">System-shaped error. Cold red. Talks about the system, not the user.</div>
+    </div>
+    <div class="col good">
+      <div class="head">DO — inline, terracotta, retry</div>
+      <div style="background: color-mix(in srgb, var(--nham-danger) 6%, #fff); border: 1px solid color-mix(in srgb, var(--nham-danger) 25%, transparent); padding: 14px 16px; border-radius: var(--radius-2xl);">
+        <p style="margin: 0; font-family: var(--font-ui); font-weight: 600; font-size: 13px; color: var(--fg);">Could not load this day</p>
+        <p style="margin: 4px 0 10px; font-family: var(--font-ui); font-size: 12px; color: var(--fg-muted); line-height: 1.5;">Your saved meals for this date did not load. Try again before logging more food.</p>
+        <button style="background: color-mix(in srgb, var(--nham-danger) 18%, #fff); color: var(--fg); border: none; padding: 6px 12px; border-radius: 999px; font-family: var(--font-ui); font-size: 11px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+          <i data-lucide="refresh-cw" style="width: 12px; height: 12px;"></i> Retry day
+        </button>
+      </div>
+      <div class="caption">Title + plain-language explanation + concrete next action. Terracotta wash, not red.</div>
+    </div>
+  </div>
+  <script>lucide.createIcons();</script>
+</div></body></html>

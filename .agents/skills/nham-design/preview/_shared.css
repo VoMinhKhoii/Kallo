@@ -1,0 +1,25 @@
+@import url("../colors_and_type.css");
+
+/* Preview card chrome — every card is 700px wide, lives inside the
+   Design System tab. We strip body margin and let cards control their
+   own internal padding. */
+* { box-sizing: border-box; }
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 700px;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-ui);
+  -webkit-font-smoothing: antialiased;
+}
+.card {
+  width: 700px;
+  padding: 28px 32px;
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.row { display: flex; gap: 12px; align-items: stretch; flex-wrap: wrap; }
+.col { display: flex; flex-direction: column; gap: 8px; }

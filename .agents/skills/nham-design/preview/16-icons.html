@@ -1,0 +1,32 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><link rel="stylesheet" href="_shared.css"></head>
+<body><div class="card">
+  <script src="https://unpkg.com/lucide@0.483.0"></script>
+  <style>
+    .grid { display: grid; grid-template-columns: repeat(8, 1fr); gap: 16px; }
+    .ic-cell { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+    .ic-cell svg { width: 22px; height: 22px; color: var(--fg); stroke-width: 1.75; }
+    .ic-cell .n { font-family: var(--font-mono); font-size: 9px; color: var(--fg-stone); text-align: center;}
+    .info { font-family: var(--font-mono); font-size: 11px; color: var(--fg-stone); }
+  </style>
+  <div class="info">lucide-react, stroke 1.5–2. h-4 inline · h-5 nav · h-3.5 badge sparkle.</div>
+  <div class="grid">
+    <div class="ic-cell"><i data-lucide="utensils-crossed"></i><span class="n">utensils-crossed</span></div>
+    <div class="ic-cell"><i data-lucide="sparkles"></i><span class="n">sparkles</span></div>
+    <div class="ic-cell"><i data-lucide="flame"></i><span class="n">flame</span></div>
+    <div class="ic-cell"><i data-lucide="layout-dashboard"></i><span class="n">layout-dashboard</span></div>
+    <div class="ic-cell"><i data-lucide="activity"></i><span class="n">activity</span></div>
+    <div class="ic-cell"><i data-lucide="shield-check"></i><span class="n">shield-check</span></div>
+    <div class="ic-cell"><i data-lucide="settings"></i><span class="n">settings</span></div>
+    <div class="ic-cell"><i data-lucide="arrow-right"></i><span class="n">arrow-right</span></div>
+    <div class="ic-cell"><i data-lucide="arrow-up"></i><span class="n">arrow-up</span></div>
+    <div class="ic-cell"><i data-lucide="chevron-down"></i><span class="n">chevron-down</span></div>
+    <div class="ic-cell"><i data-lucide="check"></i><span class="n">check</span></div>
+    <div class="ic-cell"><i data-lucide="x"></i><span class="n">x</span></div>
+    <div class="ic-cell"><i data-lucide="square"></i><span class="n">square</span></div>
+    <div class="ic-cell"><i data-lucide="panel-left-open"></i><span class="n">panel-left-open</span></div>
+    <div class="ic-cell"><i data-lucide="panel-left-close"></i><span class="n">panel-left-close</span></div>
+    <div class="ic-cell"><i data-lucide="search"></i><span class="n">search</span></div>
+  </div>
+  <script>lucide.createIcons();</script>
+</div></body></html>
