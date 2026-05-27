@@ -8,9 +8,21 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useForm } from 'react-hook-form';
 import type { z } from 'zod';
-import { Form, FormControl, FormField, FormItem } from '@/components/ui/form';
+import { DecimalInput } from '@/components/shared/decimal-input';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormMessage,
+} from '@/components/ui/form';
 import { AGGRESSION_KCAL_PER_KG } from '@/lib/onboarding/constants';
-import { bodyMetricsSchema, goalSchema } from '@/lib/onboarding/schemas';
+import {
+  bodyMetricsMessages,
+  bodyMetricsSchema,
+  createBodyMetricsSchema,
+  goalSchema,
+} from '@/lib/onboarding/schemas';
 import {
   calcBMR,
   calcDailyTargets,
@@ -227,11 +239,22 @@ export function ScreenBodyMetrics({
   onChange,
 }: ScreenBodyMetricsProps) {
   const t = useTranslations('onboarding');
+  const tValidation = useTranslations('validation.bodyMetrics');
   const onChangeRef = useRef(onChange);
   onChangeRef.current = onChange;
 
+  // Built with locale-aware messages so validation errors follow the active
+  // locale. Shares the shape of the module-level screen1Schema used for types.
+  const localizedSchema = useMemo(
+    () =>
+      createBodyMetricsSchema(bodyMetricsMessages(tValidation)).merge(
+        goalSchema
+      ),
+    [tValidation]
+  );
+
   const form = useForm<Screen1FormData>({
-    resolver: zodResolver(screen1Schema),
+    resolver: zodResolver(localizedSchema),
     defaultValues: {
       biologicalSex: defaultValues.biologicalSex,
       weightKg: defaultValues.weightKg,
@@ -325,6 +348,9 @@ export function ScreenBodyMetrics({
   const reportChange = useCallback(() => {
     const v = form.getValues();
     if (tdee === null || !finalTargets) return;
+    // Don't advance the wizard with out-of-range / invalid metrics — the Next
+    // button is gated on this screen having reported data.
+    if (!screen1Schema.safeParse(v).success) return;
     onChangeRef.current({
       ...v,
       tdeeKcal: tdee,
@@ -414,15 +440,12 @@ export function ScreenBodyMetrics({
                       {`${t('bodyMetrics.weight')} (${t('bodyMetrics.weightUnit')})`}
                     </label>
                     <FormControl>
-                      <input
-                        type="number"
+                      <DecimalInput
+                        inputMode="decimal"
                         placeholder="65"
-                        {...field}
-                        value={field.value ?? ''}
-                        onChange={(e) => {
-                          const v = e.target.value;
-                          field.onChange(v === '' ? undefined : Number(v));
-                        }}
+                        name={field.name}
+                        value={field.value}
+                        onValueChange={field.onChange}
                         onBlur={() => {
                           field.onBlur();
                           reportChange();
@@ -430,6 +453,7 @@ export function ScreenBodyMetrics({
                         className={inputClass}
                       />
                     </FormControl>
+                    <FormMessage />
                   </FormItem>
                 )}
               />
@@ -443,15 +467,13 @@ export function ScreenBodyMetrics({
                       {`${t('bodyMetrics.height')} (${t('bodyMetrics.heightUnit')})`}
                     </label>
                     <FormControl>
-                      <input
-                        type="number"
+                      <DecimalInput
+                        integer
+                        inputMode="numeric"
                         placeholder="170"
-                        {...field}
-                        value={field.value ?? ''}
-                        onChange={(e) => {
-                          const v = e.target.value;
-                          field.onChange(v === '' ? undefined : Number(v));
-                        }}
+                        name={field.name}
+                        value={field.value}
+                        onValueChange={field.onChange}
                         onBlur={() => {
                           field.onBlur();
                           reportChange();
@@ -459,6 +481,7 @@ export function ScreenBodyMetrics({
                         className={inputClass}
                       />
                     </FormControl>
+                    <FormMessage />
                   </FormItem>
                 )}
               />
@@ -472,15 +495,13 @@ export function ScreenBodyMetrics({
                       {t('bodyMetrics.age')}
                     </label>
                     <FormControl>
-                      <input
-                        type="number"
+                      <DecimalInput
+                        integer
+                        inputMode="numeric"
                         placeholder="25"
-                        {...field}
-                        value={field.value ?? ''}
-                        onChange={(e) => {
-                          const v = e.target.value;
-                          field.onChange(v === '' ? undefined : Number(v));
-                        }}
+                        name={field.name}
+                        value={field.value}
+                        onValueChange={field.onChange}
                         onBlur={() => {
                           field.onBlur();
                           reportChange();
@@ -488,6 +509,7 @@ export function ScreenBodyMetrics({
                         className={inputClass}
                       />
                     </FormControl>
+                    <FormMessage />
                   </FormItem>
                 )}
               />

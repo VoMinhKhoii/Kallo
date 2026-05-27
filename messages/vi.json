@@ -1053,5 +1053,20 @@
     "pipelineTimeout": "Phân tích mất quá lâu. Vui lòng thử lại.",
     "rateLimited": "Hệ thống đang bận. Vui lòng đợi một chút rồi thử lại.",
     "internal": "Đã xảy ra lỗi. Vui lòng thử lại."
+  },
+  "validation": {
+    "bodyMetrics": {
+      "weightRequired": "Vui lòng nhập cân nặng.",
+      "weightMin": "Cân nặng phải từ 30 kg trở lên.",
+      "weightMax": "Cân nặng phải từ 300 kg trở xuống.",
+      "heightRequired": "Vui lòng nhập chiều cao.",
+      "heightInt": "Chiều cao phải là số nguyên.",
+      "heightMin": "Chiều cao phải từ 100 cm trở lên.",
+      "heightMax": "Chiều cao phải từ 250 cm trở xuống.",
+      "ageRequired": "Vui lòng nhập tuổi.",
+      "ageInt": "Tuổi phải là số nguyên.",
+      "ageMin": "Tuổi phải từ 13 trở lên.",
+      "ageMax": "Tuổi phải từ 100 trở xuống."
+    }
   }
 }
