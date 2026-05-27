@@ -27,6 +27,7 @@ This file is the **single source of truth** for agent behavior. Rules here take 
   |-------|-------------|
   | `vercel-react-best-practices` | **Default for all tasks.** Any React/Next.js code: components, pages, data fetching, hooks, server actions, bundle optimization, re-render prevention, SSR/client patterns. 68 rules across 8 categories. |
   | `vercel-composition-patterns` | Component architecture: refactoring prop-heavy components, building compound components, designing reusable APIs, lifting state, context providers, React 19 patterns. |
+  | `nham-design` | **Required for ANY design or UI work in this app — even the lightest touch.** Nhẩm's brand system: warm earthy palette, Lora + DM Sans, italic-accent rule, Lucide icon allowlist, drift watchlist (`destructive` vs `nham-danger`, tiny-dot disease, trend-arrow tropes, etc.), and canonical-surface references. Invoke before changing colors, type, spacing, radii, shadows, copy tone, or any component visuals. |
   | `web-design-guidelines` | UI/UX work: styling, layout, accessibility, responsive design, form design, color contrast, spacing, typography. Audits against Web Interface Guidelines. |
   | `vercel-react-view-transitions` | Animations: page transitions, route change animations, shared element animations, enter/exit animations, list reorder, directional navigation. Uses native View Transition API. |
 
