@@ -70,7 +70,7 @@ export function VerdictHero({ overview }: VerdictHeroProps) {
   if (tooFew) {
     headline = t('verdict.gathering');
     muted = t('verdict.gatheringSub', {
-      days: dayFormatter.format(overview.loggedDays),
+      days: dayFormatter.format(overview.completeDays),
     });
   } else {
     if (consistent && attention) {
@@ -86,14 +86,17 @@ export function VerdictHero({ overview }: VerdictHeroProps) {
     muted =
       avgConfidence === null
         ? t('verdict.trustLineNoConfidence', {
-            days: dayFormatter.format(overview.loggedDays),
+            days: dayFormatter.format(overview.completeDays),
           })
         : t('verdict.trustLine', {
-            days: dayFormatter.format(overview.loggedDays),
+            days: dayFormatter.format(overview.completeDays),
             confidence: new Intl.NumberFormat(locale, {
               maximumFractionDigits: 0,
             }).format(avgConfidence),
           });
+    if (overview.partialDays > 0) {
+      muted += ` ${t('verdict.partialNote', { count: overview.partialDays })}`;
+    }
   }
 
   return (

@@ -14,6 +14,7 @@ import type {
   HeatmapData,
   HeatmapRange,
 } from '@/lib/types/dashboard';
+import { cn } from '@/lib/utils';
 import { getHeatmapColor, HEATMAP_COLORS } from './heatmap-colors';
 
 const DAY_LABELS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
@@ -80,6 +81,7 @@ export function AdherenceHeatmap({ data, range }: AdherenceHeatmapProps) {
   const getTooltipText = (cell: HeatmapCell) => {
     if (cell.status === 'future') return t('future');
     if (cell.status === 'outside') return t('outside');
+    if (cell.status === 'partial') return t('partial');
     if (cell.status !== 'logged' || cell.ratio === null) return t('notLogged');
 
     const { labelKey } = getHeatmapColor(cell.ratio);
@@ -144,9 +146,10 @@ export function AdherenceHeatmap({ data, range }: AdherenceHeatmapProps) {
                   const ratio = cell?.ratio ?? null;
                   const { bg } = getHeatmapColor(ratio);
                   const isLogged = cell?.status === 'logged' && ratio !== null;
+                  const isPartial = cell?.status === 'partial';
                   const isMuted =
                     cell?.status === 'future' || cell?.status === 'outside';
-                  const isFocusable = isLogged && !isMuted;
+                  const isFocusable = (isLogged || isPartial) && !isMuted;
                   const tooltipText = cell
                     ? getTooltipText(cell)
                     : t('notLogged');
@@ -178,11 +181,13 @@ export function AdherenceHeatmap({ data, range }: AdherenceHeatmapProps) {
                         >
                           {!isLogged && (
                             <div
-                              className={
+                              className={cn(
+                                'absolute inset-0 rounded-[3px]',
                                 isMuted
-                                  ? 'absolute inset-0 rounded-[3px] bg-nham-track/55 opacity-70'
-                                  : 'absolute inset-0 rounded-[3px] border border-nham-border bg-nham-track/30'
-                              }
+                                  ? 'bg-nham-track/55 opacity-70'
+                                  : 'bg-nham-track/30',
+                                isPartial && 'border border-nham-border'
+                              )}
                             />
                           )}
                         </motion.button>

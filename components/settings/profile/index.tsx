@@ -1,19 +1,21 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { ChevronDown, Loader2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useMemo, useState, useTransition } from 'react';
-import { useForm } from 'react-hook-form';
+import { type FieldErrors, useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { z } from 'zod';
 import { Form } from '@/components/ui/form';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { saveProfileSettings } from '@/lib/onboarding/actions';
 import {
-  bodyMetricsSchema,
+  bodyMetricsMessages,
   cookingHabitsSchema,
   countrySchema,
+  createBodyMetricsSchema,
 } from '@/lib/onboarding/schemas';
 import {
   calcBMR,
@@ -35,20 +37,40 @@ import { BodyMetrics } from './body-metrics';
 import { Cooking } from './cooking';
 import { Regional } from './regional';
 
-const profileSchema = bodyMetricsSchema
-  .merge(
-    z.object({
-      goal: z.enum(['cutting', 'bulking', 'maintaining']),
-      aggression: z.number().min(0.1).max(0.8).nullable(),
-      carbSplit: z.enum(['moderate_carb', 'lower_carb', 'higher_carb']),
-    })
-  )
-  .merge(countrySchema)
-  .merge(cookingHabitsSchema);
+const profileGoalSchema = z.object({
+  goal: z.enum(['cutting', 'bulking', 'maintaining']),
+  aggression: z.number().min(0.1).max(0.8).nullable(),
+  carbSplit: z.enum(['moderate_carb', 'lower_carb', 'higher_carb']),
+});
 
-export type ProfileFormValues = z.infer<typeof profileSchema>;
+export type ProfileFormValues = z.infer<
+  ReturnType<typeof createBodyMetricsSchema>
+> &
+  z.infer<typeof profileGoalSchema> &
+  z.infer<typeof countrySchema> &
+  z.infer<typeof cookingHabitsSchema>;
 
 type SectionId = 'body-metrics' | 'regional' | 'cooking';
+
+// Which tab owns each field, so an invalid submit can switch to the tab
+// holding the first error instead of failing silently behind another tab.
+const SECTION_FOR_FIELD: Partial<Record<keyof ProfileFormValues, SectionId>> = {
+  biologicalSex: 'body-metrics',
+  weightKg: 'body-metrics',
+  heightCm: 'body-metrics',
+  age: 'body-metrics',
+  activityLevel: 'body-metrics',
+  goal: 'body-metrics',
+  aggression: 'body-metrics',
+  carbSplit: 'body-metrics',
+  countryOfOrigin: 'regional',
+  countryOfResidence: 'regional',
+  oilUsage: 'cooking',
+  defaultRicePortion: 'cooking',
+  sugarBraised: 'cooking',
+  defaultProteinPortion: 'cooking',
+  brothConsumption: 'cooking',
+};
 
 interface Section {
   id: SectionId;
@@ -84,9 +106,10 @@ interface ProfileProps {
 export function Profile({ profile }: ProfileProps) {
   const t = useTranslations('settings');
   const tc = useTranslations('common');
+  const tValidation = useTranslations('validation.bodyMetrics');
   const locale = useLocale();
-  const [openSection, setOpenSection] = useState<SectionId>('body-metrics');
   const [isPending, startTransition] = useTransition();
+  const [activeTab, setActiveTab] = useState<SectionId>('body-metrics');
 
   const SECTIONS: Section[] = [
     {
@@ -135,25 +158,41 @@ export function Profile({ profile }: ProfileProps) {
     [profile]
   );
 
+  // Built with locale-aware messages so validation errors follow the active
+  // locale. Shares the shape of the type-level ProfileFormValues above.
+  const localizedProfileSchema = useMemo(
+    () =>
+      createBodyMetricsSchema(bodyMetricsMessages(tValidation))
+        .merge(profileGoalSchema)
+        .merge(countrySchema)
+        .merge(cookingHabitsSchema),
+    [tValidation]
+  );
+
   const form = useForm<ProfileFormValues>({
-    resolver: zodResolver(profileSchema),
+    resolver: zodResolver(localizedProfileSchema),
     defaultValues,
     mode: 'onBlur',
   });
 
   const isDirty = form.formState.isDirty;
 
-  function toggleSection(id: SectionId) {
-    setOpenSection((prev) => (prev === id ? prev : id));
-  }
-
   function handleCancel() {
     form.reset(defaultValues);
   }
 
-  function handleSave() {
-    const values = form.getValues();
+  function handleInvalid(errors: FieldErrors<ProfileFormValues>) {
+    const firstField = Object.keys(errors)[0] as
+      | keyof ProfileFormValues
+      | undefined;
+    const section = firstField ? SECTION_FOR_FIELD[firstField] : undefined;
+    if (section) {
+      setActiveTab(section);
+    }
+    toast.error(t('profilePanel.invalidError'));
+  }
 
+  function handleSave(values: ProfileFormValues) {
     // Compute TDEE and macros for persistence
     const bmr = calcBMR({
       biologicalSex: values.biologicalSex,
@@ -211,69 +250,44 @@ export function Profile({ profile }: ProfileProps) {
     <div style={{ fontFamily: 'DM Sans, sans-serif' }}>
       <Form {...form}>
         <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            handleSave();
-          }}
+          onSubmit={form.handleSubmit(handleSave, handleInvalid)}
           className="space-y-3"
         >
-          {SECTIONS.map((section) => {
-            const isOpen = openSection === section.id;
-            return (
-              <div
-                key={section.id}
-                className="overflow-hidden rounded-2xl border border-[#EAE7E0] bg-[#FDFCF8] transition-shadow hover:shadow-sm"
-              >
-                {/* Accordion header */}
-                <button
-                  type="button"
-                  onClick={() => toggleSection(section.id)}
-                  className="flex w-full items-center justify-between px-6 py-4 text-left"
+          <Tabs
+            value={activeTab}
+            onValueChange={(value) => setActiveTab(value as SectionId)}
+            className="w-full gap-0"
+          >
+            <TabsList className="mb-2 h-auto w-full justify-start gap-1 overflow-x-auto rounded-xl bg-[#EAE7E0]/40 p-1">
+              {SECTIONS.map((section) => (
+                <TabsTrigger
+                  key={section.id}
+                  value={section.id}
+                  className="flex-1 whitespace-nowrap rounded-lg px-3 py-1.5 font-medium text-[#7B6F62] text-[14px] focus-visible:ring-2 focus-visible:ring-[#C9A87C]/40 data-[state=active]:bg-white data-[state=active]:text-[#2C2416] data-[state=active]:shadow-sm"
                 >
-                  <div>
-                    <h3
-                      className="font-medium text-[#2C2416] text-[16px] tracking-tight"
-                      style={{ fontFamily: 'Lora, serif' }}
-                    >
-                      {section.title}
-                    </h3>
-                    <p className="mt-0.5 text-[#8B8682] text-[13px]">
-                      {section.subtitle}
-                    </p>
-                  </div>
-                  <ChevronDown
-                    className={`h-5 w-5 shrink-0 text-[#8B8682] transition-transform duration-300 ${
-                      isOpen ? 'rotate-180' : ''
-                    }`}
-                  />
-                </button>
+                  {section.title}
+                </TabsTrigger>
+              ))}
+            </TabsList>
 
-                {/* Accordion content */}
-                <AnimatePresence initial={false}>
-                  {isOpen && (
-                    <motion.div
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: 'auto', opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      transition={{
-                        height: { duration: 0.3, ease: 'easeInOut' },
-                        opacity: { duration: 0.2 },
-                      }}
-                      className="overflow-hidden"
-                    >
-                      <div className="border-[#EAE7E0] border-t px-6 py-6">
-                        {section.id === 'body-metrics' && <BodyMetrics />}
-                        {section.id === 'regional' && <Regional />}
-                        {section.id === 'cooking' && <Cooking />}
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-            );
-          })}
+            {SECTIONS.map((section) => (
+              <TabsContent
+                key={section.id}
+                value={section.id}
+                className="rounded-2xl border border-[#EAE7E0] bg-[#FDFCF8] p-3 focus-visible:outline-none sm:p-5 lg:p-6"
+              >
+                <p className="mb-5 text-[#7B6F62] text-[13px] sm:mb-6">
+                  {section.subtitle}
+                </p>
+                {section.id === 'body-metrics' && <BodyMetrics />}
+                {section.id === 'regional' && <Regional />}
+                {section.id === 'cooking' && <Cooking />}
+              </TabsContent>
+            ))}
+          </Tabs>
 
-          {/* Sticky Save/Cancel bar */}
+          {/* Pinned save bar — rests above the bottom edge while content
+              scrolls behind it and dissolves into a soft fade. */}
           <AnimatePresence>
             {isDirty && (
               <motion.div
@@ -281,24 +295,30 @@ export function Profile({ profile }: ProfileProps) {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: 20 }}
                 transition={{ duration: 0.2, ease: 'easeOut' }}
-                className="sticky bottom-0 z-10 flex items-center justify-end gap-3 rounded-2xl border border-[#EAE7E0] bg-[#FDFCF8]/95 px-6 py-4 shadow-lg backdrop-blur-sm"
+                className="sticky inset-x-0 bottom-0 z-20 pb-3 sm:pb-4"
               >
-                <button
-                  type="button"
-                  onClick={handleCancel}
-                  disabled={isPending}
-                  className="rounded-xl px-5 py-2.5 font-medium text-[#8B8682] text-[14px] transition-colors hover:bg-[#F5F4F0] hover:text-[#2C2416]"
-                >
-                  {tc('cancel')}
-                </button>
-                <button
-                  type="submit"
-                  disabled={isPending}
-                  className="flex items-center gap-2 rounded-xl bg-[#2C2416] px-5 py-2.5 font-medium text-[#FDFCF8] text-[14px] shadow-sm transition-all hover:bg-[#1C1917] disabled:opacity-50"
-                >
-                  {isPending && <Loader2 className="h-4 w-4 animate-spin" />}
-                  {t('save')}
-                </button>
+                <div
+                  aria-hidden="true"
+                  className="pointer-events-none absolute inset-x-0 -top-8 bottom-0 bg-gradient-to-t from-55% from-nham-surface to-transparent"
+                />
+                <div className="relative flex items-center justify-end gap-3 rounded-2xl border border-[#EAE7E0] bg-[#FDFCF8]/95 px-5 py-3.5 shadow-lg backdrop-blur-sm sm:px-6 sm:py-4">
+                  <button
+                    type="button"
+                    onClick={handleCancel}
+                    disabled={isPending}
+                    className="rounded-xl px-5 py-2.5 font-medium text-[#7B6F62] text-[14px] transition-colors hover:bg-[#F5F4F0] hover:text-[#2C2416] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C9A87C]/40"
+                  >
+                    {tc('cancel')}
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isPending}
+                    className="flex items-center gap-2 rounded-xl bg-[#2C2416] px-5 py-2.5 font-medium text-[#FDFCF8] text-[14px] shadow-sm transition-all hover:bg-[#1C1917] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C9A87C]/60 disabled:opacity-50"
+                  >
+                    {isPending && <Loader2 className="h-4 w-4 animate-spin" />}
+                    {t('save')}
+                  </button>
+                </div>
               </motion.div>
             )}
           </AnimatePresence>

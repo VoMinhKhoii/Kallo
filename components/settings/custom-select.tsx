@@ -29,26 +29,36 @@ export function CustomSelect({ options, value, onChange }: CustomSelectProps) {
         setIsOpen(false);
       }
     }
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === 'Escape') {
+        setIsOpen(false);
+      }
+    }
     if (isOpen) {
       document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('keydown', handleKeyDown);
     }
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
   }, [isOpen]);
 
   return (
-    <div className="relative" ref={containerRef}>
+    <div className="relative min-w-0" ref={containerRef}>
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className={`flex w-full items-center justify-between rounded-lg border bg-white px-3 py-2 text-[#2C2416] text-[14px] transition-all focus:outline-none ${
+        aria-expanded={isOpen}
+        className={`flex w-full items-center justify-between rounded-lg border bg-white px-3 py-2 text-[#2C2416] text-[14px] transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C9A87C]/40 ${
           isOpen
             ? 'border-[#C9A87C] shadow-sm ring-1 ring-[#C9A87C]/20'
             : 'border-[#EAE7E0] hover:border-[#C9A87C]/50'
         }`}
       >
-        <span className="truncate pr-2">{selectedOption?.label}</span>
+        <span className="min-w-0 truncate pr-2">{selectedOption?.label}</span>
         <ChevronDown
-          className={`h-4 w-4 text-[#8B8682] transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`}
+          className={`h-4 w-4 shrink-0 text-[#7B6F62] transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`}
         />
       </button>
       <AnimatePresence>
@@ -64,11 +74,12 @@ export function CustomSelect({ options, value, onChange }: CustomSelectProps) {
               <button
                 key={opt.value}
                 type="button"
+                aria-current={value === opt.value ? 'true' : undefined}
                 onClick={() => {
                   onChange(opt.value);
                   setIsOpen(false);
                 }}
-                className="flex w-full items-center justify-between px-3 py-2.5 text-left text-[#2C2416] text-[14px] transition-colors hover:bg-[#F5F4F0]"
+                className="flex w-full items-center justify-between px-3 py-2.5 text-left text-[#2C2416] text-[14px] transition-colors hover:bg-[#F5F4F0] focus-visible:bg-[#F5F4F0] focus-visible:outline-none"
               >
                 <span className={value === opt.value ? 'font-medium' : ''}>
                   {opt.label}

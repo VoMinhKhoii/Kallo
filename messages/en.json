@@ -461,9 +461,10 @@
       "attentionOnly": "{attention} need a closer look {period}.",
       "quiet": "A quiet stretch. Keep logging to sharpen the pattern.",
       "gathering": "Gathering your pattern.",
-      "gatheringSub": "{days} logged days so far — keep going and the picture sharpens.",
-      "trustLine": "{days} logged days · {confidence}% avg confidence",
-      "trustLineNoConfidence": "{days} logged days",
+      "gatheringSub": "{days} complete days so far — keep going and the picture sharpens.",
+      "trustLine": "{days} complete days · {confidence}% avg confidence",
+      "trustLineNoConfidence": "{days} complete days",
+      "partialNote": "· {count, plural, one {# partial day set aside} other {# partial days set aside}}",
       "period7d": "the last 7 days",
       "period30d": "the last 30 days",
       "period90d": "the last 90 days"
@@ -471,7 +472,7 @@
     "rhythm": {
       "eyebrow": "The shape of your days",
       "calories": "kcal",
-      "avgPerLoggedDay": "avg per logged day",
+      "avgPerLoggedDay": "avg per complete day",
       "compositionLabel": "{macro} {pct}%",
       "macroCompositionAria": "Macro composition",
       "consistency": {
@@ -569,6 +570,9 @@
       "higherCarb": "Higher carb",
       "higherCarbDescription": "Active (30/20/50)",
       "tdee": "Estimated TDEE",
+      "basedOnTdee": "Based on TDEE",
+      "perDay": "kcal/day",
+      "maintenance": "at maintenance",
       "calorieTarget": "Daily calorie target",
       "protein": "Protein",
       "carbs": "Carbs",
@@ -875,6 +879,7 @@
     "adherenceHeatmap": {
       "onTrack": "{percent}% on track",
       "notLogged": "Not logged",
+      "partial": "Partial day (under-logged)",
       "future": "Future day",
       "outside": "Outside selected range",
       "offTarget": "Off target",
@@ -950,7 +955,17 @@
       "legacyMacroWarning": "Daily macro summary unavailable because some legacy meals have unknown macros.",
       "loadErrorTitle": "Could not load this day",
       "loadErrorDescription": "Your saved meals for this date did not load. Try again before logging more food.",
-      "retryDay": "Retry day"
+      "retryDay": "Retry day",
+      "partialDayNotice": {
+        "title": "This day may be under-logged",
+        "body": "Only {calories, number} of your {target, number} kcal target is logged, so it's set aside from your trends. Add anything you missed to fold it back in."
+      },
+      "partialYesterdayPrompt": {
+        "title": "Yesterday looks under-logged",
+        "body": "Only {calories, number} of your {target, number} kcal target is logged.",
+        "open": "Open yesterday",
+        "dismiss": "Dismiss"
+      }
     },
     "streaming": {
       "connecting": "Connecting...",
@@ -1014,7 +1029,8 @@
     },
     "regionalPanel": {
       "description": "AI uses your country info to understand food culture and locally available ingredients.",
-      "searchCountryLabel": "Search country"
+      "searchCountryLabel": "Search country",
+      "clearLabel": "Clear selection"
     },
     "profilePage": {
       "title": "Profile",
@@ -1027,7 +1043,8 @@
       "bodyMetricsSubtitle": "Weight, height, activity level, and macro targets",
       "regionalSubtitle": "Country of origin and current residence",
       "cookingSubtitle": "Oil usage, rice, sugar, protein, and broth defaults",
-      "saveError": "Failed to save settings. Please try again."
+      "saveError": "Failed to save settings. Please try again.",
+      "invalidError": "Some entries are invalid — please review your body metrics."
     }
   },
   "errors": {
@@ -1036,5 +1053,20 @@
     "pipelineTimeout": "Analysis took too long. Please try again.",
     "rateLimited": "The service is busy. Please wait a moment and try again.",
     "internal": "Something went wrong. Please try again."
+  },
+  "validation": {
+    "bodyMetrics": {
+      "weightRequired": "Please enter your weight.",
+      "weightMin": "Weight must be at least 30 kg.",
+      "weightMax": "Weight must be at most 300 kg.",
+      "heightRequired": "Please enter your height.",
+      "heightInt": "Height must be a whole number.",
+      "heightMin": "Height must be at least 100 cm.",
+      "heightMax": "Height must be at most 250 cm.",
+      "ageRequired": "Please enter your age.",
+      "ageInt": "Age must be a whole number.",
+      "ageMin": "Age must be at least 13.",
+      "ageMax": "Age must be at most 100."
+    }
   }
 }

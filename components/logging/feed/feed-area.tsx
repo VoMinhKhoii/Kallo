@@ -9,6 +9,8 @@ import { toast } from 'sonner';
 import { EmptyState } from '@/components/logging/feed/empty-state';
 import { MacroSummary } from '@/components/logging/feed/macro-summary';
 import { MealEntry } from '@/components/logging/feed/meal-entry';
+import { PartialDayNotice } from '@/components/logging/feed/partial-day-notice';
+import { PartialYesterdayPrompt } from '@/components/logging/feed/partial-yesterday-prompt';
 import { PersistedMealCard } from '@/components/logging/feed/persisted-meal-card';
 import { StreamingMealEntry } from '@/components/logging/feed/streaming-meal-entry';
 import {
@@ -16,6 +18,7 @@ import {
   type MealInputHandle,
 } from '@/components/logging/input/meal-input';
 import type { LoggingProfile } from '@/components/logging/logging-shell';
+import { addDays } from '@/components/logging/sidebar/timeline-utils';
 import { useFeedSubmit } from '@/hooks/use-feed-submit';
 import { loggingDayKeys, useLoggingDay } from '@/hooks/use-logging-day';
 import { useConfirmMeal } from '@/hooks/use-meal-mutations';
@@ -23,6 +26,7 @@ import { useStreamAnalysis } from '@/hooks/use-stream-analysis';
 import { useStreamingTerminalEffects } from '@/hooks/use-streaming-terminal-effects';
 import { useSubmitGuard } from '@/hooks/use-submit-guard';
 import { sumDisplayedNutrition } from '@/lib/ai/pipeline/goal-adjustment';
+import { isLikelyPartialDay } from '@/lib/nutrition/pattern/completeness';
 import type {
   ChatMessage,
   MealQuantityEdit,
@@ -50,10 +54,12 @@ function toStreamingPhase(status: string): StreamingPhase {
 
 interface FeedAreaProps {
   selectedDate: string;
+  today: string;
   profile: LoggingProfile;
   initialMeal?: string;
   isDateNavigationPending?: boolean;
   onInitialMealApplied?: () => void;
+  onSelectDate: (date: string) => void;
 }
 
 function MacroSummarySkeleton() {
@@ -159,10 +165,12 @@ function LoggingDayErrorState({
 
 export function FeedArea({
   selectedDate,
+  today,
   profile,
   initialMeal,
   isDateNavigationPending = false,
   onInitialMealApplied,
+  onSelectDate,
 }: FeedAreaProps) {
   const t = useTranslations('logging.feedArea');
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -172,6 +180,11 @@ export function FeedArea({
   const queryClient = useQueryClient();
   const { guard } = useSubmitGuard();
   const [streamingMsgId, setStreamingMsgId] = useState<string | null>(null);
+  // Session-scoped dismissal for the "yesterday under-logged" prompt. FeedArea
+  // stays mounted across date navigation, so this survives clicking through to
+  // yesterday and back; a hard reload re-arms the once-daily nudge.
+  const [yesterdayPromptDismissed, setYesterdayPromptDismissed] =
+    useState(false);
 
   const lastPrefilledMealRef = useRef<string | null>(null);
 
@@ -281,6 +294,10 @@ export function FeedArea({
       messages.find((message) => message.id === streamingMsgId)?.loggedDate ??
       selectedDate;
 
+    // byUserDate is a 3-element key; the actual query uses byUserDateOffset
+    // (4 elements, including the tz offset). This relies on TanStack Query's
+    // default prefix matching to invalidate it — do not add `exact: true` here
+    // or the yesterday-prompt/day view will show stale totals after a re-log.
     queryClient.invalidateQueries({
       queryKey: loggingDayKeys.byUserDate(profile.userId, originDate),
     });
@@ -403,8 +420,30 @@ export function FeedArea({
   const hasContent =
     hasPersistedMeals || hasPendingMessages || hasStreamingMessages;
 
+  const isToday = selectedDate === today;
+  const isPastDay = selectedDate < today;
+  const showPartialDayNotice =
+    isPastDay &&
+    !isDayLoading &&
+    !isDayError &&
+    !hasUnknownDailyMacros &&
+    hasPersistedMeals &&
+    !hasPendingMessages &&
+    !hasStreamingMessages &&
+    isLikelyPartialDay(dailyTotals.calories, profile.calorieTarget);
+
   return (
     <main className="flex min-w-0 flex-1 flex-col self-stretch overflow-hidden">
+      {isToday && !yesterdayPromptDismissed && (
+        <PartialYesterdayPrompt
+          userId={profile.userId}
+          yesterday={addDays(today, -1)}
+          calorieTarget={profile.calorieTarget}
+          onOpenDay={onSelectDate}
+          onDismiss={() => setYesterdayPromptDismissed(true)}
+        />
+      )}
+
       <div
         className="shrink-0 bg-nham-surface px-3 pt-3 pb-2 sm:px-6 sm:pt-4 sm:pb-3"
         data-testid="macro-summary-region"
@@ -424,6 +463,17 @@ export function FeedArea({
           )}
         </div>
       </div>
+
+      {showPartialDayNotice && (
+        <div className="shrink-0 px-3 pb-2 sm:px-6">
+          <div className="mx-auto max-w-4xl">
+            <PartialDayNotice
+              calories={dailyTotals.calories}
+              target={profile.calorieTarget}
+            />
+          </div>
+        </div>
+      )}
 
       {/* Scrollable meal cards only */}
       <div

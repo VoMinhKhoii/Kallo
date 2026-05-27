@@ -1,3 +1,4 @@
+import { classifyDayCompleteness } from '@/lib/nutrition/pattern/completeness';
 import type {
   HeatmapCell,
   HeatmapData,
@@ -155,6 +156,12 @@ export function buildCalorieAdherenceHeatmapData({
     dailyCalories.map((day) => [day.date, day.calories])
   );
   const hasTarget = calorieTarget !== null && calorieTarget > 0;
+  // Days under-logged relative to the target are marked 'partial' so they are
+  // neither colour-graded as a low-intake day nor counted toward adherence.
+  const { partialDates } = classifyDayCompleteness(
+    dailyCalories,
+    calorieTarget
+  );
 
   for (
     let current = startDate;
@@ -167,10 +174,11 @@ export function buildCalorieAdherenceHeatmapData({
 
     const weekIndex = Math.floor(daysBetween(startWeek, current) / 7);
     const dayIndex = getMondayDayIndex(current);
+    const isPartial = partialDates.has(key);
     cells[dayIndex][weekIndex] = {
       date: key,
-      ratio: calories / calorieTarget,
-      status: 'logged',
+      ratio: isPartial ? null : calories / calorieTarget,
+      status: isPartial ? 'partial' : 'logged',
     };
   }
 
