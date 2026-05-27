@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Nhẩm — UI Kit</title>
+<link rel="icon" type="image/svg+xml" href="../../assets/favicon.svg" />
+<link rel="stylesheet" href="../../colors_and_type.css" />
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; min-height: 100%; background: #fefbf6; }
+  #root { min-height: 100vh; }
+
+  @keyframes nham-blink { 0%, 100% { opacity: 1 } 50% { opacity: 0 } }
+  @keyframes nham-pulse { 0%, 100% { opacity: 1; transform: scale(1) } 50% { opacity: 0.6; transform: scale(0.85) } }
+  @keyframes nham-spring {
+    0% { opacity: 0; transform: translateY(16px) scale(0.95); }
+    100% { opacity: 1; transform: translateY(0) scale(1); }
+  }
+
+  /* Kit-mode segmented router (top-right floating). */
+  .kit-router {
+    position: fixed; bottom: 16px; right: 16px; z-index: 100;
+    display: inline-flex; gap: 2px; padding: 4px;
+    background: rgba(255,255,255,0.85); backdrop-filter: blur(12px);
+    border: 1px solid rgba(232,213,181,0.6); border-radius: 999px;
+    box-shadow: 0 10px 30px rgba(44,36,22,0.08);
+    font-family: "DM Sans", sans-serif;
+  }
+  .kit-router button {
+    border: none; background: transparent; cursor: pointer;
+    padding: 6px 14px; border-radius: 999px; font-size: 11px;
+    color: #8b7355; font-weight: 600; letter-spacing: 0.04em;
+    text-transform: uppercase; transition: all .2s;
+  }
+  .kit-router button.active { background: #695e4e; color: #fff; }
+  .kit-router button:hover:not(.active) { background: rgba(240,234,224,0.6); color: #2c2416; }
+</style>
+
+<!-- React + Babel -->
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<!-- Lucide icon library -->
+<script src="https://unpkg.com/lucide@0.483.0"></script>
+
+<!-- Tokens then components (order matters — each file pushes to window) -->
+<script src="tokens.js"></script>
+<script type="text/babel" src="_shared.jsx"></script>
+<script type="text/babel" src="MealInput.jsx"></script>
+<script type="text/babel" src="MealCard.jsx"></script>
+<script type="text/babel" src="Sidebar.jsx"></script>
+<script type="text/babel" src="TodayDock.jsx"></script>
+<script type="text/babel" src="Heatmap.jsx"></script>
+<script type="text/babel" src="WeightChart.jsx"></script>
+<script type="text/babel" src="DashboardScreen.jsx"></script>
+<script type="text/babel" src="LoggingScreen.jsx"></script>
+<script type="text/babel" src="NutritionScreen.jsx"></script>
+<script type="text/babel" src="Landing.jsx"></script>
+<script type="text/babel" src="AppShell.jsx"></script>
+</head>
+<body>
+<div id="root" data-screen-label="01 Nhẩm UI Kit"></div>
+
+<script type="text/babel" data-presets="env,react">
+const { useState, useMemo } = React;
+
+const SEED_MEALS = [
+  {
+    time: "12:47",
+    rawInput: "2 mực kho mặn + 50gr nạc dăm luộc + 1 chén cơm + canh chua",
+    calories: 585, protein: 38, carbs: 72, fat: 14,
+    groups: [
+      { name: "Mực kho (2 pcs)", calories: 180, protein: 18, carbs: 8, fat: 6 },
+      { name: "Nạc dăm (50g)", calories: 145, protein: 14, carbs: 0, fat: 9 },
+      { name: "Cơm trắng (1 chén)", calories: 200, protein: 4, carbs: 44, fat: 0 },
+      { name: "Canh chua", calories: 60, protein: 2, carbs: 8, fat: 1 },
+    ],
+  },
+  {
+    time: "08:12",
+    rawInput: "Phở bò tái + quẩy",
+    calories: 480, protein: 32, carbs: 64, fat: 12,
+    groups: [
+      { name: "Phở bò tái", calories: 420, protein: 30, carbs: 56, fat: 10 },
+      { name: "Quẩy (1 cây)", calories: 60, protein: 2, carbs: 8, fat: 3 },
+    ],
+  },
+];
+
+function App() {
+  const [route, setRoute] = useState({ surface: "landing" }); // {surface: 'landing' | 'app', screen?}
+  const [meals, setMeals] = useState(SEED_MEALS);
+
+  const nutrition = useMemo(() => {
+    const sum = meals.reduce((a, m) => ({
+      calories: a.calories + m.calories,
+      protein: a.protein + m.protein,
+      carbs: a.carbs + m.carbs,
+      fat: a.fat + m.fat,
+    }), { calories: 0, protein: 0, carbs: 0, fat: 0 });
+    return {
+      calories: { current: sum.calories, target: 2200 },
+      protein:  { current: sum.protein,  target: 140 },
+      carbs:    { current: sum.carbs,    target: 250 },
+      fat:      { current: sum.fat,      target: 70  },
+    };
+  }, [meals]);
+
+  const weightData = useMemo(() => window.genWeightData(), []);
+  const heatmapData = useMemo(() => window.genHeatmap(30), []);
+
+  function addMeal(text) {
+    // Canned analysis. In the real product this is the Gemini pipeline.
+    const cal = 320 + Math.floor(Math.random() * 380);
+    const newMeal = {
+      time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+      rawInput: text,
+      calories: cal,
+      protein: Math.round(cal * 0.22 / 4),
+      carbs:   Math.round(cal * 0.50 / 4),
+      fat:     Math.round(cal * 0.28 / 9),
+      groups: [
+        { name: text.split(/[+,]/)[0].trim() || "Main", calories: Math.round(cal*0.7), protein: 18, carbs: 32, fat: 8 },
+        { name: text.split(/[+,]/)[1]?.trim() || "Side", calories: Math.round(cal*0.3), protein: 6, carbs: 18, fat: 4 },
+      ],
+    };
+    setMeals(prev => [newMeal, ...prev]);
+  }
+
+  // ----- Screens -----
+  const screens = {
+    landing:   <Landing onEnterApp={() => setRoute({ surface: "app", screen: "dashboard" })} />,
+    dashboard: <DashboardScreen nutrition={nutrition} meals={meals} weightData={weightData} heatmapData={heatmapData} onLogMeal={() => setRoute({ surface: "app", screen: "logging" })} />,
+    nutrition: <NutritionScreen />,
+    logging:   <LoggingScreen meals={meals} addMeal={addMeal} />,
+    settings:  <NutritionScreen />, // placeholder reuse
+  };
+
+  let content;
+  if (route.surface === "landing") {
+    content = screens.landing;
+  } else {
+    content = (
+      <AppShell
+        current={route.screen}
+        onNavigate={s => setRoute({ surface: "app", screen: s })}
+        onExitApp={() => setRoute({ surface: "landing" })}
+      >
+        {screens[route.screen]}
+      </AppShell>
+    );
+  }
+
+  // Floating kit router so we can jump anywhere.
+  const target = route.surface === "landing" ? "landing" : route.screen;
+  const segments = [
+    { id: "landing",   label: "Landing" },
+    { id: "dashboard", label: "Dashboard" },
+    { id: "logging",   label: "Logging" },
+    { id: "nutrition", label: "Nutrition" },
+  ];
+
+  return (
+    <React.Fragment>
+      {content}
+      <div className="kit-router" role="tablist">
+        {segments.map(s => (
+          <button key={s.id}
+            className={target === s.id ? "active" : ""}
+            onClick={() => s.id === "landing" ? setRoute({ surface: "landing" }) : setRoute({ surface: "app", screen: s.id })}>
+            {s.label}
+          </button>
+        ))}
+      </div>
+    </React.Fragment>
+  );
+}
+
+const root = ReactDOM.createRoot(document.getElementById("root"));
+root.render(<App />);
+</script>
+
+</body>
+</html>

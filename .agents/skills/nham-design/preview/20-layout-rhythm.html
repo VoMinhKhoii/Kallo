@@ -1,0 +1,102 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><link rel="stylesheet" href="_shared.css"></head>
+<body><div class="card">
+  <style>
+    .lane { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .col { padding: 14px; border-radius: var(--radius-xl); border: 1px solid var(--border-soft); background: #fff; min-height: 0;}
+    .col.bad { border-color: rgba(211, 123, 105, 0.35); background: color-mix(in srgb, var(--nham-danger) 4%, #fff); }
+    .col.good { border-color: rgba(124, 163, 104, 0.35); background: color-mix(in srgb, var(--nham-success) 4%, #fff); }
+    .col .head { display: flex; align-items: center; gap: 8px; font-family: var(--font-ui); font-weight: 700; font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase; margin-bottom: 10px; }
+    .col.bad .head { color: var(--nham-danger); }
+    .col.good .head { color: var(--nham-success); }
+    .col .head::before { content: ""; width: 6px; height: 6px; border-radius: 999px; background: currentColor; }
+    .caption { font-family: var(--font-mono); font-size: 10px; color: var(--fg-stone); margin-top: 8px; line-height: 1.4; }
+
+    /* Cramped card */
+    .cramped { padding: 6px 8px; border: 1px solid var(--border-soft); border-radius: 8px; background: #fff; font-family: var(--font-ui); }
+    .cramped .lbl { font-size: 9px; color: var(--fg-stone); margin: 0; }
+    .cramped .v   { font-size: 18px; color: var(--fg); margin: 1px 0; }
+    .cramped .meta{ font-size: 9px; color: var(--fg-stone); margin: 0; }
+    .cramped .row + .row { margin-top: 6px; }
+    .cramped-stack > div + div { margin-top: 2px; }
+
+    /* Canonical card */
+    .canon { padding: 20px; border: 1px solid var(--border-soft); border-radius: var(--radius-3xl); background: #fff; font-family: var(--font-ui); display: flex; flex-direction: column; gap: 14px; }
+    .canon .eyebrow { font-family: var(--font-ui); font-weight: 700; font-size: 10px; letter-spacing: 0.2em; color: var(--fg-stone); text-transform: uppercase; }
+    .canon .v { font-family: var(--font-display); font-weight: 500; font-size: 36px; color: var(--fg); letter-spacing: -0.03em; line-height: 1; font-variant-numeric: tabular-nums; }
+    .canon .meta { font-size: 12px; color: var(--fg-muted); margin: 0;}
+
+    /* Section gap demo */
+    .gap-bad > div { padding: 6px; border-radius: 8px; border: 1px solid var(--border-soft); background:#fff; }
+    .gap-bad > div + div { margin-top: 4px; }
+    .gap-good { display:flex; flex-direction: column; gap: 20px; }
+    .gap-good > div { padding: 16px; border-radius: var(--radius-2xl); border: 1px solid var(--border-soft); background:#fff; }
+    .gap-bad .h, .gap-good .h { font-family: var(--font-ui); font-weight: 600; font-size: 11px; color: var(--fg); margin-bottom: 2px;}
+    .gap-bad .p, .gap-good .p { font-family: var(--font-ui); font-size: 10px; color: var(--fg-muted); margin: 0; }
+  </style>
+
+  <!-- Pair 1: card padding -->
+  <div class="lane">
+    <div class="col bad">
+      <div class="head">DON'T — cramped card</div>
+      <div class="cramped">
+        <div class="row"><p class="lbl">CALORIES REMAINING</p><p class="v">1,615</p><p class="meta">585 kcal logged</p></div>
+      </div>
+      <div class="caption">p-2 + tiny type. Reads as a "data widget", not a glance-able panel.</div>
+    </div>
+    <div class="col good">
+      <div class="head">DO — generous card</div>
+      <div class="canon">
+        <div>
+          <div class="eyebrow">Calories remaining</div>
+          <div class="v" style="margin-top: 6px;">1,615<span style="font-family: var(--font-display); font-style: italic; color: var(--fg-muted); font-size: 18px; font-weight: 400; margin-left: 6px;">/ 2,200</span></div>
+        </div>
+        <p class="meta">585 kcal logged</p>
+      </div>
+      <div class="caption">p-5 / 18-22 radius / 14px gap between header and body. The number breathes.</div>
+    </div>
+  </div>
+
+  <!-- Pair 2: section gap rhythm -->
+  <div class="lane">
+    <div class="col bad">
+      <div class="head">DON'T — section gap = 4px</div>
+      <div class="gap-bad">
+        <div><div class="h">Today</div><p class="p">Calorie ring + macros…</p></div>
+        <div><div class="h">Progress</div><p class="p">Weight trend…</p></div>
+        <div><div class="h">Consistency</div><p class="p">Adherence heatmap…</p></div>
+      </div>
+      <div class="caption">Sections touch. Reads as one giant table. No editorial rhythm.</div>
+    </div>
+    <div class="col good">
+      <div class="head">DO — section gap = 20–24</div>
+      <div class="gap-good">
+        <div><div class="h">Today</div><p class="p">Calorie ring + macros…</p></div>
+        <div><div class="h">Progress</div><p class="p">Weight trend…</p></div>
+      </div>
+      <div class="caption">gap-5 between dashboard sections. Each one is its own paragraph.</div>
+    </div>
+  </div>
+
+  <!-- Pair 3: margin discipline -->
+  <div class="lane">
+    <div class="col bad">
+      <div class="head">DON'T — margin-stacked children</div>
+      <pre style="margin:0; font-family: var(--font-mono); font-size: 10px; color: var(--fg-muted); white-space: pre-wrap; background: rgba(0,0,0,0.02); padding: 10px; border-radius: 8px; line-height: 1.5;">&lt;section&gt;
+  &lt;h2 className="mb-3"&gt;…&lt;/h2&gt;
+  &lt;p  className="mb-4 mt-2"&gt;…&lt;/p&gt;
+  &lt;div className="mt-6 mb-2"&gt;…&lt;/div&gt;
+&lt;/section&gt;</pre>
+      <div class="caption">Margin collapse + arbitrary spacing per child. Untrackable.</div>
+    </div>
+    <div class="col good">
+      <div class="head">DO — parent owns the rhythm</div>
+      <pre style="margin:0; font-family: var(--font-mono); font-size: 10px; color: var(--fg-muted); white-space: pre-wrap; background: rgba(0,0,0,0.02); padding: 10px; border-radius: 8px; line-height: 1.5;">&lt;section className="flex flex-col gap-4"&gt;
+  &lt;h2&gt;…&lt;/h2&gt;
+  &lt;p&gt;…&lt;/p&gt;
+  &lt;div&gt;…&lt;/div&gt;
+&lt;/section&gt;</pre>
+      <div class="caption">flex / grid + gap. Spacing belongs to the layout, not the children.</div>
+    </div>
+  </div>
+</div></body></html>

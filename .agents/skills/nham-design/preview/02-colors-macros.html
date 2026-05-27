@@ -1,0 +1,29 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><link rel="stylesheet" href="_shared.css"></head>
+<body><div class="card">
+  <style>
+    .macro { flex: 1; padding: 20px; border-radius: var(--radius-2xl); background: #fff; border: 1px solid var(--border-soft); }
+    .dot { display: inline-block; width: 14px; height: 14px; border-radius: 999px; vertical-align: middle; margin-right: 10px; }
+    .name { font-family: var(--font-display); font-size: 22px; color: var(--fg); display: flex; align-items: center; }
+    .hex { font-family: var(--font-mono); font-size: 11px; color: var(--fg-stone); margin-top: 8px; }
+    .bar { height: 6px; border-radius: 999px; background: var(--bg-wash); overflow: hidden; margin-top: 14px; }
+    .fill { height: 100%; border-radius: 999px; }
+  </style>
+  <div class="row">
+    <div class="macro">
+      <div class="name"><span class="dot" style="background:#c9a87c"></span>Protein</div>
+      <div class="bar"><div class="fill" style="background:#c9a87c;width:72%"></div></div>
+      <div class="hex">#c9a87c · --nham-macro-protein</div>
+    </div>
+    <div class="macro">
+      <div class="name"><span class="dot" style="background:#8b7355"></span>Carbs</div>
+      <div class="bar"><div class="fill" style="background:#8b7355;width:54%"></div></div>
+      <div class="hex">#8b7355 · --nham-macro-carbs</div>
+    </div>
+    <div class="macro">
+      <div class="name"><span class="dot" style="background:#a8a29e"></span>Fat</div>
+      <div class="bar"><div class="fill" style="background:#a8a29e;width:38%"></div></div>
+      <div class="hex">#a8a29e · --nham-macro-fat</div>
+    </div>
+  </div>
+</div></body></html>

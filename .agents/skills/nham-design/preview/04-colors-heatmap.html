@@ -1,0 +1,28 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><link rel="stylesheet" href="_shared.css"></head>
+<body><div class="card">
+  <style>
+    .scale { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
+    .step { aspect-ratio: 1.4 / 1; border-radius: var(--radius-xl); display: flex; flex-direction: column; justify-content: space-between; padding: 10px 12px; color: #fff; font-size: 11px; }
+    .step .lbl { font-weight: 600; }
+    .step .hex { font-family: var(--font-mono); opacity: 0.85; }
+    .legend { display:flex; justify-content: space-between; font-size: 11px; color: var(--fg-stone); margin-top: 4px;}
+    .grid-demo { display: grid; grid-template-columns: repeat(20, 1fr); gap: 3px; margin-top: 8px;}
+    .grid-demo > div { aspect-ratio: 1; border-radius: 3px; }
+  </style>
+  <div class="scale">
+    <div class="step" style="background:#7ca368"><span class="lbl">On target</span><span class="hex">#7ca368</span></div>
+    <div class="step" style="background:#a6c495"><span class="lbl">Close</span><span class="hex">#a6c495</span></div>
+    <div class="step" style="background:#d4c9ad; color:#5a5043"><span class="lbl">Slight</span><span class="hex">#d4c9ad</span></div>
+    <div class="step" style="background:#e09c84"><span class="lbl">Moderate</span><span class="hex">#e09c84</span></div>
+    <div class="step" style="background:#d37b69"><span class="lbl">Far</span><span class="hex">#d37b69</span></div>
+  </div>
+  <div class="legend"><span>under-target → on-target</span><span>→ over-target</span></div>
+  <div class="grid-demo">
+    <!-- 40 days of fake adherence -->
+    <div style="background:#f5f4f0"></div><div style="background:#a6c495"></div><div style="background:#7ca368"></div><div style="background:#7ca368"></div><div style="background:#d4c9ad"></div><div style="background:#a6c495"></div><div style="background:#7ca368"></div><div style="background:#e09c84"></div><div style="background:#d4c9ad"></div><div style="background:#7ca368"></div>
+    <div style="background:#7ca368"></div><div style="background:#a6c495"></div><div style="background:#d4c9ad"></div><div style="background:#a6c495"></div><div style="background:#7ca368"></div><div style="background:#7ca368"></div><div style="background:#d4c9ad"></div><div style="background:#a6c495"></div><div style="background:#7ca368"></div><div style="background:#d37b69"></div>
+    <div style="background:#a6c495"></div><div style="background:#7ca368"></div><div style="background:#7ca368"></div><div style="background:#d4c9ad"></div><div style="background:#e09c84"></div><div style="background:#a6c495"></div><div style="background:#7ca368"></div><div style="background:#7ca368"></div><div style="background:#7ca368"></div><div style="background:#a6c495"></div>
+    <div style="background:#f5f4f0"></div><div style="background:#f5f4f0"></div><div style="background:#f5f4f0"></div><div style="background:#f5f4f0"></div><div style="background:#f5f4f0"></div><div style="background:#f5f4f0"></div><div style="background:#f5f4f0"></div><div style="background:#f5f4f0"></div><div style="background:#f5f4f0"></div><div style="background:#f5f4f0"></div>
+  </div>
+</div></body></html>
