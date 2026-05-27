@@ -13,7 +13,8 @@
       "!dist",
       "!**/dist",
       "!apps/mobile",
-      "!supabase/migrations/meta"
+      "!supabase/migrations/meta",
+      "!.agents/skills"
     ]
   },
   "formatter": {
