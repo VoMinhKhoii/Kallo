@@ -4,7 +4,13 @@ import { useTranslations } from 'next-intl';
 import { useMemo } from 'react';
 import { useFormContext, useWatch } from 'react-hook-form';
 import { CustomSelect } from '@/components/settings/custom-select';
-import { FormControl, FormField, FormItem } from '@/components/ui/form';
+import { DecimalInput } from '@/components/shared/decimal-input';
+import {
+  FormControl,
+  FormField,
+  FormItem,
+  FormMessage,
+} from '@/components/ui/form';
 import { AGGRESSION_KCAL_PER_KG } from '@/lib/onboarding/constants';
 import {
   calcBMR,
@@ -154,18 +160,17 @@ export function BodyMetrics() {
                 {t('weight')} ({t('weightUnit')})
               </label>
               <FormControl>
-                <input
-                  type="number"
+                <DecimalInput
+                  inputMode="decimal"
                   placeholder="65"
-                  value={field.value ?? ''}
-                  onChange={(e) => {
-                    const v = e.target.value;
-                    field.onChange(v === '' ? undefined : Number(v));
-                  }}
+                  name={field.name}
+                  value={field.value}
+                  onValueChange={field.onChange}
                   onBlur={field.onBlur}
                   className={inputClass}
                 />
               </FormControl>
+              <FormMessage />
             </FormItem>
           )}
         />
@@ -180,18 +185,18 @@ export function BodyMetrics() {
                 {t('height')} ({t('heightUnit')})
               </label>
               <FormControl>
-                <input
-                  type="number"
+                <DecimalInput
+                  integer
+                  inputMode="numeric"
                   placeholder="170"
-                  value={field.value ?? ''}
-                  onChange={(e) => {
-                    const v = e.target.value;
-                    field.onChange(v === '' ? undefined : Number(v));
-                  }}
+                  name={field.name}
+                  value={field.value}
+                  onValueChange={field.onChange}
                   onBlur={field.onBlur}
                   className={inputClass}
                 />
               </FormControl>
+              <FormMessage />
             </FormItem>
           )}
         />
@@ -206,18 +211,18 @@ export function BodyMetrics() {
                 {t('age')}
               </label>
               <FormControl>
-                <input
-                  type="number"
+                <DecimalInput
+                  integer
+                  inputMode="numeric"
                   placeholder="25"
-                  value={field.value ?? ''}
-                  onChange={(e) => {
-                    const v = e.target.value;
-                    field.onChange(v === '' ? undefined : Number(v));
-                  }}
+                  name={field.name}
+                  value={field.value}
+                  onValueChange={field.onChange}
                   onBlur={field.onBlur}
                   className={inputClass}
                 />
               </FormControl>
+              <FormMessage />
             </FormItem>
           )}
         />

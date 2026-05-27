@@ -9,7 +9,7 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useLogWeight } from '@/hooks/use-weight-mutations';
-import { cn } from '@/lib/utils';
+import { cn, parseDecimalInput } from '@/lib/utils';
 import { type WeightLogInput, weightLogSchema } from '@/lib/validation';
 
 interface CompactWeightLogProps {
@@ -90,13 +90,10 @@ export function CompactWeightLog({
         <div className="relative flex-1">
           <Input
             id="compact-weight-kg"
-            {...register('weightKg', { valueAsNumber: true })}
-            type="number"
+            {...register('weightKg', { setValueAs: parseDecimalInput })}
+            type="text"
             inputMode="decimal"
             autoComplete="off"
-            step="0.1"
-            min="30"
-            max="300"
             aria-invalid={Boolean(errors.weightKg)}
             aria-describedby={errorId}
             className={cn(

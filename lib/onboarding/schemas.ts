@@ -56,6 +56,66 @@ export const bodyMetricsSchema = z.object({
   activityLevel: activityLevelSchema,
 });
 
+export interface BodyMetricsMessages {
+  weightRequired: string;
+  weightMin: string;
+  weightMax: string;
+  heightRequired: string;
+  heightInt: string;
+  heightMin: string;
+  heightMax: string;
+  ageRequired: string;
+  ageInt: string;
+  ageMin: string;
+  ageMax: string;
+}
+
+/**
+ * Locale-aware variant of {@link bodyMetricsSchema}. The static schema is kept
+ * for type inference and non-UI validation; UI forms build this with messages
+ * resolved through next-intl so validation errors follow the active locale.
+ */
+export function createBodyMetricsSchema(m: BodyMetricsMessages) {
+  return z.object({
+    biologicalSex: biologicalSexSchema,
+    weightKg: z
+      .number({ error: m.weightRequired })
+      .min(30, m.weightMin)
+      .max(300, m.weightMax),
+    heightCm: z
+      .number({ error: m.heightRequired })
+      .int(m.heightInt)
+      .min(100, m.heightMin)
+      .max(250, m.heightMax),
+    age: z
+      .number({ error: m.ageRequired })
+      .int(m.ageInt)
+      .min(13, m.ageMin)
+      .max(100, m.ageMax),
+    activityLevel: activityLevelSchema,
+  });
+}
+
+/** Resolve {@link BodyMetricsMessages} from a next-intl translator scoped to
+ * the `validation.bodyMetrics` namespace. */
+export function bodyMetricsMessages(
+  t: (key: string) => string
+): BodyMetricsMessages {
+  return {
+    weightRequired: t('weightRequired'),
+    weightMin: t('weightMin'),
+    weightMax: t('weightMax'),
+    heightRequired: t('heightRequired'),
+    heightInt: t('heightInt'),
+    heightMin: t('heightMin'),
+    heightMax: t('heightMax'),
+    ageRequired: t('ageRequired'),
+    ageInt: t('ageInt'),
+    ageMin: t('ageMin'),
+    ageMax: t('ageMax'),
+  };
+}
+
 export const goalSchema = z
   .object({
     goal: goalEnumSchema,

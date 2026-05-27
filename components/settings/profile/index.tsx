@@ -4,17 +4,18 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Loader2 } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useLocale, useTranslations } from 'next-intl';
-import { useMemo, useTransition } from 'react';
-import { useForm } from 'react-hook-form';
+import { useMemo, useState, useTransition } from 'react';
+import { type FieldErrors, useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { z } from 'zod';
 import { Form } from '@/components/ui/form';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { saveProfileSettings } from '@/lib/onboarding/actions';
 import {
-  bodyMetricsSchema,
+  bodyMetricsMessages,
   cookingHabitsSchema,
   countrySchema,
+  createBodyMetricsSchema,
 } from '@/lib/onboarding/schemas';
 import {
   calcBMR,
@@ -36,20 +37,40 @@ import { BodyMetrics } from './body-metrics';
 import { Cooking } from './cooking';
 import { Regional } from './regional';
 
-const profileSchema = bodyMetricsSchema
-  .merge(
-    z.object({
-      goal: z.enum(['cutting', 'bulking', 'maintaining']),
-      aggression: z.number().min(0.1).max(0.8).nullable(),
-      carbSplit: z.enum(['moderate_carb', 'lower_carb', 'higher_carb']),
-    })
-  )
-  .merge(countrySchema)
-  .merge(cookingHabitsSchema);
+const profileGoalSchema = z.object({
+  goal: z.enum(['cutting', 'bulking', 'maintaining']),
+  aggression: z.number().min(0.1).max(0.8).nullable(),
+  carbSplit: z.enum(['moderate_carb', 'lower_carb', 'higher_carb']),
+});
 
-export type ProfileFormValues = z.infer<typeof profileSchema>;
+export type ProfileFormValues = z.infer<
+  ReturnType<typeof createBodyMetricsSchema>
+> &
+  z.infer<typeof profileGoalSchema> &
+  z.infer<typeof countrySchema> &
+  z.infer<typeof cookingHabitsSchema>;
 
 type SectionId = 'body-metrics' | 'regional' | 'cooking';
+
+// Which tab owns each field, so an invalid submit can switch to the tab
+// holding the first error instead of failing silently behind another tab.
+const SECTION_FOR_FIELD: Partial<Record<keyof ProfileFormValues, SectionId>> = {
+  biologicalSex: 'body-metrics',
+  weightKg: 'body-metrics',
+  heightCm: 'body-metrics',
+  age: 'body-metrics',
+  activityLevel: 'body-metrics',
+  goal: 'body-metrics',
+  aggression: 'body-metrics',
+  carbSplit: 'body-metrics',
+  countryOfOrigin: 'regional',
+  countryOfResidence: 'regional',
+  oilUsage: 'cooking',
+  defaultRicePortion: 'cooking',
+  sugarBraised: 'cooking',
+  defaultProteinPortion: 'cooking',
+  brothConsumption: 'cooking',
+};
 
 interface Section {
   id: SectionId;
@@ -85,8 +106,10 @@ interface ProfileProps {
 export function Profile({ profile }: ProfileProps) {
   const t = useTranslations('settings');
   const tc = useTranslations('common');
+  const tValidation = useTranslations('validation.bodyMetrics');
   const locale = useLocale();
   const [isPending, startTransition] = useTransition();
+  const [activeTab, setActiveTab] = useState<SectionId>('body-metrics');
 
   const SECTIONS: Section[] = [
     {
@@ -135,8 +158,19 @@ export function Profile({ profile }: ProfileProps) {
     [profile]
   );
 
+  // Built with locale-aware messages so validation errors follow the active
+  // locale. Shares the shape of the type-level ProfileFormValues above.
+  const localizedProfileSchema = useMemo(
+    () =>
+      createBodyMetricsSchema(bodyMetricsMessages(tValidation))
+        .merge(profileGoalSchema)
+        .merge(countrySchema)
+        .merge(cookingHabitsSchema),
+    [tValidation]
+  );
+
   const form = useForm<ProfileFormValues>({
-    resolver: zodResolver(profileSchema),
+    resolver: zodResolver(localizedProfileSchema),
     defaultValues,
     mode: 'onBlur',
   });
@@ -145,6 +179,17 @@ export function Profile({ profile }: ProfileProps) {
 
   function handleCancel() {
     form.reset(defaultValues);
+  }
+
+  function handleInvalid(errors: FieldErrors<ProfileFormValues>) {
+    const firstField = Object.keys(errors)[0] as
+      | keyof ProfileFormValues
+      | undefined;
+    const section = firstField ? SECTION_FOR_FIELD[firstField] : undefined;
+    if (section) {
+      setActiveTab(section);
+    }
+    toast.error(t('profilePanel.invalidError'));
   }
 
   function handleSave(values: ProfileFormValues) {
@@ -205,12 +250,14 @@ export function Profile({ profile }: ProfileProps) {
     <div style={{ fontFamily: 'DM Sans, sans-serif' }}>
       <Form {...form}>
         <form
-          onSubmit={form.handleSubmit(handleSave, () =>
-            toast.error(t('profilePanel.invalidError'))
-          )}
+          onSubmit={form.handleSubmit(handleSave, handleInvalid)}
           className="space-y-3"
         >
-          <Tabs defaultValue="body-metrics" className="w-full gap-0">
+          <Tabs
+            value={activeTab}
+            onValueChange={(value) => setActiveTab(value as SectionId)}
+            className="w-full gap-0"
+          >
             <TabsList className="mb-2 h-auto w-full justify-start gap-1 overflow-x-auto rounded-xl bg-[#EAE7E0]/40 p-1">
               {SECTIONS.map((section) => (
                 <TabsTrigger

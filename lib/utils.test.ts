@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { cn } from '@/lib/utils';
+import { cn, parseDecimalInput } from '@/lib/utils';
 
 describe('cn utility', () => {
   it('merges class names', () => {
@@ -20,5 +20,32 @@ describe('cn utility', () => {
 
   it('returns empty string for no inputs', () => {
     expect(cn()).toBe('');
+  });
+});
+
+describe('parseDecimalInput', () => {
+  it('parses a comma decimal separator (iOS/EU keyboards)', () => {
+    expect(parseDecimalInput('65,3')).toBe(65.3);
+  });
+
+  it('parses a period decimal separator', () => {
+    expect(parseDecimalInput('65.3')).toBe(65.3);
+  });
+
+  it('trims surrounding whitespace', () => {
+    expect(parseDecimalInput(' 70 ')).toBe(70);
+  });
+
+  it('parses plain integers', () => {
+    expect(parseDecimalInput('170')).toBe(170);
+  });
+
+  it('returns NaN for blank input', () => {
+    expect(parseDecimalInput('')).toBeNaN();
+    expect(parseDecimalInput('   ')).toBeNaN();
+  });
+
+  it('returns NaN for non-numeric input', () => {
+    expect(parseDecimalInput('abc')).toBeNaN();
   });
 });
