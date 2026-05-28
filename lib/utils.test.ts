@@ -48,4 +48,9 @@ describe('parseDecimalInput', () => {
   it('returns NaN for non-numeric input', () => {
     expect(parseDecimalInput('abc')).toBeNaN();
   });
+
+  it('returns an already-numeric value unchanged (RHF setValueAs on numeric default)', () => {
+    expect(parseDecimalInput(65.3)).toBe(65.3);
+    expect(parseDecimalInput(70)).toBe(70);
+  });
 });
