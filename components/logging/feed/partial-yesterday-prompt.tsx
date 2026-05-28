@@ -1,6 +1,6 @@
 'use client';
 
-import { ArrowRight, X } from 'lucide-react';
+import { ArrowLeft, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useLoggingDay } from '@/hooks/use-logging-day';
 import { sumDisplayedNutrition } from '@/lib/ai/pipeline/goal-adjustment';
@@ -69,8 +69,8 @@ export function PartialYesterdayPrompt({
               className="mt-3 inline-flex min-h-8 touch-manipulation items-center gap-2 rounded-full border border-nham-border/60 px-3 py-1.5 font-medium text-nham-text text-sm transition-colors hover:border-nham-accent/50 hover:bg-nham-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent focus-visible:ring-offset-2 focus-visible:ring-offset-nham-surface"
               style={{ fontFamily: 'DM Sans, sans-serif' }}
             >
+              <ArrowLeft className="size-4" aria-hidden="true" />
               {t('open')}
-              <ArrowRight className="size-4" aria-hidden="true" />
             </button>
           </div>
           <button
