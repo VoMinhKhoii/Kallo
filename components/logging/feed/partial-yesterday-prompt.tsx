@@ -1,6 +1,6 @@
 'use client';
 
-import { AlertCircle, X } from 'lucide-react';
+import { ArrowLeft, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useLoggingDay } from '@/hooks/use-logging-day';
 import { sumDisplayedNutrition } from '@/lib/ai/pipeline/goal-adjustment';
@@ -48,22 +48,28 @@ export function PartialYesterdayPrompt({
       <div className="mx-auto max-w-4xl">
         <div
           role="status"
-          className="flex items-start gap-3 rounded-2xl border border-amber-200/70 bg-amber-50/80 p-3 sm:p-4"
+          className="flex items-start gap-3 rounded-2xl border border-nham-border/60 bg-nham-surface p-3 sm:p-4"
         >
-          <AlertCircle
-            className="mt-0.5 size-4 shrink-0 text-amber-600"
-            aria-hidden="true"
-          />
           <div className="min-w-0 flex-1">
-            <p className="font-medium text-amber-900 text-sm">{t('title')}</p>
-            <p className="mt-0.5 text-[13px] text-amber-800/90">
+            <p
+              className="text-base text-nham-danger italic"
+              style={{ fontFamily: 'Lora, serif' }}
+            >
+              {t('title')}
+            </p>
+            <p
+              className="mt-1 text-[13px] text-nham-text-muted"
+              style={{ fontFamily: 'DM Sans, sans-serif' }}
+            >
               {t('body', { calories, target: calorieTarget })}
             </p>
             <button
               type="button"
               onClick={() => onOpenDay(yesterday)}
-              className="mt-2 inline-flex min-h-8 items-center rounded-full bg-amber-100 px-3 py-1.5 font-medium text-amber-900 text-sm transition-colors hover:bg-amber-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-600 focus-visible:ring-offset-2"
+              className="mt-3 inline-flex min-h-8 touch-manipulation items-center gap-2 rounded-full border border-nham-border/60 px-3 py-1.5 font-medium text-nham-text text-sm transition-colors hover:border-nham-accent/50 hover:bg-nham-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent focus-visible:ring-offset-2 focus-visible:ring-offset-nham-surface"
+              style={{ fontFamily: 'DM Sans, sans-serif' }}
             >
+              <ArrowLeft className="size-4" aria-hidden="true" />
               {t('open')}
             </button>
           </div>
@@ -71,7 +77,7 @@ export function PartialYesterdayPrompt({
             type="button"
             onClick={onDismiss}
             aria-label={t('dismiss')}
-            className="-m-1 flex size-8 shrink-0 items-center justify-center rounded-full p-1 text-amber-700/80 transition-colors hover:bg-amber-100 hover:text-amber-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-600 focus-visible:ring-offset-2"
+            className="-m-1 flex size-8 shrink-0 items-center justify-center rounded-full p-1 text-nham-text-muted transition-colors hover:bg-nham-hover hover:text-nham-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent focus-visible:ring-offset-2 focus-visible:ring-offset-nham-surface"
           >
             <X className="size-4" aria-hidden="true" />
           </button>
