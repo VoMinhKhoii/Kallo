@@ -548,6 +548,7 @@ export function FeedArea({
                       <MealEntry
                         key={msg.id}
                         message={msg}
+                        isConfirming={confirmMeal.isPending}
                         onConfirm={(edits) => {
                           if (msg.analysisId)
                             handleConfirmMeal(msg.id, msg.analysisId, edits);

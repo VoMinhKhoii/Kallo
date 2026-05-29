@@ -147,8 +147,12 @@ export function useConfirmMeal(userId: string) {
       );
       queryClient.setQueriesData<LoggingDayData>(filter, (old) => {
         if (!old) {
-          // Seed the day so the ring reflects this meal even if the initial
-          // load / pending-analysis refetch has not landed yet.
+          // Entry exists but its initial load is still in flight (data
+          // undefined). Seed it so the ring reflects this meal immediately.
+          // Note: setQueriesData only runs this updater for already-cached
+          // query entries; it cannot create one where the query is unmounted.
+          // The real fix for the stale ring is sourcing the meal from the
+          // passed parsedMeal (above), not this branch.
           return { persistedMeals: [optimisticMeal], pendingConfirmations: [] };
         }
         // Guard against a double-insert if the settle refetch already raced in
