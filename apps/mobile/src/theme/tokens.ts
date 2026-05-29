@@ -26,6 +26,7 @@ export const colors = {
   timelineDotFill: 'rgba(201, 168, 124, 0.3)', // accent @ 30% — pulsing timeline dot fill
   btnBorderGhost: 'rgba(105, 94, 78, 0.4)', // btn umber @ 40% — ghost button border
   textMuted60: 'rgba(139, 115, 85, 0.6)', // textMuted @ 60%
+  textMuted70: 'rgba(139, 115, 85, 0.7)', // textMuted @ 70% — macro-bar labels
   placeholderMuted40: 'rgba(139, 115, 85, 0.4)', // textMuted @ 40% — input placeholder
   // Numeric alpha set for the nutrition tree (web `accent/NN`, `hover/NN`, etc.
   // that RN can't express via Tailwind opacity). One predictable convention.
@@ -43,6 +44,24 @@ export const colors = {
   text40: 'rgba(44, 36, 22, 0.4)',
   textMuted50: 'rgba(139, 115, 85, 0.5)',
   danger70: 'rgba(211, 123, 105, 0.7)',
+  // Settings + onboarding neutral/cream palette. The web hardcodes these hexes;
+  // they diverge slightly from the core --nham-* tokens (lighter hairlines,
+  // a parallel warm-gray text ramp, near-white cream fills).
+  inputBorder: '#eae7e0', // light input/divider hairline (≠ border #e8d5b5)
+  inputBorder40: 'rgba(234, 231, 224, 0.4)', // tab-list / segmented control bg
+  textWarm: '#7b6f62', // warm secondary text (≠ textSoft #6b5d4f, textMuted)
+  textHelp: '#8b8682', // cool help-text gray (onboarding)
+  textSelected: '#6f6556', // selected-state label gray
+  cream: '#fdfcf8', // raised card / button-label cream (≠ surface #fefbf6)
+  cream95: 'rgba(253, 252, 248, 0.95)', // pinned save bar
+  cardCream: '#fffcf8', // card cream (onboarding)
+  selectedCard: '#fff8ef', // selected option-card fill (onboarding)
+  selectedSegment: '#fbf2e6', // selected segment fill (onboarding)
+  btnDarkHover: '#1c1917', // dark primary-button hover (settings)
+  btnDarkHover2: '#3d3425', // dark primary-button hover (onboarding/light)
+  accent05: 'rgba(201, 168, 124, 0.05)', // carb-split selected card fill
+  accent07: 'rgba(201, 168, 124, 0.07)', // hero target gradient
+  accent20: 'rgba(201, 168, 124, 0.2)', // hero divider border
   hover: '#f0eae0',
   track: '#f5f4f0',
   stone: '#a8a29e', // cool gray — captions, fat macro
