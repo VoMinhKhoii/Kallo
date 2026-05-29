@@ -11,9 +11,22 @@ import { colors, space } from '~/theme/tokens';
  * screen fills it with the timeline date strip, like the web header slot), and
  * a right spacer mirroring the hamburger so the slot stays centered.
  */
-export function AppHeader({ children }: { children?: ReactNode }) {
+export function AppHeader({
+  children,
+  expanded = false,
+}: {
+  children?: ReactNode;
+  expanded?: boolean;
+}) {
   const navigation = useNavigation();
   const t = useTranslations('app.shell');
+
+  // Expanded (strip) mode hands the full row to the children (the timeline
+  // week strip) and drops the hamburger + spacer so the strip isn't squeezed —
+  // mirrors the web header's data-strip-mode contract.
+  if (expanded) {
+    return <View style={styles.header}>{children}</View>;
+  }
 
   return (
     <View style={styles.header}>

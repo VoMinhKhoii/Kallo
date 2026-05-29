@@ -9,6 +9,7 @@ import {
   StyleSheet,
   View,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { PersistedMeal } from '@/lib/api/contracts/meals';
 import { round0 } from '~/lib/logging/format';
 import { loggingDayKeys, todayDateString } from '~/lib/logging/keys';
@@ -42,6 +43,7 @@ export function FeedArea({
 }) {
   const td = useTranslations('dashboard');
   const tErrors = useTranslations('errors');
+  const insets = useSafeAreaInsets();
   // The day being viewed/edited — defaults to today when no date is provided.
   const selectedDate = date ?? todayDateString();
   const queryClient = useQueryClient();
@@ -228,7 +230,9 @@ export function FeedArea({
         </Text>
       ) : null}
 
-      <View style={styles.inputWrap}>
+      <View
+        style={[styles.inputWrap, { paddingBottom: insets.bottom + space[2] }]}
+      >
         <MealInput
           ref={inputRef}
           onSubmit={submit}

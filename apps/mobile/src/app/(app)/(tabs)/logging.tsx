@@ -28,6 +28,7 @@ export default function LoggingScreen() {
   // of truth — mirrors the web LoggingShell's selectedDate.
   const today = todayDateString();
   const [selectedDate, setSelectedDate] = useState(today);
+  const [pickerExpanded, setPickerExpanded] = useState(false);
 
   const { data, isLoading } = useQuery({
     queryKey: ['onboarding', 'profile'],
@@ -70,12 +71,14 @@ export default function LoggingScreen() {
   return (
     <Screen edges={['top']}>
       <View style={{ paddingHorizontal: space[3] }}>
-        <AppHeader>
+        <AppHeader expanded={pickerExpanded}>
           <TimelinePicker
             dates={mealDates}
             today={today}
             selectedDate={selectedDate}
             onSelectDate={setSelectedDate}
+            expanded={pickerExpanded}
+            onExpandedChange={setPickerExpanded}
           />
         </AppHeader>
       </View>

@@ -22,6 +22,10 @@ export interface TimelinePickerProps {
   today: string;
   selectedDate: string;
   onSelectDate: (date: string) => void;
+  /** Chip (collapsed) vs week-strip (expanded). Lifted to the parent so the
+   *  header can give the expanded strip the full row width. */
+  expanded: boolean;
+  onExpandedChange: (expanded: boolean) => void;
 }
 
 function DayCell({
@@ -111,10 +115,11 @@ export function TimelinePicker({
   today,
   selectedDate,
   onSelectDate,
+  expanded,
+  onExpandedChange,
 }: TimelinePickerProps) {
   const t = useTranslations('logging.timelineSidebar');
   const locale = useLocale();
-  const [mode, setMode] = useState<'chip' | 'strip'>('chip');
 
   const mealDates = useMemo(() => new Set(dates), [dates]);
   const hasMeal = mealDates.has(selectedDate);
@@ -146,17 +151,17 @@ export function TimelinePicker({
 
   const handleOpenStrip = useCallback(() => {
     setVisibleAnchor(selectedAnchor);
-    setMode('strip');
-  }, [selectedAnchor]);
+    onExpandedChange(true);
+  }, [selectedAnchor, onExpandedChange]);
 
   const handleSelectDay = useCallback(
     (date: string) => {
       if (date !== selectedDate) {
         onSelectDate(date);
       }
-      setMode('chip');
+      onExpandedChange(false);
     },
-    [onSelectDate, selectedDate]
+    [onSelectDate, onExpandedChange, selectedDate]
   );
 
   const navigateToAnchor = useCallback(
@@ -178,7 +183,7 @@ export function TimelinePicker({
     navigateToAnchor(addDays(visibleAnchor, 7));
   }, [canNavigateNext, navigateToAnchor, visibleAnchor]);
 
-  if (mode === 'chip') {
+  if (!expanded) {
     return (
       <Pressable
         accessibilityRole="button"
