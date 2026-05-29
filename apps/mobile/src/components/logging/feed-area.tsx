@@ -16,7 +16,7 @@ import { useConfirmMeal } from '~/lib/logging/use-meal-mutations';
 import { useLoggingDay } from '~/lib/logging/use-logging-day';
 import { useStreamAnalysis } from '~/lib/logging/use-stream-analysis';
 import { Text } from '~/theme/text';
-import { colors, space } from '~/theme/tokens';
+import { colors, radii, space } from '~/theme/tokens';
 import { CalorieRing } from './calorie-ring';
 import { EmptyState } from './empty-state';
 import { MealEntry } from './meal-entry';
@@ -69,6 +69,39 @@ export function FeedArea({ profile }: { profile: LoggingProfile }) {
   const dailyCalories = round0(
     persistedMeals.reduce((sum, m) => sum + (m.nutrition.caloriesKcal ?? 0), 0)
   );
+  const dailyProtein = round0(
+    persistedMeals.reduce((sum, m) => sum + (m.nutrition.proteinG ?? 0), 0)
+  );
+  const dailyCarbs = round0(
+    persistedMeals.reduce((sum, m) => sum + (m.nutrition.carbohydrateG ?? 0), 0)
+  );
+  const dailyFat = round0(
+    persistedMeals.reduce((sum, m) => sum + (m.nutrition.fatG ?? 0), 0)
+  );
+
+  const macroBars = [
+    {
+      key: 'protein',
+      label: 'Protein',
+      current: dailyProtein,
+      target: profile.proteinTargetG,
+      color: colors.macroProtein,
+    },
+    {
+      key: 'carbs',
+      label: 'Carbs',
+      current: dailyCarbs,
+      target: profile.carbsTargetG,
+      color: colors.macroCarbs,
+    },
+    {
+      key: 'fat',
+      label: 'Fat',
+      current: dailyFat,
+      target: profile.fatTargetG,
+      color: colors.macroFat,
+    },
+  ] as const;
 
   const isStreaming =
     stream.status !== 'idle' &&
@@ -102,10 +135,35 @@ export function FeedArea({ profile }: { profile: LoggingProfile }) {
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <View style={styles.header}>
-        <CalorieRing current={dailyCalories} target={profile.calorieTarget} />
-        <View style={styles.headerText}>
-          <Text variant="eyebrow">Today</Text>
-          <Text variant="small">{`${dailyCalories} / ${profile.calorieTarget} kcal`}</Text>
+        <View style={styles.ringColumn}>
+          <CalorieRing current={dailyCalories} target={profile.calorieTarget} />
+          <Text variant="numCaption">{`${dailyCalories} / ${profile.calorieTarget} kcal`}</Text>
+        </View>
+        <View style={styles.macroBars}>
+          {macroBars.map(({ key, label, current, target, color }) => {
+            const pct =
+              target > 0
+                ? Math.max(0, Math.min(100, (current / target) * 100))
+                : 0;
+            return (
+              <View key={key} style={styles.macroRow}>
+                <Text variant="macroLabel" style={styles.macroLabel}>
+                  {label}
+                </Text>
+                <View style={styles.macroTrack}>
+                  <View
+                    style={[
+                      styles.macroFill,
+                      { width: `${pct}%`, backgroundColor: color },
+                    ]}
+                  />
+                </View>
+                <Text variant="macroValue" style={styles.macroValue}>
+                  {`${current}/${target}g`}
+                </Text>
+              </View>
+            );
+          })}
         </View>
       </View>
 
@@ -113,7 +171,10 @@ export function FeedArea({ profile }: { profile: LoggingProfile }) {
         data={persistedMeals}
         keyExtractor={(m) => m.id}
         renderItem={({ item }) => <PersistedMealCard meal={item} />}
-        contentContainerStyle={styles.list}
+        contentContainerStyle={
+          persistedMeals.length === 0 ? styles.listEmpty : styles.list
+        }
+        ItemSeparatorComponent={() => <View style={styles.cardSeparator} />}
         keyboardShouldPersistTaps="handled"
         ListEmptyComponent={
           isEmpty ? (
@@ -175,25 +236,41 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: space[4],
-    paddingHorizontal: space[5],
-    paddingVertical: space[4],
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    paddingHorizontal: space[3],
+    paddingTop: space[3],
+    paddingBottom: space[2],
+    backgroundColor: colors.surface,
   },
-  headerText: { flex: 1, gap: space[1] },
-  list: { padding: space[5], flexGrow: 1 },
+  ringColumn: { alignItems: 'center', gap: space[1] },
+  macroBars: { flex: 1, gap: space[2] },
+  macroRow: { flexDirection: 'row', alignItems: 'center', gap: space[3] },
+  macroLabel: { width: 48 },
+  macroTrack: {
+    height: 6,
+    flex: 1,
+    borderRadius: radii.pill,
+    overflow: 'hidden',
+    backgroundColor: colors.track,
+  },
+  macroFill: { height: '100%', borderRadius: radii.pill },
+  macroValue: { width: 56 },
+  list: { padding: space[3], paddingLeft: space[3] + space[6], flexGrow: 1 },
+  listEmpty: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: space[6],
+  },
+  cardSeparator: { height: space[2] },
   loading: { marginTop: space[10] },
   error: {
     color: colors.danger,
-    paddingHorizontal: space[5],
+    paddingHorizontal: space[3],
     paddingBottom: space[2],
   },
   inputWrap: {
-    paddingHorizontal: space[4],
+    paddingHorizontal: space[3],
     paddingTop: space[2],
-    paddingBottom: space[4],
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
-    backgroundColor: colors.surface,
+    paddingBottom: space[3],
   },
 });

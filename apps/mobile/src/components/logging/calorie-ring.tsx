@@ -23,8 +23,8 @@ const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
 export function CalorieRing({
   current,
   target,
-  size = 86,
-  strokeWidth = 4,
+  size = 78,
+  strokeWidth = 3,
 }: {
   current: number;
   target: number;
@@ -62,6 +62,7 @@ export function CalorieRing({
           r={RADIUS}
           stroke={colors.track}
           strokeWidth={strokeWidth}
+          vectorEffect="non-scaling-stroke"
           fill="none"
         />
         <AnimatedCircle
@@ -70,6 +71,7 @@ export function CalorieRing({
           r={RADIUS}
           stroke={colors.accent}
           strokeWidth={strokeWidth}
+          vectorEffect="non-scaling-stroke"
           fill="none"
           strokeLinecap="round"
           strokeDasharray={CIRCUMFERENCE}
@@ -77,10 +79,16 @@ export function CalorieRing({
           transform={`rotate(-90 ${CENTER} ${CENTER})`}
         />
       </Svg>
-      <Text variant="numDisplay" style={{ fontSize: 20 }}>
+      <Text
+        variant="numDisplay"
+        style={{ fontSize: 17, lineHeight: 17, letterSpacing: 0 }}
+      >
         {remaining.toLocaleString()}
       </Text>
-      <Text variant="eyebrow" style={{ fontSize: 8 }}>
+      <Text
+        variant="eyebrow"
+        style={{ fontSize: 8, letterSpacing: 1.2, marginTop: 2 }}
+      >
         left
       </Text>
     </View>

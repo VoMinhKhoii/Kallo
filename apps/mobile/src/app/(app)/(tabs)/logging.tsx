@@ -47,10 +47,12 @@ export default function LoggingScreen() {
 
   const profile: LoggingProfile = {
     userId,
+    // Defaults mirror the web's DEFAULT_PROFILE (app/[locale]/(app)/logging/page.tsx)
+    // so an incomplete-onboarding profile shows sensible targets, never /0g.
     calorieTarget: data?.calorieTarget ?? 2000,
-    proteinTargetG: data?.proteinTargetG ?? 0,
-    carbsTargetG: data?.carbsTargetG ?? 0,
-    fatTargetG: data?.fatTargetG ?? 0,
+    proteinTargetG: data?.proteinTargetG ?? 150,
+    carbsTargetG: data?.carbsTargetG ?? 250,
+    fatTargetG: data?.fatTargetG ?? 65,
   };
 
   return (

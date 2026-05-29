@@ -14,7 +14,19 @@ export const colors = {
   accent: '#c9a87c', // signature tan — highlights, italic accent
   accentDark: '#b89968',
   border: '#e8d5b5', // biscotti hairline
-  borderSoft: 'rgba(232, 213, 181, 0.6)',
+  borderSoft: 'rgba(232, 213, 181, 0.6)', // biscotti @ 60%
+  borderHalf: 'rgba(232, 213, 181, 0.5)', // biscotti @ 50% — totals-row dashed top border
+  borderFaint: 'rgba(232, 213, 181, 0.3)', // biscotti @ 30% — faint hairlines
+  borderBiscotti40: 'rgba(232, 213, 181, 0.4)', // biscotti @ 40% — input resting border
+  elevTranslucent: 'rgba(255, 255, 255, 0.8)', // card/elev @ 80%
+  surface80: 'rgba(254, 251, 246, 0.8)', // surface cream @ 80%
+  accentSelectedFill: 'rgba(201, 168, 124, 0.1)', // accent @ 10% — selected-state fill
+  accentSelectedBorder: 'rgba(201, 168, 124, 0.5)', // accent @ 50% — selected-state border
+  borderAccent40: 'rgba(201, 168, 124, 0.4)', // accent @ 40% — input focus-within border
+  timelineDotFill: 'rgba(201, 168, 124, 0.3)', // accent @ 30% — pulsing timeline dot fill
+  btnBorderGhost: 'rgba(105, 94, 78, 0.4)', // btn umber @ 40% — ghost button border
+  textMuted60: 'rgba(139, 115, 85, 0.6)', // textMuted @ 60%
+  placeholderMuted40: 'rgba(139, 115, 85, 0.4)', // textMuted @ 40% — input placeholder
   hover: '#f0eae0',
   track: '#f5f4f0',
   stone: '#a8a29e', // cool gray — captions, fat macro
@@ -63,6 +75,7 @@ export const fontSize = {
   lg: 18,
   md: 16,
   sm: 14,
+  '13': 13, // detail rows (item name/calories, totals label) — between sm(14) and 2xs(11)
   xs: 12,
   '2xs': 11,
   eyebrow: 10,
@@ -89,6 +102,8 @@ export const radii = {
   sm: 6,
   md: 8,
   lg: 10,
+  buttonXl: 12, // web rounded-xl (12px) — sits between lg(10) and xl(14)
+  containerLg: 16, // web rounded-2xl (16px) — for components whose container differs from the shared 2xl(18)
   xl: 14,
   '2xl': 18,
   '3xl': 22,
@@ -132,6 +147,21 @@ export const shadow = {
     shadowRadius: 16,
     shadowOffset: { width: 0, height: 10 },
     elevation: 4,
+  },
+  // Warm accent-tinted (#c9a87c) input glow — NOT espresso. Resting + focus.
+  input: {
+    shadowColor: '#c9a87c',
+    shadowOpacity: 0.06,
+    shadowRadius: 20,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 2,
+  },
+  inputFocus: {
+    shadowColor: '#c9a87c',
+    shadowOpacity: 0.12,
+    shadowRadius: 20,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 2,
   },
 } as const;
 
