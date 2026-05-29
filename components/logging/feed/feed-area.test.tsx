@@ -43,12 +43,17 @@ vi.mock('@/components/logging/input/meal-input', () => ({
   }),
 }));
 
-const { mockInvalidateQueries, mockUseLoggingDay, mockUseStreamAnalysis } =
-  vi.hoisted(() => ({
-    mockInvalidateQueries: vi.fn(),
-    mockUseLoggingDay: vi.fn(),
-    mockUseStreamAnalysis: vi.fn(),
-  }));
+const {
+  mockInvalidateQueries,
+  mockUseLoggingDay,
+  mockUseStreamAnalysis,
+  mockUseStreamingTerminalEffects,
+} = vi.hoisted(() => ({
+  mockInvalidateQueries: vi.fn(),
+  mockUseLoggingDay: vi.fn(),
+  mockUseStreamAnalysis: vi.fn(),
+  mockUseStreamingTerminalEffects: vi.fn(),
+}));
 
 vi.mock('@tanstack/react-query', () => ({
   useQueryClient: () => ({ invalidateQueries: mockInvalidateQueries }),
@@ -74,7 +79,7 @@ vi.mock('@/hooks/use-stream-analysis', () => ({
 }));
 
 vi.mock('@/hooks/use-streaming-terminal-effects', () => ({
-  useStreamingTerminalEffects: vi.fn(),
+  useStreamingTerminalEffects: mockUseStreamingTerminalEffects,
 }));
 
 vi.mock('@/hooks/use-submit-guard', () => ({
@@ -345,5 +350,32 @@ describe('FeedArea', () => {
     fireEvent.click(screen.getByRole('button', { name: 'dismiss' }));
 
     expect(screen.queryByRole('button', { name: 'open' })).toBeNull();
+  });
+
+  it('marks the day stale without a racing refetch when analysis completes', () => {
+    render(
+      <FeedArea
+        selectedDate={TODAY}
+        today={TODAY}
+        profile={profile}
+        onSelectDate={vi.fn()}
+      />
+    );
+
+    // Invoke the onAnalysisComplete callback the feed wires into the streaming
+    // terminal effects. It must NOT trigger a background refetch (refetchType:
+    // 'none') — that pre-save refetch could otherwise clobber a just-confirmed
+    // meal and strand the calorie ring on the stale value.
+    const config = mockUseStreamingTerminalEffects.mock.calls.at(-1)?.[0];
+    expect(config?.onAnalysisComplete).toBeTypeOf('function');
+    config.onAnalysisComplete();
+
+    expect(mockInvalidateQueries).toHaveBeenCalledWith({
+      queryKey: ['logging-day', profile.userId, TODAY],
+      refetchType: 'none',
+    });
+    expect(mockInvalidateQueries).toHaveBeenCalledWith({
+      queryKey: ['meal-dates'],
+    });
   });
 });

@@ -6,7 +6,6 @@ import { dailyMealsKeys } from '@/hooks/use-daily-meals';
 import { loggingDayKeys } from '@/hooks/use-logging-day';
 import type {
   LoggingDayData,
-  PendingMealConfirmation,
   PersistedMeal,
   PersistedMealItemGroup,
 } from '@/lib/actions/meals';
@@ -17,7 +16,7 @@ import {
 import { NUTRITION_KEYS } from '@/lib/ai/constants';
 import type { NutritionValues } from '@/lib/ai/types';
 import { recalculateTotals } from '@/lib/meal-utils';
-import type { MacroBreakdown, MealItem } from '@/lib/types/meal';
+import type { MacroBreakdown, MealItem, ParsedMeal } from '@/lib/types/meal';
 
 type QuantityEdit = NonNullable<
   Parameters<typeof confirmAndSaveMealAction>[0]['edits']
@@ -77,12 +76,19 @@ function applyEditsToItems(
   });
 }
 
-function pendingToOptimisticMeal(
-  pending: PendingMealConfirmation,
+// Build the optimistic persisted meal from data the caller already holds (the
+// streamed analysis result), rather than re-reading the pending confirmation
+// from the query cache. The cached pending row may not have landed yet when the
+// user confirms (esp. the first meal of the day), so depending on it caused the
+// optimistic update to silently no-op and the calorie ring to stay stale.
+function buildOptimisticMeal(
+  parsedMeal: ParsedMeal,
+  rawInput: string,
+  loggedAt: string,
   mealId: string,
   edits?: QuantityEdit[]
 ): PersistedMeal {
-  const items = applyEditsToItems(pending.parsedMeal.items, edits);
+  const items = applyEditsToItems(parsedMeal.items, edits);
   const groups: PersistedMealItemGroup[] = items.map((item, order) => ({
     name: item.name,
     order,
@@ -91,19 +97,28 @@ function pendingToOptimisticMeal(
   }));
   const total = edits?.length
     ? recalculateTotals(items)
-    : pending.parsedMeal.totalMacros;
+    : parsedMeal.totalMacros;
   return {
     // Same id the server will persist, so the card keeps one stable React key
     // from optimistic insert through the post-save refetch (no re-fade).
     id: mealId,
-    rawInput: pending.rawInput,
+    rawInput,
     mealSlot: null,
     confidenceOverall: null,
-    loggedAt: pending.loggedAt,
+    loggedAt,
     nutrition: macrosToNutrition(total),
     mealItemGroups: groups,
   };
 }
+
+// Client-supplied data needed to build the optimistic meal without reading the
+// pending confirmation back out of the cache. Stripped before the server call.
+type ConfirmMealVariables = Parameters<typeof confirmAndSaveMealAction>[0] & {
+  originDate: string;
+  parsedMeal: ParsedMeal;
+  rawInput: string;
+  loggedAt: string;
+};
 
 export function useConfirmMeal(userId: string) {
   const queryClient = useQueryClient();
@@ -111,28 +126,44 @@ export function useConfirmMeal(userId: string) {
   return useMutation({
     mutationFn: ({
       originDate: _originDate,
+      parsedMeal: _parsedMeal,
+      rawInput: _rawInput,
+      loggedAt: _loggedAt,
       ...input
-    }: Parameters<typeof confirmAndSaveMealAction>[0] & {
-      originDate: string;
-    }) => confirmAndSaveMealAction(input),
+    }: ConfirmMealVariables) => confirmAndSaveMealAction(input),
     onMutate: async (variables) => {
       const filter = {
         queryKey: loggingDayKeys.byUserDate(userId, variables.originDate),
       };
       await queryClient.cancelQueries(filter);
       const snapshots = queryClient.getQueriesData<LoggingDayData>(filter);
+      const mealId = variables.mealId ?? `optimistic-${variables.analysisId}`;
+      const optimisticMeal = buildOptimisticMeal(
+        variables.parsedMeal,
+        variables.rawInput,
+        variables.loggedAt,
+        mealId,
+        variables.edits
+      );
       queryClient.setQueriesData<LoggingDayData>(filter, (old) => {
-        if (!old) return old;
-        const pending = old.pendingConfirmations.find(
-          (p) => p.id === variables.analysisId
+        if (!old) {
+          // Entry exists but its initial load is still in flight (data
+          // undefined). Seed it so the ring reflects this meal immediately.
+          // Note: setQueriesData only runs this updater for already-cached
+          // query entries; it cannot create one where the query is unmounted.
+          // The real fix for the stale ring is sourcing the meal from the
+          // passed parsedMeal (above), not this branch.
+          return { persistedMeals: [optimisticMeal], pendingConfirmations: [] };
+        }
+        // Guard against a double-insert if the settle refetch already raced in
+        // this meal by its stable id.
+        const alreadyPersisted = old.persistedMeals.some(
+          (m) => m.id === mealId
         );
-        if (!pending) return old;
-        const mealId = variables.mealId ?? `optimistic-${variables.analysisId}`;
         return {
-          persistedMeals: [
-            ...old.persistedMeals,
-            pendingToOptimisticMeal(pending, mealId, variables.edits),
-          ],
+          persistedMeals: alreadyPersisted
+            ? old.persistedMeals
+            : [...old.persistedMeals, optimisticMeal],
           pendingConfirmations: old.pendingConfirmations.filter(
             (p) => p.id !== variables.analysisId
           ),
