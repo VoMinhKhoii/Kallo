@@ -14,11 +14,14 @@ import { dashboardKeys } from './keys';
  * mobile `useLoggingDay`) and sent as `&tz=`. Send the SAME range string that
  * will be rendered so the server returns the matching grid.
  *
+ * Mobile renders a FIXED 90-day window (`'90d'`) — the same range the web
+ * resolves to at a phone's available width — so the default arg is `'90d'`.
+ *
  * Invalidate on app focus / day rollover with the 2-element prefix
  * `dashboardKeys.heatmapAll` (no `exact: true`). Meal mutations do NOT touch
  * this cache (web relies on the 60s staleTime + focus refetch instead).
  */
-export function useHeatmap(range: HeatmapRange) {
+export function useHeatmap(range: HeatmapRange = '90d') {
   const timezoneOffset = new Date().getTimezoneOffset();
   return useQuery<HeatmapData>({
     queryKey: dashboardKeys.heatmap(range),

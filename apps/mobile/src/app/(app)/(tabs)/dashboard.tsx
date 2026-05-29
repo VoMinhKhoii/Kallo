@@ -3,12 +3,11 @@ import { Flame } from 'lucide-react-native';
 import { useMemo } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { AdherenceHeatmap } from '~/components/dashboard/adherence-heatmap';
-import { CompactWeightLog } from '~/components/dashboard/compact-weight-log';
 import { SectionHeader, SectionState } from '~/components/dashboard/section-header';
 import { WeightChart } from '~/components/dashboard/weight-chart';
 import { CalorieRing } from '~/components/logging/calorie-ring';
+import { useTranslations } from '~/i18n';
 import { apiGet } from '~/lib/api-client';
-import { useWeightSummary } from '~/lib/dashboard/use-weight';
 import { round0 } from '~/lib/logging/format';
 import { todayDateString } from '~/lib/logging/keys';
 import { useLoggingDay } from '~/lib/logging/use-logging-day';
@@ -23,7 +22,8 @@ import { colors, fonts, fontSize, radii, space } from '~/theme/tokens';
  * the three web sections, in the web's order:
  *
  *   1. TODAY SUMMARY  — week title + TodayDock (calorie ring + macros + meals)
- *   2. PROGRESS       — "Progress" + 30-day badge + WeightChart + CompactWeightLog
+ *   2. PROGRESS       — "Progress" + 30-day badge + the single WeightChart card
+ *                       (callout + TODAY'S WEIGHT input + chart)
  *   3. CONSISTENCY    — "Consistency" + 30-day badge + AdherenceHeatmap
  *
  * Section headers come from the shared SectionHeader. Sections 2 & 3 are
@@ -35,7 +35,8 @@ import { colors, fonts, fontSize, radii, space } from '~/theme/tokens';
  *    thresholds, so the range badges are hardcoded "30 days" and the weight /
  *    heatmap queries run at the fixed '30d' range. The badges are passive labels
  *    (web derives the range from width; there are no interactive tabs).
- *  - No i18n framework yet → English copy from messages/en.json, verbatim.
+ *  - The PROGRESS section is i18n'd via `~/i18n` (use-intl); the TODAY /
+ *    CONSISTENCY copy is still the inlined English from messages/en.json.
  */
 
 // EN copy (messages/en.json `dashboard.*`), sentence case.
@@ -51,7 +52,6 @@ const COPY = {
   mealReceiptsHint: 'Your meal receipts will show up here',
   recentMeals: 'Recent meals',
   mealsLogged: (count: number) => `${count} logged`,
-  progress: 'Progress',
   consistency: 'Consistency',
   retry: 'Try again',
   todayLoading: "Loading today's meals…",
@@ -102,6 +102,7 @@ export default function DashboardScreen() {
   const { session } = useSession();
   const userId = session?.user.id;
   const todayDate = todayDateString();
+  const t = useTranslations('dashboard');
   const weekTitle = useMemo(
     () => getWeekTitle('en', COPY.weekOf, todayDate),
     [todayDate]
@@ -147,7 +148,10 @@ export default function DashboardScreen() {
 
         {/* SECTION 2 — Progress (weight trend + chart + weight log) */}
         <View style={styles.section}>
-          <SectionHeader title={COPY.progress} range={COPY.range30} />
+          <SectionHeader
+            title={t('progress')}
+            range={t('ranges.thirtyDays')}
+          />
           <ProgressSection todayDate={todayDate} />
         </View>
 
@@ -338,28 +342,14 @@ function TodaySection({
 /* ---------------------------------------------------------------- Section 2 */
 
 /**
- * Progress section — the web's ProgressStory card collapses on mobile to the
- * WeightChart (which already fuses the trend status callout + the SVG area
- * chart) followed by CompactWeightLog. The weight summary is fetched once here
- * (fixed '30d') to feed CompactWeightLog's currentWeight / todayWeight; the same
- * cached query backs WeightChart, so there is no extra request. The status
- * callout is rendered exactly once (inside WeightChart) — matching web.
+ * Progress section — a faithful 1:1 of the web ProgressStory
+ * (components/dashboard/progress/progress-story.tsx). The single WeightChart
+ * card now nests, in order, the trend callout, the TODAY'S WEIGHT input
+ * (CompactWeightLog), and the SVG area chart — exactly as the web card does.
+ * The card owns its own `useWeightSummary` query and loading/error states.
  */
 function ProgressSection({ todayDate }: { todayDate: string }) {
-  const { data } = useWeightSummary('30d');
-
-  return (
-    <View style={styles.progressStack}>
-      <WeightChart />
-      {data ? (
-        <CompactWeightLog
-          currentWeight={data.currentWeight}
-          todayWeight={data.todayWeight}
-          todayDate={todayDate}
-        />
-      ) : null}
-    </View>
-  );
+  return <WeightChart todayDate={todayDate} />;
 }
 
 /* --------------------------------------------------------------------- root */
@@ -374,7 +364,6 @@ const styles = StyleSheet.create({
   },
   // Inter-section gap-4 (16px); header-to-content gap-1.5 (6px) inside.
   section: { marginBottom: space[4], gap: 6 },
-  progressStack: { gap: space[3] },
   center: {
     flex: 1,
     alignItems: 'center',

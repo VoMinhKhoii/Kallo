@@ -1,3 +1,4 @@
+import { TrendingDown, TrendingUp } from 'lucide-react-native';
 import { useMemo, useState } from 'react';
 import {
   ActivityIndicator,
@@ -17,65 +18,29 @@ import Svg, {
 } from 'react-native-svg';
 import type { WeightSummaryData } from '@/lib/api/contracts/weight';
 import type { WeightGoalDirection, WeightRange } from '@/lib/types/weight';
+import { useLocale, useTranslations } from '~/i18n';
+import { buildXTicks } from '~/lib/dashboard/weight-chart-utils';
 import { useWeightSummary } from '~/lib/dashboard/use-weight';
 import {
   buildWeightTrendSummary,
   type WeightTrendStatus,
 } from '~/lib/dashboard/weight-trend';
-import { buildXTicks } from '~/lib/dashboard/weight-chart-utils';
+import { CompactWeightLog } from '~/components/dashboard/compact-weight-log';
 import { Card } from '~/theme/primitives';
 import { Text } from '~/theme/text';
 import { colors, fonts, fontSize, radii, space } from '~/theme/tokens';
 
 /**
- * Mobile WeightChart — 1:1 port of the web ProgressStory + WeightChart
- * (components/dashboard/progress/{progress-story,weight-chart}.tsx), drawn with
- * react-native-svg instead of recharts. Self-contained: owns its range tabs,
- * calls `useWeightSummary`, and renders its own loading / error / empty states.
+ * Mobile weight card — 1:1 port of the web ProgressStory
+ * (components/dashboard/progress/progress-story.tsx), which nests, in order:
+ *   [1] trend / delta callout
+ *   [2] TODAY'S WEIGHT input (CompactWeightLog)
+ *   [3] the SVG area chart (web WeightChart, drawn with react-native-svg).
  *
- * Layout (web is a 2-col grid; mobile stacks): [1] trend callout, [2] chart.
- * CompactWeightLog is a separate component and is intentionally out of scope.
- *
- * Copy is the English text from messages/en.json verbatim — the mobile app has
- * no i18n framework wired yet (matches the other mobile components).
+ * Self-contained: owns its range, calls `useWeightSummary`, and renders its own
+ * loading / error states. i18n via `~/i18n` (use-intl), same `dashboard` keys
+ * and `t.raw('progressStatus.{status}')` shape as the web.
  */
-
-// --- copy (verbatim from messages/en.json `dashboard`) ---------------------
-const STATUS_COPY: Record<WeightTrendStatus, { label: string; detail: string }> =
-  {
-    insufficient: {
-      label: 'Tracking started',
-      detail: 'Log tomorrow to see your trend.',
-    },
-    on_pace: {
-      label: 'On pace',
-      detail: 'Your current pace is matching the plan.',
-    },
-    ahead: {
-      label: 'Ahead of plan',
-      detail: 'Progress is moving faster than expected.',
-    },
-    behind: {
-      label: 'Needs attention',
-      detail: 'The trend is softer than the plan right now.',
-    },
-    stable: {
-      label: 'Stable',
-      detail: 'Your weight is staying within a quiet maintenance band.',
-    },
-  };
-
-const COPY = {
-  kg: 'kg',
-  now: 'Now',
-  projected: 'Projected',
-  start: 'Start',
-  weekPrefix: 'W',
-  offTrack: 'Off track',
-  noWeightData: 'Log your first weight to start tracking your trend.',
-  loadingWeightTrend: 'Loading weight trend…',
-  progressLoadError: 'Unable to load the weight trend. Please try again.',
-} as const;
 
 // --- chart geometry --------------------------------------------------------
 const MARGIN = { top: 4, right: 12, bottom: 4, left: 0 } as const;
@@ -102,11 +67,11 @@ function monotonePath(pts: { x: number; y: number }[]): string {
   return d;
 }
 
-export function WeightChart() {
+export function WeightChart({ todayDate }: { todayDate: string }) {
   // Web derives the range from container width; on a phone that is always the
-  // 30-day view (the section header shows the passive "30 days" label). No
-  // interactive tabs — matches the web mobile rendering.
+  // 30-day view (the section header shows the passive "30 days" label).
   const range: WeightRange = '30d';
+  const t = useTranslations('dashboard');
   const { data, isLoading, isError } = useWeightSummary(range);
 
   return (
@@ -115,23 +80,32 @@ export function WeightChart() {
         <View style={styles.stateBox}>
           <ActivityIndicator color={colors.accent} />
           <Text variant="small" style={styles.stateText}>
-            {COPY.loadingWeightTrend}
+            {t('loadingWeightTrend')}
           </Text>
         </View>
       ) : isError || !data ? (
         <View style={styles.stateBox}>
           <Text variant="small" style={styles.stateText}>
-            {COPY.progressLoadError}
+            {t('progressLoadError')}
           </Text>
         </View>
       ) : (
-        <Body data={data} range={range} />
+        <Body data={data} range={range} todayDate={todayDate} />
       )}
     </Card>
   );
 }
 
-function Body({ data, range }: { data: WeightSummaryData; range: WeightRange }) {
+function Body({
+  data,
+  range,
+  todayDate,
+}: {
+  data: WeightSummaryData;
+  range: WeightRange;
+  todayDate: string;
+}) {
+  const t = useTranslations('dashboard');
   const summary = useMemo(
     () =>
       buildWeightTrendSummary({
@@ -145,10 +119,16 @@ function Body({ data, range }: { data: WeightSummaryData; range: WeightRange }) 
     [data, range]
   );
 
-  const copy = STATUS_COPY[summary.status];
+  const copy = t.raw(`progressStatus.${summary.status}`) as {
+    label: string;
+    detail: string;
+  };
   const isInsufficient = summary.status === 'insufficient';
   const delta = summary.currentWeight - summary.startWeight;
   const behind = summary.status === 'behind';
+  // Web: const Icon = delta <= 0 ? TrendingDown : TrendingUp;
+  const Icon = delta <= 0 ? TrendingDown : TrendingUp;
+  const pillColor = behind ? colors.danger : colors.accent;
 
   return (
     <View style={styles.body}>
@@ -157,12 +137,8 @@ function Body({ data, range }: { data: WeightSummaryData; range: WeightRange }) 
         <View
           style={[styles.pill, behind ? styles.pillBehind : styles.pillAccent]}
         >
-          <Text
-            style={[
-              styles.pillText,
-              { color: behind ? colors.danger : colors.accent },
-            ]}
-          >
+          <Icon size={14} color={pillColor} />
+          <Text style={[styles.pillText, { color: pillColor }]}>
             {copy.label}
           </Text>
         </View>
@@ -171,31 +147,25 @@ function Body({ data, range }: { data: WeightSummaryData; range: WeightRange }) 
           <View style={styles.heroLeft}>
             <Text style={styles.hero}>
               {isInsufficient
-                ? `${summary.currentWeight.toFixed(1)} ${COPY.kg}`
-                : `${delta > 0 ? '+' : ''}${delta.toFixed(1)} ${COPY.kg}`}
+                ? `${summary.currentWeight.toFixed(1)} ${t('units.kg')}`
+                : `${delta > 0 ? '+' : ''}${delta.toFixed(1)} ${t('units.kg')}`}
             </Text>
-            <Text variant="italicAccent" style={styles.detail}>
-              {copy.detail}
-            </Text>
+            <Text style={styles.detail}>{copy.detail}</Text>
           </View>
 
           {!isInsufficient && (
             <View style={styles.tiles}>
               <View style={styles.tile}>
-                <Text variant="eyebrow" style={styles.tileLabel}>
-                  {COPY.now}
-                </Text>
-                <Text variant="numCaption" style={styles.tileValue}>
-                  {summary.currentWeight.toFixed(1)} {COPY.kg}
+                <Text style={styles.tileLabel}>{t('now')}</Text>
+                <Text style={styles.tileValue}>
+                  {summary.currentWeight.toFixed(1)} {t('units.kg')}
                 </Text>
               </View>
               {summary.canProject && (
                 <View style={styles.tile}>
-                  <Text variant="eyebrow" style={styles.tileLabel}>
-                    {COPY.projected}
-                  </Text>
-                  <Text variant="numCaption" style={styles.tileValue}>
-                    {summary.projectedEndWeight.toFixed(1)} {COPY.kg}
+                  <Text style={styles.tileLabel}>{t('projected')}</Text>
+                  <Text style={styles.tileValue}>
+                    {summary.projectedEndWeight.toFixed(1)} {t('units.kg')}
                   </Text>
                 </View>
               )}
@@ -204,7 +174,14 @@ function Body({ data, range }: { data: WeightSummaryData; range: WeightRange }) 
         </View>
       </View>
 
-      {/* [2] Chart */}
+      {/* [2] TODAY'S WEIGHT input — folded into the card */}
+      <CompactWeightLog
+        currentWeight={data.currentWeight}
+        todayWeight={data.todayWeight}
+        todayDate={todayDate}
+      />
+
+      {/* [3] Chart */}
       <ChartCanvas
         data={data.weights}
         periodStartWeight={data.periodStartWeight}
@@ -229,6 +206,8 @@ function ChartCanvas({
   goalDirection: WeightGoalDirection;
   range: WeightRange;
 }) {
+  const t = useTranslations('dashboard');
+  const locale = useLocale();
   const [width, setWidth] = useState(0);
   const [active, setActive] = useState<number | null>(null);
 
@@ -239,7 +218,7 @@ function ChartCanvas({
     return (
       <View style={styles.emptyBox}>
         <Text variant="small" style={styles.stateText}>
-          {COPY.noWeightData}
+          {t('noWeightData')}
         </Text>
       </View>
     );
@@ -304,11 +283,10 @@ function ChartCanvas({
 
   // X ticks + labels.
   const { ticks: xTicks, formatter: xFormatter } = isSinglePoint
-    ? { ticks: [0], formatter: () => COPY.start }
-    : buildXTicks(data.length, range, 'en', COPY.now, COPY.weekPrefix);
+    ? { ticks: [0], formatter: () => t('start') }
+    : buildXTicks(data.length, range, locale, t('now'), t('weekPrefix'));
 
-  // Press / drag → nearest data point (View responder system; no PanResponder
-  // ref so we don't read a ref during render).
+  // Press / drag → nearest data point.
   function updateActive(e: GestureResponderEvent) {
     if (plotW <= 0) return;
     const localX = e.nativeEvent.locationX - plotLeft;
@@ -327,9 +305,7 @@ function ChartCanvas({
       {goalDirection !== 'flat' && (
         <View style={styles.legend}>
           <View style={styles.legendSwatch} />
-          <Text variant="meta" style={styles.legendLabel}>
-            {COPY.offTrack}
-          </Text>
+          <Text style={styles.legendLabel}>{t('offTrack')}</Text>
         </View>
       )}
 
@@ -364,7 +340,7 @@ function ChartCanvas({
               />
             )}
 
-            {/* Y axis line + tick labels */}
+            {/* Y axis line */}
             <Line
               x1={plotLeft}
               y1={plotTop}
@@ -421,26 +397,26 @@ function ChartCanvas({
 
         {/* Y tick labels (left gutter) */}
         {width > 0 &&
-          yTicks.map((t) => (
+          yTicks.map((tick) => (
             <Text
-              key={`y-${t}`}
-              style={[styles.yTick, { top: yToPx(t) - 6 }]}
+              key={`y-${tick}`}
+              style={[styles.yTick, { top: yToPx(tick) - 6 }]}
             >
-              {t.toFixed(1)}
+              {tick.toFixed(1)}
             </Text>
           ))}
 
         {/* X tick labels (bottom) */}
         {width > 0 &&
-          xTicks.map((t, i) => (
+          xTicks.map((tick, i) => (
             <Text
-              key={`x-${t}`}
+              key={`x-${tick}`}
               style={[
                 styles.xTick,
-                { left: xToPx(t) - 18, width: 36, top: plotBottom + 3 },
+                { left: xToPx(tick) - 18, width: 36, top: plotBottom + 3 },
               ]}
             >
-              {xFormatter(t, i)}
+              {xFormatter(tick, i)}
             </Text>
           ))}
 
@@ -459,7 +435,7 @@ function ChartCanvas({
             ]}
           >
             <Text style={styles.tooltipText}>
-              {data[activeIdx].toFixed(1)} {COPY.kg}
+              {data[activeIdx].toFixed(1)} {t('units.kg')}
             </Text>
           </View>
         )}
@@ -469,10 +445,12 @@ function ChartCanvas({
 }
 
 const styles = StyleSheet.create({
+  // Web ProgressStory card: rounded-[1.5rem] (24) border nham-border/60 p-2.5 (10).
   card: {
     borderColor: colors.borderSoft,
     borderRadius: radii['4xl'],
-    gap: space[3],
+    padding: 10,
+    gap: space[2],
   },
   // Loading / error / empty boxes
   stateBox: {
@@ -488,16 +466,20 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
 
-  body: { gap: space[3] },
+  // gap-2 between the three nested blocks (callout / input / chart).
+  body: { gap: space[2] },
 
-  // Trend callout
+  // Trend callout — web rounded-[1.25rem] (20) bg nham-surface/70 p-2.5 (10).
   callout: {
-    borderRadius: radii['2xl'],
+    borderRadius: radii['3xl'],
     backgroundColor: colors.surface80,
-    padding: space[3],
+    padding: 10,
   },
   pill: {
+    flexDirection: 'row',
+    alignItems: 'center',
     alignSelf: 'flex-start',
+    gap: space[2],
     borderRadius: radii.pill,
     paddingHorizontal: 10,
     paddingVertical: 4,
@@ -516,28 +498,44 @@ const styles = StyleSheet.create({
   heroLeft: { flexShrink: 1 },
   hero: {
     fontFamily: fonts.serifMedium, // Lora 500 — never bold
-    fontSize: fontSize.h2,
+    fontSize: fontSize.h3, // web text-3xl (~30); h3=24 fits the narrow phone
     letterSpacing: -1.2,
     color: colors.text,
     fontVariant: ['tabular-nums'],
   },
+  // Web: mt-1 text-nham-stone text-xs — muted gray DM Sans 12px, NOT italic accent.
   detail: {
-    fontFamily: fonts.serifItalic,
+    fontFamily: fonts.sansRegular,
     fontSize: fontSize.xs,
-    lineHeight: 17,
-    color: colors.accent,
+    lineHeight: 16,
+    color: colors.stone,
     marginTop: space[1],
   },
 
   tiles: { flexDirection: 'row', gap: space[2] },
+  // Web: rounded-xl bg-card/80 px-2.5 py-2.
   tile: {
     borderRadius: radii.buttonXl,
     backgroundColor: colors.elevTranslucent,
     paddingHorizontal: 10,
     paddingVertical: space[2],
   },
-  tileLabel: { fontSize: 9, letterSpacing: 1.4 },
-  tileValue: { color: colors.text, marginTop: 2 },
+  // Web: block text-[9px] uppercase tracking-[0.14em] stone.
+  tileLabel: {
+    fontFamily: fonts.sansBold,
+    fontSize: 9,
+    letterSpacing: 1.3,
+    textTransform: 'uppercase',
+    color: colors.stone,
+  },
+  // Web: font-mono text-xs nham-text.
+  tileValue: {
+    fontFamily: fonts.sansSemiBold,
+    fontSize: fontSize.xs,
+    color: colors.text,
+    marginTop: 2,
+    fontVariant: ['tabular-nums'],
+  },
 
   // Legend
   legend: {
@@ -553,7 +551,11 @@ const styles = StyleSheet.create({
     backgroundColor: colors.danger,
     opacity: 0.5,
   },
-  legendLabel: { color: colors.stone, fontSize: fontSize.eyebrow },
+  legendLabel: {
+    fontFamily: fonts.sansRegular,
+    color: colors.stone,
+    fontSize: fontSize.eyebrow,
+  },
 
   // Chart canvas
   canvas: { height: CHART_H, position: 'relative' },

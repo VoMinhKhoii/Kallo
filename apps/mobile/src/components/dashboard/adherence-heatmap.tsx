@@ -6,6 +6,7 @@ import type {
   HeatmapData,
   HeatmapRange,
 } from '@/lib/types/dashboard';
+import { useTranslations } from '~/i18n';
 import { useHeatmap } from '~/lib/dashboard/use-heatmap';
 import { getHeatmapColor, HEATMAP_COLORS } from '~/lib/dashboard/heatmap-colors';
 import { Button, Card } from '~/theme/primitives';
@@ -15,16 +16,20 @@ import { colors, fonts, fontSize, radii, shadow, space } from '~/theme/tokens';
 /**
  * Adherence ("consistency") heatmap. Server-built grid (`useHeatmap`) rendered
  * as a fixed-size SVG grid of rounded cells, tinted via the vendored heatmap
- * colors. Mirrors web `components/dashboard/progress/adherence-heatmap.tsx`,
+ * colors. Faithful 1:1 of web `components/dashboard/progress/adherence-heatmap.tsx`,
  * with the mobile adaptations called out in the port plan:
  *
- *  - No ResizeObserver: mobile picks a FIXED range (default '30d', which always
- *    fits a phone) and a FIXED cell size computed from the window width.
+ *  - Fixed at the 90-day range (the same range the web resolves to at a phone's
+ *    available width). Column count is whatever the server returns
+ *    (`data.cells[0].length`, 13 or 14 weeks depending on weekday) — never a
+ *    constant, so cells and month labels stay aligned.
+ *  - No ResizeObserver: a FIXED cell size is computed from the window width
+ *    using the same heuristic as the web (DAY_LABEL_WIDTH + gutter + gaps),
+ *    clamped to >=10px so ~14 columns never overflow.
  *  - No hover tooltip: tapping a logged/partial cell shows its label in a small
  *    bubble above the cell (mobile has no hover/focus tooltip surface).
- *  - No i18n framework yet (mobile hardcodes the English strings, matching the
- *    other logging components); the strings mirror `messages/en.json`
- *    `dashboard.adherenceHeatmap` exactly.
+ *  - i18n via `~/i18n` (`useTranslations('dashboard.adherenceHeatmap')`) — the
+ *    SAME namespace and keys the web component uses.
  */
 
 const DAY_LABELS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'] as const;
@@ -34,30 +39,6 @@ const DAY_LABEL_GUTTER = space[1]; // gap-1 between labels column and grid (4px)
 const MONTH_STRIP_HEIGHT = 16; // web h-4
 const CELL_RADIUS = 3; // rounded-[3px]
 
-// i18n English mirrors (messages/en.json dashboard.adherenceHeatmap). The
-// Vietnamese values live in messages/vi.json for when i18n is wired up.
-const T = {
-  onTrack: (percent: number) => `${percent}% on track`,
-  notLogged: 'Not logged',
-  partial: 'Partial day (under-logged)',
-  future: 'Future day',
-  outside: 'Outside selected range',
-  offTarget: 'Off target',
-  onTarget: 'On target',
-  noData: 'No data',
-  close: 'Close',
-  slightlyOver: 'Slightly over',
-  slightlyUnder: 'Slightly under',
-  over: 'Over',
-  under: 'Under',
-  farOver: 'Far over',
-  farUnder: 'Far under',
-} as const;
-
-const HEATMAP_LOAD_ERROR =
-  'Unable to load the consistency section. Please try again.';
-const RETRY = 'Try again';
-
 interface Bubble {
   text: string;
   x: number; // center x of the cell, in svg/local coords
@@ -65,21 +46,22 @@ interface Bubble {
 }
 
 export function AdherenceHeatmap() {
-  // 30d (5 weeks) always fits a phone with cells comfortably >=10px. There is
-  // no interactive range toggle on web — the label is passive — so mobile keeps
-  // a single fixed range.
-  const range: HeatmapRange = '30d';
+  // Fixed at the 90-day window — the range the web resolves to on a phone-width
+  // viewport. There is no interactive range toggle on web (the label is
+  // passive), so mobile keeps a single fixed range.
+  const range: HeatmapRange = '90d';
   const query = useHeatmap(range);
   const { width: screenWidth } = useWindowDimensions();
+  const t = useTranslations('dashboard');
 
   if (query.isError) {
     return (
       <Card style={styles.stateCard}>
         <Text variant="small" style={styles.stateMessage}>
-          {HEATMAP_LOAD_ERROR}
+          {t('heatmapLoadError')}
         </Text>
         <Button
-          title={RETRY}
+          title={t('retry')}
           variant="ghost"
           onPress={() => query.refetch()}
         />
@@ -110,6 +92,7 @@ interface HeatmapBodyProps {
  * for the range's nominal week count, no tooltips, no header percent).
  */
 function HeatmapBody({ data, range, screenWidth }: HeatmapBodyProps) {
+  const t = useTranslations('dashboard.adherenceHeatmap');
   const [bubble, setBubble] = useState<Bubble | null>(null);
   const gap = GAP[range];
 
@@ -156,7 +139,7 @@ function HeatmapBody({ data, range, screenWidth }: HeatmapBodyProps) {
     const isMuted = cell.status === 'future' || cell.status === 'outside';
     // Only logged/partial cells respond (web's isFocusable rule).
     if (!((isLogged || isPartial) && !isMuted)) return;
-    const text = getTooltipText(cell);
+    const text = getTooltipText(t, cell);
     const x = wi * step + sq / 2;
     const y = di * step;
     setBubble((prev) =>
@@ -169,7 +152,7 @@ function HeatmapBody({ data, range, screenWidth }: HeatmapBodyProps) {
       {/* Header: "{percent}% on track" */}
       <View style={styles.header}>
         <Text variant="captionTabular" style={styles.headerLabel}>
-          {data ? T.onTrack(adherenceRate) : ' '}
+          {data ? t('onTrack', { percent: adherenceRate }) : ' '}
         </Text>
       </View>
 
@@ -267,7 +250,7 @@ function HeatmapBody({ data, range, screenWidth }: HeatmapBodyProps) {
 
       {/* Legend: Off target — diverging gradient bar — On target */}
       <View style={styles.legend}>
-        <Text style={styles.legendLabel}>{T.offTarget}</Text>
+        <Text style={styles.legendLabel}>{t('offTarget')}</Text>
         <View style={styles.legendBarWrap}>
           <Svg width="100%" height={LEGEND_BAR_HEIGHT}>
             <Defs>
@@ -290,11 +273,13 @@ function HeatmapBody({ data, range, screenWidth }: HeatmapBodyProps) {
             />
           </Svg>
         </View>
-        <Text style={styles.legendLabel}>{T.onTarget}</Text>
+        <Text style={styles.legendLabel}>{t('onTarget')}</Text>
       </View>
     </Card>
   );
 }
+
+type TranslateFn = (key: string, values?: Record<string, string | number>) => string;
 
 const BUBBLE_HALF_W = 60;
 const LEGEND_BAR_HEIGHT = 6;
@@ -334,13 +319,13 @@ function cellRectProps(cell: HeatmapCell | null): {
 }
 
 /** Tooltip text, mirroring web getTooltipText (middot separator for logged). */
-function getTooltipText(cell: HeatmapCell): string {
-  if (cell.status === 'future') return T.future;
-  if (cell.status === 'outside') return T.outside;
-  if (cell.status === 'partial') return T.partial;
-  if (cell.status !== 'logged' || cell.ratio === null) return T.notLogged;
+function getTooltipText(t: TranslateFn, cell: HeatmapCell): string {
+  if (cell.status === 'future') return t('future');
+  if (cell.status === 'outside') return t('outside');
+  if (cell.status === 'partial') return t('partial');
+  if (cell.status !== 'logged' || cell.ratio === null) return t('notLogged');
   const { labelKey } = getHeatmapColor(cell.ratio);
-  return `${T[labelKey as keyof typeof T] ?? labelKey} · ${Math.round(cell.ratio * 100)}%`;
+  return `${t(labelKey)} · ${Math.round(cell.ratio * 100)}%`;
 }
 
 const styles = StyleSheet.create({

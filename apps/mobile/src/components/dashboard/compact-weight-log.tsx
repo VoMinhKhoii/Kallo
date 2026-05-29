@@ -7,6 +7,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import { useTranslations } from '~/i18n';
 import { ApiError } from '~/lib/api-client';
 import { parseDecimalInput } from '~/lib/dashboard/format';
 import { useLogWeight } from '~/lib/dashboard/use-weight';
@@ -20,63 +21,25 @@ import { colors, fonts, fontSize, radii, space, tracking } from '~/theme/tokens'
  * logged weight (falling back to the profile's current weight) and flips to an
  * "Update" affordance once a value exists for today.
  *
+ * i18n via `~/i18n` (use-intl) — the SAME `dashboard` keys the web component
+ * uses (`weightCard.*`, `saving`, `save`, `units.kg`).
+ *
  * Deviations from web, all sanctioned by the porting spec:
  *  - No react-hook-form / zod resolver. Validation is a trivial inline numeric
  *    guard (NaN or out of 30–300 kg). We must NOT import `weightLogSchema` as a
- *    value (it would drag `zod` + web-only deps into the RN bundle), so the two
- *    bound messages are replicated inline, verbatim from lib/validation.ts.
- *  - No sonner/i18n framework on mobile. Strings are inlined as en/vi pairs and
- *    chosen by the `locale` prop (default 'en'), matching how the logging layer
- *    threads an optional locale. Success/failure feedback is a transient inline
- *    line in the hint/error slot (auto-clears), since there is no toast host.
+ *    value (it would drag `zod` + web-only deps into the RN bundle). The bound
+ *    message comes from the catalog (`weightCard.invalid`).
+ *  - No sonner toast host → success/failure feedback is a transient inline line
+ *    in the hint/error slot (auto-clears).
  *  - The web's hidden `loggedDate` field becomes a closed-over prop sent in the
  *    mutation body.
  */
-
-type Locale = 'en' | 'vi';
 
 interface CompactWeightLogProps {
   currentWeight: number;
   todayWeight: number | null | undefined;
   todayDate: string;
-  locale?: Locale;
 }
-
-// Bilingual strings — mirror messages/{en,vi}.json `dashboard` keys. The
-// validation messages are the web's Vietnamese-only zod bounds; we pair them
-// with an English equivalent so the inline guard reads in the active locale.
-const STRINGS = {
-  en: {
-    todaysWeight: "Today's weight",
-    logWeight: 'Log weight',
-    inputLabel: 'Weight in kilograms',
-    kg: 'kg',
-    saving: 'Saving…',
-    update: 'Update',
-    save: 'Save',
-    editHint: "Editing today's entry — saves overwrite the previous value.",
-    saved: 'Weight saved',
-    saveFailed: 'Failed to save weight',
-    invalidValue: 'Check the weight value before saving',
-    weightMin: 'Weight must be at least 30 kg.',
-    weightMax: 'Weight must be at most 300 kg.',
-  },
-  vi: {
-    todaysWeight: 'Cân nặng hôm nay',
-    logWeight: 'Ghi cân nặng',
-    inputLabel: 'Cân nặng theo kilogram',
-    kg: 'kg',
-    saving: 'Đang lưu…',
-    update: 'Cập nhật',
-    save: 'Lưu',
-    editHint: 'Đang sửa số liệu hôm nay — lần lưu sau sẽ ghi đè giá trị trước.',
-    saved: 'Đã lưu cân nặng',
-    saveFailed: 'Không thể lưu cân nặng',
-    invalidValue: 'Kiểm tra giá trị cân nặng trước khi lưu',
-    weightMin: 'Cân nặng phải lớn hơn hoặc bằng 30 kg.',
-    weightMax: 'Cân nặng phải nhỏ hơn hoặc bằng 300 kg.',
-  },
-} as const satisfies Record<Locale, Record<string, string>>;
 
 const WEIGHT_MIN = 30;
 const WEIGHT_MAX = 300;
@@ -87,9 +50,8 @@ export function CompactWeightLog({
   currentWeight,
   todayWeight,
   todayDate,
-  locale = 'en',
 }: CompactWeightLogProps) {
-  const t = STRINGS[locale];
+  const t = useTranslations('dashboard');
   const logWeight = useLogWeight();
   const hasTodayWeight = typeof todayWeight === 'number';
   const prefill = String(todayWeight ?? currentWeight);
@@ -136,14 +98,13 @@ export function CompactWeightLog({
   const onSubmit = async () => {
     const weightKg = parseDecimalInput(value);
     // Trivial inline numeric guard (the web's zod resolver, distilled).
-    if (Number.isNaN(weightKg) || weightKg < WEIGHT_MIN) {
-      setValidationError(t.weightMin);
-      showFeedback({ kind: 'error', message: t.invalidValue });
-      return;
-    }
-    if (weightKg > WEIGHT_MAX) {
-      setValidationError(t.weightMax);
-      showFeedback({ kind: 'error', message: t.invalidValue });
+    if (
+      Number.isNaN(weightKg) ||
+      weightKg < WEIGHT_MIN ||
+      weightKg > WEIGHT_MAX
+    ) {
+      setValidationError(t('weightCard.invalid'));
+      showFeedback({ kind: 'error', message: t('weightCard.invalidValue') });
       return;
     }
     setValidationError(null);
@@ -151,13 +112,14 @@ export function CompactWeightLog({
     try {
       await logWeight.mutateAsync({ loggedDate: todayDate, weightKg });
       // Match the web: stay populated with the submitted value, clear dirty so
-      // the prop-sync effect (now fed the refetched todayWeight) takes over.
+      // the prop-sync (now fed the refetched todayWeight) takes over.
       setValue(String(weightKg));
       setDirty(false);
-      showFeedback({ kind: 'success', message: t.saved });
+      showFeedback({ kind: 'success', message: t('weightCard.saved') });
     } catch (error) {
       // The server returns a localized zod message in body.error.message.
-      const message = error instanceof ApiError ? error.message : t.saveFailed;
+      const message =
+        error instanceof ApiError ? error.message : t('weightCard.saveFailed');
       console.error('[dashboard] compact weight log failed', error);
       showFeedback({ kind: 'error', message });
     }
@@ -165,10 +127,10 @@ export function CompactWeightLog({
 
   const isPending = logWeight.isPending;
   const submitLabel = isPending
-    ? t.saving
+    ? t('saving')
     : hasTodayWeight
-      ? t.update
-      : t.save;
+      ? t('weightCard.update')
+      : t('save');
 
   // Exactly one Row 3 line shows. Transient feedback wins; then the validation
   // error; then the edit hint (only when editing an existing entry).
@@ -179,14 +141,14 @@ export function CompactWeightLog({
       <View style={styles.eyebrowRow}>
         <Scale color={colors.accent} size={14} />
         <Text variant="eyebrow" style={styles.eyebrow}>
-          {hasTodayWeight ? t.todaysWeight : t.logWeight}
+          {hasTodayWeight ? t('weightCard.todaysWeight') : t('weightCard.logWeight')}
         </Text>
       </View>
 
       <View style={styles.inputRow}>
         <View style={styles.inputWrapper}>
           <TextInput
-            accessibilityLabel={t.inputLabel}
+            accessibilityLabel={t('weightCard.inputLabel')}
             style={[styles.input, validationError && styles.inputInvalid]}
             value={value}
             onChangeText={onChangeText}
@@ -196,7 +158,7 @@ export function CompactWeightLog({
             editable={!isPending}
             placeholderTextColor={colors.placeholderMuted40}
           />
-          <Text style={styles.unit}>{t.kg}</Text>
+          <Text style={styles.unit}>{t('units.kg')}</Text>
         </View>
 
         <Pressable
@@ -234,21 +196,20 @@ export function CompactWeightLog({
         </Text>
       )}
       {showEditHint && (
-        <Text style={[styles.row3, styles.hint]}>{t.editHint}</Text>
+        <Text style={[styles.row3, styles.hint]}>{t('weightCard.editHint')}</Text>
       )}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  // Web: rounded-[1.25rem] (20px) border nham-border/60 bg nham-surface/70 p-3.
-  // Radius kept in the card family (2xl = 18) per the porting note.
+  // Web: rounded-[1.25rem] (20) border nham-border/60 bg nham-surface/70 p-3 (12).
   container: {
     flexDirection: 'column',
     borderWidth: 1,
     borderColor: colors.borderSoft,
     backgroundColor: colors.surface80,
-    borderRadius: radii['2xl'],
+    borderRadius: radii['3xl'],
     padding: space[3],
   },
   eyebrowRow: {
@@ -257,9 +218,7 @@ const styles = StyleSheet.create({
     gap: space[2],
     marginBottom: 6,
   },
-  // Web eyebrow is 9px / 0.15em; the shared 10px eyebrow variant is close enough
-  // (the ~10px eyebrow exception). Pull size to 9 + matching tracking to stay
-  // faithful while reusing the variant's weight/transform/color.
+  // Web eyebrow is 9px / 0.15em; pull the variant size to 9 + matching tracking.
   eyebrow: {
     fontSize: 9,
     letterSpacing: tracking.wide,
@@ -275,7 +234,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   // Web: h-9 rounded-xl border-nham-border bg-card pr-8 font-mono text-sm.
-  // No mono on mobile → DM Sans medium + tabular nums.
+  // pr-32px clears the absolutely-pinned "kg" suffix.
   input: {
     height: 36,
     borderRadius: radii.buttonXl,
