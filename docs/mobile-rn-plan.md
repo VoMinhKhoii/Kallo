@@ -2,7 +2,8 @@
 
 > **Status**: Verified, executable. Supersedes the 2026-05-16 draft.
 > **Last updated**: 2026-05-29
-> **Scope decision**: FULL 1:1 PARITY (UI + logic) of all in-app surfaces — NOT an MVP-first cut. Admin is the only out-of-scope surface.
+> **Scope decision**: FULL parity (UI + logic) of all in-app surfaces — NOT an MVP-first cut. Admin is the only out-of-scope surface.
+> **What "1:1" means** (clarified by Khoi 2026-05-29): design + behavior **CONSISTENCY**, NOT a pixel-replica of the web's responsive-mobile layout. The native app should feel like the same app — same design system (tokens, Lora/DM Sans, warm palette, voice, the canonical calorie-ring / meal-card / heatmap patterns) and same logic — implemented with native-idiomatic patterns (bottom tabs, native sheets/inputs). The web's responsive-mobile UI is mature; mobile mirrors its design language, not its DOM. ("Different rooms, same house.")
 > **Grounded in**: a fresh 8-mapper verification pass over the live codebase (workflow `map-web-for-rn-port`, 2026-05-29). All line numbers below are current as of that pass.
 
 ---
@@ -189,6 +190,10 @@ Create:
 - Preserve the inline `feed-area.tsx:301` post-stream invalidation (`loggingDayKeys.byUserDate` prefix + `['meal-dates']`).
 
 **Done when:** mobile log/confirm/edit-grams/delete round-trips with web on the same backend; streaming waterfall + card mount/exit animate.
+
+> **DESIGN-SYSTEM DECISION (2026-05-29): typed tokens + StyleSheet primitives, NOT NativeWind.** Rationale: the stack is bleeding-edge (RN 0.85 / React 19 / React Compiler), NativeWind's `jsxImportSource` babel transform interacts with React Compiler, and styling can't be visually QA'd headlessly — so a deterministic StyleSheet layer is safer. Consistency comes from shared TOKENS, not shared class strings, and screens are re-implemented natively regardless (no verbatim class reuse to gain). If class-parity with web is later desired, NativeWind can be layered in. §5's NativeWind config is retained as reference only.
+> **STATUS — Phase 3 design-system foundation COMPLETE & build-verified (2026-05-29), uncommitted→committed.** `src/theme/{tokens,fonts,text,primitives}` transcribe the `--nham-*` palette + type scale + radii/spacing/shadows; Lora + DM Sans via `@expo-google-fonts/*` (subpath imports) loaded at root with a splash gate; `Text` (variant type system, tabular nums, italic-accent), `Screen`/`Card`/`Button` primitives. Auth + home screens migrated onto it. Verified: tsc clean + `expo export` bundles.
+> **REMAINING in Phase 3 — the LOGGING WEDGE** (the big one, next chunk): `(app)/(tabs)/logging.tsx` + FeedArea/MealInput/MealEntry(+Item)/StreamingMealEntry/PersistedMealCard/MacroSummary/CalorieRing; the `react-native-sse` client (`use-stream-analysis.ts`, enumerate NAMED events, send `locale`); RN hooks (useLoggingDay/useConfirmMeal/useFeedSubmit/useStreamingTerminalEffects/useSubmitGuard/usePrefetchDates + corrected useDeleteMeal); reuse shared `@/lib/*` types/contracts/streaming (first real exercise of the Metro shared-lib path); `expo-crypto` randomUUID polyfill. Bottom-tab nav introduced here (Dashboard/Nutrition/Logging).
 
 ### Phase 4 — Dashboard + weight (~6 days)
 `(app)/(tabs)/dashboard.tsx`:

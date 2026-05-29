@@ -3,17 +3,16 @@ import { Link, useRouter } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import { useState } from 'react';
 import {
-  ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
-  Pressable,
   StyleSheet,
-  Text,
   TextInput,
   View,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { supabase } from '~/lib/supabase';
+import { Button, Screen } from '~/theme/primitives';
+import { Text } from '~/theme/text';
+import { colors, fonts, radii, space } from '~/theme/tokens';
 
 // Required so the in-app browser dismisses correctly after the OAuth redirect.
 WebBrowser.maybeCompleteAuthSession();
@@ -70,19 +69,23 @@ export default function SignIn() {
   };
 
   return (
-    <SafeAreaView style={styles.safe}>
+    <Screen>
       <KeyboardAvoidingView
         style={styles.flex}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
         <View style={styles.container}>
-          <Text style={styles.wordmark}>Nhẩm</Text>
-          <Text style={styles.subtitle}>What did you eat?</Text>
+          <Text variant="h1" style={styles.center}>
+            Nhẩm
+          </Text>
+          <Text variant="lead" style={styles.subtitle}>
+            What did you eat?
+          </Text>
 
           <TextInput
             style={styles.input}
             placeholder="Email"
-            placeholderTextColor="#a8a29e"
+            placeholderTextColor={colors.stone}
             autoCapitalize="none"
             autoComplete="email"
             keyboardType="email-address"
@@ -92,107 +95,73 @@ export default function SignIn() {
           <TextInput
             style={styles.input}
             placeholder="Password"
-            placeholderTextColor="#a8a29e"
+            placeholderTextColor={colors.stone}
             secureTextEntry
             autoComplete="current-password"
             value={password}
             onChangeText={setPassword}
           />
 
-          {error ? <Text style={styles.error}>{error}</Text> : null}
+          {error ? (
+            <Text variant="small" style={styles.error}>
+              {error}
+            </Text>
+          ) : null}
 
-          <Pressable
-            style={[styles.primary, busy && styles.disabled]}
-            disabled={busy}
-            onPress={signInWithEmail}
-          >
-            {busy ? (
-              <ActivityIndicator color="#ffffff" />
-            ) : (
-              <Text style={styles.primaryText}>Sign in</Text>
-            )}
-          </Pressable>
+          <Button title="Sign in" onPress={signInWithEmail} loading={busy} />
 
           <View style={styles.dividerRow}>
             <View style={styles.divider} />
-            <Text style={styles.dividerText}>or</Text>
+            <Text variant="small" style={styles.dividerText}>
+              or
+            </Text>
             <View style={styles.divider} />
           </View>
 
-          <Pressable
-            style={[styles.secondary, busy && styles.disabled]}
-            disabled={busy}
+          <Button
+            title="Continue with Google"
+            variant="secondary"
             onPress={signInWithGoogle}
-          >
-            <Text style={styles.secondaryText}>Continue with Google</Text>
-          </Pressable>
+            disabled={busy}
+          />
 
           <View style={styles.footerRow}>
-            <Text style={styles.muted}>New here? </Text>
+            <Text variant="small">New here? </Text>
             <Link href="/(auth)/sign-up" style={styles.link}>
               Create an account
             </Link>
           </View>
         </View>
       </KeyboardAvoidingView>
-    </SafeAreaView>
+    </Screen>
   );
 }
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  safe: { flex: 1, backgroundColor: '#fefbf6' },
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    paddingHorizontal: 28,
-    gap: 12,
-  },
-  wordmark: {
-    fontSize: 40,
-    color: '#2c2416',
-    textAlign: 'center',
-    marginBottom: 2,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: '#8b7355',
-    textAlign: 'center',
-    marginBottom: 20,
-  },
+  container: { flex: 1, justifyContent: 'center', paddingHorizontal: 28, gap: space[3] },
+  center: { textAlign: 'center' },
+  subtitle: { textAlign: 'center', marginBottom: space[5] },
   input: {
     borderWidth: 1,
-    borderColor: '#e8d5b5',
-    borderRadius: 14,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
+    borderColor: colors.border,
+    borderRadius: radii.xl,
+    paddingHorizontal: space[4],
+    paddingVertical: space[4],
     fontSize: 16,
-    color: '#2c2416',
-    backgroundColor: '#ffffff',
+    fontFamily: fonts.sansRegular,
+    color: colors.text,
+    backgroundColor: colors.elev,
   },
-  error: { color: '#d37b69', fontSize: 14, paddingHorizontal: 4 },
-  primary: {
-    backgroundColor: '#695e4e',
-    borderRadius: 14,
-    paddingVertical: 16,
+  error: { color: colors.danger, paddingHorizontal: space[1] },
+  dividerRow: {
+    flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 4,
+    gap: space[3],
+    marginVertical: space[1],
   },
-  primaryText: { color: '#ffffff', fontSize: 16, fontWeight: '600' },
-  disabled: { opacity: 0.6 },
-  dividerRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginVertical: 4 },
-  divider: { flex: 1, height: 1, backgroundColor: '#e8d5b5' },
-  dividerText: { color: '#a8a29e', fontSize: 13 },
-  secondary: {
-    borderWidth: 1,
-    borderColor: '#e8d5b5',
-    borderRadius: 14,
-    paddingVertical: 16,
-    alignItems: 'center',
-    backgroundColor: '#ffffff',
-  },
-  secondaryText: { color: '#2c2416', fontSize: 16, fontWeight: '500' },
-  footerRow: { flexDirection: 'row', justifyContent: 'center', marginTop: 16 },
-  muted: { color: '#8b7355', fontSize: 14 },
-  link: { color: '#c9a87c', fontSize: 14, fontWeight: '600' },
+  divider: { flex: 1, height: 1, backgroundColor: colors.border },
+  dividerText: { color: colors.stone },
+  footerRow: { flexDirection: 'row', justifyContent: 'center', marginTop: space[4] },
+  link: { fontFamily: fonts.sansSemiBold, fontSize: 14, color: colors.accent },
 });
