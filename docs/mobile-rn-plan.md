@@ -170,6 +170,14 @@ Create:
 
 **Done when:** sign-in → `apiGet('/api/v1/onboarding/profile')` renders profile. Bail-out: ship magic-link only if PKCE Google fails after 2 dev days.
 
+> **STATUS — Phase 2 code COMPLETE & build-verified (2026-05-29), uncommitted.** Scaffolded with **Expo SDK 56** (RN 0.85, React 19.2.3 — matches web, expo-router v4, Reanimated 4), NOT SDK 52.
+> - **Auth methods corrected**: web uses **email/password (`signInWithPassword` + `signUp`) + Google OAuth** — NOT magic-link. Mobile mirrors this: `(auth)/sign-in.tsx` (password + Google PKCE via `expo-web-browser` + `exchangeCodeForSession`), `(auth)/sign-up.tsx`. No separate `auth-callback` route needed — `openAuthSessionAsync` returns the redirect URL inline.
+> - **Alias convention**: mobile's own code uses `~/*` → `./src/*`; **`@/lib/*` is reserved for the shared web lib** (`../../lib/*`) so shared files' internal `@/lib/...` imports resolve. `metro.config.js` adds `watchFolders`/`nodeModulesPaths` for the repo root (manual, since we're deliberately not a Bun workspace).
+> - Files: `metro.config.js`, `tsconfig.json` (aliases), `app.json` (scheme `nham`, `expo-web-browser` plugin, `typedRoutes:false`, light-only), `.env`(gitignored)/`.env.example`, `src/lib/{supabase,api-client,query-client,session}.ts(x)`, `src/app/_layout.tsx` + `index.tsx` (session gate) + `(auth)/*` + `(app)/*`. Removed template scaffolding.
+> - Deps (expo install): `@supabase/supabase-js@2.106`, `@tanstack/react-query@5.100`, `zod@4.4.3` (matches web), `expo-secure-store@56.0.4`, `react-native-url-polyfill`.
+> - Verified: `tsc --noEmit` clean · `expo-doctor` 21/21 · **`expo export` bundles (1632 modules → Hermes bundle, 0 errors)**.
+> - REMAINING (needs a device/simulator + Supabase dashboard): (a) runtime sign-in (email/password) with a test user; (b) Google OAuth deep link — needs a dev build for the `nham://` scheme + `nham://auth-callback` added to Supabase allowed redirects; (c) authed call to `localhost:3000` (web dev server running + device reachability); (d) the shared `@/lib/*` Metro path is configured but not yet exercised at runtime (first used in Phase 3). SecureStore >2KB caveat noted in `supabase.ts`.
+
 ### Phase 3 — Design system + Logging wedge (~7 days)
 **Goal:** Full logging parity — type → streaming SSE → inline edit/confirm → feed, with the streaming/confirm animations.
 
