@@ -112,5 +112,12 @@ const styles = StyleSheet.create({
   header: { paddingHorizontal: space[3], zIndex: 20 },
   // Transparent full-screen catcher beneath the header (zIndex 20) but above
   // the feed (default 0), so tapping the feed area collapses the strip.
-  collapseScrim: { ...StyleSheet.absoluteFillObject, zIndex: 10 },
+  collapseScrim: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 10,
+  },
 });
