@@ -1,8 +1,12 @@
 import { useQuery } from '@tanstack/react-query';
+import { useState } from 'react';
 import { ActivityIndicator, View } from 'react-native';
 import { AppHeader } from '~/components/app/app-header';
 import { FeedArea, type LoggingProfile } from '~/components/logging/feed-area';
+import { TimelinePicker } from '~/components/logging/timeline-picker';
 import { apiGet } from '~/lib/api-client';
+import { todayDateString } from '~/lib/logging/keys';
+import { useMealDates } from '~/lib/logging/use-meal-dates';
 import { useSession } from '~/lib/session';
 import { Screen } from '~/theme/primitives';
 import { Text } from '~/theme/text';
@@ -20,11 +24,18 @@ export default function LoggingScreen() {
   const { session } = useSession();
   const userId = session?.user.id;
 
+  // Owned here so the date strip (in the header) and the feed share one source
+  // of truth — mirrors the web LoggingShell's selectedDate.
+  const today = todayDateString();
+  const [selectedDate, setSelectedDate] = useState(today);
+
   const { data, isLoading } = useQuery({
     queryKey: ['onboarding', 'profile'],
     queryFn: () => apiGet<ProfileRow>('/api/v1/onboarding/profile'),
     enabled: !!userId,
   });
+
+  const { data: mealDates = [] } = useMealDates(userId);
 
   if (!userId) {
     return (
@@ -59,9 +70,16 @@ export default function LoggingScreen() {
   return (
     <Screen edges={['top']}>
       <View style={{ paddingHorizontal: space[3] }}>
-        <AppHeader />
+        <AppHeader>
+          <TimelinePicker
+            dates={mealDates}
+            today={today}
+            selectedDate={selectedDate}
+            onSelectDate={setSelectedDate}
+          />
+        </AppHeader>
       </View>
-      <FeedArea profile={profile} />
+      <FeedArea profile={profile} date={selectedDate} />
     </Screen>
   );
 }

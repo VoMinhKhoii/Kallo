@@ -33,15 +33,22 @@ export interface LoggingProfile {
   fatTargetG: number;
 }
 
-export function FeedArea({ profile }: { profile: LoggingProfile }) {
+export function FeedArea({
+  profile,
+  date,
+}: {
+  profile: LoggingProfile;
+  date?: string;
+}) {
   const td = useTranslations('dashboard');
   const tErrors = useTranslations('errors');
-  const today = todayDateString();
+  // The day being viewed/edited — defaults to today when no date is provided.
+  const selectedDate = date ?? todayDateString();
   const queryClient = useQueryClient();
   const inputRef = useRef<MealInputHandle>(null);
   const [errorText, setErrorText] = useState<string | null>(null);
 
-  const { data: day, isLoading } = useLoggingDay(profile.userId, today);
+  const { data: day, isLoading } = useLoggingDay(profile.userId, selectedDate);
   const stream = useStreamAnalysis();
   const confirmMeal = useConfirmMeal(profile.userId);
 
@@ -55,12 +62,12 @@ export function FeedArea({ profile }: { profile: LoggingProfile }) {
   useEffect(() => {
     if (stream.status === 'done' && stream.analysisId) {
       queryClient.invalidateQueries({
-        queryKey: loggingDayKeys.byUserDate(profile.userId, today),
+        queryKey: loggingDayKeys.byUserDate(profile.userId, selectedDate),
       });
       queryClient.invalidateQueries({ queryKey: ['meal-dates'] });
       stream.reset();
     }
-  }, [stream, queryClient, profile.userId, today]);
+  }, [stream, queryClient, profile.userId, selectedDate]);
 
   useEffect(() => {
     if (stream.status === 'error') {
@@ -116,7 +123,7 @@ export function FeedArea({ profile }: { profile: LoggingProfile }) {
     inputRef.current?.clear();
     stream.analyze({
       message: text,
-      loggedDate: today,
+      loggedDate: selectedDate,
       timezoneOffset: new Date().getTimezoneOffset(),
     });
   };
@@ -198,7 +205,7 @@ export function FeedArea({ profile }: { profile: LoggingProfile }) {
                   confirmMeal.mutate({
                     analysisId: p.id,
                     mealId: randomUUID(),
-                    originDate: today,
+                    originDate: selectedDate,
                     edits: edits.length > 0 ? edits : undefined,
                   })
                 }

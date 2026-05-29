@@ -1,5 +1,5 @@
 import { Check, Minus, Pencil, Plus } from 'lucide-react-native';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import type { MealItem, MealQuantityEdit, ParsedMeal } from '@/lib/types/meal';
 import {
@@ -13,6 +13,10 @@ import { fmtG, fmtKcal } from '~/lib/logging/format';
 import { Card } from '~/theme/primitives';
 import { Text } from '~/theme/text';
 import { colors, fonts, fontSize, radii, shadow, space } from '~/theme/tokens';
+
+// Briefly block Confirm after a quantity tap so a fast double-tap on a
+// stepper can't slip through and save before the user is done adjusting.
+const CONFIRM_DEBOUNCE_MS = 300;
 
 /** An unconfirmed analysis: editable dish quantities (+/- steppers) + confirm.
  * Reuses the web's pure quantity helpers so scaling math is identical. */
@@ -32,15 +36,32 @@ export function MealEntry({
   const original = parsedMeal.items;
   const [items, setItems] = useState<MealItem[]>(original);
   const [editing, setEditing] = useState(false);
+  const [confirmCoolingDown, setConfirmCoolingDown] = useState(false);
+  const confirmTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const totals = recalculateTotals(items);
 
-  const change = (itemId: string, delta: number) =>
+  useEffect(() => {
+    return () => {
+      if (confirmTimerRef.current) clearTimeout(confirmTimerRef.current);
+    };
+  }, []);
+
+  const change = (itemId: string, delta: number) => {
     setItems((prev) => applyQuantityChange(prev, original, itemId, delta));
+    setConfirmCoolingDown(true);
+    if (confirmTimerRef.current) clearTimeout(confirmTimerRef.current);
+    confirmTimerRef.current = setTimeout(
+      () => setConfirmCoolingDown(false),
+      CONFIRM_DEBOUNCE_MS
+    );
+  };
 
   const isBusy = busy === true;
+  const confirmDisabled = isBusy || (editing && confirmCoolingDown);
 
   return (
-    <Card style={styles.card}>
+    <View style={styles.wrap}>
+      <Card style={styles.card}>
       <View style={styles.header}>
         <Text variant="mealQuote" style={styles.quote}>
           {rawInput || parsedMeal.mealName}
@@ -69,7 +90,7 @@ export function MealEntry({
           {items.map((item) => {
             const isGrams = item.unit === 'g' || item.unit === 'ml';
             const step = isGrams ? 10 : 1;
-            const minusDisabled = isGrams && item.quantity <= MIN_DISH_GRAMS;
+            const minusDisabled = item.quantity <= MIN_DISH_GRAMS;
             return (
               <View
                 key={item.id}
@@ -128,31 +149,39 @@ export function MealEntry({
             <Text variant="numStrong">{fmtKcal(totals.calories)}</Text>
           </View>
         </View>
-
-        <View style={styles.saveWrap}>
-          <Pressable
-            onPress={() => onConfirm(deriveQuantityEdits(items, original))}
-            disabled={isBusy}
-            style={({ pressed }) => [
-              styles.saveBtn,
-              editing ? styles.saveBtnEditing : styles.saveBtnDefault,
-              pressed && !isBusy && styles.saveBtnPressed,
-              isBusy && styles.saveBtnDisabled,
-            ]}
-          >
-            <Check color={editing ? colors.btn : '#ffffff'} size={14} />
-            <Text style={[styles.saveLabel, editing ? styles.saveLabelEditing : styles.saveLabelDefault]}>
-              {tLogging('confirm')}
-            </Text>
-          </Pressable>
-        </View>
       </View>
-    </Card>
+      </Card>
+
+      {/* Action button — sits outside the card, as on web. */}
+      <View style={styles.saveWrap}>
+        <Pressable
+          onPress={() => onConfirm(deriveQuantityEdits(items, original))}
+          disabled={confirmDisabled}
+          style={({ pressed }) => [
+            styles.saveBtn,
+            editing ? styles.saveBtnEditing : styles.saveBtnDefault,
+            pressed && !confirmDisabled && styles.saveBtnPressed,
+            confirmDisabled && styles.saveBtnDisabled,
+          ]}
+        >
+          <Check color={editing ? colors.btn : '#ffffff'} size={14} />
+          <Text style={[styles.saveLabel, editing ? styles.saveLabelEditing : styles.saveLabelDefault]}>
+            {tLogging('confirm')}
+          </Text>
+        </Pressable>
+      </View>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  card: { marginBottom: space[3], gap: space[2] },
+  wrap: { marginBottom: space[3] },
+  card: {
+    borderRadius: radii.containerLg,
+    borderColor: colors.borderSoft,
+    gap: space[2],
+    ...shadow.sm,
+  },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: space[2] },
   quote: { flex: 1, fontSize: 17 },
   editPill: {
@@ -217,7 +246,7 @@ const styles = StyleSheet.create({
   totalLabel: { fontFamily: fonts.sansBold },
   totalRight: { flexDirection: 'row', alignItems: 'center', gap: space[4] },
   macros: { color: colors.textMuted },
-  saveWrap: { marginTop: space[3] },
+  saveWrap: { marginTop: space[3], flexDirection: 'row' },
   saveBtn: {
     flex: 1,
     flexDirection: 'row',

@@ -12,7 +12,7 @@ const r = Math.round;
 
 /** A saved meal in the day's feed — collapsed by default, expandable. */
 export function PersistedMealCard({ meal }: { meal: PersistedMeal }) {
-  const t = useTranslations('logging.mealEntry');
+  const t = useTranslations('logging.persistedMealCard');
   const [collapsed, setCollapsed] = useState(true);
   const n = meal.nutrition;
   const time = new Date(meal.loggedAt).toLocaleTimeString([], {
@@ -29,7 +29,12 @@ export function PersistedMealCard({ meal }: { meal: PersistedMeal }) {
         <Text variant="mealQuote" style={styles.quote}>
           {meal.rawInput}
         </Text>
-        <View style={styles.chevronButton}>
+        <View
+          style={styles.chevronButton}
+          accessibilityRole="button"
+          accessibilityLabel={t('toggleDetails')}
+          accessibilityState={{ expanded: !collapsed }}
+        >
           <ChevronDown
             color={colors.textMuted}
             size={16}
@@ -38,16 +43,17 @@ export function PersistedMealCard({ meal }: { meal: PersistedMeal }) {
         </View>
       </Pressable>
 
-      <View style={styles.macroRow}>
-        <Text variant="captionTabular">
-          {`P: ${fmtG(n.proteinG)}  C: ${fmtG(n.carbohydrateG)}  F: ${fmtG(n.fatG)}`}
-        </Text>
-        <Text variant="numStrong" style={styles.summaryCalories}>
-          {fmtKcal(n.caloriesKcal)}
-        </Text>
-      </View>
-
-      {!collapsed ? (
+      {/* Collapsed summary — hidden once expanded (matches web AnimatePresence) */}
+      {collapsed ? (
+        <View style={styles.macroRow}>
+          <Text variant="captionTabular">
+            {`P: ${fmtG(n.proteinG)}  C: ${fmtG(n.carbohydrateG)}  F: ${fmtG(n.fatG)}`}
+          </Text>
+          <Text variant="numStrong" style={styles.summaryCalories}>
+            {fmtKcal(n.caloriesKcal)}
+          </Text>
+        </View>
+      ) : (
         <View style={styles.details}>
           <View style={styles.itemList}>
             {meal.mealItemGroups.map((group) => (
@@ -82,7 +88,7 @@ export function PersistedMealCard({ meal }: { meal: PersistedMeal }) {
             </View>
           </View>
         </View>
-      ) : null}
+      )}
     </Card>
   );
 }
@@ -90,6 +96,7 @@ export function PersistedMealCard({ meal }: { meal: PersistedMeal }) {
 const styles = StyleSheet.create({
   card: {
     marginBottom: space[3],
+    borderRadius: radii.containerLg,
     borderColor: colors.borderSoft,
     ...shadow.sm,
   },
