@@ -1,5 +1,6 @@
 import { Redirect, Stack } from 'expo-router';
 import { ActivityIndicator, View } from 'react-native';
+import { OnboardingGate } from '~/components/onboarding/onboarding-gate';
 import { useSession } from '~/lib/session';
 
 export default function AppLayout() {
@@ -18,9 +19,14 @@ export default function AppLayout() {
   }
 
   return (
-    <Stack
-      screenOptions={{ headerShown: false, contentStyle: { backgroundColor: '#fefbf6' } }}
-    />
+    <>
+      <Stack
+        screenOptions={{ headerShown: false, contentStyle: { backgroundColor: '#fefbf6' } }}
+      />
+      {/* Onboarding wizard overlay — auto-opens once when the profile is
+          incomplete (the Modal renders above the Stack). */}
+      <OnboardingGate />
+    </>
   );
 }
 
