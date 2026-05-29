@@ -1,9 +1,10 @@
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
-import { ActivityIndicator, View } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 import { AppHeader } from '~/components/app/app-header';
 import { FeedArea, type LoggingProfile } from '~/components/logging/feed-area';
 import { TimelinePicker } from '~/components/logging/timeline-picker';
+import { useTranslations } from '~/i18n';
 import { apiGet } from '~/lib/api-client';
 import { todayDateString } from '~/lib/logging/keys';
 import { useMealDates } from '~/lib/logging/use-meal-dates';
@@ -29,6 +30,7 @@ export default function LoggingScreen() {
   const today = todayDateString();
   const [selectedDate, setSelectedDate] = useState(today);
   const [pickerExpanded, setPickerExpanded] = useState(false);
+  const tc = useTranslations('common');
 
   const { data, isLoading } = useQuery({
     queryKey: ['onboarding', 'profile'],
@@ -70,7 +72,10 @@ export default function LoggingScreen() {
 
   return (
     <Screen edges={['top']}>
-      <View style={{ paddingHorizontal: space[3] }}>
+      {/* Header sits above the collapse scrim (zIndex) so the expanded strip's
+          day cells + chevrons stay tappable while the scrim catches taps
+          everywhere else. */}
+      <View style={styles.header}>
         <AppHeader expanded={pickerExpanded}>
           <TimelinePicker
             dates={mealDates}
@@ -83,15 +88,29 @@ export default function LoggingScreen() {
         </AppHeader>
       </View>
       <FeedArea profile={profile} date={selectedDate} />
+      {/* Tap anywhere outside the strip collapses it (mirrors the web's
+          outside-click-to-collapse on the expanded timeline). */}
+      {pickerExpanded ? (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={tc('close')}
+          style={styles.collapseScrim}
+          onPress={() => setPickerExpanded(false)}
+        />
+      ) : null}
     </Screen>
   );
 }
 
-const styles = {
+const styles = StyleSheet.create({
   center: {
     flex: 1,
-    alignItems: 'center' as const,
-    justifyContent: 'center' as const,
+    alignItems: 'center',
+    justifyContent: 'center',
     padding: space[6],
   },
-};
+  header: { paddingHorizontal: space[3], zIndex: 20 },
+  // Transparent full-screen catcher beneath the header (zIndex 20) but above
+  // the feed (default 0), so tapping the feed area collapses the strip.
+  collapseScrim: { ...StyleSheet.absoluteFillObject, zIndex: 10 },
+});
