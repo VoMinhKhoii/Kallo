@@ -60,7 +60,7 @@ export default function SignIn() {
 
       const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
       if (exchangeError) throw exchangeError;
-      router.replace('/(app)');
+      router.replace('/logging');
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Google sign-in failed.');
     } finally {
@@ -127,7 +127,7 @@ export default function SignIn() {
 
           <View style={styles.footerRow}>
             <Text variant="small">New here? </Text>
-            <Link href="/(auth)/sign-up" style={styles.link}>
+            <Link href="/sign-up" style={styles.link}>
               Create an account
             </Link>
           </View>

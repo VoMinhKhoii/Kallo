@@ -34,7 +34,7 @@ export default function SignUp() {
       return;
     }
     if (data.session) {
-      router.replace('/(app)');
+      router.replace('/logging');
       return;
     }
     setNotice('Check your email to confirm your account, then sign in.');
@@ -89,7 +89,7 @@ export default function SignUp() {
 
           <View style={styles.footerRow}>
             <Text variant="small">Already have an account? </Text>
-            <Link href="/(auth)/sign-in" style={styles.link}>
+            <Link href="/sign-in" style={styles.link}>
               Sign in
             </Link>
           </View>

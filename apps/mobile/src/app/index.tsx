@@ -20,5 +20,5 @@ export default function Index() {
     );
   }
 
-  return <Redirect href={session ? '/(app)' : '/(auth)/sign-in'} />;
+  return <Redirect href={session ? '/logging' : '/sign-in'} />;
 }
