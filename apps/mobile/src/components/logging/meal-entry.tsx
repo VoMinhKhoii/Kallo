@@ -8,6 +8,7 @@ import {
   MIN_DISH_GRAMS,
   recalculateTotals,
 } from '~/lib/logging/meal-utils';
+import { useTranslations } from '~/i18n';
 import { fmtG, fmtKcal } from '~/lib/logging/format';
 import { Card } from '~/theme/primitives';
 import { Text } from '~/theme/text';
@@ -26,6 +27,8 @@ export function MealEntry({
   busy?: boolean;
   onConfirm: (edits: MealQuantityEdit[]) => void;
 }) {
+  const t = useTranslations('logging.mealEntry');
+  const tLogging = useTranslations('logging');
   const original = parsedMeal.items;
   const [items, setItems] = useState<MealItem[]>(original);
   const [editing, setEditing] = useState(false);
@@ -56,7 +59,7 @@ export function MealEntry({
             variant="pillLabel"
             style={editing ? styles.editPillLabelDone : styles.editPillLabelEdit}
           >
-            {editing ? 'Done' : 'Edit'}
+            {editing ? t('done') : t('edit')}
           </Text>
         </Pressable>
       </View>
@@ -116,7 +119,7 @@ export function MealEntry({
 
         <View style={styles.totalRow}>
           <Text variant="itemName" style={styles.totalLabel}>
-            Total
+            {t('total')}
           </Text>
           <View style={styles.totalRight}>
             <Text variant="captionTabular" style={styles.macros}>
@@ -139,7 +142,7 @@ export function MealEntry({
           >
             <Check color={editing ? colors.btn : '#ffffff'} size={14} />
             <Text style={[styles.saveLabel, editing ? styles.saveLabelEditing : styles.saveLabelDefault]}>
-              Save meal
+              {tLogging('confirm')}
             </Text>
           </Pressable>
         </View>

@@ -1,5 +1,6 @@
 import { UtensilsCrossed } from 'lucide-react-native';
 import { Pressable, StyleSheet, View } from 'react-native';
+import { useTranslations } from '~/i18n';
 import { Text } from '~/theme/text';
 import { colors, radii, space, tracking } from '~/theme/tokens';
 
@@ -11,6 +12,8 @@ export function EmptyState({
 }: {
   onSuggestion: (suggestion: string) => void;
 }) {
+  const t = useTranslations('logging.emptyState');
+
   return (
     <View style={styles.wrap}>
       <View style={styles.iconTile}>
@@ -18,10 +21,10 @@ export function EmptyState({
       </View>
       <View style={styles.textBlock}>
         <Text variant="h4" style={styles.headline}>
-          What did you eat?
+          {t('title')}
         </Text>
         <Text variant="small" style={styles.subtitle}>
-          Describe your meal and get a macro breakdown.
+          {t('subtitle')}
         </Text>
       </View>
       <View style={styles.chips}>

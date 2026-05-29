@@ -2,18 +2,19 @@ import { useEffect, useRef } from 'react';
 import { Animated, Easing, StyleSheet, View } from 'react-native';
 import type { StreamStatus } from '@/lib/ai/streaming/types';
 import type { MealItem } from '@/lib/types/meal';
+import { useTranslations } from '~/i18n';
 import { fmtG, fmtKcal } from '~/lib/logging/format';
 import { Card } from '~/theme/primitives';
 import { Text } from '~/theme/text';
 import { colors, fonts, fontSize, radii, space } from '~/theme/tokens';
 
-const PHASE_LABELS: Record<string, string> = {
-  connecting: 'Connecting…',
-  decomposing: 'Breaking down your meal…',
-  matching: 'Matching ingredients…',
-  estimating: 'Estimating nutrition…',
-  assembling: 'Putting it all together…',
-};
+const PHASE_KEYS = new Set([
+  'connecting',
+  'decomposing',
+  'matching',
+  'estimating',
+  'assembling',
+]);
 
 /** A continuously-rotating 12px tan ring (CSS `animate-spin` equivalent). */
 function Spinner() {
@@ -71,9 +72,12 @@ export function StreamingEntry({
   items: string[];
   completedItems: MealItem[];
 }) {
+  const t = useTranslations('logging.streaming');
+  const tMealEntry = useTranslations('logging.mealEntry');
   const completedNames = new Set(completedItems.map((i) => i.name.toLowerCase()));
   const pendingNames = items.filter((n) => !completedNames.has(n.toLowerCase()));
   const pulse = usePulse();
+  const phaseLabel = PHASE_KEYS.has(status) ? t(status) : t('analyzing');
 
   return (
     <Card style={styles.card}>
@@ -115,7 +119,7 @@ export function StreamingEntry({
 
       {/* Totals skeleton — dashed-top 'Total' row with macro + calorie bars. */}
       <View style={styles.totalRow}>
-        <Text style={styles.totalLabel}>Total</Text>
+        <Text style={styles.totalLabel}>{tMealEntry('total')}</Text>
         <View style={styles.totalRight}>
           <View style={styles.totalMacroGroup}>
             <Animated.View style={[styles.skelBarTotal, { opacity: pulse }]} />
@@ -129,7 +133,7 @@ export function StreamingEntry({
       {/* Stage indicator — spinner + phase label, at the bottom of the card. */}
       <View style={styles.stage}>
         <Spinner />
-        <Text variant="phaseLabel">{PHASE_LABELS[status] ?? 'Analyzing…'}</Text>
+        <Text variant="phaseLabel">{phaseLabel}</Text>
       </View>
     </Card>
   );

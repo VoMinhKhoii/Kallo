@@ -2,6 +2,7 @@ import { ChevronDown } from 'lucide-react-native';
 import { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import type { PersistedMeal } from '@/lib/api/contracts/meals';
+import { useTranslations } from '~/i18n';
 import { fmtG, fmtKcal } from '~/lib/logging/format';
 import { Card } from '~/theme/primitives';
 import { Text } from '~/theme/text';
@@ -11,6 +12,7 @@ const r = Math.round;
 
 /** A saved meal in the day's feed — collapsed by default, expandable. */
 export function PersistedMealCard({ meal }: { meal: PersistedMeal }) {
+  const t = useTranslations('logging.mealEntry');
   const [collapsed, setCollapsed] = useState(true);
   const n = meal.nutrition;
   const time = new Date(meal.loggedAt).toLocaleTimeString([], {
@@ -71,7 +73,7 @@ export function PersistedMealCard({ meal }: { meal: PersistedMeal }) {
           </View>
 
           <View style={styles.totalsRow}>
-            <Text variant="calorieBold">Total</Text>
+            <Text variant="calorieBold">{t('total')}</Text>
             <View style={styles.totalsRight}>
               <Text variant="captionTabular">
                 {`P: ${fmtG(n.proteinG)}  C: ${fmtG(n.carbohydrateG)}  F: ${fmtG(n.fatG)}`}

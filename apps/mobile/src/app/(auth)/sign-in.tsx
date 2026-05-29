@@ -9,6 +9,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import { useTranslations } from '~/i18n';
 import { supabase } from '~/lib/supabase';
 import { Button, Screen } from '~/theme/primitives';
 import { Text } from '~/theme/text';
@@ -18,6 +19,9 @@ import { colors, fonts, radii, space } from '~/theme/tokens';
 WebBrowser.maybeCompleteAuthSession();
 
 export default function SignIn() {
+  const t = useTranslations('auth.signIn');
+  const tDialog = useTranslations('auth.dialog');
+  const tCommon = useTranslations('common');
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -62,7 +66,7 @@ export default function SignIn() {
       if (exchangeError) throw exchangeError;
       router.replace('/logging');
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Google sign-in failed.');
+      setError(e instanceof Error ? e.message : tDialog('googleError'));
     } finally {
       setBusy(false);
     }
@@ -79,12 +83,12 @@ export default function SignIn() {
             Nhẩm
           </Text>
           <Text variant="lead" style={styles.subtitle}>
-            What did you eat?
+            {tDialog('signInSubtitle')}
           </Text>
 
           <TextInput
             style={styles.input}
-            placeholder="Email"
+            placeholder={t('email')}
             placeholderTextColor={colors.stone}
             autoCapitalize="none"
             autoComplete="email"
@@ -94,7 +98,7 @@ export default function SignIn() {
           />
           <TextInput
             style={styles.input}
-            placeholder="Password"
+            placeholder={t('password')}
             placeholderTextColor={colors.stone}
             secureTextEntry
             autoComplete="current-password"
@@ -108,27 +112,27 @@ export default function SignIn() {
             </Text>
           ) : null}
 
-          <Button title="Sign in" onPress={signInWithEmail} loading={busy} />
+          <Button title={t('submit')} onPress={signInWithEmail} loading={busy} />
 
           <View style={styles.dividerRow}>
             <View style={styles.divider} />
             <Text variant="small" style={styles.dividerText}>
-              or
+              {tCommon('or')}
             </Text>
             <View style={styles.divider} />
           </View>
 
           <Button
-            title="Continue with Google"
+            title={tDialog('continueWithGoogle')}
             variant="secondary"
             onPress={signInWithGoogle}
             disabled={busy}
           />
 
           <View style={styles.footerRow}>
-            <Text variant="small">New here? </Text>
+            <Text variant="small">{t('noAccount')} </Text>
             <Link href="/sign-up" style={styles.link}>
-              Create an account
+              {t('signUpLink')}
             </Link>
           </View>
         </View>

@@ -7,12 +7,15 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import { useTranslations } from '~/i18n';
 import { supabase } from '~/lib/supabase';
 import { Button, Screen } from '~/theme/primitives';
 import { Text } from '~/theme/text';
 import { colors, fonts, radii, space } from '~/theme/tokens';
 
 export default function SignUp() {
+  const t = useTranslations('auth.signUp');
+  const tDialog = useTranslations('auth.dialog');
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -37,7 +40,7 @@ export default function SignUp() {
       router.replace('/logging');
       return;
     }
-    setNotice('Check your email to confirm your account, then sign in.');
+    setNotice(t('success'));
   };
 
   return (
@@ -48,15 +51,15 @@ export default function SignUp() {
       >
         <View style={styles.container}>
           <Text variant="h2" style={styles.center}>
-            Create your account
+            {t('title')}
           </Text>
           <Text variant="lead" style={styles.subtitle}>
-            Track Vietnamese meals, the way you describe them.
+            {tDialog('signUpSubtitle')}
           </Text>
 
           <TextInput
             style={styles.input}
-            placeholder="Email"
+            placeholder={t('email')}
             placeholderTextColor={colors.stone}
             autoCapitalize="none"
             autoComplete="email"
@@ -66,7 +69,7 @@ export default function SignUp() {
           />
           <TextInput
             style={styles.input}
-            placeholder="Password"
+            placeholder={t('password')}
             placeholderTextColor={colors.stone}
             secureTextEntry
             autoComplete="new-password"
@@ -85,12 +88,12 @@ export default function SignUp() {
             </Text>
           ) : null}
 
-          <Button title="Create account" onPress={signUp} loading={busy} />
+          <Button title={t('submit')} onPress={signUp} loading={busy} />
 
           <View style={styles.footerRow}>
-            <Text variant="small">Already have an account? </Text>
+            <Text variant="small">{`${t('hasAccount')} `}</Text>
             <Link href="/sign-in" style={styles.link}>
-              Sign in
+              {t('signInLink')}
             </Link>
           </View>
         </View>

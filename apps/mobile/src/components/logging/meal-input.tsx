@@ -1,6 +1,7 @@
 import { ArrowUp, Square } from 'lucide-react-native';
 import { forwardRef, useImperativeHandle, useRef, useState } from 'react';
 import { Pressable, StyleSheet, TextInput, View } from 'react-native';
+import { useTranslations } from '~/i18n';
 import { colors, fonts, fontSize, radii, shadow, space } from '~/theme/tokens';
 
 export interface MealInputHandle {
@@ -19,6 +20,7 @@ interface MealInputProps {
 /** Natural-language meal composer: a growing multiline input + submit/stop. */
 export const MealInput = forwardRef<MealInputHandle, MealInputProps>(
   function MealInput({ onSubmit, onCancel, disabled }, ref) {
+    const t = useTranslations('logging');
     const [text, setText] = useState('');
     const [contentHeight, setContentHeight] = useState(32);
     const [focused, setFocused] = useState(false);
@@ -52,7 +54,7 @@ export const MealInput = forwardRef<MealInputHandle, MealInputProps>(
           value={text}
           onChangeText={setText}
           multiline
-          placeholder="Describe your meal…"
+          placeholder={t('placeholder')}
           placeholderTextColor={colors.placeholderMuted40}
           editable={!disabled}
           onFocus={() => setFocused(true)}

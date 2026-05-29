@@ -15,6 +15,7 @@ import { loggingDayKeys, todayDateString } from '~/lib/logging/keys';
 import { useConfirmMeal } from '~/lib/logging/use-meal-mutations';
 import { useLoggingDay } from '~/lib/logging/use-logging-day';
 import { useStreamAnalysis } from '~/lib/logging/use-stream-analysis';
+import { useTranslations } from '~/i18n';
 import { Text } from '~/theme/text';
 import { colors, radii, space } from '~/theme/tokens';
 import { CalorieRing } from './calorie-ring';
@@ -33,6 +34,8 @@ export interface LoggingProfile {
 }
 
 export function FeedArea({ profile }: { profile: LoggingProfile }) {
+  const td = useTranslations('dashboard');
+  const tErrors = useTranslations('errors');
   const today = todayDateString();
   const queryClient = useQueryClient();
   const inputRef = useRef<MealInputHandle>(null);
@@ -61,7 +64,7 @@ export function FeedArea({ profile }: { profile: LoggingProfile }) {
 
   useEffect(() => {
     if (stream.status === 'error') {
-      setErrorText(stream.error ?? 'Something went wrong. Please try again.');
+      setErrorText(stream.error ?? tErrors('internal'));
       stream.reset();
     }
   }, [stream]);
@@ -82,21 +85,21 @@ export function FeedArea({ profile }: { profile: LoggingProfile }) {
   const macroBars = [
     {
       key: 'protein',
-      label: 'Protein',
+      label: td('protein'),
       current: dailyProtein,
       target: profile.proteinTargetG,
       color: colors.macroProtein,
     },
     {
       key: 'carbs',
-      label: 'Carbs',
+      label: td('carbs'),
       current: dailyCarbs,
       target: profile.carbsTargetG,
       color: colors.macroCarbs,
     },
     {
       key: 'fat',
-      label: 'Fat',
+      label: td('fat'),
       current: dailyFat,
       target: profile.fatTargetG,
       color: colors.macroFat,

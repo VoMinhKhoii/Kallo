@@ -41,21 +41,7 @@ import { colors, fonts, fontSize, radii, space } from '~/theme/tokens';
 
 // EN copy (messages/en.json `dashboard.*`), sentence case.
 const COPY = {
-  weekOf: 'Week of',
-  today: 'Today',
-  caloriesRemaining: 'Calories remaining',
-  caloriesLogged: 'kcal logged',
-  protein: 'Protein',
-  carbs: 'Carbs',
-  fat: 'Fat',
-  noMealsToday: 'No meals logged today',
-  mealReceiptsHint: 'Your meal receipts will show up here',
-  recentMeals: 'Recent meals',
-  mealsLogged: (count: number) => `${count} logged`,
   consistency: 'Consistency',
-  retry: 'Try again',
-  todayLoading: "Loading today's meals…",
-  todayLoadError: "Unable to load today's meals. Please try again.",
   range30: '30 days',
   notSignedIn: 'Not signed in.',
 } as const;
@@ -104,8 +90,8 @@ export default function DashboardScreen() {
   const todayDate = todayDateString();
   const t = useTranslations('dashboard');
   const weekTitle = useMemo(
-    () => getWeekTitle('en', COPY.weekOf, todayDate),
-    [todayDate]
+    () => getWeekTitle('en', t('weekOf'), todayDate),
+    [t, todayDate]
   );
 
   const profileQuery = useQuery({
@@ -182,19 +168,20 @@ function TodaySection({
   todayDate: string;
   targets: DockTargets;
 }) {
+  const t = useTranslations('dashboard');
   const { data: day, isPending, isError, refetch } = useLoggingDay(
     userId,
     todayDate
   );
 
   if (isPending) {
-    return <SectionState message={COPY.todayLoading} />;
+    return <SectionState message={t('todayLoading')} />;
   }
   if (isError) {
     return (
       <SectionState
-        message={COPY.todayLoadError}
-        actionLabel={COPY.retry}
+        message={t('todayLoadError')}
+        actionLabel={t('retry')}
         onAction={() => {
           void refetch();
         }}
@@ -221,21 +208,21 @@ function TodaySection({
   const macroBars = [
     {
       key: 'protein',
-      label: COPY.protein,
+      label: t('protein'),
       current: round0(totals.protein),
       target: targets.proteinTargetG,
       color: colors.macroProtein,
     },
     {
       key: 'carbs',
-      label: COPY.carbs,
+      label: t('carbs'),
       current: round0(totals.carbs),
       target: targets.carbsTargetG,
       color: colors.macroCarbs,
     },
     {
       key: 'fat',
-      label: COPY.fat,
+      label: t('fat'),
       current: round0(totals.fat),
       target: targets.fatTargetG,
       color: colors.macroFat,
@@ -247,7 +234,7 @@ function TodaySection({
       {/* (a) Calories remaining — cream hero block */}
       <View style={dock.remainingBlock}>
         <Text variant="eyebrow" style={dock.remainingEyebrow}>
-          {COPY.caloriesRemaining}
+          {t('caloriesRemaining')}
         </Text>
         <View style={dock.heroRow}>
           <Text style={dock.heroNumber}>{remaining.toLocaleString()}</Text>
@@ -256,7 +243,7 @@ function TodaySection({
           </Text>
         </View>
         <Text style={dock.subline}>
-          {calories.toLocaleString()} {COPY.caloriesLogged}
+          {calories.toLocaleString()} {t('caloriesLogged')}
         </Text>
       </View>
 
@@ -301,17 +288,17 @@ function TodaySection({
       <View style={dock.mealBlock}>
         {meals.length === 0 ? (
           <View style={dock.mealEmpty}>
-            <Text style={dock.mealEmptyTitle}>{COPY.noMealsToday}</Text>
-            <Text style={dock.mealEmptyHint}>{COPY.mealReceiptsHint}</Text>
+            <Text style={dock.mealEmptyTitle}>{t('noMealsToday')}</Text>
+            <Text style={dock.mealEmptyHint}>{t('mealReceiptsHint')}</Text>
           </View>
         ) : (
           <>
             <View style={dock.mealHeader}>
               <Text variant="eyebrow" style={dock.mealHeaderLabel}>
-                {COPY.recentMeals}
+                {t('recentMeals')}
               </Text>
               <Text style={dock.mealHeaderCount}>
-                {COPY.mealsLogged(meals.length)}
+                {t('mealsLogged', { count: meals.length })}
               </Text>
             </View>
             <View style={dock.mealRows}>
