@@ -1,46 +1,27 @@
-import { Tabs } from 'expo-router';
-import { Activity, LayoutDashboard, UtensilsCrossed } from 'lucide-react-native';
-import { colors, fonts } from '~/theme/tokens';
+import { Drawer } from 'expo-router/drawer';
+import { Sidebar } from '~/components/app/sidebar';
+import { colors } from '~/theme/tokens';
 
-export default function TabsLayout() {
+/**
+ * Primary navigation — a left slide-in Drawer with a custom Sidebar, opened by
+ * the hamburger in AppHeader. Mirrors the web's mobile nav (a hamburger header
+ * + sheet drawer), replacing the earlier bottom tab bar.
+ */
+export default function DrawerLayout() {
   return (
-    <Tabs
+    <Drawer
+      drawerContent={(props) => <Sidebar {...props} />}
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: colors.btn,
-        tabBarInactiveTintColor: colors.stone,
-        tabBarStyle: {
-          backgroundColor: colors.elev,
-          borderTopColor: colors.border,
-        },
-        tabBarLabelStyle: { fontFamily: fonts.sansMedium, fontSize: 11 },
+        drawerType: 'front',
+        swipeEdgeWidth: 48,
+        drawerStyle: { backgroundColor: colors.surface, width: 320 },
       }}
     >
-      <Tabs.Screen
-        name="logging"
-        options={{
-          title: 'Log',
-          tabBarIcon: ({ color, size }) => (
-            <UtensilsCrossed color={color} size={size} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="dashboard"
-        options={{
-          title: 'Dashboard',
-          tabBarIcon: ({ color, size }) => (
-            <LayoutDashboard color={color} size={size} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="nutrition"
-        options={{
-          title: 'Nutrition',
-          tabBarIcon: ({ color, size }) => <Activity color={color} size={size} />,
-        }}
-      />
-    </Tabs>
+      <Drawer.Screen name="logging" />
+      <Drawer.Screen name="dashboard" />
+      <Drawer.Screen name="nutrition" />
+      <Drawer.Screen name="settings" />
+    </Drawer>
   );
 }

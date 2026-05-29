@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Flame } from 'lucide-react-native';
 import { useMemo } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
+import { AppHeader } from '~/components/app/app-header';
 import { AdherenceHeatmap } from '~/components/dashboard/adherence-heatmap';
 import { SectionHeader, SectionState } from '~/components/dashboard/section-header';
 import { WeightChart } from '~/components/dashboard/weight-chart';
@@ -121,6 +122,9 @@ export default function DashboardScreen() {
 
   return (
     <Screen edges={['top', 'bottom']}>
+      <View style={{ paddingHorizontal: space[3] }}>
+        <AppHeader />
+      </View>
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={styles.content}
@@ -143,7 +147,7 @@ export default function DashboardScreen() {
 
         {/* SECTION 3 — Consistency (adherence heatmap) */}
         <View style={styles.section}>
-          <SectionHeader title={COPY.consistency} range={COPY.range30} />
+          <SectionHeader title={t('consistency')} range={t('ranges.ninetyDays')} />
           <AdherenceHeatmap />
         </View>
       </ScrollView>

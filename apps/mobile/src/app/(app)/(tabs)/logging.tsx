@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { ActivityIndicator, View } from 'react-native';
+import { AppHeader } from '~/components/app/app-header';
 import { FeedArea, type LoggingProfile } from '~/components/logging/feed-area';
 import { apiGet } from '~/lib/api-client';
 import { useSession } from '~/lib/session';
@@ -57,6 +58,9 @@ export default function LoggingScreen() {
 
   return (
     <Screen edges={['top']}>
+      <View style={{ paddingHorizontal: space[3] }}>
+        <AppHeader />
+      </View>
       <FeedArea profile={profile} />
     </Screen>
   );
