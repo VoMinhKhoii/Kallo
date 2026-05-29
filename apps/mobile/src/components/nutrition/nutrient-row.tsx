@@ -4,6 +4,8 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import Animated, {
   FadeIn,
   FadeOut,
+  LinearTransition,
+  ReduceMotion,
   useAnimatedStyle,
   useSharedValue,
   withTiming,
@@ -61,7 +63,11 @@ export function NutrientRow({ card }: NutrientRowProps) {
   };
 
   return (
-    <View style={styles.row}>
+    // layout transition reflows the list smoothly as the detail mounts/unmounts.
+    <Animated.View
+      layout={LinearTransition.duration(280).reduceMotion(ReduceMotion.System)}
+      style={styles.row}
+    >
       <Pressable
         accessibilityRole="button"
         accessibilityState={{ expanded: open }}
@@ -90,15 +96,16 @@ export function NutrientRow({ card }: NutrientRowProps) {
       </Pressable>
 
       {open ? (
+        // Web height/opacity collapse, duration 0.28.
         <Animated.View
-          entering={FadeIn.duration(180)}
-          exiting={FadeOut.duration(120)}
+          entering={FadeIn.duration(280).reduceMotion(ReduceMotion.System)}
+          exiting={FadeOut.duration(280).reduceMotion(ReduceMotion.System)}
           style={styles.detail}
         >
           <NutrientDetail card={card} />
         </Animated.View>
       ) : null}
-    </View>
+    </Animated.View>
   );
 }
 

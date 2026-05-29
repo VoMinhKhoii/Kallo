@@ -101,7 +101,8 @@ const styles = StyleSheet.create({
   tryLabel: {
     fontFamily: fonts.sansBold,
     fontSize: 10,
-    letterSpacing: 1.6,
+    // Web tracking-[0.2em] @ 10px = 2.
+    letterSpacing: 2,
     textTransform: 'uppercase',
     color: colors.stone,
   },

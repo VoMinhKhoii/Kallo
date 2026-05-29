@@ -4,6 +4,7 @@ import Animated, {
   Easing,
   useAnimatedStyle,
   useSharedValue,
+  withDelay,
   withTiming,
 } from 'react-native-reanimated';
 import { colors, radii } from '~/theme/tokens';
@@ -15,6 +16,8 @@ interface TargetProgressBarProps {
   showExceed: boolean;
   /** Fill animation duration, ms (web seconds → ms). */
   duration?: number;
+  /** Fill animation delay, ms — staggers the fill after the row enters. */
+  delay?: number;
   accessibilityLabel?: string;
 }
 
@@ -27,6 +30,7 @@ export function TargetProgressBar({
   percentOfTarget,
   showExceed,
   duration = 700,
+  delay = 0,
   accessibilityLabel,
 }: TargetProgressBarProps) {
   const hasValue = percentOfTarget !== null;
@@ -34,11 +38,14 @@ export function TargetProgressBar({
   const width = useSharedValue(0);
 
   useEffect(() => {
-    width.value = withTiming(fillWidth, {
-      duration,
-      easing: Easing.out(Easing.cubic),
-    });
-  }, [fillWidth, duration, width]);
+    width.value = withDelay(
+      delay,
+      withTiming(fillWidth, {
+        duration,
+        easing: Easing.out(Easing.cubic),
+      })
+    );
+  }, [fillWidth, duration, delay, width]);
 
   const fillStyle = useAnimatedStyle(() => ({ width: `${width.value}%` }));
   const fillColor = !hasValue

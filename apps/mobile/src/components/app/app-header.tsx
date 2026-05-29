@@ -2,8 +2,14 @@ import { useNavigation } from 'expo-router';
 import { Menu } from 'lucide-react-native';
 import type { ReactNode } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
+import Animated, {
+  Easing,
+  FadeIn,
+  LinearTransition,
+  ReduceMotion,
+} from 'react-native-reanimated';
 import { useTranslations } from '~/i18n';
-import { colors, space } from '~/theme/tokens';
+import { colors, radii, space } from '~/theme/tokens';
 
 /**
  * In-flow mobile header — ported from the web MobileNav header row: a hamburger
@@ -21,15 +27,30 @@ export function AppHeader({
   const navigation = useNavigation();
   const t = useTranslations('app.shell');
 
+  // The header morphs (chip pill → full-width strip) via the layout transition
+  // — web animates the container width/shape over 0.28s with the same easing.
+  const headerLayout = LinearTransition.duration(280)
+    .easing(Easing.bezier(0.16, 1, 0.3, 1))
+    .reduceMotion(ReduceMotion.System);
+
   // Expanded (strip) mode hands the full row to the children (the timeline
   // week strip) and drops the hamburger + spacer so the strip isn't squeezed —
   // mirrors the web header's data-strip-mode contract.
   if (expanded) {
-    return <View style={styles.header}>{children}</View>;
+    return (
+      <Animated.View style={styles.header} layout={headerLayout}>
+        <Animated.View
+          style={styles.flex}
+          entering={FadeIn.duration(150).reduceMotion(ReduceMotion.System)}
+        >
+          {children}
+        </Animated.View>
+      </Animated.View>
+    );
   }
 
   return (
-    <View style={styles.header}>
+    <Animated.View style={styles.header} layout={headerLayout}>
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={t('openMenu')}
@@ -39,13 +60,18 @@ export function AppHeader({
         }
         style={styles.menuBtn}
       >
-        <Menu size={22} color={colors.text} />
+        <Menu size={20} color={colors.text} />
       </Pressable>
 
-      <View style={styles.slot}>{children}</View>
+      <Animated.View
+        style={styles.slot}
+        entering={FadeIn.duration(150).reduceMotion(ReduceMotion.System)}
+      >
+        {children}
+      </Animated.View>
 
       <View style={styles.spacer} />
-    </View>
+    </Animated.View>
   );
 }
 
@@ -62,8 +88,9 @@ const styles = StyleSheet.create({
     height: HIT,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 10,
+    borderRadius: radii.sm,
   },
   slot: { flex: 1, minWidth: 0, alignItems: 'center', justifyContent: 'center' },
+  flex: { flex: 1, minWidth: 0 },
   spacer: { width: HIT, height: HIT },
 });

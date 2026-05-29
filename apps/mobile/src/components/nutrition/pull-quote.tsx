@@ -1,4 +1,5 @@
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet } from 'react-native';
+import Animated, { FadeInDown, ReduceMotion } from 'react-native-reanimated';
 import type { EducationCardData } from '@/lib/nutrition/types';
 import { useTranslations } from '~/i18n';
 import { Text } from '~/theme/text';
@@ -14,11 +15,17 @@ export function PullQuote({ card }: PullQuoteProps) {
   const tRoot = useTranslations();
 
   return (
-    <View style={styles.aside}>
+    // Web motion.aside opacity/y:8 duration 0.55 delay 0.22.
+    <Animated.View
+      entering={FadeInDown.duration(550)
+        .delay(220)
+        .reduceMotion(ReduceMotion.System)}
+      style={styles.aside}
+    >
       <Text style={styles.eyebrow}>{t('pullQuote.eyebrow')}</Text>
       <Text style={styles.heading}>{tRoot(card.titleKey)}</Text>
       <Text style={styles.body}>{tRoot(card.bodyKey)}</Text>
-    </View>
+    </Animated.View>
   );
 }
 
@@ -33,7 +40,8 @@ const styles = StyleSheet.create({
   eyebrow: {
     fontFamily: fonts.sansBold,
     fontSize: 10,
-    letterSpacing: 2,
+    // Web tracking-[0.22em] @ 10px ≈ 2.2.
+    letterSpacing: 2.2,
     textTransform: 'uppercase',
     color: colors.stone,
   },
@@ -47,7 +55,8 @@ const styles = StyleSheet.create({
   body: {
     fontFamily: fonts.serifItalic,
     fontSize: 15,
-    lineHeight: 26,
+    // Web leading-7 = 28.
+    lineHeight: 28,
     color: colors.textMuted,
   },
 });

@@ -40,7 +40,8 @@ export function InlineError({
 
 const styles = StyleSheet.create({
   card: {
-    borderRadius: radii['2xl'],
+    // Web rounded-2xl = 16 (containerLg), not the shared 2xl(18).
+    borderRadius: radii.containerLg,
     borderWidth: 1,
     borderColor: colors.borderSoft,
     backgroundColor: colors.elev,
@@ -49,7 +50,8 @@ const styles = StyleSheet.create({
   },
   btn: {
     alignSelf: 'flex-start',
-    borderRadius: radii.xl,
+    // Web rounded-xl = 12.
+    borderRadius: radii.buttonXl,
     borderWidth: 1,
     borderColor: colors.borderSoft,
     paddingHorizontal: space[4],

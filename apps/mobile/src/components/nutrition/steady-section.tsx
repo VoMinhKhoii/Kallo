@@ -22,7 +22,7 @@ export function SteadySection({ cards }: SteadySectionProps) {
   return (
     <View style={styles.section}>
       <View style={styles.headerRow}>
-        <SectionEyebrow label={t('steady.eyebrow')} />
+        <SectionEyebrow label={t('steady.eyebrow')} delay={180} />
         <Text style={styles.hint}>{t('steady.hint')}</Text>
       </View>
       <View style={styles.list}>
@@ -50,7 +50,8 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
   },
   list: {
-    borderRadius: radii['2xl'],
+    // Web rounded-2xl = 16 (containerLg), not the shared 2xl(18).
+    borderRadius: radii.containerLg,
     borderWidth: 1,
     borderColor: colors.borderHalf,
     overflow: 'hidden',

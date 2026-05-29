@@ -1,6 +1,19 @@
 import { ArrowUp, Square } from 'lucide-react-native';
-import { forwardRef, useImperativeHandle, useRef, useState } from 'react';
+import {
+  forwardRef,
+  useEffect,
+  useImperativeHandle,
+  useRef,
+  useState,
+} from 'react';
 import { Pressable, StyleSheet, TextInput, View } from 'react-native';
+import Animated, {
+  interpolateColor,
+  ReduceMotion,
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+} from 'react-native-reanimated';
 import { useTranslations } from '~/i18n';
 import { colors, fonts, fontSize, radii, shadow, space } from '~/theme/tokens';
 
@@ -42,8 +55,29 @@ export const MealInput = forwardRef<MealInputHandle, MealInputProps>(
       if (canSubmit) onSubmit(text);
     };
 
+    // Border + shadow crossfade on focus over 300ms (web transition-all 300ms
+    // focus-within:border-accent/40 + stronger glow).
+    const focus = useSharedValue(0);
+    useEffect(() => {
+      focus.value = withTiming(focused ? 1 : 0, {
+        duration: 300,
+        reduceMotion: ReduceMotion.System,
+      });
+    }, [focused, focus]);
+    const barStyle = useAnimatedStyle(() => ({
+      borderColor: interpolateColor(
+        focus.value,
+        [0, 1],
+        [colors.borderBiscotti40, colors.borderAccent40]
+      ),
+      shadowOpacity:
+        shadow.input.shadowOpacity +
+        focus.value *
+          (shadow.inputFocus.shadowOpacity - shadow.input.shadowOpacity),
+    }));
+
     return (
-      <View style={[styles.bar, focused && styles.barFocused]}>
+      <Animated.View style={[styles.bar, barStyle]}>
         <TextInput
           ref={inputRef}
           style={[
@@ -88,7 +122,7 @@ export const MealInput = forwardRef<MealInputHandle, MealInputProps>(
             <ArrowUp color="#ffffff" size={16} />
           </Pressable>
         )}
-      </View>
+      </Animated.View>
     );
   }
 );
@@ -104,10 +138,6 @@ const styles = StyleSheet.create({
     borderRadius: radii.containerLg,
     backgroundColor: colors.elev,
     ...shadow.input,
-  },
-  barFocused: {
-    borderColor: colors.borderAccent40,
-    ...shadow.inputFocus,
   },
   input: {
     flex: 1,

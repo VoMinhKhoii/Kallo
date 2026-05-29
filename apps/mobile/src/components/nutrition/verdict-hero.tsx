@@ -1,4 +1,5 @@
 import { StyleSheet, View } from 'react-native';
+import Animated, { FadeInDown, ReduceMotion } from 'react-native-reanimated';
 import type { NutritionOverview } from '@/lib/nutrition/types';
 import { useLocale, useTranslations } from '~/i18n';
 import {
@@ -68,13 +69,19 @@ export function VerdictHero({ overview }: VerdictHeroProps) {
   }
 
   return (
-    <View style={styles.row}>
+    // Web motion.p opacity/y:4 duration 0.5 delay 0.05.
+    <Animated.View
+      entering={FadeInDown.duration(500)
+        .delay(50)
+        .reduceMotion(ReduceMotion.System)}
+      style={styles.row}
+    >
       <View style={styles.dot} />
       <Text style={styles.line}>
         <Text style={styles.headline}>{headline}</Text>
         <Text style={styles.muted}>{`  ${muted}`}</Text>
       </Text>
-    </View>
+    </Animated.View>
   );
 }
 

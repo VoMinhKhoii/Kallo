@@ -1,5 +1,9 @@
 import type { ReactNode } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
+import Animated, {
+  FadeInDown,
+  ReduceMotion,
+} from 'react-native-reanimated';
 import type {
   NutritionRange,
   NutritionRangeInput,
@@ -42,17 +46,26 @@ export function EditorialHeader({
   return (
     <View style={styles.header}>
       <View style={styles.topRow}>
-        <View style={styles.titleBlock}>
+        {/* Title block: web motion.div opacity/y:6 duration 0.5 (no delay). */}
+        <Animated.View
+          entering={FadeInDown.duration(500).reduceMotion(ReduceMotion.System)}
+          style={styles.titleBlock}
+        >
           <SectionEyebrow
             label={t('editorial.eyebrow')}
             trailing={tRange(resolvedRange)}
+            delay={0}
           />
           <Text style={styles.date}>{dateRange}</Text>
-        </View>
+        </Animated.View>
 
-        <View
+        {/* Range toggle: web motion.div opacity/y:6 duration 0.5 delay 0.05. */}
+        <Animated.View
           accessibilityRole="radiogroup"
           accessibilityLabel={tRange('label')}
+          entering={FadeInDown.duration(500)
+            .delay(50)
+            .reduceMotion(ReduceMotion.System)}
           style={styles.toggle}
         >
           {RANGES.map((range) => {
@@ -64,10 +77,12 @@ export function EditorialHeader({
                 accessibilityState={{ selected: active, disabled: !!disabled }}
                 disabled={disabled}
                 onPress={() => onRangeChange(range)}
-                style={[
+                style={({ pressed }) => [
                   styles.toggleBtn,
                   active && styles.toggleBtnActive,
                   disabled && styles.toggleDisabled,
+                  // Web inactive `hover:text-nham-text` → RN pressed bg highlight.
+                  pressed && !active && styles.toggleBtnPressed,
                 ]}
               >
                 <Text
@@ -81,10 +96,20 @@ export function EditorialHeader({
               </Pressable>
             );
           })}
-        </View>
+        </Animated.View>
       </View>
 
-      {verdict ? <View style={styles.verdictWrap}>{verdict}</View> : null}
+      {/* Verdict: web motion.div opacity/y:4 duration 0.5 delay 0.1. */}
+      {verdict ? (
+        <Animated.View
+          entering={FadeInDown.duration(500)
+            .delay(100)
+            .reduceMotion(ReduceMotion.System)}
+          style={styles.verdictWrap}
+        >
+          {verdict}
+        </Animated.View>
+      ) : null}
     </View>
   );
 }
@@ -123,6 +148,7 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
   },
   toggleBtnActive: { backgroundColor: colors.text },
+  toggleBtnPressed: { backgroundColor: colors.hover40 },
   toggleDisabled: { opacity: 0.6 },
   toggleLabel: {
     fontFamily: fonts.sansMedium,

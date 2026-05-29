@@ -1,4 +1,5 @@
 import { StyleSheet, View } from 'react-native';
+import Animated, { FadeInDown, ReduceMotion } from 'react-native-reanimated';
 import type { NutrientCardData } from '@/lib/nutrition/types';
 import { TargetProgressBar } from '~/components/shared/target-progress-bar';
 import { useLocale, useTranslations } from '~/i18n';
@@ -9,10 +10,12 @@ import { FoodChipRow } from './food-chip-row';
 
 interface SpotlightRowProps {
   card: NutrientCardData;
+  /** Entrance delay, ms (mirrors the web per-card motion stagger). */
+  delay?: number;
 }
 
 /** RN port of web `components/nutrition/rows/spotlight-row.tsx`. */
-export function SpotlightRow({ card }: SpotlightRowProps) {
+export function SpotlightRow({ card, delay = 0 }: SpotlightRowProps) {
   const t = useTranslations('nutrition');
   const tRoot = useTranslations();
   const locale = useLocale();
@@ -25,7 +28,13 @@ export function SpotlightRow({ card }: SpotlightRowProps) {
       : t('focus.percentOfTarget', { value: Math.round(percent) });
 
   return (
-    <View style={styles.article}>
+    // Web motion.article opacity/y:8 duration 0.5 delay 0.1 + index*0.06.
+    <Animated.View
+      entering={FadeInDown.duration(500)
+        .delay(delay)
+        .reduceMotion(ReduceMotion.System)}
+      style={styles.article}
+    >
       <View style={styles.headRow}>
         <Text style={styles.heading}>{label}</Text>
         <Text style={[styles.figure, showExceed && styles.figureExceed]}>
@@ -37,6 +46,7 @@ export function SpotlightRow({ card }: SpotlightRowProps) {
         <TargetProgressBar
           percentOfTarget={card.percentOfTarget}
           showExceed={showExceed}
+          delay={delay + 100}
           accessibilityLabel={t('focus.spotlightBarAria', {
             label,
             pct: Math.round(percent),
@@ -61,7 +71,7 @@ export function SpotlightRow({ card }: SpotlightRowProps) {
       </Text>
 
       <FoodChipRow nutrient={card.nutrient} variant="spotlight" limit={5} />
-    </View>
+    </Animated.View>
   );
 }
 

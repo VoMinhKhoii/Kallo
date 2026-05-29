@@ -16,14 +16,15 @@ export function FocusSection({ cards }: FocusSectionProps) {
 
   return (
     <View style={styles.section}>
-      <SectionEyebrow label={t('focus.eyebrow')} />
+      <SectionEyebrow label={t('focus.eyebrow')} delay={150} />
       <View style={styles.rows}>
         {cards.map((card, index) => (
           <View
             key={card.nutrient}
             style={index < cards.length - 1 ? styles.divided : undefined}
           >
-            <SpotlightRow card={card} />
+            {/* Web per-card stagger: delay 0.1 + index*0.06. */}
+            <SpotlightRow card={card} delay={100 + index * 60} />
           </View>
         ))}
       </View>

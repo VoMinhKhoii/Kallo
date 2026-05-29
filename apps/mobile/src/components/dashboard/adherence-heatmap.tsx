@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { StyleSheet, useWindowDimensions, View } from 'react-native';
+import Animated, { FadeIn, ReduceMotion } from 'react-native-reanimated';
 import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 import type {
   HeatmapCell,
@@ -198,8 +199,14 @@ function HeatmapBody({ data, range, screenWidth }: HeatmapBodyProps) {
           </View>
 
           {/* Cell grid (SVG). Iteration: outer week column, inner day row;
-              cells indexed [dayRow][weekColumn]. */}
+              cells indexed [dayRow][weekColumn]. Web fans each cell in with a
+              column/day-staggered scale-up; per-SVG-Rect entrances aren't
+              feasible, so the whole grid fades in over 300ms as the minimal
+              equivalent (honors OS reduced-motion, like web's useReducedMotion). */}
           <View>
+            <Animated.View
+              entering={FadeIn.duration(300).reduceMotion(ReduceMotion.System)}
+            >
             <Svg width={gridWidth} height={gridHeight}>
               {Array.from({ length: numWeeks }, (_, wi) =>
                 DAY_LABELS.map((_label, di) => {
@@ -229,6 +236,7 @@ function HeatmapBody({ data, range, screenWidth }: HeatmapBodyProps) {
                 })
               )}
             </Svg>
+            </Animated.View>
 
             {bubble ? (
               <View

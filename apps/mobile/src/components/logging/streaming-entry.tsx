@@ -1,5 +1,11 @@
 import { useEffect, useRef } from 'react';
 import { Animated, Easing, StyleSheet, View } from 'react-native';
+import Reanimated, {
+  FadeInDown,
+  FadeInLeft,
+  FadeOut,
+  ReduceMotion,
+} from 'react-native-reanimated';
 import type { StreamStatus } from '@/lib/ai/streaming/types';
 import type { MealItem } from '@/lib/types/meal';
 import { useTranslations } from '~/i18n';
@@ -80,62 +86,86 @@ export function StreamingEntry({
   const phaseLabel = PHASE_KEYS.has(status) ? t(status) : t('analyzing');
 
   return (
-    <Card style={styles.card}>
-      {/* Left timeline rail — active-streaming affordance. */}
-      <View style={styles.railLine} pointerEvents="none" />
-      <Animated.View style={[styles.railDot, { opacity: pulse }]} pointerEvents="none" />
+    // Web streaming card enters opacity+y:10, exits opacity, 0.2s.
+    <Reanimated.View
+      entering={FadeInDown.duration(200).reduceMotion(ReduceMotion.System)}
+      exiting={FadeOut.duration(200).reduceMotion(ReduceMotion.System)}
+    >
+      <Card style={styles.card}>
+        {/* Left timeline rail — active-streaming affordance. */}
+        <View style={styles.railLine} pointerEvents="none" />
+        <Animated.View style={[styles.railDot, { opacity: pulse }]} pointerEvents="none" />
 
-      {completedItems.map((item) => (
-        <View key={item.id} style={styles.row}>
-          <Text variant="itemName" style={styles.name} numberOfLines={1}>
-            {item.name}
-          </Text>
-          <View style={styles.rowRight}>
-            <View style={styles.macroGroup}>
-              <Text variant="macroTiny">{`P: ${fmtG(item.macros.protein)}`}</Text>
-              <Text variant="macroTiny">{`C: ${fmtG(item.macros.carbs)}`}</Text>
-              <Text variant="macroTiny">{`F: ${fmtG(item.macros.fat)}`}</Text>
+        {/* Items block — web wraps rows in mb-4 space-y-1 (16px below, 4px between). */}
+        <View style={styles.itemsBlock}>
+          {completedItems.map((item, index) => (
+            // Each completed item waterfalls in from the left (web stagger
+            // index*0.04s).
+            <Reanimated.View
+              key={item.id}
+              style={styles.row}
+              entering={FadeInLeft.duration(250)
+                .delay(index * 40)
+                .reduceMotion(ReduceMotion.System)}
+            >
+              <Text variant="itemName" style={styles.name} numberOfLines={1}>
+                {item.name}
+              </Text>
+              <View style={styles.rowRight}>
+                <View style={styles.macroGroup}>
+                  <Text variant="macroTiny">{`P: ${fmtG(item.macros.protein)}`}</Text>
+                  <Text variant="macroTiny">{`C: ${fmtG(item.macros.carbs)}`}</Text>
+                  <Text variant="macroTiny">{`F: ${fmtG(item.macros.fat)}`}</Text>
+                </View>
+                <Text variant="calorieBold">{fmtKcal(item.macros.calories)}</Text>
+              </View>
+            </Reanimated.View>
+          ))}
+
+          {pendingNames.map((name, index) => (
+            // Pending skeleton rows stagger in too (web skeleton index*0.08s).
+            <Reanimated.View
+              key={name}
+              style={styles.row}
+              entering={FadeInLeft.duration(250)
+                .delay(index * 80)
+                .reduceMotion(ReduceMotion.System)}
+            >
+              <Text variant="itemName" style={styles.name} numberOfLines={1}>
+                {name}
+              </Text>
+              <View style={styles.rowRight}>
+                <View style={styles.macroGroup}>
+                  <Animated.View style={[styles.skelBarSm, { opacity: pulse }]} />
+                  <Animated.View style={[styles.skelBarSm, { opacity: pulse }]} />
+                  <Animated.View style={[styles.skelBarSm, { opacity: pulse }]} />
+                </View>
+                <Animated.View style={[styles.skelBarKcalSm, { opacity: pulse }]} />
+              </View>
+            </Reanimated.View>
+          ))}
+        </View>
+
+        {/* Totals skeleton — dashed-top 'Total' row with macro + calorie bars. */}
+        <View style={styles.totalRow}>
+          <Text style={styles.totalLabel}>{tMealEntry('total')}</Text>
+          <View style={styles.totalRight}>
+            <View style={styles.totalMacroGroup}>
+              <Animated.View style={[styles.skelBarTotal, { opacity: pulse }]} />
+              <Animated.View style={[styles.skelBarTotal, { opacity: pulse }]} />
+              <Animated.View style={[styles.skelBarTotal, { opacity: pulse }]} />
             </View>
-            <Text variant="calorieBold">{fmtKcal(item.macros.calories)}</Text>
+            <Animated.View style={[styles.skelBarKcalTotal, { opacity: pulse }]} />
           </View>
         </View>
-      ))}
 
-      {pendingNames.map((name) => (
-        <View key={name} style={styles.row}>
-          <Text variant="itemName" style={styles.name} numberOfLines={1}>
-            {name}
-          </Text>
-          <View style={styles.rowRight}>
-            <View style={styles.macroGroup}>
-              <Animated.View style={[styles.skelBarSm, { opacity: pulse }]} />
-              <Animated.View style={[styles.skelBarSm, { opacity: pulse }]} />
-              <Animated.View style={[styles.skelBarSm, { opacity: pulse }]} />
-            </View>
-            <Animated.View style={[styles.skelBarKcalSm, { opacity: pulse }]} />
-          </View>
+        {/* Stage indicator — spinner + phase label, at the bottom of the card. */}
+        <View style={styles.stage}>
+          <Spinner />
+          <Text variant="phaseLabel">{phaseLabel}</Text>
         </View>
-      ))}
-
-      {/* Totals skeleton — dashed-top 'Total' row with macro + calorie bars. */}
-      <View style={styles.totalRow}>
-        <Text style={styles.totalLabel}>{tMealEntry('total')}</Text>
-        <View style={styles.totalRight}>
-          <View style={styles.totalMacroGroup}>
-            <Animated.View style={[styles.skelBarTotal, { opacity: pulse }]} />
-            <Animated.View style={[styles.skelBarTotal, { opacity: pulse }]} />
-            <Animated.View style={[styles.skelBarTotal, { opacity: pulse }]} />
-          </View>
-          <Animated.View style={[styles.skelBarKcalTotal, { opacity: pulse }]} />
-        </View>
-      </View>
-
-      {/* Stage indicator — spinner + phase label, at the bottom of the card. */}
-      <View style={styles.stage}>
-        <Spinner />
-        <Text variant="phaseLabel">{phaseLabel}</Text>
-      </View>
-    </Card>
+      </Card>
+    </Reanimated.View>
   );
 }
 
@@ -164,6 +194,8 @@ const styles = StyleSheet.create({
     borderColor: colors.accent,
     backgroundColor: colors.timelineDotFill,
   },
+  // Items block: 4px between rows (web space-y-1), 16px before totals (mb-4).
+  itemsBlock: { gap: space[1], marginBottom: space[4] },
   row: {
     flexDirection: 'row',
     justifyContent: 'space-between',

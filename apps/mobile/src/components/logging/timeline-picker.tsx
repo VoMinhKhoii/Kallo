@@ -5,6 +5,7 @@ import {
 } from 'lucide-react-native';
 import { useCallback, useMemo, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
+import Animated, { FadeIn, ReduceMotion } from 'react-native-reanimated';
 import { useLocale, useTranslations } from '~/i18n';
 import {
   addDays,
@@ -13,7 +14,7 @@ import {
   formatTimelineDayLabel,
 } from '~/lib/logging/timeline-utils';
 import { Text } from '~/theme/text';
-import { colors, radii, space } from '~/theme/tokens';
+import { colors, fonts, radii, space, tracking } from '~/theme/tokens';
 
 export interface TimelinePickerProps {
   /** Dates with logged meals — drives the "has meals" dots. */
@@ -83,6 +84,8 @@ function DayCell({
         isToday && !isSelected && styles.cellToday,
         isFuture && styles.cellFuture,
         pressed && !isFuture && styles.cellPressed,
+        // web active:scale-[0.97] on tap
+        pressed && !isFuture && { transform: [{ scale: 0.97 }] },
       ]}
     >
       <Text
@@ -185,38 +188,52 @@ export function TimelinePicker({
 
   if (!expanded) {
     return (
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel={t('selectDate')}
-        accessibilityState={{ expanded: false }}
-        onPress={handleOpenStrip}
-        style={({ pressed }) => [styles.chip, pressed && styles.chipPressed]}
+      // Chip content fades in as the header morphs from strip → pill.
+      <Animated.View
+        entering={FadeIn.duration(150).reduceMotion(ReduceMotion.System)}
       >
-        <CalendarIcon size={14} color={colors.accent} />
-        <Text variant="chipText" numberOfLines={1} style={styles.chipLabel}>
-          {formattedDate}
-        </Text>
-        {hasMeal ? (
-          <View
-            accessibilityRole="text"
-            accessibilityLabel={t('hasMealIndicator')}
-            style={[styles.dot, styles.dotMeal]}
-          />
-        ) : null}
-      </Pressable>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={t('selectDate')}
+          accessibilityState={{ expanded: false }}
+          onPress={handleOpenStrip}
+          style={({ pressed }) => [styles.chip, pressed && styles.chipPressed]}
+        >
+          <CalendarIcon size={14} color={colors.accent} />
+          <Text variant="chipText" numberOfLines={1} style={styles.chipLabel}>
+            {formattedDate}
+          </Text>
+          {hasMeal ? (
+            <View
+              accessibilityRole="text"
+              accessibilityLabel={t('hasMealIndicator')}
+              style={[styles.dot, styles.dotMeal]}
+            />
+          ) : null}
+        </Pressable>
+      </Animated.View>
     );
   }
 
   return (
-    <View style={styles.strip}>
+    // Strip content fades in as the header morphs from pill → full-width strip.
+    <Animated.View
+      style={styles.strip}
+      entering={FadeIn.duration(180).delay(50).reduceMotion(ReduceMotion.System)}
+    >
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={t('previousWeek')}
         hitSlop={4}
         onPress={scrollPrev}
-        style={({ pressed }) => [styles.chevron, pressed && styles.chevronPressed]}
+        style={({ pressed }) => [
+          styles.chevron,
+          pressed && styles.chevronPressed,
+          // web active:scale-[0.96]
+          pressed && { transform: [{ scale: 0.96 }] },
+        ]}
       >
-        <ChevronLeft size={18} color={colors.textMuted} />
+        <ChevronLeft size={16} color={colors.textMuted} />
       </Pressable>
 
       <View
@@ -248,14 +265,16 @@ export function TimelinePicker({
         style={({ pressed }) => [
           styles.chevron,
           pressed && canNavigateNext && styles.chevronPressed,
+          // web active:scale-[0.96]
+          pressed && canNavigateNext && { transform: [{ scale: 0.96 }] },
         ]}
       >
         <ChevronRight
-          size={18}
+          size={16}
           color={canNavigateNext ? colors.textMuted : colors.placeholderMuted40}
         />
       </Pressable>
-    </View>
+    </Animated.View>
   );
 }
 
@@ -265,7 +284,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: space[2],
-    height: 40,
+    height: 44,
     maxWidth: 288,
     paddingHorizontal: space[4],
     borderRadius: radii.pill,
@@ -307,7 +326,12 @@ const styles = StyleSheet.create({
   cellToday: { backgroundColor: colors.timelineDotFill },
   cellFuture: { opacity: 0.55 },
   cellPressed: { backgroundColor: colors.hover },
-  cellDayName: { color: colors.textMuted },
+  // Web day name is font-semibold + tracking-tight (not macroLabel's bold/wide).
+  cellDayName: {
+    color: colors.textMuted,
+    fontFamily: fonts.sansSemiBold,
+    letterSpacing: tracking.tight,
+  },
   cellDayNum: { color: colors.textMuted, fontSize: 13 },
   cellTextSelected: { color: colors.text },
   // ---- dots ----

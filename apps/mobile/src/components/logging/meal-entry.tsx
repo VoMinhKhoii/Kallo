@@ -1,6 +1,13 @@
 import { Check, Minus, Pencil, Plus } from 'lucide-react-native';
 import { useEffect, useRef, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
+import Animated, {
+  FadeIn,
+  FadeOut,
+  LinearTransition,
+  ReduceMotion,
+  ZoomIn,
+} from 'react-native-reanimated';
 import type { MealItem, MealQuantityEdit, ParsedMeal } from '@/lib/types/meal';
 import {
   applyQuantityChange,
@@ -60,7 +67,12 @@ export function MealEntry({
   const confirmDisabled = isBusy || (editing && confirmCoolingDown);
 
   return (
-    <View style={styles.wrap}>
+    // exiting fades the card on confirm instead of a hard pop-out (web smoothly
+    // collapses the entry in place).
+    <Animated.View
+      style={styles.wrap}
+      exiting={FadeOut.duration(200).reduceMotion(ReduceMotion.System)}
+    >
       <Card style={styles.card}>
       <View style={styles.header}>
         <Text variant="mealQuote" style={styles.quote}>
@@ -71,17 +83,24 @@ export function MealEntry({
           hitSlop={8}
           style={[styles.editPill, editing ? styles.editPillDone : styles.editPillEdit]}
         >
-          {editing ? (
-            <Check color={colors.accent} size={12} />
-          ) : (
-            <Pencil color={colors.textMuted} size={12} />
-          )}
-          <Text
-            variant="pillLabel"
-            style={editing ? styles.editPillLabelDone : styles.editPillLabelEdit}
+          {/* Keyed swap so edit↔done pops with a scale-in (web AnimatePresence). */}
+          <Animated.View
+            key={editing ? 'done' : 'edit'}
+            style={styles.editPillInner}
+            entering={ZoomIn.duration(150).reduceMotion(ReduceMotion.System)}
           >
-            {editing ? t('done') : t('edit')}
-          </Text>
+            {editing ? (
+              <Check color={colors.accent} size={12} />
+            ) : (
+              <Pencil color={colors.textMuted} size={12} />
+            )}
+            <Text
+              variant="pillLabel"
+              style={editing ? styles.editPillLabelDone : styles.editPillLabelEdit}
+            >
+              {editing ? t('done') : t('edit')}
+            </Text>
+          </Animated.View>
         </Pressable>
       </View>
 
@@ -92,13 +111,21 @@ export function MealEntry({
             const step = isGrams ? 10 : 1;
             const minusDisabled = item.quantity <= MIN_DISH_GRAMS;
             return (
-              <View
+              // layout animates the padding/bg shift when edit mode toggles.
+              <Animated.View
                 key={item.id}
+                layout={LinearTransition.duration(150).reduceMotion(
+                  ReduceMotion.System
+                )}
                 style={[styles.itemRow, editing ? styles.itemRowEditing : styles.itemRowResting]}
               >
                 <View style={styles.itemLeft}>
                   {editing ? (
-                    <View style={styles.stepper}>
+                    <Animated.View
+                      style={styles.stepper}
+                      entering={FadeIn.duration(150).reduceMotion(ReduceMotion.System)}
+                      exiting={FadeOut.duration(150).reduceMotion(ReduceMotion.System)}
+                    >
                       <Pressable
                         style={[styles.step, minusDisabled && styles.stepDisabled]}
                         disabled={minusDisabled}
@@ -117,7 +144,7 @@ export function MealEntry({
                       >
                         <Plus color={colors.textMuted} size={10} />
                       </Pressable>
-                    </View>
+                    </Animated.View>
                   ) : null}
                   <Text variant="itemName" style={styles.itemName} numberOfLines={1}>
                     {item.name}
@@ -133,7 +160,7 @@ export function MealEntry({
                     {fmtKcal(item.macros.calories)}
                   </Text>
                 </View>
-              </View>
+              </Animated.View>
             );
           })}
         </View>
@@ -170,7 +197,7 @@ export function MealEntry({
           </Text>
         </Pressable>
       </View>
-    </View>
+    </Animated.View>
   );
 }
 
@@ -193,6 +220,7 @@ const styles = StyleSheet.create({
     paddingVertical: space[1],
     paddingHorizontal: 10,
   },
+  editPillInner: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   editPillEdit: { borderColor: colors.borderSoft },
   editPillDone: {
     borderColor: colors.accentSelectedBorder,
@@ -206,11 +234,11 @@ const styles = StyleSheet.create({
     borderStyle: 'dashed',
     borderTopColor: colors.border,
     paddingTop: space[4],
-    gap: space[2],
   },
-  items: { gap: space[2] },
+  // 4px between rows (web space-y-1), 16px before totals (web mb-4).
+  items: { gap: space[1], marginBottom: space[4] },
   itemRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: space[2] },
-  itemRowResting: { paddingVertical: space[2] },
+  itemRowResting: { paddingVertical: 10 },
   itemRowEditing: {
     borderRadius: radii.md,
     backgroundColor: colors.surface80,
@@ -218,11 +246,11 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
   },
   itemLeft: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: space[2] },
-  stepper: { flexDirection: 'row', alignItems: 'center', gap: space[2] },
+  stepper: { flexDirection: 'row', alignItems: 'center', gap: 2 },
   step: {
     width: 28,
     height: 28,
-    borderRadius: radii.sm,
+    borderRadius: radii.md,
     borderWidth: 1,
     borderColor: colors.borderSoft,
     backgroundColor: colors.elev,

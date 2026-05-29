@@ -1,6 +1,11 @@
 import { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
-import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
+import Animated, {
+  FadeIn,
+  FadeOut,
+  LinearTransition,
+  ReduceMotion,
+} from 'react-native-reanimated';
 import type { NutrientCardData } from '@/lib/nutrition/types';
 import { SectionEyebrow } from '~/components/shared/section-eyebrow';
 import { useTranslations } from '~/i18n';
@@ -24,9 +29,14 @@ export function BackgroundSection({ cards }: BackgroundSectionProps) {
   if (cards.length === 0) return null;
 
   return (
-    <View style={styles.section}>
+    // layout transition lets the section grow/shrink smoothly as the panel
+    // mounts/unmounts (RN can't animate height:auto like web's AnimatePresence).
+    <Animated.View
+      layout={LinearTransition.duration(300).reduceMotion(ReduceMotion.System)}
+      style={styles.section}
+    >
       <View style={styles.headerRow}>
-        <SectionEyebrow label={t('background.eyebrow')} />
+        <SectionEyebrow label={t('background.eyebrow')} delay={200} />
         <Pressable
           accessibilityRole="button"
           accessibilityState={{ expanded: open }}
@@ -41,9 +51,13 @@ export function BackgroundSection({ cards }: BackgroundSectionProps) {
       </View>
 
       {open ? (
+        // Web AnimatePresence opacity + height collapse, duration 0.3.
         <Animated.View
-          entering={FadeIn.duration(220)}
-          exiting={FadeOut.duration(150)}
+          entering={FadeIn.duration(300).reduceMotion(ReduceMotion.System)}
+          exiting={FadeOut.duration(300).reduceMotion(ReduceMotion.System)}
+          layout={LinearTransition.duration(300).reduceMotion(
+            ReduceMotion.System
+          )}
           style={styles.panel}
         >
           <Text style={styles.hint}>{t('background.hint')}</Text>
@@ -54,7 +68,7 @@ export function BackgroundSection({ cards }: BackgroundSectionProps) {
           </View>
         </Animated.View>
       ) : null}
-    </View>
+    </Animated.View>
   );
 }
 
@@ -78,7 +92,8 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
   },
   list: {
-    borderRadius: radii['2xl'],
+    // Web rounded-2xl = 16 (containerLg), not the shared 2xl(18).
+    borderRadius: radii.containerLg,
     borderWidth: 1,
     borderColor: colors.borderHalf,
     overflow: 'hidden',

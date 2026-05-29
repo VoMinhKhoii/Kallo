@@ -91,7 +91,7 @@ function Bar({
 }
 
 const styles = StyleSheet.create({
-  stack: { gap: space[10] },
+  stack: { gap: space[12] },
   flex: { flex: 1 },
   headerBlock: {
     gap: space[2],
@@ -100,7 +100,8 @@ const styles = StyleSheet.create({
     paddingBottom: space[5],
   },
   card: {
-    borderRadius: radii['3xl'],
+    // Web rounded-3xl = 24 (matches the live daily-rhythm card).
+    borderRadius: 24,
     borderWidth: 1,
     borderColor: colors.borderSoft,
     padding: space[5],
@@ -114,7 +115,8 @@ const styles = StyleSheet.create({
   macroRows: { gap: space[3] },
   macroRow: { flexDirection: 'row', alignItems: 'center', gap: space[3] },
   listCard: {
-    borderRadius: radii['2xl'],
+    // Web rounded-2xl = 16 (containerLg), matching the live steady list.
+    borderRadius: radii.containerLg,
     borderWidth: 1,
     borderColor: colors.borderHalf,
     overflow: 'hidden',

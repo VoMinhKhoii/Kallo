@@ -66,7 +66,12 @@ export function Sidebar({ navigation }: SidebarProps) {
             <Pressable
               key={item.id}
               onPress={() => go(item.href)}
-              style={[styles.navItem, active && styles.navItemActive]}
+              style={({ pressed }) => [
+                styles.navItem,
+                active && styles.navItemActive,
+                // web hover:bg-nham-hover/60 press feedback
+                pressed && !active && styles.rowPressed,
+              ]}
             >
               <Icon size={20} color={active ? '#ffffff' : colors.text} />
               <Text style={[styles.navLabel, active && styles.navLabelActive]}>
@@ -96,7 +101,11 @@ export function Sidebar({ navigation }: SidebarProps) {
 
         <Pressable
           onPress={() => go('/settings')}
-          style={[styles.footerItem, settingsActive && styles.navItemActive]}
+          style={({ pressed }) => [
+            styles.footerItem,
+            settingsActive && styles.navItemActive,
+            pressed && !settingsActive && styles.rowPressed,
+          ]}
         >
           <Settings size={16} color={settingsActive ? '#ffffff' : colors.text} />
           <Text style={[styles.footerLabel, settingsActive && styles.navLabelActive]}>
@@ -104,7 +113,13 @@ export function Sidebar({ navigation }: SidebarProps) {
           </Text>
         </Pressable>
 
-        <Pressable onPress={signOut} style={styles.footerItem}>
+        <Pressable
+          onPress={signOut}
+          style={({ pressed }) => [
+            styles.footerItem,
+            pressed && styles.rowPressed,
+          ]}
+        >
           <LogOut size={16} color={colors.danger} />
           <Text style={[styles.footerLabel, { color: colors.danger }]}>
             {tMenu('signOut')}
@@ -118,7 +133,7 @@ export function Sidebar({ navigation }: SidebarProps) {
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.surface },
   header: {
-    gap: 2,
+    gap: space[1],
     borderBottomWidth: 1,
     borderBottomColor: colors.borderSoft,
     paddingHorizontal: space[4],
@@ -132,11 +147,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: space[3],
-    borderRadius: radii.lg,
+    borderRadius: radii.md,
     paddingHorizontal: space[3],
     paddingVertical: 10,
   },
   navItemActive: { backgroundColor: colors.btn },
+  // web hover:bg-nham-hover/60 — press feedback on nav/footer rows
+  rowPressed: { backgroundColor: colors.hover },
   navLabel: { fontFamily: fonts.sansMedium, fontSize: 14, color: colors.text },
   navLabelActive: { color: '#ffffff' },
   footer: {
@@ -150,7 +167,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: space[3],
-    borderRadius: radii.xl,
+    borderRadius: radii.buttonXl,
     backgroundColor: colors.elev,
     paddingHorizontal: space[3],
     paddingVertical: 10,
@@ -173,7 +190,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: space[3],
-    borderRadius: radii.xl,
+    borderRadius: radii.buttonXl,
     paddingHorizontal: space[3],
     paddingVertical: 10,
     marginTop: space[1],

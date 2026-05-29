@@ -52,7 +52,7 @@ export default function NutritionScreen() {
 
   return (
     <Screen edges={['top', 'bottom']}>
-      <View style={{ paddingHorizontal: space[3] }}>
+      <View style={{ paddingHorizontal: space[5] }}>
         <AppHeader />
       </View>
       <ScrollView
@@ -105,12 +105,12 @@ export default function NutritionScreen() {
 const styles = StyleSheet.create({
   scroll: { flex: 1 },
   content: {
-    paddingHorizontal: space[3],
-    paddingTop: space[3],
+    paddingHorizontal: space[5],
+    paddingTop: space[6],
     paddingBottom: space[20],
   },
-  // Editorial rhythm — the web's gap-12 (48px), tightened a touch for phone.
-  stack: { gap: space[10] },
+  // Editorial rhythm — the web's gap-12 (48px) between every section seam.
+  stack: { gap: space[12] },
   center: {
     flex: 1,
     alignItems: 'center',

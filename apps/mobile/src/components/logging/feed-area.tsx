@@ -10,6 +10,16 @@ import {
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Animated, {
+  Easing,
+  FadeIn,
+  FadeInUp,
+  ReduceMotion,
+  useAnimatedStyle,
+  useSharedValue,
+  withDelay,
+  withTiming,
+} from 'react-native-reanimated';
 import type { PersistedMeal } from '@/lib/api/contracts/meals';
 import { round0 } from '~/lib/logging/format';
 import { loggingDayKeys, todayDateString } from '~/lib/logging/keys';
@@ -32,6 +42,31 @@ export interface LoggingProfile {
   proteinTargetG: number;
   carbsTargetG: number;
   fatTargetG: number;
+}
+
+/** A single macro bar whose fill sweeps 0→pct (web macro-summary: width 0→%,
+ *  duration 1s, delay 0.2s, easeOut). Extracted so the width hook isn't run
+ *  inside the macro-bars .map. */
+function MacroBar({ pct, color }: { pct: number; color: string }) {
+  const w = useSharedValue(0);
+  useEffect(() => {
+    w.value = withDelay(
+      200,
+      withTiming(pct, {
+        duration: 1000,
+        easing: Easing.out(Easing.ease),
+        reduceMotion: ReduceMotion.System,
+      })
+    );
+  }, [pct, w]);
+  const fillStyle = useAnimatedStyle(() => ({ width: `${w.value}%` }));
+  return (
+    <View style={styles.macroTrack}>
+      <Animated.View
+        style={[styles.macroFill, fillStyle, { backgroundColor: color }]}
+      />
+    </View>
+  );
 }
 
 export function FeedArea({
@@ -146,7 +181,11 @@ export function FeedArea({
       style={styles.flex}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      <View style={styles.header}>
+      {/* Web macro-summary enters opacity+y:-8 over 0.35s easeOut. */}
+      <Animated.View
+        style={styles.header}
+        entering={FadeInUp.duration(350).reduceMotion(ReduceMotion.System)}
+      >
         <View style={styles.ringColumn}>
           <CalorieRing current={dailyCalories} target={profile.calorieTarget} />
           <Text variant="numCaption">{`${dailyCalories} / ${profile.calorieTarget} kcal`}</Text>
@@ -162,14 +201,7 @@ export function FeedArea({
                 <Text variant="macroLabel" style={styles.macroLabel}>
                   {label}
                 </Text>
-                <View style={styles.macroTrack}>
-                  <View
-                    style={[
-                      styles.macroFill,
-                      { width: `${pct}%`, backgroundColor: color },
-                    ]}
-                  />
-                </View>
+                <MacroBar pct={pct} color={color} />
                 <Text variant="macroValue" style={styles.macroValue}>
                   {`${current}/${target}g`}
                 </Text>
@@ -177,12 +209,19 @@ export function FeedArea({
             );
           })}
         </View>
-      </View>
+      </Animated.View>
 
       <FlatList
         data={persistedMeals}
         keyExtractor={(m) => m.id}
-        renderItem={({ item }) => <PersistedMealCard meal={item} />}
+        renderItem={({ item }) => (
+          // Web fades each feed card in (motion.article opacity 0→1).
+          <Animated.View
+            entering={FadeIn.duration(200).reduceMotion(ReduceMotion.System)}
+          >
+            <PersistedMealCard meal={item} />
+          </Animated.View>
+        )}
         contentContainerStyle={
           persistedMeals.length === 0 ? styles.listEmpty : styles.list
         }
@@ -258,7 +297,7 @@ const styles = StyleSheet.create({
   ringColumn: { alignItems: 'center', gap: space[1] },
   macroBars: { flex: 1, gap: space[2] },
   macroRow: { flexDirection: 'row', alignItems: 'center', gap: space[3] },
-  macroLabel: { width: 48 },
+  macroLabel: { width: 48, color: colors.textMuted70 },
   macroTrack: {
     height: 6,
     flex: 1,

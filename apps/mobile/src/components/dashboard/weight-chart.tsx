@@ -7,6 +7,11 @@ import {
   StyleSheet,
   View,
 } from 'react-native';
+import Animated, {
+  FadeIn,
+  FadeOut,
+  ReduceMotion,
+} from 'react-native-reanimated';
 import Svg, {
   Circle,
   Defs,
@@ -320,6 +325,12 @@ function ChartCanvas({
         onResponderTerminate={() => setActive(null)}
       >
         {width > 0 && (
+          // Web recharts <Area> draws in on first render (~clip-reveal). RN-SVG
+          // can't measure the path length, so we fade the whole chart in over
+          // 600ms — kills the instant pop without faking a sweep.
+          <Animated.View
+            entering={FadeIn.duration(600).reduceMotion(ReduceMotion.System)}
+          >
           <Svg width={width} height={CHART_H}>
             <Defs>
               <LinearGradient id="lineGrad" x1="0" y1="0" x2="0" y2="1">
@@ -393,6 +404,7 @@ function ChartCanvas({
               />
             )}
           </Svg>
+          </Animated.View>
         )}
 
         {/* Y tick labels (left gutter) */}
@@ -420,9 +432,12 @@ function ChartCanvas({
             </Text>
           ))}
 
-        {/* Press tooltip */}
+        {/* Press tooltip — micro-fade in/out (web recharts cross-fades the
+            active Tooltip). Conditionally mounted so exiting fires on release. */}
         {activeIdx !== null && dotX !== undefined && dotY !== undefined && (
-          <View
+          <Animated.View
+            entering={FadeIn.duration(120).reduceMotion(ReduceMotion.System)}
+            exiting={FadeOut.duration(120).reduceMotion(ReduceMotion.System)}
             style={[
               styles.tooltip,
               {
@@ -437,7 +452,7 @@ function ChartCanvas({
             <Text style={styles.tooltipText}>
               {data[activeIdx].toFixed(1)} {t('units.kg')}
             </Text>
-          </View>
+          </Animated.View>
         )}
       </View>
     </View>

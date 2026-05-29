@@ -1,5 +1,6 @@
 import { useRouter } from 'expo-router';
 import { Pressable, StyleSheet, View } from 'react-native';
+import Animated, { FadeInDown, ReduceMotion } from 'react-native-reanimated';
 import Svg, { Path } from 'react-native-svg';
 import { useTranslations } from '~/i18n';
 import { Text } from '~/theme/text';
@@ -11,7 +12,13 @@ export function EmptyState() {
   const router = useRouter();
 
   return (
-    <View style={styles.section}>
+    // Web motion.section opacity/y:8 duration 0.55 delay 0.1.
+    <Animated.View
+      entering={FadeInDown.duration(550)
+        .delay(100)
+        .reduceMotion(ReduceMotion.System)}
+      style={styles.section}
+    >
       <SeedMark />
       <View style={styles.copy}>
         <Text style={styles.heading}>{t('emptyV2.title')}</Text>
@@ -24,7 +31,7 @@ export function EmptyState() {
       >
         <Text style={styles.ctaLabel}>{t('emptyV2.logMeal')}</Text>
       </Pressable>
-    </View>
+    </Animated.View>
   );
 }
 
@@ -63,7 +70,8 @@ const styles = StyleSheet.create({
   body: {
     fontFamily: fonts.sansRegular,
     fontSize: 14,
-    lineHeight: 24,
+    // Web text-sm leading-7 = 28.
+    lineHeight: 28,
     color: colors.textMuted,
   },
   cta: {

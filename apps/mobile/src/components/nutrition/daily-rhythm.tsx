@@ -1,4 +1,14 @@
+import { useEffect } from 'react';
 import { StyleSheet, View } from 'react-native';
+import Animated, {
+  Easing,
+  FadeInDown,
+  ReduceMotion,
+  useAnimatedStyle,
+  useSharedValue,
+  withDelay,
+  withTiming,
+} from 'react-native-reanimated';
 import type { MacroPattern } from '@/lib/nutrition/types';
 import { TargetProgressBar } from '~/components/shared/target-progress-bar';
 import { SectionEyebrow } from '~/components/shared/section-eyebrow';
@@ -29,8 +39,14 @@ export function DailyRhythm({ macros }: DailyRhythmProps) {
   const macroRows = orderedMacroRows(macros);
 
   return (
-    <View style={styles.section}>
-      <SectionEyebrow label={t('rhythm.eyebrow')} />
+    // Web section motion.div opacity/y:8 duration 0.5 delay 0.1.
+    <Animated.View
+      entering={FadeInDown.duration(500)
+        .delay(100)
+        .reduceMotion(ReduceMotion.System)}
+      style={styles.section}
+    >
+      <SectionEyebrow label={t('rhythm.eyebrow')} delay={100} />
 
       <View style={styles.card}>
         {/* Calorie hero — stacks above the composition pill on phone. */}
@@ -48,24 +64,10 @@ export function DailyRhythm({ macros }: DailyRhythmProps) {
 
         {totalKcal > 0 ? (
           <View style={styles.compositionBlock}>
-            <View
-              accessibilityRole="image"
-              accessibilityLabel={t('rhythm.macroCompositionAria')}
-              style={styles.pill}
-            >
-              {segments.map((segment) =>
-                segment.pct > 0 ? (
-                  <View
-                    key={segment.key}
-                    style={{
-                      width: `${segment.pct}%`,
-                      height: '100%',
-                      backgroundColor: COMPOSITION_COLORS[segment.key],
-                    }}
-                  />
-                ) : null
-              )}
-            </View>
+            <CompositionPill
+              segments={segments}
+              ariaLabel={t('rhythm.macroCompositionAria')}
+            />
             <View style={styles.legend}>
               {segments.map((segment) => (
                 <View key={segment.key} style={styles.legendItem}>
@@ -97,6 +99,55 @@ export function DailyRhythm({ macros }: DailyRhythmProps) {
           ))}
         </View>
       </View>
+    </Animated.View>
+  );
+}
+
+interface CompositionPillProps {
+  segments: { key: keyof typeof COMPOSITION_COLORS; pct: number }[];
+  ariaLabel: string;
+}
+
+/**
+ * The macro composition bar. Web animates each segment `scaleX 0→1` from the
+ * left (transformOrigin:left, duration 0.6 delay 0.15 easeOut) — they share the
+ * same left origin, so scaling the whole row group reproduces the "draw out"
+ * effect while preserving each segment's relative width exactly.
+ */
+function CompositionPill({ segments, ariaLabel }: CompositionPillProps) {
+  const scale = useSharedValue(0);
+
+  useEffect(() => {
+    scale.value = withDelay(
+      150,
+      withTiming(1, { duration: 600, easing: Easing.out(Easing.cubic) })
+    );
+  }, [scale]);
+
+  const fillStyle = useAnimatedStyle(() => ({
+    transform: [{ scaleX: scale.value }],
+  }));
+
+  return (
+    <View
+      accessibilityRole="image"
+      accessibilityLabel={ariaLabel}
+      style={styles.pill}
+    >
+      <Animated.View style={[styles.pillFill, fillStyle]}>
+        {segments.map((segment) =>
+          segment.pct > 0 ? (
+            <View
+              key={segment.key}
+              style={{
+                width: `${segment.pct}%`,
+                height: '100%',
+                backgroundColor: COMPOSITION_COLORS[segment.key],
+              }}
+            />
+          ) : null
+        )}
+      </Animated.View>
     </View>
   );
 }
@@ -162,7 +213,8 @@ function MacroRow({
 const styles = StyleSheet.create({
   section: { gap: space[4] },
   card: {
-    borderRadius: radii['3xl'],
+    // Web rounded-3xl = 24 (radii['3xl'] is 22, intentionally kept for dashboard).
+    borderRadius: 24,
     borderWidth: 1,
     borderColor: colors.borderSoft,
     backgroundColor: colors.surface80,
@@ -187,7 +239,8 @@ const styles = StyleSheet.create({
     marginTop: space[1],
     fontFamily: fonts.sansRegular,
     fontSize: 12,
-    letterSpacing: 1.8,
+    // Web tracking-[0.18em] @ 12px ≈ 2.16.
+    letterSpacing: 2.2,
     textTransform: 'uppercase',
     color: colors.textMuted,
   },
@@ -200,6 +253,8 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     backgroundColor: colors.track,
   },
+  // Segment group scaled from the left for the "draw out" entrance.
+  pillFill: { flexDirection: 'row', height: '100%', width: '100%', transformOrigin: 'left' },
   legend: { flexDirection: 'row', flexWrap: 'wrap', columnGap: space[3], rowGap: 4 },
   legendItem: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   legendDot: { width: 6, height: 6, borderRadius: radii.pill },
@@ -216,9 +271,9 @@ const styles = StyleSheet.create({
     borderColor: colors.borderBiscotti40,
     paddingTop: space[5],
   },
-  macroRow: { flexDirection: 'row', alignItems: 'center', gap: space[2] },
+  macroRow: { flexDirection: 'row', alignItems: 'center', gap: space[3] },
   macroLabel: {
-    width: 80,
+    width: 88,
     fontFamily: fonts.sansMedium,
     fontSize: 14,
     color: colors.text,

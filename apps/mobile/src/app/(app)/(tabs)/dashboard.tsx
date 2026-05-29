@@ -1,7 +1,16 @@
 import { useQuery } from '@tanstack/react-query';
 import { Flame } from 'lucide-react-native';
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
+import Animated, {
+  Easing,
+  FadeInDown,
+  ReduceMotion,
+  useAnimatedStyle,
+  useSharedValue,
+  withDelay,
+  withTiming,
+} from 'react-native-reanimated';
 import { AppHeader } from '~/components/app/app-header';
 import { AdherenceHeatmap } from '~/components/dashboard/adherence-heatmap';
 import { SectionHeader, SectionState } from '~/components/dashboard/section-header';
@@ -234,8 +243,13 @@ function TodaySection({
   ] as const;
 
   return (
-    <Card style={dock.card}>
-      {/* (a) Calories remaining — cream hero block */}
+    // Web today-dock.tsx: motion.section initial {opacity:0,y:10} → {1,0} over
+    // 0.45s. FadeInDown gives the fade + 10px up-slide in one entrance.
+    <Animated.View
+      entering={FadeInDown.duration(450).reduceMotion(ReduceMotion.System)}
+    >
+      <Card style={dock.card}>
+        {/* (a) Calories remaining — cream hero block */}
       <View style={dock.remainingBlock}>
         <Text variant="eyebrow" style={dock.remainingEyebrow}>
           {t('caloriesRemaining')}
@@ -261,23 +275,18 @@ function TodaySection({
           center={<Flame size={24} color={colors.accent} />}
         />
         <View style={dock.macroBars}>
-          {macroBars.map(({ key, label, current, target, color }) => {
+          {macroBars.map(({ key, label, current, target, color }, idx) => {
             const pct =
               target > 0
                 ? Math.max(0, Math.min(100, (current / target) * 100))
                 : 0;
             return (
               <View key={key} style={dock.macroRow}>
-                <Text variant="macroLabel" style={dock.macroLabel}>
+                <Text variant="macroLabel" numberOfLines={1} style={dock.macroLabel}>
                   {label}
                 </Text>
                 <View style={dock.macroTrack}>
-                  <View
-                    style={[
-                      dock.macroFill,
-                      { width: `${pct}%`, backgroundColor: color },
-                    ]}
-                  />
+                  <MacroBar pct={pct} color={color} idx={idx} />
                 </View>
                 <Text variant="macroValue" style={dock.macroValue}>
                   {`${current}/${target}g`}
@@ -325,8 +334,40 @@ function TodaySection({
             </View>
           </>
         )}
-      </View>
-    </Card>
+        </View>
+      </Card>
+    </Animated.View>
+  );
+}
+
+/**
+ * One macro bar fill. Hooks can't run inside the `.map`, so the animated fill is
+ * extracted here. Mirrors web macro-bars.tsx: width animates 0 → pct over 0.9s
+ * with a per-bar stagger (idx*100 + 200ms lead-in) and the signature ease.
+ */
+function MacroBar({
+  pct,
+  color,
+  idx,
+}: {
+  pct: number;
+  color: string;
+  idx: number;
+}) {
+  const w = useSharedValue(0);
+  useEffect(() => {
+    w.value = withDelay(
+      idx * 100 + 200,
+      withTiming(pct, {
+        duration: 900,
+        easing: Easing.bezier(0.16, 1, 0.3, 1),
+        reduceMotion: ReduceMotion.System,
+      })
+    );
+  }, [pct, idx, w]);
+  const fillStyle = useAnimatedStyle(() => ({ width: `${w.value}%` }));
+  return (
+    <Animated.View style={[dock.macroFill, fillStyle, { backgroundColor: color }]} />
   );
 }
 
@@ -413,8 +454,10 @@ const dock = StyleSheet.create({
     backgroundColor: colors.surface80,
     padding: space[3],
   },
-  macroBars: { flex: 1, gap: space[2] },
+  // Web MacroBars container is gap-3.5 (14px) between the three macro rows.
+  macroBars: { flex: 1, gap: 14 },
   macroRow: { flexDirection: 'row', alignItems: 'center', gap: space[3] },
+  // Keep the variant's 0.6 tracking — at 48px width a wider value wraps "PROTEIN".
   macroLabel: { width: 48 },
   macroTrack: {
     height: 6,

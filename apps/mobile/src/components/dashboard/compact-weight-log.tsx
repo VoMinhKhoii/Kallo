@@ -12,7 +12,7 @@ import { ApiError } from '~/lib/api-client';
 import { parseDecimalInput } from '~/lib/dashboard/format';
 import { useLogWeight } from '~/lib/dashboard/use-weight';
 import { Text } from '~/theme/text';
-import { colors, fonts, fontSize, radii, space, tracking } from '~/theme/tokens';
+import { colors, fonts, fontSize, radii, space } from '~/theme/tokens';
 
 /**
  * CompactWeightLog — mobile port of the web `components/dashboard/current/
@@ -218,10 +218,11 @@ const styles = StyleSheet.create({
     gap: space[2],
     marginBottom: 6,
   },
-  // Web eyebrow is 9px / 0.15em; pull the variant size to 9 + matching tracking.
+  // Web eyebrow is 9px / 0.15em (= 1.35px @9px); pull the variant size to 9 +
+  // matching tracking (the variant's 0.6 under-tracks).
   eyebrow: {
     fontSize: 9,
-    letterSpacing: tracking.wide,
+    letterSpacing: 1.35,
   },
   inputRow: {
     flexDirection: 'row',
