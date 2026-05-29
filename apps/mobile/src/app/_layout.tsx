@@ -5,6 +5,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { I18nProvider } from '~/i18n';
 import { queryClient } from '~/lib/query-client';
 import { SessionProvider } from '~/lib/session';
 import { useAppFonts } from '~/theme/fonts';
@@ -27,14 +28,16 @@ export default function RootLayout() {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <SafeAreaProvider>
-        <SessionProvider>
-          <QueryClientProvider client={queryClient}>
-            <Stack screenOptions={{ headerShown: false }} />
-            <StatusBar style="dark" />
-          </QueryClientProvider>
-        </SessionProvider>
-      </SafeAreaProvider>
+      <I18nProvider>
+        <SafeAreaProvider>
+          <SessionProvider>
+            <QueryClientProvider client={queryClient}>
+              <Stack screenOptions={{ headerShown: false }} />
+              <StatusBar style="dark" />
+            </QueryClientProvider>
+          </SessionProvider>
+        </SafeAreaProvider>
+      </I18nProvider>
     </GestureHandlerRootView>
   );
 }

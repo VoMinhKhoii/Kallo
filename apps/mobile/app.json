@@ -41,7 +41,8 @@
         {
           "experimentalLauncherActivity": false
         }
-      ]
+      ],
+      "expo-localization"
     ],
     "experiments": {
       "typedRoutes": false,
