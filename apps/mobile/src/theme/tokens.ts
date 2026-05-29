@@ -27,6 +27,22 @@ export const colors = {
   btnBorderGhost: 'rgba(105, 94, 78, 0.4)', // btn umber @ 40% — ghost button border
   textMuted60: 'rgba(139, 115, 85, 0.6)', // textMuted @ 60%
   placeholderMuted40: 'rgba(139, 115, 85, 0.4)', // textMuted @ 40% — input placeholder
+  // Numeric alpha set for the nutrition tree (web `accent/NN`, `hover/NN`, etc.
+  // that RN can't express via Tailwind opacity). One predictable convention.
+  accent10: 'rgba(201, 168, 124, 0.1)', // == accentSelectedFill
+  accent15: 'rgba(201, 168, 124, 0.15)',
+  accent30: 'rgba(201, 168, 124, 0.3)', // == timelineDotFill
+  accent35: 'rgba(201, 168, 124, 0.35)',
+  accent40: 'rgba(201, 168, 124, 0.4)', // == borderAccent40
+  accent50: 'rgba(201, 168, 124, 0.5)', // == accentSelectedBorder
+  accent60: 'rgba(201, 168, 124, 0.6)',
+  hover40: 'rgba(240, 234, 224, 0.4)',
+  hover50: 'rgba(240, 234, 224, 0.5)',
+  stone50: 'rgba(168, 162, 158, 0.5)',
+  stone70: 'rgba(168, 162, 158, 0.7)',
+  text40: 'rgba(44, 36, 22, 0.4)',
+  textMuted50: 'rgba(139, 115, 85, 0.5)',
+  danger70: 'rgba(211, 123, 105, 0.7)',
   hover: '#f0eae0',
   track: '#f5f4f0',
   stone: '#a8a29e', // cool gray — captions, fat macro
