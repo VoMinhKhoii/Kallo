@@ -95,7 +95,9 @@ function buildOptimisticMeal(
     ingredients: [],
     nutrition: macrosToNutrition(item.macros),
   }));
-  const total = edits?.length ? recalculateTotals(items) : parsedMeal.totalMacros;
+  const total = edits?.length
+    ? recalculateTotals(items)
+    : parsedMeal.totalMacros;
   return {
     // Same id the server will persist, so the card keeps one stable React key
     // from optimistic insert through the post-save refetch (no re-fade).
@@ -111,9 +113,7 @@ function buildOptimisticMeal(
 
 // Client-supplied data needed to build the optimistic meal without reading the
 // pending confirmation back out of the cache. Stripped before the server call.
-type ConfirmMealVariables = Parameters<
-  typeof confirmAndSaveMealAction
->[0] & {
+type ConfirmMealVariables = Parameters<typeof confirmAndSaveMealAction>[0] & {
   originDate: string;
   parsedMeal: ParsedMeal;
   rawInput: string;
