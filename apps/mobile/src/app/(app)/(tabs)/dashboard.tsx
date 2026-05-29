@@ -1,17 +1,524 @@
-import { View } from 'react-native';
-import { Screen } from '~/theme/primitives';
+import { useQuery } from '@tanstack/react-query';
+import { Flame } from 'lucide-react-native';
+import { useMemo } from 'react';
+import { ScrollView, StyleSheet, View } from 'react-native';
+import { AdherenceHeatmap } from '~/components/dashboard/adherence-heatmap';
+import { CompactWeightLog } from '~/components/dashboard/compact-weight-log';
+import { SectionHeader, SectionState } from '~/components/dashboard/section-header';
+import { WeightChart } from '~/components/dashboard/weight-chart';
+import { CalorieRing } from '~/components/logging/calorie-ring';
+import { apiGet } from '~/lib/api-client';
+import { useWeightSummary } from '~/lib/dashboard/use-weight';
+import { round0 } from '~/lib/logging/format';
+import { todayDateString } from '~/lib/logging/keys';
+import { useLoggingDay } from '~/lib/logging/use-logging-day';
+import { useSession } from '~/lib/session';
+import { Card, Screen } from '~/theme/primitives';
 import { Text } from '~/theme/text';
-import { space } from '~/theme/tokens';
+import { colors, fonts, fontSize, radii, space } from '~/theme/tokens';
+
+/**
+ * Dashboard screen — mobile port of the web `DashboardShell`
+ * (components/dashboard/dashboard-shell.tsx). A vertically scrolling stack of
+ * the three web sections, in the web's order:
+ *
+ *   1. TODAY SUMMARY  — week title + TodayDock (calorie ring + macros + meals)
+ *   2. PROGRESS       — "Progress" + 30-day badge + WeightChart + CompactWeightLog
+ *   3. CONSISTENCY    — "Consistency" + 30-day badge + AdherenceHeatmap
+ *
+ * Section headers come from the shared SectionHeader. Sections 2 & 3 are
+ * self-contained (their components own their hooks + loading/error/empty); the
+ * Today section's loading/error replace the whole dock per the web shell.
+ *
+ * Mobile deviations (per the port plan):
+ *  - No container measurement: the phone is always below the web's 620px / year
+ *    thresholds, so the range badges are hardcoded "30 days" and the weight /
+ *    heatmap queries run at the fixed '30d' range. The badges are passive labels
+ *    (web derives the range from width; there are no interactive tabs).
+ *  - No i18n framework yet → English copy from messages/en.json, verbatim.
+ */
+
+// EN copy (messages/en.json `dashboard.*`), sentence case.
+const COPY = {
+  weekOf: 'Week of',
+  today: 'Today',
+  caloriesRemaining: 'Calories remaining',
+  caloriesLogged: 'kcal logged',
+  protein: 'Protein',
+  carbs: 'Carbs',
+  fat: 'Fat',
+  noMealsToday: 'No meals logged today',
+  mealReceiptsHint: 'Your meal receipts will show up here',
+  recentMeals: 'Recent meals',
+  mealsLogged: (count: number) => `${count} logged`,
+  progress: 'Progress',
+  consistency: 'Consistency',
+  retry: 'Try again',
+  todayLoading: "Loading today's meals…",
+  todayLoadError: "Unable to load today's meals. Please try again.",
+  range30: '30 days',
+  notSignedIn: 'Not signed in.',
+} as const;
+
+/**
+ * Pure helper vendored from the web `getWeekTitle` (dashboard-shell.tsx). Builds
+ * "Week of {Mon} – {Sun}, {year}" for the Monday-anchored week containing
+ * today, via standard JS Date + Intl (both fine in app code).
+ */
+function getWeekTitle(locale: string, label: string, today: string): string {
+  const now = new Date(today);
+  const day = now.getDay(); // 0=Sun, 1=Mon...
+  const diffToMon = day === 0 ? -6 : 1 - day;
+  const monday = new Date(today);
+  monday.setDate(now.getDate() + diffToMon);
+  const sunday = new Date(monday);
+  sunday.setDate(monday.getDate() + 6);
+
+  const formatter = new Intl.DateTimeFormat(locale, {
+    month: 'long',
+    day: 'numeric',
+  });
+  const year = sunday.getFullYear();
+
+  return `${label} ${formatter.format(monday)} – ${formatter.format(sunday)}, ${year}`;
+}
+
+// The onboarding profile row (the macro/calorie targets the dock needs).
+type ProfileRow = {
+  calorieTarget: number | null;
+  proteinTargetG: number | null;
+  carbsTargetG: number | null;
+  fatTargetG: number | null;
+} | null;
+
+interface DockTargets {
+  calorieTarget: number;
+  proteinTargetG: number;
+  carbsTargetG: number;
+  fatTargetG: number;
+}
 
 export default function DashboardScreen() {
+  const { session } = useSession();
+  const userId = session?.user.id;
+  const todayDate = todayDateString();
+  const weekTitle = useMemo(
+    () => getWeekTitle('en', COPY.weekOf, todayDate),
+    [todayDate]
+  );
+
+  const profileQuery = useQuery({
+    queryKey: ['onboarding', 'profile'],
+    queryFn: () => apiGet<ProfileRow>('/api/v1/onboarding/profile'),
+    enabled: !!userId,
+  });
+
+  if (!userId) {
+    return (
+      <Screen>
+        <View style={styles.center}>
+          <Text variant="small">{COPY.notSignedIn}</Text>
+        </View>
+      </Screen>
+    );
+  }
+
+  // Defaults mirror the web DEFAULT_PROFILE so an incomplete-onboarding profile
+  // shows sensible targets, never /0g.
+  const targets: DockTargets = {
+    calorieTarget: profileQuery.data?.calorieTarget ?? 2000,
+    proteinTargetG: profileQuery.data?.proteinTargetG ?? 150,
+    carbsTargetG: profileQuery.data?.carbsTargetG ?? 250,
+    fatTargetG: profileQuery.data?.fatTargetG ?? 65,
+  };
+
   return (
-    <Screen>
-      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: space[6], gap: space[2] }}>
-        <Text variant="eyebrow">Dashboard</Text>
-        <Text variant="lead" style={{ textAlign: 'center' }}>
-          Your calorie ring, weight trend, and consistency heatmap arrive in Phase 4.
-        </Text>
-      </View>
+    <Screen edges={['top', 'bottom']}>
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* SECTION 1 — Today summary */}
+        <View style={styles.section}>
+          <SectionHeader title={weekTitle} />
+          <TodaySection userId={userId} todayDate={todayDate} targets={targets} />
+        </View>
+
+        {/* SECTION 2 — Progress (weight trend + chart + weight log) */}
+        <View style={styles.section}>
+          <SectionHeader title={COPY.progress} range={COPY.range30} />
+          <ProgressSection todayDate={todayDate} />
+        </View>
+
+        {/* SECTION 3 — Consistency (adherence heatmap) */}
+        <View style={styles.section}>
+          <SectionHeader title={COPY.consistency} range={COPY.range30} />
+          <AdherenceHeatmap />
+        </View>
+      </ScrollView>
     </Screen>
   );
 }
+
+/* ---------------------------------------------------------------- Section 1 */
+
+/**
+ * TodayDock-equivalent (web components/dashboard/today/today-dock.tsx). Reuses
+ * the logging `CalorieRing` (with a Flame center, like the web) and the
+ * feed-area macro-bar markup. Adds the "Calories remaining" hero block and the
+ * meal list that distinguish TodayDock from feed-area's header.
+ */
+function TodaySection({
+  userId,
+  todayDate,
+  targets,
+}: {
+  userId: string;
+  todayDate: string;
+  targets: DockTargets;
+}) {
+  const { data: day, isPending, isError, refetch } = useLoggingDay(
+    userId,
+    todayDate
+  );
+
+  if (isPending) {
+    return <SectionState message={COPY.todayLoading} />;
+  }
+  if (isError) {
+    return (
+      <SectionState
+        message={COPY.todayLoadError}
+        actionLabel={COPY.retry}
+        onAction={() => {
+          void refetch();
+        }}
+      />
+    );
+  }
+
+  const meals = [...(day.persistedMeals ?? [])].sort((a, b) =>
+    a.loggedAt.localeCompare(b.loggedAt)
+  );
+
+  const totals = meals.reduce(
+    (sum, m) => ({
+      calories: sum.calories + (m.nutrition.caloriesKcal ?? 0),
+      protein: sum.protein + (m.nutrition.proteinG ?? 0),
+      carbs: sum.carbs + (m.nutrition.carbohydrateG ?? 0),
+      fat: sum.fat + (m.nutrition.fatG ?? 0),
+    }),
+    { calories: 0, protein: 0, carbs: 0, fat: 0 }
+  );
+  const calories = round0(totals.calories);
+  const remaining = Math.max(0, targets.calorieTarget - calories);
+
+  const macroBars = [
+    {
+      key: 'protein',
+      label: COPY.protein,
+      current: round0(totals.protein),
+      target: targets.proteinTargetG,
+      color: colors.macroProtein,
+    },
+    {
+      key: 'carbs',
+      label: COPY.carbs,
+      current: round0(totals.carbs),
+      target: targets.carbsTargetG,
+      color: colors.macroCarbs,
+    },
+    {
+      key: 'fat',
+      label: COPY.fat,
+      current: round0(totals.fat),
+      target: targets.fatTargetG,
+      color: colors.macroFat,
+    },
+  ] as const;
+
+  return (
+    <Card style={dock.card}>
+      {/* (a) Calories remaining — cream hero block */}
+      <View style={dock.remainingBlock}>
+        <Text variant="eyebrow" style={dock.remainingEyebrow}>
+          {COPY.caloriesRemaining}
+        </Text>
+        <View style={dock.heroRow}>
+          <Text style={dock.heroNumber}>{remaining.toLocaleString()}</Text>
+          <Text style={dock.heroTarget}>
+            / {targets.calorieTarget.toLocaleString()}
+          </Text>
+        </View>
+        <Text style={dock.subline}>
+          {calories.toLocaleString()} {COPY.caloriesLogged}
+        </Text>
+      </View>
+
+      {/* (b) Ring + macros — cream block */}
+      <View style={dock.ringBlock}>
+        <CalorieRing
+          current={calories}
+          target={targets.calorieTarget}
+          size={72}
+          strokeWidth={6}
+          center={<Flame size={24} color={colors.accent} />}
+        />
+        <View style={dock.macroBars}>
+          {macroBars.map(({ key, label, current, target, color }) => {
+            const pct =
+              target > 0
+                ? Math.max(0, Math.min(100, (current / target) * 100))
+                : 0;
+            return (
+              <View key={key} style={dock.macroRow}>
+                <Text variant="macroLabel" style={dock.macroLabel}>
+                  {label}
+                </Text>
+                <View style={dock.macroTrack}>
+                  <View
+                    style={[
+                      dock.macroFill,
+                      { width: `${pct}%`, backgroundColor: color },
+                    ]}
+                  />
+                </View>
+                <Text variant="macroValue" style={dock.macroValue}>
+                  {`${current}/${target}g`}
+                </Text>
+              </View>
+            );
+          })}
+        </View>
+      </View>
+
+      {/* (c) Meal list — cream block */}
+      <View style={dock.mealBlock}>
+        {meals.length === 0 ? (
+          <View style={dock.mealEmpty}>
+            <Text style={dock.mealEmptyTitle}>{COPY.noMealsToday}</Text>
+            <Text style={dock.mealEmptyHint}>{COPY.mealReceiptsHint}</Text>
+          </View>
+        ) : (
+          <>
+            <View style={dock.mealHeader}>
+              <Text variant="eyebrow" style={dock.mealHeaderLabel}>
+                {COPY.recentMeals}
+              </Text>
+              <Text style={dock.mealHeaderCount}>
+                {COPY.mealsLogged(meals.length)}
+              </Text>
+            </View>
+            <View style={dock.mealRows}>
+              {meals.map((meal, idx) => (
+                <View key={meal.id} style={dock.mealRow}>
+                  <View style={dock.mealRowLeft}>
+                    <Text style={dock.mealIndex}>{idx + 1}</Text>
+                    <Text
+                      numberOfLines={2}
+                      style={dock.mealLabel}
+                    >
+                      {meal.rawInput}
+                    </Text>
+                  </View>
+                  <Text style={dock.mealCalories}>
+                    {round0(meal.nutrition.caloriesKcal)}
+                  </Text>
+                </View>
+              ))}
+            </View>
+          </>
+        )}
+      </View>
+    </Card>
+  );
+}
+
+/* ---------------------------------------------------------------- Section 2 */
+
+/**
+ * Progress section — the web's ProgressStory card collapses on mobile to the
+ * WeightChart (which already fuses the trend status callout + the SVG area
+ * chart) followed by CompactWeightLog. The weight summary is fetched once here
+ * (fixed '30d') to feed CompactWeightLog's currentWeight / todayWeight; the same
+ * cached query backs WeightChart, so there is no extra request. The status
+ * callout is rendered exactly once (inside WeightChart) — matching web.
+ */
+function ProgressSection({ todayDate }: { todayDate: string }) {
+  const { data } = useWeightSummary('30d');
+
+  return (
+    <View style={styles.progressStack}>
+      <WeightChart />
+      {data ? (
+        <CompactWeightLog
+          currentWeight={data.currentWeight}
+          todayWeight={data.todayWeight}
+          todayDate={todayDate}
+        />
+      ) : null}
+    </View>
+  );
+}
+
+/* --------------------------------------------------------------------- root */
+
+const styles = StyleSheet.create({
+  scroll: { flex: 1 },
+  // px-3 py-3 pb-24 → 12 / 12, with a generous bottom pad for the tab bar.
+  content: {
+    paddingHorizontal: space[3],
+    paddingTop: space[3],
+    paddingBottom: space[20],
+  },
+  // Inter-section gap-4 (16px); header-to-content gap-1.5 (6px) inside.
+  section: { marginBottom: space[4], gap: 6 },
+  progressStack: { gap: space[3] },
+  center: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: space[6],
+  },
+});
+
+// TodayDock styles. Card radius 24 (web rounded-[1.5rem]); inner blocks 18
+// (radii['2xl'], the cream sub-panel family); cream-vs-white fills + hairlines.
+const dock = StyleSheet.create({
+  card: {
+    borderRadius: radii['4xl'],
+    borderColor: colors.borderSoft,
+    padding: space[3],
+    gap: space[3],
+  },
+  // (a) Calories remaining
+  remainingBlock: {
+    borderRadius: radii['2xl'],
+    backgroundColor: colors.surface80,
+    padding: space[3],
+  },
+  remainingEyebrow: { color: colors.stone },
+  heroRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    gap: 6,
+    marginTop: space[1],
+  },
+  heroNumber: {
+    fontFamily: fonts.serifSemiBold,
+    fontSize: 36,
+    lineHeight: 36,
+    letterSpacing: -1.4,
+    color: colors.text,
+    fontVariant: ['tabular-nums'],
+  },
+  heroTarget: {
+    fontFamily: fonts.serifItalic,
+    fontSize: fontSize.lg,
+    color: colors.textMuted,
+  },
+  subline: {
+    marginTop: space[1],
+    fontFamily: fonts.sansRegular,
+    fontSize: fontSize.xs,
+    color: colors.stone,
+  },
+  // (b) Ring + macros
+  ringBlock: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space[3],
+    borderRadius: radii['2xl'],
+    backgroundColor: colors.surface80,
+    padding: space[3],
+  },
+  macroBars: { flex: 1, gap: space[2] },
+  macroRow: { flexDirection: 'row', alignItems: 'center', gap: space[3] },
+  macroLabel: { width: 48 },
+  macroTrack: {
+    height: 6,
+    flex: 1,
+    borderRadius: radii.pill,
+    overflow: 'hidden',
+    backgroundColor: colors.track,
+  },
+  macroFill: { height: '100%', borderRadius: radii.pill },
+  macroValue: { width: 52 },
+  // (c) Meal list
+  mealBlock: {
+    minHeight: 140,
+    borderRadius: radii['2xl'],
+    borderWidth: 1,
+    borderColor: colors.borderSoft,
+    backgroundColor: colors.surface80,
+    padding: 10,
+  },
+  mealEmpty: {
+    flex: 1,
+    minHeight: 116,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+  },
+  mealEmptyTitle: {
+    fontFamily: fonts.sansSemiBold,
+    fontSize: fontSize.sm,
+    color: colors.text,
+  },
+  mealEmptyHint: {
+    fontFamily: fonts.sansRegular,
+    fontSize: fontSize['2xs'],
+    color: colors.stone,
+    textAlign: 'center',
+  },
+  mealHeader: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    justifyContent: 'space-between',
+    marginBottom: space[2],
+  },
+  mealHeaderLabel: { fontSize: 9, letterSpacing: 1.4, color: colors.stone },
+  mealHeaderCount: {
+    fontFamily: fonts.sansRegular,
+    fontSize: 9,
+    color: colors.stone,
+  },
+  mealRows: { gap: 6 },
+  mealRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    gap: space[2],
+    borderRadius: radii.buttonXl,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+  },
+  mealRowLeft: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: space[2],
+    flexShrink: 1,
+  },
+  mealIndex: {
+    fontFamily: fonts.serifRegular,
+    fontSize: fontSize.eyebrow,
+    lineHeight: fontSize.eyebrow,
+    color: colors.accent,
+    marginTop: 1,
+    fontVariant: ['tabular-nums'],
+  },
+  mealLabel: {
+    flexShrink: 1,
+    fontFamily: fonts.sansRegular,
+    fontSize: fontSize['2xs'],
+    lineHeight: 14,
+    color: colors.text,
+  },
+  mealCalories: {
+    fontFamily: fonts.sansRegular,
+    fontSize: fontSize.eyebrow,
+    color: colors.stone,
+    fontVariant: ['tabular-nums'],
+  },
+});

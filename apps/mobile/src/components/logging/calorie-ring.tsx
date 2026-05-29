@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { useEffect } from 'react';
 import { View } from 'react-native';
 import Animated, {
@@ -19,17 +20,24 @@ const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
 /**
  * The calorie ring shows REMAINING calories as the fill fraction (matches web's
  * shared/calorie-ring). The progress arc animates its strokeDashoffset.
+ *
+ * `center` overrides the default in-ring content (the remaining number + "left"
+ * eyebrow) with a custom node — the dashboard TodayDock passes a <Flame/> here,
+ * mirroring the web's `center` prop, because the remaining figure is already
+ * shown as the hero number above the ring.
  */
 export function CalorieRing({
   current,
   target,
   size = 78,
   strokeWidth = 3,
+  center,
 }: {
   current: number;
   target: number;
   size?: number;
   strokeWidth?: number;
+  center?: ReactNode;
 }) {
   const remaining = Math.max(0, target - current);
   const pct = target > 0 ? Math.min(remaining / target, 1) : 0;
@@ -79,18 +87,22 @@ export function CalorieRing({
           transform={`rotate(-90 ${CENTER} ${CENTER})`}
         />
       </Svg>
-      <Text
-        variant="numDisplay"
-        style={{ fontSize: 17, lineHeight: 17, letterSpacing: 0 }}
-      >
-        {remaining.toLocaleString()}
-      </Text>
-      <Text
-        variant="eyebrow"
-        style={{ fontSize: 8, letterSpacing: 1.2, marginTop: 2 }}
-      >
-        left
-      </Text>
+      {center ?? (
+        <>
+          <Text
+            variant="numDisplay"
+            style={{ fontSize: 17, lineHeight: 17, letterSpacing: 0 }}
+          >
+            {remaining.toLocaleString()}
+          </Text>
+          <Text
+            variant="eyebrow"
+            style={{ fontSize: 8, letterSpacing: 1.2, marginTop: 2 }}
+          >
+            left
+          </Text>
+        </>
+      )}
     </View>
   );
 }
