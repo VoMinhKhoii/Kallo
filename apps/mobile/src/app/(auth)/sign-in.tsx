@@ -36,7 +36,7 @@ export default function SignIn() {
       setError(signInError.message);
       return;
     }
-    router.replace('/(app)');
+    router.replace('/logging');
   };
 
   const signInWithGoogle = async () => {
