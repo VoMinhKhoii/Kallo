@@ -17,6 +17,7 @@ import {
   text,
   timestamp,
   unique,
+  uniqueIndex,
   uuid,
   vector,
 } from 'drizzle-orm/pg-core';
@@ -849,5 +850,196 @@ export const pipelineShadowRuns = pgTable(
   },
   (table) => [
     index('pipeline_shadow_runs_primary_run_idx').on(table.primaryRunId),
+  ]
+);
+
+// ---------------------------------------------------------------------------
+// Group Tracking — Public Profiles
+// ---------------------------------------------------------------------------
+// Identity projection table. Holds ONLY the cross-user-visible social fields
+// (handle, display name, avatar seed) so that reading another user's social
+// identity never touches user_profiles, which co-locates weight_kg/tdee_kcal/
+// calorie_target under an owner-only SELECT policy. user_profiles is left
+// entirely untouched.
+//
+// `handle` is modeled as lowercased text + a unique index (not extensions.citext)
+// to keep this Drizzle-generated migration free of any dependency on a
+// hand-authored CREATE EXTENSION migration; case-insensitivity is enforced in
+// the app layer (lowercase on write, exact-match lookup on read).
+
+export const publicProfiles = pgTable(
+  'public_profiles',
+  {
+    userId: uuid('user_id')
+      .primaryKey()
+      .references(() => authUsers.id, { onDelete: 'cascade' }),
+    handle: text('handle').notNull(),
+    displayName: text('display_name'),
+    avatarSeed: text('avatar_seed'),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [unique('public_profiles_handle_uniq').on(table.handle)]
+);
+
+// ---------------------------------------------------------------------------
+// Group Tracking — Friendships
+// ---------------------------------------------------------------------------
+// Symmetric, canonical-ordered friendship edge. The user_low < user_high check
+// plus the composite unique structurally forbids duplicate or asymmetric rows.
+// status CHECK is pre-widened with every reserved value to satisfy the
+// append-only invariant.
+
+export const friendships = pgTable(
+  'friendships',
+  {
+    id: uuid('id')
+      .primaryKey()
+      .default(sql`gen_random_uuid()`),
+    userLow: uuid('user_low')
+      .notNull()
+      .references(() => authUsers.id, { onDelete: 'cascade' }),
+    userHigh: uuid('user_high')
+      .notNull()
+      .references(() => authUsers.id, { onDelete: 'cascade' }),
+    status: text('status').notNull().default('pending'),
+    requestedBy: uuid('requested_by')
+      .notNull()
+      .references(() => authUsers.id, { onDelete: 'cascade' }),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    unique('friendships_user_low_high_uniq').on(table.userLow, table.userHigh),
+    check('friendships_user_order_check', sql`${table.userLow} < ${table.userHigh}`),
+    check(
+      'friendships_status_check',
+      sql`${table.status} IN ('pending', 'accepted', 'blocked')`
+    ),
+  ]
+);
+
+// ---------------------------------------------------------------------------
+// Group Tracking — Meal Shares
+// ---------------------------------------------------------------------------
+// One opt-in row per shared meal. visibility defaults to 'private' — a meal is
+// invisible to friends until an explicit 'circle' (or 'public') row exists. The
+// partial-unique on meal_id keeps it one-row-per-meal. meals itself is left
+// untouched (still private-by-default).
+
+export const mealShares = pgTable(
+  'meal_shares',
+  {
+    id: uuid('id')
+      .primaryKey()
+      .default(sql`gen_random_uuid()`),
+    mealId: uuid('meal_id')
+      .notNull()
+      .references(() => meals.id, { onDelete: 'cascade' }),
+    actorId: uuid('actor_id')
+      .notNull()
+      .references(() => authUsers.id, { onDelete: 'cascade' }),
+    visibility: text('visibility').notNull().default('private'),
+    sharedAt: timestamp('shared_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    unique('meal_shares_meal_id_uniq').on(table.mealId),
+    check(
+      'meal_shares_visibility_check',
+      sql`${table.visibility} IN ('private', 'circle', 'public')`
+    ),
+  ]
+);
+
+// ---------------------------------------------------------------------------
+// Group Tracking — Coach Assignments (schema-only, UI dark)
+// ---------------------------------------------------------------------------
+// Directed coach -> client relationship. Reserved for a later coach console;
+// no writes are wired in the MVP. audience_id is the reserved cohort-container
+// seam (NULL until coaching-as-business is greenlit). rank/status CHECK lists
+// are pre-widened with reserved values for the append-only invariant. The
+// partial unique enforces one active primary coach per client.
+
+export const coachAssignments = pgTable(
+  'coach_assignments',
+  {
+    id: uuid('id')
+      .primaryKey()
+      .default(sql`gen_random_uuid()`),
+    coachId: uuid('coach_id')
+      .notNull()
+      .references(() => authUsers.id, { onDelete: 'cascade' }),
+    clientId: uuid('client_id')
+      .notNull()
+      .references(() => authUsers.id, { onDelete: 'cascade' }),
+    rank: text('rank').notNull().default('primary'),
+    status: text('status').notNull().default('pending'),
+    audienceId: uuid('audience_id'),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    check(
+      'coach_assignments_rank_check',
+      sql`${table.rank} IN ('primary', 'secondary')`
+    ),
+    check(
+      'coach_assignments_status_check',
+      sql`${table.status} IN ('pending', 'active', 'revoked')`
+    ),
+    uniqueIndex('coach_assignments_one_active_primary_idx')
+      .on(table.clientId)
+      .where(sql`rank = 'primary' AND status = 'active'`),
+  ]
+);
+
+// ---------------------------------------------------------------------------
+// Group Tracking — Circle Events
+// ---------------------------------------------------------------------------
+// Append-only event spine consumed via TanStack refetchInterval polling
+// (Realtime deferred). `audience` is the reserved group_id slot (NULL today).
+// The type CHECK list is pre-widened with every reserved event type so future
+// event kinds need no ALTER.
+
+export const circleEvents = pgTable(
+  'circle_events',
+  {
+    id: uuid('id')
+      .primaryKey()
+      .default(sql`gen_random_uuid()`),
+    actorId: uuid('actor_id')
+      .notNull()
+      .references(() => authUsers.id, { onDelete: 'cascade' }),
+    audience: uuid('audience'),
+    type: text('type').notNull(),
+    refId: uuid('ref_id'),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    check(
+      'circle_events_type_check',
+      sql`${table.type} IN ('meal_shared', 'friend_request', 'friend_accepted', 'coach_nudge', 'streak_milestone', 'recap_ready')`
+    ),
+    index('circle_events_audience_created_idx').on(
+      table.audience,
+      sql`${table.createdAt} DESC`
+    ),
+    index('circle_events_actor_created_idx').on(
+      table.actorId,
+      sql`${table.createdAt} DESC`
+    ),
   ]
 );

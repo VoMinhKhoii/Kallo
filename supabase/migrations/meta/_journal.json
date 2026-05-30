@@ -302,6 +302,13 @@
       "when": 1778338800000,
       "tag": "20260509130000_ingredient_query_embeddings_lower_name_en_idx",
       "breakpoints": true
+    },
+    {
+      "idx": 43,
+      "version": "7",
+      "when": 1780124855090,
+      "tag": "20260530070735_lush_talkback",
+      "breakpoints": true
     }
   ]
 }
