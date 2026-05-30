@@ -46,6 +46,22 @@ export function fetchFriends(): Promise<CircleMember[]> {
   );
 }
 
+export function fetchMyProfile(): Promise<PublicProfile | null> {
+  return request<{ profile: PublicProfile | null }>(
+    '/api/v1/groups/profile'
+  ).then((r) => r.profile);
+}
+
+export function saveMyProfile(input: {
+  handle: string;
+  displayName?: string;
+}): Promise<PublicProfile> {
+  return postJson<{ profile: PublicProfile }>(
+    '/api/v1/groups/profile',
+    input
+  ).then((r) => r.profile);
+}
+
 export function searchFriendByHandle(
   handle: string
 ): Promise<PublicProfile | null> {

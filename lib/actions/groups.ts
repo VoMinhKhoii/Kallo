@@ -105,31 +105,68 @@ export async function upsertPublicProfile(
     throw Errors.conflict('Handle này đã được sử dụng.');
   }
 
-  const [row] = await db
-    .insert(publicProfiles)
-    .values({
-      userId: actorId,
-      handle,
-      displayName: parsed.displayName ?? null,
-      avatarSeed: parsed.avatarSeed ?? null,
-    })
-    .onConflictDoUpdate({
-      target: publicProfiles.userId,
-      set: {
+  // Seed the warm-palette avatar/swatch from the handle when the caller does
+  // not supply one, so every claimed profile renders a stable, distinct color.
+  const avatarSeed = parsed.avatarSeed ?? handle;
+
+  try {
+    const [row] = await db
+      .insert(publicProfiles)
+      .values({
+        userId: actorId,
         handle,
         displayName: parsed.displayName ?? null,
-        avatarSeed: parsed.avatarSeed ?? null,
-        updatedAt: new Date(),
-      },
-    })
-    .returning();
+        avatarSeed,
+      })
+      .onConflictDoUpdate({
+        target: publicProfiles.userId,
+        set: {
+          handle,
+          displayName: parsed.displayName ?? null,
+          avatarSeed,
+          updatedAt: new Date(),
+        },
+      })
+      .returning();
 
-  return {
-    userId: row.userId,
-    handle: row.handle,
-    displayName: row.displayName,
-    avatarSeed: row.avatarSeed,
-  };
+    return {
+      userId: row.userId,
+      handle: row.handle,
+      displayName: row.displayName,
+      avatarSeed: row.avatarSeed,
+    };
+  } catch (error) {
+    // The handle unique index is the ultimate guard: a concurrent claim of the
+    // same handle by a different user (which the pre-check above can race past)
+    // surfaces as a Postgres 23505 unique violation. Map it to a clean 409
+    // instead of leaking a raw 500.
+    if ((error as { code?: string } | null)?.code === '23505') {
+      throw Errors.conflict('Handle này đã được sử dụng.');
+    }
+    throw error;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// getMyPublicProfile — the actor's own profile (or null if not claimed yet)
+// ---------------------------------------------------------------------------
+
+export async function getMyPublicProfile(
+  actorId: string,
+  db: Db = defaultDb
+): Promise<PublicProfile | null> {
+  const rows = await db
+    .select({
+      userId: publicProfiles.userId,
+      handle: publicProfiles.handle,
+      displayName: publicProfiles.displayName,
+      avatarSeed: publicProfiles.avatarSeed,
+    })
+    .from(publicProfiles)
+    .where(eq(publicProfiles.userId, actorId))
+    .limit(1);
+
+  return rows[0] ?? null;
 }
 
 // ---------------------------------------------------------------------------

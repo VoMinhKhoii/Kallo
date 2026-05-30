@@ -1,7 +1,7 @@
 'use client';
 
-import { Check, Link2, Loader2, Search, UserPlus, X } from 'lucide-react';
-import { useTranslations } from 'next-intl';
+import { Check, Copy, Link2, Loader2, Search, UserPlus, X } from 'lucide-react';
+import { useLocale, useTranslations } from 'next-intl';
 import { type ReactNode, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import {
@@ -20,12 +20,17 @@ import {
   useFriends,
   useRequestFriend,
 } from '@/hooks/use-friends';
+import { useMyProfile, useSaveProfile } from '@/hooks/use-profile';
+import { ApiError } from '@/lib/errors';
 import type { CircleMember, PublicProfile } from '@/lib/groups/client';
-import { HANDLE_MIN_LENGTH } from '@/lib/groups/handles';
+import { HANDLE_MIN_LENGTH, validateHandle } from '@/lib/groups/handles';
 
 interface AddFriendDialogProps {
   /** The control that opens the dialog (e.g. a button). */
   trigger: ReactNode;
+  /** When set (arriving via an invite link ?add=handle), the dialog opens
+   *  automatically with this handle pre-searched. */
+  initialHandle?: string;
 }
 
 function initialFor(profile: PublicProfile): string {
@@ -70,9 +75,9 @@ function ProfileIdentity({ profile }: { profile: PublicProfile }) {
   );
 }
 
-function SearchSection() {
+function SearchSection({ initialQuery = '' }: { initialQuery?: string }) {
   const t = useTranslations('groups.addFriend');
-  const [query, setQuery] = useState('');
+  const [query, setQuery] = useState(initialQuery);
   const normalized = query.trim().toLowerCase();
   const { data: result, isFetching } = useFriendSearch(normalized);
   const requestFriend = useRequestFriend();
@@ -294,13 +299,127 @@ function RequestsAndCircle() {
   );
 }
 
-export function AddFriendDialog({ trigger }: AddFriendDialogProps) {
+/**
+ * Top of the dialog: claim your @handle if you don't have one yet (the
+ * prerequisite for being findable / appearing in a friend's circle), otherwise
+ * surface your shareable invite link as readable text plus a copy button.
+ */
+function InviteSection() {
   const t = useTranslations('groups.addFriend');
+  const locale = useLocale();
+  const { data: profile, isLoading } = useMyProfile();
+  const saveProfile = useSaveProfile();
+  const [handle, setHandle] = useState('');
 
-  const handleCopyLink = async () => {
+  // Don't flash the claim form before we know whether a handle already exists.
+  if (isLoading) {
+    return (
+      <div className="h-[76px] animate-pulse rounded-xl bg-nham-hover/50" />
+    );
+  }
+
+  if (!profile) {
+    const normalized = handle.trim().toLowerCase().replace(/^@+/, '');
+    const validation =
+      normalized.length === 0 ? null : validateHandle(normalized);
+    const canSave = validation?.valid === true && !saveProfile.isPending;
+
+    // Show the specific reason once they've typed enough to judge; stay quiet
+    // while still below the minimum length.
+    let issue = '';
+    if (
+      validation &&
+      !validation.valid &&
+      normalized.length >= HANDLE_MIN_LENGTH
+    ) {
+      issue =
+        validation.error === 'reserved'
+          ? t('handleReserved')
+          : t('handleInvalid');
+    }
+
+    const submit = () => {
+      if (!canSave) return;
+      saveProfile.mutate(
+        { handle: normalized },
+        {
+          onError: (error) => {
+            const code = error instanceof ApiError ? error.code : null;
+            toast.error(
+              code === 'CONFLICT'
+                ? t('handleTaken')
+                : code === 'VALIDATION_FAILED'
+                  ? t('handleInvalid')
+                  : t('claimError')
+            );
+          },
+        }
+      );
+    };
+
+    return (
+      <div className="space-y-2 rounded-xl border border-nham-accent/40 bg-nham-accent/[0.06] p-3">
+        <p
+          className="font-medium text-[13px] text-nham-text"
+          style={{ fontFamily: 'DM Sans, sans-serif' }}
+        >
+          {t('claimTitle')}
+        </p>
+        <div className="flex items-stretch gap-2">
+          <div className="relative flex-1">
+            <span
+              className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-[14px] text-nham-text-muted"
+              style={{ fontFamily: 'DM Sans, sans-serif' }}
+            >
+              @
+            </span>
+            <Input
+              value={handle}
+              onChange={(event) => setHandle(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter') {
+                  event.preventDefault();
+                  submit();
+                }
+              }}
+              placeholder={t('claimPlaceholder')}
+              aria-label={t('claimTitle')}
+              autoComplete="off"
+              autoCapitalize="none"
+              spellCheck={false}
+              maxLength={30}
+              className="border-nham-border/60 bg-white pl-7 text-nham-text"
+              style={{ fontFamily: 'DM Sans, sans-serif' }}
+            />
+          </div>
+          <button
+            type="button"
+            onClick={submit}
+            disabled={!canSave}
+            className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-nham-btn px-3.5 font-medium text-[12px] text-white transition-colors hover:bg-nham-btn/90 disabled:cursor-not-allowed disabled:opacity-60"
+            style={{ fontFamily: 'DM Sans, sans-serif' }}
+          >
+            {saveProfile.isPending ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            ) : null}
+            {saveProfile.isPending ? t('saving') : t('save')}
+          </button>
+        </div>
+        <p
+          className={`text-[11px] ${issue ? 'text-nham-danger' : 'text-nham-text-muted'}`}
+          style={{ fontFamily: 'DM Sans, sans-serif' }}
+        >
+          {issue || t('claimHint')}
+        </p>
+      </div>
+    );
+  }
+
+  const origin = typeof window === 'undefined' ? '' : window.location.origin;
+  const inviteLink = `${origin}/${locale}/groups?add=${profile.handle}`;
+  const copy = async () => {
     try {
-      const link = `${window.location.origin}/`;
-      await navigator.clipboard.writeText(link);
+      await navigator.clipboard.writeText(inviteLink);
       toast.success(t('linkCopied'));
     } catch {
       toast.error(t('linkCopyError'));
@@ -308,7 +427,43 @@ export function AddFriendDialog({ trigger }: AddFriendDialogProps) {
   };
 
   return (
-    <Dialog>
+    <div className="space-y-1.5">
+      <p
+        className="flex items-center gap-1.5 px-1 font-medium text-[10px] text-nham-text-muted uppercase tracking-[0.08em]"
+        style={{ fontFamily: 'DM Sans, sans-serif' }}
+      >
+        <Link2 className="h-3.5 w-3.5" />
+        {t('yourInvite')}
+      </p>
+      <div className="flex items-stretch gap-2">
+        <Input
+          readOnly
+          value={inviteLink}
+          onFocus={(event) => event.currentTarget.select()}
+          aria-label={t('yourInvite')}
+          className="flex-1 border-nham-border/60 bg-white text-[12px] text-nham-text-muted"
+          style={{ fontFamily: 'DM Sans, sans-serif' }}
+        />
+        <button
+          type="button"
+          onClick={copy}
+          className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-nham-border/60 bg-white px-3.5 font-medium text-[12px] text-nham-text transition-colors hover:border-nham-accent/50"
+          style={{ fontFamily: 'DM Sans, sans-serif' }}
+        >
+          <Copy className="h-3.5 w-3.5" />
+          {t('copy')}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+export function AddFriendDialog({ trigger, initialHandle }: AddFriendDialogProps) {
+  const t = useTranslations('groups.addFriend');
+  const [open, setOpen] = useState(Boolean(initialHandle));
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>{trigger}</DialogTrigger>
       <DialogContent className="gap-5 border-nham-border/60 bg-nham-surface">
         <DialogHeader>
@@ -326,17 +481,9 @@ export function AddFriendDialog({ trigger }: AddFriendDialogProps) {
           </DialogDescription>
         </DialogHeader>
 
-        <SearchSection />
+        <InviteSection />
 
-        <button
-          type="button"
-          onClick={handleCopyLink}
-          className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-nham-border/60 bg-white px-3 py-2.5 font-medium text-[13px] text-nham-text-muted transition-colors hover:border-nham-accent/50 hover:text-nham-text"
-          style={{ fontFamily: 'DM Sans, sans-serif' }}
-        >
-          <Link2 className="h-4 w-4" />
-          {t('copyLink')}
-        </button>
+        <SearchSection initialQuery={initialHandle} />
 
         <div className="max-h-[40vh] overflow-y-auto">
           <RequestsAndCircle />
