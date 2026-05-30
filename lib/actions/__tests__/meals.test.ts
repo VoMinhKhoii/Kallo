@@ -63,6 +63,11 @@ vi.mock('@/lib/db', () => ({
 vi.mock('@/lib/db/schema', () => ({
   meals: { id: 'meals.id', userId: 'meals.userId', loggedAt: 'meals.loggedAt' },
   mealItems: { mealId: 'mealItems.mealId' },
+  mealShares: {
+    mealId: 'mealShares.mealId',
+    id: 'mealShares.id',
+    visibility: 'mealShares.visibility',
+  },
   pendingAnalyses: {
     id: 'pendingAnalyses.id',
     userId: 'pendingAnalyses.userId',
@@ -497,6 +502,12 @@ describe('loadMealsByDate', () => {
               sodiumMg: null,
             },
           ]),
+        }),
+      })
+      // Third select: the per-meal share lookup. No share for this meal.
+      .mockReturnValueOnce({
+        from: vi.fn().mockReturnValue({
+          where: vi.fn().mockResolvedValue([]),
         }),
       });
 
