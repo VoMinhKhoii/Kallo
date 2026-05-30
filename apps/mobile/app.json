@@ -8,9 +8,11 @@
     "scheme": "nham",
     "userInterfaceStyle": "light",
     "ios": {
-      "icon": "./assets/expo.icon"
+      "icon": "./assets/expo.icon",
+      "bundleIdentifier": "com.khoivo.nham"
     },
     "android": {
+      "package": "com.khoivo.nham",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -42,7 +44,8 @@
           "experimentalLauncherActivity": false
         }
       ],
-      "expo-localization"
+      "expo-localization",
+      "@sentry/react-native"
     ],
     "experiments": {
       "typedRoutes": false,

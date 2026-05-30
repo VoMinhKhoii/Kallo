@@ -88,3 +88,16 @@ export const apiPost = <T>(path: string, body?: unknown) =>
 export const apiPut = <T>(path: string, body?: unknown) =>
   request<T>('PUT', path, body ?? {});
 export const apiDelete = <T>(path: string) => request<T>('DELETE', path);
+
+/**
+ * Fire-and-forget ping to wake a scale-to-zero backend (Cloud Run) on launch,
+ * so the first authed request doesn't pay the cold-start latency. Hits the
+ * public health endpoint; failures are swallowed (offline / unreachable is fine).
+ */
+export async function warmupApi(): Promise<void> {
+  try {
+    await fetch(`${BASE_URL}/api/healthz`, { method: 'GET' });
+  } catch {
+    // Best-effort warmup — ignore failures.
+  }
+}

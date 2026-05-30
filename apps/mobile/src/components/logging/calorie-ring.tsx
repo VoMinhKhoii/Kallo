@@ -3,6 +3,7 @@ import { useEffect } from 'react';
 import { View } from 'react-native';
 import Animated, {
   Easing,
+  ReduceMotion,
   useAnimatedProps,
   useSharedValue,
   withTiming,
@@ -47,6 +48,7 @@ export function CalorieRing({
     offset.value = withTiming(CIRCUMFERENCE * (1 - pct), {
       duration: 1000,
       easing: Easing.bezier(0.16, 1, 0.3, 1),
+      reduceMotion: ReduceMotion.System,
     });
   }, [pct, offset]);
 

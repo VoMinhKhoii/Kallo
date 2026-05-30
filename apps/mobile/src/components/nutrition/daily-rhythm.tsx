@@ -120,7 +120,11 @@ function CompositionPill({ segments, ariaLabel }: CompositionPillProps) {
   useEffect(() => {
     scale.value = withDelay(
       150,
-      withTiming(1, { duration: 600, easing: Easing.out(Easing.cubic) })
+      withTiming(1, {
+        duration: 600,
+        easing: Easing.out(Easing.cubic),
+        reduceMotion: ReduceMotion.System,
+      })
     );
   }, [scale]);
 

@@ -10,14 +10,18 @@
 // solved (likely by converting to a Bun workspace), keep shared usage to
 // TYPES only; vendor any needed pure value helpers into the app. The aliases
 // below are wired and ready for when that infra lands.
-const { getDefaultConfig } = require('expo/metro-config');
+//
+// Sentry: getSentryExpoConfig is a drop-in for expo's getDefaultConfig that
+// adds Sentry's Metro serializer (source maps). All custom resolver /
+// watchFolders config below is preserved verbatim.
+const { getSentryExpoConfig } = require('@sentry/react-native/metro');
 const fs = require('fs');
 const path = require('path');
 
 const projectRoot = __dirname;
 const monorepoRoot = path.resolve(projectRoot, '../..');
 
-const config = getDefaultConfig(projectRoot);
+const config = getSentryExpoConfig(projectRoot);
 
 config.watchFolders = [monorepoRoot];
 config.resolver.nodeModulesPaths = [

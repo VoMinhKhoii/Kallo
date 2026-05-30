@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { type AccessibilityProps, StyleSheet, View } from 'react-native';
 import Animated, {
   Easing,
+  ReduceMotion,
   useAnimatedStyle,
   useSharedValue,
   withDelay,
@@ -43,6 +44,7 @@ export function TargetProgressBar({
       withTiming(fillWidth, {
         duration,
         easing: Easing.out(Easing.cubic),
+        reduceMotion: ReduceMotion.System,
       })
     );
   }, [fillWidth, duration, delay, width]);

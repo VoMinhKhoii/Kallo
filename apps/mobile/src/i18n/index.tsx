@@ -1,7 +1,4 @@
 import * as Localization from 'expo-localization';
-import type { ReactNode } from 'react';
-import { useMemo } from 'react';
-import { IntlProvider } from 'use-intl';
 import en from './messages/en.json';
 import vi from './messages/vi.json';
 
@@ -10,9 +7,12 @@ import vi from './messages/vi.json';
  * the same message catalogs (vendored from ../../messages via scripts/sync-i18n.mjs).
  * Components call `useTranslations('namespace')` exactly like the web, so a web
  * component ports over by swapping its `next-intl` import for `~/i18n`.
+ *
+ * The active locale is resolved in `locale-provider.tsx` (profile.preferredLocale
+ * → device locale → 'en'); this module owns the catalogs + the device fallback.
  */
 
-const MESSAGES = { en, vi } as const;
+export const MESSAGES = { en, vi } as const;
 export type AppLocale = keyof typeof MESSAGES;
 const DEFAULT_LOCALE: AppLocale = 'en';
 
@@ -20,20 +20,6 @@ const DEFAULT_LOCALE: AppLocale = 'en';
 export function resolveDeviceLocale(): AppLocale {
   const code = Localization.getLocales()[0]?.languageCode;
   return code === 'vi' ? 'vi' : DEFAULT_LOCALE;
-}
-
-export function I18nProvider({ children }: { children: ReactNode }) {
-  const locale = useMemo(resolveDeviceLocale, []);
-  const timeZone = useMemo(
-    () => Localization.getCalendars()[0]?.timeZone ?? undefined,
-    []
-  );
-
-  return (
-    <IntlProvider locale={locale} messages={MESSAGES[locale]} timeZone={timeZone}>
-      {children}
-    </IntlProvider>
-  );
 }
 
 export { useTranslations, useFormatter, useLocale, useNow } from 'use-intl';

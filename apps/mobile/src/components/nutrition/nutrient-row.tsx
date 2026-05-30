@@ -59,7 +59,10 @@ export function NutrientRow({ card }: NutrientRowProps) {
   const toggle = () => {
     const next = !open;
     setOpen(next);
-    rotate.value = withTiming(next ? 90 : 0, { duration: 200 });
+    rotate.value = withTiming(next ? 90 : 0, {
+      duration: 200,
+      reduceMotion: ReduceMotion.System,
+    });
   };
 
   return (
