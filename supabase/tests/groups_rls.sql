@@ -28,7 +28,7 @@
 
 BEGIN;
 
-SELECT plan(18);
+SELECT plan(20);
 
 -- -----------------------------------------------------------------------------
 -- Fixtures (planted as the privileged test role, bypassing RLS)
@@ -295,11 +295,12 @@ SELECT is(
 RESET ROLE;
 
 -- =============================================================================
--- (f) Identity vs. metrics split.
---     cross-user public_profiles -> handle/display_name VISIBLE   [positive]
---     cross-user user_profiles   -> body metrics ZERO            [negative]
---     Tested as the stranger, to prove identity is broadly searchable while
---     body metrics stay strictly owner-only.
+-- (f) Identity directory is SCOPED + non-enumerable; metrics stay owner-only.
+--     stranger table SELECT of a profile  -> ZERO   (non-enumerable) [negative]
+--     stranger exact-match RPC            -> resolves the owner      [positive]
+--     stranger partial/prefix RPC         -> ZERO   (no harvest)     [negative]
+--     stranger user_profiles body metrics -> ZERO                    [negative]
+--     accepted friend table SELECT        -> handle VISIBLE          [positive]
 -- =============================================================================
 SET LOCAL ROLE authenticated;
 SELECT set_config(
@@ -308,22 +309,50 @@ SELECT set_config(
   true
 );
 
+-- A stranger cannot enumerate the directory through the table itself.
 SELECT is(
-  (SELECT handle FROM public.public_profiles WHERE user_id = :'owner_id'),
-  'owner_handle',
-  '(f) cross-user public_profiles SELECT returns the handle'
+  (SELECT count(*)::int FROM public.public_profiles WHERE user_id = :'owner_id'),
+  0,
+  '(f) a stranger sees ZERO public_profiles rows via the table (non-enumerable)'
 );
 
+-- ...but the exact-match RPC still resolves a handle for a non-friend, so
+-- add-by-@handle keeps working.
 SELECT is(
-  (SELECT display_name FROM public.public_profiles WHERE user_id = :'owner_id'),
-  'Owner Person',
-  '(f) cross-user public_profiles SELECT returns the display_name'
+  (SELECT count(*)::int FROM public.search_public_profile('owner_handle')
+     WHERE user_id = :'owner_id'),
+  1,
+  '(f) exact-match RPC resolves the owner handle for a non-friend (add-by-@handle works)'
 );
 
+-- A partial handle resolves NOTHING — no prefix/enumeration harvest.
+SELECT is(
+  (SELECT count(*)::int FROM public.search_public_profile('owner')),
+  0,
+  '(f) a partial handle returns ZERO via the RPC (no prefix enumeration)'
+);
+
+-- Body metrics never leak cross-user.
 SELECT is(
   (SELECT count(*)::int FROM public.user_profiles WHERE user_id = :'owner_id'),
   0,
   '(f) cross-user user_profiles SELECT returns ZERO rows (body metrics never leak)'
+);
+
+RESET ROLE;
+
+-- An accepted friend CAN read the owner's identity (needed for the circle feed).
+SET LOCAL ROLE authenticated;
+SELECT set_config(
+  'request.jwt.claims',
+  json_build_object('sub', :'friend_id', 'role', 'authenticated')::text,
+  true
+);
+
+SELECT is(
+  (SELECT handle FROM public.public_profiles WHERE user_id = :'owner_id'),
+  'owner_handle',
+  '(f) an accepted friend CAN read the owner handle via the table'
 );
 
 RESET ROLE;
