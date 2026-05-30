@@ -15,8 +15,19 @@ import {
 } from '@/lib/actions/meals';
 import { NUTRITION_KEYS } from '@/lib/ai/constants';
 import type { NutritionValues } from '@/lib/ai/types';
+import { resolveSliderNutrition } from '@/lib/cheat/slider-nutrition';
 import { recalculateTotals } from '@/lib/meal-utils';
+import type {
+  CheatSliderLevels,
+  CheatSliderSpec,
+} from '@/lib/types/cheat';
 import type { MacroBreakdown, MealItem, ParsedMeal } from '@/lib/types/meal';
+
+/** Client-held cheat data needed to seed the optimistic cheat-meal card. */
+interface OptimisticCheatInput {
+  spec: CheatSliderSpec;
+  levels: CheatSliderLevels;
+}
 
 type QuantityEdit = NonNullable<
   Parameters<typeof confirmAndSaveMealAction>[0]['edits']
@@ -86,8 +97,34 @@ function buildOptimisticMeal(
   rawInput: string,
   loggedAt: string,
   mealId: string,
-  edits?: QuantityEdit[]
+  edits?: QuantityEdit[],
+  cheat?: OptimisticCheatInput
 ): PersistedMeal {
+  // Cheat meal: resolve nutrition from the chosen slider levels (same helper
+  // the server uses), and carry the spec/levels so the card renders the cheat
+  // variant immediately.
+  if (cheat) {
+    const resolved = resolveSliderNutrition(cheat.spec, cheat.levels);
+    return {
+      id: mealId,
+      rawInput,
+      mealSlot: cheat.spec.mealSlot,
+      confidenceOverall: cheat.spec.confidence,
+      loggedAt,
+      nutrition: macrosToNutrition({
+        calories: resolved.caloriesKcal,
+        protein: resolved.proteinG,
+        carbs: resolved.carbohydrateG,
+        fat: resolved.fatG,
+      }),
+      mealItemGroups: [],
+      entryMode: 'cheat',
+      alcoholG: resolved.alcoholG,
+      cheatSliders: { spec: cheat.spec, levels: cheat.levels },
+      estimateRationale: cheat.spec.rationale,
+    };
+  }
+
   const items = applyEditsToItems(parsedMeal.items, edits);
   const groups: PersistedMealItemGroup[] = items.map((item, order) => ({
     name: item.name,
@@ -108,6 +145,10 @@ function buildOptimisticMeal(
     loggedAt,
     nutrition: macrosToNutrition(total),
     mealItemGroups: groups,
+    entryMode: 'precise',
+    alcoholG: null,
+    cheatSliders: null,
+    estimateRationale: null,
   };
 }
 
@@ -118,6 +159,8 @@ type ConfirmMealVariables = Parameters<typeof confirmAndSaveMealAction>[0] & {
   parsedMeal: ParsedMeal;
   rawInput: string;
   loggedAt: string;
+  /** Present for cheat meals — seeds the optimistic cheat card. */
+  cheat?: OptimisticCheatInput;
 };
 
 export function useConfirmMeal(userId: string) {
@@ -129,6 +172,7 @@ export function useConfirmMeal(userId: string) {
       parsedMeal: _parsedMeal,
       rawInput: _rawInput,
       loggedAt: _loggedAt,
+      cheat: _cheat,
       ...input
     }: ConfirmMealVariables) => confirmAndSaveMealAction(input),
     onMutate: async (variables) => {
@@ -143,7 +187,8 @@ export function useConfirmMeal(userId: string) {
         variables.rawInput,
         variables.loggedAt,
         mealId,
-        variables.edits
+        variables.edits,
+        variables.cheat
       );
       queryClient.setQueriesData<LoggingDayData>(filter, (old) => {
         if (!old) {

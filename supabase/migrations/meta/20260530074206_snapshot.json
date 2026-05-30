@@ -1,6 +1,6 @@
 {
-  "id": "11f036a7-cb62-47dc-90c0-51bd730d23c7",
-  "prevId": "f740c4c5-adaf-488a-b473-cff29e939dde",
+  "id": "86eadedf-3e4e-4d6a-8986-dc07e343d3f4",
+  "prevId": "58fb5881-2ffc-4cd8-a283-03d6d5391665",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -102,6 +102,360 @@
       "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.analysis_in_flight_limits": {
+      "name": "analysis_in_flight_limits",
+      "schema": "",
+      "columns": {
+        "key_kind": {
+          "name": "key_kind",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "key_hash": {
+          "name": "key_hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "route": {
+          "name": "route",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "count": {
+          "name": "count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "analysis_in_flight_limits_updated_idx": {
+          "name": "analysis_in_flight_limits_updated_idx",
+          "columns": [
+            {
+              "expression": "updated_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "analysis_in_flight_limits_key_uniq": {
+          "name": "analysis_in_flight_limits_key_uniq",
+          "nullsNotDistinct": false,
+          "columns": [
+            "key_kind",
+            "key_hash",
+            "route"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "analysis_in_flight_limits_key_kind_check": {
+          "name": "analysis_in_flight_limits_key_kind_check",
+          "value": "\"analysis_in_flight_limits\".\"key_kind\" IN ('user')"
+        },
+        "analysis_in_flight_limits_count_check": {
+          "name": "analysis_in_flight_limits_count_check",
+          "value": "\"analysis_in_flight_limits\".\"count\" >= 0"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.analysis_model_budget_events": {
+      "name": "analysis_model_budget_events",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "request_id": {
+          "name": "request_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "route": {
+          "name": "route",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "work_kind": {
+          "name": "work_kind",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "provider": {
+          "name": "provider",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "model": {
+          "name": "model",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "request_count": {
+          "name": "request_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 1
+        },
+        "input_tokens": {
+          "name": "input_tokens",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "output_tokens": {
+          "name": "output_tokens",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "error_category": {
+          "name": "error_category",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "analysis_model_budget_events_created_idx": {
+          "name": "analysis_model_budget_events_created_idx",
+          "columns": [
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "analysis_model_budget_events_work_created_idx": {
+          "name": "analysis_model_budget_events_work_created_idx",
+          "columns": [
+            {
+              "expression": "work_kind",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "analysis_model_budget_events_provider_error_idx": {
+          "name": "analysis_model_budget_events_provider_error_idx",
+          "columns": [
+            {
+              "expression": "provider",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "error_category",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "analysis_model_budget_events_work_kind_check": {
+          "name": "analysis_model_budget_events_work_kind_check",
+          "value": "\"analysis_model_budget_events\".\"work_kind\" IN ('primary', 'shadow', 'nonessential')"
+        },
+        "analysis_model_budget_events_request_count_check": {
+          "name": "analysis_model_budget_events_request_count_check",
+          "value": "\"analysis_model_budget_events\".\"request_count\" >= 0"
+        },
+        "analysis_model_budget_events_input_tokens_check": {
+          "name": "analysis_model_budget_events_input_tokens_check",
+          "value": "\"analysis_model_budget_events\".\"input_tokens\" >= 0"
+        },
+        "analysis_model_budget_events_output_tokens_check": {
+          "name": "analysis_model_budget_events_output_tokens_check",
+          "value": "\"analysis_model_budget_events\".\"output_tokens\" >= 0"
+        },
+        "analysis_model_budget_events_error_category_check": {
+          "name": "analysis_model_budget_events_error_category_check",
+          "value": "\"analysis_model_budget_events\".\"error_category\" IS NULL OR \"analysis_model_budget_events\".\"error_category\" IN ('rate_limit', 'quota', 'server_error', 'timeout', 'network', 'unknown')"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.analysis_rate_limit_windows": {
+      "name": "analysis_rate_limit_windows",
+      "schema": "",
+      "columns": {
+        "key_kind": {
+          "name": "key_kind",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "key_hash": {
+          "name": "key_hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "route": {
+          "name": "route",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "window_kind": {
+          "name": "window_kind",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "window_start": {
+          "name": "window_start",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "count": {
+          "name": "count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "analysis_rate_limit_windows_updated_idx": {
+          "name": "analysis_rate_limit_windows_updated_idx",
+          "columns": [
+            {
+              "expression": "updated_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "analysis_rate_limit_windows_key_uniq": {
+          "name": "analysis_rate_limit_windows_key_uniq",
+          "nullsNotDistinct": false,
+          "columns": [
+            "key_kind",
+            "key_hash",
+            "route",
+            "window_kind",
+            "window_start"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "analysis_rate_limit_windows_key_kind_check": {
+          "name": "analysis_rate_limit_windows_key_kind_check",
+          "value": "\"analysis_rate_limit_windows\".\"key_kind\" IN ('user', 'ip')"
+        },
+        "analysis_rate_limit_windows_window_kind_check": {
+          "name": "analysis_rate_limit_windows_window_kind_check",
+          "value": "\"analysis_rate_limit_windows\".\"window_kind\" IN ('minute', 'hour', 'day')"
+        },
+        "analysis_rate_limit_windows_count_check": {
+          "name": "analysis_rate_limit_windows_count_check",
+          "value": "\"analysis_rate_limit_windows\".\"count\" >= 0"
+        }
+      },
       "isRLSEnabled": false
     },
     "public.body_weight_log": {
@@ -598,6 +952,31 @@
           "notNull": true,
           "default": "now()"
         },
+        "entry_mode": {
+          "name": "entry_mode",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'precise'"
+        },
+        "alcohol_g": {
+          "name": "alcohol_g",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cheat_sliders": {
+          "name": "cheat_sliders",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "estimate_rationale": {
+          "name": "estimate_rationale",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
         "calories_kcal": {
           "name": "calories_kcal",
           "type": "numeric",
@@ -831,6 +1210,10 @@
         "meals_confidence_overall_check": {
           "name": "meals_confidence_overall_check",
           "value": "\"meals\".\"confidence_overall\" IN ('high', 'medium', 'low')"
+        },
+        "meals_entry_mode_check": {
+          "name": "meals_entry_mode_check",
+          "value": "\"meals\".\"entry_mode\" IN ('precise', 'cheat')"
         }
       },
       "isRLSEnabled": false
@@ -864,6 +1247,20 @@
           "primaryKey": false,
           "notNull": true
         },
+        "entry_mode": {
+          "name": "entry_mode",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'precise'"
+        },
+        "logged_at": {
+          "name": "logged_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
         "expires_at": {
           "name": "expires_at",
           "type": "timestamp with time zone",
@@ -894,6 +1291,27 @@
           "concurrently": false,
           "method": "btree",
           "with": {}
+        },
+        "pending_analyses_user_logged_at_idx": {
+          "name": "pending_analyses_user_logged_at_idx",
+          "columns": [
+            {
+              "expression": "user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "logged_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
         }
       },
       "foreignKeys": {
@@ -904,6 +1322,105 @@
           "schemaTo": "auth",
           "columnsFrom": [
             "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "pending_analyses_entry_mode_check": {
+          "name": "pending_analyses_entry_mode_check",
+          "value": "\"pending_analyses\".\"entry_mode\" IN ('precise', 'cheat')"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.pipeline_llm_call_metadata": {
+      "name": "pipeline_llm_call_metadata",
+      "schema": "",
+      "columns": {
+        "llm_call_id": {
+          "name": "llm_call_id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "provider": {
+          "name": "provider",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "region": {
+          "name": "region",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cache_status": {
+          "name": "cache_status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "input_tokens": {
+          "name": "input_tokens",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "output_tokens": {
+          "name": "output_tokens",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cached_tokens": {
+          "name": "cached_tokens",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "thought_tokens": {
+          "name": "thought_tokens",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "prompt_chars": {
+          "name": "prompt_chars",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "schema_chars": {
+          "name": "schema_chars",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "pipeline_llm_call_metadata_llm_call_id_pipeline_llm_calls_id_fk": {
+          "name": "pipeline_llm_call_metadata_llm_call_id_pipeline_llm_calls_id_fk",
+          "tableFrom": "pipeline_llm_call_metadata",
+          "tableTo": "pipeline_llm_calls",
+          "columnsFrom": [
+            "llm_call_id"
           ],
           "columnsTo": [
             "id"
@@ -1499,6 +2016,27 @@
           "notNull": true,
           "default": 0
         },
+        "language_guard_misfire": {
+          "name": "language_guard_misfire",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "language_retry_count": {
+          "name": "language_retry_count",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "alias_fallback_fired": {
+          "name": "alias_fallback_fired",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
         "prompt_personalization_fields": {
           "name": "prompt_personalization_fields",
           "type": "text[]",
@@ -1507,7 +2045,40 @@
           "default": "'{}'::text[]"
         }
       },
-      "indexes": {},
+      "indexes": {
+        "pipeline_runs_language_guard_misfire_idx": {
+          "name": "pipeline_runs_language_guard_misfire_idx",
+          "columns": [
+            {
+              "expression": "language_guard_misfire",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "where": "language_guard_misfire = true",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "pipeline_runs_alias_fallback_fired_idx": {
+          "name": "pipeline_runs_alias_fallback_fired_idx",
+          "columns": [
+            {
+              "expression": "alias_fallback_fired",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "where": "alias_fallback_fired = true",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
       "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},

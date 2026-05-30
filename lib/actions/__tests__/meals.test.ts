@@ -254,6 +254,86 @@ describe('confirmAndSaveMealAction', () => {
     expect(mealRow.id).toBe(UUID_MEAL);
   });
 
+  it('resolves cheat-meal nutrition from slider levels and inserts zero items', async () => {
+    const capturedValues: Record<string, unknown>[] = [];
+    const cheatSpec = {
+      rationale: 'Korean BBQ — meat-forward, fairly rich.',
+      mealSlot: 'dinner' as const,
+      confidence: 'medium' as const,
+      sliders: [
+        {
+          key: 'protein' as const,
+          label: 'Thịt',
+          defaultLevel: 5,
+          anchors: [
+            { level: 0, label: 'không', proteinG: 0 },
+            { level: 10, label: 'tiệc thịt', proteinG: 120 },
+          ],
+        },
+        {
+          key: 'fat' as const,
+          label: 'Độ béo',
+          defaultLevel: 5,
+          anchors: [
+            { level: 0, label: 'nạc', fatG: 0 },
+            { level: 10, label: 'mỡ', fatG: 80 },
+          ],
+        },
+        {
+          key: 'drinks' as const,
+          label: 'Đồ uống',
+          defaultLevel: 0,
+          anchors: [
+            { level: 0, label: 'không', alcoholG: 0 },
+            { level: 10, label: 'bia', alcoholG: 40 },
+          ],
+        },
+      ],
+    };
+
+    mockTxDelete.mockReturnValue({
+      where: vi.fn().mockReturnValue({
+        returning: vi.fn().mockResolvedValue([
+          {
+            id: UUID_1,
+            userId: mockUser.id,
+            rawInput: 'Korean BBQ buffet',
+            entryMode: 'cheat',
+            pipelineResult: { entryMode: 'cheat', spec: cheatSpec },
+            loggedAt: LOGGED_AT,
+          },
+        ]),
+      }),
+    });
+
+    mockTxInsert.mockImplementation(() => ({
+      values: vi.fn().mockImplementation((vals: Record<string, unknown>) => {
+        capturedValues.push(vals);
+        return { returning: vi.fn().mockResolvedValue([{ id: UUID_MEAL }]) };
+      }),
+    }));
+
+    const result = await confirmAndSaveMealAction({
+      analysisId: UUID_1,
+      // protein 10 → 120g, fat 5 → 40g, drinks 10 → 40g alcohol
+      levels: { protein: 10, fat: 5, drinks: 10 },
+    });
+
+    expect(result).toEqual({ mealId: UUID_MEAL });
+    // Only the meals row — no meal_items insert for a cheat meal.
+    expect(mockTxInsert).toHaveBeenCalledTimes(1);
+
+    const mealRow = capturedValues[0];
+    expect(mealRow.entryMode).toBe('cheat');
+    expect(mealRow.proteinG).toBe(120);
+    expect(mealRow.fatG).toBe(40);
+    expect(mealRow.alcoholG).toBe(40);
+    // 4*120 + 9*40 + 7*40 = 480 + 360 + 280 = 1120
+    expect(mealRow.caloriesKcal).toBe(1120);
+    expect(mealRow.estimateRationale).toBe(cheatSpec.rationale);
+    expect(mealRow.mealSlot).toBe('dinner');
+  });
+
   it('should reject invalid UUID', async () => {
     await expect(
       confirmAndSaveMealAction({ analysisId: 'not-a-uuid' })

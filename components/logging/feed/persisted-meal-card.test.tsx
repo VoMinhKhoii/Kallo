@@ -77,6 +77,10 @@ const mealWithUnknownMacros: PersistedMeal = {
       ingredients: [],
     },
   ],
+  entryMode: 'precise',
+  alcoholG: null,
+  cheatSliders: null,
+  estimateRationale: null,
 };
 
 describe('PersistedMealCard', () => {

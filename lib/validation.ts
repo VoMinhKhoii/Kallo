@@ -47,6 +47,12 @@ export const mealMessageSchema = z.object({
   locale: z.enum(['en', 'vi']).optional(),
   loggedDate: dateStringSchema,
   timezoneOffset: timezoneOffsetSchema,
+  // Cheat-meal logging: when mode='cheat', the route runs the slider estimator
+  // instead of the decomposition pipeline. `cheatType` is an optional chip and
+  // `clarifyAnswer` carries the reply to a prior vague-input clarifying question.
+  mode: z.enum(['precise', 'cheat']).optional(),
+  cheatType: z.string().trim().max(60).optional(),
+  clarifyAnswer: z.string().trim().max(200).optional(),
 });
 
 /** Shared schema for a single weight log entry. */

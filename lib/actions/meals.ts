@@ -11,6 +11,12 @@ import {
 } from '@/lib/ai/pipeline/goal-adjustment';
 import type { NutritionValues, PipelineResult } from '@/lib/ai/types';
 import { requireAuthAndProfile } from '@/lib/auth';
+import { resolveSliderNutrition } from '@/lib/cheat/slider-nutrition';
+import type {
+  CheatSliderLevels,
+  CheatSliderSpec,
+  CheatSlidersPersisted,
+} from '@/lib/types/cheat';
 import { getUtcDayRangeForLocalDate } from '@/lib/date/local-day';
 import { db } from '@/lib/db';
 import {
@@ -44,6 +50,15 @@ const confirmAndSaveSchema = z.object({
       })
     )
     .max(50)
+    .optional(),
+  // Cheat-meal: the user's chosen slider positions (0–10 per axis). The server
+  // recomputes nutrition from the staged spec + these levels — it never trusts
+  // client-sent nutrition numbers.
+  levels: z
+    .partialRecord(
+      z.enum(['protein', 'carbs', 'fat', 'drinks']),
+      z.number().min(0).max(10)
+    )
     .optional(),
 });
 
@@ -123,6 +138,7 @@ export async function confirmAndSaveMealAction(input: {
     ingredientIndex?: number;
     newGrams: number;
   }[];
+  levels?: CheatSliderLevels;
 }) {
   const parsed = confirmAndSaveSchema.parse(input);
   const { user, profile } = await requireAuthAndProfile();
@@ -143,6 +159,44 @@ export async function confirmAndSaveMealAction(input: {
       throw Errors.validationFailed(
         'Phân tích không tồn tại hoặc đã được lưu.'
       );
+    }
+
+    // Cheat-meal branch: recompute nutrition from the staged slider spec + the
+    // user's chosen levels (server-authoritative), insert a single meal row
+    // with zero meal_items, and store the spec/levels for re-edit.
+    if (pending.entryMode === 'cheat') {
+      const { spec } = pending.pipelineResult as {
+        entryMode: 'cheat';
+        spec: CheatSliderSpec;
+      };
+      const levels: CheatSliderLevels = parsed.levels ?? {};
+      const resolved = resolveSliderNutrition(spec, levels);
+
+      const loggedAt = pending.loggedAt;
+      const mealSlot = spec.mealSlot ?? inferMealSlot(loggedAt);
+      const persisted: CheatSlidersPersisted = { spec, levels };
+
+      const [meal] = await tx
+        .insert(meals)
+        .values({
+          ...(parsed.mealId ? { id: parsed.mealId } : {}),
+          userId: user.id,
+          rawInput: pending.rawInput,
+          mealSlot,
+          confidenceOverall: spec.confidence,
+          loggedAt,
+          entryMode: 'cheat',
+          caloriesKcal: resolved.caloriesKcal,
+          proteinG: resolved.proteinG,
+          carbohydrateG: resolved.carbohydrateG,
+          fatG: resolved.fatG,
+          alcoholG: resolved.alcoholG,
+          cheatSliders: persisted,
+          estimateRationale: spec.rationale,
+        })
+        .returning({ id: meals.id });
+
+      return { mealId: meal.id };
     }
 
     const pipelineResult = pending.pipelineResult as PipelineResult;
@@ -322,6 +376,14 @@ export interface PersistedMeal {
   loggedAt: string;
   nutrition: NutritionValues;
   mealItemGroups: PersistedMealItemGroup[];
+  /** 'precise' (default pipeline) or 'cheat' (slider estimate). */
+  entryMode: 'precise' | 'cheat';
+  /** Cheat-only: ethanol grams folded into the calorie total. */
+  alcoholG: number | null;
+  /** Cheat-only: slider spec + chosen levels, for re-edit/repeat. */
+  cheatSliders: CheatSlidersPersisted | null;
+  /** Cheat-only: the "we get the occasion" rationale line. */
+  estimateRationale: string | null;
 }
 
 export interface PersistedMealItemGroup {
@@ -450,6 +512,11 @@ async function loadMealsByDateForUser(
       loggedAt: meal.loggedAt.toISOString(),
       nutrition: extractNutritionValues(meal),
       mealItemGroups: groups,
+      entryMode: meal.entryMode === 'cheat' ? 'cheat' : 'precise',
+      alcoholG: meal.alcoholG ?? null,
+      cheatSliders:
+        (meal.cheatSliders as CheatSlidersPersisted | null) ?? null,
+      estimateRationale: meal.estimateRationale ?? null,
     };
   });
 }

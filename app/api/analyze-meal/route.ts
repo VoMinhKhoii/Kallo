@@ -13,6 +13,7 @@ import {
 } from '@/lib/ai/mappers';
 import { logUnmatchedIngredients } from '@/lib/ai/matching';
 import { analyzeMeal } from '@/lib/ai/pipeline';
+import { estimateCheatMeal } from '@/lib/ai/pipeline/cheat-estimate';
 import { readBooleanEnv } from '@/lib/ai/pipeline/feature-flags';
 import { logPipelineEnd, logPipelineStart } from '@/lib/ai/pipeline/logging';
 import type { StreamEvent } from '@/lib/ai/streaming';
@@ -134,6 +135,9 @@ async function validateRequest(request: NextRequest) {
           parsed.data.loggedDate,
           parsed.data.timezoneOffset
         ),
+        mode: parsed.data.mode ?? 'precise',
+        cheatType: parsed.data.cheatType,
+        clarifyAnswer: parsed.data.clarifyAnswer,
         profile,
         geminiConfig,
       },
@@ -147,8 +151,17 @@ export async function POST(request: NextRequest) {
   // Phase 1: Pre-stream validation — errors returned as JSON
   const validation = await validateRequest(request);
   if (validation.error) return validation.error;
-  const { userId, message, locale, loggedAt, profile, geminiConfig } =
-    validation.data;
+  const {
+    userId,
+    message,
+    locale,
+    loggedAt,
+    mode,
+    cheatType,
+    clarifyAnswer,
+    profile,
+    geminiConfig,
+  } = validation.data;
 
   const userContext = buildAiRequestContext(buildUserContext(profile), {
     mealText: message,
@@ -233,6 +246,64 @@ export async function POST(request: NextRequest) {
         }
 
         const gemini = createGeminiClient(geminiConfig);
+
+        // Cheat-meal branch: one reasoning call returns a slider spec instead
+        // of the full decomposition pipeline. The precise path below is
+        // untouched.
+        if (mode === 'cheat') {
+          const spec = await estimateCheatMeal(
+            { description: message, cheatType, clarifyAnswer, userContext },
+            gemini,
+            emit
+          );
+
+          if (request.signal.aborted) {
+            return;
+          }
+
+          // Vague input — surface the clarifying question and stop. The client
+          // re-calls with `clarifyAnswer`; nothing is staged for confirm yet.
+          if (spec.clarifyingQuestion) {
+            emit({ type: 'cheat_estimate', spec });
+            logPipelineEnd(
+              requestId,
+              'success',
+              Date.now() - startTime,
+              db,
+              undefined,
+              null
+            );
+            return;
+          }
+
+          // Stage the spec so confirm can recompute nutrition authoritatively
+          // from the user's chosen levels. Persist BEFORE surfacing (same
+          // ordering rationale as the precise path).
+          const [insertedCheat] = await db
+            .insert(pendingAnalyses)
+            .values({
+              userId,
+              pipelineResult: { entryMode: 'cheat', spec },
+              rawInput: message,
+              entryMode: 'cheat',
+              loggedAt,
+            })
+            .returning({ id: pendingAnalyses.id });
+
+          emit({ type: 'cheat_estimate', spec });
+          emit({ type: 'analysis_complete', analysisId: insertedCheat.id });
+
+          logPipelineEnd(
+            requestId,
+            'success',
+            Date.now() - startTime,
+            db,
+            undefined,
+            null
+          );
+          return;
+        }
+
         const result = await analyzeMeal(
           message,
           userContext,

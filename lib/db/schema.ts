@@ -236,6 +236,18 @@ export const meals = pgTable(
       .notNull()
       .defaultNow(),
 
+    // Cheat-meal logging (entry_mode='cheat'): a slider-based occasion estimate
+    // that bypasses ingredient decomposition. 'precise' is the default pipeline.
+    entryMode: text('entry_mode').notNull().default('precise'),
+    // Alcohol (ethanol) grams — the one calorie source the P/C/F sliders can't
+    // hold (~7 kcal/g). Nullable; only populated for cheat meals with drinks.
+    alcoholG: numeric('alcohol_g', { mode: 'number' }),
+    // Slider spec + the user's chosen levels, so a cheat meal can be re-edited
+    // or repeated. Shape: { spec: CheatSliderSpec, levels: CheatSliderLevels }.
+    cheatSliders: jsonb('cheat_sliders'),
+    // ≤280-char "we get the occasion" line shown on the cheat-meal card.
+    estimateRationale: text('estimate_rationale'),
+
     // Persisted nutrition — one numeric value per nutrient
     caloriesKcal: numeric('calories_kcal', { mode: 'number' }),
     proteinG: numeric('protein_g', { mode: 'number' }),
@@ -281,6 +293,10 @@ export const meals = pgTable(
     check(
       'meals_confidence_overall_check',
       sql`${table.confidenceOverall} IN ('high', 'medium', 'low')`
+    ),
+    check(
+      'meals_entry_mode_check',
+      sql`${table.entryMode} IN ('precise', 'cheat')`
     ),
     index('meals_user_logged_at_idx').on(table.userId, table.loggedAt),
   ]
@@ -630,6 +646,9 @@ export const pendingAnalyses = pgTable(
       .references(() => authUsers.id, { onDelete: 'cascade' }),
     pipelineResult: jsonb('pipeline_result').notNull(),
     rawInput: text('raw_input').notNull(),
+    // Mirrors meals.entry_mode so confirmAndSaveMealAction can branch without
+    // unpacking the JSONB. 'precise' is the default pipeline.
+    entryMode: text('entry_mode').notNull().default('precise'),
     loggedAt: timestamp('logged_at', { withTimezone: true })
       .notNull()
       .defaultNow(),
@@ -641,6 +660,10 @@ export const pendingAnalyses = pgTable(
       .defaultNow(),
   },
   (table) => [
+    check(
+      'pending_analyses_entry_mode_check',
+      sql`${table.entryMode} IN ('precise', 'cheat')`
+    ),
     index('pending_analyses_expires_idx').on(table.expiresAt),
     index('pending_analyses_user_logged_at_idx').on(
       table.userId,
