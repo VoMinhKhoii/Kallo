@@ -64,11 +64,23 @@ function ShareCardButton({ shareId }: { shareId: string }) {
  * block the parse. Toggles meal_shares.visibility circle↔private; the wall
  * reflects it on the next poll. No vanity metrics.
  */
-function ShareToCircleButton({ mealId }: { mealId: string }) {
+function ShareToCircleButton({
+  mealId,
+  share,
+}: {
+  mealId: string;
+  share: PersistedMeal['share'];
+}) {
   const t = useTranslations('groups.shareControl');
   const shareMeal = useShareMeal();
-  const [isShared, setIsShared] = useState(false);
-  const [shareId, setShareId] = useState<string | null>(null);
+  // Seed from real server state so an already-shared meal renders as shared
+  // (and can be unshared) after a reload, instead of always defaulting to off.
+  const [isShared, setIsShared] = useState(
+    share != null && share.visibility !== 'private'
+  );
+  const [shareId, setShareId] = useState<string | null>(
+    share && share.visibility !== 'private' ? share.shareId : null
+  );
 
   const handleToggle = () => {
     if (shareMeal.isPending) return;
@@ -284,7 +296,7 @@ export function PersistedMealCard({ meal }: PersistedMealCardProps) {
 
         {/* Post-save share affordance — never at the text input */}
         <div className="mt-3 flex justify-end border-nham-border/40 border-t border-dashed pt-2.5">
-          <ShareToCircleButton mealId={meal.id} />
+          <ShareToCircleButton mealId={meal.id} share={meal.share} />
         </div>
       </div>
     </motion.article>

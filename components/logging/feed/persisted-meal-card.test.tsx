@@ -87,6 +87,7 @@ const mealWithUnknownMacros: PersistedMeal = {
       ingredients: [],
     },
   ],
+  share: null,
 };
 
 describe('PersistedMealCard', () => {

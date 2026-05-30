@@ -108,6 +108,8 @@ function buildOptimisticMeal(
     loggedAt,
     nutrition: macrosToNutrition(total),
     mealItemGroups: groups,
+    // A freshly-saved meal is never shared yet.
+    share: null,
   };
 }
 
