@@ -987,6 +987,22 @@
       "toggleDetails": "Toggle meal details",
       "total": "Total"
     },
+    "cheatToggle": "Cheat meal",
+    "cheatPlaceholder": "Korean BBQ buffet, went all out...",
+    "cheatSliders": {
+      "badge": "Cheat meal",
+      "confirm": "Save meal",
+      "kcal": "kcal",
+      "alcohol": "alcohol"
+    },
+    "cheatMealCard": {
+      "badge": "Cheat meal",
+      "toggleDetails": "Toggle meal details",
+      "total": "Total",
+      "youSet": "YOU SET",
+      "alcoholShort": "Alc",
+      "reassurance": "One meal is a rounding error on your trend — tomorrow's plan is unchanged."
+    },
     "timelineSidebar": {
       "navigationLabel": "Timeline navigation",
       "week": "Week {number}",

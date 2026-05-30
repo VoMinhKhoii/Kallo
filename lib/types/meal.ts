@@ -48,4 +48,6 @@ export interface ChatMessage {
   streamingItems?: string[];
   streamingCompletedItems?: MealItem[];
   analysisId?: string;
+  /** Cheat-meal slider spec — set on a finalized cheat message. */
+  cheatSpec?: import('./cheat').CheatSliderSpec;
 }

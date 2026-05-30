@@ -22,6 +22,8 @@ interface UseFeedSubmitParams {
   guard: (fn: () => Promise<void>) => Promise<void>;
   lastAnalysisIdRef: RefObject<string | null>;
   lastErrorRef: RefObject<string | null>;
+  /** When true, submit runs the cheat-meal slider estimator. */
+  isCheat?: boolean;
 }
 
 function generateId() {
@@ -39,6 +41,7 @@ export function useFeedSubmit({
   guard,
   lastAnalysisIdRef,
   lastErrorRef,
+  isCheat,
 }: UseFeedSubmitParams) {
   const handleSubmit = async () => {
     if (stream.isAnalyzing) return;
@@ -82,6 +85,7 @@ export function useFeedSubmit({
         message: text,
         loggedDate: selectedDate,
         timezoneOffset: new Date().getTimezoneOffset(),
+        ...(isCheat ? { mode: 'cheat' as const } : {}),
       });
     });
   };

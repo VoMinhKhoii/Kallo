@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { parseSSEChunk } from '@/lib/ai/streaming/encoder';
 import type { StreamEvent, StreamStatus } from '@/lib/ai/streaming/types';
+import type { CheatSliderSpec } from '@/lib/types/cheat';
 import type { MealItem, ParsedMeal } from '@/lib/types/meal';
 
 export interface StreamAnalysisState {
@@ -10,6 +11,8 @@ export interface StreamAnalysisState {
   items: string[];
   completedItems: MealItem[];
   result: ParsedMeal | null;
+  /** Cheat-meal slider spec (when mode='cheat'); replaces `result`. */
+  cheatSpec: CheatSliderSpec | null;
   analysisId: string | null;
   error: string | null;
   isAnalyzing: boolean;
@@ -19,6 +22,11 @@ export interface StreamAnalyzeInput {
   message: string;
   loggedDate: string;
   timezoneOffset: number;
+  /** 'cheat' runs the slider estimator instead of the decomposition pipeline. */
+  mode?: 'precise' | 'cheat';
+  cheatType?: string;
+  /** Reply to a prior vague-input clarifying question. */
+  clarifyAnswer?: string;
 }
 
 const INITIAL_STATE: StreamAnalysisState = {
@@ -26,6 +34,7 @@ const INITIAL_STATE: StreamAnalysisState = {
   items: [],
   completedItems: [],
   result: null,
+  cheatSpec: null,
   analysisId: null,
   error: null,
   isAnalyzing: false,
@@ -91,6 +100,19 @@ export function useStreamAnalysis() {
 
           case 'result':
             return { ...prev, result: event.data };
+
+          case 'cheat_estimate':
+            // A clarifying-question spec ends the stream with no
+            // analysis_complete (client must re-ask), so settle isAnalyzing
+            // here. A full spec keeps streaming until analysis_complete.
+            return event.spec.clarifyingQuestion
+              ? {
+                  ...prev,
+                  cheatSpec: event.spec,
+                  status: 'done',
+                  isAnalyzing: false,
+                }
+              : { ...prev, cheatSpec: event.spec };
 
           case 'analysis_complete':
             return {
@@ -188,7 +210,12 @@ export function useStreamAnalysis() {
           const events = parseSSEChunk(chunk, buffer);
 
           for (const event of events) {
-            if (event.type === 'analysis_complete' || event.type === 'error') {
+            if (
+              event.type === 'analysis_complete' ||
+              event.type === 'error' ||
+              (event.type === 'cheat_estimate' &&
+                event.spec.clarifyingQuestion != null)
+            ) {
               receivedTerminal = true;
             }
             processEvent(event, thisRequestId, requestIdRef);
@@ -200,7 +227,12 @@ export function useStreamAnalysis() {
         if (finalChunk) {
           const events = parseSSEChunk(finalChunk, buffer);
           for (const event of events) {
-            if (event.type === 'analysis_complete' || event.type === 'error') {
+            if (
+              event.type === 'analysis_complete' ||
+              event.type === 'error' ||
+              (event.type === 'cheat_estimate' &&
+                event.spec.clarifyingQuestion != null)
+            ) {
               receivedTerminal = true;
             }
             processEvent(event, thisRequestId, requestIdRef);

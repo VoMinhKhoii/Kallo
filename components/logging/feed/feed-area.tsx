@@ -6,6 +6,7 @@ import { AnimatePresence, motion } from 'motion/react';
 import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
+import { CheatSliderCard } from '@/components/logging/feed/cheat-slider-card';
 import { EmptyState } from '@/components/logging/feed/empty-state';
 import { MacroSummary } from '@/components/logging/feed/macro-summary';
 import { MealEntry } from '@/components/logging/feed/meal-entry';
@@ -26,13 +27,22 @@ import { useStreamAnalysis } from '@/hooks/use-stream-analysis';
 import { useStreamingTerminalEffects } from '@/hooks/use-streaming-terminal-effects';
 import { useSubmitGuard } from '@/hooks/use-submit-guard';
 import { sumDisplayedNutrition } from '@/lib/ai/pipeline/goal-adjustment';
+import type { CheatSliderLevels } from '@/lib/types/cheat';
 import { isLikelyPartialDay } from '@/lib/nutrition/pattern/completeness';
 import type {
   ChatMessage,
+  MacroBreakdown,
   MealQuantityEdit,
   StreamingPhase,
 } from '@/lib/types/meal';
 import { cn } from '@/lib/utils';
+
+const emptyMacros: MacroBreakdown = {
+  calories: 0,
+  protein: 0,
+  carbs: 0,
+  fat: 0,
+};
 
 function toStreamingPhase(status: string): StreamingPhase {
   switch (status) {
@@ -187,6 +197,8 @@ export function FeedArea({
     useState(false);
 
   const lastPrefilledMealRef = useRef<string | null>(null);
+  // Cheat-meal mode: a buffet/indulgent occasion logged via sliders.
+  const [isCheat, setIsCheat] = useState(false);
 
   // Prefill from dashboard meal trigger; re-runs when initialMeal changes so
   // repeated dashboard→logging handoffs while the component stays mounted work.
@@ -287,6 +299,7 @@ export function FeedArea({
     guard,
     lastAnalysisIdRef,
     lastErrorRef,
+    isCheat,
   });
 
   const handleAnalysisComplete = useCallback(() => {
@@ -360,6 +373,68 @@ export function FeedArea({
         },
       }
     );
+  };
+
+  const handleConfirmCheatMeal = (
+    messageId: string,
+    analysisId: string,
+    levels: CheatSliderLevels
+  ) => {
+    const message = messages.find(
+      (m) => m.id === messageId || m.analysisId === analysisId
+    );
+    setMessages((prev) =>
+      prev.filter((m) => m.id !== messageId && m.analysisId !== analysisId)
+    );
+    if (!message?.cheatSpec) return;
+    const mealId = crypto.randomUUID();
+    confirmMeal.mutate(
+      {
+        analysisId,
+        mealId,
+        originDate: selectedDate,
+        // Cheat meals have no ParsedMeal; the optimistic card is built from the
+        // spec + levels instead.
+        parsedMeal: { mealName: '', items: [], totalMacros: emptyMacros },
+        rawInput: message.userInput ?? message.content,
+        loggedAt: message.timestamp.toISOString(),
+        levels,
+        cheat: { spec: message.cheatSpec, levels },
+      },
+      {
+        onSuccess: () => {
+          toast.success(t('savedMeal'));
+        },
+      }
+    );
+  };
+
+  // Vague-input fallback: re-run the cheat estimator with the chosen answer.
+  const handleCheatClarify = (messageId: string, answer: string) => {
+    const message = messages.find((m) => m.id === messageId);
+    if (!message) return;
+    setStreamingMsgId(messageId);
+    lastAnalysisIdRef.current = null;
+    lastErrorRef.current = null;
+    setMessages((prev) =>
+      prev.map((m) =>
+        m.id === messageId
+          ? {
+              ...m,
+              cheatSpec: undefined,
+              isStreaming: true,
+              streamingPhase: 'waiting',
+            }
+          : m
+      )
+    );
+    void stream.analyze({
+      message: message.userInput ?? message.content,
+      loggedDate: selectedDate,
+      timezoneOffset: new Date().getTimezoneOffset(),
+      mode: 'cheat',
+      clarifyAnswer: answer,
+    });
   };
 
   // Derive display messages: overlay live streaming state onto the active message.
@@ -543,6 +618,29 @@ export function FeedArea({
                     return <StreamingMealEntry key={msg.id} message={msg} />;
                   }
 
+                  if (msg.cheatSpec) {
+                    return (
+                      <CheatSliderCard
+                        key={msg.id}
+                        spec={msg.cheatSpec}
+                        userInput={msg.userInput}
+                        timestamp={msg.timestamp}
+                        isConfirming={confirmMeal.isPending}
+                        onConfirm={(levels) => {
+                          if (msg.analysisId)
+                            handleConfirmCheatMeal(
+                              msg.id,
+                              msg.analysisId,
+                              levels
+                            );
+                        }}
+                        onClarify={(answer) =>
+                          handleCheatClarify(msg.id, answer)
+                        }
+                      />
+                    );
+                  }
+
                   if (msg.parsedMeal) {
                     return (
                       <MealEntry
@@ -610,6 +708,8 @@ export function FeedArea({
               setStreamingMsgId(null);
             }}
             disabled={stream.isAnalyzing}
+            isCheat={isCheat}
+            onToggleCheat={setIsCheat}
           />
         </div>
       </div>

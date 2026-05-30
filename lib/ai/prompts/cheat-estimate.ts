@@ -44,7 +44,7 @@ export function getCheatEstimatePromptLabel(
 }
 
 export function getCheatEstimatePromptBuilder(
-  label: CheatEstimatePromptLabel = getCheatEstimatePromptLabel()
+  _label: CheatEstimatePromptLabel = getCheatEstimatePromptLabel()
 ): CheatEstimatePromptBuilder {
   // Single production builder for now; the label hook mirrors the
   // decomposition/nutrition prompts so a compressed variant can be slotted in.

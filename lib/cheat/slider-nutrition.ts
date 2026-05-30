@@ -17,13 +17,7 @@ export interface ResolvedCheatNutrition {
   caloriesKcal: number;
 }
 
-const NUTRIENT_KEYS = [
-  'proteinG',
-  'carbohydrateG',
-  'fatG',
-  'alcoholG',
-] as const;
-type NutrientKey = (typeof NUTRIENT_KEYS)[number];
+type NutrientKey = 'proteinG' | 'carbohydrateG' | 'fatG' | 'alcoholG';
 
 /** Clamp a slider level into the valid 0..10 range. */
 export function clampLevel(level: number): number {

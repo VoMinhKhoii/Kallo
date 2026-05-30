@@ -987,6 +987,22 @@
       "toggleDetails": "Bật/tắt chi tiết bữa ăn",
       "total": "Tổng"
     },
+    "cheatToggle": "Bữa xả",
+    "cheatPlaceholder": "Buffet nướng Hàn, ăn hết mình luôn...",
+    "cheatSliders": {
+      "badge": "Bữa xả",
+      "confirm": "Lưu bữa ăn",
+      "kcal": "kcal",
+      "alcohol": "cồn"
+    },
+    "cheatMealCard": {
+      "badge": "Bữa xả",
+      "toggleDetails": "Bật/tắt chi tiết bữa ăn",
+      "total": "Tổng",
+      "youSet": "BẠN ĐÃ CHỌN",
+      "alcoholShort": "Cồn",
+      "reassurance": "Một bữa ăn chỉ là sai số nhỏ trên hành trình của bạn — kế hoạch ngày mai không đổi."
+    },
     "timelineSidebar": {
       "navigationLabel": "Điều hướng dòng thời gian",
       "week": "Tuần {number}",

@@ -1,6 +1,6 @@
 'use client';
 
-import { ArrowUp, Square } from 'lucide-react';
+import { ArrowUp, Cookie, Square } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import {
   forwardRef,
@@ -42,6 +42,9 @@ interface MealInputProps {
    * submit button is replaced with a stop button that calls this. */
   onCancel?: () => void;
   disabled?: boolean;
+  /** Cheat-meal mode: a buffet/indulgent occasion logged via sliders. */
+  isCheat?: boolean;
+  onToggleCheat?: (next: boolean) => void;
 }
 
 function readDraft(): string {
@@ -67,7 +70,10 @@ function writeDraft(text: string) {
 const hasMeaningfulText = (text: string) => text.trim().length > 0;
 
 export const MealInput = forwardRef<MealInputHandle, MealInputProps>(
-  function MealInput({ onSubmit, onCancel, disabled }, ref) {
+  function MealInput(
+    { onSubmit, onCancel, disabled, isCheat, onToggleCheat },
+    ref
+  ) {
     const t = useTranslations('logging');
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const debounceRef = useRef<ReturnType<typeof setTimeout>>(null);
@@ -148,22 +154,43 @@ export const MealInput = forwardRef<MealInputHandle, MealInputProps>(
     const canSubmit = hasContent && !disabled;
     const showStopButton = Boolean(disabled && onCancel);
 
+    const placeholder = isCheat ? t('cheatPlaceholder') : t('placeholder');
+
     return (
-      <div className="flex items-end gap-3 rounded-2xl border border-nham-border/40 bg-background p-3 shadow-[0_4px_20px_color-mix(in_srgb,var(--color-nham-accent)_6%,transparent)] transition-all duration-300 focus-within:border-nham-accent/40 focus-within:shadow-[0_4px_20px_color-mix(in_srgb,var(--color-nham-accent)_12%,transparent)]">
-        <label htmlFor="meal-input" className="sr-only">
-          {t('placeholder')}
-        </label>
-        <textarea
-          ref={textareaRef}
-          id="meal-input"
-          rows={1}
-          defaultValue={readDraft()}
-          onChange={handleChange}
-          onKeyDown={handleKeyDown}
-          placeholder={t('placeholder')}
-          disabled={disabled}
-          className="flex-1 resize-none bg-transparent py-1.5 font-[var(--font-dm-sans)] font-normal text-nham-text text-sm leading-5 placeholder:text-nham-text-muted/40 focus:outline-none disabled:opacity-50"
-        />
+      <div className="flex flex-col gap-2 rounded-2xl border border-nham-border/40 bg-background p-3 shadow-[0_4px_20px_color-mix(in_srgb,var(--color-nham-accent)_6%,transparent)] transition-all duration-300 focus-within:border-nham-accent/40 focus-within:shadow-[0_4px_20px_color-mix(in_srgb,var(--color-nham-accent)_12%,transparent)]">
+        {onToggleCheat && (
+          <div className="flex items-center">
+            <button
+              type="button"
+              onClick={() => onToggleCheat(!isCheat)}
+              aria-pressed={isCheat}
+              className={`flex items-center gap-1.5 rounded-full px-2.5 py-1 font-medium text-xs transition-colors ${
+                isCheat
+                  ? 'bg-nham-accent/15 text-nham-text'
+                  : 'text-nham-text-muted/70 hover:bg-nham-hover/40 hover:text-nham-text'
+              }`}
+              style={{ fontFamily: 'DM Sans, sans-serif' }}
+            >
+              <Cookie className="h-3.5 w-3.5" />
+              {t('cheatToggle')}
+            </button>
+          </div>
+        )}
+        <div className="flex items-end gap-3">
+          <label htmlFor="meal-input" className="sr-only">
+            {placeholder}
+          </label>
+          <textarea
+            ref={textareaRef}
+            id="meal-input"
+            rows={1}
+            defaultValue={readDraft()}
+            onChange={handleChange}
+            onKeyDown={handleKeyDown}
+            placeholder={placeholder}
+            disabled={disabled}
+            className="flex-1 resize-none bg-transparent py-1.5 font-[var(--font-dm-sans)] font-normal text-nham-text text-sm leading-5 placeholder:text-nham-text-muted/40 focus:outline-none disabled:opacity-50"
+          />
         {showStopButton ? (
           <button
             type="button"
@@ -184,6 +211,7 @@ export const MealInput = forwardRef<MealInputHandle, MealInputProps>(
             <ArrowUp className="h-4 w-4" />
           </button>
         )}
+        </div>
       </div>
     );
   }
