@@ -5,6 +5,7 @@ import { AnimatePresence, motion } from 'motion/react';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { CircleEmpty } from '@/components/groups/circle-empty';
+import { CircleWallSkeleton } from '@/components/groups/circle-wall-skeleton';
 import { useCircleFeed } from '@/hooks/use-circle-feed';
 import type { CircleFeedEntry } from '@/lib/groups/client';
 
@@ -172,7 +173,11 @@ function CircleCard({ entry }: { entry: CircleFeedEntry }) {
  * badge-free by design — never a global newsfeed.
  */
 export function CircleWall() {
-  const { data: feed = [] } = useCircleFeed();
+  const { data: feed = [], isPending } = useCircleFeed();
+
+  if (isPending) {
+    return <CircleWallSkeleton />;
+  }
 
   if (feed.length === 0) {
     return <CircleEmpty />;
