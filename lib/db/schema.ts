@@ -897,9 +897,7 @@ export const publicProfiles = pgTable(
 export const friendships = pgTable(
   'friendships',
   {
-    id: uuid('id')
-      .primaryKey()
-      .default(sql`gen_random_uuid()`),
+    id: uuid('id').primaryKey().default(sql`gen_random_uuid()`),
     userLow: uuid('user_low')
       .notNull()
       .references(() => authUsers.id, { onDelete: 'cascade' }),
@@ -919,7 +917,10 @@ export const friendships = pgTable(
   },
   (table) => [
     unique('friendships_user_low_high_uniq').on(table.userLow, table.userHigh),
-    check('friendships_user_order_check', sql`${table.userLow} < ${table.userHigh}`),
+    check(
+      'friendships_user_order_check',
+      sql`${table.userLow} < ${table.userHigh}`
+    ),
     check(
       'friendships_status_check',
       sql`${table.status} IN ('pending', 'accepted', 'blocked')`
@@ -938,9 +939,7 @@ export const friendships = pgTable(
 export const mealShares = pgTable(
   'meal_shares',
   {
-    id: uuid('id')
-      .primaryKey()
-      .default(sql`gen_random_uuid()`),
+    id: uuid('id').primaryKey().default(sql`gen_random_uuid()`),
     mealId: uuid('meal_id')
       .notNull()
       .references(() => meals.id, { onDelete: 'cascade' }),
@@ -973,9 +972,7 @@ export const mealShares = pgTable(
 export const coachAssignments = pgTable(
   'coach_assignments',
   {
-    id: uuid('id')
-      .primaryKey()
-      .default(sql`gen_random_uuid()`),
+    id: uuid('id').primaryKey().default(sql`gen_random_uuid()`),
     coachId: uuid('coach_id')
       .notNull()
       .references(() => authUsers.id, { onDelete: 'cascade' }),
@@ -1015,9 +1012,7 @@ export const coachAssignments = pgTable(
 export const circleEvents = pgTable(
   'circle_events',
   {
-    id: uuid('id')
-      .primaryKey()
-      .default(sql`gen_random_uuid()`),
+    id: uuid('id').primaryKey().default(sql`gen_random_uuid()`),
     actorId: uuid('actor_id')
       .notNull()
       .references(() => authUsers.id, { onDelete: 'cascade' }),

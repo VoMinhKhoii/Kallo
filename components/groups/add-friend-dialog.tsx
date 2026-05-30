@@ -458,7 +458,10 @@ function InviteSection() {
   );
 }
 
-export function AddFriendDialog({ trigger, initialHandle }: AddFriendDialogProps) {
+export function AddFriendDialog({
+  trigger,
+  initialHandle,
+}: AddFriendDialogProps) {
   const t = useTranslations('groups.addFriend');
   const [open, setOpen] = useState(Boolean(initialHandle));
 

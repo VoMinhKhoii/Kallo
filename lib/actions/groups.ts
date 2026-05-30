@@ -224,10 +224,7 @@ export async function requestFriend(
     .select({ id: friendships.id, status: friendships.status })
     .from(friendships)
     .where(
-      and(
-        eq(friendships.userLow, userLow),
-        eq(friendships.userHigh, userHigh)
-      )
+      and(eq(friendships.userLow, userLow), eq(friendships.userHigh, userHigh))
     )
     .limit(1);
 
@@ -279,10 +276,7 @@ export async function acceptFriend(
         eq(friendships.status, 'pending'),
         // Only the recipient (not the requester) may accept.
         sql`${friendships.requestedBy} <> ${actorId}`,
-        or(
-          eq(friendships.userLow, actorId),
-          eq(friendships.userHigh, actorId)
-        )
+        or(eq(friendships.userLow, actorId), eq(friendships.userHigh, actorId))
       )
     )
     .returning({ id: friendships.id, status: friendships.status });
@@ -362,10 +356,7 @@ export async function listCircle(
     )
     .where(
       and(
-        or(
-          eq(friendships.userLow, actorId),
-          eq(friendships.userHigh, actorId)
-        ),
+        or(eq(friendships.userLow, actorId), eq(friendships.userHigh, actorId)),
         sql`${friendships.status} <> 'blocked'`
       )
     )
@@ -417,10 +408,7 @@ export async function listCircleFeed(
     .from(friendships)
     .where(
       and(
-        or(
-          eq(friendships.userLow, actorId),
-          eq(friendships.userHigh, actorId)
-        ),
+        or(eq(friendships.userLow, actorId), eq(friendships.userHigh, actorId)),
         eq(friendships.status, 'accepted')
       )
     );

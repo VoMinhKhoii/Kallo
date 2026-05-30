@@ -1,4 +1,4 @@
-import { NextResponse, type NextRequest } from 'next/server';
+import { type NextRequest, NextResponse } from 'next/server';
 import { setMealShareVisibility } from '@/lib/actions/group-members';
 import { Errors, serializeError } from '@/lib/errors';
 import { requireUserId } from '../_auth';

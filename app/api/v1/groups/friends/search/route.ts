@@ -1,4 +1,4 @@
-import { NextResponse, type NextRequest } from 'next/server';
+import { type NextRequest, NextResponse } from 'next/server';
 import { searchByHandle } from '@/lib/actions/groups';
 import { serializeError } from '@/lib/errors';
 import { requireUserId } from '../../_auth';

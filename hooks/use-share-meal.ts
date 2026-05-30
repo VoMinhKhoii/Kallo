@@ -1,8 +1,8 @@
 'use client';
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { setMealShareVisibility } from '@/lib/groups/client';
 import { circleFeedKeys } from '@/hooks/use-circle-feed';
+import { setMealShareVisibility } from '@/lib/groups/client';
 
 interface ShareMealInput {
   mealId: string;

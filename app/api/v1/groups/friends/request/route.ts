@@ -1,4 +1,4 @@
-import { NextResponse, type NextRequest } from 'next/server';
+import { type NextRequest, NextResponse } from 'next/server';
 import { requestFriend } from '@/lib/actions/groups';
 import { Errors, serializeError } from '@/lib/errors';
 import { requireUserId } from '../../_auth';

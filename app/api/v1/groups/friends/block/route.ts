@@ -1,4 +1,4 @@
-import { NextResponse, type NextRequest } from 'next/server';
+import { type NextRequest, NextResponse } from 'next/server';
 import { blockFriend } from '@/lib/actions/groups';
 import { Errors, serializeError } from '@/lib/errors';
 import { requireUserId } from '../../_auth';
@@ -14,10 +14,7 @@ export async function POST(request: NextRequest) {
     } catch {
       throw Errors.validationFailed('Invalid JSON in request body');
     }
-    const result = await blockFriend(
-      actorId,
-      body as { targetUserId: string }
-    );
+    const result = await blockFriend(actorId, body as { targetUserId: string });
     return NextResponse.json(result);
   } catch (error) {
     return serializeError(error);
