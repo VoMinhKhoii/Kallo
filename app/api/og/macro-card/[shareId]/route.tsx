@@ -390,8 +390,7 @@ export async function GET(
                         width: 200,
                       }}
                     >
-                      {m.label}:{' '}
-                      {m.grams == null ? 'N/A' : `${Math.round(m.grams)}g`}
+                      {`${m.label}: ${m.grams == null ? 'N/A' : `${Math.round(m.grams)}g`}`}
                     </div>
                   </div>
                 );
