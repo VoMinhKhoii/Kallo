@@ -1,19 +1,14 @@
 import { type NextRequest, NextResponse } from 'next/server';
 import { setMealShareVisibility } from '@/lib/actions/group-members';
-import { Errors, serializeError } from '@/lib/errors';
-import { requireUserId } from '../_auth';
+import { serializeError } from '@/lib/errors';
+import { readJsonBody, requireUserId } from '../_auth';
 
 export const runtime = 'nodejs';
 
 export async function POST(request: NextRequest) {
   try {
     const actorId = await requireUserId();
-    let body: unknown;
-    try {
-      body = await request.json();
-    } catch {
-      throw Errors.validationFailed('Invalid JSON in request body');
-    }
+    const body = await readJsonBody(request);
     const result = await setMealShareVisibility(
       actorId,
       body as { mealId: string; visibility: 'private' | 'circle' }

@@ -16,3 +16,16 @@ export async function requireUserId(): Promise<string> {
   }
   return data.user.id;
 }
+
+/**
+ * Parse a request's JSON body, mapping a malformed payload to a structured
+ * validation error (the route's serializeError() catch turns it into a 400).
+ * The schema/service-fn validates the shape, so this returns `unknown`.
+ */
+export async function readJsonBody(request: Request): Promise<unknown> {
+  try {
+    return await request.json();
+  } catch {
+    throw Errors.validationFailed('Invalid JSON in request body');
+  }
+}
