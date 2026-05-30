@@ -11,6 +11,8 @@ export type DashboardTimeRange = HeatmapRange;
 export interface DailyCalories {
   date: string;
   calories: number;
+  /** Whether any meal that day was a cheat meal. */
+  hasCheatMeal?: boolean;
 }
 
 interface BuildCalorieAdherenceHeatmapInput {
@@ -155,6 +157,9 @@ export function buildCalorieAdherenceHeatmapData({
   const caloriesByDate = new Map(
     dailyCalories.map((day) => [day.date, day.calories])
   );
+  const cheatByDate = new Map(
+    dailyCalories.map((day) => [day.date, Boolean(day.hasCheatMeal)])
+  );
   const hasTarget = calorieTarget !== null && calorieTarget > 0;
   // Days under-logged relative to the target are marked 'partial' so they are
   // neither colour-graded as a low-intake day nor counted toward adherence.
@@ -179,6 +184,7 @@ export function buildCalorieAdherenceHeatmapData({
       date: key,
       ratio: isPartial ? null : calories / calorieTarget,
       status: isPartial ? 'partial' : 'logged',
+      hasCheatMeal: cheatByDate.get(key) ?? false,
     };
   }
 

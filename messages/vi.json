@@ -880,6 +880,7 @@
       "onTrack": "{percent}% đúng mục tiêu",
       "notLogged": "Chưa ghi nhận",
       "partial": "Ngày ghi thiếu",
+      "cheatDay": "Ngày xả",
       "future": "Ngày trong tương lai",
       "outside": "Ngoài khoảng đang xem",
       "offTarget": "Lệch mục tiêu",
@@ -894,6 +895,7 @@
       "farUnder": "Thiếu nhiều"
     },
     "caloriesLogged": "kcal đã ghi",
+    "weeklyAccumulator": "Tuần này: {consumed} / {target} kcal",
     "mealReceiptsHint": "Những bữa ăn sẽ hiển thị ở đây",
     "progressStatus": {
       "insufficient": {

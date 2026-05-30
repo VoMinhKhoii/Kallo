@@ -880,6 +880,7 @@
       "onTrack": "{percent}% on track",
       "notLogged": "Not logged",
       "partial": "Partial day (under-logged)",
+      "cheatDay": "Cheat day",
       "future": "Future day",
       "outside": "Outside selected range",
       "offTarget": "Off target",
@@ -894,6 +895,7 @@
       "farUnder": "Far under"
     },
     "caloriesLogged": "kcal logged",
+    "weeklyAccumulator": "This week: {consumed} / {target} kcal",
     "mealReceiptsHint": "Your meal receipts will show up here",
     "progressStatus": {
       "insufficient": {

@@ -42,7 +42,13 @@ export function AdherenceHeatmap({ data, range }: AdherenceHeatmapProps) {
     let total = 0;
     for (const row of data.cells) {
       for (const cell of row) {
-        if (cell.status === 'logged' && cell.ratio !== null) {
+        // Cheat days are neutral: they intentionally exceed target, so they
+        // count as neither a hit nor a miss for the adherence rate.
+        if (
+          cell.status === 'logged' &&
+          cell.ratio !== null &&
+          !cell.hasCheatMeal
+        ) {
           total++;
           if (Math.abs(cell.ratio - 1.0) <= 0.1) onTarget++;
         }
@@ -84,6 +90,7 @@ export function AdherenceHeatmap({ data, range }: AdherenceHeatmapProps) {
     if (cell.status === 'partial') return t('partial');
     if (cell.status !== 'logged' || cell.ratio === null) return t('notLogged');
 
+    if (cell.hasCheatMeal) return t('cheatDay');
     const { labelKey } = getHeatmapColor(cell.ratio);
     return `${t(labelKey)} · ${Math.round(cell.ratio * 100)}%`;
   };
@@ -146,6 +153,7 @@ export function AdherenceHeatmap({ data, range }: AdherenceHeatmapProps) {
                   const ratio = cell?.ratio ?? null;
                   const { bg } = getHeatmapColor(ratio);
                   const isLogged = cell?.status === 'logged' && ratio !== null;
+                  const isCheat = isLogged && Boolean(cell?.hasCheatMeal);
                   const isPartial = cell?.status === 'partial';
                   const isMuted =
                     cell?.status === 'future' || cell?.status === 'outside';
@@ -176,8 +184,20 @@ export function AdherenceHeatmap({ data, range }: AdherenceHeatmapProps) {
                                   delay: wi * 0.01 + di * 0.005,
                                 }
                           }
-                          className="relative cursor-default rounded-[3px] transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent/60"
-                          style={{ backgroundColor: isLogged ? bg : undefined }}
+                          className={cn(
+                            'relative cursor-default rounded-[3px] transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent/60',
+                            // Cheat day: a calm warm ring instead of intensity
+                            // grading — recognizable, never red.
+                            isCheat &&
+                              'ring-1 ring-nham-cheat ring-inset'
+                          )}
+                          style={{
+                            backgroundColor: isCheat
+                              ? 'var(--nham-cheat-fill)'
+                              : isLogged
+                                ? bg
+                                : undefined,
+                          }}
                         >
                           {!isLogged && (
                             <div
@@ -189,6 +209,14 @@ export function AdherenceHeatmap({ data, range }: AdherenceHeatmapProps) {
                                 isPartial && 'border border-nham-border'
                               )}
                             />
+                          )}
+                          {isCheat && (
+                            <span
+                              aria-hidden
+                              className="absolute inset-0 flex items-center justify-center text-[8px] text-nham-cheat"
+                            >
+                              ●
+                            </span>
                           )}
                         </motion.button>
                       </TooltipTrigger>

@@ -68,6 +68,8 @@
   --color-nham-heatmap-slight: var(--nham-heatmap-slight);
   --color-nham-heatmap-moderate: var(--nham-heatmap-moderate);
   --color-nham-heatmap-far: var(--nham-heatmap-far);
+  --color-nham-cheat: var(--nham-cheat);
+  --color-nham-cheat-fill: var(--nham-cheat-fill);
   /* Bar visualization tokens */
   --color-nham-bar-miss: var(--nham-bar-miss);
 }
@@ -128,6 +130,9 @@
   --nham-heatmap-slight: #d4c9ad;
   --nham-heatmap-moderate: #e09c84;
   --nham-heatmap-far: #d37b69;
+  /* Cheat-day token — warm accent, recognizable but never red */
+  --nham-cheat: #c9a87c;
+  --nham-cheat-fill: #f3e6d2;
   /* Bar visualization token */
   --nham-bar-miss: #d4c9ad;
 }
@@ -187,6 +192,9 @@
   --nham-heatmap-slight: #c4b99d;
   --nham-heatmap-moderate: #cf8b76;
   --nham-heatmap-far: #e08878;
+  /* Cheat-day token — warm accent, recognizable but never red */
+  --nham-cheat: #c9a87c;
+  --nham-cheat-fill: #4a3f2e;
   /* Bar visualization token */
   --nham-bar-miss: #6b6054;
 }
