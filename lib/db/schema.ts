@@ -917,6 +917,10 @@ export const friendships = pgTable(
   },
   (table) => [
     unique('friendships_user_low_high_uniq').on(table.userLow, table.userHigh),
+    // The composite unique covers the user_low-leading half of the pair lookup;
+    // this indexes the user_high = actor branch of the OR in listCircle and the
+    // 30s feed poll, which would otherwise seq-scan the whole friend graph.
+    index('friendships_user_high_idx').on(table.userHigh),
     check(
       'friendships_user_order_check',
       sql`${table.userLow} < ${table.userHigh}`
@@ -953,6 +957,13 @@ export const mealShares = pgTable(
   },
   (table) => [
     unique('meal_shares_meal_id_uniq').on(table.mealId),
+    // Feed driving scan filters shared_at within the day, only non-private rows.
+    // The partial predicate keeps the index small (most rows stay private).
+    index('meal_shares_shared_at_idx')
+      .on(sql`${table.sharedAt} DESC`)
+      .where(sql`visibility <> 'private'`),
+    // The RLS SELECT policy and feed join filter by actor_id.
+    index('meal_shares_actor_idx').on(table.actorId),
     check(
       'meal_shares_visibility_check',
       sql`${table.visibility} IN ('private', 'circle', 'public')`
