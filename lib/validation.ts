@@ -60,3 +60,63 @@ export const weightLogSchema = z.object({
 
 export type MealMessageInput = z.infer<typeof mealMessageSchema>;
 export type WeightLogInput = z.infer<typeof weightLogSchema>;
+
+// ---------------------------------------------------------------------------
+// Group tracking schemas
+// ---------------------------------------------------------------------------
+
+const uuidSchema = z.string().uuid('Phải là UUID hợp lệ.');
+
+/**
+ * A handle as accepted by the API: lowercased, 3-20 chars, [a-z0-9_]. The
+ * reserved-handle blocklist is enforced separately via lib/groups/handles.ts
+ * (validateHandle) so the rejection reason can be distinguished.
+ */
+export const handleSchema = z
+  .string()
+  .trim()
+  .toLowerCase()
+  .min(3, 'Handle phải có ít nhất 3 ký tự.')
+  .max(20, 'Handle tối đa 20 ký tự.')
+  .regex(/^[a-z0-9_]+$/u, 'Handle chỉ gồm chữ thường, số và dấu gạch dưới.');
+
+/** Exact-match handle search (no prefix/enumeration). */
+export const searchByHandleSchema = z.object({
+  handle: handleSchema,
+});
+
+/** Upsert the caller's own public profile. */
+export const upsertPublicProfileSchema = z.object({
+  handle: handleSchema,
+  displayName: z.string().trim().min(1).max(50).optional(),
+  avatarSeed: z.string().trim().min(1).max(64).optional(),
+});
+
+export const requestFriendSchema = z.object({
+  targetUserId: uuidSchema,
+});
+
+export const acceptFriendSchema = z.object({
+  friendshipId: uuidSchema,
+});
+
+export const blockFriendSchema = z.object({
+  targetUserId: uuidSchema,
+});
+
+export const setMealShareVisibilitySchema = z.object({
+  mealId: uuidSchema,
+  visibility: z.enum(['private', 'circle']),
+});
+
+export const circleFeedSchema = z.object({
+  timezoneOffset: timezoneOffsetSchema,
+});
+
+export type HandleInput = z.infer<typeof handleSchema>;
+export type UpsertPublicProfileInput = z.infer<
+  typeof upsertPublicProfileSchema
+>;
+export type SetMealShareVisibilityInput = z.infer<
+  typeof setMealShareVisibilitySchema
+>;
