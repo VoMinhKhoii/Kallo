@@ -1,8 +1,18 @@
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 import type { PersistedMeal } from '@/lib/actions/meals';
 import { PersistedMealCard } from './persisted-meal-card';
+
+function renderCard(meal: PersistedMeal) {
+  const queryClient = new QueryClient();
+  return render(
+    <QueryClientProvider client={queryClient}>
+      <PersistedMealCard meal={meal} />
+    </QueryClientProvider>
+  );
+}
 
 const mealWithUnknownMacros: PersistedMeal = {
   id: 'meal-1',
@@ -82,7 +92,7 @@ const mealWithUnknownMacros: PersistedMeal = {
 describe('PersistedMealCard', () => {
   it('renders unknown persisted macros as N/A instead of zero', async () => {
     const user = userEvent.setup();
-    render(<PersistedMealCard meal={mealWithUnknownMacros} />);
+    renderCard(mealWithUnknownMacros);
 
     expect(screen.getByText(/P: N\/A/)).toBeInTheDocument();
     expect(screen.getAllByText('N/A').length).toBeGreaterThan(0);

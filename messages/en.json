@@ -33,6 +33,9 @@
     },
     "nutrition": {
       "title": "Nutrition — Nhẩm"
+    },
+    "groups": {
+      "title": "Groups — Nhẩm"
     }
   },
   "shared": {
@@ -54,6 +57,7 @@
       "tracking": "Tracking",
       "nutrition": "Nutrition",
       "logging": "Logging",
+      "groups": "Groups",
       "admin": "Admin",
       "settings": "Settings",
       "expandSidebar": "Expand sidebar",
@@ -1008,6 +1012,61 @@
       "previousWeek": "Previous week",
       "nextWeek": "Next week",
       "openCalendar": "Open calendar"
+    }
+  },
+  "groups": {
+    "page": {
+      "title": "Your circle",
+      "subtitle": "What your friends are eating today.",
+      "addFriend": "Add friend"
+    },
+    "empty": {
+      "title": "Your circle is quiet",
+      "subtitle": "Add a friend by their handle to share what you're eating. Your log stays private until you choose to share it.",
+      "cta": "Add a friend"
+    },
+    "wall": {
+      "sharedAt": "Shared at {time}",
+      "toggleDetails": "Toggle meal details",
+      "total": "Total"
+    },
+    "shareControl": {
+      "share": "Share to circle",
+      "shared": "Shared to circle",
+      "sharing": "Sharing…",
+      "errorShare": "Couldn't share to your circle. Try again.",
+      "errorUnshare": "Couldn't update sharing. Try again.",
+      "shareCard": "Share card",
+      "shareCardTitle": "My meal on Nhẩm",
+      "copiedLink": "Card link copied to clipboard",
+      "errorCopy": "Couldn't copy the card link. Try again."
+    },
+    "addFriend": {
+      "title": "Add a friend",
+      "description": "Find someone by their exact handle, or send them your invite link.",
+      "searchPlaceholder": "@handle",
+      "searchLabel": "Search by handle",
+      "searching": "Searching…",
+      "notFound": "No one found with that handle.",
+      "hint": "Handles are exact — type the whole thing.",
+      "request": "Send request",
+      "requesting": "Sending…",
+      "requested": "Request sent",
+      "copyLink": "Copy invite link",
+      "linkCopied": "Invite link copied to clipboard.",
+      "linkCopyError": "Couldn't copy the link. Try again.",
+      "requestError": "Couldn't send the request. Try again.",
+      "incomingTitle": "Requests for you",
+      "outgoingTitle": "Sent requests",
+      "circleTitle": "Your circle",
+      "accept": "Accept",
+      "accepting": "Accepting…",
+      "block": "Block",
+      "blocking": "Blocking…",
+      "acceptError": "Couldn't accept the request. Try again.",
+      "blockError": "Couldn't block. Try again.",
+      "pendingOutgoing": "Pending",
+      "emptyCircle": "No friends yet."
     }
   },
   "settings": {

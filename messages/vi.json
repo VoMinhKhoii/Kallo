@@ -33,6 +33,9 @@
     },
     "nutrition": {
       "title": "Dinh dưỡng — Nhẩm"
+    },
+    "groups": {
+      "title": "Nhóm — Nhẩm"
     }
   },
   "shared": {
@@ -54,6 +57,7 @@
       "tracking": "Theo dõi",
       "nutrition": "Dinh dưỡng",
       "logging": "Ghi nhận",
+      "groups": "Nhóm",
       "admin": "Quản trị",
       "settings": "Cài đặt",
       "expandSidebar": "Mở rộng thanh bên",
@@ -1008,6 +1012,61 @@
       "previousWeek": "Tuần trước",
       "nextWeek": "Tuần sau",
       "openCalendar": "Mở lịch"
+    }
+  },
+  "groups": {
+    "page": {
+      "title": "Vòng kết nối của bạn",
+      "subtitle": "Hôm nay bạn bè đang ăn gì.",
+      "addFriend": "Thêm bạn"
+    },
+    "empty": {
+      "title": "Vòng kết nối đang yên ắng",
+      "subtitle": "Thêm bạn bằng tên định danh để chia sẻ những gì bạn đang ăn. Nhật ký của bạn vẫn riêng tư cho đến khi bạn chọn chia sẻ.",
+      "cta": "Thêm một người bạn"
+    },
+    "wall": {
+      "sharedAt": "Chia sẻ lúc {time}",
+      "toggleDetails": "Xem chi tiết bữa ăn",
+      "total": "Tổng"
+    },
+    "shareControl": {
+      "share": "Chia sẻ với vòng kết nối",
+      "shared": "Đã chia sẻ với vòng kết nối",
+      "sharing": "Đang chia sẻ…",
+      "errorShare": "Không thể chia sẻ. Vui lòng thử lại.",
+      "errorUnshare": "Không thể cập nhật chia sẻ. Vui lòng thử lại.",
+      "shareCard": "Chia sẻ thẻ",
+      "shareCardTitle": "Bữa ăn của tôi trên Nhẩm",
+      "copiedLink": "Đã sao chép liên kết thẻ",
+      "errorCopy": "Không thể sao chép liên kết. Vui lòng thử lại."
+    },
+    "addFriend": {
+      "title": "Thêm một người bạn",
+      "description": "Tìm ai đó bằng tên định danh chính xác, hoặc gửi liên kết mời.",
+      "searchPlaceholder": "@tên_định_danh",
+      "searchLabel": "Tìm theo tên định danh",
+      "searching": "Đang tìm…",
+      "notFound": "Không tìm thấy ai với tên định danh đó.",
+      "hint": "Tên định danh phải chính xác — hãy gõ đầy đủ.",
+      "request": "Gửi lời mời",
+      "requesting": "Đang gửi…",
+      "requested": "Đã gửi lời mời",
+      "copyLink": "Sao chép liên kết mời",
+      "linkCopied": "Đã sao chép liên kết mời.",
+      "linkCopyError": "Không thể sao chép liên kết. Vui lòng thử lại.",
+      "requestError": "Không thể gửi lời mời. Vui lòng thử lại.",
+      "incomingTitle": "Lời mời dành cho bạn",
+      "outgoingTitle": "Lời mời đã gửi",
+      "circleTitle": "Vòng kết nối của bạn",
+      "accept": "Chấp nhận",
+      "accepting": "Đang chấp nhận…",
+      "block": "Chặn",
+      "blocking": "Đang chặn…",
+      "acceptError": "Không thể chấp nhận lời mời. Vui lòng thử lại.",
+      "blockError": "Không thể chặn. Vui lòng thử lại.",
+      "pendingOutgoing": "Đang chờ",
+      "emptyCircle": "Chưa có bạn nào."
     }
   },
   "settings": {
