@@ -9,6 +9,7 @@ import {
   requestFriend,
   searchFriendByHandle,
 } from '@/lib/groups/client';
+import { HANDLE_MIN_LENGTH } from '@/lib/groups/handles';
 
 export const friendsKeys = {
   all: ['friends'] as const,
@@ -28,7 +29,7 @@ export function useFriendSearch(handle: string) {
   return useQuery({
     queryKey: ['friend-search', normalized],
     queryFn: () => searchFriendByHandle(normalized),
-    enabled: normalized.length >= 3,
+    enabled: normalized.length >= HANDLE_MIN_LENGTH,
   });
 }
 

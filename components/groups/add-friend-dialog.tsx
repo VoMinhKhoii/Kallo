@@ -84,6 +84,7 @@ function SearchSection({ initialQuery = '' }: { initialQuery?: string }) {
 
   const handleRequest = (userId: string) => {
     requestFriend.mutate(userId, {
+      onSuccess: () => toast.success(t('requested')),
       onError: () => toast.error(t('requestError')),
     });
   };

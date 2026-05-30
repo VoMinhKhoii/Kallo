@@ -20,7 +20,9 @@ export function useCircleFeed() {
   const timezoneOffset = new Date().getTimezoneOffset();
 
   return useQuery<CircleFeedEntry[]>({
-    queryKey: circleFeedKeys.all,
+    // Offset is part of the key so a changed tz (DST/travel) can't serve a
+    // stale-day feed; invalidating circleFeedKeys.all still matches the prefix.
+    queryKey: [...circleFeedKeys.all, timezoneOffset],
     queryFn: () => fetchCircleFeed(timezoneOffset),
     refetchInterval: FEED_POLL_INTERVAL_MS,
   });

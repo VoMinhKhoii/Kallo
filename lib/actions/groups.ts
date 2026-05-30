@@ -3,9 +3,12 @@
 // ---------------------------------------------------------------------------
 // Pure, dependency-light async functions. Each takes the authenticated actor's
 // id plus an optional Drizzle `db` handle (defaulting to the app singleton) so
-// the REST routes and tests can call them directly. RLS is the source of truth
-// at the DB layer; these functions add app-layer `WHERE actor = ...` checks as
-// defense-in-depth and shape the response for the client.
+// the REST routes and tests can call them directly. NOTE: this Drizzle `db`
+// connects via DATABASE_URL as the owner role and BYPASSES RLS, so the
+// app-layer `WHERE actor = ...` scoping below is the PRIMARY authorization
+// control here, not defense-in-depth — every query must carry an explicit actor
+// predicate. RLS is the source of truth only for the Supabase-session/PostgREST
+// path (direct client reads + the OG card route).
 
 import { and, desc, eq, gte, inArray, lt, or, sql } from 'drizzle-orm';
 import { getUtcDayRangeForLocalDate } from '@/lib/date/local-day';
