@@ -1028,7 +1028,8 @@
     "wall": {
       "sharedAt": "Shared at {time}",
       "toggleDetails": "Toggle meal details",
-      "total": "Total"
+      "total": "Total",
+      "loading": "Loading your circle"
     },
     "shareControl": {
       "share": "Share to circle",

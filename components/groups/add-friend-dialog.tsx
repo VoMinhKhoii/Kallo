@@ -132,6 +132,7 @@ function SearchSection({ initialQuery = '' }: { initialQuery?: string }) {
 
       {showNotFound ? (
         <p
+          aria-live="polite"
           className="px-1 text-[12px] text-nham-text-muted"
           style={{ fontFamily: 'DM Sans, sans-serif' }}
         >
@@ -384,6 +385,7 @@ function InviteSection() {
               }}
               placeholder={t('claimPlaceholder')}
               aria-label={t('claimTitle')}
+              aria-invalid={Boolean(issue)}
               autoComplete="off"
               autoCapitalize="none"
               spellCheck={false}
@@ -406,6 +408,7 @@ function InviteSection() {
           </button>
         </div>
         <p
+          aria-live="polite"
           className={`text-[11px] ${issue ? 'text-nham-danger' : 'text-nham-text-muted'}`}
           style={{ fontFamily: 'DM Sans, sans-serif' }}
         >

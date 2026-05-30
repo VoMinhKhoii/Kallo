@@ -1028,7 +1028,8 @@
     "wall": {
       "sharedAt": "Chia sẻ lúc {time}",
       "toggleDetails": "Xem chi tiết bữa ăn",
-      "total": "Tổng"
+      "total": "Tổng",
+      "loading": "Đang tải vòng kết nối của bạn"
     },
     "shareControl": {
       "share": "Chia sẻ với vòng kết nối",

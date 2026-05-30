@@ -94,6 +94,7 @@ function ShareToCircleButton({ mealId }: { mealId: string }) {
         onClick={handleToggle}
         disabled={shareMeal.isPending}
         aria-pressed={isShared}
+        aria-busy={shareMeal.isPending}
         className={cn(
           'inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 font-medium text-[11px] transition-colors disabled:cursor-not-allowed disabled:opacity-60',
           isShared

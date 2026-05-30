@@ -1,6 +1,7 @@
 'use client';
 
 import { motion } from 'motion/react';
+import { useTranslations } from 'next-intl';
 
 /** Number of placeholder cards shown while the circle feed loads. */
 const SKELETON_COUNT = 3;
@@ -11,11 +12,12 @@ const SKELETON_COUNT = 3;
  * flash of the empty state during the initial fetch.
  */
 export function CircleWallSkeleton() {
+  const t = useTranslations('groups.wall');
   return (
     <div
       role="status"
       aria-busy="true"
-      aria-label="Loading your circle"
+      aria-label={t('loading')}
       className="space-y-6 pl-4 sm:pl-10"
     >
       {Array.from({ length: SKELETON_COUNT }, (_, index) => (
