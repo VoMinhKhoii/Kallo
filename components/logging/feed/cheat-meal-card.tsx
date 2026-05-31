@@ -4,11 +4,11 @@ import { ChevronDown, PartyPopper } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
-import { Badge } from '@/components/ui/badge';
 import {
   formatCaloriesOrNA,
   formatMacroOrNA,
 } from '@/components/logging/feed/format-inline-nutrition';
+import { Badge } from '@/components/ui/badge';
 import type { PersistedMeal } from '@/lib/actions/meals';
 import { activeAnchorLabel } from '@/lib/cheat/slider-nutrition';
 

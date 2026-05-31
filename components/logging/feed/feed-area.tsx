@@ -27,8 +27,8 @@ import { useStreamAnalysis } from '@/hooks/use-stream-analysis';
 import { useStreamingTerminalEffects } from '@/hooks/use-streaming-terminal-effects';
 import { useSubmitGuard } from '@/hooks/use-submit-guard';
 import { sumDisplayedNutrition } from '@/lib/ai/pipeline/goal-adjustment';
-import type { CheatSliderLevels } from '@/lib/types/cheat';
 import { isLikelyPartialDay } from '@/lib/nutrition/pattern/completeness';
+import type { CheatSliderLevels } from '@/lib/types/cheat';
 import type {
   ChatMessage,
   MacroBreakdown,

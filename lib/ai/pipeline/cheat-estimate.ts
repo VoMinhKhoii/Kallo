@@ -6,10 +6,10 @@ import {
 } from '@/lib/ai/prompts/cheat-estimate';
 import { sanitizePromptContextValue } from '@/lib/ai/prompts/sanitize';
 import type { PromptPersonalizationContext } from '@/lib/ai/prompts/types';
-import type { UserContext } from '@/lib/ai/types';
 import type { StreamEvent } from '@/lib/ai/streaming/types';
-import type { CheatSliderSpec } from '@/lib/types/cheat';
+import type { UserContext } from '@/lib/ai/types';
 import { clampLevel } from '@/lib/cheat/slider-nutrition';
+import type { CheatSliderSpec } from '@/lib/types/cheat';
 import { resolveModelProfile } from './model-profile';
 import { type CheatEstimate, cheatEstimateSchema } from './schemas';
 
