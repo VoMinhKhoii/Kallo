@@ -4,7 +4,7 @@ import {
   upsertPublicProfile,
 } from '@/lib/actions/groups';
 import { serializeError } from '@/lib/errors';
-import { requireUserId } from '../_auth';
+import { readJsonBody, requireUserId } from '../_auth';
 
 export const runtime = 'nodejs';
 
@@ -26,7 +26,11 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const actorId = await requireUserId();
-    const body = await request.json().catch(() => ({}));
+    const body = (await readJsonBody(request)) as {
+      handle: string;
+      displayName?: string;
+      avatarSeed?: string;
+    };
     const profile = await upsertPublicProfile(actorId, {
       handle: body.handle,
       displayName: body.displayName,
