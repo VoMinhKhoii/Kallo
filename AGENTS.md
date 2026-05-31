@@ -224,6 +224,12 @@ Full documentation in `docs/DATABASE.md`. Key points:
 - **Batch operations need rate limiting**: 35s delays between batches of 50 for 100 req/min free tier.
 - **Parse 429 retry-after headers** from Gemini API for accurate backoff.
 
+### OG Images (Satori / `@vercel/og`)
+The macro-card OG route (`app/api/og/macro-card/[shareId]/route.tsx`) renders through Satori, which is **not a browser**. Check the `@vercel/og` docs (via Context7) before editing it:
+- **Every element with 2+ children needs an explicit `display: 'flex'`** (or `'none'`). Satori has no default block layout and throws without it. This is the easy bug to ship blind.
+- **Literal hex colors only** — Satori can't resolve `var(--nham-*)`. Mirror the palette from `app/globals.css` as hex.
+- **Load fonts from disk** (`_fonts/*.ttf` via `readFile`) and pass them to `ImageResponse`; there is no `@font-face`/web-font access.
+
 ### Agent Workflow
 - **Check `package.json` scripts** before assuming a command exists.
 - **For Supabase interactive commands** (`dbr:reset`): use `bash mode="async"` with `write_bash` to send `y`.
@@ -271,3 +277,4 @@ Architectural decisions and their rationale. Format: Context → Decision → Tr
 | TanStack Query not used for SSE | Raw fetch + ReadableStream for SSE consumer | Purpose-built state machine vs fighting TanStack abstraction | Active |
 | Animation library | motion (not Framer Motion) for all animations | Lighter bundle, same API surface | Active |
 | Vector dimensions | 768-dim via gemini-embedding-001 (text-embedding-004 deprecated) | Larger vectors but better multilingual quality | Active |
+| `@handle` search felt like a username system users didn't understand | Locket-style link invites: auto-provisioned shareable link (editable slug reuses `public_profiles.handle`), recipient taps Accept to connect — no inviter approval | No discovery/search; a forwarded link lets anyone connect (mitigated by remove-friend; rotatable token deferred) | Active |
