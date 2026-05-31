@@ -66,7 +66,7 @@ function CircleCard({ entry }: { entry: CircleFeedEntry }) {
           className="text-[12px] text-nham-text"
           style={{ fontFamily: 'DM Sans, sans-serif' }}
         >
-          {friend.displayName?.trim() || `@${friend.handle}`}
+          {friend.displayName?.trim() || friend.handle}
         </span>
         <span
           className="text-[11px] text-nham-text-muted/60"
