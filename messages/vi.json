@@ -652,6 +652,7 @@
       "hasAccount": "Đã có tài khoản?",
       "signInLink": "Đăng nhập",
       "success": "Kiểm tra email để xác nhận tài khoản",
+      "successSignedIn": "Đã tạo tài khoản. Chào mừng!",
       "error": "Không thể tạo tài khoản",
       "emailPlaceholder": "ban@example.com",
       "passwordPlaceholder": "Tạo mật khẩu",
@@ -1022,7 +1023,7 @@
     },
     "empty": {
       "title": "Vòng kết nối đang yên ắng",
-      "subtitle": "Thêm bạn bằng tên định danh để chia sẻ những gì bạn đang ăn. Nhật ký của bạn vẫn riêng tư cho đến khi bạn chọn chia sẻ.",
+      "subtitle": "Chia sẻ liên kết mời để kết nối. Nhật ký của bạn vẫn riêng tư cho đến khi bạn chọn chia sẻ.",
       "cta": "Thêm một người bạn"
     },
     "wall": {
@@ -1041,44 +1042,6 @@
       "shareCardTitle": "Bữa ăn của tôi trên Nhẩm",
       "copiedLink": "Đã sao chép liên kết thẻ",
       "errorCopy": "Không thể sao chép liên kết. Vui lòng thử lại."
-    },
-    "addFriend": {
-      "title": "Thêm một người bạn",
-      "description": "Tìm ai đó bằng tên định danh chính xác, hoặc gửi liên kết mời.",
-      "searchPlaceholder": "@tên_định_danh",
-      "searchLabel": "Tìm theo tên định danh",
-      "searching": "Đang tìm…",
-      "notFound": "Không tìm thấy ai với tên định danh đó.",
-      "hint": "Tên định danh phải chính xác — hãy gõ đầy đủ.",
-      "request": "Gửi lời mời",
-      "requesting": "Đang gửi…",
-      "requested": "Đã gửi lời mời",
-      "copyLink": "Sao chép liên kết mời",
-      "linkCopied": "Đã sao chép liên kết mời.",
-      "linkCopyError": "Không thể sao chép liên kết. Vui lòng thử lại.",
-      "claimTitle": "Tạo tên định danh để bạn bè có thể thêm bạn",
-      "claimPlaceholder": "tendinhdanh",
-      "claimHint": "Chữ thường, số và dấu gạch dưới. Đây là cách bạn bè tìm thấy bạn.",
-      "save": "Lưu",
-      "saving": "Đang lưu…",
-      "claimError": "Không thể lưu tên định danh. Vui lòng thử lại.",
-      "handleTaken": "Tên định danh đã có người dùng. Hãy thử tên khác.",
-      "handleReserved": "Tên định danh này được giữ chỗ. Hãy thử tên khác.",
-      "handleInvalid": "Dùng 3–20 ký tự chữ thường, số hoặc gạch dưới.",
-      "yourInvite": "Liên kết mời của bạn",
-      "copy": "Sao chép",
-      "requestError": "Không thể gửi lời mời. Vui lòng thử lại.",
-      "incomingTitle": "Lời mời dành cho bạn",
-      "outgoingTitle": "Lời mời đã gửi",
-      "circleTitle": "Vòng kết nối của bạn",
-      "accept": "Chấp nhận",
-      "accepting": "Đang chấp nhận…",
-      "block": "Chặn",
-      "blocking": "Đang chặn…",
-      "acceptError": "Không thể chấp nhận lời mời. Vui lòng thử lại.",
-      "blockError": "Không thể chặn. Vui lòng thử lại.",
-      "pendingOutgoing": "Đang chờ",
-      "emptyCircle": "Chưa có bạn nào."
     },
     "invite": {
       "title": "Mời vào vòng kết nối",
@@ -1101,7 +1064,13 @@
     "circle": {
       "title": "Vòng kết nối ({count})",
       "empty": "Chưa có ai trong vòng kết nối. Chia sẻ liên kết để kết nối.",
-      "remove": "Xoá"
+      "remove": "Xoá",
+      "removeError": "Không thể xoá. Vui lòng thử lại."
+    },
+    "error": {
+      "title": "Không thể tải vòng kết nối",
+      "body": "Đã xảy ra lỗi. Kiểm tra kết nối và thử lại.",
+      "retry": "Thử lại"
     },
     "connect": {
       "connectTitle": "Kết nối với {name}",

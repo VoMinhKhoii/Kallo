@@ -5,7 +5,9 @@ import { AnimatePresence, motion } from 'motion/react';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { CircleEmpty } from '@/components/groups/circle-empty';
+import { CircleError } from '@/components/groups/circle-error';
 import { CircleWallSkeleton } from '@/components/groups/circle-wall-skeleton';
+import { labelFor } from '@/components/groups/invite/profile-identity';
 import { useCircleFeed } from '@/hooks/use-circle-feed';
 import type { CircleFeedEntry } from '@/lib/groups/client';
 
@@ -15,11 +17,6 @@ function formatMacro(value: number | null): string {
 
 function formatCalories(value: number | null): string {
   return value == null ? 'N/A' : `${Math.round(value)} kcal`;
-}
-
-function initialFor(entry: CircleFeedEntry['friend']): string {
-  const source = entry.displayName?.trim() || entry.handle;
-  return source.charAt(0).toUpperCase();
 }
 
 /**
@@ -42,6 +39,8 @@ function CircleCard({ entry }: { entry: CircleFeedEntry }) {
   const carbs = formatMacro(meal.carbohydrateG);
   const fat = formatMacro(meal.fatG);
 
+  const friendLabel = labelFor(friend);
+
   return (
     <motion.article
       initial={{ opacity: 0 }}
@@ -59,14 +58,14 @@ function CircleCard({ entry }: { entry: CircleFeedEntry }) {
             className="font-bold text-[10px] text-nham-btn"
             style={{ fontFamily: 'DM Sans, sans-serif' }}
           >
-            {initialFor(friend)}
+            {friendLabel.charAt(0).toUpperCase()}
           </span>
         </span>
         <span
           className="text-[12px] text-nham-text"
           style={{ fontFamily: 'DM Sans, sans-serif' }}
         >
-          {friend.displayName?.trim() || friend.handle}
+          {friendLabel}
         </span>
         <span
           className="text-[11px] text-nham-text-muted/60"
@@ -173,10 +172,22 @@ function CircleCard({ entry }: { entry: CircleFeedEntry }) {
  * badge-free by design — never a global newsfeed.
  */
 export function CircleWall() {
-  const { data: feed = [], isPending } = useCircleFeed();
+  const {
+    data: feed = [],
+    isPending,
+    isError,
+    isFetching,
+    refetch,
+  } = useCircleFeed();
 
   if (isPending) {
     return <CircleWallSkeleton />;
+  }
+
+  if (isError) {
+    return (
+      <CircleError onRetry={() => void refetch()} isRetrying={isFetching} />
+    );
   }
 
   if (feed.length === 0) {

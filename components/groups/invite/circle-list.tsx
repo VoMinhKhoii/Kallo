@@ -1,6 +1,8 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
+import { toast } from 'sonner';
+import { CircleError } from '@/components/groups/circle-error';
 import { useFriends, useRemoveFriend } from '@/hooks/use-friends';
 import type { CircleMember } from '@/lib/groups/client';
 import { ProfileIdentity } from './profile-identity';
@@ -8,8 +10,14 @@ import { ProfileIdentity } from './profile-identity';
 /** The signed-in user's accepted connections, each with a Remove action. */
 export function CircleList() {
   const t = useTranslations('groups.circle');
-  const { data: members = [] } = useFriends();
+  const { data: members = [], isError, isFetching, refetch } = useFriends();
   const removeFriend = useRemoveFriend();
+
+  if (isError) {
+    return (
+      <CircleError onRetry={() => void refetch()} isRetrying={isFetching} />
+    );
+  }
 
   const circle = members.filter((m) => m.status === 'accepted');
 
@@ -41,8 +49,13 @@ export function CircleList() {
             <ProfileIdentity profile={member.profile} />
             <button
               type="button"
-              onClick={() => removeFriend.mutate(member.profile.userId)}
+              onClick={() =>
+                removeFriend.mutate(member.profile.userId, {
+                  onError: () => toast.error(t('removeError')),
+                })
+              }
               disabled={removeFriend.isPending}
+              aria-busy={removeFriend.isPending}
               className="inline-flex shrink-0 items-center rounded-lg border border-nham-border/60 px-2.5 py-1.5 font-medium text-[12px] text-nham-text-muted transition-colors hover:bg-nham-danger/10 hover:text-nham-danger disabled:cursor-not-allowed disabled:opacity-60"
               style={{ fontFamily: 'DM Sans, sans-serif' }}
             >

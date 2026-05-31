@@ -652,6 +652,7 @@
       "hasAccount": "Already have an account?",
       "signInLink": "Sign in",
       "success": "Check your email to confirm your account",
+      "successSignedIn": "Account created. Welcome!",
       "error": "Could not create account",
       "emailPlaceholder": "you@example.com",
       "passwordPlaceholder": "Create a password",
@@ -1022,7 +1023,7 @@
     },
     "empty": {
       "title": "Your circle is quiet",
-      "subtitle": "Add a friend by their handle to share what you're eating. Your log stays private until you choose to share it.",
+      "subtitle": "Share your invite link to connect. Your log stays private until you choose to share it.",
       "cta": "Add a friend"
     },
     "wall": {
@@ -1041,44 +1042,6 @@
       "shareCardTitle": "My meal on Nhẩm",
       "copiedLink": "Card link copied to clipboard",
       "errorCopy": "Couldn't copy the card link. Try again."
-    },
-    "addFriend": {
-      "title": "Add a friend",
-      "description": "Find someone by their exact handle, or send them your invite link.",
-      "searchPlaceholder": "@handle",
-      "searchLabel": "Search by handle",
-      "searching": "Searching…",
-      "notFound": "No one found with that handle.",
-      "hint": "Handles are exact — type the whole thing.",
-      "request": "Send request",
-      "requesting": "Sending…",
-      "requested": "Request sent",
-      "copyLink": "Copy invite link",
-      "linkCopied": "Invite link copied to clipboard.",
-      "linkCopyError": "Couldn't copy the link. Try again.",
-      "claimTitle": "Claim your handle so friends can add you",
-      "claimPlaceholder": "yourhandle",
-      "claimHint": "Lowercase letters, numbers, and underscores. This is how friends find you.",
-      "save": "Save",
-      "saving": "Saving…",
-      "claimError": "Couldn't save your handle. Try again.",
-      "handleTaken": "That handle is taken. Try another.",
-      "handleReserved": "That handle is reserved. Try another.",
-      "handleInvalid": "Use 3–20 lowercase letters, numbers, or underscores.",
-      "yourInvite": "Your invite link",
-      "copy": "Copy",
-      "requestError": "Couldn't send the request. Try again.",
-      "incomingTitle": "Requests for you",
-      "outgoingTitle": "Sent requests",
-      "circleTitle": "Your circle",
-      "accept": "Accept",
-      "accepting": "Accepting…",
-      "block": "Block",
-      "blocking": "Blocking…",
-      "acceptError": "Couldn't accept the request. Try again.",
-      "blockError": "Couldn't block. Try again.",
-      "pendingOutgoing": "Pending",
-      "emptyCircle": "No friends yet."
     },
     "invite": {
       "title": "Invite to your circle",
@@ -1101,7 +1064,13 @@
     "circle": {
       "title": "Your circle ({count})",
       "empty": "No one in your circle yet. Share your link to connect.",
-      "remove": "Remove"
+      "remove": "Remove",
+      "removeError": "Couldn't remove them. Try again."
+    },
+    "error": {
+      "title": "Couldn't load your circle",
+      "body": "Something went wrong. Check your connection and try again.",
+      "retry": "Try again"
     },
     "connect": {
       "connectTitle": "Connect with {name}",

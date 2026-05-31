@@ -54,19 +54,24 @@ export function SignUpForm() {
       return;
     }
 
-    toast.success(t('success'));
     setLoading(false);
     closeDialog();
 
-    // Confirmation disabled → a session exists now, so resurface the invite.
+    // Confirmation disabled → a session exists now, so resurface the invite
+    // directly instead of telling them to check an email that won't arrive.
     if (result?.session) {
+      toast.success(t('successSignedIn'));
       if (next) {
         window.location.assign(next);
         return;
       }
       router.push('/logging');
       router.refresh();
+      return;
     }
+
+    // Confirmation enabled → no session yet; the email link carries `next`.
+    toast.success(t('success'));
   };
 
   return (
