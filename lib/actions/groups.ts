@@ -23,12 +23,13 @@ import {
 import { Errors } from '@/lib/errors';
 import { orderedPair } from '@/lib/groups/friendship';
 import { validateHandle } from '@/lib/groups/handles';
+import { generateInviteSlug } from '@/lib/groups/slug';
 import {
-  acceptFriendSchema,
+  acceptInviteSchema,
   blockFriendSchema,
   circleFeedSchema,
-  requestFriendSchema,
-  searchByHandleSchema,
+  handleSchema,
+  removeFriendSchema,
   upsertPublicProfileSchema,
 } from '@/lib/validation';
 
@@ -173,15 +174,64 @@ export async function getMyPublicProfile(
 }
 
 // ---------------------------------------------------------------------------
-// searchByHandle — EXACT match only (not enumerable / no prefix)
+// getOrCreateMyProfile — auto-provision a link profile on first use
 // ---------------------------------------------------------------------------
+// No "claim a username" gate: the user gets a shareable link immediately, with
+// a generated slug they can edit later (upsertPublicProfile). The slug is the
+// editable end of the invite link and doubles as the person's circle label.
 
-export async function searchByHandle(
+export async function getOrCreateMyProfile(
   actorId: string,
-  input: { handle: string },
+  db: Db = defaultDb
+): Promise<PublicProfile> {
+  const existing = await getMyPublicProfile(actorId, db);
+  if (existing) return existing;
+
+  // Provision with a generated slug; retry a few times on a uniqueness clash.
+  for (let attempt = 0; attempt < 6; attempt++) {
+    const handle = generateInviteSlug();
+    try {
+      const [row] = await db
+        .insert(publicProfiles)
+        .values({
+          userId: actorId,
+          handle,
+          displayName: null,
+          avatarSeed: handle,
+        })
+        .returning();
+      return {
+        userId: row.userId,
+        handle: row.handle,
+        displayName: row.displayName,
+        avatarSeed: row.avatarSeed,
+      };
+    } catch (error) {
+      if ((error as { code?: string } | null)?.code === '23505') {
+        // Either a concurrent provision for this user, or a slug clash.
+        const now = await getMyPublicProfile(actorId, db);
+        if (now) return now;
+        continue; // slug collision — retry with a fresh slug
+      }
+      throw error;
+    }
+  }
+  throw Errors.conflict('Không thể tạo liên kết mời. Vui lòng thử lại.');
+}
+
+// ---------------------------------------------------------------------------
+// getProfileBySlug — resolve an inviter from their link slug (exact match)
+// ---------------------------------------------------------------------------
+// Server-only: the public invite page calls this via the owner-role Drizzle db
+// (which bypasses RLS). Exact match only — no search/prefix surface, so it is
+// not enumerable.
+
+export async function getProfileBySlug(
+  slug: string,
   db: Db = defaultDb
 ): Promise<PublicProfile | null> {
-  const parsed = searchByHandleSchema.parse(input);
+  const parsed = handleSchema.safeParse(slug);
+  if (!parsed.success) return null;
 
   const rows = await db
     .select({
@@ -191,110 +241,136 @@ export async function searchByHandle(
       avatarSeed: publicProfiles.avatarSeed,
     })
     .from(publicProfiles)
-    .where(eq(publicProfiles.handle, parsed.handle))
+    .where(eq(publicProfiles.handle, parsed.data))
     .limit(1);
 
-  const match = rows[0];
-  if (!match || match.userId === actorId) {
-    // Never reveal the actor's own profile via search, and never leak a "no
-    // such handle" vs "is you" distinction — both return null.
-    return null;
-  }
-
-  return match;
+  return rows[0] ?? null;
 }
 
 // ---------------------------------------------------------------------------
-// requestFriend — compute orderedPair, insert pending, write event
+// acceptInvite — the recipient taps Accept on a link; connect directly
 // ---------------------------------------------------------------------------
+// The recipient's tap IS the accept (Locket model): no separate inviter
+// approval. Creates an accepted edge, or promotes a pre-existing pending one.
+// The friendship write + event are transactional so an event can't be orphaned.
 
-export async function requestFriend(
+export async function acceptInvite(
+  actorId: string,
+  input: { slug: string },
+  db: Db = defaultDb
+): Promise<{ status: 'accepted'; inviter: PublicProfile }> {
+  const parsed = acceptInviteSchema.parse(input);
+
+  const inviter = await getProfileBySlug(parsed.slug, db);
+  if (!inviter) {
+    throw Errors.notFound('Liên kết mời không hợp lệ.');
+  }
+  if (inviter.userId === actorId) {
+    throw Errors.validationFailed('Không thể kết nối với chính mình.');
+  }
+
+  const { userLow, userHigh } = orderedPair(actorId, inviter.userId);
+
+  return db.transaction(async (tx) => {
+    const existing = await tx
+      .select({ id: friendships.id, status: friendships.status })
+      .from(friendships)
+      .where(
+        and(
+          eq(friendships.userLow, userLow),
+          eq(friendships.userHigh, userHigh)
+        )
+      )
+      .limit(1);
+
+    if (existing[0]) {
+      if (existing[0].status === 'blocked') {
+        throw Errors.conflict('Không thể kết nối.');
+      }
+      if (existing[0].status === 'accepted') {
+        return { status: 'accepted' as const, inviter };
+      }
+      // Promote a pending edge (either direction) to accepted.
+      await tx
+        .update(friendships)
+        .set({ status: 'accepted', updatedAt: new Date() })
+        .where(eq(friendships.id, existing[0].id));
+      await tx.insert(circleEvents).values({
+        actorId,
+        type: 'friend_accepted',
+        refId: existing[0].id,
+      });
+      return { status: 'accepted' as const, inviter };
+    }
+
+    const [row] = await tx
+      .insert(friendships)
+      .values({
+        userLow,
+        userHigh,
+        // The inviter initiated by sharing the link; the recipient accepted.
+        requestedBy: inviter.userId,
+        status: 'accepted',
+      })
+      .returning({ id: friendships.id });
+    await tx.insert(circleEvents).values({
+      actorId,
+      type: 'friend_accepted',
+      refId: row.id,
+    });
+    return { status: 'accepted' as const, inviter };
+  });
+}
+
+// ---------------------------------------------------------------------------
+// removeFriend — drop a connection (re-invitable later)
+// ---------------------------------------------------------------------------
+// Deletes the canonical edge so the pair can reconnect via a new invite. Never
+// clears a 'blocked' edge (removing a friend must not silently unblock).
+
+export async function removeFriend(
   actorId: string,
   input: { targetUserId: string },
   db: Db = defaultDb
-): Promise<{ friendshipId: string; status: string }> {
-  const parsed = requestFriendSchema.parse(input);
-
+): Promise<{ removed: boolean }> {
+  const parsed = removeFriendSchema.parse(input);
   if (parsed.targetUserId === actorId) {
-    throw Errors.validationFailed('Không thể kết bạn với chính mình.');
+    throw Errors.validationFailed('Không thể xoá chính mình.');
   }
 
   const { userLow, userHigh } = orderedPair(actorId, parsed.targetUserId);
 
-  // If an edge already exists (pending/accepted/blocked), surface it rather
-  // than violating the composite unique.
-  const existing = await db
-    .select({ id: friendships.id, status: friendships.status })
+  await db
+    .delete(friendships)
+    .where(
+      and(
+        eq(friendships.userLow, userLow),
+        eq(friendships.userHigh, userHigh),
+        sql`${friendships.status} <> 'blocked'`
+      )
+    );
+
+  return { removed: true };
+}
+
+// ---------------------------------------------------------------------------
+// getFriendshipStatus — the actor's edge status with another user, or null
+// ---------------------------------------------------------------------------
+
+export async function getFriendshipStatus(
+  actorId: string,
+  otherUserId: string,
+  db: Db = defaultDb
+): Promise<string | null> {
+  const { userLow, userHigh } = orderedPair(actorId, otherUserId);
+  const rows = await db
+    .select({ status: friendships.status })
     .from(friendships)
     .where(
       and(eq(friendships.userLow, userLow), eq(friendships.userHigh, userHigh))
     )
     .limit(1);
-
-  if (existing[0]) {
-    if (existing[0].status === 'blocked') {
-      throw Errors.conflict('Không thể gửi lời mời kết bạn.');
-    }
-    return { friendshipId: existing[0].id, status: existing[0].status };
-  }
-
-  const [row] = await db
-    .insert(friendships)
-    .values({
-      userLow,
-      userHigh,
-      requestedBy: actorId,
-      status: 'pending',
-    })
-    .returning({ id: friendships.id, status: friendships.status });
-
-  // Event spine: the meal-share fanout is handled by a DB trigger, but
-  // friend_request has no trigger, so write it here.
-  await db.insert(circleEvents).values({
-    actorId,
-    type: 'friend_request',
-    refId: row.id,
-  });
-
-  return { friendshipId: row.id, status: row.status };
-}
-
-// ---------------------------------------------------------------------------
-// acceptFriend — accepter must NOT be the requester
-// ---------------------------------------------------------------------------
-
-export async function acceptFriend(
-  actorId: string,
-  input: { friendshipId: string },
-  db: Db = defaultDb
-): Promise<{ friendshipId: string; status: string }> {
-  const parsed = acceptFriendSchema.parse(input);
-
-  const [row] = await db
-    .update(friendships)
-    .set({ status: 'accepted', updatedAt: new Date() })
-    .where(
-      and(
-        eq(friendships.id, parsed.friendshipId),
-        eq(friendships.status, 'pending'),
-        // Only the recipient (not the requester) may accept.
-        sql`${friendships.requestedBy} <> ${actorId}`,
-        or(eq(friendships.userLow, actorId), eq(friendships.userHigh, actorId))
-      )
-    )
-    .returning({ id: friendships.id, status: friendships.status });
-
-  if (!row) {
-    throw Errors.notFound('Lời mời không tồn tại hoặc không thể chấp nhận.');
-  }
-
-  await db.insert(circleEvents).values({
-    actorId,
-    type: 'friend_accepted',
-    refId: row.id,
-  });
-
-  return { friendshipId: row.id, status: row.status };
+  return rows[0]?.status ?? null;
 }
 
 // ---------------------------------------------------------------------------

@@ -1079,6 +1079,45 @@
       "blockError": "Couldn't block. Try again.",
       "pendingOutgoing": "Pending",
       "emptyCircle": "No friends yet."
+    },
+    "invite": {
+      "title": "Invite to your circle",
+      "description": "Share your link. Anyone who opens it can connect with you.",
+      "yourLink": "Your invite link",
+      "hint": "Anyone with this link can connect with you.",
+      "copy": "Copy",
+      "linkCopied": "Link copied",
+      "linkCopyError": "Couldn't copy the link",
+      "editTitle": "Edit your link",
+      "editHint": "3–20 characters: lowercase letters, numbers, underscore.",
+      "save": "Save",
+      "cancel": "Cancel",
+      "endSaved": "Link updated",
+      "endTaken": "That link is taken",
+      "endInvalid": "That link isn't valid",
+      "endReserved": "That link is reserved",
+      "endError": "Couldn't update the link"
+    },
+    "circle": {
+      "title": "Your circle ({count})",
+      "empty": "No one in your circle yet. Share your link to connect.",
+      "remove": "Remove"
+    },
+    "connect": {
+      "connectTitle": "Connect with {name}",
+      "connectBody": "Accept to add each other to your circles and see how you're each eating.",
+      "accept": "Accept",
+      "error": "Couldn't connect. Try again.",
+      "invalidTitle": "Invite not valid",
+      "invalidBody": "This invite link isn't valid or has changed.",
+      "selfTitle": "This is your invite link",
+      "selfBody": "Share it with a friend so they can connect with you.",
+      "alreadyTitle": "You're connected with {name}",
+      "alreadyBody": "You're already in each other's circles.",
+      "goToCircle": "Go to your circle",
+      "signedOutTitle": "{name} invited you to their circle",
+      "signedOutBody": "Sign in or create an account to connect.",
+      "signIn": "Sign in to connect"
     }
   },
   "settings": {

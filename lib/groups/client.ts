@@ -46,10 +46,11 @@ export function fetchFriends(): Promise<CircleMember[]> {
   );
 }
 
-export function fetchMyProfile(): Promise<PublicProfile | null> {
-  return request<{ profile: PublicProfile | null }>(
-    '/api/v1/groups/profile'
-  ).then((r) => r.profile);
+/** The user's own profile — auto-provisioned server-side, so never null. */
+export function fetchMyProfile(): Promise<PublicProfile> {
+  return request<{ profile: PublicProfile }>('/api/v1/groups/profile').then(
+    (r) => r.profile
+  );
 }
 
 export function saveMyProfile(input: {
@@ -62,26 +63,21 @@ export function saveMyProfile(input: {
   ).then((r) => r.profile);
 }
 
-export function searchFriendByHandle(
-  handle: string
-): Promise<PublicProfile | null> {
-  return request<{ profile: PublicProfile | null }>(
-    `/api/v1/groups/friends/search?handle=${encodeURIComponent(handle)}`
-  ).then((r) => r.profile);
-}
-
-export function requestFriend(targetUserId: string) {
-  return postJson<{ friendshipId: string; status: string }>(
-    '/api/v1/groups/friends/request',
-    { targetUserId }
+/** Accept an invite link, identified by the inviter's link slug. */
+export function acceptInvite(slug: string) {
+  return postJson<{ status: 'accepted'; inviter: PublicProfile }>(
+    '/api/v1/groups/invite/accept',
+    { slug }
   );
 }
 
-export function acceptFriend(friendshipId: string) {
-  return postJson<{ friendshipId: string; status: string }>(
-    '/api/v1/groups/friends/accept',
-    { friendshipId }
-  );
+/** Remove a connection (the pair can re-invite later). */
+export function removeFriend(targetUserId: string) {
+  return request<{ removed: boolean }>('/api/v1/groups/friends/remove', {
+    method: 'DELETE',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ targetUserId }),
+  });
 }
 
 export function blockFriend(targetUserId: string) {

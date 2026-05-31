@@ -104,6 +104,15 @@ export const blockFriendSchema = z.object({
   targetUserId: uuidSchema,
 });
 
+export const removeFriendSchema = z.object({
+  targetUserId: uuidSchema,
+});
+
+/** Accept a link invite, identified by the inviter's editable link slug. */
+export const acceptInviteSchema = z.object({
+  slug: handleSchema,
+});
+
 export const setMealShareVisibilitySchema = z.object({
   mealId: uuidSchema,
   visibility: z.enum(['private', 'circle']),

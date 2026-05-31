@@ -12,15 +12,15 @@ export const profileKeys = {
   mine: ['my-profile'] as const,
 };
 
-/** The signed-in user's own public profile (handle), or null if unclaimed. */
+/** The signed-in user's own profile (auto-provisioned, so never null). */
 export function useMyProfile() {
-  return useQuery<PublicProfile | null>({
+  return useQuery<PublicProfile>({
     queryKey: profileKeys.mine,
     queryFn: fetchMyProfile,
   });
 }
 
-/** Claim or update the user's handle, then refresh anything that renders it. */
+/** Update the user's link end (slug), then refresh anything that renders it. */
 export function useSaveProfile() {
   const queryClient = useQueryClient();
   return useMutation({

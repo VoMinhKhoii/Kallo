@@ -1,17 +1,18 @@
 import { type NextRequest, NextResponse } from 'next/server';
-import { acceptFriend } from '@/lib/actions/groups';
+import { removeFriend } from '@/lib/actions/groups';
 import { serializeError } from '@/lib/errors';
 import { readJsonBody, requireUserId } from '../../_auth';
 
 export const runtime = 'nodejs';
 
-export async function POST(request: NextRequest) {
+/** Remove a connection (deletes the edge; the pair can re-invite later). */
+export async function DELETE(request: NextRequest) {
   try {
     const actorId = await requireUserId();
     const body = await readJsonBody(request);
-    const result = await acceptFriend(
+    const result = await removeFriend(
       actorId,
-      body as { friendshipId: string }
+      body as { targetUserId: string }
     );
     return NextResponse.json(result);
   } catch (error) {

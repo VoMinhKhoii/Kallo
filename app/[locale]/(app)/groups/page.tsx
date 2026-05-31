@@ -9,14 +9,8 @@ export async function generateMetadata(): Promise<Metadata> {
   return { title: t('title') };
 }
 
-export default async function GroupsPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ add?: string | string[] }>;
-}) {
+export default async function GroupsPage() {
   const t = await getTranslations('groups.page');
-  const { add } = await searchParams;
-  const initialHandle = typeof add === 'string' ? add : undefined;
 
   return (
     <main className="flex-1 px-5 py-6 sm:px-8 lg:px-12">
@@ -38,7 +32,6 @@ export default async function GroupsPage({
           </div>
 
           <AddFriendDialog
-            initialHandle={initialHandle}
             trigger={
               <button
                 type="button"

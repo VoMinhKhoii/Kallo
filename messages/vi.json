@@ -1079,6 +1079,45 @@
       "blockError": "Không thể chặn. Vui lòng thử lại.",
       "pendingOutgoing": "Đang chờ",
       "emptyCircle": "Chưa có bạn nào."
+    },
+    "invite": {
+      "title": "Mời vào vòng kết nối",
+      "description": "Chia sẻ liên kết của bạn. Bất kỳ ai mở liên kết đều có thể kết nối với bạn.",
+      "yourLink": "Liên kết mời của bạn",
+      "hint": "Bất kỳ ai có liên kết này đều có thể kết nối với bạn.",
+      "copy": "Sao chép",
+      "linkCopied": "Đã sao chép liên kết",
+      "linkCopyError": "Không thể sao chép liên kết",
+      "editTitle": "Chỉnh sửa liên kết",
+      "editHint": "3–20 ký tự: chữ thường, số, gạch dưới.",
+      "save": "Lưu",
+      "cancel": "Huỷ",
+      "endSaved": "Đã cập nhật liên kết",
+      "endTaken": "Liên kết này đã được dùng",
+      "endInvalid": "Liên kết không hợp lệ",
+      "endReserved": "Liên kết này đã được giữ chỗ",
+      "endError": "Không thể cập nhật liên kết"
+    },
+    "circle": {
+      "title": "Vòng kết nối ({count})",
+      "empty": "Chưa có ai trong vòng kết nối. Chia sẻ liên kết để kết nối.",
+      "remove": "Xoá"
+    },
+    "connect": {
+      "connectTitle": "Kết nối với {name}",
+      "connectBody": "Chấp nhận để thêm nhau vào vòng kết nối và xem cách mỗi người đang ăn uống.",
+      "accept": "Chấp nhận",
+      "error": "Không thể kết nối. Vui lòng thử lại.",
+      "invalidTitle": "Lời mời không hợp lệ",
+      "invalidBody": "Liên kết mời này không hợp lệ hoặc đã thay đổi.",
+      "selfTitle": "Đây là liên kết mời của bạn",
+      "selfBody": "Chia sẻ với bạn bè để họ có thể kết nối với bạn.",
+      "alreadyTitle": "Bạn đã kết nối với {name}",
+      "alreadyBody": "Hai bạn đã ở trong vòng kết nối của nhau.",
+      "goToCircle": "Đến vòng kết nối",
+      "signedOutTitle": "{name} đã mời bạn vào vòng kết nối",
+      "signedOutBody": "Đăng nhập hoặc tạo tài khoản để kết nối.",
+      "signIn": "Đăng nhập để kết nối"
     }
   },
   "settings": {
