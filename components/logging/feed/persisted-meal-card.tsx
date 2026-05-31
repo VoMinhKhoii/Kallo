@@ -5,18 +5,14 @@ import { AnimatePresence, motion } from 'motion/react';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { CheatMealCard } from '@/components/logging/feed/cheat-meal-card';
+import {
+  formatCaloriesOrNA,
+  formatMacroOrNA,
+} from '@/components/logging/feed/format-inline-nutrition';
 import type { PersistedMeal } from '@/lib/actions/meals';
 
 interface PersistedMealCardProps {
   meal: PersistedMeal;
-}
-
-function formatMacro(value: number | null): string {
-  return value == null ? 'N/A' : `${Math.round(value)}g`;
-}
-
-function formatCalories(value: number | null): string {
-  return value == null ? 'N/A' : `${Math.round(value)} kcal`;
 }
 
 export function PersistedMealCard({ meal }: PersistedMealCardProps) {
@@ -36,10 +32,10 @@ function PrecisePersistedMealCard({ meal }: PersistedMealCardProps) {
     minute: '2-digit',
   });
 
-  const calories = formatCalories(meal.nutrition.caloriesKcal);
-  const protein = formatMacro(meal.nutrition.proteinG);
-  const carbs = formatMacro(meal.nutrition.carbohydrateG);
-  const fat = formatMacro(meal.nutrition.fatG);
+  const calories = formatCaloriesOrNA(meal.nutrition.caloriesKcal);
+  const protein = formatMacroOrNA(meal.nutrition.proteinG);
+  const carbs = formatMacroOrNA(meal.nutrition.carbohydrateG);
+  const fat = formatMacroOrNA(meal.nutrition.fatG);
 
   return (
     <motion.article
@@ -123,10 +119,14 @@ function PrecisePersistedMealCard({ meal }: PersistedMealCardProps) {
               <div className="mt-5 border-nham-border border-t border-dashed pt-4">
                 <div className="mb-4 space-y-1">
                   {meal.mealItemGroups.map((group) => {
-                    const gProtein = formatMacro(group.nutrition.proteinG);
-                    const gCarbs = formatMacro(group.nutrition.carbohydrateG);
-                    const gFat = formatMacro(group.nutrition.fatG);
-                    const gCal = formatCalories(group.nutrition.caloriesKcal);
+                    const gProtein = formatMacroOrNA(group.nutrition.proteinG);
+                    const gCarbs = formatMacroOrNA(
+                      group.nutrition.carbohydrateG
+                    );
+                    const gFat = formatMacroOrNA(group.nutrition.fatG);
+                    const gCal = formatCaloriesOrNA(
+                      group.nutrition.caloriesKcal
+                    );
                     return (
                       <div
                         key={`${group.order}-${group.name}`}

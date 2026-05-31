@@ -5,15 +5,15 @@ import { AnimatePresence, motion } from 'motion/react';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
+import {
+  formatCaloriesOrNA,
+  formatMacroOrNA,
+} from '@/components/logging/feed/format-inline-nutrition';
 import type { PersistedMeal } from '@/lib/actions/meals';
 import { activeAnchorLabel } from '@/lib/cheat/slider-nutrition';
 
 interface CheatMealCardProps {
   meal: PersistedMeal;
-}
-
-function fmtG(value: number | null): string {
-  return value == null ? 'N/A' : `${Math.round(value)}g`;
 }
 
 export function CheatMealCard({ meal }: CheatMealCardProps) {
@@ -25,13 +25,10 @@ export function CheatMealCard({ meal }: CheatMealCardProps) {
     minute: '2-digit',
   });
 
-  const calories =
-    meal.nutrition.caloriesKcal == null
-      ? 'N/A'
-      : `${Math.round(meal.nutrition.caloriesKcal)} kcal`;
-  const protein = fmtG(meal.nutrition.proteinG);
-  const carbs = fmtG(meal.nutrition.carbohydrateG);
-  const fat = fmtG(meal.nutrition.fatG);
+  const calories = formatCaloriesOrNA(meal.nutrition.caloriesKcal);
+  const protein = formatMacroOrNA(meal.nutrition.proteinG);
+  const carbs = formatMacroOrNA(meal.nutrition.carbohydrateG);
+  const fat = formatMacroOrNA(meal.nutrition.fatG);
 
   const persisted = meal.cheatSliders;
 
@@ -103,7 +100,7 @@ export function CheatMealCard({ meal }: CheatMealCardProps) {
                 {'  '}C: {carbs}
                 {'  '}F: {fat}
                 {meal.alcoholG != null && meal.alcoholG > 0
-                  ? `  ${t('alcoholShort')}: ${fmtG(meal.alcoholG)}`
+                  ? `  ${t('alcoholShort')}: ${formatMacroOrNA(meal.alcoholG)}`
                   : ''}
               </span>
               <span className="font-bold text-nham-text text-sm tabular-nums">

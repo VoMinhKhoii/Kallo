@@ -16,11 +16,6 @@ import type { PromptPersonalizationContext } from './types';
  * by occasion (fatty cuts, frying, butter/cheese, creamy desserts, sauces).
  */
 
-export const CHEAT_ESTIMATE_PROMPT_LABEL_ENV =
-  'PIPELINE_CHEAT_ESTIMATE_PROMPT_LABEL';
-
-export type CheatEstimatePromptLabel = 'production' | 'compressed';
-
 export interface CheatEstimatePromptInput {
   /** Sanitized free-text occasion description. */
   description: string;
@@ -29,26 +24,6 @@ export interface CheatEstimatePromptInput {
   /** A prior clarifying-question answer, when re-calling after a vague input. */
   clarifyAnswer?: string | null;
   userContext: PromptPersonalizationContext;
-}
-
-export type CheatEstimatePromptBuilder = (
-  input: CheatEstimatePromptInput
-) => string;
-
-export function getCheatEstimatePromptLabel(
-  env: Record<string, string | undefined> = process.env
-): CheatEstimatePromptLabel {
-  return env[CHEAT_ESTIMATE_PROMPT_LABEL_ENV] === 'compressed'
-    ? 'compressed'
-    : 'production';
-}
-
-export function getCheatEstimatePromptBuilder(
-  _label: CheatEstimatePromptLabel = getCheatEstimatePromptLabel()
-): CheatEstimatePromptBuilder {
-  // Single production builder for now; the label hook mirrors the
-  // decomposition/nutrition prompts so a compressed variant can be slotted in.
-  return buildCheatEstimatePrompt;
 }
 
 function buildCountryContextLines(

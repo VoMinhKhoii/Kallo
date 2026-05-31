@@ -91,6 +91,7 @@ export function CheatSliderCard({
                   key={option}
                   type="button"
                   disabled={isConfirming}
+                  aria-busy={isConfirming}
                   onClick={() => onClarify?.(option)}
                   className="rounded-full border border-nham-border/60 px-3 py-1.5 text-nham-text text-sm transition-colors hover:border-nham-accent/60 hover:bg-nham-hover/40 disabled:opacity-50"
                   style={{ fontFamily: 'DM Sans, sans-serif' }}
@@ -187,6 +188,7 @@ export function CheatSliderCard({
         <button
           type="button"
           disabled={isConfirming}
+          aria-busy={isConfirming}
           onClick={() => onConfirm?.(levels)}
           className="mt-5 w-full rounded-xl bg-nham-btn py-2.5 font-medium text-sm text-white transition-colors hover:bg-nham-btn-hover disabled:opacity-50"
           style={{ fontFamily: 'DM Sans, sans-serif' }}
