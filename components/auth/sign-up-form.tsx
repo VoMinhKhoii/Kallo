@@ -59,7 +59,7 @@ export function SignUpForm() {
     closeDialog();
 
     // Confirmation disabled → a session exists now, so resurface the invite.
-    if (result.session) {
+    if (result?.session) {
       if (next) {
         window.location.assign(next);
         return;
