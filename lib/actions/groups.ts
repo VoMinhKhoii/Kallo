@@ -272,6 +272,9 @@ export async function acceptInvite(
   const { userLow, userHigh } = orderedPair(actorId, inviter.userId);
 
   return db.transaction(async (tx) => {
+    // Lock the canonical edge row for the duration of the transaction so a
+    // concurrent blockFriend/acceptInvite can't interleave between this read
+    // and the promote below (which would let an accept land on top of a block).
     const existing = await tx
       .select({ id: friendships.id, status: friendships.status })
       .from(friendships)
@@ -281,7 +284,8 @@ export async function acceptInvite(
           eq(friendships.userHigh, userHigh)
         )
       )
-      .limit(1);
+      .limit(1)
+      .for('update');
 
     if (existing[0]) {
       if (existing[0].status === 'blocked') {
@@ -290,11 +294,17 @@ export async function acceptInvite(
       if (existing[0].status === 'accepted') {
         return { status: 'accepted' as const, inviter };
       }
-      // Promote a pending edge (either direction) to accepted.
+      // Promote a pending edge (either direction) to accepted. The row is
+      // locked above; the status guard is defence-in-depth.
       await tx
         .update(friendships)
         .set({ status: 'accepted', updatedAt: new Date() })
-        .where(eq(friendships.id, existing[0].id));
+        .where(
+          and(
+            eq(friendships.id, existing[0].id),
+            sql`${friendships.status} <> 'blocked'`
+          )
+        );
       await tx.insert(circleEvents).values({
         actorId,
         type: 'friend_accepted',
@@ -303,7 +313,10 @@ export async function acceptInvite(
       return { status: 'accepted' as const, inviter };
     }
 
-    const [row] = await tx
+    // No edge yet. The locked read can't lock a row that doesn't exist, so a
+    // racing accept/block may insert first; swallow the unique violation and
+    // reconcile instead of surfacing a spurious 500 on this core action.
+    const inserted = await tx
       .insert(friendships)
       .values({
         userLow,
@@ -312,12 +325,34 @@ export async function acceptInvite(
         requestedBy: inviter.userId,
         status: 'accepted',
       })
+      .onConflictDoNothing({
+        target: [friendships.userLow, friendships.userHigh],
+      })
       .returning({ id: friendships.id });
-    await tx.insert(circleEvents).values({
-      actorId,
-      type: 'friend_accepted',
-      refId: row.id,
-    });
+
+    if (inserted[0]) {
+      await tx.insert(circleEvents).values({
+        actorId,
+        type: 'friend_accepted',
+        refId: inserted[0].id,
+      });
+      return { status: 'accepted' as const, inviter };
+    }
+
+    // A concurrent writer won the insert — re-read and honour a block.
+    const reconciled = await tx
+      .select({ status: friendships.status })
+      .from(friendships)
+      .where(
+        and(
+          eq(friendships.userLow, userLow),
+          eq(friendships.userHigh, userHigh)
+        )
+      )
+      .limit(1);
+    if (reconciled[0]?.status === 'blocked') {
+      throw Errors.conflict('Không thể kết nối.');
+    }
     return { status: 'accepted' as const, inviter };
   });
 }
@@ -478,7 +513,8 @@ export async function listCircleFeed(
     parsed.timezoneOffset
   );
 
-  // Resolve the actor's accepted friends.
+  // Resolve the actor's accepted friends, most-recently-connected first so the
+  // cap below is deterministic (not arbitrary physical row order).
   const friendRows = await db
     .select({
       userLow: friendships.userLow,
@@ -490,7 +526,8 @@ export async function listCircleFeed(
         or(eq(friendships.userLow, actorId), eq(friendships.userHigh, actorId)),
         eq(friendships.status, 'accepted')
       )
-    );
+    )
+    .orderBy(desc(friendships.updatedAt));
 
   const friendIds = friendRows.map((r) =>
     r.userLow === actorId ? r.userHigh : r.userLow

@@ -65,7 +65,11 @@ export type WeightLogInput = z.infer<typeof weightLogSchema>;
 // Group tracking schemas
 // ---------------------------------------------------------------------------
 
-const uuidSchema = z.string().uuid('Phải là UUID hợp lệ.');
+// Lowercase after validating: Postgres compares uuids case-insensitively, but
+// the JS canonical-pair ordering (lib/groups/friendship.ts orderedPair) sorts
+// lexicographically, so an uppercase-hex id would order differently than the
+// stored lowercase row. Normalising here keeps both authorities in agreement.
+const uuidSchema = z.string().uuid('Phải là UUID hợp lệ.').toLowerCase();
 
 /**
  * A handle as accepted by the API: lowercased, 3-20 chars, [a-z0-9_]. The
@@ -80,24 +84,11 @@ export const handleSchema = z
   .max(20, 'Handle tối đa 20 ký tự.')
   .regex(/^[a-z0-9_]+$/u, 'Handle chỉ gồm chữ thường, số và dấu gạch dưới.');
 
-/** Exact-match handle search (no prefix/enumeration). */
-export const searchByHandleSchema = z.object({
-  handle: handleSchema,
-});
-
 /** Upsert the caller's own public profile. */
 export const upsertPublicProfileSchema = z.object({
   handle: handleSchema,
   displayName: z.string().trim().min(1).max(50).optional(),
   avatarSeed: z.string().trim().min(1).max(64).optional(),
-});
-
-export const requestFriendSchema = z.object({
-  targetUserId: uuidSchema,
-});
-
-export const acceptFriendSchema = z.object({
-  friendshipId: uuidSchema,
 });
 
 export const blockFriendSchema = z.object({

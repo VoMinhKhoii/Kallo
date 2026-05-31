@@ -91,7 +91,7 @@ const inviterRow = {
   avatarSeed: SLUG,
 };
 
-// A `.from().where().limit()` chain resolving to the given rows.
+// A `.from().where().limit()` chain resolving to the given rows (db.select).
 function selectRows(rows: unknown[]) {
   return {
     from: vi.fn().mockReturnValue({
@@ -102,16 +102,48 @@ function selectRows(rows: unknown[]) {
   };
 }
 
-// Capture every tx.insert(table).values(vals); `.returning()` yields the friendship row.
+// The in-transaction read: `.limit(1).for('update')` (locked existing-edge read)
+// AND a plain awaited `.limit(1)` (the reconcile read). The limit result is a
+// real Promise (so `await` resolves the rows) with `.for()` attached.
+function txSelect(rows: unknown[]) {
+  const limitResult = Object.assign(Promise.resolve(rows), {
+    for: vi.fn().mockResolvedValue(rows),
+  });
+  return {
+    from: vi.fn().mockReturnValue({
+      where: vi.fn().mockReturnValue({
+        limit: vi.fn().mockReturnValue(limitResult),
+      }),
+    }),
+  };
+}
+
+// Capture every tx.insert(table).values(vals). The friendship insert chains
+// `.onConflictDoNothing().returning()`; the event insert just awaits `.values()`.
 function captureInserts() {
   const calls: Record<string, unknown>[] = [];
   mockTxInsert.mockImplementation(() => ({
     values: vi.fn().mockImplementation((vals: Record<string, unknown>) => {
       calls.push(vals);
-      return { returning: vi.fn().mockResolvedValue([{ id: FRIENDSHIP_ID }]) };
+      const chain = {
+        returning: vi.fn().mockResolvedValue([{ id: FRIENDSHIP_ID }]),
+      };
+      return { ...chain, onConflictDoNothing: vi.fn().mockReturnValue(chain) };
     }),
   }));
   return calls;
+}
+
+// A friendship insert whose ON CONFLICT DO NOTHING inserted nothing (a racing
+// writer won), so `.returning()` is empty.
+function insertConflicted() {
+  mockTxInsert.mockImplementation(() => ({
+    values: vi.fn().mockReturnValue({
+      onConflictDoNothing: vi.fn().mockReturnValue({
+        returning: vi.fn().mockResolvedValue([]),
+      }),
+    }),
+  }));
 }
 
 // ---------------------------------------------------------------------------
@@ -146,7 +178,7 @@ describe('acceptInvite', () => {
 
   it('creates an accepted edge crediting the inviter, plus an event', async () => {
     mockDbSelect.mockReturnValueOnce(selectRows([inviterRow]));
-    mockTxSelect.mockReturnValueOnce(selectRows([])); // no existing edge
+    mockTxSelect.mockReturnValueOnce(txSelect([])); // no existing edge
     const inserts = captureInserts();
 
     const result = await acceptInvite(ACTOR, { slug: SLUG });
@@ -166,7 +198,7 @@ describe('acceptInvite', () => {
   it('promotes a pending edge to accepted', async () => {
     mockDbSelect.mockReturnValueOnce(selectRows([inviterRow]));
     mockTxSelect.mockReturnValueOnce(
-      selectRows([{ id: FRIENDSHIP_ID, status: 'pending' }])
+      txSelect([{ id: FRIENDSHIP_ID, status: 'pending' }])
     );
     mockTxUpdate.mockReturnValue({
       set: vi
@@ -187,7 +219,7 @@ describe('acceptInvite', () => {
   it('is a no-op when already connected', async () => {
     mockDbSelect.mockReturnValueOnce(selectRows([inviterRow]));
     mockTxSelect.mockReturnValueOnce(
-      selectRows([{ id: FRIENDSHIP_ID, status: 'accepted' }])
+      txSelect([{ id: FRIENDSHIP_ID, status: 'accepted' }])
     );
 
     const result = await acceptInvite(ACTOR, { slug: SLUG });
@@ -200,7 +232,7 @@ describe('acceptInvite', () => {
   it('refuses to connect over a blocked edge', async () => {
     mockDbSelect.mockReturnValueOnce(selectRows([inviterRow]));
     mockTxSelect.mockReturnValueOnce(
-      selectRows([{ id: FRIENDSHIP_ID, status: 'blocked' }])
+      txSelect([{ id: FRIENDSHIP_ID, status: 'blocked' }])
     );
 
     await expect(acceptInvite(ACTOR, { slug: SLUG })).rejects.toThrow(
@@ -208,6 +240,30 @@ describe('acceptInvite', () => {
     );
     expect(mockTxUpdate).not.toHaveBeenCalled();
     expect(mockTxInsert).not.toHaveBeenCalled();
+  });
+
+  it('stays idempotent when a concurrent accept wins the insert race', async () => {
+    mockDbSelect.mockReturnValueOnce(selectRows([inviterRow]));
+    mockTxSelect
+      .mockReturnValueOnce(txSelect([])) // locked read: no edge
+      .mockReturnValueOnce(txSelect([{ status: 'accepted' }])); // reconcile read
+    insertConflicted();
+
+    const result = await acceptInvite(ACTOR, { slug: SLUG });
+
+    expect(result.status).toBe('accepted');
+  });
+
+  it('refuses when a concurrent block wins the insert race', async () => {
+    mockDbSelect.mockReturnValueOnce(selectRows([inviterRow]));
+    mockTxSelect
+      .mockReturnValueOnce(txSelect([])) // locked read: no edge
+      .mockReturnValueOnce(txSelect([{ status: 'blocked' }])); // reconcile read
+    insertConflicted();
+
+    await expect(acceptInvite(ACTOR, { slug: SLUG })).rejects.toThrow(
+      'Không thể kết nối.'
+    );
   });
 });
 
