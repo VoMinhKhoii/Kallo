@@ -20,7 +20,7 @@ description: |
   Explicit performance review requests should route here.
   </commentary>
   </example>
-model: inherit
+model: sonnet
 color: yellow
 tools: ["Read", "Glob", "Grep", "Bash", "WebSearch", "WebFetch"]
 ---

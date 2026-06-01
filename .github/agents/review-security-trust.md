@@ -20,7 +20,7 @@ description: |
   Explicit security review request with heavy reporting should route directly to this reviewer.
   </commentary>
   </example>
-model: inherit
+model: sonnet
 color: red
 tools: ["Read", "Write", "Edit", "Glob", "Grep", "Bash", "WebSearch", "WebFetch"]
 ---

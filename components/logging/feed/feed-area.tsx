@@ -324,29 +324,31 @@ export function FeedArea({
   });
 
   const handleConfirmMeal = (
-    messageId: string,
-    analysisId: string,
+    message: ChatMessage,
     edits: MealQuantityEdit[]
   ) => {
-    // Capture the streamed analysis off the local message BEFORE we drop it, so
-    // the optimistic cache update can build the meal from data we already hold
-    // instead of depending on the pending-confirmation row being in the cache.
-    const message = messages.find(
-      (m) => m.id === messageId || m.analysisId === analysisId
-    );
-    // Drop the local copy before mutate so the optimistic cache update in
-    // useConfirmMeal does not briefly expose it as an unsaved card.
+    // The caller already holds the fully-built message — from either the local
+    // stream or a server-loaded pending confirmation — so the optimistic cache
+    // update can build the meal straight from it. (Re-deriving it from
+    // `messages` here would miss server-backed pending cards, which never enter
+    // that array, and silently drop the save.)
+    //
+    // Drop any local copy before mutate so the optimistic cache update in
+    // useConfirmMeal does not briefly expose it as an unsaved card. This is a
+    // no-op for server-loaded pending cards.
     setMessages((prev) =>
-      prev.filter((m) => m.id !== messageId && m.analysisId !== analysisId)
+      prev.filter(
+        (m) => m.id !== message.id && m.analysisId !== message.analysisId
+      )
     );
-    if (!message?.parsedMeal) return;
+    if (!message.parsedMeal || !message.analysisId) return;
     // Client-minted id: doubles as the persisted row's PK and an idempotency
     // key, so the optimistic card and the refetched row share one stable React
     // key (no remount/re-fade after save).
     const mealId = crypto.randomUUID();
     confirmMeal.mutate(
       {
-        analysisId,
+        analysisId: message.analysisId,
         mealId,
         originDate: selectedDate,
         parsedMeal: message.parsedMeal,
@@ -549,10 +551,7 @@ export function FeedArea({
                         key={msg.id}
                         message={msg}
                         isConfirming={confirmMeal.isPending}
-                        onConfirm={(edits) => {
-                          if (msg.analysisId)
-                            handleConfirmMeal(msg.id, msg.analysisId, edits);
-                        }}
+                        onConfirm={(edits) => handleConfirmMeal(msg, edits)}
                       />
                     );
                   }

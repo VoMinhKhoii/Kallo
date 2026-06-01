@@ -559,6 +559,53 @@ describe('loadPendingAnalysesByDate', () => {
     expect(pending[0]?.loggedAt).toBe(LOGGED_AT.toISOString());
     expect(pending[0]?.parsedMeal.mealName).toBe('Phở bò');
   });
+
+  it('skips malformed legacy rows instead of failing the whole day load', async () => {
+    // Pending rows whose stored pipelineResult predates the current shape must
+    // not throw and 500 the logging-day load. toParsedMeal walks mealItems →
+    // each item's ingredients → displayedNutrition, so all of these legacy
+    // shapes are skipped (not just a missing `mealItems`); valid rows still load.
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    mockDbSelect.mockReturnValueOnce({
+      from: vi.fn().mockReturnValue({
+        where: vi.fn().mockReturnValue({
+          orderBy: vi.fn().mockResolvedValue([
+            {
+              id: UUID_1,
+              rawInput: 'Cơm tấm',
+              loggedAt: LOGGED_AT,
+              // No mealItems at all.
+              pipelineResult: { legacy: true },
+            },
+            {
+              id: UUID_MEAL,
+              rawInput: 'Bún chả',
+              loggedAt: LOGGED_AT,
+              // Has mealItems, but each item is missing ingredients +
+              // displayedNutrition — passes a shallow array check, throws deeper.
+              pipelineResult: { mealItems: [{ name: 'Bún chả' }] },
+            },
+            {
+              id: UUID_2,
+              rawInput: 'Phở bò',
+              loggedAt: LOGGED_AT,
+              pipelineResult: samplePipelineResult,
+            },
+          ]),
+        }),
+      }),
+    });
+
+    const pending = await loadPendingAnalysesByDate({
+      date: '2026-04-06',
+      timezoneOffset: -420,
+    });
+
+    expect(pending).toHaveLength(1);
+    expect(pending[0]?.id).toBe(UUID_2);
+    expect(errorSpy).toHaveBeenCalledTimes(2);
+    errorSpy.mockRestore();
+  });
 });
 
 describe('deleteMealAction', () => {
