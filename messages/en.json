@@ -1000,7 +1000,8 @@
       "badge": "Cheat meal",
       "confirm": "Save meal",
       "kcal": "kcal",
-      "alcohol": "alcohol"
+      "alcohol": "alcohol",
+      "between": "Between {low} and {high}"
     },
     "cheatMealCard": {
       "badge": "Cheat meal",

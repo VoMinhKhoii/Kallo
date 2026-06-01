@@ -7,7 +7,6 @@ import { useMemo, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Slider } from '@/components/ui/slider';
 import {
-  activeAnchorLabel,
   defaultLevels,
   resolveSliderNutrition,
 } from '@/lib/cheat/slider-nutrition';
@@ -16,6 +15,7 @@ import type {
   CheatSliderLevels,
   CheatSliderSpec,
 } from '@/lib/types/cheat';
+import { cn } from '@/lib/utils';
 
 interface CheatSliderCardProps {
   spec: CheatSliderSpec;
@@ -159,7 +159,7 @@ export function CheatSliderCard({
           style={{ fontFamily: 'DM Sans, sans-serif' }}
         >
           <span className="font-semibold text-2xl text-nham-text">
-            {resolved.caloriesKcal} {t('kcal')}
+            ≈ {resolved.caloriesKcal} {t('kcal')}
           </span>
           <span className="text-nham-text-muted text-sm">
             P {Math.round(resolved.proteinG)}g · C{' '}
@@ -209,26 +209,36 @@ function CheatSliderRow({
   level: number;
   onChange: (level: number) => void;
 }) {
-  const anchorLabel = activeAnchorLabel(slider, level);
+  const t = useTranslations('logging.cheatSliders');
+  const color = MACRO_DOT[slider.key];
+  const stops = [...slider.anchors].sort((a, b) => a.level - b.level);
+
+  // Even levels sit on a labeled stop; odd levels (1/3/5/7/9) are the "between
+  // two stops" positions, so we highlight the two bracketing rows instead.
+  const onStop = level % 2 === 0;
+  const betweenLow = onStop ? -1 : level - 1;
+  const betweenHigh = onStop ? -1 : level + 1;
+
+  const valueText = onStop
+    ? (stops.find((s) => s.level === level)?.label ?? slider.label)
+    : t('between', {
+        low: stops.find((s) => s.level === betweenLow)?.label ?? '',
+        high: stops.find((s) => s.level === betweenHigh)?.label ?? '',
+      });
+
   return (
     <div>
-      <div className="mb-1.5 flex items-baseline justify-between gap-2">
+      <div className="mb-1.5 flex items-center gap-1.5">
         <span
-          className="flex items-center gap-1.5 font-medium text-nham-text text-sm"
+          aria-hidden
+          className="inline-block h-2 w-2 rounded-full"
+          style={{ backgroundColor: color }}
+        />
+        <span
+          className="font-medium text-nham-text text-sm"
           style={{ fontFamily: 'DM Sans, sans-serif' }}
         >
-          <span
-            aria-hidden
-            className="inline-block h-2 w-2 rounded-full"
-            style={{ backgroundColor: MACRO_DOT[slider.key] }}
-          />
           {slider.label}
-        </span>
-        <span
-          className="text-nham-text-muted text-xs"
-          style={{ fontFamily: 'DM Sans, sans-serif' }}
-        >
-          {anchorLabel}
         </span>
       </div>
       <Slider
@@ -238,7 +248,50 @@ function CheatSliderRow({
         value={[level]}
         onValueChange={(values) => onChange(values[0] ?? 0)}
         aria-label={slider.label}
+        aria-valuetext={valueText}
       />
+      {/* All six scenarios, always visible — tap one to jump there. */}
+      <div
+        className="mt-2 flex flex-col gap-0.5"
+        style={{ fontFamily: 'DM Sans, sans-serif' }}
+      >
+        {stops.map((anchor) => {
+          const isExact = onStop && anchor.level === level;
+          const isBetween =
+            anchor.level === betweenLow || anchor.level === betweenHigh;
+          return (
+            <button
+              key={anchor.level}
+              type="button"
+              aria-pressed={isExact}
+              onClick={() => onChange(anchor.level)}
+              className={cn(
+                'flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-[13px] transition-colors',
+                isExact
+                  ? 'bg-nham-hover/60 font-medium text-nham-text'
+                  : isBetween
+                    ? 'bg-nham-hover/30 text-nham-text'
+                    : 'text-nham-text-muted hover:bg-nham-hover/40'
+              )}
+              style={
+                isExact ? { boxShadow: `inset 3px 0 0 ${color}` } : undefined
+              }
+            >
+              <span
+                aria-hidden
+                className={cn(
+                  'h-1.5 w-1.5 shrink-0 rounded-full',
+                  !(isExact || isBetween) && 'border border-nham-border'
+                )}
+                style={
+                  isExact || isBetween ? { backgroundColor: color } : undefined
+                }
+              />
+              <span>{anchor.label}</span>
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 }

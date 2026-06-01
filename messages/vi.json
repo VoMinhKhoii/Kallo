@@ -1000,7 +1000,8 @@
       "badge": "Bữa xả",
       "confirm": "Lưu bữa ăn",
       "kcal": "kcal",
-      "alcohol": "cồn"
+      "alcohol": "cồn",
+      "between": "Giữa {low} và {high}"
     },
     "cheatMealCard": {
       "badge": "Bữa xả",

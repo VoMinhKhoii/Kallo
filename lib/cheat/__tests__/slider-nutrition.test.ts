@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import type { CheatSliderSpec } from '@/lib/types/cheat';
+import type { CheatSliderAnchor, CheatSliderSpec } from '@/lib/types/cheat';
 import {
   activeAnchorLabel,
+  canonicalizeAnchors,
   clampLevel,
   defaultLevels,
   resolveSliderNutrition,
@@ -129,6 +130,64 @@ describe('resolveSliderNutrition', () => {
     const spec = makeSpec();
     const result = resolveSliderNutrition(spec, { protein: 99 });
     expect(result.proteinG).toBe(120);
+  });
+});
+
+describe('canonicalizeAnchors', () => {
+  it('resamples sparse anchors onto the six even stops with interpolated grams', () => {
+    const anchors: CheatSliderAnchor[] = [
+      { level: 0, label: 'a', proteinG: 0 },
+      { level: 5, label: 'b', proteinG: 60 },
+      { level: 10, label: 'c', proteinG: 120 },
+    ];
+    const stops = canonicalizeAnchors(anchors);
+    expect(stops.map((s) => s.level)).toEqual([0, 2, 4, 6, 8, 10]);
+    expect(stops.map((s) => s.proteinG)).toEqual([0, 24, 48, 72, 96, 120]);
+  });
+
+  it('labels each stop from the nearest authored anchor', () => {
+    const anchors: CheatSliderAnchor[] = [
+      { level: 0, label: 'a', proteinG: 0 },
+      { level: 5, label: 'b', proteinG: 60 },
+      { level: 10, label: 'c', proteinG: 120 },
+    ];
+    const stops = canonicalizeAnchors(anchors);
+    expect(stops.map((s) => s.label)).toEqual(['a', 'a', 'b', 'b', 'c', 'c']);
+  });
+
+  it('forces grams monotonically non-decreasing across stops', () => {
+    // Authored grams dip at level 4 — the resampled scale must not go backwards.
+    const anchors: CheatSliderAnchor[] = [
+      { level: 0, label: 'a', fatG: 0 },
+      { level: 2, label: 'b', fatG: 50 },
+      { level: 4, label: 'c', fatG: 30 },
+      { level: 10, label: 'd', fatG: 100 },
+    ];
+    const stops = canonicalizeAnchors(anchors);
+    const fats = stops.map((s) => s.fatG ?? 0);
+    for (let i = 1; i < fats.length; i++) {
+      expect(fats[i]).toBeGreaterThanOrEqual(fats[i - 1]);
+    }
+    // The dip at level 4 (raw 30) is lifted to the prior stop's 50.
+    expect(stops[2].fatG).toBe(50);
+  });
+
+  it('carries only the nutrients the slider authored', () => {
+    const anchors: CheatSliderAnchor[] = [
+      { level: 0, label: 'none', carbohydrateG: 0, alcoholG: 0 },
+      { level: 10, label: 'lots', carbohydrateG: 50, alcoholG: 40 },
+    ];
+    const stops = canonicalizeAnchors(anchors);
+    expect(stops.map((s) => s.carbohydrateG)).toEqual([0, 10, 20, 30, 40, 50]);
+    expect(stops.map((s) => s.alcoholG)).toEqual([0, 8, 16, 24, 32, 40]);
+    expect(stops.every((s) => s.proteinG === undefined)).toBe(true);
+    expect(stops.every((s) => s.fatG === undefined)).toBe(true);
+  });
+
+  it('returns six empty-label stops for empty input', () => {
+    const stops = canonicalizeAnchors([]);
+    expect(stops.map((s) => s.level)).toEqual([0, 2, 4, 6, 8, 10]);
+    expect(stops.every((s) => s.label === '')).toBe(true);
   });
 });
 

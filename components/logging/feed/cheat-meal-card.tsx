@@ -11,9 +11,36 @@ import {
 import { Badge } from '@/components/ui/badge';
 import type { PersistedMeal } from '@/lib/actions/meals';
 import { activeAnchorLabel } from '@/lib/cheat/slider-nutrition';
+import { cn } from '@/lib/utils';
 
 interface CheatMealCardProps {
   meal: PersistedMeal;
+}
+
+const MACRO_DOT: Record<string, string> = {
+  protein: 'var(--color-nham-macro-protein)',
+  carbs: 'var(--color-nham-macro-carbs)',
+  fat: 'var(--color-nham-macro-fat)',
+  drinks: 'var(--color-nham-accent)',
+};
+
+/** Six dots filled up to the chosen stop — where on the scale the user landed. */
+function StopScale({ level, color }: { level: number; color: string }) {
+  const filled = Math.min(6, Math.max(1, Math.round(level / 2) + 1));
+  return (
+    <span aria-hidden className="flex items-center gap-0.5">
+      {Array.from({ length: 6 }, (_, i) => (
+        <span
+          key={i}
+          className={cn(
+            'h-1.5 w-1.5 rounded-full',
+            i >= filled && 'border border-nham-border'
+          )}
+          style={i < filled ? { backgroundColor: color } : undefined}
+        />
+      ))}
+    </span>
+  );
 }
 
 export function CheatMealCard({ meal }: CheatMealCardProps) {
@@ -26,6 +53,10 @@ export function CheatMealCard({ meal }: CheatMealCardProps) {
   });
 
   const calories = formatCaloriesOrNA(meal.nutrition.caloriesKcal);
+  // Cheat calories are an estimate the user placed themselves — flag it with ≈
+  // (precise meals keep the unprefixed shared formatter untouched).
+  const caloriesApprox =
+    meal.nutrition.caloriesKcal == null ? calories : `≈ ${calories}`;
   const protein = formatMacroOrNA(meal.nutrition.proteinG);
   const carbs = formatMacroOrNA(meal.nutrition.carbohydrateG);
   const fat = formatMacroOrNA(meal.nutrition.fatG);
@@ -104,7 +135,7 @@ export function CheatMealCard({ meal }: CheatMealCardProps) {
                   : ''}
               </span>
               <span className="font-bold text-nham-text text-sm tabular-nums">
-                {calories}
+                {caloriesApprox}
               </span>
             </motion.div>
           )}
@@ -149,8 +180,14 @@ export function CheatMealCard({ meal }: CheatMealCardProps) {
                           className="flex items-center justify-between gap-3 text-[13px]"
                           style={{ fontFamily: 'DM Sans, sans-serif' }}
                         >
-                          <span className="font-medium text-nham-text">
-                            {slider.label}
+                          <span className="flex min-w-0 items-center gap-2">
+                            <span className="font-medium text-nham-text">
+                              {slider.label}
+                            </span>
+                            <StopScale
+                              level={level}
+                              color={MACRO_DOT[slider.key]}
+                            />
                           </span>
                           <span className="min-w-0 truncate text-right text-nham-text-muted text-xs">
                             {activeAnchorLabel(slider, level)}
@@ -183,7 +220,7 @@ export function CheatMealCard({ meal }: CheatMealCardProps) {
                         className="font-bold text-nham-text tabular-nums"
                         style={{ fontFamily: 'DM Sans, sans-serif' }}
                       >
-                        {calories}
+                        {caloriesApprox}
                       </span>
                     </div>
                   </div>

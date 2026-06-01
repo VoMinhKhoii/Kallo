@@ -8,7 +8,7 @@ import { sanitizePromptContextValue } from '@/lib/ai/prompts/sanitize';
 import type { PromptPersonalizationContext } from '@/lib/ai/prompts/types';
 import type { StreamEvent } from '@/lib/ai/streaming/types';
 import type { UserContext } from '@/lib/ai/types';
-import { clampLevel } from '@/lib/cheat/slider-nutrition';
+import { canonicalizeAnchors, clampLevel } from '@/lib/cheat/slider-nutrition';
 import type { CheatSliderSpec } from '@/lib/types/cheat';
 import { resolveModelProfile } from './model-profile';
 import { type CheatEstimate, cheatEstimateSchema } from './schemas';
@@ -41,33 +41,25 @@ function toPersonalizationContext(
 }
 
 /**
- * Defensive repair so the interpolator in `slider-nutrition.ts` can never
- * divide by zero or invert: clamp every level into 0..10, ensure each slider
- * spans level 0 and level 10 by stretching the nearest anchors, and clamp the
- * default level into range.
+ * Defensive repair so the always-visible 6-row UI and the interpolator in
+ * `slider-nutrition.ts` always get a clean scale: clamp every authored level
+ * into 0..10, then resample onto the six canonical stops (0/2/4/6/8/10) with
+ * monotonic grams via `canonicalizeAnchors`, and clamp the default level into
+ * range. The model is asked for the six stops directly; this guarantees them
+ * regardless of drift.
  */
 function normalizeCheatEstimate(raw: CheatEstimate): CheatSliderSpec {
   const sliders = raw.sliders.map((slider) => {
-    const anchors = slider.anchors
-      .map((anchor) => ({ ...anchor, level: clampLevel(anchor.level) }))
-      .sort((a, b) => a.level - b.level);
-
-    // Guarantee endpoints at 0 and 10 (stretch the nearest anchor outward).
-    if (anchors.length > 0 && anchors[0].level > 0) {
-      anchors[0] = { ...anchors[0], level: 0 };
-    }
-    if (anchors.length > 0 && anchors[anchors.length - 1].level < 10) {
-      anchors[anchors.length - 1] = {
-        ...anchors[anchors.length - 1],
-        level: 10,
-      };
-    }
+    const clamped = slider.anchors.map((anchor) => ({
+      ...anchor,
+      level: clampLevel(anchor.level),
+    }));
 
     return {
       key: slider.key,
       label: slider.label,
       defaultLevel: clampLevel(slider.defaultLevel),
-      anchors,
+      anchors: canonicalizeAnchors(clamped),
     };
   });
 

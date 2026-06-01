@@ -66,14 +66,16 @@ export function buildCheatEstimatePrompt(
     - key="fat": label it for OVERALL RICHNESS. Anchors carry ONLY fatG.
     - key="drinks" (optional): label it for BEVERAGES. Anchors may carry carbohydrateG (sugary drinks), fatG (creamy drinks), and alcoholG (beer/wine/spirits) together. Omit this slider entirely for occasions where drinks are unlikely (e.g. a box of donuts).
   Each slider has: a localized label, a defaultLevel (0–10, your single best guess for THIS user/occasion — the slider starts here), and anchors.
-  Anchors are sparse keypoints (typically 3–5). You MUST include an anchor at level 0 and an anchor at level 10. Each anchor's label is a concrete, recognizable scenario — NOT "a little / normal / a lot". Grams between anchors are linearly interpolated by the client.
+  Emit EXACTLY 6 anchors, one at each level 0, 2, 4, 6, 8, and 10. The user sees all six labels at once and places themselves on the scale, so every stop must be a concrete, recognizable scenario the user can match against — NOT "a little / normal / a lot", and NOT a near-duplicate of its neighbour. Each step up should be a visibly bigger occasion than the one below it.
+  Keep each label short enough to read in a single row (a few words).
+  Every anchor carries its own-axis grams (drinks anchors may carry carbohydrateG/fatG/alcoholG). Grams must be MONOTONICALLY NON-DECREASING from level 0 → 10. The client interpolates the in-between levels (1/3/5/7/9).
   Anchor grams are TOTAL as-eaten grams of that nutrient for the whole occasion at that level (not per 100g, not per dish).
 </sliders>
 
 <fat_slider_reasoning>
   Spend the bulk of your reasoning here. Meat→protein and rice→carbs are near-mechanical, but FAT has many sources that vary entirely by occasion: fatty vs lean cuts (e.g. pork belly), frying oil, butter/cheese, creamy desserts / ice cream, rich sauces and dips. Enumerate the plausible fat sources for THIS specific occasion, then synthesize them into the anchor scenarios and grams.
-  Example — Korean BBQ: level 0 "mostly lean cuts, grilled" · level 3 "some pork belly" · level 5 "lots of pork belly + fried sides" · level 10 "fatty cuts + everything fried + ice-cream dessert".
-  Example — box of donuts: anchors range over pastry/glaze richness instead.
+  Example — Korean BBQ (the six stops): level 0 "mostly lean cuts, grilled" · level 2 "a little pork belly" · level 4 "lots of pork belly" · level 6 "pork belly + fried sides" · level 8 "fatty cuts + lots fried" · level 10 "fattiest cuts + everything fried + ice-cream dessert".
+  Example — box of donuts: the six stops range over pastry/glaze richness instead.
 </fat_slider_reasoning>
 
 <orthogonality>

@@ -1,5 +1,6 @@
 import type {
   CheatSlider,
+  CheatSliderAnchor,
   CheatSliderLevels,
   CheatSliderSpec,
 } from '@/lib/types/cheat';
@@ -18,6 +19,20 @@ export interface ResolvedCheatNutrition {
 }
 
 type NutrientKey = 'proteinG' | 'carbohydrateG' | 'fatG' | 'alcoholG';
+
+const NUTRIENT_KEYS: NutrientKey[] = [
+  'proteinG',
+  'carbohydrateG',
+  'fatG',
+  'alcoholG',
+];
+
+/**
+ * The six canonical, evenly-spaced stops every slider resolves to. Levels 0 and
+ * 10 are the endpoints; the odd levels 1/3/5/7/9 are the meaningful "between two
+ * stops" positions the user can still drag to.
+ */
+export const CANONICAL_STOP_LEVELS = [0, 2, 4, 6, 8, 10] as const;
 
 /** Clamp a slider level into the valid 0..10 range. */
 export function clampLevel(level: number): number {
@@ -80,6 +95,75 @@ function interpolateNutrient(
 
 function round1(value: number): number {
   return Math.round(value * 10) / 10;
+}
+
+/** The authored anchor closest to `level` (ties resolve to the lower level). */
+function nearestAnchorLabel(
+  sorted: CheatSliderAnchor[],
+  level: number
+): string {
+  let best = sorted[0];
+  let bestDist = Math.abs(best.level - level);
+  for (const anchor of sorted) {
+    const dist = Math.abs(anchor.level - level);
+    if (dist < bestDist) {
+      best = anchor;
+      bestDist = dist;
+    }
+  }
+  return best.label;
+}
+
+/**
+ * Resample arbitrary model-authored anchors onto the six canonical stops
+ * (levels 0/2/4/6/8/10). Grams per stop come from piecewise-linear
+ * interpolation of the source anchors; each stop's label is taken from the
+ * nearest authored anchor. Grams are then forced monotonically non-decreasing
+ * across stops so "more food" never resolves to fewer grams.
+ *
+ * This makes the always-visible 6-row UI robust to model drift (too few anchors,
+ * odd levels, non-monotonic grams) while leaving the odd in-between levels to
+ * interpolate correctly through `interpolateNutrient` at resolve time.
+ */
+export function canonicalizeAnchors(
+  anchors: CheatSliderAnchor[]
+): CheatSliderAnchor[] {
+  if (anchors.length === 0) {
+    return CANONICAL_STOP_LEVELS.map((level) => ({ level, label: '' }));
+  }
+  const sorted = [...anchors].sort((a, b) => a.level - b.level);
+
+  // Only carry the nutrients this slider actually authored (macro sliders emit
+  // one axis; the drinks slider may emit carbs/fat/alcohol).
+  const activeNutrients = NUTRIENT_KEYS.filter((key) =>
+    sorted.some((anchor) => anchor[key] !== undefined)
+  );
+
+  const stops: CheatSliderAnchor[] = CANONICAL_STOP_LEVELS.map((level) => {
+    const stop: CheatSliderAnchor = {
+      level,
+      label: nearestAnchorLabel(sorted, level),
+    };
+    for (const key of activeNutrients) {
+      stop[key] = round1(interpolateNutrient(sorted, level, key));
+    }
+    return stop;
+  });
+
+  // Enforce monotonic non-decreasing grams per nutrient across the stops.
+  for (const key of activeNutrients) {
+    let prev = 0;
+    for (const stop of stops) {
+      const value = stop[key] ?? 0;
+      if (value < prev) {
+        stop[key] = prev;
+      } else {
+        prev = value;
+      }
+    }
+  }
+
+  return stops;
 }
 
 /**
