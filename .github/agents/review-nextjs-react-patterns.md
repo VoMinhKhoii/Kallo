@@ -20,7 +20,7 @@ description: |
   Explicit React/Next.js review requests should route here.
   </commentary>
   </example>
-model: inherit
+model: sonnet
 color: cyan
 tools: ["Read", "Write", "Edit", "Glob", "Grep", "Bash", "WebSearch", "WebFetch"]
 ---

@@ -20,7 +20,7 @@ description: |
   Explicit state or correctness review requests should route here.
   </commentary>
   </example>
-model: inherit
+model: sonnet
 color: magenta
 tools: ["Read", "Write", "Edit", "Glob", "Grep", "Bash", "WebSearch", "WebFetch"]
 ---
