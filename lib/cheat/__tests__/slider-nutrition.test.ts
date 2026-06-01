@@ -6,6 +6,7 @@ import {
   clampLevel,
   defaultLevels,
   resolveSliderNutrition,
+  withLevelsAsDefaults,
 } from '../slider-nutrition';
 
 function makeSpec(): CheatSliderSpec {
@@ -130,6 +131,28 @@ describe('resolveSliderNutrition', () => {
     const spec = makeSpec();
     const result = resolveSliderNutrition(spec, { protein: 99 });
     expect(result.proteinG).toBe(120);
+  });
+});
+
+describe('withLevelsAsDefaults', () => {
+  it('seeds each slider default from the prior chosen levels, keeping anchors', () => {
+    const spec = makeSpec();
+    const reseeded = withLevelsAsDefaults(spec, {
+      protein: 8,
+      carbs: 2,
+      fat: 6,
+      drinks: 10,
+    });
+    expect(reseeded.sliders.map((s) => s.defaultLevel)).toEqual([8, 2, 6, 10]);
+    // Anchors (the scenario labels) are reused verbatim — no AI call.
+    expect(reseeded.sliders[0].anchors).toBe(spec.sliders[0].anchors);
+  });
+
+  it('falls back to the slider default and clamps when a level is missing/out of range', () => {
+    const spec = makeSpec();
+    const reseeded = withLevelsAsDefaults(spec, { protein: 99 });
+    expect(reseeded.sliders[0].defaultLevel).toBe(10); // clamped
+    expect(reseeded.sliders[1].defaultLevel).toBe(spec.sliders[1].defaultLevel);
   });
 });
 

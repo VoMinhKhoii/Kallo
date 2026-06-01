@@ -6,6 +6,7 @@ import { AnimatePresence, motion } from 'motion/react';
 import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
+import { CheatOccasionChips } from '@/components/logging/feed/cheat-occasion-chips';
 import { CheatSliderCard } from '@/components/logging/feed/cheat-slider-card';
 import { EmptyState } from '@/components/logging/feed/empty-state';
 import { MacroSummary } from '@/components/logging/feed/macro-summary';
@@ -23,9 +24,14 @@ import { addDays } from '@/components/logging/sidebar/timeline-utils';
 import { useFeedSubmit } from '@/hooks/use-feed-submit';
 import { loggingDayKeys, useLoggingDay } from '@/hooks/use-logging-day';
 import { useConfirmMeal } from '@/hooks/use-meal-mutations';
+import { useRecentCheatOccasions } from '@/hooks/use-recent-cheat-occasions';
 import { useStreamAnalysis } from '@/hooks/use-stream-analysis';
 import { useStreamingTerminalEffects } from '@/hooks/use-streaming-terminal-effects';
 import { useSubmitGuard } from '@/hooks/use-submit-guard';
+import {
+  type RecentCheatOccasion,
+  stageCheatRepeatAction,
+} from '@/lib/actions/meals';
 import { sumDisplayedNutrition } from '@/lib/ai/pipeline/goal-adjustment';
 import { isLikelyPartialDay } from '@/lib/nutrition/pattern/completeness';
 import type { CheatSliderLevels } from '@/lib/types/cheat';
@@ -199,6 +205,9 @@ export function FeedArea({
   const lastPrefilledMealRef = useRef<string | null>(null);
   // Cheat-meal mode: a buffet/indulgent occasion logged via sliders.
   const [isCheat, setIsCheat] = useState(false);
+  // "Log it again" — re-staging a past cheat occasion (a quick DB insert, no AI).
+  const [isStagingRepeat, setIsStagingRepeat] = useState(false);
+  const recentCheatOccasions = useRecentCheatOccasions(profile.userId, isCheat);
 
   // Prefill from dashboard meal trigger; re-runs when initialMeal changes so
   // repeated dashboard→logging handoffs while the component stays mounted work.
@@ -435,6 +444,38 @@ export function FeedArea({
       mode: 'cheat',
       clarifyAnswer: answer,
     });
+  };
+
+  // "Log it again": re-stage a past cheat occasion's sliders (seeded with last
+  // time's amounts) without re-running the estimator, then surface the card.
+  const handleRepeatCheat = async (occasion: RecentCheatOccasion) => {
+    if (isStagingRepeat || stream.isAnalyzing) return;
+    setIsStagingRepeat(true);
+    try {
+      const staged = await stageCheatRepeatAction({
+        sourceMealId: occasion.mealId,
+        loggedDate: selectedDate,
+        timezoneOffset: new Date().getTimezoneOffset(),
+      });
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: crypto.randomUUID(),
+          role: 'assistant',
+          content: '',
+          cheatSpec: staged.spec,
+          userInput: staged.rawInput,
+          timestamp: new Date(staged.loggedAt),
+          loggedDate: selectedDate,
+          analysisId: staged.analysisId,
+        },
+      ]);
+      scrollToBottom();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : t('repeatError'));
+    } finally {
+      setIsStagingRepeat(false);
+    }
   };
 
   // Derive display messages: overlay live streaming state onto the active message.
@@ -695,6 +736,13 @@ export function FeedArea({
 
       {/* Input area */}
       <div className="shrink-0 px-3 pt-2 pb-3 sm:px-6 sm:pb-4">
+        {isCheat && (
+          <CheatOccasionChips
+            occasions={recentCheatOccasions.data ?? []}
+            disabled={isStagingRepeat || stream.isAnalyzing}
+            onSelect={handleRepeatCheat}
+          />
+        )}
         <div className="mx-auto max-w-3xl">
           <MealInput
             ref={inputRef}

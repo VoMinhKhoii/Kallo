@@ -959,6 +959,7 @@
     },
     "feedArea": {
       "savedMeal": "Đã lưu bữa ăn",
+      "repeatError": "Không thể mở lại dịp này.",
       "legacyMacroWarning": "Không thể hiển thị tổng macro trong ngày vì một số bữa ăn cũ thiếu macro.",
       "loadErrorTitle": "Không thể tải ngày này",
       "loadErrorDescription": "Các bữa ăn đã lưu cho ngày này chưa tải được. Hãy thử lại trước khi ghi thêm món.",
@@ -1002,6 +1003,9 @@
       "kcal": "kcal",
       "alcohol": "cồn",
       "between": "Giữa {low} và {high}"
+    },
+    "cheatRepeat": {
+      "title": "Ghi lại lần nữa"
     },
     "cheatMealCard": {
       "badge": "Bữa xả",

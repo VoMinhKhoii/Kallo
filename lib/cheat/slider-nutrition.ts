@@ -42,6 +42,24 @@ export function clampLevel(level: number): number {
   return Math.min(10, Math.max(0, level));
 }
 
+/**
+ * Re-seed each slider's default to a previously chosen level, reusing the
+ * scenario labels/anchors verbatim. Drives "log it again": a repeat card opens
+ * on last time's amounts (the user can still nudge — this time may differ).
+ */
+export function withLevelsAsDefaults(
+  spec: CheatSliderSpec,
+  levels: CheatSliderLevels
+): CheatSliderSpec {
+  return {
+    ...spec,
+    sliders: spec.sliders.map((slider) => ({
+      ...slider,
+      defaultLevel: clampLevel(levels[slider.key] ?? slider.defaultLevel),
+    })),
+  };
+}
+
 /** The AI's default position per slider — what an untouched card resolves to. */
 export function defaultLevels(spec: CheatSliderSpec): CheatSliderLevels {
   const levels: CheatSliderLevels = {};

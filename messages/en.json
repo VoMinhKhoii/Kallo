@@ -959,6 +959,7 @@
     },
     "feedArea": {
       "savedMeal": "Meal saved",
+      "repeatError": "Could not reopen that occasion.",
       "legacyMacroWarning": "Daily macro summary unavailable because some legacy meals have unknown macros.",
       "loadErrorTitle": "Could not load this day",
       "loadErrorDescription": "Your saved meals for this date did not load. Try again before logging more food.",
@@ -1002,6 +1003,9 @@
       "kcal": "kcal",
       "alcohol": "alcohol",
       "between": "Between {low} and {high}"
+    },
+    "cheatRepeat": {
+      "title": "Log it again"
     },
     "cheatMealCard": {
       "badge": "Cheat meal",

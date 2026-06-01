@@ -233,6 +233,8 @@ export function useConfirmMeal(userId: string) {
         queryKey: loggingDayKeys.byUserDate(userId, variables.originDate),
       });
       queryClient.invalidateQueries({ queryKey: ['meal-dates'] });
+      // Refresh the "log it again" chips so a newly-saved cheat occasion appears.
+      queryClient.invalidateQueries({ queryKey: ['recent-cheat-occasions'] });
     },
   });
 }
