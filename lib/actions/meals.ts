@@ -505,14 +505,30 @@ async function loadPendingAnalysesByDateForUser(
     )
     .orderBy(desc(pendingAnalyses.loggedAt));
 
-  return rows.map((row) => {
-    const pipelineResult = row.pipelineResult as PipelineResult;
-    return {
-      id: row.id,
-      rawInput: row.rawInput,
-      loggedAt: row.loggedAt.toISOString(),
-      parsedMeal: toParsedMeal(pipelineResult),
-    };
+  return rows.flatMap((row) => {
+    // Defensive: a row whose stored pipelineResult predates the current shape
+    // (legacy/malformed) must not throw and 500 the entire day load via the
+    // Promise.all in loadLoggingDay. toParsedMeal walks several fields
+    // (mealItems, each item's ingredients, displayedNutrition), so guard the
+    // whole conversion rather than one field — any malformed shape is skipped.
+    // Skipping is safe: such a row is un-confirmable anyway since confirm reads
+    // the same pipelineResult.
+    try {
+      return [
+        {
+          id: row.id,
+          rawInput: row.rawInput,
+          loggedAt: row.loggedAt.toISOString(),
+          parsedMeal: toParsedMeal(row.pipelineResult as PipelineResult),
+        },
+      ];
+    } catch (error) {
+      console.error(
+        '[loadPendingAnalyses] Skipping pending analysis with malformed pipelineResult',
+        { id: row.id, error }
+      );
+      return [];
+    }
   });
 }
 
