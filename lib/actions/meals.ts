@@ -12,11 +12,6 @@ import {
 import type { NutritionValues, PipelineResult } from '@/lib/ai/types';
 import { requireAuthAndProfile } from '@/lib/auth';
 import { resolveSliderNutrition } from '@/lib/cheat/slider-nutrition';
-import type {
-  CheatSliderLevels,
-  CheatSliderSpec,
-  CheatSlidersPersisted,
-} from '@/lib/types/cheat';
 import { getUtcDayRangeForLocalDate } from '@/lib/date/local-day';
 import { db } from '@/lib/db';
 import {
@@ -29,6 +24,11 @@ import {
 import { Errors } from '@/lib/errors';
 import { goalEnumSchema } from '@/lib/onboarding/schemas';
 import type { Goal } from '@/lib/onboarding/types';
+import type {
+  CheatSliderLevels,
+  CheatSliderSpec,
+  CheatSlidersPersisted,
+} from '@/lib/types/cheat';
 import { dateStringSchema, timezoneOffsetSchema } from '@/lib/validation';
 
 // ---------------------------------------------------------------------------
@@ -536,8 +536,7 @@ async function loadMealsByDateForUser(
       mealItemGroups: groups,
       entryMode: meal.entryMode === 'cheat' ? 'cheat' : 'precise',
       alcoholG: meal.alcoholG ?? null,
-      cheatSliders:
-        (meal.cheatSliders as CheatSlidersPersisted | null) ?? null,
+      cheatSliders: (meal.cheatSliders as CheatSlidersPersisted | null) ?? null,
       estimateRationale: meal.estimateRationale ?? null,
       share: share ? { shareId: share.id, visibility: share.visibility } : null,
     };

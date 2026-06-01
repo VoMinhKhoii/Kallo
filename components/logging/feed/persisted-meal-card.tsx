@@ -120,7 +120,6 @@ function ShareToCircleButton({
   );
 }
 
-
 export function PersistedMealCard({ meal }: PersistedMealCardProps) {
   // Cheat meals render a dedicated, warmly-decorated card variant.
   if (meal.entryMode === 'cheat') {

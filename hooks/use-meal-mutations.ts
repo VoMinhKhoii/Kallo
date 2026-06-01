@@ -17,10 +17,7 @@ import { NUTRITION_KEYS } from '@/lib/ai/constants';
 import type { NutritionValues } from '@/lib/ai/types';
 import { resolveSliderNutrition } from '@/lib/cheat/slider-nutrition';
 import { recalculateTotals } from '@/lib/meal-utils';
-import type {
-  CheatSliderLevels,
-  CheatSliderSpec,
-} from '@/lib/types/cheat';
+import type { CheatSliderLevels, CheatSliderSpec } from '@/lib/types/cheat';
 import type { MacroBreakdown, MealItem, ParsedMeal } from '@/lib/types/meal';
 
 /** Client-held cheat data needed to seed the optimistic cheat-meal card. */

@@ -188,8 +188,7 @@ export function AdherenceHeatmap({ data, range }: AdherenceHeatmapProps) {
                             'relative cursor-default rounded-[3px] transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent/60',
                             // Cheat day: a calm warm ring instead of intensity
                             // grading — recognizable, never red.
-                            isCheat &&
-                              'ring-1 ring-nham-cheat ring-inset'
+                            isCheat && 'ring-1 ring-nham-cheat ring-inset'
                           )}
                           style={{
                             backgroundColor: isCheat
