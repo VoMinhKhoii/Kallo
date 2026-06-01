@@ -489,6 +489,7 @@ export function FeedArea({
         role: 'assistant',
         content: '',
         parsedMeal: pending.parsedMeal,
+        cheatSpec: pending.cheatSpec,
         userInput: pending.rawInput,
         timestamp: new Date(pending.loggedAt),
         loggedDate: selectedDate,

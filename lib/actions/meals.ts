@@ -413,7 +413,10 @@ export interface PendingMealConfirmation {
   id: string;
   rawInput: string;
   loggedAt: string;
-  parsedMeal: ReturnType<typeof toParsedMeal>;
+  /** Set for precise entries. Absent for cheat entries (which carry cheatSpec). */
+  parsedMeal?: ReturnType<typeof toParsedMeal>;
+  /** Set for cheat entries: the staged slider spec the user confirms against. */
+  cheatSpec?: CheatSliderSpec;
 }
 
 export interface LoggingDayData {
@@ -573,12 +576,24 @@ async function loadPendingAnalysesByDateForUser(
     .orderBy(desc(pendingAnalyses.loggedAt));
 
   return rows.map((row) => {
-    const pipelineResult = row.pipelineResult as PipelineResult;
-    return {
+    const base = {
       id: row.id,
       rawInput: row.rawInput,
       loggedAt: row.loggedAt.toISOString(),
-      parsedMeal: toParsedMeal(pipelineResult),
+    };
+    // Cheat rows stage a slider spec, not a decomposition PipelineResult, so
+    // toParsedMeal (which reads .mealItems) can't apply. Branch on entryMode,
+    // mirroring confirmAndSaveMealAction.
+    if (row.entryMode === 'cheat') {
+      const { spec } = row.pipelineResult as {
+        entryMode: 'cheat';
+        spec: CheatSliderSpec;
+      };
+      return { ...base, cheatSpec: spec };
+    }
+    return {
+      ...base,
+      parsedMeal: toParsedMeal(row.pipelineResult as PipelineResult),
     };
   });
 }

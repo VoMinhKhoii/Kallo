@@ -637,7 +637,50 @@ describe('loadPendingAnalysesByDate', () => {
     expect(pending[0]?.id).toBe(UUID_1);
     expect(pending[0]?.rawInput).toBe('Phở bò');
     expect(pending[0]?.loggedAt).toBe(LOGGED_AT.toISOString());
-    expect(pending[0]?.parsedMeal.mealName).toBe('Phở bò');
+    expect(pending[0]?.parsedMeal?.mealName).toBe('Phở bò');
+  });
+
+  it('returns a cheat pending row as cheatSpec without crashing on missing mealItems', async () => {
+    const spec = {
+      sliders: [
+        {
+          key: 'protein',
+          label: 'Thịt / hải sản',
+          defaultLevel: 5,
+          anchors: [
+            { level: 0, label: 'không' },
+            { level: 10, label: 'rất nhiều' },
+          ],
+        },
+      ],
+      rationale: 'Tiệc nướng cuối tuần',
+      mealSlot: 'dinner',
+      confidence: 'medium',
+    };
+    mockDbSelect.mockReturnValueOnce({
+      from: vi.fn().mockReturnValue({
+        where: vi.fn().mockReturnValue({
+          orderBy: vi.fn().mockResolvedValue([
+            {
+              id: UUID_1,
+              rawInput: 'Tiệc nướng',
+              loggedAt: LOGGED_AT,
+              entryMode: 'cheat',
+              pipelineResult: { entryMode: 'cheat', spec },
+            },
+          ]),
+        }),
+      }),
+    });
+
+    const pending = await loadPendingAnalysesByDate({
+      date: '2026-04-06',
+      timezoneOffset: -420,
+    });
+
+    expect(pending).toHaveLength(1);
+    expect(pending[0]?.cheatSpec).toEqual(spec);
+    expect(pending[0]?.parsedMeal).toBeUndefined();
   });
 });
 
