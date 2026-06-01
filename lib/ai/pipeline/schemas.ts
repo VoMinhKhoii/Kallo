@@ -514,11 +514,15 @@ export const cheatSliderSchema = z.object({
     .number()
     .min(0)
     .max(10)
-    .describe("The single best-guess level; the slider starts here."),
+    .describe('The single best-guess level; the slider starts here.'),
+  // No .max() here: Gemini's responseJsonSchema rejects a schema whose nested
+  // bounded arrays unroll to too many fields. sliders.max(4) × anchors.max(11)
+  // × the 6-property anchor object tripped that limit with 400 INVALID_ARGUMENT.
+  // Capping anchor count is non-essential (the prompt asks for sparse keypoints
+  // incl. level 0 and 10), so we drop the upper bound and keep the .min(2) floor.
   anchors: z
     .array(cheatSliderAnchorSchema)
     .min(2)
-    .max(11)
     .describe(
       'Sparse keypoints; MUST include level 0 and level 10. Grams between anchors are interpolated.'
     ),
