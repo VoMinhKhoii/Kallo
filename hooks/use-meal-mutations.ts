@@ -122,6 +122,7 @@ function buildOptimisticMeal(
       alcoholG: resolved.alcoholG,
       cheatSliders: { spec: cheat.spec, levels: cheat.levels },
       estimateRationale: cheat.spec.rationale,
+      share: null,
     };
   }
 
