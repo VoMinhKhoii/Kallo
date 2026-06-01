@@ -66,3 +66,63 @@ export const weightLogSchema = z.object({
 
 export type MealMessageInput = z.infer<typeof mealMessageSchema>;
 export type WeightLogInput = z.infer<typeof weightLogSchema>;
+
+// ---------------------------------------------------------------------------
+// Group tracking schemas
+// ---------------------------------------------------------------------------
+
+// Lowercase after validating: Postgres compares uuids case-insensitively, but
+// the JS canonical-pair ordering (lib/groups/friendship.ts orderedPair) sorts
+// lexicographically, so an uppercase-hex id would order differently than the
+// stored lowercase row. Normalising here keeps both authorities in agreement.
+const uuidSchema = z.string().uuid('Phải là UUID hợp lệ.').toLowerCase();
+
+/**
+ * A handle as accepted by the API: lowercased, 3-20 chars, [a-z0-9_]. The
+ * reserved-handle blocklist is enforced separately via lib/groups/handles.ts
+ * (validateHandle) so the rejection reason can be distinguished.
+ */
+export const handleSchema = z
+  .string()
+  .trim()
+  .toLowerCase()
+  .min(3, 'Handle phải có ít nhất 3 ký tự.')
+  .max(20, 'Handle tối đa 20 ký tự.')
+  .regex(/^[a-z0-9_]+$/u, 'Handle chỉ gồm chữ thường, số và dấu gạch dưới.');
+
+/** Upsert the caller's own public profile. */
+export const upsertPublicProfileSchema = z.object({
+  handle: handleSchema,
+  displayName: z.string().trim().min(1).max(50).optional(),
+  avatarSeed: z.string().trim().min(1).max(64).optional(),
+});
+
+export const blockFriendSchema = z.object({
+  targetUserId: uuidSchema,
+});
+
+export const removeFriendSchema = z.object({
+  targetUserId: uuidSchema,
+});
+
+/** Accept a link invite, identified by the inviter's editable link slug. */
+export const acceptInviteSchema = z.object({
+  slug: handleSchema,
+});
+
+export const setMealShareVisibilitySchema = z.object({
+  mealId: uuidSchema,
+  visibility: z.enum(['private', 'circle']),
+});
+
+export const circleFeedSchema = z.object({
+  timezoneOffset: timezoneOffsetSchema,
+});
+
+export type HandleInput = z.infer<typeof handleSchema>;
+export type UpsertPublicProfileInput = z.infer<
+  typeof upsertPublicProfileSchema
+>;
+export type SetMealShareVisibilityInput = z.infer<
+  typeof setMealShareVisibilitySchema
+>;

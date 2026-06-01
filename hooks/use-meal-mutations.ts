@@ -149,6 +149,7 @@ function buildOptimisticMeal(
     alcoholG: null,
     cheatSliders: null,
     estimateRationale: null,
+    share: null,
   };
 }
 

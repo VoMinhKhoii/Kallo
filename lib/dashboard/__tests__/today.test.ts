@@ -55,6 +55,7 @@ const meals: PersistedMeal[] = [
     alcoholG: null,
     cheatSliders: null,
     estimateRationale: null,
+    share: null,
   },
   {
     id: 'meal-2',
@@ -97,6 +98,7 @@ const meals: PersistedMeal[] = [
     alcoholG: null,
     cheatSliders: null,
     estimateRationale: null,
+    share: null,
   },
 ];
 

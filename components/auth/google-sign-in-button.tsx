@@ -4,18 +4,21 @@ import { Loader2 } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { toast } from 'sonner';
+import { useAuthDialog } from '@/components/auth/auth-provider';
 import { createClient } from '@/lib/supabase/client';
 
 export function GoogleSignInButton() {
   const t = useTranslations('auth.dialog');
   const locale = useLocale();
+  const { next } = useAuthDialog();
   const [loading, setLoading] = useState(false);
 
   const onClick = async () => {
     setLoading(true);
     const supabase = createClient();
-    const next = `/${locale}/logging`;
-    const redirectTo = `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`;
+    // Prefer the invite return-path when present; otherwise land in the app.
+    const target = next ?? `/${locale}/logging`;
+    const redirectTo = `${window.location.origin}/auth/callback?next=${encodeURIComponent(target)}`;
 
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
