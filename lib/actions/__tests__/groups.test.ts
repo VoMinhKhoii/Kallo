@@ -153,6 +153,20 @@ function insertConflicted() {
 describe('acceptInvite', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    // Default db.select fallback: the recipient already has a link profile, so
+    // getOrCreateMyProfile (called before the transaction) short-circuits. The
+    // first db.select per test is overridden with .mockReturnValueOnce for the
+    // getProfileBySlug lookup; this default serves the getMyPublicProfile read.
+    mockDbSelect.mockReturnValue(
+      selectRows([
+        {
+          userId: ACTOR,
+          handle: 'mine4821',
+          displayName: null,
+          avatarSeed: 'mine4821',
+        },
+      ])
+    );
   });
 
   it('rejects a malformed slug before touching the db', async () => {
@@ -193,6 +207,31 @@ describe('acceptInvite', () => {
 
     const event = inserts.find((v) => v.type === 'friend_accepted');
     expect(event?.refId).toBe(FRIENDSHIP_ID);
+  });
+
+  it('provisions the recipient profile when they have none yet', async () => {
+    mockDbSelect
+      .mockReturnValueOnce(selectRows([inviterRow])) // getProfileBySlug
+      .mockReturnValueOnce(selectRows([])); // getMyPublicProfile: none yet
+    mockDbInsert.mockReturnValue({
+      values: vi.fn().mockReturnValue({
+        returning: vi.fn().mockResolvedValue([
+          {
+            userId: ACTOR,
+            handle: 'mine4821',
+            displayName: null,
+            avatarSeed: 'mine4821',
+          },
+        ]),
+      }),
+    });
+    mockTxSelect.mockReturnValueOnce(txSelect([])); // no existing edge
+    captureInserts();
+
+    const result = await acceptInvite(ACTOR, { slug: SLUG });
+
+    expect(result.status).toBe('accepted');
+    expect(mockDbInsert).toHaveBeenCalledTimes(1); // recipient was provisioned
   });
 
   it('promotes a pending edge to accepted', async () => {

@@ -1,6 +1,7 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { circleFeedKeys } from '@/hooks/use-circle-feed';
 import {
   blockFriend,
   type CircleMember,
@@ -26,6 +27,8 @@ export function useRemoveFriend() {
     mutationFn: (targetUserId: string) => removeFriend(targetUserId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: friendsKeys.all });
+      // Drop the removed friend's meals from the ambient wall, too.
+      queryClient.invalidateQueries({ queryKey: circleFeedKeys.all });
     },
   });
 }
@@ -36,6 +39,8 @@ export function useBlockFriend() {
     mutationFn: (targetUserId: string) => blockFriend(targetUserId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: friendsKeys.all });
+      // Drop the blocked friend's meals from the ambient wall, too.
+      queryClient.invalidateQueries({ queryKey: circleFeedKeys.all });
     },
   });
 }

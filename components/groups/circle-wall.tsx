@@ -11,12 +11,12 @@ import { labelFor } from '@/components/groups/invite/profile-identity';
 import { useCircleFeed } from '@/hooks/use-circle-feed';
 import type { CircleFeedEntry } from '@/lib/groups/client';
 
-function formatMacro(value: number | null): string {
-  return value == null ? 'N/A' : `${Math.round(value)}g`;
+function formatMacro(value: number | null, na: string): string {
+  return value == null ? na : `${Math.round(value)}g`;
 }
 
-function formatCalories(value: number | null): string {
-  return value == null ? 'N/A' : `${Math.round(value)} kcal`;
+function formatCalories(value: number | null, na: string): string {
+  return value == null ? na : `${Math.round(value)} kcal`;
 }
 
 /**
@@ -34,10 +34,11 @@ function CircleCard({ entry }: { entry: CircleFeedEntry }) {
     minute: '2-digit',
   });
 
-  const calories = formatCalories(meal.caloriesKcal);
-  const protein = formatMacro(meal.proteinG);
-  const carbs = formatMacro(meal.carbohydrateG);
-  const fat = formatMacro(meal.fatG);
+  const na = t('na');
+  const calories = formatCalories(meal.caloriesKcal, na);
+  const protein = formatMacro(meal.proteinG, na);
+  const carbs = formatMacro(meal.carbohydrateG, na);
+  const fat = formatMacro(meal.fatG, na);
 
   const friendLabel = labelFor(friend);
 

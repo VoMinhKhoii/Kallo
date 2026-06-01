@@ -1030,7 +1030,8 @@
       "sharedAt": "Shared at {time}",
       "toggleDetails": "Toggle meal details",
       "total": "Total",
-      "loading": "Loading your circle"
+      "loading": "Loading your circle",
+      "na": "N/A"
     },
     "shareControl": {
       "share": "Share to circle",

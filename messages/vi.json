@@ -1030,7 +1030,8 @@
       "sharedAt": "Chia sẻ lúc {time}",
       "toggleDetails": "Xem chi tiết bữa ăn",
       "total": "Tổng",
-      "loading": "Đang tải vòng kết nối của bạn"
+      "loading": "Đang tải vòng kết nối của bạn",
+      "na": "Không có"
     },
     "shareControl": {
       "share": "Chia sẻ với vòng kết nối",
