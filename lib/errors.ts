@@ -95,6 +95,10 @@ export const Errors = {
   validationFailed: (detail: string) =>
     new AppError('VALIDATION_FAILED', 400, false, detail),
 
+  notFound: (detail: string) => new AppError('NOT_FOUND', 404, false, detail),
+
+  conflict: (detail: string) => new AppError('CONFLICT', 409, false, detail),
+
   rateLimited: (message?: string) =>
     new AppError(
       'RATE_LIMITED',

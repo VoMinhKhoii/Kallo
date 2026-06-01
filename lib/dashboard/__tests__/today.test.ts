@@ -51,6 +51,7 @@ const meals: PersistedMeal[] = [
       vitaminHMcg: null,
     },
     mealItemGroups: [],
+    share: null,
   },
   {
     id: 'meal-2',
@@ -89,6 +90,7 @@ const meals: PersistedMeal[] = [
       vitaminHMcg: null,
     },
     mealItemGroups: [],
+    share: null,
   },
 ];
 

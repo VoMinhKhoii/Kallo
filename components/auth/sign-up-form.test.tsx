@@ -54,6 +54,9 @@ describe('SignUpForm', () => {
       expect(signUpMock).toHaveBeenCalledWith({
         email: 'new@example.com',
         password: 'hunter22',
+        options: {
+          emailRedirectTo: expect.stringContaining('/auth/callback?next='),
+        },
       });
     });
 

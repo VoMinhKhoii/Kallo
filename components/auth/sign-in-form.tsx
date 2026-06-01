@@ -15,7 +15,7 @@ import { createClient } from '@/lib/supabase/client';
 export function SignInForm() {
   const t = useTranslations('auth.signIn');
   const router = useRouter();
-  const { closeDialog } = useAuthDialog();
+  const { closeDialog, next } = useAuthDialog();
   const [loading, setLoading] = useState(false);
 
   const signInSchema = z.object({
@@ -49,6 +49,13 @@ export function SignInForm() {
 
     toast.success(t('success'));
     closeDialog();
+    if (next) {
+      // `next` is a full locale-prefixed path (e.g. /en/invite/abc). A hard
+      // navigation makes the server re-read the fresh session cookie so the
+      // invite page resolves as signed-in.
+      window.location.assign(next);
+      return;
+    }
     router.push('/logging');
     router.refresh();
   };
