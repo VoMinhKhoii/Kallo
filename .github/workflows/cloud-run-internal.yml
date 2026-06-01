@@ -32,18 +32,47 @@ jobs:
       - uses: google-github-actions/setup-gcloud@e427ad8a34f8676edf47cf7d7925499adf3eb74f # v2.2.1
         with:
           project_id: ${{ vars.GCP_PROJECT_ID }}
-      - name: Pre-deploy validation
+      - uses: supabase/setup-cli@ab058987d8d6c725971f6cf9d0b5c98467e30bd1 # v1.7.1
+        with:
+          version: 1.200.3
+      - name: Read shared database URL
         run: |
           db_url="$(gcloud secrets versions access latest --secret=nham-nonprod-database-url)"
+          encoded_db_url="$(node ./scripts/cloud-run/shared-db.mjs encode-url --db-url "$db_url")"
           echo "::add-mask::$db_url"
+          echo "::add-mask::$encoded_db_url"
+          { echo 'INTERNAL_DATABASE_URL<<EOF'; echo "$db_url"; echo 'EOF'; } >> "$GITHUB_ENV"
+          { echo 'INTERNAL_DATABASE_URL_ENCODED<<EOF'; echo "$encoded_db_url"; echo 'EOF'; } >> "$GITHUB_ENV"
+      - name: Pre-deploy validation
+        run: |
           gcloud artifacts docker images describe "$IMAGE_TAG"
           gcloud secrets describe nham-nonprod-database-url
           gcloud secrets describe nham-nonprod-gemini-api-key
           gcloud iam service-accounts describe "${{ vars.GCP_RUNTIME_SERVICE_ACCOUNT }}"
           [[ "$SERVICE_NAME" = "nham-internal" ]]
-          node ./scripts/cloud-run/shared-db.mjs assert-target --db-url "$db_url" --project-ref "$SUPABASE_PROJECT_ID"
-          node ./scripts/cloud-run/shared-db.mjs assert-migrations-applied --db-url "$db_url" --migrations-dir ./supabase/migrations
-          node ./scripts/cloud-run/shared-db.mjs assert-state --db-url "$db_url"
+          node ./scripts/cloud-run/shared-db.mjs assert-target --db-url "$INTERNAL_DATABASE_URL" --project-ref "$SUPABASE_PROJECT_ID"
+          node ./scripts/cloud-run/shared-db.mjs assert-state --db-url "$INTERNAL_DATABASE_URL"
+      # Migrations are applied here, on the main deploy, so a merge to main both
+      # applies schema and ships the app in one pass (no separate staging trip).
+      # The append-only check is scoped to just the pending files — historical,
+      # already-applied migrations are immutable and must not be re-validated at
+      # deploy time. CI already validates append-only on the PR/push diff with
+      # the correct git baseline.
+      - name: Validate pending migrations are append-only
+        run: |
+          pending_list="$(node ./scripts/cloud-run/shared-db.mjs list-pending --db-url "$INTERNAL_DATABASE_URL" --migrations-dir ./supabase/migrations)"
+          if [ -z "$pending_list" ]; then
+            echo "No pending migrations to validate."
+          else
+            echo "Validating pending migration(s):"
+            echo "$pending_list"
+            mapfile -t pending <<< "$pending_list"
+            node ./scripts/check-append-only-migrations.mjs "${pending[@]}"
+          fi
+      - name: Apply pending migrations to shared DB
+        run: yes | supabase db push --db-url "$INTERNAL_DATABASE_URL_ENCODED"
+      - name: Verify migrations applied
+        run: node ./scripts/cloud-run/shared-db.mjs assert-migrations-applied --db-url "$INTERNAL_DATABASE_URL" --migrations-dir ./supabase/migrations
       - name: Record previous revision
         run: |
           # By contract, the currently serving revision is the last known good one,

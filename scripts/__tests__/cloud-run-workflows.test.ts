@@ -75,6 +75,17 @@ describe('Cloud Run staging workflow', () => {
     expect(workflow).toContain(`STAGING_DATABASE_URL_ENCODED<<EOF`);
   });
 
+  it('scopes the deploy-time append-only check to pending migrations only', () => {
+    const workflow = readWorkflow('cloud-run-staging.yml');
+
+    // A deploy job has no git baseline; scope the check to the not-yet-applied
+    // migrations so historical, already-applied ones are not re-flagged.
+    expect(workflow).toContain(
+      'list-pending --db-url "$STAGING_DATABASE_URL" --migrations-dir ./supabase/migrations'
+    );
+    expect(workflow).toContain('node scripts/check-append-only-migrations.mjs');
+  });
+
   it('passes through the resolved PR number for staging comment updates', () => {
     const workflow = readWorkflow('cloud-run-staging.yml');
 
@@ -108,11 +119,29 @@ describe('Cloud Run staging workflow', () => {
 });
 
 describe('Cloud Run internal workflow', () => {
-  it('asserts that all local migrations are applied before deploying', () => {
+  it('applies pending migrations on the main deploy, then verifies them', () => {
     const workflow = readWorkflow('cloud-run-internal.yml');
 
+    // Migrations are applied on the main deploy itself (no separate staging
+    // trip), then re-asserted so a partial push fails the deploy.
     expect(workflow).toContain(
-      'node ./scripts/cloud-run/shared-db.mjs assert-migrations-applied --db-url "$db_url" --migrations-dir ./supabase/migrations'
+      'run: yes | supabase db push --db-url "$INTERNAL_DATABASE_URL_ENCODED"'
+    );
+    expect(workflow).toContain(
+      'node ./scripts/cloud-run/shared-db.mjs assert-migrations-applied --db-url "$INTERNAL_DATABASE_URL" --migrations-dir ./supabase/migrations'
+    );
+  });
+
+  it('scopes the deploy-time append-only check to pending migrations only', () => {
+    const workflow = readWorkflow('cloud-run-internal.yml');
+
+    // A deploy job has no git baseline, so the check is scoped to the
+    // not-yet-applied migrations rather than re-scanning all of history.
+    expect(workflow).toContain(
+      'list-pending --db-url "$INTERNAL_DATABASE_URL" --migrations-dir ./supabase/migrations'
+    );
+    expect(workflow).toContain(
+      'node ./scripts/check-append-only-migrations.mjs'
     );
   });
 });

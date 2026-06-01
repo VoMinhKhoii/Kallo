@@ -332,6 +332,36 @@ function assertMigrationsApplied(databaseUrl, migrationsDir) {
   };
 }
 
+// Map a set of migration version prefixes to their repo-relative .sql file
+// paths within migrationsDir, sorted. Versions with no matching file are
+// dropped (defensive — every version here came from a real local file).
+export function selectMigrationFilesForVersions(versions, migrationsDir) {
+  const wanted = new Set(versions);
+  if (wanted.size === 0) return [];
+
+  const dir = migrationsDir.replace(/^\.\//, '').replace(/\/$/, '');
+  return readdirSync(migrationsDir, { withFileTypes: true })
+    .filter((entry) => entry.isFile() && entry.name.endsWith('.sql'))
+    .filter((entry) => {
+      const match = entry.name.match(/^(\d+)_/);
+      return match !== null && wanted.has(match[1]);
+    })
+    .map((entry) => `${dir}/${entry.name}`)
+    .sort();
+}
+
+// The migration files present locally but not yet applied to the target DB —
+// i.e. exactly what `supabase db push` will apply. Returned as repo-relative
+// paths so the append-only validator can be scoped to just these files; the
+// historical, already-applied migrations are immutable and must not be
+// re-flagged at deploy time.
+function listPendingMigrationFiles(databaseUrl, migrationsDir) {
+  const localVersions = readLocalMigrationVersions(migrationsDir);
+  const appliedVersions = runPsqlMigrationsCheck(databaseUrl);
+  const pending = findPendingMigrations(localVersions, appliedVersions);
+  return selectMigrationFilesForVersions(pending, migrationsDir);
+}
+
 function getRequiredFlag(flagName) {
   const flagIndex = process.argv.indexOf(flagName);
 
@@ -377,6 +407,18 @@ function main() {
     return;
   }
 
+  if (command === 'list-pending') {
+    const databaseUrl = getRequiredFlag('--db-url');
+    const migrationsDir = getRequiredFlag('--migrations-dir');
+    const files = listPendingMigrationFiles(databaseUrl, migrationsDir);
+    // Emit one path per line (nothing when there are no pending migrations) so
+    // a workflow can `mapfile` the result and scope the append-only check.
+    if (files.length > 0) {
+      console.log(files.join('\n'));
+    }
+    return;
+  }
+
   if (command === 'encode-url') {
     const databaseUrl = getRequiredFlag('--db-url');
     console.log(encodeDatabaseUrl(databaseUrl));
@@ -384,7 +426,7 @@ function main() {
   }
 
   throw new Error(
-    'Usage: node scripts/cloud-run/shared-db.mjs <assert-target|assert-state|assert-migrations-applied|encode-url> [--db-url ...] [--project-ref ...] [--migrations-dir ...]'
+    'Usage: node scripts/cloud-run/shared-db.mjs <assert-target|assert-state|assert-migrations-applied|list-pending|encode-url> [--db-url ...] [--project-ref ...] [--migrations-dir ...]'
   );
 }
 
