@@ -11,6 +11,7 @@ import {
   parseAppliedMigrationVersions,
   parseSharedDbStateOutput,
   readLocalMigrationVersions,
+  selectMigrationFilesForVersions,
   validateProjectRefAlignment,
 } from './shared-db.mjs';
 
@@ -215,5 +216,59 @@ describe('migration assertion helpers', () => {
         ['20260101000000', '20260199999999_manual_hotfix']
       )
     ).toEqual([]);
+  });
+});
+
+describe('selectMigrationFilesForVersions', () => {
+  let migrationsDir: string;
+
+  beforeEach(() => {
+    migrationsDir = mkdtempSync(join(tmpdir(), 'shared-db-select-'));
+  });
+
+  afterEach(() => {
+    rmSync(migrationsDir, { recursive: true, force: true });
+  });
+
+  it('maps versions to their .sql file paths, sorted', () => {
+    writeFileSync(join(migrationsDir, '20260101000000_first.sql'), '');
+    writeFileSync(join(migrationsDir, '20260102000000_second.sql'), '');
+    writeFileSync(join(migrationsDir, '20260103000000_third.sql'), '');
+
+    expect(
+      selectMigrationFilesForVersions(
+        ['20260103000000', '20260101000000'],
+        migrationsDir
+      )
+    ).toEqual([
+      `${migrationsDir}/20260101000000_first.sql`,
+      `${migrationsDir}/20260103000000_third.sql`,
+    ]);
+  });
+
+  it('returns an empty array when no versions are requested', () => {
+    writeFileSync(join(migrationsDir, '20260101000000_first.sql'), '');
+    expect(selectMigrationFilesForVersions([], migrationsDir)).toEqual([]);
+  });
+
+  it('drops requested versions that have no matching file', () => {
+    writeFileSync(join(migrationsDir, '20260101000000_first.sql'), '');
+
+    expect(
+      selectMigrationFilesForVersions(
+        ['20260101000000', '20269999999999'],
+        migrationsDir
+      )
+    ).toEqual([`${migrationsDir}/20260101000000_first.sql`]);
+  });
+
+  it('matches only prefixed .sql files (no README, no prefix-less .sql)', () => {
+    writeFileSync(join(migrationsDir, '20260101000000_first.sql'), '');
+    writeFileSync(join(migrationsDir, 'manual_fix.sql'), '');
+    writeFileSync(join(migrationsDir, 'README.md'), '');
+
+    expect(
+      selectMigrationFilesForVersions(['20260101000000'], migrationsDir)
+    ).toEqual([`${migrationsDir}/20260101000000_first.sql`]);
   });
 });
