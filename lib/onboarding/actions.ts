@@ -3,6 +3,7 @@
 import { eq } from 'drizzle-orm';
 import { db } from '@/lib/db';
 import { userProfiles } from '@/lib/db/schema';
+import { Errors } from '@/lib/errors';
 import { ONBOARDING_TOTAL_STEPS } from '@/lib/onboarding/constants';
 import { hasSavedOnboardingProfileData } from '@/lib/onboarding/progress';
 import { createClient } from '@/lib/supabase/server';
@@ -12,7 +13,7 @@ async function getAuthUser() {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) throw new Error('Not authenticated');
+  if (!user) throw Errors.notAuthenticated();
   return user;
 }
 
