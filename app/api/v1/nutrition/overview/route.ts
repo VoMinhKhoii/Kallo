@@ -1,5 +1,6 @@
 import type { NextRequest } from 'next/server';
 import { overviewQuerySchema } from '@/lib/api/contracts/nutrition';
+import { parseTzParam } from '@/lib/api/query';
 import { handleRouteError } from '@/lib/api/respond';
 import { getNutritionOverview } from '@/lib/nutrition/actions/overview';
 
@@ -11,7 +12,7 @@ export async function GET(req: NextRequest) {
     const rawTz = searchParams.get('tz');
     const { range, tz } = overviewQuerySchema.parse({
       range: searchParams.get('range'),
-      tz: rawTz === null ? null : Number(rawTz),
+      tz: parseTzParam(rawTz),
     });
     const result = await getNutritionOverview({
       range,
