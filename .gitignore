@@ -64,3 +64,6 @@ seed_food.sql
 # Local git worktrees
 .worktrees/
 .gstack/
+
+# Local Claude Code MCP server config (no secrets, but per-developer)
+.mcp.json
