@@ -11,6 +11,7 @@ import {
 } from '@/lib/ai/pipeline/goal-adjustment';
 import type { NutritionValues, PipelineResult } from '@/lib/ai/types';
 import { requireAuthAndProfile } from '@/lib/auth';
+import { groupOccasions } from '@/lib/cheat/occasion-grouping';
 import {
   resolveSliderNutrition,
   withLevelsAsDefaults,
@@ -643,24 +644,13 @@ export async function loadRecentCheatOccasionsAction(input: {
     .orderBy(desc(meals.loggedAt))
     .limit(60);
 
-  const seen = new Set<string>();
-  const occasions: RecentCheatOccasion[] = [];
-  for (const row of rows) {
-    const key = row.rawInput.trim().toLowerCase();
-    if (!key || seen.has(key)) {
-      continue;
-    }
-    seen.add(key);
-    occasions.push({
-      mealId: row.id,
-      rawInput: row.rawInput,
-      loggedAt: row.loggedAt.toISOString(),
-    });
-    if (occasions.length >= limit) {
-      break;
-    }
-  }
-  return occasions;
+  // Group near-duplicate occasions (e.g. "korean bbq" / "Korean BBQ buffet")
+  // so a place the user cheats at often shows up once, keeping its newest wording.
+  return groupOccasions(rows, limit).map((row) => ({
+    mealId: row.id,
+    rawInput: row.rawInput,
+    loggedAt: row.loggedAt.toISOString(),
+  }));
 }
 
 const stageCheatRepeatSchema = z.object({
