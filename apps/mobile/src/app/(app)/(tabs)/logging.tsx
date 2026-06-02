@@ -2,12 +2,13 @@ import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 import { AppHeader } from '~/components/app/app-header';
-import { FeedArea, type LoggingProfile } from '~/components/logging/feed-area';
-import { TimelinePicker } from '~/components/logging/timeline-picker';
+import { FeedArea, type LoggingProfile } from '~/components/logging/feed/feed-area';
+import { TimelinePicker } from '~/components/logging/input/timeline-picker';
 import { useTranslations } from '~/i18n';
 import { apiGet } from '~/lib/api-client';
 import { todayDateString } from '~/lib/logging/keys';
-import { useMealDates } from '~/lib/logging/use-meal-dates';
+import { onboardingKeys } from '~/lib/onboarding/keys';
+import { useMealDates } from '~/lib/logging/hooks/use-meal-dates';
 import { useSession } from '~/lib/session';
 import { Screen } from '~/theme/primitives';
 import { Text } from '~/theme/text';
@@ -33,7 +34,7 @@ export default function LoggingScreen() {
   const tc = useTranslations('common');
 
   const { data, isLoading } = useQuery({
-    queryKey: ['onboarding', 'profile'],
+    queryKey: onboardingKeys.profile,
     queryFn: () => apiGet<ProfileRow>('/api/v1/onboarding/profile'),
     enabled: !!userId,
   });

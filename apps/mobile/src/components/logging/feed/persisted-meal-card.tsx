@@ -13,7 +13,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import type { PersistedMeal } from '@/lib/api/contracts/meals';
 import { useTranslations } from '~/i18n';
-import { fmtG, fmtKcal } from '~/lib/logging/format';
+import { fmtG, fmtKcal } from '~/lib/logging/logic/format';
 import { Card } from '~/theme/primitives';
 import { Text } from '~/theme/text';
 import { colors, fontSize, leading, radii, shadow, space } from '~/theme/tokens';

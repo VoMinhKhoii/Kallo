@@ -12,7 +12,7 @@ import {
   buildCenteredStripFromAnchor,
   dateStringToDate,
   formatTimelineDayLabel,
-} from '~/lib/logging/timeline-utils';
+} from '~/lib/logging/logic/timeline-utils';
 import { Text } from '~/theme/text';
 import { colors, fonts, radii, space, tracking } from '~/theme/tokens';
 

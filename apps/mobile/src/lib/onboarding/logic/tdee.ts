@@ -13,7 +13,7 @@ import {
   ACTIVITY_MULTIPLIERS,
   AGGRESSION_KCAL_PER_KG,
   CARB_SPLIT_RATIOS,
-} from './constants';
+} from '../data/constants';
 
 export function calcBMR(metrics: BodyMetrics): number {
   const base =

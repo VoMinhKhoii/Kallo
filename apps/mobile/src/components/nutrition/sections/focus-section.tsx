@@ -3,7 +3,7 @@ import type { NutrientCardData } from '@/lib/nutrition/types';
 import { SectionEyebrow } from '~/components/shared/section-eyebrow';
 import { useTranslations } from '~/i18n';
 import { colors, space } from '~/theme/tokens';
-import { SpotlightRow } from './spotlight-row';
+import { SpotlightRow } from '../rows/spotlight-row';
 
 interface FocusSectionProps {
   cards: NutrientCardData[];

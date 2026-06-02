@@ -14,9 +14,9 @@ import {
   deriveQuantityEdits,
   MIN_DISH_GRAMS,
   recalculateTotals,
-} from '~/lib/logging/meal-utils';
+} from '~/lib/logging/logic/meal-utils';
 import { useTranslations } from '~/i18n';
-import { fmtG, fmtKcal } from '~/lib/logging/format';
+import { fmtG, fmtKcal } from '~/lib/logging/logic/format';
 import { Card } from '~/theme/primitives';
 import { Text } from '~/theme/text';
 import { colors, fonts, fontSize, radii, shadow, space } from '~/theme/tokens';

@@ -13,14 +13,14 @@ import type { MacroPattern } from '@/lib/nutrition/types';
 import { TargetProgressBar } from '~/components/shared/target-progress-bar';
 import { SectionEyebrow } from '~/components/shared/section-eyebrow';
 import { useLocale, useTranslations } from '~/i18n';
-import { formatLocalizedNumber, shouldShowExceed } from '~/lib/nutrition/helpers';
+import { formatLocalizedNumber, shouldShowExceed } from '~/lib/nutrition/logic/helpers';
 import {
   buildComposition,
   COMPOSITION_COLORS,
   COMPOSITION_SHORT,
   consistencyLabelKey,
   orderedMacroRows,
-} from '~/lib/nutrition/rhythm-logic';
+} from '~/lib/nutrition/logic/rhythm-logic';
 import { Text } from '~/theme/text';
 import { colors, fonts, radii, space } from '~/theme/tokens';
 

@@ -7,7 +7,7 @@ import {
   joinNames,
   PERIOD_KEYS,
   takeNames,
-} from '~/lib/nutrition/verdict-logic';
+} from '~/lib/nutrition/logic/verdict-logic';
 import { Text } from '~/theme/text';
 import { colors, fonts, space } from '~/theme/tokens';
 

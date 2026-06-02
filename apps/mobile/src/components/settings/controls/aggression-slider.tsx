@@ -1,7 +1,7 @@
 import Slider from '@react-native-community/slider';
 import { StyleSheet, View } from 'react-native';
 import { useTranslations } from '~/i18n';
-import { AGGRESSION_KCAL_PER_KG } from '~/lib/onboarding/constants';
+import { AGGRESSION_KCAL_PER_KG } from '~/lib/onboarding/data/constants';
 import { Text } from '~/theme/text';
 import { colors, fonts, radii, space } from '~/theme/tokens';
 

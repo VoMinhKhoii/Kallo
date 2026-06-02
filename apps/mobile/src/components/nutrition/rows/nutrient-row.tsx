@@ -12,8 +12,8 @@ import Animated, {
 } from 'react-native-reanimated';
 import type { NutrientCardData } from '@/lib/nutrition/types';
 import { useTranslations } from '~/i18n';
-import { shouldShowExceed } from '~/lib/nutrition/helpers';
-import { STATUS_COLORS, statusKeyFor } from '~/lib/nutrition/status';
+import { shouldShowExceed } from '~/lib/nutrition/logic/helpers';
+import { STATUS_COLORS, statusKeyFor } from '~/lib/nutrition/logic/status';
 import { Text } from '~/theme/text';
 import { colors, fonts, space } from '~/theme/tokens';
 import { NutrientDetail } from './nutrient-detail';

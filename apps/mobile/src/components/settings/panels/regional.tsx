@@ -4,8 +4,8 @@ import { StyleSheet, View } from 'react-native';
 import { useTranslations } from '~/i18n';
 import { Text } from '~/theme/text';
 import { colors, fonts, space } from '~/theme/tokens';
-import { CountrySelect } from './country-select';
-import type { ProfileFormValues } from './profile';
+import { CountrySelect } from '../controls/country-select';
+import type { ProfileFormValues } from '../profile';
 
 /** RN port of web `components/settings/profile/regional.tsx`. */
 export function Regional() {

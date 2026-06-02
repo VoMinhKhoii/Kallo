@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import type { getOnboardingProfile } from '@/lib/api/contracts/onboarding';
 import { apiGet } from '~/lib/api-client';
-import { onboardingKeys } from './keys';
+import { onboardingKeys } from '../keys';
 
 /** The full `userProfiles` row returned by GET /api/v1/onboarding/profile. */
 export type ProfileRow = NonNullable<

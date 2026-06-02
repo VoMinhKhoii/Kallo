@@ -1,8 +1,8 @@
 import { StyleSheet, View } from 'react-native';
 import type { NutritionNutrientKey } from '@/lib/nutrition/types';
 import { useTranslations } from '~/i18n';
-import { useFoodCandidates } from '~/lib/nutrition/use-food-candidates';
-import { asSupported } from '~/lib/nutrition/candidate-nutrients';
+import { useFoodCandidates } from '~/lib/nutrition/hooks/use-food-candidates';
+import { asSupported } from '~/lib/nutrition/logic/candidate-nutrients';
 import { Text } from '~/theme/text';
 import { colors, fonts, radii, space } from '~/theme/tokens';
 

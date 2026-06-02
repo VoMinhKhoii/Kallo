@@ -9,7 +9,7 @@ import {
   View,
 } from 'react-native';
 import { useTranslations } from '~/i18n';
-import { COUNTRIES } from '~/lib/onboarding/countries';
+import { COUNTRIES } from '~/lib/onboarding/data/countries';
 import { Text } from '~/theme/text';
 import { colors, fonts, radii, space } from '~/theme/tokens';
 

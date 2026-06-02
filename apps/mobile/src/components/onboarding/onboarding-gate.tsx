@@ -2,10 +2,10 @@ import { useEffect, useState } from 'react';
 import {
   getOnboardingResumeStep,
   shouldShowOnboardingResume,
-} from '~/lib/onboarding/progress';
-import { useProfile } from '~/lib/onboarding/use-profile';
+} from '~/lib/onboarding/logic/progress';
+import { useProfile } from '~/lib/onboarding/hooks/use-profile';
 import { useSession } from '~/lib/session';
-import { WizardModal } from './wizard-modal';
+import { WizardModal } from './wizard/wizard-modal';
 
 /**
  * Mounts the onboarding wizard as an overlay over the authenticated app
@@ -18,12 +18,19 @@ import { WizardModal } from './wizard-modal';
 export function OnboardingGate() {
   const { session } = useSession();
   const userId = session?.user.id;
-  const { data: profile, isLoading } = useProfile(!!userId);
+  const { data: profile, isLoading, isError, isSuccess } = useProfile(!!userId);
   const [open, setOpen] = useState(false);
   const [autoOpened, setAutoOpened] = useState(false);
 
   const onboardingStep = profile?.onboardingStep ?? 0;
+  // Only decide "onboarding incomplete" from a SUCCESSFUL fetch. A failed
+  // profile request leaves `profile` undefined; treating that as a new user
+  // would wrongly pop the wizard over an existing, fully-onboarded account
+  // (and risk overwriting their profile). On error we stay closed and let the
+  // query retry / the user retry by reopening the app.
   const incomplete =
+    isSuccess &&
+    !isError &&
     !isLoading &&
     !!userId &&
     shouldShowOnboardingResume(profile ?? null, onboardingStep);

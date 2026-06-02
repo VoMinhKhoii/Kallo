@@ -1,4 +1,3 @@
-import { useQuery } from '@tanstack/react-query';
 import { Flame } from 'lucide-react-native';
 import { useEffect, useMemo } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
@@ -17,10 +16,10 @@ import { SectionHeader, SectionState } from '~/components/dashboard/section-head
 import { WeightChart } from '~/components/dashboard/weight-chart';
 import { CalorieRing } from '~/components/logging/calorie-ring';
 import { useTranslations } from '~/i18n';
-import { apiGet } from '~/lib/api-client';
-import { round0 } from '~/lib/logging/format';
+import { useDashboard } from '~/lib/dashboard/hooks/use-dashboard';
+import { round0 } from '~/lib/logging/logic/format';
 import { todayDateString } from '~/lib/logging/keys';
-import { useLoggingDay } from '~/lib/logging/use-logging-day';
+import { useLoggingDay } from '~/lib/logging/hooks/use-logging-day';
 import { useSession } from '~/lib/session';
 import { Card, Screen } from '~/theme/primitives';
 import { Text } from '~/theme/text';
@@ -79,14 +78,6 @@ function getWeekTitle(locale: string, label: string, today: string): string {
   return `${label} ${formatter.format(monday)} – ${formatter.format(sunday)}, ${year}`;
 }
 
-// The onboarding profile row (the macro/calorie targets the dock needs).
-type ProfileRow = {
-  calorieTarget: number | null;
-  proteinTargetG: number | null;
-  carbsTargetG: number | null;
-  fatTargetG: number | null;
-} | null;
-
 interface DockTargets {
   calorieTarget: number;
   proteinTargetG: number;
@@ -104,11 +95,12 @@ export default function DashboardScreen() {
     [t, todayDate]
   );
 
-  const profileQuery = useQuery({
-    queryKey: ['onboarding', 'profile'],
-    queryFn: () => apiGet<ProfileRow>('/api/v1/onboarding/profile'),
-    enabled: !!userId,
-  });
+  // One aggregate fetch for the whole screen. It seeds the per-section caches
+  // (logging-day, weight-summary 30d, heatmap 90d, profile) so TodaySection /
+  // WeightChart / AdherenceHeatmap below resolve from cache — one request and
+  // one Cloud-Run cold-start instead of four. Sections render only after this
+  // succeeds, so their hooks always hit the warm cache.
+  const dashboard = useDashboard(userId ?? '', todayDate, !!userId);
 
   if (!userId) {
     return (
@@ -120,13 +112,40 @@ export default function DashboardScreen() {
     );
   }
 
+  if (dashboard.isPending) {
+    return (
+      <Screen>
+        <View style={styles.center}>
+          <SectionState message={t('todayLoading')} />
+        </View>
+      </Screen>
+    );
+  }
+
+  if (dashboard.isError) {
+    return (
+      <Screen>
+        <View style={styles.center}>
+          <SectionState
+            message={t('todayLoadError')}
+            actionLabel={t('retry')}
+            onAction={() => {
+              void dashboard.refetch();
+            }}
+          />
+        </View>
+      </Screen>
+    );
+  }
+
   // Defaults mirror the web DEFAULT_PROFILE so an incomplete-onboarding profile
   // shows sensible targets, never /0g.
+  const profile = dashboard.data.profile;
   const targets: DockTargets = {
-    calorieTarget: profileQuery.data?.calorieTarget ?? 2000,
-    proteinTargetG: profileQuery.data?.proteinTargetG ?? 150,
-    carbsTargetG: profileQuery.data?.carbsTargetG ?? 250,
-    fatTargetG: profileQuery.data?.fatTargetG ?? 65,
+    calorieTarget: profile?.calorieTarget ?? 2000,
+    proteinTargetG: profile?.proteinTargetG ?? 150,
+    carbsTargetG: profile?.carbsTargetG ?? 250,
+    fatTargetG: profile?.fatTargetG ?? 65,
   };
 
   return (

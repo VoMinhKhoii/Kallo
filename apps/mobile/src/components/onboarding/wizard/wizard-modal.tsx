@@ -17,18 +17,18 @@ import Animated, { FadeIn, ReduceMotion } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { CookingHabits } from '@/lib/onboarding/types';
 import { type AppLocale, useLocale, useTranslations } from '~/i18n';
-import { WIZARD_DEFAULTS } from '~/lib/onboarding/constants';
+import { WIZARD_DEFAULTS } from '~/lib/onboarding/data/constants';
 import {
   buildStepOneDefaults,
   type StepOneData,
-} from '~/lib/onboarding/step-one-defaults';
-import type { ProfileRow } from '~/lib/onboarding/use-profile';
-import { useSaveScreen } from '~/lib/onboarding/use-save-screen';
+} from '~/lib/onboarding/logic/step-one-defaults';
+import type { ProfileRow } from '~/lib/onboarding/hooks/use-profile';
+import { useSaveScreen } from '~/lib/onboarding/hooks/use-save-screen';
 import { Text } from '~/theme/text';
 import { colors, fonts, radii, space } from '~/theme/tokens';
-import { type ScreenOneData, ScreenBodyMetrics } from './screen-body-metrics';
-import { ScreenCooking } from './screen-cooking';
-import { ScreenOrigin } from './screen-origin';
+import { type ScreenOneData, ScreenBodyMetrics } from '../screens/screen-body-metrics';
+import { ScreenCooking } from '../screens/screen-cooking';
+import { ScreenOrigin } from '../screens/screen-origin';
 import { StepIndicator } from './step-indicator';
 
 const TOTAL_STEPS = 3;

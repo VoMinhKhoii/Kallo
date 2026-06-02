@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiPost } from '~/lib/api-client';
-import { onboardingKeys } from './keys';
+import { onboardingKeys } from '../keys';
 
 /**
  * Saves one onboarding step via POST /api/v1/onboarding/screen (mirrors the web

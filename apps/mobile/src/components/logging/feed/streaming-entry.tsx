@@ -9,7 +9,7 @@ import Reanimated, {
 import type { StreamStatus } from '@/lib/ai/streaming/types';
 import type { MealItem } from '@/lib/types/meal';
 import { useTranslations } from '~/i18n';
-import { fmtG, fmtKcal } from '~/lib/logging/format';
+import { fmtG, fmtKcal } from '~/lib/logging/logic/format';
 import { Card } from '~/theme/primitives';
 import { Text } from '~/theme/text';
 import { colors, fonts, fontSize, radii, space } from '~/theme/tokens';

@@ -2,7 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { LoggingDayData } from '@/lib/api/contracts/meals';
 import type { MealQuantityEdit } from '@/lib/types/meal';
 import { apiDelete, apiPost } from '~/lib/api-client';
-import { loggingDayKeys } from './keys';
+import { loggingDayKeys } from '../keys';
 
 interface ConfirmMealInput {
   analysisId: string;
@@ -38,7 +38,8 @@ export function useConfirmMeal(userId: string) {
       );
       return { snapshots };
     },
-    onError: (_error, _vars, context) => {
+    onError: (error, _vars, context) => {
+      console.error('[logging] confirm meal failed', error);
       for (const [key, data] of context?.snapshots ?? []) {
         queryClient.setQueryData(key, data);
       }
@@ -81,7 +82,8 @@ export function useDeleteMeal(userId: string) {
       );
       return { snapshots };
     },
-    onError: (_error, _vars, context) => {
+    onError: (error, _vars, context) => {
+      console.error('[logging] delete meal failed', error);
       for (const [key, data] of context?.snapshots ?? []) {
         queryClient.setQueryData(key, data);
       }

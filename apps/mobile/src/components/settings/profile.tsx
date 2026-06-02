@@ -39,15 +39,15 @@ import {
   calcDailyTargets,
   calcMacroGrams,
   calcTDEE,
-} from '~/lib/onboarding/tdee';
-import type { ProfileRow } from '~/lib/onboarding/use-profile';
-import { useSaveProfile } from '~/lib/onboarding/use-save-profile';
+} from '~/lib/onboarding/logic/tdee';
+import type { ProfileRow } from '~/lib/onboarding/hooks/use-profile';
+import { useSaveProfile } from '~/lib/onboarding/hooks/use-save-profile';
 import { Text } from '~/theme/text';
 import { colors, fonts, radii, shadow, space } from '~/theme/tokens';
-import { BodyMetrics } from './body-metrics';
-import { Cooking } from './cooking';
-import { Regional } from './regional';
-import { TabStrip } from './tab-strip';
+import { BodyMetrics } from './panels/body-metrics';
+import { Cooking } from './panels/cooking';
+import { Regional } from './panels/regional';
+import { TabStrip } from './controls/tab-strip';
 
 // Local goal schema — mirrors the web settings form: goal + nullable aggression
 // + carbSplit, NO deficitOverride, NO superRefine (deliberate 1:1 contract).

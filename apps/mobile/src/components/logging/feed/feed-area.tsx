@@ -21,18 +21,18 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import type { PersistedMeal } from '@/lib/api/contracts/meals';
-import { round0 } from '~/lib/logging/format';
+import { round0 } from '~/lib/logging/logic/format';
 import { loggingDayKeys, todayDateString } from '~/lib/logging/keys';
-import { useConfirmMeal } from '~/lib/logging/use-meal-mutations';
-import { useLoggingDay } from '~/lib/logging/use-logging-day';
-import { useStreamAnalysis } from '~/lib/logging/use-stream-analysis';
+import { useConfirmMeal } from '~/lib/logging/hooks/use-meal-mutations';
+import { useLoggingDay } from '~/lib/logging/hooks/use-logging-day';
+import { useStreamAnalysis } from '~/lib/logging/hooks/use-stream-analysis';
 import { useTranslations } from '~/i18n';
 import { Text } from '~/theme/text';
 import { colors, radii, space } from '~/theme/tokens';
-import { CalorieRing } from './calorie-ring';
+import { CalorieRing } from '../calorie-ring';
 import { EmptyState } from './empty-state';
 import { MealEntry } from './meal-entry';
-import { MealInput, type MealInputHandle } from './meal-input';
+import { MealInput, type MealInputHandle } from '../input/meal-input';
 import { PersistedMealCard } from './persisted-meal-card';
 import { StreamingEntry } from './streaming-entry';
 

@@ -1,6 +1,6 @@
 import { forwardRef, useState } from 'react';
 import { StyleSheet, TextInput, type TextInputProps } from 'react-native';
-import { parseDecimalInput } from '~/lib/dashboard/format';
+import { parseDecimalInput } from '~/lib/dashboard/logic/format';
 import { colors, fonts, radii, space } from '~/theme/tokens';
 
 type DecimalInputProps = Omit<

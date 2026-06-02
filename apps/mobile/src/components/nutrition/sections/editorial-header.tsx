@@ -10,7 +10,7 @@ import type {
 } from '@/lib/nutrition/types';
 import { SectionEyebrow } from '~/components/shared/section-eyebrow';
 import { useLocale, useTranslations } from '~/i18n';
-import { formatDate } from '~/lib/nutrition/format-date';
+import { formatDate } from '~/lib/nutrition/logic/format-date';
 import { Text } from '~/theme/text';
 import { colors, fonts, radii, space } from '~/theme/tokens';
 

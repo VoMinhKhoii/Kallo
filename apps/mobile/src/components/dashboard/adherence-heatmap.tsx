@@ -8,8 +8,8 @@ import type {
   HeatmapRange,
 } from '@/lib/types/dashboard';
 import { useTranslations } from '~/i18n';
-import { useHeatmap } from '~/lib/dashboard/use-heatmap';
-import { getHeatmapColor, HEATMAP_COLORS } from '~/lib/dashboard/heatmap-colors';
+import { useHeatmap } from '~/lib/dashboard/hooks/use-heatmap';
+import { getHeatmapColor, HEATMAP_COLORS } from '~/lib/dashboard/logic/heatmap-colors';
 import { Button, Card } from '~/theme/primitives';
 import { Text } from '~/theme/text';
 import { colors, fonts, fontSize, radii, shadow, space } from '~/theme/tokens';

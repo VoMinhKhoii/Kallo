@@ -1,12 +1,12 @@
 import { Globe, Languages, MapPin } from 'lucide-react-native';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
-import { CountrySelect } from '~/components/settings/country-select';
+import { CountrySelect } from '~/components/settings/controls/country-select';
 import { type AppLocale, useTranslations } from '~/i18n';
-import type { StepOneData } from '~/lib/onboarding/step-one-defaults';
+import type { StepOneData } from '~/lib/onboarding/logic/step-one-defaults';
 import { Text } from '~/theme/text';
 import { colors, fonts, space } from '~/theme/tokens';
-import { LanguageToggle } from './language-toggle';
+import { LanguageToggle } from '../wizard/language-toggle';
 
 interface ScreenOriginProps {
   defaultValues: StepOneData;

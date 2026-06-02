@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import type { LoggingDayData } from '@/lib/api/contracts/meals';
 import { apiGet } from '~/lib/api-client';
-import { loggingDayKeys, todayDateString } from './keys';
+import { loggingDayKeys, todayDateString } from '../keys';
 
 /**
  * Loads a day's persisted meals + pending confirmations from the REST surface.

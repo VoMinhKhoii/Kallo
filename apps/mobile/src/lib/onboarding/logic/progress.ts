@@ -2,7 +2,7 @@
  * Vendored verbatim from web `lib/onboarding/progress.ts` (keep in sync).
  * Pure resume-logic helpers; depend only on the vendored constants.
  */
-import { ONBOARDING_TOTAL_STEPS } from './constants';
+import { ONBOARDING_TOTAL_STEPS } from '../data/constants';
 
 const PERSONALIZATION_FIELDS = [
   'weightKg',

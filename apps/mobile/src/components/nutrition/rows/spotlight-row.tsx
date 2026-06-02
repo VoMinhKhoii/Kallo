@@ -3,7 +3,7 @@ import Animated, { FadeInDown, ReduceMotion } from 'react-native-reanimated';
 import type { NutrientCardData } from '@/lib/nutrition/types';
 import { TargetProgressBar } from '~/components/shared/target-progress-bar';
 import { useLocale, useTranslations } from '~/i18n';
-import { formatLocalizedNumber, shouldShowExceed } from '~/lib/nutrition/helpers';
+import { formatLocalizedNumber, shouldShowExceed } from '~/lib/nutrition/logic/helpers';
 import { Text } from '~/theme/text';
 import { colors, fonts, space } from '~/theme/tokens';
 import { FoodChipRow } from './food-chip-row';

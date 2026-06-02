@@ -4,8 +4,8 @@ import { Controller, useForm, useWatch } from 'react-hook-form';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { z } from 'zod';
 import type { ActivityLevel, CarbSplit, Goal } from '@/lib/onboarding/types';
-import { AggressionSlider } from '~/components/settings/aggression-slider';
-import { CustomSelect } from '~/components/settings/custom-select';
+import { AggressionSlider } from '~/components/settings/controls/aggression-slider';
+import { CustomSelect } from '~/components/settings/controls/custom-select';
 import { DecimalInput } from '~/components/shared/decimal-input';
 import { useTranslations } from '~/i18n';
 import {
@@ -20,7 +20,7 @@ import {
   calcDailyTargets,
   calcMacroGrams,
   calcTDEE,
-} from '~/lib/onboarding/tdee';
+} from '~/lib/onboarding/logic/tdee';
 import { Text } from '~/theme/text';
 import { colors, fonts, radii, space } from '~/theme/tokens';
 

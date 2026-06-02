@@ -7,7 +7,7 @@
  * `Intl.DateTimeFormat` and `new Date()` are both fine in app code (Hermes ships
  * full ICU on Expo).
  */
-import { todayDateString } from './keys';
+import { todayDateString } from '../keys';
 
 export interface WeekStrip {
   days: string[];

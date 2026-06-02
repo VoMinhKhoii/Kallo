@@ -3,7 +3,7 @@ import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 import { AppHeader } from '~/components/app/app-header';
 import { Profile } from '~/components/settings/profile';
 import { useTranslations } from '~/i18n';
-import { useProfile } from '~/lib/onboarding/use-profile';
+import { useProfile } from '~/lib/onboarding/hooks/use-profile';
 import { useSession } from '~/lib/session';
 import { Screen } from '~/theme/primitives';
 import { Text } from '~/theme/text';

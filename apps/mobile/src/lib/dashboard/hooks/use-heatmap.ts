@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import type { HeatmapData } from '@/lib/api/contracts/dashboard';
 import type { HeatmapRange } from '@/lib/types/dashboard';
 import { apiGet } from '~/lib/api-client';
-import { dashboardKeys } from './keys';
+import { dashboardKeys } from '../keys';
 
 /**
  * Loads the server-built adherence heatmap from the REST surface. The grid

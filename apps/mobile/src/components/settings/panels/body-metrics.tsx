@@ -7,14 +7,14 @@ import {
   calcDailyTargets,
   calcMacroGrams,
   calcTDEE,
-} from '~/lib/onboarding/tdee';
+} from '~/lib/onboarding/logic/tdee';
 import type { ActivityLevel, CarbSplit, Goal } from '@/lib/onboarding/types';
 import { Text } from '~/theme/text';
 import { colors, fonts, radii, space } from '~/theme/tokens';
 import { DecimalInput } from '~/components/shared/decimal-input';
-import { AggressionSlider } from './aggression-slider';
-import { CustomSelect } from './custom-select';
-import type { ProfileFormValues } from './profile';
+import { AggressionSlider } from '../controls/aggression-slider';
+import { CustomSelect } from '../controls/custom-select';
+import type { ProfileFormValues } from '../profile';
 
 const GOALS: Goal[] = ['cutting', 'maintaining', 'bulking'];
 const CARB_SPLITS: CarbSplit[] = ['moderate_carb', 'lower_carb', 'higher_carb'];

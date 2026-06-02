@@ -2,7 +2,7 @@ import * as Localization from 'expo-localization';
 import type { ReactNode } from 'react';
 import { useMemo } from 'react';
 import { IntlProvider } from 'use-intl';
-import { useProfile } from '~/lib/onboarding/use-profile';
+import { useProfile } from '~/lib/onboarding/hooks/use-profile';
 import { useSession } from '~/lib/session';
 import { type AppLocale, MESSAGES, resolveDeviceLocale } from './index';
 

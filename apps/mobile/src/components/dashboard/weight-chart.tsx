@@ -24,12 +24,12 @@ import Svg, {
 import type { WeightSummaryData } from '@/lib/api/contracts/weight';
 import type { WeightGoalDirection, WeightRange } from '@/lib/types/weight';
 import { useLocale, useTranslations } from '~/i18n';
-import { buildXTicks } from '~/lib/dashboard/weight-chart-utils';
-import { useWeightSummary } from '~/lib/dashboard/use-weight';
+import { buildXTicks } from '~/lib/dashboard/logic/weight-chart-utils';
+import { useWeightSummary } from '~/lib/dashboard/hooks/use-weight';
 import {
   buildWeightTrendSummary,
   type WeightTrendStatus,
-} from '~/lib/dashboard/weight-trend';
+} from '~/lib/dashboard/logic/weight-trend';
 import { CompactWeightLog } from '~/components/dashboard/compact-weight-log';
 import { Card } from '~/theme/primitives';
 import { Text } from '~/theme/text';

@@ -9,8 +9,8 @@ import {
 } from 'react-native';
 import { useTranslations } from '~/i18n';
 import { ApiError } from '~/lib/api-client';
-import { parseDecimalInput } from '~/lib/dashboard/format';
-import { useLogWeight } from '~/lib/dashboard/use-weight';
+import { parseDecimalInput } from '~/lib/dashboard/logic/format';
+import { useLogWeight } from '~/lib/dashboard/hooks/use-weight';
 import { Text } from '~/theme/text';
 import { colors, fonts, fontSize, radii, space } from '~/theme/tokens';
 

@@ -4,7 +4,7 @@ import { SectionEyebrow } from '~/components/shared/section-eyebrow';
 import { useTranslations } from '~/i18n';
 import { Text } from '~/theme/text';
 import { colors, fonts, radii, space } from '~/theme/tokens';
-import { NutrientRow } from './nutrient-row';
+import { NutrientRow } from '../rows/nutrient-row';
 
 interface SteadySectionProps {
   cards: NutrientCardData[];
