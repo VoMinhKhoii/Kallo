@@ -1,5 +1,82 @@
 # Changelog
 
+## [1.2.0](https://github.com/VoMinhKhoii/Nham/compare/v1.1.0...v1.2.0) (2026-06-02)
+
+
+### Features
+
+* **api:** add /api/v1 REST surface with Bearer auth for mobile ([47dd6ab](https://github.com/VoMinhKhoii/Nham/commit/47dd6abc9060aec2fcd4acabae49b0a79555fb84))
+* **api:** add aggregate GET /api/v1/dashboard endpoint ([53ea8e3](https://github.com/VoMinhKhoii/Nham/commit/53ea8e33b759f88776dbf30920def70008a7daa0))
+* **auth:** thread invite return-path through sign-in/up and OAuth ([5b1b0d0](https://github.com/VoMinhKhoii/Nham/commit/5b1b0d048d1d74628c6035ebf037883631112af6))
+* **groups:** add /api/v1/groups REST API, services, and hooks ([c91e3b6](https://github.com/VoMinhKhoii/Nham/commit/c91e3b6d4438653a3612a608b0dd7990748b2165))
+* **groups:** add Circle social data model, RLS, and isolation tests ([f33b1e1](https://github.com/VoMinhKhoii/Nham/commit/f33b1e12e714afc727b08da38d040141f9b6cf1b))
+* **groups:** add Circle wall, add-friend, and post-save share toggle UI ([cb890fe](https://github.com/VoMinhKhoii/Nham/commit/cb890fe9673a2bf0cb2f6a1cc9cc632979b1df63))
+* **groups:** add claim-handle flow and a functional invite link ([782ed37](https://github.com/VoMinhKhoii/Nham/commit/782ed37ec91b207a8c16d76f6670873a55ebe258))
+* **groups:** add Macro Card OG image and native share ([d5342fe](https://github.com/VoMinhKhoii/Nham/commit/d5342fe3942d1a6e19833237038a5e539cf56608))
+* **groups:** add skeleton loading to the circle wall ([7cd3dc4](https://github.com/VoMinhKhoii/Nham/commit/7cd3dc482e603bad2b342e4de155d740d1c8af9d))
+* **groups:** Circle social layer — opt-in meal sharing, friends, Macro Card ([f927f78](https://github.com/VoMinhKhoii/Nham/commit/f927f78738d89f97c32f0503ac555dabd02e248c))
+* **groups:** replace handle search with Locket-style link invites ([a5a107f](https://github.com/VoMinhKhoii/Nham/commit/a5a107fdf9af2e7bd04ff7ad682386c1a8870e46))
+* **groups:** scope the handle directory behind RLS + exact-match RPC ([d06badd](https://github.com/VoMinhKhoii/Nham/commit/d06baddd45a43553dfebc9f6542125abae8a91dc))
+* **mobile:** dashboard + weight surface (Phase 4) ([9ee7aac](https://github.com/VoMinhKhoii/Nham/commit/9ee7aac6049a5ba6ef738cb26ae419444a978602))
+* **mobile:** dashboard aggregate fetch, perf fixes, folder reorg ([9308a83](https://github.com/VoMinhKhoii/Nham/commit/9308a83c60a333a89c60f491a383a139695cf4a5))
+* **mobile:** design-system foundation (tokens, fonts, primitives) ([eb6544b](https://github.com/VoMinhKhoii/Nham/commit/eb6544b274430f86978743f4fe95d6b2542c5c5f))
+* **mobile:** i18n-migrate auth, logging, and today-section strings ([5e7d47e](https://github.com/VoMinhKhoii/Nham/commit/5e7d47edb71dbcc272f021443a8a808f5f4d04ff))
+* **mobile:** logging date chip + date selection + meal-card fidelity ([c877ad9](https://github.com/VoMinhKhoii/Nham/commit/c877ad96ceefe788f5ab8afc6e9e7feca0b05e40))
+* **mobile:** logging wedge — streaming meal analysis, feed, confirm ([87972ce](https://github.com/VoMinhKhoii/Nham/commit/87972ce731e500d8406ecab262db0dc348005ec8))
+* **mobile:** match logging UI 1:1 to web mobile view ([237a065](https://github.com/VoMinhKhoii/Nham/commit/237a065330c5efb41b8e6b1449090d2ff3874342))
+* **mobile:** Phase 6 — observability, locale-from-profile, warmup, EAS config ([804833f](https://github.com/VoMinhKhoii/Nham/commit/804833fc6a5e496897a8026053314ae09729baf7))
+* **mobile:** port nutrition screen 1:1 from web (Phase 5a) ([ee53abc](https://github.com/VoMinhKhoii/Nham/commit/ee53abc9c54668534b66c056ede8f29a5a9d25fb))
+* **mobile:** port onboarding wizard 1:1 from web (Phase 5c) ([857c73c](https://github.com/VoMinhKhoii/Nham/commit/857c73c74f9bcdaa51e61db1ea61d827e1b61c7b))
+* **mobile:** port settings (profile) screen 1:1 from web (Phase 5b) ([b553f45](https://github.com/VoMinhKhoii/Nham/commit/b553f4593f18e72d3a68d1a0a3c0d82facd5a0f6))
+* **mobile:** re-port weight card + 90d heatmap 1:1 from web ([2d824b1](https://github.com/VoMinhKhoii/Nham/commit/2d824b122d34a5f815936440c4108634cf70f710))
+* **mobile:** React Native/Expo app + /api/v1 REST surface ([d816b29](https://github.com/VoMinhKhoii/Nham/commit/d816b29521adb7aeba9a0c0f6fd5467961226be1))
+* **mobile:** replace bottom tabs with hamburger + drawer sidebar ([77539f8](https://github.com/VoMinhKhoii/Nham/commit/77539f86631f2a3a012d48dca8744519c79dfada))
+* **mobile:** scaffold Expo app with Supabase auth + REST client ([95a145e](https://github.com/VoMinhKhoii/Nham/commit/95a145e5f3fec0f002edf0910e98b8dc4f42bac7))
+* **mobile:** wire i18n via use-intl + shared message catalogs ([e414479](https://github.com/VoMinhKhoii/Nham/commit/e414479edcb67f231bf013697eff536824503382))
+* under-logged day handling, logging warnings, and settings rework ([e8feacc](https://github.com/VoMinhKhoii/Nham/commit/e8feacc209b6284e79555fef6767eb24ce8a3b74))
+
+
+### Bug Fixes
+
+* **dashboard:** prevent crash when weight input has a numeric default ([4fd722b](https://github.com/VoMinhKhoii/Nham/commit/4fd722be73461e9335d93bcdcd082e51c8c85063))
+* **dashboard:** prevent crash when weight input has a numeric default ([10f6f18](https://github.com/VoMinhKhoii/Nham/commit/10f6f18e304b33a363a65601186e505251c0f819))
+* **groups:** add retryable error states and clearer auth/empty copy ([33bb9e3](https://github.com/VoMinhKhoii/Nham/commit/33bb9e304bf20d221b6e4aaa59f64f0c2080b084))
+* **groups:** address CodeRabbit review on the Circle layer ([d096592](https://github.com/VoMinhKhoii/Nham/commit/d0965923509516db44bc480d6014af2d46364be1))
+* **groups:** drop the @ prefix from circle labels ([79e0bdf](https://github.com/VoMinhKhoii/Nham/commit/79e0bdf1cb8bf2a0d402f23daec35600453c9b0f))
+* **groups:** harden acceptInvite, normalize ids, fan out re-shares ([f30a1f4](https://github.com/VoMinhKhoii/Nham/commit/f30a1f4dce42e82a0193bbcbb797e9b3c4c4d8ed))
+* **groups:** render the Macro Card (Satori display:flex on multi-child node) ([76cba9e](https://github.com/VoMinhKhoii/Nham/commit/76cba9ed86302deba913c97e6d95d83ad936e626))
+* **groups:** seed the share toggle from real server state ([5eaf7f8](https://github.com/VoMinhKhoii/Nham/commit/5eaf7f8297db3565c005b4f9bb4b9f9ca557f46d))
+* **groups:** tighten feed cache key, handle constant, RLS doc, request toast ([4dce2a6](https://github.com/VoMinhKhoii/Nham/commit/4dce2a6a9cec523b5dd8250b8878a18287865973))
+* **logging:** confirm server-loaded pending meals and survive malformed rows ([d700dd9](https://github.com/VoMinhKhoii/Nham/commit/d700dd9906afdc2ae777af592026fcd53281c723))
+* **logging:** confirm server-loaded pending meals and survive malformed rows ([0912056](https://github.com/VoMinhKhoii/Nham/commit/0912056a433bc9ad5015be39257cce22e8bff55a))
+* **logging:** guard double-submit and clarify optimistic seed comment ([ae4390e](https://github.com/VoMinhKhoii/Nham/commit/ae4390e7181e86dff343075bf3668475fbbbba4e))
+* **logging:** keep calorie ring in sync after saving the first meal ([0d3c72e](https://github.com/VoMinhKhoii/Nham/commit/0d3c72eaca98196fec8e8519c4b9e8ae072aeffa))
+* **mobile:** address CodeRabbit review findings on [#139](https://github.com/VoMinhKhoii/Nham/issues/139) ([f5080e6](https://github.com/VoMinhKhoii/Nham/commit/f5080e683b60615b95f3052add972876749d3343))
+* **mobile:** full-width timeline strip on expand + input clears home indicator ([98d0dc1](https://github.com/VoMinhKhoii/Nham/commit/98d0dc11729e98868051386098d8ec22e6b1130d))
+* **mobile:** interaction + sizing fidelity pass across nutrition/dashboard/logging ([0aed0f9](https://github.com/VoMinhKhoii/Nham/commit/0aed0f965a6f9ef2aa3666c337ae74bdf81211a4))
+* **mobile:** route to /logging after email sign-in ([0a3ec2c](https://github.com/VoMinhKhoii/Nham/commit/0a3ec2c760eaded972b096683fd56b15c6e199f6))
+* **mobile:** tap-outside collapses the expanded timeline strip ([5b58fba](https://github.com/VoMinhKhoii/Nham/commit/5b58fba766f569b783bc09cefddf41d58551a39d))
+* **mobile:** use explicit insets for timeline collapse scrim (RN 0.85 lacks StyleSheet.absoluteFillObject typing) ([dfed72b](https://github.com/VoMinhKhoii/Nham/commit/dfed72bbc5803f0110312cedf89da3b87611c10b))
+
+
+### Performance
+
+* **groups:** index friendship reverse lookups and the meal-share feed scan ([0522b2b](https://github.com/VoMinhKhoii/Nham/commit/0522b2b3a9e851f5d1288a802dc4a6e092a29fd0))
+
+
+### Refactor
+
+* **groups:** extract shared readJsonBody route helper ([0422549](https://github.com/VoMinhKhoii/Nham/commit/0422549758b3bbb9d7cbe44949cb10ef5da18ca1))
+* **groups:** share readJsonBody and safeNextPath helpers ([775d03d](https://github.com/VoMinhKhoii/Nham/commit/775d03d215c435eb2842fb61869d240b0ba76316))
+
+
+### Documentation
+
+* **agents:** record Satori OG gotchas and the link-invite decision ([acf89f4](https://github.com/VoMinhKhoii/Nham/commit/acf89f450d562a415ba3a1fcaedda0f393d43357))
+* **agents:** require /nham-design for any UI or design work ([c7b7d87](https://github.com/VoMinhKhoii/Nham/commit/c7b7d87cbe01c84194c25b5d39f767efee12aaa2))
+* **groups:** add decision record and build plan ([16680c6](https://github.com/VoMinhKhoii/Nham/commit/16680c63bc99620610298896084164d878ba0661))
+* **mobile:** add verified React Native / Expo port plan ([992d9c2](https://github.com/VoMinhKhoii/Nham/commit/992d9c2667d3724fa86a5b7246b4377e8d39688f))
+
 ## [1.1.0](https://github.com/VoMinhKhoii/Nham/compare/v1.0.1...v1.1.0) (2026-05-27)
 
 
