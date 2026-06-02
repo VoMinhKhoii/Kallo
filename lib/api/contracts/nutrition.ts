@@ -40,15 +40,15 @@ export const candidatesSchema = z.object({
   nutrient: foodSourceCandidatesInputSchema.shape.nutrient,
 });
 
-// Overview response type (exported interface from the action's type module).
-export type { NutritionOverview } from '@/lib/nutrition/types';
+export type { FoodSourceCandidate } from '@/lib/nutrition/catalog/food-source-candidates';
 
 // Candidates response — render-ready, i18n-key-only. Re-exported so the mobile
 // `['nutrition','candidates',nutrient]` query is typed without re-deriving the
 // action return type. Both source modules below are pure (type-only/zod imports,
 // no server action), so this stays mobile-safe (type-only re-export).
 export type { SupportedCandidateNutrient } from '@/lib/nutrition/catalog/nutrients';
-export type { FoodSourceCandidate } from '@/lib/nutrition/catalog/food-source-candidates';
+// Overview response type (exported interface from the action's type module).
+export type { NutritionOverview } from '@/lib/nutrition/types';
 export type CandidatesResponse = {
   nutrient: import('@/lib/nutrition/catalog/nutrients').SupportedCandidateNutrient;
   candidates: import('@/lib/nutrition/catalog/food-source-candidates').FoodSourceCandidate[];

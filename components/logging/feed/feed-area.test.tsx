@@ -21,9 +21,18 @@ vi.mock('@/components/logging/feed/persisted-meal-card', () => ({
 vi.mock('@/components/logging/feed/meal-entry', () => ({
   MealEntry: ({
     message,
+    onConfirm,
   }: {
     message: { userInput?: string; analysisId?: string };
-  }) => <div data-testid="meal-entry">{message.userInput}</div>,
+    onConfirm?: (edits: unknown[]) => void;
+  }) => (
+    <div data-testid="meal-entry">
+      {message.userInput}
+      <button type="button" onClick={() => onConfirm?.([])}>
+        confirm
+      </button>
+    </div>
+  ),
 }));
 
 vi.mock('@/components/logging/feed/streaming-meal-entry', () => ({
@@ -43,12 +52,19 @@ vi.mock('@/components/logging/input/meal-input', () => ({
   }),
 }));
 
-const { mockInvalidateQueries, mockUseLoggingDay, mockUseStreamAnalysis } =
-  vi.hoisted(() => ({
-    mockInvalidateQueries: vi.fn(),
-    mockUseLoggingDay: vi.fn(),
-    mockUseStreamAnalysis: vi.fn(),
-  }));
+const {
+  mockInvalidateQueries,
+  mockMutate,
+  mockUseLoggingDay,
+  mockUseStreamAnalysis,
+  mockUseStreamingTerminalEffects,
+} = vi.hoisted(() => ({
+  mockInvalidateQueries: vi.fn(),
+  mockMutate: vi.fn(),
+  mockUseLoggingDay: vi.fn(),
+  mockUseStreamAnalysis: vi.fn(),
+  mockUseStreamingTerminalEffects: vi.fn(),
+}));
 
 vi.mock('@tanstack/react-query', () => ({
   useQueryClient: () => ({ invalidateQueries: mockInvalidateQueries }),
@@ -66,7 +82,7 @@ vi.mock('@/hooks/use-feed-submit', () => ({
 }));
 
 vi.mock('@/hooks/use-meal-mutations', () => ({
-  useConfirmMeal: () => ({ mutate: vi.fn(), isPending: false }),
+  useConfirmMeal: () => ({ mutate: mockMutate, isPending: false }),
 }));
 
 vi.mock('@/hooks/use-stream-analysis', () => ({
@@ -74,7 +90,7 @@ vi.mock('@/hooks/use-stream-analysis', () => ({
 }));
 
 vi.mock('@/hooks/use-streaming-terminal-effects', () => ({
-  useStreamingTerminalEffects: vi.fn(),
+  useStreamingTerminalEffects: mockUseStreamingTerminalEffects,
 }));
 
 vi.mock('@/hooks/use-submit-guard', () => ({
@@ -214,6 +230,50 @@ describe('FeedArea', () => {
     expect(within(scrollRegion).queryByTestId('empty-state')).toBeNull();
   });
 
+  it('fires the confirm mutation for a server-loaded pending meal', () => {
+    // Regression: pending cards from the server live in the query data, not the
+    // local `messages` array. Confirming one must still dispatch the save —
+    // previously the handler looked it up in `messages`, found nothing, and
+    // silently returned (UI showed "saved" but nothing persisted).
+    mockUseLoggingDay.mockReturnValue({
+      data: {
+        persistedMeals: [],
+        pendingConfirmations: [
+          {
+            id: 'pending-1',
+            rawInput: 'Phở bò',
+            loggedAt: '2026-05-04T05:30:00.000Z',
+            parsedMeal: {
+              mealName: 'Phở bò',
+              items: [],
+              totalMacros: { calories: 300, protein: 20, carbs: 40, fat: 8 },
+            },
+          },
+        ],
+      },
+      isError: false,
+      isFetching: false,
+      isLoading: false,
+      refetch: vi.fn(),
+    });
+
+    render(
+      <FeedArea
+        selectedDate="2026-05-04"
+        today={TODAY}
+        profile={profile}
+        onSelectDate={vi.fn()}
+      />
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'confirm' }));
+
+    expect(mockMutate).toHaveBeenCalledTimes(1);
+    expect(mockMutate.mock.calls[0][0]).toMatchObject({
+      analysisId: 'pending-1',
+    });
+  });
+
   it('shows a day loading skeleton instead of stale or empty card content', () => {
     mockUseLoggingDay.mockReturnValue({
       data: undefined,
@@ -345,5 +405,32 @@ describe('FeedArea', () => {
     fireEvent.click(screen.getByRole('button', { name: 'dismiss' }));
 
     expect(screen.queryByRole('button', { name: 'open' })).toBeNull();
+  });
+
+  it('marks the day stale without a racing refetch when analysis completes', () => {
+    render(
+      <FeedArea
+        selectedDate={TODAY}
+        today={TODAY}
+        profile={profile}
+        onSelectDate={vi.fn()}
+      />
+    );
+
+    // Invoke the onAnalysisComplete callback the feed wires into the streaming
+    // terminal effects. It must NOT trigger a background refetch (refetchType:
+    // 'none') — that pre-save refetch could otherwise clobber a just-confirmed
+    // meal and strand the calorie ring on the stale value.
+    const config = mockUseStreamingTerminalEffects.mock.calls.at(-1)?.[0];
+    expect(config?.onAnalysisComplete).toBeTypeOf('function');
+    config.onAnalysisComplete();
+
+    expect(mockInvalidateQueries).toHaveBeenCalledWith({
+      queryKey: ['logging-day', profile.userId, TODAY],
+      refetchType: 'none',
+    });
+    expect(mockInvalidateQueries).toHaveBeenCalledWith({
+      queryKey: ['meal-dates'],
+    });
   });
 });

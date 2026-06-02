@@ -147,8 +147,21 @@ jobs:
             ' || true
           )"
           echo "PREVIOUS_REVISION=$previous_revision" >> "$GITHUB_ENV"
-      - name: Validate migrations are append-only
-        run: node scripts/check-append-only-migrations.mjs
+      # Scope the append-only check to migrations not yet applied to the shared
+      # DB (exactly what the push below applies). A deploy job has no git
+      # baseline, so the unscoped check would re-flag historical, already-applied
+      # migrations. CI already validates append-only on the PR/push diff.
+      - name: Validate pending migrations are append-only
+        run: |
+          pending_list="$(node scripts/cloud-run/shared-db.mjs list-pending --db-url "$STAGING_DATABASE_URL" --migrations-dir ./supabase/migrations)"
+          if [ -z "$pending_list" ]; then
+            echo "No pending migrations to validate."
+          else
+            echo "Validating pending migration(s):"
+            echo "$pending_list"
+            mapfile -t pending <<< "$pending_list"
+            node scripts/check-append-only-migrations.mjs "${pending[@]}"
+          fi
       - name: Push migrations to shared staging DB
         run: yes | supabase db push --db-url "$STAGING_DATABASE_URL_ENCODED"
       - name: Resolve image digest

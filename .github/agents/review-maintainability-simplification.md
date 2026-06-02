@@ -20,7 +20,7 @@ description: |
   Explicit simplification requests should route here.
   </commentary>
   </example>
-model: inherit
+model: sonnet
 color: green
 tools: ["Read", "Write", "Edit", "Glob", "Grep", "Bash", "WebSearch", "WebFetch"]
 ---

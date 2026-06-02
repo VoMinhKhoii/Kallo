@@ -20,7 +20,7 @@ description: |
   Explicit database or migration review requests should route here.
   </commentary>
   </example>
-model: inherit
+model: sonnet
 color: yellow
 tools: ["Read", "Write", "Edit", "Glob", "Grep", "Bash", "WebSearch", "WebFetch"]
 ---

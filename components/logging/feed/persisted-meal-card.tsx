@@ -1,13 +1,133 @@
 'use client';
 
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, Loader2, Share2, Users2 } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
+import { toast } from 'sonner';
+import { useShareMeal } from '@/hooks/use-share-meal';
 import type { PersistedMeal } from '@/lib/actions/meals';
+import { cn } from '@/lib/utils';
 
 interface PersistedMealCardProps {
   meal: PersistedMeal;
+}
+
+/**
+ * Native-share affordance (D4). Appears only once a meal is shared to the
+ * circle, so a shareable Macro Card URL exists. Uses navigator.share with the
+ * OG card URL, falling back to a copy-link sonner toast where unavailable.
+ */
+function ShareCardButton({ shareId }: { shareId: string }) {
+  const t = useTranslations('groups.shareControl');
+
+  const handleShare = async () => {
+    const url = `${window.location.origin}/api/og/macro-card/${shareId}`;
+    if (
+      typeof navigator !== 'undefined' &&
+      typeof navigator.share === 'function'
+    ) {
+      try {
+        await navigator.share({ title: t('shareCardTitle'), url });
+        return;
+      } catch (error) {
+        // User-cancelled share is not an error; bail silently.
+        if (error instanceof DOMException && error.name === 'AbortError')
+          return;
+        // Otherwise fall through to copy-link.
+      }
+    }
+    try {
+      await navigator.clipboard.writeText(url);
+      toast.success(t('copiedLink'));
+    } catch {
+      toast.error(t('errorCopy'));
+    }
+  };
+
+  return (
+    <button
+      type="button"
+      onClick={handleShare}
+      className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 font-medium text-[11px] text-nham-text-muted/70 transition-colors hover:bg-nham-hover/40 hover:text-nham-text"
+      style={{ fontFamily: 'DM Sans, sans-serif' }}
+    >
+      <Share2 className="h-3.5 w-3.5" />
+      {t('shareCard')}
+    </button>
+  );
+}
+
+/**
+ * Subtle, post-save-only "Share to circle" toggle. Lives on an already-saved
+ * card (this file never renders the text input), so it can never precede or
+ * block the parse. Toggles meal_shares.visibility circle↔private; the wall
+ * reflects it on the next poll. No vanity metrics.
+ */
+function ShareToCircleButton({
+  mealId,
+  share,
+}: {
+  mealId: string;
+  share: PersistedMeal['share'];
+}) {
+  const t = useTranslations('groups.shareControl');
+  const shareMeal = useShareMeal();
+  // Seed from real server state so an already-shared meal renders as shared
+  // (and can be unshared) after a reload, instead of always defaulting to off.
+  const [isShared, setIsShared] = useState(
+    share != null && share.visibility !== 'private'
+  );
+  const [shareId, setShareId] = useState<string | null>(
+    share && share.visibility !== 'private' ? share.shareId : null
+  );
+
+  const handleToggle = () => {
+    if (shareMeal.isPending) return;
+    const next = isShared ? 'private' : 'circle';
+    shareMeal.mutate(
+      { mealId, visibility: next },
+      {
+        onSuccess: (data) => {
+          setIsShared(next === 'circle');
+          setShareId(next === 'circle' ? data.shareId : null);
+        },
+        onError: () =>
+          toast.error(next === 'circle' ? t('errorShare') : t('errorUnshare')),
+      }
+    );
+  };
+
+  return (
+    <div className="flex items-center gap-1.5">
+      {isShared && shareId && <ShareCardButton shareId={shareId} />}
+      <button
+        type="button"
+        onClick={handleToggle}
+        disabled={shareMeal.isPending}
+        aria-pressed={isShared}
+        aria-busy={shareMeal.isPending}
+        className={cn(
+          'inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 font-medium text-[11px] transition-colors disabled:cursor-not-allowed disabled:opacity-60',
+          isShared
+            ? 'bg-nham-accent/15 text-nham-text'
+            : 'text-nham-text-muted/70 hover:bg-nham-hover/40 hover:text-nham-text'
+        )}
+        style={{ fontFamily: 'DM Sans, sans-serif' }}
+      >
+        {shareMeal.isPending ? (
+          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+        ) : (
+          <Users2 className="h-3.5 w-3.5" />
+        )}
+        {shareMeal.isPending
+          ? t('sharing')
+          : isShared
+            ? t('shared')
+            : t('share')}
+      </button>
+    </div>
+  );
 }
 
 function formatMacro(value: number | null): string {
@@ -173,6 +293,11 @@ export function PersistedMealCard({ meal }: PersistedMealCardProps) {
             </motion.div>
           )}
         </AnimatePresence>
+
+        {/* Post-save share affordance — never at the text input */}
+        <div className="mt-3 flex justify-end border-nham-border/40 border-t border-dashed pt-2.5">
+          <ShareToCircleButton mealId={meal.id} share={meal.share} />
+        </div>
       </div>
     </motion.article>
   );

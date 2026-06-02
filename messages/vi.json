@@ -33,6 +33,9 @@
     },
     "nutrition": {
       "title": "Dinh dưỡng — Nhẩm"
+    },
+    "groups": {
+      "title": "Nhóm — Nhẩm"
     }
   },
   "shared": {
@@ -54,6 +57,7 @@
       "tracking": "Theo dõi",
       "nutrition": "Dinh dưỡng",
       "logging": "Ghi nhận",
+      "groups": "Nhóm",
       "admin": "Quản trị",
       "settings": "Cài đặt",
       "expandSidebar": "Mở rộng thanh bên",
@@ -648,6 +652,7 @@
       "hasAccount": "Đã có tài khoản?",
       "signInLink": "Đăng nhập",
       "success": "Kiểm tra email để xác nhận tài khoản",
+      "successSignedIn": "Đã tạo tài khoản. Chào mừng!",
       "error": "Không thể tạo tài khoản",
       "emailPlaceholder": "ban@example.com",
       "passwordPlaceholder": "Tạo mật khẩu",
@@ -1008,6 +1013,81 @@
       "previousWeek": "Tuần trước",
       "nextWeek": "Tuần sau",
       "openCalendar": "Mở lịch"
+    }
+  },
+  "groups": {
+    "page": {
+      "title": "Vòng kết nối của bạn",
+      "subtitle": "Hôm nay bạn bè đang ăn gì.",
+      "addFriend": "Thêm bạn"
+    },
+    "empty": {
+      "title": "Vòng kết nối đang yên ắng",
+      "subtitle": "Chia sẻ liên kết mời để kết nối. Nhật ký của bạn vẫn riêng tư cho đến khi bạn chọn chia sẻ.",
+      "cta": "Thêm một người bạn"
+    },
+    "wall": {
+      "sharedAt": "Chia sẻ lúc {time}",
+      "toggleDetails": "Xem chi tiết bữa ăn",
+      "total": "Tổng",
+      "loading": "Đang tải vòng kết nối của bạn",
+      "na": "Không có"
+    },
+    "shareControl": {
+      "share": "Chia sẻ với vòng kết nối",
+      "shared": "Đã chia sẻ với vòng kết nối",
+      "sharing": "Đang chia sẻ…",
+      "errorShare": "Không thể chia sẻ. Vui lòng thử lại.",
+      "errorUnshare": "Không thể cập nhật chia sẻ. Vui lòng thử lại.",
+      "shareCard": "Chia sẻ thẻ",
+      "shareCardTitle": "Bữa ăn của tôi trên Nhẩm",
+      "copiedLink": "Đã sao chép liên kết thẻ",
+      "errorCopy": "Không thể sao chép liên kết. Vui lòng thử lại."
+    },
+    "invite": {
+      "title": "Mời vào vòng kết nối",
+      "description": "Chia sẻ liên kết của bạn. Bất kỳ ai mở liên kết đều có thể kết nối với bạn.",
+      "yourLink": "Liên kết mời của bạn",
+      "hint": "Bất kỳ ai có liên kết này đều có thể kết nối với bạn.",
+      "copy": "Sao chép",
+      "linkCopied": "Đã sao chép liên kết",
+      "linkCopyError": "Không thể sao chép liên kết",
+      "editTitle": "Chỉnh sửa liên kết",
+      "editHint": "3–20 ký tự: chữ thường, số, gạch dưới.",
+      "save": "Lưu",
+      "cancel": "Huỷ",
+      "endSaved": "Đã cập nhật liên kết",
+      "endTaken": "Liên kết này đã được dùng",
+      "endInvalid": "Liên kết không hợp lệ",
+      "endReserved": "Liên kết này đã được giữ chỗ",
+      "endError": "Không thể cập nhật liên kết"
+    },
+    "circle": {
+      "title": "Vòng kết nối ({count})",
+      "empty": "Chưa có ai trong vòng kết nối. Chia sẻ liên kết để kết nối.",
+      "remove": "Xoá",
+      "removeError": "Không thể xoá. Vui lòng thử lại."
+    },
+    "error": {
+      "title": "Không thể tải vòng kết nối",
+      "body": "Đã xảy ra lỗi. Kiểm tra kết nối và thử lại.",
+      "retry": "Thử lại"
+    },
+    "connect": {
+      "connectTitle": "Kết nối với {name}",
+      "connectBody": "Chấp nhận để thêm nhau vào vòng kết nối và xem cách mỗi người đang ăn uống.",
+      "accept": "Chấp nhận",
+      "error": "Không thể kết nối. Vui lòng thử lại.",
+      "invalidTitle": "Lời mời không hợp lệ",
+      "invalidBody": "Liên kết mời này không hợp lệ hoặc đã thay đổi.",
+      "selfTitle": "Đây là liên kết mời của bạn",
+      "selfBody": "Chia sẻ với bạn bè để họ có thể kết nối với bạn.",
+      "alreadyTitle": "Bạn đã kết nối với {name}",
+      "alreadyBody": "Hai bạn đã ở trong vòng kết nối của nhau.",
+      "goToCircle": "Đến vòng kết nối",
+      "signedOutTitle": "{name} đã mời bạn vào vòng kết nối",
+      "signedOutBody": "Đăng nhập hoặc tạo tài khoản để kết nối.",
+      "signIn": "Đăng nhập để kết nối"
     }
   },
   "settings": {

@@ -7,6 +7,7 @@ import {
   dateStringSchema,
   timezoneOffsetSchema,
 } from '@/lib/api/contracts/meals';
+import { parseTzParam } from '@/lib/api/query';
 import { handleRouteError } from '@/lib/api/respond';
 import { getOnboardingProfile } from '@/lib/onboarding/actions';
 
@@ -28,7 +29,7 @@ export async function GET(req: NextRequest) {
     const searchParams = req.nextUrl.searchParams;
     const date = dateStringSchema.parse(searchParams.get('date'));
     const timezoneOffset = timezoneOffsetSchema.parse(
-      Number(searchParams.get('tz'))
+      parseTzParam(searchParams.get('tz'))
     );
 
     const [profile, day, weightSummary, heatmap] = await Promise.all([

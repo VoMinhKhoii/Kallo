@@ -20,9 +20,16 @@ const CONFIRM_DEBOUNCE_MS = 300;
 interface MealEntryProps {
   message: ChatMessage;
   onConfirm?: (edits: MealQuantityEdit[]) => void;
+  // Disables the confirm action while a save is in flight, so a fast
+  // double-click can't dispatch two saves (two mealIds → two inserts).
+  isConfirming?: boolean;
 }
 
-export function MealEntry({ message, onConfirm }: MealEntryProps) {
+export function MealEntry({
+  message,
+  onConfirm,
+  isConfirming,
+}: MealEntryProps) {
   const t = useTranslations('logging.mealEntry');
   const [isEditing, setIsEditing] = useState(false);
   const [confirmed, setConfirmed] = useState(false);
@@ -247,7 +254,7 @@ export function MealEntry({ message, onConfirm }: MealEntryProps) {
       {!confirmed && (
         <MealEntryActions
           isEditing={isEditing}
-          disabled={isEditing && confirmCoolingDown}
+          disabled={isConfirming || (isEditing && confirmCoolingDown)}
           onConfirm={handleConfirm}
         />
       )}

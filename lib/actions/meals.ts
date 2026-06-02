@@ -15,6 +15,7 @@ import { getUtcDayRangeForLocalDate } from '@/lib/date/local-day';
 import { db } from '@/lib/db';
 import {
   mealItems,
+  mealShares,
   meals,
   pendingAnalyses,
   unmatchedIngredients,
@@ -322,6 +323,10 @@ export interface PersistedMeal {
   loggedAt: string;
   nutrition: NutritionValues;
   mealItemGroups: PersistedMealItemGroup[];
+  /** Circle-share state, or null if the meal was never shared. `shareId` is the
+   *  meal_shares row id used to key the shareable Macro Card. Lets the card seed
+   *  the share toggle from real server state instead of always "not shared". */
+  share: { shareId: string; visibility: string } | null;
 }
 
 export interface PersistedMealItemGroup {
@@ -403,6 +408,18 @@ async function loadMealsByDateForUser(
     itemsByMealId.set(item.mealId, existing);
   }
 
+  // Fetch each meal's share row (at most one per meal) so the card can seed its
+  // share toggle from real state instead of defaulting to "not shared".
+  const shareRows = await db
+    .select({
+      mealId: mealShares.mealId,
+      id: mealShares.id,
+      visibility: mealShares.visibility,
+    })
+    .from(mealShares)
+    .where(inArray(mealShares.mealId, mealIds));
+  const shareByMealId = new Map(shareRows.map((s) => [s.mealId, s]));
+
   return mealRows.map((meal) => {
     const items = itemsByMealId.get(meal.id) ?? [];
 
@@ -442,6 +459,8 @@ async function loadMealsByDateForUser(
       );
     }
 
+    const share = shareByMealId.get(meal.id);
+
     return {
       id: meal.id,
       rawInput: meal.rawInput,
@@ -450,6 +469,7 @@ async function loadMealsByDateForUser(
       loggedAt: meal.loggedAt.toISOString(),
       nutrition: extractNutritionValues(meal),
       mealItemGroups: groups,
+      share: share ? { shareId: share.id, visibility: share.visibility } : null,
     };
   });
 }
@@ -485,14 +505,30 @@ async function loadPendingAnalysesByDateForUser(
     )
     .orderBy(desc(pendingAnalyses.loggedAt));
 
-  return rows.map((row) => {
-    const pipelineResult = row.pipelineResult as PipelineResult;
-    return {
-      id: row.id,
-      rawInput: row.rawInput,
-      loggedAt: row.loggedAt.toISOString(),
-      parsedMeal: toParsedMeal(pipelineResult),
-    };
+  return rows.flatMap((row) => {
+    // Defensive: a row whose stored pipelineResult predates the current shape
+    // (legacy/malformed) must not throw and 500 the entire day load via the
+    // Promise.all in loadLoggingDay. toParsedMeal walks several fields
+    // (mealItems, each item's ingredients, displayedNutrition), so guard the
+    // whole conversion rather than one field — any malformed shape is skipped.
+    // Skipping is safe: such a row is un-confirmable anyway since confirm reads
+    // the same pipelineResult.
+    try {
+      return [
+        {
+          id: row.id,
+          rawInput: row.rawInput,
+          loggedAt: row.loggedAt.toISOString(),
+          parsedMeal: toParsedMeal(row.pipelineResult as PipelineResult),
+        },
+      ];
+    } catch (error) {
+      console.error(
+        '[loadPendingAnalyses] Skipping pending analysis with malformed pipelineResult',
+        { id: row.id, error }
+      );
+      return [];
+    }
   });
 }
 

@@ -3,6 +3,7 @@ import {
   LayoutDashboard,
   type LucideIcon,
   ShieldCheck,
+  Users2,
   UtensilsCrossed,
 } from 'lucide-react';
 
@@ -32,6 +33,12 @@ export const NAV_ITEMS: readonly NavItemConfig[] = [
     href: '/logging',
     labelKey: 'logging',
     icon: UtensilsCrossed,
+  },
+  {
+    id: 'groups',
+    href: '/groups',
+    labelKey: 'groups',
+    icon: Users2,
   },
   {
     id: 'admin',

@@ -298,8 +298,16 @@ export function FeedArea({
     // (4 elements, including the tz offset). This relies on TanStack Query's
     // default prefix matching to invalidate it — do not add `exact: true` here
     // or the yesterday-prompt/day view will show stale totals after a re-log.
+    //
+    // refetchType: 'none' marks the day stale WITHOUT launching a background
+    // refetch. The pending card already renders from the local streamed
+    // message, so no immediate network read is needed here — and that refetch
+    // (which captures the pre-save snapshot) could otherwise resolve after a
+    // confirm and clobber the just-saved meal, leaving the calorie ring stale.
+    // The confirm mutation's onSettled refetch reconciles authoritative state.
     queryClient.invalidateQueries({
       queryKey: loggingDayKeys.byUserDate(profile.userId, originDate),
+      refetchType: 'none',
     });
     queryClient.invalidateQueries({ queryKey: ['meal-dates'] });
   }, [messages, profile.userId, queryClient, selectedDate, streamingMsgId]);
@@ -316,24 +324,36 @@ export function FeedArea({
   });
 
   const handleConfirmMeal = (
-    messageId: string,
-    analysisId: string,
+    message: ChatMessage,
     edits: MealQuantityEdit[]
   ) => {
-    // Drop the local copy before mutate so the optimistic cache update in
-    // useConfirmMeal does not briefly expose it as an unsaved card.
+    // The caller already holds the fully-built message — from either the local
+    // stream or a server-loaded pending confirmation — so the optimistic cache
+    // update can build the meal straight from it. (Re-deriving it from
+    // `messages` here would miss server-backed pending cards, which never enter
+    // that array, and silently drop the save.)
+    //
+    // Drop any local copy before mutate so the optimistic cache update in
+    // useConfirmMeal does not briefly expose it as an unsaved card. This is a
+    // no-op for server-loaded pending cards.
     setMessages((prev) =>
-      prev.filter((m) => m.id !== messageId && m.analysisId !== analysisId)
+      prev.filter(
+        (m) => m.id !== message.id && m.analysisId !== message.analysisId
+      )
     );
+    if (!message.parsedMeal || !message.analysisId) return;
     // Client-minted id: doubles as the persisted row's PK and an idempotency
     // key, so the optimistic card and the refetched row share one stable React
     // key (no remount/re-fade after save).
     const mealId = crypto.randomUUID();
     confirmMeal.mutate(
       {
-        analysisId,
+        analysisId: message.analysisId,
         mealId,
         originDate: selectedDate,
+        parsedMeal: message.parsedMeal,
+        rawInput: message.userInput ?? message.content,
+        loggedAt: message.timestamp.toISOString(),
         edits: edits.length > 0 ? edits : undefined,
       },
       {
@@ -530,10 +550,8 @@ export function FeedArea({
                       <MealEntry
                         key={msg.id}
                         message={msg}
-                        onConfirm={(edits) => {
-                          if (msg.analysisId)
-                            handleConfirmMeal(msg.id, msg.analysisId, edits);
-                        }}
+                        isConfirming={confirmMeal.isPending}
+                        onConfirm={(edits) => handleConfirmMeal(msg, edits)}
                       />
                     );
                   }
