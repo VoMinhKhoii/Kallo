@@ -1,0 +1,611 @@
+import { TrendingDown, TrendingUp } from 'lucide-react-native';
+import { useMemo, useState } from 'react';
+import {
+  ActivityIndicator,
+  type GestureResponderEvent,
+  type LayoutChangeEvent,
+  StyleSheet,
+  View,
+} from 'react-native';
+import Animated, {
+  FadeIn,
+  FadeOut,
+  ReduceMotion,
+} from 'react-native-reanimated';
+import Svg, {
+  Circle,
+  Defs,
+  Line,
+  LinearGradient,
+  Path,
+  Rect,
+  Stop,
+} from 'react-native-svg';
+import type { WeightSummaryData } from '@/lib/api/contracts/weight';
+import type { WeightGoalDirection, WeightRange } from '@/lib/types/weight';
+import { useLocale, useTranslations } from '~/i18n';
+import { buildXTicks } from '~/lib/dashboard/logic/weight-chart-utils';
+import { useWeightSummary } from '~/lib/dashboard/hooks/use-weight';
+import {
+  buildWeightTrendSummary,
+  type WeightTrendStatus,
+} from '~/lib/dashboard/logic/weight-trend';
+import { CompactWeightLog } from '~/components/dashboard/compact-weight-log';
+import { Card } from '~/theme/primitives';
+import { Text } from '~/theme/text';
+import { colors, fonts, fontSize, radii, space } from '~/theme/tokens';
+
+/**
+ * Mobile weight card — 1:1 port of the web ProgressStory
+ * (components/dashboard/progress/progress-story.tsx), which nests, in order:
+ *   [1] trend / delta callout
+ *   [2] TODAY'S WEIGHT input (CompactWeightLog)
+ *   [3] the SVG area chart (web WeightChart, drawn with react-native-svg).
+ *
+ * Self-contained: owns its range, calls `useWeightSummary`, and renders its own
+ * loading / error states. i18n via `~/i18n` (use-intl), same `dashboard` keys
+ * and `t.raw('progressStatus.{status}')` shape as the web.
+ */
+
+// --- chart geometry --------------------------------------------------------
+const MARGIN = { top: 4, right: 12, bottom: 4, left: 0 } as const;
+const Y_GUTTER = 36; // web YAxis width=36
+const X_AXIS_H = 16; // room for x-tick labels
+const CHART_H = 200; // web min-h-[200px]
+
+/** Catmull-Rom → cubic-bezier path, matching recharts `type="monotone"` feel. */
+function monotonePath(pts: { x: number; y: number }[]): string {
+  if (pts.length === 0) return '';
+  if (pts.length === 1) return `M ${pts[0].x} ${pts[0].y}`;
+  let d = `M ${pts[0].x} ${pts[0].y}`;
+  for (let i = 0; i < pts.length - 1; i++) {
+    const p0 = pts[i - 1] ?? pts[i];
+    const p1 = pts[i];
+    const p2 = pts[i + 1];
+    const p3 = pts[i + 2] ?? p2;
+    const cp1x = p1.x + (p2.x - p0.x) / 6;
+    const cp1y = p1.y + (p2.y - p0.y) / 6;
+    const cp2x = p2.x - (p3.x - p1.x) / 6;
+    const cp2y = p2.y - (p3.y - p1.y) / 6;
+    d += ` C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${p2.x} ${p2.y}`;
+  }
+  return d;
+}
+
+export function WeightChart({ todayDate }: { todayDate: string }) {
+  // Web derives the range from container width; on a phone that is always the
+  // 30-day view (the section header shows the passive "30 days" label).
+  const range: WeightRange = '30d';
+  const t = useTranslations('dashboard');
+  const { data, isLoading, isError } = useWeightSummary(range);
+
+  return (
+    <Card style={styles.card}>
+      {isLoading ? (
+        <View style={styles.stateBox}>
+          <ActivityIndicator color={colors.accent} />
+          <Text variant="small" style={styles.stateText}>
+            {t('loadingWeightTrend')}
+          </Text>
+        </View>
+      ) : isError || !data ? (
+        <View style={styles.stateBox}>
+          <Text variant="small" style={styles.stateText}>
+            {t('progressLoadError')}
+          </Text>
+        </View>
+      ) : (
+        <Body data={data} range={range} todayDate={todayDate} />
+      )}
+    </Card>
+  );
+}
+
+function Body({
+  data,
+  range,
+  todayDate,
+}: {
+  data: WeightSummaryData;
+  range: WeightRange;
+  todayDate: string;
+}) {
+  const t = useTranslations('dashboard');
+  const summary = useMemo(
+    () =>
+      buildWeightTrendSummary({
+        weights: data.weights,
+        periodStartWeight: data.periodStartWeight,
+        expectedEndWeight: data.expectedEndWeight,
+        goalDirection: data.goalDirection,
+        range,
+        elapsedDays: data.periodElapsedDays,
+      }),
+    [data, range]
+  );
+
+  const copy = t.raw(`progressStatus.${summary.status}`) as {
+    label: string;
+    detail: string;
+  };
+  const isInsufficient = summary.status === 'insufficient';
+  const delta = summary.currentWeight - summary.startWeight;
+  const behind = summary.status === 'behind';
+  // Web: const Icon = delta <= 0 ? TrendingDown : TrendingUp;
+  const Icon = delta <= 0 ? TrendingDown : TrendingUp;
+  const pillColor = behind ? colors.danger : colors.accent;
+
+  return (
+    <View style={styles.body}>
+      {/* [1] Trend / delta callout */}
+      <View style={styles.callout}>
+        <View
+          style={[styles.pill, behind ? styles.pillBehind : styles.pillAccent]}
+        >
+          <Icon size={14} color={pillColor} />
+          <Text style={[styles.pillText, { color: pillColor }]}>
+            {copy.label}
+          </Text>
+        </View>
+
+        <View style={styles.heroRow}>
+          <View style={styles.heroLeft}>
+            <Text style={styles.hero}>
+              {isInsufficient
+                ? `${summary.currentWeight.toFixed(1)} ${t('units.kg')}`
+                : `${delta > 0 ? '+' : ''}${delta.toFixed(1)} ${t('units.kg')}`}
+            </Text>
+            <Text style={styles.detail}>{copy.detail}</Text>
+          </View>
+
+          {!isInsufficient && (
+            <View style={styles.tiles}>
+              <View style={styles.tile}>
+                <Text style={styles.tileLabel}>{t('now')}</Text>
+                <Text style={styles.tileValue}>
+                  {summary.currentWeight.toFixed(1)} {t('units.kg')}
+                </Text>
+              </View>
+              {summary.canProject && (
+                <View style={styles.tile}>
+                  <Text style={styles.tileLabel}>{t('projected')}</Text>
+                  <Text style={styles.tileValue}>
+                    {summary.projectedEndWeight.toFixed(1)} {t('units.kg')}
+                  </Text>
+                </View>
+              )}
+            </View>
+          )}
+        </View>
+      </View>
+
+      {/* [2] TODAY'S WEIGHT input — folded into the card */}
+      <CompactWeightLog
+        currentWeight={data.currentWeight}
+        todayWeight={data.todayWeight}
+        todayDate={todayDate}
+      />
+
+      {/* [3] Chart */}
+      <ChartCanvas
+        data={data.weights}
+        periodStartWeight={data.periodStartWeight}
+        expectedEndWeight={data.expectedEndWeight}
+        goalDirection={data.goalDirection}
+        range={range}
+      />
+    </View>
+  );
+}
+
+function ChartCanvas({
+  data,
+  periodStartWeight,
+  expectedEndWeight,
+  goalDirection,
+  range,
+}: {
+  data: number[];
+  periodStartWeight: number;
+  expectedEndWeight: number;
+  goalDirection: WeightGoalDirection;
+  range: WeightRange;
+}) {
+  const t = useTranslations('dashboard');
+  const locale = useLocale();
+  const [width, setWidth] = useState(0);
+  const [active, setActive] = useState<number | null>(null);
+
+  const onLayout = (e: LayoutChangeEvent) =>
+    setWidth(e.nativeEvent.layout.width);
+
+  if (data.length === 0) {
+    return (
+      <View style={styles.emptyBox}>
+        <Text variant="small" style={styles.stateText}>
+          {t('noWeightData')}
+        </Text>
+      </View>
+    );
+  }
+
+  const isSinglePoint = data.length === 1;
+  const rangeDays = range === '30d' ? 30 : 90;
+
+  // Y domain — clamped to goal range, expanding if data exceeds it.
+  const goalTop = Math.max(periodStartWeight, expectedEndWeight);
+  const goalBottom = Math.min(periodStartWeight, expectedEndWeight);
+  const dataMin = Math.min(...data);
+  const dataMax = Math.max(...data);
+  const yMin = Math.min(goalBottom, dataMin) - 0.3;
+  const yMax = Math.max(goalTop, dataMax) + 0.3;
+
+  const yTicks = [periodStartWeight, expectedEndWeight].filter(
+    (value, index, arr) => arr.indexOf(value) === index
+  );
+
+  // Plot rect (inside gutter + margins).
+  const plotLeft = Y_GUTTER + MARGIN.left;
+  const plotRight = width - MARGIN.right;
+  const plotW = Math.max(0, plotRight - plotLeft);
+  const plotTop = MARGIN.top;
+  const plotBottom = CHART_H - X_AXIS_H - MARGIN.bottom;
+  const plotH = Math.max(0, plotBottom - plotTop);
+
+  const yToPx = (v: number) =>
+    plotBottom - ((v - yMin) / (yMax - yMin || 1)) * plotH;
+  // X domain: single-point uses [0, rangeDays-1]; else index 0..N-1.
+  const xMax = isSinglePoint ? rangeDays - 1 : data.length - 1;
+  const xToPx = (i: number) => plotLeft + (i / (xMax || 1)) * plotW;
+
+  const points = data.map((w, i) => ({ x: xToPx(i), y: yToPx(w) }));
+  const linePath = monotonePath(points);
+  const areaPath =
+    points.length >= 2
+      ? `${linePath} L ${points[points.length - 1].x} ${plotBottom} L ${points[0].x} ${plotBottom} Z`
+      : '';
+
+  // Off-track band: above start (losing), below start (gaining), none (flat).
+  const offTrackTop =
+    goalDirection === 'down'
+      ? yMax
+      : goalDirection === 'up'
+        ? periodStartWeight
+        : null;
+  const offTrackBottom =
+    goalDirection === 'down'
+      ? periodStartWeight
+      : goalDirection === 'up'
+        ? yMin
+        : null;
+  const showBand = offTrackTop !== null && offTrackBottom !== null;
+  const bandY = showBand ? yToPx(offTrackTop as number) : 0;
+  const bandH = showBand
+    ? yToPx(offTrackBottom as number) - yToPx(offTrackTop as number)
+    : 0;
+
+  const refY = yToPx(periodStartWeight);
+
+  // X ticks + labels.
+  const { ticks: xTicks, formatter: xFormatter } = isSinglePoint
+    ? { ticks: [0], formatter: () => t('start') }
+    : buildXTicks(data.length, range, locale, t('now'), t('weekPrefix'));
+
+  // Press / drag → nearest data point.
+  function updateActive(e: GestureResponderEvent) {
+    if (plotW <= 0) return;
+    const localX = e.nativeEvent.locationX - plotLeft;
+    const frac = Math.min(1, Math.max(0, localX / plotW));
+    const idx = Math.round(frac * (data.length - 1));
+    setActive(Math.min(data.length - 1, Math.max(0, idx)));
+  }
+
+  const activeIdx = isSinglePoint ? 0 : active;
+  const showDot = isSinglePoint || activeIdx !== null;
+  const dotX = activeIdx !== null ? points[activeIdx]?.x : undefined;
+  const dotY = activeIdx !== null ? points[activeIdx]?.y : undefined;
+
+  return (
+    <View>
+      {goalDirection !== 'flat' && (
+        <View style={styles.legend}>
+          <View style={styles.legendSwatch} />
+          <Text style={styles.legendLabel}>{t('offTrack')}</Text>
+        </View>
+      )}
+
+      <View
+        onLayout={onLayout}
+        style={styles.canvas}
+        onStartShouldSetResponder={() => true}
+        onMoveShouldSetResponder={() => true}
+        onResponderGrant={updateActive}
+        onResponderMove={updateActive}
+        onResponderRelease={() => setActive(null)}
+        onResponderTerminate={() => setActive(null)}
+      >
+        {width > 0 && (
+          // Web recharts <Area> draws in on first render (~clip-reveal). RN-SVG
+          // can't measure the path length, so we fade the whole chart in over
+          // 600ms — kills the instant pop without faking a sweep.
+          <Animated.View
+            entering={FadeIn.duration(600).reduceMotion(ReduceMotion.System)}
+          >
+          <Svg width={width} height={CHART_H}>
+            <Defs>
+              <LinearGradient id="lineGrad" x1="0" y1="0" x2="0" y2="1">
+                <Stop offset="0" stopColor={colors.accent} stopOpacity={0.18} />
+                <Stop offset="1" stopColor={colors.accent} stopOpacity={0} />
+              </LinearGradient>
+            </Defs>
+
+            {/* Off-track shaded band */}
+            {showBand && (
+              <Rect
+                x={plotLeft}
+                y={bandY}
+                width={plotW}
+                height={bandH}
+                fill={colors.danger}
+                fillOpacity={0.08}
+              />
+            )}
+
+            {/* Y axis line */}
+            <Line
+              x1={plotLeft}
+              y1={plotTop}
+              x2={plotLeft}
+              y2={plotBottom}
+              stroke={colors.border}
+              strokeWidth={1}
+            />
+            {/* X axis line */}
+            <Line
+              x1={plotLeft}
+              y1={plotBottom}
+              x2={plotRight}
+              y2={plotBottom}
+              stroke={colors.border}
+              strokeWidth={1}
+            />
+
+            {/* Reference line at periodStartWeight */}
+            <Line
+              x1={plotLeft}
+              y1={refY}
+              x2={plotRight}
+              y2={refY}
+              stroke={colors.danger}
+              strokeOpacity={0.25}
+              strokeWidth={1}
+            />
+
+            {/* Area + line */}
+            {areaPath !== '' && <Path d={areaPath} fill="url(#lineGrad)" />}
+            <Path
+              d={linePath}
+              fill="none"
+              stroke={colors.accent}
+              strokeWidth={2}
+              strokeLinejoin="round"
+              strokeLinecap="round"
+            />
+
+            {/* Active / single-point dot */}
+            {showDot && dotX !== undefined && dotY !== undefined && (
+              <Circle
+                cx={dotX}
+                cy={dotY}
+                r={4}
+                fill={colors.accent}
+                stroke="#ffffff"
+                strokeWidth={2}
+              />
+            )}
+          </Svg>
+          </Animated.View>
+        )}
+
+        {/* Y tick labels (left gutter) */}
+        {width > 0 &&
+          yTicks.map((tick) => (
+            <Text
+              key={`y-${tick}`}
+              style={[styles.yTick, { top: yToPx(tick) - 6 }]}
+            >
+              {tick.toFixed(1)}
+            </Text>
+          ))}
+
+        {/* X tick labels (bottom) */}
+        {width > 0 &&
+          xTicks.map((tick, i) => (
+            <Text
+              key={`x-${tick}`}
+              style={[
+                styles.xTick,
+                { left: xToPx(tick) - 18, width: 36, top: plotBottom + 3 },
+              ]}
+            >
+              {xFormatter(tick, i)}
+            </Text>
+          ))}
+
+        {/* Press tooltip — micro-fade in/out (web recharts cross-fades the
+            active Tooltip). Conditionally mounted so exiting fires on release. */}
+        {activeIdx !== null && dotX !== undefined && dotY !== undefined && (
+          <Animated.View
+            entering={FadeIn.duration(120).reduceMotion(ReduceMotion.System)}
+            exiting={FadeOut.duration(120).reduceMotion(ReduceMotion.System)}
+            style={[
+              styles.tooltip,
+              {
+                left: Math.min(
+                  Math.max(0, dotX - 28),
+                  Math.max(0, width - 64)
+                ),
+                top: Math.max(0, dotY - 34),
+              },
+            ]}
+          >
+            <Text style={styles.tooltipText}>
+              {data[activeIdx].toFixed(1)} {t('units.kg')}
+            </Text>
+          </Animated.View>
+        )}
+      </View>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  // Web ProgressStory card: rounded-[1.5rem] (24) border nham-border/60 p-2.5 (10).
+  card: {
+    borderColor: colors.borderSoft,
+    borderRadius: radii['4xl'],
+    padding: 10,
+    gap: space[2],
+  },
+  // Loading / error / empty boxes
+  stateBox: {
+    minHeight: CHART_H,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: space[2],
+  },
+  stateText: { color: colors.stone, textAlign: 'center' },
+  emptyBox: {
+    minHeight: CHART_H,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  // gap-2 between the three nested blocks (callout / input / chart).
+  body: { gap: space[2] },
+
+  // Trend callout — web rounded-[1.25rem] (20) bg nham-surface/70 p-2.5 (10).
+  callout: {
+    borderRadius: radii['3xl'],
+    backgroundColor: colors.surface80,
+    padding: 10,
+  },
+  pill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    gap: space[2],
+    borderRadius: radii.pill,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    marginBottom: space[2],
+  },
+  pillAccent: { backgroundColor: colors.accentSelectedFill },
+  pillBehind: { backgroundColor: 'rgba(211, 123, 105, 0.1)' },
+  pillText: { fontFamily: fonts.sansSemiBold, fontSize: fontSize.xs },
+
+  heroRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    justifyContent: 'space-between',
+    gap: space[3],
+  },
+  heroLeft: { flexShrink: 1 },
+  hero: {
+    fontFamily: fonts.serifMedium, // Lora 500 — never bold
+    fontSize: fontSize.h3, // web text-3xl (~30); h3=24 fits the narrow phone
+    letterSpacing: -1.2,
+    color: colors.text,
+    fontVariant: ['tabular-nums'],
+  },
+  // Web: mt-1 text-nham-stone text-xs — muted gray DM Sans 12px, NOT italic accent.
+  detail: {
+    fontFamily: fonts.sansRegular,
+    fontSize: fontSize.xs,
+    lineHeight: 16,
+    color: colors.stone,
+    marginTop: space[1],
+  },
+
+  tiles: { flexDirection: 'row', gap: space[2] },
+  // Web: rounded-xl bg-card/80 px-2.5 py-2.
+  tile: {
+    borderRadius: radii.buttonXl,
+    backgroundColor: colors.elevTranslucent,
+    paddingHorizontal: 10,
+    paddingVertical: space[2],
+  },
+  // Web: block text-[9px] uppercase tracking-[0.14em] stone.
+  tileLabel: {
+    fontFamily: fonts.sansBold,
+    fontSize: 9,
+    letterSpacing: 1.3,
+    textTransform: 'uppercase',
+    color: colors.stone,
+  },
+  // Web: font-mono text-xs nham-text.
+  tileValue: {
+    fontFamily: fonts.sansSemiBold,
+    fontSize: fontSize.xs,
+    color: colors.text,
+    marginTop: 2,
+    fontVariant: ['tabular-nums'],
+  },
+
+  // Legend
+  legend: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 2,
+  },
+  legendSwatch: {
+    width: 12,
+    height: 8,
+    borderRadius: radii.sm,
+    backgroundColor: colors.danger,
+    opacity: 0.5,
+  },
+  legendLabel: {
+    fontFamily: fonts.sansRegular,
+    color: colors.stone,
+    fontSize: fontSize.eyebrow,
+  },
+
+  // Chart canvas
+  canvas: { height: CHART_H, position: 'relative' },
+  yTick: {
+    position: 'absolute',
+    left: 0,
+    width: Y_GUTTER - 4,
+    textAlign: 'right',
+    fontFamily: fonts.sansRegular,
+    fontSize: 9,
+    color: colors.stone,
+    fontVariant: ['tabular-nums'],
+  },
+  xTick: {
+    position: 'absolute',
+    textAlign: 'center',
+    fontFamily: fonts.sansRegular,
+    fontSize: 9,
+    color: colors.stone,
+  },
+
+  // Tooltip
+  tooltip: {
+    position: 'absolute',
+    borderRadius: radii.md,
+    borderWidth: 1,
+    borderColor: colors.borderSoft,
+    backgroundColor: colors.elev,
+    paddingHorizontal: space[3],
+    paddingVertical: 6,
+  },
+  tooltipText: {
+    fontFamily: fonts.sansMedium,
+    fontSize: fontSize.xs,
+    color: colors.text,
+    fontVariant: ['tabular-nums'],
+  },
+});
