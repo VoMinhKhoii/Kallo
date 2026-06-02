@@ -29,9 +29,9 @@ function allCookingFieldsNull(values: Partial<CookingHabits>): boolean {
 export function ScreenCooking({ defaultValues, onChange }: ScreenCookingProps) {
   const t = useTranslations('onboarding.cooking');
   const hasPrePopulated = useRef(false);
-  const initial = allCookingFieldsNull(defaultValues)
+  const initial: CookingHabits = allCookingFieldsNull(defaultValues)
     ? NEUTRAL_COOKING_DEFAULTS
-    : (defaultValues as CookingHabits);
+    : { ...NEUTRAL_COOKING_DEFAULTS, ...defaultValues };
 
   const { control, getValues, setValue, trigger } = useForm<CookingHabits>({
     resolver: zodResolver(cookingHabitsSchema),
@@ -51,10 +51,10 @@ export function ScreenCooking({ defaultValues, onChange }: ScreenCookingProps) {
         setValue(key as keyof CookingHabits, value as CookingHabits[keyof CookingHabits]);
       }
       void trigger();
-      onChange(NEUTRAL_COOKING_DEFAULTS);
+      report();
       hasPrePopulated.current = true;
     }
-  }, [defaultValues, setValue, trigger, onChange]);
+  }, [defaultValues, setValue, trigger, report]);
 
   const fields: {
     name: keyof CookingHabits;

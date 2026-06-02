@@ -26,10 +26,10 @@ import type { ProfileRow } from '~/lib/onboarding/hooks/use-profile';
 import { useSaveScreen } from '~/lib/onboarding/hooks/use-save-screen';
 import { Text } from '~/theme/text';
 import { colors, fonts, radii, space } from '~/theme/tokens';
-import { type ScreenOneData, ScreenBodyMetrics } from '../screens/screen-body-metrics';
-import { ScreenCooking } from '../screens/screen-cooking';
-import { ScreenOrigin } from '../screens/screen-origin';
-import { StepIndicator } from './step-indicator';
+import { type ScreenOneData, ScreenBodyMetrics } from '~/components/onboarding/screens/screen-body-metrics';
+import { ScreenCooking } from '~/components/onboarding/screens/screen-cooking';
+import { ScreenOrigin } from '~/components/onboarding/screens/screen-origin';
+import { StepIndicator } from '~/components/onboarding/wizard/step-indicator';
 
 const TOTAL_STEPS = 3;
 

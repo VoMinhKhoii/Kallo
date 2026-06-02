@@ -12,9 +12,9 @@ import type { ActivityLevel, CarbSplit, Goal } from '@/lib/onboarding/types';
 import { Text } from '~/theme/text';
 import { colors, fonts, radii, space } from '~/theme/tokens';
 import { DecimalInput } from '~/components/shared/decimal-input';
-import { AggressionSlider } from '../controls/aggression-slider';
-import { CustomSelect } from '../controls/custom-select';
-import type { ProfileFormValues } from '../profile';
+import { AggressionSlider } from '~/components/settings/controls/aggression-slider';
+import { CustomSelect } from '~/components/settings/controls/custom-select';
+import type { ProfileFormValues } from '~/components/settings/profile';
 
 const GOALS: Goal[] = ['cutting', 'maintaining', 'bulking'];
 const CARB_SPLITS: CarbSplit[] = ['moderate_carb', 'lower_carb', 'higher_carb'];

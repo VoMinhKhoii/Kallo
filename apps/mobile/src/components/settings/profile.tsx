@@ -44,10 +44,10 @@ import type { ProfileRow } from '~/lib/onboarding/hooks/use-profile';
 import { useSaveProfile } from '~/lib/onboarding/hooks/use-save-profile';
 import { Text } from '~/theme/text';
 import { colors, fonts, radii, shadow, space } from '~/theme/tokens';
-import { BodyMetrics } from './panels/body-metrics';
-import { Cooking } from './panels/cooking';
-import { Regional } from './panels/regional';
-import { TabStrip } from './controls/tab-strip';
+import { BodyMetrics } from '~/components/settings/panels/body-metrics';
+import { Cooking } from '~/components/settings/panels/cooking';
+import { Regional } from '~/components/settings/panels/regional';
+import { TabStrip } from '~/components/settings/controls/tab-strip';
 
 // Local goal schema — mirrors the web settings form: goal + nullable aggression
 // + carbSplit, NO deficitOverride, NO superRefine (deliberate 1:1 contract).

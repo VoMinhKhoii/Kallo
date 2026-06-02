@@ -6,7 +6,7 @@ import {
   useEffect,
   useState,
 } from 'react';
-import { supabase } from './supabase';
+import { supabase } from '~/lib/supabase';
 
 interface SessionContextValue {
   session: Session | null;
@@ -25,10 +25,11 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      setSession(data.session);
-      setLoading(false);
-    });
+    supabase.auth
+      .getSession()
+      .then(({ data }) => setSession(data.session))
+      .catch((error) => console.error('getSession failed', error))
+      .finally(() => setLoading(false));
 
     const {
       data: { subscription },

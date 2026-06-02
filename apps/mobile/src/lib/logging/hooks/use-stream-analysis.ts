@@ -6,6 +6,12 @@ import { supabase } from '~/lib/supabase';
 
 const BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL;
 
+if (!BASE_URL) {
+  throw new Error(
+    'Missing EXPO_PUBLIC_API_BASE_URL — see apps/mobile/.env.example.'
+  );
+}
+
 export interface StreamAnalysisState {
   status: StreamStatus;
   items: string[]; // streamed dish names (item_name)

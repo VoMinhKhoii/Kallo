@@ -11,8 +11,8 @@ import {
   SafeAreaView,
   type Edge,
 } from 'react-native-safe-area-context';
-import { colors, fonts, radii, shadow, space } from './tokens';
-import { Text } from './text';
+import { colors, fonts, radii, shadow, space } from '~/theme/tokens';
+import { Text } from '~/theme/text';
 
 /** Full-bleed cream screen with safe-area insets. */
 export function Screen({

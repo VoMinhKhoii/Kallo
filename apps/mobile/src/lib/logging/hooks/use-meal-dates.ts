@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { apiGet } from '~/lib/api-client';
-import { mealDatesKey } from '../keys';
+import { mealDatesKey } from '~/lib/logging/keys';
 
 /**
  * Loads the set of dates that have logged meals (the "has meals" dots in the

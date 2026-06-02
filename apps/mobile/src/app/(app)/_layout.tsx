@@ -2,6 +2,7 @@ import { Redirect, Stack } from 'expo-router';
 import { ActivityIndicator, View } from 'react-native';
 import { OnboardingGate } from '~/components/onboarding/onboarding-gate';
 import { useSession } from '~/lib/session';
+import { colors } from '~/theme/tokens';
 
 export default function AppLayout() {
   const { session, loading } = useSession();
@@ -9,7 +10,7 @@ export default function AppLayout() {
   if (loading) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator color="#c9a87c" />
+        <ActivityIndicator color={colors.accent} />
       </View>
     );
   }
@@ -21,7 +22,7 @@ export default function AppLayout() {
   return (
     <>
       <Stack
-        screenOptions={{ headerShown: false, contentStyle: { backgroundColor: '#fefbf6' } }}
+        screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.surface } }}
       />
       {/* Onboarding wizard overlay — auto-opens once when the profile is
           incomplete (the Modal renders above the Stack). */}
@@ -35,6 +36,6 @@ const styles = {
     flex: 1,
     alignItems: 'center' as const,
     justifyContent: 'center' as const,
-    backgroundColor: '#fefbf6',
+    backgroundColor: colors.surface,
   },
 };

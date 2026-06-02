@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import type { CandidatesResponse } from '@/lib/api/contracts/nutrition';
 import type { NutritionNutrientKey } from '@/lib/nutrition/types';
 import { apiPost } from '~/lib/api-client';
-import { asSupported } from '../logic/candidate-nutrients';
+import { asSupported } from '~/lib/nutrition/logic/candidate-nutrients';
 
 /**
  * Loads curated food-source candidates for a nutrient. Mirrors the web

@@ -7,7 +7,7 @@ import { supabase } from '~/lib/supabase';
 import { useSession } from '~/lib/session';
 import { Text } from '~/theme/text';
 import { colors, fonts, radii, space } from '~/theme/tokens';
-import { isActiveRoute, NAV_ITEMS } from './nav-items';
+import { isActiveRoute, NAV_ITEMS } from '~/components/app/nav-items';
 
 /**
  * Drawer content — the mobile primary nav, ported from the web MobileNav sheet

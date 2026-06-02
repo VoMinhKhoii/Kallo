@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { ProfileSettingsInput } from '@/lib/api/contracts/onboarding';
 import { apiPut } from '~/lib/api-client';
-import { onboardingKeys } from '../keys';
+import { onboardingKeys } from '~/lib/onboarding/keys';
 
 /**
  * Saves the profile/settings form via PUT /api/v1/profile (mirrors the web

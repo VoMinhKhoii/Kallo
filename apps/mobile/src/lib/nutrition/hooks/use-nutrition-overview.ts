@@ -2,7 +2,7 @@ import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import type { NutritionOverview } from '@/lib/api/contracts/nutrition';
 import type { NutritionRangeInput } from '@/lib/nutrition/types';
 import { apiGet } from '~/lib/api-client';
-import { nutritionKeys } from '../keys';
+import { nutritionKeys } from '~/lib/nutrition/keys';
 
 /**
  * Loads the server-built nutrition overview from the REST surface. Mirrors the

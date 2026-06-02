@@ -15,7 +15,8 @@
     "close": "Close",
     "or": "or",
     "optional": "Optional",
-    "notFound": "Page not found"
+    "notFound": "Page not found",
+    "notSignedIn": "Not signed in."
   },
   "nav": {
     "logging": "Logging",
@@ -33,6 +34,9 @@
     },
     "nutrition": {
       "title": "Nutrition — Nhẩm"
+    },
+    "groups": {
+      "title": "Groups — Nhẩm"
     }
   },
   "shared": {
@@ -54,6 +58,7 @@
       "tracking": "Tracking",
       "nutrition": "Nutrition",
       "logging": "Logging",
+      "groups": "Groups",
       "admin": "Admin",
       "settings": "Settings",
       "expandSidebar": "Expand sidebar",
@@ -648,6 +653,7 @@
       "hasAccount": "Already have an account?",
       "signInLink": "Sign in",
       "success": "Check your email to confirm your account",
+      "successSignedIn": "Account created. Welcome!",
       "error": "Could not create account",
       "emailPlaceholder": "you@example.com",
       "passwordPlaceholder": "Create a password",
@@ -1008,6 +1014,81 @@
       "previousWeek": "Previous week",
       "nextWeek": "Next week",
       "openCalendar": "Open calendar"
+    }
+  },
+  "groups": {
+    "page": {
+      "title": "Your circle",
+      "subtitle": "What your friends are eating today.",
+      "addFriend": "Add friend"
+    },
+    "empty": {
+      "title": "Your circle is quiet",
+      "subtitle": "Share your invite link to connect. Your log stays private until you choose to share it.",
+      "cta": "Add a friend"
+    },
+    "wall": {
+      "sharedAt": "Shared at {time}",
+      "toggleDetails": "Toggle meal details",
+      "total": "Total",
+      "loading": "Loading your circle",
+      "na": "N/A"
+    },
+    "shareControl": {
+      "share": "Share to circle",
+      "shared": "Shared to circle",
+      "sharing": "Sharing…",
+      "errorShare": "Couldn't share to your circle. Try again.",
+      "errorUnshare": "Couldn't update sharing. Try again.",
+      "shareCard": "Share card",
+      "shareCardTitle": "My meal on Nhẩm",
+      "copiedLink": "Card link copied to clipboard",
+      "errorCopy": "Couldn't copy the card link. Try again."
+    },
+    "invite": {
+      "title": "Invite to your circle",
+      "description": "Share your link. Anyone who opens it can connect with you.",
+      "yourLink": "Your invite link",
+      "hint": "Anyone with this link can connect with you.",
+      "copy": "Copy",
+      "linkCopied": "Link copied",
+      "linkCopyError": "Couldn't copy the link",
+      "editTitle": "Edit your link",
+      "editHint": "3–20 characters: lowercase letters, numbers, underscore.",
+      "save": "Save",
+      "cancel": "Cancel",
+      "endSaved": "Link updated",
+      "endTaken": "That link is taken",
+      "endInvalid": "That link isn't valid",
+      "endReserved": "That link is reserved",
+      "endError": "Couldn't update the link"
+    },
+    "circle": {
+      "title": "Your circle ({count})",
+      "empty": "No one in your circle yet. Share your link to connect.",
+      "remove": "Remove",
+      "removeError": "Couldn't remove them. Try again."
+    },
+    "error": {
+      "title": "Couldn't load your circle",
+      "body": "Something went wrong. Check your connection and try again.",
+      "retry": "Try again"
+    },
+    "connect": {
+      "connectTitle": "Connect with {name}",
+      "connectBody": "Accept to add each other to your circles and see how you're each eating.",
+      "accept": "Accept",
+      "error": "Couldn't connect. Try again.",
+      "invalidTitle": "Invite not valid",
+      "invalidBody": "This invite link isn't valid or has changed.",
+      "selfTitle": "This is your invite link",
+      "selfBody": "Share it with a friend so they can connect with you.",
+      "alreadyTitle": "You're connected with {name}",
+      "alreadyBody": "You're already in each other's circles.",
+      "goToCircle": "Go to your circle",
+      "signedOutTitle": "{name} invited you to their circle",
+      "signedOutBody": "Sign in or create an account to connect.",
+      "signIn": "Sign in to connect"
     }
   },
   "settings": {

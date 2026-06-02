@@ -1,4 +1,4 @@
-import { supabase } from './supabase';
+import { supabase } from '~/lib/supabase';
 
 const BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL;
 
@@ -28,9 +28,24 @@ export class ApiError extends Error {
   }
 }
 
+/**
+ * Parse a `Retry-After` header, which may be either a number of seconds or an
+ * HTTP-date. `Number()` alone returns NaN for the date form, so try numeric
+ * seconds first, then fall back to a date delta, else `undefined`.
+ */
+function parseRetryAfter(header: string | null): number | undefined {
+  if (!header) return undefined;
+  const seconds = Number(header);
+  if (Number.isFinite(seconds)) return seconds;
+  const deltaMs = Date.parse(header) - Date.now();
+  const deltaSeconds = deltaMs / 1000;
+  return Number.isFinite(deltaSeconds) && deltaSeconds > 0
+    ? deltaSeconds
+    : undefined;
+}
+
 async function toApiError(res: Response): Promise<ApiError> {
-  const retryHeader = res.headers.get('Retry-After');
-  const retryAfterSeconds = retryHeader ? Number(retryHeader) : undefined;
+  const retryAfterSeconds = parseRetryAfter(res.headers.get('Retry-After'));
   try {
     const body = (await res.json()) as {
       error?: {

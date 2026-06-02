@@ -1,6 +1,6 @@
 import * as Localization from 'expo-localization';
-import en from './messages/en.json';
-import vi from './messages/vi.json';
+import en from '~/i18n/messages/en.json';
+import vi from '~/i18n/messages/vi.json';
 
 /**
  * Mobile i18n — the same `use-intl` core that powers the web's next-intl, fed

@@ -16,7 +16,7 @@ import { shouldShowExceed } from '~/lib/nutrition/logic/helpers';
 import { STATUS_COLORS, statusKeyFor } from '~/lib/nutrition/logic/status';
 import { Text } from '~/theme/text';
 import { colors, fonts, space } from '~/theme/tokens';
-import { NutrientDetail } from './nutrient-detail';
+import { NutrientDetail } from '~/components/nutrition/rows/nutrient-detail';
 
 interface NutrientRowProps {
   card: NutrientCardData;

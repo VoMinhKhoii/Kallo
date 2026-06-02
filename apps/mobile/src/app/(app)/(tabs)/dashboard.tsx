@@ -61,10 +61,14 @@ const COPY = {
  * today, via standard JS Date + Intl (both fine in app code).
  */
 function getWeekTitle(locale: string, label: string, today: string): string {
-  const now = new Date(today);
+  // Parse 'YYYY-MM-DD' into local-time components: `new Date(string)` treats it
+  // as UTC midnight, which the local-time getters below would then read as the
+  // previous day for negative-UTC-offset users (off-by-one week).
+  const [y, m, d] = today.split('-').map(Number);
+  const now = new Date(y, m - 1, d);
   const day = now.getDay(); // 0=Sun, 1=Mon...
   const diffToMon = day === 0 ? -6 : 1 - day;
-  const monday = new Date(today);
+  const monday = new Date(y, m - 1, d);
   monday.setDate(now.getDate() + diffToMon);
   const sunday = new Date(monday);
   sunday.setDate(monday.getDate() + 6);

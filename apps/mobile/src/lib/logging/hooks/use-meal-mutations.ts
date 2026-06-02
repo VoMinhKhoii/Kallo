@@ -2,7 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { LoggingDayData } from '@/lib/api/contracts/meals';
 import type { MealQuantityEdit } from '@/lib/types/meal';
 import { apiDelete, apiPost } from '~/lib/api-client';
-import { loggingDayKeys } from '../keys';
+import { loggingDayKeys } from '~/lib/logging/keys';
 
 interface ConfirmMealInput {
   analysisId: string;

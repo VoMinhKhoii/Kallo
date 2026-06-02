@@ -19,6 +19,7 @@ export default function SettingsScreen() {
   const userId = session?.user.id;
   const router = useRouter();
   const tPage = useTranslations('settings.profilePage');
+  const tCommon = useTranslations('common');
   const { data: profile, isLoading } = useProfile(!!userId);
 
   return (
@@ -29,7 +30,7 @@ export default function SettingsScreen() {
 
       {!userId ? (
         <View style={styles.center}>
-          <Text variant="small">Not signed in.</Text>
+          <Text variant="small">{tCommon('notSignedIn')}</Text>
         </View>
       ) : isLoading ? (
         <View style={styles.center}>

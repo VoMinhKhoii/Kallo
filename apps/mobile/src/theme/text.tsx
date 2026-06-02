@@ -1,5 +1,5 @@
 import { Text as RNText, type TextProps, StyleSheet } from 'react-native';
-import { colors, fonts, fontSize, leading, tracking } from './tokens';
+import { colors, fonts, fontSize, leading, tracking } from '~/theme/tokens';
 
 export type TextVariant =
   | 'display'

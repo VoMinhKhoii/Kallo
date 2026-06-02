@@ -3,7 +3,7 @@ import type { DashboardBundle } from '@/lib/api/contracts/dashboard';
 import { apiGet } from '~/lib/api-client';
 import { loggingDayKeys } from '~/lib/logging/keys';
 import { onboardingKeys } from '~/lib/onboarding/keys';
-import { dashboardKeys, weightSummaryKeys } from '../keys';
+import { dashboardKeys, weightSummaryKeys } from '~/lib/dashboard/keys';
 
 /**
  * Fetches the whole dashboard in ONE request (`GET /api/v1/dashboard`) instead

@@ -6,7 +6,7 @@ import { type AppLocale, useTranslations } from '~/i18n';
 import type { StepOneData } from '~/lib/onboarding/logic/step-one-defaults';
 import { Text } from '~/theme/text';
 import { colors, fonts, space } from '~/theme/tokens';
-import { LanguageToggle } from '../wizard/language-toggle';
+import { LanguageToggle } from '~/components/onboarding/wizard/language-toggle';
 
 interface ScreenOriginProps {
   defaultValues: StepOneData;

@@ -1,6 +1,6 @@
 import { Pressable, StyleSheet, View } from 'react-native';
 import { Text } from '~/theme/text';
-import { colors, radii, space } from '~/theme/tokens';
+import { colors, fonts, radii, space } from '~/theme/tokens';
 
 interface InlineErrorProps {
   isRetrying: boolean;
@@ -59,5 +59,5 @@ const styles = StyleSheet.create({
   },
   btnPressed: { backgroundColor: colors.hover },
   btnDisabled: { opacity: 0.5 },
-  btnLabel: { color: colors.text, fontWeight: '500' },
+  btnLabel: { color: colors.text, fontFamily: fonts.sansMedium },
 });

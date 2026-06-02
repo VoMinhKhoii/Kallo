@@ -74,7 +74,7 @@ export function EditorialHeader({
               <Pressable
                 key={range}
                 accessibilityRole="radio"
-                accessibilityState={{ selected: active, disabled: !!disabled }}
+                accessibilityState={{ checked: active, disabled: !!disabled }}
                 disabled={disabled}
                 onPress={() => onRangeChange(range)}
                 style={({ pressed }) => [

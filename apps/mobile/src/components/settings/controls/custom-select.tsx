@@ -11,6 +11,10 @@ import Animated, {
 import { Text } from '~/theme/text';
 import { colors, fonts, radii, shadow, space } from '~/theme/tokens';
 
+// Animated Pressable so the sheet itself swallows taps (a no-op onPress keeps a
+// tap on the sheet's padding from bubbling to the backdrop and closing it).
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+
 interface CustomSelectOption {
   value: string;
   label: string;
@@ -83,9 +87,10 @@ export function CustomSelect({ options, value, onChange }: CustomSelectProps) {
         onRequestClose={() => setOpen(false)}
       >
         <Pressable style={styles.backdrop} onPress={() => setOpen(false)}>
-          <Animated.View
+          <AnimatedPressable
             entering={FadeIn.duration(150).reduceMotion(ReduceMotion.System)}
             style={[styles.sheet, sheetStyle]}
+            onPress={() => {}}
           >
             {options.map((opt) => {
               const isSelected = value === opt.value;
@@ -115,7 +120,7 @@ export function CustomSelect({ options, value, onChange }: CustomSelectProps) {
                 </Pressable>
               );
             })}
-          </Animated.View>
+          </AnimatedPressable>
         </Pressable>
       </Modal>
     </>

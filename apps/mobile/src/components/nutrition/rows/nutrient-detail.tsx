@@ -6,7 +6,7 @@ import { formatLocalizedNumber, shouldShowExceed } from '~/lib/nutrition/logic/h
 import { showChips } from '~/lib/nutrition/logic/status';
 import { Text } from '~/theme/text';
 import { colors, fonts, space } from '~/theme/tokens';
-import { FoodChipRow } from './food-chip-row';
+import { FoodChipRow } from '~/components/nutrition/rows/food-chip-row';
 
 interface NutrientDetailProps {
   card: NutrientCardData;

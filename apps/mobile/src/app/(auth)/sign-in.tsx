@@ -53,14 +53,14 @@ export default function SignIn() {
         options: { redirectTo, skipBrowserRedirect: true },
       });
       if (oauthError) throw oauthError;
-      if (!data?.url) throw new Error('Could not start Google sign-in.');
+      if (!data?.url) throw new Error(tDialog('googleError'));
 
       const result = await WebBrowser.openAuthSessionAsync(data.url, redirectTo);
       if (result.type !== 'success') return; // user cancelled
 
       const { queryParams } = Linking.parse(result.url);
       const code = queryParams?.code;
-      if (typeof code !== 'string') throw new Error('No authorization code returned.');
+      if (typeof code !== 'string') throw new Error(tDialog('googleError'));
 
       const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
       if (exchangeError) throw exchangeError;

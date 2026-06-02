@@ -29,12 +29,12 @@ import { useStreamAnalysis } from '~/lib/logging/hooks/use-stream-analysis';
 import { useTranslations } from '~/i18n';
 import { Text } from '~/theme/text';
 import { colors, radii, space } from '~/theme/tokens';
-import { CalorieRing } from '../calorie-ring';
-import { EmptyState } from './empty-state';
-import { MealEntry } from './meal-entry';
-import { MealInput, type MealInputHandle } from '../input/meal-input';
-import { PersistedMealCard } from './persisted-meal-card';
-import { StreamingEntry } from './streaming-entry';
+import { CalorieRing } from '~/components/logging/calorie-ring';
+import { EmptyState } from '~/components/logging/feed/empty-state';
+import { MealEntry } from '~/components/logging/feed/meal-entry';
+import { MealInput, type MealInputHandle } from '~/components/logging/input/meal-input';
+import { PersistedMealCard } from '~/components/logging/feed/persisted-meal-card';
+import { StreamingEntry } from '~/components/logging/feed/streaming-entry';
 
 export interface LoggingProfile {
   userId: string;

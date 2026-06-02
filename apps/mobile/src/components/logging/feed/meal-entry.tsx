@@ -109,7 +109,9 @@ export function MealEntry({
           {items.map((item) => {
             const isGrams = item.unit === 'g' || item.unit === 'ml';
             const step = isGrams ? 10 : 1;
-            const minusDisabled = item.quantity <= MIN_DISH_GRAMS;
+            const minusDisabled = isGrams
+              ? item.quantity <= MIN_DISH_GRAMS
+              : item.quantity <= 0;
             return (
               // layout animates the padding/bg shift when edit mode toggles.
               <Animated.View

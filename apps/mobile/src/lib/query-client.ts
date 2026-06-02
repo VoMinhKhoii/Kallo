@@ -1,5 +1,5 @@
 import { QueryClient } from '@tanstack/react-query';
-import { ApiError } from './api-client';
+import { ApiError } from '~/lib/api-client';
 
 // Mirrors the web client's global staleTime so both clients cache identically.
 export const queryClient = new QueryClient({

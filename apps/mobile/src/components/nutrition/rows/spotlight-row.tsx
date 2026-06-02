@@ -6,7 +6,7 @@ import { useLocale, useTranslations } from '~/i18n';
 import { formatLocalizedNumber, shouldShowExceed } from '~/lib/nutrition/logic/helpers';
 import { Text } from '~/theme/text';
 import { colors, fonts, space } from '~/theme/tokens';
-import { FoodChipRow } from './food-chip-row';
+import { FoodChipRow } from '~/components/nutrition/rows/food-chip-row';
 
 interface SpotlightRowProps {
   card: NutrientCardData;

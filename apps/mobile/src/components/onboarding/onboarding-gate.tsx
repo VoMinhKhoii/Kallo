@@ -5,7 +5,7 @@ import {
 } from '~/lib/onboarding/logic/progress';
 import { useProfile } from '~/lib/onboarding/hooks/use-profile';
 import { useSession } from '~/lib/session';
-import { WizardModal } from './wizard/wizard-modal';
+import { WizardModal } from '~/components/onboarding/wizard/wizard-modal';
 
 /**
  * Mounts the onboarding wizard as an overlay over the authenticated app
@@ -18,7 +18,7 @@ import { WizardModal } from './wizard/wizard-modal';
 export function OnboardingGate() {
   const { session } = useSession();
   const userId = session?.user.id;
-  const { data: profile, isLoading, isError, isSuccess } = useProfile(!!userId);
+  const { data: profile, isSuccess } = useProfile(!!userId);
   const [open, setOpen] = useState(false);
   const [autoOpened, setAutoOpened] = useState(false);
 
@@ -30,8 +30,6 @@ export function OnboardingGate() {
   // query retry / the user retry by reopening the app.
   const incomplete =
     isSuccess &&
-    !isError &&
-    !isLoading &&
     !!userId &&
     shouldShowOnboardingResume(profile ?? null, onboardingStep);
 

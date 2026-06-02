@@ -80,7 +80,8 @@ export function CountrySelect({ value, onChange }: CountrySelectProps) {
         onRequestClose={close}
       >
         <Pressable style={styles.backdrop} onPress={close}>
-          <View style={styles.sheet}>
+          {/* No-op Pressable swallows taps on the sheet so only the backdrop closes. */}
+          <Pressable style={styles.sheet} onPress={() => {}}>
             <View style={styles.searchWrap}>
               <TextInput
                 value={search}
@@ -126,7 +127,7 @@ export function CountrySelect({ value, onChange }: CountrySelectProps) {
                 );
               }}
             />
-          </View>
+          </Pressable>
         </Pressable>
       </Modal>
     </>

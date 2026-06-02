@@ -4,7 +4,7 @@ import { useMemo } from 'react';
 import { IntlProvider } from 'use-intl';
 import { useProfile } from '~/lib/onboarding/hooks/use-profile';
 import { useSession } from '~/lib/session';
-import { type AppLocale, MESSAGES, resolveDeviceLocale } from './index';
+import { type AppLocale, MESSAGES, resolveDeviceLocale } from '~/i18n/index';
 
 /**
  * Active app locale = profile.preferredLocale → device locale → 'en'.
@@ -23,7 +23,7 @@ export function LocaleProvider({ children }: { children: ReactNode }) {
   const userId = session?.user.id;
   const { data: profile } = useProfile(!!userId);
 
-  const deviceLocale = useMemo(resolveDeviceLocale, []);
+  const deviceLocale = useMemo(() => resolveDeviceLocale(), []);
   const timeZone = useMemo(
     () => Localization.getCalendars()[0]?.timeZone ?? undefined,
     []

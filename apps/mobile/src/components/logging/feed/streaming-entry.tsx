@@ -125,7 +125,7 @@ export function StreamingEntry({
           {pendingNames.map((name, index) => (
             // Pending skeleton rows stagger in too (web skeleton index*0.08s).
             <Reanimated.View
-              key={name}
+              key={`${name}-${index}`}
               style={styles.row}
               entering={FadeInLeft.duration(250)
                 .delay(index * 80)

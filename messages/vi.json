@@ -15,7 +15,8 @@
     "close": "Đóng",
     "or": "hoặc",
     "optional": "Tùy chọn",
-    "notFound": "Không tìm thấy trang"
+    "notFound": "Không tìm thấy trang",
+    "notSignedIn": "Chưa đăng nhập."
   },
   "nav": {
     "logging": "Ghi nhận",

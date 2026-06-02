@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { WeightSummaryData } from '@/lib/api/contracts/weight';
 import type { WeightRange } from '@/lib/types/weight';
 import { apiDelete, apiGet, apiPost } from '~/lib/api-client';
-import { weightSummaryKeys } from '../keys';
+import { weightSummaryKeys } from '~/lib/dashboard/keys';
 
 /**
  * Loads the weight-summary payload (chart series + plan baseline) from the REST

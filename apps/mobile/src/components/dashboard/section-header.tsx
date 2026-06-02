@@ -136,6 +136,6 @@ const s = StyleSheet.create({
   stateButtonLabel: {
     fontFamily: fonts.sansSemiBold,
     fontSize: fontSize.xs,
-    color: '#ffffff',
+    color: colors.elev,
   },
 });

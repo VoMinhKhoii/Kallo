@@ -45,7 +45,7 @@ export default function LoggingScreen() {
     return (
       <Screen>
         <View style={styles.center}>
-          <Text variant="small">Not signed in.</Text>
+          <Text variant="small">{tc('notSignedIn')}</Text>
         </View>
       </Screen>
     );

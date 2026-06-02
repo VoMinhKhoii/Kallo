@@ -3,8 +3,8 @@ import { StyleSheet, View } from 'react-native';
 import { useTranslations } from '~/i18n';
 import { Text } from '~/theme/text';
 import { colors, fonts, radii, space } from '~/theme/tokens';
-import { OptionStrip } from '../controls/option-strip';
-import type { ProfileFormValues } from '../profile';
+import { OptionStrip } from '~/components/settings/controls/option-strip';
+import type { ProfileFormValues } from '~/components/settings/profile';
 
 type CookingFieldName =
   | 'oilUsage'
