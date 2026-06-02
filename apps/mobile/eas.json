@@ -22,7 +22,10 @@
         "simulator": false
       },
       "env": {
-        "EXPO_PUBLIC_API_BASE_URL": "FILL_ME_PRODUCTION_CLOUD_RUN_URL"
+        "EXPO_PUBLIC_API_BASE_URL": "https://nham-internal-714321235532.asia-southeast3.run.app",
+        "EXPO_PUBLIC_SUPABASE_URL": "https://oudpzhfzirgjbhrzcett.supabase.co",
+        "EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY": "sb_publishable_TIrP9KQanbXTxsxJcERbLA_cI6PSNeV",
+        "SENTRY_DISABLE_AUTO_UPLOAD": "true"
       }
     },
     "production": {
@@ -30,17 +33,16 @@
       "channel": "production",
       "autoIncrement": true,
       "env": {
-        "EXPO_PUBLIC_API_BASE_URL": "FILL_ME_PRODUCTION_CLOUD_RUN_URL"
+        "EXPO_PUBLIC_API_BASE_URL": "https://nham-internal-714321235532.asia-southeast3.run.app",
+        "EXPO_PUBLIC_SUPABASE_URL": "https://oudpzhfzirgjbhrzcett.supabase.co",
+        "EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY": "sb_publishable_TIrP9KQanbXTxsxJcERbLA_cI6PSNeV",
+        "SENTRY_DISABLE_AUTO_UPLOAD": "true"
       }
     }
   },
   "submit": {
     "production": {
-      "ios": {
-        "appleId": "FILL_ME_APPLE_ID_EMAIL",
-        "ascAppId": "FILL_ME_APP_STORE_CONNECT_APP_ID",
-        "appleTeamId": "FILL_ME_APPLE_TEAM_ID"
-      },
+      "ios": {},
       "android": {
         "serviceAccountKeyPath": "./credentials/play-service-account.json",
         "track": "internal",

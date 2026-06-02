@@ -9,7 +9,10 @@
     "userInterfaceStyle": "light",
     "ios": {
       "icon": "./assets/expo.icon",
-      "bundleIdentifier": "com.khoivo.nham"
+      "bundleIdentifier": "com.khoivo.nham",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "package": "com.khoivo.nham",
@@ -50,6 +53,19 @@
     "experiments": {
       "typedRoutes": false,
       "reactCompiler": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "3c60fbb1-50d9-4096-b3a0-29d0304c4925"
+      }
+    },
+    "owner": "vmkhoiii",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/3c60fbb1-50d9-4096-b3a0-29d0304c4925"
     }
   }
 }
