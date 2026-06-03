@@ -188,12 +188,17 @@ describe('useConfirmMeal optimistic update', () => {
     expect(dayData(queryClient)?.persistedMeals).toHaveLength(0);
   });
 
-  it('invalidates the day, daily-meals, and meal-dates on settle', async () => {
+  it('cancels then refetches the day + daily-meals and invalidates meal-dates on settle', async () => {
+    // The day queries must be cancelled (to drop any in-flight pre-commit fetch)
+    // then refetched as the last writer — a plain invalidate would dedupe into
+    // that empty fetch. meal-dates has no such race and stays a plain invalidate.
     const queryClient = new QueryClient();
     queryClient.setQueryData<LoggingDayData>(DAY_KEY, {
       persistedMeals: [],
       pendingConfirmations: [],
     });
+    const cancelSpy = vi.spyOn(queryClient, 'cancelQueries');
+    const refetchSpy = vi.spyOn(queryClient, 'refetchQueries');
     const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
     mockConfirm.mockResolvedValue({ mealId: 'meal-1' });
 
@@ -208,10 +213,53 @@ describe('useConfirmMeal optimistic update', () => {
     });
 
     await waitFor(() => {
-      const keys = invalidateSpy.mock.calls.map((call) => call[0]?.queryKey);
-      expect(keys).toContainEqual(dailyMealsKeys.byDate(DATE));
-      expect(keys).toContainEqual(loggingDayKeys.byUserDate(USER_ID, DATE));
-      expect(keys).toContainEqual(['meal-dates']);
+      const cancelKeys = cancelSpy.mock.calls.map((call) => call[0]?.queryKey);
+      const refetchKeys = refetchSpy.mock.calls.map((call) => call[0]?.queryKey);
+      const invalidateKeys = invalidateSpy.mock.calls.map(
+        (call) => call[0]?.queryKey
+      );
+      expect(cancelKeys).toContainEqual(dailyMealsKeys.byDate(DATE));
+      expect(cancelKeys).toContainEqual(loggingDayKeys.byUserDate(USER_ID, DATE));
+      expect(refetchKeys).toContainEqual(dailyMealsKeys.byDate(DATE));
+      expect(refetchKeys).toContainEqual(
+        loggingDayKeys.byUserDate(USER_ID, DATE)
+      );
+      expect(invalidateKeys).toContainEqual(['meal-dates']);
     });
+  });
+
+  it('re-asserts the confirmed meal if a stale empty read clobbers the cache mid-save', async () => {
+    // Regression (first meal of the day): a window-focus/stale day fetch that
+    // captured the pre-save empty snapshot can resolve during the save and reset
+    // the cache, leaving the calorie ring at zero until a manual refresh. The
+    // onSuccess re-assert must reinstate the confirmed meal after such a clobber.
+    const queryClient = new QueryClient();
+    queryClient.setQueryData<LoggingDayData>(DAY_KEY, {
+      persistedMeals: [],
+      pendingConfirmations: [],
+    });
+    // The server call resolves, but a stale read overwrites the optimistic
+    // insert with the empty pre-save snapshot just before success.
+    mockConfirm.mockImplementation(async () => {
+      queryClient.setQueryData<LoggingDayData>(DAY_KEY, {
+        persistedMeals: [],
+        pendingConfirmations: [],
+      });
+      return { mealId: 'meal-1' };
+    });
+
+    const { result } = renderConfirm(queryClient);
+    await result.current.mutateAsync({
+      analysisId: 'analysis-1',
+      mealId: 'meal-1',
+      originDate: DATE,
+      parsedMeal: makeParsedMeal(),
+      rawInput: 'Phở bò',
+      loggedAt: '2026-05-29T01:00:00.000Z',
+    });
+
+    const meals = dayData(queryClient)?.persistedMeals ?? [];
+    expect(meals).toHaveLength(1);
+    expect(meals[0]?.id).toBe('meal-1');
   });
 });

@@ -113,6 +113,34 @@ function buildOptimisticMeal(
   };
 }
 
+// Merge the confirmed meal into a cached logging-day, idempotently: append it
+// unless its stable id is already present, and drop the matching pending
+// confirmation. Shared by onMutate (optimistic insert) and onSuccess (re-assert
+// after the server commit) so a stale pre-commit read that slips in between them
+// can't leave the day — and the calorie ring — empty.
+function mergeConfirmedMealIntoDay(
+  old: LoggingDayData | undefined,
+  meal: PersistedMeal,
+  analysisId: string
+): LoggingDayData {
+  if (!old) {
+    // Entry exists but its initial load is still in flight (data undefined).
+    // Seed it so the ring reflects this meal immediately. Note: setQueriesData
+    // only runs this updater for already-cached query entries; it cannot create
+    // one where the query is unmounted.
+    return { persistedMeals: [meal], pendingConfirmations: [] };
+  }
+  const alreadyPersisted = old.persistedMeals.some((m) => m.id === meal.id);
+  return {
+    persistedMeals: alreadyPersisted
+      ? old.persistedMeals
+      : [...old.persistedMeals, meal],
+    pendingConfirmations: old.pendingConfirmations.filter(
+      (p) => p.id !== analysisId
+    ),
+  };
+}
+
 // Client-supplied data needed to build the optimistic meal without reading the
 // pending confirmation back out of the cache. Stripped before the server call.
 type ConfirmMealVariables = Parameters<typeof confirmAndSaveMealAction>[0] & {
@@ -147,31 +175,26 @@ export function useConfirmMeal(userId: string) {
         mealId,
         variables.edits
       );
-      queryClient.setQueriesData<LoggingDayData>(filter, (old) => {
-        if (!old) {
-          // Entry exists but its initial load is still in flight (data
-          // undefined). Seed it so the ring reflects this meal immediately.
-          // Note: setQueriesData only runs this updater for already-cached
-          // query entries; it cannot create one where the query is unmounted.
-          // The real fix for the stale ring is sourcing the meal from the
-          // passed parsedMeal (above), not this branch.
-          return { persistedMeals: [optimisticMeal], pendingConfirmations: [] };
-        }
-        // Guard against a double-insert if the settle refetch already raced in
-        // this meal by its stable id.
-        const alreadyPersisted = old.persistedMeals.some(
-          (m) => m.id === mealId
-        );
-        return {
-          persistedMeals: alreadyPersisted
-            ? old.persistedMeals
-            : [...old.persistedMeals, optimisticMeal],
-          pendingConfirmations: old.pendingConfirmations.filter(
-            (p) => p.id !== variables.analysisId
-          ),
-        };
-      });
-      return { snapshots };
+      queryClient.setQueriesData<LoggingDayData>(filter, (old) =>
+        mergeConfirmedMealIntoDay(old, optimisticMeal, variables.analysisId)
+      );
+      return { snapshots, optimisticMeal };
+    },
+    onSuccess: (_data, variables, context) => {
+      // Re-assert the confirmed meal after the server commit. If a stale
+      // pre-commit read landed between the optimistic insert and the settle
+      // refetch, this idempotently puts the meal back so the ring never drops to
+      // zero. onSettled then reconciles with authoritative server state.
+      if (!context?.optimisticMeal) return;
+      queryClient.setQueriesData<LoggingDayData>(
+        { queryKey: loggingDayKeys.byUserDate(userId, variables.originDate) },
+        (old) =>
+          mergeConfirmedMealIntoDay(
+            old,
+            context.optimisticMeal,
+            variables.analysisId
+          )
+      );
     },
     onError: (error, _vars, context) => {
       if (context?.snapshots) {
@@ -183,13 +206,27 @@ export function useConfirmMeal(userId: string) {
         error instanceof Error ? error.message : 'Không thể lưu bữa ăn.'
       );
     },
-    onSettled: (_data, _err, variables) => {
-      queryClient.invalidateQueries({
-        queryKey: dailyMealsKeys.byDate(variables.originDate),
-      });
-      queryClient.invalidateQueries({
-        queryKey: loggingDayKeys.byUserDate(userId, variables.originDate),
-      });
+    onSettled: async (_data, _err, variables) => {
+      const loggingDayKey = loggingDayKeys.byUserDate(
+        userId,
+        variables.originDate
+      );
+      const dailyMealsKey = dailyMealsKeys.byDate(variables.originDate);
+      // The save just committed in a non-abortable transaction, so any day fetch
+      // that is still in flight read the PRE-save (empty/pending) snapshot. A
+      // plain invalidate would dedupe into that fetch and resolve to the empty
+      // state, clobbering the saved meal and leaving the calorie ring at zero
+      // until a manual refresh. Cancel those in-flight fetches first (their late
+      // results are discarded), then refetch authoritative post-commit state as
+      // the last writer.
+      await Promise.all([
+        queryClient.cancelQueries({ queryKey: loggingDayKey }),
+        queryClient.cancelQueries({ queryKey: dailyMealsKey }),
+      ]);
+      await Promise.all([
+        queryClient.refetchQueries({ queryKey: loggingDayKey, type: 'active' }),
+        queryClient.refetchQueries({ queryKey: dailyMealsKey, type: 'active' }),
+      ]);
       queryClient.invalidateQueries({ queryKey: ['meal-dates'] });
     },
   });
