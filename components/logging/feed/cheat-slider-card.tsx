@@ -144,15 +144,6 @@ export function CheatSliderCard({
           </Badge>
         </div>
 
-        {spec.rationale && (
-          <p
-            className="mb-4 text-nham-text-muted text-sm leading-relaxed"
-            style={{ fontFamily: 'DM Sans, sans-serif' }}
-          >
-            {spec.rationale}
-          </p>
-        )}
-
         {/* Live calorie + macro readout */}
         <div
           className="mb-4 flex flex-wrap items-baseline gap-x-4 gap-y-1"
@@ -172,7 +163,7 @@ export function CheatSliderCard({
         </div>
 
         {/* Sliders */}
-        <div className="flex flex-col gap-5">
+        <div className="flex flex-col gap-6">
           {spec.sliders.map((slider) => (
             <CheatSliderRow
               key={slider.key}
@@ -214,7 +205,7 @@ function CheatSliderRow({
   const stops = [...slider.anchors].sort((a, b) => a.level - b.level);
 
   // Even levels sit on a labeled stop; odd levels (1/3/5/7/9) are the "between
-  // two stops" positions, so we highlight the two bracketing rows instead.
+  // two stops" positions, so we highlight the two bracketing stops instead.
   const onStop = level % 2 === 0;
   const betweenLow = onStop ? -1 : level - 1;
   const betweenHigh = onStop ? -1 : level + 1;
@@ -226,71 +217,99 @@ function CheatSliderRow({
         high: stops.find((s) => s.level === betweenHigh)?.label ?? '',
       });
 
+  // Stops alternate above / below the track (three each) so six labels fit
+  // without crowding; each links to its position with a light connector line.
+  const renderStop = (
+    anchor: (typeof stops)[number],
+    side: 'top' | 'bottom'
+  ) => {
+    const isExact = onStop && anchor.level === level;
+    const isBetween =
+      anchor.level === betweenLow || anchor.level === betweenHigh;
+    const isActive = isExact || isBetween;
+    const isLeftEdge = anchor.level === 0;
+    const isRightEdge = anchor.level === 10;
+
+    return (
+      <button
+        key={anchor.level}
+        type="button"
+        aria-pressed={isExact}
+        onClick={() => onChange(anchor.level)}
+        className={cn(
+          'absolute max-w-[5.5rem] cursor-pointer text-[11px] leading-tight transition-colors',
+          side === 'top' ? 'bottom-0 pb-3.5' : 'top-0 pt-3.5',
+          isLeftEdge ? 'text-left' : isRightEdge ? 'text-right' : 'text-center',
+          isExact
+            ? 'font-semibold text-nham-text'
+            : isBetween
+              ? 'text-nham-text'
+              : 'text-nham-text-muted/80 hover:text-nham-text'
+        )}
+        style={{
+          left: `${anchor.level * 10}%`,
+          transform: isLeftEdge
+            ? 'translateX(0)'
+            : isRightEdge
+              ? 'translateX(-100%)'
+              : 'translateX(-50%)',
+        }}
+      >
+        {anchor.label}
+        {/* Light connector from the term to its stop on the track. */}
+        <span
+          aria-hidden
+          className={cn(
+            'absolute h-3.5 w-px',
+            side === 'top' ? 'bottom-0' : 'top-0',
+            isLeftEdge
+              ? 'left-0'
+              : isRightEdge
+                ? 'right-0'
+                : 'left-1/2 -translate-x-1/2'
+          )}
+          style={{
+            backgroundColor: isActive ? color : 'var(--color-nham-border)',
+          }}
+        />
+      </button>
+    );
+  };
+
   return (
-    <div>
-      <div className="mb-1.5 flex items-center gap-1.5">
+    <div style={{ fontFamily: 'DM Sans, sans-serif' }}>
+      <div className="mb-1 flex items-center gap-1.5">
         <span
           aria-hidden
           className="inline-block h-2 w-2 rounded-full"
           style={{ backgroundColor: color }}
         />
-        <span
-          className="font-medium text-nham-text text-sm"
-          style={{ fontFamily: 'DM Sans, sans-serif' }}
-        >
+        <span className="font-medium text-nham-text text-sm">
           {slider.label}
         </span>
       </div>
-      <Slider
-        min={0}
-        max={10}
-        step={1}
-        value={[level]}
-        onValueChange={(values) => onChange(values[0] ?? 0)}
-        aria-label={slider.label}
-        aria-valuetext={valueText}
-      />
-      {/* All six scenarios, always visible — tap one to jump there. */}
-      <div
-        className="mt-2 flex flex-col gap-0.5"
-        style={{ fontFamily: 'DM Sans, sans-serif' }}
-      >
-        {stops.map((anchor) => {
-          const isExact = onStop && anchor.level === level;
-          const isBetween =
-            anchor.level === betweenLow || anchor.level === betweenHigh;
-          return (
-            <button
-              key={anchor.level}
-              type="button"
-              aria-pressed={isExact}
-              onClick={() => onChange(anchor.level)}
-              className={cn(
-                'flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-[13px] transition-colors',
-                isExact
-                  ? 'bg-nham-hover/60 font-medium text-nham-text'
-                  : isBetween
-                    ? 'bg-nham-hover/30 text-nham-text'
-                    : 'text-nham-text-muted hover:bg-nham-hover/40'
-              )}
-              style={
-                isExact ? { boxShadow: `inset 3px 0 0 ${color}` } : undefined
-              }
-            >
-              <span
-                aria-hidden
-                className={cn(
-                  'h-1.5 w-1.5 shrink-0 rounded-full',
-                  !(isExact || isBetween) && 'border border-nham-border'
-                )}
-                style={
-                  isExact || isBetween ? { backgroundColor: color } : undefined
-                }
-              />
-              <span>{anchor.label}</span>
-            </button>
-          );
-        })}
+      <div className="relative">
+        {/* Three scenarios above the track */}
+        <div className="relative h-14">
+          {stops.map((anchor, i) =>
+            i % 2 === 0 ? renderStop(anchor, 'top') : null
+          )}
+        </div>
+        <Slider
+          min={0}
+          max={10}
+          step={1}
+          value={[level]}
+          onValueChange={(values) => onChange(values[0] ?? 0)}
+          aria-label={slider.label}
+          aria-valuetext={valueText}
+        />
+        {/* Three scenarios below the track */}
+        <div className="relative h-14">
+          {stops.map((anchor, i) =>
+            i % 2 === 1 ? renderStop(anchor, 'bottom') : null
+          )}
+        </div>
       </div>
     </div>
   );
