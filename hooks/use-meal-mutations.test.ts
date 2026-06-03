@@ -188,17 +188,18 @@ describe('useConfirmMeal optimistic update', () => {
     expect(dayData(queryClient)?.persistedMeals).toHaveLength(0);
   });
 
-  it('cancels then refetches the day + daily-meals and invalidates meal-dates on settle', async () => {
-    // The day queries must be cancelled (to drop any in-flight pre-commit fetch)
-    // then refetched as the last writer — a plain invalidate would dedupe into
-    // that empty fetch. meal-dates has no such race and stays a plain invalidate.
+  it('cancels then invalidates the day + daily-meals + meal-dates on settle', async () => {
+    // The day queries must be cancelled first (to drop any in-flight pre-commit
+    // fetch) THEN invalidated, so the refetch is fresh post-commit state rather
+    // than a dedupe into the empty fetch. Invalidate (not refetch-active-only)
+    // so the usually-unmounted dashboard daily-meals query is marked stale and
+    // refreshes when next shown.
     const queryClient = new QueryClient();
     queryClient.setQueryData<LoggingDayData>(DAY_KEY, {
       persistedMeals: [],
       pendingConfirmations: [],
     });
     const cancelSpy = vi.spyOn(queryClient, 'cancelQueries');
-    const refetchSpy = vi.spyOn(queryClient, 'refetchQueries');
     const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
     mockConfirm.mockResolvedValue({ mealId: 'meal-1' });
 
@@ -214,14 +215,13 @@ describe('useConfirmMeal optimistic update', () => {
 
     await waitFor(() => {
       const cancelKeys = cancelSpy.mock.calls.map((call) => call[0]?.queryKey);
-      const refetchKeys = refetchSpy.mock.calls.map((call) => call[0]?.queryKey);
       const invalidateKeys = invalidateSpy.mock.calls.map(
         (call) => call[0]?.queryKey
       );
       expect(cancelKeys).toContainEqual(dailyMealsKeys.byDate(DATE));
       expect(cancelKeys).toContainEqual(loggingDayKeys.byUserDate(USER_ID, DATE));
-      expect(refetchKeys).toContainEqual(dailyMealsKeys.byDate(DATE));
-      expect(refetchKeys).toContainEqual(
+      expect(invalidateKeys).toContainEqual(dailyMealsKeys.byDate(DATE));
+      expect(invalidateKeys).toContainEqual(
         loggingDayKeys.byUserDate(USER_ID, DATE)
       );
       expect(invalidateKeys).toContainEqual(['meal-dates']);

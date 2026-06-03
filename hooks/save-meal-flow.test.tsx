@@ -1,0 +1,344 @@
+// @vitest-environment jsdom
+//
+// Integration ("e2e-style") coverage for the save-meal feature. The confirm flow
+// has many moving parts — an optimistic insert, a non-abortable server commit,
+// and two independent calorie rings reading two different queries (the logging
+// page's `useLoggingDay` and the dashboard's `useDailyMeals`). Regressions here
+// are easy to introduce and invisible to the per-hook unit tests, so this drives
+// the real hooks + a real QueryClient against a mutable in-memory "server" and
+// asserts the rendered ring totals on BOTH surfaces, including reconciliation of
+// the optimistic estimate to the saved value and the reload-pending path.
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import type { ReactNode } from 'react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { useDailyMeals } from '@/hooks/use-daily-meals';
+import { useLoggingDay } from '@/hooks/use-logging-day';
+import { useConfirmMeal } from '@/hooks/use-meal-mutations';
+import { NUTRITION_KEYS } from '@/lib/ai/constants';
+import type {
+  LoggingDayData,
+  PendingMealConfirmation,
+  PersistedMeal,
+} from '@/lib/actions/meals';
+import type { ParsedMeal } from '@/lib/types/meal';
+
+// ---------------------------------------------------------------------------
+// In-memory server. confirmAndSaveMealAction moves a pending row into a saved
+// meal whose nutrition is intentionally DIFFERENT from the optimistic estimate
+// (mirrors server-side goal adjustment), so reconciliation is observable.
+// ---------------------------------------------------------------------------
+
+const SERVER_CALORIES = 480; // saved/goal-adjusted value the rings must settle on
+const OPTIMISTIC_CALORIES = 500; // raw estimate from the streamed parsedMeal
+
+const server = {
+  meals: [] as PersistedMeal[],
+  pending: [] as PendingMealConfirmation[],
+  confirmCalls: 0,
+  reset() {
+    this.meals = [];
+    this.pending = [];
+    this.confirmCalls = 0;
+  },
+};
+
+function nutritionWith(calories: number) {
+  const base = Object.fromEntries(NUTRITION_KEYS.map((k) => [k, null]));
+  return {
+    ...base,
+    caloriesKcal: calories,
+    proteinG: 20,
+    carbohydrateG: 40,
+    fatG: 10,
+  } as PersistedMeal['nutrition'];
+}
+
+const { mockLoadLoggingDay, mockLoadMealsByDate, mockConfirm } = vi.hoisted(
+  () => ({
+    mockLoadLoggingDay: vi.fn(),
+    mockLoadMealsByDate: vi.fn(),
+    mockConfirm: vi.fn(),
+  })
+);
+
+vi.mock('@/lib/actions/meals', () => ({
+  loadLoggingDay: mockLoadLoggingDay,
+  loadMealsByDate: mockLoadMealsByDate,
+  confirmAndSaveMealAction: mockConfirm,
+  deleteMealAction: vi.fn(),
+}));
+
+vi.mock('sonner', () => ({
+  toast: { error: vi.fn(), success: vi.fn() },
+}));
+
+const USER_ID = 'user-1';
+const DATE = '2026-05-04';
+
+function parsedMeal(): ParsedMeal {
+  return {
+    mealName: 'Phở bò',
+    items: [
+      {
+        id: 'item-1',
+        name: 'Phở bò',
+        quantity: 300,
+        unit: 'g',
+        macros: {
+          calories: OPTIMISTIC_CALORIES,
+          protein: 30,
+          carbs: 50,
+          fat: 12,
+        },
+      },
+    ],
+    totalMacros: {
+      calories: OPTIMISTIC_CALORIES,
+      protein: 30,
+      carbs: 50,
+      fat: 12,
+    },
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Test surfaces — minimal stand-ins for the two calorie rings + the confirm
+// button. Each ring reads the same query its real ring reads and renders the
+// summed calories; the button fires the real confirm mutation.
+// ---------------------------------------------------------------------------
+
+function caloriesOf(meals: PersistedMeal[]): number {
+  return meals.reduce((sum, m) => sum + (m.nutrition.caloriesKcal ?? 0), 0);
+}
+
+function LoggingRing() {
+  const { data } = useLoggingDay(USER_ID, DATE);
+  return (
+    <div data-testid="logging-ring">{caloriesOf(data?.persistedMeals ?? [])}</div>
+  );
+}
+
+function DashboardRing() {
+  const { data } = useDailyMeals(DATE);
+  return <div data-testid="dashboard-ring">{caloriesOf(data ?? [])}</div>;
+}
+
+function ConfirmButton({ analysisId }: { analysisId: string }) {
+  const confirm = useConfirmMeal(USER_ID);
+  return (
+    <button
+      type="button"
+      onClick={() =>
+        confirm.mutate({
+          analysisId,
+          mealId: 'meal-1',
+          originDate: DATE,
+          parsedMeal: parsedMeal(),
+          rawInput: 'Phở bò',
+          loggedAt: '2026-05-04T05:30:00.000Z',
+        })
+      }
+    >
+      confirm
+    </button>
+  );
+}
+
+function Surfaces({
+  analysisId = 'analysis-1',
+  showLogging = true,
+  showDashboard = true,
+}: {
+  analysisId?: string;
+  showLogging?: boolean;
+  showDashboard?: boolean;
+}) {
+  return (
+    <>
+      {showLogging && <LoggingRing />}
+      {showDashboard && <DashboardRing />}
+      <ConfirmButton analysisId={analysisId} />
+    </>
+  );
+}
+
+function makeClient() {
+  return new QueryClient({
+    defaultOptions: {
+      queries: { retry: false, gcTime: Number.POSITIVE_INFINITY },
+      mutations: { retry: false },
+    },
+  });
+}
+
+function renderWith(client: QueryClient, ui: ReactNode) {
+  return render(<QueryClientProvider client={client}>{ui}</QueryClientProvider>);
+}
+
+async function clickConfirm() {
+  await act(async () => {
+    fireEvent.click(screen.getByRole('button', { name: 'confirm' }));
+  });
+}
+
+beforeEach(() => {
+  server.reset();
+  vi.clearAllMocks();
+
+  mockLoadLoggingDay.mockImplementation(
+    async (): Promise<LoggingDayData> => ({
+      persistedMeals: server.meals,
+      pendingConfirmations: server.pending,
+    })
+  );
+  mockLoadMealsByDate.mockImplementation(
+    async (): Promise<PersistedMeal[]> => server.meals
+  );
+  // Commit: drop the pending row, append the saved meal with server nutrition.
+  mockConfirm.mockImplementation(async ({ mealId }: { mealId: string }) => {
+    server.confirmCalls += 1;
+    server.pending = [];
+    server.meals = [
+      {
+        id: mealId,
+        rawInput: 'Phở bò',
+        mealSlot: null,
+        confidenceOverall: null,
+        loggedAt: '2026-05-04T05:30:00.000Z',
+        nutrition: nutritionWith(SERVER_CALORIES),
+        mealItemGroups: [],
+        share: null,
+      },
+    ];
+    return { mealId };
+  });
+});
+
+describe('save-meal flow (integration)', () => {
+  it('first streamed meal: both rings reconcile to the saved server value', async () => {
+    const client = makeClient();
+    renderWith(client, <Surfaces />);
+
+    // Both rings start empty.
+    await waitFor(() => {
+      expect(screen.getByTestId('logging-ring')).toHaveTextContent('0');
+      expect(screen.getByTestId('dashboard-ring')).toHaveTextContent('0');
+    });
+
+    await clickConfirm();
+
+    // After the confirm settles, BOTH rings reflect the SAVED value (480) — not
+    // the optimistic estimate (500) and not the empty pre-save snapshot (0).
+    await waitFor(() => {
+      expect(screen.getByTestId('logging-ring')).toHaveTextContent(
+        String(SERVER_CALORIES)
+      );
+      expect(screen.getByTestId('dashboard-ring')).toHaveTextContent(
+        String(SERVER_CALORIES)
+      );
+    });
+    expect(server.confirmCalls).toBe(1);
+  });
+
+  it('keeps the saved meal even if a stale empty day refetch races the confirm', async () => {
+    const client = makeClient();
+    renderWith(client, <Surfaces showDashboard={false} />);
+
+    await waitFor(() =>
+      expect(screen.getByTestId('logging-ring')).toHaveTextContent('0')
+    );
+
+    // Kick a manual refetch that resolves against the PRE-save snapshot, then
+    // confirm. The settle cancel + re-fetch must make the saved meal the last
+    // writer rather than letting the in-flight empty read clobber it.
+    await act(async () => {
+      void client.refetchQueries({ queryKey: ['logging-day'] });
+      fireEvent.click(screen.getByRole('button', { name: 'confirm' }));
+    });
+
+    await waitFor(() =>
+      expect(screen.getByTestId('logging-ring')).toHaveTextContent(
+        String(SERVER_CALORIES)
+      )
+    );
+  });
+
+  it('refreshes the dashboard ring even when it was unmounted during the save', async () => {
+    // Regression: the realistic flow is dashboard (cached empty) → logging → log
+    // a meal → back to dashboard. Confirming while the dashboard is unmounted
+    // must still mark its cached daily-meals query stale, so re-opening it shows
+    // the meal instead of lingering on the empty (full) pre-save snapshot within
+    // staleTime. Refetching only ACTIVE queries on settle would miss it.
+    const client = makeClient();
+    const { rerender } = renderWith(client, <Surfaces />);
+
+    // 1. Dashboard mounts and caches the empty day.
+    await waitFor(() =>
+      expect(screen.getByTestId('dashboard-ring')).toHaveTextContent('0')
+    );
+
+    // 2. Leave the dashboard (query stays cached, not yet stale: DATE is a past
+    //    day → 5min staleTime, and gcTime is Infinity here).
+    rerender(
+      <QueryClientProvider client={client}>
+        <Surfaces showDashboard={false} />
+      </QueryClientProvider>
+    );
+    expect(screen.queryByTestId('dashboard-ring')).toBeNull();
+
+    // 3. Save the first meal from the logging page.
+    await clickConfirm();
+    await waitFor(() =>
+      expect(screen.getByTestId('logging-ring')).toHaveTextContent(
+        String(SERVER_CALORIES)
+      )
+    );
+
+    // 4. Re-open the dashboard — it must refetch (because it was invalidated) and
+    //    show the saved meal, not the stale cached 0.
+    rerender(
+      <QueryClientProvider client={client}>
+        <Surfaces />
+      </QueryClientProvider>
+    );
+    await waitFor(() =>
+      expect(screen.getByTestId('dashboard-ring')).toHaveTextContent(
+        String(SERVER_CALORIES)
+      )
+    );
+  });
+
+  it('reload-pending: confirming a server-loaded pending meal fills both rings', async () => {
+    // Simulate a reload where the unsaved meal is a server pending row (it never
+    // entered the local message list). Confirming it must save AND sync the rings.
+    server.pending = [
+      {
+        id: 'analysis-1',
+        rawInput: 'Phở bò',
+        loggedAt: '2026-05-04T05:30:00.000Z',
+        parsedMeal: parsedMeal(),
+      },
+    ];
+
+    const client = makeClient();
+    renderWith(client, <Surfaces />);
+
+    // Pending isn't counted, so the rings start at 0 with a pending row present.
+    await waitFor(() =>
+      expect(screen.getByTestId('logging-ring')).toHaveTextContent('0')
+    );
+
+    await clickConfirm();
+
+    await waitFor(() => {
+      expect(screen.getByTestId('logging-ring')).toHaveTextContent(
+        String(SERVER_CALORIES)
+      );
+      expect(screen.getByTestId('dashboard-ring')).toHaveTextContent(
+        String(SERVER_CALORIES)
+      );
+    });
+    expect(server.confirmCalls).toBe(1);
+  });
+});

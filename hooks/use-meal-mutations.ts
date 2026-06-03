@@ -213,21 +213,26 @@ export function useConfirmMeal(userId: string) {
       );
       const dailyMealsKey = dailyMealsKeys.byDate(variables.originDate);
       // The save just committed in a non-abortable transaction, so any day fetch
-      // that is still in flight read the PRE-save (empty/pending) snapshot. A
-      // plain invalidate would dedupe into that fetch and resolve to the empty
-      // state, clobbering the saved meal and leaving the calorie ring at zero
-      // until a manual refresh. Cancel those in-flight fetches first (their late
-      // results are discarded), then refetch authoritative post-commit state as
-      // the last writer.
+      // that is still in flight read the PRE-save (empty/pending) snapshot.
+      // Cancel those first (their late results are discarded) so the follow-up
+      // invalidate starts a FRESH post-commit refetch instead of deduping into
+      // the empty in-flight one — otherwise the saved meal is clobbered and the
+      // calorie ring stays at zero until a manual refresh.
       await Promise.all([
         queryClient.cancelQueries({ queryKey: loggingDayKey }),
         queryClient.cancelQueries({ queryKey: dailyMealsKey }),
       ]);
+      // Invalidate (not just refetch active): the dashboard's daily-meals query
+      // is usually unmounted while logging, so it must be marked stale to refetch
+      // when next shown — refetching only active queries would leave its ring on
+      // the empty pre-save snapshot. After the cancel above, the active surfaces
+      // (logging day) refetch authoritative server state as the last writer,
+      // reconciling the optimistic estimate to the saved values.
       await Promise.all([
-        queryClient.refetchQueries({ queryKey: loggingDayKey, type: 'active' }),
-        queryClient.refetchQueries({ queryKey: dailyMealsKey, type: 'active' }),
+        queryClient.invalidateQueries({ queryKey: loggingDayKey }),
+        queryClient.invalidateQueries({ queryKey: dailyMealsKey }),
+        queryClient.invalidateQueries({ queryKey: ['meal-dates'] }),
       ]);
-      queryClient.invalidateQueries({ queryKey: ['meal-dates'] });
     },
   });
 }
