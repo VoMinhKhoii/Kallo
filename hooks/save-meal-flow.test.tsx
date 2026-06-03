@@ -195,23 +195,24 @@ beforeEach(() => {
   mockLoadMealsByDate.mockImplementation(
     async (): Promise<PersistedMeal[]> => server.meals
   );
-  // Commit: drop the pending row, append the saved meal with server nutrition.
+  // Commit: drop the pending row, append the saved meal with server nutrition,
+  // and return that authoritative meal in the confirm response (mirrors the real
+  // action, which the client now reconciles against without a day refetch).
   mockConfirm.mockImplementation(async ({ mealId }: { mealId: string }) => {
     server.confirmCalls += 1;
     server.pending = [];
-    server.meals = [
-      {
-        id: mealId,
-        rawInput: 'Phở bò',
-        mealSlot: null,
-        confidenceOverall: null,
-        loggedAt: '2026-05-04T05:30:00.000Z',
-        nutrition: nutritionWith(SERVER_CALORIES),
-        mealItemGroups: [],
-        share: null,
-      },
-    ];
-    return { mealId };
+    const meal: PersistedMeal = {
+      id: mealId,
+      rawInput: 'Phở bò',
+      mealSlot: null,
+      confidenceOverall: null,
+      loggedAt: '2026-05-04T05:30:00.000Z',
+      nutrition: nutritionWith(SERVER_CALORIES),
+      mealItemGroups: [],
+      share: null,
+    };
+    server.meals = [meal];
+    return { mealId, meal };
   });
 });
 

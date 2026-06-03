@@ -283,8 +283,15 @@ export async function confirmAndSaveMealAction(input: {
       }))
     );
 
+    // Capture the inserted ids (RETURNING preserves the multi-row VALUES order)
+    // so the saved meal returned below can carry real ingredient row ids without
+    // a follow-up read.
+    let insertedItemIds: { id: string }[] = [];
     if (itemRows.length > 0) {
-      await tx.insert(mealItems).values(itemRows);
+      insertedItemIds = await tx
+        .insert(mealItems)
+        .values(itemRows)
+        .returning({ id: mealItems.id });
     }
 
     // Await all unmatched ingredient updates within the transaction
@@ -306,7 +313,52 @@ export async function confirmAndSaveMealAction(input: {
       );
     }
 
-    return { mealId: meal.id };
+    // Rebuild the saved meal in the exact shape loadMealsByDate returns, from
+    // data already computed in this transaction. The client reconciles its
+    // optimistic card straight to these authoritative values from the confirm
+    // response — no follow-up day refetch (and its round-trip) required.
+    let idCursor = 0;
+    const mealItemGroups: PersistedMealItemGroup[] = persistedMealItems.map(
+      (mealItem, order) => {
+        const ingredients: PersistedIngredient[] = mealItem.ingredients.map(
+          (ing) => ({
+            id: insertedItemIds[idCursor++]?.id ?? '',
+            ingredientName: ing.ingredientName,
+            foodCompositionId: ing.foodCompositionId,
+            estimatedGrams: ing.estimatedGrams,
+            userFacingUnit: ing.userFacingUnit,
+            cookingMethod: ing.cookingMethod,
+            matchConfidence: ing.matchConfidence,
+            nutrition: ing.displayedNutrition,
+          })
+        );
+        return {
+          name: mealItem.name,
+          order,
+          // Match loadMealsByDate exactly: group nutrition is the SUM of the
+          // displayed ingredient nutrition, not goalAdjust(sum), so the value is
+          // identical to what a refetch of this day would produce.
+          nutrition: sumDisplayedNutrition(ingredients.map((i) => i.nutrition)),
+          ingredients,
+        };
+      }
+    );
+
+    const savedMeal: PersistedMeal = {
+      id: meal.id,
+      rawInput: pending.rawInput,
+      mealSlot,
+      confidenceOverall: pipelineResult.confidenceOverall,
+      loggedAt: loggedAt.toISOString(),
+      nutrition: mealDisplayed,
+      mealItemGroups,
+      // A freshly-saved meal is never shared yet.
+      share: null,
+    };
+
+    // `mealId` kept for backward compatibility (e.g. the mobile confirm route);
+    // `meal` is the authoritative payload the web client reconciles against.
+    return { mealId: meal.id, meal: savedMeal };
   });
 }
 

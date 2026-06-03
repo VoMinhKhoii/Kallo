@@ -222,7 +222,11 @@ describe('confirmAndSaveMealAction', () => {
       analysisId: UUID_1,
     });
 
-    expect(result).toEqual({ mealId: UUID_MEAL });
+    // Returns the saved meal alongside the id so the client can reconcile its
+    // optimistic card without a follow-up day refetch.
+    expect(result).toMatchObject({ mealId: UUID_MEAL });
+    expect(result.meal.id).toBe(UUID_MEAL);
+    expect(result.meal.nutrition).toBeDefined();
     // INSERT called twice: meals + mealItems
     expect(mockTxInsert).toHaveBeenCalledTimes(2);
   });
