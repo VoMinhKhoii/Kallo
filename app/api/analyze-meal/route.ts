@@ -138,6 +138,7 @@ async function validateRequest(request: NextRequest) {
         mode: parsed.data.mode ?? 'precise',
         cheatType: parsed.data.cheatType,
         clarifyAnswer: parsed.data.clarifyAnswer,
+        cheatIntensity: parsed.data.cheatIntensity,
         profile,
         geminiConfig,
       },
@@ -159,6 +160,7 @@ export async function POST(request: NextRequest) {
     mode,
     cheatType,
     clarifyAnswer,
+    cheatIntensity,
     profile,
     geminiConfig,
   } = validation.data;
@@ -252,7 +254,13 @@ export async function POST(request: NextRequest) {
         // untouched.
         if (mode === 'cheat') {
           const spec = await estimateCheatMeal(
-            { description: message, cheatType, clarifyAnswer, userContext },
+            {
+              description: message,
+              cheatType,
+              clarifyAnswer,
+              cheatIntensity,
+              userContext,
+            },
             gemini,
             emit
           );

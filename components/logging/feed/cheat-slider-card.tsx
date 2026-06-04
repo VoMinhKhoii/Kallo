@@ -218,7 +218,7 @@ function CheatSliderRow({
       });
 
   // Stops alternate above / below the track (three each) so six labels fit
-  // without crowding; each links to its position with a light connector line.
+  // without crowding, each positioned at its point on the 0–10 scale.
   const renderStop = (
     anchor: (typeof stops)[number],
     side: 'top' | 'bottom'
@@ -226,7 +226,6 @@ function CheatSliderRow({
     const isExact = onStop && anchor.level === level;
     const isBetween =
       anchor.level === betweenLow || anchor.level === betweenHigh;
-    const isActive = isExact || isBetween;
     const isLeftEdge = anchor.level === 0;
     const isRightEdge = anchor.level === 10;
 
@@ -256,22 +255,6 @@ function CheatSliderRow({
         }}
       >
         {anchor.label}
-        {/* Light connector from the term to its stop on the track. */}
-        <span
-          aria-hidden
-          className={cn(
-            'absolute h-3.5 w-px',
-            side === 'top' ? 'bottom-0' : 'top-0',
-            isLeftEdge
-              ? 'left-0'
-              : isRightEdge
-                ? 'right-0'
-                : 'left-1/2 -translate-x-1/2'
-          )}
-          style={{
-            backgroundColor: isActive ? color : 'var(--color-nham-border)',
-          }}
-        />
       </button>
     );
   };

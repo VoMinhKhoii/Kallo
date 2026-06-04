@@ -11,6 +11,9 @@ import type { MealConfidence, MealSlot } from '@/lib/ai/types';
  */
 export type CheatSliderKey = 'protein' | 'carbs' | 'fat' | 'drinks';
 
+/** User-chosen indulgence magnitude for a cheat occasion (scales anchor grams). */
+export type CheatIntensity = 'light' | 'medium' | 'heavy';
+
 /**
  * A sparse keypoint on a slider. The AI authors a handful of these (it MUST
  * include level 0 and level 10); grams at intermediate levels are interpolated.
@@ -46,8 +49,6 @@ export interface CheatClarifyingQuestion {
 /** Full estimator output, staged in pending_analyses and meals.cheat_sliders. */
 export interface CheatSliderSpec {
   sliders: CheatSlider[];
-  /** ≤280-char "we get the occasion" line. */
-  rationale: string;
   mealSlot: MealSlot | null;
   confidence: MealConfidence;
   /** Present only when the model could not set sensible anchors. */

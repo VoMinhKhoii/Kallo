@@ -549,12 +549,6 @@ export const cheatEstimateSchema = z.object({
     .describe(
       'The macro sliders (protein, carbs, fat) plus an optional drinks slider when plausible. Empty/loose only when clarifyingQuestion is set.'
     ),
-  rationale: z
-    .string()
-    .max(280)
-    .describe(
-      'A warm, ≤280-char line showing the app understood the occasion. No clinical tone, no judgement.'
-    ),
   mealSlot: z
     .enum(['breakfast', 'brunch', 'lunch', 'dinner', 'snack'])
     .nullable()

@@ -200,7 +200,6 @@ export async function confirmAndSaveMealAction(input: {
           fatG: resolved.fatG,
           alcoholG: resolved.alcoholG,
           cheatSliders: persisted,
-          estimateRationale: spec.rationale,
         })
         .returning({ id: meals.id });
 
@@ -390,8 +389,6 @@ export interface PersistedMeal {
   alcoholG: number | null;
   /** Cheat-only: slider spec + chosen levels, for re-edit/repeat. */
   cheatSliders: CheatSlidersPersisted | null;
-  /** Cheat-only: the "we get the occasion" rationale line. */
-  estimateRationale: string | null;
   /** Circle-share state, or null if the meal was never shared. `shareId` is the
    *  meal_shares row id used to key the shareable Macro Card. Lets the card seed
    *  the share toggle from real server state instead of always "not shared". */
@@ -544,7 +541,6 @@ async function loadMealsByDateForUser(
       entryMode: meal.entryMode === 'cheat' ? 'cheat' : 'precise',
       alcoholG: meal.alcoholG ?? null,
       cheatSliders: (meal.cheatSliders as CheatSlidersPersisted | null) ?? null,
-      estimateRationale: meal.estimateRationale ?? null,
       share: share ? { shareId: share.id, visibility: share.visibility } : null,
     };
   });

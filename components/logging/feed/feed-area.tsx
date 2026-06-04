@@ -34,7 +34,7 @@ import {
 } from '@/lib/actions/meals';
 import { sumDisplayedNutrition } from '@/lib/ai/pipeline/goal-adjustment';
 import { isLikelyPartialDay } from '@/lib/nutrition/pattern/completeness';
-import type { CheatSliderLevels } from '@/lib/types/cheat';
+import type { CheatIntensity, CheatSliderLevels } from '@/lib/types/cheat';
 import type {
   ChatMessage,
   MacroBreakdown,
@@ -205,6 +205,9 @@ export function FeedArea({
   const lastPrefilledMealRef = useRef<string | null>(null);
   // Cheat-meal mode: a buffet/indulgent occasion logged via sliders.
   const [isCheat, setIsCheat] = useState(false);
+  // Indulgence magnitude (like an AI "thinking" level) — scales the estimate.
+  const [cheatIntensity, setCheatIntensity] =
+    useState<CheatIntensity>('medium');
   // "Log it again" — re-staging a past cheat occasion (a quick DB insert, no AI).
   const [isStagingRepeat, setIsStagingRepeat] = useState(false);
   const recentCheatOccasions = useRecentCheatOccasions(profile.userId, isCheat);
@@ -309,6 +312,7 @@ export function FeedArea({
     lastAnalysisIdRef,
     lastErrorRef,
     isCheat,
+    cheatIntensity,
   });
 
   const handleAnalysisComplete = useCallback(() => {
@@ -442,6 +446,7 @@ export function FeedArea({
       loggedDate: selectedDate,
       timezoneOffset: new Date().getTimezoneOffset(),
       mode: 'cheat',
+      cheatIntensity,
       clarifyAnswer: answer,
     });
   };
@@ -759,6 +764,8 @@ export function FeedArea({
             disabled={stream.isAnalyzing}
             isCheat={isCheat}
             onToggleCheat={setIsCheat}
+            cheatIntensity={cheatIntensity}
+            onChangeIntensity={setCheatIntensity}
           />
         </div>
       </div>

@@ -53,6 +53,8 @@ export const mealMessageSchema = z.object({
   mode: z.enum(['precise', 'cheat']).optional(),
   cheatType: z.string().trim().max(60).optional(),
   clarifyAnswer: z.string().trim().max(200).optional(),
+  // Indulgence magnitude for cheat mode — scales the slider anchor gram ranges.
+  cheatIntensity: z.enum(['light', 'medium', 'heavy']).optional(),
 });
 
 /** Shared schema for a single weight log entry. */

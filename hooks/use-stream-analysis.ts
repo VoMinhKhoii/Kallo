@@ -25,6 +25,8 @@ export interface StreamAnalyzeInput {
   /** 'cheat' runs the slider estimator instead of the decomposition pipeline. */
   mode?: 'precise' | 'cheat';
   cheatType?: string;
+  /** Indulgence magnitude for cheat mode — scales the slider anchor grams. */
+  cheatIntensity?: 'light' | 'medium' | 'heavy';
   /** Reply to a prior vague-input clarifying question. */
   clarifyAnswer?: string;
 }

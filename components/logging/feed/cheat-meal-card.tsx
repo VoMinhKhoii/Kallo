@@ -153,15 +153,6 @@ export function CheatMealCard({ meal }: CheatMealCardProps) {
               style={{ overflow: 'hidden' }}
             >
               <div className="mt-5 border-nham-border border-t border-dashed pt-4">
-                {meal.estimateRationale && (
-                  <p
-                    className="mb-4 text-nham-text-muted text-sm leading-relaxed"
-                    style={{ fontFamily: 'DM Sans, sans-serif' }}
-                  >
-                    {meal.estimateRationale}
-                  </p>
-                )}
-
                 {/* "You set" slider summary */}
                 {persisted && (
                   <div className="mb-4 space-y-2">

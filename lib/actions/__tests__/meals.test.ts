@@ -262,7 +262,6 @@ describe('confirmAndSaveMealAction', () => {
   it('resolves cheat-meal nutrition from slider levels and inserts zero items', async () => {
     const capturedValues: Record<string, unknown>[] = [];
     const cheatSpec = {
-      rationale: 'Korean BBQ — meat-forward, fairly rich.',
       mealSlot: 'dinner' as const,
       confidence: 'medium' as const,
       sliders: [
@@ -335,7 +334,6 @@ describe('confirmAndSaveMealAction', () => {
     expect(mealRow.alcoholG).toBe(40);
     // 4*120 + 9*40 + 7*40 = 480 + 360 + 280 = 1120
     expect(mealRow.caloriesKcal).toBe(1120);
-    expect(mealRow.estimateRationale).toBe(cheatSpec.rationale);
     expect(mealRow.mealSlot).toBe('dinner');
   });
 
@@ -653,7 +651,6 @@ describe('loadPendingAnalysesByDate', () => {
           ],
         },
       ],
-      rationale: 'Tiệc nướng cuối tuần',
       mealSlot: 'dinner',
       confidence: 'medium',
     };

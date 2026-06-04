@@ -1,3 +1,4 @@
+import type { CheatIntensity } from '@/lib/types/cheat';
 import { buildPromptContextLine } from './sanitize';
 import type { PromptPersonalizationContext } from './types';
 
@@ -23,6 +24,8 @@ export interface CheatEstimatePromptInput {
   cheatType?: string | null;
   /** A prior clarifying-question answer, when re-calling after a vague input. */
   clarifyAnswer?: string | null;
+  /** User-chosen indulgence magnitude — scales the anchor gram ranges. */
+  cheatIntensity?: CheatIntensity;
   userContext: PromptPersonalizationContext;
 }
 
@@ -45,6 +48,7 @@ export function buildCheatEstimatePrompt(
   const { cookingHabits } = userContext;
   const countryLines = buildCountryContextLines(userContext);
   const outputLanguage = userContext.outputLanguage ?? 'match_user_input';
+  const intensity = input.cheatIntensity ?? 'medium';
 
   const occasionLines = [
     buildPromptContextLine('description', description),
@@ -55,7 +59,7 @@ export function buildCheatEstimatePrompt(
   return `You are a cuisine-aware "cheat meal" estimator. The user is logging an indulgent occasion — an all-you-can-eat buffet, Korean BBQ, a box of donuts — that is impossible to itemize precisely. Do NOT itemize. Instead, turn the occasion into a small set of labeled 0–10 sliders the user can place themselves on. Return JSON only.
 
 <language>
-  output_language=${outputLanguage}. Emit every slider label, every anchor label, the rationale, and any clarifyingQuestion in output_language.
+  output_language=${outputLanguage}. Emit every slider label, every anchor label, and any clarifyingQuestion in output_language.
   country_of_origin and country_of_residence calibrate portion sizes and which foods are plausible — NOT display language.
 </language>
 
@@ -82,9 +86,13 @@ export function buildCheatEstimatePrompt(
   Sliders are independent dials, each emitting only its own nutrient. This is NOT double-counting: a fatty cut feeds proteinG via the protein slider AND fatG via the fat slider — the user sets "how much meat" and "how rich overall" separately.
 </orthogonality>
 
-<rationale>
-  rationale is one warm ≤280-char line that shows you understood the occasion. No judgement, no clinical tone, no calorie scolding.
-</rationale>
+<intensity>
+  intensity=${intensity}. This is how indulgent THIS occasion was, measured against OTHER indulgent outings — NOT against everyday eating. Crucially, even "light" is already clearly more than a normal, controlled meal: a cheat occasion means lots of variety / many dishes / sampling widely, just not gorging. Never collapse "light" back toward a normal portion.
+    - light  = a relaxed indulgence: many dishes, restrained portions of each (e.g. a multi-dish goat-meat lunch — more than a normal meal, but not a buffet devour).
+    - medium = a typical eat-out indulgence with generous portions.
+    - heavy  = all-out / all-you-can-eat, really going for it.
+  Calibrate the anchor GRAM RANGES to this intensity: raise the grams at the mid and upper stops and the level-10 peak as intensity climbs (light's upper stops still sit visibly above a normal meal; heavy's peak is the highest). intensity scales magnitude only — it never changes the occasion's identity, and level 0 still means "none of that axis".
+</intensity>
 
 <clarifying_question>
   Only when the description is too vague to author sensible anchors (e.g. just "dinner out"), set clarifyingQuestion with one short question and optional answer chips, and you may emit looser/fewer sliders. Otherwise omit clarifyingQuestion. Prefer answering with sensible defaults over asking.

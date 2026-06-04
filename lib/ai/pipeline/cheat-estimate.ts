@@ -9,7 +9,7 @@ import type { PromptPersonalizationContext } from '@/lib/ai/prompts/types';
 import type { StreamEvent } from '@/lib/ai/streaming/types';
 import type { UserContext } from '@/lib/ai/types';
 import { canonicalizeAnchors, clampLevel } from '@/lib/cheat/slider-nutrition';
-import type { CheatSliderSpec } from '@/lib/types/cheat';
+import type { CheatIntensity, CheatSliderSpec } from '@/lib/types/cheat';
 import { resolveModelProfile } from './model-profile';
 import { type CheatEstimate, cheatEstimateSchema } from './schemas';
 
@@ -20,6 +20,8 @@ export interface EstimateCheatMealInput {
   cheatType?: string | null;
   /** A prior clarifying-question answer, when re-calling after a vague input. */
   clarifyAnswer?: string | null;
+  /** User-chosen indulgence magnitude (light/medium/heavy); defaults to medium. */
+  cheatIntensity?: CheatIntensity;
   userContext: UserContext;
 }
 
@@ -65,7 +67,6 @@ function normalizeCheatEstimate(raw: CheatEstimate): CheatSliderSpec {
 
   return {
     sliders,
-    rationale: raw.rationale,
     mealSlot: raw.mealSlot,
     confidence: raw.confidence,
     ...(raw.clarifyingQuestion
@@ -101,6 +102,7 @@ export async function estimateCheatMeal(
     description,
     cheatType,
     clarifyAnswer,
+    cheatIntensity: input.cheatIntensity,
     userContext: toPersonalizationContext(input.userContext),
   };
 

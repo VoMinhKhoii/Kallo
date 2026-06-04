@@ -54,7 +54,6 @@ const meals: PersistedMeal[] = [
     entryMode: 'precise',
     alcoholG: null,
     cheatSliders: null,
-    estimateRationale: null,
     share: null,
   },
   {
@@ -97,7 +96,6 @@ const meals: PersistedMeal[] = [
     entryMode: 'precise',
     alcoholG: null,
     cheatSliders: null,
-    estimateRationale: null,
     share: null,
   },
 ];

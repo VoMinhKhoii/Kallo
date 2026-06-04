@@ -1,6 +1,6 @@
 'use client';
 
-import { ArrowUp, Cookie, Square } from 'lucide-react';
+import { ArrowUp, Square } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import {
   forwardRef,
@@ -10,6 +10,8 @@ import {
   useRef,
   useState,
 } from 'react';
+import { CheatModePicker } from '@/components/logging/input/cheat-mode-picker';
+import type { CheatIntensity } from '@/lib/types/cheat';
 
 const STORAGE_KEY = 'nham:meal-input-draft';
 const DEBOUNCE_MS = 500;
@@ -45,6 +47,9 @@ interface MealInputProps {
   /** Cheat-meal mode: a buffet/indulgent occasion logged via sliders. */
   isCheat?: boolean;
   onToggleCheat?: (next: boolean) => void;
+  /** Indulgence magnitude shown in the mode picker (cheat mode). */
+  cheatIntensity?: CheatIntensity;
+  onChangeIntensity?: (next: CheatIntensity) => void;
 }
 
 function readDraft(): string {
@@ -71,7 +76,15 @@ const hasMeaningfulText = (text: string) => text.trim().length > 0;
 
 export const MealInput = forwardRef<MealInputHandle, MealInputProps>(
   function MealInput(
-    { onSubmit, onCancel, disabled, isCheat, onToggleCheat },
+    {
+      onSubmit,
+      onCancel,
+      disabled,
+      isCheat,
+      onToggleCheat,
+      cheatIntensity,
+      onChangeIntensity,
+    },
     ref
   ) {
     const t = useTranslations('logging');
@@ -158,25 +171,7 @@ export const MealInput = forwardRef<MealInputHandle, MealInputProps>(
 
     return (
       <div className="flex flex-col gap-2 rounded-2xl border border-nham-border/40 bg-background p-3 shadow-[0_4px_20px_color-mix(in_srgb,var(--color-nham-accent)_6%,transparent)] transition-all duration-300 focus-within:border-nham-accent/40 focus-within:shadow-[0_4px_20px_color-mix(in_srgb,var(--color-nham-accent)_12%,transparent)]">
-        {onToggleCheat && (
-          <div className="flex items-center">
-            <button
-              type="button"
-              onClick={() => onToggleCheat(!isCheat)}
-              aria-pressed={isCheat}
-              className={`flex items-center gap-1.5 rounded-full px-2.5 py-1 font-medium text-xs transition-colors ${
-                isCheat
-                  ? 'bg-nham-accent/15 text-nham-text'
-                  : 'text-nham-text-muted/70 hover:bg-nham-hover/40 hover:text-nham-text'
-              }`}
-              style={{ fontFamily: 'DM Sans, sans-serif' }}
-            >
-              <Cookie className="h-3.5 w-3.5" />
-              {t('cheatToggle')}
-            </button>
-          </div>
-        )}
-        <div className="flex items-end gap-3">
+        <div className="flex items-end gap-2">
           <label htmlFor="meal-input" className="sr-only">
             {placeholder}
           </label>
@@ -191,6 +186,15 @@ export const MealInput = forwardRef<MealInputHandle, MealInputProps>(
             disabled={disabled}
             className="flex-1 resize-none bg-transparent py-1.5 font-[var(--font-dm-sans)] font-normal text-nham-text text-sm leading-5 placeholder:text-nham-text-muted/40 focus:outline-none disabled:opacity-50"
           />
+          {onToggleCheat && (
+            <CheatModePicker
+              isCheat={Boolean(isCheat)}
+              intensity={cheatIntensity ?? 'medium'}
+              disabled={disabled}
+              onChangeMode={onToggleCheat}
+              onChangeIntensity={(next) => onChangeIntensity?.(next)}
+            />
+          )}
           {showStopButton ? (
             <button
               type="button"

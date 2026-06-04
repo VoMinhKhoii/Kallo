@@ -90,7 +90,6 @@ const mealWithUnknownMacros: PersistedMeal = {
   entryMode: 'precise',
   alcoholG: null,
   cheatSliders: null,
-  estimateRationale: null,
   share: null,
 };
 

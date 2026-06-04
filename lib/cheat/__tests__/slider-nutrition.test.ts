@@ -11,7 +11,6 @@ import {
 
 function makeSpec(): CheatSliderSpec {
   return {
-    rationale: 'Korean BBQ buffet — meat-forward, some rice, fairly rich.',
     mealSlot: 'dinner',
     confidence: 'medium',
     sliders: [

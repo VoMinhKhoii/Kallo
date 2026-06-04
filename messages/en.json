@@ -995,7 +995,20 @@
       "toggleDetails": "Toggle meal details",
       "total": "Total"
     },
-    "cheatToggle": "Cheat meal",
+    "mode": {
+      "normal": "Normal",
+      "cheat": "Cheat meal"
+    },
+    "modePicker": {
+      "ariaLabel": "Logging mode"
+    },
+    "cheatIntensity": {
+      "label": "How much did you eat?",
+      "helper": "Scales the estimate",
+      "light": "Light",
+      "medium": "Medium",
+      "heavy": "Heavy"
+    },
     "cheatPlaceholder": "Korean BBQ buffet, went all out...",
     "cheatSliders": {
       "badge": "Cheat meal",
