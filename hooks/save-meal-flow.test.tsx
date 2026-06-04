@@ -36,10 +36,12 @@ const server = {
   meals: [] as PersistedMeal[],
   pending: [] as PendingMealConfirmation[],
   confirmCalls: 0,
+  lastEdits: undefined as unknown[] | undefined,
   reset() {
     this.meals = [];
     this.pending = [];
     this.confirmCalls = 0;
+    this.lastEdits = undefined;
   },
 };
 
@@ -124,7 +126,15 @@ function DashboardRing() {
   return <div data-testid="dashboard-ring">{caloriesOf(data ?? [])}</div>;
 }
 
-function ConfirmButton({ analysisId }: { analysisId: string }) {
+function ConfirmButton({
+  analysisId,
+  mealId = 'meal-1',
+  edits,
+}: {
+  analysisId: string;
+  mealId?: string;
+  edits?: { mealItemOrder: number; newGrams: number }[];
+}) {
   const confirm = useConfirmMeal(USER_ID);
   return (
     <button
@@ -132,11 +142,12 @@ function ConfirmButton({ analysisId }: { analysisId: string }) {
       onClick={() =>
         confirm.mutate({
           analysisId,
-          mealId: 'meal-1',
+          mealId,
           originDate: DATE,
           parsedMeal: parsedMeal(),
           rawInput: 'Phở bò',
           loggedAt: '2026-05-04T05:30:00.000Z',
+          edits,
         })
       }
     >
@@ -147,10 +158,14 @@ function ConfirmButton({ analysisId }: { analysisId: string }) {
 
 function Surfaces({
   analysisId = 'analysis-1',
+  mealId = 'meal-1',
+  edits,
   showLogging = true,
   showDashboard = true,
 }: {
   analysisId?: string;
+  mealId?: string;
+  edits?: { mealItemOrder: number; newGrams: number }[];
   showLogging?: boolean;
   showDashboard?: boolean;
 }) {
@@ -158,7 +173,7 @@ function Surfaces({
     <>
       {showLogging && <LoggingRing />}
       {showDashboard && <DashboardRing />}
-      <ConfirmButton analysisId={analysisId} />
+      <ConfirmButton analysisId={analysisId} mealId={mealId} edits={edits} />
     </>
   );
 }
@@ -195,25 +210,40 @@ beforeEach(() => {
   mockLoadMealsByDate.mockImplementation(
     async (): Promise<PersistedMeal[]> => server.meals
   );
-  // Commit: drop the pending row, append the saved meal with server nutrition,
-  // and return that authoritative meal in the confirm response (mirrors the real
-  // action, which the client now reconciles against without a day refetch).
-  mockConfirm.mockImplementation(async ({ mealId }: { mealId: string }) => {
-    server.confirmCalls += 1;
-    server.pending = [];
-    const meal: PersistedMeal = {
-      id: mealId,
-      rawInput: 'Phở bò',
-      mealSlot: null,
-      confidenceOverall: null,
-      loggedAt: '2026-05-04T05:30:00.000Z',
-      nutrition: nutritionWith(SERVER_CALORIES),
-      mealItemGroups: [],
-      share: null,
-    };
-    server.meals = [meal];
-    return { mealId, meal };
-  });
+  // Commit: drop the confirmed pending row, APPEND the saved meal (keeping any
+  // other meals/pendings), and return that authoritative meal in the response
+  // (mirrors the real action, which the client reconciles against without a day
+  // refetch). Edited dishes come back with adjusted (doubled) calories so the
+  // edit path is observable end-to-end.
+  mockConfirm.mockImplementation(
+    async ({
+      mealId,
+      analysisId,
+      edits,
+    }: {
+      mealId: string;
+      analysisId: string;
+      edits?: unknown[];
+    }) => {
+      server.confirmCalls += 1;
+      server.lastEdits = edits;
+      server.pending = server.pending.filter((p) => p.id !== analysisId);
+      const calories =
+        edits && edits.length > 0 ? SERVER_CALORIES * 2 : SERVER_CALORIES;
+      const meal: PersistedMeal = {
+        id: mealId,
+        rawInput: 'Phở bò',
+        mealSlot: null,
+        confidenceOverall: null,
+        loggedAt: '2026-05-04T05:30:00.000Z',
+        nutrition: nutritionWith(calories),
+        mealItemGroups: [],
+        share: null,
+      };
+      server.meals = [...server.meals, meal];
+      return { mealId, meal };
+    }
+  );
 });
 
 describe('save-meal flow (integration)', () => {
@@ -341,5 +371,129 @@ describe('save-meal flow (integration)', () => {
       );
     });
     expect(server.confirmCalls).toBe(1);
+  });
+
+  it('accumulates onto existing meals rather than replacing them', async () => {
+    // A day that already has one saved meal (300). Saving a second must SUM both
+    // on the ring (300 + 480 = 780), not overwrite — guards the merge appending.
+    server.meals = [
+      {
+        id: 'meal-0',
+        rawInput: 'Cơm tấm',
+        mealSlot: null,
+        confidenceOverall: null,
+        loggedAt: '2026-05-04T03:00:00.000Z',
+        nutrition: nutritionWith(300),
+        mealItemGroups: [],
+        share: null,
+      },
+    ];
+
+    const client = makeClient();
+    renderWith(client, <Surfaces mealId="meal-1" />);
+
+    await waitFor(() =>
+      expect(screen.getByTestId('logging-ring')).toHaveTextContent('300')
+    );
+
+    await clickConfirm();
+
+    await waitFor(() => {
+      expect(screen.getByTestId('logging-ring')).toHaveTextContent('780');
+      expect(screen.getByTestId('dashboard-ring')).toHaveTextContent('780');
+    });
+  });
+
+  it('passes quantity edits to the server and shows the adjusted value', async () => {
+    // A whole-dish edit must flow through to the server action, and the ring must
+    // settle on the server's edit-adjusted value (doubled here), not the estimate.
+    const client = makeClient();
+    renderWith(
+      client,
+      <Surfaces edits={[{ mealItemOrder: 0, newGrams: 600 }]} />
+    );
+
+    await waitFor(() =>
+      expect(screen.getByTestId('logging-ring')).toHaveTextContent('0')
+    );
+
+    await clickConfirm();
+
+    await waitFor(() =>
+      expect(screen.getByTestId('logging-ring')).toHaveTextContent(
+        String(SERVER_CALORIES * 2)
+      )
+    );
+    expect(server.lastEdits).toEqual([{ mealItemOrder: 0, newGrams: 600 }]);
+  });
+
+  it('rolls back the optimistic insert when the save fails', async () => {
+    // A day with one saved meal (300). A confirm that the server rejects must
+    // leave the ring at 300 — the optimistic insert is removed, no phantom meal.
+    server.meals = [
+      {
+        id: 'meal-0',
+        rawInput: 'Cơm tấm',
+        mealSlot: null,
+        confidenceOverall: null,
+        loggedAt: '2026-05-04T03:00:00.000Z',
+        nutrition: nutritionWith(300),
+        mealItemGroups: [],
+        share: null,
+      },
+    ];
+    mockConfirm.mockRejectedValueOnce(new Error('boom'));
+
+    const client = makeClient();
+    renderWith(client, <Surfaces mealId="meal-1" />);
+
+    await waitFor(() =>
+      expect(screen.getByTestId('logging-ring')).toHaveTextContent('300')
+    );
+
+    await clickConfirm();
+
+    // The optimistic 780 must not stick; the ring returns to the prior 300.
+    await waitFor(() =>
+      expect(screen.getByTestId('logging-ring')).toHaveTextContent('300')
+    );
+    expect(screen.getByTestId('dashboard-ring')).toHaveTextContent('300');
+  });
+
+  it('confirming one of several pending meals leaves the others pending', async () => {
+    // Two server pending rows; confirming one persists only it (counted on the
+    // ring) and leaves the other pending (uncounted) — no cross-contamination.
+    server.pending = [
+      {
+        id: 'analysis-1',
+        rawInput: 'Phở bò',
+        loggedAt: '2026-05-04T05:30:00.000Z',
+        parsedMeal: parsedMeal(),
+      },
+      {
+        id: 'analysis-2',
+        rawInput: 'Bún chả',
+        loggedAt: '2026-05-04T06:30:00.000Z',
+        parsedMeal: parsedMeal(),
+      },
+    ];
+
+    const client = makeClient();
+    renderWith(client, <Surfaces analysisId="analysis-1" mealId="meal-1" />);
+
+    await waitFor(() =>
+      expect(screen.getByTestId('logging-ring')).toHaveTextContent('0')
+    );
+
+    await clickConfirm();
+
+    await waitFor(() =>
+      expect(screen.getByTestId('logging-ring')).toHaveTextContent(
+        String(SERVER_CALORIES)
+      )
+    );
+    // Exactly one meal saved; the other pending row remains unconfirmed.
+    expect(server.meals).toHaveLength(1);
+    expect(server.pending.map((p) => p.id)).toEqual(['analysis-2']);
   });
 });
