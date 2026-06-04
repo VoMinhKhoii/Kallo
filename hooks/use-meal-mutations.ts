@@ -113,6 +113,16 @@ function buildOptimisticMeal(
   };
 }
 
+// Replace the list item whose id matches `meal.id`, or append it if absent.
+function upsertById(
+  list: PersistedMeal[],
+  meal: PersistedMeal
+): PersistedMeal[] {
+  return list.some((m) => m.id === meal.id)
+    ? list.map((m) => (m.id === meal.id ? meal : m))
+    : [...list, meal];
+}
+
 // Put the confirmed meal into a cached logging-day, idempotently: replace the
 // row sharing its stable id (the optimistic insert) with this one, or append it
 // if absent, and drop the matching pending confirmation. Shared by onMutate (the
@@ -131,11 +141,8 @@ function mergeConfirmedMealIntoDay(
     // one where the query is unmounted.
     return { persistedMeals: [meal], pendingConfirmations: [] };
   }
-  const exists = old.persistedMeals.some((m) => m.id === meal.id);
   return {
-    persistedMeals: exists
-      ? old.persistedMeals.map((m) => (m.id === meal.id ? meal : m))
-      : [...old.persistedMeals, meal],
+    persistedMeals: upsertById(old.persistedMeals, meal),
     pendingConfirmations: old.pendingConfirmations.filter(
       (p) => p.id !== analysisId
     ),
@@ -150,9 +157,7 @@ function upsertMealIntoList(
   meal: PersistedMeal
 ): PersistedMeal[] | undefined {
   if (!old) return old;
-  return old.some((m) => m.id === meal.id)
-    ? old.map((m) => (m.id === meal.id ? meal : m))
-    : [...old, meal];
+  return upsertById(old, meal);
 }
 
 // Client-supplied data needed to build the optimistic meal without reading the
