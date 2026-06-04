@@ -1,5 +1,6 @@
 'use server';
 
+import { randomUUID } from 'node:crypto';
 import { and, desc, eq, gte, inArray, isNull, lt, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import { NUTRITION_KEYS } from '@/lib/ai/constants';
@@ -267,13 +268,28 @@ export async function confirmAndSaveMealAction(input: {
       })
       .returning({ id: meals.id });
 
+    // Pre-generate a stable id for each ingredient row so the inserted rows and
+    // the saved-meal payload returned below share ids by construction — no
+    // dependence on RETURNING row order. (mealItems.id defaults to
+    // gen_random_uuid(); an explicit id simply overrides that default.)
+    const itemGroups = persistedMealItems.map((mealItem, order) => ({
+      name: mealItem.name,
+      order,
+      displayedNutrition: mealItem.displayedNutrition,
+      ingredients: mealItem.ingredients.map((ing) => ({
+        id: randomUUID(),
+        ing,
+      })),
+    }));
+
     // Insert meal items (ingredients grouped by parent dish)
-    const itemRows = persistedMealItems.flatMap((mealItem, order) =>
-      mealItem.ingredients.map((ing) => ({
+    const itemRows = itemGroups.flatMap((group) =>
+      group.ingredients.map(({ id, ing }) => ({
+        id,
         mealId: meal.id,
         ingredientName: ing.ingredientName,
-        mealItemName: mealItem.name,
-        mealItemOrder: order,
+        mealItemName: group.name,
+        mealItemOrder: group.order,
         foodCompositionId: ing.foodCompositionId,
         estimatedGrams: ing.estimatedGrams,
         userFacingUnit: ing.userFacingUnit,
@@ -283,15 +299,8 @@ export async function confirmAndSaveMealAction(input: {
       }))
     );
 
-    // Capture the inserted ids (RETURNING preserves the multi-row VALUES order)
-    // so the saved meal returned below can carry real ingredient row ids without
-    // a follow-up read.
-    let insertedItemIds: { id: string }[] = [];
     if (itemRows.length > 0) {
-      insertedItemIds = await tx
-        .insert(mealItems)
-        .values(itemRows)
-        .returning({ id: mealItems.id });
+      await tx.insert(mealItems).values(itemRows);
     }
 
     // Await all unmatched ingredient updates within the transaction
@@ -314,35 +323,33 @@ export async function confirmAndSaveMealAction(input: {
     }
 
     // Rebuild the saved meal in the exact shape loadMealsByDate returns, from
-    // data already computed in this transaction. The client reconciles its
-    // optimistic card straight to these authoritative values from the confirm
-    // response — no follow-up day refetch (and its round-trip) required.
-    let idCursor = 0;
-    const mealItemGroups: PersistedMealItemGroup[] = persistedMealItems.map(
-      (mealItem, order) => {
-        const ingredients: PersistedIngredient[] = mealItem.ingredients.map(
-          (ing) => ({
-            id: insertedItemIds[idCursor++]?.id ?? '',
-            ingredientName: ing.ingredientName,
-            foodCompositionId: ing.foodCompositionId,
-            estimatedGrams: ing.estimatedGrams,
-            userFacingUnit: ing.userFacingUnit,
-            cookingMethod: ing.cookingMethod,
-            matchConfidence: ing.matchConfidence,
-            nutrition: ing.displayedNutrition,
-          })
-        );
-        return {
-          name: mealItem.name,
-          order,
-          // Match loadMealsByDate exactly: group nutrition is the SUM of the
-          // displayed ingredient nutrition, not goalAdjust(sum), so the value is
-          // identical to what a refetch of this day would produce.
-          nutrition: sumDisplayedNutrition(ingredients.map((i) => i.nutrition)),
-          ingredients,
-        };
-      }
-    );
+    // data already computed in this transaction (reusing the same pre-generated
+    // ingredient ids). The client reconciles its optimistic card straight to
+    // these authoritative values from the confirm response — no follow-up day
+    // refetch (and its round-trip) required.
+    const mealItemGroups: PersistedMealItemGroup[] = itemGroups.map((group) => {
+      const ingredients: PersistedIngredient[] = group.ingredients.map(
+        ({ id, ing }) => ({
+          id,
+          ingredientName: ing.ingredientName,
+          foodCompositionId: ing.foodCompositionId,
+          estimatedGrams: ing.estimatedGrams,
+          userFacingUnit: ing.userFacingUnit,
+          cookingMethod: ing.cookingMethod,
+          matchConfidence: ing.matchConfidence,
+          nutrition: ing.displayedNutrition,
+        })
+      );
+      return {
+        name: group.name,
+        order: group.order,
+        // Match loadMealsByDate exactly: group nutrition is the SUM of the
+        // displayed ingredient nutrition, not goalAdjust(sum), so the value is
+        // identical to what a refetch of this day would produce.
+        nutrition: sumDisplayedNutrition(ingredients.map((i) => i.nutrition)),
+        ingredients,
+      };
+    });
 
     const savedMeal: PersistedMeal = {
       id: meal.id,
