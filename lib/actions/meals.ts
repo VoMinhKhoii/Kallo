@@ -3,6 +3,11 @@
 import { randomUUID } from 'node:crypto';
 import { and, desc, eq, gte, inArray, isNull, lt, sql } from 'drizzle-orm';
 import { z } from 'zod';
+import {
+  buildPersistedIngredient,
+  buildPersistedMeal,
+  buildPersistedMealItemGroup,
+} from '@/lib/actions/persisted-meal';
 import { NUTRITION_KEYS } from '@/lib/ai/constants';
 import { toParsedMeal } from '@/lib/ai/mappers';
 import {
@@ -111,46 +116,6 @@ function inferMealSlot(date: Date): string {
   if (hour < 14) return 'lunch';
   if (hour < 17) return 'snack';
   return 'dinner';
-}
-
-// ---------------------------------------------------------------------------
-// Shared client-facing meal shape builders
-// ---------------------------------------------------------------------------
-// Single source of truth for the PersistedMeal shape, used by BOTH the save
-// (confirmAndSaveMealAction) and load (loadMealsByDateForUser) paths so they can
-// never drift. Adding a field to any of the Persisted* interfaces forces every
-// call site that goes through these builders to supply it (a compile error),
-// and the group-nutrition rule lives in exactly one place. (Type hoisting lets
-// these reference the Persisted* interfaces declared further down the file.)
-
-/** Build a PersistedIngredient — the single construction point for its shape. */
-export function buildPersistedIngredient(
-  fields: PersistedIngredient
-): PersistedIngredient {
-  return fields;
-}
-
-/**
- * Build a PersistedMealItemGroup. Group nutrition is always the SUM of the
- * displayed ingredient nutrition (never goalAdjust(sum)); this is the parity-
- * critical rule both paths must share.
- */
-export function buildPersistedMealItemGroup(
-  name: string,
-  order: number,
-  ingredients: PersistedIngredient[]
-): PersistedMealItemGroup {
-  return {
-    name,
-    order,
-    ingredients,
-    nutrition: sumDisplayedNutrition(ingredients.map((i) => i.nutrition)),
-  };
-}
-
-/** Build a PersistedMeal — the single construction point for its shape. */
-export function buildPersistedMeal(fields: PersistedMeal): PersistedMeal {
-  return fields;
 }
 
 // ---------------------------------------------------------------------------

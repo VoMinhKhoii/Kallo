@@ -85,9 +85,6 @@ vi.mock('@/lib/db/schema', () => ({
 // ---------------------------------------------------------------------------
 
 import {
-  buildPersistedIngredient,
-  buildPersistedMeal,
-  buildPersistedMealItemGroup,
   confirmAndSaveMealAction,
   deleteMealAction,
   loadMealDates,
@@ -95,6 +92,11 @@ import {
   loadPendingAnalysesByDate,
   type PersistedMeal,
 } from '@/lib/actions/meals';
+import {
+  buildPersistedIngredient,
+  buildPersistedMeal,
+  buildPersistedMealItemGroup,
+} from '@/lib/actions/persisted-meal';
 import { requireAuthAndProfile } from '@/lib/auth';
 
 // Valid v4 UUIDs (Zod v4 validates version+variant bits)
