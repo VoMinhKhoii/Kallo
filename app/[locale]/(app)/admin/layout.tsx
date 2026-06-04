@@ -1,4 +1,5 @@
 import { requireAdmin } from '@/lib/admin/require-admin';
+import { AdminNav } from './_components/admin-nav';
 
 export const dynamic = 'force-dynamic';
 
@@ -11,6 +12,7 @@ export const metadata = {
  * Layout owns the admin page chrome:
  *  - vertical scroll container (the AppShell is viewport-locked, so each
  *    feature must bring its own scroll)
+ *  - the persistent admin sub-nav (sticky to the top of the scroll container)
  *  - outer page padding (`p-3 sm:p-6`)
  *
  * Page components under /admin must NOT add their own `p-*`. Width-constraining
@@ -23,7 +25,8 @@ export default async function AdminLayout({
 }) {
   await requireAdmin();
   return (
-    <div className="flex-1 overflow-y-auto">
+    <div className="flex-1 overflow-y-auto bg-nham-surface text-nham-text">
+      <AdminNav />
       <div className="p-3 sm:p-6">{children}</div>
     </div>
   );

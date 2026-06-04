@@ -3,16 +3,28 @@ import {
   AlertTriangle,
   ArrowRight,
   CheckCircle2,
+  ChevronDown,
   CircleSlash,
   XCircle,
 } from 'lucide-react';
 import { z } from 'zod';
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible';
 import type {
   pipelineLlmCalls,
   pipelineRequests,
   pipelineStageLogs,
 } from '@/lib/db/schema';
 import { cn } from '@/lib/utils';
+import {
+  confidenceTone,
+  type MetricTone,
+  metricToneClass,
+  statusDotClass,
+} from '../../../_components/status-badge';
 
 // ---------------------------------------------------------------------------
 // Lenient schemas — the pipeline writes typed JSON, but we never want this
@@ -152,66 +164,26 @@ function normalizeStageStatus(
   return 'pending';
 }
 
-function pickConfidenceTone(c: 'high' | 'medium' | 'low'): {
-  dot: string;
-  bar: string;
-  text: string;
-  badgeBg: string;
-} {
-  if (c === 'high')
-    return {
-      dot: 'bg-green-500',
-      bar: 'bg-green-500',
-      text: 'text-green-700 dark:text-green-400',
-      badgeBg: 'bg-green-100 dark:bg-green-900/30',
-    };
-  if (c === 'medium')
-    return {
-      dot: 'bg-amber-500',
-      bar: 'bg-amber-500',
-      text: 'text-amber-700 dark:text-amber-400',
-      badgeBg: 'bg-amber-100 dark:bg-amber-900/30',
-    };
-  return {
-    dot: 'bg-red-500',
-    bar: 'bg-red-500',
-    text: 'text-red-700 dark:text-red-400',
-    badgeBg: 'bg-red-100 dark:bg-red-900/30',
-  };
-}
-
 function StageDot({ status }: { status: DiagnosticStageStatus }) {
-  if (status === 'success') {
-    return (
-      <span
-        className="relative z-10 inline-flex h-3 w-3 items-center justify-center rounded-full bg-green-500 ring-4 ring-background"
-        aria-hidden
-      />
-    );
-  }
-  if (status === 'error') {
-    return (
-      <span
-        className="relative z-10 inline-flex h-3 w-3 items-center justify-center rounded-full bg-red-500 ring-4 ring-background"
-        aria-hidden
-      />
-    );
-  }
-  if (status === 'skipped') {
-    return (
-      <span
-        className="relative z-10 inline-flex h-3 w-3 items-center justify-center rounded-full bg-muted-foreground/40 ring-4 ring-background"
-        aria-hidden
-      />
-    );
-  }
   return (
     <span
-      className="relative z-10 inline-flex h-3 w-3 items-center justify-center rounded-full bg-muted-foreground/30 ring-4 ring-background"
       aria-hidden
+      className={cn(
+        'inline-flex h-2.5 w-2.5 shrink-0 rounded-full',
+        statusDotClass(status)
+      )}
     />
   );
 }
+
+// Static config driving both the jump-nav and the rendered stage sections so
+// the two never drift out of sync.
+const STAGE_NAV = [
+  { id: 'stage-input', label: 'Input' },
+  { id: 'stage-decomposition', label: 'Decomposition' },
+  { id: 'stage-matching', label: 'Matching' },
+  { id: 'stage-nutrition', label: 'Nutrition' },
+] as const;
 
 // ---------------------------------------------------------------------------
 
@@ -222,9 +194,9 @@ export function PipelineSummary({
 }: PipelineSummaryProps) {
   if (stageLogs.length === 0) {
     return (
-      <div className="rounded-lg border border-dashed bg-muted/20 p-4 text-muted-foreground text-sm">
+      <div className="rounded-lg border border-nham-border/60 border-dashed bg-nham-track/30 p-4 font-sans-display text-nham-text-muted text-sm">
         No pipeline trace recorded for this request. Enable{' '}
-        <code className="rounded bg-muted px-1 py-0.5 text-xs">
+        <code className="rounded bg-nham-hover px-1 py-0.5 text-xs">
           PIPELINE_TRACE_ENABLED
         </code>{' '}
         to capture stage logs.
@@ -311,20 +283,32 @@ export function PipelineSummary({
   );
 
   const erroredStage = stageLogs.find((s) => s.status === 'error');
+  const decompositionStatus = normalizeStageStatus(
+    stagesByName.decomposition?.status
+  );
+  const matchingStatus = normalizeStageStatus(stagesByName.matching?.status);
   const nutritionAssemblyStatus = normalizeStageStatus(
     stagesByName.assembly?.status ?? stagesByName.nutrition?.status
   );
 
+  const navStatus: Record<string, DiagnosticStageStatus> = {
+    'stage-input': 'success',
+    'stage-decomposition': decompositionStatus,
+    'stage-matching': matchingStatus,
+    'stage-nutrition': nutritionAssemblyStatus,
+  };
+
   return (
     <section
       aria-label="Pipeline summary"
-      className="rounded-lg border bg-card"
+      className="rounded-lg border border-nham-border/60 bg-white/50 font-sans-display dark:bg-white/[0.02]"
+      id="pipeline-summary"
     >
       {/* Header strip */}
-      <div className="flex flex-wrap items-baseline gap-x-6 gap-y-2 border-b px-5 py-3">
+      <div className="flex flex-wrap items-baseline gap-x-6 gap-y-2 border-nham-border/60 border-b px-5 py-3">
         <div className="flex items-baseline gap-2">
-          <span className="font-semibold text-sm">Pipeline</span>
-          <span className="text-muted-foreground text-xs">
+          <span className="font-semibold text-nham-text text-sm">Pipeline</span>
+          <span className="text-nham-text-muted text-xs">
             {stageLogs.length} stages · {llmCalls.length} LLM calls
           </span>
         </div>
@@ -370,10 +354,27 @@ export function PipelineSummary({
         ) : null}
       </div>
 
+      {/* Sticky stage jump-nav — pin a stage without scrolling the whole page */}
+      <nav
+        aria-label="Jump to stage"
+        className="-mx-px sticky top-[5.75rem] z-10 flex flex-wrap items-center gap-1.5 border-nham-border/60 border-b bg-nham-surface/90 px-5 py-2 backdrop-blur"
+      >
+        {STAGE_NAV.map((s) => (
+          <a
+            className="inline-flex items-center gap-1.5 rounded-full border border-nham-border/60 px-2.5 py-1 text-nham-text-muted text-xs transition-colors hover:bg-nham-hover/60 hover:text-nham-text"
+            href={`#${s.id}`}
+            key={s.id}
+          >
+            <StageDot status={navStatus[s.id]} />
+            {s.label}
+          </a>
+        ))}
+      </nav>
+
       {/* Error banner — always points to the failing stage */}
       {erroredStage && (
-        <div className="flex items-start gap-2 border-b bg-red-50 px-5 py-3 text-red-900 text-sm dark:bg-red-950/30 dark:text-red-200">
-          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
+        <div className="flex items-start gap-2 border-nham-border/60 border-b bg-nham-danger/10 px-5 py-3 text-nham-danger text-sm">
+          <AlertTriangle aria-hidden className="mt-0.5 h-4 w-4 shrink-0" />
           <div className="space-y-0.5">
             <p className="font-medium">
               Failed at <span className="capitalize">{erroredStage.stage}</span>
@@ -387,203 +388,185 @@ export function PipelineSummary({
         </div>
       )}
 
-      {/* Pipeline body — 4 stages on a vertical rail */}
-      <div className="relative px-5 py-5">
-        {/* Vertical rail: 1px neutral; status dots align to it */}
-        <div
-          className="absolute top-6 bottom-6 left-[27px] w-px bg-border"
-          aria-hidden
-        />
-
-        <ol className="space-y-5">
-          {/* Stage 1 — Input */}
-          <StageRow
-            dot={<StageDot status="success" />}
-            status="success"
-            title="Input"
-            meta={
-              decomp.success && decomp.data.mealSlot ? (
-                <Chip>{decomp.data.mealSlot}</Chip>
-              ) : null
-            }
-          >
-            <p className="rounded-md bg-muted/50 px-3 py-2 font-mono text-sm leading-relaxed">
-              {request.rawInput}
+      {/* Pipeline body — 4 collapsible stage sections */}
+      <div className="space-y-3 px-5 py-5">
+        {/* Stage 1 — Input */}
+        <StageSection
+          id="stage-input"
+          meta={
+            decomp.success && decomp.data.mealSlot ? (
+              <Chip>{decomp.data.mealSlot}</Chip>
+            ) : null
+          }
+          status="success"
+          title="Input"
+        >
+          <p className="rounded-md bg-nham-track/60 px-3 py-2 font-mono text-nham-text text-sm leading-relaxed">
+            {request.rawInput}
+          </p>
+          {decomp.success && decomp.data.isFood === false && (
+            <p className="mt-2 text-amber-700 text-xs dark:text-amber-400">
+              Decomposition flagged this as non-food.
             </p>
-            {decomp.success && decomp.data.isFood === false && (
-              <p className="mt-2 text-amber-700 text-xs dark:text-amber-400">
-                Decomposition flagged this as non-food.
-              </p>
-            )}
-          </StageRow>
+          )}
+        </StageSection>
 
-          {/* Stage 2 — Decomposition */}
-          <StageRow
-            dot={
-              <StageDot
-                status={normalizeStageStatus(
-                  stagesByName.decomposition?.status
-                )}
-              />
-            }
-            status={normalizeStageStatus(stagesByName.decomposition?.status)}
-            title="Decomposition"
-            meta={
-              <div className="flex flex-wrap items-center justify-end gap-1.5">
-                <span className="text-muted-foreground text-xs tabular-nums">
-                  {stagesByName.decomposition?.durationMs ?? '—'} ms
-                  {' · '}
-                  {mealItems.length} item{mealItems.length === 1 ? '' : 's'}
-                  {' · '}
-                  {totalIngredients} ingredient
-                  {totalIngredients === 1 ? '' : 's'}
-                </span>
-                {languageMetadata ? (
-                  <LanguageMetadataChips metadata={languageMetadata} />
-                ) : null}
-              </div>
-            }
-          >
-            {!decomp.success ? (
-              <ParseFallback stage="decomposition" />
-            ) : mealItems.length === 0 ? (
-              <p className="text-muted-foreground text-sm">No meal items.</p>
-            ) : (
-              <ul className="space-y-2">
-                {mealItems.map((item) => (
-                  <li
-                    key={item.name}
-                    className="flex flex-wrap items-baseline gap-x-3 gap-y-1"
-                  >
-                    <span className="font-medium text-sm">{item.name}</span>
-                    <span className="flex flex-wrap gap-1.5">
-                      {item.ingredients.map((ing) => (
-                        <span
-                          key={`${item.name}:${ing.name}`}
-                          className="inline-flex items-baseline gap-1 rounded-full bg-muted/70 px-2 py-0.5 text-xs"
-                        >
-                          <span>{ing.name}</span>
-                          <span className="text-muted-foreground tabular-nums">
-                            {ing.estimatedGrams ?? '—'}g
-                          </span>
+        {/* Stage 2 — Decomposition */}
+        <StageSection
+          id="stage-decomposition"
+          meta={
+            <div className="flex flex-wrap items-center justify-end gap-1.5">
+              <span className="text-nham-text-muted text-xs tabular-nums">
+                {stagesByName.decomposition?.durationMs ?? '—'} ms
+                {' · '}
+                {mealItems.length} item{mealItems.length === 1 ? '' : 's'}
+                {' · '}
+                {totalIngredients} ingredient
+                {totalIngredients === 1 ? '' : 's'}
+              </span>
+              {languageMetadata ? (
+                <LanguageMetadataChips metadata={languageMetadata} />
+              ) : null}
+            </div>
+          }
+          status={decompositionStatus}
+          title="Decomposition"
+        >
+          {!decomp.success ? (
+            <ParseFallback stage="decomposition" />
+          ) : mealItems.length === 0 ? (
+            <p className="text-nham-text-muted text-sm">No meal items.</p>
+          ) : (
+            <ul className="space-y-2">
+              {mealItems.map((item) => (
+                <li
+                  className="flex flex-wrap items-baseline gap-x-3 gap-y-1"
+                  key={item.name}
+                >
+                  <span className="font-medium text-nham-text text-sm">
+                    {item.name}
+                  </span>
+                  <span className="flex flex-wrap gap-1.5">
+                    {item.ingredients.map((ing) => (
+                      <span
+                        className="inline-flex items-baseline gap-1 rounded-full bg-nham-hover px-2 py-0.5 text-nham-text text-xs"
+                        key={`${item.name}:${ing.name}`}
+                      >
+                        <span>{ing.name}</span>
+                        <span className="text-nham-text-muted tabular-nums">
+                          {ing.estimatedGrams ?? '—'}g
                         </span>
-                      ))}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </StageRow>
+                      </span>
+                    ))}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </StageSection>
 
-          {/* Stage 3 — Matching (the diagnostic core) */}
-          <StageRow
-            dot={
-              <StageDot
-                status={normalizeStageStatus(stagesByName.matching?.status)}
-              />
-            }
-            status={normalizeStageStatus(stagesByName.matching?.status)}
-            title="Matching"
-            meta={
-              <span className="text-muted-foreground text-xs tabular-nums">
-                {stagesByName.matching?.durationMs ?? '—'} ms
-                {' · '}
-                {matchedCount} matched
-                {' · '}
-                {unmatched.length} unmatched
-                {(matchStrategyCounts.vector > 0 ||
-                  matchStrategyCounts.fuzzy > 0 ||
-                  matchStrategyCounts.alias > 0) && (
-                  <>
-                    {' · '}
-                    {matchStrategyCounts.vector}v{' / '}
-                    {matchStrategyCounts.fuzzy}f
-                    {matchStrategyCounts.alias > 0 && (
-                      <>
-                        {' / '}
-                        {matchStrategyCounts.alias}a
-                      </>
-                    )}
-                  </>
-                )}
-              </span>
-            }
-          >
-            {!matching.success ? (
-              <ParseFallback stage="matching" />
-            ) : matched.length + unmatched.length === 0 ? (
-              <p className="text-muted-foreground text-sm">
-                No matches recorded.
-              </p>
-            ) : (
-              <div className="space-y-3">
-                {[...rowsByMeal.entries()].map(([mealName, rows]) => (
-                  <div key={mealName} className="space-y-1.5">
-                    <p className="text-muted-foreground text-xs uppercase tracking-wide">
-                      {mealName}
-                    </p>
-                    <ul className="divide-y rounded-md border bg-muted/20">
-                      {rows.map((row) => (
-                        <MatchRow
-                          key={`${mealName}:${row.ingredientName}`}
-                          row={row}
+        {/* Stage 3 — Matching (the diagnostic core) */}
+        <StageSection
+          id="stage-matching"
+          meta={
+            <span className="text-nham-text-muted text-xs tabular-nums">
+              {stagesByName.matching?.durationMs ?? '—'} ms
+              {' · '}
+              {matchedCount} matched
+              {' · '}
+              {unmatched.length} unmatched
+              {(matchStrategyCounts.vector > 0 ||
+                matchStrategyCounts.fuzzy > 0 ||
+                matchStrategyCounts.alias > 0) && (
+                <>
+                  {' · '}
+                  {matchStrategyCounts.vector}v{' / '}
+                  {matchStrategyCounts.fuzzy}f
+                  {matchStrategyCounts.alias > 0 && (
+                    <>
+                      {' / '}
+                      {matchStrategyCounts.alias}a
+                    </>
+                  )}
+                </>
+              )}
+            </span>
+          }
+          status={matchingStatus}
+          title="Matching"
+        >
+          {!matching.success ? (
+            <ParseFallback stage="matching" />
+          ) : matched.length + unmatched.length === 0 ? (
+            <p className="text-nham-text-muted text-sm">No matches recorded.</p>
+          ) : (
+            <div className="space-y-3">
+              {[...rowsByMeal.entries()].map(([mealName, rows]) => (
+                <div className="space-y-1.5" key={mealName}>
+                  <p className="text-nham-text-muted text-xs uppercase tracking-wide">
+                    {mealName}
+                  </p>
+                  <ul className="divide-y divide-nham-border/40 rounded-md border border-nham-border/50 bg-nham-track/20">
+                    {rows.map((row) => (
+                      <MatchRow
+                        key={`${mealName}:${row.ingredientName}`}
+                        row={row}
+                      />
+                    ))}
+                  </ul>
+                </div>
+              ))}
+              {unmatchedOutputRows.length > 0 && (
+                <div className="space-y-1.5">
+                  <p className="text-nham-danger text-xs uppercase tracking-wide">
+                    Unmatched output ({unmatchedOutputRows.length})
+                  </p>
+                  <ul className="divide-y divide-nham-danger/20 rounded-md border border-nham-danger/30 bg-nham-danger/[0.06]">
+                    {unmatchedOutputRows.map((u) => (
+                      <li
+                        className="flex items-center gap-2 px-3 py-2 text-nham-text text-sm"
+                        key={u.ingredientName}
+                      >
+                        <XCircle
+                          aria-hidden
+                          className="h-3.5 w-3.5 text-nham-danger"
                         />
-                      ))}
-                    </ul>
-                  </div>
-                ))}
-                {unmatchedOutputRows.length > 0 && (
-                  <div className="space-y-1.5">
-                    <p className="text-red-700 text-xs uppercase tracking-wide dark:text-red-400">
-                      Unmatched output ({unmatchedOutputRows.length})
-                    </p>
-                    <ul className="divide-y rounded-md border border-red-200 bg-red-50/40 dark:border-red-900/40 dark:bg-red-950/20">
-                      {unmatchedOutputRows.map((u) => (
-                        <li
-                          key={u.ingredientName}
-                          className="flex items-center gap-2 px-3 py-2 text-sm"
-                        >
-                          <XCircle
-                            className="h-3.5 w-3.5 text-red-500"
-                            aria-hidden
-                          />
-                          <span>{u.ingredientName}</span>
-                          {u.mealContext && (
-                            <span className="text-muted-foreground text-xs">
-                              · {u.mealContext}
-                            </span>
-                          )}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-              </div>
-            )}
-          </StageRow>
+                        <span>{u.ingredientName}</span>
+                        {u.mealContext && (
+                          <span className="text-nham-text-muted text-xs">
+                            · {u.mealContext}
+                          </span>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          )}
+        </StageSection>
 
-          {/* Stage 4 — Nutrition + Assembly */}
-          <StageRow
-            dot={<StageDot status={nutritionAssemblyStatus} />}
-            status={nutritionAssemblyStatus}
-            title="Nutrition & assembly"
-            meta={
-              <span className="text-muted-foreground text-xs tabular-nums">
-                {stagesByName.nutrition?.durationMs ?? '—'} ms est ·{' '}
-                {stagesByName.assembly?.durationMs ?? '—'} ms assemble
-              </span>
-            }
-          >
-            {!assembly.success ? (
-              <ParseFallback stage="assembly" />
-            ) : (
-              <AssemblyTotals
-                items={assembly.data.mealItems}
-                totals={assembly.data.displayedNutrition}
-              />
-            )}
-          </StageRow>
-        </ol>
+        {/* Stage 4 — Nutrition + Assembly */}
+        <StageSection
+          id="stage-nutrition"
+          meta={
+            <span className="text-nham-text-muted text-xs tabular-nums">
+              {stagesByName.nutrition?.durationMs ?? '—'} ms est ·{' '}
+              {stagesByName.assembly?.durationMs ?? '—'} ms assemble
+            </span>
+          }
+          status={nutritionAssemblyStatus}
+          title="Nutrition & assembly"
+        >
+          {!assembly.success ? (
+            <ParseFallback stage="assembly" />
+          ) : (
+            <AssemblyTotals
+              items={assembly.data.mealItems}
+              totals={assembly.data.displayedNutrition}
+            />
+          )}
+        </StageSection>
       </div>
     </section>
   );
@@ -593,35 +576,50 @@ export function PipelineSummary({
 // Sub-components
 // ---------------------------------------------------------------------------
 
-function StageRow({
-  dot,
+/**
+ * One collapsible stage section. Defaults open (so the whole trace is visible
+ * at a glance and server-rendered content stays in the DOM) but can be folded
+ * away to focus on a single stage. The `id` is the jump-nav scroll target.
+ */
+function StageSection({
+  id,
   status,
   title,
   meta,
   children,
 }: {
-  dot: React.ReactNode;
+  id: string;
   status: DiagnosticStageStatus;
   title: string;
   meta?: React.ReactNode;
   children: React.ReactNode;
 }) {
   return (
-    <li className="relative flex gap-4">
-      <div className="flex w-8 shrink-0 justify-center pt-1">{dot}</div>
-      <div className="min-w-0 flex-1 space-y-2">
-        <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+    <Collapsible
+      className="scroll-mt-28 rounded-md border border-nham-border/50 bg-nham-track/30"
+      defaultOpen
+      id={id}
+    >
+      <CollapsibleTrigger className="group flex w-full items-center gap-3 px-3 py-2.5 text-left">
+        <StageDot status={status} />
+        <div className="flex min-w-0 flex-1 flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
           <div className="flex min-w-0 items-baseline gap-2">
-            <h3 className="font-semibold text-sm">{title}</h3>
-            <span className="rounded bg-muted px-1.5 py-0.5 font-medium text-[11px] text-muted-foreground capitalize">
+            <h3 className="font-semibold text-nham-text text-sm">{title}</h3>
+            <span className="rounded bg-nham-hover px-1.5 py-0.5 font-medium text-[11px] text-nham-text-muted capitalize">
               {status}
             </span>
           </div>
           {meta}
         </div>
+        <ChevronDown
+          aria-hidden
+          className="h-4 w-4 shrink-0 text-nham-text-muted transition-transform group-data-[state=open]:rotate-180"
+        />
+      </CollapsibleTrigger>
+      <CollapsibleContent className="border-nham-border/40 border-t px-3 py-3">
         {children}
-      </div>
-    </li>
+      </CollapsibleContent>
+    </Collapsible>
   );
 }
 
@@ -632,22 +630,16 @@ function Metric({
 }: {
   label: string;
   value: string;
-  tone?: 'neutral' | 'good' | 'warn' | 'bad';
+  tone?: MetricTone;
 }) {
-  const toneClass =
-    tone === 'good'
-      ? 'text-green-700 dark:text-green-400'
-      : tone === 'warn'
-        ? 'text-amber-700 dark:text-amber-400'
-        : tone === 'bad'
-          ? 'text-red-700 dark:text-red-400'
-          : '';
   return (
     <div className="flex flex-col">
-      <span className="text-[11px] text-muted-foreground uppercase tracking-wide">
+      <span className="text-[11px] text-nham-text-muted uppercase tracking-wide">
         {label}
       </span>
-      <span className={cn('font-medium text-sm tabular-nums', toneClass)}>
+      <span
+        className={cn('font-medium text-sm tabular-nums', metricToneClass(tone))}
+      >
         {value}
       </span>
     </div>
@@ -682,7 +674,7 @@ function LanguageMetadataChips({ metadata }: { metadata: LanguageMetadata }) {
 
 function Chip({ children }: { children: React.ReactNode }) {
   return (
-    <span className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 font-medium text-muted-foreground text-xs capitalize">
+    <span className="inline-flex items-center rounded-full bg-nham-hover px-2 py-0.5 font-medium text-nham-text-muted text-xs capitalize">
       {children}
     </span>
   );
@@ -690,26 +682,21 @@ function Chip({ children }: { children: React.ReactNode }) {
 
 function MatchRow({ row }: { row: MatchDiagnosticRow }) {
   const isUnmatched = row.confidence === 'unmatched';
-  const tone =
-    row.confidence === 'high'
-      ? pickConfidenceTone('high')
-      : row.confidence === 'medium'
-        ? pickConfidenceTone('medium')
-        : pickConfidenceTone('low');
+  const tone = confidenceTone(row.confidence);
   const sim = row.similarity ?? 0;
   const simPct = Math.max(0, Math.min(1, sim)) * 100;
 
   return (
-    <li className="grid grid-cols-[1fr_auto_1.2fr_auto] items-center gap-x-3 gap-y-1 px-3 py-2 text-sm">
+    <li className="grid grid-cols-[1fr_auto_1.2fr_auto] items-center gap-x-3 gap-y-1 px-3 py-2 text-nham-text text-sm">
       {/* Source ingredient + grams */}
       <div className="flex min-w-0 items-center gap-2">
         <span
-          className={cn('inline-block h-2 w-2 shrink-0 rounded-full', tone.dot)}
           aria-hidden
+          className={cn('inline-block h-2 w-2 shrink-0 rounded-full', tone.dot)}
         />
         <span className="truncate">{row.ingredientName}</span>
         {row.grams !== null && (
-          <span className="shrink-0 text-muted-foreground text-xs tabular-nums">
+          <span className="shrink-0 text-nham-text-muted text-xs tabular-nums">
             {row.grams}g
           </span>
         )}
@@ -717,13 +704,13 @@ function MatchRow({ row }: { row: MatchDiagnosticRow }) {
 
       {/* Arrow */}
       <ArrowRight
-        className="h-3.5 w-3.5 shrink-0 text-muted-foreground"
         aria-hidden
+        className="h-3.5 w-3.5 shrink-0 text-nham-text-muted"
       />
 
       {/* Match target + similarity bar */}
       {isUnmatched ? (
-        <span className="flex items-center gap-1.5 text-red-700 text-xs dark:text-red-400">
+        <span className="flex items-center gap-1.5 text-nham-danger text-xs">
           <CircleSlash className="h-3.5 w-3.5" aria-hidden />
           no match
         </span>
@@ -731,15 +718,15 @@ function MatchRow({ row }: { row: MatchDiagnosticRow }) {
         <div className="flex min-w-0 items-center gap-2">
           <span className="truncate">{row.matchedName}</span>
           <span
-            className="hidden h-1.5 w-16 shrink-0 overflow-hidden rounded-full bg-muted sm:inline-block"
             aria-hidden
+            className="hidden h-1.5 w-16 shrink-0 overflow-hidden rounded-full bg-nham-track sm:inline-block"
           >
             <span
               className={cn('block h-full', tone.bar)}
               style={{ width: `${simPct}%` }}
             />
           </span>
-          <span className="shrink-0 text-muted-foreground text-xs tabular-nums">
+          <span className="shrink-0 text-nham-text-muted text-xs tabular-nums">
             {sim.toFixed(2)}
           </span>
         </div>
@@ -750,8 +737,7 @@ function MatchRow({ row }: { row: MatchDiagnosticRow }) {
         <span
           className={cn(
             'inline-flex items-center gap-1 rounded px-1.5 py-0.5 font-medium text-[11px]',
-            tone.badgeBg,
-            tone.text
+            tone.badge
           )}
         >
           unmatched
@@ -760,8 +746,7 @@ function MatchRow({ row }: { row: MatchDiagnosticRow }) {
         <span
           className={cn(
             'inline-flex items-center gap-1 rounded px-1.5 py-0.5 font-medium text-[11px] capitalize',
-            tone.badgeBg,
-            tone.text
+            tone.badge
           )}
         >
           <CheckCircle2 className="h-3 w-3" aria-hidden />
@@ -777,19 +762,19 @@ function MatchRow({ row }: { row: MatchDiagnosticRow }) {
           row.source !== null ||
           row.latencyMs !== null ||
           row.viaAlias) && (
-          <div className="col-start-3 col-end-5 -mt-0.5 flex flex-wrap items-center gap-1.5 text-[11px] text-muted-foreground">
+          <div className="-mt-0.5 col-start-3 col-end-5 flex flex-wrap items-center gap-1.5 text-[11px] text-nham-text-muted">
             {row.matchType !== null && (
-              <span className="inline-flex items-center rounded bg-muted px-1.5 py-0.5 font-medium tabular-nums">
+              <span className="inline-flex items-center rounded bg-nham-hover px-1.5 py-0.5 font-medium tabular-nums">
                 {row.matchType}
               </span>
             )}
             {row.source !== null && (
-              <span className="inline-flex items-center rounded bg-muted px-1.5 py-0.5 font-medium uppercase tabular-nums">
+              <span className="inline-flex items-center rounded bg-nham-hover px-1.5 py-0.5 font-medium uppercase tabular-nums">
                 {row.source}
               </span>
             )}
             {row.viaAlias && (
-              <span className="inline-flex items-center rounded bg-amber-100 px-1.5 py-0.5 font-medium text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
+              <span className="inline-flex items-center rounded bg-amber-500/15 px-1.5 py-0.5 font-medium text-amber-700 dark:bg-amber-400/15 dark:text-amber-300">
                 via alias
               </span>
             )}
@@ -822,7 +807,7 @@ function AssemblyTotals({
   return (
     <div className="space-y-3">
       {items.length > 0 && (
-        <ul className="divide-y rounded-md border">
+        <ul className="divide-y divide-nham-border/40 rounded-md border border-nham-border/50">
           {items.map((item) => {
             const kcal = pickMacro(item, 'caloriesKcal');
             const p = pickMacro(item, 'proteinG');
@@ -831,7 +816,7 @@ function AssemblyTotals({
             return (
               <li
                 key={item.name}
-                className="grid grid-cols-[1fr_auto_auto_auto_auto] items-baseline gap-x-4 gap-y-1 px-3 py-2 text-sm tabular-nums"
+                className="grid grid-cols-[1fr_auto_auto_auto_auto] items-baseline gap-x-4 gap-y-1 px-3 py-2 text-nham-text text-sm tabular-nums"
               >
                 <span className="truncate font-medium">{item.name}</span>
                 <Macro label="kcal" value={kcal} />
@@ -844,7 +829,7 @@ function AssemblyTotals({
         </ul>
       )}
       {totals && (
-        <div className="flex flex-wrap items-baseline gap-x-5 gap-y-1 rounded-md bg-muted/40 px-3 py-2 text-sm tabular-nums">
+        <div className="flex flex-wrap items-baseline gap-x-5 gap-y-1 rounded-md bg-nham-track/50 px-3 py-2 text-nham-text text-sm tabular-nums">
           <span className="font-semibold">Total</span>
           <Macro label="kcal" value={totals.caloriesKcal ?? null} emphasis />
           <Macro label="P" value={totals.proteinG ?? null} unit="g" />
@@ -878,7 +863,7 @@ function Macro({
         {value == null ? '—' : Math.round(value)}
         {unit ?? ''}
       </span>
-      <span className="text-[11px] text-muted-foreground uppercase">
+      <span className="text-[11px] text-nham-text-muted uppercase">
         {label}
       </span>
     </span>
@@ -887,7 +872,7 @@ function Macro({
 
 function ParseFallback({ stage }: { stage: string }) {
   return (
-    <p className="rounded-md border border-dashed bg-muted/20 px-3 py-2 text-muted-foreground text-xs">
+    <p className="rounded-md border border-nham-border/60 border-dashed bg-nham-track/30 px-3 py-2 text-nham-text-muted text-xs">
       Could not parse <code className="font-mono">{stage}</code> output. See raw
       stage below.
     </p>

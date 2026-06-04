@@ -2,6 +2,11 @@ import type { InferSelectModel } from 'drizzle-orm';
 import type { RequestDetailLlmCall } from '@/lib/admin/queries';
 import type { pipelineLlmCalls, pipelineStageLogs } from '@/lib/db/schema';
 import { cn } from '@/lib/utils';
+import {
+  type CompareLabel as StatusCompareLabel,
+  compareLabelClass,
+  statusToneClass,
+} from '../../../_components/status-badge';
 import { JsonViewer } from './json-viewer';
 
 type StageLog = InferSelectModel<typeof pipelineStageLogs>;
@@ -14,7 +19,7 @@ type MetadataItem = {
   unit?: 'chars' | 'tokens';
 };
 
-export type CompareLabel = 'unchanged' | 'changed' | 'only-here';
+export type CompareLabel = StatusCompareLabel;
 
 export interface StageWithCalls {
   stage: StageLog;
@@ -26,60 +31,49 @@ interface StageTimelineProps {
   stages: StageWithCalls[];
 }
 
-const STAGE_STATUS_STYLES: Record<string, string> = {
-  success:
-    'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
-  error: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',
-  skipped: 'bg-gray-100 text-gray-600 dark:bg-gray-800/50 dark:text-gray-400',
-};
-
-const COMPARE_LABEL_STYLES: Record<CompareLabel, string> = {
-  unchanged: 'bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400',
-  changed:
-    'bg-orange-50 text-orange-700 dark:bg-orange-900/20 dark:text-orange-400',
-  'only-here':
-    'bg-purple-50 text-purple-700 dark:bg-purple-900/20 dark:text-purple-400',
-};
-
 export function StageTimeline({ stages }: StageTimelineProps) {
   if (stages.length === 0) {
     return (
-      <p className="py-4 text-center text-muted-foreground text-sm">
+      <p className="py-4 text-center text-nham-text-muted text-sm">
         No stage logs recorded.
       </p>
     );
   }
 
   return (
-    <ol className="space-y-3">
+    <ol className="space-y-3 font-sans-display">
       {stages.map(({ stage, calls, compareLabel }) => (
-        <li key={stage.id} className="rounded-lg border bg-card">
+        <li
+          key={stage.id}
+          className="rounded-lg border border-nham-border/60 bg-white/50 dark:bg-white/[0.02]"
+        >
           {/* Stage header */}
-          <div className="flex flex-wrap items-center gap-2 border-b px-4 py-2">
-            <span className="font-mono text-muted-foreground text-xs">
+          <div className="flex flex-wrap items-center gap-2 border-nham-border/60 border-b px-4 py-2">
+            <span className="font-mono text-nham-text-muted text-xs">
               #{stage.stageIndex}
             </span>
-            <span className="font-semibold capitalize">{stage.stage}</span>
+            <span className="font-semibold text-nham-text capitalize">
+              {stage.stage}
+            </span>
 
             <span
               className={cn(
-                'inline-flex rounded px-1.5 py-0.5 font-medium text-xs',
-                STAGE_STATUS_STYLES[stage.status] ??
-                  'bg-muted text-muted-foreground'
+                'inline-flex rounded-md px-1.5 py-0.5 font-medium text-xs capitalize',
+                statusToneClass(stage.status)
               )}
             >
               {stage.status}
             </span>
 
-            <span className="text-muted-foreground text-xs tabular-nums">
+            <span className="text-nham-text-muted text-xs tabular-nums">
               {stage.durationMs} ms
             </span>
 
             {compareLabel && (
               <span
                 className={cn(
-                  'ml-auto inline-flex rounded px-1.5 py-0.5 font-medium text-xs',
-                  COMPARE_LABEL_STYLES[compareLabel]
+                  'ml-auto inline-flex rounded-md px-1.5 py-0.5 font-medium text-xs',
+                  compareLabelClass(compareLabel)
                 )}
               >
                 {compareLabel}
@@ -90,7 +84,7 @@ export function StageTimeline({ stages }: StageTimelineProps) {
           {/* Stage body */}
           <div className="space-y-2 p-4">
             {stage.error && (
-              <div className="rounded border border-red-200 bg-red-50 p-2 font-mono text-red-700 text-xs dark:border-red-900 dark:bg-red-950/40 dark:text-red-400">
+              <div className="rounded-md border border-nham-danger/40 bg-nham-danger/10 p-2 font-mono text-nham-danger text-xs">
                 {stage.error}
               </div>
             )}
@@ -105,7 +99,7 @@ export function StageTimeline({ stages }: StageTimelineProps) {
             {/* LLM calls nested under this stage */}
             {calls.length > 0 && (
               <div className="mt-3 space-y-2">
-                <p className="font-medium text-muted-foreground text-xs uppercase tracking-wide">
+                <p className="font-medium text-nham-text-muted text-xs uppercase tracking-wide">
                   LLM Calls ({calls.length})
                 </p>
                 {calls.map((call, idx) => (
@@ -126,23 +120,23 @@ function LlmCallRow({ call, index }: { call: LlmCall; index: number }) {
   const metadataItems = getVisibleMetadataItems(call, metadata);
 
   return (
-    <div className="rounded border bg-muted/20 text-xs">
+    <div className="rounded-md border border-nham-border/50 bg-nham-track/40 text-xs">
       {/* Call header */}
-      <div className="flex flex-wrap items-center gap-2 border-b px-3 py-1.5">
-        <span className="font-medium text-muted-foreground">
+      <div className="flex flex-wrap items-center gap-2 border-nham-border/50 border-b px-3 py-1.5">
+        <span className="font-medium text-nham-text-muted">
           Call {index + 1}
         </span>
-        <span className="font-mono">{call.model}</span>
+        <span className="font-mono text-nham-text">{call.model}</span>
         {call.attempt > 1 ? (
-          <span className="rounded bg-yellow-100 px-1 py-0.5 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400">
+          <span className="rounded bg-amber-500/15 px-1 py-0.5 text-amber-700 dark:bg-amber-400/15 dark:text-amber-300">
             attempt {call.attempt}
           </span>
         ) : null}
-        <span className="text-muted-foreground tabular-nums">
+        <span className="text-nham-text-muted tabular-nums">
           {call.latencyMs} ms
         </span>
         {totalTokens > 0 ? (
-          <span className="text-muted-foreground tabular-nums">
+          <span className="text-nham-text-muted tabular-nums">
             {call.inputTokens ?? 0} in / {call.outputTokens ?? 0} out tokens
           </span>
         ) : null}
@@ -150,7 +144,7 @@ function LlmCallRow({ call, index }: { call: LlmCall; index: number }) {
           <MetadataChips items={metadataItems} />
         ) : null}
         {call.error ? (
-          <span className="ml-auto rounded bg-red-100 px-1.5 py-0.5 text-red-700 dark:bg-red-900/30 dark:text-red-400">
+          <span className="ml-auto rounded bg-nham-danger/15 px-1.5 py-0.5 text-nham-danger">
             error
           </span>
         ) : null}
@@ -159,7 +153,7 @@ function LlmCallRow({ call, index }: { call: LlmCall; index: number }) {
       {/* Call body */}
       <div className="space-y-1.5 p-3">
         {call.error ? (
-          <div className="rounded border border-red-200 bg-red-50 p-1.5 font-mono text-red-700 dark:border-red-900 dark:bg-red-950/40 dark:text-red-400">
+          <div className="rounded-md border border-nham-danger/40 bg-nham-danger/10 p-1.5 font-mono text-nham-danger">
             {call.error}
           </div>
         ) : null}
@@ -209,10 +203,10 @@ function MetadataChips({ items }: { items: MetadataItem[] }) {
     <div className="flex min-w-0 flex-wrap items-center gap-1.5">
       {items.map((item) => (
         <span
-          className="rounded bg-background px-1.5 py-0.5 text-muted-foreground tabular-nums"
+          className="rounded bg-nham-surface px-1.5 py-0.5 text-nham-text-muted tabular-nums"
           key={item.label}
         >
-          <span className="font-medium text-foreground">{item.label}</span>{' '}
+          <span className="font-medium text-nham-text">{item.label}</span>{' '}
           {formatMetadataValue(item)}
         </span>
       ))}

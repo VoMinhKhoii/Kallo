@@ -19,11 +19,11 @@ export function VersionDiff({
   return (
     <div className="space-y-3 text-xs">
       <div className="flex gap-4 font-medium">
-        <span className="text-red-600 dark:text-red-400">− {labelA}</span>
-        <span className="text-green-600 dark:text-green-400">+ {labelB}</span>
+        <span className="text-nham-danger">− {labelA}</span>
+        <span className="text-nham-success">+ {labelB}</span>
       </div>
 
-      <div className="overflow-auto rounded border font-mono">
+      <div className="overflow-auto rounded-md border border-nham-border/60 font-mono">
         {hunks.map((hunk, i) => {
           const lines = hunk.value.split('\n');
           // Trailing empty string from split — drop it but keep internal empties
@@ -34,11 +34,9 @@ export function VersionDiff({
               key={`${i}-${j}`}
               className={cn(
                 'whitespace-pre px-3 py-0.5',
-                hunk.added &&
-                  'bg-green-50 text-green-800 dark:bg-green-950/40 dark:text-green-300',
-                hunk.removed &&
-                  'bg-red-50 text-red-800 dark:bg-red-950/40 dark:text-red-300',
-                !hunk.added && !hunk.removed && 'text-muted-foreground'
+                hunk.added && 'bg-nham-success/10 text-nham-success',
+                hunk.removed && 'bg-nham-danger/10 text-nham-danger',
+                !hunk.added && !hunk.removed && 'text-nham-text-muted'
               )}
             >
               {hunk.added ? '+ ' : hunk.removed ? '- ' : '  '}

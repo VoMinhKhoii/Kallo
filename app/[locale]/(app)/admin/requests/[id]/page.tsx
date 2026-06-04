@@ -6,9 +6,11 @@ import { formatUtcTimestamp } from '@/lib/admin/format';
 import { getRequestDetail } from '@/lib/admin/queries';
 import { requireAdmin } from '@/lib/admin/require-admin';
 import { db } from '@/lib/db';
+import { StatusBadge } from '../../_components/status-badge';
 import { PipelineSummary } from './_components/pipeline-summary';
 import { PipelineVersionBadge } from './_components/pipeline-version-badge';
 import { ReplayButton } from './_components/replay-button';
+import { RequestDetailTabs } from './_components/request-detail-tabs';
 import type {
   CompareLabel,
   StageWithCalls,
@@ -36,14 +38,6 @@ interface PageProps {
   params: Promise<{ id: string }>;
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }
-
-const STATUS_STYLES: Record<string, string> = {
-  success:
-    'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
-  error: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',
-  pending:
-    'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400',
-};
 
 function sortJsonKeys(value: unknown): unknown {
   if (value === null || typeof value !== 'object') return value;
@@ -150,7 +144,7 @@ export default async function RequestDetailPage({
       <div>
         <Link
           href="/admin/requests"
-          className="inline-flex items-center gap-1 text-muted-foreground text-sm hover:text-foreground"
+          className="inline-flex items-center gap-1 text-nham-text-muted text-sm transition-colors hover:text-nham-text"
         >
           <ArrowLeft className="h-3.5 w-3.5" />
           All Requests
@@ -158,25 +152,24 @@ export default async function RequestDetailPage({
       </div>
 
       {/* Request metadata */}
-      <div className="rounded-lg border bg-card p-5">
+      <div className="rounded-lg border border-nham-border/60 bg-white/50 p-5 dark:bg-white/[0.02]">
         <div className="flex flex-wrap items-start justify-between gap-4">
-          <div className="space-y-1">
-            <h1 className="font-mono text-muted-foreground text-sm">
+          <div className="min-w-0 space-y-1">
+            <h1 className="break-all font-mono text-nham-text-muted text-sm">
               {request.id}
             </h1>
-            <p className="font-semibold text-lg">
+            <p
+              className="font-semibold text-lg text-nham-text"
+              style={{ fontFamily: 'Lora, serif' }}
+            >
               {request.rawInput.length > 100
                 ? `${request.rawInput.slice(0, 100)}…`
                 : request.rawInput}
             </p>
           </div>
 
-          <div className="flex items-center gap-3">
-            <span
-              className={`inline-flex rounded px-2 py-1 font-medium text-xs ${STATUS_STYLES[request.status] ?? 'bg-muted text-muted-foreground'}`}
-            >
-              {request.status}
-            </span>
+          <div className="flex flex-wrap items-center gap-2.5">
+            <StatusBadge status={request.status} />
             <PipelineVersionBadge
               promptVersionsUsed={parsePromptVersionsUsed(
                 request.promptVersionsUsed
@@ -184,39 +177,43 @@ export default async function RequestDetailPage({
             />
             {request.dryRun && (
               <span
-                className="inline-flex rounded bg-amber-100 px-2 py-1 font-medium text-amber-900 text-xs dark:bg-amber-900/30 dark:text-amber-200"
+                className="inline-flex rounded-md bg-amber-500/15 px-2 py-0.5 font-medium font-sans-display text-[11px] text-amber-700 dark:bg-amber-400/15 dark:text-amber-300"
                 title="This request was created by a dry-run replay (mocked Gemini responses)."
               >
                 DRY-RUN
               </span>
             )}
             <ReplayButton requestId={request.id} />
-            <ReplayButton requestId={request.id} dryRun />
+            <ReplayButton dryRun requestId={request.id} />
           </div>
         </div>
 
-        <dl className="mt-4 grid grid-cols-2 gap-x-6 gap-y-2 text-sm sm:grid-cols-4">
-          <div>
-            <dt className="text-muted-foreground text-xs">User</dt>
-            <dd className="font-mono">{request.userId ?? '—'}</dd>
+        <dl className="mt-4 grid grid-cols-2 gap-x-6 gap-y-2 font-sans-display text-sm sm:grid-cols-4">
+          <div className="min-w-0">
+            <dt className="text-nham-text-muted text-xs">User</dt>
+            <dd className="truncate font-mono text-nham-text">
+              {request.userId ?? '—'}
+            </dd>
           </div>
           <div>
-            <dt className="text-muted-foreground text-xs">Duration</dt>
-            <dd className="tabular-nums">{request.durationMs ?? '—'} ms</dd>
+            <dt className="text-nham-text-muted text-xs">Duration</dt>
+            <dd className="text-nham-text tabular-nums">
+              {request.durationMs ?? '—'} ms
+            </dd>
           </div>
           <div>
-            <dt className="text-muted-foreground text-xs">Triggered at</dt>
-            <dd className="tabular-nums">
+            <dt className="text-nham-text-muted text-xs">Triggered at</dt>
+            <dd className="text-nham-text tabular-nums">
               {formatUtcTimestamp(request.createdAt)}
             </dd>
           </div>
           {request.replayOfRequestId && (
             <div>
-              <dt className="text-muted-foreground text-xs">Replay of</dt>
+              <dt className="text-nham-text-muted text-xs">Replay of</dt>
               <dd>
                 <Link
                   href={`/admin/requests/${request.replayOfRequestId}`}
-                  className="font-mono text-xs hover:underline"
+                  className="font-mono text-nham-accent text-xs hover:underline"
                 >
                   {request.replayOfRequestId.slice(0, 8)}…
                 </Link>
@@ -227,17 +224,17 @@ export default async function RequestDetailPage({
 
         {/* Compare controls */}
         {isCompare ? (
-          <div className="mt-3 flex items-center gap-2 rounded-md bg-muted/40 px-3 py-2 text-sm">
+          <div className="mt-3 flex items-center gap-2 rounded-md bg-nham-track/50 px-3 py-2 font-sans-display text-nham-text text-sm">
             <span>Comparing with</span>
             <Link
               href={`/admin/requests/${compareId}`}
-              className="font-mono text-xs hover:underline"
+              className="font-mono text-nham-accent text-xs hover:underline"
             >
               {compareId}
             </Link>
             <Link
               href={`/admin/requests/${id}`}
-              className="ml-auto text-muted-foreground text-xs hover:underline"
+              className="ml-auto text-nham-text-muted text-xs hover:underline"
             >
               Exit compare
             </Link>
@@ -245,31 +242,41 @@ export default async function RequestDetailPage({
         ) : null}
       </div>
 
-      {/* High-signal pipeline summary (always visible — diagnostic-first) */}
-      <PipelineSummary
-        request={detail.request}
-        stageLogs={detail.stageLogs}
-        llmCalls={detail.llmCalls}
-      />
-
-      {/* Timeline */}
+      {/* Compare mode is inherently a side-by-side raw view, so it bypasses the
+          Summary / Raw-trace tabs and renders both timelines directly. */}
       {isCompare ? (
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <p className="mb-2 font-semibold text-sm">
-              {id.slice(0, 8)}… (primary)
-            </p>
-            <StageTimeline stages={left} />
+        <>
+          <PipelineSummary
+            request={detail.request}
+            stageLogs={detail.stageLogs}
+            llmCalls={detail.llmCalls}
+          />
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+            <div>
+              <p className="mb-2 font-semibold text-nham-text text-sm">
+                {id.slice(0, 8)}… (primary)
+              </p>
+              <StageTimeline stages={left} />
+            </div>
+            <div>
+              <p className="mb-2 font-semibold text-nham-text text-sm">
+                {compareId?.slice(0, 8)}… (compare)
+              </p>
+              <StageTimeline stages={right} />
+            </div>
           </div>
-          <div>
-            <p className="mb-2 font-semibold text-sm">
-              {compareId?.slice(0, 8)}… (compare)
-            </p>
-            <StageTimeline stages={right} />
-          </div>
-        </div>
+        </>
       ) : (
-        <StageTimeline stages={left} />
+        <RequestDetailTabs
+          rawTrace={<StageTimeline stages={left} />}
+          summary={
+            <PipelineSummary
+              request={detail.request}
+              stageLogs={detail.stageLogs}
+              llmCalls={detail.llmCalls}
+            />
+          }
+        />
       )}
     </div>
   );

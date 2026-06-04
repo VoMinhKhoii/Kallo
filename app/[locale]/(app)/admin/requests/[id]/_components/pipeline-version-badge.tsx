@@ -38,19 +38,19 @@ function classify(
 
 const STYLES: Record<Version, { bg: string; label: string; title: string }> = {
   v2: {
-    bg: 'bg-emerald-100 text-emerald-900 dark:bg-emerald-900/30 dark:text-emerald-200',
+    bg: 'bg-nham-success/15 text-nham-success dark:bg-nham-success/20',
     label: 'V2',
     title:
       'Pipeline v2 — pure-decompose Call 1, CRAG-grounded Call 2 with verdict + grams + macros.',
   },
   v1: {
-    bg: 'bg-slate-100 text-slate-900 dark:bg-slate-700/40 dark:text-slate-200',
+    bg: 'bg-nham-accent/20 text-nham-text dark:bg-nham-accent/25',
     label: 'V1',
     title:
       'Pipeline v1 (legacy) — decomposition emits grams, nutrition adjusts fat only.',
   },
   unknown: {
-    bg: 'bg-muted text-muted-foreground',
+    bg: 'bg-nham-hover text-nham-text-muted',
     label: 'PIPELINE: ?',
     title:
       'No prompt versions recorded. Either PIPELINE_TRACE_ENABLED=false or trace context was absent for this request.',
@@ -62,7 +62,7 @@ export function PipelineVersionBadge({ promptVersionsUsed }: Props): ReactNode {
   const s = STYLES[v];
   return (
     <span
-      className={`inline-flex rounded px-2 py-1 font-medium text-xs ${s.bg}`}
+      className={`inline-flex rounded-md px-2 py-0.5 font-medium font-sans-display text-[11px] ${s.bg}`}
       title={s.title}
     >
       {s.label}

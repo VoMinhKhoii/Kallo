@@ -51,13 +51,13 @@ export function FiltersForm({ current }: FiltersFormProps) {
   return (
     <form
       onSubmit={handleSubmit}
-      className="flex flex-wrap items-end gap-3 rounded-lg border bg-muted/40 p-4"
+      className="flex flex-wrap items-end gap-3 rounded-lg border border-nham-border/60 bg-nham-track/40 p-4 font-sans-display"
     >
       {/* Status */}
       <div className="flex flex-col gap-1">
         <label
           htmlFor="filters-status"
-          className="text-muted-foreground text-xs"
+          className="text-nham-text-muted text-xs"
         >
           Status
         </label>
@@ -78,7 +78,7 @@ export function FiltersForm({ current }: FiltersFormProps) {
       <div className="flex flex-col gap-1">
         <label
           htmlFor="filters-user-id"
-          className="text-muted-foreground text-xs"
+          className="text-nham-text-muted text-xs"
         >
           User ID (UUID)
         </label>
@@ -95,7 +95,7 @@ export function FiltersForm({ current }: FiltersFormProps) {
       <div className="flex flex-col gap-1">
         <label
           htmlFor="filters-date-from"
-          className="text-muted-foreground text-xs"
+          className="text-nham-text-muted text-xs"
         >
           From
         </label>
@@ -110,7 +110,7 @@ export function FiltersForm({ current }: FiltersFormProps) {
       <div className="flex flex-col gap-1">
         <label
           htmlFor="filters-date-to"
-          className="text-muted-foreground text-xs"
+          className="text-nham-text-muted text-xs"
         >
           To
         </label>
@@ -130,9 +130,9 @@ export function FiltersForm({ current }: FiltersFormProps) {
           type="checkbox"
           checked={includeReplays}
           onChange={(e) => setIncludeReplays(e.target.checked)}
-          className="h-4 w-4 rounded border"
+          className="h-4 w-4 rounded border border-nham-border accent-nham-accent"
         />
-        <label htmlFor="includeReplays" className="text-sm">
+        <label htmlFor="includeReplays" className="text-nham-text text-sm">
           Include replays
         </label>
       </div>

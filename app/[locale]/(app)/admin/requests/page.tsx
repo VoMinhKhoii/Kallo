@@ -47,10 +47,17 @@ export default async function RequestsPage({
   const totalPages = Math.max(1, Math.ceil(total / filters.pageSize));
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h1 className="font-semibold text-xl">Pipeline Requests</h1>
-        <span className="text-muted-foreground text-sm">{total} total</span>
+    <div className="mx-auto max-w-6xl space-y-4">
+      <div className="flex items-baseline justify-between">
+        <h1
+          className="font-semibold text-nham-text text-xl tracking-tight"
+          style={{ fontFamily: 'Lora, serif' }}
+        >
+          Pipeline Requests
+        </h1>
+        <span className="text-nham-text-muted text-sm tabular-nums">
+          {total} total
+        </span>
       </div>
 
       <FiltersForm current={flat} />
@@ -59,15 +66,15 @@ export default async function RequestsPage({
 
       {/* Pagination */}
       {totalPages > 1 && (
-        <div className="flex items-center gap-2 text-muted-foreground text-sm">
-          <span>
+        <div className="flex items-center gap-2 text-nham-text-muted text-sm">
+          <span className="tabular-nums">
             Page {filters.page} of {totalPages}
           </span>
           {filters.page > 1 && (
             <Link
               href={`/admin/requests?${new URLSearchParams({ ...flat, page: String(filters.page - 1) }).toString()}`}
               aria-label="Previous page"
-              className="rounded border px-2 py-1 hover:bg-muted"
+              className="rounded-md border border-nham-border/60 px-2 py-1 text-nham-text transition-colors hover:bg-nham-hover/60"
             >
               ← Prev
             </Link>
@@ -76,7 +83,7 @@ export default async function RequestsPage({
             <Link
               href={`/admin/requests?${new URLSearchParams({ ...flat, page: String(filters.page + 1) }).toString()}`}
               aria-label="Next page"
-              className="rounded border px-2 py-1 hover:bg-muted"
+              className="rounded-md border border-nham-border/60 px-2 py-1 text-nham-text transition-colors hover:bg-nham-hover/60"
             >
               Next →
             </Link>

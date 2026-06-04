@@ -1,95 +1,71 @@
 import { Link } from '@/i18n/navigation';
 import { formatUtcTimestamp } from '@/lib/admin/format';
 import type { RequestListRow } from '@/lib/admin/queries';
-import { cn } from '@/lib/utils';
+import { StatusBadge } from '../../_components/status-badge';
 
 interface RequestsTableProps {
   rows: RequestListRow[];
 }
 
-const STATUS_STYLES: Record<string, string> = {
-  success:
-    'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
-  error: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',
-  pending:
-    'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400',
-};
-
 export function RequestsTable({ rows }: RequestsTableProps) {
   if (rows.length === 0) {
     return (
-      <p className="py-8 text-center text-muted-foreground text-sm">
+      <p className="py-8 text-center text-nham-text-muted text-sm">
         No requests found.
       </p>
     );
   }
 
   return (
-    <div className="overflow-x-auto rounded-lg border">
-      <table className="w-full text-sm">
-        <thead className="border-b bg-muted/50">
-          <tr>
-            <th className="px-4 py-2 text-left font-medium text-muted-foreground">
-              ID
-            </th>
-            <th className="px-4 py-2 text-left font-medium text-muted-foreground">
-              Status
-            </th>
-            <th className="px-4 py-2 text-left font-medium text-muted-foreground">
-              Duration
-            </th>
-            <th className="px-4 py-2 text-left font-medium text-muted-foreground">
-              Input (preview)
-            </th>
-            <th className="px-4 py-2 text-left font-medium text-muted-foreground">
-              Created
-            </th>
-            <th className="px-4 py-2 text-left font-medium text-muted-foreground">
-              Replay
-            </th>
+    <div className="overflow-x-auto rounded-lg border border-nham-border/60 bg-white/40 dark:bg-white/[0.02]">
+      <table className="w-full font-sans-display text-sm">
+        <thead className="border-nham-border/60 border-b bg-nham-track/50">
+          <tr className="text-left text-nham-text-muted text-xs">
+            <th className="px-4 py-2.5 font-medium">ID</th>
+            <th className="px-4 py-2.5 font-medium">Status</th>
+            <th className="px-4 py-2.5 font-medium">Duration</th>
+            <th className="px-4 py-2.5 font-medium">Input (preview)</th>
+            <th className="px-4 py-2.5 font-medium">Created</th>
+            <th className="px-4 py-2.5 font-medium">Replay</th>
           </tr>
         </thead>
-        <tbody className="divide-y">
+        <tbody className="divide-y divide-nham-border/40">
           {rows.map((row) => (
-            <tr key={row.id} className="transition-colors hover:bg-muted/40">
-              <td className="px-4 py-2">
+            <tr
+              className="transition-colors hover:bg-nham-hover/50"
+              key={row.id}
+            >
+              <td className="px-4 py-2.5">
                 <Link
+                  className="font-mono text-nham-accent text-xs hover:underline"
                   href={`/admin/requests/${row.id}`}
-                  className="font-mono text-blue-600 text-xs hover:underline dark:text-blue-400"
                 >
                   {row.id.slice(0, 8)}…
                 </Link>
               </td>
-              <td className="px-4 py-2">
-                <span
-                  className={cn(
-                    'inline-flex rounded px-1.5 py-0.5 font-medium text-xs',
-                    STATUS_STYLES[row.status] ?? 'bg-muted text-foreground'
-                  )}
-                >
-                  {row.status}
-                </span>
+              <td className="px-4 py-2.5">
+                <StatusBadge status={row.status} />
               </td>
-              <td className="px-4 py-2 text-muted-foreground tabular-nums">
+              <td className="px-4 py-2.5 text-nham-text-muted tabular-nums">
                 {row.durationMs != null ? `${row.durationMs} ms` : '—'}
               </td>
-              <td className="max-w-xs truncate px-4 py-2 text-muted-foreground">
+              <td className="max-w-xs truncate px-4 py-2.5 text-nham-text">
                 {row.rawInput.slice(0, 80)}
                 {row.rawInput.length > 80 ? '…' : ''}
               </td>
-              <td className="px-4 py-2 text-muted-foreground tabular-nums">
+              <td className="px-4 py-2.5 text-nham-text-muted tabular-nums">
                 {formatUtcTimestamp(row.createdAt)}
               </td>
-              <td className="px-4 py-2">
+              <td className="px-4 py-2.5">
                 {row.replayOfRequestId ? (
                   <Link
+                    className="font-mono text-nham-text-muted text-xs hover:underline"
                     href={`/admin/requests/${row.replayOfRequestId}`}
-                    className="font-mono text-muted-foreground text-xs hover:underline"
                   >
                     {row.replayOfRequestId.slice(0, 8)}…
                   </Link>
                 ) : (
-                  <span className="text-muted-foreground">—</span>
+                  <span className="text-nham-text-muted">—</span>
                 )}
               </td>
             </tr>

@@ -16,7 +16,7 @@ export function Sparkline({ data }: SparklineProps) {
 
   if (data.length === 0) {
     return (
-      <div className="flex h-16 items-center justify-center text-muted-foreground text-xs">
+      <div className="flex h-16 items-center justify-center text-nham-text-muted text-xs">
         No data
       </div>
     );
@@ -43,12 +43,12 @@ export function Sparkline({ data }: SparklineProps) {
               <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
                 <stop
                   offset="5%"
-                  stopColor="hsl(var(--primary))"
-                  stopOpacity={0.3}
+                  stopColor="var(--nham-accent)"
+                  stopOpacity={0.35}
                 />
                 <stop
                   offset="95%"
-                  stopColor="hsl(var(--primary))"
+                  stopColor="var(--nham-accent)"
                   stopOpacity={0}
                 />
               </linearGradient>
@@ -66,7 +66,7 @@ export function Sparkline({ data }: SparklineProps) {
             <Area
               type="monotone"
               dataKey="count"
-              stroke="hsl(var(--primary))"
+              stroke="var(--nham-accent)"
               strokeWidth={1.5}
               fill={`url(#${gradientId})`}
               dot={false}

@@ -16,16 +16,21 @@ export default function AdminError({
 
   return (
     <div
-      className="flex min-h-[40vh] flex-col items-center justify-center gap-3 text-center"
+      className="flex min-h-[40vh] flex-col items-center justify-center gap-3 text-center font-sans-display"
       role="alert"
     >
-      <h2 className="font-semibold text-lg">Something went wrong</h2>
-      <p className="max-w-md text-muted-foreground text-sm">
+      <h2
+        className="font-semibold text-lg text-nham-text"
+        style={{ fontFamily: 'Lora, serif' }}
+      >
+        Something went wrong
+      </h2>
+      <p className="max-w-md text-nham-text-muted text-sm">
         {error.message ||
           'An unexpected error occurred while loading admin data.'}
       </p>
       {error.digest && (
-        <p className="text-muted-foreground text-xs">digest: {error.digest}</p>
+        <p className="text-nham-text-muted text-xs">digest: {error.digest}</p>
       )}
       <Button onClick={() => reset()} variant="outline" size="sm">
         Try again
