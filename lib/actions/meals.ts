@@ -125,7 +125,7 @@ export async function confirmAndSaveMealAction(input: {
     ingredientIndex?: number;
     newGrams: number;
   }[];
-}) {
+}): Promise<ConfirmMealResponse> {
   const parsed = confirmAndSaveSchema.parse(input);
   const { user, profile } = await requireAuthAndProfile();
 
@@ -416,6 +416,17 @@ export interface PendingMealConfirmation {
 export interface LoggingDayData {
   persistedMeals: PersistedMeal[];
   pendingConfirmations: PendingMealConfirmation[];
+}
+
+/**
+ * Return shape of `confirmAndSaveMealAction`. `mealId` is kept for backward
+ * compatibility (the mobile `POST /api/v1/meals/confirm` route echoes it);
+ * `meal` is the authoritative saved meal the web client reconciles against
+ * without a follow-up day refetch. Re-exported via lib/api/contracts/meals.ts.
+ */
+export interface ConfirmMealResponse {
+  mealId: string;
+  meal: PersistedMeal;
 }
 
 export async function loadMealsByDate(input: {

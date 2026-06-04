@@ -6,8 +6,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { dailyMealsKeys } from '@/hooks/use-daily-meals';
 import { loggingDayKeys } from '@/hooks/use-logging-day';
 import { useConfirmMeal } from '@/hooks/use-meal-mutations';
-import { NUTRITION_KEYS } from '@/lib/ai/constants';
 import type { LoggingDayData, PersistedMeal } from '@/lib/actions/meals';
+import { NUTRITION_KEYS } from '@/lib/ai/constants';
 import type { ParsedMeal } from '@/lib/types/meal';
 
 const { mockConfirm } = vi.hoisted(() => ({ mockConfirm: vi.fn() }));
@@ -136,7 +136,9 @@ describe('useConfirmMeal optimistic update', () => {
     });
     // Hold the server response so we can inspect the OPTIMISTIC insert before
     // onSuccess overwrites it with authoritative values.
-    let resolveConfirm: (value: ReturnType<typeof savedMealResult>) => void;
+    // Definite-assignment (!): the Promise executor runs synchronously, so this
+    // is assigned before any use, but TS control-flow can't prove it.
+    let resolveConfirm!: (value: ReturnType<typeof savedMealResult>) => void;
     mockConfirm.mockReturnValue(
       new Promise((resolve) => {
         resolveConfirm = resolve;
@@ -263,7 +265,9 @@ describe('useConfirmMeal optimistic update', () => {
         (call) => call[0]?.queryKey
       );
       expect(cancelKeys).toContainEqual(dailyMealsKeys.byDate(DATE));
-      expect(cancelKeys).toContainEqual(loggingDayKeys.byUserDate(USER_ID, DATE));
+      expect(cancelKeys).toContainEqual(
+        loggingDayKeys.byUserDate(USER_ID, DATE)
+      );
       expect(invalidateKeys).toContainEqual(dailyMealsKeys.byDate(DATE));
       expect(invalidateKeys).toContainEqual(
         loggingDayKeys.byUserDate(USER_ID, DATE)
@@ -305,5 +309,37 @@ describe('useConfirmMeal optimistic update', () => {
     const meals = dayData(queryClient)?.persistedMeals ?? [];
     expect(meals).toHaveLength(1);
     expect(meals[0]?.id).toBe('meal-1');
+  });
+
+  it('falls back to an active refetch when the response omits the saved meal', async () => {
+    // Defensive contract-skew path: if the confirm response lacks `meal`, the
+    // in-place reconcile is impossible, so onSuccess must invalidate the day
+    // queries with an ACTIVE refetch (default refetchType) to heal — distinct
+    // from the refetchType:'none' marks onSettled issues on the normal path.
+    const queryClient = new QueryClient();
+    queryClient.setQueryData<LoggingDayData>(DAY_KEY, {
+      persistedMeals: [],
+      pendingConfirmations: [],
+    });
+    const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
+    mockConfirm.mockResolvedValue({ mealId: 'meal-1' }); // no `meal`
+
+    const { result } = renderConfirm(queryClient);
+    await result.current.mutateAsync({
+      analysisId: 'analysis-1',
+      mealId: 'meal-1',
+      originDate: DATE,
+      parsedMeal: makeParsedMeal(),
+      rawInput: 'Phở bò',
+      loggedAt: '2026-05-29T01:00:00.000Z',
+    });
+
+    const activeDayInvalidations = invalidateSpy.mock.calls.filter(
+      (call) =>
+        JSON.stringify(call[0]?.queryKey) ===
+          JSON.stringify(loggingDayKeys.byUserDate(USER_ID, DATE)) &&
+        call[0]?.refetchType === undefined
+    );
+    expect(activeDayInvalidations.length).toBeGreaterThan(0);
   });
 });

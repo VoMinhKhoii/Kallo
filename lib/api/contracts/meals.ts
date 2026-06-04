@@ -38,6 +38,7 @@ export const confirmMealSchema = z.object({
 export type ConfirmMealInput = z.infer<typeof confirmMealSchema>;
 
 export type {
+  ConfirmMealResponse,
   LoggingDayData,
   PendingMealConfirmation,
   PersistedIngredient,

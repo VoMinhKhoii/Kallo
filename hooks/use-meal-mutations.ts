@@ -162,7 +162,14 @@ function upsertMealIntoList(
 
 // Client-supplied data needed to build the optimistic meal without reading the
 // pending confirmation back out of the cache. Stripped before the server call.
-type ConfirmMealVariables = Parameters<typeof confirmAndSaveMealAction>[0] & {
+// `mealId` is REQUIRED here (the server schema keeps it optional for the mobile
+// REST route): the optimistic insert and the authoritative onSuccess write must
+// share one id, otherwise they'd be two rows and the ring would double-count.
+type ConfirmMealVariables = Omit<
+  Parameters<typeof confirmAndSaveMealAction>[0],
+  'mealId'
+> & {
+  mealId: string;
   originDate: string;
   parsedMeal: ParsedMeal;
   rawInput: string;
@@ -186,12 +193,11 @@ export function useConfirmMeal(userId: string) {
       };
       await queryClient.cancelQueries(filter);
       const snapshots = queryClient.getQueriesData<LoggingDayData>(filter);
-      const mealId = variables.mealId ?? `optimistic-${variables.analysisId}`;
       const optimisticMeal = buildOptimisticMeal(
         variables.parsedMeal,
         variables.rawInput,
         variables.loggedAt,
-        mealId,
+        variables.mealId,
         variables.edits
       );
       queryClient.setQueriesData<LoggingDayData>(filter, (old) =>
@@ -200,21 +206,40 @@ export function useConfirmMeal(userId: string) {
       return { snapshots };
     },
     onSuccess: (data, variables) => {
+      const loggingDayKey = loggingDayKeys.byUserDate(
+        userId,
+        variables.originDate
+      );
+      const dailyMealsKey = dailyMealsKeys.byDate(variables.originDate);
+      // Cancel any day fetch still in flight BEFORE writing authoritative state:
+      // such a fetch read the PRE-save (empty/pending) snapshot and would clobber
+      // this write when it lands. Cancelling first means its late result is
+      // discarded, closing the window between this write and the settle phase.
+      queryClient.cancelQueries({ queryKey: loggingDayKey });
+      queryClient.cancelQueries({ queryKey: dailyMealsKey });
       // Reconcile straight from the confirm response — the server returns the
       // saved meal in its authoritative (goal-adjusted) shape, so we overwrite
       // the optimistic estimate in place rather than waiting for a day refetch.
       // This removes the brief "estimate then correct" flash on the calorie ring
       // and saves the follow-up network round-trip.
-      const savedMeal = data?.meal;
-      if (!savedMeal) return;
+      const savedMeal = data.meal;
+      if (!savedMeal) {
+        // Defensive (the web action always returns `meal`): if a version-skewed
+        // response omits it, fall back to a refetch so the ring reconciles
+        // instead of keeping the optimistic estimate stuck.
+        queryClient.invalidateQueries({ queryKey: loggingDayKey });
+        queryClient.invalidateQueries({ queryKey: dailyMealsKey });
+        return;
+      }
       queryClient.setQueriesData<LoggingDayData>(
-        { queryKey: loggingDayKeys.byUserDate(userId, variables.originDate) },
+        { queryKey: loggingDayKey },
         (old) => mergeConfirmedMealIntoDay(old, savedMeal, variables.analysisId)
       );
       // Keep the dashboard ring in sync instantly when its daily-meals query is
-      // already mounted; an unmounted one is handled by the invalidate on settle.
+      // already mounted; an unmounted one is marked stale by the invalidate on
+      // settle and refetches on its next mount.
       queryClient.setQueriesData<PersistedMeal[]>(
-        { queryKey: dailyMealsKeys.byDate(variables.originDate) },
+        { queryKey: dailyMealsKey },
         (old) => upsertMealIntoList(old, savedMeal)
       );
     },
@@ -228,33 +253,21 @@ export function useConfirmMeal(userId: string) {
         error instanceof Error ? error.message : 'Không thể lưu bữa ăn.'
       );
     },
-    onSettled: async (_data, _err, variables) => {
+    onSettled: (_data, error, variables) => {
       const loggingDayKey = loggingDayKeys.byUserDate(
         userId,
         variables.originDate
       );
       const dailyMealsKey = dailyMealsKeys.byDate(variables.originDate);
-      // The save just committed in a non-abortable transaction, so any day fetch
-      // still in flight read the PRE-save (empty/pending) snapshot and would
-      // clobber the authoritative meal onSuccess just wrote when it lands. Cancel
-      // them — their late results are discarded.
-      await Promise.all([
-        queryClient.cancelQueries({ queryKey: loggingDayKey }),
-        queryClient.cancelQueries({ queryKey: dailyMealsKey }),
-      ]);
-      // No refetch needed: onSuccess already wrote authoritative state into the
-      // mounted caches from the confirm response. Just mark the day queries stale
-      // (refetchType 'none' = no network) so an UNMOUNTED surface — e.g. the
-      // dashboard while logging — refetches when next shown instead of lingering
-      // on the empty pre-save snapshot.
-      queryClient.invalidateQueries({
-        queryKey: loggingDayKey,
-        refetchType: 'none',
-      });
-      queryClient.invalidateQueries({
-        queryKey: dailyMealsKey,
-        refetchType: 'none',
-      });
+      // On success, onSuccess already wrote authoritative state from the confirm
+      // response, so just mark the day queries stale WITHOUT a refetch
+      // (refetchType 'none' = no network) — an unmounted surface (e.g. the
+      // dashboard while logging) refreshes on its next mount. On error the
+      // optimistic insert was rolled back; refetch actively to heal in case a
+      // cancelled in-flight fetch left a surface behind.
+      const refetchType = error ? 'active' : 'none';
+      queryClient.invalidateQueries({ queryKey: loggingDayKey, refetchType });
+      queryClient.invalidateQueries({ queryKey: dailyMealsKey, refetchType });
       // meal-dates (timeline dots) has no optimistic path; refresh it normally.
       queryClient.invalidateQueries({ queryKey: ['meal-dates'] });
     },

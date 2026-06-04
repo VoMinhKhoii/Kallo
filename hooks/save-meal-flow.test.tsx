@@ -9,18 +9,24 @@
 // asserts the rendered ring totals on BOTH surfaces, including reconciliation of
 // the optimistic estimate to the saved value and the reload-pending path.
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useDailyMeals } from '@/hooks/use-daily-meals';
 import { useLoggingDay } from '@/hooks/use-logging-day';
 import { useConfirmMeal } from '@/hooks/use-meal-mutations';
-import { NUTRITION_KEYS } from '@/lib/ai/constants';
 import type {
   LoggingDayData,
   PendingMealConfirmation,
   PersistedMeal,
 } from '@/lib/actions/meals';
+import { NUTRITION_KEYS } from '@/lib/ai/constants';
 import type { ParsedMeal } from '@/lib/types/meal';
 
 // ---------------------------------------------------------------------------
@@ -117,7 +123,9 @@ function caloriesOf(meals: PersistedMeal[]): number {
 function LoggingRing() {
   const { data } = useLoggingDay(USER_ID, DATE);
   return (
-    <div data-testid="logging-ring">{caloriesOf(data?.persistedMeals ?? [])}</div>
+    <div data-testid="logging-ring">
+      {caloriesOf(data?.persistedMeals ?? [])}
+    </div>
   );
 }
 
@@ -188,7 +196,9 @@ function makeClient() {
 }
 
 function renderWith(client: QueryClient, ui: ReactNode) {
-  return render(<QueryClientProvider client={client}>{ui}</QueryClientProvider>);
+  return render(
+    <QueryClientProvider client={client}>{ui}</QueryClientProvider>
+  );
 }
 
 async function clickConfirm() {
