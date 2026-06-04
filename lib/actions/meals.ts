@@ -114,6 +114,46 @@ function inferMealSlot(date: Date): string {
 }
 
 // ---------------------------------------------------------------------------
+// Shared client-facing meal shape builders
+// ---------------------------------------------------------------------------
+// Single source of truth for the PersistedMeal shape, used by BOTH the save
+// (confirmAndSaveMealAction) and load (loadMealsByDateForUser) paths so they can
+// never drift. Adding a field to any of the Persisted* interfaces forces every
+// call site that goes through these builders to supply it (a compile error),
+// and the group-nutrition rule lives in exactly one place. (Type hoisting lets
+// these reference the Persisted* interfaces declared further down the file.)
+
+/** Build a PersistedIngredient — the single construction point for its shape. */
+export function buildPersistedIngredient(
+  fields: PersistedIngredient
+): PersistedIngredient {
+  return fields;
+}
+
+/**
+ * Build a PersistedMealItemGroup. Group nutrition is always the SUM of the
+ * displayed ingredient nutrition (never goalAdjust(sum)); this is the parity-
+ * critical rule both paths must share.
+ */
+export function buildPersistedMealItemGroup(
+  name: string,
+  order: number,
+  ingredients: PersistedIngredient[]
+): PersistedMealItemGroup {
+  return {
+    name,
+    order,
+    ingredients,
+    nutrition: sumDisplayedNutrition(ingredients.map((i) => i.nutrition)),
+  };
+}
+
+/** Build a PersistedMeal — the single construction point for its shape. */
+export function buildPersistedMeal(fields: PersistedMeal): PersistedMeal {
+  return fields;
+}
+
+// ---------------------------------------------------------------------------
 // C1: Confirm and Save Meal
 // ---------------------------------------------------------------------------
 
@@ -327,31 +367,26 @@ export async function confirmAndSaveMealAction(input: {
     // ingredient ids). The client reconciles its optimistic card straight to
     // these authoritative values from the confirm response — no follow-up day
     // refetch (and its round-trip) required.
-    const mealItemGroups: PersistedMealItemGroup[] = itemGroups.map((group) => {
-      const ingredients: PersistedIngredient[] = group.ingredients.map(
-        ({ id, ing }) => ({
-          id,
-          ingredientName: ing.ingredientName,
-          foodCompositionId: ing.foodCompositionId,
-          estimatedGrams: ing.estimatedGrams,
-          userFacingUnit: ing.userFacingUnit,
-          cookingMethod: ing.cookingMethod,
-          matchConfidence: ing.matchConfidence,
-          nutrition: ing.displayedNutrition,
-        })
-      );
-      return {
-        name: group.name,
-        order: group.order,
-        // Match loadMealsByDate exactly: group nutrition is the SUM of the
-        // displayed ingredient nutrition, not goalAdjust(sum), so the value is
-        // identical to what a refetch of this day would produce.
-        nutrition: sumDisplayedNutrition(ingredients.map((i) => i.nutrition)),
-        ingredients,
-      };
-    });
+    const mealItemGroups: PersistedMealItemGroup[] = itemGroups.map((group) =>
+      buildPersistedMealItemGroup(
+        group.name,
+        group.order,
+        group.ingredients.map(({ id, ing }) =>
+          buildPersistedIngredient({
+            id,
+            ingredientName: ing.ingredientName,
+            foodCompositionId: ing.foodCompositionId,
+            estimatedGrams: ing.estimatedGrams,
+            userFacingUnit: ing.userFacingUnit,
+            cookingMethod: ing.cookingMethod,
+            matchConfidence: ing.matchConfidence,
+            nutrition: ing.displayedNutrition,
+          })
+        )
+      )
+    );
 
-    const savedMeal: PersistedMeal = {
+    const savedMeal = buildPersistedMeal({
       id: meal.id,
       rawInput: pending.rawInput,
       mealSlot,
@@ -361,7 +396,7 @@ export async function confirmAndSaveMealAction(input: {
       mealItemGroups,
       // A freshly-saved meal is never shared yet.
       share: null,
-    };
+    });
 
     // `mealId` kept for backward compatibility (e.g. the mobile confirm route);
     // `meal` is the authoritative payload the web client reconciles against.
@@ -493,54 +528,55 @@ async function loadMealsByDateForUser(
   return mealRows.map((meal) => {
     const items = itemsByMealId.get(meal.id) ?? [];
 
-    // Reconstruct meal item groups from flat ingredients
-    const groupMap = new Map<string, PersistedMealItemGroup>();
+    // Group flat ingredient rows by parent dish (order:name), preserving row
+    // order within each group.
+    const ingredientsByGroup = new Map<
+      string,
+      { name: string; order: number; ingredients: PersistedIngredient[] }
+    >();
     for (const item of items) {
       const key = `${item.mealItemOrder}:${item.mealItemName}`;
-      let group = groupMap.get(key);
+      let group = ingredientsByGroup.get(key);
       if (!group) {
         group = {
           name: item.mealItemName,
           order: item.mealItemOrder,
           ingredients: [],
-          nutrition: {} as NutritionValues,
         };
-        groupMap.set(key, group);
+        ingredientsByGroup.set(key, group);
       }
-      group.ingredients.push({
-        id: item.id,
-        ingredientName: item.ingredientName,
-        foodCompositionId: item.foodCompositionId,
-        estimatedGrams: item.estimatedGrams,
-        userFacingUnit: item.userFacingUnit,
-        cookingMethod: item.cookingMethod,
-        matchConfidence: item.matchConfidence,
-        nutrition: extractNutritionValues(item),
-      });
-    }
-
-    // Sort groups by order, compute group-level nutrition
-    const groups = Array.from(groupMap.values()).sort(
-      (a, b) => a.order - b.order
-    );
-    for (const group of groups) {
-      group.nutrition = sumDisplayedNutrition(
-        group.ingredients.map((ingredient) => ingredient.nutrition)
+      group.ingredients.push(
+        buildPersistedIngredient({
+          id: item.id,
+          ingredientName: item.ingredientName,
+          foodCompositionId: item.foodCompositionId,
+          estimatedGrams: item.estimatedGrams,
+          userFacingUnit: item.userFacingUnit,
+          cookingMethod: item.cookingMethod,
+          matchConfidence: item.matchConfidence,
+          nutrition: extractNutritionValues(item),
+        })
       );
     }
 
+    const mealItemGroups = Array.from(ingredientsByGroup.values())
+      .sort((a, b) => a.order - b.order)
+      .map((group) =>
+        buildPersistedMealItemGroup(group.name, group.order, group.ingredients)
+      );
+
     const share = shareByMealId.get(meal.id);
 
-    return {
+    return buildPersistedMeal({
       id: meal.id,
       rawInput: meal.rawInput,
       mealSlot: meal.mealSlot,
       confidenceOverall: meal.confidenceOverall,
       loggedAt: meal.loggedAt.toISOString(),
       nutrition: extractNutritionValues(meal),
-      mealItemGroups: groups,
+      mealItemGroups,
       share: share ? { shareId: share.id, visibility: share.visibility } : null,
-    };
+    });
   });
 }
 
