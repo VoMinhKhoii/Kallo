@@ -1,5 +1,5 @@
 {
-  "id": "a3da7a40-08d1-4693-b2cf-bf6709c76faa",
+  "id": "926297f8-a48a-4856-baa9-30bf05e82f37",
   "prevId": "35d39c12-e3ad-477a-9b0d-5cbab0ae9f5a",
   "version": "7",
   "dialect": "postgresql",
@@ -1697,6 +1697,10 @@
         "meals_entry_mode_check": {
           "name": "meals_entry_mode_check",
           "value": "\"meals\".\"entry_mode\" IN ('precise', 'cheat')"
+        },
+        "meals_alcohol_g_non_negative_check": {
+          "name": "meals_alcohol_g_non_negative_check",
+          "value": "\"meals\".\"alcohol_g\" IS NULL OR \"meals\".\"alcohol_g\" >= 0"
         }
       },
       "isRLSEnabled": false

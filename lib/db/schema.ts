@@ -299,6 +299,13 @@ export const meals = pgTable(
       'meals_entry_mode_check',
       sql`${table.entryMode} IN ('precise', 'cheat')`
     ),
+    // Defense-in-depth: the app only ever derives alcohol from non-negative
+    // slider anchors, but guard the column so a bypassed path can't corrupt
+    // nutrition aggregates with a negative value.
+    check(
+      'meals_alcohol_g_non_negative_check',
+      sql`${table.alcoholG} IS NULL OR ${table.alcoholG} >= 0`
+    ),
     index('meals_user_logged_at_idx').on(table.userId, table.loggedAt),
   ]
 );

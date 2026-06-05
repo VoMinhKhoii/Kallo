@@ -1,6 +1,6 @@
+import { buildPromptContextLine } from '@/lib/ai/prompts/sanitize';
+import type { PromptPersonalizationContext } from '@/lib/ai/prompts/types';
 import type { CheatIntensity } from '@/lib/types/cheat';
-import { buildPromptContextLine } from './sanitize';
-import type { PromptPersonalizationContext } from './types';
 
 /**
  * Cheat-meal slider estimator prompt.

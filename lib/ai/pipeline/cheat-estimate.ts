@@ -1,5 +1,10 @@
 import { ThinkingLevel } from '@google/genai';
 import type { GeminiClient } from '@/lib/ai/gemini';
+import { resolveModelProfile } from '@/lib/ai/pipeline/model-profile';
+import {
+  type CheatEstimate,
+  cheatEstimateSchema,
+} from '@/lib/ai/pipeline/schemas';
 import {
   buildCheatEstimatePrompt,
   type CheatEstimatePromptInput,
@@ -10,8 +15,6 @@ import type { StreamEvent } from '@/lib/ai/streaming/types';
 import type { UserContext } from '@/lib/ai/types';
 import { canonicalizeAnchors, clampLevel } from '@/lib/cheat/slider-nutrition';
 import type { CheatIntensity, CheatSliderSpec } from '@/lib/types/cheat';
-import { resolveModelProfile } from './model-profile';
-import { type CheatEstimate, cheatEstimateSchema } from './schemas';
 
 export interface EstimateCheatMealInput {
   /** Raw free-text occasion description (sanitized inside). */

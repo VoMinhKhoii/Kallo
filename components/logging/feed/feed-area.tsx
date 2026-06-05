@@ -391,21 +391,23 @@ export function FeedArea({
   };
 
   const handleConfirmCheatMeal = (
-    messageId: string,
-    analysisId: string,
+    message: ChatMessage,
     levels: CheatSliderLevels
   ) => {
-    const message = messages.find(
-      (m) => m.id === messageId || m.analysisId === analysisId
-    );
+    // Take the rendered message directly rather than re-finding it in `messages`:
+    // a server-loaded pending cheat card is rendered from `pendingConfirmations`
+    // and never enters `messages`, so a lookup there would miss it and silently
+    // drop the confirm. (Mirrors handleConfirmMeal.)
+    if (!message.analysisId || !message.cheatSpec) return;
     setMessages((prev) =>
-      prev.filter((m) => m.id !== messageId && m.analysisId !== analysisId)
+      prev.filter(
+        (m) => m.id !== message.id && m.analysisId !== message.analysisId
+      )
     );
-    if (!message?.cheatSpec) return;
     const mealId = crypto.randomUUID();
     confirmMeal.mutate(
       {
-        analysisId,
+        analysisId: message.analysisId,
         mealId,
         originDate: selectedDate,
         // Cheat meals have no ParsedMeal; the optimistic card is built from the
@@ -425,23 +427,34 @@ export function FeedArea({
   };
 
   // Vague-input fallback: re-run the cheat estimator with the chosen answer.
-  const handleCheatClarify = (messageId: string, answer: string) => {
-    const message = messages.find((m) => m.id === messageId);
-    if (!message) return;
-    setStreamingMsgId(messageId);
+  const handleCheatClarify = (message: ChatMessage, answer: string) => {
+    setStreamingMsgId(message.id);
     lastAnalysisIdRef.current = null;
     lastErrorRef.current = null;
+    // Update the local message in place, or seed it if this card came from a
+    // server pending row (not yet in `messages`) — so the streaming overlay has
+    // a message to attach to.
     setMessages((prev) =>
-      prev.map((m) =>
-        m.id === messageId
-          ? {
-              ...m,
+      prev.some((m) => m.id === message.id)
+        ? prev.map((m) =>
+            m.id === message.id
+              ? {
+                  ...m,
+                  cheatSpec: undefined,
+                  isStreaming: true,
+                  streamingPhase: 'waiting',
+                }
+              : m
+          )
+        : [
+            ...prev,
+            {
+              ...message,
               cheatSpec: undefined,
               isStreaming: true,
               streamingPhase: 'waiting',
-            }
-          : m
-      )
+            },
+          ]
     );
     void stream.analyze({
       message: message.userInput ?? message.content,
@@ -683,17 +696,10 @@ export function FeedArea({
                         userInput={msg.userInput}
                         timestamp={msg.timestamp}
                         isConfirming={confirmMeal.isPending}
-                        onConfirm={(levels) => {
-                          if (msg.analysisId)
-                            handleConfirmCheatMeal(
-                              msg.id,
-                              msg.analysisId,
-                              levels
-                            );
-                        }}
-                        onClarify={(answer) =>
-                          handleCheatClarify(msg.id, answer)
+                        onConfirm={(levels) =>
+                          handleConfirmCheatMeal(msg, levels)
                         }
+                        onClarify={(answer) => handleCheatClarify(msg, answer)}
                       />
                     );
                   }

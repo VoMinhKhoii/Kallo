@@ -202,6 +202,9 @@ export function CheatMealCard({ meal }: CheatMealCardProps) {
                         P: {protein}
                         {'  '}C: {carbs}
                         {'  '}F: {fat}
+                        {meal.alcoholG != null && meal.alcoholG > 0
+                          ? `  ${t('alcoholShort')}: ${formatMacroOrNA(meal.alcoholG)}`
+                          : ''}
                       </span>
                       <span
                         className="font-bold text-nham-text tabular-nums"

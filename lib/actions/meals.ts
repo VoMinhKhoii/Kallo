@@ -697,11 +697,19 @@ async function loadPendingAnalysesByDateForUser(
       // toParsedMeal (which reads .mealItems) can't apply. Branch on entryMode,
       // mirroring confirmAndSaveMealAction.
       if (row.entryMode === 'cheat') {
-        const { spec } = row.pipelineResult as {
-          entryMode: 'cheat';
-          spec: CheatSliderSpec;
-        };
-        return [{ ...base, cheatSpec: spec }];
+        // Validate the staged spec rather than blindly destructuring: a
+        // malformed payload (e.g. {}) wouldn't throw and would surface a card
+        // with cheatSpec: undefined. Throwing routes it through the catch below,
+        // which skips + logs it like any other malformed row.
+        const spec = (row.pipelineResult as { spec?: unknown } | null)?.spec;
+        if (
+          !spec ||
+          typeof spec !== 'object' ||
+          !Array.isArray((spec as { sliders?: unknown }).sliders)
+        ) {
+          throw new Error('Malformed cheat pending analysis payload');
+        }
+        return [{ ...base, cheatSpec: spec as CheatSliderSpec }];
       }
       return [
         {
