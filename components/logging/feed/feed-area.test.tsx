@@ -9,7 +9,9 @@ vi.mock('@/components/logging/feed/empty-state', () => ({
 }));
 
 vi.mock('@/components/logging/feed/macro-summary', () => ({
-  MacroSummary: () => <div data-testid="macro-summary" />,
+  MacroSummary: ({ totals }: { totals: { calories: number } }) => (
+    <div data-testid="macro-summary" data-calories={totals.calories} />
+  ),
 }));
 
 vi.mock('@/components/logging/feed/persisted-meal-card', () => ({
@@ -21,9 +23,18 @@ vi.mock('@/components/logging/feed/persisted-meal-card', () => ({
 vi.mock('@/components/logging/feed/meal-entry', () => ({
   MealEntry: ({
     message,
+    onConfirm,
   }: {
     message: { userInput?: string; analysisId?: string };
-  }) => <div data-testid="meal-entry">{message.userInput}</div>,
+    onConfirm?: (edits: unknown[]) => void;
+  }) => (
+    <div data-testid="meal-entry">
+      {message.userInput}
+      <button type="button" onClick={() => onConfirm?.([])}>
+        confirm
+      </button>
+    </div>
+  ),
 }));
 
 vi.mock('@/components/logging/feed/streaming-meal-entry', () => ({
@@ -45,11 +56,13 @@ vi.mock('@/components/logging/input/meal-input', () => ({
 
 const {
   mockInvalidateQueries,
+  mockMutate,
   mockUseLoggingDay,
   mockUseStreamAnalysis,
   mockUseStreamingTerminalEffects,
 } = vi.hoisted(() => ({
   mockInvalidateQueries: vi.fn(),
+  mockMutate: vi.fn(),
   mockUseLoggingDay: vi.fn(),
   mockUseStreamAnalysis: vi.fn(),
   mockUseStreamingTerminalEffects: vi.fn(),
@@ -71,7 +84,7 @@ vi.mock('@/hooks/use-feed-submit', () => ({
 }));
 
 vi.mock('@/hooks/use-meal-mutations', () => ({
-  useConfirmMeal: () => ({ mutate: vi.fn(), isPending: false }),
+  useConfirmMeal: () => ({ mutate: mockMutate, isPending: false }),
 }));
 
 vi.mock('@/hooks/use-recent-cheat-occasions', () => ({
@@ -183,6 +196,28 @@ describe('FeedArea', () => {
     expect(input).toBeInTheDocument();
   });
 
+  it('feeds saved meal calories into the macro summary ring', () => {
+    // The calorie ring reads its total from loggingDay.persistedMeals. The
+    // first-meal regression left this at 0 after a save because the cache was
+    // clobbered back to empty; assert the wiring sums the persisted meals so the
+    // ring reflects the day once the confirmed meal is in the cache.
+    dayWithMeals([makeMeal(450), makeMeal(300, 'meal-2')]);
+
+    render(
+      <FeedArea
+        selectedDate="2026-05-04"
+        today={TODAY}
+        profile={profile}
+        onSelectDate={vi.fn()}
+      />
+    );
+
+    expect(screen.getByTestId('macro-summary')).toHaveAttribute(
+      'data-calories',
+      '750'
+    );
+  });
+
   it('renders server-backed pending confirmations in the card scroller', () => {
     mockUseLoggingDay.mockReturnValue({
       data: {
@@ -225,6 +260,50 @@ describe('FeedArea', () => {
       'Phở bò'
     );
     expect(within(scrollRegion).queryByTestId('empty-state')).toBeNull();
+  });
+
+  it('fires the confirm mutation for a server-loaded pending meal', () => {
+    // Regression: pending cards from the server live in the query data, not the
+    // local `messages` array. Confirming one must still dispatch the save —
+    // previously the handler looked it up in `messages`, found nothing, and
+    // silently returned (UI showed "saved" but nothing persisted).
+    mockUseLoggingDay.mockReturnValue({
+      data: {
+        persistedMeals: [],
+        pendingConfirmations: [
+          {
+            id: 'pending-1',
+            rawInput: 'Phở bò',
+            loggedAt: '2026-05-04T05:30:00.000Z',
+            parsedMeal: {
+              mealName: 'Phở bò',
+              items: [],
+              totalMacros: { calories: 300, protein: 20, carbs: 40, fat: 8 },
+            },
+          },
+        ],
+      },
+      isError: false,
+      isFetching: false,
+      isLoading: false,
+      refetch: vi.fn(),
+    });
+
+    render(
+      <FeedArea
+        selectedDate="2026-05-04"
+        today={TODAY}
+        profile={profile}
+        onSelectDate={vi.fn()}
+      />
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'confirm' }));
+
+    expect(mockMutate).toHaveBeenCalledTimes(1);
+    expect(mockMutate.mock.calls[0][0]).toMatchObject({
+      analysisId: 'pending-1',
+    });
   });
 
   it('shows a day loading skeleton instead of stale or empty card content', () => {

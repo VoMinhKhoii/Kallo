@@ -15,7 +15,8 @@
     "close": "Close",
     "or": "or",
     "optional": "Optional",
-    "notFound": "Page not found"
+    "notFound": "Page not found",
+    "notSignedIn": "Not signed in."
   },
   "nav": {
     "logging": "Logging",

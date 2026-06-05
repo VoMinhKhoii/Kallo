@@ -1,0 +1,18 @@
+{
+  "extends": "expo/tsconfig.base",
+  "compilerOptions": {
+    "strict": true,
+    "paths": {
+      // Mobile app's own source.
+      "~/*": ["./src/*"],
+      // Shared web code imported verbatim (REST contracts, pure schemas,
+      // types). Mapped under `@/lib/*` to match how the web repo references
+      // itself, so a shared file's internal `@/lib/...` imports resolve
+      // correctly when bundled into the mobile app.
+      "@/lib/*": ["../../lib/*"],
+      "@/messages/*": ["../../messages/*"],
+      "@/i18n/*": ["../../i18n/*"]
+    }
+  },
+  "include": ["**/*.ts", "**/*.tsx", ".expo/types/**/*.ts", "expo-env.d.ts"]
+}
