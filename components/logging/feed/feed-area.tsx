@@ -524,39 +524,47 @@ export function FeedArea({
     }
   }, [stream.isAnalyzing, streamItemCount, scrollToBottom]);
 
-  // Unconfirmed streaming messages (exclude user messages)
-  const pendingIds = useMemo(
-    () => new Set(pendingConfirmations.map((pending) => pending.id)),
-    [pendingConfirmations]
+  // Analyses that still have a live, in-session card. We render those from the
+  // local streamed message — it holds the user's in-progress slider levels /
+  // quantity edits in component state. Rendering the server-pending twin instead
+  // (after a background refetch lands `pendingConfirmations`) would mount a
+  // different React element and reset that state mid-edit, so we suppress the
+  // twin until the local card is gone (confirmed/dismissed).
+  const localAnalysisIds = useMemo(
+    () =>
+      new Set(
+        displayMessages
+          .filter((m) => m.role === 'assistant' && m.analysisId)
+          .map((m) => m.analysisId as string)
+      ),
+    [displayMessages]
   );
 
   const pendingMessages = useMemo<ChatMessage[]>(
     () =>
-      pendingConfirmations.map((pending) => ({
-        id: `pending-${pending.id}`,
-        role: 'assistant',
-        content: '',
-        parsedMeal: pending.parsedMeal,
-        cheatSpec: pending.cheatSpec,
-        userInput: pending.rawInput,
-        timestamp: new Date(pending.loggedAt),
-        loggedDate: selectedDate,
-        analysisId: pending.id,
-      })),
-    [pendingConfirmations, selectedDate]
+      pendingConfirmations
+        .filter((pending) => !localAnalysisIds.has(pending.id))
+        .map((pending) => ({
+          id: `pending-${pending.id}`,
+          role: 'assistant',
+          content: '',
+          parsedMeal: pending.parsedMeal,
+          cheatSpec: pending.cheatSpec,
+          userInput: pending.rawInput,
+          timestamp: new Date(pending.loggedAt),
+          loggedDate: selectedDate,
+          analysisId: pending.id,
+        })),
+    [pendingConfirmations, selectedDate, localAnalysisIds]
   );
 
   const unconfirmedMessages = [
     ...pendingMessages,
-    ...displayMessages.filter(
-      (m) =>
-        m.role === 'assistant' &&
-        (!m.analysisId || !pendingIds.has(m.analysisId))
-    ),
+    ...displayMessages.filter((m) => m.role === 'assistant'),
   ];
   const hasPendingMessages = pendingMessages.length > 0;
-  const hasStreamingMessages = unconfirmedMessages.some(
-    (message) => !pendingIds.has(message.analysisId ?? '')
+  const hasStreamingMessages = displayMessages.some(
+    (message) => message.role === 'assistant'
   );
   const hasPersistedMeals = persistedMeals.length > 0;
   const hasContent =
