@@ -63,7 +63,7 @@ export default async function HealthPage() {
   return (
     <div className="mx-auto max-w-5xl space-y-8 font-sans-display">
       <div>
-        <h1 className="font-lora font-bold text-2xl text-nham-text tracking-tight">
+        <h1 className="font-bold font-lora text-2xl text-nham-text tracking-tight">
           Pipeline Health
         </h1>
         <p className="mt-1 text-nham-text-muted text-sm">

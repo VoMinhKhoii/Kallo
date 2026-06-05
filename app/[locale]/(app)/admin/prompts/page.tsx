@@ -12,7 +12,7 @@ export default async function PromptsPage() {
   return (
     <div className="mx-auto max-w-4xl space-y-6 font-sans-display">
       <div>
-        <h1 className="font-lora font-bold text-2xl text-nham-text tracking-tight">
+        <h1 className="font-bold font-lora text-2xl text-nham-text tracking-tight">
           Prompts
         </h1>
         <p className="mt-1 text-nham-text-muted text-sm">
