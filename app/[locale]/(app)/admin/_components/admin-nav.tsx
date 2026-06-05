@@ -1,9 +1,9 @@
 'use client';
 
 import { Activity, Inbox, type LucideIcon, ScrollText } from 'lucide-react';
+import { isActiveRoute } from '@/components/app/nav-items';
 import { Link, usePathname } from '@/i18n/navigation';
 import { cn } from '@/lib/utils';
-import { isActiveRoute } from '@/components/app/nav-items';
 
 interface AdminNavLink {
   href: string;

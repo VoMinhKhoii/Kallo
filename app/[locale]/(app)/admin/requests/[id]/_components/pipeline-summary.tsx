@@ -357,7 +357,7 @@ export function PipelineSummary({
       {/* Sticky stage jump-nav — pin a stage without scrolling the whole page */}
       <nav
         aria-label="Jump to stage"
-        className="-mx-px sticky top-[5.75rem] z-10 flex flex-wrap items-center gap-1.5 border-nham-border/60 border-b bg-nham-surface/90 px-5 py-2 backdrop-blur"
+        className="sticky top-[5.75rem] z-10 -mx-px flex flex-wrap items-center gap-1.5 border-nham-border/60 border-b bg-nham-surface/90 px-5 py-2 backdrop-blur"
       >
         {STAGE_NAV.map((s) => (
           <a
@@ -638,7 +638,10 @@ function Metric({
         {label}
       </span>
       <span
-        className={cn('font-medium text-sm tabular-nums', metricToneClass(tone))}
+        className={cn(
+          'font-medium text-sm tabular-nums',
+          metricToneClass(tone)
+        )}
       >
         {value}
       </span>
@@ -762,7 +765,7 @@ function MatchRow({ row }: { row: MatchDiagnosticRow }) {
           row.source !== null ||
           row.latencyMs !== null ||
           row.viaAlias) && (
-          <div className="-mt-0.5 col-start-3 col-end-5 flex flex-wrap items-center gap-1.5 text-[11px] text-nham-text-muted">
+          <div className="col-start-3 col-end-5 -mt-0.5 flex flex-wrap items-center gap-1.5 text-[11px] text-nham-text-muted">
             {row.matchType !== null && (
               <span className="inline-flex items-center rounded bg-nham-hover px-1.5 py-0.5 font-medium tabular-nums">
                 {row.matchType}

@@ -22,7 +22,7 @@ export function RequestDetailTabs({
 }) {
   return (
     <Tabs className="gap-4" defaultValue="summary">
-      <div className="-mx-3 sm:-mx-6 sticky top-12 z-20 border-nham-border/60 border-b bg-nham-surface/90 px-3 py-2 backdrop-blur sm:px-6">
+      <div className="sticky top-12 z-20 -mx-3 border-nham-border/60 border-b bg-nham-surface/90 px-3 py-2 backdrop-blur sm:-mx-6 sm:px-6">
         <TabsList variant="line">
           <TabsTrigger value="summary">
             <Layers aria-hidden />

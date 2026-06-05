@@ -1,11 +1,6 @@
 'use client';
 
-import {
-  Check,
-  ChevronDown,
-  ChevronRight,
-  Copy,
-} from 'lucide-react';
+import { Check, ChevronDown, ChevronRight, Copy } from 'lucide-react';
 import { type ReactNode, useId, useState } from 'react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
@@ -64,9 +59,7 @@ function highlightJson(json: string): ReactNode[] {
 
 function Primitive({ value }: { value: unknown }) {
   if (typeof value === 'string') {
-    return (
-      <span className="break-all text-nham-success">{`"${value}"`}</span>
-    );
+    return <span className="break-all text-nham-success">{`"${value}"`}</span>;
   }
   if (typeof value === 'number') {
     return (
@@ -126,8 +119,7 @@ function JsonNode({
           {!open && (
             <>
               {' '}
-              <span className="tabular-nums">{entries.length}</span>
-              {' '}
+              <span className="tabular-nums">{entries.length}</span>{' '}
               {closeBracket}
             </>
           )}
