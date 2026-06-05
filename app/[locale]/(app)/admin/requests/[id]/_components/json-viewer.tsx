@@ -239,6 +239,8 @@ export function JsonViewer({
             <button
               type="button"
               onClick={handleCopy}
+              aria-label={copied ? 'Copied to clipboard' : 'Copy to clipboard'}
+              aria-live="polite"
               className="inline-flex items-center gap-1 rounded px-1.5 py-1 font-medium text-[11px] text-nham-text-muted transition-colors hover:bg-nham-hover/70 hover:text-nham-text"
             >
               {copied ? (

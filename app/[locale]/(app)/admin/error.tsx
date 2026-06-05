@@ -19,10 +19,7 @@ export default function AdminError({
       className="flex min-h-[40vh] flex-col items-center justify-center gap-3 text-center font-sans-display"
       role="alert"
     >
-      <h2
-        className="font-semibold text-lg text-nham-text"
-        style={{ fontFamily: 'Lora, serif' }}
-      >
+      <h2 className="font-lora font-semibold text-lg text-nham-text">
         Something went wrong
       </h2>
       <p className="max-w-md text-nham-text-muted text-sm">

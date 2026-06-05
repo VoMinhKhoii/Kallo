@@ -1,6 +1,7 @@
 import { healthAggregates } from '@/lib/admin/queries';
 import { requireAdmin } from '@/lib/admin/require-admin';
 import { db } from '@/lib/db';
+import { metricToneClass } from '../_components/status-badge';
 import { Sparkline } from './_components/sparkline';
 
 export const dynamic = 'force-dynamic';
@@ -16,10 +17,10 @@ function ms(value: number | null) {
 }
 
 function rateColor(rate: number | null) {
-  if (rate === null) return 'text-nham-text-muted';
-  if (rate >= 0.95) return 'text-nham-success';
-  if (rate >= 0.8) return 'text-amber-700 dark:text-amber-400';
-  return 'text-nham-danger';
+  if (rate === null) return metricToneClass('neutral');
+  if (rate >= 0.95) return metricToneClass('good');
+  if (rate >= 0.8) return metricToneClass('warn');
+  return metricToneClass('bad');
 }
 
 export default async function HealthPage() {
@@ -62,10 +63,7 @@ export default async function HealthPage() {
   return (
     <div className="mx-auto max-w-5xl space-y-8 font-sans-display">
       <div>
-        <h1
-          className="font-bold text-2xl text-nham-text tracking-tight"
-          style={{ fontFamily: 'Lora, serif' }}
-        >
+        <h1 className="font-lora font-bold text-2xl text-nham-text tracking-tight">
           Pipeline Health
         </h1>
         <p className="mt-1 text-nham-text-muted text-sm">

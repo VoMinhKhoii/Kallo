@@ -158,10 +158,7 @@ export default async function RequestDetailPage({
             <h1 className="break-all font-mono text-nham-text-muted text-sm">
               {request.id}
             </h1>
-            <p
-              className="font-semibold text-lg text-nham-text"
-              style={{ fontFamily: 'Lora, serif' }}
-            >
+            <p className="font-lora font-semibold text-lg text-nham-text">
               {request.rawInput.length > 100
                 ? `${request.rawInput.slice(0, 100)}…`
                 : request.rawInput}

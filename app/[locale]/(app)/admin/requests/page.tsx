@@ -49,10 +49,7 @@ export default async function RequestsPage({
   return (
     <div className="mx-auto max-w-6xl space-y-4">
       <div className="flex items-baseline justify-between">
-        <h1
-          className="font-semibold text-nham-text text-xl tracking-tight"
-          style={{ fontFamily: 'Lora, serif' }}
-        >
+        <h1 className="font-lora font-semibold text-nham-text text-xl tracking-tight">
           Pipeline Requests
         </h1>
         <span className="text-nham-text-muted text-sm tabular-nums">

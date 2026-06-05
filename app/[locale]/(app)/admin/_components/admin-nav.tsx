@@ -28,10 +28,7 @@ export function AdminNav() {
   return (
     <header className="sticky top-0 z-30 border-nham-border/60 border-b bg-nham-surface/85 backdrop-blur">
       <div className="mx-auto flex max-w-6xl items-center gap-3 px-3 py-2.5 sm:px-6">
-        <span
-          className="shrink-0 font-semibold text-nham-text text-sm tracking-tight"
-          style={{ fontFamily: 'Lora, serif' }}
-        >
+        <span className="shrink-0 font-lora font-semibold text-nham-text text-sm tracking-tight">
           Nhẩm Admin
         </span>
         <nav aria-label="Admin sections" className="flex items-center gap-1">

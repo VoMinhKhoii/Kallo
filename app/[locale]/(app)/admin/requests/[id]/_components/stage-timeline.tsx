@@ -3,11 +3,13 @@ import type { RequestDetailLlmCall } from '@/lib/admin/queries';
 import type { pipelineLlmCalls, pipelineStageLogs } from '@/lib/db/schema';
 import { cn } from '@/lib/utils';
 import {
-  type CompareLabel as StatusCompareLabel,
+  type CompareLabel,
   compareLabelClass,
   statusToneClass,
 } from '../../../_components/status-badge';
 import { JsonViewer } from './json-viewer';
+
+export type { CompareLabel };
 
 type StageLog = InferSelectModel<typeof pipelineStageLogs>;
 type BaseLlmCall = InferSelectModel<typeof pipelineLlmCalls>;
@@ -18,8 +20,6 @@ type MetadataItem = {
   value: number | string | null | undefined;
   unit?: 'chars' | 'tokens';
 };
-
-export type CompareLabel = StatusCompareLabel;
 
 export interface StageWithCalls {
   stage: StageLog;

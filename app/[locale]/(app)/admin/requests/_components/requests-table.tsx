@@ -17,7 +17,7 @@ export function RequestsTable({ rows }: RequestsTableProps) {
   }
 
   return (
-    <div className="overflow-x-auto rounded-lg border border-nham-border/60 bg-white/40 dark:bg-white/[0.02]">
+    <div className="overflow-x-auto rounded-lg border border-nham-border/60 bg-white/50 dark:bg-white/[0.02]">
       <table className="w-full font-sans-display text-sm">
         <thead className="border-nham-border/60 border-b bg-nham-track/50">
           <tr className="text-left text-nham-text-muted text-xs">

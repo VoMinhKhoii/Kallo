@@ -212,6 +212,12 @@
     font-family: var(--font-dm-sans), ui-sans-serif, system-ui, sans-serif;
   }
 
+  /* Lora serif utility — replaces inline `style={{ fontFamily: 'Lora, serif' }}`
+     used for admin headings and the branded app title. */
+  .font-lora {
+    font-family: var(--font-lora), "Source Serif Pro", Georgia, serif;
+  }
+
   /* Subtle pulse used for the onboarding-incomplete dot. */
   @keyframes nham-pulse-dot {
     0%,
