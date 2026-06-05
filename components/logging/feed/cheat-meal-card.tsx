@@ -10,19 +10,15 @@ import {
 } from '@/components/logging/feed/format-inline-nutrition';
 import { Badge } from '@/components/ui/badge';
 import type { PersistedMeal } from '@/lib/actions/meals';
-import { activeAnchorLabel } from '@/lib/cheat/slider-nutrition';
+import {
+  activeAnchorLabel,
+  CHEAT_SLIDER_COLORS,
+} from '@/lib/cheat/slider-nutrition';
 import { cn } from '@/lib/utils';
 
 interface CheatMealCardProps {
   meal: PersistedMeal;
 }
-
-const MACRO_DOT: Record<string, string> = {
-  protein: 'var(--color-nham-macro-protein)',
-  carbs: 'var(--color-nham-macro-carbs)',
-  fat: 'var(--color-nham-macro-fat)',
-  drinks: 'var(--color-nham-accent)',
-};
 
 /** Six dots filled up to the chosen stop — where on the scale the user landed. */
 function StopScale({ level, color }: { level: number; color: string }) {
@@ -177,7 +173,7 @@ export function CheatMealCard({ meal }: CheatMealCardProps) {
                             </span>
                             <StopScale
                               level={level}
-                              color={MACRO_DOT[slider.key]}
+                              color={CHEAT_SLIDER_COLORS[slider.key]}
                             />
                           </span>
                           <span className="min-w-0 truncate text-right text-nham-text-muted text-xs">

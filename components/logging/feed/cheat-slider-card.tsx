@@ -7,6 +7,7 @@ import { useMemo, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Slider } from '@/components/ui/slider';
 import {
+  CHEAT_SLIDER_COLORS,
   defaultLevels,
   resolveSliderNutrition,
 } from '@/lib/cheat/slider-nutrition';
@@ -27,13 +28,6 @@ interface CheatSliderCardProps {
   /** Answer a clarifying question (rare vague-input fallback). */
   onClarify?: (answer: string) => void;
 }
-
-const MACRO_DOT: Record<string, string> = {
-  protein: 'var(--color-nham-macro-protein)',
-  carbs: 'var(--color-nham-macro-carbs)',
-  fat: 'var(--color-nham-macro-fat)',
-  drinks: 'var(--color-nham-accent)',
-};
 
 export function CheatSliderCard({
   spec,
@@ -201,7 +195,7 @@ function CheatSliderRow({
   onChange: (level: number) => void;
 }) {
   const t = useTranslations('logging.cheatSliders');
-  const color = MACRO_DOT[slider.key];
+  const color = CHEAT_SLIDER_COLORS[slider.key];
   const stops = [...slider.anchors].sort((a, b) => a.level - b.level);
 
   // Even levels sit on a labeled stop; odd levels (1/3/5/7/9) are the "between
@@ -243,7 +237,7 @@ function CheatSliderRow({
             ? 'font-semibold text-nham-text'
             : isBetween
               ? 'text-nham-text'
-              : 'text-nham-text-muted/80 hover:text-nham-text'
+              : 'text-nham-text-muted hover:text-nham-text'
         )}
         style={{
           left: `${anchor.level * 10}%`,

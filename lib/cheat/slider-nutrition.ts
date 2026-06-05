@@ -1,9 +1,22 @@
 import type {
   CheatSlider,
   CheatSliderAnchor,
+  CheatSliderKey,
   CheatSliderLevels,
   CheatSliderSpec,
 } from '@/lib/types/cheat';
+
+/**
+ * Dot/indicator color per slider axis, shared by the live slider card and the
+ * persisted cheat-meal card so the two stay in lockstep. Macro axes reuse the
+ * shared macro palette; drinks borrows the warm accent.
+ */
+export const CHEAT_SLIDER_COLORS: Record<CheatSliderKey, string> = {
+  protein: 'var(--color-nham-macro-protein)',
+  carbs: 'var(--color-nham-macro-carbs)',
+  fat: 'var(--color-nham-macro-fat)',
+  drinks: 'var(--color-nham-accent)',
+};
 
 /**
  * Single source of truth for turning chosen slider levels into nutrition.
