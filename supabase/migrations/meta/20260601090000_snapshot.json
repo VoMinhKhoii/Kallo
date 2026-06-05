@@ -1,6 +1,6 @@
 {
-  "id": "86eadedf-3e4e-4d6a-8986-dc07e343d3f4",
-  "prevId": "58fb5881-2ffc-4cd8-a283-03d6d5391665",
+  "id": "a3da7a40-08d1-4693-b2cf-bf6709c76faa",
+  "prevId": "35d39c12-e3ad-477a-9b0d-5cbab0ae9f5a",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -527,6 +527,370 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
+    "public.circle_events": {
+      "name": "circle_events",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "actor_id": {
+          "name": "actor_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "audience": {
+          "name": "audience",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "type": {
+          "name": "type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "ref_id": {
+          "name": "ref_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "circle_events_audience_created_idx": {
+          "name": "circle_events_audience_created_idx",
+          "columns": [
+            {
+              "expression": "audience",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "\"created_at\" DESC",
+              "asc": true,
+              "isExpression": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "circle_events_actor_created_idx": {
+          "name": "circle_events_actor_created_idx",
+          "columns": [
+            {
+              "expression": "actor_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "\"created_at\" DESC",
+              "asc": true,
+              "isExpression": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "circle_events_actor_id_users_id_fk": {
+          "name": "circle_events_actor_id_users_id_fk",
+          "tableFrom": "circle_events",
+          "tableTo": "users",
+          "schemaTo": "auth",
+          "columnsFrom": [
+            "actor_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "circle_events_type_check": {
+          "name": "circle_events_type_check",
+          "value": "\"circle_events\".\"type\" IN ('meal_shared', 'friend_request', 'friend_accepted', 'coach_nudge', 'streak_milestone', 'recap_ready')"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.coach_assignments": {
+      "name": "coach_assignments",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "coach_id": {
+          "name": "coach_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "client_id": {
+          "name": "client_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "rank": {
+          "name": "rank",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'primary'"
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'pending'"
+        },
+        "audience_id": {
+          "name": "audience_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "coach_assignments_one_active_primary_idx": {
+          "name": "coach_assignments_one_active_primary_idx",
+          "columns": [
+            {
+              "expression": "client_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "where": "rank = 'primary' AND status = 'active'",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "coach_assignments_coach_id_users_id_fk": {
+          "name": "coach_assignments_coach_id_users_id_fk",
+          "tableFrom": "coach_assignments",
+          "tableTo": "users",
+          "schemaTo": "auth",
+          "columnsFrom": [
+            "coach_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "coach_assignments_client_id_users_id_fk": {
+          "name": "coach_assignments_client_id_users_id_fk",
+          "tableFrom": "coach_assignments",
+          "tableTo": "users",
+          "schemaTo": "auth",
+          "columnsFrom": [
+            "client_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "coach_assignments_rank_check": {
+          "name": "coach_assignments_rank_check",
+          "value": "\"coach_assignments\".\"rank\" IN ('primary', 'secondary')"
+        },
+        "coach_assignments_status_check": {
+          "name": "coach_assignments_status_check",
+          "value": "\"coach_assignments\".\"status\" IN ('pending', 'active', 'revoked')"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.friendships": {
+      "name": "friendships",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "user_low": {
+          "name": "user_low",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "user_high": {
+          "name": "user_high",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'pending'"
+        },
+        "requested_by": {
+          "name": "requested_by",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "friendships_user_high_idx": {
+          "name": "friendships_user_high_idx",
+          "columns": [
+            {
+              "expression": "user_high",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "friendships_user_low_users_id_fk": {
+          "name": "friendships_user_low_users_id_fk",
+          "tableFrom": "friendships",
+          "tableTo": "users",
+          "schemaTo": "auth",
+          "columnsFrom": [
+            "user_low"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "friendships_user_high_users_id_fk": {
+          "name": "friendships_user_high_users_id_fk",
+          "tableFrom": "friendships",
+          "tableTo": "users",
+          "schemaTo": "auth",
+          "columnsFrom": [
+            "user_high"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "friendships_requested_by_users_id_fk": {
+          "name": "friendships_requested_by_users_id_fk",
+          "tableFrom": "friendships",
+          "tableTo": "users",
+          "schemaTo": "auth",
+          "columnsFrom": [
+            "requested_by"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "friendships_user_low_high_uniq": {
+          "name": "friendships_user_low_high_uniq",
+          "nullsNotDistinct": false,
+          "columns": [
+            "user_low",
+            "user_high"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "friendships_user_order_check": {
+          "name": "friendships_user_order_check",
+          "value": "\"friendships\".\"user_low\" < \"friendships\".\"user_high\""
+        },
+        "friendships_status_check": {
+          "name": "friendships_status_check",
+          "value": "\"friendships\".\"status\" IN ('pending', 'accepted', 'blocked')"
+        }
+      },
+      "isRLSEnabled": false
+    },
     "public.ingredient_query_embeddings": {
       "name": "ingredient_query_embeddings",
       "schema": "",
@@ -901,6 +1265,125 @@
       "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.meal_shares": {
+      "name": "meal_shares",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "meal_id": {
+          "name": "meal_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "actor_id": {
+          "name": "actor_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "visibility": {
+          "name": "visibility",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'private'"
+        },
+        "shared_at": {
+          "name": "shared_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "meal_shares_shared_at_idx": {
+          "name": "meal_shares_shared_at_idx",
+          "columns": [
+            {
+              "expression": "\"shared_at\" DESC",
+              "asc": true,
+              "isExpression": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "where": "visibility <> 'private'",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "meal_shares_actor_idx": {
+          "name": "meal_shares_actor_idx",
+          "columns": [
+            {
+              "expression": "actor_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "meal_shares_meal_id_meals_id_fk": {
+          "name": "meal_shares_meal_id_meals_id_fk",
+          "tableFrom": "meal_shares",
+          "tableTo": "meals",
+          "columnsFrom": [
+            "meal_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "meal_shares_actor_id_users_id_fk": {
+          "name": "meal_shares_actor_id_users_id_fk",
+          "tableFrom": "meal_shares",
+          "tableTo": "users",
+          "schemaTo": "auth",
+          "columnsFrom": [
+            "actor_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "meal_shares_meal_id_uniq": {
+          "name": "meal_shares_meal_id_uniq",
+          "nullsNotDistinct": false,
+          "columns": [
+            "meal_id"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "meal_shares_visibility_check": {
+          "name": "meal_shares_visibility_check",
+          "value": "\"meal_shares\".\"visibility\" IN ('private', 'circle', 'public')"
+        }
+      },
       "isRLSEnabled": false
     },
     "public.meals": {
@@ -2399,6 +2882,80 @@
           "columns": [
             "name",
             "code_hash"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.public_profiles": {
+      "name": "public_profiles",
+      "schema": "",
+      "columns": {
+        "user_id": {
+          "name": "user_id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "handle": {
+          "name": "handle",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "display_name": {
+          "name": "display_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "avatar_seed": {
+          "name": "avatar_seed",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "public_profiles_user_id_users_id_fk": {
+          "name": "public_profiles_user_id_users_id_fk",
+          "tableFrom": "public_profiles",
+          "tableTo": "users",
+          "schemaTo": "auth",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "public_profiles_handle_uniq": {
+          "name": "public_profiles_handle_uniq",
+          "nullsNotDistinct": false,
+          "columns": [
+            "handle"
           ]
         }
       },
