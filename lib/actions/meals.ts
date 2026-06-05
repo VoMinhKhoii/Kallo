@@ -1,7 +1,13 @@
 'use server';
 
+import { randomUUID } from 'node:crypto';
 import { and, desc, eq, gte, inArray, isNull, lt, sql } from 'drizzle-orm';
 import { z } from 'zod';
+import {
+  buildPersistedIngredient,
+  buildPersistedMeal,
+  buildPersistedMealItemGroup,
+} from '@/lib/actions/persisted-meal';
 import { NUTRITION_KEYS } from '@/lib/ai/constants';
 import { toParsedMeal } from '@/lib/ai/mappers';
 import {
@@ -124,7 +130,7 @@ export async function confirmAndSaveMealAction(input: {
     ingredientIndex?: number;
     newGrams: number;
   }[];
-}) {
+}): Promise<ConfirmMealResponse> {
   const parsed = confirmAndSaveSchema.parse(input);
   const { user, profile } = await requireAuthAndProfile();
 
@@ -267,13 +273,28 @@ export async function confirmAndSaveMealAction(input: {
       })
       .returning({ id: meals.id });
 
+    // Pre-generate a stable id for each ingredient row so the inserted rows and
+    // the saved-meal payload returned below share ids by construction — no
+    // dependence on RETURNING row order. (mealItems.id defaults to
+    // gen_random_uuid(); an explicit id simply overrides that default.)
+    const itemGroups = persistedMealItems.map((mealItem, order) => ({
+      name: mealItem.name,
+      order,
+      displayedNutrition: mealItem.displayedNutrition,
+      ingredients: mealItem.ingredients.map((ing) => ({
+        id: randomUUID(),
+        ing,
+      })),
+    }));
+
     // Insert meal items (ingredients grouped by parent dish)
-    const itemRows = persistedMealItems.flatMap((mealItem, order) =>
-      mealItem.ingredients.map((ing) => ({
+    const itemRows = itemGroups.flatMap((group) =>
+      group.ingredients.map(({ id, ing }) => ({
+        id,
         mealId: meal.id,
         ingredientName: ing.ingredientName,
-        mealItemName: mealItem.name,
-        mealItemOrder: order,
+        mealItemName: group.name,
+        mealItemOrder: group.order,
         foodCompositionId: ing.foodCompositionId,
         estimatedGrams: ing.estimatedGrams,
         userFacingUnit: ing.userFacingUnit,
@@ -306,7 +327,45 @@ export async function confirmAndSaveMealAction(input: {
       );
     }
 
-    return { mealId: meal.id };
+    // Rebuild the saved meal in the exact shape loadMealsByDate returns, from
+    // data already computed in this transaction (reusing the same pre-generated
+    // ingredient ids). The client reconciles its optimistic card straight to
+    // these authoritative values from the confirm response — no follow-up day
+    // refetch (and its round-trip) required.
+    const mealItemGroups: PersistedMealItemGroup[] = itemGroups.map((group) =>
+      buildPersistedMealItemGroup(
+        group.name,
+        group.order,
+        group.ingredients.map(({ id, ing }) =>
+          buildPersistedIngredient({
+            id,
+            ingredientName: ing.ingredientName,
+            foodCompositionId: ing.foodCompositionId,
+            estimatedGrams: ing.estimatedGrams,
+            userFacingUnit: ing.userFacingUnit,
+            cookingMethod: ing.cookingMethod,
+            matchConfidence: ing.matchConfidence,
+            nutrition: ing.displayedNutrition,
+          })
+        )
+      )
+    );
+
+    const savedMeal = buildPersistedMeal({
+      id: meal.id,
+      rawInput: pending.rawInput,
+      mealSlot,
+      confidenceOverall: pipelineResult.confidenceOverall,
+      loggedAt: loggedAt.toISOString(),
+      nutrition: mealDisplayed,
+      mealItemGroups,
+      // A freshly-saved meal is never shared yet.
+      share: null,
+    });
+
+    // `mealId` kept for backward compatibility (e.g. the mobile confirm route);
+    // `meal` is the authoritative payload the web client reconciles against.
+    return { mealId: meal.id, meal: savedMeal };
   });
 }
 
@@ -357,6 +416,17 @@ export interface PendingMealConfirmation {
 export interface LoggingDayData {
   persistedMeals: PersistedMeal[];
   pendingConfirmations: PendingMealConfirmation[];
+}
+
+/**
+ * Return shape of `confirmAndSaveMealAction`. `mealId` is kept for backward
+ * compatibility (the mobile `POST /api/v1/meals/confirm` route echoes it);
+ * `meal` is the authoritative saved meal the web client reconciles against
+ * without a follow-up day refetch. Re-exported via lib/api/contracts/meals.ts.
+ */
+export interface ConfirmMealResponse {
+  mealId: string;
+  meal: PersistedMeal;
 }
 
 export async function loadMealsByDate(input: {
@@ -423,54 +493,55 @@ async function loadMealsByDateForUser(
   return mealRows.map((meal) => {
     const items = itemsByMealId.get(meal.id) ?? [];
 
-    // Reconstruct meal item groups from flat ingredients
-    const groupMap = new Map<string, PersistedMealItemGroup>();
+    // Group flat ingredient rows by parent dish (order:name), preserving row
+    // order within each group.
+    const ingredientsByGroup = new Map<
+      string,
+      { name: string; order: number; ingredients: PersistedIngredient[] }
+    >();
     for (const item of items) {
       const key = `${item.mealItemOrder}:${item.mealItemName}`;
-      let group = groupMap.get(key);
+      let group = ingredientsByGroup.get(key);
       if (!group) {
         group = {
           name: item.mealItemName,
           order: item.mealItemOrder,
           ingredients: [],
-          nutrition: {} as NutritionValues,
         };
-        groupMap.set(key, group);
+        ingredientsByGroup.set(key, group);
       }
-      group.ingredients.push({
-        id: item.id,
-        ingredientName: item.ingredientName,
-        foodCompositionId: item.foodCompositionId,
-        estimatedGrams: item.estimatedGrams,
-        userFacingUnit: item.userFacingUnit,
-        cookingMethod: item.cookingMethod,
-        matchConfidence: item.matchConfidence,
-        nutrition: extractNutritionValues(item),
-      });
-    }
-
-    // Sort groups by order, compute group-level nutrition
-    const groups = Array.from(groupMap.values()).sort(
-      (a, b) => a.order - b.order
-    );
-    for (const group of groups) {
-      group.nutrition = sumDisplayedNutrition(
-        group.ingredients.map((ingredient) => ingredient.nutrition)
+      group.ingredients.push(
+        buildPersistedIngredient({
+          id: item.id,
+          ingredientName: item.ingredientName,
+          foodCompositionId: item.foodCompositionId,
+          estimatedGrams: item.estimatedGrams,
+          userFacingUnit: item.userFacingUnit,
+          cookingMethod: item.cookingMethod,
+          matchConfidence: item.matchConfidence,
+          nutrition: extractNutritionValues(item),
+        })
       );
     }
 
+    const mealItemGroups = Array.from(ingredientsByGroup.values())
+      .sort((a, b) => a.order - b.order)
+      .map((group) =>
+        buildPersistedMealItemGroup(group.name, group.order, group.ingredients)
+      );
+
     const share = shareByMealId.get(meal.id);
 
-    return {
+    return buildPersistedMeal({
       id: meal.id,
       rawInput: meal.rawInput,
       mealSlot: meal.mealSlot,
       confidenceOverall: meal.confidenceOverall,
       loggedAt: meal.loggedAt.toISOString(),
       nutrition: extractNutritionValues(meal),
-      mealItemGroups: groups,
+      mealItemGroups,
       share: share ? { shareId: share.id, visibility: share.visibility } : null,
-    };
+    });
   });
 }
 

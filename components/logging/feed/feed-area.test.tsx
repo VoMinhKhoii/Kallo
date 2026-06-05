@@ -9,7 +9,9 @@ vi.mock('@/components/logging/feed/empty-state', () => ({
 }));
 
 vi.mock('@/components/logging/feed/macro-summary', () => ({
-  MacroSummary: () => <div data-testid="macro-summary" />,
+  MacroSummary: ({ totals }: { totals: { calories: number } }) => (
+    <div data-testid="macro-summary" data-calories={totals.calories} />
+  ),
 }));
 
 vi.mock('@/components/logging/feed/persisted-meal-card', () => ({
@@ -184,6 +186,28 @@ describe('FeedArea', () => {
     expect(within(scrollRegion).queryByTestId('macro-summary')).toBeNull();
     expect(within(scrollRegion).queryByTestId('meal-input')).toBeNull();
     expect(input).toBeInTheDocument();
+  });
+
+  it('feeds saved meal calories into the macro summary ring', () => {
+    // The calorie ring reads its total from loggingDay.persistedMeals. The
+    // first-meal regression left this at 0 after a save because the cache was
+    // clobbered back to empty; assert the wiring sums the persisted meals so the
+    // ring reflects the day once the confirmed meal is in the cache.
+    dayWithMeals([makeMeal(450), makeMeal(300, 'meal-2')]);
+
+    render(
+      <FeedArea
+        selectedDate="2026-05-04"
+        today={TODAY}
+        profile={profile}
+        onSelectDate={vi.fn()}
+      />
+    );
+
+    expect(screen.getByTestId('macro-summary')).toHaveAttribute(
+      'data-calories',
+      '750'
+    );
   });
 
   it('renders server-backed pending confirmations in the card scroller', () => {

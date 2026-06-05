@@ -113,9 +113,63 @@ function buildOptimisticMeal(
   };
 }
 
+// Replace the list item whose id matches `meal.id`, or append it if absent.
+function upsertById(
+  list: PersistedMeal[],
+  meal: PersistedMeal
+): PersistedMeal[] {
+  return list.some((m) => m.id === meal.id)
+    ? list.map((m) => (m.id === meal.id ? meal : m))
+    : [...list, meal];
+}
+
+// Put the confirmed meal into a cached logging-day, idempotently: replace the
+// row sharing its stable id (the optimistic insert) with this one, or append it
+// if absent, and drop the matching pending confirmation. Shared by onMutate (the
+// optimistic estimate) and onSuccess (the authoritative server meal from the
+// confirm response, which overwrites the estimate in place — same id, so no
+// remount/re-fade — and is the reason no day refetch is needed to reconcile).
+function mergeConfirmedMealIntoDay(
+  old: LoggingDayData | undefined,
+  meal: PersistedMeal,
+  analysisId: string
+): LoggingDayData {
+  if (!old) {
+    // Entry exists but its initial load is still in flight (data undefined).
+    // Seed it so the ring reflects this meal immediately. Note: setQueriesData
+    // only runs this updater for already-cached query entries; it cannot create
+    // one where the query is unmounted.
+    return { persistedMeals: [meal], pendingConfirmations: [] };
+  }
+  return {
+    persistedMeals: upsertById(old.persistedMeals, meal),
+    pendingConfirmations: old.pendingConfirmations.filter(
+      (p) => p.id !== analysisId
+    ),
+  };
+}
+
+// Upsert a meal into the dashboard's daily-meals list (a bare PersistedMeal[]).
+// Returns `old` untouched when the query isn't cached, so we never fabricate a
+// list for a dashboard that was never mounted (it should refetch on next mount).
+function upsertMealIntoList(
+  old: PersistedMeal[] | undefined,
+  meal: PersistedMeal
+): PersistedMeal[] | undefined {
+  if (!old) return old;
+  return upsertById(old, meal);
+}
+
 // Client-supplied data needed to build the optimistic meal without reading the
 // pending confirmation back out of the cache. Stripped before the server call.
-type ConfirmMealVariables = Parameters<typeof confirmAndSaveMealAction>[0] & {
+// `mealId` is REQUIRED here (the server schema keeps it optional for the mobile
+// REST route): the optimistic insert and the authoritative onSuccess write must
+// share one id, otherwise they'd be two rows and the ring would double-count.
+type ConfirmMealVariables = Omit<
+  Parameters<typeof confirmAndSaveMealAction>[0],
+  'mealId'
+> & {
+  mealId: string;
   originDate: string;
   parsedMeal: ParsedMeal;
   rawInput: string;
@@ -139,39 +193,55 @@ export function useConfirmMeal(userId: string) {
       };
       await queryClient.cancelQueries(filter);
       const snapshots = queryClient.getQueriesData<LoggingDayData>(filter);
-      const mealId = variables.mealId ?? `optimistic-${variables.analysisId}`;
       const optimisticMeal = buildOptimisticMeal(
         variables.parsedMeal,
         variables.rawInput,
         variables.loggedAt,
-        mealId,
+        variables.mealId,
         variables.edits
       );
-      queryClient.setQueriesData<LoggingDayData>(filter, (old) => {
-        if (!old) {
-          // Entry exists but its initial load is still in flight (data
-          // undefined). Seed it so the ring reflects this meal immediately.
-          // Note: setQueriesData only runs this updater for already-cached
-          // query entries; it cannot create one where the query is unmounted.
-          // The real fix for the stale ring is sourcing the meal from the
-          // passed parsedMeal (above), not this branch.
-          return { persistedMeals: [optimisticMeal], pendingConfirmations: [] };
-        }
-        // Guard against a double-insert if the settle refetch already raced in
-        // this meal by its stable id.
-        const alreadyPersisted = old.persistedMeals.some(
-          (m) => m.id === mealId
-        );
-        return {
-          persistedMeals: alreadyPersisted
-            ? old.persistedMeals
-            : [...old.persistedMeals, optimisticMeal],
-          pendingConfirmations: old.pendingConfirmations.filter(
-            (p) => p.id !== variables.analysisId
-          ),
-        };
-      });
+      queryClient.setQueriesData<LoggingDayData>(filter, (old) =>
+        mergeConfirmedMealIntoDay(old, optimisticMeal, variables.analysisId)
+      );
       return { snapshots };
+    },
+    onSuccess: (data, variables) => {
+      const loggingDayKey = loggingDayKeys.byUserDate(
+        userId,
+        variables.originDate
+      );
+      const dailyMealsKey = dailyMealsKeys.byDate(variables.originDate);
+      // Cancel any day fetch still in flight BEFORE writing authoritative state:
+      // such a fetch read the PRE-save (empty/pending) snapshot and would clobber
+      // this write when it lands. Cancelling first means its late result is
+      // discarded, closing the window between this write and the settle phase.
+      queryClient.cancelQueries({ queryKey: loggingDayKey });
+      queryClient.cancelQueries({ queryKey: dailyMealsKey });
+      // Reconcile straight from the confirm response — the server returns the
+      // saved meal in its authoritative (goal-adjusted) shape, so we overwrite
+      // the optimistic estimate in place rather than waiting for a day refetch.
+      // This removes the brief "estimate then correct" flash on the calorie ring
+      // and saves the follow-up network round-trip.
+      const savedMeal = data.meal;
+      if (!savedMeal) {
+        // Defensive (the web action always returns `meal`): if a version-skewed
+        // response omits it, fall back to a refetch so the ring reconciles
+        // instead of keeping the optimistic estimate stuck.
+        queryClient.invalidateQueries({ queryKey: loggingDayKey });
+        queryClient.invalidateQueries({ queryKey: dailyMealsKey });
+        return;
+      }
+      queryClient.setQueriesData<LoggingDayData>(
+        { queryKey: loggingDayKey },
+        (old) => mergeConfirmedMealIntoDay(old, savedMeal, variables.analysisId)
+      );
+      // Keep the dashboard ring in sync instantly when its daily-meals query is
+      // already mounted; an unmounted one is marked stale by the invalidate on
+      // settle and refetches on its next mount.
+      queryClient.setQueriesData<PersistedMeal[]>(
+        { queryKey: dailyMealsKey },
+        (old) => upsertMealIntoList(old, savedMeal)
+      );
     },
     onError: (error, _vars, context) => {
       if (context?.snapshots) {
@@ -183,13 +253,22 @@ export function useConfirmMeal(userId: string) {
         error instanceof Error ? error.message : 'Không thể lưu bữa ăn.'
       );
     },
-    onSettled: (_data, _err, variables) => {
-      queryClient.invalidateQueries({
-        queryKey: dailyMealsKeys.byDate(variables.originDate),
-      });
-      queryClient.invalidateQueries({
-        queryKey: loggingDayKeys.byUserDate(userId, variables.originDate),
-      });
+    onSettled: (_data, error, variables) => {
+      const loggingDayKey = loggingDayKeys.byUserDate(
+        userId,
+        variables.originDate
+      );
+      const dailyMealsKey = dailyMealsKeys.byDate(variables.originDate);
+      // On success, onSuccess already wrote authoritative state from the confirm
+      // response, so just mark the day queries stale WITHOUT a refetch
+      // (refetchType 'none' = no network) — an unmounted surface (e.g. the
+      // dashboard while logging) refreshes on its next mount. On error the
+      // optimistic insert was rolled back; refetch actively to heal in case a
+      // cancelled in-flight fetch left a surface behind.
+      const refetchType = error ? 'active' : 'none';
+      queryClient.invalidateQueries({ queryKey: loggingDayKey, refetchType });
+      queryClient.invalidateQueries({ queryKey: dailyMealsKey, refetchType });
+      // meal-dates (timeline dots) has no optimistic path; refresh it normally.
       queryClient.invalidateQueries({ queryKey: ['meal-dates'] });
     },
   });
