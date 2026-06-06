@@ -185,18 +185,20 @@ export function CheatSliderCard({
             />
           ))}
         </div>
-
-        <button
-          type="button"
-          disabled={isConfirming}
-          aria-busy={isConfirming}
-          onClick={() => onConfirm?.(levels)}
-          className="mt-5 w-full rounded-xl bg-nham-btn py-2.5 font-medium text-sm text-white transition-colors hover:bg-nham-btn-hover disabled:opacity-50"
-          style={{ fontFamily: 'DM Sans, sans-serif' }}
-        >
-          {t('confirm')}
-        </button>
       </div>
+
+      {/* Save action sits below the card body, like a primary action under the
+          meal rather than inside the card. */}
+      <button
+        type="button"
+        disabled={isConfirming}
+        aria-busy={isConfirming}
+        onClick={() => onConfirm?.(levels)}
+        className="mt-2 w-full rounded-xl bg-nham-btn py-2.5 font-medium text-sm text-white transition-colors hover:bg-nham-btn-hover disabled:opacity-50"
+        style={{ fontFamily: 'DM Sans, sans-serif' }}
+      >
+        {t('confirm')}
+      </button>
     </motion.article>
   );
 }
@@ -247,7 +249,11 @@ function CheatSliderRow({
         aria-pressed={isExact}
         onClick={() => onChange(anchor.level)}
         className={cn(
-          'absolute line-clamp-2 max-w-[5.5rem] cursor-pointer text-[11px] leading-tight transition-colors sm:max-w-[8rem]',
+          // Explicit width (not max-width): a label pinned at left:100% with
+          // only max-width shrinks to the ~0 space left of the container edge
+          // and collapses to one word per line. A fixed width wraps it at a real
+          // 4–5-word column and shows the whole label.
+          'absolute w-[5rem] cursor-pointer text-[11px] leading-tight transition-colors sm:w-[7.5rem]',
           side === 'top' ? 'bottom-0 pb-3' : 'top-0 pt-3',
           isLeftEdge ? 'text-left' : isRightEdge ? 'text-right' : 'text-center',
           isExact
@@ -280,7 +286,7 @@ function CheatSliderRow({
       </div>
       <div className="relative">
         {/* Three scenarios above the track */}
-        <div className="relative h-12">
+        <div className="relative h-14">
           {stops.map((anchor, i) =>
             i % 2 === 0 ? renderStop(anchor, 'top') : null
           )}
@@ -295,7 +301,7 @@ function CheatSliderRow({
           aria-valuetext={valueText}
         />
         {/* Three scenarios below the track */}
-        <div className="relative h-12">
+        <div className="relative h-14">
           {stops.map((anchor, i) =>
             i % 2 === 1 ? renderStop(anchor, 'bottom') : null
           )}
