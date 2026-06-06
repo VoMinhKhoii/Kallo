@@ -1,17 +1,26 @@
 # nham_mobile
 
-A new Flutter project.
+Flutter client for **Nhẩm** — the AI-powered Vietnamese meal tracker. A 1:1 port of the web app's
+mobile view, sharing the same `/api/v1` backend and Supabase project.
 
-## Getting Started
+## Run it
 
-This project is a starting point for a Flutter application.
+```bash
+./tool/run_dev.sh        # iOS Simulator, dev config (localhost API + dev Supabase)
+```
 
-A few resources to get you started if this is your first Flutter project:
+## Ship it
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
+```bash
+cd ios && fastlane ios beta   # build + sign + upload to TestFlight
+```
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## Docs
+
+See [`apps/docs/mobile`](../docs/mobile/README.md):
+
+- [development.md](../docs/mobile/development.md) — local dev loop, env config, gotchas
+- [releasing.md](../docs/mobile/releasing.md) — TestFlight pipeline, signing, export compliance
+- [architecture.md](../docs/mobile/architecture.md) — structure, stack, web parity
+
+Web↔Flutter fidelity tracking lives in [`FIDELITY_AUDIT.md`](./FIDELITY_AUDIT.md).
