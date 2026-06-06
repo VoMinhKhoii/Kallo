@@ -247,7 +247,7 @@ function CheatSliderRow({
         aria-pressed={isExact}
         onClick={() => onChange(anchor.level)}
         className={cn(
-          'absolute line-clamp-2 max-w-[5.5rem] cursor-pointer text-[10px] leading-tight transition-colors',
+          'absolute line-clamp-2 max-w-[5.5rem] cursor-pointer text-[11px] leading-tight transition-colors sm:max-w-[8rem]',
           side === 'top' ? 'bottom-0 pb-3' : 'top-0 pt-3',
           isLeftEdge ? 'text-left' : isRightEdge ? 'text-right' : 'text-center',
           isExact
@@ -276,11 +276,6 @@ function CheatSliderRow({
         <Icon aria-hidden className="h-4 w-4 shrink-0" style={{ color }} />
         <span className="font-medium text-nham-text text-sm">
           {slider.label}
-        </span>
-        {/* Current choice, always fully readable even when a positional label
-            below is clamped. */}
-        <span className="ml-auto min-w-0 truncate pl-2 text-right text-[11px] text-nham-text-muted">
-          {valueText}
         </span>
       </div>
       <div className="relative">
