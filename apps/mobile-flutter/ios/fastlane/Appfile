@@ -1,0 +1,1 @@
+app_identifier(ENV["ASC_APP_IDENTIFIER"] || "com.khoivo.nham")
