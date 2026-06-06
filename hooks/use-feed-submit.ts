@@ -6,6 +6,7 @@ import type {
   StreamAnalysisState,
   StreamAnalyzeInput,
 } from '@/hooks/use-stream-analysis';
+import type { CheatIntensity } from '@/lib/types/cheat';
 import type { ChatMessage } from '@/lib/types/meal';
 import { mealTextSchema } from '@/lib/validation';
 
@@ -22,6 +23,10 @@ interface UseFeedSubmitParams {
   guard: (fn: () => Promise<void>) => Promise<void>;
   lastAnalysisIdRef: RefObject<string | null>;
   lastErrorRef: RefObject<string | null>;
+  /** When true, submit runs the cheat-meal slider estimator. */
+  isCheat?: boolean;
+  /** Indulgence magnitude passed to the cheat estimator. */
+  cheatIntensity?: CheatIntensity;
 }
 
 function generateId() {
@@ -39,6 +44,8 @@ export function useFeedSubmit({
   guard,
   lastAnalysisIdRef,
   lastErrorRef,
+  isCheat,
+  cheatIntensity,
 }: UseFeedSubmitParams) {
   const handleSubmit = async () => {
     if (stream.isAnalyzing) return;
@@ -82,6 +89,12 @@ export function useFeedSubmit({
         message: text,
         loggedDate: selectedDate,
         timezoneOffset: new Date().getTimezoneOffset(),
+        ...(isCheat
+          ? {
+              mode: 'cheat' as const,
+              cheatIntensity: cheatIntensity ?? 'medium',
+            }
+          : {}),
       });
     });
   };

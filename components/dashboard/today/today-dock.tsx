@@ -9,12 +9,19 @@ import type { MealEntry, NutritionData } from '@/lib/types/dashboard';
 import { MealList } from './meal-list';
 import { InlineMealTrigger } from './meal-trigger';
 
+interface WeeklyAccumulator {
+  consumed: number;
+  target: number;
+  hasData: boolean;
+}
+
 interface TodayDockProps {
   nutrition: NutritionData;
   meals: MealEntry[];
+  weekly?: WeeklyAccumulator;
 }
 
-export function TodayDock({ nutrition, meals }: TodayDockProps) {
+export function TodayDock({ nutrition, meals, weekly }: TodayDockProps) {
   const t = useTranslations('dashboard');
   const remaining = Math.max(
     0,
@@ -74,6 +81,14 @@ export function TodayDock({ nutrition, meals }: TodayDockProps) {
           <p className="mt-1 text-nham-stone text-xs">
             {nutrition.calories.current.toLocaleString()} {t('caloriesLogged')}
           </p>
+          {weekly?.hasData && (
+            <p className="mt-0.5 text-nham-stone text-xs">
+              {t('weeklyAccumulator', {
+                consumed: weekly.consumed.toLocaleString(),
+                target: weekly.target.toLocaleString(),
+              })}
+            </p>
+          )}
         </div>
 
         <div className="grid min-h-0 gap-3 xl:grid-rows-[minmax(0,1fr)_auto]">

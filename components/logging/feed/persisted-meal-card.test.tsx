@@ -87,6 +87,9 @@ const mealWithUnknownMacros: PersistedMeal = {
       ingredients: [],
     },
   ],
+  entryMode: 'precise',
+  alcoholG: null,
+  cheatSliders: null,
   share: null,
 };
 

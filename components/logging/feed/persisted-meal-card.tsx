@@ -5,6 +5,11 @@ import { AnimatePresence, motion } from 'motion/react';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { toast } from 'sonner';
+import { CheatMealCard } from '@/components/logging/feed/cheat-meal-card';
+import {
+  formatCaloriesOrNA,
+  formatMacroOrNA,
+} from '@/components/logging/feed/format-inline-nutrition';
 import { useShareMeal } from '@/hooks/use-share-meal';
 import type { PersistedMeal } from '@/lib/actions/meals';
 import { cn } from '@/lib/utils';
@@ -13,11 +18,6 @@ interface PersistedMealCardProps {
   meal: PersistedMeal;
 }
 
-/**
- * Native-share affordance (D4). Appears only once a meal is shared to the
- * circle, so a shareable Macro Card URL exists. Uses navigator.share with the
- * OG card URL, falling back to a copy-link sonner toast where unavailable.
- */
 function ShareCardButton({ shareId }: { shareId: string }) {
   const t = useTranslations('groups.shareControl');
 
@@ -31,10 +31,8 @@ function ShareCardButton({ shareId }: { shareId: string }) {
         await navigator.share({ title: t('shareCardTitle'), url });
         return;
       } catch (error) {
-        // User-cancelled share is not an error; bail silently.
         if (error instanceof DOMException && error.name === 'AbortError')
           return;
-        // Otherwise fall through to copy-link.
       }
     }
     try {
@@ -58,12 +56,6 @@ function ShareCardButton({ shareId }: { shareId: string }) {
   );
 }
 
-/**
- * Subtle, post-save-only "Share to circle" toggle. Lives on an already-saved
- * card (this file never renders the text input), so it can never precede or
- * block the parse. Toggles meal_shares.visibility circle↔private; the wall
- * reflects it on the next poll. No vanity metrics.
- */
 function ShareToCircleButton({
   mealId,
   share,
@@ -73,8 +65,6 @@ function ShareToCircleButton({
 }) {
   const t = useTranslations('groups.shareControl');
   const shareMeal = useShareMeal();
-  // Seed from real server state so an already-shared meal renders as shared
-  // (and can be unshared) after a reload, instead of always defaulting to off.
   const [isShared, setIsShared] = useState(
     share != null && share.visibility !== 'private'
   );
@@ -130,15 +120,15 @@ function ShareToCircleButton({
   );
 }
 
-function formatMacro(value: number | null): string {
-  return value == null ? 'N/A' : `${Math.round(value)}g`;
-}
-
-function formatCalories(value: number | null): string {
-  return value == null ? 'N/A' : `${Math.round(value)} kcal`;
-}
-
 export function PersistedMealCard({ meal }: PersistedMealCardProps) {
+  // Cheat meals render a dedicated, warmly-decorated card variant.
+  if (meal.entryMode === 'cheat') {
+    return <CheatMealCard meal={meal} />;
+  }
+  return <PrecisePersistedMealCard meal={meal} />;
+}
+
+function PrecisePersistedMealCard({ meal }: PersistedMealCardProps) {
   const t = useTranslations('logging.persistedMealCard');
   const [isCollapsed, setIsCollapsed] = useState(true);
 
@@ -147,10 +137,10 @@ export function PersistedMealCard({ meal }: PersistedMealCardProps) {
     minute: '2-digit',
   });
 
-  const calories = formatCalories(meal.nutrition.caloriesKcal);
-  const protein = formatMacro(meal.nutrition.proteinG);
-  const carbs = formatMacro(meal.nutrition.carbohydrateG);
-  const fat = formatMacro(meal.nutrition.fatG);
+  const calories = formatCaloriesOrNA(meal.nutrition.caloriesKcal);
+  const protein = formatMacroOrNA(meal.nutrition.proteinG);
+  const carbs = formatMacroOrNA(meal.nutrition.carbohydrateG);
+  const fat = formatMacroOrNA(meal.nutrition.fatG);
 
   return (
     <motion.article
@@ -234,10 +224,14 @@ export function PersistedMealCard({ meal }: PersistedMealCardProps) {
               <div className="mt-5 border-nham-border border-t border-dashed pt-4">
                 <div className="mb-4 space-y-1">
                   {meal.mealItemGroups.map((group) => {
-                    const gProtein = formatMacro(group.nutrition.proteinG);
-                    const gCarbs = formatMacro(group.nutrition.carbohydrateG);
-                    const gFat = formatMacro(group.nutrition.fatG);
-                    const gCal = formatCalories(group.nutrition.caloriesKcal);
+                    const gProtein = formatMacroOrNA(group.nutrition.proteinG);
+                    const gCarbs = formatMacroOrNA(
+                      group.nutrition.carbohydrateG
+                    );
+                    const gFat = formatMacroOrNA(group.nutrition.fatG);
+                    const gCal = formatCaloriesOrNA(
+                      group.nutrition.caloriesKcal
+                    );
                     return (
                       <div
                         key={`${group.order}-${group.name}`}

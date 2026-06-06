@@ -269,6 +269,90 @@ describe('confirmAndSaveMealAction', () => {
     expect(mealRow.id).toBe(UUID_MEAL);
   });
 
+  it('resolves cheat-meal nutrition from slider levels and inserts zero items', async () => {
+    const capturedValues: Record<string, unknown>[] = [];
+    const cheatSpec = {
+      mealSlot: 'dinner' as const,
+      confidence: 'medium' as const,
+      sliders: [
+        {
+          key: 'protein' as const,
+          label: 'Thịt',
+          defaultLevel: 5,
+          anchors: [
+            { level: 0, label: 'không', proteinG: 0 },
+            { level: 10, label: 'tiệc thịt', proteinG: 120 },
+          ],
+        },
+        {
+          key: 'fat' as const,
+          label: 'Độ béo',
+          defaultLevel: 5,
+          anchors: [
+            { level: 0, label: 'nạc', fatG: 0 },
+            { level: 10, label: 'mỡ', fatG: 80 },
+          ],
+        },
+        {
+          key: 'drinks' as const,
+          label: 'Đồ uống',
+          defaultLevel: 0,
+          anchors: [
+            { level: 0, label: 'không', alcoholG: 0 },
+            { level: 10, label: 'bia', alcoholG: 40 },
+          ],
+        },
+      ],
+    };
+
+    mockTxDelete.mockReturnValue({
+      where: vi.fn().mockReturnValue({
+        returning: vi.fn().mockResolvedValue([
+          {
+            id: UUID_1,
+            userId: mockUser.id,
+            rawInput: 'Korean BBQ buffet',
+            entryMode: 'cheat',
+            pipelineResult: { entryMode: 'cheat', spec: cheatSpec },
+            loggedAt: LOGGED_AT,
+          },
+        ]),
+      }),
+    });
+
+    mockTxInsert.mockImplementation(() => ({
+      values: vi.fn().mockImplementation((vals: Record<string, unknown>) => {
+        capturedValues.push(vals);
+        return { returning: vi.fn().mockResolvedValue([{ id: UUID_MEAL }]) };
+      }),
+    }));
+
+    const result = await confirmAndSaveMealAction({
+      analysisId: UUID_1,
+      // protein 10 → 120g, fat 5 → 40g, drinks 10 → 40g alcohol
+      levels: { protein: 10, fat: 5, drinks: 10 },
+    });
+
+    expect(result.mealId).toBe(UUID_MEAL);
+    // The confirm response carries the authoritative saved cheat meal so the
+    // client reconciles in place (no day refetch) — same contract as precise.
+    expect(result.meal.entryMode).toBe('cheat');
+    expect(result.meal.alcoholG).toBe(40);
+    expect(result.meal.nutrition.caloriesKcal).toBe(1120);
+    expect(result.meal.mealItemGroups).toEqual([]);
+    // Only the meals row — no meal_items insert for a cheat meal.
+    expect(mockTxInsert).toHaveBeenCalledTimes(1);
+
+    const mealRow = capturedValues[0];
+    expect(mealRow.entryMode).toBe('cheat');
+    expect(mealRow.proteinG).toBe(120);
+    expect(mealRow.fatG).toBe(40);
+    expect(mealRow.alcoholG).toBe(40);
+    // 4*120 + 9*40 + 7*40 = 480 + 360 + 280 = 1120
+    expect(mealRow.caloriesKcal).toBe(1120);
+    expect(mealRow.mealSlot).toBe('dinner');
+  });
+
   it('should reject invalid UUID', async () => {
     await expect(
       confirmAndSaveMealAction({ analysisId: 'not-a-uuid' })
@@ -567,7 +651,49 @@ describe('loadPendingAnalysesByDate', () => {
     expect(pending[0]?.id).toBe(UUID_1);
     expect(pending[0]?.rawInput).toBe('Phở bò');
     expect(pending[0]?.loggedAt).toBe(LOGGED_AT.toISOString());
-    expect(pending[0]?.parsedMeal.mealName).toBe('Phở bò');
+    expect(pending[0]?.parsedMeal?.mealName).toBe('Phở bò');
+  });
+
+  it('returns a cheat pending row as cheatSpec without crashing on missing mealItems', async () => {
+    const spec = {
+      sliders: [
+        {
+          key: 'protein',
+          label: 'Thịt / hải sản',
+          defaultLevel: 5,
+          anchors: [
+            { level: 0, label: 'không' },
+            { level: 10, label: 'rất nhiều' },
+          ],
+        },
+      ],
+      mealSlot: 'dinner',
+      confidence: 'medium',
+    };
+    mockDbSelect.mockReturnValueOnce({
+      from: vi.fn().mockReturnValue({
+        where: vi.fn().mockReturnValue({
+          orderBy: vi.fn().mockResolvedValue([
+            {
+              id: UUID_1,
+              rawInput: 'Tiệc nướng',
+              loggedAt: LOGGED_AT,
+              entryMode: 'cheat',
+              pipelineResult: { entryMode: 'cheat', spec },
+            },
+          ]),
+        }),
+      }),
+    });
+
+    const pending = await loadPendingAnalysesByDate({
+      date: '2026-04-06',
+      timezoneOffset: -420,
+    });
+
+    expect(pending).toHaveLength(1);
+    expect(pending[0]?.cheatSpec).toEqual(spec);
+    expect(pending[0]?.parsedMeal).toBeUndefined();
   });
 
   it('skips malformed legacy rows instead of failing the whole day load', async () => {
@@ -737,6 +863,9 @@ describe('persisted-meal builders (save/load parity)', () => {
       mealItemGroups: [
         buildPersistedMealItemGroup('Phở bò', 0, [ingredient('a', 450)]),
       ],
+      entryMode: 'precise',
+      alcoholG: null,
+      cheatSliders: null,
       share: null,
     });
 
@@ -744,7 +873,10 @@ describe('persisted-meal builders (save/load parity)', () => {
     // PersistedMeal, this (and the builder's typed signature) must be updated.
     expect(Object.keys(meal).sort()).toEqual(
       [
+        'alcoholG',
+        'cheatSliders',
         'confidenceOverall',
+        'entryMode',
         'id',
         'loggedAt',
         'mealItemGroups',

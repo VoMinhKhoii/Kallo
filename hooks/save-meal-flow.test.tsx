@@ -248,6 +248,9 @@ beforeEach(() => {
         loggedAt: '2026-05-04T05:30:00.000Z',
         nutrition: nutritionWith(calories),
         mealItemGroups: [],
+        entryMode: 'precise',
+        alcoholG: null,
+        cheatSliders: null,
         share: null,
       };
       server.meals = [...server.meals, meal];
@@ -395,6 +398,9 @@ describe('save-meal flow (integration)', () => {
         loggedAt: '2026-05-04T03:00:00.000Z',
         nutrition: nutritionWith(300),
         mealItemGroups: [],
+        entryMode: 'precise',
+        alcoholG: null,
+        cheatSliders: null,
         share: null,
       },
     ];
@@ -449,6 +455,9 @@ describe('save-meal flow (integration)', () => {
         loggedAt: '2026-05-04T03:00:00.000Z',
         nutrition: nutritionWith(300),
         mealItemGroups: [],
+        entryMode: 'precise',
+        alcoholG: null,
+        cheatSliders: null,
         share: null,
       },
     ];

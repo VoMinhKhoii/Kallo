@@ -1,3 +1,4 @@
+import type { CheatSliderSpec } from '@/lib/types/cheat';
 import type { MealItem, ParsedMeal } from '@/lib/types/meal';
 
 // ---------------------------------------------------------------------------
@@ -55,6 +56,16 @@ export interface ResultEvent {
   data: ParsedMeal;
 }
 
+/**
+ * Cheat-meal result — a slider spec instead of a finalized meal. The client
+ * renders interactive sliders and resolves nutrition locally; the chosen
+ * levels are sent on confirm. Replaces `result` on the cheat path.
+ */
+export interface CheatEstimateEvent {
+  type: 'cheat_estimate';
+  spec: CheatSliderSpec;
+}
+
 /** Analysis stored durably — safe to confirm and persist */
 export interface AnalysisCompleteEvent {
   type: 'analysis_complete';
@@ -81,6 +92,7 @@ export type StreamEvent =
   | ItemNameEvent
   | ItemMacrosEvent
   | ResultEvent
+  | CheatEstimateEvent
   | AnalysisCompleteEvent
   | StreamErrorEvent;
 

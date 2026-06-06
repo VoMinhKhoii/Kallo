@@ -14,6 +14,7 @@ describe('useFeedSubmit', () => {
         items: [],
         completedItems: [],
         result: null,
+        cheatSpec: null,
         analysisId: null,
         error: null,
         isAnalyzing: false,

@@ -87,6 +87,14 @@ vi.mock('@/hooks/use-meal-mutations', () => ({
   useConfirmMeal: () => ({ mutate: mockMutate, isPending: false }),
 }));
 
+vi.mock('@/hooks/use-recent-cheat-occasions', () => ({
+  useRecentCheatOccasions: () => ({ data: [] }),
+}));
+
+vi.mock('@/lib/actions/meals', () => ({
+  stageCheatRepeatAction: vi.fn(),
+}));
+
 vi.mock('@/hooks/use-stream-analysis', () => ({
   useStreamAnalysis: mockUseStreamAnalysis,
 }));

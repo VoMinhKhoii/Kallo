@@ -1,6 +1,7 @@
 export { encodeSSE, parseSSEChunk } from './encoder';
 export type {
   AnalysisCompleteEvent,
+  CheatEstimateEvent,
   ItemMacrosEvent,
   ItemNameEvent,
   PipelineStage,
