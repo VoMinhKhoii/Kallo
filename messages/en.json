@@ -998,7 +998,9 @@
     },
     "mode": {
       "normal": "Normal",
-      "cheat": "Cheat meal"
+      "normalDescription": "Break a meal into ingredients for a precise estimate",
+      "cheat": "Cheat meal",
+      "cheatDescription": "Hard-to-count occasions — set a few sliders instead"
     },
     "modePicker": {
       "ariaLabel": "Logging mode"

@@ -1,6 +1,13 @@
 'use client';
 
-import { PartyPopper } from 'lucide-react';
+import {
+  Beer,
+  Droplet,
+  Drumstick,
+  type LucideIcon,
+  PartyPopper,
+  Wheat,
+} from 'lucide-react';
 import { motion } from 'motion/react';
 import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
@@ -17,6 +24,15 @@ import type {
   CheatSliderSpec,
 } from '@/lib/types/cheat';
 import { cn } from '@/lib/utils';
+
+// One food-domain icon per macro axis — encodes the slider's identity (and
+// shares its accent color), replacing the decorative status dot.
+const CHEAT_SLIDER_ICONS: Record<CheatSlider['key'], LucideIcon> = {
+  protein: Drumstick,
+  carbs: Wheat,
+  fat: Droplet,
+  drinks: Beer,
+};
 
 interface CheatSliderCardProps {
   spec: CheatSliderSpec;
@@ -157,7 +173,7 @@ export function CheatSliderCard({
         </div>
 
         {/* Sliders */}
-        <div className="flex flex-col gap-6">
+        <div className="flex flex-col gap-5">
           {spec.sliders.map((slider) => (
             <CheatSliderRow
               key={slider.key}
@@ -196,6 +212,7 @@ function CheatSliderRow({
 }) {
   const t = useTranslations('logging.cheatSliders');
   const color = CHEAT_SLIDER_COLORS[slider.key];
+  const Icon = CHEAT_SLIDER_ICONS[slider.key];
   const stops = [...slider.anchors].sort((a, b) => a.level - b.level);
 
   // Even levels sit on a labeled stop; odd levels (1/3/5/7/9) are the "between
@@ -230,8 +247,8 @@ function CheatSliderRow({
         aria-pressed={isExact}
         onClick={() => onChange(anchor.level)}
         className={cn(
-          'absolute max-w-[5.5rem] cursor-pointer text-[11px] leading-tight transition-colors',
-          side === 'top' ? 'bottom-0 pb-3.5' : 'top-0 pt-3.5',
+          'absolute line-clamp-2 max-w-[5.5rem] cursor-pointer text-[10px] leading-tight transition-colors',
+          side === 'top' ? 'bottom-0 pb-3' : 'top-0 pt-3',
           isLeftEdge ? 'text-left' : isRightEdge ? 'text-right' : 'text-center',
           isExact
             ? 'font-semibold text-nham-text'
@@ -256,18 +273,19 @@ function CheatSliderRow({
   return (
     <div style={{ fontFamily: 'DM Sans, sans-serif' }}>
       <div className="mb-1 flex items-center gap-1.5">
-        <span
-          aria-hidden
-          className="inline-block h-2 w-2 rounded-full"
-          style={{ backgroundColor: color }}
-        />
+        <Icon aria-hidden className="h-4 w-4 shrink-0" style={{ color }} />
         <span className="font-medium text-nham-text text-sm">
           {slider.label}
+        </span>
+        {/* Current choice, always fully readable even when a positional label
+            below is clamped. */}
+        <span className="ml-auto min-w-0 truncate pl-2 text-right text-[11px] text-nham-text-muted">
+          {valueText}
         </span>
       </div>
       <div className="relative">
         {/* Three scenarios above the track */}
-        <div className="relative h-14">
+        <div className="relative h-12">
           {stops.map((anchor, i) =>
             i % 2 === 0 ? renderStop(anchor, 'top') : null
           )}
@@ -282,7 +300,7 @@ function CheatSliderRow({
           aria-valuetext={valueText}
         />
         {/* Three scenarios below the track */}
-        <div className="relative h-14">
+        <div className="relative h-12">
           {stops.map((anchor, i) =>
             i % 2 === 1 ? renderStop(anchor, 'bottom') : null
           )}

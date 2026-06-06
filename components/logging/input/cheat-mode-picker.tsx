@@ -1,13 +1,12 @@
 'use client';
 
-import { ChevronDown, Cookie, Utensils } from 'lucide-react';
+import { Check, ChevronDown } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuItem,
   DropdownMenuLabel,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
@@ -47,35 +46,50 @@ export function CheatModePicker({
         type="button"
         disabled={disabled}
         aria-label={t('modePicker.ariaLabel')}
-        className="flex h-8 shrink-0 items-center gap-1.5 rounded-lg border border-nham-border/60 px-2.5 font-medium text-nham-text text-xs transition-colors hover:border-nham-accent/60 hover:bg-nham-hover/40 disabled:opacity-50"
+        className="flex h-8 shrink-0 items-center gap-1 rounded-lg px-2 font-medium text-nham-text text-xs transition-colors hover:bg-nham-hover/50 disabled:opacity-50"
         style={{ fontFamily: 'DM Sans, sans-serif' }}
       >
-        {isCheat ? (
-          <Cookie className="h-3.5 w-3.5 text-nham-accent" />
-        ) : (
-          <Utensils className="h-3.5 w-3.5 text-nham-text-muted" />
-        )}
         <span className="max-w-[8rem] truncate">{triggerLabel}</span>
         <ChevronDown className="h-3 w-3 text-nham-text-muted/70" />
       </DropdownMenuTrigger>
       <DropdownMenuContent
         align="end"
-        className="border-nham-border/60"
+        className="w-64 border-nham-border/60"
         style={{ fontFamily: 'DM Sans, sans-serif' }}
       >
-        <DropdownMenuRadioGroup
-          value={isCheat ? 'cheat' : 'precise'}
-          onValueChange={(value) => onChangeMode(value === 'cheat')}
-        >
-          <DropdownMenuRadioItem value="precise">
-            <Utensils className="h-3.5 w-3.5" />
-            {t('mode.normal')}
-          </DropdownMenuRadioItem>
-          <DropdownMenuRadioItem value="cheat">
-            <Cookie className="h-3.5 w-3.5" />
-            {t('mode.cheat')}
-          </DropdownMenuRadioItem>
-        </DropdownMenuRadioGroup>
+        {/* Mode: Normal vs Cheat — a model-picker pattern with a one-line
+            description each and a brown tick on the selected row. */}
+        {(
+          [
+            { isCheat: false, key: 'normal' },
+            { isCheat: true, key: 'cheat' },
+          ] as const
+        ).map((mode) => {
+          const selected = isCheat === mode.isCheat;
+          return (
+            <DropdownMenuItem
+              key={mode.key}
+              // Keep the menu open so the cheat intensity reveals in place.
+              onSelect={(event) => {
+                event.preventDefault();
+                onChangeMode(mode.isCheat);
+              }}
+              className="items-start gap-2"
+            >
+              <span className="min-w-0 flex-1">
+                <span className="block font-medium text-nham-text text-sm">
+                  {t(`mode.${mode.key}`)}
+                </span>
+                <span className="mt-0.5 block text-[11px] text-nham-text-muted leading-snug">
+                  {t(`mode.${mode.key}Description`)}
+                </span>
+              </span>
+              {selected && (
+                <Check className="mt-0.5 size-4 shrink-0 text-nham-accent" />
+              )}
+            </DropdownMenuItem>
+          );
+        })}
 
         {isCheat && (
           <>
@@ -86,18 +100,23 @@ export function CheatModePicker({
             <p className="px-2 pb-1 text-[11px] text-nham-text-muted/70">
               {t('cheatIntensity.helper')}
             </p>
-            <DropdownMenuRadioGroup
-              value={intensity}
-              onValueChange={(value) =>
-                onChangeIntensity(value as CheatIntensity)
-              }
-            >
-              {INTENSITIES.map((level) => (
-                <DropdownMenuRadioItem key={level} value={level}>
-                  {t(`cheatIntensity.${level}`)}
-                </DropdownMenuRadioItem>
-              ))}
-            </DropdownMenuRadioGroup>
+            {INTENSITIES.map((level) => {
+              const selected = intensity === level;
+              return (
+                <DropdownMenuItem
+                  key={level}
+                  onSelect={() => onChangeIntensity(level)}
+                  className="justify-between"
+                >
+                  <span className="text-sm">
+                    {t(`cheatIntensity.${level}`)}
+                  </span>
+                  {selected && (
+                    <Check className="size-4 shrink-0 text-nham-accent" />
+                  )}
+                </DropdownMenuItem>
+              );
+            })}
           </>
         )}
       </DropdownMenuContent>

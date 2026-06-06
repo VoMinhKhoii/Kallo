@@ -998,7 +998,9 @@
     },
     "mode": {
       "normal": "Bình thường",
-      "cheat": "Bữa xả"
+      "normalDescription": "Tách bữa ăn thành nguyên liệu để ước tính chính xác",
+      "cheat": "Bữa xả",
+      "cheatDescription": "Dịp khó đếm — chỉ cần kéo vài thanh trượt"
     },
     "modePicker": {
       "ariaLabel": "Chế độ ghi"
