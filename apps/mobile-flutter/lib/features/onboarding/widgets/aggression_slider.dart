@@ -1,0 +1,149 @@
+import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter/material.dart';
+
+import '../../../theme/nham_colors.dart';
+import '../../../theme/nham_theme.dart';
+import '../../../theme/nham_typography.dart';
+import '../data/constants.dart';
+
+/// Mirror of `components/onboarding/screen-body-metrics.tsx` aggression block.
+///
+/// 0.1–0.8 step 0.1, header row (bold label · {x.x} kg/week), dark-espresso
+/// slider track (h-1.5), Low/Moderate/High labels, and a tinted #F5F4F0 box
+/// reading the ~kcal/day deficit/surplus. Card: rounded-2xl, 1px #EAE7E0, p-4.
+class AggressionSlider extends StatelessWidget {
+  const AggressionSlider({
+    super.key,
+    required this.value,
+    required this.onChange,
+    required this.goal, // 'cutting' | 'bulking'
+  });
+
+  final double? value;
+  final ValueChanged<double> onChange;
+  final String goal;
+
+  @override
+  Widget build(BuildContext context) {
+    final aggressionKg = value ?? 0.5;
+    final kcalDelta = (aggressionKg * kAggressionKcalPerKg).round();
+    final isCutting = goal == 'cutting';
+
+    return Container(
+      // rounded-2xl border #EAE7E0 bg white p-4
+      padding: const EdgeInsets.all(NhamSpacing.sp4),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFFFFF),
+        borderRadius: BorderRadius.circular(NhamRadii.containerLg),
+        border: Border.all(color: NhamColors.inputBorder),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Header row: bold 13 label (left) · {x.x} kg/week (right).
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                tr('onboarding.bodyMetrics.aggression'),
+                style: NhamTextStyles.sansBold(fontSize: 13)
+                    .copyWith(color: NhamColors.text),
+              ),
+              Text.rich(
+                TextSpan(
+                  children: [
+                    TextSpan(text: aggressionKg.toStringAsFixed(1)),
+                    const TextSpan(
+                      text: ' kg/week',
+                      style: TextStyle(color: NhamColors.textHelp),
+                    ),
+                  ],
+                ),
+                style: NhamTextStyles.sansMedium(fontSize: 14)
+                    .copyWith(color: NhamColors.text),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12), // mb-3
+          // Slider: dark espresso filled track + thumb on #EAE7E0, h-1.5 (6px).
+          SliderTheme(
+            data: SliderTheme.of(context).copyWith(
+              activeTrackColor: NhamColors.text,
+              inactiveTrackColor: NhamColors.inputBorder,
+              thumbColor: NhamColors.text,
+              overlayColor: NhamColors.text40,
+              trackHeight: 6,
+              showValueIndicator: ShowValueIndicator.never,
+            ),
+            child: Slider(
+              min: 0.1,
+              max: 0.8,
+              divisions: 7, // step 0.1 → 7 stops (0.1..0.8)
+              value: aggressionKg.clamp(0.1, 0.8),
+              onChanged: (v) => onChange((v * 10).round() / 10),
+            ),
+          ),
+          const SizedBox(height: 10), // mt-2.5
+          // Three end labels: Low (left), Moderate (center), High (right);
+          // active band bolds + darkens to #2C2416.
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              _endLabel(
+                tr('onboarding.bodyMetrics.aggressionLow'),
+                active: aggressionKg <= 0.3,
+              ),
+              _endLabel(
+                'Moderate',
+                active: aggressionKg > 0.3 && aggressionKg <= 0.6,
+              ),
+              _endLabel(
+                tr('onboarding.bodyMetrics.aggressionHigh'),
+                active: aggressionKg > 0.6,
+              ),
+            ],
+          ),
+          const SizedBox(height: 12), // mt-3
+          // Tinted deficit/surplus info box.
+          Container(
+            padding: const EdgeInsets.symmetric(
+              horizontal: NhamSpacing.sp3,
+              vertical: NhamSpacing.sp2,
+            ),
+            decoration: BoxDecoration(
+              color: NhamColors.track, // bg-[#F5F4F0]
+              borderRadius: BorderRadius.circular(NhamRadii.md), // rounded-lg
+            ),
+            child: Text.rich(
+              TextSpan(
+                children: [
+                  const TextSpan(text: 'Translates to a '),
+                  TextSpan(
+                    text: '~$kcalDelta kcal/day',
+                    style: NhamTextStyles.sansMedium(fontSize: 12)
+                        .copyWith(color: NhamColors.text),
+                  ),
+                  TextSpan(text: ' ${isCutting ? 'deficit' : 'surplus'}.'),
+                ],
+              ),
+              textAlign: TextAlign.center,
+              style: NhamTextStyles.sansRegular(fontSize: 12)
+                  .copyWith(color: NhamColors.stone), // #A8A29E
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _endLabel(String text, {required bool active}) => Text(
+        text,
+        style: (active
+                ? NhamTextStyles.sansBold(fontSize: 11)
+                : NhamTextStyles.sansRegular(fontSize: 11))
+            .copyWith(
+          color: active ? NhamColors.text : NhamColors.textHelp,
+        ),
+      );
+}

@@ -1,0 +1,85 @@
+import 'package:flutter/material.dart';
+
+import '../../../theme/nham_colors.dart';
+import '../../../theme/nham_theme.dart';
+import '../../../theme/nham_typography.dart';
+
+/// The email submit button.
+///
+/// Matches web `components/auth/sign-in-form.tsx:82`:
+/// `flex w-full items-center justify-center gap-2 rounded-xl bg-[#2C2416]
+/// px-4 py-3 font-medium text-sm text-white tracking-tight transition-all
+/// duration-200 hover:bg-[#3D3425] disabled:opacity-60`. While loading a
+/// Loader2 spinner (h-4 w-4, white) sits beside the still-visible label.
+/// rounded-xl → 12, px-4 → 16, py-3 → 12, gap-2 → 8.
+class AuthSubmitButton extends StatefulWidget {
+  const AuthSubmitButton({
+    super.key,
+    required this.label,
+    required this.onPressed,
+    required this.busy,
+  });
+
+  final String label;
+  final VoidCallback onPressed;
+  final bool busy;
+
+  @override
+  State<AuthSubmitButton> createState() => _AuthSubmitButtonState();
+}
+
+class _AuthSubmitButtonState extends State<AuthSubmitButton> {
+  bool _pressed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    // hover:bg-[#3D3425] → on press lerp the espresso fill toward the hover
+    // shade, 200ms.
+    final fill = _pressed ? NhamColors.btnDarkHover2 : NhamColors.text;
+
+    return Opacity(
+      opacity: widget.busy ? 0.6 : 1.0,
+      child: GestureDetector(
+        onTapDown: widget.busy ? null : (_) => setState(() => _pressed = true),
+        onTapUp: widget.busy ? null : (_) => setState(() => _pressed = false),
+        onTapCancel:
+            widget.busy ? null : () => setState(() => _pressed = false),
+        onTap: widget.busy ? null : widget.onPressed,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(
+            horizontal: NhamSpacing.sp4,
+            vertical: NhamSpacing.sp3,
+          ),
+          decoration: BoxDecoration(
+            color: fill,
+            borderRadius: BorderRadius.circular(NhamRadii.buttonXl),
+          ),
+          alignment: Alignment.center,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (widget.busy) ...[
+                const SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: NhamColors.elev,
+                  ),
+                ),
+                const SizedBox(width: 8), // gap-2
+              ],
+              Text(
+                widget.label,
+                style: NhamTextStyles.sansMedium(fontSize: NhamFontSize.sm)
+                    .copyWith(color: NhamColors.elev, letterSpacing: -0.2),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
