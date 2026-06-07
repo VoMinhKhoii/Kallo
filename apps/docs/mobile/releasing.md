@@ -1,7 +1,7 @@
 # Mobile — Releasing to TestFlight
 
-How the **Flutter** app ships to TestFlight. Unlike the RN app (which used Expo/EAS cloud
-builds), the Flutter app is a **local Xcode archive** signed with your own Apple credentials and
+How the **Flutter** app ships to TestFlight. Unlike the earlier RN port (now removed, which used
+Expo/EAS cloud builds), the Flutter app is a **local Xcode archive** signed with your own Apple credentials and
 uploaded via **fastlane**. Everything is committed at `apps/mobile-flutter/ios/fastlane/`.
 
 > First successful ship: **build 1.0.0 (4)**, 2026-06-06.
@@ -20,7 +20,7 @@ by hand.
 ## One-time setup
 
 ### 1. Apple Developer membership
-You need the paid Apple Developer Program (already in place — the RN app shipped to TestFlight).
+You need the paid Apple Developer Program (already in place — the earlier RN port shipped to TestFlight).
 
 ### 2. App Store Connect API key
 Auth is via an App Store Connect **API key** (not interactive Apple login).
@@ -45,7 +45,7 @@ The Key ID / Issuer ID / Team ID are baked into the `Fastfile` (they're useless 
 
 ## App identity
 
-- **Bundle id:** `com.khoivo.nham` — intentionally the **same as the RN app**, so the Flutter
+- **Bundle id:** `com.khoivo.nham` — intentionally the **same as the earlier RN port**, so the Flutter
   build appears as a new build of the existing App Store Connect record (App id `6775761392`),
   with the same testers. (The Flutter project's original `com.nham.nhamMobile` was changed for this.)
 - **Marketing version:** `1.0.0` (from `pubspec.yaml`'s `version:`). Bump it there when you want a

@@ -12,7 +12,6 @@
       "**",
       "!dist",
       "!**/dist",
-      "!apps/mobile",
       "!supabase/migrations/meta",
       "!.agents/skills"
     ]
