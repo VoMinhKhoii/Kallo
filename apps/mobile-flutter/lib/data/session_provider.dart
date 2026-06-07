@@ -27,16 +27,6 @@ final currentSessionProvider = Provider<Session?>((ref) {
   return ref.watch(sessionProvider).valueOrNull;
 });
 
-/// Whether the signed-in user has finished onboarding.
-///
-/// SEAM: the onboarding/data phase owns the real profile query
-/// (`shouldShowOnboardingResume` in RN `lib/onboarding/logic/progress.ts`).
-/// Until that lands, default to `true` so a signed-in user routes straight to
-/// `/dashboard` (matching the RN index redirect, which never gated routing on
-/// onboarding — the wizard is an overlay). Override this provider once the
-/// profile query exists to enable the signed-in → `/onboarding` redirect.
-final onboardingCompleteProvider = Provider<bool>((ref) => true);
-
 /// Imperative auth actions for the auth surface (sign-in / sign-up / sign-out).
 ///
 /// The RN `SessionProvider` exposed only `signOut`; the sign-in/up screens

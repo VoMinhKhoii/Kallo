@@ -63,6 +63,12 @@ final onboardingResumeProvider = Provider<bool>((ref) {
   );
 });
 
+/// Session-scoped flag: the user closed/skipped out of the FORCED full-page
+/// onboarding. The router ANDs `!dismissed` into its force predicate so it
+/// doesn't immediately re-route them back (the sidebar dialog still resumes).
+/// Resets on app restart — a first-session user gets one nudge per cold start.
+final onboardingForceDismissedProvider = StateProvider<bool>((_) => false);
+
 /// The 1-based step the wizard should open on (`getOnboardingResumeStep`).
 final onboardingResumeStepProvider = Provider<int>((ref) {
   final profile = ref.watch(profileProvider).valueOrNull;

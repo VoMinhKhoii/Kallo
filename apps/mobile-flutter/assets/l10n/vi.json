@@ -528,6 +528,11 @@
   },
   "onboarding": {
     "stepOf": "Bước {current} / {total}",
+    "saveError": "Không thể lưu bước này. Vui lòng thử lại.",
+    "setup": {
+      "title": "Đang thiết lập tài khoản của bạn",
+      "subtitle": "Đang cá nhân hoá mục tiêu của bạn — chỉ mất một chút thôi."
+    },
     "origin": {
       "title": "Bạn đến từ đâu?",
       "subtitle": "Quê quán giúp AI hiểu văn hóa ẩm thực bạn gắn bó. Nơi ở hiện tại giúp AI gợi ý nguyên liệu dễ tìm quanh bạn.",

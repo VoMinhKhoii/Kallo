@@ -529,6 +529,11 @@
   },
   "onboarding": {
     "stepOf": "Step {current} of {total}",
+    "saveError": "Couldn't save this step. Please try again.",
+    "setup": {
+      "title": "Setting up your account",
+      "subtitle": "Personalizing your targets — this'll just take a moment."
+    },
     "origin": {
       "title": "Where are you from?",
       "subtitle": "Origin helps the AI lean toward the food culture you identify with. Current residence helps it bias toward ingredients that are easier to find around you.",

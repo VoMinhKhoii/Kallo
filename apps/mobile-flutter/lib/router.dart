@@ -13,6 +13,7 @@ import 'features/logging/screens/logging_screen.dart';
 import 'features/nutrition/screens/nutrition_screen.dart';
 import 'features/onboarding/providers/onboarding_providers.dart';
 import 'features/onboarding/screens/onboarding_screen.dart';
+import 'features/onboarding/screens/welcome_setup_screen.dart';
 import 'features/settings/screens/settings_screen.dart';
 import 'services/supabase_service.dart';
 import 'shell/placeholder_screen.dart';
@@ -45,7 +46,11 @@ final routerProvider = Provider<GoRouter>((ref) {
   // Re-run redirects when the async profile resolves and flips the
   // onboarding-resume decision (signed-in + incomplete profile → /onboarding).
   // Auth changes alone don't cover this — the profile fetch settles later.
+  // `profileProvider` itself covers the brand-new-user splash hold (we wait on
+  // the profile before deciding); the dismissed flag covers skip-out.
+  ref.listen(profileProvider, (_, __) => refresh.ping());
   ref.listen(onboardingResumeProvider, (_, __) => refresh.ping());
+  ref.listen(onboardingForceDismissedProvider, (_, __) => refresh.ping());
 
   return GoRouter(
     navigatorKey: _rootKey,
@@ -67,30 +72,48 @@ final routerProvider = Provider<GoRouter>((ref) {
       // the null, leaving a stale signed-in value and stranding the user in the
       // app. `auth.currentSession` is updated synchronously before the event
       // fires, so it's always current here.
-      final signedIn = SupabaseService.client.auth.currentSession != null;
-      // RN's index never force-routed to onboarding — the wizard is a
-      // DISMISSIBLE overlay over the dashboard (OnboardingGate). So signed-in
-      // users land on the app; onboarding is reachable at /onboarding but not
-      // forced. (Set this to `!ref.read(onboardingResumeProvider)` to force
-      // incomplete profiles into the wizard instead.)
-      const onboardingComplete = true;
+      final session = SupabaseService.client.auth.currentSession;
+      final signedIn = session != null;
       final loc = state.matchedLocation;
 
       final atAuth = loc == '/sign-in' || loc == '/sign-up';
       final atOnboarding = loc == '/onboarding';
+      final atWelcome = loc == '/welcome';
 
       // Signed out: only the auth routes are reachable.
       if (!signedIn) {
         return atAuth ? null : '/sign-in';
       }
 
-      // Signed in but onboarding unfinished → the wizard, unless already there.
-      if (!onboardingComplete) {
+      // The post-finish setup interstitial is always reachable while signed in
+      // (it warms caches then routes to /logging) — never bounce it, even mid
+      // completion when the profile is briefly stale.
+      if (atWelcome) return null;
+
+      final firstSession = _isFirstSession(session.user);
+      final dismissed = ref.read(onboardingForceDismissedProvider);
+
+      // Brand-new first-session users: hold on the splash until the profile (the
+      // onboarding decision) resolves, so they don't flash the dashboard first.
+      if (firstSession && !dismissed) {
+        final profileAsync = ref.read(profileProvider);
+        if (profileAsync.isLoading && !profileAsync.hasValue) {
+          return loc == '/' ? null : '/';
+        }
+      }
+
+      // Force ONLY brand-new first-session users with an incomplete profile into
+      // the full-page wizard. Returning-incomplete users are NOT forced — they
+      // resume via the sidebar dialog. Closing/finishing sets the session-scoped
+      // dismissed flag so the router stops re-forcing them.
+      final forceOnboarding =
+          firstSession && !dismissed && ref.read(onboardingResumeProvider);
+      if (forceOnboarding) {
         return atOnboarding ? null : '/onboarding';
       }
 
-      // Fully onboarded: bounce away from the index / auth / onboarding routes
-      // into the app; leave in-app tab routes untouched.
+      // Not forced: bounce away from the index / auth / onboarding routes into
+      // the app; leave in-app tab routes (and /welcome, handled above) alone.
       if (loc == '/' || atAuth || atOnboarding) {
         return '/dashboard';
       }
@@ -115,6 +138,11 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/onboarding',
         parentNavigatorKey: _rootKey,
         builder: (context, state) => const OnboardingScreen(),
+      ),
+      GoRoute(
+        path: '/welcome',
+        parentNavigatorKey: _rootKey,
+        builder: (context, state) => const WelcomeSetupScreen(),
       ),
 
       // The primary destinations — each its own branch so state/scroll persist
@@ -189,6 +217,20 @@ final routerProvider = Provider<GoRouter>((ref) {
     ],
   );
 });
+
+/// Whether this looks like the user's very first session — a brand-new account
+/// whose last sign-in is within 60s of creation. Mirrors the web layout's
+/// `isFirstSession` gate (`app/[locale]/(app)/layout.tsx`) so only fresh
+/// sign-ups are force-routed into onboarding.
+bool _isFirstSession(User? user) {
+  if (user == null) return false;
+  final created = DateTime.tryParse(user.createdAt);
+  if (created == null) return false;
+  final lastRaw = user.lastSignInAt;
+  final lastSignIn = lastRaw != null ? DateTime.tryParse(lastRaw) : null;
+  final signIn = lastSignIn ?? created;
+  return signIn.difference(created).abs() < const Duration(seconds: 60);
+}
 
 /// Bridges Supabase's auth stream to a [Listenable] for [GoRouter.refreshListenable].
 ///

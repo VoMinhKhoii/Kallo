@@ -6,6 +6,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../data/session_provider.dart';
 import '../features/onboarding/providers/onboarding_providers.dart';
+import '../features/onboarding/widgets/onboarding_dialog.dart';
 import '../theme/nham_colors.dart';
 import '../theme/nham_theme.dart';
 import '../theme/nham_typography.dart';
@@ -202,7 +203,7 @@ class Sidebar extends ConsumerWidget {
                     _OnboardingNudge(
                       onResume: () {
                         onClose();
-                        context.go('/onboarding');
+                        showOnboardingDialog(context, ref);
                       },
                     ),
                     const SizedBox(height: 12),
