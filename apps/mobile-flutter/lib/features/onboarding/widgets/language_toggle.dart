@@ -6,9 +6,10 @@ import '../../../theme/nham_typography.dart';
 
 /// RN port of `components/onboarding/wizard/language-toggle.tsx`.
 ///
-/// Web shows GB/VN flag icons; that package isn't a mobile dep, so the toggle
-/// shows the language label + a check (no emoji, per design). lucide `Check`
-/// → [Icons.check].
+/// Web shows GB/VN SVG flags (`country-flag-icons`); on mobile we use the
+/// regional-indicator flag emoji (🇬🇧 English, 🇻🇳 Tiếng Việt), which iOS/Android
+/// render natively. lucide `Check` → [Icons.check]. Picking a language switches
+/// the app locale live (see `ScreenOrigin`).
 class LanguageToggle extends StatelessWidget {
   const LanguageToggle({
     super.key,
@@ -19,9 +20,9 @@ class LanguageToggle extends StatelessWidget {
   final String value; // 'en' | 'vi'
   final ValueChanged<String> onChange;
 
-  static const List<({String code, String label})> _languages = [
-    (code: 'en', label: 'English'),
-    (code: 'vi', label: 'Tiếng Việt'),
+  static const List<({String code, String label, String flag})> _languages = [
+    (code: 'en', label: 'English', flag: '🇬🇧'),
+    (code: 'vi', label: 'Tiếng Việt', flag: '🇻🇳'),
   ];
 
   @override
@@ -33,6 +34,7 @@ class LanguageToggle extends StatelessWidget {
           Expanded(
             child: _LangButton(
               label: _languages[i].label,
+              flag: _languages[i].flag,
               selected: value == _languages[i].code,
               onTap: () => onChange(_languages[i].code),
             ),
@@ -46,11 +48,13 @@ class LanguageToggle extends StatelessWidget {
 class _LangButton extends StatefulWidget {
   const _LangButton({
     required this.label,
+    required this.flag,
     required this.selected,
     required this.onTap,
   });
 
   final String label;
+  final String flag;
   final bool selected;
   final VoidCallback onTap;
 
@@ -87,6 +91,9 @@ class _LangButtonState extends State<_LangButton> {
         ),
         child: Row(
           children: [
+            // h-5 w-7 rounded flag on web → regional-indicator emoji here.
+            Text(widget.flag, style: const TextStyle(fontSize: 20)),
+            const SizedBox(width: NhamSpacing.sp3),
             Expanded(
               child: Text(
                 widget.label,

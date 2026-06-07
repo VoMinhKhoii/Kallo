@@ -11,8 +11,9 @@ import '../widgets/language_toggle.dart';
 /// RN port of `components/onboarding/screens/screen-origin.tsx` (step 1).
 ///
 /// No validation; reports on mount so Next is enabled immediately. The toggle
-/// sets the persisted `preferredLocale` without live-switching the app language
-/// (no in-app switcher yet). lucide `Languages`/`Globe`/`MapPin` →
+/// sets the persisted `preferredLocale` AND live-switches the app language via
+/// `context.setLocale` (matching web's `switchLocale`). lucide
+/// `Languages`/`Globe`/`MapPin` →
 /// [Icons.translate]/[Icons.public]/[Icons.place_outlined].
 class ScreenOrigin extends StatefulWidget {
   const ScreenOrigin({
@@ -78,7 +79,9 @@ class _ScreenOriginState extends State<ScreenOrigin> {
             LanguageToggle(
               value: _locale,
               onChange: (v) {
+                if (v == _locale) return;
                 setState(() => _locale = v);
+                context.setLocale(Locale(v)); // live-switch the app language
                 _report();
               },
             ),

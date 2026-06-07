@@ -37,7 +37,10 @@ Future<void> showOnboardingDialog(BuildContext context, WidgetRef ref) {
         ),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(28),
-          child: ColoredBox(
+          // Material provides the cream surface AND the Material ancestor the
+          // step-2 TextFields need (the full page gets this from its Scaffold;
+          // showGeneralDialog has no Scaffold, so supply one here).
+          child: Material(
             color: NhamColors.cream,
             child: OnboardingWizard(
               onComplete: () {

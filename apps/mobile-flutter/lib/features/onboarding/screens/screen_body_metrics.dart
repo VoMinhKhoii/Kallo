@@ -90,7 +90,8 @@ class ScreenTwoDefaults {
 }
 
 const List<String> _goals = ['cutting', 'maintaining', 'bulking'];
-const List<String> _carbSplits = ['moderate_carb', 'lower_carb', 'higher_carb'];
+// Displayed High → Moderate → Low (default selection stays moderate_carb).
+const List<String> _carbSplits = ['higher_carb', 'moderate_carb', 'lower_carb'];
 
 /// RN port of `components/onboarding/screens/screen-body-metrics.tsx` (step 2).
 class ScreenBodyMetrics extends StatefulWidget {
@@ -473,30 +474,18 @@ class _ScreenBodyMetricsState extends State<ScreenBodyMetrics> {
 
           if (targetCalories > 0) ...[
             const SizedBox(height: NhamSpacing.sp4), // space-y-4
-            // MACRO SUMMARY label + serif 24px calorie row.
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                _FieldLabel(tr('onboarding.bodyMetrics.macroSummary')),
-                Text.rich(
-                  TextSpan(
-                    children: [
-                      TextSpan(text: _fmt(targetCalories)),
-                      TextSpan(
-                        text: ' ${tr('onboarding.bodyMetrics.kcal')}',
-                        style: NhamTextStyles.sansRegular(fontSize: 14)
-                            .copyWith(color: NhamColors.textHelp),
-                      ),
-                    ],
-                  ),
-                  style: NhamTextStyles.serifRegular(fontSize: 24)
-                      .copyWith(color: NhamColors.text),
-                ),
-              ],
+            // Daily-target hero card (gradient) — calorie target + caption +
+            // P/C/F for the selected split. Sits right below the goal toggle.
+            _DailyTargetCard(
+              calorieTarget: targetCalories,
+              tdee: tdee,
+              goal: _goal,
+              macros: _finalTargets,
             ),
-            const SizedBox(height: NhamSpacing.sp3), // mb-3
-            // Carb split cards (gap-2.5).
+            const SizedBox(height: NhamSpacing.sp4),
+            _FieldLabel(tr('onboarding.bodyMetrics.carbSplit')),
+            const SizedBox(height: NhamSpacing.sp2), // mb-2
+            // Carb split cards (gap-2.5) — High / Moderate / Low.
             Column(
               children: [
                 for (var i = 0; i < _carbSplits.length; i++) ...[
@@ -518,6 +507,24 @@ class _ScreenBodyMetricsState extends State<ScreenBodyMetrics> {
       ),
     );
   }
+}
+
+/// Daily-target hero card — accent gradient surface showing the computed
+/// calorie target, a "based on TDEE…" caption, and the selected split's macros.
+/// Ported from the RN onboarding `hero` block (which used a flat accent tint);
+/// here it's a soft accent gradient.
+class _DailyTargetCard extends StatelessWidget {
+  const _DailyTargetCard({
+    required this.calorieTarget,
+    required this.tdee,
+    required this.goal,
+    required this.macros,
+  });
+
+  final num calorieTarget;
+  final int tdee;
+  final String goal;
+  final MacroTargets? macros;
 
   String _fmt(num n) {
     final s = n.round().toString();
@@ -527,6 +534,101 @@ class _ScreenBodyMetricsState extends State<ScreenBodyMetrics> {
       buf.write(s[i]);
     }
     return buf.toString();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final caption = StringBuffer()
+      ..write(tr('onboarding.bodyMetrics.basedOnTdee'))
+      ..write(' ~${_fmt(tdee)} ${tr('onboarding.bodyMetrics.kcal')}');
+    if (goal == 'maintaining') {
+      caption.write(' · ${tr('onboarding.bodyMetrics.maintenance')}');
+    } else {
+      final sign = goal == 'cutting' ? '−' : '+';
+      final delta = (tdee - calorieTarget).abs();
+      final kind = goal == 'cutting'
+          ? tr('onboarding.bodyMetrics.aggressionDeficit')
+          : tr('onboarding.bodyMetrics.aggressionSurplus');
+      caption.write(
+        ' · $sign${_fmt(delta)} ${tr('onboarding.bodyMetrics.perDay')} $kind',
+      );
+    }
+
+    final m = macros;
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(NhamSpacing.sp5),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [NhamColors.accent15, NhamColors.accent05],
+        ),
+        borderRadius: BorderRadius.circular(NhamRadii.containerLg),
+        border: Border.all(color: NhamColors.accent40),
+      ),
+      child: Column(
+        children: [
+          Text(
+            tr('onboarding.bodyMetrics.calorieTarget').toUpperCase(),
+            textAlign: TextAlign.center,
+            style: NhamTextStyles.sansBold(fontSize: 11)
+                .copyWith(color: NhamColors.accentDark, letterSpacing: 1.5),
+          ),
+          const SizedBox(height: NhamSpacing.sp2),
+          Text.rich(
+            TextSpan(
+              children: [
+                TextSpan(text: _fmt(calorieTarget)),
+                TextSpan(
+                  text: ' ${tr('onboarding.bodyMetrics.kcal')}',
+                  style: NhamTextStyles.sansRegular(fontSize: 18)
+                      .copyWith(color: NhamColors.textHelp),
+                ),
+              ],
+            ),
+            style: NhamTextStyles.serifRegular(fontSize: 36)
+                .copyWith(color: NhamColors.text),
+          ),
+          const SizedBox(height: NhamSpacing.sp2),
+          Text(
+            caption.toString(),
+            textAlign: TextAlign.center,
+            style: NhamTextStyles.sansRegular(fontSize: 12, height: 16 / 12)
+                .copyWith(color: NhamColors.textHelp),
+          ),
+          if (m != null) ...[
+            const SizedBox(height: NhamSpacing.sp4),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                _macroCell(tr('onboarding.bodyMetrics.protein'), m.proteinG),
+                _macroCell(tr('onboarding.bodyMetrics.carbs'), m.carbsG),
+                _macroCell(tr('onboarding.bodyMetrics.fat'), m.fatG),
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _macroCell(String label, num grams) {
+    return Column(
+      children: [
+        Text(
+          label.toUpperCase(),
+          style: NhamTextStyles.sansMedium(fontSize: 10)
+              .copyWith(color: NhamColors.textMuted, letterSpacing: 0.5),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          '${grams.round()}${tr('onboarding.bodyMetrics.grams')}',
+          style: NhamTextStyles.sansSemiBold(fontSize: 15)
+              .copyWith(color: NhamColors.text),
+        ),
+      ],
+    );
   }
 }
 

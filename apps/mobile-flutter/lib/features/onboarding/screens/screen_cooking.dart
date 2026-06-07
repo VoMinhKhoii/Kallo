@@ -187,50 +187,44 @@ class _ScreenCookingState extends State<ScreenCooking> {
         ),
         const SizedBox(height: NhamSpacing.sp6),
         for (var i = 0; i < fields.length; i++) ...[
-          if (i > 0) const SizedBox(height: NhamSpacing.sp4),
+          if (i > 0) const SizedBox(height: NhamSpacing.sp6),
           _buildCard(fields[i]),
         ],
       ],
     );
   }
 
+  // Outer per-category card removed — each category renders flat (label + hint
+  // + option strip), separated by the parent's gap.
   Widget _buildCard(_CookingField f) {
-    return Container(
-      padding: const EdgeInsets.all(NhamSpacing.sp5),
-      decoration: BoxDecoration(
-        color: NhamColors.elev,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: NhamColors.inputBorder),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text(
-            f.label,
-            style: NhamTextStyles.sansBold(fontSize: 13)
-                .copyWith(color: NhamColors.text),
-          ),
-          if (f.hint != null)
-            Padding(
-              // RN marginTop: -space[1] then card gap[3] → net spacing.
-              padding: const EdgeInsets.only(top: NhamSpacing.sp3 - NhamSpacing.sp1),
-              child: Text(
-                f.hint!,
-                style: NhamTextStyles.sansRegular(fontSize: 12, height: 18 / 12)
-                    .copyWith(color: NhamColors.textHelp),
-              ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          f.label,
+          style: NhamTextStyles.sansBold(fontSize: 13)
+              .copyWith(color: NhamColors.text),
+        ),
+        if (f.hint != null)
+          Padding(
+            // RN marginTop: -space[1] then card gap[3] → net spacing.
+            padding: const EdgeInsets.only(top: NhamSpacing.sp3 - NhamSpacing.sp1),
+            child: Text(
+              f.hint!,
+              style: NhamTextStyles.sansRegular(fontSize: 12, height: 18 / 12)
+                  .copyWith(color: NhamColors.textHelp),
             ),
-          const SizedBox(height: NhamSpacing.sp3),
-          OptionStrip(
-            options: f.options,
-            value: _values[f.name]!,
-            onChange: (v) {
-              setState(() => _values[f.name] = v);
-              _report();
-            },
           ),
-        ],
-      ),
+        const SizedBox(height: NhamSpacing.sp3),
+        OptionStrip(
+          options: f.options,
+          value: _values[f.name]!,
+          onChange: (v) {
+            setState(() => _values[f.name] = v);
+            _report();
+          },
+        ),
+      ],
     );
   }
 }

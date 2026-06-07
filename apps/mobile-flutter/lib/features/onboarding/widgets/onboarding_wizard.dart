@@ -58,6 +58,8 @@ class OnboardingWizard extends ConsumerStatefulWidget {
 class _OnboardingWizardState extends ConsumerState<OnboardingWizard> {
   int? _currentStep;
   bool _isPending = false;
+  // Which control triggered the in-flight save — drives WHICH button spins.
+  bool _pendingIsSkip = false;
 
   // Direction of the last step change: +1 next/skip, -1 back. Drives the
   // horizontal slide of the AnimatedSwitcher (web AnimatePresence direction).
@@ -152,11 +154,13 @@ class _OnboardingWizardState extends ConsumerState<OnboardingWizard> {
   void _handleNext() {
     final data = _screenData[_currentStep!];
     if (data == null) return;
+    _pendingIsSkip = false;
     _save(data);
   }
 
   void _handleSkip() {
     _direction = 1;
+    _pendingIsSkip = true;
     _save(const {});
   }
 
@@ -228,6 +232,8 @@ class _OnboardingWizardState extends ConsumerState<OnboardingWizard> {
         _Footer(
           isFirstStep: isFirstStep,
           isPending: _isPending,
+          pendingSkip: _isPending && _pendingIsSkip,
+          pendingNext: _isPending && !_pendingIsSkip,
           isNextDisabled: isNextDisabled,
           isLastStep: step >= _totalSteps,
           onBack: _handleBack,
@@ -433,22 +439,22 @@ class _StepTransition extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AnimatedSwitcher(
-      duration: const Duration(milliseconds: 250),
-      switchInCurve: Curves.easeOutCubic,
-      switchOutCurve: Curves.easeOutCubic,
+      duration: const Duration(milliseconds: 320),
+      switchInCurve: Curves.easeInOutCubic,
+      switchOutCurve: Curves.easeInOutCubic,
       transitionBuilder: (child, animation) {
         final incoming = child.key == this.child.key;
-        // 20px expressed as a fraction; SlideTransition uses fractional offset
-        // of the child's size, so use a small Tween via Transform instead.
-        final dx = incoming ? direction * 20.0 : direction * -20.0;
+        // A clean page sweep: incoming slides in from one side, outgoing slides
+        // out the other (the outgoing child's `animation` runs 1→0). Fractional
+        // offset (~22% of width) reads as a deliberate sweep, not a nudge.
+        final begin = incoming
+            ? Offset(direction * 0.22, 0)
+            : Offset(-direction * 0.22, 0);
         return FadeTransition(
           opacity: animation,
-          child: AnimatedBuilder(
-            animation: animation,
-            builder: (context, c) => Transform.translate(
-              offset: Offset(dx * (1 - animation.value), 0),
-              child: c,
-            ),
+          child: SlideTransition(
+            position:
+                Tween<Offset>(begin: begin, end: Offset.zero).animate(animation),
             child: child,
           ),
         );
@@ -469,6 +475,8 @@ class _Footer extends StatelessWidget {
   const _Footer({
     required this.isFirstStep,
     required this.isPending,
+    required this.pendingSkip,
+    required this.pendingNext,
     required this.isNextDisabled,
     required this.isLastStep,
     required this.onBack,
@@ -478,6 +486,8 @@ class _Footer extends StatelessWidget {
 
   final bool isFirstStep;
   final bool isPending;
+  final bool pendingSkip;
+  final bool pendingNext;
   final bool isNextDisabled;
   final bool isLastStep;
   final VoidCallback onBack;
@@ -509,10 +519,10 @@ class _Footer extends StatelessWidget {
           Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              _SkipButton(onTap: onSkip),
+              _SkipButton(onTap: onSkip, pending: pendingSkip),
               const SizedBox(width: NhamSpacing.sp3),
               _NextButton(
-                isPending: isPending,
+                pending: pendingNext,
                 isLastStep: isLastStep,
                 onTap: onNext,
               ),
@@ -562,8 +572,9 @@ class _BackButtonState extends State<_BackButton> {
 }
 
 class _SkipButton extends StatefulWidget {
-  const _SkipButton({required this.onTap});
+  const _SkipButton({required this.onTap, required this.pending});
   final VoidCallback? onTap;
+  final bool pending;
 
   @override
   State<_SkipButton> createState() => _SkipButtonState();
@@ -601,7 +612,18 @@ class _SkipButtonState extends State<_SkipButton> {
                   .copyWith(color: textColor),
             ),
             const SizedBox(width: 6),
-            Icon(Icons.skip_next, size: 14, color: textColor),
+            // Skipping spins HERE (replacing the skip glyph), not on Next.
+            if (widget.pending)
+              SizedBox(
+                width: 14,
+                height: 14,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(textColor),
+                ),
+              )
+            else
+              Icon(Icons.skip_next, size: 14, color: textColor),
           ],
         ),
       ),
@@ -611,12 +633,12 @@ class _SkipButtonState extends State<_SkipButton> {
 
 class _NextButton extends StatefulWidget {
   const _NextButton({
-    required this.isPending,
+    required this.pending,
     required this.isLastStep,
     required this.onTap,
   });
 
-  final bool isPending;
+  final bool pending;
   final bool isLastStep;
   final VoidCallback? onTap;
 
@@ -629,7 +651,7 @@ class _NextButtonState extends State<_NextButton> {
 
   @override
   Widget build(BuildContext context) {
-    final isPending = widget.isPending;
+    final pending = widget.pending;
     final isLastStep = widget.isLastStep;
     final onTap = widget.onTap;
     final disabled = onTap == null;
@@ -655,7 +677,14 @@ class _NextButtonState extends State<_NextButton> {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              if (isPending)
+              // Label stays put; the trailing arrow is what becomes the spinner.
+              Text(
+                isLastStep ? tr('common.finish') : tr('common.next'),
+                style: NhamTextStyles.sansMedium(fontSize: 14)
+                    .copyWith(color: NhamColors.cream),
+              ),
+              const SizedBox(width: NhamSpacing.sp2),
+              if (pending)
                 const SizedBox(
                   width: 16,
                   height: 16,
@@ -666,13 +695,8 @@ class _NextButtonState extends State<_NextButton> {
                   ),
                 )
               else
-                Text(
-                  isLastStep ? tr('common.finish') : tr('common.next'),
-                  style: NhamTextStyles.sansMedium(fontSize: 14)
-                      .copyWith(color: NhamColors.cream),
-                ),
-              const SizedBox(width: NhamSpacing.sp2),
-              const Icon(Icons.arrow_forward, size: 16, color: NhamColors.cream),
+                const Icon(Icons.arrow_forward,
+                    size: 16, color: NhamColors.cream),
             ],
           ),
         ),
