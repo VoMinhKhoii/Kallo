@@ -214,6 +214,20 @@ export async function confirmAndSaveMealAction(input: {
         })
         .returning({ id: meals.id });
 
+      // Share to circle by default: insert a 'circle' meal_shares row so every
+      // freshly-logged meal is shared automatically (the AFTER INSERT trigger
+      // fans out the meal_shared circle event). The user can still opt this
+      // meal back out via the per-meal toggle. onConflictDoNothing preserves a
+      // prior explicit choice on the re-confirm/edit path (existing meal id).
+      const [shareRow] = await tx
+        .insert(mealShares)
+        .values({ mealId: meal.id, actorId: user.id, visibility: 'circle' })
+        .onConflictDoNothing({ target: mealShares.mealId })
+        .returning({ id: mealShares.id, visibility: mealShares.visibility });
+      const share = shareRow
+        ? { shareId: shareRow.id, visibility: shareRow.visibility }
+        : null;
+
       // Rebuild the saved cheat meal in the shape loadMealsByDate returns, so
       // the client reconciles its optimistic card from the confirm response
       // (same id → in-place overwrite, no day refetch) — mirroring the precise
@@ -236,7 +250,7 @@ export async function confirmAndSaveMealAction(input: {
         entryMode: 'cheat',
         alcoholG: resolved.alcoholG,
         cheatSliders: persisted,
-        share: null,
+        share,
       });
 
       return { mealId: meal.id, meal: savedMeal };
@@ -363,6 +377,20 @@ export async function confirmAndSaveMealAction(input: {
       })
       .returning({ id: meals.id });
 
+    // Share to circle by default: insert a 'circle' meal_shares row so every
+    // freshly-logged meal is shared automatically (the AFTER INSERT trigger
+    // fans out the meal_shared circle event). The user can still opt this meal
+    // back out via the per-meal toggle. onConflictDoNothing preserves a prior
+    // explicit choice on the re-confirm/edit path (existing meal id).
+    const [shareRow] = await tx
+      .insert(mealShares)
+      .values({ mealId: meal.id, actorId: user.id, visibility: 'circle' })
+      .onConflictDoNothing({ target: mealShares.mealId })
+      .returning({ id: mealShares.id, visibility: mealShares.visibility });
+    const share = shareRow
+      ? { shareId: shareRow.id, visibility: shareRow.visibility }
+      : null;
+
     // Pre-generate a stable id for each ingredient row so the inserted rows and
     // the saved-meal payload returned below share ids by construction — no
     // dependence on RETURNING row order. (mealItems.id defaults to
@@ -452,8 +480,8 @@ export async function confirmAndSaveMealAction(input: {
       entryMode: 'precise',
       alcoholG: null,
       cheatSliders: null,
-      // A freshly-saved meal is never shared yet.
-      share: null,
+      // Shared to circle by default (see the meal_shares insert above).
+      share,
     });
 
     // `mealId` kept for backward compatibility (e.g. the mobile confirm route);

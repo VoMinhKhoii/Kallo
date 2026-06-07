@@ -119,7 +119,11 @@ function buildOptimisticMeal(
       entryMode: 'cheat',
       alcoholG: resolved.alcoholG,
       cheatSliders: { spec: cheat.spec, levels: cheat.levels },
-      share: null,
+      // Shared to circle by default. shareId is left empty optimistically (the
+      // real one arrives with the confirm response); the toggle reads only
+      // visibility for its pressed state, and the Macro Card button stays hidden
+      // until a server shareId is present.
+      share: { shareId: '', visibility: 'circle' },
     };
   }
 
@@ -146,8 +150,11 @@ function buildOptimisticMeal(
     entryMode: 'precise',
     alcoholG: null,
     cheatSliders: null,
-    // A freshly-saved meal is never shared yet.
-    share: null,
+    // Shared to circle by default. shareId is left empty optimistically (the
+    // real one arrives with the confirm response); the toggle reads only
+    // visibility for its pressed state, and the Macro Card button stays hidden
+    // until a server shareId is present.
+    share: { shareId: '', visibility: 'circle' },
   };
 }
 

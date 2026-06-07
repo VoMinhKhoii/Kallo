@@ -1,11 +1,12 @@
 // ---------------------------------------------------------------------------
 // Group tracking — meal share visibility toggle
 // ---------------------------------------------------------------------------
-// The per-meal opt-in share control. visibility defaults to 'private'; toggling
-// to 'circle' upserts a single row on the partial-unique meal_id, and the DB
-// AFTER INSERT OR UPDATE trigger on meal_shares writes the meal_shared
-// circle_event on the private -> non-private transition (so re-shares fan out
-// too). No always-share shortcut: every share is a deliberate per-meal act.
+// The per-meal share control. Meals are shared to the circle by default — the
+// save path (confirmAndSaveMealAction) inserts a 'circle' meal_shares row on
+// creation — so this toggle is the per-meal opt-out (and re-opt-in). Toggling
+// upserts a single row on the partial-unique meal_id, and the DB AFTER INSERT
+// OR UPDATE trigger on meal_shares writes the meal_shared circle_event on the
+// private -> non-private transition (so re-shares fan out too).
 
 import { and, eq } from 'drizzle-orm';
 import { db as defaultDb } from '@/lib/db';
