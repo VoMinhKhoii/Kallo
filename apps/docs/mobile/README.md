@@ -1,15 +1,14 @@
 # Nhẩm Mobile — Docs
 
-Documentation for the Nhẩm mobile clients. There are two:
+Documentation for the Nhẩm mobile client:
 
 | App | Path | Stack | Status |
 |-----|------|-------|--------|
 | **Flutter** | [`apps/mobile-flutter`](../../mobile-flutter) | Flutter 3.44, Riverpod, go_router, Supabase | 1:1 port of the web mobile view; on TestFlight as `com.khoivo.nham` |
-| **React Native** | [`apps/mobile`](../../mobile) | Expo / EAS, NativeWind | Earlier port; shipped to TestFlight via EAS |
 
-Both clients talk to the **same** backend (`/api/v1` REST + SSE) and the same Supabase project as the web app.
+The app talks to the **same** backend (`/api/v1` REST + SSE) and the same Supabase project as the web app.
 
-These docs cover the **Flutter** app unless noted.
+> An earlier React Native / Expo port (`apps/mobile`) was removed once the Flutter app reached parity.
 
 ## Contents
 
@@ -20,7 +19,10 @@ These docs cover the **Flutter** app unless noted.
 ## TL;DR
 
 ```bash
-# Run on the simulator (dev: localhost API + dev Supabase)
+# Whole stack — backend (:3000) + app on the simulator, one command (repo root)
+bun dev:mobile
+
+# App only (backend already running, or no data needed)
 cd apps/mobile-flutter && ./tool/run_dev.sh
 
 # Ship a TestFlight build (prod backend, auto build-number bump)

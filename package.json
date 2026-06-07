@@ -6,6 +6,7 @@
     "setup:env": "bash scripts/link-worktree-env.sh",
     "predev": "bash scripts/link-worktree-env.sh",
     "dev": "next dev",
+    "dev:mobile": "bash apps/mobile-flutter/tool/dev_mobile.sh",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",

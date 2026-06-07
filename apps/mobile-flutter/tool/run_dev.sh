@@ -72,6 +72,14 @@ if [[ -z "$SIM_UDID" ]]; then
 fi
 [[ -n "$SIM_UDID" ]] || { echo "No iOS simulator available. Create one in Xcode first."; exit 1; }
 
+# --- warn (non-fatal) if the backend isn't up --------------------------------
+# The app boots and auth (Supabase) works without it, but every data screen
+# errors until /api/v1 is reachable. Cheap heads-up so it's not a mystery.
+if ! curl -fsS --max-time 2 "$API_BASE_URL/api/healthz" >/dev/null 2>&1; then
+  echo "⚠  Backend not reachable at $API_BASE_URL — sign-in works, but data screens will error."
+  echo "   Start it from the worktree that serves /api/v1:  bun run dev"
+fi
+
 # --- mirror to /tmp (out of iCloud) and run ----------------------------------
 echo "Syncing $APP_DIR -> $WORK"
 mkdir -p "$WORK"
@@ -81,7 +89,20 @@ xattr -cr "$WORK" 2>/dev/null || true
 cd "$WORK"
 echo "Running on $SIM_UDID  (API=$API_BASE_URL)"
 echo "Edit files in $WORK for hot reload; run 'tool/run_dev.sh back' to save them home."
-exec flutter run -d "$SIM_UDID" \
-  --dart-define=API_BASE_URL="$API_BASE_URL" \
-  --dart-define=SUPABASE_URL="$SUPABASE_URL" \
-  --dart-define=SUPABASE_ANON_KEY="$SUPABASE_ANON_KEY"
+
+run=(flutter run -d "$SIM_UDID"
+  --dart-define=API_BASE_URL="$API_BASE_URL"
+  --dart-define=SUPABASE_URL="$SUPABASE_URL"
+  --dart-define=SUPABASE_ANON_KEY="$SUPABASE_ANON_KEY")
+
+# `flutter run` quits as soon as stdin hits EOF, and on quit it DETACHES the
+# engine — leaving a debug build on-screen as a blank white/black window. That's
+# fine interactively (a TTY keeps stdin open for the r/R/q keys), but when this
+# script is launched headlessly (an agent, CI, `… &`, a pipe) stdin is closed and
+# the app blanks seconds after launch. So: if stdin isn't a TTY, hold it open.
+if [[ -t 0 ]]; then
+  exec "${run[@]}"
+else
+  echo "(non-interactive stdin — holding it open so flutter run stays attached; see development.md → blank screen)"
+  sleep 2147483647 | "${run[@]}"
+fi

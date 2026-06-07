@@ -11,12 +11,22 @@ How to run and iterate on the **Flutter** app (`apps/mobile-flutter`) locally.
 
 ## Quick start
 
+**One command for the whole stack** (backend **+** app), from the repo root:
+
+```bash
+bun dev:mobile
+```
+
+This starts the `/api/v1` backend on `:3000` (skipped if already up), waits for it to answer, then runs the app on the simulator. **Ctrl-C tears down both.** It's just an orchestrator around `bun run dev` + `tool/run_dev.sh`.
+
+**App only** (when the backend is already running, or you don't need data):
+
 ```bash
 cd apps/mobile-flutter
 ./tool/run_dev.sh
 ```
 
-`tool/run_dev.sh` does everything:
+`tool/run_dev.sh` does everything for the app:
 
 1. Mirrors the app to `/tmp/nham-flutter` (out of iCloud — see below).
 2. Boots / reuses an iOS Simulator.
@@ -93,6 +103,18 @@ On a **physical device** (not the sim) point `API_BASE_URL` at your machine's LA
 `NSAllowsLocalNetworking`.
 
 ## Gotchas
+
+### Gotcha: blank white/black screen on the simulator
+
+The app launches, `flutter:` logs stream (Supabase init, localization), the process is alive — but the screen is **blank**. Two distinct causes, both bit us hard once:
+
+1. **`flutter run` detached.** A **debug** build only renders while `flutter run` is attached. It quits on stdin EOF and detaches the engine → blank window. This happens whenever the app is launched **without an attached `flutter run`**:
+   - cold-launching the installed app with `xcrun simctl launch …` after `flutter run` exited, or
+   - running `run_dev.sh` / `flutter run` **headlessly** (an agent, CI, `… &`, a pipe) where stdin is closed.
+
+   **Fix:** keep `flutter run` attached. `run_dev.sh` now auto-detects a non-TTY stdin and holds it open so it stays attached; interactively, just leave the `flutter run` terminal running. Never verify via `simctl launch` alone — screenshot the **attached** session.
+
+2. **A native plugin not migrated to the UIScene lifecycle.** This app's iOS shell uses Flutter's new scene template (`ios/Runner/SceneDelegate.swift` = `FlutterSceneDelegate`, implicit-engine `AppDelegate`). A plugin that still uses the old `UIApplicationDelegate` launch lifecycle can break the Flutter view's compositing → blank app even while attached, with a log line like `Plugin FLT…Plugin uses deprecated application lifecycle events … UIScene lifecycle support`. We hit this with **`google_sign_in`** (it was unused — auth uses the Supabase OAuth **browser** flow — so it was removed). **Don't add a native iOS plugin without confirming it supports the UIScene lifecycle**, or you'll get a blank screen.
 
 ### Gotcha: CocoaPods breaks after a Ruby bump
 
