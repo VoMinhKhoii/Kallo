@@ -38,20 +38,20 @@ const List<FontFeature> _tnum = [FontFeature.tabularFigures()];
 
 // ── Type — DM Sans only, 5 sizes (40 / 20 / 15 / 13 / 11) ─────────────────
 
-/// 40 / 700 — the ONE hero number per card (calories remaining, weight delta).
+/// 40 / 600 — the ONE hero number per card (calories remaining, weight).
 TextStyle dashHero({Color color = kInk}) => GoogleFonts.dmSans(
       fontSize: 40,
-      fontWeight: FontWeight.w700,
+      fontWeight: FontWeight.w600,
       height: 1.0,
       letterSpacing: -1.2,
       color: color,
       fontFeatures: _tnum,
     );
 
-/// 20 / 700 — ring-center number, macro gram values, metric values.
+/// 20 / 600 — ring-center number, macro gram values, metric values.
 TextStyle dashValue({Color color = kInk}) => GoogleFonts.dmSans(
       fontSize: 20,
-      fontWeight: FontWeight.w700,
+      fontWeight: FontWeight.w600,
       height: 1.1,
       color: color,
       fontFeatures: _tnum,

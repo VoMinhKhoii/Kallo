@@ -22,9 +22,11 @@ import '../../../theme/nham_theme.dart';
 import '../data/dashboard_providers.dart';
 import '../logic/dashboard_format.dart';
 import '../widgets/adherence_heatmap.dart';
+import '../widgets/dashboard_tokens.dart';
 import '../widgets/floating_meal_trigger.dart';
 import '../widgets/section_header.dart';
 import '../widgets/today_section.dart';
+import '../widgets/week_strip.dart';
 import '../widgets/weight_chart.dart';
 
 // EN copy (messages/en.json `dashboard.*`), matching the RN inlined COPY.
@@ -122,7 +124,6 @@ class _Content extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bottomInset = MediaQuery.of(context).padding.bottom;
-    final weekTitle = getWeekTitle('en', tr('dashboard.weekOf'), todayDate);
 
     return Stack(
       children: [
@@ -135,12 +136,17 @@ class _Content extends StatelessWidget {
             bottom: bottomInset + 96,
           ),
           children: [
-            // SECTION 1 — Today summary.
-            _Section(
-              children: [
-                SectionHeader(title: weekTitle, headline: true),
-                TodaySection(args: args, targets: targets),
-              ],
+            // SECTION 1 — greeting + week strip + today summary.
+            Center(
+              child: Padding(
+                padding: const EdgeInsets.only(bottom: NhamSpacing.sp3),
+                child: Text('Hello', style: dashHeadline()),
+              ),
+            ),
+            WeekStrip(args: args, todayDate: todayDate),
+            Padding(
+              padding: const EdgeInsets.only(bottom: NhamSpacing.sp4),
+              child: TodaySection(args: args, targets: targets),
             ),
             // SECTION 2 — Progress.
             _Section(

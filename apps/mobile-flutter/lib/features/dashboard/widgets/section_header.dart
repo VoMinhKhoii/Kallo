@@ -8,19 +8,16 @@ import '../../../theme/nham_colors.dart';
 import '../../../theme/nham_theme.dart';
 import 'dashboard_tokens.dart';
 
-/// The dashboard section label. Two modes:
-///   • [headline] = the single serif editorial moment per viewport (the week
-///     title) — Lora 22, espresso, mixed-case. Used ONCE, at the top.
-///   • default = an 11px bold uppercase taupe eyebrow with wide tracking. A
-///     [range] (or [action]) makes it a space-between row with a read-only
-///     range badge (same eyebrow size, lighter weight) on the trailing edge.
+/// The dashboard section label: an 11px bold uppercase taupe eyebrow with wide
+/// tracking. A [range] (or [action]) makes it a space-between row with a
+/// read-only range badge (same eyebrow size, lighter weight) on the trailing
+/// edge.
 class SectionHeader extends StatelessWidget {
   const SectionHeader({
     super.key,
     required this.title,
     this.range,
     this.action,
-    this.headline = false,
   });
 
   final String title;
@@ -31,20 +28,8 @@ class SectionHeader extends StatelessWidget {
   /// Optional trailing slot (overrides [range] when provided).
   final Widget? action;
 
-  /// Render as the serif page headline (the one editorial moment).
-  final bool headline;
-
   @override
   Widget build(BuildContext context) {
-    if (headline) {
-      return _HeaderFadeIn(
-        child: Padding(
-          padding: const EdgeInsets.only(bottom: NhamSpacing.sp3),
-          child: Text(title, style: dashHeadline()),
-        ),
-      );
-    }
-
     final Widget? trailing = action ??
         (range != null
             ? Text(range!.toUpperCase(),

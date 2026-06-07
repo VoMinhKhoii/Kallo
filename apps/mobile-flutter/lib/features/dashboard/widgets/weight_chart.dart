@@ -1,29 +1,25 @@
 /// WeightChart — the dashboard's weight-trend card.
 ///
-/// 2026 redesign: a flat white card holding three whitespace-separated zones —
-///   [1] trend / delta callout (delta is the bold-sans hero number)
-///   [2] today's-weight input ([CompactWeightLog])
-///   [3] the area chart (fl_chart), sized by AspectRatio with a width-responsive
-///       y-gutter so it never overflows on narrow screens.
+/// 2026 redesign (round 2): a flat white card with NO trend interpretation —
+/// the current weight as the bold hero number, the today's-weight input, and an
+/// integrated minimal line (no axis frame, no off-track band; a dotted goal line
+/// + tiny start/now end-labels). The line bleeds to the card edges so it reads
+/// as part of the card, not a pasted-in chart.
 library;
 
 import 'package:easy_localization/easy_localization.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
 
-import '../../../models/dashboard.dart';
 import '../../../models/weight.dart';
 import '../../../theme/nham_colors.dart';
 import '../../../theme/nham_theme.dart';
 import '../data/dashboard_providers.dart';
-import '../logic/weight_chart_utils.dart';
-import '../logic/weight_trend.dart';
 import 'compact_weight_log.dart';
 import 'dashboard_tokens.dart';
 
-const double _chartAspect = 1.75; // canvas width : height
+const double _chartAspect = 2.2; // canvas width : height (minimal band)
 
 class WeightChart extends ConsumerWidget {
   const WeightChart({super.key, required this.todayDate, required this.args});
@@ -95,100 +91,24 @@ class _Body extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const range = WeightRange.d30;
-    final summary = buildWeightTrendSummary(
-      weights: data.weights,
-      periodStartWeight: data.periodStartWeight,
-      expectedEndWeight: data.expectedEndWeight,
-      goalDirection: data.goalDirection,
-      range: range,
-      elapsedDays: data.periodElapsedDays,
-    );
-
-    final label = tr('dashboard.progressStatus.${summary.status.key}.label');
-    final detail = tr('dashboard.progressStatus.${summary.status.key}.detail');
-    final isInsufficient = summary.status == WeightTrendStatus.insufficient;
-    final delta = summary.currentWeight - summary.startWeight;
-    final behind = summary.status == WeightTrendStatus.behind;
-    final trendDown = delta <= 0;
-    // Status colour carries meaning: sage = on track, terracotta = behind.
-    final statusColor = behind ? NhamColors.danger : NhamColors.success;
     final kg = tr('dashboard.units.kg');
-
-    final deltaStr = isInsufficient
-        ? summary.currentWeight.toStringAsFixed(1)
-        : '${delta > 0 ? '+' : ''}${delta.toStringAsFixed(1)}';
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // [1] Trend / delta callout — flat (no cream sub-block).
-        // Status pill.
-        Align(
-          alignment: Alignment.centerLeft,
-          child: Container(
-            margin: const EdgeInsets.only(bottom: NhamSpacing.sp2),
-            padding: const EdgeInsets.symmetric(
-                horizontal: 10, vertical: NhamSpacing.sp1),
-            decoration: BoxDecoration(
-              color: statusColor.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(NhamRadii.pill),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  trendDown ? LucideIcons.trendingDown : LucideIcons.trendingUp,
-                  size: 16,
-                  color: statusColor,
-                ),
-                const SizedBox(width: NhamSpacing.sp2),
-                Text(label, style: dashEyebrow(color: statusColor)),
-              ],
-            ),
-          ),
-        ),
+        // Hero — current weight only (no trend pill / detail / projection).
         Row(
-          crossAxisAlignment: CrossAxisAlignment.end,
+          crossAxisAlignment: CrossAxisAlignment.baseline,
+          textBaseline: TextBaseline.alphabetic,
           children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.baseline,
-                    textBaseline: TextBaseline.alphabetic,
-                    children: [
-                      Text(deltaStr, style: dashHero()),
-                      const SizedBox(width: 6),
-                      Text(kg, style: dashBody(color: kInkSecondary)),
-                    ],
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.only(top: NhamSpacing.sp1),
-                    child: Text(detail, style: dashMeta(color: kInkDisabled)),
-                  ),
-                ],
-              ),
-            ),
-            if (!isInsufficient) ...[
-              const SizedBox(width: NhamSpacing.sp3),
-              _Stat(
-                  label: tr('dashboard.now'),
-                  value: '${summary.currentWeight.toStringAsFixed(1)} $kg'),
-              if (summary.canProject) ...[
-                const SizedBox(width: NhamSpacing.sp4),
-                _Stat(
-                    label: tr('dashboard.projected'),
-                    value:
-                        '${summary.projectedEndWeight.toStringAsFixed(1)} $kg'),
-              ],
-            ],
+            Text(data.currentWeight.toStringAsFixed(1), style: dashHero()),
+            const SizedBox(width: 6),
+            Text(kg, style: dashBody(color: kInkSecondary)),
           ],
         ),
         const SizedBox(height: NhamSpacing.sp4),
 
-        // [2] TODAY'S WEIGHT input.
+        // Today's-weight input.
         CompactWeightLog(
           currentWeight: data.currentWeight,
           todayWeight: data.todayWeight,
@@ -197,60 +117,35 @@ class _Body extends StatelessWidget {
         ),
         const SizedBox(height: NhamSpacing.sp4),
 
-        // [3] Chart.
+        // Integrated minimal chart.
         _ChartCanvas(
           weights: data.weights,
           periodStartWeight: data.periodStartWeight,
           expectedEndWeight: data.expectedEndWeight,
-          goalDirection: data.goalDirection,
-          range: range,
         ),
       ],
     );
   }
 }
 
-class _Stat extends StatelessWidget {
-  const _Stat({required this.label, required this.value});
-  final String label;
-  final String value;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(label.toUpperCase(), style: dashEyebrow()),
-        const SizedBox(height: 2),
-        Text(value, style: dashMeta(color: kInk, tabular: true)),
-      ],
-    );
-  }
-}
-
-/// The fl_chart area chart. Y domain is clamped to the goal range, expanding to
-/// fit the data. Off-track band, reference line, accent gradient area, curved
-/// line, and a press tooltip mirror the RN SVG chart.
+/// A frameless area line that bleeds to the card edges, with a dotted goal line
+/// and tiny start/now end-labels — no axes, no band, no interpretation.
 class _ChartCanvas extends StatelessWidget {
   const _ChartCanvas({
     required this.weights,
     required this.periodStartWeight,
     required this.expectedEndWeight,
-    required this.goalDirection,
-    required this.range,
   });
 
   final List<double> weights;
   final double periodStartWeight;
   final double expectedEndWeight;
-  final WeightGoalDirection goalDirection;
-  final WeightRange range;
 
   @override
   Widget build(BuildContext context) {
     if (weights.isEmpty) {
       return Container(
-        constraints: const BoxConstraints(minHeight: 180),
+        constraints: const BoxConstraints(minHeight: 120),
         alignment: Alignment.center,
         child: Text(
           tr('dashboard.noWeightData'),
@@ -260,11 +155,8 @@ class _ChartCanvas extends StatelessWidget {
       );
     }
 
-    final locale = context.locale.languageCode;
+    final kg = tr('dashboard.units.kg');
     final isSinglePoint = weights.length == 1;
-    final rangeDays = range == WeightRange.d30 ? 30 : 90;
-    // Bug B fix: narrow screens get a tighter y-gutter so the plot keeps width.
-    final yGutter = MediaQuery.of(context).size.width < 360 ? 28.0 : 36.0;
 
     final goalTop = periodStartWeight > expectedEndWeight
         ? periodStartWeight
@@ -276,136 +168,46 @@ class _ChartCanvas extends StatelessWidget {
     final dataMax = weights.reduce((a, b) => a > b ? a : b);
     final yMin = (goalBottom < dataMin ? goalBottom : dataMin) - 0.3;
     final yMax = (goalTop > dataMax ? goalTop : dataMax) + 0.3;
-
-    final xMax = (isSinglePoint ? rangeDays - 1 : weights.length - 1).toDouble();
+    final xMax = (isSinglePoint ? 1 : weights.length - 1).toDouble();
 
     final spots = <FlSpot>[
       for (var i = 0; i < weights.length; i++) FlSpot(i.toDouble(), weights[i]),
     ];
 
-    // Y ticks: periodStart + expectedEnd (deduped).
-    final yTicks = <double>{periodStartWeight, expectedEndWeight}.toList();
-
-    // X ticks + formatter.
-    final XTicks xTicksData = isSinglePoint
-        ? XTicks([0], (_, __) => tr('dashboard.start'))
-        : buildXTicks(weights.length, range, locale, tr('dashboard.now'),
-            tr('dashboard.weekPrefix'));
-    final xTicks = xTicksData.ticks;
-
-    final tickStyle = dashMeta(color: kInkSecondary, tabular: true);
-
-    // Off-track band bounds.
-    double? bandTop;
-    double? bandBottom;
-    if (goalDirection == WeightGoalDirection.down) {
-      bandTop = yMax;
-      bandBottom = periodStartWeight;
-    } else if (goalDirection == WeightGoalDirection.up) {
-      bandTop = periodStartWeight;
-      bandBottom = yMin;
-    }
-    final showBand = bandTop != null && bandBottom != null;
-
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        if (goalDirection != WeightGoalDirection.flat)
-          Padding(
-            padding: const EdgeInsets.only(bottom: NhamSpacing.sp1),
-            child: Row(
-              children: [
-                Container(
-                  width: 12,
-                  height: 8,
-                  decoration: BoxDecoration(
-                    color: NhamColors.danger.withValues(alpha: 0.5),
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                ),
-                const SizedBox(width: 6),
-                Text(tr('dashboard.offTrack'),
-                    style: dashMeta(color: kInkDisabled)),
-              ],
-            ),
-          ),
         AspectRatio(
           aspectRatio: _chartAspect,
           child: LineChart(
             LineChartData(
               minX: 0,
-              maxX: xMax == 0 ? 1 : xMax,
+              maxX: xMax,
               minY: yMin,
               maxY: yMax,
               clipData: const FlClipData.all(),
               backgroundColor: Colors.transparent,
               gridData: const FlGridData(show: false),
-              borderData: FlBorderData(
-                show: true,
-                border: const Border(
-                  left: BorderSide(color: kHairline, width: 1),
-                  bottom: BorderSide(color: kHairline, width: 1),
-                ),
-              ),
-              rangeAnnotations: RangeAnnotations(
-                horizontalRangeAnnotations: [
-                  if (showBand)
-                    HorizontalRangeAnnotation(
-                      y1: bandBottom,
-                      y2: bandTop,
-                      color: NhamColors.danger.withValues(alpha: 0.08),
-                    ),
-                ],
-              ),
+              borderData: FlBorderData(show: false), // no frame
+              titlesData: const FlTitlesData(show: false), // no gutter / axes
+              // Dotted goal line.
               extraLinesData: ExtraLinesData(
                 horizontalLines: [
                   HorizontalLine(
-                    y: periodStartWeight,
-                    color: NhamColors.danger.withValues(alpha: 0.25),
+                    y: expectedEndWeight,
+                    color: NhamColors.accent.withValues(alpha: 0.45),
                     strokeWidth: 1,
+                    dashArray: const [4, 3],
+                    label: HorizontalLineLabel(
+                      show: true,
+                      alignment: Alignment.topRight,
+                      padding: const EdgeInsets.only(right: 2, bottom: 2),
+                      style: dashMeta(color: kInkDisabled),
+                      labelResolver: (_) =>
+                          '${tr('dashboard.goal')} ${expectedEndWeight.toStringAsFixed(1)}',
+                    ),
                   ),
                 ],
-              ),
-              titlesData: FlTitlesData(
-                topTitles: const AxisTitles(
-                    sideTitles: SideTitles(showTitles: false)),
-                rightTitles: const AxisTitles(
-                    sideTitles: SideTitles(showTitles: false)),
-                leftTitles: AxisTitles(
-                  sideTitles: SideTitles(
-                    showTitles: true,
-                    reservedSize: yGutter,
-                    getTitlesWidget: (value, meta) {
-                      for (final t in yTicks) {
-                        if ((value - t).abs() < 0.0001) {
-                          return SideTitleWidget(
-                            meta: meta,
-                            child: Text(t.toStringAsFixed(1), style: tickStyle),
-                          );
-                        }
-                      }
-                      return const SizedBox.shrink();
-                    },
-                  ),
-                ),
-                bottomTitles: AxisTitles(
-                  sideTitles: SideTitles(
-                    showTitles: true,
-                    reservedSize: 18,
-                    getTitlesWidget: (value, meta) {
-                      for (var i = 0; i < xTicks.length; i++) {
-                        if ((value - xTicks[i]).abs() < 0.0001) {
-                          return SideTitleWidget(
-                            meta: meta,
-                            child: Text(xTicksData.formatter(xTicks[i], i),
-                                style: tickStyle),
-                          );
-                        }
-                      }
-                      return const SizedBox.shrink();
-                    },
-                  ),
-                ),
               ),
               lineTouchData: LineTouchData(
                 handleBuiltInTouches: true,
@@ -432,7 +234,7 @@ class _ChartCanvas extends StatelessWidget {
                   getTooltipItems: (touchedSpots) => touchedSpots
                       .map(
                         (s) => LineTooltipItem(
-                          '${s.y.toStringAsFixed(1)} ${tr('dashboard.units.kg')}',
+                          '${s.y.toStringAsFixed(1)} $kg',
                           dashMeta(color: kInk, tabular: true),
                         ),
                       )
@@ -472,10 +274,20 @@ class _ChartCanvas extends StatelessWidget {
                 ),
               ],
             ),
-            // recharts Area default ≈1.5s ease-in-out draw on mount.
             duration: const Duration(milliseconds: 1500),
             curve: Curves.easeInOut,
           ),
+        ),
+        const SizedBox(height: NhamSpacing.sp1),
+        // Tiny start / now end-labels (in place of an axis).
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text('${weights.first.toStringAsFixed(1)} $kg',
+                style: dashMeta(color: kInkDisabled, tabular: true)),
+            Text('${weights.last.toStringAsFixed(1)} $kg',
+                style: dashMeta(color: kInkSecondary, tabular: true)),
+          ],
         ),
       ],
     );

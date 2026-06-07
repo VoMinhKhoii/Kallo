@@ -111,57 +111,60 @@ class _Dock extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // (a) Calories-remaining hero — directly on white, no sub-block.
-            Text(
-              tr('dashboard.caloriesRemaining').toUpperCase(),
-              style: dashEyebrow(),
-            ),
-            const SizedBox(height: NhamSpacing.sp1),
+            // (a) Hero: big calories number on the left, ring on the right.
             Row(
-              crossAxisAlignment: CrossAxisAlignment.baseline,
-              textBaseline: TextBaseline.alphabetic,
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                Text(_fmt(remaining), style: dashHero()),
-                const SizedBox(width: 6),
-                Text(
-                  '/ ${_fmt(targets.calorieTarget.round())}',
-                  style: dashBody(color: kInkSecondary),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        tr('dashboard.caloriesRemaining').toUpperCase(),
+                        style: dashEyebrow(),
+                      ),
+                      const SizedBox(height: NhamSpacing.sp1),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.baseline,
+                        textBaseline: TextBaseline.alphabetic,
+                        children: [
+                          Flexible(
+                            child: Text(_fmt(remaining),
+                                style: dashHero(), maxLines: 1),
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            '/ ${_fmt(targets.calorieTarget.round())}',
+                            style: dashBody(color: kInkSecondary),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: NhamSpacing.sp1),
+                      Text(
+                        '${_fmt(calories)} ${tr('dashboard.caloriesLogged')}',
+                        style: dashMeta(color: kInkDisabled),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: NhamSpacing.sp4),
+                CalorieRing(
+                  current: calories.toDouble(),
+                  target: targets.calorieTarget,
+                  size: 84,
+                  strokeWidth: 6,
+                  center: const Icon(LucideIcons.flame, size: 22, color: kInk),
                 ),
               ],
-            ),
-            const SizedBox(height: NhamSpacing.sp1),
-            Text(
-              '${_fmt(calories)} ${tr('dashboard.caloriesLogged')}',
-              style: dashMeta(color: kInkDisabled),
             ),
 
             const SizedBox(height: NhamSpacing.sp5),
 
-            // (b) Ring + macros.
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                CalorieRing(
-                  current: calories.toDouble(),
-                  target: targets.calorieTarget,
-                  size: 72,
-                  strokeWidth: 6,
-                  center: const Icon(LucideIcons.flame,
-                      size: 20, color: kInk),
-                ),
-                const SizedBox(width: NhamSpacing.sp4),
-                Expanded(
-                  child: Column(
-                    children: [
-                      for (var i = 0; i < macroBars.length; i++) ...[
-                        if (i > 0) const SizedBox(height: NhamSpacing.sp3),
-                        _MacroRow(bar: macroBars[i], idx: i),
-                      ],
-                    ],
-                  ),
-                ),
-              ],
-            ),
+            // (b) Macro bars — full width.
+            for (var i = 0; i < macroBars.length; i++) ...[
+              if (i > 0) const SizedBox(height: NhamSpacing.sp3),
+              _MacroRow(bar: macroBars[i], idx: i),
+            ],
 
             const SizedBox(height: NhamSpacing.sp5),
 

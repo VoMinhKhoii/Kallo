@@ -19,6 +19,20 @@ String todayDateString([DateTime? date]) {
   return '$y-$m-$day';
 }
 
+/// The 7 local `DateTime`s (Mon→Sun) of the Monday-anchored week containing
+/// [today] (a local `YYYY-MM-DD`). Reuses the same Monday math as [getWeekTitle].
+List<DateTime> weekDaysFor(String today) {
+  final parts = today.split('-').map(int.parse).toList();
+  final now = DateTime(parts[0], parts[1], parts[2]);
+  final weekday = now.weekday % 7; // Dart Mon=1..Sun=7 → Sun=0..Sat=6.
+  final diffToMon = weekday == 0 ? -6 : 1 - weekday;
+  final monday = DateTime(now.year, now.month, now.day + diffToMon);
+  return [
+    for (var i = 0; i < 7; i++)
+      DateTime(monday.year, monday.month, monday.day + i),
+  ];
+}
+
 /// Builds "Week of {Mon} – {Sun}, {year}" for the Monday-anchored week
 /// containing [today] (a local `YYYY-MM-DD`). Vendored from the RN
 /// `getWeekTitle` (dashboard.tsx).

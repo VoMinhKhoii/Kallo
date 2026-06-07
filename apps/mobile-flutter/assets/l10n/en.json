@@ -856,6 +856,7 @@
     "heatmapLoadError": "Unable to load the consistency section. Please try again.",
     "loadingWeightTrend": "Loading weight trend…",
     "now": "Now",
+    "goal": "Goal",
     "start": "Start",
     "weekPrefix": "W",
     "projected": "Projected",
