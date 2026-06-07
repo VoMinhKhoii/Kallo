@@ -1,14 +1,13 @@
 import 'package:flutter/material.dart';
 
 import '../../../theme/nham_colors.dart';
-import '../widgets/auth_dialog.dart';
+import '../widgets/auth_page.dart';
 
 /// The sign-up route.
 ///
-/// Matches web `components/auth/auth-dialog.tsx`: a centered modal card over a
-/// dimmed, blurred backdrop with two in-place tabs. This route opens the dialog
-/// on the sign-up tab; the in-dialog footer/segmented control switches to
-/// sign-in in place (no route change).
+/// A flat full-page auth surface (header, in-place Sign in / Sign up toggle,
+/// Google button, divider, form, footer) on the cream surface. Opens on the
+/// sign-up tab; the toggle/footer switches to sign-in in place (no route change).
 class SignUpScreen extends StatelessWidget {
   const SignUpScreen({super.key});
 
@@ -16,7 +15,7 @@ class SignUpScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return const Scaffold(
       backgroundColor: NhamColors.surface,
-      body: AuthDialog(initialSignIn: false),
+      body: AuthPage(initialSignIn: false),
     );
   }
 }

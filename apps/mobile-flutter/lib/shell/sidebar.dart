@@ -478,11 +478,20 @@ class _SignOutRowState extends State<_SignOutRow> {
     setState(() => _signingOut = true);
     try {
       await widget.ref.read(authControllerProvider).signOut();
-      // The router's auth refresh redirects to /sign-in on the cleared session;
-      // close the drawer so it isn't left open over the auth surface.
-      if (mounted) widget.onClose();
-    } catch (_) {
-      if (mounted) setState(() => _signingOut = false);
+      if (!mounted) return;
+      // Close the drawer, then route to /sign-in explicitly. The router's auth
+      // refresh also redirects on the cleared session, but the explicit nav is
+      // a backstop so a missed redirect can't strand the user in the app.
+      widget.onClose();
+      context.go('/sign-in');
+    } catch (error) {
+      // Don't swallow it: reset so the row is tappable again and tell the user.
+      debugPrint('Sign-out failed: $error');
+      if (!mounted) return;
+      setState(() => _signingOut = false);
+      ScaffoldMessenger.maybeOf(context)?.showSnackBar(
+        SnackBar(content: Text(tr('app.userMenu.signOutError'))),
+      );
     }
   }
 

@@ -2,6 +2,8 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'data/analytics.dart';
+import 'data/session_provider.dart';
 import 'router.dart';
 import 'theme/nham_theme.dart';
 
@@ -18,6 +20,19 @@ class NhamApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final router = ref.watch(routerProvider);
+
+    // Tie PostHog identity to the auth session: identify on sign-in (email,
+    // Google, sign-up, restore) and reset on sign-out. No-op until a PostHog
+    // key is configured. Mirrors the RN provider's identify/reset behavior.
+    ref.listen(sessionProvider, (prev, next) {
+      final analytics = ref.read(analyticsProvider);
+      final session = next.valueOrNull;
+      if (session != null) {
+        analytics.identify(session.user.id);
+      } else if (prev?.valueOrNull != null) {
+        analytics.reset();
+      }
+    });
 
     return MaterialApp.router(
       title: 'Nhẩm',

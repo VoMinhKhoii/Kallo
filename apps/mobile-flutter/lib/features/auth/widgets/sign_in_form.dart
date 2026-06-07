@@ -110,6 +110,7 @@ class _SignInFormState extends ConsumerState<SignInForm> {
         AuthSubmitButton(
           label: tr('auth.signIn.submit'),
           busy: busy,
+          loading: state.emailBusy,
           onPressed: _submit,
         ),
       ],

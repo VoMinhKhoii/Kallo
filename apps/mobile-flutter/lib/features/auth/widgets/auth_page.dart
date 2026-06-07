@@ -1,5 +1,3 @@
-import 'dart:ui';
-
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -9,45 +7,29 @@ import '../../../theme/nham_theme.dart';
 import '../../../theme/nham_typography.dart';
 import '../providers/auth_form_controller.dart';
 import 'auth_divider.dart';
-import 'auth_tab_toggle.dart';
 import 'google_button.dart';
 import 'sign_in_form.dart';
 import 'sign_up_form.dart';
 
-/// The auth modal.
+/// The auth surface as a full-bleed page.
 ///
-/// 1:1 with web `components/auth/auth-dialog.tsx`: a centered card over a
-/// dimmed, blurred backdrop, holding two in-place tabs (sign in / sign up) that
-/// share the Google button + divider and cross-fade/slide the form on switch.
-///
-/// On Flutter the auth surface is a full route (the router gates signed-out
-/// users here), so the backdrop is presentation-only — there is no page behind
-/// it to dismiss back to.
-class AuthDialog extends ConsumerStatefulWidget {
-  const AuthDialog({super.key, this.initialSignIn = true});
+/// Ported from web `components/auth/auth-dialog.tsx`, but rendered as a flat
+/// page on the cream surface rather than a modal: no dimmed/blurred backdrop and
+/// no floating card. It keeps the same content (header, Google button +
+/// divider, form, footer) and cross-fades between the Sign in / Sign up forms;
+/// the footer link is the only tab switch (the top toggle was removed).
+class AuthPage extends ConsumerStatefulWidget {
+  const AuthPage({super.key, this.initialSignIn = true});
 
   /// Which tab opens first. `/sign-in` → true, `/sign-up` → false.
   final bool initialSignIn;
 
   @override
-  ConsumerState<AuthDialog> createState() => _AuthDialogState();
+  ConsumerState<AuthPage> createState() => _AuthPageState();
 }
 
-class _AuthDialogState extends ConsumerState<AuthDialog>
-    with SingleTickerProviderStateMixin {
+class _AuthPageState extends ConsumerState<AuthPage> {
   late bool _signIn = widget.initialSignIn;
-
-  // Spring(stiffness 400, damping 30) ≈ a ~270ms easeOutBack-ish settle.
-  late final AnimationController _enter = AnimationController(
-    vsync: this,
-    duration: const Duration(milliseconds: 270),
-  )..forward();
-
-  @override
-  void dispose() {
-    _enter.dispose();
-    super.dispose();
-  }
 
   void _setTab(bool signIn) {
     if (_signIn == signIn) return;
@@ -79,99 +61,37 @@ class _AuthDialogState extends ConsumerState<AuthDialog>
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      children: [
-        // Backdrop: bg-[#2C2416]/40 backdrop-blur-sm, fade 0→1 over 200ms.
-        Positioned.fill(
-          child: FadeTransition(
-            opacity: CurvedAnimation(
-              parent: _enter,
-              // Backdrop is a plain 200ms fade (independent of the spring).
-              curve: const Interval(0.0, 0.74, curve: Curves.easeOut),
-            ),
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 4, sigmaY: 4),
-              child: const ColoredBox(color: Color(0x662C2416)),
-            ),
-          ),
-        ),
+    final provider =
+        _signIn ? signInControllerProvider : signUpControllerProvider;
+    final state = ref.watch(provider);
 
-        // Centered card.
-        Center(
-          child: Padding(
-            // w-[calc(100%-2rem)] → 16px gutter each side.
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 420),
-              child: _buildEntrance(child: _card(context)),
+    return SafeArea(
+      child: Center(
+        child: SingleChildScrollView(
+          // Page gutter (32) + maxWidth 420 → a 356px content column, matching
+          // the old card's px-8 inner width so spacing/line lengths are 1:1.
+          padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 32),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 420),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                _header(),
+                _googleBlock(state, ref.read(provider.notifier).signInWithGoogle),
+                _formBlock(state),
+              ],
             ),
           ),
         ),
-      ],
-    );
-  }
-
-  Widget _buildEntrance({required Widget child}) {
-    return AnimatedBuilder(
-      animation: _enter,
-      builder: (context, c) {
-        final t = Curves.easeOutBack.transform(_enter.value);
-        final fade = Curves.easeOut.transform(_enter.value);
-        // scale 0.95→1, y 10→0, opacity 0→1.
-        final scale = 0.95 + 0.05 * t;
-        final dy = 10.0 * (1 - t);
-        return Opacity(
-          opacity: fade.clamp(0.0, 1.0),
-          child: Transform.translate(
-            offset: Offset(0, dy),
-            child: Transform.scale(scale: scale, child: c),
-          ),
-        );
-      },
-      child: child,
-    );
-  }
-
-  Widget _card(BuildContext context) {
-    return Container(
-      clipBehavior: Clip.antiAlias,
-      decoration: BoxDecoration(
-        color: NhamColors.cardCream, // #FFFCF8
-        borderRadius: BorderRadius.circular(NhamRadii.containerLg), // 16
-        border: Border.all(color: NhamColors.borderBiscotti40), // #E8D5B5/40
-        boxShadow: const [
-          // 0 25px 60px -12px rgba(44,36,22,0.25)
-          BoxShadow(
-            color: Color(0x402C2416),
-            blurRadius: 60,
-            spreadRadius: -12,
-            offset: Offset(0, 25),
-          ),
-          // 0 0 0 1px rgba(201,168,124,0.08)
-          BoxShadow(
-            color: Color(0x14C9A87C),
-            blurRadius: 0,
-            spreadRadius: 1,
-          ),
-        ],
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          _header(),
-          _tabToggle(),
-          _googleBlock(),
-          _formBlock(),
-        ],
       ),
     );
   }
 
-  // px-8 pt-8 pb-2, centered.
+  // pb-2, centered.
   Widget _header() {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(32, 32, 32, 8),
+      padding: const EdgeInsets.only(bottom: 8),
       child: Column(
         children: [
           Text(
@@ -198,36 +118,16 @@ class _AuthDialogState extends ConsumerState<AuthDialog>
     );
   }
 
-  // px-8 pt-4 pb-2.
-  Widget _tabToggle() {
+  // space-y-3, pt-4.
+  Widget _googleBlock(AuthFormState state, VoidCallback onGoogle) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(32, 16, 32, 8),
-      child: AuthTabToggle(
-        signInActive: _signIn,
-        onSignIn: () => _setTab(true),
-        onSignUp: () => _setTab(false),
-        signInLabel: tr('auth.dialog.signInTab'),
-        signUpLabel: tr('auth.dialog.signUpTab'),
-      ),
-    );
-  }
-
-  // space-y-3, px-8, pt-4.
-  Widget _googleBlock() {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(32, 16, 32, 0),
+      padding: const EdgeInsets.only(top: 16),
       child: Column(
         children: [
           GoogleButton(
-            busy: ref.watch(
-              _signIn ? signInControllerProvider : signUpControllerProvider,
-            ).busy,
-            onPressed: ref
-                .read(
-                  (_signIn ? signInControllerProvider : signUpControllerProvider)
-                      .notifier,
-                )
-                .signInWithGoogle,
+            busy: state.busy,
+            loading: state.googleBusy,
+            onPressed: onGoogle,
           ),
           const SizedBox(height: 12), // space-y-3
           const AuthDivider(),
@@ -236,10 +136,10 @@ class _AuthDialogState extends ConsumerState<AuthDialog>
     );
   }
 
-  // px-8 pt-4 pb-6.
-  Widget _formBlock() {
+  // pt-4.
+  Widget _formBlock(AuthFormState state) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(32, 16, 32, 24),
+      padding: const EdgeInsets.only(top: 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -273,13 +173,13 @@ class _AuthDialogState extends ConsumerState<AuthDialog>
                   ),
           ),
           const SizedBox(height: 20), // mt-5
-          _footer(),
+          _footer(state),
         ],
       ),
     );
   }
 
-  Widget _footer() {
+  Widget _footer(AuthFormState state) {
     final prompt = _signIn
         ? tr('auth.signIn.noAccount')
         : tr('auth.signUp.hasAccount');
@@ -293,7 +193,14 @@ class _AuthDialogState extends ConsumerState<AuthDialog>
           style: NhamTextStyles.sansRegular(fontSize: NhamFontSize.sm)
               .copyWith(color: NhamColors.textMuted),
         ),
-        _FooterLink(label: action, onTap: () => _setTab(!_signIn)),
+        // Inert while a request is in flight — same guard as the tab toggle.
+        Opacity(
+          opacity: state.busy ? 0.6 : 1.0,
+          child: IgnorePointer(
+            ignoring: state.busy,
+            child: _FooterLink(label: action, onTap: () => _setTab(!_signIn)),
+          ),
+        ),
       ],
     );
   }

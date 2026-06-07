@@ -18,11 +18,17 @@ class AuthSubmitButton extends StatefulWidget {
     required this.label,
     required this.onPressed,
     required this.busy,
+    this.loading = false,
   });
 
   final String label;
   final VoidCallback onPressed;
+
+  /// Any auth request is in flight — disables + dims the button.
   final bool busy;
+
+  /// This button's own action is in flight — shows the spinner beside the label.
+  final bool loading;
 
   @override
   State<AuthSubmitButton> createState() => _AuthSubmitButtonState();
@@ -60,7 +66,7 @@ class _AuthSubmitButtonState extends State<AuthSubmitButton> {
             mainAxisAlignment: MainAxisAlignment.center,
             mainAxisSize: MainAxisSize.min,
             children: [
-              if (widget.busy) ...[
+              if (widget.loading) ...[
                 const SizedBox(
                   width: 16,
                   height: 16,

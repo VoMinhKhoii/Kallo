@@ -113,6 +113,7 @@ class _SignUpFormState extends ConsumerState<SignUpForm> {
         AuthSubmitButton(
           label: tr('auth.signUp.submit'),
           busy: busy,
+          loading: state.emailBusy,
           onPressed: _submit,
         ),
       ],

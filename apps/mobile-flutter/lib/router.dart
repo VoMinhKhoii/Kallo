@@ -60,7 +60,14 @@ final routerProvider = Provider<GoRouter>((ref) {
         return state.matchedLocation == '/' ? null : '/';
       }
 
-      final signedIn = sessionAsync.valueOrNull != null;
+      // Read the AUTHORITATIVE session straight off the client, not the
+      // `sessionProvider` AsyncValue. The refresh listenable and the provider
+      // both subscribe to `onAuthStateChange`; on sign-out the redirect can run
+      // (driven by the listenable) before the provider's stream has propagated
+      // the null, leaving a stale signed-in value and stranding the user in the
+      // app. `auth.currentSession` is updated synchronously before the event
+      // fires, so it's always current here.
+      final signedIn = SupabaseService.client.auth.currentSession != null;
       // RN's index never force-routed to onboarding — the wizard is a
       // DISMISSIBLE overlay over the dashboard (OnboardingGate). So signed-in
       // users land on the app; onboarding is reachable at /onboarding but not

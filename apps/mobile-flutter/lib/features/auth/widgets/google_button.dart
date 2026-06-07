@@ -16,10 +16,20 @@ import 'google_logo.dart';
 /// = #2C2416) replaces the logo. rounded-xl → 12, gap-2.5 → 10, px-4 → 16,
 /// py-3 → 12.
 class GoogleButton extends StatefulWidget {
-  const GoogleButton({super.key, required this.onPressed, required this.busy});
+  const GoogleButton({
+    super.key,
+    required this.onPressed,
+    required this.busy,
+    this.loading = false,
+  });
 
   final VoidCallback onPressed;
+
+  /// Any auth request is in flight — disables + dims the button.
   final bool busy;
+
+  /// Google is the in-flight action — swaps the logo for a spinner.
+  final bool loading;
 
   @override
   State<GoogleButton> createState() => _GoogleButtonState();
@@ -55,7 +65,7 @@ class _GoogleButtonState extends State<GoogleButton> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              if (widget.busy)
+              if (widget.loading)
                 const SizedBox(
                   width: 16,
                   height: 16,
