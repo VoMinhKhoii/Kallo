@@ -4,21 +4,23 @@ library;
 
 import 'package:flutter/material.dart';
 
-import '../../../shared/widgets/widgets.dart';
 import '../../../theme/nham_colors.dart';
 import '../../../theme/nham_theme.dart';
-import '../../../theme/nham_typography.dart';
 import 'dashboard_tokens.dart';
 
-/// The dashboard section label: a 12px bold uppercase stone label with 0.2em
-/// tracking (≈ 2.4pt @ 12px). With a [range] (or [action]) it becomes a
-/// space-between row with a read-only range badge on the trailing edge.
+/// The dashboard section label. Two modes:
+///   • [headline] = the single serif editorial moment per viewport (the week
+///     title) — Lora 22, espresso, mixed-case. Used ONCE, at the top.
+///   • default = an 11px bold uppercase taupe eyebrow with wide tracking. A
+///     [range] (or [action]) makes it a space-between row with a read-only
+///     range badge (same eyebrow size, lighter weight) on the trailing edge.
 class SectionHeader extends StatelessWidget {
   const SectionHeader({
     super.key,
     required this.title,
     this.range,
     this.action,
+    this.headline = false,
   });
 
   final String title;
@@ -29,23 +31,30 @@ class SectionHeader extends StatelessWidget {
   /// Optional trailing slot (overrides [range] when provided).
   final Widget? action;
 
-  // text-xs(12) uppercase bold stone, letterSpacing 2.4.
-  static final TextStyle _title =
-      NhamTextStyles.sansBold(fontSize: NhamFontSize.xs)
-          .copyWith(letterSpacing: 2.4, color: NhamColors.stone);
+  /// Render as the serif page headline (the one editorial moment).
+  final bool headline;
 
   @override
   Widget build(BuildContext context) {
+    if (headline) {
+      return _HeaderFadeIn(
+        child: Padding(
+          padding: const EdgeInsets.only(bottom: NhamSpacing.sp3),
+          child: Text(title, style: dashHeadline()),
+        ),
+      );
+    }
+
     final Widget? trailing = action ??
         (range != null
-            ? Text(
-                range!,
-                style: NhamTextStyles.sansMedium(fontSize: NhamFontSize.xxs)
-                    .copyWith(color: NhamColors.stone),
-              )
+            ? Text(range!.toUpperCase(),
+                style: dashEyebrow(weight: FontWeight.w500))
             : null);
 
-    final label = Text(title.toUpperCase(), style: _title);
+    final label = Text(
+      title.toUpperCase(),
+      style: dashEyebrow(color: kInk),
+    );
 
     if (trailing == null) {
       return _HeaderFadeIn(
@@ -145,20 +154,18 @@ class _SectionStateState extends State<SectionState> {
       constraints: const BoxConstraints(minHeight: 180),
       padding: const EdgeInsets.all(NhamSpacing.sp4),
       decoration: BoxDecoration(
-        color: NhamColors.elev,
-        borderRadius: BorderRadius.circular(kCardRadius24),
-        border: Border.all(color: NhamColors.borderSoft),
-        boxShadow: const [kCardShadow], // shadow-[0_10px_32px_…/0.05]
+        color: kCardSurface,
+        borderRadius: BorderRadius.circular(kCardRadius),
+        boxShadow: const [kCardShadow], // shadow only, no border
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          NhamText(
+          Text(
             widget.message,
-            variant: NhamTextVariant.small,
             textAlign: TextAlign.center,
-            style: const TextStyle(color: NhamColors.stone),
+            style: dashBody(color: kInkSecondary),
           ),
           if (hasAction) ...[
             const SizedBox(height: NhamSpacing.sp3),
@@ -180,8 +187,7 @@ class _SectionStateState extends State<SectionState> {
                 ),
                 child: Text(
                   widget.actionLabel!,
-                  style: NhamTextStyles.sansSemiBold(fontSize: NhamFontSize.xs)
-                      .copyWith(color: NhamColors.elev),
+                  style: dashEyebrow(color: Colors.white, weight: FontWeight.w600),
                 ),
               ),
             ),

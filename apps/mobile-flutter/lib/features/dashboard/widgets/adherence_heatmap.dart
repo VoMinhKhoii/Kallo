@@ -15,7 +15,6 @@ import '../../../models/dashboard.dart';
 import '../../../shared/widgets/widgets.dart';
 import '../../../theme/nham_colors.dart';
 import '../../../theme/nham_theme.dart';
-import '../../../theme/nham_typography.dart';
 import '../data/dashboard_providers.dart';
 import '../logic/heatmap_colors.dart';
 import 'dashboard_tokens.dart';
@@ -46,22 +45,21 @@ class AdherenceHeatmap extends ConsumerWidget {
       error: (_, __) => Container(
         constraints: const BoxConstraints(minHeight: 180),
         alignment: Alignment.center,
-        padding: const EdgeInsets.all(NhamSpacing.sp3),
+        padding: const EdgeInsets.all(NhamSpacing.sp4),
         decoration: BoxDecoration(
-          color: NhamColors.elev,
-          borderRadius: BorderRadius.circular(NhamRadii.xxxl),
-          border: Border.all(color: NhamColors.borderSoft),
+          color: kCardSurface,
+          borderRadius: BorderRadius.circular(kCardRadius),
+          boxShadow: const [kCardShadow],
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 280),
-              child: NhamText(
+              child: Text(
                 tr('dashboard.heatmapLoadError'),
-                variant: NhamTextVariant.small,
                 textAlign: TextAlign.center,
-                style: const TextStyle(color: NhamColors.stone),
+                style: dashMeta(color: kInkDisabled),
               ),
             ),
             const SizedBox(height: NhamSpacing.sp3),
@@ -151,12 +149,11 @@ class _HeatmapBodyState extends State<_HeatmapBody>
     final numWeeks = _numWeeks;
 
     return Container(
-      padding: const EdgeInsets.all(NhamSpacing.sp3),
+      padding: const EdgeInsets.all(NhamSpacing.sp4),
       decoration: BoxDecoration(
-        color: NhamColors.elev,
-        borderRadius: BorderRadius.circular(kCardRadius24), // rounded-[1.5rem]
-        border: Border.all(color: NhamColors.borderSoft), // /60
-        boxShadow: const [kCardShadow], // shadow-[0_10px_32px_…/0.05]
+        color: kCardSurface, // solid white
+        borderRadius: BorderRadius.circular(kCardRadius),
+        boxShadow: const [kCardShadow], // shadow only, no border
       ),
       child: LayoutBuilder(
         builder: (context, constraints) {
@@ -172,15 +169,13 @@ class _HeatmapBodyState extends State<_HeatmapBody>
             children: [
               // Header: "{percent}% on track".
               Padding(
-                padding: const EdgeInsets.only(bottom: 6), // mb-1.5
-                // font-mono text-xs(12) text-nham-text-muted.
+                padding: const EdgeInsets.only(bottom: NhamSpacing.sp2),
                 child: Text(
                   data != null
                       ? tr('dashboard.adherenceHeatmap.onTrack',
                           namedArgs: {'percent': '$_adherenceRate'})
                       : ' ',
-                  style: dashMono(fontSize: NhamFontSize.xs)
-                      .copyWith(color: NhamColors.textMuted),
+                  style: dashMeta(color: kInk, tabular: true),
                 ),
               ),
 
@@ -206,8 +201,9 @@ class _HeatmapBodyState extends State<_HeatmapBody>
                             alignment: Alignment.centerRight,
                             child: Text(
                               _dayLabels[i],
-                              style: NhamTextStyles.sansSemiBold(fontSize: 10)
-                                  .copyWith(color: NhamColors.textMuted),
+                              style: dashEyebrow(
+                                  color: kInkSecondary,
+                                  weight: FontWeight.w600),
                             ),
                           ),
                       ],
@@ -235,9 +231,9 @@ class _HeatmapBodyState extends State<_HeatmapBody>
                                   h.month,
                                   maxLines: 1,
                                   overflow: TextOverflow.clip,
-                                  style:
-                                      NhamTextStyles.sansSemiBold(fontSize: 10)
-                                          .copyWith(color: NhamColors.textMuted),
+                                  style: dashEyebrow(
+                                      color: kInkSecondary,
+                                      weight: FontWeight.w600),
                                 ),
                               ),
                           ],
@@ -296,8 +292,7 @@ class _HeatmapBodyState extends State<_HeatmapBody>
                                 child: Text(
                                   _bubble!.text,
                                   textAlign: TextAlign.center,
-                                  style: NhamTextStyles.sansMedium(fontSize: 10)
-                                      .copyWith(color: Colors.white),
+                                  style: dashMeta(color: Colors.white),
                                 ),
                               ),
                             ),
@@ -315,10 +310,7 @@ class _HeatmapBodyState extends State<_HeatmapBody>
                   children: [
                     Text(
                       tr('dashboard.adherenceHeatmap.offTarget'),
-                      style:
-                          NhamTextStyles.sansRegular(fontSize: 9).copyWith(
-                        color: NhamColors.stone,
-                      ),
+                      style: dashMeta(color: kInkDisabled),
                     ),
                     const SizedBox(width: NhamSpacing.sp2),
                     Expanded(
@@ -347,10 +339,7 @@ class _HeatmapBodyState extends State<_HeatmapBody>
                     const SizedBox(width: NhamSpacing.sp2),
                     Text(
                       tr('dashboard.adherenceHeatmap.onTarget'),
-                      style:
-                          NhamTextStyles.sansRegular(fontSize: 9).copyWith(
-                        color: NhamColors.stone,
-                      ),
+                      style: dashMeta(color: kInkDisabled),
                     ),
                   ],
                 ),
@@ -417,31 +406,22 @@ class _HeatmapBodyState extends State<_HeatmapBody>
   }
 }
 
-/// SVG fill/stroke for one cell, mirroring the RN `cellRectProps`.
-({Color fill, double? fillOpacity, double? opacity, Color? stroke})
-    _cellRectProps(HeatmapCell? cell) {
+/// One cell's solid fill + optional stroke. Three solid states (no fractional
+/// opacity multipliers): logged = scale colour, unlogged/partial = neutral
+/// track (partial gets a hairline ring), out-of-range = barely-there cream.
+({Color fill, Color? stroke}) _cellRectProps(HeatmapCell? cell) {
   final ratio = cell?.ratio;
   final isLogged = cell?.status == HeatmapCellStatus.logged && ratio != null;
   if (isLogged) {
-    return (
-      fill: getHeatmapColor(ratio).bg ?? NhamColors.track,
-      fillOpacity: null,
-      opacity: null,
-      stroke: null,
-    );
+    return (fill: getHeatmapColor(ratio).bg ?? kTrack, stroke: null);
   }
   final isMuted = cell?.status == HeatmapCellStatus.future ||
       cell?.status == HeatmapCellStatus.outside;
   if (isMuted) {
-    return (fill: NhamColors.track, fillOpacity: 0.55, opacity: 0.7, stroke: null);
+    return (fill: kPage, stroke: null); // out-of-range
   }
   final isPartial = cell?.status == HeatmapCellStatus.partial;
-  return (
-    fill: NhamColors.track,
-    fillOpacity: 0.3,
-    opacity: null,
-    stroke: isPartial ? NhamColors.border : null,
-  );
+  return (fill: kTrack, stroke: isPartial ? kHairline : null);
 }
 
 class _GridPainter extends CustomPainter {
@@ -502,11 +482,8 @@ class _GridPainter extends CustomPainter {
         final rrect =
             RRect.fromRectAndRadius(rect, const Radius.circular(_cellRadius));
 
-        // fillOpacity multiplies the fill alpha; opacity multiplies the whole;
-        // cellAlpha is the per-cell reveal fade.
-        var alpha = (props.fillOpacity ?? 1.0) * cellAlpha;
-        if (props.opacity != null) alpha *= props.opacity!;
-        fillPaint.color = props.fill.withValues(alpha: alpha);
+        // Solid fill; cellAlpha is only the per-cell reveal fade (→ 1).
+        fillPaint.color = props.fill.withValues(alpha: cellAlpha);
         canvas.drawRRect(rrect, fillPaint);
 
         if (props.stroke != null) {

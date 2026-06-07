@@ -1,33 +1,29 @@
-/// WeightChart — RN port of the web ProgressStory
-/// (`components/dashboard/weight-chart.tsx`). A single card nesting, in order:
-///   [1] trend / delta callout
-///   [2] TODAY'S WEIGHT input (CompactWeightLog)
-///   [3] the area chart (here drawn with fl_chart).
+/// WeightChart — the dashboard's weight-trend card.
 ///
-/// Self-contained: reads the weight summary slice off the dashboard bundle and
-/// renders its own loading / error states. The chart fixes at the 30-day range.
+/// 2026 redesign: a flat white card holding three whitespace-separated zones —
+///   [1] trend / delta callout (delta is the bold-sans hero number)
+///   [2] today's-weight input ([CompactWeightLog])
+///   [3] the area chart (fl_chart), sized by AspectRatio with a width-responsive
+///       y-gutter so it never overflows on narrow screens.
 library;
 
 import 'package:easy_localization/easy_localization.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../models/dashboard.dart';
 import '../../../models/weight.dart';
-import '../../../shared/widgets/widgets.dart';
 import '../../../theme/nham_colors.dart';
 import '../../../theme/nham_theme.dart';
-import '../../../theme/nham_typography.dart';
 import '../data/dashboard_providers.dart';
 import '../logic/weight_chart_utils.dart';
 import '../logic/weight_trend.dart';
 import 'compact_weight_log.dart';
 import 'dashboard_tokens.dart';
 
-const double _chartH = 200; // RN min-h-[200px]
-const double _yGutter = 36; // RN YAxis width=36
-const double _xAxisH = 16; // room for x-tick labels
+const double _chartAspect = 1.75; // canvas width : height
 
 class WeightChart extends ConsumerWidget {
   const WeightChart({super.key, required this.todayDate, required this.args});
@@ -40,12 +36,11 @@ class WeightChart extends ConsumerWidget {
     final async = ref.watch(weightSummaryProvider(args));
 
     return Container(
-      padding: const EdgeInsets.all(10), // p-2.5
+      padding: const EdgeInsets.all(NhamSpacing.sp4),
       decoration: BoxDecoration(
-        color: NhamColors.elev,
-        borderRadius: BorderRadius.circular(kCardRadius24), // rounded-[1.5rem]
-        border: Border.all(color: NhamColors.borderSoft), // /60
-        boxShadow: const [kCardShadow], // shadow-[0_10px_32px_…/0.05]
+        color: kCardSurface, // solid white
+        borderRadius: BorderRadius.circular(kCardRadius),
+        boxShadow: const [kCardShadow], // shadow only, no border
       ),
       child: async.when(
         loading: () => _MinHeight(
@@ -55,25 +50,22 @@ class WeightChart extends ConsumerWidget {
               const CircularProgressIndicator(
                   color: NhamColors.accent, strokeWidth: 3),
               const SizedBox(height: NhamSpacing.sp2),
-              NhamText(
+              Text(
                 tr('dashboard.loadingWeightTrend'),
-                variant: NhamTextVariant.small,
                 textAlign: TextAlign.center,
-                style: const TextStyle(color: NhamColors.stone),
+                style: dashMeta(color: kInkDisabled),
               ),
             ],
           ),
         ),
         error: (_, __) => _MinHeight(
-          child: NhamText(
+          child: Text(
             tr('dashboard.progressLoadError'),
-            variant: NhamTextVariant.small,
             textAlign: TextAlign.center,
-            style: const TextStyle(color: NhamColors.stone),
+            style: dashMeta(color: kInkDisabled),
           ),
         ),
-        data: (data) =>
-            _Body(data: data, todayDate: todayDate, args: args),
+        data: (data) => _Body(data: data, todayDate: todayDate, args: args),
       ),
     );
   }
@@ -119,111 +111,82 @@ class _Body extends StatelessWidget {
     final delta = summary.currentWeight - summary.startWeight;
     final behind = summary.status == WeightTrendStatus.behind;
     final trendDown = delta <= 0;
-    final pillColor = behind ? NhamColors.danger : NhamColors.accent;
+    // Status colour carries meaning: sage = on track, terracotta = behind.
+    final statusColor = behind ? NhamColors.danger : NhamColors.success;
     final kg = tr('dashboard.units.kg');
+
+    final deltaStr = isInsufficient
+        ? summary.currentWeight.toStringAsFixed(1)
+        : '${delta > 0 ? '+' : ''}${delta.toStringAsFixed(1)}';
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // [1] Trend / delta callout.
-        Container(
-          padding: const EdgeInsets.all(10), // p-2.5
-          decoration: BoxDecoration(
-            color: NhamColors.surface80,
-            borderRadius: BorderRadius.circular(NhamRadii.xxxl), // rounded-3xl
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Status pill (self-start).
-              Align(
-                alignment: Alignment.centerLeft,
-                child: Container(
-                  margin: const EdgeInsets.only(bottom: NhamSpacing.sp2),
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 10, vertical: NhamSpacing.sp1),
-                  decoration: BoxDecoration(
-                    color: behind
-                        ? const Color(0x1AD37B69) // rgba(211,123,105,0.1)
-                        : NhamColors.accentSelectedFill,
-                    borderRadius: BorderRadius.circular(NhamRadii.pill),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        trendDown
-                            ? Icons.trending_down
-                            : Icons.trending_up,
-                        size: 14,
-                        color: pillColor,
-                      ),
-                      const SizedBox(width: NhamSpacing.sp2),
-                      Text(
-                        label,
-                        style: NhamTextStyles.sansSemiBold(
-                                fontSize: NhamFontSize.xs)
-                            .copyWith(color: pillColor),
-                      ),
-                    ],
-                  ),
+        // [1] Trend / delta callout — flat (no cream sub-block).
+        // Status pill.
+        Align(
+          alignment: Alignment.centerLeft,
+          child: Container(
+            margin: const EdgeInsets.only(bottom: NhamSpacing.sp2),
+            padding: const EdgeInsets.symmetric(
+                horizontal: 10, vertical: NhamSpacing.sp1),
+            decoration: BoxDecoration(
+              color: statusColor.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(NhamRadii.pill),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  trendDown ? LucideIcons.trendingDown : LucideIcons.trendingUp,
+                  size: 16,
+                  color: statusColor,
                 ),
-              ),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Flexible(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          isInsufficient
-                              ? '${summary.currentWeight.toStringAsFixed(1)} $kg'
-                              : '${delta > 0 ? '+' : ''}${delta.toStringAsFixed(1)} $kg',
-                          // text-3xl(30) font-semibold Lora tracking-[-0.04em].
-                          style: NhamTextStyles.serifSemiBold(fontSize: 30)
-                              .copyWith(
-                            letterSpacing: -1.2,
-                            color: NhamColors.text,
-                            fontFeatures: const [FontFeature.tabularFigures()],
-                          ),
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.only(top: NhamSpacing.sp1),
-                          child: Text(
-                            detail,
-                            style: NhamTextStyles.sansRegular(
-                                    fontSize: NhamFontSize.xs, height: 16 / 12)
-                                .copyWith(color: NhamColors.stone),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  if (!isInsufficient) ...[
-                    const SizedBox(width: NhamSpacing.sp3),
-                    Row(
-                      children: [
-                        _Stat(
-                            label: tr('dashboard.now'),
-                            value:
-                                '${summary.currentWeight.toStringAsFixed(1)} $kg'),
-                        if (summary.canProject) ...[
-                          const SizedBox(width: NhamSpacing.sp2),
-                          _Stat(
-                              label: tr('dashboard.projected'),
-                              value:
-                                  '${summary.projectedEndWeight.toStringAsFixed(1)} $kg'),
-                        ],
-                      ],
-                    ),
-                  ],
-                ],
-              ),
-            ],
+                const SizedBox(width: NhamSpacing.sp2),
+                Text(label, style: dashEyebrow(color: statusColor)),
+              ],
+            ),
           ),
         ),
-        const SizedBox(height: NhamSpacing.sp2),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.baseline,
+                    textBaseline: TextBaseline.alphabetic,
+                    children: [
+                      Text(deltaStr, style: dashHero()),
+                      const SizedBox(width: 6),
+                      Text(kg, style: dashBody(color: kInkSecondary)),
+                    ],
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(top: NhamSpacing.sp1),
+                    child: Text(detail, style: dashMeta(color: kInkDisabled)),
+                  ),
+                ],
+              ),
+            ),
+            if (!isInsufficient) ...[
+              const SizedBox(width: NhamSpacing.sp3),
+              _Stat(
+                  label: tr('dashboard.now'),
+                  value: '${summary.currentWeight.toStringAsFixed(1)} $kg'),
+              if (summary.canProject) ...[
+                const SizedBox(width: NhamSpacing.sp4),
+                _Stat(
+                    label: tr('dashboard.projected'),
+                    value:
+                        '${summary.projectedEndWeight.toStringAsFixed(1)} $kg'),
+              ],
+            ],
+          ],
+        ),
+        const SizedBox(height: NhamSpacing.sp4),
 
         // [2] TODAY'S WEIGHT input.
         CompactWeightLog(
@@ -232,7 +195,7 @@ class _Body extends StatelessWidget {
           todayDate: todayDate,
           args: args,
         ),
-        const SizedBox(height: NhamSpacing.sp2),
+        const SizedBox(height: NhamSpacing.sp4),
 
         // [3] Chart.
         _ChartCanvas(
@@ -254,30 +217,13 @@ class _Stat extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-      decoration: BoxDecoration(
-        color: NhamColors.elevTranslucent,
-        borderRadius: BorderRadius.circular(NhamRadii.buttonXl), // rounded-xl
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            label.toUpperCase(),
-            // text-[9px] uppercase tracking-[0.14em] (= 1.26px @ 9px) stone.
-            style: NhamTextStyles.sansBold(fontSize: 9)
-                .copyWith(letterSpacing: 1.26, color: NhamColors.stone),
-          ),
-          const SizedBox(height: 2),
-          // font-mono text-xs(12) text-nham-text.
-          Text(
-            value,
-            style: dashMono(fontSize: NhamFontSize.xs)
-                .copyWith(color: NhamColors.text),
-          ),
-        ],
-      ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label.toUpperCase(), style: dashEyebrow()),
+        const SizedBox(height: 2),
+        Text(value, style: dashMeta(color: kInk, tabular: true)),
+      ],
     );
   }
 }
@@ -304,13 +250,12 @@ class _ChartCanvas extends StatelessWidget {
   Widget build(BuildContext context) {
     if (weights.isEmpty) {
       return Container(
-        constraints: const BoxConstraints(minHeight: 200),
+        constraints: const BoxConstraints(minHeight: 180),
         alignment: Alignment.center,
-        child: NhamText(
+        child: Text(
           tr('dashboard.noWeightData'),
-          variant: NhamTextVariant.small,
           textAlign: TextAlign.center,
-          style: const TextStyle(color: NhamColors.stone),
+          style: dashMeta(color: kInkDisabled),
         ),
       );
     }
@@ -318,6 +263,8 @@ class _ChartCanvas extends StatelessWidget {
     final locale = context.locale.languageCode;
     final isSinglePoint = weights.length == 1;
     final rangeDays = range == WeightRange.d30 ? 30 : 90;
+    // Bug B fix: narrow screens get a tighter y-gutter so the plot keeps width.
+    final yGutter = MediaQuery.of(context).size.width < 360 ? 28.0 : 36.0;
 
     final goalTop = periodStartWeight > expectedEndWeight
         ? periodStartWeight
@@ -346,6 +293,8 @@ class _ChartCanvas extends StatelessWidget {
             tr('dashboard.weekPrefix'));
     final xTicks = xTicksData.ticks;
 
+    final tickStyle = dashMeta(color: kInkSecondary, tabular: true);
+
     // Off-track band bounds.
     double? bandTop;
     double? bandBottom;
@@ -363,29 +312,25 @@ class _ChartCanvas extends StatelessWidget {
       children: [
         if (goalDirection != WeightGoalDirection.flat)
           Padding(
-            padding: const EdgeInsets.only(bottom: 2), // mb-0.5
+            padding: const EdgeInsets.only(bottom: NhamSpacing.sp1),
             child: Row(
               children: [
                 Container(
-                  width: 12, // w-3
-                  height: 8, // h-2
+                  width: 12,
+                  height: 8,
                   decoration: BoxDecoration(
                     color: NhamColors.danger.withValues(alpha: 0.5),
-                    borderRadius: BorderRadius.circular(4), // rounded-sm
+                    borderRadius: BorderRadius.circular(4),
                   ),
                 ),
                 const SizedBox(width: 6),
-                Text(
-                  tr('dashboard.offTrack'),
-                  style: NhamTextStyles.sansRegular(
-                          fontSize: NhamFontSize.eyebrow)
-                      .copyWith(color: NhamColors.stone),
-                ),
+                Text(tr('dashboard.offTrack'),
+                    style: dashMeta(color: kInkDisabled)),
               ],
             ),
           ),
-        SizedBox(
-          height: _chartH,
+        AspectRatio(
+          aspectRatio: _chartAspect,
           child: LineChart(
             LineChartData(
               minX: 0,
@@ -398,8 +343,8 @@ class _ChartCanvas extends StatelessWidget {
               borderData: FlBorderData(
                 show: true,
                 border: const Border(
-                  left: BorderSide(color: NhamColors.border, width: 1),
-                  bottom: BorderSide(color: NhamColors.border, width: 1),
+                  left: BorderSide(color: kHairline, width: 1),
+                  bottom: BorderSide(color: kHairline, width: 1),
                 ),
               ),
               rangeAnnotations: RangeAnnotations(
@@ -429,23 +374,13 @@ class _ChartCanvas extends StatelessWidget {
                 leftTitles: AxisTitles(
                   sideTitles: SideTitles(
                     showTitles: true,
-                    reservedSize: _yGutter,
+                    reservedSize: yGutter,
                     getTitlesWidget: (value, meta) {
-                      // Only render the two goal ticks.
                       for (final t in yTicks) {
                         if ((value - t).abs() < 0.0001) {
                           return SideTitleWidget(
                             meta: meta,
-                            child: Text(
-                              t.toStringAsFixed(1),
-                              style: NhamTextStyles.sansRegular(fontSize: 9)
-                                  .copyWith(
-                                color: NhamColors.stone,
-                                fontFeatures: const [
-                                  FontFeature.tabularFigures()
-                                ],
-                              ),
-                            ),
+                            child: Text(t.toStringAsFixed(1), style: tickStyle),
                           );
                         }
                       }
@@ -456,17 +391,14 @@ class _ChartCanvas extends StatelessWidget {
                 bottomTitles: AxisTitles(
                   sideTitles: SideTitles(
                     showTitles: true,
-                    reservedSize: _xAxisH,
+                    reservedSize: 18,
                     getTitlesWidget: (value, meta) {
                       for (var i = 0; i < xTicks.length; i++) {
                         if ((value - xTicks[i]).abs() < 0.0001) {
                           return SideTitleWidget(
                             meta: meta,
-                            child: Text(
-                              xTicksData.formatter(xTicks[i], i),
-                              style: NhamTextStyles.sansRegular(fontSize: 9)
-                                  .copyWith(color: NhamColors.stone),
-                            ),
+                            child: Text(xTicksData.formatter(xTicks[i], i),
+                                style: tickStyle),
                           );
                         }
                       }
@@ -494,18 +426,14 @@ class _ChartCanvas extends StatelessWidget {
                     )
                     .toList(),
                 touchTooltipData: LineTouchTooltipData(
-                  getTooltipColor: (_) => NhamColors.elev,
-                  tooltipBorder: const BorderSide(color: NhamColors.borderSoft),
+                  getTooltipColor: (_) => kCardSurface,
+                  tooltipBorder: const BorderSide(color: kHairline),
                   tooltipRoundedRadius: NhamRadii.md,
                   getTooltipItems: (touchedSpots) => touchedSpots
                       .map(
                         (s) => LineTooltipItem(
                           '${s.y.toStringAsFixed(1)} ${tr('dashboard.units.kg')}',
-                          NhamTextStyles.sansMedium(fontSize: NhamFontSize.xs)
-                              .copyWith(
-                            color: NhamColors.text,
-                            fontFeatures: const [FontFeature.tabularFigures()],
-                          ),
+                          dashMeta(color: kInk, tabular: true),
                         ),
                       )
                       .toList(),

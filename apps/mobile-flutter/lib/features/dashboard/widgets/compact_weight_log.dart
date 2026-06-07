@@ -14,12 +14,12 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../data/api_client.dart';
 import '../../../shared/widgets/widgets.dart';
 import '../../../theme/nham_colors.dart';
 import '../../../theme/nham_theme.dart';
-import '../../../theme/nham_typography.dart';
 import '../data/dashboard_providers.dart';
 import 'dashboard_tokens.dart';
 
@@ -166,135 +166,108 @@ class _CompactWeightLogState extends ConsumerState<CompactWeightLog> {
     final showEditHint =
         _hasTodayWeight && _validationError == null && _feedback == null;
 
-    return Container(
-      padding: const EdgeInsets.all(NhamSpacing.sp3), // p-3
-      decoration: BoxDecoration(
-        color: kSurface70, // bg-nham-surface/70
-        borderRadius: BorderRadius.circular(kBlockRadius20), // rounded-[1.25rem]
-        border: Border.all(color: NhamColors.borderSoft), // /60
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.only(bottom: 6), // mb-1.5
-            child: Row(
-              children: [
-                const Icon(Icons.monitor_weight_outlined,
-                    size: 14, color: NhamColors.accent),
-                const SizedBox(width: NhamSpacing.sp2),
-                NhamText(
-                  _hasTodayWeight
-                      ? tr('dashboard.weightCard.todaysWeight')
-                      : tr('dashboard.weightCard.logWeight'),
-                  variant: NhamTextVariant.eyebrow,
-                  style: const TextStyle(fontSize: 9, letterSpacing: 1.35),
-                ),
-              ],
-            ),
-          ),
-          Row(
+    final borderColor =
+        _validationError != null ? NhamColors.danger : kHairline;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(bottom: NhamSpacing.sp2),
+          child: Row(
             children: [
-              Expanded(
-                child: SizedBox(
-                  height: 36,
-                  child: Stack(
-                    children: [
-                      TextField(
-                        controller: _controller,
-                        onChanged: _onChanged,
-                        enabled: !_pending,
-                        keyboardType: const TextInputType.numberWithOptions(
-                            decimal: true),
-                        inputFormatters: [
-                          FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]')),
-                        ],
-                        autocorrect: false,
-                        cursorColor: NhamColors.accent,
-                        // font-mono text-sm(14) text-nham-text.
-                        style: dashMono(fontSize: NhamFontSize.sm)
-                            .copyWith(color: NhamColors.text),
-                        decoration: InputDecoration(
-                          isDense: true,
-                          filled: true,
-                          fillColor: NhamColors.elev,
-                          contentPadding: const EdgeInsets.only(
-                            left: NhamSpacing.sp3,
-                            right: 32,
-                          ),
-                          border: _border(_validationError != null
-                              ? NhamColors.danger
-                              : NhamColors.border),
-                          enabledBorder: _border(_validationError != null
-                              ? NhamColors.danger
-                              : NhamColors.border),
-                          // Web Input focus-visible ring → accent border.
-                          focusedBorder: _border(_validationError != null
-                              ? NhamColors.danger
-                              : NhamColors.accent),
-                          disabledBorder: _border(NhamColors.border),
-                        ),
-                      ),
-                      Positioned(
-                        right: NhamSpacing.sp3,
-                        top: 0,
-                        bottom: 0,
-                        child: Center(
-                          child: Text(
-                            tr('dashboard.units.kg'),
-                            style: NhamTextStyles.sansRegular(fontSize: 11)
-                                .copyWith(color: NhamColors.stone),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
+              const Icon(LucideIcons.scale, size: 16, color: kInkSecondary),
               const SizedBox(width: NhamSpacing.sp2),
-              _SubmitButton(
-                label: submitLabel,
-                pending: _pending,
-                pressed: _pressed,
-                onTapDown: () => setState(() => _pressed = true),
-                onTapUp: () => setState(() => _pressed = false),
-                onTapCancel: () => setState(() => _pressed = false),
-                onTap: _pending ? null : _onSubmit,
+              Text(
+                (_hasTodayWeight
+                        ? tr('dashboard.weightCard.todaysWeight')
+                        : tr('dashboard.weightCard.logWeight'))
+                    .toUpperCase(),
+                style: dashEyebrow(),
               ),
             ],
           ),
-          if (_feedback != null)
-            Padding(
-              padding: const EdgeInsets.only(top: NhamSpacing.sp1),
-              child: Text(
-                _feedback!.message,
-                style: NhamTextStyles.sansRegular(fontSize: 10).copyWith(
-                  color: _feedback!.kind == _FeedbackKind.success
-                      ? NhamColors.success
-                      : NhamColors.danger,
+        ),
+        Row(
+          children: [
+            Expanded(
+              child: SizedBox(
+                height: 44,
+                child: TextField(
+                  controller: _controller,
+                  onChanged: _onChanged,
+                  enabled: !_pending,
+                  keyboardType:
+                      const TextInputType.numberWithOptions(decimal: true),
+                  inputFormatters: [
+                    FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]')),
+                  ],
+                  autocorrect: false,
+                  cursorColor: NhamColors.accent,
+                  style: dashBody(tabular: true),
+                  decoration: InputDecoration(
+                    isDense: true,
+                    filled: true,
+                    fillColor: kCardSurface,
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: NhamSpacing.sp3,
+                      vertical: NhamSpacing.sp3,
+                    ),
+                    // Suffix in-flow (no Positioned overlay → no overlap).
+                    suffixText: tr('dashboard.units.kg'),
+                    suffixStyle: dashMeta(color: kInkDisabled),
+                    border: _border(borderColor),
+                    enabledBorder: _border(borderColor),
+                    // Web Input focus-visible ring → accent border.
+                    focusedBorder: _border(_validationError != null
+                        ? NhamColors.danger
+                        : NhamColors.accent),
+                    disabledBorder: _border(kHairline),
+                  ),
                 ),
               ),
-            )
-          else if (_validationError != null)
-            Padding(
-              padding: const EdgeInsets.only(top: NhamSpacing.sp1),
-              child: Text(
-                _validationError!,
-                style: NhamTextStyles.sansRegular(fontSize: 10)
-                    .copyWith(color: NhamColors.danger),
-              ),
-            )
-          else if (showEditHint)
-            Padding(
-              padding: const EdgeInsets.only(top: NhamSpacing.sp1),
-              child: Text(
-                tr('dashboard.weightCard.editHint'),
-                style: NhamTextStyles.sansRegular(fontSize: 10)
-                    .copyWith(color: NhamColors.stone),
+            ),
+            const SizedBox(width: NhamSpacing.sp2),
+            _SubmitButton(
+              label: submitLabel,
+              pending: _pending,
+              pressed: _pressed,
+              onTapDown: () => setState(() => _pressed = true),
+              onTapUp: () => setState(() => _pressed = false),
+              onTapCancel: () => setState(() => _pressed = false),
+              onTap: _pending ? null : _onSubmit,
+            ),
+          ],
+        ),
+        if (_feedback != null)
+          Padding(
+            padding: const EdgeInsets.only(top: NhamSpacing.sp2),
+            child: Text(
+              _feedback!.message,
+              style: dashMeta(
+                color: _feedback!.kind == _FeedbackKind.success
+                    ? NhamColors.success
+                    : NhamColors.danger,
               ),
             ),
-        ],
-      ),
+          )
+        else if (_validationError != null)
+          Padding(
+            padding: const EdgeInsets.only(top: NhamSpacing.sp2),
+            child: Text(
+              _validationError!,
+              style: dashMeta(color: NhamColors.danger),
+            ),
+          )
+        else if (showEditHint)
+          Padding(
+            padding: const EdgeInsets.only(top: NhamSpacing.sp2),
+            child: Text(
+              tr('dashboard.weightCard.editHint'),
+              style: dashMeta(color: kInkDisabled),
+            ),
+          ),
+      ],
     );
   }
 
@@ -333,8 +306,8 @@ class _SubmitButton extends StatelessWidget {
       child: Opacity(
         opacity: pending ? 0.55 : 1,
         child: Container(
-          height: 36,
-          padding: const EdgeInsets.symmetric(horizontal: NhamSpacing.sp3),
+          height: 44,
+          padding: const EdgeInsets.symmetric(horizontal: NhamSpacing.sp4),
           alignment: Alignment.center,
           decoration: BoxDecoration(
             color: pressed && !pending ? NhamColors.btnHover : NhamColors.btn,
@@ -349,8 +322,7 @@ class _SubmitButton extends StatelessWidget {
                 )
               : Text(
                   label,
-                  style: NhamTextStyles.sansSemiBold(fontSize: NhamFontSize.xs)
-                      .copyWith(color: Colors.white),
+                  style: dashEyebrow(color: Colors.white, weight: FontWeight.w600),
                 ),
         ),
       ),

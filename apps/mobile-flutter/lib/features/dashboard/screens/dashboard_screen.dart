@@ -138,7 +138,7 @@ class _Content extends StatelessWidget {
             // SECTION 1 — Today summary.
             _Section(
               children: [
-                SectionHeader(title: weekTitle),
+                SectionHeader(title: weekTitle, headline: true),
                 TodaySection(args: args, targets: targets),
               ],
             ),

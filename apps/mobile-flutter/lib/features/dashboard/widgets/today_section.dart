@@ -1,17 +1,18 @@
-/// TodaySection — RN port of the dashboard's TodayDock-equivalent
-/// (`dashboard.tsx` `TodaySection`). The reused [CalorieRing] (with a flame
-/// center), the macro bars, the "Calories remaining" hero block, and the meal
-/// list. Reads today's persisted meals off the dashboard bundle.
+/// TodaySection — the dashboard's calorie/macro/meals dock.
+///
+/// 2026 redesign: ONE flat white card (no nested translucent cream blocks), the
+/// calorie-remaining number as the bold-sans hero, macro bars with readable
+/// values, and a plain meal list. Zones are separated by whitespace, not by
+/// stacked fills. See `dashboard_tokens.dart` for the type/color system.
 library;
 
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
-import '../../../shared/widgets/widgets.dart';
 import '../../../theme/nham_colors.dart';
 import '../../../theme/nham_theme.dart';
-import '../../../theme/nham_typography.dart';
 import '../data/dashboard_providers.dart';
 import '../data/logging_day.dart';
 import '../logic/dashboard_format.dart';
@@ -101,111 +102,71 @@ class _Dock extends StatelessWidget {
 
     return _FadeInDown(
       child: Container(
-        padding: const EdgeInsets.all(NhamSpacing.sp3),
+        padding: const EdgeInsets.all(NhamSpacing.sp4),
         decoration: BoxDecoration(
-          color: kCard90, // bg-card/90
-          borderRadius:
-              BorderRadius.circular(kCardRadius24), // rounded-[1.5rem]
-          border: Border.all(color: kBorder70), // border-nham-border/70
-          boxShadow: const [kCardShadow], // shadow-[0_10px_32px_…/0.05]
+          color: kCardSurface, // solid white
+          borderRadius: BorderRadius.circular(kCardRadius),
+          boxShadow: const [kCardShadow], // shadow only, no border
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // (a) Calories remaining hero.
-            _CreamBlock(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  NhamText(
-                    tr('dashboard.caloriesRemaining'),
-                    variant: NhamTextVariant.eyebrow,
-                    style: const TextStyle(color: NhamColors.stone),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.only(top: NhamSpacing.sp1),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.baseline,
-                      textBaseline: TextBaseline.alphabetic,
-                      children: [
-                        Text(
-                          _fmt(remaining),
-                          style:
-                              NhamTextStyles.serifSemiBold(fontSize: 36, height: 1)
-                                  .copyWith(
-                            letterSpacing: -1.44, // tracking-[-0.04em] @ 36px
-                            color: NhamColors.text,
-                            fontFeatures: const [FontFeature.tabularFigures()],
-                          ),
-                        ),
-                        const SizedBox(width: 6),
-                        Text(
-                          '/ ${_fmt(targets.calorieTarget.round())}',
-                          style: NhamTextStyles.serifItalic(
-                                  fontSize: NhamFontSize.lg)
-                              .copyWith(color: NhamColors.textMuted),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.only(top: NhamSpacing.sp1),
-                    child: Text(
-                      '${_fmt(calories)} ${tr('dashboard.caloriesLogged')}',
-                      style:
-                          NhamTextStyles.sansRegular(fontSize: NhamFontSize.xs)
-                              .copyWith(color: NhamColors.stone),
-                    ),
-                  ),
-                ],
-              ),
+            // (a) Calories-remaining hero — directly on white, no sub-block.
+            Text(
+              tr('dashboard.caloriesRemaining').toUpperCase(),
+              style: dashEyebrow(),
             ),
-            const SizedBox(height: NhamSpacing.sp3),
+            const SizedBox(height: NhamSpacing.sp1),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.baseline,
+              textBaseline: TextBaseline.alphabetic,
+              children: [
+                Text(_fmt(remaining), style: dashHero()),
+                const SizedBox(width: 6),
+                Text(
+                  '/ ${_fmt(targets.calorieTarget.round())}',
+                  style: dashBody(color: kInkSecondary),
+                ),
+              ],
+            ),
+            const SizedBox(height: NhamSpacing.sp1),
+            Text(
+              '${_fmt(calories)} ${tr('dashboard.caloriesLogged')}',
+              style: dashMeta(color: kInkDisabled),
+            ),
+
+            const SizedBox(height: NhamSpacing.sp5),
 
             // (b) Ring + macros.
-            _CreamBlock(
-              color: kSurface60, // bg-nham-surface/60
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  CalorieRing(
-                    current: calories.toDouble(),
-                    target: targets.calorieTarget,
-                    size: 72,
-                    strokeWidth: 6,
-                    center: const Icon(Icons.local_fire_department_outlined,
-                        size: 24, color: NhamColors.accent),
-                  ),
-                  const SizedBox(width: NhamSpacing.sp3),
-                  Expanded(
-                    child: Column(
-                      children: [
-                        for (var i = 0; i < macroBars.length; i++) ...[
-                          if (i > 0) const SizedBox(height: 14), // gap-3.5
-                          _MacroRow(bar: macroBars[i], idx: i),
-                        ],
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                CalorieRing(
+                  current: calories.toDouble(),
+                  target: targets.calorieTarget,
+                  size: 72,
+                  strokeWidth: 6,
+                  center: const Icon(LucideIcons.flame,
+                      size: 20, color: kInk),
+                ),
+                const SizedBox(width: NhamSpacing.sp4),
+                Expanded(
+                  child: Column(
+                    children: [
+                      for (var i = 0; i < macroBars.length; i++) ...[
+                        if (i > 0) const SizedBox(height: NhamSpacing.sp3),
+                        _MacroRow(bar: macroBars[i], idx: i),
                       ],
-                    ),
+                    ],
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
-            const SizedBox(height: NhamSpacing.sp3),
 
-            // (c) Meal list.
-            Container(
-              constraints: const BoxConstraints(minHeight: 140),
-              padding: const EdgeInsets.all(10), // p-2.5
-              decoration: BoxDecoration(
-                color: kSurface60, // bg-nham-surface/60
-                borderRadius:
-                    BorderRadius.circular(kBlockRadius20), // rounded-[1.25rem]
-                border: Border.all(color: NhamColors.borderSoft), // /60
-              ),
-              child: meals.isEmpty
-                  ? _EmptyMeals()
-                  : _MealList(meals: meals),
-            ),
+            const SizedBox(height: NhamSpacing.sp5),
+
+            // (c) Meal list — plain, on the card surface (no nested fill).
+            meals.isEmpty ? _EmptyMeals() : _MealList(meals: meals),
           ],
         ),
       ),
@@ -224,26 +185,6 @@ class _Dock extends StatelessWidget {
   }
 }
 
-class _CreamBlock extends StatelessWidget {
-  const _CreamBlock({required this.child, this.color = NhamColors.surface80});
-  final Widget child;
-
-  /// `bg-nham-surface/80` (hero) or `bg-nham-surface/60` (ring+macros).
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(NhamSpacing.sp3),
-      decoration: BoxDecoration(
-        color: color,
-        borderRadius: BorderRadius.circular(kBlockRadius20), // rounded-[1.25rem]
-      ),
-      child: child,
-    );
-  }
-}
-
 class _MacroRow extends StatelessWidget {
   const _MacroRow({required this.bar, required this.idx});
   final _MacroBarData bar;
@@ -258,33 +199,28 @@ class _MacroRow extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         SizedBox(
-          width: 48,
+          width: 72,
           child: Text(
             bar.label.toUpperCase(),
             maxLines: 1,
-            // w-12 font-bold text-[9px] stone uppercase tracking-widest(0.9px).
-            style: NhamTextStyles.sansBold(fontSize: 9)
-                .copyWith(letterSpacing: 0.9, color: NhamColors.stone),
+            overflow: TextOverflow.visible,
+            softWrap: false,
+            style: dashEyebrow(color: kInk),
           ),
         ),
         const SizedBox(width: NhamSpacing.sp3),
         Expanded(child: _MacroBar(pct: pct, color: bar.color, idx: idx)),
         const SizedBox(width: NhamSpacing.sp3),
-        SizedBox(
-          width: 52,
-          // w-[52px] text-right font-mono text-[10px] stone tabular-nums.
-          child: Text(
-            '${bar.current}/${bar.target}g',
-            textAlign: TextAlign.right,
-            style: dashMono(fontSize: 10).copyWith(color: NhamColors.stone),
-          ),
+        Text(
+          '${bar.current}/${bar.target}g',
+          style: dashMeta(color: kInk, tabular: true),
         ),
       ],
     );
   }
 }
 
-/// One macro bar fill: h-1.5 (6px) track, fill animates 0 → pct over 900ms with
+/// One macro bar fill: h-2 (8px) track, fill animates 0 → pct over 900ms with
 /// a per-bar stagger (idx*100 + 200ms lead-in) and the signature ease.
 class _MacroBar extends StatefulWidget {
   const _MacroBar({required this.pct, required this.color, required this.idx});
@@ -340,8 +276,8 @@ class _MacroBarState extends State<_MacroBar>
     return ClipRRect(
       borderRadius: BorderRadius.circular(NhamRadii.pill),
       child: Container(
-        height: 6, // h-1.5
-        color: NhamColors.track,
+        height: 8, // h-2
+        color: kTrack,
         child: LayoutBuilder(
           builder: (context, constraints) => AnimatedBuilder(
             animation: _fill,
@@ -349,7 +285,7 @@ class _MacroBarState extends State<_MacroBar>
               alignment: Alignment.centerLeft,
               child: Container(
                 width: constraints.maxWidth * (_fill.value / 100),
-                height: 6,
+                height: 8,
                 decoration: BoxDecoration(
                   color: widget.color,
                   borderRadius: BorderRadius.circular(NhamRadii.pill),
@@ -363,87 +299,30 @@ class _MacroBarState extends State<_MacroBar>
   }
 }
 
-/// Empty state — a DASHED-border card:
-/// `border border-nham-border/60 border-dashed bg-card/40 rounded-2xl px-3 py-3`,
-/// centered, gap-1.5.
+/// Empty state — plain centered text on the card surface (no dashed border).
 class _EmptyMeals extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ConstrainedBox(
-      constraints: const BoxConstraints(minHeight: 116),
-      child: CustomPaint(
-        painter: _DashedBorderPainter(
-          color: NhamColors.borderSoft, // /60
-          radius: NhamRadii.containerLg, // rounded-2xl(16)
-        ),
-        child: Container(
-          decoration: BoxDecoration(
-            color: kCard40, // bg-card/40
-            borderRadius: BorderRadius.circular(NhamRadii.containerLg),
+      constraints: const BoxConstraints(minHeight: 96),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(
+            tr('dashboard.noMealsToday'),
+            textAlign: TextAlign.center,
+            style: dashBody(weight: FontWeight.w600),
           ),
-          padding: const EdgeInsets.symmetric(
-              horizontal: NhamSpacing.sp3, vertical: NhamSpacing.sp3),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                tr('dashboard.noMealsToday'),
-                textAlign: TextAlign.center,
-                style: NhamTextStyles.sansSemiBold(fontSize: NhamFontSize.sm)
-                    .copyWith(color: NhamColors.text),
-              ),
-              const SizedBox(height: 6), // gap-1.5
-              Text(
-                tr('dashboard.mealReceiptsHint'),
-                textAlign: TextAlign.center,
-                style: NhamTextStyles.sansRegular(fontSize: 11)
-                    .copyWith(color: NhamColors.stone),
-              ),
-            ],
+          const SizedBox(height: NhamSpacing.sp1),
+          Text(
+            tr('dashboard.mealReceiptsHint'),
+            textAlign: TextAlign.center,
+            style: dashMeta(color: kInkDisabled),
           ),
-        ),
+        ],
       ),
     );
   }
-}
-
-/// Paints a dashed rounded-rect stroke (Tailwind `border-dashed`, ~1px).
-class _DashedBorderPainter extends CustomPainter {
-  _DashedBorderPainter({required this.color, required this.radius});
-  final Color color;
-  final double radius;
-
-  static const double _dash = 4;
-  static const double _gap = 3;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final rrect = RRect.fromRectAndRadius(
-      Offset.zero & size,
-      Radius.circular(radius),
-    );
-    final path = Path()..addRRect(rrect);
-    final paint = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1
-      ..color = color;
-
-    for (final metric in path.computeMetrics()) {
-      var dist = 0.0;
-      while (dist < metric.length) {
-        final next = dist + _dash;
-        canvas.drawPath(
-          metric.extractPath(dist, next.clamp(0, metric.length)),
-          paint,
-        );
-        dist = next + _gap;
-      }
-    }
-  }
-
-  @override
-  bool shouldRepaint(_DashedBorderPainter old) =>
-      old.color != color || old.radius != radius;
 }
 
 class _MealList extends StatelessWidget {
@@ -463,23 +342,18 @@ class _MealList extends StatelessWidget {
             textBaseline: TextBaseline.alphabetic,
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              NhamText(
-                tr('dashboard.recentMeals'),
-                variant: NhamTextVariant.eyebrow,
-                // text-[9px] tracking-[0.15em] (= 1.35px @ 9px).
-                style: const TextStyle(fontSize: 9, letterSpacing: 1.35),
-              ),
+              Text(tr('dashboard.recentMeals').toUpperCase(),
+                  style: dashEyebrow()),
               Text(
                 tr('dashboard.mealsLogged',
                     namedArgs: {'count': '${meals.length}'}),
-                style: NhamTextStyles.sansRegular(fontSize: 9)
-                    .copyWith(color: NhamColors.stone),
+                style: dashMeta(color: kInkDisabled),
               ),
             ],
           ),
         ),
         for (var i = 0; i < meals.length; i++) ...[
-          if (i > 0) const SizedBox(height: 6), // gap-1.5
+          if (i > 0) const SizedBox(height: NhamSpacing.sp2),
           _MealRow(index: i, meal: meals[i]),
         ],
       ],
@@ -495,7 +369,7 @@ class _MealRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -503,37 +377,29 @@ class _MealRow extends StatelessWidget {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Padding(
-                  padding: const EdgeInsets.only(top: 2), // mt-0.5
+                SizedBox(
+                  width: 18,
                   child: Text(
                     '${index + 1}',
-                    style: NhamTextStyles.serifRegular(
-                            fontSize: NhamFontSize.eyebrow, height: 1)
-                        .copyWith(
-                      color: NhamColors.accent,
-                      fontFeatures: const [FontFeature.tabularFigures()],
-                    ),
+                    style: dashMeta(color: kInkSecondary, tabular: true),
                   ),
                 ),
-                const SizedBox(width: NhamSpacing.sp2),
+                const SizedBox(width: NhamSpacing.sp1),
                 Expanded(
                   child: Text(
                     meal.rawInput,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
-                    // leading-tight = 1.25.
-                    style: NhamTextStyles.sansRegular(fontSize: 11, height: 1.25)
-                        .copyWith(color: NhamColors.text),
+                    style: dashBody(),
                   ),
                 ),
               ],
             ),
           ),
           const SizedBox(width: NhamSpacing.sp2),
-          // font-mono text-[10px] stone tabular-nums.
           Text(
             '${round0(meal.nutrition.caloriesKcal)}',
-            style: dashMono(fontSize: 10).copyWith(color: NhamColors.stone),
+            style: dashMeta(color: kInkSecondary, tabular: true),
           ),
         ],
       ),
