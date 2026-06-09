@@ -247,7 +247,7 @@ export function useConfirmMeal(userId: string) {
       );
       return { snapshots };
     },
-    onSuccess: (data, variables) => {
+    onSuccess: async (data, variables) => {
       const loggingDayKey = loggingDayKeys.byUserDate(
         userId,
         variables.originDate
@@ -255,10 +255,13 @@ export function useConfirmMeal(userId: string) {
       const dailyMealsKey = dailyMealsKeys.byDate(variables.originDate);
       // Cancel any day fetch still in flight BEFORE writing authoritative state:
       // such a fetch read the PRE-save (empty/pending) snapshot and would clobber
-      // this write when it lands. Cancelling first means its late result is
-      // discarded, closing the window between this write and the settle phase.
-      queryClient.cancelQueries({ queryKey: loggingDayKey });
-      queryClient.cancelQueries({ queryKey: dailyMealsKey });
+      // this write when it lands. AWAIT both cancellations so an in-flight fetch
+      // can't resolve between the cancel and the setQueriesData write below
+      // (mirrors the awaited cancel in onMutate).
+      await Promise.all([
+        queryClient.cancelQueries({ queryKey: loggingDayKey }),
+        queryClient.cancelQueries({ queryKey: dailyMealsKey }),
+      ]);
       // Reconcile straight from the confirm response — the server returns the
       // saved meal in its authoritative (goal-adjusted) shape, so we overwrite
       // the optimistic estimate in place rather than waiting for a day refetch.
