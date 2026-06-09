@@ -95,8 +95,7 @@ class _MealInputState extends State<MealInput>
     );
   }
 
-  bool get _canSubmit =>
-      _controller.text.trim().isNotEmpty && !widget.disabled;
+  bool get _canSubmit => _controller.text.trim().isNotEmpty && !widget.disabled;
 
   void _submit() {
     if (_canSubmit) widget.onSubmit(_controller.text);
@@ -108,11 +107,12 @@ class _MealInputState extends State<MealInput>
       animation: _focus,
       builder: (context, child) {
         final t = _focus.value;
-        final borderColor = Color.lerp(
-          NhamColors.borderBiscotti40,
-          NhamColors.borderAccent40,
-          t,
-        )!;
+        final borderColor =
+            Color.lerp(
+              NhamColors.borderBiscotti40,
+              NhamColors.borderAccent40,
+              t,
+            )!;
         // Interpolate the input glow opacity (resting → focus).
         final glow = BoxShadow(
           color: NhamColors.accent.withValues(alpha: 0.06 + t * 0.06),
@@ -159,8 +159,9 @@ class _MealInputState extends State<MealInput>
                     enabledBorder: InputBorder.none,
                     focusedBorder: InputBorder.none,
                     disabledBorder: InputBorder.none,
-                    contentPadding:
-                        const EdgeInsets.symmetric(vertical: 6), // py-1.5
+                    contentPadding: const EdgeInsets.symmetric(
+                      vertical: 6,
+                    ), // py-1.5
                     hintText: 'logging.placeholder'.tr(),
                     hintStyle: NhamTextStyles.sansRegular(
                       fontSize: NhamFontSize.sm,
@@ -176,12 +177,14 @@ class _MealInputState extends State<MealInput>
             _ActionButton(
               icon: Icons.stop, // lucide Square (filled) → Icons.stop
               iconSize: 14,
+              label: 'common.cancel'.tr(),
               onTap: widget.onCancel,
             )
           else
             _ActionButton(
               icon: Icons.arrow_upward, // lucide ArrowUp → Icons.arrow_upward
               iconSize: 16,
+              label: 'logging.submit'.tr(),
               enabled: _canSubmit,
               onTap: _canSubmit ? _submit : null,
             ),
@@ -197,12 +200,14 @@ class _ActionButton extends StatefulWidget {
   const _ActionButton({
     required this.icon,
     required this.iconSize,
+    required this.label,
     this.onTap,
     this.enabled = true,
   });
 
   final IconData icon;
   final double iconSize;
+  final String label;
   final VoidCallback? onTap;
   final bool enabled;
 
@@ -216,25 +221,36 @@ class _ActionButtonState extends State<_ActionButton> {
   @override
   Widget build(BuildContext context) {
     final tappable = widget.onTap != null;
-    return GestureDetector(
-      onTapDown: tappable ? (_) => setState(() => _pressed = true) : null,
-      onTapUp: tappable ? (_) => setState(() => _pressed = false) : null,
-      onTapCancel: tappable ? () => setState(() => _pressed = false) : null,
-      onTap: widget.onTap,
-      child: AnimatedScale(
-        scale: _pressed ? 0.95 : 1,
-        duration: const Duration(milliseconds: 200), // transition-all duration-200
-        child: Opacity(
-          opacity: widget.enabled ? 1 : 0.3,
-          child: Container(
-            width: 32,
-            height: 32,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: _pressed ? NhamColors.btnHover : NhamColors.btn,
-              borderRadius: BorderRadius.circular(NhamRadii.md),
+    return Semantics(
+      button: true,
+      enabled: tappable,
+      label: widget.label,
+      child: GestureDetector(
+        onTapDown: tappable ? (_) => setState(() => _pressed = true) : null,
+        onTapUp: tappable ? (_) => setState(() => _pressed = false) : null,
+        onTapCancel: tappable ? () => setState(() => _pressed = false) : null,
+        onTap: widget.onTap,
+        child: AnimatedScale(
+          scale: _pressed ? 0.95 : 1,
+          duration: const Duration(
+            milliseconds: 200,
+          ), // transition-all duration-200
+          child: Opacity(
+            opacity: widget.enabled ? 1 : 0.3,
+            child: Container(
+              width: 32,
+              height: 32,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: _pressed ? NhamColors.btnHover : NhamColors.btn,
+                borderRadius: BorderRadius.circular(NhamRadii.md),
+              ),
+              child: Icon(
+                widget.icon,
+                size: widget.iconSize,
+                color: Colors.white,
+              ),
             ),
-            child: Icon(widget.icon, size: widget.iconSize, color: Colors.white),
           ),
         ),
       ),

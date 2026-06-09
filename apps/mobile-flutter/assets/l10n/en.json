@@ -16,7 +16,9 @@
     "or": "or",
     "optional": "Optional",
     "notFound": "Page not found",
-    "notSignedIn": "Not signed in."
+    "notSignedIn": "Not signed in.",
+    "increase": "Increase",
+    "decrease": "Decrease"
   },
   "nav": {
     "logging": "Logging",

@@ -64,25 +64,27 @@ class _FloatingMealTriggerState extends State<FloatingMealTrigger> {
           bottom: 80, // bottom-20
           child: AnimatedSwitcher(
             duration: const Duration(milliseconds: 160),
-            transitionBuilder: (child, anim) => FadeTransition(
-              opacity: anim,
-              child: SlideTransition(
-                // y 8 → 0.
-                position: Tween<Offset>(
-                  begin: const Offset(0, 8 / 44),
-                  end: Offset.zero,
-                ).animate(anim),
-                child: child,
-              ),
-            ),
-            child: _expanded
-                ? _MealInputBar(
-                    key: const ValueKey('meal-input'),
-                    controller: _controller,
-                    focusNode: _focus,
-                    onSubmit: _submit,
-                  )
-                : const SizedBox.shrink(key: ValueKey('hidden')),
+            transitionBuilder:
+                (child, anim) => FadeTransition(
+                  opacity: anim,
+                  child: SlideTransition(
+                    // y 8 → 0.
+                    position: Tween<Offset>(
+                      begin: const Offset(0, 8 / 44),
+                      end: Offset.zero,
+                    ).animate(anim),
+                    child: child,
+                  ),
+                ),
+            child:
+                _expanded
+                    ? _MealInputBar(
+                      key: const ValueKey('meal-input'),
+                      controller: _controller,
+                      focusNode: _focus,
+                      onSubmit: _submit,
+                    )
+                    : const SizedBox.shrink(key: ValueKey('hidden')),
           ),
         ),
 
@@ -90,32 +92,41 @@ class _FloatingMealTriggerState extends State<FloatingMealTrigger> {
         Positioned(
           right: NhamSpacing.sp4, // right-4
           bottom: NhamSpacing.sp5, // bottom-5
-          child: GestureDetector(
-            onTapDown: (_) => setState(() => _fabPressed = true),
-            onTapUp: (_) => setState(() => _fabPressed = false),
-            onTapCancel: () => setState(() => _fabPressed = false),
-            onTap: _expanded ? _close : _open,
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 150),
-              width: 44, // h-11 w-11
-              height: 44,
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                color: _fabPressed ? NhamColors.btnHover : NhamColors.btn,
-                borderRadius: BorderRadius.circular(NhamRadii.containerLg), // 16
-                boxShadow: const [
-                  // shadow-[0_4px_16px_rgba(44,36,22,0.18)].
-                  BoxShadow(
-                    color: Color(0x2E2C2416), // #2C2416 @ 18%
-                    blurRadius: 16,
-                    offset: Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: Icon(
-                _expanded ? Icons.close : Icons.restaurant_outlined,
-                size: 20, // h-5 w-5
-                color: Colors.white,
+          child: Semantics(
+            button: true,
+            label:
+                _expanded
+                    ? tr('dashboard.mealTrigger.close')
+                    : tr('dashboard.logMeal'),
+            child: GestureDetector(
+              onTapDown: (_) => setState(() => _fabPressed = true),
+              onTapUp: (_) => setState(() => _fabPressed = false),
+              onTapCancel: () => setState(() => _fabPressed = false),
+              onTap: _expanded ? _close : _open,
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 150),
+                width: 44, // h-11 w-11
+                height: 44,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: _fabPressed ? NhamColors.btnHover : NhamColors.btn,
+                  borderRadius: BorderRadius.circular(
+                    NhamRadii.containerLg,
+                  ), // 16
+                  boxShadow: const [
+                    // shadow-[0_4px_16px_rgba(44,36,22,0.18)].
+                    BoxShadow(
+                      color: Color(0x2E2C2416), // #2C2416 @ 18%
+                      blurRadius: 16,
+                      offset: Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Icon(
+                  _expanded ? Icons.close : Icons.restaurant_outlined,
+                  size: 20, // h-5 w-5
+                  color: Colors.white,
+                ),
               ),
             ),
           ),
@@ -173,7 +184,9 @@ class _MealInputBarState extends State<_MealInputBar> {
       padding: const EdgeInsets.symmetric(horizontal: NhamSpacing.sp3), // px-3
       decoration: BoxDecoration(
         color: NhamColors.elev, // bg-card
-        borderRadius: BorderRadius.circular(NhamRadii.containerLg), // rounded-2xl
+        borderRadius: BorderRadius.circular(
+          NhamRadii.containerLg,
+        ), // rounded-2xl
         border: Border.all(
           // border-nham-border/70 → focus-within:border-nham-accent/50.
           color: focused ? NhamColors.accent50 : const Color(0xB3E8D5B5),
@@ -188,23 +201,27 @@ class _MealInputBarState extends State<_MealInputBar> {
               maxLength: 300,
               cursorColor: NhamColors.accent,
               onSubmitted: (_) => widget.onSubmit(),
-              style: NhamTextStyles.sansRegular(fontSize: NhamFontSize.sm)
-                  .copyWith(color: NhamColors.text),
+              style: NhamTextStyles.sansRegular(
+                fontSize: NhamFontSize.sm,
+              ).copyWith(color: NhamColors.text),
               decoration: InputDecoration(
                 counterText: '',
                 isCollapsed: true,
                 border: InputBorder.none,
                 hintText: tr('logging.placeholder'),
-                hintStyle: NhamTextStyles.sansRegular(fontSize: NhamFontSize.sm)
-                    .copyWith(color: NhamColors.stone),
+                hintStyle: NhamTextStyles.sansRegular(
+                  fontSize: NhamFontSize.sm,
+                ).copyWith(color: NhamColors.stone),
               ),
             ),
           ),
           const SizedBox(width: NhamSpacing.sp2), // gap-2
           // Submit: h-8 w-8 rounded-xl btn → hover btn-hover; disabled track.
           GestureDetector(
-            onTapDown: hasText ? (_) => setState(() => _sendPressed = true) : null,
-            onTapUp: hasText ? (_) => setState(() => _sendPressed = false) : null,
+            onTapDown:
+                hasText ? (_) => setState(() => _sendPressed = true) : null,
+            onTapUp:
+                hasText ? (_) => setState(() => _sendPressed = false) : null,
             onTapCancel: () => setState(() => _sendPressed = false),
             onTap: hasText ? widget.onSubmit : null,
             child: Container(
@@ -212,9 +229,10 @@ class _MealInputBarState extends State<_MealInputBar> {
               height: 32,
               alignment: Alignment.center,
               decoration: BoxDecoration(
-                color: !hasText
-                    ? NhamColors.track
-                    : (_sendPressed ? NhamColors.btnHover : NhamColors.btn),
+                color:
+                    !hasText
+                        ? NhamColors.track
+                        : (_sendPressed ? NhamColors.btnHover : NhamColors.btn),
                 borderRadius: BorderRadius.circular(NhamRadii.buttonXl), // 12
               ),
               child: Icon(
