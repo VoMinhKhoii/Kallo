@@ -6,6 +6,8 @@ import { AnimatePresence, motion } from 'motion/react';
 import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
+import { CheatOccasionChips } from '@/components/logging/feed/cheat-occasion-chips';
+import { CheatSliderCard } from '@/components/logging/feed/cheat-slider-card';
 import { EmptyState } from '@/components/logging/feed/empty-state';
 import { MacroSummary } from '@/components/logging/feed/macro-summary';
 import { MealEntry } from '@/components/logging/feed/meal-entry';
@@ -22,17 +24,31 @@ import { addDays } from '@/components/logging/sidebar/timeline-utils';
 import { useFeedSubmit } from '@/hooks/use-feed-submit';
 import { loggingDayKeys, useLoggingDay } from '@/hooks/use-logging-day';
 import { useConfirmMeal } from '@/hooks/use-meal-mutations';
+import { useRecentCheatOccasions } from '@/hooks/use-recent-cheat-occasions';
 import { useStreamAnalysis } from '@/hooks/use-stream-analysis';
 import { useStreamingTerminalEffects } from '@/hooks/use-streaming-terminal-effects';
 import { useSubmitGuard } from '@/hooks/use-submit-guard';
+import {
+  type RecentCheatOccasion,
+  stageCheatRepeatAction,
+} from '@/lib/actions/meals';
 import { sumDisplayedNutrition } from '@/lib/ai/pipeline/goal-adjustment';
 import { isLikelyPartialDay } from '@/lib/nutrition/pattern/completeness';
+import type { CheatIntensity, CheatSliderLevels } from '@/lib/types/cheat';
 import type {
   ChatMessage,
+  MacroBreakdown,
   MealQuantityEdit,
   StreamingPhase,
 } from '@/lib/types/meal';
 import { cn } from '@/lib/utils';
+
+const emptyMacros: MacroBreakdown = {
+  calories: 0,
+  protein: 0,
+  carbs: 0,
+  fat: 0,
+};
 
 function toStreamingPhase(status: string): StreamingPhase {
   switch (status) {
@@ -187,6 +203,14 @@ export function FeedArea({
     useState(false);
 
   const lastPrefilledMealRef = useRef<string | null>(null);
+  // Cheat-meal mode: a buffet/indulgent occasion logged via sliders.
+  const [isCheat, setIsCheat] = useState(false);
+  // Indulgence magnitude (like an AI "thinking" level) — scales the estimate.
+  const [cheatIntensity, setCheatIntensity] =
+    useState<CheatIntensity>('medium');
+  // "Log it again" — re-staging a past cheat occasion (a quick DB insert, no AI).
+  const [isStagingRepeat, setIsStagingRepeat] = useState(false);
+  const recentCheatOccasions = useRecentCheatOccasions(profile.userId, isCheat);
 
   // Prefill from dashboard meal trigger; re-runs when initialMeal changes so
   // repeated dashboard→logging handoffs while the component stays mounted work.
@@ -287,6 +311,8 @@ export function FeedArea({
     guard,
     lastAnalysisIdRef,
     lastErrorRef,
+    isCheat,
+    cheatIntensity,
   });
 
   const handleAnalysisComplete = useCallback(() => {
@@ -364,6 +390,114 @@ export function FeedArea({
     );
   };
 
+  const handleConfirmCheatMeal = (
+    message: ChatMessage,
+    levels: CheatSliderLevels
+  ) => {
+    // Take the rendered message directly rather than re-finding it in `messages`:
+    // a server-loaded pending cheat card is rendered from `pendingConfirmations`
+    // and never enters `messages`, so a lookup there would miss it and silently
+    // drop the confirm. (Mirrors handleConfirmMeal.)
+    if (!message.analysisId || !message.cheatSpec) return;
+    setMessages((prev) =>
+      prev.filter(
+        (m) => m.id !== message.id && m.analysisId !== message.analysisId
+      )
+    );
+    const mealId = crypto.randomUUID();
+    confirmMeal.mutate(
+      {
+        analysisId: message.analysisId,
+        mealId,
+        originDate: selectedDate,
+        // Cheat meals have no ParsedMeal; the optimistic card is built from the
+        // spec + levels instead.
+        parsedMeal: { mealName: '', items: [], totalMacros: emptyMacros },
+        rawInput: message.userInput ?? message.content,
+        loggedAt: message.timestamp.toISOString(),
+        levels,
+        cheat: { spec: message.cheatSpec, levels },
+      },
+      {
+        onSuccess: () => {
+          toast.success(t('savedMeal'));
+        },
+      }
+    );
+  };
+
+  // Vague-input fallback: re-run the cheat estimator with the chosen answer.
+  const handleCheatClarify = (message: ChatMessage, answer: string) => {
+    setStreamingMsgId(message.id);
+    lastAnalysisIdRef.current = null;
+    lastErrorRef.current = null;
+    // Update the local message in place, or seed it if this card came from a
+    // server pending row (not yet in `messages`) — so the streaming overlay has
+    // a message to attach to.
+    setMessages((prev) =>
+      prev.some((m) => m.id === message.id)
+        ? prev.map((m) =>
+            m.id === message.id
+              ? {
+                  ...m,
+                  cheatSpec: undefined,
+                  isStreaming: true,
+                  streamingPhase: 'waiting',
+                }
+              : m
+          )
+        : [
+            ...prev,
+            {
+              ...message,
+              cheatSpec: undefined,
+              isStreaming: true,
+              streamingPhase: 'waiting',
+            },
+          ]
+    );
+    void stream.analyze({
+      message: message.userInput ?? message.content,
+      loggedDate: selectedDate,
+      timezoneOffset: new Date().getTimezoneOffset(),
+      mode: 'cheat',
+      cheatIntensity,
+      clarifyAnswer: answer,
+    });
+  };
+
+  // "Log it again": re-stage a past cheat occasion's sliders (seeded with last
+  // time's amounts) without re-running the estimator, then surface the card.
+  const handleRepeatCheat = async (occasion: RecentCheatOccasion) => {
+    if (isStagingRepeat || stream.isAnalyzing) return;
+    setIsStagingRepeat(true);
+    try {
+      const staged = await stageCheatRepeatAction({
+        sourceMealId: occasion.mealId,
+        loggedDate: selectedDate,
+        timezoneOffset: new Date().getTimezoneOffset(),
+      });
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: crypto.randomUUID(),
+          role: 'assistant',
+          content: '',
+          cheatSpec: staged.spec,
+          userInput: staged.rawInput,
+          timestamp: new Date(staged.loggedAt),
+          loggedDate: selectedDate,
+          analysisId: staged.analysisId,
+        },
+      ]);
+      scrollToBottom();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : t('repeatError'));
+    } finally {
+      setIsStagingRepeat(false);
+    }
+  };
+
   // Derive display messages: overlay live streaming state onto the active message.
   const displayMessages = useMemo(() => {
     const selectedMessages = messages.filter(
@@ -403,38 +537,47 @@ export function FeedArea({
     }
   }, [stream.isAnalyzing, streamItemCount, scrollToBottom]);
 
-  // Unconfirmed streaming messages (exclude user messages)
-  const pendingIds = useMemo(
-    () => new Set(pendingConfirmations.map((pending) => pending.id)),
-    [pendingConfirmations]
+  // Analyses that still have a live, in-session card. We render those from the
+  // local streamed message — it holds the user's in-progress slider levels /
+  // quantity edits in component state. Rendering the server-pending twin instead
+  // (after a background refetch lands `pendingConfirmations`) would mount a
+  // different React element and reset that state mid-edit, so we suppress the
+  // twin until the local card is gone (confirmed/dismissed).
+  const localAnalysisIds = useMemo(
+    () =>
+      new Set(
+        displayMessages
+          .filter((m) => m.role === 'assistant' && m.analysisId)
+          .map((m) => m.analysisId as string)
+      ),
+    [displayMessages]
   );
 
   const pendingMessages = useMemo<ChatMessage[]>(
     () =>
-      pendingConfirmations.map((pending) => ({
-        id: `pending-${pending.id}`,
-        role: 'assistant',
-        content: '',
-        parsedMeal: pending.parsedMeal,
-        userInput: pending.rawInput,
-        timestamp: new Date(pending.loggedAt),
-        loggedDate: selectedDate,
-        analysisId: pending.id,
-      })),
-    [pendingConfirmations, selectedDate]
+      pendingConfirmations
+        .filter((pending) => !localAnalysisIds.has(pending.id))
+        .map((pending) => ({
+          id: `pending-${pending.id}`,
+          role: 'assistant',
+          content: '',
+          parsedMeal: pending.parsedMeal,
+          cheatSpec: pending.cheatSpec,
+          userInput: pending.rawInput,
+          timestamp: new Date(pending.loggedAt),
+          loggedDate: selectedDate,
+          analysisId: pending.id,
+        })),
+    [pendingConfirmations, selectedDate, localAnalysisIds]
   );
 
   const unconfirmedMessages = [
     ...pendingMessages,
-    ...displayMessages.filter(
-      (m) =>
-        m.role === 'assistant' &&
-        (!m.analysisId || !pendingIds.has(m.analysisId))
-    ),
+    ...displayMessages.filter((m) => m.role === 'assistant'),
   ];
   const hasPendingMessages = pendingMessages.length > 0;
-  const hasStreamingMessages = unconfirmedMessages.some(
-    (message) => !pendingIds.has(message.analysisId ?? '')
+  const hasStreamingMessages = displayMessages.some(
+    (message) => message.role === 'assistant'
   );
   const hasPersistedMeals = persistedMeals.length > 0;
   const hasContent =
@@ -545,6 +688,22 @@ export function FeedArea({
                     return <StreamingMealEntry key={msg.id} message={msg} />;
                   }
 
+                  if (msg.cheatSpec) {
+                    return (
+                      <CheatSliderCard
+                        key={msg.id}
+                        spec={msg.cheatSpec}
+                        userInput={msg.userInput}
+                        timestamp={msg.timestamp}
+                        isConfirming={confirmMeal.isPending}
+                        onConfirm={(levels) =>
+                          handleConfirmCheatMeal(msg, levels)
+                        }
+                        onClarify={(answer) => handleCheatClarify(msg, answer)}
+                      />
+                    );
+                  }
+
                   if (msg.parsedMeal) {
                     return (
                       <MealEntry
@@ -595,6 +754,13 @@ export function FeedArea({
 
       {/* Input area */}
       <div className="shrink-0 px-3 pt-2 pb-3 sm:px-6 sm:pb-4">
+        {isCheat && (
+          <CheatOccasionChips
+            occasions={recentCheatOccasions.data ?? []}
+            disabled={isStagingRepeat || stream.isAnalyzing}
+            onSelect={handleRepeatCheat}
+          />
+        )}
         <div className="mx-auto max-w-3xl">
           <MealInput
             ref={inputRef}
@@ -609,6 +775,10 @@ export function FeedArea({
               setStreamingMsgId(null);
             }}
             disabled={stream.isAnalyzing}
+            isCheat={isCheat}
+            onToggleCheat={setIsCheat}
+            cheatIntensity={cheatIntensity}
+            onChangeIntensity={setCheatIntensity}
           />
         </div>
       </div>

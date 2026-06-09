@@ -886,6 +886,7 @@
       "onTrack": "{percent}% on track",
       "notLogged": "Not logged",
       "partial": "Partial day (under-logged)",
+      "cheatDay": "Cheat day",
       "future": "Future day",
       "outside": "Outside selected range",
       "offTarget": "Off target",
@@ -900,6 +901,7 @@
       "farUnder": "Far under"
     },
     "caloriesLogged": "kcal logged",
+    "weeklyAccumulator": "This week: {consumed} / {target} kcal",
     "mealReceiptsHint": "Your meal receipts will show up here",
     "progressStatus": {
       "insufficient": {
@@ -958,6 +960,7 @@
     },
     "feedArea": {
       "savedMeal": "Meal saved",
+      "repeatError": "Could not reopen that occasion.",
       "legacyMacroWarning": "Daily macro summary unavailable because some legacy meals have unknown macros.",
       "loadErrorTitle": "Could not load this day",
       "loadErrorDescription": "Your saved meals for this date did not load. Try again before logging more food.",
@@ -992,6 +995,41 @@
     "persistedMealCard": {
       "toggleDetails": "Toggle meal details",
       "total": "Total"
+    },
+    "mode": {
+      "normal": "Normal",
+      "normalDescription": "Break a meal into ingredients for a precise estimate",
+      "cheat": "Cheat meal",
+      "cheatDescription": "Hard-to-count occasions — set a few sliders instead"
+    },
+    "modePicker": {
+      "ariaLabel": "Logging mode"
+    },
+    "cheatIntensity": {
+      "label": "How much did you eat?",
+      "helper": "Scales the estimate",
+      "light": "Light",
+      "medium": "Medium",
+      "heavy": "Heavy"
+    },
+    "cheatPlaceholder": "Korean BBQ buffet, went all out...",
+    "cheatSliders": {
+      "badge": "Cheat meal",
+      "confirm": "Save meal",
+      "kcal": "kcal",
+      "alcohol": "alcohol",
+      "between": "Between {low} and {high}"
+    },
+    "cheatRepeat": {
+      "title": "Log it again"
+    },
+    "cheatMealCard": {
+      "badge": "Cheat meal",
+      "toggleDetails": "Toggle meal details",
+      "total": "Total",
+      "youSet": "YOU SET",
+      "alcoholShort": "Alc",
+      "reassurance": "One meal is a rounding error on your trend — tomorrow's plan is unchanged."
     },
     "timelineSidebar": {
       "navigationLabel": "Timeline navigation",

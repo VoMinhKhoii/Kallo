@@ -17,7 +17,15 @@ import {
 } from '@/lib/ai/pipeline/goal-adjustment';
 import type { NutritionValues, PipelineResult } from '@/lib/ai/types';
 import { requireAuthAndProfile } from '@/lib/auth';
-import { getUtcDayRangeForLocalDate } from '@/lib/date/local-day';
+import { groupOccasions } from '@/lib/cheat/occasion-grouping';
+import {
+  resolveSliderNutrition,
+  withLevelsAsDefaults,
+} from '@/lib/cheat/slider-nutrition';
+import {
+  getUtcDayRangeForLocalDate,
+  getUtcInstantForLocalDate,
+} from '@/lib/date/local-day';
 import { db } from '@/lib/db';
 import {
   mealItems,
@@ -29,6 +37,11 @@ import {
 import { Errors } from '@/lib/errors';
 import { goalEnumSchema } from '@/lib/onboarding/schemas';
 import type { Goal } from '@/lib/onboarding/types';
+import type {
+  CheatSliderLevels,
+  CheatSliderSpec,
+  CheatSlidersPersisted,
+} from '@/lib/types/cheat';
 import { dateStringSchema, timezoneOffsetSchema } from '@/lib/validation';
 
 // ---------------------------------------------------------------------------
@@ -51,6 +64,15 @@ const confirmAndSaveSchema = z.object({
       })
     )
     .max(50)
+    .optional(),
+  // Cheat-meal: the user's chosen slider positions (0–10 per axis). The server
+  // recomputes nutrition from the staged spec + these levels — it never trusts
+  // client-sent nutrition numbers.
+  levels: z
+    .partialRecord(
+      z.enum(['protein', 'carbs', 'fat', 'drinks']),
+      z.number().min(0).max(10)
+    )
     .optional(),
 });
 
@@ -96,6 +118,11 @@ const profileNutritionSettingsSchema = z
 // Helpers
 // ---------------------------------------------------------------------------
 
+/** All nutrient keys null — base for building a sparse NutritionValues. */
+const EMPTY_NUTRITION = Object.fromEntries(
+  NUTRITION_KEYS.map((key) => [key, null])
+) as unknown as NutritionValues;
+
 /**
  * Persist a single numeric value per nutrient on meals and meal_items.
  */
@@ -130,6 +157,7 @@ export async function confirmAndSaveMealAction(input: {
     ingredientIndex?: number;
     newGrams: number;
   }[];
+  levels?: CheatSliderLevels;
 }): Promise<ConfirmMealResponse> {
   const parsed = confirmAndSaveSchema.parse(input);
   const { user, profile } = await requireAuthAndProfile();
@@ -150,6 +178,68 @@ export async function confirmAndSaveMealAction(input: {
       throw Errors.validationFailed(
         'Phân tích không tồn tại hoặc đã được lưu.'
       );
+    }
+
+    // Cheat-meal branch: recompute nutrition from the staged slider spec + the
+    // user's chosen levels (server-authoritative), insert a single meal row
+    // with zero meal_items, and store the spec/levels for re-edit.
+    if (pending.entryMode === 'cheat') {
+      const { spec } = pending.pipelineResult as {
+        entryMode: 'cheat';
+        spec: CheatSliderSpec;
+      };
+      const levels: CheatSliderLevels = parsed.levels ?? {};
+      const resolved = resolveSliderNutrition(spec, levels);
+
+      const loggedAt = pending.loggedAt;
+      const mealSlot = spec.mealSlot ?? inferMealSlot(loggedAt);
+      const persisted: CheatSlidersPersisted = { spec, levels };
+
+      const [meal] = await tx
+        .insert(meals)
+        .values({
+          ...(parsed.mealId ? { id: parsed.mealId } : {}),
+          userId: user.id,
+          rawInput: pending.rawInput,
+          mealSlot,
+          confidenceOverall: spec.confidence,
+          loggedAt,
+          entryMode: 'cheat',
+          caloriesKcal: resolved.caloriesKcal,
+          proteinG: resolved.proteinG,
+          carbohydrateG: resolved.carbohydrateG,
+          fatG: resolved.fatG,
+          alcoholG: resolved.alcoholG,
+          cheatSliders: persisted,
+        })
+        .returning({ id: meals.id });
+
+      // Rebuild the saved cheat meal in the shape loadMealsByDate returns, so
+      // the client reconciles its optimistic card from the confirm response
+      // (same id → in-place overwrite, no day refetch) — mirroring the precise
+      // path below. Cheat meals carry zero meal_items.
+      const nutrition = {
+        ...EMPTY_NUTRITION,
+        caloriesKcal: resolved.caloriesKcal,
+        proteinG: resolved.proteinG,
+        carbohydrateG: resolved.carbohydrateG,
+        fatG: resolved.fatG,
+      };
+      const savedMeal = buildPersistedMeal({
+        id: meal.id,
+        rawInput: pending.rawInput,
+        mealSlot,
+        confidenceOverall: spec.confidence,
+        loggedAt: loggedAt.toISOString(),
+        nutrition,
+        mealItemGroups: [],
+        entryMode: 'cheat',
+        alcoholG: resolved.alcoholG,
+        cheatSliders: persisted,
+        share: null,
+      });
+
+      return { mealId: meal.id, meal: savedMeal };
     }
 
     const pipelineResult = pending.pipelineResult as PipelineResult;
@@ -359,6 +449,9 @@ export async function confirmAndSaveMealAction(input: {
       loggedAt: loggedAt.toISOString(),
       nutrition: mealDisplayed,
       mealItemGroups,
+      entryMode: 'precise',
+      alcoholG: null,
+      cheatSliders: null,
       // A freshly-saved meal is never shared yet.
       share: null,
     });
@@ -382,6 +475,12 @@ export interface PersistedMeal {
   loggedAt: string;
   nutrition: NutritionValues;
   mealItemGroups: PersistedMealItemGroup[];
+  /** 'precise' (default pipeline) or 'cheat' (slider estimate). */
+  entryMode: 'precise' | 'cheat';
+  /** Cheat-only: ethanol grams folded into the calorie total. */
+  alcoholG: number | null;
+  /** Cheat-only: slider spec + chosen levels, for re-edit/repeat. */
+  cheatSliders: CheatSlidersPersisted | null;
   /** Circle-share state, or null if the meal was never shared. `shareId` is the
    *  meal_shares row id used to key the shareable Macro Card. Lets the card seed
    *  the share toggle from real server state instead of always "not shared". */
@@ -410,7 +509,10 @@ export interface PendingMealConfirmation {
   id: string;
   rawInput: string;
   loggedAt: string;
-  parsedMeal: ReturnType<typeof toParsedMeal>;
+  /** Set for precise entries. Absent for cheat entries (which carry cheatSpec). */
+  parsedMeal?: ReturnType<typeof toParsedMeal>;
+  /** Set for cheat entries: the staged slider spec the user confirms against. */
+  cheatSpec?: CheatSliderSpec;
 }
 
 export interface LoggingDayData {
@@ -540,6 +642,9 @@ async function loadMealsByDateForUser(
       loggedAt: meal.loggedAt.toISOString(),
       nutrition: extractNutritionValues(meal),
       mealItemGroups,
+      entryMode: meal.entryMode === 'cheat' ? 'cheat' : 'precise',
+      alcoholG: meal.alcoholG ?? null,
+      cheatSliders: (meal.cheatSliders as CheatSlidersPersisted | null) ?? null,
       share: share ? { shareId: share.id, visibility: share.visibility } : null,
     });
   });
@@ -576,20 +681,39 @@ async function loadPendingAnalysesByDateForUser(
     )
     .orderBy(desc(pendingAnalyses.loggedAt));
 
-  return rows.flatMap((row) => {
+  return rows.flatMap<PendingMealConfirmation>((row) => {
     // Defensive: a row whose stored pipelineResult predates the current shape
     // (legacy/malformed) must not throw and 500 the entire day load via the
-    // Promise.all in loadLoggingDay. toParsedMeal walks several fields
-    // (mealItems, each item's ingredients, displayedNutrition), so guard the
-    // whole conversion rather than one field — any malformed shape is skipped.
-    // Skipping is safe: such a row is un-confirmable anyway since confirm reads
-    // the same pipelineResult.
+    // Promise.all in loadLoggingDay. Guard the whole conversion — any malformed
+    // shape is skipped (such a row is un-confirmable anyway, since confirm reads
+    // the same pipelineResult).
     try {
+      const base = {
+        id: row.id,
+        rawInput: row.rawInput,
+        loggedAt: row.loggedAt.toISOString(),
+      };
+      // Cheat rows stage a slider spec, not a decomposition PipelineResult, so
+      // toParsedMeal (which reads .mealItems) can't apply. Branch on entryMode,
+      // mirroring confirmAndSaveMealAction.
+      if (row.entryMode === 'cheat') {
+        // Validate the staged spec rather than blindly destructuring: a
+        // malformed payload (e.g. {}) wouldn't throw and would surface a card
+        // with cheatSpec: undefined. Throwing routes it through the catch below,
+        // which skips + logs it like any other malformed row.
+        const spec = (row.pipelineResult as { spec?: unknown } | null)?.spec;
+        if (
+          !spec ||
+          typeof spec !== 'object' ||
+          !Array.isArray((spec as { sliders?: unknown }).sliders)
+        ) {
+          throw new Error('Malformed cheat pending analysis payload');
+        }
+        return [{ ...base, cheatSpec: spec as CheatSliderSpec }];
+      }
       return [
         {
-          id: row.id,
-          rawInput: row.rawInput,
-          loggedAt: row.loggedAt.toISOString(),
+          ...base,
           parsedMeal: toParsedMeal(row.pipelineResult as PipelineResult),
         },
       ];
@@ -601,6 +725,121 @@ async function loadPendingAnalysesByDateForUser(
       return [];
     }
   });
+}
+
+// ---------------------------------------------------------------------------
+// Repeat a previous cheat occasion (no AI call)
+// ---------------------------------------------------------------------------
+
+/** A distinct past cheat occasion, surfaced as a chip above the input. */
+export interface RecentCheatOccasion {
+  /** Source meal id — re-staged on tap to seed a fresh slider card. */
+  mealId: string;
+  /** The occasion text (e.g. "Korean BBQ buffet"), shown on the chip. */
+  rawInput: string;
+  loggedAt: string;
+}
+
+const loadRecentCheatOccasionsSchema = z.object({
+  limit: z.number().int().min(1).max(12).optional(),
+});
+
+/**
+ * Recent, de-duplicated cheat occasions for the current user — the source for
+ * the "log it again" chips. Dedup is by occasion text (most recent kept) so a
+ * place the user cheats at often shows up once, not five times.
+ */
+export async function loadRecentCheatOccasionsAction(input: {
+  limit?: number;
+}): Promise<RecentCheatOccasion[]> {
+  const parsed = loadRecentCheatOccasionsSchema.parse(input);
+  const { user } = await requireAuthAndProfile();
+  const limit = parsed.limit ?? 5;
+
+  const rows = await db
+    .select({
+      id: meals.id,
+      rawInput: meals.rawInput,
+      loggedAt: meals.loggedAt,
+    })
+    .from(meals)
+    .where(and(eq(meals.userId, user.id), eq(meals.entryMode, 'cheat')))
+    .orderBy(desc(meals.loggedAt))
+    .limit(60);
+
+  // Group near-duplicate occasions (e.g. "korean bbq" / "Korean BBQ buffet")
+  // so a place the user cheats at often shows up once, keeping its newest wording.
+  return groupOccasions(rows, limit).map((row) => ({
+    mealId: row.id,
+    rawInput: row.rawInput,
+    loggedAt: row.loggedAt.toISOString(),
+  }));
+}
+
+const stageCheatRepeatSchema = z.object({
+  sourceMealId: z.string().uuid('sourceMealId phải là UUID hợp lệ.'),
+  loggedDate: dateStringSchema,
+  timezoneOffset: timezoneOffsetSchema,
+});
+
+/**
+ * Repeat a past cheat occasion without re-running the estimator: re-stage its
+ * stored slider spec as a fresh pending analysis, with each slider's default
+ * pre-set to last time's chosen level (the user can still nudge — this time's
+ * amounts may differ). Confirm then flows through the normal cheat path.
+ */
+export async function stageCheatRepeatAction(input: {
+  sourceMealId: string;
+  loggedDate: string;
+  timezoneOffset: number;
+}): Promise<{
+  analysisId: string;
+  spec: CheatSliderSpec;
+  rawInput: string;
+  loggedAt: string;
+}> {
+  const parsed = stageCheatRepeatSchema.parse(input);
+  const { user } = await requireAuthAndProfile();
+
+  const [source] = await db
+    .select({
+      rawInput: meals.rawInput,
+      cheatSliders: meals.cheatSliders,
+      entryMode: meals.entryMode,
+    })
+    .from(meals)
+    .where(and(eq(meals.id, parsed.sourceMealId), eq(meals.userId, user.id)))
+    .limit(1);
+
+  if (!source || source.entryMode !== 'cheat' || !source.cheatSliders) {
+    throw Errors.validationFailed('Không tìm thấy bữa xả trước đó.');
+  }
+
+  const { spec, levels } = source.cheatSliders as CheatSlidersPersisted;
+  const repeatSpec = withLevelsAsDefaults(spec, levels);
+
+  const loggedAt = getUtcInstantForLocalDate(
+    parsed.loggedDate,
+    parsed.timezoneOffset
+  );
+
+  const [inserted] = await db
+    .insert(pendingAnalyses)
+    .values({
+      userId: user.id,
+      pipelineResult: { entryMode: 'cheat', spec: repeatSpec },
+      rawInput: source.rawInput,
+      entryMode: 'cheat',
+      loggedAt,
+    })
+    .returning({ id: pendingAnalyses.id });
+
+  return {
+    analysisId: inserted.id,
+    spec: repeatSpec,
+    rawInput: source.rawInput,
+    loggedAt: loggedAt.toISOString(),
+  };
 }
 
 export async function loadLoggingDay(input: {

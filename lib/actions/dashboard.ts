@@ -80,11 +80,13 @@ export async function loadCalorieAdherenceHeatmap(input: {
   const offsetMins = -parsed.timezoneOffset;
   const localDateExpr = sql<string>`DATE(${meals.loggedAt} + (${sql.raw(String(offsetMins))}::integer * INTERVAL '1 minute'))`;
   const caloriesExpr = sql<number>`COALESCE(SUM(${meals.caloriesKcal}), 0)`;
+  const hasCheatExpr = sql<boolean>`BOOL_OR(${meals.entryMode} = 'cheat')`;
 
   const dailyCalories = await db
     .select({
       date: localDateExpr.as('date'),
       calories: caloriesExpr.as('calories'),
+      hasCheatMeal: hasCheatExpr.as('has_cheat_meal'),
     })
     .from(meals)
     .where(
@@ -102,6 +104,7 @@ export async function loadCalorieAdherenceHeatmap(input: {
     dailyCalories: dailyCalories.map((day) => ({
       date: day.date,
       calories: Number(day.calories),
+      hasCheatMeal: Boolean(day.hasCheatMeal),
     })),
     calorieTarget: profile.calorieTarget,
     timezoneOffset: parsed.timezoneOffset,

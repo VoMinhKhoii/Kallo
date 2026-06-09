@@ -24,6 +24,8 @@ export interface HeatmapCell {
    */
   consumedRatio: number | null;
   status: HeatmapCellStatus;
+  /** A cheat meal was logged this day — rendered with a calm, distinct mark. */
+  hasCheatMeal?: boolean;
 }
 
 export interface HeatmapMonthHeader {

@@ -27,20 +27,29 @@ export function useStreamingTerminalEffects({
   lastErrorRef,
   onAnalysisComplete,
 }: UseStreamingTerminalEffectsParams) {
-  // Terminal: stream completed — finalize streaming message, store analysisId
+  // Terminal: stream completed — finalize streaming message, store analysisId.
+  // Two shapes settle here: a precise `result` meal, or a cheat `cheatSpec`.
+  // The cheat clarify-question fallback finalizes WITHOUT an analysisId (the
+  // client must re-ask), so it's allowed through explicitly.
   useEffect(() => {
+    const isCheatClarify =
+      stream.cheatSpec?.clarifyingQuestion != null && !stream.analysisId;
+    const hasPayload = Boolean(stream.result) || Boolean(stream.cheatSpec);
     if (
       stream.status !== 'done' ||
-      !stream.result ||
-      !stream.analysisId ||
-      lastAnalysisIdRef.current === stream.analysisId ||
+      !hasPayload ||
+      (!stream.analysisId && !isCheatClarify) ||
+      (stream.analysisId != null &&
+        lastAnalysisIdRef.current === stream.analysisId) ||
       !streamingMsgId
     ) {
       return;
     }
-    lastAnalysisIdRef.current = stream.analysisId;
-    const msgId = streamingMsgId;
     const analysisId = stream.analysisId;
+    if (analysisId) lastAnalysisIdRef.current = analysisId;
+    const msgId = streamingMsgId;
+    const cheatSpec = stream.cheatSpec;
+    const result = stream.result;
     setStreamingMsgId(null);
 
     setMessages((prev) =>
@@ -52,18 +61,20 @@ export function useStreamingTerminalEffects({
               streamingPhase: 'done' as const,
               streamingItems: undefined,
               streamingCompletedItems: undefined,
-              parsedMeal: stream.result!,
-              analysisId,
+              parsedMeal: result ?? undefined,
+              cheatSpec: cheatSpec ?? undefined,
+              analysisId: analysisId ?? undefined,
             }
           : msg
       )
     );
-    onAnalysisComplete?.(analysisId);
+    if (analysisId) onAnalysisComplete?.(analysisId);
     stream.reset();
     scrollToBottom();
   }, [
     stream.status,
     stream.result,
+    stream.cheatSpec,
     stream.analysisId,
     stream.reset,
     streamingMsgId,

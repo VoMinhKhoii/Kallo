@@ -66,6 +66,9 @@ function savedMealResult(
       fatG: 12,
     } as PersistedMeal['nutrition'],
     mealItemGroups: [],
+    entryMode: 'precise',
+    alcoholG: null,
+    cheatSliders: null,
     share: null,
   };
   return { mealId: id, meal };

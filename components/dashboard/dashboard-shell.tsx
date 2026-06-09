@@ -82,6 +82,7 @@ export function DashboardShell({ profile }: DashboardShellProps) {
     resolvedHeatmapData,
     todayMeals,
     todayNutrition,
+    weekly,
     weightSummary,
     weightSummaryQuery,
   } = useDashboardQueries({
@@ -115,7 +116,11 @@ export function DashboardShell({ profile }: DashboardShellProps) {
                   }}
                 />
               ) : (
-                <TodayDock nutrition={todayNutrition} meals={todayMeals} />
+                <TodayDock
+                  nutrition={todayNutrition}
+                  meals={todayMeals}
+                  weekly={weekly}
+                />
               )}
             </div>
           </section>

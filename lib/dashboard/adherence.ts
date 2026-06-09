@@ -11,6 +11,8 @@ export type DashboardTimeRange = HeatmapRange;
 export interface DailyCalories {
   date: string;
   calories: number;
+  /** Whether any meal that day was a cheat meal. */
+  hasCheatMeal?: boolean;
 }
 
 interface BuildCalorieAdherenceHeatmapInput {
@@ -162,6 +164,9 @@ export function buildCalorieAdherenceHeatmapData({
   const caloriesByDate = new Map(
     dailyCalories.map((day) => [day.date, day.calories])
   );
+  const cheatByDate = new Map(
+    dailyCalories.map((day) => [day.date, Boolean(day.hasCheatMeal)])
+  );
   const hasTarget = calorieTarget !== null && calorieTarget > 0;
   // consumedRatio (the per-day ring's progress fill) falls back to the same
   // default the client uses when onboarding hasn't set a target yet, so the ring
@@ -209,6 +214,7 @@ export function buildCalorieAdherenceHeatmapData({
       ratio: isPartial ? null : calories / calorieTarget,
       consumedRatio,
       status: isPartial ? 'partial' : 'logged',
+      hasCheatMeal: cheatByDate.get(key) ?? false,
     };
   }
 

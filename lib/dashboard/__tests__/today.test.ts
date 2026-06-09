@@ -51,6 +51,9 @@ const meals: PersistedMeal[] = [
       vitaminHMcg: null,
     },
     mealItemGroups: [],
+    entryMode: 'precise',
+    alcoholG: null,
+    cheatSliders: null,
     share: null,
   },
   {
@@ -90,6 +93,9 @@ const meals: PersistedMeal[] = [
       vitaminHMcg: null,
     },
     mealItemGroups: [],
+    entryMode: 'precise',
+    alcoholG: null,
+    cheatSliders: null,
     share: null,
   },
 ];

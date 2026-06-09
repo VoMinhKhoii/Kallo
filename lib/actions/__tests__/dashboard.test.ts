@@ -70,8 +70,8 @@ describe('loadCalorieAdherenceHeatmap', () => {
         where: vi.fn().mockReturnValue({
           groupBy: vi.fn().mockReturnValue({
             orderBy: vi.fn().mockResolvedValue([
-              { date: '2026-04-30', calories: '1200' },
-              { date: '2026-05-01', calories: '1800' },
+              { date: '2026-04-30', calories: '1200', hasCheatMeal: false },
+              { date: '2026-05-01', calories: '1800', hasCheatMeal: true },
             ]),
           }),
         }),
@@ -94,8 +94,8 @@ describe('loadCalorieAdherenceHeatmap', () => {
         calorieTarget: 2000,
         timezoneOffset: 0,
         dailyCalories: [
-          { date: '2026-04-30', calories: 1200 },
-          { date: '2026-05-01', calories: 1800 },
+          { date: '2026-04-30', calories: 1200, hasCheatMeal: false },
+          { date: '2026-05-01', calories: 1800, hasCheatMeal: true },
         ],
       })
     );

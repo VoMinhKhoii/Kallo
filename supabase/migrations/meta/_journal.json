@@ -316,6 +316,13 @@
       "when": 1780158051579,
       "tag": "20260530162051_group_tracking_indexes",
       "breakpoints": true
+    },
+    {
+      "idx": 45,
+      "version": "7",
+      "when": 1780290000000,
+      "tag": "20260601090000_add_cheat_meal_columns",
+      "breakpoints": true
     }
   ]
 }

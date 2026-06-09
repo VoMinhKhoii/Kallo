@@ -70,6 +70,30 @@ describe('buildCalorieAdherenceHeatmap', () => {
     });
   });
 
+  it('flags a cheat day on its logged cell so the UI can decorate it', () => {
+    const data = buildCalorieAdherenceHeatmapData({
+      range: '30d',
+      timezoneOffset: 0,
+      calorieTarget: 2000,
+      now: new Date('2026-04-23T12:00:00.000Z'),
+      dailyCalories: [
+        { date: '2026-04-22', calories: 2000, hasCheatMeal: false },
+        { date: '2026-04-23', calories: 3500, hasCheatMeal: true },
+      ],
+    });
+
+    expect(data.cells[2][4]).toMatchObject({
+      date: '2026-04-22',
+      status: 'logged',
+      hasCheatMeal: false,
+    });
+    expect(data.cells[3][4]).toMatchObject({
+      date: '2026-04-23',
+      status: 'logged',
+      hasCheatMeal: true,
+    });
+  });
+
   it('builds year heatmap data with future and outside padding cells', () => {
     const heatmap = buildCalorieAdherenceHeatmapData({
       range: 'year',

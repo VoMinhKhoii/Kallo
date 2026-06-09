@@ -886,6 +886,7 @@
       "onTrack": "{percent}% đúng mục tiêu",
       "notLogged": "Chưa ghi nhận",
       "partial": "Ngày ghi thiếu",
+      "cheatDay": "Ngày xả",
       "future": "Ngày trong tương lai",
       "outside": "Ngoài khoảng đang xem",
       "offTarget": "Lệch mục tiêu",
@@ -900,6 +901,7 @@
       "farUnder": "Thiếu nhiều"
     },
     "caloriesLogged": "kcal đã ghi",
+    "weeklyAccumulator": "Tuần này: {consumed} / {target} kcal",
     "mealReceiptsHint": "Những bữa ăn sẽ hiển thị ở đây",
     "progressStatus": {
       "insufficient": {
@@ -958,6 +960,7 @@
     },
     "feedArea": {
       "savedMeal": "Đã lưu bữa ăn",
+      "repeatError": "Không thể mở lại dịp này.",
       "legacyMacroWarning": "Không thể hiển thị tổng macro trong ngày vì một số bữa ăn cũ thiếu macro.",
       "loadErrorTitle": "Không thể tải ngày này",
       "loadErrorDescription": "Các bữa ăn đã lưu cho ngày này chưa tải được. Hãy thử lại trước khi ghi thêm món.",
@@ -992,6 +995,41 @@
     "persistedMealCard": {
       "toggleDetails": "Bật/tắt chi tiết bữa ăn",
       "total": "Tổng"
+    },
+    "mode": {
+      "normal": "Bình thường",
+      "normalDescription": "Tách bữa ăn thành nguyên liệu để ước tính chính xác",
+      "cheat": "Bữa xả",
+      "cheatDescription": "Dịp khó đếm — chỉ cần kéo vài thanh trượt"
+    },
+    "modePicker": {
+      "ariaLabel": "Chế độ ghi"
+    },
+    "cheatIntensity": {
+      "label": "Bạn đã ăn nhiều cỡ nào?",
+      "helper": "Điều chỉnh mức ước tính",
+      "light": "Nhẹ",
+      "medium": "Vừa",
+      "heavy": "Nhiều"
+    },
+    "cheatPlaceholder": "Buffet nướng Hàn, ăn hết mình luôn...",
+    "cheatSliders": {
+      "badge": "Bữa xả",
+      "confirm": "Lưu bữa ăn",
+      "kcal": "kcal",
+      "alcohol": "cồn",
+      "between": "Giữa {low} và {high}"
+    },
+    "cheatRepeat": {
+      "title": "Ghi lại lần nữa"
+    },
+    "cheatMealCard": {
+      "badge": "Bữa xả",
+      "toggleDetails": "Bật/tắt chi tiết bữa ăn",
+      "total": "Tổng",
+      "youSet": "BẠN ĐÃ CHỌN",
+      "alcoholShort": "Cồn",
+      "reassurance": "Một bữa ăn chỉ là sai số nhỏ trên hành trình của bạn — kế hoạch ngày mai không đổi."
     },
     "timelineSidebar": {
       "navigationLabel": "Điều hướng dòng thời gian",
