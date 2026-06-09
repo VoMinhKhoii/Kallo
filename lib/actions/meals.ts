@@ -13,7 +13,6 @@ import { toParsedMeal } from '@/lib/ai/mappers';
 import {
   goalAdjustNutrition,
   sumBoundedNutrition,
-  sumDisplayedNutrition,
 } from '@/lib/ai/pipeline/goal-adjustment';
 import type { NutritionValues, PipelineResult } from '@/lib/ai/types';
 import { requireAuthAndProfile } from '@/lib/auth';
