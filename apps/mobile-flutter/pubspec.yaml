@@ -4,7 +4,7 @@ publish_to: "none"
 # Marketing version (CFBundleShortVersionString). The build number (+N) is
 # overridden at release time by fastlane (`--build-number`) to the next
 # TestFlight build for com.khoivo.nham.
-version: 1.0.0+1
+version: 1.0.1+5
 
 environment:
   sdk: ^3.7.0
