@@ -67,12 +67,28 @@ platform :ios do
 
     # Compile Dart with PROD defines. --no-codesign so the Flutter build phase
     # doesn't need a cert; signing happens in the xcodebuild archive below.
+    #
+    # fastlane runs under Homebrew Ruby and exports GEM_HOME/GEM_PATH/RUBYOPT
+    # for its own gems. Those leak into the `pod` subprocess that `flutter build`
+    # spawns, making CocoaPods load the wrong native gems → "CocoaPods is
+    # installed but broken" and pod install is skipped. Strip the Ruby/Bundler
+    # env so flutter's pod invocation uses the system CocoaPods cleanly.
     Dir.chdir("..") do # apps/mobile-flutter
-      sh("flutter", "build", "ios", "--release", "--no-codesign",
-         "--build-name=1.0.1", "--build-number=#{next_build}",
-         "--dart-define=API_BASE_URL=#{API_BASE_URL}",
-         "--dart-define=SUPABASE_URL=#{SUPABASE_URL}",
-         "--dart-define=SUPABASE_ANON_KEY=#{SUPABASE_ANON_KEY}")
+      ruby_env_keys = %w[
+        GEM_HOME GEM_PATH RUBYOPT RUBYLIB
+        BUNDLE_GEMFILE BUNDLE_BIN_PATH BUNDLER_VERSION BUNDLER_SETUP
+      ]
+      saved = {}
+      ruby_env_keys.each { |k| saved[k] = ENV.delete(k) }
+      begin
+        sh("flutter", "build", "ios", "--release", "--no-codesign",
+           "--build-name=1.0.1", "--build-number=#{next_build}",
+           "--dart-define=API_BASE_URL=#{API_BASE_URL}",
+           "--dart-define=SUPABASE_URL=#{SUPABASE_URL}",
+           "--dart-define=SUPABASE_ANON_KEY=#{SUPABASE_ANON_KEY}")
+      ensure
+        saved.each { |k, v| ENV[k] = v unless v.nil? }
+      end
     end
 
     # Manual signing on the Runner target ONLY (never global — breaks deps).
@@ -85,16 +101,21 @@ platform :ios do
     sh("security", "unlock-keychain", "-p", KEYCHAIN_PASS,
        File.expand_path("~/Library/Keychains/#{KEYCHAIN_NAME}"))
 
-    sh("xcodebuild -workspace Runner.xcworkspace -scheme Runner -configuration Release " \
-       "-sdk iphoneos -destination 'generic/platform=iOS' " \
-       "-archivePath ../build/Runner.xcarchive archive")
+    # fastlane 2.235 runs `sh` from the Fastfile's own dir (ios/fastlane), but
+    # these xcodebuild paths (Runner.xcworkspace, ../build, ExportOptions.plist)
+    # are written relative to ios/. Pin CWD to ios/ so they resolve.
+    Dir.chdir(File.expand_path("..", __dir__)) do # ios/
+      sh("xcodebuild -workspace Runner.xcworkspace -scheme Runner -configuration Release " \
+         "-sdk iphoneos -destination 'generic/platform=iOS' " \
+         "-archivePath ../build/Runner.xcarchive archive")
 
-    sh("xcodebuild -exportArchive -archivePath ../build/Runner.xcarchive " \
-       "-exportPath ../build/ios/ipa -exportOptionsPlist ExportOptions.plist")
+      sh("xcodebuild -exportArchive -archivePath ../build/Runner.xcarchive " \
+         "-exportPath ../build/ios/ipa -exportOptionsPlist ExportOptions.plist")
+    end
 
     upload_to_testflight(
       api_key: key, app_identifier: APP_ID,
-      ipa: File.expand_path("../build/ios/ipa/nham_mobile.ipa"),
+      ipa: File.expand_path("../build/ios/ipa/nham_mobile.ipa", File.expand_path("..", __dir__)),
       skip_waiting_for_build_processing: true, skip_submission: true,
     )
   end
