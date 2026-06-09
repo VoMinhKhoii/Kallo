@@ -14,6 +14,8 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../data/api_client.dart';
+// Prefixed: dashboard_providers also exports a `loggingDayProvider`.
+import '../../dashboard/data/dashboard_providers.dart' as dash;
 import 'logging_keys.dart';
 import 'logging_models.dart';
 
@@ -158,6 +160,12 @@ class ConfirmMealNotifier extends FamilyNotifier<bool, String> {
       // onSettled: refetch the day + meal-dates list.
       await notifier.refresh();
       ref.invalidate(mealDatesProvider(arg));
+      // The dashboard reads the day/macros/heatmap off its own bundle, keyed by
+      // (userId, date) — invalidate it so the Today card + week-strip ring pick
+      // up the just-confirmed meal instead of showing the pre-log cache.
+      ref.invalidate(
+        dash.dashboardBundleProvider((userId: arg, date: originDate)),
+      );
     }
   }
 }
