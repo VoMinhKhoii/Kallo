@@ -53,7 +53,9 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
   void _submit(String text) {
     setState(() => _errorText = null);
     _inputController.clear();
-    ref.read(streamAnalysisProvider.notifier).analyze(
+    ref
+        .read(streamAnalysisProvider.notifier)
+        .analyze(
           StreamAnalyzeInput(
             message: text,
             loggedDate: widget.date,
@@ -67,10 +69,7 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
     _inputController.focus();
   }
 
-  void _onStreamChange(
-    StreamAnalysisState? prev,
-    StreamAnalysisState next,
-  ) {
+  void _onStreamChange(StreamAnalysisState? prev, StreamAnalysisState next) {
     // On completion: refetch the day + meal-dates so the stored analysis shows
     // as a confirmable card, then clear the local stream.
     if (next.status == StreamStatus.done && next.analysisId != null) {
@@ -102,20 +101,32 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
     final pendingConfirmations =
         day?.pendingConfirmations ?? const <PendingMealConfirmation>[];
 
-    final isStreaming = stream.status != StreamStatus.idle &&
+    final isStreaming =
+        stream.status != StreamStatus.idle &&
         stream.status != StreamStatus.done &&
         stream.status != StreamStatus.error;
 
-    final dailyCalories = round0(persistedMeals.fold<double>(
-        0, (s, m) => s + (m.nutrition.caloriesKcal ?? 0)));
-    final dailyProtein = round0(persistedMeals.fold<double>(
-        0, (s, m) => s + (m.nutrition.proteinG ?? 0)));
-    final dailyCarbs = round0(persistedMeals.fold<double>(
-        0, (s, m) => s + (m.nutrition.carbohydrateG ?? 0)));
-    final dailyFat = round0(persistedMeals.fold<double>(
-        0, (s, m) => s + (m.nutrition.fatG ?? 0)));
+    final dailyCalories = round0(
+      persistedMeals.fold<double>(
+        0,
+        (s, m) => s + (m.nutrition.caloriesKcal ?? 0),
+      ),
+    );
+    final dailyProtein = round0(
+      persistedMeals.fold<double>(0, (s, m) => s + (m.nutrition.proteinG ?? 0)),
+    );
+    final dailyCarbs = round0(
+      persistedMeals.fold<double>(
+        0,
+        (s, m) => s + (m.nutrition.carbohydrateG ?? 0),
+      ),
+    );
+    final dailyFat = round0(
+      persistedMeals.fold<double>(0, (s, m) => s + (m.nutrition.fatG ?? 0)),
+    );
 
-    final isEmpty = !isLoading &&
+    final isEmpty =
+        !isLoading &&
         persistedMeals.isEmpty &&
         pendingConfirmations.isEmpty &&
         !isStreaming;
@@ -123,12 +134,24 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
     final hasFooterItems = pendingConfirmations.isNotEmpty || isStreaming;
 
     final macroBars = [
-      _MacroBarData('dashboard.protein'.tr(), dailyProtein,
-          profile.proteinTargetG, NhamColors.macroProtein),
-      _MacroBarData('dashboard.carbs'.tr(), dailyCarbs, profile.carbsTargetG,
-          NhamColors.macroCarbs),
-      _MacroBarData('dashboard.fat'.tr(), dailyFat, profile.fatTargetG,
-          NhamColors.macroFat),
+      _MacroBarData(
+        'dashboard.protein'.tr(),
+        dailyProtein,
+        profile.proteinTargetG,
+        NhamColors.macroProtein,
+      ),
+      _MacroBarData(
+        'dashboard.carbs'.tr(),
+        dailyCarbs,
+        profile.carbsTargetG,
+        NhamColors.macroCarbs,
+      ),
+      _MacroBarData(
+        'dashboard.fat'.tr(),
+        dailyFat,
+        profile.fatTargetG,
+        NhamColors.macroFat,
+      ),
     ];
 
     final bottomInset = MediaQuery.of(context).padding.bottom;
@@ -141,39 +164,46 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
           child: Container(
             color: NhamColors.surface,
             padding: const EdgeInsets.fromLTRB(
-                NhamSpacing.sp3, NhamSpacing.sp3, NhamSpacing.sp3, NhamSpacing.sp2),
-            child: isLoading
-                ? const _MacroSummarySkeleton()
-                : Row(
-                    children: [
-                      Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          CalorieRing(
-                            current: dailyCalories.toDouble(),
-                            target: profile.calorieTarget.toDouble(),
-                          ),
-                          const SizedBox(height: 4), // gap-1
-                          NhamText(
-                            '$dailyCalories / ${profile.calorieTarget} kcal',
-                            variant: NhamTextVariant.numCaption,
-                          ),
-                        ],
-                      ),
-                      const SizedBox(width: NhamSpacing.sp4), // gap-4
-                      Expanded(
-                        child: Column(
+              NhamSpacing.sp3,
+              NhamSpacing.sp3,
+              NhamSpacing.sp3,
+              NhamSpacing.sp2,
+            ),
+            child:
+                isLoading
+                    ? const _MacroSummarySkeleton()
+                    : Row(
+                      children: [
+                        Column(
+                          mainAxisSize: MainAxisSize.min,
                           children: [
-                            for (var i = 0; i < macroBars.length; i++) ...[
-                              _MacroRow(data: macroBars[i]),
-                              if (i != macroBars.length - 1)
-                                const SizedBox(height: NhamSpacing.sp2), // gap-2
-                            ],
+                            CalorieRing(
+                              current: dailyCalories.toDouble(),
+                              target: profile.calorieTarget.toDouble(),
+                            ),
+                            const SizedBox(height: 4), // gap-1
+                            NhamText(
+                              '$dailyCalories / ${profile.calorieTarget} kcal',
+                              variant: NhamTextVariant.numCaption,
+                            ),
                           ],
                         ),
-                      ),
-                    ],
-                  ),
+                        const SizedBox(width: NhamSpacing.sp4), // gap-4
+                        Expanded(
+                          child: Column(
+                            children: [
+                              for (var i = 0; i < macroBars.length; i++) ...[
+                                _MacroRow(data: macroBars[i]),
+                                if (i != macroBars.length - 1)
+                                  const SizedBox(
+                                    height: NhamSpacing.sp2,
+                                  ), // gap-2
+                              ],
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
           ),
         ),
 
@@ -195,7 +225,11 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
         if (_errorText != null)
           Padding(
             padding: const EdgeInsets.fromLTRB(
-                NhamSpacing.sp3, 0, NhamSpacing.sp3, NhamSpacing.sp2),
+              NhamSpacing.sp3,
+              0,
+              NhamSpacing.sp3,
+              NhamSpacing.sp2,
+            ),
             child: NhamText(
               _errorText!,
               variant: NhamTextVariant.small,
@@ -329,18 +363,30 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
     );
   }
 
-  void _confirm(String analysisId, List<MealQuantityEdit> edits) {
-    ref.read(confirmMealProvider(widget.profile.userId).notifier).confirm(
-          analysisId: analysisId,
-          mealId: _uuid.v4(),
-          originDate: widget.date,
-          edits: edits.isEmpty
-              ? null
-              : [
-                  for (final e in edits)
-                    {'mealItemOrder': e.mealItemOrder, 'newGrams': e.newGrams},
-                ],
-        );
+  Future<void> _confirm(String analysisId, List<MealQuantityEdit> edits) async {
+    try {
+      await ref
+          .read(confirmMealProvider(widget.profile.userId).notifier)
+          .confirm(
+            analysisId: analysisId,
+            mealId: _uuid.v4(),
+            originDate: widget.date,
+            edits:
+                edits.isEmpty
+                    ? null
+                    : [
+                      for (final e in edits)
+                        {
+                          'mealItemOrder': e.mealItemOrder,
+                          'newGrams': e.newGrams,
+                        },
+                    ],
+          );
+    } catch (_) {
+      // confirm() rolls the optimistic removal back on failure; surface the
+      // error too so it isn't silently swallowed.
+      if (mounted) setState(() => _errorText = 'errors.internal'.tr());
+    }
   }
 }
 
@@ -357,7 +403,8 @@ class _Footer extends StatelessWidget {
   final bool isStreaming;
   final StreamAnalysisState stream;
   final bool confirmPending;
-  final void Function(String analysisId, List<MealQuantityEdit> edits) onConfirm;
+  final void Function(String analysisId, List<MealQuantityEdit> edits)
+  onConfirm;
 
   @override
   Widget build(BuildContext context) {
@@ -371,8 +418,7 @@ class _Footer extends StatelessWidget {
             parsedMeal: pendingConfirmations[i].parsedMeal,
             busy: confirmPending,
             isLast: !isStreaming && i == pendingConfirmations.length - 1,
-            onConfirm: (edits) =>
-                onConfirm(pendingConfirmations[i].id, edits),
+            onConfirm: (edits) => onConfirm(pendingConfirmations[i].id, edits),
           ),
         if (isStreaming)
           StreamingEntry(
@@ -400,10 +446,12 @@ class _MacroRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final pct = data.target > 0
-        ? math.max(0, math.min(100, (data.current / data.target) * 100))
-            .toDouble()
-        : 0.0;
+    final pct =
+        data.target > 0
+            ? math
+                .max(0, math.min(100, (data.current / data.target) * 100))
+                .toDouble()
+            : 0.0;
     return Row(
       children: [
         SizedBox(
@@ -447,10 +495,10 @@ class _MacroBarState extends State<_MacroBar>
   );
   late Animation<double> _anim = _build(0, widget.pct);
 
-  Animation<double> _build(double from, double to) =>
-      Tween<double>(begin: from, end: to)
-          .chain(CurveTween(curve: Curves.easeOut))
-          .animate(_c);
+  Animation<double> _build(double from, double to) => Tween<double>(
+    begin: from,
+    end: to,
+  ).chain(CurveTween(curve: Curves.easeOut)).animate(_c);
 
   @override
   void initState() {
@@ -486,16 +534,17 @@ class _MacroBarState extends State<_MacroBar>
         color: NhamColors.track,
         child: AnimatedBuilder(
           animation: _anim,
-          builder: (context, _) => FractionallySizedBox(
-            alignment: Alignment.centerLeft,
-            widthFactor: (_anim.value / 100).clamp(0, 1),
-            child: Container(
-              decoration: BoxDecoration(
-                color: widget.color,
-                borderRadius: BorderRadius.circular(NhamRadii.pill),
+          builder:
+              (context, _) => FractionallySizedBox(
+                alignment: Alignment.centerLeft,
+                widthFactor: (_anim.value / 100).clamp(0, 1),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: widget.color,
+                    borderRadius: BorderRadius.circular(NhamRadii.pill),
+                  ),
+                ),
               ),
-            ),
-          ),
         ),
       ),
     );
@@ -519,8 +568,10 @@ class _PulseState extends State<_Pulse> with SingleTickerProviderStateMixin {
     vsync: this,
     duration: const Duration(milliseconds: 2000),
   )..repeat(reverse: true);
-  late final Animation<double> _opacity = Tween<double>(begin: 0.5, end: 1)
-      .animate(CurvedAnimation(parent: _c, curve: const Cubic(0.4, 0, 0.6, 1)));
+  late final Animation<double> _opacity = Tween<double>(
+    begin: 0.5,
+    end: 1,
+  ).animate(CurvedAnimation(parent: _c, curve: const Cubic(0.4, 0, 0.6, 1)));
 
   @override
   void dispose() {
@@ -534,13 +585,13 @@ class _PulseState extends State<_Pulse> with SingleTickerProviderStateMixin {
 }
 
 Widget _bar(double width, double height, Color color) => Container(
-      width: width,
-      height: height,
-      decoration: BoxDecoration(
-        color: color,
-        borderRadius: BorderRadius.circular(NhamRadii.pill),
-      ),
-    );
+  width: width,
+  height: height,
+  decoration: BoxDecoration(
+    color: color,
+    borderRadius: BorderRadius.circular(NhamRadii.pill),
+  ),
+);
 
 /// Macro header skeleton: a 2-col grid of 4 rounded-2xl border/50 bg-hover/25
 /// tiles, each with a label bar + accent/25 value bar (MacroSummarySkeleton).
@@ -552,21 +603,21 @@ class _MacroSummarySkeleton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     Widget tile(int i) => Container(
-          padding: const EdgeInsets.all(NhamSpacing.sp3), // p-3
-          decoration: BoxDecoration(
-            color: const Color(0x40F0EAE0), // bg-nham-hover/25
-            borderRadius: BorderRadius.circular(NhamRadii.containerLg), // 2xl
-            border: Border.all(color: NhamColors.borderHalf), // border/50
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _bar(_labelWidths[i], 12, const Color(0xB3E8D5B5)), // border/70
-              const SizedBox(height: NhamSpacing.sp2), // mb-2
-              _bar(64, 20, NhamColors.accent35), // h-5 w-16 accent/25
-            ],
-          ),
-        );
+      padding: const EdgeInsets.all(NhamSpacing.sp3), // p-3
+      decoration: BoxDecoration(
+        color: const Color(0x40F0EAE0), // bg-nham-hover/25
+        borderRadius: BorderRadius.circular(NhamRadii.containerLg), // 2xl
+        border: Border.all(color: NhamColors.borderHalf), // border/50
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _bar(_labelWidths[i], 12, const Color(0xB3E8D5B5)), // border/70
+          const SizedBox(height: NhamSpacing.sp2), // mb-2
+          _bar(64, 20, NhamColors.accent35), // h-5 w-16 accent/25
+        ],
+      ),
+    );
 
     return _Pulse(
       child: Column(
@@ -600,80 +651,83 @@ class _LoggingDaySkeleton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     Widget ghostCard(bool isLast) => TimelineRail(
-          isLast: isLast,
-          dotChild: Container(
-            width: 8,
-            height: 8,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: NhamColors.surface,
-              border: Border.all(color: NhamColors.accent60, width: 2),
-            ),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.only(bottom: NhamSpacing.sp8), // gap-8
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _bar(64, 12, const Color(0xB3E8D5B5)), // border/70 time bar
-                const SizedBox(height: NhamSpacing.sp2), // mb-2
-                Container(
-                  padding: const EdgeInsets.all(NhamSpacing.sp4), // p-5→16
-                  decoration: BoxDecoration(
-                    color: const Color(0x33F0EAE0), // bg-nham-hover/20
-                    borderRadius:
-                        BorderRadius.circular(NhamRadii.containerLg), // 2xl
-                    border: Border.all(color: NhamColors.borderSoft), // /60
-                    boxShadow: const [NhamShadows.sm],
+      isLast: isLast,
+      dotChild: Container(
+        width: 8,
+        height: 8,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: NhamColors.surface,
+          border: Border.all(color: NhamColors.accent60, width: 2),
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.only(bottom: NhamSpacing.sp8), // gap-8
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _bar(64, 12, const Color(0xB3E8D5B5)), // border/70 time bar
+            const SizedBox(height: NhamSpacing.sp2), // mb-2
+            Container(
+              padding: const EdgeInsets.all(NhamSpacing.sp4), // p-5→16
+              decoration: BoxDecoration(
+                color: const Color(0x33F0EAE0), // bg-nham-hover/20
+                borderRadius: BorderRadius.circular(
+                  NhamRadii.containerLg,
+                ), // 2xl
+                border: Border.all(color: NhamColors.borderSoft), // /60
+                boxShadow: const [NhamShadows.sm],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  LayoutBuilder(
+                    builder:
+                        (_, c) => _bar(
+                          c.maxWidth * 2 / 3,
+                          20,
+                          const Color(0xB3E8D5B5),
+                        ),
                   ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                  const SizedBox(height: NhamSpacing.sp4), // mb-4
+                  LayoutBuilder(
+                    builder:
+                        (_, c) => _bar(c.maxWidth, 12, NhamColors.borderSoft),
+                  ),
+                  const SizedBox(height: NhamSpacing.sp2),
+                  LayoutBuilder(
+                    builder:
+                        (_, c) =>
+                            _bar(c.maxWidth * 5 / 6, 12, NhamColors.borderHalf),
+                  ),
+                  const SizedBox(height: NhamSpacing.sp2),
+                  LayoutBuilder(
+                    builder:
+                        (_, c) => _bar(
+                          c.maxWidth * 3 / 5,
+                          12,
+                          NhamColors.borderBiscotti40,
+                        ),
+                  ),
+                  const SizedBox(height: NhamSpacing.sp5), // mt-5
+                  const DashedDivider(color: NhamColors.borderHalf),
+                  const SizedBox(height: NhamSpacing.sp3), // pt-3
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      LayoutBuilder(
-                        builder: (_, c) => _bar(
-                            c.maxWidth * 2 / 3, 20, const Color(0xB3E8D5B5)),
-                      ),
-                      const SizedBox(height: NhamSpacing.sp4), // mb-4
-                      LayoutBuilder(
-                        builder: (_, c) => _bar(
-                            c.maxWidth, 12, NhamColors.borderSoft),
-                      ),
-                      const SizedBox(height: NhamSpacing.sp2),
-                      LayoutBuilder(
-                        builder: (_, c) => _bar(
-                            c.maxWidth * 5 / 6, 12, NhamColors.borderHalf),
-                      ),
-                      const SizedBox(height: NhamSpacing.sp2),
-                      LayoutBuilder(
-                        builder: (_, c) => _bar(c.maxWidth * 3 / 5, 12,
-                            NhamColors.borderBiscotti40),
-                      ),
-                      const SizedBox(height: NhamSpacing.sp5), // mt-5
-                      const DashedDivider(color: NhamColors.borderHalf),
-                      const SizedBox(height: NhamSpacing.sp3), // pt-3
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          _bar(112, 12, NhamColors.borderHalf), // w-28
-                          _bar(64, 16, NhamColors.accent35), // accent/25
-                        ],
-                      ),
+                      _bar(112, 12, NhamColors.borderHalf), // w-28
+                      _bar(64, 16, NhamColors.accent35), // accent/25
                     ],
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-        );
-
-    return _Pulse(
-      child: Column(
-        children: [
-          ghostCard(false),
-          ghostCard(true),
-        ],
+          ],
+        ),
       ),
     );
+
+    return _Pulse(child: Column(children: [ghostCard(false), ghostCard(true)]));
   }
 }
 
@@ -709,8 +763,11 @@ class _LoggingDayErrorState extends StatelessWidget {
             children: [
               const Padding(
                 padding: EdgeInsets.only(top: 2), // mt-0.5
-                child: Icon(Icons.error_outline, // lucide AlertCircle
-                    size: 20, color: _red600),
+                child: Icon(
+                  Icons.error_outline, // lucide AlertCircle
+                  size: 20,
+                  color: _red600,
+                ),
               ),
               const SizedBox(width: NhamSpacing.sp3), // gap-3
               Expanded(
@@ -721,8 +778,8 @@ class _LoggingDayErrorState extends StatelessWidget {
                       'logging.feedArea.loadErrorTitle'.tr(),
                       variant: NhamTextVariant.small,
                       style: NhamTextStyles.sansSemiBold(
-                              fontSize: NhamFontSize.sm)
-                          .copyWith(color: _red950),
+                        fontSize: NhamFontSize.sm,
+                      ).copyWith(color: _red950),
                     ),
                     const SizedBox(height: 4), // mt-1
                     NhamText(
@@ -754,7 +811,9 @@ class _RetryPill extends StatelessWidget {
       child: Container(
         constraints: const BoxConstraints(minHeight: 36), // min-h-9
         padding: const EdgeInsets.symmetric(
-            horizontal: 14, vertical: 8), // px-3.5 py-2
+          horizontal: 14,
+          vertical: 8,
+        ), // px-3.5 py-2
         decoration: BoxDecoration(
           color: _LoggingDayErrorState._red100,
           borderRadius: BorderRadius.circular(NhamRadii.pill),
@@ -762,14 +821,18 @@ class _RetryPill extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.refresh, // lucide RefreshCw
-                size: 16, color: _LoggingDayErrorState._red950),
+            const Icon(
+              Icons.refresh, // lucide RefreshCw
+              size: 16,
+              color: _LoggingDayErrorState._red950,
+            ),
             const SizedBox(width: NhamSpacing.sp2), // gap-2
             NhamText(
               'logging.feedArea.retryDay'.tr(),
               variant: NhamTextVariant.small,
-              style: NhamTextStyles.sansMedium(fontSize: NhamFontSize.sm)
-                  .copyWith(color: _LoggingDayErrorState._red950),
+              style: NhamTextStyles.sansMedium(
+                fontSize: NhamFontSize.sm,
+              ).copyWith(color: _LoggingDayErrorState._red950),
             ),
           ],
         ),

@@ -14,6 +14,7 @@ library;
 
 import 'dart:async';
 
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../data/api_client.dart';
@@ -48,32 +49,36 @@ class StreamAnalysisState {
     String? analysisId,
     String? error,
     bool? isAnalyzing,
-  }) =>
-      StreamAnalysisState(
-        status: status ?? this.status,
-        items: items ?? this.items,
-        completedItems: completedItems ?? this.completedItems,
-        result: result ?? this.result,
-        analysisId: analysisId ?? this.analysisId,
-        error: error ?? this.error,
-        isAnalyzing: isAnalyzing ?? this.isAnalyzing,
-      );
+  }) => StreamAnalysisState(
+    status: status ?? this.status,
+    items: items ?? this.items,
+    completedItems: completedItems ?? this.completedItems,
+    result: result ?? this.result,
+    analysisId: analysisId ?? this.analysisId,
+    error: error ?? this.error,
+    isAnalyzing: isAnalyzing ?? this.isAnalyzing,
+  );
 
   static const StreamAnalysisState initial = StreamAnalysisState();
 }
 
 /// Maps a [PipelineStage] (from a `stage` event) to the matching [StreamStatus].
 StreamStatus _statusForStage(PipelineStage stage) => switch (stage) {
-      PipelineStage.authenticating => StreamStatus.authenticating,
-      PipelineStage.decomposing => StreamStatus.decomposing,
-      PipelineStage.matching => StreamStatus.matching,
-      PipelineStage.estimating => StreamStatus.estimating,
-      PipelineStage.assembling => StreamStatus.assembling,
-    };
+  PipelineStage.authenticating => StreamStatus.authenticating,
+  PipelineStage.decomposing => StreamStatus.decomposing,
+  PipelineStage.matching => StreamStatus.matching,
+  PipelineStage.estimating => StreamStatus.estimating,
+  PipelineStage.assembling => StreamStatus.assembling,
+};
 
 class StreamAnalysisController extends Notifier<StreamAnalysisState> {
   StreamSubscription<StreamEvent>? _sub;
+  Timer? _timeout;
   int _requestId = 0;
+
+  // Server caps analyze at 60s (maxDuration); time the client out a bit past
+  // that so a stalled pipeline surfaces an error instead of spinning forever.
+  static const Duration _analyzeTimeout = Duration(seconds: 70);
 
   @override
   StreamAnalysisState build() {
@@ -84,6 +89,8 @@ class StreamAnalysisController extends Notifier<StreamAnalysisState> {
   void _closeStream() {
     _sub?.cancel();
     _sub = null;
+    _timeout?.cancel();
+    _timeout = null;
   }
 
   /// Reset to idle WITHOUT bumping the request id (the RN `reset`, called after
@@ -110,15 +117,15 @@ class StreamAnalysisController extends Notifier<StreamAnalysisState> {
       case ItemMacrosEvent(:final mealItemId, :final item):
         // Upsert by run-scoped mealItemId — a retry re-emits the same slot.
         final next = item.copyWith(id: mealItemId);
-        final idx =
-            state.completedItems.indexWhere((i) => i.id == mealItemId);
+        final idx = state.completedItems.indexWhere((i) => i.id == mealItemId);
         if (idx >= 0) {
           final updated = [...state.completedItems];
           updated[idx] = next;
           state = state.copyWith(completedItems: updated);
         } else {
-          state =
-              state.copyWith(completedItems: [...state.completedItems, next]);
+          state = state.copyWith(
+            completedItems: [...state.completedItems, next],
+          );
         }
       case ResultEvent(:final data):
         state = state.copyWith(result: data);
@@ -148,29 +155,43 @@ class StreamAnalysisController extends Notifier<StreamAnalysisState> {
     );
 
     final api = ref.read(apiClientProvider);
-    _sub = api.analyzeMeal(input).listen(
-      (event) {
-        _apply(event, reqId);
-        if (event is AnalysisCompleteEvent || event is StreamErrorEvent) {
-          _closeStream();
-        }
-      },
-      onError: (_) {
-        if (reqId != _requestId) return;
-        if (state.status == StreamStatus.done) return;
-        state = state.copyWith(
-          status: StreamStatus.error,
-          error: 'Connection lost',
-          isAnalyzing: false,
+    _sub = api
+        .analyzeMeal(input)
+        .listen(
+          (event) {
+            _apply(event, reqId);
+            if (event is AnalysisCompleteEvent || event is StreamErrorEvent) {
+              _closeStream();
+            }
+          },
+          onError: (_) {
+            if (reqId != _requestId) return;
+            if (state.status == StreamStatus.done) return;
+            state = state.copyWith(
+              status: StreamStatus.error,
+              error: tr('errors.internal'),
+              isAnalyzing: false,
+            );
+            _closeStream();
+          },
+          cancelOnError: true,
         );
-        _closeStream();
-      },
-      cancelOnError: true,
-    );
+
+    // Wall-clock guard: a stalled pipeline that never emits analysis_complete /
+    // error would otherwise leave the UI spinning with the input disabled.
+    _timeout = Timer(_analyzeTimeout, () {
+      if (reqId != _requestId || state.status == StreamStatus.done) return;
+      state = state.copyWith(
+        status: StreamStatus.error,
+        error: tr('errors.pipelineTimeout'),
+        isAnalyzing: false,
+      );
+      _closeStream();
+    });
   }
 }
 
 final streamAnalysisProvider =
     NotifierProvider<StreamAnalysisController, StreamAnalysisState>(
-  StreamAnalysisController.new,
-);
+      StreamAnalysisController.new,
+    );
