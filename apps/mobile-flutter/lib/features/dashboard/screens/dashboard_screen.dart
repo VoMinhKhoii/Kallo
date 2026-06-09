@@ -30,7 +30,6 @@ import '../widgets/week_strip.dart';
 import '../widgets/weight_chart.dart';
 
 // EN copy (messages/en.json `dashboard.*`), matching the RN inlined COPY.
-const _notSignedIn = 'Not signed in.';
 
 // Web DEFAULT_PROFILE fallbacks so an incomplete-onboarding profile never /0g.
 const _defaultCalorieTarget = 2000.0;
@@ -47,11 +46,12 @@ class DashboardScreen extends ConsumerWidget {
     final userId = session?.user.id;
 
     if (userId == null) {
-      return const Screen(
+      return Screen(
         child: Center(
           child: Padding(
-            padding: EdgeInsets.all(NhamSpacing.sp6),
-            child: NhamText(_notSignedIn, variant: NhamTextVariant.small),
+            padding: const EdgeInsets.all(NhamSpacing.sp6),
+            child: NhamText(tr('common.notSignedIn'),
+                variant: NhamTextVariant.small),
           ),
         ),
       );

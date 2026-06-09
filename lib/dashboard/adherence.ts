@@ -193,10 +193,12 @@ export function buildCalorieAdherenceHeatmapData({
     const consumedRatio = calories / ringTarget;
 
     if (!hasTarget) {
-      // No real target: can't colour-grade adherence, but expose ring progress.
+      // No real target: can't colour-grade adherence, but the day IS logged and
+      // the ring shows real progress — expose both. ratio stays null (ungradable).
       cells[dayIndex][weekIndex] = {
         ...cells[dayIndex][weekIndex],
         consumedRatio,
+        status: 'logged',
       };
       continue;
     }
