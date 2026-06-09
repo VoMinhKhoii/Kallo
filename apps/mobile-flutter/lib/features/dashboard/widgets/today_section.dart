@@ -36,6 +36,10 @@ class DockTargets {
   final double fatTargetG;
 }
 
+/// Shared right-hand column width: the macro `x/yg` values and the meal-row
+/// kcal sit in this fixed column so both align to one right edge.
+const double _valueColumnWidth = 68;
+
 class TodaySection extends ConsumerWidget {
   const TodaySection({super.key, required this.args, required this.targets});
 
@@ -166,7 +170,7 @@ class _Dock extends StatelessWidget {
               _MacroRow(bar: macroBars[i], idx: i),
             ],
 
-            const SizedBox(height: NhamSpacing.sp5),
+            const _Separator(),
 
             // (c) Meal list — plain, on the card surface (no nested fill).
             meals.isEmpty ? _EmptyMeals() : _MealList(meals: meals),
@@ -186,6 +190,20 @@ class _Dock extends StatelessWidget {
     }
     return n < 0 ? '-$buf' : buf.toString();
   }
+}
+
+/// A hairline divider between the card's zones (hero · macros · meals).
+/// Full content-width (stretched by the card Column) so it lines up with every
+/// row's left/right edges.
+class _Separator extends StatelessWidget {
+  const _Separator();
+
+  @override
+  Widget build(BuildContext context) => Container(
+        height: 1,
+        margin: const EdgeInsets.symmetric(vertical: NhamSpacing.sp4),
+        color: const Color(0xFFE4E1DC), // soft neutral grey hairline
+      );
 }
 
 class _MacroRow extends StatelessWidget {
@@ -214,9 +232,15 @@ class _MacroRow extends StatelessWidget {
         const SizedBox(width: NhamSpacing.sp3),
         Expanded(child: _MacroBar(pct: pct, color: bar.color, idx: idx)),
         const SizedBox(width: NhamSpacing.sp3),
-        Text(
-          '${bar.current}/${bar.target}g',
-          style: dashMeta(color: kInk, tabular: true),
+        // Fixed-width right column so every bar ends at the same x and the
+        // values line up (shared with the meal-row kcal column).
+        SizedBox(
+          width: _valueColumnWidth,
+          child: Text(
+            '${bar.current}/${bar.target}g',
+            textAlign: TextAlign.right,
+            style: dashMeta(color: kInk, tabular: true),
+          ),
         ),
       ],
     );
@@ -373,36 +397,38 @@ class _MealRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),
+      // Baseline-align the index, name and kcal so the row reads on one line;
+      // index sits in an 18px column (left edge = content-left, like the macro
+      // labels) and kcal in the shared right column (aligned with the macro
+      // values).
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.baseline,
+        textBaseline: TextBaseline.alphabetic,
         children: [
+          SizedBox(
+            width: 18,
+            child: Text(
+              '${index + 1}',
+              style: dashMeta(color: kInkSecondary, tabular: true),
+            ),
+          ),
+          const SizedBox(width: NhamSpacing.sp1),
           Expanded(
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                SizedBox(
-                  width: 18,
-                  child: Text(
-                    '${index + 1}',
-                    style: dashMeta(color: kInkSecondary, tabular: true),
-                  ),
-                ),
-                const SizedBox(width: NhamSpacing.sp1),
-                Expanded(
-                  child: Text(
-                    meal.rawInput,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: dashBody(),
-                  ),
-                ),
-              ],
+            child: Text(
+              meal.rawInput,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: dashBody(),
             ),
           ),
           const SizedBox(width: NhamSpacing.sp2),
-          Text(
-            '${round0(meal.nutrition.caloriesKcal)}',
-            style: dashMeta(color: kInkSecondary, tabular: true),
+          SizedBox(
+            width: _valueColumnWidth,
+            child: Text(
+              '${round0(meal.nutrition.caloriesKcal)}',
+              textAlign: TextAlign.right,
+              style: dashMeta(color: kInkSecondary, tabular: true),
+            ),
           ),
         ],
       ),

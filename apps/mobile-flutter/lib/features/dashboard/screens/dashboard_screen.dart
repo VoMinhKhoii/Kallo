@@ -64,9 +64,9 @@ class DashboardScreen extends ConsumerWidget {
     return Screen(
       child: Column(
         children: [
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: NhamSpacing.sp3),
-            child: AppHeader(),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: NhamSpacing.sp3),
+            child: AppHeader(child: Text('Hello', style: dashHeadline())),
           ),
           Expanded(
             child: bundle.when(
@@ -110,20 +110,33 @@ class DashboardScreen extends ConsumerWidget {
   }
 }
 
-class _Content extends StatelessWidget {
+class _Content extends StatefulWidget {
   const _Content({
     required this.args,
     required this.todayDate,
     required this.targets,
   });
 
+  /// Today-anchored args — Progress (30d), Consistency (90d) and the week
+  /// strip's rings stay "as of today" regardless of the selected day.
   final DashboardArgs args;
   final String todayDate;
   final DockTargets targets;
 
   @override
+  State<_Content> createState() => _ContentState();
+}
+
+class _ContentState extends State<_Content> {
+  // The day whose summary the Today card shows; tapping a strip day changes it
+  // (browse day-card only). Defaults to today.
+  late String _selectedDate = widget.todayDate;
+
+  @override
   Widget build(BuildContext context) {
     final bottomInset = MediaQuery.of(context).padding.bottom;
+    // Today card follows the selected day; everything else stays on today.
+    final selectedArgs = (userId: widget.args.userId, date: _selectedDate);
 
     return Stack(
       children: [
@@ -136,17 +149,17 @@ class _Content extends StatelessWidget {
             bottom: bottomInset + 96,
           ),
           children: [
-            // SECTION 1 — greeting + week strip + today summary.
-            Center(
-              child: Padding(
-                padding: const EdgeInsets.only(bottom: NhamSpacing.sp3),
-                child: Text('Hello', style: dashHeadline()),
-              ),
+            // SECTION 1 — week strip + today summary (greeting now lives in the
+            // header row, beside the hamburger).
+            WeekStrip(
+              args: widget.args,
+              todayDate: widget.todayDate,
+              selectedDate: _selectedDate,
+              onSelectDay: (d) => setState(() => _selectedDate = d),
             ),
-            WeekStrip(args: args, todayDate: todayDate),
             Padding(
               padding: const EdgeInsets.only(bottom: NhamSpacing.sp4),
-              child: TodaySection(args: args, targets: targets),
+              child: TodaySection(args: selectedArgs, targets: widget.targets),
             ),
             // SECTION 2 — Progress.
             _Section(
@@ -155,7 +168,7 @@ class _Content extends StatelessWidget {
                   title: tr('dashboard.progress'),
                   range: tr('dashboard.ranges.thirtyDays'),
                 ),
-                WeightChart(todayDate: todayDate, args: args),
+                WeightChart(todayDate: widget.todayDate, args: widget.args),
               ],
             ),
             // SECTION 3 — Consistency.
@@ -165,7 +178,7 @@ class _Content extends StatelessWidget {
                   title: tr('dashboard.consistency'),
                   range: tr('dashboard.ranges.ninetyDays'),
                 ),
-                AdherenceHeatmap(args: args),
+                AdherenceHeatmap(args: widget.args),
               ],
             ),
           ],

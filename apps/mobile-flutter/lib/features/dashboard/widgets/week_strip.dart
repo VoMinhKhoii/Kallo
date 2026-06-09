@@ -1,44 +1,60 @@
-/// WeekStrip — the Mon→Sun strip at the top of the dashboard.
+/// WeekStrip — the dashboard's always-on 7-day week strip.
 ///
-/// Shows the whole week (the card below is just today), with today highlighted
-/// and a small dot under any day that has a logged meal. The logged-day signal
-/// is read off the heatmap slice already in the dashboard bundle — no extra
-/// fetch.
+/// Centered on today (3 days before / 3 after). Each day shows its weekday
+/// abbreviation and date number inside a small **calorie ring**: the ring fill
+/// is that day's calories ÷ target and its colour is the consistency-heatmap
+/// tier for that day (green on-target → red far-off). Days with no log show an
+/// empty track ring; future days are bare + dimmed. Read-only — the per-day
+/// data (ratio + status by date) comes off the heatmap slice already in the
+/// dashboard bundle, so there's no extra fetch.
 library;
 
+import 'dart:math' as math;
+
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../models/dashboard.dart';
 import '../../../theme/nham_colors.dart';
 import '../../../theme/nham_theme.dart';
+import '../../logging/logic/timeline_utils.dart';
 import '../data/dashboard_providers.dart';
-import '../logic/dashboard_format.dart';
 import 'dashboard_tokens.dart';
 
 class WeekStrip extends ConsumerWidget {
-  const WeekStrip({super.key, required this.args, required this.todayDate});
+  const WeekStrip({
+    super.key,
+    required this.args,
+    required this.todayDate,
+    required this.selectedDate,
+    required this.onSelectDay,
+  });
 
+  /// Today-anchored args — the heatmap/ring data stays "as of today" even when
+  /// another day is selected.
   final DashboardArgs args;
   final String todayDate;
 
+  /// The day whose summary the Today card is showing (the white chip).
+  final String selectedDate;
+  final ValueChanged<String> onSelectDay;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final days = weekDaysFor(todayDate);
-
-    // Dates with a logged (or partial) meal, off the heatmap bundle slice.
+    // Per-day adherence (ratio + status) keyed by date, off the heatmap slice.
     final heatmap = ref.watch(heatmapProvider(args)).valueOrNull;
-    final logged = <String>{};
+    final byDate = <String, HeatmapCell>{};
     if (heatmap != null) {
       for (final row in heatmap.cells) {
         for (final cell in row) {
-          if (cell.status == HeatmapCellStatus.logged ||
-              cell.status == HeatmapCellStatus.partial) {
-            logged.add(cell.date);
-          }
+          byDate[cell.date] = cell;
         }
       }
     }
+
+    final days = buildCenteredStripFromAnchor(todayDate).days;
+    final locale = context.locale.toString();
 
     return Padding(
       padding: const EdgeInsets.only(bottom: NhamSpacing.sp3),
@@ -46,72 +62,173 @@ class WeekStrip extends ConsumerWidget {
         children: [
           for (final d in days)
             Expanded(
-              child: _Day(
+              child: _DayCell(
                 date: d,
-                isToday: dateString(d) == todayDate,
-                logged: logged.contains(dateString(d)),
+                isToday: d == todayDate,
+                isSelected: d == selectedDate,
+                cell: byDate[d],
+                locale: locale,
+                onSelectDay: onSelectDay,
               ),
             ),
         ],
       ),
     );
   }
-
-  // Local YYYY-MM-DD for a DateTime (reuses todayDateString's formatting).
-  static String dateString(DateTime d) => todayDateString(d);
 }
 
-const List<String> _letters = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+class _DayCell extends StatelessWidget {
+  const _DayCell({
+    required this.date,
+    required this.isToday,
+    required this.isSelected,
+    required this.cell,
+    required this.locale,
+    required this.onSelectDay,
+  });
 
-class _Day extends StatelessWidget {
-  const _Day({required this.date, required this.isToday, required this.logged});
-
-  final DateTime date;
+  final String date;
   final bool isToday;
-  final bool logged;
+  final bool isSelected;
+  final HeatmapCell? cell;
+  final String locale;
+  final ValueChanged<String> onSelectDay;
+
+  static const double _ring = 36;
 
   @override
   Widget build(BuildContext context) {
-    final letter = _letters[(date.weekday - 1) % 7];
-    return Column(
-      children: [
-        Text(
-          letter,
-          style: dashEyebrow(
-              color: isToday ? NhamColors.accentDark : kInkSecondary),
-        ),
-        const SizedBox(height: 6),
-        Container(
-          width: 32,
-          height: 32,
-          alignment: Alignment.center,
-          decoration: isToday
-              ? BoxDecoration(
-                  color: NhamColors.accent10,
-                  shape: BoxShape.circle,
-                  border: Border.all(color: NhamColors.accent),
-                )
-              : null,
-          child: Text(
-            '${date.day}',
-            style: dashBody(
-              color: kInk,
-              weight: isToday ? FontWeight.w600 : FontWeight.w400,
-              tabular: true,
+    final dt = dateStringToDate(date);
+    final weekday = DateFormat('EEE', locale).format(dt); // locale-aware, e.g. "Sun"
+    final labelColor = isToday ? NhamColors.accentDark : kInkSecondary;
+
+    final ratio = cell?.ratio;
+    final isFuture = cell?.status == HeatmapCellStatus.future ||
+        cell?.status == HeatmapCellStatus.outside;
+
+    // Same "calories remaining" ring as the headline calorie card: the accent
+    // arc is the fraction of the day's target still REMAINING (1 − consumed÷
+    // target). Days with no log show only the track.
+    final arcColor = ratio != null ? NhamColors.accent : null;
+    final fraction =
+        ratio != null ? (1.0 - ratio).clamp(0.0, 1.0).toDouble() : 0.0;
+
+    final cell0 = Container(
+      // Equal margin/padding on every cell keeps the weekday letters aligned;
+      // only the SELECTED day gets the solid white chip + soft lift.
+      margin: const EdgeInsets.symmetric(horizontal: 3),
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      decoration: isSelected
+          ? BoxDecoration(
+              color: kCardSurface,
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: const [
+                BoxShadow(
+                  color: Color(0x142C2416), // espresso @8% — small-chip lift
+                  blurRadius: 12,
+                  offset: Offset(0, 4),
+                ),
+              ],
+            )
+          : null,
+      child: Column(
+        children: [
+          Text(
+            weekday,
+            maxLines: 1,
+            // 11px DM Sans semibold, tight tracking (mixed-case, locale-safe).
+            style: dashMeta(color: labelColor).copyWith(
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              letterSpacing: -0.2,
             ),
           ),
-        ),
-        const SizedBox(height: 5),
-        // Logged-day dot (fixed footprint so rows stay aligned).
-        Container(
-          width: 5,
-          height: 5,
-          decoration: BoxDecoration(
-            color: logged ? NhamColors.accent : Colors.transparent,
-            shape: BoxShape.circle,
+          const SizedBox(height: 6),
+          SizedBox(
+            width: _ring,
+            height: _ring,
+            child: CustomPaint(
+              painter: _DayRingPainter(
+                fraction: fraction,
+                arcColor: arcColor,
+                // In-range days (even unlogged) get a faint track; future bare.
+                showTrack: !isFuture,
+              ),
+              child: Center(
+                child: Text(
+                  '${dt.day}',
+                  style: dashBody(
+                    color: isFuture ? kInkDisabled : kInk,
+                    weight: isToday ? FontWeight.w600 : FontWeight.w400,
+                    tabular: true,
+                  ),
+                ),
+              ),
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
+    );
+
+    // Future days have no day to browse → not selectable.
+    if (isFuture) return cell0;
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () => onSelectDay(date),
+      child: cell0,
     );
   }
+}
+
+/// A small progress ring: a faint track + a rounded arc swept clockwise from 12
+/// o'clock for [fraction] of the circle, in the heatmap tier [arcColor].
+class _DayRingPainter extends CustomPainter {
+  _DayRingPainter({
+    required this.fraction,
+    required this.arcColor,
+    required this.showTrack,
+  });
+
+  final double fraction;
+  final Color? arcColor;
+  final bool showTrack;
+
+  static const double _stroke = 2.5;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = (size.width - _stroke) / 2;
+
+    if (showTrack) {
+      canvas.drawCircle(
+        center,
+        radius,
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = _stroke
+          ..color = kHairline, // biscotti track — visible against the cream page
+      );
+    }
+
+    if (arcColor != null && fraction > 0) {
+      canvas.drawArc(
+        Rect.fromCircle(center: center, radius: radius),
+        -math.pi / 2, // 12 o'clock
+        2 * math.pi * fraction,
+        false,
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = _stroke
+          ..strokeCap = StrokeCap.round
+          ..color = arcColor!,
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(_DayRingPainter old) =>
+      old.fraction != fraction ||
+      old.arcColor != arcColor ||
+      old.showTrack != showTrack;
 }
