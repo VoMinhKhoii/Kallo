@@ -12,7 +12,17 @@ export type HeatmapCellStatus =
 
 export interface HeatmapCell {
   date: string;
+  /**
+   * Adherence ratio for the consistency grid's colour grading — null for
+   * partial (under-logged) days so they are not colour-graded.
+   */
   ratio: number | null;
+  /**
+   * Raw calories ÷ target for the day, NEVER gated by the partial rule — used
+   * by the dashboard's per-day calorie ring (progress fill). Null only when the
+   * day has no logged calories (or no target).
+   */
+  consumedRatio: number | null;
   status: HeatmapCellStatus;
 }
 

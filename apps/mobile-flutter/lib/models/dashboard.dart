@@ -28,35 +28,48 @@ enum HeatmapCellStatus { logged, partial, unlogged, future, outside }
 
 class HeatmapCell {
   final String date;
+
+  /// Adherence ratio (gated — null for partial days) used by the consistency
+  /// grid's colour grading.
   final double? ratio;
+
+  /// Raw calories ÷ target, ungated — drives the dashboard's per-day calorie
+  /// ring. Null only when the day has no logged calories (or no target).
+  final double? consumedRatio;
   final HeatmapCellStatus status;
 
   const HeatmapCell({
     required this.date,
     required this.ratio,
+    required this.consumedRatio,
     required this.status,
   });
 
   factory HeatmapCell.fromJson(Map<String, dynamic> json) => HeatmapCell(
         date: json['date'] as String,
         ratio: (json['ratio'] as num?)?.toDouble(),
+        consumedRatio: (json['consumedRatio'] as num?)?.toDouble(),
         status: HeatmapCellStatus.values.byName(json['status'] as String),
       );
 
   Map<String, dynamic> toJson() => {
         'date': date,
         'ratio': ratio,
+        'consumedRatio': consumedRatio,
         'status': status.name,
       };
 
   HeatmapCell copyWith({
     String? date,
     double? Function()? ratio,
+    double? Function()? consumedRatio,
     HeatmapCellStatus? status,
   }) =>
       HeatmapCell(
         date: date ?? this.date,
         ratio: ratio != null ? ratio() : this.ratio,
+        consumedRatio:
+            consumedRatio != null ? consumedRatio() : this.consumedRatio,
         status: status ?? this.status,
       );
 }

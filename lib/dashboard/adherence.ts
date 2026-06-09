@@ -28,6 +28,13 @@ const RANGE_DAYS: Record<Exclude<DashboardTimeRange, 'year'>, number> = {
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
+/**
+ * Fallback calorie target for the per-day ring's progress fill when the profile
+ * has none yet (onboarding incomplete). Mirrors the dashboard client's
+ * DEFAULT_PROFILE calorie target so the ring and the calorie card agree.
+ */
+const DEFAULT_RING_CALORIE_TARGET = 2000;
+
 function toDateKey(date: Date): string {
   return date.toISOString().slice(0, 10);
 }
@@ -148,7 +155,7 @@ export function buildCalorieAdherenceHeatmapData({
             ? 'future'
             : 'unlogged';
 
-      return { date: dateKey, ratio: null, status };
+      return { date: dateKey, ratio: null, consumedRatio: null, status };
     })
   );
 
@@ -156,6 +163,14 @@ export function buildCalorieAdherenceHeatmapData({
     dailyCalories.map((day) => [day.date, day.calories])
   );
   const hasTarget = calorieTarget !== null && calorieTarget > 0;
+  // consumedRatio (the per-day ring's progress fill) falls back to the same
+  // default the client uses when onboarding hasn't set a target yet, so the ring
+  // still tracks intake. The gated `ratio` (consistency colour grading) keeps
+  // requiring a REAL target and stays null without one.
+  const ringTarget =
+    calorieTarget && calorieTarget > 0
+      ? calorieTarget
+      : DEFAULT_RING_CALORIE_TARGET;
   // Days under-logged relative to the target are marked 'partial' so they are
   // neither colour-graded as a low-intake day nor counted toward adherence.
   const { partialDates } = classifyDayCompleteness(
@@ -170,14 +185,27 @@ export function buildCalorieAdherenceHeatmapData({
   ) {
     const key = toDateKey(current);
     const calories = caloriesByDate.get(key);
-    if (calories === undefined || !hasTarget) continue;
+    if (calories === undefined) continue;
 
     const weekIndex = Math.floor(daysBetween(startWeek, current) / 7);
     const dayIndex = getMondayDayIndex(current);
+    // Raw progress (consumed ÷ effective target), ungated — drives the ring.
+    const consumedRatio = calories / ringTarget;
+
+    if (!hasTarget) {
+      // No real target: can't colour-grade adherence, but expose ring progress.
+      cells[dayIndex][weekIndex] = {
+        ...cells[dayIndex][weekIndex],
+        consumedRatio,
+      };
+      continue;
+    }
+
     const isPartial = partialDates.has(key);
     cells[dayIndex][weekIndex] = {
       date: key,
       ratio: isPartial ? null : calories / calorieTarget,
+      consumedRatio,
       status: isPartial ? 'partial' : 'logged',
     };
   }

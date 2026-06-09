@@ -1,12 +1,12 @@
 /// WeekStrip — the dashboard's always-on 7-day week strip.
 ///
 /// Centered on today (3 days before / 3 after). Each day shows its weekday
-/// abbreviation and date number inside a small **calorie ring**: the ring fill
-/// is that day's calories ÷ target and its colour is the consistency-heatmap
-/// tier for that day (green on-target → red far-off). Days with no log show an
-/// empty track ring; future days are bare + dimmed. Read-only — the per-day
-/// data (ratio + status by date) comes off the heatmap slice already in the
-/// dashboard bundle, so there's no extra fetch.
+/// abbreviation and date number inside a small **calorie ring** — the accent
+/// arc fills with that day's progress toward the target (`consumedRatio` =
+/// calories ÷ target, ungated). Today fills live as meals are logged (the
+/// bundle refetches on confirm); days with no log show an empty track ring;
+/// future days are bare + dimmed. Read-only — the per-day data comes off the
+/// heatmap slice already in the dashboard bundle, so there's no extra fetch.
 library;
 
 import 'dart:math' as math;
@@ -102,16 +102,17 @@ class _DayCell extends StatelessWidget {
     final weekday = DateFormat('EEE', locale).format(dt); // locale-aware, e.g. "Sun"
     final labelColor = isToday ? NhamColors.accentDark : kInkSecondary;
 
-    final ratio = cell?.ratio;
+    final consumed = cell?.consumedRatio;
     final isFuture = cell?.status == HeatmapCellStatus.future ||
         cell?.status == HeatmapCellStatus.outside;
 
-    // Same "calories remaining" ring as the headline calorie card: the accent
-    // arc is the fraction of the day's target still REMAINING (1 − consumed÷
-    // target). Days with no log show only the track.
-    final arcColor = ratio != null ? NhamColors.accent : null;
+    // Progress ring: the accent arc fills as the day's calories approach the
+    // target (consumed ÷ target, clamped to a full sweep when over). Days with
+    // no logged calories show only the track.
+    final arcColor =
+        (consumed != null && consumed > 0) ? NhamColors.accent : null;
     final fraction =
-        ratio != null ? (1.0 - ratio).clamp(0.0, 1.0).toDouble() : 0.0;
+        consumed != null ? consumed.clamp(0.0, 1.0).toDouble() : 0.0;
 
     final cell0 = Container(
       // Equal margin/padding on every cell keeps the weekday letters aligned;
@@ -207,7 +208,8 @@ class _DayRingPainter extends CustomPainter {
         Paint()
           ..style = PaintingStyle.stroke
           ..strokeWidth = _stroke
-          ..color = kHairline, // biscotti track — visible against the cream page
+          ..color = NhamColors.track, // same grey track as the calorie ring,
+        // so the accent progress arc reads clearly
       );
     }
 
