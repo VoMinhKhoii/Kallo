@@ -1,0 +1,36 @@
+import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter/material.dart';
+
+import '../shared/widgets/widgets.dart';
+import '../theme/nham_theme.dart';
+import 'app_header.dart';
+
+/// Stand-in surface for nav destinations whose feature screens don't exist in
+/// the Flutter app yet (Groups, Admin). It keeps the drawer nav model honest —
+/// every drawer item navigates somewhere with the shared header + hamburger —
+/// without inventing a feature UI. Replace with the real screen under
+/// `lib/features/<feature>/` when that surface is ported.
+class PlaceholderScreen extends StatelessWidget {
+  const PlaceholderScreen({required this.titleKey, super.key});
+
+  final String titleKey;
+
+  @override
+  Widget build(BuildContext context) {
+    return Screen(
+      child: Column(
+        children: [
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: NhamSpacing.sp3),
+            child: AppHeader(),
+          ),
+          Expanded(
+            child: Center(
+              child: NhamText(tr(titleKey), variant: NhamTextVariant.h4),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}

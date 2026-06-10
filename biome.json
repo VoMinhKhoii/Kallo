@@ -12,9 +12,9 @@
       "**",
       "!dist",
       "!**/dist",
-      "!apps/mobile",
       "!supabase/migrations/meta",
-      "!.agents/skills"
+      "!.agents/skills",
+      "!apps/mobile-flutter"
     ]
   },
   "formatter": {

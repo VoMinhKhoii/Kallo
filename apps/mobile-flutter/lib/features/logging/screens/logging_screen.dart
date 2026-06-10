@@ -1,0 +1,126 @@
+import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../../../data/session_provider.dart';
+import '../../../shared/widgets/nham_text.dart';
+import '../../../shell/app_header.dart';
+import '../../../theme/nham_colors.dart';
+import '../../../theme/nham_theme.dart';
+import '../data/logging_keys.dart';
+import '../data/logging_models.dart';
+import '../data/logging_providers.dart';
+import '../widgets/feed_area.dart';
+import '../widgets/timeline_picker.dart';
+
+/// The logging tab. Owns the selected date + picker-expanded state so the date
+/// strip (in the header) and the feed share one source of truth — mirrors the
+/// RN `LoggingScreen` and the web `LoggingShell`'s `selectedDate`.
+///
+/// Ported 1:1 from `apps/mobile/src/app/(app)/(tabs)/logging.tsx`.
+class LoggingScreen extends ConsumerStatefulWidget {
+  const LoggingScreen({super.key});
+
+  @override
+  ConsumerState<LoggingScreen> createState() => _LoggingScreenState();
+}
+
+class _LoggingScreenState extends ConsumerState<LoggingScreen> {
+  final String _today = todayDateString();
+  late String _selectedDate = _today;
+  bool _pickerExpanded = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final session = ref.watch(currentSessionProvider);
+    final userId = session?.user.id;
+
+    if (userId == null) {
+      return _centered(
+        NhamText('common.notSignedIn'.tr(), variant: NhamTextVariant.small),
+      );
+    }
+
+    final profileAsync = ref.watch(loggingProfileProvider);
+    final mealDates =
+        ref.watch(mealDatesProvider(userId)).valueOrNull ?? const <String>[];
+
+    if (profileAsync.isLoading) {
+      return _centered(
+        const CircularProgressIndicator(color: NhamColors.accent),
+      );
+    }
+
+    final data = profileAsync.valueOrNull;
+    // Defaults mirror the web's DEFAULT_PROFILE so an incomplete-onboarding
+    // profile shows sensible targets, never /0g.
+    final profile = LoggingProfile(
+      userId: userId,
+      calorieTarget: (data?['calorieTarget'] as num?)?.toInt() ?? 2000,
+      proteinTargetG: (data?['proteinTargetG'] as num?)?.toInt() ?? 150,
+      carbsTargetG: (data?['carbsTargetG'] as num?)?.toInt() ?? 250,
+      fatTargetG: (data?['fatTargetG'] as num?)?.toInt() ?? 65,
+    );
+
+    // Header in normal flow at the top; the collapse scrim overlays ONLY the
+    // feed region below it (so the strip's cells/chevrons stay tappable while
+    // the scrim catches taps everywhere else — the RN z-20 header / z-10 scrim
+    // contract). Tapping outside the strip collapses it (web parity).
+    return ColoredBox(
+      color: NhamColors.surface,
+      child: SafeArea(
+        bottom: false,
+        child: Column(
+          children: [
+            Padding(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: NhamSpacing.sp3),
+              child: AppHeader(
+                expanded: _pickerExpanded,
+                child: TimelinePicker(
+                  dates: mealDates,
+                  today: _today,
+                  selectedDate: _selectedDate,
+                  expanded: _pickerExpanded,
+                  onSelectDate: (date) =>
+                      setState(() => _selectedDate = date),
+                  onExpandedChange: (v) =>
+                      setState(() => _pickerExpanded = v),
+                ),
+              ),
+            ),
+            Expanded(
+              child: Stack(
+                children: [
+                  Positioned.fill(
+                    child: FeedArea(profile: profile, date: _selectedDate),
+                  ),
+                  if (_pickerExpanded)
+                    Positioned.fill(
+                      child: GestureDetector(
+                        behavior: HitTestBehavior.translucent,
+                        onTap: () =>
+                            setState(() => _pickerExpanded = false),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _centered(Widget child) {
+    return ColoredBox(
+      color: NhamColors.surface,
+      child: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(NhamSpacing.sp6),
+          child: Center(child: child),
+        ),
+      ),
+    );
+  }
+}

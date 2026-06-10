@@ -1,5 +1,10 @@
 # Plan: Full 1:1 React Native + Expo Port of Nhẩm (UI + Logic Parity)
 
+> **⚠️ Historical / superseded.** The React Native + Expo app this plan produced (`apps/mobile`)
+> has been removed in favor of the Flutter port (`apps/mobile-flutter`). Kept as a record of the
+> original parity scope and the web↔mobile mapping; for the live mobile client see
+> [`apps/docs/mobile/`](../apps/docs/mobile/).
+>
 > **Status**: Verified, executable. Supersedes the 2026-05-16 draft.
 > **Last updated**: 2026-05-29
 > **Scope decision**: FULL parity (UI + logic) of all in-app surfaces — NOT an MVP-first cut. Admin is the only out-of-scope surface.

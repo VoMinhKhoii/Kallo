@@ -38,6 +38,7 @@ This file is the **single source of truth** for agent behavior. Rules here take 
 - **Write Tests**: Write tests (Vitest) for new features and bug fixes.
 - **Zod Validation**: Validate all external inputs (API params, form data, URL params) with Zod schemas.
 - **Pre-Read Docs**: Read `docs/DATABASE.md` before any DB/migration work. Read `docs/DATA.md` before food data work.
+- **Mobile Work**: Before developing or releasing the Flutter mobile app (`apps/mobile-flutter`), read `apps/docs/mobile/` — `development.md` (local run loop via `./tool/run_dev.sh`, env/dart-defines, the iCloud→`/tmp` codesign caveat, CocoaPods gotcha), `releasing.md` (fastlane TestFlight pipeline, signing, export compliance), and `architecture.md` (structure + web parity). Mobile builds run from a `/tmp` mirror and ship via `fastlane ios beta` — **NOT** the web `bun`/EAS flows. The web rules in this file (TanStack Query, shadcn, Tailwind, Biome, etc.) do **not** apply to the Flutter app.
 - **Context7 MCP**: Use Context7 MCP tool to fetch up-to-date documentation when working with any technology. Training data may be outdated.
 - **Established Pattern Research**: When a task involves a third-party library, framework feature, or product behavior that is already widely solved by other developers, use Context7 early to review the official docs and recommended patterns before locking the design or implementation. Treat this as required research for state ownership, routing, persistence, and other edge-case-heavy behavior so we do not reinvent brittle local patterns.
 - **Conventional Commits**: Use conventional commit format: `feat:`, `fix:`, `chore:`, `refactor:`, `test:`, `docs:`.
@@ -53,6 +54,7 @@ This file is the **single source of truth** for agent behavior. Rules here take 
   Be conservative: **major bumps are rare** — most "big" features are still minor. If unsure, downgrade (use `feat:` instead of `feat!:`; use `fix:` instead of `feat:`). To override release-please's auto-computed version on a given release, either (a) add `Release-As: x.y.z` as a footer in any commit on the release, or (b) edit the open Release PR (title + `package.json` + `CHANGELOG.md`) before merging — release-please honors whatever ships in the PR.
 - **Formatting Workflow**: Run `bunx @biomejs/biome check --write .` before making manual formatting fixes.
 - **Proactive Refactoring**: Flag files >400 LOC and components >200 LOC for extraction into smaller units.
+- **Keep Docs Current**: When you change a workflow, command, env requirement, or architecture that an existing doc describes, update that doc in the **same** change. When you introduce a workflow or gotcha future sessions will need, create or extend the relevant doc — mobile dev/release lives in `apps/docs/mobile/`, project/web docs in `docs/`. Don't let docs drift from reality; verify every path/command before writing it.
 - **Session Retrospective**: At the end of every session, review mistakes/edge cases encountered and propose AGENTS.md updates. Verify all file paths and commands exist before adding new rules.
 
 ## 3. Commands

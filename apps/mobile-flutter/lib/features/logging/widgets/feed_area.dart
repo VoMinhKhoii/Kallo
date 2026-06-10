@@ -1,0 +1,842 @@
+import 'dart:math' as math;
+
+import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:uuid/uuid.dart';
+
+import '../../../data/api_client.dart';
+import '../../../models/meal.dart';
+import '../../../models/streaming.dart';
+import '../../../shared/widgets/nham_text.dart';
+import '../../../theme/nham_colors.dart';
+import '../../../theme/nham_theme.dart';
+import '../../../theme/nham_typography.dart';
+import '../data/logging_keys.dart';
+import '../data/logging_models.dart';
+import '../data/logging_providers.dart';
+import '../data/stream_analysis_controller.dart';
+import '../logic/format.dart';
+import 'calorie_ring.dart';
+import 'dashed_divider.dart';
+import 'empty_state.dart';
+import 'entrances.dart';
+import 'meal_entry.dart';
+import 'meal_input.dart';
+import 'persisted_meal_card.dart';
+import 'streaming_entry.dart';
+import 'timeline_rail.dart';
+
+const _uuid = Uuid();
+
+/// The day's meal feed: macro summary header, the scrollable card list, the
+/// pending/streaming footer, and the natural-language meal input.
+///
+/// Ported 1:1 from `apps/mobile/src/components/logging/feed/feed-area.tsx`.
+class FeedArea extends ConsumerStatefulWidget {
+  const FeedArea({super.key, required this.profile, required this.date});
+
+  final LoggingProfile profile;
+  final String date;
+
+  @override
+  ConsumerState<FeedArea> createState() => _FeedAreaState();
+}
+
+class _FeedAreaState extends ConsumerState<FeedArea> {
+  final MealInputController _inputController = MealInputController();
+  String? _errorText;
+
+  LoggingDayArgs get _dayArgs =>
+      LoggingDayArgs(widget.profile.userId, widget.date);
+
+  void _submit(String text) {
+    setState(() => _errorText = null);
+    _inputController.clear();
+    ref
+        .read(streamAnalysisProvider.notifier)
+        .analyze(
+          StreamAnalyzeInput(
+            message: text,
+            loggedDate: widget.date,
+            timezoneOffset: timezoneOffsetMinutes(),
+          ),
+        );
+  }
+
+  void _handleSuggestion(String s) {
+    _inputController.setText(s);
+    _inputController.focus();
+  }
+
+  void _onStreamChange(StreamAnalysisState? prev, StreamAnalysisState next) {
+    // On completion: refetch the day + meal-dates so the stored analysis shows
+    // as a confirmable card, then clear the local stream.
+    if (next.status == StreamStatus.done && next.analysisId != null) {
+      ref.invalidate(loggingDayProvider(_dayArgs));
+      ref.invalidate(mealDatesProvider(widget.profile.userId));
+      ref.read(streamAnalysisProvider.notifier).reset();
+    }
+    // On error: surface the message then reset.
+    if (next.status == StreamStatus.error) {
+      setState(() => _errorText = next.error ?? 'errors.internal'.tr());
+      ref.read(streamAnalysisProvider.notifier).reset();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    ref.listen<StreamAnalysisState>(streamAnalysisProvider, _onStreamChange);
+
+    final profile = widget.profile;
+    final stream = ref.watch(streamAnalysisProvider);
+    final dayAsync = ref.watch(loggingDayProvider(_dayArgs));
+    final confirmPending = ref.watch(confirmMealProvider(profile.userId));
+
+    final day = dayAsync.valueOrNull;
+    final isLoading = dayAsync.isLoading;
+
+    final persistedMeals = [...(day?.persistedMeals ?? const <PersistedMeal>[])]
+      ..sort((a, b) => a.loggedAt.compareTo(b.loggedAt));
+    final pendingConfirmations =
+        day?.pendingConfirmations ?? const <PendingMealConfirmation>[];
+
+    final isStreaming =
+        stream.status != StreamStatus.idle &&
+        stream.status != StreamStatus.done &&
+        stream.status != StreamStatus.error;
+
+    final dailyCalories = round0(
+      persistedMeals.fold<double>(
+        0,
+        (s, m) => s + (m.nutrition.caloriesKcal ?? 0),
+      ),
+    );
+    final dailyProtein = round0(
+      persistedMeals.fold<double>(0, (s, m) => s + (m.nutrition.proteinG ?? 0)),
+    );
+    final dailyCarbs = round0(
+      persistedMeals.fold<double>(
+        0,
+        (s, m) => s + (m.nutrition.carbohydrateG ?? 0),
+      ),
+    );
+    final dailyFat = round0(
+      persistedMeals.fold<double>(0, (s, m) => s + (m.nutrition.fatG ?? 0)),
+    );
+
+    final isEmpty =
+        !isLoading &&
+        persistedMeals.isEmpty &&
+        pendingConfirmations.isEmpty &&
+        !isStreaming;
+
+    final hasFooterItems = pendingConfirmations.isNotEmpty || isStreaming;
+
+    final macroBars = [
+      _MacroBarData(
+        'dashboard.protein'.tr(),
+        dailyProtein,
+        profile.proteinTargetG,
+        NhamColors.macroProtein,
+      ),
+      _MacroBarData(
+        'dashboard.carbs'.tr(),
+        dailyCarbs,
+        profile.carbsTargetG,
+        NhamColors.macroCarbs,
+      ),
+      _MacroBarData(
+        'dashboard.fat'.tr(),
+        dailyFat,
+        profile.fatTargetG,
+        NhamColors.macroFat,
+      ),
+    ];
+
+    final bottomInset = MediaQuery.of(context).padding.bottom;
+
+    return Column(
+      children: [
+        // Macro summary — enters opacity + slide-down (350ms). While the day
+        // query loads, the live ring/bars are replaced by a 2-col skeleton.
+        FadeInUp(
+          child: Container(
+            color: NhamColors.surface,
+            padding: const EdgeInsets.fromLTRB(
+              NhamSpacing.sp3,
+              NhamSpacing.sp3,
+              NhamSpacing.sp3,
+              NhamSpacing.sp2,
+            ),
+            child:
+                isLoading
+                    ? const _MacroSummarySkeleton()
+                    : Row(
+                      children: [
+                        Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            CalorieRing(
+                              current: dailyCalories.toDouble(),
+                              target: profile.calorieTarget.toDouble(),
+                            ),
+                            const SizedBox(height: 4), // gap-1
+                            NhamText(
+                              '$dailyCalories / ${profile.calorieTarget} kcal',
+                              variant: NhamTextVariant.numCaption,
+                            ),
+                          ],
+                        ),
+                        const SizedBox(width: NhamSpacing.sp4), // gap-4
+                        Expanded(
+                          child: Column(
+                            children: [
+                              for (var i = 0; i < macroBars.length; i++) ...[
+                                _MacroRow(data: macroBars[i]),
+                                if (i != macroBars.length - 1)
+                                  const SizedBox(
+                                    height: NhamSpacing.sp2,
+                                  ), // gap-2
+                              ],
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+          ),
+        ),
+
+        // The card list.
+        Expanded(
+          child: _buildList(
+            isEmpty: isEmpty,
+            isLoading: isLoading,
+            hasError: dayAsync.hasError,
+            persistedMeals: persistedMeals,
+            pendingConfirmations: pendingConfirmations,
+            isStreaming: isStreaming,
+            stream: stream,
+            hasFooterItems: hasFooterItems,
+            confirmPending: confirmPending,
+          ),
+        ),
+
+        if (_errorText != null)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+              NhamSpacing.sp3,
+              0,
+              NhamSpacing.sp3,
+              NhamSpacing.sp2,
+            ),
+            child: NhamText(
+              _errorText!,
+              variant: NhamTextVariant.small,
+              style: const TextStyle(color: NhamColors.danger),
+            ),
+          ),
+
+        Padding(
+          padding: EdgeInsets.fromLTRB(
+            NhamSpacing.sp3,
+            NhamSpacing.sp2,
+            NhamSpacing.sp3,
+            bottomInset + NhamSpacing.sp2,
+          ),
+          child: MealInput(
+            controller: _inputController,
+            onSubmit: _submit,
+            onCancel: () => ref.read(streamAnalysisProvider.notifier).cancel(),
+            disabled: stream.isAnalyzing,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildList({
+    required bool isEmpty,
+    required bool isLoading,
+    required bool hasError,
+    required List<PersistedMeal> persistedMeals,
+    required List<PendingMealConfirmation> pendingConfirmations,
+    required bool isStreaming,
+    required StreamAnalysisState stream,
+    required bool hasFooterItems,
+    required bool confirmPending,
+  }) {
+    // Day fetch error → red alert card with retry (LoggingDayErrorState).
+    if (hasError && persistedMeals.isEmpty && !hasFooterItems) {
+      return _LoggingDayErrorState(
+        onRetry: () => ref.invalidate(loggingDayProvider(_dayArgs)),
+      );
+    }
+
+    // FlatList contentContainerStyle: empty → centered with vertical padding;
+    // populated → padding 12 + extra left gutter of 24 (for the timeline rail).
+    if (persistedMeals.isEmpty) {
+      final Widget body;
+      if (isEmpty) {
+        body = EmptyState(onSuggestion: _handleSuggestion);
+      } else if (isLoading) {
+        // 2-item card skeleton with the timeline rail (LoggingDaySkeleton).
+        body = const _LoggingDaySkeleton();
+      } else {
+        body = const SizedBox.shrink();
+      }
+
+      // When there ARE footer items (pending/streaming) but no persisted meals,
+      // the footer still renders with the gutter padding.
+      if (hasFooterItems) {
+        return SingleChildScrollView(
+          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+          padding: const EdgeInsets.only(
+            top: NhamSpacing.sp3,
+            bottom: NhamSpacing.sp3,
+            left: NhamSpacing.sp3 + NhamSpacing.sp6,
+            right: NhamSpacing.sp3,
+          ),
+          child: _Footer(
+            pendingConfirmations: pendingConfirmations,
+            isStreaming: isStreaming,
+            stream: stream,
+            confirmPending: confirmPending,
+            onConfirm: _confirm,
+          ),
+        );
+      }
+
+      // The loading skeleton sits in the timeline gutter (it carries its own
+      // rail); the empty state is centered.
+      if (isLoading) {
+        return SingleChildScrollView(
+          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+          padding: const EdgeInsets.only(
+            top: NhamSpacing.sp3,
+            bottom: NhamSpacing.sp3,
+            left: NhamSpacing.sp3 + NhamSpacing.sp6,
+            right: NhamSpacing.sp3,
+          ),
+          child: body,
+        );
+      }
+
+      return SingleChildScrollView(
+        keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: NhamSpacing.sp6),
+          child: Center(child: body),
+        ),
+      );
+    }
+
+    return ListView.separated(
+      keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+      padding: const EdgeInsets.only(
+        top: NhamSpacing.sp3,
+        bottom: NhamSpacing.sp3,
+        left: NhamSpacing.sp3 + NhamSpacing.sp6, // padding + timeline gutter
+        right: NhamSpacing.sp3,
+      ),
+      itemCount: persistedMeals.length + (hasFooterItems ? 1 : 0),
+      separatorBuilder: (_, __) => const SizedBox(height: NhamSpacing.sp2),
+      itemBuilder: (context, index) {
+        if (index < persistedMeals.length) {
+          final meal = persistedMeals[index];
+          return FadeIn(
+            key: ValueKey(meal.id),
+            child: PersistedMealCard(
+              meal: meal,
+              isLast: !hasFooterItems && index == persistedMeals.length - 1,
+            ),
+          );
+        }
+        return _Footer(
+          pendingConfirmations: pendingConfirmations,
+          isStreaming: isStreaming,
+          stream: stream,
+          confirmPending: confirmPending,
+          onConfirm: _confirm,
+        );
+      },
+    );
+  }
+
+  Future<void> _confirm(String analysisId, List<MealQuantityEdit> edits) async {
+    try {
+      await ref
+          .read(confirmMealProvider(widget.profile.userId).notifier)
+          .confirm(
+            analysisId: analysisId,
+            mealId: _uuid.v4(),
+            originDate: widget.date,
+            edits:
+                edits.isEmpty
+                    ? null
+                    : [
+                      for (final e in edits)
+                        {
+                          'mealItemOrder': e.mealItemOrder,
+                          'newGrams': e.newGrams,
+                        },
+                    ],
+          );
+    } catch (_) {
+      // confirm() rolls the optimistic removal back on failure; surface the
+      // error too so it isn't silently swallowed.
+      if (mounted) setState(() => _errorText = 'errors.internal'.tr());
+    }
+  }
+}
+
+class _Footer extends StatelessWidget {
+  const _Footer({
+    required this.pendingConfirmations,
+    required this.isStreaming,
+    required this.stream,
+    required this.confirmPending,
+    required this.onConfirm,
+  });
+
+  final List<PendingMealConfirmation> pendingConfirmations;
+  final bool isStreaming;
+  final StreamAnalysisState stream;
+  final bool confirmPending;
+  final void Function(String analysisId, List<MealQuantityEdit> edits)
+  onConfirm;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        for (var i = 0; i < pendingConfirmations.length; i++)
+          MealEntry(
+            key: ValueKey(pendingConfirmations[i].id),
+            rawInput: pendingConfirmations[i].rawInput,
+            parsedMeal: pendingConfirmations[i].parsedMeal,
+            busy: confirmPending,
+            isLast: !isStreaming && i == pendingConfirmations.length - 1,
+            onConfirm: (edits) => onConfirm(pendingConfirmations[i].id, edits),
+          ),
+        if (isStreaming)
+          StreamingEntry(
+            status: stream.status,
+            items: stream.items,
+            completedItems: stream.completedItems,
+            isLast: true,
+          ),
+      ],
+    );
+  }
+}
+
+class _MacroBarData {
+  const _MacroBarData(this.label, this.current, this.target, this.color);
+  final String label;
+  final int current;
+  final int target;
+  final Color color;
+}
+
+class _MacroRow extends StatelessWidget {
+  const _MacroRow({required this.data});
+  final _MacroBarData data;
+
+  @override
+  Widget build(BuildContext context) {
+    final pct =
+        data.target > 0
+            ? math
+                .max(0, math.min(100, (data.current / data.target) * 100))
+                .toDouble()
+            : 0.0;
+    return Row(
+      children: [
+        SizedBox(
+          width: 48, // w-12
+          child: NhamText(
+            data.label,
+            variant: NhamTextVariant.macroLabel,
+            style: const TextStyle(color: NhamColors.textMuted70),
+          ),
+        ),
+        const SizedBox(width: NhamSpacing.sp3), // gap-3
+        Expanded(child: _MacroBar(pct: pct, color: data.color)),
+        const SizedBox(width: NhamSpacing.sp3),
+        SizedBox(
+          width: 56, // w-14
+          child: NhamText(
+            '${data.current}/${data.target}g',
+            variant: NhamTextVariant.macroValue,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// A single macro bar whose fill sweeps 0→pct (1000ms, delay 200ms, easeOut).
+class _MacroBar extends StatefulWidget {
+  const _MacroBar({required this.pct, required this.color});
+  final double pct;
+  final Color color;
+
+  @override
+  State<_MacroBar> createState() => _MacroBarState();
+}
+
+class _MacroBarState extends State<_MacroBar>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _c = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 1000),
+  );
+  late Animation<double> _anim = _build(0, widget.pct);
+
+  Animation<double> _build(double from, double to) => Tween<double>(
+    begin: from,
+    end: to,
+  ).chain(CurveTween(curve: Curves.easeOut)).animate(_c);
+
+  @override
+  void initState() {
+    super.initState();
+    Future<void>.delayed(const Duration(milliseconds: 200), () {
+      if (mounted) _c.forward();
+    });
+  }
+
+  @override
+  void didUpdateWidget(_MacroBar oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.pct != widget.pct) {
+      _anim = _build(_anim.value, widget.pct);
+      _c
+        ..reset()
+        ..forward();
+    }
+  }
+
+  @override
+  void dispose() {
+    _c.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(NhamRadii.pill),
+      child: Container(
+        height: 6, // h-1.5
+        color: NhamColors.track,
+        child: AnimatedBuilder(
+          animation: _anim,
+          builder:
+              (context, _) => FractionallySizedBox(
+                alignment: Alignment.centerLeft,
+                widthFactor: (_anim.value / 100).clamp(0, 1),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: widget.color,
+                    borderRadius: BorderRadius.circular(NhamRadii.pill),
+                  ),
+                ),
+              ),
+        ),
+      ),
+    );
+  }
+}
+
+// ── Loading / error states ──────────────────────────────────────────────
+
+/// A continuously pulsing wrapper (Tailwind animate-pulse: opacity 1→.5→1 over
+/// 2s cubic-bezier(0.4,0,0.6,1)).
+class _Pulse extends StatefulWidget {
+  const _Pulse({required this.child});
+  final Widget child;
+
+  @override
+  State<_Pulse> createState() => _PulseState();
+}
+
+class _PulseState extends State<_Pulse> with SingleTickerProviderStateMixin {
+  late final AnimationController _c = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 2000),
+  )..repeat(reverse: true);
+  late final Animation<double> _opacity = Tween<double>(
+    begin: 0.5,
+    end: 1,
+  ).animate(CurvedAnimation(parent: _c, curve: const Cubic(0.4, 0, 0.6, 1)));
+
+  @override
+  void dispose() {
+    _c.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) =>
+      FadeTransition(opacity: _opacity, child: widget.child);
+}
+
+Widget _bar(double width, double height, Color color) => Container(
+  width: width,
+  height: height,
+  decoration: BoxDecoration(
+    color: color,
+    borderRadius: BorderRadius.circular(NhamRadii.pill),
+  ),
+);
+
+/// Macro header skeleton: a 2-col grid of 4 rounded-2xl border/50 bg-hover/25
+/// tiles, each with a label bar + accent/25 value bar (MacroSummarySkeleton).
+class _MacroSummarySkeleton extends StatelessWidget {
+  const _MacroSummarySkeleton();
+
+  static const _labelWidths = [64.0, 52.0, 58.0, 48.0];
+
+  @override
+  Widget build(BuildContext context) {
+    Widget tile(int i) => Container(
+      padding: const EdgeInsets.all(NhamSpacing.sp3), // p-3
+      decoration: BoxDecoration(
+        color: const Color(0x40F0EAE0), // bg-nham-hover/25
+        borderRadius: BorderRadius.circular(NhamRadii.containerLg), // 2xl
+        border: Border.all(color: NhamColors.borderHalf), // border/50
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _bar(_labelWidths[i], 12, const Color(0xB3E8D5B5)), // border/70
+          const SizedBox(height: NhamSpacing.sp2), // mb-2
+          _bar(64, 20, NhamColors.accent35), // h-5 w-16 accent/25
+        ],
+      ),
+    );
+
+    return _Pulse(
+      child: Column(
+        children: [
+          Row(
+            children: [
+              Expanded(child: tile(0)),
+              const SizedBox(width: NhamSpacing.sp3), // gap-3
+              Expanded(child: tile(1)),
+            ],
+          ),
+          const SizedBox(height: NhamSpacing.sp3),
+          Row(
+            children: [
+              Expanded(child: tile(2)),
+              const SizedBox(width: NhamSpacing.sp3),
+              Expanded(child: tile(3)),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Day-loading skeleton: 2 pulsing ghost cards with the timeline rail, a title
+/// bar, 3 text lines, and a dashed-top totals row (LoggingDaySkeleton).
+class _LoggingDaySkeleton extends StatelessWidget {
+  const _LoggingDaySkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    Widget ghostCard(bool isLast) => TimelineRail(
+      isLast: isLast,
+      dotChild: Container(
+        width: 8,
+        height: 8,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: NhamColors.surface,
+          border: Border.all(color: NhamColors.accent60, width: 2),
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.only(bottom: NhamSpacing.sp8), // gap-8
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _bar(64, 12, const Color(0xB3E8D5B5)), // border/70 time bar
+            const SizedBox(height: NhamSpacing.sp2), // mb-2
+            Container(
+              padding: const EdgeInsets.all(NhamSpacing.sp4), // p-5→16
+              decoration: BoxDecoration(
+                color: const Color(0x33F0EAE0), // bg-nham-hover/20
+                borderRadius: BorderRadius.circular(
+                  NhamRadii.containerLg,
+                ), // 2xl
+                border: Border.all(color: NhamColors.borderSoft), // /60
+                boxShadow: const [NhamShadows.sm],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  LayoutBuilder(
+                    builder:
+                        (_, c) => _bar(
+                          c.maxWidth * 2 / 3,
+                          20,
+                          const Color(0xB3E8D5B5),
+                        ),
+                  ),
+                  const SizedBox(height: NhamSpacing.sp4), // mb-4
+                  LayoutBuilder(
+                    builder:
+                        (_, c) => _bar(c.maxWidth, 12, NhamColors.borderSoft),
+                  ),
+                  const SizedBox(height: NhamSpacing.sp2),
+                  LayoutBuilder(
+                    builder:
+                        (_, c) =>
+                            _bar(c.maxWidth * 5 / 6, 12, NhamColors.borderHalf),
+                  ),
+                  const SizedBox(height: NhamSpacing.sp2),
+                  LayoutBuilder(
+                    builder:
+                        (_, c) => _bar(
+                          c.maxWidth * 3 / 5,
+                          12,
+                          NhamColors.borderBiscotti40,
+                        ),
+                  ),
+                  const SizedBox(height: NhamSpacing.sp5), // mt-5
+                  const DashedDivider(color: NhamColors.borderHalf),
+                  const SizedBox(height: NhamSpacing.sp3), // pt-3
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      _bar(112, 12, NhamColors.borderHalf), // w-28
+                      _bar(64, 16, NhamColors.accent35), // accent/25
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    return _Pulse(child: Column(children: [ghostCard(false), ghostCard(true)]));
+  }
+}
+
+/// Day fetch error: a red alert card with an AlertCircle, title/desc, and a
+/// retry pill whose icon spins while refetching (LoggingDayErrorState).
+class _LoggingDayErrorState extends StatelessWidget {
+  const _LoggingDayErrorState({required this.onRetry});
+  final VoidCallback onRetry;
+
+  static const _red50 = Color(0xCCFEF2F2); // bg-red-50/80
+  static const _red200 = Color(0xB3FECACA); // border-red-200/70
+  static const _red600 = Color(0xFFDC2626);
+  static const _red950 = Color(0xFF450A0A);
+  static const _red900 = Color(0xCC7F1D1D); // red-900/80
+  static const _red100 = Color(0xFFFEE2E2);
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(NhamSpacing.sp6),
+        child: Container(
+          constraints: const BoxConstraints(maxWidth: 448), // max-w-md
+          padding: const EdgeInsets.all(NhamSpacing.sp4), // p-4
+          decoration: BoxDecoration(
+            color: _red50,
+            borderRadius: BorderRadius.circular(NhamRadii.containerLg), // 2xl
+            border: Border.all(color: _red200),
+            boxShadow: const [NhamShadows.sm],
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Padding(
+                padding: EdgeInsets.only(top: 2), // mt-0.5
+                child: Icon(
+                  Icons.error_outline, // lucide AlertCircle
+                  size: 20,
+                  color: _red600,
+                ),
+              ),
+              const SizedBox(width: NhamSpacing.sp3), // gap-3
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    NhamText(
+                      'logging.feedArea.loadErrorTitle'.tr(),
+                      variant: NhamTextVariant.small,
+                      style: NhamTextStyles.sansSemiBold(
+                        fontSize: NhamFontSize.sm,
+                      ).copyWith(color: _red950),
+                    ),
+                    const SizedBox(height: 4), // mt-1
+                    NhamText(
+                      'logging.feedArea.loadErrorDescription'.tr(),
+                      variant: NhamTextVariant.small,
+                      style: const TextStyle(color: _red900),
+                    ),
+                    const SizedBox(height: NhamSpacing.sp3), // mt-3
+                    _RetryPill(onRetry: onRetry),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _RetryPill extends StatelessWidget {
+  const _RetryPill({required this.onRetry});
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onRetry,
+      child: Container(
+        constraints: const BoxConstraints(minHeight: 36), // min-h-9
+        padding: const EdgeInsets.symmetric(
+          horizontal: 14,
+          vertical: 8,
+        ), // px-3.5 py-2
+        decoration: BoxDecoration(
+          color: _LoggingDayErrorState._red100,
+          borderRadius: BorderRadius.circular(NhamRadii.pill),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(
+              Icons.refresh, // lucide RefreshCw
+              size: 16,
+              color: _LoggingDayErrorState._red950,
+            ),
+            const SizedBox(width: NhamSpacing.sp2), // gap-2
+            NhamText(
+              'logging.feedArea.retryDay'.tr(),
+              variant: NhamTextVariant.small,
+              style: NhamTextStyles.sansMedium(
+                fontSize: NhamFontSize.sm,
+              ).copyWith(color: _LoggingDayErrorState._red950),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

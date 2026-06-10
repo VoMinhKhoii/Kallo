@@ -166,9 +166,9 @@ Two seeded accounts: A logs a meal → shares to circle → B sees exactly one c
 ---
 
 ## Mobile parity follow-ups (NOT in this build)
-- React Native/Expo screens (Circle wall, add-friend sheet, share toggle) in `apps/mobile/` calling the **same** `/api/v1/groups/*` contract via `Authorization: Bearer <access_token>`.
-- Vendor-copy the pure helpers (`orderedPair`, handle blocklist) into the mobile package (Metro can't resolve runtime VALUE imports from web `lib/`).
-- Native share sheet on the Macro Card; design tokens already transcribed in `apps/mobile/src/theme/tokens.ts` keep the card identical.
+- Flutter screens (Circle wall, add-friend sheet, share toggle) in `apps/mobile-flutter/` calling the **same** `/api/v1/groups/*` contract via `Authorization: Bearer <access_token>`.
+- Re-implement the pure helpers (`orderedPair`, handle blocklist) in Dart in the Flutter app (it can't import the web `lib/` TS helpers).
+- Native share sheet on the Macro Card; design tokens already transcribed in `apps/mobile-flutter/lib/theme/nham_colors.dart` keep the card identical.
 - Realtime upgrade: swap the `refetchInterval` poll for a Supabase Realtime subscription on `circle_events` — **no REST contract change** (the `{actor_id, audience, type, ref_id, created_at}` shape is fixed now).
 
 ## Open questions

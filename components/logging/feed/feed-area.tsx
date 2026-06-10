@@ -359,6 +359,10 @@ export function FeedArea({
     // `messages` here would miss server-backed pending cards, which never enter
     // that array, and silently drop the save.)
     //
+    // Guard FIRST: without a parsedMeal/analysisId there is nothing to confirm,
+    // and filtering on an `undefined` analysisId below would drop every message
+    // that DOES have one.
+    if (!message.parsedMeal || !message.analysisId) return;
     // Drop any local copy before mutate so the optimistic cache update in
     // useConfirmMeal does not briefly expose it as an unsaved card. This is a
     // no-op for server-loaded pending cards.
@@ -367,7 +371,6 @@ export function FeedArea({
         (m) => m.id !== message.id && m.analysisId !== message.analysisId
       )
     );
-    if (!message.parsedMeal || !message.analysisId) return;
     // Client-minted id: doubles as the persisted row's PK and an idempotency
     // key, so the optimistic card and the refetched row share one stable React
     // key (no remount/re-fade after save).
