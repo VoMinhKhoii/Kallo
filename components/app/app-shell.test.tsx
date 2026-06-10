@@ -72,7 +72,7 @@ describe('AppShell', () => {
     wizardShellPropsSpy.mockReset();
   });
 
-  it('reopens onboarding at step 1 when a locale draft exists', () => {
+  it('reopens onboarding at step 1 when a locale draft exists', async () => {
     readStepOneLocaleDraftMock.mockReturnValue({
       countryOfOrigin: 'Vietnam',
       countryOfResidence: 'Australia',
@@ -94,7 +94,9 @@ describe('AppShell', () => {
       </AppShell>
     );
 
-    expect(screen.getByText('Wizard Shell')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText('Wizard Shell')).toBeInTheDocument();
+    });
     expect(wizardShellPropsSpy).toHaveBeenCalledWith(
       expect.objectContaining({
         initialStep: 1,

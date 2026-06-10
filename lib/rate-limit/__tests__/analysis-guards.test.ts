@@ -128,6 +128,7 @@ class InMemoryAnalysisGuardDb {
       }
     },
     insert: (table: unknown) => this.createInsertBuilder(this.state, table),
+    update: (table: unknown) => this.createUpdateBuilder(this.state, table),
   } as unknown as AppDb;
 
   getWindowCount(
@@ -179,9 +180,33 @@ class InMemoryAnalysisGuardDb {
     return this.state.budgetEvents.map((event) => ({ ...event }));
   }
 
+  seedInFlight(input: {
+    userId: string;
+    route?: string;
+    count?: number;
+    updatedAt: Date;
+  }) {
+    const route = input.route ?? analyzeMealRoute;
+    this.state.inFlight.set(
+      this.inFlightKey({
+        keyKind: 'user',
+        keyHash: hashedUser(input.userId),
+        route,
+      }),
+      {
+        keyKind: 'user',
+        keyHash: hashedUser(input.userId),
+        route,
+        count: input.count ?? 1,
+        updatedAt: new Date(input.updatedAt),
+      }
+    );
+  }
+
   private createClient(state: GuardState) {
     return {
       insert: (table: unknown) => this.createInsertBuilder(state, table),
+      update: (table: unknown) => this.createUpdateBuilder(state, table),
     } as unknown as AppDb;
   }
 
@@ -208,6 +233,19 @@ class InMemoryAnalysisGuardDb {
     };
   }
 
+  private createUpdateBuilder(state: GuardState, table: unknown) {
+    let rowValues: unknown;
+
+    return {
+      set: (values: unknown) => {
+        rowValues = values;
+        return {
+          where: () => this.applyUpdate(state, table, rowValues),
+        };
+      },
+    };
+  }
+
   private applyInsert(state: GuardState, table: unknown, values: unknown) {
     if (table === analysisRateLimitWindows) {
       return this.applyWindowInsert(state, values as WindowRow);
@@ -222,6 +260,14 @@ class InMemoryAnalysisGuardDb {
     }
 
     throw new Error('Unexpected table in analysis guard test DB');
+  }
+
+  private applyUpdate(state: GuardState, table: unknown, values: unknown) {
+    if (table === analysisInFlightLimits) {
+      return this.applyInFlightUpdate(state, values as InFlightRow);
+    }
+
+    throw new Error('Unexpected update table in analysis guard test DB');
   }
 
   private applyWindowInsert(state: GuardState, values: WindowRow) {
@@ -254,6 +300,20 @@ class InMemoryAnalysisGuardDb {
     });
 
     return Promise.resolve([{ count }]);
+  }
+
+  private applyInFlightUpdate(state: GuardState, values: InFlightRow) {
+    for (const [key, row] of state.inFlight.entries()) {
+      if (row.updatedAt < values.updatedAt) {
+        state.inFlight.set(key, {
+          ...row,
+          count: values.count,
+          updatedAt: new Date(values.updatedAt),
+        });
+      }
+    }
+
+    return Promise.resolve();
   }
 
   private applyBudgetEventInsert(state: GuardState, values: BudgetEventRow) {
@@ -660,6 +720,25 @@ describe('checkAnalysisGuards', () => {
     ).toBe(1);
 
     await runningGuard.release?.();
+  });
+
+  it('self-heals stale in-flight rows before checking concurrency', async () => {
+    const store = new InMemoryAnalysisGuardDb();
+    store.seedInFlight({
+      userId: 'user-1',
+      updatedAt: new Date(fixedNow.getTime() - 2 * 60 * 1000),
+    });
+
+    const guard = expectAllowedMealGuard(
+      await checkMealAnalysisGuard(store, {
+        concurrentUser: 1,
+      })
+    );
+
+    expect(store.getInFlightCount('user-1', analyzeMealRoute)).toBe(1);
+
+    await guard.release?.();
+    expect(store.getInFlightCount('user-1', analyzeMealRoute)).toBe(0);
   });
 
   it('decrements in-flight count exactly once per release handle', async () => {
