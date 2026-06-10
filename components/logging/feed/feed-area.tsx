@@ -28,13 +28,14 @@ import { useRecentCheatOccasions } from '@/hooks/use-recent-cheat-occasions';
 import { useStreamAnalysis } from '@/hooks/use-stream-analysis';
 import { useStreamingTerminalEffects } from '@/hooks/use-streaming-terminal-effects';
 import { useSubmitGuard } from '@/hooks/use-submit-guard';
+import { sumDisplayedNutrition } from '@/lib/ai/pipeline/goal-adjustment';
+import { isLikelyPartialDay } from '@/lib/nutrition/pattern/completeness';
 import {
   type RecentCheatOccasion,
   stageCheatRepeatAction,
 } from '@/lib/actions/meals';
-import { sumDisplayedNutrition } from '@/lib/ai/pipeline/goal-adjustment';
-import { isLikelyPartialDay } from '@/lib/nutrition/pattern/completeness';
 import type { CheatIntensity, CheatSliderLevels } from '@/lib/types/cheat';
+import type { InputMode } from '@/components/logging/input/cheat-mode-picker';
 import type {
   ChatMessage,
   MacroBreakdown,
@@ -203,13 +204,14 @@ export function FeedArea({
     useState(false);
 
   const lastPrefilledMealRef = useRef<string | null>(null);
-  // Cheat-meal mode: a buffet/indulgent occasion logged via sliders.
-  const [isCheat, setIsCheat] = useState(false);
+  // Input mode: normal / manual / cheat.
+  const [loggingMode, setLoggingMode] = useState<InputMode>('normal');
   // Indulgence magnitude (like an AI "thinking" level) — scales the estimate.
   const [cheatIntensity, setCheatIntensity] =
     useState<CheatIntensity>('medium');
   // "Log it again" — re-staging a past cheat occasion (a quick DB insert, no AI).
   const [isStagingRepeat, setIsStagingRepeat] = useState(false);
+  const isCheat = loggingMode === 'cheat';
   const recentCheatOccasions = useRecentCheatOccasions(profile.userId, isCheat);
 
   // Prefill from dashboard meal trigger; re-runs when initialMeal changes so
@@ -778,8 +780,8 @@ export function FeedArea({
               setStreamingMsgId(null);
             }}
             disabled={stream.isAnalyzing}
-            isCheat={isCheat}
-            onToggleCheat={setIsCheat}
+            mode={loggingMode}
+            onModeChange={setLoggingMode}
             cheatIntensity={cheatIntensity}
             onChangeIntensity={setCheatIntensity}
           />

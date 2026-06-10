@@ -14,4 +14,6 @@ export type PromptPersonalizationContext = Pick<
   | 'cookingHabits'
   | 'inputLanguage'
   | 'outputLanguage'
->;
+> & {
+  manualEstimation?: UserContext['manualEstimation'];
+};

@@ -136,6 +136,10 @@ async function validateRequest(request: NextRequest) {
           parsed.data.timezoneOffset
         ),
         mode: parsed.data.mode ?? 'precise',
+        loggingMode: parsed.data.loggingMode,
+        portionCertainty: parsed.data.portionCertainty,
+        mealContext: parsed.data.mealContext,
+        knownDetails: parsed.data.knownDetails,
         cheatType: parsed.data.cheatType,
         clarifyAnswer: parsed.data.clarifyAnswer,
         cheatIntensity: parsed.data.cheatIntensity,
@@ -158,6 +162,10 @@ export async function POST(request: NextRequest) {
     locale,
     loggedAt,
     mode,
+    loggingMode,
+    portionCertainty,
+    mealContext,
+    knownDetails,
     cheatType,
     clarifyAnswer,
     cheatIntensity,
@@ -169,6 +177,15 @@ export async function POST(request: NextRequest) {
     mealText: message,
     requestLocale: locale,
     profileLocale: profile.preferredLocale,
+    manualEstimation:
+      loggingMode === 'manual'
+        ? {
+            loggingMode,
+            portionCertainty,
+            mealContext,
+            knownDetails,
+          }
+        : undefined,
   });
   const ip = getRequestIp(request);
 
@@ -389,7 +406,19 @@ export async function POST(request: NextRequest) {
           .insert(pendingAnalyses)
           .values({
             userId,
-            pipelineResult: result.data,
+            pipelineResult: {
+              ...result.data,
+              ...(loggingMode === 'manual'
+                ? {
+                    manualLogging: {
+                      loggingMode,
+                      portionCertainty,
+                      mealContext,
+                      knownDetails,
+                    },
+                  }
+                : {}),
+            },
             rawInput: message,
             loggedAt,
           })

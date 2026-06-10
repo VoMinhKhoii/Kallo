@@ -76,4 +76,72 @@ describe('MealInput localStorage persistence', () => {
     render(<MealInput onSubmit={() => {}} />);
     expect(screen.getByRole('button', { name: /submit/i })).toBeEnabled();
   });
+
+  it('keeps item list hidden in normal mode', () => {
+    render(<MealInput onSubmit={() => {}} mode="normal" />);
+
+    expect(
+      screen.queryByPlaceholderText('manualLogging.qtyPlaceholder')
+    ).not.toBeInTheDocument();
+  });
+
+  it('shows item list when mode prop is manual', () => {
+    render(<MealInput onSubmit={() => {}} mode="manual" />);
+
+    expect(
+      screen.getByPlaceholderText('manualLogging.qtyPlaceholder')
+    ).toBeVisible();
+    expect(
+      screen.getByPlaceholderText('manualLogging.namePlaceholder')
+    ).toBeVisible();
+    expect(
+      screen.getByRole('button', { name: 'manualLogging.addItem' })
+    ).toBeVisible();
+  });
+
+  it('pre-fills first item name from textarea when switching to manual', async () => {
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+    const { rerender } = render(<MealInput onSubmit={() => {}} mode="normal" />);
+
+    await user.type(screen.getByRole('textbox'), 'phở bò');
+    rerender(<MealInput onSubmit={() => {}} mode="manual" />);
+
+    expect(
+      screen.getByPlaceholderText('manualLogging.namePlaceholder')
+    ).toHaveValue('phở bò');
+  });
+
+  it('serialises item list back to textarea when switching to normal', async () => {
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+    const { rerender } = render(<MealInput onSubmit={() => {}} mode="manual" />);
+
+    const qtyInput = screen.getByPlaceholderText('manualLogging.qtyPlaceholder');
+    const nameInput = screen.getByPlaceholderText('manualLogging.namePlaceholder');
+    await user.type(qtyInput, '1 bowl');
+    await user.type(nameInput, 'rice');
+
+    rerender(<MealInput onSubmit={() => {}} mode="normal" />);
+
+    expect(screen.getByRole('textbox')).toHaveValue('1 bowl rice');
+  });
+
+  it('submit is disabled in manual mode until an item is complete', async () => {
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+    render(<MealInput onSubmit={() => {}} mode="manual" />);
+
+    expect(screen.getByRole('button', { name: /submit/i })).toBeDisabled();
+
+    await user.type(screen.getByPlaceholderText('manualLogging.qtyPlaceholder'), '1 bowl');
+    await user.type(screen.getByPlaceholderText('manualLogging.namePlaceholder'), 'rice');
+
+    expect(screen.getByRole('button', { name: /submit/i })).toBeEnabled();
+  });
+
+  it('shows summary line in manual mode', () => {
+    render(<MealInput onSubmit={() => {}} mode="manual" />);
+
+    expect(
+      screen.getByText('manualLogging.summary.noContext')
+    ).toBeInTheDocument();
+  });
 });

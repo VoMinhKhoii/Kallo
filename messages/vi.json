@@ -929,6 +929,7 @@
   "logging": {
     "title": "Bạn đã ăn gì?",
     "placeholder": "Mô tả bữa ăn...",
+    "manualPlaceholder": "vd. 1 chén cơm, 100g gà nướng, 1 quả trứng...",
     "submit": "Phân tích",
     "stopAnalyzing": "Dừng phân tích",
     "analyzing": "Đang phân tích bữa ăn...",
@@ -996,9 +997,37 @@
       "toggleDetails": "Bật/tắt chi tiết bữa ăn",
       "total": "Tổng"
     },
+    "loggingMode": {
+      "default": "Default",
+      "manual": "Manual"
+    },
+    "manualLogging": {
+      "qtyPlaceholder": "khẩu phần",
+      "namePlaceholder": "tên món ăn",
+      "addItem": "Thêm món",
+      "removeItem": "Xóa món",
+      "context": {
+        "home_cooked": "Nấu ở nhà",
+        "restaurant": "Hàng quán",
+        "packaged": "Đóng gói",
+        "shared_buffet": "Ăn chung hoặc buffet"
+      },
+      "contextSummary": {
+        "home_cooked": "kiểu nấu ở nhà",
+        "restaurant": "kiểu hàng quán",
+        "packaged": "kiểu đồ đóng gói",
+        "shared_buffet": "kiểu ăn chung hoặc buffet"
+      },
+      "summary": {
+        "noContext": "AI dùng khẩu phần bạn mô tả",
+        "withContext": "AI dùng khẩu phần của bạn với giả định {context}"
+      }
+    },
     "mode": {
       "normal": "Bình thường",
       "normalDescription": "Tách bữa ăn thành nguyên liệu để ước tính chính xác",
+      "manual": "Thủ công",
+      "manualDescription": "Tự nhập từng món với số lượng cụ thể",
       "cheat": "Bữa xả",
       "cheatDescription": "Dịp khó đếm — chỉ cần kéo vài thanh trượt"
     },

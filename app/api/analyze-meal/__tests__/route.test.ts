@@ -324,6 +324,19 @@ describe('POST /api/analyze-meal', () => {
     expect(mockCreateGeminiClient).not.toHaveBeenCalled();
   });
 
+  it('returns 400 when manual logging omits required certainty', async () => {
+    const res = await POST(
+      createRequest({
+        ...mealRequestBody('phở bò'),
+        loggingMode: 'manual',
+      })
+    );
+
+    expect(res.status).toBe(400);
+    const json = await res.json();
+    expect(json.error.code).toBe('VALIDATION_FAILED');
+  });
+
   it('returns 404 when profile row is missing', async () => {
     mockSelect.mockResolvedValue([]);
     const res = await POST(createRequest(mealRequestBody('phở bò')));
@@ -600,6 +613,45 @@ describe('POST /api/analyze-meal', () => {
       inputLanguage: 'mixed',
       outputLanguage: 'vi',
     });
+  });
+
+  it('passes manual logging context into the pipeline and stored analysis', async () => {
+    mockAnalyzeMeal.mockResolvedValue({
+      success: true,
+      data: mockPipelineData,
+    });
+
+    const res = await POST(
+      createRequest({
+        ...mealRequestBody('phở bò'),
+        loggingMode: 'manual',
+        portionCertainty: 'rough',
+        mealContext: 'restaurant',
+        knownDetails: [{ type: 'grams', grams: 420 }],
+      })
+    );
+    await res.text();
+
+    const userContext = mockAnalyzeMeal.mock.calls[0]?.[1];
+    expect(userContext.manualEstimation).toEqual({
+      loggingMode: 'manual',
+      portionCertainty: 'rough',
+      mealContext: 'restaurant',
+      knownDetails: [{ type: 'grams', grams: 420 }],
+    });
+
+    expect(mockInsertValues).toHaveBeenCalledWith(
+      expect.objectContaining({
+        pipelineResult: expect.objectContaining({
+          manualLogging: {
+            loggingMode: 'manual',
+            portionCertainty: 'rough',
+            mealContext: 'restaurant',
+            knownDetails: [{ type: 'grams', grams: 420 }],
+          },
+        }),
+      })
+    );
   });
 
   it('uses profile locale fallback when request locale is omitted', async () => {

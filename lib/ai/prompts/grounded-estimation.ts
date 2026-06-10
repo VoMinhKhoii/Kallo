@@ -116,6 +116,49 @@ ${countryLines.length > 0 ? `${countryLines.join('\n')}\n` : ''}  oil_usage: ${c
 </user_context>`;
 }
 
+function buildManualEstimationBlock(
+  manualEstimation: PromptPersonalizationContext['manualEstimation']
+): string | null {
+  if (!manualEstimation || manualEstimation.loggingMode !== 'manual') {
+    return null;
+  }
+
+  const lines = [
+    `<manual_estimation>`,
+    `  portion_certainty: ${manualEstimation.portionCertainty ?? 'unspecified'}`,
+    `  meal_context: ${manualEstimation.mealContext ?? 'unspecified'}`,
+  ];
+
+  if ((manualEstimation.knownDetails?.length ?? 0) === 0) {
+    lines.push('  known_details: none');
+  } else {
+    lines.push('  known_details:');
+    for (const detail of manualEstimation.knownDetails ?? []) {
+      if (detail.type === 'grams') {
+        lines.push(`    - grams: ${detail.grams}g total`);
+        continue;
+      }
+
+      if (detail.type === 'serving_size') {
+        lines.push(`    - serving_size: ${detail.quantity} ${detail.label}`);
+        continue;
+      }
+
+      lines.push(
+        `    - exact_packaged_item: ${detail.packageLabel}${detail.servingLabel ? ` | ${detail.servingLabel}` : ''}`
+      );
+    }
+  }
+
+  lines.push(
+    '  precedence: known details are strongest anchors, meal context adjusts priors, portion certainty controls estimate width.',
+    '  interpretation: grams and serving details describe the total meal portion the user consumed.'
+  );
+  lines.push('</manual_estimation>');
+
+  return lines.join('\n');
+}
+
 function renderIngredient(ing: IngredientWithCandidates): string {
   const inputIng = ing.ingredient;
   const cookingMethod = inputIng.cookingMethod;
@@ -221,12 +264,17 @@ export function buildGroundedEstimationPrompt(args: {
   const label = args.label ?? getGroundedEstimationPromptLabel();
   const staticPrefix = buildStaticPrefix(label);
   const userContextBlock = buildUserContextBlock(args.userContext);
+  const manualEstimationBlock = buildManualEstimationBlock(
+    args.userContext.manualEstimation
+  );
   const originalPromptBlock = `<original_prompt>\n${escapeXmlAttribute(args.originalPrompt)}\n</original_prompt>`;
   const ingredientDataBlock = buildIngredientDataBlock(args.mealItems);
 
   return `${staticPrefix}
 
 ${userContextBlock}
+
+${manualEstimationBlock ? `${manualEstimationBlock}\n` : ''}
 
 ${originalPromptBlock}
 
@@ -287,6 +335,10 @@ const STATIC_PREFIX_COMPRESSED = `You are a grounded nutrition estimator. Return
     - candidate db_state="raw": grams = raw mass (convert from user's spoken cooked weight if needed using the yield priors above, or take the user's verbatim raw weight when state_hint="raw_weight").
     - candidate db_state="unknown": treat as cooked unless the user weighed raw.
   Server scales DB per_100g × grams / 100 — no further yield conversion happens server-side.
+  If <manual_estimation> is present:
+    - known_details are stronger than generic priors;
+    - meal_context nudges portion/oil assumptions;
+    - portion_certainty controls how tight or wide your bounds should be.
 </grams_rule>
 
 <macro_rule>
@@ -332,6 +384,14 @@ const STATIC_PREFIX_PRODUCTION = `You are a grounded nutrition expert. For each 
     3. Emit bounded macro triples reflecting cooking-method and user-typed prep modifiers, within tight envelopes the server enforces.
   The server then assembles final per-meal nutrition using your verdicts, grams, and macros — with DB-anchored protein/carb baked in unless you signaled a user-typed modifier.
 </your_pipeline_role>
+
+<manual_estimation_rule>
+  When a <manual_estimation> block is present, treat it as request-level guidance:
+    1. known_details are the strongest anchors;
+    2. meal_context adjusts portion and density priors;
+    3. portion_certainty controls uncertainty width.
+  Do not ignore explicit manual anchors just because a generic cuisine prior would suggest otherwise.
+</manual_estimation_rule>
 
 <output_contract>
   Return JSON only. Echo ingredientName and mealItemName exactly from <ingredient_data>.

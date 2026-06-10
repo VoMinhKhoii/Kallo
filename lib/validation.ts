@@ -1,4 +1,10 @@
 import { z } from 'zod';
+import {
+  KNOWN_DETAIL_TYPE_VALUES,
+  LOGGING_MODE_VALUES,
+  MEAL_CONTEXT_VALUES,
+  PORTION_CERTAINTY_VALUES,
+} from '@/lib/logging/manual-estimation';
 
 const urlOnlyPattern = /^(?:https?:\/\/\S*|www\.\S*)$/iu;
 
@@ -42,20 +48,94 @@ export const mealTextSchema = z
 /**
  * Schema for the meal analysis request body.
  */
-export const mealMessageSchema = z.object({
-  message: mealTextSchema,
-  locale: z.enum(['en', 'vi']).optional(),
-  loggedDate: dateStringSchema,
-  timezoneOffset: timezoneOffsetSchema,
-  // Cheat-meal logging: when mode='cheat', the route runs the slider estimator
-  // instead of the decomposition pipeline. `cheatType` is an optional chip and
-  // `clarifyAnswer` carries the reply to a prior vague-input clarifying question.
-  mode: z.enum(['precise', 'cheat']).optional(),
-  cheatType: z.string().trim().max(60).optional(),
-  clarifyAnswer: z.string().trim().max(200).optional(),
-  // Indulgence magnitude for cheat mode — scales the slider anchor gram ranges.
-  cheatIntensity: z.enum(['light', 'medium', 'heavy']).optional(),
-});
+export const mealMessageSchema = z
+  .object({
+    message: mealTextSchema,
+    locale: z.enum(['en', 'vi']).optional(),
+    loggedDate: dateStringSchema,
+    timezoneOffset: timezoneOffsetSchema,
+    loggingMode: z.enum(LOGGING_MODE_VALUES).default('default'),
+    // Cheat-meal logging: when mode='cheat', the route runs the slider estimator
+    // instead of the decomposition pipeline. `cheatType` is an optional chip and
+    // `clarifyAnswer` carries the reply to a prior vague-input clarifying question.
+    mode: z.enum(['precise', 'cheat']).optional(),
+    cheatType: z.string().trim().max(60).optional(),
+    clarifyAnswer: z.string().trim().max(200).optional(),
+    // Indulgence magnitude for cheat mode — scales the slider anchor gram ranges.
+    cheatIntensity: z.enum(['light', 'medium', 'heavy']).optional(),
+    portionCertainty: z.enum(PORTION_CERTAINTY_VALUES).optional(),
+    mealContext: z.enum(MEAL_CONTEXT_VALUES).optional(),
+    knownDetails: z
+      .array(
+        z.discriminatedUnion('type', [
+          z.object({
+            type: z.literal(KNOWN_DETAIL_TYPE_VALUES[0]),
+            grams: z
+              .number()
+              .positive('Gram phải lớn hơn 0.')
+              .max(5000, 'Gram phải nhỏ hơn hoặc bằng 5000.'),
+          }),
+          z.object({
+            type: z.literal(KNOWN_DETAIL_TYPE_VALUES[1]),
+            quantity: z
+              .number()
+              .positive('Khẩu phần phải lớn hơn 0.')
+              .max(100, 'Khẩu phần phải nhỏ hơn hoặc bằng 100.'),
+            label: z
+              .string()
+              .trim()
+              .min(1, 'Vui lòng nhập loại khẩu phần.')
+              .max(60, 'Loại khẩu phần quá dài.'),
+          }),
+          z.object({
+            type: z.literal(KNOWN_DETAIL_TYPE_VALUES[2]),
+            packageLabel: z
+              .string()
+              .trim()
+              .min(1, 'Vui lòng nhập chi tiết sản phẩm đóng gói.')
+              .max(120, 'Chi tiết sản phẩm đóng gói quá dài.'),
+            servingLabel: z
+              .string()
+              .trim()
+              .max(120, 'Chi tiết khẩu phần quá dài.')
+              .optional(),
+          }),
+        ])
+      )
+      .max(3, 'Tối đa 3 chi tiết bổ sung.')
+      .optional(),
+  })
+  .superRefine((value, ctx) => {
+    const isManual = value.loggingMode === 'manual';
+    const hasManualFields =
+      value.portionCertainty != null ||
+      value.mealContext != null ||
+      value.knownDetails != null;
+
+    if (value.mode === 'cheat' && isManual) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['loggingMode'],
+        message: 'Manual mode does not support cheat logging.',
+      });
+    }
+
+    if (!isManual && hasManualFields) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['loggingMode'],
+        message: 'Manual logging details require loggingMode="manual".',
+      });
+    }
+
+    if (isManual && value.portionCertainty == null) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['portionCertainty'],
+        message: 'Vui lòng chọn mức chắc chắn về khẩu phần.',
+      });
+    }
+  });
 
 /** Shared schema for a single weight log entry. */
 export const weightLogSchema = z.object({
