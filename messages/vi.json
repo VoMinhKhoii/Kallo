@@ -1034,7 +1034,8 @@
     "persistedMealCard": {
       "toggleDetails": "Bật/tắt chi tiết bữa ăn",
       "total": "Tổng",
-      "remove": "Xóa"
+      "remove": "Xóa",
+      "logAgain": "Ghi lại"
     },
     "mode": {
       "normal": "Bình thường",

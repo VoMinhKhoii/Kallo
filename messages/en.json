@@ -1034,7 +1034,8 @@
     "persistedMealCard": {
       "toggleDetails": "Toggle meal details",
       "total": "Total",
-      "remove": "Remove"
+      "remove": "Remove",
+      "logAgain": "Log again"
     },
     "mode": {
       "normal": "Normal",

@@ -752,6 +752,10 @@ export function FeedArea({
                     key={meal.id}
                     meal={meal}
                     onDelete={() => handleDeleteMeal(meal.id)}
+                    onLogAgain={() => {
+                      inputRef.current?.setText(meal.rawInput);
+                      inputRef.current?.focus();
+                    }}
                   />
                 ))}
               </AnimatePresence>

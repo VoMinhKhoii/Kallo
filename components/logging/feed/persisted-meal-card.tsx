@@ -18,6 +18,8 @@ interface PersistedMealCardProps {
   meal: PersistedMeal;
   /** Remove this meal (deferred delete with undo handled by the feed). */
   onDelete?: () => void;
+  /** Re-log: prefill the composer with this meal's raw input. */
+  onLogAgain?: () => void;
 }
 
 function ShareCardButton({ shareId }: { shareId: string }) {
@@ -122,15 +124,31 @@ function ShareToCircleButton({
   );
 }
 
-export function PersistedMealCard({ meal, onDelete }: PersistedMealCardProps) {
-  // Cheat meals render a dedicated, warmly-decorated card variant.
+export function PersistedMealCard({
+  meal,
+  onDelete,
+  onLogAgain,
+}: PersistedMealCardProps) {
+  // Cheat meals render a dedicated, warmly-decorated card variant; re-logging a
+  // cheat occasion has its own slider-seeded path (the occasion chips), so the
+  // "Log again" affordance lives only on precise meals.
   if (meal.entryMode === 'cheat') {
     return <CheatMealCard meal={meal} onDelete={onDelete} />;
   }
-  return <PrecisePersistedMealCard meal={meal} onDelete={onDelete} />;
+  return (
+    <PrecisePersistedMealCard
+      meal={meal}
+      onDelete={onDelete}
+      onLogAgain={onLogAgain}
+    />
+  );
 }
 
-function PrecisePersistedMealCard({ meal, onDelete }: PersistedMealCardProps) {
+function PrecisePersistedMealCard({
+  meal,
+  onDelete,
+  onLogAgain,
+}: PersistedMealCardProps) {
   const t = useTranslations('logging.persistedMealCard');
   const [isCollapsed, setIsCollapsed] = useState(true);
 
@@ -290,20 +308,30 @@ function PrecisePersistedMealCard({ meal, onDelete }: PersistedMealCardProps) {
           )}
         </AnimatePresence>
 
-        {/* Post-save actions — never at the text input */}
+        {/* Post-save actions — the correction row, never at the text input */}
         <div className="mt-3 flex items-center justify-between border-nham-border/40 border-t border-dashed pt-2.5">
-          {onDelete ? (
-            <button
-              type="button"
-              onClick={onDelete}
-              className="rounded-full px-2.5 py-1 font-medium text-[11px] text-nham-text-muted/70 transition-colors hover:bg-nham-danger/10 hover:text-nham-danger"
-              style={{ fontFamily: 'DM Sans, sans-serif' }}
-            >
-              {t('remove')}
-            </button>
-          ) : (
-            <span />
-          )}
+          <div className="flex items-center gap-0.5">
+            {onLogAgain && (
+              <button
+                type="button"
+                onClick={onLogAgain}
+                className="rounded-full px-2.5 py-1 font-medium text-[11px] text-nham-text-muted/70 transition-colors hover:bg-nham-hover/40 hover:text-nham-text"
+                style={{ fontFamily: 'DM Sans, sans-serif' }}
+              >
+                {t('logAgain')}
+              </button>
+            )}
+            {onDelete && (
+              <button
+                type="button"
+                onClick={onDelete}
+                className="rounded-full px-2.5 py-1 font-medium text-[11px] text-nham-text-muted/70 transition-colors hover:bg-nham-danger/10 hover:text-nham-danger"
+                style={{ fontFamily: 'DM Sans, sans-serif' }}
+              >
+                {t('remove')}
+              </button>
+            )}
+          </div>
           <ShareToCircleButton mealId={meal.id} share={meal.share} />
         </div>
       </div>
