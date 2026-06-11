@@ -6,7 +6,7 @@
     "finish": "Hoàn tất",
     "save": "Lưu",
     "cancel": "Hủy",
-    "loading": "Đang tải...",
+    "loading": "Đang tải…",
     "error": "Đã xảy ra lỗi",
     "retry": "Thử lại",
     "search": "Tìm kiếm",
@@ -744,7 +744,7 @@
         "analysis": "Phân tích dinh dưỡng bằng AI",
         "highConfidence": "Độ tin cậy cao",
         "totalCalories": "Tổng calo",
-        "inputPlaceholder": "Mô tả bữa ăn của bạn...",
+        "inputPlaceholder": "Mô tả bữa ăn của bạn…",
         "smartContext": "Ngữ cảnh thông minh",
         "smartContextText": "Dùng vùng miền, thói quen nấu ăn và mô tả bữa ăn để siết chặt ước tính."
       }
@@ -969,10 +969,10 @@
   },
   "logging": {
     "title": "Bạn đã ăn gì?",
-    "placeholder": "Mô tả bữa ăn...",
+    "placeholder": "Mô tả bữa ăn…",
     "submit": "Phân tích",
     "stopAnalyzing": "Dừng phân tích",
-    "analyzing": "Đang phân tích bữa ăn...",
+    "analyzing": "Đang phân tích bữa ăn…",
     "breakfast": "Sáng",
     "brunch": "Sáng muộn",
     "lunch": "Trưa",
@@ -1021,12 +1021,12 @@
       }
     },
     "streaming": {
-      "connecting": "Đang kết nối...",
-      "decomposing": "Đang tách bữa ăn của bạn...",
-      "matching": "Đang khớp nguyên liệu...",
-      "estimating": "Đang ước tính dinh dưỡng...",
-      "assembling": "Đang tổng hợp kết quả...",
-      "analyzing": "Đang phân tích..."
+      "connecting": "Đang kết nối…",
+      "decomposing": "Đang tách bữa ăn của bạn…",
+      "matching": "Đang khớp nguyên liệu…",
+      "estimating": "Đang ước tính dinh dưỡng…",
+      "assembling": "Đang tổng hợp kết quả…",
+      "analyzing": "Đang phân tích…"
     },
     "mealEntry": {
       "edit": "Sửa",
@@ -1058,7 +1058,7 @@
       "medium": "Vừa",
       "heavy": "Nhiều"
     },
-    "cheatPlaceholder": "Buffet nướng Hàn, ăn hết mình luôn...",
+    "cheatPlaceholder": "Buffet nướng Hàn, ăn hết mình luôn…",
     "cheatSliders": {
       "badge": "Bữa xả",
       "confirm": "Lưu bữa ăn",
