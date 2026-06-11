@@ -9,7 +9,7 @@ import {
   Wheat,
 } from 'lucide-react';
 import { motion } from 'motion/react';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Slider } from '@/components/ui/slider';
@@ -54,6 +54,7 @@ export function CheatSliderCard({
   onClarify,
 }: CheatSliderCardProps) {
   const t = useTranslations('logging.cheatSliders');
+  const locale = useLocale();
   const [levels, setLevels] = useState<CheatSliderLevels>(() =>
     defaultLevels(spec)
   );
@@ -63,7 +64,7 @@ export function CheatSliderCard({
     [spec, levels]
   );
 
-  const timeLabel = timestamp.toLocaleTimeString([], {
+  const timeLabel = timestamp.toLocaleTimeString(locale, {
     hour: '2-digit',
     minute: '2-digit',
   });

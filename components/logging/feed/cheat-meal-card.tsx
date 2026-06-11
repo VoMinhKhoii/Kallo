@@ -2,7 +2,7 @@
 
 import { ChevronDown, PartyPopper } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { useState } from 'react';
 import {
   formatCaloriesOrNA,
@@ -43,9 +43,10 @@ function StopScale({ level, color }: { level: number; color: string }) {
 
 export function CheatMealCard({ meal, onDelete }: CheatMealCardProps) {
   const t = useTranslations('logging.cheatMealCard');
+  const locale = useLocale();
   const [isCollapsed, setIsCollapsed] = useState(true);
 
-  const timeLabel = new Date(meal.loggedAt).toLocaleTimeString([], {
+  const timeLabel = new Date(meal.loggedAt).toLocaleTimeString(locale, {
     hour: '2-digit',
     minute: '2-digit',
   });

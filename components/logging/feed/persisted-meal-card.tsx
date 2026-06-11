@@ -2,7 +2,7 @@
 
 import { ChevronDown, Loader2, Share2, Users2 } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { CheatMealCard } from '@/components/logging/feed/cheat-meal-card';
@@ -150,9 +150,10 @@ function PrecisePersistedMealCard({
   onLogAgain,
 }: PersistedMealCardProps) {
   const t = useTranslations('logging.persistedMealCard');
+  const locale = useLocale();
   const [isCollapsed, setIsCollapsed] = useState(true);
 
-  const timeLabel = new Date(meal.loggedAt).toLocaleTimeString([], {
+  const timeLabel = new Date(meal.loggedAt).toLocaleTimeString(locale, {
     hour: '2-digit',
     minute: '2-digit',
   });

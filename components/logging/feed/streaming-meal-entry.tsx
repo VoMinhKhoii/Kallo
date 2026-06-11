@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'motion/react';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import {
   formatCaloriesValue,
   formatMacroValue,
@@ -54,6 +54,7 @@ function CompletedItemRow({ item, index }: { item: MealItem; index: number }) {
 
 export function StreamingMealEntry({ message }: StreamingMealEntryProps) {
   const t = useTranslations('logging.streaming');
+  const locale = useLocale();
   const phase = message.streamingPhase ?? 'waiting';
   const namedItems = message.streamingItems ?? [];
   const completedItems = message.streamingCompletedItems ?? [];
@@ -74,7 +75,7 @@ export function StreamingMealEntry({ message }: StreamingMealEntryProps) {
   const anonymousCount = Math.max(0, DEFAULT_SKELETON_COUNT - totalKnown);
   const showAnonymous = phase !== 'assembling' && phase !== 'done';
 
-  const timeLabel = message.timestamp.toLocaleTimeString([], {
+  const timeLabel = message.timestamp.toLocaleTimeString(locale, {
     hour: '2-digit',
     minute: '2-digit',
   });

@@ -2,7 +2,7 @@
 
 import { ChevronDown } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { CircleEmpty } from '@/components/groups/circle-empty';
 import { CircleError } from '@/components/groups/circle-error';
@@ -26,10 +26,11 @@ function formatCalories(value: number | null, na: string): string {
  */
 function CircleCard({ entry }: { entry: CircleFeedEntry }) {
   const t = useTranslations('groups.wall');
+  const locale = useLocale();
   const [isCollapsed, setIsCollapsed] = useState(true);
   const { friend, meal } = entry;
 
-  const timeLabel = new Date(meal.sharedAt).toLocaleTimeString([], {
+  const timeLabel = new Date(meal.sharedAt).toLocaleTimeString(locale, {
     hour: '2-digit',
     minute: '2-digit',
   });

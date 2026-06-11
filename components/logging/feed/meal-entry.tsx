@@ -2,7 +2,7 @@
 
 import { Check, ChevronDown, Pencil } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { useEffect, useRef, useState } from 'react';
 import { MealEntryActions } from '@/components/logging/feed/meal-entry-actions';
 import { MealEntryItem } from '@/components/logging/feed/meal-entry-item';
@@ -31,6 +31,7 @@ export function MealEntry({
   isConfirming,
 }: MealEntryProps) {
   const t = useTranslations('logging.mealEntry');
+  const locale = useLocale();
   const [isEditing, setIsEditing] = useState(false);
   const [confirmed, setConfirmed] = useState(false);
   const [items, setItems] = useState<MealItem[]>(
@@ -71,7 +72,7 @@ export function MealEntry({
     onConfirm?.(edits);
   };
 
-  const timeLabel = message.timestamp.toLocaleTimeString([], {
+  const timeLabel = message.timestamp.toLocaleTimeString(locale, {
     hour: '2-digit',
     minute: '2-digit',
   });
