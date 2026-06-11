@@ -39,7 +39,7 @@ function SidebarInner() {
       style={{ fontFamily: 'DM Sans, sans-serif' }}
     >
       <h2
-        className="px-3 font-medium text-[#2C2416] text-lg tracking-tight"
+        className="px-3 font-normal text-[#2C2416] text-lg tracking-tight"
         style={{ fontFamily: 'Lora, serif' }}
       >
         {t('title')}

@@ -72,7 +72,7 @@ export function MacroSummary({
           center={
             <>
               <span
-                className="font-semibold text-[17px] text-nham-text tabular-nums leading-none sm:text-[19px]"
+                className="font-normal text-[17px] text-nham-text tabular-nums leading-none sm:text-[19px]"
                 style={{ fontFamily: 'Lora, serif' }}
               >
                 {centerValue.toLocaleString()}

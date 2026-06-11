@@ -282,7 +282,7 @@ export function ScreenOrigin({ defaultValues, onChange }: ScreenOriginProps) {
     <div className="space-y-6 lg:space-y-7">
       <div className="max-w-2xl">
         <h2
-          className="mb-2 font-medium text-2xl text-[#2C2416] tracking-tight"
+          className="mb-2 font-normal text-2xl text-[#2C2416] tracking-tight"
           style={{ fontFamily: 'Lora, serif' }}
         >
           {t('origin.title')}

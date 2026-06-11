@@ -41,7 +41,7 @@ export function ProblemSection() {
             repeat: Infinity,
             ease: 'linear',
           }}
-          className="whitespace-nowrap font-bold font-serif text-[20vw] leading-none tracking-tighter"
+          className="whitespace-nowrap font-normal font-serif text-[20vw] leading-none tracking-tighter"
         >
           404 NOT FOUND 404 NOT FOUND 404 NOT FOUND 404 NOT FOUND
         </motion.div>

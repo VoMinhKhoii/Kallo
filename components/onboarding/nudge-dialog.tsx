@@ -70,7 +70,7 @@ export function NudgeDialog({
       <DialogContent className="overflow-hidden rounded-2xl border border-[#E8D5B5]/60 bg-[#FFFCF8] p-6 shadow-lg sm:max-w-md">
         <DialogHeader className="space-y-3 pb-2 text-left">
           <DialogTitle
-            className="font-medium text-[#2C2416] text-xl"
+            className="font-normal text-[#2C2416] text-xl"
             style={{ fontFamily: 'Lora, serif' }}
           >
             Hồ sơ chưa hoàn tất

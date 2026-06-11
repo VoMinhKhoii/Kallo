@@ -70,7 +70,7 @@ export function TodayDock({ nutrition, meals, weekly }: TodayDockProps) {
           </span>
           <div className="mt-1 flex items-baseline gap-1.5">
             <span
-              className="font-semibold text-4xl text-nham-text tabular-nums leading-none tracking-[-0.04em] sm:text-5xl"
+              className="font-normal text-4xl text-nham-text tabular-nums leading-none tracking-[-0.04em] sm:text-5xl"
               style={{ fontFamily: 'Lora, serif' }}
             >
               {Math.abs(remaining).toLocaleString()}

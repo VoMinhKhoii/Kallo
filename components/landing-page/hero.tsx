@@ -155,7 +155,7 @@ export function Hero() {
                   {/* User Input Bubble */}
                   <div className="max-w-[82%] self-end">
                     <div className="rounded-3xl rounded-br-sm border border-[#E8D5B5]/20 bg-[#E8D5B5]/20 px-4 py-3 text-[#2C2416] shadow-sm">
-                      <p className="break-words font-medium font-serif text-sm leading-relaxed sm:text-[15px]">
+                      <p className="break-words font-normal font-serif text-sm leading-relaxed sm:text-[15px]">
                         {typedText}
                         {isTyping && (
                           <span className="ml-0.5 inline-block h-4 w-0.5 animate-pulse bg-[#C9A87C] align-middle"></span>
@@ -218,7 +218,7 @@ export function Hero() {
                           ))}
 
                           <div className="mt-1 flex items-center justify-between border-[#F0EAE0] border-t pt-2">
-                            <span className="font-medium font-serif text-[#2C2416] text-xs sm:text-sm">
+                            <span className="font-normal font-serif text-[#2C2416] text-xs sm:text-sm">
                               {t('demo.totalCalories')}
                             </span>
                             <span className="font-bold font-mono text-[#C9A87C] text-base sm:text-lg">

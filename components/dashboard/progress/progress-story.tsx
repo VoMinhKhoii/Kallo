@@ -60,7 +60,7 @@ export function ProgressStory({
           <div className="flex items-end justify-between gap-3">
             <div>
               <h2
-                className="font-semibold text-3xl text-nham-text tracking-[-0.04em]"
+                className="font-normal text-3xl text-nham-text tracking-[-0.04em]"
                 style={{ fontFamily: 'Lora, serif' }}
               >
                 {isInsufficient

@@ -26,7 +26,7 @@ export default async function ProfileSettingsPage() {
     return (
       <div className="flex flex-1 flex-col items-center justify-center gap-4 px-4 py-16">
         <h1
-          className="font-semibold text-[#2C2416] text-xl"
+          className="font-normal text-[#2C2416] text-xl"
           style={{ fontFamily: 'Lora, serif' }}
         >
           {t('emptyTitle')}
@@ -51,7 +51,7 @@ export default async function ProfileSettingsPage() {
     <div className="mx-auto w-full max-w-2xl px-3 py-4 sm:px-5 sm:py-8">
       <div className="mb-4 sm:mb-6">
         <h1
-          className="font-medium text-2xl text-[#2C2416] tracking-tight"
+          className="font-normal text-2xl text-[#2C2416] tracking-tight"
           style={{ fontFamily: 'Lora, serif' }}
         >
           {t('title')}
