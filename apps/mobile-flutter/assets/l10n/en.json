@@ -53,6 +53,11 @@
       "openMenu": "Open menu",
       "closeMenu": "Close menu"
     },
+    "tabBar": {
+      "today": "Today",
+      "log": "Log",
+      "patterns": "Patterns"
+    },
     "mainSidebar": {
       "navigationLabel": "Main navigation",
       "sectionLabel": "Main",

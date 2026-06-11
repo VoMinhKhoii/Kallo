@@ -45,9 +45,9 @@ class _SettingsList extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: NhamSpacing.sp3),
-            child: AppHeader(),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: NhamSpacing.sp3),
+            child: AppHeader(onBack: () => GoRouter.of(context).pop()),
           ),
           Expanded(
             child: Padding(

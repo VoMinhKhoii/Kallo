@@ -53,6 +53,11 @@
       "openMenu": "Mở menu",
       "closeMenu": "Đóng menu"
     },
+    "tabBar": {
+      "today": "Hôm nay",
+      "log": "Ghi món",
+      "patterns": "Xu hướng"
+    },
     "mainSidebar": {
       "navigationLabel": "Điều hướng chính",
       "sectionLabel": "Chính",

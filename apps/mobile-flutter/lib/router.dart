@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -27,11 +27,13 @@ final _shellKey = GlobalKey<NavigatorState>(debugLabel: 'shell');
 /// The app's [GoRouter], wired to Riverpod for the auth redirect.
 ///
 /// Routing model (per the port contract):
-///   • A [StatefulShellRoute] hosts the primary destinations behind the shell's
-///     left nav drawer (`/dashboard`, `/nutrition`, `/logging`, `/groups`,
-///     `/admin`) plus `/settings` (drawer footer). Each is its own branch so
-///     state/scroll persist across drawer navigations.
-///   • `/sign-in`, `/sign-up`, and `/onboarding` are standalone root routes.
+///   • A [StatefulShellRoute] hosts the primary destinations behind the bottom
+///     tab bar (`/dashboard`, `/nutrition`, `/logging`) plus the off-bar
+///     `/groups` and `/admin`. Each is its own branch so state/scroll persist
+///     across tab switches.
+///   • `/sign-in`, `/sign-up`, `/onboarding`, `/welcome`, and `/settings` are
+///     standalone root routes (`/settings` pushes over the shell from the
+///     header avatar with Cupertino swipe-back).
 ///   • `/` redirects based on auth + onboarding state.
 ///
 /// The redirect mirrors the RN gates (`app/index.tsx` +
@@ -145,10 +147,18 @@ final routerProvider = Provider<GoRouter>((ref) {
         parentNavigatorKey: _rootKey,
         builder: (context, state) => const WelcomeSetupScreen(),
       ),
+      // Settings pushes over the shell (Cupertino swipe-back) from the header
+      // avatar — it's an account surface, not a primary tab destination.
+      GoRoute(
+        path: '/settings',
+        parentNavigatorKey: _rootKey,
+        pageBuilder: (context, state) =>
+            const CupertinoPage<void>(child: SettingsScreen()),
+      ),
 
       // The primary destinations — each its own branch so state/scroll persist
-      // across drawer navigations. Order mirrors the web nav list (dashboard,
-      // nutrition, logging, groups, admin) plus settings (drawer footer).
+      // across tab switches. Order: dashboard, nutrition, logging, groups,
+      // admin (the last two are off-bar — reachable by route, not the tab bar).
       StatefulShellRoute.indexedStack(
         parentNavigatorKey: _rootKey,
         builder:
@@ -202,14 +212,6 @@ final routerProvider = Provider<GoRouter>((ref) {
                     (context, state) => const PlaceholderScreen(
                       titleKey: 'app.mainSidebar.admin',
                     ),
-              ),
-            ],
-          ),
-          StatefulShellBranch(
-            routes: [
-              GoRoute(
-                path: '/settings',
-                builder: (context, state) => const SettingsScreen(),
               ),
             ],
           ),

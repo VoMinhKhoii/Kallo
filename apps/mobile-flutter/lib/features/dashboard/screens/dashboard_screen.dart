@@ -66,7 +66,10 @@ class DashboardScreen extends ConsumerWidget {
         children: [
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: NhamSpacing.sp3),
-            child: AppHeader(child: Text('Hello', style: dashHeadline())),
+            child: AppHeader(
+              showAvatar: true,
+              child: Text('Hello', style: dashHeadline()),
+            ),
           ),
           Expanded(
             child: bundle.when(
