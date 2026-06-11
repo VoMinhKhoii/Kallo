@@ -1105,6 +1105,21 @@
   },
   "settings": {
     "title": "Cài đặt",
+    "account": {
+      "title": "Tài khoản",
+      "exportTitle": "Xuất dữ liệu của tôi",
+      "exportError": "Không thể xuất dữ liệu. Vui lòng thử lại.",
+      "signOut": "Đăng xuất",
+      "signOutConfirmTitle": "Đăng xuất khỏi Nhẩm?",
+      "cancel": "Hủy",
+      "delete": "Xóa tài khoản",
+      "deleteScreenTitle": "Xóa tài khoản",
+      "deleteConsequence": "Thao tác này xóa hồ sơ, mọi bữa ăn bạn đã ghi, và lịch sử cân nặng của bạn. Không thể hoàn tác.",
+      "deleteConfirmLabel": "Nhập {word} để xác nhận",
+      "deleteConfirmWord": "XÓA",
+      "deleteConfirmAction": "Xóa tài khoản của tôi",
+      "deleteError": "Không thể xóa tài khoản. Vui lòng thử lại."
+    },
     "profile": "Hồ sơ",
     "preferences": "Tùy chỉnh",
     "bodyMetrics": "Chỉ số cơ thể",

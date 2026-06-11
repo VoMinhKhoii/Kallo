@@ -1106,6 +1106,21 @@
   },
   "settings": {
     "title": "Settings",
+    "account": {
+      "title": "Account",
+      "exportTitle": "Export my data",
+      "exportError": "Could not export your data. Please try again.",
+      "signOut": "Sign out",
+      "signOutConfirmTitle": "Sign out of Nhẩm?",
+      "cancel": "Cancel",
+      "delete": "Delete account",
+      "deleteScreenTitle": "Delete account",
+      "deleteConsequence": "This removes your profile, every meal you've logged, and your weight history. There is no undo.",
+      "deleteConfirmLabel": "Type {word} to confirm",
+      "deleteConfirmWord": "DELETE",
+      "deleteConfirmAction": "Delete my account",
+      "deleteError": "Could not delete your account. Please try again."
+    },
     "profile": "Profile",
     "preferences": "Preferences",
     "bodyMetrics": "Body Metrics",

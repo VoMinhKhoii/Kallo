@@ -40,7 +40,8 @@ class ApiError implements Exception {
   ]);
 
   @override
-  String toString() => 'ApiError($code, $status, retryable=$retryable): $message';
+  String toString() =>
+      'ApiError($code, $status, retryable=$retryable): $message';
 }
 
 /// Parse a `Retry-After` header: numeric seconds first, else HTTP-date delta.
@@ -96,17 +97,17 @@ class StreamAnalyzeInput {
   });
 
   Map<String, dynamic> toJson() => {
-        'message': message,
-        'loggedDate': loggedDate,
-        'timezoneOffset': timezoneOffset,
-        if (locale != null) 'locale': locale,
-      };
+    'message': message,
+    'loggedDate': loggedDate,
+    'timezoneOffset': timezoneOffset,
+    if (locale != null) 'locale': locale,
+  };
 }
 
 class ApiClient {
   ApiClient({http.Client? httpClient})
-      : _http = httpClient ?? http.Client(),
-        _baseUrl = Env.apiBaseUrl;
+    : _http = httpClient ?? http.Client(),
+      _baseUrl = Env.apiBaseUrl;
 
   final http.Client _http;
   final String _baseUrl;
@@ -118,11 +119,7 @@ class ApiClient {
     return token != null ? {'Authorization': 'Bearer $token'} : {};
   }
 
-  Future<T> _request<T>(
-    String method,
-    String path, [
-    Object? body,
-  ]) async {
+  Future<T> _request<T>(String method, String path, [Object? body]) async {
     final headers = await _authHeaders();
     if (body != null) {
       headers['Content-Type'] = 'application/json';
@@ -158,6 +155,16 @@ class ApiClient {
   /// DELETE.
   Future<T> delete<T>(String path) => _request<T>('DELETE', path);
 
+  /// Permanently delete the signed-in user's account and all their data
+  /// (`DELETE /api/v1/account`). The server removes the Supabase auth user,
+  /// which cascades to every app row. There is no undo.
+  Future<void> deleteAccount() => delete<dynamic>('/api/v1/account');
+
+  /// Fetch a complete JSON snapshot of the user's data
+  /// (`GET /api/v1/account`): profile, meals (with items), and weights.
+  Future<Map<String, dynamic>> exportMyData() =>
+      get<Map<String, dynamic>>('/api/v1/account');
+
   /// Fire-and-forget ping to wake a scale-to-zero backend on launch. Failures
   /// are swallowed (offline / unreachable is fine). Mirrors `warmupApi()`.
   Future<void> warmup() async {
@@ -182,9 +189,10 @@ class ApiClient {
     headers['Content-Type'] = 'application/json';
     headers['Accept'] = 'text/event-stream';
 
-    final req = http.Request('POST', Uri.parse('$_baseUrl/api/analyze-meal'))
-      ..headers.addAll(headers)
-      ..body = jsonEncode(input.toJson());
+    final req =
+        http.Request('POST', Uri.parse('$_baseUrl/api/analyze-meal'))
+          ..headers.addAll(headers)
+          ..body = jsonEncode(input.toJson());
 
     http.StreamedResponse streamed;
     try {
