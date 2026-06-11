@@ -23,10 +23,10 @@ interface TodayDockProps {
 
 export function TodayDock({ nutrition, meals, weekly }: TodayDockProps) {
   const t = useTranslations('dashboard');
-  const remaining = Math.max(
-    0,
-    nutrition.calories.target - nutrition.calories.current
-  );
+  // Over target is shown, not censored: the honest over-count with an eyebrow
+  // that flips to "Over target" in espresso ink — never a clamped 0, never red.
+  const remaining = nutrition.calories.target - nutrition.calories.current;
+  const isOver = remaining < 0;
   const macroItems = [
     {
       label: t('protein'),
@@ -61,15 +61,19 @@ export function TodayDock({ nutrition, meals, weekly }: TodayDockProps) {
     >
       <div className="grid min-h-0 gap-3 xl:grid-cols-[minmax(180px,0.34fr)_minmax(0,0.66fr)]">
         <div className="flex min-h-0 flex-col justify-center rounded-[1.25rem] bg-nham-surface/80 p-3">
-          <span className="block font-bold text-[10px] text-nham-stone uppercase tracking-[0.2em]">
-            {t('caloriesRemaining')}
+          <span
+            className={`block font-bold text-[10px] uppercase tracking-[0.2em] ${
+              isOver ? 'text-nham-text' : 'text-nham-stone'
+            }`}
+          >
+            {isOver ? t('overTarget') : t('caloriesRemaining')}
           </span>
           <div className="mt-1 flex items-baseline gap-1.5">
             <span
               className="font-semibold text-4xl text-nham-text tabular-nums leading-none tracking-[-0.04em] sm:text-5xl"
               style={{ fontFamily: 'Lora, serif' }}
             >
-              {remaining.toLocaleString()}
+              {Math.abs(remaining).toLocaleString()}
             </span>
             <span
               className="text-lg text-nham-text-muted italic"

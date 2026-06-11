@@ -693,7 +693,11 @@ export function FeedArea({
               {t('legacyMacroWarning')}
             </div>
           ) : (
-            <MacroSummary totals={dailyTotals} targets={targets} />
+            <MacroSummary
+              totals={dailyTotals}
+              targets={targets}
+              isPastDay={isPastDay}
+            />
           )}
         </div>
       </div>

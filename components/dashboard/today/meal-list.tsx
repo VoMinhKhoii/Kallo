@@ -52,7 +52,7 @@ export function MealList({ meals }: MealListProps) {
               </span>
             </div>
             <span className="shrink-0 font-mono text-[10px] text-nham-stone tabular-nums">
-              {meal.calories}
+              {meal.calories} kcal
             </span>
           </div>
         ))}
