@@ -1,5 +1,6 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../../models/nutrition.dart';
 import '../../../shared/widgets/section_eyebrow.dart';
@@ -102,7 +103,10 @@ class EditorialHeader extends StatelessWidget {
                           label: tr('nutrition.range.${_ranges[i]}'),
                           active: resolvedRange == _ranges[i],
                           disabled: disabled,
-                          onTap: () => onRangeChange(_inputFor(_ranges[i])),
+                          onTap: () {
+                            HapticFeedback.selectionClick();
+                            onRangeChange(_inputFor(_ranges[i]));
+                          },
                         ),
                       ],
                     ],

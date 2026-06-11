@@ -1,5 +1,6 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../../theme/nham_colors.dart';
 import '../../../theme/nham_theme.dart';
@@ -102,7 +103,10 @@ class _MealInputState extends State<MealInput>
   bool get _canSubmit => _controller.text.trim().isNotEmpty;
 
   void _submit() {
-    if (_canSubmit) widget.onSubmit(_controller.text);
+    if (_canSubmit) {
+      HapticFeedback.lightImpact();
+      widget.onSubmit(_controller.text);
+    }
   }
 
   @override

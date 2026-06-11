@@ -2,6 +2,7 @@ import 'dart:ui';
 
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../theme/nham_colors.dart';
@@ -118,6 +119,7 @@ class _ProfileFormState extends ConsumerState<ProfileForm> {
     final ok = await ref.read(saveProfileProvider.notifier).save(payload);
     if (!mounted) return;
     if (ok) {
+      HapticFeedback.mediumImpact(); // success cue on save
       _controller.markSaved();
     } else {
       setState(() => _errorText = tr('settings.profilePanel.saveError'));

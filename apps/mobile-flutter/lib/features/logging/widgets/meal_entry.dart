@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../../models/meal.dart';
 import '../../../shared/widgets/nham_text.dart';
@@ -54,6 +55,7 @@ class _MealEntryState extends State<MealEntry> {
   }
 
   void _change(String itemId, double delta) {
+    HapticFeedback.selectionClick();
     setState(() {
       _items = applyQuantityChange(_items, _original, itemId, delta);
       _confirmCoolingDown = true;

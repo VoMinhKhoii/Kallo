@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 
@@ -427,6 +428,8 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
                         },
                     ],
           );
+      // Saved — a success haptic confirms the meal landed.
+      HapticFeedback.mediumImpact();
     } catch (_) {
       // confirm() rolls the optimistic removal back on failure; surface the
       // error too so it isn't silently swallowed.

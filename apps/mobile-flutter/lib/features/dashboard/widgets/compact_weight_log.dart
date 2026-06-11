@@ -141,6 +141,7 @@ class _CompactWeightLogState extends ConsumerState<CompactWeightLog> {
         _dirty = false;
         _pending = false;
       });
+      HapticFeedback.mediumImpact(); // success cue on save
       _showFeedback(
         _Feedback(_FeedbackKind.success, tr('dashboard.weightCard.saved')),
       );

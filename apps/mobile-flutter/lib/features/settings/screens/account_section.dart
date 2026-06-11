@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
@@ -50,6 +51,7 @@ class _AccountSectionState extends ConsumerState<AccountSection> {
   }
 
   Future<void> _confirmSignOut() async {
+    HapticFeedback.lightImpact(); // sheet-open cue
     final confirmed = await showCupertinoModalPopup<bool>(
       context: context,
       builder:

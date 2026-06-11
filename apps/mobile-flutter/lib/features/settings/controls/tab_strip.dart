@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../../theme/nham_colors.dart';
 import '../../../theme/nham_theme.dart';
@@ -42,7 +43,10 @@ class TabStrip extends StatelessWidget {
             Expanded(child: _TabButton(
               tab: tabs[i],
               active: tabs[i].id == active,
-              onTap: () => onChange(tabs[i].id),
+              onTap: () {
+                HapticFeedback.selectionClick();
+                onChange(tabs[i].id);
+              },
             )),
           ],
         ],

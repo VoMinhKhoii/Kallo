@@ -1,5 +1,6 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../../shared/widgets/nham_text.dart';
 import '../../../theme/nham_colors.dart';
@@ -62,7 +63,10 @@ class _TimelinePickerState extends State<TimelinePicker> {
       _didSwipe = false;
       return;
     }
-    if (date != widget.selectedDate) widget.onSelectDate(date);
+    if (date != widget.selectedDate) {
+      HapticFeedback.selectionClick();
+      widget.onSelectDate(date);
+    }
     widget.onExpandedChange(false);
   }
 
