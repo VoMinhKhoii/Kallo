@@ -145,7 +145,7 @@ const ReceiptVisual = ({ stage }: { stage: number }) => {
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="font-medium">{t('modification')}</span>
-                  <span className="rounded border border-red-100 bg-red-50 px-2 py-0.5 font-bold text-red-600">
+                  <span className="rounded border border-nham-danger/30 bg-nham-danger/10 px-2 py-0.5 font-bold text-nham-danger">
                     {t('modificationValue')}
                   </span>
                 </div>

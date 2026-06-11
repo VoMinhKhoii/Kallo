@@ -150,16 +150,16 @@ function LoggingDayErrorState({
     <div className="flex flex-1 items-center justify-center py-6">
       <div
         role="alert"
-        className="w-full max-w-md rounded-2xl border border-red-200/70 bg-red-50/80 p-4 text-red-950 shadow-sm"
+        className="w-full max-w-md rounded-2xl border border-nham-danger/30 bg-nham-danger/10 p-4 text-nham-text shadow-sm"
       >
         <div className="flex gap-3">
           <AlertCircle
-            className="mt-0.5 h-5 w-5 shrink-0 text-red-600"
+            className="mt-0.5 h-5 w-5 shrink-0 text-nham-danger"
             aria-hidden="true"
           />
           <div className="min-w-0 flex-1">
             <p className="font-semibold text-sm">{t('loadErrorTitle')}</p>
-            <p className="mt-1 text-red-900/80 text-sm">
+            <p className="mt-1 text-nham-text-muted text-sm">
               {t('loadErrorDescription')}
             </p>
             <button
@@ -167,7 +167,7 @@ function LoggingDayErrorState({
               onClick={onRetry}
               disabled={isRetrying}
               aria-busy={isRetrying}
-              className="mt-3 inline-flex min-h-9 items-center gap-2 rounded-full bg-red-100 px-3.5 py-2 font-medium text-red-950 text-sm transition-colors hover:bg-red-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+              className="mt-3 inline-flex min-h-9 items-center gap-2 rounded-full bg-nham-danger/15 px-3.5 py-2 font-medium text-nham-danger text-sm transition-colors hover:bg-nham-danger/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-danger focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
             >
               <RefreshCw
                 className={cn('h-4 w-4', isRetrying && 'animate-spin')}
@@ -807,8 +807,8 @@ export function FeedArea({
                       className="group relative"
                     >
                       <div className="absolute top-2 bottom-0 -left-10 w-px bg-nham-border/60 group-last:bg-transparent" />
-                      <div className="absolute top-2 -left-[43px] h-2 w-2 rounded-full border-2 border-rose-400 bg-white" />
-                      <div className="rounded-2xl border border-rose-200/60 bg-rose-50/50 p-4">
+                      <div className="absolute top-2 -left-[43px] h-2 w-2 rounded-full border-2 border-nham-danger bg-white" />
+                      <div className="rounded-2xl border border-nham-danger/30 bg-nham-danger/10 p-4">
                         {msg.userInput && (
                           <p
                             className="mb-2 text-[13px] text-nham-text-muted"
@@ -818,7 +818,7 @@ export function FeedArea({
                           </p>
                         )}
                         <p
-                          className="text-rose-600 text-sm"
+                          className="text-nham-danger text-sm"
                           style={{
                             fontFamily: 'DM Sans, sans-serif',
                           }}

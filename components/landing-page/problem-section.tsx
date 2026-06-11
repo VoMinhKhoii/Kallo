@@ -136,7 +136,7 @@ export function ProblemSection() {
                 <span>{t('visual.searchResult2')}</span>
                 <span className="font-mono">0 kcal</span>
               </div>
-              <div className="flex items-center justify-between rounded-lg bg-red-50 p-2 font-medium text-red-500 text-xs">
+              <div className="flex items-center justify-between rounded-lg bg-nham-danger/10 p-2 font-medium text-nham-danger text-xs">
                 <span>{t('visual.noMatch')}</span>
                 <AlertCircle className="h-3 w-3" />
               </div>
@@ -165,12 +165,12 @@ export function ProblemSection() {
               </div>
             </div>
             <div className="relative mt-4 overflow-hidden border-[#C9A87C]/10 border-t pt-4">
-              <div className="absolute inset-0 animate-pulse bg-red-500/5" />
+              <div className="absolute inset-0 animate-pulse bg-nham-danger/5" />
               <div className="relative flex items-center justify-between text-xs">
-                <span className="font-medium text-red-400">
+                <span className="font-medium text-nham-danger">
                   {t('visual.hiddenCalories')}
                 </span>
-                <span className="font-bold font-mono text-red-400">
+                <span className="font-bold font-mono text-nham-danger">
                   +180 kcal
                 </span>
               </div>
@@ -182,8 +182,8 @@ export function ProblemSection() {
             style={{ y: y3, rotate: -2 }}
             className="absolute bottom-[10%] left-[28%] z-30 flex w-[220px] flex-col items-center rounded-xl border border-[#E8D5B5]/20 bg-white p-6 text-center shadow-xl"
           >
-            <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-full bg-red-50">
-              <X className="h-5 w-5 text-red-500" />
+            <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-full bg-nham-danger/10">
+              <X className="h-5 w-5 text-nham-danger" />
             </div>
             <h4 className="mb-1 font-bold text-[#2C2416]">
               {t('visual.entryFailed')}
@@ -218,7 +218,7 @@ export function ProblemSection() {
                 <span>{t('visual.searchResult2')}</span>
                 <span className="font-mono">0 kcal</span>
               </div>
-              <div className="flex items-center justify-between rounded-lg bg-red-50 p-2 font-medium text-red-500 text-xs">
+              <div className="flex items-center justify-between rounded-lg bg-nham-danger/10 p-2 font-medium text-nham-danger text-xs">
                 <span>{t('visual.noMatch')}</span>
                 <AlertCircle className="h-3 w-3" />
               </div>
@@ -250,10 +250,10 @@ export function ProblemSection() {
             </div>
             <div className="mt-4 border-[#C9A87C]/10 border-t pt-4">
               <div className="flex items-center justify-between text-xs">
-                <span className="font-medium text-red-400">
+                <span className="font-medium text-nham-danger">
                   {t('visual.hiddenCalories')}
                 </span>
-                <span className="font-bold font-mono text-red-400">
+                <span className="font-bold font-mono text-nham-danger">
                   +180 kcal
                 </span>
               </div>
@@ -267,8 +267,8 @@ export function ProblemSection() {
             transition={{ delay: 0.3 }}
             className="flex flex-col items-center rounded-xl border border-[#E8D5B5]/20 bg-white p-6 text-center shadow-lg sm:col-span-2 sm:mx-auto sm:max-w-[280px]"
           >
-            <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-full bg-red-50">
-              <X className="h-5 w-5 text-red-500" />
+            <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-full bg-nham-danger/10">
+              <X className="h-5 w-5 text-nham-danger" />
             </div>
             <h4 className="mb-1 font-bold text-[#2C2416]">
               {t('visual.entryFailed')}
