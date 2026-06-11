@@ -1144,7 +1144,30 @@
     "sidebar": {
       "title": "Settings",
       "profile": "Profile",
+      "account": "Account",
       "navigationLabel": "Settings navigation"
+    },
+    "account": {
+      "title": "Account",
+      "description": "Your sign-in, your data, and how to leave.",
+      "emailLabel": "Signed in as",
+      "exportTitle": "Export my data",
+      "exportDescription": "Download everything Nhẩm holds for you, as a JSON file.",
+      "exportAction": "Export",
+      "exporting": "Preparing your data…",
+      "exportError": "Could not export your data. Please try again.",
+      "signOutTitle": "Sign out",
+      "signOutAction": "Sign out",
+      "deleteTitle": "Delete account",
+      "deleteDescription": "Permanently remove your account and everything in it.",
+      "deleteAction": "Delete account",
+      "deleteConsequence": "This removes your profile, every meal you've logged, and your weight history. There is no undo.",
+      "deleteConfirmLabel": "Type {word} to confirm",
+      "deleteConfirmWord": "DELETE",
+      "deleteConfirmAction": "Delete my account",
+      "deleting": "Deleting your account…",
+      "deleteCancel": "Keep my account",
+      "deleteError": "Could not delete your account. Please try again."
     },
     "regionalPanel": {
       "description": "AI uses your country info to understand food culture and locally available ingredients.",

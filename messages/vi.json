@@ -1144,7 +1144,30 @@
     "sidebar": {
       "title": "Cài đặt",
       "profile": "Hồ sơ",
+      "account": "Tài khoản",
       "navigationLabel": "Điều hướng cài đặt"
+    },
+    "account": {
+      "title": "Tài khoản",
+      "description": "Đăng nhập, dữ liệu, và cách rời đi của bạn.",
+      "emailLabel": "Đang đăng nhập với",
+      "exportTitle": "Xuất dữ liệu của tôi",
+      "exportDescription": "Tải về mọi thứ Nhẩm đang lưu cho bạn, dưới dạng tệp JSON.",
+      "exportAction": "Xuất",
+      "exporting": "Đang chuẩn bị dữ liệu…",
+      "exportError": "Không thể xuất dữ liệu. Vui lòng thử lại.",
+      "signOutTitle": "Đăng xuất",
+      "signOutAction": "Đăng xuất",
+      "deleteTitle": "Xóa tài khoản",
+      "deleteDescription": "Xóa vĩnh viễn tài khoản và mọi dữ liệu bên trong.",
+      "deleteAction": "Xóa tài khoản",
+      "deleteConsequence": "Thao tác này xóa hồ sơ, mọi bữa ăn bạn đã ghi, và lịch sử cân nặng của bạn. Không thể hoàn tác.",
+      "deleteConfirmLabel": "Nhập {word} để xác nhận",
+      "deleteConfirmWord": "XÓA",
+      "deleteConfirmAction": "Xóa tài khoản của tôi",
+      "deleting": "Đang xóa tài khoản…",
+      "deleteCancel": "Giữ tài khoản",
+      "deleteError": "Không thể xóa tài khoản. Vui lòng thử lại."
     },
     "regionalPanel": {
       "description": "AI dùng thông tin quốc gia của bạn để hiểu văn hóa ẩm thực và nguyên liệu dễ tìm tại nơi bạn sống.",

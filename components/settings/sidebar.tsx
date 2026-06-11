@@ -1,6 +1,6 @@
 'use client';
 
-import { ChevronRight, User } from 'lucide-react';
+import { ChevronRight, ShieldCheck, User } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { memo } from 'react';
 import { Link, usePathname } from '@/i18n/navigation';
@@ -23,6 +23,12 @@ function SidebarInner() {
       label: t('profile'),
       href: '/settings/profile',
       icon: <User className="h-4 w-4 shrink-0" />,
+    },
+    {
+      id: 'account',
+      label: t('account'),
+      href: '/settings/account',
+      icon: <ShieldCheck className="h-4 w-4 shrink-0" />,
     },
   ];
 
