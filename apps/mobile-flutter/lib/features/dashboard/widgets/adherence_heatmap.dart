@@ -19,7 +19,17 @@ import '../data/dashboard_providers.dart';
 import '../logic/heatmap_colors.dart';
 import 'dashboard_tokens.dart';
 
-const List<String> _dayLabels = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+/// Monday-first narrow weekday initials for [locale] (en → M T W T F S S; vi →
+/// the localized initials). Anchored on a known Monday so DST/locale offsets
+/// can't shift the order.
+List<String> _weekdayInitials(String locale) {
+  // 2024-01-01 is a Monday.
+  final monday = DateTime(2024, 1, 1);
+  final fmt = DateFormat('EEEEE', locale); // narrow weekday
+  return [
+    for (var i = 0; i < 7; i++) fmt.format(monday.add(Duration(days: i))),
+  ];
+}
 const double _gap90d = 2; // GAP['90d']
 const double _dayLabelWidth = 16;
 const double _dayLabelGutter = NhamSpacing.sp1; // gap-1 (4px)
@@ -147,6 +157,7 @@ class _HeatmapBodyState extends State<_HeatmapBody>
   Widget build(BuildContext context) {
     final data = widget.data;
     final numWeeks = _numWeeks;
+    final dayLabels = _weekdayInitials(context.locale.toString());
 
     return Container(
       padding: const EdgeInsets.all(NhamSpacing.sp4),
@@ -189,7 +200,7 @@ class _HeatmapBodyState extends State<_HeatmapBody>
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        for (var i = 0; i < _dayLabels.length; i++)
+                        for (var i = 0; i < dayLabels.length; i++)
                           Container(
                             height: sq,
                             margin: EdgeInsets.only(
@@ -200,7 +211,7 @@ class _HeatmapBodyState extends State<_HeatmapBody>
                             padding: const EdgeInsets.only(right: 4),
                             alignment: Alignment.centerRight,
                             child: Text(
-                              _dayLabels[i],
+                              dayLabels[i],
                               style: dashEyebrow(
                                   color: kInkSecondary,
                                   weight: FontWeight.w600),

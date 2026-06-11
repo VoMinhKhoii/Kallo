@@ -77,6 +77,7 @@ class _Dock extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final locale = context.locale.toString();
     final meals = [...day.persistedMeals]
       ..sort((a, b) => a.loggedAt.compareTo(b.loggedAt));
 
@@ -91,9 +92,9 @@ class _Dock extends StatelessWidget {
       totalFat += m.nutrition.fatG ?? 0;
     }
     final calories = round0(totalCalories);
-    final remaining = (targets.calorieTarget - calories)
-        .clamp(0, double.infinity)
-        .round();
+    // Honest signed remaining — negative when over target (no censoring clamp).
+    final remaining = (targets.calorieTarget - calories).round();
+    final overTarget = remaining < 0;
 
     final macroBars = <_MacroBarData>[
       _MacroBarData(tr('dashboard.protein'), round0(totalProtein),
@@ -124,8 +125,14 @@ class _Dock extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        tr('dashboard.caloriesRemaining').toUpperCase(),
-                        style: dashEyebrow(),
+                        (overTarget
+                                ? tr('dashboard.caloriesOverTarget')
+                                : tr('dashboard.caloriesRemaining'))
+                            .toUpperCase(),
+                        // OVER TARGET flips to espresso ink — never red.
+                        style: dashEyebrow(
+                          color: overTarget ? kInk : kInkSecondary,
+                        ),
                       ),
                       const SizedBox(height: NhamSpacing.sp1),
                       Row(
@@ -133,19 +140,24 @@ class _Dock extends StatelessWidget {
                         textBaseline: TextBaseline.alphabetic,
                         children: [
                           Flexible(
-                            child: Text(_fmt(remaining),
-                                style: dashHero(), maxLines: 1),
+                            child: Text(
+                              _fmt(remaining.abs(), locale),
+                              style: dashHero(),
+                              maxLines: 1,
+                            ),
                           ),
                           const SizedBox(width: 6),
                           Text(
-                            '/ ${_fmt(targets.calorieTarget.round())}',
+                            overTarget
+                                ? tr('dashboard.over')
+                                : '/ ${_fmt(targets.calorieTarget.round(), locale)}',
                             style: dashBody(color: kInkSecondary),
                           ),
                         ],
                       ),
                       const SizedBox(height: NhamSpacing.sp1),
                       Text(
-                        '${_fmt(calories)} ${tr('dashboard.caloriesLogged')}',
+                        '${_fmt(calories, locale)} ${tr('dashboard.caloriesLogged')}',
                         style: dashMeta(color: kInkDisabled),
                       ),
                     ],
@@ -180,16 +192,8 @@ class _Dock extends StatelessWidget {
     );
   }
 
-  static String _fmt(int n) {
-    // toLocaleString() → group thousands with commas (en default).
-    final s = n.abs().toString();
-    final buf = StringBuffer();
-    for (var i = 0; i < s.length; i++) {
-      if (i > 0 && (s.length - i) % 3 == 0) buf.write(',');
-      buf.write(s[i]);
-    }
-    return n < 0 ? '-$buf' : buf.toString();
-  }
+  // Locale-aware thousands grouping (en → "2,000", vi → "2.000").
+  static String _fmt(int n, String locale) => formatCount(n, locale);
 }
 
 /// A hairline divider between the card's zones (hero · macros · meals).

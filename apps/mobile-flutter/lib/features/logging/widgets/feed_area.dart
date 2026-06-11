@@ -15,6 +15,7 @@ import '../../../theme/nham_typography.dart';
 import '../data/logging_keys.dart';
 import '../data/logging_models.dart';
 import '../data/logging_providers.dart';
+import '../../dashboard/logic/dashboard_format.dart' show formatCount;
 import '../data/stream_analysis_controller.dart';
 import '../logic/format.dart';
 import 'calorie_ring.dart';
@@ -183,7 +184,7 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
                             ),
                             const SizedBox(height: 4), // gap-1
                             NhamText(
-                              '$dailyCalories / ${profile.calorieTarget} kcal',
+                              '${formatCount(dailyCalories, context.locale.toString())} / ${formatCount(profile.calorieTarget, context.locale.toString())} kcal',
                               variant: NhamTextVariant.numCaption,
                             ),
                           ],
