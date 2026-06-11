@@ -16,8 +16,9 @@ export function SignUpForm() {
   const t = useTranslations('auth.signUp');
   const locale = useLocale();
   const router = useRouter();
-  const { closeDialog, next } = useAuthDialog();
+  const { closeDialog, next, showCheckEmail } = useAuthDialog();
   const [loading, setLoading] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
 
   const signUpSchema = z.object({
     email: z.email(t('emailError')),
@@ -36,6 +37,7 @@ export function SignUpForm() {
 
   const onSubmit = async (data: SignUpValues) => {
     setLoading(true);
+    setFormError(null);
     const supabase = createClient();
     // Return the recipient to their invite link after they confirm their email
     // (or immediately, if email confirmation is disabled). `next` is already a
@@ -49,17 +51,17 @@ export function SignUpForm() {
     });
 
     if (error) {
-      toast.error(error.message);
+      setFormError(t('error'));
       setLoading(false);
       return;
     }
 
     setLoading(false);
-    closeDialog();
 
     // Confirmation disabled → a session exists now, so resurface the invite
     // directly instead of telling them to check an email that won't arrive.
     if (result?.session) {
+      closeDialog();
       toast.success(t('successSignedIn'));
       if (next) {
         window.location.assign(next);
@@ -70,8 +72,9 @@ export function SignUpForm() {
       return;
     }
 
-    // Confirmation enabled → no session yet; the email link carries `next`.
-    toast.success(t('success'));
+    // Confirmation enabled → no session yet; hold on a persistent "check your
+    // email" panel (the link carries `next`) instead of a vanishing toast.
+    showCheckEmail(data.email, 'confirm');
   };
 
   return (
@@ -90,6 +93,16 @@ export function SignUpForm() {
         error={errors.password?.message}
         {...register('password')}
       />
+
+      {formError && (
+        <p
+          className="text-nham-danger text-sm"
+          style={{ fontFamily: 'DM Sans, sans-serif' }}
+        >
+          {formError}
+        </p>
+      )}
+
       <button
         type="submit"
         disabled={loading}

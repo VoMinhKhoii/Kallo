@@ -638,6 +638,7 @@
       "signUpLink": "Sign up",
       "forgotPassword": "Forgot password?",
       "error": "Invalid email or password",
+      "errorUnconfirmed": "This email isn't confirmed yet. Check your inbox for the link.",
       "success": "Signed in successfully",
       "emailPlaceholder": "you@example.com",
       "passwordPlaceholder": "Enter your password",
@@ -677,6 +678,39 @@
       "submit": "Verify",
       "resend": "Resend code",
       "error": "Invalid code"
+    },
+    "forgot": {
+      "title": "Reset your password",
+      "subtitle": "We'll email you a link to set a new one.",
+      "description": "Enter the email you signed up with and we'll send a reset link.",
+      "email": "Email",
+      "emailPlaceholder": "you@example.com",
+      "emailError": "Enter a valid email address",
+      "submit": "Send reset link",
+      "back": "Back to sign in"
+    },
+    "checkEmail": {
+      "title": "Check your email",
+      "subtitle": "Open the link to continue.",
+      "descriptionConfirm": "We sent a confirmation link to",
+      "descriptionReset": "We sent a password reset link to",
+      "resend": "Resend the link",
+      "resendIn": "Resend in {seconds}s",
+      "back": "Back to sign in"
+    },
+    "reset": {
+      "title": "Set a new password",
+      "subtitle": "Choose a new password for your account.",
+      "expiredSubtitle": "This link is no longer valid. Request a fresh one to continue.",
+      "password": "New password",
+      "passwordPlaceholder": "Create a password",
+      "passwordError": "Password must be at least 6 characters",
+      "confirm": "Confirm password",
+      "confirmPlaceholder": "Re-enter your password",
+      "mismatch": "Passwords don't match",
+      "submit": "Save new password",
+      "error": "Could not update your password. Please try again.",
+      "backHome": "Back to home"
     }
   },
   "landing": {

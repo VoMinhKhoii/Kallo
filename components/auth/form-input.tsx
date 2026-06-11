@@ -36,7 +36,7 @@ export function FormInput({
           className={cn(
             'w-full rounded-xl border bg-white px-4 py-3 text-[#2C2416] text-sm outline-none transition-all duration-200 placeholder:text-[#B0A695]',
             error
-              ? 'border-red-400 focus:border-red-500 focus:ring-2 focus:ring-red-500/10'
+              ? 'border-nham-danger/50 focus:border-nham-danger focus:ring-2 focus:ring-nham-danger/10'
               : 'border-[#E8D5B5]/60 focus:border-[#C9A87C] focus:ring-2 focus:ring-[#C9A87C]/10'
           )}
           style={{ fontFamily: 'DM Sans, sans-serif' }}
@@ -58,7 +58,7 @@ export function FormInput({
       </div>
       {error && (
         <p
-          className="text-red-500 text-xs"
+          className="text-nham-danger text-xs"
           style={{ fontFamily: 'DM Sans, sans-serif' }}
         >
           {error}

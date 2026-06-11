@@ -638,6 +638,7 @@
       "signUpLink": "Đăng ký",
       "forgotPassword": "Quên mật khẩu?",
       "error": "Email hoặc mật khẩu không đúng",
+      "errorUnconfirmed": "Email này chưa được xác nhận. Kiểm tra hộp thư để tìm liên kết.",
       "success": "Đăng nhập thành công",
       "emailPlaceholder": "ban@example.com",
       "passwordPlaceholder": "Nhập mật khẩu",
@@ -677,6 +678,39 @@
       "submit": "Xác nhận",
       "resend": "Gửi lại mã",
       "error": "Mã không hợp lệ"
+    },
+    "forgot": {
+      "title": "Đặt lại mật khẩu",
+      "subtitle": "Chúng tôi sẽ gửi liên kết để bạn đặt mật khẩu mới.",
+      "description": "Nhập email bạn đã đăng ký, chúng tôi sẽ gửi liên kết đặt lại.",
+      "email": "Email",
+      "emailPlaceholder": "ban@example.com",
+      "emailError": "Nhập địa chỉ email hợp lệ",
+      "submit": "Gửi liên kết",
+      "back": "Quay lại đăng nhập"
+    },
+    "checkEmail": {
+      "title": "Kiểm tra email",
+      "subtitle": "Mở liên kết để tiếp tục.",
+      "descriptionConfirm": "Chúng tôi đã gửi liên kết xác nhận đến",
+      "descriptionReset": "Chúng tôi đã gửi liên kết đặt lại mật khẩu đến",
+      "resend": "Gửi lại liên kết",
+      "resendIn": "Gửi lại sau {seconds}s",
+      "back": "Quay lại đăng nhập"
+    },
+    "reset": {
+      "title": "Đặt mật khẩu mới",
+      "subtitle": "Chọn mật khẩu mới cho tài khoản của bạn.",
+      "expiredSubtitle": "Liên kết này không còn hiệu lực. Hãy yêu cầu liên kết mới để tiếp tục.",
+      "password": "Mật khẩu mới",
+      "passwordPlaceholder": "Tạo mật khẩu",
+      "passwordError": "Mật khẩu phải có ít nhất 6 ký tự",
+      "confirm": "Xác nhận mật khẩu",
+      "confirmPlaceholder": "Nhập lại mật khẩu",
+      "mismatch": "Mật khẩu không khớp",
+      "submit": "Lưu mật khẩu mới",
+      "error": "Không thể cập nhật mật khẩu. Vui lòng thử lại.",
+      "backHome": "Về trang chủ"
     }
   },
   "landing": {
