@@ -26,13 +26,17 @@ class MealInput extends StatefulWidget {
     required this.controller,
     required this.onSubmit,
     this.onCancel,
-    this.disabled = false,
+    this.analyzing = false,
   });
 
   final MealInputController controller;
   final ValueChanged<String> onSubmit;
   final VoidCallback? onCancel;
-  final bool disabled;
+
+  /// While true the action button shows Stop (the run can be cancelled) — but
+  /// the field stays editable so a new meal can be typed mid-analysis (the
+  /// requestId-supersede mechanism handles overlap).
+  final bool analyzing;
 
   @override
   State<MealInput> createState() => _MealInputState();
@@ -95,7 +99,7 @@ class _MealInputState extends State<MealInput>
     );
   }
 
-  bool get _canSubmit => _controller.text.trim().isNotEmpty && !widget.disabled;
+  bool get _canSubmit => _controller.text.trim().isNotEmpty;
 
   void _submit() {
     if (_canSubmit) widget.onSubmit(_controller.text);
@@ -139,41 +143,37 @@ class _MealInputState extends State<MealInput>
                 minHeight: _minHeight,
                 maxHeight: _maxHeight,
               ),
-              child: Opacity(
-                opacity: widget.disabled ? 0.5 : 1,
-                child: TextField(
-                  controller: _controller,
-                  focusNode: _focusNode,
-                  enabled: !widget.disabled,
-                  maxLines: null,
-                  keyboardType: TextInputType.multiline,
-                  textInputAction: TextInputAction.newline,
-                  style: NhamTextStyles.sansRegular(
+              child: TextField(
+                controller: _controller,
+                focusNode: _focusNode,
+                maxLines: null,
+                keyboardType: TextInputType.multiline,
+                textInputAction: TextInputAction.newline,
+                style: NhamTextStyles.sansRegular(
+                  fontSize: NhamFontSize.sm,
+                  height: 20 / 14, // leading-5 (20px) at text-sm (14px)
+                ).copyWith(color: NhamColors.text),
+                cursorColor: NhamColors.accent,
+                decoration: InputDecoration(
+                  isCollapsed: true,
+                  border: InputBorder.none,
+                  enabledBorder: InputBorder.none,
+                  focusedBorder: InputBorder.none,
+                  disabledBorder: InputBorder.none,
+                  contentPadding: const EdgeInsets.symmetric(
+                    vertical: 6,
+                  ), // py-1.5
+                  hintText: 'logging.placeholder'.tr(),
+                  hintStyle: NhamTextStyles.sansRegular(
                     fontSize: NhamFontSize.sm,
-                    height: 20 / 14, // leading-5 (20px) at text-sm (14px)
-                  ).copyWith(color: NhamColors.text),
-                  cursorColor: NhamColors.accent,
-                  decoration: InputDecoration(
-                    isCollapsed: true,
-                    border: InputBorder.none,
-                    enabledBorder: InputBorder.none,
-                    focusedBorder: InputBorder.none,
-                    disabledBorder: InputBorder.none,
-                    contentPadding: const EdgeInsets.symmetric(
-                      vertical: 6,
-                    ), // py-1.5
-                    hintText: 'logging.placeholder'.tr(),
-                    hintStyle: NhamTextStyles.sansRegular(
-                      fontSize: NhamFontSize.sm,
-                      height: 20 / 14,
-                    ).copyWith(color: NhamColors.placeholderMuted40),
-                  ),
+                    height: 20 / 14,
+                  ).copyWith(color: NhamColors.placeholderMuted40),
                 ),
               ),
             ),
           ),
           const SizedBox(width: NhamSpacing.sp3),
-          if (widget.disabled && widget.onCancel != null)
+          if (widget.analyzing && widget.onCancel != null)
             _ActionButton(
               icon: Icons.stop, // lucide Square (filled) → Icons.stop
               iconSize: 14,

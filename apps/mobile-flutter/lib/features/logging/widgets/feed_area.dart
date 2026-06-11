@@ -46,13 +46,26 @@ class FeedArea extends ConsumerStatefulWidget {
 
 class _FeedAreaState extends ConsumerState<FeedArea> {
   final MealInputController _inputController = MealInputController();
+
+  /// The text of the run currently in flight — restored to the composer if it
+  /// fails, so a failed analysis never destroys what the user typed.
+  String? _inFlightText;
+
+  /// A failed attempt, rendered as a feed card with "Try again" (terracotta).
+  String? _failedText;
+
+  /// Inline error for a failed confirm (saving a meal) — not analysis errors,
+  /// which surface as the failed-attempt card.
   String? _errorText;
 
   LoggingDayArgs get _dayArgs =>
       LoggingDayArgs(widget.profile.userId, widget.date);
 
   void _submit(String text) {
-    setState(() => _errorText = null);
+    setState(() {
+      _failedText = null;
+      _inFlightText = text;
+    });
     _inputController.clear();
     ref
         .read(streamAnalysisProvider.notifier)
@@ -65,6 +78,12 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
         );
   }
 
+  void _retry() {
+    final text = _failedText;
+    if (text == null) return;
+    _submit(text);
+  }
+
   void _handleSuggestion(String s) {
     _inputController.setText(s);
     _inputController.focus();
@@ -74,13 +93,22 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
     // On completion: refetch the day + meal-dates so the stored analysis shows
     // as a confirmable card, then clear the local stream.
     if (next.status == StreamStatus.done && next.analysisId != null) {
+      _inFlightText = null;
       ref.invalidate(loggingDayProvider(_dayArgs));
       ref.invalidate(mealDatesProvider(widget.profile.userId));
       ref.read(streamAnalysisProvider.notifier).reset();
     }
-    // On error: surface the message then reset.
+    // On error: never destroy the typed meal. Restore the raw text into the
+    // composer AND render the failed attempt as a feed card (Try again).
     if (next.status == StreamStatus.error) {
-      setState(() => _errorText = next.error ?? 'errors.internal'.tr());
+      final text = _inFlightText;
+      setState(() {
+        _failedText = text;
+        _inFlightText = null;
+      });
+      if (text != null && _inputController.getText().trim().isEmpty) {
+        _inputController.setText(text);
+      }
       ref.read(streamAnalysisProvider.notifier).reset();
     }
   }
@@ -126,13 +154,17 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
       persistedMeals.fold<double>(0, (s, m) => s + (m.nutrition.fatG ?? 0)),
     );
 
+    final hasFailedAttempt = _failedText != null;
+
     final isEmpty =
         !isLoading &&
         persistedMeals.isEmpty &&
         pendingConfirmations.isEmpty &&
-        !isStreaming;
+        !isStreaming &&
+        !hasFailedAttempt;
 
-    final hasFooterItems = pendingConfirmations.isNotEmpty || isStreaming;
+    final hasFooterItems =
+        pendingConfirmations.isNotEmpty || isStreaming || hasFailedAttempt;
 
     final macroBars = [
       _MacroBarData(
@@ -220,6 +252,9 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
             stream: stream,
             hasFooterItems: hasFooterItems,
             confirmPending: confirmPending,
+            failedText: _failedText,
+            onRetry: _retry,
+            onDiscardFailed: () => setState(() => _failedText = null),
           ),
         ),
 
@@ -249,7 +284,7 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
             controller: _inputController,
             onSubmit: _submit,
             onCancel: () => ref.read(streamAnalysisProvider.notifier).cancel(),
-            disabled: stream.isAnalyzing,
+            analyzing: stream.isAnalyzing,
           ),
         ),
       ],
@@ -266,6 +301,9 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
     required StreamAnalysisState stream,
     required bool hasFooterItems,
     required bool confirmPending,
+    required String? failedText,
+    required VoidCallback onRetry,
+    required VoidCallback onDiscardFailed,
   }) {
     // Day fetch error → red alert card with retry (LoggingDayErrorState).
     if (hasError && persistedMeals.isEmpty && !hasFooterItems) {
@@ -304,6 +342,9 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
             stream: stream,
             confirmPending: confirmPending,
             onConfirm: _confirm,
+            failedText: failedText,
+            onRetry: onRetry,
+            onDiscardFailed: onDiscardFailed,
           ),
         );
       }
@@ -359,6 +400,9 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
           stream: stream,
           confirmPending: confirmPending,
           onConfirm: _confirm,
+          failedText: failedText,
+          onRetry: onRetry,
+          onDiscardFailed: onDiscardFailed,
         );
       },
     );
@@ -398,6 +442,9 @@ class _Footer extends StatelessWidget {
     required this.stream,
     required this.confirmPending,
     required this.onConfirm,
+    required this.failedText,
+    required this.onRetry,
+    required this.onDiscardFailed,
   });
 
   final List<PendingMealConfirmation> pendingConfirmations;
@@ -406,9 +453,13 @@ class _Footer extends StatelessWidget {
   final bool confirmPending;
   final void Function(String analysisId, List<MealQuantityEdit> edits)
   onConfirm;
+  final String? failedText;
+  final VoidCallback onRetry;
+  final VoidCallback onDiscardFailed;
 
   @override
   Widget build(BuildContext context) {
+    final hasFailed = failedText != null;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -418,7 +469,9 @@ class _Footer extends StatelessWidget {
             rawInput: pendingConfirmations[i].rawInput,
             parsedMeal: pendingConfirmations[i].parsedMeal,
             busy: confirmPending,
-            isLast: !isStreaming && i == pendingConfirmations.length - 1,
+            isLast: !isStreaming &&
+                !hasFailed &&
+                i == pendingConfirmations.length - 1,
             onConfirm: (edits) => onConfirm(pendingConfirmations[i].id, edits),
           ),
         if (isStreaming)
@@ -426,9 +479,177 @@ class _Footer extends StatelessWidget {
             status: stream.status,
             items: stream.items,
             completedItems: stream.completedItems,
-            isLast: true,
+            isLast: !hasFailed,
+          ),
+        if (hasFailed)
+          _FailedAttemptCard(
+            rawInput: failedText!,
+            onRetry: onRetry,
+            onDiscard: onDiscardFailed,
           ),
       ],
+    );
+  }
+}
+
+/// A failed analysis, rendered as a feed card so the attempt is never lost: the
+/// raw input as a Lora quote, a terracotta one-liner, and "Try again" as the
+/// primary action (with a quiet Discard). The raw text is also restored to the
+/// composer — this card is the visible record of what happened.
+class _FailedAttemptCard extends StatelessWidget {
+  const _FailedAttemptCard({
+    required this.rawInput,
+    required this.onRetry,
+    required this.onDiscard,
+  });
+
+  final String rawInput;
+  final VoidCallback onRetry;
+  final VoidCallback onDiscard;
+
+  @override
+  Widget build(BuildContext context) {
+    return TimelineRail(
+      isLast: true,
+      // A terracotta-ringed dot marks the failed entry (never red).
+      dotChild: Container(
+        width: 8,
+        height: 8,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: NhamColors.elev,
+          border: Border.all(color: NhamColors.danger, width: 2),
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.only(bottom: NhamSpacing.sp3),
+        child: Container(
+          padding: const EdgeInsets.all(NhamSpacing.sp4),
+          decoration: BoxDecoration(
+            color: NhamColors.surface,
+            borderRadius: BorderRadius.circular(NhamRadii.containerLg),
+            border: Border.all(color: NhamColors.borderSoft),
+            boxShadow: const [NhamShadows.sm],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              NhamText(
+                rawInput,
+                variant: NhamTextVariant.mealQuote,
+                style: const TextStyle(fontSize: 17, height: 28 / 17),
+              ),
+              const SizedBox(height: NhamSpacing.sp3),
+              NhamText(
+                'logging.failedAttempt.message'.tr(),
+                variant: NhamTextVariant.small,
+                style: const TextStyle(color: NhamColors.danger),
+              ),
+              const SizedBox(height: NhamSpacing.sp4),
+              Row(
+                children: [
+                  Expanded(
+                    child: _RetryButton(onTap: onRetry),
+                  ),
+                  const SizedBox(width: NhamSpacing.sp2),
+                  _DiscardButton(onTap: onDiscard),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Primary "Try again" — solid umber, mirroring the confirm button's resting
+/// look (an honest re-run of the same meal).
+class _RetryButton extends StatefulWidget {
+  const _RetryButton({required this.onTap});
+  final VoidCallback onTap;
+
+  @override
+  State<_RetryButton> createState() => _RetryButtonState();
+}
+
+class _RetryButtonState extends State<_RetryButton> {
+  bool _pressed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      button: true,
+      label: 'logging.failedAttempt.tryAgain'.tr(),
+      child: GestureDetector(
+        onTapDown: (_) => setState(() => _pressed = true),
+        onTapUp: (_) => setState(() => _pressed = false),
+        onTapCancel: () => setState(() => _pressed = false),
+        onTap: widget.onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+          decoration: BoxDecoration(
+            color: _pressed ? NhamColors.btnHover : NhamColors.btn,
+            borderRadius: BorderRadius.circular(NhamRadii.xl),
+            boxShadow: [_pressed ? NhamShadows.md : NhamShadows.sm],
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.refresh, size: 14, color: Colors.white),
+              const SizedBox(width: 6),
+              NhamText(
+                'logging.failedAttempt.tryAgain'.tr(),
+                variant: NhamTextVariant.body,
+                style: NhamTextStyles.sansMedium(fontSize: NhamFontSize.xs)
+                    .copyWith(color: Colors.white),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Quiet "Discard" — wires the previously-unused logging.discard string.
+class _DiscardButton extends StatefulWidget {
+  const _DiscardButton({required this.onTap});
+  final VoidCallback onTap;
+
+  @override
+  State<_DiscardButton> createState() => _DiscardButtonState();
+}
+
+class _DiscardButtonState extends State<_DiscardButton> {
+  bool _pressed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      button: true,
+      label: 'logging.discard'.tr(),
+      child: GestureDetector(
+        onTapDown: (_) => setState(() => _pressed = true),
+        onTapUp: (_) => setState(() => _pressed = false),
+        onTapCancel: () => setState(() => _pressed = false),
+        onTap: widget.onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+          decoration: BoxDecoration(
+            color: _pressed ? NhamColors.hover : Colors.transparent,
+            borderRadius: BorderRadius.circular(NhamRadii.xl),
+          ),
+          child: NhamText(
+            'logging.discard'.tr(),
+            variant: NhamTextVariant.body,
+            style: NhamTextStyles.sansMedium(fontSize: NhamFontSize.xs)
+                .copyWith(color: NhamColors.textMuted),
+          ),
+        ),
+      ),
     );
   }
 }

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
@@ -72,8 +74,25 @@ class _StreamingEntryState extends State<StreamingEntry>
     CurvedAnimation(parent: _pulse, curve: const Cubic(0.4, 0, 0.6, 1)),
   );
 
+  // A gentle reassurance line appears once the run passes ~20s, so a slow
+  // pipeline doesn't read as a stall.
+  bool _showReassurance = false;
+  late final Timer _reassuranceTimer = Timer(
+    const Duration(seconds: 20),
+    () {
+      if (mounted) setState(() => _showReassurance = true);
+    },
+  );
+
+  @override
+  void initState() {
+    super.initState();
+    _reassuranceTimer; // start the timer
+  }
+
   @override
   void dispose() {
+    _reassuranceTimer.cancel();
     _spin.dispose();
     _pulse.dispose();
     super.dispose();
@@ -191,6 +210,15 @@ class _StreamingEntryState extends State<StreamingEntry>
                   NhamText(phaseLabel, variant: NhamTextVariant.phaseLabel),
                 ],
               ),
+              // ~20s reassurance line — appears when the pipeline runs long.
+              if (_showReassurance) ...[
+                const SizedBox(height: NhamSpacing.sp2),
+                NhamText(
+                  'logging.streaming.stillWorking'.tr(),
+                  variant: NhamTextVariant.small,
+                  style: const TextStyle(color: NhamColors.textMuted),
+                ),
+              ],
             ],
           ),
         ),

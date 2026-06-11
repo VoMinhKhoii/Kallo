@@ -1018,7 +1018,12 @@
       "matching": "Matching ingredients...",
       "estimating": "Estimating nutrition...",
       "assembling": "Putting it all together...",
-      "analyzing": "Analyzing..."
+      "analyzing": "Analyzing...",
+      "stillWorking": "Still working on it — almost there."
+    },
+    "failedAttempt": {
+      "message": "We couldn't read this one. Your note is safe — give it another try.",
+      "tryAgain": "Try again"
     },
     "mealEntry": {
       "edit": "Edit",

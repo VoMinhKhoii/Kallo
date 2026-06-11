@@ -1017,7 +1017,12 @@
       "matching": "Đang khớp nguyên liệu...",
       "estimating": "Đang ước tính dinh dưỡng...",
       "assembling": "Đang tổng hợp kết quả...",
-      "analyzing": "Đang phân tích..."
+      "analyzing": "Đang phân tích...",
+      "stillWorking": "Vẫn đang xử lý — sắp xong rồi."
+    },
+    "failedAttempt": {
+      "message": "Chưa đọc được món này. Ghi chú của bạn vẫn còn — thử lại nhé.",
+      "tryAgain": "Thử lại"
     },
     "mealEntry": {
       "edit": "Sửa",
