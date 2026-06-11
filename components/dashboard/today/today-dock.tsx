@@ -56,11 +56,11 @@ export function TodayDock({ nutrition, meals, weekly }: TodayDockProps) {
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.45 }}
-      className="grid gap-3 rounded-[1.5rem] border border-nham-border/70 bg-card/90 p-3 shadow-[0_10px_32px_rgba(44,36,22,0.05)] xl:h-full xl:min-h-0 xl:grid-cols-[minmax(0,0.68fr)_minmax(260px,0.32fr)] xl:p-4"
+      className="grid gap-3 rounded-[1.5rem] border border-nham-border/70 bg-card p-3 shadow-[0_10px_32px_rgba(44,36,22,0.05)] xl:h-full xl:min-h-0 xl:grid-cols-[minmax(0,0.68fr)_minmax(260px,0.32fr)] xl:p-4"
       aria-label={t('today')}
     >
       <div className="grid min-h-0 gap-3 xl:grid-cols-[minmax(180px,0.34fr)_minmax(0,0.66fr)]">
-        <div className="flex min-h-0 flex-col justify-center rounded-[1.25rem] bg-nham-surface/80 p-3">
+        <div className="flex min-h-0 flex-col justify-center rounded-[1.25rem] bg-nham-surface p-3">
           <span
             className={`block font-bold text-[10px] uppercase tracking-[0.2em] ${
               isOver ? 'text-nham-text' : 'text-nham-stone'
@@ -96,7 +96,7 @@ export function TodayDock({ nutrition, meals, weekly }: TodayDockProps) {
         </div>
 
         <div className="grid min-h-0 gap-3 xl:grid-rows-[minmax(0,1fr)_auto]">
-          <div className="flex min-h-0 items-center gap-3 rounded-[1.25rem] bg-nham-surface/60 p-3">
+          <div className="flex min-h-0 items-center gap-3 rounded-[1.25rem] bg-nham-surface p-3">
             <CalorieRing
               current={nutrition.calories.current}
               target={nutrition.calories.target}

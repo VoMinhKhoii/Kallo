@@ -56,7 +56,7 @@ export function ProgressStory({
   return (
     <section className="grid min-h-[360px] gap-2 rounded-[1.5rem] border border-nham-border/60 bg-card p-2.5 shadow-[0_10px_32px_rgba(44,36,22,0.05)] xl:h-full xl:min-h-0 xl:grid-cols-[minmax(240px,0.32fr)_minmax(0,0.68fr)]">
       <div className="grid min-h-0 gap-2 xl:grid-rows-[auto_auto] xl:content-start">
-        <div className="rounded-[1.25rem] bg-nham-surface/70 p-2.5">
+        <div className="rounded-[1.25rem] bg-nham-surface p-2.5">
           <div className="flex items-end justify-between gap-3">
             <div>
               <h2
@@ -75,8 +75,8 @@ export function ProgressStory({
                   summary.canProject ? 'grid-cols-2' : 'grid-cols-1'
                 )}
               >
-                <div className="rounded-xl bg-card/80 px-2.5 py-2">
-                  <span className="block text-[9px] text-nham-stone uppercase tracking-[0.14em]">
+                <div className="rounded-xl bg-card px-2.5 py-2">
+                  <span className="block text-[9px] text-nham-stone uppercase tracking-[0.15em]">
                     {t('now')}
                   </span>
                   <strong className="font-mono text-nham-text text-xs">
@@ -84,8 +84,8 @@ export function ProgressStory({
                   </strong>
                 </div>
                 {summary.canProject && (
-                  <div className="rounded-xl bg-card/80 px-2.5 py-2">
-                    <span className="block text-[9px] text-nham-stone uppercase tracking-[0.14em]">
+                  <div className="rounded-xl bg-card px-2.5 py-2">
+                    <span className="block text-[9px] text-nham-stone uppercase tracking-[0.15em]">
                       {t('projected')}
                     </span>
                     <strong className="font-mono text-nham-text text-xs">

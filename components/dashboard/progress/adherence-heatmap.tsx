@@ -1,7 +1,7 @@
 'use client';
 
 import { motion, useReducedMotion } from 'motion/react';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Tooltip,
@@ -17,7 +17,14 @@ import type {
 import { cn } from '@/lib/utils';
 import { getHeatmapColor, HEATMAP_COLORS } from './heatmap-colors';
 
-const DAY_LABELS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+// Locale-aware narrow weekday initials in Monday-first order (the grid's row
+// order). 2024-01-01 was a Monday, so days 1–7 of Jan 2024 are Mon…Sun.
+function getDayLabels(locale: string): string[] {
+  const formatter = new Intl.DateTimeFormat(locale, { weekday: 'narrow' });
+  return Array.from({ length: 7 }, (_, i) =>
+    formatter.format(new Date(Date.UTC(2024, 0, 1 + i, 12)))
+  );
+}
 
 const GAP: Record<HeatmapRange, number> = { '30d': 3, '90d': 2, year: 1 };
 const DAY_LABEL_WIDTH = 16;
@@ -30,6 +37,8 @@ interface AdherenceHeatmapProps {
 
 export function AdherenceHeatmap({ data, range }: AdherenceHeatmapProps) {
   const t = useTranslations('dashboard.adherenceHeatmap');
+  const locale = useLocale();
+  const dayLabels = useMemo(() => getDayLabels(locale), [locale]);
   const gridRef = useRef<HTMLDivElement>(null);
   const [sq, setSq] = useState(19);
   // The 'year' range stagger fires up to 371 cells. Honour the OS-level
@@ -108,7 +117,7 @@ export function AdherenceHeatmap({ data, range }: AdherenceHeatmapProps) {
         <div ref={gridRef} className="flex min-h-0 flex-1 items-center gap-1">
           {/* Day labels */}
           <div className="flex shrink-0 flex-col" style={{ gap: `${gap}px` }}>
-            {DAY_LABELS.map((d, i) => (
+            {dayLabels.map((d, i) => (
               <div
                 key={`lbl-${i}`}
                 className="flex items-center justify-end pr-1 font-semibold text-[10px] text-nham-text-muted"
