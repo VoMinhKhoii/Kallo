@@ -852,6 +852,12 @@
   },
   "dashboard": {
     "title": "Dashboard",
+    "greeting": {
+      "morning": "Good morning",
+      "afternoon": "Good afternoon",
+      "evening": "Good evening",
+      "night": "Good evening"
+    },
     "today": "Today",
     "thisWeek": "This Week",
     "caloriesConsumed": "Calories consumed",

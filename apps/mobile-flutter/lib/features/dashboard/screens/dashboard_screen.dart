@@ -68,7 +68,7 @@ class DashboardScreen extends ConsumerWidget {
             padding: const EdgeInsets.symmetric(horizontal: NhamSpacing.sp3),
             child: AppHeader(
               showAvatar: true,
-              child: Text('Hello', style: dashHeadline()),
+              child: Text(_greeting().tr(), style: dashHeadline()),
             ),
           ),
           Expanded(
@@ -111,6 +111,16 @@ class DashboardScreen extends ConsumerWidget {
       fatTargetG: p?.fatTargetG ?? _defaultFatTargetG,
     );
   }
+}
+
+/// The l10n key for a time-of-day greeting, driven by the device clock. A
+/// greeting, not an interpretation — the only Lora moment on the screen.
+String _greeting() {
+  final hour = DateTime.now().hour;
+  if (hour < 12) return 'dashboard.greeting.morning';
+  if (hour < 17) return 'dashboard.greeting.afternoon';
+  if (hour < 21) return 'dashboard.greeting.evening';
+  return 'dashboard.greeting.night';
 }
 
 class _Content extends StatefulWidget {

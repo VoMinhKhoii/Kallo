@@ -851,6 +851,12 @@
   },
   "dashboard": {
     "title": "Tổng quan",
+    "greeting": {
+      "morning": "Chào buổi sáng",
+      "afternoon": "Chào buổi chiều",
+      "evening": "Chào buổi tối",
+      "night": "Chào buổi tối"
+    },
     "today": "Hôm nay",
     "thisWeek": "Tuần này",
     "caloriesConsumed": "Calo đã nạp",
