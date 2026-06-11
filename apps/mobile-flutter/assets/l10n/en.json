@@ -677,6 +677,8 @@
       "signUpSubtitle": "Start tracking Vietnamese meals with AI-powered nutrition analysis.",
       "signInTab": "Sign in",
       "signUpTab": "Sign up",
+      "continueWithApple": "Continue with Apple",
+      "appleError": "Apple sign-in failed. Please try again.",
       "continueWithGoogle": "Continue with Google",
       "orContinueWithEmail": "or continue with email",
       "googleError": "Google sign-in failed. Please try again."

@@ -1,4 +1,5 @@
 import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -6,6 +7,7 @@ import '../../../theme/nham_colors.dart';
 import '../../../theme/nham_theme.dart';
 import '../../../theme/nham_typography.dart';
 import '../providers/auth_form_controller.dart';
+import 'apple_button.dart';
 import 'auth_divider.dart';
 import 'google_button.dart';
 import 'sign_in_form.dart';
@@ -52,8 +54,9 @@ class _AuthPageState extends ConsumerState<AuthPage> {
           ),
           content: Text(
             message,
-            style: NhamTextStyles.sansMedium(fontSize: NhamFontSize.sm)
-                .copyWith(color: NhamColors.text),
+            style: NhamTextStyles.sansMedium(
+              fontSize: NhamFontSize.sm,
+            ).copyWith(color: NhamColors.text),
           ),
         ),
       );
@@ -78,7 +81,7 @@ class _AuthPageState extends ConsumerState<AuthPage> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 _header(),
-                _googleBlock(state, ref.read(provider.notifier).signInWithGoogle),
+                _socialBlock(state, ref.read(provider.notifier)),
                 _formBlock(state),
               ],
             ),
@@ -100,8 +103,9 @@ class _AuthPageState extends ConsumerState<AuthPage> {
                 : tr('auth.dialog.signUpTitle'),
             textAlign: TextAlign.center,
             // Lora w400, 24px (text-2xl), #2C2416.
-            style: NhamTextStyles.serifRegular(fontSize: NhamFontSize.h3)
-                .copyWith(color: NhamColors.text),
+            style: NhamTextStyles.serifRegular(
+              fontSize: NhamFontSize.h3,
+            ).copyWith(color: NhamColors.text),
           ),
           const SizedBox(height: 4), // mb-1
           Text(
@@ -110,8 +114,9 @@ class _AuthPageState extends ConsumerState<AuthPage> {
                 : tr('auth.dialog.signUpSubtitle'),
             textAlign: TextAlign.center,
             // text-sm #8B7355 DM Sans.
-            style: NhamTextStyles.sansRegular(fontSize: NhamFontSize.sm)
-                .copyWith(color: NhamColors.textMuted),
+            style: NhamTextStyles.sansRegular(
+              fontSize: NhamFontSize.sm,
+            ).copyWith(color: NhamColors.textMuted),
           ),
         ],
       ),
@@ -119,15 +124,27 @@ class _AuthPageState extends ConsumerState<AuthPage> {
   }
 
   // space-y-3, pt-4.
-  Widget _googleBlock(AuthFormState state, VoidCallback onGoogle) {
+  Widget _socialBlock(AuthFormState state, AuthFormController controller) {
+    // Sign in with Apple is iOS/macOS-only (and an App Store requirement
+    // there); placed above Google as the most prominent social option.
+    final showApple =
+        defaultTargetPlatform == TargetPlatform.iOS ||
+        defaultTargetPlatform == TargetPlatform.macOS;
     return Padding(
       padding: const EdgeInsets.only(top: 16),
       child: Column(
         children: [
+          if (showApple) ...[
+            AppleButton(
+              busy: state.busy,
+              onPressed: controller.signInWithApple,
+            ),
+            const SizedBox(height: 12), // space-y-3
+          ],
           GoogleButton(
             busy: state.busy,
             loading: state.googleBusy,
-            onPressed: onGoogle,
+            onPressed: controller.signInWithGoogle,
           ),
           const SizedBox(height: 12), // space-y-3
           const AuthDivider(),
@@ -156,21 +173,26 @@ class _AuthPageState extends ConsumerState<AuthPage> {
                 opacity: animation,
                 child: AnimatedBuilder(
                   animation: animation,
-                  builder: (context, c) => Transform.translate(
-                    offset: Offset(beginDx * (1 - animation.value), 0),
-                    child: c,
-                  ),
+                  builder:
+                      (context, c) => Transform.translate(
+                        offset: Offset(beginDx * (1 - animation.value), 0),
+                        child: c,
+                      ),
                   child: child,
                 ),
               );
             },
-            child: _signIn
-                ? SignInForm(key: const ValueKey('sign-in'), onError: _toast)
-                : SignUpForm(
-                    key: const ValueKey('sign-up'),
-                    onError: _toast,
-                    onNotice: _toast,
-                  ),
+            child:
+                _signIn
+                    ? SignInForm(
+                      key: const ValueKey('sign-in'),
+                      onError: _toast,
+                    )
+                    : SignUpForm(
+                      key: const ValueKey('sign-up'),
+                      onError: _toast,
+                      onNotice: _toast,
+                    ),
           ),
           const SizedBox(height: 20), // mt-5
           _footer(state),
@@ -180,9 +202,8 @@ class _AuthPageState extends ConsumerState<AuthPage> {
   }
 
   Widget _footer(AuthFormState state) {
-    final prompt = _signIn
-        ? tr('auth.signIn.noAccount')
-        : tr('auth.signUp.hasAccount');
+    final prompt =
+        _signIn ? tr('auth.signIn.noAccount') : tr('auth.signUp.hasAccount');
     final action =
         _signIn ? tr('auth.signIn.signUpLink') : tr('auth.signUp.signInLink');
     return Row(
@@ -190,8 +211,9 @@ class _AuthPageState extends ConsumerState<AuthPage> {
       children: [
         Text(
           '$prompt ',
-          style: NhamTextStyles.sansRegular(fontSize: NhamFontSize.sm)
-              .copyWith(color: NhamColors.textMuted),
+          style: NhamTextStyles.sansRegular(
+            fontSize: NhamFontSize.sm,
+          ).copyWith(color: NhamColors.textMuted),
         ),
         // Inert while a request is in flight — same guard as the tab toggle.
         Opacity(
@@ -234,8 +256,9 @@ class _FooterLinkState extends State<_FooterLink> {
       onTap: widget.onTap,
       child: AnimatedDefaultTextStyle(
         duration: const Duration(milliseconds: 200), // transition-colors
-        style: NhamTextStyles.sansSemiBold(fontSize: NhamFontSize.sm)
-            .copyWith(color: _pressed ? _hover : NhamColors.accent),
+        style: NhamTextStyles.sansSemiBold(
+          fontSize: NhamFontSize.sm,
+        ).copyWith(color: _pressed ? _hover : NhamColors.accent),
         child: Text(widget.label),
       ),
     );
