@@ -9,7 +9,6 @@ interface PullQuoteProps {
 }
 
 export function PullQuote({ card }: PullQuoteProps) {
-  const t = useTranslations('nutrition');
   const tRoot = useTranslations();
 
   return (
@@ -19,15 +18,12 @@ export function PullQuote({ card }: PullQuoteProps) {
       transition={{ duration: 0.55, delay: 0.22 }}
       className="max-w-3xl border-nham-accent/60 border-l-[3px] border-dashed pl-5 lg:ml-8 lg:pl-8"
     >
-      <p className="font-bold text-[10px] text-nham-stone uppercase tracking-[0.22em]">
-        {t('pullQuote.eyebrow')}
-      </p>
       <h3
-        className="mt-3 text-nham-text"
+        className="text-nham-text"
         style={{
           fontFamily: 'Lora, serif',
           fontStyle: 'italic',
-          fontWeight: 500,
+          fontWeight: 400,
           fontSize: 'clamp(1.125rem, 0.85rem + 1.2vw, 1.4rem)',
           lineHeight: 1.35,
           letterSpacing: '-0.005em',

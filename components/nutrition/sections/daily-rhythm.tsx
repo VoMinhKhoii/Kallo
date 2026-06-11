@@ -5,7 +5,6 @@ import { useLocale, useTranslations } from 'next-intl';
 import type { MacroPattern } from '@/lib/nutrition/types';
 import { cn } from '@/lib/utils';
 import { formatLocalizedNumber, shouldShowExceed } from '../primitives/helpers';
-import { SectionEyebrow } from '../primitives/section-eyebrow';
 import { TargetProgressBar } from '../primitives/target-progress-bar';
 
 interface DailyRhythmProps {
@@ -47,6 +46,12 @@ export function DailyRhythm({ macros }: DailyRhythmProps) {
   const locale = useLocale();
 
   const calories = macros.find((m) => m.key === 'calories');
+  const compositionLabels = Object.fromEntries(
+    COMPOSITION_KEYS.map((key) => {
+      const macro = macros.find((m) => m.key === key);
+      return [key, macro ? tRoot(macro.labelKey) : COMPOSITION_SHORT[key]];
+    })
+  ) as Record<CompositionKey, string>;
   const composition = COMPOSITION_KEYS.map((key) => {
     const macro = macros.find((m) => m.key === key);
     if (!macro || macro.averagePerDay <= 0) {
@@ -82,14 +87,13 @@ export function DailyRhythm({ macros }: DailyRhythmProps) {
       <h2 id={headingId} className="sr-only">
         {eyebrowLabel}
       </h2>
-      <SectionEyebrow label={eyebrowLabel} delay={0.1} />
 
-      <div className="rounded-3xl border border-nham-border/60 bg-card/55 p-5 sm:p-6">
+      <div className="rounded-3xl border border-nham-border/60 bg-white p-5 sm:p-6">
         <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <p
               className="text-nham-text leading-none tracking-[-0.02em]"
-              style={{ fontFamily: 'Lora, serif', fontWeight: 500 }}
+              style={{ fontFamily: 'Lora, serif', fontWeight: 400 }}
             >
               <span className="text-4xl tabular-nums sm:text-5xl">
                 {calories
@@ -124,7 +128,7 @@ export function DailyRhythm({ macros }: DailyRhythmProps) {
                         backgroundColor: COMPOSITION_COLORS[segment.key],
                       }}
                     />
-                    {COMPOSITION_SHORT[segment.key]} {Math.round(segment.pct)}%
+                    {compositionLabels[segment.key]} {Math.round(segment.pct)}%
                   </span>
                 ))}
               </p>

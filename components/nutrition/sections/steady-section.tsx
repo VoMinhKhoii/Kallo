@@ -2,7 +2,6 @@
 
 import { useTranslations } from 'next-intl';
 import type { NutrientCardData } from '@/lib/nutrition/types';
-import { SectionEyebrow } from '../primitives/section-eyebrow';
 import { NutrientRow } from '../rows/nutrient-row';
 
 interface SteadySectionProps {
@@ -24,11 +23,10 @@ export function SteadySection({ cards }: SteadySectionProps) {
       <h2 id={headingId} className="sr-only">
         {eyebrowLabel}
       </h2>
-      <div className="flex items-baseline justify-between gap-4">
-        <SectionEyebrow label={eyebrowLabel} delay={0.18} />
+      <div className="flex items-baseline justify-end gap-4">
         <p className="text-[11px] text-nham-text-muted">{t('steady.hint')}</p>
       </div>
-      <div className="overflow-hidden rounded-2xl border border-nham-border/50 bg-card/40">
+      <div className="overflow-hidden rounded-2xl border border-nham-border/50 bg-white">
         <div className="grid sm:grid-cols-2">
           <ul>
             {left.map((card) => (

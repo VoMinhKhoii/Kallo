@@ -37,7 +37,7 @@ export function SpotlightRow({ card, delay = 0 }: SpotlightRowProps) {
           className="text-nham-text"
           style={{
             fontFamily: 'Lora, serif',
-            fontWeight: 500,
+            fontWeight: 400,
             fontSize: 'clamp(1.25rem, 0.95rem + 1.4vw, 1.6rem)',
             letterSpacing: '-0.01em',
           }}

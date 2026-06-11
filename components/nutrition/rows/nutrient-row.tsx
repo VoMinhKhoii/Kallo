@@ -1,6 +1,6 @@
 'use client';
 
-import { ChevronRight } from 'lucide-react';
+import { ChevronDown } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useTranslations } from 'next-intl';
 import { useId, useState } from 'react';
@@ -114,11 +114,11 @@ export function NutrientRow({ card }: NutrientRowProps) {
         </span>
         <motion.span
           aria-hidden="true"
-          animate={{ rotate: open ? 90 : 0 }}
+          animate={{ rotate: open ? 180 : 0 }}
           transition={{ duration: 0.2 }}
           className="shrink-0 text-nham-stone"
         >
-          <ChevronRight className="h-4 w-4" aria-hidden="true" />
+          <ChevronDown className="h-4 w-4" aria-hidden="true" />
         </motion.span>
       </button>
 

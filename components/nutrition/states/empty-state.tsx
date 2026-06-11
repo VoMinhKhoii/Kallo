@@ -24,7 +24,7 @@ export function EmptyState() {
           className="text-balance text-nham-text"
           style={{
             fontFamily: 'Lora, serif',
-            fontWeight: 500,
+            fontWeight: 400,
             fontSize: 'clamp(1.5rem, 1.1rem + 1.6vw, 2rem)',
             letterSpacing: '-0.015em',
             lineHeight: 1.25,

@@ -107,12 +107,8 @@ export function VerdictHero({ overview }: VerdictHeroProps) {
       className="flex flex-wrap items-baseline gap-x-2.5 gap-y-1 text-sm leading-6"
     >
       <span
-        aria-hidden="true"
-        className="inline-block h-1.5 w-1.5 shrink-0 translate-y-[-2px] rounded-full bg-nham-accent"
-      />
-      <span
         className="text-nham-text"
-        style={{ fontFamily: 'Lora, serif', fontWeight: 500 }}
+        style={{ fontFamily: 'Lora, serif', fontWeight: 400 }}
       >
         {headline}
       </span>
