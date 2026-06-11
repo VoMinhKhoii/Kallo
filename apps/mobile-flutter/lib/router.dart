@@ -19,6 +19,7 @@ import 'services/supabase_service.dart';
 import 'shell/placeholder_screen.dart';
 import 'shell/tab_scaffold.dart';
 import 'theme/nham_colors.dart';
+import 'theme/nham_typography.dart';
 
 final _rootKey = GlobalKey<NavigatorState>(debugLabel: 'root');
 final _shellKey = GlobalKey<NavigatorState>(debugLabel: 'shell');
@@ -256,23 +257,59 @@ class _GoRouterAuthRefresh extends ChangeNotifier {
   }
 }
 
-/// Minimal cream splash shown on the index route while the redirect resolves.
-/// Mirrors RN's centered [ActivityIndicator] on the surface background.
-class _SplashScreen extends StatelessWidget {
+/// Cream splash shown on the index route while the redirect resolves. The
+/// first frame of brand: the Lora "Nhẩm" wordmark breathing gently on the cream
+/// surface, instead of a generic Material spinner. The cream background matches
+/// the native LaunchScreen so the native→Flutter handoff is seamless.
+class _SplashScreen extends StatefulWidget {
   const _SplashScreen();
 
   @override
+  State<_SplashScreen> createState() => _SplashScreenState();
+}
+
+class _SplashScreenState extends State<_SplashScreen>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 1400),
+  );
+
+  @override
+  void initState() {
+    super.initState();
+    // Gentle breathing pulse, paused under reduced-motion.
+    if (!WidgetsBinding
+        .instance
+        .platformDispatcher
+        .accessibilityFeatures
+        .disableAnimations) {
+      _controller.repeat(reverse: true);
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return const ColoredBox(
+    final wordmark = Text(
+      'Nhẩm',
+      style: NhamTextStyles.serifRegular(
+        fontSize: 32,
+      ).copyWith(color: NhamColors.text),
+    );
+    return ColoredBox(
       color: NhamColors.surface,
       child: Center(
-        child: SizedBox(
-          width: 28,
-          height: 28,
-          child: CircularProgressIndicator(
-            strokeWidth: 2,
-            valueColor: AlwaysStoppedAnimation<Color>(NhamColors.accent),
+        child: FadeTransition(
+          opacity: Tween<double>(begin: 0.5, end: 1.0).animate(
+            CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
           ),
+          child: wordmark,
         ),
       ),
     );
