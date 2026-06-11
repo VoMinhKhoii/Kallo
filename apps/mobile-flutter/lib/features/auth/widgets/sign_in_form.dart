@@ -2,7 +2,10 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../theme/nham_colors.dart';
+import '../../../theme/nham_typography.dart';
 import '../providers/auth_form_controller.dart';
+import '../screens/forgot_password_screen.dart';
 import 'auth_submit_button.dart';
 import 'auth_text_field.dart';
 
@@ -54,10 +57,7 @@ class _SignInFormState extends ConsumerState<SignInForm> {
 
   void _submit() {
     if (!_validate()) return;
-    _controller.signInWithEmail(
-      email: _email.text,
-      password: _password.text,
-    );
+    _controller.signInWithEmail(email: _email.text, password: _password.text);
   }
 
   @override
@@ -105,6 +105,27 @@ class _SignInFormState extends ConsumerState<SignInForm> {
           onChanged: (_) {
             if (_passwordError != null) setState(() => _passwordError = null);
           },
+        ),
+        const SizedBox(height: 8),
+        Align(
+          alignment: Alignment.centerRight,
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap:
+                busy
+                    ? null
+                    : () => Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                        builder: (_) => const ForgotPasswordScreen(),
+                      ),
+                    ),
+            child: Text(
+              tr('auth.signIn.forgotPassword'),
+              style: NhamTextStyles.sansRegular(
+                fontSize: 12,
+              ).copyWith(color: NhamColors.textMuted),
+            ),
+          ),
         ),
         const SizedBox(height: 16), // space-y-4
         AuthSubmitButton(

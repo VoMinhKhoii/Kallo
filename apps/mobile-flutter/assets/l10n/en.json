@@ -683,6 +683,18 @@
       "orContinueWithEmail": "or continue with email",
       "googleError": "Google sign-in failed. Please try again."
     },
+    "forgot": {
+      "title": "Reset your password",
+      "description": "Enter the email you signed up with and we'll send a reset link.",
+      "email": "Email",
+      "emailPlaceholder": "you@example.com",
+      "emailError": "Enter a valid email address",
+      "submit": "Send reset link",
+      "back": "Back to sign in",
+      "sentTitle": "Check your email",
+      "sentDescription": "We sent a password reset link to",
+      "backToSignIn": "Back to sign in"
+    },
     "otp": {
       "title": "Check your email",
       "subtitle": "We sent a verification code to {email}",
