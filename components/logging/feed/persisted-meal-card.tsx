@@ -16,6 +16,8 @@ import { cn } from '@/lib/utils';
 
 interface PersistedMealCardProps {
   meal: PersistedMeal;
+  /** Remove this meal (deferred delete with undo handled by the feed). */
+  onDelete?: () => void;
 }
 
 function ShareCardButton({ shareId }: { shareId: string }) {
@@ -120,15 +122,15 @@ function ShareToCircleButton({
   );
 }
 
-export function PersistedMealCard({ meal }: PersistedMealCardProps) {
+export function PersistedMealCard({ meal, onDelete }: PersistedMealCardProps) {
   // Cheat meals render a dedicated, warmly-decorated card variant.
   if (meal.entryMode === 'cheat') {
-    return <CheatMealCard meal={meal} />;
+    return <CheatMealCard meal={meal} onDelete={onDelete} />;
   }
-  return <PrecisePersistedMealCard meal={meal} />;
+  return <PrecisePersistedMealCard meal={meal} onDelete={onDelete} />;
 }
 
-function PrecisePersistedMealCard({ meal }: PersistedMealCardProps) {
+function PrecisePersistedMealCard({ meal, onDelete }: PersistedMealCardProps) {
   const t = useTranslations('logging.persistedMealCard');
   const [isCollapsed, setIsCollapsed] = useState(true);
 
@@ -288,8 +290,20 @@ function PrecisePersistedMealCard({ meal }: PersistedMealCardProps) {
           )}
         </AnimatePresence>
 
-        {/* Post-save share affordance — never at the text input */}
-        <div className="mt-3 flex justify-end border-nham-border/40 border-t border-dashed pt-2.5">
+        {/* Post-save actions — never at the text input */}
+        <div className="mt-3 flex items-center justify-between border-nham-border/40 border-t border-dashed pt-2.5">
+          {onDelete ? (
+            <button
+              type="button"
+              onClick={onDelete}
+              className="rounded-full px-2.5 py-1 font-medium text-[11px] text-nham-text-muted/70 transition-colors hover:bg-nham-danger/10 hover:text-nham-danger"
+              style={{ fontFamily: 'DM Sans, sans-serif' }}
+            >
+              {t('remove')}
+            </button>
+          ) : (
+            <span />
+          )}
           <ShareToCircleButton mealId={meal.id} share={meal.share} />
         </div>
       </div>

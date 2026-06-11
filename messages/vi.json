@@ -962,6 +962,9 @@
     },
     "feedArea": {
       "savedMeal": "Đã lưu bữa ăn",
+      "mealRemoved": "Đã xóa bữa ăn",
+      "undo": "Hoàn tác",
+      "deleteError": "Không thể xóa bữa ăn. Vui lòng thử lại.",
       "repeatError": "Không thể mở lại dịp này.",
       "legacyMacroWarning": "Không thể hiển thị tổng macro trong ngày vì một số bữa ăn cũ thiếu macro.",
       "loadErrorTitle": "Không thể tải ngày này",
@@ -996,7 +999,8 @@
     },
     "persistedMealCard": {
       "toggleDetails": "Bật/tắt chi tiết bữa ăn",
-      "total": "Tổng"
+      "total": "Tổng",
+      "remove": "Xóa"
     },
     "mode": {
       "normal": "Bình thường",
@@ -1027,6 +1031,7 @@
     },
     "cheatMealCard": {
       "badge": "Bữa xả",
+      "remove": "Xóa",
       "toggleDetails": "Bật/tắt chi tiết bữa ăn",
       "total": "Tổng",
       "youSet": "BẠN ĐÃ CHỌN",

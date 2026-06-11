@@ -18,6 +18,8 @@ import { cn } from '@/lib/utils';
 
 interface CheatMealCardProps {
   meal: PersistedMeal;
+  /** Remove this meal (deferred delete with undo handled by the feed). */
+  onDelete?: () => void;
 }
 
 /** Six dots filled up to the chosen stop — where on the scale the user landed. */
@@ -39,7 +41,7 @@ function StopScale({ level, color }: { level: number; color: string }) {
   );
 }
 
-export function CheatMealCard({ meal }: CheatMealCardProps) {
+export function CheatMealCard({ meal, onDelete }: CheatMealCardProps) {
   const t = useTranslations('logging.cheatMealCard');
   const [isCollapsed, setIsCollapsed] = useState(true);
 
@@ -227,6 +229,19 @@ export function CheatMealCard({ meal }: CheatMealCardProps) {
             </motion.div>
           )}
         </AnimatePresence>
+
+        {onDelete && (
+          <div className="mt-3 flex justify-start border-nham-border/40 border-t border-dashed pt-2.5">
+            <button
+              type="button"
+              onClick={onDelete}
+              className="rounded-full px-2.5 py-1 font-medium text-[11px] text-nham-text-muted/70 transition-colors hover:bg-nham-danger/10 hover:text-nham-danger"
+              style={{ fontFamily: 'DM Sans, sans-serif' }}
+            >
+              {t('remove')}
+            </button>
+          </div>
+        )}
       </div>
     </motion.article>
   );

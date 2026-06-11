@@ -962,6 +962,9 @@
     },
     "feedArea": {
       "savedMeal": "Meal saved",
+      "mealRemoved": "Meal removed",
+      "undo": "Undo",
+      "deleteError": "Could not remove the meal. Please try again.",
       "repeatError": "Could not reopen that occasion.",
       "legacyMacroWarning": "Daily macro summary unavailable because some legacy meals have unknown macros.",
       "loadErrorTitle": "Could not load this day",
@@ -996,7 +999,8 @@
     },
     "persistedMealCard": {
       "toggleDetails": "Toggle meal details",
-      "total": "Total"
+      "total": "Total",
+      "remove": "Remove"
     },
     "mode": {
       "normal": "Normal",
@@ -1027,6 +1031,7 @@
     },
     "cheatMealCard": {
       "badge": "Cheat meal",
+      "remove": "Remove",
       "toggleDetails": "Toggle meal details",
       "total": "Total",
       "youSet": "YOU SET",

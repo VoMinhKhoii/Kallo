@@ -21,6 +21,7 @@ import {
 } from '@/components/logging/input/meal-input';
 import type { LoggingProfile } from '@/components/logging/logging-shell';
 import { addDays } from '@/components/logging/sidebar/timeline-utils';
+import { dailyMealsKeys } from '@/hooks/use-daily-meals';
 import { useFeedSubmit } from '@/hooks/use-feed-submit';
 import { loggingDayKeys, useLoggingDay } from '@/hooks/use-logging-day';
 import { useConfirmMeal } from '@/hooks/use-meal-mutations';
@@ -29,6 +30,8 @@ import { useStreamAnalysis } from '@/hooks/use-stream-analysis';
 import { useStreamingTerminalEffects } from '@/hooks/use-streaming-terminal-effects';
 import { useSubmitGuard } from '@/hooks/use-submit-guard';
 import {
+  deleteMealAction,
+  type LoggingDayData,
   type RecentCheatOccasion,
   stageCheatRepeatAction,
 } from '@/lib/actions/meals';
@@ -195,6 +198,71 @@ export function FeedArea({
   const stream = useStreamAnalysis();
   const queryClient = useQueryClient();
   const { guard } = useSubmitGuard();
+
+  // Remove a meal with a 5-second undo. The card is dropped from the day cache
+  // immediately so the calorie ring and macro bars heal on screen; the server
+  // delete is deferred until the toast closes, so "undo" just restores the
+  // snapshot (no re-insert needed). Mis-logged meals were previously permanent.
+  const handleDeleteMeal = useCallback(
+    (mealId: string) => {
+      const filter = {
+        queryKey: loggingDayKeys.byUserDate(profile.userId, selectedDate),
+      };
+      const snapshots = queryClient.getQueriesData<LoggingDayData>(filter);
+
+      queryClient.setQueriesData<LoggingDayData>(filter, (old) =>
+        old
+          ? {
+              ...old,
+              persistedMeals: old.persistedMeals.filter(
+                (meal) => meal.id !== mealId
+              ),
+            }
+          : old
+      );
+
+      let undone = false;
+      const restore = () => {
+        for (const [key, data] of snapshots) {
+          queryClient.setQueryData(key, data);
+        }
+      };
+      const commit = async () => {
+        if (undone) return;
+        try {
+          await deleteMealAction({ mealId });
+        } catch (error) {
+          restore();
+          toast.error(
+            error instanceof Error ? error.message : t('deleteError')
+          );
+          return;
+        }
+        queryClient.invalidateQueries({
+          queryKey: loggingDayKeys.byUserDate(profile.userId, selectedDate),
+          refetchType: 'none',
+        });
+        queryClient.invalidateQueries({
+          queryKey: dailyMealsKeys.byDate(selectedDate),
+        });
+        queryClient.invalidateQueries({ queryKey: ['meal-dates'] });
+      };
+
+      toast(t('mealRemoved'), {
+        duration: 5000,
+        action: {
+          label: t('undo'),
+          onClick: () => {
+            undone = true;
+            restore();
+          },
+        },
+        onAutoClose: commit,
+        onDismiss: commit,
+      });
+    },
+    [profile.userId, selectedDate, queryClient, t]
+  );
   const [streamingMsgId, setStreamingMsgId] = useState<string | null>(null);
   // Session-scoped dismissal for the "yesterday under-logged" prompt. FeedArea
   // stays mounted across date navigation, so this survives clicking through to
@@ -680,7 +748,11 @@ export function FeedArea({
               {/* Persisted meals from DB */}
               <AnimatePresence initial={false}>
                 {orderedPersistedMeals.map((meal) => (
-                  <PersistedMealCard key={meal.id} meal={meal} />
+                  <PersistedMealCard
+                    key={meal.id}
+                    meal={meal}
+                    onDelete={() => handleDeleteMeal(meal.id)}
+                  />
                 ))}
               </AnimatePresence>
 
