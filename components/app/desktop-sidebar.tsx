@@ -1,6 +1,7 @@
 'use client';
 
 import { PanelLeftClose, PanelLeftOpen, Settings } from 'lucide-react';
+import { useLinkStatus } from 'next/link';
 import { useTranslations } from 'next-intl';
 import type * as React from 'react';
 import { useState } from 'react';
@@ -63,6 +64,23 @@ function SectionHeader({
   );
 }
 
+/**
+ * Instant pending feedback on the tapped row: while the next route's data is
+ * being fetched, paint a soft hover-tint behind the (inactive) row so the click
+ * is acknowledged immediately instead of the old page freezing. `useLinkStatus`
+ * must run inside a descendant of the <Link>.
+ */
+function NavPendingTint({ isActive }: { isActive: boolean }) {
+  const { pending } = useLinkStatus();
+  if (!pending || isActive) return null;
+  return (
+    <span
+      aria-hidden="true"
+      className="pointer-events-none absolute inset-0 -z-[1] rounded-lg bg-nham-hover/70 motion-safe:animate-pulse"
+    />
+  );
+}
+
 function SidebarNavLink({
   item,
   collapsed,
@@ -85,6 +103,7 @@ function SidebarNavLink({
             : 'text-nham-text-muted hover:bg-nham-hover/60 hover:text-nham-text'
         )}
       >
+        <NavPendingTint isActive={isActive} />
         <span
           className={cn(
             'flex h-5 w-5 shrink-0 items-center justify-center transition-colors',
