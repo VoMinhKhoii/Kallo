@@ -62,6 +62,8 @@
       "logging": "Ghi nhận",
       "groups": "Nhóm",
       "admin": "Quản trị",
+      "logMeal": "Ghi món",
+      "composerTitle": "Bạn đã ăn gì?",
       "settings": "Cài đặt",
       "expandSidebar": "Mở rộng thanh bên",
       "collapseSidebar": "Thu gọn thanh bên",

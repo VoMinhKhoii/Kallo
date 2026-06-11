@@ -8,6 +8,7 @@ import { useState } from 'react';
 import { useSidebarState } from '@/hooks/use-sidebar-state';
 import { Link, usePathname } from '@/i18n/navigation';
 import { cn } from '@/lib/utils';
+import { GlobalComposer } from './global-composer';
 import { isActiveRoute, visibleNavItems } from './nav-items';
 import { OnboardingNudge } from './onboarding-nudge';
 import { SidebarTooltip } from './sidebar-tooltip';
@@ -243,13 +244,24 @@ export function DesktopSidebar({
         pinnedCollapsed && collapsed && 'cursor-pointer'
       )}
     >
-      {/* Header — pin/unpin toggle */}
+      {/* Header — Lora wordmark (home link) + pin/unpin toggle. The authed app
+          finally says its own name. */}
       <div
         className={cn(
           'flex shrink-0 items-center px-3 pt-3',
-          collapsed ? 'justify-center' : 'justify-end'
+          collapsed ? 'justify-center' : 'justify-between'
         )}
       >
+        {!collapsed && (
+          <Link
+            href="/dashboard"
+            aria-label="Nhẩm"
+            className="rounded-md px-1 text-[22px] text-nham-text leading-none tracking-tight transition-colors hover:text-nham-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent"
+            style={{ fontFamily: 'Lora, serif' }}
+          >
+            Nhẩm
+          </Link>
+        )}
         <SidebarTooltip
           enabled={collapsed}
           label={pinnedCollapsed ? t('expandSidebar') : t('collapseSidebar')}
@@ -273,10 +285,10 @@ export function DesktopSidebar({
         </SidebarTooltip>
       </div>
 
-      {/* Scroll region: nav + onboarding + settings */}
+      {/* Scroll region: composer + nav + onboarding + settings */}
       <div className="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto p-3">
+        <GlobalComposer collapsed={collapsed} />
         <nav className="flex flex-col gap-3">
-          <SectionHeader label={t('sectionLabel')} collapsed={collapsed} />
           <ul className="flex flex-col gap-1.5">
             {navItems.map((item) => (
               <li key={item.id}>
