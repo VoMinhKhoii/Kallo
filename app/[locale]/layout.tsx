@@ -44,10 +44,10 @@ const dmSans = DM_Sans({
 });
 
 export const viewport: Viewport = {
-  themeColor: [
-    { media: '(prefers-color-scheme: light)', color: '#ffffff' },
-    { media: '(prefers-color-scheme: dark)', color: '#121214' },
-  ],
+  // Cream canvas, light-only. The product ships a single warm theme; the prior
+  // white / near-black status-bar zone framed the cream paper incorrectly in
+  // standalone PWA.
+  themeColor: '#fefbf6',
   viewportFit: 'cover',
 };
 
