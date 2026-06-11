@@ -22,9 +22,9 @@ export function Header() {
         <div className="flex items-center gap-2">
           <div
             className="font-medium text-2xl text-[#2C2416]"
-            style={{ fontFamily: 'Lora, serif' }}
+            style={{ fontFamily: 'var(--font-lora), Georgia, serif' }}
           >
-            Nham
+            Nhẩm
           </div>
         </div>
 
@@ -33,21 +33,30 @@ export function Header() {
           <a
             href="#features"
             className="text-[#6B5D4F] text-sm transition-colors hover:text-[#2C2416]"
-            style={{ fontFamily: 'DM Sans, sans-serif' }}
+            style={{
+              fontFamily:
+                'var(--font-dm-sans), ui-sans-serif, system-ui, sans-serif',
+            }}
           >
             {t('features')}
           </a>
           <a
             href="#how"
             className="text-[#6B5D4F] text-sm transition-colors hover:text-[#2C2416]"
-            style={{ fontFamily: 'DM Sans, sans-serif' }}
+            style={{
+              fontFamily:
+                'var(--font-dm-sans), ui-sans-serif, system-ui, sans-serif',
+            }}
           >
             {t('howItWorks')}
           </a>
           <a
             href="#pricing"
             className="text-[#6B5D4F] text-sm transition-colors hover:text-[#2C2416]"
-            style={{ fontFamily: 'DM Sans, sans-serif' }}
+            style={{
+              fontFamily:
+                'var(--font-dm-sans), ui-sans-serif, system-ui, sans-serif',
+            }}
           >
             {t('pricing')}
           </a>
@@ -59,7 +68,10 @@ export function Header() {
           <Button
             variant="landing-ghost"
             className="hidden sm:block"
-            style={{ fontFamily: 'DM Sans, sans-serif' }}
+            style={{
+              fontFamily:
+                'var(--font-dm-sans), ui-sans-serif, system-ui, sans-serif',
+            }}
             onClick={() => openDialog('sign-in')}
           >
             {t('signIn')}
@@ -67,7 +79,10 @@ export function Header() {
           <Button
             variant="header-cta"
             size="header"
-            style={{ fontFamily: 'DM Sans, sans-serif' }}
+            style={{
+              fontFamily:
+                'var(--font-dm-sans), ui-sans-serif, system-ui, sans-serif',
+            }}
             onClick={() => openDialog('sign-up')}
           >
             {t('getStarted')}

@@ -11,13 +11,16 @@ export async function Footer() {
           <div className="md:col-span-2">
             <div
               className="mb-4 font-medium text-2xl text-[#2C2416]"
-              style={{ fontFamily: 'Lora, serif' }}
+              style={{ fontFamily: 'var(--font-lora), Georgia, serif' }}
             >
-              Nham
+              Nhẩm
             </div>
             <p
               className="max-w-sm text-[#6B5D4F] leading-relaxed"
-              style={{ fontFamily: 'DM Sans, sans-serif' }}
+              style={{
+                fontFamily:
+                  'var(--font-dm-sans), ui-sans-serif, system-ui, sans-serif',
+              }}
             >
               {t('tagline')}
             </p>
@@ -27,7 +30,10 @@ export async function Footer() {
           <div>
             <h4
               className="mb-4 font-medium text-[#2C2416]"
-              style={{ fontFamily: 'DM Sans, sans-serif' }}
+              style={{
+                fontFamily:
+                  'var(--font-dm-sans), ui-sans-serif, system-ui, sans-serif',
+              }}
             >
               {t('product')}
             </h4>
@@ -36,7 +42,10 @@ export async function Footer() {
                 <a
                   href="#"
                   className="text-[#6B5D4F] text-sm transition-colors hover:text-[#2C2416]"
-                  style={{ fontFamily: 'DM Sans, sans-serif' }}
+                  style={{
+                    fontFamily:
+                      'var(--font-dm-sans), ui-sans-serif, system-ui, sans-serif',
+                  }}
                 >
                   {t('features')}
                 </a>
@@ -45,7 +54,10 @@ export async function Footer() {
                 <a
                   href="#"
                   className="text-[#6B5D4F] text-sm transition-colors hover:text-[#2C2416]"
-                  style={{ fontFamily: 'DM Sans, sans-serif' }}
+                  style={{
+                    fontFamily:
+                      'var(--font-dm-sans), ui-sans-serif, system-ui, sans-serif',
+                  }}
                 >
                   {t('howItWorks')}
                 </a>
@@ -54,7 +66,10 @@ export async function Footer() {
                 <a
                   href="#"
                   className="text-[#6B5D4F] text-sm transition-colors hover:text-[#2C2416]"
-                  style={{ fontFamily: 'DM Sans, sans-serif' }}
+                  style={{
+                    fontFamily:
+                      'var(--font-dm-sans), ui-sans-serif, system-ui, sans-serif',
+                  }}
                 >
                   {t('pricing')}
                 </a>
@@ -63,7 +78,10 @@ export async function Footer() {
                 <a
                   href="#"
                   className="text-[#6B5D4F] text-sm transition-colors hover:text-[#2C2416]"
-                  style={{ fontFamily: 'DM Sans, sans-serif' }}
+                  style={{
+                    fontFamily:
+                      'var(--font-dm-sans), ui-sans-serif, system-ui, sans-serif',
+                  }}
                 >
                   {t('faq')}
                 </a>
@@ -75,7 +93,10 @@ export async function Footer() {
           <div>
             <h4
               className="mb-4 font-medium text-[#2C2416]"
-              style={{ fontFamily: 'DM Sans, sans-serif' }}
+              style={{
+                fontFamily:
+                  'var(--font-dm-sans), ui-sans-serif, system-ui, sans-serif',
+              }}
             >
               {t('company')}
             </h4>
@@ -84,7 +105,10 @@ export async function Footer() {
                 <a
                   href="#"
                   className="text-[#6B5D4F] text-sm transition-colors hover:text-[#2C2416]"
-                  style={{ fontFamily: 'DM Sans, sans-serif' }}
+                  style={{
+                    fontFamily:
+                      'var(--font-dm-sans), ui-sans-serif, system-ui, sans-serif',
+                  }}
                 >
                   {t('about')}
                 </a>
@@ -93,7 +117,10 @@ export async function Footer() {
                 <a
                   href="#"
                   className="text-[#6B5D4F] text-sm transition-colors hover:text-[#2C2416]"
-                  style={{ fontFamily: 'DM Sans, sans-serif' }}
+                  style={{
+                    fontFamily:
+                      'var(--font-dm-sans), ui-sans-serif, system-ui, sans-serif',
+                  }}
                 >
                   {t('blog')}
                 </a>
@@ -102,7 +129,10 @@ export async function Footer() {
                 <a
                   href="#"
                   className="text-[#6B5D4F] text-sm transition-colors hover:text-[#2C2416]"
-                  style={{ fontFamily: 'DM Sans, sans-serif' }}
+                  style={{
+                    fontFamily:
+                      'var(--font-dm-sans), ui-sans-serif, system-ui, sans-serif',
+                  }}
                 >
                   {t('contact')}
                 </a>
@@ -111,7 +141,10 @@ export async function Footer() {
                 <a
                   href="#"
                   className="text-[#6B5D4F] text-sm transition-colors hover:text-[#2C2416]"
-                  style={{ fontFamily: 'DM Sans, sans-serif' }}
+                  style={{
+                    fontFamily:
+                      'var(--font-dm-sans), ui-sans-serif, system-ui, sans-serif',
+                  }}
                 >
                   {t('privacy')}
                 </a>
@@ -124,7 +157,10 @@ export async function Footer() {
         <div className="flex flex-col items-center justify-between gap-4 border-[#E8D5B5]/30 border-t pt-8 md:flex-row">
           <p
             className="text-[#8B7355] text-sm"
-            style={{ fontFamily: 'DM Sans, sans-serif' }}
+            style={{
+              fontFamily:
+                'var(--font-dm-sans), ui-sans-serif, system-ui, sans-serif',
+            }}
           >
             {t('copyright', { year: new Date().getFullYear() })}
           </p>
@@ -132,21 +168,30 @@ export async function Footer() {
             <a
               href="#"
               className="text-[#8B7355] text-sm transition-colors hover:text-[#2C2416]"
-              style={{ fontFamily: 'DM Sans, sans-serif' }}
+              style={{
+                fontFamily:
+                  'var(--font-dm-sans), ui-sans-serif, system-ui, sans-serif',
+              }}
             >
               {t('terms')}
             </a>
             <a
               href="#"
               className="text-[#8B7355] text-sm transition-colors hover:text-[#2C2416]"
-              style={{ fontFamily: 'DM Sans, sans-serif' }}
+              style={{
+                fontFamily:
+                  'var(--font-dm-sans), ui-sans-serif, system-ui, sans-serif',
+              }}
             >
               {t('privacyLink')}
             </a>
             <a
               href="#"
               className="text-[#8B7355] text-sm transition-colors hover:text-[#2C2416]"
-              style={{ fontFamily: 'DM Sans, sans-serif' }}
+              style={{
+                fontFamily:
+                  'var(--font-dm-sans), ui-sans-serif, system-ui, sans-serif',
+              }}
             >
               {t('security')}
             </a>

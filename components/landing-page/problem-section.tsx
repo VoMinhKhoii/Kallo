@@ -65,7 +65,7 @@ export function ProblemSection() {
 
             <h2
               className="mb-8 font-normal text-5xl leading-[1.1] lg:text-7xl"
-              style={{ fontFamily: 'Lora, serif' }}
+              style={{ fontFamily: 'var(--font-lora), Georgia, serif' }}
             >
               {t('title')}
               <br />{' '}
@@ -76,7 +76,10 @@ export function ProblemSection() {
 
             <p
               className="mb-12 max-w-md font-light text-[#B0A695] text-xl leading-relaxed"
-              style={{ fontFamily: 'DM Sans, sans-serif' }}
+              style={{
+                fontFamily:
+                  'var(--font-dm-sans), ui-sans-serif, system-ui, sans-serif',
+              }}
             >
               {t('subtitle')}
             </p>

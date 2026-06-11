@@ -62,7 +62,7 @@ export function Hero() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.1 }}
             className="mb-8 font-normal text-5xl text-[#2C2416] leading-[1.1] lg:text-7xl"
-            style={{ fontFamily: 'Lora, serif' }}
+            style={{ fontFamily: 'var(--font-lora), Georgia, serif' }}
           >
             {t('title')} <br />
             <span className="font-light text-[#C9A87C] italic">
@@ -75,7 +75,10 @@ export function Hero() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.2 }}
             className="mb-10 max-w-md font-light text-[#6B5D4F] text-lg leading-relaxed"
-            style={{ fontFamily: 'DM Sans, sans-serif' }}
+            style={{
+              fontFamily:
+                'var(--font-dm-sans), ui-sans-serif, system-ui, sans-serif',
+            }}
           >
             {t('subtitle')}
           </motion.p>
@@ -100,26 +103,15 @@ export function Hero() {
             </Button>
           </motion.div>
 
+          {/* Honest beta note — no fabricated avatars or "loved by N users"
+              claims for a product that is just launching. */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.6, duration: 1 }}
-            className="mt-12 flex items-center gap-4 text-[#8B7355] text-sm"
+            className="mt-12 text-[#8B7355] text-sm"
           >
-            <div className="flex -space-x-3">
-              {[1, 2, 3, 4].map((i) => (
-                <div
-                  key={i}
-                  className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full border-[#FEFBF6] border-[3px] bg-[#E0D8CC] shadow-sm"
-                >
-                  <div className="font-bold text-[#6B5D4F] text-[10px] opacity-50">
-                    {String.fromCharCode(64 + i)}
-                  </div>
-                </div>
-              ))}
-            </div>
-            <div className="h-8 w-px bg-[#E8D5B5]" />
-            <p className="font-medium">{t('socialProof')}</p>
+            <p className="font-medium">{t('beta')}</p>
           </motion.div>
         </div>
 

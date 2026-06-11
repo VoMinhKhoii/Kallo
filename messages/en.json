@@ -698,6 +698,7 @@
       "cta": "Get Started",
       "ctaSecondary": "See How It Works",
       "socialProof": "Loved by early Vietnamese beta users",
+      "beta": "In beta · built in Vietnam",
       "demo": {
         "today": "Today",
         "date": "Meal log",
@@ -799,6 +800,7 @@
       "feature2": "AI understands cooking context",
       "feature3": "Bounded nutrition estimates",
       "socialProof": "Trusted by early testers who were tired of guessing",
+      "trust": "Vietnamese food-composition data · understands how you cook · tiếng Việt + English",
       "appStore": "App Store rating",
       "users": "beta users",
       "mealsTracked": "meals tracked"
