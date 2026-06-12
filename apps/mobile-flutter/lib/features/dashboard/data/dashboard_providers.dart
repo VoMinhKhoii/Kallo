@@ -96,6 +96,12 @@ final loggingDayProvider =
 /// the [LoggingDayData] (persistedMeals) slice the Today card renders. The
 /// *anchor* day (today) still reads off the already-warm bundle so the first
 /// page costs no extra round-trip; only swiping to another day fetches.
+///
+/// Deliberately NOT autoDispose: the pager keeps day slices cached while the
+/// user swipes back and forth (autoDispose would refetch on every page turn).
+/// The trade-off is that mutations must invalidate the affected date
+/// explicitly — meal confirm ([ConfirmMealNotifier]) and meal delete
+/// (the feed's swipe-remove) both do.
 final dashboardDayProvider =
     FutureProvider.family<LoggingDayData, DashboardArgs>((ref, args) async {
   final api = ref.watch(apiClientProvider);

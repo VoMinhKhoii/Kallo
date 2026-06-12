@@ -68,18 +68,6 @@ class LoggingDayNotifier
     );
   }
 
-  /// Optimistically remove a persisted meal (on delete).
-  void removeMeal(String mealId) {
-    final current = state.valueOrNull;
-    if (current == null) return;
-    state = AsyncData(
-      current.copyWith(
-        persistedMeals:
-            current.persistedMeals.where((m) => m.id != mealId).toList(),
-      ),
-    );
-  }
-
   /// Roll back to a snapshot (on mutation error).
   void restore(LoggingDayData snapshot) {
     state = AsyncData(snapshot);
@@ -169,9 +157,14 @@ class ConfirmMealNotifier extends FamilyNotifier<bool, String> {
       ref.invalidate(mealDatesProvider(arg));
       // The dashboard reads the day/macros/heatmap off its own bundle, keyed by
       // (userId, date) — invalidate it so the Today card + week-strip ring pick
-      // up the just-confirmed meal instead of showing the pre-log cache.
+      // up the just-confirmed meal instead of showing the pre-log cache. The
+      // pager's per-day slice is a separate non-autodispose family, so it must
+      // be invalidated explicitly too or a browsed day keeps its stale cache.
       ref.invalidate(
         dash.dashboardBundleProvider((userId: arg, date: originDate)),
+      );
+      ref.invalidate(
+        dash.dashboardDayProvider((userId: arg, date: originDate)),
       );
     }
   }

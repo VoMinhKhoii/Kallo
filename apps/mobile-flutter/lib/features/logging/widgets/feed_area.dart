@@ -17,6 +17,7 @@ import '../../../theme/nham_typography.dart';
 import '../data/logging_keys.dart';
 import '../data/logging_models.dart';
 import '../data/logging_providers.dart';
+import '../../dashboard/data/dashboard_providers.dart' as dash;
 import '../../dashboard/logic/dashboard_format.dart' show formatCount;
 import '../data/stream_analysis_controller.dart';
 import '../logic/format.dart';
@@ -69,6 +70,12 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
   /// which surface as the failed-attempt card.
   String? _errorText;
 
+  /// Meals swiped away but still inside the undo window. They are filtered out
+  /// of the rendered feed (so a mid-window refetch can't resurrect the card)
+  /// without ever mutating the day cache — Undo just removes the id, and a
+  /// failed DELETE removes it too (the data was never locally changed).
+  final Set<String> _pendingRemovalIds = <String>{};
+
   LoggingDayArgs get _dayArgs =>
       LoggingDayArgs(widget.profile.userId, widget.date);
 
@@ -117,14 +124,13 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
 
   /// Trailing-swipe removal of a saved meal: the day visibly heals (the meal
   /// drops out of the totals immediately) with a 5-second undo. The DELETE only
-  /// fires if the undo window closes — undo just restores the snapshot. No
-  /// confirm modal; nothing is destroyed within the grace window.
+  /// fires if the undo window closes. The day cache is never locally mutated —
+  /// the meal id sits in [_pendingRemovalIds] and is filtered out of the
+  /// rendered feed, so undo, refetch races, and failed deletes all resolve by
+  /// just adding/removing the id. No confirm modal; nothing is destroyed
+  /// within the grace window.
   void _removeMeal(PersistedMeal meal) {
-    final dayNotifier = ref.read(loggingDayProvider(_dayArgs).notifier);
-    final snapshot = ref.read(loggingDayProvider(_dayArgs)).valueOrNull;
-    if (snapshot == null) return;
-
-    dayNotifier.removeMeal(meal.id);
+    setState(() => _pendingRemovalIds.add(meal.id));
 
     var undone = false;
     final messenger = ScaffoldMessenger.of(context);
@@ -143,24 +149,49 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
               textColor: NhamColors.accent,
               onPressed: () {
                 undone = true;
-                dayNotifier.restore(snapshot);
+                if (mounted) {
+                  setState(() => _pendingRemovalIds.remove(meal.id));
+                }
               },
             ),
           ),
         )
         .closed
         .then((_) async {
-      if (undone) return;
+      if (undone || !mounted) return;
       try {
         await ref.read(apiClientProvider).delete<void>(
               '/api/v1/meals/${Uri.encodeComponent(meal.id)}',
             );
-        ref.invalidate(mealDatesProvider(widget.profile.userId));
       } catch (_) {
-        // The server rejected the delete — restore so the feed stays truthful.
-        dayNotifier.restore(snapshot);
-        if (mounted) setState(() => _errorText = 'errors.internal'.tr());
+        // The server rejected the delete — releasing the id makes the card
+        // reappear (the cache was never mutated), keeping the feed truthful.
+        if (mounted) {
+          setState(() {
+            _pendingRemovalIds.remove(meal.id);
+            _errorText = 'errors.internal'.tr();
+          });
+        }
+        return;
       }
+      if (!mounted) return;
+      // The delete landed — heal every cache that carries this date before
+      // releasing the id, so the refetched day (sans meal) is what renders.
+      ref.invalidate(mealDatesProvider(widget.profile.userId));
+      ref.invalidate(dash.dashboardBundleProvider(
+        (userId: widget.profile.userId, date: widget.date),
+      ));
+      ref.invalidate(dash.dashboardDayProvider(
+        (userId: widget.profile.userId, date: widget.date),
+      ));
+      try {
+        await ref.read(loggingDayProvider(_dayArgs).notifier).refresh();
+      } catch (_) {
+        // The refetch failing doesn't un-delete the meal — keep the id
+        // filtered (a harmless no-op once a later fetch succeeds).
+        return;
+      }
+      if (mounted) setState(() => _pendingRemovalIds.remove(meal.id));
     });
   }
 
@@ -217,7 +248,12 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
     final day = dayAsync.valueOrNull;
     final isLoading = dayAsync.isLoading;
 
-    final persistedMeals = [...(day?.persistedMeals ?? const <PersistedMeal>[])]
+    // Swiped-away meals inside the undo window are filtered out here (not
+    // removed from the cache), so totals heal immediately and a mid-window
+    // refetch cannot resurrect the card.
+    final persistedMeals = (day?.persistedMeals ?? const <PersistedMeal>[])
+        .where((m) => !_pendingRemovalIds.contains(m.id))
+        .toList()
       ..sort((a, b) => a.loggedAt.compareTo(b.loggedAt));
     final pendingConfirmations =
         day?.pendingConfirmations ?? const <PendingMealConfirmation>[];
