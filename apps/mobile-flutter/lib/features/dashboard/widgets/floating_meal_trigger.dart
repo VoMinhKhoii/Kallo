@@ -9,6 +9,7 @@ library;
 
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../theme/nham_colors.dart';
@@ -123,7 +124,7 @@ class _FloatingMealTriggerState extends State<FloatingMealTrigger> {
                   ],
                 ),
                 child: Icon(
-                  _expanded ? Icons.close : Icons.restaurant_outlined,
+                  _expanded ? LucideIcons.x : LucideIcons.utensilsCrossed,
                   size: 20, // h-5 w-5
                   color: Colors.white,
                 ),
@@ -236,7 +237,7 @@ class _MealInputBarState extends State<_MealInputBar> {
                 borderRadius: BorderRadius.circular(NhamRadii.buttonXl), // 12
               ),
               child: Icon(
-                Icons.arrow_upward,
+                LucideIcons.arrowUp,
                 size: 16, // h-4 w-4
                 color: hasText ? Colors.white : NhamColors.stone,
               ),
