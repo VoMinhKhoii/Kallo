@@ -11,6 +11,7 @@ import {
 import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useAuthDialog } from '@/components/auth/auth-provider';
+import { scrollToAnchorId } from '@/components/landing-page/scroll-to-anchor';
 import { Button } from '@/components/ui/button';
 import {
   getHeroFixture,
@@ -198,7 +199,11 @@ export function Hero() {
               <span className="font-medium tracking-wide">{t('cta')}</span>
               <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
             </Button>
-            <Button variant="hero-outline" size="hero">
+            <Button
+              variant="hero-outline"
+              size="hero"
+              onClick={() => scrollToAnchorId('how')}
+            >
               {t('ctaSecondary')}
             </Button>
           </motion.div>

@@ -4,6 +4,7 @@ import { Check } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useTranslations } from 'next-intl';
 import { useAuthDialog } from '@/components/auth/auth-provider';
+import { scrollToAnchorId } from '@/components/landing-page/scroll-to-anchor';
 import { Button } from '@/components/ui/button';
 
 export function CTASection() {
@@ -59,6 +60,7 @@ export function CTASection() {
                   fontFamily:
                     'var(--font-dm-sans), ui-sans-serif, system-ui, sans-serif',
                 }}
+                onClick={() => scrollToAnchorId('how')}
               >
                 {t('buttonSecondary')}
               </Button>

@@ -737,8 +737,8 @@
       "title": "Track Vietnamese meals",
       "titleHighlight": "without the guesswork",
       "subtitle": "Describe your meal the way you'd tell a friend — in Vietnamese, English, or both. Nhẩm knows phở, bánh mì, and 500+ Vietnamese dishes, and how you cook them, then estimates the nutrition from Vietnamese food-composition data.",
-      "cta": "Get Started",
-      "ctaSecondary": "See How It Works",
+      "cta": "Get started",
+      "ctaSecondary": "See how it works",
       "beta": "In beta · built in Vietnam",
       "demo": {
         "today": "Today",
@@ -841,7 +841,7 @@
     "cta": {
       "title": "Ready to track smarter?",
       "subtitle": "Join the beta and start tracking Vietnamese meals with real accuracy.",
-      "button": "Get Started Free",
+      "button": "Get started free",
       "buttonSecondary": "See a sample analysis",
       "feature1": "Vietnamese-first database",
       "feature2": "AI understands cooking context",
