@@ -267,6 +267,43 @@ export function FeedArea({
     },
     [profile.userId, selectedDate, queryClient, t]
   );
+  // Silent superseding delete for an NL-refine: the corrected meal already
+  // saved, so the original is dropped from the cache and server with no undo
+  // toast (the correction IS the user's intent — an "undo" here would confuse).
+  const replaceOldMeal = useCallback(
+    async (mealId: string) => {
+      queryClient.setQueriesData<LoggingDayData>(
+        {
+          queryKey: loggingDayKeys.byUserDate(profile.userId, selectedDate),
+        },
+        (old) =>
+          old
+            ? {
+                ...old,
+                persistedMeals: old.persistedMeals.filter(
+                  (meal) => meal.id !== mealId
+                ),
+              }
+            : old
+      );
+      try {
+        await deleteMealAction({ mealId });
+      } catch {
+        // The corrected meal is saved; a failed delete leaves a duplicate the
+        // user can remove manually. Surface it without blocking.
+        toast.error(t('deleteError'));
+      }
+      queryClient.invalidateQueries({
+        queryKey: loggingDayKeys.byUserDate(profile.userId, selectedDate),
+        refetchType: 'none',
+      });
+      queryClient.invalidateQueries({
+        queryKey: dailyMealsKeys.byDate(selectedDate),
+      });
+      queryClient.invalidateQueries({ queryKey: ['meal-dates'] });
+    },
+    [profile.userId, selectedDate, queryClient, t]
+  );
   const [streamingMsgId, setStreamingMsgId] = useState<string | null>(null);
   // Session-scoped dismissal for the "yesterday under-logged" prompt. FeedArea
   // stays mounted across date navigation, so this survives clicking through to
@@ -346,6 +383,46 @@ export function FeedArea({
     });
   }, []);
 
+  // NL-refine: re-run the analysis waterfall on the meal's text plus a plain
+  // correction, then replace the meal. We reuse the streaming surface — a fresh
+  // pending card streams in exactly like a new log — and register the old meal
+  // id so confirming the correction deletes the original (no stacking).
+  const handleRefineMeal = useCallback(
+    (meal: { id: string; rawInput: string }, correction: string) => {
+      if (stream.isAnalyzing) return;
+      // The pipeline reads the whole meal afresh; the parenthetical carries the
+      // correction as a same-line aside so decomposition keeps the dish context.
+      const combined = `${meal.rawInput} (${correction})`;
+      const assistantMsgId = crypto.randomUUID();
+      replacedMealByMsgIdRef.current.set(assistantMsgId, meal.id);
+      setStreamingMsgId(assistantMsgId);
+      lastAnalysisIdRef.current = null;
+      lastErrorRef.current = null;
+
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: assistantMsgId,
+          role: 'assistant',
+          content: '',
+          userInput: combined,
+          loggedDate: selectedDate,
+          timestamp: new Date(),
+          isStreaming: true,
+          streamingPhase: 'waiting',
+        },
+      ]);
+      scrollToBottom();
+
+      void stream.analyze({
+        message: combined,
+        loggedDate: selectedDate,
+        timezoneOffset: new Date().getTimezoneOffset(),
+      });
+    },
+    [stream, selectedDate, scrollToBottom]
+  );
+
   // Compute daily totals from persisted meals
   const targets = useMemo(
     () => ({
@@ -393,6 +470,10 @@ export function FeedArea({
 
   const lastAnalysisIdRef = useRef<string | null>(null);
   const lastErrorRef = useRef<string | null>(null);
+  // NL-refine bookkeeping: maps a refine streaming-message id → the persisted
+  // meal it replaces. When that re-analysis is confirmed, the old meal is
+  // deleted so the corrected meal supersedes it instead of stacking.
+  const replacedMealByMsgIdRef = useRef<Map<string, string>>(new Map());
 
   const { handleSubmit } = useFeedSubmit({
     stream,
@@ -468,6 +549,9 @@ export function FeedArea({
     // key, so the optimistic card and the refetched row share one stable React
     // key (no remount/re-fade after save).
     const mealId = crypto.randomUUID();
+    // If this card came from an NL-refine, the meal it corrects is deleted on
+    // confirm so the correction supersedes the original rather than stacking.
+    const replacedMealId = replacedMealByMsgIdRef.current.get(message.id);
     confirmMeal.mutate(
       {
         analysisId: message.analysisId,
@@ -481,6 +565,10 @@ export function FeedArea({
       {
         onSuccess: () => {
           toast.success(t('savedMeal'));
+          if (replacedMealId) {
+            replacedMealByMsgIdRef.current.delete(message.id);
+            void replaceOldMeal(replacedMealId);
+          }
         },
       }
     );
@@ -794,6 +882,12 @@ export function FeedArea({
                       inputRef.current?.focus();
                     }}
                     onUpdate={(changes) => handleUpdateMeal(meal.id, changes)}
+                    onRefine={(correction) =>
+                      handleRefineMeal(
+                        { id: meal.id, rawInput: meal.rawInput },
+                        correction
+                      )
+                    }
                   />
                 ))}
               </AnimatePresence>

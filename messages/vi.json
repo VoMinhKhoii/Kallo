@@ -1048,7 +1048,11 @@
       "savingEdit": "Đang lưu…",
       "removeRow": "Bỏ {name}",
       "mealUpdated": "Đã cập nhật bữa ăn",
-      "updateError": "Không cập nhật được bữa ăn — hãy thử lại."
+      "updateError": "Không cập nhật được bữa ăn — hãy thử lại.",
+      "refineLabel": "Sửa bằng lời",
+      "refinePlaceholder": "vd: mực chiên chứ không phải kho",
+      "refineSubmit": "Phân tích lại",
+      "refineHint": "Chúng tôi sẽ đọc lại cả bữa ăn cùng đính chính của bạn và thay thế."
     },
     "mode": {
       "normal": "Bình thường",

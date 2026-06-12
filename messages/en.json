@@ -1048,7 +1048,11 @@
       "savingEdit": "Saving…",
       "removeRow": "Remove {name}",
       "mealUpdated": "Meal updated",
-      "updateError": "Couldn't update the meal — try again."
+      "updateError": "Couldn't update the meal — try again.",
+      "refineLabel": "Fix it in words",
+      "refinePlaceholder": "e.g. the squid was fried, not braised",
+      "refineSubmit": "Re-analyze",
+      "refineHint": "We'll re-read the whole meal with your correction and replace it."
     },
     "mode": {
       "normal": "Normal",

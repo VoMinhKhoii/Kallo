@@ -6,6 +6,7 @@ import {
   Minus,
   Plus,
   Share2,
+  Sparkles,
   Users2,
   X,
 } from 'lucide-react';
@@ -37,6 +38,12 @@ interface PersistedMealCardProps {
   onLogAgain?: () => void;
   /** Persist gram overrides / per-row removals; resolves when saved. */
   onUpdate?: (changes: MealAmountEdit) => Promise<void>;
+  /**
+   * Natural-language correction: re-run the analysis waterfall on the meal's
+   * text plus this correction, replacing the meal once confirmed. Closes the
+   * editor and hands off to the feed's streaming surface.
+   */
+  onRefine?: (correction: string) => void;
 }
 
 function ShareCardButton({ shareId }: { shareId: string }) {
@@ -146,6 +153,7 @@ export function PersistedMealCard({
   onDelete,
   onLogAgain,
   onUpdate,
+  onRefine,
 }: PersistedMealCardProps) {
   // Cheat meals render a dedicated, warmly-decorated card variant; re-logging a
   // cheat occasion has its own slider-seeded path (the occasion chips), so the
@@ -159,6 +167,7 @@ export function PersistedMealCard({
       onDelete={onDelete}
       onLogAgain={onLogAgain}
       onUpdate={onUpdate}
+      onRefine={onRefine}
     />
   );
 }
@@ -175,13 +184,22 @@ function MealAmountEditor({
   meal,
   onCancel,
   onSave,
+  onRefine,
 }: {
   meal: PersistedMeal;
   onCancel: () => void;
   onSave: (changes: MealAmountEdit) => Promise<void>;
+  onRefine?: (correction: string) => void;
 }) {
   const t = useTranslations('logging.persistedMealCard');
   const [isSaving, setIsSaving] = useState(false);
+  const [correction, setCorrection] = useState('');
+
+  const submitRefine = () => {
+    const trimmed = correction.trim();
+    if (trimmed.length === 0 || !onRefine) return;
+    onRefine(trimmed);
+  };
 
   // Flatten the meal's ingredient rows (each carries a stable id + grams) into
   // the editable working set. Removals and gram steps mutate local state only;
@@ -304,6 +322,55 @@ function MealAmountEditor({
         ))}
       </div>
 
+      {/* Natural-language refine — talk to fix it, the same way you logged it.
+          Re-runs the full analysis waterfall on the meal text plus this note,
+          replacing the meal once confirmed. */}
+      {onRefine && (
+        <div className="mt-4 border-nham-border/50 border-t border-dashed pt-4">
+          <label
+            htmlFor={`refine-${meal.id}`}
+            className="px-1 font-medium text-[10px] text-nham-text-muted uppercase tracking-[0.08em]"
+            style={{ fontFamily: 'DM Sans, sans-serif' }}
+          >
+            {t('refineLabel')}
+          </label>
+          <div className="mt-1.5 flex items-stretch gap-2">
+            <input
+              id={`refine-${meal.id}`}
+              value={correction}
+              onChange={(event) => setCorrection(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter') {
+                  event.preventDefault();
+                  submitRefine();
+                }
+              }}
+              placeholder={t('refinePlaceholder')}
+              autoComplete="off"
+              maxLength={200}
+              className="min-w-0 flex-1 rounded-lg border border-nham-border/60 bg-white px-3 py-2 text-[13px] text-nham-text placeholder:text-nham-text-muted/50 focus:border-nham-accent/50 focus:outline-none"
+              style={{ fontFamily: 'DM Sans, sans-serif' }}
+            />
+            <button
+              type="button"
+              onClick={submitRefine}
+              disabled={correction.trim().length === 0}
+              className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-nham-accent/15 px-3 font-medium text-[12px] text-nham-text transition-colors hover:bg-nham-accent/25 disabled:cursor-not-allowed disabled:opacity-50"
+              style={{ fontFamily: 'DM Sans, sans-serif' }}
+            >
+              <Sparkles className="h-3.5 w-3.5" />
+              {t('refineSubmit')}
+            </button>
+          </div>
+          <p
+            className="mt-1.5 px-1 text-[11px] text-nham-text-muted/70"
+            style={{ fontFamily: 'DM Sans, sans-serif' }}
+          >
+            {t('refineHint')}
+          </p>
+        </div>
+      )}
+
       <div className="mt-4 flex items-center justify-end gap-2">
         <button
           type="button"
@@ -335,6 +402,7 @@ function PrecisePersistedMealCard({
   onDelete,
   onLogAgain,
   onUpdate,
+  onRefine,
 }: PersistedMealCardProps) {
   const t = useTranslations('logging.persistedMealCard');
   const locale = useLocale();
@@ -432,6 +500,14 @@ function PrecisePersistedMealCard({
             meal={meal}
             onCancel={() => setIsEditing(false)}
             onSave={onUpdate}
+            onRefine={
+              onRefine
+                ? (correction) => {
+                    setIsEditing(false);
+                    onRefine(correction);
+                  }
+                : undefined
+            }
           />
         )}
 
