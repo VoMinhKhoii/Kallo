@@ -31,6 +31,11 @@ class StreamAnalysisState {
   final String? error;
   final bool isAnalyzing;
 
+  /// The day this run logs into (`StreamAnalyzeInput.loggedDate`). Lets the
+  /// feed pin the streaming/reveal cards to their origin date, so switching
+  /// the selected day doesn't render them on the wrong day's feed.
+  final String? loggedDate;
+
   const StreamAnalysisState({
     this.status = StreamStatus.idle,
     this.items = const [],
@@ -39,6 +44,7 @@ class StreamAnalysisState {
     this.analysisId,
     this.error,
     this.isAnalyzing = false,
+    this.loggedDate,
   });
 
   StreamAnalysisState copyWith({
@@ -49,6 +55,7 @@ class StreamAnalysisState {
     String? analysisId,
     String? error,
     bool? isAnalyzing,
+    String? loggedDate,
   }) => StreamAnalysisState(
     status: status ?? this.status,
     items: items ?? this.items,
@@ -57,6 +64,7 @@ class StreamAnalysisState {
     analysisId: analysisId ?? this.analysisId,
     error: error ?? this.error,
     isAnalyzing: isAnalyzing ?? this.isAnalyzing,
+    loggedDate: loggedDate ?? this.loggedDate,
   );
 
   static const StreamAnalysisState initial = StreamAnalysisState();
@@ -149,9 +157,10 @@ class StreamAnalysisController extends Notifier<StreamAnalysisState> {
   Future<void> analyze(StreamAnalyzeInput input) async {
     _closeStream();
     final reqId = ++_requestId;
-    state = const StreamAnalysisState(
+    state = StreamAnalysisState(
       status: StreamStatus.connecting,
       isAnalyzing: true,
+      loggedDate: input.loggedDate,
     );
 
     final api = ref.read(apiClientProvider);

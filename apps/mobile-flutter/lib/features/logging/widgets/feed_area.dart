@@ -1,3 +1,4 @@
+import 'dart:async' show unawaited;
 import 'dart:math' as math;
 
 import 'package:easy_localization/easy_localization.dart';
@@ -98,6 +99,23 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
   }
 
   void _submit(String text) {
+    // A second submit while an unconfirmed reveal is showing must not
+    // vaporize the first answer: that analysis is already stored server-side
+    // as pending, so refresh its origin day — it resurfaces as a
+    // pending-confirmation card.
+    final prior = ref.read(streamAnalysisProvider);
+    if (prior.status == StreamStatus.done && prior.analysisId != null) {
+      final originDate = prior.loggedDate ?? widget.date;
+      unawaited(
+        ref
+            .read(
+              loggingDayProvider(
+                LoggingDayArgs(widget.profile.userId, originDate),
+              ).notifier,
+            )
+            .refresh(),
+      );
+    }
     setState(() {
       _failedText = null;
       _revealRawInput = null;
@@ -266,7 +284,12 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
         m.nutrition.carbohydrateG == null ||
         m.nutrition.fatG == null);
 
+    // Pin the live stream/reveal cards to the day they were submitted on, so
+    // switching the selected date doesn't render them on the wrong day's feed.
+    final streamIsForThisDay = stream.loggedDate == widget.date;
+
     final isStreaming =
+        streamIsForThisDay &&
         stream.status != StreamStatus.idle &&
         stream.status != StreamStatus.done &&
         stream.status != StreamStatus.error;
@@ -274,6 +297,7 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
     // The completed-but-not-yet-confirmed answer, held in place as a morph of
     // the streaming card (built from the locally-held stream.result).
     final isRevealing =
+        streamIsForThisDay &&
         stream.status == StreamStatus.done &&
         stream.result != null &&
         stream.analysisId != null;
@@ -646,13 +670,17 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
   /// meal. On failure the stream stays so the user can retry the confirm.
   Future<void> _confirmReveal(
       String analysisId, List<MealQuantityEdit> edits) async {
+    // Confirm against the day the analysis was submitted on (the reveal is
+    // date-guarded to that day), so the ORIGIN date's caches are updated.
+    final originDate =
+        ref.read(streamAnalysisProvider).loggedDate ?? widget.date;
     try {
       await ref
           .read(confirmMealProvider(widget.profile.userId).notifier)
           .confirm(
             analysisId: analysisId,
             mealId: _uuid.v4(),
-            originDate: widget.date,
+            originDate: originDate,
             edits: edits.isEmpty
                 ? null
                 : [
@@ -726,10 +754,12 @@ class _Footer extends StatelessWidget {
             completedItems: stream.completedItems,
             isLast: !hasFailed,
           ),
-        // The completed answer, morphed in place from the streaming card: the
-        // per-row macros are already real, the totals count up, and the spinner
-        // row has swapped for Edit/Confirm. Keyed by analysisId so it's the same
-        // element across the streaming→done transition (no remount).
+        // The completed answer in the streaming card's slot: per-row macros
+        // already real, totals count up, the spinner row swapped for
+        // Edit/Confirm. This IS a remount (StreamingEntry and MealEntry are
+        // different widgets) — the `revealing` flag softens the seam: the card
+        // background matches the streaming card's and the item rows crossfade
+        // in place instead of re-entering.
         if (isRevealing)
           MealEntry(
             key: ValueKey('reveal-${stream.analysisId}'),

@@ -98,6 +98,9 @@ class _MealEntryState extends State<MealEntry> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             _Card(
+              // The reveal replaces the streaming card in place — matching its
+              // surface background removes the background flip at the swap.
+              color: widget.revealing ? NhamColors.surface : NhamColors.elev,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -133,17 +136,30 @@ class _MealEntryState extends State<MealEntry> {
                       children: [
                         for (final (index, item) in _items.indexed)
                           // Web: each item enters opacity 0→1, x:-8→0, staggered
-                          // delay index*0.05s (meal-entry-item.tsx:32-35).
-                          FadeInLeft(
-                            key: ValueKey(item.id),
-                            offset: 8,
-                            delay: Duration(milliseconds: index * 50),
-                            child: _ItemRow(
-                              item: item,
-                              editing: _editing,
-                              onChange: _change,
+                          // delay index*0.05s (meal-entry-item.tsx:32-35). On
+                          // the reveal the rows were already on screen in the
+                          // streaming card — crossfade in place, don't re-enter.
+                          if (widget.revealing)
+                            FadeIn(
+                              key: ValueKey(item.id),
+                              duration: const Duration(milliseconds: 150),
+                              child: _ItemRow(
+                                item: item,
+                                editing: _editing,
+                                onChange: _change,
+                              ),
+                            )
+                          else
+                            FadeInLeft(
+                              key: ValueKey(item.id),
+                              offset: 8,
+                              delay: Duration(milliseconds: index * 50),
+                              child: _ItemRow(
+                                item: item,
+                                editing: _editing,
+                                onChange: _change,
+                              ),
                             ),
-                          ),
                       ],
                     ),
                   ),
@@ -507,16 +523,18 @@ class _ConfirmButtonState extends State<_ConfirmButton> {
 }
 
 /// Card: rounded-2xl (16px), border/60 hairline, shadow.sm, padding 16.
+/// [color] lets the reveal match the streaming card's surface background.
 class _Card extends StatelessWidget {
-  const _Card({required this.child});
+  const _Card({required this.child, this.color = NhamColors.elev});
   final Widget child;
+  final Color color;
 
   @override
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(NhamSpacing.sp4),
       decoration: BoxDecoration(
-        color: NhamColors.elev,
+        color: color,
         borderRadius: BorderRadius.circular(NhamRadii.containerLg),
         border: Border.all(color: NhamColors.borderSoft),
         boxShadow: const [NhamShadows.sm],
