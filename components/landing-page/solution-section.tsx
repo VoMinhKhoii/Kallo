@@ -240,6 +240,7 @@ export function SolutionSection() {
   return (
     <section
       ref={containerRef}
+      id="features"
       className="relative bg-[#FAF9F7] text-[#2C2416]"
     >
       {/* Desktop Scroll-Driven Layout */}

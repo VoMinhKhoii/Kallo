@@ -21,6 +21,7 @@ export function ProblemSection() {
   return (
     <section
       ref={containerRef}
+      id="how"
       className="relative overflow-hidden bg-[#2C2416] py-32 text-[#FEFBF6] lg:py-48"
     >
       {/* Grain Overlay */}

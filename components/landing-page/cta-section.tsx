@@ -10,7 +10,7 @@ export function CTASection() {
   const t = useTranslations('landing.cta');
   const { openDialog } = useAuthDialog();
   return (
-    <section className="relative bg-white py-32">
+    <section id="pricing" className="relative bg-white py-32">
       <div className="mx-auto max-w-4xl px-6 text-center">
         <motion.div
           initial={{ opacity: 0, y: 20 }}

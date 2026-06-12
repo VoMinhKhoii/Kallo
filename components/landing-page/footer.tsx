@@ -8,7 +8,7 @@ export async function Footer() {
       <div className="mx-auto max-w-7xl px-6 py-16">
         <div className="mb-12 grid gap-12 md:grid-cols-4">
           {/* Brand */}
-          <div className="md:col-span-2">
+          <div className="md:col-span-3">
             <div
               className="mb-4 font-medium text-2xl text-[#2C2416]"
               style={{ fontFamily: 'var(--font-lora), Georgia, serif' }}
@@ -26,7 +26,9 @@ export async function Footer() {
             </p>
           </div>
 
-          {/* Links Column 1 */}
+          {/* Product — real in-page anchors. The dead Company/legal columns
+              (about/blog/contact/faq/terms/privacy/security) are removed, not
+              parked on href="#"; no such pages exist to honestly link to. */}
           <div>
             <h4
               className="mb-4 font-medium text-[#2C2416]"
@@ -40,7 +42,7 @@ export async function Footer() {
             <ul className="space-y-3">
               <li>
                 <a
-                  href="#"
+                  href="#features"
                   className="text-[#6B5D4F] text-sm transition-colors hover:text-[#2C2416]"
                   style={{
                     fontFamily:
@@ -52,7 +54,7 @@ export async function Footer() {
               </li>
               <li>
                 <a
-                  href="#"
+                  href="#how"
                   className="text-[#6B5D4F] text-sm transition-colors hover:text-[#2C2416]"
                   style={{
                     fontFamily:
@@ -64,7 +66,7 @@ export async function Footer() {
               </li>
               <li>
                 <a
-                  href="#"
+                  href="#pricing"
                   className="text-[#6B5D4F] text-sm transition-colors hover:text-[#2C2416]"
                   style={{
                     fontFamily:
@@ -72,81 +74,6 @@ export async function Footer() {
                   }}
                 >
                   {t('pricing')}
-                </a>
-              </li>
-              <li>
-                <a
-                  href="#"
-                  className="text-[#6B5D4F] text-sm transition-colors hover:text-[#2C2416]"
-                  style={{
-                    fontFamily:
-                      'var(--font-dm-sans), ui-sans-serif, system-ui, sans-serif',
-                  }}
-                >
-                  {t('faq')}
-                </a>
-              </li>
-            </ul>
-          </div>
-
-          {/* Links Column 2 */}
-          <div>
-            <h4
-              className="mb-4 font-medium text-[#2C2416]"
-              style={{
-                fontFamily:
-                  'var(--font-dm-sans), ui-sans-serif, system-ui, sans-serif',
-              }}
-            >
-              {t('company')}
-            </h4>
-            <ul className="space-y-3">
-              <li>
-                <a
-                  href="#"
-                  className="text-[#6B5D4F] text-sm transition-colors hover:text-[#2C2416]"
-                  style={{
-                    fontFamily:
-                      'var(--font-dm-sans), ui-sans-serif, system-ui, sans-serif',
-                  }}
-                >
-                  {t('about')}
-                </a>
-              </li>
-              <li>
-                <a
-                  href="#"
-                  className="text-[#6B5D4F] text-sm transition-colors hover:text-[#2C2416]"
-                  style={{
-                    fontFamily:
-                      'var(--font-dm-sans), ui-sans-serif, system-ui, sans-serif',
-                  }}
-                >
-                  {t('blog')}
-                </a>
-              </li>
-              <li>
-                <a
-                  href="#"
-                  className="text-[#6B5D4F] text-sm transition-colors hover:text-[#2C2416]"
-                  style={{
-                    fontFamily:
-                      'var(--font-dm-sans), ui-sans-serif, system-ui, sans-serif',
-                  }}
-                >
-                  {t('contact')}
-                </a>
-              </li>
-              <li>
-                <a
-                  href="#"
-                  className="text-[#6B5D4F] text-sm transition-colors hover:text-[#2C2416]"
-                  style={{
-                    fontFamily:
-                      'var(--font-dm-sans), ui-sans-serif, system-ui, sans-serif',
-                  }}
-                >
-                  {t('privacy')}
                 </a>
               </li>
             </ul>
@@ -164,38 +91,6 @@ export async function Footer() {
           >
             {t('copyright', { year: new Date().getFullYear() })}
           </p>
-          <div className="flex gap-6">
-            <a
-              href="#"
-              className="text-[#8B7355] text-sm transition-colors hover:text-[#2C2416]"
-              style={{
-                fontFamily:
-                  'var(--font-dm-sans), ui-sans-serif, system-ui, sans-serif',
-              }}
-            >
-              {t('terms')}
-            </a>
-            <a
-              href="#"
-              className="text-[#8B7355] text-sm transition-colors hover:text-[#2C2416]"
-              style={{
-                fontFamily:
-                  'var(--font-dm-sans), ui-sans-serif, system-ui, sans-serif',
-              }}
-            >
-              {t('privacyLink')}
-            </a>
-            <a
-              href="#"
-              className="text-[#8B7355] text-sm transition-colors hover:text-[#2C2416]"
-              style={{
-                fontFamily:
-                  'var(--font-dm-sans), ui-sans-serif, system-ui, sans-serif',
-              }}
-            >
-              {t('security')}
-            </a>
-          </div>
         </div>
       </div>
     </footer>

@@ -10,6 +10,22 @@ export function Header() {
   const t = useTranslations('landing.header');
   const { openDialog } = useAuthDialog();
 
+  // Smooth-scroll the in-page anchors, honoring reduced-motion (instant jump
+  // for users who opt out). Offsets for the fixed header via scroll-margin.
+  const scrollToAnchor =
+    (id: string) => (event: React.MouseEvent<HTMLAnchorElement>) => {
+      event.preventDefault();
+      const target = document.getElementById(id);
+      if (!target) return;
+      const prefersReduced = window.matchMedia(
+        '(prefers-reduced-motion: reduce)'
+      ).matches;
+      target.scrollIntoView({
+        behavior: prefersReduced ? 'auto' : 'smooth',
+        block: 'start',
+      });
+    };
+
   return (
     <motion.header
       initial={{ y: -20, opacity: 0 }}
@@ -32,6 +48,7 @@ export function Header() {
         <nav className="hidden items-center gap-8 md:flex">
           <a
             href="#features"
+            onClick={scrollToAnchor('features')}
             className="text-[#6B5D4F] text-sm transition-colors hover:text-[#2C2416]"
             style={{
               fontFamily:
@@ -42,6 +59,7 @@ export function Header() {
           </a>
           <a
             href="#how"
+            onClick={scrollToAnchor('how')}
             className="text-[#6B5D4F] text-sm transition-colors hover:text-[#2C2416]"
             style={{
               fontFamily:
@@ -52,6 +70,7 @@ export function Header() {
           </a>
           <a
             href="#pricing"
+            onClick={scrollToAnchor('pricing')}
             className="text-[#6B5D4F] text-sm transition-colors hover:text-[#2C2416]"
             style={{
               fontFamily:
