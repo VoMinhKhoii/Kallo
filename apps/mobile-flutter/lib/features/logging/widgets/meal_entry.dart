@@ -322,19 +322,27 @@ class _StepperState extends State<_Stepper> {
       onTapUp: tappable ? (_) => setState(() => _pressed = false) : null,
       onTapCancel: tappable ? () => setState(() => _pressed = false) : null,
       onTap: widget.onTap,
-      child: Opacity(
-        opacity: widget.disabled ? 0.4 : 1, // opacity-40
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 150), // transition-colors
-          width: 28,
-          height: 28,
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            color: _pressed ? NhamColors.hover : NhamColors.elev,
-            borderRadius: BorderRadius.circular(NhamRadii.md),
-            border: Border.all(color: NhamColors.borderSoft),
+      // 40pt tap target around the 28pt visual stepper (kept under 44 so two
+      // steppers + the count value still fit a narrow row without overflow).
+      child: SizedBox(
+        width: 40,
+        height: 40,
+        child: Center(
+          child: Opacity(
+          opacity: widget.disabled ? 0.4 : 1, // opacity-40
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 150), // transition-colors
+            width: 28,
+            height: 28,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: _pressed ? NhamColors.hover : NhamColors.elev,
+              borderRadius: BorderRadius.circular(NhamRadii.md),
+              border: Border.all(color: NhamColors.borderSoft),
+            ),
+            child: Icon(widget.icon, size: 10, color: NhamColors.textMuted),
           ),
-          child: Icon(widget.icon, size: 10, color: NhamColors.textMuted),
+          ),
         ),
       ),
     );

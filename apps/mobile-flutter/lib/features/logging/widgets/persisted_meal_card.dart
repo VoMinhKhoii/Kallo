@@ -84,26 +84,31 @@ class _PersistedMealCardState extends State<PersistedMealCard>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Header — only the chevron is the toggle target.
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        child: NhamText(
-                          meal.rawInput,
-                          variant: NhamTextVariant.mealQuote,
-                          style: const TextStyle(
-                            fontSize: 17,
-                            height: 28 / 17, // leading-7 (28px)
+                  // Header — the whole row is the toggle target (not just the
+                  // ~24px chevron), so the comfortable tap area spans the quote.
+                  GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: _toggle,
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: NhamText(
+                            meal.rawInput,
+                            variant: NhamTextVariant.mealQuote,
+                            style: const TextStyle(
+                              fontSize: 17,
+                              height: 28 / 17, // leading-7 (28px)
+                            ),
                           ),
                         ),
-                      ),
-                      const SizedBox(width: NhamSpacing.sp3), // gap-3
-                      _ChevronToggle(
-                        expand: _expand,
-                        onTap: _toggle,
-                      ),
-                    ],
+                        const SizedBox(width: NhamSpacing.sp3), // gap-3
+                        _ChevronToggle(
+                          expand: _expand,
+                          onTap: _toggle,
+                        ),
+                      ],
+                    ),
                   ),
 
                   // Collapsed summary — fades + collapses height as it expands.

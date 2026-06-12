@@ -113,6 +113,13 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
     _submit(text);
   }
 
+  /// Pull-to-refresh: refetch the day + the meal-dates strip. Awaited so the
+  /// platform refresh control holds its spinner until the data settles.
+  Future<void> _refresh() async {
+    ref.invalidate(mealDatesProvider(widget.profile.userId));
+    await ref.read(loggingDayProvider(_dayArgs).notifier).refresh();
+  }
+
   void _handleSuggestion(String s) {
     _inputController.setText(s);
     _inputController.focus();
@@ -423,8 +430,12 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
       );
     }
 
-    return ListView.separated(
+    return RefreshIndicator.adaptive(
+      onRefresh: _refresh,
+      color: NhamColors.accent,
+      child: ListView.separated(
       controller: _scrollController,
+      physics: const AlwaysScrollableScrollPhysics(),
       keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
       padding: const EdgeInsets.only(
         top: NhamSpacing.sp3,
@@ -459,6 +470,7 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
           onDiscardFailed: onDiscardFailed,
         );
       },
+      ),
     );
   }
 

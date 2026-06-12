@@ -109,11 +109,12 @@ class _StreamingEntryState extends State<StreamingEntry>
         ? _phaseKey(widget.status).tr()
         : 'logging.streaming.analyzing'.tr();
 
-    // Anonymous skeleton rows pad the list up to DEFAULT_SKELETON_COUNT=3 while
-    // the phase is still early (streaming-meal-entry.tsx:72-75).
-    const defaultSkeletonCount = 3;
+    // Anonymous skeleton rows only fill in BEFORE any dish names have arrived —
+    // padding a known small meal (e.g. one coffee) up to 3 ghosts implies
+    // over-detection. Once names stream in, the real rows carry the count; until
+    // then a single ghost reads as "one thing, still resolving".
     final totalKnown = widget.completedItems.length + pendingNames.length;
-    final anonymousCount = (defaultSkeletonCount - totalKnown).clamp(0, 3);
+    final anonymousCount = totalKnown > 0 ? 0 : 1;
     final showAnonymous = widget.status != StreamStatus.assembling &&
         widget.status != StreamStatus.done;
 

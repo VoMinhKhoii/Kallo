@@ -234,25 +234,32 @@ class _ActionButtonState extends State<_ActionButton> {
         onTapUp: tappable ? (_) => setState(() => _pressed = false) : null,
         onTapCancel: tappable ? () => setState(() => _pressed = false) : null,
         onTap: widget.onTap,
-        child: AnimatedScale(
-          scale: _pressed ? 0.95 : 1,
-          duration: const Duration(
-            milliseconds: 200,
-          ), // transition-all duration-200
-          child: Opacity(
-            opacity: widget.enabled ? 1 : 0.3,
-            child: Container(
-              width: 32,
-              height: 32,
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                color: _pressed ? NhamColors.btnHover : NhamColors.btn,
-                borderRadius: BorderRadius.circular(NhamRadii.md),
-              ),
-              child: Icon(
-                widget.icon,
-                size: widget.iconSize,
-                color: Colors.white,
+        // 44pt minimum tap target (HIG) around the 32pt visual button.
+        child: SizedBox(
+          width: 44,
+          height: 44,
+          child: Center(
+            child: AnimatedScale(
+              scale: _pressed ? 0.95 : 1,
+              duration: const Duration(
+                milliseconds: 200,
+              ), // transition-all duration-200
+              child: Opacity(
+                opacity: widget.enabled ? 1 : 0.3,
+                child: Container(
+                  width: 32,
+                  height: 32,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: _pressed ? NhamColors.btnHover : NhamColors.btn,
+                    borderRadius: BorderRadius.circular(NhamRadii.md),
+                  ),
+                  child: Icon(
+                    widget.icon,
+                    size: widget.iconSize,
+                    color: Colors.white,
+                  ),
+                ),
               ),
             ),
           ),
