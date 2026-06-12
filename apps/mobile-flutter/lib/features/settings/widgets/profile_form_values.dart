@@ -89,9 +89,12 @@ class ProfileFormValues {
 
     return ProfileFormValues(
       biologicalSex: _sexFrom(p.biologicalSex) ?? BiologicalSex.male,
-      weightKg: p.weightKg ?? 65,
-      heightCm: p.heightCm ?? 165,
-      age: p.age ?? 25,
+      // Numeric body metrics start EMPTY when the profile has none — never
+      // fabricated 65/165/25, which a user who skipped onboarding could save as
+      // if they were real. validateBodyMetrics forces a genuine entry instead.
+      weightKg: p.weightKg,
+      heightCm: p.heightCm,
+      age: p.age,
       activityLevel: _activityFrom(p.activityLevel) ?? ActivityLevel.light,
       goal: _goalFrom(p.goal) ?? Goal.maintaining,
       aggression: parseAggression(),
