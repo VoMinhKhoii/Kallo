@@ -55,12 +55,8 @@ abstract final class NhamTextStyles {
         height: height,
       );
 
-  static TextStyle serifSemiBold({double? fontSize, double? height}) =>
-      GoogleFonts.lora(
-        fontWeight: FontWeight.w600,
-        fontSize: fontSize,
-        height: height,
-      );
+  // No serifSemiBold: Lora is never above 400 (the bible's hardest type rule).
+  // Deleted so a bold-Lora regression can't be reintroduced by reaching for it.
 
   static TextStyle serifItalic({double? fontSize, double? height}) =>
       GoogleFonts.lora(

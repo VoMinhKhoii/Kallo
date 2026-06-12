@@ -126,7 +126,7 @@ class _DefaultCenter extends StatelessWidget {
       children: [
         Text(
           formatCount(value, locale),
-          style: NhamTextStyles.serifSemiBold(fontSize: 17, height: 1)
+          style: NhamTextStyles.serifRegular(fontSize: 17, height: 1)
               .copyWith(color: NhamColors.text, letterSpacing: 0),
         ),
         const SizedBox(height: 2),

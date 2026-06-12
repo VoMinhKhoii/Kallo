@@ -6,7 +6,7 @@
     "finish": "Finish",
     "save": "Save",
     "cancel": "Cancel",
-    "loading": "Loading...",
+    "loading": "Loading…",
     "error": "Something went wrong",
     "retry": "Try again",
     "search": "Search",
@@ -734,7 +734,7 @@
         "analysis": "AI nutrition analysis",
         "highConfidence": "High confidence",
         "totalCalories": "Total calories",
-        "inputPlaceholder": "Describe your meal...",
+        "inputPlaceholder": "Describe your meal…",
         "smartContext": "Smart context",
         "smartContextText": "Uses your region, cooking habits, and meal text to tighten estimates."
       }
@@ -943,10 +943,10 @@
   },
   "logging": {
     "title": "What did you eat?",
-    "placeholder": "Describe your meal...",
+    "placeholder": "Describe your meal…",
     "submit": "Analyze",
     "stopAnalyzing": "Stop analyzing",
-    "analyzing": "Analyzing your meal...",
+    "analyzing": "Analyzing your meal…",
     "breakfast": "Breakfast",
     "brunch": "Brunch",
     "lunch": "Lunch",
@@ -994,12 +994,12 @@
       }
     },
     "streaming": {
-      "connecting": "Connecting...",
-      "decomposing": "Breaking down your meal...",
-      "matching": "Matching ingredients...",
-      "estimating": "Estimating nutrition...",
-      "assembling": "Putting it all together...",
-      "analyzing": "Analyzing...",
+      "connecting": "Connecting…",
+      "decomposing": "Breaking down your meal…",
+      "matching": "Matching ingredients…",
+      "estimating": "Estimating nutrition…",
+      "assembling": "Putting it all together…",
+      "analyzing": "Analyzing…",
       "stillWorking": "Still working on it — almost there."
     },
     "failedAttempt": {

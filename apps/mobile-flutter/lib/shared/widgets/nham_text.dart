@@ -70,8 +70,9 @@ class NhamText extends StatelessWidget {
   static TextStyle styleFor(NhamTextVariant variant) {
     switch (variant) {
       case NhamTextVariant.display:
-        // serifSemiBold, display size, display leading + tracking.
-        return NhamTextStyles.serifSemiBold(
+        // Lora regular (never bold — the bible's hardest type rule), display
+        // size, display leading + tracking.
+        return NhamTextStyles.serifRegular(
           fontSize: NhamFontSize.display,
           height: NhamLeading.display,
         ).copyWith(
@@ -130,7 +131,7 @@ class NhamText extends StatelessWidget {
           height: NhamLeading.relaxed,
         ).copyWith(color: NhamColors.text);
       case NhamTextVariant.numDisplay:
-        return NhamTextStyles.serifSemiBold(fontSize: NhamFontSize.h2).copyWith(
+        return NhamTextStyles.serifRegular(fontSize: NhamFontSize.h2).copyWith(
           letterSpacing: NhamTracking.display,
           color: NhamColors.text,
           fontFeatures: const [_tabularNums],
