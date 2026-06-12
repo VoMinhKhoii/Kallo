@@ -2,6 +2,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import 'app.dart';
 import 'services/supabase_service.dart';
@@ -18,6 +19,11 @@ const _supabaseAnonKey = String.fromEnvironment('SUPABASE_ANON_KEY');
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await EasyLocalization.ensureInitialized();
+
+  // The brand fonts (Lora + DM Sans, every weight/style the app uses) are
+  // bundled under assets/google_fonts/ — never fetch over HTTP, so a cold
+  // offline start still renders in the brand type instead of the fallback.
+  GoogleFonts.config.allowRuntimeFetching = false;
 
   if (_supabaseUrl.isEmpty || _supabaseAnonKey.isEmpty) {
     throw StateError(

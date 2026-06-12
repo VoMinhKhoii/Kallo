@@ -40,3 +40,8 @@ flutter:
   uses-material-design: true
   assets:
     - assets/l10n/
+    # Bundled brand fonts (OFL). google_fonts resolves these local assets by
+    # their API filenames — do NOT rename — so the UI renders in Lora/DM Sans
+    # on a cold offline start instead of falling back while fetching. Runtime
+    # fetching is disabled in main.dart. No `fonts:` section needed.
+    - assets/google_fonts/
