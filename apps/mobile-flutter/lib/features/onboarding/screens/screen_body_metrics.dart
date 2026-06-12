@@ -9,6 +9,7 @@ import '../../../theme/nham_typography.dart';
 import '../logic/tdee.dart';
 import '../widgets/aggression_slider.dart';
 import '../widgets/custom_select.dart';
+import '../widgets/option_strip.dart';
 
 /// Step-2 form values + computed targets, reported up when the body-metrics
 /// schema passes (mirrors RN `ScreenOneData`). Keys match the RN payload so the
@@ -241,16 +242,15 @@ class _ScreenBodyMetricsState extends State<ScreenBodyMetrics> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // "About You" header block (mb-4 before the grid).
+              // "About you" header block (mb-4 before the grid).
               Text(
-                'About You',
+                tr('onboarding.bodyMetrics.aboutYou').toUpperCase(),
                 style: NhamTextStyles.sansBold(fontSize: 11)
                     .copyWith(letterSpacing: 1.5, color: NhamColors.stone),
               ),
               const SizedBox(height: NhamSpacing.sp1), // mt-1
               Text(
-                'These stay optional, but once you fill them in, Nhẩm can '
-                'compute more tailored targets locally.',
+                tr('onboarding.bodyMetrics.aboutYouHint'),
                 style: NhamTextStyles.sansRegular(fontSize: 13, height: 1.625)
                     .copyWith(color: NhamColors.textHelp),
               ),
@@ -277,14 +277,13 @@ class _ScreenBodyMetricsState extends State<ScreenBodyMetrics> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Fill the basics to unlock targets.',
+            tr('onboarding.bodyMetrics.unlockTitle'),
             style: NhamTextStyles.sansMedium(fontSize: 14)
                 .copyWith(color: NhamColors.text),
           ),
           const SizedBox(height: NhamSpacing.sp1), // mt-1
           Text(
-            'Once sex, weight, height, age, and activity are filled, this side '
-            'turns into your live calorie target and macro planner.',
+            tr('onboarding.bodyMetrics.unlockHint'),
             style: NhamTextStyles.sansRegular(fontSize: 13, height: 1.625)
                 .copyWith(color: NhamColors.textHelp),
           ),
@@ -297,15 +296,16 @@ class _ScreenBodyMetricsState extends State<ScreenBodyMetrics> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // biological sex (full)
+        // biological sex (full) — two options, so a 2-segment strip rather than
+        // a select popover (a tap-to-open menu for a binary choice).
         _FieldLabel(tr('onboarding.bodyMetrics.biologicalSex')),
         const SizedBox(height: 6),
-        CustomSelect(
+        OptionStrip(
           value: _sex ?? '',
           options: [
-            CustomSelectOption(
+            OptionStripItem(
                 label: tr('onboarding.bodyMetrics.male'), value: 'male'),
-            CustomSelectOption(
+            OptionStripItem(
                 label: tr('onboarding.bodyMetrics.female'), value: 'female'),
           ],
           onChange: (v) {
@@ -509,10 +509,10 @@ class _ScreenBodyMetricsState extends State<ScreenBodyMetrics> {
   }
 }
 
-/// Daily-target hero card — accent gradient surface showing the computed
-/// calorie target, a "based on TDEE…" caption, and the selected split's macros.
-/// Ported from the RN onboarding `hero` block (which used a flat accent tint);
-/// here it's a soft accent gradient.
+/// Daily-target card — a flat white surface showing the computed calorie
+/// target, a "based on TDEE…" caption, and the selected split's macros.
+/// Hierarchy comes from the hairline border, not an alpha gradient (matching
+/// the dashboard token system: solid cards, one radius).
 class _DailyTargetCard extends StatelessWidget {
   const _DailyTargetCard({
     required this.calorieTarget,
@@ -559,13 +559,9 @@ class _DailyTargetCard extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(NhamSpacing.sp5),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [NhamColors.accent15, NhamColors.accent05],
-        ),
+        color: NhamColors.elev,
         borderRadius: BorderRadius.circular(NhamRadii.containerLg),
-        border: Border.all(color: NhamColors.accent40),
+        border: Border.all(color: NhamColors.inputBorder),
       ),
       child: Column(
         children: [
@@ -573,7 +569,7 @@ class _DailyTargetCard extends StatelessWidget {
             tr('onboarding.bodyMetrics.calorieTarget').toUpperCase(),
             textAlign: TextAlign.center,
             style: NhamTextStyles.sansBold(fontSize: 11)
-                .copyWith(color: NhamColors.accentDark, letterSpacing: 1.5),
+                .copyWith(color: NhamColors.stone, letterSpacing: 1.5),
           ),
           const SizedBox(height: NhamSpacing.sp2),
           Text.rich(

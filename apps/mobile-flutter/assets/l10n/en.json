@@ -599,7 +599,11 @@
       "fat": "Fat",
       "macroSummary": "Daily targets",
       "kcal": "kcal",
-      "grams": "g"
+      "grams": "g",
+      "aboutYou": "About you",
+      "aboutYouHint": "These stay optional, but once you fill them in, Nhẩm can compute more tailored targets locally.",
+      "unlockTitle": "Fill the basics to unlock targets.",
+      "unlockHint": "Once sex, weight, height, age, and activity are filled, this becomes your live calorie target and macro planner."
     },
     "cooking": {
       "title": "Your cooking habits",
