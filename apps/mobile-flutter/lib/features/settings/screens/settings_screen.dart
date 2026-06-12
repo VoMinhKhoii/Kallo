@@ -4,6 +4,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../data/session_provider.dart';
 import '../../../shared/widgets/nham_primitives.dart';
@@ -124,7 +125,7 @@ class _ProfileRowTileState extends State<_ProfileRowTile> {
         child: Row(
           children: [
             Icon(
-              Icons.person_outline,
+              LucideIcons.user,
               size: 16,
               color: _pressed ? NhamColors.text : NhamColors.textMuted,
             ),
@@ -141,7 +142,7 @@ class _ProfileRowTileState extends State<_ProfileRowTile> {
             ),
             // ChevronRight inactive = text-muted/50.
             const Icon(
-              Icons.chevron_right,
+              LucideIcons.chevronRight,
               size: 16,
               color: NhamColors.textMuted50,
             ),
@@ -376,7 +377,7 @@ class _BackHeaderState extends State<_BackHeader> {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.arrow_back, size: 16, color: color),
+                Icon(LucideIcons.arrowLeft, size: 16, color: color),
                 const SizedBox(width: 6), // gap-1.5
                 Text(
                   tr('settings.title'),
