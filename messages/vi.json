@@ -1059,7 +1059,8 @@
       "refineLabel": "Sửa bằng lời",
       "refinePlaceholder": "vd: mực chiên chứ không phải kho",
       "refineSubmit": "Phân tích lại",
-      "refineHint": "Chúng tôi sẽ đọc lại cả bữa ăn cùng đính chính của bạn và thay thế."
+      "refineHint": "Chúng tôi sẽ đọc lại cả bữa ăn cùng đính chính của bạn và thay thế.",
+      "refineTightHint": "Mô tả gốc khá dài — chúng tôi sẽ rút gọn một chút để vừa phần đính chính."
     },
     "mode": {
       "normal": "Bình thường",

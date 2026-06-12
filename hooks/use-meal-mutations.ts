@@ -330,6 +330,14 @@ export function useUpdateMeal(userId: string, originDate: string) {
 
   return useMutation({
     mutationFn: updateMealAction,
+    onMutate: async () => {
+      // Cancel any day fetch still in flight BEFORE the edit lands: such a
+      // fetch read the pre-edit snapshot and would overwrite the authoritative
+      // onSuccess write when it resolves (mirrors useConfirmMeal's onMutate).
+      await queryClient.cancelQueries({
+        queryKey: loggingDayKeys.byUserDate(userId, originDate),
+      });
+    },
     onSuccess: (data) => {
       const savedMeal = data.meal;
       if (!savedMeal) return;

@@ -1059,7 +1059,8 @@
       "refineLabel": "Fix it in words",
       "refinePlaceholder": "e.g. the squid was fried, not braised",
       "refineSubmit": "Re-analyze",
-      "refineHint": "We'll re-read the whole meal with your correction and replace it."
+      "refineHint": "We'll re-read the whole meal with your correction and replace it.",
+      "refineTightHint": "The original text is long — we'll trim it a little to fit your correction."
     },
     "mode": {
       "normal": "Normal",

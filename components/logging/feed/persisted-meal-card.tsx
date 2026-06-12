@@ -23,6 +23,14 @@ import { useShareMeal } from '@/hooks/use-share-meal';
 import type { PersistedMeal } from '@/lib/actions/meals';
 import { MIN_DISH_GRAMS } from '@/lib/meal-utils';
 import { cn } from '@/lib/utils';
+import { MEAL_TEXT_MAX_LENGTH } from '@/lib/validation';
+
+// The NL-refine is submitted as `${rawInput} (${correction})` — the joining
+// " (" + ")" costs 3 chars against the analysis pipeline's message cap.
+const REFINE_JOIN_CHARS = 3;
+// Below this remaining budget we still allow a short correction (the feed
+// truncates the original text to fit) but tell the user about the trade.
+const REFINE_MIN_BUDGET = 20;
 
 /** Per-stored-row edit the card sends up to the update mutation. */
 export interface MealAmountEdit {
@@ -201,6 +209,17 @@ function MealAmountEditor({
     onRefine(trimmed);
   };
 
+  // Keep `rawInput + correction + join` within the server's message cap. When
+  // the original text leaves almost no room, allow a short correction anyway —
+  // the feed truncates the original to fit — and surface that quietly.
+  const refineBudget =
+    MEAL_TEXT_MAX_LENGTH - REFINE_JOIN_CHARS - meal.rawInput.length;
+  const refineTight = refineBudget < REFINE_MIN_BUDGET;
+  const refineMaxLength = Math.max(
+    Math.min(200, refineBudget),
+    REFINE_MIN_BUDGET
+  );
+
   // Flatten the meal's ingredient rows (each carries a stable id + grams) into
   // the editable working set. Removals and gram steps mutate local state only;
   // nothing persists until Save.
@@ -347,7 +366,7 @@ function MealAmountEditor({
               }}
               placeholder={t('refinePlaceholder')}
               autoComplete="off"
-              maxLength={200}
+              maxLength={refineMaxLength}
               className="min-w-0 flex-1 rounded-lg border border-nham-border/60 bg-white px-3 py-2 text-[13px] text-nham-text placeholder:text-nham-text-muted/50 focus:border-nham-accent/50 focus:outline-none"
               style={{ fontFamily: 'DM Sans, sans-serif' }}
             />
@@ -366,7 +385,7 @@ function MealAmountEditor({
             className="mt-1.5 px-1 text-[11px] text-nham-text-muted/70"
             style={{ fontFamily: 'DM Sans, sans-serif' }}
           >
-            {t('refineHint')}
+            {refineTight ? t('refineTightHint') : t('refineHint')}
           </p>
         </div>
       )}

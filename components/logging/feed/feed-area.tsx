@@ -48,6 +48,7 @@ import type {
   StreamingPhase,
 } from '@/lib/types/meal';
 import { cn } from '@/lib/utils';
+import { MEAL_TEXT_MAX_LENGTH } from '@/lib/validation';
 
 const emptyMacros: MacroBreakdown = {
   calories: 0,
@@ -272,6 +273,15 @@ export function FeedArea({
   // toast (the correction IS the user's intent — an "undo" here would confuse).
   const replaceOldMeal = useCallback(
     async (mealId: string) => {
+      // If the meal is already gone from the cache (e.g. removed by a racing
+      // delete), the server call would only produce a spurious error toast.
+      const stillInCache = queryClient
+        .getQueriesData<LoggingDayData>({
+          queryKey: loggingDayKeys.byUserDate(profile.userId, selectedDate),
+        })
+        .some(([, data]) =>
+          data?.persistedMeals.some((meal) => meal.id === mealId)
+        );
       queryClient.setQueriesData<LoggingDayData>(
         {
           queryKey: loggingDayKeys.byUserDate(profile.userId, selectedDate),
@@ -286,12 +296,28 @@ export function FeedArea({
               }
             : old
       );
-      try {
-        await deleteMealAction({ mealId });
-      } catch {
-        // The corrected meal is saved; a failed delete leaves a duplicate the
-        // user can remove manually. Surface it without blocking.
-        toast.error(t('deleteError'));
+      if (stillInCache) {
+        try {
+          await deleteMealAction({ mealId });
+        } catch (error) {
+          // A not-found means another path already deleted it — the data is
+          // correct, so stay silent. Anything else really left a duplicate:
+          // refetch so the original meal resurfaces and the user can remove
+          // it manually.
+          const message = error instanceof Error ? error.message : '';
+          if (!message.includes('không tồn tại')) {
+            toast.error(t('deleteError'));
+            queryClient.invalidateQueries({
+              queryKey: loggingDayKeys.byUserDate(profile.userId, selectedDate),
+              refetchType: 'active',
+            });
+            queryClient.invalidateQueries({
+              queryKey: dailyMealsKeys.byDate(selectedDate),
+            });
+            queryClient.invalidateQueries({ queryKey: ['meal-dates'] });
+            return;
+          }
+        }
       }
       queryClient.invalidateQueries({
         queryKey: loggingDayKeys.byUserDate(profile.userId, selectedDate),
@@ -402,7 +428,15 @@ export function FeedArea({
       if (stream.isAnalyzing) return;
       // The pipeline reads the whole meal afresh; the parenthetical carries the
       // correction as a same-line aside so decomposition keeps the dish context.
-      const combined = `${meal.rawInput} (${correction})`;
+      // The server caps messages at MEAL_TEXT_MAX_LENGTH — when the original
+      // text plus the correction (and the 3 joining chars) would exceed it,
+      // truncate the original so the analysis is never rejected.
+      const baseBudget = MEAL_TEXT_MAX_LENGTH - correction.length - 3;
+      const base =
+        meal.rawInput.length > baseBudget
+          ? meal.rawInput.slice(0, Math.max(baseBudget, 0)).trimEnd()
+          : meal.rawInput;
+      const combined = `${base} (${correction})`;
       const assistantMsgId = crypto.randomUUID();
       replacedMealByMsgIdRef.current.set(assistantMsgId, meal.id);
       setStreamingMsgId(assistantMsgId);

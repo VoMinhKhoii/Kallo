@@ -25,12 +25,15 @@ export const dateStringSchema = z
 
 export const timezoneOffsetSchema = z.number().int().min(-840).max(720);
 
+/** Hard cap on a meal description — the NL-refine budget mirrors this. */
+export const MEAL_TEXT_MAX_LENGTH = 500;
+
 /** Shared inner schema for a meal description string (used by API + feed submit). */
 export const mealTextSchema = z
   .string()
   .trim()
   .min(1, 'Vui lòng nhập món ăn.')
-  .max(500, 'Tin nhắn quá dài (tối đa 500 ký tự).')
+  .max(MEAL_TEXT_MAX_LENGTH, 'Tin nhắn quá dài (tối đa 500 ký tự).')
   .transform((s) => s.normalize('NFC'))
   .refine((s) => /\p{L}/u.test(s), 'Tin nhắn phải chứa ít nhất một chữ cái.')
   .refine((s) => !urlOnlyPattern.test(s), 'Vui lòng nhập mô tả món ăn.')
