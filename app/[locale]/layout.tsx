@@ -1,5 +1,12 @@
 import type { Metadata, Viewport } from 'next';
-import { DM_Sans, Fraunces, Geist, Geist_Mono, Lora } from 'next/font/google';
+import {
+  Be_Vietnam_Pro,
+  DM_Sans,
+  Fraunces,
+  Geist,
+  Geist_Mono,
+  Lora,
+} from 'next/font/google';
 import { notFound } from 'next/navigation';
 import { hasLocale, NextIntlClientProvider } from 'next-intl';
 import {
@@ -40,6 +47,19 @@ const lora = Lora({
 const dmSans = DM_Sans({
   variable: '--font-dm-sans',
   subsets: ['latin'],
+  display: 'swap',
+});
+
+// DM Sans ships no Vietnamese subset on Google Fonts (adding a 'vietnamese'
+// subset is a build error), so vi diacritics would otherwise fall back
+// per-glyph to a system font mid-word. Be Vietnam Pro is a near-identical
+// geometric sans WITH full Vietnamese coverage; it is wired into the
+// --font-dm-sans fallback chain (see globals.css) so only the glyphs DM Sans
+// lacks resolve here — the Latin body keeps DM Sans intact.
+const viSans = Be_Vietnam_Pro({
+  variable: '--font-vi-sans',
+  subsets: ['vietnamese', 'latin'],
+  weight: ['400', '500', '600', '700'],
   display: 'swap',
 });
 
@@ -111,7 +131,7 @@ export default async function LocaleLayout({
   return (
     <html lang={locale}>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} ${lora.variable} ${dmSans.variable} ${fraunces.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} ${lora.variable} ${dmSans.variable} ${viSans.variable} ${fraunces.variable} antialiased`}
       >
         <div className="noise-bg pointer-events-none fixed inset-0 z-50 opacity-[0.03] mix-blend-overlay" />
         <NextIntlClientProvider messages={messages}>

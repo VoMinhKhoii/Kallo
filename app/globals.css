@@ -206,6 +206,11 @@
   }
   body {
     @apply bg-background text-foreground;
+    /* Append the Vietnamese-capable sans so inherited body text covers vi
+       diacritics that the latin-only Geist/DM Sans subsets lack. */
+    font-family:
+      var(--font-sans), var(--font-vi-sans), ui-sans-serif, system-ui,
+      sans-serif;
   }
 }
 
@@ -216,9 +221,13 @@
   }
 
   /* DM Sans display utility — replaces inline `style={{ fontFamily }}`
-     repeated across the sidebar and shell. */
+     repeated across the sidebar and shell. Be Vietnam Pro (--font-vi-sans)
+     sits between DM Sans and the system fallback to cover the Vietnamese
+     diacritics DM Sans's latin-only subset lacks. */
   .font-sans-display {
-    font-family: var(--font-dm-sans), ui-sans-serif, system-ui, sans-serif;
+    font-family:
+      var(--font-dm-sans), var(--font-vi-sans), ui-sans-serif, system-ui,
+      sans-serif;
   }
 
   /* Subtle pulse used for the onboarding-incomplete dot. */
