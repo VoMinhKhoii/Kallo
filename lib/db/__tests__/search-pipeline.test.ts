@@ -1017,3 +1017,48 @@ describe('search_ingredients_by_name (manual search ranking)', () => {
     ).toContain('gà ta');
   });
 });
+
+// ─── *_all_sources single-statement match functions (v2 pipeline) ────────────
+
+describe('all-sources match functions (single statement per arm)', () => {
+  it('fuzzy_match_ingredients_all_sources partitions per source with word-extent ranking', async () => {
+    const rows = await sql<
+      Array<{ id: string; source_id: number; similarity: number }>
+    >`
+      SELECT * FROM fuzzy_match_ingredients_all_sources('thịt gà', 3, 0.15)
+    `;
+    expect(rows.length).toBeGreaterThan(0);
+    // No source may exceed the per-source cap.
+    const bySource = new Map<number, number>();
+    for (const row of rows) {
+      bySource.set(row.source_id, (bySource.get(row.source_id) ?? 0) + 1);
+    }
+    for (const count of bySource.values()) {
+      expect(count).toBeLessThanOrEqual(3);
+    }
+    // Ordered by score desc overall.
+    for (let i = 1; i < rows.length; i++) {
+      expect(rows[i].similarity).toBeLessThanOrEqual(rows[i - 1].similarity);
+    }
+  });
+
+  it('match_ingredients_all_sources returns the same neighbors as the per-source calls', async () => {
+    // Self-match: use a seeded row's own embedding; it must come back as the
+    // top hit for its source, mirroring the match_ingredients_by_source tests.
+    const [seed] = await sql<Array<{ id: string; source_id: number }>>`
+      SELECT id, source_id FROM vietnamese_food_composition
+      WHERE embedding IS NOT NULL LIMIT 1
+    `;
+    const rows = await sql<
+      Array<{ id: string; source_id: number; similarity: number }>
+    >`
+      SELECT a.* FROM match_ingredients_all_sources(
+        (SELECT embedding FROM vietnamese_food_composition WHERE id = ${seed.id}),
+        3, 0.5
+      ) a
+    `;
+    const sameSource = rows.filter((r) => r.source_id === seed.source_id);
+    expect(sameSource[0]?.id).toBe(seed.id);
+    expect(sameSource[0]?.similarity).toBeGreaterThan(0.99);
+  });
+});

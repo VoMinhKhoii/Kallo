@@ -16,6 +16,7 @@ import {
   type FuzzyMatchRow,
   type MatchInfo,
   mergeTopKAcrossSources,
+  rrfFuseCandidates,
   SOURCE_FAO,
   SOURCE_USDA,
   USDA_VECTOR_THRESHOLD,
@@ -88,17 +89,34 @@ interface IngredientWithContext {
   dishCookingMethod: string | null;
 }
 
+/** Row from the *_all_sources match functions: FuzzyMatchRow + source_id. */
+type SourcedMatchRow = FuzzyMatchRow & { source_id: number };
+
+function splitBySource(rows: SourcedMatchRow[]): {
+  fao: FuzzyMatchRow[];
+  usda: FuzzyMatchRow[];
+} {
+  const fao: FuzzyMatchRow[] = [];
+  const usda: FuzzyMatchRow[] = [];
+  for (const row of rows) {
+    if (row.source_id === SOURCE_FAO) fao.push(row);
+    else if (row.source_id === SOURCE_USDA) usda.push(row);
+  }
+  return { fao, usda };
+}
+
 /**
  * Run the top-K matching cascade for a list of v2-decomposed ingredients.
  *
  * Phases:
  *   1. Embedding resolution (L1/L2/L3 — reuses v1 cache).
- *   2. Source-aware vector search (FAO + USDA), each returning up to
- *      `sourceLimit` rows. Then `buildMatchTopK` applies the
- *      state-mismatch penalty per source.
- *   3. Merge across sources into a single similarity-desc list, capped at
- *      `k` per ingredient.
- *   4. If empty, fall back to fuzzy (pg_trgm) per source and repeat the merge.
+ *   2. Hybrid retrieval per ingredient: ONE vector statement + ONE fuzzy
+ *      statement (each returning both sources via a window partition), run
+ *      in parallel. `buildMatchTopK` applies per-source thresholds + the
+ *      state-mismatch penalty per arm.
+ *   3. Reciprocal Rank Fusion of the vector and fuzzy arms into the final
+ *      top-K candidate pool (rank-based — the two arms' scores are not on
+ *      comparable scales). The LLM in Call 2 still makes the final pick.
  *   5. Batch-fetch nutrition for all unique candidate IDs once and attach
  *      `per_100g` + `inediblePct` to each candidate.
  */
@@ -116,7 +134,7 @@ export async function matchTopKPerIngredient(
   if (ingredients.length === 0) return [];
 
   const t0 = Date.now();
-  let fuzzyFallbackFires = 0;
+  let vectorArmEmptyCount = 0;
 
   const ctxs: IngredientWithContext[] = ingredients.map((ing, i) => ({
     ingredient: ing,
@@ -180,70 +198,81 @@ export async function matchTopKPerIngredient(
       const embedding = embeddings[c.index];
       if (!embedding) return { ingredientIndex: c.index, candidates: [] };
 
-      // Vector search: query FAO + USDA in parallel. Stringify the embedding
-      // once — it's ~768 floats (~15-20KB) and was previously serialized twice.
+      // Hybrid retrieval, one round-trip-time: the vector and fuzzy arms run
+      // as two parallel single-statement queries, each returning the top rows
+      // for BOTH sources via a window partition (previously 2 vector
+      // statements — each shipping the same ~15-20KB embedding literal — plus
+      // 2 more fuzzy statements when the vector arm came up empty). The fuzzy
+      // arm now always runs: an exact lexical name hit must be able to
+      // compete with a semantically-adjacent-but-wrong vector hit instead of
+      // only surfacing when the vector arm fails entirely.
       const embeddingLiteral = JSON.stringify(embedding);
-      const [faoRows, usdaRows] = await Promise.all([
+      const [vectorRows, fuzzyRows] = await Promise.all([
         db.execute(
-          sql`SELECT * FROM match_ingredients_by_source(${embeddingLiteral}::vector, ${SOURCE_FAO}, ${sourceLimit}, 0.5)`
+          sql`SELECT * FROM match_ingredients_all_sources(${embeddingLiteral}::vector, ${sourceLimit}, 0.5)`
         ),
         db.execute(
-          sql`SELECT * FROM match_ingredients_by_source(${embeddingLiteral}::vector, ${SOURCE_USDA}, ${sourceLimit}, 0.5)`
+          sql`SELECT * FROM fuzzy_match_ingredients_all_sources(${c.matchingName}, ${sourceLimit}, 0.15)`
         ),
       ]);
-
-      const faoTop = buildMatchTopK(
-        c.matchingName,
-        faoRows as unknown as FuzzyMatchRow[],
-        k,
-        FAO_VECTOR_THRESHOLD,
-        'fao',
-        'vector',
-        c.expectedState
+      const vectorBySource = splitBySource(
+        vectorRows as unknown as SourcedMatchRow[]
       );
-      const usdaTop = buildMatchTopK(
-        c.matchingName,
-        usdaRows as unknown as FuzzyMatchRow[],
-        k,
-        USDA_VECTOR_THRESHOLD,
-        'usda',
-        'vector',
-        c.expectedState
+      const fuzzyBySource = splitBySource(
+        fuzzyRows as unknown as SourcedMatchRow[]
       );
 
-      let merged = mergeTopKAcrossSources([faoTop, usdaTop], k);
+      // Per-arm, per-source acceptance thresholds + state penalty, exactly as
+      // before — fusion only ever sees candidates that cleared their own bar.
+      const vectorList = mergeTopKAcrossSources(
+        [
+          buildMatchTopK(
+            c.matchingName,
+            vectorBySource.fao,
+            k,
+            FAO_VECTOR_THRESHOLD,
+            'fao',
+            'vector',
+            c.expectedState
+          ),
+          buildMatchTopK(
+            c.matchingName,
+            vectorBySource.usda,
+            k,
+            USDA_VECTOR_THRESHOLD,
+            'usda',
+            'vector',
+            c.expectedState
+          ),
+        ],
+        k
+      );
+      const fuzzyList = mergeTopKAcrossSources(
+        [
+          buildMatchTopK(
+            c.matchingName,
+            fuzzyBySource.fao,
+            k,
+            FUZZY_FALLBACK_THRESHOLD,
+            'fao',
+            'fuzzy',
+            c.expectedState
+          ),
+          buildMatchTopK(
+            c.matchingName,
+            fuzzyBySource.usda,
+            k,
+            FUZZY_FALLBACK_THRESHOLD,
+            'usda',
+            'fuzzy',
+            c.expectedState
+          ),
+        ],
+        k
+      );
 
-      if (merged.length === 0) {
-        fuzzyFallbackFires++;
-        // Fuzzy fallback.
-        const [faoFuzzy, usdaFuzzy] = await Promise.all([
-          db.execute(
-            sql`SELECT * FROM fuzzy_match_ingredients_by_source(${c.matchingName}, ${SOURCE_FAO}, ${sourceLimit}, 0.15)`
-          ),
-          db.execute(
-            sql`SELECT * FROM fuzzy_match_ingredients_by_source(${c.matchingName}, ${SOURCE_USDA}, ${sourceLimit}, 0.15)`
-          ),
-        ]);
-        const faoFTop = buildMatchTopK(
-          c.matchingName,
-          faoFuzzy as unknown as FuzzyMatchRow[],
-          k,
-          FUZZY_FALLBACK_THRESHOLD,
-          'fao',
-          'fuzzy',
-          c.expectedState
-        );
-        const usdaFTop = buildMatchTopK(
-          c.matchingName,
-          usdaFuzzy as unknown as FuzzyMatchRow[],
-          k,
-          FUZZY_FALLBACK_THRESHOLD,
-          'usda',
-          'fuzzy',
-          c.expectedState
-        );
-        merged = mergeTopKAcrossSources([faoFTop, usdaFTop], k);
-      }
+      if (vectorList.length === 0) vectorArmEmptyCount++;
+      const merged = rrfFuseCandidates(vectorList, fuzzyList, k);
 
       return {
         ingredientIndex: c.index,
@@ -298,7 +327,7 @@ export async function matchTopKPerIngredient(
     console.info('[v2-matching] phase timings', {
       ingredients: ingredients.length,
       l3MissCount,
-      fuzzyFallbackFires,
+      vectorArmEmptyCount,
       phase1_cacheLookupMs: phase1Ms,
       phase2_geminiBatchMs: phase2Ms,
       phase3_vectorAndFuzzyMs: phase3Ms,

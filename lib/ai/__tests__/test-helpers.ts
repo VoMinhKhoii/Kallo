@@ -184,7 +184,24 @@ export function createSourceAwareMockDb(
         const result = options.customRouter(q);
         if (result !== null) return Promise.resolve(result);
       }
-      // Source-aware vector matching
+      // Single-statement all-sources matching (v2 hybrid retrieval): combine
+      // the per-source routes and tag rows with source_id, the column the
+      // *_all_sources functions add so the caller can re-partition.
+      const withSource = (rows: unknown[] | undefined, sourceId: number) =>
+        (rows ?? []).map((r) => ({ source_id: sourceId, ...(r as object) }));
+      if (q.includes('match_ingredients_all_sources')) {
+        return Promise.resolve([
+          ...withSource(routes.fao_vector, 1),
+          ...withSource(routes.usda_vector, 2),
+        ]);
+      }
+      if (q.includes('fuzzy_match_ingredients_all_sources')) {
+        return Promise.resolve([
+          ...withSource(routes.fao_fuzzy, 1),
+          ...withSource(routes.usda_fuzzy, 2),
+        ]);
+      }
+      // Source-aware vector matching (legacy v1 path)
       if (q.includes('match_ingredients_by_source') && !q.includes('fuzzy')) {
         if (q.includes('1')) return Promise.resolve(routes.fao_vector ?? []);
         if (q.includes('2')) return Promise.resolve(routes.usda_vector ?? []);
