@@ -1165,7 +1165,14 @@
       "endTaken": "That link is taken",
       "endInvalid": "That link isn't valid",
       "endReserved": "That link is reserved",
-      "endError": "Couldn't update the link"
+      "endError": "Couldn't update the link",
+      "appearTitle": "How you appear",
+      "appearHint": "The name your circle sees on shared meals.",
+      "appearPlaceholder": "Your name",
+      "appearEdit": "Edit display name",
+      "appearSaved": "Display name updated",
+      "appearError": "Couldn't update your name",
+      "appearFallback": "Set a display name"
     },
     "circle": {
       "title": "Your circle ({count})",

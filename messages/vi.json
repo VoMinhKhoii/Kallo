@@ -1165,7 +1165,14 @@
       "endTaken": "Liên kết này đã được dùng",
       "endInvalid": "Liên kết không hợp lệ",
       "endReserved": "Liên kết này đã được giữ chỗ",
-      "endError": "Không thể cập nhật liên kết"
+      "endError": "Không thể cập nhật liên kết",
+      "appearTitle": "Bạn hiện ra thế nào",
+      "appearHint": "Tên mà vòng kết nối thấy trên các bữa ăn được chia sẻ.",
+      "appearPlaceholder": "Tên của bạn",
+      "appearEdit": "Sửa tên hiển thị",
+      "appearSaved": "Đã cập nhật tên hiển thị",
+      "appearError": "Không thể cập nhật tên của bạn",
+      "appearFallback": "Đặt tên hiển thị"
     },
     "circle": {
       "title": "Vòng kết nối ({count})",
