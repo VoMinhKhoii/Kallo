@@ -3,7 +3,7 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { AlertCircle, RefreshCw } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { CheatOccasionChips } from '@/components/logging/feed/cheat-occasion-chips';
@@ -20,7 +20,10 @@ import {
   type MealInputHandle,
 } from '@/components/logging/input/meal-input';
 import type { LoggingProfile } from '@/components/logging/logging-shell';
-import { addDays } from '@/components/logging/sidebar/timeline-utils';
+import {
+  addDays,
+  formatNamedDayHeader,
+} from '@/components/logging/sidebar/timeline-utils';
 import { dailyMealsKeys } from '@/hooks/use-daily-meals';
 import { useFeedSubmit } from '@/hooks/use-feed-submit';
 import { loggingDayKeys, useLoggingDay } from '@/hooks/use-logging-day';
@@ -192,6 +195,7 @@ export function FeedArea({
   onSelectDate,
 }: FeedAreaProps) {
   const t = useTranslations('logging.feedArea');
+  const locale = useLocale();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const inputRef = useRef<MealInputHandle>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -769,6 +773,14 @@ export function FeedArea({
 
         {!isDayLoading && !isDayError && hasContent && (
           <div className="mx-auto w-full max-w-3xl pl-6 sm:pl-12">
+            {hasPersistedMeals && (
+              <h2
+                className="mb-5 text-[19px] text-nham-text sm:mb-6 sm:text-[22px]"
+                style={{ fontFamily: 'Lora, serif' }}
+              >
+                {formatNamedDayHeader(selectedDate, locale)}
+              </h2>
+            )}
             <div className="flex flex-col gap-5 sm:gap-8">
               {/* Persisted meals from DB */}
               <AnimatePresence initial={false}>

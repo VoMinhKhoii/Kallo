@@ -1,18 +1,14 @@
 'use client';
 
-import { AlertCircle, ChevronDown, ChevronUp } from 'lucide-react';
+import { AlertCircle } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { cn } from '@/lib/utils';
+import { useCallback, useMemo } from 'react';
 import { TimelineDateButton } from './timeline-date-button';
 import {
+  adjacentDate,
+  formatMonthDivider,
   formatTimelineDayLabel,
-  formatWeekDateRange,
-  getSelectedMonthKey,
-  getSelectedWeekKey,
-  getWeekDateRange,
-  groupByMonth,
-  sortTimelineDaysAscending,
+  groupDaysByMonthFlat,
 } from './timeline-utils';
 
 interface TimelineSidebarProps {
@@ -39,52 +35,38 @@ export function TimelineSidebar({
   const t = useTranslations('logging.timelineSidebar');
   const locale = useLocale();
 
-  const months = useMemo(() => groupByMonth(allDates), [allDates]);
-
-  const selectedMonth = useMemo(
-    () => getSelectedMonthKey(selectedDate),
-    [selectedDate]
+  // Flat, reverse-chronological day list grouped under sticky month dividers —
+  // the single-level replacement for the month→week→day accordion tree.
+  const monthGroups = useMemo(() => groupDaysByMonthFlat(allDates), [allDates]);
+  // The navigable order for keyboard ←/→ (newest-first, mirrors the list).
+  const orderedDescending = useMemo(
+    () => [...allDates].sort((a, b) => b.localeCompare(a)),
+    [allDates]
   );
+  const mealDates = useMemo(() => new Set(dates), [dates]);
 
-  const selectedWeekKey = useMemo(
-    () => getSelectedWeekKey(selectedDate),
-    [selectedDate]
+  // ArrowLeft steps to an older day (visually down the list); ArrowRight to a
+  // newer day. Scoped to the nav so it never hijacks typing in the composer.
+  const handleKeyDown = useCallback(
+    (event: React.KeyboardEvent<HTMLElement>) => {
+      const direction =
+        event.key === 'ArrowLeft' ? -1 : event.key === 'ArrowRight' ? 1 : 0;
+      if (direction === 0) return;
+      const next = adjacentDate(
+        orderedDescending,
+        selectedDate,
+        direction as 1 | -1
+      );
+      if (next) {
+        event.preventDefault();
+        onSelectDate(next);
+      }
+    },
+    [orderedDescending, selectedDate, onSelectDate]
   );
-
-  const [expandedMonths, setExpandedMonths] = useState<Set<string>>(
-    () => new Set([selectedMonth])
-  );
-  const [expandedWeeks, setExpandedWeeks] = useState<Set<string>>(
-    () => new Set([selectedWeekKey])
-  );
-
-  // Auto-expand the month/week containing the newly selected date
-  useEffect(() => {
-    setExpandedMonths((prev) => new Set(prev).add(selectedMonth));
-    setExpandedWeeks((prev) => new Set(prev).add(selectedWeekKey));
-  }, [selectedMonth, selectedWeekKey]);
-
-  const toggleMonth = useCallback((monthKey: string) => {
-    setExpandedMonths((prev) => {
-      const next = new Set(prev);
-      if (next.has(monthKey)) next.delete(monthKey);
-      else next.add(monthKey);
-      return next;
-    });
-  }, []);
-
-  const toggleWeek = useCallback((weekKey: string) => {
-    setExpandedWeeks((prev) => {
-      const next = new Set(prev);
-      if (next.has(weekKey)) next.delete(weekKey);
-      else next.add(weekKey);
-      return next;
-    });
-  }, []);
 
   const hasSavedMeals = dates.length > 0;
 
-  // Loading state
   if (isPending) {
     return (
       <nav
@@ -106,13 +88,16 @@ export function TimelineSidebar({
 
   return (
     <nav
-      className="hidden h-full w-[252px] shrink-0 flex-col overflow-hidden border-border/40 border-r py-3 pr-3 md:flex"
+      className="hidden h-full w-[252px] shrink-0 flex-col overflow-hidden border-border/40 border-r py-3 pr-3 focus:outline-none md:flex"
       aria-label={t('navigationLabel')}
+      // biome-ignore lint/a11y/noNoninteractiveTabindex: the nav is a roving keyboard target for ArrowLeft/Right day navigation.
+      tabIndex={0}
+      onKeyDown={handleKeyDown}
     >
-      <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto overflow-x-hidden">
+      <div className="flex min-h-0 flex-1 flex-col overflow-y-auto overflow-x-hidden">
         {/* Error state */}
         {isError && (
-          <div className="ml-3 flex flex-col gap-2 rounded-lg border border-nham-danger/30 bg-nham-danger/10 p-3">
+          <div className="mb-4 ml-3 flex flex-col gap-2 rounded-lg border border-nham-danger/30 bg-nham-danger/10 p-3">
             <div className="flex items-center gap-2 text-nham-danger text-sm">
               <AlertCircle className="h-4 w-4" aria-hidden="true" />
               <span className="flex-1 font-medium">
@@ -136,182 +121,30 @@ export function TimelineSidebar({
           </div>
         )}
 
-        {/* Timeline */}
-        {months.map((month) => {
-          const isMonthExpanded = expandedMonths.has(month.key);
-
-          return (
-            <div key={month.key} className="flex w-full flex-col gap-2">
-              {/* Month header */}
-              <button
-                type="button"
-                onClick={() => toggleMonth(month.key)}
-                aria-expanded={isMonthExpanded}
-                aria-controls={`month-${month.key}`}
-                className="ml-3 flex w-[calc(100%-0.75rem)] min-w-0 items-center gap-2 text-muted-foreground transition-colors hover:text-nham-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent focus-visible:ring-offset-2"
-              >
-                <span className="min-w-0 flex-1 truncate text-left font-medium font-sans-display text-[10px] uppercase tracking-[0.04em]">
-                  {month.month}/{month.year}
-                </span>
-                {isMonthExpanded ? (
-                  <ChevronUp className="h-3.5 w-3.5" aria-hidden="true" />
-                ) : (
-                  <ChevronDown className="h-3.5 w-3.5" aria-hidden="true" />
-                )}
-              </button>
-
-              {/* Month content */}
-              {isMonthExpanded && (
-                <div
-                  id={`month-${month.key}`}
-                  className="flex w-full flex-col gap-2"
-                >
-                  {/* Month separator */}
-                  <div className="ml-3 h-0.5 rounded-sm bg-neutral-100" />
-
-                  {/* Weeks */}
-                  {month.weeks.map((week) => {
-                    const isWeekExpanded = expandedWeeks.has(week.key);
-                    const hasSelectedDay = week.days.includes(selectedDate);
-                    const weekRange = getWeekDateRange({
-                      year: month.year,
-                      month: month.month,
-                      weekNumber: week.weekNumber,
-                    });
-                    const weekRangeLabel = formatWeekDateRange(
-                      weekRange,
-                      locale
-                    );
-                    const sortedDays = sortTimelineDaysAscending(week.days);
-
-                    return (
-                      <div key={week.key} className="w-full min-w-0">
-                        {/* Week button */}
-                        <button
-                          type="button"
-                          onClick={() => toggleWeek(week.key)}
-                          aria-expanded={isWeekExpanded}
-                          aria-controls={`week-${week.key}`}
-                          className={cn(
-                            'ml-3 flex w-[calc(100%-0.75rem)] min-w-0 items-center gap-2 rounded-md px-1 py-1.5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent focus-visible:ring-offset-2',
-                            hasSelectedDay
-                              ? 'text-nham-text'
-                              : 'text-nham-text-muted hover:text-nham-text'
-                          )}
-                        >
-                          <span className="flex min-w-0 flex-1 items-baseline gap-2 text-left font-sans-display tracking-tight">
-                            <span className="shrink-0 font-semibold text-[13px]">
-                              {t('week', { number: week.weekNumber })}
-                            </span>
-                            <span className="min-w-0 truncate font-medium text-[11px] text-nham-text-muted/75">
-                              {weekRangeLabel}
-                            </span>
-                          </span>
-                          {isWeekExpanded ? (
-                            <ChevronUp
-                              className="h-3.5 w-3.5 shrink-0"
-                              aria-hidden="true"
-                            />
-                          ) : (
-                            <ChevronDown
-                              className="h-3.5 w-3.5 shrink-0"
-                              aria-hidden="true"
-                            />
-                          )}
-                        </button>
-
-                        {/* Day tree */}
-                        {isWeekExpanded && (
-                          <div
-                            id={`week-${week.key}`}
-                            className="relative mt-1 ml-3 min-w-0 pl-8"
-                          >
-                            {/* Days list */}
-                            <ul className="flex min-w-0 flex-1 flex-col gap-1.5">
-                              {sortedDays.map((date, index) => {
-                                const isFirst = index === 0;
-                                const isLast = index === sortedDays.length - 1;
-                                const isActive = date === selectedDate;
-                                const isToday = date === today;
-                                const hasMeal = dates.includes(date);
-                                const label = formatTimelineDayLabel(
-                                  date,
-                                  locale
-                                );
-
-                                return (
-                                  <li
-                                    key={date}
-                                    className="relative flex w-full min-w-0 items-center"
-                                  >
-                                    {/* Upper vertical segment: for the first item it
-                                        reaches up to the vertical midpoint of the Week
-                                        row above (row height ~32px + mt-1 gap = ~20px). */}
-                                    <div
-                                      aria-hidden="true"
-                                      className="pointer-events-none absolute z-[2] w-0.5 bg-nham-accent"
-                                      style={{
-                                        left: '-15px',
-                                        top: isFirst ? '-0.25rem' : '-3px',
-                                        height: isFirst
-                                          ? 'calc(50% - 10px + 0.25rem)'
-                                          : 'calc(50% - 7px)',
-                                      }}
-                                    />
-
-                                    {/* Lower vertical segment: connects this item to
-                                        the next (omitted on the last item so the line
-                                        ends exactly at the final L-connector) */}
-                                    {!isLast && (
-                                      <div
-                                        aria-hidden="true"
-                                        className="pointer-events-none absolute z-[2] w-0.5 bg-nham-accent"
-                                        style={{
-                                          left: '-15px',
-                                          top: '50%',
-                                          height: 'calc(50% + 3px)',
-                                        }}
-                                      />
-                                    )}
-
-                                    {/* L-shaped connector curving from the vertical
-                                        line into the day button */}
-                                    <div
-                                      aria-hidden="true"
-                                      className="pointer-events-none absolute z-[2] -translate-y-full rounded-bl-lg border-nham-accent border-b-2 border-l-2"
-                                      style={{
-                                        left: '-15px',
-                                        top: '50%',
-                                        height: '10px',
-                                        width: '15px',
-                                      }}
-                                    />
-
-                                    {/* Date button */}
-                                    <TimelineDateButton
-                                      date={date}
-                                      label={label}
-                                      isActive={isActive}
-                                      isToday={isToday}
-                                      todayLabel={t('todayLabel')}
-                                      hasMeal={hasMeal}
-                                      variant="desktop"
-                                      onSelectDate={onSelectDate}
-                                    />
-                                  </li>
-                                );
-                              })}
-                            </ul>
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          );
-        })}
+        {/* Flat day list, month dividers sticky at the top of their section */}
+        {monthGroups.map((group) => (
+          <section key={group.key} className="flex flex-col">
+            <h2 className="sticky top-0 z-10 mb-1.5 ml-3 bg-nham-surface py-1.5 font-medium font-sans-display text-[10px] text-muted-foreground uppercase tracking-[0.08em]">
+              {formatMonthDivider(group, locale)}
+            </h2>
+            <ul className="mb-3 flex flex-col gap-1">
+              {group.days.map((date) => (
+                <li key={date} className="flex w-full min-w-0">
+                  <TimelineDateButton
+                    date={date}
+                    label={formatTimelineDayLabel(date, locale)}
+                    isActive={date === selectedDate}
+                    isToday={date === today}
+                    todayLabel={t('todayLabel')}
+                    hasMeal={mealDates.has(date)}
+                    variant="desktop"
+                    onSelectDate={onSelectDate}
+                  />
+                </li>
+              ))}
+            </ul>
+          </section>
+        ))}
       </div>
     </nav>
   );

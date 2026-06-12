@@ -3,22 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { TimelineSidebar } from './timeline-sidebar';
 
-describe('TimelineSidebar', () => {
-  /**
-   * Helper to find a button by its aria-controls attribute.
-   * Necessary because multiple week buttons can have the same accessible name
-   * with the next-intl mock.
-   */
-  function getButtonByControls(controls: string): HTMLButtonElement {
-    const button = screen
-      .getAllByRole('button')
-      .find(
-        (candidate) => candidate.getAttribute('aria-controls') === controls
-      );
-    expect(button).toBeInstanceOf(HTMLButtonElement);
-    return button as HTMLButtonElement;
-  }
-
+describe('TimelineSidebar (flat day list)', () => {
   const baseProps = {
     dates: ['2026-05-03', '2026-05-01'],
     allDates: ['2026-05-03', '2026-05-02', '2026-05-01'],
@@ -30,50 +15,76 @@ describe('TimelineSidebar', () => {
     onSelectDate: vi.fn(),
   };
 
-  it('renders navigation with aria-label translation key navigationLabel', () => {
+  it('renders navigation with the navigationLabel aria-label', () => {
     render(<TimelineSidebar {...baseProps} />);
-
-    const nav = screen.getByRole('navigation', {
-      name: /navigationLabel/i,
-    });
-    expect(nav).toBeInTheDocument();
+    expect(
+      screen.getByRole('navigation', { name: /navigationLabel/i })
+    ).toBeInTheDocument();
   });
 
-  it('exposes aria-expanded="true" for month and week controls containing selected date', () => {
+  it('renders one sticky month divider for the month', () => {
     render(<TimelineSidebar {...baseProps} />);
-
-    // Find month button for May 2026 (05-2026)
-    const monthButton = screen.getByRole('button', {
-      name: /5\/2026/i,
-    });
-    expect(monthButton).toHaveAttribute('aria-expanded', 'true');
-
-    // Find week button for week 1 of May 2026 by its aria-controls attribute
-    const weekButton = getButtonByControls('week-05-2026-w1');
-    expect(weekButton).toHaveAttribute('aria-expanded', 'true');
+    // formatMonthDivider → "May 2026" (long month + year)
+    expect(
+      screen.getByRole('heading', { name: 'May 2026' })
+    ).toBeInTheDocument();
   });
 
-  it('calls onSelectDate with correct date when date button is clicked', async () => {
+  it('lists days flat, most-recent-first under the month', () => {
+    render(<TimelineSidebar {...baseProps} />);
+    const dayButtons = screen
+      .getAllByRole('button')
+      .filter((button) => button.hasAttribute('data-has-meal'));
+    expect(dayButtons.map((button) => button.textContent)).toEqual([
+      'Sun - May 3 (todayLabel)',
+      'Sat - May 2',
+      'Fri - May 1',
+    ]);
+  });
+
+  it('calls onSelectDate with the clicked date', async () => {
     const user = userEvent.setup();
     const onSelectDate = vi.fn();
-
     render(<TimelineSidebar {...baseProps} onSelectDate={onSelectDate} />);
-
-    // Find date button for May 1 (2026-05-01) by its exact formatted label
-    // formatDayLabel returns "Fri, May 1" for 2026-05-01
-    const mayFirstButton = screen.getByRole('button', {
-      name: 'Fri - May 1',
-    });
-
-    await user.click(mayFirstButton);
+    await user.click(screen.getByRole('button', { name: 'Fri - May 1' }));
     expect(onSelectDate).toHaveBeenCalledWith('2026-05-01');
   });
 
-  it('keeps selected date usable in error state and exposes retry button calling onRetry', async () => {
+  it('ArrowLeft selects the next older day, ArrowRight the next newer day', async () => {
+    const user = userEvent.setup();
+    const onSelectDate = vi.fn();
+    render(<TimelineSidebar {...baseProps} onSelectDate={onSelectDate} />);
+
+    const nav = screen.getByRole('navigation', { name: /navigationLabel/i });
+    nav.focus();
+    // Selected = May 2. Older = May 1, newer = May 3.
+    await user.keyboard('{ArrowLeft}');
+    expect(onSelectDate).toHaveBeenLastCalledWith('2026-05-01');
+    await user.keyboard('{ArrowRight}');
+    expect(onSelectDate).toHaveBeenLastCalledWith('2026-05-03');
+  });
+
+  it('marks logged dates with data-has-meal="true" and unlogged with "false"', () => {
+    render(<TimelineSidebar {...baseProps} />);
+    const dayButtons = screen
+      .getAllByRole('button')
+      .filter((button) => button.hasAttribute('data-has-meal'));
+
+    const may3 = dayButtons.find((b) => b.textContent?.includes('May 3'));
+    const may2 = dayButtons.find(
+      (b) => b.getAttribute('aria-current') === 'date'
+    );
+    const may1 = dayButtons.find((b) => b.textContent?.includes('May 1'));
+
+    expect(may3?.dataset.hasMeal).toBe('true');
+    expect(may2?.dataset.hasMeal).toBe('false'); // selected but not logged
+    expect(may1?.dataset.hasMeal).toBe('true');
+  });
+
+  it('keeps the selected date usable and exposes retry in the error state', async () => {
     const user = userEvent.setup();
     const onRetry = vi.fn();
     const onSelectDate = vi.fn();
-
     render(
       <TimelineSidebar
         {...baseProps}
@@ -83,196 +94,51 @@ describe('TimelineSidebar', () => {
       />
     );
 
-    // Selected date should still be clickable
-    const dateButtons = screen.getAllByRole('button');
-    const selectedDateButton = dateButtons.find((btn) =>
-      btn.getAttribute('aria-current')
-    );
-    expect(selectedDateButton).toBeInTheDocument();
+    const selected = screen
+      .getAllByRole('button')
+      .find((btn) => btn.getAttribute('aria-current'));
+    expect(selected).toBeInTheDocument();
 
-    // Retry button should be present
-    const retryButton = screen.getByRole('button', {
-      name: /retryDates/i,
-    });
-    expect(retryButton).toBeInTheDocument();
-
-    await user.click(retryButton);
+    const retry = screen.getByRole('button', { name: /retryDates/i });
+    await user.click(retry);
     expect(onRetry).toHaveBeenCalled();
 
-    // Selected date should still be clickable
-    if (selectedDateButton) {
-      await user.click(selectedDateButton);
+    if (selected) {
+      await user.click(selected);
       expect(onSelectDate).toHaveBeenCalled();
     }
   });
 
-  it('renders skeleton UI in loading state', () => {
+  it('renders skeleton UI in the loading state', () => {
     render(<TimelineSidebar {...baseProps} isPending={true} />);
-
-    // Check for skeleton elements
     const nav = screen.getByRole('navigation');
-    expect(nav).toBeInTheDocument();
-
-    // Skeleton should have loading visual indicators
-    const skeletons = nav.querySelectorAll('[aria-busy="true"]');
-    expect(skeletons.length).toBeGreaterThan(0);
+    expect(nav.querySelectorAll('[aria-busy="true"]').length).toBeGreaterThan(
+      0
+    );
   });
 
-  it('renders noPreviousMeals message when dates is empty while keeping selected date usable', () => {
+  it('renders the noPreviousMeals message when dates is empty', () => {
     render(<TimelineSidebar {...baseProps} dates={[]} />);
-
-    // Empty history message should appear
-    const emptyMessage = screen.getByText(/noPreviousMeals/i);
-    expect(emptyMessage).toBeInTheDocument();
-
-    // Selected date should still be clickable
-    const dateButtons = screen.getAllByRole('button');
-    const selectedDateButton = dateButtons.find((btn) =>
-      btn.getAttribute('aria-current')
-    );
-    expect(selectedDateButton).toBeInTheDocument();
-  });
-
-  it('uses raw dates list for meal indicators: logged date has data-has-meal="true", unlogged date has data-has-meal="false"', () => {
-    render(<TimelineSidebar {...baseProps} />);
-
-    // Find all date buttons
-    const dateButtons = screen.getAllByRole('button');
-    const dateButtonsWithMealData = dateButtons.filter((btn) =>
-      btn.hasAttribute('data-has-meal')
-    );
-
-    // May 3 (2026-05-03) is today and in dates array
-    const may3Button = dateButtonsWithMealData.find(
-      (btn) =>
-        btn.textContent?.includes('Sun - May 3') &&
-        btn.dataset.hasMeal === 'true'
-    );
-    expect(may3Button).toBeInTheDocument();
-
-    // May 2 (2026-05-02) is selected but not in dates array
-    const may2Button = dateButtonsWithMealData.find(
-      (btn) =>
-        btn.getAttribute('aria-current') === 'date' &&
-        btn.dataset.hasMeal === 'false'
-    );
-    expect(may2Button).toBeInTheDocument();
-
-    // May 1 (2026-05-01) is in dates array
-    const may1Button = dateButtonsWithMealData.find(
-      (btn) =>
-        btn.textContent?.includes('May 1') && btn.dataset.hasMeal === 'true'
-    );
-    expect(may1Button).toBeInTheDocument();
-  });
-
-  it('renders week date ranges and day labels in less-recent-first order', () => {
-    render(<TimelineSidebar {...baseProps} />);
-
-    const weekButton = getButtonByControls('week-05-2026-w1');
-    // May 2026: week 1 = May 1–3 (days before the first Monday, May 4)
-    expect(weekButton).toHaveTextContent('May 1 - May 3');
-
-    const dateButtons = screen
+    expect(screen.getByText(/noPreviousMeals/i)).toBeInTheDocument();
+    const selected = screen
       .getAllByRole('button')
-      .filter((button) => button.hasAttribute('data-has-meal'));
+      .find((btn) => btn.getAttribute('aria-current'));
+    expect(selected).toBeInTheDocument();
+  });
 
-    // Days are sorted ascending (less recent first).
-    // May 3 is today so it gets the localized today suffix.
-    expect(dateButtons.map((button) => button.textContent)).toEqual([
-      'Fri - May 1',
-      'Sat - May 2',
-      'Sun - May 3 (todayLabel)',
+  it('renders a divider per distinct month, newest-first', () => {
+    render(
+      <TimelineSidebar
+        {...baseProps}
+        dates={['2026-05-01', '2026-04-20']}
+        allDates={['2026-05-01', '2026-04-20']}
+        selectedDate="2026-05-01"
+      />
+    );
+    const headings = screen.getAllByRole('heading');
+    expect(headings.map((h) => h.textContent)).toEqual([
+      'May 2026',
+      'April 2026',
     ]);
-  });
-
-  it('collapses the selected month when its toggle button is clicked', async () => {
-    const user = userEvent.setup();
-
-    render(<TimelineSidebar {...baseProps} />);
-
-    // Find month button for May 2026 (05-2026)
-    const monthButton = screen.getByRole('button', {
-      name: /5\/2026/i,
-    });
-
-    // Initially expanded (contains selected date)
-    expect(monthButton).toHaveAttribute('aria-expanded', 'true');
-
-    // Click to collapse
-    await user.click(monthButton);
-
-    // Now collapsed
-    expect(monthButton).toHaveAttribute('aria-expanded', 'false');
-  });
-
-  it('collapses the selected week when its toggle button is clicked', async () => {
-    const user = userEvent.setup();
-
-    render(<TimelineSidebar {...baseProps} />);
-
-    // Find week button for week 1 of May 2026 by aria-controls
-    const weekButton = getButtonByControls('week-05-2026-w1');
-
-    // Initially expanded (contains selected date)
-    expect(weekButton).toHaveAttribute('aria-expanded', 'true');
-
-    // Click to collapse
-    await user.click(weekButton);
-
-    // Now collapsed
-    expect(weekButton).toHaveAttribute('aria-expanded', 'false');
-  });
-
-  it('handles multiple weeks with ambiguous names correctly using aria-controls', () => {
-    // Test data with dates spanning multiple weeks to prove selector is robust.
-    // May 2026: week 1 = May 1–3, week 2 = May 4–10, week 3 = May 11–17, week 4 = May 18–24
-    const multiWeekProps = {
-      ...baseProps,
-      dates: [
-        '2026-05-24',
-        '2026-05-20',
-        '2026-05-14',
-        '2026-05-10',
-        '2026-05-03',
-        '2026-05-01',
-      ],
-      allDates: [
-        '2026-05-24',
-        '2026-05-20',
-        '2026-05-14',
-        '2026-05-10',
-        '2026-05-03',
-        '2026-05-02',
-        '2026-05-01',
-      ],
-      selectedDate: '2026-05-10',
-    };
-
-    render(<TimelineSidebar {...multiWeekProps} />);
-
-    // All week buttons have the same accessible name "week" due to next-intl mock
-    // but we can distinguish them by aria-controls
-
-    // Week 1 (May 1–3)
-    const week1Button = getButtonByControls('week-05-2026-w1');
-    expect(week1Button).toHaveAttribute('aria-expanded', 'false'); // Not selected
-
-    // Week 2 (May 4–10) - contains selected date (May 10)
-    const week2Button = getButtonByControls('week-05-2026-w2');
-    expect(week2Button).toHaveAttribute('aria-expanded', 'true'); // Selected
-
-    // Week 3 (May 11–17)
-    const week3Button = getButtonByControls('week-05-2026-w3');
-    expect(week3Button).toHaveAttribute('aria-expanded', 'false'); // Not selected
-
-    // Week 4 (May 18–24)
-    const week4Button = getButtonByControls('week-05-2026-w4');
-    expect(week4Button).toHaveAttribute('aria-expanded', 'false'); // Not selected
-
-    // All buttons are distinct despite having the same accessible name
-    expect(week1Button).not.toBe(week2Button);
-    expect(week2Button).not.toBe(week3Button);
-    expect(week3Button).not.toBe(week4Button);
   });
 });

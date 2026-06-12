@@ -340,6 +340,90 @@ export function groupByMonth(dates: string[]): MonthSection[] {
   return sections;
 }
 
+export interface FlatMonthGroup {
+  key: string;
+  month: number;
+  year: number;
+  /** Days in this month, reverse-chronological (most recent first). */
+  days: string[];
+}
+
+/**
+ * Groups dates into a flat, reverse-chronological day list under month headers.
+ * Months are most-recent-first; days within each month are most-recent-first.
+ * This is the flat replacement for the month→week→day accordion: one disclosure
+ * level (none), with month headers acting as sticky dividers.
+ */
+export function groupDaysByMonthFlat(dates: string[]): FlatMonthGroup[] {
+  const monthMap = new Map<string, FlatMonthGroup>();
+
+  for (const dateStr of dates) {
+    const monthKey = getSelectedMonthKey(dateStr);
+    const date = dateStringToDate(dateStr);
+    let group = monthMap.get(monthKey);
+    if (!group) {
+      group = {
+        key: monthKey,
+        month: date.getMonth() + 1,
+        year: date.getFullYear(),
+        days: [],
+      };
+      monthMap.set(monthKey, group);
+    }
+    group.days.push(dateStr);
+  }
+
+  const groups = Array.from(monthMap.values());
+  groups.sort((a, b) => b.year - a.year || b.month - a.month);
+  for (const group of groups) {
+    group.days.sort((a, b) => b.localeCompare(a));
+  }
+  return groups;
+}
+
+/**
+ * Formats a month-divider label (e.g. "May 2026") in the active locale.
+ */
+export function formatMonthDivider(
+  group: { month: number; year: number },
+  locale: string
+): string {
+  const date = new Date(group.year, group.month - 1, 1);
+  return new Intl.DateTimeFormat(locale, {
+    month: 'long',
+    year: 'numeric',
+  }).format(date);
+}
+
+/**
+ * Formats a full named day header for the feed (e.g. "Sunday, May 3").
+ */
+export function formatNamedDayHeader(dateStr: string, locale: string): string {
+  const date = dateStringToDate(dateStr);
+  return new Intl.DateTimeFormat(locale, {
+    weekday: 'long',
+    month: 'long',
+    day: 'numeric',
+  }).format(date);
+}
+
+/**
+ * Steps to the adjacent date in a reverse-chronological list. `direction` of -1
+ * moves toward older days (visually down / ArrowDown), +1 toward newer days
+ * (ArrowUp). Returns null at the ends so callers can no-op.
+ */
+export function adjacentDate(
+  orderedDescending: string[],
+  current: string,
+  direction: 1 | -1
+): string | null {
+  const index = orderedDescending.indexOf(current);
+  if (index === -1) return null;
+  // List is descending (newest first): newer = lower index.
+  const nextIndex = direction === 1 ? index - 1 : index + 1;
+  return orderedDescending[nextIndex] ?? null;
+}
+
 /**
  * Formats a compact date for the mobile chip (e.g., "Mon, May 4").
  */
