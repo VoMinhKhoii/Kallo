@@ -58,17 +58,11 @@ class VerdictHero extends StatelessWidget {
         headline = tr('nutrition.verdict.quiet');
       }
 
-      final avgConfidence = getAverageConfidence(overview);
-      muted = avgConfidence == null
-          ? tr('nutrition.verdict.trustLineNoConfidence', namedArgs: {
-              'days': dayFormatter.format(overview.completeDays),
-            })
-          : tr('nutrition.verdict.trustLine', namedArgs: {
-              'days': dayFormatter.format(overview.completeDays),
-              'confidence': (NumberFormat.decimalPattern(locale)
-                    ..maximumFractionDigits = 0)
-                  .format(avgConfidence),
-            });
+      // Founder direction: confidence numbers are never surfaced — the trust
+      // line names only how many complete days back the verdict.
+      muted = tr('nutrition.verdict.trustLine', namedArgs: {
+        'days': dayFormatter.format(overview.completeDays),
+      });
       if (overview.partialDays > 0) {
         // ICU plural → easy_localization plural object. The leading '· ' and the
         // count live inside each form; '{}' is the count.

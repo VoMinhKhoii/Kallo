@@ -101,7 +101,7 @@
   "nutrition": {
     "eyebrow": "Pattern analysis",
     "title": "Nutrition",
-    "subtitle": "Review long-term macro and micronutrient patterns, with confidence labels when the food data is incomplete.",
+    "subtitle": "Review long-term macro and micronutrient patterns.",
     "loading": "Loading nutrition overview…",
     "range": {
       "label": "Nutrition range",
@@ -117,10 +117,8 @@
       "macroConsistency": "Macro consistency",
       "confidentOnly": "Only confident gaps are flagged",
       "coverageHint": "Nutrients with thin coverage",
-      "averageConfidence": "Avg confidence: {value}",
       "weakest": "Weakest",
       "none": "None yet",
-      "trustLine": "{days} logged days · {confidence} avg confidence · {range} view",
       "verdict": {
         "label": "Pattern verdict",
         "attention": "{nutrients} need attention",
@@ -475,8 +473,7 @@
       "quiet": "A quiet stretch. Keep logging to sharpen the pattern.",
       "gathering": "Gathering your pattern.",
       "gatheringSub": "{days} complete days so far — keep going and the picture sharpens.",
-      "trustLine": "{days} complete days · {confidence}% avg confidence",
-      "trustLineNoConfidence": "{days} complete days",
+      "trustLine": "{days} complete days",
       "partialNote": {
         "one": "· {} partial day set aside",
         "other": "· {} partial days set aside"
@@ -997,7 +994,6 @@
     "nutritionSummary": "Nutrition summary",
     "ingredients": "Ingredients",
     "calories": "Calories",
-    "confidence": "Confidence",
     "high": "High",
     "medium": "Medium",
     "low": "Low",

@@ -101,7 +101,7 @@
   "nutrition": {
     "eyebrow": "Phân tích xu hướng",
     "title": "Dinh dưỡng",
-    "subtitle": "Nhìn lại xu hướng macro và vi chất dài hạn, kèm nhãn độ tin cậy khi dữ liệu món ăn còn thiếu.",
+    "subtitle": "Nhìn lại xu hướng macro và vi chất dài hạn.",
     "loading": "Đang tải tổng quan dinh dưỡng…",
     "range": {
       "label": "Khoảng thời gian dinh dưỡng",
@@ -117,10 +117,8 @@
       "macroConsistency": "Độ ổn định macro",
       "confidentOnly": "Chỉ đánh dấu khi đủ tin cậy",
       "coverageHint": "Vi chất có độ phủ mỏng",
-      "averageConfidence": "Độ tin cậy TB: {value}",
       "weakest": "Yếu nhất",
       "none": "Chưa có",
-      "trustLine": "{days} ngày có bữa ăn · độ tin cậy TB {confidence} · chế độ xem {range}",
       "verdict": {
         "label": "Kết luận xu hướng",
         "attention": "{nutrients} cần chú ý",
@@ -475,8 +473,7 @@
       "quiet": "Một giai đoạn yên ả. Tiếp tục ghi nhận để hoàn thiện xu hướng.",
       "gathering": "Vẫn đang gom dần xu hướng của bạn.",
       "gatheringSub": "Đã có {days} ngày đủ bữa — cứ tiếp tục, bức tranh sẽ rõ dần.",
-      "trustLine": "{days} ngày đủ bữa · độ tin cậy TB {confidence}%",
-      "trustLineNoConfidence": "{days} ngày đủ bữa",
+      "trustLine": "{days} ngày đủ bữa",
       "partialNote": {
         "other": "· tạm bỏ qua {} ngày ghi thiếu"
       },
@@ -996,7 +993,6 @@
     "nutritionSummary": "Tóm tắt dinh dưỡng",
     "ingredients": "Nguyên liệu",
     "calories": "Calo",
-    "confidence": "Độ tin cậy",
     "high": "Cao",
     "medium": "Trung bình",
     "low": "Thấp",
