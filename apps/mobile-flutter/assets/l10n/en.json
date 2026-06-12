@@ -1196,7 +1196,9 @@
       "regionalSubtitle": "Country of origin and current residence",
       "cookingSubtitle": "Oil usage, rice, sugar, protein, and broth defaults",
       "saveError": "Failed to save settings. Please try again.",
-      "invalidError": "Some entries are invalid — please review your body metrics."
+      "invalidError": "Some entries are invalid — please review your body metrics.",
+      "retry": "Try again",
+      "incompleteHint": "Nothing saved yet — fill in weight, height, and age first."
     },
     "rows": {
       "goalPace": "Goal & pace",

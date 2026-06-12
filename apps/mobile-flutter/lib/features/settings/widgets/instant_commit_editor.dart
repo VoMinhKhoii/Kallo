@@ -77,16 +77,33 @@ class _InstantCommitEditorState extends ConsumerState<InstantCommitEditor> {
     if (_controller.isDirty || localeChanged) _commit();
   }
 
+  /// The values/locale of a failed commit, held for the retry affordance
+  /// (the visible controls roll back to the last-saved state on failure).
+  ProfileFormValues? _failedValues;
+  String? _failedLocale;
+
   Future<void> _commit() async {
-    final v = _controller.values;
+    final locale = context.locale.languageCode;
     // Instant-commit requires complete body metrics (an onboarded profile). The
     // editors are only reachable for such a profile, but guard anyway so a
     // partial profile never PUTs nulls.
-    if (validateBodyMetrics(v).isNotEmpty) return;
+    if (validateBodyMetrics(_controller.values).isNotEmpty) {
+      // Nothing was sent — don't let a device-side locale change diverge from
+      // the server; revert it and say quietly why nothing saved.
+      if (locale != _savedLocale) {
+        await context.setLocale(Locale(_savedLocale));
+      }
+      if (mounted) {
+        setState(
+          () => _errorText = tr('settings.profilePanel.incompleteHint'),
+        );
+      }
+      return;
+    }
 
     _committing = true;
-    final locale = context.locale.languageCode;
-    final payload = buildProfilePayload(v, locale);
+    final committed = _controller.values.clone();
+    final payload = buildProfilePayload(committed, locale);
     final ok = await ref.read(saveProfileProvider.notifier).save(payload);
     if (!mounted) {
       _committing = false;
@@ -94,13 +111,50 @@ class _InstantCommitEditorState extends ConsumerState<InstantCommitEditor> {
     }
     if (ok) {
       HapticFeedback.selectionClick();
-      _controller.markSaved();
+      // Baseline exactly what was sent — edits made while the save was in
+      // flight stay dirty and re-commit below, instead of being silently
+      // baselined away.
+      _controller.markSavedAs(committed);
       _savedLocale = locale;
+      _failedValues = null;
+      _failedLocale = null;
       if (_errorText != null) setState(() => _errorText = null);
+      _committing = false;
+      if (_controller.isDirty ||
+          context.locale.languageCode != _savedLocale) {
+        await _commit();
+      }
     } else {
-      setState(() => _errorText = tr('settings.profilePanel.saveError'));
+      // Visual rollback: the controls return to their last-saved values, and a
+      // device-side locale change is reverted so device and server never
+      // diverge. The attempted values are held for "Try again".
+      _failedValues = _controller.values.clone();
+      _failedLocale = locale;
+      _controller.reset();
+      if (context.locale.languageCode != _savedLocale) {
+        await context.setLocale(Locale(_savedLocale));
+      }
+      if (mounted) {
+        setState(() => _errorText = tr('settings.profilePanel.saveError'));
+      }
+      _committing = false;
     }
-    _committing = false;
+  }
+
+  /// Re-applies the failed commit's values (and locale) and commits again.
+  Future<void> _retry() async {
+    final values = _failedValues;
+    if (values == null) return;
+    final locale = _failedLocale;
+    _failedValues = null;
+    _failedLocale = null;
+    setState(() => _errorText = null);
+    if (locale != null && locale != context.locale.languageCode) {
+      await context.setLocale(Locale(locale));
+      if (!mounted) return;
+    }
+    // setValues notifies; _onChanged sees the dirty/locale state and commits.
+    _controller.setValues(values);
   }
 
   @override
@@ -134,10 +188,31 @@ class _InstantCommitEditorState extends ConsumerState<InstantCommitEditor> {
           if (_errorText != null)
             Padding(
               padding: const EdgeInsets.only(bottom: NhamSpacing.sp3),
-              child: Text(
-                _errorText!,
-                style: NhamTextStyles.sansRegular(fontSize: NhamFontSize.sm)
-                    .copyWith(color: NhamColors.danger),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Text(
+                      _errorText!,
+                      style:
+                          NhamTextStyles.sansRegular(fontSize: NhamFontSize.sm)
+                              .copyWith(color: NhamColors.danger),
+                    ),
+                  ),
+                  if (_failedValues != null) ...[
+                    const SizedBox(width: NhamSpacing.sp3),
+                    GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: _retry,
+                      child: Text(
+                        tr('settings.profilePanel.retry'),
+                        style: NhamTextStyles.sansMedium(
+                          fontSize: NhamFontSize.sm,
+                        ).copyWith(color: NhamColors.text),
+                      ),
+                    ),
+                  ],
+                ],
               ),
             ),
           widget.child,
