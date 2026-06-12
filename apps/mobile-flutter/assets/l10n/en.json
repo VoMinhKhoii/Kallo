@@ -539,7 +539,9 @@
     "saveError": "Couldn't save this step. Please try again.",
     "setup": {
       "title": "Setting up your account",
-      "subtitle": "Personalizing your targets — this'll just take a moment."
+      "subtitle": "Personalizing your targets — this'll just take a moment.",
+      "targetReadyLabel": "Your daily target",
+      "perDay": "kcal/day"
     },
     "origin": {
       "title": "Where are you from?",

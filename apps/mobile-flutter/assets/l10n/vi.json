@@ -538,7 +538,9 @@
     "saveError": "Không thể lưu bước này. Vui lòng thử lại.",
     "setup": {
       "title": "Đang thiết lập tài khoản của bạn",
-      "subtitle": "Đang cá nhân hoá mục tiêu của bạn — chỉ mất một chút thôi."
+      "subtitle": "Đang cá nhân hoá mục tiêu của bạn — chỉ mất một chút thôi.",
+      "targetReadyLabel": "Mục tiêu mỗi ngày của bạn",
+      "perDay": "kcal/ngày"
     },
     "origin": {
       "title": "Bạn đến từ đâu?",

@@ -3,20 +3,24 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../data/session_provider.dart';
 import '../../../theme/nham_colors.dart';
 import '../../../theme/nham_typography.dart';
 import '../../dashboard/data/dashboard_providers.dart';
+import '../../dashboard/logic/dashboard_format.dart';
 import '../../logging/data/logging_providers.dart';
 import '../providers/onboarding_providers.dart';
 
-/// "Setting up your account" — the celebratory finish shown after the wizard
-/// completes, before landing on `/logging`.
+/// The celebratory finish shown after the wizard completes, before landing on
+/// `/logging`.
 ///
-/// It does double duty: a lively beat so the transition feels deliberate, and a
-/// cache-warm gate that drops the stale/null targets the dashboard + logging
-/// screens may be holding (the per-step saves only refreshed the profile). It
-/// invalidates the profile, dashboard bundle, and logging profile, warms the
-/// profile fetch, holds a minimum window so it never flashes, then routes on.
+/// It does double duty: a deliberate beat that pays off the wizard by counting
+/// the freshly-computed daily calorie target up in Lora 40, and a cache-warm
+/// gate that drops the stale/null targets the dashboard + logging screens may
+/// be holding (the per-step saves only refreshed the profile). It invalidates
+/// the profile, dashboard bundle, and logging profile, warms the dashboard
+/// fetch (the authority on the computed target), holds a minimum window so it
+/// never flashes, then routes on.
 class WelcomeSetupScreen extends ConsumerStatefulWidget {
   const WelcomeSetupScreen({super.key});
 
@@ -26,11 +30,13 @@ class WelcomeSetupScreen extends ConsumerStatefulWidget {
 
 class _WelcomeSetupScreenState extends ConsumerState<WelcomeSetupScreen>
     with SingleTickerProviderStateMixin {
-  // Gentle radar pulse around the badge.
-  late final AnimationController _pulse = AnimationController(
+  // Drives the count-up from 0 → target.
+  late final AnimationController _count = AnimationController(
     vsync: this,
-    duration: const Duration(milliseconds: 1600),
-  )..repeat();
+    duration: const Duration(milliseconds: 1100),
+  );
+
+  int? _target;
 
   @override
   void initState() {
@@ -40,7 +46,7 @@ class _WelcomeSetupScreenState extends ConsumerState<WelcomeSetupScreen>
 
   @override
   void dispose() {
-    _pulse.dispose();
+    _count.dispose();
     super.dispose();
   }
 
@@ -50,12 +56,33 @@ class _WelcomeSetupScreenState extends ConsumerState<WelcomeSetupScreen>
     ref.invalidate(loggingProfileProvider);
     ref.invalidate(profileProvider);
 
-    // Warm the profile (targets), but never block the finish on a slow/failed
-    // fetch — the min window carries the UX either way.
-    final warm = ref
-        .read(profileProvider.future)
-        .then<void>((_) {}, onError: (_, __) {})
-        .timeout(const Duration(seconds: 6), onTimeout: () {});
+    final userId = ref.read(currentSessionProvider)?.user.id;
+
+    // Warm the dashboard bundle (the computed target lives here), but never
+    // block the finish on a slow/failed fetch — the min window carries the UX.
+    Future<void> warm = Future<void>.value();
+    if (userId != null) {
+      final args = (userId: userId, date: todayDateString());
+      warm = ref
+          .read(dashboardBundleProvider(args).future)
+          .then<void>((bundle) {
+            final t = bundle.profile?.calorieTarget;
+            if (t != null && mounted) {
+              setState(() => _target = t.round());
+              final reduced = WidgetsBinding
+                  .instance
+                  .platformDispatcher
+                  .accessibilityFeatures
+                  .disableAnimations;
+              if (reduced) {
+                _count.value = 1;
+              } else {
+                _count.forward();
+              }
+            }
+          }, onError: (_, __) {})
+          .timeout(const Duration(seconds: 6), onTimeout: () {});
+    }
 
     await Future.wait([
       warm,
@@ -70,6 +97,16 @@ class _WelcomeSetupScreenState extends ConsumerState<WelcomeSetupScreen>
     context.go('/logging');
   }
 
+  String _fmt(int n) {
+    final s = n.toString();
+    final buf = StringBuffer();
+    for (var i = 0; i < s.length; i++) {
+      if (i > 0 && (s.length - i) % 3 == 0) buf.write(',');
+      buf.write(s[i]);
+    }
+    return buf.toString();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -81,8 +118,40 @@ class _WelcomeSetupScreenState extends ConsumerState<WelcomeSetupScreen>
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                _Badge(pulse: _pulse),
-                const SizedBox(height: 28),
+                if (_target != null) ...[
+                  Text(
+                    tr('onboarding.setup.targetReadyLabel').toUpperCase(),
+                    textAlign: TextAlign.center,
+                    style: NhamTextStyles.eyebrow()
+                        .copyWith(color: NhamColors.stone),
+                  ),
+                  const SizedBox(height: 10),
+                  // The target counts up in Lora 40.
+                  AnimatedBuilder(
+                    animation: _count,
+                    builder: (context, _) {
+                      final shown = (_target! * _count.value).round();
+                      return Text.rich(
+                        TextSpan(
+                          children: [
+                            TextSpan(text: _fmt(shown)),
+                            TextSpan(
+                              text: ' ${tr('onboarding.setup.perDay')}',
+                              style: NhamTextStyles.sansRegular(
+                                fontSize: NhamFontSize.md,
+                              ).copyWith(color: NhamColors.textMuted),
+                            ),
+                          ],
+                        ),
+                        textAlign: TextAlign.center,
+                        style: NhamTextStyles.serifRegular(
+                          fontSize: NhamFontSize.h1,
+                        ).copyWith(color: NhamColors.text),
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 24),
+                ],
                 Text(
                   tr('onboarding.setup.title'),
                   textAlign: TextAlign.center,
@@ -100,54 +169,6 @@ class _WelcomeSetupScreenState extends ConsumerState<WelcomeSetupScreen>
             ),
           ),
         ),
-      ),
-    );
-  }
-}
-
-/// Accent badge with a check, wrapped by an expanding-and-fading radar ring.
-class _Badge extends StatelessWidget {
-  const _Badge({required this.pulse});
-
-  final Animation<double> pulse;
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: 120,
-      height: 120,
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          AnimatedBuilder(
-            animation: pulse,
-            builder: (context, _) {
-              final v = pulse.value;
-              final size = 76 + 44 * v;
-              return Container(
-                width: size,
-                height: size,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: NhamColors.accent.withValues(alpha: (1 - v) * 0.22),
-                ),
-              );
-            },
-          ),
-          Container(
-            width: 76,
-            height: 76,
-            decoration: const BoxDecoration(
-              shape: BoxShape.circle,
-              color: NhamColors.accent,
-            ),
-            child: const Icon(
-              Icons.check_rounded,
-              size: 38,
-              color: NhamColors.cream,
-            ),
-          ),
-        ],
       ),
     );
   }
