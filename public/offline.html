@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#fefbf6" />
+    <title>Nhẩm</title>
+    <style>
+      :root {
+        --cream: #fefbf6;
+        --surface: #fdfcf8;
+        --border: #eae7e0;
+        --ink: #2c2416;
+        --muted: #7b6f62;
+        --accent: #c9a87c;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+      }
+      body {
+        background: var(--cream);
+        color: var(--ink);
+        font-family:
+          'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+          sans-serif;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: calc(env(safe-area-inset-top) + 1.5rem) 1.5rem
+          calc(env(safe-area-inset-bottom) + 1.5rem);
+        text-align: center;
+        -webkit-font-smoothing: antialiased;
+      }
+      main {
+        max-width: 22rem;
+      }
+      .mark {
+        width: 3rem;
+        height: 3rem;
+        margin: 0 auto 1.5rem;
+        border-radius: 0.875rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--accent);
+        color: var(--surface);
+        font-family: 'Lora', Georgia, 'Times New Roman', serif;
+        font-size: 1.375rem;
+        line-height: 1;
+      }
+      h1 {
+        font-family: 'Lora', Georgia, 'Times New Roman', serif;
+        font-weight: 400;
+        font-size: 1.625rem;
+        line-height: 1.25;
+        letter-spacing: -0.01em;
+        margin: 0 0 0.75rem;
+      }
+      p {
+        font-size: 0.9375rem;
+        line-height: 1.6;
+        color: var(--muted);
+        margin: 0;
+      }
+      button {
+        margin-top: 1.75rem;
+        appearance: none;
+        border: 1px solid var(--border);
+        background: var(--surface);
+        color: var(--ink);
+        font-family: inherit;
+        font-size: 0.875rem;
+        font-weight: 500;
+        padding: 0.625rem 1.25rem;
+        border-radius: 0.75rem;
+        cursor: pointer;
+        transition: border-color 0.15s ease;
+      }
+      button:hover {
+        border-color: var(--accent);
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <div class="mark" aria-hidden="true">Nh</div>
+      <h1 data-i18n="title">You're offline.</h1>
+      <p data-i18n="body">
+        Your note is kept — we'll estimate when you're back.
+      </p>
+      <button type="button" data-i18n="retry" onclick="location.reload()">
+        Try again
+      </button>
+    </main>
+    <script>
+      // Self-contained bilingual copy — the offline page can't negotiate a
+      // locale through the (unreachable) server, so pick from navigator.language.
+      (function () {
+        var vi = {
+          title: 'Bạn đang ngoại tuyến.',
+          body: 'Ghi chú của bạn được giữ lại — chúng tôi sẽ ước tính khi bạn quay lại.',
+          retry: 'Thử lại',
+        };
+        if ((navigator.language || '').toLowerCase().indexOf('vi') === 0) {
+          document.documentElement.lang = 'vi';
+          document.querySelectorAll('[data-i18n]').forEach(function (el) {
+            var key = el.getAttribute('data-i18n');
+            if (vi[key]) el.textContent = vi[key];
+          });
+        }
+      })();
+    </script>
+  </body>
+</html>
