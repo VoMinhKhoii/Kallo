@@ -35,6 +35,17 @@ String todayDateString([DateTime? date]) {
   return '${d.year}-$m-$day';
 }
 
+/// Local YYYY-MM-DD `delta` days from [date] (matches the web's `addDays`).
+String addDays(String date, int delta) {
+  final parts = date.split('-');
+  final base = DateTime(
+    int.parse(parts[0]),
+    int.parse(parts[1]),
+    int.parse(parts[2]),
+  );
+  return todayDateString(base.add(Duration(days: delta)));
+}
+
 /// Local timezone offset in MINUTES, matching JS `Date.getTimezoneOffset()`
 /// (minutes BEHIND UTC, i.e. `-(localOffsetMinutes)`).
 int timezoneOffsetMinutes([DateTime? date]) {

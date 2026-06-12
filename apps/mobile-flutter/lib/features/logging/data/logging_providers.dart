@@ -115,6 +115,13 @@ final mealDatesProvider =
       );
 });
 
+/// Session-scoped dismiss state for the once-daily "yesterday looks
+/// under-logged" nudge, keyed by the yesterday date so a fresh day re-prompts.
+/// Mirrors the web's in-memory `yesterdayPromptDismissed` useState — it resets
+/// on app relaunch (not persisted), so the prompt is at most once per session.
+final yesterdayPromptDismissedProvider =
+    StateProvider.family<bool, String>((ref, date) => false);
+
 /// The onboarding profile row the logging screen needs (calorie + macro
 /// targets). Mirrors RN `useQuery({ queryKey: onboardingKeys.profile, ... })`.
 final loggingProfileProvider =

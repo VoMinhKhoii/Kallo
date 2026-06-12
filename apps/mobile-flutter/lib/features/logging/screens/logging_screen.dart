@@ -11,6 +11,7 @@ import '../data/logging_keys.dart';
 import '../data/logging_models.dart';
 import '../data/logging_providers.dart';
 import '../widgets/feed_area.dart';
+import '../widgets/partial_yesterday_prompt.dart';
 import '../widgets/timeline_picker.dart';
 
 /// The logging tab. Owns the selected date + picker-expanded state so the date
@@ -89,6 +90,17 @@ class _LoggingScreenState extends ConsumerState<LoggingScreen> {
                 ),
               ),
             ),
+            // A once-daily nudge when *yesterday* was under-logged — only while
+            // viewing today, and only until dismissed this session.
+            if (_selectedDate == _today &&
+                !ref.watch(yesterdayPromptDismissedProvider(
+                    addDays(_today, -1))))
+              PartialYesterdayPrompt(
+                userId: userId,
+                yesterday: addDays(_today, -1),
+                calorieTarget: profile.calorieTarget,
+                onOpenDay: (date) => setState(() => _selectedDate = date),
+              ),
             Expanded(
               child: Stack(
                 children: [
