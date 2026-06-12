@@ -127,9 +127,11 @@ class _HeatmapBodyState extends State<_HeatmapBody>
     return data.cells.isNotEmpty ? data.cells[0].length : 0;
   }
 
-  int get _adherenceRate {
+  /// (onTrackPercent, loggedDayCount). The percent is meaningless with zero
+  /// logged days — the count gates whether the "% on track" line renders.
+  ({int percent, int loggedDays}) get _adherence {
     final data = widget.data;
-    if (data == null) return 0;
+    if (data == null) return (percent: 0, loggedDays: 0);
     var onTarget = 0;
     var total = 0;
     for (final row in data.cells) {
@@ -140,7 +142,8 @@ class _HeatmapBodyState extends State<_HeatmapBody>
         }
       }
     }
-    return total > 0 ? ((onTarget / total) * 100).round() : 0;
+    final percent = total > 0 ? ((onTarget / total) * 100).round() : 0;
+    return (percent: percent, loggedDays: total);
   }
 
   double _cellSize(double contentWidth, int numWeeks) {
@@ -178,13 +181,15 @@ class _HeatmapBodyState extends State<_HeatmapBody>
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Header: "{percent}% on track".
+              // Header: "{percent}% on track". Suppressed entirely until there's
+              // at least one logged day — a new user shouldn't read "0% on
+              // track" over an empty grid (the value is computed from no data).
               Padding(
                 padding: const EdgeInsets.only(bottom: NhamSpacing.sp2),
                 child: Text(
-                  data != null
+                  (data != null && _adherence.loggedDays > 0)
                       ? tr('dashboard.adherenceHeatmap.onTrack',
-                          namedArgs: {'percent': '$_adherenceRate'})
+                          namedArgs: {'percent': '${_adherence.percent}'})
                       : ' ',
                   style: dashMeta(color: kInk, tabular: true),
                 ),
