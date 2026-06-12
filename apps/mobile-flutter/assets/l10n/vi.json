@@ -659,7 +659,6 @@
       "noAccount": "Chưa có tài khoản?",
       "signUpLink": "Đăng ký",
       "forgotPassword": "Quên mật khẩu?",
-      "error": "Email hoặc mật khẩu không đúng",
       "success": "Đăng nhập thành công",
       "emailPlaceholder": "ban@example.com",
       "passwordPlaceholder": "Nhập mật khẩu",
@@ -675,7 +674,6 @@
       "hasAccount": "Đã có tài khoản?",
       "signInLink": "Đăng nhập",
       "successSignedIn": "Đã tạo tài khoản. Chào mừng!",
-      "error": "Không thể tạo tài khoản",
       "emailPlaceholder": "ban@example.com",
       "passwordPlaceholder": "Tạo mật khẩu",
       "emailError": "Nhập địa chỉ email hợp lệ",
@@ -732,6 +730,13 @@
     },
     "pending": {
       "finishing": "Đang hoàn tất đăng nhập…"
+    },
+    "errors": {
+      "invalidCredentials": "Email và mật khẩu không khớp — thử lại hoặc đặt lại mật khẩu nhé.",
+      "emailNotConfirmed": "Email này chưa được xác nhận — kiểm tra hộp thư để tìm liên kết nhé.",
+      "network": "Không kết nối được máy chủ — kiểm tra mạng rồi thử lại nhé.",
+      "rateLimited": "Bạn thao tác hơi nhanh — đợi một chút rồi thử lại nhé.",
+      "generic": "Đã có lỗi xảy ra — bạn thử lại nhé."
     }
   },
   "landing": {

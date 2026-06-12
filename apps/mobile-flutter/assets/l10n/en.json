@@ -660,7 +660,6 @@
       "noAccount": "Don't have an account?",
       "signUpLink": "Sign up",
       "forgotPassword": "Forgot password?",
-      "error": "Invalid email or password",
       "success": "Signed in successfully",
       "emailPlaceholder": "you@example.com",
       "passwordPlaceholder": "Enter your password",
@@ -676,7 +675,6 @@
       "hasAccount": "Already have an account?",
       "signInLink": "Sign in",
       "successSignedIn": "Account created. Welcome!",
-      "error": "Could not create account",
       "emailPlaceholder": "you@example.com",
       "passwordPlaceholder": "Create a password",
       "emailError": "Enter a valid email address",
@@ -733,6 +731,13 @@
     },
     "pending": {
       "finishing": "Finishing sign-in…"
+    },
+    "errors": {
+      "invalidCredentials": "That email and password don't match — try again or reset your password.",
+      "emailNotConfirmed": "That email hasn't been confirmed yet — check your inbox for the link.",
+      "network": "Couldn't reach the server — check your connection and try again.",
+      "rateLimited": "Too many attempts — give it a moment, then try again.",
+      "generic": "Something went wrong — please try again."
     }
   },
   "landing": {

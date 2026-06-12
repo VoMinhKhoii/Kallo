@@ -97,6 +97,19 @@ class _AuthPageState extends ConsumerState<AuthPage> {
     final state = ref.watch(_provider);
     final showConfirm = state.pendingEmail != null;
 
+    // Errors raised while the email form is on screen render inline there.
+    // Anything else (OAuth on the welcome face, a failed resend on the
+    // confirm face) would otherwise be invisible — toast those.
+    ref.listen<AuthFormState>(_provider, (prev, next) {
+      final err = next.error;
+      final emailFormShowing =
+          _mode == _AuthMode.email && next.pendingEmail == null;
+      if (err != null && err != prev?.error && !emailFormShowing) {
+        _toast(err);
+        _controller.clearMessages();
+      }
+    });
+
     // Which face: confirm-email > email form > welcome.
     final Widget face;
     if (showConfirm) {
@@ -109,7 +122,6 @@ class _AuthPageState extends ConsumerState<AuthPage> {
       face = EmailAuthForm(
         key: const ValueKey('email'),
         provider: _provider,
-        onError: _toast,
         onBack: () => setState(() => _mode = _AuthMode.welcome),
       );
     } else {

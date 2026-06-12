@@ -18,13 +18,11 @@ class EmailAuthForm extends ConsumerStatefulWidget {
   const EmailAuthForm({
     super.key,
     required this.provider,
-    required this.onError,
     required this.onBack,
   });
 
   final AutoDisposeStateNotifierProvider<AuthFormController, AuthFormState>
       provider;
-  final void Function(String message) onError;
   final VoidCallback onBack;
 
   @override
@@ -36,7 +34,6 @@ class _EmailAuthFormState extends ConsumerState<EmailAuthForm> {
   final _password = TextEditingController();
   String? _emailError;
   String? _passwordError;
-  bool _wasBusy = false;
   bool _createMode = false;
 
   @override
@@ -72,16 +69,6 @@ class _EmailAuthFormState extends ConsumerState<EmailAuthForm> {
   Widget build(BuildContext context) {
     final state = ref.watch(widget.provider);
     final busy = state.busy;
-
-    // Surface a Supabase error as a toast once the request settles.
-    if (_wasBusy && !busy && state.error != null) {
-      final msg = state.error!;
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        widget.onError(msg);
-        _controller.clearMessages();
-      });
-    }
-    _wasBusy = busy;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -134,6 +121,7 @@ class _EmailAuthFormState extends ConsumerState<EmailAuthForm> {
           errorText: _emailError,
           onChanged: (_) {
             if (_emailError != null) setState(() => _emailError = null);
+            _controller.clearMessages();
           },
         ),
         const SizedBox(height: 16),
@@ -153,6 +141,7 @@ class _EmailAuthFormState extends ConsumerState<EmailAuthForm> {
           errorText: _passwordError,
           onChanged: (_) {
             if (_passwordError != null) setState(() => _passwordError = null);
+            _controller.clearMessages();
           },
         ),
         if (!_createMode) ...[
@@ -175,6 +164,18 @@ class _EmailAuthFormState extends ConsumerState<EmailAuthForm> {
                 ).copyWith(color: NhamColors.textMuted),
               ),
             ),
+          ),
+        ],
+        // Inline auth error — stays put (unlike a toast) and the fields keep
+        // their values so the user can correct and retry in place.
+        if (state.error != null) ...[
+          const SizedBox(height: 12),
+          Text(
+            state.error!,
+            style: NhamTextStyles.sansRegular(
+              fontSize: NhamFontSize.sm,
+              height: NhamLeading.normal,
+            ).copyWith(color: NhamColors.danger),
           ),
         ],
         const SizedBox(height: 16),
@@ -204,7 +205,10 @@ class _EmailAuthFormState extends ConsumerState<EmailAuthForm> {
                 ignoring: busy,
                 child: GestureDetector(
                   behavior: HitTestBehavior.opaque,
-                  onTap: () => setState(() => _createMode = !_createMode),
+                  onTap: () {
+                    _controller.clearMessages();
+                    setState(() => _createMode = !_createMode);
+                  },
                   child: Text(
                     _createMode
                         ? tr('auth.signUp.signInLink')

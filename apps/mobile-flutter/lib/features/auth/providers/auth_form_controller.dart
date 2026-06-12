@@ -20,6 +20,26 @@ const String kAuthRedirect = 'nham://auth-callback';
 /// `busy` bool that made one tap spin every control.
 enum AuthAction { email, google, apple }
 
+/// Maps a Supabase [AuthException] to warm, localized copy — the raw English
+/// `e.message` never reaches the UI. Wrong-password and no-account are
+/// deliberately indistinguishable (Supabase anti-enumeration returns the same
+/// `invalid_credentials` for both), so they share one neutral line.
+String authErrorMessage(AuthException e) {
+  if (e is AuthRetryableFetchException) return tr('auth.errors.network');
+  switch (e.code) {
+    case 'invalid_credentials':
+      return tr('auth.errors.invalidCredentials');
+    case 'email_not_confirmed':
+      return tr('auth.errors.emailNotConfirmed');
+    case 'over_request_rate_limit':
+    case 'over_email_send_rate_limit':
+      return tr('auth.errors.rateLimited');
+    default:
+      if (e.statusCode == '429') return tr('auth.errors.rateLimited');
+      return tr('auth.errors.generic');
+  }
+}
+
 /// Immutable view-state for an auth screen, mirroring the RN screens'
 /// `busy` / `error` / `notice` `useState` triplet — except `busy` is now an
 /// `AuthAction?` so the email and Google buttons own independent spinners.
@@ -100,11 +120,18 @@ class AuthFormController extends StateNotifier<AuthFormState> {
       // routes into the app (RN did `router.replace('/logging')`).
       state = state.copyWith(clearAction: true);
     } on AuthException catch (e) {
-      state = state.copyWith(clearAction: true, error: e.message);
+      if (e.code == 'email_not_confirmed') {
+        // The account exists but was never confirmed — surface the real
+        // confirm-email state (with its resend affordance) instead of a
+        // dead-end error line.
+        state = state.copyWith(clearAction: true, pendingEmail: email.trim());
+        return;
+      }
+      state = state.copyWith(clearAction: true, error: authErrorMessage(e));
     } catch (_) {
       state = state.copyWith(
         clearAction: true,
-        error: tr('auth.signIn.error'),
+        error: tr('auth.errors.generic'),
       );
     }
   }
@@ -134,11 +161,11 @@ class AuthFormController extends StateNotifier<AuthFormState> {
         pendingEmail: email.trim(),
       );
     } on AuthException catch (e) {
-      state = state.copyWith(clearAction: true, error: e.message);
+      state = state.copyWith(clearAction: true, error: authErrorMessage(e));
     } catch (_) {
       state = state.copyWith(
         clearAction: true,
-        error: tr('auth.signUp.error'),
+        error: tr('auth.errors.generic'),
       );
     }
   }
@@ -167,7 +194,7 @@ class AuthFormController extends StateNotifier<AuthFormState> {
       // app-switch; the UI's lifecycle listener clears it if the user cancels
       // and resumes still signed-out.
     } on AuthException catch (e) {
-      state = state.copyWith(clearAction: true, error: e.message);
+      state = state.copyWith(clearAction: true, error: authErrorMessage(e));
     } catch (_) {
       state = state.copyWith(
         clearAction: true,
@@ -222,7 +249,7 @@ class AuthFormController extends StateNotifier<AuthFormState> {
         error: tr('auth.dialog.appleError'),
       );
     } on AuthException catch (e) {
-      state = state.copyWith(clearAction: true, error: e.message);
+      state = state.copyWith(clearAction: true, error: authErrorMessage(e));
     } catch (_) {
       state = state.copyWith(
         clearAction: true,
@@ -257,11 +284,11 @@ class AuthFormController extends StateNotifier<AuthFormState> {
         notice: tr('auth.confirm.resent'),
       );
     } on AuthException catch (e) {
-      state = state.copyWith(clearAction: true, error: e.message);
+      state = state.copyWith(clearAction: true, error: authErrorMessage(e));
     } catch (e) {
       state = state.copyWith(
         clearAction: true,
-        error: tr('auth.signUp.error'),
+        error: tr('auth.errors.generic'),
       );
     }
   }
