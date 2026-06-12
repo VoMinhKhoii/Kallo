@@ -321,6 +321,13 @@ export function FeedArea({
   const [isStagingRepeat, setIsStagingRepeat] = useState(false);
   const recentCheatOccasions = useRecentCheatOccasions(profile.userId, isCheat);
 
+  // Auto-submit the handed-off meal once the prefill effect has armed it. The
+  // dashboard composer used to navigate here and only re-insert the text,
+  // forcing the user to tap send a second time (the double-submit). We now
+  // submit the handoff for them. Kept in a ref so the prefill effect (which
+  // runs before handleSubmit is defined) can arm it without a dependency cycle.
+  const pendingAutoSubmitRef = useRef(false);
+
   // Prefill from dashboard meal trigger; re-runs when initialMeal changes so
   // repeated dashboard→logging handoffs while the component stays mounted work.
   useEffect(() => {
@@ -328,8 +335,11 @@ export function FeedArea({
     lastPrefilledMealRef.current = initialMeal;
     inputRef.current?.setText(initialMeal);
     inputRef.current?.focus();
+    // Cheat handoffs go through their own slider path; only precise text
+    // auto-submits. The dashboard composer never hands off in cheat mode.
+    pendingAutoSubmitRef.current = !isCheat;
     onInitialMealApplied?.();
-  }, [initialMeal, onInitialMealApplied]);
+  }, [initialMeal, isCheat, onInitialMealApplied]);
 
   const {
     data: loggingDay,
@@ -488,6 +498,14 @@ export function FeedArea({
     isCheat,
     cheatIntensity,
   });
+
+  // Fire the armed handoff once the input is prefilled and not already
+  // analyzing. handleSubmit reads the freshly-set text from the input ref.
+  useEffect(() => {
+    if (!pendingAutoSubmitRef.current || stream.isAnalyzing) return;
+    pendingAutoSubmitRef.current = false;
+    void handleSubmit();
+  }, [handleSubmit, stream.isAnalyzing]);
 
   const handleAnalysisComplete = useCallback(() => {
     const originDate =
