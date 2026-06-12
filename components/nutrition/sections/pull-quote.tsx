@@ -16,7 +16,7 @@ export function PullQuote({ card }: PullQuoteProps) {
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.55, delay: 0.22 }}
-      className="max-w-3xl border-nham-accent/60 border-l-[3px] border-dashed pl-5 lg:ml-8 lg:pl-8"
+      className="mx-auto max-w-2xl py-6 text-center sm:py-8 lg:py-10"
     >
       <h3
         className="text-nham-text"
@@ -32,7 +32,7 @@ export function PullQuote({ card }: PullQuoteProps) {
         {tRoot(card.titleKey)}
       </h3>
       <p
-        className="mt-3 max-w-prose text-nham-text-muted leading-7"
+        className="mx-auto mt-3 max-w-prose text-nham-text-muted leading-7"
         style={{
           fontFamily: 'Lora, serif',
           fontStyle: 'italic',

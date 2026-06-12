@@ -115,20 +115,26 @@ export function DailyRhythm({ macros }: DailyRhythmProps) {
                 segments={segments}
                 ariaLabel={t('rhythm.macroCompositionAria')}
               />
-              <p className="mt-2 flex flex-wrap gap-x-3 text-[11px] text-nham-text-muted tabular-nums">
+              {/* Composition legend: full words, with a 2px color tick UNDER
+                  each word rather than a decorative dot before it (the bible's
+                  tiny-dot disease). The tick keys word → bar color. */}
+              <p className="mt-2 flex flex-wrap gap-x-4 gap-y-1.5 text-[11px] text-nham-text-muted tabular-nums">
                 {segments.map((segment) => (
                   <span
                     key={segment.key}
-                    className="inline-flex items-center gap-1.5"
+                    className="inline-flex flex-col gap-1"
                   >
+                    <span>
+                      {compositionLabels[segment.key]} {Math.round(segment.pct)}
+                      %
+                    </span>
                     <span
                       aria-hidden="true"
-                      className="inline-block h-1.5 w-1.5 rounded-full"
+                      className="h-0.5 w-full rounded-full"
                       style={{
                         backgroundColor: COMPOSITION_COLORS[segment.key],
                       }}
                     />
-                    {compositionLabels[segment.key]} {Math.round(segment.pct)}%
                   </span>
                 ))}
               </p>
