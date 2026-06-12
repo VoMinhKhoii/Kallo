@@ -97,14 +97,17 @@ export function DashboardShell({ profile }: DashboardShellProps) {
 
   return (
     <main
-      className="relative flex min-h-0 flex-1 flex-col overflow-y-auto overflow-x-hidden bg-nham-surface xl:overflow-hidden"
+      className="relative flex min-h-0 flex-1 flex-col overflow-y-auto overflow-x-hidden bg-nham-surface"
       style={{ fontFamily: 'DM Sans, sans-serif' }}
     >
-      <div className="min-h-full px-3 py-3 pb-24 sm:px-5 sm:py-4 lg:px-8 xl:h-full xl:min-h-0 xl:overflow-hidden xl:py-3 xl:pb-3">
-        <div className="mx-auto grid max-w-[1440px] gap-4 sm:gap-5 xl:h-full xl:min-h-0 xl:grid-rows-[minmax(150px,0.78fr)_minmax(220px,1.1fr)_minmax(240px,1.12fr)] xl:gap-3">
-          <section className="flex min-h-0 flex-col gap-1.5">
+      {/* Un-inverted: a scrolling page, not a no-scroll cockpit. Tier 1 is a
+          generous Today band (full width at every breakpoint); Tier 2 is
+          Progress + Consistency at 50/50 on large screens, stacked below. */}
+      <div className="px-3 py-4 pb-24 sm:px-5 sm:py-5 lg:px-8">
+        <div className="mx-auto grid max-w-[1440px] gap-5 sm:gap-6">
+          <section className="flex flex-col gap-2">
             <SectionHeader title={weekTitle} />
-            <div className="xl:min-h-0 xl:flex-1">
+            <div>
               {dailyMealsQuery.isPending ? (
                 <DashboardSectionState message={t('todayLoading')} />
               ) : dailyMealsQuery.isError ? (
@@ -125,76 +128,78 @@ export function DashboardShell({ profile }: DashboardShellProps) {
             </div>
           </section>
 
-          <section
-            ref={progressContainerRef}
-            className="flex min-w-0 flex-col gap-1.5 xl:min-h-0"
-          >
-            <div className="flex items-center justify-between gap-3">
-              <span className="font-bold text-[12px] text-nham-stone uppercase tracking-[0.2em]">
-                {t('progress')}
-              </span>
-              <span className="font-medium text-[11px] text-nham-stone">
-                {t(RANGE_LABEL_KEYS[weightRange])}
-              </span>
-            </div>
-            <div className="xl:min-h-0 xl:flex-1">
-              {!hasMeasuredProgress || weightSummaryQuery.isPending ? (
-                <ProgressStory
-                  weightSummary={undefined}
-                  range={weightRange}
-                  todayDate={todayDate}
-                />
-              ) : weightSummaryQuery.isError ? (
-                <DashboardSectionState
-                  message={t('progressLoadError')}
-                  actionLabel={t('retry')}
-                  onAction={() => {
-                    void weightSummaryQuery.refetch();
-                  }}
-                />
-              ) : (
-                <ProgressStory
-                  weightSummary={weightSummary}
-                  range={weightRange}
-                  todayDate={todayDate}
-                />
-              )}
-            </div>
-          </section>
-
-          <section className="flex min-w-0 flex-col gap-1.5 xl:min-h-0">
-            <div className="flex items-center justify-between gap-3">
-              <span className="font-bold text-[12px] text-nham-stone uppercase tracking-[0.2em]">
-                {t('consistency')}
-              </span>
-              <span className="font-medium text-[11px] text-nham-stone">
-                {t(RANGE_LABEL_KEYS[renderedHeatmapRange])}
-              </span>
-            </div>
-            <div
-              ref={heatmapContainerRef}
-              className="min-h-[310px] rounded-[1.5rem] border border-nham-border/60 bg-card p-3 shadow-[0_10px_32px_rgba(44,36,22,0.05)] sm:min-h-[340px] md:min-h-[360px] xl:min-h-0 xl:flex-1 xl:p-4"
+          <div className="grid gap-5 sm:gap-6 xl:grid-cols-2">
+            <section
+              ref={progressContainerRef}
+              className="flex min-w-0 flex-col gap-2"
             >
-              {!hasMeasuredHeatmap || heatmapQuery.isPending ? (
-                <HeatmapSkeleton range={renderedHeatmapRange} />
-              ) : heatmapQuery.isError ? (
-                <DashboardSectionState
-                  message={t('heatmapLoadError')}
-                  actionLabel={t('retry')}
-                  onAction={() => {
-                    void heatmapQuery.refetch();
-                  }}
-                />
-              ) : !heatmapData ? (
-                <HeatmapSkeleton range={renderedHeatmapRange} />
-              ) : (
-                <AdherenceHeatmap
-                  data={resolvedHeatmapData}
-                  range={renderedHeatmapRange}
-                />
-              )}
-            </div>
-          </section>
+              <div className="flex items-center justify-between gap-3">
+                <span className="font-bold text-[12px] text-nham-stone uppercase tracking-[0.2em]">
+                  {t('progress')}
+                </span>
+                <span className="font-medium text-[11px] text-nham-stone">
+                  {t(RANGE_LABEL_KEYS[weightRange])}
+                </span>
+              </div>
+              <div>
+                {!hasMeasuredProgress || weightSummaryQuery.isPending ? (
+                  <ProgressStory
+                    weightSummary={undefined}
+                    range={weightRange}
+                    todayDate={todayDate}
+                  />
+                ) : weightSummaryQuery.isError ? (
+                  <DashboardSectionState
+                    message={t('progressLoadError')}
+                    actionLabel={t('retry')}
+                    onAction={() => {
+                      void weightSummaryQuery.refetch();
+                    }}
+                  />
+                ) : (
+                  <ProgressStory
+                    weightSummary={weightSummary}
+                    range={weightRange}
+                    todayDate={todayDate}
+                  />
+                )}
+              </div>
+            </section>
+
+            <section className="flex min-w-0 flex-col gap-2">
+              <div className="flex items-center justify-between gap-3">
+                <span className="font-bold text-[12px] text-nham-stone uppercase tracking-[0.2em]">
+                  {t('consistency')}
+                </span>
+                <span className="font-medium text-[11px] text-nham-stone">
+                  {t(RANGE_LABEL_KEYS[renderedHeatmapRange])}
+                </span>
+              </div>
+              <div
+                ref={heatmapContainerRef}
+                className="min-h-[310px] rounded-[1.5rem] border border-nham-border/60 bg-card p-3 shadow-[0_10px_32px_rgba(44,36,22,0.05)] sm:min-h-[340px] md:min-h-[360px] xl:p-4"
+              >
+                {!hasMeasuredHeatmap || heatmapQuery.isPending ? (
+                  <HeatmapSkeleton range={renderedHeatmapRange} />
+                ) : heatmapQuery.isError ? (
+                  <DashboardSectionState
+                    message={t('heatmapLoadError')}
+                    actionLabel={t('retry')}
+                    onAction={() => {
+                      void heatmapQuery.refetch();
+                    }}
+                  />
+                ) : !heatmapData ? (
+                  <HeatmapSkeleton range={renderedHeatmapRange} />
+                ) : (
+                  <AdherenceHeatmap
+                    data={resolvedHeatmapData}
+                    range={renderedHeatmapRange}
+                  />
+                )}
+              </div>
+            </section>
+          </div>
         </div>
       </div>
 

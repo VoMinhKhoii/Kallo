@@ -110,7 +110,6 @@ export function ProgressStory({
           data={weightSummary.weights}
           periodStartWeight={weightSummary.periodStartWeight}
           expectedEndWeight={weightSummary.expectedEndWeight}
-          goalDirection={weightSummary.goalDirection}
           range={range}
         />
       </div>

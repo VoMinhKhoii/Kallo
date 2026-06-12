@@ -46,7 +46,11 @@ export function AdherenceHeatmap({ data, range }: AdherenceHeatmapProps) {
   // don't get a wall of moving cells. They still see the final state.
   const prefersReducedMotion = useReducedMotion();
 
-  const adherenceRate = useMemo(() => {
+  // Suppress the "% on track" figure until there are at least this many scored
+  // days. A brand-new user otherwise reads "0% on track" over an empty grid —
+  // a verdict computed from no data. Earn the figure first.
+  const MIN_DAYS_FOR_RATE = 3;
+  const { adherenceRate, scoredDays } = useMemo(() => {
     let onTarget = 0;
     let total = 0;
     for (const row of data.cells) {
@@ -63,7 +67,10 @@ export function AdherenceHeatmap({ data, range }: AdherenceHeatmapProps) {
         }
       }
     }
-    return total > 0 ? Math.round((onTarget / total) * 100) : 0;
+    return {
+      adherenceRate: total > 0 ? Math.round((onTarget / total) * 100) : 0,
+      scoredDays: total,
+    };
   }, [data]);
 
   const gap = GAP[range];
@@ -107,11 +114,13 @@ export function AdherenceHeatmap({ data, range }: AdherenceHeatmapProps) {
   return (
     <TooltipProvider delayDuration={100}>
       <div className="flex h-full flex-col">
-        {/* Header */}
+        {/* Header — the rate is suppressed until enough days are scored. */}
         <div className="mb-1.5 flex items-baseline justify-between gap-2">
-          <span className="shrink-0 font-mono text-nham-text-muted text-xs">
-            {t('onTrack', { percent: adherenceRate })}
-          </span>
+          {scoredDays >= MIN_DAYS_FOR_RATE && (
+            <span className="shrink-0 font-mono text-nham-text-muted text-xs">
+              {t('onTrack', { percent: adherenceRate })}
+            </span>
+          )}
         </div>
 
         <div ref={gridRef} className="flex min-h-0 flex-1 items-center gap-1">

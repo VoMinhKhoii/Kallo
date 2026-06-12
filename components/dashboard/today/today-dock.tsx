@@ -56,47 +56,48 @@ export function TodayDock({ nutrition, meals, weekly }: TodayDockProps) {
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.45 }}
-      className="grid gap-3 rounded-[1.5rem] border border-nham-border/70 bg-card p-3 shadow-[0_10px_32px_rgba(44,36,22,0.05)] xl:h-full xl:min-h-0 xl:grid-cols-[minmax(0,0.68fr)_minmax(260px,0.32fr)] xl:p-4"
+      className="flex flex-col gap-4 rounded-[1.5rem] border border-nham-border/70 bg-card p-4 shadow-[0_10px_32px_rgba(44,36,22,0.05)] sm:p-5"
       aria-label={t('today')}
     >
-      <div className="grid min-h-0 gap-3 xl:grid-cols-[minmax(180px,0.34fr)_minmax(0,0.66fr)]">
-        <div className="flex min-h-0 flex-col justify-center rounded-[1.25rem] bg-nham-surface p-3">
-          <span
-            className={`block font-bold text-[10px] uppercase tracking-[0.2em] ${
-              isOver ? 'text-nham-text' : 'text-nham-stone'
-            }`}
-          >
-            {isOver ? t('overTarget') : t('caloriesRemaining')}
-          </span>
-          <div className="mt-1 flex items-baseline gap-1.5">
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,0.62fr)_minmax(260px,0.38fr)]">
+        <div className="grid gap-4 sm:grid-cols-[minmax(200px,0.42fr)_minmax(0,0.58fr)]">
+          <div className="flex flex-col justify-center rounded-[1.25rem] bg-nham-surface p-4">
             <span
-              className="font-normal text-4xl text-nham-text tabular-nums leading-none tracking-[-0.04em] sm:text-5xl"
-              style={{ fontFamily: 'Lora, serif' }}
+              className={`block font-bold text-[10px] uppercase tracking-[0.2em] ${
+                isOver ? 'text-nham-text' : 'text-nham-stone'
+              }`}
             >
-              {Math.abs(remaining).toLocaleString()}
+              {isOver ? t('overTarget') : t('caloriesRemaining')}
             </span>
-            <span
-              className="text-lg text-nham-text-muted italic"
-              style={{ fontFamily: 'Lora, serif' }}
-            >
-              / {nutrition.calories.target.toLocaleString()}
-            </span>
-          </div>
-          <p className="mt-1 text-nham-stone text-xs">
-            {nutrition.calories.current.toLocaleString()} {t('caloriesLogged')}
-          </p>
-          {weekly?.hasData && (
-            <p className="mt-0.5 text-nham-stone text-xs">
-              {t('weeklyAccumulator', {
-                consumed: weekly.consumed.toLocaleString(),
-                target: weekly.target.toLocaleString(),
-              })}
+            <div className="mt-1.5 flex items-baseline gap-2">
+              <span
+                className="font-light text-[56px] text-nham-text tabular-nums leading-none tracking-[-0.04em] sm:text-[64px]"
+                style={{ fontFamily: 'Lora, serif' }}
+              >
+                {Math.abs(remaining).toLocaleString()}
+              </span>
+              <span
+                className="text-nham-text-muted text-xl italic"
+                style={{ fontFamily: 'Lora, serif' }}
+              >
+                / {nutrition.calories.target.toLocaleString()}
+              </span>
+            </div>
+            <p className="mt-1.5 text-nham-stone text-xs">
+              {nutrition.calories.current.toLocaleString()}{' '}
+              {t('caloriesLogged')}
             </p>
-          )}
-        </div>
+            {weekly?.hasData && (
+              <p className="mt-0.5 text-nham-stone text-xs">
+                {t('weeklyAccumulator', {
+                  consumed: weekly.consumed.toLocaleString(),
+                  target: weekly.target.toLocaleString(),
+                })}
+              </p>
+            )}
+          </div>
 
-        <div className="grid min-h-0 gap-3 xl:grid-rows-[minmax(0,1fr)_auto]">
-          <div className="flex min-h-0 items-center gap-3 rounded-[1.25rem] bg-nham-surface p-3">
+          <div className="flex items-center gap-3 rounded-[1.25rem] bg-nham-surface p-4">
             <CalorieRing
               current={nutrition.calories.current}
               target={nutrition.calories.target}
@@ -106,14 +107,19 @@ export function TodayDock({ nutrition, meals, weekly }: TodayDockProps) {
             />
             <MacroBars items={macroItems} />
           </div>
-          <div className="hidden min-w-0 xl:block">
-            <InlineMealTrigger />
-          </div>
+        </div>
+
+        <div className="min-h-[140px] rounded-[1.25rem] border border-nham-border/60 bg-nham-surface/60 p-3">
+          <MealList meals={meals} />
         </div>
       </div>
 
-      <div className="min-h-[140px] rounded-[1.25rem] border border-nham-border/60 bg-nham-surface/60 p-2.5 xl:min-h-0">
-        <MealList meals={meals} />
+      {/* Composer as the band's full-width bottom row — present at EVERY
+          breakpoint (previously xl-only, so it vanished 768–1280px). The mobile
+          floating trigger still covers <768 with its own affordance, so this is
+          shown from sm up to avoid two composers on phones. */}
+      <div className="hidden min-w-0 sm:block">
+        <InlineMealTrigger />
       </div>
     </motion.section>
   );
