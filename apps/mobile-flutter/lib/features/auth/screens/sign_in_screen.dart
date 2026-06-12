@@ -5,9 +5,9 @@ import '../widgets/auth_page.dart';
 
 /// The sign-in route.
 ///
-/// A flat full-page auth surface (header, in-place Sign in / Sign up toggle,
-/// Google button, divider, form, footer) on the cream surface. Opens on the
-/// sign-in tab; the toggle/footer switches to sign-up in place (no route change).
+/// Lands on the pre-auth welcome screen (wordmark, typing demo, three social/
+/// email options). "Continue with email" cross-fades to a single email path;
+/// sign-up cross-fades to a "Check your email" state. No top tab split.
 class SignInScreen extends StatelessWidget {
   const SignInScreen({super.key});
 
@@ -15,7 +15,7 @@ class SignInScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return const Scaffold(
       backgroundColor: NhamColors.surface,
-      body: AuthPage(initialSignIn: true),
+      body: AuthPage(),
     );
   }
 }

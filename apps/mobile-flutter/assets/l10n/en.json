@@ -667,7 +667,6 @@
       "submit": "Create Account",
       "hasAccount": "Already have an account?",
       "signInLink": "Sign in",
-      "success": "Check your email to confirm your account",
       "successSignedIn": "Account created. Welcome!",
       "error": "Could not create account",
       "emailPlaceholder": "you@example.com",
@@ -706,6 +705,26 @@
       "submit": "Verify",
       "resend": "Resend code",
       "error": "Invalid code"
+    },
+    "welcome": {
+      "tagline": "Track Vietnamese meals",
+      "taglineHighlight": "without the guesswork",
+      "demoMeal": "2 mực kho mặn + 1 chén cơm + canh chua",
+      "demoResult": "{kcal} kcal",
+      "continueWithEmail": "Continue with email",
+      "terms": "By continuing you agree to our terms and privacy policy."
+    },
+    "confirm": {
+      "title": "Check your email",
+      "description": "We sent a confirmation link to",
+      "hint": "Tap the link to finish creating your account.",
+      "resend": "Resend email",
+      "resendIn": "Resend in {seconds}s",
+      "resent": "Email sent again",
+      "back": "Back"
+    },
+    "pending": {
+      "finishing": "Finishing sign-in…"
     }
   },
   "landing": {

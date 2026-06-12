@@ -25,7 +25,12 @@ enum AuthAction { email, google, apple }
 /// `AuthAction?` so the email and Google buttons own independent spinners.
 @immutable
 class AuthFormState {
-  const AuthFormState({this.action, this.error, this.notice});
+  const AuthFormState({
+    this.action,
+    this.error,
+    this.notice,
+    this.pendingEmail,
+  });
 
   /// The in-flight action (email or Google), or `null` when idle.
   final AuthAction? action;
@@ -35,6 +40,10 @@ class AuthFormState {
 
   /// `notice` — success notice (sage), used by sign-up's confirm-email path.
   final String? notice;
+
+  /// The address a confirmation email was sent to. Non-null drives the
+  /// "Check your email" cross-fade state (replacing the old vanishing toast).
+  final String? pendingEmail;
 
   /// Any request in flight — disables inputs and the tab toggle.
   bool get busy => action != null;
@@ -52,14 +61,17 @@ class AuthFormState {
     AuthAction? action,
     String? error,
     String? notice,
+    String? pendingEmail,
     bool clearAction = false,
     bool clearError = false,
     bool clearNotice = false,
+    bool clearPendingEmail = false,
   }) {
     return AuthFormState(
       action: clearAction ? null : (action ?? this.action),
       error: clearError ? null : (error ?? this.error),
       notice: clearNotice ? null : (notice ?? this.notice),
+      pendingEmail: clearPendingEmail ? null : (pendingEmail ?? this.pendingEmail),
     );
   }
 }
@@ -89,8 +101,11 @@ class AuthFormController extends StateNotifier<AuthFormState> {
       state = state.copyWith(clearAction: true);
     } on AuthException catch (e) {
       state = state.copyWith(clearAction: true, error: e.message);
-    } catch (e) {
-      state = state.copyWith(clearAction: true, error: e.toString());
+    } catch (_) {
+      state = state.copyWith(
+        clearAction: true,
+        error: tr('auth.signIn.error'),
+      );
     }
   }
 
@@ -111,14 +126,20 @@ class AuthFormController extends StateNotifier<AuthFormState> {
         state = state.copyWith(clearAction: true);
         return;
       }
+      // No session: a confirmation email is on its way. Hold the address so the
+      // UI can cross-fade to a real "Check your email" state (not a toast that
+      // vanishes before the user reads it).
       state = state.copyWith(
         clearAction: true,
-        notice: tr('auth.signUp.success'),
+        pendingEmail: email.trim(),
       );
     } on AuthException catch (e) {
       state = state.copyWith(clearAction: true, error: e.message);
-    } catch (e) {
-      state = state.copyWith(clearAction: true, error: e.toString());
+    } catch (_) {
+      state = state.copyWith(
+        clearAction: true,
+        error: tr('auth.signUp.error'),
+      );
     }
   }
 
@@ -141,10 +162,10 @@ class AuthFormController extends StateNotifier<AuthFormState> {
       );
       // The browser hands off; supabase_flutter's deep-link observer completes
       // the PKCE exchange on the nham://auth-callback return, onAuthStateChange
-      // fires, and the router redirect routes in. Clear the spinner now — the
-      // app is backgrounded in the browser and shouldn't sit spinning if the
-      // user cancels and returns.
-      state = state.copyWith(clearAction: true);
+      // fires, and the router redirect routes in. Keep the `google` action set
+      // so the UI can hold a "Finishing sign-in…" state across the Safari
+      // app-switch; the UI's lifecycle listener clears it if the user cancels
+      // and resumes still signed-out.
     } on AuthException catch (e) {
       state = state.copyWith(clearAction: true, error: e.message);
     } catch (_) {
@@ -222,6 +243,44 @@ class AuthFormController extends StateNotifier<AuthFormState> {
     ).join();
   }
 
+  /// Re-send the sign-up confirmation email to the pending address. Drives the
+  /// "Resend email" affordance on the confirm-email state; the UI owns the
+  /// cooldown so a tap can't spam Supabase's own rate limit.
+  Future<void> resendConfirmation() async {
+    final email = state.pendingEmail;
+    if (email == null) return;
+    state = state.copyWith(action: AuthAction.email, clearError: true);
+    try {
+      await _auth.resend(type: OtpType.signup, email: email);
+      state = state.copyWith(
+        clearAction: true,
+        notice: tr('auth.confirm.resent'),
+      );
+    } on AuthException catch (e) {
+      state = state.copyWith(clearAction: true, error: e.message);
+    } catch (e) {
+      state = state.copyWith(
+        clearAction: true,
+        error: tr('auth.signUp.error'),
+      );
+    }
+  }
+
+  /// Drop the in-flight action (e.g. the OAuth browser round-trip was
+  /// cancelled and the app resumed still signed-out).
+  void resetAction() {
+    if (state.action != null) state = state.copyWith(clearAction: true);
+  }
+
+  /// Leave the confirm-email state (the "Back" affordance).
+  void clearPendingEmail() {
+    state = state.copyWith(
+      clearPendingEmail: true,
+      clearError: true,
+      clearNotice: true,
+    );
+  }
+
   /// Clear any surfaced error/notice (e.g. when the user edits a field).
   void clearMessages() {
     if (state.error != null || state.notice != null) {
@@ -230,15 +289,10 @@ class AuthFormController extends StateNotifier<AuthFormState> {
   }
 }
 
-/// Sign-in screen controller.
+/// The auth controller. The welcome → email → confirm-email path is one flow,
+/// so a single instance backs the whole surface (the old split sign-in/sign-up
+/// providers collapsed with the split UI).
 final signInControllerProvider =
-    StateNotifierProvider.autoDispose<AuthFormController, AuthFormState>(
-      AuthFormController.new,
-    );
-
-/// Sign-up screen controller (separate instance so its `notice` state is
-/// independent of sign-in).
-final signUpControllerProvider =
     StateNotifierProvider.autoDispose<AuthFormController, AuthFormState>(
       AuthFormController.new,
     );

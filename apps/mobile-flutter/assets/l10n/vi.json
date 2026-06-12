@@ -666,7 +666,6 @@
       "submit": "Tạo tài khoản",
       "hasAccount": "Đã có tài khoản?",
       "signInLink": "Đăng nhập",
-      "success": "Kiểm tra email để xác nhận tài khoản",
       "successSignedIn": "Đã tạo tài khoản. Chào mừng!",
       "error": "Không thể tạo tài khoản",
       "emailPlaceholder": "ban@example.com",
@@ -705,6 +704,26 @@
       "submit": "Xác nhận",
       "resend": "Gửi lại mã",
       "error": "Mã không hợp lệ"
+    },
+    "welcome": {
+      "tagline": "Theo dõi bữa ăn Việt",
+      "taglineHighlight": "không cần phỏng đoán",
+      "demoMeal": "2 mực kho mặn + 1 chén cơm + canh chua",
+      "demoResult": "{kcal} kcal",
+      "continueWithEmail": "Tiếp tục với email",
+      "terms": "Khi tiếp tục, bạn đồng ý với điều khoản và chính sách bảo mật của chúng tôi."
+    },
+    "confirm": {
+      "title": "Kiểm tra email của bạn",
+      "description": "Chúng tôi đã gửi liên kết xác nhận đến",
+      "hint": "Nhấn vào liên kết để hoàn tất tạo tài khoản.",
+      "resend": "Gửi lại email",
+      "resendIn": "Gửi lại sau {seconds}s",
+      "resent": "Đã gửi lại email",
+      "back": "Quay lại"
+    },
+    "pending": {
+      "finishing": "Đang hoàn tất đăng nhập…"
     }
   },
   "landing": {
