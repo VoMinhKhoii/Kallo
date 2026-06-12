@@ -1,7 +1,7 @@
 {
   "common": {
     "back": "Back",
-    "next": "Next Step",
+    "next": "Next step",
     "skip": "Skip",
     "finish": "Finish",
     "save": "Save",
@@ -22,7 +22,7 @@
     "logging": "Logging",
     "dashboard": "Dashboard",
     "settings": "Settings",
-    "signOut": "Sign Out"
+    "signOut": "Sign out"
   },
   "metadata": {
     "root": {
@@ -452,7 +452,7 @@
     "empty": {
       "title": "No meals in this range",
       "description": "Log meals for a few days to see macro and micronutrient patterns.",
-      "logMeal": "Log Meal"
+      "logMeal": "Log meal"
     },
     "trends": {
       "tooFewDays": "Keep logging meals to build reliable trend lines. Averages are still shown for the days available."
@@ -641,7 +641,7 @@
       "title": "Welcome back",
       "email": "Email",
       "password": "Password",
-      "submit": "Sign In",
+      "submit": "Sign in",
       "noAccount": "Don't have an account?",
       "signUpLink": "Sign up",
       "forgotPassword": "Forgot password?",
@@ -658,7 +658,7 @@
       "email": "Email",
       "password": "Password",
       "confirmPassword": "Confirm password",
-      "submit": "Create Account",
+      "submit": "Create account",
       "hasAccount": "Already have an account?",
       "signInLink": "Sign in",
       "success": "Check your email to confirm your account",
