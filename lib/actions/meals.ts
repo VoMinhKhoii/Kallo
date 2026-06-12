@@ -13,6 +13,7 @@ import { toParsedMeal } from '@/lib/ai/mappers';
 import {
   goalAdjustNutrition,
   sumBoundedNutrition,
+  sumDisplayedNutrition,
 } from '@/lib/ai/pipeline/goal-adjustment';
 import type { NutritionValues, PipelineResult } from '@/lib/ai/types';
 import { requireAuthAndProfile } from '@/lib/auth';
@@ -83,6 +84,23 @@ type LoadMealsByDateInput = z.infer<typeof loadMealsByDateSchema>;
 
 const deleteMealSchema = z.object({
   mealId: z.string().uuid('mealId phải là UUID hợp lệ.'),
+});
+
+const updateMealSchema = z.object({
+  mealId: z.string().uuid('mealId phải là UUID hợp lệ.'),
+  // Per-stored-item gram override. `id` is the meal_items row id (the same id
+  // the card renders), so the client never needs to track positional order.
+  edits: z
+    .array(
+      z.object({
+        id: z.string().uuid(),
+        newGrams: z.number().positive().finite().max(100_000),
+      })
+    )
+    .max(100)
+    .optional(),
+  // Stored item rows to drop entirely (per-row "remove").
+  removeIds: z.array(z.string().uuid()).max(100).optional(),
 });
 
 const loadMealDatesSchema = z.object({
@@ -926,6 +944,207 @@ export async function deleteMealAction(input: { mealId: string }) {
   }
 
   return { success: true };
+}
+
+// ---------------------------------------------------------------------------
+// C4: Edit a persisted meal (gram overrides + per-row removal)
+// ---------------------------------------------------------------------------
+
+/** Scale every stored nutrient on a row by `ratio`, preserving nulls. */
+function scaleNutritionRow(
+  row: Record<string, unknown>,
+  ratio: number
+): NutritionValues {
+  const result = { ...EMPTY_NUTRITION };
+  for (const key of NUTRITION_KEYS) {
+    const raw = row[key];
+    const value =
+      typeof raw === 'number'
+        ? raw
+        : typeof raw === 'string'
+          ? Number(raw)
+          : null;
+    result[key] =
+      value != null && Number.isFinite(value) ? value * ratio : null;
+  }
+  return result;
+}
+
+/**
+ * Edit a persisted (precise) meal: override the cooked grams of stored items
+ * and/or remove some of them, then recompute the meal totals from what remains.
+ *
+ * Tenant isolation: Drizzle bypasses Supabase RLS, so the `WHERE userId` filter
+ * is the ONLY thing keeping one user out of another's meals. Every query here is
+ * re-scoped to the authenticated `user.id` (the meal lookup) or constrained to
+ * that meal's own item rows — mirroring `deleteMealAction`'s guard exactly. A
+ * user can therefore never edit or drop a row belonging to someone else.
+ */
+export async function updateMealAction(input: {
+  mealId: string;
+  edits?: { id: string; newGrams: number }[];
+  removeIds?: string[];
+}): Promise<ConfirmMealResponse> {
+  const parsed = updateMealSchema.parse(input);
+  const { user } = await requireAuthAndProfile();
+
+  return await db.transaction(async (tx) => {
+    // Ownership gate: load the meal scoped to the authenticated user. A meal
+    // belonging to anyone else simply isn't returned, so the edit can't proceed.
+    const [meal] = await tx
+      .select()
+      .from(meals)
+      .where(and(eq(meals.id, parsed.mealId), eq(meals.userId, user.id)))
+      .limit(1);
+
+    if (!meal) {
+      throw Errors.validationFailed(
+        'Bữa ăn không tồn tại hoặc không thuộc về bạn.'
+      );
+    }
+    if (meal.entryMode === 'cheat') {
+      throw Errors.validationFailed(
+        'Không thể chỉnh sửa bữa xả theo cách này.'
+      );
+    }
+
+    // Item rows are reached only through this meal id, which we just proved the
+    // caller owns — so they inherit the same tenant scope.
+    const itemRows = await tx
+      .select()
+      .from(mealItems)
+      .where(eq(mealItems.mealId, meal.id));
+
+    const editById = new Map(
+      (parsed.edits ?? []).map((edit) => [edit.id, edit.newGrams])
+    );
+    const removeIds = new Set(parsed.removeIds ?? []);
+
+    const keptRows = itemRows.filter((row) => !removeIds.has(row.id));
+    if (keptRows.length === 0) {
+      throw Errors.validationFailed(
+        'Bữa ăn phải còn ít nhất một món. Hãy xóa cả bữa thay vào đó.'
+      );
+    }
+
+    // Compute each kept row's new nutrition (scaled when a gram override applies)
+    // and the new meal totals as their sum.
+    const updates: {
+      id: string;
+      estimatedGrams: number;
+      nutrition: NutritionValues;
+    }[] = [];
+    const keptNutrition: NutritionValues[] = [];
+
+    for (const row of keptRows) {
+      const newGrams = editById.get(row.id);
+      const currentGrams = row.estimatedGrams;
+      if (
+        newGrams !== undefined &&
+        currentGrams != null &&
+        currentGrams > 0 &&
+        newGrams !== currentGrams
+      ) {
+        const ratio = newGrams / currentGrams;
+        const scaled = scaleNutritionRow(row, ratio);
+        updates.push({
+          id: row.id,
+          estimatedGrams: newGrams,
+          nutrition: scaled,
+        });
+        keptNutrition.push(scaled);
+      } else {
+        keptNutrition.push(extractNutritionValues(row));
+      }
+    }
+
+    const mealTotals = sumDisplayedNutrition(keptNutrition);
+
+    // Apply: scale the edited item rows, drop the removed ones, write the new
+    // meal totals — all scoped to this meal's ids.
+    for (const update of updates) {
+      await tx
+        .update(mealItems)
+        .set({
+          estimatedGrams: update.estimatedGrams,
+          ...nutritionValuesToRow(update.nutrition),
+        })
+        .where(and(eq(mealItems.id, update.id), eq(mealItems.mealId, meal.id)));
+    }
+
+    if (removeIds.size > 0) {
+      await tx
+        .delete(mealItems)
+        .where(
+          and(
+            eq(mealItems.mealId, meal.id),
+            inArray(mealItems.id, Array.from(removeIds))
+          )
+        );
+    }
+
+    await tx
+      .update(meals)
+      .set(nutritionValuesToRow(mealTotals))
+      .where(and(eq(meals.id, meal.id), eq(meals.userId, user.id)));
+
+    // Rebuild the saved meal in the exact shape loadMealsByDate returns so the
+    // client reconciles its card in place — same id, no day refetch.
+    const nutritionByRowId = new Map(
+      updates.map((update) => [update.id, update.nutrition])
+    );
+    const ingredientsByGroup = new Map<
+      string,
+      { name: string; order: number; ingredients: PersistedIngredient[] }
+    >();
+    for (const row of keptRows) {
+      const key = `${row.mealItemOrder}:${row.mealItemName}`;
+      let group = ingredientsByGroup.get(key);
+      if (!group) {
+        group = {
+          name: row.mealItemName,
+          order: row.mealItemOrder,
+          ingredients: [],
+        };
+        ingredientsByGroup.set(key, group);
+      }
+      group.ingredients.push(
+        buildPersistedIngredient({
+          id: row.id,
+          ingredientName: row.ingredientName,
+          foodCompositionId: row.foodCompositionId,
+          estimatedGrams: editById.get(row.id) ?? row.estimatedGrams ?? null,
+          userFacingUnit: row.userFacingUnit,
+          cookingMethod: row.cookingMethod,
+          matchConfidence: row.matchConfidence,
+          nutrition:
+            nutritionByRowId.get(row.id) ?? extractNutritionValues(row),
+        })
+      );
+    }
+
+    const mealItemGroups = Array.from(ingredientsByGroup.values())
+      .sort((a, b) => a.order - b.order)
+      .map((group) =>
+        buildPersistedMealItemGroup(group.name, group.order, group.ingredients)
+      );
+
+    const savedMeal = buildPersistedMeal({
+      id: meal.id,
+      rawInput: meal.rawInput,
+      mealSlot: meal.mealSlot,
+      confidenceOverall: meal.confidenceOverall,
+      loggedAt: meal.loggedAt.toISOString(),
+      nutrition: mealTotals,
+      mealItemGroups,
+      entryMode: 'precise',
+      alcoholG: meal.alcoholG ?? null,
+      cheatSliders: null,
+      share: null,
+    });
+
+    return { mealId: meal.id, meal: savedMeal };
+  });
 }
 
 // ---------------------------------------------------------------------------

@@ -12,6 +12,7 @@ import type {
 import {
   confirmAndSaveMealAction,
   deleteMealAction,
+  updateMealAction,
 } from '@/lib/actions/meals';
 import { NUTRITION_KEYS } from '@/lib/ai/constants';
 import type { NutritionValues } from '@/lib/ai/types';
@@ -317,6 +318,51 @@ export function useConfirmMeal(userId: string) {
       queryClient.invalidateQueries({ queryKey: ['meal-dates'] });
       // Refresh the "log it again" chips so a newly-saved cheat occasion appears.
       queryClient.invalidateQueries({ queryKey: ['recent-cheat-occasions'] });
+    },
+  });
+}
+
+// Edit a persisted meal in place: gram overrides and/or per-row removals. The
+// server recomputes nutrition and returns the authoritative saved meal, which
+// overwrites the card by its stable id (no remount). Scoped to the user's day.
+export function useUpdateMeal(userId: string, originDate: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: updateMealAction,
+    onSuccess: (data) => {
+      const savedMeal = data.meal;
+      if (!savedMeal) return;
+      const loggingDayKey = loggingDayKeys.byUserDate(userId, originDate);
+      const dailyMealsKey = dailyMealsKeys.byDate(originDate);
+      queryClient.setQueriesData<LoggingDayData>(
+        { queryKey: loggingDayKey },
+        (old) =>
+          old
+            ? {
+                ...old,
+                persistedMeals: upsertById(old.persistedMeals, savedMeal),
+              }
+            : old
+      );
+      queryClient.setQueriesData<PersistedMeal[]>(
+        { queryKey: dailyMealsKey },
+        (old) => upsertMealIntoList(old, savedMeal)
+      );
+    },
+    onError: (error) => {
+      toast.error(
+        error instanceof Error ? error.message : 'Không thể cập nhật bữa ăn.'
+      );
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({
+        queryKey: loggingDayKeys.byUserDate(userId, originDate),
+        refetchType: 'none',
+      });
+      queryClient.invalidateQueries({
+        queryKey: dailyMealsKeys.byDate(originDate),
+      });
     },
   });
 }

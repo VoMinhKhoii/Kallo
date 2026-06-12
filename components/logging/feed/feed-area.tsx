@@ -24,7 +24,7 @@ import { addDays } from '@/components/logging/sidebar/timeline-utils';
 import { dailyMealsKeys } from '@/hooks/use-daily-meals';
 import { useFeedSubmit } from '@/hooks/use-feed-submit';
 import { loggingDayKeys, useLoggingDay } from '@/hooks/use-logging-day';
-import { useConfirmMeal } from '@/hooks/use-meal-mutations';
+import { useConfirmMeal, useUpdateMeal } from '@/hooks/use-meal-mutations';
 import { useRecentCheatOccasions } from '@/hooks/use-recent-cheat-occasions';
 import { useStreamAnalysis } from '@/hooks/use-stream-analysis';
 import { useStreamingTerminalEffects } from '@/hooks/use-streaming-terminal-effects';
@@ -309,6 +309,27 @@ export function FeedArea({
 
   // Mutations
   const confirmMeal = useConfirmMeal(profile.userId);
+  const updateMeal = useUpdateMeal(profile.userId, selectedDate);
+
+  // Persist an amount edit (gram overrides + per-row removals) for one meal.
+  // The mutation reconciles the card in place from the authoritative response.
+  const handleUpdateMeal = useCallback(
+    async (
+      mealId: string,
+      changes: {
+        edits: { id: string; newGrams: number }[];
+        removeIds: string[];
+      }
+    ) => {
+      await updateMeal.mutateAsync({
+        mealId,
+        edits: changes.edits.length > 0 ? changes.edits : undefined,
+        removeIds: changes.removeIds.length > 0 ? changes.removeIds : undefined,
+      });
+      toast.success(t('mealUpdatedToast'));
+    },
+    [updateMeal, t]
+  );
 
   const scrollToBottom = useCallback(() => {
     requestAnimationFrame(() => {
@@ -760,6 +781,7 @@ export function FeedArea({
                       inputRef.current?.setText(meal.rawInput);
                       inputRef.current?.focus();
                     }}
+                    onUpdate={(changes) => handleUpdateMeal(meal.id, changes)}
                   />
                 ))}
               </AnimatePresence>

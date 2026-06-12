@@ -14,6 +14,7 @@ const {
   mockTxDelete,
   mockTxInsert,
   mockTxUpdate,
+  mockTxSelect,
   mockDbSelect,
   mockDbDelete,
   mockTx,
@@ -21,18 +22,21 @@ const {
   const mockTxDelete = vi.fn();
   const mockTxInsert = vi.fn();
   const mockTxUpdate = vi.fn();
+  const mockTxSelect = vi.fn();
   const mockDbSelect = vi.fn();
   const mockDbDelete = vi.fn();
   const mockTx = {
     delete: mockTxDelete,
     insert: mockTxInsert,
     update: mockTxUpdate,
+    select: mockTxSelect,
   };
   return {
     mockUser: { id: 'user-123', email: 'test@example.com' },
     mockTxDelete,
     mockTxInsert,
     mockTxUpdate,
+    mockTxSelect,
     mockDbSelect,
     mockDbDelete,
     mockTx,
@@ -62,7 +66,11 @@ vi.mock('@/lib/db', () => ({
 
 vi.mock('@/lib/db/schema', () => ({
   meals: { id: 'meals.id', userId: 'meals.userId', loggedAt: 'meals.loggedAt' },
-  mealItems: { mealId: 'mealItems.mealId' },
+  mealItems: {
+    id: 'mealItems.id',
+    mealId: 'mealItems.mealId',
+    estimatedGrams: 'mealItems.estimatedGrams',
+  },
   mealShares: {
     mealId: 'mealShares.mealId',
     id: 'mealShares.id',
@@ -91,6 +99,7 @@ import {
   loadMealsByDate,
   loadPendingAnalysesByDate,
   type PersistedMeal,
+  updateMealAction,
 } from '@/lib/actions/meals';
 import {
   buildPersistedIngredient,
@@ -776,6 +785,193 @@ describe('deleteMealAction', () => {
 
   it('should reject invalid mealId', async () => {
     await expect(deleteMealAction({ mealId: 'bad' })).rejects.toThrow();
+  });
+});
+
+describe('updateMealAction', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  // Each `tx.select()` resolves through .from().where() — the meal lookup adds
+  // .limit(), the item lookup awaits .where() directly. Queue per call.
+  function queueMealLookup(rows: unknown[]) {
+    mockTxSelect.mockReturnValueOnce({
+      from: vi.fn().mockReturnValue({
+        where: vi.fn().mockReturnValue({
+          limit: vi.fn().mockResolvedValue(rows),
+        }),
+      }),
+    });
+  }
+  function queueItemLookup(rows: unknown[]) {
+    mockTxSelect.mockReturnValueOnce({
+      from: vi.fn().mockReturnValue({
+        where: vi.fn().mockResolvedValue(rows),
+      }),
+    });
+  }
+
+  function mealRow(overrides: Record<string, unknown> = {}) {
+    return {
+      id: UUID_MEAL,
+      userId: mockUser.id,
+      rawInput: 'Phở bò',
+      mealSlot: 'lunch',
+      confidenceOverall: 'high',
+      loggedAt: LOGGED_AT,
+      entryMode: 'precise',
+      alcoholG: null,
+      caloriesKcal: 520,
+      proteinG: 31,
+      carbohydrateG: 60,
+      fatG: 14,
+      ...overrides,
+    };
+  }
+  function itemRow(overrides: Record<string, unknown> = {}) {
+    return {
+      id: UUID_1,
+      mealId: UUID_MEAL,
+      ingredientName: 'Bánh phở',
+      mealItemName: 'Phở bò',
+      mealItemOrder: 0,
+      foodCompositionId: 'fc-1',
+      estimatedGrams: 200,
+      userFacingUnit: '1 tô',
+      cookingMethod: 'luộc',
+      matchConfidence: 0.9,
+      caloriesKcal: 300,
+      proteinG: 5,
+      carbohydrateG: 60,
+      fatG: 2,
+      ...overrides,
+    };
+  }
+
+  function captureUpdate(captured: Record<string, unknown>[]) {
+    return {
+      set: vi.fn().mockImplementation((vals: Record<string, unknown>) => {
+        captured.push(vals);
+        return { where: vi.fn().mockResolvedValue(undefined) };
+      }),
+    };
+  }
+
+  it('rejects a meal that belongs to another user (userId-scoped lookup)', async () => {
+    // Defense-in-depth tenant isolation: the meal SELECT is scoped to the
+    // authenticated user, so another user's meal returns no row and the edit
+    // is refused — never reaching any item update/delete. (Drizzle bypasses
+    // RLS; this WHERE userId is the only thing preventing a cross-tenant edit.)
+    queueMealLookup([]); // scoped lookup finds nothing for this user
+
+    await expect(
+      updateMealAction({
+        mealId: UUID_MEAL,
+        edits: [{ id: UUID_1, newGrams: 400 }],
+      })
+    ).rejects.toThrow('không thuộc về bạn');
+
+    // Critically: no item read, update, or delete was attempted.
+    expect(mockTxUpdate).not.toHaveBeenCalled();
+    expect(mockTxDelete).not.toHaveBeenCalled();
+  });
+
+  it('scales the edited item and recomputes meal totals', async () => {
+    queueMealLookup([mealRow()]);
+    queueItemLookup([
+      itemRow(),
+      itemRow({
+        id: UUID_2,
+        ingredientName: 'Thịt bò',
+        estimatedGrams: 100,
+        caloriesKcal: 220,
+        proteinG: 26,
+        carbohydrateG: 0,
+        fatG: 12,
+      }),
+    ]);
+
+    const itemUpdates: Record<string, unknown>[] = [];
+    const mealUpdates: Record<string, unknown>[] = [];
+    let updateCall = 0;
+    mockTxUpdate.mockImplementation(() => {
+      // First update(s) = item rows, final = the meals total row.
+      updateCall += 1;
+      return updateCall <= 1
+        ? captureUpdate(itemUpdates)
+        : captureUpdate(mealUpdates);
+    });
+
+    const result = await updateMealAction({
+      mealId: UUID_MEAL,
+      edits: [{ id: UUID_1, newGrams: 400 }], // double the 200g bánh phở
+    });
+
+    // Edited row scaled 2x.
+    expect(itemUpdates[0]?.estimatedGrams).toBe(400);
+    expect(itemUpdates[0]?.caloriesKcal).toBe(600);
+    // Meal totals = scaled bánh phở (600) + untouched thịt bò (220).
+    expect(mealUpdates[0]?.caloriesKcal).toBe(820);
+    expect(result.meal.nutrition.caloriesKcal).toBe(820);
+    expect(result.meal.mealItemGroups[0]?.ingredients).toHaveLength(2);
+  });
+
+  it('removes a row and recomputes from what remains', async () => {
+    queueMealLookup([mealRow()]);
+    queueItemLookup([
+      itemRow(),
+      itemRow({
+        id: UUID_2,
+        ingredientName: 'Thịt bò',
+        estimatedGrams: 100,
+        caloriesKcal: 220,
+        proteinG: 26,
+        carbohydrateG: 0,
+        fatG: 12,
+      }),
+    ]);
+
+    const mealUpdates: Record<string, unknown>[] = [];
+    mockTxUpdate.mockImplementation(() => captureUpdate(mealUpdates));
+    const deleteWhere = vi.fn().mockResolvedValue(undefined);
+    mockTxDelete.mockReturnValue({ where: deleteWhere });
+
+    const result = await updateMealAction({
+      mealId: UUID_MEAL,
+      removeIds: [UUID_2],
+    });
+
+    expect(mockTxDelete).toHaveBeenCalledTimes(1);
+    // Only the bánh phở (300) survives.
+    expect(mealUpdates[0]?.caloriesKcal).toBe(300);
+    expect(result.meal.mealItemGroups[0]?.ingredients).toHaveLength(1);
+    expect(result.meal.mealItemGroups[0]?.ingredients[0]?.id).toBe(UUID_1);
+  });
+
+  it('refuses to remove the last remaining item', async () => {
+    queueMealLookup([mealRow()]);
+    queueItemLookup([itemRow()]);
+
+    await expect(
+      updateMealAction({ mealId: UUID_MEAL, removeIds: [UUID_1] })
+    ).rejects.toThrow('ít nhất một món');
+    expect(mockTxDelete).not.toHaveBeenCalled();
+  });
+
+  it('refuses to edit a cheat meal through this path', async () => {
+    queueMealLookup([mealRow({ entryMode: 'cheat' })]);
+
+    await expect(
+      updateMealAction({
+        mealId: UUID_MEAL,
+        edits: [{ id: UUID_1, newGrams: 400 }],
+      })
+    ).rejects.toThrow('bữa xả');
+  });
+
+  it('rejects an invalid mealId', async () => {
+    await expect(updateMealAction({ mealId: 'bad' })).rejects.toThrow();
   });
 });
 

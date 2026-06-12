@@ -1001,6 +1001,7 @@
     },
     "feedArea": {
       "savedMeal": "Meal saved",
+      "mealUpdatedToast": "Meal updated",
       "mealRemoved": "Meal removed",
       "undo": "Undo",
       "deleteError": "Could not remove the meal. Please try again.",
@@ -1040,7 +1041,14 @@
       "toggleDetails": "Toggle meal details",
       "total": "Total",
       "remove": "Remove",
-      "logAgain": "Log again"
+      "logAgain": "Log again",
+      "editAmounts": "Edit amounts",
+      "cancelEdit": "Cancel",
+      "saveEdit": "Save changes",
+      "savingEdit": "Saving…",
+      "removeRow": "Remove {name}",
+      "mealUpdated": "Meal updated",
+      "updateError": "Couldn't update the meal — try again."
     },
     "mode": {
       "normal": "Normal",

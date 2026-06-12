@@ -1001,6 +1001,7 @@
     },
     "feedArea": {
       "savedMeal": "Đã lưu bữa ăn",
+      "mealUpdatedToast": "Đã cập nhật bữa ăn",
       "mealRemoved": "Đã xóa bữa ăn",
       "undo": "Hoàn tác",
       "deleteError": "Không thể xóa bữa ăn. Vui lòng thử lại.",
@@ -1040,7 +1041,14 @@
       "toggleDetails": "Bật/tắt chi tiết bữa ăn",
       "total": "Tổng",
       "remove": "Xóa",
-      "logAgain": "Ghi lại"
+      "logAgain": "Ghi lại",
+      "editAmounts": "Sửa lượng",
+      "cancelEdit": "Hủy",
+      "saveEdit": "Lưu thay đổi",
+      "savingEdit": "Đang lưu…",
+      "removeRow": "Bỏ {name}",
+      "mealUpdated": "Đã cập nhật bữa ăn",
+      "updateError": "Không cập nhật được bữa ăn — hãy thử lại."
     },
     "mode": {
       "normal": "Bình thường",
