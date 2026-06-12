@@ -188,6 +188,32 @@ export function Profile({ profile }: ProfileProps) {
 
   const isDirty = form.formState.isDirty;
 
+  // Mirror the persisted-target computation off the live form so the save
+  // button can name its consequence ("Save — new target 1,640 kcal"). Returns
+  // null until the body metrics are complete enough to produce a target.
+  const watched = form.watch();
+  const pendingTarget = useMemo(() => {
+    const { biologicalSex, weightKg, heightCm, age, activityLevel } = watched;
+    if (!biologicalSex || !weightKg || !heightCm || !age || !activityLevel) {
+      return null;
+    }
+    const bmr = calcBMR({
+      biologicalSex,
+      weightKg,
+      heightCm,
+      age,
+      activityLevel,
+    });
+    const tdee = calcTDEE(bmr, activityLevel);
+    const targets = calcDailyTargets(
+      tdee,
+      watched.goal,
+      watched.aggression,
+      watched.carbSplit
+    );
+    return Math.round(Math.max(targets.calories, 500));
+  }, [watched]);
+
   function handleCancel() {
     form.reset(defaultValues);
   }
@@ -290,7 +316,9 @@ export function Profile({ profile }: ProfileProps) {
                 <p className="mb-5 text-[#7B6F62] text-[13px] sm:mb-6">
                   {section.subtitle}
                 </p>
-                {section.id === 'body-metrics' && <BodyMetrics />}
+                {section.id === 'body-metrics' && (
+                  <BodyMetrics savedCalorieTarget={profile.calorieTarget} />
+                )}
                 {section.id === 'regional' && <Regional />}
                 {section.id === 'cooking' && <Cooking />}
               </TabsContent>
@@ -327,7 +355,11 @@ export function Profile({ profile }: ProfileProps) {
                     className="flex items-center gap-2 rounded-xl bg-[#2C2416] px-5 py-2.5 font-medium text-[#FDFCF8] text-[14px] shadow-sm transition-all hover:bg-[#1C1917] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C9A87C]/60 disabled:opacity-50"
                   >
                     {isPending && <Loader2 className="h-4 w-4 animate-spin" />}
-                    {t('save')}
+                    {pendingTarget !== null
+                      ? t('saveWithTarget', {
+                          target: pendingTarget.toLocaleString(),
+                        })
+                      : t('save')}
                   </button>
                 </div>
               </motion.div>

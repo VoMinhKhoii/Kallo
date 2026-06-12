@@ -27,8 +27,16 @@ const CARB_SPLITS: CarbSplit[] = ['moderate_carb', 'lower_carb', 'higher_carb'];
 const inputClass =
   'w-full rounded-lg border border-[#EAE7E0] bg-white px-3 py-2 text-[14px] text-[#2C2416] transition-colors hover:border-[#C9A87C]/50 focus:border-[#C9A87C] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C9A87C]/40';
 
-export function BodyMetrics() {
+const AGGRESSIVE_PACE_KG = 0.6;
+
+interface BodyMetricsProps {
+  /** The calorie target currently persisted, for the before→after ritual. */
+  savedCalorieTarget: number | null;
+}
+
+export function BodyMetrics({ savedCalorieTarget }: BodyMetricsProps) {
   const t = useTranslations('onboarding.bodyMetrics');
+  const tSettings = useTranslations('settings');
   const form = useFormContext<ProfileFormValues>();
 
   const ACTIVITY_OPTIONS = [
@@ -400,65 +408,102 @@ export function BodyMetrics() {
             />
           </div>
 
-          {/* Hero: daily target is the headline; TDEE is the supporting caption */}
-          {macros && (
-            <div className="rounded-2xl border border-[#C9A87C]/40 bg-gradient-to-b from-[#C9A87C]/[0.07] to-transparent p-5 text-center sm:p-6">
-              <span className="block font-bold text-[#6B5D4F] text-[11px] uppercase tracking-widest">
-                {t('calorieTarget')}
-              </span>
-              <div className="mt-1 font-serif text-4xl text-[#2C2416] tracking-tighter sm:text-5xl">
-                {Math.round(targetCalories).toLocaleString()}{' '}
-                <span className="font-sans text-[#7B6F62] text-lg">
-                  {t('kcal')}
-                </span>
-              </div>
-              <p className="mt-1.5 text-[#7B6F62] text-[12px]">
-                {t('basedOnTdee')} ~{Math.round(tdee).toLocaleString()}{' '}
-                {t('kcal')}
-                {watchGoal === 'maintaining' ? (
-                  <> · {t('maintenance')}</>
-                ) : (
-                  <>
-                    {' · '}
-                    {watchGoal === 'cutting' ? '−' : '+'}
-                    {Math.abs(
-                      Math.round(tdee) - Math.round(targetCalories)
-                    ).toLocaleString()}{' '}
-                    {t('perDay')}{' '}
-                    {watchGoal === 'cutting'
-                      ? t('aggressionDeficit')
-                      : t('aggressionSurplus')}
-                  </>
-                )}
-              </p>
-              <div className="mt-5 grid grid-cols-3 gap-4 border-[#C9A87C]/20 border-t pt-4">
-                <div>
-                  <div className="font-bold text-[#6B5D4F] text-[10px] uppercase tracking-widest">
-                    {t('protein')}
+          {/* Hero: daily target is the headline; TDEE is the supporting caption.
+              When the recomputed target diverges from the saved one, surface
+              the comparison as a before→after ritual (muted strikethrough →
+              new), tinting terracotta when the pace is aggressive. */}
+          {macros &&
+            (() => {
+              const newTarget = Math.round(Math.max(targetCalories, 500));
+              const diverged =
+                savedCalorieTarget !== null &&
+                Math.round(savedCalorieTarget) !== newTarget;
+              const aggressivePace =
+                watchGoal !== 'maintaining' &&
+                (watchAggression ?? 0) > AGGRESSIVE_PACE_KG;
+              const newTargetClass = aggressivePace
+                ? 'text-nham-danger'
+                : 'text-[#2C2416]';
+              return (
+                <div className="rounded-2xl border border-[#C9A87C]/40 bg-gradient-to-b from-[#C9A87C]/[0.07] to-transparent p-5 text-center sm:p-6">
+                  <span className="block font-bold text-[#6B5D4F] text-[11px] uppercase tracking-widest">
+                    {diverged
+                      ? tSettings('targetRitual.newLabel')
+                      : t('calorieTarget')}
+                  </span>
+                  {diverged && savedCalorieTarget !== null ? (
+                    <p
+                      className="mt-1 text-[#9A8F80] text-sm tabular-nums line-through"
+                      style={{ fontFamily: 'Lora, serif' }}
+                    >
+                      {Math.round(savedCalorieTarget).toLocaleString()}{' '}
+                      {tSettings('targetRitual.unit')}
+                    </p>
+                  ) : null}
+                  <div
+                    className={`mt-1 text-4xl tabular-nums tracking-tighter sm:text-5xl ${newTargetClass}`}
+                    style={{ fontFamily: 'Lora, serif', fontWeight: 400 }}
+                  >
+                    {newTarget.toLocaleString()}{' '}
+                    <span className="font-sans text-[#7B6F62] text-lg">
+                      {t('kcal')}
+                    </span>
                   </div>
-                  <div className="font-medium text-[#2C2416] text-lg">
-                    {macros.proteinG}g
+                  {aggressivePace ? (
+                    <p className="mt-1.5 text-[12px] text-nham-danger">
+                      {tSettings('targetRitual.aggressivePace', {
+                        pace: (watchAggression ?? 0).toFixed(2),
+                      })}
+                    </p>
+                  ) : null}
+                  <p className="mt-1.5 text-[#7B6F62] text-[12px]">
+                    {t('basedOnTdee')} ~{Math.round(tdee).toLocaleString()}{' '}
+                    {t('kcal')}
+                    {watchGoal === 'maintaining' ? (
+                      <> · {t('maintenance')}</>
+                    ) : (
+                      <>
+                        {' · '}
+                        {watchGoal === 'cutting' ? '−' : '+'}
+                        {Math.abs(
+                          Math.round(tdee) - Math.round(targetCalories)
+                        ).toLocaleString()}{' '}
+                        {t('perDay')}{' '}
+                        {watchGoal === 'cutting'
+                          ? t('aggressionDeficit')
+                          : t('aggressionSurplus')}
+                      </>
+                    )}
+                  </p>
+                  <div className="mt-5 grid grid-cols-3 gap-4 border-[#C9A87C]/20 border-t pt-4">
+                    <div>
+                      <div className="font-bold text-[#6B5D4F] text-[10px] uppercase tracking-widest">
+                        {t('protein')}
+                      </div>
+                      <div className="font-medium text-[#2C2416] text-lg">
+                        {macros.proteinG}g
+                      </div>
+                    </div>
+                    <div>
+                      <div className="font-bold text-[#6B5D4F] text-[10px] uppercase tracking-widest">
+                        {t('carbs')}
+                      </div>
+                      <div className="font-medium text-[#2C2416] text-lg">
+                        {macros.carbsG}g
+                      </div>
+                    </div>
+                    <div>
+                      <div className="font-bold text-[#6B5D4F] text-[10px] uppercase tracking-widest">
+                        {t('fat')}
+                      </div>
+                      <div className="font-medium text-[#2C2416] text-lg">
+                        {macros.fatG}g
+                      </div>
+                    </div>
                   </div>
                 </div>
-                <div>
-                  <div className="font-bold text-[#6B5D4F] text-[10px] uppercase tracking-widest">
-                    {t('carbs')}
-                  </div>
-                  <div className="font-medium text-[#2C2416] text-lg">
-                    {macros.carbsG}g
-                  </div>
-                </div>
-                <div>
-                  <div className="font-bold text-[#6B5D4F] text-[10px] uppercase tracking-widest">
-                    {t('fat')}
-                  </div>
-                  <div className="font-medium text-[#2C2416] text-lg">
-                    {macros.fatG}g
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
+              );
+            })()}
         </div>
       )}
     </div>

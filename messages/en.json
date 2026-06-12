@@ -1231,7 +1231,14 @@
     "cooking": "Cooking Habits",
     "regional": "Regional",
     "save": "Save changes",
+    "saveWithTarget": "Save — new target {target} kcal",
     "saved": "Changes saved",
+    "targetRitual": {
+      "savedLabel": "Saved target",
+      "newLabel": "New target",
+      "unit": "kcal",
+      "aggressivePace": "{pace} kg/wk — an aggressive pace"
+    },
     "language": "Language",
     "languageHint": "Change the app language",
     "sidebar": {
