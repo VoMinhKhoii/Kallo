@@ -552,7 +552,8 @@
       "noCountries": "Không tìm thấy quốc gia",
       "fallbackNote": "Bỏ trống nếu muốn. AI sẽ chỉ dựa vào ảnh và mô tả bữa ăn của bạn.",
       "preferredLanguage": "Ngôn ngữ ưa thích",
-      "preferredLanguageHint": "Chọn ngôn ngữ hiển thị cho ứng dụng"
+      "preferredLanguageHint": "Chọn ngôn ngữ hiển thị cho ứng dụng",
+      "commonCountries": "Phổ biến"
     },
     "bodyMetrics": {
       "title": "Chỉ số cơ thể",

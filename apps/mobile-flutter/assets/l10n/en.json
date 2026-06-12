@@ -553,7 +553,8 @@
       "noCountries": "No countries found",
       "fallbackNote": "Leave one or both empty if you want. The AI will fall back to your photo and meal text only.",
       "preferredLanguage": "Preferred language",
-      "preferredLanguageHint": "Choose your language for the app interface"
+      "preferredLanguageHint": "Choose your language for the app interface",
+      "commonCountries": "Common"
     },
     "bodyMetrics": {
       "title": "Your body metrics",
