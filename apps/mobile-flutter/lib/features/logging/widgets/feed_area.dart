@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
@@ -819,7 +820,7 @@ class _RetryButtonState extends State<_RetryButton> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.refresh, size: 14, color: Colors.white),
+              const Icon(LucideIcons.refreshCw, size: 14, color: Colors.white),
               const SizedBox(width: 6),
               NhamText(
                 'logging.failedAttempt.tryAgain'.tr(),
@@ -1251,7 +1252,7 @@ class _LoggingDayErrorState extends StatelessWidget {
               const Padding(
                 padding: EdgeInsets.only(top: 2), // mt-0.5
                 child: Icon(
-                  Icons.error_outline, // lucide AlertCircle
+                  LucideIcons.circleAlert, // lucide AlertCircle
                   size: 20,
                   color: _red600,
                 ),
@@ -1309,7 +1310,7 @@ class _RetryPill extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             const Icon(
-              Icons.refresh, // lucide RefreshCw
+              LucideIcons.refreshCw, // lucide RefreshCw
               size: 16,
               color: _LoggingDayErrorState._red950,
             ),

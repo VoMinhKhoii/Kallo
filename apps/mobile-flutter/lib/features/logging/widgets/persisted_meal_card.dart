@@ -1,5 +1,6 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:flutter/services.dart';
 
 import '../../../shared/widgets/nham_text.dart';
@@ -83,7 +84,7 @@ class _PersistedMealCardState extends State<PersistedMealCard>
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.delete_outline, size: 18, color: Colors.white),
+            const Icon(LucideIcons.trash2, size: 18, color: Colors.white),
             const SizedBox(width: 6),
             NhamText(
               'logging.remove'.tr(),
@@ -245,7 +246,7 @@ class _ChevronToggleState extends State<_ChevronToggle> {
         child: RotationTransition(
           turns: Tween<double>(begin: 0, end: 0.5).animate(widget.expand),
           child: Icon(
-            Icons.keyboard_arrow_down, // lucide ChevronDown
+            LucideIcons.chevronDown, // lucide ChevronDown
             size: 16,
             color: _pressed ? NhamColors.text : NhamColors.textMuted60,
           ),

@@ -1,5 +1,6 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:flutter/services.dart';
 
 import '../../../shared/widgets/nham_text.dart';
@@ -171,7 +172,7 @@ class _TimelinePickerState extends State<TimelinePicker> {
       key: const ValueKey('strip-content'),
       children: [
         _NavButton(
-          icon: Icons.chevron_left, // lucide ChevronLeft
+          icon: LucideIcons.chevronLeft, // lucide ChevronLeft
           onTap: _scrollPrev,
           color: NhamColors.textMuted,
         ),
@@ -199,7 +200,7 @@ class _TimelinePickerState extends State<TimelinePicker> {
         ),
         const SizedBox(width: 4),
         _NavButton(
-          icon: Icons.chevron_right, // lucide ChevronRight
+          icon: LucideIcons.chevronRight, // lucide ChevronRight
           onTap: _canNavigateNext ? _scrollNext : null,
           color: _canNavigateNext
               ? NhamColors.textMuted
@@ -279,7 +280,7 @@ class _ChipButtonState extends State<_ChipButton> {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.calendar_today_outlined,
+            const Icon(LucideIcons.calendar,
                 size: 14, color: NhamColors.accent), // lucide Calendar
             const SizedBox(width: NhamSpacing.sp2), // gap-2
             Flexible(

@@ -1,5 +1,6 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:flutter/services.dart';
 
 import '../../../theme/nham_colors.dart';
@@ -179,14 +180,14 @@ class _MealInputState extends State<MealInput>
           const SizedBox(width: NhamSpacing.sp3),
           if (widget.analyzing && widget.onCancel != null)
             _ActionButton(
-              icon: Icons.stop, // lucide Square (filled) → Icons.stop
+              icon: LucideIcons.square, // lucide Square (filled) → LucideIcons.square
               iconSize: 14,
               label: 'common.cancel'.tr(),
               onTap: widget.onCancel,
             )
           else
             _ActionButton(
-              icon: Icons.arrow_upward, // lucide ArrowUp → Icons.arrow_upward
+              icon: LucideIcons.arrowUp, // lucide ArrowUp → LucideIcons.arrowUp
               iconSize: 16,
               label: 'logging.submit'.tr(),
               enabled: _canSubmit,

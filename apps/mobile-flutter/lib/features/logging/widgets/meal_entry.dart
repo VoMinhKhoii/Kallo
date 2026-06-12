@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:flutter/services.dart';
 
 import '../../../models/meal.dart';
@@ -239,7 +240,7 @@ class _ItemRow extends StatelessWidget {
                     child: Row(
                       children: [
                         _Stepper(
-                          icon: Icons.remove, // lucide Minus
+                          icon: LucideIcons.minus, // lucide Minus
                           disabled: minusDisabled,
                           onTap: minusDisabled
                               ? null
@@ -258,7 +259,7 @@ class _ItemRow extends StatelessWidget {
                         ),
                         const SizedBox(width: 2),
                         _Stepper(
-                          icon: Icons.add, // lucide Plus
+                          icon: LucideIcons.plus, // lucide Plus
                           onTap: () => onChange(item.id, step),
                         ),
                         const SizedBox(width: NhamSpacing.sp2), // gap-2
@@ -388,7 +389,7 @@ class _EditPill extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               Icon(
-                editing ? Icons.check : Icons.edit_outlined, // Check / Pencil
+                editing ? LucideIcons.check : LucideIcons.pencil, // Check / Pencil
                 size: 12,
                 color: editing ? NhamColors.accent : NhamColors.textMuted,
               ),
@@ -475,7 +476,7 @@ class _ConfirmButtonState extends State<_ConfirmButton> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.check, size: 14, color: fg),
+              Icon(LucideIcons.check, size: 14, color: fg),
               const SizedBox(width: 6), // gap-1.5
               NhamText(
                 'logging.confirm'.tr(),

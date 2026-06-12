@@ -1,5 +1,6 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../shared/widgets/nham_text.dart';
 import '../../../theme/nham_colors.dart';
@@ -36,7 +37,7 @@ class EmptyState extends StatelessWidget {
                 borderRadius: BorderRadius.circular(NhamRadii.xl), // rounded-xl
               ),
               child: const Icon(
-                Icons.restaurant, // lucide UtensilsCrossed → Icons.restaurant
+                LucideIcons.utensilsCrossed, // lucide UtensilsCrossed → LucideIcons.utensilsCrossed
                 size: 20,
                 color: NhamColors.textMuted,
               ),
