@@ -190,7 +190,15 @@ class _ProfileScreen extends ConsumerWidget {
                               ),
                             ),
                           ),
-                      error: (_, __) => const _ProfileEmpty(),
+                      // A flaky fetch is NOT an absent profile — only a
+                      // genuinely-null profile (onboarding never ran) gets the
+                      // re-onboarding empty state. An error offers a retry, not
+                      // a misleading "Start setup".
+                      error: (_, __) => _ProfileLoadError(
+                        // userId is non-null in this branch (the null case is
+                        // handled above), so the profile query is keyed `true`.
+                        onRetry: () => ref.invalidate(profileProvider(true)),
+                      ),
                       data:
                           (profile) =>
                               profile != null
@@ -264,6 +272,60 @@ class _ProfileEmpty extends StatelessWidget {
                 ),
                 child: Text(
                   tr('settings.profilePage.startSetup'),
+                  style: NhamTextStyles.sansMedium(
+                    fontSize: NhamFontSize.sm,
+                  ).copyWith(color: Colors.white),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Profile load failed (a flaky fetch, not an absent profile). Shows a neutral
+/// error + a retry — never the re-onboarding "Start setup" CTA, which would
+/// strand a configured user in a false "set up your profile" dead-end.
+class _ProfileLoadError extends StatelessWidget {
+  const _ProfileLoadError({required this.onRetry});
+
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: NhamSpacing.sp5),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            tr('common.error'),
+            style: NhamTextStyles.serifMedium(
+              fontSize: NhamFontSize.h3,
+            ).copyWith(
+              letterSpacing: NhamTracking.tight,
+              color: NhamColors.text,
+            ),
+          ),
+          const SizedBox(height: NhamSpacing.sp4),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: GestureDetector(
+              onTap: onRetry,
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: NhamSpacing.sp5,
+                  vertical: 10,
+                ),
+                decoration: BoxDecoration(
+                  color: NhamColors.text,
+                  borderRadius: BorderRadius.circular(NhamRadii.pill),
+                ),
+                child: Text(
+                  tr('common.retry'),
                   style: NhamTextStyles.sansMedium(
                     fontSize: NhamFontSize.sm,
                   ).copyWith(color: Colors.white),
