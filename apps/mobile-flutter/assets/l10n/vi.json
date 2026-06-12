@@ -18,7 +18,8 @@
     "notFound": "Không tìm thấy trang",
     "notSignedIn": "Chưa đăng nhập.",
     "increase": "Tăng",
-    "decrease": "Giảm"
+    "decrease": "Giảm",
+    "copied": "Đã sao chép liên kết"
   },
   "nav": {
     "logging": "Ghi nhận",
@@ -1194,6 +1195,18 @@
       "cookingSubtitle": "Thiết lập dầu mỡ, cơm, đường, đạm và nước dùng mặc định",
       "saveError": "Không thể lưu cài đặt. Vui lòng thử lại.",
       "invalidError": "Một số giá trị không hợp lệ — vui lòng kiểm tra lại chỉ số cơ thể."
+    },
+    "rows": {
+      "goalPace": "Mục tiêu & tốc độ",
+      "cooking": "Thói quen nấu nướng",
+      "region": "Khu vực & ngôn ngữ",
+      "notSet": "Chưa thiết lập"
+    },
+    "about": {
+      "title": "Giới thiệu",
+      "version": "Phiên bản",
+      "privacy": "Chính sách bảo mật",
+      "terms": "Điều khoản dịch vụ"
     }
   },
   "errors": {

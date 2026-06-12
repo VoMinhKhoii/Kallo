@@ -18,7 +18,8 @@
     "notFound": "Page not found",
     "notSignedIn": "Not signed in.",
     "increase": "Increase",
-    "decrease": "Decrease"
+    "decrease": "Decrease",
+    "copied": "Link copied"
   },
   "nav": {
     "logging": "Logging",
@@ -1195,6 +1196,18 @@
       "cookingSubtitle": "Oil usage, rice, sugar, protein, and broth defaults",
       "saveError": "Failed to save settings. Please try again.",
       "invalidError": "Some entries are invalid — please review your body metrics."
+    },
+    "rows": {
+      "goalPace": "Goal & pace",
+      "cooking": "Cooking habits",
+      "region": "Region & language",
+      "notSet": "Not set"
+    },
+    "about": {
+      "title": "About",
+      "version": "Version",
+      "privacy": "Privacy policy",
+      "terms": "Terms of service"
     }
   },
   "errors": {

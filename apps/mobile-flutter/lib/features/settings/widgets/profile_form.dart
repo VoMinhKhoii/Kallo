@@ -12,26 +12,17 @@ import '../../../features/logging/widgets/count_up.dart';
 import '../../../theme/nham_colors.dart';
 import '../../../theme/nham_theme.dart';
 import '../../../theme/nham_typography.dart';
-import '../controls/tab_strip.dart';
 import '../data/profile_providers.dart';
-import '../logic/tdee.dart';
+import '../logic/profile_payload.dart';
 import '../panels/body_metrics.dart';
-import '../panels/cooking.dart';
-import '../panels/regional.dart';
 import 'profile_form_controller.dart';
 import 'profile_form_values.dart';
 
-enum _SectionId { bodyMetrics, regional, cooking }
-
-const _fieldSection = <ProfileField, _SectionId>{
-  ProfileField.weightKg: _SectionId.bodyMetrics,
-  ProfileField.heightCm: _SectionId.bodyMetrics,
-  ProfileField.age: _SectionId.bodyMetrics,
-};
-
-/// RN port of web `components/settings/profile/index.tsx`. The tabbed profile
-/// editor: header + subtitle, [TabStrip], the active panel inside a cream card,
-/// and a floating Save/Cancel bar that fades in when the form is dirty.
+/// The "Goal & pace" focused editor — the one numeric settings surface, so it
+/// keeps the felt floating Save/Cancel bar (toggle/select editors instant-commit
+/// instead). Renders the body-metrics + goal/pace/split/target panel inside a
+/// cream card; the bar fades in when the form is dirty and morphs into a
+/// "Changes saved · N kcal/day" confirmation on save.
 class ProfileForm extends ConsumerStatefulWidget {
   const ProfileForm({super.key, required this.profile});
 
@@ -44,7 +35,6 @@ class ProfileForm extends ConsumerStatefulWidget {
 class _ProfileFormState extends ConsumerState<ProfileForm> {
   late final ProfileFormController _controller =
       ProfileFormController(ProfileFormValues.fromRow(widget.profile));
-  _SectionId _activeTab = _SectionId.bodyMetrics;
   String? _errorText;
 
   // Felt-save state: after a successful save the bar morphs into a
@@ -86,52 +76,16 @@ class _ProfileFormState extends ConsumerState<ProfileForm> {
     final errors = validateBodyMetrics(v);
     if (errors.isNotEmpty) {
       _controller.setErrors(errors);
-      final first = errors.keys.first;
-      final section = _fieldSection[first];
       setState(() {
-        if (section != null) _activeTab = section;
         _errorText = tr('settings.profilePanel.invalidError');
       });
       return;
     }
     _controller.setErrors(const {});
 
-    // Compute targets exactly as RN `handleSave`.
-    final bmr = calcBMR(
-      biologicalSex: v.biologicalSex,
-      weightKg: v.weightKg!,
-      heightCm: v.heightCm!,
-      age: v.age!,
-    );
-    final tdee = calcTDEE(bmr, v.activityLevel);
-    final targets =
-        calcDailyTargets(tdee, v.goal, v.aggression, v.carbSplit);
-    final clampedCalories = targets.calories < 500 ? 500.0 : targets.calories;
-    final macros = calcMacroGrams(clampedCalories, v.carbSplit);
-
-    final payload = ProfileSavePayload(
-      weightKg: v.weightKg!,
-      heightCm: v.heightCm!,
-      age: v.age!,
-      biologicalSex: v.biologicalSex,
-      activityLevel: v.activityLevel,
-      tdeeKcal: tdee,
-      goal: v.goal,
-      aggression: v.aggression,
-      carbSplit: v.carbSplit,
-      calorieTarget: clampedCalories.round(),
-      proteinTargetG: macros.proteinG.round(),
-      carbsTargetG: macros.carbsG.round(),
-      fatTargetG: macros.fatG.round(),
-      countryOfOrigin: v.countryOfOrigin,
-      countryOfResidence: v.countryOfResidence,
-      preferredLocale: context.locale.languageCode,
-      oilUsage: v.oilUsage,
-      defaultRicePortion: v.defaultRicePortion,
-      sugarBraised: v.sugarBraised,
-      defaultProteinPortion: v.defaultProteinPortion,
-      brothConsumption: v.brothConsumption,
-    );
+    // Compute targets exactly as RN `handleSave` (shared with the instant-commit
+    // editors via buildProfilePayload).
+    final payload = buildProfilePayload(v, context.locale.languageCode);
 
     setState(() => _errorText = null);
     final ok = await ref.read(saveProfileProvider.notifier).save(payload);
@@ -141,7 +95,7 @@ class _ProfileFormState extends ConsumerState<ProfileForm> {
       _controller.markSaved();
       // Felt save: morph the bar into "Changes saved · N kcal/day", count the
       // target old→new, hold ~1.6s, then dissolve.
-      final newTarget = clampedCalories.round();
+      final newTarget = payload.calorieTarget;
       _savedTimer?.cancel();
       setState(() => _savedCalorieTarget = newTarget);
       _savedTimer = Timer(const Duration(milliseconds: 1600), () {
@@ -159,16 +113,6 @@ class _ProfileFormState extends ConsumerState<ProfileForm> {
   @override
   Widget build(BuildContext context) {
     final saving = ref.watch(saveProfileProvider).isLoading;
-    final tabs = [
-      (id: _SectionId.bodyMetrics, title: tr('settings.bodyMetrics'),
-          subtitle: tr('settings.profilePanel.bodyMetricsSubtitle')),
-      (id: _SectionId.regional, title: tr('settings.regional'),
-          subtitle: tr('settings.profilePanel.regionalSubtitle')),
-      (id: _SectionId.cooking, title: tr('settings.cooking'),
-          subtitle: tr('settings.profilePanel.cookingSubtitle')),
-    ];
-    final activeSubtitle =
-        tabs.firstWhere((t) => t.id == _activeTab).subtitle;
 
     return ProfileFormScope(
       controller: _controller,
@@ -184,7 +128,7 @@ class _ProfileFormState extends ConsumerState<ProfileForm> {
             keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
             children: [
               Text(
-                tr('settings.profilePage.title'),
+                tr('settings.rows.goalPace'),
                 style: NhamTextStyles.serifRegular(fontSize: NhamFontSize.h3)
                     .copyWith(letterSpacing: NhamTracking.tight, color: NhamColors.text),
               ),
@@ -192,21 +136,11 @@ class _ProfileFormState extends ConsumerState<ProfileForm> {
               Padding(
                 padding: const EdgeInsets.only(bottom: NhamSpacing.sp4),
                 child: Text(
-                  tr('settings.profilePage.description'),
+                  tr('settings.profilePanel.bodyMetricsSubtitle'),
                   style: NhamTextStyles.sansRegular(fontSize: NhamFontSize.detail)
                       .copyWith(height: 20 / 13, color: NhamColors.textWarm),
                 ),
               ),
-              TabStrip(
-                tabs: [
-                  for (final t in tabs)
-                    TabStripItem(id: t.id.name, label: t.title),
-                ],
-                active: _activeTab.name,
-                onChange: (id) => setState(() =>
-                    _activeTab = _SectionId.values.byName(id)),
-              ),
-              const SizedBox(height: NhamSpacing.sp2),
               Container(
                 padding: const EdgeInsets.all(NhamSpacing.sp3),
                 decoration: BoxDecoration(
@@ -214,24 +148,7 @@ class _ProfileFormState extends ConsumerState<ProfileForm> {
                   borderRadius: BorderRadius.circular(NhamRadii.containerLg),
                   border: Border.all(color: NhamColors.inputBorder),
                 ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: NhamSpacing.sp5),
-                      child: Text(
-                        activeSubtitle,
-                        style: NhamTextStyles.sansRegular(fontSize: NhamFontSize.detail)
-                            .copyWith(color: NhamColors.textWarm),
-                      ),
-                    ),
-                    switch (_activeTab) {
-                      _SectionId.bodyMetrics => const BodyMetrics(),
-                      _SectionId.regional => const Regional(),
-                      _SectionId.cooking => const Cooking(),
-                    },
-                  ],
-                ),
+                child: const BodyMetrics(),
               ),
             ],
           ),

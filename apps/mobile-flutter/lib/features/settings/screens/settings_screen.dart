@@ -2,6 +2,7 @@ import 'dart:ui';
 
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
@@ -12,13 +13,24 @@ import '../../../shell/app_header.dart';
 import '../../../theme/nham_colors.dart';
 import '../../../theme/nham_theme.dart';
 import '../../../theme/nham_typography.dart';
+import '../data/countries.dart';
 import '../data/profile_providers.dart';
+import '../panels/cooking.dart';
+import '../widgets/instant_commit_editor.dart';
 import '../widgets/profile_form.dart';
+import '../widgets/region_editor.dart';
 import 'account_section.dart';
 
-/// Settings tab — two-level nav (list → profile drill-in), mirroring the RN
-/// expo-router stack inside the settings tab. A nested [Navigator] owns the
-/// drill-in so the single contract route `/settings` keeps one screen widget.
+/// The marketing version string (no `package_info_plus` dependency in pubspec,
+/// so this is rendered statically — keep in sync with `pubspec.yaml`).
+const String _appVersion = '1.0.1';
+const String _privacyUrl = 'https://nham.app/privacy';
+const String _termsUrl = 'https://nham.app/terms';
+
+/// Settings tab — a single scrollable root of grouped preference rows, each
+/// pushing ONE focused editor (Cupertino swipe-back). The numeric goal editor
+/// keeps the felt save bar; toggle/select editors instant-commit. A nested
+/// [Navigator] owns the drill-in so the `/settings` route stays one widget.
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
 
@@ -34,13 +46,18 @@ class SettingsScreen extends StatelessWidget {
   }
 }
 
-/// Settings list view — mirrors the web sidebar's drill-in nav. Tap "Profile"
-/// to push the profile editor onto the (nested) stack.
-class _SettingsList extends StatelessWidget {
+/// Settings root: grouped preference rows with current-value sublines, the
+/// account group, and an about/legal group.
+class _SettingsList extends ConsumerWidget {
   const _SettingsList();
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final session = ref.watch(currentSessionProvider);
+    final userId = session?.user.id;
+    final profileAsync = ref.watch(profileProvider(userId != null));
+    final profile = profileAsync.valueOrNull;
+
     return Screen(
       bottom: false,
       child: Column(
@@ -51,57 +68,164 @@ class _SettingsList extends StatelessWidget {
             child: AppHeader(onBack: () => GoRouter.of(context).pop()),
           ),
           Expanded(
-            child: Padding(
+            child: ListView(
               padding: const EdgeInsets.fromLTRB(
                 NhamSpacing.sp4,
                 NhamSpacing.sp2,
                 NhamSpacing.sp4,
-                0,
+                NhamSpacing.sp6,
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Text(
-                    // Web sidebar h2: text-lg (18) font-medium tracking-tight,
-                    // Lora.
-                    tr('settings.title'),
-                    style: NhamTextStyles.serifMedium(
-                      fontSize: NhamFontSize.lg,
-                    ).copyWith(
-                      letterSpacing: NhamTracking.tight,
-                      color: NhamColors.text,
-                    ),
-                  ),
-                  const SizedBox(height: NhamSpacing.sp4),
-                  _ProfileRowTile(
-                    onTap:
-                        () => Navigator.of(context).push(
-                          MaterialPageRoute<void>(
-                            builder: (_) => const _ProfileScreen(),
-                          ),
-                        ),
-                  ),
-                  const SizedBox(height: NhamSpacing.sp5),
-                  const AccountSection(),
-                ],
-              ),
+              children: [
+                Text(
+                  tr('settings.title'),
+                  style: NhamTextStyles.serifMedium(fontSize: NhamFontSize.lg)
+                      .copyWith(
+                          letterSpacing: NhamTracking.tight,
+                          color: NhamColors.text),
+                ),
+                const SizedBox(height: NhamSpacing.sp4),
+
+                // ── Preferences ─────────────────────────────────────────────
+                _GroupLabel(tr('settings.preferences')),
+                _PreferenceRow(
+                  icon: LucideIcons.target,
+                  label: tr('settings.rows.goalPace'),
+                  subline: _goalPaceSubline(context, profile),
+                  onTap: () => _push(context, _EditorKind.goal),
+                ),
+                _PreferenceRow(
+                  icon: LucideIcons.utensilsCrossed,
+                  label: tr('settings.rows.cooking'),
+                  subline: tr('settings.profilePanel.cookingSubtitle'),
+                  onTap: () => _push(context, _EditorKind.cooking),
+                ),
+                _PreferenceRow(
+                  icon: LucideIcons.globe,
+                  label: tr('settings.rows.region'),
+                  subline: _regionSubline(context, profile),
+                  onTap: () => _push(context, _EditorKind.region),
+                ),
+
+                const SizedBox(height: NhamSpacing.sp5),
+                const AccountSection(),
+
+                const SizedBox(height: NhamSpacing.sp5),
+                // ── About ───────────────────────────────────────────────────
+                _GroupLabel(tr('settings.about.title')),
+                _InfoRow(
+                  icon: LucideIcons.info,
+                  label: tr('settings.about.version'),
+                  value: _appVersion,
+                ),
+                _PreferenceRow(
+                  icon: LucideIcons.shieldCheck,
+                  label: tr('settings.about.privacy'),
+                  subline: _privacyUrl,
+                  onTap: () => _copyLink(context, _privacyUrl),
+                ),
+                _PreferenceRow(
+                  icon: LucideIcons.fileText,
+                  label: tr('settings.about.terms'),
+                  subline: _termsUrl,
+                  onTap: () => _copyLink(context, _termsUrl),
+                ),
+              ],
             ),
           ),
         ],
       ),
     );
   }
+
+  void _push(BuildContext context, _EditorKind kind) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(builder: (_) => _ProfileScreen(kind: kind)),
+    );
+  }
+
+  void _copyLink(BuildContext context, String url) {
+    Clipboard.setData(ClipboardData(text: url));
+    ScaffoldMessenger.maybeOf(context)?.showSnackBar(
+      SnackBar(content: Text(tr('common.copied'))),
+    );
+  }
+
+  /// "Cutting · 0.50 kg/wk" — the saved goal + pace, or "Not set" when no
+  /// profile / no goal is configured.
+  String _goalPaceSubline(BuildContext context, ProfileRow? profile) {
+    if (profile == null) return tr('settings.rows.notSet');
+    final goal = profile.goal;
+    if (goal == null) return tr('settings.rows.notSet');
+    final goalLabel = switch (goal) {
+      'cutting' => tr('onboarding.bodyMetrics.cutting'),
+      'bulking' => tr('onboarding.bodyMetrics.bulking'),
+      _ => tr('onboarding.bodyMetrics.maintaining'),
+    };
+    if (goal == 'maintaining') return goalLabel;
+    final aggression = double.tryParse(profile.aggression ?? '');
+    if (aggression == null) return goalLabel;
+    final unit = tr('onboarding.bodyMetrics.weightUnit');
+    return '$goalLabel · ${aggression.toStringAsFixed(2)} $unit/wk';
+  }
+
+  /// "Việt Nam · Tiếng Việt" — residence country + current app language, or
+  /// just the language when no country is set.
+  String _regionSubline(BuildContext context, ProfileRow? profile) {
+    final lang = context.locale.languageCode == 'vi' ? 'Tiếng Việt' : 'English';
+    final residence = profile?.countryOfResidence;
+    if (residence == null || residence.isEmpty) return lang;
+    final label = _countryLabel(residence, context.locale.languageCode);
+    return '$label · $lang';
+  }
+
+  String _countryLabel(String value, String locale) {
+    for (final c in kCountries) {
+      if (c.value == value) return locale == 'vi' ? c.vi : c.value;
+    }
+    return value;
+  }
 }
 
-class _ProfileRowTile extends StatefulWidget {
-  const _ProfileRowTile({required this.onTap});
+/// The focused editor a preference row pushes onto the stack.
+enum _EditorKind { goal, cooking, region }
+
+class _GroupLabel extends StatelessWidget {
+  const _GroupLabel(this.text);
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(left: NhamSpacing.sp3, bottom: 4),
+      child: Text(
+        text.toUpperCase(),
+        style: NhamTextStyles.sansBold(fontSize: 10)
+            .copyWith(letterSpacing: 2.0, color: NhamColors.textMuted),
+      ),
+    );
+  }
+}
+
+/// A grouped preference row: an icon, a label with a current-value subline, and
+/// a trailing chevron. Presses fade the hover fill in and darken the text.
+class _PreferenceRow extends StatefulWidget {
+  const _PreferenceRow({
+    required this.icon,
+    required this.label,
+    required this.subline,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String label;
+  final String subline;
   final VoidCallback onTap;
 
   @override
-  State<_ProfileRowTile> createState() => _ProfileRowTileState();
+  State<_PreferenceRow> createState() => _PreferenceRowState();
 }
 
-class _ProfileRowTileState extends State<_ProfileRowTile> {
+class _PreferenceRowState extends State<_PreferenceRow> {
   bool _pressed = false;
 
   @override
@@ -112,35 +236,42 @@ class _ProfileRowTileState extends State<_ProfileRowTile> {
       onTapUp: (_) => setState(() => _pressed = false),
       onTapCancel: () => setState(() => _pressed = false),
       child: Container(
-        // Web nav item: no border. rounded-xl px-3 py-2.5 gap-2.5, inactive
-        // text-muted, on press hover/50 fill + text darkens to text.
         padding: const EdgeInsets.symmetric(
           horizontal: NhamSpacing.sp3,
-          vertical: 10, // py-2.5
+          vertical: 10,
         ),
         decoration: BoxDecoration(
           color: _pressed ? NhamColors.hover50 : Colors.transparent,
-          borderRadius: BorderRadius.circular(NhamRadii.buttonXl), // rounded-xl
+          borderRadius: BorderRadius.circular(NhamRadii.buttonXl),
         ),
         child: Row(
           children: [
             Icon(
-              LucideIcons.user,
+              widget.icon,
               size: 16,
               color: _pressed ? NhamColors.text : NhamColors.textMuted,
             ),
-            const SizedBox(width: 10), // gap-2.5
+            const SizedBox(width: 10),
             Expanded(
-              child: Text(
-                tr('settings.sidebar.profile'),
-                style: NhamTextStyles.sansMedium(
-                  fontSize: NhamFontSize.sm,
-                ).copyWith(
-                  color: _pressed ? NhamColors.text : NhamColors.textMuted,
-                ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    widget.label,
+                    style: NhamTextStyles.sansMedium(fontSize: NhamFontSize.sm)
+                        .copyWith(color: NhamColors.text),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    widget.subline,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: NhamTextStyles.sansRegular(fontSize: NhamFontSize.xs)
+                        .copyWith(color: NhamColors.textMuted),
+                  ),
+                ],
               ),
             ),
-            // ChevronRight inactive = text-muted/50.
             const Icon(
               LucideIcons.chevronRight,
               size: 16,
@@ -153,10 +284,57 @@ class _ProfileRowTileState extends State<_ProfileRowTile> {
   }
 }
 
-/// Profile editor screen — pushed from the settings list. Back header mirrors
-/// the web shell's ArrowLeft + "Settings" link.
+/// A non-navigating info row (label on the left, a static value on the right) —
+/// used for the app version.
+class _InfoRow extends StatelessWidget {
+  const _InfoRow({
+    required this.icon,
+    required this.label,
+    required this.value,
+  });
+
+  final IconData icon;
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: NhamSpacing.sp3,
+        vertical: 10,
+      ),
+      child: Row(
+        children: [
+          Icon(icon, size: 16, color: NhamColors.textMuted),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              label,
+              style: NhamTextStyles.sansMedium(fontSize: NhamFontSize.sm)
+                  .copyWith(color: NhamColors.text),
+            ),
+          ),
+          Text(
+            value,
+            style: NhamTextStyles.sansRegular(fontSize: NhamFontSize.sm)
+                .copyWith(
+                    color: NhamColors.textMuted,
+                    fontFeatures: const [FontFeature.tabularFigures()]),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Focused profile editor screen — pushed from a settings row. Renders ONE of
+/// the goal / cooking / region editors. Back header mirrors the web shell's
+/// ArrowLeft + "Settings" link.
 class _ProfileScreen extends ConsumerWidget {
-  const _ProfileScreen();
+  const _ProfileScreen({required this.kind});
+
+  final _EditorKind kind;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -169,7 +347,6 @@ class _ProfileScreen extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Back header — bg-[#FDFCF8]/90 backdrop-blur-sm, border-b.
           const _BackHeader(),
           Expanded(
             child:
@@ -196,14 +373,12 @@ class _ProfileScreen extends ConsumerWidget {
                       // re-onboarding empty state. An error offers a retry, not
                       // a misleading "Start setup".
                       error: (_, __) => _ProfileLoadError(
-                        // userId is non-null in this branch (the null case is
-                        // handled above), so the profile query is keyed `true`.
                         onRetry: () => ref.invalidate(profileProvider(true)),
                       ),
                       data:
                           (profile) =>
                               profile != null
-                                  ? ProfileForm(profile: profile)
+                                  ? _editor(profile)
                                   : const _ProfileEmpty(),
                     ),
           ),
@@ -211,6 +386,17 @@ class _ProfileScreen extends ConsumerWidget {
       ),
     );
   }
+
+  Widget _editor(ProfileRow profile) => switch (kind) {
+        _EditorKind.goal => ProfileForm(profile: profile),
+        _EditorKind.cooking => InstantCommitEditor(
+            profile: profile,
+            title: tr('settings.rows.cooking'),
+            subtitle: tr('settings.profilePanel.cookingSubtitle'),
+            child: const Cooking(),
+          ),
+        _EditorKind.region => RegionEditor(profile: profile),
+      };
 }
 
 class _Centered extends StatelessWidget {
