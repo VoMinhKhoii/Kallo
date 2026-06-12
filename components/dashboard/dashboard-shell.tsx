@@ -3,7 +3,10 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { useLocale, useTranslations } from 'next-intl';
 import { useMemo } from 'react';
-import { chooseRenderedHeatmapRange } from '@/lib/dashboard/heatmap-range';
+import {
+  chooseDataAgeRange,
+  chooseRenderedHeatmapRange,
+} from '@/lib/dashboard/heatmap-range';
 import type {
   DashboardProfile,
   HeatmapRange,
@@ -46,9 +49,14 @@ const RANGE_LABEL_KEYS: Record<HeatmapRange, string> = {
 
 interface DashboardShellProps {
   profile: DashboardProfile;
+  /** UTC date of the user's first logged meal, or null if they've logged none. */
+  firstMealDate: string | null;
 }
 
-export function DashboardShell({ profile }: DashboardShellProps) {
+export function DashboardShell({
+  profile,
+  firstMealDate,
+}: DashboardShellProps) {
   const t = useTranslations('dashboard');
   const locale = useLocale();
   const queryClient = useQueryClient();
@@ -67,9 +75,13 @@ export function DashboardShell({ profile }: DashboardShellProps) {
   );
   const weightRange: TimeRange =
     progressWidth !== null && progressWidth >= 620 ? '90d' : '30d';
+  // Stage by data age first (a new user shouldn't face an empty year grid),
+  // then let the size chooser cap it so the earned range still fits the
+  // viewport. The two compose: data age picks the ceiling, size lowers it.
+  const dataAgeRange = chooseDataAgeRange(firstMealDate, todayDate);
   const renderedHeatmapRange = heatmapSize
     ? chooseRenderedHeatmapRange({
-        preferredRange: 'year',
+        preferredRange: dataAgeRange,
         availableWidth: heatmapSize.width,
         availableHeight: heatmapSize.height,
         weekCount: { '30d': 5, '90d': 14, year: 53 },
@@ -123,6 +135,7 @@ export function DashboardShell({ profile }: DashboardShellProps) {
                   nutrition={todayNutrition}
                   meals={todayMeals}
                   weekly={weekly}
+                  isFirstRun={firstMealDate === null}
                 />
               )}
             </div>

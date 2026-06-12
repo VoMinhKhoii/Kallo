@@ -54,6 +54,22 @@ function average(values: number[]): number {
   return values.reduce((sum, value) => sum + value, 0) / values.length;
 }
 
+/**
+ * The UTC date (YYYY-MM-DD) of the user's earliest logged meal, or null when
+ * they've logged nothing. Used to stage the consistency heatmap's range by data
+ * age rather than viewport size — a brand-new user shouldn't face an empty year.
+ */
+export async function getFirstMealLocalDate(): Promise<string | null> {
+  const { user } = await requireAuthAndProfile();
+  const [row] = await db
+    .select({ loggedAt: meals.loggedAt })
+    .from(meals)
+    .where(eq(meals.userId, user.id))
+    .orderBy(asc(meals.loggedAt))
+    .limit(1);
+  return row ? row.loggedAt.toISOString().slice(0, 10) : null;
+}
+
 export async function loadCalorieAdherenceHeatmap(input: {
   range: HeatmapRange;
   timezoneOffset: number;

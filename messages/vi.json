@@ -888,6 +888,7 @@
     "carbs": "Carb",
     "fat": "Chất béo",
     "noMealsToday": "Chưa ghi nhận bữa ăn nào hôm nay",
+    "firstRunPrompt": "Hôm nay bạn đã ăn gì?",
     "logMeal": "Ghi nhận bữa ăn",
     "recentMeals": "Bữa ăn gần đây",
     "viewAll": "Xem tất cả",

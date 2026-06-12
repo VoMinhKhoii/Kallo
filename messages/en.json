@@ -888,6 +888,7 @@
     "carbs": "Carbs",
     "fat": "Fat",
     "noMealsToday": "No meals logged today",
+    "firstRunPrompt": "What did you eat today?",
     "logMeal": "Log a meal",
     "recentMeals": "Recent meals",
     "viewAll": "View all",

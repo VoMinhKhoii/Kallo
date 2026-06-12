@@ -19,9 +19,16 @@ interface TodayDockProps {
   nutrition: NutritionData;
   meals: MealEntry[];
   weekly?: WeeklyAccumulator;
+  /** True before the user has ever logged a meal — show the day-0 prompt. */
+  isFirstRun?: boolean;
 }
 
-export function TodayDock({ nutrition, meals, weekly }: TodayDockProps) {
+export function TodayDock({
+  nutrition,
+  meals,
+  weekly,
+  isFirstRun,
+}: TodayDockProps) {
   const t = useTranslations('dashboard');
   // Over target is shown, not censored: the honest over-count with an eyebrow
   // that flips to "Over target" in espresso ink — never a clamped 0, never red.
@@ -50,6 +57,31 @@ export function TodayDock({ nutrition, meals, weekly }: TodayDockProps) {
       unit: 'g' as const,
     },
   ];
+
+  // Day 0: the user has never logged. Don't open with a full ring reading
+  // "2,000 remaining" computed from silent defaults — that's a verdict over no
+  // data. A single Lora question and the composer is the whole card.
+  if (isFirstRun && meals.length === 0) {
+    return (
+      <motion.section
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.45 }}
+        className="flex flex-col items-center gap-6 rounded-[1.5rem] border border-nham-border/70 bg-card px-4 py-12 text-center shadow-[0_10px_32px_rgba(44,36,22,0.05)] sm:px-5 sm:py-16"
+        aria-label={t('today')}
+      >
+        <p
+          className="max-w-sm text-3xl text-nham-text leading-tight tracking-[-0.02em] sm:text-4xl"
+          style={{ fontFamily: 'Lora, serif', fontWeight: 400 }}
+        >
+          {t('firstRunPrompt')}
+        </p>
+        <div className="w-full max-w-md">
+          <InlineMealTrigger />
+        </div>
+      </motion.section>
+    );
+  }
 
   return (
     <motion.section
