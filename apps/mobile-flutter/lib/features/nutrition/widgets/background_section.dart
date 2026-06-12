@@ -1,8 +1,8 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
+import '../../../features/dashboard/widgets/dashboard_tokens.dart';
 import '../../../models/nutrition.dart';
-import '../../../shared/widgets/section_eyebrow.dart';
 import '../../../theme/nham_colors.dart';
 import '../../../theme/nham_typography.dart';
 import 'nutrient_row.dart';
@@ -64,9 +64,10 @@ class _BackgroundSectionState extends State<BackgroundSection>
           crossAxisAlignment: CrossAxisAlignment.baseline,
           textBaseline: TextBaseline.alphabetic,
           children: [
-            SectionEyebrow(
-              label: tr('nutrition.background.eyebrow'),
-              delay: const Duration(milliseconds: 200),
+            Text(
+              tr('nutrition.background.eyebrow'),
+              style: NhamTextStyles.sansMedium(fontSize: 14)
+                  .copyWith(color: NhamColors.textMuted),
             ),
             const Spacer(),
             const SizedBox(width: 16),
@@ -98,12 +99,12 @@ class _BackgroundSectionState extends State<BackgroundSection>
                   ),
                   const SizedBox(height: 8),
                   ClipRRect(
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(kCardRadius),
                     child: DecoratedBox(
                       decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: NhamColors.borderHalf),
-                        color: NhamColors.cardWhite30,
+                        borderRadius: BorderRadius.circular(kCardRadius),
+                        color: kCardSurface,
+                        boxShadow: const [kCardShadow],
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,

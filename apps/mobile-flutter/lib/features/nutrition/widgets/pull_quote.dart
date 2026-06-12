@@ -33,14 +33,6 @@ class PullQuote extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    tr('nutrition.pullQuote.eyebrow').toUpperCase(),
-                    style: NhamTextStyles.sansBold(fontSize: 10).copyWith(
-                      letterSpacing: 2.2,
-                      color: NhamColors.stone,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
                     tr(card.titleKey),
                     style: NhamTextStyles.serifItalic(fontSize: 18).copyWith(
                       height: 25 / 18,

@@ -1,8 +1,8 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
+import '../../../features/dashboard/widgets/dashboard_tokens.dart';
 import '../../../models/nutrition.dart';
-import '../../../shared/widgets/section_eyebrow.dart';
 import '../../../shared/widgets/target_progress_bar.dart';
 import '../../../theme/nham_colors.dart';
 import '../../../theme/nham_typography.dart';
@@ -29,17 +29,12 @@ class DailyRhythm extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SectionEyebrow(
-            label: tr('nutrition.rhythm.eyebrow'),
-            delay: const Duration(milliseconds: 100),
-          ),
-          const SizedBox(height: 16),
           Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(24),
-              border: Border.all(color: NhamColors.borderSoft),
-              color: NhamColors.cardWhite55,
+              borderRadius: BorderRadius.circular(kCardRadius),
+              color: kCardSurface,
+              boxShadow: const [kCardShadow],
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,

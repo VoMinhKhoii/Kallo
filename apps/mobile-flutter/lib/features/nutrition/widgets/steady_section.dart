@@ -1,6 +1,7 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
+import '../../../features/dashboard/widgets/dashboard_tokens.dart';
 import '../../../models/nutrition.dart';
 import '../../../shared/widgets/section_eyebrow.dart';
 import '../../../theme/nham_colors.dart';
@@ -42,12 +43,12 @@ class SteadySection extends StatelessWidget {
         ),
         const SizedBox(height: 12),
         ClipRRect(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(kCardRadius),
           child: DecoratedBox(
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: NhamColors.borderHalf),
-              color: NhamColors.cardWhite40,
+              borderRadius: BorderRadius.circular(kCardRadius),
+              color: kCardSurface,
+              boxShadow: const [kCardShadow],
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,

@@ -1,8 +1,6 @@
-import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
 import '../../../models/nutrition.dart';
-import '../../../shared/widgets/section_eyebrow.dart';
 import '../../../theme/nham_colors.dart';
 import 'spotlight_row.dart';
 
@@ -19,11 +17,6 @@ class FocusSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        SectionEyebrow(
-          label: tr('nutrition.focus.eyebrow'),
-          delay: const Duration(milliseconds: 150),
-        ),
-        const SizedBox(height: 20),
         for (var i = 0; i < cards.length; i++) ...[
           if (i > 0) const SizedBox(height: 24),
           if (i < cards.length - 1)
