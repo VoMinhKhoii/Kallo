@@ -31,7 +31,8 @@ class BodyMetrics extends StatelessWidget {
 
     // Live TDEE / targets — recomputed on every form mutation (the controller
     // notifies, the screen rebuilds this panel). Matches RN useWatch + useMemo.
-    final allMetricsFilled = v.weightKg != null &&
+    final allMetricsFilled = v.biologicalSex != null &&
+        v.weightKg != null &&
         !(v.weightKg!.isNaN) &&
         v.heightCm != null &&
         v.age != null;
@@ -39,7 +40,7 @@ class BodyMetrics extends StatelessWidget {
     int? tdee;
     if (allMetricsFilled) {
       final bmr = calcBMR(
-        biologicalSex: v.biologicalSex,
+        biologicalSex: v.biologicalSex!,
         weightKg: v.weightKg!,
         heightCm: v.heightCm!,
         age: v.age!,
@@ -59,13 +60,32 @@ class BodyMetrics extends StatelessWidget {
           children: [
             _Field(
               label: t('biologicalSex'),
-              child: CustomSelect(
-                value: v.biologicalSex.name,
-                onChange: (s) => form.update(
-                    (f) => f.biologicalSex = BiologicalSex.values.byName(s)),
-                options: [
-                  CustomSelectOption(value: 'male', label: t('male')),
-                  CustomSelectOption(value: 'female', label: t('female')),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  CustomSelect(
+                    // Empty until genuinely chosen — no silent male default.
+                    value: v.biologicalSex?.name ?? '',
+                    placeholder: t('sexPlaceholder'),
+                    onChange: (s) {
+                      form.update((f) =>
+                          f.biologicalSex = BiologicalSex.values.byName(s));
+                      form.clearError(ProfileField.biologicalSex);
+                    },
+                    options: [
+                      CustomSelectOption(value: 'male', label: t('male')),
+                      CustomSelectOption(value: 'female', label: t('female')),
+                    ],
+                  ),
+                  if (form.errorFor(ProfileField.biologicalSex) != null) ...[
+                    const SizedBox(height: 6), // gap-1.5
+                    Text(
+                      form.errorFor(ProfileField.biologicalSex)!,
+                      style:
+                          NhamTextStyles.sansRegular(fontSize: NhamFontSize.xs)
+                              .copyWith(color: NhamColors.danger),
+                    ),
+                  ],
                 ],
               ),
             ),

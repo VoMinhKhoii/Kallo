@@ -561,6 +561,7 @@
       "title": "Chỉ số cơ thể",
       "subtitle": "Chúng tôi dùng thông tin này để tính mục tiêu calo và dinh dưỡng hàng ngày.",
       "biologicalSex": "Giới tính sinh học",
+      "sexPlaceholder": "Chọn…",
       "male": "Nam",
       "female": "Nữ",
       "weight": "Cân nặng",
@@ -972,6 +973,17 @@
     "mealReceiptsHint": "Những bữa ăn sẽ hiển thị ở đây",
     "firstRunQuestion": "Hôm nay bạn đã ăn gì?",
     "firstRunHint": "Mô tả bữa đầu tiên — Nhẩm lo phần còn lại.",
+    "firstRunChips": {
+      "morning1": "1 tô phở bò + quẩy",
+      "morning2": "2 trứng ốp la + bánh mì",
+      "morning3": "1 ly cà phê sữa đá",
+      "midday1": "1 dĩa cơm tấm sườn",
+      "midday2": "1 tô bún chả",
+      "midday3": "1 chén cơm + thịt kho",
+      "evening1": "2 mực kho + 1 chén cơm",
+      "evening2": "1 tô canh chua cá lóc",
+      "evening3": "1 tô bún bò Huế"
+    },
     "yesterday": "Hôm qua"
   },
   "logging": {
@@ -1205,7 +1217,8 @@
       "goalPace": "Mục tiêu & tốc độ",
       "cooking": "Thói quen nấu nướng",
       "region": "Khu vực & ngôn ngữ",
-      "notSet": "Chưa thiết lập"
+      "notSet": "Chưa thiết lập",
+      "pacePerWeek": "{pace} {unit}/tuần"
     },
     "about": {
       "title": "Giới thiệu",
@@ -1223,6 +1236,7 @@
   },
   "validation": {
     "bodyMetrics": {
+      "sexRequired": "Vui lòng chọn giới tính sinh học.",
       "weightRequired": "Vui lòng nhập cân nặng.",
       "weightMin": "Cân nặng phải từ 30 kg trở lên.",
       "weightMax": "Cân nặng phải từ 300 kg trở xuống.",

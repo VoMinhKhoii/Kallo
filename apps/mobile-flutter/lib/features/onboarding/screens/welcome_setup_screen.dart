@@ -97,16 +97,6 @@ class _WelcomeSetupScreenState extends ConsumerState<WelcomeSetupScreen>
     context.go('/logging');
   }
 
-  String _fmt(int n) {
-    final s = n.toString();
-    final buf = StringBuffer();
-    for (var i = 0; i < s.length; i++) {
-      if (i > 0 && (s.length - i) % 3 == 0) buf.write(',');
-      buf.write(s[i]);
-    }
-    return buf.toString();
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -134,7 +124,13 @@ class _WelcomeSetupScreenState extends ConsumerState<WelcomeSetupScreen>
                       return Text.rich(
                         TextSpan(
                           children: [
-                            TextSpan(text: _fmt(shown)),
+                            // Locale-aware grouping (en "2,000" / vi "2.000").
+                            TextSpan(
+                              text: formatCount(
+                                shown,
+                                context.locale.toString(),
+                              ),
+                            ),
                             TextSpan(
                               text: ' ${tr('onboarding.setup.perDay')}',
                               style: NhamTextStyles.sansRegular(

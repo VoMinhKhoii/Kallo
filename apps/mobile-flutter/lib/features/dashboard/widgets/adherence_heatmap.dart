@@ -181,13 +181,14 @@ class _HeatmapBodyState extends State<_HeatmapBody>
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Header: "{percent}% on track". Suppressed entirely until there's
-              // at least one logged day — a new user shouldn't read "0% on
-              // track" over an empty grid (the value is computed from no data).
+              // Header: "{percent}% on track". Suppressed until at least 3
+              // scored days (spec) — a percentage computed from one or two
+              // days reads as noise, and a new user shouldn't see "0% on
+              // track" over an empty grid.
               Padding(
                 padding: const EdgeInsets.only(bottom: NhamSpacing.sp2),
                 child: Text(
-                  (data != null && _adherence.loggedDays > 0)
+                  (data != null && _adherence.loggedDays >= 3)
                       ? tr('dashboard.adherenceHeatmap.onTrack',
                           namedArgs: {'percent': '${_adherence.percent}'})
                       : ' ',

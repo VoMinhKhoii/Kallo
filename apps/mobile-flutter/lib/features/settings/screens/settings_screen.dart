@@ -78,7 +78,7 @@ class _SettingsList extends ConsumerWidget {
               children: [
                 Text(
                   tr('settings.title'),
-                  style: NhamTextStyles.serifMedium(fontSize: NhamFontSize.lg)
+                  style: NhamTextStyles.serifRegular(fontSize: NhamFontSize.lg)
                       .copyWith(
                           letterSpacing: NhamTracking.tight,
                           color: NhamColors.text),
@@ -165,7 +165,15 @@ class _SettingsList extends ConsumerWidget {
     final aggression = double.tryParse(profile.aggression ?? '');
     if (aggression == null) return goalLabel;
     final unit = tr('onboarding.bodyMetrics.weightUnit');
-    return '$goalLabel · ${aggression.toStringAsFixed(2)} $unit/wk';
+    // Locale decimal separator (vi "0,50") + localized per-week suffix.
+    final paceFmt = NumberFormat.decimalPattern(context.locale.languageCode)
+      ..minimumFractionDigits = 2
+      ..maximumFractionDigits = 2;
+    final pace = tr('settings.rows.pacePerWeek', namedArgs: {
+      'pace': paceFmt.format(aggression),
+      'unit': unit,
+    });
+    return '$goalLabel · $pace';
   }
 
   /// "Việt Nam · Tiếng Việt" — residence country + current app language, or
@@ -426,7 +434,7 @@ class _ProfileEmpty extends StatelessWidget {
         children: [
           Text(
             tr('settings.profilePage.emptyTitle'),
-            style: NhamTextStyles.serifMedium(
+            style: NhamTextStyles.serifRegular(
               fontSize: NhamFontSize.h3,
             ).copyWith(
               letterSpacing: NhamTracking.tight,
@@ -490,7 +498,7 @@ class _ProfileLoadError extends StatelessWidget {
         children: [
           Text(
             tr('common.error'),
-            style: NhamTextStyles.serifMedium(
+            style: NhamTextStyles.serifRegular(
               fontSize: NhamFontSize.h3,
             ).copyWith(
               letterSpacing: NhamTracking.tight,

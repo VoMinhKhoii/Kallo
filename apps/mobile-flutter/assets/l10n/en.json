@@ -562,6 +562,7 @@
       "title": "Your body metrics",
       "subtitle": "We use these to calculate your daily calorie and macro targets.",
       "biologicalSex": "Biological sex",
+      "sexPlaceholder": "Select…",
       "male": "Male",
       "female": "Female",
       "weight": "Weight",
@@ -973,6 +974,17 @@
     "mealReceiptsHint": "Your meal receipts will show up here",
     "firstRunQuestion": "What did you eat today?",
     "firstRunHint": "Describe your first meal — Nhẩm estimates the rest.",
+    "firstRunChips": {
+      "morning1": "1 tô phở bò + quẩy",
+      "morning2": "2 trứng ốp la + bánh mì",
+      "morning3": "1 ly cà phê sữa đá",
+      "midday1": "1 dĩa cơm tấm sườn",
+      "midday2": "1 tô bún chả",
+      "midday3": "1 chén cơm + thịt kho",
+      "evening1": "2 mực kho + 1 chén cơm",
+      "evening2": "1 tô canh chua cá lóc",
+      "evening3": "1 tô bún bò Huế"
+    },
     "yesterday": "Yesterday"
   },
   "logging": {
@@ -1206,7 +1218,8 @@
       "goalPace": "Goal & pace",
       "cooking": "Cooking habits",
       "region": "Region & language",
-      "notSet": "Not set"
+      "notSet": "Not set",
+      "pacePerWeek": "{pace} {unit}/wk"
     },
     "about": {
       "title": "About",
@@ -1224,6 +1237,7 @@
   },
   "validation": {
     "bodyMetrics": {
+      "sexRequired": "Please select your biological sex.",
       "weightRequired": "Please enter your weight.",
       "weightMin": "Weight must be at least 30 kg.",
       "weightMax": "Weight must be at most 300 kg.",

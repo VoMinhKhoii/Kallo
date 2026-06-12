@@ -9,6 +9,7 @@ library;
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../theme/nham_colors.dart';
@@ -87,13 +88,27 @@ class TodaySection extends ConsumerWidget {
   }
 }
 
-/// First-run collapse: a single Lora question, no ring, no "% on track". Shown
-/// only when the user has never logged a meal (zero today AND zero history).
+/// First-run collapse: a single Lora question, no ring, no "% on track", plus
+/// three time-of-day-aware suggestion chips that open the meal composer
+/// prefilled. Shown only when the user has never logged a meal (zero today
+/// AND zero history).
 class _FirstRunCard extends StatelessWidget {
   const _FirstRunCard();
 
+  /// Which suggestion set fits the device clock (morning / midday / evening).
+  static String _chipBucket() {
+    final hour = DateTime.now().hour;
+    if (hour < 11) return 'morning';
+    if (hour < 16) return 'midday';
+    return 'evening';
+  }
+
   @override
   Widget build(BuildContext context) {
+    final bucket = _chipBucket();
+    final suggestions = [
+      for (var i = 1; i <= 3; i++) tr('dashboard.firstRunChips.$bucket$i'),
+    ];
     return _FadeInDown(
       child: Container(
         width: double.infinity,
@@ -113,8 +128,58 @@ class _FirstRunCard extends StatelessWidget {
               tr('dashboard.firstRunHint'),
               style: dashBody(color: kInkSecondary),
             ),
+            const SizedBox(height: NhamSpacing.sp4),
+            Wrap(
+              spacing: 6,
+              runSpacing: 6,
+              children: [
+                for (final s in suggestions)
+                  _FirstRunChip(
+                    label: s,
+                    // Same prefill handoff the meal FAB uses.
+                    onTap: () => context
+                        .go('/logging?meal=${Uri.encodeComponent(s)}'),
+                  ),
+              ],
+            ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// A suggestion pill matching the logging empty-state chips: border hairline,
+/// pill radius, white fill; pressed → accent-tinged border.
+class _FirstRunChip extends StatefulWidget {
+  const _FirstRunChip({required this.label, required this.onTap});
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  State<_FirstRunChip> createState() => _FirstRunChipState();
+}
+
+class _FirstRunChipState extends State<_FirstRunChip> {
+  bool _pressed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTapDown: (_) => setState(() => _pressed = true),
+      onTapUp: (_) => setState(() => _pressed = false),
+      onTapCancel: () => setState(() => _pressed = false),
+      onTap: widget.onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: _pressed ? const Color(0x26E8D5B5) : NhamColors.elev,
+          borderRadius: BorderRadius.circular(NhamRadii.pill),
+          border: Border.all(
+            color: _pressed ? NhamColors.accent50 : NhamColors.borderSoft,
+          ),
+        ),
+        child: Text(widget.label, style: dashMeta(color: kInk)),
       ),
     );
   }
@@ -506,7 +571,7 @@ class _MealRow extends StatelessWidget {
           SizedBox(
             width: _valueColumnWidth,
             child: Text(
-              '${round0(meal.nutrition.caloriesKcal)}',
+              '${round0(meal.nutrition.caloriesKcal)} kcal',
               textAlign: TextAlign.right,
               style: dashMeta(color: kInkSecondary, tabular: true),
             ),

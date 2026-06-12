@@ -14,7 +14,7 @@ ProfileSavePayload buildProfilePayload(
   String preferredLocale,
 ) {
   final bmr = calcBMR(
-    biologicalSex: v.biologicalSex,
+    biologicalSex: v.biologicalSex!,
     weightKg: v.weightKg!,
     heightCm: v.heightCm!,
     age: v.age!,
@@ -28,7 +28,7 @@ ProfileSavePayload buildProfilePayload(
     weightKg: v.weightKg!,
     heightCm: v.heightCm!,
     age: v.age!,
-    biologicalSex: v.biologicalSex,
+    biologicalSex: v.biologicalSex!,
     activityLevel: v.activityLevel,
     tdeeKcal: tdee,
     goal: v.goal,

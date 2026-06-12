@@ -110,7 +110,9 @@ class _InstantCommitEditorState extends ConsumerState<InstantCommitEditor> {
       return;
     }
     if (ok) {
-      HapticFeedback.selectionClick();
+      // One save-success cue app-wide: mediumImpact (matches logging + the
+      // goal editor), not the lighter selection tick.
+      HapticFeedback.mediumImpact();
       // Baseline exactly what was sent — edits made while the save was in
       // flight stay dirty and re-commit below, instead of being silently
       // baselined away.

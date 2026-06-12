@@ -292,13 +292,14 @@ class _ExpandedDetails extends StatelessWidget {
                         const SizedBox(width: NhamSpacing.sp3), // gap-3
                         Row(
                           children: [
-                            NhamText('P:${fmtG(group.nutrition.proteinG)}',
+                            NhamText('P: ${fmtG(group.nutrition.proteinG)}',
                                 variant: NhamTextVariant.macroTiny),
                             const SizedBox(width: NhamSpacing.sp2),
-                            NhamText('C:${fmtG(group.nutrition.carbohydrateG)}',
+                            NhamText(
+                                'C: ${fmtG(group.nutrition.carbohydrateG)}',
                                 variant: NhamTextVariant.macroTiny),
                             const SizedBox(width: NhamSpacing.sp2),
-                            NhamText('F:${fmtG(group.nutrition.fatG)}',
+                            NhamText('F: ${fmtG(group.nutrition.fatG)}',
                                 variant: NhamTextVariant.macroTiny),
                             const SizedBox(width: NhamSpacing.sp3), // gap-3
                             NhamText(

@@ -27,11 +27,16 @@ class CustomSelect extends StatefulWidget {
     required this.options,
     required this.value,
     required this.onChange,
+    this.placeholder,
   });
 
   final List<CustomSelectOption> options;
   final String value;
   final ValueChanged<String> onChange;
+
+  /// Muted trigger text shown while [value] matches no option (e.g. a field
+  /// that must be genuinely chosen and starts empty).
+  final String? placeholder;
 
   @override
   State<CustomSelect> createState() => _CustomSelectState();
@@ -150,12 +155,16 @@ class _CustomSelectState extends State<CustomSelect>
                   child: Padding(
                     padding: const EdgeInsets.only(right: NhamSpacing.sp2),
                     child: Text(
-                      selected ?? '',
+                      selected ?? widget.placeholder ?? '',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style:
                           NhamTextStyles.sansRegular(fontSize: NhamFontSize.sm)
-                              .copyWith(color: NhamColors.text),
+                              .copyWith(
+                        color: selected != null
+                            ? NhamColors.text
+                            : NhamColors.textHelp,
+                      ),
                     ),
                   ),
                 ),

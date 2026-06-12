@@ -311,13 +311,13 @@ class _ItemRow extends StatelessWidget {
             opacity: struck ? 0.4 : 1,
             child: Row(
               children: [
-                NhamText('P:${fmtG(item.macros.protein)}',
+                NhamText('P: ${fmtG(item.macros.protein)}',
                     variant: NhamTextVariant.itemMacro, maxLines: 1),
                 const SizedBox(width: NhamSpacing.sp2),
-                NhamText('C:${fmtG(item.macros.carbs)}',
+                NhamText('C: ${fmtG(item.macros.carbs)}',
                     variant: NhamTextVariant.itemMacro, maxLines: 1),
                 const SizedBox(width: NhamSpacing.sp2),
-                NhamText('F:${fmtG(item.macros.fat)}',
+                NhamText('F: ${fmtG(item.macros.fat)}',
                     variant: NhamTextVariant.itemMacro, maxLines: 1),
                 const SizedBox(width: NhamSpacing.sp3), // gap-3
                 NhamText(fmtKcal(item.macros.calories),

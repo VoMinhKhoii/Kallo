@@ -107,13 +107,14 @@ class DashboardScreen extends ConsumerWidget {
     );
   }
 
-  /// True when the user has never logged anything, ever — so the dashboard can
-  /// collapse to the one first-run card and suppress the "% on track" framing.
+  /// True when the user looks brand-new — so the dashboard can collapse to
+  /// the one first-run card and suppress the "% on track" framing.
   ///
   /// There is no explicit "has-logged-before" flag on the bundle, so this gates
-  /// on "zero meals today AND zero historical logged/partial heatmap cells" — a
-  /// real meal on any day in the 90d window produces a logged-or-partial cell,
-  /// so an existing user is never mistaken for first-run.
+  /// on "zero meals today AND zero logged/partial heatmap cells in the 90d
+  /// window". Known limit: a returning user whose last meal is older than 90
+  /// days has no cells in the window and IS treated as first-run — acceptable,
+  /// since after that long a gentle restart reads better than stale framing.
   bool _isFirstRun(DashboardBundle data) {
     if (data.day.persistedMeals.isNotEmpty) return false;
     for (final row in data.heatmap.cells) {

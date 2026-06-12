@@ -1302,18 +1302,14 @@ class _LoggingDaySkeleton extends StatelessWidget {
   }
 }
 
-/// Day fetch error: a red alert card with an AlertCircle, title/desc, and a
-/// retry pill whose icon spins while refetching (LoggingDayErrorState).
+/// Day fetch error: a warm alert card — terracotta `nham-danger` accents on
+/// the cream surface (never literal reds, which break the palette on sight) —
+/// with a CircleAlert, title/desc, and a retry pill (LoggingDayErrorState).
 class _LoggingDayErrorState extends StatelessWidget {
   const _LoggingDayErrorState({required this.onRetry});
   final VoidCallback onRetry;
 
-  static const _red50 = Color(0xCCFEF2F2); // bg-red-50/80
-  static const _red200 = Color(0xB3FECACA); // border-red-200/70
-  static const _red600 = Color(0xFFDC2626);
-  static const _red950 = Color(0xFF450A0A);
-  static const _red900 = Color(0xCC7F1D1D); // red-900/80
-  static const _red100 = Color(0xFFFEE2E2);
+  static const _dangerFill = Color(0x1AD37B69); // nham-danger @ 10%
 
   @override
   Widget build(BuildContext context) {
@@ -1324,9 +1320,9 @@ class _LoggingDayErrorState extends StatelessWidget {
           constraints: const BoxConstraints(maxWidth: 448), // max-w-md
           padding: const EdgeInsets.all(NhamSpacing.sp4), // p-4
           decoration: BoxDecoration(
-            color: _red50,
+            color: NhamColors.surface,
             borderRadius: BorderRadius.circular(NhamRadii.containerLg), // 2xl
-            border: Border.all(color: _red200),
+            border: Border.all(color: NhamColors.borderSoft),
             boxShadow: const [NhamShadows.sm],
           ),
           child: Row(
@@ -1337,7 +1333,7 @@ class _LoggingDayErrorState extends StatelessWidget {
                 child: Icon(
                   LucideIcons.circleAlert, // lucide AlertCircle
                   size: 20,
-                  color: _red600,
+                  color: NhamColors.danger,
                 ),
               ),
               const SizedBox(width: NhamSpacing.sp3), // gap-3
@@ -1350,13 +1346,13 @@ class _LoggingDayErrorState extends StatelessWidget {
                       variant: NhamTextVariant.small,
                       style: NhamTextStyles.sansSemiBold(
                         fontSize: NhamFontSize.sm,
-                      ).copyWith(color: _red950),
+                      ).copyWith(color: NhamColors.text),
                     ),
                     const SizedBox(height: 4), // mt-1
                     NhamText(
                       'logging.feedArea.loadErrorDescription'.tr(),
                       variant: NhamTextVariant.small,
-                      style: const TextStyle(color: _red900),
+                      style: const TextStyle(color: NhamColors.textMuted),
                     ),
                     const SizedBox(height: NhamSpacing.sp3), // mt-3
                     _RetryPill(onRetry: onRetry),
@@ -1386,7 +1382,7 @@ class _RetryPill extends StatelessWidget {
           vertical: 8,
         ), // px-3.5 py-2
         decoration: BoxDecoration(
-          color: _LoggingDayErrorState._red100,
+          color: _LoggingDayErrorState._dangerFill,
           borderRadius: BorderRadius.circular(NhamRadii.pill),
         ),
         child: Row(
@@ -1395,7 +1391,7 @@ class _RetryPill extends StatelessWidget {
             const Icon(
               LucideIcons.refreshCw, // lucide RefreshCw
               size: 16,
-              color: _LoggingDayErrorState._red950,
+              color: NhamColors.danger,
             ),
             const SizedBox(width: NhamSpacing.sp2), // gap-2
             NhamText(
@@ -1403,7 +1399,7 @@ class _RetryPill extends StatelessWidget {
               variant: NhamTextVariant.small,
               style: NhamTextStyles.sansMedium(
                 fontSize: NhamFontSize.sm,
-              ).copyWith(color: _LoggingDayErrorState._red950),
+              ).copyWith(color: NhamColors.danger),
             ),
           ],
         ),
