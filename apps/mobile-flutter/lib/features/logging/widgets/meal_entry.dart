@@ -217,6 +217,10 @@ class _ItemRow extends StatelessWidget {
     final step = isGrams ? 10.0 : 1.0;
     final minusDisabled =
         isGrams ? item.quantity <= minDishGrams : item.quantity <= 0;
+    // Stepping a count-unit item to 0 strikes the row — a clear "this one's
+    // out" cue before confirm drops it. Grams floor at minDishGrams, so only
+    // count units can reach 0.
+    final struck = !isGrams && item.quantity <= 0;
 
     return AnimatedContainer(
       duration: const Duration(milliseconds: 150),
@@ -272,26 +276,36 @@ class _ItemRow extends StatelessWidget {
                     variant: NhamTextVariant.itemName,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
+                    style: struck
+                        ? const TextStyle(
+                            decoration: TextDecoration.lineThrough,
+                            decorationColor: NhamColors.textMuted,
+                            color: NhamColors.textMuted,
+                          )
+                        : null,
                   ),
                 ),
               ],
             ),
           ),
           const SizedBox(width: NhamSpacing.sp3), // gap-3
-          Row(
-            children: [
-              NhamText('P:${fmtG(item.macros.protein)}',
-                  variant: NhamTextVariant.itemMacro, maxLines: 1),
-              const SizedBox(width: NhamSpacing.sp2),
-              NhamText('C:${fmtG(item.macros.carbs)}',
-                  variant: NhamTextVariant.itemMacro, maxLines: 1),
-              const SizedBox(width: NhamSpacing.sp2),
-              NhamText('F:${fmtG(item.macros.fat)}',
-                  variant: NhamTextVariant.itemMacro, maxLines: 1),
-              const SizedBox(width: NhamSpacing.sp3), // gap-3
-              NhamText(fmtKcal(item.macros.calories),
-                  variant: NhamTextVariant.itemCalories, maxLines: 1),
-            ],
+          Opacity(
+            opacity: struck ? 0.4 : 1,
+            child: Row(
+              children: [
+                NhamText('P:${fmtG(item.macros.protein)}',
+                    variant: NhamTextVariant.itemMacro, maxLines: 1),
+                const SizedBox(width: NhamSpacing.sp2),
+                NhamText('C:${fmtG(item.macros.carbs)}',
+                    variant: NhamTextVariant.itemMacro, maxLines: 1),
+                const SizedBox(width: NhamSpacing.sp2),
+                NhamText('F:${fmtG(item.macros.fat)}',
+                    variant: NhamTextVariant.itemMacro, maxLines: 1),
+                const SizedBox(width: NhamSpacing.sp3), // gap-3
+                NhamText(fmtKcal(item.macros.calories),
+                    variant: NhamTextVariant.itemCalories, maxLines: 1),
+              ],
+            ),
           ),
         ],
       ),
