@@ -8,7 +8,6 @@ import { ForgotPasswordForm } from '@/components/auth/forgot-password-form';
 import { GoogleSignInButton } from '@/components/auth/google-sign-in-button';
 import { SignInForm } from '@/components/auth/sign-in-form';
 import { SignUpForm } from '@/components/auth/sign-up-form';
-import { TabButton } from '@/components/auth/tab-button';
 
 export function AuthDialog() {
   const tDialog = useTranslations('auth.dialog');
@@ -83,28 +82,12 @@ export function AuthDialog() {
                 </p>
               </div>
 
-              {/* Credentials screen: tabs + Google + email form */}
+              {/* Credentials screen: Google first, then email form. The mode
+                  (sign in vs create account) is carried by the title + the one
+                  bottom toggle link — the redundant segmented tabs are gone. */}
               {panel === 'auth' && (
                 <>
-                  {/* Tab Toggle */}
-                  <div className="px-8 pt-4 pb-2">
-                    <div className="flex rounded-xl bg-[#F0EAE0]/60 p-1">
-                      <TabButton
-                        active={tab === 'sign-in'}
-                        onClick={() => setTab('sign-in')}
-                      >
-                        {tDialog('signInTab')}
-                      </TabButton>
-                      <TabButton
-                        active={tab === 'sign-up'}
-                        onClick={() => setTab('sign-up')}
-                      >
-                        {tDialog('signUpTab')}
-                      </TabButton>
-                    </div>
-                  </div>
-
-                  {/* Google + divider — same for both tabs */}
+                  {/* Google leads — the fastest path */}
                   <div className="space-y-3 px-8 pt-4">
                     <GoogleSignInButton />
                     <div className="flex items-center gap-3">
