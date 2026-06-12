@@ -21,6 +21,7 @@ import 'calorie_ring.dart';
 import 'dashed_divider.dart';
 import 'empty_state.dart';
 import 'entrances.dart';
+import 'manual_log_sheet.dart';
 import 'meal_entry.dart';
 import 'meal_input.dart';
 import 'persisted_meal_card.dart';
@@ -248,6 +249,12 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
             controller: _inputController,
             onSubmit: _submit,
             onCancel: () => ref.read(streamAnalysisProvider.notifier).cancel(),
+            onManualTap:
+                () => showManualLogSheet(
+                  context,
+                  userId: widget.profile.userId,
+                  date: widget.date,
+                ),
             disabled: stream.isAnalyzing,
           ),
         ),
