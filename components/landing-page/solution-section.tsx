@@ -181,14 +181,11 @@ const ReceiptVisual = ({ stage }: { stage: number }) => {
                     {t('total')}
                   </span>
                   <span className="font-bold font-mono text-4xl text-[#2C2416]">
-                    ~845
+                    845
                   </span>
                   <span className="font-medium text-[#8B7355] text-sm">
                     kcal
                   </span>
-                </div>
-                <div className="mt-1 rounded border border-[#E8D5B5]/50 bg-[#FAF9F7] px-2 py-1 font-mono text-[#8B7355] text-[10px]">
-                  {t('range')}
                 </div>
                 <div className="mt-1 flex items-center gap-1 font-medium text-[#C9A87C] text-[10px]">
                   <div className="h-1.5 w-1.5 rounded-full bg-[#C9A87C]" />
@@ -196,7 +193,7 @@ const ReceiptVisual = ({ stage }: { stage: number }) => {
                 </div>
               </div>
               <div className="mt-4 grid grid-cols-3 gap-2">
-                {['P: ~30g', 'C: ~105g', 'F: ~32g'].map((macro, i) => (
+                {['P: 30g', 'C: 105g', 'F: 32g'].map((macro, i) => (
                   <div
                     key={i}
                     className="rounded border border-[#E8D5B5]/50 bg-[#FAF9F7] p-2 text-center"

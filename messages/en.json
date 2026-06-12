@@ -104,7 +104,7 @@
   "nutrition": {
     "eyebrow": "Pattern analysis",
     "title": "Nutrition",
-    "subtitle": "Review long-term macro and micronutrient patterns, with confidence labels when the food data is incomplete.",
+    "subtitle": "Review long-term macro and micronutrient patterns built from your logged meals.",
     "loading": "Loading nutrition overview…",
     "range": {
       "label": "Nutrition range",
@@ -118,12 +118,9 @@
       "needsAttention": "Needs attention",
       "limitedData": "Limited data",
       "macroConsistency": "Macro consistency",
-      "confidentOnly": "Only confident gaps are flagged",
       "coverageHint": "Nutrients with thin coverage",
-      "averageConfidence": "Avg confidence: {value}",
       "weakest": "Weakest",
       "none": "None yet",
-      "trustLine": "{days} logged days · {confidence} avg confidence · {range} view",
       "verdict": {
         "label": "Pattern verdict",
         "attention": "{nutrients} need attention",
@@ -164,13 +161,6 @@
       "averageVsTarget": "{average} avg · {target} target",
       "expand": "View trend",
       "collapse": "Hide trend"
-    },
-    "confidence": {
-      "normal": "Good confidence",
-      "limitedData": "Limited data",
-      "warningPoints": "Points only",
-      "insufficientData": "Insufficient data",
-      "coverage": "Data confidence"
     },
     "targetSources": {
       "vietnamRda": "Vietnam RDA",
@@ -478,7 +468,6 @@
       "quiet": "A quiet stretch. Keep logging to sharpen the pattern.",
       "gathering": "Gathering your pattern.",
       "gatheringSub": "{days} complete days so far — keep going and the picture sharpens.",
-      "trustLine": "{days} complete days · {confidence}% avg confidence",
       "trustLineNoConfidence": "{days} complete days",
       "partialNote": "· {count, plural, one {# partial day set aside} other {# partial days set aside}}",
       "period7d": "the last 7 days",
@@ -750,7 +739,6 @@
       "subtitle": "Describe your meal the way you'd tell a friend — in Vietnamese, English, or both. Nhẩm knows phở, bánh mì, and 500+ Vietnamese dishes, and how you cook them, then estimates the nutrition from Vietnamese food-composition data.",
       "cta": "Get Started",
       "ctaSecondary": "See How It Works",
-      "socialProof": "Loved by early Vietnamese beta users",
       "beta": "In beta · built in Vietnam",
       "demo": {
         "today": "Today",
@@ -810,9 +798,9 @@
       "step3Text": "Region, cooking habits, and nutrition goals help the AI understand hidden calories and likely portion adjustments.",
       "step3TextMobile": "Region, cooking habits, and goals help the AI tighten the estimate.",
       "step4Label": "Step 4",
-      "step4Title": "You get a useful, bounded result",
-      "step4Text": "Instead of fake precision, Nhẩm gives a realistic calorie and macro range you can actually use.",
-      "step4TextMobile": "Get a realistic calorie and macro range instead of fake precision.",
+      "step4Title": "You get one number you can trust",
+      "step4Text": "Nhẩm gives you one calorie and macro number you can trust, built from real Vietnamese food data and how you actually cook.",
+      "step4TextMobile": "One number you can trust, built from real Vietnamese food data.",
       "cta": "Start tracking now",
       "whyLabel": "Why Nhẩm works better",
       "whyTitle": "Built around how Vietnamese meals are actually eaten",
@@ -820,8 +808,8 @@
       "feature1Text": "Matches meals against Vietnamese food composition data instead of forcing Western substitutes.",
       "feature2Title": "Context-aware estimation",
       "feature2Text": "Understands modifiers like less scallion oil, extra broth, or home-style braising habits.",
-      "feature3Title": "Useful uncertainty, not fake certainty",
-      "feature3Text": "Returns bounded estimates so you can make better decisions without pretending the data is perfect.",
+      "feature3Title": "Numbers you can trust",
+      "feature3Text": "Every estimate is grounded in Vietnamese food-composition data, so the numbers hold up when you make decisions.",
       "profile": {
         "title": "Personalization profile",
         "active": "Active",
@@ -845,10 +833,9 @@
         "modificationValue": "Less scallion oil",
         "goalStrategy": "Goal strategy",
         "goalCutting": "Cutting",
-        "goalUpperBound": "Use upper bound",
+        "goalUpperBound": "Count conservatively",
         "total": "Estimated total",
-        "range": "Range: ~760–845 kcal",
-        "upperBoundNote": "Upper bound shown for cutting"
+        "upperBoundNote": "Counted conservatively for cutting"
       }
     },
     "cta": {
@@ -858,12 +845,9 @@
       "buttonSecondary": "See a sample analysis",
       "feature1": "Vietnamese-first database",
       "feature2": "AI understands cooking context",
-      "feature3": "Bounded nutrition estimates",
+      "feature3": "Nutrition numbers you can trust",
       "socialProof": "Trusted by early testers who were tired of guessing",
-      "trust": "Vietnamese food-composition data · understands how you cook · tiếng Việt + English",
-      "appStore": "App Store rating",
-      "users": "beta users",
-      "mealsTracked": "meals tracked"
+      "trust": "Vietnamese food-composition data · understands how you cook · tiếng Việt + English"
     },
     "footer": {
       "tagline": "Vietnamese meal tracking, powered by AI.",
