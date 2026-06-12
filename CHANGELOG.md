@@ -1,5 +1,61 @@
 # Changelog
 
+## [1.3.0](https://github.com/VoMinhKhoii/Nham/compare/v1.2.0...v1.3.0) (2026-06-10)
+
+
+### Features
+
+* **cheat:** alternating top/bottom stop labels + drinks ramp ordering ([8d61ab8](https://github.com/VoMinhKhoii/Nham/commit/8d61ab888d7b5fd4abda4aaa1780ac04d69890cd))
+* **cheat:** cheat-meal logging via interpretable sliders ([65967c0](https://github.com/VoMinhKhoii/Nham/commit/65967c05870eed272e4a2e796bec304e2cf45e44))
+* **cheat:** mode picker + Light/Medium/Heavy intensity; drop rationale + connector ([148cc58](https://github.com/VoMinhKhoii/Nham/commit/148cc5837565e96f60caabc2f44fe1dd292b2219))
+* **dashboard:** per-day calorie progress ring on the mobile week strip ([ac73108](https://github.com/VoMinhKhoii/Nham/commit/ac73108a6656ca96309bfe06cc873d6733b7755a))
+* **mobile-flutter:** add Flutter 1:1 port of the mobile app ([7723110](https://github.com/VoMinhKhoii/Nham/commit/772311008df814f6f2abcf2931d6419521828915))
+* **mobile-flutter:** dashboard header greeting, week strip, card alignment ([5a449f0](https://github.com/VoMinhKhoii/Nham/commit/5a449f090c2b1a8a00b19fe2a21f5294048f844b))
+* **mobile-flutter:** dashboard surface polish (round 2) ([b9bc9ab](https://github.com/VoMinhKhoii/Nham/commit/b9bc9ab13bea6ced59ae29e2652bf1cc000f7e78))
+* **mobile-flutter:** force first-run onboarding + dual presentation + setup interstitial ([7d94c3a](https://github.com/VoMinhKhoii/Nham/commit/7d94c3a7fa0f38a43e73fad42b1c3539a7b0777b))
+* **mobile-flutter:** onboarding polish (daily-target card, flags, transitions) ([9515c3f](https://github.com/VoMinhKhoii/Nham/commit/9515c3fe0e894eab1854f33a29554b9cea1f77f3))
+* **mobile-flutter:** redesign dashboard — flat, high-contrast system ([d7f8465](https://github.com/VoMinhKhoii/Nham/commit/d7f8465abcd1fe0584fd67826f0a63706dd51bd4))
+
+
+### Bug Fixes
+
+* **cheat:** address CodeRabbit review on [#152](https://github.com/VoMinhKhoii/Nham/issues/152) ([9adb7d0](https://github.com/VoMinhKhoii/Nham/commit/9adb7d0be56587e2559ad1f893e428b961ada7f7))
+* **cheat:** polish slider card + mode picker UI ([b84c46c](https://github.com/VoMinhKhoii/Nham/commit/b84c46ce1b39e548687cc79c709269cb38c6ae76))
+* **cheat:** preserve in-progress slider levels across background refetch ([8927360](https://github.com/VoMinhKhoii/Nham/commit/89273603daa37941130099e35cefcb8e344c3f4e))
+* **cheat:** stop right-edge label collapse + move Save outside the card ([78296ef](https://github.com/VoMinhKhoii/Nham/commit/78296efc4114cba76885710f62bbc245509f3893))
+* **cheat:** widen slider scenario labels instead of title readout ([476e07a](https://github.com/VoMinhKhoii/Nham/commit/476e07a5284945e26d7fca63b5b45a6aec8f4c10))
+* **ci:** make biome lint pass on feat/mobile-flutter ([3fe620b](https://github.com/VoMinhKhoii/Nham/commit/3fe620b0b90c459a331229e5f423e588f821504e))
+* **dashboard:** apply pre-PR review auto-fixes ([96d2b33](https://github.com/VoMinhKhoii/Nham/commit/96d2b3389527a054e126627418b254603f42a95d))
+* **db:** regenerate cheat snapshot on the group-tracking baseline ([3c2cbc0](https://github.com/VoMinhKhoii/Nham/commit/3c2cbc0c55dd39941ba2af8020aae6e898d620bc))
+* **logging:** harden confirm reconciliation per pre-PR review ([ce39e46](https://github.com/VoMinhKhoii/Nham/commit/ce39e469808d334e4d82ba9aad82a2b938cd5eee))
+* **logging:** keep calorie ring synced after saving the first meal ([723da40](https://github.com/VoMinhKhoii/Nham/commit/723da40a39a32e90282db446d79a5e87320c4f90))
+* **logging:** refresh dashboard ring after save + add save-meal e2e coverage ([125814a](https://github.com/VoMinhKhoii/Nham/commit/125814af1d67cad5f6227512f6a0cfc3bc367301))
+* **meals:** move PersistedMeal builders out of the 'use server' module ([a02bed9](https://github.com/VoMinhKhoii/Nham/commit/a02bed926d9afaa87ce9f03c7fac48b82ef5ada3))
+* **mobile-flutter:** refresh dashboard after logging a meal ([c150235](https://github.com/VoMinhKhoii/Nham/commit/c1502359c3bd3cd2a6c2f76f55c16a4b915dffaf))
+* **mobile-flutter:** repair auth flow + register OAuth deep link ([6d84f02](https://github.com/VoMinhKhoii/Nham/commit/6d84f02fefe150fac21d07b4f3fede621d8724ac))
+* **mobile-flutter:** repair fastlane beta lane for Ruby 4.0 / fastlane 2.235 ([feadfd5](https://github.com/VoMinhKhoii/Nham/commit/feadfd5303f59ef9ad7f5ac9756211438301133f))
+* **mobile-flutter:** surface analyze stalls + confirm failures ([4be6e77](https://github.com/VoMinhKhoii/Nham/commit/4be6e776c6ffd55c108a7fcdcaaf9e81f9a129c6))
+
+
+### Performance
+
+* **api:** memoize auth per request + harden confirm cache writes ([6073399](https://github.com/VoMinhKhoii/Nham/commit/60733994519df06d1a10b2c96450e177660517ba))
+* **logging:** reconcile saved meal from confirm response, drop day refetch ([fdc8fcb](https://github.com/VoMinhKhoii/Nham/commit/fdc8fcba1a8474cc25ef7ec0a32acebf68820685))
+
+
+### Refactor
+
+* **cheat:** share macro-color constant + fix stop-label contrast ([db95d74](https://github.com/VoMinhKhoii/Nham/commit/db95d743200d8871641ab5334aa871c76b8d9514))
+* **logging:** extract shared upsertById cache helper ([bd0f184](https://github.com/VoMinhKhoii/Nham/commit/bd0f184ced45d4456d3eac9533d023f94d69362f))
+* **meals:** pre-generate ingredient ids instead of relying on RETURNING order ([4f3f5f5](https://github.com/VoMinhKhoii/Nham/commit/4f3f5f58f380a6c345f85af3257354bfd4203e97))
+* **meals:** share PersistedMeal builders across save and load paths ([5620951](https://github.com/VoMinhKhoii/Nham/commit/5620951dc730693bb3e3c46851c7c894d9ff64d3))
+
+
+### Documentation
+
+* **agents:** point mobile work at apps/docs/mobile + add doc-upkeep rule ([d822cdd](https://github.com/VoMinhKhoii/Nham/commit/d822cdd546235078055839155bfd4737c4939f17))
+* **mobile:** add apps/docs/mobile (development, releasing, architecture) ([7a5a0c3](https://github.com/VoMinhKhoii/Nham/commit/7a5a0c358bc6bc96006b0240edf975146c2682e6))
+
 ## [1.2.0](https://github.com/VoMinhKhoii/Nham/compare/v1.1.0...v1.2.0) (2026-06-02)
 
 
