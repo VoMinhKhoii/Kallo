@@ -520,7 +520,6 @@
     },
     "steady": {
       "eyebrow": "Đang giữ ổn định",
-      "hint": "Chạm vào một dòng để xem xu hướng, gợi ý món và lưu ý.",
       "percent": "{value}%",
       "limited": "dữ liệu hạn chế",
       "noTarget": "chưa có mục tiêu",

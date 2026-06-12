@@ -520,7 +520,6 @@
     },
     "steady": {
       "eyebrow": "What's holding steady",
-      "hint": "Tap a row to see its trend, foods, and any caveats.",
       "percent": "{value}%",
       "limited": "limited data",
       "noTarget": "no target",

@@ -109,7 +109,10 @@ export function NutritionShell() {
                     />
                   </div>
                   <div className="lg:col-span-6 xl:col-span-5">
-                    <FocusSection cards={overview.spotlight} />
+                    <FocusSection
+                      cards={overview.spotlight}
+                      daySeries={overview.daySeries}
+                    />
                   </div>
                 </div>
               ) : (
@@ -119,7 +122,10 @@ export function NutritionShell() {
                 />
               )}
 
-              <SteadySection cards={overview.steady} />
+              <SteadySection
+                cards={overview.steady}
+                daySeries={overview.daySeries}
+              />
 
               <BackgroundSection cards={overview.moreNutrients} />
 
