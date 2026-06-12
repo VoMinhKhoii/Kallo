@@ -35,16 +35,16 @@ class TimelinePicker extends StatefulWidget {
   State<TimelinePicker> createState() => _TimelinePickerState();
 }
 
-// Swipe cooldown to mirror the web (mobile-timeline-picker.tsx:32). The 40px
-// threshold is satisfied by Flutter's drag-end velocity gesture.
-const int _kSwipeCooldownMs = 250;
+// A large midpoint so the PageView can page many weeks into the past while the
+// current week sits at a known index (weeks are unbounded backwards).
+const int _kWeekPageBase = 5000;
 
 class _TimelinePickerState extends State<TimelinePicker> {
   late String _visibleAnchor = _selectedAnchor;
-  // Suppresses the day-tap that immediately follows a horizontal swipe
-  // (mirrors didSwipeRef in mobile-timeline-picker.tsx).
-  bool _didSwipe = false;
-  int _lastSwipeAtMs = 0;
+  // The current week lives at [_kWeekPageBase]; each page back is one week
+  // earlier, each page forward one later (capped at the current week).
+  late final PageController _pageController =
+      PageController(initialPage: _kWeekPageBase);
 
   String get _currentAnchor => widget.today;
   String get _selectedAnchor => widget.selectedDate.compareTo(_currentAnchor) > 0
@@ -53,16 +53,33 @@ class _TimelinePickerState extends State<TimelinePicker> {
 
   bool get _canNavigateNext => _visibleAnchor.compareTo(_currentAnchor) < 0;
 
+  String _anchorForPage(int page) =>
+      addDays(_currentAnchor, (page - _kWeekPageBase) * 7);
+
+  int _pageForAnchor(String anchor) {
+    final base = dateStringToDate(_currentAnchor);
+    final target = dateStringToDate(anchor);
+    final weeks = (target.difference(base).inDays / 7).round();
+    return _kWeekPageBase + weeks;
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
   void _openStrip() {
     setState(() => _visibleAnchor = _selectedAnchor);
+    // Jump the PageView to the selected week without animating the open.
+    final page = _pageForAnchor(_selectedAnchor);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_pageController.hasClients) _pageController.jumpToPage(page);
+    });
     widget.onExpandedChange(true);
   }
 
   void _selectDay(String date) {
-    if (_didSwipe) {
-      _didSwipe = false;
-      return;
-    }
     if (date != widget.selectedDate) {
       HapticFeedback.selectionClick();
       widget.onSelectDate(date);
@@ -70,34 +87,27 @@ class _TimelinePickerState extends State<TimelinePicker> {
     widget.onExpandedChange(false);
   }
 
-  void _navigateToAnchor(String anchor) {
-    final next =
-        anchor.compareTo(_currentAnchor) > 0 ? _currentAnchor : anchor;
-    if (next != _visibleAnchor) setState(() => _visibleAnchor = next);
+  void _onPageChanged(int page) {
+    final anchor = _anchorForPage(page);
+    if (anchor != _visibleAnchor) {
+      HapticFeedback.selectionClick();
+      setState(() => _visibleAnchor = anchor);
+    }
   }
 
-  void _scrollPrev() => _navigateToAnchor(addDays(_visibleAnchor, -7));
+  void _scrollPrev() {
+    _pageController.previousPage(
+      duration: const Duration(milliseconds: 280),
+      curve: const Cubic(0.16, 1, 0.3, 1),
+    );
+  }
 
   void _scrollNext() {
     if (!_canNavigateNext) return;
-    _navigateToAnchor(addDays(_visibleAnchor, 7));
-  }
-
-  // Horizontal-swipe paging with a 40px threshold + 250ms cooldown, mirroring
-  // handlePointerUp in mobile-timeline-picker.tsx:294-316. A swipe also
-  // suppresses the subsequent day-tap via [_didSwipe].
-  void _onSwipeEnd(DragEndDetails details) {
-    final dx = details.primaryVelocity ?? 0;
-    if (dx == 0) return;
-    final now = DateTime.now().millisecondsSinceEpoch;
-    if (now - _lastSwipeAtMs < _kSwipeCooldownMs) return;
-    _lastSwipeAtMs = now;
-    _didSwipe = true;
-    if (dx > 0) {
-      _scrollPrev();
-    } else {
-      _scrollNext();
-    }
+    _pageController.nextPage(
+      duration: const Duration(milliseconds: 280),
+      curve: const Cubic(0.16, 1, 0.3, 1),
+    );
   }
 
   @override
@@ -157,12 +167,6 @@ class _TimelinePickerState extends State<TimelinePicker> {
   }
 
   Widget _buildStrip(String locale, Set<String> mealDates) {
-    final weekStrips = [
-      addDays(_visibleAnchor, -7),
-      _visibleAnchor,
-      addDays(_visibleAnchor, 7),
-    ].map(buildCenteredStripFromAnchor).toList();
-
     return Row(
       key: const ValueKey('strip-content'),
       children: [
@@ -172,43 +176,25 @@ class _TimelinePickerState extends State<TimelinePicker> {
           color: NhamColors.textMuted,
         ),
         const SizedBox(width: 4), // gap-1
-        // Three-week carousel: prev/visible/next rendered in a row offset
-        // translateX(-100%), paging slides 200ms ease-out
-        // (mobile-timeline-picker.tsx:410-452).
+        // Real week paging via PageView — swipe AND chevrons slide a full week
+        // (the old hand-rolled carousel's transform was a constant and never
+        // animated). Forward is capped at the current week (itemCount).
         Expanded(
-          child: GestureDetector(
-            behavior: HitTestBehavior.translucent,
-            onHorizontalDragEnd: _onSwipeEnd,
-            child: ClipRect(
-              child: LayoutBuilder(
-                builder: (context, c) {
-                  final weekWidth = c.maxWidth;
-                  return AnimatedContainer(
-                    duration: const Duration(milliseconds: 200),
-                    curve: Curves.easeOut,
-                    // Base offset translateX(-100%): visible week centered.
-                    transform: Matrix4.translationValues(-weekWidth, 0, 0),
-                    width: weekWidth * 3,
-                    child: Row(
-                      children: [
-                        for (final week in weekStrips)
-                          SizedBox(
-                            width: weekWidth,
-                            child: _WeekRow(
-                              week: week,
-                              today: widget.today,
-                              selectedDate: widget.selectedDate,
-                              mealDates: mealDates,
-                              locale: locale,
-                              onSelect: _selectDay,
-                            ),
-                          ),
-                      ],
-                    ),
-                  );
-                },
-              ),
-            ),
+          child: PageView.builder(
+            controller: _pageController,
+            onPageChanged: _onPageChanged,
+            itemCount: _kWeekPageBase + 1,
+            itemBuilder: (context, page) {
+              final week = buildCenteredStripFromAnchor(_anchorForPage(page));
+              return _WeekRow(
+                week: week,
+                today: widget.today,
+                selectedDate: widget.selectedDate,
+                mealDates: mealDates,
+                locale: locale,
+                onSelect: _selectDay,
+              );
+            },
           ),
         ),
         const SizedBox(width: 4),
