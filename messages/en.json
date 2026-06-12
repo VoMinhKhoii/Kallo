@@ -492,7 +492,16 @@
         "noTarget": "no target"
       },
       "rowLabel": "{macro}: {average} {unit} per logged day, {label}",
-      "barAria": "{macro} progress toward target"
+      "barAria": "{macro} progress toward target",
+      "timeAxis": {
+        "byDay": "Day by day",
+        "byWeek": "Week by week",
+        "rangeLabel": "{low}–{high} {unit}",
+        "stripAria": "{macro} per {bucket}: low {low}, high {high} {unit}",
+        "bucketDay": "day",
+        "bucketWeek": "week",
+        "gap": "no complete log"
+      }
     },
     "focus": {
       "eyebrow": "Where to focus",

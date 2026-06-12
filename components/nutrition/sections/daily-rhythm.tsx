@@ -2,13 +2,15 @@
 
 import { motion } from 'motion/react';
 import { useLocale, useTranslations } from 'next-intl';
-import type { MacroPattern } from '@/lib/nutrition/types';
+import type { MacroPattern, NutritionDaySeries } from '@/lib/nutrition/types';
 import { cn } from '@/lib/utils';
+import { DayStrip } from '../primitives/day-strip';
 import { formatLocalizedNumber, shouldShowExceed } from '../primitives/helpers';
 import { TargetProgressBar } from '../primitives/target-progress-bar';
 
 interface DailyRhythmProps {
   macros: MacroPattern[];
+  daySeries: NutritionDaySeries;
 }
 
 const KCAL_PER_GRAM = {
@@ -40,12 +42,16 @@ function consistencyLabelKey(pct: number | null): string {
   return 'rhythm.consistency.thin';
 }
 
-export function DailyRhythm({ macros }: DailyRhythmProps) {
+export function DailyRhythm({ macros, daySeries }: DailyRhythmProps) {
   const t = useTranslations('nutrition');
   const tRoot = useTranslations();
   const locale = useLocale();
 
   const calories = macros.find((m) => m.key === 'calories');
+  const caloriesSeries = daySeries.series.find((s) => s.metric === 'calories');
+  const hasTimeAxis =
+    caloriesSeries !== undefined &&
+    caloriesSeries.buckets.some((bucket) => bucket.value !== null);
   const compositionLabels = Object.fromEntries(
     COMPOSITION_KEYS.map((key) => {
       const macro = macros.find((m) => m.key === key);
@@ -141,6 +147,21 @@ export function DailyRhythm({ macros }: DailyRhythmProps) {
             </div>
           ) : null}
         </div>
+
+        {hasTimeAxis ? (
+          <div className="mt-6 space-y-2 border-nham-border/40 border-t border-dashed pt-5">
+            <p className="text-nham-text-muted text-xs uppercase tracking-[0.18em]">
+              {daySeries.unit === 'day'
+                ? t('rhythm.timeAxis.byDay')
+                : t('rhythm.timeAxis.byWeek')}
+            </p>
+            <DayStrip
+              series={caloriesSeries}
+              unit={daySeries.unit}
+              label={t('rhythm.calories')}
+            />
+          </div>
+        ) : null}
 
         <div className="mt-6 space-y-3 border-nham-border/40 border-t border-dashed pt-5">
           {macroRows.map((macro) => (

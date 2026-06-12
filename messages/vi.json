@@ -492,7 +492,16 @@
         "noTarget": "chưa có mục tiêu"
       },
       "rowLabel": "{macro}: {average} {unit} mỗi ngày ghi, {label}",
-      "barAria": "Tiến độ {macro} so với mục tiêu"
+      "barAria": "Tiến độ {macro} so với mục tiêu",
+      "timeAxis": {
+        "byDay": "Từng ngày",
+        "byWeek": "Từng tuần",
+        "rangeLabel": "{low}–{high} {unit}",
+        "stripAria": "{macro} mỗi {bucket}: thấp {low}, cao {high} {unit}",
+        "bucketDay": "ngày",
+        "bucketWeek": "tuần",
+        "gap": "chưa ghi đủ bữa"
+      }
     },
     "focus": {
       "eyebrow": "Cần để ý",
