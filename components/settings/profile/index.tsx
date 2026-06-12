@@ -131,11 +131,22 @@ export function Profile({ profile }: ProfileProps) {
 
   const defaultValues: ProfileFormValues = useMemo(
     () => ({
-      biologicalSex: (profile.biologicalSex as 'male' | 'female') ?? 'male',
-      weightKg: profile.weightKg ? Number(profile.weightKg) : 65,
-      heightCm: profile.heightCm ?? 165,
-      age: profile.age ?? 25,
-      activityLevel: (profile.activityLevel as ActivityLevel) ?? 'light',
+      // Body metrics are NOT defaulted to fabricated numbers. A user who
+      // skipped onboarding has null weight/height/age/sex; pre-filling
+      // 65kg/165cm/25y/male would let them save fabricated data as if it were
+      // real (and silently recompute a target from it). Leave them empty so
+      // the schema's "required" validation forces a real entry before save.
+      biologicalSex:
+        (profile.biologicalSex as 'male' | 'female') ??
+        (undefined as unknown as 'male' | 'female'),
+      weightKg: profile.weightKg
+        ? Number(profile.weightKg)
+        : (undefined as unknown as number),
+      heightCm: profile.heightCm ?? (undefined as unknown as number),
+      age: profile.age ?? (undefined as unknown as number),
+      activityLevel:
+        (profile.activityLevel as ActivityLevel) ??
+        (undefined as unknown as ActivityLevel),
       goal: (profile.goal as Goal) ?? 'maintaining',
       aggression: (() => {
         const raw = profile.aggression;
