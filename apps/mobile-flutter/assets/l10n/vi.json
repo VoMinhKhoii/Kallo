@@ -938,7 +938,10 @@
       "farUnder": "Thiếu nhiều"
     },
     "caloriesLogged": "kcal đã ghi",
-    "mealReceiptsHint": "Những bữa ăn sẽ hiển thị ở đây"
+    "mealReceiptsHint": "Những bữa ăn sẽ hiển thị ở đây",
+    "firstRunQuestion": "Hôm nay bạn đã ăn gì?",
+    "firstRunHint": "Mô tả bữa đầu tiên — Nhẩm lo phần còn lại.",
+    "yesterday": "Hôm qua"
   },
   "logging": {
     "title": "Bạn đã ăn gì?",

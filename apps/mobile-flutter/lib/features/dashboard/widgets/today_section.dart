@@ -13,6 +13,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../theme/nham_colors.dart';
 import '../../../theme/nham_theme.dart';
+import '../../logging/widgets/count_up.dart';
 import '../data/dashboard_providers.dart';
 import '../data/logging_day.dart';
 import '../logic/dashboard_format.dart';
@@ -41,22 +42,80 @@ class DockTargets {
 const double _valueColumnWidth = 68;
 
 class TodaySection extends ConsumerWidget {
-  const TodaySection({super.key, required this.args, required this.targets});
+  const TodaySection({
+    super.key,
+    required this.args,
+    required this.targets,
+    required this.dateLabel,
+    this.isToday = true,
+    this.isFirstRun = false,
+  });
 
   final DashboardArgs args;
   final DockTargets targets;
 
+  /// A human date line shown at the top of the card ("Today", "Yesterday", or a
+  /// localized "Mon, Jun 9"). The card always says which day it is showing.
+  final String dateLabel;
+
+  /// Whether [args] is today. Today reads off the already-warm dashboard bundle
+  /// (no extra round-trip); other days fetch their own light per-day slice.
+  final bool isToday;
+
+  /// The user has never logged anything, ever — collapse to the first-run card.
+  final bool isFirstRun;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final async = ref.watch(loggingDayProvider(args));
+    if (isFirstRun) return const _FirstRunCard();
+
+    // Today reads the bundle's day slice (warm cache, seam parity with the rest
+    // of the dashboard); any other day fetches its own slice so browsing never
+    // refetches the 90d heatmap + profile + weight bundle.
+    final provider =
+        isToday ? loggingDayProvider(args) : dashboardDayProvider(args);
+    final async = ref.watch(provider);
     return async.when(
       loading: () => SectionState(message: tr('dashboard.todayLoading')),
       error: (_, __) => SectionState(
         message: tr('dashboard.todayLoadError'),
         actionLabel: tr('dashboard.retry'),
-        onAction: () => ref.invalidate(dashboardBundleProvider(args)),
+        onAction: () => ref.invalidate(provider),
       ),
-      data: (day) => _Dock(day: day, targets: targets),
+      data: (day) => _Dock(day: day, targets: targets, dateLabel: dateLabel),
+    );
+  }
+}
+
+/// First-run collapse: a single Lora question, no ring, no "% on track". Shown
+/// only when the user has never logged a meal (zero today AND zero history).
+class _FirstRunCard extends StatelessWidget {
+  const _FirstRunCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return _FadeInDown(
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(
+            vertical: NhamSpacing.sp6, horizontal: NhamSpacing.sp4),
+        decoration: BoxDecoration(
+          color: kCardSurface,
+          borderRadius: BorderRadius.circular(kCardRadius),
+          boxShadow: const [kCardShadow],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(tr('dashboard.firstRunQuestion'), style: dashHeadline()),
+            const SizedBox(height: NhamSpacing.sp2),
+            Text(
+              tr('dashboard.firstRunHint'),
+              style: dashBody(color: kInkSecondary),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -70,10 +129,15 @@ class _MacroBarData {
 }
 
 class _Dock extends StatelessWidget {
-  const _Dock({required this.day, required this.targets});
+  const _Dock({
+    required this.day,
+    required this.targets,
+    required this.dateLabel,
+  });
 
   final LoggingDayData day;
   final DockTargets targets;
+  final String dateLabel;
 
   @override
   Widget build(BuildContext context) {
@@ -116,6 +180,11 @@ class _Dock extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            // Date line — the card always names the day it is showing.
+            Padding(
+              padding: const EdgeInsets.only(bottom: NhamSpacing.sp3),
+              child: Text(dateLabel, style: dashEyebrow(color: kInkSecondary)),
+            ),
             // (a) Hero: big calories number on the left, ring on the right.
             Row(
               crossAxisAlignment: CrossAxisAlignment.center,
@@ -140,10 +209,13 @@ class _Dock extends StatelessWidget {
                         textBaseline: TextBaseline.alphabetic,
                         children: [
                           Flexible(
-                            child: Text(
-                              _fmt(remaining.abs(), locale),
+                            // Counts the remaining figure up on day-swap (~300ms)
+                            // so paging settles in place instead of popping.
+                            child: CountUpText(
+                              value: remaining.abs().toDouble(),
+                              duration: const Duration(milliseconds: 300),
                               style: dashHero(),
-                              maxLines: 1,
+                              format: (v) => _fmt(v.round(), locale),
                             ),
                           ),
                           const SizedBox(width: 6),

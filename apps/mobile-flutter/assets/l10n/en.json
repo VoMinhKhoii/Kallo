@@ -939,7 +939,10 @@
       "farUnder": "Far under"
     },
     "caloriesLogged": "kcal logged",
-    "mealReceiptsHint": "Your meal receipts will show up here"
+    "mealReceiptsHint": "Your meal receipts will show up here",
+    "firstRunQuestion": "What did you eat today?",
+    "firstRunHint": "Describe your first meal — Nhẩm estimates the rest.",
+    "yesterday": "Yesterday"
   },
   "logging": {
     "title": "What did you eat?",
