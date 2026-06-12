@@ -15,6 +15,7 @@ import { PartialDayNotice } from '@/components/logging/feed/partial-day-notice';
 import { PartialYesterdayPrompt } from '@/components/logging/feed/partial-yesterday-prompt';
 import { PersistedMealCard } from '@/components/logging/feed/persisted-meal-card';
 import { StreamingMealEntry } from '@/components/logging/feed/streaming-meal-entry';
+import type { InputMode } from '@/components/logging/input/cheat-mode-picker';
 import {
   MealInput,
   type MealInputHandle,
@@ -28,14 +29,13 @@ import { useRecentCheatOccasions } from '@/hooks/use-recent-cheat-occasions';
 import { useStreamAnalysis } from '@/hooks/use-stream-analysis';
 import { useStreamingTerminalEffects } from '@/hooks/use-streaming-terminal-effects';
 import { useSubmitGuard } from '@/hooks/use-submit-guard';
-import { sumDisplayedNutrition } from '@/lib/ai/pipeline/goal-adjustment';
-import { isLikelyPartialDay } from '@/lib/nutrition/pattern/completeness';
 import {
   type RecentCheatOccasion,
   stageCheatRepeatAction,
 } from '@/lib/actions/meals';
+import { sumDisplayedNutrition } from '@/lib/ai/pipeline/goal-adjustment';
+import { isLikelyPartialDay } from '@/lib/nutrition/pattern/completeness';
 import type { CheatIntensity, CheatSliderLevels } from '@/lib/types/cheat';
-import type { InputMode } from '@/components/logging/input/cheat-mode-picker';
 import type {
   ChatMessage,
   MacroBreakdown,

@@ -184,7 +184,8 @@ export const MealInput = forwardRef<MealInputHandle, MealInputProps>(
           if (isManual) return serializeItemsToText(manualState.items);
           return textareaRef.current?.value ?? '';
         },
-        getManualLogging: () => buildManualLoggingRequest(manualState, isManual),
+        getManualLogging: () =>
+          buildManualLoggingRequest(manualState, isManual),
         clear: () => {
           if (isManual) {
             const emptyItem = createDefaultManualItem(crypto.randomUUID());
@@ -299,8 +300,7 @@ export const MealInput = forwardRef<MealInputHandle, MealInputProps>(
     };
 
     const canSubmit =
-      !disabled &&
-      (isManual ? hasCompleteItem(manualState.items) : hasContent);
+      !disabled && (isManual ? hasCompleteItem(manualState.items) : hasContent);
     const showStopButton = Boolean(disabled && onCancel);
 
     const submitButton = showStopButton ? (

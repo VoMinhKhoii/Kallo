@@ -3,10 +3,10 @@
 import { Plus, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useEffect, useRef } from 'react';
-import {
-  type ManualItem,
-  type ManualLoggingFormState,
-  type MealContext,
+import type {
+  ManualItem,
+  ManualLoggingFormState,
+  MealContext,
 } from '@/lib/logging/manual-estimation';
 import { cn } from '@/lib/utils';
 
@@ -201,7 +201,7 @@ export function ManualEstimationControls({
             const lastId = state.items[state.items.length - 1]?.id;
             pendingFocus.current = { id: onItemAdd(lastId), field: 'qty' };
           }}
-          className="flex items-center gap-1.5 px-1 py-1 text-nham-text-muted/60 text-sm transition-colors hover:text-nham-text-muted disabled:opacity-40 focus-visible:outline-none"
+          className="flex items-center gap-1.5 px-1 py-1 text-nham-text-muted/60 text-sm transition-colors hover:text-nham-text-muted focus-visible:outline-none disabled:opacity-40"
           style={{ fontFamily: 'DM Sans, sans-serif' }}
         >
           <Plus className="h-3.5 w-3.5" />
@@ -209,7 +209,7 @@ export function ManualEstimationControls({
         </button>
       </div>
 
-      <div className="flex flex-col gap-2 border-t border-nham-border/30 pt-2.5">
+      <div className="flex flex-col gap-2 border-nham-border/30 border-t pt-2.5">
         <div className="flex flex-wrap gap-2">
           {(
             ['home_cooked', 'restaurant', 'packaged', 'shared_buffet'] as const
@@ -220,9 +220,7 @@ export function ManualEstimationControls({
               disabled={disabled}
               label={t(`manualLogging.context.${value}`)}
               onClick={() =>
-                onMealContextChange(
-                  state.mealContext === value ? null : value
-                )
+                onMealContextChange(state.mealContext === value ? null : value)
               }
             />
           ))}

@@ -101,7 +101,9 @@ describe('MealInput localStorage persistence', () => {
 
   it('pre-fills first item name from textarea when switching to manual', async () => {
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
-    const { rerender } = render(<MealInput onSubmit={() => {}} mode="normal" />);
+    const { rerender } = render(
+      <MealInput onSubmit={() => {}} mode="normal" />
+    );
 
     await user.type(screen.getByRole('textbox'), 'phở bò');
     rerender(<MealInput onSubmit={() => {}} mode="manual" />);
@@ -113,10 +115,16 @@ describe('MealInput localStorage persistence', () => {
 
   it('serialises item list back to textarea when switching to normal', async () => {
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
-    const { rerender } = render(<MealInput onSubmit={() => {}} mode="manual" />);
+    const { rerender } = render(
+      <MealInput onSubmit={() => {}} mode="manual" />
+    );
 
-    const qtyInput = screen.getByPlaceholderText('manualLogging.qtyPlaceholder');
-    const nameInput = screen.getByPlaceholderText('manualLogging.namePlaceholder');
+    const qtyInput = screen.getByPlaceholderText(
+      'manualLogging.qtyPlaceholder'
+    );
+    const nameInput = screen.getByPlaceholderText(
+      'manualLogging.namePlaceholder'
+    );
     await user.type(qtyInput, '1 bowl');
     await user.type(nameInput, 'rice');
 
@@ -131,8 +139,14 @@ describe('MealInput localStorage persistence', () => {
 
     expect(screen.getByRole('button', { name: /submit/i })).toBeDisabled();
 
-    await user.type(screen.getByPlaceholderText('manualLogging.qtyPlaceholder'), '1 bowl');
-    await user.type(screen.getByPlaceholderText('manualLogging.namePlaceholder'), 'rice');
+    await user.type(
+      screen.getByPlaceholderText('manualLogging.qtyPlaceholder'),
+      '1 bowl'
+    );
+    await user.type(
+      screen.getByPlaceholderText('manualLogging.namePlaceholder'),
+      'rice'
+    );
 
     expect(screen.getByRole('button', { name: /submit/i })).toBeEnabled();
   });
