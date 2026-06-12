@@ -316,9 +316,9 @@ export function MobileTimelinePicker({
   );
 
   // When the host page provides the header slot (LoggingShell inside AppShell),
-  // render into it via a portal so the chip shares the hamburger row. The inline
-  // fallback is the test/Storybook contract — production always finds the slot
-  // because MobileNav mounts as a sibling. Do not delete the fallback when
+  // render into it via a portal so the chip sits in the mobile header row. The
+  // inline fallback is the test/Storybook contract — production always finds the
+  // slot because MobileNav mounts as a sibling. Do not delete the fallback when
   // refactoring; the tests rely on it to render without an AppShell parent.
   const renderIntoSlot = (node: React.ReactNode) =>
     portalTarget ? createPortal(node, portalTarget) : node;
@@ -339,8 +339,9 @@ export function MobileTimelinePicker({
       {renderIntoSlot(
         <div
           ref={wrapperRef}
-          // Read by mobile-nav.tsx via group-has-[[data-strip-mode=true]]
-          // to hide the hamburger + spacer while the strip is open.
+          // Kept for the strip-mode contract; the header slot is now full-width
+          // (the hamburger was retired for the bottom tab bar), so the strip
+          // already owns the whole row.
           data-strip-mode={mode === 'strip'}
           className="flex min-w-0 flex-1 items-center justify-center gap-2 md:hidden"
         >

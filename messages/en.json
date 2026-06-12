@@ -53,6 +53,13 @@
       "openMenu": "Open menu",
       "closeMenu": "Close menu"
     },
+    "bottomNav": {
+      "label": "Primary",
+      "you": "You",
+      "youSheetLabel": "Your account",
+      "language": "Language",
+      "logMeal": "Log a meal"
+    },
     "mainSidebar": {
       "navigationLabel": "Main navigation",
       "sectionLabel": "Main",

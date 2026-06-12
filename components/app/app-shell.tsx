@@ -3,6 +3,7 @@
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { toast } from 'sonner';
+import { FloatingMealTrigger } from '@/components/dashboard/today/meal-trigger';
 import { WizardShell } from '@/components/onboarding/wizard-shell';
 import { useRouter } from '@/i18n/navigation';
 import {
@@ -15,6 +16,7 @@ import {
   shouldShowOnboardingResume,
 } from '@/lib/onboarding/progress';
 import { readStepOneLocaleDraft } from '@/lib/onboarding/step-one-locale-draft';
+import { BottomTabBar } from './bottom-tab-bar';
 import { DesktopSidebar } from './desktop-sidebar';
 import { MobileNav } from './mobile-nav';
 import type { UserMenuUser } from './user-menu';
@@ -103,7 +105,7 @@ export function AppShell({
   };
 
   return (
-    <div className="flex h-dvh min-w-0 overflow-hidden bg-nham-surface">
+    <div className="flex h-dvh min-w-0 flex-col overflow-hidden bg-nham-surface pt-[env(safe-area-inset-top)] md:flex-row">
       <div className="flex min-h-0 min-w-0 flex-1 gap-3 overflow-x-hidden p-3">
         {/* Desktop sidebar — hidden on mobile */}
         <div className="hidden md:block">
@@ -121,21 +123,20 @@ export function AppShell({
           />
         </div>
 
-        {/* Page content (mobile gets a hamburger header reserving space above) */}
+        {/* Page content (mobile reserves a header strip for the date-chip slot) */}
         <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-x-hidden">
-          <MobileNav
-            user={user}
-            isAdmin={isAdmin}
-            onboardingIncomplete={showOnboardingNudge}
-            onboardingStep={onboardingStep}
-            onResumeOnboarding={handleResume}
-            isOnboardingMinimized={isOnboardingMinimized}
-            onMinimizeOnboarding={handleMinimizeNudge}
-            onRestoreOnboarding={handleRestoreNudge}
-          />
+          <MobileNav />
           {children}
         </div>
       </div>
+
+      {/* Mobile-web primary navigation — in-flow on mobile so it reserves its
+          own height (no per-page bottom padding needed); the desktop rail
+          covers ≥ md. Replaces the retired hamburger drawer. */}
+      <BottomTabBar user={user} onboardingIncomplete={showOnboardingNudge} />
+      {/* Shell-level log action — promoted from the dashboard so quick-logging
+          is reachable from every mobile surface. */}
+      <FloatingMealTrigger />
 
       {showOnboarding && (
         <WizardShell

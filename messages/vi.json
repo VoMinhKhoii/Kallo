@@ -53,6 +53,13 @@
       "openMenu": "Mở menu",
       "closeMenu": "Đóng menu"
     },
+    "bottomNav": {
+      "label": "Chính",
+      "you": "Bạn",
+      "youSheetLabel": "Tài khoản của bạn",
+      "language": "Ngôn ngữ",
+      "logMeal": "Ghi bữa ăn"
+    },
     "mainSidebar": {
       "navigationLabel": "Điều hướng chính",
       "sectionLabel": "Chính",

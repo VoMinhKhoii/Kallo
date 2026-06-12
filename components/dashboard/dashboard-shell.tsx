@@ -17,7 +17,6 @@ import { AdherenceHeatmap } from './progress/adherence-heatmap';
 import { HeatmapSkeleton } from './progress/progress-section-skeleton';
 import { ProgressStory } from './progress/progress-story';
 import { SectionHeader } from './section-header';
-import { FloatingMealTrigger } from './today/meal-trigger';
 import { TodayDock } from './today/today-dock';
 import { useDashboardDateRefresh } from './use-dashboard-date-refresh';
 import { useDashboardMeasurements } from './use-dashboard-measurements';
@@ -215,8 +214,6 @@ export function DashboardShell({
           </div>
         </div>
       </div>
-
-      <FloatingMealTrigger />
     </main>
   );
 }
