@@ -1252,11 +1252,13 @@
     },
     "language": "Ngôn ngữ",
     "languageHint": "Thay đổi ngôn ngữ ứng dụng",
-    "sidebar": {
-      "title": "Cài đặt",
-      "profile": "Hồ sơ",
-      "account": "Tài khoản",
-      "navigationLabel": "Điều hướng cài đặt"
+    "description": "Mục tiêu, cách nấu, và tài khoản của bạn — tất cả ở một nơi.",
+    "anchorNav": {
+      "label": "Trong trang này",
+      "bodyMetrics": "Mục tiêu & chỉ số",
+      "regional": "Khu vực & ngôn ngữ",
+      "cooking": "Nấu nướng",
+      "account": "Tài khoản"
     },
     "account": {
       "title": "Tài khoản",

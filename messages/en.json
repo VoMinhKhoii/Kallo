@@ -1252,11 +1252,13 @@
     },
     "language": "Language",
     "languageHint": "Change the app language",
-    "sidebar": {
-      "title": "Settings",
-      "profile": "Profile",
-      "account": "Account",
-      "navigationLabel": "Settings navigation"
+    "description": "Your goal, your cooking, and your account — all in one place.",
+    "anchorNav": {
+      "label": "On this page",
+      "bodyMetrics": "Goal & metrics",
+      "regional": "Region & language",
+      "cooking": "Cooking",
+      "account": "Account"
     },
     "account": {
       "title": "Account",

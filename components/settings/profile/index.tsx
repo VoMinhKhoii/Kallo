@@ -4,12 +4,11 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Loader2 } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useLocale, useTranslations } from 'next-intl';
-import { useMemo, useState, useTransition } from 'react';
+import { useMemo, useTransition } from 'react';
 import { type FieldErrors, useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { z } from 'zod';
 import { Form } from '@/components/ui/form';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { saveProfileSettings } from '@/lib/onboarding/actions';
 import {
   bodyMetricsMessages,
@@ -52,8 +51,15 @@ export type ProfileFormValues = z.infer<
 
 type SectionId = 'body-metrics' | 'regional' | 'cooking';
 
-// Which tab owns each field, so an invalid submit can switch to the tab
-// holding the first error instead of failing silently behind another tab.
+// Anchor id for each stacked section — shared with the page's anchor nav.
+export const SETTINGS_SECTION_ANCHOR: Record<SectionId, string> = {
+  'body-metrics': 'settings-body-metrics',
+  regional: 'settings-regional',
+  cooking: 'settings-cooking',
+};
+
+// Which section owns each field, so an invalid submit can scroll to the
+// section holding the first error instead of leaving it off-screen.
 const SECTION_FOR_FIELD: Partial<Record<keyof ProfileFormValues, SectionId>> = {
   biologicalSex: 'body-metrics',
   weightKg: 'body-metrics',
@@ -109,7 +115,6 @@ export function Profile({ profile }: ProfileProps) {
   const tValidation = useTranslations('validation.bodyMetrics');
   const locale = useLocale();
   const [isPending, startTransition] = useTransition();
-  const [activeTab, setActiveTab] = useState<SectionId>('body-metrics');
 
   const SECTIONS: Section[] = [
     {
@@ -224,7 +229,9 @@ export function Profile({ profile }: ProfileProps) {
       | undefined;
     const section = firstField ? SECTION_FOR_FIELD[firstField] : undefined;
     if (section) {
-      setActiveTab(section);
+      document
+        .getElementById(SETTINGS_SECTION_ANCHOR[section])
+        ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
     toast.error(t('profilePanel.invalidError'));
   }
@@ -290,30 +297,24 @@ export function Profile({ profile }: ProfileProps) {
           onSubmit={form.handleSubmit(handleSave, handleInvalid)}
           className="space-y-3"
         >
-          <Tabs
-            value={activeTab}
-            onValueChange={(value) => setActiveTab(value as SectionId)}
-            className="w-full gap-0"
-          >
-            <TabsList className="mb-2 h-auto w-full justify-start gap-1 overflow-x-auto rounded-xl bg-[#EAE7E0]/40 p-1">
-              {SECTIONS.map((section) => (
-                <TabsTrigger
-                  key={section.id}
-                  value={section.id}
-                  className="flex-1 whitespace-nowrap rounded-lg px-3 py-1.5 font-medium text-[#7B6F62] text-[14px] focus-visible:ring-2 focus-visible:ring-[#C9A87C]/40 data-[state=active]:bg-white data-[state=active]:text-[#2C2416] data-[state=active]:shadow-sm"
+          {/* Flattened: the three former tabs are now stacked sections with
+              anchor ids, scrolled to from the page's anchor nav (and on
+              validation error). */}
+          <div className="flex flex-col gap-5">
+            {SECTIONS.map((section) => (
+              <section
+                key={section.id}
+                id={SETTINGS_SECTION_ANCHOR[section.id]}
+                aria-label={section.title}
+                className="scroll-mt-20 rounded-2xl border border-[#EAE7E0] bg-[#FDFCF8] p-3 sm:p-5 lg:p-6"
+              >
+                <h2
+                  className="font-normal text-[#2C2416] text-lg tracking-tight"
+                  style={{ fontFamily: 'Lora, serif' }}
                 >
                   {section.title}
-                </TabsTrigger>
-              ))}
-            </TabsList>
-
-            {SECTIONS.map((section) => (
-              <TabsContent
-                key={section.id}
-                value={section.id}
-                className="rounded-2xl border border-[#EAE7E0] bg-[#FDFCF8] p-3 focus-visible:outline-none sm:p-5 lg:p-6"
-              >
-                <p className="mb-5 text-[#7B6F62] text-[13px] sm:mb-6">
+                </h2>
+                <p className="mt-1 mb-5 text-[#7B6F62] text-[13px] sm:mb-6">
                   {section.subtitle}
                 </p>
                 {section.id === 'body-metrics' && (
@@ -321,9 +322,9 @@ export function Profile({ profile }: ProfileProps) {
                 )}
                 {section.id === 'regional' && <Regional />}
                 {section.id === 'cooking' && <Cooking />}
-              </TabsContent>
+              </section>
             ))}
-          </Tabs>
+          </div>
 
           {/* Pinned save bar — rests above the bottom edge while content
               scrolls behind it and dissolves into a soft fade. */}
