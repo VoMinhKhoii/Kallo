@@ -1125,7 +1125,18 @@
       "toggleDetails": "Xem chi tiết bữa ăn",
       "total": "Tổng",
       "loading": "Đang tải vòng kết nối của bạn",
-      "na": "Không có"
+      "na": "Không có",
+      "you": "Bạn",
+      "presenceLabel": "Ai trong vòng kết nối của bạn",
+      "sharedTodayHint": "Hôm nay đã chia sẻ",
+      "quietHint": "Hôm nay yên ắng",
+      "memberActions": "Tùy chọn cho {name}",
+      "remove": "Xóa",
+      "block": "Chặn",
+      "removed": "Đã xóa khỏi vòng kết nối",
+      "blocked": "Đã chặn",
+      "undo": "Hoàn tác",
+      "actionError": "Chưa được — hãy thử lại."
     },
     "shareControl": {
       "share": "Chia sẻ với vòng kết nối",

@@ -1125,7 +1125,18 @@
       "toggleDetails": "Toggle meal details",
       "total": "Total",
       "loading": "Loading your circle",
-      "na": "N/A"
+      "na": "N/A",
+      "you": "You",
+      "presenceLabel": "Who's in your circle",
+      "sharedTodayHint": "Shared something today",
+      "quietHint": "Quiet today",
+      "memberActions": "Actions for {name}",
+      "remove": "Remove",
+      "block": "Block",
+      "removed": "Removed from your circle",
+      "blocked": "Blocked",
+      "undo": "Undo",
+      "actionError": "That didn't work — try again."
     },
     "shareControl": {
       "share": "Share to circle",
