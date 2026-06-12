@@ -2,12 +2,16 @@
 
 import { AnimatePresence, motion } from 'motion/react';
 import { useTranslations } from 'next-intl';
+import { useEffect, useRef } from 'react';
 import { useAuthDialog } from '@/components/auth/auth-provider';
 import { CheckEmailPanel } from '@/components/auth/check-email-panel';
 import { ForgotPasswordForm } from '@/components/auth/forgot-password-form';
 import { GoogleSignInButton } from '@/components/auth/google-sign-in-button';
 import { SignInForm } from '@/components/auth/sign-in-form';
 import { SignUpForm } from '@/components/auth/sign-up-form';
+
+const FOCUSABLE_SELECTOR =
+  'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
 export function AuthDialog() {
   const tDialog = useTranslations('auth.dialog');
@@ -16,6 +20,52 @@ export function AuthDialog() {
   const tForgot = useTranslations('auth.forgot');
   const tCheck = useTranslations('auth.checkEmail');
   const { open, tab, panel, closeDialog, setTab } = useAuthDialog();
+  const dialogRef = useRef<HTMLDivElement>(null);
+
+  // Focus management: trap Tab inside the dialog, close on Escape, and
+  // restore focus to the opener when the dialog unmounts.
+  useEffect(() => {
+    if (!open) return;
+    const dialog = dialogRef.current;
+    if (!dialog) return;
+
+    const previouslyFocused =
+      document.activeElement instanceof HTMLElement
+        ? document.activeElement
+        : null;
+    dialog.focus();
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        closeDialog();
+        return;
+      }
+      if (event.key !== 'Tab') return;
+      const focusable = Array.from(
+        dialog.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)
+      );
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (!first || !last) return;
+      const active = document.activeElement;
+      if (event.shiftKey) {
+        if (active === first || !dialog.contains(active)) {
+          event.preventDefault();
+          last.focus();
+        }
+      } else if (active === last || !dialog.contains(active)) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      previouslyFocused?.focus();
+    };
+  }, [open, closeDialog]);
 
   if (!open) return null;
 
@@ -55,6 +105,11 @@ export function AuthDialog() {
           {/* Dialog */}
           <motion.div
             key="auth-dialog"
+            ref={dialogRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="auth-dialog-title"
+            tabIndex={-1}
             initial={{ opacity: 0, scale: 0.95, y: 10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 10 }}
@@ -63,14 +118,15 @@ export function AuthDialog() {
               stiffness: 400,
               damping: 30,
             }}
-            className="fixed top-1/2 left-1/2 z-101 w-[calc(100%-2rem)] max-w-[420px] -translate-x-1/2 -translate-y-1/2"
+            className="fixed top-1/2 left-1/2 z-101 w-[calc(100%-2rem)] max-w-[420px] -translate-x-1/2 -translate-y-1/2 focus:outline-none"
           >
             <div className="overflow-hidden rounded-2xl border border-[#E8D5B5]/40 bg-[#FFFCF8] shadow-[0_25px_60px_-12px_rgba(44,36,22,0.25),0_0_0_1px_rgba(201,168,124,0.08)]">
               {/* Header */}
               <div className="px-8 pt-8 pb-2 text-center">
                 <h2
+                  id="auth-dialog-title"
                   className="mb-1 font-normal text-2xl text-[#2C2416]"
-                  style={{ fontFamily: 'Lora, serif' }}
+                  style={{ fontFamily: 'var(--font-lora), Georgia, serif' }}
                 >
                   {title}
                 </h2>
