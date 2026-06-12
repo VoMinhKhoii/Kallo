@@ -213,6 +213,8 @@ class _Dock extends StatelessWidget {
                             // so paging settles in place instead of popping.
                             child: CountUpText(
                               value: remaining.abs().toDouble(),
+                              enabled:
+                                  !MediaQuery.disableAnimationsOf(context),
                               duration: const Duration(milliseconds: 300),
                               style: dashHero(),
                               format: (v) => _fmt(v.round(), locale),
@@ -376,6 +378,8 @@ class _MacroBarState extends State<_MacroBar>
 
   @override
   Widget build(BuildContext context) {
+    // Reduced motion: render the fill at its resting width, no sweep.
+    final reduceMotion = MediaQuery.disableAnimationsOf(context);
     return ClipRRect(
       borderRadius: BorderRadius.circular(NhamRadii.pill),
       child: Container(
@@ -387,7 +391,8 @@ class _MacroBarState extends State<_MacroBar>
             builder: (context, _) => Align(
               alignment: Alignment.centerLeft,
               child: Container(
-                width: constraints.maxWidth * (_fill.value / 100),
+                width: constraints.maxWidth *
+                    ((reduceMotion ? widget.pct : _fill.value) / 100),
                 height: 8,
                 decoration: BoxDecoration(
                   color: widget.color,

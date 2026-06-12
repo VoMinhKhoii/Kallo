@@ -91,6 +91,24 @@ class _StreamingEntryState extends State<StreamingEntry>
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Reduced motion: freeze the spin/pulse loops into calm static states —
+    // the arc rests, the skeleton bars and the timeline dot hold full opacity.
+    if (MediaQuery.disableAnimationsOf(context)) {
+      _spin
+        ..stop()
+        ..value = 0;
+      _pulse
+        ..stop()
+        ..value = 1;
+    } else {
+      if (!_spin.isAnimating) _spin.repeat();
+      if (!_pulse.isAnimating) _pulse.repeat(reverse: true);
+    }
+  }
+
+  @override
   void dispose() {
     _reassuranceTimer.cancel();
     _spin.dispose();

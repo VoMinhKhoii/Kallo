@@ -185,7 +185,9 @@ class _MealEntryState extends State<MealEntry> {
                           const SizedBox(width: NhamSpacing.sp4), // gap-4
                           CountUpText(
                             value: totals.calories,
-                            enabled: _countUp,
+                            // Reduced motion: the reveal total lands in place.
+                            enabled: _countUp &&
+                                !MediaQuery.disableAnimationsOf(context),
                             format: (v) => fmtKcal(v),
                             variant: NhamTextVariant.numStrong,
                           ),

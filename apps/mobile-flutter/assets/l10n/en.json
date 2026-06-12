@@ -152,13 +152,15 @@
     "card": {
       "average": "Average",
       "target": "Target",
-      "targetProgress": "Target progress",
       "context": "Context",
       "noData": "No data",
       "noTargetClaim": "No target claim",
       "averageVsTarget": "{average} avg · {target} target",
       "expand": "View trend",
       "collapse": "Hide trend"
+    },
+    "detail": {
+      "averageVsTarget": "Average vs target"
     },
     "confidence": {
       "normal": "Good confidence",

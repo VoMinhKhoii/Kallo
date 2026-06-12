@@ -1081,6 +1081,8 @@ class _MacroBarState extends State<_MacroBar>
 
   @override
   Widget build(BuildContext context) {
+    // Reduced motion: render the fill at its resting width, no sweep.
+    final reduceMotion = MediaQuery.disableAnimationsOf(context);
     return ClipRRect(
       borderRadius: BorderRadius.circular(NhamRadii.pill),
       child: Container(
@@ -1091,7 +1093,9 @@ class _MacroBarState extends State<_MacroBar>
           builder:
               (context, _) => FractionallySizedBox(
                 alignment: Alignment.centerLeft,
-                widthFactor: (_anim.value / 100).clamp(0, 1),
+                widthFactor:
+                    ((reduceMotion ? widget.pct : _anim.value) / 100)
+                        .clamp(0, 1),
                 child: Container(
                   decoration: BoxDecoration(
                     color: widget.color,
@@ -1126,6 +1130,19 @@ class _PulseState extends State<_Pulse> with SingleTickerProviderStateMixin {
     begin: 0.5,
     end: 1,
   ).animate(CurvedAnimation(parent: _c, curve: const Cubic(0.4, 0, 0.6, 1)));
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Reduced motion: hold the skeleton fully visible instead of looping.
+    if (MediaQuery.disableAnimationsOf(context)) {
+      _c
+        ..stop()
+        ..value = 1;
+    } else if (!_c.isAnimating) {
+      _c.repeat(reverse: true);
+    }
+  }
 
   @override
   void dispose() {

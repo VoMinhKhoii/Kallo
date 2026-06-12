@@ -152,13 +152,15 @@
     "card": {
       "average": "Trung bình",
       "target": "Mục tiêu",
-      "targetProgress": "Tiến độ mục tiêu",
       "context": "Ngữ cảnh",
       "noData": "Chưa có dữ liệu",
       "noTargetClaim": "Chưa kết luận theo mục tiêu",
       "averageVsTarget": "{average} TB · mục tiêu {target}",
       "expand": "Xem xu hướng",
       "collapse": "Ẩn xu hướng"
+    },
+    "detail": {
+      "averageVsTarget": "Trung bình so với mục tiêu"
     },
     "confidence": {
       "normal": "Độ tin cậy tốt",

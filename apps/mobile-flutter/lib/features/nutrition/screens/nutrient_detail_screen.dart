@@ -81,9 +81,11 @@ class NutrientDetailScreen extends ConsumerWidget {
                       ],
                     ),
                     const SizedBox(height: 4),
+                    // Meta, not an eyebrow — the screen keeps max two eyebrows
+                    // (the sparkline + candidates section labels).
                     Text(
-                      tr('nutrition.rhythm.avgPerLoggedDay').toUpperCase(),
-                      style: dashEyebrow(),
+                      tr('nutrition.rhythm.avgPerLoggedDay'),
+                      style: dashMeta(color: kInkSecondary),
                     ),
                     if (hasTarget) ...[
                       const SizedBox(height: 20),
@@ -117,23 +119,29 @@ class NutrientDetailScreen extends ConsumerWidget {
                 ),
               ),
 
-              // ── Band 2: coverage sparkline ────────────────────────────
-              const SizedBox(height: 24),
-              Text(tr('nutrition.card.targetProgress').toUpperCase(),
-                  style: dashEyebrow()),
-              const SizedBox(height: 12),
-              Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: kCardSurface,
-                  borderRadius: BorderRadius.circular(kCardRadius),
-                  boxShadow: const [kCardShadow],
+              // ── Band 2: the average against target ───────────────────
+              // We hold one resolved average, not a per-day series — when
+              // there's nothing meaningful to plot (no target, or limited
+              // data) the band is omitted entirely; the candidate rows carry
+              // the screen.
+              if (_coveragePoints(card, limited).isNotEmpty) ...[
+                const SizedBox(height: 24),
+                Text(tr('nutrition.detail.averageVsTarget').toUpperCase(),
+                    style: dashEyebrow()),
+                const SizedBox(height: 12),
+                Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: kCardSurface,
+                    borderRadius: BorderRadius.circular(kCardRadius),
+                    boxShadow: const [kCardShadow],
+                  ),
+                  child: NutrientSparkline(
+                    points: _coveragePoints(card, limited),
+                    semanticLabel: tr('nutrition.trend.chartLabel'),
+                  ),
                 ),
-                child: NutrientSparkline(
-                  points: _coveragePoints(card, limited),
-                  semanticLabel: tr('nutrition.trend.chartLabel'),
-                ),
-              ),
+              ],
 
               // ── Band 3: food candidates as full rows ──────────────────
               if (card.supportsCandidates) ...[
@@ -155,17 +163,16 @@ class NutrientDetailScreen extends ConsumerWidget {
     );
   }
 
-  /// Coverage points for the sparkline. We hold a single resolved average, not
-  /// a per-day series, so we surface that one point (normalized against target
-  /// when there is one). Limited/insufficient data → no point (the rail).
+  /// Points for the sparkline. We hold a single resolved average, not a
+  /// per-day series, so at most one point exists — the average normalized
+  /// against the target. No target (nothing to normalize against) or
+  /// limited/insufficient data → empty, and the band isn't rendered. Never a
+  /// fabricated midpoint.
   List<double> _coveragePoints(NutrientCardData card, bool limited) {
     if (limited || card.averagePerDay == null) return const [];
     final target = card.target;
-    if (target != null && target > 0) {
-      return [(card.averagePerDay! / target).clamp(0.0, 1.0)];
-    }
-    // No target → a mid-rail marker so the point still reads as "logged".
-    return const [0.5];
+    if (target == null || target <= 0) return const [];
+    return [(card.averagePerDay! / target).clamp(0.0, 1.0)];
   }
 }
 
