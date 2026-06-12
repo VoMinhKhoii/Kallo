@@ -1217,7 +1217,10 @@
       "selfBody": "Share it with a friend so they can connect with you.",
       "alreadyTitle": "You're connected with {name}",
       "alreadyBody": "You're already in each other's circles.",
+      "connectedTitle": "You're connected",
+      "connectedBody": "You're in each other's circles now. Head over whenever you like.",
       "goToCircle": "Go to your circle",
+      "you": "You",
       "signedOutTitle": "{name} invited you to their circle",
       "signedOutBody": "Sign in or create an account to connect.",
       "signIn": "Sign in to connect"

@@ -1217,7 +1217,10 @@
       "selfBody": "Chia sẻ với bạn bè để họ có thể kết nối với bạn.",
       "alreadyTitle": "Bạn đã kết nối với {name}",
       "alreadyBody": "Hai bạn đã ở trong vòng kết nối của nhau.",
+      "connectedTitle": "Đã kết nối",
+      "connectedBody": "Giờ hai bạn đã ở trong vòng kết nối của nhau. Ghé thăm bất cứ lúc nào bạn muốn.",
       "goToCircle": "Đến vòng kết nối",
+      "you": "Bạn",
       "signedOutTitle": "{name} đã mời bạn vào vòng kết nối",
       "signedOutBody": "Đăng nhập hoặc tạo tài khoản để kết nối.",
       "signIn": "Đăng nhập để kết nối"

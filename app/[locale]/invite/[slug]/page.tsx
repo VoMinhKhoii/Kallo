@@ -1,10 +1,11 @@
 import { getTranslations } from 'next-intl/server';
 import type { ReactNode } from 'react';
-import { InviteAccept } from '@/components/groups/invite/invite-accept';
+import { ConnectPanel } from '@/components/groups/invite/connect-panel';
 import { InviteAuthCta } from '@/components/groups/invite/invite-auth-cta';
 import { Link } from '@/i18n/navigation';
 import {
   getFriendshipStatus,
+  getMyPublicProfile,
   getProfileBySlug,
   type PublicProfile,
 } from '@/lib/actions/groups';
@@ -118,15 +119,22 @@ export default async function InvitePage({
     return <Shell title={t('invalidTitle')} body={t('invalidBody')} />;
   }
 
-  // Connect: the recipient taps Accept.
+  // Connect: the recipient taps Accept, and the whole panel resolves in place
+  // (their disc slides in beside the inviter's, the title crossfades to "You're
+  // connected") rather than teleporting to an empty /groups.
+  const myProfile = await getMyPublicProfile(user.id);
+  const youLabel =
+    myProfile?.displayName?.trim() ||
+    myProfile?.handle ||
+    user.email?.charAt(0) ||
+    t('you');
+
   return (
-    <Shell
-      profile={inviter}
-      title={t('connectTitle', { name })}
-      body={t('connectBody')}
-    >
-      <InviteAccept slug={inviter.handle} />
-    </Shell>
+    <ConnectPanel
+      slug={inviter.handle}
+      inviterLabel={name}
+      youLabel={youLabel}
+    />
   );
 }
 
