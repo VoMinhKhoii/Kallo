@@ -5,7 +5,7 @@ import { getInedibleCache } from '../cache/nutrition-cache';
 import type { GeminiClient } from '../gemini';
 import { deriveExpectedState } from '../pipeline/cooking-method-state';
 import type { DecomposedIngredientV2 } from '../pipeline/schemas';
-import type { NutritionPer100g } from '../types';
+import type { MatchType, NutritionPer100g } from '../types';
 import { cacheQueryEmbedding, resolveQueryEmbedding } from './embedding-cache';
 import { batchFetchNutrition } from './nutrition-batch';
 import {
@@ -13,12 +13,11 @@ import {
   type DbIngredientState,
   FAO_VECTOR_THRESHOLD,
   FUZZY_FALLBACK_THRESHOLD,
-  type FuzzyMatchRow,
   type MatchInfo,
   mergeTopKAcrossSources,
   rrfFuseCandidates,
-  SOURCE_FAO,
-  SOURCE_USDA,
+  type SourcedMatchRow,
+  splitBySource,
   USDA_VECTOR_THRESHOLD,
 } from './source-matching';
 
@@ -87,22 +86,6 @@ interface IngredientWithContext {
   matchingName: string;
   expectedState: DbIngredientState;
   dishCookingMethod: string | null;
-}
-
-/** Row from the *_all_sources match functions: FuzzyMatchRow + source_id. */
-type SourcedMatchRow = FuzzyMatchRow & { source_id: number };
-
-function splitBySource(rows: SourcedMatchRow[]): {
-  fao: FuzzyMatchRow[];
-  usda: FuzzyMatchRow[];
-} {
-  const fao: FuzzyMatchRow[] = [];
-  const usda: FuzzyMatchRow[] = [];
-  for (const row of rows) {
-    if (row.source_id === SOURCE_FAO) fao.push(row);
-    else if (row.source_id === SOURCE_USDA) usda.push(row);
-  }
-  return { fao, usda };
 }
 
 /**
@@ -215,60 +198,50 @@ export async function matchTopKPerIngredient(
           sql`SELECT * FROM fuzzy_match_ingredients_all_sources(${c.matchingName}, ${sourceLimit}, 0.15)`
         ),
       ]);
-      const vectorBySource = splitBySource(
-        vectorRows as unknown as SourcedMatchRow[]
-      );
-      const fuzzyBySource = splitBySource(
-        fuzzyRows as unknown as SourcedMatchRow[]
-      );
-
       // Per-arm, per-source acceptance thresholds + state penalty, exactly as
       // before — fusion only ever sees candidates that cleared their own bar.
-      const vectorList = mergeTopKAcrossSources(
-        [
-          buildMatchTopK(
-            c.matchingName,
-            vectorBySource.fao,
-            k,
-            FAO_VECTOR_THRESHOLD,
-            'fao',
-            'vector',
-            c.expectedState
-          ),
-          buildMatchTopK(
-            c.matchingName,
-            vectorBySource.usda,
-            k,
-            USDA_VECTOR_THRESHOLD,
-            'usda',
-            'vector',
-            c.expectedState
-          ),
-        ],
-        k
+      const armTopK = (
+        rows: unknown,
+        matchType: MatchType,
+        faoThreshold: number,
+        usdaThreshold: number
+      ) => {
+        const bySource = splitBySource(rows as SourcedMatchRow[]);
+        return mergeTopKAcrossSources(
+          [
+            buildMatchTopK(
+              c.matchingName,
+              bySource.fao,
+              k,
+              faoThreshold,
+              'fao',
+              matchType,
+              c.expectedState
+            ),
+            buildMatchTopK(
+              c.matchingName,
+              bySource.usda,
+              k,
+              usdaThreshold,
+              'usda',
+              matchType,
+              c.expectedState
+            ),
+          ],
+          k
+        );
+      };
+      const vectorList = armTopK(
+        vectorRows,
+        'vector',
+        FAO_VECTOR_THRESHOLD,
+        USDA_VECTOR_THRESHOLD
       );
-      const fuzzyList = mergeTopKAcrossSources(
-        [
-          buildMatchTopK(
-            c.matchingName,
-            fuzzyBySource.fao,
-            k,
-            FUZZY_FALLBACK_THRESHOLD,
-            'fao',
-            'fuzzy',
-            c.expectedState
-          ),
-          buildMatchTopK(
-            c.matchingName,
-            fuzzyBySource.usda,
-            k,
-            FUZZY_FALLBACK_THRESHOLD,
-            'usda',
-            'fuzzy',
-            c.expectedState
-          ),
-        ],
-        k
+      const fuzzyList = armTopK(
+        fuzzyRows,
+        'fuzzy',
+        FUZZY_FALLBACK_THRESHOLD,
+        FUZZY_FALLBACK_THRESHOLD
       );
 
       if (vectorList.length === 0) vectorArmEmptyCount++;

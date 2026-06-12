@@ -926,18 +926,22 @@ describe('search infrastructure integrity', () => {
   });
 });
 
-// ─── search_ingredients_by_name (manual-logging search) ─────────────────────
+// ─── manual-logging search ranking (fuzzy_match_ingredients_all_sources) ────
 
-describe('search_ingredients_by_name (manual search ranking)', () => {
+describe('fuzzy_match_ingredients_all_sources (manual search ranking)', () => {
+  // Mirrors the manual search route's wrapper: collapse the per-source rows
+  // into one list — score first, FAO before USDA on ties, shorter names first.
   async function searchByName(
     query: string,
     count = 10,
     threshold = 0.15
   ): Promise<FuzzyResult[]> {
     return sql<FuzzyResult[]>`
-      SELECT * FROM search_ingredients_by_name(
+      SELECT * FROM fuzzy_match_ingredients_all_sources(
         ${query}, ${count}, ${threshold}
       )
+      ORDER BY similarity DESC, source_id ASC, length(name_primary) ASC
+      LIMIT ${count}
     `;
   }
 

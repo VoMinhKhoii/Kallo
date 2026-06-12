@@ -7,6 +7,9 @@ import {
   buildPersistedIngredient,
   buildPersistedMeal,
   buildPersistedMealItemGroup,
+  extractNutritionValues,
+  inferMealSlot,
+  nutritionValuesToRow,
 } from '@/lib/actions/persisted-meal';
 import { NUTRITION_KEYS } from '@/lib/ai/constants';
 import { toParsedMeal } from '@/lib/ai/mappers';
@@ -121,28 +124,6 @@ const profileNutritionSettingsSchema = z
 const EMPTY_NUTRITION = Object.fromEntries(
   NUTRITION_KEYS.map((key) => [key, null])
 ) as unknown as NutritionValues;
-
-/**
- * Persist a single numeric value per nutrient on meals and meal_items.
- */
-function nutritionValuesToRow(
-  nutrition: NutritionValues
-): Record<string, unknown> {
-  const row: Record<string, unknown> = {};
-  for (const key of NUTRITION_KEYS) {
-    row[key] = nutrition[key];
-  }
-  return row;
-}
-
-/** Infer meal slot from time of day as fallback */
-function inferMealSlot(date: Date): string {
-  const hour = date.getHours();
-  if (hour < 10) return 'breakfast';
-  if (hour < 14) return 'lunch';
-  if (hour < 17) return 'snack';
-  return 'dinner';
-}
 
 // ---------------------------------------------------------------------------
 // C1: Confirm and Save Meal
@@ -853,56 +834,6 @@ export async function loadLoggingDay(input: {
   ]);
 
   return { persistedMeals, pendingConfirmations };
-}
-
-/** Extract flat NutritionValues from a DB row with numeric columns */
-function extractNutritionValues(row: Record<string, unknown>): NutritionValues {
-  const result: NutritionValues = {
-    caloriesKcal: null,
-    proteinG: null,
-    carbohydrateG: null,
-    fatG: null,
-    fiberG: null,
-    sodiumMg: null,
-    calciumMg: null,
-    ironMg: null,
-    magnesiumMg: null,
-    phosphorusMg: null,
-    potassiumMg: null,
-    zincMg: null,
-    copperMcg: null,
-    manganeseMg: null,
-    betaCaroteneMcg: null,
-    vitaminAMcg: null,
-    vitaminDMcg: null,
-    vitaminEMg: null,
-    vitaminKMcg: null,
-    vitaminCMg: null,
-    vitaminB1Mg: null,
-    vitaminB2Mg: null,
-    vitaminPpMg: null,
-    vitaminB5Mg: null,
-    vitaminB6Mg: null,
-    vitaminB9Mcg: null,
-    vitaminB12Mcg: null,
-    vitaminHMcg: null,
-  };
-  for (const key of NUTRITION_KEYS) {
-    const val = row[key];
-    if (typeof val === 'number') {
-      result[key] = Number.isFinite(val) ? val : null;
-      continue;
-    }
-
-    if (typeof val === 'string') {
-      const parsed = Number(val);
-      result[key] = Number.isFinite(parsed) ? parsed : null;
-      continue;
-    }
-
-    result[key] = null;
-  }
-  return result;
 }
 
 // ---------------------------------------------------------------------------

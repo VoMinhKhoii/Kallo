@@ -388,7 +388,6 @@ function manualVariables() {
     originDate: DATE,
     loggedDate: DATE,
     timezoneOffset: TZ,
-    loggedAt: '2026-05-29T01:00:00.000Z',
     rows: makeManualRows(),
   };
 }

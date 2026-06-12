@@ -179,7 +179,8 @@ export const MealInput = forwardRef<MealInputHandle, MealInputProps>(
       ref,
       () => ({
         getText: () => textareaRef.current?.value ?? '',
-        getManualRows: () => manualRows,
+        // Read through the ref so the handle isn't rebuilt on every keystroke.
+        getManualRows: () => manualRowsRef.current,
         clear: () => {
           if (isManual) {
             setManualRows([createEmptyRow(crypto.randomUUID())]);
@@ -193,7 +194,7 @@ export const MealInput = forwardRef<MealInputHandle, MealInputProps>(
           updateText(text);
         },
       }),
-      [isManual, manualRows, updateText]
+      [isManual, updateText]
     );
 
     useEffect(() => {

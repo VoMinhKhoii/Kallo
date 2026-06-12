@@ -54,6 +54,23 @@ export interface FuzzyMatchRow {
   similarity: number;
 }
 
+/** Row from the *_all_sources match functions: FuzzyMatchRow + source_id. */
+export type SourcedMatchRow = FuzzyMatchRow & { source_id: number };
+
+/** Demux an *_all_sources result set back into per-source candidate lists. */
+export function splitBySource(rows: SourcedMatchRow[]): {
+  fao: FuzzyMatchRow[];
+  usda: FuzzyMatchRow[];
+} {
+  const fao: FuzzyMatchRow[] = [];
+  const usda: FuzzyMatchRow[] = [];
+  for (const row of rows) {
+    if (row.source_id === SOURCE_FAO) fao.push(row);
+    else if (row.source_id === SOURCE_USDA) usda.push(row);
+  }
+  return { fao, usda };
+}
+
 /**
  * Lightweight match result carrying only match metadata (no nutrition).
  * Used internally to decouple matching from nutrition fetching.

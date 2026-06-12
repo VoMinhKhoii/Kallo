@@ -10,8 +10,6 @@ import 'package:uuid/uuid.dart';
 
 import '../../../data/api_client.dart';
 import '../../../models/ingredient.dart';
-// Prefixed: dashboard_providers also exports a `loggingDayProvider`.
-import '../../dashboard/data/dashboard_providers.dart' as dash;
 import 'logging_keys.dart';
 import 'logging_providers.dart';
 
@@ -100,12 +98,9 @@ class ManualLogController extends AutoDisposeNotifier<ManualLogState> {
     );
   }
 
-  void clear() {
-    state = const ManualLogState();
-  }
-
   /// Save the complete items as one meal, then run the same cache cascade the
-  /// confirm flow uses (day feed, timeline dots, dashboard bundle).
+  /// confirm flow uses (day feed, timeline dots, dashboard bundle). On
+  /// failure the server changed nothing, so no surface is invalidated.
   Future<void> save({required String userId, required String date}) async {
     final items = state.completeItems;
     if (items.isEmpty || state.isSaving) return;
@@ -123,14 +118,9 @@ class ManualLogController extends AutoDisposeNotifier<ManualLogState> {
         'timezoneOffset': timezoneOffsetMinutes(),
       });
       state = const ManualLogState();
+      invalidateMealSurfaces(ref, userId, date);
     } finally {
       if (state.isSaving) state = state.copyWith(isSaving: false);
-      final dayArgs = LoggingDayArgs(userId, date);
-      ref.invalidate(loggingDayProvider(dayArgs));
-      ref.invalidate(mealDatesProvider(userId));
-      ref.invalidate(
-        dash.dashboardBundleProvider((userId: userId, date: date)),
-      );
     }
   }
 }

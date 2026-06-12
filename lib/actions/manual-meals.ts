@@ -7,10 +7,12 @@ import {
   buildPersistedIngredient,
   buildPersistedMeal,
   buildPersistedMealItemGroup,
+  extractNutritionValues,
+  inferMealSlot,
+  nutritionValuesToRow,
 } from '@/lib/actions/persisted-meal';
 import { NUTRITION_KEYS } from '@/lib/ai/constants';
 import { sumDisplayedNutrition } from '@/lib/ai/pipeline/goal-adjustment';
-import type { NutritionValues } from '@/lib/ai/types';
 import {
   type SaveManualMealInput,
   saveManualMealSchema,
@@ -22,37 +24,18 @@ import { mealItems, meals, vietnameseFoodComposition } from '@/lib/db/schema';
 import { Errors } from '@/lib/errors';
 import { scaleNutritionValues } from '@/lib/logging/manual-logging';
 
-/** Infer meal slot from time of day (mirrors lib/actions/meals.ts). */
-function inferMealSlot(date: Date): string {
-  const hour = date.getHours();
-  if (hour < 10) return 'breakfast';
-  if (hour < 14) return 'lunch';
-  if (hour < 17) return 'snack';
-  return 'dinner';
-}
-
-/** Persist a single numeric value per nutrient on meals and meal_items. */
-function nutritionValuesToRow(
-  nutrition: NutritionValues
-): Record<string, unknown> {
-  const row: Record<string, unknown> = {};
-  for (const key of NUTRITION_KEYS) {
-    row[key] = nutrition[key];
-  }
-  return row;
-}
-
-/** Parse a composition row's per-100g values — its numeric columns surface as
- *  strings (they are declared without `mode: 'number'`). */
-function parsePer100g(row: Record<string, unknown>): NutritionValues {
-  const result = {} as Record<string, number | null>;
-  for (const key of NUTRITION_KEYS) {
-    const raw = row[key];
-    const parsed = raw == null ? null : Number(raw);
-    result[key] = parsed != null && Number.isFinite(parsed) ? parsed : null;
-  }
-  return result as unknown as NutritionValues;
-}
+// Only the columns the save needs — the composition table also carries the
+// 768-dim embedding (~15-20KB serialized) and search-text blobs, which
+// SELECT * would ship per ingredient for nothing.
+const compositionSelection = {
+  id: vietnameseFoodComposition.id,
+  namePrimary: vietnameseFoodComposition.namePrimary,
+  ...(Object.fromEntries(
+    NUTRITION_KEYS.map((key) => [key, vietnameseFoodComposition[key]])
+  ) as {
+    [K in (typeof NUTRITION_KEYS)[number]]: (typeof vietnameseFoodComposition)[K];
+  }),
+};
 
 /**
  * Save a manually-composed meal: ingredient ids + grams in, nutrition computed
@@ -71,7 +54,7 @@ export async function saveManualMealAction(
 
   const ids = parsed.items.map((item) => item.foodCompositionId);
   const compositionRows = await db
-    .select()
+    .select(compositionSelection)
     .from(vietnameseFoodComposition)
     .where(inArray(vietnameseFoodComposition.id, ids));
   const compositionById = new Map(compositionRows.map((row) => [row.id, row]));
@@ -94,7 +77,7 @@ export async function saveManualMealAction(
       grams: item.grams,
       name: composition.namePrimary,
       nutrition: scaleNutritionValues(
-        parsePer100g(composition as Record<string, unknown>),
+        extractNutritionValues(composition),
         item.grams
       ),
     };

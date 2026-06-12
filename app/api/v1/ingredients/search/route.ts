@@ -21,18 +21,6 @@ const SEMANTIC_VECTOR_THRESHOLD = 0.75;
 // lexically and the semantic supplement is skipped (no embedding work).
 const LEXICAL_STRONG_SIMILARITY = 0.45;
 
-/** Strip Vietnamese diacritics client-side of the DB (matches how
- *  `search_text_ascii` was generated) so the prefix fallback never depends on
- *  the connection's search_path exposing the unaccent extension. */
-function toAscii(text: string): string {
-  return text
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/đ/g, 'd')
-    .replace(/Đ/g, 'D')
-    .toLowerCase();
-}
-
 function toSearchResult(row: Record<string, unknown>): IngredientSearchResult {
   return {
     id: String(row.id),
@@ -66,6 +54,9 @@ async function loadRecentIngredients(
     JOIN meals m ON m.id = mi.meal_id
     JOIN vietnamese_food_composition v ON v.id = mi.food_composition_id
     WHERE m.user_id = ${userId}
+      -- Recents older than this aren't useful suggestions; the bound keeps the
+      -- aggregation from scanning a user's lifetime history.
+      AND m.logged_at > now() - interval '90 days'
     GROUP BY v.id
     ORDER BY last_used DESC
     LIMIT ${limit}
@@ -122,19 +113,22 @@ async function searchIngredients(
   q: string,
   limit: number
 ): Promise<IngredientSearchResult[]> {
-  // Primary: trigram match via search_ingredients_by_name (branches diacritic
-  // vs ASCII internally). It ranks with word_similarity — the query against
-  // the best-matching extent of each name, with name_alt scored per variant —
-  // so short queries like "ức gà" surface the long-named USDA body-part
-  // entries instead of being drowned by short generic FAO names. The function
-  // already orders by score, then curated FAO (source_id 1) before translated
-  // USDA, then shorter names; the JOIN just adds per-100g macros.
+  // Primary: trigram match via fuzzy_match_ingredients_all_sources — the same
+  // ranking function the v2 AI matcher uses (branches diacritic vs ASCII
+  // internally). It ranks with word_similarity — the query against the
+  // best-matching extent of each name, with name_alt scored per variant — so
+  // short queries like "ức gà" surface the long-named USDA body-part entries
+  // instead of being drowned by short generic FAO names. The outer ORDER BY +
+  // LIMIT collapse the per-source rows into one list: score first, curated FAO
+  // (source_id 1) before translated USDA on ties, shorter names first; the
+  // JOIN just adds per-100g macros.
   const fuzzyRows = await db.execute(sql`
     SELECT f.id, f.name_primary, f.name_alt, f.name_en, f.state, f.similarity,
            v.calories_kcal, v.protein_g, v.carbohydrate_g, v.fat_g
-    FROM search_ingredients_by_name(${q}, ${limit}, 0.15) f
+    FROM fuzzy_match_ingredients_all_sources(${q}, ${limit}, 0.15) f
     JOIN vietnamese_food_composition v ON v.id = f.id
-    ORDER BY f.similarity DESC, v.source_id ASC
+    ORDER BY f.similarity DESC, f.source_id ASC, length(f.name_primary) ASC
+    LIMIT ${limit}
   `);
   const results = (fuzzyRows as unknown as Record<string, unknown>[]).map(
     toSearchResult
@@ -159,14 +153,16 @@ async function searchIngredients(
   // Supplement: trigram similarity is unreliable for short queries (Vietnamese
   // staples like "gà", "bò", "cá"), so backfill with a substring match against
   // the precomputed ASCII search text, prefix matches first.
-  const ascii = toAscii(q);
+  // The query is folded with the DB's own unaccent — the exact algorithm the
+  // trigger used to generate search_text_ascii, so the two sides can't drift.
   const prefixRows = await db.execute(sql`
     SELECT v.id, v.name_primary, v.name_alt, v.name_en, v.state,
            0::float AS similarity,
            v.calories_kcal, v.protein_g, v.carbohydrate_g, v.fat_g
-    FROM vietnamese_food_composition v
-    WHERE v.search_text_ascii LIKE ${`%${ascii}%`}
-    ORDER BY (v.search_text_ascii LIKE ${`${ascii}%`}) DESC,
+    FROM vietnamese_food_composition v,
+         lower(extensions.unaccent(${q})) AS ascii_q
+    WHERE v.search_text_ascii LIKE '%' || ascii_q || '%'
+    ORDER BY (v.search_text_ascii LIKE ascii_q || '%') DESC,
              v.source_id ASC,
              length(v.name_primary) ASC
     LIMIT ${limit}

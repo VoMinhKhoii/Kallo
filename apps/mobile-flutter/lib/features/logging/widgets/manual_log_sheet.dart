@@ -82,7 +82,9 @@ class _ManualLogSheetState extends ConsumerState<ManualLogSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final state = ref.watch(manualLogProvider);
+    // The items state is watched only inside the selected-items and totals
+    // Consumers below — a grams keystroke rebuilds those two sections, not
+    // the whole sheet (search field, results, header).
     final resultsAsync = ref.watch(ingredientSearchProvider(_query));
     final maxHeight = MediaQuery.of(context).size.height * 0.9;
     final keyboardInset = MediaQuery.of(context).viewInsets.bottom;
@@ -191,28 +193,37 @@ class _ManualLogSheetState extends ConsumerState<ManualLogSheet> {
                   NhamSpacing.sp3,
                 ),
                 children: [
-                  if (state.items.isNotEmpty) ...[
-                    NhamText(
-                      'logging.manualLogging.selected'.tr(),
-                      variant: NhamTextVariant.eyebrow,
-                    ),
-                    const SizedBox(height: NhamSpacing.sp2),
-                    for (final item in state.items)
-                      _SelectedItemRow(
-                        key: ValueKey(item.id),
-                        item: item,
-                        disabled: state.isSaving,
-                        onGramsChange:
-                            (grams) => ref
-                                .read(manualLogProvider.notifier)
-                                .updateGrams(item.id, grams),
-                        onRemove:
-                            () => ref
-                                .read(manualLogProvider.notifier)
-                                .removeItem(item.id),
-                      ),
-                    const SizedBox(height: NhamSpacing.sp3),
-                  ],
+                  Consumer(
+                    builder: (context, ref, _) {
+                      final state = ref.watch(manualLogProvider);
+                      if (state.items.isEmpty) return const SizedBox.shrink();
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          NhamText(
+                            'logging.manualLogging.selected'.tr(),
+                            variant: NhamTextVariant.eyebrow,
+                          ),
+                          const SizedBox(height: NhamSpacing.sp2),
+                          for (final item in state.items)
+                            _SelectedItemRow(
+                              key: ValueKey(item.id),
+                              item: item,
+                              disabled: state.isSaving,
+                              onGramsChange:
+                                  (grams) => ref
+                                      .read(manualLogProvider.notifier)
+                                      .updateGrams(item.id, grams),
+                              onRemove:
+                                  () => ref
+                                      .read(manualLogProvider.notifier)
+                                      .removeItem(item.id),
+                            ),
+                          const SizedBox(height: NhamSpacing.sp3),
+                        ],
+                      );
+                    },
+                  ),
                   _ResultsSection(
                     query: _query,
                     resultsAsync: resultsAsync,
@@ -250,16 +261,21 @@ class _ManualLogSheetState extends ConsumerState<ManualLogSheet> {
                 color: NhamColors.elev,
                 border: Border(top: BorderSide(color: NhamColors.borderFaint)),
               ),
-              child: Row(
-                children: [
-                  Expanded(child: _TotalsSummary(totals: state.totals)),
-                  const SizedBox(width: NhamSpacing.sp3),
-                  _SaveButton(
-                    enabled: state.canSave,
-                    saving: state.isSaving,
-                    onTap: _save,
-                  ),
-                ],
+              child: Consumer(
+                builder: (context, ref, _) {
+                  final state = ref.watch(manualLogProvider);
+                  return Row(
+                    children: [
+                      Expanded(child: _TotalsSummary(totals: state.totals)),
+                      const SizedBox(width: NhamSpacing.sp3),
+                      _SaveButton(
+                        enabled: state.canSave,
+                        saving: state.isSaving,
+                        onTap: _save,
+                      ),
+                    ],
+                  );
+                },
               ),
             ),
           ],

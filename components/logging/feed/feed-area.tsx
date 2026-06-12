@@ -34,7 +34,6 @@ import {
   stageCheatRepeatAction,
 } from '@/lib/actions/meals';
 import { sumDisplayedNutrition } from '@/lib/ai/pipeline/goal-adjustment';
-import { getUtcInstantForLocalDate } from '@/lib/date/local-day';
 import { rowIsComplete } from '@/lib/logging/manual-logging';
 import { isLikelyPartialDay } from '@/lib/nutrition/pattern/completeness';
 import type { CheatIntensity, CheatSliderLevels } from '@/lib/types/cheat';
@@ -328,16 +327,11 @@ export function FeedArea({
     );
     if (rows.length === 0 || saveManualMeal.isPending) return;
 
-    const timezoneOffset = new Date().getTimezoneOffset();
     saveManualMeal.mutate({
       mealId: crypto.randomUUID(),
       originDate: selectedDate,
       loggedDate: selectedDate,
-      timezoneOffset,
-      loggedAt: getUtcInstantForLocalDate(
-        selectedDate,
-        timezoneOffset
-      ).toISOString(),
+      timezoneOffset: new Date().getTimezoneOffset(),
       rows,
     });
     inputRef.current?.clear();
