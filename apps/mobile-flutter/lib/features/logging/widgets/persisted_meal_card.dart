@@ -1,9 +1,11 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../../shared/widgets/nham_text.dart';
 import '../../../theme/nham_colors.dart';
 import '../../../theme/nham_theme.dart';
+import '../../../theme/nham_typography.dart';
 import '../data/logging_models.dart';
 import '../logic/format.dart';
 import 'dashed_divider.dart';
@@ -20,10 +22,15 @@ class PersistedMealCard extends StatefulWidget {
     super.key,
     required this.meal,
     this.isLast = false,
+    this.onRemove,
   });
 
   final PersistedMeal meal;
   final bool isLast;
+
+  /// iOS trailing-swipe removal (terracotta, never red) — fired when the card is
+  /// dismissed. Null disables the swipe.
+  final VoidCallback? onRemove;
 
   @override
   State<PersistedMealCard> createState() => _PersistedMealCardState();
@@ -54,6 +61,43 @@ class _PersistedMealCardState extends State<PersistedMealCard>
     super.dispose();
   }
 
+  /// Wrap the card in a trailing-swipe-to-remove Dismissible (terracotta, never
+  /// red) when [onRemove] is set; otherwise return the card untouched.
+  Widget _maybeDismissible(Widget card) {
+    final onRemove = widget.onRemove;
+    if (onRemove == null) return card;
+    return Dismissible(
+      key: ValueKey('dismiss-${widget.meal.id}'),
+      direction: DismissDirection.endToStart,
+      onDismissed: (_) {
+        HapticFeedback.mediumImpact();
+        onRemove();
+      },
+      background: Container(
+        alignment: Alignment.centerRight,
+        padding: const EdgeInsets.symmetric(horizontal: NhamSpacing.sp5),
+        decoration: BoxDecoration(
+          color: NhamColors.danger,
+          borderRadius: BorderRadius.circular(NhamRadii.containerLg),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.delete_outline, size: 18, color: Colors.white),
+            const SizedBox(width: 6),
+            NhamText(
+              'logging.remove'.tr(),
+              variant: NhamTextVariant.body,
+              style: NhamTextStyles.sansMedium(fontSize: NhamFontSize.xs)
+                  .copyWith(color: Colors.white),
+            ),
+          ],
+        ),
+      ),
+      child: card,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final meal = widget.meal;
@@ -80,6 +124,7 @@ class _PersistedMealCardState extends State<PersistedMealCard>
               variant: NhamTextVariant.timeLabel,
             ),
             const SizedBox(height: NhamSpacing.sp2), // mb-2
+            _maybeDismissible(
             _Card(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -158,6 +203,7 @@ class _PersistedMealCardState extends State<PersistedMealCard>
                   ),
                 ],
               ),
+            ),
             ),
           ],
         ),

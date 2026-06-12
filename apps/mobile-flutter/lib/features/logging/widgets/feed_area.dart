@@ -114,6 +114,55 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
     _submit(text);
   }
 
+  /// Trailing-swipe removal of a saved meal: the day visibly heals (the meal
+  /// drops out of the totals immediately) with a 5-second undo. The DELETE only
+  /// fires if the undo window closes — undo just restores the snapshot. No
+  /// confirm modal; nothing is destroyed within the grace window.
+  void _removeMeal(PersistedMeal meal) {
+    final dayNotifier = ref.read(loggingDayProvider(_dayArgs).notifier);
+    final snapshot = ref.read(loggingDayProvider(_dayArgs)).valueOrNull;
+    if (snapshot == null) return;
+
+    dayNotifier.removeMeal(meal.id);
+
+    var undone = false;
+    final messenger = ScaffoldMessenger.of(context);
+    messenger.clearSnackBars();
+    messenger
+        .showSnackBar(
+          SnackBar(
+            duration: const Duration(seconds: 5),
+            content: NhamText(
+              'logging.mealRemoved'.tr(),
+              variant: NhamTextVariant.body,
+              style: const TextStyle(color: NhamColors.surface),
+            ),
+            action: SnackBarAction(
+              label: 'logging.undo'.tr(),
+              textColor: NhamColors.accent,
+              onPressed: () {
+                undone = true;
+                dayNotifier.restore(snapshot);
+              },
+            ),
+          ),
+        )
+        .closed
+        .then((_) async {
+      if (undone) return;
+      try {
+        await ref.read(apiClientProvider).delete<void>(
+              '/api/v1/meals/${Uri.encodeComponent(meal.id)}',
+            );
+        ref.invalidate(mealDatesProvider(widget.profile.userId));
+      } catch (_) {
+        // The server rejected the delete — restore so the feed stays truthful.
+        dayNotifier.restore(snapshot);
+        if (mounted) setState(() => _errorText = 'errors.internal'.tr());
+      }
+    });
+  }
+
   /// Pull-to-refresh: refetch the day + the meal-dates strip. Awaited so the
   /// platform refresh control holds its spinner until the data settles.
   Future<void> _refresh() async {
@@ -503,6 +552,7 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
             child: PersistedMealCard(
               meal: meal,
               isLast: !hasFooterItems && index == persistedMeals.length - 1,
+              onRemove: () => _removeMeal(meal),
             ),
           );
         }
