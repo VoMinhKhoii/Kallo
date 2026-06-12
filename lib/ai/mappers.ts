@@ -13,7 +13,6 @@ interface AiRequestContextInput {
   mealText: string;
   requestLocale?: SupportedOutputLanguage;
   profileLocale?: string | null;
-  manualEstimation?: UserContext['manualEstimation'];
 }
 
 function toSupportedOutputLanguage(
@@ -80,7 +79,6 @@ export function buildAiRequestContext(
     ...userContext,
     inputLanguage: language.inputLanguage,
     outputLanguage: language.outputLanguage,
-    manualEstimation: input.manualEstimation,
   };
 }
 

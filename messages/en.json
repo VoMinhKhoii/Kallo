@@ -929,7 +929,6 @@
   "logging": {
     "title": "What did you eat?",
     "placeholder": "Describe your meal...",
-    "manualPlaceholder": "e.g. 1 bowl rice, 100g grilled chicken, 1 egg...",
     "submit": "Analyze",
     "stopAnalyzing": "Stop analyzing",
     "analyzing": "Analyzing your meal...",
@@ -997,37 +996,29 @@
       "toggleDetails": "Toggle meal details",
       "total": "Total"
     },
-    "loggingMode": {
-      "default": "Default",
-      "manual": "Manual"
-    },
     "manualLogging": {
-      "qtyPlaceholder": "qty",
-      "namePlaceholder": "food name",
-      "addItem": "Add item",
-      "removeItem": "Remove item",
-      "context": {
-        "home_cooked": "Home-cooked",
-        "restaurant": "Restaurant",
-        "packaged": "Packaged",
-        "shared_buffet": "Shared or buffet"
-      },
-      "contextSummary": {
-        "home_cooked": "home-cooked",
-        "restaurant": "restaurant",
-        "packaged": "packaged",
-        "shared_buffet": "shared or buffet"
-      },
-      "summary": {
-        "noContext": "AI uses your stated portions",
-        "withContext": "AI uses your portions with {context} assumptions"
-      }
+      "searchPlaceholder": "Search foods...",
+      "gramsPlaceholder": "100",
+      "gramsUnit": "g",
+      "gramsLabel": "Grams",
+      "addItem": "Add food",
+      "removeItem": "Remove food",
+      "noResults": "No foods found",
+      "searching": "Searching...",
+      "recentFoods": "Recent foods",
+      "stateRaw": "raw",
+      "stateCooked": "cooked",
+      "kcalPer100g": "{kcal} kcal/100g",
+      "rowKcal": "{kcal} kcal",
+      "total": "Total",
+      "totalKcal": "{kcal} kcal",
+      "totalMacros": "P {protein} · C {carbs} · F {fat}"
     },
     "mode": {
       "normal": "Normal",
       "normalDescription": "Break a meal into ingredients for a precise estimate",
       "manual": "Manual",
-      "manualDescription": "Specify each item with exact quantities yourself",
+      "manualDescription": "Search foods and enter exact grams",
       "cheat": "Cheat meal",
       "cheatDescription": "Hard-to-count occasions — set a few sliders instead"
     },

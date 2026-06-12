@@ -3,12 +3,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { parseSSEChunk } from '@/lib/ai/streaming/encoder';
 import type { StreamEvent, StreamStatus } from '@/lib/ai/streaming/types';
-import type {
-  KnownDetailInput,
-  LoggingMode,
-  MealContext,
-  PortionCertainty,
-} from '@/lib/logging/manual-estimation';
 import type { CheatSliderSpec } from '@/lib/types/cheat';
 import type { MealItem, ParsedMeal } from '@/lib/types/meal';
 
@@ -28,10 +22,6 @@ export interface StreamAnalyzeInput {
   message: string;
   loggedDate: string;
   timezoneOffset: number;
-  loggingMode?: LoggingMode;
-  portionCertainty?: PortionCertainty;
-  mealContext?: MealContext;
-  knownDetails?: KnownDetailInput[];
   /** 'cheat' runs the slider estimator instead of the decomposition pipeline. */
   mode?: 'precise' | 'cheat';
   cheatType?: string;

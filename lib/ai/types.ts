@@ -92,8 +92,6 @@ export type GoalAdjustedNutrient =
   | 'carbohydrateG'
   | 'fatG';
 
-import type { ManualLoggingContext } from '@/lib/logging/manual-estimation';
-
 // ---------------------------------------------------------------------------
 // User context (gathered from user_profiles for pipeline)
 // ---------------------------------------------------------------------------
@@ -107,7 +105,6 @@ export interface UserContext {
   inputLanguage?: MealInputLanguage;
   outputLanguage?: SupportedOutputLanguage;
   cookingHabits: CookingHabits;
-  manualEstimation?: ManualLoggingContext;
 }
 
 // ---------------------------------------------------------------------------
@@ -337,7 +334,6 @@ export interface PipelineResult {
   boundedNutrition: BoundedNutrition;
   displayedNutrition: NutritionValues;
   unmatchedIngredients: UnmatchedIngredient[];
-  manualLogging?: ManualLoggingContext;
 }
 
 /** Pipeline error types */

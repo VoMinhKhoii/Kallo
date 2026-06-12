@@ -4,6 +4,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { dailyMealsKeys } from '@/hooks/use-daily-meals';
 import { loggingDayKeys } from '@/hooks/use-logging-day';
+import { saveManualMealAction } from '@/lib/actions/manual-meals';
 import type {
   LoggingDayData,
   PersistedMeal,
@@ -15,7 +16,14 @@ import {
 } from '@/lib/actions/meals';
 import { NUTRITION_KEYS } from '@/lib/ai/constants';
 import type { NutritionValues } from '@/lib/ai/types';
+import type { SaveManualMealInput } from '@/lib/api/contracts/meals';
 import { resolveSliderNutrition } from '@/lib/cheat/slider-nutrition';
+import {
+  type CompleteManualMealRow,
+  parseGrams,
+  rowMacros,
+  totalsForRows,
+} from '@/lib/logging/manual-logging';
 import { recalculateTotals } from '@/lib/meal-utils';
 import type { CheatSliderLevels, CheatSliderSpec } from '@/lib/types/cheat';
 import type { MacroBreakdown, MealItem, ParsedMeal } from '@/lib/types/meal';
@@ -163,14 +171,15 @@ function upsertById(
 
 // Put the confirmed meal into a cached logging-day, idempotently: replace the
 // row sharing its stable id (the optimistic insert) with this one, or append it
-// if absent, and drop the matching pending confirmation. Shared by onMutate (the
+// if absent, and drop the matching pending confirmation (manual saves have no
+// pending confirmation — pass undefined). Shared by onMutate (the
 // optimistic estimate) and onSuccess (the authoritative server meal from the
 // confirm response, which overwrites the estimate in place — same id, so no
 // remount/re-fade — and is the reason no day refetch is needed to reconcile).
 function mergeConfirmedMealIntoDay(
   old: LoggingDayData | undefined,
   meal: PersistedMeal,
-  analysisId: string
+  analysisId?: string
 ): LoggingDayData {
   if (!old) {
     // Entry exists but its initial load is still in flight (data undefined).
@@ -181,9 +190,9 @@ function mergeConfirmedMealIntoDay(
   }
   return {
     persistedMeals: upsertById(old.persistedMeals, meal),
-    pendingConfirmations: old.pendingConfirmations.filter(
-      (p) => p.id !== analysisId
-    ),
+    pendingConfirmations: analysisId
+      ? old.pendingConfirmations.filter((p) => p.id !== analysisId)
+      : old.pendingConfirmations,
   };
 }
 
@@ -317,6 +326,138 @@ export function useConfirmMeal(userId: string) {
       queryClient.invalidateQueries({ queryKey: ['meal-dates'] });
       // Refresh the "log it again" chips so a newly-saved cheat occasion appears.
       queryClient.invalidateQueries({ queryKey: ['recent-cheat-occasions'] });
+    },
+  });
+}
+
+// Client-supplied data for a manual (Cronometer-style) save. `rows` are the
+// complete form rows (ingredient picked + valid grams); the optimistic meal is
+// built from their client-held per-100g macros, then overwritten in place by
+// the server's authoritative meal (same id) on success.
+type SaveManualMealVariables = Omit<SaveManualMealInput, 'mealId' | 'items'> & {
+  mealId: string;
+  originDate: string;
+  /** The optimistic card's loggedAt (ISO). */
+  loggedAt: string;
+  rows: CompleteManualMealRow[];
+};
+
+// Build the optimistic persisted meal from the per-100g macros already held by
+// the form rows. Micros are left null; the server response fills them in.
+function buildOptimisticManualMeal(
+  variables: SaveManualMealVariables
+): PersistedMeal {
+  const { rows, mealId, loggedAt } = variables;
+  const groups: PersistedMealItemGroup[] = rows.map((row, order) => ({
+    name: row.ingredient.namePrimary,
+    order,
+    ingredients: [],
+    nutrition: { ...EMPTY_NUTRITION, ...rowMacros(row) },
+  }));
+  return {
+    // Same id the server will persist — one stable React key from optimistic
+    // insert through reconciliation (no re-fade).
+    id: mealId,
+    rawInput: rows
+      .map((row) => `${parseGrams(row.grams)}g ${row.ingredient.namePrimary}`)
+      .join(', '),
+    mealSlot: variables.mealSlot ?? null,
+    confidenceOverall: 'high',
+    loggedAt,
+    nutrition: { ...EMPTY_NUTRITION, ...totalsForRows(rows) },
+    mealItemGroups: groups,
+    entryMode: 'precise',
+    alcoholG: null,
+    cheatSliders: null,
+    share: null,
+  };
+}
+
+/**
+ * Save a manually-composed meal (ingredient ids + grams — no AI, no pending
+ * analysis). Cache choreography mirrors useConfirmMeal: optimistic upsert into
+ * the logging-day prefix key, in-place authoritative overwrite on success,
+ * snapshot rollback on error.
+ */
+export function useSaveManualMeal(userId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (variables: SaveManualMealVariables) =>
+      saveManualMealAction({
+        mealId: variables.mealId,
+        items: variables.rows.map((row) => ({
+          foodCompositionId: row.ingredient.id,
+          // rowIsComplete guaranteed a parseable positive value.
+          grams: parseGrams(row.grams) ?? 0,
+        })),
+        mealSlot: variables.mealSlot,
+        loggedDate: variables.loggedDate,
+        timezoneOffset: variables.timezoneOffset,
+      }),
+    onMutate: async (variables) => {
+      const filter = {
+        queryKey: loggingDayKeys.byUserDate(userId, variables.originDate),
+      };
+      await queryClient.cancelQueries(filter);
+      const snapshots = queryClient.getQueriesData<LoggingDayData>(filter);
+      const optimisticMeal = buildOptimisticManualMeal(variables);
+      queryClient.setQueriesData<LoggingDayData>(filter, (old) =>
+        mergeConfirmedMealIntoDay(old, optimisticMeal)
+      );
+      return { snapshots };
+    },
+    onSuccess: async (data, variables) => {
+      const loggingDayKey = loggingDayKeys.byUserDate(
+        userId,
+        variables.originDate
+      );
+      const dailyMealsKey = dailyMealsKeys.byDate(variables.originDate);
+      // Cancel in-flight day fetches BEFORE writing authoritative state — they
+      // read the pre-save snapshot and would clobber this write (same
+      // choreography as useConfirmMeal.onSuccess).
+      await Promise.all([
+        queryClient.cancelQueries({ queryKey: loggingDayKey }),
+        queryClient.cancelQueries({ queryKey: dailyMealsKey }),
+      ]);
+      const savedMeal = data.meal;
+      if (!savedMeal) {
+        queryClient.invalidateQueries({ queryKey: loggingDayKey });
+        queryClient.invalidateQueries({ queryKey: dailyMealsKey });
+        return;
+      }
+      queryClient.setQueriesData<LoggingDayData>(
+        { queryKey: loggingDayKey },
+        (old) => mergeConfirmedMealIntoDay(old, savedMeal)
+      );
+      queryClient.setQueriesData<PersistedMeal[]>(
+        { queryKey: dailyMealsKey },
+        (old) => upsertMealIntoList(old, savedMeal)
+      );
+    },
+    onError: (error, _vars, context) => {
+      if (context?.snapshots) {
+        for (const [key, data] of context.snapshots) {
+          queryClient.setQueryData(key, data);
+        }
+      }
+      toast.error(
+        error instanceof Error ? error.message : 'Không thể lưu bữa ăn.'
+      );
+    },
+    onSettled: (_data, error, variables) => {
+      const loggingDayKey = loggingDayKeys.byUserDate(
+        userId,
+        variables.originDate
+      );
+      const dailyMealsKey = dailyMealsKeys.byDate(variables.originDate);
+      // Success: authoritative state was already written in onSuccess — mark
+      // stale without refetching. Error: refetch actively to heal any surface a
+      // cancelled in-flight fetch left behind.
+      const refetchType = error ? 'active' : 'none';
+      queryClient.invalidateQueries({ queryKey: loggingDayKey, refetchType });
+      queryClient.invalidateQueries({ queryKey: dailyMealsKey, refetchType });
+      queryClient.invalidateQueries({ queryKey: ['meal-dates'] });
     },
   });
 }

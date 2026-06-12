@@ -6,10 +6,9 @@ import type {
   StreamAnalysisState,
   StreamAnalyzeInput,
 } from '@/hooks/use-stream-analysis';
-import type { ManualLoggingContext } from '@/lib/logging/manual-estimation';
 import type { CheatIntensity } from '@/lib/types/cheat';
 import type { ChatMessage } from '@/lib/types/meal';
-import { mealMessageSchema, mealTextSchema } from '@/lib/validation';
+import { mealTextSchema } from '@/lib/validation';
 
 interface UseFeedSubmitParams {
   stream: StreamAnalysisState & {
@@ -17,11 +16,7 @@ interface UseFeedSubmitParams {
     reset: () => void;
   };
   selectedDate: string;
-  inputRef: RefObject<{
-    getText: () => string;
-    getManualLogging: () => ManualLoggingContext | Record<string, unknown>;
-    clear: () => void;
-  } | null>;
+  inputRef: RefObject<{ getText: () => string; clear: () => void } | null>;
   setMessages: React.Dispatch<React.SetStateAction<ChatMessage[]>>;
   setStreamingMsgId: (id: string | null) => void;
   scrollToBottom: () => void;
@@ -54,67 +49,12 @@ export function useFeedSubmit({
 }: UseFeedSubmitParams) {
   const handleSubmit = async () => {
     if (stream.isAnalyzing) return;
-
-    if (isCheat) {
-      const parsed = mealTextSchema.safeParse(inputRef.current?.getText());
-      if (!parsed.success) {
-        toast.error(parsed.error.issues[0]?.message ?? 'Vui lòng nhập món ăn.');
-        return;
-      }
-      const text = parsed.data;
-
-      await guard(async () => {
-        const assistantMsgId = generateId();
-        setStreamingMsgId(assistantMsgId);
-        lastAnalysisIdRef.current = null;
-        lastErrorRef.current = null;
-
-        const userMessage: ChatMessage = {
-          id: generateId(),
-          role: 'user',
-          content: text,
-          loggedDate: selectedDate,
-          timestamp: new Date(),
-        };
-
-        const streamingMessage: ChatMessage = {
-          id: assistantMsgId,
-          role: 'assistant',
-          content: '',
-          userInput: text,
-          loggedDate: selectedDate,
-          timestamp: new Date(),
-          isStreaming: true,
-          streamingPhase: 'waiting',
-        };
-
-        setMessages((prev) => [...prev, userMessage, streamingMessage]);
-        inputRef.current?.clear();
-        scrollToBottom();
-
-        await stream.analyze({
-          message: text,
-          loggedDate: selectedDate,
-          timezoneOffset: new Date().getTimezoneOffset(),
-          mode: 'cheat' as const,
-          cheatIntensity: cheatIntensity ?? 'medium',
-        });
-      });
-      return;
-    }
-
-    const requestBody = {
-      message: inputRef.current?.getText(),
-      loggedDate: selectedDate,
-      timezoneOffset: new Date().getTimezoneOffset(),
-      ...inputRef.current?.getManualLogging(),
-    };
-    const parsed = mealMessageSchema.safeParse(requestBody);
+    const parsed = mealTextSchema.safeParse(inputRef.current?.getText());
     if (!parsed.success) {
       toast.error(parsed.error.issues[0]?.message ?? 'Vui lòng nhập món ăn.');
       return;
     }
-    const text = parsed.data.message;
+    const text = parsed.data;
 
     await guard(async () => {
       const assistantMsgId = generateId();
@@ -146,7 +86,15 @@ export function useFeedSubmit({
       scrollToBottom();
 
       await stream.analyze({
-        ...parsed.data,
+        message: text,
+        loggedDate: selectedDate,
+        timezoneOffset: new Date().getTimezoneOffset(),
+        ...(isCheat
+          ? {
+              mode: 'cheat' as const,
+              cheatIntensity: cheatIntensity ?? 'medium',
+            }
+          : {}),
       });
     });
   };

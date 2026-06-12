@@ -14,22 +14,21 @@ import {
   CheatModePicker,
   type InputMode,
 } from '@/components/logging/input/cheat-mode-picker';
-import { ManualEstimationControls } from '@/components/logging/input/manual-estimation-controls';
+import { ManualLoggingControls } from '@/components/logging/input/manual-logging-controls';
 import {
-  buildManualLoggingRequest,
-  createDefaultManualItem,
-  createDefaultManualLoggingFormState,
-  hasCompleteItem,
-  type ManualLoggingContext,
-  type ManualLoggingFormState,
-  type MealContext,
-  serializeItemsToText,
-} from '@/lib/logging/manual-estimation';
+  createEmptyRow,
+  hasCompleteRow,
+  type ManualMealRow,
+} from '@/lib/logging/manual-logging';
 import type { CheatIntensity } from '@/lib/types/cheat';
 import { cn } from '@/lib/utils';
 
 const STORAGE_KEY = 'nham:meal-input-draft';
-const MANUAL_ITEMS_KEY = 'nham:meal-input-manual-items';
+// v2: rows are {id, ingredient, grams} (DB-backed picks). The pre-rework
+// {id, qty, name} drafts under the old key are shape-incompatible; the old key
+// is deleted on first read.
+const MANUAL_ROWS_KEY = 'nham:meal-input-manual-items-v2';
+const LEGACY_MANUAL_ITEMS_KEY = 'nham:meal-input-manual-items';
 const DEBOUNCE_MS = 500;
 // Single-line height matches the submit button (h-8 = 32px) so the placeholder
 // sits on the button's vertical centerline. Above MAX, textarea scrolls itself.
@@ -49,7 +48,7 @@ function autoResize(el: HTMLTextAreaElement) {
 
 export interface MealInputHandle {
   getText: () => string;
-  getManualLogging: () => ManualLoggingContext | Record<string, unknown>;
+  getManualRows: () => ManualMealRow[];
   clear: () => void;
   focus: () => void;
   setText: (text: string) => void;
@@ -89,23 +88,48 @@ function writeDraft(text: string) {
   }
 }
 
-function readManualItemsDraft(): ManualLoggingFormState['items'] {
-  try {
-    const raw = localStorage.getItem(MANUAL_ITEMS_KEY);
-    if (!raw) return [createDefaultManualItem(crypto.randomUUID())];
-    const parsed = JSON.parse(raw);
-    if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-  } catch {}
-  return [createDefaultManualItem(crypto.randomUUID())];
+function isValidManualRow(value: unknown): value is ManualMealRow {
+  if (typeof value !== 'object' || value === null) return false;
+  const row = value as Record<string, unknown>;
+  if (typeof row.id !== 'string' || typeof row.grams !== 'string') {
+    return false;
+  }
+  if (row.ingredient === null) return true;
+  if (typeof row.ingredient !== 'object') return false;
+  const ingredient = row.ingredient as Record<string, unknown>;
+  return (
+    typeof ingredient.id === 'string' &&
+    typeof ingredient.namePrimary === 'string' &&
+    typeof ingredient.per100g === 'object' &&
+    ingredient.per100g !== null
+  );
 }
 
-function writeManualItemsDraft(items: ManualLoggingFormState['items']) {
+function readManualRowsDraft(): ManualMealRow[] {
   try {
-    const filled = items.filter((i) => i.qty.trim() || i.name.trim());
+    localStorage.removeItem(LEGACY_MANUAL_ITEMS_KEY);
+    const raw = localStorage.getItem(MANUAL_ROWS_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (
+        Array.isArray(parsed) &&
+        parsed.length > 0 &&
+        parsed.every(isValidManualRow)
+      ) {
+        return parsed;
+      }
+    }
+  } catch {}
+  return [createEmptyRow(crypto.randomUUID())];
+}
+
+function writeManualRowsDraft(rows: ManualMealRow[]) {
+  try {
+    const filled = rows.filter((row) => row.ingredient || row.grams.trim());
     if (filled.length === 0) {
-      localStorage.removeItem(MANUAL_ITEMS_KEY);
+      localStorage.removeItem(MANUAL_ROWS_KEY);
     } else {
-      localStorage.setItem(MANUAL_ITEMS_KEY, JSON.stringify(items));
+      localStorage.setItem(MANUAL_ROWS_KEY, JSON.stringify(rows));
     }
   } catch {}
 }
@@ -131,16 +155,11 @@ export const MealInput = forwardRef<MealInputHandle, MealInputProps>(
     const [hasContent, setHasContent] = useState(() =>
       hasMeaningfulText(readDraft())
     );
-    const [manualState, setManualState] = useState<ManualLoggingFormState>(() =>
-      createDefaultManualLoggingFormState()
+    const [manualRows, setManualRows] = useState<ManualMealRow[]>(() =>
+      readManualRowsDraft()
     );
-    // Track previous mode to react to transitions.
-    const prevModeRef = useRef<InputMode>(mode);
-    const manualStateRef = useRef(manualState);
-    manualStateRef.current = manualState;
-    // Mirrors the textarea's current text value so we can read it even after the
-    // textarea unmounts (which happens before effects fire on a mode transition).
-    const textValueRef = useRef(readDraft());
+    const manualRowsRef = useRef(manualRows);
+    manualRowsRef.current = manualRows;
 
     const isManual = mode === 'manual';
     const isCheat = mode === 'cheat';
@@ -151,46 +170,20 @@ export const MealInput = forwardRef<MealInputHandle, MealInputProps>(
         el.value = text;
         autoResize(el);
       }
-      textValueRef.current = text;
       setHasContent(hasMeaningfulText(text));
       writeDraft(text);
       if (debounceRef.current) clearTimeout(debounceRef.current);
     }, []);
 
-    // Handle mode transitions: pre-fill items from textarea when going to manual,
-    // serialize items back to textarea when leaving manual.
-    useEffect(() => {
-      const prevMode = prevModeRef.current;
-      prevModeRef.current = mode;
-      if (prevMode === mode) return;
-
-      if (mode === 'manual' && prevMode !== 'manual') {
-        const currentText = textValueRef.current.trim();
-        const savedItems = readManualItemsDraft();
-        const items = currentText
-          ? [{ id: crypto.randomUUID(), qty: '', name: currentText }]
-          : savedItems;
-        setManualState((prev) => ({ ...prev, items }));
-      } else if (mode !== 'manual' && prevMode === 'manual') {
-        const serialized = serializeItemsToText(manualStateRef.current.items);
-        updateText(serialized);
-      }
-    }, [mode, updateText]);
-
     useImperativeHandle(
       ref,
       () => ({
-        getText: () => {
-          if (isManual) return serializeItemsToText(manualState.items);
-          return textareaRef.current?.value ?? '';
-        },
-        getManualLogging: () =>
-          buildManualLoggingRequest(manualState, isManual),
+        getText: () => textareaRef.current?.value ?? '',
+        getManualRows: () => manualRows,
         clear: () => {
           if (isManual) {
-            const emptyItem = createDefaultManualItem(crypto.randomUUID());
-            setManualState((prev) => ({ ...prev, items: [emptyItem] }));
-            writeManualItemsDraft([]);
+            setManualRows([createEmptyRow(crypto.randomUUID())]);
+            writeManualRowsDraft([]);
           } else {
             updateText('');
           }
@@ -200,7 +193,7 @@ export const MealInput = forwardRef<MealInputHandle, MealInputProps>(
           updateText(text);
         },
       }),
-      [isManual, manualState, updateText]
+      [isManual, manualRows, updateText]
     );
 
     useEffect(() => {
@@ -212,7 +205,7 @@ export const MealInput = forwardRef<MealInputHandle, MealInputProps>(
       const flushDraft = () => {
         if (debounceRef.current) clearTimeout(debounceRef.current);
         writeDraft(el.value);
-        writeManualItemsDraft(manualStateRef.current.items);
+        writeManualRowsDraft(manualRowsRef.current);
       };
 
       window.addEventListener('beforeunload', flushDraft);
@@ -225,21 +218,20 @@ export const MealInput = forwardRef<MealInputHandle, MealInputProps>(
           writeDraft(el.value);
         }
       };
-    }, []); // eslint-disable-line react-hooks/exhaustive-deps
+    }, []);
 
-    // Persist manual items draft on change.
+    // Persist manual rows draft on change.
     useEffect(() => {
       if (!isManual) return;
       const timer = setTimeout(() => {
-        writeManualItemsDraft(manualState.items);
+        writeManualRowsDraft(manualRows);
       }, DEBOUNCE_MS);
       return () => clearTimeout(timer);
-    }, [isManual, manualState.items]);
+    }, [isManual, manualRows]);
 
     const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
       const el = e.currentTarget;
       autoResize(el);
-      textValueRef.current = el.value;
       setHasContent(hasMeaningfulText(el.value));
 
       if (debounceRef.current) clearTimeout(debounceRef.current);
@@ -258,49 +250,37 @@ export const MealInput = forwardRef<MealInputHandle, MealInputProps>(
       }
     };
 
-    const handleItemChange = (
+    const handleRowChange = (
       id: string,
-      field: 'qty' | 'name',
-      value: string
+      patch: Partial<Omit<ManualMealRow, 'id'>>
     ) => {
-      setManualState((prev) => ({
-        ...prev,
-        items: prev.items.map((item) =>
-          item.id === id ? { ...item, [field]: value } : item
-        ),
-      }));
+      setManualRows((prev) =>
+        prev.map((row) => (row.id === id ? { ...row, ...patch } : row))
+      );
     };
 
-    const handleItemAdd = (afterId?: string): string => {
+    const handleRowAdd = (afterId?: string): string => {
       const newId = crypto.randomUUID();
-      setManualState((prev) => {
-        const newItem = createDefaultManualItem(newId);
-        if (!afterId) {
-          return { ...prev, items: [...prev.items, newItem] };
-        }
-        const idx = prev.items.findIndex((i) => i.id === afterId);
-        const next = [...prev.items];
-        next.splice(idx + 1, 0, newItem);
-        return { ...prev, items: next };
+      setManualRows((prev) => {
+        const newRow = createEmptyRow(newId);
+        if (!afterId) return [...prev, newRow];
+        const idx = prev.findIndex((row) => row.id === afterId);
+        const next = [...prev];
+        next.splice(idx + 1, 0, newRow);
+        return next;
       });
       return newId;
     };
 
-    const handleItemRemove = (id: string) => {
-      setManualState((prev) => {
-        const next = prev.items.filter((i) => i.id !== id);
-        return {
-          ...prev,
-          items:
-            next.length > 0
-              ? next
-              : [createDefaultManualItem(crypto.randomUUID())],
-        };
+    const handleRowRemove = (id: string) => {
+      setManualRows((prev) => {
+        const next = prev.filter((row) => row.id !== id);
+        return next.length > 0 ? next : [createEmptyRow(crypto.randomUUID())];
       });
     };
 
     const canSubmit =
-      !disabled && (isManual ? hasCompleteItem(manualState.items) : hasContent);
+      !disabled && (isManual ? hasCompleteRow(manualRows) : hasContent);
     const showStopButton = Boolean(disabled && onCancel);
 
     const submitButton = showStopButton ? (
@@ -328,17 +308,14 @@ export const MealInput = forwardRef<MealInputHandle, MealInputProps>(
 
     return (
       <div className="flex flex-col gap-2 rounded-2xl border border-nham-border/40 bg-background p-3 shadow-[0_4px_20px_color-mix(in_srgb,var(--color-nham-accent)_6%,transparent)] transition-all duration-300 focus-within:border-nham-accent/40 focus-within:shadow-[0_4px_20px_color-mix(in_srgb,var(--color-nham-accent)_12%,transparent)]">
-        {/* Manual mode: item list */}
+        {/* Manual mode: DB-backed ingredient rows */}
         {isManual && (
-          <ManualEstimationControls
+          <ManualLoggingControls
             disabled={disabled}
-            state={manualState}
-            onMealContextChange={(mealContext: MealContext | null) =>
-              setManualState((prev) => ({ ...prev, mealContext }))
-            }
-            onItemChange={handleItemChange}
-            onItemAdd={handleItemAdd}
-            onItemRemove={handleItemRemove}
+            rows={manualRows}
+            onRowChange={handleRowChange}
+            onRowAdd={handleRowAdd}
+            onRowRemove={handleRowRemove}
           />
         )}
 

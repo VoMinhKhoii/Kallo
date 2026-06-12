@@ -929,7 +929,6 @@
   "logging": {
     "title": "Bạn đã ăn gì?",
     "placeholder": "Mô tả bữa ăn...",
-    "manualPlaceholder": "vd. 1 chén cơm, 100g gà nướng, 1 quả trứng...",
     "submit": "Phân tích",
     "stopAnalyzing": "Dừng phân tích",
     "analyzing": "Đang phân tích bữa ăn...",
@@ -997,37 +996,29 @@
       "toggleDetails": "Bật/tắt chi tiết bữa ăn",
       "total": "Tổng"
     },
-    "loggingMode": {
-      "default": "Default",
-      "manual": "Manual"
-    },
     "manualLogging": {
-      "qtyPlaceholder": "khẩu phần",
-      "namePlaceholder": "tên món ăn",
+      "searchPlaceholder": "Tìm món ăn...",
+      "gramsPlaceholder": "100",
+      "gramsUnit": "g",
+      "gramsLabel": "Số gam",
       "addItem": "Thêm món",
       "removeItem": "Xóa món",
-      "context": {
-        "home_cooked": "Nấu ở nhà",
-        "restaurant": "Hàng quán",
-        "packaged": "Đóng gói",
-        "shared_buffet": "Ăn chung hoặc buffet"
-      },
-      "contextSummary": {
-        "home_cooked": "kiểu nấu ở nhà",
-        "restaurant": "kiểu hàng quán",
-        "packaged": "kiểu đồ đóng gói",
-        "shared_buffet": "kiểu ăn chung hoặc buffet"
-      },
-      "summary": {
-        "noContext": "AI dùng khẩu phần bạn mô tả",
-        "withContext": "AI dùng khẩu phần của bạn với giả định {context}"
-      }
+      "noResults": "Không tìm thấy món nào",
+      "searching": "Đang tìm...",
+      "recentFoods": "Món gần đây",
+      "stateRaw": "sống",
+      "stateCooked": "chín",
+      "kcalPer100g": "{kcal} kcal/100g",
+      "rowKcal": "{kcal} kcal",
+      "total": "Tổng cộng",
+      "totalKcal": "{kcal} kcal",
+      "totalMacros": "P {protein} · C {carbs} · F {fat}"
     },
     "mode": {
       "normal": "Bình thường",
       "normalDescription": "Tách bữa ăn thành nguyên liệu để ước tính chính xác",
       "manual": "Thủ công",
-      "manualDescription": "Tự nhập từng món với số lượng cụ thể",
+      "manualDescription": "Tìm món và nhập chính xác số gam",
       "cheat": "Bữa xả",
       "cheatDescription": "Dịp khó đếm — chỉ cần kéo vài thanh trượt"
     },

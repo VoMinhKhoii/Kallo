@@ -24,7 +24,7 @@ import type { LoggingProfile } from '@/components/logging/logging-shell';
 import { addDays } from '@/components/logging/sidebar/timeline-utils';
 import { useFeedSubmit } from '@/hooks/use-feed-submit';
 import { loggingDayKeys, useLoggingDay } from '@/hooks/use-logging-day';
-import { useConfirmMeal } from '@/hooks/use-meal-mutations';
+import { useConfirmMeal, useSaveManualMeal } from '@/hooks/use-meal-mutations';
 import { useRecentCheatOccasions } from '@/hooks/use-recent-cheat-occasions';
 import { useStreamAnalysis } from '@/hooks/use-stream-analysis';
 import { useStreamingTerminalEffects } from '@/hooks/use-streaming-terminal-effects';
@@ -34,6 +34,8 @@ import {
   stageCheatRepeatAction,
 } from '@/lib/actions/meals';
 import { sumDisplayedNutrition } from '@/lib/ai/pipeline/goal-adjustment';
+import { getUtcInstantForLocalDate } from '@/lib/date/local-day';
+import { rowIsComplete } from '@/lib/logging/manual-logging';
 import { isLikelyPartialDay } from '@/lib/nutrition/pattern/completeness';
 import type { CheatIntensity, CheatSliderLevels } from '@/lib/types/cheat';
 import type {
@@ -243,6 +245,7 @@ export function FeedArea({
 
   // Mutations
   const confirmMeal = useConfirmMeal(profile.userId);
+  const saveManualMeal = useSaveManualMeal(profile.userId);
 
   const scrollToBottom = useCallback(() => {
     requestAnimationFrame(() => {
@@ -316,6 +319,30 @@ export function FeedArea({
     isCheat,
     cheatIntensity,
   });
+
+  // Manual (Cronometer-style) submit: ingredient ids + grams straight to the
+  // save endpoint — deterministic, no streaming analysis and no AI call.
+  const handleManualSubmit = useCallback(() => {
+    const rows = (inputRef.current?.getManualRows() ?? []).filter(
+      rowIsComplete
+    );
+    if (rows.length === 0 || saveManualMeal.isPending) return;
+
+    const timezoneOffset = new Date().getTimezoneOffset();
+    saveManualMeal.mutate({
+      mealId: crypto.randomUUID(),
+      originDate: selectedDate,
+      loggedDate: selectedDate,
+      timezoneOffset,
+      loggedAt: getUtcInstantForLocalDate(
+        selectedDate,
+        timezoneOffset
+      ).toISOString(),
+      rows,
+    });
+    inputRef.current?.clear();
+    scrollToBottom();
+  }, [saveManualMeal, selectedDate, scrollToBottom]);
 
   const handleAnalysisComplete = useCallback(() => {
     const originDate =
@@ -769,7 +796,9 @@ export function FeedArea({
         <div className="mx-auto max-w-3xl">
           <MealInput
             ref={inputRef}
-            onSubmit={handleSubmit}
+            onSubmit={
+              loggingMode === 'manual' ? handleManualSubmit : handleSubmit
+            }
             onCancel={() => {
               stream.cancel();
               if (streamingMsgId) {

@@ -637,7 +637,6 @@ function toPromptPersonalizationContext(
     cookingHabits: userContext.cookingHabits,
     inputLanguage: userContext.inputLanguage,
     outputLanguage: userContext.outputLanguage,
-    manualEstimation: userContext.manualEstimation,
   };
 }
 
