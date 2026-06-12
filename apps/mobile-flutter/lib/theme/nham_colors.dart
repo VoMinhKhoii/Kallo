@@ -67,6 +67,7 @@ abstract final class NhamColors {
   static const Color textMuted50 = Color(0x808B7355); // 50%
   static const Color textMuted60 = Color(0x998B7355); // 60%
   static const Color textMuted70 = Color(0xB38B7355); // 70% — macro-bar labels
+  static const Color textMuted80 = Color(0xCC8B7355); // 80% — legacy-macro note
   static const Color placeholderMuted40 = Color(0x668B7355); // 40%
 
   // ── Hover alpha variants ─────────────────────────────────────────────

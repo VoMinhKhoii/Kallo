@@ -19,6 +19,7 @@ import '../data/logging_providers.dart';
 import '../../dashboard/logic/dashboard_format.dart' show formatCount;
 import '../data/stream_analysis_controller.dart';
 import '../logic/format.dart';
+import '../logic/meal_utils.dart' show isLikelyPartialDay;
 import 'calorie_ring.dart';
 import 'dashed_divider.dart';
 import 'empty_state.dart';
@@ -171,6 +172,14 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
     final pendingConfirmations =
         day?.pendingConfirmations ?? const <PendingMealConfirmation>[];
 
+    // Legacy meals can carry unknown macros — when any do, the daily summary
+    // can't be totalled honestly, so we show a quiet note instead of the ring.
+    final hasUnknownDailyMacros = persistedMeals.any((m) =>
+        m.nutrition.caloriesKcal == null ||
+        m.nutrition.proteinG == null ||
+        m.nutrition.carbohydrateG == null ||
+        m.nutrition.fatG == null);
+
     final isStreaming =
         stream.status != StreamStatus.idle &&
         stream.status != StreamStatus.done &&
@@ -217,6 +226,20 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
         isRevealing ||
         hasFailedAttempt;
 
+    // A past day with real meals but under half the target reads as
+    // under-logged; the trends set it aside, so we say so (and offer to fold it
+    // back in by adding what was missed). Only when nothing is mid-flight.
+    final isPastDay = widget.date.compareTo(todayDateString()) < 0;
+    final showPartialDayNotice = isPastDay &&
+        !isLoading &&
+        !dayAsync.hasError &&
+        !hasUnknownDailyMacros &&
+        persistedMeals.isNotEmpty &&
+        pendingConfirmations.isEmpty &&
+        !isStreaming &&
+        !isRevealing &&
+        isLikelyPartialDay(dailyCalories.toDouble(), profile.calorieTarget);
+
     final macroBars = [
       _MacroBarData(
         'dashboard.protein'.tr(),
@@ -253,9 +276,21 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
               NhamSpacing.sp3,
               NhamSpacing.sp2,
             ),
-            child:
-                isLoading
-                    ? const _MacroSummarySkeleton()
+            child: isLoading
+                ? const _MacroSummarySkeleton()
+                : hasUnknownDailyMacros
+                    // Some legacy meals have unknown macros — the day can't be
+                    // totalled, so say so plainly instead of showing a wrong ring.
+                    ? Align(
+                        alignment: Alignment.centerLeft,
+                        child: NhamText(
+                          'logging.feedArea.legacyMacroWarning'.tr(),
+                          variant: NhamTextVariant.small,
+                          style: NhamTextStyles.sansMedium(
+                            fontSize: NhamFontSize.eyebrow + 1,
+                          ).copyWith(color: NhamColors.textMuted80),
+                        ),
+                      )
                     : Row(
                       children: [
                         Column(
@@ -290,6 +325,21 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
                     ),
           ),
         ),
+
+        // Under-logged past day: a quiet note that it's set aside from trends.
+        if (showPartialDayNotice)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+              NhamSpacing.sp3,
+              0,
+              NhamSpacing.sp3,
+              NhamSpacing.sp2,
+            ),
+            child: _PartialDayNotice(
+              calories: dailyCalories,
+              target: profile.calorieTarget,
+            ),
+          ),
 
         // The card list.
         Expanded(
@@ -771,6 +821,49 @@ class _DiscardButtonState extends State<_DiscardButton> {
                 .copyWith(color: NhamColors.textMuted),
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// A past-day under-logged note: Lora-italic terracotta title + a DM Sans body
+/// that names the gap and invites folding the day back in. Ported from the web
+/// `PartialDayNotice` (the strings shipped translated but were never rendered).
+class _PartialDayNotice extends StatelessWidget {
+  const _PartialDayNotice({required this.calories, required this.target});
+
+  final int calories;
+  final int target;
+
+  @override
+  Widget build(BuildContext context) {
+    final locale = context.locale.toString();
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(NhamSpacing.sp3),
+      decoration: BoxDecoration(
+        color: NhamColors.surface,
+        borderRadius: BorderRadius.circular(NhamRadii.containerLg),
+        border: Border.all(color: NhamColors.borderSoft),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          NhamText(
+            'logging.feedArea.partialDayNotice.title'.tr(),
+            variant: NhamTextVariant.italicAccent,
+            style: const TextStyle(color: NhamColors.danger),
+          ),
+          const SizedBox(height: 4), // mt-1
+          NhamText(
+            'logging.feedArea.partialDayNotice.body'.tr(namedArgs: {
+              'calories': formatCount(calories, locale),
+              'target': formatCount(target, locale),
+            }),
+            variant: NhamTextVariant.small,
+            style: const TextStyle(color: NhamColors.textMuted),
+          ),
+        ],
       ),
     );
   }

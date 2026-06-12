@@ -8,6 +8,18 @@ import '../../../models/meal.dart';
 /// Minimum allowed cooked weight for a grams/ml dish.
 const double minDishGrams = 10;
 
+/// A day reads as under-logged when its calories fall below this fraction of
+/// the target (ported from `lib/nutrition/pattern/completeness.ts`).
+const double partialDayFraction = 0.5;
+
+/// True when a past day's logged calories are positive but below half the
+/// target — likely under-logged, so the trends set it aside.
+bool isLikelyPartialDay(double calories, int? calorieTarget) {
+  if (calorieTarget == null || calorieTarget <= 0) return false;
+  if (calories <= 0) return false;
+  return calories < partialDayFraction * calorieTarget;
+}
+
 /// Sum each item's macros into a single [MacroBreakdown].
 MacroBreakdown recalculateTotals(List<MealItem> items) {
   return items.fold(
