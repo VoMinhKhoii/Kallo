@@ -1,5 +1,6 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../theme/nham_colors.dart';
 import '../../../theme/nham_theme.dart';
@@ -14,7 +15,7 @@ import '../widgets/language_toggle.dart';
 /// sets the persisted `preferredLocale` AND live-switches the app language via
 /// `context.setLocale` (matching web's `switchLocale`). lucide
 /// `Languages`/`Globe`/`MapPin` →
-/// [Icons.translate]/[Icons.public]/[Icons.place_outlined].
+/// [LucideIcons.languages]/[LucideIcons.globe]/[LucideIcons.mapPin].
 class ScreenOrigin extends StatefulWidget {
   const ScreenOrigin({
     super.key,
@@ -72,7 +73,7 @@ class _ScreenOriginState extends State<ScreenOrigin> {
         _Card(
           children: [
             _LabelRow(
-              icon: Icons.translate,
+              icon: LucideIcons.languages,
               label: tr('onboarding.origin.preferredLanguage'),
             ),
             const SizedBox(height: NhamSpacing.sp4),
@@ -93,7 +94,7 @@ class _ScreenOriginState extends State<ScreenOrigin> {
         _Card(
           children: [
             _Field(
-              icon: Icons.public,
+              icon: LucideIcons.globe,
               label: tr('onboarding.origin.countryOfOrigin'),
               hint: tr('onboarding.origin.countryOfOriginHint'),
               child: CountrySelect(
@@ -106,7 +107,7 @@ class _ScreenOriginState extends State<ScreenOrigin> {
             ),
             const SizedBox(height: NhamSpacing.sp4),
             _Field(
-              icon: Icons.place_outlined,
+              icon: LucideIcons.mapPin,
               label: tr('onboarding.origin.countryOfResidence'),
               hint: tr('onboarding.origin.countryOfResidenceHint'),
               child: CountrySelect(

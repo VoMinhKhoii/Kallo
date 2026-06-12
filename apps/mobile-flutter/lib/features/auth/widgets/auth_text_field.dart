@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../theme/nham_colors.dart';
 import '../../../theme/nham_theme.dart';
@@ -209,7 +210,7 @@ class _RevealToggleState extends State<_RevealToggle> {
         onTapCancel: () => setState(() => _pressed = false),
         onTap: widget.onTap,
         child: Icon(
-          widget.revealed ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+          widget.revealed ? LucideIcons.eyeOff : LucideIcons.eye,
           size: 16,
           color: color,
         ),

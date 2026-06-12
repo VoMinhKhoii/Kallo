@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../theme/nham_colors.dart';
 import '../../../theme/nham_theme.dart';
@@ -150,7 +151,7 @@ class _CustomSelectState extends State<CustomSelect>
                 RotationTransition(
                   turns: Tween<double>(begin: 0, end: 0.5).animate(_chevron),
                   child: const Icon(
-                    Icons.keyboard_arrow_down,
+                    LucideIcons.chevronDown,
                     size: 16,
                     color: NhamColors.textHelp,
                   ),
@@ -311,7 +312,7 @@ class _OptionRowState extends State<_OptionRow> {
               ),
             ),
             if (widget.selected)
-              const Icon(Icons.check, size: 16, color: NhamColors.accent)
+              const Icon(LucideIcons.check, size: 16, color: NhamColors.accent)
             else
               const SizedBox(width: 16, height: 16),
           ],
