@@ -11,6 +11,7 @@ import '../../../theme/nham_theme.dart';
 import '../../../theme/nham_typography.dart';
 import '../logic/format.dart';
 import '../logic/meal_utils.dart';
+import 'count_up.dart';
 import 'dashed_divider.dart';
 import 'entrances.dart';
 import 'timeline_rail.dart';
@@ -29,6 +30,7 @@ class MealEntry extends StatefulWidget {
     required this.onConfirm,
     this.busy = false,
     this.isLast = false,
+    this.revealing = false,
   });
 
   final ParsedMeal parsedMeal;
@@ -36,6 +38,11 @@ class MealEntry extends StatefulWidget {
   final ValueChanged<List<MealQuantityEdit>> onConfirm;
   final bool busy;
   final bool isLast;
+
+  /// True for the streaming-reveal morph's first mount: the totals row counts
+  /// up and the confirm CTA slides in as the spinner row slides out — the
+  /// continuation of the streaming card, not a fresh pop.
+  final bool revealing;
 
   @override
   State<MealEntry> createState() => _MealEntryState();
@@ -47,6 +54,9 @@ class _MealEntryState extends State<MealEntry> {
   bool _editing = false;
   bool _confirmCoolingDown = false;
   Timer? _confirmTimer;
+  // After the first totals count-up, edits should jump rather than re-animate
+  // from zero — only the reveal's opening frame counts up.
+  late bool _countUp = widget.revealing;
 
   @override
   void dispose() {
@@ -57,6 +67,7 @@ class _MealEntryState extends State<MealEntry> {
   void _change(String itemId, double delta) {
     HapticFeedback.selectionClick();
     setState(() {
+      _countUp = false; // a manual edit snaps; only the reveal counts up
       _items = applyQuantityChange(_items, _original, itemId, delta);
       _confirmCoolingDown = true;
     });
@@ -68,6 +79,11 @@ class _MealEntryState extends State<MealEntry> {
 
   bool get _confirmDisabled =>
       widget.busy || (_editing && _confirmCoolingDown);
+
+  /// Wrap the confirm CTA in a slide-up entrance only on the reveal morph's
+  /// opening frame (the spinner row has just slid out of the same slot).
+  Widget _maybeReveal(Widget child) =>
+      widget.revealing ? FadeInUp(offset: 12, child: child) : child;
 
   @override
   Widget build(BuildContext context) {
@@ -150,8 +166,12 @@ class _MealEntryState extends State<MealEntry> {
                             style: const TextStyle(color: NhamColors.textMuted),
                           ),
                           const SizedBox(width: NhamSpacing.sp4), // gap-4
-                          NhamText(fmtKcal(totals.calories),
-                              variant: NhamTextVariant.numStrong),
+                          CountUpText(
+                            value: totals.calories,
+                            enabled: _countUp,
+                            format: (v) => fmtKcal(v),
+                            variant: NhamTextVariant.numStrong,
+                          ),
                         ],
                       ),
                     ],
@@ -160,14 +180,17 @@ class _MealEntryState extends State<MealEntry> {
               ),
             ),
             const SizedBox(height: NhamSpacing.sp3), // mt-3
-            _ConfirmButton(
-              editing: _editing,
-              disabled: _confirmDisabled,
-              onTap: _confirmDisabled
-                  ? null
-                  : () => widget.onConfirm(
-                        deriveQuantityEdits(_items, _original),
-                      ),
+            // On reveal the CTA slides up into the slot the spinner row vacated.
+            _maybeReveal(
+              _ConfirmButton(
+                editing: _editing,
+                disabled: _confirmDisabled,
+                onTap: _confirmDisabled
+                    ? null
+                    : () => widget.onConfirm(
+                          deriveQuantityEdits(_items, _original),
+                        ),
+              ),
             ),
           ],
         ),

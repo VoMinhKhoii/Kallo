@@ -48,12 +48,20 @@ class FeedArea extends ConsumerStatefulWidget {
 class _FeedAreaState extends ConsumerState<FeedArea> {
   final MealInputController _inputController = MealInputController();
 
+  /// Scrolls the freshly-revealed answer into view (nothing scrolled it before).
+  final ScrollController _scrollController = ScrollController();
+
   /// The text of the run currently in flight — restored to the composer if it
   /// fails, so a failed analysis never destroys what the user typed.
   String? _inFlightText;
 
   /// A failed attempt, rendered as a feed card with "Try again" (terracotta).
   String? _failedText;
+
+  /// The raw text of the just-revealed answer — shown as the morph card's Lora
+  /// quote so the confirmable card carries the user's own words, not a derived
+  /// meal name (the streaming→reveal→persisted object stays continuous).
+  String? _revealRawInput;
 
   /// Inline error for a failed confirm (saving a meal) — not analysis errors,
   /// which surface as the failed-attempt card.
@@ -62,12 +70,32 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
   LoggingDayArgs get _dayArgs =>
       LoggingDayArgs(widget.profile.userId, widget.date);
 
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  /// Bring the footer (streaming card / revealed answer) into view.
+  void _scrollToAnswer() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!_scrollController.hasClients) return;
+      _scrollController.animateTo(
+        _scrollController.position.maxScrollExtent,
+        duration: const Duration(milliseconds: 400),
+        curve: const Cubic(0.16, 1, 0.3, 1),
+      );
+    });
+  }
+
   void _submit(String text) {
     setState(() {
       _failedText = null;
+      _revealRawInput = null;
       _inFlightText = text;
     });
     _inputController.clear();
+    _scrollToAnswer();
     ref
         .read(streamAnalysisProvider.notifier)
         .analyze(
@@ -91,13 +119,18 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
   }
 
   void _onStreamChange(StreamAnalysisState? prev, StreamAnalysisState next) {
-    // On completion: refetch the day + meal-dates so the stored analysis shows
-    // as a confirmable card, then clear the local stream.
-    if (next.status == StreamStatus.done && next.analysisId != null) {
+    // On completion: hold the stream alive and let the streaming card morph in
+    // place into a confirmable answer (the reveal — per-row macros already real,
+    // totals count up, spinner row swaps for Edit/Confirm). One light impact
+    // marks the moment the answer lands; nothing unmounts. The refetch + reset
+    // happens only once the user confirms (_confirmReveal).
+    if (next.status == StreamStatus.done &&
+        next.analysisId != null &&
+        prev?.status != StreamStatus.done) {
+      _revealRawInput = _inFlightText;
       _inFlightText = null;
-      ref.invalidate(loggingDayProvider(_dayArgs));
-      ref.invalidate(mealDatesProvider(widget.profile.userId));
-      ref.read(streamAnalysisProvider.notifier).reset();
+      HapticFeedback.lightImpact();
+      _scrollToAnswer();
     }
     // On error: never destroy the typed meal. Restore the raw text into the
     // composer AND render the failed attempt as a feed card (Try again).
@@ -136,6 +169,13 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
         stream.status != StreamStatus.done &&
         stream.status != StreamStatus.error;
 
+    // The completed-but-not-yet-confirmed answer, held in place as a morph of
+    // the streaming card (built from the locally-held stream.result).
+    final isRevealing =
+        stream.status == StreamStatus.done &&
+        stream.result != null &&
+        stream.analysisId != null;
+
     final dailyCalories = round0(
       persistedMeals.fold<double>(
         0,
@@ -162,10 +202,13 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
         persistedMeals.isEmpty &&
         pendingConfirmations.isEmpty &&
         !isStreaming &&
+        !isRevealing &&
         !hasFailedAttempt;
 
-    final hasFooterItems =
-        pendingConfirmations.isNotEmpty || isStreaming || hasFailedAttempt;
+    final hasFooterItems = pendingConfirmations.isNotEmpty ||
+        isStreaming ||
+        isRevealing ||
+        hasFailedAttempt;
 
     final macroBars = [
       _MacroBarData(
@@ -250,6 +293,7 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
             persistedMeals: persistedMeals,
             pendingConfirmations: pendingConfirmations,
             isStreaming: isStreaming,
+            isRevealing: isRevealing,
             stream: stream,
             hasFooterItems: hasFooterItems,
             confirmPending: confirmPending,
@@ -299,6 +343,7 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
     required List<PersistedMeal> persistedMeals,
     required List<PendingMealConfirmation> pendingConfirmations,
     required bool isStreaming,
+    required bool isRevealing,
     required StreamAnalysisState stream,
     required bool hasFooterItems,
     required bool confirmPending,
@@ -330,6 +375,7 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
       // the footer still renders with the gutter padding.
       if (hasFooterItems) {
         return SingleChildScrollView(
+          controller: _scrollController,
           keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
           padding: const EdgeInsets.only(
             top: NhamSpacing.sp3,
@@ -340,9 +386,12 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
           child: _Footer(
             pendingConfirmations: pendingConfirmations,
             isStreaming: isStreaming,
+            isRevealing: isRevealing,
             stream: stream,
             confirmPending: confirmPending,
             onConfirm: _confirm,
+            onConfirmReveal: _confirmReveal,
+            revealRawInput: _revealRawInput,
             failedText: failedText,
             onRetry: onRetry,
             onDiscardFailed: onDiscardFailed,
@@ -375,6 +424,7 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
     }
 
     return ListView.separated(
+      controller: _scrollController,
       keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
       padding: const EdgeInsets.only(
         top: NhamSpacing.sp3,
@@ -398,9 +448,12 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
         return _Footer(
           pendingConfirmations: pendingConfirmations,
           isStreaming: isStreaming,
+          isRevealing: isRevealing,
           stream: stream,
           confirmPending: confirmPending,
           onConfirm: _confirm,
+          onConfirmReveal: _confirmReveal,
+          revealRawInput: _revealRawInput,
           failedText: failedText,
           onRetry: onRetry,
           onDiscardFailed: onDiscardFailed,
@@ -436,15 +489,50 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
       if (mounted) setState(() => _errorText = 'errors.internal'.tr());
     }
   }
+
+  /// Confirm straight from the revealed answer (the morph card). The analysis is
+  /// already stored server-side (analysis_complete); confirming persists it. On
+  /// success we tear down the local stream so the revealed card hands off to the
+  /// refetched persisted card — one continuous object from typed words to saved
+  /// meal. On failure the stream stays so the user can retry the confirm.
+  Future<void> _confirmReveal(
+      String analysisId, List<MealQuantityEdit> edits) async {
+    try {
+      await ref
+          .read(confirmMealProvider(widget.profile.userId).notifier)
+          .confirm(
+            analysisId: analysisId,
+            mealId: _uuid.v4(),
+            originDate: widget.date,
+            edits: edits.isEmpty
+                ? null
+                : [
+                    for (final e in edits)
+                      {
+                        'mealItemOrder': e.mealItemOrder,
+                        'newGrams': e.newGrams,
+                      },
+                  ],
+          );
+      HapticFeedback.mediumImpact();
+      _revealRawInput = null;
+      ref.read(streamAnalysisProvider.notifier).reset();
+    } catch (_) {
+      if (mounted) setState(() => _errorText = 'errors.internal'.tr());
+    }
+  }
 }
 
 class _Footer extends StatelessWidget {
   const _Footer({
     required this.pendingConfirmations,
     required this.isStreaming,
+    required this.isRevealing,
     required this.stream,
     required this.confirmPending,
     required this.onConfirm,
+    required this.onConfirmReveal,
+    required this.revealRawInput,
     required this.failedText,
     required this.onRetry,
     required this.onDiscardFailed,
@@ -452,10 +540,14 @@ class _Footer extends StatelessWidget {
 
   final List<PendingMealConfirmation> pendingConfirmations;
   final bool isStreaming;
+  final bool isRevealing;
+  final String? revealRawInput;
   final StreamAnalysisState stream;
   final bool confirmPending;
   final void Function(String analysisId, List<MealQuantityEdit> edits)
   onConfirm;
+  final void Function(String analysisId, List<MealQuantityEdit> edits)
+  onConfirmReveal;
   final String? failedText;
   final VoidCallback onRetry;
   final VoidCallback onDiscardFailed;
@@ -473,6 +565,7 @@ class _Footer extends StatelessWidget {
             parsedMeal: pendingConfirmations[i].parsedMeal,
             busy: confirmPending,
             isLast: !isStreaming &&
+                !isRevealing &&
                 !hasFailed &&
                 i == pendingConfirmations.length - 1,
             onConfirm: (edits) => onConfirm(pendingConfirmations[i].id, edits),
@@ -483,6 +576,20 @@ class _Footer extends StatelessWidget {
             items: stream.items,
             completedItems: stream.completedItems,
             isLast: !hasFailed,
+          ),
+        // The completed answer, morphed in place from the streaming card: the
+        // per-row macros are already real, the totals count up, and the spinner
+        // row has swapped for Edit/Confirm. Keyed by analysisId so it's the same
+        // element across the streaming→done transition (no remount).
+        if (isRevealing)
+          MealEntry(
+            key: ValueKey('reveal-${stream.analysisId}'),
+            rawInput: revealRawInput ?? '',
+            parsedMeal: stream.result!,
+            busy: confirmPending,
+            revealing: true,
+            isLast: !hasFailed,
+            onConfirm: (edits) => onConfirmReveal(stream.analysisId!, edits),
           ),
         if (hasFailed)
           _FailedAttemptCard(
