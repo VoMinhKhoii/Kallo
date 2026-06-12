@@ -1012,7 +1012,8 @@
       "rowKcal": "{kcal} kcal",
       "total": "Tổng cộng",
       "totalKcal": "{kcal} kcal",
-      "totalMacros": "P {protein} · C {carbs} · F {fat}"
+      "totalMacros": "P {protein} · C {carbs} · F {fat}",
+      "relatedMatch": "liên quan"
     },
     "mode": {
       "normal": "Bình thường",

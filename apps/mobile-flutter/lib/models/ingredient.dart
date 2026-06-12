@@ -57,6 +57,10 @@ class IngredientSearchResult {
   /// surface it so users pick the entry matching how they weighed the food.
   final String state;
 
+  /// True when found by the semantic (embedding) supplement rather than a
+  /// lexical match — labelled as a related, not exact, hit.
+  final bool semantic;
+
   final IngredientMacrosPer100g per100g;
 
   const IngredientSearchResult({
@@ -65,6 +69,7 @@ class IngredientSearchResult {
     required this.nameEn,
     required this.state,
     required this.per100g,
+    this.semantic = false,
   });
 
   factory IngredientSearchResult.fromJson(Map<String, dynamic> json) =>
@@ -73,6 +78,7 @@ class IngredientSearchResult {
         namePrimary: json['namePrimary'] as String,
         nameEn: json['nameEn'] as String?,
         state: json['state'] as String? ?? 'raw',
+        semantic: json['semantic'] as bool? ?? false,
         per100g: IngredientMacrosPer100g.fromJson(
           (json['per100g'] as Map<String, dynamic>?) ?? const {},
         ),

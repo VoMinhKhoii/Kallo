@@ -3,6 +3,9 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const execute = vi.fn();
 const requireAuthAndProfile = vi.fn();
+const resolveQueryEmbedding = vi.fn();
+const cacheQueryEmbedding = vi.fn();
+const generateEmbeddingBatch = vi.fn();
 
 vi.mock('@/lib/db', () => ({
   db: { execute },
@@ -10,6 +13,16 @@ vi.mock('@/lib/db', () => ({
 
 vi.mock('@/lib/auth', () => ({
   requireAuthAndProfile,
+}));
+
+vi.mock('@/lib/ai/matching/embedding-cache', () => ({
+  resolveQueryEmbedding,
+  cacheQueryEmbedding,
+}));
+
+vi.mock('@/lib/ai/gemini', () => ({
+  resolveGeminiProvider: () => ({ kind: 'test' }),
+  createGeminiClient: () => ({ generateEmbeddingBatch }),
 }));
 
 const { GET } = await import('@/app/api/v1/ingredients/search/route');
@@ -39,10 +52,17 @@ const riceDbRow = {
 beforeEach(() => {
   execute.mockReset();
   requireAuthAndProfile.mockReset();
+  resolveQueryEmbedding.mockReset();
+  cacheQueryEmbedding.mockReset();
+  generateEmbeddingBatch.mockReset();
   requireAuthAndProfile.mockResolvedValue({
     user: { id: 'user-123' },
     profile: {},
   });
+  // Default: no cached embedding and no live embedding → semantic path
+  // degrades silently unless a test opts in.
+  resolveQueryEmbedding.mockResolvedValue(null);
+  generateEmbeddingBatch.mockResolvedValue([]);
 });
 
 describe('GET /api/v1/ingredients/search', () => {
@@ -98,6 +118,77 @@ describe('GET /api/v1/ingredients/search', () => {
       'fct-rice',
       'fct-rice-2',
     ]);
+  });
+
+  it('supplements weak lexical results with semantic matches, flagged and deduped', async () => {
+    // Vocabulary gap: nothing lexical matches well ("lườn gà" shares no
+    // trigrams with breast entries) → the embedding supplement kicks in.
+    resolveQueryEmbedding.mockResolvedValue([0.1, 0.2, 0.3]);
+    execute
+      .mockResolvedValueOnce([{ ...riceDbRow, similarity: 0.2 }]) // weak fuzzy
+      .mockResolvedValueOnce([
+        { ...riceDbRow, similarity: 0.9 }, // duplicate of the lexical hit
+        {
+          ...riceDbRow,
+          id: 'fct-breast',
+          name_primary: 'Ức gà',
+          similarity: 0.85,
+        },
+      ]) // match_ingredients
+      .mockResolvedValueOnce([]); // substring backfill
+
+    const res = await GET(makeRequest({ q: 'lườn gà' }));
+    const { results } = await res.json();
+
+    expect(JSON.stringify(execute.mock.calls[1][0])).toContain(
+      'match_ingredients'
+    );
+    const ids = results.map((r: { id: string }) => r.id);
+    expect(ids).toEqual(['fct-rice', 'fct-breast']); // deduped, lexical first
+    expect(results[0].semantic).toBeUndefined(); // lexical hits unflagged
+    expect(results[1].semantic).toBe(true);
+  });
+
+  it('skips the semantic supplement when the lexical hit is strong', async () => {
+    execute
+      .mockResolvedValueOnce([riceDbRow]) // similarity 0.92 ≥ threshold
+      .mockResolvedValueOnce([]); // substring backfill only
+
+    await GET(makeRequest({ q: 'cơm trắng' }));
+
+    expect(resolveQueryEmbedding).not.toHaveBeenCalled();
+    for (const call of execute.mock.calls) {
+      expect(JSON.stringify(call[0])).not.toContain('match_ingredients(');
+    }
+  });
+
+  it('live-embeds and caches when the query has no cached embedding', async () => {
+    resolveQueryEmbedding.mockResolvedValue(null);
+    generateEmbeddingBatch.mockResolvedValue([[0.5, 0.6]]);
+    execute
+      .mockResolvedValueOnce([]) // no fuzzy hits
+      .mockResolvedValueOnce([{ ...riceDbRow, similarity: 0.8 }]) // vector
+      .mockResolvedValueOnce([]); // substring backfill
+
+    const res = await GET(makeRequest({ q: 'lườn gà' }));
+    const { results } = await res.json();
+
+    expect(generateEmbeddingBatch).toHaveBeenCalledWith(['lườn gà']);
+    expect(cacheQueryEmbedding).toHaveBeenCalled();
+    expect(results[0].semantic).toBe(true);
+  });
+
+  it('degrades to lexical-only when the embedding path fails', async () => {
+    resolveQueryEmbedding.mockRejectedValue(new Error('embed infra down'));
+    execute
+      .mockResolvedValueOnce([{ ...riceDbRow, similarity: 0.2 }]) // weak fuzzy
+      .mockResolvedValueOnce([]); // substring backfill
+
+    const res = await GET(makeRequest({ q: 'lườn gà' }));
+    expect(res.status).toBe(200);
+    const { results } = await res.json();
+    expect(results).toHaveLength(1);
+    expect(results[0].id).toBe('fct-rice');
   });
 
   it('returns the recent-foods list when q is empty', async () => {

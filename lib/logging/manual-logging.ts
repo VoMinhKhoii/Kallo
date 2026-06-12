@@ -28,6 +28,9 @@ export interface IngredientSearchResult {
   state: string;
   /** Trigram similarity (1 for recent-foods results). */
   similarity: number;
+  /** True when found by the semantic (embedding) supplement rather than a
+   *  lexical match — the UI labels these as related, not exact, hits. */
+  semantic?: boolean;
   per100g: IngredientMacrosPer100g;
 }
 

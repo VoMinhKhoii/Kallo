@@ -1,5 +1,10 @@
 import { sql } from 'drizzle-orm';
 import type { NextRequest } from 'next/server';
+import { createGeminiClient, resolveGeminiProvider } from '@/lib/ai/gemini';
+import {
+  cacheQueryEmbedding,
+  resolveQueryEmbedding,
+} from '@/lib/ai/matching/embedding-cache';
 import { ingredientSearchQuerySchema } from '@/lib/api/contracts/ingredients';
 import { handleRouteError } from '@/lib/api/respond';
 import { requireAuthAndProfile } from '@/lib/auth';
@@ -7,6 +12,14 @@ import { db } from '@/lib/db';
 import type { IngredientSearchResult } from '@/lib/logging/manual-logging';
 
 export const runtime = 'nodejs';
+
+// Vector matches below this cosine similarity are noise for a picker UI —
+// kept deliberately strict (the AI pipeline accepts 0.7 for USDA; manual
+// search prefers fewer, better suggestions over recall).
+const SEMANTIC_VECTOR_THRESHOLD = 0.75;
+// When the best lexical hit scores at least this, the query is well-covered
+// lexically and the semantic supplement is skipped (no embedding work).
+const LEXICAL_STRONG_SIMILARITY = 0.45;
 
 /** Strip Vietnamese diacritics client-side of the DB (matches how
  *  `search_text_ascii` was generated) so the prefix fallback never depends on
@@ -60,6 +73,51 @@ async function loadRecentIngredients(
   return (rows as unknown as Record<string, unknown>[]).map(toSearchResult);
 }
 
+/** Resolve a query embedding through the pipeline's 3-tier cache (memory →
+ *  ingredient_query_embeddings → live Gemini embed call, cached on return). */
+async function resolveEmbedding(q: string): Promise<number[] | null> {
+  const cached = await resolveQueryEmbedding(q, db);
+  if (cached) return cached;
+  const gemini = createGeminiClient(resolveGeminiProvider());
+  const [generated] = await gemini.generateEmbeddingBatch([q]);
+  if (!generated) return null;
+  cacheQueryEmbedding(q, generated, db);
+  return generated;
+}
+
+/** Semantic supplement, reusing the AI pipeline's deterministic retrieval
+ *  layer (cached embeddings + pgvector match_ingredients — NOT its LLM calls).
+ *  Covers vocabulary the lexical index can't ("lườn gà" → chicken breast with
+ *  zero shared trigrams). Strictly thresholded, and results are flagged so the
+ *  UI can label them as related rather than exact. Any failure (no embedding
+ *  provider, vector infra down) degrades to lexical-only — never a 500. */
+async function semanticSupplement(
+  q: string,
+  limit: number
+): Promise<IngredientSearchResult[]> {
+  try {
+    const embedding = await resolveEmbedding(q);
+    if (!embedding) return [];
+    const rows = await db.execute(sql`
+      SELECT f.id, f.name_primary, f.name_alt, f.name_en, f.state, f.similarity,
+             v.calories_kcal, v.protein_g, v.carbohydrate_g, v.fat_g
+      FROM match_ingredients(${JSON.stringify(embedding)}::vector, ${limit}, ${SEMANTIC_VECTOR_THRESHOLD}) f
+      JOIN vietnamese_food_composition v ON v.id = f.id
+      ORDER BY f.similarity DESC, v.source_id ASC
+    `);
+    return (rows as unknown as Record<string, unknown>[]).map((row) => ({
+      ...toSearchResult(row),
+      semantic: true,
+    }));
+  } catch (error) {
+    console.warn(
+      '[ingredient-search] semantic supplement failed; lexical results only:',
+      error
+    );
+    return [];
+  }
+}
+
 async function searchIngredients(
   q: string,
   limit: number
@@ -81,6 +139,21 @@ async function searchIngredients(
   const results = (fuzzyRows as unknown as Record<string, unknown>[]).map(
     toSearchResult
   );
+  const seen = new Set(results.map((r) => r.id));
+
+  // Semantic supplement: only when the lexical index has no strong answer —
+  // a confident lexical hit means the user typed something the names cover,
+  // and skipping the embedding path keeps the common case fast.
+  const lexicalStrong =
+    results.length > 0 && results[0].similarity >= LEXICAL_STRONG_SIMILARITY;
+  if (!lexicalStrong) {
+    for (const result of await semanticSupplement(q, limit)) {
+      if (results.length >= limit) break;
+      if (seen.has(result.id)) continue;
+      seen.add(result.id);
+      results.push(result);
+    }
+  }
   if (results.length >= limit) return results;
 
   // Supplement: trigram similarity is unreliable for short queries (Vietnamese
@@ -98,7 +171,6 @@ async function searchIngredients(
              length(v.name_primary) ASC
     LIMIT ${limit}
   `);
-  const seen = new Set(results.map((r) => r.id));
   for (const row of prefixRows as unknown as Record<string, unknown>[]) {
     if (results.length >= limit) break;
     const result = toSearchResult(row);

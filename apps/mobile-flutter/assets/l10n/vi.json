@@ -1040,7 +1040,8 @@
       "kcal": "kcal",
       "kcalPer100g": "kcal/100g",
       "removeItem": "Xóa món",
-      "save": "Lưu bữa ăn"
+      "save": "Lưu bữa ăn",
+      "relatedMatch": "liên quan"
     }
   },
   "groups": {

@@ -195,6 +195,14 @@ function IngredientCombobox({
                     {result.namePrimary}
                   </span>
                   <StateBadge state={result.state} />
+                  {result.semantic && (
+                    <span
+                      className="shrink-0 text-[10px] text-nham-text-muted/60"
+                      style={{ fontFamily: 'DM Sans, sans-serif' }}
+                    >
+                      ≈ {t('manualLogging.relatedMatch')}
+                    </span>
+                  )}
                 </div>
                 {result.nameEn && (
                   <div

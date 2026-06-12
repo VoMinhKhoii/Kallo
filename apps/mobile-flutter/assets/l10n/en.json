@@ -1041,7 +1041,8 @@
       "kcal": "kcal",
       "kcalPer100g": "kcal/100g",
       "removeItem": "Remove food",
-      "save": "Save meal"
+      "save": "Save meal",
+      "relatedMatch": "related"
     }
   },
   "groups": {

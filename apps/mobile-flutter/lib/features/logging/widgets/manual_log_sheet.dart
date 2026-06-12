@@ -499,6 +499,15 @@ class _ResultTile extends StatelessWidget {
                         ),
                         const SizedBox(width: 6),
                         _StateBadge(state: result.state),
+                        if (result.semantic) ...[
+                          const SizedBox(width: 6),
+                          Text(
+                            '≈ ${'logging.manualLogging.relatedMatch'.tr()}',
+                            style: NhamTextStyles.sansRegular(
+                              fontSize: 10,
+                            ).copyWith(color: NhamColors.textMuted60),
+                          ),
+                        ],
                       ],
                     ),
                     if (result.nameEn != null && result.nameEn!.isNotEmpty)

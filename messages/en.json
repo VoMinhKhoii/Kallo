@@ -1012,7 +1012,8 @@
       "rowKcal": "{kcal} kcal",
       "total": "Total",
       "totalKcal": "{kcal} kcal",
-      "totalMacros": "P {protein} · C {carbs} · F {fat}"
+      "totalMacros": "P {protein} · C {carbs} · F {fat}",
+      "relatedMatch": "related"
     },
     "mode": {
       "normal": "Normal",
