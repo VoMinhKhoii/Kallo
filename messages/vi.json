@@ -742,11 +742,19 @@
         "date": "Nhật ký bữa ăn",
         "justNow": "Vừa xong",
         "analysis": "Phân tích dinh dưỡng bằng AI",
-        "highConfidence": "Độ tin cậy cao",
         "totalCalories": "Tổng calo",
         "inputPlaceholder": "Mô tả bữa ăn của bạn…",
         "smartContext": "Ngữ cảnh thông minh",
-        "smartContextText": "Dùng vùng miền, thói quen nấu ăn và mô tả bữa ăn để siết chặt ước tính."
+        "smartContextText": "Dùng vùng miền, thói quen nấu ăn và mô tả bữa ăn để siết chặt ước tính.",
+        "send": "Phân tích bữa ăn",
+        "save": "Lưu bữa ăn này",
+        "phaseMatching": "Đang khớp nguyên liệu…",
+        "phaseEstimating": "Đang ước tính dinh dưỡng…",
+        "chips": {
+          "phoBo": "1 tô phở bò tái + quẩy",
+          "comTam": "Cơm tấm sườn bì chả",
+          "bunCha": "Bún chả Hà Nội"
+        }
       }
     },
     "problem": {
@@ -761,15 +769,14 @@
       "card3Title": "Thiếu ngữ cảnh nấu nướng",
       "card3Text": "Xào ít dầu và chiên ngập dầu — cùng nguyên liệu nhưng calo rất khác nhau.",
       "visual": {
-        "searchPlaceholder": "Tìm món ăn của bạn",
-        "searchResult1": "Mực kho",
-        "searchResult2": "Thịt nạc",
-        "noMatch": "Không có kết quả khớp",
-        "detected": "Món được nhận diện",
-        "braisedPork": "Cơm thịt kho",
-        "hiddenCalories": "Calo ẩn từ dầu và món kèm",
-        "entryFailed": "Ghi tay thất bại",
-        "entryFailedText": "Quá nhiều công sức cho một bữa ăn."
+        "appLabel": "Một app phương Tây điển hình",
+        "query": "mực kho",
+        "result1": "Mực sống",
+        "result1Note": "không kho, không nước sốt",
+        "result2": "Mực chiên giòn",
+        "result2Note": "sai hẳn món",
+        "noMatch": "Không có kết quả khớp cho “mực kho”",
+        "caption": "Hai kết quả suýt soát và một cái nhún vai — cho món ăn có mặt trong hàng triệu gia đình."
       },
       "quote": "Khi cơ sở dữ liệu không hiểu ẩm thực của bạn, mọi mục tiêu calo đều chỉ là phỏng đoán.",
       "quoteLabel": "Vấn đề người dùng gặp đi gặp lại"

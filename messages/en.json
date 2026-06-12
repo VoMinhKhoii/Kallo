@@ -742,11 +742,19 @@
         "date": "Meal log",
         "justNow": "Just now",
         "analysis": "AI nutrition analysis",
-        "highConfidence": "High confidence",
         "totalCalories": "Total calories",
         "inputPlaceholder": "Describe your meal…",
         "smartContext": "Smart context",
-        "smartContextText": "Uses your region, cooking habits, and meal text to tighten estimates."
+        "smartContextText": "Uses your region, cooking habits, and meal text to tighten estimates.",
+        "send": "Analyze meal",
+        "save": "Save this meal",
+        "phaseMatching": "Matching ingredients…",
+        "phaseEstimating": "Estimating nutrition…",
+        "chips": {
+          "phoBo": "1 tô phở bò tái + quẩy",
+          "comTam": "Cơm tấm sườn bì chả",
+          "bunCha": "Bún chả Hà Nội"
+        }
       }
     },
     "problem": {
@@ -761,15 +769,14 @@
       "card3Title": "No cooking context",
       "card3Text": "A stir-fry with minimal oil vs. deep-fried — same ingredient, very different calories.",
       "visual": {
-        "searchPlaceholder": "Search for your dish",
-        "searchResult1": "Braised squid",
-        "searchResult2": "Lean pork",
-        "noMatch": "No exact match",
-        "detected": "Detected dish",
-        "braisedPork": "Braised pork bowl",
-        "hiddenCalories": "Hidden calories from oil & extras",
-        "entryFailed": "Manual logging failed",
-        "entryFailedText": "Too much effort for one meal."
+        "appLabel": "A typical Western tracker",
+        "query": "mực kho",
+        "result1": "Squid, raw",
+        "result1Note": "no braising, no sauce",
+        "result2": "Calamari, fried",
+        "result2Note": "wrong dish entirely",
+        "noMatch": "No exact match for “mực kho”",
+        "caption": "Two near-misses and a shrug — for a dish eaten in millions of homes."
       },
       "quote": "When the food database doesn't understand your cuisine, every calorie target becomes a guess.",
       "quoteLabel": "What users keep running into"
