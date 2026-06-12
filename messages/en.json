@@ -1056,6 +1056,7 @@
       "removeRow": "Remove {name}",
       "mealUpdated": "Meal updated",
       "updateError": "Couldn't update the meal — try again.",
+      "refineAction": "Fix with words",
       "refineLabel": "Fix it in words",
       "refinePlaceholder": "e.g. the squid was fried, not braised",
       "refineSubmit": "Re-analyze",

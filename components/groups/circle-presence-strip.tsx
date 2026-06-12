@@ -140,7 +140,28 @@ export function CirclePresenceStrip({
   sharedTodayUserIds: Set<string>;
 }) {
   const t = useTranslations('groups.wall');
-  const { data: members = [] } = useFriends();
+  const { data: members = [], isPending } = useFriends();
+
+  // While the roster loads, hold the strip's space with muted disc
+  // placeholders so the wall doesn't jump when members pop in.
+  if (isPending) {
+    return (
+      <section
+        aria-label={t('presenceLabel')}
+        aria-busy="true"
+        className="mb-6 pl-4 sm:pl-10"
+      >
+        <div className="flex animate-pulse flex-wrap items-start gap-4">
+          {[0, 1, 2].map((index) => (
+            <div key={index} className="flex flex-col items-center gap-1.5">
+              <span className="size-10 rounded-full bg-nham-border/40 ring-1 ring-nham-border/50" />
+              <span className="h-2.5 w-10 rounded-full bg-nham-border/40" />
+            </div>
+          ))}
+        </div>
+      </section>
+    );
+  }
 
   const accepted = members.filter((m) => m.status === 'accepted');
   if (accepted.length === 0) return null;

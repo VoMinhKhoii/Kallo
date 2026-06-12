@@ -12,7 +12,7 @@ import {
 } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useLocale, useTranslations } from 'next-intl';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { CheatMealCard } from '@/components/logging/feed/cheat-meal-card';
 import {
@@ -188,24 +188,34 @@ interface EditableRow {
   removed: boolean;
 }
 
-function MealAmountEditor({
+/**
+ * Natural-language refine input — talk to fix the meal, the same way it was
+ * logged. Re-runs the full analysis waterfall on the meal text plus this note,
+ * replacing the meal once confirmed. Rendered both from the collapsed card's
+ * "Fix with words" action and inside the amount editor.
+ */
+function RefineField({
   meal,
-  onCancel,
-  onSave,
   onRefine,
+  autoFocus = false,
 }: {
   meal: PersistedMeal;
-  onCancel: () => void;
-  onSave: (changes: MealAmountEdit) => Promise<void>;
-  onRefine?: (correction: string) => void;
+  onRefine: (correction: string) => void;
+  autoFocus?: boolean;
 }) {
   const t = useTranslations('logging.persistedMealCard');
-  const [isSaving, setIsSaving] = useState(false);
   const [correction, setCorrection] = useState('');
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  // Focus on mount only when explicitly opened by the user (the "Fix with
+  // words" action) — never steal focus when the field renders passively.
+  useEffect(() => {
+    if (autoFocus) inputRef.current?.focus();
+  }, [autoFocus]);
 
   const submitRefine = () => {
     const trimmed = correction.trim();
-    if (trimmed.length === 0 || !onRefine) return;
+    if (trimmed.length === 0) return;
     onRefine(trimmed);
   };
 
@@ -219,6 +229,68 @@ function MealAmountEditor({
     Math.min(200, refineBudget),
     REFINE_MIN_BUDGET
   );
+
+  return (
+    <>
+      <label
+        htmlFor={`refine-${meal.id}`}
+        className="px-1 font-medium text-[10px] text-nham-text-muted uppercase tracking-[0.08em]"
+        style={{ fontFamily: 'DM Sans, sans-serif' }}
+      >
+        {t('refineLabel')}
+      </label>
+      <div className="mt-1.5 flex items-stretch gap-2">
+        <input
+          ref={inputRef}
+          id={`refine-${meal.id}`}
+          value={correction}
+          onChange={(event) => setCorrection(event.target.value)}
+          onKeyDown={(event) => {
+            if (event.key === 'Enter') {
+              event.preventDefault();
+              submitRefine();
+            }
+          }}
+          placeholder={t('refinePlaceholder')}
+          autoComplete="off"
+          maxLength={refineMaxLength}
+          className="min-w-0 flex-1 rounded-lg border border-nham-border/60 bg-white px-3 py-2 text-[13px] text-nham-text placeholder:text-nham-text-muted/50 focus:border-nham-accent/50 focus:outline-none"
+          style={{ fontFamily: 'DM Sans, sans-serif' }}
+        />
+        <button
+          type="button"
+          onClick={submitRefine}
+          disabled={correction.trim().length === 0}
+          className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-nham-accent/15 px-3 font-medium text-[12px] text-nham-text transition-colors hover:bg-nham-accent/25 disabled:cursor-not-allowed disabled:opacity-50"
+          style={{ fontFamily: 'DM Sans, sans-serif' }}
+        >
+          <Sparkles className="h-3.5 w-3.5" />
+          {t('refineSubmit')}
+        </button>
+      </div>
+      <p
+        className="mt-1.5 px-1 text-[11px] text-nham-text-muted/70"
+        style={{ fontFamily: 'DM Sans, sans-serif' }}
+      >
+        {refineTight ? t('refineTightHint') : t('refineHint')}
+      </p>
+    </>
+  );
+}
+
+function MealAmountEditor({
+  meal,
+  onCancel,
+  onSave,
+  onRefine,
+}: {
+  meal: PersistedMeal;
+  onCancel: () => void;
+  onSave: (changes: MealAmountEdit) => Promise<void>;
+  onRefine?: (correction: string) => void;
+}) {
+  const t = useTranslations('logging.persistedMealCard');
+  const [isSaving, setIsSaving] = useState(false);
 
   // Flatten the meal's ingredient rows (each carries a stable id + grams) into
   // the editable working set. Removals and gram steps mutate local state only;
@@ -341,52 +413,10 @@ function MealAmountEditor({
         ))}
       </div>
 
-      {/* Natural-language refine — talk to fix it, the same way you logged it.
-          Re-runs the full analysis waterfall on the meal text plus this note,
-          replacing the meal once confirmed. */}
+      {/* Natural-language refine — talk to fix it, the same way you logged it. */}
       {onRefine && (
         <div className="mt-4 border-nham-border/50 border-t border-dashed pt-4">
-          <label
-            htmlFor={`refine-${meal.id}`}
-            className="px-1 font-medium text-[10px] text-nham-text-muted uppercase tracking-[0.08em]"
-            style={{ fontFamily: 'DM Sans, sans-serif' }}
-          >
-            {t('refineLabel')}
-          </label>
-          <div className="mt-1.5 flex items-stretch gap-2">
-            <input
-              id={`refine-${meal.id}`}
-              value={correction}
-              onChange={(event) => setCorrection(event.target.value)}
-              onKeyDown={(event) => {
-                if (event.key === 'Enter') {
-                  event.preventDefault();
-                  submitRefine();
-                }
-              }}
-              placeholder={t('refinePlaceholder')}
-              autoComplete="off"
-              maxLength={refineMaxLength}
-              className="min-w-0 flex-1 rounded-lg border border-nham-border/60 bg-white px-3 py-2 text-[13px] text-nham-text placeholder:text-nham-text-muted/50 focus:border-nham-accent/50 focus:outline-none"
-              style={{ fontFamily: 'DM Sans, sans-serif' }}
-            />
-            <button
-              type="button"
-              onClick={submitRefine}
-              disabled={correction.trim().length === 0}
-              className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-nham-accent/15 px-3 font-medium text-[12px] text-nham-text transition-colors hover:bg-nham-accent/25 disabled:cursor-not-allowed disabled:opacity-50"
-              style={{ fontFamily: 'DM Sans, sans-serif' }}
-            >
-              <Sparkles className="h-3.5 w-3.5" />
-              {t('refineSubmit')}
-            </button>
-          </div>
-          <p
-            className="mt-1.5 px-1 text-[11px] text-nham-text-muted/70"
-            style={{ fontFamily: 'DM Sans, sans-serif' }}
-          >
-            {refineTight ? t('refineTightHint') : t('refineHint')}
-          </p>
+          <RefineField meal={meal} onRefine={onRefine} />
         </div>
       )}
 
@@ -427,6 +457,9 @@ function PrecisePersistedMealCard({
   const locale = useLocale();
   const [isCollapsed, setIsCollapsed] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
+  // "Fix with words" from the always-visible action row — opens the refine
+  // input directly, without requiring expand → Edit amounts.
+  const [isRefineOpen, setIsRefineOpen] = useState(false);
   // Only meals with gram-bearing ingredient rows can be amount-edited; a
   // legacy/empty meal (no item rows) has nothing to step.
   const canEdit =
@@ -622,10 +655,22 @@ function PrecisePersistedMealCard({
                   {t('logAgain')}
                 </button>
               )}
+              {onRefine && (
+                <button
+                  type="button"
+                  aria-expanded={isRefineOpen}
+                  onClick={() => setIsRefineOpen((prev) => !prev)}
+                  className="rounded-full px-2.5 py-1 font-medium text-[11px] text-nham-text-muted/70 transition-colors hover:bg-nham-hover/40 hover:text-nham-text"
+                  style={{ fontFamily: 'DM Sans, sans-serif' }}
+                >
+                  {t('refineAction')}
+                </button>
+              )}
               {canEdit && (
                 <button
                   type="button"
                   onClick={() => {
+                    setIsRefineOpen(false);
                     setIsCollapsed(true);
                     setIsEditing(true);
                   }}
@@ -647,6 +692,21 @@ function PrecisePersistedMealCard({
               )}
             </div>
             <ShareToCircleButton mealId={meal.id} share={meal.share} />
+          </div>
+        )}
+
+        {/* The refine field opened from the action row — one interaction from
+            the collapsed card. Also available inside the amount editor. */}
+        {!isEditing && isRefineOpen && onRefine && (
+          <div className="mt-3 border-nham-border/40 border-t border-dashed pt-3">
+            <RefineField
+              meal={meal}
+              autoFocus
+              onRefine={(correction) => {
+                setIsRefineOpen(false);
+                onRefine(correction);
+              }}
+            />
           </div>
         )}
       </div>

@@ -1056,6 +1056,7 @@
       "removeRow": "Bỏ {name}",
       "mealUpdated": "Đã cập nhật bữa ăn",
       "updateError": "Không cập nhật được bữa ăn — hãy thử lại.",
+      "refineAction": "Sửa bằng lời",
       "refineLabel": "Sửa bằng lời",
       "refinePlaceholder": "vd: mực chiên chứ không phải kho",
       "refineSubmit": "Phân tích lại",
