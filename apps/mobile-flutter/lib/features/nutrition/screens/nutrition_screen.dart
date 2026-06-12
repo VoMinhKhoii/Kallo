@@ -7,6 +7,7 @@ import '../../../models/nutrition.dart';
 import '../../../shared/widgets/nham_primitives.dart';
 import '../../../shared/widgets/nham_text.dart';
 import '../../../shell/app_header.dart';
+import '../../../theme/nham_colors.dart';
 import '../providers/nutrition_overview_provider.dart';
 import '../widgets/background_section.dart';
 import '../widgets/daily_rhythm.dart';
@@ -53,6 +54,28 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> {
       );
     }
 
+    // A refetch that fails while we still hold a prior overview keeps the
+    // content on screen (copyWithPrevious) and surfaces the failure as a toast
+    // instead of nuking what the user is reading.
+    ref.listen<AsyncValue<NutritionOverview>>(
+      nutritionOverviewProvider(_range),
+      (prev, next) {
+        if (next.hasError && next.hasValue) {
+          final messenger = ScaffoldMessenger.of(context);
+          messenger.clearSnackBars();
+          messenger.showSnackBar(
+            SnackBar(
+              content: NhamText(
+                tr('nutrition.errors.overviewToast'),
+                variant: NhamTextVariant.body,
+                style: const TextStyle(color: NhamColors.surface),
+              ),
+            ),
+          );
+        }
+      },
+    );
+
     final async = ref.watch(nutritionOverviewProvider(_range));
     // `isFetching`: a refetch in flight while previous data is shown.
     final isFetching = async.isLoading && async.hasValue;
@@ -66,10 +89,20 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> {
             child: AppHeader(),
           ),
           Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(20, 24, 20, 80),
-              physics: const ClampingScrollPhysics(),
-              child: _buildBody(async, isFetching),
+            // Native bounce physics (the only screen that was forced to
+            // Clamping) + pull-to-refresh, consistent with the rest of the app.
+            child: RefreshIndicator(
+              onRefresh: () => ref
+                  .read(nutritionOverviewProvider(_range).notifier)
+                  .refetch(),
+              color: NhamColors.accent,
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(20, 24, 20, 80),
+                physics: const AlwaysScrollableScrollPhysics(
+                  parent: BouncingScrollPhysics(),
+                ),
+                child: _buildBody(async, isFetching),
+              ),
             ),
           ),
         ],

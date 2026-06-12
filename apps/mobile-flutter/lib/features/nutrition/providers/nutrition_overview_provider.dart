@@ -60,15 +60,30 @@ class NutritionOverviewNotifier
   }
 
   /// Refetch the current range — mirrors `query.refetch()`. Keeps the existing
-  /// data visible (sets `isFetching` semantics via `AsyncValue.isLoading` on a
-  /// guarded refresh that preserves the previous value).
-  Future<void> refetch() async {
+  /// data visible while loading, and — critically — on FAILURE retains the
+  /// previous overview underneath the error (`copyWithPrevious`) so a flaky
+  /// refetch doesn't blank out the editorial stack the user is reading. The
+  /// screen reads `hasValue` to keep rendering content and surfaces the failure
+  /// as a toast instead.
+  ///
+  /// Returns true on success, false on failure (so the caller can toast).
+  Future<bool> refetch() async {
     final range = arg;
-    state = await AsyncValue.guard(() async {
+    final previous = state;
+    // Show the in-flight (isLoading) state over the current value.
+    state = const AsyncValue<NutritionOverview>.loading()
+        .copyWithPrevious(previous);
+    try {
       final overview = await _fetch(range);
       _lastOverview = overview;
-      return overview;
-    });
+      state = AsyncData(overview);
+      return true;
+    } catch (error, stack) {
+      // Retain the previous data under the error.
+      state = AsyncError<NutritionOverview>(error, stack)
+          .copyWithPrevious(previous);
+      return false;
+    }
   }
 }
 
