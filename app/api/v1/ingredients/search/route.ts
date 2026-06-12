@@ -64,14 +64,17 @@ async function searchIngredients(
   q: string,
   limit: number
 ): Promise<IngredientSearchResult[]> {
-  // Primary: trigram fuzzy match (the DB function branches diacritic vs ASCII
-  // internally). Joined back to the composition table for per-100g macros;
-  // ties rank curated FAO Vietnamese entries (source_id 1) above translated
-  // USDA rows.
+  // Primary: trigram match via search_ingredients_by_name (branches diacritic
+  // vs ASCII internally). It ranks with word_similarity — the query against
+  // the best-matching extent of each name, with name_alt scored per variant —
+  // so short queries like "ức gà" surface the long-named USDA body-part
+  // entries instead of being drowned by short generic FAO names. The function
+  // already orders by score, then curated FAO (source_id 1) before translated
+  // USDA, then shorter names; the JOIN just adds per-100g macros.
   const fuzzyRows = await db.execute(sql`
     SELECT f.id, f.name_primary, f.name_alt, f.name_en, f.state, f.similarity,
            v.calories_kcal, v.protein_g, v.carbohydrate_g, v.fat_g
-    FROM fuzzy_match_ingredients(${q}, ${limit}, 0.15) f
+    FROM search_ingredients_by_name(${q}, ${limit}, 0.15) f
     JOIN vietnamese_food_composition v ON v.id = f.id
     ORDER BY f.similarity DESC, v.source_id ASC
   `);

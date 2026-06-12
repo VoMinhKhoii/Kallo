@@ -925,3 +925,96 @@ describe('search infrastructure integrity', () => {
     expect(rows.length).toBe(0);
   });
 });
+
+// ─── search_ingredients_by_name (manual-logging search) ─────────────────────
+
+describe('search_ingredients_by_name (manual search ranking)', () => {
+  async function searchByName(
+    query: string,
+    count = 10,
+    threshold = 0.15
+  ): Promise<FuzzyResult[]> {
+    return sql<FuzzyResult[]>`
+      SELECT * FROM search_ingredients_by_name(
+        ${query}, ${count}, ${threshold}
+      )
+    `;
+  }
+
+  const breastId = 'test-manual-search-breast';
+  const genericId = 'test-manual-search-generic';
+
+  // Fixture pair reproducing the body-part ranking bug: a long
+  // USDA-translated chicken-breast entry (the desired hit, reachable only
+  // through a name_alt variant or a fragment of the long name) vs a short
+  // generic FAO-style chicken entry that whole-string similarity used to
+  // rank first.
+  async function insertFixtures() {
+    await sql`
+      INSERT INTO vietnamese_food_composition
+        (id, name_primary, name_alt, name_en, type_vn, type_en, source_id, state)
+      VALUES
+        (
+          ${breastId},
+          'Gà, gà giò hoặc gà rán, ức, chỉ thịt, sống',
+          ARRAY['ức gà', 'ức gà bỏ da', 'ức gà không xương'],
+          'Chicken, broilers or fryers, breast, meat only, raw',
+          'Thịt', 'Poultry', 2, 'raw'
+        ),
+        (
+          ${genericId},
+          'Thịt gà test',
+          ARRAY['gà test'],
+          'Chicken meat test',
+          'Thịt', 'Poultry', 1, 'raw'
+        )
+    `;
+  }
+
+  async function deleteFixtures() {
+    await sql`
+      DELETE FROM vietnamese_food_composition
+      WHERE id IN (${breastId}, ${genericId})
+    `;
+  }
+
+  it('ranks a body-part entry above generic meat for "ức gà"', async () => {
+    await insertFixtures();
+    try {
+      const results = await searchByName('ức gà');
+      const ids = results.map((r) => r.id);
+
+      // The breast entry must surface at all (it never did under
+      // whole-string ranking) and must beat the short generic entry.
+      expect(ids).toContain(breastId);
+      const breastRank = ids.indexOf(breastId);
+      const genericRank = ids.indexOf(genericId);
+      if (genericRank !== -1) {
+        expect(breastRank).toBeLessThan(genericRank);
+      }
+      // An exact name_alt variant is a full-strength hit.
+      expect(results[breastRank].similarity).toBeGreaterThan(0.9);
+    } finally {
+      await deleteFixtures();
+    }
+  });
+
+  it('matches the same entry through the ASCII branch ("uc ga")', async () => {
+    await insertFixtures();
+    try {
+      const results = await searchByName('uc ga');
+      expect(results.map((r) => r.id)).toContain(breastId);
+    } finally {
+      await deleteFixtures();
+    }
+  });
+
+  it('still resolves exact short names first', async () => {
+    const results = await searchByName('thịt gà ta');
+    expect(results.length).toBeGreaterThan(0);
+    expect(
+      `${results[0].name_primary} ${(results[0].name_alt ?? []).join(' ')}`
+        .toLowerCase()
+    ).toContain('gà ta');
+  });
+});

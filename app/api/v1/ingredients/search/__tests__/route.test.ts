@@ -74,6 +74,12 @@ describe('GET /api/v1/ingredients/search', () => {
       },
     });
     expect(execute).toHaveBeenCalledTimes(1);
+    // Manual search must use the word_similarity-ranked function — the
+    // whole-string-ranked fuzzy_match_ingredients buries body-part entries
+    // ("ức gà") under short generic names.
+    expect(JSON.stringify(execute.mock.calls[0][0])).toContain(
+      'search_ingredients_by_name'
+    );
   });
 
   it('backfills short-query results with the substring fallback, deduped', async () => {
