@@ -1013,8 +1013,7 @@ describe('search_ingredients_by_name (manual search ranking)', () => {
     const results = await searchByName('thịt gà ta');
     expect(results.length).toBeGreaterThan(0);
     expect(
-      `${results[0].name_primary} ${(results[0].name_alt ?? []).join(' ')}`
-        .toLowerCase()
+      `${results[0].name_primary} ${(results[0].name_alt ?? []).join(' ')}`.toLowerCase()
     ).toContain('gà ta');
   });
 });
