@@ -124,10 +124,7 @@ export default async function InvitePage({
   // connected") rather than teleporting to an empty /groups.
   const myProfile = await getMyPublicProfile(user.id);
   const youLabel =
-    myProfile?.displayName?.trim() ||
-    myProfile?.handle ||
-    user.email?.charAt(0) ||
-    t('you');
+    myProfile?.displayName?.trim() || myProfile?.handle || t('you');
 
   return (
     <ConnectPanel

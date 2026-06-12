@@ -45,7 +45,10 @@ export function AccountPanel({ email }: { email: string | null }) {
       anchor.remove();
       URL.revokeObjectURL(url);
     } catch (error) {
-      console.error('Failed to export data:', error);
+      console.error(
+        'Failed to export data:',
+        error instanceof Error ? error.message : String(error)
+      );
       toast.error(t('exportError'));
     } finally {
       setExporting(false);
@@ -62,7 +65,10 @@ export function AccountPanel({ email }: { email: string | null }) {
       document.cookie = 'NEXT_LOCALE=; Path=/; Max-Age=0; SameSite=Lax';
       window.location.assign('/');
     } catch (error) {
-      console.error('Failed to sign out:', error);
+      console.error(
+        'Failed to sign out:',
+        error instanceof Error ? error.message : String(error)
+      );
       toast.error(t('signOutAction'));
       setSigningOut(false);
     }
@@ -77,7 +83,10 @@ export function AccountPanel({ email }: { email: string | null }) {
       document.cookie = 'NEXT_LOCALE=; Path=/; Max-Age=0; SameSite=Lax';
       window.location.assign('/');
     } catch (error) {
-      console.error('Failed to delete account:', error);
+      console.error(
+        'Failed to delete account:',
+        error instanceof Error ? error.message : String(error)
+      );
       toast.error(t('deleteError'));
       setDeleting(false);
     }

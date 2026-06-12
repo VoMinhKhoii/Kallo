@@ -22,10 +22,57 @@ async function requireUser() {
   return { user: data.user, supabase };
 }
 
+/**
+ * Explicit field-by-field pick of the user's profile row for the export.
+ * Spelled out (rather than passing `$inferSelect` through) so a future
+ * column must be consciously added here before it ships in the export —
+ * nothing auto-leaks. Covers everything the user owns today: body metrics,
+ * goal + targets, origin/locale, cooking habits, and onboarding progress.
+ */
+function pickProfileExport(row: typeof userProfiles.$inferSelect) {
+  return {
+    userId: row.userId,
+    // Body metrics
+    weightKg: row.weightKg,
+    heightCm: row.heightCm,
+    age: row.age,
+    biologicalSex: row.biologicalSex,
+    activityLevel: row.activityLevel,
+    tdeeKcal: row.tdeeKcal,
+    // Goal & targets
+    goal: row.goal,
+    aggression: row.aggression,
+    calorieTarget: row.calorieTarget,
+    proteinTargetG: row.proteinTargetG,
+    carbsTargetG: row.carbsTargetG,
+    fatTargetG: row.fatTargetG,
+    carbSplit: row.carbSplit,
+    // Origin & language
+    countryOfOrigin: row.countryOfOrigin,
+    countryOfResidence: row.countryOfResidence,
+    preferredLocale: row.preferredLocale,
+    // Cooking habits
+    oilUsage: row.oilUsage,
+    defaultRicePortion: row.defaultRicePortion,
+    sugarBraised: row.sugarBraised,
+    defaultProteinPortion: row.defaultProteinPortion,
+    brothConsumption: row.brothConsumption,
+    // Onboarding progress
+    onboardingStep: row.onboardingStep,
+    onboardingCompletedAt: row.onboardingCompletedAt,
+    onboardingMinimizedAt: row.onboardingMinimizedAt,
+    // Record timestamps
+    createdAt: row.createdAt,
+    updatedAt: row.updatedAt,
+  };
+}
+
+export type ProfileExport = ReturnType<typeof pickProfileExport>;
+
 export interface DataExport {
   exportedAt: string;
   account: { id: string; email: string | null };
-  profile: typeof userProfiles.$inferSelect | null;
+  profile: ProfileExport | null;
   meals: Array<
     typeof meals.$inferSelect & { items: (typeof mealItems.$inferSelect)[] }
   >;
@@ -71,7 +118,7 @@ export async function exportMyDataAction(): Promise<DataExport> {
   return {
     exportedAt: new Date().toISOString(),
     account: { id: user.id, email: user.email ?? null },
-    profile: profileRows[0] ?? null,
+    profile: profileRows[0] ? pickProfileExport(profileRows[0]) : null,
     meals: mealRows.map((meal) => ({
       ...meal,
       items: itemsByMeal.get(meal.id) ?? [],

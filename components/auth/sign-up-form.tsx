@@ -10,6 +10,7 @@ import * as z from 'zod';
 import { useAuthDialog } from '@/components/auth/auth-provider';
 import { FormInput } from '@/components/auth/form-input';
 import { useRouter } from '@/i18n/navigation';
+import { safeNextPath } from '@/lib/auth/safe-next';
 import { createClient } from '@/lib/supabase/client';
 
 export function SignUpForm() {
@@ -63,8 +64,11 @@ export function SignUpForm() {
     if (result?.session) {
       closeDialog();
       toast.success(t('successSignedIn'));
-      if (next) {
-        window.location.assign(next);
+      // Re-validate `next` before navigating so it can never become an open
+      // redirect (when valid it is a full locale-prefixed in-app path).
+      const safeNext = safeNextPath(next);
+      if (safeNext) {
+        window.location.assign(safeNext);
         return;
       }
       router.push('/logging');

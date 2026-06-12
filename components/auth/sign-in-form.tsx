@@ -9,6 +9,7 @@ import * as z from 'zod';
 import { useAuthDialog } from '@/components/auth/auth-provider';
 import { FormInput } from '@/components/auth/form-input';
 import { useRouter } from '@/i18n/navigation';
+import { safeNextPath } from '@/lib/auth/safe-next';
 import { createClient } from '@/lib/supabase/client';
 
 export function SignInForm() {
@@ -56,11 +57,13 @@ export function SignInForm() {
     }
 
     closeDialog();
-    if (next) {
-      // `next` is a full locale-prefixed path (e.g. /en/invite/abc). A hard
-      // navigation makes the server re-read the fresh session cookie so the
-      // invite page resolves as signed-in.
-      window.location.assign(next);
+    // `next` is a full locale-prefixed path (e.g. /en/invite/abc), re-validated
+    // here so it can never become an open redirect. A hard navigation makes the
+    // server re-read the fresh session cookie so the invite page resolves as
+    // signed-in.
+    const safeNext = safeNextPath(next);
+    if (safeNext) {
+      window.location.assign(safeNext);
       return;
     }
     router.push('/logging');
