@@ -196,17 +196,43 @@ describe('GET /api/v1/ingredients/search', () => {
     expect(results[0].semantic).toBeUndefined();
   });
 
-  it('skips the semantic arm only on a near-exact lexical hit', async () => {
+  it('runs the semantic arm even when lexical saturates, so meaning wins over token collisions (cơm)', async () => {
+    // word_similarity saturates: "Cá cơm" (anchovy) ties at ~1.0 with rice
+    // because both contain the "cơm" token. A high lexical score must NOT
+    // suppress the embedding arm — only the embedding knows "cơm" means rice.
+    resolveQueryEmbedding.mockResolvedValue([0.1, 0.2, 0.3]);
     execute
-      .mockResolvedValueOnce([riceDbRow]) // similarity 0.92 ≥ LEXICAL_EXACT_ENOUGH
-      .mockResolvedValueOnce([]); // substring backfill only
+      .mockResolvedValueOnce([
+        {
+          ...riceDbRow,
+          id: 'anchovy',
+          name_primary: 'Cá cơm',
+          similarity: 1.001,
+        },
+        {
+          ...riceDbRow,
+          id: 'rice',
+          name_primary: 'Cơm trắng',
+          similarity: 1.0004,
+        },
+      ]) // lexical: anchovy tied at the top via the shared "cơm" token
+      .mockResolvedValueOnce([
+        {
+          ...riceDbRow,
+          id: 'rice',
+          name_primary: 'Cơm trắng',
+          similarity: 0.85,
+        },
+      ]) // semantic: only rice is semantically "cơm"
+      .mockResolvedValueOnce([]); // substring backfill
 
-    await GET(makeRequest({ q: 'cơm trắng' }));
+    const res = await GET(makeRequest({ q: 'cơm' }));
+    const { results } = await res.json();
 
-    expect(resolveQueryEmbedding).not.toHaveBeenCalled();
-    for (const call of execute.mock.calls) {
-      expect(JSON.stringify(call[0])).not.toContain('match_ingredients(');
-    }
+    expect(resolveQueryEmbedding).toHaveBeenCalled();
+    // rice: lexical rank 1 (1/61) + weighted semantic rank 0 (2/60) beats
+    // anchovy: lexical rank 0 (1/60) alone.
+    expect(results[0].id).toBe('rice');
   });
 
   it('live-embeds and caches when the query has no cached embedding', async () => {

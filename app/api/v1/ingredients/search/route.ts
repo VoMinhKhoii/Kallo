@@ -15,14 +15,18 @@ export const runtime = 'nodejs';
 
 // Vector matches below this cosine similarity are noise for a picker UI.
 const SEMANTIC_VECTOR_THRESHOLD = 0.72;
-// Only a NEAR-EXACT lexical hit lets us skip the embedding arm: it means the
-// user typed essentially a full name/alias, which embeddings can't improve on
-// (and we save the cost). Anything below this runs the semantic arm and fuses
-// — a merely "similar-looking" lexical hit (e.g. "Mề gà" for "ức gà", which
-// shares the dominant "gà" token) is NOT trustworthy enough to suppress it.
-const LEXICAL_EXACT_ENOUGH = 0.85;
 // Reciprocal Rank Fusion dampening constant (Cormack et al.).
 const RRF_K = 60;
+// The semantic arm is weighted heavier than the lexical arm in the fusion.
+// Trigram word_similarity SATURATES — many rows tie at ~1.0 because they share
+// a token with the query — and it has no way to tell a polysemous token apart:
+// "cơm" alone is rice, but "cá cơm" is anchovy and "rau giền cơm" is amaranth;
+// "ức gà" is chicken breast, "ức gà tây" is turkey. Embeddings disambiguate
+// these by meaning, so they get the louder vote; cross-arm agreement does the
+// rest (a row both arms return outranks a lexical-only token collision).
+const SEMANTIC_RRF_WEIGHT = 2;
+// Don't embed 1-character queries — the vector is noise at that length.
+const MIN_SEMANTIC_QUERY_LENGTH = 2;
 
 function toSearchResult(row: Record<string, unknown>): IngredientSearchResult {
   return {
@@ -132,14 +136,14 @@ async function lexicalSearch(
 }
 
 /**
- * Fuse the lexical and semantic arms by Reciprocal Rank Fusion: a result is
- * scored by Σ 1/(RRF_K + rank) across the arms it appears in. Because cosine
- * and trigram scores live on incomparable scales, fusing by RANK (not raw
- * score) is what lets a strong semantic hit ("ức gà" → chicken breast) climb
- * above a wrong-but-lexically-similar one ("Mề gà", which only shares the
- * dominant "gà" token). A result found by BOTH arms keeps its lexical variant
- * (shown as an exact hit, not "≈ related"); a semantic-only result keeps its
- * `semantic: true` flag.
+ * Fuse the lexical and semantic arms by weighted Reciprocal Rank Fusion: a
+ * result is scored by Σ weight/(RRF_K + rank) across the arms it appears in.
+ * Cosine and trigram scores are not on comparable scales, so we fuse by RANK,
+ * not raw score — and the semantic arm carries SEMANTIC_RRF_WEIGHT because
+ * trigram ranking saturates and can't disambiguate polysemous tokens. A row
+ * both arms return wins on agreement; a row only the embedding arm found keeps
+ * its `semantic: true` flag (the "≈ related" badge); a row only the lexical arm
+ * found keeps its exact variant.
  */
 function rrfFuse(
   lexical: IngredientSearchResult[],
@@ -148,23 +152,42 @@ function rrfFuse(
 ): IngredientSearchResult[] {
   const fused = new Map<
     string,
-    { score: number; result: IngredientSearchResult }
+    {
+      score: number;
+      inLexical: boolean;
+      inSemantic: boolean;
+      result: IngredientSearchResult;
+    }
   >();
   lexical.forEach((result, rank) => {
-    fused.set(result.id, { score: 1 / (RRF_K + rank), result });
+    fused.set(result.id, {
+      score: 1 / (RRF_K + rank),
+      inLexical: true,
+      inSemantic: false,
+      result,
+    });
   });
   semantic.forEach((result, rank) => {
+    const contribution = SEMANTIC_RRF_WEIGHT / (RRF_K + rank);
     const existing = fused.get(result.id);
     if (existing) {
-      existing.score += 1 / (RRF_K + rank);
+      existing.score += contribution;
+      existing.inSemantic = true; // keep the lexical (exact, unflagged) variant
     } else {
-      fused.set(result.id, { score: 1 / (RRF_K + rank), result });
+      fused.set(result.id, {
+        score: contribution,
+        inLexical: false,
+        inSemantic: true,
+        result,
+      });
     }
   });
+  // Tie-break: cross-arm agreement first, then semantic presence (the more
+  // trustworthy signal here) — never the raw, cross-metric `similarity`.
+  const agreement = (e: { inLexical: boolean; inSemantic: boolean }) =>
+    e.inLexical && e.inSemantic ? 2 : e.inSemantic ? 1 : 0;
   return Array.from(fused.values())
-    .sort(
-      (a, b) => b.score - a.score || b.result.similarity - a.result.similarity
-    )
+    .sort((a, b) => b.score - a.score || agreement(b) - agreement(a))
     .slice(0, limit)
     .map((entry) => entry.result);
 }
@@ -173,20 +196,19 @@ async function searchIngredients(
   q: string,
   limit: number
 ): Promise<IngredientSearchResult[]> {
-  const lexical = await lexicalSearch(q, limit);
-
-  // A near-exact lexical hit is trusted as-is (and skips the embedding cost).
-  // Otherwise run the semantic arm and rank-fuse, so it can pull a correct
-  // result above a wrong-but-lexically-similar one — the trigram score alone
-  // can't separate "ức gà" (breast) from "Mề gà"/"Tim gà" (offal), which all
-  // share the dominant "gà" token.
-  const lexicalExact =
-    lexical.length > 0 && lexical[0].similarity >= LEXICAL_EXACT_ENOUGH;
-  let results = lexical;
-  if (!lexicalExact) {
-    const semantic = await semanticSupplement(q, limit);
-    if (semantic.length > 0) results = rrfFuse(lexical, semantic, limit);
-  }
+  // Always run both arms (in parallel) and rank-fuse. A high lexical score is
+  // NOT trustworthy on its own — word_similarity saturates, tying many rows
+  // that merely share a token with the query — so we never let it suppress the
+  // embedding arm. Embeddings degrade to [] on failure (and are skipped for
+  // 1-char queries), so the worst case is plain lexical ranking.
+  const [lexical, semantic] = await Promise.all([
+    lexicalSearch(q, limit),
+    q.length >= MIN_SEMANTIC_QUERY_LENGTH
+      ? semanticSupplement(q, limit)
+      : Promise.resolve<IngredientSearchResult[]>([]),
+  ]);
+  const results =
+    semantic.length > 0 ? rrfFuse(lexical, semantic, limit) : lexical;
   if (results.length >= limit) return results;
 
   const seen = new Set(results.map((r) => r.id));
