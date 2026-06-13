@@ -8,6 +8,7 @@ import {
   type ManualMealRow,
   parseGrams,
   rowIsComplete,
+  rowLabel,
   rowMacros,
   scaleNutritionValues,
   totalsForRows,
@@ -24,8 +25,21 @@ const rice: IngredientSearchResult = {
 };
 
 function row(grams: string, ingredient = rice): ManualMealRow {
-  return { id: 'row-1', ingredient, grams };
+  return { id: 'row-1', query: '', ingredient, grams };
 }
+
+describe('rowLabel', () => {
+  it('prefers the raw typed text, falling back to the picked name', () => {
+    expect(
+      rowLabel({ id: 'x', query: 'ức gà', ingredient: rice, grams: '1' })
+    ).toBe('ức gà');
+    // Empty query (e.g. tapped a recent) → the ingredient name.
+    expect(
+      rowLabel({ id: 'x', query: '  ', ingredient: rice, grams: '1' })
+    ).toBe('Cơm trắng');
+    expect(rowLabel(createEmptyRow('x'))).toBe('');
+  });
+});
 
 describe('parseGrams', () => {
   it('parses plain and comma-decimal values', () => {
@@ -46,9 +60,9 @@ describe('rowIsComplete / hasCompleteRow', () => {
   it('requires both an ingredient and parseable grams', () => {
     expect(rowIsComplete(createEmptyRow('x'))).toBe(false);
     expect(rowIsComplete(row(''))).toBe(false);
-    expect(rowIsComplete({ id: 'x', ingredient: null, grams: '100' })).toBe(
-      false
-    );
+    expect(
+      rowIsComplete({ id: 'x', query: '', ingredient: null, grams: '100' })
+    ).toBe(false);
     expect(rowIsComplete(row('100'))).toBe(true);
     expect(hasCompleteRow([createEmptyRow('x'), row('100')])).toBe(true);
   });
@@ -78,7 +92,7 @@ describe('totalsForRows', () => {
     };
     const totals = totalsForRows([
       row('100'),
-      { id: 'row-2', ingredient: chicken, grams: '50' },
+      { id: 'row-2', query: '', ingredient: chicken, grams: '50' },
       createEmptyRow('row-3'),
     ]);
     expect(totals.caloriesKcal).toBeCloseTo(130 + 100);

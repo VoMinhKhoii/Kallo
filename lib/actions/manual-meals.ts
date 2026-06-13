@@ -75,7 +75,9 @@ export async function saveManualMealAction(
       order,
       foodCompositionId: item.foodCompositionId,
       grams: item.grams,
-      name: composition.namePrimary,
+      // Save the user's raw typed text as the label; the composition row still
+      // drives the nutrition. Fall back to its name when no label was sent.
+      name: item.label ?? composition.namePrimary,
       nutrition: scaleNutritionValues(
         extractNutritionValues(composition),
         item.grams

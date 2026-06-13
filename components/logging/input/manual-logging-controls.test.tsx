@@ -98,6 +98,32 @@ describe('ManualLoggingControls', () => {
     expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
   });
 
+  it('keeps the typed text and shows the picked DB name below it', async () => {
+    mockUseIngredientSearch.mockReturnValue({
+      data: [riceResult],
+      isFetching: false,
+    });
+    const user = userEvent.setup();
+    render(
+      <Harness
+        initialRows={[
+          { id: 'row-1', query: 'cơm nhà', ingredient: null, grams: '' },
+        ]}
+      />
+    );
+
+    const input = screen.getByPlaceholderText(
+      'manualLogging.searchPlaceholder'
+    );
+    await user.click(input);
+    await user.click(screen.getByRole('option', { name: /Cơm trắng/ }));
+
+    // The typed text is preserved (it's what gets saved)...
+    expect(input).toHaveValue('cơm nhà');
+    // ...and the matched DB entry's name shows below for reference.
+    expect(screen.getAllByText('Cơm trắng').length).toBeGreaterThan(0);
+  });
+
   it('selects with keyboard arrows + Enter', async () => {
     mockUseIngredientSearch.mockReturnValue({
       data: [riceResult, chickenResult],
@@ -123,7 +149,9 @@ describe('ManualLoggingControls', () => {
     const user = userEvent.setup();
     render(
       <Harness
-        initialRows={[{ id: 'row-1', ingredient: riceResult, grams: '' }]}
+        initialRows={[
+          { id: 'row-1', query: '', ingredient: riceResult, grams: '' },
+        ]}
       />
     );
 
@@ -196,7 +224,9 @@ describe('ManualLoggingControls', () => {
     let lastPatch: Partial<ManualMealRow> | null = null;
     render(
       <ManualLoggingControls
-        rows={[{ id: 'row-1', ingredient: riceResult, grams: '100' }]}
+        rows={[
+          { id: 'row-1', query: '', ingredient: riceResult, grams: '100' },
+        ]}
         onRowChange={(_id, patch) => {
           lastPatch = patch;
         }}
@@ -209,6 +239,6 @@ describe('ManualLoggingControls', () => {
       screen.getByPlaceholderText('manualLogging.searchPlaceholder'),
       'x'
     );
-    expect(lastPatch).toEqual({ ingredient: null });
+    expect(lastPatch).toEqual({ query: 'x', ingredient: null });
   });
 });

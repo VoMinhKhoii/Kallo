@@ -363,6 +363,7 @@ function makeManualRows(): CompleteManualMealRow[] {
   return [
     {
       id: 'row-1',
+      query: 'cơm nhà nấu',
       grams: '150',
       ingredient: {
         id: 'fct-rice',
@@ -429,7 +430,7 @@ describe('useSaveManualMeal', () => {
     expect(optimistic?.id).toBe('meal-manual-1');
     // 150g × 130 kcal/100g — computed client-side from the row's per-100g data.
     expect(optimistic?.nutrition.caloriesKcal).toBeCloseTo(195);
-    expect(optimistic?.rawInput).toBe('150g Cơm trắng');
+    expect(optimistic?.rawInput).toBe('150g cơm nhà nấu');
     expect(optimistic?.entryMode).toBe('precise');
 
     // Server resolves with the authoritative meal (same id, micros filled in).
@@ -441,9 +442,12 @@ describe('useSaveManualMeal', () => {
     expect(meals[0]?.nutrition.caloriesKcal).toBe(196);
 
     // The server call carries only the API input — no optimistic-only fields.
+    // The user's raw text rides along as the saved label.
     expect(mockSaveManual).toHaveBeenCalledWith({
       mealId: 'meal-manual-1',
-      items: [{ foodCompositionId: 'fct-rice', grams: 150 }],
+      items: [
+        { foodCompositionId: 'fct-rice', grams: 150, label: 'cơm nhà nấu' },
+      ],
       mealSlot: undefined,
       loggedDate: DATE,
       timezoneOffset: TZ,

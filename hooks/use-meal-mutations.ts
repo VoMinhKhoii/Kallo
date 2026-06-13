@@ -27,6 +27,7 @@ import { getUtcInstantForLocalDate } from '@/lib/date/local-day';
 import {
   type CompleteManualMealRow,
   parseGrams,
+  rowLabel,
   rowMacros,
   totalsForRows,
 } from '@/lib/logging/manual-logging';
@@ -408,7 +409,7 @@ function buildOptimisticManualMeal(
     variables.timezoneOffset
   ).toISOString();
   const groups: PersistedMealItemGroup[] = rows.map((row, order) => ({
-    name: row.ingredient.namePrimary,
+    name: rowLabel(row),
     order,
     ingredients: [],
     nutrition: { ...EMPTY_NUTRITION, ...rowMacros(row) },
@@ -418,7 +419,7 @@ function buildOptimisticManualMeal(
     // insert through reconciliation (no re-fade).
     id: mealId,
     rawInput: rows
-      .map((row) => `${parseGrams(row.grams)}g ${row.ingredient.namePrimary}`)
+      .map((row) => `${parseGrams(row.grams)}g ${rowLabel(row)}`)
       .join(', '),
     mealSlot: variables.mealSlot ?? null,
     confidenceOverall: 'high',
@@ -449,6 +450,8 @@ export function useSaveManualMeal(userId: string) {
           foodCompositionId: row.ingredient.id,
           // rowIsComplete guaranteed a parseable positive value.
           grams: parseGrams(row.grams) ?? 0,
+          // Persist the user's raw text as the label.
+          label: rowLabel(row),
         })),
         mealSlot: variables.mealSlot,
         loggedDate: variables.loggedDate,

@@ -55,40 +55,35 @@ function StateBadge({ state }: { state: string }) {
 
 interface IngredientComboboxProps {
   rowId: string;
-  value: IngredientSearchResult | null;
+  /** The user's raw typed text — the source of truth for the input value. */
+  query: string;
+  ingredient: IngredientSearchResult | null;
   disabled?: boolean;
+  autoFocus?: boolean;
+  onQueryChange: (text: string) => void;
   onSelect: (ingredient: IngredientSearchResult) => void;
-  onClearSelection: () => void;
   inputRef?: (el: HTMLInputElement | null) => void;
 }
 
 function IngredientCombobox({
   rowId,
-  value,
+  query,
+  ingredient,
   disabled,
+  autoFocus,
+  onQueryChange,
   onSelect,
-  onClearSelection,
   inputRef,
 }: IngredientComboboxProps) {
   const t = useTranslations('logging');
   const listboxId = useId();
-  const [text, setText] = useState(value?.namePrimary ?? '');
   const [open, setOpen] = useState(false);
   const [highlighted, setHighlighted] = useState(0);
-  const { data, isFetching } = useIngredientSearch(text, open);
+  const { data, isFetching } = useIngredientSearch(query, open);
   // Stable fallback identity — `data ?? []` inline would mint a new array
   // every render and re-trigger the render-adjustment below forever.
   const results = data ?? EMPTY_RESULTS;
-  const isRecents = text.trim().length === 0;
-
-  // Sync display text when the selection changes from outside (e.g. clear()),
-  // adjusting state during render instead of in an effect.
-  const valueName = value?.namePrimary ?? '';
-  const [prevValueName, setPrevValueName] = useState(valueName);
-  if (prevValueName !== valueName) {
-    setPrevValueName(valueName);
-    setText(valueName);
-  }
+  const isRecents = query.trim().length === 0;
 
   // Re-anchor the highlight when a new result set lands.
   const [prevResults, setPrevResults] = useState(results);
@@ -97,9 +92,8 @@ function IngredientCombobox({
     setHighlighted(0);
   }
 
-  const select = (ingredient: IngredientSearchResult) => {
-    onSelect(ingredient);
-    setText(ingredient.namePrimary);
+  const select = (result: IngredientSearchResult) => {
+    onSelect(result);
     setOpen(false);
   };
 
@@ -132,17 +126,18 @@ function IngredientCombobox({
         ref={inputRef}
         type="text"
         role="combobox"
+        // biome-ignore lint/a11y/noAutofocus: opening manual mode should raise the mobile keyboard
+        autoFocus={autoFocus}
         aria-expanded={open}
         aria-controls={listboxId}
         aria-autocomplete="list"
         aria-label={t('manualLogging.searchPlaceholder')}
-        value={text}
+        value={query}
         onChange={(e) => {
-          setText(e.target.value);
+          // Typing replaces the query and invalidates the previous pick.
+          onQueryChange(e.target.value);
           setHighlighted(0);
           setOpen(true);
-          // Editing the text invalidates the previous pick.
-          if (value) onClearSelection();
         }}
         onFocus={() => setOpen(true)}
         onBlur={() => setOpen(false)}
@@ -152,12 +147,26 @@ function IngredientCombobox({
         className="w-full rounded-xl border border-nham-border/50 bg-nham-hover/10 px-3 py-2 text-nham-text text-sm transition-colors placeholder:text-nham-text-muted/40 focus:border-nham-accent/50 focus:outline-none disabled:opacity-50"
         style={{ fontFamily: 'DM Sans, sans-serif' }}
       />
+      {/* The picked DB entry's name — what's saved is the raw text above; this
+          shows which composition entry supplies the nutrition. */}
+      {ingredient && ingredient.namePrimary !== query.trim() && (
+        <div className="mt-1 flex items-center gap-1.5 px-1">
+          <span
+            className="truncate text-nham-text-muted text-xs"
+            style={{ fontFamily: 'DM Sans, sans-serif' }}
+          >
+            {ingredient.namePrimary}
+          </span>
+          <StateBadge state={ingredient.state} />
+        </div>
+      )}
       {open && (
         <div
           id={listboxId}
           role="listbox"
           aria-label={t('manualLogging.searchPlaceholder')}
-          className="absolute right-0 left-0 z-20 mt-1 max-h-72 overflow-y-auto rounded-xl border border-nham-border/50 bg-background py-1 shadow-[0_8px_30px_color-mix(in_srgb,var(--color-nham-accent)_12%,transparent)]"
+          // Opens UPWARD — the manual input sits at the bottom of the feed.
+          className="absolute right-0 bottom-full left-0 z-20 mb-1 max-h-72 overflow-y-auto rounded-xl border border-nham-border/50 bg-background py-1 shadow-[0_8px_30px_color-mix(in_srgb,var(--color-nham-accent)_12%,transparent)]"
         >
           {isRecents && results.length > 0 && (
             <div
@@ -263,17 +272,26 @@ export function ManualLoggingControls({
   return (
     <div className="flex flex-col gap-3">
       <div className="flex flex-col gap-1.5">
-        {rows.map((row) => {
+        {rows.map((row, idx) => {
           const macros = rowMacros(row);
           return (
-            <div key={row.id} className="flex items-center gap-2">
+            <div key={row.id} className="flex items-start gap-2">
               <IngredientCombobox
                 rowId={row.id}
-                value={row.ingredient}
+                query={row.query}
+                ingredient={row.ingredient}
                 disabled={disabled}
-                onSelect={(ingredient) => onRowChange(row.id, { ingredient })}
-                onClearSelection={() =>
-                  onRowChange(row.id, { ingredient: null })
+                autoFocus={idx === 0}
+                onQueryChange={(text) =>
+                  onRowChange(row.id, { query: text, ingredient: null })
+                }
+                onSelect={(ingredient) =>
+                  onRowChange(row.id, {
+                    ingredient,
+                    // Keep the user's typed text; only borrow the DB name when
+                    // they picked a recent without typing anything.
+                    query: row.query.trim() || ingredient.namePrimary,
+                  })
                 }
                 inputRef={(el) => {
                   searchRefs.current.set(row.id, el);

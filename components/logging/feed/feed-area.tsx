@@ -676,12 +676,7 @@ export function FeedArea({
             !isDayLoading &&
             !isDayError && (
               <div className="flex flex-1 items-center justify-center py-6">
-                <EmptyState
-                  onSuggestionClick={(suggestion) => {
-                    inputRef.current?.setText(suggestion);
-                    inputRef.current?.focus();
-                  }}
-                />
+                <EmptyState />
               </div>
             )}
         </AnimatePresence>

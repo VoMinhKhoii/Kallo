@@ -39,15 +39,26 @@ export interface IngredientSearchResponse {
 }
 
 /** One editable row in the manual logging form. `grams` stays a string while
- *  editing (partial input like "1." must not be destroyed by reformatting). */
+ *  editing (partial input like "1." must not be destroyed by reformatting).
+ *  `query` is the user's raw typed text — it is what gets SAVED as the
+ *  ingredient label, while `ingredient` (the picked DB row) supplies the
+ *  nutrition. The two are independent so "ức gà" can be logged verbatim while
+ *  the matched composition entry drives the numbers. */
 export interface ManualMealRow {
   id: string;
+  query: string;
   ingredient: IngredientSearchResult | null;
   grams: string;
 }
 
 export function createEmptyRow(id: string): ManualMealRow {
-  return { id, ingredient: null, grams: '' };
+  return { id, query: '', ingredient: null, grams: '' };
+}
+
+/** The label saved for a row: the user's raw text, falling back to the picked
+ *  ingredient's name (e.g. when they tapped a recent without typing). */
+export function rowLabel(row: ManualMealRow): string {
+  return row.query.trim() || row.ingredient?.namePrimary || '';
 }
 
 export function parseGrams(grams: string): number | null {

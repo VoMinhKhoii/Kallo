@@ -6,7 +6,7 @@ import type { IngredientSearchResult } from '@/lib/logging/manual-logging';
 import { MealInput, type MealInputHandle } from './meal-input';
 
 const STORAGE_KEY = 'nham:meal-input-draft';
-const MANUAL_ROWS_KEY = 'nham:meal-input-manual-items-v2';
+const MANUAL_ROWS_KEY = 'nham:meal-input-manual-items-v3';
 
 const riceResult: IngredientSearchResult = {
   id: 'fct-rice',
@@ -157,7 +157,7 @@ describe('MealInput localStorage persistence', () => {
     expect(rows[0].grams).toBe('150');
   });
 
-  it('persists manual rows to the v2 draft key and restores them on mount', async () => {
+  it('persists manual rows to the v3 draft key and restores them on mount', async () => {
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
     const { unmount } = render(<MealInput onSubmit={() => {}} mode="manual" />);
 

@@ -54,6 +54,9 @@ export const saveManualMealSchema = z.object({
       z.object({
         foodCompositionId: z.string().min(1).max(120),
         grams: z.number().positive().finite().max(5000),
+        // The user's raw typed text, saved as the ingredient label. Falls back
+        // to the composition's name server-side when absent.
+        label: z.string().trim().min(1).max(200).optional(),
       })
     )
     .min(1)

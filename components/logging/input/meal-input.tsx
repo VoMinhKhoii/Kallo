@@ -24,11 +24,14 @@ import type { CheatIntensity } from '@/lib/types/cheat';
 import { cn } from '@/lib/utils';
 
 const STORAGE_KEY = 'nham:meal-input-draft';
-// v2: rows are {id, ingredient, grams} (DB-backed picks). The pre-rework
-// {id, qty, name} drafts under the old key are shape-incompatible; the old key
-// is deleted on first read.
-const MANUAL_ROWS_KEY = 'nham:meal-input-manual-items-v2';
-const LEGACY_MANUAL_ITEMS_KEY = 'nham:meal-input-manual-items';
+// v3: rows are {id, query, ingredient, grams} — `query` is the raw typed text.
+// Older shapes (v2 {id, ingredient, grams}, pre-rework {id, qty, name}) are
+// incompatible and their keys are deleted on first read.
+const MANUAL_ROWS_KEY = 'nham:meal-input-manual-items-v3';
+const LEGACY_MANUAL_ITEMS_KEYS = [
+  'nham:meal-input-manual-items',
+  'nham:meal-input-manual-items-v2',
+];
 const DEBOUNCE_MS = 500;
 // Single-line height matches the submit button (h-8 = 32px) so the placeholder
 // sits on the button's vertical centerline. Above MAX, textarea scrolls itself.
@@ -91,7 +94,11 @@ function writeDraft(text: string) {
 function isValidManualRow(value: unknown): value is ManualMealRow {
   if (typeof value !== 'object' || value === null) return false;
   const row = value as Record<string, unknown>;
-  if (typeof row.id !== 'string' || typeof row.grams !== 'string') {
+  if (
+    typeof row.id !== 'string' ||
+    typeof row.query !== 'string' ||
+    typeof row.grams !== 'string'
+  ) {
     return false;
   }
   if (row.ingredient === null) return true;
@@ -107,7 +114,7 @@ function isValidManualRow(value: unknown): value is ManualMealRow {
 
 function readManualRowsDraft(): ManualMealRow[] {
   try {
-    localStorage.removeItem(LEGACY_MANUAL_ITEMS_KEY);
+    for (const key of LEGACY_MANUAL_ITEMS_KEYS) localStorage.removeItem(key);
     const raw = localStorage.getItem(MANUAL_ROWS_KEY);
     if (raw) {
       const parsed = JSON.parse(raw);
@@ -125,7 +132,9 @@ function readManualRowsDraft(): ManualMealRow[] {
 
 function writeManualRowsDraft(rows: ManualMealRow[]) {
   try {
-    const filled = rows.filter((row) => row.ingredient || row.grams.trim());
+    const filled = rows.filter(
+      (row) => row.ingredient || row.query.trim() || row.grams.trim()
+    );
     if (filled.length === 0) {
       localStorage.removeItem(MANUAL_ROWS_KEY);
     } else {
