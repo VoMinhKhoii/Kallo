@@ -13,13 +13,16 @@ import type { IngredientSearchResult } from '@/lib/logging/manual-logging';
 
 export const runtime = 'nodejs';
 
-// Vector matches below this cosine similarity are noise for a picker UI —
-// kept deliberately strict (the AI pipeline accepts 0.7 for USDA; manual
-// search prefers fewer, better suggestions over recall).
-const SEMANTIC_VECTOR_THRESHOLD = 0.75;
-// When the best lexical hit scores at least this, the query is well-covered
-// lexically and the semantic supplement is skipped (no embedding work).
-const LEXICAL_STRONG_SIMILARITY = 0.45;
+// Vector matches below this cosine similarity are noise for a picker UI.
+const SEMANTIC_VECTOR_THRESHOLD = 0.72;
+// Only a NEAR-EXACT lexical hit lets us skip the embedding arm: it means the
+// user typed essentially a full name/alias, which embeddings can't improve on
+// (and we save the cost). Anything below this runs the semantic arm and fuses
+// — a merely "similar-looking" lexical hit (e.g. "Mề gà" for "ức gà", which
+// shares the dominant "gà" token) is NOT trustworthy enough to suppress it.
+const LEXICAL_EXACT_ENOUGH = 0.85;
+// Reciprocal Rank Fusion dampening constant (Cormack et al.).
+const RRF_K = 60;
 
 function toSearchResult(row: Record<string, unknown>): IngredientSearchResult {
   return {
@@ -109,20 +112,15 @@ async function semanticSupplement(
   }
 }
 
-async function searchIngredients(
+/** Lexical (trigram) arm: fuzzy_match_ingredients_all_sources — the same
+ *  word_similarity ranking the v2 AI matcher uses. Per-source rows collapse
+ *  into one list: score first, curated FAO (source_id 1) before translated
+ *  USDA on ties, shorter names first; the JOIN adds per-100g macros. */
+async function lexicalSearch(
   q: string,
   limit: number
 ): Promise<IngredientSearchResult[]> {
-  // Primary: trigram match via fuzzy_match_ingredients_all_sources — the same
-  // ranking function the v2 AI matcher uses (branches diacritic vs ASCII
-  // internally). It ranks with word_similarity — the query against the
-  // best-matching extent of each name, with name_alt scored per variant — so
-  // short queries like "ức gà" surface the long-named USDA body-part entries
-  // instead of being drowned by short generic FAO names. The outer ORDER BY +
-  // LIMIT collapse the per-source rows into one list: score first, curated FAO
-  // (source_id 1) before translated USDA on ties, shorter names first; the
-  // JOIN just adds per-100g macros.
-  const fuzzyRows = await db.execute(sql`
+  const rows = await db.execute(sql`
     SELECT f.id, f.name_primary, f.name_alt, f.name_en, f.state, f.similarity,
            v.calories_kcal, v.protein_g, v.carbohydrate_g, v.fat_g
     FROM fuzzy_match_ingredients_all_sources(${q}, ${limit}, 0.15) f
@@ -130,26 +128,68 @@ async function searchIngredients(
     ORDER BY f.similarity DESC, f.source_id ASC, length(f.name_primary) ASC
     LIMIT ${limit}
   `);
-  const results = (fuzzyRows as unknown as Record<string, unknown>[]).map(
-    toSearchResult
-  );
-  const seen = new Set(results.map((r) => r.id));
+  return (rows as unknown as Record<string, unknown>[]).map(toSearchResult);
+}
 
-  // Semantic supplement: only when the lexical index has no strong answer —
-  // a confident lexical hit means the user typed something the names cover,
-  // and skipping the embedding path keeps the common case fast.
-  const lexicalStrong =
-    results.length > 0 && results[0].similarity >= LEXICAL_STRONG_SIMILARITY;
-  if (!lexicalStrong) {
-    for (const result of await semanticSupplement(q, limit)) {
-      if (results.length >= limit) break;
-      if (seen.has(result.id)) continue;
-      seen.add(result.id);
-      results.push(result);
+/**
+ * Fuse the lexical and semantic arms by Reciprocal Rank Fusion: a result is
+ * scored by Σ 1/(RRF_K + rank) across the arms it appears in. Because cosine
+ * and trigram scores live on incomparable scales, fusing by RANK (not raw
+ * score) is what lets a strong semantic hit ("ức gà" → chicken breast) climb
+ * above a wrong-but-lexically-similar one ("Mề gà", which only shares the
+ * dominant "gà" token). A result found by BOTH arms keeps its lexical variant
+ * (shown as an exact hit, not "≈ related"); a semantic-only result keeps its
+ * `semantic: true` flag.
+ */
+function rrfFuse(
+  lexical: IngredientSearchResult[],
+  semantic: IngredientSearchResult[],
+  limit: number
+): IngredientSearchResult[] {
+  const fused = new Map<
+    string,
+    { score: number; result: IngredientSearchResult }
+  >();
+  lexical.forEach((result, rank) => {
+    fused.set(result.id, { score: 1 / (RRF_K + rank), result });
+  });
+  semantic.forEach((result, rank) => {
+    const existing = fused.get(result.id);
+    if (existing) {
+      existing.score += 1 / (RRF_K + rank);
+    } else {
+      fused.set(result.id, { score: 1 / (RRF_K + rank), result });
     }
+  });
+  return Array.from(fused.values())
+    .sort(
+      (a, b) => b.score - a.score || b.result.similarity - a.result.similarity
+    )
+    .slice(0, limit)
+    .map((entry) => entry.result);
+}
+
+async function searchIngredients(
+  q: string,
+  limit: number
+): Promise<IngredientSearchResult[]> {
+  const lexical = await lexicalSearch(q, limit);
+
+  // A near-exact lexical hit is trusted as-is (and skips the embedding cost).
+  // Otherwise run the semantic arm and rank-fuse, so it can pull a correct
+  // result above a wrong-but-lexically-similar one — the trigram score alone
+  // can't separate "ức gà" (breast) from "Mề gà"/"Tim gà" (offal), which all
+  // share the dominant "gà" token.
+  const lexicalExact =
+    lexical.length > 0 && lexical[0].similarity >= LEXICAL_EXACT_ENOUGH;
+  let results = lexical;
+  if (!lexicalExact) {
+    const semantic = await semanticSupplement(q, limit);
+    if (semantic.length > 0) results = rrfFuse(lexical, semantic, limit);
   }
   if (results.length >= limit) return results;
 
+  const seen = new Set(results.map((r) => r.id));
   // Supplement: trigram similarity is unreliable for short queries (Vietnamese
   // staples like "gà", "bò", "cá"), so backfill with a substring match against
   // the precomputed ASCII search text, prefix matches first.

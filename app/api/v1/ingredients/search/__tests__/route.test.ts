@@ -150,9 +150,55 @@ describe('GET /api/v1/ingredients/search', () => {
     expect(results[1].semantic).toBe(true);
   });
 
-  it('skips the semantic supplement when the lexical hit is strong', async () => {
+  it('rank-fuses a semantic hit above wrong-but-lexically-similar offal (ức gà)', async () => {
+    // The core fix: "ức gà" (breast) shares only the dominant "gà" token with
+    // "Mề gà"/"Tim gà" (offal), which therefore outrank it lexically. The
+    // embedding arm puts the breast first, and RRF fusion promotes it.
+    resolveQueryEmbedding.mockResolvedValue([0.1, 0.2, 0.3]);
     execute
-      .mockResolvedValueOnce([riceDbRow]) // similarity 0.92 ≥ threshold
+      .mockResolvedValueOnce([
+        {
+          ...riceDbRow,
+          id: 'fao-gizzard',
+          name_primary: 'Mề gà',
+          similarity: 0.55,
+        },
+        {
+          ...riceDbRow,
+          id: 'fao-heart',
+          name_primary: 'Tim gà',
+          similarity: 0.52,
+        },
+        {
+          ...riceDbRow,
+          id: 'usda-breast',
+          name_primary: 'Ức gà',
+          similarity: 0.5,
+        },
+      ]) // lexical: offal outranks the breast on the shared "gà" token
+      .mockResolvedValueOnce([
+        {
+          ...riceDbRow,
+          id: 'usda-breast',
+          name_primary: 'Ức gà',
+          similarity: 0.82,
+        },
+      ]) // semantic: the breast is the nearest embedding
+      .mockResolvedValueOnce([]); // substring backfill
+
+    const res = await GET(makeRequest({ q: 'ức gà' }));
+    const { results } = await res.json();
+
+    // breast: lexical rank 2 (1/62) + semantic rank 0 (1/60) beats
+    // gizzard: lexical rank 0 (1/60) alone.
+    expect(results[0].id).toBe('usda-breast');
+    // found by both arms → kept as a normal hit, not "≈ related"
+    expect(results[0].semantic).toBeUndefined();
+  });
+
+  it('skips the semantic arm only on a near-exact lexical hit', async () => {
+    execute
+      .mockResolvedValueOnce([riceDbRow]) // similarity 0.92 ≥ LEXICAL_EXACT_ENOUGH
       .mockResolvedValueOnce([]); // substring backfill only
 
     await GET(makeRequest({ q: 'cơm trắng' }));
