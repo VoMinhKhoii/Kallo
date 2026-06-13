@@ -273,7 +273,9 @@ export const MealInput = forwardRef<MealInputHandle, MealInputProps>(
       const newId = crypto.randomUUID();
       setManualRows((prev) => {
         const newRow = createEmptyRow(newId);
-        if (!afterId) return [...prev, newRow];
+        // Prepend: new rows appear at the top so the list grows upward toward
+        // the "Add food" button above it.
+        if (!afterId) return [newRow, ...prev];
         const idx = prev.findIndex((row) => row.id === afterId);
         const next = [...prev];
         next.splice(idx + 1, 0, newRow);

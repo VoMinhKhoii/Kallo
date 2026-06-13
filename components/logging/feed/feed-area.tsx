@@ -213,6 +213,9 @@ export function FeedArea({
   // "Log it again" — re-staging a past cheat occasion (a quick DB insert, no AI).
   const [isStagingRepeat, setIsStagingRepeat] = useState(false);
   const isCheat = loggingMode === 'cheat';
+  // Manual mode is a focused, vertically-centered composer (sits where the
+  // empty state's prompt lives) rather than a bottom-pinned bar.
+  const isManualMode = loggingMode === 'manual';
   const recentCheatOccasions = useRecentCheatOccasions(profile.userId, isCheat);
 
   // Prefill from dashboard meal trigger; re-runs when initialMeal changes so
@@ -664,10 +667,14 @@ export function FeedArea({
         </div>
       )}
 
-      {/* Scrollable meal cards only */}
+      {/* Scrollable meal cards only — hidden while the manual composer takes
+          the center of the screen. */}
       <div
         ref={scrollRef}
-        className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain px-3 py-3 sm:px-6 sm:py-4"
+        className={cn(
+          'flex min-h-0 flex-col overflow-y-auto overscroll-contain px-3 py-3 sm:px-6 sm:py-4',
+          isManualMode ? 'hidden' : 'flex-1'
+        )}
         data-testid="meal-card-scroll"
       >
         <AnimatePresence mode="wait">
@@ -773,8 +780,16 @@ export function FeedArea({
         )}
       </div>
 
-      {/* Input area */}
-      <div className="shrink-0 px-3 pt-2 pb-3 sm:px-6 sm:pb-4">
+      {/* Input area — bottom-pinned normally; vertically centered in manual
+          mode so the composer sits in the middle of the screen. */}
+      <div
+        className={cn(
+          'px-3 pt-2 pb-3 sm:px-6 sm:pb-4',
+          isManualMode
+            ? 'flex min-h-0 flex-1 flex-col justify-center overflow-y-auto'
+            : 'shrink-0'
+        )}
+      >
         {isCheat && (
           <CheatOccasionChips
             occasions={recentCheatOccasions.data ?? []}

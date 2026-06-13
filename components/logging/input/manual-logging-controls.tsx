@@ -272,6 +272,21 @@ export function ManualLoggingControls({
   return (
     <div className="flex flex-col gap-3">
       <div className="flex flex-col gap-1.5">
+        {/* "Add food" sits ABOVE the rows; new rows are prepended so the list
+            grows upward toward this button. */}
+        <button
+          type="button"
+          disabled={disabled}
+          onClick={() => {
+            pendingFocus.current = onRowAdd();
+          }}
+          className="flex items-center gap-1.5 px-1 py-1 text-nham-text-muted/60 text-sm transition-colors hover:text-nham-text-muted focus-visible:outline-none disabled:opacity-40"
+          style={{ fontFamily: 'DM Sans, sans-serif' }}
+        >
+          <Plus className="h-3.5 w-3.5" />
+          {t('manualLogging.addItem')}
+        </button>
+
         {rows.map((row, idx) => {
           const macros = rowMacros(row);
           return (
@@ -345,19 +360,6 @@ export function ManualLoggingControls({
             </div>
           );
         })}
-
-        <button
-          type="button"
-          disabled={disabled}
-          onClick={() => {
-            pendingFocus.current = onRowAdd(rows[rows.length - 1]?.id);
-          }}
-          className="flex items-center gap-1.5 px-1 py-1 text-nham-text-muted/60 text-sm transition-colors hover:text-nham-text-muted focus-visible:outline-none disabled:opacity-40"
-          style={{ fontFamily: 'DM Sans, sans-serif' }}
-        >
-          <Plus className="h-3.5 w-3.5" />
-          {t('manualLogging.addItem')}
-        </button>
       </div>
 
       {hasTotals && (
