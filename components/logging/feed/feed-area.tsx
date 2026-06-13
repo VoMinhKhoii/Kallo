@@ -213,9 +213,6 @@ export function FeedArea({
   // "Log it again" — re-staging a past cheat occasion (a quick DB insert, no AI).
   const [isStagingRepeat, setIsStagingRepeat] = useState(false);
   const isCheat = loggingMode === 'cheat';
-  // Manual mode is a focused, vertically-centered composer (sits where the
-  // empty state's prompt lives) rather than a bottom-pinned bar.
-  const isManualMode = loggingMode === 'manual';
   const recentCheatOccasions = useRecentCheatOccasions(profile.userId, isCheat);
 
   // Prefill from dashboard meal trigger; re-runs when initialMeal changes so
@@ -611,6 +608,11 @@ export function FeedArea({
   const hasPersistedMeals = persistedMeals.length > 0;
   const hasContent =
     hasPersistedMeals || hasPendingMessages || hasStreamingMessages;
+  // ChatGPT-style: before anything is logged the composer sits centered with
+  // the prompt; once there's content it animates down to the bottom while the
+  // cards animate in. Not mode-based — purely content-driven.
+  const isEmptyComposer =
+    !hasContent && !stream.isAnalyzing && !isDayLoading && !isDayError;
 
   const isToday = selectedDate === today;
   const isPastDay = selectedDate < today;
@@ -667,158 +669,165 @@ export function FeedArea({
         </div>
       )}
 
-      {/* Scrollable meal cards only — hidden while the manual composer takes
-          the center of the screen. */}
+      {/* Body: the cards region + the composer. When empty, the whole group is
+          centered (justify-center) so the composer sits in the middle with the
+          prompt; once there's content the cards take the height and the
+          composer animates down to the bottom. */}
       <div
-        ref={scrollRef}
         className={cn(
-          'flex min-h-0 flex-col overflow-y-auto overscroll-contain px-3 py-3 sm:px-6 sm:py-4',
-          isManualMode ? 'hidden' : 'flex-1'
+          'flex min-h-0 flex-1 flex-col',
+          isEmptyComposer && 'justify-center'
         )}
-        data-testid="meal-card-scroll"
       >
-        <AnimatePresence mode="wait">
-          {!hasContent &&
-            !stream.isAnalyzing &&
-            !isDayLoading &&
-            !isDayError && (
-              <div className="flex flex-1 items-center justify-center py-6">
+        <div
+          ref={scrollRef}
+          className={cn(
+            'flex flex-col overscroll-contain px-3 sm:px-6',
+            isEmptyComposer
+              ? 'shrink-0'
+              : 'min-h-0 flex-1 overflow-y-auto py-3 sm:py-4'
+          )}
+          data-testid="meal-card-scroll"
+        >
+          <AnimatePresence mode="wait">
+            {isEmptyComposer && (
+              <div className="flex items-center justify-center py-6">
                 <EmptyState />
               </div>
             )}
-        </AnimatePresence>
+          </AnimatePresence>
 
-        {isDayLoading && <LoggingDaySkeleton />}
+          {isDayLoading && <LoggingDaySkeleton />}
 
-        {!isDayLoading && isDayError && (
-          <LoggingDayErrorState
-            isRetrying={isDayRetrying}
-            onRetry={() => {
-              void refetchLoggingDay();
-            }}
-          />
-        )}
+          {!isDayLoading && isDayError && (
+            <LoggingDayErrorState
+              isRetrying={isDayRetrying}
+              onRetry={() => {
+                void refetchLoggingDay();
+              }}
+            />
+          )}
 
-        {!isDayLoading && !isDayError && hasContent && (
-          <div className="mx-auto w-full max-w-3xl pl-6 sm:pl-12">
-            <div className="flex flex-col gap-5 sm:gap-8">
-              {/* Persisted meals from DB */}
-              <AnimatePresence initial={false}>
-                {orderedPersistedMeals.map((meal) => (
-                  <PersistedMealCard key={meal.id} meal={meal} />
-                ))}
-              </AnimatePresence>
+          {!isDayLoading && !isDayError && hasContent && (
+            <div className="mx-auto w-full max-w-3xl pl-6 sm:pl-12">
+              <div className="flex flex-col gap-5 sm:gap-8">
+                {/* Persisted meals from DB */}
+                <AnimatePresence initial={false}>
+                  {orderedPersistedMeals.map((meal) => (
+                    <PersistedMealCard key={meal.id} meal={meal} />
+                  ))}
+                </AnimatePresence>
 
-              {/* Streaming / unconfirmed messages */}
-              <AnimatePresence initial={false}>
-                {unconfirmedMessages.map((msg) => {
-                  if (msg.isStreaming) {
-                    return <StreamingMealEntry key={msg.id} message={msg} />;
-                  }
+                {/* Streaming / unconfirmed messages */}
+                <AnimatePresence initial={false}>
+                  {unconfirmedMessages.map((msg) => {
+                    if (msg.isStreaming) {
+                      return <StreamingMealEntry key={msg.id} message={msg} />;
+                    }
 
-                  if (msg.cheatSpec) {
+                    if (msg.cheatSpec) {
+                      return (
+                        <CheatSliderCard
+                          key={msg.id}
+                          spec={msg.cheatSpec}
+                          userInput={msg.userInput}
+                          timestamp={msg.timestamp}
+                          isConfirming={confirmMeal.isPending}
+                          onConfirm={(levels) =>
+                            handleConfirmCheatMeal(msg, levels)
+                          }
+                          onClarify={(answer) =>
+                            handleCheatClarify(msg, answer)
+                          }
+                        />
+                      );
+                    }
+
+                    if (msg.parsedMeal) {
+                      return (
+                        <MealEntry
+                          key={msg.id}
+                          message={msg}
+                          isConfirming={confirmMeal.isPending}
+                          onConfirm={(edits) => handleConfirmMeal(msg, edits)}
+                        />
+                      );
+                    }
+
+                    // Error message display
                     return (
-                      <CheatSliderCard
+                      <motion.div
                         key={msg.id}
-                        spec={msg.cheatSpec}
-                        userInput={msg.userInput}
-                        timestamp={msg.timestamp}
-                        isConfirming={confirmMeal.isPending}
-                        onConfirm={(levels) =>
-                          handleConfirmCheatMeal(msg, levels)
-                        }
-                        onClarify={(answer) => handleCheatClarify(msg, answer)}
-                      />
-                    );
-                  }
-
-                  if (msg.parsedMeal) {
-                    return (
-                      <MealEntry
-                        key={msg.id}
-                        message={msg}
-                        isConfirming={confirmMeal.isPending}
-                        onConfirm={(edits) => handleConfirmMeal(msg, edits)}
-                      />
-                    );
-                  }
-
-                  // Error message display
-                  return (
-                    <motion.div
-                      key={msg.id}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className="group relative"
-                    >
-                      <div className="absolute top-2 bottom-0 -left-10 w-px bg-nham-border/60 group-last:bg-transparent" />
-                      <div className="absolute top-2 -left-[43px] h-2 w-2 rounded-full border-2 border-rose-400 bg-white" />
-                      <div className="rounded-2xl border border-rose-200/60 bg-rose-50/50 p-4">
-                        {msg.userInput && (
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="group relative"
+                      >
+                        <div className="absolute top-2 bottom-0 -left-10 w-px bg-nham-border/60 group-last:bg-transparent" />
+                        <div className="absolute top-2 -left-[43px] h-2 w-2 rounded-full border-2 border-rose-400 bg-white" />
+                        <div className="rounded-2xl border border-rose-200/60 bg-rose-50/50 p-4">
+                          {msg.userInput && (
+                            <p
+                              className="mb-2 text-[13px] text-nham-text-muted"
+                              style={{ fontFamily: 'Lora, serif' }}
+                            >
+                              {msg.userInput}
+                            </p>
+                          )}
                           <p
-                            className="mb-2 text-[13px] text-nham-text-muted"
-                            style={{ fontFamily: 'Lora, serif' }}
+                            className="text-rose-600 text-sm"
+                            style={{
+                              fontFamily: 'DM Sans, sans-serif',
+                            }}
                           >
-                            {msg.userInput}
+                            {msg.content}
                           </p>
-                        )}
-                        <p
-                          className="text-rose-600 text-sm"
-                          style={{
-                            fontFamily: 'DM Sans, sans-serif',
-                          }}
-                        >
-                          {msg.content}
-                        </p>
-                      </div>
-                    </motion.div>
-                  );
-                })}
-              </AnimatePresence>
+                        </div>
+                      </motion.div>
+                    );
+                  })}
+                </AnimatePresence>
+              </div>
             </div>
-          </div>
-        )}
-      </div>
-
-      {/* Input area — bottom-pinned normally; vertically centered in manual
-          mode so the composer sits in the middle of the screen. */}
-      <div
-        className={cn(
-          'px-3 pt-2 pb-3 sm:px-6 sm:pb-4',
-          isManualMode
-            ? 'flex min-h-0 flex-1 flex-col justify-center overflow-y-auto'
-            : 'shrink-0'
-        )}
-      >
-        {isCheat && (
-          <CheatOccasionChips
-            occasions={recentCheatOccasions.data ?? []}
-            disabled={isStagingRepeat || stream.isAnalyzing}
-            onSelect={handleRepeatCheat}
-          />
-        )}
-        <div className="mx-auto w-full max-w-3xl">
-          <MealInput
-            ref={inputRef}
-            onSubmit={
-              loggingMode === 'manual' ? handleManualSubmit : handleSubmit
-            }
-            onCancel={() => {
-              stream.cancel();
-              if (streamingMsgId) {
-                setMessages((prev) =>
-                  prev.filter((m) => m.id !== streamingMsgId)
-                );
-              }
-              setStreamingMsgId(null);
-            }}
-            disabled={stream.isAnalyzing}
-            mode={loggingMode}
-            onModeChange={setLoggingMode}
-            cheatIntensity={cheatIntensity}
-            onChangeIntensity={setCheatIntensity}
-          />
+          )}
         </div>
+
+        {/* Composer — `layout` smoothly tweens it from the centered position
+            (empty) down to the bottom once cards take the height above it. */}
+        <motion.div
+          layout
+          transition={{ type: 'spring', stiffness: 320, damping: 34 }}
+          className="shrink-0 px-3 pt-2 pb-3 sm:px-6 sm:pb-4"
+        >
+          {isCheat && (
+            <CheatOccasionChips
+              occasions={recentCheatOccasions.data ?? []}
+              disabled={isStagingRepeat || stream.isAnalyzing}
+              onSelect={handleRepeatCheat}
+            />
+          )}
+          <div className="mx-auto w-full max-w-3xl">
+            <MealInput
+              ref={inputRef}
+              onSubmit={
+                loggingMode === 'manual' ? handleManualSubmit : handleSubmit
+              }
+              onCancel={() => {
+                stream.cancel();
+                if (streamingMsgId) {
+                  setMessages((prev) =>
+                    prev.filter((m) => m.id !== streamingMsgId)
+                  );
+                }
+                setStreamingMsgId(null);
+              }}
+              disabled={stream.isAnalyzing}
+              mode={loggingMode}
+              onModeChange={setLoggingMode}
+              cheatIntensity={cheatIntensity}
+              onChangeIntensity={setCheatIntensity}
+            />
+          </div>
+        </motion.div>
       </div>
     </main>
   );
