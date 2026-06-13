@@ -797,7 +797,7 @@ export function FeedArea({
             onSelect={handleRepeatCheat}
           />
         )}
-        <div className="mx-auto max-w-3xl">
+        <div className="mx-auto w-full max-w-3xl">
           <MealInput
             ref={inputRef}
             onSubmit={
