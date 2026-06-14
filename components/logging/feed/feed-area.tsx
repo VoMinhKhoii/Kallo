@@ -8,7 +8,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { CheatOccasionChips } from '@/components/logging/feed/cheat-occasion-chips';
 import { CheatSliderCard } from '@/components/logging/feed/cheat-slider-card';
-import { EmptyState } from '@/components/logging/feed/empty-state';
 import { MacroSummary } from '@/components/logging/feed/macro-summary';
 import { MealEntry } from '@/components/logging/feed/meal-entry';
 import { PartialDayNotice } from '@/components/logging/feed/partial-day-notice';
@@ -669,9 +668,9 @@ export function FeedArea({
         </div>
       )}
 
-      {/* Body: the cards region + the composer. When empty, the whole group is
-          centered (justify-center) so the composer sits in the middle with the
-          prompt; once there's content the cards take the height and the
+      {/* Body: the cards region + the composer. When empty, the composer is
+          the centered element (no prompt above it — the input bar IS the
+          empty state); once there's content the cards take the height and the
           composer animates down to the bottom. */}
       <div
         className={cn(
@@ -689,14 +688,6 @@ export function FeedArea({
           )}
           data-testid="meal-card-scroll"
         >
-          <AnimatePresence mode="wait">
-            {isEmptyComposer && (
-              <div className="flex items-center justify-center py-6">
-                <EmptyState />
-              </div>
-            )}
-          </AnimatePresence>
-
           {isDayLoading && <LoggingDaySkeleton />}
 
           {!isDayLoading && isDayError && (

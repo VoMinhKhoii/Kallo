@@ -4,10 +4,6 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { NUTRITION_KEYS } from '@/lib/ai/constants';
 import { FeedArea } from './feed-area';
 
-vi.mock('@/components/logging/feed/empty-state', () => ({
-  EmptyState: () => <div data-testid="empty-state" />,
-}));
-
 vi.mock('@/components/logging/feed/macro-summary', () => ({
   MacroSummary: ({ totals }: { totals: { calories: number } }) => (
     <div data-testid="macro-summary" data-calories={totals.calories} />
@@ -192,7 +188,7 @@ describe('FeedArea', () => {
     expect(
       within(macroRegion).getByTestId('macro-summary')
     ).toBeInTheDocument();
-    expect(within(scrollRegion).getByTestId('empty-state')).toBeInTheDocument();
+    // On an empty day the input bar IS the centered empty state — no prompt.
     expect(within(scrollRegion).queryByTestId('macro-summary')).toBeNull();
     expect(within(scrollRegion).queryByTestId('meal-input')).toBeNull();
     expect(input).toBeInTheDocument();
