@@ -1,13 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-const {
-  getOnboardingProfileMock,
-  getTranslationsMock,
-  getFirstMealLocalDateMock,
-} = vi.hoisted(() => ({
+const { getOnboardingProfileMock, getTranslationsMock } = vi.hoisted(() => ({
   getOnboardingProfileMock: vi.fn(),
   getTranslationsMock: vi.fn(),
-  getFirstMealLocalDateMock: vi.fn(),
 }));
 
 vi.mock('next-intl/server', () => ({
@@ -16,10 +11,6 @@ vi.mock('next-intl/server', () => ({
 
 vi.mock('@/lib/onboarding/actions', () => ({
   getOnboardingProfile: getOnboardingProfileMock,
-}));
-
-vi.mock('@/lib/actions/dashboard', () => ({
-  getFirstMealLocalDate: getFirstMealLocalDateMock,
 }));
 
 vi.mock('@/components/dashboard/dashboard-shell', () => ({
@@ -32,10 +23,8 @@ describe('DashboardPage', () => {
   beforeEach(() => {
     getOnboardingProfileMock.mockReset();
     getTranslationsMock.mockReset();
-    getFirstMealLocalDateMock.mockReset();
 
     getTranslationsMock.mockResolvedValue((key: string) => key);
-    getFirstMealLocalDateMock.mockResolvedValue(null);
   });
 
   afterEach(() => {
@@ -69,7 +58,6 @@ describe('DashboardPage', () => {
         carbsTargetG: 250,
         fatTargetG: 65,
       },
-      firstMealDate: null,
     });
     expect(page?.type).toBeDefined();
   });
@@ -92,7 +80,6 @@ describe('DashboardPage', () => {
         carbsTargetG: 180,
         fatTargetG: 60,
       },
-      firstMealDate: null,
     });
     expect(page?.type).toBeDefined();
   });
@@ -115,7 +102,6 @@ describe('DashboardPage', () => {
         carbsTargetG: 180,
         fatTargetG: 65,
       },
-      firstMealDate: null,
     });
     expect(page?.type).toBeDefined();
   });

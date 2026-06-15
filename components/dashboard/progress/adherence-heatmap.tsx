@@ -1,7 +1,7 @@
 'use client';
 
 import { motion, useReducedMotion } from 'motion/react';
-import { useLocale, useTranslations } from 'next-intl';
+import { useTranslations } from 'next-intl';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Tooltip,
@@ -17,14 +17,7 @@ import type {
 import { cn } from '@/lib/utils';
 import { getHeatmapColor, HEATMAP_COLORS } from './heatmap-colors';
 
-// Locale-aware narrow weekday initials in Monday-first order (the grid's row
-// order). 2024-01-01 was a Monday, so days 1–7 of Jan 2024 are Mon…Sun.
-function getDayLabels(locale: string): string[] {
-  const formatter = new Intl.DateTimeFormat(locale, { weekday: 'narrow' });
-  return Array.from({ length: 7 }, (_, i) =>
-    formatter.format(new Date(Date.UTC(2024, 0, 1 + i, 12)))
-  );
-}
+const DAY_LABELS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 
 const GAP: Record<HeatmapRange, number> = { '30d': 3, '90d': 2, year: 1 };
 const DAY_LABEL_WIDTH = 16;
@@ -37,8 +30,6 @@ interface AdherenceHeatmapProps {
 
 export function AdherenceHeatmap({ data, range }: AdherenceHeatmapProps) {
   const t = useTranslations('dashboard.adherenceHeatmap');
-  const locale = useLocale();
-  const dayLabels = useMemo(() => getDayLabels(locale), [locale]);
   const gridRef = useRef<HTMLDivElement>(null);
   const [sq, setSq] = useState(19);
   // The 'year' range stagger fires up to 371 cells. Honour the OS-level
@@ -46,11 +37,7 @@ export function AdherenceHeatmap({ data, range }: AdherenceHeatmapProps) {
   // don't get a wall of moving cells. They still see the final state.
   const prefersReducedMotion = useReducedMotion();
 
-  // Suppress the "% on track" figure until there are at least this many scored
-  // days. A brand-new user otherwise reads "0% on track" over an empty grid —
-  // a verdict computed from no data. Earn the figure first.
-  const MIN_DAYS_FOR_RATE = 3;
-  const { adherenceRate, scoredDays } = useMemo(() => {
+  const adherenceRate = useMemo(() => {
     let onTarget = 0;
     let total = 0;
     for (const row of data.cells) {
@@ -67,10 +54,7 @@ export function AdherenceHeatmap({ data, range }: AdherenceHeatmapProps) {
         }
       }
     }
-    return {
-      adherenceRate: total > 0 ? Math.round((onTarget / total) * 100) : 0,
-      scoredDays: total,
-    };
+    return total > 0 ? Math.round((onTarget / total) * 100) : 0;
   }, [data]);
 
   const gap = GAP[range];
@@ -114,19 +98,17 @@ export function AdherenceHeatmap({ data, range }: AdherenceHeatmapProps) {
   return (
     <TooltipProvider delayDuration={100}>
       <div className="flex h-full flex-col">
-        {/* Header — the rate is suppressed until enough days are scored. */}
+        {/* Header */}
         <div className="mb-1.5 flex items-baseline justify-between gap-2">
-          {scoredDays >= MIN_DAYS_FOR_RATE && (
-            <span className="shrink-0 font-mono text-nham-text-muted text-xs">
-              {t('onTrack', { percent: adherenceRate })}
-            </span>
-          )}
+          <span className="shrink-0 font-mono text-nham-text-muted text-xs">
+            {t('onTrack', { percent: adherenceRate })}
+          </span>
         </div>
 
         <div ref={gridRef} className="flex min-h-0 flex-1 items-center gap-1">
           {/* Day labels */}
           <div className="flex shrink-0 flex-col" style={{ gap: `${gap}px` }}>
-            {dayLabels.map((d, i) => (
+            {DAY_LABELS.map((d, i) => (
               <div
                 key={`lbl-${i}`}
                 className="flex items-center justify-end pr-1 font-semibold text-[10px] text-nham-text-muted"

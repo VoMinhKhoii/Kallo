@@ -1,5 +1,6 @@
 'use client';
 
+import { TrendingDown, TrendingUp } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useMemo } from 'react';
 import { CompactWeightLog } from '@/components/dashboard/current/compact-weight-log';
@@ -44,29 +45,45 @@ export function ProgressStory({
     );
   }
 
+  const copy = t.raw(`progressStatus.${summary.status}`);
   const isInsufficient = summary.status === 'insufficient';
   const delta = summary.currentWeight - summary.startWeight;
-  // A minus sign is a real minus, not a hyphen; the kg delta reads as the
-  // period's change. Direction and pace are read from the chart's guide line
-  // below — no pill, no trend arrow, no written verdict.
-  const deltaLabel = `${delta > 0 ? '+' : delta < 0 ? '−' : ''}${Math.abs(
-    delta
-  ).toFixed(1)} ${t('units.kg')}`;
+  const Icon = delta <= 0 ? TrendingDown : TrendingUp;
 
   return (
     <section className="grid min-h-[360px] gap-2 rounded-[1.5rem] border border-nham-border/60 bg-card p-2.5 shadow-[0_10px_32px_rgba(44,36,22,0.05)] xl:h-full xl:min-h-0 xl:grid-cols-[minmax(240px,0.32fr)_minmax(0,0.68fr)]">
       <div className="grid min-h-0 gap-2 xl:grid-rows-[auto_auto] xl:content-start">
-        <div className="rounded-[1.25rem] bg-nham-surface p-2.5">
+        <div className="rounded-[1.25rem] bg-nham-surface/70 p-2.5">
+          <div
+            className={cn(
+              'mb-2 inline-flex items-center gap-2 rounded-full px-2.5 py-1 font-semibold text-xs',
+              summary.status === 'behind'
+                ? 'bg-destructive/10 text-destructive'
+                : 'bg-nham-accent/10 text-nham-accent'
+            )}
+          >
+            <Icon className="h-3.5 w-3.5" aria-hidden="true" />
+            {copy.label}
+          </div>
           <div className="flex items-end justify-between gap-3">
             <div>
-              <h2
-                className="font-normal text-3xl text-nham-text tracking-[-0.04em]"
-                style={{ fontFamily: 'Lora, serif' }}
-              >
-                {isInsufficient
-                  ? `${summary.currentWeight.toFixed(1)} ${t('units.kg')}`
-                  : deltaLabel}
-              </h2>
+              {isInsufficient ? (
+                <h2
+                  className="font-semibold text-3xl text-nham-text tracking-[-0.04em]"
+                  style={{ fontFamily: 'Lora, serif' }}
+                >
+                  {summary.currentWeight.toFixed(1)} {t('units.kg')}
+                </h2>
+              ) : (
+                <h2
+                  className="font-semibold text-3xl text-nham-text tracking-[-0.04em]"
+                  style={{ fontFamily: 'Lora, serif' }}
+                >
+                  {delta > 0 ? '+' : ''}
+                  {delta.toFixed(1)} {t('units.kg')}
+                </h2>
+              )}
+              <p className="mt-1 text-nham-stone text-xs">{copy.detail}</p>
             </div>
             {!isInsufficient && (
               <div
@@ -75,8 +92,8 @@ export function ProgressStory({
                   summary.canProject ? 'grid-cols-2' : 'grid-cols-1'
                 )}
               >
-                <div className="rounded-xl bg-card px-2.5 py-2">
-                  <span className="block text-[9px] text-nham-stone uppercase tracking-[0.15em]">
+                <div className="rounded-xl bg-card/80 px-2.5 py-2">
+                  <span className="block text-[9px] text-nham-stone uppercase tracking-[0.14em]">
                     {t('now')}
                   </span>
                   <strong className="font-mono text-nham-text text-xs">
@@ -84,8 +101,8 @@ export function ProgressStory({
                   </strong>
                 </div>
                 {summary.canProject && (
-                  <div className="rounded-xl bg-card px-2.5 py-2">
-                    <span className="block text-[9px] text-nham-stone uppercase tracking-[0.15em]">
+                  <div className="rounded-xl bg-card/80 px-2.5 py-2">
+                    <span className="block text-[9px] text-nham-stone uppercase tracking-[0.14em]">
                       {t('projected')}
                     </span>
                     <strong className="font-mono text-nham-text text-xs">
@@ -110,6 +127,7 @@ export function ProgressStory({
           data={weightSummary.weights}
           periodStartWeight={weightSummary.periodStartWeight}
           expectedEndWeight={weightSummary.expectedEndWeight}
+          goalDirection={weightSummary.goalDirection}
           range={range}
         />
       </div>

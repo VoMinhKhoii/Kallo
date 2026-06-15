@@ -1,7 +1,6 @@
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 import { DashboardShell } from '@/components/dashboard/dashboard-shell';
-import { getFirstMealLocalDate } from '@/lib/actions/dashboard';
 import { getOnboardingProfile } from '@/lib/onboarding/actions';
 import type { DashboardProfile } from '@/lib/types/dashboard';
 
@@ -21,10 +20,7 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function DashboardPage() {
-  const [profileRow, firstMealDate] = await Promise.all([
-    getOnboardingProfile(),
-    getFirstMealLocalDate(),
-  ]);
+  const profileRow = await getOnboardingProfile();
 
   const profile: DashboardProfile = {
     calorieTarget: profileRow?.calorieTarget ?? DEFAULT_PROFILE.calorieTarget,
@@ -34,5 +30,5 @@ export default async function DashboardPage() {
     fatTargetG: profileRow?.fatTargetG ?? DEFAULT_PROFILE.fatTargetG,
   };
 
-  return <DashboardShell profile={profile} firstMealDate={firstMealDate} />;
+  return <DashboardShell profile={profile} />;
 }

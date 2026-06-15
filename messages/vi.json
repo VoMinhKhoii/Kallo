@@ -42,8 +42,6 @@
   "shared": {
     "calorieRing": {
       "left": "còn lại",
-      "over": "vượt",
-      "eaten": "đã ăn",
       "ariaLabel": "Còn {remaining} trên tổng {target} calo"
     }
   },
@@ -864,12 +862,10 @@
     "thisWeek": "Tuần này",
     "caloriesConsumed": "Calo đã nạp",
     "caloriesRemaining": "Calo còn lại",
-    "overTarget": "Vượt mục tiêu",
     "protein": "Đạm",
     "carbs": "Carb",
     "fat": "Chất béo",
     "noMealsToday": "Chưa ghi nhận bữa ăn nào hôm nay",
-    "firstRunPrompt": "Hôm nay bạn đã ăn gì?",
     "logMeal": "Ghi nhận bữa ăn",
     "recentMeals": "Bữa ăn gần đây",
     "viewAll": "Xem tất cả",

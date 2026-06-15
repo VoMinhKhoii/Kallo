@@ -5,6 +5,7 @@ import { useMemo } from 'react';
 import {
   Area,
   AreaChart,
+  ReferenceArea,
   ReferenceLine,
   ResponsiveContainer,
   Tooltip,
@@ -19,6 +20,7 @@ interface WeightChartProps {
   data: number[];
   periodStartWeight: number;
   expectedEndWeight: number;
+  goalDirection: 'up' | 'down' | 'flat';
   range: TimeRange;
 }
 
@@ -26,6 +28,7 @@ export function WeightChart({
   data,
   periodStartWeight,
   expectedEndWeight,
+  goalDirection,
   range,
 }: WeightChartProps) {
   const locale = useLocale();
@@ -71,18 +74,35 @@ export function WeightChart({
   const yMin = Math.min(goalBottom, dataMin) - 0.3;
   const yMax = Math.max(goalTop, dataMax) + 0.3;
 
-  // Plan-path guide: a single dashed taupe line from the period's start weight
-  // to its expected end weight. Deviation reads as distance from the guide — no
-  // colored judgment zones, no danger reference line, no legend. (A maintenance
-  // goal collapses to a flat guide at the start weight, which is still correct.)
-  const lastDay = isSinglePoint ? rangeDays - 1 : data.length - 1;
-  const planPathSegment = [
-    { x: 0, y: periodStartWeight },
-    { x: lastDay, y: expectedEndWeight },
-  ];
+  // Off-track zone: above start weight (losing), below start weight (gaining), none for maintenance
+  const offTrackTop =
+    goalDirection === 'down'
+      ? yMax
+      : goalDirection === 'up'
+        ? periodStartWeight
+        : null;
+  const offTrackBottom =
+    goalDirection === 'down'
+      ? periodStartWeight
+      : goalDirection === 'up'
+        ? yMin
+        : null;
 
   return (
     <div className="flex h-full min-h-[200px] flex-col">
+      {/* Legend — off track only */}
+      {goalDirection !== 'flat' && (
+        <div className="mb-0.5 flex items-center gap-4 text-[10px] text-nham-stone">
+          <span className="flex items-center gap-1.5">
+            <span
+              className="inline-block h-2 w-3 rounded-sm opacity-50"
+              style={{ backgroundColor: 'var(--nham-danger)' }}
+            />
+            {t('offTrack')}
+          </span>
+        </div>
+      )}
+
       <div className="min-h-0 flex-1">
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart
@@ -103,6 +123,16 @@ export function WeightChart({
                 />
               </linearGradient>
             </defs>
+
+            {offTrackTop !== null && offTrackBottom !== null && (
+              <ReferenceArea
+                y1={offTrackBottom}
+                y2={offTrackTop}
+                fill="var(--nham-danger)"
+                fillOpacity={0.08}
+                strokeOpacity={0}
+              />
+            )}
 
             <XAxis
               dataKey="day"
@@ -127,13 +157,11 @@ export function WeightChart({
 
             <Tooltip content={<WeightChartTooltip />} />
 
-            {/* Plan-path guide: where you'd be if you stayed on pace. */}
             <ReferenceLine
-              segment={planPathSegment}
-              stroke="var(--nham-text-muted)"
-              strokeOpacity={0.45}
-              strokeWidth={1.5}
-              strokeDasharray="5 4"
+              y={periodStartWeight}
+              stroke="var(--nham-danger)"
+              strokeOpacity={0.25}
+              strokeWidth={1}
             />
 
             <Area

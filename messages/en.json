@@ -42,8 +42,6 @@
   "shared": {
     "calorieRing": {
       "left": "left",
-      "over": "over",
-      "eaten": "eaten",
       "ariaLabel": "{remaining} of {target} calories remaining"
     }
   },
@@ -864,12 +862,10 @@
     "thisWeek": "This Week",
     "caloriesConsumed": "Calories consumed",
     "caloriesRemaining": "Calories remaining",
-    "overTarget": "Over target",
     "protein": "Protein",
     "carbs": "Carbs",
     "fat": "Fat",
     "noMealsToday": "No meals logged today",
-    "firstRunPrompt": "What did you eat today?",
     "logMeal": "Log a meal",
     "recentMeals": "Recent meals",
     "viewAll": "View all",

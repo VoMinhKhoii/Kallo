@@ -113,9 +113,7 @@ export function FloatingMealTrigger() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 8 }}
             transition={{ duration: 0.16 }}
-            // Sit above the bottom tab bar (≈58px + safe-area) so the composer
-            // never overlaps the nav.
-            className="fixed right-4 bottom-[calc(env(safe-area-inset-bottom)+5.5rem)] left-4 z-50"
+            className="fixed right-4 bottom-20 left-4 z-50"
           >
             <MealInputForm
               id="dashboard-floating-meal-input"
@@ -133,8 +131,7 @@ export function FloatingMealTrigger() {
         onClick={expanded ? handleClose : () => setExpanded(true)}
         aria-label={expanded ? tm('close') : t('logMeal')}
         aria-expanded={expanded}
-        // Anchored above the bottom tab bar.
-        className="fixed right-4 bottom-[calc(env(safe-area-inset-bottom)+4rem)] z-50 flex h-12 w-12 items-center justify-center rounded-2xl bg-nham-btn text-white shadow-[0_4px_16px_rgba(44,36,22,0.18)] transition-colors hover:bg-nham-btn-hover"
+        className="fixed right-4 bottom-5 z-50 flex h-11 w-11 items-center justify-center rounded-2xl bg-nham-btn text-white shadow-[0_4px_16px_rgba(44,36,22,0.18)] transition-colors hover:bg-nham-btn-hover"
       >
         {expanded ? (
           <X className="h-5 w-5" />

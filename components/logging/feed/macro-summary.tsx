@@ -4,16 +4,10 @@ import { motion } from 'motion/react';
 import { useTranslations } from 'next-intl';
 import { CalorieRing } from '@/components/shared/calorie-ring';
 import type { MacroBreakdown } from '@/lib/types/meal';
-import { cn } from '@/lib/utils';
 
 interface MacroSummaryProps {
   totals: MacroBreakdown;
   targets: MacroBreakdown;
-  /**
-   * Past days are framed by what was eaten, not what's "left" — the day's
-   * standing is carried by the heatmap color scale, not a remaining-count.
-   */
-  isPastDay?: boolean;
 }
 
 const MACRO_COLORS: Record<'protein' | 'carbs' | 'fat', string> = {
@@ -22,11 +16,7 @@ const MACRO_COLORS: Record<'protein' | 'carbs' | 'fat', string> = {
   fat: 'var(--nham-macro-fat)',
 };
 
-export function MacroSummary({
-  totals,
-  targets,
-  isPastDay = false,
-}: MacroSummaryProps) {
+export function MacroSummary({ totals, targets }: MacroSummaryProps) {
   const td = useTranslations('dashboard');
   const tRing = useTranslations('shared.calorieRing');
 
@@ -40,18 +30,7 @@ export function MacroSummary({
     { key: 'fat', label: td('fat'), color: MACRO_COLORS.fat },
   ];
   const { calories } = totals;
-  const remaining = targets.calories - calories;
-  const isOver = remaining < 0;
-
-  // The ring center carries the day's standing through the number + a one-word
-  // eyebrow — never a pill, an icon, or a colored verdict. Past days drop the
-  // remaining/over framing entirely and simply show what was eaten.
-  const centerValue = isPastDay ? calories : isOver ? -remaining : remaining;
-  const centerLabel = isPastDay
-    ? tRing('eaten')
-    : isOver
-      ? tRing('over')
-      : tRing('left');
+  const remaining = Math.max(0, targets.calories - calories);
 
   return (
     <motion.div
@@ -75,17 +54,13 @@ export function MacroSummary({
                 className="font-normal text-[17px] text-nham-text tabular-nums leading-none sm:text-[19px]"
                 style={{ fontFamily: 'Lora, serif' }}
               >
-                {centerValue.toLocaleString()}
+                {remaining.toLocaleString()}
               </span>
               <span
-                className={cn(
-                  'mt-0.5 font-bold text-[8px] uppercase tracking-[0.15em]',
-                  // Over target reads in espresso ink — present, not alarmed.
-                  isOver && !isPastDay ? 'text-nham-text' : 'text-nham-stone'
-                )}
+                className="mt-0.5 font-bold text-[8px] text-nham-stone uppercase tracking-[0.15em]"
                 style={{ fontFamily: 'DM Sans, sans-serif' }}
               >
-                {centerLabel}
+                {tRing('left')}
               </span>
             </>
           }
@@ -109,16 +84,10 @@ export function MacroSummary({
         {MACROS.map(({ key, label, color }) => {
           const current = totals[key];
           const target = targets[key];
-          const macroOver = target > 0 && current > target;
-          // Under target: the fill is the consumed share of the bar, rest track.
-          // Over target: the bar is full and splits — the macro colour holds the
-          // target portion, the overflow trails in quiet terracotta. The bar
-          // visibly spills past its goal; no icon, no pill, no alarm red.
-          const fillPercent =
+          const percent =
             target > 0
               ? Math.max(0, Math.min(100, (current / target) * 100))
               : 0;
-          const targetPortion = macroOver ? (target / current) * 100 : 100;
 
           return (
             <div key={key} className="flex items-center gap-3">
@@ -131,40 +100,18 @@ export function MacroSummary({
               <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-nham-track">
                 <motion.div
                   initial={{ width: 0 }}
-                  animate={{ width: macroOver ? '100%' : `${fillPercent}%` }}
-                  transition={{ duration: 1, delay: 0.2, ease: 'easeOut' }}
-                  className="flex h-full overflow-hidden rounded-full"
-                >
-                  {macroOver ? (
-                    <>
-                      <span
-                        className="h-full shrink-0"
-                        style={{
-                          width: `${targetPortion}%`,
-                          backgroundColor: color,
-                        }}
-                      />
-                      <span
-                        className="h-full flex-1"
-                        style={{
-                          backgroundColor: 'var(--nham-danger)',
-                          opacity: 0.4,
-                        }}
-                      />
-                    </>
-                  ) : (
-                    <span
-                      className="h-full w-full"
-                      style={{ backgroundColor: color }}
-                    />
-                  )}
-                </motion.div>
+                  animate={{ width: `${percent}%` }}
+                  transition={{
+                    duration: 1,
+                    delay: 0.2,
+                    ease: 'easeOut',
+                  }}
+                  className="h-full rounded-full"
+                  style={{ backgroundColor: color }}
+                />
               </div>
               <span
-                className={cn(
-                  'w-14 text-right text-[11px] tabular-nums sm:w-16',
-                  macroOver ? 'text-nham-text' : 'text-nham-text-muted'
-                )}
+                className="w-14 text-right text-[11px] text-nham-text-muted tabular-nums sm:w-16"
                 style={{ fontFamily: 'DM Sans, sans-serif' }}
               >
                 {Math.round(current)}/{target}g
