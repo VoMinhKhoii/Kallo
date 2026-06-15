@@ -1,14 +1,12 @@
 'use client';
 
 import { PanelLeftClose, PanelLeftOpen, Settings } from 'lucide-react';
-import { useLinkStatus } from 'next/link';
 import { useTranslations } from 'next-intl';
 import type * as React from 'react';
 import { useState } from 'react';
 import { useSidebarState } from '@/hooks/use-sidebar-state';
 import { Link, usePathname } from '@/i18n/navigation';
 import { cn } from '@/lib/utils';
-import { GlobalComposer } from './global-composer';
 import { isActiveRoute, visibleNavItems } from './nav-items';
 import { OnboardingNudge } from './onboarding-nudge';
 import { SidebarTooltip } from './sidebar-tooltip';
@@ -65,23 +63,6 @@ function SectionHeader({
   );
 }
 
-/**
- * Instant pending feedback on the tapped row: while the next route's data is
- * being fetched, paint a soft hover-tint behind the (inactive) row so the click
- * is acknowledged immediately instead of the old page freezing. `useLinkStatus`
- * must run inside a descendant of the <Link>.
- */
-function NavPendingTint({ isActive }: { isActive: boolean }) {
-  const { pending } = useLinkStatus();
-  if (!pending || isActive) return null;
-  return (
-    <span
-      aria-hidden="true"
-      className="pointer-events-none absolute inset-0 -z-[1] rounded-lg bg-nham-hover/70 motion-safe:animate-pulse"
-    />
-  );
-}
-
 function SidebarNavLink({
   item,
   collapsed,
@@ -104,7 +85,6 @@ function SidebarNavLink({
             : 'text-nham-text-muted hover:bg-nham-hover/60 hover:text-nham-text'
         )}
       >
-        <NavPendingTint isActive={isActive} />
         <span
           className={cn(
             'flex h-5 w-5 shrink-0 items-center justify-center transition-colors',
@@ -244,24 +224,13 @@ export function DesktopSidebar({
         pinnedCollapsed && collapsed && 'cursor-pointer'
       )}
     >
-      {/* Header — Lora wordmark (home link) + pin/unpin toggle. The authed app
-          finally says its own name. */}
+      {/* Header — pin/unpin toggle */}
       <div
         className={cn(
           'flex shrink-0 items-center px-3 pt-3',
-          collapsed ? 'justify-center' : 'justify-between'
+          collapsed ? 'justify-center' : 'justify-end'
         )}
       >
-        {!collapsed && (
-          <Link
-            href="/dashboard"
-            aria-label="Nhẩm"
-            className="rounded-md px-1 text-[22px] text-nham-text leading-none tracking-tight transition-colors hover:text-nham-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent"
-            style={{ fontFamily: 'Lora, serif' }}
-          >
-            Nhẩm
-          </Link>
-        )}
         <SidebarTooltip
           enabled={collapsed}
           label={pinnedCollapsed ? t('expandSidebar') : t('collapseSidebar')}
@@ -285,10 +254,10 @@ export function DesktopSidebar({
         </SidebarTooltip>
       </div>
 
-      {/* Scroll region: composer + nav + onboarding + settings */}
+      {/* Scroll region: nav + onboarding + settings */}
       <div className="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto p-3">
-        <GlobalComposer collapsed={collapsed} />
         <nav className="flex flex-col gap-3">
+          <SectionHeader label={t('sectionLabel')} collapsed={collapsed} />
           <ul className="flex flex-col gap-1.5">
             {navItems.map((item) => (
               <li key={item.id}>

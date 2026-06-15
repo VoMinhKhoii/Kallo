@@ -53,25 +53,16 @@
       "openMenu": "Open menu",
       "closeMenu": "Close menu"
     },
-    "bottomNav": {
-      "label": "Primary",
-      "you": "You",
-      "youSheetLabel": "Your account",
-      "language": "Language",
-      "logMeal": "Log a meal"
-    },
     "mainSidebar": {
       "navigationLabel": "Main navigation",
       "sectionLabel": "Main",
-      "dashboard": "Today",
+      "dashboard": "Dashboard",
       "tracking": "Tracking",
-      "nutrition": "Patterns",
-      "logging": "Meals",
+      "nutrition": "Nutrition",
+      "logging": "Logging",
       "groups": "Groups",
       "admin": "Admin",
       "settings": "Settings",
-      "logMeal": "Log a meal",
-      "composerTitle": "What did you eat?",
       "expandSidebar": "Expand sidebar",
       "collapseSidebar": "Collapse sidebar",
       "completeProfile": "Complete profile",

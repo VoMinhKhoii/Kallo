@@ -15,7 +15,6 @@ export interface NavItemConfig {
   adminOnly?: boolean;
 }
 
-// Order mirrors the daily loop — Today / Meals / Patterns / Groups.
 export const NAV_ITEMS: readonly NavItemConfig[] = [
   {
     id: 'dashboard',
@@ -24,16 +23,16 @@ export const NAV_ITEMS: readonly NavItemConfig[] = [
     icon: LayoutDashboard,
   },
   {
-    id: 'logging',
-    href: '/logging',
-    labelKey: 'logging',
-    icon: UtensilsCrossed,
-  },
-  {
     id: 'nutrition',
     href: '/nutrition',
     labelKey: 'nutrition',
     icon: Activity,
+  },
+  {
+    id: 'logging',
+    href: '/logging',
+    labelKey: 'logging',
+    icon: UtensilsCrossed,
   },
   {
     id: 'groups',

@@ -1,7 +1,7 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { BottomTabBar } from './bottom-tab-bar';
+import { MobileNav } from './mobile-nav';
 
 const { createClientMock, toastErrorMock } = vi.hoisted(() => ({
   createClientMock: vi.fn(),
@@ -18,8 +18,8 @@ vi.mock('sonner', () => ({
   },
 }));
 
-// Render Sheet primitives inline so the "You" sheet content is queryable
-// without driving Radix's portal-based open animation.
+// Render Sheet primitives inline so the drawer content is queryable without
+// having to drive the trigger through Radix's portal-based open animation.
 vi.mock('@/components/ui/sheet', () => ({
   Sheet: ({ children }: { children: React.ReactNode }) => <>{children}</>,
   SheetContent: ({ children }: { children: React.ReactNode }) => (
@@ -34,45 +34,49 @@ vi.mock('@/components/ui/sheet', () => ({
   SheetTitle: ({ children }: { children: React.ReactNode }) => (
     <h2>{children}</h2>
   ),
+  SheetTrigger: ({ children }: { children: React.ReactNode }) => (
+    <>{children}</>
+  ),
 }));
 
 const baseUser = { email: 'minh@example.com', displayName: 'Minh' };
 
-describe('BottomTabBar', () => {
+describe('MobileNav', () => {
   beforeEach(() => {
     createClientMock.mockReset();
     toastErrorMock.mockReset();
   });
 
-  it('renders the three primary destinations as tab links', () => {
-    render(<BottomTabBar user={baseUser} />);
+  it('renders the hamburger button and the standard nav destinations', () => {
+    render(<MobileNav user={baseUser} />);
 
+    expect(
+      screen.getByRole('button', { name: 'openMenu' })
+    ).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'dashboard' })).toHaveAttribute(
       'href',
       '/dashboard'
-    );
-    expect(screen.getByRole('link', { name: 'logging' })).toHaveAttribute(
-      'href',
-      '/logging'
     );
     expect(screen.getByRole('link', { name: 'nutrition' })).toHaveAttribute(
       'href',
       '/nutrition'
     );
+    expect(screen.getByRole('link', { name: 'logging' })).toHaveAttribute(
+      'href',
+      '/logging'
+    );
+    expect(
+      screen.queryByRole('link', { name: 'admin' })
+    ).not.toBeInTheDocument();
   });
 
-  it('exposes Groups, Settings and sign out inside the You sheet', () => {
-    render(<BottomTabBar user={baseUser} />);
+  it('shows the admin destination only when isAdmin is true', () => {
+    render(<MobileNav user={baseUser} isAdmin />);
 
-    expect(screen.getByRole('link', { name: 'groups' })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: 'admin' })).toHaveAttribute(
       'href',
-      '/groups'
+      '/admin'
     );
-    expect(screen.getByRole('link', { name: 'settings' })).toHaveAttribute(
-      'href',
-      '/settings'
-    );
-    expect(screen.getByRole('button', { name: 'signOut' })).toBeInTheDocument();
   });
 
   it('reports a sign-out failure via toast and re-enables the button', async () => {
@@ -82,7 +86,7 @@ describe('BottomTabBar', () => {
       .mockResolvedValue({ error: new Error('sign-out failed') });
     createClientMock.mockReturnValue({ auth: { signOut: signOutMock } });
 
-    render(<BottomTabBar user={baseUser} />);
+    render(<MobileNav user={baseUser} />);
 
     const signOutButton = screen.getByRole('button', { name: 'signOut' });
     await user.click(signOutButton);

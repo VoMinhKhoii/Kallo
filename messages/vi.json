@@ -53,13 +53,6 @@
       "openMenu": "Mở menu",
       "closeMenu": "Đóng menu"
     },
-    "bottomNav": {
-      "label": "Chính",
-      "you": "Bạn",
-      "youSheetLabel": "Tài khoản của bạn",
-      "language": "Ngôn ngữ",
-      "logMeal": "Ghi bữa ăn"
-    },
     "mainSidebar": {
       "navigationLabel": "Điều hướng chính",
       "sectionLabel": "Chính",
@@ -69,8 +62,6 @@
       "logging": "Ghi nhận",
       "groups": "Nhóm",
       "admin": "Quản trị",
-      "logMeal": "Ghi món",
-      "composerTitle": "Bạn đã ăn gì?",
       "settings": "Cài đặt",
       "expandSidebar": "Mở rộng thanh bên",
       "collapseSidebar": "Thu gọn thanh bên",
