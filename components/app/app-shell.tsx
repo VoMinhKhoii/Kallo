@@ -1,7 +1,7 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { useState } from 'react';
+import { useState, useSyncExternalStore } from 'react';
 import { toast } from 'sonner';
 import { WizardShell } from '@/components/onboarding/wizard-shell';
 import { useRouter } from '@/i18n/navigation';
@@ -34,6 +34,10 @@ interface AppShellProps {
 
 const FALLBACK_USER: UserMenuUser = { email: null, displayName: null };
 
+function subscribeToStepOneLocaleDraft() {
+  return () => {};
+}
+
 export function AppShell({
   onboardingStep,
   initialProfile,
@@ -45,28 +49,38 @@ export function AppShell({
   children,
 }: AppShellProps) {
   const tNudge = useTranslations('app.onboardingNudge');
-  const hasStepOneLocaleDraft = readStepOneLocaleDraft() !== null;
   const router = useRouter();
   const showResumeOnboarding = shouldShowOnboardingResume(
     initialProfile,
     onboardingStep
   );
   const resumeStep = getOnboardingResumeStep(initialProfile, onboardingStep);
-  const [showOnboarding, setShowOnboarding] = useState(
-    (onboardingStep === 0 && isFirstSession) || hasStepOneLocaleDraft
+  const hasStepOneLocaleDraft = useSyncExternalStore(
+    subscribeToStepOneLocaleDraft,
+    () => readStepOneLocaleDraft() !== null,
+    () => false
   );
+  const [draftAutoOpenDismissed, setDraftAutoOpenDismissed] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(
+    onboardingStep === 0 && isFirstSession
+  );
+  const shouldAutoOpenFromDraft =
+    hasStepOneLocaleDraft && !draftAutoOpenDismissed;
+  const onboardingOpen = showOnboarding || shouldAutoOpenFromDraft;
 
   const handleClose = () => {
     setShowOnboarding(false);
+    setDraftAutoOpenDismissed(true);
   };
 
   const handleComplete = () => {
     setShowOnboarding(false);
+    setDraftAutoOpenDismissed(true);
     router.refresh();
   };
 
   const handleResume = () => setShowOnboarding(true);
-  const showOnboardingNudge = showResumeOnboarding && !showOnboarding;
+  const showOnboardingNudge = showResumeOnboarding && !onboardingOpen;
 
   // Onboarding minimized state: server-truth from `initialProfile`, with
   // optimistic local override so the UI is snappy. The server actions
@@ -137,7 +151,7 @@ export function AppShell({
         </div>
       </div>
 
-      {showOnboarding && (
+      {onboardingOpen && (
         <WizardShell
           initialStep={hasStepOneLocaleDraft ? 1 : resumeStep}
           initialProfile={initialProfile}

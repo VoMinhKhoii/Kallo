@@ -996,9 +996,30 @@
       "toggleDetails": "Toggle meal details",
       "total": "Total"
     },
+    "manualLogging": {
+      "searchPlaceholder": "Search foods...",
+      "gramsPlaceholder": "100",
+      "gramsUnit": "g",
+      "gramsLabel": "Grams",
+      "addItem": "Add food",
+      "removeItem": "Remove food",
+      "noResults": "No foods found",
+      "searching": "Searching...",
+      "recentFoods": "Recent foods",
+      "stateRaw": "raw",
+      "stateCooked": "cooked",
+      "kcalPer100g": "{kcal} kcal/100g",
+      "rowKcal": "{kcal} kcal",
+      "total": "Total",
+      "totalKcal": "{kcal} kcal",
+      "totalMacros": "P {protein} · C {carbs} · F {fat}",
+      "relatedMatch": "related"
+    },
     "mode": {
       "normal": "Normal",
       "normalDescription": "Break a meal into ingredients for a precise estimate",
+      "manual": "Manual",
+      "manualDescription": "Search foods and enter exact grams",
       "cheat": "Cheat meal",
       "cheatDescription": "Hard-to-count occasions — set a few sliders instead"
     },
