@@ -326,23 +326,26 @@ export function FeedArea({
     );
     if (rows.length === 0 || saveManualMeal.isPending) return;
 
-    saveManualMeal.mutate({
-      mealId: crypto.randomUUID(),
-      originDate: selectedDate,
-      loggedDate: selectedDate,
-      timezoneOffset: new Date().getTimezoneOffset(),
-      rows,
-    }, {
-      onSuccess: () => {
-        toast.success(t('savedMeal'));
+    saveManualMeal.mutate(
+      {
+        mealId: crypto.randomUUID(),
+        originDate: selectedDate,
+        loggedDate: selectedDate,
+        timezoneOffset: new Date().getTimezoneOffset(),
+        rows,
       },
-      onError: (error) => {
-        toast.error(error instanceof Error ? error.message : t('saveError'));
-      },
-    });
+      {
+        onSuccess: () => {
+          toast.success(t('savedMeal'));
+        },
+        onError: (error) => {
+          toast.error(error instanceof Error ? error.message : t('saveError'));
+        },
+      }
+    );
     inputRef.current?.clear();
     scrollToBottom();
-  }, [saveManualMeal, selectedDate, scrollToBottom]);
+  }, [saveManualMeal, selectedDate, scrollToBottom, t]);
 
   const handleAnalysisComplete = useCallback(() => {
     const originDate =
