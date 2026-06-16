@@ -75,6 +75,7 @@ class ManualLogController extends AutoDisposeNotifier<ManualLogState> {
   /// Add a picked search result with a sensible default portion the user can
   /// immediately edit inline (one tap to add keeps the flow fast).
   void addIngredient(IngredientSearchResult ingredient) {
+    if (state.items.length >= 30) return;
     state = state.copyWith(
       items: [
         ...state.items,
@@ -84,10 +85,11 @@ class ManualLogController extends AutoDisposeNotifier<ManualLogState> {
   }
 
   void updateGrams(String itemId, double? grams) {
+    final clamped = grams == null ? null : grams.clamp(0, 5000).toDouble();
     state = state.copyWith(
       items: [
         for (final item in state.items)
-          if (item.id == itemId) item.copyWith(grams: () => grams) else item,
+          if (item.id == itemId) item.copyWith(grams: () => clamped) else item,
       ],
     );
   }

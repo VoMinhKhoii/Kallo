@@ -267,7 +267,7 @@ export function rrfFuseCandidates(
   const addArm = (list: MatchInfo[]) => {
     list.forEach((candidate, rank) => {
       const id = candidate.foodCompositionId;
-      const contribution = 1 / (RRF_K + rank);
+      const contribution = 1 / (RRF_K + rank + 1);
       const existing = fused.get(id);
       if (!existing) {
         fused.set(id, { score: contribution, bestRank: rank, candidate });

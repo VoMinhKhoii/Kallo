@@ -41,7 +41,7 @@ vi.mock('@/components/logging/input/meal-input', () => ({
   MealInput: forwardRef(function MockMealInput(_props, ref) {
     useImperativeHandle(ref, () => ({
       getText: () => '',
-      getManualLogging: () => ({ loggingMode: 'default' }),
+      getManualLogging: () => ({ loggingMode: 'normal' }),
       clear: vi.fn(),
       focus: vi.fn(),
       setText: vi.fn(),

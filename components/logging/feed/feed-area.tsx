@@ -332,6 +332,13 @@ export function FeedArea({
       loggedDate: selectedDate,
       timezoneOffset: new Date().getTimezoneOffset(),
       rows,
+    }, {
+      onSuccess: () => {
+        toast.success(t('savedMeal'));
+      },
+      onError: (error) => {
+        toast.error(error instanceof Error ? error.message : t('saveError'));
+      },
     });
     inputRef.current?.clear();
     scrollToBottom();

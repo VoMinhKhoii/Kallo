@@ -238,7 +238,11 @@ describe('saveManualMealAction', () => {
       group.ingredients[0].nutrition.caloriesKcal ?? Number.NaN
     );
     // loggedAt lands inside the local day that was sent (UTC+7).
-    expect(result.meal.loggedAt.startsWith('2026-06-1')).toBe(true);
+    const loggedAtMs = Date.parse(result.meal.loggedAt);
+    const localMs = loggedAtMs - baseInput.timezoneOffset * 60_000;
+    expect(new Date(localMs).toISOString().slice(0, 10)).toBe(
+      baseInput.loggedDate
+    );
   });
 
   it('rejects invalid input (no items, non-positive grams)', async () => {

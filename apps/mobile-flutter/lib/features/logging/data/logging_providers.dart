@@ -181,7 +181,11 @@ class ConfirmMealNotifier extends FamilyNotifier<bool, String> {
       state = false;
       // onSettled: refetch the day (awaited — the feed swaps the pending card
       // for the saved one) + invalidate the other meal-keyed surfaces.
-      await notifier.refresh();
+      try {
+        await notifier.refresh();
+      } catch (_) {
+        ref.invalidate(loggingDayProvider(dayArgs));
+      }
       invalidateMealSurfaces(ref, arg, originDate, includeDay: false);
     }
   }

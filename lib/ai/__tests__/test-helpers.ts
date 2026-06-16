@@ -189,16 +189,16 @@ export function createSourceAwareMockDb(
       // *_all_sources functions add so the caller can re-partition.
       const withSource = (rows: unknown[] | undefined, sourceId: number) =>
         (rows ?? []).map((r) => ({ source_id: sourceId, ...(r as object) }));
-      if (q.includes('match_ingredients_all_sources')) {
-        return Promise.resolve([
-          ...withSource(routes.fao_vector, 1),
-          ...withSource(routes.usda_vector, 2),
-        ]);
-      }
       if (q.includes('fuzzy_match_ingredients_all_sources')) {
         return Promise.resolve([
           ...withSource(routes.fao_fuzzy, 1),
           ...withSource(routes.usda_fuzzy, 2),
+        ]);
+      }
+      if (q.includes('match_ingredients_all_sources')) {
+        return Promise.resolve([
+          ...withSource(routes.fao_vector, 1),
+          ...withSource(routes.usda_vector, 2),
         ]);
       }
       // Source-aware vector matching (legacy v1 path)
