@@ -28,6 +28,7 @@ class MealInput extends StatefulWidget {
     required this.controller,
     required this.onSubmit,
     this.onCancel,
+    this.onManualTap,
     this.analyzing = false,
   });
 
@@ -39,6 +40,10 @@ class MealInput extends StatefulWidget {
   /// the field stays editable so a new meal can be typed mid-analysis (the
   /// requestId-supersede mechanism handles overlap).
   final bool analyzing;
+
+  /// Opens the manual-log sheet (search foods + exact grams, no AI). Rendered
+  /// as a ghost button beside submit when provided.
+  final VoidCallback? onManualTap;
 
   @override
   State<MealInput> createState() => _MealInputState();
@@ -178,6 +183,14 @@ class _MealInputState extends State<MealInput>
             ),
           ),
           const SizedBox(width: NhamSpacing.sp3),
+          if (widget.onManualTap != null && !widget.analyzing) ...[
+            _GhostButton(
+              icon: Icons.edit_note,
+              label: 'logging.manualLogging.openSheet'.tr(),
+              onTap: widget.onManualTap!,
+            ),
+            const SizedBox(width: NhamSpacing.sp2),
+          ],
           if (!_canSubmit && widget.analyzing && widget.onCancel != null)
             _ActionButton(
               icon:
@@ -196,6 +209,43 @@ class _MealInputState extends State<MealInput>
               onTap: _canSubmit ? _submit : null,
             ),
         ],
+      ),
+    );
+  }
+}
+
+/// 32x32 ghost button (umber outline, transparent bg) — the manual-log entry
+/// point sitting beside the submit button, mirroring the web's mode picker
+/// placement next to send.
+class _GhostButton extends StatelessWidget {
+  const _GhostButton({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      button: true,
+      label: label,
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          width: 32,
+          height: 32,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: Colors.transparent,
+            borderRadius: BorderRadius.circular(NhamRadii.md),
+            border: Border.all(color: NhamColors.btnBorderGhost),
+          ),
+          child: Icon(icon, size: 18, color: NhamColors.btn),
+        ),
       ),
     );
   }

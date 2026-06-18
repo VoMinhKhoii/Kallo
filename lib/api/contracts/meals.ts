@@ -9,6 +9,7 @@
  *   - `export type` re-exports of the actions' return types (erased at runtime).
  */
 import { z } from 'zod';
+import { dateStringSchema, timezoneOffsetSchema } from '@/lib/validation';
 
 export { dateStringSchema, timezoneOffsetSchema } from '@/lib/validation';
 
@@ -36,6 +37,36 @@ export const confirmMealSchema = z.object({
 });
 
 export type ConfirmMealInput = z.infer<typeof confirmMealSchema>;
+
+/**
+ * Request body for `POST /api/v1/meals/manual` → `saveManualMealAction`.
+ *
+ * Deterministic manual logging: the client sends ingredient ids + grams; the
+ * server computes nutrition from per-100g composition data and persists the
+ * meal directly — no AI pipeline, no pendingAnalyses staging. `mealId` is the
+ * optional client-generated id so the optimistic card and the persisted row
+ * share a stable key.
+ */
+export const saveManualMealSchema = z.object({
+  mealId: z.string().uuid('mealId phải là UUID hợp lệ.').optional(),
+  items: z
+    .array(
+      z.object({
+        foodCompositionId: z.string().min(1).max(120),
+        grams: z.number().positive().finite().max(5000),
+        // The user's raw typed text, saved as the ingredient label. Falls back
+        // to the composition's name server-side when absent.
+        label: z.string().trim().min(1).max(200).optional(),
+      })
+    )
+    .min(1)
+    .max(30),
+  mealSlot: z.enum(['breakfast', 'lunch', 'snack', 'dinner']).optional(),
+  loggedDate: dateStringSchema,
+  timezoneOffset: timezoneOffsetSchema,
+});
+
+export type SaveManualMealInput = z.infer<typeof saveManualMealSchema>;
 
 export type {
   ConfirmMealResponse,

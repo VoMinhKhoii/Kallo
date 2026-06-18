@@ -4,10 +4,10 @@
  * The /api/analyze-meal route is gated by Postgres-backed counters in
  * `analysis_in_flight_limits` and `analysis_rate_limit_windows`. Aborted
  * SSE streams, dev hot-reloads mid-pipeline, and process kills mid-stream
- * leave the in-flight `count` > 0 forever (no TTL/reaper yet — that's
- * deferred Phase 3 reliability work). Once `count` exceeds the
- * `concurrent_user` limit (default 1), every new request is blocked with a
- * 429 "rateLimited" response until someone manually zeroes the row.
+ * can leave the in-flight `count` > 0. The runtime now self-heals rows older
+ * than `ANALYSIS_IN_FLIGHT_STALE_AFTER_SECONDS` (default 90s), but this script
+ * is still useful when you want to clear fresh/stuck rows immediately or wipe
+ * the minute/hour/day counters too.
  *
  * Usage:
  *   bun --env-file=.env.local scripts/reset-analysis-guards.ts
