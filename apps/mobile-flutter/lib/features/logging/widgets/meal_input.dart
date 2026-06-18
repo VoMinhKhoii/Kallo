@@ -178,9 +178,11 @@ class _MealInputState extends State<MealInput>
             ),
           ),
           const SizedBox(width: NhamSpacing.sp3),
-          if (widget.analyzing && widget.onCancel != null)
+          if (!_canSubmit && widget.analyzing && widget.onCancel != null)
             _ActionButton(
-              icon: LucideIcons.square, // lucide Square (filled) → LucideIcons.square
+              icon:
+                  LucideIcons
+                      .square, // lucide Square (filled) → LucideIcons.square
               iconSize: 14,
               label: 'common.cancel'.tr(),
               onTap: widget.onCancel,

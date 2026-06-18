@@ -77,44 +77,59 @@ class _OptionButtonState extends State<_OptionButton> {
   @override
   Widget build(BuildContext context) {
     // Inactive `hover:text-[#2C2416]` — text darkens to `text` on press.
-    final color = widget.active || _pressed
-        ? NhamColors.text
-        : NhamColors.textWarm;
-    return GestureDetector(
+    final color =
+        widget.active || _pressed ? NhamColors.text : NhamColors.textWarm;
+    final label =
+        widget.option.hint == null
+            ? widget.option.label
+            : '${widget.option.label}, ${widget.option.hint}';
+    return Semantics(
+      button: true,
+      selected: widget.active,
+      excludeSemantics: true,
+      label: label,
       onTap: widget.onTap,
-      onTapDown: (_) => setState(() => _pressed = true),
-      onTapUp: (_) => setState(() => _pressed = false),
-      onTapCancel: () => setState(() => _pressed = false),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 150), // transition-all
-        alignment: Alignment.center,
-        // py-2
-        padding: const EdgeInsets.symmetric(vertical: NhamSpacing.sp2),
-        decoration: BoxDecoration(
-          color: widget.active ? NhamColors.elev : Colors.transparent,
-          borderRadius: BorderRadius.circular(NhamRadii.md), // rounded-lg = 8
-          boxShadow: widget.active ? const [NhamShadows.sm] : null,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              widget.option.label,
-              textAlign: TextAlign.center,
-              style: NhamTextStyles.sansMedium(fontSize: NhamFontSize.detail)
-                  .copyWith(color: color),
-            ),
-            if (widget.option.hint != null)
-              Padding(
-                padding: const EdgeInsets.only(top: 2), // mt-0.5
-                child: Text(
-                  widget.option.hint!,
-                  textAlign: TextAlign.center,
-                  style: NhamTextStyles.sansRegular(fontSize: NhamFontSize.eyebrow)
-                      .copyWith(height: 13 / 10, color: color.withValues(alpha: 0.7)),
-                ),
+      child: GestureDetector(
+        onTap: widget.onTap,
+        onTapDown: (_) => setState(() => _pressed = true),
+        onTapUp: (_) => setState(() => _pressed = false),
+        onTapCancel: () => setState(() => _pressed = false),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 150), // transition-all
+          alignment: Alignment.center,
+          // py-2
+          padding: const EdgeInsets.symmetric(vertical: NhamSpacing.sp2),
+          decoration: BoxDecoration(
+            color: widget.active ? NhamColors.elev : Colors.transparent,
+            borderRadius: BorderRadius.circular(NhamRadii.md), // rounded-lg = 8
+            boxShadow: widget.active ? const [NhamShadows.sm] : null,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                widget.option.label,
+                textAlign: TextAlign.center,
+                style: NhamTextStyles.sansMedium(
+                  fontSize: NhamFontSize.detail,
+                ).copyWith(color: color),
               ),
-          ],
+              if (widget.option.hint != null)
+                Padding(
+                  padding: const EdgeInsets.only(top: 2), // mt-0.5
+                  child: Text(
+                    widget.option.hint!,
+                    textAlign: TextAlign.center,
+                    style: NhamTextStyles.sansRegular(
+                      fontSize: NhamFontSize.eyebrow,
+                    ).copyWith(
+                      height: 13 / 10,
+                      color: color.withValues(alpha: 0.7),
+                    ),
+                  ),
+                ),
+            ],
+          ),
         ),
       ),
     );

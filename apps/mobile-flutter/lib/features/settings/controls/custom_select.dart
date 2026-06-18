@@ -43,7 +43,7 @@ class CustomSelect extends StatefulWidget {
 }
 
 class _CustomSelectState extends State<CustomSelect>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   final LayerLink _link = LayerLink();
   final GlobalKey _triggerKey = GlobalKey();
   OverlayEntry? _entry;
@@ -79,18 +79,19 @@ class _CustomSelectState extends State<CustomSelect>
     final box = _triggerKey.currentContext?.findRenderObject() as RenderBox?;
     final width = box?.size.width ?? 0;
     _entry = OverlayEntry(
-      builder: (_) => _DropdownOverlay(
-        link: _link,
-        width: width,
-        animation: _popover,
-        options: widget.options,
-        value: widget.value,
-        onPick: (v) {
-          widget.onChange(v);
-          _close();
-        },
-        onDismiss: _close,
-      ),
+      builder:
+          (_) => _DropdownOverlay(
+            link: _link,
+            width: width,
+            animation: _popover,
+            options: widget.options,
+            value: widget.value,
+            onPick: (v) {
+              widget.onChange(v);
+              _close();
+            },
+            onDismiss: _close,
+          ),
     );
     Overlay.of(context).insert(_entry!);
     setState(() => _open = true);
@@ -111,72 +112,81 @@ class _CustomSelectState extends State<CustomSelect>
 
   @override
   Widget build(BuildContext context) {
-    final selected = widget.options
-        .where((o) => o.value == widget.value)
-        .map((o) => o.label)
-        .firstOrNull;
+    final selected =
+        widget.options
+            .where((o) => o.value == widget.value)
+            .map((o) => o.label)
+            .firstOrNull;
 
-    final borderColor = _open
-        ? NhamColors.accent
-        : (_pressed ? NhamColors.accent50 : NhamColors.inputBorder);
+    final borderColor =
+        _open
+            ? NhamColors.accent
+            : (_pressed ? NhamColors.accent50 : NhamColors.inputBorder);
 
-    return CompositedTransformTarget(
-      link: _link,
-      child: GestureDetector(
-        onTap: _toggle,
-        onTapDown: (_) => setState(() => _pressed = true),
-        onTapUp: (_) => setState(() => _pressed = false),
-        onTapCancel: () => setState(() => _pressed = false),
-        child: Container(
-          key: _triggerKey,
-          // Outer ring: `ring-1 ring-accent/20` when open, sitting 1px outside
-          // the 1px border at the same `rounded-lg` (8px) radius.
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(NhamRadii.md + 1),
-            border: Border.all(
-              color: _open ? NhamColors.accent20 : Colors.transparent,
-              width: 1,
-            ),
-          ),
+    return Semantics(
+      button: true,
+      excludeSemantics: true,
+      label: selected ?? widget.placeholder ?? '',
+      onTap: _toggle,
+      child: CompositedTransformTarget(
+        link: _link,
+        child: GestureDetector(
+          onTap: _toggle,
+          onTapDown: (_) => setState(() => _pressed = true),
+          onTapUp: (_) => setState(() => _pressed = false),
+          onTapCancel: () => setState(() => _pressed = false),
           child: Container(
+            key: _triggerKey,
+            // Outer ring: `ring-1 ring-accent/20` when open, sitting 1px outside
+            // the 1px border at the same `rounded-lg` (8px) radius.
             decoration: BoxDecoration(
-              color: NhamColors.elev,
-              borderRadius: BorderRadius.circular(NhamRadii.md),
-              border: Border.all(color: borderColor, width: 1),
-              boxShadow: _open ? const [NhamShadows.sm] : null,
+              borderRadius: BorderRadius.circular(NhamRadii.md + 1),
+              border: Border.all(
+                color: _open ? NhamColors.accent20 : Colors.transparent,
+                width: 1,
+              ),
             ),
-            padding: const EdgeInsets.symmetric(
-              horizontal: NhamSpacing.sp3,
-              vertical: NhamSpacing.sp2,
-            ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.only(right: NhamSpacing.sp2),
-                    child: Text(
-                      selected ?? widget.placeholder ?? '',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style:
-                          NhamTextStyles.sansRegular(fontSize: NhamFontSize.sm)
-                              .copyWith(
-                        color: selected != null
-                            ? NhamColors.text
-                            : NhamColors.textHelp,
+            child: Container(
+              decoration: BoxDecoration(
+                color: NhamColors.elev,
+                borderRadius: BorderRadius.circular(NhamRadii.md),
+                border: Border.all(color: borderColor, width: 1),
+                boxShadow: _open ? const [NhamShadows.sm] : null,
+              ),
+              padding: const EdgeInsets.symmetric(
+                horizontal: NhamSpacing.sp3,
+                vertical: NhamSpacing.sp2,
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.only(right: NhamSpacing.sp2),
+                      child: Text(
+                        selected ?? widget.placeholder ?? '',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: NhamTextStyles.sansRegular(
+                          fontSize: NhamFontSize.sm,
+                        ).copyWith(
+                          color:
+                              selected != null
+                                  ? NhamColors.text
+                                  : NhamColors.textHelp,
+                        ),
                       ),
                     ),
                   ),
-                ),
-                RotationTransition(
-                  turns: Tween<double>(begin: 0, end: 0.5).animate(_chevron),
-                  child: const Icon(
-                    LucideIcons.chevronDown,
-                    size: 16,
-                    color: NhamColors.textWarm,
+                  RotationTransition(
+                    turns: Tween<double>(begin: 0, end: 0.5).animate(_chevron),
+                    child: const Icon(
+                      LucideIcons.chevronDown,
+                      size: 16,
+                      color: NhamColors.textWarm,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
@@ -246,8 +256,7 @@ class _DropdownOverlay extends StatelessWidget {
                 child: Material(
                   color: Colors.transparent,
                   child: Container(
-                    padding:
-                        const EdgeInsets.symmetric(vertical: 6), // py-1.5
+                    padding: const EdgeInsets.symmetric(vertical: 6), // py-1.5
                     decoration: BoxDecoration(
                       color: NhamColors.elev,
                       borderRadius: BorderRadius.circular(NhamRadii.buttonXl),
@@ -303,34 +312,47 @@ class _DropdownRowState extends State<_DropdownRow> {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
+    return Semantics(
+      button: true,
+      selected: widget.selected,
+      excludeSemantics: true,
+      label: widget.option.label,
       onTap: widget.onTap,
-      onTapDown: (_) => setState(() => _pressed = true),
-      onTapUp: (_) => setState(() => _pressed = false),
-      onTapCancel: () => setState(() => _pressed = false),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 150), // transition-colors
-        color: _pressed ? NhamColors.track : Colors.transparent,
-        padding: const EdgeInsets.symmetric(
-          horizontal: NhamSpacing.sp3,
-          vertical: NhamSpacing.sp2 + 2, // py-2.5 = 10
-        ),
-        child: Row(
-          children: [
-            Expanded(
-              child: Text(
-                widget.option.label,
-                style: (widget.selected
-                        ? NhamTextStyles.sansMedium(fontSize: NhamFontSize.sm)
-                        : NhamTextStyles.sansRegular(fontSize: NhamFontSize.sm))
-                    .copyWith(color: NhamColors.text),
+      child: GestureDetector(
+        onTap: widget.onTap,
+        onTapDown: (_) => setState(() => _pressed = true),
+        onTapUp: (_) => setState(() => _pressed = false),
+        onTapCancel: () => setState(() => _pressed = false),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 150), // transition-colors
+          color: _pressed ? NhamColors.track : Colors.transparent,
+          padding: const EdgeInsets.symmetric(
+            horizontal: NhamSpacing.sp3,
+            vertical: NhamSpacing.sp2 + 2, // py-2.5 = 10
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  widget.option.label,
+                  style: (widget.selected
+                          ? NhamTextStyles.sansMedium(fontSize: NhamFontSize.sm)
+                          : NhamTextStyles.sansRegular(
+                            fontSize: NhamFontSize.sm,
+                          ))
+                      .copyWith(color: NhamColors.text),
+                ),
               ),
-            ),
-            if (widget.selected)
-              const Icon(LucideIcons.check, size: 16, color: NhamColors.accent)
-            else
-              const SizedBox(width: 16, height: 16),
-          ],
+              if (widget.selected)
+                const Icon(
+                  LucideIcons.check,
+                  size: 16,
+                  color: NhamColors.accent,
+                )
+              else
+                const SizedBox(width: 16, height: 16),
+            ],
+          ),
         ),
       ),
     );

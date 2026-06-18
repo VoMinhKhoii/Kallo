@@ -11,20 +11,17 @@ import '../../../theme/nham_colors.dart';
 import '../providers/nutrition_overview_provider.dart';
 import '../widgets/background_section.dart';
 import '../widgets/daily_rhythm.dart';
-import '../widgets/editorial_header.dart';
 import '../widgets/empty_state.dart';
 import '../widgets/focus_section.dart';
 import '../widgets/inline_error.dart';
 import '../widgets/nutrition_skeleton.dart';
 import '../widgets/pull_quote.dart';
 import '../widgets/steady_section.dart';
-import '../widgets/verdict_hero.dart';
 
 /// Nutrition screen — mobile port of the web `NutritionShell`
 /// (`apps/mobile/src/app/(app)/(tabs)/nutrition.tsx`). A purely client-query
-/// editorial stack: header (with interactive 7d/30d/90d range toggle + verdict)
-/// → calorie rhythm card → focus spotlights → steady nutrient list → "other
-/// nutrients" toggle → vitamin-D pull-quote.
+/// editorial stack: calorie rhythm card with range toggle → focus spotlights →
+/// steady nutrient list → "other nutrients" toggle → vitamin-D pull-quote.
 ///
 /// Single column throughout (the web's lg:two-up + sm:2-col grids collapse on
 /// phone); the AnimatePresence height-collapse becomes an `AnimatedSize` fade.
@@ -92,9 +89,11 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> {
             // Native bounce physics (the only screen that was forced to
             // Clamping) + pull-to-refresh, consistent with the rest of the app.
             child: RefreshIndicator(
-              onRefresh: () => ref
-                  .read(nutritionOverviewProvider(_range).notifier)
-                  .refetch(),
+              onRefresh:
+                  () =>
+                      ref
+                          .read(nutritionOverviewProvider(_range).notifier)
+                          .refetch(),
               color: NhamColors.accent,
               child: SingleChildScrollView(
                 padding: const EdgeInsets.fromLTRB(20, 24, 20, 80),
@@ -123,9 +122,7 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> {
         message: tr('nutrition.errors.overview'),
         retryLabel: tr('nutrition.errors.retry'),
         onRetry: () {
-          ref
-              .read(nutritionOverviewProvider(_range).notifier)
-              .refetch();
+          ref.read(nutritionOverviewProvider(_range).notifier).refetch();
         },
       );
     }
@@ -137,32 +134,24 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> {
         message: tr('nutrition.errors.overview'),
         retryLabel: tr('nutrition.errors.retry'),
         onRetry: () {
-          ref
-              .read(nutritionOverviewProvider(_range).notifier)
-              .refetch();
+          ref.read(nutritionOverviewProvider(_range).notifier).refetch();
         },
       );
     }
 
-    final isEmpty = overview.loggedDays == 0;
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        EditorialHeader(
-          resolvedRange: overview.resolvedRange,
-          onRangeChange: (range) => setState(() => _range = range),
-          startDate: overview.period.startDate,
-          endDate: overview.period.endDate,
-          disabled: isFetching,
-          verdict: isEmpty ? null : VerdictHero(overview: overview),
-        ),
-        if (isEmpty) ...[
+        if (overview.loggedDays == 0) ...[
           const SizedBox(height: 48),
           const EmptyState(),
         ] else ...[
-          const SizedBox(height: 48),
-          DailyRhythm(macros: overview.macros),
+          DailyRhythm(
+            macros: overview.macros,
+            resolvedRange: overview.resolvedRange,
+            onRangeChange: (range) => setState(() => _range = range),
+            disabled: isFetching,
+          ),
           const SizedBox(height: 48),
           FocusSection(cards: overview.spotlight),
           const SizedBox(height: 48),

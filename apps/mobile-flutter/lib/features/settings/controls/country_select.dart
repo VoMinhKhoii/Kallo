@@ -50,16 +50,17 @@ class _CountrySelectState extends State<CountrySelect> {
     final box = _triggerKey.currentContext?.findRenderObject() as RenderBox?;
     final width = box?.size.width ?? 0;
     _entry = OverlayEntry(
-      builder: (_) => _CountryDropdown(
-        link: _link,
-        width: width,
-        selectedValue: widget.value,
-        onPick: (v) {
-          widget.onChange(v);
-          _close();
-        },
-        onDismiss: _close,
-      ),
+      builder:
+          (_) => _CountryDropdown(
+            link: _link,
+            width: width,
+            selectedValue: widget.value,
+            onPick: (v) {
+              widget.onChange(v);
+              _close();
+            },
+            onDismiss: _close,
+          ),
     );
     Overlay.of(context).insert(_entry!);
     setState(() => _open = true);
@@ -78,84 +79,105 @@ class _CountrySelectState extends State<CountrySelect> {
   @override
   Widget build(BuildContext context) {
     final selected =
-        kCountries.where((c) => c.value == widget.value).map((c) => c.vi).firstOrNull;
+        kCountries
+            .where((c) => c.value == widget.value)
+            .map((c) => c.vi)
+            .firstOrNull;
     final hasValue = widget.value != null;
+    final triggerLabel =
+        hasValue
+            ? (selected != null ? '${widget.value} ($selected)' : widget.value!)
+            : tr('onboarding.origin.selectCountry');
 
-    final borderColor = _open
-        ? NhamColors.accent
-        : (_pressed ? NhamColors.accent50 : NhamColors.inputBorder);
+    final borderColor =
+        _open
+            ? NhamColors.accent
+            : (_pressed ? NhamColors.accent50 : NhamColors.inputBorder);
 
-    return CompositedTransformTarget(
-      link: _link,
-      child: Stack(
-        children: [
-          GestureDetector(
-            onTap: _toggle,
-            onTapDown: (_) => setState(() => _pressed = true),
-            onTapUp: (_) => setState(() => _pressed = false),
-            onTapCancel: () => setState(() => _pressed = false),
-            child: Container(
-              key: _triggerKey,
-              // py-2.5 pl-4 pr-(10|4)
-              padding: EdgeInsets.fromLTRB(
-                NhamSpacing.sp4,
-                10,
-                hasValue ? 40 : NhamSpacing.sp4,
-                10,
-              ),
-              decoration: BoxDecoration(
-                color: _open ? NhamColors.elev : NhamColors.cream,
-                borderRadius: BorderRadius.circular(NhamRadii.buttonXl),
-                border: Border.all(color: borderColor),
-              ),
-              child: Text(
-                hasValue
-                    ? (selected != null
-                        ? '${widget.value} ($selected)'
-                        : widget.value!)
-                    : tr('onboarding.origin.selectCountry'),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style:
-                    NhamTextStyles.sansRegular(fontSize: NhamFontSize.sm).copyWith(
-                  color: hasValue ? NhamColors.text : NhamColors.textWarm,
+    return Semantics(
+      button: true,
+      excludeSemantics: true,
+      label: triggerLabel,
+      onTap: _toggle,
+      child: CompositedTransformTarget(
+        link: _link,
+        child: Stack(
+          children: [
+            GestureDetector(
+              onTap: _toggle,
+              onTapDown: (_) => setState(() => _pressed = true),
+              onTapUp: (_) => setState(() => _pressed = false),
+              onTapCancel: () => setState(() => _pressed = false),
+              child: Container(
+                key: _triggerKey,
+                width: double.infinity,
+                // py-2.5 pl-4 pr-(10|4)
+                padding: EdgeInsets.fromLTRB(
+                  NhamSpacing.sp4,
+                  10,
+                  hasValue ? 40 : NhamSpacing.sp4,
+                  10,
+                ),
+                decoration: BoxDecoration(
+                  color: _open ? NhamColors.elev : NhamColors.cream,
+                  borderRadius: BorderRadius.circular(NhamRadii.buttonXl),
+                  border: Border.all(color: borderColor),
+                ),
+                child: Text(
+                  triggerLabel,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: NhamTextStyles.sansRegular(
+                    fontSize: NhamFontSize.sm,
+                  ).copyWith(
+                    color: hasValue ? NhamColors.text : NhamColors.textWarm,
+                  ),
                 ),
               ),
             ),
-          ),
-          if (hasValue)
-            // Clear button overlay: right 10px, vertically centered, rounded-md
-            // p-1, '×' glyph, color textWarm → text on press.
-            Positioned(
-              right: 10,
-              top: 0,
-              bottom: 0,
-              child: Center(
-                child: GestureDetector(
-                  behavior: HitTestBehavior.opaque,
-                  onTap: () => widget.onChange(null),
-                  onTapDown: (_) => setState(() => _clearPressed = true),
-                  onTapUp: (_) => setState(() => _clearPressed = false),
-                  onTapCancel: () => setState(() => _clearPressed = false),
-                  child: Container(
-                    padding: const EdgeInsets.all(NhamSpacing.sp1), // p-1
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(NhamRadii.md),
-                    ),
-                    child: Text(
-                      '×', // ×
-                      style: NhamTextStyles.sansRegular(fontSize: 16).copyWith(
-                        height: 1,
-                        color: _clearPressed
-                            ? NhamColors.text
-                            : NhamColors.textWarm,
+            if (hasValue)
+              // Clear button overlay: right 10px, vertically centered, rounded-md
+              // p-1, '×' glyph, color textWarm → text on press.
+              Positioned(
+                right: 10,
+                top: 0,
+                bottom: 0,
+                child: Center(
+                  child: Semantics(
+                    button: true,
+                    excludeSemantics: true,
+                    label: tr('common.remove'),
+                    onTap: () => widget.onChange(null),
+                    child: GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: () => widget.onChange(null),
+                      onTapDown: (_) => setState(() => _clearPressed = true),
+                      onTapUp: (_) => setState(() => _clearPressed = false),
+                      onTapCancel: () => setState(() => _clearPressed = false),
+                      child: Container(
+                        padding: const EdgeInsets.all(NhamSpacing.sp1), // p-1
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(NhamRadii.md),
+                        ),
+                        child: Text(
+                          '×', // ×
+                          style: NhamTextStyles.sansRegular(
+                            fontSize: 16,
+                          ).copyWith(
+                            height: 1,
+                            color:
+                                _clearPressed
+                                    ? NhamColors.text
+                                    : NhamColors.textWarm,
+                          ),
+                        ),
                       ),
                     ),
                   ),
                 ),
               ),
-            ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -192,13 +214,14 @@ class _CountryDropdownState extends State<_CountryDropdown> {
 
   @override
   Widget build(BuildContext context) {
-    final filtered = _query.isEmpty
-        ? kCountries
-        : kCountries.where((c) {
-            final q = _query.toLowerCase();
-            return c.value.toLowerCase().contains(q) ||
-                c.vi.toLowerCase().contains(q);
-          }).toList();
+    final filtered =
+        _query.isEmpty
+            ? kCountries
+            : kCountries.where((c) {
+              final q = _query.toLowerCase();
+              return c.value.toLowerCase().contains(q) ||
+                  c.vi.toLowerCase().contains(q);
+            }).toList();
 
     return Stack(
       children: [
@@ -246,24 +269,25 @@ class _CountryDropdownState extends State<_CountryDropdown> {
                       // Search header — p-2, border-b
                       Container(
                         padding: const EdgeInsets.all(NhamSpacing.sp2),
-                        decoration: const Border(
-                          bottom: BorderSide(color: NhamColors.inputBorder),
-                        ).toBoxDecoration(),
+                        decoration:
+                            const Border(
+                              bottom: BorderSide(color: NhamColors.inputBorder),
+                            ).toBoxDecoration(),
                         child: TextField(
                           controller: _search,
                           autofocus: true,
                           onChanged: (v) => setState(() => _query = v),
                           style: NhamTextStyles.sansRegular(
-                                  fontSize: NhamFontSize.detail)
-                              .copyWith(color: NhamColors.text),
+                            fontSize: NhamFontSize.detail,
+                          ).copyWith(color: NhamColors.text),
                           decoration: InputDecoration(
                             isDense: true,
                             filled: true,
                             fillColor: NhamColors.track,
                             hintText: tr('onboarding.origin.searchCountry'),
                             hintStyle: NhamTextStyles.sansRegular(
-                                    fontSize: NhamFontSize.detail)
-                                .copyWith(color: NhamColors.textWarm),
+                              fontSize: NhamFontSize.detail,
+                            ).copyWith(color: NhamColors.textWarm),
                             contentPadding: const EdgeInsets.symmetric(
                               horizontal: NhamSpacing.sp3,
                               vertical: NhamSpacing.sp2,
@@ -277,36 +301,39 @@ class _CountryDropdownState extends State<_CountryDropdown> {
                       // List — max-h-48 (192px), p-1
                       ConstrainedBox(
                         constraints: const BoxConstraints(maxHeight: 192),
-                        child: filtered.isEmpty
-                            ? Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: NhamSpacing.sp3,
-                                  vertical: NhamSpacing.sp2,
+                        child:
+                            filtered.isEmpty
+                                ? Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: NhamSpacing.sp3,
+                                    vertical: NhamSpacing.sp2,
+                                  ),
+                                  child: Text(
+                                    tr('onboarding.origin.noCountries'),
+                                    textAlign: TextAlign.center,
+                                    style: NhamTextStyles.sansRegular(
+                                      fontSize: NhamFontSize.detail,
+                                    ).copyWith(color: NhamColors.textWarm),
+                                  ),
+                                )
+                                : ListView.builder(
+                                  padding: const EdgeInsets.all(
+                                    NhamSpacing.sp1,
+                                  ),
+                                  shrinkWrap: true,
+                                  keyboardDismissBehavior:
+                                      ScrollViewKeyboardDismissBehavior.onDrag,
+                                  itemCount: filtered.length,
+                                  itemBuilder: (_, i) {
+                                    final c = filtered[i];
+                                    return _CountryRow(
+                                      label: c.value,
+                                      vi: c.vi,
+                                      selected: widget.selectedValue == c.value,
+                                      onTap: () => widget.onPick(c.value),
+                                    );
+                                  },
                                 ),
-                                child: Text(
-                                  tr('onboarding.origin.noCountries'),
-                                  textAlign: TextAlign.center,
-                                  style: NhamTextStyles.sansRegular(
-                                          fontSize: NhamFontSize.detail)
-                                      .copyWith(color: NhamColors.textWarm),
-                                ),
-                              )
-                            : ListView.builder(
-                                padding: const EdgeInsets.all(NhamSpacing.sp1),
-                                shrinkWrap: true,
-                                keyboardDismissBehavior:
-                                    ScrollViewKeyboardDismissBehavior.onDrag,
-                                itemCount: filtered.length,
-                                itemBuilder: (_, i) {
-                                  final c = filtered[i];
-                                  return _CountryRow(
-                                    label: c.value,
-                                    vi: c.vi,
-                                    selected: widget.selectedValue == c.value,
-                                    onTap: () => widget.onPick(c.value),
-                                  );
-                                },
-                              ),
                       ),
                     ],
                   ),
@@ -320,9 +347,9 @@ class _CountryDropdownState extends State<_CountryDropdown> {
   }
 
   OutlineInputBorder _searchBorder() => OutlineInputBorder(
-        borderRadius: BorderRadius.circular(NhamRadii.lg), // rounded-lg = 10
-        borderSide: BorderSide.none,
-      );
+    borderRadius: BorderRadius.circular(NhamRadii.lg), // rounded-lg = 10
+    borderSide: BorderSide.none,
+  );
 }
 
 class _CountryRow extends StatefulWidget {
@@ -347,44 +374,57 @@ class _CountryRowState extends State<_CountryRow> {
 
   @override
   Widget build(BuildContext context) {
-    final Color? bg = widget.selected
-        ? NhamColors.accent10
-        : (_pressed ? NhamColors.track : null);
+    final Color? bg =
+        widget.selected
+            ? NhamColors.accent10
+            : (_pressed ? NhamColors.track : null);
 
-    return GestureDetector(
+    return Semantics(
+      button: true,
+      selected: widget.selected,
+      excludeSemantics: true,
+      label: '${widget.label}, ${widget.vi}',
       onTap: widget.onTap,
-      onTapDown: (_) => setState(() => _pressed = true),
-      onTapUp: (_) => setState(() => _pressed = false),
-      onTapCancel: () => setState(() => _pressed = false),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 150),
-        decoration: BoxDecoration(
-          color: bg,
-          borderRadius: BorderRadius.circular(NhamRadii.lg), // rounded-lg = 10
-        ),
-        padding: const EdgeInsets.symmetric(
-          horizontal: NhamSpacing.sp3,
-          vertical: NhamSpacing.sp2,
-        ),
-        child: Row(
-          children: [
-            Expanded(
-              child: Text(
-                widget.label,
-                style: (widget.selected
-                        ? NhamTextStyles.sansMedium(
-                            fontSize: NhamFontSize.detail)
-                        : NhamTextStyles.sansRegular(
-                            fontSize: NhamFontSize.detail))
-                    .copyWith(color: NhamColors.text),
+      child: GestureDetector(
+        onTap: widget.onTap,
+        onTapDown: (_) => setState(() => _pressed = true),
+        onTapUp: (_) => setState(() => _pressed = false),
+        onTapCancel: () => setState(() => _pressed = false),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          decoration: BoxDecoration(
+            color: bg,
+            borderRadius: BorderRadius.circular(
+              NhamRadii.lg,
+            ), // rounded-lg = 10
+          ),
+          padding: const EdgeInsets.symmetric(
+            horizontal: NhamSpacing.sp3,
+            vertical: NhamSpacing.sp2,
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  widget.label,
+                  style: (widget.selected
+                          ? NhamTextStyles.sansMedium(
+                            fontSize: NhamFontSize.detail,
+                          )
+                          : NhamTextStyles.sansRegular(
+                            fontSize: NhamFontSize.detail,
+                          ))
+                      .copyWith(color: NhamColors.text),
+                ),
               ),
-            ),
-            Text(
-              widget.vi,
-              style: NhamTextStyles.sansRegular(fontSize: NhamFontSize.xxs)
-                  .copyWith(color: NhamColors.textWarm),
-            ),
-          ],
+              Text(
+                widget.vi,
+                style: NhamTextStyles.sansRegular(
+                  fontSize: NhamFontSize.xxs,
+                ).copyWith(color: NhamColors.textWarm),
+              ),
+            ],
+          ),
         ),
       ),
     );

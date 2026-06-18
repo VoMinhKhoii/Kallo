@@ -15,10 +15,13 @@ import 'dart:convert';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
+import 'package:supabase_flutter/supabase_flutter.dart' show Session;
 
 import '../models/streaming.dart';
 import '../services/supabase_service.dart';
 import 'env.dart';
+
+const _authRefreshSkew = Duration(minutes: 5);
 
 /// Client-side mirror of the server `ApiError` envelope.
 ///
@@ -112,10 +115,26 @@ class ApiClient {
   final http.Client _http;
   final String _baseUrl;
 
+  bool _expiresSoon(Session session) {
+    final expiresAt = session.expiresAt;
+    if (expiresAt == null) return false;
+    final expiry = DateTime.fromMillisecondsSinceEpoch(expiresAt * 1000);
+    return DateTime.now().add(_authRefreshSkew).isAfter(expiry);
+  }
+
   /// Bearer header from the current Supabase session token, or empty when
   /// signed out. Mirrors `authHeaders()` in the RN client.
   Future<Map<String, String>> _authHeaders() async {
-    final token = SupabaseService.client.auth.currentSession?.accessToken;
+    final auth = SupabaseService.client.auth;
+    var session = auth.currentSession;
+    if (session != null && _expiresSoon(session)) {
+      try {
+        session = (await auth.refreshSession()).session ?? auth.currentSession;
+      } catch (_) {
+        session = auth.currentSession;
+      }
+    }
+    final token = session?.accessToken;
     return token != null ? {'Authorization': 'Bearer $token'} : {};
   }
 

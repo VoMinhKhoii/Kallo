@@ -66,16 +66,20 @@ class _BackgroundSectionState extends State<BackgroundSection>
           children: [
             Text(
               tr('nutrition.background.eyebrow'),
-              style: NhamTextStyles.sansMedium(fontSize: 14)
-                  .copyWith(color: NhamColors.textMuted),
+              style: NhamTextStyles.sansMedium(
+                fontSize: 14,
+              ).copyWith(color: NhamColors.textMuted),
             ),
             const Spacer(),
             const SizedBox(width: 16),
             _ToggleButton(
-              label: _open
-                  ? tr('nutrition.background.hide')
-                  : tr('nutrition.background.show',
-                      namedArgs: {'count': cards.length.toString()}),
+              label:
+                  _open
+                      ? tr('nutrition.background.hide')
+                      : tr(
+                        'nutrition.background.show',
+                        namedArgs: {'count': cards.length.toString()},
+                      ),
               onTap: _toggle,
             ),
           ],
@@ -94,8 +98,9 @@ class _BackgroundSectionState extends State<BackgroundSection>
                 children: [
                   Text(
                     tr('nutrition.background.hint'),
-                    style: NhamTextStyles.sansRegular(fontSize: 11)
-                        .copyWith(color: NhamColors.textMuted),
+                    style: NhamTextStyles.sansRegular(
+                      fontSize: 11,
+                    ).copyWith(color: NhamColors.textMuted),
                   ),
                   const SizedBox(height: 8),
                   ClipRRect(
@@ -142,19 +147,29 @@ class _ToggleButtonState extends State<_ToggleButton> {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTapDown: (_) => setState(() => _pressed = true),
-      onTapUp: (_) => setState(() => _pressed = false),
-      onTapCancel: () => setState(() => _pressed = false),
-      onTap: widget.onTap,
-      child: Text(
-        widget.label,
-        style: NhamTextStyles.sansMedium(fontSize: 12).copyWith(
-          color: NhamColors.text,
-          decoration: _pressed ? TextDecoration.underline : null,
-          decorationColor: NhamColors.text,
-          decorationThickness: 1,
+    return Semantics(
+      button: true,
+      label: widget.label,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTapDown: (_) => setState(() => _pressed = true),
+        onTapUp: (_) => setState(() => _pressed = false),
+        onTapCancel: () => setState(() => _pressed = false),
+        onTap: widget.onTap,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+          child: Align(
+            alignment: Alignment.centerRight,
+            child: Text(
+              widget.label,
+              style: NhamTextStyles.sansMedium(fontSize: 12).copyWith(
+                color: NhamColors.text,
+                decoration: _pressed ? TextDecoration.underline : null,
+                decorationColor: NhamColors.text,
+                decorationThickness: 1,
+              ),
+            ),
+          ),
         ),
       ),
     );

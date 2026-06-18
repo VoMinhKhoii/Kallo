@@ -152,8 +152,9 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/settings',
         parentNavigatorKey: _rootKey,
-        pageBuilder: (context, state) =>
-            const CupertinoPage<void>(child: SettingsScreen()),
+        pageBuilder:
+            (context, state) =>
+                const CupertinoPage<void>(child: SettingsScreen()),
       ),
 
       // The primary destinations — each its own branch so state/scroll persist
@@ -287,6 +288,8 @@ class _SplashScreenState extends State<_SplashScreen>
         .accessibilityFeatures
         .disableAnimations) {
       _controller.repeat(reverse: true);
+    } else {
+      _controller.value = 1;
     }
   }
 

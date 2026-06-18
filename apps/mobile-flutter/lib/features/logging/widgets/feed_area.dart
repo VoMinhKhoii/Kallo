@@ -176,41 +176,60 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
         )
         .closed
         .then((_) async {
-      if (undone || !mounted) return;
-      try {
-        await ref.read(apiClientProvider).delete<void>(
-              '/api/v1/meals/${Uri.encodeComponent(meal.id)}',
+          if (undone || !mounted) return;
+          try {
+            await ref
+                .read(apiClientProvider)
+                .delete<void>('/api/v1/meals/${Uri.encodeComponent(meal.id)}');
+          } catch (_) {
+            // The server rejected the delete — releasing the id makes the card
+            // reappear (the cache was never mutated), keeping the feed truthful.
+            ref.invalidate(loggingDayProvider(_dayArgs));
+            ref.invalidate(
+              dash.dashboardBundleProvider((
+                userId: widget.profile.userId,
+                date: widget.date,
+              )),
             );
-      } catch (_) {
-        // The server rejected the delete — releasing the id makes the card
-        // reappear (the cache was never mutated), keeping the feed truthful.
-        if (mounted) {
-          setState(() {
-            _pendingRemovalIds.remove(meal.id);
-            _errorText = 'errors.internal'.tr();
-          });
-        }
-        return;
-      }
-      if (!mounted) return;
-      // The delete landed — heal every cache that carries this date before
-      // releasing the id, so the refetched day (sans meal) is what renders.
-      ref.invalidate(mealDatesProvider(widget.profile.userId));
-      ref.invalidate(dash.dashboardBundleProvider(
-        (userId: widget.profile.userId, date: widget.date),
-      ));
-      ref.invalidate(dash.dashboardDayProvider(
-        (userId: widget.profile.userId, date: widget.date),
-      ));
-      try {
-        await ref.read(loggingDayProvider(_dayArgs).notifier).refresh();
-      } catch (_) {
-        // The refetch failing doesn't un-delete the meal — keep the id
-        // filtered (a harmless no-op once a later fetch succeeds).
-        return;
-      }
-      if (mounted) setState(() => _pendingRemovalIds.remove(meal.id));
-    });
+            ref.invalidate(
+              dash.dashboardDayProvider((
+                userId: widget.profile.userId,
+                date: widget.date,
+              )),
+            );
+            if (mounted) {
+              setState(() {
+                _pendingRemovalIds.remove(meal.id);
+                _errorText = 'errors.internal'.tr();
+              });
+            }
+            return;
+          }
+          if (!mounted) return;
+          // The delete landed — heal every cache that carries this date before
+          // releasing the id, so the refetched day (sans meal) is what renders.
+          ref.invalidate(mealDatesProvider(widget.profile.userId));
+          ref.invalidate(
+            dash.dashboardBundleProvider((
+              userId: widget.profile.userId,
+              date: widget.date,
+            )),
+          );
+          ref.invalidate(
+            dash.dashboardDayProvider((
+              userId: widget.profile.userId,
+              date: widget.date,
+            )),
+          );
+          try {
+            await ref.read(loggingDayProvider(_dayArgs).notifier).refresh();
+          } catch (_) {
+            // The refetch failing doesn't un-delete the meal — keep the id
+            // filtered (a harmless no-op once a later fetch succeeds).
+            return;
+          }
+          if (mounted) setState(() => _pendingRemovalIds.remove(meal.id));
+        });
   }
 
   /// Pull-to-refresh: refetch the day + the meal-dates strip. Awaited so the
@@ -269,20 +288,23 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
     // Swiped-away meals inside the undo window are filtered out here (not
     // removed from the cache), so totals heal immediately and a mid-window
     // refetch cannot resurrect the card.
-    final persistedMeals = (day?.persistedMeals ?? const <PersistedMeal>[])
-        .where((m) => !_pendingRemovalIds.contains(m.id))
-        .toList()
-      ..sort((a, b) => a.loggedAt.compareTo(b.loggedAt));
+    final persistedMeals =
+        (day?.persistedMeals ?? const <PersistedMeal>[])
+            .where((m) => !_pendingRemovalIds.contains(m.id))
+            .toList()
+          ..sort((a, b) => a.loggedAt.compareTo(b.loggedAt));
     final pendingConfirmations =
         day?.pendingConfirmations ?? const <PendingMealConfirmation>[];
 
     // Legacy meals can carry unknown macros — when any do, the daily summary
     // can't be totalled honestly, so we show a quiet note instead of the ring.
-    final hasUnknownDailyMacros = persistedMeals.any((m) =>
-        m.nutrition.caloriesKcal == null ||
-        m.nutrition.proteinG == null ||
-        m.nutrition.carbohydrateG == null ||
-        m.nutrition.fatG == null);
+    final hasUnknownDailyMacros = persistedMeals.any(
+      (m) =>
+          m.nutrition.caloriesKcal == null ||
+          m.nutrition.proteinG == null ||
+          m.nutrition.carbohydrateG == null ||
+          m.nutrition.fatG == null,
+    );
 
     // Pin the live stream/reveal cards to the day they were submitted on, so
     // switching the selected date doesn't render them on the wrong day's feed.
@@ -331,7 +353,8 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
         !isRevealing &&
         !hasFailedAttempt;
 
-    final hasFooterItems = pendingConfirmations.isNotEmpty ||
+    final hasFooterItems =
+        pendingConfirmations.isNotEmpty ||
         isStreaming ||
         isRevealing ||
         hasFailedAttempt;
@@ -340,7 +363,8 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
     // under-logged; the trends set it aside, so we say so (and offer to fold it
     // back in by adding what was missed). Only when nothing is mid-flight.
     final isPastDay = widget.date.compareTo(todayDateString()) < 0;
-    final showPartialDayNotice = isPastDay &&
+    final showPartialDayNotice =
+        isPastDay &&
         !isLoading &&
         !dayAsync.hasError &&
         !hasUnknownDailyMacros &&
@@ -386,21 +410,22 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
               NhamSpacing.sp3,
               NhamSpacing.sp2,
             ),
-            child: isLoading
-                ? const _MacroSummarySkeleton()
-                : hasUnknownDailyMacros
+            child:
+                isLoading
+                    ? const _MacroSummarySkeleton()
+                    : hasUnknownDailyMacros
                     // Some legacy meals have unknown macros — the day can't be
                     // totalled, so say so plainly instead of showing a wrong ring.
                     ? Align(
-                        alignment: Alignment.centerLeft,
-                        child: NhamText(
-                          'logging.feedArea.legacyMacroWarning'.tr(),
-                          variant: NhamTextVariant.small,
-                          style: NhamTextStyles.sansMedium(
-                            fontSize: NhamFontSize.eyebrow + 1,
-                          ).copyWith(color: NhamColors.textMuted80),
-                        ),
-                      )
+                      alignment: Alignment.centerLeft,
+                      child: NhamText(
+                        'logging.feedArea.legacyMacroWarning'.tr(),
+                        variant: NhamTextVariant.small,
+                        style: NhamTextStyles.sansMedium(
+                          fontSize: NhamFontSize.eyebrow + 1,
+                        ).copyWith(color: NhamColors.textMuted80),
+                      ),
+                    )
                     : Row(
                       children: [
                         Column(
@@ -594,43 +619,43 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
       onRefresh: _refresh,
       color: NhamColors.accent,
       child: ListView.separated(
-      controller: _scrollController,
-      physics: const AlwaysScrollableScrollPhysics(),
-      keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-      padding: const EdgeInsets.only(
-        top: NhamSpacing.sp3,
-        bottom: NhamSpacing.sp3,
-        left: NhamSpacing.sp3 + NhamSpacing.sp6, // padding + timeline gutter
-        right: NhamSpacing.sp3,
-      ),
-      itemCount: persistedMeals.length + (hasFooterItems ? 1 : 0),
-      separatorBuilder: (_, __) => const SizedBox(height: NhamSpacing.sp2),
-      itemBuilder: (context, index) {
-        if (index < persistedMeals.length) {
-          final meal = persistedMeals[index];
-          return FadeIn(
-            key: ValueKey(meal.id),
-            child: PersistedMealCard(
-              meal: meal,
-              isLast: !hasFooterItems && index == persistedMeals.length - 1,
-              onRemove: () => _removeMeal(meal),
-            ),
+        controller: _scrollController,
+        physics: const AlwaysScrollableScrollPhysics(),
+        keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+        padding: const EdgeInsets.only(
+          top: NhamSpacing.sp3,
+          bottom: NhamSpacing.sp3,
+          left: NhamSpacing.sp3 + NhamSpacing.sp6, // padding + timeline gutter
+          right: NhamSpacing.sp3,
+        ),
+        itemCount: persistedMeals.length + (hasFooterItems ? 1 : 0),
+        separatorBuilder: (_, __) => const SizedBox(height: NhamSpacing.sp2),
+        itemBuilder: (context, index) {
+          if (index < persistedMeals.length) {
+            final meal = persistedMeals[index];
+            return FadeIn(
+              key: ValueKey(meal.id),
+              child: PersistedMealCard(
+                meal: meal,
+                isLast: !hasFooterItems && index == persistedMeals.length - 1,
+                onRemove: () => _removeMeal(meal),
+              ),
+            );
+          }
+          return _Footer(
+            pendingConfirmations: pendingConfirmations,
+            isStreaming: isStreaming,
+            isRevealing: isRevealing,
+            stream: stream,
+            confirmPending: confirmPending,
+            onConfirm: _confirm,
+            onConfirmReveal: _confirmReveal,
+            revealRawInput: _revealRawInput,
+            failedText: failedText,
+            onRetry: onRetry,
+            onDiscardFailed: onDiscardFailed,
           );
-        }
-        return _Footer(
-          pendingConfirmations: pendingConfirmations,
-          isStreaming: isStreaming,
-          isRevealing: isRevealing,
-          stream: stream,
-          confirmPending: confirmPending,
-          onConfirm: _confirm,
-          onConfirmReveal: _confirmReveal,
-          revealRawInput: _revealRawInput,
-          failedText: failedText,
-          onRetry: onRetry,
-          onDiscardFailed: onDiscardFailed,
-        );
-      },
+        },
       ),
     );
   }
@@ -669,7 +694,9 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
   /// refetched persisted card — one continuous object from typed words to saved
   /// meal. On failure the stream stays so the user can retry the confirm.
   Future<void> _confirmReveal(
-      String analysisId, List<MealQuantityEdit> edits) async {
+    String analysisId,
+    List<MealQuantityEdit> edits,
+  ) async {
     // Confirm against the day the analysis was submitted on (the reveal is
     // date-guarded to that day), so the ORIGIN date's caches are updated.
     final originDate =
@@ -681,15 +708,16 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
             analysisId: analysisId,
             mealId: _uuid.v4(),
             originDate: originDate,
-            edits: edits.isEmpty
-                ? null
-                : [
-                    for (final e in edits)
-                      {
-                        'mealItemOrder': e.mealItemOrder,
-                        'newGrams': e.newGrams,
-                      },
-                  ],
+            edits:
+                edits.isEmpty
+                    ? null
+                    : [
+                      for (final e in edits)
+                        {
+                          'mealItemOrder': e.mealItemOrder,
+                          'newGrams': e.newGrams,
+                        },
+                    ],
           );
       HapticFeedback.mediumImpact();
       _revealRawInput = null;
@@ -741,7 +769,8 @@ class _Footer extends StatelessWidget {
             rawInput: pendingConfirmations[i].rawInput,
             parsedMeal: pendingConfirmations[i].parsedMeal,
             busy: confirmPending,
-            isLast: !isStreaming &&
+            isLast:
+                !isStreaming &&
                 !isRevealing &&
                 !hasFailed &&
                 i == pendingConfirmations.length - 1,
@@ -837,9 +866,7 @@ class _FailedAttemptCard extends StatelessWidget {
               const SizedBox(height: NhamSpacing.sp4),
               Row(
                 children: [
-                  Expanded(
-                    child: _RetryButton(onTap: onRetry),
-                  ),
+                  Expanded(child: _RetryButton(onTap: onRetry)),
                   const SizedBox(width: NhamSpacing.sp2),
                   _DiscardButton(onTap: onDiscard),
                 ],
@@ -891,8 +918,9 @@ class _RetryButtonState extends State<_RetryButton> {
               NhamText(
                 'logging.failedAttempt.tryAgain'.tr(),
                 variant: NhamTextVariant.body,
-                style: NhamTextStyles.sansMedium(fontSize: NhamFontSize.xs)
-                    .copyWith(color: Colors.white),
+                style: NhamTextStyles.sansMedium(
+                  fontSize: NhamFontSize.xs,
+                ).copyWith(color: Colors.white),
               ),
             ],
           ),
@@ -934,8 +962,9 @@ class _DiscardButtonState extends State<_DiscardButton> {
           child: NhamText(
             'logging.discard'.tr(),
             variant: NhamTextVariant.body,
-            style: NhamTextStyles.sansMedium(fontSize: NhamFontSize.xs)
-                .copyWith(color: NhamColors.textMuted),
+            style: NhamTextStyles.sansMedium(
+              fontSize: NhamFontSize.xs,
+            ).copyWith(color: NhamColors.textMuted),
           ),
         ),
       ),
@@ -973,10 +1002,12 @@ class _PartialDayNotice extends StatelessWidget {
           ),
           const SizedBox(height: 4), // mt-1
           NhamText(
-            'logging.feedArea.partialDayNotice.body'.tr(namedArgs: {
-              'calories': formatCount(calories, locale),
-              'target': formatCount(target, locale),
-            }),
+            'logging.feedArea.partialDayNotice.body'.tr(
+              namedArgs: {
+                'calories': formatCount(calories, locale),
+                'target': formatCount(target, locale),
+              },
+            ),
             variant: NhamTextVariant.small,
             style: const TextStyle(color: NhamColors.textMuted),
           ),
@@ -1093,9 +1124,8 @@ class _MacroBarState extends State<_MacroBar>
           builder:
               (context, _) => FractionallySizedBox(
                 alignment: Alignment.centerLeft,
-                widthFactor:
-                    ((reduceMotion ? widget.pct : _anim.value) / 100)
-                        .clamp(0, 1),
+                widthFactor: ((reduceMotion ? widget.pct : _anim.value) / 100)
+                    .clamp(0, 1),
                 child: Container(
                   decoration: BoxDecoration(
                     color: widget.color,

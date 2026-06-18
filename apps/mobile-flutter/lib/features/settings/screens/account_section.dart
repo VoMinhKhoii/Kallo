@@ -168,51 +168,58 @@ class _AccountRowState extends State<_AccountRow> {
             ? const Color(0x1AD37B69) // danger @ 10%
             : NhamColors.hover50;
 
-    return Opacity(
-      opacity: widget.enabled ? 1.0 : 0.6,
-      child: GestureDetector(
-        onTap: widget.enabled ? widget.onTap : null,
-        onTapDown:
-            widget.enabled ? (_) => setState(() => _pressed = true) : null,
-        onTapUp:
-            widget.enabled ? (_) => setState(() => _pressed = false) : null,
-        onTapCancel:
-            widget.enabled ? () => setState(() => _pressed = false) : null,
-        child: Container(
-          padding: const EdgeInsets.symmetric(
-            horizontal: NhamSpacing.sp3,
-            vertical: 10,
-          ),
-          decoration: BoxDecoration(
-            color: _pressed ? fill : Colors.transparent,
-            borderRadius: BorderRadius.circular(NhamRadii.buttonXl),
-          ),
-          child: Row(
-            children: [
-              Icon(
-                widget.icon,
-                size: 16,
-                color: _pressed ? pressedColor : color,
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  widget.label,
-                  style: NhamTextStyles.sansMedium(
-                    fontSize: NhamFontSize.sm,
-                  ).copyWith(color: _pressed ? pressedColor : color),
+    return Semantics(
+      button: true,
+      enabled: widget.enabled,
+      excludeSemantics: true,
+      label: widget.label,
+      onTap: widget.enabled ? widget.onTap : null,
+      child: Opacity(
+        opacity: widget.enabled ? 1.0 : 0.6,
+        child: GestureDetector(
+          onTap: widget.enabled ? widget.onTap : null,
+          onTapDown:
+              widget.enabled ? (_) => setState(() => _pressed = true) : null,
+          onTapUp:
+              widget.enabled ? (_) => setState(() => _pressed = false) : null,
+          onTapCancel:
+              widget.enabled ? () => setState(() => _pressed = false) : null,
+          child: Container(
+            padding: const EdgeInsets.symmetric(
+              horizontal: NhamSpacing.sp3,
+              vertical: 10,
+            ),
+            decoration: BoxDecoration(
+              color: _pressed ? fill : Colors.transparent,
+              borderRadius: BorderRadius.circular(NhamRadii.buttonXl),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  widget.icon,
+                  size: 16,
+                  color: _pressed ? pressedColor : color,
                 ),
-              ),
-              if (widget.busy)
-                const SizedBox(
-                  width: 14,
-                  height: 14,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: NhamColors.textMuted,
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    widget.label,
+                    style: NhamTextStyles.sansMedium(
+                      fontSize: NhamFontSize.sm,
+                    ).copyWith(color: _pressed ? pressedColor : color),
                   ),
                 ),
-            ],
+                if (widget.busy)
+                  const SizedBox(
+                    width: 14,
+                    height: 14,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: NhamColors.textMuted,
+                    ),
+                  ),
+              ],
+            ),
           ),
         ),
       ),
@@ -255,17 +262,25 @@ class _AccountDeleteScreenState extends ConsumerState<_AccountDeleteScreen> {
     setState(() => _deleting = true);
     try {
       await ref.read(apiClientProvider).deleteAccount();
-      // The account (and all data) is gone; clear the local session and leave.
-      await ref.read(authControllerProvider).signOut();
-      if (!mounted) return;
-      context.go('/sign-in');
     } catch (_) {
       if (!mounted) return;
       setState(() => _deleting = false);
       ScaffoldMessenger.maybeOf(context)?.showSnackBar(
         SnackBar(content: Text(tr('settings.account.deleteError'))),
       );
+      return;
     }
+
+    // The account is gone server-side. A local sign-out failure should not make
+    // the destructive action look like it failed.
+    try {
+      await ref.read(authControllerProvider).signOut();
+    } catch (_) {
+      // Ignore: routing to sign-in clears the user's path out of the deleted
+      // account state, and Supabase will refresh/reject the stale session.
+    }
+    if (!mounted) return;
+    context.go('/sign-in');
   }
 
   @override

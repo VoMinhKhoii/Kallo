@@ -28,7 +28,8 @@ class TabScaffold extends StatelessWidget {
   final StatefulNavigationShell navigationShell;
 
   // Branch indices in the router's StatefulShellRoute (declaration order):
-  // 0 dashboard · 1 nutrition · 2 logging · 3 groups · 4 admin · 5 settings.
+  // 0 dashboard · 1 nutrition · 2 logging · 3 groups · 4 admin.
+  // Settings is a standalone root route, not a shell branch.
   static const int _branchDashboard = 0;
   static const int _branchNutrition = 1;
   static const int _branchLogging = 2;
@@ -82,9 +83,10 @@ class TabScaffold extends StatelessWidget {
       child: Scaffold(
         backgroundColor: NhamColors.surface,
         body: navigationShell,
-        bottomNavigationBar: showBar
-            ? _BottomBar(tabs: _tabs, currentBranch: current, onTap: _onTap)
-            : null,
+        bottomNavigationBar:
+            showBar
+                ? _BottomBar(tabs: _tabs, currentBranch: current, onTap: _onTap)
+                : null,
       ),
     );
   }
@@ -121,9 +123,7 @@ class _BottomBar extends StatelessWidget {
     return DecoratedBox(
       decoration: const BoxDecoration(
         color: NhamColors.surface,
-        border: Border(
-          top: BorderSide(color: NhamColors.borderSoft, width: 1),
-        ),
+        border: Border(top: BorderSide(color: NhamColors.borderSoft, width: 1)),
       ),
       child: Padding(
         padding: EdgeInsets.only(bottom: bottomInset),

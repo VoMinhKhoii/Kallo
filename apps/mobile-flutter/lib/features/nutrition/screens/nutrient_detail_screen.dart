@@ -32,15 +32,19 @@ class NutrientDetailScreen extends ConsumerWidget {
     final label = tr(card.labelKey);
     final hasTarget = card.percentOfTarget != null;
     final percent = card.percentOfTarget ?? 0;
-    final showExceed = shouldShowExceed(card.nutrientType, card.percentOfTarget);
+    final showExceed = shouldShowExceed(
+      card.nutrientType,
+      card.percentOfTarget,
+    );
     final limited =
         card.displayState == ConfidenceDisplayState.limitedData ||
-            card.displayState == ConfidenceDisplayState.insufficientData;
+        card.displayState == ConfidenceDisplayState.insufficientData;
 
     // The point figure: today's resolved average, the single trustworthy number.
-    final figure = card.averagePerDay == null
-        ? '—'
-        : formatLocalizedNumber(card.averagePerDay!, locale);
+    final figure =
+        card.averagePerDay == null
+            ? '—'
+            : formatLocalizedNumber(card.averagePerDay!, locale);
 
     return CupertinoPageScaffold(
       backgroundColor: kPage,
@@ -126,8 +130,10 @@ class NutrientDetailScreen extends ConsumerWidget {
               // the screen.
               if (_coveragePoints(card, limited).isNotEmpty) ...[
                 const SizedBox(height: 24),
-                Text(tr('nutrition.detail.averageVsTarget').toUpperCase(),
-                    style: dashEyebrow()),
+                Text(
+                  tr('nutrition.detail.averageVsTarget').toUpperCase(),
+                  style: dashEyebrow(),
+                ),
                 const SizedBox(height: 12),
                 Container(
                   padding: const EdgeInsets.all(20),
@@ -146,8 +152,10 @@ class NutrientDetailScreen extends ConsumerWidget {
               // ── Band 3: food candidates as full rows ──────────────────
               if (card.supportsCandidates) ...[
                 const SizedBox(height: 24),
-                Text(tr('nutrition.candidates.title').toUpperCase(),
-                    style: dashEyebrow()),
+                Text(
+                  tr('nutrition.candidates.title').toUpperCase(),
+                  style: dashEyebrow(),
+                ),
                 const SizedBox(height: 6),
                 Text(
                   tr('nutrition.candidates.description'),
@@ -187,15 +195,17 @@ class _FoodCandidates extends ConsumerWidget {
     final async = ref.watch(foodCandidatesProvider(nutrient));
 
     return async.when(
-      loading: () => Padding(
-        padding: const EdgeInsets.symmetric(vertical: 8),
-        child: Text(tr('nutrition.candidates.loading'), style: dashMeta()),
-      ),
-      error: (_, __) => _ErrorLine(
-        message: tr('nutrition.candidates.error'),
-        retryLabel: tr('nutrition.candidates.retry'),
-        onRetry: () => ref.invalidate(foodCandidatesProvider(nutrient)),
-      ),
+      loading:
+          () => Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: Text(tr('nutrition.candidates.loading'), style: dashMeta()),
+          ),
+      error:
+          (_, __) => _ErrorLine(
+            message: tr('nutrition.candidates.error'),
+            retryLabel: tr('nutrition.candidates.retry'),
+            onRetry: () => ref.invalidate(foodCandidatesProvider(nutrient)),
+          ),
       data: (response) {
         final candidates = response?.candidates ?? const [];
         if (candidates.isEmpty) {
@@ -232,14 +242,22 @@ class _ErrorLine extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Expanded(
-          child: Text(message, style: dashMeta(color: kInkSecondary)),
-        ),
+        Expanded(child: Text(message, style: dashMeta(color: kInkSecondary))),
         const SizedBox(width: 12),
-        GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          onTap: onRetry,
-          child: Text(retryLabel, style: dashMeta(color: kInk)),
+        Semantics(
+          button: true,
+          label: retryLabel,
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: onRetry,
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+              child: Align(
+                alignment: Alignment.center,
+                child: Text(retryLabel, style: dashMeta(color: kInk)),
+              ),
+            ),
+          ),
         ),
       ],
     );

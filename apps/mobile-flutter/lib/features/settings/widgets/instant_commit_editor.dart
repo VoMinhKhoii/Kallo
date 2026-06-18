@@ -40,13 +40,15 @@ class InstantCommitEditor extends ConsumerStatefulWidget {
 }
 
 class _InstantCommitEditorState extends ConsumerState<InstantCommitEditor> {
-  late final ProfileFormController _controller =
-      ProfileFormController(ProfileFormValues.fromRow(widget.profile));
+  late final ProfileFormController _controller = ProfileFormController(
+    ProfileFormValues.fromRow(widget.profile),
+  );
   String? _errorText;
 
   /// The app locale at the last successful save. A locale change is committed
   /// even when no form field is dirty (preferredLocale lives outside the form).
-  late String _savedLocale = widget.profile.raw['preferredLocale'] as String? ??
+  late String _savedLocale =
+      widget.profile.raw['preferredLocale'] as String? ??
       WidgetsBinding.instance.platformDispatcher.locale.languageCode;
 
   @override
@@ -94,9 +96,7 @@ class _InstantCommitEditorState extends ConsumerState<InstantCommitEditor> {
         await context.setLocale(Locale(_savedLocale));
       }
       if (mounted) {
-        setState(
-          () => _errorText = tr('settings.profilePanel.incompleteHint'),
-        );
+        setState(() => _errorText = tr('settings.profilePanel.incompleteHint'));
       }
       return;
     }
@@ -122,8 +122,7 @@ class _InstantCommitEditorState extends ConsumerState<InstantCommitEditor> {
       _failedLocale = null;
       if (_errorText != null) setState(() => _errorText = null);
       _committing = false;
-      if (_controller.isDirty ||
-          context.locale.languageCode != _savedLocale) {
+      if (_controller.isDirty || context.locale.languageCode != _savedLocale) {
         await _commit();
       }
     } else {
@@ -174,17 +173,21 @@ class _InstantCommitEditorState extends ConsumerState<InstantCommitEditor> {
         children: [
           Text(
             widget.title,
-            style: NhamTextStyles.serifRegular(fontSize: NhamFontSize.h3)
-                .copyWith(
-                    letterSpacing: NhamTracking.tight, color: NhamColors.text),
+            style: NhamTextStyles.serifRegular(
+              fontSize: NhamFontSize.h3,
+            ).copyWith(
+              letterSpacing: NhamTracking.tight,
+              color: NhamColors.text,
+            ),
           ),
           const SizedBox(height: NhamSpacing.sp1),
           Padding(
             padding: const EdgeInsets.only(bottom: NhamSpacing.sp4),
             child: Text(
               widget.subtitle,
-              style: NhamTextStyles.sansRegular(fontSize: NhamFontSize.detail)
-                  .copyWith(height: 20 / 13, color: NhamColors.textWarm),
+              style: NhamTextStyles.sansRegular(
+                fontSize: NhamFontSize.detail,
+              ).copyWith(height: 20 / 13, color: NhamColors.textWarm),
             ),
           ),
           if (_errorText != null)
@@ -196,21 +199,27 @@ class _InstantCommitEditorState extends ConsumerState<InstantCommitEditor> {
                   Expanded(
                     child: Text(
                       _errorText!,
-                      style:
-                          NhamTextStyles.sansRegular(fontSize: NhamFontSize.sm)
-                              .copyWith(color: NhamColors.danger),
+                      style: NhamTextStyles.sansRegular(
+                        fontSize: NhamFontSize.sm,
+                      ).copyWith(color: NhamColors.danger),
                     ),
                   ),
                   if (_failedValues != null) ...[
                     const SizedBox(width: NhamSpacing.sp3),
-                    GestureDetector(
-                      behavior: HitTestBehavior.opaque,
+                    Semantics(
+                      button: true,
+                      excludeSemantics: true,
+                      label: tr('settings.profilePanel.retry'),
                       onTap: _retry,
-                      child: Text(
-                        tr('settings.profilePanel.retry'),
-                        style: NhamTextStyles.sansMedium(
-                          fontSize: NhamFontSize.sm,
-                        ).copyWith(color: NhamColors.text),
+                      child: GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onTap: _retry,
+                        child: Text(
+                          tr('settings.profilePanel.retry'),
+                          style: NhamTextStyles.sansMedium(
+                            fontSize: NhamFontSize.sm,
+                          ).copyWith(color: NhamColors.text),
+                        ),
                       ),
                     ),
                   ],

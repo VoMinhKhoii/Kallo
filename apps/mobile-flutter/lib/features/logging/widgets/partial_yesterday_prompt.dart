@@ -37,20 +37,25 @@ class PartialYesterdayPrompt extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final dayAsync =
-        ref.watch(loggingDayProvider(LoggingDayArgs(userId, yesterday)));
-    final meals = dayAsync.valueOrNull?.persistedMeals ?? const <PersistedMeal>[];
+    final dismissed = ref.watch(yesterdayPromptDismissedProvider(yesterday));
+    final dayAsync = ref.watch(
+      loggingDayProvider(LoggingDayArgs(userId, yesterday)),
+    );
+    final meals =
+        dayAsync.valueOrNull?.persistedMeals ?? const <PersistedMeal>[];
 
     final hasMeals = meals.isNotEmpty;
     // A meal with unknown calories makes the day's total untrustworthy, so the
     // partial-day check would be misleading — suppress the prompt then.
-    final hasUnknownCalories =
-        meals.any((m) => m.nutrition.caloriesKcal == null);
+    final hasUnknownCalories = meals.any(
+      (m) => m.nutrition.caloriesKcal == null,
+    );
     final calories = round0(
       meals.fold<double>(0, (s, m) => s + (m.nutrition.caloriesKcal ?? 0)),
     );
 
-    if (!hasMeals ||
+    if (dismissed ||
+        !hasMeals ||
         hasUnknownCalories ||
         !isLikelyPartialDay(calories.toDouble(), calorieTarget)) {
       return const SizedBox.shrink();
@@ -87,10 +92,12 @@ class PartialYesterdayPrompt extends ConsumerWidget {
                   ),
                   const SizedBox(height: 4), // mt-1
                   NhamText(
-                    '$t.body'.tr(namedArgs: {
-                      'calories': formatCount(calories, locale),
-                      'target': formatCount(calorieTarget, locale),
-                    }),
+                    '$t.body'.tr(
+                      namedArgs: {
+                        'calories': formatCount(calories, locale),
+                        'target': formatCount(calorieTarget, locale),
+                      },
+                    ),
                     variant: NhamTextVariant.small,
                     style: const TextStyle(color: NhamColors.textMuted),
                   ),
@@ -105,9 +112,15 @@ class PartialYesterdayPrompt extends ConsumerWidget {
             const SizedBox(width: NhamSpacing.sp3),
             _DismissButton(
               label: '$t.dismiss'.tr(),
-              onTap: () => ref
-                  .read(yesterdayPromptDismissedProvider(yesterday).notifier)
-                  .state = true,
+              onTap:
+                  () =>
+                      ref
+                          .read(
+                            yesterdayPromptDismissedProvider(
+                              yesterday,
+                            ).notifier,
+                          )
+                          .state = true,
             ),
           ],
         ),
@@ -157,13 +170,18 @@ class _OpenButtonState extends State<_OpenButton> {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(LucideIcons.arrowLeft, size: 16, color: NhamColors.text),
+              const Icon(
+                LucideIcons.arrowLeft,
+                size: 16,
+                color: NhamColors.text,
+              ),
               const SizedBox(width: 8), // gap-2
               NhamText(
                 widget.label,
                 variant: NhamTextVariant.body,
-                style: NhamTextStyles.sansMedium(fontSize: NhamFontSize.sm)
-                    .copyWith(color: NhamColors.text),
+                style: NhamTextStyles.sansMedium(
+                  fontSize: NhamFontSize.sm,
+                ).copyWith(color: NhamColors.text),
               ),
             ],
           ),

@@ -9,12 +9,22 @@ import '../../../theme/nham_typography.dart';
 import '../logic/helpers.dart';
 import '../logic/rhythm_logic.dart';
 import 'fade_in_down.dart';
+import 'range_selector.dart';
 
 /// RN port of `apps/mobile/src/components/nutrition/sections/daily-rhythm.tsx`.
 class DailyRhythm extends StatelessWidget {
-  const DailyRhythm({super.key, required this.macros});
+  const DailyRhythm({
+    super.key,
+    required this.macros,
+    required this.resolvedRange,
+    required this.onRangeChange,
+    this.disabled = false,
+  });
 
   final List<MacroPattern> macros;
+  final String resolvedRange;
+  final ValueChanged<NutritionRangeInput> onRangeChange;
+  final bool disabled;
 
   @override
   Widget build(BuildContext context) {
@@ -39,6 +49,15 @@ class DailyRhythm extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                Align(
+                  alignment: Alignment.topCenter,
+                  child: NutritionRangeSelector(
+                    resolvedRange: resolvedRange,
+                    onRangeChange: onRangeChange,
+                    disabled: disabled,
+                  ),
+                ),
+                const SizedBox(height: 20),
                 // Calorie hero.
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -47,23 +66,30 @@ class DailyRhythm extends StatelessWidget {
                       TextSpan(
                         children: [
                           TextSpan(
-                            text: calories != null
-                                ? formatLocalizedNumber(
-                                    calories.averagePerDay, locale)
-                                : '—',
-                            style:
-                                NhamTextStyles.serifMedium(fontSize: 36).copyWith(
+                            text:
+                                calories != null
+                                    ? formatLocalizedNumber(
+                                      calories.averagePerDay,
+                                      locale,
+                                    )
+                                    : '—',
+                            style: NhamTextStyles.serifMedium(
+                              fontSize: 36,
+                            ).copyWith(
                               height: 40 / 36,
                               letterSpacing: -0.7,
                               color: NhamColors.text,
-                              fontFeatures: const [FontFeature.tabularFigures()],
+                              fontFeatures: const [
+                                FontFeature.tabularFigures(),
+                              ],
                             ),
                           ),
                           const WidgetSpan(child: SizedBox(width: 8)),
                           TextSpan(
                             text: tr('nutrition.rhythm.calories'),
-                            style: NhamTextStyles.sansRegular(fontSize: 16)
-                                .copyWith(color: NhamColors.textMuted),
+                            style: NhamTextStyles.sansRegular(
+                              fontSize: 16,
+                            ).copyWith(color: NhamColors.textMuted),
                           ),
                         ],
                       ),
@@ -104,11 +130,12 @@ class DailyRhythm extends StatelessWidget {
                             const SizedBox(width: 6),
                             Text(
                               '${kCompositionShort[segment.key]} ${segment.pct.round()}%',
-                              style: NhamTextStyles.sansRegular(fontSize: 11)
-                                  .copyWith(
+                              style: NhamTextStyles.sansRegular(
+                                fontSize: 11,
+                              ).copyWith(
                                 color: NhamColors.textMuted,
                                 fontFeatures: const [
-                                  FontFeature.tabularFigures()
+                                  FontFeature.tabularFigures(),
                                 ],
                               ),
                             ),
@@ -132,8 +159,10 @@ class DailyRhythm extends StatelessWidget {
                           consistencyLabel: tr(
                             'nutrition.${consistencyLabelKey(macroRows[i].consistencyPct)}',
                           ),
-                          barAriaLabel: tr('nutrition.rhythm.barAria',
-                              namedArgs: {'macro': tr(macroRows[i].labelKey)}),
+                          barAriaLabel: tr(
+                            'nutrition.rhythm.barAria',
+                            namedArgs: {'macro': tr(macroRows[i].labelKey)},
+                          ),
                         ),
                       ],
                     ],
@@ -163,10 +192,7 @@ class _DashedTopDivider extends StatelessWidget {
           height: 1,
           child: CustomPaint(painter: _DashedLinePainter()),
         ),
-        Padding(
-          padding: const EdgeInsets.only(top: 20),
-          child: child,
-        ),
+        Padding(padding: const EdgeInsets.only(top: 20), child: child),
       ],
     );
   }
@@ -177,9 +203,10 @@ class _DashedLinePainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = NhamColors.borderBiscotti40
-      ..strokeWidth = 1;
+    final paint =
+        Paint()
+          ..color = NhamColors.borderBiscotti40
+          ..strokeWidth = 1;
     const dash = 4.0;
     const gap = 3.0;
     var x = 0.0;
@@ -247,14 +274,15 @@ class _CompositionPillState extends State<_CompositionPill>
           color: NhamColors.track,
           child: AnimatedBuilder(
             animation: _scale,
-            builder: (context, child) => Align(
-              alignment: Alignment.centerLeft,
-              child: Transform.scale(
-                scaleX: _scale.value,
-                alignment: Alignment.centerLeft,
-                child: child,
-              ),
-            ),
+            builder:
+                (context, child) => Align(
+                  alignment: Alignment.centerLeft,
+                  child: Transform.scale(
+                    scaleX: _scale.value,
+                    alignment: Alignment.centerLeft,
+                    child: child,
+                  ),
+                ),
             // Proportional flex so the segments always fill the bar exactly —
             // fixed pixel widths summed to ~0.8% over (float rounding) and
             // overflowed the Row by a couple px.
@@ -292,15 +320,17 @@ class _MacroRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final ratio = macro.target != null && macro.target! > 0
-        ? macro.averagePerDay / macro.target!
-        : null;
+    final ratio =
+        macro.target != null && macro.target! > 0
+            ? macro.averagePerDay / macro.target!
+            : null;
     final pctOfTarget = ratio == null ? null : ratio * 100;
     final showExceed = shouldShowExceed(macro.nutrientType, pctOfTarget);
 
     String figure;
     if (macro.target == null || macro.target! <= 0) {
-      figure = '${formatLocalizedNumber(macro.averagePerDay, locale)} ${macro.unit}';
+      figure =
+          '${formatLocalizedNumber(macro.averagePerDay, locale)} ${macro.unit}';
     } else {
       final pct = (macro.averagePerDay / macro.target! * 100).round();
       figure = showExceed && pct > 100 ? '+${pct - 100}%' : '$pct%';
@@ -315,8 +345,9 @@ class _MacroRow extends StatelessWidget {
             label,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: NhamTextStyles.sansMedium(fontSize: 14)
-                .copyWith(color: NhamColors.text),
+            style: NhamTextStyles.sansMedium(
+              fontSize: 14,
+            ).copyWith(color: NhamColors.text),
           ),
         ),
         const SizedBox(width: 12),
@@ -340,25 +371,34 @@ class _MacroRow extends StatelessWidget {
         ),
         const SizedBox(width: 12),
         SizedBox(
-          width: 88,
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.baseline,
-            textBaseline: TextBaseline.alphabetic,
-            children: [
-              Text(
-                consistencyLabel,
-                style: NhamTextStyles.sansRegular(fontSize: 12)
-                    .copyWith(color: NhamColors.text),
+          width: 96,
+          child: Align(
+            alignment: Alignment.centerRight,
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerRight,
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.baseline,
+                textBaseline: TextBaseline.alphabetic,
+                children: [
+                  Text(
+                    consistencyLabel,
+                    style: NhamTextStyles.sansRegular(
+                      fontSize: 12,
+                    ).copyWith(color: NhamColors.text),
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    figure,
+                    style: NhamTextStyles.sansRegular(fontSize: 11).copyWith(
+                      color:
+                          showExceed ? NhamColors.danger : NhamColors.textMuted,
+                      fontFeatures: const [FontFeature.tabularFigures()],
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(width: 6),
-              Text(
-                figure,
-                style: NhamTextStyles.sansRegular(fontSize: 11).copyWith(
-                  color: showExceed ? NhamColors.danger : NhamColors.textMuted,
-                  fontFeatures: const [FontFeature.tabularFigures()],
-                ),
-              ),
-            ],
+            ),
           ),
         ),
       ],

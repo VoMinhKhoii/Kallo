@@ -55,8 +55,8 @@ abstract final class NhamTextStyles {
         height: height,
       );
 
-  // No serifSemiBold: Lora is never above 400 (the bible's hardest type rule).
-  // Deleted so a bold-Lora regression can't be reintroduced by reaching for it.
+  // No serifSemiBold: Lora is allowed up to w500 for select display/number
+  // treatments, but never w600+ bold weight.
 
   static TextStyle serifItalic({double? fontSize, double? height}) =>
       GoogleFonts.lora(
@@ -99,57 +99,39 @@ abstract final class NhamTextStyles {
   // ── Semantic presets ──────────────────────────────────────────────
 
   static TextStyle displayLarge() => serifRegular(
-        fontSize: NhamFontSize.display,
-        height: NhamLeading.display,
-      ).copyWith(letterSpacing: NhamTracking.display);
+    fontSize: NhamFontSize.display,
+    height: NhamLeading.display,
+  ).copyWith(letterSpacing: NhamTracking.display);
 
-  static TextStyle heading1() => serifRegular(
-        fontSize: NhamFontSize.h1,
-        height: NhamLeading.tight,
-      );
+  static TextStyle heading1() =>
+      serifRegular(fontSize: NhamFontSize.h1, height: NhamLeading.tight);
 
-  static TextStyle heading2() => serifRegular(
-        fontSize: NhamFontSize.h2,
-        height: NhamLeading.tight,
-      );
+  static TextStyle heading2() =>
+      serifRegular(fontSize: NhamFontSize.h2, height: NhamLeading.tight);
 
-  static TextStyle heading3() => serifMedium(
-        fontSize: NhamFontSize.h3,
-        height: NhamLeading.snug,
-      );
+  static TextStyle heading3() =>
+      serifMedium(fontSize: NhamFontSize.h3, height: NhamLeading.snug);
 
-  static TextStyle heading4() => serifMedium(
-        fontSize: NhamFontSize.h4,
-        height: NhamLeading.snug,
-      );
+  static TextStyle heading4() =>
+      serifMedium(fontSize: NhamFontSize.h4, height: NhamLeading.snug);
 
-  static TextStyle bodyLarge() => sansRegular(
-        fontSize: NhamFontSize.lg,
-        height: NhamLeading.normal,
-      );
+  static TextStyle bodyLarge() =>
+      sansRegular(fontSize: NhamFontSize.lg, height: NhamLeading.normal);
 
-  static TextStyle body() => sansRegular(
-        fontSize: NhamFontSize.md,
-        height: NhamLeading.normal,
-      );
+  static TextStyle body() =>
+      sansRegular(fontSize: NhamFontSize.md, height: NhamLeading.normal);
 
-  static TextStyle bodySmall() => sansRegular(
-        fontSize: NhamFontSize.sm,
-        height: NhamLeading.normal,
-      );
+  static TextStyle bodySmall() =>
+      sansRegular(fontSize: NhamFontSize.sm, height: NhamLeading.normal);
 
-  static TextStyle caption() => sansRegular(
-        fontSize: NhamFontSize.xs,
-        height: NhamLeading.normal,
-      );
+  static TextStyle caption() =>
+      sansRegular(fontSize: NhamFontSize.xs, height: NhamLeading.normal);
 
   static TextStyle eyebrow() => sansSemiBold(
-        fontSize: NhamFontSize.eyebrow,
-        height: NhamLeading.normal,
-      ).copyWith(letterSpacing: NhamTracking.eyebrow);
+    fontSize: NhamFontSize.eyebrow,
+    height: NhamLeading.normal,
+  ).copyWith(letterSpacing: NhamTracking.eyebrow);
 
-  static TextStyle buttonLabel() => sansSemiBold(
-        fontSize: NhamFontSize.sm,
-        height: NhamLeading.snug,
-      );
+  static TextStyle buttonLabel() =>
+      sansSemiBold(fontSize: NhamFontSize.sm, height: NhamLeading.snug);
 }

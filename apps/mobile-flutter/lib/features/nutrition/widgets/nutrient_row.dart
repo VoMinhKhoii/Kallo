@@ -42,13 +42,17 @@ class _NutrientRowState extends State<NutrientRow> {
     final label = tr(card.labelKey);
     final isLimited =
         card.displayState == ConfidenceDisplayState.limitedData ||
-            card.displayState == ConfidenceDisplayState.insufficientData;
+        card.displayState == ConfidenceDisplayState.insufficientData;
     final hasNoTarget = card.percentOfTarget == null;
-    final dotColor = isLimited || hasNoTarget
-        ? NhamColors.stone
-        : kStatusColors[statusKeyFor(card)]!;
+    final dotColor =
+        isLimited || hasNoTarget
+            ? NhamColors.stone
+            : kStatusColors[statusKeyFor(card)]!;
 
-    final showExceed = shouldShowExceed(card.nutrientType, card.percentOfTarget);
+    final showExceed = shouldShowExceed(
+      card.nutrientType,
+      card.percentOfTarget,
+    );
 
     String figure;
     if (card.displayState == ConfidenceDisplayState.insufficientData) {
@@ -58,67 +62,79 @@ class _NutrientRowState extends State<NutrientRow> {
     } else if (showExceed && card.percentOfTarget! > 100) {
       figure = '+${(card.percentOfTarget! - 100).round()}%';
     } else {
-      figure = tr('nutrition.steady.percent',
-          namedArgs: {'value': card.percentOfTarget!.round().toString()});
+      figure = tr(
+        'nutrition.steady.percent',
+        namedArgs: {'value': card.percentOfTarget!.round().toString()},
+      );
     }
 
-    final figureColor = showExceed
-        ? NhamColors.danger
-        : isLimited
+    final figureColor =
+        showExceed
+            ? NhamColors.danger
+            : isLimited
             ? NhamColors.textMuted
             : NhamColors.text;
 
     return DecoratedBox(
       decoration: const BoxDecoration(
-        border: Border(
-          bottom: BorderSide(color: NhamColors.borderBiscotti40),
-        ),
+        border: Border(bottom: BorderSide(color: NhamColors.borderBiscotti40)),
       ),
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTapDown: (_) => setState(() => _pressed = true),
-        onTapUp: (_) => setState(() => _pressed = false),
-        onTapCancel: () => setState(() => _pressed = false),
-        onTap: _open,
-        child: ColoredBox(
-          color: _pressed ? NhamColors.hover40 : Colors.transparent,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            child: Row(
-              children: [
-                Container(
-                  width: 6,
-                  height: 6,
-                  decoration: BoxDecoration(
-                    color: dotColor,
-                    shape: BoxShape.circle,
-                  ),
+      child: Semantics(
+        button: true,
+        label: label,
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTapDown: (_) => setState(() => _pressed = true),
+          onTapUp: (_) => setState(() => _pressed = false),
+          onTapCancel: () => setState(() => _pressed = false),
+          onTap: _open,
+          child: ColoredBox(
+            color: _pressed ? NhamColors.hover40 : Colors.transparent,
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(minHeight: 44),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    label,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: NhamTextStyles.sansRegular(fontSize: 14)
-                        .copyWith(color: NhamColors.text),
-                  ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 6,
+                      height: 6,
+                      decoration: BoxDecoration(
+                        color: dotColor,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        label,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: NhamTextStyles.sansRegular(
+                          fontSize: 14,
+                        ).copyWith(color: NhamColors.text),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Text(
+                      figure,
+                      style: NhamTextStyles.sansRegular(fontSize: 12).copyWith(
+                        color: figureColor,
+                        fontFeatures: const [FontFeature.tabularFigures()],
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    const Icon(
+                      LucideIcons.chevronRight,
+                      size: 16,
+                      color: NhamColors.stone,
+                    ),
+                  ],
                 ),
-                const SizedBox(width: 12),
-                Text(
-                  figure,
-                  style: NhamTextStyles.sansRegular(fontSize: 12).copyWith(
-                    color: figureColor,
-                    fontFeatures: const [FontFeature.tabularFigures()],
-                  ),
-                ),
-                const SizedBox(width: 12),
-                const Icon(
-                  LucideIcons.chevronRight,
-                  size: 16,
-                  color: NhamColors.stone,
-                ),
-              ],
+              ),
             ),
           ),
         ),

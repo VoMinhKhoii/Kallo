@@ -27,8 +27,7 @@ class LoggingScreen extends ConsumerStatefulWidget {
 }
 
 class _LoggingScreenState extends ConsumerState<LoggingScreen> {
-  final String _today = todayDateString();
-  late String _selectedDate = _today;
+  late String _selectedDate = todayDateString();
   bool _pickerExpanded = false;
 
   @override
@@ -62,6 +61,8 @@ class _LoggingScreenState extends ConsumerState<LoggingScreen> {
       carbsTargetG: (data?['carbsTargetG'] as num?)?.toInt() ?? 250,
       fatTargetG: (data?['fatTargetG'] as num?)?.toInt() ?? 65,
     );
+    final today = todayDateString();
+    final yesterday = addDays(today, -1);
 
     // Header in normal flow at the top; the collapse scrim overlays ONLY the
     // feed region below it (so the strip's cells/chevrons stay tappable while
@@ -74,30 +75,26 @@ class _LoggingScreenState extends ConsumerState<LoggingScreen> {
         child: Column(
           children: [
             Padding(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: NhamSpacing.sp3),
+              padding: const EdgeInsets.symmetric(horizontal: NhamSpacing.sp3),
               child: AppHeader(
                 expanded: _pickerExpanded,
                 child: TimelinePicker(
                   dates: mealDates,
-                  today: _today,
+                  today: today,
                   selectedDate: _selectedDate,
                   expanded: _pickerExpanded,
-                  onSelectDate: (date) =>
-                      setState(() => _selectedDate = date),
-                  onExpandedChange: (v) =>
-                      setState(() => _pickerExpanded = v),
+                  onSelectDate: (date) => setState(() => _selectedDate = date),
+                  onExpandedChange: (v) => setState(() => _pickerExpanded = v),
                 ),
               ),
             ),
             // A once-daily nudge when *yesterday* was under-logged — only while
             // viewing today, and only until dismissed this session.
-            if (_selectedDate == _today &&
-                !ref.watch(yesterdayPromptDismissedProvider(
-                    addDays(_today, -1))))
+            if (_selectedDate == today &&
+                !ref.watch(yesterdayPromptDismissedProvider(yesterday)))
               PartialYesterdayPrompt(
                 userId: userId,
-                yesterday: addDays(_today, -1),
+                yesterday: yesterday,
                 calorieTarget: profile.calorieTarget,
                 onOpenDay: (date) => setState(() => _selectedDate = date),
               ),
@@ -111,8 +108,7 @@ class _LoggingScreenState extends ConsumerState<LoggingScreen> {
                     Positioned.fill(
                       child: GestureDetector(
                         behavior: HitTestBehavior.translucent,
-                        onTap: () =>
-                            setState(() => _pickerExpanded = false),
+                        onTap: () => setState(() => _pickerExpanded = false),
                       ),
                     ),
                 ],

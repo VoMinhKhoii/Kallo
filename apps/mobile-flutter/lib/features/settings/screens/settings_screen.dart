@@ -1,5 +1,7 @@
 import 'dart:ui';
 
+import 'dart:async';
+
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -78,10 +80,12 @@ class _SettingsList extends ConsumerWidget {
               children: [
                 Text(
                   tr('settings.title'),
-                  style: NhamTextStyles.serifRegular(fontSize: NhamFontSize.lg)
-                      .copyWith(
-                          letterSpacing: NhamTracking.tight,
-                          color: NhamColors.text),
+                  style: NhamTextStyles.serifRegular(
+                    fontSize: NhamFontSize.lg,
+                  ).copyWith(
+                    letterSpacing: NhamTracking.tight,
+                    color: NhamColors.text,
+                  ),
                 ),
                 const SizedBox(height: NhamSpacing.sp4),
 
@@ -138,16 +142,16 @@ class _SettingsList extends ConsumerWidget {
   }
 
   void _push(BuildContext context, _EditorKind kind) {
-    Navigator.of(context).push(
-      MaterialPageRoute<void>(builder: (_) => _ProfileScreen(kind: kind)),
-    );
+    Navigator.of(
+      context,
+    ).push(MaterialPageRoute<void>(builder: (_) => _ProfileScreen(kind: kind)));
   }
 
   void _copyLink(BuildContext context, String url) {
     Clipboard.setData(ClipboardData(text: url));
-    ScaffoldMessenger.maybeOf(context)?.showSnackBar(
-      SnackBar(content: Text(tr('common.copied'))),
-    );
+    ScaffoldMessenger.maybeOf(
+      context,
+    )?.showSnackBar(SnackBar(content: Text(tr('common.copied'))));
   }
 
   /// "Cutting · 0.50 kg/wk" — the saved goal + pace, or "Not set" when no
@@ -166,13 +170,14 @@ class _SettingsList extends ConsumerWidget {
     if (aggression == null) return goalLabel;
     final unit = tr('onboarding.bodyMetrics.weightUnit');
     // Locale decimal separator (vi "0,50") + localized per-week suffix.
-    final paceFmt = NumberFormat.decimalPattern(context.locale.languageCode)
-      ..minimumFractionDigits = 2
-      ..maximumFractionDigits = 2;
-    final pace = tr('settings.rows.pacePerWeek', namedArgs: {
-      'pace': paceFmt.format(aggression),
-      'unit': unit,
-    });
+    final paceFmt =
+        NumberFormat.decimalPattern(context.locale.languageCode)
+          ..minimumFractionDigits = 2
+          ..maximumFractionDigits = 2;
+    final pace = tr(
+      'settings.rows.pacePerWeek',
+      namedArgs: {'pace': paceFmt.format(aggression), 'unit': unit},
+    );
     return '$goalLabel · $pace';
   }
 
@@ -207,8 +212,9 @@ class _GroupLabel extends StatelessWidget {
       padding: const EdgeInsets.only(left: NhamSpacing.sp3, bottom: 4),
       child: Text(
         text.toUpperCase(),
-        style: NhamTextStyles.sansBold(fontSize: 10)
-            .copyWith(letterSpacing: 2.0, color: NhamColors.textMuted),
+        style: NhamTextStyles.sansBold(
+          fontSize: 10,
+        ).copyWith(letterSpacing: 2.0, color: NhamColors.textMuted),
       ),
     );
   }
@@ -238,54 +244,62 @@ class _PreferenceRowState extends State<_PreferenceRow> {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
+    return Semantics(
+      button: true,
+      excludeSemantics: true,
+      label: '${widget.label}, ${widget.subline}',
       onTap: widget.onTap,
-      onTapDown: (_) => setState(() => _pressed = true),
-      onTapUp: (_) => setState(() => _pressed = false),
-      onTapCancel: () => setState(() => _pressed = false),
-      child: Container(
-        padding: const EdgeInsets.symmetric(
-          horizontal: NhamSpacing.sp3,
-          vertical: 10,
-        ),
-        decoration: BoxDecoration(
-          color: _pressed ? NhamColors.hover50 : Colors.transparent,
-          borderRadius: BorderRadius.circular(NhamRadii.buttonXl),
-        ),
-        child: Row(
-          children: [
-            Icon(
-              widget.icon,
-              size: 16,
-              color: _pressed ? NhamColors.text : NhamColors.textMuted,
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    widget.label,
-                    style: NhamTextStyles.sansMedium(fontSize: NhamFontSize.sm)
-                        .copyWith(color: NhamColors.text),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    widget.subline,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: NhamTextStyles.sansRegular(fontSize: NhamFontSize.xs)
-                        .copyWith(color: NhamColors.textMuted),
-                  ),
-                ],
+      child: GestureDetector(
+        onTap: widget.onTap,
+        onTapDown: (_) => setState(() => _pressed = true),
+        onTapUp: (_) => setState(() => _pressed = false),
+        onTapCancel: () => setState(() => _pressed = false),
+        child: Container(
+          padding: const EdgeInsets.symmetric(
+            horizontal: NhamSpacing.sp3,
+            vertical: 10,
+          ),
+          decoration: BoxDecoration(
+            color: _pressed ? NhamColors.hover50 : Colors.transparent,
+            borderRadius: BorderRadius.circular(NhamRadii.buttonXl),
+          ),
+          child: Row(
+            children: [
+              Icon(
+                widget.icon,
+                size: 16,
+                color: _pressed ? NhamColors.text : NhamColors.textMuted,
               ),
-            ),
-            const Icon(
-              LucideIcons.chevronRight,
-              size: 16,
-              color: NhamColors.textMuted50,
-            ),
-          ],
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      widget.label,
+                      style: NhamTextStyles.sansMedium(
+                        fontSize: NhamFontSize.sm,
+                      ).copyWith(color: NhamColors.text),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      widget.subline,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: NhamTextStyles.sansRegular(
+                        fontSize: NhamFontSize.xs,
+                      ).copyWith(color: NhamColors.textMuted),
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(
+                LucideIcons.chevronRight,
+                size: 16,
+                color: NhamColors.textMuted50,
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -319,16 +333,19 @@ class _InfoRow extends StatelessWidget {
           Expanded(
             child: Text(
               label,
-              style: NhamTextStyles.sansMedium(fontSize: NhamFontSize.sm)
-                  .copyWith(color: NhamColors.text),
+              style: NhamTextStyles.sansMedium(
+                fontSize: NhamFontSize.sm,
+              ).copyWith(color: NhamColors.text),
             ),
           ),
           Text(
             value,
-            style: NhamTextStyles.sansRegular(fontSize: NhamFontSize.sm)
-                .copyWith(
-                    color: NhamColors.textMuted,
-                    fontFeatures: const [FontFeature.tabularFigures()]),
+            style: NhamTextStyles.sansRegular(
+              fontSize: NhamFontSize.sm,
+            ).copyWith(
+              color: NhamColors.textMuted,
+              fontFeatures: const [FontFeature.tabularFigures()],
+            ),
           ),
         ],
       ),
@@ -380,9 +397,14 @@ class _ProfileScreen extends ConsumerWidget {
                       // genuinely-null profile (onboarding never ran) gets the
                       // re-onboarding empty state. An error offers a retry, not
                       // a misleading "Start setup".
-                      error: (_, __) => _ProfileLoadError(
-                        onRetry: () => ref.invalidate(profileProvider(true)),
-                      ),
+                      error:
+                          (_, __) => _ProfileLoadError(
+                            onRetry: () {
+                              unawaited(
+                                ref.refresh(profileProvider(true).future),
+                              );
+                            },
+                          ),
                       data:
                           (profile) =>
                               profile != null
@@ -396,15 +418,15 @@ class _ProfileScreen extends ConsumerWidget {
   }
 
   Widget _editor(ProfileRow profile) => switch (kind) {
-        _EditorKind.goal => ProfileForm(profile: profile),
-        _EditorKind.cooking => InstantCommitEditor(
-            profile: profile,
-            title: tr('settings.rows.cooking'),
-            subtitle: tr('settings.profilePanel.cookingSubtitle'),
-            child: const Cooking(),
-          ),
-        _EditorKind.region => RegionEditor(profile: profile),
-      };
+    _EditorKind.goal => ProfileForm(profile: profile),
+    _EditorKind.cooking => InstantCommitEditor(
+      profile: profile,
+      title: tr('settings.rows.cooking'),
+      subtitle: tr('settings.profilePanel.cookingSubtitle'),
+      child: const Cooking(),
+    ),
+    _EditorKind.region => RegionEditor(profile: profile),
+  };
 }
 
 class _Centered extends StatelessWidget {
@@ -454,22 +476,28 @@ class _ProfileEmpty extends StatelessWidget {
           // descendant context, so this crosses tabs correctly.
           Align(
             alignment: Alignment.centerLeft,
-            child: GestureDetector(
+            child: Semantics(
+              button: true,
+              excludeSemantics: true,
+              label: tr('settings.profilePage.startSetup'),
               onTap: () => context.go('/logging'),
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: NhamSpacing.sp5,
-                  vertical: 10,
-                ),
-                decoration: BoxDecoration(
-                  color: NhamColors.text,
-                  borderRadius: BorderRadius.circular(NhamRadii.pill),
-                ),
-                child: Text(
-                  tr('settings.profilePage.startSetup'),
-                  style: NhamTextStyles.sansMedium(
-                    fontSize: NhamFontSize.sm,
-                  ).copyWith(color: Colors.white),
+              child: GestureDetector(
+                onTap: () => context.go('/logging'),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: NhamSpacing.sp5,
+                    vertical: 10,
+                  ),
+                  decoration: BoxDecoration(
+                    color: NhamColors.text,
+                    borderRadius: BorderRadius.circular(NhamRadii.pill),
+                  ),
+                  child: Text(
+                    tr('settings.profilePage.startSetup'),
+                    style: NhamTextStyles.sansMedium(
+                      fontSize: NhamFontSize.sm,
+                    ).copyWith(color: Colors.white),
+                  ),
                 ),
               ),
             ),
@@ -508,22 +536,28 @@ class _ProfileLoadError extends StatelessWidget {
           const SizedBox(height: NhamSpacing.sp4),
           Align(
             alignment: Alignment.centerLeft,
-            child: GestureDetector(
+            child: Semantics(
+              button: true,
+              excludeSemantics: true,
+              label: tr('common.retry'),
               onTap: onRetry,
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: NhamSpacing.sp5,
-                  vertical: 10,
-                ),
-                decoration: BoxDecoration(
-                  color: NhamColors.text,
-                  borderRadius: BorderRadius.circular(NhamRadii.pill),
-                ),
-                child: Text(
-                  tr('common.retry'),
-                  style: NhamTextStyles.sansMedium(
-                    fontSize: NhamFontSize.sm,
-                  ).copyWith(color: Colors.white),
+              child: GestureDetector(
+                onTap: onRetry,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: NhamSpacing.sp5,
+                    vertical: 10,
+                  ),
+                  decoration: BoxDecoration(
+                    color: NhamColors.text,
+                    borderRadius: BorderRadius.circular(NhamRadii.pill),
+                  ),
+                  child: Text(
+                    tr('common.retry'),
+                    style: NhamTextStyles.sansMedium(
+                      fontSize: NhamFontSize.sm,
+                    ).copyWith(color: Colors.white),
+                  ),
                 ),
               ),
             ),
@@ -553,33 +587,41 @@ class _BackHeaderState extends State<_BackHeader> {
     return ClipRect(
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8), // backdrop-blur-sm
-        child: GestureDetector(
-          behavior: HitTestBehavior.opaque,
+        child: Semantics(
+          button: true,
+          excludeSemantics: true,
+          label: tr('settings.title'),
           onTap: () => Navigator.of(context).pop(),
-          onTapDown: (_) => setState(() => _pressed = true),
-          onTapUp: (_) => setState(() => _pressed = false),
-          onTapCancel: () => setState(() => _pressed = false),
-          child: Container(
-            padding: const EdgeInsets.symmetric(
-              horizontal: NhamSpacing.sp4,
-              vertical: NhamSpacing.sp3,
-            ),
-            decoration: const BoxDecoration(
-              color: Color(0xE6FDFCF8), // cream @ 90%
-              border: Border(bottom: BorderSide(color: NhamColors.inputBorder)),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(LucideIcons.arrowLeft, size: 16, color: color),
-                const SizedBox(width: 6), // gap-1.5
-                Text(
-                  tr('settings.title'),
-                  style: NhamTextStyles.sansMedium(
-                    fontSize: NhamFontSize.sm,
-                  ).copyWith(color: color),
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: () => Navigator.of(context).pop(),
+            onTapDown: (_) => setState(() => _pressed = true),
+            onTapUp: (_) => setState(() => _pressed = false),
+            onTapCancel: () => setState(() => _pressed = false),
+            child: Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: NhamSpacing.sp4,
+                vertical: NhamSpacing.sp3,
+              ),
+              decoration: const BoxDecoration(
+                color: Color(0xE6FDFCF8), // cream @ 90%
+                border: Border(
+                  bottom: BorderSide(color: NhamColors.inputBorder),
                 ),
-              ],
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(LucideIcons.arrowLeft, size: 16, color: color),
+                  const SizedBox(width: 6), // gap-1.5
+                  Text(
+                    tr('settings.title'),
+                    style: NhamTextStyles.sansMedium(
+                      fontSize: NhamFontSize.sm,
+                    ).copyWith(color: color),
+                  ),
+                ],
+              ),
             ),
           ),
         ),

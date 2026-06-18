@@ -59,12 +59,17 @@ class _LanguageFieldState extends State<_LanguageField> {
       children: [
         Row(
           children: [
-            const Icon(LucideIcons.languages, size: 16, color: NhamColors.accent),
+            const Icon(
+              LucideIcons.languages,
+              size: 16,
+              color: NhamColors.accent,
+            ),
             const SizedBox(width: NhamSpacing.sp2),
             Text(
               tr('settings.language'),
-              style: NhamTextStyles.sansMedium(fontSize: NhamFontSize.detail)
-                  .copyWith(color: NhamColors.text),
+              style: NhamTextStyles.sansMedium(
+                fontSize: NhamFontSize.detail,
+              ).copyWith(color: NhamColors.text),
             ),
           ],
         ),
@@ -73,11 +78,13 @@ class _LanguageFieldState extends State<_LanguageField> {
           value: current,
           onChange: (v) {
             if (v == current) return;
-            context.setLocale(Locale(v));
-            // Nudge the controller to fire a notification. preferredLocale lives
-            // outside the form, so InstantCommitEditor detects the locale change
-            // and commits even though no field value changed (identity assign).
-            form.update((f) => f.countryOfResidence = f.countryOfResidence);
+            context.setLocale(Locale(v)).then((_) {
+              if (!mounted) return;
+              // Nudge the controller to fire a notification. preferredLocale
+              // lives outside the form, so InstantCommitEditor detects the
+              // locale change and commits even though no field value changed.
+              form.update((f) => f.countryOfResidence = f.countryOfResidence);
+            });
           },
         ),
       ],

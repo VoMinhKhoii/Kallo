@@ -24,15 +24,12 @@ class WelcomeDemo extends StatefulWidget {
 
 class _WelcomeDemoState extends State<WelcomeDemo>
     with SingleTickerProviderStateMixin {
-  late final String _full = tr('auth.welcome.demoMeal');
+  String _full = '';
   int _typed = 0;
   bool _resolved = false;
   Timer? _timer;
 
-  late final AnimationController _chip = AnimationController(
-    vsync: this,
-    duration: const Duration(milliseconds: 420),
-  );
+  late final AnimationController _chip;
 
   bool get _reducedMotion =>
       WidgetsBinding
@@ -44,12 +41,29 @@ class _WelcomeDemoState extends State<WelcomeDemo>
   @override
   void initState() {
     super.initState();
+    _chip = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 420),
+    );
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final full = tr('auth.welcome.demoMeal');
+    if (full == _full) return;
+
+    _timer?.cancel();
+    _full = full;
     if (_reducedMotion) {
       _typed = _full.length;
       _resolved = true;
       _chip.value = 1;
       return;
     }
+    _typed = 0;
+    _resolved = false;
+    _chip.reset();
     _startTyping();
   }
 
@@ -104,18 +118,19 @@ class _WelcomeDemoState extends State<WelcomeDemo>
             duration: const Duration(milliseconds: 240),
             curve: Curves.easeOut,
             alignment: Alignment.centerLeft,
-            child: _resolved
-                ? FadeTransition(
-                    opacity: _chip,
-                    child: ScaleTransition(
-                      scale: Tween<double>(begin: 0.92, end: 1).animate(
-                        CurvedAnimation(parent: _chip, curve: Curves.easeOut),
+            child:
+                _resolved
+                    ? FadeTransition(
+                      opacity: _chip,
+                      child: ScaleTransition(
+                        scale: Tween<double>(begin: 0.92, end: 1).animate(
+                          CurvedAnimation(parent: _chip, curve: Curves.easeOut),
+                        ),
+                        alignment: Alignment.centerLeft,
+                        child: _resultChip(),
                       ),
-                      alignment: Alignment.centerLeft,
-                      child: _resultChip(),
-                    ),
-                  )
-                : const SizedBox(height: 0, width: double.infinity),
+                    )
+                    : const SizedBox(height: 0, width: double.infinity),
           ),
         ],
       ),

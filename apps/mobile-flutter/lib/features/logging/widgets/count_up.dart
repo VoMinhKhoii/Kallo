@@ -38,14 +38,16 @@ class CountUpText extends StatefulWidget {
 
 class _CountUpTextState extends State<CountUpText>
     with SingleTickerProviderStateMixin {
-  late final AnimationController _c =
-      AnimationController(vsync: this, duration: widget.duration);
+  late final AnimationController _c = AnimationController(
+    vsync: this,
+    duration: widget.duration,
+  );
   late Animation<double> _anim = _build(widget.from, widget.value);
 
-  Animation<double> _build(double from, double to) =>
-      Tween<double>(begin: from, end: to)
-          .chain(CurveTween(curve: widget.curve))
-          .animate(_c);
+  Animation<double> _build(double from, double to) => Tween<double>(
+    begin: from,
+    end: to,
+  ).chain(CurveTween(curve: widget.curve)).animate(_c);
 
   @override
   void initState() {
@@ -62,9 +64,15 @@ class _CountUpTextState extends State<CountUpText>
     super.didUpdateWidget(old);
     if (old.value != widget.value) {
       _anim = _build(_anim.value, widget.value);
-      _c
-        ..reset()
-        ..forward();
+      if (widget.enabled) {
+        _c
+          ..reset()
+          ..forward();
+      } else {
+        _c.value = 1;
+      }
+    } else if (old.enabled != widget.enabled && !widget.enabled) {
+      _c.value = 1;
     }
   }
 
@@ -77,16 +85,20 @@ class _CountUpTextState extends State<CountUpText>
   @override
   Widget build(BuildContext context) {
     if (!widget.enabled) {
-      return NhamText(widget.format(widget.value),
-          variant: widget.variant, style: widget.style);
+      return NhamText(
+        widget.format(widget.value),
+        variant: widget.variant,
+        style: widget.style,
+      );
     }
     return AnimatedBuilder(
       animation: _anim,
-      builder: (context, _) => NhamText(
-        widget.format(_anim.value),
-        variant: widget.variant,
-        style: widget.style,
-      ),
+      builder:
+          (context, _) => NhamText(
+            widget.format(_anim.value),
+            variant: widget.variant,
+            style: widget.style,
+          ),
     );
   }
 }

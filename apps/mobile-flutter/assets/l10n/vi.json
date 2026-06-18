@@ -1173,7 +1173,7 @@
       "deleteScreenTitle": "Xóa tài khoản",
       "deleteConsequence": "Thao tác này xóa hồ sơ, mọi bữa ăn bạn đã ghi, và lịch sử cân nặng của bạn. Không thể hoàn tác.",
       "deleteConfirmLabel": "Nhập {word} để xác nhận",
-      "deleteConfirmWord": "XÓA",
+      "deleteConfirmWord": "XOA",
       "deleteConfirmAction": "Xóa tài khoản của tôi",
       "deleteError": "Không thể xóa tài khoản. Vui lòng thử lại."
     },

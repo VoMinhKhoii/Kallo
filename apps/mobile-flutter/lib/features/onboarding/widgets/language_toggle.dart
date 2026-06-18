@@ -70,59 +70,73 @@ class _LangButtonState extends State<_LangButton> {
   @override
   Widget build(BuildContext context) {
     // Unselected: hover:border-[#C9A87C]/50 (border lightens toward accent).
-    final borderColor = widget.selected
-        ? NhamColors.accent
-        : (_pressed ? NhamColors.accent50 : NhamColors.inputBorder);
-    return GestureDetector(
-      onTapDown: (_) => setState(() => _pressed = true),
-      onTapUp: (_) => setState(() => _pressed = false),
-      onTapCancel: () => setState(() => _pressed = false),
+    final borderColor =
+        widget.selected
+            ? NhamColors.accent
+            : (_pressed ? NhamColors.accent50 : NhamColors.inputBorder);
+    return Semantics(
+      button: true,
+      selected: widget.selected,
+      excludeSemantics: true,
+      label: widget.label,
       onTap: widget.onTap,
-      child: AnimatedContainer(
-        // transition-colors ~150ms ease.
-        duration: const Duration(milliseconds: 150),
-        curve: const Cubic(0.25, 0.1, 0.25, 1),
-        padding: const EdgeInsets.symmetric(
-          horizontal: NhamSpacing.sp4,
-          vertical: NhamSpacing.sp3,
-        ),
-        decoration: BoxDecoration(
-          color: widget.selected ? NhamColors.accent10 : NhamColors.cream,
-          borderRadius: BorderRadius.circular(NhamRadii.containerLg),
-          border: Border.all(color: borderColor),
-        ),
-        child: Row(
-          children: [
-            // h-5 w-7 rounded flag on web → Lora language-code monogram disc.
-            Container(
-              width: 28,
-              height: 20,
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                color: NhamColors.accent10,
-                borderRadius: BorderRadius.circular(NhamRadii.sm),
+      child: GestureDetector(
+        onTapDown: (_) => setState(() => _pressed = true),
+        onTapUp: (_) => setState(() => _pressed = false),
+        onTapCancel: () => setState(() => _pressed = false),
+        onTap: widget.onTap,
+        child: AnimatedContainer(
+          // transition-colors ~150ms ease.
+          duration: const Duration(milliseconds: 150),
+          curve: const Cubic(0.25, 0.1, 0.25, 1),
+          padding: const EdgeInsets.symmetric(
+            horizontal: NhamSpacing.sp4,
+            vertical: NhamSpacing.sp3,
+          ),
+          decoration: BoxDecoration(
+            color: widget.selected ? NhamColors.accent10 : NhamColors.cream,
+            borderRadius: BorderRadius.circular(NhamRadii.containerLg),
+            border: Border.all(color: borderColor),
+          ),
+          child: Row(
+            children: [
+              // h-5 w-7 rounded flag on web → Lora language-code monogram disc.
+              Container(
+                width: 28,
+                height: 20,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: NhamColors.accent10,
+                  borderRadius: BorderRadius.circular(NhamRadii.sm),
+                ),
+                child: Text(
+                  widget.mono,
+                  style: NhamTextStyles.serifRegular(
+                    fontSize: 11,
+                  ).copyWith(color: NhamColors.text, letterSpacing: 0.5),
+                ),
               ),
-              child: Text(
-                widget.mono,
-                style: NhamTextStyles.serifRegular(fontSize: 11)
-                    .copyWith(color: NhamColors.text, letterSpacing: 0.5),
-              ),
-            ),
-            const SizedBox(width: NhamSpacing.sp3),
-            Expanded(
-              child: Text(
-                widget.label,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: NhamTextStyles.sansMedium(fontSize: 14)
-                    .copyWith(color: NhamColors.text),
-              ),
-            ),
-            if (widget.selected) ...[
               const SizedBox(width: NhamSpacing.sp3),
-              const Icon(LucideIcons.check, size: 16, color: NhamColors.accent),
+              Expanded(
+                child: Text(
+                  widget.label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: NhamTextStyles.sansMedium(
+                    fontSize: 14,
+                  ).copyWith(color: NhamColors.text),
+                ),
+              ),
+              if (widget.selected) ...[
+                const SizedBox(width: NhamSpacing.sp3),
+                const Icon(
+                  LucideIcons.check,
+                  size: 16,
+                  color: NhamColors.accent,
+                ),
+              ],
             ],
-          ],
+          ),
         ),
       ),
     );
