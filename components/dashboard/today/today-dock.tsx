@@ -67,13 +67,13 @@ export function TodayDock({ nutrition, meals, weekly }: TodayDockProps) {
           <div className="mt-1 flex items-baseline gap-1.5">
             <span
               className="font-semibold text-4xl text-nham-text tabular-nums leading-none tracking-[-0.04em] sm:text-5xl"
-              style={{ fontFamily: 'Lora, serif' }}
+              style={{ fontFamily: 'DM Sans, sans-serif' }}
             >
               {remaining.toLocaleString()}
             </span>
             <span
-              className="text-lg text-nham-text-muted italic"
-              style={{ fontFamily: 'Lora, serif' }}
+              className="text-lg text-nham-text-muted"
+              style={{ fontFamily: 'DM Sans, sans-serif' }}
             >
               / {nutrition.calories.target.toLocaleString()}
             </span>
@@ -97,7 +97,7 @@ export function TodayDock({ nutrition, meals, weekly }: TodayDockProps) {
               current={nutrition.calories.current}
               target={nutrition.calories.target}
               size={72}
-              strokeWidth={6}
+              strokeWidth={4}
               center={<Flame className="h-6 w-6 text-nham-accent" />}
             />
             <MacroBars items={macroItems} />

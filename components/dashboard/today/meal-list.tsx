@@ -43,7 +43,7 @@ export function MealList({ meals }: MealListProps) {
             <div className="flex min-w-0 items-start gap-2">
               <span
                 className="mt-0.5 shrink-0 text-[10px] text-nham-accent tabular-nums leading-none"
-                style={{ fontFamily: 'Lora, serif' }}
+                style={{ fontFamily: 'DM Sans, sans-serif' }}
               >
                 {idx + 1}
               </span>
