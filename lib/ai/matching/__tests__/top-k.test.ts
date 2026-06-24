@@ -3,6 +3,7 @@ import {
   buildMatchTopK,
   type FuzzyMatchRow,
   mergeTopKAcrossSources,
+  rrfFuseCandidates,
 } from '../source-matching';
 
 function row(
@@ -146,5 +147,76 @@ describe('mergeTopKAcrossSources', () => {
 
   it('handles empty source lists', () => {
     expect(mergeTopKAcrossSources([[], []], 5)).toEqual([]);
+  });
+});
+
+describe('rrfFuseCandidates', () => {
+  const C = (id: string, sim: number, matchType?: 'vector' | 'fuzzy') => ({
+    ingredientName: 'x',
+    foodCompositionId: id,
+    matchedName: id,
+    similarity: sim,
+    confidence: 'high' as const,
+    state: 'cooked' as const,
+    ...(matchType ? { matchType } : {}),
+  });
+
+  it('returns the other arm unchanged when one arm is empty', () => {
+    const vector = [C('a', 0.9), C('b', 0.85)];
+    expect(rrfFuseCandidates(vector, [], 3)).toEqual(vector);
+    expect(rrfFuseCandidates([], vector, 3)).toEqual(vector);
+  });
+
+  it('ranks a candidate found by both arms above single-arm candidates', () => {
+    // Vector arm: wrong-ish semantic neighbor first, real match second.
+    const vector = [
+      C('semantic-neighbor', 0.84, 'vector'),
+      C('real', 0.82, 'vector'),
+    ];
+    // Fuzzy arm: exact lexical hit on the real match.
+    const fuzzy = [C('real', 0.95, 'fuzzy')];
+
+    const fused = rrfFuseCandidates(vector, fuzzy, 3);
+    // 'real': 1/61 (vector rank 1) + 1/60 (fuzzy rank 0) beats
+    // 'semantic-neighbor': 1/60 alone.
+    expect(fused[0].foodCompositionId).toBe('real');
+    expect(fused[1].foodCompositionId).toBe('semantic-neighbor');
+  });
+
+  it('keeps the variant from the arm where the id ranks better', () => {
+    const vector = [C('a', 0.8, 'vector'), C('b', 0.78, 'vector')];
+    const fuzzy = [C('b', 0.99, 'fuzzy')];
+
+    const fused = rrfFuseCandidates(vector, fuzzy, 3);
+    const b = fused.find((c) => c.foodCompositionId === 'b');
+    // 'b' ranks 0 in fuzzy vs 1 in vector → fuzzy variant kept.
+    expect(b?.matchType).toBe('fuzzy');
+    expect(b?.similarity).toBe(0.99);
+    // 'a' only appears in vector.
+    const a = fused.find((c) => c.foodCompositionId === 'a');
+    expect(a?.matchType).toBe('vector');
+  });
+
+  it('prefers the vector variant on a rank tie', () => {
+    const vector = [C('same', 0.8, 'vector')];
+    const fuzzy = [C('same', 0.9, 'fuzzy')];
+    const fused = rrfFuseCandidates(vector, fuzzy, 3);
+    expect(fused).toHaveLength(1);
+    expect(fused[0].matchType).toBe('vector');
+  });
+
+  it('caps the fused pool at K', () => {
+    const vector = [C('a', 0.9), C('b', 0.85), C('c', 0.8)];
+    const fuzzy = [C('d', 0.95), C('e', 0.9)];
+    expect(rrfFuseCandidates(vector, fuzzy, 2)).toHaveLength(2);
+    expect(rrfFuseCandidates(vector, fuzzy, 0)).toEqual([]);
+  });
+
+  it('breaks equal RRF scores by similarity', () => {
+    // a: vector rank 0 only (1/60). d: fuzzy rank 0 only (1/60). Same score.
+    const vector = [C('a', 0.75)];
+    const fuzzy = [C('d', 0.92)];
+    const fused = rrfFuseCandidates(vector, fuzzy, 2);
+    expect(fused[0].foodCompositionId).toBe('d');
   });
 });

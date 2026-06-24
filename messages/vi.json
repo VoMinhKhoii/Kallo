@@ -995,6 +995,7 @@
     },
     "feedArea": {
       "savedMeal": "Đã lưu bữa ăn",
+      "saveError": "Không thể lưu bữa ăn. Vui lòng thử lại.",
       "mealUpdatedToast": "Đã cập nhật bữa ăn",
       "mealRemoved": "Đã xóa bữa ăn",
       "undo": "Hoàn tác",
@@ -1050,9 +1051,30 @@
       "refineHint": "Chúng tôi sẽ đọc lại cả bữa ăn cùng đính chính của bạn và thay thế.",
       "refineTightHint": "Mô tả gốc khá dài — chúng tôi sẽ rút gọn một chút để vừa phần đính chính."
     },
+    "manualLogging": {
+      "searchPlaceholder": "Tìm món ăn...",
+      "gramsPlaceholder": "100",
+      "gramsUnit": "g",
+      "gramsLabel": "Số gam",
+      "addItem": "Thêm món",
+      "removeItem": "Xóa món",
+      "noResults": "Không tìm thấy món nào",
+      "searching": "Đang tìm...",
+      "recentFoods": "Món gần đây",
+      "stateRaw": "sống",
+      "stateCooked": "chín",
+      "kcalPer100g": "{kcal} kcal/100g",
+      "rowKcal": "{kcal} kcal",
+      "total": "Tổng cộng",
+      "totalKcal": "{kcal} kcal",
+      "totalMacros": "P {protein} · C {carbs} · F {fat}",
+      "relatedMatch": "liên quan"
+    },
     "mode": {
       "normal": "Bình thường",
       "normalDescription": "Tách bữa ăn thành nguyên liệu để ước tính chính xác",
+      "manual": "Thủ công",
+      "manualDescription": "Tìm món và nhập chính xác số gam",
       "cheat": "Bữa xả",
       "cheatDescription": "Dịp khó đếm — chỉ cần kéo vài thanh trượt"
     },

@@ -8,13 +8,13 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { CheatOccasionChips } from '@/components/logging/feed/cheat-occasion-chips';
 import { CheatSliderCard } from '@/components/logging/feed/cheat-slider-card';
-import { EmptyState } from '@/components/logging/feed/empty-state';
 import { MacroSummary } from '@/components/logging/feed/macro-summary';
 import { MealEntry } from '@/components/logging/feed/meal-entry';
 import { PartialDayNotice } from '@/components/logging/feed/partial-day-notice';
 import { PartialYesterdayPrompt } from '@/components/logging/feed/partial-yesterday-prompt';
 import { PersistedMealCard } from '@/components/logging/feed/persisted-meal-card';
 import { StreamingMealEntry } from '@/components/logging/feed/streaming-meal-entry';
+import type { InputMode } from '@/components/logging/input/cheat-mode-picker';
 import {
   MealInput,
   type MealInputHandle,
@@ -24,7 +24,11 @@ import { addDays } from '@/components/logging/sidebar/timeline-utils';
 import { dailyMealsKeys } from '@/hooks/use-daily-meals';
 import { useFeedSubmit } from '@/hooks/use-feed-submit';
 import { loggingDayKeys, useLoggingDay } from '@/hooks/use-logging-day';
-import { useConfirmMeal, useUpdateMeal } from '@/hooks/use-meal-mutations';
+import {
+  useConfirmMeal,
+  useSaveManualMeal,
+  useUpdateMeal,
+} from '@/hooks/use-meal-mutations';
 import { useRecentCheatOccasions } from '@/hooks/use-recent-cheat-occasions';
 import { useStreamAnalysis } from '@/hooks/use-stream-analysis';
 import { useStreamingTerminalEffects } from '@/hooks/use-streaming-terminal-effects';
@@ -36,6 +40,7 @@ import {
   stageCheatRepeatAction,
 } from '@/lib/actions/meals';
 import { sumDisplayedNutrition } from '@/lib/ai/pipeline/goal-adjustment';
+import { rowIsComplete } from '@/lib/logging/manual-logging';
 import { isLikelyPartialDay } from '@/lib/nutrition/pattern/completeness';
 import type { CheatIntensity, CheatSliderLevels } from '@/lib/types/cheat';
 import type {
@@ -334,13 +339,14 @@ export function FeedArea({
     useState(false);
 
   const lastPrefilledMealRef = useRef<string | null>(null);
-  // Cheat-meal mode: a buffet/indulgent occasion logged via sliders.
-  const [isCheat, setIsCheat] = useState(false);
+  // Input mode: normal / manual / cheat.
+  const [loggingMode, setLoggingMode] = useState<InputMode>('normal');
   // Indulgence magnitude (like an AI "thinking" level) — scales the estimate.
   const [cheatIntensity, setCheatIntensity] =
     useState<CheatIntensity>('medium');
   // "Log it again" — re-staging a past cheat occasion (a quick DB insert, no AI).
   const [isStagingRepeat, setIsStagingRepeat] = useState(false);
+  const isCheat = loggingMode === 'cheat';
   const recentCheatOccasions = useRecentCheatOccasions(profile.userId, isCheat);
 
   // Auto-submit the handed-off meal once the prefill effect has armed it. The
@@ -383,6 +389,7 @@ export function FeedArea({
   // Mutations
   const confirmMeal = useConfirmMeal(profile.userId);
   const updateMeal = useUpdateMeal(profile.userId, selectedDate);
+  const saveManualMeal = useSaveManualMeal(profile.userId);
 
   // Persist an amount edit (gram overrides + per-row removals) for one meal.
   // The mutation reconciles the card in place from the authoritative response.
@@ -536,6 +543,35 @@ export function FeedArea({
     pendingAutoSubmitRef.current = false;
     void handleSubmit();
   }, [handleSubmit, stream.isAnalyzing]);
+
+  // Manual (Cronometer-style) submit: ingredient ids + grams straight to the
+  // save endpoint — deterministic, no streaming analysis and no AI call.
+  const handleManualSubmit = useCallback(() => {
+    const rows = (inputRef.current?.getManualRows() ?? []).filter(
+      rowIsComplete
+    );
+    if (rows.length === 0 || saveManualMeal.isPending) return;
+
+    saveManualMeal.mutate(
+      {
+        mealId: crypto.randomUUID(),
+        originDate: selectedDate,
+        loggedDate: selectedDate,
+        timezoneOffset: new Date().getTimezoneOffset(),
+        rows,
+      },
+      {
+        onSuccess: () => {
+          toast.success(t('savedMeal'));
+        },
+        onError: (error) => {
+          toast.error(error instanceof Error ? error.message : t('saveError'));
+        },
+      }
+    );
+    inputRef.current?.clear();
+    scrollToBottom();
+  }, [saveManualMeal, selectedDate, scrollToBottom, t]);
 
   const handleAnalysisComplete = useCallback(() => {
     const originDate =
@@ -814,6 +850,11 @@ export function FeedArea({
   const hasPersistedMeals = persistedMeals.length > 0;
   const hasContent =
     hasPersistedMeals || hasPendingMessages || hasStreamingMessages;
+  // ChatGPT-style: before anything is logged the composer sits centered with
+  // the prompt; once there's content it animates down to the bottom while the
+  // cards animate in. Not mode-based — purely content-driven.
+  const isEmptyComposer =
+    !hasContent && !stream.isAnalyzing && !isDayLoading && !isDayError;
 
   const isToday = selectedDate === today;
   const isPastDay = selectedDate < today;
@@ -870,164 +911,172 @@ export function FeedArea({
         </div>
       )}
 
-      {/* Scrollable meal cards only */}
+      {/* Body: the cards region + the composer. When empty, the composer is
+          the centered element (no prompt above it — the input bar IS the
+          empty state); once there's content the cards take the height and the
+          composer animates down to the bottom. */}
       <div
-        ref={scrollRef}
-        className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain px-3 py-3 sm:px-6 sm:py-4"
-        data-testid="meal-card-scroll"
+        className={cn(
+          'flex min-h-0 flex-1 flex-col',
+          isEmptyComposer && 'justify-center'
+        )}
       >
-        <AnimatePresence mode="wait">
-          {!hasContent &&
-            !stream.isAnalyzing &&
-            !isDayLoading &&
-            !isDayError && (
-              <div className="flex flex-1 items-center justify-center py-6">
-                <EmptyState
-                  onSuggestionClick={(suggestion) => {
-                    inputRef.current?.setText(suggestion);
-                    inputRef.current?.focus();
-                  }}
-                />
-              </div>
-            )}
-        </AnimatePresence>
+        <div
+          ref={scrollRef}
+          className={cn(
+            'flex flex-col overscroll-contain px-3 sm:px-6',
+            isEmptyComposer
+              ? 'shrink-0'
+              : 'min-h-0 flex-1 overflow-y-auto py-3 sm:py-4'
+          )}
+          data-testid="meal-card-scroll"
+        >
+          {isDayLoading && <LoggingDaySkeleton />}
 
-        {isDayLoading && <LoggingDaySkeleton />}
+          {!isDayLoading && isDayError && (
+            <LoggingDayErrorState
+              isRetrying={isDayRetrying}
+              onRetry={() => {
+                void refetchLoggingDay();
+              }}
+            />
+          )}
 
-        {!isDayLoading && isDayError && (
-          <LoggingDayErrorState
-            isRetrying={isDayRetrying}
-            onRetry={() => {
-              void refetchLoggingDay();
-            }}
-          />
-        )}
+          {!isDayLoading && !isDayError && hasContent && (
+            <div className="mx-auto w-full max-w-3xl pl-6 sm:pl-12">
+              <div className="flex flex-col gap-5 sm:gap-8">
+                {/* Persisted meals from DB */}
+                <AnimatePresence initial={false}>
+                  {orderedPersistedMeals.map((meal) => (
+                    <PersistedMealCard
+                      key={meal.id}
+                      meal={meal}
+                      onDelete={() => handleDeleteMeal(meal.id)}
+                      onLogAgain={() => {
+                        inputRef.current?.setText(meal.rawInput);
+                        inputRef.current?.focus();
+                      }}
+                      onUpdate={(changes) => handleUpdateMeal(meal.id, changes)}
+                      onRefine={(correction) =>
+                        handleRefineMeal(
+                          { id: meal.id, rawInput: meal.rawInput },
+                          correction
+                        )
+                      }
+                    />
+                  ))}
+                </AnimatePresence>
 
-        {!isDayLoading && !isDayError && hasContent && (
-          <div className="mx-auto w-full max-w-3xl pl-6 sm:pl-12">
-            <div className="flex flex-col gap-5 sm:gap-8">
-              {/* Persisted meals from DB */}
-              <AnimatePresence initial={false}>
-                {orderedPersistedMeals.map((meal) => (
-                  <PersistedMealCard
-                    key={meal.id}
-                    meal={meal}
-                    onDelete={() => handleDeleteMeal(meal.id)}
-                    onLogAgain={() => {
-                      inputRef.current?.setText(meal.rawInput);
-                      inputRef.current?.focus();
-                    }}
-                    onUpdate={(changes) => handleUpdateMeal(meal.id, changes)}
-                    onRefine={(correction) =>
-                      handleRefineMeal(
-                        { id: meal.id, rawInput: meal.rawInput },
-                        correction
-                      )
+                {/* Streaming / unconfirmed messages */}
+                <AnimatePresence initial={false}>
+                  {unconfirmedMessages.map((msg) => {
+                    if (msg.isStreaming) {
+                      return <StreamingMealEntry key={msg.id} message={msg} />;
                     }
-                  />
-                ))}
-              </AnimatePresence>
 
-              {/* Streaming / unconfirmed messages */}
-              <AnimatePresence initial={false}>
-                {unconfirmedMessages.map((msg) => {
-                  if (msg.isStreaming) {
-                    return <StreamingMealEntry key={msg.id} message={msg} />;
-                  }
+                    if (msg.cheatSpec) {
+                      return (
+                        <CheatSliderCard
+                          key={msg.id}
+                          spec={msg.cheatSpec}
+                          userInput={msg.userInput}
+                          timestamp={msg.timestamp}
+                          isConfirming={confirmMeal.isPending}
+                          onConfirm={(levels) =>
+                            handleConfirmCheatMeal(msg, levels)
+                          }
+                          onClarify={(answer) =>
+                            handleCheatClarify(msg, answer)
+                          }
+                        />
+                      );
+                    }
 
-                  if (msg.cheatSpec) {
+                    if (msg.parsedMeal) {
+                      return (
+                        <MealEntry
+                          key={msg.id}
+                          message={msg}
+                          isConfirming={confirmMeal.isPending}
+                          onConfirm={(edits) => handleConfirmMeal(msg, edits)}
+                        />
+                      );
+                    }
+
+                    // Error message display
                     return (
-                      <CheatSliderCard
+                      <motion.div
                         key={msg.id}
-                        spec={msg.cheatSpec}
-                        userInput={msg.userInput}
-                        timestamp={msg.timestamp}
-                        isConfirming={confirmMeal.isPending}
-                        onConfirm={(levels) =>
-                          handleConfirmCheatMeal(msg, levels)
-                        }
-                        onClarify={(answer) => handleCheatClarify(msg, answer)}
-                      />
-                    );
-                  }
-
-                  if (msg.parsedMeal) {
-                    return (
-                      <MealEntry
-                        key={msg.id}
-                        message={msg}
-                        isConfirming={confirmMeal.isPending}
-                        onConfirm={(edits) => handleConfirmMeal(msg, edits)}
-                      />
-                    );
-                  }
-
-                  // Error message display
-                  return (
-                    <motion.div
-                      key={msg.id}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className="group relative"
-                    >
-                      <div className="absolute top-2 bottom-0 -left-10 w-px bg-nham-border/60 group-last:bg-transparent" />
-                      <div className="absolute top-2 -left-[43px] h-2 w-2 rounded-full border-2 border-nham-danger bg-white" />
-                      <div className="rounded-2xl border border-nham-danger/30 bg-nham-danger/10 p-4">
-                        {msg.userInput && (
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="group relative"
+                      >
+                        <div className="absolute top-2 bottom-0 -left-10 w-px bg-nham-border/60 group-last:bg-transparent" />
+                        <div className="absolute top-2 -left-[43px] h-2 w-2 rounded-full border-2 border-nham-danger bg-white" />
+                        <div className="rounded-2xl border border-nham-danger/30 bg-nham-danger/10 p-4">
+                          {msg.userInput && (
+                            <p
+                              className="mb-2 text-[13px] text-nham-text-muted"
+                              style={{ fontFamily: 'Lora, serif' }}
+                            >
+                              {msg.userInput}
+                            </p>
+                          )}
                           <p
-                            className="mb-2 text-[13px] text-nham-text-muted"
-                            style={{ fontFamily: 'Lora, serif' }}
+                            className="text-nham-danger text-sm"
+                            style={{
+                              fontFamily: 'DM Sans, sans-serif',
+                            }}
                           >
-                            {msg.userInput}
+                            {msg.content}
                           </p>
-                        )}
-                        <p
-                          className="text-nham-danger text-sm"
-                          style={{
-                            fontFamily: 'DM Sans, sans-serif',
-                          }}
-                        >
-                          {msg.content}
-                        </p>
-                      </div>
-                    </motion.div>
-                  );
-                })}
-              </AnimatePresence>
+                        </div>
+                      </motion.div>
+                    );
+                  })}
+                </AnimatePresence>
+              </div>
             </div>
-          </div>
-        )}
-      </div>
-
-      {/* Input area */}
-      <div className="shrink-0 px-3 pt-2 pb-3 sm:px-6 sm:pb-4">
-        {isCheat && (
-          <CheatOccasionChips
-            occasions={recentCheatOccasions.data ?? []}
-            disabled={isStagingRepeat || stream.isAnalyzing}
-            onSelect={handleRepeatCheat}
-          />
-        )}
-        <div className="mx-auto max-w-3xl">
-          <MealInput
-            ref={inputRef}
-            onSubmit={handleSubmit}
-            onCancel={() => {
-              stream.cancel();
-              if (streamingMsgId) {
-                setMessages((prev) =>
-                  prev.filter((m) => m.id !== streamingMsgId)
-                );
-              }
-              setStreamingMsgId(null);
-            }}
-            disabled={stream.isAnalyzing}
-            isCheat={isCheat}
-            onToggleCheat={setIsCheat}
-            cheatIntensity={cheatIntensity}
-            onChangeIntensity={setCheatIntensity}
-          />
+          )}
         </div>
+
+        {/* Composer — `layout` smoothly tweens it from the centered position
+            (empty) down to the bottom once cards take the height above it. */}
+        <motion.div
+          layout
+          transition={{ type: 'spring', stiffness: 320, damping: 34 }}
+          className="shrink-0 px-3 pt-2 pb-3 sm:px-6 sm:pb-4"
+        >
+          {isCheat && (
+            <CheatOccasionChips
+              occasions={recentCheatOccasions.data ?? []}
+              disabled={isStagingRepeat || stream.isAnalyzing}
+              onSelect={handleRepeatCheat}
+            />
+          )}
+          <div className="mx-auto w-full max-w-3xl">
+            <MealInput
+              ref={inputRef}
+              onSubmit={
+                loggingMode === 'manual' ? handleManualSubmit : handleSubmit
+              }
+              onCancel={() => {
+                stream.cancel();
+                if (streamingMsgId) {
+                  setMessages((prev) =>
+                    prev.filter((m) => m.id !== streamingMsgId)
+                  );
+                }
+                setStreamingMsgId(null);
+              }}
+              disabled={stream.isAnalyzing}
+              mode={loggingMode}
+              onModeChange={setLoggingMode}
+              cheatIntensity={cheatIntensity}
+              onChangeIntensity={setCheatIntensity}
+            />
+          </div>
+        </motion.div>
       </div>
     </main>
   );

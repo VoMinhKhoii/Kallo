@@ -1025,6 +1025,24 @@
       "previousWeek": "Previous week",
       "nextWeek": "Next week",
       "openCalendar": "Open calendar"
+    },
+    "manualLogging": {
+      "openSheet": "Log manually",
+      "title": "Log manually",
+      "subtitle": "Search foods, enter exact grams — no AI",
+      "searchPlaceholder": "Search foods...",
+      "recentFoods": "Recent foods",
+      "selected": "Selected",
+      "noResults": "No foods found",
+      "searching": "Searching...",
+      "stateRaw": "raw",
+      "stateCooked": "cooked",
+      "gramsUnit": "g",
+      "kcal": "kcal",
+      "kcalPer100g": "kcal/100g",
+      "removeItem": "Remove food",
+      "save": "Save meal",
+      "relatedMatch": "related"
     }
   },
   "groups": {

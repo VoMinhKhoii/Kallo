@@ -995,6 +995,7 @@
     },
     "feedArea": {
       "savedMeal": "Meal saved",
+      "saveError": "Could not save the meal. Please try again.",
       "mealUpdatedToast": "Meal updated",
       "mealRemoved": "Meal removed",
       "undo": "Undo",
@@ -1050,9 +1051,30 @@
       "refineHint": "We'll re-read the whole meal with your correction and replace it.",
       "refineTightHint": "The original text is long — we'll trim it a little to fit your correction."
     },
+    "manualLogging": {
+      "searchPlaceholder": "Search foods...",
+      "gramsPlaceholder": "100",
+      "gramsUnit": "g",
+      "gramsLabel": "Grams",
+      "addItem": "Add food",
+      "removeItem": "Remove food",
+      "noResults": "No foods found",
+      "searching": "Searching...",
+      "recentFoods": "Recent foods",
+      "stateRaw": "raw",
+      "stateCooked": "cooked",
+      "kcalPer100g": "{kcal} kcal/100g",
+      "rowKcal": "{kcal} kcal",
+      "total": "Total",
+      "totalKcal": "{kcal} kcal",
+      "totalMacros": "P {protein} · C {carbs} · F {fat}",
+      "relatedMatch": "related"
+    },
     "mode": {
       "normal": "Normal",
       "normalDescription": "Break a meal into ingredients for a precise estimate",
+      "manual": "Manual",
+      "manualDescription": "Search foods and enter exact grams",
       "cheat": "Cheat meal",
       "cheatDescription": "Hard-to-count occasions — set a few sliders instead"
     },

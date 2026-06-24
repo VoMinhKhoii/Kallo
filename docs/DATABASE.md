@@ -172,9 +172,10 @@ The query-side embedding (for the ingredient name output by the LLM) is resolved
 **Input normalization**: All inputs are normalized via `normalizeIngredientKey()` (NFC + lowercase + trim) at the entry point of both `resolveQueryEmbedding()` and `cacheQueryEmbedding()`, before any tier is checked.
 
 - **L1 hit**: Returns immediately from process memory. Lost on server restart.
-- **L2 hit**: Exact match on `name_vi` only. Promotes both `name_vi` and `name_en` into L1.
-- **L2 miss + name_en match**: If `name_en` matches but `name_vi` doesn't, this is a synonym signal. The system logs a `synonym_candidates` row asynchronously (fire-and-forget) and continues to L3.
+- **L2 hit**: Exact match on `name_vi` or `lower(name_en)`. Promotes both `name_vi` and `name_en` into L1.
+- **L2 miss**: Neither `name_vi` nor `lower(name_en)` matched. The system logs a `synonym_candidates` row asynchronously (fire-and-forget) and continues to L3.
 - **L3 fallback**: Calls Gemini API, then fire-and-forget inserts into L2 (as `name_vi`) + sets L1. `ON CONFLICT DO NOTHING` for concurrency safety.
+- **L1 priming**: `warmEmbeddingCache()` is now explicit only; the live request path does not kick off a full-table warm-up on cache miss. L1 is primarily primed by `nutrition-cache.loadAll()` when VN FCT rows are fetched, avoiding extra DB contention on cold requests.
 - **pg_trgm**: Removed from the live lookup path. GIN trgm indexes remain for a future background synonym discovery job that writes to `synonym_candidates`.
 - **Seed migration**: `20260319034000_seed_query_embeddings_from_fct.sql` copies `(name_primary, name_en, embedding)` from `vietnamese_food_composition`.
 - **Table**: `ingredient_query_embeddings(name_vi TEXT PK, name_en TEXT, embedding VECTOR(768), created_at TIMESTAMPTZ)`

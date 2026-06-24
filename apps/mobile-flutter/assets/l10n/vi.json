@@ -1024,6 +1024,24 @@
       "previousWeek": "Tuần trước",
       "nextWeek": "Tuần sau",
       "openCalendar": "Mở lịch"
+    },
+    "manualLogging": {
+      "openSheet": "Ghi thủ công",
+      "title": "Ghi thủ công",
+      "subtitle": "Tìm món, nhập chính xác số gam — không dùng AI",
+      "searchPlaceholder": "Tìm món ăn...",
+      "recentFoods": "Món gần đây",
+      "selected": "Đã chọn",
+      "noResults": "Không tìm thấy món nào",
+      "searching": "Đang tìm...",
+      "stateRaw": "sống",
+      "stateCooked": "chín",
+      "gramsUnit": "g",
+      "kcal": "kcal",
+      "kcalPer100g": "kcal/100g",
+      "removeItem": "Xóa món",
+      "save": "Lưu bữa ăn",
+      "relatedMatch": "liên quan"
     }
   },
   "groups": {

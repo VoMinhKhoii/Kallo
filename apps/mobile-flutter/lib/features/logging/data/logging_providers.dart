@@ -29,9 +29,7 @@ class LoggingDayArgs {
 
   @override
   bool operator ==(Object other) =>
-      other is LoggingDayArgs &&
-      other.userId == userId &&
-      other.date == date;
+      other is LoggingDayArgs && other.userId == userId && other.date == date;
 
   @override
   int get hashCode => Object.hash(userId, date);
@@ -61,9 +59,10 @@ class LoggingDayNotifier
     if (current == null) return;
     state = AsyncData(
       current.copyWith(
-        pendingConfirmations: current.pendingConfirmations
-            .where((p) => p.id != analysisId)
-            .toList(),
+        pendingConfirmations:
+            current.pendingConfirmations
+                .where((p) => p.id != analysisId)
+                .toList(),
       ),
     );
   }
@@ -87,17 +86,22 @@ class LoggingDayNotifier
 
   /// Refetch from the server (the `onSettled` invalidation analogue).
   Future<void> refresh() => ref.refresh(
-        loggingDayProvider(LoggingDayArgs(arg.userId, arg.date)).future,
-      );
+    loggingDayProvider(LoggingDayArgs(arg.userId, arg.date)).future,
+  );
 }
 
-final loggingDayProvider = AsyncNotifierProvider.family<LoggingDayNotifier,
-    LoggingDayData, LoggingDayArgs>(LoggingDayNotifier.new);
+final loggingDayProvider = AsyncNotifierProvider.family<
+  LoggingDayNotifier,
+  LoggingDayData,
+  LoggingDayArgs
+>(LoggingDayNotifier.new);
 
 /// Loads the set of dates that have logged meals (timeline "has meals" dots).
 /// Keyed per-user; the timezone offset is folded in at fetch time.
-final mealDatesProvider =
-    FutureProvider.autoDispose.family<List<String>, String?>((ref, userId) async {
+final mealDatesProvider = FutureProvider.autoDispose.family<
+  List<String>,
+  String?
+>((ref, userId) async {
   if (userId == null) return const [];
   // Keep this alive briefly so tab switches don't refetch (mirrors staleTime).
   final link = ref.keepAlive();
@@ -110,18 +114,36 @@ final mealDatesProvider =
 
   final api = ref.watch(apiClientProvider);
   final tz = timezoneOffsetMinutes();
-  return api.get<List<dynamic>>('/api/v1/meals/dates?tz=$tz').then(
-        (list) => list.cast<String>(),
-      );
+  return api
+      .get<List<dynamic>>('/api/v1/meals/dates?tz=$tz')
+      .then((list) => list.cast<String>());
 });
 
 /// The onboarding profile row the logging screen needs (calorie + macro
 /// targets). Mirrors RN `useQuery({ queryKey: onboardingKeys.profile, ... })`.
 final loggingProfileProvider =
     FutureProvider.autoDispose<Map<String, dynamic>?>((ref) async {
-  final api = ref.watch(apiClientProvider);
-  return api.get<Map<String, dynamic>?>('/api/v1/onboarding/profile');
-});
+      final api = ref.watch(apiClientProvider);
+      return api.get<Map<String, dynamic>?>('/api/v1/onboarding/profile');
+    });
+
+/// Mark every meal-keyed surface stale after a meal mutation: the day feed
+/// (optional — confirm awaits an explicit refresh instead), the timeline
+/// dots, and the dashboard bundle. The dashboard reads the day/macros/heatmap
+/// off its own bundle, keyed by (userId, date) — it must be invalidated too or
+/// the Today card + week-strip ring keep showing the pre-log cache.
+void invalidateMealSurfaces(
+  Ref ref,
+  String userId,
+  String date, {
+  bool includeDay = true,
+}) {
+  if (includeDay) {
+    ref.invalidate(loggingDayProvider(LoggingDayArgs(userId, date)));
+  }
+  ref.invalidate(mealDatesProvider(userId));
+  ref.invalidate(dash.dashboardBundleProvider((userId: userId, date: date)));
+}
 
 /// Confirm a pending analysis into a saved meal, with the RN hook's optimistic
 /// removal + rollback + settle-invalidation behavior.
@@ -157,15 +179,14 @@ class ConfirmMealNotifier extends FamilyNotifier<bool, String> {
       rethrow;
     } finally {
       state = false;
-      // onSettled: refetch the day + meal-dates list.
-      await notifier.refresh();
-      ref.invalidate(mealDatesProvider(arg));
-      // The dashboard reads the day/macros/heatmap off its own bundle, keyed by
-      // (userId, date) — invalidate it so the Today card + week-strip ring pick
-      // up the just-confirmed meal instead of showing the pre-log cache.
-      ref.invalidate(
-        dash.dashboardBundleProvider((userId: arg, date: originDate)),
-      );
+      // onSettled: refetch the day (awaited — the feed swaps the pending card
+      // for the saved one) + invalidate the other meal-keyed surfaces.
+      try {
+        await notifier.refresh();
+      } catch (_) {
+        ref.invalidate(loggingDayProvider(dayArgs));
+      }
+      invalidateMealSurfaces(ref, arg, originDate, includeDay: false);
     }
   }
 }
@@ -173,5 +194,5 @@ class ConfirmMealNotifier extends FamilyNotifier<bool, String> {
 /// Per-user confirm notifier. `isPending` == the bool state.
 final confirmMealProvider =
     NotifierProvider.family<ConfirmMealNotifier, bool, String>(
-  ConfirmMealNotifier.new,
-);
+      ConfirmMealNotifier.new,
+    );
