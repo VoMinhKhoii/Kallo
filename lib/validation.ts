@@ -58,6 +58,10 @@ export const mealMessageSchema = z.object({
   clarifyAnswer: z.string().trim().max(200).optional(),
   // Indulgence magnitude for cheat mode — scales the slider anchor gram ranges.
   cheatIntensity: z.enum(['light', 'medium', 'heavy']).optional(),
+  // NL-refine: the original meal's timestamp, so a correction re-analysis keeps
+  // the meal's place in the timeline (and its inferred slot) instead of jumping
+  // to "now". When present it overrides the loggedDate/timezoneOffset stamping.
+  inheritLoggedAt: z.string().datetime().optional(),
 });
 
 /** Shared schema for a single weight log entry. */

@@ -84,6 +84,7 @@ vi.mock('@/hooks/use-meal-mutations', () => ({
   useConfirmMeal: () => ({ mutate: mockMutate, isPending: false }),
   useUpdateMeal: () => ({ mutateAsync: vi.fn(), isPending: false }),
   useSaveManualMeal: () => ({ mutate: vi.fn(), isPending: false }),
+  useDuplicateMeal: () => ({ mutate: vi.fn(), isPending: false }),
 }));
 
 vi.mock('@/hooks/use-recent-cheat-occasions', () => ({

@@ -991,6 +991,23 @@ export async function updateMealAction(input: {
 
     const mealTotals = sumDisplayedNutrition(keptNutrition);
 
+    // Alcohol is tracked on the meal, not per item, so it can't be recomputed
+    // from rows the way the macros are. Approximate it by the change in total
+    // mass: shrinking or dropping items scales the alcohol down proportionally,
+    // mirroring how the displayed macros fall. (Exact per-ingredient alcohol
+    // would need a schema change; this keeps the number from going stale.)
+    const oldTotalGrams = itemRows.reduce(
+      (sum, row) => sum + (row.estimatedGrams ?? 0),
+      0
+    );
+    const newKeptGrams = keptRows.reduce(
+      (sum, row) => sum + (editById.get(row.id) ?? row.estimatedGrams ?? 0),
+      0
+    );
+    const massRatio = oldTotalGrams > 0 ? newKeptGrams / oldTotalGrams : 0;
+    const newAlcoholG =
+      meal.alcoholG != null ? meal.alcoholG * massRatio : null;
+
     // Apply: scale the edited item rows, drop the removed ones, write the new
     // meal totals — all scoped to this meal's ids.
     for (const update of updates) {
@@ -1016,7 +1033,7 @@ export async function updateMealAction(input: {
 
     await tx
       .update(meals)
-      .set(nutritionValuesToRow(mealTotals))
+      .set({ ...nutritionValuesToRow(mealTotals), alcoholG: newAlcoholG })
       .where(and(eq(meals.id, meal.id), eq(meals.userId, user.id)));
 
     // Rebuild the saved meal in the exact shape loadMealsByDate returns so the
@@ -1069,7 +1086,168 @@ export async function updateMealAction(input: {
       nutrition: mealTotals,
       mealItemGroups,
       entryMode: 'precise',
-      alcoholG: meal.alcoholG ?? null,
+      alcoholG: newAlcoholG,
+      cheatSliders: null,
+      share: null,
+    });
+
+    return { mealId: meal.id, meal: savedMeal };
+  });
+}
+
+// ---------------------------------------------------------------------------
+// C4b: Duplicate a persisted meal ("log again")
+// ---------------------------------------------------------------------------
+
+const duplicateMealSchema = z.object({
+  mealId: z.string().uuid('mealId phải là UUID hợp lệ.'),
+  // Client-generated id so the optimistic card and the persisted row share a
+  // stable React key (mirrors confirm/manual save).
+  newMealId: z.string().uuid('mealId phải là UUID hợp lệ.').optional(),
+  loggedDate: dateStringSchema,
+  timezoneOffset: timezoneOffsetSchema,
+});
+
+/**
+ * "Log again": reproduce an existing meal exactly by copying its stored item
+ * rows (composition ids, grams, per-row nutrition) into a brand-new meal
+ * stamped for the chosen day. No AI pipeline runs, so the accepted numbers — and
+ * any prior manual gram edits — are preserved verbatim instead of being
+ * re-estimated from the raw text (which is what re-submitting the text would do).
+ *
+ * Tenant isolation: the source meal is loaded scoped to the authenticated user;
+ * its item rows are reached only through that meal's id — mirroring
+ * `updateMealAction`'s guard.
+ */
+export async function duplicateMealAction(input: {
+  mealId: string;
+  newMealId?: string;
+  loggedDate: string;
+  timezoneOffset: number;
+}): Promise<ConfirmMealResponse> {
+  const parsed = duplicateMealSchema.parse(input);
+  const { user } = await requireAuthAndProfile();
+
+  return await db.transaction(async (tx) => {
+    const [source] = await tx
+      .select()
+      .from(meals)
+      .where(and(eq(meals.id, parsed.mealId), eq(meals.userId, user.id)))
+      .limit(1);
+
+    if (!source) {
+      throw Errors.validationFailed(
+        'Bữa ăn không tồn tại hoặc không thuộc về bạn.'
+      );
+    }
+    // Cheat meals carry no item rows (their nutrition lives in the slider spec);
+    // duplicating one as a precise meal would drop that, so refuse here.
+    if (source.entryMode === 'cheat') {
+      throw Errors.validationFailed('Không thể ghi lại bữa xả theo cách này.');
+    }
+
+    const sourceItems = await tx
+      .select()
+      .from(mealItems)
+      .where(eq(mealItems.mealId, source.id));
+
+    // A re-log is a new eating event "now" on the chosen day, so the slot is
+    // inferred from the new instant rather than copied from the original.
+    const loggedAt = getUtcInstantForLocalDate(
+      parsed.loggedDate,
+      parsed.timezoneOffset
+    );
+    const mealSlot = inferMealSlot(loggedAt);
+    const mealNutrition = extractNutritionValues(source);
+
+    const [meal] = await tx
+      .insert(meals)
+      .values({
+        ...(parsed.newMealId ? { id: parsed.newMealId } : {}),
+        userId: user.id,
+        rawInput: source.rawInput,
+        mealSlot,
+        confidenceOverall: source.confidenceOverall,
+        loggedAt,
+        entryMode: 'precise',
+        alcoholG: source.alcoholG,
+        ...nutritionValuesToRow(mealNutrition),
+      })
+      .returning({ id: meals.id });
+
+    // Copy each item with a fresh id, preserving order/composition/grams and the
+    // stored per-row nutrition exactly (extract → write the same values back).
+    const copies = sourceItems.map((row) => ({
+      id: randomUUID(),
+      row,
+      nutrition: extractNutritionValues(row),
+    }));
+
+    if (copies.length > 0) {
+      await tx.insert(mealItems).values(
+        copies.map(({ id, row, nutrition }) => ({
+          id,
+          mealId: meal.id,
+          ingredientName: row.ingredientName,
+          mealItemName: row.mealItemName,
+          mealItemOrder: row.mealItemOrder,
+          foodCompositionId: row.foodCompositionId,
+          estimatedGrams: row.estimatedGrams,
+          userFacingUnit: row.userFacingUnit,
+          cookingMethod: row.cookingMethod,
+          matchConfidence: row.matchConfidence,
+          ...nutritionValuesToRow(nutrition),
+        }))
+      );
+    }
+
+    // Rebuild the saved meal in loadMealsByDate's shape, grouped by dish, so the
+    // client reconciles its optimistic card in place (same id, no day refetch).
+    const groups = new Map<
+      string,
+      { name: string; order: number; ingredients: PersistedIngredient[] }
+    >();
+    for (const { id, row, nutrition } of copies) {
+      const key = `${row.mealItemOrder}:${row.mealItemName}`;
+      let group = groups.get(key);
+      if (!group) {
+        group = {
+          name: row.mealItemName,
+          order: row.mealItemOrder,
+          ingredients: [],
+        };
+        groups.set(key, group);
+      }
+      group.ingredients.push(
+        buildPersistedIngredient({
+          id,
+          ingredientName: row.ingredientName,
+          foodCompositionId: row.foodCompositionId,
+          estimatedGrams: row.estimatedGrams,
+          userFacingUnit: row.userFacingUnit,
+          cookingMethod: row.cookingMethod,
+          matchConfidence: row.matchConfidence,
+          nutrition,
+        })
+      );
+    }
+
+    const mealItemGroups = Array.from(groups.values())
+      .sort((a, b) => a.order - b.order)
+      .map((group) =>
+        buildPersistedMealItemGroup(group.name, group.order, group.ingredients)
+      );
+
+    const savedMeal = buildPersistedMeal({
+      id: meal.id,
+      rawInput: source.rawInput,
+      mealSlot,
+      confidenceOverall: source.confidenceOverall,
+      loggedAt: loggedAt.toISOString(),
+      nutrition: mealNutrition,
+      mealItemGroups,
+      entryMode: 'precise',
+      alcoholG: source.alcoholG ?? null,
       cheatSliders: null,
       share: null,
     });

@@ -26,6 +26,7 @@ import { useFeedSubmit } from '@/hooks/use-feed-submit';
 import { loggingDayKeys, useLoggingDay } from '@/hooks/use-logging-day';
 import {
   useConfirmMeal,
+  useDuplicateMeal,
   useSaveManualMeal,
   useUpdateMeal,
 } from '@/hooks/use-meal-mutations';
@@ -36,6 +37,7 @@ import { useSubmitGuard } from '@/hooks/use-submit-guard';
 import {
   deleteMealAction,
   type LoggingDayData,
+  type PersistedMeal,
   type RecentCheatOccasion,
   stageCheatRepeatAction,
 } from '@/lib/actions/meals';
@@ -187,6 +189,14 @@ function LoggingDayErrorState({
     </div>
   );
 }
+
+// "Fix with words" (natural-language refine) is hidden for now. It currently
+// re-runs the whole AI pipeline on the meal's text — a re-log masquerading as an
+// edit (it re-estimates every item and drops prior manual edits). It stays off
+// until reworked into a surgical, single-item correction (tracked separately).
+// The handler and its identity-preserving plumbing remain wired, so flipping
+// this back to `true` restores the feature with the corrected behavior.
+const REFINE_ENABLED = false;
 
 export function FeedArea({
   selectedDate,
@@ -390,6 +400,7 @@ export function FeedArea({
   const confirmMeal = useConfirmMeal(profile.userId);
   const updateMeal = useUpdateMeal(profile.userId, selectedDate);
   const saveManualMeal = useSaveManualMeal(profile.userId);
+  const duplicateMeal = useDuplicateMeal(profile.userId);
 
   // Persist an amount edit (gram overrides + per-row removals) for one meal.
   // The mutation reconciles the card in place from the authoritative response.
@@ -411,6 +422,31 @@ export function FeedArea({
     [updateMeal, t]
   );
 
+  // "Log again": reproduce the meal exactly (deterministic server-side copy of
+  // its items) on the viewed day, rather than re-typing the text and re-running
+  // the AI pipeline — which would yield fresh, drifted numbers and lose any
+  // prior manual edits.
+  const handleLogAgain = useCallback(
+    (meal: PersistedMeal) => {
+      if (duplicateMeal.isPending) return;
+      const newMealId = crypto.randomUUID();
+      duplicateMeal.mutate(
+        {
+          source: meal,
+          newMealId,
+          originDate: selectedDate,
+          loggedDate: selectedDate,
+          timezoneOffset: new Date().getTimezoneOffset(),
+          loggedAt: new Date().toISOString(),
+        },
+        {
+          onSuccess: () => toast.success(t('savedMeal')),
+        }
+      );
+    },
+    [duplicateMeal, selectedDate, t]
+  );
+
   const scrollToBottom = useCallback(() => {
     requestAnimationFrame(() => {
       if (scrollRef.current) {
@@ -427,7 +463,10 @@ export function FeedArea({
   // pending card streams in exactly like a new log — and register the old meal
   // id so confirming the correction deletes the original (no stacking).
   const handleRefineMeal = useCallback(
-    (meal: { id: string; rawInput: string }, correction: string) => {
+    (
+      meal: { id: string; rawInput: string; loggedAt: string },
+      correction: string
+    ) => {
       if (stream.isAnalyzing) return;
       // The pipeline reads the whole meal afresh; the parenthetical carries the
       // correction as a same-line aside so decomposition keeps the dish context.
@@ -465,6 +504,8 @@ export function FeedArea({
         message: combined,
         loggedDate: selectedDate,
         timezoneOffset: new Date().getTimezoneOffset(),
+        // Keep the corrected meal anchored to the original's instant/slot.
+        inheritLoggedAt: meal.loggedAt,
       });
     },
     [stream, selectedDate, scrollToBottom]
@@ -562,6 +603,10 @@ export function FeedArea({
       },
       {
         onSuccess: () => {
+          // Clear only after the save lands — on failure the rolled-back card
+          // would otherwise leave the user with an empty composer and no way to
+          // recover the rows they typed.
+          inputRef.current?.clear();
           toast.success(t('savedMeal'));
         },
         onError: (error) => {
@@ -569,7 +614,6 @@ export function FeedArea({
         },
       }
     );
-    inputRef.current?.clear();
     scrollToBottom();
   }, [saveManualMeal, selectedDate, scrollToBottom, t]);
 
@@ -952,16 +996,20 @@ export function FeedArea({
                       key={meal.id}
                       meal={meal}
                       onDelete={() => handleDeleteMeal(meal.id)}
-                      onLogAgain={() => {
-                        inputRef.current?.setText(meal.rawInput);
-                        inputRef.current?.focus();
-                      }}
+                      onLogAgain={() => handleLogAgain(meal)}
                       onUpdate={(changes) => handleUpdateMeal(meal.id, changes)}
-                      onRefine={(correction) =>
-                        handleRefineMeal(
-                          { id: meal.id, rawInput: meal.rawInput },
-                          correction
-                        )
+                      onRefine={
+                        REFINE_ENABLED
+                          ? (correction) =>
+                              handleRefineMeal(
+                                {
+                                  id: meal.id,
+                                  rawInput: meal.rawInput,
+                                  loggedAt: meal.loggedAt,
+                                },
+                                correction
+                              )
+                          : undefined
                       }
                     />
                   ))}

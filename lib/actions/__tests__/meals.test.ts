@@ -95,6 +95,7 @@ vi.mock('@/lib/db/schema', () => ({
 import {
   confirmAndSaveMealAction,
   deleteMealAction,
+  duplicateMealAction,
   loadMealDates,
   loadMealsByDate,
   loadPendingAnalysesByDate,
@@ -970,8 +971,211 @@ describe('updateMealAction', () => {
     ).rejects.toThrow('bữa xả');
   });
 
+  it('scales the meal-level alcohol by the change in total mass', async () => {
+    // Alcohol lives on the meal, not the rows, so it tracks the total-mass
+    // ratio: halving the only item's grams halves the alcohol.
+    queueMealLookup([mealRow({ alcoholG: 40 })]);
+    queueItemLookup([itemRow()]); // single 200g item
+
+    const itemUpdates: Record<string, unknown>[] = [];
+    const mealUpdates: Record<string, unknown>[] = [];
+    let updateCall = 0;
+    mockTxUpdate.mockImplementation(() => {
+      updateCall += 1;
+      return updateCall <= 1
+        ? captureUpdate(itemUpdates)
+        : captureUpdate(mealUpdates);
+    });
+
+    const result = await updateMealAction({
+      mealId: UUID_MEAL,
+      edits: [{ id: UUID_1, newGrams: 100 }], // 200g → 100g, ratio 0.5
+    });
+
+    expect(mealUpdates[0]?.alcoholG).toBe(20);
+    expect(result.meal.alcoholG).toBe(20);
+  });
+
+  it('leaves a null alcohol value null after an edit', async () => {
+    queueMealLookup([mealRow({ alcoholG: null })]);
+    queueItemLookup([itemRow()]);
+
+    const mealUpdates: Record<string, unknown>[] = [];
+    let updateCall = 0;
+    mockTxUpdate.mockImplementation(() => {
+      updateCall += 1;
+      return updateCall <= 1 ? captureUpdate([]) : captureUpdate(mealUpdates);
+    });
+
+    const result = await updateMealAction({
+      mealId: UUID_MEAL,
+      edits: [{ id: UUID_1, newGrams: 100 }],
+    });
+
+    expect(mealUpdates[0]?.alcoholG).toBeNull();
+    expect(result.meal.alcoholG).toBeNull();
+  });
+
   it('rejects an invalid mealId', async () => {
     await expect(updateMealAction({ mealId: 'bad' })).rejects.toThrow();
+  });
+});
+
+describe('duplicateMealAction', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  function queueMealLookup(rows: unknown[]) {
+    mockTxSelect.mockReturnValueOnce({
+      from: vi.fn().mockReturnValue({
+        where: vi.fn().mockReturnValue({
+          limit: vi.fn().mockResolvedValue(rows),
+        }),
+      }),
+    });
+  }
+  function queueItemLookup(rows: unknown[]) {
+    mockTxSelect.mockReturnValueOnce({
+      from: vi.fn().mockReturnValue({
+        where: vi.fn().mockResolvedValue(rows),
+      }),
+    });
+  }
+  function sourceMeal(overrides: Record<string, unknown> = {}) {
+    return {
+      id: UUID_MEAL,
+      userId: mockUser.id,
+      rawInput: 'Phở bò',
+      mealSlot: 'lunch',
+      confidenceOverall: 'high',
+      loggedAt: LOGGED_AT,
+      entryMode: 'precise',
+      alcoholG: 12,
+      caloriesKcal: 520,
+      proteinG: 31,
+      carbohydrateG: 60,
+      fatG: 14,
+      ...overrides,
+    };
+  }
+  function sourceItem(overrides: Record<string, unknown> = {}) {
+    return {
+      id: UUID_1,
+      mealId: UUID_MEAL,
+      ingredientName: 'Bánh phở',
+      mealItemName: 'Phở bò',
+      mealItemOrder: 0,
+      foodCompositionId: 'fc-1',
+      estimatedGrams: 200,
+      userFacingUnit: '1 tô',
+      cookingMethod: 'luộc',
+      matchConfidence: 0.9,
+      caloriesKcal: 300,
+      proteinG: 5,
+      carbohydrateG: 60,
+      fatG: 2,
+      ...overrides,
+    };
+  }
+
+  // `.values()` captures the inserted rows; the meals insert chains `.returning`
+  // and the item insert is awaited directly (awaiting the plain object is a
+  // no-op), so one impl serves both.
+  function captureInserts(captured: unknown[]) {
+    mockTxInsert.mockImplementation(() => ({
+      values: vi.fn().mockImplementation((vals: unknown) => {
+        captured.push(vals);
+        return { returning: vi.fn().mockResolvedValue([{ id: UUID_2 }]) };
+      }),
+    }));
+  }
+
+  it('rejects a meal that belongs to another user (userId-scoped lookup)', async () => {
+    queueMealLookup([]); // scoped lookup finds nothing for this user
+
+    await expect(
+      duplicateMealAction({
+        mealId: UUID_MEAL,
+        loggedDate: '2026-06-24',
+        timezoneOffset: -420,
+      })
+    ).rejects.toThrow('không thuộc về bạn');
+
+    expect(mockTxInsert).not.toHaveBeenCalled();
+  });
+
+  it('refuses to duplicate a cheat meal', async () => {
+    queueMealLookup([sourceMeal({ entryMode: 'cheat' })]);
+
+    await expect(
+      duplicateMealAction({
+        mealId: UUID_MEAL,
+        loggedDate: '2026-06-24',
+        timezoneOffset: -420,
+      })
+    ).rejects.toThrow('bữa xả');
+    expect(mockTxInsert).not.toHaveBeenCalled();
+  });
+
+  it('copies the items verbatim into a new meal with fresh ids', async () => {
+    queueMealLookup([sourceMeal()]);
+    queueItemLookup([
+      sourceItem(),
+      sourceItem({
+        id: UUID_2,
+        ingredientName: 'Thịt bò',
+        estimatedGrams: 100,
+        caloriesKcal: 220,
+        proteinG: 26,
+        carbohydrateG: 0,
+        fatG: 12,
+      }),
+    ]);
+
+    const inserts: unknown[] = [];
+    captureInserts(inserts);
+
+    const result = await duplicateMealAction({
+      mealId: UUID_MEAL,
+      newMealId: UUID_2,
+      loggedDate: '2026-06-24',
+      timezoneOffset: -420,
+    });
+
+    // First insert = the new meal row; carries the source's numbers + alcohol.
+    const mealInsert = inserts[0] as Record<string, unknown>;
+    expect(mealInsert.id).toBe(UUID_2);
+    expect(mealInsert.rawInput).toBe('Phở bò');
+    expect(mealInsert.alcoholG).toBe(12);
+    expect(mealInsert.entryMode).toBe('precise');
+
+    // Second insert = the copied item rows, re-parented with fresh ids.
+    const itemInserts = inserts[1] as Record<string, unknown>[];
+    expect(itemInserts).toHaveLength(2);
+    for (const row of itemInserts) {
+      expect(row.mealId).toBe(UUID_2);
+      expect(row.id).not.toBe(UUID_1);
+      expect(row.id).not.toBe(UUID_2);
+    }
+    expect(itemInserts[0]?.foodCompositionId).toBe('fc-1');
+    expect(itemInserts[0]?.estimatedGrams).toBe(200);
+    expect(itemInserts[0]?.caloriesKcal).toBe(300);
+
+    // The returned meal reconstructs both ingredients under the new id.
+    expect(result.meal.id).toBe(UUID_2);
+    expect(result.meal.nutrition.caloriesKcal).toBe(520);
+    expect(result.meal.mealItemGroups[0]?.ingredients).toHaveLength(2);
+  });
+
+  it('rejects an invalid mealId', async () => {
+    await expect(
+      duplicateMealAction({
+        mealId: 'bad',
+        loggedDate: '2026-06-24',
+        timezoneOffset: -420,
+      })
+    ).rejects.toThrow();
   });
 });
 
