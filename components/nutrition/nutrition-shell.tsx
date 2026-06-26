@@ -103,17 +103,29 @@ export function NutritionShell() {
               {overview.spotlight.length > 0 ? (
                 <div className="grid gap-8 lg:grid-cols-12 lg:gap-10">
                   <div className="lg:col-span-6 xl:col-span-7">
-                    <DailyRhythm macros={overview.macros} />
+                    <DailyRhythm
+                      macros={overview.macros}
+                      daySeries={overview.daySeries}
+                    />
                   </div>
                   <div className="lg:col-span-6 xl:col-span-5">
-                    <FocusSection cards={overview.spotlight} />
+                    <FocusSection
+                      cards={overview.spotlight}
+                      daySeries={overview.daySeries}
+                    />
                   </div>
                 </div>
               ) : (
-                <DailyRhythm macros={overview.macros} />
+                <DailyRhythm
+                  macros={overview.macros}
+                  daySeries={overview.daySeries}
+                />
               )}
 
-              <SteadySection cards={overview.steady} />
+              <SteadySection
+                cards={overview.steady}
+                daySeries={overview.daySeries}
+              />
 
               <BackgroundSection cards={overview.moreNutrients} />
 

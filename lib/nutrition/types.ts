@@ -79,6 +79,48 @@ export interface MacroPattern {
   nutrientType: NutrientType;
 }
 
+/**
+ * A metric the per-day time axis can chart: the macros plus the default
+ * micronutrients (the ones rendered as cards). Keyed off the same identifiers
+ * the rest of the DTO uses so the UI can join a series to its card.
+ */
+export type DaySeriesMetricKey =
+  | 'calories'
+  | 'protein'
+  | 'carbohydrate'
+  | 'fat'
+  | NutritionNutrientKey;
+
+/** Whether the time axis buckets by day (7d) or by week (30d/90d). */
+export type DaySeriesBucketUnit = 'day' | 'week';
+
+export interface DaySeriesBucket {
+  /** Inclusive local-date start of the bucket. */
+  startDate: string;
+  /** Inclusive local-date end of the bucket (same as start for day buckets). */
+  endDate: string;
+  /** Per-day average of the metric across the bucket's complete days. */
+  value: number | null;
+  /** Value as a fraction of the metric's target, or null when no target. */
+  ratioOfTarget: number | null;
+}
+
+export interface NutrientDaySeries {
+  metric: DaySeriesMetricKey;
+  labelKey: string;
+  unit: string;
+  target: number | null;
+  buckets: DaySeriesBucket[];
+  /** Min/max of non-null bucket values, for the whisker band. Null if empty. */
+  min: number | null;
+  max: number | null;
+}
+
+export interface NutritionDaySeries {
+  unit: DaySeriesBucketUnit;
+  series: NutrientDaySeries[];
+}
+
 export interface NutrientCardData {
   nutrient: NutritionNutrientKey;
   labelKey: string;
@@ -132,6 +174,11 @@ export interface NutritionOverview {
     macroConsistency: MacroConsistencySummary;
   };
   macros: MacroPattern[];
+  /**
+   * Per-bucket time series for the macros and default micronutrients. Days for
+   * the 7d range, weeks for 30d/90d. Empty when there are no complete days.
+   */
+  daySeries: NutritionDaySeries;
   micronutrients: NutrientCardData[];
   /** Subset of `micronutrients` chosen for headline focus (max 2). */
   spotlight: NutrientCardData[];

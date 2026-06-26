@@ -1,6 +1,6 @@
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { AppShell } from '@/components/app/app-shell';
+import { AppShell } from '@/components/app/shell/app-shell';
 import { isAdminEmail } from '@/lib/admin/is-admin';
 import { getOnboardingProfile } from '@/lib/onboarding/actions';
 import {

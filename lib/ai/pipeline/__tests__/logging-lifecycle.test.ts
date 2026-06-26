@@ -1,5 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { logPipelineEnd, logPipelineStart } from '@/lib/ai/pipeline/logging';
+import {
+  logPipelineEnd,
+  logPipelineStart,
+} from '@/lib/ai/pipeline/telemetry/logging';
 import type { UserContext } from '@/lib/ai/types';
 import type { AppDb } from '@/lib/db';
 

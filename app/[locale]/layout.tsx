@@ -1,5 +1,12 @@
 import type { Metadata, Viewport } from 'next';
-import { DM_Sans, Fraunces, Geist, Geist_Mono, Lora } from 'next/font/google';
+import {
+  Be_Vietnam_Pro,
+  DM_Sans,
+  Fraunces,
+  Geist,
+  Geist_Mono,
+  Lora,
+} from 'next/font/google';
 import { notFound } from 'next/navigation';
 import { hasLocale, NextIntlClientProvider } from 'next-intl';
 import {
@@ -7,6 +14,7 @@ import {
   getTranslations,
   setRequestLocale,
 } from 'next-intl/server';
+import { ServiceWorkerRegister } from '@/components/app/shell/service-worker-register';
 import { QueryProvider } from '@/components/providers/query-provider';
 import { Toaster } from '@/components/ui/sonner';
 import { routing } from '@/i18n/navigation';
@@ -43,11 +51,24 @@ const dmSans = DM_Sans({
   display: 'swap',
 });
 
+// DM Sans ships no Vietnamese subset on Google Fonts (adding a 'vietnamese'
+// subset is a build error), so vi diacritics would otherwise fall back
+// per-glyph to a system font mid-word. Be Vietnam Pro is a near-identical
+// geometric sans WITH full Vietnamese coverage; it is wired into the
+// --font-dm-sans fallback chain (see globals.css) so only the glyphs DM Sans
+// lacks resolve here — the Latin body keeps DM Sans intact.
+const viSans = Be_Vietnam_Pro({
+  variable: '--font-vi-sans',
+  subsets: ['vietnamese', 'latin'],
+  weight: ['400', '500', '600', '700'],
+  display: 'swap',
+});
+
 export const viewport: Viewport = {
-  themeColor: [
-    { media: '(prefers-color-scheme: light)', color: '#ffffff' },
-    { media: '(prefers-color-scheme: dark)', color: '#121214' },
-  ],
+  // Cream canvas, light-only. The product ships a single warm theme; the prior
+  // white / near-black status-bar zone framed the cream paper incorrectly in
+  // standalone PWA.
+  themeColor: '#fefbf6',
   viewportFit: 'cover',
 };
 
@@ -111,13 +132,16 @@ export default async function LocaleLayout({
   return (
     <html lang={locale}>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} ${lora.variable} ${dmSans.variable} ${fraunces.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} ${lora.variable} ${dmSans.variable} ${viSans.variable} ${fraunces.variable} antialiased`}
       >
         <div className="noise-bg pointer-events-none fixed inset-0 z-50 opacity-[0.03] mix-blend-overlay" />
         <NextIntlClientProvider messages={messages}>
           <QueryProvider>{children}</QueryProvider>
         </NextIntlClientProvider>
         <Toaster />
+        {/* Registers the offline SW only when NEXT_PUBLIC_ENABLE_SW=true;
+            defaults off so it can never white-screen production. */}
+        <ServiceWorkerRegister />
       </body>
     </html>
   );

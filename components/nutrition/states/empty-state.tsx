@@ -21,10 +21,9 @@ export function EmptyState() {
       <div className="max-w-xl space-y-3">
         <h2
           id={headingId}
-          className="text-balance text-nham-text"
+          className="text-balance font-serif text-nham-text"
           style={{
-            fontFamily: 'Lora, serif',
-            fontWeight: 500,
+            fontWeight: 400,
             fontSize: 'clamp(1.5rem, 1.1rem + 1.6vw, 2rem)',
             letterSpacing: '-0.015em',
             lineHeight: 1.25,

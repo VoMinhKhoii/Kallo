@@ -28,7 +28,7 @@ const {
 
 vi.mock('server-only', () => ({}));
 
-vi.mock('@/lib/ai/pipeline/trace', () => ({
+vi.mock('@/lib/ai/pipeline/telemetry/trace', () => ({
   logStage: mockLogStage,
   logLlmCall: mockLogLlmCall,
   recordPromptVersion: mockRecordPromptVersion,

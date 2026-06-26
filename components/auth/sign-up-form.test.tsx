@@ -5,11 +5,14 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { SignUpForm } from './sign-up-form';
 
 const closeDialogMock = vi.fn();
+const showCheckEmailMock = vi.fn();
 const signUpMock = vi.fn();
 
 vi.mock('@/components/auth/auth-provider', () => ({
   useAuthDialog: () => ({
     closeDialog: closeDialogMock,
+    showCheckEmail: showCheckEmailMock,
+    next: null,
   }),
 }));
 
@@ -33,8 +36,9 @@ describe('SignUpForm', () => {
     vi.clearAllMocks();
   });
 
-  it('shows success feedback and closes the dialog after sign-up', async () => {
-    signUpMock.mockResolvedValue({ error: null });
+  it('holds on the check-your-email panel after a confirmation sign-up', async () => {
+    // No session in the response → email confirmation is enabled.
+    signUpMock.mockResolvedValue({ data: { session: null }, error: null });
 
     render(<SignUpForm />);
 
@@ -61,8 +65,14 @@ describe('SignUpForm', () => {
     });
 
     await waitFor(() => {
-      expect(toast.success).toHaveBeenCalledWith('success');
-      expect(closeDialogMock).toHaveBeenCalled();
+      expect(showCheckEmailMock).toHaveBeenCalledWith(
+        'new@example.com',
+        'confirm'
+      );
     });
+    // The dialog stays open on the persistent check-email panel; no vanishing
+    // success toast.
+    expect(closeDialogMock).not.toHaveBeenCalled();
+    expect(toast.success).not.toHaveBeenCalled();
   });
 });

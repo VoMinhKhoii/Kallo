@@ -9,6 +9,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const {
   mockDbSelect,
+  mockDbSelectDistinctOn,
   mockDbInsert,
   mockDbDelete,
   mockTxSelect,
@@ -21,6 +22,7 @@ const {
   const mockTxUpdate = vi.fn();
   return {
     mockDbSelect: vi.fn(),
+    mockDbSelectDistinctOn: vi.fn(),
     mockDbInsert: vi.fn(),
     mockDbDelete: vi.fn(),
     mockTxSelect,
@@ -37,6 +39,7 @@ const {
 vi.mock('@/lib/db', () => ({
   db: {
     select: mockDbSelect,
+    selectDistinctOn: mockDbSelectDistinctOn,
     insert: mockDbInsert,
     delete: mockDbDelete,
     transaction: vi.fn((fn: (tx: typeof mockTx) => Promise<unknown>) =>
@@ -63,8 +66,21 @@ vi.mock('@/lib/db/schema', () => ({
     updatedAt: 'f.updatedAt',
   },
   circleEvents: { actorId: 'ce.actorId', type: 'ce.type', refId: 'ce.refId' },
-  mealShares: { id: 'ms.id', mealId: 'ms.mealId', visibility: 'ms.visibility' },
-  meals: { id: 'm.id', userId: 'm.userId' },
+  mealShares: {
+    id: 'ms.id',
+    mealId: 'ms.mealId',
+    visibility: 'ms.visibility',
+    sharedAt: 'ms.sharedAt',
+  },
+  meals: {
+    id: 'm.id',
+    userId: 'm.userId',
+    rawInput: 'm.rawInput',
+    caloriesKcal: 'm.caloriesKcal',
+    proteinG: 'm.proteinG',
+    carbohydrateG: 'm.carbohydrateG',
+    fatG: 'm.fatG',
+  },
 }));
 
 // ---------------------------------------------------------------------------
@@ -75,6 +91,7 @@ import {
   acceptInvite,
   getOrCreateMyProfile,
   getProfileBySlug,
+  listCircleFeed,
   removeFriend,
 } from '@/lib/actions/groups';
 
@@ -406,5 +423,105 @@ describe('getOrCreateMyProfile', () => {
     expect(result.userId).toBe(ACTOR);
     expect(result.handle).toBe('cafe1234');
     expect(mockDbInsert).toHaveBeenCalledTimes(1);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// listCircleFeed — the actor at their own table + accepted-only scoping
+// ---------------------------------------------------------------------------
+
+describe('listCircleFeed', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  const FRIEND = INVITER;
+
+  // The accepted-friends lookup: db.select().from().where().orderBy().
+  function friendsQuery(rows: unknown[]) {
+    mockDbSelect.mockReturnValueOnce({
+      from: vi.fn().mockReturnValue({
+        where: vi.fn().mockReturnValue({
+          orderBy: vi.fn().mockResolvedValue(rows),
+        }),
+      }),
+    });
+  }
+
+  // The per-user most-recent-shared-meal lookup: selectDistinctOn(...)
+  // .from().innerJoin().innerJoin().where().orderBy(). Capture the where args so
+  // the test can assert the actor is included in the inArray scope.
+  function mealsQuery(rows: unknown[], capture?: { where?: unknown }) {
+    mockDbSelectDistinctOn.mockReturnValueOnce({
+      from: vi.fn().mockReturnValue({
+        innerJoin: vi.fn().mockReturnValue({
+          innerJoin: vi.fn().mockReturnValue({
+            where: vi.fn().mockImplementation((arg: unknown) => {
+              if (capture) capture.where = arg;
+              return { orderBy: vi.fn().mockResolvedValue(rows) };
+            }),
+          }),
+        }),
+      }),
+    });
+  }
+
+  function sharedMeal(userId: string, sharedAt: Date, handle: string) {
+    return {
+      friendUserId: userId,
+      mealId: `meal-${userId}`,
+      shareId: `share-${userId}`,
+      rawInput: `${handle} meal`,
+      caloriesKcal: 500,
+      proteinG: 20,
+      carbohydrateG: 50,
+      fatG: 15,
+      sharedAt,
+      handle,
+      displayName: null,
+      avatarSeed: handle,
+    };
+  }
+
+  it('places the actor first (their own table) and tags it isSelf', async () => {
+    friendsQuery([{ userLow: ACTOR, userHigh: FRIEND }]);
+    // Friend shared more recently, but the actor's own meal must still lead.
+    mealsQuery([
+      sharedMeal(FRIEND, new Date('2026-05-03T10:00:00Z'), 'phofan'),
+      sharedMeal(ACTOR, new Date('2026-05-03T08:00:00Z'), 'me'),
+    ]);
+
+    const feed = await listCircleFeed(ACTOR, { timezoneOffset: 0 });
+
+    expect(feed).toHaveLength(2);
+    expect(feed[0]?.isSelf).toBe(true);
+    expect(feed[0]?.friend.userId).toBe(ACTOR);
+    expect(feed[1]?.isSelf).toBe(false);
+    expect(feed[1]?.friend.userId).toBe(FRIEND);
+  });
+
+  it('still returns the actor own meal with zero friends', async () => {
+    friendsQuery([]); // no accepted friends
+    mealsQuery([sharedMeal(ACTOR, new Date('2026-05-03T08:00:00Z'), 'me')]);
+
+    const feed = await listCircleFeed(ACTOR, { timezoneOffset: 0 });
+
+    expect(feed).toHaveLength(1);
+    expect(feed[0]?.isSelf).toBe(true);
+  });
+
+  it('scopes the meal query to the actor + accepted friends only', async () => {
+    // The friendIds set is derived from accepted edges, so a user only ever
+    // sees their own meal and accepted friends meals — never an arbitrary user.
+    friendsQuery([{ userLow: ACTOR, userHigh: FRIEND }]);
+    const capture: { where?: unknown } = {};
+    mealsQuery([], capture);
+
+    await listCircleFeed(ACTOR, { timezoneOffset: 0 });
+
+    // The serialized predicate must reference both the actor and the friend id.
+    const serialized = JSON.stringify(capture.where ?? {});
+    expect(serialized).toContain(ACTOR);
+    expect(serialized).toContain(FRIEND);
   });
 });

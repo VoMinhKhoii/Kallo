@@ -52,16 +52,14 @@ export function CheatModePicker({
         type="button"
         disabled={disabled}
         aria-label={t('modePicker.ariaLabel')}
-        className="flex h-8 shrink-0 items-center gap-1 rounded-lg px-2 font-medium text-nham-text text-xs transition-colors hover:bg-nham-hover/50 disabled:opacity-50"
-        style={{ fontFamily: 'DM Sans, sans-serif' }}
+        className="flex h-8 shrink-0 items-center gap-1 rounded-lg px-2 font-medium font-sans-display text-nham-text text-xs transition-colors hover:bg-nham-hover/50 disabled:opacity-50"
       >
         <span className="max-w-[8rem] truncate">{triggerLabel}</span>
         <ChevronDown className="h-3 w-3 text-nham-text-muted/70" />
       </DropdownMenuTrigger>
       <DropdownMenuContent
         align="end"
-        className="w-64 border-nham-border/60"
-        style={{ fontFamily: 'DM Sans, sans-serif' }}
+        className="w-64 border-nham-border/60 font-sans-display"
       >
         {MODES.map((m) => {
           const selected = mode === m;

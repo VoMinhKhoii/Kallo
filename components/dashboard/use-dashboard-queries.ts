@@ -3,8 +3,8 @@
 import { useQuery } from '@tanstack/react-query';
 import { useEffect, useMemo, useRef } from 'react';
 import { toast } from 'sonner';
-import { useDailyMeals } from '@/hooks/use-daily-meals';
-import { useWeightSummary } from '@/hooks/use-weight-summary';
+import { useDailyMeals } from '@/hooks/meals/use-daily-meals';
+import { useWeightSummary } from '@/hooks/weight/use-weight-summary';
 import { loadCalorieAdherenceHeatmap } from '@/lib/actions/dashboard';
 import { buildCalorieAdherenceHeatmapData } from '@/lib/dashboard/adherence';
 import {

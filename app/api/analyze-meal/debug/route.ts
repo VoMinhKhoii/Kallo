@@ -22,13 +22,13 @@ import {
 } from '@/lib/ai/matching/embedding-cache';
 import { fetchNutritionPer100g } from '@/lib/ai/matching/nutrition-db';
 import { assembleResult } from '@/lib/ai/pipeline/assembly';
+import { resolveModelProfile } from '@/lib/ai/pipeline/config/model-profile';
 import { NON_FOOD_BLOCKLIST } from '@/lib/ai/pipeline/errors';
 import { ensureIdsOnDecomposition } from '@/lib/ai/pipeline/ids';
 import {
   ingredientDisplayName,
   ingredientCanonicalName as ingredientSearchName,
 } from '@/lib/ai/pipeline/ingredient-accessors';
-import { resolveModelProfile } from '@/lib/ai/pipeline/model-profile';
 import { reconcileNutritionIds } from '@/lib/ai/pipeline/nutrition';
 import {
   mealDecompositionSchema,

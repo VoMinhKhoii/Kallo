@@ -17,7 +17,7 @@ import {
   buildAllTimelineDates,
   todayDateString,
 } from '@/components/logging/sidebar/timeline-utils';
-import { usePrefetchDates } from '@/hooks/use-prefetch-dates';
+import { usePrefetchDates } from '@/hooks/meals/use-prefetch-dates';
 import { usePathname, useRouter } from '@/i18n/navigation';
 import { loadMealDates } from '@/lib/actions/meals';
 import type { Goal } from '@/lib/onboarding/types';

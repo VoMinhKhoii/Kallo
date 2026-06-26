@@ -61,6 +61,8 @@ export interface CircleFeedEntry {
     displayName: string | null;
     avatarSeed: string | null;
   };
+  /** True when this entry is the actor's own shared meal (their own table). */
+  isSelf: boolean;
   meal: {
     mealId: string;
     shareId: string;
@@ -537,12 +539,17 @@ export async function listCircleFeed(
   const friendIds = friendRows.map((r) =>
     r.userLow === actorId ? r.userHigh : r.userLow
   );
-  if (friendIds.length === 0) return [];
 
-  // Cap the number of friends considered (non-scrollable ambient wall).
+  // Cap the number of FRIENDS considered (non-scrollable ambient wall). The
+  // actor is always included beyond the cap so they keep their own table even
+  // with a full circle — presence without your own presence is surveillance.
   const cappedFriendIds = friendIds.slice(0, CIRCLE_FEED_FRIEND_CAP);
+  const queryUserIds = [actorId, ...cappedFriendIds];
 
-  // Most-recent shared ('circle' or 'public') meal per friend within today.
+  // Most-recent shared ('circle' or 'public') meal per user within today —
+  // the actor plus their (capped) friends. Self-inclusion stays userId-scoped:
+  // a user only ever sees their own meal and meals of users they are accepted
+  // friends with (the friendIds set is derived from accepted edges above).
   const rows = await db
     .selectDistinctOn([meals.userId], {
       friendUserId: meals.userId,
@@ -563,7 +570,7 @@ export async function listCircleFeed(
     .innerJoin(publicProfiles, eq(publicProfiles.userId, meals.userId))
     .where(
       and(
-        inArray(meals.userId, cappedFriendIds),
+        inArray(meals.userId, queryUserIds),
         sql`${mealShares.visibility} <> 'private'`,
         gte(mealShares.sharedAt, dayStart),
         lt(mealShares.sharedAt, dayEnd)
@@ -572,18 +579,14 @@ export async function listCircleFeed(
     // DISTINCT ON requires the leading ORDER BY to match the distinct key.
     .orderBy(meals.userId, desc(mealShares.sharedAt));
 
-  // Order the deduped rows newest-first for display.
-  const sorted = rows.sort(
-    (a, b) => b.sharedAt.getTime() - a.sharedAt.getTime()
-  );
-
-  return sorted.map((r) => ({
+  const entries = rows.map((r) => ({
     friend: {
       userId: r.friendUserId,
       handle: r.handle,
       displayName: r.displayName,
       avatarSeed: r.avatarSeed,
     },
+    isSelf: r.friendUserId === actorId,
     meal: {
       mealId: r.mealId,
       shareId: r.shareId,
@@ -595,6 +598,17 @@ export async function listCircleFeed(
       sharedAt: r.sharedAt.toISOString(),
     },
   }));
+
+  // The actor's own table is the first slot; friends follow newest-first.
+  const self = entries.filter((e) => e.isSelf);
+  const friends = entries
+    .filter((e) => !e.isSelf)
+    .sort(
+      (a, b) =>
+        new Date(b.meal.sharedAt).getTime() -
+        new Date(a.meal.sharedAt).getTime()
+    );
+  return [...self, ...friends];
 }
 
 // ---------------------------------------------------------------------------

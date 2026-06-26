@@ -1,7 +1,7 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { getStreamingPhaseLabel } from '@/components/logging/feed/streaming-phase-label';
+import { getStreamingPhaseLabel } from '@/components/logging/feed/streaming/streaming-phase-label';
 import type { StreamStatus } from '@/lib/ai/streaming/types';
 
 interface AnalysisStageBannerProps {

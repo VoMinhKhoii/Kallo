@@ -137,6 +137,25 @@ describe('mealMessageSchema', () => {
     const result = mealMessageSchema.safeParse('just a string');
     expect(result.success).toBe(false);
   });
+
+  it('accepts an ISO inheritLoggedAt for a refine', () => {
+    const result = mealMessageSchema.safeParse({
+      ...mealBody('Phở bò (thêm trứng)'),
+      inheritLoggedAt: '2026-04-05T17:30:00.000Z',
+    });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.inheritLoggedAt).toBe('2026-04-05T17:30:00.000Z');
+    }
+  });
+
+  it('rejects a non-ISO inheritLoggedAt', () => {
+    const result = mealMessageSchema.safeParse({
+      ...mealBody('Phở bò'),
+      inheritLoggedAt: 'yesterday',
+    });
+    expect(result.success).toBe(false);
+  });
 });
 
 describe('weightLogSchema', () => {
