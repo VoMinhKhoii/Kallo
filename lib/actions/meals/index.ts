@@ -47,6 +47,19 @@ import type {
   CheatSlidersPersisted,
 } from '@/lib/types/cheat';
 import { dateStringSchema, timezoneOffsetSchema } from '@/lib/validation';
+import type {
+  ConfirmMealResponse,
+  LoggingDayData,
+  PendingMealConfirmation,
+  PersistedMeal,
+  PersistedMealItemGroup,
+  RecentCheatOccasion,
+} from './types';
+
+// The PersistedMeal/* shapes live in ./types (a plain module) so they can be
+// imported as types without dragging in this 'use server' runtime. Re-exported
+// here so existing `@/lib/actions/meals` import sites keep resolving them.
+export type * from './types';
 
 // ---------------------------------------------------------------------------
 // Zod schemas for input validation
@@ -465,71 +478,6 @@ export async function confirmAndSaveMealAction(input: {
 // C2: Load Meals by Date
 // ---------------------------------------------------------------------------
 
-/** Persisted meal returned to client */
-export interface PersistedMeal {
-  id: string;
-  rawInput: string;
-  mealSlot: string | null;
-  confidenceOverall: string | null;
-  loggedAt: string;
-  nutrition: NutritionValues;
-  mealItemGroups: PersistedMealItemGroup[];
-  /** 'precise' (default pipeline) or 'cheat' (slider estimate). */
-  entryMode: 'precise' | 'cheat';
-  /** Cheat-only: ethanol grams folded into the calorie total. */
-  alcoholG: number | null;
-  /** Cheat-only: slider spec + chosen levels, for re-edit/repeat. */
-  cheatSliders: CheatSlidersPersisted | null;
-  /** Circle-share state, or null if the meal was never shared. `shareId` is the
-   *  meal_shares row id used to key the shareable Macro Card. Lets the card seed
-   *  the share toggle from real server state instead of always "not shared". */
-  share: { shareId: string; visibility: string } | null;
-}
-
-export interface PersistedMealItemGroup {
-  name: string;
-  order: number;
-  ingredients: PersistedIngredient[];
-  nutrition: NutritionValues;
-}
-
-export interface PersistedIngredient {
-  id: string;
-  ingredientName: string;
-  foodCompositionId: string | null;
-  estimatedGrams: number | null;
-  userFacingUnit: string | null;
-  cookingMethod: string | null;
-  matchConfidence: number | null;
-  nutrition: NutritionValues;
-}
-
-export interface PendingMealConfirmation {
-  id: string;
-  rawInput: string;
-  loggedAt: string;
-  /** Set for precise entries. Absent for cheat entries (which carry cheatSpec). */
-  parsedMeal?: ReturnType<typeof toParsedMeal>;
-  /** Set for cheat entries: the staged slider spec the user confirms against. */
-  cheatSpec?: CheatSliderSpec;
-}
-
-export interface LoggingDayData {
-  persistedMeals: PersistedMeal[];
-  pendingConfirmations: PendingMealConfirmation[];
-}
-
-/**
- * Return shape of `confirmAndSaveMealAction`. `mealId` is kept for backward
- * compatibility (the mobile `POST /api/v1/meals/confirm` route echoes it);
- * `meal` is the authoritative saved meal the web client reconciles against
- * without a follow-up day refetch. Re-exported via lib/api/contracts/meals.ts.
- */
-export interface ConfirmMealResponse {
-  mealId: string;
-  meal: PersistedMeal;
-}
-
 export async function loadMealsByDate(input: {
   date: string;
   timezoneOffset: number;
@@ -699,15 +647,6 @@ async function loadPendingAnalysesByDateForUser(
 // ---------------------------------------------------------------------------
 // Repeat a previous cheat occasion (no AI call)
 // ---------------------------------------------------------------------------
-
-/** A distinct past cheat occasion, surfaced as a chip above the input. */
-export interface RecentCheatOccasion {
-  /** Source meal id — re-staged on tap to seed a fresh slider card. */
-  mealId: string;
-  /** The occasion text (e.g. "Korean BBQ buffet"), shown on the chip. */
-  rawInput: string;
-  loggedAt: string;
-}
 
 const loadRecentCheatOccasionsSchema = z.object({
   limit: z.number().int().min(1).max(12).optional(),
