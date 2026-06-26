@@ -1,8 +1,8 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
+import { StreamingMealEntry } from '@/components/logging/feed/streaming/streaming-meal-entry';
 import type { ChatMessage, MealItem } from '@/lib/types/meal';
 import { MealEntryItem } from './meal-entry-item';
-import { StreamingMealEntry } from './streaming-meal-entry';
 
 const item: MealItem = {
   id: 'item-1',

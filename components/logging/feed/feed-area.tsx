@@ -6,14 +6,14 @@ import { AnimatePresence, motion } from 'motion/react';
 import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
-import { CheatOccasionChips } from '@/components/logging/feed/cheat-occasion-chips';
-import { CheatSliderCard } from '@/components/logging/feed/cheat-slider-card';
+import { CheatOccasionChips } from '@/components/logging/feed/cheat/cheat-occasion-chips';
+import { CheatSliderCard } from '@/components/logging/feed/cheat/cheat-slider-card';
 import { MacroSummary } from '@/components/logging/feed/macro-summary';
-import { MealEntry } from '@/components/logging/feed/meal-entry';
-import { PartialDayNotice } from '@/components/logging/feed/partial-day-notice';
-import { PartialYesterdayPrompt } from '@/components/logging/feed/partial-yesterday-prompt';
-import { PersistedMealCard } from '@/components/logging/feed/persisted-meal-card';
-import { StreamingMealEntry } from '@/components/logging/feed/streaming-meal-entry';
+import { MealEntry } from '@/components/logging/feed/meal-entry/meal-entry';
+import { PartialDayNotice } from '@/components/logging/feed/partial-day/partial-day-notice';
+import { PartialYesterdayPrompt } from '@/components/logging/feed/partial-day/partial-yesterday-prompt';
+import { PersistedMealCard } from '@/components/logging/feed/persisted/persisted-meal-card';
+import { StreamingMealEntry } from '@/components/logging/feed/streaming/streaming-meal-entry';
 import type { InputMode } from '@/components/logging/input/cheat-mode-picker';
 import {
   MealInput,

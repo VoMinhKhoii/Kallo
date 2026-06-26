@@ -4,8 +4,8 @@ import { Check, ChevronDown, Pencil } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useEffect, useRef, useState } from 'react';
-import { MealEntryActions } from '@/components/logging/feed/meal-entry-actions';
-import { MealEntryItem } from '@/components/logging/feed/meal-entry-item';
+import { MealEntryActions } from '@/components/logging/feed/meal-entry/meal-entry-actions';
+import { MealEntryItem } from '@/components/logging/feed/meal-entry/meal-entry-item';
 import {
   applyQuantityChange,
   deriveQuantityEdits,

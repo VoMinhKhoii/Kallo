@@ -10,7 +10,7 @@ import {
   MealEntryItemSkeleton,
   MealEntryTotalSkeleton,
 } from '@/components/logging/feed/skeletons';
-import { getStreamingPhaseLabel } from '@/components/logging/feed/streaming-phase-label';
+import { getStreamingPhaseLabel } from '@/components/logging/feed/streaming/streaming-phase-label';
 import type { ChatMessage, MealItem } from '@/lib/types/meal';
 
 const DEFAULT_SKELETON_COUNT = 3;

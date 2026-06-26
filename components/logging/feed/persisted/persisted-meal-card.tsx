@@ -14,7 +14,7 @@ import { AnimatePresence, motion } from 'motion/react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
-import { CheatMealCard } from '@/components/logging/feed/cheat-meal-card';
+import { CheatMealCard } from '@/components/logging/feed/cheat/cheat-meal-card';
 import {
   formatCaloriesOrNA,
   formatMacroOrNA,

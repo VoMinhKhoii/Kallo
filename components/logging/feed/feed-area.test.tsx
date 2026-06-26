@@ -10,13 +10,13 @@ vi.mock('@/components/logging/feed/macro-summary', () => ({
   ),
 }));
 
-vi.mock('@/components/logging/feed/persisted-meal-card', () => ({
+vi.mock('@/components/logging/feed/persisted/persisted-meal-card', () => ({
   PersistedMealCard: ({ meal }: { meal: { id: string } }) => (
     <div data-testid="persisted-meal-card">{meal.id}</div>
   ),
 }));
 
-vi.mock('@/components/logging/feed/meal-entry', () => ({
+vi.mock('@/components/logging/feed/meal-entry/meal-entry', () => ({
   MealEntry: ({
     message,
     onConfirm,
@@ -33,7 +33,7 @@ vi.mock('@/components/logging/feed/meal-entry', () => ({
   ),
 }));
 
-vi.mock('@/components/logging/feed/streaming-meal-entry', () => ({
+vi.mock('@/components/logging/feed/streaming/streaming-meal-entry', () => ({
   StreamingMealEntry: () => <div data-testid="streaming-meal-entry" />,
 }));
 
