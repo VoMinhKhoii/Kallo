@@ -432,17 +432,14 @@ export function BodyMetrics({ savedCalorieTarget }: BodyMetricsProps) {
                       : t('calorieTarget')}
                   </span>
                   {diverged && savedCalorieTarget !== null ? (
-                    <p
-                      className="mt-1 text-[#9A8F80] text-sm tabular-nums line-through"
-                      style={{ fontFamily: 'Lora, serif' }}
-                    >
+                    <p className="mt-1 font-serif text-[#9A8F80] text-sm tabular-nums line-through">
                       {Math.round(savedCalorieTarget).toLocaleString()}{' '}
                       {tSettings('targetRitual.unit')}
                     </p>
                   ) : null}
                   <div
-                    className={`mt-1 text-4xl tabular-nums tracking-tighter sm:text-5xl ${newTargetClass}`}
-                    style={{ fontFamily: 'Lora, serif', fontWeight: 400 }}
+                    className={`mt-1 font-serif text-4xl tabular-nums tracking-tighter sm:text-5xl ${newTargetClass}`}
+                    style={{ fontWeight: 400 }}
                   >
                     {newTarget.toLocaleString()}{' '}
                     <span className="font-sans text-[#7B6F62] text-lg">

@@ -99,10 +99,7 @@ export function SignUpForm() {
       />
 
       {formError && (
-        <p
-          className="text-nham-danger text-sm"
-          style={{ fontFamily: 'DM Sans, sans-serif' }}
-        >
+        <p className="font-sans-display text-nham-danger text-sm">
           {formError}
         </p>
       )}
@@ -110,8 +107,7 @@ export function SignUpForm() {
       <button
         type="submit"
         disabled={loading}
-        className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#2C2416] px-4 py-3 font-medium text-sm text-white tracking-tight transition-all duration-200 hover:bg-[#3D3425] disabled:opacity-60"
-        style={{ fontFamily: 'DM Sans, sans-serif' }}
+        className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#2C2416] px-4 py-3 font-medium font-sans-display text-sm text-white tracking-tight transition-all duration-200 hover:bg-[#3D3425] disabled:opacity-60"
       >
         {loading && <Loader2 className="h-4 w-4 animate-spin" />}
         {t('submit')}

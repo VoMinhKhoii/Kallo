@@ -26,8 +26,7 @@ function CompletedItemRow({ item, index }: { item: MealItem; index: number }) {
       initial={{ opacity: 0, x: -8 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ delay: index * 0.04 }}
-      className="flex items-center justify-between py-2.5 text-[13px]"
-      style={{ fontFamily: 'DM Sans, sans-serif' }}
+      className="flex items-center justify-between py-2.5 font-sans-display text-[13px]"
     >
       <span className="min-w-0 truncate font-medium text-nham-text">
         {item.name}
@@ -95,10 +94,7 @@ export function StreamingMealEntry({ message }: StreamingMealEntryProps) {
 
       {/* Time label */}
       <div className="mb-2">
-        <span
-          className="font-bold text-[11px] text-nham-text-muted/60 tracking-widest"
-          style={{ fontFamily: 'DM Sans, sans-serif' }}
-        >
+        <span className="font-bold font-sans-display text-[11px] text-nham-text-muted/60 tracking-widest">
           {timeLabel}
         </span>
       </div>
@@ -107,10 +103,7 @@ export function StreamingMealEntry({ message }: StreamingMealEntryProps) {
       <div className="rounded-2xl border border-nham-border/60 bg-nham-surface p-4 shadow-sm sm:p-5">
         {/* Header: quoted input */}
         {message.userInput && (
-          <p
-            className="text-[17px] text-nham-text leading-relaxed sm:text-[19px]"
-            style={{ fontFamily: 'Lora, serif' }}
-          >
+          <p className="font-serif text-[17px] text-nham-text leading-relaxed sm:text-[19px]">
             {message.userInput}
           </p>
         )}
@@ -159,8 +152,7 @@ export function StreamingMealEntry({ message }: StreamingMealEntryProps) {
           <span
             aria-live="polite"
             aria-atomic="true"
-            className="text-[11px] text-nham-text-muted"
-            style={{ fontFamily: 'DM Sans, sans-serif' }}
+            className="font-sans-display text-[11px] text-nham-text-muted"
           >
             {getStreamingPhaseLabel(t, phase)}
           </span>

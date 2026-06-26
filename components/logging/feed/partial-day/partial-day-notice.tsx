@@ -15,16 +15,10 @@ export function PartialDayNotice({ calories, target }: PartialDayNoticeProps) {
       role="status"
       className="rounded-2xl border border-nham-border/60 bg-nham-surface p-3 sm:p-4"
     >
-      <p
-        className="text-base text-nham-danger italic"
-        style={{ fontFamily: 'Lora, serif' }}
-      >
+      <p className="font-serif text-base text-nham-danger italic">
         {t('title')}
       </p>
-      <p
-        className="mt-1 text-[13px] text-nham-text-muted"
-        style={{ fontFamily: 'DM Sans, sans-serif' }}
-      >
+      <p className="mt-1 font-sans-display text-[13px] text-nham-text-muted">
         {t('body', { calories, target })}
       </p>
     </div>

@@ -124,10 +124,7 @@ export function Regional() {
 
   return (
     <div className="space-y-5">
-      <p
-        className="text-[#7B6F62] text-[14px] leading-relaxed"
-        style={{ fontFamily: 'DM Sans, sans-serif' }}
-      >
+      <p className="font-sans-display text-[#7B6F62] text-[14px] leading-relaxed">
         {tRegional('description')}
       </p>
 

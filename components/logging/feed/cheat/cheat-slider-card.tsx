@@ -82,17 +82,11 @@ export function CheatSliderCard({
         <div className="absolute top-2 -left-[43px] h-2 w-2 rounded-full border-2 border-nham-accent bg-white" />
         <div className="rounded-2xl border border-nham-border/60 bg-white p-4 shadow-sm sm:p-5">
           {userInput && (
-            <p
-              className="mb-3 text-[17px] text-nham-text leading-relaxed sm:text-[19px]"
-              style={{ fontFamily: 'Lora, serif' }}
-            >
+            <p className="mb-3 font-serif text-[17px] text-nham-text leading-relaxed sm:text-[19px]">
               {userInput}
             </p>
           )}
-          <p
-            className="mb-3 text-nham-text text-sm"
-            style={{ fontFamily: 'DM Sans, sans-serif' }}
-          >
+          <p className="mb-3 font-sans-display text-nham-text text-sm">
             {q.prompt}
           </p>
           {q.options && q.options.length > 0 && (
@@ -104,8 +98,7 @@ export function CheatSliderCard({
                   disabled={isConfirming}
                   aria-busy={isConfirming}
                   onClick={() => onClarify?.(option)}
-                  className="rounded-full border border-nham-border/60 px-3 py-1.5 text-nham-text text-sm transition-colors hover:border-nham-accent/60 hover:bg-nham-hover/40 disabled:opacity-50"
-                  style={{ fontFamily: 'DM Sans, sans-serif' }}
+                  className="rounded-full border border-nham-border/60 px-3 py-1.5 font-sans-display text-nham-text text-sm transition-colors hover:border-nham-accent/60 hover:bg-nham-hover/40 disabled:opacity-50"
                 >
                   {option}
                 </button>
@@ -128,10 +121,7 @@ export function CheatSliderCard({
       <div className="absolute top-2 -left-[43px] h-2 w-2 rounded-full border-2 border-nham-accent bg-white" />
 
       <div className="mb-2">
-        <span
-          className="font-bold text-[11px] text-nham-text-muted/60 tracking-widest"
-          style={{ fontFamily: 'DM Sans, sans-serif' }}
-        >
+        <span className="font-bold font-sans-display text-[11px] text-nham-text-muted/60 tracking-widest">
           {timeLabel}
         </span>
       </div>
@@ -139,27 +129,18 @@ export function CheatSliderCard({
       <div className="rounded-2xl border border-nham-border/60 bg-white p-4 shadow-sm sm:p-5">
         <div className="mb-3 flex items-start justify-between gap-3">
           {userInput && (
-            <p
-              className="text-[17px] text-nham-text leading-relaxed sm:text-[19px]"
-              style={{ fontFamily: 'Lora, serif' }}
-            >
+            <p className="font-serif text-[17px] text-nham-text leading-relaxed sm:text-[19px]">
               {userInput}
             </p>
           )}
-          <Badge
-            className="shrink-0 gap-1 border-transparent bg-nham-accent/15 text-nham-text"
-            style={{ fontFamily: 'DM Sans, sans-serif' }}
-          >
+          <Badge className="shrink-0 gap-1 border-transparent bg-nham-accent/15 font-sans-display text-nham-text">
             <PartyPopper className="h-3 w-3" />
             {t('badge')}
           </Badge>
         </div>
 
         {/* Live calorie + macro readout */}
-        <div
-          className="mb-4 flex flex-wrap items-baseline gap-x-4 gap-y-1"
-          style={{ fontFamily: 'DM Sans, sans-serif' }}
-        >
+        <div className="mb-4 flex flex-wrap items-baseline gap-x-4 gap-y-1 font-sans-display">
           <span className="font-semibold text-2xl text-nham-text">
             ≈ {resolved.caloriesKcal} {t('kcal')}
           </span>
@@ -195,8 +176,7 @@ export function CheatSliderCard({
         disabled={isConfirming}
         aria-busy={isConfirming}
         onClick={() => onConfirm?.(levels)}
-        className="mt-2 w-full rounded-xl bg-nham-btn py-2.5 font-medium text-sm text-white transition-colors hover:bg-nham-btn-hover disabled:opacity-50"
-        style={{ fontFamily: 'DM Sans, sans-serif' }}
+        className="mt-2 w-full rounded-xl bg-nham-btn py-2.5 font-medium font-sans-display text-sm text-white transition-colors hover:bg-nham-btn-hover disabled:opacity-50"
       >
         {t('confirm')}
       </button>
@@ -278,7 +258,7 @@ function CheatSliderRow({
   };
 
   return (
-    <div style={{ fontFamily: 'DM Sans, sans-serif' }}>
+    <div className="font-sans-display">
       <div className="mb-1 flex items-center gap-1.5">
         <Icon aria-hidden className="h-4 w-4 shrink-0" style={{ color }} />
         <span className="font-medium text-nham-text text-sm">

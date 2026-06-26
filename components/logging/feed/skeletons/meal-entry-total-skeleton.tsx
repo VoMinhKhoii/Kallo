@@ -2,10 +2,7 @@ export function MealEntryTotalSkeleton() {
   return (
     <div className="border-nham-border/50 border-t border-dashed pt-3">
       <div className="flex items-center justify-between">
-        <span
-          className="font-bold text-[13px] text-nham-text"
-          style={{ fontFamily: 'DM Sans, sans-serif' }}
-        >
+        <span className="font-bold font-sans-display text-[13px] text-nham-text">
           Total
         </span>
         <div className="flex items-center gap-4">

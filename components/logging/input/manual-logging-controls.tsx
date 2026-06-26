@@ -44,9 +44,9 @@ function StateBadge({ state }: { state: string }) {
         'shrink-0 rounded-full px-1.5 py-px text-[10px] uppercase tracking-wide',
         state === 'cooked'
           ? 'bg-nham-accent/15 text-nham-accent'
-          : 'bg-nham-hover/40 text-nham-text-muted'
+          : 'bg-nham-hover/40 text-nham-text-muted',
+        'font-sans-display'
       )}
-      style={{ fontFamily: 'DM Sans, sans-serif' }}
     >
       {label}
     </span>
@@ -144,17 +144,13 @@ function IngredientCombobox({
         onKeyDown={handleKeyDown}
         placeholder={t('manualLogging.searchPlaceholder')}
         disabled={disabled}
-        className="w-full rounded-xl border border-nham-border/50 bg-nham-hover/10 px-3 py-2 text-nham-text text-sm transition-colors placeholder:text-nham-text-muted/40 focus:border-nham-accent/50 focus:outline-none disabled:opacity-50"
-        style={{ fontFamily: 'DM Sans, sans-serif' }}
+        className="w-full rounded-xl border border-nham-border/50 bg-nham-hover/10 px-3 py-2 font-sans-display text-nham-text text-sm transition-colors placeholder:text-nham-text-muted/40 focus:border-nham-accent/50 focus:outline-none disabled:opacity-50"
       />
       {/* The picked DB entry's name — what's saved is the raw text above; this
           shows which composition entry supplies the nutrition. */}
       {ingredient && ingredient.namePrimary !== query.trim() && (
         <div className="mt-1 flex items-center gap-1.5 px-1">
-          <span
-            className="truncate text-nham-text-muted text-xs"
-            style={{ fontFamily: 'DM Sans, sans-serif' }}
-          >
+          <span className="truncate font-sans-display text-nham-text-muted text-xs">
             {ingredient.namePrimary}
           </span>
           <StateBadge state={ingredient.state} />
@@ -171,8 +167,7 @@ function IngredientCombobox({
           {isRecents && results.length > 0 && (
             <div
               aria-hidden
-              className="px-3 pt-1.5 pb-1 text-[11px] text-nham-text-muted/60 uppercase tracking-wide"
-              style={{ fontFamily: 'DM Sans, sans-serif' }}
+              className="px-3 pt-1.5 pb-1 font-sans-display text-[11px] text-nham-text-muted/60 uppercase tracking-wide"
             >
               {t('manualLogging.recentFoods')}
             </div>
@@ -197,35 +192,23 @@ function IngredientCombobox({
             >
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-1.5">
-                  <span
-                    className="truncate text-nham-text text-sm"
-                    style={{ fontFamily: 'DM Sans, sans-serif' }}
-                  >
+                  <span className="truncate font-sans-display text-nham-text text-sm">
                     {result.namePrimary}
                   </span>
                   <StateBadge state={result.state} />
                   {result.semantic && (
-                    <span
-                      className="shrink-0 text-[10px] text-nham-text-muted/60"
-                      style={{ fontFamily: 'DM Sans, sans-serif' }}
-                    >
+                    <span className="shrink-0 font-sans-display text-[10px] text-nham-text-muted/60">
                       ≈ {t('manualLogging.relatedMatch')}
                     </span>
                   )}
                 </div>
                 {result.nameEn && (
-                  <div
-                    className="truncate text-nham-text-muted/70 text-xs"
-                    style={{ fontFamily: 'DM Sans, sans-serif' }}
-                  >
+                  <div className="truncate font-sans-display text-nham-text-muted/70 text-xs">
                     {result.nameEn}
                   </div>
                 )}
               </div>
-              <span
-                className="shrink-0 text-nham-text-muted text-xs tabular-nums"
-                style={{ fontFamily: 'DM Sans, sans-serif' }}
-              >
+              <span className="shrink-0 font-sans-display text-nham-text-muted text-xs tabular-nums">
                 {t('manualLogging.kcalPer100g', {
                   kcal: formatKcal(result.per100g.caloriesKcal),
                 })}
@@ -233,10 +216,7 @@ function IngredientCombobox({
             </div>
           ))}
           {results.length === 0 && (
-            <div
-              className="px-3 py-2 text-nham-text-muted/70 text-sm"
-              style={{ fontFamily: 'DM Sans, sans-serif' }}
-            >
+            <div className="px-3 py-2 font-sans-display text-nham-text-muted/70 text-sm">
               {isFetching
                 ? t('manualLogging.searching')
                 : t('manualLogging.noResults')}
@@ -280,8 +260,7 @@ export function ManualLoggingControls({
           onClick={() => {
             pendingFocus.current = onRowAdd();
           }}
-          className="flex items-center gap-1.5 px-1 py-1 text-nham-text-muted/60 text-sm transition-colors hover:text-nham-text-muted focus-visible:outline-none disabled:opacity-40"
-          style={{ fontFamily: 'DM Sans, sans-serif' }}
+          className="flex items-center gap-1.5 px-1 py-1 font-sans-display text-nham-text-muted/60 text-sm transition-colors hover:text-nham-text-muted focus-visible:outline-none disabled:opacity-40"
         >
           <Plus className="h-3.5 w-3.5" />
           {t('manualLogging.addItem')}
@@ -323,21 +302,16 @@ export function ManualLoggingControls({
                   placeholder={t('manualLogging.gramsPlaceholder')}
                   aria-label={t('manualLogging.gramsLabel')}
                   disabled={disabled}
-                  className="w-full rounded-xl border border-nham-border/50 bg-nham-hover/10 py-2 pr-7 pl-3 text-nham-text text-sm tabular-nums transition-colors placeholder:text-nham-text-muted/40 focus:border-nham-accent/50 focus:outline-none disabled:opacity-50"
-                  style={{ fontFamily: 'DM Sans, sans-serif' }}
+                  className="w-full rounded-xl border border-nham-border/50 bg-nham-hover/10 py-2 pr-7 pl-3 font-sans-display text-nham-text text-sm tabular-nums transition-colors placeholder:text-nham-text-muted/40 focus:border-nham-accent/50 focus:outline-none disabled:opacity-50"
                 />
                 <span
                   aria-hidden
-                  className="absolute top-1/2 right-3 -translate-y-1/2 text-nham-text-muted/50 text-xs"
-                  style={{ fontFamily: 'DM Sans, sans-serif' }}
+                  className="absolute top-1/2 right-3 -translate-y-1/2 font-sans-display text-nham-text-muted/50 text-xs"
                 >
                   {t('manualLogging.gramsUnit')}
                 </span>
               </div>
-              <span
-                className="w-14 shrink-0 text-right text-nham-text-muted text-xs tabular-nums"
-                style={{ fontFamily: 'DM Sans, sans-serif' }}
-              >
+              <span className="w-14 shrink-0 text-right font-sans-display text-nham-text-muted text-xs tabular-nums">
                 {macros
                   ? t('manualLogging.rowKcal', {
                       kcal: formatKcal(macros.caloriesKcal),
@@ -364,16 +338,10 @@ export function ManualLoggingControls({
 
       {hasTotals && (
         <div className="flex items-baseline justify-between border-nham-border/30 border-t pt-2.5">
-          <span
-            className="text-nham-text-muted text-sm"
-            style={{ fontFamily: 'Lora, serif' }}
-          >
+          <span className="font-serif text-nham-text-muted text-sm">
             {t('manualLogging.total')}
           </span>
-          <div
-            className="flex items-baseline gap-3 tabular-nums"
-            style={{ fontFamily: 'DM Sans, sans-serif' }}
-          >
+          <div className="flex items-baseline gap-3 font-sans-display tabular-nums">
             <span className="font-medium text-nham-text text-sm">
               {t('manualLogging.totalKcal', {
                 kcal: formatKcal(totals.caloriesKcal),

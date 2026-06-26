@@ -98,8 +98,8 @@ export function DailyRhythm({ macros, daySeries }: DailyRhythmProps) {
         <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <p
-              className="text-nham-text leading-none tracking-[-0.02em]"
-              style={{ fontFamily: 'Lora, serif', fontWeight: 400 }}
+              className="font-serif text-nham-text leading-none tracking-[-0.02em]"
+              style={{ fontWeight: 400 }}
             >
               <span className="text-4xl tabular-nums sm:text-5xl">
                 {calories

@@ -41,10 +41,7 @@ export function MealList({ meals }: MealListProps) {
             className="flex items-start justify-between gap-2 rounded-xl border border-transparent px-2.5 py-1.5 transition-colors hover:border-nham-border/60 hover:bg-card/80"
           >
             <div className="flex min-w-0 items-start gap-2">
-              <span
-                className="mt-0.5 shrink-0 text-[10px] text-nham-accent tabular-nums leading-none"
-                style={{ fontFamily: 'DM Sans, sans-serif' }}
-              >
+              <span className="mt-0.5 shrink-0 font-sans-display text-[10px] text-nham-accent tabular-nums leading-none">
                 {idx + 1}
               </span>
               <span className="line-clamp-2 text-[11px] text-nham-text leading-tight">

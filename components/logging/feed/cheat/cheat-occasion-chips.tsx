@@ -24,10 +24,7 @@ export function CheatOccasionChips({
 
   return (
     <div className="mx-auto mb-2 flex max-w-3xl flex-col gap-1.5">
-      <span
-        className="px-1 font-bold text-[10px] text-nham-text-muted/60 uppercase tracking-widest"
-        style={{ fontFamily: 'DM Sans, sans-serif' }}
-      >
+      <span className="px-1 font-bold font-sans-display text-[10px] text-nham-text-muted/60 uppercase tracking-widest">
         {t('title')}
       </span>
       <div className="flex flex-wrap gap-2">
@@ -38,8 +35,7 @@ export function CheatOccasionChips({
             disabled={disabled}
             onClick={() => onSelect(occasion)}
             title={occasion.rawInput}
-            className="flex max-w-[14rem] items-center gap-1.5 rounded-full border border-nham-border/60 px-3 py-1.5 text-nham-text text-xs transition-colors hover:border-nham-accent/60 hover:bg-nham-hover/40 disabled:cursor-not-allowed disabled:opacity-50"
-            style={{ fontFamily: 'DM Sans, sans-serif' }}
+            className="flex max-w-[14rem] items-center gap-1.5 rounded-full border border-nham-border/60 px-3 py-1.5 font-sans-display text-nham-text text-xs transition-colors hover:border-nham-accent/60 hover:bg-nham-hover/40 disabled:cursor-not-allowed disabled:opacity-50"
           >
             <Cookie className="h-3 w-3 shrink-0 text-nham-accent" />
             <span className="truncate">{occasion.rawInput}</span>

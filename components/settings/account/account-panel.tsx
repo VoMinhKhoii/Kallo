@@ -93,10 +93,7 @@ export function AccountPanel({ email }: { email: string | null }) {
   };
 
   return (
-    <div
-      className="flex flex-col gap-3"
-      style={{ fontFamily: 'DM Sans, sans-serif' }}
-    >
+    <div className="flex flex-col gap-3 font-sans-display">
       {/* Signed-in identity */}
       {email && (
         <div className="rounded-2xl border border-nham-border/70 bg-white px-4 py-3.5">

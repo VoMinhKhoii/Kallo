@@ -58,23 +58,14 @@ function CircleCard({ entry }: { entry: CircleFeedEntry }) {
       {/* Friend identity */}
       <div className="mb-2 flex items-center gap-2">
         <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-nham-accent/40 to-nham-border/55 ring-1 ring-nham-accent/25">
-          <span
-            className="font-bold text-[10px] text-nham-btn"
-            style={{ fontFamily: 'DM Sans, sans-serif' }}
-          >
+          <span className="font-bold font-sans-display text-[10px] text-nham-btn">
             {friendLabel.charAt(0).toUpperCase()}
           </span>
         </span>
-        <span
-          className="text-[12px] text-nham-text"
-          style={{ fontFamily: 'DM Sans, sans-serif' }}
-        >
+        <span className="font-sans-display text-[12px] text-nham-text">
           {friendLabel}
         </span>
-        <span
-          className="text-[11px] text-nham-text-muted/60"
-          style={{ fontFamily: 'DM Sans, sans-serif' }}
-        >
+        <span className="font-sans-display text-[11px] text-nham-text-muted/60">
           {t('sharedAt', { time: timeLabel })}
         </span>
       </div>
@@ -82,10 +73,7 @@ function CircleCard({ entry }: { entry: CircleFeedEntry }) {
       {/* Card */}
       <div className="rounded-2xl border border-nham-border/60 bg-white p-4 shadow-sm transition-shadow hover:shadow-md sm:p-5">
         <div className="flex items-start justify-between gap-3">
-          <p
-            className="text-[17px] text-nham-text leading-relaxed sm:text-[19px]"
-            style={{ fontFamily: 'Lora, serif' }}
-          >
+          <p className="font-serif text-[17px] text-nham-text leading-relaxed sm:text-[19px]">
             {meal.rawInput}
           </p>
           <button
@@ -110,8 +98,7 @@ function CircleCard({ entry }: { entry: CircleFeedEntry }) {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.15 }}
-              className="mt-2 flex items-center justify-between"
-              style={{ fontFamily: 'DM Sans, sans-serif' }}
+              className="mt-2 flex items-center justify-between font-sans-display"
             >
               <span className="text-[11px] text-nham-text-muted tabular-nums">
                 P: {protein}
@@ -138,25 +125,16 @@ function CircleCard({ entry }: { entry: CircleFeedEntry }) {
             >
               <div className="mt-5 border-nham-border/50 border-t border-dashed pt-3">
                 <div className="flex items-center justify-between">
-                  <span
-                    className="font-bold text-[13px] text-nham-text"
-                    style={{ fontFamily: 'DM Sans, sans-serif' }}
-                  >
+                  <span className="font-bold font-sans-display text-[13px] text-nham-text">
                     {t('total')}
                   </span>
                   <div className="flex items-center gap-4">
-                    <span
-                      className="text-[11px] text-nham-text-muted tabular-nums"
-                      style={{ fontFamily: 'DM Sans, sans-serif' }}
-                    >
+                    <span className="font-sans-display text-[11px] text-nham-text-muted tabular-nums">
                       P: {protein}
                       {'  '}C: {carbs}
                       {'  '}F: {fat}
                     </span>
-                    <span
-                      className="font-bold text-nham-text tabular-nums"
-                      style={{ fontFamily: 'DM Sans, sans-serif' }}
-                    >
+                    <span className="font-bold font-sans-display text-nham-text tabular-nums">
                       {calories}
                     </span>
                   </div>

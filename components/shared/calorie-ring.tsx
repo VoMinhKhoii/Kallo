@@ -96,10 +96,7 @@ export function CalorieRing({
       >
         {center ?? (
           <>
-            <span
-              className="font-normal text-[22px] text-nham-text tabular-nums leading-none"
-              style={{ fontFamily: 'Lora, serif' }}
-            >
+            <span className="font-normal font-serif text-[22px] text-nham-text tabular-nums leading-none">
               {remaining.toLocaleString()}
             </span>
             <span className="mt-0.5 font-bold text-[8px] text-nham-stone uppercase tracking-[0.15em]">

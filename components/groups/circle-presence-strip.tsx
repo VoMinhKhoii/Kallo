@@ -80,17 +80,11 @@ function MemberDisc({
                 : 'opacity-60 ring-nham-border/50'
             )}
           >
-            <span
-              className="font-bold text-[14px] text-nham-btn"
-              style={{ fontFamily: 'DM Sans, sans-serif' }}
-            >
+            <span className="font-bold font-sans-display text-[14px] text-nham-btn">
               {initial}
             </span>
           </span>
-          <span
-            className="max-w-[4.5rem] truncate text-[10px] text-nham-text-muted"
-            style={{ fontFamily: 'DM Sans, sans-serif' }}
-          >
+          <span className="max-w-[4.5rem] truncate font-sans-display text-[10px] text-nham-text-muted">
             {name}
           </span>
         </button>
@@ -99,18 +93,14 @@ function MemberDisc({
         align="center"
         className="w-44 rounded-xl border-nham-border/60 p-1.5"
       >
-        <p
-          className="px-2 py-1 text-[11px] text-nham-text-muted"
-          style={{ fontFamily: 'DM Sans, sans-serif' }}
-        >
+        <p className="px-2 py-1 font-sans-display text-[11px] text-nham-text-muted">
           {sharedToday ? t('sharedTodayHint') : t('quietHint')}
         </p>
         <button
           type="button"
           onClick={handleRemove}
           disabled={busy}
-          className="flex w-full items-center rounded-lg px-2 py-1.5 text-left font-medium text-[13px] text-nham-text transition-colors hover:bg-nham-hover/50 disabled:opacity-50"
-          style={{ fontFamily: 'DM Sans, sans-serif' }}
+          className="flex w-full items-center rounded-lg px-2 py-1.5 text-left font-medium font-sans-display text-[13px] text-nham-text transition-colors hover:bg-nham-hover/50 disabled:opacity-50"
         >
           {t('remove')}
         </button>
@@ -118,8 +108,7 @@ function MemberDisc({
           type="button"
           onClick={handleBlock}
           disabled={busy}
-          className="flex w-full items-center rounded-lg px-2 py-1.5 text-left font-medium text-[13px] text-nham-danger transition-colors hover:bg-nham-danger/10 disabled:opacity-50"
-          style={{ fontFamily: 'DM Sans, sans-serif' }}
+          className="flex w-full items-center rounded-lg px-2 py-1.5 text-left font-medium font-sans-display text-[13px] text-nham-danger transition-colors hover:bg-nham-danger/10 disabled:opacity-50"
         >
           {t('block')}
         </button>

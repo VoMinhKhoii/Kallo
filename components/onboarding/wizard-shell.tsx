@@ -255,10 +255,7 @@ export function WizardShell({
   const isNextDisabled = isPending || !screenData[currentStep];
 
   return (
-    <div
-      className="fixed inset-0 z-[100] flex items-center justify-center bg-[#2C2416]/20 p-4 backdrop-blur-sm sm:p-6"
-      style={{ fontFamily: 'DM Sans, sans-serif' }}
-    >
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#2C2416]/20 p-4 font-sans-display backdrop-blur-sm sm:p-6">
       <motion.div
         initial={{ opacity: 0, scale: 0.95, y: 10 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}

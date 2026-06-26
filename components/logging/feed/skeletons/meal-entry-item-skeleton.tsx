@@ -15,8 +15,7 @@ export function MealEntryItemSkeleton({
       initial={{ opacity: 0, x: -8 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ delay: index * 0.08 }}
-      className="flex items-center justify-between py-2.5 text-[13px]"
-      style={{ fontFamily: 'DM Sans, sans-serif' }}
+      className="flex items-center justify-between py-2.5 font-sans-display text-[13px]"
     >
       {/* Left: item name or placeholder */}
       <div className="flex min-w-0 items-center gap-2">

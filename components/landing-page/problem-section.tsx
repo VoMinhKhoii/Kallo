@@ -39,10 +39,7 @@ export function ProblemSection() {
               </span>
             </div>
 
-            <h2
-              className="mb-8 font-normal text-5xl leading-[1.1] lg:text-6xl"
-              style={{ fontFamily: 'var(--font-lora), Georgia, serif' }}
-            >
+            <h2 className="mb-8 font-normal font-serif text-5xl leading-[1.1] lg:text-6xl">
               {t('title')}
               <br />
               <span className="font-light text-[#C9A87C] italic">
@@ -50,13 +47,7 @@ export function ProblemSection() {
               </span>
             </h2>
 
-            <p
-              className="mb-12 max-w-md font-light text-[#B0A695] text-lg leading-relaxed"
-              style={{
-                fontFamily:
-                  'var(--font-dm-sans), ui-sans-serif, system-ui, sans-serif',
-              }}
-            >
+            <p className="mb-12 max-w-md font-light font-sans-display text-[#B0A695] text-lg leading-relaxed">
               {t('subtitle')}
             </p>
 

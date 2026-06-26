@@ -16,9 +16,9 @@ export function TabButton({ active, children, onClick }: TabButtonProps) {
       onClick={onClick}
       className={cn(
         'relative z-10 flex-1 py-2.5 font-medium text-sm tracking-tight transition-colors duration-200',
-        active ? 'text-[#2C2416]' : 'text-[#8B7355]/70'
+        active ? 'text-[#2C2416]' : 'text-[#8B7355]/70',
+        'font-sans-display'
       )}
-      style={{ fontFamily: 'DM Sans, sans-serif' }}
     >
       {children}
       {active && (

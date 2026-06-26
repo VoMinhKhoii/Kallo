@@ -125,15 +125,11 @@ export function AuthDialog() {
               <div className="px-8 pt-8 pb-2 text-center">
                 <h2
                   id="auth-dialog-title"
-                  className="mb-1 font-normal text-2xl text-[#2C2416]"
-                  style={{ fontFamily: 'var(--font-lora), Georgia, serif' }}
+                  className="mb-1 font-normal font-serif text-2xl text-[#2C2416]"
                 >
                   {title}
                 </h2>
-                <p
-                  className="text-[#8B7355] text-sm"
-                  style={{ fontFamily: 'DM Sans, sans-serif' }}
-                >
+                <p className="font-sans-display text-[#8B7355] text-sm">
                   {subtitle}
                 </p>
               </div>
@@ -148,10 +144,7 @@ export function AuthDialog() {
                     <GoogleSignInButton />
                     <div className="flex items-center gap-3">
                       <div className="h-px flex-1 bg-[#E8D5B5]/60" />
-                      <span
-                        className="text-[#8B7355] text-xs"
-                        style={{ fontFamily: 'DM Sans, sans-serif' }}
-                      >
+                      <span className="font-sans-display text-[#8B7355] text-xs">
                         {tDialog('orContinueWithEmail')}
                       </span>
                       <div className="h-px flex-1 bg-[#E8D5B5]/60" />
@@ -176,10 +169,7 @@ export function AuthDialog() {
                     </AnimatePresence>
 
                     {/* Toggle Link */}
-                    <p
-                      className="mt-5 text-center text-[#8B7355] text-sm"
-                      style={{ fontFamily: 'DM Sans, sans-serif' }}
-                    >
+                    <p className="mt-5 text-center font-sans-display text-[#8B7355] text-sm">
                       {tab === 'sign-in'
                         ? tSignIn('noAccount')
                         : tSignUp('hasAccount')}

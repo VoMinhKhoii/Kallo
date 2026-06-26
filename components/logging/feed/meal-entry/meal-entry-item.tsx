@@ -35,9 +35,9 @@ export function MealEntryItem({
       transition={{ delay: index * 0.05 }}
       className={cn(
         'flex items-center justify-between py-2.5 text-[13px]',
-        isEditing && 'rounded-lg bg-nham-surface/80 px-2'
+        isEditing && 'rounded-lg bg-nham-surface/80 px-2',
+        'font-sans-display'
       )}
-      style={{ fontFamily: 'DM Sans, sans-serif' }}
     >
       {/* Left: edit controls + item name */}
       <div className="flex min-w-0 items-center gap-2">

@@ -74,10 +74,7 @@ export function CheatMealCard({ meal, onDelete }: CheatMealCardProps) {
       <div className="absolute top-2 -left-5 h-2 w-2 rounded-full border-2 border-nham-accent bg-nham-accent sm:-left-[43px]" />
 
       <div className="mb-2">
-        <span
-          className="font-bold text-[11px] text-nham-text-muted/60 tracking-widest"
-          style={{ fontFamily: 'DM Sans, sans-serif' }}
-        >
+        <span className="font-bold font-sans-display text-[11px] text-nham-text-muted/60 tracking-widest">
           {timeLabel}
         </span>
       </div>
@@ -86,17 +83,11 @@ export function CheatMealCard({ meal, onDelete }: CheatMealCardProps) {
         {/* Header */}
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <Badge
-              className="mb-2 gap-1 border-transparent bg-nham-accent/15 text-nham-text"
-              style={{ fontFamily: 'DM Sans, sans-serif' }}
-            >
+            <Badge className="mb-2 gap-1 border-transparent bg-nham-accent/15 font-sans-display text-nham-text">
               <PartyPopper className="h-3 w-3" />
               {t('badge')}
             </Badge>
-            <p
-              className="text-[17px] text-nham-text leading-relaxed sm:text-[19px]"
-              style={{ fontFamily: 'Lora, serif' }}
-            >
+            <p className="font-serif text-[17px] text-nham-text leading-relaxed sm:text-[19px]">
               {meal.rawInput}
             </p>
           </div>
@@ -122,8 +113,7 @@ export function CheatMealCard({ meal, onDelete }: CheatMealCardProps) {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.15 }}
-              className="mt-2 flex items-center justify-between"
-              style={{ fontFamily: 'DM Sans, sans-serif' }}
+              className="mt-2 flex items-center justify-between font-sans-display"
             >
               <span className="text-[11px] text-nham-text-muted tabular-nums">
                 P: {protein}
@@ -155,10 +145,7 @@ export function CheatMealCard({ meal, onDelete }: CheatMealCardProps) {
                 {/* "You set" slider summary */}
                 {persisted && (
                   <div className="mb-4 space-y-2">
-                    <span
-                      className="font-bold text-[11px] text-nham-text-muted/70 tracking-widest"
-                      style={{ fontFamily: 'DM Sans, sans-serif' }}
-                    >
+                    <span className="font-bold font-sans-display text-[11px] text-nham-text-muted/70 tracking-widest">
                       {t('youSet')}
                     </span>
                     {persisted.spec.sliders.map((slider) => {
@@ -167,8 +154,7 @@ export function CheatMealCard({ meal, onDelete }: CheatMealCardProps) {
                       return (
                         <div
                           key={slider.key}
-                          className="flex items-center justify-between gap-3 text-[13px]"
-                          style={{ fontFamily: 'DM Sans, sans-serif' }}
+                          className="flex items-center justify-between gap-3 font-sans-display text-[13px]"
                         >
                           <span className="flex min-w-0 items-center gap-2">
                             <span className="font-medium text-nham-text">
@@ -191,17 +177,11 @@ export function CheatMealCard({ meal, onDelete }: CheatMealCardProps) {
                 {/* Totals */}
                 <div className="border-nham-border/50 border-t border-dashed pt-3">
                   <div className="flex items-center justify-between">
-                    <span
-                      className="font-bold text-[13px] text-nham-text"
-                      style={{ fontFamily: 'DM Sans, sans-serif' }}
-                    >
+                    <span className="font-bold font-sans-display text-[13px] text-nham-text">
                       {t('total')}
                     </span>
                     <div className="flex items-center gap-4">
-                      <span
-                        className="text-[11px] text-nham-text-muted tabular-nums"
-                        style={{ fontFamily: 'DM Sans, sans-serif' }}
-                      >
+                      <span className="font-sans-display text-[11px] text-nham-text-muted tabular-nums">
                         P: {protein}
                         {'  '}C: {carbs}
                         {'  '}F: {fat}
@@ -209,10 +189,7 @@ export function CheatMealCard({ meal, onDelete }: CheatMealCardProps) {
                           ? `  ${t('alcoholShort')}: ${formatMacroOrNA(meal.alcoholG)}`
                           : ''}
                       </span>
-                      <span
-                        className="font-bold text-nham-text tabular-nums"
-                        style={{ fontFamily: 'DM Sans, sans-serif' }}
-                      >
+                      <span className="font-bold font-sans-display text-nham-text tabular-nums">
                         {caloriesApprox}
                       </span>
                     </div>
@@ -220,10 +197,7 @@ export function CheatMealCard({ meal, onDelete }: CheatMealCardProps) {
                 </div>
 
                 {/* Reassurance */}
-                <p
-                  className="mt-4 text-[12px] text-nham-text-muted/80 italic leading-relaxed"
-                  style={{ fontFamily: 'DM Sans, sans-serif' }}
-                >
+                <p className="mt-4 font-sans-display text-[12px] text-nham-text-muted/80 italic leading-relaxed">
                   {t('reassurance')}
                 </p>
               </div>
@@ -236,8 +210,7 @@ export function CheatMealCard({ meal, onDelete }: CheatMealCardProps) {
             <button
               type="button"
               onClick={onDelete}
-              className="rounded-full px-2.5 py-1 font-medium text-[11px] text-nham-text-muted/70 transition-colors hover:bg-nham-danger/10 hover:text-nham-danger"
-              style={{ fontFamily: 'DM Sans, sans-serif' }}
+              className="rounded-full px-2.5 py-1 font-medium font-sans-display text-[11px] text-nham-text-muted/70 transition-colors hover:bg-nham-danger/10 hover:text-nham-danger"
             >
               {t('remove')}
             </button>

@@ -291,7 +291,7 @@ export function Profile({ profile }: ProfileProps) {
   }
 
   return (
-    <div style={{ fontFamily: 'DM Sans, sans-serif' }}>
+    <div className="font-sans-display">
       <Form {...form}>
         <form
           onSubmit={form.handleSubmit(handleSave, handleInvalid)}
@@ -308,10 +308,7 @@ export function Profile({ profile }: ProfileProps) {
                 aria-label={section.title}
                 className="scroll-mt-20 rounded-2xl border border-[#EAE7E0] bg-[#FDFCF8] p-3 sm:p-5 lg:p-6"
               >
-                <h2
-                  className="font-normal text-[#2C2416] text-lg tracking-tight"
-                  style={{ fontFamily: 'Lora, serif' }}
-                >
+                <h2 className="font-normal font-serif text-[#2C2416] text-lg tracking-tight">
                   {section.title}
                 </h2>
                 <p className="mt-1 mb-5 text-[#7B6F62] text-[13px] sm:mb-6">

@@ -932,10 +932,7 @@ export function FeedArea({
           {isDayLoading ? (
             <MacroSummarySkeleton />
           ) : isDayError ? null : hasUnknownDailyMacros ? (
-            <div
-              className="font-medium text-[11px] text-nham-text-muted/80"
-              style={{ fontFamily: 'DM Sans, sans-serif' }}
-            >
+            <div className="font-medium font-sans-display text-[11px] text-nham-text-muted/80">
               {t('legacyMacroWarning')}
             </div>
           ) : (
@@ -1063,19 +1060,11 @@ export function FeedArea({
                         <div className="absolute top-2 -left-[43px] h-2 w-2 rounded-full border-2 border-nham-danger bg-white" />
                         <div className="rounded-2xl border border-nham-danger/30 bg-nham-danger/10 p-4">
                           {msg.userInput && (
-                            <p
-                              className="mb-2 text-[13px] text-nham-text-muted"
-                              style={{ fontFamily: 'Lora, serif' }}
-                            >
+                            <p className="mb-2 font-serif text-[13px] text-nham-text-muted">
                               {msg.userInput}
                             </p>
                           )}
-                          <p
-                            className="text-nham-danger text-sm"
-                            style={{
-                              fontFamily: 'DM Sans, sans-serif',
-                            }}
-                          >
+                          <p className="font-sans-display text-nham-danger text-sm">
                             {msg.content}
                           </p>
                         </div>

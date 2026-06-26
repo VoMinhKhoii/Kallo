@@ -19,17 +19,9 @@ function ReceiptHeader() {
   return (
     <div className="border-[#E8D5B5] border-b-2 border-dashed bg-[#FAF9F7] p-6 text-center">
       <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-[#2C2416] text-[#FEFBF6] shadow-lg">
-        <span
-          className="font-bold text-xl italic"
-          style={{ fontFamily: 'var(--font-lora), Georgia, serif' }}
-        >
-          M
-        </span>
+        <span className="font-bold font-serif text-xl italic">M</span>
       </div>
-      <h3
-        className="mb-1 text-[#2C2416] text-xl uppercase tracking-widest"
-        style={{ fontFamily: 'var(--font-lora), Georgia, serif' }}
-      >
+      <h3 className="mb-1 font-serif text-[#2C2416] text-xl uppercase tracking-widest">
         {t('title')}
       </h3>
       <p className="font-mono text-[#8B7355] text-[10px] tracking-wider">
@@ -69,8 +61,7 @@ const ReceiptVisual = ({ stage }: { stage: number }) => {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
-              className="relative z-10 text-[#2C2416] text-xl leading-relaxed"
-              style={{ fontFamily: 'var(--font-lora), Georgia, serif' }}
+              className="relative z-10 font-serif text-[#2C2416] text-xl leading-relaxed"
             >
               &quot;Cơm tấm sườn bì chả,{' '}
               <span className="text-[#C9A87C] italic">ít mỡ hành</span>, thêm
@@ -172,12 +163,7 @@ const ReceiptVisual = ({ stage }: { stage: number }) => {
             >
               <div className="mb-2 flex flex-col items-end">
                 <div className="flex items-baseline gap-2">
-                  <span
-                    className="text-[#2C2416] text-lg opacity-60"
-                    style={{
-                      fontFamily: 'var(--font-lora), Georgia, serif',
-                    }}
-                  >
+                  <span className="font-serif text-[#2C2416] text-lg opacity-60">
                     {t('total')}
                   </span>
                   <span className="font-bold font-mono text-4xl text-[#2C2416]">
@@ -259,19 +245,10 @@ export function SolutionSection() {
             <span className="mb-4 font-mono text-[#C9A87C] text-xs uppercase tracking-widest">
               {t('step1Label')}
             </span>
-            <h2
-              className="mb-6 text-5xl leading-tight"
-              style={{ fontFamily: 'var(--font-lora), Georgia, serif' }}
-            >
+            <h2 className="mb-6 font-serif text-5xl leading-tight">
               {t('step1Title')}
             </h2>
-            <p
-              className="font-light text-[#6B5D4F] text-lg leading-relaxed"
-              style={{
-                fontFamily:
-                  'var(--font-dm-sans), ui-sans-serif, system-ui, sans-serif',
-              }}
-            >
+            <p className="font-light font-sans-display text-[#6B5D4F] text-lg leading-relaxed">
               {t('step1Text')}
             </p>
           </div>
@@ -281,19 +258,10 @@ export function SolutionSection() {
             <span className="mb-4 font-mono text-[#C9A87C] text-xs uppercase tracking-widest">
               {t('step2Label')}
             </span>
-            <h2
-              className="mb-6 text-5xl leading-tight"
-              style={{ fontFamily: 'var(--font-lora), Georgia, serif' }}
-            >
+            <h2 className="mb-6 font-serif text-5xl leading-tight">
               {t('step2Title')}
             </h2>
-            <p
-              className="font-light text-[#6B5D4F] text-lg leading-relaxed"
-              style={{
-                fontFamily:
-                  'var(--font-dm-sans), ui-sans-serif, system-ui, sans-serif',
-              }}
-            >
+            <p className="font-light font-sans-display text-[#6B5D4F] text-lg leading-relaxed">
               {t('step2Text')}
             </p>
           </div>
@@ -303,19 +271,10 @@ export function SolutionSection() {
             <span className="mb-4 font-mono text-[#C9A87C] text-xs uppercase tracking-widest">
               {t('step3Label')}
             </span>
-            <h2
-              className="mb-6 text-5xl leading-tight"
-              style={{ fontFamily: 'var(--font-lora), Georgia, serif' }}
-            >
+            <h2 className="mb-6 font-serif text-5xl leading-tight">
               {t('step3Title')}
             </h2>
-            <p
-              className="font-light text-[#6B5D4F] text-lg leading-relaxed"
-              style={{
-                fontFamily:
-                  'var(--font-dm-sans), ui-sans-serif, system-ui, sans-serif',
-              }}
-            >
+            <p className="font-light font-sans-display text-[#6B5D4F] text-lg leading-relaxed">
               {t('step3Text')}
             </p>
           </div>
@@ -325,19 +284,10 @@ export function SolutionSection() {
             <span className="mb-4 font-mono text-[#C9A87C] text-xs uppercase tracking-widest">
               {t('step4Label')}
             </span>
-            <h2
-              className="mb-6 text-5xl leading-tight"
-              style={{ fontFamily: 'var(--font-lora), Georgia, serif' }}
-            >
+            <h2 className="mb-6 font-serif text-5xl leading-tight">
               {t('step4Title')}
             </h2>
-            <p
-              className="mb-8 font-light text-[#6B5D4F] text-lg leading-relaxed"
-              style={{
-                fontFamily:
-                  'var(--font-dm-sans), ui-sans-serif, system-ui, sans-serif',
-              }}
-            >
+            <p className="mb-8 font-light font-sans-display text-[#6B5D4F] text-lg leading-relaxed">
               {t('step4Text')}
             </p>
             <button
@@ -358,19 +308,10 @@ export function SolutionSection() {
           <span className="mb-4 block font-mono text-[#C9A87C] text-xs uppercase tracking-widest">
             {t('step1Label')}
           </span>
-          <h2
-            className="mb-4 text-4xl text-[#2C2416] leading-tight"
-            style={{ fontFamily: 'var(--font-lora), Georgia, serif' }}
-          >
+          <h2 className="mb-4 font-serif text-4xl text-[#2C2416] leading-tight">
             {t('step1Title')}
           </h2>
-          <p
-            className="mb-8 font-light text-[#6B5D4F] leading-relaxed"
-            style={{
-              fontFamily:
-                'var(--font-dm-sans), ui-sans-serif, system-ui, sans-serif',
-            }}
-          >
+          <p className="mb-8 font-light font-sans-display text-[#6B5D4F] leading-relaxed">
             {t('step1TextMobile')}
           </p>
           <ReceiptVisual stage={1} />
@@ -381,19 +322,10 @@ export function SolutionSection() {
           <span className="mb-4 block font-mono text-[#C9A87C] text-xs uppercase tracking-widest">
             {t('step2Label')}
           </span>
-          <h2
-            className="mb-4 text-4xl text-[#2C2416] leading-tight"
-            style={{ fontFamily: 'var(--font-lora), Georgia, serif' }}
-          >
+          <h2 className="mb-4 font-serif text-4xl text-[#2C2416] leading-tight">
             {t('step2Title')}
           </h2>
-          <p
-            className="mb-8 font-light text-[#6B5D4F] leading-relaxed"
-            style={{
-              fontFamily:
-                'var(--font-dm-sans), ui-sans-serif, system-ui, sans-serif',
-            }}
-          >
+          <p className="mb-8 font-light font-sans-display text-[#6B5D4F] leading-relaxed">
             {t('step2TextMobile')}
           </p>
           <ReceiptVisual stage={2} />
@@ -404,19 +336,10 @@ export function SolutionSection() {
           <span className="mb-4 block font-mono text-[#C9A87C] text-xs uppercase tracking-widest">
             {t('step3Label')}
           </span>
-          <h2
-            className="mb-4 text-4xl text-[#2C2416] leading-tight"
-            style={{ fontFamily: 'var(--font-lora), Georgia, serif' }}
-          >
+          <h2 className="mb-4 font-serif text-4xl text-[#2C2416] leading-tight">
             {t('step3Title')}
           </h2>
-          <p
-            className="mb-8 font-light text-[#6B5D4F] leading-relaxed"
-            style={{
-              fontFamily:
-                'var(--font-dm-sans), ui-sans-serif, system-ui, sans-serif',
-            }}
-          >
+          <p className="mb-8 font-light font-sans-display text-[#6B5D4F] leading-relaxed">
             {t('step3TextMobile')}
           </p>
           <ReceiptVisual stage={3} />
@@ -427,19 +350,10 @@ export function SolutionSection() {
           <span className="mb-4 block font-mono text-[#C9A87C] text-xs uppercase tracking-widest">
             {t('step4Label')}
           </span>
-          <h2
-            className="mb-4 text-4xl text-[#2C2416] leading-tight"
-            style={{ fontFamily: 'var(--font-lora), Georgia, serif' }}
-          >
+          <h2 className="mb-4 font-serif text-4xl text-[#2C2416] leading-tight">
             {t('step4Title')}
           </h2>
-          <p
-            className="mb-8 font-light text-[#6B5D4F] leading-relaxed"
-            style={{
-              fontFamily:
-                'var(--font-dm-sans), ui-sans-serif, system-ui, sans-serif',
-            }}
-          >
+          <p className="mb-8 font-light font-sans-display text-[#6B5D4F] leading-relaxed">
             {t('step4TextMobile')}
           </p>
           <ReceiptVisual stage={4} />
@@ -467,10 +381,7 @@ export function SolutionSection() {
           <span className="mb-4 block font-medium text-[#8B7355] text-sm uppercase tracking-widest">
             {t('whyLabel')}
           </span>
-          <h2
-            className="mb-6 font-normal text-4xl text-[#2C2416] lg:text-5xl"
-            style={{ fontFamily: 'var(--font-lora), Georgia, serif' }}
-          >
+          <h2 className="mb-6 font-normal font-serif text-4xl text-[#2C2416] lg:text-5xl">
             {t('whyTitle')}
           </h2>
         </motion.div>
@@ -487,19 +398,10 @@ export function SolutionSection() {
                 <BookOpen className="h-5 w-5 text-[#8B7355]" />
               </div>
               <div>
-                <h3
-                  className="mb-2 font-medium text-[#2C2416] text-xl"
-                  style={{ fontFamily: 'var(--font-lora), Georgia, serif' }}
-                >
+                <h3 className="mb-2 font-medium font-serif text-[#2C2416] text-xl">
                   {t('feature1Title')}
                 </h3>
-                <p
-                  className="text-[#6B5D4F] leading-relaxed"
-                  style={{
-                    fontFamily:
-                      'var(--font-dm-sans), ui-sans-serif, system-ui, sans-serif',
-                  }}
-                >
+                <p className="font-sans-display text-[#6B5D4F] leading-relaxed">
                   {t('feature1Text')}
                 </p>
               </div>
@@ -510,19 +412,10 @@ export function SolutionSection() {
                 <Sparkles className="h-5 w-5 text-[#8B7355]" />
               </div>
               <div>
-                <h3
-                  className="mb-2 font-medium text-[#2C2416] text-xl"
-                  style={{ fontFamily: 'var(--font-lora), Georgia, serif' }}
-                >
+                <h3 className="mb-2 font-medium font-serif text-[#2C2416] text-xl">
                   {t('feature2Title')}
                 </h3>
-                <p
-                  className="text-[#6B5D4F] leading-relaxed"
-                  style={{
-                    fontFamily:
-                      'var(--font-dm-sans), ui-sans-serif, system-ui, sans-serif',
-                  }}
-                >
+                <p className="font-sans-display text-[#6B5D4F] leading-relaxed">
                   {t('feature2Text')}
                 </p>
               </div>
@@ -533,19 +426,10 @@ export function SolutionSection() {
                 <Scale className="h-5 w-5 text-[#8B7355]" />
               </div>
               <div>
-                <h3
-                  className="mb-2 font-medium text-[#2C2416] text-xl"
-                  style={{ fontFamily: 'var(--font-lora), Georgia, serif' }}
-                >
+                <h3 className="mb-2 font-medium font-serif text-[#2C2416] text-xl">
                   {t('feature3Title')}
                 </h3>
-                <p
-                  className="text-[#6B5D4F] leading-relaxed"
-                  style={{
-                    fontFamily:
-                      'var(--font-dm-sans), ui-sans-serif, system-ui, sans-serif',
-                  }}
-                >
+                <p className="font-sans-display text-[#6B5D4F] leading-relaxed">
                   {t('feature3Text')}
                 </p>
               </div>

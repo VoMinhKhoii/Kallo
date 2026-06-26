@@ -51,23 +51,16 @@ export function PartialYesterdayPrompt({
           className="flex items-start gap-3 rounded-2xl border border-nham-border/60 bg-nham-surface p-3 sm:p-4"
         >
           <div className="min-w-0 flex-1">
-            <p
-              className="text-base text-nham-danger italic"
-              style={{ fontFamily: 'Lora, serif' }}
-            >
+            <p className="font-serif text-base text-nham-danger italic">
               {t('title')}
             </p>
-            <p
-              className="mt-1 text-[13px] text-nham-text-muted"
-              style={{ fontFamily: 'DM Sans, sans-serif' }}
-            >
+            <p className="mt-1 font-sans-display text-[13px] text-nham-text-muted">
               {t('body', { calories, target: calorieTarget })}
             </p>
             <button
               type="button"
               onClick={() => onOpenDay(yesterday)}
-              className="mt-3 inline-flex min-h-8 touch-manipulation items-center gap-2 rounded-full border border-nham-border/60 px-3 py-1.5 font-medium text-nham-text text-sm transition-colors hover:border-nham-accent/50 hover:bg-nham-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent focus-visible:ring-offset-2 focus-visible:ring-offset-nham-surface"
-              style={{ fontFamily: 'DM Sans, sans-serif' }}
+              className="mt-3 inline-flex min-h-8 touch-manipulation items-center gap-2 rounded-full border border-nham-border/60 px-3 py-1.5 font-medium font-sans-display text-nham-text text-sm transition-colors hover:border-nham-accent/50 hover:bg-nham-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent focus-visible:ring-offset-2 focus-visible:ring-offset-nham-surface"
             >
               <ArrowLeft className="size-4" aria-hidden="true" />
               {t('open')}

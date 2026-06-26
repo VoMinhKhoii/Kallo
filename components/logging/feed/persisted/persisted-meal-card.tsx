@@ -83,8 +83,7 @@ function ShareCardButton({ shareId }: { shareId: string }) {
     <button
       type="button"
       onClick={handleShare}
-      className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 font-medium text-[11px] text-nham-text-muted/70 transition-colors hover:bg-nham-hover/40 hover:text-nham-text"
-      style={{ fontFamily: 'DM Sans, sans-serif' }}
+      className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 font-medium font-sans-display text-[11px] text-nham-text-muted/70 transition-colors hover:bg-nham-hover/40 hover:text-nham-text"
     >
       <Share2 className="h-3.5 w-3.5" />
       {t('shareCard')}
@@ -137,9 +136,9 @@ function ShareToCircleButton({
           'inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 font-medium text-[11px] transition-colors disabled:cursor-not-allowed disabled:opacity-60',
           isShared
             ? 'bg-nham-accent/15 text-nham-text'
-            : 'text-nham-text-muted/70 hover:bg-nham-hover/40 hover:text-nham-text'
+            : 'text-nham-text-muted/70 hover:bg-nham-hover/40 hover:text-nham-text',
+          'font-sans-display'
         )}
-        style={{ fontFamily: 'DM Sans, sans-serif' }}
       >
         {shareMeal.isPending ? (
           <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -234,8 +233,7 @@ function RefineField({
     <>
       <label
         htmlFor={`refine-${meal.id}`}
-        className="px-1 font-medium text-[10px] text-nham-text-muted uppercase tracking-[0.08em]"
-        style={{ fontFamily: 'DM Sans, sans-serif' }}
+        className="px-1 font-medium font-sans-display text-[10px] text-nham-text-muted uppercase tracking-[0.08em]"
       >
         {t('refineLabel')}
       </label>
@@ -254,24 +252,19 @@ function RefineField({
           placeholder={t('refinePlaceholder')}
           autoComplete="off"
           maxLength={refineMaxLength}
-          className="min-w-0 flex-1 rounded-lg border border-nham-border/60 bg-white px-3 py-2 text-[13px] text-nham-text placeholder:text-nham-text-muted/50 focus:border-nham-accent/50 focus:outline-none"
-          style={{ fontFamily: 'DM Sans, sans-serif' }}
+          className="min-w-0 flex-1 rounded-lg border border-nham-border/60 bg-white px-3 py-2 font-sans-display text-[13px] text-nham-text placeholder:text-nham-text-muted/50 focus:border-nham-accent/50 focus:outline-none"
         />
         <button
           type="button"
           onClick={submitRefine}
           disabled={correction.trim().length === 0}
-          className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-nham-accent/15 px-3 font-medium text-[12px] text-nham-text transition-colors hover:bg-nham-accent/25 disabled:cursor-not-allowed disabled:opacity-50"
-          style={{ fontFamily: 'DM Sans, sans-serif' }}
+          className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-nham-accent/15 px-3 font-medium font-sans-display text-[12px] text-nham-text transition-colors hover:bg-nham-accent/25 disabled:cursor-not-allowed disabled:opacity-50"
         >
           <Sparkles className="h-3.5 w-3.5" />
           {t('refineSubmit')}
         </button>
       </div>
-      <p
-        className="mt-1.5 px-1 text-[11px] text-nham-text-muted/70"
-        style={{ fontFamily: 'DM Sans, sans-serif' }}
-      >
+      <p className="mt-1.5 px-1 font-sans-display text-[11px] text-nham-text-muted/70">
         {refineTight ? t('refineTightHint') : t('refineHint')}
       </p>
     </>
@@ -363,9 +356,9 @@ function MealAmountEditor({
             key={row.id}
             className={cn(
               'flex items-center justify-between gap-2 rounded-lg px-2 py-2 text-[13px]',
-              row.removed ? 'opacity-40' : 'bg-nham-surface/80'
+              row.removed ? 'opacity-40' : 'bg-nham-surface/80',
+              'font-sans-display'
             )}
-            style={{ fontFamily: 'DM Sans, sans-serif' }}
           >
             <div className="flex min-w-0 items-center gap-2">
               {row.grams != null && !row.removed && (
@@ -425,8 +418,7 @@ function MealAmountEditor({
           type="button"
           onClick={onCancel}
           disabled={isSaving}
-          className="rounded-full px-3 py-1.5 font-medium text-[12px] text-nham-text-muted/80 transition-colors hover:bg-nham-hover/40 hover:text-nham-text disabled:opacity-60"
-          style={{ fontFamily: 'DM Sans, sans-serif' }}
+          className="rounded-full px-3 py-1.5 font-medium font-sans-display text-[12px] text-nham-text-muted/80 transition-colors hover:bg-nham-hover/40 hover:text-nham-text disabled:opacity-60"
         >
           {t('cancelEdit')}
         </button>
@@ -435,8 +427,7 @@ function MealAmountEditor({
           onClick={handleSave}
           disabled={isSaving || !canSave}
           aria-busy={isSaving}
-          className="inline-flex items-center gap-1.5 rounded-full bg-nham-accent/15 px-3.5 py-1.5 font-medium text-[12px] text-nham-text transition-colors hover:bg-nham-accent/25 disabled:cursor-not-allowed disabled:opacity-60"
-          style={{ fontFamily: 'DM Sans, sans-serif' }}
+          className="inline-flex items-center gap-1.5 rounded-full bg-nham-accent/15 px-3.5 py-1.5 font-medium font-sans-display text-[12px] text-nham-text transition-colors hover:bg-nham-accent/25 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {isSaving && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
           {isSaving ? t('savingEdit') : t('saveEdit')}
@@ -491,10 +482,7 @@ function PrecisePersistedMealCard({
 
       {/* Time label */}
       <div className="mb-2">
-        <span
-          className="font-bold text-[11px] text-nham-text-muted/60 tracking-widest"
-          style={{ fontFamily: 'DM Sans, sans-serif' }}
-        >
+        <span className="font-bold font-sans-display text-[11px] text-nham-text-muted/60 tracking-widest">
           {timeLabel}
         </span>
       </div>
@@ -503,10 +491,7 @@ function PrecisePersistedMealCard({
       <div className="rounded-2xl border border-nham-border/60 bg-white p-4 shadow-sm transition-shadow hover:shadow-md sm:p-5">
         {/* Header */}
         <div className="flex items-start justify-between gap-3">
-          <p
-            className="text-[17px] text-nham-text leading-relaxed sm:text-[19px]"
-            style={{ fontFamily: 'Lora, serif' }}
-          >
+          <p className="font-serif text-[17px] text-nham-text leading-relaxed sm:text-[19px]">
             {meal.rawInput}
           </p>
           <button
@@ -531,8 +516,7 @@ function PrecisePersistedMealCard({
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.15 }}
-              className="mt-2 flex items-center justify-between"
-              style={{ fontFamily: 'DM Sans, sans-serif' }}
+              className="mt-2 flex items-center justify-between font-sans-display"
             >
               <span className="text-[11px] text-nham-text-muted tabular-nums">
                 P: {protein}
@@ -588,8 +572,7 @@ function PrecisePersistedMealCard({
                     return (
                       <div
                         key={`${group.order}-${group.name}`}
-                        className="flex items-center justify-between py-2 text-[13px]"
-                        style={{ fontFamily: 'DM Sans, sans-serif' }}
+                        className="flex items-center justify-between py-2 font-sans-display text-[13px]"
                       >
                         <span className="min-w-0 truncate font-medium text-nham-text">
                           {group.name}
@@ -612,25 +595,16 @@ function PrecisePersistedMealCard({
                 {/* Totals */}
                 <div className="border-nham-border/50 border-t border-dashed pt-3">
                   <div className="flex items-center justify-between">
-                    <span
-                      className="font-bold text-[13px] text-nham-text"
-                      style={{ fontFamily: 'DM Sans, sans-serif' }}
-                    >
+                    <span className="font-bold font-sans-display text-[13px] text-nham-text">
                       {t('total')}
                     </span>
                     <div className="flex items-center gap-4">
-                      <span
-                        className="text-[11px] text-nham-text-muted tabular-nums"
-                        style={{ fontFamily: 'DM Sans, sans-serif' }}
-                      >
+                      <span className="font-sans-display text-[11px] text-nham-text-muted tabular-nums">
                         P: {protein}
                         {'  '}C: {carbs}
                         {'  '}F: {fat}
                       </span>
-                      <span
-                        className="font-bold text-nham-text tabular-nums"
-                        style={{ fontFamily: 'DM Sans, sans-serif' }}
-                      >
+                      <span className="font-bold font-sans-display text-nham-text tabular-nums">
                         {calories}
                       </span>
                     </div>
@@ -649,8 +623,7 @@ function PrecisePersistedMealCard({
                 <button
                   type="button"
                   onClick={onLogAgain}
-                  className="rounded-full px-2.5 py-1 font-medium text-[11px] text-nham-text-muted/70 transition-colors hover:bg-nham-hover/40 hover:text-nham-text"
-                  style={{ fontFamily: 'DM Sans, sans-serif' }}
+                  className="rounded-full px-2.5 py-1 font-medium font-sans-display text-[11px] text-nham-text-muted/70 transition-colors hover:bg-nham-hover/40 hover:text-nham-text"
                 >
                   {t('logAgain')}
                 </button>
@@ -660,8 +633,7 @@ function PrecisePersistedMealCard({
                   type="button"
                   aria-expanded={isRefineOpen}
                   onClick={() => setIsRefineOpen((prev) => !prev)}
-                  className="rounded-full px-2.5 py-1 font-medium text-[11px] text-nham-text-muted/70 transition-colors hover:bg-nham-hover/40 hover:text-nham-text"
-                  style={{ fontFamily: 'DM Sans, sans-serif' }}
+                  className="rounded-full px-2.5 py-1 font-medium font-sans-display text-[11px] text-nham-text-muted/70 transition-colors hover:bg-nham-hover/40 hover:text-nham-text"
                 >
                   {t('refineAction')}
                 </button>
@@ -674,8 +646,7 @@ function PrecisePersistedMealCard({
                     setIsCollapsed(true);
                     setIsEditing(true);
                   }}
-                  className="rounded-full px-2.5 py-1 font-medium text-[11px] text-nham-text-muted/70 transition-colors hover:bg-nham-hover/40 hover:text-nham-text"
-                  style={{ fontFamily: 'DM Sans, sans-serif' }}
+                  className="rounded-full px-2.5 py-1 font-medium font-sans-display text-[11px] text-nham-text-muted/70 transition-colors hover:bg-nham-hover/40 hover:text-nham-text"
                 >
                   {t('editAmounts')}
                 </button>
@@ -684,8 +655,7 @@ function PrecisePersistedMealCard({
                 <button
                   type="button"
                   onClick={onDelete}
-                  className="rounded-full px-2.5 py-1 font-medium text-[11px] text-nham-text-muted/70 transition-colors hover:bg-nham-danger/10 hover:text-nham-danger"
-                  style={{ fontFamily: 'DM Sans, sans-serif' }}
+                  className="rounded-full px-2.5 py-1 font-medium font-sans-display text-[11px] text-nham-text-muted/70 transition-colors hover:bg-nham-danger/10 hover:text-nham-danger"
                 >
                   {t('remove')}
                 </button>
