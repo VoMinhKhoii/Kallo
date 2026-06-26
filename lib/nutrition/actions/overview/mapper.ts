@@ -400,6 +400,64 @@ function buildBucketBounds(
   return bounds;
 }
 
+interface DaySeriesMetricSpec {
+  metric: DaySeriesMetricKey;
+  rowKey: NumericRowKey;
+  labelKey: string;
+  unit: string;
+  target: number | null;
+}
+
+/** Build one metric's bucket series: each bucket's value is the per-day average
+ *  of the metric over that bucket's COMPLETE days only. Pure over its inputs so
+ *  the day-series builder stays a flat map over the metric specs. */
+function buildMetricSeries(
+  spec: DaySeriesMetricSpec,
+  bounds: { startDate: string; endDate: string }[],
+  completeDaysInBucket: number[],
+  completeRows: OverviewMealItemRow[]
+): NutrientDaySeries {
+  const buckets: DaySeriesBucket[] = bounds.map((bucket, index) => {
+    const days = completeDaysInBucket[index];
+    if (days === 0) {
+      return {
+        startDate: bucket.startDate,
+        endDate: bucket.endDate,
+        value: null,
+        ratioOfTarget: null,
+      };
+    }
+    const total = completeRows.reduce((sum, row) => {
+      if (row.localDate < bucket.startDate || row.localDate > bucket.endDate) {
+        return sum;
+      }
+      return sum + Math.max(0, row[spec.rowKey] ?? 0);
+    }, 0);
+    const value = total / days;
+    return {
+      startDate: bucket.startDate,
+      endDate: bucket.endDate,
+      value,
+      ratioOfTarget:
+        spec.target && spec.target > 0 ? value / spec.target : null,
+    };
+  });
+
+  const values = buckets
+    .map((bucket) => bucket.value)
+    .filter((value): value is number => value !== null);
+
+  return {
+    metric: spec.metric,
+    labelKey: spec.labelKey,
+    unit: spec.unit,
+    target: spec.target,
+    buckets,
+    min: values.length > 0 ? Math.min(...values) : null,
+    max: values.length > 0 ? Math.max(...values) : null,
+  };
+}
+
 /**
  * Build the per-bucket time series. Each bucket's value is the per-day average
  * of the metric over that bucket's COMPLETE days only — the same complete-day
@@ -436,13 +494,7 @@ function buildDaySeries({
     return count;
   });
 
-  const metrics: {
-    metric: DaySeriesMetricKey;
-    rowKey: NumericRowKey;
-    labelKey: string;
-    unit: string;
-    target: number | null;
-  }[] = [
+  const metrics: DaySeriesMetricSpec[] = [
     ...DAY_SERIES_MACROS.map((macro) => ({
       metric: macro.metric,
       rowKey: macro.rowKey,
@@ -462,50 +514,9 @@ function buildDaySeries({
     }),
   ];
 
-  const series: NutrientDaySeries[] = metrics.map((metric) => {
-    const buckets: DaySeriesBucket[] = bounds.map((bucket, index) => {
-      const days = completeDaysInBucket[index];
-      if (days === 0) {
-        return {
-          startDate: bucket.startDate,
-          endDate: bucket.endDate,
-          value: null,
-          ratioOfTarget: null,
-        };
-      }
-      const total = completeRows.reduce((sum, row) => {
-        if (
-          row.localDate < bucket.startDate ||
-          row.localDate > bucket.endDate
-        ) {
-          return sum;
-        }
-        return sum + Math.max(0, row[metric.rowKey] ?? 0);
-      }, 0);
-      const value = total / days;
-      return {
-        startDate: bucket.startDate,
-        endDate: bucket.endDate,
-        value,
-        ratioOfTarget:
-          metric.target && metric.target > 0 ? value / metric.target : null,
-      };
-    });
-
-    const values = buckets
-      .map((bucket) => bucket.value)
-      .filter((value): value is number => value !== null);
-
-    return {
-      metric: metric.metric,
-      labelKey: metric.labelKey,
-      unit: metric.unit,
-      target: metric.target,
-      buckets,
-      min: values.length > 0 ? Math.min(...values) : null,
-      max: values.length > 0 ? Math.max(...values) : null,
-    };
-  });
+  const series: NutrientDaySeries[] = metrics.map((spec) =>
+    buildMetricSeries(spec, bounds, completeDaysInBucket, completeRows)
+  );
 
   return { unit, series };
 }

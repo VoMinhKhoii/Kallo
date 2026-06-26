@@ -5,7 +5,7 @@ import { Loader2 } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useMemo, useTransition } from 'react';
-import { type FieldErrors, useForm } from 'react-hook-form';
+import { type DefaultValues, type FieldErrors, useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { z } from 'zod';
 import { Form } from '@/components/ui/form';
@@ -134,24 +134,22 @@ export function Profile({ profile }: ProfileProps) {
     },
   ];
 
-  const defaultValues: ProfileFormValues = useMemo(
+  // Typed as DefaultValues (a deep-partial) — both useForm and form.reset
+  // accept it. This is what lets the body-metrics fields start genuinely empty
+  // (undefined) instead of being cast from a fabricated value; the schema's
+  // "required" rule then forces a real entry before save.
+  const defaultValues: DefaultValues<ProfileFormValues> = useMemo(
     () => ({
       // Body metrics are NOT defaulted to fabricated numbers. A user who
       // skipped onboarding has null weight/height/age/sex; pre-filling
       // 65kg/165cm/25y/male would let them save fabricated data as if it were
       // real (and silently recompute a target from it). Leave them empty so
       // the schema's "required" validation forces a real entry before save.
-      biologicalSex:
-        (profile.biologicalSex as 'male' | 'female') ??
-        (undefined as unknown as 'male' | 'female'),
-      weightKg: profile.weightKg
-        ? Number(profile.weightKg)
-        : (undefined as unknown as number),
-      heightCm: profile.heightCm ?? (undefined as unknown as number),
-      age: profile.age ?? (undefined as unknown as number),
-      activityLevel:
-        (profile.activityLevel as ActivityLevel) ??
-        (undefined as unknown as ActivityLevel),
+      biologicalSex: (profile.biologicalSex as 'male' | 'female') ?? undefined,
+      weightKg: profile.weightKg ? Number(profile.weightKg) : undefined,
+      heightCm: profile.heightCm ?? undefined,
+      age: profile.age ?? undefined,
+      activityLevel: (profile.activityLevel as ActivityLevel) ?? undefined,
       goal: (profile.goal as Goal) ?? 'maintaining',
       aggression: (() => {
         const raw = profile.aggression;
