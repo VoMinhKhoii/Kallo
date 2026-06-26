@@ -11,11 +11,11 @@ import {
   type StreamOptions,
   type StructuredOutputParams,
 } from '@/lib/ai/gemini';
+import { analyzeMeal } from '@/lib/ai/pipeline/orchestrator';
 import {
   logPipelineStart,
   setPipelineFinalState,
 } from '@/lib/ai/pipeline/telemetry/logging';
-import { analyzeMeal } from '@/lib/ai/pipeline/orchestrator';
 import { hashUserId } from '@/lib/ai/pipeline/telemetry/run-telemetry';
 import { logLlmCall } from '@/lib/ai/pipeline/telemetry/trace';
 import type { UserContext } from '@/lib/ai/types';
