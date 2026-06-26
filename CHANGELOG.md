@@ -1,5 +1,97 @@
 # Changelog
 
+## [1.4.0](https://github.com/VoMinhKhoii/Nham/compare/v1.3.0...v1.4.0) (2026-06-26)
+
+
+### Features
+
+* **app:** brand-voiced loading + error boundaries and pending-nav feedback ([7940ddc](https://github.com/VoMinhKhoii/Nham/commit/7940ddc07c6ff8fd10ba55c6bac62c447c4bc406))
+* **app:** put the daily verb and the brand in the desktop rail ([d546a53](https://github.com/VoMinhKhoii/Nham/commit/d546a539d64e25c339643d122fa28ff65f500ea5))
+* **auth:** collapse the dialog's triple mode-statement, lead with Google ([c17efd5](https://github.com/VoMinhKhoii/Nham/commit/c17efd536c24413770990e672a09377f753a1c99))
+* **auth:** keep auth on the invite page instead of teleporting to marketing ([7e050f5](https://github.com/VoMinhKhoii/Nham/commit/7e050f5e8123f5f9eb9cc53756bea5a18cfc5fbf))
+* **auth:** password recovery, persistent check-email, and inline errors ([9adbfd0](https://github.com/VoMinhKhoii/Nham/commit/9adbfd0fef6bb852b2e1ded4ffc51b5b53242e22))
+* **dashboard,logging:** design the over-target state, retire the pill and trend arrows ([2f60761](https://github.com/VoMinhKhoii/Nham/commit/2f60761976d67391e92274eb819800a7fe242aa8))
+* **dashboard:** stage heatmap by data age + day-0 empty card ([6b19b35](https://github.com/VoMinhKhoii/Nham/commit/6b19b35c976763c0d6840f21b7d5cec08ad37c43))
+* **dashboard:** un-invert to a scrolling page with a generous Today band ([9eae371](https://github.com/VoMinhKhoii/Nham/commit/9eae371c8287ce0526defb0e58a5ef98b0599d52))
+* **groups:** add "How you appear" display-name row to the invite dialog ([98d40b4](https://github.com/VoMinhKhoii/Nham/commit/98d40b4a95fa87c1f6fb68d7e542eda560883a4e))
+* **groups:** seat the user at their own table + a presence strip ([588fafa](https://github.com/VoMinhKhoii/Nham/commit/588fafa7ffdc024d99c239401cff3a85274eb1c5))
+* **invite:** resolve invite-accept in place, no teleport ([c373811](https://github.com/VoMinhKhoii/Nham/commit/c373811bdde4b50b9e352a35c1a359ee34b24cf0))
+* **landing,nutrition:** remove all surfaced uncertainty per founder direction ([39997d1](https://github.com/VoMinhKhoii/Nham/commit/39997d12bc7a47d4199a2f43f65502e4b83fe748))
+* **landing:** playable hero demo + editorial problem rebuild ([b821f41](https://github.com/VoMinhKhoii/Nham/commit/b821f414a4e2a5bf49fd683f2a10c433ee21daed))
+* **landing:** real anchors, honest footer, and a true-pitch subtitle ([fd8eab7](https://github.com/VoMinhKhoii/Nham/commit/fd8eab7f1ef9171dab2512173d72bf77796e8838))
+* **logging:** "fix it in words" — NL-refine a persisted meal ([ff3b7dd](https://github.com/VoMinhKhoii/Nham/commit/ff3b7dde7147a6957cada402f0dbb8700446adbd))
+* **logging:** "Log again" re-logs any meal from the feed ([1987e28](https://github.com/VoMinhKhoii/Nham/commit/1987e28f3b6e502bcd72ba221d1859ee62f2e93a))
+* **logging:** center manual composer, grow ingredients upward ([0c61f1e](https://github.com/VoMinhKhoii/Nham/commit/0c61f1ea949fa445b2722e7a3ee366ec7f208f2e))
+* **logging:** center the composer when empty, animate to bottom on log ([bd7dfbf](https://github.com/VoMinhKhoii/Nham/commit/bd7dfbf0c2989b40f6626a299e1eea1d5a725946))
+* **logging:** Cronometer-style manual logging with semantic search ([9afe1aa](https://github.com/VoMinhKhoii/Nham/commit/9afe1aa80e9249cedb58f7ce309560c5d4ac207a))
+* **logging:** deterministic Cronometer-style manual logging on web ([a713e13](https://github.com/VoMinhKhoii/Nham/commit/a713e134d877350dec5e1b6feb457465e3edea58))
+* **logging:** edit a persisted meal — gram steppers + per-row remove ([0691682](https://github.com/VoMinhKhoii/Nham/commit/0691682627fe50ef5607cbb3f4e426bd4f152b06))
+* **logging:** flat reverse-chronological day list with sticky month dividers ([55cc9da](https://github.com/VoMinhKhoii/Nham/commit/55cc9dae70ebe39c4e24be764070de87aa11aa83))
+* **logging:** make the input bar itself the centered empty state ([86349bf](https://github.com/VoMinhKhoii/Nham/commit/86349bfac11a82c70bb807e2db95d0347f4cccb9))
+* **logging:** manual-log UX — save raw text, name below, dropdown upward ([10c72be](https://github.com/VoMinhKhoii/Nham/commit/10c72bebbb77ea4731c073e530a79caf20c94360))
+* **logging:** remove a meal with 5-second undo ([bde22c1](https://github.com/VoMinhKhoii/Nham/commit/bde22c146b70f9a31a8581e1c30c7fb2a5169d2c))
+* **mobile:** Cronometer-style manual logging sheet ([6614c8b](https://github.com/VoMinhKhoii/Nham/commit/6614c8bb204faa4dbc570bfa55b3931f0528691b))
+* **nutrition:** per-day time axis on the rhythm figure ([1d9ea36](https://github.com/VoMinhKhoii/Nham/commit/1d9ea36514c2868ae9a91941af183a9e2b358406))
+* **nutrition:** per-nutrient day-strips on spotlight + steady rows ([96d225e](https://github.com/VoMinhKhoii/Nham/commit/96d225e32d58429baca06a40c77383c45190e346))
+* pre-launch UX overhaul (web) — full audit, Waves 0–3 ([f71388c](https://github.com/VoMinhKhoii/Nham/commit/f71388cd863be9a22e701907497150e9d974b079))
+* **pwa:** brand app icons, cream manifest, and authed-home redirect ([adb9aba](https://github.com/VoMinhKhoii/Nham/commit/adb9aba8820d0ce50feda6615af1a01b4c7f55d2))
+* **pwa:** mobile bottom tab bar + shell-level log action ([aabbae7](https://github.com/VoMinhKhoii/Nham/commit/aabbae735a5f369502083191045ab30b5d379424))
+* **pwa:** tier-1 offline page + flag-gated service worker ([2c229bb](https://github.com/VoMinhKhoii/Nham/commit/2c229bbe4b036937e6bbdc90659fabf08afbbb32))
+* **search:** semantic fallback for manual ingredient search ([94fc7e8](https://github.com/VoMinhKhoii/Nham/commit/94fc7e86c74a683e37b73af3cf9518e74e5870a6))
+* **settings:** account deletion + data export with full backend ([a5c1256](https://github.com/VoMinhKhoii/Nham/commit/a5c12564128df366eb4aa5047a73e55ed593806e))
+* **settings:** flatten routed tabs into one anchored page ([01a23c0](https://github.com/VoMinhKhoii/Nham/commit/01a23c0b90346a790d39db9133eb531901daea2a))
+* **settings:** goal before→after ritual + consequence-aware save ([a9580ff](https://github.com/VoMinhKhoii/Nham/commit/a9580ffd1b089ee1a2926d345b26454787d72457))
+* **settings:** stop fabricating body-metric defaults + add a language row ([0de3724](https://github.com/VoMinhKhoii/Nham/commit/0de37249f379dc821564dc5bebd2c6aa8279bf85))
+* **ux:** one-tap NL refine, presence skeleton, offline system fonts ([57855b3](https://github.com/VoMinhKhoii/Nham/commit/57855b325e49ae8a863b05c6c9506299ff1c5c3d))
+
+
+### Bug Fixes
+
+* add missing t dependency to useCallback ([6b3e959](https://github.com/VoMinhKhoii/Nham/commit/6b3e959e8957e25bd7cbdd9ce952840a35a14039))
+* address CodeRabbit review — 8 fixes across web, Flutter, and docs ([6e9059d](https://github.com/VoMinhKhoii/Nham/commit/6e9059d20aeb4fa105fa7d89ef9824533f6d86f0))
+* **auth:** make auth dialog accessible (dialog role, focus trap, Escape) ([b9e05d1](https://github.com/VoMinhKhoii/Nham/commit/b9e05d1017d33b31de0443244a3e0d2c5f78bf5c))
+* **dashboard:** tactical brand sweep — solid cards, localized weekdays ([f515cf8](https://github.com/VoMinhKhoii/Nham/commit/f515cf8da8b043692fbe728935304781fe8829a5))
+* **i18n:** cover Vietnamese diacritics with a DM Sans sans companion ([e1132bf](https://github.com/VoMinhKhoii/Nham/commit/e1132bfcea53c51a3d17f0edc9256049910f2c28))
+* **i18n:** format meal time labels with the active app locale ([e80d6ad](https://github.com/VoMinhKhoii/Nham/commit/e80d6ad02797445be3d7a7bfe01c47d21c28a3e7))
+* **i18n:** use the real ellipsis character in display copy ([16b8d5f](https://github.com/VoMinhKhoii/Nham/commit/16b8d5f41f374724df5d9169efc98b2e7e4e8365))
+* **landing:** load the brand fonts, restore diacritics, remove fabricated proof ([f917a39](https://github.com/VoMinhKhoii/Nham/commit/f917a396e623a46249156ee8520002723bd4c71e))
+* **logging:** harden meal-card edit/log-again/manual logic; hide fix-with-words ([1863ada](https://github.com/VoMinhKhoii/Nham/commit/1863ada99bed958df7b4db66542d53a9c951cf59))
+* **logging:** harden NL-refine error path, races, and length budget ([9e37d8f](https://github.com/VoMinhKhoii/Nham/commit/9e37d8ff5cbe27c2e0a676f1eddb8f6978a265e8))
+* **logging:** manual composer spans full width when centered ([d7423e0](https://github.com/VoMinhKhoii/Nham/commit/d7423e04b57d9eabc52c900a5706f2e3aa042911))
+* **meals:** keep share state when editing a meal's amounts ([1dd6f35](https://github.com/VoMinhKhoii/Nham/commit/1dd6f350bd43bd46414cf6ee5ae363033434e2bb))
+* **nav:** redirect dead settings routes and wire 'see how it works' CTAs ([235c893](https://github.com/VoMinhKhoii/Nham/commit/235c893c12e7e29f96494f0e0bd42efd07623529))
+* **pwa:** auto-submit the dashboard→logging handoff (kill the double-submit) ([5821df6](https://github.com/VoMinhKhoii/Nham/commit/5821df6d920231fadac30ac571b98077eef085a1))
+* **search:** always rank-fuse with a weighted semantic arm ([9c39cb5](https://github.com/VoMinhKhoii/Nham/commit/9c39cb508b98848c5e471d968632d44b6797f087))
+* **search:** de-saturate fuzzy ranking with canonical-name tie-break ([f9015bc](https://github.com/VoMinhKhoii/Nham/commit/f9015bcd2c824f30d89136f80e9ad890634a9234))
+* **search:** rank manual ingredient search by word_similarity ([e2de415](https://github.com/VoMinhKhoii/Nham/commit/e2de415f1257e15147460b673209a74aa61ed1dc))
+* **search:** rank-fuse manual ingredient search instead of gating semantic ([fea2258](https://github.com/VoMinhKhoii/Nham/commit/fea225809d6de5f86eb078f72f2a512276771854))
+* **security:** harden auth redirects, admin client, logs, and data export ([e5ea0a3](https://github.com/VoMinhKhoii/Nham/commit/e5ea0a3d0f23bce5fd21bf234bd2957713f5d1e7))
+* **ui:** hold Lora to weight 400, never heavier ([cf8ecc1](https://github.com/VoMinhKhoii/Nham/commit/cf8ecc1cf0613b76873694f10e26186f7f5a4d68))
+* **ui:** re-clothe error states in warm nham-danger token ([1d44a3f](https://github.com/VoMinhKhoii/Nham/commit/1d44a3ffab8ef07e12f0f9ef5295ab3e0e82deb4))
+* **ux:** minor sweep — SELECT as typing target, sentence-case labels ([288d832](https://github.com/VoMinhKhoii/Nham/commit/288d832290ec04e14cc44c7ce6edc02aa04697bc))
+
+
+### Performance
+
+* **pipeline:** hybrid RRF retrieval in one round trip per arm ([b2f62d9](https://github.com/VoMinhKhoii/Nham/commit/b2f62d91642a7f575e94911de7503da2ef6b2ff9))
+
+
+### Refactor
+
+* **app:** nest components/app into navigation/ and shell/ ([35a80ac](https://github.com/VoMinhKhoii/Nham/commit/35a80accdc8ab61e19b2648630f5c2e9c81e4168))
+* **feed:** extract useMealCardActions from feed-area god component ([20be89f](https://github.com/VoMinhKhoii/Nham/commit/20be89f0c224afec3f377d78536b0591281da212))
+* **feed:** nest logging/feed cards into domain subfolders ([9fc9894](https://github.com/VoMinhKhoii/Nham/commit/9fc98944d35b1c95e8eeb6f24a6036ab2f0657dc))
+* **hooks:** nest hooks/ into domain groups ([299d5fe](https://github.com/VoMinhKhoii/Nham/commit/299d5fee9fbe6b70447919046699b6c82c644a71))
+* **meals:** extract buildMealItemGroupsFromRows, dedupe 3 rebuild sites ([0bc676d](https://github.com/VoMinhKhoii/Nham/commit/0bc676d4d09b74e7d322ca5de4b566b662ac0227))
+* **meals:** nest lib/actions/meals/ and split out the type shapes ([46ed4b9](https://github.com/VoMinhKhoii/Nham/commit/46ed4b9f15a57bd8e81ad460fa87fe9094471398))
+* **nutrition:** lift DailyRhythm legend + PullQuote out of the template register ([b0ed539](https://github.com/VoMinhKhoii/Nham/commit/b0ed53984666d3aa2a64d830ea1dffda6651d651))
+* **nutrition:** re-token Patterns to the brand register ([688e6ae](https://github.com/VoMinhKhoii/Nham/commit/688e6ae130ad416bd482854bbaffcbd8be876cd2))
+* **pipeline:** nest lib/ai/pipeline into shadow/, telemetry/, config/ ([ac19c1b](https://github.com/VoMinhKhoii/Nham/commit/ac19c1bbc5517a2555c44f2759294365c3a53788))
+* **quality:** extract useAsyncAction, decompose day-series, drop unsafe casts ([c1e13b5](https://github.com/VoMinhKhoii/Nham/commit/c1e13b52ba42057842499532c73ac2880e3980f4))
+* simplify and modularize manual logging + matching changes ([052190a](https://github.com/VoMinhKhoii/Nham/commit/052190accbec35192d2879cc3c7de2f05da0e328))
+* structure cleanup — folder nesting, font utilities, god-component split ([27953d9](https://github.com/VoMinhKhoii/Nham/commit/27953d9ff70f42eaeca4c2acc3cb90103b18bc78))
+* **ui:** replace inline fontFamily styles with font utility classes ([8f58a29](https://github.com/VoMinhKhoii/Nham/commit/8f58a296127f985d1cba2d953320e8f59e6fefe2))
+
 ## [1.3.0](https://github.com/VoMinhKhoii/Nham/compare/v1.2.0...v1.3.0) (2026-06-10)
 
 
