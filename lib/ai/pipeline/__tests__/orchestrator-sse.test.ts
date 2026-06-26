@@ -13,7 +13,7 @@ const { mockMatchIngredients, mockAssembleResult } = vi.hoisted(() => ({
 
 vi.mock('server-only', () => ({}));
 
-vi.mock('@/lib/ai/pipeline/trace', () => ({
+vi.mock('@/lib/ai/pipeline/telemetry/trace', () => ({
   logStage: vi.fn(),
   logLlmCall: vi.fn(),
   recordPromptVersion: vi.fn().mockResolvedValue(undefined),

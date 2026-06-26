@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 
 describe('ambiguityFlags routing guard', () => {
   it('does not let compute-policy read ambiguityFlags', async () => {
-    const code = await readFile('lib/ai/pipeline/compute-policy.ts', 'utf-8');
+    const code = await readFile('lib/ai/pipeline/config/compute-policy.ts', 'utf-8');
 
     expect(code).not.toMatch(/ambiguityFlags/);
   });

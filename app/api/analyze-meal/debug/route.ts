@@ -28,7 +28,7 @@ import {
   ingredientDisplayName,
   ingredientCanonicalName as ingredientSearchName,
 } from '@/lib/ai/pipeline/ingredient-accessors';
-import { resolveModelProfile } from '@/lib/ai/pipeline/model-profile';
+import { resolveModelProfile } from '@/lib/ai/pipeline/config/model-profile';
 import { reconcileNutritionIds } from '@/lib/ai/pipeline/nutrition';
 import {
   mealDecompositionSchema,

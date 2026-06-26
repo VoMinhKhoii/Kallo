@@ -10,7 +10,7 @@ import {
   type ShadowGuard,
   type ShadowRunnerDeps,
   type ShadowRunPersistRow,
-} from '../shadow-runner';
+} from '../shadow/shadow-runner';
 
 function makePipelineResponse(args: {
   caloriesMid: number;

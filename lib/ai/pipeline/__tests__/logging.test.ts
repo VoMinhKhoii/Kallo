@@ -26,7 +26,7 @@ function makeMockDb() {
 }
 
 // Import after mocks
-const { logPipelineEnd } = await import('@/lib/ai/pipeline/logging');
+const { logPipelineEnd } = await import('@/lib/ai/pipeline/telemetry/logging');
 
 describe('logPipelineEnd', () => {
   it('includes promptVersionsUsed in SET when provided with data', () => {

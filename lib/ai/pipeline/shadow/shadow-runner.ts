@@ -2,7 +2,7 @@ import type {
   PipelineResponse,
   PipelineResult,
   ProcessedIngredient,
-} from '../types';
+} from '../../types';
 import { computeDivergence, type ShadowDivergence } from './shadow-divergence';
 import type { ShadowGuardAbortReason } from './shadow-guards';
 

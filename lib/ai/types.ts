@@ -350,7 +350,7 @@ export type PipelineResponse =
   | {
       success: true;
       data: PipelineResult;
-      __telemetry?: import('./pipeline/run-telemetry').PipelineRunRow;
+      __telemetry?: import('./pipeline/telemetry/run-telemetry').PipelineRunRow;
       __telemetryRunId?: string;
       /** Resolves once the pipeline_runs row insert has committed.
        * Consumers that need the row to exist before referencing it via FK
@@ -360,7 +360,7 @@ export type PipelineResponse =
   | {
       success: false;
       error: PipelineError;
-      __telemetry?: import('./pipeline/run-telemetry').PipelineRunRow;
+      __telemetry?: import('./pipeline/telemetry/run-telemetry').PipelineRunRow;
       __telemetryRunId?: string;
       __telemetryRunPersisted?: Promise<void>;
     };

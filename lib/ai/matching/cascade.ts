@@ -11,7 +11,7 @@ import {
   type MatchStateInfo,
   matchSingleIngredientWithEmbedding,
 } from '@/lib/ai/matching/source-matching';
-import { readBooleanEnv } from '@/lib/ai/pipeline/feature-flags';
+import { readBooleanEnv } from '@/lib/ai/pipeline/config/feature-flags';
 import {
   ingredientCanonicalName,
   ingredientDisplayName as ingredientRawName,

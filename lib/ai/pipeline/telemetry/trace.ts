@@ -8,7 +8,7 @@ import {
   pipelineStageLogs,
   promptVersions,
 } from '@/lib/db/schema';
-import { readBooleanEnv } from './feature-flags';
+import { readBooleanEnv } from '../config/feature-flags';
 
 const enabled = () => readBooleanEnv('PIPELINE_TRACE_ENABLED', false);
 const cache = new Map<string, string>(); // `${name}:${hash}` -> id

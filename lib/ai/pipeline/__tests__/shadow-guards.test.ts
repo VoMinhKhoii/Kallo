@@ -3,7 +3,7 @@ import {
   createPrimaryLatencyTracker,
   createShadowGuard,
   type ShadowGuardClock,
-} from '../shadow-guards';
+} from '../shadow/shadow-guards';
 
 describe('createShadowGuard', () => {
   it('admits the first run', async () => {

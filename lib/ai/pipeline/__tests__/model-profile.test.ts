@@ -4,7 +4,7 @@ import {
   NEXT_PROFILE,
   resolveModelProfile,
   STABLE_PROFILE,
-} from '../model-profile';
+} from '../config/model-profile';
 
 describe('resolveModelProfile', () => {
   let saved: string | undefined;

@@ -5,8 +5,9 @@
  * meal, never user-shaped data. To add a field, add it to the interface and
  * MEAL_FACTS_KEYS together, and justify why it is a fact about the meal.
  */
+
+import type { AnomalyType } from '../validation';
 import type { ModelProfile } from './model-profile';
-import type { AnomalyType } from './validation';
 
 /**
  * Narrow-by-design input to {@link pickComputePolicy}.

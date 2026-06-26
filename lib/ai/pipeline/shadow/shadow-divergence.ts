@@ -1,4 +1,4 @@
-import type { PipelineResponse } from '../types';
+import type { PipelineResponse } from '../../types';
 
 export interface ShadowDivergence {
   /** |candidateCal - primaryCal| / primaryCal (mid values). */

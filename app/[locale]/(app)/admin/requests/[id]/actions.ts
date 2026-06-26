@@ -14,10 +14,10 @@ import {
 import {
   logPipelineStart,
   setPipelineFinalState,
-} from '@/lib/ai/pipeline/logging';
+} from '@/lib/ai/pipeline/telemetry/logging';
 import { analyzeMeal } from '@/lib/ai/pipeline/orchestrator';
-import { hashUserId } from '@/lib/ai/pipeline/run-telemetry';
-import { logLlmCall } from '@/lib/ai/pipeline/trace';
+import { hashUserId } from '@/lib/ai/pipeline/telemetry/run-telemetry';
+import { logLlmCall } from '@/lib/ai/pipeline/telemetry/trace';
 import type { UserContext } from '@/lib/ai/types';
 import { db } from '@/lib/db';
 import {

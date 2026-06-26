@@ -1,6 +1,6 @@
 import { sql } from 'drizzle-orm';
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
-import { readBooleanEnv } from '@/lib/ai/pipeline/feature-flags';
+import { readBooleanEnv } from '@/lib/ai/pipeline/config/feature-flags';
 import type * as schema from '@/lib/db/schema';
 
 /**

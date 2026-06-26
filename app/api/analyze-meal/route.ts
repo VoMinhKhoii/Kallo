@@ -14,8 +14,8 @@ import {
 import { logUnmatchedIngredients } from '@/lib/ai/matching';
 import { analyzeMeal } from '@/lib/ai/pipeline';
 import { estimateCheatMeal } from '@/lib/ai/pipeline/cheat-estimate';
-import { readBooleanEnv } from '@/lib/ai/pipeline/feature-flags';
-import { logPipelineEnd, logPipelineStart } from '@/lib/ai/pipeline/logging';
+import { readBooleanEnv } from '@/lib/ai/pipeline/config/feature-flags';
+import { logPipelineEnd, logPipelineStart } from '@/lib/ai/pipeline/telemetry/logging';
 import type { StreamEvent } from '@/lib/ai/streaming';
 import { encodeSSE } from '@/lib/ai/streaming';
 import { getUtcInstantForLocalDate } from '@/lib/date/local-day';

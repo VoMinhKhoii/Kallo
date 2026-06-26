@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   isPipelineV2Enabled,
   isPipelineV2ShadowEnabled,
-} from '../pipeline-feature-flag';
+} from '../config/pipeline-feature-flag';
 
 describe('isPipelineV2Enabled', () => {
   it('defaults to true (v2 is the production default)', () => {
