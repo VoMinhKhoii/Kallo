@@ -1020,6 +1020,15 @@ export async function updateMealAction(input: {
       }))
     );
 
+    // Editing amounts must NOT change share state: carry the meal's existing
+    // share row through so the reconciled card keeps its "shared" badge instead
+    // of silently resetting to private until the next day refetch.
+    const [shareRow] = await tx
+      .select({ id: mealShares.id, visibility: mealShares.visibility })
+      .from(mealShares)
+      .where(eq(mealShares.mealId, meal.id))
+      .limit(1);
+
     const savedMeal = buildPersistedMeal({
       id: meal.id,
       rawInput: meal.rawInput,
@@ -1031,7 +1040,9 @@ export async function updateMealAction(input: {
       entryMode: 'precise',
       alcoholG: newAlcoholG,
       cheatSliders: null,
-      share: null,
+      share: shareRow
+        ? { shareId: shareRow.id, visibility: shareRow.visibility }
+        : null,
     });
 
     return { mealId: meal.id, meal: savedMeal };

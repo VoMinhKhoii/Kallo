@@ -812,6 +812,16 @@ describe('updateMealAction', () => {
       }),
     });
   }
+  // The savedMeal rebuild loads the meal's share row last (from→where→limit).
+  function queueShareLookup(rows: unknown[]) {
+    mockTxSelect.mockReturnValueOnce({
+      from: vi.fn().mockReturnValue({
+        where: vi.fn().mockReturnValue({
+          limit: vi.fn().mockResolvedValue(rows),
+        }),
+      }),
+    });
+  }
 
   function mealRow(overrides: Record<string, unknown> = {}) {
     return {
@@ -892,6 +902,7 @@ describe('updateMealAction', () => {
         fatG: 12,
       }),
     ]);
+    queueShareLookup([]);
 
     const itemUpdates: Record<string, unknown>[] = [];
     const mealUpdates: Record<string, unknown>[] = [];
@@ -932,6 +943,7 @@ describe('updateMealAction', () => {
         fatG: 12,
       }),
     ]);
+    queueShareLookup([]);
 
     const mealUpdates: Record<string, unknown>[] = [];
     mockTxUpdate.mockImplementation(() => captureUpdate(mealUpdates));
@@ -976,6 +988,7 @@ describe('updateMealAction', () => {
     // ratio: halving the only item's grams halves the alcohol.
     queueMealLookup([mealRow({ alcoholG: 40 })]);
     queueItemLookup([itemRow()]); // single 200g item
+    queueShareLookup([]);
 
     const itemUpdates: Record<string, unknown>[] = [];
     const mealUpdates: Record<string, unknown>[] = [];
@@ -999,6 +1012,7 @@ describe('updateMealAction', () => {
   it('leaves a null alcohol value null after an edit', async () => {
     queueMealLookup([mealRow({ alcoholG: null })]);
     queueItemLookup([itemRow()]);
+    queueShareLookup([]);
 
     const mealUpdates: Record<string, unknown>[] = [];
     let updateCall = 0;
@@ -1014,6 +1028,26 @@ describe('updateMealAction', () => {
 
     expect(mealUpdates[0]?.alcoholG).toBeNull();
     expect(result.meal.alcoholG).toBeNull();
+  });
+
+  it('preserves the meal share state across an edit', async () => {
+    // Editing amounts must not reset a shared meal to private in the reconciled
+    // card — the existing share row is carried through.
+    queueMealLookup([mealRow()]);
+    queueItemLookup([itemRow()]);
+    queueShareLookup([{ id: UUID_2, visibility: 'circle' }]);
+
+    mockTxUpdate.mockImplementation(() => captureUpdate([]));
+
+    const result = await updateMealAction({
+      mealId: UUID_MEAL,
+      edits: [{ id: UUID_1, newGrams: 100 }],
+    });
+
+    expect(result.meal.share).toEqual({
+      shareId: UUID_2,
+      visibility: 'circle',
+    });
   });
 
   it('rejects an invalid mealId', async () => {
