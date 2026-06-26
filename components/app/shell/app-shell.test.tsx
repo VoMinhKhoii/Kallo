@@ -34,7 +34,7 @@ vi.mock('@/components/onboarding/wizard-shell', () => ({
   },
 }));
 
-vi.mock('./desktop-sidebar', () => ({
+vi.mock('../navigation/desktop-sidebar', () => ({
   DesktopSidebar: ({
     onboardingIncomplete,
     isOnboardingMinimized,
@@ -59,7 +59,7 @@ vi.mock('./desktop-sidebar', () => ({
   ),
 }));
 
-vi.mock('./mobile-nav', () => ({
+vi.mock('../navigation/mobile-nav', () => ({
   MobileNav: () => <div data-testid="mobile-nav" />,
 }));
 

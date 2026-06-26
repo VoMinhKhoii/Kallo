@@ -15,9 +15,9 @@ import {
   shouldShowOnboardingResume,
 } from '@/lib/onboarding/progress';
 import { readStepOneLocaleDraft } from '@/lib/onboarding/step-one-locale-draft';
-import { DesktopSidebar } from './desktop-sidebar';
-import { MobileNav } from './mobile-nav';
-import type { UserMenuUser } from './user-menu';
+import { DesktopSidebar } from '../navigation/desktop-sidebar';
+import { MobileNav } from '../navigation/mobile-nav';
+import type { UserMenuUser } from '../navigation/user-menu';
 
 type ProfileRow = NonNullable<Awaited<ReturnType<typeof getOnboardingProfile>>>;
 
