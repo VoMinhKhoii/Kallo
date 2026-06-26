@@ -58,7 +58,7 @@ export function ProgressStory({
             className={cn(
               'mb-2 inline-flex items-center gap-2 rounded-full px-2.5 py-1 font-semibold text-xs',
               summary.status === 'behind'
-                ? 'bg-destructive/10 text-destructive'
+                ? 'bg-nham-danger/10 text-nham-danger'
                 : 'bg-nham-accent/10 text-nham-accent'
             )}
           >
@@ -70,14 +70,14 @@ export function ProgressStory({
               {isInsufficient ? (
                 <h2
                   className="font-semibold text-3xl text-nham-text tracking-[-0.04em]"
-                  style={{ fontFamily: 'Lora, serif' }}
+                  style={{ fontFamily: 'DM Sans, sans-serif' }}
                 >
                   {summary.currentWeight.toFixed(1)} {t('units.kg')}
                 </h2>
               ) : (
                 <h2
                   className="font-semibold text-3xl text-nham-text tracking-[-0.04em]"
-                  style={{ fontFamily: 'Lora, serif' }}
+                  style={{ fontFamily: 'DM Sans, sans-serif' }}
                 >
                   {delta > 0 ? '+' : ''}
                   {delta.toFixed(1)} {t('units.kg')}

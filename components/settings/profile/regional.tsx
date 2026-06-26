@@ -1,10 +1,13 @@
 'use client';
 
-import { Globe, MapPin } from 'lucide-react';
-import { useTranslations } from 'next-intl';
+import { Globe, Languages, MapPin } from 'lucide-react';
+import { useLocale, useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { useFormContext } from 'react-hook-form';
+import { LanguageToggle } from '@/components/onboarding/language-toggle';
 import { FormControl, FormField, FormItem } from '@/components/ui/form';
+import { useLocaleSwitch } from '@/hooks/use-locale-switch';
+import type { Locale } from '@/i18n/config';
 import { COUNTRIES } from '@/lib/onboarding/countries';
 import type { ProfileFormValues } from './index';
 
@@ -114,6 +117,9 @@ function CountrySelect({
 export function Regional() {
   const tOrigin = useTranslations('onboarding.origin');
   const tRegional = useTranslations('settings.regionalPanel');
+  const tSettings = useTranslations('settings');
+  const locale = useLocale();
+  const switchLocale = useLocaleSwitch();
   const form = useFormContext<ProfileFormValues>();
 
   return (
@@ -124,6 +130,23 @@ export function Regional() {
       >
         {tRegional('description')}
       </p>
+
+      {/* Language — the only post-onboarding way to change app language (the
+          settings.language keys were orphaned). Switches the locale in place;
+          it lives outside the profile form's dirty state. */}
+      <div>
+        <div className="mb-2 flex items-center gap-2 font-medium text-[#2C2416] text-[13px]">
+          <Languages className="h-4 w-4 text-[#C9A87C]" />
+          {tSettings('language')}
+        </div>
+        <LanguageToggle
+          value={locale}
+          onChange={(next) => switchLocale(next as Locale)}
+        />
+        <p className="mt-1.5 text-[#7B6F62] text-[12px]">
+          {tSettings('languageHint')}
+        </p>
+      </div>
 
       <div className="space-y-4">
         <FormField

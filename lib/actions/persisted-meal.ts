@@ -82,6 +82,65 @@ export function buildPersistedMealItemGroup(
   };
 }
 
+/** Row-shaped input for {@link buildMealItemGroupsFromRows}: the per-ingredient
+ *  fields plus its already-resolved nutrition. Callers pick the id/grams/
+ *  nutrition variant they need — stored DB values, scaled edits, or fresh-id
+ *  copies — so the grouping itself can live in one place. */
+export interface MealItemRow {
+  id: string;
+  ingredientName: string;
+  mealItemName: string;
+  mealItemOrder: number;
+  foodCompositionId: string | null;
+  estimatedGrams: number | null;
+  userFacingUnit: string | null;
+  cookingMethod: string | null;
+  matchConfidence: number | null;
+  nutrition: NutritionValues;
+}
+
+/**
+ * Group flat ingredient rows into PersistedMealItemGroup[] by parent dish
+ * (order:name), preserving row order within each group and sorting groups by
+ * order. The single rebuild point shared by the day-load and the edit/duplicate
+ * write paths, so the PersistedMeal shape can never drift between them.
+ */
+export function buildMealItemGroupsFromRows(
+  rows: MealItemRow[]
+): PersistedMealItemGroup[] {
+  const byGroup = new Map<
+    string,
+    { name: string; order: number; ingredients: PersistedIngredient[] }
+  >();
+  for (const row of rows) {
+    const key = `${row.mealItemOrder}:${row.mealItemName}`;
+    let group = byGroup.get(key);
+    if (!group) {
+      group = {
+        name: row.mealItemName,
+        order: row.mealItemOrder,
+        ingredients: [],
+      };
+      byGroup.set(key, group);
+    }
+    group.ingredients.push(
+      buildPersistedIngredient({
+        id: row.id,
+        ingredientName: row.ingredientName,
+        foodCompositionId: row.foodCompositionId,
+        estimatedGrams: row.estimatedGrams,
+        userFacingUnit: row.userFacingUnit,
+        cookingMethod: row.cookingMethod,
+        matchConfidence: row.matchConfidence,
+        nutrition: row.nutrition,
+      })
+    );
+  }
+  return Array.from(byGroup.values())
+    .sort((a, b) => a.order - b.order)
+    .map((g) => buildPersistedMealItemGroup(g.name, g.order, g.ingredients));
+}
+
 /** Build a PersistedMeal — the single construction point for its shape. */
 export function buildPersistedMeal(fields: PersistedMeal): PersistedMeal {
   return fields;

@@ -33,7 +33,9 @@ export function LocaleSwitcher() {
       role="group"
       className="flex items-center gap-2"
       aria-label={t('label')}
-      style={{ fontFamily: 'DM Sans, sans-serif' }}
+      style={{
+        fontFamily: 'var(--font-dm-sans), ui-sans-serif, system-ui, sans-serif',
+      }}
     >
       {LOCALES.map(({ code, label, Flag }) => {
         const selected = code === locale;

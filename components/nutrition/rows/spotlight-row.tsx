@@ -2,22 +2,36 @@
 
 import { motion } from 'motion/react';
 import { useLocale, useTranslations } from 'next-intl';
-import type { NutrientCardData } from '@/lib/nutrition/types';
+import type {
+  NutrientCardData,
+  NutritionDaySeries,
+} from '@/lib/nutrition/types';
 import { cn } from '@/lib/utils';
-import { formatLocalizedNumber, shouldShowExceed } from '../primitives/helpers';
+import { DayStrip } from '../primitives/day-strip';
+import {
+  findNutrientSeries,
+  formatLocalizedNumber,
+  shouldShowExceed,
+} from '../primitives/helpers';
 import { TargetProgressBar } from '../primitives/target-progress-bar';
 import { FoodChipRow } from './food-chip-row';
 
 interface SpotlightRowProps {
   card: NutrientCardData;
+  daySeries?: NutritionDaySeries;
   delay?: number;
 }
 
-export function SpotlightRow({ card, delay = 0 }: SpotlightRowProps) {
+export function SpotlightRow({
+  card,
+  daySeries,
+  delay = 0,
+}: SpotlightRowProps) {
   const t = useTranslations('nutrition');
   const tRoot = useTranslations();
   const locale = useLocale();
   const label = tRoot(card.labelKey);
+  const series = findNutrientSeries(daySeries, card.nutrient);
   const percent = card.percentOfTarget ?? 0;
   const showExceed = shouldShowExceed(card.nutrientType, card.percentOfTarget);
   const figure =
@@ -37,7 +51,7 @@ export function SpotlightRow({ card, delay = 0 }: SpotlightRowProps) {
           className="text-nham-text"
           style={{
             fontFamily: 'Lora, serif',
-            fontWeight: 500,
+            fontWeight: 400,
             fontSize: 'clamp(1.25rem, 0.95rem + 1.4vw, 1.6rem)',
             letterSpacing: '-0.01em',
           }}
@@ -81,6 +95,17 @@ export function SpotlightRow({ card, delay = 0 }: SpotlightRowProps) {
           source: tRoot(card.targetSourceLabelKey),
         })}
       </p>
+
+      {series && daySeries ? (
+        <div className="space-y-1.5">
+          <p className="text-[10px] text-nham-text-muted uppercase tracking-[0.16em]">
+            {daySeries.unit === 'day'
+              ? t('rhythm.timeAxis.byDay')
+              : t('rhythm.timeAxis.byWeek')}
+          </p>
+          <DayStrip series={series} unit={daySeries.unit} label={label} />
+        </div>
+      ) : null}
 
       <FoodChipRow nutrient={card.nutrient} variant="spotlight" limit={5} />
     </motion.article>

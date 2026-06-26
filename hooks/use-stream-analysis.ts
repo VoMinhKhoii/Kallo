@@ -29,6 +29,9 @@ export interface StreamAnalyzeInput {
   cheatIntensity?: 'light' | 'medium' | 'heavy';
   /** Reply to a prior vague-input clarifying question. */
   clarifyAnswer?: string;
+  /** NL-refine: original meal's ISO timestamp, so the corrected meal keeps its
+   *  timeline position/slot instead of being re-stamped to "now". */
+  inheritLoggedAt?: string;
 }
 
 const INITIAL_STATE: StreamAnalysisState = {

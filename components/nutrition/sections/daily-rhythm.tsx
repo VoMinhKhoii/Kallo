@@ -2,14 +2,15 @@
 
 import { motion } from 'motion/react';
 import { useLocale, useTranslations } from 'next-intl';
-import type { MacroPattern } from '@/lib/nutrition/types';
+import type { MacroPattern, NutritionDaySeries } from '@/lib/nutrition/types';
 import { cn } from '@/lib/utils';
+import { DayStrip } from '../primitives/day-strip';
 import { formatLocalizedNumber, shouldShowExceed } from '../primitives/helpers';
-import { SectionEyebrow } from '../primitives/section-eyebrow';
 import { TargetProgressBar } from '../primitives/target-progress-bar';
 
 interface DailyRhythmProps {
   macros: MacroPattern[];
+  daySeries: NutritionDaySeries;
 }
 
 const KCAL_PER_GRAM = {
@@ -41,12 +42,22 @@ function consistencyLabelKey(pct: number | null): string {
   return 'rhythm.consistency.thin';
 }
 
-export function DailyRhythm({ macros }: DailyRhythmProps) {
+export function DailyRhythm({ macros, daySeries }: DailyRhythmProps) {
   const t = useTranslations('nutrition');
   const tRoot = useTranslations();
   const locale = useLocale();
 
   const calories = macros.find((m) => m.key === 'calories');
+  const caloriesSeries = daySeries.series.find((s) => s.metric === 'calories');
+  const hasTimeAxis =
+    caloriesSeries !== undefined &&
+    caloriesSeries.buckets.some((bucket) => bucket.value !== null);
+  const compositionLabels = Object.fromEntries(
+    COMPOSITION_KEYS.map((key) => {
+      const macro = macros.find((m) => m.key === key);
+      return [key, macro ? tRoot(macro.labelKey) : COMPOSITION_SHORT[key]];
+    })
+  ) as Record<CompositionKey, string>;
   const composition = COMPOSITION_KEYS.map((key) => {
     const macro = macros.find((m) => m.key === key);
     if (!macro || macro.averagePerDay <= 0) {
@@ -82,14 +93,13 @@ export function DailyRhythm({ macros }: DailyRhythmProps) {
       <h2 id={headingId} className="sr-only">
         {eyebrowLabel}
       </h2>
-      <SectionEyebrow label={eyebrowLabel} delay={0.1} />
 
-      <div className="rounded-3xl border border-nham-border/60 bg-card/55 p-5 sm:p-6">
+      <div className="rounded-3xl border border-nham-border/60 bg-white p-5 sm:p-6">
         <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <p
               className="text-nham-text leading-none tracking-[-0.02em]"
-              style={{ fontFamily: 'Lora, serif', fontWeight: 500 }}
+              style={{ fontFamily: 'Lora, serif', fontWeight: 400 }}
             >
               <span className="text-4xl tabular-nums sm:text-5xl">
                 {calories
@@ -111,26 +121,47 @@ export function DailyRhythm({ macros }: DailyRhythmProps) {
                 segments={segments}
                 ariaLabel={t('rhythm.macroCompositionAria')}
               />
-              <p className="mt-2 flex flex-wrap gap-x-3 text-[11px] text-nham-text-muted tabular-nums">
+              {/* Composition legend: full words, with a 2px color tick UNDER
+                  each word rather than a decorative dot before it (the bible's
+                  tiny-dot disease). The tick keys word → bar color. */}
+              <p className="mt-2 flex flex-wrap gap-x-4 gap-y-1.5 text-[11px] text-nham-text-muted tabular-nums">
                 {segments.map((segment) => (
                   <span
                     key={segment.key}
-                    className="inline-flex items-center gap-1.5"
+                    className="inline-flex flex-col gap-1"
                   >
+                    <span>
+                      {compositionLabels[segment.key]} {Math.round(segment.pct)}
+                      %
+                    </span>
                     <span
                       aria-hidden="true"
-                      className="inline-block h-1.5 w-1.5 rounded-full"
+                      className="h-0.5 w-full rounded-full"
                       style={{
                         backgroundColor: COMPOSITION_COLORS[segment.key],
                       }}
                     />
-                    {COMPOSITION_SHORT[segment.key]} {Math.round(segment.pct)}%
                   </span>
                 ))}
               </p>
             </div>
           ) : null}
         </div>
+
+        {hasTimeAxis ? (
+          <div className="mt-6 space-y-2 border-nham-border/40 border-t border-dashed pt-5">
+            <p className="text-nham-text-muted text-xs uppercase tracking-[0.18em]">
+              {daySeries.unit === 'day'
+                ? t('rhythm.timeAxis.byDay')
+                : t('rhythm.timeAxis.byWeek')}
+            </p>
+            <DayStrip
+              series={caloriesSeries}
+              unit={daySeries.unit}
+              label={t('rhythm.calories')}
+            />
+          </div>
+        ) : null}
 
         <div className="mt-6 space-y-3 border-nham-border/40 border-t border-dashed pt-5">
           {macroRows.map((macro) => (

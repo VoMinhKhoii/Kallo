@@ -4,6 +4,7 @@ import { randomUUID } from 'node:crypto';
 import { and, desc, eq, gte, inArray, isNull, lt, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import {
+  buildMealItemGroupsFromRows,
   buildPersistedIngredient,
   buildPersistedMeal,
   buildPersistedMealItemGroup,
@@ -16,6 +17,7 @@ import { toParsedMeal } from '@/lib/ai/mappers';
 import {
   goalAdjustNutrition,
   sumBoundedNutrition,
+  sumDisplayedNutrition,
 } from '@/lib/ai/pipeline/goal-adjustment';
 import type { NutritionValues, PipelineResult } from '@/lib/ai/types';
 import { requireAuthAndProfile } from '@/lib/auth';
@@ -45,6 +47,19 @@ import type {
   CheatSlidersPersisted,
 } from '@/lib/types/cheat';
 import { dateStringSchema, timezoneOffsetSchema } from '@/lib/validation';
+import type {
+  ConfirmMealResponse,
+  LoggingDayData,
+  PendingMealConfirmation,
+  PersistedMeal,
+  PersistedMealItemGroup,
+  RecentCheatOccasion,
+} from './types';
+
+// The PersistedMeal/* shapes live in ./types (a plain module) so they can be
+// imported as types without dragging in this 'use server' runtime. Re-exported
+// here so existing `@/lib/actions/meals` import sites keep resolving them.
+export type * from './types';
 
 // ---------------------------------------------------------------------------
 // Zod schemas for input validation
@@ -86,6 +101,23 @@ type LoadMealsByDateInput = z.infer<typeof loadMealsByDateSchema>;
 
 const deleteMealSchema = z.object({
   mealId: z.string().uuid('mealId phải là UUID hợp lệ.'),
+});
+
+const updateMealSchema = z.object({
+  mealId: z.string().uuid('mealId phải là UUID hợp lệ.'),
+  // Per-stored-item gram override. `id` is the meal_items row id (the same id
+  // the card renders), so the client never needs to track positional order.
+  edits: z
+    .array(
+      z.object({
+        id: z.string().uuid(),
+        newGrams: z.number().positive().finite().max(100_000),
+      })
+    )
+    .max(100)
+    .optional(),
+  // Stored item rows to drop entirely (per-row "remove").
+  removeIds: z.array(z.string().uuid()).max(100).optional(),
 });
 
 const loadMealDatesSchema = z.object({
@@ -446,71 +478,6 @@ export async function confirmAndSaveMealAction(input: {
 // C2: Load Meals by Date
 // ---------------------------------------------------------------------------
 
-/** Persisted meal returned to client */
-export interface PersistedMeal {
-  id: string;
-  rawInput: string;
-  mealSlot: string | null;
-  confidenceOverall: string | null;
-  loggedAt: string;
-  nutrition: NutritionValues;
-  mealItemGroups: PersistedMealItemGroup[];
-  /** 'precise' (default pipeline) or 'cheat' (slider estimate). */
-  entryMode: 'precise' | 'cheat';
-  /** Cheat-only: ethanol grams folded into the calorie total. */
-  alcoholG: number | null;
-  /** Cheat-only: slider spec + chosen levels, for re-edit/repeat. */
-  cheatSliders: CheatSlidersPersisted | null;
-  /** Circle-share state, or null if the meal was never shared. `shareId` is the
-   *  meal_shares row id used to key the shareable Macro Card. Lets the card seed
-   *  the share toggle from real server state instead of always "not shared". */
-  share: { shareId: string; visibility: string } | null;
-}
-
-export interface PersistedMealItemGroup {
-  name: string;
-  order: number;
-  ingredients: PersistedIngredient[];
-  nutrition: NutritionValues;
-}
-
-export interface PersistedIngredient {
-  id: string;
-  ingredientName: string;
-  foodCompositionId: string | null;
-  estimatedGrams: number | null;
-  userFacingUnit: string | null;
-  cookingMethod: string | null;
-  matchConfidence: number | null;
-  nutrition: NutritionValues;
-}
-
-export interface PendingMealConfirmation {
-  id: string;
-  rawInput: string;
-  loggedAt: string;
-  /** Set for precise entries. Absent for cheat entries (which carry cheatSpec). */
-  parsedMeal?: ReturnType<typeof toParsedMeal>;
-  /** Set for cheat entries: the staged slider spec the user confirms against. */
-  cheatSpec?: CheatSliderSpec;
-}
-
-export interface LoggingDayData {
-  persistedMeals: PersistedMeal[];
-  pendingConfirmations: PendingMealConfirmation[];
-}
-
-/**
- * Return shape of `confirmAndSaveMealAction`. `mealId` is kept for backward
- * compatibility (the mobile `POST /api/v1/meals/confirm` route echoes it);
- * `meal` is the authoritative saved meal the web client reconciles against
- * without a follow-up day refetch. Re-exported via lib/api/contracts/meals.ts.
- */
-export interface ConfirmMealResponse {
-  mealId: string;
-  meal: PersistedMeal;
-}
-
 export async function loadMealsByDate(input: {
   date: string;
   timezoneOffset: number;
@@ -575,42 +542,12 @@ async function loadMealsByDateForUser(
   return mealRows.map((meal) => {
     const items = itemsByMealId.get(meal.id) ?? [];
 
-    // Group flat ingredient rows by parent dish (order:name), preserving row
-    // order within each group.
-    const ingredientsByGroup = new Map<
-      string,
-      { name: string; order: number; ingredients: PersistedIngredient[] }
-    >();
-    for (const item of items) {
-      const key = `${item.mealItemOrder}:${item.mealItemName}`;
-      let group = ingredientsByGroup.get(key);
-      if (!group) {
-        group = {
-          name: item.mealItemName,
-          order: item.mealItemOrder,
-          ingredients: [],
-        };
-        ingredientsByGroup.set(key, group);
-      }
-      group.ingredients.push(
-        buildPersistedIngredient({
-          id: item.id,
-          ingredientName: item.ingredientName,
-          foodCompositionId: item.foodCompositionId,
-          estimatedGrams: item.estimatedGrams,
-          userFacingUnit: item.userFacingUnit,
-          cookingMethod: item.cookingMethod,
-          matchConfidence: item.matchConfidence,
-          nutrition: extractNutritionValues(item),
-        })
-      );
-    }
-
-    const mealItemGroups = Array.from(ingredientsByGroup.values())
-      .sort((a, b) => a.order - b.order)
-      .map((group) =>
-        buildPersistedMealItemGroup(group.name, group.order, group.ingredients)
-      );
+    const mealItemGroups = buildMealItemGroupsFromRows(
+      items.map((item) => ({
+        ...item,
+        nutrition: extractNutritionValues(item),
+      }))
+    );
 
     const share = shareByMealId.get(meal.id);
 
@@ -710,15 +647,6 @@ async function loadPendingAnalysesByDateForUser(
 // ---------------------------------------------------------------------------
 // Repeat a previous cheat occasion (no AI call)
 // ---------------------------------------------------------------------------
-
-/** A distinct past cheat occasion, surfaced as a chip above the input. */
-export interface RecentCheatOccasion {
-  /** Source meal id — re-staged on tap to seed a fresh slider card. */
-  mealId: string;
-  /** The occasion text (e.g. "Korean BBQ buffet"), shown on the chip. */
-  rawInput: string;
-  loggedAt: string;
-}
 
 const loadRecentCheatOccasionsSchema = z.object({
   limit: z.number().int().min(1).max(12).optional(),
@@ -857,6 +785,337 @@ export async function deleteMealAction(input: { mealId: string }) {
   }
 
   return { success: true };
+}
+
+// ---------------------------------------------------------------------------
+// C4: Edit a persisted meal (gram overrides + per-row removal)
+// ---------------------------------------------------------------------------
+
+/** Scale every stored nutrient on a row by `ratio`, preserving nulls. */
+function scaleNutritionRow(
+  row: Record<string, unknown>,
+  ratio: number
+): NutritionValues {
+  const result = { ...EMPTY_NUTRITION };
+  for (const key of NUTRITION_KEYS) {
+    const raw = row[key];
+    const value =
+      typeof raw === 'number'
+        ? raw
+        : typeof raw === 'string'
+          ? Number(raw)
+          : null;
+    result[key] =
+      value != null && Number.isFinite(value) ? value * ratio : null;
+  }
+  return result;
+}
+
+/**
+ * Edit a persisted (precise) meal: override the cooked grams of stored items
+ * and/or remove some of them, then recompute the meal totals from what remains.
+ *
+ * Tenant isolation: Drizzle bypasses Supabase RLS, so the `WHERE userId` filter
+ * is the ONLY thing keeping one user out of another's meals. Every query here is
+ * re-scoped to the authenticated `user.id` (the meal lookup) or constrained to
+ * that meal's own item rows — mirroring `deleteMealAction`'s guard exactly. A
+ * user can therefore never edit or drop a row belonging to someone else.
+ */
+export async function updateMealAction(input: {
+  mealId: string;
+  edits?: { id: string; newGrams: number }[];
+  removeIds?: string[];
+}): Promise<ConfirmMealResponse> {
+  const parsed = updateMealSchema.parse(input);
+  const { user } = await requireAuthAndProfile();
+
+  return await db.transaction(async (tx) => {
+    // Ownership gate: load the meal scoped to the authenticated user. A meal
+    // belonging to anyone else simply isn't returned, so the edit can't proceed.
+    const [meal] = await tx
+      .select()
+      .from(meals)
+      .where(and(eq(meals.id, parsed.mealId), eq(meals.userId, user.id)))
+      .limit(1);
+
+    if (!meal) {
+      throw Errors.validationFailed(
+        'Bữa ăn không tồn tại hoặc không thuộc về bạn.'
+      );
+    }
+    if (meal.entryMode === 'cheat') {
+      throw Errors.validationFailed(
+        'Không thể chỉnh sửa bữa xả theo cách này.'
+      );
+    }
+
+    // Item rows are reached only through this meal id, which we just proved the
+    // caller owns — so they inherit the same tenant scope.
+    const itemRows = await tx
+      .select()
+      .from(mealItems)
+      .where(eq(mealItems.mealId, meal.id));
+
+    const editById = new Map(
+      (parsed.edits ?? []).map((edit) => [edit.id, edit.newGrams])
+    );
+    const removeIds = new Set(parsed.removeIds ?? []);
+
+    const keptRows = itemRows.filter((row) => !removeIds.has(row.id));
+    if (keptRows.length === 0) {
+      throw Errors.validationFailed(
+        'Bữa ăn phải còn ít nhất một món. Hãy xóa cả bữa thay vào đó.'
+      );
+    }
+
+    // Compute each kept row's new nutrition (scaled when a gram override applies)
+    // and the new meal totals as their sum.
+    const updates: {
+      id: string;
+      estimatedGrams: number;
+      nutrition: NutritionValues;
+    }[] = [];
+    const keptNutrition: NutritionValues[] = [];
+
+    for (const row of keptRows) {
+      const newGrams = editById.get(row.id);
+      const currentGrams = row.estimatedGrams;
+      if (
+        newGrams !== undefined &&
+        currentGrams != null &&
+        currentGrams > 0 &&
+        newGrams !== currentGrams
+      ) {
+        const ratio = newGrams / currentGrams;
+        const scaled = scaleNutritionRow(row, ratio);
+        updates.push({
+          id: row.id,
+          estimatedGrams: newGrams,
+          nutrition: scaled,
+        });
+        keptNutrition.push(scaled);
+      } else {
+        keptNutrition.push(extractNutritionValues(row));
+      }
+    }
+
+    const mealTotals = sumDisplayedNutrition(keptNutrition);
+
+    // Alcohol is tracked on the meal, not per item, so it can't be recomputed
+    // from rows the way the macros are. Approximate it by the change in total
+    // mass: shrinking or dropping items scales the alcohol down proportionally,
+    // mirroring how the displayed macros fall. (Exact per-ingredient alcohol
+    // would need a schema change; this keeps the number from going stale.)
+    const oldTotalGrams = itemRows.reduce(
+      (sum, row) => sum + (row.estimatedGrams ?? 0),
+      0
+    );
+    const newKeptGrams = keptRows.reduce(
+      (sum, row) => sum + (editById.get(row.id) ?? row.estimatedGrams ?? 0),
+      0
+    );
+    const massRatio = oldTotalGrams > 0 ? newKeptGrams / oldTotalGrams : 0;
+    const newAlcoholG =
+      meal.alcoholG != null ? meal.alcoholG * massRatio : null;
+
+    // Apply: scale the edited item rows, drop the removed ones, write the new
+    // meal totals — all scoped to this meal's ids.
+    for (const update of updates) {
+      await tx
+        .update(mealItems)
+        .set({
+          estimatedGrams: update.estimatedGrams,
+          ...nutritionValuesToRow(update.nutrition),
+        })
+        .where(and(eq(mealItems.id, update.id), eq(mealItems.mealId, meal.id)));
+    }
+
+    if (removeIds.size > 0) {
+      await tx
+        .delete(mealItems)
+        .where(
+          and(
+            eq(mealItems.mealId, meal.id),
+            inArray(mealItems.id, Array.from(removeIds))
+          )
+        );
+    }
+
+    await tx
+      .update(meals)
+      .set({ ...nutritionValuesToRow(mealTotals), alcoholG: newAlcoholG })
+      .where(and(eq(meals.id, meal.id), eq(meals.userId, user.id)));
+
+    // Rebuild the saved meal in the exact shape loadMealsByDate returns so the
+    // client reconciles its card in place — same id, no day refetch.
+    const nutritionByRowId = new Map(
+      updates.map((update) => [update.id, update.nutrition])
+    );
+    const mealItemGroups = buildMealItemGroupsFromRows(
+      keptRows.map((row) => ({
+        ...row,
+        estimatedGrams: editById.get(row.id) ?? row.estimatedGrams ?? null,
+        nutrition: nutritionByRowId.get(row.id) ?? extractNutritionValues(row),
+      }))
+    );
+
+    // Editing amounts must NOT change share state: carry the meal's existing
+    // share row through so the reconciled card keeps its "shared" badge instead
+    // of silently resetting to private until the next day refetch.
+    const [shareRow] = await tx
+      .select({ id: mealShares.id, visibility: mealShares.visibility })
+      .from(mealShares)
+      .where(eq(mealShares.mealId, meal.id))
+      .limit(1);
+
+    const savedMeal = buildPersistedMeal({
+      id: meal.id,
+      rawInput: meal.rawInput,
+      mealSlot: meal.mealSlot,
+      confidenceOverall: meal.confidenceOverall,
+      loggedAt: meal.loggedAt.toISOString(),
+      nutrition: mealTotals,
+      mealItemGroups,
+      entryMode: 'precise',
+      alcoholG: newAlcoholG,
+      cheatSliders: null,
+      share: shareRow
+        ? { shareId: shareRow.id, visibility: shareRow.visibility }
+        : null,
+    });
+
+    return { mealId: meal.id, meal: savedMeal };
+  });
+}
+
+// ---------------------------------------------------------------------------
+// C4b: Duplicate a persisted meal ("log again")
+// ---------------------------------------------------------------------------
+
+const duplicateMealSchema = z.object({
+  mealId: z.string().uuid('mealId phải là UUID hợp lệ.'),
+  // Client-generated id so the optimistic card and the persisted row share a
+  // stable React key (mirrors confirm/manual save).
+  newMealId: z.string().uuid('mealId phải là UUID hợp lệ.').optional(),
+  loggedDate: dateStringSchema,
+  timezoneOffset: timezoneOffsetSchema,
+});
+
+/**
+ * "Log again": reproduce an existing meal exactly by copying its stored item
+ * rows (composition ids, grams, per-row nutrition) into a brand-new meal
+ * stamped for the chosen day. No AI pipeline runs, so the accepted numbers — and
+ * any prior manual gram edits — are preserved verbatim instead of being
+ * re-estimated from the raw text (which is what re-submitting the text would do).
+ *
+ * Tenant isolation: the source meal is loaded scoped to the authenticated user;
+ * its item rows are reached only through that meal's id — mirroring
+ * `updateMealAction`'s guard.
+ */
+export async function duplicateMealAction(input: {
+  mealId: string;
+  newMealId?: string;
+  loggedDate: string;
+  timezoneOffset: number;
+}): Promise<ConfirmMealResponse> {
+  const parsed = duplicateMealSchema.parse(input);
+  const { user } = await requireAuthAndProfile();
+
+  return await db.transaction(async (tx) => {
+    const [source] = await tx
+      .select()
+      .from(meals)
+      .where(and(eq(meals.id, parsed.mealId), eq(meals.userId, user.id)))
+      .limit(1);
+
+    if (!source) {
+      throw Errors.validationFailed(
+        'Bữa ăn không tồn tại hoặc không thuộc về bạn.'
+      );
+    }
+    // Cheat meals carry no item rows (their nutrition lives in the slider spec);
+    // duplicating one as a precise meal would drop that, so refuse here.
+    if (source.entryMode === 'cheat') {
+      throw Errors.validationFailed('Không thể ghi lại bữa xả theo cách này.');
+    }
+
+    const sourceItems = await tx
+      .select()
+      .from(mealItems)
+      .where(eq(mealItems.mealId, source.id));
+
+    // A re-log is a new eating event "now" on the chosen day, so the slot is
+    // inferred from the new instant rather than copied from the original.
+    const loggedAt = getUtcInstantForLocalDate(
+      parsed.loggedDate,
+      parsed.timezoneOffset
+    );
+    const mealSlot = inferMealSlot(loggedAt);
+    const mealNutrition = extractNutritionValues(source);
+
+    const [meal] = await tx
+      .insert(meals)
+      .values({
+        ...(parsed.newMealId ? { id: parsed.newMealId } : {}),
+        userId: user.id,
+        rawInput: source.rawInput,
+        mealSlot,
+        confidenceOverall: source.confidenceOverall,
+        loggedAt,
+        entryMode: 'precise',
+        alcoholG: source.alcoholG,
+        ...nutritionValuesToRow(mealNutrition),
+      })
+      .returning({ id: meals.id });
+
+    // Copy each item with a fresh id, preserving order/composition/grams and the
+    // stored per-row nutrition exactly (extract → write the same values back).
+    const copies = sourceItems.map((row) => ({
+      id: randomUUID(),
+      row,
+      nutrition: extractNutritionValues(row),
+    }));
+
+    if (copies.length > 0) {
+      await tx.insert(mealItems).values(
+        copies.map(({ id, row, nutrition }) => ({
+          id,
+          mealId: meal.id,
+          ingredientName: row.ingredientName,
+          mealItemName: row.mealItemName,
+          mealItemOrder: row.mealItemOrder,
+          foodCompositionId: row.foodCompositionId,
+          estimatedGrams: row.estimatedGrams,
+          userFacingUnit: row.userFacingUnit,
+          cookingMethod: row.cookingMethod,
+          matchConfidence: row.matchConfidence,
+          ...nutritionValuesToRow(nutrition),
+        }))
+      );
+    }
+
+    // Rebuild the saved meal in loadMealsByDate's shape, grouped by dish, so the
+    // client reconciles its optimistic card in place (same id, no day refetch).
+    const mealItemGroups = buildMealItemGroupsFromRows(
+      copies.map(({ id, row, nutrition }) => ({ ...row, id, nutrition }))
+    );
+
+    const savedMeal = buildPersistedMeal({
+      id: meal.id,
+      rawInput: source.rawInput,
+      mealSlot,
+      confidenceOverall: source.confidenceOverall,
+      loggedAt: loggedAt.toISOString(),
+      nutrition: mealNutrition,
+      mealItemGroups,
+      entryMode: 'precise',
+      alcoholG: source.alcoholG ?? null,
+      cheatSliders: null,
+      share: null,
+    });
+
+    return { mealId: meal.id, meal: savedMeal };
+  });
 }
 
 // ---------------------------------------------------------------------------

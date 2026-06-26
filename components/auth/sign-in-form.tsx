@@ -5,18 +5,19 @@ import { Loader2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { toast } from 'sonner';
 import * as z from 'zod';
 import { useAuthDialog } from '@/components/auth/auth-provider';
 import { FormInput } from '@/components/auth/form-input';
 import { useRouter } from '@/i18n/navigation';
+import { safeNextPath } from '@/lib/auth/safe-next';
 import { createClient } from '@/lib/supabase/client';
 
 export function SignInForm() {
   const t = useTranslations('auth.signIn');
   const router = useRouter();
-  const { closeDialog, next } = useAuthDialog();
+  const { closeDialog, next, showForgot } = useAuthDialog();
   const [loading, setLoading] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
 
   const signInSchema = z.object({
     email: z.email(t('emailError')),
@@ -35,6 +36,7 @@ export function SignInForm() {
 
   const onSubmit = async (data: SignInValues) => {
     setLoading(true);
+    setFormError(null);
     const supabase = createClient();
     const { error } = await supabase.auth.signInWithPassword({
       email: data.email,
@@ -42,18 +44,26 @@ export function SignInForm() {
     });
 
     if (error) {
-      toast.error(error.message);
+      // Supabase returns the same error for a wrong password and a nonexistent
+      // account (anti-enumeration), so the copy stays neutral and renders
+      // inline — never a raw API string in a toast.
+      setFormError(
+        error.message === 'Email not confirmed'
+          ? t('errorUnconfirmed')
+          : t('error')
+      );
       setLoading(false);
       return;
     }
 
-    toast.success(t('success'));
     closeDialog();
-    if (next) {
-      // `next` is a full locale-prefixed path (e.g. /en/invite/abc). A hard
-      // navigation makes the server re-read the fresh session cookie so the
-      // invite page resolves as signed-in.
-      window.location.assign(next);
+    // `next` is a full locale-prefixed path (e.g. /en/invite/abc), re-validated
+    // here so it can never become an open redirect. A hard navigation makes the
+    // server re-read the fresh session cookie so the invite page resolves as
+    // signed-in.
+    const safeNext = safeNextPath(next);
+    if (safeNext) {
+      window.location.assign(safeNext);
       return;
     }
     router.push('/logging');
@@ -69,13 +79,35 @@ export function SignInForm() {
         error={errors.email?.message}
         {...register('email')}
       />
-      <FormInput
-        label={t('password')}
-        type="password"
-        placeholder={t('passwordPlaceholder')}
-        error={errors.password?.message}
-        {...register('password')}
-      />
+      <div className="space-y-1.5">
+        <FormInput
+          label={t('password')}
+          type="password"
+          placeholder={t('passwordPlaceholder')}
+          error={errors.password?.message}
+          {...register('password')}
+        />
+        <div className="flex justify-end">
+          <button
+            type="button"
+            onClick={showForgot}
+            className="text-[#8B7355] text-xs transition-colors hover:text-[#2C2416]"
+            style={{ fontFamily: 'DM Sans, sans-serif' }}
+          >
+            {t('forgotPassword')}
+          </button>
+        </div>
+      </div>
+
+      {formError && (
+        <p
+          className="text-nham-danger text-sm"
+          style={{ fontFamily: 'DM Sans, sans-serif' }}
+        >
+          {formError}
+        </p>
+      )}
+
       <button
         type="submit"
         disabled={loading}

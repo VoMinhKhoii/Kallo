@@ -1,16 +1,20 @@
 'use client';
 
-import { ChevronRight } from 'lucide-react';
+import { ChevronDown } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useTranslations } from 'next-intl';
 import { useId, useState } from 'react';
-import type { NutrientCardData } from '@/lib/nutrition/types';
+import type {
+  NutrientCardData,
+  NutritionDaySeries,
+} from '@/lib/nutrition/types';
 import { cn } from '@/lib/utils';
 import { shouldShowExceed } from '../primitives/helpers';
 import { NutrientDetail } from './nutrient-detail';
 
 interface NutrientRowProps {
   card: NutrientCardData;
+  daySeries?: NutritionDaySeries;
 }
 
 const STATUS_COLORS: Record<string, string> = {
@@ -51,7 +55,7 @@ function statusKeyFor(card: NutrientCardData): keyof typeof STATUS_COLORS {
   return 'far';
 }
 
-export function NutrientRow({ card }: NutrientRowProps) {
+export function NutrientRow({ card, daySeries }: NutrientRowProps) {
   const t = useTranslations('nutrition');
   const tRoot = useTranslations();
   const [open, setOpen] = useState(false);
@@ -114,11 +118,11 @@ export function NutrientRow({ card }: NutrientRowProps) {
         </span>
         <motion.span
           aria-hidden="true"
-          animate={{ rotate: open ? 90 : 0 }}
+          animate={{ rotate: open ? 180 : 0 }}
           transition={{ duration: 0.2 }}
           className="shrink-0 text-nham-stone"
         >
-          <ChevronRight className="h-4 w-4" aria-hidden="true" />
+          <ChevronDown className="h-4 w-4" aria-hidden="true" />
         </motion.span>
       </button>
 
@@ -135,7 +139,7 @@ export function NutrientRow({ card }: NutrientRowProps) {
         className="overflow-hidden"
       >
         <div inert={!open} className="px-4 pb-4 sm:px-5">
-          <NutrientDetail card={card} />
+          <NutrientDetail card={card} daySeries={daySeries} />
         </div>
       </motion.div>
     </li>

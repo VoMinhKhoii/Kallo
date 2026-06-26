@@ -51,7 +51,7 @@ export function OnboardingCard({
             Thiết lập chưa hoàn tất
           </div>
           <h3
-            className="mb-1 font-medium text-[#2C2416] text-xl"
+            className="mb-1 font-normal text-[#2C2416] text-xl"
             style={{ fontFamily: 'Lora, serif' }}
           >
             Sẵn sàng khám phá?

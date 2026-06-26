@@ -4,7 +4,6 @@ import { AnimatePresence, motion } from 'motion/react';
 import { useTranslations } from 'next-intl';
 import { useId, useState } from 'react';
 import type { NutrientCardData } from '@/lib/nutrition/types';
-import { SectionEyebrow } from '../primitives/section-eyebrow';
 import { NutrientRow } from '../rows/nutrient-row';
 
 interface BackgroundSectionProps {
@@ -29,8 +28,7 @@ export function BackgroundSection({ cards }: BackgroundSectionProps) {
       <h2 id={headingId} className="sr-only">
         {eyebrowLabel}
       </h2>
-      <div className="flex items-baseline justify-between gap-4">
-        <SectionEyebrow label={eyebrowLabel} delay={0.2} />
+      <div className="flex items-baseline justify-end gap-4">
         <button
           type="button"
           onClick={() => setOpen((current) => !current)}
@@ -56,7 +54,7 @@ export function BackgroundSection({ cards }: BackgroundSectionProps) {
             <p className="mb-2 text-[11px] text-nham-text-muted">
               {t('background.hint')}
             </p>
-            <div className="overflow-hidden rounded-2xl border border-nham-border/50 bg-card/30">
+            <div className="overflow-hidden rounded-2xl border border-nham-border/50 bg-white">
               <div className="grid sm:grid-cols-2">
                 <ul>
                   {left.map((card) => (

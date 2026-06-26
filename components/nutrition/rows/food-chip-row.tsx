@@ -96,7 +96,7 @@ export function FoodChipRow({
             'inline-flex items-center whitespace-nowrap rounded-full border px-2.5 py-0.5 text-[11px] leading-5',
             variant === 'spotlight'
               ? 'border-nham-accent/40 bg-nham-accent/10 text-nham-text'
-              : 'border-nham-border/60 bg-card/40 text-nham-text-muted'
+              : 'border-nham-border/60 bg-nham-surface text-nham-text-muted'
           )}
         >
           {tRoot(candidate.nameKey)}

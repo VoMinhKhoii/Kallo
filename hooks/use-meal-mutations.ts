@@ -18,6 +18,8 @@ import type {
 import {
   confirmAndSaveMealAction,
   deleteMealAction,
+  duplicateMealAction,
+  updateMealAction,
 } from '@/lib/actions/meals';
 import { NUTRITION_KEYS } from '@/lib/ai/constants';
 import type { NutritionValues } from '@/lib/ai/types';
@@ -470,6 +472,105 @@ export function useSaveManualMeal(userId: string) {
       rollbackOptimisticMeal(queryClient, error, context),
     onSettled: (_data, error, variables) =>
       settleMealSave(queryClient, userId, variables.originDate, error),
+  });
+}
+
+// Edit a persisted meal in place: gram overrides and/or per-row removals. The
+// server recomputes nutrition and returns the authoritative saved meal, which
+// overwrites the card by its stable id (no remount). Scoped to the user's day.
+export function useUpdateMeal(userId: string, originDate: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: updateMealAction,
+    onMutate: async () => {
+      // Cancel any day fetch still in flight BEFORE the edit lands: such a
+      // fetch read the pre-edit snapshot and would overwrite the authoritative
+      // onSuccess write when it resolves (mirrors useConfirmMeal's onMutate).
+      await queryClient.cancelQueries({
+        queryKey: loggingDayKeys.byUserDate(userId, originDate),
+      });
+    },
+    onSuccess: (data) => {
+      const savedMeal = data.meal;
+      if (!savedMeal) return;
+      const loggingDayKey = loggingDayKeys.byUserDate(userId, originDate);
+      const dailyMealsKey = dailyMealsKeys.byDate(originDate);
+      queryClient.setQueriesData<LoggingDayData>(
+        { queryKey: loggingDayKey },
+        (old) =>
+          old
+            ? {
+                ...old,
+                persistedMeals: upsertById(old.persistedMeals, savedMeal),
+              }
+            : old
+      );
+      queryClient.setQueriesData<PersistedMeal[]>(
+        { queryKey: dailyMealsKey },
+        (old) => upsertMealIntoList(old, savedMeal)
+      );
+    },
+    onError: (error) => {
+      toast.error(
+        error instanceof Error ? error.message : 'Không thể cập nhật bữa ăn.'
+      );
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({
+        queryKey: loggingDayKeys.byUserDate(userId, originDate),
+        refetchType: 'none',
+      });
+      queryClient.invalidateQueries({
+        queryKey: dailyMealsKeys.byDate(originDate),
+      });
+    },
+  });
+}
+
+interface DuplicateMealVariables {
+  /** The meal being re-logged — cloned for the optimistic card. */
+  source: PersistedMeal;
+  /** Client-generated id shared by the optimistic card and the persisted row. */
+  newMealId: string;
+  /** The day the duplicate lands on (= loggedDate). */
+  originDate: string;
+  loggedDate: string;
+  timezoneOffset: number;
+  /** Optimistic ISO timestamp; the server response overwrites it on success. */
+  loggedAt: string;
+}
+
+/**
+ * "Log again" — duplicate an existing meal server-side (deterministic copy of
+ * its item rows, no AI re-analysis), reconciling the new meal into the day the
+ * same way a confirm does. The optimistic card is a clone of the source meal
+ * under the new id so it appears instantly.
+ */
+export function useDuplicateMeal(userId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (v: DuplicateMealVariables) =>
+      duplicateMealAction({
+        mealId: v.source.id,
+        newMealId: v.newMealId,
+        loggedDate: v.loggedDate,
+        timezoneOffset: v.timezoneOffset,
+      }),
+    onMutate: (v) =>
+      applyOptimisticMeal(queryClient, userId, v.originDate, {
+        ...v.source,
+        id: v.newMealId,
+        loggedAt: v.loggedAt,
+        share: null,
+      }),
+    onSuccess: (data, v) =>
+      reconcileSavedMeal(queryClient, userId, v.originDate, data.meal),
+    onError: (error, _v, context) =>
+      rollbackOptimisticMeal(queryClient, error, context),
+    onSettled: (_data, error, v) =>
+      settleMealSave(queryClient, userId, v.originDate, error),
   });
 }
 

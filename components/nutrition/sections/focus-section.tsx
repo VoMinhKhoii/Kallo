@@ -1,15 +1,19 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import type { NutrientCardData } from '@/lib/nutrition/types';
+import type {
+  NutrientCardData,
+  NutritionDaySeries,
+} from '@/lib/nutrition/types';
 import { SectionEyebrow } from '../primitives/section-eyebrow';
 import { SpotlightRow } from '../rows/spotlight-row';
 
 interface FocusSectionProps {
   cards: NutrientCardData[];
+  daySeries?: NutritionDaySeries;
 }
 
-export function FocusSection({ cards }: FocusSectionProps) {
+export function FocusSection({ cards, daySeries }: FocusSectionProps) {
   const t = useTranslations('nutrition');
   if (cards.length === 0) return null;
 
@@ -31,6 +35,7 @@ export function FocusSection({ cards }: FocusSectionProps) {
           <SpotlightRow
             key={card.nutrient}
             card={card}
+            daySeries={daySeries}
             delay={0.1 + index * 0.06}
           />
         ))}

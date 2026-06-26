@@ -34,7 +34,7 @@ export function NutritionSkeleton() {
 
         {/* Daily rhythm + focus */}
         <div className="grid gap-8 lg:grid-cols-12 lg:gap-10">
-          <div className="space-y-5 rounded-3xl border border-nham-border/50 bg-card/40 p-6 lg:col-span-6 xl:col-span-7">
+          <div className="space-y-5 rounded-3xl border border-nham-border/50 bg-white p-6 lg:col-span-6 xl:col-span-7">
             <div className="flex items-end justify-between">
               <div className="h-10 w-32 rounded-full bg-nham-track" />
               <div className="h-2 w-32 rounded-full bg-nham-track" />
@@ -75,7 +75,7 @@ export function NutritionSkeleton() {
         </div>
 
         {/* Steady — two columns */}
-        <div className="overflow-hidden rounded-2xl border border-nham-border/50 bg-card/40">
+        <div className="overflow-hidden rounded-2xl border border-nham-border/50 bg-white">
           <div className="grid sm:grid-cols-2">
             {[0, 1].map((col) => (
               <div

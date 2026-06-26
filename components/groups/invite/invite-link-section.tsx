@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { useMyProfile, useSaveProfile } from '@/hooks/use-profile';
 import { ApiError } from '@/lib/errors';
 import { HANDLE_MIN_LENGTH, validateHandle } from '@/lib/groups/handles';
+import { DisplayNameRow } from './display-name-row';
 
 /**
  * The signed-in user's shareable invite link. The profile (and its slug) is
@@ -145,50 +146,53 @@ export function InviteLinkSection() {
   }
 
   return (
-    <div className="space-y-1.5">
-      <p
-        className="flex items-center gap-1.5 px-1 font-medium text-[10px] text-nham-text-muted uppercase tracking-[0.08em]"
-        style={{ fontFamily: 'DM Sans, sans-serif' }}
-      >
-        <Link2 className="h-3.5 w-3.5" />
-        {t('yourLink')}
-      </p>
-      <div className="flex items-stretch gap-2">
-        <Input
-          readOnly
-          value={inviteLink}
-          onFocus={(event) => event.currentTarget.select()}
-          aria-label={t('yourLink')}
-          className="flex-1 border-nham-border/60 bg-white text-[12px] text-nham-text-muted"
-          style={{ fontFamily: 'DM Sans, sans-serif' }}
-        />
-        <button
-          type="button"
-          onClick={() => {
-            setDraft(profile.handle);
-            setEditing(true);
-          }}
-          aria-label={t('editTitle')}
-          className="inline-flex shrink-0 items-center rounded-lg border border-nham-border/60 bg-white px-3 text-nham-text-muted transition-colors hover:border-nham-accent/50 hover:text-nham-text"
-        >
-          <Pencil className="h-3.5 w-3.5" />
-        </button>
-        <button
-          type="button"
-          onClick={copy}
-          className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-nham-border/60 bg-white px-3.5 font-medium text-[12px] text-nham-text transition-colors hover:border-nham-accent/50"
+    <div className="space-y-4">
+      <DisplayNameRow profile={profile} />
+      <div className="space-y-1.5">
+        <p
+          className="flex items-center gap-1.5 px-1 font-medium text-[10px] text-nham-text-muted uppercase tracking-[0.08em]"
           style={{ fontFamily: 'DM Sans, sans-serif' }}
         >
-          <Copy className="h-3.5 w-3.5" />
-          {t('copy')}
-        </button>
+          <Link2 className="h-3.5 w-3.5" />
+          {t('yourLink')}
+        </p>
+        <div className="flex items-stretch gap-2">
+          <Input
+            readOnly
+            value={inviteLink}
+            onFocus={(event) => event.currentTarget.select()}
+            aria-label={t('yourLink')}
+            className="flex-1 border-nham-border/60 bg-white text-[12px] text-nham-text-muted"
+            style={{ fontFamily: 'DM Sans, sans-serif' }}
+          />
+          <button
+            type="button"
+            onClick={() => {
+              setDraft(profile.handle);
+              setEditing(true);
+            }}
+            aria-label={t('editTitle')}
+            className="inline-flex shrink-0 items-center rounded-lg border border-nham-border/60 bg-white px-3 text-nham-text-muted transition-colors hover:border-nham-accent/50 hover:text-nham-text"
+          >
+            <Pencil className="h-3.5 w-3.5" />
+          </button>
+          <button
+            type="button"
+            onClick={copy}
+            className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-nham-border/60 bg-white px-3.5 font-medium text-[12px] text-nham-text transition-colors hover:border-nham-accent/50"
+            style={{ fontFamily: 'DM Sans, sans-serif' }}
+          >
+            <Copy className="h-3.5 w-3.5" />
+            {t('copy')}
+          </button>
+        </div>
+        <p
+          className="px-1 text-[11px] text-nham-text-muted/70"
+          style={{ fontFamily: 'DM Sans, sans-serif' }}
+        >
+          {t('hint')}
+        </p>
       </div>
-      <p
-        className="px-1 text-[11px] text-nham-text-muted/70"
-        style={{ fontFamily: 'DM Sans, sans-serif' }}
-      >
-        {t('hint')}
-      </p>
     </div>
   );
 }

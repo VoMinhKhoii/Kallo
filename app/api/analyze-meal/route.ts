@@ -131,10 +131,14 @@ async function validateRequest(request: NextRequest) {
         userId: user.id,
         message: parsed.data.message,
         locale: parsed.data.locale,
-        loggedAt: getUtcInstantForLocalDate(
-          parsed.data.loggedDate,
-          parsed.data.timezoneOffset
-        ),
+        // A refine inherits the original meal's instant so the corrected meal
+        // keeps its timeline position/slot; a fresh log stamps from the day.
+        loggedAt: parsed.data.inheritLoggedAt
+          ? new Date(parsed.data.inheritLoggedAt)
+          : getUtcInstantForLocalDate(
+              parsed.data.loggedDate,
+              parsed.data.timezoneOffset
+            ),
         mode: parsed.data.mode ?? 'precise',
         cheatType: parsed.data.cheatType,
         clarifyAnswer: parsed.data.clarifyAnswer,

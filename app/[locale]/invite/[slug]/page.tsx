@@ -1,9 +1,11 @@
 import { getTranslations } from 'next-intl/server';
 import type { ReactNode } from 'react';
-import { InviteAccept } from '@/components/groups/invite/invite-accept';
+import { ConnectPanel } from '@/components/groups/invite/connect-panel';
+import { InviteAuthCta } from '@/components/groups/invite/invite-auth-cta';
 import { Link } from '@/i18n/navigation';
 import {
   getFriendshipStatus,
+  getMyPublicProfile,
   getProfileBySlug,
   type PublicProfile,
 } from '@/lib/actions/groups';
@@ -76,23 +78,18 @@ export default async function InvitePage({
     data: { user },
   } = await supabase.auth.getUser();
 
-  // Signed out: route to the landing auth dialog, returning here afterward.
+  // Signed out: keep auth ON this page — the dialog opens over the inviter's
+  // card and `next` round-trips back here (now signed in → Connect). No more
+  // teleport to the marketing page that erased the friend at commitment.
   if (!user) {
     const invitePath = `/${locale}/invite/${inviter.handle}`;
-    const href = `/${locale}?auth=sign-up&next=${encodeURIComponent(invitePath)}`;
     return (
       <Shell
         profile={inviter}
         title={t('signedOutTitle', { name })}
         body={t('signedOutBody')}
       >
-        <a
-          href={href}
-          className="inline-flex items-center justify-center rounded-xl bg-nham-btn px-6 py-3 font-medium text-[15px] text-white shadow-nham-btn/20 shadow-sm transition-colors hover:bg-nham-btn/90"
-          style={{ fontFamily: 'DM Sans, sans-serif' }}
-        >
-          {t('signIn')}
-        </a>
+        <InviteAuthCta next={invitePath} />
       </Shell>
     );
   }
@@ -122,15 +119,19 @@ export default async function InvitePage({
     return <Shell title={t('invalidTitle')} body={t('invalidBody')} />;
   }
 
-  // Connect: the recipient taps Accept.
+  // Connect: the recipient taps Accept, and the whole panel resolves in place
+  // (their disc slides in beside the inviter's, the title crossfades to "You're
+  // connected") rather than teleporting to an empty /groups.
+  const myProfile = await getMyPublicProfile(user.id);
+  const youLabel =
+    myProfile?.displayName?.trim() || myProfile?.handle || t('you');
+
   return (
-    <Shell
-      profile={inviter}
-      title={t('connectTitle', { name })}
-      body={t('connectBody')}
-    >
-      <InviteAccept slug={inviter.handle} />
-    </Shell>
+    <ConnectPanel
+      slug={inviter.handle}
+      inviterLabel={name}
+      youLabel={youLabel}
+    />
   );
 }
 

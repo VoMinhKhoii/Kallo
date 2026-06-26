@@ -112,8 +112,8 @@ export function TimelineSidebar({
       <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto overflow-x-hidden">
         {/* Error state */}
         {isError && (
-          <div className="ml-3 flex flex-col gap-2 rounded-lg border border-red-200/60 bg-red-50/80 p-3">
-            <div className="flex items-center gap-2 text-red-900 text-sm">
+          <div className="ml-3 flex flex-col gap-2 rounded-lg border border-nham-danger/30 bg-nham-danger/10 p-3">
+            <div className="flex items-center gap-2 text-nham-danger text-sm">
               <AlertCircle className="h-4 w-4" aria-hidden="true" />
               <span className="flex-1 font-medium">
                 {t('failedToLoadDates')}
@@ -122,7 +122,7 @@ export function TimelineSidebar({
             <button
               type="button"
               onClick={onRetry}
-              className="rounded-lg bg-red-100 px-3 py-2 font-medium text-red-900 text-sm transition-[background-color,color] hover:bg-red-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600 focus-visible:ring-offset-2"
+              className="rounded-lg bg-nham-danger/15 px-3 py-2 font-medium text-nham-danger text-sm transition-[background-color,color] hover:bg-nham-danger/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-danger focus-visible:ring-offset-2"
             >
               {t('retryDates')}
             </button>

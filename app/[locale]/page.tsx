@@ -1,3 +1,4 @@
+import { redirect } from 'next/navigation';
 import { Suspense } from 'react';
 import { AuthDialog } from '@/components/auth/auth-dialog';
 import { AuthProvider } from '@/components/auth/auth-provider';
@@ -11,6 +12,7 @@ import {
   SolutionSection,
 } from '@/components/landing-page';
 import { safeNextPath } from '@/lib/auth/safe-next';
+import { createClient } from '@/lib/supabase/server';
 
 export default async function Home({
   searchParams,
@@ -23,6 +25,19 @@ export default async function Home({
   // Default to the sign-up tab, since invite recipients usually have no account.
   const initialOpen = auth === 'sign-in' || auth === 'sign-up' || next !== null;
   const initialTab = auth === 'sign-in' ? 'sign-in' : 'sign-up';
+
+  // A signed-in visitor with no auth/invite intent shouldn't see the marketing
+  // page — send them into the app. This is also what makes the installed PWA
+  // (whose start_url is /dashboard) never flash the landing page.
+  if (!initialOpen) {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (user) {
+      redirect('/dashboard');
+    }
+  }
 
   return (
     <AuthProvider next={next} initialOpen={initialOpen} initialTab={initialTab}>

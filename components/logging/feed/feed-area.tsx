@@ -21,14 +21,23 @@ import {
 } from '@/components/logging/input/meal-input';
 import type { LoggingProfile } from '@/components/logging/logging-shell';
 import { addDays } from '@/components/logging/sidebar/timeline-utils';
+import { dailyMealsKeys } from '@/hooks/use-daily-meals';
 import { useFeedSubmit } from '@/hooks/use-feed-submit';
 import { loggingDayKeys, useLoggingDay } from '@/hooks/use-logging-day';
-import { useConfirmMeal, useSaveManualMeal } from '@/hooks/use-meal-mutations';
+import {
+  useConfirmMeal,
+  useDuplicateMeal,
+  useSaveManualMeal,
+  useUpdateMeal,
+} from '@/hooks/use-meal-mutations';
 import { useRecentCheatOccasions } from '@/hooks/use-recent-cheat-occasions';
 import { useStreamAnalysis } from '@/hooks/use-stream-analysis';
 import { useStreamingTerminalEffects } from '@/hooks/use-streaming-terminal-effects';
 import { useSubmitGuard } from '@/hooks/use-submit-guard';
 import {
+  deleteMealAction,
+  type LoggingDayData,
+  type PersistedMeal,
   type RecentCheatOccasion,
   stageCheatRepeatAction,
 } from '@/lib/actions/meals';
@@ -43,6 +52,7 @@ import type {
   StreamingPhase,
 } from '@/lib/types/meal';
 import { cn } from '@/lib/utils';
+import { MEAL_TEXT_MAX_LENGTH } from '@/lib/validation';
 
 const emptyMacros: MacroBreakdown = {
   calories: 0,
@@ -148,16 +158,16 @@ function LoggingDayErrorState({
     <div className="flex flex-1 items-center justify-center py-6">
       <div
         role="alert"
-        className="w-full max-w-md rounded-2xl border border-red-200/70 bg-red-50/80 p-4 text-red-950 shadow-sm"
+        className="w-full max-w-md rounded-2xl border border-nham-danger/30 bg-nham-danger/10 p-4 text-nham-text shadow-sm"
       >
         <div className="flex gap-3">
           <AlertCircle
-            className="mt-0.5 h-5 w-5 shrink-0 text-red-600"
+            className="mt-0.5 h-5 w-5 shrink-0 text-nham-danger"
             aria-hidden="true"
           />
           <div className="min-w-0 flex-1">
             <p className="font-semibold text-sm">{t('loadErrorTitle')}</p>
-            <p className="mt-1 text-red-900/80 text-sm">
+            <p className="mt-1 text-nham-text-muted text-sm">
               {t('loadErrorDescription')}
             </p>
             <button
@@ -165,7 +175,7 @@ function LoggingDayErrorState({
               onClick={onRetry}
               disabled={isRetrying}
               aria-busy={isRetrying}
-              className="mt-3 inline-flex min-h-9 items-center gap-2 rounded-full bg-red-100 px-3.5 py-2 font-medium text-red-950 text-sm transition-colors hover:bg-red-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+              className="mt-3 inline-flex min-h-9 items-center gap-2 rounded-full bg-nham-danger/15 px-3.5 py-2 font-medium text-nham-danger text-sm transition-colors hover:bg-nham-danger/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-danger focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
             >
               <RefreshCw
                 className={cn('h-4 w-4', isRetrying && 'animate-spin')}
@@ -179,6 +189,14 @@ function LoggingDayErrorState({
     </div>
   );
 }
+
+// "Fix with words" (natural-language refine) is hidden for now. It currently
+// re-runs the whole AI pipeline on the meal's text — a re-log masquerading as an
+// edit (it re-estimates every item and drops prior manual edits). It stays off
+// until reworked into a surgical, single-item correction (tracked separately).
+// The handler and its identity-preserving plumbing remain wired, so flipping
+// this back to `true` restores the feature with the corrected behavior.
+const REFINE_ENABLED = false;
 
 export function FeedArea({
   selectedDate,
@@ -196,6 +214,133 @@ export function FeedArea({
   const stream = useStreamAnalysis();
   const queryClient = useQueryClient();
   const { guard } = useSubmitGuard();
+
+  // Remove a meal with a 5-second undo. The card is dropped from the day cache
+  // immediately so the calorie ring and macro bars heal on screen; the server
+  // delete is deferred until the toast closes, so "undo" just restores the
+  // snapshot (no re-insert needed). Mis-logged meals were previously permanent.
+  const handleDeleteMeal = useCallback(
+    (mealId: string) => {
+      const filter = {
+        queryKey: loggingDayKeys.byUserDate(profile.userId, selectedDate),
+      };
+      const snapshots = queryClient.getQueriesData<LoggingDayData>(filter);
+
+      queryClient.setQueriesData<LoggingDayData>(filter, (old) =>
+        old
+          ? {
+              ...old,
+              persistedMeals: old.persistedMeals.filter(
+                (meal) => meal.id !== mealId
+              ),
+            }
+          : old
+      );
+
+      let undone = false;
+      const restore = () => {
+        for (const [key, data] of snapshots) {
+          queryClient.setQueryData(key, data);
+        }
+      };
+      const commit = async () => {
+        if (undone) return;
+        try {
+          await deleteMealAction({ mealId });
+        } catch (error) {
+          restore();
+          toast.error(
+            error instanceof Error ? error.message : t('deleteError')
+          );
+          return;
+        }
+        queryClient.invalidateQueries({
+          queryKey: loggingDayKeys.byUserDate(profile.userId, selectedDate),
+          refetchType: 'none',
+        });
+        queryClient.invalidateQueries({
+          queryKey: dailyMealsKeys.byDate(selectedDate),
+        });
+        queryClient.invalidateQueries({ queryKey: ['meal-dates'] });
+      };
+
+      toast(t('mealRemoved'), {
+        duration: 5000,
+        action: {
+          label: t('undo'),
+          onClick: () => {
+            undone = true;
+            restore();
+          },
+        },
+        onAutoClose: commit,
+        onDismiss: commit,
+      });
+    },
+    [profile.userId, selectedDate, queryClient, t]
+  );
+  // Silent superseding delete for an NL-refine: the corrected meal already
+  // saved, so the original is dropped from the cache and server with no undo
+  // toast (the correction IS the user's intent — an "undo" here would confuse).
+  const replaceOldMeal = useCallback(
+    async (mealId: string) => {
+      // If the meal is already gone from the cache (e.g. removed by a racing
+      // delete), the server call would only produce a spurious error toast.
+      const stillInCache = queryClient
+        .getQueriesData<LoggingDayData>({
+          queryKey: loggingDayKeys.byUserDate(profile.userId, selectedDate),
+        })
+        .some(([, data]) =>
+          data?.persistedMeals.some((meal) => meal.id === mealId)
+        );
+      queryClient.setQueriesData<LoggingDayData>(
+        {
+          queryKey: loggingDayKeys.byUserDate(profile.userId, selectedDate),
+        },
+        (old) =>
+          old
+            ? {
+                ...old,
+                persistedMeals: old.persistedMeals.filter(
+                  (meal) => meal.id !== mealId
+                ),
+              }
+            : old
+      );
+      if (stillInCache) {
+        try {
+          await deleteMealAction({ mealId });
+        } catch (error) {
+          // A not-found means another path already deleted it — the data is
+          // correct, so stay silent. Anything else really left a duplicate:
+          // refetch so the original meal resurfaces and the user can remove
+          // it manually.
+          const message = error instanceof Error ? error.message : '';
+          if (!message.includes('không tồn tại')) {
+            toast.error(t('deleteError'));
+            queryClient.invalidateQueries({
+              queryKey: loggingDayKeys.byUserDate(profile.userId, selectedDate),
+              refetchType: 'active',
+            });
+            queryClient.invalidateQueries({
+              queryKey: dailyMealsKeys.byDate(selectedDate),
+            });
+            queryClient.invalidateQueries({ queryKey: ['meal-dates'] });
+            return;
+          }
+        }
+      }
+      queryClient.invalidateQueries({
+        queryKey: loggingDayKeys.byUserDate(profile.userId, selectedDate),
+        refetchType: 'none',
+      });
+      queryClient.invalidateQueries({
+        queryKey: dailyMealsKeys.byDate(selectedDate),
+      });
+      queryClient.invalidateQueries({ queryKey: ['meal-dates'] });
+    },
+    [profile.userId, selectedDate, queryClient, t]
+  );
   const [streamingMsgId, setStreamingMsgId] = useState<string | null>(null);
   // Session-scoped dismissal for the "yesterday under-logged" prompt. FeedArea
   // stays mounted across date navigation, so this survives clicking through to
@@ -214,6 +359,13 @@ export function FeedArea({
   const isCheat = loggingMode === 'cheat';
   const recentCheatOccasions = useRecentCheatOccasions(profile.userId, isCheat);
 
+  // Auto-submit the handed-off meal once the prefill effect has armed it. The
+  // dashboard composer used to navigate here and only re-insert the text,
+  // forcing the user to tap send a second time (the double-submit). We now
+  // submit the handoff for them. Kept in a ref so the prefill effect (which
+  // runs before handleSubmit is defined) can arm it without a dependency cycle.
+  const pendingAutoSubmitRef = useRef(false);
+
   // Prefill from dashboard meal trigger; re-runs when initialMeal changes so
   // repeated dashboard→logging handoffs while the component stays mounted work.
   useEffect(() => {
@@ -221,8 +373,11 @@ export function FeedArea({
     lastPrefilledMealRef.current = initialMeal;
     inputRef.current?.setText(initialMeal);
     inputRef.current?.focus();
+    // Cheat handoffs go through their own slider path; only precise text
+    // auto-submits. The dashboard composer never hands off in cheat mode.
+    pendingAutoSubmitRef.current = !isCheat;
     onInitialMealApplied?.();
-  }, [initialMeal, onInitialMealApplied]);
+  }, [initialMeal, isCheat, onInitialMealApplied]);
 
   const {
     data: loggingDay,
@@ -243,7 +398,54 @@ export function FeedArea({
 
   // Mutations
   const confirmMeal = useConfirmMeal(profile.userId);
+  const updateMeal = useUpdateMeal(profile.userId, selectedDate);
   const saveManualMeal = useSaveManualMeal(profile.userId);
+  const duplicateMeal = useDuplicateMeal(profile.userId);
+
+  // Persist an amount edit (gram overrides + per-row removals) for one meal.
+  // The mutation reconciles the card in place from the authoritative response.
+  const handleUpdateMeal = useCallback(
+    async (
+      mealId: string,
+      changes: {
+        edits: { id: string; newGrams: number }[];
+        removeIds: string[];
+      }
+    ) => {
+      await updateMeal.mutateAsync({
+        mealId,
+        edits: changes.edits.length > 0 ? changes.edits : undefined,
+        removeIds: changes.removeIds.length > 0 ? changes.removeIds : undefined,
+      });
+      toast.success(t('mealUpdatedToast'));
+    },
+    [updateMeal, t]
+  );
+
+  // "Log again": reproduce the meal exactly (deterministic server-side copy of
+  // its items) on the viewed day, rather than re-typing the text and re-running
+  // the AI pipeline — which would yield fresh, drifted numbers and lose any
+  // prior manual edits.
+  const handleLogAgain = useCallback(
+    (meal: PersistedMeal) => {
+      if (duplicateMeal.isPending) return;
+      const newMealId = crypto.randomUUID();
+      duplicateMeal.mutate(
+        {
+          source: meal,
+          newMealId,
+          originDate: selectedDate,
+          loggedDate: selectedDate,
+          timezoneOffset: new Date().getTimezoneOffset(),
+          loggedAt: new Date().toISOString(),
+        },
+        {
+          onSuccess: () => toast.success(t('savedMeal')),
+        }
+      );
+    },
+    [duplicateMeal, selectedDate, t]
+  );
 
   const scrollToBottom = useCallback(() => {
     requestAnimationFrame(() => {
@@ -255,6 +457,59 @@ export function FeedArea({
       }
     });
   }, []);
+
+  // NL-refine: re-run the analysis waterfall on the meal's text plus a plain
+  // correction, then replace the meal. We reuse the streaming surface — a fresh
+  // pending card streams in exactly like a new log — and register the old meal
+  // id so confirming the correction deletes the original (no stacking).
+  const handleRefineMeal = useCallback(
+    (
+      meal: { id: string; rawInput: string; loggedAt: string },
+      correction: string
+    ) => {
+      if (stream.isAnalyzing) return;
+      // The pipeline reads the whole meal afresh; the parenthetical carries the
+      // correction as a same-line aside so decomposition keeps the dish context.
+      // The server caps messages at MEAL_TEXT_MAX_LENGTH — when the original
+      // text plus the correction (and the 3 joining chars) would exceed it,
+      // truncate the original so the analysis is never rejected.
+      const baseBudget = MEAL_TEXT_MAX_LENGTH - correction.length - 3;
+      const base =
+        meal.rawInput.length > baseBudget
+          ? meal.rawInput.slice(0, Math.max(baseBudget, 0)).trimEnd()
+          : meal.rawInput;
+      const combined = `${base} (${correction})`;
+      const assistantMsgId = crypto.randomUUID();
+      replacedMealByMsgIdRef.current.set(assistantMsgId, meal.id);
+      setStreamingMsgId(assistantMsgId);
+      lastAnalysisIdRef.current = null;
+      lastErrorRef.current = null;
+
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: assistantMsgId,
+          role: 'assistant',
+          content: '',
+          userInput: combined,
+          loggedDate: selectedDate,
+          timestamp: new Date(),
+          isStreaming: true,
+          streamingPhase: 'waiting',
+        },
+      ]);
+      scrollToBottom();
+
+      void stream.analyze({
+        message: combined,
+        loggedDate: selectedDate,
+        timezoneOffset: new Date().getTimezoneOffset(),
+        // Keep the corrected meal anchored to the original's instant/slot.
+        inheritLoggedAt: meal.loggedAt,
+      });
+    },
+    [stream, selectedDate, scrollToBottom]
+  );
 
   // Compute daily totals from persisted meals
   const targets = useMemo(
@@ -303,6 +558,10 @@ export function FeedArea({
 
   const lastAnalysisIdRef = useRef<string | null>(null);
   const lastErrorRef = useRef<string | null>(null);
+  // NL-refine bookkeeping: maps a refine streaming-message id → the persisted
+  // meal it replaces. When that re-analysis is confirmed, the old meal is
+  // deleted so the corrected meal supersedes it instead of stacking.
+  const replacedMealByMsgIdRef = useRef<Map<string, string>>(new Map());
 
   const { handleSubmit } = useFeedSubmit({
     stream,
@@ -317,6 +576,14 @@ export function FeedArea({
     isCheat,
     cheatIntensity,
   });
+
+  // Fire the armed handoff once the input is prefilled and not already
+  // analyzing. handleSubmit reads the freshly-set text from the input ref.
+  useEffect(() => {
+    if (!pendingAutoSubmitRef.current || stream.isAnalyzing) return;
+    pendingAutoSubmitRef.current = false;
+    void handleSubmit();
+  }, [handleSubmit, stream.isAnalyzing]);
 
   // Manual (Cronometer-style) submit: ingredient ids + grams straight to the
   // save endpoint — deterministic, no streaming analysis and no AI call.
@@ -336,6 +603,10 @@ export function FeedArea({
       },
       {
         onSuccess: () => {
+          // Clear only after the save lands — on failure the rolled-back card
+          // would otherwise leave the user with an empty composer and no way to
+          // recover the rows they typed.
+          inputRef.current?.clear();
           toast.success(t('savedMeal'));
         },
         onError: (error) => {
@@ -343,7 +614,6 @@ export function FeedArea({
         },
       }
     );
-    inputRef.current?.clear();
     scrollToBottom();
   }, [saveManualMeal, selectedDate, scrollToBottom, t]);
 
@@ -407,6 +677,9 @@ export function FeedArea({
     // key, so the optimistic card and the refetched row share one stable React
     // key (no remount/re-fade after save).
     const mealId = crypto.randomUUID();
+    // If this card came from an NL-refine, the meal it corrects is deleted on
+    // confirm so the correction supersedes the original rather than stacking.
+    const replacedMealId = replacedMealByMsgIdRef.current.get(message.id);
     confirmMeal.mutate(
       {
         analysisId: message.analysisId,
@@ -420,6 +693,10 @@ export function FeedArea({
       {
         onSuccess: () => {
           toast.success(t('savedMeal'));
+          if (replacedMealId) {
+            replacedMealByMsgIdRef.current.delete(message.id);
+            void replaceOldMeal(replacedMealId);
+          }
         },
       }
     );
@@ -715,7 +992,26 @@ export function FeedArea({
                 {/* Persisted meals from DB */}
                 <AnimatePresence initial={false}>
                   {orderedPersistedMeals.map((meal) => (
-                    <PersistedMealCard key={meal.id} meal={meal} />
+                    <PersistedMealCard
+                      key={meal.id}
+                      meal={meal}
+                      onDelete={() => handleDeleteMeal(meal.id)}
+                      onLogAgain={() => handleLogAgain(meal)}
+                      onUpdate={(changes) => handleUpdateMeal(meal.id, changes)}
+                      onRefine={
+                        REFINE_ENABLED
+                          ? (correction) =>
+                              handleRefineMeal(
+                                {
+                                  id: meal.id,
+                                  rawInput: meal.rawInput,
+                                  loggedAt: meal.loggedAt,
+                                },
+                                correction
+                              )
+                          : undefined
+                      }
+                    />
                   ))}
                 </AnimatePresence>
 
@@ -764,8 +1060,8 @@ export function FeedArea({
                         className="group relative"
                       >
                         <div className="absolute top-2 bottom-0 -left-10 w-px bg-nham-border/60 group-last:bg-transparent" />
-                        <div className="absolute top-2 -left-[43px] h-2 w-2 rounded-full border-2 border-rose-400 bg-white" />
-                        <div className="rounded-2xl border border-rose-200/60 bg-rose-50/50 p-4">
+                        <div className="absolute top-2 -left-[43px] h-2 w-2 rounded-full border-2 border-nham-danger bg-white" />
+                        <div className="rounded-2xl border border-nham-danger/30 bg-nham-danger/10 p-4">
                           {msg.userInput && (
                             <p
                               className="mb-2 text-[13px] text-nham-text-muted"
@@ -775,7 +1071,7 @@ export function FeedArea({
                             </p>
                           )}
                           <p
-                            className="text-rose-600 text-sm"
+                            className="text-nham-danger text-sm"
                             style={{
                               fontFamily: 'DM Sans, sans-serif',
                             }}
