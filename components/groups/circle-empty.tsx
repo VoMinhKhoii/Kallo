@@ -35,8 +35,7 @@ export function CircleEmpty() {
           initial={{ opacity: 0, y: 6 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1, duration: 0.3 }}
-          className="font-normal text-nham-text text-xl tracking-tight"
-          style={{ fontFamily: 'Lora, serif' }}
+          className="font-normal font-serif text-nham-text text-xl tracking-tight"
         >
           {t('title')}
         </motion.h2>
@@ -44,8 +43,7 @@ export function CircleEmpty() {
           initial={{ opacity: 0, y: 6 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2, duration: 0.3 }}
-          className="text-nham-text-muted text-sm leading-relaxed"
-          style={{ fontFamily: 'DM Sans, sans-serif' }}
+          className="font-sans-display text-nham-text-muted text-sm leading-relaxed"
         >
           {t('subtitle')}
         </motion.p>
@@ -60,8 +58,7 @@ export function CircleEmpty() {
           trigger={
             <button
               type="button"
-              className="rounded-xl bg-nham-btn px-4 py-2 font-medium text-[13px] text-white shadow-nham-btn/20 shadow-sm transition-colors hover:bg-nham-btn/90"
-              style={{ fontFamily: 'DM Sans, sans-serif' }}
+              className="rounded-xl bg-nham-btn px-4 py-2 font-medium font-sans-display text-[13px] text-white shadow-nham-btn/20 shadow-sm transition-colors hover:bg-nham-btn/90"
             >
               {t('cta')}
             </button>

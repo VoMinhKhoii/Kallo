@@ -18,17 +18,11 @@ export function ProfileIdentity({ profile }: { profile: Identity }) {
   return (
     <div className="flex min-w-0 items-center gap-3">
       <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-nham-accent/40 to-nham-border/50 ring-1 ring-nham-accent/25">
-        <span
-          className="font-bold text-[13px] text-nham-btn"
-          style={{ fontFamily: 'DM Sans, sans-serif' }}
-        >
+        <span className="font-bold font-sans-display text-[13px] text-nham-btn">
           {initialFor(profile)}
         </span>
       </span>
-      <span
-        className="truncate text-[14px] text-nham-text"
-        style={{ fontFamily: 'DM Sans, sans-serif' }}
-      >
+      <span className="truncate font-sans-display text-[14px] text-nham-text">
         {labelFor(profile)}
       </span>
     </div>

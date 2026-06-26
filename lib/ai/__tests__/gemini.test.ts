@@ -8,7 +8,7 @@ const { mockLogLlmCall } = vi.hoisted(() => ({
 }));
 
 vi.mock('server-only', () => ({}));
-vi.mock('@/lib/ai/pipeline/trace', () => ({
+vi.mock('@/lib/ai/pipeline/telemetry/trace', () => ({
   logLlmCall: mockLogLlmCall,
 }));
 

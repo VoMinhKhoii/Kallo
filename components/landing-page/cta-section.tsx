@@ -19,20 +19,11 @@ export function CTASection() {
           viewport={{ once: true }}
           transition={{ duration: 0.8 }}
         >
-          <h2
-            className="mb-6 font-normal text-5xl text-[#2C2416] leading-tight lg:text-6xl"
-            style={{ fontFamily: 'var(--font-lora), Georgia, serif' }}
-          >
+          <h2 className="mb-6 font-normal font-serif text-5xl text-[#2C2416] leading-tight lg:text-6xl">
             {t('title')}
           </h2>
 
-          <p
-            className="mx-auto mb-12 max-w-2xl text-[#6B5D4F] text-xl leading-relaxed"
-            style={{
-              fontFamily:
-                'var(--font-dm-sans), ui-sans-serif, system-ui, sans-serif',
-            }}
-          >
+          <p className="mx-auto mb-12 max-w-2xl font-sans-display text-[#6B5D4F] text-xl leading-relaxed">
             {t('subtitle')}
           </p>
 
@@ -42,10 +33,7 @@ export function CTASection() {
               <Button
                 variant="landing-primary"
                 size="landing"
-                style={{
-                  fontFamily:
-                    'var(--font-dm-sans), ui-sans-serif, system-ui, sans-serif',
-                }}
+                className="font-sans-display"
                 onClick={() => openDialog('sign-up')}
               >
                 {t('button')}
@@ -56,10 +44,7 @@ export function CTASection() {
               <Button
                 variant="landing-secondary"
                 size="landing"
-                style={{
-                  fontFamily:
-                    'var(--font-dm-sans), ui-sans-serif, system-ui, sans-serif',
-                }}
+                className="font-sans-display"
                 onClick={() => scrollToAnchorId('how')}
               >
                 {t('buttonSecondary')}
@@ -71,36 +56,15 @@ export function CTASection() {
           <div className="mb-16 flex flex-wrap justify-center gap-8 text-[#8B7355] text-sm">
             <div className="flex items-center gap-2">
               <Check className="h-4 w-4 text-[#C9A87C]" />
-              <span
-                style={{
-                  fontFamily:
-                    'var(--font-dm-sans), ui-sans-serif, system-ui, sans-serif',
-                }}
-              >
-                {t('feature1')}
-              </span>
+              <span className="font-sans-display">{t('feature1')}</span>
             </div>
             <div className="flex items-center gap-2">
               <Check className="h-4 w-4 text-[#C9A87C]" />
-              <span
-                style={{
-                  fontFamily:
-                    'var(--font-dm-sans), ui-sans-serif, system-ui, sans-serif',
-                }}
-              >
-                {t('feature2')}
-              </span>
+              <span className="font-sans-display">{t('feature2')}</span>
             </div>
             <div className="flex items-center gap-2">
               <Check className="h-4 w-4 text-[#C9A87C]" />
-              <span
-                style={{
-                  fontFamily:
-                    'var(--font-dm-sans), ui-sans-serif, system-ui, sans-serif',
-                }}
-              >
-                {t('feature3')}
-              </span>
+              <span className="font-sans-display">{t('feature3')}</span>
             </div>
           </div>
 
@@ -113,13 +77,7 @@ export function CTASection() {
             transition={{ duration: 0.8, delay: 0.2 }}
             className="border-[#E8D5B5]/30 border-t pt-12"
           >
-            <p
-              className="text-[#8B7355] text-sm"
-              style={{
-                fontFamily:
-                  'var(--font-dm-sans), ui-sans-serif, system-ui, sans-serif',
-              }}
-            >
+            <p className="font-sans-display text-[#8B7355] text-sm">
               {t('trust')}
             </p>
           </motion.div>

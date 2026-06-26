@@ -68,17 +68,11 @@ export function ProgressStory({
           <div className="flex items-end justify-between gap-3">
             <div>
               {isInsufficient ? (
-                <h2
-                  className="font-semibold text-3xl text-nham-text tracking-[-0.04em]"
-                  style={{ fontFamily: 'DM Sans, sans-serif' }}
-                >
+                <h2 className="font-sans-display font-semibold text-3xl text-nham-text tracking-[-0.04em]">
                   {summary.currentWeight.toFixed(1)} {t('units.kg')}
                 </h2>
               ) : (
-                <h2
-                  className="font-semibold text-3xl text-nham-text tracking-[-0.04em]"
-                  style={{ fontFamily: 'DM Sans, sans-serif' }}
-                >
+                <h2 className="font-sans-display font-semibold text-3xl text-nham-text tracking-[-0.04em]">
                   {delta > 0 ? '+' : ''}
                   {delta.toFixed(1)} {t('units.kg')}
                 </h2>

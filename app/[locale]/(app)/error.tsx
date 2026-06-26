@@ -22,16 +22,10 @@ export default function AppError({
 
   return (
     <div
-      className="flex min-h-[60vh] flex-1 flex-col items-center justify-center gap-4 px-6 text-center"
+      className="flex min-h-[60vh] flex-1 flex-col items-center justify-center gap-4 px-6 text-center font-sans-display"
       role="alert"
-      style={{ fontFamily: 'DM Sans, sans-serif' }}
     >
-      <h2
-        className="text-[#2C2416] text-xl"
-        style={{ fontFamily: 'Lora, serif' }}
-      >
-        This didn’t load.
-      </h2>
+      <h2 className="font-serif text-[#2C2416] text-xl">This didn’t load.</h2>
       <p className="max-w-sm text-[14px] text-nham-text-muted leading-relaxed">
         Something went wrong on our side. Give it another try.
       </p>

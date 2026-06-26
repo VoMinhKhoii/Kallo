@@ -37,10 +37,7 @@ export default async function SettingsPage() {
   const email = data.user?.email ?? null;
 
   return (
-    <div
-      className="mx-auto w-full max-w-5xl px-3 py-4 sm:px-5 sm:py-8 lg:flex lg:gap-8"
-      style={{ fontFamily: 'DM Sans, sans-serif' }}
-    >
+    <div className="mx-auto w-full max-w-5xl px-3 py-4 font-sans-display sm:px-5 sm:py-8 lg:flex lg:gap-8">
       {/* Anchor nav — replaces the routed master-detail. Horizontal on small
           screens, a sticky rail on large. */}
       <div className="mb-3 shrink-0 lg:mb-0 lg:w-[200px]">
@@ -49,10 +46,7 @@ export default async function SettingsPage() {
 
       <div className="min-w-0 flex-1">
         <header className="mb-5 sm:mb-7">
-          <h1
-            className="font-normal text-2xl text-[#2C2416] tracking-tight"
-            style={{ fontFamily: 'Lora, serif' }}
-          >
+          <h1 className="font-normal font-serif text-2xl text-[#2C2416] tracking-tight">
             {t('title')}
           </h1>
           <p className="mt-1 text-[#7B6F62] text-[14px]">{t('description')}</p>
@@ -62,10 +56,7 @@ export default async function SettingsPage() {
           <Profile profile={profile} />
         ) : (
           <div className="flex flex-col items-center gap-4 rounded-2xl border border-[#EAE7E0] bg-[#FDFCF8] px-4 py-12 text-center">
-            <h2
-              className="text-[#2C2416] text-lg"
-              style={{ fontFamily: 'Lora, serif' }}
-            >
+            <h2 className="font-serif text-[#2C2416] text-lg">
               {tProfile('emptyTitle')}
             </h2>
             <p className="max-w-sm text-[#6B5D4F] text-[14px]">
@@ -87,10 +78,7 @@ export default async function SettingsPage() {
           className="mt-8 scroll-mt-20"
         >
           <div className="mb-4">
-            <h2
-              className="font-normal text-[#2C2416] text-xl tracking-tight"
-              style={{ fontFamily: 'Lora, serif' }}
-            >
+            <h2 className="font-normal font-serif text-[#2C2416] text-xl tracking-tight">
               {tAccount('title')}
             </h2>
             <p className="mt-1 text-[#7B6F62] text-[14px]">

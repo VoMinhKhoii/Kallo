@@ -36,10 +36,7 @@ export function Header() {
       <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-5">
         {/* Logo */}
         <div className="flex items-center gap-2">
-          <div
-            className="font-medium text-2xl text-[#2C2416]"
-            style={{ fontFamily: 'var(--font-lora), Georgia, serif' }}
-          >
+          <div className="font-medium font-serif text-2xl text-[#2C2416]">
             Nhẩm
           </div>
         </div>
@@ -49,33 +46,21 @@ export function Header() {
           <a
             href="#features"
             onClick={scrollToAnchor('features')}
-            className="text-[#6B5D4F] text-sm transition-colors hover:text-[#2C2416]"
-            style={{
-              fontFamily:
-                'var(--font-dm-sans), ui-sans-serif, system-ui, sans-serif',
-            }}
+            className="font-sans-display text-[#6B5D4F] text-sm transition-colors hover:text-[#2C2416]"
           >
             {t('features')}
           </a>
           <a
             href="#how"
             onClick={scrollToAnchor('how')}
-            className="text-[#6B5D4F] text-sm transition-colors hover:text-[#2C2416]"
-            style={{
-              fontFamily:
-                'var(--font-dm-sans), ui-sans-serif, system-ui, sans-serif',
-            }}
+            className="font-sans-display text-[#6B5D4F] text-sm transition-colors hover:text-[#2C2416]"
           >
             {t('howItWorks')}
           </a>
           <a
             href="#pricing"
             onClick={scrollToAnchor('pricing')}
-            className="text-[#6B5D4F] text-sm transition-colors hover:text-[#2C2416]"
-            style={{
-              fontFamily:
-                'var(--font-dm-sans), ui-sans-serif, system-ui, sans-serif',
-            }}
+            className="font-sans-display text-[#6B5D4F] text-sm transition-colors hover:text-[#2C2416]"
           >
             {t('pricing')}
           </a>
@@ -86,11 +71,7 @@ export function Header() {
           <LocaleSwitcher />
           <Button
             variant="landing-ghost"
-            className="hidden sm:block"
-            style={{
-              fontFamily:
-                'var(--font-dm-sans), ui-sans-serif, system-ui, sans-serif',
-            }}
+            className="hidden font-sans-display sm:block"
             onClick={() => openDialog('sign-in')}
           >
             {t('signIn')}
@@ -98,10 +79,7 @@ export function Header() {
           <Button
             variant="header-cta"
             size="header"
-            style={{
-              fontFamily:
-                'var(--font-dm-sans), ui-sans-serif, system-ui, sans-serif',
-            }}
+            className="font-sans-display"
             onClick={() => openDialog('sign-up')}
           >
             {t('getStarted')}

@@ -1,6 +1,6 @@
 import { GoogleGenAI, type ThinkingLevel } from '@google/genai';
 import type { ZodType } from 'zod';
-import { logLlmCall } from '@/lib/ai/pipeline/trace';
+import { logLlmCall } from '@/lib/ai/pipeline/telemetry/trace';
 import { measurePromptBudget } from '@/lib/ai/prompts/budget';
 import {
   getProviderJsonSchemaMode,

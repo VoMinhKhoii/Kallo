@@ -3,7 +3,7 @@
 import { GB, VN } from 'country-flag-icons/react/3x2';
 import { useLocale, useTranslations } from 'next-intl';
 import { useTransition } from 'react';
-import { useLocaleSwitch } from '@/hooks/use-locale-switch';
+import { useLocaleSwitch } from '@/hooks/profile/use-locale-switch';
 import type { Locale } from '@/i18n/config';
 import { cn } from '@/lib/utils';
 
@@ -31,11 +31,8 @@ export function LocaleSwitcher() {
   return (
     <div
       role="group"
-      className="flex items-center gap-2"
+      className="flex items-center gap-2 font-sans-display"
       aria-label={t('label')}
-      style={{
-        fontFamily: 'var(--font-dm-sans), ui-sans-serif, system-ui, sans-serif',
-      }}
     >
       {LOCALES.map(({ code, label, Flag }) => {
         const selected = code === locale;

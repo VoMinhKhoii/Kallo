@@ -31,25 +31,16 @@ function Shell({
       <div className="flex w-full max-w-sm flex-col items-center gap-5 text-center">
         {label ? (
           <span className="flex size-16 items-center justify-center rounded-full bg-gradient-to-br from-nham-accent/40 to-nham-border/50 ring-1 ring-nham-accent/25">
-            <span
-              className="font-bold text-2xl text-nham-btn"
-              style={{ fontFamily: 'DM Sans, sans-serif' }}
-            >
+            <span className="font-bold font-sans-display text-2xl text-nham-btn">
               {label.charAt(0).toUpperCase()}
             </span>
           </span>
         ) : null}
         <div className="space-y-2">
-          <h1
-            className="font-normal text-2xl text-nham-text tracking-tight"
-            style={{ fontFamily: 'Lora, serif' }}
-          >
+          <h1 className="font-normal font-serif text-2xl text-nham-text tracking-tight">
             {title}
           </h1>
-          <p
-            className="text-nham-text-muted text-sm leading-relaxed"
-            style={{ fontFamily: 'DM Sans, sans-serif' }}
-          >
+          <p className="font-sans-display text-nham-text-muted text-sm leading-relaxed">
             {body}
           </p>
         </div>
@@ -139,8 +130,7 @@ function CircleLink({ label }: { label: string }) {
   return (
     <Link
       href="/groups"
-      className="inline-flex items-center justify-center rounded-xl border border-nham-border/60 bg-white px-6 py-3 font-medium text-[15px] text-nham-text transition-colors hover:border-nham-accent/50"
-      style={{ fontFamily: 'DM Sans, sans-serif' }}
+      className="inline-flex items-center justify-center rounded-xl border border-nham-border/60 bg-white px-6 py-3 font-medium font-sans-display text-[15px] text-nham-text transition-colors hover:border-nham-accent/50"
     >
       {label}
     </Link>

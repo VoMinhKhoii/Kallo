@@ -31,16 +31,10 @@ export function AddFriendDialog({ trigger }: AddFriendDialogProps) {
       <DialogTrigger asChild>{trigger}</DialogTrigger>
       <DialogContent className="gap-5 border-nham-border/60 bg-nham-surface">
         <DialogHeader>
-          <DialogTitle
-            className="text-nham-text text-xl"
-            style={{ fontFamily: 'Lora, serif' }}
-          >
+          <DialogTitle className="font-serif text-nham-text text-xl">
             {t('title')}
           </DialogTitle>
-          <DialogDescription
-            className="text-nham-text-muted"
-            style={{ fontFamily: 'DM Sans, sans-serif' }}
-          >
+          <DialogDescription className="font-sans-display text-nham-text-muted">
             {t('description')}
           </DialogDescription>
         </DialogHeader>

@@ -5,7 +5,7 @@ import { AnimatePresence, motion } from 'motion/react';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { toast } from 'sonner';
-import { useAcceptInvite } from '@/hooks/use-invite';
+import { useAcceptInvite } from '@/hooks/social/use-invite';
 import { Link } from '@/i18n/navigation';
 
 interface ConnectPanelProps {
@@ -65,18 +65,14 @@ export function ConnectPanel({
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -6 }}
               transition={{ duration: 0.3 }}
-              className="font-normal text-2xl text-nham-text tracking-tight"
-              style={{ fontFamily: 'Lora, serif' }}
+              className="font-normal font-serif text-2xl text-nham-text tracking-tight"
             >
               {connected
                 ? t('connectedTitle')
                 : t('connectTitle', { name: inviterLabel })}
             </motion.h1>
           </AnimatePresence>
-          <p
-            className="text-nham-text-muted text-sm leading-relaxed"
-            style={{ fontFamily: 'DM Sans, sans-serif' }}
-          >
+          <p className="font-sans-display text-nham-text-muted text-sm leading-relaxed">
             {connected ? t('connectedBody') : t('connectBody')}
           </p>
         </div>
@@ -84,8 +80,7 @@ export function ConnectPanel({
         {connected ? (
           <Link
             href="/groups"
-            className="inline-flex items-center justify-center rounded-xl border border-nham-border/60 bg-white px-6 py-3 font-medium text-[15px] text-nham-text transition-colors hover:border-nham-accent/50"
-            style={{ fontFamily: 'DM Sans, sans-serif' }}
+            className="inline-flex items-center justify-center rounded-xl border border-nham-border/60 bg-white px-6 py-3 font-medium font-sans-display text-[15px] text-nham-text transition-colors hover:border-nham-accent/50"
           >
             {t('goToCircle')}
           </Link>
@@ -94,8 +89,7 @@ export function ConnectPanel({
             type="button"
             onClick={onAccept}
             disabled={accept.isPending}
-            className="inline-flex items-center justify-center gap-2 rounded-xl bg-nham-btn px-6 py-3 font-medium text-[15px] text-white shadow-nham-btn/20 shadow-sm transition-colors hover:bg-nham-btn/90 disabled:cursor-not-allowed disabled:opacity-60"
-            style={{ fontFamily: 'DM Sans, sans-serif' }}
+            className="inline-flex items-center justify-center gap-2 rounded-xl bg-nham-btn px-6 py-3 font-medium font-sans-display text-[15px] text-white shadow-nham-btn/20 shadow-sm transition-colors hover:bg-nham-btn/90 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {accept.isPending ? (
               <Loader2 className="h-4 w-4 animate-spin" />
@@ -125,10 +119,7 @@ function Disc({
           : 'flex size-14 items-center justify-center rounded-full bg-gradient-to-br from-nham-accent/40 to-nham-border/50 ring-1 ring-nham-accent/25'
       }
     >
-      <span
-        className="font-bold text-nham-btn text-xl"
-        style={{ fontFamily: 'DM Sans, sans-serif' }}
-      >
+      <span className="font-bold font-sans-display text-nham-btn text-xl">
         {label.charAt(0).toUpperCase()}
       </span>
     </span>

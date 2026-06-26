@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { isShadowSampled, SHADOW_SAMPLING_RATE } from '../shadow-sampling';
+import {
+  isShadowSampled,
+  SHADOW_SAMPLING_RATE,
+} from '../shadow/shadow-sampling';
 
 describe('isShadowSampled', () => {
   it('returns false when the feature flag is off', () => {

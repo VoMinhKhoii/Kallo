@@ -21,7 +21,7 @@ const riceResult: IngredientSearchResult = {
 // Stable return object: useQuery data is referentially stable across renders;
 // the mock must be too, or the combobox's render-adjustment would loop.
 const searchHookResult = { data: [riceResult], isFetching: false };
-vi.mock('@/hooks/use-ingredient-search', () => ({
+vi.mock('@/hooks/meals/use-ingredient-search', () => ({
   useIngredientSearch: () => searchHookResult,
 }));
 

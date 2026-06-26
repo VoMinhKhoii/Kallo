@@ -1,14 +1,10 @@
 export default function SettingsLoading() {
   return (
     <div
-      className="mx-auto w-full max-w-2xl px-3 py-4 sm:px-5 sm:py-8"
+      className="mx-auto w-full max-w-2xl px-3 py-4 font-sans-display sm:px-5 sm:py-8"
       aria-busy="true"
-      style={{ fontFamily: 'DM Sans, sans-serif' }}
     >
-      <p
-        className="text-nham-text-muted text-sm"
-        style={{ fontFamily: 'Lora, serif' }}
-      >
+      <p className="font-serif text-nham-text-muted text-sm">
         Opening your settings…
       </p>
       <div className="mt-5 flex flex-col gap-3 motion-safe:animate-pulse">

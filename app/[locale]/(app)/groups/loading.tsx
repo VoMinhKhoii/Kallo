@@ -7,10 +7,7 @@ export default function GroupsLoading() {
         {/* Header band — mirrors groups/page.tsx */}
         <header className="flex items-start justify-between gap-4">
           <div className="space-y-2">
-            <p
-              className="text-nham-text-muted text-sm"
-              style={{ fontFamily: 'Lora, serif' }}
-            >
+            <p className="font-serif text-nham-text-muted text-sm">
               Gathering your circle…
             </p>
             <div className="h-3 w-48 rounded-full bg-nham-track motion-safe:animate-pulse" />

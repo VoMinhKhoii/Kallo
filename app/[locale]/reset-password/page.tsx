@@ -70,15 +70,9 @@ export default function ResetPasswordPage() {
   };
 
   return (
-    <main
-      className="flex min-h-dvh items-center justify-center bg-nham-surface px-4"
-      style={{ fontFamily: 'DM Sans, sans-serif' }}
-    >
+    <main className="flex min-h-dvh items-center justify-center bg-nham-surface px-4 font-sans-display">
       <div className="w-full max-w-[400px] rounded-2xl border border-[#E8D5B5]/40 bg-[#FFFCF8] p-8 shadow-[0_25px_60px_-12px_rgba(44,36,22,0.18)]">
-        <h1
-          className="mb-1 text-center font-normal text-2xl text-[#2C2416]"
-          style={{ fontFamily: 'Lora, serif' }}
-        >
+        <h1 className="mb-1 text-center font-normal font-serif text-2xl text-[#2C2416]">
           {t('title')}
         </h1>
         <p className="mb-6 text-center text-[#8B7355] text-sm">

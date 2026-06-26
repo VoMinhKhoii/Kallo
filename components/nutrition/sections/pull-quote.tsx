@@ -19,9 +19,8 @@ export function PullQuote({ card }: PullQuoteProps) {
       className="mx-auto max-w-2xl py-6 text-center sm:py-8 lg:py-10"
     >
       <h3
-        className="text-nham-text"
+        className="font-serif text-nham-text"
         style={{
-          fontFamily: 'Lora, serif',
           fontStyle: 'italic',
           fontWeight: 400,
           fontSize: 'clamp(1.125rem, 0.85rem + 1.2vw, 1.4rem)',
@@ -32,9 +31,8 @@ export function PullQuote({ card }: PullQuoteProps) {
         {tRoot(card.titleKey)}
       </h3>
       <p
-        className="mx-auto mt-3 max-w-prose text-nham-text-muted leading-7"
+        className="mx-auto mt-3 max-w-prose font-serif text-nham-text-muted leading-7"
         style={{
-          fontFamily: 'Lora, serif',
           fontStyle: 'italic',
           fontSize: '0.9375rem',
         }}

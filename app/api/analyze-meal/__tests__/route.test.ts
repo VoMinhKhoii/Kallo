@@ -108,7 +108,7 @@ vi.mock('@/lib/rate-limit/analysis-guards', () => ({
   checkAnalysisGuards: (...args: unknown[]) => mockCheckAnalysisGuards(...args),
 }));
 
-vi.mock('@/lib/ai/pipeline/logging', () => ({
+vi.mock('@/lib/ai/pipeline/telemetry/logging', () => ({
   logPipelineStart: (...args: unknown[]) => mockLogPipelineStart(...args),
   logPipelineEnd: (...args: unknown[]) => mockLogPipelineEnd(...args),
 }));

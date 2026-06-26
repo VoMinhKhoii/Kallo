@@ -33,7 +33,7 @@ const { mockUseIngredientSearch } = vi.hoisted(() => ({
   mockUseIngredientSearch: vi.fn(),
 }));
 
-vi.mock('@/hooks/use-ingredient-search', () => ({
+vi.mock('@/hooks/meals/use-ingredient-search', () => ({
   useIngredientSearch: mockUseIngredientSearch,
 }));
 

@@ -109,18 +109,10 @@ export function ScreenCooking({ defaultValues, onChange }: ScreenCookingProps) {
     <Form {...form}>
       <form className="space-y-6 lg:space-y-7">
         <div className="max-w-2xl">
-          <h2
-            className="mb-2 font-normal text-2xl text-[#2C2416] tracking-tight"
-            style={{ fontFamily: 'Lora, serif' }}
-          >
+          <h2 className="mb-2 font-normal font-serif text-2xl text-[#2C2416] tracking-tight">
             {t('cooking.title')}
           </h2>
-          <p
-            className="text-[#8B8682] text-[15px] leading-relaxed"
-            style={{
-              fontFamily: 'DM Sans, sans-serif',
-            }}
-          >
+          <p className="font-sans-display text-[#8B8682] text-[15px] leading-relaxed">
             {t('cooking.subtitle')}
           </p>
         </div>

@@ -21,10 +21,7 @@ export default function LoggingLoading() {
       {/* Feed — mirrors FeedArea: centered timeline rail + pinned input bar */}
       <main className="flex min-w-0 flex-1 flex-col self-stretch overflow-hidden">
         <div className="flex min-h-0 flex-1 flex-col overflow-y-auto px-3 py-3 sm:px-6 sm:py-4">
-          <p
-            className="mx-auto mb-6 w-full max-w-3xl pl-6 text-nham-text-muted text-sm sm:pl-12"
-            style={{ fontFamily: 'Lora, serif' }}
-          >
+          <p className="mx-auto mb-6 w-full max-w-3xl pl-6 font-serif text-nham-text-muted text-sm sm:pl-12">
             Pulling up your day…
           </p>
           <div className="mx-auto w-full max-w-3xl pl-6 sm:pl-12">

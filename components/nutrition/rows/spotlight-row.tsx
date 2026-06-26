@@ -48,9 +48,8 @@ export function SpotlightRow({
     >
       <div className="flex items-baseline justify-between gap-3">
         <h3
-          className="text-nham-text"
+          className="font-serif text-nham-text"
           style={{
-            fontFamily: 'Lora, serif',
             fontWeight: 400,
             fontSize: 'clamp(1.25rem, 0.95rem + 1.4vw, 1.6rem)',
             letterSpacing: '-0.01em',

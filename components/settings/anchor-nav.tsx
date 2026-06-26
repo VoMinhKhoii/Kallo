@@ -36,8 +36,7 @@ export function SettingsAnchorNav() {
   return (
     <nav
       aria-label={t('label')}
-      className="lg:sticky lg:top-3"
-      style={{ fontFamily: 'DM Sans, sans-serif' }}
+      className="font-sans-display lg:sticky lg:top-3"
     >
       <p className="hidden px-3 pb-2 font-medium text-[#7B6F62] text-[11px] uppercase tracking-[0.12em] lg:block">
         {t('label')}

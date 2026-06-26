@@ -8,7 +8,7 @@ const { switchLocaleMock, writeDraftMock } = vi.hoisted(() => ({
   writeDraftMock: vi.fn(),
 }));
 
-vi.mock('@/hooks/use-locale-switch', () => ({
+vi.mock('@/hooks/profile/use-locale-switch', () => ({
   useLocaleSwitch: () => switchLocaleMock,
 }));
 

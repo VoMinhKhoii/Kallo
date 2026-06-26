@@ -6,7 +6,7 @@ import { useState } from 'react';
 import { useFormContext } from 'react-hook-form';
 import { LanguageToggle } from '@/components/onboarding/language-toggle';
 import { FormControl, FormField, FormItem } from '@/components/ui/form';
-import { useLocaleSwitch } from '@/hooks/use-locale-switch';
+import { useLocaleSwitch } from '@/hooks/profile/use-locale-switch';
 import type { Locale } from '@/i18n/config';
 import { COUNTRIES } from '@/lib/onboarding/countries';
 import type { ProfileFormValues } from './index';
@@ -124,10 +124,7 @@ export function Regional() {
 
   return (
     <div className="space-y-5">
-      <p
-        className="text-[#7B6F62] text-[14px] leading-relaxed"
-        style={{ fontFamily: 'DM Sans, sans-serif' }}
-      >
+      <p className="font-sans-display text-[#7B6F62] text-[14px] leading-relaxed">
         {tRegional('description')}
       </p>
 

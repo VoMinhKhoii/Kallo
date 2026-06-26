@@ -56,18 +56,10 @@ export function CheckEmailPanel() {
         <MailCheck className="h-5 w-5 text-[#A88B63]" />
       </div>
       <div className="space-y-2">
-        <p
-          className="text-[#8B7355] text-sm leading-relaxed"
-          style={{ fontFamily: 'DM Sans, sans-serif' }}
-        >
+        <p className="font-sans-display text-[#8B7355] text-sm leading-relaxed">
           {mode === 'reset' ? t('descriptionReset') : t('descriptionConfirm')}
         </p>
-        <p
-          className="text-[#2C2416] text-base"
-          style={{ fontFamily: 'Lora, serif' }}
-        >
-          {email}
-        </p>
+        <p className="font-serif text-[#2C2416] text-base">{email}</p>
       </div>
 
       <div className="space-y-3">
@@ -75,8 +67,7 @@ export function CheckEmailPanel() {
           type="button"
           onClick={handleResend}
           disabled={cooldown > 0}
-          className="text-[#C9A87C] text-sm transition-colors hover:text-[#A88B63] disabled:text-[#B0A695] disabled:hover:text-[#B0A695]"
-          style={{ fontFamily: 'DM Sans, sans-serif' }}
+          className="font-sans-display text-[#C9A87C] text-sm transition-colors hover:text-[#A88B63] disabled:text-[#B0A695] disabled:hover:text-[#B0A695]"
         >
           {cooldown > 0 ? t('resendIn', { seconds: cooldown }) : t('resend')}
         </button>
@@ -84,8 +75,7 @@ export function CheckEmailPanel() {
         <button
           type="button"
           onClick={showAuth}
-          className="mx-auto flex items-center gap-1.5 text-[#8B7355] text-sm transition-colors hover:text-[#2C2416]"
-          style={{ fontFamily: 'DM Sans, sans-serif' }}
+          className="mx-auto flex items-center gap-1.5 font-sans-display text-[#8B7355] text-sm transition-colors hover:text-[#2C2416]"
         >
           <ArrowLeft className="h-3.5 w-3.5" />
           {t('back')}

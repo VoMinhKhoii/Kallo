@@ -23,10 +23,7 @@ export function FormInput({
 
   return (
     <div className="space-y-1.5">
-      <label
-        className="block font-medium text-[#2C2416] text-xs tracking-wide"
-        style={{ fontFamily: 'DM Sans, sans-serif' }}
-      >
+      <label className="block font-medium font-sans-display text-[#2C2416] text-xs tracking-wide">
         {label}
       </label>
       <div className="relative">
@@ -37,9 +34,9 @@ export function FormInput({
             'w-full rounded-xl border bg-white px-4 py-3 text-[#2C2416] text-sm outline-none transition-all duration-200 placeholder:text-[#B0A695]',
             error
               ? 'border-nham-danger/50 focus:border-nham-danger focus:ring-2 focus:ring-nham-danger/10'
-              : 'border-[#E8D5B5]/60 focus:border-[#C9A87C] focus:ring-2 focus:ring-[#C9A87C]/10'
+              : 'border-[#E8D5B5]/60 focus:border-[#C9A87C] focus:ring-2 focus:ring-[#C9A87C]/10',
+            'font-sans-display'
           )}
-          style={{ fontFamily: 'DM Sans, sans-serif' }}
           {...props}
         />
         {isPassword && (
@@ -57,12 +54,7 @@ export function FormInput({
         )}
       </div>
       {error && (
-        <p
-          className="text-nham-danger text-xs"
-          style={{ fontFamily: 'DM Sans, sans-serif' }}
-        >
-          {error}
-        </p>
+        <p className="font-sans-display text-nham-danger text-xs">{error}</p>
       )}
     </div>
   );

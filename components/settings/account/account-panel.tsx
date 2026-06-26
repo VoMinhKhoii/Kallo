@@ -3,7 +3,7 @@
 import { Download, LogOut } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
-import { toast } from 'sonner';
+import { useAsyncAction } from '@/hooks/ui/use-async-action';
 import { deleteAccountAction, exportMyDataAction } from '@/lib/actions/account';
 import { createClient } from '@/lib/supabase/client';
 import { cn } from '@/lib/utils';
@@ -18,85 +18,71 @@ import { cn } from '@/lib/utils';
  */
 export function AccountPanel({ email }: { email: string | null }) {
   const t = useTranslations('settings.account');
-  const [exporting, setExporting] = useState(false);
-  const [signingOut, setSigningOut] = useState(false);
+  const exportAction = useAsyncAction();
+  const signOutAction = useAsyncAction();
+  const deleteAction = useAsyncAction();
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [confirmText, setConfirmText] = useState('');
-  const [deleting, setDeleting] = useState(false);
+  const deleting = deleteAction.pending;
 
   const confirmWord = t('deleteConfirmWord');
   const canDelete = confirmText.trim() === confirmWord && !deleting;
 
-  const handleExport = async () => {
-    if (exporting) return;
-    setExporting(true);
-    try {
-      const data = await exportMyDataAction();
-      const blob = new Blob([JSON.stringify(data, null, 2)], {
-        type: 'application/json',
-      });
-      const url = URL.createObjectURL(blob);
-      const date = data.exportedAt.slice(0, 10);
-      const anchor = document.createElement('a');
-      anchor.href = url;
-      anchor.download = `nham-data-${date}.json`;
-      document.body.appendChild(anchor);
-      anchor.click();
-      anchor.remove();
-      URL.revokeObjectURL(url);
-    } catch (error) {
-      console.error(
-        'Failed to export data:',
-        error instanceof Error ? error.message : String(error)
-      );
-      toast.error(t('exportError'));
-    } finally {
-      setExporting(false);
-    }
-  };
+  const handleExport = () =>
+    exportAction.run(
+      async () => {
+        const data = await exportMyDataAction();
+        const blob = new Blob([JSON.stringify(data, null, 2)], {
+          type: 'application/json',
+        });
+        const url = URL.createObjectURL(blob);
+        const date = data.exportedAt.slice(0, 10);
+        const anchor = document.createElement('a');
+        anchor.href = url;
+        anchor.download = `nham-data-${date}.json`;
+        document.body.appendChild(anchor);
+        anchor.click();
+        anchor.remove();
+        URL.revokeObjectURL(url);
+      },
+      { logLabel: 'Failed to export data:', errorMessage: t('exportError') }
+    );
 
-  const handleSignOut = async () => {
-    if (signingOut) return;
-    setSigningOut(true);
-    try {
-      const supabase = createClient();
-      const { error } = await supabase.auth.signOut();
-      if (error) throw error;
-      document.cookie = 'NEXT_LOCALE=; Path=/; Max-Age=0; SameSite=Lax';
-      window.location.assign('/');
-    } catch (error) {
-      console.error(
-        'Failed to sign out:',
-        error instanceof Error ? error.message : String(error)
-      );
-      toast.error(t('signOutAction'));
-      setSigningOut(false);
-    }
-  };
+  const handleSignOut = () =>
+    signOutAction.run(
+      async () => {
+        const supabase = createClient();
+        const { error } = await supabase.auth.signOut();
+        if (error) throw error;
+        document.cookie = 'NEXT_LOCALE=; Path=/; Max-Age=0; SameSite=Lax';
+        window.location.assign('/');
+      },
+      {
+        logLabel: 'Failed to sign out:',
+        errorMessage: t('signOutAction'),
+        keepPendingOnSuccess: true,
+      }
+    );
 
-  const handleDelete = async () => {
+  const handleDelete = () => {
     if (!canDelete) return;
-    setDeleting(true);
-    try {
-      await deleteAccountAction();
-      // The account (and all data) is gone — leave the app entirely.
-      document.cookie = 'NEXT_LOCALE=; Path=/; Max-Age=0; SameSite=Lax';
-      window.location.assign('/');
-    } catch (error) {
-      console.error(
-        'Failed to delete account:',
-        error instanceof Error ? error.message : String(error)
-      );
-      toast.error(t('deleteError'));
-      setDeleting(false);
-    }
+    deleteAction.run(
+      async () => {
+        await deleteAccountAction();
+        // The account (and all data) is gone — leave the app entirely.
+        document.cookie = 'NEXT_LOCALE=; Path=/; Max-Age=0; SameSite=Lax';
+        window.location.assign('/');
+      },
+      {
+        logLabel: 'Failed to delete account:',
+        errorMessage: t('deleteError'),
+        keepPendingOnSuccess: true,
+      }
+    );
   };
 
   return (
-    <div
-      className="flex flex-col gap-3"
-      style={{ fontFamily: 'DM Sans, sans-serif' }}
-    >
+    <div className="flex flex-col gap-3 font-sans-display">
       {/* Signed-in identity */}
       {email && (
         <div className="rounded-2xl border border-nham-border/70 bg-white px-4 py-3.5">
@@ -118,12 +104,12 @@ export function AccountPanel({ email }: { email: string | null }) {
         <button
           type="button"
           onClick={handleExport}
-          disabled={exporting}
-          aria-busy={exporting}
+          disabled={exportAction.pending}
+          aria-busy={exportAction.pending}
           className="inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-nham-border bg-nham-surface px-3.5 py-2 font-medium text-[13px] text-nham-text transition-colors duration-150 hover:bg-nham-hover/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent disabled:opacity-60"
         >
           <Download className="h-3.5 w-3.5" />
-          {exporting ? t('exporting') : t('exportAction')}
+          {exportAction.pending ? t('exporting') : t('exportAction')}
         </button>
       </div>
 
@@ -133,8 +119,8 @@ export function AccountPanel({ email }: { email: string | null }) {
         <button
           type="button"
           onClick={handleSignOut}
-          disabled={signingOut}
-          aria-busy={signingOut}
+          disabled={signOutAction.pending}
+          aria-busy={signOutAction.pending}
           className="inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-nham-border bg-nham-surface px-3.5 py-2 font-medium text-[13px] text-nham-text transition-colors duration-150 hover:bg-nham-hover/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent disabled:opacity-60"
         >
           <LogOut className="h-3.5 w-3.5" />

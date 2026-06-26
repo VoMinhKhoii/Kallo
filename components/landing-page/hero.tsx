@@ -162,8 +162,7 @@ export function Hero() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.1 }}
-            className="mb-8 font-normal text-5xl text-[#2C2416] leading-[1.1] lg:text-7xl"
-            style={{ fontFamily: 'var(--font-lora), Georgia, serif' }}
+            className="mb-8 font-normal font-serif text-5xl text-[#2C2416] leading-[1.1] lg:text-7xl"
           >
             {t('title')} <br />
             <span className="font-light text-[#C9A87C] italic">
@@ -175,11 +174,7 @@ export function Hero() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.2 }}
-            className="mb-10 max-w-md font-light text-[#6B5D4F] text-lg leading-relaxed"
-            style={{
-              fontFamily:
-                'var(--font-dm-sans), ui-sans-serif, system-ui, sans-serif',
-            }}
+            className="mb-10 max-w-md font-light font-sans-display text-[#6B5D4F] text-lg leading-relaxed"
           >
             {t('subtitle')}
           </motion.p>

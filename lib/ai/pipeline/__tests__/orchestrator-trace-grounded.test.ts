@@ -13,18 +13,17 @@ import type { GroundedEstimation, MealDecompositionV2 } from '../schemas';
 // short-circuits without DB calls.
 const mockLogStage = vi.fn();
 const mockBuildLlmStageTrace = vi.fn().mockReturnValue(undefined);
-vi.mock('../trace', () => ({
+vi.mock('../telemetry/trace', () => ({
   logStage: mockLogStage,
   buildLlmStageTrace: mockBuildLlmStageTrace,
 }));
 
 // Stub run-telemetry's writePipelineRun so we capture it without DB.
 const mockWritePipelineRun = vi.fn().mockResolvedValue(undefined);
-vi.mock('../run-telemetry', async () => {
-  const actual =
-    await vi.importActual<typeof import('../run-telemetry')>(
-      '../run-telemetry'
-    );
+vi.mock('../telemetry/run-telemetry', async () => {
+  const actual = await vi.importActual<
+    typeof import('../telemetry/run-telemetry')
+  >('../telemetry/run-telemetry');
   return {
     ...actual,
     writePipelineRun: mockWritePipelineRun,

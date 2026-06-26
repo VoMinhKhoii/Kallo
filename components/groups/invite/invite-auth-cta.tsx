@@ -19,8 +19,7 @@ function InviteAuthButton() {
     <button
       type="button"
       onClick={() => openDialog('sign-up')}
-      className="inline-flex items-center justify-center rounded-xl bg-nham-btn px-6 py-3 font-medium text-[15px] text-white shadow-nham-btn/20 shadow-sm transition-colors hover:bg-nham-btn/90"
-      style={{ fontFamily: 'DM Sans, sans-serif' }}
+      className="inline-flex items-center justify-center rounded-xl bg-nham-btn px-6 py-3 font-medium font-sans-display text-[15px] text-white shadow-nham-btn/20 shadow-sm transition-colors hover:bg-nham-btn/90"
     >
       {t('signIn')}
     </button>

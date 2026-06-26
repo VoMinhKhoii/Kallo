@@ -12,10 +12,10 @@ import type { AppDb } from '@/lib/db';
 vi.mock('server-only', () => ({}));
 
 // Must be imported after potential env manipulation
-let recordPromptVersion: typeof import('@/lib/ai/pipeline/trace').recordPromptVersion;
-let logStage: typeof import('@/lib/ai/pipeline/trace').logStage;
-let logLlmCall: typeof import('@/lib/ai/pipeline/trace').logLlmCall;
-let _resetPromptVersionCacheForTests: typeof import('@/lib/ai/pipeline/trace')._resetPromptVersionCacheForTests;
+let recordPromptVersion: typeof import('@/lib/ai/pipeline/telemetry/trace').recordPromptVersion;
+let logStage: typeof import('@/lib/ai/pipeline/telemetry/trace').logStage;
+let logLlmCall: typeof import('@/lib/ai/pipeline/telemetry/trace').logLlmCall;
+let _resetPromptVersionCacheForTests: typeof import('@/lib/ai/pipeline/telemetry/trace')._resetPromptVersionCacheForTests;
 
 // ── Mock helpers ─────────────────────────────────────────────────────────────
 
@@ -60,7 +60,7 @@ beforeEach(async () => {
   // stub PIPELINE_TRACE_ENABLED=false in their own beforeEach.
   vi.stubEnv('PIPELINE_TRACE_ENABLED', 'true');
   vi.resetModules();
-  const mod = await import('@/lib/ai/pipeline/trace');
+  const mod = await import('@/lib/ai/pipeline/telemetry/trace');
   recordPromptVersion = mod.recordPromptVersion;
   logStage = mod.logStage;
   logLlmCall = mod.logLlmCall;
@@ -361,7 +361,7 @@ describe('PIPELINE_TRACE_ENABLED=false', () => {
   beforeEach(async () => {
     vi.stubEnv('PIPELINE_TRACE_ENABLED', 'false');
     vi.resetModules();
-    const mod = await import('@/lib/ai/pipeline/trace');
+    const mod = await import('@/lib/ai/pipeline/telemetry/trace');
     recordPromptVersion = mod.recordPromptVersion;
     logStage = mod.logStage;
     logLlmCall = mod.logLlmCall;

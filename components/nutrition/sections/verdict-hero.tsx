@@ -86,10 +86,7 @@ export function VerdictHero({ overview }: VerdictHeroProps) {
       transition={{ duration: 0.5, delay: 0.05 }}
       className="flex flex-wrap items-baseline gap-x-2.5 gap-y-1 text-sm leading-6"
     >
-      <span
-        className="text-nham-text"
-        style={{ fontFamily: 'Lora, serif', fontWeight: 400 }}
-      >
+      <span className="font-serif text-nham-text" style={{ fontWeight: 400 }}>
         {headline}
       </span>
       <span className="text-nham-text-muted">{muted}</span>

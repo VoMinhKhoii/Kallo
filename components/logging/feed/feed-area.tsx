@@ -6,14 +6,14 @@ import { AnimatePresence, motion } from 'motion/react';
 import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
-import { CheatOccasionChips } from '@/components/logging/feed/cheat-occasion-chips';
-import { CheatSliderCard } from '@/components/logging/feed/cheat-slider-card';
+import { CheatOccasionChips } from '@/components/logging/feed/cheat/cheat-occasion-chips';
+import { CheatSliderCard } from '@/components/logging/feed/cheat/cheat-slider-card';
 import { MacroSummary } from '@/components/logging/feed/macro-summary';
-import { MealEntry } from '@/components/logging/feed/meal-entry';
-import { PartialDayNotice } from '@/components/logging/feed/partial-day-notice';
-import { PartialYesterdayPrompt } from '@/components/logging/feed/partial-yesterday-prompt';
-import { PersistedMealCard } from '@/components/logging/feed/persisted-meal-card';
-import { StreamingMealEntry } from '@/components/logging/feed/streaming-meal-entry';
+import { MealEntry } from '@/components/logging/feed/meal-entry/meal-entry';
+import { PartialDayNotice } from '@/components/logging/feed/partial-day/partial-day-notice';
+import { PartialYesterdayPrompt } from '@/components/logging/feed/partial-day/partial-yesterday-prompt';
+import { PersistedMealCard } from '@/components/logging/feed/persisted/persisted-meal-card';
+import { StreamingMealEntry } from '@/components/logging/feed/streaming/streaming-meal-entry';
 import type { InputMode } from '@/components/logging/input/cheat-mode-picker';
 import {
   MealInput,
@@ -21,23 +21,18 @@ import {
 } from '@/components/logging/input/meal-input';
 import type { LoggingProfile } from '@/components/logging/logging-shell';
 import { addDays } from '@/components/logging/sidebar/timeline-utils';
-import { dailyMealsKeys } from '@/hooks/use-daily-meals';
-import { useFeedSubmit } from '@/hooks/use-feed-submit';
-import { loggingDayKeys, useLoggingDay } from '@/hooks/use-logging-day';
+import { useFeedSubmit } from '@/hooks/meals/use-feed-submit';
+import { loggingDayKeys, useLoggingDay } from '@/hooks/meals/use-logging-day';
+import { useMealCardActions } from '@/hooks/meals/use-meal-card-actions';
 import {
   useConfirmMeal,
-  useDuplicateMeal,
   useSaveManualMeal,
-  useUpdateMeal,
-} from '@/hooks/use-meal-mutations';
-import { useRecentCheatOccasions } from '@/hooks/use-recent-cheat-occasions';
-import { useStreamAnalysis } from '@/hooks/use-stream-analysis';
-import { useStreamingTerminalEffects } from '@/hooks/use-streaming-terminal-effects';
-import { useSubmitGuard } from '@/hooks/use-submit-guard';
+} from '@/hooks/meals/use-meal-mutations';
+import { useRecentCheatOccasions } from '@/hooks/meals/use-recent-cheat-occasions';
+import { useStreamAnalysis } from '@/hooks/meals/use-stream-analysis';
+import { useStreamingTerminalEffects } from '@/hooks/meals/use-streaming-terminal-effects';
+import { useSubmitGuard } from '@/hooks/meals/use-submit-guard';
 import {
-  deleteMealAction,
-  type LoggingDayData,
-  type PersistedMeal,
   type RecentCheatOccasion,
   stageCheatRepeatAction,
 } from '@/lib/actions/meals';
@@ -215,132 +210,12 @@ export function FeedArea({
   const queryClient = useQueryClient();
   const { guard } = useSubmitGuard();
 
-  // Remove a meal with a 5-second undo. The card is dropped from the day cache
-  // immediately so the calorie ring and macro bars heal on screen; the server
-  // delete is deferred until the toast closes, so "undo" just restores the
-  // snapshot (no re-insert needed). Mis-logged meals were previously permanent.
-  const handleDeleteMeal = useCallback(
-    (mealId: string) => {
-      const filter = {
-        queryKey: loggingDayKeys.byUserDate(profile.userId, selectedDate),
-      };
-      const snapshots = queryClient.getQueriesData<LoggingDayData>(filter);
-
-      queryClient.setQueriesData<LoggingDayData>(filter, (old) =>
-        old
-          ? {
-              ...old,
-              persistedMeals: old.persistedMeals.filter(
-                (meal) => meal.id !== mealId
-              ),
-            }
-          : old
-      );
-
-      let undone = false;
-      const restore = () => {
-        for (const [key, data] of snapshots) {
-          queryClient.setQueryData(key, data);
-        }
-      };
-      const commit = async () => {
-        if (undone) return;
-        try {
-          await deleteMealAction({ mealId });
-        } catch (error) {
-          restore();
-          toast.error(
-            error instanceof Error ? error.message : t('deleteError')
-          );
-          return;
-        }
-        queryClient.invalidateQueries({
-          queryKey: loggingDayKeys.byUserDate(profile.userId, selectedDate),
-          refetchType: 'none',
-        });
-        queryClient.invalidateQueries({
-          queryKey: dailyMealsKeys.byDate(selectedDate),
-        });
-        queryClient.invalidateQueries({ queryKey: ['meal-dates'] });
-      };
-
-      toast(t('mealRemoved'), {
-        duration: 5000,
-        action: {
-          label: t('undo'),
-          onClick: () => {
-            undone = true;
-            restore();
-          },
-        },
-        onAutoClose: commit,
-        onDismiss: commit,
-      });
-    },
-    [profile.userId, selectedDate, queryClient, t]
-  );
-  // Silent superseding delete for an NL-refine: the corrected meal already
-  // saved, so the original is dropped from the cache and server with no undo
-  // toast (the correction IS the user's intent — an "undo" here would confuse).
-  const replaceOldMeal = useCallback(
-    async (mealId: string) => {
-      // If the meal is already gone from the cache (e.g. removed by a racing
-      // delete), the server call would only produce a spurious error toast.
-      const stillInCache = queryClient
-        .getQueriesData<LoggingDayData>({
-          queryKey: loggingDayKeys.byUserDate(profile.userId, selectedDate),
-        })
-        .some(([, data]) =>
-          data?.persistedMeals.some((meal) => meal.id === mealId)
-        );
-      queryClient.setQueriesData<LoggingDayData>(
-        {
-          queryKey: loggingDayKeys.byUserDate(profile.userId, selectedDate),
-        },
-        (old) =>
-          old
-            ? {
-                ...old,
-                persistedMeals: old.persistedMeals.filter(
-                  (meal) => meal.id !== mealId
-                ),
-              }
-            : old
-      );
-      if (stillInCache) {
-        try {
-          await deleteMealAction({ mealId });
-        } catch (error) {
-          // A not-found means another path already deleted it — the data is
-          // correct, so stay silent. Anything else really left a duplicate:
-          // refetch so the original meal resurfaces and the user can remove
-          // it manually.
-          const message = error instanceof Error ? error.message : '';
-          if (!message.includes('không tồn tại')) {
-            toast.error(t('deleteError'));
-            queryClient.invalidateQueries({
-              queryKey: loggingDayKeys.byUserDate(profile.userId, selectedDate),
-              refetchType: 'active',
-            });
-            queryClient.invalidateQueries({
-              queryKey: dailyMealsKeys.byDate(selectedDate),
-            });
-            queryClient.invalidateQueries({ queryKey: ['meal-dates'] });
-            return;
-          }
-        }
-      }
-      queryClient.invalidateQueries({
-        queryKey: loggingDayKeys.byUserDate(profile.userId, selectedDate),
-        refetchType: 'none',
-      });
-      queryClient.invalidateQueries({
-        queryKey: dailyMealsKeys.byDate(selectedDate),
-      });
-      queryClient.invalidateQueries({ queryKey: ['meal-dates'] });
-    },
-    [profile.userId, selectedDate, queryClient, t]
-  );
+  // Persistence actions on a saved meal card (remove-with-undo, edit amounts,
+  // log again, and the silent supersede used by NL-refine). They touch only the
+  // day cache + meal mutations, so they live in their own hook and keep this
+  // component focused on streaming orchestration.
+  const { handleDeleteMeal, handleUpdateMeal, handleLogAgain, replaceOldMeal } =
+    useMealCardActions({ userId: profile.userId, selectedDate });
   const [streamingMsgId, setStreamingMsgId] = useState<string | null>(null);
   // Session-scoped dismissal for the "yesterday under-logged" prompt. FeedArea
   // stays mounted across date navigation, so this survives clicking through to
@@ -398,54 +273,7 @@ export function FeedArea({
 
   // Mutations
   const confirmMeal = useConfirmMeal(profile.userId);
-  const updateMeal = useUpdateMeal(profile.userId, selectedDate);
   const saveManualMeal = useSaveManualMeal(profile.userId);
-  const duplicateMeal = useDuplicateMeal(profile.userId);
-
-  // Persist an amount edit (gram overrides + per-row removals) for one meal.
-  // The mutation reconciles the card in place from the authoritative response.
-  const handleUpdateMeal = useCallback(
-    async (
-      mealId: string,
-      changes: {
-        edits: { id: string; newGrams: number }[];
-        removeIds: string[];
-      }
-    ) => {
-      await updateMeal.mutateAsync({
-        mealId,
-        edits: changes.edits.length > 0 ? changes.edits : undefined,
-        removeIds: changes.removeIds.length > 0 ? changes.removeIds : undefined,
-      });
-      toast.success(t('mealUpdatedToast'));
-    },
-    [updateMeal, t]
-  );
-
-  // "Log again": reproduce the meal exactly (deterministic server-side copy of
-  // its items) on the viewed day, rather than re-typing the text and re-running
-  // the AI pipeline — which would yield fresh, drifted numbers and lose any
-  // prior manual edits.
-  const handleLogAgain = useCallback(
-    (meal: PersistedMeal) => {
-      if (duplicateMeal.isPending) return;
-      const newMealId = crypto.randomUUID();
-      duplicateMeal.mutate(
-        {
-          source: meal,
-          newMealId,
-          originDate: selectedDate,
-          loggedDate: selectedDate,
-          timezoneOffset: new Date().getTimezoneOffset(),
-          loggedAt: new Date().toISOString(),
-        },
-        {
-          onSuccess: () => toast.success(t('savedMeal')),
-        }
-      );
-    },
-    [duplicateMeal, selectedDate, t]
-  );
 
   const scrollToBottom = useCallback(() => {
     requestAnimationFrame(() => {
@@ -932,10 +760,7 @@ export function FeedArea({
           {isDayLoading ? (
             <MacroSummarySkeleton />
           ) : isDayError ? null : hasUnknownDailyMacros ? (
-            <div
-              className="font-medium text-[11px] text-nham-text-muted/80"
-              style={{ fontFamily: 'DM Sans, sans-serif' }}
-            >
+            <div className="font-medium font-sans-display text-[11px] text-nham-text-muted/80">
               {t('legacyMacroWarning')}
             </div>
           ) : (
@@ -1063,19 +888,11 @@ export function FeedArea({
                         <div className="absolute top-2 -left-[43px] h-2 w-2 rounded-full border-2 border-nham-danger bg-white" />
                         <div className="rounded-2xl border border-nham-danger/30 bg-nham-danger/10 p-4">
                           {msg.userInput && (
-                            <p
-                              className="mb-2 text-[13px] text-nham-text-muted"
-                              style={{ fontFamily: 'Lora, serif' }}
-                            >
+                            <p className="mb-2 font-serif text-[13px] text-nham-text-muted">
                               {msg.userInput}
                             </p>
                           )}
-                          <p
-                            className="text-nham-danger text-sm"
-                            style={{
-                              fontFamily: 'DM Sans, sans-serif',
-                            }}
-                          >
+                          <p className="font-sans-display text-nham-danger text-sm">
                             {msg.content}
                           </p>
                         </div>

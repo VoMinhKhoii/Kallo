@@ -42,7 +42,10 @@ import {
   type MealFactsForComputePolicy,
   pickComputePolicy,
   summarizeCandidateConfidence,
-} from './compute-policy';
+} from './config/compute-policy';
+import { readBooleanEnv } from './config/feature-flags';
+import { resolveModelProfile } from './config/model-profile';
+import { isPipelineV2Enabled } from './config/pipeline-feature-flag';
 import { deriveExpectedState } from './cooking-method-state';
 import {
   buildDecompositionCacheKey,
@@ -59,7 +62,6 @@ import {
   NonFoodError,
   nonFoodResponse,
 } from './errors';
-import { readBooleanEnv } from './feature-flags';
 import { analyzeMealV2 } from './grounded-orchestrator';
 import { createCompactIdSequence } from './id-sequence';
 import { ensureIdsOnDecomposition, type MealDecompositionWithIds } from './ids';
@@ -68,30 +70,31 @@ import {
   ingredientGrams as decompositionIngredientGrams,
   ingredientDisplayName as decompositionIngredientName,
 } from './ingredient-accessors';
-import { resolveModelProfile } from './model-profile';
 import {
   computeMacroBaseMap,
   type RawNutritionAdjustment,
   reconcileNutritionIds,
   resolveStreamingMealItem,
 } from './nutrition';
-import { isPipelineV2Enabled } from './pipeline-feature-flag';
 import { aggregateRrfMeasurements } from './rrf-aggregation';
-import { buildPipelineRunRow, writePipelineRun } from './run-telemetry';
 import { mealDecompositionSchema, nutritionAdjustmentSchema } from './schemas';
 import {
   createShadowGuard,
   getPrimaryP95Ms,
   isEmbeddingRateLimited,
-} from './shadow-guards';
+} from './shadow/shadow-guards';
 import {
   runShadowAsync,
   type ShadowGuard,
   type ShadowRunnerDeps,
   type ShadowRunPersistRow,
-} from './shadow-runner';
-import { isShadowSampled } from './shadow-sampling';
-import { buildLlmStageTrace, logStage } from './trace';
+} from './shadow/shadow-runner';
+import { isShadowSampled } from './shadow/shadow-sampling';
+import {
+  buildPipelineRunRow,
+  writePipelineRun,
+} from './telemetry/run-telemetry';
+import { buildLlmStageTrace, logStage } from './telemetry/trace';
 import {
   classifyAnomalies,
   detectAnomalies,

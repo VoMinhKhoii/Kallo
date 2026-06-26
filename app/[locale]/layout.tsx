@@ -14,7 +14,7 @@ import {
   getTranslations,
   setRequestLocale,
 } from 'next-intl/server';
-import { ServiceWorkerRegister } from '@/components/app/service-worker-register';
+import { ServiceWorkerRegister } from '@/components/app/shell/service-worker-register';
 import { QueryProvider } from '@/components/providers/query-provider';
 import { Toaster } from '@/components/ui/sonner';
 import { routing } from '@/i18n/navigation';

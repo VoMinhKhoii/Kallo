@@ -5,7 +5,7 @@ import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { Input } from '@/components/ui/input';
-import { useSaveProfile } from '@/hooks/use-profile';
+import { useSaveProfile } from '@/hooks/profile/use-profile';
 import type { PublicProfile } from '@/lib/groups/client';
 
 const DISPLAY_NAME_MAX = 50;
@@ -51,10 +51,7 @@ export function DisplayNameRow({ profile }: { profile: PublicProfile }) {
   if (editing) {
     return (
       <div className="space-y-2 rounded-xl border border-nham-accent/40 bg-nham-accent/[0.06] p-3">
-        <p
-          className="font-medium text-[13px] text-nham-text"
-          style={{ fontFamily: 'DM Sans, sans-serif' }}
-        >
+        <p className="font-medium font-sans-display text-[13px] text-nham-text">
           {t('appearTitle')}
         </p>
         <div className="flex items-stretch gap-2">
@@ -71,8 +68,7 @@ export function DisplayNameRow({ profile }: { profile: PublicProfile }) {
             placeholder={t('appearPlaceholder')}
             autoComplete="off"
             maxLength={DISPLAY_NAME_MAX}
-            className="flex-1 border-nham-border/60 bg-white text-nham-text"
-            style={{ fontFamily: 'DM Sans, sans-serif' }}
+            className="flex-1 border-nham-border/60 bg-white font-sans-display text-nham-text"
           />
           <button
             type="button"
@@ -96,10 +92,7 @@ export function DisplayNameRow({ profile }: { profile: PublicProfile }) {
             <X className="h-4 w-4" />
           </button>
         </div>
-        <p
-          className="text-[11px] text-nham-text-muted"
-          style={{ fontFamily: 'DM Sans, sans-serif' }}
-        >
+        <p className="font-sans-display text-[11px] text-nham-text-muted">
           {t('appearHint')}
         </p>
       </div>
@@ -108,17 +101,11 @@ export function DisplayNameRow({ profile }: { profile: PublicProfile }) {
 
   return (
     <div className="space-y-1.5">
-      <p
-        className="px-1 font-medium text-[10px] text-nham-text-muted uppercase tracking-[0.08em]"
-        style={{ fontFamily: 'DM Sans, sans-serif' }}
-      >
+      <p className="px-1 font-medium font-sans-display text-[10px] text-nham-text-muted uppercase tracking-[0.08em]">
         {t('appearTitle')}
       </p>
       <div className="flex items-stretch gap-2">
-        <div
-          className="flex flex-1 items-center rounded-lg border border-nham-border/60 bg-white px-3 text-[13px]"
-          style={{ fontFamily: 'DM Sans, sans-serif' }}
-        >
+        <div className="flex flex-1 items-center rounded-lg border border-nham-border/60 bg-white px-3 font-sans-display text-[13px]">
           {current ? (
             <span className="truncate text-nham-text">{current}</span>
           ) : (

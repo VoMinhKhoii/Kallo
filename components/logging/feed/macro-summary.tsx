@@ -50,25 +50,16 @@ export function MacroSummary({ totals, targets }: MacroSummaryProps) {
           className="size-[78px] [--calorie-ring-stroke:3px] sm:size-[86px] sm:[--calorie-ring-stroke:4px]"
           center={
             <>
-              <span
-                className="font-normal text-[17px] text-nham-text tabular-nums leading-none sm:text-[19px]"
-                style={{ fontFamily: 'Lora, serif' }}
-              >
+              <span className="font-normal font-serif text-[17px] text-nham-text tabular-nums leading-none sm:text-[19px]">
                 {remaining.toLocaleString()}
               </span>
-              <span
-                className="mt-0.5 font-bold text-[8px] text-nham-stone uppercase tracking-[0.15em]"
-                style={{ fontFamily: 'DM Sans, sans-serif' }}
-              >
+              <span className="mt-0.5 font-bold font-sans-display text-[8px] text-nham-stone uppercase tracking-[0.15em]">
                 {tRing('left')}
               </span>
             </>
           }
         />
-        <span
-          className="font-semibold text-nham-text-muted text-xs tabular-nums"
-          style={{ fontFamily: 'DM Sans, sans-serif' }}
-        >
+        <span className="font-sans-display font-semibold text-nham-text-muted text-xs tabular-nums">
           {calories.toLocaleString()} / {targets.calories.toLocaleString()} kcal
         </span>
       </div>
@@ -91,10 +82,7 @@ export function MacroSummary({ totals, targets }: MacroSummaryProps) {
 
           return (
             <div key={key} className="flex items-center gap-3">
-              <span
-                className="w-12 font-bold text-[10px] text-nham-text-muted/70 uppercase tracking-wider sm:w-14"
-                style={{ fontFamily: 'DM Sans, sans-serif' }}
-              >
+              <span className="w-12 font-bold font-sans-display text-[10px] text-nham-text-muted/70 uppercase tracking-wider sm:w-14">
                 {label}
               </span>
               <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-nham-track">
@@ -110,10 +98,7 @@ export function MacroSummary({ totals, targets }: MacroSummaryProps) {
                   style={{ backgroundColor: color }}
                 />
               </div>
-              <span
-                className="w-14 text-right text-[11px] text-nham-text-muted tabular-nums sm:w-16"
-                style={{ fontFamily: 'DM Sans, sans-serif' }}
-              >
+              <span className="w-14 text-right font-sans-display text-[11px] text-nham-text-muted tabular-nums sm:w-16">
                 {Math.round(current)}/{target}g
               </span>
             </div>

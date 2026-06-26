@@ -54,19 +54,22 @@ import type {
 } from '../types';
 import { assembleResult } from './assembly';
 import { bridgeV2ToV1 } from './bridge';
+import { resolveModelProfile } from './config/model-profile';
 import { createDecompositionStreamController } from './decomposition-stream';
 import { handleError, nonFoodResponse } from './errors';
-import { resolveModelProfile } from './model-profile';
 import { reconcileNutritionIds } from './nutrition';
 import type { AnalyzeMealTraceContext } from './orchestrator';
-import { buildPipelineRunRow, writePipelineRun } from './run-telemetry';
 import {
   type GroundedEstimation,
   groundedEstimationSchema,
   type MealDecompositionV2,
   mealDecompositionV2Schema,
 } from './schemas';
-import { buildLlmStageTrace, logStage } from './trace';
+import {
+  buildPipelineRunRow,
+  writePipelineRun,
+} from './telemetry/run-telemetry';
+import { buildLlmStageTrace, logStage } from './telemetry/trace';
 
 export interface AnalyzeMealV2Options {
   /** Top-K candidates to pass to Call 2 per ingredient. Default 3. */
