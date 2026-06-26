@@ -4,6 +4,7 @@ import { randomUUID } from 'node:crypto';
 import { and, desc, eq, gte, inArray, isNull, lt, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import {
+  buildMealItemGroupsFromRows,
   buildPersistedIngredient,
   buildPersistedMeal,
   buildPersistedMealItemGroup,
@@ -593,42 +594,12 @@ async function loadMealsByDateForUser(
   return mealRows.map((meal) => {
     const items = itemsByMealId.get(meal.id) ?? [];
 
-    // Group flat ingredient rows by parent dish (order:name), preserving row
-    // order within each group.
-    const ingredientsByGroup = new Map<
-      string,
-      { name: string; order: number; ingredients: PersistedIngredient[] }
-    >();
-    for (const item of items) {
-      const key = `${item.mealItemOrder}:${item.mealItemName}`;
-      let group = ingredientsByGroup.get(key);
-      if (!group) {
-        group = {
-          name: item.mealItemName,
-          order: item.mealItemOrder,
-          ingredients: [],
-        };
-        ingredientsByGroup.set(key, group);
-      }
-      group.ingredients.push(
-        buildPersistedIngredient({
-          id: item.id,
-          ingredientName: item.ingredientName,
-          foodCompositionId: item.foodCompositionId,
-          estimatedGrams: item.estimatedGrams,
-          userFacingUnit: item.userFacingUnit,
-          cookingMethod: item.cookingMethod,
-          matchConfidence: item.matchConfidence,
-          nutrition: extractNutritionValues(item),
-        })
-      );
-    }
-
-    const mealItemGroups = Array.from(ingredientsByGroup.values())
-      .sort((a, b) => a.order - b.order)
-      .map((group) =>
-        buildPersistedMealItemGroup(group.name, group.order, group.ingredients)
-      );
+    const mealItemGroups = buildMealItemGroupsFromRows(
+      items.map((item) => ({
+        ...item,
+        nutrition: extractNutritionValues(item),
+      }))
+    );
 
     const share = shareByMealId.get(meal.id);
 
@@ -1041,41 +1012,13 @@ export async function updateMealAction(input: {
     const nutritionByRowId = new Map(
       updates.map((update) => [update.id, update.nutrition])
     );
-    const ingredientsByGroup = new Map<
-      string,
-      { name: string; order: number; ingredients: PersistedIngredient[] }
-    >();
-    for (const row of keptRows) {
-      const key = `${row.mealItemOrder}:${row.mealItemName}`;
-      let group = ingredientsByGroup.get(key);
-      if (!group) {
-        group = {
-          name: row.mealItemName,
-          order: row.mealItemOrder,
-          ingredients: [],
-        };
-        ingredientsByGroup.set(key, group);
-      }
-      group.ingredients.push(
-        buildPersistedIngredient({
-          id: row.id,
-          ingredientName: row.ingredientName,
-          foodCompositionId: row.foodCompositionId,
-          estimatedGrams: editById.get(row.id) ?? row.estimatedGrams ?? null,
-          userFacingUnit: row.userFacingUnit,
-          cookingMethod: row.cookingMethod,
-          matchConfidence: row.matchConfidence,
-          nutrition:
-            nutritionByRowId.get(row.id) ?? extractNutritionValues(row),
-        })
-      );
-    }
-
-    const mealItemGroups = Array.from(ingredientsByGroup.values())
-      .sort((a, b) => a.order - b.order)
-      .map((group) =>
-        buildPersistedMealItemGroup(group.name, group.order, group.ingredients)
-      );
+    const mealItemGroups = buildMealItemGroupsFromRows(
+      keptRows.map((row) => ({
+        ...row,
+        estimatedGrams: editById.get(row.id) ?? row.estimatedGrams ?? null,
+        nutrition: nutritionByRowId.get(row.id) ?? extractNutritionValues(row),
+      }))
+    );
 
     const savedMeal = buildPersistedMeal({
       id: meal.id,
@@ -1203,40 +1146,9 @@ export async function duplicateMealAction(input: {
 
     // Rebuild the saved meal in loadMealsByDate's shape, grouped by dish, so the
     // client reconciles its optimistic card in place (same id, no day refetch).
-    const groups = new Map<
-      string,
-      { name: string; order: number; ingredients: PersistedIngredient[] }
-    >();
-    for (const { id, row, nutrition } of copies) {
-      const key = `${row.mealItemOrder}:${row.mealItemName}`;
-      let group = groups.get(key);
-      if (!group) {
-        group = {
-          name: row.mealItemName,
-          order: row.mealItemOrder,
-          ingredients: [],
-        };
-        groups.set(key, group);
-      }
-      group.ingredients.push(
-        buildPersistedIngredient({
-          id,
-          ingredientName: row.ingredientName,
-          foodCompositionId: row.foodCompositionId,
-          estimatedGrams: row.estimatedGrams,
-          userFacingUnit: row.userFacingUnit,
-          cookingMethod: row.cookingMethod,
-          matchConfidence: row.matchConfidence,
-          nutrition,
-        })
-      );
-    }
-
-    const mealItemGroups = Array.from(groups.values())
-      .sort((a, b) => a.order - b.order)
-      .map((group) =>
-        buildPersistedMealItemGroup(group.name, group.order, group.ingredients)
-      );
+    const mealItemGroups = buildMealItemGroupsFromRows(
+      copies.map(({ id, row, nutrition }) => ({ ...row, id, nutrition }))
+    );
 
     const savedMeal = buildPersistedMeal({
       id: meal.id,
