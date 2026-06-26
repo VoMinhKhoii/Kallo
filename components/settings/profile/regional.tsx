@@ -6,7 +6,7 @@ import { useState } from 'react';
 import { useFormContext } from 'react-hook-form';
 import { LanguageToggle } from '@/components/onboarding/language-toggle';
 import { FormControl, FormField, FormItem } from '@/components/ui/form';
-import { useLocaleSwitch } from '@/hooks/use-locale-switch';
+import { useLocaleSwitch } from '@/hooks/profile/use-locale-switch';
 import type { Locale } from '@/i18n/config';
 import { COUNTRIES } from '@/lib/onboarding/countries';
 import type { ProfileFormValues } from './index';

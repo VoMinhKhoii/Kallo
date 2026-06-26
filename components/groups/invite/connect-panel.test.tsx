@@ -14,7 +14,7 @@ vi.mock('@/i18n/navigation', () => ({
   Link: ({ children }: { children: React.ReactNode }) => <a>{children}</a>,
 }));
 
-vi.mock('@/hooks/use-invite', () => ({
+vi.mock('@/hooks/social/use-invite', () => ({
   useAcceptInvite: () => ({ mutate: mutateMock, isPending: false }),
 }));
 

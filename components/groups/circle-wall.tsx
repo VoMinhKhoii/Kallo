@@ -9,7 +9,7 @@ import { CircleError } from '@/components/groups/circle-error';
 import { CirclePresenceStrip } from '@/components/groups/circle-presence-strip';
 import { CircleWallSkeleton } from '@/components/groups/circle-wall-skeleton';
 import { labelFor } from '@/components/groups/invite/profile-identity';
-import { useCircleFeed } from '@/hooks/use-circle-feed';
+import { useCircleFeed } from '@/hooks/social/use-circle-feed';
 import type { CircleFeedEntry } from '@/lib/groups/client';
 
 function formatMacro(value: number | null, na: string): string {

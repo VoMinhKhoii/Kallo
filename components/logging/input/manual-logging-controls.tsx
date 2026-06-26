@@ -3,7 +3,7 @@
 import { Plus, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useEffect, useId, useRef, useState } from 'react';
-import { useIngredientSearch } from '@/hooks/use-ingredient-search';
+import { useIngredientSearch } from '@/hooks/meals/use-ingredient-search';
 import {
   type IngredientSearchResult,
   type ManualMealRow,

@@ -69,25 +69,25 @@ vi.mock('@tanstack/react-query', () => ({
   useQueryClient: () => ({ invalidateQueries: mockInvalidateQueries }),
 }));
 
-vi.mock('@/hooks/use-logging-day', () => ({
+vi.mock('@/hooks/meals/use-logging-day', () => ({
   loggingDayKeys: {
     byUserDate: (userId: string, date: string) => ['logging-day', userId, date],
   },
   useLoggingDay: mockUseLoggingDay,
 }));
 
-vi.mock('@/hooks/use-feed-submit', () => ({
+vi.mock('@/hooks/meals/use-feed-submit', () => ({
   useFeedSubmit: () => ({ handleSubmit: vi.fn() }),
 }));
 
-vi.mock('@/hooks/use-meal-mutations', () => ({
+vi.mock('@/hooks/meals/use-meal-mutations', () => ({
   useConfirmMeal: () => ({ mutate: mockMutate, isPending: false }),
   useUpdateMeal: () => ({ mutateAsync: vi.fn(), isPending: false }),
   useSaveManualMeal: () => ({ mutate: vi.fn(), isPending: false }),
   useDuplicateMeal: () => ({ mutate: vi.fn(), isPending: false }),
 }));
 
-vi.mock('@/hooks/use-recent-cheat-occasions', () => ({
+vi.mock('@/hooks/meals/use-recent-cheat-occasions', () => ({
   useRecentCheatOccasions: () => ({ data: [] }),
 }));
 
@@ -95,15 +95,15 @@ vi.mock('@/lib/actions/meals', () => ({
   stageCheatRepeatAction: vi.fn(),
 }));
 
-vi.mock('@/hooks/use-stream-analysis', () => ({
+vi.mock('@/hooks/meals/use-stream-analysis', () => ({
   useStreamAnalysis: mockUseStreamAnalysis,
 }));
 
-vi.mock('@/hooks/use-streaming-terminal-effects', () => ({
+vi.mock('@/hooks/meals/use-streaming-terminal-effects', () => ({
   useStreamingTerminalEffects: mockUseStreamingTerminalEffects,
 }));
 
-vi.mock('@/hooks/use-submit-guard', () => ({
+vi.mock('@/hooks/meals/use-submit-guard', () => ({
   useSubmitGuard: () => ({ guard: (fn: () => Promise<void>) => fn() }),
 }));
 

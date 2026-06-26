@@ -1,12 +1,12 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { friendsKeys } from '@/hooks/social/use-friends';
 import {
   fetchMyProfile,
   type PublicProfile,
   saveMyProfile,
 } from '@/lib/groups/client';
-import { friendsKeys } from './use-friends';
 
 export const profileKeys = {
   mine: ['my-profile'] as const,

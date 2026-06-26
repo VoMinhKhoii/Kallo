@@ -5,7 +5,7 @@ import { toast } from 'sonner';
 import type {
   StreamAnalysisState,
   StreamAnalyzeInput,
-} from '@/hooks/use-stream-analysis';
+} from '@/hooks/meals/use-stream-analysis';
 import type { CheatIntensity } from '@/lib/types/cheat';
 import type { ChatMessage } from '@/lib/types/meal';
 import { mealTextSchema } from '@/lib/validation';

@@ -3,9 +3,12 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { createElement, type ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { dailyMealsKeys } from '@/hooks/use-daily-meals';
-import { loggingDayKeys } from '@/hooks/use-logging-day';
-import { useConfirmMeal, useSaveManualMeal } from '@/hooks/use-meal-mutations';
+import { dailyMealsKeys } from '@/hooks/meals/use-daily-meals';
+import { loggingDayKeys } from '@/hooks/meals/use-logging-day';
+import {
+  useConfirmMeal,
+  useSaveManualMeal,
+} from '@/hooks/meals/use-meal-mutations';
 import type { LoggingDayData, PersistedMeal } from '@/lib/actions/meals';
 import { NUTRITION_KEYS } from '@/lib/ai/constants';
 import type { CompleteManualMealRow } from '@/lib/logging/manual-logging';

@@ -3,7 +3,7 @@
 import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
 import { CircleError } from '@/components/groups/circle-error';
-import { useFriends, useRemoveFriend } from '@/hooks/use-friends';
+import { useFriends, useRemoveFriend } from '@/hooks/social/use-friends';
 import type { CircleMember } from '@/lib/groups/client';
 import { ProfileIdentity } from './profile-identity';
 

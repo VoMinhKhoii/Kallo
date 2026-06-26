@@ -5,7 +5,7 @@ import type { NutritionValues } from '@/lib/ai/types';
 import { PartialYesterdayPrompt } from './partial-yesterday-prompt';
 
 const mockUseLoggingDay = vi.fn();
-vi.mock('@/hooks/use-logging-day', () => ({
+vi.mock('@/hooks/meals/use-logging-day', () => ({
   useLoggingDay: (userId: string, date: string) =>
     mockUseLoggingDay(userId, date),
 }));

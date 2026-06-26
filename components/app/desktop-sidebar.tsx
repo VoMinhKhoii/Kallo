@@ -4,7 +4,7 @@ import { PanelLeftClose, PanelLeftOpen, Settings } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import type * as React from 'react';
 import { useState } from 'react';
-import { useSidebarState } from '@/hooks/use-sidebar-state';
+import { useSidebarState } from '@/hooks/ui/use-sidebar-state';
 import { Link, usePathname } from '@/i18n/navigation';
 import { cn } from '@/lib/utils';
 import { isActiveRoute, visibleNavItems } from './nav-items';

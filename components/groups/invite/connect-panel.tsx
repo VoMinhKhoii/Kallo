@@ -5,7 +5,7 @@ import { AnimatePresence, motion } from 'motion/react';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { toast } from 'sonner';
-import { useAcceptInvite } from '@/hooks/use-invite';
+import { useAcceptInvite } from '@/hooks/social/use-invite';
 import { Link } from '@/i18n/navigation';
 
 interface ConnectPanelProps {

@@ -21,19 +21,19 @@ import {
 } from '@/components/logging/input/meal-input';
 import type { LoggingProfile } from '@/components/logging/logging-shell';
 import { addDays } from '@/components/logging/sidebar/timeline-utils';
-import { dailyMealsKeys } from '@/hooks/use-daily-meals';
-import { useFeedSubmit } from '@/hooks/use-feed-submit';
-import { loggingDayKeys, useLoggingDay } from '@/hooks/use-logging-day';
+import { dailyMealsKeys } from '@/hooks/meals/use-daily-meals';
+import { useFeedSubmit } from '@/hooks/meals/use-feed-submit';
+import { loggingDayKeys, useLoggingDay } from '@/hooks/meals/use-logging-day';
 import {
   useConfirmMeal,
   useDuplicateMeal,
   useSaveManualMeal,
   useUpdateMeal,
-} from '@/hooks/use-meal-mutations';
-import { useRecentCheatOccasions } from '@/hooks/use-recent-cheat-occasions';
-import { useStreamAnalysis } from '@/hooks/use-stream-analysis';
-import { useStreamingTerminalEffects } from '@/hooks/use-streaming-terminal-effects';
-import { useSubmitGuard } from '@/hooks/use-submit-guard';
+} from '@/hooks/meals/use-meal-mutations';
+import { useRecentCheatOccasions } from '@/hooks/meals/use-recent-cheat-occasions';
+import { useStreamAnalysis } from '@/hooks/meals/use-stream-analysis';
+import { useStreamingTerminalEffects } from '@/hooks/meals/use-streaming-terminal-effects';
+import { useSubmitGuard } from '@/hooks/meals/use-submit-guard';
 import {
   deleteMealAction,
   type LoggingDayData,

@@ -18,9 +18,9 @@ import {
 } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { useDailyMeals } from '@/hooks/use-daily-meals';
-import { useLoggingDay } from '@/hooks/use-logging-day';
-import { useConfirmMeal } from '@/hooks/use-meal-mutations';
+import { useDailyMeals } from '@/hooks/meals/use-daily-meals';
+import { useLoggingDay } from '@/hooks/meals/use-logging-day';
+import { useConfirmMeal } from '@/hooks/meals/use-meal-mutations';
 import type {
   LoggingDayData,
   PendingMealConfirmation,

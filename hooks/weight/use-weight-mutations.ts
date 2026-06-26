@@ -2,7 +2,7 @@
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { weightSummaryKeys } from '@/hooks/use-weight-summary';
+import { weightSummaryKeys } from '@/hooks/weight/use-weight-summary';
 import { deleteWeightLogAction, logWeightAction } from '@/lib/actions/weight';
 
 export function useLogWeight() {

@@ -5,7 +5,7 @@ import { useLocale, useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { Input } from '@/components/ui/input';
-import { useMyProfile, useSaveProfile } from '@/hooks/use-profile';
+import { useMyProfile, useSaveProfile } from '@/hooks/profile/use-profile';
 import { ApiError } from '@/lib/errors';
 import { HANDLE_MIN_LENGTH, validateHandle } from '@/lib/groups/handles';
 import { DisplayNameRow } from './display-name-row';

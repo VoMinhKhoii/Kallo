@@ -2,7 +2,7 @@
 
 import { ArrowLeft, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { useLoggingDay } from '@/hooks/use-logging-day';
+import { useLoggingDay } from '@/hooks/meals/use-logging-day';
 import { sumDisplayedNutrition } from '@/lib/ai/pipeline/goal-adjustment';
 import { isLikelyPartialDay } from '@/lib/nutrition/pattern/completeness';
 

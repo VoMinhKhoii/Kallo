@@ -1,7 +1,7 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { circleFeedKeys } from '@/hooks/use-circle-feed';
+import { circleFeedKeys } from '@/hooks/social/use-circle-feed';
 import {
   blockFriend,
   type CircleMember,

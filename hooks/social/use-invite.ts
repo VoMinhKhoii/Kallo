@@ -1,8 +1,8 @@
 'use client';
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { circleFeedKeys } from '@/hooks/use-circle-feed';
-import { friendsKeys } from '@/hooks/use-friends';
+import { circleFeedKeys } from '@/hooks/social/use-circle-feed';
+import { friendsKeys } from '@/hooks/social/use-friends';
 import { acceptInvite } from '@/lib/groups/client';
 
 /**

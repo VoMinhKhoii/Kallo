@@ -12,7 +12,7 @@ import {
   useBlockFriend,
   useFriends,
   useRemoveFriend,
-} from '@/hooks/use-friends';
+} from '@/hooks/social/use-friends';
 import type { CircleMember } from '@/lib/groups/client';
 import { cn } from '@/lib/utils';
 

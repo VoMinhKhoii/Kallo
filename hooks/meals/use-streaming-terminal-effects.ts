@@ -3,7 +3,7 @@
 import type { RefObject } from 'react';
 import { useEffect } from 'react';
 import { toast } from 'sonner';
-import type { StreamAnalysisState } from '@/hooks/use-stream-analysis';
+import type { StreamAnalysisState } from '@/hooks/meals/use-stream-analysis';
 import type { ChatMessage } from '@/lib/types/meal';
 
 interface UseStreamingTerminalEffectsParams {

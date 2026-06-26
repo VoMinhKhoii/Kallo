@@ -5,7 +5,7 @@ import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { Input } from '@/components/ui/input';
-import { useSaveProfile } from '@/hooks/use-profile';
+import { useSaveProfile } from '@/hooks/profile/use-profile';
 import type { PublicProfile } from '@/lib/groups/client';
 
 const DISPLAY_NAME_MAX = 50;

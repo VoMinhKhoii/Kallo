@@ -7,8 +7,8 @@ import {
   useQueryClient,
 } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { dailyMealsKeys } from '@/hooks/use-daily-meals';
-import { loggingDayKeys } from '@/hooks/use-logging-day';
+import { dailyMealsKeys } from '@/hooks/meals/use-daily-meals';
+import { loggingDayKeys } from '@/hooks/meals/use-logging-day';
 import { saveManualMealAction } from '@/lib/actions/manual-meals';
 import type {
   LoggingDayData,

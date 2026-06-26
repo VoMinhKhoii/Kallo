@@ -2,7 +2,7 @@
 
 import { useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
-import { dailyMealsKeys } from '@/hooks/use-daily-meals';
+import { dailyMealsKeys } from '@/hooks/meals/use-daily-meals';
 import { loadMealsByDate } from '@/lib/actions/meals';
 
 function addDays(dateStr: string, days: number): string {

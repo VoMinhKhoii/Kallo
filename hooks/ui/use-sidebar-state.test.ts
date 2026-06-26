@@ -5,7 +5,7 @@ import {
   SIDEBAR_EXPAND_MODE_COOKIE,
   SIDEBAR_STATE_COOKIE,
 } from '@/lib/sidebar/cookies';
-import { useSidebarState } from '../use-sidebar-state';
+import { useSidebarState } from './use-sidebar-state';
 
 function clearCookies() {
   for (const name of [SIDEBAR_STATE_COOKIE, SIDEBAR_EXPAND_MODE_COOKIE]) {

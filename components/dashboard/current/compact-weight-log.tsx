@@ -8,7 +8,7 @@ import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { useLogWeight } from '@/hooks/use-weight-mutations';
+import { useLogWeight } from '@/hooks/weight/use-weight-mutations';
 import { cn, parseDecimalInput } from '@/lib/utils';
 import { type WeightLogInput, weightLogSchema } from '@/lib/validation';
 
