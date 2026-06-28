@@ -1,15 +1,41 @@
 'use server';
 
-import { and, desc, ne, sql } from 'drizzle-orm';
+import { and, desc, notIlike, notInArray, sql } from 'drizzle-orm';
 import { requireAuthAndProfile } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { vietnameseFoodComposition } from '@/lib/db/schema';
 import { NUTRIENT_META } from '../catalog/nutrients';
 import { foodSourceCandidatesInputSchema } from '../schemas';
 
-// Condiments are dense per-100g but you don't eat 100g of fish sauce — exclude
-// them so suggestions read like foods you'd actually portion.
-const CONDIMENT_TYPE_EN = 'Condiments, traditional sauces';
+// Ranking by raw per-100g density surfaces things that are dense but you'd never
+// portion to fill a gap: dried spices (1g of dried thyme tops vitamin K),
+// fortified breakfast cereals, oils, sweets, shake/drink mixes, and
+// yeast/leavening agents. Exclude those whole categories (USDA SR + VN FCT
+// naming variants) so suggestions read like foods you'd actually eat. Whole-food
+// groups — meats, vegetables, fruits, legumes, fish, nuts, grains, roots — stay.
+const EXCLUDED_TYPES_EN = [
+  'Condiments, traditional sauces',
+  'Spices and Herbs',
+  'Breakfast Cereals',
+  'Fats and Oils',
+  'Oil, lard, butter',
+  'Sweets',
+  'Sugar, confectionery',
+  'Beverages',
+  'Beverage and liquor',
+  'Baked Products',
+  'Soups, Sauces, and Gravies',
+];
+
+// The "Other" catch-all holds legit foods (e.g. goose liver) alongside fortified
+// snack/supplement entries from USDA. Drop those by name marker rather than
+// excluding the whole group: "Formulated bar, SNICKERS…", "…vitamin and mineral
+// fortified", "Yeast extract spread".
+const EXCLUDED_NAME_PATTERNS = [
+  '%formulated%',
+  '%fortified%',
+  '%yeast extract%',
+];
 
 // A pool larger than what's shown at once, so the client can cycle through
 // alternatives ("don't have these?") without another round-trip.
@@ -36,7 +62,10 @@ export async function getFoodSourceCandidates(input: unknown) {
     .where(
       and(
         sql`${column} > 0`,
-        ne(vietnameseFoodComposition.typeEn, CONDIMENT_TYPE_EN)
+        notInArray(vietnameseFoodComposition.typeEn, EXCLUDED_TYPES_EN),
+        ...EXCLUDED_NAME_PATTERNS.map((pattern) =>
+          notIlike(vietnameseFoodComposition.nameEn, pattern)
+        )
       )
     )
     .orderBy(desc(column))
