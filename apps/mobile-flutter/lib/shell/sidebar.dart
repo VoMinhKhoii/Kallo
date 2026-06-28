@@ -520,15 +520,9 @@ class _OnboardingNudge extends ConsumerWidget {
       padding: const EdgeInsets.all(NhamSpacing.sp4), // p-4 = 16
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(NhamRadii.xxl), // rounded-2xl = 18
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Color(0x1AC9A87C), // accent @ 10%
-            NhamColors.surface,
-            Color(0x8CF0EAE0), // hover @ 55%
-          ],
-        ),
+        // Solid card on the cream drawer — hierarchy from the border, not a
+        // gradient wash.
+        color: NhamColors.elev,
         border: Border.all(
           color: const Color(0x40C9A87C), // accent @ 25%
           width: 1,
@@ -537,41 +531,23 @@ class _OnboardingNudge extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Step counter row (sparkle chip + counter).
-          Row(
-            children: [
-              Container(
-                width: 20,
-                height: 20,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: const Color(0x33C9A87C), // accent @ 20%
-                  borderRadius: BorderRadius.circular(NhamRadii.md),
-                ),
-                child: const Icon(
-                  LucideIcons.sparkles,
-                  size: 12,
-                  color: NhamColors.accent,
-                ),
-              ),
-              const SizedBox(width: 6), // gap-1.5
-              Text(
-                tr(
-                  'app.onboardingNudge.stepCounter',
-                  namedArgs: {'current': '$safeStep', 'total': '$_total'},
-                ).toUpperCase(),
-                style: NhamTextStyles.sansMedium(fontSize: 10).copyWith(
-                  color: NhamColors.textMuted,
-                  letterSpacing: 0.6, // 0.06em of 10px
-                ),
-              ),
-            ],
+          // Step counter eyebrow.
+          Text(
+            tr(
+              'app.onboardingNudge.stepCounter',
+              namedArgs: {'current': '$safeStep', 'total': '$_total'},
+            ).toUpperCase(),
+            style: NhamTextStyles.sansMedium(fontSize: NhamFontSize.eyebrow)
+                .copyWith(
+              color: NhamColors.textMuted,
+              letterSpacing: NhamTracking.wide, // 0.06em
+            ),
           ),
           const SizedBox(height: 8), // mb-2
           Text(
             tr('app.onboardingNudge.title'),
-            style: NhamTextStyles.sansMedium(
-              fontSize: 12,
+            style: NhamTextStyles.sansSemiBold(
+              fontSize: NhamFontSize.sm,
               height: NhamLeading.snug,
             ).copyWith(color: NhamColors.text),
           ),
@@ -579,7 +555,7 @@ class _OnboardingNudge extends ConsumerWidget {
           Text(
             tr('app.onboardingNudge.description'),
             style: NhamTextStyles.sansRegular(
-              fontSize: 11,
+              fontSize: NhamFontSize.detail,
               height: NhamLeading.relaxed,
             ).copyWith(color: NhamColors.textMuted),
           ),
@@ -654,8 +630,8 @@ class _NudgeCtaState extends State<_NudgeCta> {
         ),
         child: Text(
           tr('app.onboardingNudge.cta'),
-          style: NhamTextStyles.sansMedium(
-            fontSize: 11,
+          style: NhamTextStyles.sansSemiBold(
+            fontSize: NhamFontSize.detail,
           ).copyWith(color: Colors.white),
         ),
       ),
