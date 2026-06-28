@@ -19,6 +19,7 @@ import '../data/countries.dart';
 import '../data/profile_providers.dart';
 import '../panels/cooking.dart';
 import '../widgets/instant_commit_editor.dart';
+import '../../../shared/widgets/top_toast.dart';
 import '../widgets/profile_form.dart';
 import '../widgets/region_editor.dart';
 import 'account_section.dart';
@@ -149,9 +150,7 @@ class _SettingsList extends ConsumerWidget {
 
   void _copyLink(BuildContext context, String url) {
     Clipboard.setData(ClipboardData(text: url));
-    ScaffoldMessenger.maybeOf(
-      context,
-    )?.showSnackBar(SnackBar(content: Text(tr('common.copied'))));
+    showTopToast(context, tr('common.copied'));
   }
 
   /// "Cutting · 0.50 kg/wk" — the saved goal + pace, or "Not set" when no

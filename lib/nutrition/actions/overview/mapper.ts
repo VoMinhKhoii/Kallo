@@ -479,7 +479,8 @@ function buildDaySeries({
   profile: NutritionProfile;
   targets: Record<NutritionNutrientKey, MicronutrientTarget>;
 }): NutritionDaySeries {
-  const unit: DaySeriesBucketUnit = resolvedRange === '7d' ? 'day' : 'week';
+  const unit: DaySeriesBucketUnit =
+    resolvedRange === '1d' || resolvedRange === '7d' ? 'day' : 'week';
   const step = unit === 'day' ? 1 : 7;
   const bounds = buildBucketBounds(period.startDate, period.endDate, step);
 
@@ -560,7 +561,11 @@ export function mapOverviewRowsToDto({
         macroConsistency: { averageConsistencyPct: 0, weakestMacro: null },
       },
       macros: [],
-      daySeries: { unit: resolvedRange === '7d' ? 'day' : 'week', series: [] },
+      daySeries: {
+        unit:
+          resolvedRange === '1d' || resolvedRange === '7d' ? 'day' : 'week',
+        series: [],
+      },
       micronutrients: [],
       spotlight: [],
       steady: [],

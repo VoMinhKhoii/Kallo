@@ -15,6 +15,7 @@ class TargetProgressBar extends StatefulWidget {
     this.duration = const Duration(milliseconds: 700),
     this.delay = Duration.zero,
     this.semanticLabel,
+    this.fillColor,
   });
 
   /// Current percent toward target (0..100+); null when no target is set.
@@ -30,6 +31,10 @@ class TargetProgressBar extends StatefulWidget {
   final Duration delay;
 
   final String? semanticLabel;
+
+  /// Overrides the resting fill color (e.g. emerald on an on-target card). The
+  /// exceed (danger) and no-value (stone) colors still take precedence.
+  final Color? fillColor;
 
   @override
   State<TargetProgressBar> createState() => _TargetProgressBarState();
@@ -95,7 +100,7 @@ class _TargetProgressBarState extends State<TargetProgressBar>
         ? NhamColors.stone50
         : widget.showExceed
             ? NhamColors.danger
-            : NhamColors.text;
+            : widget.fillColor ?? NhamColors.text;
 
     final bar = LayoutBuilder(
       builder: (context, constraints) {

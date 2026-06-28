@@ -8,6 +8,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../data/session_provider.dart';
 import '../features/onboarding/providers/onboarding_providers.dart';
 import '../features/onboarding/widgets/onboarding_dialog.dart';
+import '../shared/widgets/top_toast.dart';
 import '../theme/nham_colors.dart';
 import '../theme/nham_theme.dart';
 import '../theme/nham_typography.dart';
@@ -484,8 +485,10 @@ class _SignOutRowState extends State<_SignOutRow> {
       debugPrint('Sign-out failed: $error');
       if (!mounted) return;
       setState(() => _signingOut = false);
-      ScaffoldMessenger.maybeOf(context)?.showSnackBar(
-        SnackBar(content: Text(tr('app.userMenu.signOutError'))),
+      showTopToast(
+        context,
+        tr('app.userMenu.signOutError'),
+        variant: TopToastVariant.error,
       );
     }
   }

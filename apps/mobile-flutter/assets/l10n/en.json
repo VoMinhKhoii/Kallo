@@ -105,9 +105,31 @@
     "loading": "Loading nutrition overview…",
     "range": {
       "label": "Nutrition range",
-      "7d": "7 days",
-      "30d": "30 days",
+      "1d": "Today",
+      "7d": "7d",
+      "30d": "30d",
       "90d": "90 days"
+    },
+    "nutrientGroups": {
+      "vitamins": "Vitamins",
+      "minerals": "Minerals"
+    },
+    "cell": {
+      "limited": "limited",
+      "noTarget": "no target"
+    },
+    "suggestedFoods": {
+      "button": "Suggested foods",
+      "title": "Foods to close your gaps",
+      "subtitle": "Ideas for the nutrients you're lowest on over this timeframe — for variety and coverage, not prescriptions."
+    },
+    "sources": {
+      "caption": "Targets from WHO/FAO · Vietnam RDA · NASEM DRI",
+      "title": "Where targets come from",
+      "intro": "Daily targets are drawn from internationally recognized reference intakes, matched to your profile (age, sex, and region).",
+      "whoFao": "WHO/FAO — Vitamin and Mineral Requirements in Human Nutrition, 2nd ed. (2004)",
+      "vietnamRda": "Vietnam Ministry of Health — Recommended Dietary Allowances (2016)",
+      "nasem": "NASEM — Dietary Reference Intakes (1997–2019)"
     },
     "summary": {
       "label": "Nutrition summary",

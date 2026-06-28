@@ -12,6 +12,7 @@ import '../data/profile_row.dart';
 import '../logic/step_one_defaults.dart';
 import '../providers/onboarding_providers.dart';
 import '../screens/screen_body_metrics.dart';
+import '../../../shared/widgets/top_toast.dart';
 import '../screens/screen_cooking.dart';
 import '../screens/screen_origin.dart';
 import 'step_indicator.dart';
@@ -131,26 +132,11 @@ class _OnboardingWizardState extends ConsumerState<OnboardingWizard> {
   }
 
   void _showSaveError() {
-    final messenger = ScaffoldMessenger.maybeOf(context);
-    if (messenger == null) return;
-    messenger
-      ..clearSnackBars()
-      ..showSnackBar(
-        SnackBar(
-          behavior: SnackBarBehavior.floating,
-          backgroundColor: NhamColors.cardCream,
-          elevation: 4,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(NhamRadii.buttonXl),
-            side: const BorderSide(color: NhamColors.border),
-          ),
-          content: Text(
-            tr('onboarding.saveError'),
-            style: NhamTextStyles.sansMedium(fontSize: NhamFontSize.sm)
-                .copyWith(color: NhamColors.text),
-          ),
-        ),
-      );
+    showTopToast(
+      context,
+      tr('onboarding.saveError'),
+      variant: TopToastVariant.error,
+    );
   }
 
   void _handleNext() {

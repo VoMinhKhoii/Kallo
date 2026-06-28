@@ -11,6 +11,7 @@ import '../providers/auth_form_controller.dart';
 import 'apple_button.dart';
 import 'auth_divider.dart';
 import 'confirm_email_view.dart';
+import '../../../shared/widgets/top_toast.dart';
 import 'email_auth_form.dart';
 import 'google_button.dart';
 import 'welcome_demo.dart';
@@ -73,27 +74,7 @@ class _AuthPageState extends ConsumerState<AuthPage> {
   }
 
   void _toast(String message) {
-    final messenger = ScaffoldMessenger.maybeOf(context);
-    if (messenger == null) return;
-    messenger
-      ..clearSnackBars()
-      ..showSnackBar(
-        SnackBar(
-          behavior: SnackBarBehavior.floating,
-          backgroundColor: NhamColors.cardCream,
-          elevation: 4,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(NhamRadii.buttonXl),
-            side: const BorderSide(color: NhamColors.border),
-          ),
-          content: Text(
-            message,
-            style: NhamTextStyles.sansMedium(
-              fontSize: NhamFontSize.sm,
-            ).copyWith(color: NhamColors.text),
-          ),
-        ),
-      );
+    showTopToast(context, message, variant: TopToastVariant.error);
   }
 
   @override

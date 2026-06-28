@@ -178,31 +178,21 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
     setState(() => _pendingRemovalIds.add(meal.id));
 
     var undone = false;
-    final messenger = ScaffoldMessenger.of(context);
-    messenger.clearSnackBars();
-    messenger
-        .showSnackBar(
-          SnackBar(
-            duration: const Duration(seconds: 5),
-            content: NhamText(
-              'logging.mealRemoved'.tr(),
-              variant: NhamTextVariant.body,
-              style: const TextStyle(color: NhamColors.surface),
-            ),
-            action: SnackBarAction(
-              label: 'logging.undo'.tr(),
-              textColor: NhamColors.accent,
-              onPressed: () {
-                undone = true;
-                if (mounted) {
-                  setState(() => _pendingRemovalIds.remove(meal.id));
-                }
-              },
-            ),
-          ),
-        )
-        .closed
-        .then((_) async {
+    // Top-anchored undo toast (every toast lives at the top now). Its future
+    // resolves on dismissal — by Undo, tap, or timeout — mirroring the old
+    // SnackBar.closed, so the delete still finalizes only after the window.
+    showTopToast(
+      context,
+      'logging.mealRemoved'.tr(),
+      actionLabel: 'logging.undo'.tr(),
+      duration: const Duration(seconds: 5),
+      onAction: () {
+        undone = true;
+        if (mounted) {
+          setState(() => _pendingRemovalIds.remove(meal.id));
+        }
+      },
+    ).then((_) async {
           if (undone || !mounted) return;
           try {
             await ref

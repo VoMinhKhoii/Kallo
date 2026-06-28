@@ -105,9 +105,31 @@
     "loading": "Đang tải tổng quan dinh dưỡng…",
     "range": {
       "label": "Khoảng thời gian dinh dưỡng",
-      "7d": "7 ngày",
-      "30d": "30 ngày",
+      "1d": "Hôm nay",
+      "7d": "7n",
+      "30d": "30n",
       "90d": "90 ngày"
+    },
+    "nutrientGroups": {
+      "vitamins": "Vitamin",
+      "minerals": "Khoáng chất"
+    },
+    "cell": {
+      "limited": "hạn chế",
+      "noTarget": "chưa có"
+    },
+    "suggestedFoods": {
+      "button": "Gợi ý món ăn",
+      "title": "Món ăn lấp đầy thiếu hụt",
+      "subtitle": "Gợi ý cho các chất bạn đang thiếu nhất trong khoảng thời gian này — để đa dạng và đầy đủ, không phải chỉ định y khoa."
+    },
+    "sources": {
+      "caption": "Mục tiêu theo WHO/FAO · RDA Việt Nam · NASEM DRI",
+      "title": "Nguồn của mục tiêu",
+      "intro": "Mục tiêu hằng ngày dựa trên các mức tham chiếu được công nhận quốc tế, điều chỉnh theo hồ sơ của bạn (tuổi, giới tính và khu vực).",
+      "whoFao": "WHO/FAO — Nhu cầu Vitamin và Khoáng chất trong Dinh dưỡng, tái bản lần 2 (2004)",
+      "vietnamRda": "Bộ Y tế Việt Nam — Nhu cầu Dinh dưỡng Khuyến nghị (2016)",
+      "nasem": "NASEM — Dietary Reference Intakes (1997–2019)"
     },
     "summary": {
       "label": "Tóm tắt dinh dưỡng",

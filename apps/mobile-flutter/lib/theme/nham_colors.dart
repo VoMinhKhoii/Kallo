@@ -83,7 +83,13 @@ abstract final class NhamColors {
   static const Color macroFat = Color(0xFFA8A29E);
 
   // ── Status ───────────────────────────────────────────────────────────
-  static const Color success = Color(0xFF7CA368); // sage
+  static const Color success = Color(0xFF7CA368); // sage (heatmap/legacy)
+  // Fresh emerald for "on target" cards — brighter + cleaner than the olive
+  // sage, reads modern against the warm cream surface.
+  static const Color successAccent = Color(0xFF1FA971); // emerald — text + bar
+  static const Color successDark = Color(0xFF14855A); // deeper emerald — figures
+  static const Color successFaint = Color(0xFFEAF7F0); // mint — met-card fill
+  static const Color successBorder = Color(0x331FA971); // emerald @ 20% — hairline
   static const Color danger = Color(0xFFD37B69); // terracotta
 
   // ── Adherence heatmap diverging scale ────────────────────────────────

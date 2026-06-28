@@ -18,13 +18,17 @@ import 'tab_scaffold.dart';
 /// The hamburger carries the onboarding pulse-dot when setup is incomplete
 /// (the indicator that used to live on the retired avatar disc / bottom bar).
 class AppHeader extends StatelessWidget {
-  const AppHeader({this.child, this.onBack, super.key});
+  const AppHeader({this.child, this.onBack, this.trailing, super.key});
 
   /// Center slot content.
   final Widget? child;
 
   /// When non-null, a back chevron replaces the hamburger (pushed screens).
   final VoidCallback? onBack;
+
+  /// Optional right-slot content (e.g. the nutrition date toggle). When null a
+  /// 44×44 spacer mirrors the leading slot so [child] stays centered.
+  final Widget? trailing;
 
   // Square hit target for the side slots.
   static const double _hit = 44;
@@ -45,8 +49,10 @@ class AppHeader extends StatelessWidget {
               child: child ?? const SizedBox.shrink(),
             ),
           ),
-          // Right spacer mirrors the left slot so the center stays centered.
-          const SizedBox(width: _hit, height: _hit),
+          // Trailing slot, or a spacer that mirrors the leading slot so the
+          // center stays centered when there's nothing on the right.
+          trailing ??
+              const SizedBox(width: _hit, height: _hit),
         ],
       ),
     );

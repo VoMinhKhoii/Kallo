@@ -14,6 +14,7 @@ import 'package:share_plus/share_plus.dart';
 import '../../../data/api_client.dart';
 import '../../../data/session_provider.dart';
 import '../../../shared/widgets/nham_primitives.dart';
+import '../../../shared/widgets/top_toast.dart';
 import '../../../theme/nham_colors.dart';
 import '../../../theme/nham_theme.dart';
 import '../../../theme/nham_typography.dart';
@@ -90,9 +91,7 @@ class _AccountSectionState extends ConsumerState<AccountSection> {
   }
 
   void _toast(String message) {
-    ScaffoldMessenger.maybeOf(
-      context,
-    )?.showSnackBar(SnackBar(content: Text(message)));
+    showTopToast(context, message, variant: TopToastVariant.error);
   }
 
   @override
@@ -265,8 +264,10 @@ class _AccountDeleteScreenState extends ConsumerState<_AccountDeleteScreen> {
     } catch (_) {
       if (!mounted) return;
       setState(() => _deleting = false);
-      ScaffoldMessenger.maybeOf(context)?.showSnackBar(
-        SnackBar(content: Text(tr('settings.account.deleteError'))),
+      showTopToast(
+        context,
+        tr('settings.account.deleteError'),
+        variant: TopToastVariant.error,
       );
       return;
     }
