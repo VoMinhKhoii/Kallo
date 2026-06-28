@@ -1,5 +1,6 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
@@ -8,11 +9,11 @@ import '../../../models/nutrition.dart';
 import '../../../theme/nham_colors.dart';
 import '../../../theme/nham_theme.dart';
 import '../logic/status.dart';
+import '../providers/candidates_response.dart';
 import '../providers/food_candidates_provider.dart';
 
-/// The under-target, candidate-supported nutrients from an overview, most
-/// in-need first — the input to the suggested-foods CTA. Mirrors the web
-/// `showChips` gate (supported · confidence ≥ 40 · < 90% of target).
+/// The under-target nutrients from an overview, most in-need first — the input
+/// to the suggested-foods CTA (confidence ≥ 40 · < 90% of target).
 List<NutrientCardData> suggestedFoodNutrients(NutritionOverview overview) {
   final all = [...overview.micronutrients, ...overview.moreNutrients];
   final eligible = all.where(showChips).toList()
@@ -22,8 +23,9 @@ List<NutrientCardData> suggestedFoodNutrients(NutritionOverview overview) {
   return eligible.take(5).toList();
 }
 
-/// The single nutrition CTA: a compact list of the nutrients you're short on —
-/// which one, by how much, and a few ingredients that close the gap.
+/// The single nutrition CTA: which nutrients you're short on, by how much, and
+/// foods that close the gap. Tap a food to keep it; "Don't have these?" swaps
+/// the rest for other options from the same pool (no refetch).
 Future<void> showSuggestedFoodsSheet(
   BuildContext context, {
   required List<NutrientCardData> nutrients,
@@ -106,16 +108,28 @@ class _SuggestedFoodsSheet extends StatelessWidget {
   }
 }
 
-class _NutrientGap extends ConsumerWidget {
+class _NutrientGap extends ConsumerStatefulWidget {
   const _NutrientGap({required this.card});
 
   final NutrientCardData card;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_NutrientGap> createState() => _NutrientGapState();
+}
+
+class _NutrientGapState extends ConsumerState<_NutrientGap> {
+  static const int _visibleCount = 3;
+
+  final Set<String> _reserved = {};
+  int _cursor = 0;
+
+  @override
+  Widget build(BuildContext context) {
+    final card = widget.card;
     final async = ref.watch(foodCandidatesProvider(card.nutrient));
     final pct = card.percentOfTarget;
     final shortBy = pct == null ? null : (100 - pct).round();
+    final vi = context.locale.languageCode == 'vi';
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -126,10 +140,11 @@ class _NutrientGap extends ConsumerWidget {
           textBaseline: TextBaseline.alphabetic,
           children: [
             Expanded(
-              child: Text(tr(card.labelKey), style: dashBody(weight: FontWeight.w600)),
+              child: Text(tr(card.labelKey),
+                  style: dashBody(weight: FontWeight.w600)),
             ),
             const SizedBox(width: NhamSpacing.sp2),
-            if (shortBy != null)
+            if (shortBy != null && shortBy > 0)
               Text(
                 tr('nutrition.suggestedFoods.short',
                     namedArgs: {'value': shortBy.toString()}),
@@ -138,52 +153,141 @@ class _NutrientGap extends ConsumerWidget {
           ],
         ),
         const SizedBox(height: NhamSpacing.sp2_5),
-        // Which ingredients close the gap.
         async.when(
-          loading: () => Text(
-            tr('nutrition.candidates.loading'),
-            style: dashMeta(color: kInkDisabled),
-          ),
-          error: (_, __) => Text(
-            tr('nutrition.candidates.error'),
-            style: dashMeta(color: kInkDisabled),
-          ),
-          data: (response) {
-            final names = (response?.candidates ?? const [])
-                .take(5)
-                .map((c) => tr(c.nameKey))
-                .toList();
-            if (names.isEmpty) {
-              return Text(tr('nutrition.candidates.empty'),
-                  style: dashMeta(color: kInkDisabled));
-            }
-            return Wrap(
-              spacing: NhamSpacing.sp2,
-              runSpacing: NhamSpacing.sp2,
-              children: [for (final n in names) _FoodChip(name: n)],
-            );
-          },
+          loading: () => Text(tr('nutrition.candidates.loading'),
+              style: dashMeta(color: kInkDisabled)),
+          error: (_, __) => Text(tr('nutrition.candidates.error'),
+              style: dashMeta(color: kInkDisabled)),
+          data: (response) => _foods(response, vi),
         ),
+      ],
+    );
+  }
+
+  Widget _foods(CandidatesResponse response, bool vi) {
+    final pool = response.foods;
+    if (pool.isEmpty) {
+      return Text(tr('nutrition.candidates.empty'),
+          style: dashMeta(color: kInkDisabled));
+    }
+
+    final reserved = pool.where((f) => _reserved.contains(f.id)).toList();
+    final rest = pool.where((f) => !_reserved.contains(f.id)).toList();
+    final rotatingSlots = (_visibleCount - reserved.length).clamp(0, pool.length);
+
+    final rotating = <FoodCandidate>[];
+    for (var i = 0; i < rotatingSlots && i < rest.length; i++) {
+      rotating.add(rest[(_cursor + i) % rest.length]);
+    }
+    final visible = [...reserved, ...rotating];
+    final canRefresh = rest.length > rotatingSlots;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Wrap(
+          spacing: NhamSpacing.sp2,
+          runSpacing: NhamSpacing.sp2,
+          children: [
+            for (final f in visible)
+              _FoodChip(
+                label: vi ? f.name : f.nameEn,
+                reserved: _reserved.contains(f.id),
+                onTap: () {
+                  HapticFeedback.selectionClick();
+                  setState(() {
+                    if (!_reserved.add(f.id)) _reserved.remove(f.id);
+                  });
+                },
+              ),
+          ],
+        ),
+        if (canRefresh) ...[
+          const SizedBox(height: NhamSpacing.sp2),
+          _RefreshButton(
+            onTap: () => setState(
+              () => _cursor = (_cursor + rotatingSlots) % rest.length,
+            ),
+          ),
+        ],
       ],
     );
   }
 }
 
 class _FoodChip extends StatelessWidget {
-  const _FoodChip({required this.name});
+  const _FoodChip({
+    required this.label,
+    required this.reserved,
+    required this.onTap,
+  });
 
-  final String name;
+  final String label;
+  final bool reserved;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: kFieldFill,
-        borderRadius: BorderRadius.circular(NhamRadii.pill),
-        border: Border.all(color: NhamColors.borderSoft),
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 120),
+        padding: EdgeInsets.fromLTRB(
+          reserved ? 8 : 10,
+          6,
+          10,
+          6,
+        ),
+        decoration: BoxDecoration(
+          color: reserved ? NhamColors.accent10 : kFieldFill,
+          borderRadius: BorderRadius.circular(NhamRadii.pill),
+          border: Border.all(
+            color: reserved ? NhamColors.accent50 : NhamColors.borderSoft,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (reserved) ...[
+              const Icon(LucideIcons.check, size: 13, color: NhamColors.accentDark),
+              const SizedBox(width: 4),
+            ],
+            Text(
+              label,
+              style: dashMeta(color: reserved ? NhamColors.text : kInk),
+            ),
+          ],
+        ),
       ),
-      child: Text(name, style: dashMeta(color: kInk)),
+    );
+  }
+}
+
+class _RefreshButton extends StatelessWidget {
+  const _RefreshButton({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 2),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(LucideIcons.refreshCw, size: 13, color: kInkSecondary),
+            const SizedBox(width: 5),
+            Text(
+              tr('nutrition.suggestedFoods.refresh'),
+              style: dashMeta(color: kInkSecondary),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

@@ -122,7 +122,8 @@
       "button": "Gợi ý món ăn",
       "title": "Món ăn lấp đầy thiếu hụt",
       "subtitle": "Gợi ý cho các chất bạn đang thiếu nhất trong khoảng thời gian này — để đa dạng và đầy đủ, không phải chỉ định y khoa.",
-      "short": "thiếu {value}%"
+      "short": "thiếu {value}%",
+      "refresh": "Không có sẵn?"
     },
     "sources": {
       "caption": "Mục tiêu theo WHO/FAO · RDA Việt Nam · NASEM DRI",
