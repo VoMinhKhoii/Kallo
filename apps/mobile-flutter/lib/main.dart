@@ -2,6 +2,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import 'app.dart';
 import 'services/supabase_service.dart';
@@ -18,6 +19,12 @@ const _supabaseAnonKey = String.fromEnvironment('SUPABASE_ANON_KEY');
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await EasyLocalization.ensureInitialized();
+
+  // Lora (serif) is bundled under assets/google_fonts/ and resolved by
+  // google_fonts — never fetch over HTTP, so a cold offline start still renders
+  // in the brand serif instead of the fallback. The UI sans (Be Vietnam Pro) is
+  // a native pubspec font family, always available offline.
+  GoogleFonts.config.allowRuntimeFetching = false;
 
   if (_supabaseUrl.isEmpty || _supabaseAnonKey.isEmpty) {
     throw StateError(

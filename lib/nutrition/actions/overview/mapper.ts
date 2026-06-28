@@ -3,8 +3,6 @@ import {
   DEFAULT_NUTRIENTS,
   getNutrientMeta,
   MORE_NUTRIENTS,
-  SUPPORTED_CANDIDATE_NUTRIENT_SET,
-  type SupportedCandidateNutrient,
 } from '../../catalog/nutrients';
 import {
   type MicronutrientTarget,
@@ -40,6 +38,7 @@ import type {
   NutritionDaySeries,
   NutritionNutrientKey,
   NutritionOverview,
+  NutritionRange,
   NutritionRangeInput,
 } from '../../types';
 import type { OverviewMealItemRow } from './query';
@@ -53,15 +52,23 @@ const SPOTLIGHT_LIMIT = 2;
 const SPOTLIGHT_MIN_CONFIDENCE = 40;
 const SPOTLIGHT_MAX_PERCENT = 90;
 
+// Day-series bucket granularity per resolved range: short ranges bucket by day,
+// long ranges by week. Table-driven so a new range needs no conditional edits.
+const RANGE_BUCKET_UNIT: Record<NutritionRange, DaySeriesBucketUnit> = {
+  '1d': 'day',
+  '7d': 'day',
+  '30d': 'week',
+  '90d': 'week',
+};
+
 function isSpotlightCandidate(card: NutrientCardData): boolean {
+  // Every default micronutrient can surface food candidates (the composition
+  // table has a column for each), so the gate is purely confidence + gap.
+  // `partitionSpotlight` is only ever called on the default micronutrients.
   return (
-    card.supportsCandidates &&
     card.confidence >= SPOTLIGHT_MIN_CONFIDENCE &&
     card.percentOfTarget !== null &&
-    card.percentOfTarget < SPOTLIGHT_MAX_PERCENT &&
-    SUPPORTED_CANDIDATE_NUTRIENT_SET.has(
-      card.nutrient as SupportedCandidateNutrient
-    )
+    card.percentOfTarget < SPOTLIGHT_MAX_PERCENT
   );
 }
 
@@ -320,7 +327,6 @@ function buildNutrientCards({
       caveatKey:
         nutrient === 'sodiumMg' ? getSodiumCaveatKey(sodiumStats) : undefined,
       sourceBreakdown,
-      supportsCandidates: DEFAULT_NUTRIENT_SET.has(nutrient),
       nutrientType: target.nutrientType,
     });
   });
@@ -479,7 +485,7 @@ function buildDaySeries({
   profile: NutritionProfile;
   targets: Record<NutritionNutrientKey, MicronutrientTarget>;
 }): NutritionDaySeries {
-  const unit: DaySeriesBucketUnit = resolvedRange === '7d' ? 'day' : 'week';
+  const unit: DaySeriesBucketUnit = RANGE_BUCKET_UNIT[resolvedRange];
   const step = unit === 'day' ? 1 : 7;
   const bounds = buildBucketBounds(period.startDate, period.endDate, step);
 
@@ -560,7 +566,10 @@ export function mapOverviewRowsToDto({
         macroConsistency: { averageConsistencyPct: 0, weakestMacro: null },
       },
       macros: [],
-      daySeries: { unit: resolvedRange === '7d' ? 'day' : 'week', series: [] },
+      daySeries: {
+        unit: RANGE_BUCKET_UNIT[resolvedRange],
+        series: [],
+      },
       micronutrients: [],
       spotlight: [],
       steady: [],

@@ -6,7 +6,7 @@
     "finish": "Finish",
     "save": "Save",
     "cancel": "Cancel",
-    "loading": "Loading...",
+    "loading": "Loading…",
     "error": "Something went wrong",
     "retry": "Try again",
     "search": "Search",
@@ -18,7 +18,8 @@
     "notFound": "Page not found",
     "notSignedIn": "Not signed in.",
     "increase": "Increase",
-    "decrease": "Decrease"
+    "decrease": "Decrease",
+    "copied": "Link copied"
   },
   "nav": {
     "logging": "Logging",
@@ -52,6 +53,11 @@
       "navigationMenu": "Navigation menu",
       "openMenu": "Open menu",
       "closeMenu": "Close menu"
+    },
+    "tabBar": {
+      "today": "Today",
+      "log": "Log",
+      "patterns": "Patterns"
     },
     "mainSidebar": {
       "navigationLabel": "Main navigation",
@@ -95,13 +101,37 @@
   "nutrition": {
     "eyebrow": "Pattern analysis",
     "title": "Nutrition",
-    "subtitle": "Review long-term macro and micronutrient patterns, with confidence labels when the food data is incomplete.",
+    "subtitle": "Review long-term macro and micronutrient patterns.",
     "loading": "Loading nutrition overview…",
     "range": {
       "label": "Nutrition range",
-      "7d": "7 days",
-      "30d": "30 days",
+      "1d": "Today",
+      "7d": "7d",
+      "30d": "30d",
       "90d": "90 days"
+    },
+    "nutrientGroups": {
+      "vitamins": "Vitamins",
+      "minerals": "Minerals"
+    },
+    "cell": {
+      "limited": "limited",
+      "noTarget": "no target"
+    },
+    "suggestedFoods": {
+      "button": "Suggested foods",
+      "title": "Foods to close your gaps",
+      "subtitle": "Ideas for the nutrients you're lowest on over this timeframe — for variety and coverage, not prescriptions.",
+      "short": "{value}% short",
+      "refresh": "Don't have these?"
+    },
+    "sources": {
+      "caption": "Targets from WHO/FAO · Vietnam RDA · NASEM DRI",
+      "title": "Where targets come from",
+      "intro": "Daily targets are drawn from internationally recognized reference intakes, matched to your profile (age, sex, and region).",
+      "whoFao": "WHO/FAO — Vitamin and Mineral Requirements in Human Nutrition, 2nd ed. (2004)",
+      "vietnamRda": "Vietnam Ministry of Health — Recommended Dietary Allowances (2016)",
+      "nasem": "NASEM — Dietary Reference Intakes (1997–2019)"
     },
     "summary": {
       "label": "Nutrition summary",
@@ -111,10 +141,8 @@
       "macroConsistency": "Macro consistency",
       "confidentOnly": "Only confident gaps are flagged",
       "coverageHint": "Nutrients with thin coverage",
-      "averageConfidence": "Avg confidence: {value}",
       "weakest": "Weakest",
       "none": "None yet",
-      "trustLine": "{days} logged days · {confidence} avg confidence · {range} view",
       "verdict": {
         "label": "Pattern verdict",
         "attention": "{nutrients} need attention",
@@ -148,13 +176,15 @@
     "card": {
       "average": "Average",
       "target": "Target",
-      "targetProgress": "Target progress",
       "context": "Context",
       "noData": "No data",
       "noTargetClaim": "No target claim",
       "averageVsTarget": "{average} avg · {target} target",
       "expand": "View trend",
       "collapse": "Hide trend"
+    },
+    "detail": {
+      "averageVsTarget": "Average vs target"
     },
     "confidence": {
       "normal": "Good confidence",
@@ -469,8 +499,7 @@
       "quiet": "A quiet stretch. Keep logging to sharpen the pattern.",
       "gathering": "Gathering your pattern.",
       "gatheringSub": "{days} complete days so far — keep going and the picture sharpens.",
-      "trustLine": "{days} complete days · {confidence}% avg confidence",
-      "trustLineNoConfidence": "{days} complete days",
+      "trustLine": "{days} complete days",
       "partialNote": {
         "one": "· {} partial day set aside",
         "other": "· {} partial days set aside"
@@ -534,7 +563,9 @@
     "saveError": "Couldn't save this step. Please try again.",
     "setup": {
       "title": "Setting up your account",
-      "subtitle": "Personalizing your targets — this'll just take a moment."
+      "subtitle": "Personalizing your targets — this'll just take a moment.",
+      "targetReadyLabel": "Your daily target",
+      "perDay": "kcal/day"
     },
     "origin": {
       "title": "Where are you from?",
@@ -548,12 +579,14 @@
       "noCountries": "No countries found",
       "fallbackNote": "Leave one or both empty if you want. The AI will fall back to your photo and meal text only.",
       "preferredLanguage": "Preferred language",
-      "preferredLanguageHint": "Choose your language for the app interface"
+      "preferredLanguageHint": "Choose your language for the app interface",
+      "commonCountries": "Common"
     },
     "bodyMetrics": {
       "title": "Your body metrics",
       "subtitle": "We use these to calculate your daily calorie and macro targets.",
       "biologicalSex": "Biological sex",
+      "sexPlaceholder": "Select…",
       "male": "Male",
       "female": "Female",
       "weight": "Weight",
@@ -594,7 +627,11 @@
       "fat": "Fat",
       "macroSummary": "Daily targets",
       "kcal": "kcal",
-      "grams": "g"
+      "grams": "g",
+      "aboutYou": "About you",
+      "aboutYouHint": "These stay optional, but once you fill them in, Nhẩm can compute more tailored targets locally.",
+      "unlockTitle": "Fill the basics to unlock targets.",
+      "unlockHint": "Once sex, weight, height, age, and activity are filled, this becomes your live calorie target and macro planner."
     },
     "cooking": {
       "title": "Your cooking habits",
@@ -647,7 +684,6 @@
       "noAccount": "Don't have an account?",
       "signUpLink": "Sign up",
       "forgotPassword": "Forgot password?",
-      "error": "Invalid email or password",
       "success": "Signed in successfully",
       "emailPlaceholder": "you@example.com",
       "passwordPlaceholder": "Enter your password",
@@ -662,9 +698,7 @@
       "submit": "Create Account",
       "hasAccount": "Already have an account?",
       "signInLink": "Sign in",
-      "success": "Check your email to confirm your account",
       "successSignedIn": "Account created. Welcome!",
-      "error": "Could not create account",
       "emailPlaceholder": "you@example.com",
       "passwordPlaceholder": "Create a password",
       "emailError": "Enter a valid email address",
@@ -677,9 +711,23 @@
       "signUpSubtitle": "Start tracking Vietnamese meals with AI-powered nutrition analysis.",
       "signInTab": "Sign in",
       "signUpTab": "Sign up",
+      "continueWithApple": "Continue with Apple",
+      "appleError": "Apple sign-in failed. Please try again.",
       "continueWithGoogle": "Continue with Google",
       "orContinueWithEmail": "or continue with email",
       "googleError": "Google sign-in failed. Please try again."
+    },
+    "forgot": {
+      "title": "Reset your password",
+      "description": "Enter the email you signed up with and we'll send a reset link.",
+      "email": "Email",
+      "emailPlaceholder": "you@example.com",
+      "emailError": "Enter a valid email address",
+      "submit": "Send reset link",
+      "back": "Back to sign in",
+      "sentTitle": "Check your email",
+      "sentDescription": "We sent a password reset link to",
+      "backToSignIn": "Back to sign in"
     },
     "otp": {
       "title": "Check your email",
@@ -687,6 +735,33 @@
       "submit": "Verify",
       "resend": "Resend code",
       "error": "Invalid code"
+    },
+    "welcome": {
+      "tagline": "Track Vietnamese meals",
+      "taglineHighlight": "without the guesswork",
+      "demoMeal": "2 mực kho mặn + 1 chén cơm + canh chua",
+      "demoResult": "{kcal} kcal",
+      "continueWithEmail": "Continue with email",
+      "terms": "By continuing you agree to our terms and privacy policy."
+    },
+    "confirm": {
+      "title": "Check your email",
+      "description": "We sent a confirmation link to",
+      "hint": "Tap the link to finish creating your account.",
+      "resend": "Resend email",
+      "resendIn": "Resend in {seconds}s",
+      "resent": "Email sent again",
+      "back": "Back"
+    },
+    "pending": {
+      "finishing": "Finishing sign-in…"
+    },
+    "errors": {
+      "invalidCredentials": "That email and password don't match — try again or reset your password.",
+      "emailNotConfirmed": "That email hasn't been confirmed yet — check your inbox for the link.",
+      "network": "Couldn't reach the server — check your connection and try again.",
+      "rateLimited": "Too many attempts — give it a moment, then try again.",
+      "generic": "Something went wrong — please try again."
     }
   },
   "landing": {
@@ -715,7 +790,7 @@
         "analysis": "AI nutrition analysis",
         "highConfidence": "High confidence",
         "totalCalories": "Total calories",
-        "inputPlaceholder": "Describe your meal...",
+        "inputPlaceholder": "Describe your meal…",
         "smartContext": "Smart context",
         "smartContextText": "Uses your region, cooking habits, and meal text to tighten estimates."
       }
@@ -833,10 +908,19 @@
   },
   "dashboard": {
     "title": "Dashboard",
+    "greeting": {
+      "morning": "Good morning",
+      "afternoon": "Good afternoon",
+      "evening": "Good evening",
+      "night": "Good evening"
+    },
     "today": "Today",
     "thisWeek": "This Week",
     "caloriesConsumed": "Calories consumed",
     "caloriesRemaining": "Calories remaining",
+    "caloriesOverTarget": "Over target",
+    "left": "left",
+    "over": "over",
     "protein": "Protein",
     "carbs": "Carbs",
     "fat": "Fat",
@@ -891,7 +975,9 @@
       "logWeight": "Log weight",
       "update": "Update",
       "editHint": "Editing today's entry — saves overwrite the previous value.",
-      "saveFailed": "Failed to save weight"
+      "saveFailed": "Failed to save weight",
+      "netChange": "Net change",
+      "steady": "Steady"
     },
     "adherenceHeatmap": {
       "onTrack": "{percent}% on track",
@@ -912,35 +998,40 @@
     },
     "caloriesLogged": "kcal logged",
     "mealReceiptsHint": "Your meal receipts will show up here",
-    "progressStatus": {
-      "insufficient": {
-        "label": "Tracking started",
-        "detail": "Log tomorrow to see your trend."
-      },
-      "on_pace": {
-        "label": "On pace",
-        "detail": "Your current pace is matching the plan."
-      },
-      "ahead": {
-        "label": "Ahead of plan",
-        "detail": "Progress is moving faster than expected."
-      },
-      "behind": {
-        "label": "Needs attention",
-        "detail": "The trend is softer than the plan right now."
-      },
-      "stable": {
-        "label": "Stable",
-        "detail": "Your weight is staying within a quiet maintenance band."
-      }
-    }
+    "firstRunQuestion": "What did you eat today?",
+    "firstRunHint": "Describe your first meal — Nhẩm estimates the rest.",
+    "firstRunChips": {
+      "morning1": "1 tô phở bò + quẩy",
+      "morning2": "2 trứng ốp la + bánh mì",
+      "morning3": "1 ly cà phê sữa đá",
+      "midday1": "1 dĩa cơm tấm sườn",
+      "midday2": "1 tô bún chả",
+      "midday3": "1 chén cơm + thịt kho",
+      "evening1": "2 mực kho + 1 chén cơm",
+      "evening2": "1 tô canh chua cá lóc",
+      "evening3": "1 tô bún bò Huế"
+    },
+    "yesterday": "Yesterday"
   },
   "logging": {
     "title": "What did you eat?",
-    "placeholder": "Describe your meal...",
+    "placeholder": "Describe your meal…",
+    "composerPlaceholder": "Add a meal…",
+    "modeSelector": {
+      "title": "How do you want to log?",
+      "button": "Mode",
+      "soon": "Soon",
+      "comingSoon": "Cheat meal mode is coming soon",
+      "normal": "Normal",
+      "normalDesc": "Describe a meal in your own words",
+      "cheat": "Cheat meal",
+      "cheatDesc": "Log a treat without the breakdown",
+      "manual": "Manual",
+      "manualDesc": "Search foods, enter exact grams"
+    },
     "submit": "Analyze",
     "stopAnalyzing": "Stop analyzing",
-    "analyzing": "Analyzing your meal...",
+    "analyzing": "Analyzing your meal…",
     "breakfast": "Breakfast",
     "brunch": "Brunch",
     "lunch": "Lunch",
@@ -949,11 +1040,13 @@
     "mealSlot": "Meal type",
     "confirm": "Save meal",
     "discard": "Discard",
+    "remove": "Remove",
+    "mealRemoved": "Meal removed",
+    "undo": "Undo",
     "edit": "Edit",
     "nutritionSummary": "Nutrition summary",
     "ingredients": "Ingredients",
     "calories": "Calories",
-    "confidence": "Confidence",
     "high": "High",
     "medium": "Medium",
     "low": "Low",
@@ -965,7 +1058,10 @@
     "todaysMeals": "Today's meals",
     "emptyState": {
       "title": "What did you eat?",
-      "subtitle": "Describe your meal and get a macro breakdown."
+      "title2": "What's on your plate?",
+      "title3": "What did you have?",
+      "title4": "Ready to log a meal?",
+      "title5": "What's for this meal?"
     },
     "feedArea": {
       "savedMeal": "Meal saved",
@@ -985,12 +1081,17 @@
       }
     },
     "streaming": {
-      "connecting": "Connecting...",
-      "decomposing": "Breaking down your meal...",
-      "matching": "Matching ingredients...",
-      "estimating": "Estimating nutrition...",
-      "assembling": "Putting it all together...",
-      "analyzing": "Analyzing..."
+      "connecting": "Connecting…",
+      "decomposing": "Breaking down your meal…",
+      "matching": "Matching ingredients…",
+      "estimating": "Estimating nutrition…",
+      "assembling": "Putting it all together…",
+      "analyzing": "Analyzing…",
+      "stillWorking": "Still working on it — almost there."
+    },
+    "failedAttempt": {
+      "message": "We couldn't read this one. Your note is safe — give it another try.",
+      "tryAgain": "Try again"
     },
     "mealEntry": {
       "edit": "Edit",
@@ -1032,6 +1133,7 @@
       "subtitle": "Search foods, enter exact grams — no AI",
       "searchPlaceholder": "Search foods...",
       "recentFoods": "Recent foods",
+      "recentsHint": "Search to add foods",
       "selected": "Selected",
       "noResults": "No foods found",
       "searching": "Searching...",
@@ -1122,6 +1224,21 @@
   },
   "settings": {
     "title": "Settings",
+    "account": {
+      "title": "Account",
+      "exportTitle": "Export my data",
+      "exportError": "Could not export your data. Please try again.",
+      "signOut": "Sign out",
+      "signOutConfirmTitle": "Sign out of Nhẩm?",
+      "cancel": "Cancel",
+      "delete": "Delete account",
+      "deleteScreenTitle": "Delete account",
+      "deleteConsequence": "This removes your profile, every meal you've logged, and your weight history. There is no undo.",
+      "deleteConfirmLabel": "Type {word} to confirm",
+      "deleteConfirmWord": "DELETE",
+      "deleteConfirmAction": "Delete my account",
+      "deleteError": "Could not delete your account. Please try again."
+    },
     "profile": "Profile",
     "preferences": "Preferences",
     "bodyMetrics": "Body Metrics",
@@ -1154,7 +1271,22 @@
       "regionalSubtitle": "Country of origin and current residence",
       "cookingSubtitle": "Oil usage, rice, sugar, protein, and broth defaults",
       "saveError": "Failed to save settings. Please try again.",
-      "invalidError": "Some entries are invalid — please review your body metrics."
+      "invalidError": "Some entries are invalid — please review your body metrics.",
+      "retry": "Try again",
+      "incompleteHint": "Nothing saved yet — fill in weight, height, and age first."
+    },
+    "rows": {
+      "goalPace": "Goal & pace",
+      "cooking": "Cooking habits",
+      "region": "Region & language",
+      "notSet": "Not set",
+      "pacePerWeek": "{pace} {unit}/wk"
+    },
+    "about": {
+      "title": "About",
+      "version": "Version",
+      "privacy": "Privacy policy",
+      "terms": "Terms of service"
     }
   },
   "errors": {
@@ -1166,6 +1298,7 @@
   },
   "validation": {
     "bodyMetrics": {
+      "sexRequired": "Please select your biological sex.",
       "weightRequired": "Please enter your weight.",
       "weightMin": "Weight must be at least 30 kg.",
       "weightMax": "Weight must be at most 300 kg.",

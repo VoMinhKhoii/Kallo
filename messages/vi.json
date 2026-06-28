@@ -459,6 +459,7 @@
       "gatheringSub": "Đã có {days} ngày đủ bữa — cứ tiếp tục, bức tranh sẽ rõ dần.",
       "trustLineNoConfidence": "{days} ngày đủ bữa",
       "partialNote": "· {count, plural, other {tạm bỏ qua # ngày ghi thiếu}}",
+      "period1d": "hôm nay",
       "period7d": "7 ngày qua",
       "period30d": "30 ngày qua",
       "period90d": "90 ngày qua"

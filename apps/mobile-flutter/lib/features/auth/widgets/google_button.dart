@@ -79,7 +79,7 @@ class _GoogleButtonState extends State<GoogleButton> {
               const SizedBox(width: 10), // gap-2.5
               Text(
                 tr('auth.dialog.continueWithGoogle'),
-                style: NhamTextStyles.sansMedium(fontSize: NhamFontSize.sm)
+                style: NhamTextStyles.sansMedium(fontSize: NhamFontSize.md)
                     .copyWith(color: NhamColors.text, letterSpacing: -0.2),
               ),
             ],

@@ -13,18 +13,24 @@ library;
 
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import '../../../models/dashboard.dart';
 import '../../../shared/widgets/widgets.dart';
 import '../../../data/session_provider.dart';
 import '../../../shell/app_header.dart';
 import '../../../theme/nham_theme.dart';
+import '../../logging/logic/timeline_utils.dart' hide WeekStrip;
 import '../data/dashboard_providers.dart';
 import '../logic/dashboard_format.dart';
 import '../widgets/adherence_heatmap.dart';
 import '../widgets/dashboard_tokens.dart';
 import '../widgets/floating_meal_trigger.dart';
 import '../widgets/section_header.dart';
+import '../widgets/skeleton.dart';
 import '../widgets/today_section.dart';
 import '../widgets/week_strip.dart';
 import '../widgets/weight_chart.dart';
@@ -66,20 +72,20 @@ class DashboardScreen extends ConsumerWidget {
         children: [
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: NhamSpacing.sp3),
-            child: AppHeader(child: Text('Hello', style: dashHeadline())),
+            child: AppHeader(
+              child: Text(_greeting().tr(), style: dashHeadline()),
+            ),
           ),
           Expanded(
             child: bundle.when(
-              loading: () => Center(
-                child: Padding(
-                  padding: const EdgeInsets.all(NhamSpacing.sp6),
-                  child: SectionState(message: tr('dashboard.todayLoading')),
-                ),
-              ),
+              // Skeleton of the real layout (not a centered spinner) so the
+              // load previews its own shape.
+              loading: () => const _DashboardSkeleton(),
               error: (_, __) => Center(
                 child: Padding(
                   padding: const EdgeInsets.all(NhamSpacing.sp6),
                   child: SectionState(
+                    icon: LucideIcons.cloudOff,
                     message: tr('dashboard.todayLoadError'),
                     actionLabel: tr('dashboard.retry'),
                     onAction: () =>
@@ -91,12 +97,34 @@ class DashboardScreen extends ConsumerWidget {
                 args: args,
                 todayDate: todayDate,
                 targets: _targetsFor(data),
+                isFirstRun: _isFirstRun(data),
               ),
             ),
           ),
         ],
       ),
     );
+  }
+
+  /// True when the user looks brand-new — so the dashboard can collapse to
+  /// the one first-run card and suppress the "% on track" framing.
+  ///
+  /// There is no explicit "has-logged-before" flag on the bundle, so this gates
+  /// on "zero meals today AND zero logged/partial heatmap cells in the 90d
+  /// window". Known limit: a returning user whose last meal is older than 90
+  /// days has no cells in the window and IS treated as first-run — acceptable,
+  /// since after that long a gentle restart reads better than stale framing.
+  bool _isFirstRun(DashboardBundle data) {
+    if (data.day.persistedMeals.isNotEmpty) return false;
+    for (final row in data.heatmap.cells) {
+      for (final cell in row) {
+        if (cell.status == HeatmapCellStatus.logged ||
+            cell.status == HeatmapCellStatus.partial) {
+          return false;
+        }
+      }
+    }
+    return true;
   }
 
   DockTargets _targetsFor(DashboardBundle data) {
@@ -110,11 +138,22 @@ class DashboardScreen extends ConsumerWidget {
   }
 }
 
+/// The l10n key for a time-of-day greeting, driven by the device clock. A
+/// greeting, not an interpretation — the only Lora moment on the screen.
+String _greeting() {
+  final hour = DateTime.now().hour;
+  if (hour < 12) return 'dashboard.greeting.morning';
+  if (hour < 17) return 'dashboard.greeting.afternoon';
+  if (hour < 21) return 'dashboard.greeting.evening';
+  return 'dashboard.greeting.night';
+}
+
 class _Content extends StatefulWidget {
   const _Content({
     required this.args,
     required this.todayDate,
     required this.targets,
+    required this.isFirstRun,
   });
 
   /// Today-anchored args — Progress (30d), Consistency (90d) and the week
@@ -122,21 +161,67 @@ class _Content extends StatefulWidget {
   final DashboardArgs args;
   final String todayDate;
   final DockTargets targets;
+  final bool isFirstRun;
 
   @override
   State<_Content> createState() => _ContentState();
 }
 
 class _ContentState extends State<_Content> {
-  // The day whose summary the Today card shows; tapping a strip day changes it
-  // (browse day-card only). Defaults to today.
-  late String _selectedDate = widget.todayDate;
+  /// The browsable days, oldest → today (future days aren't pageable). Today is
+  /// always the last page; the strip centers today at index 3, so the past half
+  /// (indices 0..3) is exactly today and the three days before it.
+  late final List<String> _days =
+      buildCenteredStripFromAnchor(widget.todayDate).days.sublist(0, 4);
+  late final int _todayPage = _days.length - 1;
+
+  // The day whose summary the Today card shows; tapping a strip day or swiping
+  // the card changes it. Defaults to today (the last page).
+  late int _page = _todayPage;
+  late final PageController _pageController =
+      PageController(initialPage: _todayPage);
+
+  String get _selectedDate => _days[_page];
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  /// Strip tap → animate the day card to that page (selection haptic fires in
+  /// the strip's own GestureDetector). Future / out-of-window days are ignored.
+  void _onSelectDay(String date) {
+    final idx = _days.indexOf(date);
+    if (idx < 0 || idx == _page) return;
+    _pageController.animateToPage(
+      idx,
+      duration: const Duration(milliseconds: 280),
+      curve: const Cubic(0.16, 1, 0.3, 1),
+    );
+  }
+
+  /// Swipe → update selection + fire the same selection haptic the strip uses.
+  void _onPageChanged(int page) {
+    if (page == _page) return;
+    HapticFeedback.selectionClick();
+    setState(() => _page = page);
+  }
+
+  /// A human date line for the card: "Today" / "Yesterday" / a localized
+  /// weekday-month-day (e.g. "Mon, Jun 9").
+  String _dateLabel(String date, String locale) {
+    if (date == widget.todayDate) return tr('dashboard.today');
+    if (date == addDays(widget.todayDate, -1)) {
+      return tr('dashboard.yesterday');
+    }
+    return DateFormat('EEE, MMM d', locale).format(dateStringToDate(date));
+  }
 
   @override
   Widget build(BuildContext context) {
     final bottomInset = MediaQuery.of(context).padding.bottom;
-    // Today card follows the selected day; everything else stays on today.
-    final selectedArgs = (userId: widget.args.userId, date: _selectedDate);
+    final locale = context.locale.toString();
 
     return Stack(
       children: [
@@ -149,17 +234,32 @@ class _ContentState extends State<_Content> {
             bottom: bottomInset + 96,
           ),
           children: [
-            // SECTION 1 — week strip + today summary (greeting now lives in the
-            // header row, beside the hamburger).
+            // SECTION 1 — week strip + the paged day-viewer (greeting now lives
+            // in the header row, beside the hamburger).
             WeekStrip(
               args: widget.args,
               todayDate: widget.todayDate,
               selectedDate: _selectedDate,
-              onSelectDay: (d) => setState(() => _selectedDate = d),
+              onSelectDay: _onSelectDay,
             ),
             Padding(
               padding: const EdgeInsets.only(bottom: NhamSpacing.sp4),
-              child: TodaySection(args: selectedArgs, targets: widget.targets),
+              child: widget.isFirstRun
+                  ? TodaySection(
+                      args: widget.args,
+                      targets: widget.targets,
+                      dateLabel: _dateLabel(widget.todayDate, locale),
+                      isFirstRun: true,
+                    )
+                  : _DayPager(
+                      controller: _pageController,
+                      days: _days,
+                      todayPage: _todayPage,
+                      userId: widget.args.userId,
+                      targets: widget.targets,
+                      onPageChanged: _onPageChanged,
+                      dateLabel: (d) => _dateLabel(d, locale),
+                    ),
             ),
             // SECTION 2 — Progress.
             _Section(
@@ -185,6 +285,194 @@ class _ContentState extends State<_Content> {
         ),
         // Mobile-only FAB (web `md:hidden` FloatingMealTrigger).
         const FloatingMealTrigger(),
+      ],
+    );
+  }
+}
+
+/// The paged day-viewer: a PageView of [TodaySection]s, one per browsable day,
+/// synced to the week strip. Swiping or tapping a strip day moves the page.
+///
+/// A PageView needs a bounded height, but each day's card differs in height
+/// (different meal counts). Each page reports its measured height; the pager
+/// animates its own height to the active page so the surrounding ListView
+/// reflows smoothly instead of the card being clipped or over-tall.
+class _DayPager extends StatefulWidget {
+  const _DayPager({
+    required this.controller,
+    required this.days,
+    required this.todayPage,
+    required this.userId,
+    required this.targets,
+    required this.onPageChanged,
+    required this.dateLabel,
+  });
+
+  final PageController controller;
+  final List<String> days;
+  final int todayPage;
+  final String userId;
+  final DockTargets targets;
+  final ValueChanged<int> onPageChanged;
+  final String Function(String date) dateLabel;
+
+  @override
+  State<_DayPager> createState() => _DayPagerState();
+}
+
+class _DayPagerState extends State<_DayPager> {
+  late final List<double?> _heights =
+      List<double?>.filled(widget.days.length, null);
+  late int _active = widget.todayPage;
+
+  void _report(int index, double height) {
+    if (_heights[index] == height) return;
+    // Defer the setState out of the layout/build phase.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      setState(() => _heights[index] = height);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // While a page is unmeasured, fall back to the tallest known height (or a
+    // sensible minimum) so the first frame isn't zero-height.
+    final known = _heights.whereType<double>();
+    final fallback = known.isEmpty
+        ? 280.0
+        : known.reduce((a, b) => a > b ? a : b);
+    final height = _heights[_active] ?? fallback;
+
+    return AnimatedSize(
+      duration: const Duration(milliseconds: 220),
+      curve: const Cubic(0.16, 1, 0.3, 1),
+      alignment: Alignment.topCenter,
+      child: SizedBox(
+        height: height,
+        child: PageView.builder(
+          controller: widget.controller,
+          itemCount: widget.days.length,
+          onPageChanged: (p) {
+            setState(() => _active = p);
+            widget.onPageChanged(p);
+          },
+          itemBuilder: (context, index) {
+            final date = widget.days[index];
+            return _MeasuredPage(
+              onHeight: (h) => _report(index, h),
+              child: TodaySection(
+                args: (userId: widget.userId, date: date),
+                targets: widget.targets,
+                dateLabel: widget.dateLabel(date),
+                isToday: index == widget.todayPage,
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+}
+
+/// Reports its child's laid-out height once per layout pass, top-aligned so the
+/// card sits at the top of the (taller) page viewport.
+class _MeasuredPage extends StatelessWidget {
+  const _MeasuredPage({required this.child, required this.onHeight});
+  final Widget child;
+  final ValueChanged<double> onHeight;
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      physics: const NeverScrollableScrollPhysics(),
+      child: _SizeReporter(
+        onHeight: onHeight,
+        child: child,
+      ),
+    );
+  }
+}
+
+class _SizeReporter extends SingleChildRenderObjectWidget {
+  const _SizeReporter({required this.onHeight, required super.child});
+  final ValueChanged<double> onHeight;
+
+  @override
+  _SizeReporterRender createRenderObject(BuildContext context) =>
+      _SizeReporterRender(onHeight);
+
+  @override
+  void updateRenderObject(
+      BuildContext context, _SizeReporterRender renderObject) {
+    renderObject.onHeight = onHeight;
+  }
+}
+
+class _SizeReporterRender extends RenderProxyBox {
+  _SizeReporterRender(this.onHeight);
+  ValueChanged<double> onHeight;
+  double? _last;
+
+  @override
+  void performLayout() {
+    super.performLayout();
+    final h = size.height;
+    if (h != _last) {
+      _last = h;
+      onHeight(h);
+    }
+  }
+}
+
+/// The full-page loading skeleton — a week-strip row, the Today card, and the
+/// two lower section cards, all under one shimmer sweep. Mirrors [_Content]'s
+/// padding so the swap to real data doesn't jump.
+class _DashboardSkeleton extends StatelessWidget {
+  const _DashboardSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    final bottomInset = MediaQuery.of(context).padding.bottom;
+    // Each card / header shimmers its own bars internally (so the white card
+    // surfaces stay white); only the bare week-strip pills need a wrapper.
+    return ListView(
+      padding: EdgeInsets.only(
+        left: NhamSpacing.sp3,
+        right: NhamSpacing.sp3,
+        top: NhamSpacing.sp3,
+        bottom: bottomInset + 96,
+      ),
+      children: const [
+        // Week-strip row — four day pills.
+        Shimmer(
+          child: Padding(
+            padding: EdgeInsets.symmetric(vertical: NhamSpacing.sp2),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                SkeletonBar(width: 64, height: 76, radius: 16),
+                SkeletonBar(width: 64, height: 76, radius: 16),
+                SkeletonBar(width: 64, height: 76, radius: 16),
+                SkeletonBar(width: 64, height: 76, radius: 16),
+              ],
+            ),
+          ),
+        ),
+        SizedBox(height: NhamSpacing.sp3),
+        // Section 1 — Today.
+        SkeletonHeader(),
+        TodayCardSkeleton(),
+        SizedBox(height: NhamSpacing.sp4),
+        // Section 2 — Progress.
+        SkeletonHeader(),
+        WeightCardSkeleton(),
+        SizedBox(height: NhamSpacing.sp4),
+        // Section 3 — Consistency.
+        SkeletonHeader(),
+        SkeletonCard(children: [
+          SkeletonBar(height: 120, radius: 10),
+        ]),
       ],
     );
   }

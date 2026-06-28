@@ -13,6 +13,7 @@ interface VerdictHeroProps {
 }
 
 const PERIOD_KEYS: Record<NutritionRange, string> = {
+  '1d': 'verdict.period1d',
   '7d': 'verdict.period7d',
   '30d': 'verdict.period30d',
   '90d': 'verdict.period90d',

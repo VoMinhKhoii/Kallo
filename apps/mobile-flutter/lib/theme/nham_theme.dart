@@ -183,6 +183,21 @@ abstract final class NhamTheme {
         thickness: 1,
         space: 0,
       ),
+      // Branded toasts: espresso pill, cream text, soft radius — not the stock
+      // dark-gray Material pill (sign-out errors, the undo toast, etc.).
+      snackBarTheme: SnackBarThemeData(
+        backgroundColor: NhamColors.text, // espresso
+        contentTextStyle: NhamTextStyles.body().copyWith(
+          fontSize: NhamFontSize.sm,
+          color: NhamColors.surface, // cream
+        ),
+        actionTextColor: NhamColors.accent,
+        behavior: SnackBarBehavior.floating,
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(NhamRadii.xl),
+        ),
+      ),
     );
   }
 }

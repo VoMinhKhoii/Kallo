@@ -1,13 +1,14 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:flutter/services.dart';
 
 import '../../../shared/widgets/nham_text.dart';
 import '../../../theme/nham_colors.dart';
 import '../../../theme/nham_theme.dart';
+import '../../../theme/nham_typography.dart';
 import '../data/logging_models.dart';
 import '../logic/format.dart';
-import 'dashed_divider.dart';
-import 'timeline_rail.dart';
 
 /// A saved meal in the day's feed — collapsed by default, expandable.
 ///
@@ -20,10 +21,15 @@ class PersistedMealCard extends StatefulWidget {
     super.key,
     required this.meal,
     this.isLast = false,
+    this.onRemove,
   });
 
   final PersistedMeal meal;
   final bool isLast;
+
+  /// iOS trailing-swipe removal (terracotta, never red) — fired when the card is
+  /// dismissed. Null disables the swipe.
+  final VoidCallback? onRemove;
 
   @override
   State<PersistedMealCard> createState() => _PersistedMealCardState();
@@ -54,6 +60,43 @@ class _PersistedMealCardState extends State<PersistedMealCard>
     super.dispose();
   }
 
+  /// Wrap the card in a trailing-swipe-to-remove Dismissible (terracotta, never
+  /// red) when [onRemove] is set; otherwise return the card untouched.
+  Widget _maybeDismissible(Widget card) {
+    final onRemove = widget.onRemove;
+    if (onRemove == null) return card;
+    return Dismissible(
+      key: ValueKey('dismiss-${widget.meal.id}'),
+      direction: DismissDirection.endToStart,
+      onDismissed: (_) {
+        HapticFeedback.mediumImpact();
+        onRemove();
+      },
+      background: Container(
+        alignment: Alignment.centerRight,
+        padding: const EdgeInsets.symmetric(horizontal: NhamSpacing.sp5),
+        decoration: BoxDecoration(
+          color: NhamColors.danger,
+          borderRadius: BorderRadius.circular(NhamRadii.containerLg),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(LucideIcons.trash2, size: 18, color: Colors.white),
+            const SizedBox(width: 6),
+            NhamText(
+              'logging.remove'.tr(),
+              variant: NhamTextVariant.body,
+              style: NhamTextStyles.sansMedium(fontSize: NhamFontSize.xs)
+                  .copyWith(color: Colors.white),
+            ),
+          ],
+        ),
+      ),
+      child: card,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final meal = widget.meal;
@@ -67,43 +110,45 @@ class _PersistedMealCardState extends State<PersistedMealCard>
       curve: Curves.easeInOut,
     );
 
-    return TimelineRail(
-      isLast: widget.isLast,
-      child: Padding(
-        padding: const EdgeInsets.only(bottom: NhamSpacing.sp3), // mb-3
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+    return Padding(
+      padding: const EdgeInsets.only(bottom: NhamSpacing.sp3), // mb-3
+      child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Time label sits ABOVE the card (sibling, mb-2) — not inside it.
-            NhamText(
-              time,
-              variant: NhamTextVariant.timeLabel,
-            ),
+            // Time as a centered divider on top of the card (── 1:04 AM ──) —
+            // no left timeline gutter, so the card gets the full row width.
+            _TimeDivider(time: time),
             const SizedBox(height: NhamSpacing.sp2), // mb-2
+            _maybeDismissible(
             _Card(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Header — only the chevron is the toggle target.
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        child: NhamText(
-                          meal.rawInput,
-                          variant: NhamTextVariant.mealQuote,
-                          style: const TextStyle(
-                            fontSize: 17,
-                            height: 28 / 17, // leading-7 (28px)
+                  // Header — the whole row is the toggle target (not just the
+                  // ~24px chevron), so the comfortable tap area spans the quote.
+                  GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: _toggle,
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: NhamText(
+                            meal.rawInput,
+                            variant: NhamTextVariant.mealQuote,
+                            style: const TextStyle(
+                              fontSize: 17,
+                              height: 28 / 17, // leading-7 (28px)
+                            ),
                           ),
                         ),
-                      ),
-                      const SizedBox(width: NhamSpacing.sp3), // gap-3
-                      _ChevronToggle(
-                        expand: _expand,
-                        onTap: _toggle,
-                      ),
-                    ],
+                        const SizedBox(width: NhamSpacing.sp3), // gap-3
+                        _ChevronToggle(
+                          expand: _expand,
+                          onTap: _toggle,
+                        ),
+                      ],
+                    ),
                   ),
 
                   // Collapsed summary — fades + collapses height as it expands.
@@ -154,9 +199,38 @@ class _PersistedMealCardState extends State<PersistedMealCard>
                 ],
               ),
             ),
+            ),
           ],
         ),
+      );
+  }
+}
+
+/// Centered time divider that sits on top of a meal card: a hairline, the time
+/// (── 1:04 AM ──), and a hairline — replacing the old left-rail time label.
+class _TimeDivider extends StatelessWidget {
+  const _TimeDivider({required this.time});
+
+  final String time;
+
+  @override
+  Widget build(BuildContext context) {
+    const line = Expanded(
+      child: Divider(
+        color: NhamColors.borderFaint,
+        height: 1,
+        thickness: 1,
       ),
+    );
+    return Row(
+      children: [
+        line,
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: NhamSpacing.sp3),
+          child: NhamText(time, variant: NhamTextVariant.timeLabel),
+        ),
+        line,
+      ],
     );
   }
 }
@@ -194,7 +268,7 @@ class _ChevronToggleState extends State<_ChevronToggle> {
         child: RotationTransition(
           turns: Tween<double>(begin: 0, end: 0.5).animate(widget.expand),
           child: Icon(
-            Icons.keyboard_arrow_down, // lucide ChevronDown
+            LucideIcons.chevronDown, // lucide ChevronDown
             size: 16,
             color: _pressed ? NhamColors.text : NhamColors.textMuted60,
           ),
@@ -218,7 +292,7 @@ class _ExpandedDetails extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const DashedDivider(color: NhamColors.border),
+          const Divider(height: 1, thickness: 1, color: NhamColors.borderFaint),
           const SizedBox(height: NhamSpacing.sp4), // pt-4
           Padding(
             padding: const EdgeInsets.only(bottom: NhamSpacing.sp4), // mb-4
@@ -240,13 +314,14 @@ class _ExpandedDetails extends StatelessWidget {
                         const SizedBox(width: NhamSpacing.sp3), // gap-3
                         Row(
                           children: [
-                            NhamText('P:${fmtG(group.nutrition.proteinG)}',
+                            NhamText('P: ${fmtG(group.nutrition.proteinG)}',
                                 variant: NhamTextVariant.macroTiny),
                             const SizedBox(width: NhamSpacing.sp2),
-                            NhamText('C:${fmtG(group.nutrition.carbohydrateG)}',
+                            NhamText(
+                                'C: ${fmtG(group.nutrition.carbohydrateG)}',
                                 variant: NhamTextVariant.macroTiny),
                             const SizedBox(width: NhamSpacing.sp2),
-                            NhamText('F:${fmtG(group.nutrition.fatG)}',
+                            NhamText('F: ${fmtG(group.nutrition.fatG)}',
                                 variant: NhamTextVariant.macroTiny),
                             const SizedBox(width: NhamSpacing.sp3), // gap-3
                             NhamText(
@@ -261,7 +336,7 @@ class _ExpandedDetails extends StatelessWidget {
               ],
             ),
           ),
-          const DashedDivider(color: NhamColors.borderHalf),
+          const Divider(height: 1, thickness: 1, color: NhamColors.borderFaint),
           const SizedBox(height: NhamSpacing.sp3), // pt-3
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,

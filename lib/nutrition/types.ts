@@ -1,4 +1,4 @@
-export type NutritionRange = '7d' | '30d' | '90d';
+export type NutritionRange = '1d' | '7d' | '30d' | '90d';
 export type NutritionRangeInput = 'auto' | NutritionRange;
 export type BucketTimezone = 'local' | 'utc';
 export type TargetSource = 'vietnam_rda' | 'who_fao' | 'nasem' | 'unsupported';
@@ -146,7 +146,6 @@ export interface NutrientCardData {
     faoVietnamConfidence: number | null;
     missingSodiumCondimentItems?: number;
   };
-  supportsCandidates: boolean;
 }
 
 export interface EducationCardData {

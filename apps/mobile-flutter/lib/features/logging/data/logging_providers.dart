@@ -67,18 +67,6 @@ class LoggingDayNotifier
     );
   }
 
-  /// Optimistically remove a persisted meal (on delete).
-  void removeMeal(String mealId) {
-    final current = state.valueOrNull;
-    if (current == null) return;
-    state = AsyncData(
-      current.copyWith(
-        persistedMeals:
-            current.persistedMeals.where((m) => m.id != mealId).toList(),
-      ),
-    );
-  }
-
   /// Roll back to a snapshot (on mutation error).
   void restore(LoggingDayData snapshot) {
     state = AsyncData(snapshot);
@@ -119,6 +107,14 @@ final mealDatesProvider = FutureProvider.autoDispose.family<
       .then((list) => list.cast<String>());
 });
 
+/// Session-scoped dismiss state for the once-daily "yesterday looks
+/// under-logged" nudge, keyed by the yesterday date so a fresh day re-prompts.
+/// Mirrors the web's in-memory `yesterdayPromptDismissed` useState — it resets
+/// on app relaunch (not persisted), so the prompt is at most once per session.
+final yesterdayPromptDismissedProvider = StateProvider.family<bool, String>(
+  (ref, date) => false,
+);
+
 /// The onboarding profile row the logging screen needs (calorie + macro
 /// targets). Mirrors RN `useQuery({ queryKey: onboardingKeys.profile, ... })`.
 final loggingProfileProvider =
@@ -143,6 +139,7 @@ void invalidateMealSurfaces(
   }
   ref.invalidate(mealDatesProvider(userId));
   ref.invalidate(dash.dashboardBundleProvider((userId: userId, date: date)));
+  ref.invalidate(dash.dashboardDayProvider((userId: userId, date: date)));
 }
 
 /// Confirm a pending analysis into a saved meal, with the RN hook's optimistic

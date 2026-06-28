@@ -31,22 +31,23 @@ describe('nutrition overview schema', () => {
 });
 
 describe('food source candidates schema', () => {
-  it('accepts supported candidate nutrient keys', () => {
+  it('accepts any card nutrient (default + extended)', () => {
     expect(
-      foodSourceCandidatesInputSchema.parse({
-        nutrient: 'ironMg',
-      })
-    ).toEqual({
-      nutrient: 'ironMg',
-    });
+      foodSourceCandidatesInputSchema.parse({ nutrient: 'ironMg' })
+    ).toEqual({ nutrient: 'ironMg' });
+    // Extended nutrients are candidates now (DB-derived foods).
+    expect(
+      foodSourceCandidatesInputSchema.safeParse({ nutrient: 'magnesiumMg' })
+        .success
+    ).toBe(true);
   });
 
-  it('rejects unsupported candidate nutrients', () => {
-    expect(
-      foodSourceCandidatesInputSchema.safeParse({
-        nutrient: 'magnesiumMg',
-      }).success
-    ).toBe(false);
+  it('rejects non-card nutrients (hidden / education / macros)', () => {
+    for (const nutrient of ['vitaminHMcg', 'vitaminDMcg', 'fiberG']) {
+      expect(
+        foodSourceCandidatesInputSchema.safeParse({ nutrient }).success
+      ).toBe(false);
+    }
   });
 });
 

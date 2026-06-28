@@ -126,18 +126,18 @@ describe('resolveMicronutrientTargets', () => {
     });
   });
 
-  it('does not score age-dependent Vietnam iron when female age is missing', () => {
+  it('defaults age-unknown Vietnam female iron to the premenopausal RDA', () => {
     const targets = resolveMicronutrientTargets({
       ...baseProfile,
       biologicalSex: 'female',
       age: null,
     });
 
+    // Age unknown → keep the (higher) premenopausal floor rather than null.
     expect(targets.ironMg).toMatchObject({
-      value: null,
-      source: 'unsupported',
-      sourceLabelKey: 'nutrition.targetSources.unsupported',
-      applicability: 'unsupported',
+      value: 24,
+      source: 'vietnam_rda',
+      applicability: 'scored',
     });
     expect(targets.vitaminCMg).toMatchObject({
       value: 70,
@@ -165,17 +165,19 @@ describe('resolveMicronutrientTargets', () => {
     });
   });
 
-  it('does not score sex-dependent nutrients when biological sex is missing', () => {
+  it('uses the sex-neutral average when biological sex is missing', () => {
     const targets = resolveMicronutrientTargets({
       ...baseProfile,
       biologicalSex: null,
     });
 
+    // Sex unknown → mean of male/female RDA (iron: (10 + 24) / 2 = 17) so the
+    // nutrient still scores instead of showing "no target".
     expect(targets.ironMg).toMatchObject({
-      value: null,
-      source: 'unsupported',
-      sourceLabelKey: 'nutrition.targetSources.unsupported',
-      applicability: 'unsupported',
+      value: 17,
+      source: 'vietnam_rda',
+      sourceLabelKey: 'nutrition.targetSources.vietnamRda',
+      applicability: 'scored',
     });
     expect(targets.vitaminCMg).toMatchObject({
       value: 70,

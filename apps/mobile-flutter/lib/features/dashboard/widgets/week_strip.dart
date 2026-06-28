@@ -13,6 +13,7 @@ import 'dart:math' as math;
 
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../models/dashboard.dart';
@@ -175,7 +176,10 @@ class _DayCell extends StatelessWidget {
     if (isFuture) return cell0;
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
-      onTap: () => onSelectDay(date),
+      onTap: () {
+        HapticFeedback.selectionClick();
+        onSelectDay(date);
+      },
       child: cell0,
     );
   }

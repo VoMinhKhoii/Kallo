@@ -22,6 +22,7 @@ interface MacroConsistencyInput {
 }
 
 const MINIMUM_LOGGED_DAYS: Record<NutritionRange, number> = {
+  '1d': 1,
   '7d': 3,
   '30d': 10,
   '90d': 30,

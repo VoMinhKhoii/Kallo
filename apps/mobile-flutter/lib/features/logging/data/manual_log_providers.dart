@@ -85,7 +85,7 @@ class ManualLogController extends AutoDisposeNotifier<ManualLogState> {
   }
 
   void updateGrams(String itemId, double? grams) {
-    final clamped = grams == null ? null : grams.clamp(0, 5000).toDouble();
+    final clamped = grams?.clamp(0, 5000).toDouble();
     state = state.copyWith(
       items: [
         for (final item in state.items)

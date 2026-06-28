@@ -9,7 +9,9 @@ import '../data/profile_providers.dart';
 /// nullable because the user can clear an input mid-edit; validation guards the
 /// save. `weightKg` is nullable (the DecimalInput reports `null` while empty).
 class ProfileFormValues {
-  BiologicalSex biologicalSex;
+  /// Null until the user has actually chosen — never silently defaulted to
+  /// male, which would bake a wrong BMR into the saved targets.
+  BiologicalSex? biologicalSex;
   double? weightKg;
   int? heightCm;
   int? age;
@@ -88,10 +90,16 @@ class ProfileFormValues {
     }
 
     return ProfileFormValues(
-      biologicalSex: _sexFrom(p.biologicalSex) ?? BiologicalSex.male,
-      weightKg: p.weightKg ?? 65,
-      heightCm: p.heightCm ?? 165,
-      age: p.age ?? 25,
+      // Like the numeric metrics below, sex starts EMPTY when the profile has
+      // none — a silent male default would compute a wrong BMR the user never
+      // chose. validateBodyMetrics forces a genuine selection instead.
+      biologicalSex: _sexFrom(p.biologicalSex),
+      // Numeric body metrics start EMPTY when the profile has none — never
+      // fabricated 65/165/25, which a user who skipped onboarding could save as
+      // if they were real. validateBodyMetrics forces a genuine entry instead.
+      weightKg: p.weightKg,
+      heightCm: p.heightCm,
+      age: p.age,
       activityLevel: _activityFrom(p.activityLevel) ?? ActivityLevel.light,
       goal: _goalFrom(p.goal) ?? Goal.maintaining,
       aggression: parseAggression(),
@@ -174,13 +182,18 @@ BrothConsumption? _brothFrom(String? s) => switch (s) {
     };
 
 /// Field identifiers, used to map a validation error to its owning tab.
-enum ProfileField { weightKg, heightCm, age }
+enum ProfileField { biologicalSex, weightKg, heightCm, age }
 
 /// Validates the body-metrics numeric fields exactly as the RN zod schema does
 /// (`createBodyMetricsSchema`). Returns the per-field localized error messages
 /// (`validation.bodyMetrics.*`), or an empty map when all valid.
 Map<ProfileField, String> validateBodyMetrics(ProfileFormValues v) {
   final errors = <ProfileField, String>{};
+
+  if (v.biologicalSex == null) {
+    errors[ProfileField.biologicalSex] =
+        tr('validation.bodyMetrics.sexRequired');
+  }
 
   final w = v.weightKg;
   if (w == null || w.isNaN) {

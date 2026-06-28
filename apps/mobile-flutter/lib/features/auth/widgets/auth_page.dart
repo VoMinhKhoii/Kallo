@@ -1,242 +1,335 @@
 import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../services/supabase_service.dart';
 import '../../../theme/nham_colors.dart';
 import '../../../theme/nham_theme.dart';
 import '../../../theme/nham_typography.dart';
 import '../providers/auth_form_controller.dart';
+import 'apple_button.dart';
 import 'auth_divider.dart';
+import 'confirm_email_view.dart';
+import '../../../shared/widgets/top_toast.dart';
+import 'email_auth_form.dart';
 import 'google_button.dart';
-import 'sign_in_form.dart';
-import 'sign_up_form.dart';
+import 'welcome_demo.dart';
 
-/// The auth surface as a full-bleed page.
+/// Which face of the auth surface is showing.
+enum _AuthMode { welcome, email }
+
+/// The auth surface as a full-bleed page on the cream surface.
 ///
-/// Ported from web `components/auth/auth-dialog.tsx`, but rendered as a flat
-/// page on the cream surface rather than a modal: no dimmed/blurred backdrop and
-/// no floating card. It keeps the same content (header, Google button +
-/// divider, form, footer) and cross-fades between the Sign in / Sign up forms;
-/// the footer link is the only tab switch (the top toggle was removed).
+/// Replaces the old "login wall titled Welcome back". It now lands on a real
+/// pre-auth **welcome screen**: the Lora wordmark, a typing demo resolving into
+/// a point result, then three stacked social/email options. "Continue with
+/// email" cross-fades to a single email path (no sign-in/sign-up tab split). A
+/// successful sign-up cross-fades again to a real "Check your email" state with
+/// a resend-cooldown, instead of a SnackBar that vanishes before it's read.
 class AuthPage extends ConsumerStatefulWidget {
-  const AuthPage({super.key, this.initialSignIn = true});
-
-  /// Which tab opens first. `/sign-in` → true, `/sign-up` → false.
-  final bool initialSignIn;
+  const AuthPage({super.key});
 
   @override
   ConsumerState<AuthPage> createState() => _AuthPageState();
 }
 
 class _AuthPageState extends ConsumerState<AuthPage> {
-  late bool _signIn = widget.initialSignIn;
+  _AuthMode _mode = _AuthMode.welcome;
 
-  void _setTab(bool signIn) {
-    if (_signIn == signIn) return;
-    setState(() => _signIn = signIn);
+  /// Drives the face-switch slide direction: true = advancing (welcome → email),
+  /// false = going back. Lets the transition read as forward/back navigation.
+  bool _forward = true;
+
+  // The welcome + email surfaces share one controller (single path).
+  static final _provider = signInControllerProvider;
+
+  AuthFormController get _controller => ref.read(_provider.notifier);
+
+  AppLifecycleListener? _lifecycle;
+
+  @override
+  void initState() {
+    super.initState();
+    // OAuth hands off to Safari; on return the deep-link observer completes the
+    // PKCE exchange. If the app resumes still signed-out, the user cancelled —
+    // drop the "Finishing sign-in…" pending state so it doesn't hang.
+    _lifecycle = AppLifecycleListener(
+      onResume: () {
+        final state = ref.read(_provider);
+        if (state.googleBusy &&
+            SupabaseService.client.auth.currentSession == null) {
+          _controller.clearMessages();
+          // Clear the in-flight action so the overlay drops.
+          ref.read(_provider.notifier).resetAction();
+        }
+      },
+    );
+  }
+
+  @override
+  void dispose() {
+    _lifecycle?.dispose();
+    super.dispose();
   }
 
   void _toast(String message) {
-    final messenger = ScaffoldMessenger.maybeOf(context);
-    if (messenger == null) return;
-    messenger
-      ..clearSnackBars()
-      ..showSnackBar(
-        SnackBar(
-          behavior: SnackBarBehavior.floating,
-          backgroundColor: NhamColors.cardCream,
-          elevation: 4,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(NhamRadii.buttonXl),
-            side: const BorderSide(color: NhamColors.border),
-          ),
-          content: Text(
-            message,
-            style: NhamTextStyles.sansMedium(fontSize: NhamFontSize.sm)
-                .copyWith(color: NhamColors.text),
-          ),
-        ),
-      );
+    showTopToast(context, message, variant: TopToastVariant.error);
   }
 
   @override
   Widget build(BuildContext context) {
-    final provider =
-        _signIn ? signInControllerProvider : signUpControllerProvider;
-    final state = ref.watch(provider);
+    final state = ref.watch(_provider);
+    final showConfirm = state.pendingEmail != null;
 
-    return SafeArea(
-      child: Center(
-        child: SingleChildScrollView(
-          // Page gutter (32) + maxWidth 420 → a 356px content column, matching
-          // the old card's px-8 inner width so spacing/line lengths are 1:1.
-          padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 32),
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 420),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                _header(),
-                _googleBlock(state, ref.read(provider.notifier).signInWithGoogle),
-                _formBlock(state),
-              ],
+    // Errors raised while the email form is on screen render inline there.
+    // Anything else (OAuth on the welcome face, a failed resend on the
+    // confirm face) would otherwise be invisible — toast those.
+    ref.listen<AuthFormState>(_provider, (prev, next) {
+      final err = next.error;
+      final emailFormShowing =
+          _mode == _AuthMode.email && next.pendingEmail == null;
+      if (err != null && err != prev?.error && !emailFormShowing) {
+        _toast(err);
+        _controller.clearMessages();
+      }
+    });
+
+    // Which face: confirm-email > email form > welcome. The key also tells the
+    // switcher's transitionBuilder which child is incoming vs outgoing.
+    final Key currentKey = showConfirm
+        ? const ValueKey('confirm')
+        : _mode == _AuthMode.email
+            ? const ValueKey('email')
+            : const ValueKey('welcome');
+
+    final Widget face;
+    if (showConfirm) {
+      face = ConfirmEmailView(provider: _provider, onNotice: _toast);
+    } else if (_mode == _AuthMode.email) {
+      face = EmailAuthForm(
+        provider: _provider,
+        onBack: () => setState(() {
+          _forward = false;
+          _mode = _AuthMode.welcome;
+        }),
+      );
+    } else {
+      face = _welcome(state);
+    }
+
+    // Each face is a full-screen, opaque page so switching reads as an
+    // iOS-style full-page push (not a content cross-fade). The opaque fill lets
+    // the incoming page cover the outgoing one as it slides across.
+    final Widget page = ColoredBox(
+      key: currentKey,
+      color: NhamColors.surface,
+      child: SafeArea(
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 32),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 420),
+              child: face,
             ),
           ),
         ),
       ),
     );
-  }
 
-  // pb-2, centered.
-  Widget _header() {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: Column(
-        children: [
-          Text(
-            _signIn
-                ? tr('auth.dialog.signInTitle')
-                : tr('auth.dialog.signUpTitle'),
-            textAlign: TextAlign.center,
-            // Lora w400, 24px (text-2xl), #2C2416.
-            style: NhamTextStyles.serifRegular(fontSize: NhamFontSize.h3)
-                .copyWith(color: NhamColors.text),
-          ),
-          const SizedBox(height: 4), // mb-1
-          Text(
-            _signIn
-                ? tr('auth.dialog.signInSubtitle')
-                : tr('auth.dialog.signUpSubtitle'),
-            textAlign: TextAlign.center,
-            // text-sm #8B7355 DM Sans.
-            style: NhamTextStyles.sansRegular(fontSize: NhamFontSize.sm)
-                .copyWith(color: NhamColors.textMuted),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // space-y-3, pt-4.
-  Widget _googleBlock(AuthFormState state, VoidCallback onGoogle) {
-    return Padding(
-      padding: const EdgeInsets.only(top: 16),
-      child: Column(
-        children: [
-          GoogleButton(
-            busy: state.busy,
-            loading: state.googleBusy,
-            onPressed: onGoogle,
-          ),
-          const SizedBox(height: 12), // space-y-3
-          const AuthDivider(),
-        ],
-      ),
-    );
-  }
-
-  // pt-4.
-  Widget _formBlock(AuthFormState state) {
-    return Padding(
-      padding: const EdgeInsets.only(top: 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          // Tab-switch cross-fade + 10px horizontal slide, 150ms, mode 'wait'.
-          AnimatedSwitcher(
-            duration: const Duration(milliseconds: 150),
-            switchInCurve: Curves.easeOut,
-            switchOutCurve: Curves.easeIn,
+    return Stack(
+      children: [
+        Positioned.fill(
+          child: AnimatedSwitcher(
+            duration: const Duration(milliseconds: 340),
             transitionBuilder: (child, animation) {
-              final incomingSignIn = (child.key == const ValueKey('sign-in'));
-              // sign-in enters from x:-10, sign-up from x:+10.
-              final beginDx = incomingSignIn ? -10.0 : 10.0;
-              return FadeTransition(
-                opacity: animation,
-                child: AnimatedBuilder(
-                  animation: animation,
-                  builder: (context, c) => Transform.translate(
-                    offset: Offset(beginDx * (1 - animation.value), 0),
-                    child: c,
-                  ),
-                  child: child,
-                ),
+              // Incoming slides a full width in from the lead side; outgoing
+              // parallax-slides a little the opposite way, beneath it. Direction
+              // flips on "back" via [_forward].
+              final incoming = child.key == currentKey;
+              final dir = _forward ? 1.0 : -1.0;
+              final curved = CurvedAnimation(
+                parent: animation,
+                curve: Curves.easeOutCubic,
+              );
+              final begin = incoming ? Offset(dir, 0) : Offset(-dir * 0.25, 0);
+              return SlideTransition(
+                position: Tween<Offset>(begin: begin, end: Offset.zero)
+                    .animate(curved),
+                child: child,
               );
             },
-            child: _signIn
-                ? SignInForm(key: const ValueKey('sign-in'), onError: _toast)
-                : SignUpForm(
-                    key: const ValueKey('sign-up'),
-                    onError: _toast,
-                    onNotice: _toast,
-                  ),
+            layoutBuilder: (currentChild, previousChildren) => Stack(
+              children: [
+                ...previousChildren,
+                if (currentChild != null) currentChild,
+              ],
+            ),
+            child: page,
           ),
-          const SizedBox(height: 20), // mt-5
-          _footer(state),
-        ],
-      ),
+        ),
+        // OAuth app-switch: a calm "Finishing sign-in…" hold so the surface
+        // never sits blank or spins indefinitely after Safari returns.
+        if (state.googleBusy) const _FinishingOverlay(),
+      ],
     );
   }
 
-  Widget _footer(AuthFormState state) {
-    final prompt = _signIn
-        ? tr('auth.signIn.noAccount')
-        : tr('auth.signUp.hasAccount');
-    final action =
-        _signIn ? tr('auth.signIn.signUpLink') : tr('auth.signUp.signInLink');
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
+  Widget _welcome(AuthFormState state) {
+    final showApple =
+        defaultTargetPlatform == TargetPlatform.iOS ||
+        defaultTargetPlatform == TargetPlatform.macOS;
+    return Column(
+      key: const ValueKey('welcome'),
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text(
-          '$prompt ',
-          style: NhamTextStyles.sansRegular(fontSize: NhamFontSize.sm)
-              .copyWith(color: NhamColors.textMuted),
-        ),
-        // Inert while a request is in flight — same guard as the tab toggle.
-        Opacity(
-          opacity: state.busy ? 0.6 : 1.0,
-          child: IgnorePointer(
-            ignoring: state.busy,
-            child: _FooterLink(label: action, onTap: () => _setTab(!_signIn)),
+        // Wordmark.
+        Center(
+          child: Text(
+            'Nhẩm',
+            style: NhamTextStyles.serifRegular(
+              fontSize: 28,
+            ).copyWith(color: NhamColors.text),
           ),
+        ),
+        const SizedBox(height: 14),
+        // Tagline — sentence, with the second clause italic-tan.
+        Text.rich(
+          TextSpan(
+            children: [
+              TextSpan(text: '${tr('auth.welcome.tagline')} '),
+              TextSpan(
+                text: tr('auth.welcome.taglineHighlight'),
+                style: NhamTextStyles.serifItalic(
+                  fontSize: NhamFontSize.h3,
+                ).copyWith(color: NhamColors.accent),
+              ),
+            ],
+          ),
+          textAlign: TextAlign.center,
+          style: NhamTextStyles.serifRegular(
+            fontSize: NhamFontSize.h3,
+            height: NhamLeading.snug,
+          ).copyWith(color: NhamColors.text),
+        ),
+        const SizedBox(height: 28),
+        const WelcomeDemo(),
+        const SizedBox(height: 28),
+        if (showApple) ...[
+          AppleButton(busy: state.busy, onPressed: _controller.signInWithApple),
+          const SizedBox(height: 12),
+        ],
+        GoogleButton(
+          busy: state.busy,
+          loading: state.googleBusy,
+          onPressed: _controller.signInWithGoogle,
+        ),
+        const SizedBox(height: 12),
+        const AuthDivider(),
+        const SizedBox(height: 12),
+        _EmailEntryButton(
+          busy: state.busy,
+          onPressed: () => setState(() {
+            _forward = true;
+            _mode = _AuthMode.email;
+          }),
+        ),
+        const SizedBox(height: 18),
+        Text(
+          tr('auth.welcome.terms'),
+          textAlign: TextAlign.center,
+          style: NhamTextStyles.sansRegular(
+            fontSize: NhamFontSize.xs,
+            height: NhamLeading.normal,
+          ).copyWith(color: NhamColors.textMuted),
         ),
       ],
     );
   }
 }
 
-/// Inline tab-switch link: `font-semibold text-[#C9A87C]
-/// hover:text-[#A88B63] transition-colors`.
-class _FooterLink extends StatefulWidget {
-  const _FooterLink({required this.label, required this.onTap});
+/// "Continue with email" — a ghost button matching the Google button shape but
+/// without a logo, so the three options read as one stack.
+class _EmailEntryButton extends StatefulWidget {
+  const _EmailEntryButton({required this.onPressed, required this.busy});
 
-  final String label;
-  final VoidCallback onTap;
+  final VoidCallback onPressed;
+  final bool busy;
 
   @override
-  State<_FooterLink> createState() => _FooterLinkState();
+  State<_EmailEntryButton> createState() => _EmailEntryButtonState();
 }
 
-class _FooterLinkState extends State<_FooterLink> {
+class _EmailEntryButtonState extends State<_EmailEntryButton> {
   bool _pressed = false;
-
-  // Web hover color is #A88B63 (distinct from the accentDark token #B89968).
-  static const Color _hover = Color(0xFFA88B63);
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTapDown: (_) => setState(() => _pressed = true),
-      onTapUp: (_) => setState(() => _pressed = false),
-      onTapCancel: () => setState(() => _pressed = false),
-      onTap: widget.onTap,
-      child: AnimatedDefaultTextStyle(
-        duration: const Duration(milliseconds: 200), // transition-colors
-        style: NhamTextStyles.sansSemiBold(fontSize: NhamFontSize.sm)
-            .copyWith(color: _pressed ? _hover : NhamColors.accent),
-        child: Text(widget.label),
+    final fill = _pressed ? NhamColors.cardCream : NhamColors.elev;
+    return Opacity(
+      opacity: widget.busy ? 0.6 : 1.0,
+      child: GestureDetector(
+        onTapDown: widget.busy ? null : (_) => setState(() => _pressed = true),
+        onTapUp: widget.busy ? null : (_) => setState(() => _pressed = false),
+        onTapCancel:
+            widget.busy ? null : () => setState(() => _pressed = false),
+        onTap: widget.busy ? null : widget.onPressed,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(
+            horizontal: NhamSpacing.sp4,
+            vertical: NhamSpacing.sp3,
+          ),
+          decoration: BoxDecoration(
+            color: fill,
+            borderRadius: BorderRadius.circular(NhamRadii.buttonXl),
+            border: Border.all(color: NhamColors.border),
+          ),
+          alignment: Alignment.center,
+          child: Text(
+            tr('auth.welcome.continueWithEmail'),
+            style: NhamTextStyles.sansMedium(fontSize: NhamFontSize.md)
+                .copyWith(color: NhamColors.text, letterSpacing: -0.2),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// A calm full-bleed "Finishing sign-in…" hold shown while the OAuth browser
+/// round-trip completes after Safari returns.
+class _FinishingOverlay extends StatelessWidget {
+  const _FinishingOverlay();
+
+  @override
+  Widget build(BuildContext context) {
+    return Positioned.fill(
+      child: ColoredBox(
+        color: NhamColors.surface80,
+        child: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const SizedBox(
+                width: 22,
+                height: 22,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: NhamColors.accent,
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                tr('auth.pending.finishing'),
+                style: NhamTextStyles.sansMedium(
+                  fontSize: NhamFontSize.sm,
+                ).copyWith(color: NhamColors.textMuted),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

@@ -40,7 +40,6 @@ export function NutrientDetail({ card, daySeries }: NutrientDetailProps) {
         });
 
   const showChips =
-    card.supportsCandidates &&
     card.confidence >= 40 &&
     card.percentOfTarget !== null &&
     card.percentOfTarget < 90;

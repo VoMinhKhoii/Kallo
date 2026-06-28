@@ -26,6 +26,10 @@ dependencies:
   lucide_icons_flutter: ^3.1.14
   intl: ^0.20.2
   uuid: ^4.5.1
+  sign_in_with_apple: ^6.1.4
+  crypto: ^3.0.6
+  share_plus: ^10.1.4
+  path_provider: ^2.1.5
 
 dev_dependencies:
   flutter_test:
@@ -36,3 +40,22 @@ flutter:
   uses-material-design: true
   assets:
     - assets/l10n/
+    # Bundled brand fonts (OFL). google_fonts resolves the Lora files in here by
+    # their API filenames — do NOT rename — so serif renders on a cold offline
+    # start instead of falling back while fetching. Runtime fetching is disabled
+    # in main.dart.
+    - assets/google_fonts/
+  # Be Vietnam Pro is the UI sans (replaces DM Sans, whose bundled subset lacked
+  # Vietnamese diacritics). Declared as a native family — referenced directly by
+  # NhamTextStyles.sansFamily — so the full Vietnamese glyph set is guaranteed.
+  fonts:
+    - family: BeVietnamPro
+      fonts:
+        - asset: assets/google_fonts/BeVietnamPro-Regular.ttf
+          weight: 400
+        - asset: assets/google_fonts/BeVietnamPro-Medium.ttf
+          weight: 500
+        - asset: assets/google_fonts/BeVietnamPro-SemiBold.ttf
+          weight: 600
+        - asset: assets/google_fonts/BeVietnamPro-Bold.ttf
+          weight: 700

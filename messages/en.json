@@ -459,6 +459,7 @@
       "gatheringSub": "{days} complete days so far — keep going and the picture sharpens.",
       "trustLineNoConfidence": "{days} complete days",
       "partialNote": "· {count, plural, one {# partial day set aside} other {# partial days set aside}}",
+      "period1d": "today",
       "period7d": "the last 7 days",
       "period30d": "the last 30 days",
       "period90d": "the last 90 days"

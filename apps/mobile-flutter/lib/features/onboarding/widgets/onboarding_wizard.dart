@@ -1,6 +1,7 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../models/onboarding.dart';
 import '../../../theme/nham_colors.dart';
@@ -11,6 +12,7 @@ import '../data/profile_row.dart';
 import '../logic/step_one_defaults.dart';
 import '../providers/onboarding_providers.dart';
 import '../screens/screen_body_metrics.dart';
+import '../../../shared/widgets/top_toast.dart';
 import '../screens/screen_cooking.dart';
 import '../screens/screen_origin.dart';
 import 'step_indicator.dart';
@@ -35,8 +37,9 @@ double? _parseAggression(String? raw, double fallback) {
 /// The modal entrance animation (scale/opacity/y) is intentionally NOT here: it
 /// belongs to the dialog presentation ([showOnboardingDialog]), not the wizard.
 ///
-/// lucide icons → Material: `X`→[Icons.close], `ArrowLeft`→[Icons.arrow_back],
-/// `ArrowRight`→[Icons.arrow_forward], `SkipForward`→[Icons.skip_next].
+/// Icons are Lucide one-for-one: `X`→[LucideIcons.x],
+/// `ArrowLeft`→[LucideIcons.arrowLeft], `ArrowRight`→[LucideIcons.arrowRight],
+/// `SkipForward`→[LucideIcons.skipForward].
 class OnboardingWizard extends ConsumerStatefulWidget {
   const OnboardingWizard({
     super.key,
@@ -129,26 +132,11 @@ class _OnboardingWizardState extends ConsumerState<OnboardingWizard> {
   }
 
   void _showSaveError() {
-    final messenger = ScaffoldMessenger.maybeOf(context);
-    if (messenger == null) return;
-    messenger
-      ..clearSnackBars()
-      ..showSnackBar(
-        SnackBar(
-          behavior: SnackBarBehavior.floating,
-          backgroundColor: NhamColors.cardCream,
-          elevation: 4,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(NhamRadii.buttonXl),
-            side: const BorderSide(color: NhamColors.border),
-          ),
-          content: Text(
-            tr('onboarding.saveError'),
-            style: NhamTextStyles.sansMedium(fontSize: NhamFontSize.sm)
-                .copyWith(color: NhamColors.text),
-          ),
-        ),
-      );
+    showTopToast(
+      context,
+      tr('onboarding.saveError'),
+      variant: TopToastVariant.error,
+    );
   }
 
   void _handleNext() {
@@ -307,7 +295,7 @@ class _CloseButtonState extends State<_CloseButton> {
           color: _pressed ? const Color(0x80EAE7E0) : Colors.transparent,
         ),
         child: Icon(
-          Icons.close,
+          LucideIcons.x,
           size: 20,
           color: _pressed ? NhamColors.text : NhamColors.textHelp,
         ),
@@ -558,7 +546,7 @@ class _BackButtonState extends State<_BackButton> {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.arrow_back, size: 16, color: color),
+          Icon(LucideIcons.arrowLeft, size: 16, color: color),
           const SizedBox(width: NhamSpacing.sp2),
           Text(
             tr('common.back'),
@@ -623,7 +611,7 @@ class _SkipButtonState extends State<_SkipButton> {
                 ),
               )
             else
-              Icon(Icons.skip_next, size: 14, color: textColor),
+              Icon(LucideIcons.skipForward, size: 14, color: textColor),
           ],
         ),
       ),
@@ -695,7 +683,7 @@ class _NextButtonState extends State<_NextButton> {
                   ),
                 )
               else
-                const Icon(Icons.arrow_forward,
+                const Icon(LucideIcons.arrowRight,
                     size: 16, color: NhamColors.cream),
             ],
           ),

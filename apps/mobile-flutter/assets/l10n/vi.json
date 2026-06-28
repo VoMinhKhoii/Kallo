@@ -6,7 +6,7 @@
     "finish": "Hoàn tất",
     "save": "Lưu",
     "cancel": "Hủy",
-    "loading": "Đang tải...",
+    "loading": "Đang tải…",
     "error": "Đã xảy ra lỗi",
     "retry": "Thử lại",
     "search": "Tìm kiếm",
@@ -18,7 +18,8 @@
     "notFound": "Không tìm thấy trang",
     "notSignedIn": "Chưa đăng nhập.",
     "increase": "Tăng",
-    "decrease": "Giảm"
+    "decrease": "Giảm",
+    "copied": "Đã sao chép liên kết"
   },
   "nav": {
     "logging": "Ghi nhận",
@@ -52,6 +53,11 @@
       "navigationMenu": "Menu điều hướng",
       "openMenu": "Mở menu",
       "closeMenu": "Đóng menu"
+    },
+    "tabBar": {
+      "today": "Hôm nay",
+      "log": "Ghi món",
+      "patterns": "Xu hướng"
     },
     "mainSidebar": {
       "navigationLabel": "Điều hướng chính",
@@ -95,13 +101,37 @@
   "nutrition": {
     "eyebrow": "Phân tích xu hướng",
     "title": "Dinh dưỡng",
-    "subtitle": "Nhìn lại xu hướng macro và vi chất dài hạn, kèm nhãn độ tin cậy khi dữ liệu món ăn còn thiếu.",
+    "subtitle": "Nhìn lại xu hướng macro và vi chất dài hạn.",
     "loading": "Đang tải tổng quan dinh dưỡng…",
     "range": {
       "label": "Khoảng thời gian dinh dưỡng",
-      "7d": "7 ngày",
-      "30d": "30 ngày",
+      "1d": "Hôm nay",
+      "7d": "7n",
+      "30d": "30n",
       "90d": "90 ngày"
+    },
+    "nutrientGroups": {
+      "vitamins": "Vitamin",
+      "minerals": "Khoáng chất"
+    },
+    "cell": {
+      "limited": "hạn chế",
+      "noTarget": "chưa có"
+    },
+    "suggestedFoods": {
+      "button": "Gợi ý món ăn",
+      "title": "Món ăn lấp đầy thiếu hụt",
+      "subtitle": "Gợi ý cho các chất bạn đang thiếu nhất trong khoảng thời gian này — để đa dạng và đầy đủ, không phải chỉ định y khoa.",
+      "short": "thiếu {value}%",
+      "refresh": "Không có sẵn?"
+    },
+    "sources": {
+      "caption": "Mục tiêu theo WHO/FAO · RDA Việt Nam · NASEM DRI",
+      "title": "Nguồn của mục tiêu",
+      "intro": "Mục tiêu hằng ngày dựa trên các mức tham chiếu được công nhận quốc tế, điều chỉnh theo hồ sơ của bạn (tuổi, giới tính và khu vực).",
+      "whoFao": "WHO/FAO — Nhu cầu Vitamin và Khoáng chất trong Dinh dưỡng, tái bản lần 2 (2004)",
+      "vietnamRda": "Bộ Y tế Việt Nam — Nhu cầu Dinh dưỡng Khuyến nghị (2016)",
+      "nasem": "NASEM — Dietary Reference Intakes (1997–2019)"
     },
     "summary": {
       "label": "Tóm tắt dinh dưỡng",
@@ -111,10 +141,8 @@
       "macroConsistency": "Độ ổn định macro",
       "confidentOnly": "Chỉ đánh dấu khi đủ tin cậy",
       "coverageHint": "Vi chất có độ phủ mỏng",
-      "averageConfidence": "Độ tin cậy TB: {value}",
       "weakest": "Yếu nhất",
       "none": "Chưa có",
-      "trustLine": "{days} ngày có bữa ăn · độ tin cậy TB {confidence} · chế độ xem {range}",
       "verdict": {
         "label": "Kết luận xu hướng",
         "attention": "{nutrients} cần chú ý",
@@ -148,13 +176,15 @@
     "card": {
       "average": "Trung bình",
       "target": "Mục tiêu",
-      "targetProgress": "Tiến độ mục tiêu",
       "context": "Ngữ cảnh",
       "noData": "Chưa có dữ liệu",
       "noTargetClaim": "Chưa kết luận theo mục tiêu",
       "averageVsTarget": "{average} TB · mục tiêu {target}",
       "expand": "Xem xu hướng",
       "collapse": "Ẩn xu hướng"
+    },
+    "detail": {
+      "averageVsTarget": "Trung bình so với mục tiêu"
     },
     "confidence": {
       "normal": "Độ tin cậy tốt",
@@ -469,9 +499,9 @@
       "quiet": "Một giai đoạn yên ả. Tiếp tục ghi nhận để hoàn thiện xu hướng.",
       "gathering": "Vẫn đang gom dần xu hướng của bạn.",
       "gatheringSub": "Đã có {days} ngày đủ bữa — cứ tiếp tục, bức tranh sẽ rõ dần.",
-      "trustLine": "{days} ngày đủ bữa · độ tin cậy TB {confidence}%",
-      "trustLineNoConfidence": "{days} ngày đủ bữa",
+      "trustLine": "{days} ngày đủ bữa",
       "partialNote": {
+        "one": "· tạm bỏ qua {} ngày ghi thiếu",
         "other": "· tạm bỏ qua {} ngày ghi thiếu"
       },
       "period7d": "7 ngày qua",
@@ -533,7 +563,9 @@
     "saveError": "Không thể lưu bước này. Vui lòng thử lại.",
     "setup": {
       "title": "Đang thiết lập tài khoản của bạn",
-      "subtitle": "Đang cá nhân hoá mục tiêu của bạn — chỉ mất một chút thôi."
+      "subtitle": "Đang cá nhân hoá mục tiêu của bạn — chỉ mất một chút thôi.",
+      "targetReadyLabel": "Mục tiêu mỗi ngày của bạn",
+      "perDay": "kcal/ngày"
     },
     "origin": {
       "title": "Bạn đến từ đâu?",
@@ -547,12 +579,14 @@
       "noCountries": "Không tìm thấy quốc gia",
       "fallbackNote": "Bỏ trống nếu muốn. AI sẽ chỉ dựa vào ảnh và mô tả bữa ăn của bạn.",
       "preferredLanguage": "Ngôn ngữ ưa thích",
-      "preferredLanguageHint": "Chọn ngôn ngữ hiển thị cho ứng dụng"
+      "preferredLanguageHint": "Chọn ngôn ngữ hiển thị cho ứng dụng",
+      "commonCountries": "Phổ biến"
     },
     "bodyMetrics": {
       "title": "Chỉ số cơ thể",
       "subtitle": "Chúng tôi dùng thông tin này để tính mục tiêu calo và dinh dưỡng hàng ngày.",
       "biologicalSex": "Giới tính sinh học",
+      "sexPlaceholder": "Chọn…",
       "male": "Nam",
       "female": "Nữ",
       "weight": "Cân nặng",
@@ -593,7 +627,11 @@
       "fat": "Chất béo",
       "macroSummary": "Mục tiêu hàng ngày",
       "kcal": "kcal",
-      "grams": "g"
+      "grams": "g",
+      "aboutYou": "Về bạn",
+      "aboutYouHint": "Những mục này không bắt buộc, nhưng khi bạn điền vào, Nhẩm có thể tính mục tiêu phù hợp hơn ngay trên máy.",
+      "unlockTitle": "Điền thông tin cơ bản để mở khóa mục tiêu.",
+      "unlockHint": "Khi đã điền giới tính, cân nặng, chiều cao, tuổi và mức vận động, đây sẽ thành mục tiêu calo và bảng macro của bạn."
     },
     "cooking": {
       "title": "Thói quen nấu ăn",
@@ -646,7 +684,6 @@
       "noAccount": "Chưa có tài khoản?",
       "signUpLink": "Đăng ký",
       "forgotPassword": "Quên mật khẩu?",
-      "error": "Email hoặc mật khẩu không đúng",
       "success": "Đăng nhập thành công",
       "emailPlaceholder": "ban@example.com",
       "passwordPlaceholder": "Nhập mật khẩu",
@@ -661,9 +698,7 @@
       "submit": "Tạo tài khoản",
       "hasAccount": "Đã có tài khoản?",
       "signInLink": "Đăng nhập",
-      "success": "Kiểm tra email để xác nhận tài khoản",
       "successSignedIn": "Đã tạo tài khoản. Chào mừng!",
-      "error": "Không thể tạo tài khoản",
       "emailPlaceholder": "ban@example.com",
       "passwordPlaceholder": "Tạo mật khẩu",
       "emailError": "Nhập địa chỉ email hợp lệ",
@@ -676,9 +711,23 @@
       "signUpSubtitle": "Bắt đầu theo dõi bữa ăn Việt với phân tích dinh dưỡng bằng AI.",
       "signInTab": "Đăng nhập",
       "signUpTab": "Đăng ký",
+      "continueWithApple": "Tiếp tục với Apple",
+      "appleError": "Đăng nhập bằng Apple thất bại. Vui lòng thử lại.",
       "continueWithGoogle": "Tiếp tục với Google",
       "orContinueWithEmail": "hoặc tiếp tục với email",
       "googleError": "Đăng nhập bằng Google thất bại. Vui lòng thử lại."
+    },
+    "forgot": {
+      "title": "Đặt lại mật khẩu",
+      "description": "Nhập email bạn đã đăng ký, chúng tôi sẽ gửi liên kết đặt lại.",
+      "email": "Email",
+      "emailPlaceholder": "ban@example.com",
+      "emailError": "Nhập địa chỉ email hợp lệ",
+      "submit": "Gửi liên kết",
+      "back": "Quay lại đăng nhập",
+      "sentTitle": "Kiểm tra email",
+      "sentDescription": "Chúng tôi đã gửi liên kết đặt lại mật khẩu đến",
+      "backToSignIn": "Quay lại đăng nhập"
     },
     "otp": {
       "title": "Kiểm tra email",
@@ -686,6 +735,33 @@
       "submit": "Xác nhận",
       "resend": "Gửi lại mã",
       "error": "Mã không hợp lệ"
+    },
+    "welcome": {
+      "tagline": "Theo dõi bữa ăn Việt",
+      "taglineHighlight": "không cần phỏng đoán",
+      "demoMeal": "2 mực kho mặn + 1 chén cơm + canh chua",
+      "demoResult": "{kcal} kcal",
+      "continueWithEmail": "Tiếp tục với email",
+      "terms": "Khi tiếp tục, bạn đồng ý với điều khoản và chính sách bảo mật của chúng tôi."
+    },
+    "confirm": {
+      "title": "Kiểm tra email của bạn",
+      "description": "Chúng tôi đã gửi liên kết xác nhận đến",
+      "hint": "Nhấn vào liên kết để hoàn tất tạo tài khoản.",
+      "resend": "Gửi lại email",
+      "resendIn": "Gửi lại sau {seconds}s",
+      "resent": "Đã gửi lại email",
+      "back": "Quay lại"
+    },
+    "pending": {
+      "finishing": "Đang hoàn tất đăng nhập…"
+    },
+    "errors": {
+      "invalidCredentials": "Email và mật khẩu không khớp — thử lại hoặc đặt lại mật khẩu nhé.",
+      "emailNotConfirmed": "Email này chưa được xác nhận — kiểm tra hộp thư để tìm liên kết nhé.",
+      "network": "Không kết nối được máy chủ — kiểm tra mạng rồi thử lại nhé.",
+      "rateLimited": "Bạn thao tác hơi nhanh — đợi một chút rồi thử lại nhé.",
+      "generic": "Đã có lỗi xảy ra — bạn thử lại nhé."
     }
   },
   "landing": {
@@ -714,7 +790,7 @@
         "analysis": "Phân tích dinh dưỡng bằng AI",
         "highConfidence": "Độ tin cậy cao",
         "totalCalories": "Tổng calo",
-        "inputPlaceholder": "Mô tả bữa ăn của bạn...",
+        "inputPlaceholder": "Mô tả bữa ăn của bạn…",
         "smartContext": "Ngữ cảnh thông minh",
         "smartContextText": "Dùng vùng miền, thói quen nấu ăn và mô tả bữa ăn để siết chặt ước tính."
       }
@@ -832,10 +908,19 @@
   },
   "dashboard": {
     "title": "Tổng quan",
+    "greeting": {
+      "morning": "Chào buổi sáng",
+      "afternoon": "Chào buổi chiều",
+      "evening": "Chào buổi tối",
+      "night": "Chào buổi tối"
+    },
     "today": "Hôm nay",
     "thisWeek": "Tuần này",
     "caloriesConsumed": "Calo đã nạp",
     "caloriesRemaining": "Calo còn lại",
+    "caloriesOverTarget": "Vượt mục tiêu",
+    "left": "còn lại",
+    "over": "vượt",
     "protein": "Đạm",
     "carbs": "Carb",
     "fat": "Chất béo",
@@ -890,7 +975,9 @@
       "logWeight": "Ghi cân nặng",
       "update": "Cập nhật",
       "editHint": "Đang sửa số liệu hôm nay — lần lưu sau sẽ ghi đè giá trị trước.",
-      "saveFailed": "Không thể lưu cân nặng"
+      "saveFailed": "Không thể lưu cân nặng",
+      "netChange": "Thay đổi",
+      "steady": "Ổn định"
     },
     "adherenceHeatmap": {
       "onTrack": "{percent}% đúng mục tiêu",
@@ -911,35 +998,40 @@
     },
     "caloriesLogged": "kcal đã ghi",
     "mealReceiptsHint": "Những bữa ăn sẽ hiển thị ở đây",
-    "progressStatus": {
-      "insufficient": {
-        "label": "Đã bắt đầu theo dõi",
-        "detail": "Ghi cân nặng vào ngày mai để thấy xu hướng."
-      },
-      "on_pace": {
-        "label": "Đúng kế hoạch",
-        "detail": "Tốc độ hiện tại của bạn phù hợp với kế hoạch."
-      },
-      "ahead": {
-        "label": "Vượt kế hoạch",
-        "detail": "Tiến độ nhanh hơn dự kiến."
-      },
-      "behind": {
-        "label": "Cần chú ý",
-        "detail": "Xu hướng hiện tại yếu hơn kế hoạch."
-      },
-      "stable": {
-        "label": "Ổn định",
-        "detail": "Cân nặng của bạn đang ổn định ở mức duy trì."
-      }
-    }
+    "firstRunQuestion": "Hôm nay bạn đã ăn gì?",
+    "firstRunHint": "Mô tả bữa đầu tiên — Nhẩm lo phần còn lại.",
+    "firstRunChips": {
+      "morning1": "1 tô phở bò + quẩy",
+      "morning2": "2 trứng ốp la + bánh mì",
+      "morning3": "1 ly cà phê sữa đá",
+      "midday1": "1 dĩa cơm tấm sườn",
+      "midday2": "1 tô bún chả",
+      "midday3": "1 chén cơm + thịt kho",
+      "evening1": "2 mực kho + 1 chén cơm",
+      "evening2": "1 tô canh chua cá lóc",
+      "evening3": "1 tô bún bò Huế"
+    },
+    "yesterday": "Hôm qua"
   },
   "logging": {
     "title": "Bạn đã ăn gì?",
-    "placeholder": "Mô tả bữa ăn...",
+    "placeholder": "Mô tả bữa ăn…",
+    "composerPlaceholder": "Thêm món ăn…",
+    "modeSelector": {
+      "title": "Bạn muốn ghi thế nào?",
+      "button": "Chế độ",
+      "soon": "Sắp có",
+      "comingSoon": "Chế độ bữa xả sắp ra mắt",
+      "normal": "Bình thường",
+      "normalDesc": "Mô tả bữa ăn bằng lời của bạn",
+      "cheat": "Bữa xả",
+      "cheatDesc": "Ghi nhanh bữa xả, không cần phân tích",
+      "manual": "Thủ công",
+      "manualDesc": "Tìm món, nhập gram chính xác"
+    },
     "submit": "Phân tích",
     "stopAnalyzing": "Dừng phân tích",
-    "analyzing": "Đang phân tích bữa ăn...",
+    "analyzing": "Đang phân tích bữa ăn…",
     "breakfast": "Sáng",
     "brunch": "Sáng muộn",
     "lunch": "Trưa",
@@ -948,11 +1040,13 @@
     "mealSlot": "Bữa ăn",
     "confirm": "Lưu bữa ăn",
     "discard": "Bỏ",
+    "remove": "Xóa",
+    "mealRemoved": "Đã xóa bữa ăn",
+    "undo": "Hoàn tác",
     "edit": "Sửa",
     "nutritionSummary": "Tóm tắt dinh dưỡng",
     "ingredients": "Nguyên liệu",
     "calories": "Calo",
-    "confidence": "Độ tin cậy",
     "high": "Cao",
     "medium": "Trung bình",
     "low": "Thấp",
@@ -964,7 +1058,10 @@
     "todaysMeals": "Bữa ăn hôm nay",
     "emptyState": {
       "title": "Bạn đã ăn gì?",
-      "subtitle": "Mô tả bữa ăn để nhận phân tích macro."
+      "title2": "Hôm nay ăn gì?",
+      "title3": "Bữa này có món gì?",
+      "title4": "Ghi lại bữa ăn nhé?",
+      "title5": "Bạn vừa ăn gì?"
     },
     "feedArea": {
       "savedMeal": "Đã lưu bữa ăn",
@@ -984,12 +1081,17 @@
       }
     },
     "streaming": {
-      "connecting": "Đang kết nối...",
-      "decomposing": "Đang tách bữa ăn của bạn...",
-      "matching": "Đang khớp nguyên liệu...",
-      "estimating": "Đang ước tính dinh dưỡng...",
-      "assembling": "Đang tổng hợp kết quả...",
-      "analyzing": "Đang phân tích..."
+      "connecting": "Đang kết nối…",
+      "decomposing": "Đang tách bữa ăn của bạn…",
+      "matching": "Đang khớp nguyên liệu…",
+      "estimating": "Đang ước tính dinh dưỡng…",
+      "assembling": "Đang tổng hợp kết quả…",
+      "analyzing": "Đang phân tích…",
+      "stillWorking": "Vẫn đang xử lý — sắp xong rồi."
+    },
+    "failedAttempt": {
+      "message": "Chưa đọc được món này. Ghi chú của bạn vẫn còn — thử lại nhé.",
+      "tryAgain": "Thử lại"
     },
     "mealEntry": {
       "edit": "Sửa",
@@ -1031,6 +1133,7 @@
       "subtitle": "Tìm món, nhập chính xác số gam — không dùng AI",
       "searchPlaceholder": "Tìm món ăn...",
       "recentFoods": "Món gần đây",
+      "recentsHint": "Tìm món để thêm",
       "selected": "Đã chọn",
       "noResults": "Không tìm thấy món nào",
       "searching": "Đang tìm...",
@@ -1121,6 +1224,21 @@
   },
   "settings": {
     "title": "Cài đặt",
+    "account": {
+      "title": "Tài khoản",
+      "exportTitle": "Xuất dữ liệu của tôi",
+      "exportError": "Không thể xuất dữ liệu. Vui lòng thử lại.",
+      "signOut": "Đăng xuất",
+      "signOutConfirmTitle": "Đăng xuất khỏi Nhẩm?",
+      "cancel": "Hủy",
+      "delete": "Xóa tài khoản",
+      "deleteScreenTitle": "Xóa tài khoản",
+      "deleteConsequence": "Thao tác này xóa hồ sơ, mọi bữa ăn bạn đã ghi, và lịch sử cân nặng của bạn. Không thể hoàn tác.",
+      "deleteConfirmLabel": "Nhập {word} để xác nhận",
+      "deleteConfirmWord": "XOA",
+      "deleteConfirmAction": "Xóa tài khoản của tôi",
+      "deleteError": "Không thể xóa tài khoản. Vui lòng thử lại."
+    },
     "profile": "Hồ sơ",
     "preferences": "Tùy chỉnh",
     "bodyMetrics": "Chỉ số cơ thể",
@@ -1153,7 +1271,22 @@
       "regionalSubtitle": "Quê quán và nơi ở hiện tại",
       "cookingSubtitle": "Thiết lập dầu mỡ, cơm, đường, đạm và nước dùng mặc định",
       "saveError": "Không thể lưu cài đặt. Vui lòng thử lại.",
-      "invalidError": "Một số giá trị không hợp lệ — vui lòng kiểm tra lại chỉ số cơ thể."
+      "invalidError": "Một số giá trị không hợp lệ — vui lòng kiểm tra lại chỉ số cơ thể.",
+      "retry": "Thử lại",
+      "incompleteHint": "Chưa lưu được gì — hãy điền cân nặng, chiều cao và tuổi trước nhé."
+    },
+    "rows": {
+      "goalPace": "Mục tiêu & tốc độ",
+      "cooking": "Thói quen nấu nướng",
+      "region": "Khu vực & ngôn ngữ",
+      "notSet": "Chưa thiết lập",
+      "pacePerWeek": "{pace} {unit}/tuần"
+    },
+    "about": {
+      "title": "Giới thiệu",
+      "version": "Phiên bản",
+      "privacy": "Chính sách bảo mật",
+      "terms": "Điều khoản dịch vụ"
     }
   },
   "errors": {
@@ -1165,6 +1298,7 @@
   },
   "validation": {
     "bodyMetrics": {
+      "sexRequired": "Vui lòng chọn giới tính sinh học.",
       "weightRequired": "Vui lòng nhập cân nặng.",
       "weightMin": "Cân nặng phải từ 30 kg trở lên.",
       "weightMax": "Cân nặng phải từ 300 kg trở xuống.",

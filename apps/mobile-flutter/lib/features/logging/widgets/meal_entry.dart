@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:flutter/services.dart';
 
 import '../../../models/meal.dart';
 import '../../../shared/widgets/nham_text.dart';
@@ -10,9 +12,8 @@ import '../../../theme/nham_theme.dart';
 import '../../../theme/nham_typography.dart';
 import '../logic/format.dart';
 import '../logic/meal_utils.dart';
-import 'dashed_divider.dart';
+import 'count_up.dart';
 import 'entrances.dart';
-import 'timeline_rail.dart';
 
 // Briefly block Confirm after a quantity tap so a fast double-tap on a stepper
 // can't slip through and save before the user is done adjusting.
@@ -28,6 +29,7 @@ class MealEntry extends StatefulWidget {
     required this.onConfirm,
     this.busy = false,
     this.isLast = false,
+    this.revealing = false,
   });
 
   final ParsedMeal parsedMeal;
@@ -35,6 +37,11 @@ class MealEntry extends StatefulWidget {
   final ValueChanged<List<MealQuantityEdit>> onConfirm;
   final bool busy;
   final bool isLast;
+
+  /// True for the streaming-reveal morph's first mount: the totals row counts
+  /// up and the confirm CTA slides in as the spinner row slides out — the
+  /// continuation of the streaming card, not a fresh pop.
+  final bool revealing;
 
   @override
   State<MealEntry> createState() => _MealEntryState();
@@ -46,6 +53,9 @@ class _MealEntryState extends State<MealEntry> {
   bool _editing = false;
   bool _confirmCoolingDown = false;
   Timer? _confirmTimer;
+  // After the first totals count-up, edits should jump rather than re-animate
+  // from zero — only the reveal's opening frame counts up.
+  late bool _countUp = widget.revealing;
 
   @override
   void dispose() {
@@ -54,7 +64,9 @@ class _MealEntryState extends State<MealEntry> {
   }
 
   void _change(String itemId, double delta) {
+    HapticFeedback.selectionClick();
     setState(() {
+      _countUp = false; // a manual edit snaps; only the reveal counts up
       _items = applyQuantityChange(_items, _original, itemId, delta);
       _confirmCoolingDown = true;
     });
@@ -64,21 +76,26 @@ class _MealEntryState extends State<MealEntry> {
     });
   }
 
-  bool get _confirmDisabled =>
-      widget.busy || (_editing && _confirmCoolingDown);
+  bool get _confirmDisabled => widget.busy || (_editing && _confirmCoolingDown);
+
+  /// Wrap the confirm CTA in a slide-up entrance only on the reveal morph's
+  /// opening frame (the spinner row has just slid out of the same slot).
+  Widget _maybeReveal(Widget child) =>
+      widget.revealing ? FadeInUp(offset: 12, child: child) : child;
 
   @override
   Widget build(BuildContext context) {
     final totals = recalculateTotals(_items);
 
-    return TimelineRail(
-      isLast: widget.isLast,
-      child: Padding(
-        padding: const EdgeInsets.only(bottom: NhamSpacing.sp3), // mb-3
-        child: Column(
+    return Padding(
+      padding: const EdgeInsets.only(bottom: NhamSpacing.sp3), // mb-3
+      child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             _Card(
+              // The reveal replaces the streaming card in place — matching its
+              // surface background removes the background flip at the swap.
+              color: widget.revealing ? NhamColors.surface : NhamColors.elev,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -106,7 +123,7 @@ class _MealEntryState extends State<MealEntry> {
                     ],
                   ),
                   const SizedBox(height: NhamSpacing.sp5), // mt-5
-                  const DashedDivider(color: NhamColors.border),
+                  const Divider(height: 1, thickness: 1, color: NhamColors.borderFaint),
                   const SizedBox(height: NhamSpacing.sp4), // pt-4
                   Padding(
                     padding: const EdgeInsets.only(bottom: NhamSpacing.sp4),
@@ -114,21 +131,34 @@ class _MealEntryState extends State<MealEntry> {
                       children: [
                         for (final (index, item) in _items.indexed)
                           // Web: each item enters opacity 0→1, x:-8→0, staggered
-                          // delay index*0.05s (meal-entry-item.tsx:32-35).
-                          FadeInLeft(
-                            key: ValueKey(item.id),
-                            offset: 8,
-                            delay: Duration(milliseconds: index * 50),
-                            child: _ItemRow(
-                              item: item,
-                              editing: _editing,
-                              onChange: _change,
+                          // delay index*0.05s (meal-entry-item.tsx:32-35). On
+                          // the reveal the rows were already on screen in the
+                          // streaming card — crossfade in place, don't re-enter.
+                          if (widget.revealing)
+                            FadeIn(
+                              key: ValueKey(item.id),
+                              duration: const Duration(milliseconds: 150),
+                              child: _ItemRow(
+                                item: item,
+                                editing: _editing,
+                                onChange: _change,
+                              ),
+                            )
+                          else
+                            FadeInLeft(
+                              key: ValueKey(item.id),
+                              offset: 8,
+                              delay: Duration(milliseconds: index * 50),
+                              child: _ItemRow(
+                                item: item,
+                                editing: _editing,
+                                onChange: _change,
+                              ),
                             ),
-                          ),
                       ],
                     ),
                   ),
-                  const DashedDivider(color: NhamColors.borderHalf),
+                  const Divider(height: 1, thickness: 1, color: NhamColors.borderFaint),
                   const SizedBox(height: NhamSpacing.sp3), // pt-3
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -148,8 +178,15 @@ class _MealEntryState extends State<MealEntry> {
                             style: const TextStyle(color: NhamColors.textMuted),
                           ),
                           const SizedBox(width: NhamSpacing.sp4), // gap-4
-                          NhamText(fmtKcal(totals.calories),
-                              variant: NhamTextVariant.numStrong),
+                          CountUpText(
+                            value: totals.calories,
+                            // Reduced motion: the reveal total lands in place.
+                            enabled:
+                                _countUp &&
+                                !MediaQuery.disableAnimationsOf(context),
+                            format: (v) => fmtKcal(v),
+                            variant: NhamTextVariant.numStrong,
+                          ),
                         ],
                       ),
                     ],
@@ -158,19 +195,22 @@ class _MealEntryState extends State<MealEntry> {
               ),
             ),
             const SizedBox(height: NhamSpacing.sp3), // mt-3
-            _ConfirmButton(
-              editing: _editing,
-              disabled: _confirmDisabled,
-              onTap: _confirmDisabled
-                  ? null
-                  : () => widget.onConfirm(
-                        deriveQuantityEdits(_items, _original),
-                      ),
+            // On reveal the CTA slides up into the slot the spinner row vacated.
+            _maybeReveal(
+              _ConfirmButton(
+                editing: _editing,
+                disabled: _confirmDisabled,
+                onTap:
+                    _confirmDisabled
+                        ? null
+                        : () => widget.onConfirm(
+                          deriveQuantityEdits(_items, _original),
+                        ),
+              ),
             ),
           ],
         ),
-      ),
-    );
+      );
   }
 }
 
@@ -191,18 +231,27 @@ class _ItemRow extends StatelessWidget {
     final step = isGrams ? 10.0 : 1.0;
     final minusDisabled =
         isGrams ? item.quantity <= minDishGrams : item.quantity <= 0;
+    // Stepping a count-unit item to 0 strikes the row — a clear "this one's
+    // out" cue before confirm drops it. Grams floor at minDishGrams, so only
+    // count units can reach 0.
+    final struck = !isGrams && item.quantity <= 0;
 
     return AnimatedContainer(
       duration: const Duration(milliseconds: 150),
-      padding: editing
-          ? const EdgeInsets.symmetric(vertical: 10, horizontal: 8) // py-2.5 px-2
-          : const EdgeInsets.symmetric(vertical: 10),
-      decoration: editing
-          ? BoxDecoration(
-              color: NhamColors.surface80, // surface/80
-              borderRadius: BorderRadius.circular(NhamRadii.md), // rounded-md
-            )
-          : null,
+      padding:
+          editing
+              ? const EdgeInsets.symmetric(
+                vertical: 10,
+                horizontal: 8,
+              ) // py-2.5 px-2
+              : const EdgeInsets.symmetric(vertical: 10),
+      decoration:
+          editing
+              ? BoxDecoration(
+                color: NhamColors.surface80, // surface/80
+                borderRadius: BorderRadius.circular(NhamRadii.md), // rounded-md
+              )
+              : null,
       child: Row(
         children: [
           Expanded(
@@ -214,11 +263,12 @@ class _ItemRow extends StatelessWidget {
                     child: Row(
                       children: [
                         _Stepper(
-                          icon: Icons.remove, // lucide Minus
+                          icon: LucideIcons.minus, // lucide Minus
                           disabled: minusDisabled,
-                          onTap: minusDisabled
-                              ? null
-                              : () => onChange(item.id, -step),
+                          onTap:
+                              minusDisabled
+                                  ? null
+                                  : () => onChange(item.id, -step),
                         ),
                         const SizedBox(width: 2), // gap-0.5
                         SizedBox(
@@ -227,13 +277,14 @@ class _ItemRow extends StatelessWidget {
                             item.quantity.round().toString(),
                             variant: NhamTextVariant.numStrong,
                             textAlign: TextAlign.center,
-                            style: NhamTextStyles.sansSemiBold(fontSize: 11)
-                                .copyWith(color: NhamColors.text),
+                            style: NhamTextStyles.sansSemiBold(
+                              fontSize: 11,
+                            ).copyWith(color: NhamColors.text),
                           ),
                         ),
                         const SizedBox(width: 2),
                         _Stepper(
-                          icon: Icons.add, // lucide Plus
+                          icon: LucideIcons.plus, // lucide Plus
                           onTap: () => onChange(item.id, step),
                         ),
                         const SizedBox(width: NhamSpacing.sp2), // gap-2
@@ -246,26 +297,49 @@ class _ItemRow extends StatelessWidget {
                     variant: NhamTextVariant.itemName,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
+                    style:
+                        struck
+                            ? const TextStyle(
+                              decoration: TextDecoration.lineThrough,
+                              decorationColor: NhamColors.textMuted,
+                              color: NhamColors.textMuted,
+                            )
+                            : null,
                   ),
                 ),
               ],
             ),
           ),
           const SizedBox(width: NhamSpacing.sp3), // gap-3
-          Row(
-            children: [
-              NhamText('P:${fmtG(item.macros.protein)}',
-                  variant: NhamTextVariant.itemMacro, maxLines: 1),
-              const SizedBox(width: NhamSpacing.sp2),
-              NhamText('C:${fmtG(item.macros.carbs)}',
-                  variant: NhamTextVariant.itemMacro, maxLines: 1),
-              const SizedBox(width: NhamSpacing.sp2),
-              NhamText('F:${fmtG(item.macros.fat)}',
-                  variant: NhamTextVariant.itemMacro, maxLines: 1),
-              const SizedBox(width: NhamSpacing.sp3), // gap-3
-              NhamText(fmtKcal(item.macros.calories),
-                  variant: NhamTextVariant.itemCalories, maxLines: 1),
-            ],
+          Opacity(
+            opacity: struck ? 0.4 : 1,
+            child: Row(
+              children: [
+                NhamText(
+                  'P: ${fmtG(item.macros.protein)}',
+                  variant: NhamTextVariant.itemMacro,
+                  maxLines: 1,
+                ),
+                const SizedBox(width: NhamSpacing.sp2),
+                NhamText(
+                  'C: ${fmtG(item.macros.carbs)}',
+                  variant: NhamTextVariant.itemMacro,
+                  maxLines: 1,
+                ),
+                const SizedBox(width: NhamSpacing.sp2),
+                NhamText(
+                  'F: ${fmtG(item.macros.fat)}',
+                  variant: NhamTextVariant.itemMacro,
+                  maxLines: 1,
+                ),
+                const SizedBox(width: NhamSpacing.sp3), // gap-3
+                NhamText(
+                  fmtKcal(item.macros.calories),
+                  variant: NhamTextVariant.itemCalories,
+                  maxLines: 1,
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -297,19 +371,27 @@ class _StepperState extends State<_Stepper> {
       onTapUp: tappable ? (_) => setState(() => _pressed = false) : null,
       onTapCancel: tappable ? () => setState(() => _pressed = false) : null,
       onTap: widget.onTap,
-      child: Opacity(
-        opacity: widget.disabled ? 0.4 : 1, // opacity-40
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 150), // transition-colors
-          width: 28,
-          height: 28,
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            color: _pressed ? NhamColors.hover : NhamColors.elev,
-            borderRadius: BorderRadius.circular(NhamRadii.md),
-            border: Border.all(color: NhamColors.borderSoft),
+      // 40pt tap target around the 28pt visual stepper (kept under 44 so two
+      // steppers + the count value still fit a narrow row without overflow).
+      child: SizedBox(
+        width: 40,
+        height: 40,
+        child: Center(
+          child: Opacity(
+            opacity: widget.disabled ? 0.4 : 1, // opacity-40
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 150), // transition-colors
+              width: 28,
+              height: 28,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: _pressed ? NhamColors.hover : NhamColors.elev,
+                borderRadius: BorderRadius.circular(NhamRadii.md),
+                border: Border.all(color: NhamColors.borderSoft),
+              ),
+              child: Icon(widget.icon, size: 10, color: NhamColors.textMuted),
+            ),
           ),
-          child: Icon(widget.icon, size: 10, color: NhamColors.textMuted),
         ),
       ),
     );
@@ -343,7 +425,9 @@ class _EditPill extends StatelessWidget {
         child: Container(
           key: ValueKey(editing ? 'done' : 'edit'),
           padding: const EdgeInsets.symmetric(
-              vertical: 4, horizontal: 10), // py-1 px-2.5
+            vertical: 4,
+            horizontal: 10,
+          ), // py-1 px-2.5
           decoration: BoxDecoration(
             color: editing ? NhamColors.accent10 : Colors.transparent,
             borderRadius: BorderRadius.circular(NhamRadii.pill),
@@ -355,7 +439,9 @@ class _EditPill extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               Icon(
-                editing ? Icons.check : Icons.edit_outlined, // Check / Pencil
+                editing
+                    ? LucideIcons.check
+                    : LucideIcons.pencil, // Check / Pencil
                 size: 12,
                 color: editing ? NhamColors.accent : NhamColors.textMuted,
               ),
@@ -413,44 +499,56 @@ class _ConfirmButtonState extends State<_ConfirmButton> {
     } else {
       bg = active ? NhamColors.btnHover : NhamColors.btn;
     }
-    final BoxBorder? border = editing
-        ? Border.all(
-            color: active ? NhamColors.btn : NhamColors.btnBorderGhost,
-          )
-        : null;
-    final List<BoxShadow>? shadow = editing
-        ? null
-        : [active ? NhamShadows.md : NhamShadows.sm];
+    final BoxBorder? border =
+        editing
+            ? Border.all(
+              color: active ? NhamColors.btn : NhamColors.btnBorderGhost,
+            )
+            : null;
+    final List<BoxShadow>? shadow =
+        editing ? null : [active ? NhamShadows.md : NhamShadows.sm];
 
-    return Opacity(
-      opacity: widget.disabled ? 0.5 : 1, // opacity-50
-      child: GestureDetector(
-        onTapDown: tappable ? (_) => setState(() => _pressed = true) : null,
-        onTapUp: tappable ? (_) => setState(() => _pressed = false) : null,
-        onTapCancel: tappable ? () => setState(() => _pressed = false) : null,
-        onTap: widget.onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200), // transition-all duration-200
-          padding:
-              const EdgeInsets.symmetric(vertical: 10, horizontal: 12), // py-2.5 px-3
-          decoration: BoxDecoration(
-            color: bg,
-            borderRadius: BorderRadius.circular(NhamRadii.xl), // rounded-xl
-            border: border,
-            boxShadow: shadow,
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.check, size: 14, color: fg),
-              const SizedBox(width: 6), // gap-1.5
-              NhamText(
-                'logging.confirm'.tr(),
-                variant: NhamTextVariant.body,
-                style: NhamTextStyles.sansMedium(fontSize: NhamFontSize.xs)
-                    .copyWith(color: fg),
-              ),
-            ],
+    return Semantics(
+      button: true,
+      enabled: tappable,
+      excludeSemantics: true,
+      label: 'logging.confirm'.tr(),
+      onTap: widget.onTap,
+      child: Opacity(
+        opacity: widget.disabled ? 0.5 : 1, // opacity-50
+        child: GestureDetector(
+          onTapDown: tappable ? (_) => setState(() => _pressed = true) : null,
+          onTapUp: tappable ? (_) => setState(() => _pressed = false) : null,
+          onTapCancel: tappable ? () => setState(() => _pressed = false) : null,
+          onTap: widget.onTap,
+          child: AnimatedContainer(
+            duration: const Duration(
+              milliseconds: 200,
+            ), // transition-all duration-200
+            padding: const EdgeInsets.symmetric(
+              vertical: 10,
+              horizontal: 12,
+            ), // py-2.5 px-3
+            decoration: BoxDecoration(
+              color: bg,
+              borderRadius: BorderRadius.circular(NhamRadii.xl), // rounded-xl
+              border: border,
+              boxShadow: shadow,
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(LucideIcons.check, size: 14, color: fg),
+                const SizedBox(width: 6), // gap-1.5
+                NhamText(
+                  'logging.confirm'.tr(),
+                  variant: NhamTextVariant.body,
+                  style: NhamTextStyles.sansMedium(
+                    fontSize: NhamFontSize.xs,
+                  ).copyWith(color: fg),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -459,16 +557,18 @@ class _ConfirmButtonState extends State<_ConfirmButton> {
 }
 
 /// Card: rounded-2xl (16px), border/60 hairline, shadow.sm, padding 16.
+/// [color] lets the reveal match the streaming card's surface background.
 class _Card extends StatelessWidget {
-  const _Card({required this.child});
+  const _Card({required this.child, this.color = NhamColors.elev});
   final Widget child;
+  final Color color;
 
   @override
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(NhamSpacing.sp4),
       decoration: BoxDecoration(
-        color: NhamColors.elev,
+        color: color,
         borderRadius: BorderRadius.circular(NhamRadii.containerLg),
         border: Border.all(color: NhamColors.borderSoft),
         boxShadow: const [NhamShadows.sm],
