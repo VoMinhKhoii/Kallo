@@ -501,6 +501,7 @@
       "gatheringSub": "Đã có {days} ngày đủ bữa — cứ tiếp tục, bức tranh sẽ rõ dần.",
       "trustLine": "{days} ngày đủ bữa",
       "partialNote": {
+        "one": "· tạm bỏ qua {} ngày ghi thiếu",
         "other": "· tạm bỏ qua {} ngày ghi thiếu"
       },
       "period7d": "7 ngày qua",
