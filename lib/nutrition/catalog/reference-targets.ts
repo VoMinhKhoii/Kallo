@@ -528,7 +528,7 @@ export function resolveMicronutrientTargets(
     // sex-independent nutrients the mean equals either value, so this is a
     // no-op there.
     let value: number | null;
-    let unit: string;
+    let unit: (typeof targetRow.male)['unit'];
     if (sex) {
       const target = targetRow[sex];
       // Iron in VN context for women splits at age 50 (postmenopausal RDA
