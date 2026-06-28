@@ -88,7 +88,7 @@ describe('nutrition aggregation helpers', () => {
     ).toBeUndefined();
   });
 
-  it('maps unsupported target sources and supportsCandidates defaults', () => {
+  it('maps unsupported target sources to the unsupported label key', () => {
     const card = buildNutrientCard({
       nutrient: 'sodiumMg',
       averagePerDay: 400,
@@ -100,19 +100,5 @@ describe('nutrition aggregation helpers', () => {
     expect(card.targetSourceLabelKey).toBe(
       'nutrition.targetSources.unsupported'
     );
-    expect(card.supportsCandidates).toBe(false);
-  });
-
-  it('preserves supportsCandidates when enabled', () => {
-    const card = buildNutrientCard({
-      nutrient: 'calciumMg',
-      averagePerDay: 800,
-      target: 1000,
-      targetSource: 'who_fao',
-      confidence: 80,
-      supportsCandidates: true,
-    });
-
-    expect(card.supportsCandidates).toBe(true);
   });
 });

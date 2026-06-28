@@ -31,7 +31,6 @@ interface BuildNutrientCardInput {
   betaCaroteneAveragePerDay?: number | null;
   caveatKey?: string;
   sourceBreakdown?: NutrientCardData['sourceBreakdown'];
-  supportsCandidates?: boolean;
   nutrientType?: NutrientType;
 }
 
@@ -106,7 +105,6 @@ export function buildNutrientCard({
   betaCaroteneAveragePerDay,
   caveatKey,
   sourceBreakdown,
-  supportsCandidates = false,
   nutrientType,
 }: BuildNutrientCardInput): NutrientCardData {
   const nutrientMeta = getNutrientMeta(nutrient);
@@ -138,6 +136,5 @@ export function buildNutrientCard({
           ]
         : undefined,
     sourceBreakdown,
-    supportsCandidates,
   };
 }

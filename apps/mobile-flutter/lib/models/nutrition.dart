@@ -399,7 +399,6 @@ class NutrientCardData {
   final String? caveatKey;
   final List<NutrientContextMetric>? contextMetrics;
   final SourceBreakdown? sourceBreakdown;
-  final bool supportsCandidates;
 
   const NutrientCardData({
     required this.nutrient,
@@ -417,7 +416,6 @@ class NutrientCardData {
     this.caveatKey,
     this.contextMetrics,
     this.sourceBreakdown,
-    required this.supportsCandidates,
   });
 
   factory NutrientCardData.fromJson(Map<String, dynamic> json) =>
@@ -447,7 +445,6 @@ class NutrientCardData {
             ? SourceBreakdown.fromJson(
                 json['sourceBreakdown'] as Map<String, dynamic>)
             : null,
-        supportsCandidates: json['supportsCandidates'] as bool,
       );
 
   Map<String, dynamic> toJson() => {
@@ -466,7 +463,6 @@ class NutrientCardData {
         'caveatKey': caveatKey,
         'contextMetrics': contextMetrics?.map((e) => e.toJson()).toList(),
         'sourceBreakdown': sourceBreakdown?.toJson(),
-        'supportsCandidates': supportsCandidates,
       };
 
   NutrientCardData copyWith({
@@ -485,7 +481,6 @@ class NutrientCardData {
     String? Function()? caveatKey,
     List<NutrientContextMetric>? Function()? contextMetrics,
     SourceBreakdown? Function()? sourceBreakdown,
-    bool? supportsCandidates,
   }) =>
       NutrientCardData(
         nutrient: nutrient ?? this.nutrient,
@@ -510,7 +505,6 @@ class NutrientCardData {
         sourceBreakdown: sourceBreakdown != null
             ? sourceBreakdown()
             : this.sourceBreakdown,
-        supportsCandidates: supportsCandidates ?? this.supportsCandidates,
       );
 }
 

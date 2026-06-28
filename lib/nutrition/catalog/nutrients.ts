@@ -41,28 +41,7 @@ export const EDUCATION_NUTRIENTS = [
   'vitaminDMcg',
 ] as const satisfies readonly NutritionNutrientKey[];
 
-export const SUPPORTED_CANDIDATE_NUTRIENTS = [
-  'calciumMg',
-  'ironMg',
-  'vitaminCMg',
-  'phosphorusMg',
-  'vitaminB1Mg',
-  'vitaminB2Mg',
-  'vitaminPpMg',
-  'vitaminAMcg',
-] as const satisfies readonly DefaultNutrientKey[];
-
 export type DefaultNutrientKey = (typeof DEFAULT_NUTRIENTS)[number];
-export type SupportedCandidateNutrient =
-  (typeof SUPPORTED_CANDIDATE_NUTRIENTS)[number];
-
-/**
- * Pre-built lookup set for `SUPPORTED_CANDIDATE_NUTRIENTS`. Use this instead of
- * constructing `new Set(SUPPORTED_CANDIDATE_NUTRIENTS)` in callsites.
- */
-export const SUPPORTED_CANDIDATE_NUTRIENT_SET: ReadonlySet<string> = new Set(
-  SUPPORTED_CANDIDATE_NUTRIENTS
-);
 
 export const NUTRIENT_META: Record<NutritionNutrientKey, NutrientMeta> = {
   fiberG: {

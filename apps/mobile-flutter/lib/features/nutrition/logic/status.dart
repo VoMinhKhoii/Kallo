@@ -50,11 +50,11 @@ StatusKey statusKeyFor(NutrientCardData card) {
   return StatusKey.far;
 }
 
-/// Whether the steady-detail panel shows food-source chips: supported nutrient,
-/// decent confidence, and meaningfully below target (<90%).
+/// Whether to surface food-source chips for a nutrient: decent confidence and
+/// meaningfully below target (<90%). Every card nutrient has DB-derived
+/// suggestions, so there's no per-nutrient support gate.
 bool showChips(NutrientCardData card) {
-  return card.supportsCandidates &&
-      card.confidence >= 40 &&
+  return card.confidence >= 40 &&
       card.percentOfTarget != null &&
       card.percentOfTarget! < 90;
 }

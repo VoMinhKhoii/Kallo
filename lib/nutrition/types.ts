@@ -146,7 +146,6 @@ export interface NutrientCardData {
     faoVietnamConfidence: number | null;
     missingSodiumCondimentItems?: number;
   };
-  supportsCandidates: boolean;
 }
 
 export interface EducationCardData {

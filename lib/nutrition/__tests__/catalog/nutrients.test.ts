@@ -1,9 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import {
+  CANDIDATE_NUTRIENTS,
   DEFAULT_NUTRIENTS,
   getNutrientMeta,
   HIDDEN_NUTRIENTS,
-  SUPPORTED_CANDIDATE_NUTRIENTS,
+  MORE_NUTRIENTS,
 } from '@/lib/nutrition/catalog/nutrients';
 
 describe('nutrition nutrient metadata', () => {
@@ -25,10 +26,11 @@ describe('nutrition nutrient metadata', () => {
     ]);
   });
 
-  it('marks candidate-supported nutrients as default scored nutrients', () => {
-    for (const nutrient of SUPPORTED_CANDIDATE_NUTRIENTS) {
-      expect(DEFAULT_NUTRIENTS).toContain(nutrient);
-    }
+  it('offers candidates for every default and extended nutrient', () => {
+    expect(CANDIDATE_NUTRIENTS).toEqual([
+      ...DEFAULT_NUTRIENTS,
+      ...MORE_NUTRIENTS,
+    ]);
   });
 
   it('defines units and message keys for default nutrients', () => {
