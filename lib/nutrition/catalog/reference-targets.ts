@@ -448,11 +448,10 @@ function resolveBiologicalSex(value: string | null): BiologicalSex | null {
   return null;
 }
 
-function isSexIndependentTarget(targetRow: TargetRow): boolean {
-  return (
-    targetRow.male.value === targetRow.female.value &&
-    targetRow.male.unit === targetRow.female.unit
-  );
+/// Round a derived (averaged) target to a sensible precision: whole numbers at
+/// scale, one decimal for small values like vitamin B6 (~2.1 mg).
+function roundTarget(value: number): number {
+  return value >= 10 ? Math.round(value) : Math.round(value * 10) / 10;
 }
 
 function getDefaultUnit(key: NutritionNutrientKey): 'mg' | 'mcg' {
@@ -524,37 +523,33 @@ export function resolveMicronutrientTargets(
       ? resolveAgeBand(entry, profile.age)
       : entry;
 
-    if (!sex && !isSexIndependentTarget(targetRow)) {
-      targets[key] = createUnsupportedTarget(key);
-      continue;
+    // When biological sex is unknown we still give a usable target instead of
+    // "no target": the sex-neutral mean of the male/female RDA. For
+    // sex-independent nutrients the mean equals either value, so this is a
+    // no-op there.
+    let value: number | null;
+    let unit: string;
+    if (sex) {
+      const target = targetRow[sex];
+      // Iron in VN context for women splits at age 50 (postmenopausal RDA
+      // drops 24 → 10 mg). Age-unknown women keep the premenopausal 24.
+      value =
+        key === 'ironMg' &&
+        source === 'vietnam_rda' &&
+        sex === 'female' &&
+        (profile.age ?? 0) >= 50
+          ? 10
+          : target.value;
+      unit = target.unit;
+    } else {
+      value = roundTarget((targetRow.male.value + targetRow.female.value) / 2);
+      unit = targetRow.male.unit;
     }
-
-    // Iron in VN context for women splits at age 50 (postmenopausal RDA
-    // drops from 24 → 10 mg). Preserved from the previous behavior;
-    // scoped here because it isn't a clean band split (only F changes).
-    if (
-      key === 'ironMg' &&
-      source === 'vietnam_rda' &&
-      sex === 'female' &&
-      (profile.age === null || !Number.isFinite(profile.age))
-    ) {
-      targets[key] = createUnsupportedTarget(key);
-      continue;
-    }
-
-    const target = targetRow[sex ?? 'male'];
-    const value =
-      key === 'ironMg' &&
-      source === 'vietnam_rda' &&
-      sex === 'female' &&
-      (profile.age ?? 0) >= 50
-        ? 10
-        : target.value;
 
     targets[key] = {
       key,
       value,
-      unit: target.unit,
+      unit,
       source,
       sourceLabelKey: REFERENCE_SOURCES[source].labelKey,
       applicability: 'scored',
