@@ -228,11 +228,16 @@ class _FoodChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // A long food name can be wider than the row; Wrap can't break inside a
+    // child, so cap the chip and let the label ellipsize.
+    final maxWidth = MediaQuery.of(context).size.width * 0.62;
+
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 120),
+        constraints: BoxConstraints(maxWidth: maxWidth),
         padding: EdgeInsets.fromLTRB(
           reserved ? 8 : 10,
           6,
@@ -253,9 +258,13 @@ class _FoodChip extends StatelessWidget {
               const Icon(LucideIcons.check, size: 13, color: NhamColors.accentDark),
               const SizedBox(width: 4),
             ],
-            Text(
-              label,
-              style: dashMeta(color: reserved ? NhamColors.text : kInk),
+            Flexible(
+              child: Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: dashMeta(color: reserved ? NhamColors.text : kInk),
+              ),
             ),
           ],
         ),
