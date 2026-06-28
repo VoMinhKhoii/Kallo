@@ -1,31 +1,55 @@
 'use server';
 
-import { and, eq } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 import { z } from 'zod';
+import { NUTRITION_KEYS } from '@/lib/ai/constants';
+import type {
+  BoundedNutrition,
+  NutritionValues,
+  PipelineResult,
+} from '@/lib/ai/types';
+import { requireAuthAndProfile } from '@/lib/auth';
+import {
+  fetchProductFromOpenFoodFacts,
+  type ParsedBarcodeProduct,
+} from '@/lib/barcode/openfoodfacts';
+import { getUtcInstantForLocalDate } from '@/lib/date/local-day';
 import { db } from '@/lib/db';
 import {
-  vietnameseFoodComposition,
   ingredientSources,
   pendingAnalyses,
+  vietnameseFoodComposition,
 } from '@/lib/db/schema';
-import { requireAuthAndProfile } from '@/lib/auth';
-import { fetchProductFromOpenFoodFacts, ParsedBarcodeProduct } from '@/lib/barcode/openfoodfacts';
-import { NUTRITION_KEYS } from '@/lib/ai/constants';
-import type { NutritionValues, BoundedNutrition, PipelineResult } from '@/lib/ai/types';
-import { getUtcInstantForLocalDate } from '@/lib/date/local-day';
 import { dateStringSchema, timezoneOffsetSchema } from '@/lib/validation';
-import { Errors } from '@/lib/errors';
+
 
 const searchBarcodeSchema = z.object({
-  barcode: z.string().min(1, 'Mã vạch không được để trống').regex(/^\d+$/, 'Mã vạch chỉ được chứa số'),
+  barcode: z
+    .string()
+    .min(1, 'Mã vạch không được để trống')
+    .regex(/^\d+$/, 'Mã vạch chỉ được chứa số'),
 });
 
 const stageBarcodeMealSchema = z.object({
-  barcode: z.string().min(1, 'Mã vạch không được để trống').regex(/^\d+$/, 'Mã vạch chỉ được chứa số'),
-  grams: z.number().positive('Khối lượng phải lớn hơn 0').max(100000, 'Khối lượng quá lớn'),
+  barcode: z
+    .string()
+    .min(1, 'Mã vạch không được để trống')
+    .regex(/^\d+$/, 'Mã vạch chỉ được chứa số'),
+  grams: z
+    .number()
+    .positive('Khối lượng phải lớn hơn 0')
+    .max(100000, 'Khối lượng quá lớn'),
   loggedDate: dateStringSchema,
   timezoneOffset: timezoneOffsetSchema,
 });
+
+function getErrorMessage(error: unknown): string {
+  if (error instanceof z.ZodError) {
+    const issue = error.errors[0];
+    return issue ? issue.message : 'Dữ liệu đầu vào không hợp lệ.';
+  }
+  return error instanceof Error ? error.message : 'Đã xảy ra lỗi hệ thống.';
+}
 
 function extractNutritionValues(row: Record<string, unknown>): NutritionValues {
   const result = {} as NutritionValues;
@@ -45,7 +69,10 @@ function extractNutritionValues(row: Record<string, unknown>): NutritionValues {
   return result;
 }
 
-function scaleNutrition(nutrition: NutritionValues, factor: number): NutritionValues {
+function scaleNutrition(
+  nutrition: NutritionValues,
+  factor: number
+): NutritionValues {
   const scaled = {} as NutritionValues;
   for (const key of NUTRITION_KEYS) {
     const val = nutrition[key];
@@ -69,7 +96,10 @@ function buildBoundedNutrition(nutrition: NutritionValues): BoundedNutrition {
  */
 export async function searchBarcodeAction(input: {
   barcode: string;
-}): Promise<{ success: true; data: ParsedBarcodeProduct } | { success: false; error: string }> {
+}): Promise<
+  | { success: true; data: ParsedBarcodeProduct }
+  | { success: false; error: string }
+> {
   try {
     const parsed = searchBarcodeSchema.parse(input);
     await requireAuthAndProfile();
@@ -128,7 +158,9 @@ export async function searchBarcodeAction(input: {
       .limit(1);
 
     const sourceId = sourceRow ? sourceRow.id : 1;
-    const namePrimary = product.brand ? `[${product.brand}] ${product.name}` : product.name;
+    const namePrimary = product.brand
+      ? `[${product.brand}] ${product.name}`
+      : product.name;
 
     await db.insert(vietnameseFoodComposition).values({
       id: dbId,
@@ -138,9 +170,11 @@ export async function searchBarcodeAction(input: {
       typeEn: 'Packaged product',
       sourceId,
       state: 'cooked',
-      caloriesKcal: product.caloriesKcal !== null ? String(product.caloriesKcal) : null,
+      caloriesKcal:
+        product.caloriesKcal !== null ? String(product.caloriesKcal) : null,
       proteinG: product.proteinG !== null ? String(product.proteinG) : null,
-      carbohydrateG: product.carbohydrateG !== null ? String(product.carbohydrateG) : null,
+      carbohydrateG:
+        product.carbohydrateG !== null ? String(product.carbohydrateG) : null,
       fatG: product.fatG !== null ? String(product.fatG) : null,
       fiberG: product.fiberG !== null ? String(product.fiberG) : null,
       sodiumMg: product.sodiumMg !== null ? String(product.sodiumMg) : null,
@@ -156,7 +190,7 @@ export async function searchBarcodeAction(input: {
     console.error('Error in searchBarcodeAction:', error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Đã xảy ra lỗi hệ thống.',
+      error: getErrorMessage(error),
     };
   }
 }
@@ -169,7 +203,9 @@ export async function stageBarcodeMealAction(input: {
   grams: number;
   loggedDate: string;
   timezoneOffset: number;
-}): Promise<{ success: true; analysisId: string } | { success: false; error: string }> {
+}): Promise<
+  { success: true; analysisId: string } | { success: false; error: string }
+> {
   try {
     const parsed = stageBarcodeMealSchema.parse(input);
     const { user } = await requireAuthAndProfile();
@@ -255,7 +291,7 @@ export async function stageBarcodeMealAction(input: {
     console.error('Error in stageBarcodeMealAction:', error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Đã xảy ra lỗi hệ thống.',
+      error: getErrorMessage(error),
     };
   }
 }
