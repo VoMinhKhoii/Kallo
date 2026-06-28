@@ -125,8 +125,24 @@ const VIETNAM_RDA: Partial<Record<NutritionNutrientKey, TargetEntry>> = {
     female: { value: 1000, unit: 'mg' },
   },
   ironMg: {
-    male: { value: 10, unit: 'mg' },
-    female: { value: 24, unit: 'mg' },
+    // Premenopausal women need more iron (menstrual losses); the RDA drops to
+    // the male level at 50. Age-unknown resolves to the <50 band (female 24).
+    ageBands: [
+      {
+        minAge: 50,
+        row: {
+          male: { value: 10, unit: 'mg' },
+          female: { value: 10, unit: 'mg' },
+        },
+      },
+      {
+        minAge: 0,
+        row: {
+          male: { value: 10, unit: 'mg' },
+          female: { value: 24, unit: 'mg' },
+        },
+      },
+    ],
   },
   magnesiumMg: {
     // Bảng 18, RDA, 20–29 yr.
@@ -531,15 +547,7 @@ export function resolveMicronutrientTargets(
     let unit: (typeof targetRow.male)['unit'];
     if (sex) {
       const target = targetRow[sex];
-      // Iron in VN context for women splits at age 50 (postmenopausal RDA
-      // drops 24 → 10 mg). Age-unknown women keep the premenopausal 24.
-      value =
-        key === 'ironMg' &&
-        source === 'vietnam_rda' &&
-        sex === 'female' &&
-        (profile.age ?? 0) >= 50
-          ? 10
-          : target.value;
+      value = target.value;
       unit = target.unit;
     } else {
       value = roundTarget((targetRow.male.value + targetRow.female.value) / 2);
