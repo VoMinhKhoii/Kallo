@@ -320,7 +320,8 @@ function buildNutrientCards({
       caveatKey:
         nutrient === 'sodiumMg' ? getSodiumCaveatKey(sodiumStats) : undefined,
       sourceBreakdown,
-      supportsCandidates: DEFAULT_NUTRIENT_SET.has(nutrient),
+      // Every card nutrient has DB-derived food suggestions now.
+      supportsCandidates: true,
       nutrientType: target.nutrientType,
     });
   });

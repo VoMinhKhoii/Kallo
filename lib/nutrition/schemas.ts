@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { SUPPORTED_CANDIDATE_NUTRIENTS } from './catalog/nutrients';
+import { CANDIDATE_NUTRIENTS } from './catalog/nutrients';
 
 export const nutritionRangeSchema = z.enum(['1d', '7d', '30d', '90d']);
 export const nutritionRangeInputSchema = z.enum([
@@ -22,5 +22,5 @@ export const nutritionOverviewInputSchema = z.object({
 });
 
 export const foodSourceCandidatesInputSchema = z.object({
-  nutrient: z.enum(SUPPORTED_CANDIDATE_NUTRIENTS),
+  nutrient: z.enum(CANDIDATE_NUTRIENTS),
 });

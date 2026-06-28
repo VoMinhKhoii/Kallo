@@ -26,6 +26,13 @@ export const MORE_NUTRIENTS = [
   'vitaminKMcg',
 ] as const satisfies readonly NutritionNutrientKey[];
 
+// The nutrients shown as cards (default + extended) — every one can surface
+// DB-derived food suggestions, since the composition table has a column for each.
+export const CANDIDATE_NUTRIENTS = [
+  ...DEFAULT_NUTRIENTS,
+  ...MORE_NUTRIENTS,
+] as const satisfies readonly NutritionNutrientKey[];
+
 export const HIDDEN_NUTRIENTS = [
   'vitaminHMcg',
 ] as const satisfies readonly NutritionNutrientKey[];

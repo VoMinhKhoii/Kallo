@@ -1,22 +1,10 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { getFoodSourceCandidates } from '@/lib/nutrition/actions';
-import {
-  SUPPORTED_CANDIDATE_NUTRIENT_SET,
-  type SupportedCandidateNutrient,
-} from '@/lib/nutrition/catalog/nutrients';
 import type { NutritionNutrientKey } from '@/lib/nutrition/types';
 import { cn } from '@/lib/utils';
-
-function asSupported(
-  nutrient: NutritionNutrientKey
-): SupportedCandidateNutrient | null {
-  return SUPPORTED_CANDIDATE_NUTRIENT_SET.has(nutrient)
-    ? (nutrient as SupportedCandidateNutrient)
-    : null;
-}
 
 interface FoodChipRowProps {
   nutrient: NutritionNutrientKey;
@@ -34,35 +22,27 @@ export function FoodChipRow({
   limit = 5,
 }: FoodChipRowProps) {
   const t = useTranslations('nutrition');
-  const tRoot = useTranslations();
-  const supported = asSupported(nutrient);
+  const locale = useLocale();
 
   const query = useQuery({
-    queryKey: ['nutrition', 'candidates', supported],
-    queryFn: () => {
-      if (!supported) {
-        throw new Error('Unsupported candidate nutrient.');
-      }
-      return getFoodSourceCandidates({ nutrient: supported });
-    },
-    enabled: enabled && supported !== null,
+    queryKey: ['nutrition', 'candidates', nutrient],
+    queryFn: () => getFoodSourceCandidates({ nutrient }),
+    enabled,
     retry: false,
     staleTime: 60_000,
   });
-
-  if (!supported) return null;
 
   if (query.isLoading) {
     return <ChipRowSkeleton variant={variant} />;
   }
 
   // Distinguish a fetch failure (logged for ops + visible "couldn't load"
-  // message) from a successful response with zero candidates ("no ideas").
+  // message) from a successful response with zero foods ("no ideas").
   // Both stay visually quiet so they don't overwhelm the editorial layout.
   if (query.isError) {
     console.error(
       '[nutrition] candidates query failed for nutrient',
-      supported,
+      nutrient,
       query.error
     );
     return (
@@ -72,26 +52,26 @@ export function FoodChipRow({
     );
   }
 
-  if (query.isSuccess && !query.data.candidates.length) {
+  if (query.isSuccess && !query.data.foods.length) {
     return (
       <p className="text-nham-text-muted text-xs">{t('focus.noFoodIdeas')}</p>
     );
   }
 
-  if (!query.data?.candidates.length) {
+  if (!query.data?.foods.length) {
     return null;
   }
 
-  const chips = query.data.candidates.slice(0, limit);
+  const chips = query.data.foods.slice(0, limit);
 
   return (
     <div className="flex flex-wrap items-center gap-1.5">
       <span className="font-bold text-[10px] text-nham-stone uppercase tracking-[0.2em]">
         {t('focus.tryLabel')}
       </span>
-      {chips.map((candidate) => (
+      {chips.map((food) => (
         <span
-          key={candidate.id}
+          key={food.id}
           className={cn(
             'inline-flex items-center whitespace-nowrap rounded-full border px-2.5 py-0.5 text-[11px] leading-5',
             variant === 'spotlight'
@@ -99,7 +79,7 @@ export function FoodChipRow({
               : 'border-nham-border/60 bg-nham-surface text-nham-text-muted'
           )}
         >
-          {tRoot(candidate.nameKey)}
+          {locale === 'vi' ? food.name : food.nameEn}
         </span>
       ))}
     </div>
