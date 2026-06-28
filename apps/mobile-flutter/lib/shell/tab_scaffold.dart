@@ -1,188 +1,156 @@
-import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../theme/nham_colors.dart';
-import '../theme/nham_typography.dart';
+import 'sidebar.dart';
 
 /// App shell for the primary surfaces.
 ///
-/// Three-tab cream bottom bar (HIG-native), replacing the web hamburger drawer:
-/// **Today** (dashboard) / **Log** (logging, center hero) / **Patterns**
-/// (nutrition). A hairline top border, no elevation/shadow. Active = espresso
-/// icon + 10px DM Sans label; inactive = muted. `selectionClick` haptic on
-/// switch; branch swaps are instant (no cross-page transition). The bar hides
-/// when the keyboard is open and respects the bottom safe area.
+/// The web mobile view has NO bottom tab bar (`components/app/mobile-nav.tsx`):
+/// navigation is a hamburger (in [AppHeader]) that opens a LEFT slide-in Sheet
+/// drawer. This scaffold reproduces that — a cream body hosting the active
+/// branch, plus a custom left drawer ([_NavDrawer]) matching the shadcn Sheet
+/// behavior (88vw≤320px, dim black/50 scrim, asymmetric 500ms-open / 300ms-close
+/// ease-in-out slide, tap-scrim / swipe-left to close).
 ///
-/// Settings/account moved to a 32px avatar disc in the header's right slot
-/// ([AppHeader]). Groups + Admin stay reachable as routes but are off the bar
-/// (their feature screens aren't built yet).
-///
-/// go_router's [StatefulNavigationShell] backs the branches so each destination
-/// keeps its state/scroll across switches.
-class TabScaffold extends StatelessWidget {
+/// go_router's [StatefulNavigationShell] still backs the branches so each
+/// destination keeps its state/scroll across switches; only the bottom bar is
+/// gone. [AppHeader]'s hamburger opens the drawer via [NavDrawerScope].
+class TabScaffold extends StatefulWidget {
   const TabScaffold({required this.navigationShell, super.key});
 
   final StatefulNavigationShell navigationShell;
 
-  // Branch indices in the router's StatefulShellRoute (declaration order):
-  // 0 dashboard · 1 nutrition · 2 logging · 3 groups · 4 admin.
-  // Settings is a standalone root route, not a shell branch.
-  static const int _branchDashboard = 0;
-  static const int _branchNutrition = 1;
-  static const int _branchLogging = 2;
+  @override
+  State<TabScaffold> createState() => _TabScaffoldState();
+}
 
-  // Tab order on the bar (Today / Log / Patterns) → branch index.
-  static const List<_TabSpec> _tabs = [
-    _TabSpec(
-      branch: _branchDashboard,
-      icon: LucideIcons.layoutDashboard,
-      labelKey: 'app.tabBar.today',
-    ),
-    _TabSpec(
-      branch: _branchLogging,
-      icon: LucideIcons.utensilsCrossed,
-      labelKey: 'app.tabBar.log',
-    ),
-    _TabSpec(
-      branch: _branchNutrition,
-      icon: LucideIcons.activity,
-      labelKey: 'app.tabBar.patterns',
-    ),
-  ];
+class _TabScaffoldState extends State<TabScaffold>
+    with SingleTickerProviderStateMixin {
+  // Sheet: open over 500ms, close over 300ms, ease-in-out (sheet.tsx:63).
+  static const Duration _openDuration = Duration(milliseconds: 500);
+  static const Duration _closeDuration = Duration(milliseconds: 300);
 
-  void _onTap(int branch) {
-    if (branch != navigationShell.currentIndex) {
-      HapticFeedback.selectionClick();
-    }
-    // goBranch with initialLocation: false preserves the branch's own stack.
-    navigationShell.goBranch(
-      branch,
-      initialLocation: branch == navigationShell.currentIndex,
-    );
+  late final AnimationController _controller = AnimationController(
+    vsync: this,
+    duration: _openDuration,
+    reverseDuration: _closeDuration,
+  );
+
+  void _open() {
+    _controller.forward();
+  }
+
+  void _close() {
+    _controller.reverse();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final current = navigationShell.currentIndex;
-    // Hide the bar when the keyboard is open (composer focused) and on the
-    // off-bar branches (Groups/Admin/Settings reached via header/route).
-    final keyboardOpen = MediaQuery.of(context).viewInsets.bottom > 0;
-    final onBar = _tabs.any((t) => t.branch == current);
-    final showBar = onBar && !keyboardOpen;
-
-    return PopScope(
-      // System back: from a secondary tab, return to Today rather than exiting.
-      canPop: current == _branchDashboard,
-      onPopInvokedWithResult: (didPop, _) {
-        if (didPop) return;
-        _onTap(_branchDashboard);
-      },
+    return NavDrawerScope(
+      open: _open,
       child: Scaffold(
         backgroundColor: NhamColors.surface,
-        body: navigationShell,
-        bottomNavigationBar:
-            showBar
-                ? _BottomBar(tabs: _tabs, currentBranch: current, onTap: _onTap)
-                : null,
-      ),
-    );
-  }
-}
-
-class _TabSpec {
-  const _TabSpec({
-    required this.branch,
-    required this.icon,
-    required this.labelKey,
-  });
-
-  final int branch;
-  final IconData icon;
-  final String labelKey;
-}
-
-/// The cream tab bar: a hairline top border, no elevation, safe-area padding.
-class _BottomBar extends StatelessWidget {
-  const _BottomBar({
-    required this.tabs,
-    required this.currentBranch,
-    required this.onTap,
-  });
-
-  final List<_TabSpec> tabs;
-  final int currentBranch;
-  final ValueChanged<int> onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final bottomInset = MediaQuery.of(context).padding.bottom;
-
-    return DecoratedBox(
-      decoration: const BoxDecoration(
-        color: NhamColors.surface,
-        border: Border(top: BorderSide(color: NhamColors.borderSoft, width: 1)),
-      ),
-      child: Padding(
-        padding: EdgeInsets.only(bottom: bottomInset),
-        child: SizedBox(
-          height: 56,
-          child: Row(
-            children: [
-              for (final tab in tabs)
-                Expanded(
-                  child: _TabItem(
-                    spec: tab,
-                    active: tab.branch == currentBranch,
-                    onTap: () => onTap(tab.branch),
-                  ),
-                ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _TabItem extends StatelessWidget {
-  const _TabItem({
-    required this.spec,
-    required this.active,
-    required this.onTap,
-  });
-
-  final _TabSpec spec;
-  final bool active;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final color = active ? NhamColors.text : NhamColors.textMuted;
-    return Semantics(
-      button: true,
-      selected: active,
-      label: tr(spec.labelKey),
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: onTap,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+        body: Stack(
           children: [
-            Icon(spec.icon, size: 22, color: color),
-            const SizedBox(height: 4),
-            Text(
-              tr(spec.labelKey),
-              style: NhamTextStyles.sansMedium(fontSize: 10).copyWith(
-                color: color,
-                fontWeight: active ? FontWeight.w600 : FontWeight.w500,
-              ),
-            ),
+            widget.navigationShell,
+            _NavDrawer(controller: _controller, onClose: _close),
           ],
         ),
       ),
+    );
+  }
+}
+
+/// Exposes the drawer-open callback down the tree so [AppHeader]'s hamburger
+/// can trigger it without any feature screen passing a handler.
+class NavDrawerScope extends InheritedWidget {
+  const NavDrawerScope({required this.open, required super.child, super.key});
+
+  final VoidCallback open;
+
+  static NavDrawerScope? maybeOf(BuildContext context) =>
+      context.dependOnInheritedWidgetOfExactType<NavDrawerScope>();
+
+  @override
+  bool updateShouldNotify(NavDrawerScope oldWidget) => open != oldWidget.open;
+}
+
+/// The left slide-in panel + scrim, driven by [controller] (0 = closed,
+/// 1 = open).
+class _NavDrawer extends StatelessWidget {
+  const _NavDrawer({required this.controller, required this.onClose});
+
+  final AnimationController controller;
+  final VoidCallback onClose;
+
+  // Sheet easing — `transition ease-in-out` (sheet.tsx:63).
+  static const Curve _curve = Curves.easeInOut;
+
+  @override
+  Widget build(BuildContext context) {
+    final media = MediaQuery.of(context);
+    // w-[88vw] max-w-[320px] (mobile-nav.tsx:111).
+    final panelWidth = (media.size.width * 0.88).clamp(0.0, 320.0).toDouble();
+
+    return AnimatedBuilder(
+      animation: controller,
+      builder: (context, _) {
+        final t = _curve.transform(controller.value);
+        if (t == 0) return const SizedBox.shrink();
+
+        return Stack(
+          children: [
+            // Scrim — black @ 50%, fades with the slide; tap to close.
+            Positioned.fill(
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: onClose,
+                child: ColoredBox(color: Color.fromRGBO(0, 0, 0, 0.5 * t)),
+              ),
+            ),
+            // Panel — full height, slides in from the left edge.
+            Positioned(
+              top: 0,
+              bottom: 0,
+              left: -panelWidth * (1 - t),
+              width: panelWidth,
+              // Swipe-left to dismiss.
+              child: GestureDetector(
+                onHorizontalDragUpdate: (details) {
+                  controller.value += details.primaryDelta! / panelWidth;
+                },
+                onHorizontalDragEnd: (details) {
+                  final v = details.primaryVelocity ?? 0;
+                  if (v < -200 || controller.value < 0.5) {
+                    onClose();
+                  } else {
+                    controller.forward();
+                  }
+                },
+                child: DecoratedBox(
+                  decoration: const BoxDecoration(
+                    color: NhamColors.surface,
+                    border: Border(
+                      right: BorderSide(
+                        color: NhamColors.borderSoft, // border @ 60%
+                        width: 1,
+                      ),
+                    ),
+                  ),
+                  child: Sidebar(onClose: onClose),
+                ),
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 }

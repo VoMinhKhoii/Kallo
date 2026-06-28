@@ -164,7 +164,7 @@ class _ConfirmEmailViewState extends ConsumerState<ConfirmEmailView> {
                       'auth.confirm.resendIn',
                       namedArgs: {'seconds': '$_remaining'},
                     ),
-              style: NhamTextStyles.sansMedium(fontSize: NhamFontSize.sm)
+              style: NhamTextStyles.sansMedium(fontSize: NhamFontSize.md)
                   .copyWith(
                     color: canResend
                         ? NhamColors.text

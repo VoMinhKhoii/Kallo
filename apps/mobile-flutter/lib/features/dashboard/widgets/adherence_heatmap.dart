@@ -61,7 +61,7 @@ class AdherenceHeatmap extends ConsumerWidget {
             decoration: BoxDecoration(
               color: kCardSurface,
               borderRadius: BorderRadius.circular(kCardRadius),
-              boxShadow: const [kCardShadow],
+              boxShadow: kCardShadows,
             ),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -173,7 +173,7 @@ class _HeatmapBodyState extends State<_HeatmapBody>
       decoration: BoxDecoration(
         color: kCardSurface, // solid white
         borderRadius: BorderRadius.circular(kCardRadius),
-        boxShadow: const [kCardShadow], // shadow only, no border
+        boxShadow: kCardShadows, // shadow only, no border
       ),
       child: LayoutBuilder(
         builder: (context, constraints) {

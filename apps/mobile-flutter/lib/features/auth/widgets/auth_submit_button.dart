@@ -79,7 +79,7 @@ class _AuthSubmitButtonState extends State<AuthSubmitButton> {
               ],
               Text(
                 widget.label,
-                style: NhamTextStyles.sansMedium(fontSize: NhamFontSize.sm)
+                style: NhamTextStyles.sansMedium(fontSize: NhamFontSize.md)
                     .copyWith(color: NhamColors.elev, letterSpacing: -0.2),
               ),
             ],

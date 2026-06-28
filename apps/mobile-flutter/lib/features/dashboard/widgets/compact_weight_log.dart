@@ -167,8 +167,7 @@ class _CompactWeightLogState extends ConsumerState<CompactWeightLog> {
     final showEditHint =
         _hasTodayWeight && _validationError == null && _feedback == null;
 
-    final borderColor =
-        _validationError != null ? NhamColors.danger : kHairline;
+    final hasError = _validationError != null;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -193,7 +192,7 @@ class _CompactWeightLogState extends ConsumerState<CompactWeightLog> {
           children: [
             Expanded(
               child: SizedBox(
-                height: 44,
+                height: 52,
                 child: TextField(
                   controller: _controller,
                   onChanged: _onChanged,
@@ -205,25 +204,31 @@ class _CompactWeightLogState extends ConsumerState<CompactWeightLog> {
                   ],
                   autocorrect: false,
                   cursorColor: NhamColors.accent,
-                  style: dashBody(tabular: true),
+                  // Substantial value type — a number entry reads as data, not
+                  // body copy.
+                  style: dashValue(color: kInk),
                   decoration: InputDecoration(
                     isDense: true,
                     filled: true,
-                    fillColor: kCardSurface,
+                    // Soft warm fill instead of a hairline outline — the field
+                    // reads as a tappable surface, the way native mobile inputs
+                    // do, and the border only appears on focus / error.
+                    fillColor: hasError
+                        ? NhamColors.danger.withValues(alpha: 0.06)
+                        : kFieldFill,
                     contentPadding: const EdgeInsets.symmetric(
-                      horizontal: NhamSpacing.sp3,
+                      horizontal: NhamSpacing.sp4,
                       vertical: NhamSpacing.sp3,
                     ),
                     // Suffix in-flow (no Positioned overlay → no overlap).
                     suffixText: tr('dashboard.units.kg'),
-                    suffixStyle: dashMeta(color: kInkDisabled),
-                    border: _border(borderColor),
-                    enabledBorder: _border(borderColor),
-                    // Web Input focus-visible ring → accent border.
-                    focusedBorder: _border(_validationError != null
-                        ? NhamColors.danger
-                        : NhamColors.accent),
-                    disabledBorder: _border(kHairline),
+                    suffixStyle: dashMeta(color: kInkSecondary),
+                    border: _border(Colors.transparent),
+                    enabledBorder: _border(
+                        hasError ? NhamColors.danger : Colors.transparent),
+                    focusedBorder: _border(
+                        hasError ? NhamColors.danger : NhamColors.accent),
+                    disabledBorder: _border(Colors.transparent),
                   ),
                 ),
               ),
@@ -273,8 +278,11 @@ class _CompactWeightLogState extends ConsumerState<CompactWeightLog> {
   }
 
   OutlineInputBorder _border(Color color) => OutlineInputBorder(
-        borderRadius: BorderRadius.circular(NhamRadii.buttonXl),
-        borderSide: BorderSide(color: color),
+        borderRadius: BorderRadius.circular(NhamRadii.xl),
+        borderSide: BorderSide(
+          color: color,
+          width: color == Colors.transparent ? 0 : 1.5,
+        ),
       );
 }
 
@@ -307,12 +315,12 @@ class _SubmitButton extends StatelessWidget {
       child: Opacity(
         opacity: pending ? 0.55 : 1,
         child: Container(
-          height: 44,
-          padding: const EdgeInsets.symmetric(horizontal: NhamSpacing.sp4),
+          height: 52,
+          padding: const EdgeInsets.symmetric(horizontal: NhamSpacing.sp5),
           alignment: Alignment.center,
           decoration: BoxDecoration(
             color: pressed && !pending ? NhamColors.btnHover : NhamColors.btn,
-            borderRadius: BorderRadius.circular(NhamRadii.buttonXl),
+            borderRadius: BorderRadius.circular(NhamRadii.xl),
           ),
           child: pending
               ? const SizedBox(
@@ -323,7 +331,9 @@ class _SubmitButton extends StatelessWidget {
                 )
               : Text(
                   label,
-                  style: dashEyebrow(color: Colors.white, weight: FontWeight.w600),
+                  // Sentence-case, body-sized label — a native button reads as
+                  // a word, not a techy 11px all-caps eyebrow.
+                  style: dashBody(color: Colors.white, weight: FontWeight.w600),
                 ),
         ),
       ),

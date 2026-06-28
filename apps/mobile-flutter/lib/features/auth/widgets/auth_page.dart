@@ -36,6 +36,10 @@ class AuthPage extends ConsumerStatefulWidget {
 class _AuthPageState extends ConsumerState<AuthPage> {
   _AuthMode _mode = _AuthMode.welcome;
 
+  /// Drives the face-switch slide direction: true = advancing (welcome → email),
+  /// false = going back. Lets the transition read as forward/back navigation.
+  bool _forward = true;
+
   // The welcome + email surfaces share one controller (single path).
   static final _provider = signInControllerProvider;
 
@@ -110,54 +114,77 @@ class _AuthPageState extends ConsumerState<AuthPage> {
       }
     });
 
-    // Which face: confirm-email > email form > welcome.
+    // Which face: confirm-email > email form > welcome. The key also tells the
+    // switcher's transitionBuilder which child is incoming vs outgoing.
+    final Key currentKey = showConfirm
+        ? const ValueKey('confirm')
+        : _mode == _AuthMode.email
+            ? const ValueKey('email')
+            : const ValueKey('welcome');
+
     final Widget face;
     if (showConfirm) {
-      face = ConfirmEmailView(
-        key: const ValueKey('confirm'),
-        provider: _provider,
-        onNotice: _toast,
-      );
+      face = ConfirmEmailView(provider: _provider, onNotice: _toast);
     } else if (_mode == _AuthMode.email) {
       face = EmailAuthForm(
-        key: const ValueKey('email'),
         provider: _provider,
-        onBack: () => setState(() => _mode = _AuthMode.welcome),
+        onBack: () => setState(() {
+          _forward = false;
+          _mode = _AuthMode.welcome;
+        }),
       );
     } else {
       face = _welcome(state);
     }
 
+    // Each face is a full-screen, opaque page so switching reads as an
+    // iOS-style full-page push (not a content cross-fade). The opaque fill lets
+    // the incoming page cover the outgoing one as it slides across.
+    final Widget page = ColoredBox(
+      key: currentKey,
+      color: NhamColors.surface,
+      child: SafeArea(
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 32),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 420),
+              child: face,
+            ),
+          ),
+        ),
+      ),
+    );
+
     return Stack(
       children: [
-        SafeArea(
-          child: Center(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 32,
-                vertical: 32,
-              ),
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 420),
-                child: AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 220),
-                  switchInCurve: Curves.easeOut,
-                  switchOutCurve: Curves.easeIn,
-                  transitionBuilder: (child, animation) => FadeTransition(
-                    opacity: animation,
-                    child: child,
-                  ),
-                  layoutBuilder: (currentChild, previousChildren) => Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      ...previousChildren,
-                      if (currentChild != null) currentChild,
-                    ],
-                  ),
-                  child: face,
-                ),
-              ),
+        Positioned.fill(
+          child: AnimatedSwitcher(
+            duration: const Duration(milliseconds: 340),
+            transitionBuilder: (child, animation) {
+              // Incoming slides a full width in from the lead side; outgoing
+              // parallax-slides a little the opposite way, beneath it. Direction
+              // flips on "back" via [_forward].
+              final incoming = child.key == currentKey;
+              final dir = _forward ? 1.0 : -1.0;
+              final curved = CurvedAnimation(
+                parent: animation,
+                curve: Curves.easeOutCubic,
+              );
+              final begin = incoming ? Offset(dir, 0) : Offset(-dir * 0.25, 0);
+              return SlideTransition(
+                position: Tween<Offset>(begin: begin, end: Offset.zero)
+                    .animate(curved),
+                child: child,
+              );
+            },
+            layoutBuilder: (currentChild, previousChildren) => Stack(
+              children: [
+                ...previousChildren,
+                if (currentChild != null) currentChild,
+              ],
             ),
+            child: page,
           ),
         ),
         // OAuth app-switch: a calm "Finishing sign-in…" hold so the surface
@@ -222,7 +249,10 @@ class _AuthPageState extends ConsumerState<AuthPage> {
         const SizedBox(height: 12),
         _EmailEntryButton(
           busy: state.busy,
-          onPressed: () => setState(() => _mode = _AuthMode.email),
+          onPressed: () => setState(() {
+            _forward = true;
+            _mode = _AuthMode.email;
+          }),
         ),
         const SizedBox(height: 18),
         Text(
@@ -278,7 +308,7 @@ class _EmailEntryButtonState extends State<_EmailEntryButton> {
           alignment: Alignment.center,
           child: Text(
             tr('auth.welcome.continueWithEmail'),
-            style: NhamTextStyles.sansMedium(fontSize: NhamFontSize.sm)
+            style: NhamTextStyles.sansMedium(fontSize: NhamFontSize.md)
                 .copyWith(color: NhamColors.text, letterSpacing: -0.2),
           ),
         ),

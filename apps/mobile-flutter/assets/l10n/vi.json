@@ -950,7 +950,9 @@
       "logWeight": "Ghi cân nặng",
       "update": "Cập nhật",
       "editHint": "Đang sửa số liệu hôm nay — lần lưu sau sẽ ghi đè giá trị trước.",
-      "saveFailed": "Không thể lưu cân nặng"
+      "saveFailed": "Không thể lưu cân nặng",
+      "netChange": "Thay đổi",
+      "steady": "Ổn định"
     },
     "adherenceHeatmap": {
       "onTrack": "{percent}% đúng mục tiêu",
@@ -989,6 +991,19 @@
   "logging": {
     "title": "Bạn đã ăn gì?",
     "placeholder": "Mô tả bữa ăn…",
+    "composerPlaceholder": "Thêm món ăn…",
+    "modeSelector": {
+      "title": "Bạn muốn ghi thế nào?",
+      "button": "Chế độ",
+      "soon": "Sắp có",
+      "comingSoon": "Chế độ bữa xả sắp ra mắt",
+      "normal": "Bình thường",
+      "normalDesc": "Mô tả bữa ăn bằng lời của bạn",
+      "cheat": "Bữa xả",
+      "cheatDesc": "Ghi nhanh bữa xả, không cần phân tích",
+      "manual": "Thủ công",
+      "manualDesc": "Tìm món, nhập gram chính xác"
+    },
     "submit": "Phân tích",
     "stopAnalyzing": "Dừng phân tích",
     "analyzing": "Đang phân tích bữa ăn…",
@@ -1018,7 +1033,10 @@
     "todaysMeals": "Bữa ăn hôm nay",
     "emptyState": {
       "title": "Bạn đã ăn gì?",
-      "subtitle": "Mô tả bữa ăn để nhận phân tích macro."
+      "title2": "Hôm nay ăn gì?",
+      "title3": "Bữa này có món gì?",
+      "title4": "Ghi lại bữa ăn nhé?",
+      "title5": "Bạn vừa ăn gì?"
     },
     "feedArea": {
       "savedMeal": "Đã lưu bữa ăn",
@@ -1090,6 +1108,7 @@
       "subtitle": "Tìm món, nhập chính xác số gam — không dùng AI",
       "searchPlaceholder": "Tìm món ăn...",
       "recentFoods": "Món gần đây",
+      "recentsHint": "Tìm món để thêm",
       "selected": "Đã chọn",
       "noResults": "Không tìm thấy món nào",
       "searching": "Đang tìm...",

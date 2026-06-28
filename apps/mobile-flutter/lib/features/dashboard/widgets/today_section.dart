@@ -21,6 +21,7 @@ import '../logic/dashboard_format.dart';
 import 'calorie_ring.dart';
 import 'dashboard_tokens.dart';
 import 'section_header.dart';
+import 'skeleton.dart';
 
 /// Per-screen dock targets (profile values, with the web DEFAULT_PROFILE
 /// fallbacks applied by the screen).
@@ -77,8 +78,15 @@ class TodaySection extends ConsumerWidget {
         isToday ? loggingDayProvider(args) : dashboardDayProvider(args);
     final async = ref.watch(provider);
     return async.when(
-      loading: () => SectionState(message: tr('dashboard.todayLoading')),
+      loading: () => const Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          SkeletonHeader(),
+          TodayCardSkeleton(),
+        ],
+      ),
       error: (_, __) => SectionState(
+        icon: LucideIcons.cloudOff,
         message: tr('dashboard.todayLoadError'),
         actionLabel: tr('dashboard.retry'),
         onAction: () => ref.invalidate(provider),
@@ -117,7 +125,7 @@ class _FirstRunCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: kCardSurface,
           borderRadius: BorderRadius.circular(kCardRadius),
-          boxShadow: const [kCardShadow],
+          boxShadow: kCardShadows,
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -235,98 +243,111 @@ class _Dock extends StatelessWidget {
     ];
 
     return _FadeInDown(
-      child: Container(
-        padding: const EdgeInsets.all(NhamSpacing.sp4),
-        decoration: BoxDecoration(
-          color: kCardSurface, // solid white
-          borderRadius: BorderRadius.circular(kCardRadius),
-          boxShadow: const [kCardShadow], // shadow only, no border
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // Date line — the card always names the day it is showing.
-            Padding(
-              padding: const EdgeInsets.only(bottom: NhamSpacing.sp3),
-              child: Text(dateLabel, style: dashEyebrow(color: kInkSecondary)),
-            ),
-            // (a) Hero: big calories number on the left, ring on the right.
-            Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Section header OUTSIDE the card — label left, day right. Same
+          // eyebrow treatment + flush alignment as the Progress / Consistency
+          // headers so all three sections share one rhythm.
+          Padding(
+            padding: const EdgeInsets.only(bottom: NhamSpacing.sp2),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        (overTarget
-                                ? tr('dashboard.caloriesOverTarget')
-                                : tr('dashboard.caloriesRemaining'))
-                            .toUpperCase(),
-                        // OVER TARGET flips to espresso ink — never red.
-                        style: dashEyebrow(
-                          color: overTarget ? kInk : kInkSecondary,
-                        ),
-                      ),
-                      const SizedBox(height: NhamSpacing.sp1),
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.baseline,
-                        textBaseline: TextBaseline.alphabetic,
+                Flexible(
+                  child: Text(
+                    (overTarget
+                            ? tr('dashboard.caloriesOverTarget')
+                            : tr('dashboard.caloriesRemaining'))
+                        .toUpperCase(),
+                    style: dashEyebrow(color: kInk),
+                  ),
+                ),
+                Text(dateLabel.toUpperCase(),
+                    style: dashEyebrow(weight: FontWeight.w500)),
+              ],
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.all(NhamSpacing.sp4),
+            decoration: BoxDecoration(
+              color: kCardSurface, // solid white
+              borderRadius: BorderRadius.circular(kCardRadius),
+              boxShadow: kCardShadows, // shadow only, no border
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // (a) Hero: big calories number on the left, ring on the right.
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Flexible(
-                            // Counts the remaining figure up on day-swap (~300ms)
-                            // so paging settles in place instead of popping.
-                            child: CountUpText(
-                              value: remaining.abs().toDouble(),
-                              enabled:
-                                  !MediaQuery.disableAnimationsOf(context),
-                              duration: const Duration(milliseconds: 300),
-                              style: dashHero(),
-                              format: (v) => _fmt(v.round(), locale),
-                            ),
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.baseline,
+                            textBaseline: TextBaseline.alphabetic,
+                            children: [
+                              Flexible(
+                                // Counts the remaining figure up on day-swap
+                                // (~300ms) so paging settles in place.
+                                child: CountUpText(
+                                  value: remaining.abs().toDouble(),
+                                  enabled: !MediaQuery.disableAnimationsOf(
+                                      context),
+                                  duration: const Duration(milliseconds: 300),
+                                  style: dashHero(),
+                                  format: (v) => _fmt(v.round(), locale),
+                                ),
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                overTarget
+                                    ? tr('dashboard.over')
+                                    : '/ ${_fmt(targets.calorieTarget.round(), locale)}',
+                                style: dashBody(color: kInkSecondary),
+                              ),
+                            ],
                           ),
-                          const SizedBox(width: 6),
+                          const SizedBox(height: NhamSpacing.sp1),
                           Text(
-                            overTarget
-                                ? tr('dashboard.over')
-                                : '/ ${_fmt(targets.calorieTarget.round(), locale)}',
-                            style: dashBody(color: kInkSecondary),
+                            '${_fmt(calories, locale)} ${tr('dashboard.caloriesLogged')}',
+                            style: dashMeta(color: kInkDisabled),
                           ),
                         ],
                       ),
-                      const SizedBox(height: NhamSpacing.sp1),
-                      Text(
-                        '${_fmt(calories, locale)} ${tr('dashboard.caloriesLogged')}',
-                        style: dashMeta(color: kInkDisabled),
-                      ),
-                    ],
-                  ),
+                    ),
+                    const SizedBox(width: NhamSpacing.sp4),
+                    CalorieRing(
+                      current: calories.toDouble(),
+                      target: targets.calorieTarget,
+                      size: 84,
+                      strokeWidth: 6,
+                      center:
+                          const Icon(LucideIcons.flame, size: 22, color: kInk),
+                    ),
+                  ],
                 ),
-                const SizedBox(width: NhamSpacing.sp4),
-                CalorieRing(
-                  current: calories.toDouble(),
-                  target: targets.calorieTarget,
-                  size: 84,
-                  strokeWidth: 6,
-                  center: const Icon(LucideIcons.flame, size: 22, color: kInk),
-                ),
+
+                const SizedBox(height: NhamSpacing.sp5),
+
+                // (b) Macro bars — full width.
+                for (var i = 0; i < macroBars.length; i++) ...[
+                  if (i > 0) const SizedBox(height: NhamSpacing.sp3),
+                  _MacroRow(bar: macroBars[i], idx: i),
+                ],
+
+                const _Separator(),
+
+                // (c) Meal list — plain, on the card surface (no nested fill).
+                meals.isEmpty ? _EmptyMeals() : _MealList(meals: meals),
               ],
             ),
-
-            const SizedBox(height: NhamSpacing.sp5),
-
-            // (b) Macro bars — full width.
-            for (var i = 0; i < macroBars.length; i++) ...[
-              if (i > 0) const SizedBox(height: NhamSpacing.sp3),
-              _MacroRow(bar: macroBars[i], idx: i),
-            ],
-
-            const _Separator(),
-
-            // (c) Meal list — plain, on the card surface (no nested fill).
-            meals.isEmpty ? _EmptyMeals() : _MealList(meals: meals),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

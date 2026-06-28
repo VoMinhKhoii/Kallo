@@ -16,6 +16,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../models/dashboard.dart';
 import '../../../shared/widgets/widgets.dart';
@@ -29,6 +30,7 @@ import '../widgets/adherence_heatmap.dart';
 import '../widgets/dashboard_tokens.dart';
 import '../widgets/floating_meal_trigger.dart';
 import '../widgets/section_header.dart';
+import '../widgets/skeleton.dart';
 import '../widgets/today_section.dart';
 import '../widgets/week_strip.dart';
 import '../widgets/weight_chart.dart';
@@ -71,22 +73,19 @@ class DashboardScreen extends ConsumerWidget {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: NhamSpacing.sp3),
             child: AppHeader(
-              showAvatar: true,
               child: Text(_greeting().tr(), style: dashHeadline()),
             ),
           ),
           Expanded(
             child: bundle.when(
-              loading: () => Center(
-                child: Padding(
-                  padding: const EdgeInsets.all(NhamSpacing.sp6),
-                  child: SectionState(message: tr('dashboard.todayLoading')),
-                ),
-              ),
+              // Skeleton of the real layout (not a centered spinner) so the
+              // load previews its own shape.
+              loading: () => const _DashboardSkeleton(),
               error: (_, __) => Center(
                 child: Padding(
                   padding: const EdgeInsets.all(NhamSpacing.sp6),
                   child: SectionState(
+                    icon: LucideIcons.cloudOff,
                     message: tr('dashboard.todayLoadError'),
                     actionLabel: tr('dashboard.retry'),
                     onAction: () =>
@@ -423,6 +422,59 @@ class _SizeReporterRender extends RenderProxyBox {
       _last = h;
       onHeight(h);
     }
+  }
+}
+
+/// The full-page loading skeleton — a week-strip row, the Today card, and the
+/// two lower section cards, all under one shimmer sweep. Mirrors [_Content]'s
+/// padding so the swap to real data doesn't jump.
+class _DashboardSkeleton extends StatelessWidget {
+  const _DashboardSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    final bottomInset = MediaQuery.of(context).padding.bottom;
+    // Each card / header shimmers its own bars internally (so the white card
+    // surfaces stay white); only the bare week-strip pills need a wrapper.
+    return ListView(
+      padding: EdgeInsets.only(
+        left: NhamSpacing.sp3,
+        right: NhamSpacing.sp3,
+        top: NhamSpacing.sp3,
+        bottom: bottomInset + 96,
+      ),
+      children: const [
+        // Week-strip row — four day pills.
+        Shimmer(
+          child: Padding(
+            padding: EdgeInsets.symmetric(vertical: NhamSpacing.sp2),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                SkeletonBar(width: 64, height: 76, radius: 16),
+                SkeletonBar(width: 64, height: 76, radius: 16),
+                SkeletonBar(width: 64, height: 76, radius: 16),
+                SkeletonBar(width: 64, height: 76, radius: 16),
+              ],
+            ),
+          ),
+        ),
+        SizedBox(height: NhamSpacing.sp3),
+        // Section 1 — Today.
+        SkeletonHeader(),
+        TodayCardSkeleton(),
+        SizedBox(height: NhamSpacing.sp4),
+        // Section 2 — Progress.
+        SkeletonHeader(),
+        WeightCardSkeleton(),
+        SizedBox(height: NhamSpacing.sp4),
+        // Section 3 — Consistency.
+        SkeletonHeader(),
+        SkeletonCard(children: [
+          SkeletonBar(height: 120, radius: 10),
+        ]),
+      ],
+    );
   }
 }
 

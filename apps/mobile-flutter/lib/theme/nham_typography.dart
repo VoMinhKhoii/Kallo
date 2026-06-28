@@ -34,11 +34,17 @@ abstract final class NhamTracking {
   static const double display = -1.4;
 }
 
-/// Text styles built from Lora (serif) and DM Sans (sans-serif).
+/// Text styles built from Lora (serif) and Be Vietnam Pro (sans-serif).
 ///
 /// Lora = display/serif (headings, numbers > 18px, meal quotes -- never bold).
-/// DM Sans = UI/body (buttons, labels, tabular numbers).
+/// Be Vietnam Pro = UI/body (buttons, labels, tabular numbers). It replaces the
+/// previous DM Sans, whose bundled subset lacked Vietnamese diacritics and made
+/// `phở` / `bún chả` fall back mid-word; Be Vietnam Pro covers the full
+/// Vietnamese set, so all UI text renders in one consistent typeface.
 abstract final class NhamTextStyles {
+  /// The bundled sans family (declared in pubspec `fonts:`).
+  static const String sansFamily = 'BeVietnamPro';
+
   // ── Serif (Lora) ───────────────────────────────────────────────────
 
   static TextStyle serifRegular({double? fontSize, double? height}) =>
@@ -66,31 +72,31 @@ abstract final class NhamTextStyles {
         height: height,
       );
 
-  // ── Sans (DM Sans) ────────────────────────────────────────────────
+  // ── Sans (Be Vietnam Pro) ─────────────────────────────────────────
 
-  static TextStyle sansRegular({double? fontSize, double? height}) =>
-      GoogleFonts.dmSans(
+  static TextStyle sansRegular({double? fontSize, double? height}) => TextStyle(
+        fontFamily: sansFamily,
         fontWeight: FontWeight.w400,
         fontSize: fontSize,
         height: height,
       );
 
-  static TextStyle sansMedium({double? fontSize, double? height}) =>
-      GoogleFonts.dmSans(
+  static TextStyle sansMedium({double? fontSize, double? height}) => TextStyle(
+        fontFamily: sansFamily,
         fontWeight: FontWeight.w500,
         fontSize: fontSize,
         height: height,
       );
 
-  static TextStyle sansSemiBold({double? fontSize, double? height}) =>
-      GoogleFonts.dmSans(
+  static TextStyle sansSemiBold({double? fontSize, double? height}) => TextStyle(
+        fontFamily: sansFamily,
         fontWeight: FontWeight.w600,
         fontSize: fontSize,
         height: height,
       );
 
-  static TextStyle sansBold({double? fontSize, double? height}) =>
-      GoogleFonts.dmSans(
+  static TextStyle sansBold({double? fontSize, double? height}) => TextStyle(
+        fontFamily: sansFamily,
         fontWeight: FontWeight.w700,
         fontSize: fontSize,
         height: height,

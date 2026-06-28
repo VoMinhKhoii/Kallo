@@ -13,9 +13,7 @@ import '../../../theme/nham_typography.dart';
 import '../logic/format.dart';
 import '../logic/meal_utils.dart';
 import 'count_up.dart';
-import 'dashed_divider.dart';
 import 'entrances.dart';
-import 'timeline_rail.dart';
 
 // Briefly block Confirm after a quantity tap so a fast double-tap on a stepper
 // can't slip through and save before the user is done adjusting.
@@ -89,11 +87,9 @@ class _MealEntryState extends State<MealEntry> {
   Widget build(BuildContext context) {
     final totals = recalculateTotals(_items);
 
-    return TimelineRail(
-      isLast: widget.isLast,
-      child: Padding(
-        padding: const EdgeInsets.only(bottom: NhamSpacing.sp3), // mb-3
-        child: Column(
+    return Padding(
+      padding: const EdgeInsets.only(bottom: NhamSpacing.sp3), // mb-3
+      child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             _Card(
@@ -127,7 +123,7 @@ class _MealEntryState extends State<MealEntry> {
                     ],
                   ),
                   const SizedBox(height: NhamSpacing.sp5), // mt-5
-                  const DashedDivider(color: NhamColors.border),
+                  const Divider(height: 1, thickness: 1, color: NhamColors.borderFaint),
                   const SizedBox(height: NhamSpacing.sp4), // pt-4
                   Padding(
                     padding: const EdgeInsets.only(bottom: NhamSpacing.sp4),
@@ -162,7 +158,7 @@ class _MealEntryState extends State<MealEntry> {
                       ],
                     ),
                   ),
-                  const DashedDivider(color: NhamColors.borderHalf),
+                  const Divider(height: 1, thickness: 1, color: NhamColors.borderFaint),
                   const SizedBox(height: NhamSpacing.sp3), // pt-3
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -214,8 +210,7 @@ class _MealEntryState extends State<MealEntry> {
             ),
           ],
         ),
-      ),
-    );
+      );
   }
 }
 

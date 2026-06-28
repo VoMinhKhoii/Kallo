@@ -9,8 +9,6 @@ import '../../../theme/nham_theme.dart';
 import '../../../theme/nham_typography.dart';
 import '../data/logging_models.dart';
 import '../logic/format.dart';
-import 'dashed_divider.dart';
-import 'timeline_rail.dart';
 
 /// A saved meal in the day's feed — collapsed by default, expandable.
 ///
@@ -112,18 +110,14 @@ class _PersistedMealCardState extends State<PersistedMealCard>
       curve: Curves.easeInOut,
     );
 
-    return TimelineRail(
-      isLast: widget.isLast,
-      child: Padding(
-        padding: const EdgeInsets.only(bottom: NhamSpacing.sp3), // mb-3
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+    return Padding(
+      padding: const EdgeInsets.only(bottom: NhamSpacing.sp3), // mb-3
+      child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Time label sits ABOVE the card (sibling, mb-2) — not inside it.
-            NhamText(
-              time,
-              variant: NhamTextVariant.timeLabel,
-            ),
+            // Time as a centered divider on top of the card (── 1:04 AM ──) —
+            // no left timeline gutter, so the card gets the full row width.
+            _TimeDivider(time: time),
             const SizedBox(height: NhamSpacing.sp2), // mb-2
             _maybeDismissible(
             _Card(
@@ -208,7 +202,35 @@ class _PersistedMealCardState extends State<PersistedMealCard>
             ),
           ],
         ),
+      );
+  }
+}
+
+/// Centered time divider that sits on top of a meal card: a hairline, the time
+/// (── 1:04 AM ──), and a hairline — replacing the old left-rail time label.
+class _TimeDivider extends StatelessWidget {
+  const _TimeDivider({required this.time});
+
+  final String time;
+
+  @override
+  Widget build(BuildContext context) {
+    const line = Expanded(
+      child: Divider(
+        color: NhamColors.borderFaint,
+        height: 1,
+        thickness: 1,
       ),
+    );
+    return Row(
+      children: [
+        line,
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: NhamSpacing.sp3),
+          child: NhamText(time, variant: NhamTextVariant.timeLabel),
+        ),
+        line,
+      ],
     );
   }
 }
@@ -270,7 +292,7 @@ class _ExpandedDetails extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const DashedDivider(color: NhamColors.border),
+          const Divider(height: 1, thickness: 1, color: NhamColors.borderFaint),
           const SizedBox(height: NhamSpacing.sp4), // pt-4
           Padding(
             padding: const EdgeInsets.only(bottom: NhamSpacing.sp4), // mb-4
@@ -314,7 +336,7 @@ class _ExpandedDetails extends StatelessWidget {
               ],
             ),
           ),
-          const DashedDivider(color: NhamColors.borderHalf),
+          const Divider(height: 1, thickness: 1, color: NhamColors.borderFaint),
           const SizedBox(height: NhamSpacing.sp3), // pt-3
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,

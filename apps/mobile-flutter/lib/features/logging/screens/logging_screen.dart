@@ -4,7 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../data/session_provider.dart';
 import '../../../shared/widgets/nham_text.dart';
-import '../../../shell/app_header.dart';
 import '../../../theme/nham_colors.dart';
 import '../../../theme/nham_theme.dart';
 import '../data/logging_keys.dart';
@@ -64,10 +63,9 @@ class _LoggingScreenState extends ConsumerState<LoggingScreen> {
     final today = todayDateString();
     final yesterday = addDays(today, -1);
 
-    // Header in normal flow at the top; the collapse scrim overlays ONLY the
-    // feed region below it (so the strip's cells/chevrons stay tappable while
-    // the scrim catches taps everywhere else — the RN z-20 header / z-10 scrim
-    // contract). Tapping outside the strip collapses it (web parity).
+    // The date chip MORPHS in place into the week strip (fixed height, so the
+    // feed never shifts) — a buttery cross-dissolve, not a panel that opens
+    // below. The scrim catches outside-taps to collapse back to the chip.
     return ColoredBox(
       color: NhamColors.surface,
       child: SafeArea(
@@ -75,17 +73,20 @@ class _LoggingScreenState extends ConsumerState<LoggingScreen> {
         child: Column(
           children: [
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: NhamSpacing.sp3),
-              child: AppHeader(
+              padding: const EdgeInsets.fromLTRB(
+                NhamSpacing.sp3,
+                0,
+                NhamSpacing.sp3,
+                NhamSpacing.sp1,
+              ),
+              child: DateMorph(
+                dates: mealDates,
+                today: today,
+                selectedDate: _selectedDate,
                 expanded: _pickerExpanded,
-                child: TimelinePicker(
-                  dates: mealDates,
-                  today: today,
-                  selectedDate: _selectedDate,
-                  expanded: _pickerExpanded,
-                  onSelectDate: (date) => setState(() => _selectedDate = date),
-                  onExpandedChange: (v) => setState(() => _pickerExpanded = v),
-                ),
+                onSelectDate: (date) => setState(() => _selectedDate = date),
+                onExpand: () => setState(() => _pickerExpanded = true),
+                onCollapse: () => setState(() => _pickerExpanded = false),
               ),
             ),
             // A once-daily nudge when *yesterday* was under-logged — only while

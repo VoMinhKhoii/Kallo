@@ -4,53 +4,253 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:flutter/services.dart';
 
 import '../../../shared/widgets/nham_text.dart';
+import '../../../shell/app_header.dart';
 import '../../../theme/nham_colors.dart';
 import '../../../theme/nham_theme.dart';
 import '../../../theme/nham_typography.dart';
 import '../logic/timeline_utils.dart';
 
-/// Chip (collapsed) vs. week-strip (expanded) date picker. The expanded/chip
-/// state is lifted to the parent so the header can hand the strip the full row.
-///
-/// Ported 1:1 from
-/// `apps/mobile/src/components/logging/input/timeline-picker.tsx`.
-class TimelinePicker extends StatefulWidget {
-  const TimelinePicker({
+/// The collapsed date pill that lives in the app header. Tapping it asks the
+/// parent to open the [TimelineStrip] as a dropdown overlay — the chip itself
+/// never changes size, so the feed below never shifts.
+class TimelineChip extends StatefulWidget {
+  const TimelineChip({
+    super.key,
+    required this.dates,
+    required this.selectedDate,
+    required this.onTap,
+  });
+
+  final List<String> dates;
+  final String selectedDate;
+  final VoidCallback onTap;
+
+  @override
+  State<TimelineChip> createState() => _TimelineChipState();
+}
+
+class _TimelineChipState extends State<TimelineChip> {
+  bool _pressed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final locale = context.locale.toString();
+    final hasMeal = widget.dates.contains(widget.selectedDate);
+    final formatted = formatTimelineDayLabel(widget.selectedDate, locale);
+
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTapDown: (_) => setState(() => _pressed = true),
+      onTapUp: (_) => setState(() => _pressed = false),
+      onTapCancel: () => setState(() => _pressed = false),
+      onTap: widget.onTap,
+      child: AnimatedScale(
+        scale: _pressed ? 0.96 : 1,
+        duration: const Duration(milliseconds: 150),
+        curve: Curves.easeOut,
+        child: Container(
+          height: 44,
+          constraints: const BoxConstraints(maxWidth: 288), // max-w-72
+          padding: const EdgeInsets.symmetric(horizontal: NhamSpacing.sp4),
+          decoration: BoxDecoration(
+            color: NhamColors.surface,
+            borderRadius: BorderRadius.circular(NhamRadii.pill),
+            border: Border.all(color: NhamColors.borderHalf), // border/50
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(LucideIcons.calendar,
+                  size: 14, color: NhamColors.accent),
+              const SizedBox(width: NhamSpacing.sp2), // gap-2
+              Flexible(
+                child: NhamText(
+                  formatted,
+                  variant: NhamTextVariant.chipText,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(color: NhamColors.text),
+                ),
+              ),
+              if (hasMeal) ...[
+                const SizedBox(width: NhamSpacing.sp2),
+                Container(
+                  width: 6,
+                  height: 6,
+                  decoration: const BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: NhamColors.accent,
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Morphs the date chip IN PLACE into the week strip (and back), at a fixed
+/// height so the feed below never shifts. One controller drives a buttery
+/// cross-dissolve (chip fades/shrinks out as the strip fades/scales in) on a
+/// single easeOutCubic curve. Tapping the chip expands; the parent collapses on
+/// any outside tap (the scrim) or a day selection.
+class DateMorph extends StatefulWidget {
+  const DateMorph({
     super.key,
     required this.dates,
     required this.today,
     required this.selectedDate,
-    required this.onSelectDate,
     required this.expanded,
-    required this.onExpandedChange,
+    required this.onSelectDate,
+    required this.onExpand,
+    required this.onCollapse,
   });
 
   final List<String> dates;
   final String today;
   final String selectedDate;
-  final ValueChanged<String> onSelectDate;
   final bool expanded;
-  final ValueChanged<bool> onExpandedChange;
+  final ValueChanged<String> onSelectDate;
+  final VoidCallback onExpand;
+  final VoidCallback onCollapse;
 
   @override
-  State<TimelinePicker> createState() => _TimelinePickerState();
+  State<DateMorph> createState() => _DateMorphState();
+}
+
+class _DateMorphState extends State<DateMorph>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _c = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 340),
+    value: widget.expanded ? 1 : 0,
+  );
+
+  @override
+  void didUpdateWidget(DateMorph old) {
+    super.didUpdateWidget(old);
+    if (widget.expanded != old.expanded) {
+      if (widget.expanded) {
+        _c.forward();
+      } else {
+        _c.reverse();
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _c.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // Fixed height = the expanded strip's height, so morphing never pushes the
+    // feed; the collapsed chip just centers in it.
+    return SizedBox(
+      height: 56,
+      child: AnimatedBuilder(
+        animation: _c,
+        builder: (context, _) {
+          final t = Curves.easeOutCubic.transform(_c.value);
+          final chipOpacity = (1 - t * 1.6).clamp(0.0, 1.0);
+          final stripOpacity = ((t - 0.25) / 0.75).clamp(0.0, 1.0);
+          return Stack(
+            alignment: Alignment.center,
+            children: [
+              // Collapsed layer: hamburger + centered chip + mirror spacer.
+              // The hamburger lives here, so it fades out as the strip expands.
+              if (t < 1)
+                Opacity(
+                  opacity: chipOpacity,
+                  child: IgnorePointer(
+                    ignoring: widget.expanded,
+                    child: Row(
+                      children: [
+                        const AppMenuButton(),
+                        Expanded(
+                          child: Center(
+                            child: Transform.scale(
+                              scale: 1 - t * 0.04, // shrink as it hands off
+                              child: TimelineChip(
+                                dates: widget.dates,
+                                selectedDate: widget.selectedDate,
+                                onTap: widget.onExpand,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 44, height: 44),
+                      ],
+                    ),
+                  ),
+                ),
+              // Expanded layer: the week strip, FULL header width.
+              if (t > 0)
+                Opacity(
+                  opacity: stripOpacity,
+                  child: IgnorePointer(
+                    ignoring: !widget.expanded,
+                    child: Transform.scale(
+                      scale: 0.96 + 0.04 * t, // settle in from 0.96 → 1
+                      child: TimelineStrip(
+                        dates: widget.dates,
+                        today: widget.today,
+                        selectedDate: widget.selectedDate,
+                        onSelectDate: widget.onSelectDate,
+                        onClose: widget.onCollapse,
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          );
+        },
+      ),
+    );
+  }
 }
 
 // A large midpoint so the PageView can page many weeks into the past while the
 // current week sits at a known index (weeks are unbounded backwards).
 const int _kWeekPageBase = 5000;
 
-class _TimelinePickerState extends State<TimelinePicker> {
+/// The expanded week strip, shown as a dropdown overlay below the header. Real
+/// week paging via [PageView] (swipe + chevrons). Selecting a day reports it and
+/// asks the parent to close.
+class TimelineStrip extends StatefulWidget {
+  const TimelineStrip({
+    super.key,
+    required this.dates,
+    required this.today,
+    required this.selectedDate,
+    required this.onSelectDate,
+    required this.onClose,
+  });
+
+  final List<String> dates;
+  final String today;
+  final String selectedDate;
+  final ValueChanged<String> onSelectDate;
+  final VoidCallback onClose;
+
+  @override
+  State<TimelineStrip> createState() => _TimelineStripState();
+}
+
+class _TimelineStripState extends State<TimelineStrip> {
   late String _visibleAnchor = _selectedAnchor;
-  // The current week lives at [_kWeekPageBase]; each page back is one week
-  // earlier, each page forward one later (capped at the current week).
   late final PageController _pageController =
-      PageController(initialPage: _kWeekPageBase);
+      PageController(initialPage: _pageForAnchor(_selectedAnchor));
 
   String get _currentAnchor => widget.today;
-  String get _selectedAnchor => widget.selectedDate.compareTo(_currentAnchor) > 0
-      ? _currentAnchor
-      : widget.selectedDate;
+  String get _selectedAnchor =>
+      widget.selectedDate.compareTo(_currentAnchor) > 0
+          ? _currentAnchor
+          : widget.selectedDate;
 
   bool get _canNavigateNext => _visibleAnchor.compareTo(_currentAnchor) < 0;
 
@@ -70,22 +270,12 @@ class _TimelinePickerState extends State<TimelinePicker> {
     super.dispose();
   }
 
-  void _openStrip() {
-    setState(() => _visibleAnchor = _selectedAnchor);
-    // Jump the PageView to the selected week without animating the open.
-    final page = _pageForAnchor(_selectedAnchor);
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (_pageController.hasClients) _pageController.jumpToPage(page);
-    });
-    widget.onExpandedChange(true);
-  }
-
   void _selectDay(String date) {
     if (date != widget.selectedDate) {
       HapticFeedback.selectionClick();
       widget.onSelectDate(date);
     }
-    widget.onExpandedChange(false);
+    widget.onClose();
   }
 
   void _onPageChanged(int page) {
@@ -116,97 +306,44 @@ class _TimelinePickerState extends State<TimelinePicker> {
     final locale = context.locale.toString();
     final mealDates = widget.dates.toSet();
 
-    // The container morphs between the chip pill and the full-width strip,
-    // mirroring the framer `layout` morph (motion.div, duration 0.28s,
-    // cubic-bezier(0.16,1,0.3,1)) in mobile-timeline-picker.tsx:347-356.
-    return LayoutBuilder(
-        builder: (context, constraints) {
-          final expanded = widget.expanded;
-          return AnimatedContainer(
-            duration: const Duration(milliseconds: 280),
-            curve: const Cubic(0.16, 1, 0.3, 1),
-            // Chip is a single row (44px); the expanded strip stacks
-            // weekday + number + dot per cell and needs more height, else the
-            // day cells overflow the 44px clamp (BOTTOM OVERFLOWED stripe).
-            height: expanded ? 56 : 44,
-            // chip: max-w-72 pill; strip: full width.
-            width: expanded ? constraints.maxWidth : null,
-            constraints: expanded
-                ? null
-                : const BoxConstraints(maxWidth: 288), // max-w-72
-            padding: expanded
-                ? EdgeInsets.zero
-                : const EdgeInsets.symmetric(horizontal: NhamSpacing.sp4),
-            decoration: BoxDecoration(
-              color: expanded ? Colors.transparent : NhamColors.surface,
-              borderRadius:
-                  BorderRadius.circular(expanded ? 0 : NhamRadii.pill),
-              border: expanded
-                  ? const Border.fromBorderSide(BorderSide.none)
-                  : Border.all(color: NhamColors.borderHalf), // border/50
-            ),
-            child: AnimatedSwitcher(
-              duration: const Duration(milliseconds: 150),
-              child: expanded
-                  ? _buildStrip(locale, mealDates)
-                  : _buildChipContent(locale, mealDates),
-            ),
-          );
-        },
-    );
-  }
-
-  Widget _buildChipContent(String locale, Set<String> mealDates) {
-    final hasMeal = mealDates.contains(widget.selectedDate);
-    final formatted = formatTimelineDayLabel(widget.selectedDate, locale);
-    return _ChipButton(
-      key: const ValueKey('chip-content'),
-      label: formatted,
-      hasMeal: hasMeal,
-      onTap: _openStrip,
-    );
-  }
-
-  Widget _buildStrip(String locale, Set<String> mealDates) {
-    return Row(
-      key: const ValueKey('strip-content'),
-      children: [
-        _NavButton(
-          icon: LucideIcons.chevronLeft, // lucide ChevronLeft
-          onTap: _scrollPrev,
-          color: NhamColors.textMuted,
-        ),
-        const SizedBox(width: 4), // gap-1
-        // Real week paging via PageView — swipe AND chevrons slide a full week
-        // (the old hand-rolled carousel's transform was a constant and never
-        // animated). Forward is capped at the current week (itemCount).
-        Expanded(
-          child: PageView.builder(
-            controller: _pageController,
-            onPageChanged: _onPageChanged,
-            itemCount: _kWeekPageBase + 1,
-            itemBuilder: (context, page) {
-              final week = buildCenteredStripFromAnchor(_anchorForPage(page));
-              return _WeekRow(
-                week: week,
-                today: widget.today,
-                selectedDate: widget.selectedDate,
-                mealDates: mealDates,
-                locale: locale,
-                onSelect: _selectDay,
-              );
-            },
+    return SizedBox(
+      height: 56,
+      child: Row(
+        children: [
+          _NavButton(
+            icon: LucideIcons.chevronLeft,
+            onTap: _scrollPrev,
+            color: NhamColors.textMuted,
           ),
-        ),
-        const SizedBox(width: 4),
-        _NavButton(
-          icon: LucideIcons.chevronRight, // lucide ChevronRight
-          onTap: _canNavigateNext ? _scrollNext : null,
-          color: _canNavigateNext
-              ? NhamColors.textMuted
-              : const Color(0x4D8B7355), // text-nham-text-muted/30
-        ),
-      ],
+          const SizedBox(width: 4), // gap-1
+          Expanded(
+            child: PageView.builder(
+              controller: _pageController,
+              onPageChanged: _onPageChanged,
+              itemCount: _kWeekPageBase + 1,
+              itemBuilder: (context, page) {
+                final week = buildCenteredStripFromAnchor(_anchorForPage(page));
+                return _WeekRow(
+                  week: week,
+                  today: widget.today,
+                  selectedDate: widget.selectedDate,
+                  mealDates: mealDates,
+                  locale: locale,
+                  onSelect: _selectDay,
+                );
+              },
+            ),
+          ),
+          const SizedBox(width: 4),
+          _NavButton(
+            icon: LucideIcons.chevronRight,
+            onTap: _canNavigateNext ? _scrollNext : null,
+            color: _canNavigateNext
+                ? NhamColors.textMuted
+                : const Color(0x4D8B7355), // text-nham-text-muted/30
+          ),
+        ],
+      ),
     );
   }
 }
@@ -246,66 +383,6 @@ class _WeekRow extends StatelessWidget {
           if (date != week.days.last) const SizedBox(width: 4),
         ],
       ],
-    );
-  }
-}
-
-class _ChipButton extends StatefulWidget {
-  const _ChipButton({
-    super.key,
-    required this.label,
-    required this.hasMeal,
-    required this.onTap,
-  });
-
-  final String label;
-  final bool hasMeal;
-  final VoidCallback onTap;
-
-  @override
-  State<_ChipButton> createState() => _ChipButtonState();
-}
-
-class _ChipButtonState extends State<_ChipButton> {
-  @override
-  Widget build(BuildContext context) {
-    // The pill chrome (bg/border/radius/padding/maxWidth) is owned by the
-    // morphing AnimatedContainer in the parent; this is only the chip's
-    // content + tap target.
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: widget.onTap,
-      child: SizedBox(
-        height: 44,
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(LucideIcons.calendar,
-                size: 14, color: NhamColors.accent), // lucide Calendar
-            const SizedBox(width: NhamSpacing.sp2), // gap-2
-            Flexible(
-              child: NhamText(
-                widget.label,
-                variant: NhamTextVariant.chipText,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(color: NhamColors.text),
-              ),
-            ),
-            if (widget.hasMeal) ...[
-              const SizedBox(width: NhamSpacing.sp2),
-              Container(
-                width: 6,
-                height: 6,
-                decoration: const BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: NhamColors.accent,
-                ),
-              ),
-            ],
-          ],
-        ),
-      ),
     );
   }
 }
@@ -419,8 +496,6 @@ class _DayCellState extends State<_DayCell> {
       );
     }
 
-    // Web: future days are NOT dimmed/disabled — only the meal dot becomes an
-    // empty 6x6 spacer (handled above). The cell stays full-opacity + tappable.
     return GestureDetector(
       onTapDown: (_) => setState(() => _pressed = true),
       onTapUp: (_) => setState(() => _pressed = false),
@@ -440,31 +515,31 @@ class _DayCellState extends State<_DayCell> {
             color: bg,
             borderRadius: BorderRadius.circular(14.4), // rounded-[0.9rem]
           ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                NhamText(
-                  dayName,
-                  variant: NhamTextVariant.macroLabel,
-                  style: NhamTextStyles.sansSemiBold(
-                    fontSize: NhamFontSize.eyebrow,
-                  ).copyWith(
-                    letterSpacing: NhamTracking.tight,
-                    color: labelColor,
-                  ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              NhamText(
+                dayName,
+                variant: NhamTextVariant.macroLabel,
+                style: NhamTextStyles.sansSemiBold(
+                  fontSize: NhamFontSize.eyebrow,
+                ).copyWith(
+                  letterSpacing: NhamTracking.tight,
+                  color: labelColor,
                 ),
-                const SizedBox(height: 2), // gap-0.5
-                NhamText(
-                  dayNum,
-                  variant: NhamTextVariant.numInline,
-                  style: TextStyle(fontSize: 13, color: labelColor),
-                ),
-                const SizedBox(height: 2),
-                dot,
-              ],
-            ),
+              ),
+              const SizedBox(height: 2), // gap-0.5
+              NhamText(
+                dayNum,
+                variant: NhamTextVariant.numInline,
+                style: TextStyle(fontSize: 13, color: labelColor),
+              ),
+              const SizedBox(height: 2),
+              dot,
+            ],
           ),
         ),
-      );
+      ),
+    );
   }
 }

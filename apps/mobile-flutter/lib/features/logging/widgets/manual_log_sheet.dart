@@ -2,7 +2,9 @@ import 'dart:async';
 
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../models/ingredient.dart';
 import '../../../shared/widgets/decimal_input.dart';
@@ -141,7 +143,7 @@ class _ManualLogSheetState extends ConsumerState<ManualLogSheet> {
                   ),
                   IconButton(
                     onPressed: () => Navigator.of(context).pop(),
-                    icon: const Icon(Icons.close, size: 20),
+                    icon: const Icon(LucideIcons.x, size: 20),
                     color: NhamColors.textMuted,
                     tooltip: 'common.cancel'.tr(),
                   ),
@@ -162,7 +164,7 @@ class _ManualLogSheetState extends ConsumerState<ManualLogSheet> {
                 decoration: InputDecoration(
                   isDense: true,
                   prefixIcon: const Icon(
-                    Icons.search,
+                    LucideIcons.search,
                     size: 18,
                     color: NhamColors.textMuted,
                   ),
@@ -394,7 +396,7 @@ class _SelectedItemRow extends StatelessWidget {
           ),
           IconButton(
             onPressed: disabled ? null : onRemove,
-            icon: const Icon(Icons.close, size: 16),
+            icon: const Icon(LucideIcons.x, size: 16),
             color: NhamColors.textMuted50,
             tooltip: 'logging.manualLogging.removeItem'.tr(),
             visualDensity: VisualDensity.compact,
@@ -453,9 +455,20 @@ class _ResultsSection extends StatelessWidget {
               ),
           data: (results) {
             if (results.isEmpty) {
-              // An empty recents list just means a new user — show nothing
-              // rather than an alarming "no results".
-              if (isRecents) return const SizedBox.shrink();
+              // An empty recents list just means a new user — nudge them to
+              // search rather than show an alarming "no results".
+              if (isRecents) {
+                return Padding(
+                  padding: const EdgeInsets.symmetric(vertical: NhamSpacing.sp6),
+                  child: Center(
+                    child: NhamText(
+                      'logging.manualLogging.recentsHint'.tr(),
+                      variant: NhamTextVariant.small,
+                      style: const TextStyle(color: NhamColors.textMuted),
+                    ),
+                  ),
+                );
+              }
               return Padding(
                 padding: const EdgeInsets.symmetric(vertical: NhamSpacing.sp4),
                 child: NhamText(
@@ -478,26 +491,45 @@ class _ResultsSection extends StatelessWidget {
   }
 }
 
-class _ResultTile extends StatelessWidget {
+class _ResultTile extends StatefulWidget {
   const _ResultTile({required this.result, required this.onTap});
 
   final IngredientSearchResult result;
   final VoidCallback onTap;
 
   @override
+  State<_ResultTile> createState() => _ResultTileState();
+}
+
+class _ResultTileState extends State<_ResultTile> {
+  bool _pressed = false;
+
+  void _onTap() {
+    HapticFeedback.selectionClick();
+    widget.onTap();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final result = widget.result;
     final kcal = result.per100g.caloriesKcal;
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(NhamRadii.md),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(
-            horizontal: NhamSpacing.sp1,
-            vertical: NhamSpacing.sp2,
-          ),
-          child: Row(
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTapDown: (_) => setState(() => _pressed = true),
+      onTapUp: (_) => setState(() => _pressed = false),
+      onTapCancel: () => setState(() => _pressed = false),
+      onTap: _onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 120),
+        decoration: BoxDecoration(
+          color: _pressed ? NhamColors.hover40 : Colors.transparent,
+          borderRadius: BorderRadius.circular(NhamRadii.md),
+        ),
+        padding: const EdgeInsets.symmetric(
+          horizontal: NhamSpacing.sp2,
+          vertical: NhamSpacing.sp2,
+        ),
+        child: Row(
             children: [
               Expanded(
                 child: Column(
@@ -547,15 +579,14 @@ class _ResultTile extends StatelessWidget {
               ),
               const SizedBox(width: NhamSpacing.sp1),
               const Icon(
-                Icons.add_circle_outline,
+                LucideIcons.circlePlus,
                 size: 18,
                 color: NhamColors.accentDark,
               ),
             ],
           ),
         ),
-      ),
-    );
+      );
   }
 }
 
@@ -565,6 +596,7 @@ class _TotalsSummary extends StatelessWidget {
   final IngredientMacrosPer100g totals;
 
   String _fmt(double? value) => value == null ? '—' : '${value.round()}';
+  String _fmtG(double? value) => value == null ? '—' : '${value.round()}g';
 
   @override
   Widget build(BuildContext context) {
@@ -577,7 +609,7 @@ class _TotalsSummary extends StatelessWidget {
         ),
         const SizedBox(height: 2),
         NhamText(
-          'P ${_fmt(totals.proteinG)} · C ${_fmt(totals.carbohydrateG)} · F ${_fmt(totals.fatG)}',
+          'P: ${_fmtG(totals.proteinG)} · C: ${_fmtG(totals.carbohydrateG)} · F: ${_fmtG(totals.fatG)}',
           variant: NhamTextVariant.numCaption,
           style: const TextStyle(color: NhamColors.textMuted),
         ),
@@ -586,7 +618,7 @@ class _TotalsSummary extends StatelessWidget {
   }
 }
 
-class _SaveButton extends StatelessWidget {
+class _SaveButton extends StatefulWidget {
   const _SaveButton({
     required this.enabled,
     required this.saving,
@@ -598,27 +630,45 @@ class _SaveButton extends StatelessWidget {
   final VoidCallback onTap;
 
   @override
+  State<_SaveButton> createState() => _SaveButtonState();
+}
+
+class _SaveButtonState extends State<_SaveButton> {
+  bool _pressed = false;
+
+  void _onTap() {
+    HapticFeedback.lightImpact();
+    widget.onTap();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final enabled = widget.enabled;
     return Semantics(
       button: true,
       enabled: enabled,
       label: 'logging.manualLogging.save'.tr(),
       child: GestureDetector(
-        onTap: enabled ? onTap : null,
-        child: Opacity(
-          opacity: enabled ? 1 : 0.4,
-          child: Container(
-            padding: const EdgeInsets.symmetric(
-              horizontal: NhamSpacing.sp4,
-              vertical: NhamSpacing.sp2,
-            ),
-            decoration: BoxDecoration(
-              color: NhamColors.btn,
-              borderRadius: BorderRadius.circular(NhamRadii.buttonXl),
-            ),
-            child:
-                saving
-                    ? const SizedBox(
+        onTapDown: enabled ? (_) => setState(() => _pressed = true) : null,
+        onTapUp: enabled ? (_) => setState(() => _pressed = false) : null,
+        onTapCancel: enabled ? () => setState(() => _pressed = false) : null,
+        onTap: enabled ? _onTap : null,
+        child: AnimatedScale(
+          scale: _pressed ? 0.96 : 1,
+          duration: const Duration(milliseconds: 150),
+          child: Opacity(
+            opacity: enabled ? 1 : 0.4,
+            child: Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: NhamSpacing.sp5,
+                vertical: NhamSpacing.sp3,
+              ),
+              decoration: BoxDecoration(
+                color: _pressed ? NhamColors.btnHover : NhamColors.btn,
+                borderRadius: BorderRadius.circular(NhamRadii.buttonXl),
+              ),
+              child: widget.saving
+                  ? const SizedBox(
                       width: 18,
                       height: 18,
                       child: CircularProgressIndicator(
@@ -626,12 +676,13 @@ class _SaveButton extends StatelessWidget {
                         color: Colors.white,
                       ),
                     )
-                    : Text(
+                  : Text(
                       'logging.manualLogging.save'.tr(),
-                      style: NhamTextStyles.sansMedium(
+                      style: NhamTextStyles.sansSemiBold(
                         fontSize: NhamFontSize.sm,
                       ).copyWith(color: Colors.white),
                     ),
+            ),
           ),
         ),
       ),

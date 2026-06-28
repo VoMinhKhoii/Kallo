@@ -28,7 +28,9 @@ class MealInput extends StatefulWidget {
     required this.controller,
     required this.onSubmit,
     this.onCancel,
-    this.onManualTap,
+    this.onModePressed,
+    this.modeLabel,
+    this.modeIcon,
     this.analyzing = false,
   });
 
@@ -41,9 +43,13 @@ class MealInput extends StatefulWidget {
   /// requestId-supersede mechanism handles overlap).
   final bool analyzing;
 
-  /// Opens the manual-log sheet (search foods + exact grams, no AI). Rendered
-  /// as a ghost button beside submit when provided.
-  final VoidCallback? onManualTap;
+  /// Opens the mode selector (Normal / Cheat meal / Manual). Rendered as an
+  /// icon + label on the input bar's second line.
+  final VoidCallback? onModePressed;
+
+  /// Label + icon of the currently selected mode, shown on the mode control.
+  final String? modeLabel;
+  final IconData? modeIcon;
 
   @override
   State<MealInput> createState() => _MealInputState();
@@ -144,81 +150,84 @@ class _MealInputState extends State<MealInput>
           child: child,
         );
       },
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.end,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Expanded(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(
-                minHeight: _minHeight,
-                maxHeight: _maxHeight,
-              ),
-              child: TextField(
-                controller: _controller,
-                focusNode: _focusNode,
-                maxLines: null,
-                keyboardType: TextInputType.multiline,
-                textInputAction: TextInputAction.newline,
-                style: NhamTextStyles.sansRegular(
+          // Line 1 — the composer field, full width.
+          ConstrainedBox(
+            constraints: const BoxConstraints(
+              minHeight: _minHeight,
+              maxHeight: _maxHeight,
+            ),
+            child: TextField(
+              controller: _controller,
+              focusNode: _focusNode,
+              maxLines: null,
+              keyboardType: TextInputType.multiline,
+              textInputAction: TextInputAction.newline,
+              style: NhamTextStyles.sansRegular(
+                fontSize: NhamFontSize.sm,
+                height: 20 / 14, // leading-5 (20px) at text-sm (14px)
+              ).copyWith(color: NhamColors.text),
+              cursorColor: NhamColors.accent,
+              decoration: InputDecoration(
+                isCollapsed: true,
+                border: InputBorder.none,
+                enabledBorder: InputBorder.none,
+                focusedBorder: InputBorder.none,
+                disabledBorder: InputBorder.none,
+                contentPadding: const EdgeInsets.symmetric(
+                  vertical: 6,
+                ), // py-1.5
+                hintText: 'logging.composerPlaceholder'.tr(),
+                hintStyle: NhamTextStyles.sansRegular(
                   fontSize: NhamFontSize.sm,
-                  height: 20 / 14, // leading-5 (20px) at text-sm (14px)
-                ).copyWith(color: NhamColors.text),
-                cursorColor: NhamColors.accent,
-                decoration: InputDecoration(
-                  isCollapsed: true,
-                  border: InputBorder.none,
-                  enabledBorder: InputBorder.none,
-                  focusedBorder: InputBorder.none,
-                  disabledBorder: InputBorder.none,
-                  contentPadding: const EdgeInsets.symmetric(
-                    vertical: 6,
-                  ), // py-1.5
-                  hintText: 'logging.placeholder'.tr(),
-                  hintStyle: NhamTextStyles.sansRegular(
-                    fontSize: NhamFontSize.sm,
-                    height: 20 / 14,
-                  ).copyWith(color: NhamColors.placeholderMuted40),
-                ),
+                  height: 20 / 14,
+                ).copyWith(color: NhamColors.placeholderMuted40),
               ),
             ),
           ),
-          const SizedBox(width: NhamSpacing.sp3),
-          if (widget.onManualTap != null && !widget.analyzing) ...[
-            _GhostButton(
-              icon: Icons.edit_note,
-              label: 'logging.manualLogging.openSheet'.tr(),
-              onTap: widget.onManualTap!,
-            ),
-            const SizedBox(width: NhamSpacing.sp2),
-          ],
-          if (!_canSubmit && widget.analyzing && widget.onCancel != null)
-            _ActionButton(
-              icon:
-                  LucideIcons
-                      .square, // lucide Square (filled) → LucideIcons.square
-              iconSize: 14,
-              label: 'common.cancel'.tr(),
-              onTap: widget.onCancel,
-            )
-          else
-            _ActionButton(
-              icon: LucideIcons.arrowUp, // lucide ArrowUp → LucideIcons.arrowUp
-              iconSize: 16,
-              label: 'logging.submit'.tr(),
-              enabled: _canSubmit,
-              onTap: _canSubmit ? _submit : null,
-            ),
+          const SizedBox(height: NhamSpacing.sp2),
+          // Line 2 — mode selector on the left, send/stop on the right.
+          Row(
+            children: [
+              if (widget.onModePressed != null && !widget.analyzing)
+                _ModeButton(
+                  icon: widget.modeIcon ?? LucideIcons.zap,
+                  label: widget.modeLabel ??
+                      'logging.modeSelector.button'.tr(),
+                  onTap: widget.onModePressed!,
+                ),
+              const Spacer(),
+              if (!_canSubmit && widget.analyzing && widget.onCancel != null)
+                _ActionButton(
+                  icon: LucideIcons.square, // lucide Square (filled)
+                  iconSize: 14,
+                  label: 'common.cancel'.tr(),
+                  onTap: widget.onCancel,
+                )
+              else
+                _ActionButton(
+                  icon: LucideIcons.arrowUp, // lucide ArrowUp
+                  iconSize: 16,
+                  label: 'logging.submit'.tr(),
+                  enabled: _canSubmit,
+                  onTap: _canSubmit ? _submit : null,
+                ),
+            ],
+          ),
         ],
       ),
     );
   }
 }
 
-/// 32x32 ghost button (umber outline, transparent bg) — the manual-log entry
-/// point sitting beside the submit button, mirroring the web's mode picker
-/// placement next to send.
-class _GhostButton extends StatelessWidget {
-  const _GhostButton({
+/// The mode control on the input bar's second line — a minimal icon + label
+/// (no border, no chevron), like the Claude composer's "Auto". Tapping opens the
+/// mode chooser. 44pt tap target, scales 0.96 on press.
+class _ModeButton extends StatefulWidget {
+  const _ModeButton({
     required this.icon,
     required this.label,
     required this.onTap,
@@ -229,22 +238,46 @@ class _GhostButton extends StatelessWidget {
   final VoidCallback onTap;
 
   @override
+  State<_ModeButton> createState() => _ModeButtonState();
+}
+
+class _ModeButtonState extends State<_ModeButton> {
+  bool _pressed = false;
+
+  @override
   Widget build(BuildContext context) {
     return Semantics(
       button: true,
-      label: label,
+      label: widget.label,
       child: GestureDetector(
-        onTap: onTap,
-        child: Container(
-          width: 32,
-          height: 32,
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            color: Colors.transparent,
-            borderRadius: BorderRadius.circular(NhamRadii.md),
-            border: Border.all(color: NhamColors.btnBorderGhost),
+        onTapDown: (_) => setState(() => _pressed = true),
+        onTapUp: (_) => setState(() => _pressed = false),
+        onTapCancel: () => setState(() => _pressed = false),
+        onTap: widget.onTap,
+        child: SizedBox(
+          height: 44, // HIG tap target
+          child: Center(
+            child: AnimatedScale(
+              scale: _pressed ? 0.96 : 1,
+              duration: const Duration(milliseconds: 200),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: NhamSpacing.sp1),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(widget.icon, size: 18, color: NhamColors.btn),
+                    const SizedBox(width: 6),
+                    Text(
+                      widget.label,
+                      style: NhamTextStyles.sansMedium(
+                        fontSize: NhamFontSize.sm,
+                      ).copyWith(color: NhamColors.btn),
+                    ),
+                  ],
+                ),
+              ),
+            ),
           ),
-          child: Icon(icon, size: 18, color: NhamColors.btn),
         ),
       ),
     );

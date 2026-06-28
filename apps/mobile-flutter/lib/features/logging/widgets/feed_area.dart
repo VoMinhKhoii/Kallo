@@ -24,15 +24,15 @@ import '../data/stream_analysis_controller.dart';
 import '../logic/format.dart';
 import '../logic/meal_utils.dart' show isLikelyPartialDay;
 import 'calorie_ring.dart';
-import 'dashed_divider.dart';
+import '../../../shared/widgets/top_toast.dart';
 import 'empty_state.dart';
 import 'entrances.dart';
 import 'manual_log_sheet.dart';
 import 'meal_entry.dart';
 import 'meal_input.dart';
+import 'meal_mode_sheet.dart';
 import 'persisted_meal_card.dart';
 import 'streaming_entry.dart';
-import 'timeline_rail.dart';
 
 const _uuid = Uuid();
 
@@ -52,6 +52,11 @@ class FeedArea extends ConsumerStatefulWidget {
 
 class _FeedAreaState extends ConsumerState<FeedArea> {
   final MealInputController _inputController = MealInputController();
+
+  /// The selected composer mode (the pill on the input bar). Cheat meal ports
+  /// from web later; manual is a one-shot sheet, so the persistent mode is
+  /// effectively Normal for now.
+  MealLogMode _mode = MealLogMode.normal;
 
   /// Scrolls the freshly-revealed answer into view (nothing scrolled it before).
   final ScrollController _scrollController = ScrollController();
@@ -139,6 +144,27 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
     final text = _failedText;
     if (text == null) return;
     _submit(text);
+  }
+
+  /// The first step: choose how to log. Normal focuses the composer; Manual
+  /// opens the search-and-grams sheet (a one-shot, not a persistent mode); Cheat
+  /// meal ports from web later, so it just acknowledges for now.
+  Future<void> _openModeSheet() async {
+    final picked = await showMealModeSheet(context, current: _mode);
+    if (picked == null || !mounted) return;
+    switch (picked) {
+      case MealLogMode.normal:
+        setState(() => _mode = MealLogMode.normal);
+        _inputController.focus();
+      case MealLogMode.manual:
+        showManualLogSheet(
+          context,
+          userId: widget.profile.userId,
+          date: widget.date,
+        );
+      case MealLogMode.cheat:
+        showTopToast(context, 'logging.modeSelector.comingSoon'.tr());
+    }
   }
 
   /// Trailing-swipe removal of a saved meal: the day visibly heals (the meal
@@ -240,11 +266,6 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
     await ref.read(loggingDayProvider(_dayArgs).notifier).refresh();
   }
 
-  void _handleSuggestion(String s) {
-    _inputController.setText(s);
-    _inputController.focus();
-  }
-
   void _onStreamChange(StreamAnalysisState? prev, StreamAnalysisState next) {
     // On completion: hold the stream alive and let the streaming card morph in
     // place into a confirmable answer (the reveal — per-row macros already real,
@@ -284,7 +305,11 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
     final confirmPending = ref.watch(confirmMealProvider(profile.userId));
 
     final day = dayAsync.valueOrNull;
-    final isLoading = dayAsync.isLoading;
+    // Only show the skeleton on the FIRST load (no data yet). A refetch after
+    // confirm/delete keeps the previous data on screen (react-query's
+    // keepPreviousData), so saving slots the meal in instead of reloading the
+    // whole feed.
+    final isLoading = dayAsync.isLoading && day == null;
 
     // Swiped-away meals inside the undo window are filtered out here (not
     // removed from the cache), so totals heal immediately and a mid-window
@@ -514,7 +539,7 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
         Padding(
           padding: EdgeInsets.fromLTRB(
             NhamSpacing.sp3,
-            NhamSpacing.sp2,
+            NhamSpacing.sp3,
             NhamSpacing.sp3,
             bottomInset + NhamSpacing.sp2,
           ),
@@ -523,12 +548,9 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
             onSubmit: _submit,
             onCancel: () => ref.read(streamAnalysisProvider.notifier).cancel(),
             analyzing: stream.isAnalyzing,
-            onManualTap:
-                () => showManualLogSheet(
-                  context,
-                  userId: widget.profile.userId,
-                  date: widget.date,
-                ),
+            modeLabel: mealModeLabel(_mode),
+            modeIcon: mealModeIcon(_mode),
+            onModePressed: _openModeSheet,
           ),
         ),
       ],
@@ -562,7 +584,7 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
     if (persistedMeals.isEmpty) {
       final Widget body;
       if (isEmpty) {
-        body = EmptyState(onSuggestion: _handleSuggestion);
+        body = const EmptyState();
       } else if (isLoading) {
         // 2-item card skeleton with the timeline rail (LoggingDaySkeleton).
         body = const _LoggingDaySkeleton();
@@ -579,7 +601,7 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
           padding: const EdgeInsets.only(
             top: NhamSpacing.sp3,
             bottom: NhamSpacing.sp3,
-            left: NhamSpacing.sp3 + NhamSpacing.sp6,
+            left: NhamSpacing.sp3,
             right: NhamSpacing.sp3,
           ),
           child: _Footer(
@@ -587,6 +609,7 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
             isStreaming: isStreaming,
             isRevealing: isRevealing,
             stream: stream,
+            streamingRawInput: _inFlightText,
             confirmPending: confirmPending,
             onConfirm: _confirm,
             onConfirmReveal: _confirmReveal,
@@ -606,7 +629,7 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
           padding: const EdgeInsets.only(
             top: NhamSpacing.sp3,
             bottom: NhamSpacing.sp3,
-            left: NhamSpacing.sp3 + NhamSpacing.sp6,
+            left: NhamSpacing.sp3,
             right: NhamSpacing.sp3,
           ),
           child: body,
@@ -632,7 +655,7 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
         padding: const EdgeInsets.only(
           top: NhamSpacing.sp3,
           bottom: NhamSpacing.sp3,
-          left: NhamSpacing.sp3 + NhamSpacing.sp6, // padding + timeline gutter
+          left: NhamSpacing.sp3,
           right: NhamSpacing.sp3,
         ),
         itemCount: persistedMeals.length + (hasFooterItems ? 1 : 0),
@@ -654,6 +677,7 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
             isStreaming: isStreaming,
             isRevealing: isRevealing,
             stream: stream,
+            streamingRawInput: _inFlightText,
             confirmPending: confirmPending,
             onConfirm: _confirm,
             onConfirmReveal: _confirmReveal,
@@ -686,8 +710,9 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
                         },
                     ],
           );
-      // Saved — a success haptic confirms the meal landed.
+      // Saved — a success haptic + a top toast confirm the meal landed.
       HapticFeedback.mediumImpact();
+      if (mounted) showTopToast(context, 'logging.feedArea.savedMeal'.tr());
     } catch (_) {
       // confirm() rolls the optimistic removal back on failure; surface the
       // error too so it isn't silently swallowed.
@@ -727,6 +752,7 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
                     ],
           );
       HapticFeedback.mediumImpact();
+      if (mounted) showTopToast(context, 'logging.feedArea.savedMeal'.tr());
       _revealRawInput = null;
       ref.read(streamAnalysisProvider.notifier).reset();
     } catch (_) {
@@ -741,6 +767,7 @@ class _Footer extends StatelessWidget {
     required this.isStreaming,
     required this.isRevealing,
     required this.stream,
+    required this.streamingRawInput,
     required this.confirmPending,
     required this.onConfirm,
     required this.onConfirmReveal,
@@ -754,6 +781,10 @@ class _Footer extends StatelessWidget {
   final bool isStreaming;
   final bool isRevealing;
   final String? revealRawInput;
+
+  /// The just-typed text of the in-flight analysis, shown on the streaming card
+  /// immediately so the card carries the user's words while it analyzes.
+  final String? streamingRawInput;
   final StreamAnalysisState stream;
   final bool confirmPending;
   final void Function(String analysisId, List<MealQuantityEdit> edits)
@@ -788,6 +819,7 @@ class _Footer extends StatelessWidget {
             status: stream.status,
             items: stream.items,
             completedItems: stream.completedItems,
+            rawInput: streamingRawInput,
             isLast: !hasFailed,
           ),
         // The completed answer in the streaming card's slot: per-row macros
@@ -834,21 +866,9 @@ class _FailedAttemptCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return TimelineRail(
-      isLast: true,
-      // A terracotta-ringed dot marks the failed entry (never red).
-      dotChild: Container(
-        width: 8,
-        height: 8,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color: NhamColors.elev,
-          border: Border.all(color: NhamColors.danger, width: 2),
-        ),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.only(bottom: NhamSpacing.sp3),
-        child: Container(
+    return Padding(
+      padding: const EdgeInsets.only(bottom: NhamSpacing.sp3),
+      child: Container(
           padding: const EdgeInsets.all(NhamSpacing.sp4),
           decoration: BoxDecoration(
             color: NhamColors.surface,
@@ -881,8 +901,7 @@ class _FailedAttemptCard extends StatelessWidget {
             ],
           ),
         ),
-      ),
-    );
+      );
   }
 }
 
@@ -1047,10 +1066,13 @@ class _MacroRow extends StatelessWidget {
     return Row(
       children: [
         SizedBox(
-          width: 48, // w-12
+          width: 76,
           child: NhamText(
             data.label,
             variant: NhamTextVariant.macroLabel,
+            maxLines: 1,
+            softWrap: false,
+            overflow: TextOverflow.clip,
             style: const TextStyle(color: NhamColors.textMuted70),
           ),
         ),
@@ -1258,20 +1280,9 @@ class _LoggingDaySkeleton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    Widget ghostCard(bool isLast) => TimelineRail(
-      isLast: isLast,
-      dotChild: Container(
-        width: 8,
-        height: 8,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color: NhamColors.surface,
-          border: Border.all(color: NhamColors.accent60, width: 2),
-        ),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.only(bottom: NhamSpacing.sp8), // gap-8
-        child: Column(
+    Widget ghostCard(bool isLast) => Padding(
+      padding: const EdgeInsets.only(bottom: NhamSpacing.sp8), // gap-8
+      child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _bar(64, 12, const Color(0xB3E8D5B5)), // border/70 time bar
@@ -1318,7 +1329,7 @@ class _LoggingDaySkeleton extends StatelessWidget {
                         ),
                   ),
                   const SizedBox(height: NhamSpacing.sp5), // mt-5
-                  const DashedDivider(color: NhamColors.borderHalf),
+                  const Divider(height: 1, thickness: 1, color:NhamColors.borderHalf),
                   const SizedBox(height: NhamSpacing.sp3), // pt-3
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -1332,8 +1343,7 @@ class _LoggingDaySkeleton extends StatelessWidget {
             ),
           ],
         ),
-      ),
-    );
+      );
 
     return _Pulse(child: Column(children: [ghostCard(false), ghostCard(true)]));
   }

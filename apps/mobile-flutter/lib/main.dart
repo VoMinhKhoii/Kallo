@@ -20,9 +20,10 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await EasyLocalization.ensureInitialized();
 
-  // The brand fonts (Lora + DM Sans, every weight/style the app uses) are
-  // bundled under assets/google_fonts/ — never fetch over HTTP, so a cold
-  // offline start still renders in the brand type instead of the fallback.
+  // Lora (serif) is bundled under assets/google_fonts/ and resolved by
+  // google_fonts — never fetch over HTTP, so a cold offline start still renders
+  // in the brand serif instead of the fallback. The UI sans (Be Vietnam Pro) is
+  // a native pubspec font family, always available offline.
   GoogleFonts.config.allowRuntimeFetching = false;
 
   if (_supabaseUrl.isEmpty || _supabaseAnonKey.isEmpty) {

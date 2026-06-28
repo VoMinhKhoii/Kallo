@@ -11,6 +11,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../models/weight.dart';
 import '../../../theme/nham_colors.dart';
@@ -18,6 +19,7 @@ import '../../../theme/nham_theme.dart';
 import '../data/dashboard_providers.dart';
 import 'compact_weight_log.dart';
 import 'dashboard_tokens.dart';
+import 'skeleton.dart';
 
 const double _chartAspect = 2.2; // canvas width : height (minimal band)
 
@@ -36,29 +38,29 @@ class WeightChart extends ConsumerWidget {
       decoration: BoxDecoration(
         color: kCardSurface, // solid white
         borderRadius: BorderRadius.circular(kCardRadius),
-        boxShadow: const [kCardShadow], // shadow only, no border
+        boxShadow: kCardShadows, // shadow only, no border
       ),
       child: async.when(
-        loading: () => _MinHeight(
+        // Skeleton of the card body (no spinner) — the card is already drawn,
+        // so only its inner rows shimmer.
+        loading: () => Shimmer(
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const CircularProgressIndicator(
-                  color: NhamColors.accent, strokeWidth: 3),
-              const SizedBox(height: NhamSpacing.sp2),
-              Text(
-                tr('dashboard.loadingWeightTrend'),
-                textAlign: TextAlign.center,
-                style: dashMeta(color: kInkDisabled),
-              ),
-            ],
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: weightCardSkeletonChildren(),
           ),
         ),
         error: (_, __) => _MinHeight(
-          child: Text(
-            tr('dashboard.progressLoadError'),
-            textAlign: TextAlign.center,
-            style: dashMeta(color: kInkDisabled),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(LucideIcons.cloudOff, size: 22, color: NhamColors.stone),
+              const SizedBox(height: NhamSpacing.sp2),
+              Text(
+                tr('dashboard.progressLoadError'),
+                textAlign: TextAlign.center,
+                style: dashMeta(color: kInkSecondary),
+              ),
+            ],
           ),
         ),
         data: (data) => _Body(data: data, todayDate: todayDate, args: args),
@@ -93,17 +95,32 @@ class _Body extends StatelessWidget {
   Widget build(BuildContext context) {
     final kg = tr('dashboard.units.kg');
 
+    // Net change over the window (current − period start). The top-right stat
+    // that fills what used to be an empty corner — a SaaS-style metric pair.
+    final delta = data.currentWeight - data.periodStartWeight;
+    final hasTrend = data.weights.length > 1 && delta.abs() >= 0.05;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // Hero — current weight only (no trend pill / detail / projection).
+        // Hero — current weight (left) + net-change stat (right) so the corner
+        // never reads empty.
         Row(
-          crossAxisAlignment: CrossAxisAlignment.baseline,
-          textBaseline: TextBaseline.alphabetic,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(data.currentWeight.toStringAsFixed(1), style: dashHero()),
-            const SizedBox(width: 6),
-            Text(kg, style: dashBody(color: kInkSecondary)),
+            Expanded(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.baseline,
+                textBaseline: TextBaseline.alphabetic,
+                children: [
+                  Text(data.currentWeight.toStringAsFixed(1),
+                      style: dashHero()),
+                  const SizedBox(width: 6),
+                  Text(kg, style: dashBody(color: kInkSecondary)),
+                ],
+              ),
+            ),
+            _TrendStat(delta: delta, hasTrend: hasTrend, kg: kg),
           ],
         ),
         const SizedBox(height: NhamSpacing.sp4),
@@ -122,6 +139,53 @@ class _Body extends StatelessWidget {
           weights: data.weights,
           periodStartWeight: data.periodStartWeight,
           expectedEndWeight: data.expectedEndWeight,
+        ),
+      ],
+    );
+  }
+}
+
+/// The top-right net-change metric. A signed delta + kg with a small eyebrow,
+/// turning the empty corner into a SaaS-style metric pair. No trend-arrow icon
+/// (a SaaS trope per the brand drift-watchlist) — the sign carries direction.
+class _TrendStat extends StatelessWidget {
+  const _TrendStat({
+    required this.delta,
+    required this.hasTrend,
+    required this.kg,
+  });
+
+  final double delta;
+  final bool hasTrend;
+  final String kg;
+
+  @override
+  Widget build(BuildContext context) {
+    // No history yet → a plain "steady" word (no number, no label).
+    if (!hasTrend) {
+      return Padding(
+        padding: const EdgeInsets.only(top: 6),
+        child: Text(
+          tr('dashboard.weightCard.steady'),
+          style: dashMeta(color: kInkSecondary),
+        ),
+      );
+    }
+
+    // The net-change stat — arrow + value + kg, no caption label.
+    final value = delta.abs().toStringAsFixed(1);
+    final arrow = delta > 0 ? LucideIcons.arrowUp : LucideIcons.arrowDown;
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(arrow, size: 18, color: kInk),
+        const SizedBox(width: 1),
+        Text(value, style: dashValue(color: kInk)),
+        const SizedBox(width: 3),
+        Padding(
+          padding: const EdgeInsets.only(bottom: 1),
+          child: Text(kg, style: dashMeta(color: kInkDisabled)),
         ),
       ],
     );
@@ -244,13 +308,12 @@ class _ChartCanvas extends StatelessWidget {
               lineBarsData: [
                 LineChartBarData(
                   spots: spots,
-                  isCurved: !isSinglePoint,
-                  curveSmoothness: 0.35,
-                  preventCurveOverShooting: true,
+                  // Sharp, angular line — no smoothing (was a rounded curve).
+                  isCurved: false,
                   color: NhamColors.accent,
                   barWidth: 2,
-                  isStrokeCapRound: true,
-                  isStrokeJoinRound: true,
+                  isStrokeCapRound: false,
+                  isStrokeJoinRound: false,
                   dotData: FlDotData(
                     show: isSinglePoint,
                     getDotPainter: (spot, pct, bar, idx) => FlDotCirclePainter(

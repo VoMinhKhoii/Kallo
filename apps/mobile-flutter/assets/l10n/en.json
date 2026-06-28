@@ -951,7 +951,9 @@
       "logWeight": "Log weight",
       "update": "Update",
       "editHint": "Editing today's entry — saves overwrite the previous value.",
-      "saveFailed": "Failed to save weight"
+      "saveFailed": "Failed to save weight",
+      "netChange": "Net change",
+      "steady": "Steady"
     },
     "adherenceHeatmap": {
       "onTrack": "{percent}% on track",
@@ -990,6 +992,19 @@
   "logging": {
     "title": "What did you eat?",
     "placeholder": "Describe your meal…",
+    "composerPlaceholder": "Add a meal…",
+    "modeSelector": {
+      "title": "How do you want to log?",
+      "button": "Mode",
+      "soon": "Soon",
+      "comingSoon": "Cheat meal mode is coming soon",
+      "normal": "Normal",
+      "normalDesc": "Describe a meal in your own words",
+      "cheat": "Cheat meal",
+      "cheatDesc": "Log a treat without the breakdown",
+      "manual": "Manual",
+      "manualDesc": "Search foods, enter exact grams"
+    },
     "submit": "Analyze",
     "stopAnalyzing": "Stop analyzing",
     "analyzing": "Analyzing your meal…",
@@ -1019,7 +1034,10 @@
     "todaysMeals": "Today's meals",
     "emptyState": {
       "title": "What did you eat?",
-      "subtitle": "Describe your meal and get a macro breakdown."
+      "title2": "What's on your plate?",
+      "title3": "What did you have?",
+      "title4": "Ready to log a meal?",
+      "title5": "What's for this meal?"
     },
     "feedArea": {
       "savedMeal": "Meal saved",
@@ -1091,6 +1109,7 @@
       "subtitle": "Search foods, enter exact grams — no AI",
       "searchPlaceholder": "Search foods...",
       "recentFoods": "Recent foods",
+      "recentsHint": "Search to add foods",
       "selected": "Selected",
       "noResults": "No foods found",
       "searching": "Searching...",
