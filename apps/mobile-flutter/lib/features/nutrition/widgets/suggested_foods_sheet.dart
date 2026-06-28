@@ -9,7 +9,6 @@ import '../../../theme/nham_colors.dart';
 import '../../../theme/nham_theme.dart';
 import '../logic/status.dart';
 import '../providers/food_candidates_provider.dart';
-import 'food_candidate_row.dart';
 
 /// The under-target, candidate-supported nutrients from an overview, most
 /// in-need first — the input to the suggested-foods CTA. Mirrors the web
@@ -20,12 +19,11 @@ List<NutrientCardData> suggestedFoodNutrients(NutritionOverview overview) {
     ..sort(
       (a, b) => (a.percentOfTarget ?? 0).compareTo(b.percentOfTarget ?? 0),
     );
-  return eligible.take(4).toList();
+  return eligible.take(5).toList();
 }
 
-/// Opens the single nutrition CTA: foods that help close the timeline's biggest
-/// nutrient gaps, grouped by nutrient. Reuses the per-nutrient candidate catalog
-/// (`/api/v1/nutrition/candidates`).
+/// The single nutrition CTA: a compact list of the nutrients you're short on —
+/// which one, by how much, and a few ingredients that close the gap.
 Future<void> showSuggestedFoodsSheet(
   BuildContext context, {
   required List<NutrientCardData> nutrients,
@@ -46,7 +44,7 @@ class _SuggestedFoodsSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bottomInset = MediaQuery.of(context).padding.bottom;
-    final maxHeight = MediaQuery.of(context).size.height * 0.85;
+    final maxHeight = MediaQuery.of(context).size.height * 0.8;
 
     return Container(
       constraints: BoxConstraints(maxHeight: maxHeight),
@@ -57,7 +55,6 @@ class _SuggestedFoodsSheet extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Header — X (close) on the left, centered title.
           Padding(
             padding: const EdgeInsets.fromLTRB(
               NhamSpacing.sp2,
@@ -86,7 +83,7 @@ class _SuggestedFoodsSheet extends StatelessWidget {
             ),
           ),
           Flexible(
-            child: ListView(
+            child: ListView.separated(
               shrinkWrap: true,
               padding: EdgeInsets.fromLTRB(
                 NhamSpacing.sp4,
@@ -94,19 +91,13 @@ class _SuggestedFoodsSheet extends StatelessWidget {
                 NhamSpacing.sp4,
                 bottomInset + NhamSpacing.sp5,
               ),
-              children: [
-                Padding(
-                  padding: const EdgeInsets.only(bottom: NhamSpacing.sp4),
-                  child: Text(
-                    tr('nutrition.suggestedFoods.subtitle'),
-                    style: dashMeta(),
-                  ),
-                ),
-                for (var i = 0; i < nutrients.length; i++) ...[
-                  if (i > 0) const SizedBox(height: NhamSpacing.sp5),
-                  _NutrientFoods(card: nutrients[i]),
-                ],
-              ],
+              itemCount: nutrients.length,
+              separatorBuilder: (_, __) => const Divider(
+                height: NhamSpacing.sp5,
+                thickness: 1,
+                color: NhamColors.borderFaint,
+              ),
+              itemBuilder: (_, i) => _NutrientGap(card: nutrients[i]),
             ),
           ),
         ],
@@ -115,8 +106,8 @@ class _SuggestedFoodsSheet extends StatelessWidget {
   }
 }
 
-class _NutrientFoods extends ConsumerWidget {
-  const _NutrientFoods({required this.card});
+class _NutrientGap extends ConsumerWidget {
+  const _NutrientGap({required this.card});
 
   final NutrientCardData card;
 
@@ -124,11 +115,12 @@ class _NutrientFoods extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final async = ref.watch(foodCandidatesProvider(card.nutrient));
     final pct = card.percentOfTarget;
+    final shortBy = pct == null ? null : (100 - pct).round();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Nutrient header — name, % of target, and the FAO/WHO-class source.
+        // Which nutrient + by how much you're short.
         Row(
           crossAxisAlignment: CrossAxisAlignment.baseline,
           textBaseline: TextBaseline.alphabetic,
@@ -137,45 +129,61 @@ class _NutrientFoods extends ConsumerWidget {
               child: Text(tr(card.labelKey), style: dashBody(weight: FontWeight.w600)),
             ),
             const SizedBox(width: NhamSpacing.sp2),
-            if (pct != null)
+            if (shortBy != null)
               Text(
-                tr('nutrition.focus.percentOfTarget',
-                    namedArgs: {'value': pct.round().toString()}),
-                style: dashMeta(tabular: true),
+                tr('nutrition.suggestedFoods.short',
+                    namedArgs: {'value': shortBy.toString()}),
+                style: dashMeta(color: NhamColors.danger, tabular: true),
               ),
           ],
         ),
-        const SizedBox(height: 2),
-        Text(
-          tr(card.targetSourceLabelKey),
-          style: dashEyebrow(color: kInkDisabled),
-        ),
-        const SizedBox(height: NhamSpacing.sp3),
+        const SizedBox(height: NhamSpacing.sp2_5),
+        // Which ingredients close the gap.
         async.when(
-          loading: () => Padding(
-            padding: const EdgeInsets.symmetric(vertical: NhamSpacing.sp3),
-            child: Text(tr('nutrition.candidates.loading'), style: dashMeta()),
+          loading: () => Text(
+            tr('nutrition.candidates.loading'),
+            style: dashMeta(color: kInkDisabled),
           ),
-          error: (_, __) => Padding(
-            padding: const EdgeInsets.symmetric(vertical: NhamSpacing.sp3),
-            child: Text(tr('nutrition.candidates.error'), style: dashMeta()),
+          error: (_, __) => Text(
+            tr('nutrition.candidates.error'),
+            style: dashMeta(color: kInkDisabled),
           ),
           data: (response) {
-            final candidates = response?.candidates ?? const [];
-            if (candidates.isEmpty) {
-              return Text(tr('nutrition.candidates.empty'), style: dashMeta());
+            final names = (response?.candidates ?? const [])
+                .take(5)
+                .map((c) => tr(c.nameKey))
+                .toList();
+            if (names.isEmpty) {
+              return Text(tr('nutrition.candidates.empty'),
+                  style: dashMeta(color: kInkDisabled));
             }
-            return Column(
-              children: [
-                for (var i = 0; i < candidates.length; i++) ...[
-                  if (i > 0) const SizedBox(height: NhamSpacing.sp2),
-                  FoodCandidateRow(candidate: candidates[i]),
-                ],
-              ],
+            return Wrap(
+              spacing: NhamSpacing.sp2,
+              runSpacing: NhamSpacing.sp2,
+              children: [for (final n in names) _FoodChip(name: n)],
             );
           },
         ),
       ],
+    );
+  }
+}
+
+class _FoodChip extends StatelessWidget {
+  const _FoodChip({required this.name});
+
+  final String name;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: kFieldFill,
+        borderRadius: BorderRadius.circular(NhamRadii.pill),
+        border: Border.all(color: NhamColors.borderSoft),
+      ),
+      child: Text(name, style: dashMeta(color: kInk)),
     );
   }
 }

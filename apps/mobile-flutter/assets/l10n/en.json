@@ -121,7 +121,8 @@
     "suggestedFoods": {
       "button": "Suggested foods",
       "title": "Foods to close your gaps",
-      "subtitle": "Ideas for the nutrients you're lowest on over this timeframe — for variety and coverage, not prescriptions."
+      "subtitle": "Ideas for the nutrients you're lowest on over this timeframe — for variety and coverage, not prescriptions.",
+      "short": "{value}% short"
     },
     "sources": {
       "caption": "Targets from WHO/FAO · Vietnam RDA · NASEM DRI",

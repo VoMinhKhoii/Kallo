@@ -111,12 +111,14 @@ class Sidebar extends ConsumerWidget {
         bottom: false,
         child: Column(
           children: [
-            // ── Header: name + email ──────────────────────────────────────
+            // ── Header: avatar + name + email (the primary identity block) ──
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.symmetric(
-                horizontal: NhamSpacing.sp4,
-                vertical: NhamSpacing.sp4,
+              padding: const EdgeInsets.fromLTRB(
+                NhamSpacing.sp4,
+                NhamSpacing.sp5,
+                NhamSpacing.sp4,
+                NhamSpacing.sp4,
               ),
               decoration: const BoxDecoration(
                 border: Border(
@@ -126,28 +128,37 @@ class Sidebar extends ConsumerWidget {
                   ),
                 ),
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              child: Row(
                 children: [
-                  Text(
-                    label,
-                    style: NhamTextStyles.sansRegular(
-                      fontSize: 15,
-                    ).copyWith(color: NhamColors.text),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  if (email != null) ...[
-                    const SizedBox(height: 4),
-                    Text(
-                      email,
-                      style: NhamTextStyles.sansRegular(
-                        fontSize: 11.5,
-                      ).copyWith(color: NhamColors.textMuted),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                  _Avatar(initial: _deriveInitial(label, email)),
+                  const SizedBox(width: NhamSpacing.sp3),
+                  Expanded(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          label,
+                          style: NhamTextStyles.sansSemiBold(
+                            fontSize: 16,
+                          ).copyWith(color: NhamColors.text),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        if (email != null) ...[
+                          const SizedBox(height: 2),
+                          Text(
+                            email,
+                            style: NhamTextStyles.sansRegular(
+                              fontSize: 12,
+                            ).copyWith(color: NhamColors.textMuted),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ],
                     ),
-                  ],
+                  ),
                 ],
               ),
             ),
@@ -203,8 +214,6 @@ class Sidebar extends ConsumerWidget {
                     ),
                     const SizedBox(height: 12),
                   ],
-                  _AccountCard(label: label, email: email),
-                  const SizedBox(height: 8), // mt-2
                   _FooterRow(
                     icon: LucideIcons.settings,
                     label: tr('app.mainSidebar.settings'),
@@ -306,90 +315,45 @@ class _NavRowState extends State<_NavRow> {
   }
 }
 
-/// Footer account card — white fill, radius 12, 36px gradient avatar w/ ring,
-/// bold initial, name + email column (both truncated).
-class _AccountCard extends StatelessWidget {
-  const _AccountCard({required this.label, required this.email});
+/// 44px gradient avatar with a soft accent ring + bold initial — anchors the
+/// drawer's identity header.
+class _Avatar extends StatelessWidget {
+  const _Avatar({required this.initial});
 
-  final String label;
-  final String? email;
+  final String initial;
 
   @override
   Widget build(BuildContext context) {
-    final initial = _deriveInitial(label, email);
-
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      width: 44,
+      height: 44,
+      alignment: Alignment.center,
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(
-          NhamRadii.buttonXl,
-        ), // rounded-xl=12
+        shape: BoxShape.circle,
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Color(0x66C9A87C), // accent @ 40%
+            Color(0x8CE8D5B5), // border @ 55%
+          ],
+        ),
+        border: Border.all(color: const Color(0x40C9A87C), width: 1),
       ),
-      child: Row(
-        children: [
-          Container(
-            width: 36,
-            height: 36,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              gradient: const LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  Color(0x66C9A87C), // accent @ 40%
-                  Color(0x8CE8D5B5), // border @ 55%
-                ],
-              ),
-              border: Border.all(
-                color: const Color(0x40C9A87C), // accent @ 25%
-                width: 1,
-              ),
-            ),
-            child: Text(
-              initial,
-              style: NhamTextStyles.sansBold(
-                fontSize: 13,
-              ).copyWith(color: NhamColors.btn),
-            ),
-          ),
-          const SizedBox(width: 12), // gap-3
-          Expanded(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  style: NhamTextStyles.sansMedium(
-                    fontSize: 13,
-                  ).copyWith(color: NhamColors.text),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                if (email != null)
-                  Text(
-                    email!,
-                    style: NhamTextStyles.sansRegular(
-                      fontSize: 11,
-                    ).copyWith(color: NhamColors.textMuted),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-              ],
-            ),
-          ),
-        ],
+      child: Text(
+        initial,
+        style: NhamTextStyles.sansBold(fontSize: 16).copyWith(
+          color: NhamColors.btn,
+        ),
       ),
     );
   }
+}
 
-  static String _deriveInitial(String label, String? email) {
-    final source = label.trim().isNotEmpty ? label.trim() : (email ?? '');
-    if (source.isEmpty) return '·';
-    return source.characters.first.toUpperCase();
-  }
+String _deriveInitial(String label, String? email) {
+  final source = label.trim().isNotEmpty ? label.trim() : (email ?? '');
+  if (source.isEmpty) return '·';
+  return source.characters.first.toUpperCase();
 }
 
 /// Footer Settings row — radius 12, 16px icon, 13px medium label; active =
