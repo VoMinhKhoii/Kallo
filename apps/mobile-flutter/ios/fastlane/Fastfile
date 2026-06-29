@@ -23,6 +23,13 @@ API_BASE_URL      = ENV["NHAM_API_BASE_URL"]  || "https://nham-internal-71432123
 SUPABASE_URL      = ENV["NHAM_SUPABASE_URL"]  || "https://oudpzhfzirgjbhrzcett.supabase.co"
 SUPABASE_ANON_KEY = ENV["NHAM_SUPABASE_KEY"]  || "sb_publishable_TIrP9KQanbXTxsxJcERbLA_cI6PSNeV"
 
+# Native Google sign-in client IDs (client-PUBLIC). The Web client ID is passed
+# to google_sign_in as serverClientId and must be in Supabase's "Authorized
+# Client IDs"; the iOS client ID is its `clientId`. Set the real prod values
+# here (or via env) once the Google Cloud OAuth clients exist.
+GOOGLE_WEB_CLIENT_ID = ENV["NHAM_GOOGLE_WEB_CLIENT_ID"] || ""
+GOOGLE_IOS_CLIENT_ID = ENV["NHAM_GOOGLE_IOS_CLIENT_ID"] || ""
+
 KEYCHAIN_NAME = "nham-ci.keychain-db"
 KEYCHAIN_PASS = ENV["NHAM_KEYCHAIN_PASSWORD"] || "nham-ci"
 
@@ -85,7 +92,9 @@ platform :ios do
            "--build-name=1.0.1", "--build-number=#{next_build}",
            "--dart-define=API_BASE_URL=#{API_BASE_URL}",
            "--dart-define=SUPABASE_URL=#{SUPABASE_URL}",
-           "--dart-define=SUPABASE_ANON_KEY=#{SUPABASE_ANON_KEY}")
+           "--dart-define=SUPABASE_ANON_KEY=#{SUPABASE_ANON_KEY}",
+           "--dart-define=GOOGLE_WEB_CLIENT_ID=#{GOOGLE_WEB_CLIENT_ID}",
+           "--dart-define=GOOGLE_IOS_CLIENT_ID=#{GOOGLE_IOS_CLIENT_ID}")
       ensure
         saved.each { |k, v| ENV[k] = v unless v.nil? }
       end

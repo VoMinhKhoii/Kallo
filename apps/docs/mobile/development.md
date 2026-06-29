@@ -56,6 +56,7 @@ git status                    # review, then commit
 | `API_BASE_URL` | `http://localhost:3000` | backend the app calls |
 | `NHAM_ENV_FILE` | auto-discovered | path to a `.env.local` with the Supabase creds |
 | `SUPABASE_URL` / `SUPABASE_ANON_KEY` | from `.env.local` | set to skip the `.env.local` lookup |
+| `GOOGLE_WEB_CLIENT_ID` / `GOOGLE_IOS_CLIENT_ID` | from `.env.local`, else empty | native Google sign-in client IDs (empty ⇒ Google button disabled, app still boots) |
 | `SIM_UDID` | a booted sim, else auto | target simulator |
 
 ## The iCloud codesign caveat
@@ -76,7 +77,17 @@ the [release lanes](./releasing.md) all build from a `/tmp` mirror for this reas
 Runtime config comes from compile-time `--dart-define`s, read in
 [`lib/data/env.dart`](../../mobile-flutter/lib/data/env.dart). Required: `SUPABASE_URL`,
 `SUPABASE_ANON_KEY`, `API_BASE_URL` (defaults to `http://localhost:3000`). Optional:
-`POSTHOG_KEY`, `POSTHOG_HOST`.
+`POSTHOG_KEY`, `POSTHOG_HOST`, and `GOOGLE_WEB_CLIENT_ID` / `GOOGLE_IOS_CLIENT_ID` (native
+Google sign-in — empty disables the Google button without blocking startup).
+
+> **Native Google sign-in setup.** `GOOGLE_WEB_CLIENT_ID` is the Google Cloud **Web**
+> OAuth client ID (passed to `google_sign_in` as `serverClientId`); it must also be added
+> to the Supabase Google provider's **Authorized Client IDs** (for *both* dev and prod
+> projects). `GOOGLE_IOS_CLIENT_ID` is the **iOS** client ID; its reversed form
+> (`com.googleusercontent.apps.…`) must be set as a URL scheme in
+> [`ios/Runner/Info.plist`](../../mobile-flutter/ios/Runner/Info.plist). Android needs the
+> debug **SHA-1** registered on an Android OAuth client (package `com.nham.nham_mobile`);
+> no Firebase / `google-services.json`.
 
 | Environment | API_BASE_URL | Supabase |
 |-------------|--------------|----------|

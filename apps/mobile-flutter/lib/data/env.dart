@@ -32,6 +32,18 @@ abstract final class Env {
   static const String apiBaseUrl =
       String.fromEnvironment('API_BASE_URL', defaultValue: 'http://localhost:3000');
 
+  /// Google **Web** OAuth client ID — passed to `google_sign_in` as
+  /// `serverClientId` and registered in Supabase's Google provider "Authorized
+  /// Client IDs". Empty unless configured; native Google sign-in is a guarded
+  /// no-op without it (so dev without Google config still boots).
+  static const String googleWebClientId =
+      String.fromEnvironment('GOOGLE_WEB_CLIENT_ID');
+
+  /// Google **iOS** OAuth client ID — passed to `google_sign_in` as `clientId`
+  /// (iOS only). Its reversed form is the Info.plist URL scheme.
+  static const String googleIosClientId =
+      String.fromEnvironment('GOOGLE_IOS_CLIENT_ID');
+
   /// PostHog project key. Empty => analytics is a complete no-op (RN parity).
   static const String posthogKey =
       String.fromEnvironment('POSTHOG_KEY');

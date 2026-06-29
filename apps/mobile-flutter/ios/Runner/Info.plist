@@ -28,6 +28,19 @@
 				<string>nham</string>
 			</array>
 		</dict>
+		<!-- Native Google sign-in (google_sign_in): the reversed iOS OAuth
+		     client ID, so Google returns to the app. Replace YOUR_IOS_CLIENT_ID
+		     with the iOS client ID from Google Cloud Console (the value in
+		     GOOGLE_IOS_CLIENT_ID, reversed), e.g.
+		     com.googleusercontent.apps.1234567890-abcdefg -->
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>com.googleusercontent.apps.YOUR_IOS_CLIENT_ID</string>
+			</array>
+		</dict>
 	</array>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>

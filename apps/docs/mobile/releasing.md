@@ -59,8 +59,12 @@ profile — all client-public values):
 - `API_BASE_URL=https://nham-internal-714321235532.asia-southeast3.run.app`
 - `SUPABASE_URL=https://oudpzhfzirgjbhrzcett.supabase.co`
 - `SUPABASE_ANON_KEY=sb_publishable_…`
+- `GOOGLE_WEB_CLIENT_ID` / `GOOGLE_IOS_CLIENT_ID` — native Google sign-in (set the real
+  prod values in the Fastfile or via env; the iOS client ID's reversed form must also be
+  the URL scheme in `ios/Runner/Info.plist`).
 
-Override via `NHAM_API_BASE_URL`, `NHAM_SUPABASE_URL`, `NHAM_SUPABASE_KEY`.
+Override via `NHAM_API_BASE_URL`, `NHAM_SUPABASE_URL`, `NHAM_SUPABASE_KEY`,
+`NHAM_GOOGLE_WEB_CLIENT_ID`, `NHAM_GOOGLE_IOS_CLIENT_ID`.
 
 ## How signing works (and why it's shaped this way)
 

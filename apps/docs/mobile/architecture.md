@@ -13,7 +13,7 @@ the web app's mobile-responsive view, sharing the same backend and Supabase proj
 | Auth + data | `supabase_flutter` ^2.10, `http` ^1.3 |
 | Storage | `flutter_secure_storage` ^9.2 |
 | i18n | `easy_localization` ^3, `flutter_localizations`, `intl` |
-| Google sign-in | Supabase OAuth browser flow (`signInWithOAuth` + `nham://auth-callback` deep link) — no native `google_sign_in` SDK |
+| Google sign-in | Native `google_sign_in` ^7.2 (in-app account picker) → Supabase `signInWithIdToken` — same shape as Apple, no Safari/`nham://auth-callback` round-trip |
 
 ## Layout
 
