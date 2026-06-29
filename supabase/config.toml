@@ -163,8 +163,9 @@ refresh_token_reuse_interval = 10
 enable_signup = true
 # Allow/disallow anonymous sign-ins to your project.
 enable_anonymous_sign_ins = false
-# Allow/disallow testing manual linking of accounts
-enable_manual_linking = false
+# Allow manual linking of accounts — powers the "Connect account" flow in
+# Settings → Account (supabase.auth.linkIdentity / unlinkIdentity).
+enable_manual_linking = true
 # Passwords shorter than this value will be rejected as weak. Minimum 6, recommended 8 or more.
 minimum_password_length = 6
 # Passwords that do not meet the following requirements will be rejected as weak. Supported values
@@ -252,10 +253,11 @@ max_frequency = "5s"
 # Force log out if the user has been inactive longer than the specified duration.
 # inactivity_timeout = "8h"
 
-# This hook runs before a new user is created and allows developers to reject the request based on the incoming user object.
-# [auth.hook.before_user_created]
-# enabled = true
-# uri = "pg-functions://postgres/auth/before-user-created-hook"
+# Enforce one account per verified email — rejects a duplicate-email signup.
+# See migration 20260629120000_block_duplicate_email_signup.sql.
+[auth.hook.before_user_created]
+enabled = true
+uri = "pg-functions://postgres/public/block_duplicate_email_signup"
 
 # This hook runs before a token is issued and allows you to add additional claims based on the authentication method used.
 # [auth.hook.custom_access_token]

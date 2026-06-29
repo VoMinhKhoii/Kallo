@@ -5,7 +5,11 @@ import { useTranslations } from 'next-intl';
 import { useEffect, useRef } from 'react';
 import { toast } from 'sonner';
 
-const HANDLED_CODES = new Set(['oauth_missing_code', 'oauth_exchange']);
+const HANDLED_CODES = new Set([
+  'oauth_missing_code',
+  'oauth_exchange',
+  'account_exists',
+]);
 
 /**
  * Surfaces OAuth callback failures redirected to /{locale}/?error=oauth_*.
@@ -23,7 +27,7 @@ export function OAuthErrorToast() {
     const error = params.get('error');
     if (!error || !HANDLED_CODES.has(error)) return;
     fired.current = true;
-    toast.error(t('googleError'));
+    toast.error(error === 'account_exists' ? t('accountExists') : t('googleError'));
 
     // Strip the param so a refresh doesn't replay the toast. Preserve
     // existing history.state — Next's App Router stores routing metadata

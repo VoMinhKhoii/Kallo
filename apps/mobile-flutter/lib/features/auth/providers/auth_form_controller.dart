@@ -23,6 +23,12 @@ enum AuthAction { email, google, apple }
 /// `invalid_credentials` for both), so they share one neutral line.
 String authErrorMessage(AuthException e) {
   if (e is AuthRetryableFetchException) return tr('auth.errors.network');
+  // The `before_user_created` hook rejects a duplicate-email signup with this
+  // marker in its message — surface the "use your original method" copy so a
+  // user signing in with a new provider on an existing email isn't dead-ended.
+  if (e.message.toLowerCase().contains('already exists for this email')) {
+    return tr('auth.errors.accountExists');
+  }
   switch (e.code) {
     case 'invalid_credentials':
       return tr('auth.errors.invalidCredentials');

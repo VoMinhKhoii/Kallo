@@ -761,6 +761,7 @@
       "emailNotConfirmed": "Email này chưa được xác nhận — kiểm tra hộp thư để tìm liên kết nhé.",
       "network": "Không kết nối được máy chủ — kiểm tra mạng rồi thử lại nhé.",
       "rateLimited": "Bạn thao tác hơi nhanh — đợi một chút rồi thử lại nhé.",
+      "accountExists": "Bạn đã có tài khoản với email này. Hãy đăng nhập bằng phương thức bạn đã dùng ban đầu.",
       "generic": "Đã có lỗi xảy ra — bạn thử lại nhé."
     }
   },
@@ -1228,6 +1229,14 @@
       "title": "Tài khoản",
       "exportTitle": "Xuất dữ liệu của tôi",
       "exportError": "Không thể xuất dữ liệu. Vui lòng thử lại.",
+      "connectGoogle": "Liên kết Google",
+      "connectApple": "Liên kết Apple",
+      "googleConnected": "Google · Đã liên kết",
+      "appleConnected": "Apple · Đã liên kết",
+      "disconnect": "Hủy liên kết",
+      "disconnectConfirmTitle": "Hủy liên kết phương thức đăng nhập này?",
+      "linkError": "Không thể liên kết tài khoản đó. Vui lòng thử lại.",
+      "unlinkError": "Không thể hủy liên kết tài khoản đó. Vui lòng thử lại.",
       "signOut": "Đăng xuất",
       "signOutConfirmTitle": "Đăng xuất khỏi Nhẩm?",
       "cancel": "Hủy",

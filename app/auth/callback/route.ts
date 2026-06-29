@@ -52,7 +52,24 @@ export async function handleAuthCallback(
   const next = safeNextPath(url.searchParams.get('next'));
   const locale = localeFromNext(next);
 
+  // The `before_user_created` hook rejects duplicate-email signups; Supabase
+  // then redirects here with `error`/`error_description` instead of a `code`.
+  // Surface that as a friendly "account exists" toast rather than a dead-end.
+  const DUPLICATE_MARKER = 'already exists for this email';
+  const isDuplicateError = (description: string | null): boolean =>
+    (description ?? '').toLowerCase().includes(DUPLICATE_MARKER);
+
   if (!code) {
+    const providerError = url.searchParams.get('error');
+    const providerErrorDescription = url.searchParams.get('error_description');
+    if (providerError || providerErrorDescription) {
+      const errorCode = isDuplicateError(providerErrorDescription)
+        ? 'account_exists'
+        : 'oauth_exchange';
+      return NextResponse.redirect(
+        publicUrl(request, `/${locale}/?error=${errorCode}`, url.origin)
+      );
+    }
     return NextResponse.redirect(
       publicUrl(request, `/${locale}/?error=oauth_missing_code`, url.origin)
     );
@@ -62,8 +79,11 @@ export async function handleAuthCallback(
   const { error } = await supabase.auth.exchangeCodeForSession(code);
 
   if (error) {
+    const errorCode = isDuplicateError(error.message)
+      ? 'account_exists'
+      : 'oauth_exchange';
     return NextResponse.redirect(
-      publicUrl(request, `/${locale}/?error=oauth_exchange`, url.origin)
+      publicUrl(request, `/${locale}/?error=${errorCode}`, url.origin)
     );
   }
 

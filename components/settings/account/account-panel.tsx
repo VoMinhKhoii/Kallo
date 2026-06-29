@@ -7,6 +7,7 @@ import { useAsyncAction } from '@/hooks/ui/use-async-action';
 import { deleteAccountAction, exportMyDataAction } from '@/lib/actions/account';
 import { createClient } from '@/lib/supabase/client';
 import { cn } from '@/lib/utils';
+import { LinkedAccounts } from './linked-accounts';
 
 /**
  * Account settings: data export, sign out, and permanent account deletion.
@@ -92,6 +93,9 @@ export function AccountPanel({ email }: { email: string | null }) {
           <p className="mt-0.5 text-[15px] text-nham-text">{email}</p>
         </div>
       )}
+
+      {/* Linked sign-in methods (connect / disconnect Google & Apple) */}
+      <LinkedAccounts />
 
       {/* Export */}
       <div className="flex items-center justify-between gap-4 rounded-2xl border border-nham-border/70 bg-white px-4 py-3.5">
