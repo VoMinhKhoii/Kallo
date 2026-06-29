@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../theme/nham_colors.dart';
 import '../../theme/nham_theme.dart';
@@ -29,9 +30,19 @@ class Screen extends StatelessWidget {
       child: SafeArea(
         top: top,
         bottom: bottom,
-        // Transparent Material ancestor so TextField/InkWell descendants resolve
-        // their Material lookup without painting over the cream surface.
-        child: Material(type: MaterialType.transparency, child: child),
+        // Tap anywhere on empty surface to dismiss the keyboard — the native
+        // mobile expectation. Interactive descendants (buttons, fields) win the
+        // gesture arena for their own taps, so only "background" taps drop focus.
+        // `opaque` makes the whole cream area hittable; `onTap` claims nothing
+        // that would interfere with scrolling.
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
+          // Transparent Material ancestor so TextField/InkWell descendants
+          // resolve their Material lookup without painting over the cream
+          // surface.
+          child: Material(type: MaterialType.transparency, child: child),
+        ),
       ),
     );
   }
@@ -161,7 +172,13 @@ class _NhamButtonState extends State<NhamButton> {
         onTapUp: _isDisabled ? null : (_) => setState(() => _pressed = false),
         onTapCancel:
             _isDisabled ? null : () => setState(() => _pressed = false),
-        onTap: _isDisabled ? null : widget.onPressed,
+        onTap: _isDisabled
+            ? null
+            : () {
+                // Tactile confirm on every primary/secondary/ghost action.
+                HapticFeedback.lightImpact();
+                widget.onPressed?.call();
+              },
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 150),
           curve: Curves.easeInOut,

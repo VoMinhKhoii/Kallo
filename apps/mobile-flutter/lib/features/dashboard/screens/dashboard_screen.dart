@@ -230,8 +230,9 @@ class _ContentState extends State<_Content> {
             left: NhamSpacing.sp3,
             right: NhamSpacing.sp3,
             top: NhamSpacing.sp3,
-            // pb-24 (96px) to clear the floating FAB.
-            bottom: bottomInset + 96,
+            // Clear the FAB's resting footprint (44 + 20 bottom) with a small
+            // gap — no more than that, so the scroll doesn't end in dead space.
+            bottom: bottomInset + 76,
           ),
           children: [
             // SECTION 1 — week strip + the paged day-viewer (greeting now lives
@@ -271,8 +272,10 @@ class _ContentState extends State<_Content> {
                 WeightChart(todayDate: widget.todayDate, args: widget.args),
               ],
             ),
-            // SECTION 3 — Consistency.
+            // SECTION 3 — Consistency. Last section: no trailing margin, so the
+            // scroll ends right under the heatmap instead of a dead gap.
             _Section(
+              last: true,
               children: [
                 SectionHeader(
                   title: tr('dashboard.consistency'),
@@ -441,7 +444,7 @@ class _DashboardSkeleton extends StatelessWidget {
         left: NhamSpacing.sp3,
         right: NhamSpacing.sp3,
         top: NhamSpacing.sp3,
-        bottom: bottomInset + 96,
+        bottom: bottomInset + 76,
       ),
       children: const [
         // Week-strip row — four day pills.
@@ -478,15 +481,17 @@ class _DashboardSkeleton extends StatelessWidget {
   }
 }
 
-/// A dashboard section: `mb-4 gap-1.5` (16px bottom margin, 6px inner gap).
+/// A dashboard section: `mb-4 gap-1.5` (16px bottom margin, 6px inner gap). The
+/// final section passes [last] to drop the bottom margin.
 class _Section extends StatelessWidget {
-  const _Section({required this.children});
+  const _Section({required this.children, this.last = false});
   final List<Widget> children;
+  final bool last;
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: NhamSpacing.sp4),
+      padding: EdgeInsets.only(bottom: last ? 0 : NhamSpacing.sp4),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [

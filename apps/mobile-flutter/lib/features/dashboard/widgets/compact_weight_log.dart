@@ -14,7 +14,6 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../data/api_client.dart';
 import '../../../shared/widgets/widgets.dart';
@@ -113,6 +112,7 @@ class _CompactWeightLogState extends ConsumerState<CompactWeightLog> {
   Future<void> _onSubmit() async {
     final weightKg = parseDecimalInput(_controller.text);
     if (weightKg.isNaN || weightKg < _weightMin || weightKg > _weightMax) {
+      HapticFeedback.heavyImpact(); // warn: rejected input
       setState(() => _validationError = tr('dashboard.weightCard.invalid'));
       _showFeedback(
         _Feedback(_FeedbackKind.error, tr('dashboard.weightCard.invalidValue')),
@@ -172,84 +172,66 @@ class _CompactWeightLogState extends ConsumerState<CompactWeightLog> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        // Always "Today's weight" — this field only ever logs today. No leading
+        // icon: the label alone carries the meaning and reads cleaner.
         Padding(
           padding: const EdgeInsets.only(bottom: NhamSpacing.sp2),
-          child: Row(
-            children: [
-              const Icon(LucideIcons.scale, size: 16, color: kInkSecondary),
-              const SizedBox(width: NhamSpacing.sp2),
-              Text(
-                (_hasTodayWeight
-                        ? tr('dashboard.weightCard.todaysWeight')
-                        : tr('dashboard.weightCard.logWeight'))
-                    .toUpperCase(),
-                style: dashEyebrow(),
-              ),
-            ],
+          child: Text(
+            tr('dashboard.weightCard.todaysWeight').toUpperCase(),
+            style: dashEyebrow(),
           ),
         ),
-        // IntrinsicHeight + stretch so the field's filled area and the button
-        // are the exact same height. (A fixed height on the field alone doesn't
-        // work: isDense sizes the InputDecorator fill to its content and centers
-        // it, leaving transparent gaps — so the cream fill read shorter than the
-        // solid button.)
-        IntrinsicHeight(
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Expanded(
-                child: TextField(
-                  controller: _controller,
-                  onChanged: _onChanged,
-                  enabled: !_pending,
-                  keyboardType:
-                      const TextInputType.numberWithOptions(decimal: true),
-                  inputFormatters: [
-                    FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]')),
-                  ],
-                  autocorrect: false,
-                  cursorColor: NhamColors.accent,
-                  // Substantial value type — a number entry reads as data, not
-                  // body copy.
-                  style: dashValue(color: kInk),
-                  decoration: InputDecoration(
-                    isDense: true,
-                    filled: true,
-                    // Soft warm fill instead of a hairline outline — the field
-                    // reads as a tappable surface, the way native mobile inputs
-                    // do, and the border only appears on focus / error.
-                    fillColor: hasError
-                        ? NhamColors.danger.withValues(alpha: 0.06)
-                        : kFieldFill,
-                    // Vertical padding sets the field's intrinsic height (≈ the
-                    // control height); the button stretches to match it.
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: NhamSpacing.sp4,
-                      vertical: 15,
-                    ),
-                    // Suffix in-flow (no Positioned overlay → no overlap).
-                    suffixText: tr('dashboard.units.kg'),
-                    suffixStyle: dashMeta(color: kInkSecondary),
-                    border: _border(Colors.transparent),
-                    enabledBorder: _border(
-                        hasError ? NhamColors.danger : Colors.transparent),
-                    focusedBorder: _border(
-                        hasError ? NhamColors.danger : NhamColors.accent),
-                    disabledBorder: _border(Colors.transparent),
-                  ),
-                ),
-              ),
-              const SizedBox(width: NhamSpacing.sp2),
-              _SubmitButton(
-                label: submitLabel,
-                pending: _pending,
-                pressed: _pressed,
-                onTapDown: () => setState(() => _pressed = true),
-                onTapUp: () => setState(() => _pressed = false),
-                onTapCancel: () => setState(() => _pressed = false),
-                onTap: _pending ? null : _onSubmit,
-              ),
-            ],
+        // Field on its own row, full width.
+        TextField(
+          controller: _controller,
+          onChanged: _onChanged,
+          enabled: !_pending,
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          inputFormatters: [
+            FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]')),
+          ],
+          autocorrect: false,
+          cursorColor: NhamColors.accent,
+          // Substantial value type — a number entry reads as data, not body
+          // copy.
+          style: dashValue(color: kInk),
+          decoration: InputDecoration(
+            isDense: true,
+            filled: true,
+            // Soft warm fill instead of a hairline outline — the field reads as
+            // a tappable surface, the way native mobile inputs do, and the
+            // border only appears on focus / error.
+            fillColor: hasError
+                ? NhamColors.danger.withValues(alpha: 0.06)
+                : kFieldFill,
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: NhamSpacing.sp4,
+              vertical: 15,
+            ),
+            // Suffix in-flow (no Positioned overlay → no overlap).
+            suffixText: tr('dashboard.units.kg'),
+            suffixStyle: dashMeta(color: kInkSecondary),
+            border: _border(Colors.transparent),
+            enabledBorder:
+                _border(hasError ? NhamColors.danger : Colors.transparent),
+            focusedBorder:
+                _border(hasError ? NhamColors.danger : NhamColors.accent),
+            disabledBorder: _border(Colors.transparent),
+          ),
+        ),
+        const SizedBox(height: NhamSpacing.sp2),
+        // Submit button beneath the field, full width — a clearer, more
+        // thumb-friendly target than a cramped side-by-side button.
+        SizedBox(
+          width: double.infinity,
+          child: _SubmitButton(
+            label: submitLabel,
+            pending: _pending,
+            pressed: _pressed,
+            onTapDown: () => setState(() => _pressed = true),
+            onTapUp: () => setState(() => _pressed = false),
+            onTapCancel: () => setState(() => _pressed = false),
+            onTap: _pending ? null : _onSubmit,
           ),
         ),
         if (_feedback != null)
@@ -322,8 +304,11 @@ class _SubmitButton extends StatelessWidget {
       child: Opacity(
         opacity: pending ? 0.55 : 1,
         child: Container(
-          // No fixed height — the parent Row stretches it to the field's height.
-          padding: const EdgeInsets.symmetric(horizontal: NhamSpacing.sp5),
+          // Stands on its own row now — own comfortable vertical height.
+          padding: const EdgeInsets.symmetric(
+            horizontal: NhamSpacing.sp5,
+            vertical: NhamSpacing.sp3,
+          ),
           alignment: Alignment.center,
           decoration: BoxDecoration(
             color: pressed && !pending ? NhamColors.btnHover : NhamColors.btn,
