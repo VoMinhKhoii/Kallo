@@ -103,6 +103,9 @@ class _TabScaffoldState extends State<TabScaffold>
                     _onEdgeDragUpdate(d.primaryDelta ?? 0, panelWidth),
                 onHorizontalDragEnd: (d) =>
                     _onEdgeDragEnd(d.primaryVelocity ?? 0),
+                // An interrupted swipe (recognizer loses the arena) never fires
+                // dragEnd — settle from rest so the drawer can't stick halfway.
+                onHorizontalDragCancel: () => _onEdgeDragEnd(0),
               ),
             ),
             _NavDrawer(controller: _controller, onClose: _close),
