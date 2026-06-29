@@ -1268,6 +1268,8 @@
       "linkedLastHint": "Giữ lại ít nhất một phương thức đăng nhập.",
       "linkedConnectError": "Không thể liên kết tài khoản đó. Vui lòng thử lại.",
       "linkedDisconnectError": "Không thể hủy liên kết tài khoản đó. Vui lòng thử lại.",
+      "linkedLoadError": "Không tải được phương thức đăng nhập của bạn.",
+      "linkedRetry": "Thử lại",
       "exportTitle": "Xuất dữ liệu của tôi",
       "exportDescription": "Tải về mọi thứ Nhẩm đang lưu cho bạn, dưới dạng tệp JSON.",
       "exportAction": "Xuất",

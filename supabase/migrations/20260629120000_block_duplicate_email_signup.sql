@@ -51,6 +51,10 @@ begin
 end;
 $$;
 
--- Only the auth server may invoke the hook.
+-- Only the auth server may invoke the hook. `usage on schema public` is part of
+-- Supabase's documented hook setup: hosted projects inherit it, but a from-
+-- scratch replay (project reset / fresh staging) needs it explicitly, else the
+-- auth server hits `permission denied for schema public` when calling the hook.
+grant  usage   on schema   public                                        to supabase_auth_admin;
 revoke execute on function public.block_duplicate_email_signup(jsonb) from authenticated, anon, public;
-grant  execute on function public.block_duplicate_email_signup(jsonb) to supabase_auth_admin;
+grant  execute on function public.block_duplicate_email_signup(jsonb)     to supabase_auth_admin;

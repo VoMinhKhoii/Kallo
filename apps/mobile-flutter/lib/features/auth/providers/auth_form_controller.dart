@@ -17,6 +17,14 @@ import '../../../services/supabase_service.dart';
 /// `busy` bool that made one tap spin every control.
 enum AuthAction { email, google, apple }
 
+/// Substring that identifies the `before_user_created` hook's duplicate-email
+/// rejection. Hard contract with the SQL hook's message — see
+/// `supabase/migrations/20260629120000_block_duplicate_email_signup.sql` (and
+/// the matching `DUPLICATE_EMAIL_MARKER` in the web client's callback route). A
+/// test in `auth_form_controller_test.dart` asserts the migration message still
+/// contains this string, so editing the SQL prose fails loudly here too.
+const String kDuplicateEmailMarker = 'already exists for this email';
+
 /// Maps a Supabase [AuthException] to warm, localized copy — the raw English
 /// `e.message` never reaches the UI. Wrong-password and no-account are
 /// deliberately indistinguishable (Supabase anti-enumeration returns the same
@@ -26,7 +34,7 @@ String authErrorMessage(AuthException e) {
   // The `before_user_created` hook rejects a duplicate-email signup with this
   // marker in its message — surface the "use your original method" copy so a
   // user signing in with a new provider on an existing email isn't dead-ended.
-  if (e.message.toLowerCase().contains('already exists for this email')) {
+  if (e.message.toLowerCase().contains(kDuplicateEmailMarker)) {
     return tr('auth.errors.accountExists');
   }
   switch (e.code) {

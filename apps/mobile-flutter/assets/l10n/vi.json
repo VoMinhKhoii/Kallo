@@ -753,9 +753,6 @@
       "resent": "Đã gửi lại email",
       "back": "Quay lại"
     },
-    "pending": {
-      "finishing": "Đang hoàn tất đăng nhập…"
-    },
     "errors": {
       "invalidCredentials": "Email và mật khẩu không khớp — thử lại hoặc đặt lại mật khẩu nhé.",
       "emailNotConfirmed": "Email này chưa được xác nhận — kiểm tra hộp thư để tìm liên kết nhé.",
@@ -1237,6 +1234,7 @@
       "disconnectConfirmTitle": "Hủy liên kết phương thức đăng nhập này?",
       "linkError": "Không thể liên kết tài khoản đó. Vui lòng thử lại.",
       "unlinkError": "Không thể hủy liên kết tài khoản đó. Vui lòng thử lại.",
+      "loadError": "Không tải được phương thức đăng nhập. Chạm để thử lại.",
       "signOut": "Đăng xuất",
       "signOutConfirmTitle": "Đăng xuất khỏi Nhẩm?",
       "cancel": "Hủy",

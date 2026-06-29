@@ -1268,6 +1268,8 @@
       "linkedLastHint": "Keep at least one sign-in method.",
       "linkedConnectError": "Could not connect that account. Please try again.",
       "linkedDisconnectError": "Could not disconnect that account. Please try again.",
+      "linkedLoadError": "Could not load your sign-in methods.",
+      "linkedRetry": "Try again",
       "exportTitle": "Export my data",
       "exportDescription": "Download everything Nhẩm holds for you, as a JSON file.",
       "exportAction": "Export",

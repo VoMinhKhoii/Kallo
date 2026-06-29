@@ -27,7 +27,9 @@ export function OAuthErrorToast() {
     const error = params.get('error');
     if (!error || !HANDLED_CODES.has(error)) return;
     fired.current = true;
-    toast.error(error === 'account_exists' ? t('accountExists') : t('googleError'));
+    toast.error(
+      error === 'account_exists' ? t('accountExists') : t('googleError')
+    );
 
     // Strip the param so a refresh doesn't replay the toast. Preserve
     // existing history.state — Next's App Router stores routing metadata

@@ -24,6 +24,10 @@ import '../../../theme/nham_typography.dart';
 /// deep link the app already registers (Android intent-filter + iOS URL scheme).
 const String _kLinkRedirect = 'nham://auth-callback';
 
+/// File-private helper: show a top-anchored error toast.
+void _showErrorToast(BuildContext context, String message) =>
+    showTopToast(context, message, variant: TopToastVariant.error);
+
 /// Account section of the settings list: linked sign-in methods, export data,
 /// sign out (with a confirmation sheet), and permanent account deletion.
 /// Account deletion is an App Store requirement whenever the app offers account
@@ -51,7 +55,7 @@ class _AccountSectionState extends ConsumerState<AccountSection> {
       await file.writeAsString(pretty);
       await Share.shareXFiles([XFile(file.path)]);
     } catch (_) {
-      _toast(tr('settings.account.exportError'));
+      if (mounted) _showErrorToast(context, tr('settings.account.exportError'));
     } finally {
       if (mounted) setState(() => _exporting = false);
     }
@@ -86,7 +90,7 @@ class _AccountSectionState extends ConsumerState<AccountSection> {
     } catch (_) {
       if (!mounted) return;
       setState(() => _signingOut = false);
-      _toast(tr('app.userMenu.signOutError'));
+      _showErrorToast(context, tr('app.userMenu.signOutError'));
     }
   }
 
@@ -94,10 +98,6 @@ class _AccountSectionState extends ConsumerState<AccountSection> {
     Navigator.of(context).push(
       MaterialPageRoute<void>(builder: (_) => const _AccountDeleteScreen()),
     );
-  }
-
-  void _toast(String message) {
-    showTopToast(context, message, variant: TopToastVariant.error);
   }
 
   @override
@@ -158,6 +158,7 @@ class _LinkedAccountsRowsState extends ConsumerState<_LinkedAccountsRows> {
   List<UserIdentity>? _identities;
   String? _busyProvider; // provider with an action in flight
   bool _linkInFlight = false; // a browser link round-trip is pending
+  bool _loadFailed = false; // initial identity fetch errored
   AppLifecycleListener? _lifecycle;
 
   @override
@@ -188,10 +189,16 @@ class _LinkedAccountsRowsState extends ConsumerState<_LinkedAccountsRows> {
       setState(() {
         _identities = list;
         _busyProvider = null;
+        _loadFailed = false;
       });
     } catch (_) {
       if (!mounted) return;
-      setState(() => _busyProvider = null);
+      // Surface the failure (don't leave the rows silently disabled) — the
+      // build() shows a tappable retry row when no identities loaded.
+      setState(() {
+        _busyProvider = null;
+        _loadFailed = true;
+      });
     }
   }
 
@@ -215,7 +222,7 @@ class _LinkedAccountsRowsState extends ConsumerState<_LinkedAccountsRows> {
         _busyProvider = null;
         _linkInFlight = false;
       });
-      _toast(tr('settings.account.linkError'));
+      _showErrorToast(context, tr('settings.account.linkError'));
     }
   }
 
@@ -247,20 +254,17 @@ class _LinkedAccountsRowsState extends ConsumerState<_LinkedAccountsRows> {
     } catch (_) {
       if (!mounted) return;
       setState(() => _busyProvider = null);
-      _toast(tr('settings.account.unlinkError'));
+      _showErrorToast(context, tr('settings.account.unlinkError'));
     }
-  }
-
-  void _toast(String message) {
-    showTopToast(context, message, variant: TopToastVariant.error);
   }
 
   Widget _providerRow(
     OAuthProvider provider,
-    String key,
     String connectLabel,
     String connectedLabel,
   ) {
+    // The identity provider string ('google' / 'apple') is the enum's own name.
+    final key = provider.name;
     final total = _identities?.length ?? 0;
     if (_isLinked(key)) {
       return _AccountRow(
@@ -285,12 +289,20 @@ class _LinkedAccountsRowsState extends ConsumerState<_LinkedAccountsRows> {
 
   @override
   Widget build(BuildContext context) {
+    // Initial fetch failed and nothing loaded — offer a retry instead of
+    // silently disabled rows that misrepresent the user's linked methods.
+    if (_identities == null && _loadFailed) {
+      return _AccountRow(
+        icon: LucideIcons.refreshCw,
+        label: tr('settings.account.loadError'),
+        onTap: _load,
+      );
+    }
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         _providerRow(
           OAuthProvider.google,
-          'google',
           tr('settings.account.connectGoogle'),
           tr('settings.account.googleConnected'),
         ),
@@ -298,7 +310,6 @@ class _LinkedAccountsRowsState extends ConsumerState<_LinkedAccountsRows> {
         if (Platform.isIOS || Platform.isMacOS)
           _providerRow(
             OAuthProvider.apple,
-            'apple',
             tr('settings.account.connectApple'),
             tr('settings.account.appleConnected'),
           ),
@@ -437,11 +448,7 @@ class _AccountDeleteScreenState extends ConsumerState<_AccountDeleteScreen> {
     } catch (_) {
       if (!mounted) return;
       setState(() => _deleting = false);
-      showTopToast(
-        context,
-        tr('settings.account.deleteError'),
-        variant: TopToastVariant.error,
-      );
+      _showErrorToast(context, tr('settings.account.deleteError'));
       return;
     }
 
