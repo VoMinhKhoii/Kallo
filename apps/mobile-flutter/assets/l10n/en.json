@@ -1234,7 +1234,7 @@
       "disconnectConfirmTitle": "Disconnect this sign-in method?",
       "linkError": "Couldn't connect that account. Please try again.",
       "unlinkError": "Couldn't disconnect that account. Please try again.",
-      "loadError": "Couldn't load your sign-in methods. Tap to retry.",
+      "loadError": "Couldn't load your sign-in methods.",
       "signOut": "Sign out",
       "signOutConfirmTitle": "Sign out of Nhẩm?",
       "cancel": "Cancel",

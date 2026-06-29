@@ -13,7 +13,10 @@ describe('buildCsp', () => {
     process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://abc.supabase.co';
   });
   afterEach(() => {
-    process.env.NEXT_PUBLIC_SUPABASE_URL = ORIGINAL;
+    // Assigning `undefined` to process.env coerces to the string "undefined";
+    // delete to truly restore an originally-unset var.
+    if (ORIGINAL === undefined) delete process.env.NEXT_PUBLIC_SUPABASE_URL;
+    else process.env.NEXT_PUBLIC_SUPABASE_URL = ORIGINAL;
   });
 
   it('binds scripts to the request nonce + strict-dynamic, never unsafe-inline', async () => {

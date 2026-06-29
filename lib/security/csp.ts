@@ -30,7 +30,9 @@ function supabaseOrigins(): { https: string; wss: string } | null {
   if (!url) return null;
   try {
     const { origin } = new URL(url);
-    return { https: origin, wss: origin.replace(/^https:/, 'wss:') };
+    // Realtime is wss over https and ws over http (local `supabase start`).
+    const ws = origin.replace(/^https:/, 'wss:').replace(/^http:/, 'ws:');
+    return { https: origin, wss: ws };
   } catch {
     return null;
   }

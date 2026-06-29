@@ -1234,7 +1234,7 @@
       "disconnectConfirmTitle": "Hủy liên kết phương thức đăng nhập này?",
       "linkError": "Không thể liên kết tài khoản đó. Vui lòng thử lại.",
       "unlinkError": "Không thể hủy liên kết tài khoản đó. Vui lòng thử lại.",
-      "loadError": "Không tải được phương thức đăng nhập. Chạm để thử lại.",
+      "loadError": "Không tải được phương thức đăng nhập.",
       "signOut": "Đăng xuất",
       "signOutConfirmTitle": "Đăng xuất khỏi Nhẩm?",
       "cancel": "Hủy",

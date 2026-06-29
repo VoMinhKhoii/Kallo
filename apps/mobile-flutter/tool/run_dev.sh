@@ -36,20 +36,24 @@ if [[ "${1:-}" == "back" ]]; then
   exit 0
 fi
 
+# --- discover a .env.local once (best-effort) ---------------------------------
+# Resolved regardless of whether Supabase creds are exported, so the GOOGLE_*
+# block below can still read it when only SUPABASE_* are pre-exported.
+ENVF="${NHAM_ENV_FILE:-}"
+if [[ -z "$ENVF" ]]; then
+  # search likely .env.local locations (app-local, repo root, sibling worktrees)
+  for c in \
+    "$APP_DIR/.env.local" \
+    "$APP_DIR"/../../.env.local \
+    "$APP_DIR"/../../../../.env.local \
+    "$HOME"/Documents/nham/.env.local \
+    "$HOME"/Documents/nham/.claude/worktrees/*/.env.local ; do
+    [[ -f "$c" ]] && { ENVF="$c"; break; }
+  done
+fi
+
 # --- locate dev Supabase creds ------------------------------------------------
 if [[ -z "${SUPABASE_URL:-}" || -z "${SUPABASE_ANON_KEY:-}" ]]; then
-  ENVF="${NHAM_ENV_FILE:-}"
-  if [[ -z "$ENVF" ]]; then
-    # search likely .env.local locations (app-local, repo root, sibling worktrees)
-    for c in \
-      "$APP_DIR/.env.local" \
-      "$APP_DIR"/../../.env.local \
-      "$APP_DIR"/../../../../.env.local \
-      "$HOME"/Documents/nham/.env.local \
-      "$HOME"/Documents/nham/.claude/worktrees/*/.env.local ; do
-      [[ -f "$c" ]] && { ENVF="$c"; break; }
-    done
-  fi
   [[ -n "$ENVF" && -f "$ENVF" ]] || {
     echo "Could not find a .env.local with dev Supabase creds."
     echo "Set NHAM_ENV_FILE=/path/to/.env.local, or export SUPABASE_URL + SUPABASE_ANON_KEY."

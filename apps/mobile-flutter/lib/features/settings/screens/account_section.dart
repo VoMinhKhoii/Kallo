@@ -195,10 +195,15 @@ class _LinkedAccountsRowsState extends ConsumerState<_LinkedAccountsRows> {
       if (!mounted) return;
       // Surface the failure (don't leave the rows silently disabled) — the
       // build() shows a tappable retry row when no identities loaded.
+      final isRefresh = _identities != null;
       setState(() {
         _busyProvider = null;
         _loadFailed = true;
       });
+      // The retry row only covers the empty initial load; a failed *refresh*
+      // (after link/unlink/resume) keeps the stale list, so toast it instead —
+      // otherwise a failed reload reads as a successful no-op.
+      if (isRefresh) _showErrorToast(context, tr('settings.account.loadError'));
     }
   }
 

@@ -83,7 +83,13 @@ export function LinkedAccounts() {
         {t('linkedDescription')}
       </p>
 
-      {isError ? (
+      {identitiesLoading ? (
+        // Until identities resolve we don't know what's linked — show a
+        // placeholder rather than rendering every provider as "Connect".
+        <p className="mt-3 text-[13px] text-nham-text-muted">
+          {t('linkedLoading')}
+        </p>
+      ) : isError ? (
         // Fetch failed — don't render the providers as silently "unlinked"
         // (misleads the user into reconnecting). Offer an explicit retry.
         <div className="mt-3 flex items-center justify-between gap-4 rounded-xl border border-nham-border/60 px-3.5 py-2.5">

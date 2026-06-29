@@ -70,6 +70,13 @@ platform :ios do
     next_build = latest_testflight_build_number(api_key: key, app_identifier: APP_ID, initial_build_number: 0) + 1
     UI.message("Building #{APP_ID} → build #{next_build}")
 
+    # The app boots fine without these (the Google button self-disables), so a
+    # blank value is not fatal — but a TestFlight build with broken Google
+    # sign-in should never ship *silently*. Warn loudly instead.
+    if GOOGLE_WEB_CLIENT_ID.empty? || GOOGLE_IOS_CLIENT_ID.empty?
+      UI.important("⚠️  NHAM_GOOGLE_WEB_CLIENT_ID / NHAM_GOOGLE_IOS_CLIENT_ID not set — this build ships with native Google sign-in disabled.")
+    end
+
     profile_name = self.runner.execute(:signing, :ios) # cert + profile; returns profile name
 
     # Compile Dart with PROD defines. --no-codesign so the Flutter build phase
