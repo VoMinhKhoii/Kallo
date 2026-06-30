@@ -36,20 +36,24 @@ if [[ "${1:-}" == "back" ]]; then
   exit 0
 fi
 
+# --- discover a .env.local once (best-effort) ---------------------------------
+# Resolved regardless of whether Supabase creds are exported, so the GOOGLE_*
+# block below can still read it when only SUPABASE_* are pre-exported.
+ENVF="${NHAM_ENV_FILE:-}"
+if [[ -z "$ENVF" ]]; then
+  # search likely .env.local locations (app-local, repo root, sibling worktrees)
+  for c in \
+    "$APP_DIR/.env.local" \
+    "$APP_DIR"/../../.env.local \
+    "$APP_DIR"/../../../../.env.local \
+    "$HOME"/Documents/nham/.env.local \
+    "$HOME"/Documents/nham/.claude/worktrees/*/.env.local ; do
+    [[ -f "$c" ]] && { ENVF="$c"; break; }
+  done
+fi
+
 # --- locate dev Supabase creds ------------------------------------------------
 if [[ -z "${SUPABASE_URL:-}" || -z "${SUPABASE_ANON_KEY:-}" ]]; then
-  ENVF="${NHAM_ENV_FILE:-}"
-  if [[ -z "$ENVF" ]]; then
-    # search likely .env.local locations (app-local, repo root, sibling worktrees)
-    for c in \
-      "$APP_DIR/.env.local" \
-      "$APP_DIR"/../../.env.local \
-      "$APP_DIR"/../../../../.env.local \
-      "$HOME"/Documents/nham/.env.local \
-      "$HOME"/Documents/nham/.claude/worktrees/*/.env.local ; do
-      [[ -f "$c" ]] && { ENVF="$c"; break; }
-    done
-  fi
   [[ -n "$ENVF" && -f "$ENVF" ]] || {
     echo "Could not find a .env.local with dev Supabase creds."
     echo "Set NHAM_ENV_FILE=/path/to/.env.local, or export SUPABASE_URL + SUPABASE_ANON_KEY."
@@ -61,6 +65,15 @@ if [[ -z "${SUPABASE_URL:-}" || -z "${SUPABASE_ANON_KEY:-}" ]]; then
 fi
 [[ -n "$SUPABASE_URL" && -n "$SUPABASE_ANON_KEY" ]] || { echo "Empty Supabase creds — check your .env.local."; exit 1; }
 API_BASE_URL="${API_BASE_URL:-http://localhost:3000}"
+
+# --- optional: native Google sign-in client IDs ------------------------------
+# Mirror the Supabase creds: read from the same .env.local if present, else use
+# whatever's exported. Empty is fine — main.dart guards on GOOGLE_WEB_CLIENT_ID,
+# so the app still boots; the Google button just errors until it's configured.
+if [[ -n "${ENVF:-}" && -f "${ENVF:-}" ]]; then
+  [[ -z "${GOOGLE_WEB_CLIENT_ID:-}" ]] && GOOGLE_WEB_CLIENT_ID="$(grep -E '^GOOGLE_WEB_CLIENT_ID=' "$ENVF" | head -1 | cut -d= -f2-)"
+  [[ -z "${GOOGLE_IOS_CLIENT_ID:-}" ]] && GOOGLE_IOS_CLIENT_ID="$(grep -E '^GOOGLE_IOS_CLIENT_ID=' "$ENVF" | head -1 | cut -d= -f2-)"
+fi
 
 # --- pick / boot a simulator --------------------------------------------------
 open -a Simulator >/dev/null 2>&1 || true
@@ -93,7 +106,9 @@ echo "Edit files in $WORK for hot reload; run 'tool/run_dev.sh back' to save the
 run=(flutter run -d "$SIM_UDID"
   --dart-define=API_BASE_URL="$API_BASE_URL"
   --dart-define=SUPABASE_URL="$SUPABASE_URL"
-  --dart-define=SUPABASE_ANON_KEY="$SUPABASE_ANON_KEY")
+  --dart-define=SUPABASE_ANON_KEY="$SUPABASE_ANON_KEY"
+  --dart-define=GOOGLE_WEB_CLIENT_ID="${GOOGLE_WEB_CLIENT_ID:-}"
+  --dart-define=GOOGLE_IOS_CLIENT_ID="${GOOGLE_IOS_CLIENT_ID:-}")
 
 # `flutter run` quits as soon as stdin hits EOF, and on quit it DETACHES the
 # engine — leaving a debug build on-screen as a blank white/black window. That's

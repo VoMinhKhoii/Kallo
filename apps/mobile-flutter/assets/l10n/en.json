@@ -753,14 +753,12 @@
       "resent": "Email sent again",
       "back": "Back"
     },
-    "pending": {
-      "finishing": "Finishing sign-in…"
-    },
     "errors": {
       "invalidCredentials": "That email and password don't match — try again or reset your password.",
       "emailNotConfirmed": "That email hasn't been confirmed yet — check your inbox for the link.",
       "network": "Couldn't reach the server — check your connection and try again.",
       "rateLimited": "Too many attempts — give it a moment, then try again.",
+      "accountExists": "You already have an account with this email. Sign in with the method you used originally.",
       "generic": "Something went wrong — please try again."
     }
   },
@@ -1228,6 +1226,15 @@
       "title": "Account",
       "exportTitle": "Export my data",
       "exportError": "Could not export your data. Please try again.",
+      "connectGoogle": "Connect Google",
+      "connectApple": "Connect Apple",
+      "googleConnected": "Google · Connected",
+      "appleConnected": "Apple · Connected",
+      "disconnect": "Disconnect",
+      "disconnectConfirmTitle": "Disconnect this sign-in method?",
+      "linkError": "Couldn't connect that account. Please try again.",
+      "unlinkError": "Couldn't disconnect that account. Please try again.",
+      "loadError": "Couldn't load your sign-in methods.",
       "signOut": "Sign out",
       "signOutConfirmTitle": "Sign out of Nhẩm?",
       "cancel": "Cancel",

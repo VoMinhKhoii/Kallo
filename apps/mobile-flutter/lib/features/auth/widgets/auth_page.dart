@@ -3,7 +3,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../services/supabase_service.dart';
 import '../../../theme/nham_colors.dart';
 import '../../../theme/nham_theme.dart';
 import '../../../theme/nham_typography.dart';
@@ -45,33 +44,6 @@ class _AuthPageState extends ConsumerState<AuthPage> {
   static final _provider = signInControllerProvider;
 
   AuthFormController get _controller => ref.read(_provider.notifier);
-
-  AppLifecycleListener? _lifecycle;
-
-  @override
-  void initState() {
-    super.initState();
-    // OAuth hands off to Safari; on return the deep-link observer completes the
-    // PKCE exchange. If the app resumes still signed-out, the user cancelled —
-    // drop the "Finishing sign-in…" pending state so it doesn't hang.
-    _lifecycle = AppLifecycleListener(
-      onResume: () {
-        final state = ref.read(_provider);
-        if (state.googleBusy &&
-            SupabaseService.client.auth.currentSession == null) {
-          _controller.clearMessages();
-          // Clear the in-flight action so the overlay drops.
-          ref.read(_provider.notifier).resetAction();
-        }
-      },
-    );
-  }
-
-  @override
-  void dispose() {
-    _lifecycle?.dispose();
-    super.dispose();
-  }
 
   void _toast(String message) {
     showTopToast(context, message, variant: TopToastVariant.error);
@@ -137,41 +109,36 @@ class _AuthPageState extends ConsumerState<AuthPage> {
       ),
     );
 
-    return Stack(
-      children: [
-        Positioned.fill(
-          child: AnimatedSwitcher(
-            duration: const Duration(milliseconds: 340),
-            transitionBuilder: (child, animation) {
-              // Incoming slides a full width in from the lead side; outgoing
-              // parallax-slides a little the opposite way, beneath it. Direction
-              // flips on "back" via [_forward].
-              final incoming = child.key == currentKey;
-              final dir = _forward ? 1.0 : -1.0;
-              final curved = CurvedAnimation(
-                parent: animation,
-                curve: Curves.easeOutCubic,
-              );
-              final begin = incoming ? Offset(dir, 0) : Offset(-dir * 0.25, 0);
-              return SlideTransition(
-                position: Tween<Offset>(begin: begin, end: Offset.zero)
-                    .animate(curved),
-                child: child,
-              );
-            },
-            layoutBuilder: (currentChild, previousChildren) => Stack(
-              children: [
-                ...previousChildren,
-                if (currentChild != null) currentChild,
-              ],
-            ),
-            child: page,
-          ),
-        ),
-        // OAuth app-switch: a calm "Finishing sign-in…" hold so the surface
-        // never sits blank or spins indefinitely after Safari returns.
-        if (state.googleBusy) const _FinishingOverlay(),
-      ],
+    // Native Google/Apple sheets are in-process, so the surface is just the
+    // face switcher — no "Finishing sign-in…" overlay (that only covered the
+    // old OAuth Safari app-switch); the button's own spinner holds the brief
+    // native token exchange.
+    return AnimatedSwitcher(
+      duration: const Duration(milliseconds: 340),
+      transitionBuilder: (child, animation) {
+        // Incoming slides a full width in from the lead side; outgoing
+        // parallax-slides a little the opposite way, beneath it. Direction
+        // flips on "back" via [_forward].
+        final incoming = child.key == currentKey;
+        final dir = _forward ? 1.0 : -1.0;
+        final curved = CurvedAnimation(
+          parent: animation,
+          curve: Curves.easeOutCubic,
+        );
+        final begin = incoming ? Offset(dir, 0) : Offset(-dir * 0.25, 0);
+        return SlideTransition(
+          position: Tween<Offset>(begin: begin, end: Offset.zero)
+              .animate(curved),
+          child: child,
+        );
+      },
+      layoutBuilder: (currentChild, previousChildren) => Stack(
+        children: [
+          ...previousChildren,
+          if (currentChild != null) currentChild,
+        ],
+      ),
+      child: page,
     );
   }
 
@@ -291,43 +258,6 @@ class _EmailEntryButtonState extends State<_EmailEntryButton> {
             tr('auth.welcome.continueWithEmail'),
             style: NhamTextStyles.sansMedium(fontSize: NhamFontSize.md)
                 .copyWith(color: NhamColors.text, letterSpacing: -0.2),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// A calm full-bleed "Finishing sign-in…" hold shown while the OAuth browser
-/// round-trip completes after Safari returns.
-class _FinishingOverlay extends StatelessWidget {
-  const _FinishingOverlay();
-
-  @override
-  Widget build(BuildContext context) {
-    return Positioned.fill(
-      child: ColoredBox(
-        color: NhamColors.surface80,
-        child: Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const SizedBox(
-                width: 22,
-                height: 22,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  color: NhamColors.accent,
-                ),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                tr('auth.pending.finishing'),
-                style: NhamTextStyles.sansMedium(
-                  fontSize: NhamFontSize.sm,
-                ).copyWith(color: NhamColors.textMuted),
-              ),
-            ],
           ),
         ),
       ),

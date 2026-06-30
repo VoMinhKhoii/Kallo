@@ -56,6 +56,7 @@ git status                    # review, then commit
 | `API_BASE_URL` | `http://localhost:3000` | backend the app calls |
 | `NHAM_ENV_FILE` | auto-discovered | path to a `.env.local` with the Supabase creds |
 | `SUPABASE_URL` / `SUPABASE_ANON_KEY` | from `.env.local` | set to skip the `.env.local` lookup |
+| `GOOGLE_WEB_CLIENT_ID` / `GOOGLE_IOS_CLIENT_ID` | from `.env.local`, else empty | native Google sign-in client IDs (empty ⇒ Google button disabled, app still boots) |
 | `SIM_UDID` | a booted sim, else auto | target simulator |
 
 ## The iCloud codesign caveat
@@ -76,7 +77,17 @@ the [release lanes](./releasing.md) all build from a `/tmp` mirror for this reas
 Runtime config comes from compile-time `--dart-define`s, read in
 [`lib/data/env.dart`](../../mobile-flutter/lib/data/env.dart). Required: `SUPABASE_URL`,
 `SUPABASE_ANON_KEY`, `API_BASE_URL` (defaults to `http://localhost:3000`). Optional:
-`POSTHOG_KEY`, `POSTHOG_HOST`.
+`POSTHOG_KEY`, `POSTHOG_HOST`, and `GOOGLE_WEB_CLIENT_ID` / `GOOGLE_IOS_CLIENT_ID` (native
+Google sign-in — empty disables the Google button without blocking startup).
+
+> **Native Google sign-in setup.** `GOOGLE_WEB_CLIENT_ID` is the Google Cloud **Web**
+> OAuth client ID (passed to `google_sign_in` as `serverClientId`); it must also be added
+> to the Supabase Google provider's **Authorized Client IDs** (for *both* dev and prod
+> projects). `GOOGLE_IOS_CLIENT_ID` is the **iOS** client ID; its reversed form
+> (`com.googleusercontent.apps.…`) must be set as a URL scheme in
+> [`ios/Runner/Info.plist`](../../mobile-flutter/ios/Runner/Info.plist). Android needs the
+> debug **SHA-1** registered on an Android OAuth client (package `com.nham.nham_mobile`);
+> no Firebase / `google-services.json`.
 
 | Environment | API_BASE_URL | Supabase |
 |-------------|--------------|----------|
@@ -114,7 +125,7 @@ The app launches, `flutter:` logs stream (Supabase init, localization), the proc
 
    **Fix:** keep `flutter run` attached. `run_dev.sh` now auto-detects a non-TTY stdin and holds it open so it stays attached; interactively, just leave the `flutter run` terminal running. Never verify via `simctl launch` alone — screenshot the **attached** session.
 
-2. **A native plugin not migrated to the UIScene lifecycle.** This app's iOS shell uses Flutter's new scene template (`ios/Runner/SceneDelegate.swift` = `FlutterSceneDelegate`, implicit-engine `AppDelegate`). A plugin that still uses the old `UIApplicationDelegate` launch lifecycle can break the Flutter view's compositing → blank app even while attached, with a log line like `Plugin FLT…Plugin uses deprecated application lifecycle events … UIScene lifecycle support`. We hit this with **`google_sign_in`** (it was unused — auth uses the Supabase OAuth **browser** flow — so it was removed). **Don't add a native iOS plugin without confirming it supports the UIScene lifecycle**, or you'll get a blank screen.
+2. **A native plugin not migrated to the UIScene lifecycle.** This app's iOS shell uses Flutter's new scene template (`ios/Runner/SceneDelegate.swift` = `FlutterSceneDelegate`, implicit-engine `AppDelegate`). A plugin that still uses the old `UIApplicationDelegate` launch lifecycle can break the Flutter view's compositing → blank app even while attached, with a log line like `Plugin FLT…Plugin uses deprecated application lifecycle events … UIScene lifecycle support`. We hit this historically with an **older `google_sign_in`** when it was unused. Native Google sign-in is now back on **`google_sign_in` v7** (`google_sign_in_ios` 6.3.0), which **does** support the UIScene lifecycle — it renders fine here. The lesson still stands: **don't add a native iOS plugin without confirming it supports the UIScene lifecycle**, or you'll get a blank screen.
 
 ### Gotcha: CocoaPods breaks after a Ruby bump
 

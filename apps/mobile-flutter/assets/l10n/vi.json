@@ -753,14 +753,12 @@
       "resent": "Đã gửi lại email",
       "back": "Quay lại"
     },
-    "pending": {
-      "finishing": "Đang hoàn tất đăng nhập…"
-    },
     "errors": {
       "invalidCredentials": "Email và mật khẩu không khớp — thử lại hoặc đặt lại mật khẩu nhé.",
       "emailNotConfirmed": "Email này chưa được xác nhận — kiểm tra hộp thư để tìm liên kết nhé.",
       "network": "Không kết nối được máy chủ — kiểm tra mạng rồi thử lại nhé.",
       "rateLimited": "Bạn thao tác hơi nhanh — đợi một chút rồi thử lại nhé.",
+      "accountExists": "Bạn đã có tài khoản với email này. Hãy đăng nhập bằng phương thức bạn đã dùng ban đầu.",
       "generic": "Đã có lỗi xảy ra — bạn thử lại nhé."
     }
   },
@@ -1228,6 +1226,15 @@
       "title": "Tài khoản",
       "exportTitle": "Xuất dữ liệu của tôi",
       "exportError": "Không thể xuất dữ liệu. Vui lòng thử lại.",
+      "connectGoogle": "Liên kết Google",
+      "connectApple": "Liên kết Apple",
+      "googleConnected": "Google · Đã liên kết",
+      "appleConnected": "Apple · Đã liên kết",
+      "disconnect": "Hủy liên kết",
+      "disconnectConfirmTitle": "Hủy liên kết phương thức đăng nhập này?",
+      "linkError": "Không thể liên kết tài khoản đó. Vui lòng thử lại.",
+      "unlinkError": "Không thể hủy liên kết tài khoản đó. Vui lòng thử lại.",
+      "loadError": "Không tải được phương thức đăng nhập.",
       "signOut": "Đăng xuất",
       "signOutConfirmTitle": "Đăng xuất khỏi Nhẩm?",
       "cancel": "Hủy",
