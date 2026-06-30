@@ -45,7 +45,7 @@ const stageBarcodeMealSchema = z.object({
 
 function getErrorMessage(error: unknown): string {
   if (error instanceof z.ZodError) {
-    const issue = error.errors[0];
+    const issue = error.issues[0];
     return issue ? issue.message : 'Dữ liệu đầu vào không hợp lệ.';
   }
   return error instanceof Error ? error.message : 'Đã xảy ra lỗi hệ thống.';

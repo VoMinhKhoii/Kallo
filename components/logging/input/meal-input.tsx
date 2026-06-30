@@ -339,42 +339,44 @@ export const MealInput = forwardRef<MealInputHandle, MealInputProps>(
 
         {/* Textarea — shown for normal and cheat mode */}
         {!isManual && (
-          <label htmlFor="meal-input" className="sr-only">
-            {placeholder}
-          </label>
-          <textarea
-            ref={textareaRef}
-            id="meal-input"
-            rows={1}
-            defaultValue={readDraft()}
-            onChange={handleChange}
-            onKeyDown={handleKeyDown}
-            placeholder={placeholder}
-            disabled={disabled}
-            className="flex-1 resize-none bg-transparent py-1.5 font-[var(--font-dm-sans)] font-normal text-nham-text text-sm leading-5 placeholder:text-nham-text-muted/40 focus:outline-none disabled:opacity-50"
-          />
-          {selectedDate && onBarcodeSuccess && (
-            <button
-              type="button"
+          <div className="flex items-center gap-2">
+            <label htmlFor="meal-input" className="sr-only">
+              {placeholder}
+            </label>
+            <textarea
+              ref={textareaRef}
+              id="meal-input"
+              rows={1}
+              defaultValue={readDraft()}
+              onChange={handleChange}
+              onKeyDown={handleKeyDown}
+              placeholder={placeholder}
               disabled={disabled}
-              onClick={() => setIsBarcodeOpen(true)}
-              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-nham-border/40 text-nham-text-muted transition-all duration-200 hover:bg-nham-hover hover:text-nham-text active:scale-95 disabled:opacity-30"
-              aria-label={t('barcodeScan')}
-            >
-              <Barcode className="h-4 w-4" />
-            </button>
-          )}
-          {onToggleCheat && (
-            <CheatModePicker
-              mode={mode}
-              intensity={cheatIntensity ?? 'medium'}
-              disabled={disabled}
-              onChangeMode={onModeChange}
-              onChangeIntensity={(next) => onChangeIntensity?.(next)}
+              className="flex-1 resize-none bg-transparent py-1.5 font-[var(--font-dm-sans)] font-normal text-nham-text text-sm leading-5 placeholder:text-nham-text-muted/40 focus:outline-none disabled:opacity-50"
             />
-          )}
-          {submitButton}
-        </div>
+            {selectedDate && onBarcodeSuccess && (
+              <button
+                type="button"
+                disabled={disabled}
+                onClick={() => setIsBarcodeOpen(true)}
+                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-nham-border/40 text-nham-text-muted transition-all duration-200 hover:bg-nham-hover hover:text-nham-text active:scale-95 disabled:opacity-30"
+                aria-label={t('barcodeScan')}
+              >
+                <Barcode className="h-4 w-4" />
+              </button>
+            )}
+            {onModeChange && (
+              <CheatModePicker
+                mode={mode}
+                intensity={cheatIntensity ?? 'medium'}
+                disabled={disabled}
+                onChangeMode={onModeChange}
+                onChangeIntensity={(next) => onChangeIntensity?.(next)}
+              />
+            )}
+            {submitButton}
+          </div>
+        )}
         {selectedDate && onBarcodeSuccess && (
           <BarcodeScannerDialog
             isOpen={isBarcodeOpen}

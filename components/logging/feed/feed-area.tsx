@@ -932,17 +932,25 @@ export function FeedArea({
               onSubmit={
                 loggingMode === 'manual' ? handleManualSubmit : handleSubmit
               }
-              setStreamingMsgId(null);
-            }}
-            disabled={stream.isAnalyzing}
-            isCheat={isCheat}
-            onToggleCheat={setIsCheat}
-            cheatIntensity={cheatIntensity}
-            onChangeIntensity={setCheatIntensity}
-            selectedDate={selectedDate}
-            onBarcodeSuccess={handleBarcodeSuccess}
-          />
-        </div>
+              onCancel={() => {
+                stream.cancel();
+                if (streamingMsgId) {
+                  setMessages((prev) =>
+                    prev.filter((m) => m.id !== streamingMsgId)
+                  );
+                }
+                setStreamingMsgId(null);
+              }}
+              disabled={stream.isAnalyzing}
+              mode={loggingMode}
+              onModeChange={setLoggingMode}
+              cheatIntensity={cheatIntensity}
+              onChangeIntensity={setCheatIntensity}
+              selectedDate={selectedDate}
+              onBarcodeSuccess={handleBarcodeSuccess}
+            />
+          </div>
+        </motion.div>
       </div>
     </main>
   );
