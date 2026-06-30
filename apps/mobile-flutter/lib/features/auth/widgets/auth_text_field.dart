@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../theme/nham_colors.dart';
 import '../../../theme/nham_theme.dart';
@@ -104,7 +105,7 @@ class _AuthTextFieldState extends State<AuthTextField> {
         // Label.
         Text(
           widget.label,
-          style: NhamTextStyles.sansMedium(fontSize: NhamFontSize.xs)
+          style: NhamTextStyles.sansMedium(fontSize: NhamFontSize.detail)
               .copyWith(color: NhamColors.text, letterSpacing: NhamTracking.wide),
         ),
         const SizedBox(height: 6), // space-y-1.5
@@ -138,13 +139,13 @@ class _AuthTextFieldState extends State<AuthTextField> {
                 autocorrect: false,
                 enableSuggestions: !isPassword,
                 cursorColor: NhamColors.text,
-                style: NhamTextStyles.sansRegular(fontSize: NhamFontSize.sm)
+                style: NhamTextStyles.sansRegular(fontSize: NhamFontSize.md)
                     .copyWith(color: NhamColors.text),
                 decoration: InputDecoration(
                   isDense: true,
                   hintText: widget.placeholder,
                   hintStyle:
-                      NhamTextStyles.sansRegular(fontSize: NhamFontSize.sm)
+                      NhamTextStyles.sansRegular(fontSize: NhamFontSize.md)
                           .copyWith(color: _placeholder),
                   filled: false,
                   border: InputBorder.none,
@@ -172,7 +173,7 @@ class _AuthTextFieldState extends State<AuthTextField> {
           const SizedBox(height: 6), // space-y-1.5
           Text(
             widget.errorText!,
-            style: NhamTextStyles.sansRegular(fontSize: NhamFontSize.xs)
+            style: NhamTextStyles.sansRegular(fontSize: NhamFontSize.detail)
                 .copyWith(color: _red500),
           ),
         ],
@@ -209,7 +210,7 @@ class _RevealToggleState extends State<_RevealToggle> {
         onTapCancel: () => setState(() => _pressed = false),
         onTap: widget.onTap,
         child: Icon(
-          widget.revealed ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+          widget.revealed ? LucideIcons.eyeOff : LucideIcons.eye,
           size: 16,
           color: color,
         ),

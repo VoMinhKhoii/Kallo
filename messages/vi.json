@@ -6,7 +6,7 @@
     "finish": "Hoàn tất",
     "save": "Lưu",
     "cancel": "Hủy",
-    "loading": "Đang tải...",
+    "loading": "Đang tải…",
     "error": "Đã xảy ra lỗi",
     "retry": "Thử lại",
     "search": "Tìm kiếm",
@@ -93,7 +93,7 @@
   "nutrition": {
     "eyebrow": "Phân tích xu hướng",
     "title": "Dinh dưỡng",
-    "subtitle": "Nhìn lại xu hướng macro và vi chất dài hạn, kèm nhãn độ tin cậy khi dữ liệu món ăn còn thiếu.",
+    "subtitle": "Nhìn lại xu hướng macro và vi chất dài hạn từ những bữa ăn bạn đã ghi.",
     "loading": "Đang tải tổng quan dinh dưỡng…",
     "range": {
       "label": "Khoảng thời gian dinh dưỡng",
@@ -107,12 +107,9 @@
       "needsAttention": "Cần chú ý",
       "limitedData": "Dữ liệu hạn chế",
       "macroConsistency": "Độ ổn định macro",
-      "confidentOnly": "Chỉ đánh dấu khi đủ tin cậy",
       "coverageHint": "Vi chất có độ phủ mỏng",
-      "averageConfidence": "Độ tin cậy TB: {value}",
       "weakest": "Yếu nhất",
       "none": "Chưa có",
-      "trustLine": "{days} ngày có bữa ăn · độ tin cậy TB {confidence} · chế độ xem {range}",
       "verdict": {
         "label": "Kết luận xu hướng",
         "attention": "{nutrients} cần chú ý",
@@ -153,13 +150,6 @@
       "averageVsTarget": "{average} TB · mục tiêu {target}",
       "expand": "Xem xu hướng",
       "collapse": "Ẩn xu hướng"
-    },
-    "confidence": {
-      "normal": "Độ tin cậy tốt",
-      "limitedData": "Dữ liệu hạn chế",
-      "warningPoints": "Chỉ xem điểm dữ liệu",
-      "insufficientData": "Chưa đủ dữ liệu",
-      "coverage": "Độ tin cậy dữ liệu"
     },
     "targetSources": {
       "vietnamRda": "RDA Việt Nam",
@@ -467,9 +457,9 @@
       "quiet": "Một giai đoạn yên ả. Tiếp tục ghi nhận để hoàn thiện xu hướng.",
       "gathering": "Vẫn đang gom dần xu hướng của bạn.",
       "gatheringSub": "Đã có {days} ngày đủ bữa — cứ tiếp tục, bức tranh sẽ rõ dần.",
-      "trustLine": "{days} ngày đủ bữa · độ tin cậy TB {confidence}%",
       "trustLineNoConfidence": "{days} ngày đủ bữa",
       "partialNote": "· {count, plural, other {tạm bỏ qua # ngày ghi thiếu}}",
+      "period1d": "hôm nay",
       "period7d": "7 ngày qua",
       "period30d": "30 ngày qua",
       "period90d": "90 ngày qua"
@@ -488,7 +478,16 @@
         "noTarget": "chưa có mục tiêu"
       },
       "rowLabel": "{macro}: {average} {unit} mỗi ngày ghi, {label}",
-      "barAria": "Tiến độ {macro} so với mục tiêu"
+      "barAria": "Tiến độ {macro} so với mục tiêu",
+      "timeAxis": {
+        "byDay": "Từng ngày",
+        "byWeek": "Từng tuần",
+        "rangeLabel": "{low}–{high} {unit}",
+        "stripAria": "{macro} mỗi {bucket}: thấp {low}, cao {high} {unit}",
+        "bucketDay": "ngày",
+        "bucketWeek": "tuần",
+        "gap": "chưa ghi đủ bữa"
+      }
     },
     "focus": {
       "eyebrow": "Cần để ý",
@@ -500,7 +499,6 @@
     },
     "steady": {
       "eyebrow": "Đang giữ ổn định",
-      "hint": "Chạm vào một dòng để xem xu hướng, gợi ý món và lưu ý.",
       "percent": "{value}%",
       "limited": "dữ liệu hạn chế",
       "noTarget": "chưa có mục tiêu",
@@ -638,6 +636,7 @@
       "signUpLink": "Đăng ký",
       "forgotPassword": "Quên mật khẩu?",
       "error": "Email hoặc mật khẩu không đúng",
+      "errorUnconfirmed": "Email này chưa được xác nhận. Kiểm tra hộp thư để tìm liên kết.",
       "success": "Đăng nhập thành công",
       "emailPlaceholder": "ban@example.com",
       "passwordPlaceholder": "Nhập mật khẩu",
@@ -677,6 +676,39 @@
       "submit": "Xác nhận",
       "resend": "Gửi lại mã",
       "error": "Mã không hợp lệ"
+    },
+    "forgot": {
+      "title": "Đặt lại mật khẩu",
+      "subtitle": "Chúng tôi sẽ gửi liên kết để bạn đặt mật khẩu mới.",
+      "description": "Nhập email bạn đã đăng ký, chúng tôi sẽ gửi liên kết đặt lại.",
+      "email": "Email",
+      "emailPlaceholder": "ban@example.com",
+      "emailError": "Nhập địa chỉ email hợp lệ",
+      "submit": "Gửi liên kết",
+      "back": "Quay lại đăng nhập"
+    },
+    "checkEmail": {
+      "title": "Kiểm tra email",
+      "subtitle": "Mở liên kết để tiếp tục.",
+      "descriptionConfirm": "Chúng tôi đã gửi liên kết xác nhận đến",
+      "descriptionReset": "Chúng tôi đã gửi liên kết đặt lại mật khẩu đến",
+      "resend": "Gửi lại liên kết",
+      "resendIn": "Gửi lại sau {seconds}s",
+      "back": "Quay lại đăng nhập"
+    },
+    "reset": {
+      "title": "Đặt mật khẩu mới",
+      "subtitle": "Chọn mật khẩu mới cho tài khoản của bạn.",
+      "expiredSubtitle": "Liên kết này không còn hiệu lực. Hãy yêu cầu liên kết mới để tiếp tục.",
+      "password": "Mật khẩu mới",
+      "passwordPlaceholder": "Tạo mật khẩu",
+      "passwordError": "Mật khẩu phải có ít nhất 6 ký tự",
+      "confirm": "Xác nhận mật khẩu",
+      "confirmPlaceholder": "Nhập lại mật khẩu",
+      "mismatch": "Mật khẩu không khớp",
+      "submit": "Lưu mật khẩu mới",
+      "error": "Không thể cập nhật mật khẩu. Vui lòng thử lại.",
+      "backHome": "Về trang chủ"
     }
   },
   "landing": {
@@ -694,20 +726,28 @@
       "badge": "Thiết kế cho bữa ăn Việt",
       "title": "Theo dõi bữa ăn Việt",
       "titleHighlight": "không cần đoán mò",
-      "subtitle": "Chụp ảnh hoặc mô tả bữa ăn bằng tiếng Việt. AI của chúng tôi nhận biết phở, bánh mì và hơn 500 món Việt — rồi tính dinh dưỡng từ dữ liệu đã được kiểm chứng.",
+      "subtitle": "Mô tả bữa ăn như khi bạn kể với bạn bè — bằng tiếng Việt, tiếng Anh, hoặc cả hai. Nhẩm hiểu phở, bánh mì và hơn 500 món Việt, cùng cách bạn nấu, rồi ước lượng dinh dưỡng từ dữ liệu thành phần thực phẩm Việt Nam.",
       "cta": "Bắt đầu ngay",
       "ctaSecondary": "Xem cách hoạt động",
-      "socialProof": "Được người dùng beta Việt Nam yêu thích",
+      "beta": "Đang thử nghiệm · làm tại Việt Nam",
       "demo": {
         "today": "Hôm nay",
         "date": "Nhật ký bữa ăn",
         "justNow": "Vừa xong",
         "analysis": "Phân tích dinh dưỡng bằng AI",
-        "highConfidence": "Độ tin cậy cao",
         "totalCalories": "Tổng calo",
-        "inputPlaceholder": "Mô tả bữa ăn của bạn...",
+        "inputPlaceholder": "Mô tả bữa ăn của bạn…",
         "smartContext": "Ngữ cảnh thông minh",
-        "smartContextText": "Dùng vùng miền, thói quen nấu ăn và mô tả bữa ăn để siết chặt ước tính."
+        "smartContextText": "Dùng vùng miền, thói quen nấu ăn và mô tả bữa ăn để siết chặt ước tính.",
+        "send": "Phân tích bữa ăn",
+        "save": "Lưu bữa ăn này",
+        "phaseMatching": "Đang khớp nguyên liệu…",
+        "phaseEstimating": "Đang ước tính dinh dưỡng…",
+        "chips": {
+          "phoBo": "1 tô phở bò tái + quẩy",
+          "comTam": "Cơm tấm sườn bì chả",
+          "bunCha": "Bún chả Hà Nội"
+        }
       }
     },
     "problem": {
@@ -722,15 +762,14 @@
       "card3Title": "Thiếu ngữ cảnh nấu nướng",
       "card3Text": "Xào ít dầu và chiên ngập dầu — cùng nguyên liệu nhưng calo rất khác nhau.",
       "visual": {
-        "searchPlaceholder": "Tìm món ăn của bạn",
-        "searchResult1": "Mực kho",
-        "searchResult2": "Thịt nạc",
-        "noMatch": "Không có kết quả khớp",
-        "detected": "Món được nhận diện",
-        "braisedPork": "Cơm thịt kho",
-        "hiddenCalories": "Calo ẩn từ dầu và món kèm",
-        "entryFailed": "Ghi tay thất bại",
-        "entryFailedText": "Quá nhiều công sức cho một bữa ăn."
+        "appLabel": "Một app phương Tây điển hình",
+        "query": "mực kho",
+        "result1": "Mực sống",
+        "result1Note": "không kho, không nước sốt",
+        "result2": "Mực chiên giòn",
+        "result2Note": "sai hẳn món",
+        "noMatch": "Không có kết quả khớp cho “mực kho”",
+        "caption": "Hai kết quả suýt soát và một cái nhún vai — cho món ăn có mặt trong hàng triệu gia đình."
       },
       "quote": "Khi cơ sở dữ liệu không hiểu ẩm thực của bạn, mọi mục tiêu calo đều chỉ là phỏng đoán.",
       "quoteLabel": "Vấn đề người dùng gặp đi gặp lại"
@@ -749,9 +788,9 @@
       "step3Text": "Vùng miền, thói quen nấu ăn và mục tiêu dinh dưỡng giúp AI hiểu calo ẩn và điều chỉnh khẩu phần hợp lý hơn.",
       "step3TextMobile": "Vùng miền, thói quen nấu ăn và mục tiêu giúp AI siết chặt ước tính.",
       "step4Label": "Bước 4",
-      "step4Title": "Bạn nhận được kết quả có ích, có biên độ",
-      "step4Text": "Thay vì độ chính xác giả, Nhẩm trả về khoảng calo và macro thực tế để bạn dễ ra quyết định hơn.",
-      "step4TextMobile": "Nhận khoảng calo và macro thực tế thay vì độ chính xác giả.",
+      "step4Title": "Bạn nhận được một con số đáng tin",
+      "step4Text": "Nhẩm trả về một con số calo và macro đáng tin, dựa trên dữ liệu thực phẩm Việt thật và cách bạn thực sự nấu.",
+      "step4TextMobile": "Một con số đáng tin, dựa trên dữ liệu thực phẩm Việt thật.",
       "cta": "Bắt đầu theo dõi",
       "whyLabel": "Vì sao Nhẩm tốt hơn",
       "whyTitle": "Được xây dựng theo cách bữa ăn Việt thực sự diễn ra",
@@ -759,8 +798,8 @@
       "feature1Text": "Đối chiếu món ăn với dữ liệu thành phần thực phẩm Việt thay vì ép sang món thay thế phương Tây.",
       "feature2Title": "Ước tính có ngữ cảnh",
       "feature2Text": "Hiểu các chi tiết như ít mỡ hành, thêm nước canh, hay thói quen kho kiểu nhà.",
-      "feature3Title": "Biết nói thật về độ không chắc chắn",
-      "feature3Text": "Trả về ước tính có biên độ để bạn dùng được, thay vì giả vờ dữ liệu chính xác tuyệt đối.",
+      "feature3Title": "Con số bạn tin được",
+      "feature3Text": "Mỗi ước tính đều dựa trên dữ liệu thành phần thực phẩm Việt Nam, để bạn yên tâm ra quyết định.",
       "profile": {
         "title": "Hồ sơ cá nhân hóa",
         "active": "Đang áp dụng",
@@ -784,10 +823,9 @@
         "modificationValue": "Ít mỡ hành",
         "goalStrategy": "Chiến lược mục tiêu",
         "goalCutting": "Giảm cân",
-        "goalUpperBound": "Dùng cận trên",
+        "goalUpperBound": "Tính dôi an toàn",
         "total": "Tổng ước tính",
-        "range": "Khoảng: ~760–845 kcal",
-        "upperBoundNote": "Đang hiển thị cận trên cho mục tiêu giảm cân"
+        "upperBoundNote": "Đã tính dôi một chút cho mục tiêu giảm cân"
       }
     },
     "cta": {
@@ -797,11 +835,9 @@
       "buttonSecondary": "Xem ví dụ phân tích",
       "feature1": "Cơ sở dữ liệu ưu tiên món Việt",
       "feature2": "AI hiểu ngữ cảnh nấu nướng",
-      "feature3": "Ước tính dinh dưỡng có biên độ",
+      "feature3": "Con số dinh dưỡng đáng tin",
       "socialProof": "Được người dùng thử nghiệm sớm tin dùng vì không còn phải đoán mò",
-      "appStore": "Đánh giá App Store",
-      "users": "người dùng beta",
-      "mealsTracked": "bữa ăn đã theo dõi"
+      "trust": "Dữ liệu thành phần món Việt · hiểu cách bạn nấu · tiếng Việt + English"
     },
     "footer": {
       "tagline": "Theo dõi bữa ăn Việt, được hỗ trợ bởi AI.",
@@ -949,7 +985,7 @@
     "barcodeSelectCamera": "Chọn camera",
     "submit": "Phân tích",
     "stopAnalyzing": "Dừng phân tích",
-    "analyzing": "Đang phân tích bữa ăn...",
+    "analyzing": "Đang phân tích bữa ăn…",
     "breakfast": "Sáng",
     "brunch": "Sáng muộn",
     "lunch": "Trưa",
@@ -978,6 +1014,11 @@
     },
     "feedArea": {
       "savedMeal": "Đã lưu bữa ăn",
+      "saveError": "Không thể lưu bữa ăn. Vui lòng thử lại.",
+      "mealUpdatedToast": "Đã cập nhật bữa ăn",
+      "mealRemoved": "Đã xóa bữa ăn",
+      "undo": "Hoàn tác",
+      "deleteError": "Không thể xóa bữa ăn. Vui lòng thử lại.",
       "repeatError": "Không thể mở lại dịp này.",
       "legacyMacroWarning": "Không thể hiển thị tổng macro trong ngày vì một số bữa ăn cũ thiếu macro.",
       "loadErrorTitle": "Không thể tải ngày này",
@@ -995,12 +1036,12 @@
       }
     },
     "streaming": {
-      "connecting": "Đang kết nối...",
-      "decomposing": "Đang tách bữa ăn của bạn...",
-      "matching": "Đang khớp nguyên liệu...",
-      "estimating": "Đang ước tính dinh dưỡng...",
-      "assembling": "Đang tổng hợp kết quả...",
-      "analyzing": "Đang phân tích..."
+      "connecting": "Đang kết nối…",
+      "decomposing": "Đang tách bữa ăn của bạn…",
+      "matching": "Đang khớp nguyên liệu…",
+      "estimating": "Đang ước tính dinh dưỡng…",
+      "assembling": "Đang tổng hợp kết quả…",
+      "analyzing": "Đang phân tích…"
     },
     "mealEntry": {
       "edit": "Sửa",
@@ -1012,11 +1053,47 @@
     },
     "persistedMealCard": {
       "toggleDetails": "Bật/tắt chi tiết bữa ăn",
-      "total": "Tổng"
+      "total": "Tổng",
+      "remove": "Xóa",
+      "logAgain": "Ghi lại",
+      "editAmounts": "Sửa lượng",
+      "cancelEdit": "Hủy",
+      "saveEdit": "Lưu thay đổi",
+      "savingEdit": "Đang lưu…",
+      "removeRow": "Bỏ {name}",
+      "mealUpdated": "Đã cập nhật bữa ăn",
+      "updateError": "Không cập nhật được bữa ăn — hãy thử lại.",
+      "refineAction": "Sửa bằng lời",
+      "refineLabel": "Sửa bằng lời",
+      "refinePlaceholder": "vd: mực chiên chứ không phải kho",
+      "refineSubmit": "Phân tích lại",
+      "refineHint": "Chúng tôi sẽ đọc lại cả bữa ăn cùng đính chính của bạn và thay thế.",
+      "refineTightHint": "Mô tả gốc khá dài — chúng tôi sẽ rút gọn một chút để vừa phần đính chính."
+    },
+    "manualLogging": {
+      "searchPlaceholder": "Tìm món ăn...",
+      "gramsPlaceholder": "100",
+      "gramsUnit": "g",
+      "gramsLabel": "Số gam",
+      "addItem": "Thêm món",
+      "removeItem": "Xóa món",
+      "noResults": "Không tìm thấy món nào",
+      "searching": "Đang tìm...",
+      "recentFoods": "Món gần đây",
+      "stateRaw": "sống",
+      "stateCooked": "chín",
+      "kcalPer100g": "{kcal} kcal/100g",
+      "rowKcal": "{kcal} kcal",
+      "total": "Tổng cộng",
+      "totalKcal": "{kcal} kcal",
+      "totalMacros": "P {protein} · C {carbs} · F {fat}",
+      "relatedMatch": "liên quan"
     },
     "mode": {
       "normal": "Bình thường",
       "normalDescription": "Tách bữa ăn thành nguyên liệu để ước tính chính xác",
+      "manual": "Thủ công",
+      "manualDescription": "Tìm món và nhập chính xác số gam",
       "cheat": "Bữa xả",
       "cheatDescription": "Dịp khó đếm — chỉ cần kéo vài thanh trượt"
     },
@@ -1030,7 +1107,7 @@
       "medium": "Vừa",
       "heavy": "Nhiều"
     },
-    "cheatPlaceholder": "Buffet nướng Hàn, ăn hết mình luôn...",
+    "cheatPlaceholder": "Buffet nướng Hàn, ăn hết mình luôn…",
     "cheatSliders": {
       "badge": "Bữa xả",
       "confirm": "Lưu bữa ăn",
@@ -1043,6 +1120,7 @@
     },
     "cheatMealCard": {
       "badge": "Bữa xả",
+      "remove": "Xóa",
       "toggleDetails": "Bật/tắt chi tiết bữa ăn",
       "total": "Tổng",
       "youSet": "BẠN ĐÃ CHỌN",
@@ -1088,7 +1166,18 @@
       "toggleDetails": "Xem chi tiết bữa ăn",
       "total": "Tổng",
       "loading": "Đang tải vòng kết nối của bạn",
-      "na": "Không có"
+      "na": "Không có",
+      "you": "Bạn",
+      "presenceLabel": "Ai trong vòng kết nối của bạn",
+      "sharedTodayHint": "Hôm nay đã chia sẻ",
+      "quietHint": "Hôm nay yên ắng",
+      "memberActions": "Tùy chọn cho {name}",
+      "remove": "Xóa",
+      "block": "Chặn",
+      "removed": "Đã xóa khỏi vòng kết nối",
+      "blocked": "Đã chặn",
+      "undo": "Hoàn tác",
+      "actionError": "Chưa được — hãy thử lại."
     },
     "shareControl": {
       "share": "Chia sẻ với vòng kết nối",
@@ -1117,7 +1206,14 @@
       "endTaken": "Liên kết này đã được dùng",
       "endInvalid": "Liên kết không hợp lệ",
       "endReserved": "Liên kết này đã được giữ chỗ",
-      "endError": "Không thể cập nhật liên kết"
+      "endError": "Không thể cập nhật liên kết",
+      "appearTitle": "Bạn hiện ra thế nào",
+      "appearHint": "Tên mà vòng kết nối thấy trên các bữa ăn được chia sẻ.",
+      "appearPlaceholder": "Tên của bạn",
+      "appearEdit": "Sửa tên hiển thị",
+      "appearSaved": "Đã cập nhật tên hiển thị",
+      "appearError": "Không thể cập nhật tên của bạn",
+      "appearFallback": "Đặt tên hiển thị"
     },
     "circle": {
       "title": "Vòng kết nối ({count})",
@@ -1141,7 +1237,10 @@
       "selfBody": "Chia sẻ với bạn bè để họ có thể kết nối với bạn.",
       "alreadyTitle": "Bạn đã kết nối với {name}",
       "alreadyBody": "Hai bạn đã ở trong vòng kết nối của nhau.",
+      "connectedTitle": "Đã kết nối",
+      "connectedBody": "Giờ hai bạn đã ở trong vòng kết nối của nhau. Ghé thăm bất cứ lúc nào bạn muốn.",
       "goToCircle": "Đến vòng kết nối",
+      "you": "Bạn",
       "signedOutTitle": "{name} đã mời bạn vào vòng kết nối",
       "signedOutBody": "Đăng nhập hoặc tạo tài khoản để kết nối.",
       "signIn": "Đăng nhập để kết nối"
@@ -1156,13 +1255,45 @@
     "cooking": "Thói quen nấu ăn",
     "regional": "Khu vực",
     "save": "Lưu thay đổi",
+    "saveWithTarget": "Lưu — mục tiêu mới {target} kcal",
     "saved": "Đã lưu thay đổi",
+    "targetRitual": {
+      "savedLabel": "Mục tiêu đã lưu",
+      "newLabel": "Mục tiêu mới",
+      "unit": "kcal",
+      "aggressivePace": "{pace} kg/tuần — nhịp khá gắt"
+    },
     "language": "Ngôn ngữ",
     "languageHint": "Thay đổi ngôn ngữ ứng dụng",
-    "sidebar": {
-      "title": "Cài đặt",
-      "profile": "Hồ sơ",
-      "navigationLabel": "Điều hướng cài đặt"
+    "description": "Mục tiêu, cách nấu, và tài khoản của bạn — tất cả ở một nơi.",
+    "anchorNav": {
+      "label": "Trong trang này",
+      "bodyMetrics": "Mục tiêu & chỉ số",
+      "regional": "Khu vực & ngôn ngữ",
+      "cooking": "Nấu nướng",
+      "account": "Tài khoản"
+    },
+    "account": {
+      "title": "Tài khoản",
+      "description": "Đăng nhập, dữ liệu, và cách rời đi của bạn.",
+      "emailLabel": "Đang đăng nhập với",
+      "exportTitle": "Xuất dữ liệu của tôi",
+      "exportDescription": "Tải về mọi thứ Nhẩm đang lưu cho bạn, dưới dạng tệp JSON.",
+      "exportAction": "Xuất",
+      "exporting": "Đang chuẩn bị dữ liệu…",
+      "exportError": "Không thể xuất dữ liệu. Vui lòng thử lại.",
+      "signOutTitle": "Đăng xuất",
+      "signOutAction": "Đăng xuất",
+      "deleteTitle": "Xóa tài khoản",
+      "deleteDescription": "Xóa vĩnh viễn tài khoản và mọi dữ liệu bên trong.",
+      "deleteAction": "Xóa tài khoản",
+      "deleteConsequence": "Thao tác này xóa hồ sơ, mọi bữa ăn bạn đã ghi, và lịch sử cân nặng của bạn. Không thể hoàn tác.",
+      "deleteConfirmLabel": "Nhập {word} để xác nhận",
+      "deleteConfirmWord": "XÓA",
+      "deleteConfirmAction": "Xóa tài khoản của tôi",
+      "deleting": "Đang xóa tài khoản…",
+      "deleteCancel": "Giữ tài khoản",
+      "deleteError": "Không thể xóa tài khoản. Vui lòng thử lại."
     },
     "regionalPanel": {
       "description": "AI dùng thông tin quốc gia của bạn để hiểu văn hóa ẩm thực và nguyên liệu dễ tìm tại nơi bạn sống.",

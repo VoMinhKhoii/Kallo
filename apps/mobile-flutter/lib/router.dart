@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -19,6 +19,7 @@ import 'services/supabase_service.dart';
 import 'shell/placeholder_screen.dart';
 import 'shell/tab_scaffold.dart';
 import 'theme/nham_colors.dart';
+import 'theme/nham_typography.dart';
 
 final _rootKey = GlobalKey<NavigatorState>(debugLabel: 'root');
 final _shellKey = GlobalKey<NavigatorState>(debugLabel: 'shell');
@@ -26,11 +27,13 @@ final _shellKey = GlobalKey<NavigatorState>(debugLabel: 'shell');
 /// The app's [GoRouter], wired to Riverpod for the auth redirect.
 ///
 /// Routing model (per the port contract):
-///   • A [StatefulShellRoute] hosts the primary destinations behind the shell's
-///     left nav drawer (`/dashboard`, `/nutrition`, `/logging`, `/groups`,
-///     `/admin`) plus `/settings` (drawer footer). Each is its own branch so
-///     state/scroll persist across drawer navigations.
-///   • `/sign-in`, `/sign-up`, and `/onboarding` are standalone root routes.
+///   • A [StatefulShellRoute] hosts the primary destinations behind the bottom
+///     tab bar (`/dashboard`, `/nutrition`, `/logging`) plus the off-bar
+///     `/groups` and `/admin`. Each is its own branch so state/scroll persist
+///     across tab switches.
+///   • `/sign-in`, `/sign-up`, `/onboarding`, `/welcome`, and `/settings` are
+///     standalone root routes (`/settings` pushes over the shell from the
+///     header avatar with Cupertino swipe-back).
 ///   • `/` redirects based on auth + onboarding state.
 ///
 /// The redirect mirrors the RN gates (`app/index.tsx` +
@@ -144,10 +147,19 @@ final routerProvider = Provider<GoRouter>((ref) {
         parentNavigatorKey: _rootKey,
         builder: (context, state) => const WelcomeSetupScreen(),
       ),
+      // Settings pushes over the shell (Cupertino swipe-back) from the header
+      // avatar — it's an account surface, not a primary tab destination.
+      GoRoute(
+        path: '/settings',
+        parentNavigatorKey: _rootKey,
+        pageBuilder:
+            (context, state) =>
+                const CupertinoPage<void>(child: SettingsScreen()),
+      ),
 
       // The primary destinations — each its own branch so state/scroll persist
-      // across drawer navigations. Order mirrors the web nav list (dashboard,
-      // nutrition, logging, groups, admin) plus settings (drawer footer).
+      // across tab switches. Order: dashboard, nutrition, logging, groups,
+      // admin (the last two are off-bar — reachable by route, not the tab bar).
       StatefulShellRoute.indexedStack(
         parentNavigatorKey: _rootKey,
         builder:
@@ -204,14 +216,6 @@ final routerProvider = Provider<GoRouter>((ref) {
               ),
             ],
           ),
-          StatefulShellBranch(
-            routes: [
-              GoRoute(
-                path: '/settings',
-                builder: (context, state) => const SettingsScreen(),
-              ),
-            ],
-          ),
         ],
       ),
     ],
@@ -256,23 +260,61 @@ class _GoRouterAuthRefresh extends ChangeNotifier {
   }
 }
 
-/// Minimal cream splash shown on the index route while the redirect resolves.
-/// Mirrors RN's centered [ActivityIndicator] on the surface background.
-class _SplashScreen extends StatelessWidget {
+/// Cream splash shown on the index route while the redirect resolves. The
+/// first frame of brand: the Lora "Nhẩm" wordmark breathing gently on the cream
+/// surface, instead of a generic Material spinner. The cream background matches
+/// the native LaunchScreen so the native→Flutter handoff is seamless.
+class _SplashScreen extends StatefulWidget {
   const _SplashScreen();
 
   @override
+  State<_SplashScreen> createState() => _SplashScreenState();
+}
+
+class _SplashScreenState extends State<_SplashScreen>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 1400),
+  );
+
+  @override
+  void initState() {
+    super.initState();
+    // Gentle breathing pulse, paused under reduced-motion.
+    if (!WidgetsBinding
+        .instance
+        .platformDispatcher
+        .accessibilityFeatures
+        .disableAnimations) {
+      _controller.repeat(reverse: true);
+    } else {
+      _controller.value = 1;
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return const ColoredBox(
+    final wordmark = Text(
+      'Nhẩm',
+      style: NhamTextStyles.serifRegular(
+        fontSize: 32,
+      ).copyWith(color: NhamColors.text),
+    );
+    return ColoredBox(
       color: NhamColors.surface,
       child: Center(
-        child: SizedBox(
-          width: 28,
-          height: 28,
-          child: CircularProgressIndicator(
-            strokeWidth: 2,
-            valueColor: AlwaysStoppedAnimation<Color>(NhamColors.accent),
+        child: FadeTransition(
+          opacity: Tween<double>(begin: 0.5, end: 1.0).animate(
+            CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
           ),
+          child: wordmark,
         ),
       ),
     );

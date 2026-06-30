@@ -1,5 +1,7 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:flutter/services.dart';
 
 import '../../../theme/nham_colors.dart';
 import '../../../theme/nham_theme.dart';
@@ -26,13 +28,28 @@ class MealInput extends StatefulWidget {
     required this.controller,
     required this.onSubmit,
     this.onCancel,
-    this.disabled = false,
+    this.onModePressed,
+    this.modeLabel,
+    this.modeIcon,
+    this.analyzing = false,
   });
 
   final MealInputController controller;
   final ValueChanged<String> onSubmit;
   final VoidCallback? onCancel;
-  final bool disabled;
+
+  /// While true the action button shows Stop (the run can be cancelled) — but
+  /// the field stays editable so a new meal can be typed mid-analysis (the
+  /// requestId-supersede mechanism handles overlap).
+  final bool analyzing;
+
+  /// Opens the mode selector (Normal / Cheat meal / Manual). Rendered as an
+  /// icon + label on the input bar's second line.
+  final VoidCallback? onModePressed;
+
+  /// Label + icon of the currently selected mode, shown on the mode control.
+  final String? modeLabel;
+  final IconData? modeIcon;
 
   @override
   State<MealInput> createState() => _MealInputState();
@@ -95,10 +112,13 @@ class _MealInputState extends State<MealInput>
     );
   }
 
-  bool get _canSubmit => _controller.text.trim().isNotEmpty && !widget.disabled;
+  bool get _canSubmit => _controller.text.trim().isNotEmpty;
 
   void _submit() {
-    if (_canSubmit) widget.onSubmit(_controller.text);
+    if (_canSubmit) {
+      HapticFeedback.lightImpact();
+      widget.onSubmit(_controller.text);
+    }
   }
 
   @override
@@ -130,65 +150,135 @@ class _MealInputState extends State<MealInput>
           child: child,
         );
       },
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.end,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Expanded(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(
-                minHeight: _minHeight,
-                maxHeight: _maxHeight,
+          // Line 1 — the composer field, full width.
+          ConstrainedBox(
+            constraints: const BoxConstraints(
+              minHeight: _minHeight,
+              maxHeight: _maxHeight,
+            ),
+            child: TextField(
+              controller: _controller,
+              focusNode: _focusNode,
+              maxLines: null,
+              keyboardType: TextInputType.multiline,
+              textInputAction: TextInputAction.newline,
+              style: NhamTextStyles.sansRegular(
+                fontSize: NhamFontSize.sm,
+                height: 20 / 14, // leading-5 (20px) at text-sm (14px)
+              ).copyWith(color: NhamColors.text),
+              cursorColor: NhamColors.accent,
+              decoration: InputDecoration(
+                isCollapsed: true,
+                border: InputBorder.none,
+                enabledBorder: InputBorder.none,
+                focusedBorder: InputBorder.none,
+                disabledBorder: InputBorder.none,
+                contentPadding: const EdgeInsets.symmetric(
+                  vertical: 6,
+                ), // py-1.5
+                hintText: 'logging.composerPlaceholder'.tr(),
+                hintStyle: NhamTextStyles.sansRegular(
+                  fontSize: NhamFontSize.sm,
+                  height: 20 / 14,
+                ).copyWith(color: NhamColors.placeholderMuted40),
               ),
-              child: Opacity(
-                opacity: widget.disabled ? 0.5 : 1,
-                child: TextField(
-                  controller: _controller,
-                  focusNode: _focusNode,
-                  enabled: !widget.disabled,
-                  maxLines: null,
-                  keyboardType: TextInputType.multiline,
-                  textInputAction: TextInputAction.newline,
-                  style: NhamTextStyles.sansRegular(
-                    fontSize: NhamFontSize.sm,
-                    height: 20 / 14, // leading-5 (20px) at text-sm (14px)
-                  ).copyWith(color: NhamColors.text),
-                  cursorColor: NhamColors.accent,
-                  decoration: InputDecoration(
-                    isCollapsed: true,
-                    border: InputBorder.none,
-                    enabledBorder: InputBorder.none,
-                    focusedBorder: InputBorder.none,
-                    disabledBorder: InputBorder.none,
-                    contentPadding: const EdgeInsets.symmetric(
-                      vertical: 6,
-                    ), // py-1.5
-                    hintText: 'logging.placeholder'.tr(),
-                    hintStyle: NhamTextStyles.sansRegular(
-                      fontSize: NhamFontSize.sm,
-                      height: 20 / 14,
-                    ).copyWith(color: NhamColors.placeholderMuted40),
-                  ),
+            ),
+          ),
+          const SizedBox(height: NhamSpacing.sp2),
+          // Line 2 — mode selector on the left, send/stop on the right.
+          Row(
+            children: [
+              if (widget.onModePressed != null && !widget.analyzing)
+                _ModeButton(
+                  icon: widget.modeIcon ?? LucideIcons.zap,
+                  label: widget.modeLabel ??
+                      'logging.modeSelector.button'.tr(),
+                  onTap: widget.onModePressed!,
+                ),
+              const Spacer(),
+              if (!_canSubmit && widget.analyzing && widget.onCancel != null)
+                _ActionButton(
+                  icon: LucideIcons.square, // lucide Square (filled)
+                  iconSize: 14,
+                  label: 'common.cancel'.tr(),
+                  onTap: widget.onCancel,
+                )
+              else
+                _ActionButton(
+                  icon: LucideIcons.arrowUp, // lucide ArrowUp
+                  iconSize: 16,
+                  label: 'logging.submit'.tr(),
+                  enabled: _canSubmit,
+                  onTap: _canSubmit ? _submit : null,
+                ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// The mode control on the input bar's second line — a minimal icon + label
+/// (no border, no chevron), like the Claude composer's "Auto". Tapping opens the
+/// mode chooser. 44pt tap target, scales 0.96 on press.
+class _ModeButton extends StatefulWidget {
+  const _ModeButton({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  State<_ModeButton> createState() => _ModeButtonState();
+}
+
+class _ModeButtonState extends State<_ModeButton> {
+  bool _pressed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      button: true,
+      label: widget.label,
+      child: GestureDetector(
+        onTapDown: (_) => setState(() => _pressed = true),
+        onTapUp: (_) => setState(() => _pressed = false),
+        onTapCancel: () => setState(() => _pressed = false),
+        onTap: widget.onTap,
+        child: SizedBox(
+          height: 44, // HIG tap target
+          child: Center(
+            child: AnimatedScale(
+              scale: _pressed ? 0.96 : 1,
+              duration: const Duration(milliseconds: 200),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: NhamSpacing.sp1),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(widget.icon, size: 18, color: NhamColors.btn),
+                    const SizedBox(width: 6),
+                    Text(
+                      widget.label,
+                      style: NhamTextStyles.sansMedium(
+                        fontSize: NhamFontSize.sm,
+                      ).copyWith(color: NhamColors.btn),
+                    ),
+                  ],
                 ),
               ),
             ),
           ),
-          const SizedBox(width: NhamSpacing.sp3),
-          if (widget.disabled && widget.onCancel != null)
-            _ActionButton(
-              icon: Icons.stop, // lucide Square (filled) → Icons.stop
-              iconSize: 14,
-              label: 'common.cancel'.tr(),
-              onTap: widget.onCancel,
-            )
-          else
-            _ActionButton(
-              icon: Icons.arrow_upward, // lucide ArrowUp → Icons.arrow_upward
-              iconSize: 16,
-              label: 'logging.submit'.tr(),
-              enabled: _canSubmit,
-              onTap: _canSubmit ? _submit : null,
-            ),
-        ],
+        ),
       ),
     );
   }
@@ -230,25 +320,32 @@ class _ActionButtonState extends State<_ActionButton> {
         onTapUp: tappable ? (_) => setState(() => _pressed = false) : null,
         onTapCancel: tappable ? () => setState(() => _pressed = false) : null,
         onTap: widget.onTap,
-        child: AnimatedScale(
-          scale: _pressed ? 0.95 : 1,
-          duration: const Duration(
-            milliseconds: 200,
-          ), // transition-all duration-200
-          child: Opacity(
-            opacity: widget.enabled ? 1 : 0.3,
-            child: Container(
-              width: 32,
-              height: 32,
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                color: _pressed ? NhamColors.btnHover : NhamColors.btn,
-                borderRadius: BorderRadius.circular(NhamRadii.md),
-              ),
-              child: Icon(
-                widget.icon,
-                size: widget.iconSize,
-                color: Colors.white,
+        // 44pt minimum tap target (HIG) around the 32pt visual button.
+        child: SizedBox(
+          width: 44,
+          height: 44,
+          child: Center(
+            child: AnimatedScale(
+              scale: _pressed ? 0.95 : 1,
+              duration: const Duration(
+                milliseconds: 200,
+              ), // transition-all duration-200
+              child: Opacity(
+                opacity: widget.enabled ? 1 : 0.3,
+                child: Container(
+                  width: 32,
+                  height: 32,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: _pressed ? NhamColors.btnHover : NhamColors.btn,
+                    borderRadius: BorderRadius.circular(NhamRadii.md),
+                  ),
+                  child: Icon(
+                    widget.icon,
+                    size: widget.iconSize,
+                    color: Colors.white,
+                  ),
+                ),
               ),
             ),
           ),

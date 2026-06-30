@@ -4,8 +4,15 @@
 /// `todayDateString` helper used by the dashboard screen.
 library;
 
+import 'package:intl/intl.dart';
+
 /// Rounds to a whole number, mapping null to 0. Mirrors web `round0`.
 int round0(num? n) => n == null ? 0 : n.round();
+
+/// Locale-aware thousands grouping (en → "2,000", vi → "2.000"). Mirrors the
+/// web's `toLocaleString()` instead of the hardcoded comma grouping.
+String formatCount(int n, String locale) =>
+    NumberFormat.decimalPattern(locale).format(n);
 
 /// Local `YYYY-MM-DD` for [date] (defaults to now). Matches the web/RN
 /// `todayDateString` — uses LOCAL date components, not UTC.

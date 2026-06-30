@@ -1,6 +1,6 @@
 import { ThinkingLevel } from '@google/genai';
 import type { GeminiClient } from '@/lib/ai/gemini';
-import { resolveModelProfile } from '@/lib/ai/pipeline/model-profile';
+import { resolveModelProfile } from '@/lib/ai/pipeline/config/model-profile';
 import {
   type CheatEstimate,
   cheatEstimateSchema,

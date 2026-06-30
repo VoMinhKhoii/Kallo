@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { readBooleanEnv } from '../feature-flags';
+import { readBooleanEnv } from '../config/feature-flags';
 
 describe('readBooleanEnv', () => {
   it('falls back to default when the env var is unset', () => {

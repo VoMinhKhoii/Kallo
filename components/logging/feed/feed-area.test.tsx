@@ -4,23 +4,19 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { NUTRITION_KEYS } from '@/lib/ai/constants';
 import { FeedArea } from './feed-area';
 
-vi.mock('@/components/logging/feed/empty-state', () => ({
-  EmptyState: () => <div data-testid="empty-state" />,
-}));
-
 vi.mock('@/components/logging/feed/macro-summary', () => ({
   MacroSummary: ({ totals }: { totals: { calories: number } }) => (
     <div data-testid="macro-summary" data-calories={totals.calories} />
   ),
 }));
 
-vi.mock('@/components/logging/feed/persisted-meal-card', () => ({
+vi.mock('@/components/logging/feed/persisted/persisted-meal-card', () => ({
   PersistedMealCard: ({ meal }: { meal: { id: string } }) => (
     <div data-testid="persisted-meal-card">{meal.id}</div>
   ),
 }));
 
-vi.mock('@/components/logging/feed/meal-entry', () => ({
+vi.mock('@/components/logging/feed/meal-entry/meal-entry', () => ({
   MealEntry: ({
     message,
     onConfirm,
@@ -37,7 +33,7 @@ vi.mock('@/components/logging/feed/meal-entry', () => ({
   ),
 }));
 
-vi.mock('@/components/logging/feed/streaming-meal-entry', () => ({
+vi.mock('@/components/logging/feed/streaming/streaming-meal-entry', () => ({
   StreamingMealEntry: () => <div data-testid="streaming-meal-entry" />,
 }));
 
@@ -45,6 +41,7 @@ vi.mock('@/components/logging/input/meal-input', () => ({
   MealInput: forwardRef(function MockMealInput(_props, ref) {
     useImperativeHandle(ref, () => ({
       getText: () => '',
+      getManualLogging: () => ({ loggingMode: 'normal' }),
       clear: vi.fn(),
       focus: vi.fn(),
       setText: vi.fn(),
@@ -72,22 +69,25 @@ vi.mock('@tanstack/react-query', () => ({
   useQueryClient: () => ({ invalidateQueries: mockInvalidateQueries }),
 }));
 
-vi.mock('@/hooks/use-logging-day', () => ({
+vi.mock('@/hooks/meals/use-logging-day', () => ({
   loggingDayKeys: {
     byUserDate: (userId: string, date: string) => ['logging-day', userId, date],
   },
   useLoggingDay: mockUseLoggingDay,
 }));
 
-vi.mock('@/hooks/use-feed-submit', () => ({
+vi.mock('@/hooks/meals/use-feed-submit', () => ({
   useFeedSubmit: () => ({ handleSubmit: vi.fn() }),
 }));
 
-vi.mock('@/hooks/use-meal-mutations', () => ({
+vi.mock('@/hooks/meals/use-meal-mutations', () => ({
   useConfirmMeal: () => ({ mutate: mockMutate, isPending: false }),
+  useUpdateMeal: () => ({ mutateAsync: vi.fn(), isPending: false }),
+  useSaveManualMeal: () => ({ mutate: vi.fn(), isPending: false }),
+  useDuplicateMeal: () => ({ mutate: vi.fn(), isPending: false }),
 }));
 
-vi.mock('@/hooks/use-recent-cheat-occasions', () => ({
+vi.mock('@/hooks/meals/use-recent-cheat-occasions', () => ({
   useRecentCheatOccasions: () => ({ data: [] }),
 }));
 
@@ -95,15 +95,15 @@ vi.mock('@/lib/actions/meals', () => ({
   stageCheatRepeatAction: vi.fn(),
 }));
 
-vi.mock('@/hooks/use-stream-analysis', () => ({
+vi.mock('@/hooks/meals/use-stream-analysis', () => ({
   useStreamAnalysis: mockUseStreamAnalysis,
 }));
 
-vi.mock('@/hooks/use-streaming-terminal-effects', () => ({
+vi.mock('@/hooks/meals/use-streaming-terminal-effects', () => ({
   useStreamingTerminalEffects: mockUseStreamingTerminalEffects,
 }));
 
-vi.mock('@/hooks/use-submit-guard', () => ({
+vi.mock('@/hooks/meals/use-submit-guard', () => ({
   useSubmitGuard: () => ({ guard: (fn: () => Promise<void>) => fn() }),
 }));
 
@@ -190,7 +190,7 @@ describe('FeedArea', () => {
     expect(
       within(macroRegion).getByTestId('macro-summary')
     ).toBeInTheDocument();
-    expect(within(scrollRegion).getByTestId('empty-state')).toBeInTheDocument();
+    // On an empty day the input bar IS the centered empty state — no prompt.
     expect(within(scrollRegion).queryByTestId('macro-summary')).toBeNull();
     expect(within(scrollRegion).queryByTestId('meal-input')).toBeNull();
     expect(input).toBeInTheDocument();

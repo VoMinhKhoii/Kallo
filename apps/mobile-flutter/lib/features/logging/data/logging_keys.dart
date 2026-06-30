@@ -8,21 +8,26 @@ library;
 abstract final class LoggingDayKeys {
   static const List<Object?> all = ['logging-day'];
 
-  static List<Object?> byUserDate(String userId, String date) =>
-      ['logging-day', userId, date];
+  static List<Object?> byUserDate(String userId, String date) => [
+    'logging-day',
+    userId,
+    date,
+  ];
 
   static List<Object?> byUserDateOffset(
     String userId,
     String date,
     int timezoneOffset,
-  ) =>
-      ['logging-day', userId, date, timezoneOffset];
+  ) => ['logging-day', userId, date, timezoneOffset];
 }
 
 /// `['meal-dates', userId, timezoneOffset]`. Invalidations elsewhere use the
 /// `['meal-dates']` prefix — never exact.
-List<Object?> mealDatesKey(String userId, int timezoneOffset) =>
-    ['meal-dates', userId, timezoneOffset];
+List<Object?> mealDatesKey(String userId, int timezoneOffset) => [
+  'meal-dates',
+  userId,
+  timezoneOffset,
+];
 
 /// Profile cache key — mirrors RN `onboardingKeys.profile`.
 const List<Object?> onboardingProfileKey = ['onboarding', 'profile'];
@@ -33,6 +38,17 @@ String todayDateString([DateTime? date]) {
   final m = d.month.toString().padLeft(2, '0');
   final day = d.day.toString().padLeft(2, '0');
   return '${d.year}-$m-$day';
+}
+
+/// Local YYYY-MM-DD `delta` days from [date] (matches the web's `addDays`).
+String addDays(String date, int delta) {
+  final parts = date.split('-');
+  final base = DateTime(
+    int.parse(parts[0]),
+    int.parse(parts[1]),
+    int.parse(parts[2]),
+  );
+  return todayDateString(DateTime(base.year, base.month, base.day + delta));
 }
 
 /// Local timezone offset in MINUTES, matching JS `Date.getTimezoneOffset()`

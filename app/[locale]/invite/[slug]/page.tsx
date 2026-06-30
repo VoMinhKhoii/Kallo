@@ -1,9 +1,11 @@
 import { getTranslations } from 'next-intl/server';
 import type { ReactNode } from 'react';
-import { InviteAccept } from '@/components/groups/invite/invite-accept';
+import { ConnectPanel } from '@/components/groups/invite/connect-panel';
+import { InviteAuthCta } from '@/components/groups/invite/invite-auth-cta';
 import { Link } from '@/i18n/navigation';
 import {
   getFriendshipStatus,
+  getMyPublicProfile,
   getProfileBySlug,
   type PublicProfile,
 } from '@/lib/actions/groups';
@@ -29,25 +31,16 @@ function Shell({
       <div className="flex w-full max-w-sm flex-col items-center gap-5 text-center">
         {label ? (
           <span className="flex size-16 items-center justify-center rounded-full bg-gradient-to-br from-nham-accent/40 to-nham-border/50 ring-1 ring-nham-accent/25">
-            <span
-              className="font-bold text-2xl text-nham-btn"
-              style={{ fontFamily: 'DM Sans, sans-serif' }}
-            >
+            <span className="font-bold font-sans-display text-2xl text-nham-btn">
               {label.charAt(0).toUpperCase()}
             </span>
           </span>
         ) : null}
         <div className="space-y-2">
-          <h1
-            className="font-normal text-2xl text-nham-text tracking-tight"
-            style={{ fontFamily: 'Lora, serif' }}
-          >
+          <h1 className="font-normal font-serif text-2xl text-nham-text tracking-tight">
             {title}
           </h1>
-          <p
-            className="text-nham-text-muted text-sm leading-relaxed"
-            style={{ fontFamily: 'DM Sans, sans-serif' }}
-          >
+          <p className="font-sans-display text-nham-text-muted text-sm leading-relaxed">
             {body}
           </p>
         </div>
@@ -76,23 +69,18 @@ export default async function InvitePage({
     data: { user },
   } = await supabase.auth.getUser();
 
-  // Signed out: route to the landing auth dialog, returning here afterward.
+  // Signed out: keep auth ON this page — the dialog opens over the inviter's
+  // card and `next` round-trips back here (now signed in → Connect). No more
+  // teleport to the marketing page that erased the friend at commitment.
   if (!user) {
     const invitePath = `/${locale}/invite/${inviter.handle}`;
-    const href = `/${locale}?auth=sign-up&next=${encodeURIComponent(invitePath)}`;
     return (
       <Shell
         profile={inviter}
         title={t('signedOutTitle', { name })}
         body={t('signedOutBody')}
       >
-        <a
-          href={href}
-          className="inline-flex items-center justify-center rounded-xl bg-nham-btn px-6 py-3 font-medium text-[15px] text-white shadow-nham-btn/20 shadow-sm transition-colors hover:bg-nham-btn/90"
-          style={{ fontFamily: 'DM Sans, sans-serif' }}
-        >
-          {t('signIn')}
-        </a>
+        <InviteAuthCta next={invitePath} />
       </Shell>
     );
   }
@@ -122,15 +110,19 @@ export default async function InvitePage({
     return <Shell title={t('invalidTitle')} body={t('invalidBody')} />;
   }
 
-  // Connect: the recipient taps Accept.
+  // Connect: the recipient taps Accept, and the whole panel resolves in place
+  // (their disc slides in beside the inviter's, the title crossfades to "You're
+  // connected") rather than teleporting to an empty /groups.
+  const myProfile = await getMyPublicProfile(user.id);
+  const youLabel =
+    myProfile?.displayName?.trim() || myProfile?.handle || t('you');
+
   return (
-    <Shell
-      profile={inviter}
-      title={t('connectTitle', { name })}
-      body={t('connectBody')}
-    >
-      <InviteAccept slug={inviter.handle} />
-    </Shell>
+    <ConnectPanel
+      slug={inviter.handle}
+      inviterLabel={name}
+      youLabel={youLabel}
+    />
   );
 }
 
@@ -138,8 +130,7 @@ function CircleLink({ label }: { label: string }) {
   return (
     <Link
       href="/groups"
-      className="inline-flex items-center justify-center rounded-xl border border-nham-border/60 bg-white px-6 py-3 font-medium text-[15px] text-nham-text transition-colors hover:border-nham-accent/50"
-      style={{ fontFamily: 'DM Sans, sans-serif' }}
+      className="inline-flex items-center justify-center rounded-xl border border-nham-border/60 bg-white px-6 py-3 font-medium font-sans-display text-[15px] text-nham-text transition-colors hover:border-nham-accent/50"
     >
       {label}
     </Link>

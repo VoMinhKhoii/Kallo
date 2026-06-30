@@ -94,7 +94,7 @@ export function EditorialHeader({
         role="group"
         aria-label={tRange('label')}
         className={cn(
-          'col-start-2 row-start-1 inline-flex items-center gap-px justify-self-end rounded-full border border-nham-border/60 bg-card/40 p-1',
+          'col-start-2 row-start-1 inline-flex items-center gap-px justify-self-end rounded-full border border-nham-border/60 bg-white p-1',
           verdict ? 'lg:col-start-3' : ''
         )}
       >

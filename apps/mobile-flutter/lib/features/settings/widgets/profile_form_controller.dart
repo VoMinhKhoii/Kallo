@@ -65,6 +65,21 @@ class ProfileFormController extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Marks [saved] (the values actually sent) as the clean baseline — used by
+  /// instant-commit so edits made while a save was in flight stay dirty and
+  /// re-commit, instead of being silently baselined away.
+  void markSavedAs(ProfileFormValues saved) {
+    _initial = saved.clone();
+    notifyListeners();
+  }
+
+  /// Replaces the live values wholesale (the retry affordance re-applying a
+  /// failed commit's values) and notifies.
+  void setValues(ProfileFormValues v) {
+    _values = v.clone();
+    notifyListeners();
+  }
+
   static ProfileFormController of(BuildContext context) {
     final scope = context
         .dependOnInheritedWidgetOfExactType<ProfileFormScope>();

@@ -2,29 +2,56 @@
 /// (`components/dashboard/today/meal-trigger.tsx` `FloatingMealTrigger`,
 /// rendered under `md:hidden`).
 ///
-/// A fixed bottom-right FAB (44x44, radius 16, btn color, soft shadow,
-/// UtensilsCrossed icon) that expands into a compact meal-input bar above it
-/// (slide+fade in, 160ms). Submitting navigates to `/logging?meal=…`.
+/// A 44x44 FAB (radius 16, btn color, soft shadow, UtensilsCrossed icon) that
+/// expands into a compact meal-input bar (slide+fade in, 160ms). Submitting
+/// navigates to `/logging?meal=…`.
+///
+/// The FAB is *draggable* — the user can pick it up and drop it anywhere; on
+/// release it snaps to the nearest left/right edge (the familiar "chat-head" /
+/// movable-FAB pattern) at whatever height they left it, so it never sits over
+/// content they care about. The chosen spot persists for the session via
+/// [mealFabPositionProvider]. The expanding input bar re-anchors above or below
+/// the FAB depending on where it lives.
 library;
 
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../theme/nham_colors.dart';
 import '../../../theme/nham_theme.dart';
 import '../../../theme/nham_typography.dart';
 
-class FloatingMealTrigger extends StatefulWidget {
+/// Session-scoped FAB position (top-left, in the dashboard content's local
+/// coordinate space). Null → resolve to the default bottom-right resting spot.
+/// Held in a provider so it survives tab switches and dashboard rebuilds.
+final mealFabPositionProvider = StateProvider<Offset?>((ref) => null);
+
+// FAB geometry / movement bounds.
+const double _fabSize = 44; // h-11 w-11
+const double _fabMargin = NhamSpacing.sp4; // 16 — edge inset
+const double _fabBottomGap = NhamSpacing.sp5; // 20 — default bottom rest
+
+class FloatingMealTrigger extends ConsumerStatefulWidget {
   const FloatingMealTrigger({super.key});
 
   @override
-  State<FloatingMealTrigger> createState() => _FloatingMealTriggerState();
+  ConsumerState<FloatingMealTrigger> createState() =>
+      _FloatingMealTriggerState();
 }
 
-class _FloatingMealTriggerState extends State<FloatingMealTrigger> {
+class _FloatingMealTriggerState extends ConsumerState<FloatingMealTrigger> {
   bool _expanded = false;
   bool _fabPressed = false;
+  bool _dragging = false;
+
+  /// Live FAB position while the session value is being moved; falls back to the
+  /// provider, then the default, resolved against the current bounds each build.
+  Offset? _pos;
+
   final TextEditingController _controller = TextEditingController();
   final FocusNode _focus = FocusNode();
 
@@ -36,11 +63,13 @@ class _FloatingMealTriggerState extends State<FloatingMealTrigger> {
   }
 
   void _open() {
+    HapticFeedback.lightImpact();
     setState(() => _expanded = true);
     WidgetsBinding.instance.addPostFrameCallback((_) => _focus.requestFocus());
   }
 
   void _close() {
+    HapticFeedback.selectionClick();
     _focus.unfocus();
     setState(() => _expanded = false);
   }
@@ -48,90 +77,167 @@ class _FloatingMealTriggerState extends State<FloatingMealTrigger> {
   void _submit() {
     final meal = _controller.text.trim();
     if (meal.isEmpty) return;
+    HapticFeedback.mediumImpact(); // commit cue
     _controller.clear();
-    _close();
+    _focus.unfocus();
+    setState(() => _expanded = false);
     context.go('/logging?meal=${Uri.encodeComponent(meal)}');
+  }
+
+  // ── Position helpers ───────────────────────────────────────────────────────
+
+  Offset _defaultPos(double w, double h) =>
+      Offset(w - _fabSize - _fabMargin, h - _fabSize - _fabBottomGap);
+
+  Offset _clampPos(Offset p, double w, double h) {
+    final maxX = (w - _fabSize - _fabMargin).clamp(_fabMargin, double.infinity);
+    final maxY =
+        (h - _fabSize - _fabBottomGap).clamp(_fabMargin, double.infinity);
+    return Offset(
+      p.dx.clamp(_fabMargin, maxX).toDouble(),
+      p.dy.clamp(_fabMargin, maxY).toDouble(),
+    );
+  }
+
+  Offset _resolvePos(double w, double h) {
+    final stored = _pos ?? ref.read(mealFabPositionProvider);
+    return _clampPos(stored ?? _defaultPos(w, h), w, h);
+  }
+
+  void _onDragStart() {
+    HapticFeedback.selectionClick(); // pick-up cue
+    setState(() {
+      _dragging = true;
+      _fabPressed = true;
+    });
+  }
+
+  void _onDragUpdate(Offset delta, double w, double h) {
+    setState(() {
+      _pos = _clampPos((_pos ?? _resolvePos(w, h)) + delta, w, h);
+    });
+  }
+
+  void _onDragEnd(double w, double h) {
+    final p = _pos ?? _resolvePos(w, h);
+    // Snap to whichever vertical edge the FAB's center is closer to.
+    final center = p.dx + _fabSize / 2;
+    final snappedX = center < w / 2 ? _fabMargin : (w - _fabSize - _fabMargin);
+    final snapped = _clampPos(Offset(snappedX, p.dy), w, h);
+    setState(() {
+      _pos = snapped;
+      _dragging = false;
+      _fabPressed = false;
+    });
+    ref.read(mealFabPositionProvider.notifier).state = snapped;
+    HapticFeedback.lightImpact(); // settle cue
   }
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      children: [
-        // Expanding meal-input bar: fixed right-4 bottom-20 left-4.
-        Positioned(
-          left: NhamSpacing.sp4, // left-4
-          right: NhamSpacing.sp4, // right-4
-          bottom: 80, // bottom-20
-          child: AnimatedSwitcher(
-            duration: const Duration(milliseconds: 160),
-            transitionBuilder:
-                (child, anim) => FadeTransition(
-                  opacity: anim,
-                  child: SlideTransition(
-                    // y 8 → 0.
-                    position: Tween<Offset>(
-                      begin: const Offset(0, 8 / 44),
-                      end: Offset.zero,
-                    ).animate(anim),
-                    child: child,
-                  ),
-                ),
-            child:
-                _expanded
-                    ? _MealInputBar(
-                      key: const ValueKey('meal-input'),
-                      controller: _controller,
-                      focusNode: _focus,
-                      onSubmit: _submit,
-                    )
-                    : const SizedBox.shrink(key: ValueKey('hidden')),
-          ),
-        ),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final w = constraints.maxWidth;
+        final h = constraints.maxHeight;
+        final pos = _resolvePos(w, h);
 
-        // The FAB: fixed right-4 bottom-5, 44x44 rounded-2xl.
-        Positioned(
-          right: NhamSpacing.sp4, // right-4
-          bottom: NhamSpacing.sp5, // bottom-5
-          child: Semantics(
-            button: true,
-            label:
-                _expanded
-                    ? tr('dashboard.mealTrigger.close')
-                    : tr('dashboard.logMeal'),
-            child: GestureDetector(
-              onTapDown: (_) => setState(() => _fabPressed = true),
-              onTapUp: (_) => setState(() => _fabPressed = false),
-              onTapCancel: () => setState(() => _fabPressed = false),
-              onTap: _expanded ? _close : _open,
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 150),
-                width: 44, // h-11 w-11
-                height: 44,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: _fabPressed ? NhamColors.btnHover : NhamColors.btn,
-                  borderRadius: BorderRadius.circular(
-                    NhamRadii.containerLg,
-                  ), // 16
-                  boxShadow: const [
-                    // shadow-[0_4px_16px_rgba(44,36,22,0.18)].
-                    BoxShadow(
-                      color: Color(0x2E2C2416), // #2C2416 @ 18%
-                      blurRadius: 16,
-                      offset: Offset(0, 4),
+        // Anchor the input bar above the FAB when there's room overhead, else
+        // below it — so it stays visually attached wherever the FAB lives.
+        final showAbove = pos.dy > h * 0.4;
+        final barTop = showAbove ? null : pos.dy + _fabSize + 8;
+        final barBottom = showAbove ? (h - pos.dy + 8) : null;
+
+        return SizedBox.expand(
+          child: Stack(
+            children: [
+              // Expanding meal-input bar, re-anchored to the FAB.
+              Positioned(
+                left: _fabMargin,
+                right: _fabMargin,
+                top: barTop,
+                bottom: barBottom,
+                child: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 160),
+                  transitionBuilder: (child, anim) => FadeTransition(
+                    opacity: anim,
+                    child: SlideTransition(
+                      position: Tween<Offset>(
+                        begin: const Offset(0, 8 / 44),
+                        end: Offset.zero,
+                      ).animate(anim),
+                      child: child,
                     ),
-                  ],
-                ),
-                child: Icon(
-                  _expanded ? Icons.close : Icons.restaurant_outlined,
-                  size: 20, // h-5 w-5
-                  color: Colors.white,
+                  ),
+                  child: _expanded
+                      ? _MealInputBar(
+                          key: const ValueKey('meal-input'),
+                          controller: _controller,
+                          focusNode: _focus,
+                          onSubmit: _submit,
+                        )
+                      : const SizedBox.shrink(key: ValueKey('hidden')),
                 ),
               ),
-            ),
+
+              // The draggable FAB.
+              Positioned(
+                left: pos.dx,
+                top: pos.dy,
+                width: _fabSize,
+                height: _fabSize,
+                child: Semantics(
+                  button: true,
+                  label: _expanded
+                      ? tr('dashboard.mealTrigger.close')
+                      : tr('dashboard.logMeal'),
+                  child: GestureDetector(
+                    onTapDown: (_) => setState(() => _fabPressed = true),
+                    onTapUp: (_) => setState(() => _fabPressed = false),
+                    onTapCancel: () => setState(() => _fabPressed = false),
+                    onTap: _expanded ? _close : _open,
+                    // Drag to reposition; snaps to an edge on release.
+                    onPanStart: (_) => _onDragStart(),
+                    onPanUpdate: (d) => _onDragUpdate(d.delta, w, h),
+                    onPanEnd: (_) => _onDragEnd(w, h),
+                    child: AnimatedScale(
+                      // Lift slightly while held — a tactile "picked up" feel.
+                      scale: _dragging ? 1.12 : 1.0,
+                      duration: const Duration(milliseconds: 150),
+                      curve: Curves.easeOut,
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 150),
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          color:
+                              _fabPressed ? NhamColors.btnHover : NhamColors.btn,
+                          borderRadius:
+                              BorderRadius.circular(NhamRadii.containerLg), // 16
+                          boxShadow: [
+                            // Deeper shadow while dragging reads as "above" the
+                            // surface; resting shadow matches the web FAB.
+                            BoxShadow(
+                              color: const Color(0x2E2C2416), // #2C2416 @ 18%
+                              blurRadius: _dragging ? 24 : 16,
+                              offset: Offset(0, _dragging ? 8 : 4),
+                            ),
+                          ],
+                        ),
+                        child: Icon(
+                          _expanded
+                              ? LucideIcons.x
+                              : LucideIcons.utensilsCrossed,
+                          size: 20, // h-5 w-5
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
-        ),
-      ],
+        );
+      },
     );
   }
 }
@@ -236,7 +342,7 @@ class _MealInputBarState extends State<_MealInputBar> {
                 borderRadius: BorderRadius.circular(NhamRadii.buttonXl), // 12
               ),
               child: Icon(
-                Icons.arrow_upward,
+                LucideIcons.arrowUp,
                 size: 16, // h-4 w-4
                 color: hasText ? Colors.white : NhamColors.stone,
               ),

@@ -4,8 +4,8 @@ import {
   type MealFactsForComputePolicy,
   pickComputePolicy,
   summarizeCandidateConfidence,
-} from '../compute-policy';
-import { NEXT_PROFILE, STABLE_PROFILE } from '../model-profile';
+} from '../config/compute-policy';
+import { NEXT_PROFILE, STABLE_PROFILE } from '../config/model-profile';
 import type { AnomalyType } from '../validation';
 
 const baseFacts: MealFactsForComputePolicy = {

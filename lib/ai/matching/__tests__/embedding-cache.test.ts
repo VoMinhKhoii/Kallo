@@ -151,8 +151,8 @@ describe('resolveQueryEmbedding', () => {
     );
 
     expect(result).toBeNull();
-    // 1 warm-up scan + 1 L2 exact query + 1 async name_en check
-    expect(db.execute).toHaveBeenCalledTimes(3);
+    // 1 L2 exact query + 1 async name_en check
+    expect(db.execute).toHaveBeenCalledTimes(2);
   });
 
   it('returns embedding from exact name_vi match and promotes both names to L1', async () => {
@@ -231,9 +231,9 @@ describe('resolveQueryEmbedding', () => {
     // Wait for fire-and-forget to settle
     await new Promise((r) => setTimeout(r, 10));
 
-    // Verify: warm-up scan + L2 exact + name_en check + synonym_candidates insert = 4 calls
-    expect(db.execute).toHaveBeenCalledTimes(4);
-    const lastCall = db.execute.mock.calls[3][0];
+    // Verify: L2 exact + name_en check + synonym_candidates insert = 3 calls
+    expect(db.execute).toHaveBeenCalledTimes(3);
+    const lastCall = db.execute.mock.calls[2][0];
     const lastSql = extractSqlText(lastCall);
     expect(lastSql).toContain('synonym_candidates');
   });
@@ -285,8 +285,8 @@ describe('resolveQueryEmbedding', () => {
     // Wait for fire-and-forget
     await new Promise((r) => setTimeout(r, 10));
 
-    // Only 3 calls: warm-up scan + L2 exact + name_en check (no insert since no match)
-    expect(db.execute).toHaveBeenCalledTimes(3);
+    // Only 2 calls: L2 exact + name_en check (no insert since no match)
+    expect(db.execute).toHaveBeenCalledTimes(2);
   });
 
   it('returns null safely when DB throws on L2 query', async () => {

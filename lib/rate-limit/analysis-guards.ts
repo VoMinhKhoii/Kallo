@@ -1,5 +1,5 @@
 import { createHmac } from 'node:crypto';
-import { sql } from 'drizzle-orm';
+import { and, eq, gt, lt, sql } from 'drizzle-orm';
 import { type AppDb, db as appDb } from '@/lib/db';
 import {
   analysisInFlightLimits,
@@ -180,6 +180,8 @@ export const defaultAnalysisGuardLimits: AnalysisGuardLimits = {
   concurrentUser: 1,
   concurrentRetryAfterSeconds: 15,
 };
+
+const DEFAULT_IN_FLIGHT_STALE_AFTER_SECONDS = 90;
 
 export const defaultAdminReplayGuardLimits: AdminReplayGuardLimits = {
   perAdminHour: 5,
@@ -446,7 +448,7 @@ export function getAnalysisWindowRetryAfterSeconds(
   return Math.max(1, Math.ceil(remainingMs / 1000));
 }
 
-type GuardMutationDb = Pick<AppDb, 'insert'>;
+type GuardMutationDb = Pick<AppDb, 'insert' | 'update'>;
 
 interface AnalysisGuardKey {
   keyKind: 'user';
@@ -521,6 +523,40 @@ async function incrementInFlightCounter(
     .returning({ count: analysisInFlightLimits.count });
 
   return row.count;
+}
+
+function getInFlightStaleAfterSeconds() {
+  return readPositiveInteger(
+    process.env.ANALYSIS_IN_FLIGHT_STALE_AFTER_SECONDS,
+    DEFAULT_IN_FLIGHT_STALE_AFTER_SECONDS
+  );
+}
+
+async function resetStaleInFlightCounter(
+  guardDb: GuardMutationDb,
+  input: AnalysisGuardKey & { now: Date }
+) {
+  const staleBefore = new Date(
+    input.now.getTime() - getInFlightStaleAfterSeconds() * 1000
+  );
+
+  await guardDb
+    .update(analysisInFlightLimits)
+    .set({
+      count: 0,
+      // Keep the threshold timestamp so the next upsert can move the row to
+      // "active now" in the same transaction without preserving stale age.
+      updatedAt: staleBefore,
+    })
+    .where(
+      and(
+        eq(analysisInFlightLimits.keyKind, input.keyKind),
+        eq(analysisInFlightLimits.keyHash, input.keyHash),
+        eq(analysisInFlightLimits.route, input.route),
+        gt(analysisInFlightLimits.count, 0),
+        lt(analysisInFlightLimits.updatedAt, staleBefore)
+      )
+    );
 }
 
 async function decrementInFlightCounter(
@@ -788,6 +824,11 @@ export async function checkAnalysisGuards(
           );
         }
       }
+
+      await resetStaleInFlightCounter(tx, {
+        ...guardKey,
+        now,
+      });
 
       const inFlightCount = await incrementInFlightCounter(tx, {
         ...guardKey,

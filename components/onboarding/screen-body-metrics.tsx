@@ -375,7 +375,7 @@ export function ScreenBodyMetrics({
     <Form {...form}>
       <form className="space-y-5 lg:space-y-6">
         <div className="max-w-xl">
-          <h2 className="mb-1.5 font-medium font-serif text-2xl text-[#2C2416] tracking-tight">
+          <h2 className="mb-1.5 font-normal font-serif text-2xl text-[#2C2416] tracking-tight">
             {t('bodyMetrics.title')}
           </h2>
           <p className="text-[#8B8682] text-[14px] leading-relaxed">

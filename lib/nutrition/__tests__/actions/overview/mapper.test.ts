@@ -134,4 +134,91 @@ describe('mapOverviewRowsToDto', () => {
       expect('trend' in card).toBe(false);
     }
   });
+
+  describe('daySeries', () => {
+    it('emits one day bucket per calendar day for the 7d range', () => {
+      const overview = mapRows([
+        row({ localDate: '2026-04-24', calories: 2000, proteinG: 100 }),
+        row({ localDate: '2026-04-25', calories: 2000, proteinG: 100 }),
+      ]);
+
+      expect(overview.daySeries.unit).toBe('day');
+      // The 7d period spans 2026-04-19..2026-04-25 → 7 day buckets.
+      const calories = overview.daySeries.series.find(
+        (s) => s.metric === 'calories'
+      );
+      expect(calories?.buckets).toHaveLength(7);
+      // Days with no complete log read null (gap), not zero.
+      expect(
+        calories?.buckets.find((b) => b.startDate === '2026-04-19')?.value
+      ).toBeNull();
+      // Logged complete days carry their per-day total.
+      expect(
+        calories?.buckets.find((b) => b.startDate === '2026-04-25')?.value
+      ).toBe(2000);
+    });
+
+    it('reports per-metric min/max across non-null buckets for the whisker band', () => {
+      const overview = mapRows([
+        row({ localDate: '2026-04-23', calories: 1800, proteinG: 90 }),
+        row({ localDate: '2026-04-24', calories: 2200, proteinG: 110 }),
+        row({ localDate: '2026-04-25', calories: 2000, proteinG: 100 }),
+      ]);
+
+      const calories = overview.daySeries.series.find(
+        (s) => s.metric === 'calories'
+      );
+      expect(calories?.min).toBe(1800);
+      expect(calories?.max).toBe(2200);
+      // ratioOfTarget is the per-day value over the calorie target (2000).
+      const peak = calories?.buckets.find((b) => b.startDate === '2026-04-24');
+      expect(peak?.ratioOfTarget).toBeCloseTo(1.1);
+    });
+
+    it('buckets by week for the 30d range', () => {
+      const rows: OverviewMealItemRow[] = [];
+      // 28 fully-logged days ending 2026-04-25.
+      for (let i = 0; i < 28; i++) {
+        const date = new Date(
+          Date.parse('2026-04-25T00:00:00.000Z') - i * 86_400_000
+        )
+          .toISOString()
+          .slice(0, 10);
+        rows.push(row({ localDate: date, calories: 2000, proteinG: 100 }));
+      }
+      const overview = mapOverviewRowsToDto({
+        rows,
+        profile: baseProfile,
+        requestedRange: '30d',
+        resolvedRange: '30d',
+        loggedDaysLast30: 28,
+        period: {
+          startDate: '2026-03-27',
+          endDate: '2026-04-25',
+          bucketTimezone: 'local',
+        },
+      });
+
+      expect(overview.daySeries.unit).toBe('week');
+      const calories = overview.daySeries.series.find(
+        (s) => s.metric === 'calories'
+      );
+      // 30 days / 7 → 5 week buckets (final clamps to the period end).
+      expect(calories?.buckets).toHaveLength(5);
+    });
+
+    it('includes the default micronutrients in the series', () => {
+      const overview = mapRows([
+        row({ localDate: '2026-04-25', calciumMg: 600 }),
+      ]);
+      const metrics = overview.daySeries.series.map((s) => s.metric);
+      expect(metrics).toContain('calciumMg');
+      expect(metrics).toContain('protein');
+    });
+
+    it('returns an empty series for a zero-logged period', () => {
+      const overview = mapRows([row({ calories: 0 })]);
+      expect(overview.daySeries.series).toHaveLength(0);
+    });
+  });
 });

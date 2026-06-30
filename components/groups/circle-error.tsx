@@ -30,16 +30,10 @@ export function CircleError({
             aria-hidden="true"
           />
           <div className="min-w-0 flex-1">
-            <p
-              className="font-semibold text-[13px] text-nham-text"
-              style={{ fontFamily: 'DM Sans, sans-serif' }}
-            >
+            <p className="font-sans-display font-semibold text-[13px] text-nham-text">
               {t('title')}
             </p>
-            <p
-              className="mt-1 text-[13px] text-nham-text-muted"
-              style={{ fontFamily: 'DM Sans, sans-serif' }}
-            >
+            <p className="mt-1 font-sans-display text-[13px] text-nham-text-muted">
               {t('body')}
             </p>
             <button
@@ -47,8 +41,7 @@ export function CircleError({
               onClick={onRetry}
               disabled={isRetrying}
               aria-busy={isRetrying}
-              className="mt-3 inline-flex min-h-9 items-center gap-2 rounded-full bg-nham-danger/10 px-3.5 py-2 font-medium text-[13px] text-nham-danger transition-colors hover:bg-nham-danger/15 disabled:cursor-not-allowed disabled:opacity-60"
-              style={{ fontFamily: 'DM Sans, sans-serif' }}
+              className="mt-3 inline-flex min-h-9 items-center gap-2 rounded-full bg-nham-danger/10 px-3.5 py-2 font-medium font-sans-display text-[13px] text-nham-danger transition-colors hover:bg-nham-danger/15 disabled:cursor-not-allowed disabled:opacity-60"
             >
               <RefreshCw
                 className={`h-4 w-4 ${isRetrying ? 'animate-spin' : ''}`}

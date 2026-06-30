@@ -3,10 +3,11 @@
 /// Ported from `lib/nutrition/types.ts`.
 library;
 
-enum NutritionRange { d7, d30, d90 }
+enum NutritionRange { d1, d7, d30, d90 }
 
 extension NutritionRangeValue on NutritionRange {
   String get value => switch (this) {
+        NutritionRange.d1 => '1d',
         NutritionRange.d7 => '7d',
         NutritionRange.d30 => '30d',
         NutritionRange.d90 => '90d',
@@ -14,11 +15,12 @@ extension NutritionRangeValue on NutritionRange {
 }
 
 /// Input range that may include 'auto'.
-enum NutritionRangeInput { auto, d7, d30, d90 }
+enum NutritionRangeInput { auto, d1, d7, d30, d90 }
 
 extension NutritionRangeInputValue on NutritionRangeInput {
   String get value => switch (this) {
         NutritionRangeInput.auto => 'auto',
+        NutritionRangeInput.d1 => '1d',
         NutritionRangeInput.d7 => '7d',
         NutritionRangeInput.d30 => '30d',
         NutritionRangeInput.d90 => '90d',
@@ -397,7 +399,6 @@ class NutrientCardData {
   final String? caveatKey;
   final List<NutrientContextMetric>? contextMetrics;
   final SourceBreakdown? sourceBreakdown;
-  final bool supportsCandidates;
 
   const NutrientCardData({
     required this.nutrient,
@@ -415,7 +416,6 @@ class NutrientCardData {
     this.caveatKey,
     this.contextMetrics,
     this.sourceBreakdown,
-    required this.supportsCandidates,
   });
 
   factory NutrientCardData.fromJson(Map<String, dynamic> json) =>
@@ -445,7 +445,6 @@ class NutrientCardData {
             ? SourceBreakdown.fromJson(
                 json['sourceBreakdown'] as Map<String, dynamic>)
             : null,
-        supportsCandidates: json['supportsCandidates'] as bool,
       );
 
   Map<String, dynamic> toJson() => {
@@ -464,7 +463,6 @@ class NutrientCardData {
         'caveatKey': caveatKey,
         'contextMetrics': contextMetrics?.map((e) => e.toJson()).toList(),
         'sourceBreakdown': sourceBreakdown?.toJson(),
-        'supportsCandidates': supportsCandidates,
       };
 
   NutrientCardData copyWith({
@@ -483,7 +481,6 @@ class NutrientCardData {
     String? Function()? caveatKey,
     List<NutrientContextMetric>? Function()? contextMetrics,
     SourceBreakdown? Function()? sourceBreakdown,
-    bool? supportsCandidates,
   }) =>
       NutrientCardData(
         nutrient: nutrient ?? this.nutrient,
@@ -508,7 +505,6 @@ class NutrientCardData {
         sourceBreakdown: sourceBreakdown != null
             ? sourceBreakdown()
             : this.sourceBreakdown,
-        supportsCandidates: supportsCandidates ?? this.supportsCandidates,
       );
 }
 
@@ -534,6 +530,100 @@ class EducationCardData {
         'id': id,
         'titleKey': titleKey,
         'bodyKey': bodyKey,
+      };
+}
+
+/// One bucket (a day for 7d, a week for 30d) of a metric's time series.
+class DaySeriesBucket {
+  final String startDate;
+  final String endDate;
+  final double? value;
+  final double? ratioOfTarget;
+
+  const DaySeriesBucket({
+    required this.startDate,
+    required this.endDate,
+    required this.value,
+    required this.ratioOfTarget,
+  });
+
+  factory DaySeriesBucket.fromJson(Map<String, dynamic> json) => DaySeriesBucket(
+        startDate: json['startDate'] as String,
+        endDate: json['endDate'] as String,
+        value: (json['value'] as num?)?.toDouble(),
+        ratioOfTarget: (json['ratioOfTarget'] as num?)?.toDouble(),
+      );
+
+  Map<String, dynamic> toJson() => {
+        'startDate': startDate,
+        'endDate': endDate,
+        'value': value,
+        'ratioOfTarget': ratioOfTarget,
+      };
+}
+
+/// A single metric's per-bucket series (macro or micronutrient).
+class NutrientDaySeries {
+  final String metric; // DaySeriesMetricKey: calories/protein/carbohydrate/fat/<nutrient>
+  final String labelKey;
+  final String unit;
+  final double? target;
+  final List<DaySeriesBucket> buckets;
+  final double? min;
+  final double? max;
+
+  const NutrientDaySeries({
+    required this.metric,
+    required this.labelKey,
+    required this.unit,
+    required this.target,
+    required this.buckets,
+    required this.min,
+    required this.max,
+  });
+
+  factory NutrientDaySeries.fromJson(Map<String, dynamic> json) =>
+      NutrientDaySeries(
+        metric: json['metric'] as String,
+        labelKey: json['labelKey'] as String,
+        unit: json['unit'] as String,
+        target: (json['target'] as num?)?.toDouble(),
+        buckets: (json['buckets'] as List<dynamic>)
+            .map((e) => DaySeriesBucket.fromJson(e as Map<String, dynamic>))
+            .toList(),
+        min: (json['min'] as num?)?.toDouble(),
+        max: (json['max'] as num?)?.toDouble(),
+      );
+
+  Map<String, dynamic> toJson() => {
+        'metric': metric,
+        'labelKey': labelKey,
+        'unit': unit,
+        'target': target,
+        'buckets': buckets.map((e) => e.toJson()).toList(),
+        'min': min,
+        'max': max,
+      };
+}
+
+/// The overview's per-bucket time axis (macros + default micronutrients).
+class NutritionDaySeries {
+  final String unit; // 'day' | 'week'
+  final List<NutrientDaySeries> series;
+
+  const NutritionDaySeries({required this.unit, required this.series});
+
+  factory NutritionDaySeries.fromJson(Map<String, dynamic> json) =>
+      NutritionDaySeries(
+        unit: json['unit'] as String,
+        series: (json['series'] as List<dynamic>)
+            .map((e) => NutrientDaySeries.fromJson(e as Map<String, dynamic>))
+            .toList(),
+      );
+
+  Map<String, dynamic> toJson() => {
+        'unit': unit,
+        'series': series.map((e) => e.toJson()).toList(),
       };
 }
 
@@ -590,6 +680,7 @@ class NutritionOverview {
   final List<NutrientCardData> steady;
   final List<NutrientCardData> moreNutrients;
   final List<EducationCardData> educationCards;
+  final NutritionDaySeries daySeries;
 
   const NutritionOverview({
     required this.requestedRange,
@@ -608,6 +699,7 @@ class NutritionOverview {
     required this.steady,
     required this.moreNutrients,
     required this.educationCards,
+    required this.daySeries,
   });
 
   factory NutritionOverview.fromJson(Map<String, dynamic> json) {
@@ -646,6 +738,8 @@ class NutritionOverview {
           .map(
               (e) => EducationCardData.fromJson(e as Map<String, dynamic>))
           .toList(),
+      daySeries: NutritionDaySeries.fromJson(
+          json['daySeries'] as Map<String, dynamic>),
     );
   }
 
@@ -669,6 +763,7 @@ class NutritionOverview {
         'steady': steady.map((e) => e.toJson()).toList(),
         'moreNutrients': moreNutrients.map((e) => e.toJson()).toList(),
         'educationCards': educationCards.map((e) => e.toJson()).toList(),
+        'daySeries': daySeries.toJson(),
       };
 
   NutritionOverview copyWith({
@@ -688,6 +783,7 @@ class NutritionOverview {
     List<NutrientCardData>? steady,
     List<NutrientCardData>? moreNutrients,
     List<EducationCardData>? educationCards,
+    NutritionDaySeries? daySeries,
   }) =>
       NutritionOverview(
         requestedRange: requestedRange ?? this.requestedRange,
@@ -706,5 +802,6 @@ class NutritionOverview {
         steady: steady ?? this.steady,
         moreNutrients: moreNutrients ?? this.moreNutrients,
         educationCards: educationCards ?? this.educationCards,
+        daySeries: daySeries ?? this.daySeries,
       );
 }

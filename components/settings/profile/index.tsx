@@ -4,12 +4,11 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Loader2 } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useLocale, useTranslations } from 'next-intl';
-import { useMemo, useState, useTransition } from 'react';
-import { type FieldErrors, useForm } from 'react-hook-form';
+import { useMemo, useTransition } from 'react';
+import { type DefaultValues, type FieldErrors, useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { z } from 'zod';
 import { Form } from '@/components/ui/form';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { saveProfileSettings } from '@/lib/onboarding/actions';
 import {
   bodyMetricsMessages,
@@ -52,8 +51,15 @@ export type ProfileFormValues = z.infer<
 
 type SectionId = 'body-metrics' | 'regional' | 'cooking';
 
-// Which tab owns each field, so an invalid submit can switch to the tab
-// holding the first error instead of failing silently behind another tab.
+// Anchor id for each stacked section — shared with the page's anchor nav.
+export const SETTINGS_SECTION_ANCHOR: Record<SectionId, string> = {
+  'body-metrics': 'settings-body-metrics',
+  regional: 'settings-regional',
+  cooking: 'settings-cooking',
+};
+
+// Which section owns each field, so an invalid submit can scroll to the
+// section holding the first error instead of leaving it off-screen.
 const SECTION_FOR_FIELD: Partial<Record<keyof ProfileFormValues, SectionId>> = {
   biologicalSex: 'body-metrics',
   weightKg: 'body-metrics',
@@ -109,7 +115,6 @@ export function Profile({ profile }: ProfileProps) {
   const tValidation = useTranslations('validation.bodyMetrics');
   const locale = useLocale();
   const [isPending, startTransition] = useTransition();
-  const [activeTab, setActiveTab] = useState<SectionId>('body-metrics');
 
   const SECTIONS: Section[] = [
     {
@@ -129,13 +134,22 @@ export function Profile({ profile }: ProfileProps) {
     },
   ];
 
-  const defaultValues: ProfileFormValues = useMemo(
+  // Typed as DefaultValues (a deep-partial) — both useForm and form.reset
+  // accept it. This is what lets the body-metrics fields start genuinely empty
+  // (undefined) instead of being cast from a fabricated value; the schema's
+  // "required" rule then forces a real entry before save.
+  const defaultValues: DefaultValues<ProfileFormValues> = useMemo(
     () => ({
-      biologicalSex: (profile.biologicalSex as 'male' | 'female') ?? 'male',
-      weightKg: profile.weightKg ? Number(profile.weightKg) : 65,
-      heightCm: profile.heightCm ?? 165,
-      age: profile.age ?? 25,
-      activityLevel: (profile.activityLevel as ActivityLevel) ?? 'light',
+      // Body metrics are NOT defaulted to fabricated numbers. A user who
+      // skipped onboarding has null weight/height/age/sex; pre-filling
+      // 65kg/165cm/25y/male would let them save fabricated data as if it were
+      // real (and silently recompute a target from it). Leave them empty so
+      // the schema's "required" validation forces a real entry before save.
+      biologicalSex: (profile.biologicalSex as 'male' | 'female') ?? undefined,
+      weightKg: profile.weightKg ? Number(profile.weightKg) : undefined,
+      heightCm: profile.heightCm ?? undefined,
+      age: profile.age ?? undefined,
+      activityLevel: (profile.activityLevel as ActivityLevel) ?? undefined,
       goal: (profile.goal as Goal) ?? 'maintaining',
       aggression: (() => {
         const raw = profile.aggression;
@@ -177,6 +191,32 @@ export function Profile({ profile }: ProfileProps) {
 
   const isDirty = form.formState.isDirty;
 
+  // Mirror the persisted-target computation off the live form so the save
+  // button can name its consequence ("Save — new target 1,640 kcal"). Returns
+  // null until the body metrics are complete enough to produce a target.
+  const watched = form.watch();
+  const pendingTarget = useMemo(() => {
+    const { biologicalSex, weightKg, heightCm, age, activityLevel } = watched;
+    if (!biologicalSex || !weightKg || !heightCm || !age || !activityLevel) {
+      return null;
+    }
+    const bmr = calcBMR({
+      biologicalSex,
+      weightKg,
+      heightCm,
+      age,
+      activityLevel,
+    });
+    const tdee = calcTDEE(bmr, activityLevel);
+    const targets = calcDailyTargets(
+      tdee,
+      watched.goal,
+      watched.aggression,
+      watched.carbSplit
+    );
+    return Math.round(Math.max(targets.calories, 500));
+  }, [watched]);
+
   function handleCancel() {
     form.reset(defaultValues);
   }
@@ -187,7 +227,9 @@ export function Profile({ profile }: ProfileProps) {
       | undefined;
     const section = firstField ? SECTION_FOR_FIELD[firstField] : undefined;
     if (section) {
-      setActiveTab(section);
+      document
+        .getElementById(SETTINGS_SECTION_ANCHOR[section])
+        ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
     toast.error(t('profilePanel.invalidError'));
   }
@@ -247,44 +289,37 @@ export function Profile({ profile }: ProfileProps) {
   }
 
   return (
-    <div style={{ fontFamily: 'DM Sans, sans-serif' }}>
+    <div className="font-sans-display">
       <Form {...form}>
         <form
           onSubmit={form.handleSubmit(handleSave, handleInvalid)}
           className="space-y-3"
         >
-          <Tabs
-            value={activeTab}
-            onValueChange={(value) => setActiveTab(value as SectionId)}
-            className="w-full gap-0"
-          >
-            <TabsList className="mb-2 h-auto w-full justify-start gap-1 overflow-x-auto rounded-xl bg-[#EAE7E0]/40 p-1">
-              {SECTIONS.map((section) => (
-                <TabsTrigger
-                  key={section.id}
-                  value={section.id}
-                  className="flex-1 whitespace-nowrap rounded-lg px-3 py-1.5 font-medium text-[#7B6F62] text-[14px] focus-visible:ring-2 focus-visible:ring-[#C9A87C]/40 data-[state=active]:bg-white data-[state=active]:text-[#2C2416] data-[state=active]:shadow-sm"
-                >
-                  {section.title}
-                </TabsTrigger>
-              ))}
-            </TabsList>
-
+          {/* Flattened: the three former tabs are now stacked sections with
+              anchor ids, scrolled to from the page's anchor nav (and on
+              validation error). */}
+          <div className="flex flex-col gap-5">
             {SECTIONS.map((section) => (
-              <TabsContent
+              <section
                 key={section.id}
-                value={section.id}
-                className="rounded-2xl border border-[#EAE7E0] bg-[#FDFCF8] p-3 focus-visible:outline-none sm:p-5 lg:p-6"
+                id={SETTINGS_SECTION_ANCHOR[section.id]}
+                aria-label={section.title}
+                className="scroll-mt-20 rounded-2xl border border-[#EAE7E0] bg-[#FDFCF8] p-3 sm:p-5 lg:p-6"
               >
-                <p className="mb-5 text-[#7B6F62] text-[13px] sm:mb-6">
+                <h2 className="font-normal font-serif text-[#2C2416] text-lg tracking-tight">
+                  {section.title}
+                </h2>
+                <p className="mt-1 mb-5 text-[#7B6F62] text-[13px] sm:mb-6">
                   {section.subtitle}
                 </p>
-                {section.id === 'body-metrics' && <BodyMetrics />}
+                {section.id === 'body-metrics' && (
+                  <BodyMetrics savedCalorieTarget={profile.calorieTarget} />
+                )}
                 {section.id === 'regional' && <Regional />}
                 {section.id === 'cooking' && <Cooking />}
-              </TabsContent>
+              </section>
             ))}
-          </Tabs>
+          </div>
 
           {/* Pinned save bar — rests above the bottom edge while content
               scrolls behind it and dissolves into a soft fade. */}
@@ -316,7 +351,11 @@ export function Profile({ profile }: ProfileProps) {
                     className="flex items-center gap-2 rounded-xl bg-[#2C2416] px-5 py-2.5 font-medium text-[#FDFCF8] text-[14px] shadow-sm transition-all hover:bg-[#1C1917] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C9A87C]/60 disabled:opacity-50"
                   >
                     {isPending && <Loader2 className="h-4 w-4 animate-spin" />}
-                    {t('save')}
+                    {pendingTarget !== null
+                      ? t('saveWithTarget', {
+                          target: pendingTarget.toLocaleString(),
+                        })
+                      : t('save')}
                   </button>
                 </div>
               </motion.div>

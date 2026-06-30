@@ -1,17 +1,32 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../theme/nham_colors.dart';
 import '../../../theme/nham_theme.dart';
 import '../../../theme/nham_typography.dart';
 import '../data/countries.dart';
 
-/// Mirror of `components/onboarding/screen-origin.tsx` CountryPicker.
+/// ISO values pinned above the alphabet — Việt Nam first, then the destinations
+/// most Nhẩm users live in. Keeps Việt Nam one tap away instead of buried at "V".
+const List<String> _pinnedValues = [
+  'Vietnam',
+  'United States',
+  'Australia',
+  'Japan',
+  'South Korea',
+  'Singapore',
+];
+
+/// Country picker for onboarding `screen-origin`.
 ///
-/// An anchored popover dropdown glued to the trigger: portal-positioned at the
-/// trigger bottom (+8px, flipped above when no room), same width as the trigger,
-/// rounded-2xl, border #EAE7E0, shadow [0_20px_60px_rgba(44,36,22,0.18)], a
-/// search input pinned at top, and a scroll list clamped to maxHeight 160..320.
+/// Replaces the anchored popover (which opened alphabetically at Afghanistan,
+/// auto-focused a search whose keyboard covered the list, and pinned nothing)
+/// with a native modal bottom sheet: a grabber, a pinned search that stays above
+/// the keyboard, a "Common" section (Việt Nam + frequent residences) above the
+/// full alphabetical list, and a sheet that grows with the keyboard so the list
+/// is never occluded.
 class CountrySelect extends StatefulWidget {
   const CountrySelect({super.key, required this.value, required this.onChange});
 
@@ -22,31 +37,7 @@ class CountrySelect extends StatefulWidget {
   State<CountrySelect> createState() => _CountrySelectState();
 }
 
-class _CountrySelectState extends State<CountrySelect>
-    with SingleTickerProviderStateMixin {
-  final OverlayPortalController _portal = OverlayPortalController();
-  final LayerLink _link = LayerLink();
-  final TextEditingController _search = TextEditingController();
-  final GlobalKey _triggerKey = GlobalKey();
-
-  late final AnimationController _chevron = AnimationController(
-    vsync: this,
-    duration: const Duration(milliseconds: 200),
-  );
-
-  bool _open = false;
-  String _query = '';
-  bool _flipAbove = false;
-  double _maxHeight = 320;
-  double _triggerWidth = 0;
-
-  @override
-  void dispose() {
-    _chevron.dispose();
-    _search.dispose();
-    super.dispose();
-  }
-
+class _CountrySelectState extends State<CountrySelect> {
   Country? get _selected {
     if (widget.value == null) return null;
     return kCountries.cast<Country?>().firstWhere(
@@ -55,263 +46,232 @@ class _CountrySelectState extends State<CountrySelect>
         );
   }
 
-  void _toggle() {
-    if (_open) {
-      _close();
-    } else {
-      _computePlacement();
-      setState(() => _open = true);
-      _portal.show();
-      _chevron.forward();
-    }
-  }
-
-  void _close() {
-    _chevron.reverse();
-    _portal.hide();
-    _search.clear();
-    setState(() {
-      _open = false;
-      _query = '';
-    });
-  }
-
-  void _computePlacement() {
-    final box = _triggerKey.currentContext?.findRenderObject() as RenderBox?;
-    if (box == null) return;
-    final screenH = MediaQuery.sizeOf(context).height;
-    final topLeft = box.localToGlobal(Offset.zero);
-    final spaceBelow = screenH - (topLeft.dy + box.size.height);
-    final spaceAbove = topLeft.dy;
-    _triggerWidth = box.size.width;
-    // Flip above when no room below (mirrors web: spaceBelow<180 &&
-    // spaceAbove>spaceBelow+40).
-    _flipAbove = spaceBelow < 180 && spaceAbove > spaceBelow + 40;
-    final avail = (_flipAbove ? spaceAbove : spaceBelow) - 16;
-    _maxHeight = avail.clamp(160.0, 320.0);
+  Future<void> _open() async {
+    HapticFeedback.selectionClick();
+    final picked = await showModalBottomSheet<String>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      barrierColor: NhamColors.text40,
+      builder: (_) => _CountrySheet(selectedValue: widget.value),
+    );
+    if (picked != null) widget.onChange(picked);
   }
 
   @override
   Widget build(BuildContext context) {
     final hasValue = widget.value != null && widget.value!.isNotEmpty;
     final display = hasValue
-        ? (_selected != null ? '${widget.value} (${_selected!.vi})' : widget.value!)
+        ? (_selected != null
+            ? '${widget.value} (${_selected!.vi})'
+            : widget.value!)
         : tr('onboarding.origin.selectCountry');
 
-    return CompositedTransformTarget(
-      link: _link,
-      child: OverlayPortal(
-        controller: _portal,
-        overlayChildBuilder: _buildOverlay,
-        child: GestureDetector(
-          key: _triggerKey,
-          behavior: HitTestBehavior.opaque,
-          onTap: _toggle,
-          child: Container(
-            // px-4 py-3, rounded-2xl
-            padding: const EdgeInsets.symmetric(
-              horizontal: NhamSpacing.sp4,
-              vertical: NhamSpacing.sp3,
-            ),
-            decoration: BoxDecoration(
-              // open: border #C9A87C + bg white + shadow-sm; closed: #EAE7E0 + cream
-              color: _open ? const Color(0xFFFFFFFF) : NhamColors.cream,
-              borderRadius: BorderRadius.circular(NhamRadii.containerLg),
-              border: Border.all(
-                color: _open ? NhamColors.accent : NhamColors.inputBorder,
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: _open,
+      child: Container(
+        padding: const EdgeInsets.symmetric(
+          horizontal: NhamSpacing.sp4,
+          vertical: NhamSpacing.sp3,
+        ),
+        decoration: BoxDecoration(
+          color: NhamColors.cream,
+          borderRadius: BorderRadius.circular(NhamRadii.containerLg),
+          border: Border.all(color: NhamColors.inputBorder),
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Text(
+                display,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: NhamTextStyles.sansRegular(fontSize: 14).copyWith(
+                  color: hasValue ? NhamColors.text : NhamColors.textHelp,
+                ),
               ),
-              boxShadow: _open ? const [NhamShadows.sm] : null,
             ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    display,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: NhamTextStyles.sansRegular(fontSize: 14).copyWith(
-                      color: hasValue ? NhamColors.text : NhamColors.textHelp,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: NhamSpacing.sp2),
-                RotationTransition(
-                  turns: Tween<double>(begin: 0, end: 0.5).animate(_chevron),
-                  child: const Icon(
-                    Icons.keyboard_arrow_down,
-                    size: 16,
-                    color: NhamColors.textHelp,
-                  ),
-                ),
-              ],
+            const SizedBox(width: NhamSpacing.sp2),
+            const Icon(
+              LucideIcons.chevronDown,
+              size: 16,
+              color: NhamColors.textHelp,
             ),
-          ),
+          ],
         ),
       ),
     );
   }
-
-  Widget _buildOverlay(BuildContext context) {
-    // Tap-outside scrim to dismiss.
-    return Stack(
-      children: [
-        Positioned.fill(
-          child: GestureDetector(
-            behavior: HitTestBehavior.translucent,
-            onTap: _close,
-          ),
-        ),
-        CompositedTransformFollower(
-          link: _link,
-          showWhenUnlinked: false,
-          targetAnchor:
-              _flipAbove ? Alignment.topLeft : Alignment.bottomLeft,
-          followerAnchor:
-              _flipAbove ? Alignment.bottomLeft : Alignment.topLeft,
-          offset: Offset(0, _flipAbove ? -8 : 8),
-          child: SizedBox(
-            width: _triggerWidth,
-            child: _DropdownPanel(
-              maxHeight: _maxHeight,
-              query: _query,
-              search: _search,
-              selectedValue: widget.value,
-              onQueryChange: (v) => setState(() => _query = v),
-              onPick: (v) {
-                widget.onChange(v);
-                _close();
-              },
-            ),
-          ),
-        ),
-      ],
-    );
-  }
 }
 
-class _DropdownPanel extends StatelessWidget {
-  const _DropdownPanel({
-    required this.maxHeight,
-    required this.query,
-    required this.search,
-    required this.selectedValue,
-    required this.onQueryChange,
-    required this.onPick,
-  });
+class _CountrySheet extends StatefulWidget {
+  const _CountrySheet({required this.selectedValue});
 
-  final double maxHeight;
-  final String query;
-  final TextEditingController search;
   final String? selectedValue;
-  final ValueChanged<String> onQueryChange;
-  final ValueChanged<String> onPick;
+
+  @override
+  State<_CountrySheet> createState() => _CountrySheetState();
+}
+
+class _CountrySheetState extends State<_CountrySheet> {
+  final TextEditingController _search = TextEditingController();
+  String _query = '';
+
+  static final List<Country> _pinned = [
+    for (final v in _pinnedValues)
+      kCountries.firstWhere((c) => c.value == v),
+  ];
+
+  @override
+  void dispose() {
+    _search.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    final q = query.toLowerCase();
-    final filtered = q.isEmpty
+    final q = _query.trim().toLowerCase();
+    final searching = q.isNotEmpty;
+    final filtered = searching
         ? kCountries
-        : kCountries
             .where((c) =>
                 c.value.toLowerCase().contains(q) ||
                 c.vi.toLowerCase().contains(q))
-            .toList();
+            .toList()
+        : kCountries;
 
-    return Material(
-      type: MaterialType.transparency,
-      child: Container(
-        decoration: BoxDecoration(
-          color: const Color(0xFFFFFFFF),
-          borderRadius: BorderRadius.circular(NhamRadii.containerLg), // rounded-2xl
-          border: Border.all(color: NhamColors.inputBorder),
-          boxShadow: const [
-            // shadow-[0_20px_60px_rgba(44,36,22,0.18)]
-            BoxShadow(
-              color: Color(0x2E2C2416),
-              blurRadius: 60,
-              offset: Offset(0, 20),
-            ),
-          ],
-        ),
-        clipBehavior: Clip.antiAlias,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Search header (p-2 + bottom border).
-            Container(
-              padding: const EdgeInsets.all(NhamSpacing.sp2),
-              decoration: const BoxDecoration(
-                border: Border(
-                  bottom: BorderSide(color: NhamColors.inputBorder),
+    // Keyboard inset → the sheet lifts so the pinned search + list clear it.
+    final bottomInset = MediaQuery.viewInsetsOf(context).bottom;
+
+    return Padding(
+      padding: EdgeInsets.only(bottom: bottomInset),
+      child: FractionallySizedBox(
+        heightFactor: 0.85,
+        child: Container(
+          decoration: const BoxDecoration(
+            color: NhamColors.elev,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: Column(
+            children: [
+              const SizedBox(height: 8),
+              // Grabber.
+              Container(
+                width: 36,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: NhamColors.border,
+                  borderRadius: BorderRadius.circular(NhamRadii.pill),
                 ),
               ),
-              child: TextField(
-                controller: search,
-                autofocus: true,
-                onChanged: onQueryChange,
-                cursorColor: NhamColors.accent,
-                style: NhamTextStyles.sansRegular(fontSize: 13)
-                    .copyWith(color: NhamColors.text),
-                decoration: InputDecoration(
-                  isDense: true,
-                  filled: true,
-                  fillColor: NhamColors.track, // bg-[#F5F4F0]
-                  hintText: tr('onboarding.origin.searchCountry'),
-                  hintStyle: NhamTextStyles.sansRegular(fontSize: 13)
-                      .copyWith(color: NhamColors.textHelp), // #8B8682
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: NhamSpacing.sp3,
-                    vertical: NhamSpacing.sp2,
+              // Pinned search.
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+                child: TextField(
+                  controller: _search,
+                  autofocus: false,
+                  onChanged: (v) => setState(() => _query = v),
+                  cursorColor: NhamColors.accent,
+                  style: NhamTextStyles.sansRegular(fontSize: 14)
+                      .copyWith(color: NhamColors.text),
+                  decoration: InputDecoration(
+                    isDense: true,
+                    filled: true,
+                    fillColor: NhamColors.track,
+                    prefixIcon: const Icon(
+                      LucideIcons.search,
+                      size: 16,
+                      color: NhamColors.textHelp,
+                    ),
+                    hintText: tr('onboarding.origin.searchCountry'),
+                    hintStyle: NhamTextStyles.sansRegular(fontSize: 14)
+                        .copyWith(color: NhamColors.textHelp),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: NhamSpacing.sp3,
+                      vertical: NhamSpacing.sp3,
+                    ),
+                    border: _border(),
+                    enabledBorder: _border(),
+                    focusedBorder: _border(),
                   ),
-                  border: _border(),
-                  enabledBorder: _border(),
-                  focusedBorder: _border(),
                 ),
               ),
-            ),
-            Flexible(
-              child: ConstrainedBox(
-                constraints: BoxConstraints(maxHeight: maxHeight),
+              const _SheetDivider(),
+              Expanded(
                 child: filtered.isEmpty
-                    ? Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: NhamSpacing.sp3,
-                          vertical: NhamSpacing.sp2,
-                        ),
+                    ? Center(
                         child: Text(
                           tr('onboarding.origin.noCountries'),
-                          textAlign: TextAlign.center,
-                          style: NhamTextStyles.sansRegular(fontSize: 13)
+                          style: NhamTextStyles.sansRegular(fontSize: 14)
                               .copyWith(color: NhamColors.textHelp),
                         ),
                       )
-                    : ListView.builder(
-                        padding: const EdgeInsets.all(NhamSpacing.sp1), // p-1
-                        shrinkWrap: true,
+                    : ListView(
+                        padding: const EdgeInsets.fromLTRB(8, 8, 8, 24),
                         keyboardDismissBehavior:
                             ScrollViewKeyboardDismissBehavior.onDrag,
-                        itemCount: filtered.length,
-                        itemBuilder: (context, i) {
-                          final item = filtered[i];
-                          return _OptionRow(
-                            country: item,
-                            selected: selectedValue == item.value,
-                            onTap: () => onPick(item.value),
-                          );
-                        },
+                        children: [
+                          if (!searching) ...[
+                            _SectionLabel(
+                              tr('onboarding.origin.commonCountries'),
+                            ),
+                            for (final c in _pinned)
+                              _OptionRow(
+                                country: c,
+                                selected: widget.selectedValue == c.value,
+                                onTap: () => Navigator.of(context).pop(c.value),
+                              ),
+                            const SizedBox(height: 8),
+                            const _SheetDivider(),
+                            const SizedBox(height: 8),
+                          ],
+                          for (final c in filtered)
+                            _OptionRow(
+                              country: c,
+                              selected: widget.selectedValue == c.value,
+                              onTap: () => Navigator.of(context).pop(c.value),
+                            ),
+                        ],
                       ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
   }
 
   OutlineInputBorder _border() => OutlineInputBorder(
-        borderRadius: BorderRadius.circular(NhamRadii.md), // rounded-lg
+        borderRadius: BorderRadius.circular(NhamRadii.md),
         borderSide: BorderSide.none,
       );
+}
+
+class _SectionLabel extends StatelessWidget {
+  const _SectionLabel(this.text);
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 4, 12, 6),
+      child: Text(
+        text.toUpperCase(),
+        style: NhamTextStyles.sansBold(fontSize: 10)
+            .copyWith(letterSpacing: 1.5, color: NhamColors.stone),
+      ),
+    );
+  }
+}
+
+class _SheetDivider extends StatelessWidget {
+  const _SheetDivider();
+
+  @override
+  Widget build(BuildContext context) =>
+      Container(height: 1, color: NhamColors.inputBorder);
 }
 
 class _OptionRow extends StatefulWidget {
@@ -334,7 +294,6 @@ class _OptionRowState extends State<_OptionRow> {
 
   @override
   Widget build(BuildContext context) {
-    // selected = bg-[#C9A87C]/10 + medium #2C2416; hover/press = bg #F5F4F0.
     final Color fill = widget.selected
         ? NhamColors.accent10
         : (_pressed ? NhamColors.track : Colors.transparent);
@@ -347,32 +306,35 @@ class _OptionRowState extends State<_OptionRow> {
       child: Container(
         decoration: BoxDecoration(
           color: fill,
-          borderRadius: BorderRadius.circular(NhamRadii.buttonXl), // rounded-xl
+          borderRadius: BorderRadius.circular(NhamRadii.buttonXl),
         ),
         padding: const EdgeInsets.symmetric(
-          horizontal: NhamSpacing.sp3, // px-3
-          vertical: NhamSpacing.sp2_5, // py-2.5
+          horizontal: NhamSpacing.sp3,
+          vertical: NhamSpacing.sp3,
         ),
         child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Flexible(
+            Expanded(
               child: Text(
                 widget.country.value,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: (widget.selected
-                        ? NhamTextStyles.sansMedium(fontSize: 13)
-                        : NhamTextStyles.sansRegular(fontSize: 13))
+                        ? NhamTextStyles.sansMedium(fontSize: 14)
+                        : NhamTextStyles.sansRegular(fontSize: 14))
                     .copyWith(color: NhamColors.text),
               ),
             ),
             const SizedBox(width: NhamSpacing.sp3),
             Text(
               widget.country.vi,
-              style: NhamTextStyles.sansRegular(fontSize: 11)
-                  .copyWith(color: NhamColors.textHelp), // #8B8682
+              style: NhamTextStyles.sansRegular(fontSize: 12)
+                  .copyWith(color: NhamColors.textHelp),
             ),
+            if (widget.selected) ...[
+              const SizedBox(width: NhamSpacing.sp2),
+              const Icon(LucideIcons.check, size: 16, color: NhamColors.accent),
+            ],
           ],
         ),
       ),

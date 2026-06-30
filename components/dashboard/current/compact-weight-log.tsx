@@ -8,7 +8,7 @@ import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { useLogWeight } from '@/hooks/use-weight-mutations';
+import { useLogWeight } from '@/hooks/weight/use-weight-mutations';
 import { cn, parseDecimalInput } from '@/lib/utils';
 import { type WeightLogInput, weightLogSchema } from '@/lib/validation';
 
@@ -98,7 +98,7 @@ export function CompactWeightLog({
             aria-describedby={errorId}
             className={cn(
               'h-9 rounded-xl border-nham-border bg-card pr-8 font-mono text-sm shadow-none',
-              errors.weightKg && 'border-destructive'
+              errors.weightKg && 'border-nham-danger'
             )}
           />
           <span className="absolute top-1/2 right-3 -translate-y-1/2 text-[11px] text-nham-stone">
@@ -129,7 +129,7 @@ export function CompactWeightLog({
         <p
           id="compact-weight-error"
           role="alert"
-          className="mt-1 text-[10px] text-destructive"
+          className="mt-1 text-[10px] text-nham-danger"
         >
           {errorMessage}
         </p>

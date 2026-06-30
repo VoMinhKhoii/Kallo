@@ -67,6 +67,7 @@ abstract final class NhamColors {
   static const Color textMuted50 = Color(0x808B7355); // 50%
   static const Color textMuted60 = Color(0x998B7355); // 60%
   static const Color textMuted70 = Color(0xB38B7355); // 70% — macro-bar labels
+  static const Color textMuted80 = Color(0xCC8B7355); // 80% — legacy-macro note
   static const Color placeholderMuted40 = Color(0x668B7355); // 40%
 
   // ── Hover alpha variants ─────────────────────────────────────────────
@@ -82,7 +83,13 @@ abstract final class NhamColors {
   static const Color macroFat = Color(0xFFA8A29E);
 
   // ── Status ───────────────────────────────────────────────────────────
-  static const Color success = Color(0xFF7CA368); // sage
+  static const Color success = Color(0xFF7CA368); // sage (heatmap/legacy)
+  // Fresh emerald for "on target" cards — brighter + cleaner than the olive
+  // sage, reads modern against the warm cream surface.
+  static const Color successAccent = Color(0xFF1FA971); // emerald — text + bar
+  static const Color successDark = Color(0xFF14855A); // deeper emerald — figures
+  static const Color successFaint = Color(0xFFEAF7F0); // mint — met-card fill
+  static const Color successBorder = Color(0x331FA971); // emerald @ 20% — hairline
   static const Color danger = Color(0xFFD37B69); // terracotta
 
   // ── Adherence heatmap diverging scale ────────────────────────────────

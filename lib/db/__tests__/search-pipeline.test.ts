@@ -925,3 +925,144 @@ describe('search infrastructure integrity', () => {
     expect(rows.length).toBe(0);
   });
 });
+
+// ─── manual-logging search ranking (fuzzy_match_ingredients_all_sources) ────
+
+describe('fuzzy_match_ingredients_all_sources (manual search ranking)', () => {
+  // Mirrors the manual search route's wrapper: collapse the per-source rows
+  // into one list — score first, FAO before USDA on ties, shorter names first.
+  async function searchByName(
+    query: string,
+    count = 10,
+    threshold = 0.15
+  ): Promise<FuzzyResult[]> {
+    return sql<FuzzyResult[]>`
+      SELECT * FROM fuzzy_match_ingredients_all_sources(
+        ${query}, ${count}, ${threshold}
+      )
+      ORDER BY similarity DESC, source_id ASC, length(name_primary) ASC
+      LIMIT ${count}
+    `;
+  }
+
+  const breastId = 'test-manual-search-breast';
+  const genericId = 'test-manual-search-generic';
+
+  // Fixture pair reproducing the body-part ranking bug: a long
+  // USDA-translated chicken-breast entry (the desired hit, reachable only
+  // through a name_alt variant or a fragment of the long name) vs a short
+  // generic FAO-style chicken entry that whole-string similarity used to
+  // rank first.
+  async function insertFixtures() {
+    await sql`
+      INSERT INTO vietnamese_food_composition
+        (id, name_primary, name_alt, name_en, type_vn, type_en, source_id, state)
+      VALUES
+        (
+          ${breastId},
+          'Gà, gà giò hoặc gà rán, ức, chỉ thịt, sống',
+          ARRAY['ức gà', 'ức gà bỏ da', 'ức gà không xương'],
+          'Chicken, broilers or fryers, breast, meat only, raw',
+          'Thịt', 'Poultry', 2, 'raw'
+        ),
+        (
+          ${genericId},
+          'Thịt gà test',
+          ARRAY['gà test'],
+          'Chicken meat test',
+          'Thịt', 'Poultry', 1, 'raw'
+        )
+    `;
+  }
+
+  async function deleteFixtures() {
+    await sql`
+      DELETE FROM vietnamese_food_composition
+      WHERE id IN (${breastId}, ${genericId})
+    `;
+  }
+
+  it('ranks a body-part entry above generic meat for "ức gà"', async () => {
+    await insertFixtures();
+    try {
+      const results = await searchByName('ức gà');
+      const ids = results.map((r) => r.id);
+
+      // The breast entry must surface at all (it never did under
+      // whole-string ranking) and must beat the short generic entry.
+      expect(ids).toContain(breastId);
+      const breastRank = ids.indexOf(breastId);
+      const genericRank = ids.indexOf(genericId);
+      if (genericRank !== -1) {
+        expect(breastRank).toBeLessThan(genericRank);
+      }
+      // An exact name_alt variant is a full-strength hit.
+      expect(results[breastRank].similarity).toBeGreaterThan(0.9);
+    } finally {
+      await deleteFixtures();
+    }
+  });
+
+  it('matches the same entry through the ASCII branch ("uc ga")', async () => {
+    await insertFixtures();
+    try {
+      const results = await searchByName('uc ga');
+      expect(results.map((r) => r.id)).toContain(breastId);
+    } finally {
+      await deleteFixtures();
+    }
+  });
+
+  it('still resolves exact short names first', async () => {
+    const results = await searchByName('thịt gà ta');
+    expect(results.length).toBeGreaterThan(0);
+    expect(
+      `${results[0].name_primary} ${(results[0].name_alt ?? []).join(' ')}`.toLowerCase()
+    ).toContain('gà ta');
+  });
+});
+
+// ─── *_all_sources single-statement match functions (v2 pipeline) ────────────
+
+describe('all-sources match functions (single statement per arm)', () => {
+  it('fuzzy_match_ingredients_all_sources partitions per source with word-extent ranking', async () => {
+    const rows = await sql<
+      Array<{ id: string; source_id: number; similarity: number }>
+    >`
+      SELECT * FROM fuzzy_match_ingredients_all_sources('thịt gà', 3, 0.15)
+    `;
+    expect(rows.length).toBeGreaterThan(0);
+    // No source may exceed the per-source cap.
+    const bySource = new Map<number, number>();
+    for (const row of rows) {
+      bySource.set(row.source_id, (bySource.get(row.source_id) ?? 0) + 1);
+    }
+    for (const count of bySource.values()) {
+      expect(count).toBeLessThanOrEqual(3);
+    }
+    // Ordered by score desc overall.
+    for (let i = 1; i < rows.length; i++) {
+      expect(rows[i].similarity).toBeLessThanOrEqual(rows[i - 1].similarity);
+    }
+  });
+
+  it('match_ingredients_all_sources returns the same neighbors as the per-source calls', async () => {
+    // Self-match: use a seeded row's own embedding; it must come back as the
+    // top hit for its source, mirroring the match_ingredients_by_source tests.
+    const [seed] = await sql<Array<{ id: string; source_id: number }>>`
+      SELECT id, source_id FROM vietnamese_food_composition
+      WHERE embedding IS NOT NULL LIMIT 1
+    `;
+    const rows = await sql<
+      Array<{ id: string; source_id: number; similarity: number }>
+    >`
+      SELECT a.* FROM match_ingredients_all_sources(
+        (SELECT embedding FROM vietnamese_food_composition WHERE id = ${seed.id}),
+        3, 0.5
+      ) a
+    `;
+    const sameSource = rows.filter((r) => r.source_id === seed.source_id);
+    expect(sameSource[0]?.id).toBe(seed.id);
+    expect(sameSource[0]?.similarity).toBeGreaterThan(0.99);
+  });
+});

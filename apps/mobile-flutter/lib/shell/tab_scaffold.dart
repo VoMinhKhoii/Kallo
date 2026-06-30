@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 
 import '../theme/nham_colors.dart';
@@ -38,11 +39,32 @@ class _TabScaffoldState extends State<TabScaffold>
   );
 
   void _open() {
+    // Tactile cue only when actually opening from rest — not on a repeat tap
+    // while already open, nor on every frame of an edge-swipe.
+    if (_controller.value == 0) HapticFeedback.lightImpact();
     _controller.forward();
   }
 
   void _close() {
     _controller.reverse();
+  }
+
+  /// Edge-swipe driver: while the user drags in from the left edge, advance the
+  /// open animation 1:1 with the finger.
+  void _onEdgeDragUpdate(double delta, double panelWidth) {
+    _controller.value =
+        (_controller.value + delta / panelWidth).clamp(0.0, 1.0);
+  }
+
+  /// Edge-swipe release: fling/threshold decides whether it settles open.
+  void _onEdgeDragEnd(double velocity) {
+    final opening = velocity > 200 || (velocity >= -200 && _controller.value > 0.4);
+    if (opening) {
+      HapticFeedback.lightImpact();
+      _controller.forward();
+    } else {
+      _controller.reverse();
+    }
   }
 
   @override
@@ -53,6 +75,11 @@ class _TabScaffoldState extends State<TabScaffold>
 
   @override
   Widget build(BuildContext context) {
+    final media = MediaQuery.of(context);
+    // Mirror the panel width the drawer itself uses, so an edge-drag maps the
+    // finger to the panel travel 1:1.
+    final panelWidth = (media.size.width * 0.88).clamp(0.0, 320.0).toDouble();
+
     return NavDrawerScope(
       open: _open,
       child: Scaffold(
@@ -60,6 +87,27 @@ class _TabScaffoldState extends State<TabScaffold>
         body: Stack(
           children: [
             widget.navigationShell,
+            // Left-edge swipe-to-open zone. A narrow strip (matching the native
+            // Android drawer affordance) so it never steals horizontal swipes
+            // from page content. Only claims horizontal drags — vertical scroll
+            // in the strip still reaches the list beneath. Sits below the drawer
+            // so once open, the drawer's own scrim/panel gestures take over.
+            Positioned(
+              left: 0,
+              top: 0,
+              bottom: 0,
+              width: 20,
+              child: GestureDetector(
+                behavior: HitTestBehavior.translucent,
+                onHorizontalDragUpdate: (d) =>
+                    _onEdgeDragUpdate(d.primaryDelta ?? 0, panelWidth),
+                onHorizontalDragEnd: (d) =>
+                    _onEdgeDragEnd(d.primaryVelocity ?? 0),
+                // An interrupted swipe (recognizer loses the arena) never fires
+                // dragEnd — settle from rest so the drawer can't stick halfway.
+                onHorizontalDragCancel: () => _onEdgeDragEnd(0),
+              ),
+            ),
             _NavDrawer(controller: _controller, onClose: _close),
           ],
         ),

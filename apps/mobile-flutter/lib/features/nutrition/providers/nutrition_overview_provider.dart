@@ -11,6 +11,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../data/api_client.dart';
 import '../../../data/query.dart';
+import '../../../data/session_provider.dart';
 import '../../../models/nutrition.dart';
 
 /// Raw `getTimezoneOffset()` parity: JS returns minutes POSITIVE west of UTC.
@@ -24,28 +25,34 @@ int nutritionTimezoneOffset() => -DateTime.now().timeZoneOffset.inMinutes;
 /// the new provider instance keeps the previously-resolved overview as its
 /// initial value so the layout doesn't collapse to a skeleton mid-refetch.
 final nutritionOverviewProvider = AsyncNotifierProvider.family<
-    NutritionOverviewNotifier, NutritionOverview, NutritionRangeInput>(
-  NutritionOverviewNotifier.new,
-);
+  NutritionOverviewNotifier,
+  NutritionOverview,
+  NutritionRangeInput
+>(NutritionOverviewNotifier.new);
 
 /// Holds the last successful overview across the family so a range switch can
-/// seed the next instance (the RN `keepPreviousData` behavior). Riverpod
-/// rebuilds a fresh notifier per family key, so we stash the previous value
-/// here at the Provider scope.
-NutritionOverview? _lastOverview;
+/// seed the next instance (the RN `keepPreviousData` behavior). It is keyed by
+/// user + timezone so an account switch can never seed another user's nutrition
+/// pattern into the placeholder state.
+final Map<String, NutritionOverview> _lastOverviewByAccount = {};
+
+String _overviewCacheKey(String? userId) =>
+    '${userId ?? 'signed-out'}:${nutritionTimezoneOffset()}';
 
 class NutritionOverviewNotifier
     extends FamilyAsyncNotifier<NutritionOverview, NutritionRangeInput> {
   @override
   Future<NutritionOverview> build(NutritionRangeInput arg) async {
-    final previous = _lastOverview;
+    final userId = ref.watch(currentSessionProvider)?.user.id;
+    final cacheKey = _overviewCacheKey(userId);
+    final previous = _lastOverviewByAccount[cacheKey];
     if (previous != null) {
       // Seed with the prior overview so consumers keep rendering the editorial
       // stack while the new range loads (placeholderData: keepPreviousData).
       state = AsyncData(previous);
     }
     final overview = await _fetch(arg);
-    _lastOverview = overview;
+    _lastOverviewByAccount[cacheKey] = overview;
     return overview;
   }
 
@@ -60,15 +67,34 @@ class NutritionOverviewNotifier
   }
 
   /// Refetch the current range — mirrors `query.refetch()`. Keeps the existing
-  /// data visible (sets `isFetching` semantics via `AsyncValue.isLoading` on a
-  /// guarded refresh that preserves the previous value).
-  Future<void> refetch() async {
+  /// data visible while loading, and — critically — on FAILURE retains the
+  /// previous overview underneath the error (`copyWithPrevious`) so a flaky
+  /// refetch doesn't blank out the editorial stack the user is reading. The
+  /// screen reads `hasValue` to keep rendering content and surfaces the failure
+  /// as a toast instead.
+  ///
+  /// Returns true on success, false on failure (so the caller can toast).
+  Future<bool> refetch() async {
     final range = arg;
-    state = await AsyncValue.guard(() async {
+    final previous = state;
+    // Show the in-flight (isLoading) state over the current value.
+    state = const AsyncValue<NutritionOverview>.loading().copyWithPrevious(
+      previous,
+    );
+    try {
       final overview = await _fetch(range);
-      _lastOverview = overview;
-      return overview;
-    });
+      final userId = ref.read(currentSessionProvider)?.user.id;
+      _lastOverviewByAccount[_overviewCacheKey(userId)] = overview;
+      state = AsyncData(overview);
+      return true;
+    } catch (error, stack) {
+      // Retain the previous data under the error.
+      state = AsyncError<NutritionOverview>(
+        error,
+        stack,
+      ).copyWithPrevious(previous);
+      return false;
+    }
   }
 }
 

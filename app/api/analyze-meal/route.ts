@@ -14,8 +14,11 @@ import {
 import { logUnmatchedIngredients } from '@/lib/ai/matching';
 import { analyzeMeal } from '@/lib/ai/pipeline';
 import { estimateCheatMeal } from '@/lib/ai/pipeline/cheat-estimate';
-import { readBooleanEnv } from '@/lib/ai/pipeline/feature-flags';
-import { logPipelineEnd, logPipelineStart } from '@/lib/ai/pipeline/logging';
+import { readBooleanEnv } from '@/lib/ai/pipeline/config/feature-flags';
+import {
+  logPipelineEnd,
+  logPipelineStart,
+} from '@/lib/ai/pipeline/telemetry/logging';
 import type { StreamEvent } from '@/lib/ai/streaming';
 import { encodeSSE } from '@/lib/ai/streaming';
 import { getUtcInstantForLocalDate } from '@/lib/date/local-day';
@@ -131,10 +134,14 @@ async function validateRequest(request: NextRequest) {
         userId: user.id,
         message: parsed.data.message,
         locale: parsed.data.locale,
-        loggedAt: getUtcInstantForLocalDate(
-          parsed.data.loggedDate,
-          parsed.data.timezoneOffset
-        ),
+        // A refine inherits the original meal's instant so the corrected meal
+        // keeps its timeline position/slot; a fresh log stamps from the day.
+        loggedAt: parsed.data.inheritLoggedAt
+          ? new Date(parsed.data.inheritLoggedAt)
+          : getUtcInstantForLocalDate(
+              parsed.data.loggedDate,
+              parsed.data.timezoneOffset
+            ),
         mode: parsed.data.mode ?? 'precise',
         cheatType: parsed.data.cheatType,
         clarifyAnswer: parsed.data.clarifyAnswer,

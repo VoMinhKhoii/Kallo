@@ -9,16 +9,19 @@ library;
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../theme/nham_colors.dart';
 import '../../../theme/nham_theme.dart';
+import '../../logging/widgets/count_up.dart';
 import '../data/dashboard_providers.dart';
 import '../data/logging_day.dart';
 import '../logic/dashboard_format.dart';
 import 'calorie_ring.dart';
 import 'dashboard_tokens.dart';
 import 'section_header.dart';
+import 'skeleton.dart';
 
 /// Per-screen dock targets (profile values, with the web DEFAULT_PROFILE
 /// fallbacks applied by the screen).
@@ -41,22 +44,151 @@ class DockTargets {
 const double _valueColumnWidth = 68;
 
 class TodaySection extends ConsumerWidget {
-  const TodaySection({super.key, required this.args, required this.targets});
+  const TodaySection({
+    super.key,
+    required this.args,
+    required this.targets,
+    required this.dateLabel,
+    this.isToday = true,
+    this.isFirstRun = false,
+  });
 
   final DashboardArgs args;
   final DockTargets targets;
 
+  /// A human date line shown at the top of the card ("Today", "Yesterday", or a
+  /// localized "Mon, Jun 9"). The card always says which day it is showing.
+  final String dateLabel;
+
+  /// Whether [args] is today. Today reads off the already-warm dashboard bundle
+  /// (no extra round-trip); other days fetch their own light per-day slice.
+  final bool isToday;
+
+  /// The user has never logged anything, ever — collapse to the first-run card.
+  final bool isFirstRun;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final async = ref.watch(loggingDayProvider(args));
+    if (isFirstRun) return const _FirstRunCard();
+
+    // Today reads the bundle's day slice (warm cache, seam parity with the rest
+    // of the dashboard); any other day fetches its own slice so browsing never
+    // refetches the 90d heatmap + profile + weight bundle.
+    final provider =
+        isToday ? loggingDayProvider(args) : dashboardDayProvider(args);
+    final async = ref.watch(provider);
     return async.when(
-      loading: () => SectionState(message: tr('dashboard.todayLoading')),
+      loading: () => const Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          SkeletonHeader(),
+          TodayCardSkeleton(),
+        ],
+      ),
       error: (_, __) => SectionState(
+        icon: LucideIcons.cloudOff,
         message: tr('dashboard.todayLoadError'),
         actionLabel: tr('dashboard.retry'),
-        onAction: () => ref.invalidate(dashboardBundleProvider(args)),
+        onAction: () => ref.invalidate(provider),
       ),
-      data: (day) => _Dock(day: day, targets: targets),
+      data: (day) => _Dock(day: day, targets: targets, dateLabel: dateLabel),
+    );
+  }
+}
+
+/// First-run collapse: a single Lora question, no ring, no "% on track", plus
+/// three time-of-day-aware suggestion chips that open the meal composer
+/// prefilled. Shown only when the user has never logged a meal (zero today
+/// AND zero history).
+class _FirstRunCard extends StatelessWidget {
+  const _FirstRunCard();
+
+  /// Which suggestion set fits the device clock (morning / midday / evening).
+  static String _chipBucket() {
+    final hour = DateTime.now().hour;
+    if (hour < 11) return 'morning';
+    if (hour < 16) return 'midday';
+    return 'evening';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final bucket = _chipBucket();
+    final suggestions = [
+      for (var i = 1; i <= 3; i++) tr('dashboard.firstRunChips.$bucket$i'),
+    ];
+    return _FadeInDown(
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(
+            vertical: NhamSpacing.sp6, horizontal: NhamSpacing.sp4),
+        decoration: BoxDecoration(
+          color: kCardSurface,
+          borderRadius: BorderRadius.circular(kCardRadius),
+          boxShadow: kCardShadows,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(tr('dashboard.firstRunQuestion'), style: dashHeadline()),
+            const SizedBox(height: NhamSpacing.sp2),
+            Text(
+              tr('dashboard.firstRunHint'),
+              style: dashBody(color: kInkSecondary),
+            ),
+            const SizedBox(height: NhamSpacing.sp4),
+            Wrap(
+              spacing: 6,
+              runSpacing: 6,
+              children: [
+                for (final s in suggestions)
+                  _FirstRunChip(
+                    label: s,
+                    // Same prefill handoff the meal FAB uses.
+                    onTap: () => context
+                        .go('/logging?meal=${Uri.encodeComponent(s)}'),
+                  ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// A suggestion pill matching the logging empty-state chips: border hairline,
+/// pill radius, white fill; pressed → accent-tinged border.
+class _FirstRunChip extends StatefulWidget {
+  const _FirstRunChip({required this.label, required this.onTap});
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  State<_FirstRunChip> createState() => _FirstRunChipState();
+}
+
+class _FirstRunChipState extends State<_FirstRunChip> {
+  bool _pressed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTapDown: (_) => setState(() => _pressed = true),
+      onTapUp: (_) => setState(() => _pressed = false),
+      onTapCancel: () => setState(() => _pressed = false),
+      onTap: widget.onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: _pressed ? const Color(0x26E8D5B5) : NhamColors.elev,
+          borderRadius: BorderRadius.circular(NhamRadii.pill),
+          border: Border.all(
+            color: _pressed ? NhamColors.accent50 : NhamColors.borderSoft,
+          ),
+        ),
+        child: Text(widget.label, style: dashMeta(color: kInk)),
+      ),
     );
   }
 }
@@ -70,13 +202,19 @@ class _MacroBarData {
 }
 
 class _Dock extends StatelessWidget {
-  const _Dock({required this.day, required this.targets});
+  const _Dock({
+    required this.day,
+    required this.targets,
+    required this.dateLabel,
+  });
 
   final LoggingDayData day;
   final DockTargets targets;
+  final String dateLabel;
 
   @override
   Widget build(BuildContext context) {
+    final locale = context.locale.toString();
     final meals = [...day.persistedMeals]
       ..sort((a, b) => a.loggedAt.compareTo(b.loggedAt));
 
@@ -91,9 +229,9 @@ class _Dock extends StatelessWidget {
       totalFat += m.nutrition.fatG ?? 0;
     }
     final calories = round0(totalCalories);
-    final remaining = (targets.calorieTarget - calories)
-        .clamp(0, double.infinity)
-        .round();
+    // Honest signed remaining — negative when over target (no censoring clamp).
+    final remaining = (targets.calorieTarget - calories).round();
+    final overTarget = remaining < 0;
 
     final macroBars = <_MacroBarData>[
       _MacroBarData(tr('dashboard.protein'), round0(totalProtein),
@@ -105,91 +243,117 @@ class _Dock extends StatelessWidget {
     ];
 
     return _FadeInDown(
-      child: Container(
-        padding: const EdgeInsets.all(NhamSpacing.sp4),
-        decoration: BoxDecoration(
-          color: kCardSurface, // solid white
-          borderRadius: BorderRadius.circular(kCardRadius),
-          boxShadow: const [kCardShadow], // shadow only, no border
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // (a) Hero: big calories number on the left, ring on the right.
-            Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Section header OUTSIDE the card — label left, day right. Same
+          // eyebrow treatment + flush alignment as the Progress / Consistency
+          // headers so all three sections share one rhythm.
+          Padding(
+            padding: const EdgeInsets.only(bottom: NhamSpacing.sp2),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        tr('dashboard.caloriesRemaining').toUpperCase(),
-                        style: dashEyebrow(),
-                      ),
-                      const SizedBox(height: NhamSpacing.sp1),
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.baseline,
-                        textBaseline: TextBaseline.alphabetic,
+                Flexible(
+                  child: Text(
+                    (overTarget
+                            ? tr('dashboard.caloriesOverTarget')
+                            : tr('dashboard.caloriesRemaining'))
+                        .toUpperCase(),
+                    style: dashEyebrow(color: kInk),
+                  ),
+                ),
+                Text(dateLabel.toUpperCase(),
+                    style: dashEyebrow(weight: FontWeight.w500)),
+              ],
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.all(NhamSpacing.sp4),
+            decoration: BoxDecoration(
+              color: kCardSurface, // solid white
+              borderRadius: BorderRadius.circular(kCardRadius),
+              boxShadow: kCardShadows, // shadow only, no border
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // (a) Hero: big calories number on the left, ring on the right.
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Flexible(
-                            child: Text(_fmt(remaining),
-                                style: dashHero(), maxLines: 1),
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.baseline,
+                            textBaseline: TextBaseline.alphabetic,
+                            children: [
+                              Flexible(
+                                // Counts the remaining figure up on day-swap
+                                // (~300ms) so paging settles in place.
+                                child: CountUpText(
+                                  value: remaining.abs().toDouble(),
+                                  enabled: !MediaQuery.disableAnimationsOf(
+                                      context),
+                                  duration: const Duration(milliseconds: 300),
+                                  style: dashHero(),
+                                  format: (v) => _fmt(v.round(), locale),
+                                ),
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                overTarget
+                                    ? tr('dashboard.over')
+                                    : '/ ${_fmt(targets.calorieTarget.round(), locale)}',
+                                style: dashBody(color: kInkSecondary),
+                              ),
+                            ],
                           ),
-                          const SizedBox(width: 6),
+                          const SizedBox(height: NhamSpacing.sp1),
                           Text(
-                            '/ ${_fmt(targets.calorieTarget.round())}',
-                            style: dashBody(color: kInkSecondary),
+                            '${_fmt(calories, locale)} ${tr('dashboard.caloriesLogged')}',
+                            style: dashMeta(color: kInkDisabled),
                           ),
                         ],
                       ),
-                      const SizedBox(height: NhamSpacing.sp1),
-                      Text(
-                        '${_fmt(calories)} ${tr('dashboard.caloriesLogged')}',
-                        style: dashMeta(color: kInkDisabled),
-                      ),
-                    ],
-                  ),
+                    ),
+                    const SizedBox(width: NhamSpacing.sp4),
+                    CalorieRing(
+                      current: calories.toDouble(),
+                      target: targets.calorieTarget,
+                      size: 84,
+                      strokeWidth: 6,
+                      center:
+                          const Icon(LucideIcons.flame, size: 22, color: kInk),
+                    ),
+                  ],
                 ),
-                const SizedBox(width: NhamSpacing.sp4),
-                CalorieRing(
-                  current: calories.toDouble(),
-                  target: targets.calorieTarget,
-                  size: 84,
-                  strokeWidth: 6,
-                  center: const Icon(LucideIcons.flame, size: 22, color: kInk),
-                ),
+
+                const SizedBox(height: NhamSpacing.sp5),
+
+                // (b) Macro bars — full width.
+                for (var i = 0; i < macroBars.length; i++) ...[
+                  if (i > 0) const SizedBox(height: NhamSpacing.sp3),
+                  _MacroRow(bar: macroBars[i], idx: i),
+                ],
+
+                const _Separator(),
+
+                // (c) Meal list — plain, on the card surface (no nested fill).
+                meals.isEmpty ? _EmptyMeals() : _MealList(meals: meals),
               ],
             ),
-
-            const SizedBox(height: NhamSpacing.sp5),
-
-            // (b) Macro bars — full width.
-            for (var i = 0; i < macroBars.length; i++) ...[
-              if (i > 0) const SizedBox(height: NhamSpacing.sp3),
-              _MacroRow(bar: macroBars[i], idx: i),
-            ],
-
-            const _Separator(),
-
-            // (c) Meal list — plain, on the card surface (no nested fill).
-            meals.isEmpty ? _EmptyMeals() : _MealList(meals: meals),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 
-  static String _fmt(int n) {
-    // toLocaleString() → group thousands with commas (en default).
-    final s = n.abs().toString();
-    final buf = StringBuffer();
-    for (var i = 0; i < s.length; i++) {
-      if (i > 0 && (s.length - i) % 3 == 0) buf.write(',');
-      buf.write(s[i]);
-    }
-    return n < 0 ? '-$buf' : buf.toString();
-  }
+  // Locale-aware thousands grouping (en → "2,000", vi → "2.000").
+  static String _fmt(int n, String locale) => formatCount(n, locale);
 }
 
 /// A hairline divider between the card's zones (hero · macros · meals).
@@ -300,6 +464,8 @@ class _MacroBarState extends State<_MacroBar>
 
   @override
   Widget build(BuildContext context) {
+    // Reduced motion: render the fill at its resting width, no sweep.
+    final reduceMotion = MediaQuery.disableAnimationsOf(context);
     return ClipRRect(
       borderRadius: BorderRadius.circular(NhamRadii.pill),
       child: Container(
@@ -311,7 +477,8 @@ class _MacroBarState extends State<_MacroBar>
             builder: (context, _) => Align(
               alignment: Alignment.centerLeft,
               child: Container(
-                width: constraints.maxWidth * (_fill.value / 100),
+                width: constraints.maxWidth *
+                    ((reduceMotion ? widget.pct : _fill.value) / 100),
                 height: 8,
                 decoration: BoxDecoration(
                   color: widget.color,
@@ -425,7 +592,7 @@ class _MealRow extends StatelessWidget {
           SizedBox(
             width: _valueColumnWidth,
             child: Text(
-              '${round0(meal.nutrition.caloriesKcal)}',
+              '${round0(meal.nutrition.caloriesKcal)} kcal',
               textAlign: TextAlign.right,
               style: dashMeta(color: kInkSecondary, tabular: true),
             ),

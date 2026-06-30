@@ -1,20 +1,30 @@
 'use client';
 
 import { useLocale, useTranslations } from 'next-intl';
-import type { NutrientCardData } from '@/lib/nutrition/types';
-import { formatLocalizedNumber, shouldShowExceed } from '../primitives/helpers';
+import type {
+  NutrientCardData,
+  NutritionDaySeries,
+} from '@/lib/nutrition/types';
+import { DayStrip } from '../primitives/day-strip';
+import {
+  findNutrientSeries,
+  formatLocalizedNumber,
+  shouldShowExceed,
+} from '../primitives/helpers';
 import { TargetProgressBar } from '../primitives/target-progress-bar';
 import { FoodChipRow } from './food-chip-row';
 
 interface NutrientDetailProps {
   card: NutrientCardData;
+  daySeries?: NutritionDaySeries;
 }
 
-export function NutrientDetail({ card }: NutrientDetailProps) {
+export function NutrientDetail({ card, daySeries }: NutrientDetailProps) {
   const t = useTranslations('nutrition');
   const tRoot = useTranslations();
   const locale = useLocale();
   const label = tRoot(card.labelKey);
+  const series = findNutrientSeries(daySeries, card.nutrient);
 
   const hasTarget = card.percentOfTarget !== null;
   const percent = card.percentOfTarget ?? 0;
@@ -30,7 +40,6 @@ export function NutrientDetail({ card }: NutrientDetailProps) {
         });
 
   const showChips =
-    card.supportsCandidates &&
     card.confidence >= 40 &&
     card.percentOfTarget !== null &&
     card.percentOfTarget < 90;
@@ -69,6 +78,17 @@ export function NutrientDetail({ card }: NutrientDetailProps) {
       ) : (
         <p className="text-nham-text-muted text-sm">{t('card.noData')}</p>
       )}
+
+      {series && daySeries ? (
+        <div className="space-y-1.5">
+          <p className="text-[10px] text-nham-text-muted uppercase tracking-[0.16em]">
+            {daySeries.unit === 'day'
+              ? t('rhythm.timeAxis.byDay')
+              : t('rhythm.timeAxis.byWeek')}
+          </p>
+          <DayStrip series={series} unit={daySeries.unit} label={label} />
+        </div>
+      ) : null}
 
       {showChips ? (
         <FoodChipRow nutrient={card.nutrient} variant="spotlight" limit={5} />

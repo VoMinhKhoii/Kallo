@@ -26,6 +26,13 @@ export const MORE_NUTRIENTS = [
   'vitaminKMcg',
 ] as const satisfies readonly NutritionNutrientKey[];
 
+// The nutrients shown as cards (default + extended) — every one can surface
+// DB-derived food suggestions, since the composition table has a column for each.
+export const CANDIDATE_NUTRIENTS = [
+  ...DEFAULT_NUTRIENTS,
+  ...MORE_NUTRIENTS,
+] as const satisfies readonly NutritionNutrientKey[];
+
 export const HIDDEN_NUTRIENTS = [
   'vitaminHMcg',
 ] as const satisfies readonly NutritionNutrientKey[];
@@ -34,28 +41,7 @@ export const EDUCATION_NUTRIENTS = [
   'vitaminDMcg',
 ] as const satisfies readonly NutritionNutrientKey[];
 
-export const SUPPORTED_CANDIDATE_NUTRIENTS = [
-  'calciumMg',
-  'ironMg',
-  'vitaminCMg',
-  'phosphorusMg',
-  'vitaminB1Mg',
-  'vitaminB2Mg',
-  'vitaminPpMg',
-  'vitaminAMcg',
-] as const satisfies readonly DefaultNutrientKey[];
-
 export type DefaultNutrientKey = (typeof DEFAULT_NUTRIENTS)[number];
-export type SupportedCandidateNutrient =
-  (typeof SUPPORTED_CANDIDATE_NUTRIENTS)[number];
-
-/**
- * Pre-built lookup set for `SUPPORTED_CANDIDATE_NUTRIENTS`. Use this instead of
- * constructing `new Set(SUPPORTED_CANDIDATE_NUTRIENTS)` in callsites.
- */
-export const SUPPORTED_CANDIDATE_NUTRIENT_SET: ReadonlySet<string> = new Set(
-  SUPPORTED_CANDIDATE_NUTRIENTS
-);
 
 export const NUTRIENT_META: Record<NutritionNutrientKey, NutrientMeta> = {
   fiberG: {

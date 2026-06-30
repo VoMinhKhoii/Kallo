@@ -13,6 +13,7 @@ interface VerdictHeroProps {
 }
 
 const PERIOD_KEYS: Record<NutritionRange, string> = {
+  '1d': 'verdict.period1d',
   '7d': 'verdict.period7d',
   '30d': 'verdict.period30d',
   '90d': 'verdict.period90d',
@@ -38,17 +39,6 @@ function joinNames(names: string[], locale: string): string {
   } catch {
     return names.join(', ');
   }
-}
-
-function getAverageConfidence(overview: NutritionOverview): number | null {
-  const items = [
-    ...overview.summary.mostConsistent,
-    ...overview.summary.needsAttention,
-  ];
-  if (items.length === 0) return null;
-  return (
-    items.reduce((total, item) => total + item.confidence, 0) / items.length
-  );
 }
 
 export function VerdictHero({ overview }: VerdictHeroProps) {
@@ -82,18 +72,9 @@ export function VerdictHero({ overview }: VerdictHeroProps) {
     } else {
       headline = t('verdict.quiet');
     }
-    const avgConfidence = getAverageConfidence(overview);
-    muted =
-      avgConfidence === null
-        ? t('verdict.trustLineNoConfidence', {
-            days: dayFormatter.format(overview.completeDays),
-          })
-        : t('verdict.trustLine', {
-            days: dayFormatter.format(overview.completeDays),
-            confidence: new Intl.NumberFormat(locale, {
-              maximumFractionDigits: 0,
-            }).format(avgConfidence),
-          });
+    muted = t('verdict.trustLineNoConfidence', {
+      days: dayFormatter.format(overview.completeDays),
+    });
     if (overview.partialDays > 0) {
       muted += ` ${t('verdict.partialNote', { count: overview.partialDays })}`;
     }
@@ -106,14 +87,7 @@ export function VerdictHero({ overview }: VerdictHeroProps) {
       transition={{ duration: 0.5, delay: 0.05 }}
       className="flex flex-wrap items-baseline gap-x-2.5 gap-y-1 text-sm leading-6"
     >
-      <span
-        aria-hidden="true"
-        className="inline-block h-1.5 w-1.5 shrink-0 translate-y-[-2px] rounded-full bg-nham-accent"
-      />
-      <span
-        className="text-nham-text"
-        style={{ fontFamily: 'Lora, serif', fontWeight: 500 }}
-      >
+      <span className="font-serif text-nham-text" style={{ fontWeight: 400 }}>
         {headline}
       </span>
       <span className="text-nham-text-muted">{muted}</span>

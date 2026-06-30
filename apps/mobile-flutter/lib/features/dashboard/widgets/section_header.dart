@@ -119,11 +119,15 @@ class SectionState extends StatefulWidget {
     required this.message,
     this.actionLabel,
     this.onAction,
+    this.icon,
   });
 
   final String message;
   final String? actionLabel;
   final VoidCallback? onAction;
+
+  /// Optional glyph shown above the message (e.g. a cloud-off for errors).
+  final IconData? icon;
 
   @override
   State<SectionState> createState() => _SectionStateState();
@@ -141,12 +145,25 @@ class _SectionStateState extends State<SectionState> {
       decoration: BoxDecoration(
         color: kCardSurface,
         borderRadius: BorderRadius.circular(kCardRadius),
-        boxShadow: const [kCardShadow], // shadow only, no border
+        boxShadow: kCardShadows, // shadow only, no border
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
+          if (widget.icon != null) ...[
+            Container(
+              width: 48,
+              height: 48,
+              alignment: Alignment.center,
+              decoration: const BoxDecoration(
+                color: kTrack,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(widget.icon, size: 22, color: NhamColors.stone),
+            ),
+            const SizedBox(height: NhamSpacing.sp3),
+          ],
           Text(
             widget.message,
             textAlign: TextAlign.center,
@@ -172,7 +189,9 @@ class _SectionStateState extends State<SectionState> {
                 ),
                 child: Text(
                   widget.actionLabel!,
-                  style: dashEyebrow(color: Colors.white, weight: FontWeight.w600),
+                  // Sentence-case body label — unified with the weight-card
+                  // submit button (not an 11px caps eyebrow).
+                  style: dashBody(color: Colors.white, weight: FontWeight.w600),
                 ),
               ),
             ),

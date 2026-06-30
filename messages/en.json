@@ -1,12 +1,12 @@
 {
   "common": {
     "back": "Back",
-    "next": "Next Step",
+    "next": "Next step",
     "skip": "Skip",
     "finish": "Finish",
     "save": "Save",
     "cancel": "Cancel",
-    "loading": "Loading...",
+    "loading": "Loading…",
     "error": "Something went wrong",
     "retry": "Try again",
     "search": "Search",
@@ -22,7 +22,7 @@
     "logging": "Logging",
     "dashboard": "Dashboard",
     "settings": "Settings",
-    "signOut": "Sign Out"
+    "signOut": "Sign out"
   },
   "metadata": {
     "root": {
@@ -93,7 +93,7 @@
   "nutrition": {
     "eyebrow": "Pattern analysis",
     "title": "Nutrition",
-    "subtitle": "Review long-term macro and micronutrient patterns, with confidence labels when the food data is incomplete.",
+    "subtitle": "Review long-term macro and micronutrient patterns built from your logged meals.",
     "loading": "Loading nutrition overview…",
     "range": {
       "label": "Nutrition range",
@@ -107,12 +107,9 @@
       "needsAttention": "Needs attention",
       "limitedData": "Limited data",
       "macroConsistency": "Macro consistency",
-      "confidentOnly": "Only confident gaps are flagged",
       "coverageHint": "Nutrients with thin coverage",
-      "averageConfidence": "Avg confidence: {value}",
       "weakest": "Weakest",
       "none": "None yet",
-      "trustLine": "{days} logged days · {confidence} avg confidence · {range} view",
       "verdict": {
         "label": "Pattern verdict",
         "attention": "{nutrients} need attention",
@@ -153,13 +150,6 @@
       "averageVsTarget": "{average} avg · {target} target",
       "expand": "View trend",
       "collapse": "Hide trend"
-    },
-    "confidence": {
-      "normal": "Good confidence",
-      "limitedData": "Limited data",
-      "warningPoints": "Points only",
-      "insufficientData": "Insufficient data",
-      "coverage": "Data confidence"
     },
     "targetSources": {
       "vietnamRda": "Vietnam RDA",
@@ -451,7 +441,7 @@
     "empty": {
       "title": "No meals in this range",
       "description": "Log meals for a few days to see macro and micronutrient patterns.",
-      "logMeal": "Log Meal"
+      "logMeal": "Log meal"
     },
     "trends": {
       "tooFewDays": "Keep logging meals to build reliable trend lines. Averages are still shown for the days available."
@@ -467,9 +457,9 @@
       "quiet": "A quiet stretch. Keep logging to sharpen the pattern.",
       "gathering": "Gathering your pattern.",
       "gatheringSub": "{days} complete days so far — keep going and the picture sharpens.",
-      "trustLine": "{days} complete days · {confidence}% avg confidence",
       "trustLineNoConfidence": "{days} complete days",
       "partialNote": "· {count, plural, one {# partial day set aside} other {# partial days set aside}}",
+      "period1d": "today",
       "period7d": "the last 7 days",
       "period30d": "the last 30 days",
       "period90d": "the last 90 days"
@@ -488,7 +478,16 @@
         "noTarget": "no target"
       },
       "rowLabel": "{macro}: {average} {unit} per logged day, {label}",
-      "barAria": "{macro} progress toward target"
+      "barAria": "{macro} progress toward target",
+      "timeAxis": {
+        "byDay": "Day by day",
+        "byWeek": "Week by week",
+        "rangeLabel": "{low}–{high} {unit}",
+        "stripAria": "{macro} per {bucket}: low {low}, high {high} {unit}",
+        "bucketDay": "day",
+        "bucketWeek": "week",
+        "gap": "no complete log"
+      }
     },
     "focus": {
       "eyebrow": "Where to focus",
@@ -500,7 +499,6 @@
     },
     "steady": {
       "eyebrow": "What's holding steady",
-      "hint": "Tap a row to see its trend, foods, and any caveats.",
       "percent": "{value}%",
       "limited": "limited data",
       "noTarget": "no target",
@@ -633,11 +631,12 @@
       "title": "Welcome back",
       "email": "Email",
       "password": "Password",
-      "submit": "Sign In",
+      "submit": "Sign in",
       "noAccount": "Don't have an account?",
       "signUpLink": "Sign up",
       "forgotPassword": "Forgot password?",
       "error": "Invalid email or password",
+      "errorUnconfirmed": "This email isn't confirmed yet. Check your inbox for the link.",
       "success": "Signed in successfully",
       "emailPlaceholder": "you@example.com",
       "passwordPlaceholder": "Enter your password",
@@ -649,7 +648,7 @@
       "email": "Email",
       "password": "Password",
       "confirmPassword": "Confirm password",
-      "submit": "Create Account",
+      "submit": "Create account",
       "hasAccount": "Already have an account?",
       "signInLink": "Sign in",
       "success": "Check your email to confirm your account",
@@ -677,6 +676,39 @@
       "submit": "Verify",
       "resend": "Resend code",
       "error": "Invalid code"
+    },
+    "forgot": {
+      "title": "Reset your password",
+      "subtitle": "We'll email you a link to set a new one.",
+      "description": "Enter the email you signed up with and we'll send a reset link.",
+      "email": "Email",
+      "emailPlaceholder": "you@example.com",
+      "emailError": "Enter a valid email address",
+      "submit": "Send reset link",
+      "back": "Back to sign in"
+    },
+    "checkEmail": {
+      "title": "Check your email",
+      "subtitle": "Open the link to continue.",
+      "descriptionConfirm": "We sent a confirmation link to",
+      "descriptionReset": "We sent a password reset link to",
+      "resend": "Resend the link",
+      "resendIn": "Resend in {seconds}s",
+      "back": "Back to sign in"
+    },
+    "reset": {
+      "title": "Set a new password",
+      "subtitle": "Choose a new password for your account.",
+      "expiredSubtitle": "This link is no longer valid. Request a fresh one to continue.",
+      "password": "New password",
+      "passwordPlaceholder": "Create a password",
+      "passwordError": "Password must be at least 6 characters",
+      "confirm": "Confirm password",
+      "confirmPlaceholder": "Re-enter your password",
+      "mismatch": "Passwords don't match",
+      "submit": "Save new password",
+      "error": "Could not update your password. Please try again.",
+      "backHome": "Back to home"
     }
   },
   "landing": {
@@ -694,20 +726,28 @@
       "badge": "Built for Vietnamese meals",
       "title": "Track Vietnamese meals",
       "titleHighlight": "without the guesswork",
-      "subtitle": "Snap a photo or describe your meal in Vietnamese. Our AI knows phở, bánh mì, and 500+ Vietnamese dishes — and calculates real nutrition from lab-verified data.",
-      "cta": "Get Started",
-      "ctaSecondary": "See How It Works",
-      "socialProof": "Loved by early Vietnamese beta users",
+      "subtitle": "Describe your meal the way you'd tell a friend — in Vietnamese, English, or both. Nhẩm knows phở, bánh mì, and 500+ Vietnamese dishes, and how you cook them, then estimates the nutrition from Vietnamese food-composition data.",
+      "cta": "Get started",
+      "ctaSecondary": "See how it works",
+      "beta": "In beta · built in Vietnam",
       "demo": {
         "today": "Today",
         "date": "Meal log",
         "justNow": "Just now",
         "analysis": "AI nutrition analysis",
-        "highConfidence": "High confidence",
         "totalCalories": "Total calories",
-        "inputPlaceholder": "Describe your meal...",
+        "inputPlaceholder": "Describe your meal…",
         "smartContext": "Smart context",
-        "smartContextText": "Uses your region, cooking habits, and meal text to tighten estimates."
+        "smartContextText": "Uses your region, cooking habits, and meal text to tighten estimates.",
+        "send": "Analyze meal",
+        "save": "Save this meal",
+        "phaseMatching": "Matching ingredients…",
+        "phaseEstimating": "Estimating nutrition…",
+        "chips": {
+          "phoBo": "1 tô phở bò tái + quẩy",
+          "comTam": "Cơm tấm sườn bì chả",
+          "bunCha": "Bún chả Hà Nội"
+        }
       }
     },
     "problem": {
@@ -722,15 +762,14 @@
       "card3Title": "No cooking context",
       "card3Text": "A stir-fry with minimal oil vs. deep-fried — same ingredient, very different calories.",
       "visual": {
-        "searchPlaceholder": "Search for your dish",
-        "searchResult1": "Braised squid",
-        "searchResult2": "Lean pork",
-        "noMatch": "No exact match",
-        "detected": "Detected dish",
-        "braisedPork": "Braised pork bowl",
-        "hiddenCalories": "Hidden calories from oil & extras",
-        "entryFailed": "Manual logging failed",
-        "entryFailedText": "Too much effort for one meal."
+        "appLabel": "A typical Western tracker",
+        "query": "mực kho",
+        "result1": "Squid, raw",
+        "result1Note": "no braising, no sauce",
+        "result2": "Calamari, fried",
+        "result2Note": "wrong dish entirely",
+        "noMatch": "No exact match for “mực kho”",
+        "caption": "Two near-misses and a shrug — for a dish eaten in millions of homes."
       },
       "quote": "When the food database doesn't understand your cuisine, every calorie target becomes a guess.",
       "quoteLabel": "What users keep running into"
@@ -749,9 +788,9 @@
       "step3Text": "Region, cooking habits, and nutrition goals help the AI understand hidden calories and likely portion adjustments.",
       "step3TextMobile": "Region, cooking habits, and goals help the AI tighten the estimate.",
       "step4Label": "Step 4",
-      "step4Title": "You get a useful, bounded result",
-      "step4Text": "Instead of fake precision, Nhẩm gives a realistic calorie and macro range you can actually use.",
-      "step4TextMobile": "Get a realistic calorie and macro range instead of fake precision.",
+      "step4Title": "You get one number you can trust",
+      "step4Text": "Nhẩm gives you one calorie and macro number you can trust, built from real Vietnamese food data and how you actually cook.",
+      "step4TextMobile": "One number you can trust, built from real Vietnamese food data.",
       "cta": "Start tracking now",
       "whyLabel": "Why Nhẩm works better",
       "whyTitle": "Built around how Vietnamese meals are actually eaten",
@@ -759,8 +798,8 @@
       "feature1Text": "Matches meals against Vietnamese food composition data instead of forcing Western substitutes.",
       "feature2Title": "Context-aware estimation",
       "feature2Text": "Understands modifiers like less scallion oil, extra broth, or home-style braising habits.",
-      "feature3Title": "Useful uncertainty, not fake certainty",
-      "feature3Text": "Returns bounded estimates so you can make better decisions without pretending the data is perfect.",
+      "feature3Title": "Numbers you can trust",
+      "feature3Text": "Every estimate is grounded in Vietnamese food-composition data, so the numbers hold up when you make decisions.",
       "profile": {
         "title": "Personalization profile",
         "active": "Active",
@@ -784,24 +823,21 @@
         "modificationValue": "Less scallion oil",
         "goalStrategy": "Goal strategy",
         "goalCutting": "Cutting",
-        "goalUpperBound": "Use upper bound",
+        "goalUpperBound": "Count conservatively",
         "total": "Estimated total",
-        "range": "Range: ~760–845 kcal",
-        "upperBoundNote": "Upper bound shown for cutting"
+        "upperBoundNote": "Counted conservatively for cutting"
       }
     },
     "cta": {
       "title": "Ready to track smarter?",
       "subtitle": "Join the beta and start tracking Vietnamese meals with real accuracy.",
-      "button": "Get Started Free",
+      "button": "Get started free",
       "buttonSecondary": "See a sample analysis",
       "feature1": "Vietnamese-first database",
       "feature2": "AI understands cooking context",
-      "feature3": "Bounded nutrition estimates",
+      "feature3": "Nutrition numbers you can trust",
       "socialProof": "Trusted by early testers who were tired of guessing",
-      "appStore": "App Store rating",
-      "users": "beta users",
-      "mealsTracked": "meals tracked"
+      "trust": "Vietnamese food-composition data · understands how you cook · tiếng Việt + English"
     },
     "footer": {
       "tagline": "Vietnamese meal tracking, powered by AI.",
@@ -949,7 +985,7 @@
     "barcodeSelectCamera": "Select camera",
     "submit": "Analyze",
     "stopAnalyzing": "Stop analyzing",
-    "analyzing": "Analyzing your meal...",
+    "analyzing": "Analyzing your meal…",
     "breakfast": "Breakfast",
     "brunch": "Brunch",
     "lunch": "Lunch",
@@ -978,6 +1014,11 @@
     },
     "feedArea": {
       "savedMeal": "Meal saved",
+      "saveError": "Could not save the meal. Please try again.",
+      "mealUpdatedToast": "Meal updated",
+      "mealRemoved": "Meal removed",
+      "undo": "Undo",
+      "deleteError": "Could not remove the meal. Please try again.",
       "repeatError": "Could not reopen that occasion.",
       "legacyMacroWarning": "Daily macro summary unavailable because some legacy meals have unknown macros.",
       "loadErrorTitle": "Could not load this day",
@@ -995,12 +1036,12 @@
       }
     },
     "streaming": {
-      "connecting": "Connecting...",
-      "decomposing": "Breaking down your meal...",
-      "matching": "Matching ingredients...",
-      "estimating": "Estimating nutrition...",
-      "assembling": "Putting it all together...",
-      "analyzing": "Analyzing..."
+      "connecting": "Connecting…",
+      "decomposing": "Breaking down your meal…",
+      "matching": "Matching ingredients…",
+      "estimating": "Estimating nutrition…",
+      "assembling": "Putting it all together…",
+      "analyzing": "Analyzing…"
     },
     "mealEntry": {
       "edit": "Edit",
@@ -1012,11 +1053,47 @@
     },
     "persistedMealCard": {
       "toggleDetails": "Toggle meal details",
-      "total": "Total"
+      "total": "Total",
+      "remove": "Remove",
+      "logAgain": "Log again",
+      "editAmounts": "Edit amounts",
+      "cancelEdit": "Cancel",
+      "saveEdit": "Save changes",
+      "savingEdit": "Saving…",
+      "removeRow": "Remove {name}",
+      "mealUpdated": "Meal updated",
+      "updateError": "Couldn't update the meal — try again.",
+      "refineAction": "Fix with words",
+      "refineLabel": "Fix it in words",
+      "refinePlaceholder": "e.g. the squid was fried, not braised",
+      "refineSubmit": "Re-analyze",
+      "refineHint": "We'll re-read the whole meal with your correction and replace it.",
+      "refineTightHint": "The original text is long — we'll trim it a little to fit your correction."
+    },
+    "manualLogging": {
+      "searchPlaceholder": "Search foods...",
+      "gramsPlaceholder": "100",
+      "gramsUnit": "g",
+      "gramsLabel": "Grams",
+      "addItem": "Add food",
+      "removeItem": "Remove food",
+      "noResults": "No foods found",
+      "searching": "Searching...",
+      "recentFoods": "Recent foods",
+      "stateRaw": "raw",
+      "stateCooked": "cooked",
+      "kcalPer100g": "{kcal} kcal/100g",
+      "rowKcal": "{kcal} kcal",
+      "total": "Total",
+      "totalKcal": "{kcal} kcal",
+      "totalMacros": "P {protein} · C {carbs} · F {fat}",
+      "relatedMatch": "related"
     },
     "mode": {
       "normal": "Normal",
       "normalDescription": "Break a meal into ingredients for a precise estimate",
+      "manual": "Manual",
+      "manualDescription": "Search foods and enter exact grams",
       "cheat": "Cheat meal",
       "cheatDescription": "Hard-to-count occasions — set a few sliders instead"
     },
@@ -1030,7 +1107,7 @@
       "medium": "Medium",
       "heavy": "Heavy"
     },
-    "cheatPlaceholder": "Korean BBQ buffet, went all out...",
+    "cheatPlaceholder": "Korean BBQ buffet, went all out…",
     "cheatSliders": {
       "badge": "Cheat meal",
       "confirm": "Save meal",
@@ -1043,6 +1120,7 @@
     },
     "cheatMealCard": {
       "badge": "Cheat meal",
+      "remove": "Remove",
       "toggleDetails": "Toggle meal details",
       "total": "Total",
       "youSet": "YOU SET",
@@ -1088,7 +1166,18 @@
       "toggleDetails": "Toggle meal details",
       "total": "Total",
       "loading": "Loading your circle",
-      "na": "N/A"
+      "na": "N/A",
+      "you": "You",
+      "presenceLabel": "Who's in your circle",
+      "sharedTodayHint": "Shared something today",
+      "quietHint": "Quiet today",
+      "memberActions": "Actions for {name}",
+      "remove": "Remove",
+      "block": "Block",
+      "removed": "Removed from your circle",
+      "blocked": "Blocked",
+      "undo": "Undo",
+      "actionError": "That didn't work — try again."
     },
     "shareControl": {
       "share": "Share to circle",
@@ -1117,7 +1206,14 @@
       "endTaken": "That link is taken",
       "endInvalid": "That link isn't valid",
       "endReserved": "That link is reserved",
-      "endError": "Couldn't update the link"
+      "endError": "Couldn't update the link",
+      "appearTitle": "How you appear",
+      "appearHint": "The name your circle sees on shared meals.",
+      "appearPlaceholder": "Your name",
+      "appearEdit": "Edit display name",
+      "appearSaved": "Display name updated",
+      "appearError": "Couldn't update your name",
+      "appearFallback": "Set a display name"
     },
     "circle": {
       "title": "Your circle ({count})",
@@ -1141,7 +1237,10 @@
       "selfBody": "Share it with a friend so they can connect with you.",
       "alreadyTitle": "You're connected with {name}",
       "alreadyBody": "You're already in each other's circles.",
+      "connectedTitle": "You're connected",
+      "connectedBody": "You're in each other's circles now. Head over whenever you like.",
       "goToCircle": "Go to your circle",
+      "you": "You",
       "signedOutTitle": "{name} invited you to their circle",
       "signedOutBody": "Sign in or create an account to connect.",
       "signIn": "Sign in to connect"
@@ -1156,13 +1255,45 @@
     "cooking": "Cooking Habits",
     "regional": "Regional",
     "save": "Save changes",
+    "saveWithTarget": "Save — new target {target} kcal",
     "saved": "Changes saved",
+    "targetRitual": {
+      "savedLabel": "Saved target",
+      "newLabel": "New target",
+      "unit": "kcal",
+      "aggressivePace": "{pace} kg/wk — an aggressive pace"
+    },
     "language": "Language",
     "languageHint": "Change the app language",
-    "sidebar": {
-      "title": "Settings",
-      "profile": "Profile",
-      "navigationLabel": "Settings navigation"
+    "description": "Your goal, your cooking, and your account — all in one place.",
+    "anchorNav": {
+      "label": "On this page",
+      "bodyMetrics": "Goal & metrics",
+      "regional": "Region & language",
+      "cooking": "Cooking",
+      "account": "Account"
+    },
+    "account": {
+      "title": "Account",
+      "description": "Your sign-in, your data, and how to leave.",
+      "emailLabel": "Signed in as",
+      "exportTitle": "Export my data",
+      "exportDescription": "Download everything Nhẩm holds for you, as a JSON file.",
+      "exportAction": "Export",
+      "exporting": "Preparing your data…",
+      "exportError": "Could not export your data. Please try again.",
+      "signOutTitle": "Sign out",
+      "signOutAction": "Sign out",
+      "deleteTitle": "Delete account",
+      "deleteDescription": "Permanently remove your account and everything in it.",
+      "deleteAction": "Delete account",
+      "deleteConsequence": "This removes your profile, every meal you've logged, and your weight history. There is no undo.",
+      "deleteConfirmLabel": "Type {word} to confirm",
+      "deleteConfirmWord": "DELETE",
+      "deleteConfirmAction": "Delete my account",
+      "deleting": "Deleting your account…",
+      "deleteCancel": "Keep my account",
+      "deleteError": "Could not delete your account. Please try again."
     },
     "regionalPanel": {
       "description": "AI uses your country info to understand food culture and locally available ingredients.",

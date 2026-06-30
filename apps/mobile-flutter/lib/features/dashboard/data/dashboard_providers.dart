@@ -88,6 +88,33 @@ final loggingDayProvider =
   return bundle.day;
 });
 
+/// Per-day meal slice for the dashboard's paged day-viewer.
+///
+/// Browsing a past day must NOT refetch the whole 90d heatmap + profile + weight
+/// bundle just to swap the meal list. This hits the same lightweight
+/// `GET /api/v1/logging/day` endpoint the logging surface uses and decodes only
+/// the [LoggingDayData] (persistedMeals) slice the Today card renders. The
+/// *anchor* day (today) still reads off the already-warm bundle so the first
+/// page costs no extra round-trip; only swiping to another day fetches.
+///
+/// Deliberately NOT autoDispose: the pager keeps day slices cached while the
+/// user swipes back and forth (autoDispose would refetch on every page turn).
+/// The trade-off is that mutations must invalidate the affected date
+/// explicitly — meal confirm ([ConfirmMealNotifier]) and meal delete
+/// (the feed's swipe-remove) both do.
+final dashboardDayProvider =
+    FutureProvider.family<LoggingDayData, DashboardArgs>((ref, args) async {
+  final api = ref.watch(apiClientProvider);
+  final tz = localTimezoneOffsetMinutes();
+  final date = Uri.encodeComponent(args.date);
+  return runWithRetry(() async {
+    final json = await api.get<Map<String, dynamic>>(
+      '/api/v1/logging/day?date=$date&tz=$tz',
+    );
+    return LoggingDayData.fromJson(json);
+  });
+});
+
 /// `useWeightSummary('30d')` → the 30-day weight summary slice. The mobile
 /// chart is fixed at 30d (the section header shows the passive "30 days"
 /// label), so this reads `bundle.weightSummary` directly.

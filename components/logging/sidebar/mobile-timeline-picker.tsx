@@ -316,9 +316,9 @@ export function MobileTimelinePicker({
   );
 
   // When the host page provides the header slot (LoggingShell inside AppShell),
-  // render into it via a portal so the chip shares the hamburger row. The inline
-  // fallback is the test/Storybook contract — production always finds the slot
-  // because MobileNav mounts as a sibling. Do not delete the fallback when
+  // render into it via a portal so the chip sits in the mobile header row. The
+  // inline fallback is the test/Storybook contract — production always finds the
+  // slot because MobileNav mounts as a sibling. Do not delete the fallback when
   // refactoring; the tests rely on it to render without an AppShell parent.
   const renderIntoSlot = (node: React.ReactNode) =>
     portalTarget ? createPortal(node, portalTarget) : node;
@@ -339,8 +339,9 @@ export function MobileTimelinePicker({
       {renderIntoSlot(
         <div
           ref={wrapperRef}
-          // Read by mobile-nav.tsx via group-has-[[data-strip-mode=true]]
-          // to hide the hamburger + spacer while the strip is open.
+          // Kept for the strip-mode contract; the header slot is now full-width
+          // (the hamburger was retired for the bottom tab bar), so the strip
+          // already owns the whole row.
           data-strip-mode={mode === 'strip'}
           className="flex min-w-0 flex-1 items-center justify-center gap-2 md:hidden"
         >
@@ -475,11 +476,11 @@ export function MobileTimelinePicker({
       {isError && (
         <div className="flex justify-center px-3 md:hidden">
           <div
-            className="flex max-w-[min(22rem,calc(100vw-2rem))] items-center gap-2 rounded-full border border-destructive/30 bg-destructive/5 px-3 py-1.5"
+            className="flex max-w-[min(22rem,calc(100vw-2rem))] items-center gap-2 rounded-full border border-nham-danger/30 bg-nham-danger/10 px-3 py-1.5"
             data-testid="mobile-picker-error"
             role="alert"
           >
-            <div className="flex flex-1 items-center gap-1.5 text-destructive text-xs">
+            <div className="flex flex-1 items-center gap-1.5 text-nham-danger text-xs">
               <AlertCircle className="size-3.5 shrink-0" aria-hidden="true" />
               <span>{t('failedToLoadDates')}</span>
             </div>

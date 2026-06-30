@@ -6,9 +6,11 @@ import '../../../shared/widgets/decimal_input.dart';
 import '../../../theme/nham_colors.dart';
 import '../../../theme/nham_theme.dart';
 import '../../../theme/nham_typography.dart';
+import '../../dashboard/logic/dashboard_format.dart' show formatCount;
 import '../logic/tdee.dart';
 import '../widgets/aggression_slider.dart';
 import '../widgets/custom_select.dart';
+import '../widgets/option_strip.dart';
 
 /// Step-2 form values + computed targets, reported up when the body-metrics
 /// schema passes (mirrors RN `ScreenOneData`). Keys match the RN payload so the
@@ -47,21 +49,21 @@ class ScreenTwoValues {
   });
 
   Map<String, dynamic> toJson() => {
-        'biologicalSex': biologicalSex,
-        'weightKg': weightKg,
-        'heightCm': heightCm,
-        'age': age,
-        'activityLevel': activityLevel,
-        'goal': goal,
-        'aggression': aggression,
-        'carbSplit': carbSplit,
-        'deficitOverride': deficitOverride,
-        'tdeeKcal': tdeeKcal,
-        'calorieTarget': calorieTarget,
-        'proteinTargetG': proteinTargetG,
-        'carbsTargetG': carbsTargetG,
-        'fatTargetG': fatTargetG,
-      };
+    'biologicalSex': biologicalSex,
+    'weightKg': weightKg,
+    'heightCm': heightCm,
+    'age': age,
+    'activityLevel': activityLevel,
+    'goal': goal,
+    'aggression': aggression,
+    'carbSplit': carbSplit,
+    'deficitOverride': deficitOverride,
+    'tdeeKcal': tdeeKcal,
+    'calorieTarget': calorieTarget,
+    'proteinTargetG': proteinTargetG,
+    'carbsTargetG': carbsTargetG,
+    'fatTargetG': fatTargetG,
+  };
 }
 
 /// Partial seed for step 2 (from a saved profile / re-entered wizard state).
@@ -128,13 +130,15 @@ class _ScreenBodyMetricsState extends State<ScreenBodyMetrics> {
 
   int? get _tdee {
     if (!_allMetricsFilled) return null;
-    final bmr = calcBMR(BodyMetrics(
-      biologicalSex: BiologicalSex.values.byName(_sex!),
-      weightKg: _weight!,
-      heightCm: _height!,
-      age: _age!,
-      activityLevel: activityLevelFromString(_activity),
-    ));
+    final bmr = calcBMR(
+      BodyMetrics(
+        biologicalSex: BiologicalSex.values.byName(_sex!),
+        weightKg: _weight!,
+        heightCm: _height!,
+        age: _age!,
+        activityLevel: activityLevelFromString(_activity),
+      ),
+    );
     return calcTDEE(bmr, activityLevelFromString(_activity));
   }
 
@@ -192,22 +196,24 @@ class _ScreenBodyMetricsState extends State<ScreenBodyMetrics> {
     final targets = _finalTargets;
     if (tdee == null || targets == null) return;
     if (!_validate()) return;
-    widget.onChange(ScreenTwoValues(
-      biologicalSex: _sex!,
-      weightKg: _weight!,
-      heightCm: _height!,
-      age: _age!,
-      activityLevel: _activity,
-      goal: _goal,
-      aggression: _aggression,
-      carbSplit: _carbSplit,
-      deficitOverride: widget.defaultValues.deficitOverride,
-      tdeeKcal: tdee,
-      calorieTarget: targets.calories.round(),
-      proteinTargetG: targets.proteinG.round(),
-      carbsTargetG: targets.carbsG.round(),
-      fatTargetG: targets.fatG.round(),
-    ));
+    widget.onChange(
+      ScreenTwoValues(
+        biologicalSex: _sex!,
+        weightKg: _weight!,
+        heightCm: _height!,
+        age: _age!,
+        activityLevel: _activity,
+        goal: _goal,
+        aggression: _aggression,
+        carbSplit: _carbSplit,
+        deficitOverride: widget.defaultValues.deficitOverride,
+        tdeeKcal: tdee,
+        calorieTarget: targets.calories.round(),
+        proteinTargetG: targets.proteinG.round(),
+        carbsTargetG: targets.carbsG.round(),
+        fatTargetG: targets.fatG.round(),
+      ),
+    );
   }
 
   @override
@@ -219,17 +225,19 @@ class _ScreenBodyMetricsState extends State<ScreenBodyMetrics> {
         Text(
           tr('onboarding.bodyMetrics.title'),
           // tracking-tight: -0.025em × 24px ≈ -0.6
-          style: NhamTextStyles.serifMedium(fontSize: 24)
-              .copyWith(letterSpacing: -0.6, color: NhamColors.text),
+          style: NhamTextStyles.serifMedium(
+            fontSize: 24,
+          ).copyWith(letterSpacing: -0.6, color: NhamColors.text),
         ),
         const SizedBox(height: NhamSpacing.sp1),
         Text(
           tr('onboarding.bodyMetrics.subtitle'),
-          style: NhamTextStyles.sansRegular(fontSize: 14, height: 22 / 14)
-              .copyWith(color: NhamColors.textHelp),
+          style: NhamTextStyles.sansRegular(
+            fontSize: 14,
+            height: 22 / 14,
+          ).copyWith(color: NhamColors.textHelp),
         ),
         const SizedBox(height: NhamSpacing.sp5), // space-y-5
-
         // Metrics card.
         Container(
           padding: const EdgeInsets.all(NhamSpacing.sp5),
@@ -241,18 +249,20 @@ class _ScreenBodyMetricsState extends State<ScreenBodyMetrics> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // "About You" header block (mb-4 before the grid).
+              // "About you" header block (mb-4 before the grid).
               Text(
-                'About You',
-                style: NhamTextStyles.sansBold(fontSize: 11)
-                    .copyWith(letterSpacing: 1.5, color: NhamColors.stone),
+                tr('onboarding.bodyMetrics.aboutYou').toUpperCase(),
+                style: NhamTextStyles.sansBold(
+                  fontSize: 11,
+                ).copyWith(letterSpacing: 1.5, color: NhamColors.stone),
               ),
               const SizedBox(height: NhamSpacing.sp1), // mt-1
               Text(
-                'These stay optional, but once you fill them in, Nhẩm can '
-                'compute more tailored targets locally.',
-                style: NhamTextStyles.sansRegular(fontSize: 13, height: 1.625)
-                    .copyWith(color: NhamColors.textHelp),
+                tr('onboarding.bodyMetrics.aboutYouHint'),
+                style: NhamTextStyles.sansRegular(
+                  fontSize: 13,
+                  height: 1.625,
+                ).copyWith(color: NhamColors.textHelp),
               ),
               const SizedBox(height: NhamSpacing.sp4), // mb-4
               _buildGrid(),
@@ -260,12 +270,8 @@ class _ScreenBodyMetricsState extends State<ScreenBodyMetrics> {
           ),
         ),
         const SizedBox(height: NhamSpacing.sp5), // space-y-5
-
         // Goal card (when TDEE known) or the dashed unlock placeholder.
-        if (tdee != null)
-          _buildGoalCard(tdee)
-        else
-          _buildUnlockPlaceholder(),
+        if (tdee != null) _buildGoalCard(tdee) else _buildUnlockPlaceholder(),
       ],
     );
   }
@@ -277,16 +283,18 @@ class _ScreenBodyMetricsState extends State<ScreenBodyMetrics> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Fill the basics to unlock targets.',
-            style: NhamTextStyles.sansMedium(fontSize: 14)
-                .copyWith(color: NhamColors.text),
+            tr('onboarding.bodyMetrics.unlockTitle'),
+            style: NhamTextStyles.sansMedium(
+              fontSize: 14,
+            ).copyWith(color: NhamColors.text),
           ),
           const SizedBox(height: NhamSpacing.sp1), // mt-1
           Text(
-            'Once sex, weight, height, age, and activity are filled, this side '
-            'turns into your live calorie target and macro planner.',
-            style: NhamTextStyles.sansRegular(fontSize: 13, height: 1.625)
-                .copyWith(color: NhamColors.textHelp),
+            tr('onboarding.bodyMetrics.unlockHint'),
+            style: NhamTextStyles.sansRegular(
+              fontSize: 13,
+              height: 1.625,
+            ).copyWith(color: NhamColors.textHelp),
           ),
         ],
       ),
@@ -297,16 +305,21 @@ class _ScreenBodyMetricsState extends State<ScreenBodyMetrics> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // biological sex (full)
+        // biological sex (full) — two options, so a 2-segment strip rather than
+        // a select popover (a tap-to-open menu for a binary choice).
         _FieldLabel(tr('onboarding.bodyMetrics.biologicalSex')),
         const SizedBox(height: 6),
-        CustomSelect(
+        OptionStrip(
           value: _sex ?? '',
           options: [
-            CustomSelectOption(
-                label: tr('onboarding.bodyMetrics.male'), value: 'male'),
-            CustomSelectOption(
-                label: tr('onboarding.bodyMetrics.female'), value: 'female'),
+            OptionStripItem(
+              label: tr('onboarding.bodyMetrics.male'),
+              value: 'male',
+            ),
+            OptionStripItem(
+              label: tr('onboarding.bodyMetrics.female'),
+              value: 'female',
+            ),
           ],
           onChange: (v) {
             setState(() => _sex = v);
@@ -387,15 +400,21 @@ class _ScreenBodyMetricsState extends State<ScreenBodyMetrics> {
           value: _activity,
           options: [
             CustomSelectOption(
-                label: tr('onboarding.bodyMetrics.sedentary'),
-                value: 'sedentary'),
+              label: tr('onboarding.bodyMetrics.sedentary'),
+              value: 'sedentary',
+            ),
             CustomSelectOption(
-                label: tr('onboarding.bodyMetrics.light'), value: 'light'),
+              label: tr('onboarding.bodyMetrics.light'),
+              value: 'light',
+            ),
             CustomSelectOption(
-                label: tr('onboarding.bodyMetrics.moderate'), value: 'moderate'),
+              label: tr('onboarding.bodyMetrics.moderate'),
+              value: 'moderate',
+            ),
             CustomSelectOption(
-                label: tr('onboarding.bodyMetrics.veryActive'),
-                value: 'very_active'),
+              label: tr('onboarding.bodyMetrics.veryActive'),
+              value: 'very_active',
+            ),
           ],
           onChange: (v) {
             setState(() => _activity = v);
@@ -411,19 +430,24 @@ class _ScreenBodyMetricsState extends State<ScreenBodyMetrics> {
     // surface them live alongside the report so the hero stays in sync).
     setState(() {
       String tv(String k) => tr('validation.bodyMetrics.$k');
-      _weightError = _weight == null
-          ? null
-          : (_weight! < 30
-              ? tv('weightMin')
-              : (_weight! > 300 ? tv('weightMax') : null));
-      _heightError = _height == null
-          ? null
-          : (_height! < 100
-              ? tv('heightMin')
-              : (_height! > 250 ? tv('heightMax') : null));
-      _ageError = _age == null
-          ? null
-          : (_age! < 13 ? tv('ageMin') : (_age! > 100 ? tv('ageMax') : null));
+      _weightError =
+          _weight == null
+              ? null
+              : (_weight! < 30
+                  ? tv('weightMin')
+                  : (_weight! > 300 ? tv('weightMax') : null));
+      _heightError =
+          _height == null
+              ? null
+              : (_height! < 100
+                  ? tv('heightMin')
+                  : (_height! > 250 ? tv('heightMax') : null));
+      _ageError =
+          _age == null
+              ? null
+              : (_age! < 13
+                  ? tv('ageMin')
+                  : (_age! > 100 ? tv('ageMax') : null));
     });
     _report();
   }
@@ -509,10 +533,10 @@ class _ScreenBodyMetricsState extends State<ScreenBodyMetrics> {
   }
 }
 
-/// Daily-target hero card — accent gradient surface showing the computed
-/// calorie target, a "based on TDEE…" caption, and the selected split's macros.
-/// Ported from the RN onboarding `hero` block (which used a flat accent tint);
-/// here it's a soft accent gradient.
+/// Daily-target card — a flat white surface showing the computed calorie
+/// target, a "based on TDEE…" caption, and the selected split's macros.
+/// Hierarchy comes from the hairline border, not an alpha gradient (matching
+/// the dashboard token system: solid cards, one radius).
 class _DailyTargetCard extends StatelessWidget {
   const _DailyTargetCard({
     required this.calorieTarget,
@@ -526,31 +550,26 @@ class _DailyTargetCard extends StatelessWidget {
   final String goal;
   final MacroTargets? macros;
 
-  String _fmt(num n) {
-    final s = n.round().toString();
-    final buf = StringBuffer();
-    for (var i = 0; i < s.length; i++) {
-      if (i > 0 && (s.length - i) % 3 == 0) buf.write(',');
-      buf.write(s[i]);
-    }
-    return buf.toString();
-  }
-
   @override
   Widget build(BuildContext context) {
-    final caption = StringBuffer()
-      ..write(tr('onboarding.bodyMetrics.basedOnTdee'))
-      ..write(' ~${_fmt(tdee)} ${tr('onboarding.bodyMetrics.kcal')}');
+    final locale = context.locale.toString();
+    final caption =
+        StringBuffer()
+          ..write(tr('onboarding.bodyMetrics.basedOnTdee'))
+          ..write(
+            ' ~${formatCount(tdee, locale)} ${tr('onboarding.bodyMetrics.kcal')}',
+          );
     if (goal == 'maintaining') {
       caption.write(' · ${tr('onboarding.bodyMetrics.maintenance')}');
     } else {
       final sign = goal == 'cutting' ? '−' : '+';
       final delta = (tdee - calorieTarget).abs();
-      final kind = goal == 'cutting'
-          ? tr('onboarding.bodyMetrics.aggressionDeficit')
-          : tr('onboarding.bodyMetrics.aggressionSurplus');
+      final kind =
+          goal == 'cutting'
+              ? tr('onboarding.bodyMetrics.aggressionDeficit')
+              : tr('onboarding.bodyMetrics.aggressionSurplus');
       caption.write(
-        ' · $sign${_fmt(delta)} ${tr('onboarding.bodyMetrics.perDay')} $kind',
+        ' · $sign${formatCount(delta.round(), locale)} ${tr('onboarding.bodyMetrics.perDay')} $kind',
       );
     }
 
@@ -559,43 +578,44 @@ class _DailyTargetCard extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(NhamSpacing.sp5),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [NhamColors.accent15, NhamColors.accent05],
-        ),
+        color: NhamColors.elev,
         borderRadius: BorderRadius.circular(NhamRadii.containerLg),
-        border: Border.all(color: NhamColors.accent40),
+        border: Border.all(color: NhamColors.inputBorder),
       ),
       child: Column(
         children: [
           Text(
             tr('onboarding.bodyMetrics.calorieTarget').toUpperCase(),
             textAlign: TextAlign.center,
-            style: NhamTextStyles.sansBold(fontSize: 11)
-                .copyWith(color: NhamColors.accentDark, letterSpacing: 1.5),
+            style: NhamTextStyles.sansBold(
+              fontSize: 11,
+            ).copyWith(color: NhamColors.stone, letterSpacing: 1.5),
           ),
           const SizedBox(height: NhamSpacing.sp2),
           Text.rich(
             TextSpan(
               children: [
-                TextSpan(text: _fmt(calorieTarget)),
+                TextSpan(text: formatCount(calorieTarget.round(), locale)),
                 TextSpan(
                   text: ' ${tr('onboarding.bodyMetrics.kcal')}',
-                  style: NhamTextStyles.sansRegular(fontSize: 18)
-                      .copyWith(color: NhamColors.textHelp),
+                  style: NhamTextStyles.sansRegular(
+                    fontSize: 18,
+                  ).copyWith(color: NhamColors.textHelp),
                 ),
               ],
             ),
-            style: NhamTextStyles.serifRegular(fontSize: 36)
-                .copyWith(color: NhamColors.text),
+            style: NhamTextStyles.serifRegular(
+              fontSize: 36,
+            ).copyWith(color: NhamColors.text),
           ),
           const SizedBox(height: NhamSpacing.sp2),
           Text(
             caption.toString(),
             textAlign: TextAlign.center,
-            style: NhamTextStyles.sansRegular(fontSize: 12, height: 16 / 12)
-                .copyWith(color: NhamColors.textHelp),
+            style: NhamTextStyles.sansRegular(
+              fontSize: 12,
+              height: 16 / 12,
+            ).copyWith(color: NhamColors.textHelp),
           ),
           if (m != null) ...[
             const SizedBox(height: NhamSpacing.sp4),
@@ -618,14 +638,16 @@ class _DailyTargetCard extends StatelessWidget {
       children: [
         Text(
           label.toUpperCase(),
-          style: NhamTextStyles.sansMedium(fontSize: 10)
-              .copyWith(color: NhamColors.textMuted, letterSpacing: 0.5),
+          style: NhamTextStyles.sansMedium(
+            fontSize: 10,
+          ).copyWith(color: NhamColors.textMuted, letterSpacing: 0.5),
         ),
         const SizedBox(height: 2),
         Text(
           '${grams.round()}${tr('onboarding.bodyMetrics.grams')}',
-          style: NhamTextStyles.sansSemiBold(fontSize: 15)
-              .copyWith(color: NhamColors.text),
+          style: NhamTextStyles.sansSemiBold(
+            fontSize: 15,
+          ).copyWith(color: NhamColors.text),
         ),
       ],
     );
@@ -637,18 +659,9 @@ class _TdeeHero extends StatelessWidget {
   const _TdeeHero({required this.tdee});
   final int tdee;
 
-  String _fmt(num n) {
-    final s = n.round().toString();
-    final buf = StringBuffer();
-    for (var i = 0; i < s.length; i++) {
-      if (i > 0 && (s.length - i) % 3 == 0) buf.write(',');
-      buf.write(s[i]);
-    }
-    return buf.toString();
-  }
-
   @override
   Widget build(BuildContext context) {
+    final locale = context.locale.toString();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -657,17 +670,19 @@ class _TdeeHero extends StatelessWidget {
         Text.rich(
           TextSpan(
             children: [
-              TextSpan(text: '~${_fmt(tdee)} '),
+              TextSpan(text: '~${formatCount(tdee, locale)} '),
               TextSpan(
                 text: tr('onboarding.bodyMetrics.kcal'),
-                style: NhamTextStyles.sansRegular(fontSize: 18)
-                    .copyWith(color: NhamColors.textHelp),
+                style: NhamTextStyles.sansRegular(
+                  fontSize: 18,
+                ).copyWith(color: NhamColors.textHelp),
               ),
             ],
           ),
           // text-4xl (36px) tracking-tighter
-          style: NhamTextStyles.serifRegular(fontSize: 36)
-              .copyWith(letterSpacing: -1, color: NhamColors.text),
+          style: NhamTextStyles.serifRegular(
+            fontSize: 36,
+          ).copyWith(letterSpacing: -1, color: NhamColors.text),
         ),
       ],
     );
@@ -679,8 +694,7 @@ class _Divider extends StatelessWidget {
   final Color color;
 
   @override
-  Widget build(BuildContext context) =>
-      Container(height: 1, color: color);
+  Widget build(BuildContext context) => Container(height: 1, color: color);
 }
 
 /// A dashed (dotted) 1px border panel: rounded-[28px], bg #FFFCF8, p-5.
@@ -691,10 +705,7 @@ class DottedBorderBox extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return CustomPaint(
-      painter: _DashedBorderPainter(
-        color: NhamColors.inputBorder,
-        radius: 28,
-      ),
+      painter: _DashedBorderPainter(color: NhamColors.inputBorder, radius: 28),
       child: Container(
         padding: const EdgeInsets.all(NhamSpacing.sp5),
         decoration: BoxDecoration(
@@ -714,10 +725,11 @@ class _DashedBorderPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = color
-      ..strokeWidth = 1
-      ..style = PaintingStyle.stroke;
+    final paint =
+        Paint()
+          ..color = color
+          ..strokeWidth = 1
+          ..style = PaintingStyle.stroke;
     final rrect = RRect.fromRectAndRadius(
       Offset.zero & size,
       Radius.circular(radius),
@@ -750,8 +762,9 @@ class _FieldLabel extends StatelessWidget {
   Widget build(BuildContext context) {
     return Text(
       text.toUpperCase(),
-      style: NhamTextStyles.sansBold(fontSize: 11)
-          .copyWith(letterSpacing: 1.5, color: NhamColors.stone),
+      style: NhamTextStyles.sansBold(
+        fontSize: 11,
+      ).copyWith(letterSpacing: 1.5, color: NhamColors.stone),
     );
   }
 }
@@ -775,8 +788,9 @@ class _Cell extends StatelessWidget {
           const SizedBox(height: 6),
           Text(
             error!,
-            style: NhamTextStyles.sansRegular(fontSize: 12)
-                .copyWith(color: NhamColors.danger),
+            style: NhamTextStyles.sansRegular(
+              fontSize: 12,
+            ).copyWith(color: NhamColors.danger),
           ),
         ],
       ],
@@ -842,9 +856,10 @@ class _GoalButtonState extends State<_GoalButton> {
   @override
   Widget build(BuildContext context) {
     // active bg-white #2C2416 shadow-sm; inactive #8B8682 + hover:text-#2C2416.
-    final color = widget.active
-        ? NhamColors.text
-        : (_pressed ? NhamColors.text : NhamColors.textHelp);
+    final color =
+        widget.active
+            ? NhamColors.text
+            : (_pressed ? NhamColors.text : NhamColors.textHelp);
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTapDown: (_) => setState(() => _pressed = true),
@@ -859,13 +874,14 @@ class _GoalButtonState extends State<_GoalButton> {
           vertical: NhamSpacing.sp1_5, // py-1.5
           horizontal: NhamSpacing.sp3, // px-3
         ),
-        decoration: widget.active
-            ? BoxDecoration(
-                color: NhamColors.elev,
-                borderRadius: BorderRadius.circular(NhamRadii.md),
-                boxShadow: const [NhamShadows.sm], // shadow-sm
-              )
-            : const BoxDecoration(),
+        decoration:
+            widget.active
+                ? BoxDecoration(
+                  color: NhamColors.elev,
+                  borderRadius: BorderRadius.circular(NhamRadii.md),
+                  boxShadow: const [NhamShadows.sm], // shadow-sm
+                )
+                : const BoxDecoration(),
         child: Text(
           widget.label,
           style: NhamTextStyles.sansMedium(fontSize: 14).copyWith(color: color),
@@ -896,21 +912,23 @@ class _CarbCardState extends State<_CarbCard> {
   bool _pressed = false;
 
   String get _label => switch (widget.id) {
-        'moderate_carb' => tr('onboarding.bodyMetrics.moderateCarb'),
-        'lower_carb' => tr('onboarding.bodyMetrics.lowerCarb'),
-        _ => tr('onboarding.bodyMetrics.higherCarb'),
-      };
+    'moderate_carb' => tr('onboarding.bodyMetrics.moderateCarb'),
+    'lower_carb' => tr('onboarding.bodyMetrics.lowerCarb'),
+    _ => tr('onboarding.bodyMetrics.higherCarb'),
+  };
 
   String get _desc => switch (widget.id) {
-        'moderate_carb' => tr('onboarding.bodyMetrics.moderateCarbDescription'),
-        'lower_carb' => tr('onboarding.bodyMetrics.lowerCarbDescription'),
-        _ => tr('onboarding.bodyMetrics.higherCarbDescription'),
-      };
+    'moderate_carb' => tr('onboarding.bodyMetrics.moderateCarbDescription'),
+    'lower_carb' => tr('onboarding.bodyMetrics.lowerCarbDescription'),
+    _ => tr('onboarding.bodyMetrics.higherCarbDescription'),
+  };
 
   @override
   Widget build(BuildContext context) {
-    final macros =
-        calcMacroGrams(widget.targetCalories, carbSplitFromString(widget.id));
+    final macros = calcMacroGrams(
+      widget.targetCalories,
+      carbSplitFromString(widget.id),
+    );
     final active = widget.active;
     final grams = tr('onboarding.bodyMetrics.grams');
     final rows = <(String, num)>[
@@ -919,9 +937,10 @@ class _CarbCardState extends State<_CarbCard> {
       (tr('onboarding.bodyMetrics.carbs'), macros.carbsG.round()),
     ];
 
-    final borderColor = active
-        ? NhamColors.accent
-        : (_pressed ? NhamColors.accent50 : NhamColors.inputBorder);
+    final borderColor =
+        active
+            ? NhamColors.accent
+            : (_pressed ? NhamColors.accent50 : NhamColors.inputBorder);
 
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
@@ -935,25 +954,28 @@ class _CarbCardState extends State<_CarbCard> {
           color: active ? NhamColors.selectedCard : NhamColors.elev, // #FFF8EF
           borderRadius: BorderRadius.circular(NhamRadii.xxxl), // rounded-[22px]
           border: Border.all(color: borderColor),
-          boxShadow: active
-              ? const [
-                  // shadow-[0_10px_24px_rgba(201,168,124,0.14)]
-                  BoxShadow(
-                    color: Color(0x24C9A87C),
-                    blurRadius: 24,
-                    offset: Offset(0, 10),
-                  ),
-                ]
-              : null,
+          boxShadow:
+              active
+                  ? const [
+                    // shadow-[0_10px_24px_rgba(201,168,124,0.14)]
+                    BoxShadow(
+                      color: Color(0x24C9A87C),
+                      blurRadius: 24,
+                      offset: Offset(0, 10),
+                    ),
+                  ]
+                  : null,
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             // Header band (px-3.5 py-2.5).
             Container(
-              color: active
-                  ? NhamColors.selectedSegment // #FBF2E6
-                  : NhamColors.track, // #F5F4F0
+              color:
+                  active
+                      ? NhamColors
+                          .selectedSegment // #FBF2E6
+                      : NhamColors.track, // #F5F4F0
               padding: const EdgeInsets.symmetric(
                 horizontal: NhamSpacing.sp3_5, // px-3.5
                 vertical: NhamSpacing.sp2_5, // py-2.5
@@ -963,16 +985,19 @@ class _CarbCardState extends State<_CarbCard> {
                 children: [
                   Text(
                     _label,
-                    style: NhamTextStyles.sansMedium(fontSize: 13)
-                        .copyWith(color: NhamColors.text),
+                    style: NhamTextStyles.sansMedium(
+                      fontSize: 13,
+                    ).copyWith(color: NhamColors.text),
                   ),
                   const SizedBox(height: 2), // mt-0.5
                   Text(
                     _desc,
                     style: NhamTextStyles.sansRegular(fontSize: 10).copyWith(
-                      color: active
-                          ? NhamColors.textSelected // #6F6556
-                          : NhamColors.textHelp, // #8B8682
+                      color:
+                          active
+                              ? NhamColors
+                                  .textSelected // #6F6556
+                              : NhamColors.textHelp, // #8B8682
                     ),
                   ),
                 ],
@@ -993,16 +1018,18 @@ class _CarbCardState extends State<_CarbCard> {
                       children: [
                         Text(
                           rows[i].$1.toUpperCase(),
-                          style: NhamTextStyles.sansRegular(fontSize: 10)
-                              .copyWith(
+                          style: NhamTextStyles.sansRegular(
+                            fontSize: 10,
+                          ).copyWith(
                             letterSpacing: 0.4, // tracking-wide
                             color: NhamColors.textSelected, // #6F6556
                           ),
                         ),
                         Text(
                           '${rows[i].$2}$grams',
-                          style: NhamTextStyles.sansSemiBold(fontSize: 12)
-                              .copyWith(color: NhamColors.text),
+                          style: NhamTextStyles.sansSemiBold(
+                            fontSize: 12,
+                          ).copyWith(color: NhamColors.text),
                         ),
                       ],
                     ),

@@ -5,9 +5,10 @@ import { useLocale, useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { Input } from '@/components/ui/input';
-import { useMyProfile, useSaveProfile } from '@/hooks/use-profile';
+import { useMyProfile, useSaveProfile } from '@/hooks/profile/use-profile';
 import { ApiError } from '@/lib/errors';
 import { HANDLE_MIN_LENGTH, validateHandle } from '@/lib/groups/handles';
+import { DisplayNameRow } from './display-name-row';
 
 /**
  * The signed-in user's shareable invite link. The profile (and its slug) is
@@ -78,18 +79,12 @@ export function InviteLinkSection() {
 
     return (
       <div className="space-y-2 rounded-xl border border-nham-accent/40 bg-nham-accent/[0.06] p-3">
-        <p
-          className="font-medium text-[13px] text-nham-text"
-          style={{ fontFamily: 'DM Sans, sans-serif' }}
-        >
+        <p className="font-medium font-sans-display text-[13px] text-nham-text">
           {t('editTitle')}
         </p>
         <div className="flex items-stretch gap-2">
           <div className="relative flex-1">
-            <span
-              className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-[12px] text-nham-text-muted/70"
-              style={{ fontFamily: 'DM Sans, sans-serif' }}
-            >
+            <span className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 font-sans-display text-[12px] text-nham-text-muted/70">
               …/invite/
             </span>
             <Input
@@ -107,8 +102,7 @@ export function InviteLinkSection() {
               autoCapitalize="none"
               spellCheck={false}
               maxLength={20}
-              className="border-nham-border/60 bg-white pl-[68px] text-nham-text"
-              style={{ fontFamily: 'DM Sans, sans-serif' }}
+              className="border-nham-border/60 bg-white pl-[68px] font-sans-display text-nham-text"
             />
           </div>
           <button
@@ -135,8 +129,7 @@ export function InviteLinkSection() {
         </div>
         <p
           aria-live="polite"
-          className={`text-[11px] ${issue ? 'text-nham-danger' : 'text-nham-text-muted'}`}
-          style={{ fontFamily: 'DM Sans, sans-serif' }}
+          className={`text-[11px] ${issue ? 'text-nham-danger' : 'text-nham-text-muted'} font-sans-display`}
         >
           {issue || t('editHint')}
         </p>
@@ -145,50 +138,45 @@ export function InviteLinkSection() {
   }
 
   return (
-    <div className="space-y-1.5">
-      <p
-        className="flex items-center gap-1.5 px-1 font-medium text-[10px] text-nham-text-muted uppercase tracking-[0.08em]"
-        style={{ fontFamily: 'DM Sans, sans-serif' }}
-      >
-        <Link2 className="h-3.5 w-3.5" />
-        {t('yourLink')}
-      </p>
-      <div className="flex items-stretch gap-2">
-        <Input
-          readOnly
-          value={inviteLink}
-          onFocus={(event) => event.currentTarget.select()}
-          aria-label={t('yourLink')}
-          className="flex-1 border-nham-border/60 bg-white text-[12px] text-nham-text-muted"
-          style={{ fontFamily: 'DM Sans, sans-serif' }}
-        />
-        <button
-          type="button"
-          onClick={() => {
-            setDraft(profile.handle);
-            setEditing(true);
-          }}
-          aria-label={t('editTitle')}
-          className="inline-flex shrink-0 items-center rounded-lg border border-nham-border/60 bg-white px-3 text-nham-text-muted transition-colors hover:border-nham-accent/50 hover:text-nham-text"
-        >
-          <Pencil className="h-3.5 w-3.5" />
-        </button>
-        <button
-          type="button"
-          onClick={copy}
-          className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-nham-border/60 bg-white px-3.5 font-medium text-[12px] text-nham-text transition-colors hover:border-nham-accent/50"
-          style={{ fontFamily: 'DM Sans, sans-serif' }}
-        >
-          <Copy className="h-3.5 w-3.5" />
-          {t('copy')}
-        </button>
+    <div className="space-y-4">
+      <DisplayNameRow profile={profile} />
+      <div className="space-y-1.5">
+        <p className="flex items-center gap-1.5 px-1 font-medium font-sans-display text-[10px] text-nham-text-muted uppercase tracking-[0.08em]">
+          <Link2 className="h-3.5 w-3.5" />
+          {t('yourLink')}
+        </p>
+        <div className="flex items-stretch gap-2">
+          <Input
+            readOnly
+            value={inviteLink}
+            onFocus={(event) => event.currentTarget.select()}
+            aria-label={t('yourLink')}
+            className="flex-1 border-nham-border/60 bg-white font-sans-display text-[12px] text-nham-text-muted"
+          />
+          <button
+            type="button"
+            onClick={() => {
+              setDraft(profile.handle);
+              setEditing(true);
+            }}
+            aria-label={t('editTitle')}
+            className="inline-flex shrink-0 items-center rounded-lg border border-nham-border/60 bg-white px-3 text-nham-text-muted transition-colors hover:border-nham-accent/50 hover:text-nham-text"
+          >
+            <Pencil className="h-3.5 w-3.5" />
+          </button>
+          <button
+            type="button"
+            onClick={copy}
+            className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-nham-border/60 bg-white px-3.5 font-medium font-sans-display text-[12px] text-nham-text transition-colors hover:border-nham-accent/50"
+          >
+            <Copy className="h-3.5 w-3.5" />
+            {t('copy')}
+          </button>
+        </div>
+        <p className="px-1 font-sans-display text-[11px] text-nham-text-muted/70">
+          {t('hint')}
+        </p>
       </div>
-      <p
-        className="px-1 text-[11px] text-nham-text-muted/70"
-        style={{ fontFamily: 'DM Sans, sans-serif' }}
-      >
-        {t('hint')}
-      </p>
     </div>
   );
 }

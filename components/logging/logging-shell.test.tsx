@@ -82,7 +82,7 @@ vi.mock('@/lib/actions/meals', () => ({
 }));
 
 // Mock hooks
-vi.mock('@/hooks/use-prefetch-dates', () => ({
+vi.mock('@/hooks/meals/use-prefetch-dates', () => ({
   usePrefetchDates: vi.fn(),
 }));
 
@@ -109,7 +109,7 @@ vi.mock('@/i18n/navigation', () => ({
 }));
 
 const { loadMealDates } = await import('@/lib/actions/meals');
-const { usePrefetchDates } = await import('@/hooks/use-prefetch-dates');
+const { usePrefetchDates } = await import('@/hooks/meals/use-prefetch-dates');
 
 const mockLoadMealDates = loadMealDates as Mock;
 const mockUsePrefetchDates = usePrefetchDates as Mock;

@@ -14,7 +14,6 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../data/api_client.dart';
 import '../../../shared/widgets/widgets.dart';
@@ -113,6 +112,7 @@ class _CompactWeightLogState extends ConsumerState<CompactWeightLog> {
   Future<void> _onSubmit() async {
     final weightKg = parseDecimalInput(_controller.text);
     if (weightKg.isNaN || weightKg < _weightMin || weightKg > _weightMax) {
+      HapticFeedback.heavyImpact(); // warn: rejected input
       setState(() => _validationError = tr('dashboard.weightCard.invalid'));
       _showFeedback(
         _Feedback(_FeedbackKind.error, tr('dashboard.weightCard.invalidValue')),
@@ -141,6 +141,7 @@ class _CompactWeightLogState extends ConsumerState<CompactWeightLog> {
         _dirty = false;
         _pending = false;
       });
+      HapticFeedback.mediumImpact(); // success cue on save
       _showFeedback(
         _Feedback(_FeedbackKind.success, tr('dashboard.weightCard.saved')),
       );
@@ -166,78 +167,72 @@ class _CompactWeightLogState extends ConsumerState<CompactWeightLog> {
     final showEditHint =
         _hasTodayWeight && _validationError == null && _feedback == null;
 
-    final borderColor =
-        _validationError != null ? NhamColors.danger : kHairline;
+    final hasError = _validationError != null;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        // Always "Today's weight" — this field only ever logs today. No leading
+        // icon: the label alone carries the meaning and reads cleaner.
         Padding(
           padding: const EdgeInsets.only(bottom: NhamSpacing.sp2),
-          child: Row(
-            children: [
-              const Icon(LucideIcons.scale, size: 16, color: kInkSecondary),
-              const SizedBox(width: NhamSpacing.sp2),
-              Text(
-                (_hasTodayWeight
-                        ? tr('dashboard.weightCard.todaysWeight')
-                        : tr('dashboard.weightCard.logWeight'))
-                    .toUpperCase(),
-                style: dashEyebrow(),
-              ),
-            ],
+          child: Text(
+            tr('dashboard.weightCard.todaysWeight').toUpperCase(),
+            style: dashEyebrow(),
           ),
         ),
-        Row(
-          children: [
-            Expanded(
-              child: SizedBox(
-                height: 44,
-                child: TextField(
-                  controller: _controller,
-                  onChanged: _onChanged,
-                  enabled: !_pending,
-                  keyboardType:
-                      const TextInputType.numberWithOptions(decimal: true),
-                  inputFormatters: [
-                    FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]')),
-                  ],
-                  autocorrect: false,
-                  cursorColor: NhamColors.accent,
-                  style: dashBody(tabular: true),
-                  decoration: InputDecoration(
-                    isDense: true,
-                    filled: true,
-                    fillColor: kCardSurface,
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: NhamSpacing.sp3,
-                      vertical: NhamSpacing.sp3,
-                    ),
-                    // Suffix in-flow (no Positioned overlay → no overlap).
-                    suffixText: tr('dashboard.units.kg'),
-                    suffixStyle: dashMeta(color: kInkDisabled),
-                    border: _border(borderColor),
-                    enabledBorder: _border(borderColor),
-                    // Web Input focus-visible ring → accent border.
-                    focusedBorder: _border(_validationError != null
-                        ? NhamColors.danger
-                        : NhamColors.accent),
-                    disabledBorder: _border(kHairline),
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(width: NhamSpacing.sp2),
-            _SubmitButton(
-              label: submitLabel,
-              pending: _pending,
-              pressed: _pressed,
-              onTapDown: () => setState(() => _pressed = true),
-              onTapUp: () => setState(() => _pressed = false),
-              onTapCancel: () => setState(() => _pressed = false),
-              onTap: _pending ? null : _onSubmit,
-            ),
+        // Field on its own row, full width.
+        TextField(
+          controller: _controller,
+          onChanged: _onChanged,
+          enabled: !_pending,
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          inputFormatters: [
+            FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]')),
           ],
+          autocorrect: false,
+          cursorColor: NhamColors.accent,
+          // Substantial value type — a number entry reads as data, not body
+          // copy.
+          style: dashValue(color: kInk),
+          decoration: InputDecoration(
+            isDense: true,
+            filled: true,
+            // Soft warm fill instead of a hairline outline — the field reads as
+            // a tappable surface, the way native mobile inputs do, and the
+            // border only appears on focus / error.
+            fillColor: hasError
+                ? NhamColors.danger.withValues(alpha: 0.06)
+                : kFieldFill,
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: NhamSpacing.sp4,
+              vertical: 15,
+            ),
+            // Suffix in-flow (no Positioned overlay → no overlap).
+            suffixText: tr('dashboard.units.kg'),
+            suffixStyle: dashMeta(color: kInkSecondary),
+            border: _border(Colors.transparent),
+            enabledBorder:
+                _border(hasError ? NhamColors.danger : Colors.transparent),
+            focusedBorder:
+                _border(hasError ? NhamColors.danger : NhamColors.accent),
+            disabledBorder: _border(Colors.transparent),
+          ),
+        ),
+        const SizedBox(height: NhamSpacing.sp2),
+        // Submit button beneath the field, full width — a clearer, more
+        // thumb-friendly target than a cramped side-by-side button.
+        SizedBox(
+          width: double.infinity,
+          child: _SubmitButton(
+            label: submitLabel,
+            pending: _pending,
+            pressed: _pressed,
+            onTapDown: () => setState(() => _pressed = true),
+            onTapUp: () => setState(() => _pressed = false),
+            onTapCancel: () => setState(() => _pressed = false),
+            onTap: _pending ? null : _onSubmit,
+          ),
         ),
         if (_feedback != null)
           Padding(
@@ -272,8 +267,11 @@ class _CompactWeightLogState extends ConsumerState<CompactWeightLog> {
   }
 
   OutlineInputBorder _border(Color color) => OutlineInputBorder(
-        borderRadius: BorderRadius.circular(NhamRadii.buttonXl),
-        borderSide: BorderSide(color: color),
+        borderRadius: BorderRadius.circular(NhamRadii.xl),
+        borderSide: BorderSide(
+          color: color,
+          width: color == Colors.transparent ? 0 : 1.5,
+        ),
       );
 }
 
@@ -306,12 +304,15 @@ class _SubmitButton extends StatelessWidget {
       child: Opacity(
         opacity: pending ? 0.55 : 1,
         child: Container(
-          height: 44,
-          padding: const EdgeInsets.symmetric(horizontal: NhamSpacing.sp4),
+          // Stands on its own row now — own comfortable vertical height.
+          padding: const EdgeInsets.symmetric(
+            horizontal: NhamSpacing.sp5,
+            vertical: NhamSpacing.sp3,
+          ),
           alignment: Alignment.center,
           decoration: BoxDecoration(
             color: pressed && !pending ? NhamColors.btnHover : NhamColors.btn,
-            borderRadius: BorderRadius.circular(NhamRadii.buttonXl),
+            borderRadius: BorderRadius.circular(NhamRadii.xl),
           ),
           child: pending
               ? const SizedBox(
@@ -322,7 +323,9 @@ class _SubmitButton extends StatelessWidget {
                 )
               : Text(
                   label,
-                  style: dashEyebrow(color: Colors.white, weight: FontWeight.w600),
+                  // Sentence-case, body-sized label — a native button reads as
+                  // a word, not a techy 11px all-caps eyebrow.
+                  style: dashBody(color: Colors.white, weight: FontWeight.w600),
                 ),
         ),
       ),

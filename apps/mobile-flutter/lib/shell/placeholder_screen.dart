@@ -1,5 +1,6 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 import '../shared/widgets/widgets.dart';
 import '../theme/nham_theme.dart';
@@ -20,9 +21,19 @@ class PlaceholderScreen extends StatelessWidget {
     return Screen(
       child: Column(
         children: [
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: NhamSpacing.sp3),
-            child: AppHeader(),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: NhamSpacing.sp3),
+            // Back affordance: a deep link can land here directly, so the
+            // header must always offer a way out (pop if possible, else home).
+            child: AppHeader(
+              onBack: () {
+                if (context.canPop()) {
+                  context.pop();
+                } else {
+                  context.go('/logging');
+                }
+              },
+            ),
           ),
           Expanded(
             child: Center(

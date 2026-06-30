@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildPipelineRunRow, hashUserId } from '../run-telemetry';
+import { buildPipelineRunRow, hashUserId } from '../telemetry/run-telemetry';
 
 describe('hashUserId', () => {
   it('returns HMAC-SHA256 hex of user id', () => {

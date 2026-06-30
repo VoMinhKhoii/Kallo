@@ -2,26 +2,21 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../data/session_provider.dart';
 import '../features/onboarding/providers/onboarding_providers.dart';
 import '../features/onboarding/widgets/onboarding_dialog.dart';
+import '../shared/widgets/top_toast.dart';
 import '../theme/nham_colors.dart';
 import '../theme/nham_theme.dart';
 import '../theme/nham_typography.dart';
 
 /// One drawer nav destination — mirrors the web `NavItemConfig`
 /// (`components/app/nav-items.ts`): href, i18n label key, Lucide icon, and the
-/// admin-only gate.
-///
-/// lucide-react → Material icon mapping (web uses single, non-filled glyphs;
-/// active state only changes color, never the glyph):
-///   LayoutDashboard → Icons.grid_view
-///   Activity        → Icons.show_chart   (pulse/activity line)
-///   UtensilsCrossed → Icons.restaurant
-///   Users2          → Icons.group
-///   ShieldCheck     → Icons.verified_user
+/// admin-only gate. Lucide glyphs throughout (active state only changes color,
+/// never the glyph), matching the rest of the app's iconography.
 class _NavItem {
   const _NavItem({
     required this.href,
@@ -42,27 +37,27 @@ const List<_NavItem> _navItems = [
   _NavItem(
     href: '/dashboard',
     labelKey: 'app.mainSidebar.dashboard',
-    icon: Icons.grid_view,
+    icon: LucideIcons.layoutDashboard,
   ),
   _NavItem(
     href: '/nutrition',
     labelKey: 'app.mainSidebar.nutrition',
-    icon: Icons.show_chart,
+    icon: LucideIcons.activity,
   ),
   _NavItem(
     href: '/logging',
     labelKey: 'app.mainSidebar.logging',
-    icon: Icons.restaurant,
+    icon: LucideIcons.utensilsCrossed,
   ),
   _NavItem(
     href: '/groups',
     labelKey: 'app.mainSidebar.groups',
-    icon: Icons.group,
+    icon: LucideIcons.users,
   ),
   _NavItem(
     href: '/admin',
     labelKey: 'app.mainSidebar.admin',
-    icon: Icons.verified_user,
+    icon: LucideIcons.shieldCheck,
     adminOnly: true,
   ),
 ];
@@ -116,12 +111,14 @@ class Sidebar extends ConsumerWidget {
         bottom: false,
         child: Column(
           children: [
-            // ── Header: name + email ──────────────────────────────────────
+            // ── Header: avatar + name + email (the primary identity block) ──
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.symmetric(
-                horizontal: NhamSpacing.sp4,
-                vertical: NhamSpacing.sp4,
+              padding: const EdgeInsets.fromLTRB(
+                NhamSpacing.sp4,
+                NhamSpacing.sp5,
+                NhamSpacing.sp4,
+                NhamSpacing.sp4,
               ),
               decoration: const BoxDecoration(
                 border: Border(
@@ -131,28 +128,37 @@ class Sidebar extends ConsumerWidget {
                   ),
                 ),
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              child: Row(
                 children: [
-                  Text(
-                    label,
-                    style: NhamTextStyles.sansRegular(
-                      fontSize: 15,
-                    ).copyWith(color: NhamColors.text),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  if (email != null) ...[
-                    const SizedBox(height: 4),
-                    Text(
-                      email,
-                      style: NhamTextStyles.sansRegular(
-                        fontSize: 11.5,
-                      ).copyWith(color: NhamColors.textMuted),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                  _Avatar(initial: _deriveInitial(label, email)),
+                  const SizedBox(width: NhamSpacing.sp3),
+                  Expanded(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          label,
+                          style: NhamTextStyles.sansSemiBold(
+                            fontSize: 16,
+                          ).copyWith(color: NhamColors.text),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        if (email != null) ...[
+                          const SizedBox(height: 2),
+                          Text(
+                            email,
+                            style: NhamTextStyles.sansRegular(
+                              fontSize: 12,
+                            ).copyWith(color: NhamColors.textMuted),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ],
                     ),
-                  ],
+                  ),
                 ],
               ),
             ),
@@ -208,10 +214,8 @@ class Sidebar extends ConsumerWidget {
                     ),
                     const SizedBox(height: 12),
                   ],
-                  _AccountCard(label: label, email: email),
-                  const SizedBox(height: 8), // mt-2
                   _FooterRow(
-                    icon: Icons.settings,
+                    icon: LucideIcons.settings,
                     label: tr('app.mainSidebar.settings'),
                     active: _isActiveRoute(location, '/settings'),
                     onTap: () {
@@ -311,90 +315,45 @@ class _NavRowState extends State<_NavRow> {
   }
 }
 
-/// Footer account card — white fill, radius 12, 36px gradient avatar w/ ring,
-/// bold initial, name + email column (both truncated).
-class _AccountCard extends StatelessWidget {
-  const _AccountCard({required this.label, required this.email});
+/// 44px gradient avatar with a soft accent ring + bold initial — anchors the
+/// drawer's identity header.
+class _Avatar extends StatelessWidget {
+  const _Avatar({required this.initial});
 
-  final String label;
-  final String? email;
+  final String initial;
 
   @override
   Widget build(BuildContext context) {
-    final initial = _deriveInitial(label, email);
-
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      width: 44,
+      height: 44,
+      alignment: Alignment.center,
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(
-          NhamRadii.buttonXl,
-        ), // rounded-xl=12
+        shape: BoxShape.circle,
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Color(0x66C9A87C), // accent @ 40%
+            Color(0x8CE8D5B5), // border @ 55%
+          ],
+        ),
+        border: Border.all(color: const Color(0x40C9A87C), width: 1),
       ),
-      child: Row(
-        children: [
-          Container(
-            width: 36,
-            height: 36,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              gradient: const LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  Color(0x66C9A87C), // accent @ 40%
-                  Color(0x8CE8D5B5), // border @ 55%
-                ],
-              ),
-              border: Border.all(
-                color: const Color(0x40C9A87C), // accent @ 25%
-                width: 1,
-              ),
-            ),
-            child: Text(
-              initial,
-              style: NhamTextStyles.sansBold(
-                fontSize: 13,
-              ).copyWith(color: NhamColors.btn),
-            ),
-          ),
-          const SizedBox(width: 12), // gap-3
-          Expanded(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  style: NhamTextStyles.sansMedium(
-                    fontSize: 13,
-                  ).copyWith(color: NhamColors.text),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                if (email != null)
-                  Text(
-                    email!,
-                    style: NhamTextStyles.sansRegular(
-                      fontSize: 11,
-                    ).copyWith(color: NhamColors.textMuted),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-              ],
-            ),
-          ),
-        ],
+      child: Text(
+        initial,
+        style: NhamTextStyles.sansBold(fontSize: 16).copyWith(
+          color: NhamColors.btn,
+        ),
       ),
     );
   }
+}
 
-  static String _deriveInitial(String label, String? email) {
-    final source = label.trim().isNotEmpty ? label.trim() : (email ?? '');
-    if (source.isEmpty) return '·';
-    return source.characters.first.toUpperCase();
-  }
+String _deriveInitial(String label, String? email) {
+  final source = label.trim().isNotEmpty ? label.trim() : (email ?? '');
+  if (source.isEmpty) return '·';
+  return source.characters.first.toUpperCase();
 }
 
 /// Footer Settings row — radius 12, 16px icon, 13px medium label; active =
@@ -490,8 +449,10 @@ class _SignOutRowState extends State<_SignOutRow> {
       debugPrint('Sign-out failed: $error');
       if (!mounted) return;
       setState(() => _signingOut = false);
-      ScaffoldMessenger.maybeOf(context)?.showSnackBar(
-        SnackBar(content: Text(tr('app.userMenu.signOutError'))),
+      showTopToast(
+        context,
+        tr('app.userMenu.signOutError'),
+        variant: TopToastVariant.error,
       );
     }
   }
@@ -521,7 +482,7 @@ class _SignOutRowState extends State<_SignOutRow> {
           ),
           child: Row(
             children: [
-              const Icon(Icons.logout, size: 16, color: NhamColors.danger),
+              const Icon(LucideIcons.logOut, size: 16, color: NhamColors.danger),
               const SizedBox(width: 12),
               Text(
                 tr('app.userMenu.signOut'),
@@ -559,15 +520,9 @@ class _OnboardingNudge extends ConsumerWidget {
       padding: const EdgeInsets.all(NhamSpacing.sp4), // p-4 = 16
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(NhamRadii.xxl), // rounded-2xl = 18
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Color(0x1AC9A87C), // accent @ 10%
-            NhamColors.surface,
-            Color(0x8CF0EAE0), // hover @ 55%
-          ],
-        ),
+        // Solid card on the cream drawer — hierarchy from the border, not a
+        // gradient wash.
+        color: NhamColors.elev,
         border: Border.all(
           color: const Color(0x40C9A87C), // accent @ 25%
           width: 1,
@@ -576,41 +531,23 @@ class _OnboardingNudge extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Step counter row (sparkle chip + counter).
-          Row(
-            children: [
-              Container(
-                width: 20,
-                height: 20,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: const Color(0x33C9A87C), // accent @ 20%
-                  borderRadius: BorderRadius.circular(NhamRadii.md),
-                ),
-                child: const Icon(
-                  Icons.auto_awesome,
-                  size: 12,
-                  color: NhamColors.accent,
-                ),
-              ),
-              const SizedBox(width: 6), // gap-1.5
-              Text(
-                tr(
-                  'app.onboardingNudge.stepCounter',
-                  namedArgs: {'current': '$safeStep', 'total': '$_total'},
-                ).toUpperCase(),
-                style: NhamTextStyles.sansMedium(fontSize: 10).copyWith(
-                  color: NhamColors.textMuted,
-                  letterSpacing: 0.6, // 0.06em of 10px
-                ),
-              ),
-            ],
+          // Step counter eyebrow.
+          Text(
+            tr(
+              'app.onboardingNudge.stepCounter',
+              namedArgs: {'current': '$safeStep', 'total': '$_total'},
+            ).toUpperCase(),
+            style: NhamTextStyles.sansMedium(fontSize: NhamFontSize.eyebrow)
+                .copyWith(
+              color: NhamColors.textMuted,
+              letterSpacing: NhamTracking.wide, // 0.06em
+            ),
           ),
           const SizedBox(height: 8), // mb-2
           Text(
             tr('app.onboardingNudge.title'),
-            style: NhamTextStyles.sansMedium(
-              fontSize: 12,
+            style: NhamTextStyles.sansSemiBold(
+              fontSize: NhamFontSize.sm,
               height: NhamLeading.snug,
             ).copyWith(color: NhamColors.text),
           ),
@@ -618,7 +555,7 @@ class _OnboardingNudge extends ConsumerWidget {
           Text(
             tr('app.onboardingNudge.description'),
             style: NhamTextStyles.sansRegular(
-              fontSize: 11,
+              fontSize: NhamFontSize.detail,
               height: NhamLeading.relaxed,
             ).copyWith(color: NhamColors.textMuted),
           ),
@@ -693,8 +630,8 @@ class _NudgeCtaState extends State<_NudgeCta> {
         ),
         child: Text(
           tr('app.onboardingNudge.cta'),
-          style: NhamTextStyles.sansMedium(
-            fontSize: 11,
+          style: NhamTextStyles.sansSemiBold(
+            fontSize: NhamFontSize.detail,
           ).copyWith(color: Colors.white),
         ),
       ),

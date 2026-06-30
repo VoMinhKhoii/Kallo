@@ -54,6 +54,23 @@ export interface FuzzyMatchRow {
   similarity: number;
 }
 
+/** Row from the *_all_sources match functions: FuzzyMatchRow + source_id. */
+export type SourcedMatchRow = FuzzyMatchRow & { source_id: number };
+
+/** Demux an *_all_sources result set back into per-source candidate lists. */
+export function splitBySource(rows: SourcedMatchRow[]): {
+  fao: FuzzyMatchRow[];
+  usda: FuzzyMatchRow[];
+} {
+  const fao: FuzzyMatchRow[] = [];
+  const usda: FuzzyMatchRow[] = [];
+  for (const row of rows) {
+    if (row.source_id === SOURCE_FAO) fao.push(row);
+    else if (row.source_id === SOURCE_USDA) usda.push(row);
+  }
+  return { fao, usda };
+}
+
 /**
  * Lightweight match result carrying only match metadata (no nutrition).
  * Used internally to decouple matching from nutrition fetching.
@@ -212,6 +229,69 @@ export function mergeTopKAcrossSources(
   }
   merged.sort((a, b) => b.similarity - a.similarity);
   return merged.slice(0, k);
+}
+
+/** Standard RRF dampening constant (Cormack et al.) — rank 0 contributes
+ *  1/61, rank 1 contributes 1/62, ... */
+export const RRF_K = 60;
+
+/**
+ * Reciprocal Rank Fusion of the vector and fuzzy candidate lists.
+ *
+ * Cosine similarity and trigram word-similarity live on incomparable scales,
+ * so candidates are fused by RANK within each (already threshold-gated) arm:
+ * score(id) = Σ 1/(RRF_K + rank). A candidate both arms agree on outranks a
+ * candidate only one arm found — which is exactly the signal that separates
+ * "semantically adjacent but wrong" vector hits from real matches. When an id
+ * appears in both arms, the variant from the arm where it ranks better is
+ * kept (tie → vector, whose similarity feeds confidence classification).
+ *
+ * Each arm's per-source acceptance thresholds (and the state-mismatch
+ * penalty) have already been applied by buildMatchTopK, so fusion can only
+ * reorder/extend the candidate pool with rows that individually cleared
+ * their own quality bar.
+ */
+export function rrfFuseCandidates(
+  vectorList: MatchInfo[],
+  fuzzyList: MatchInfo[],
+  k: number
+): MatchInfo[] {
+  if (k <= 0) return [];
+  if (vectorList.length === 0) return fuzzyList.slice(0, k);
+  if (fuzzyList.length === 0) return vectorList.slice(0, k);
+
+  const fused = new Map<
+    string,
+    { score: number; bestRank: number; candidate: MatchInfo }
+  >();
+  const addArm = (list: MatchInfo[]) => {
+    list.forEach((candidate, rank) => {
+      const id = candidate.foodCompositionId;
+      const contribution = 1 / (RRF_K + rank + 1);
+      const existing = fused.get(id);
+      if (!existing) {
+        fused.set(id, { score: contribution, bestRank: rank, candidate });
+        return;
+      }
+      existing.score += contribution;
+      // Keep the variant from the arm where this id ranks strictly better.
+      // The vector arm is added first, so it wins rank ties.
+      if (rank < existing.bestRank) {
+        existing.bestRank = rank;
+        existing.candidate = candidate;
+      }
+    });
+  };
+  addArm(vectorList);
+  addArm(fuzzyList);
+
+  return Array.from(fused.values())
+    .sort(
+      (a, b) =>
+        b.score - a.score || b.candidate.similarity - a.candidate.similarity
+    )
+    .slice(0, k)
+    .map((entry) => entry.candidate);
 }
 
 /**

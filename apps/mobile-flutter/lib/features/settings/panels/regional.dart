@@ -1,5 +1,6 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../theme/nham_colors.dart';
 import '../../../theme/nham_theme.dart';
@@ -28,14 +29,14 @@ class Regional extends StatelessWidget {
         ),
         const SizedBox(height: NhamSpacing.sp5),
         _CountryField(
-          icon: Icons.public, // lucide Globe
+          icon: LucideIcons.globe,
           label: tr('onboarding.origin.countryOfOrigin'),
           value: v.countryOfOrigin,
           onChange: (s) => form.update((f) => f.countryOfOrigin = s),
         ),
         const SizedBox(height: NhamSpacing.sp4),
         _CountryField(
-          icon: Icons.place, // lucide MapPin
+          icon: LucideIcons.mapPin,
           label: tr('onboarding.origin.countryOfResidence'),
           value: v.countryOfResidence,
           onChange: (s) => form.update((f) => f.countryOfResidence = s),

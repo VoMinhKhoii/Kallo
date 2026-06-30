@@ -17,16 +17,10 @@ export default async function GroupsPage() {
       <div className="mx-auto flex max-w-2xl flex-col gap-8">
         <header className="flex items-start justify-between gap-4">
           <div className="space-y-1">
-            <h1
-              className="font-normal text-2xl text-nham-text tracking-tight"
-              style={{ fontFamily: 'Lora, serif' }}
-            >
+            <h1 className="font-normal font-serif text-2xl text-nham-text tracking-tight">
               {t('title')}
             </h1>
-            <p
-              className="text-nham-text-muted text-sm"
-              style={{ fontFamily: 'DM Sans, sans-serif' }}
-            >
+            <p className="font-sans-display text-nham-text-muted text-sm">
               {t('subtitle')}
             </p>
           </div>
@@ -35,8 +29,7 @@ export default async function GroupsPage() {
             trigger={
               <button
                 type="button"
-                className="inline-flex shrink-0 items-center gap-1.5 rounded-xl bg-nham-btn px-3.5 py-2 font-medium text-[13px] text-white shadow-nham-btn/20 shadow-sm transition-colors hover:bg-nham-btn/90"
-                style={{ fontFamily: 'DM Sans, sans-serif' }}
+                className="inline-flex shrink-0 items-center gap-1.5 rounded-xl bg-nham-btn px-3.5 py-2 font-medium font-sans-display text-[13px] text-white shadow-nham-btn/20 shadow-sm transition-colors hover:bg-nham-btn/90"
               >
                 <UserPlus className="h-4 w-4" />
                 {t('addFriend')}

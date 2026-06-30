@@ -43,23 +43,14 @@ export function OnboardingCard({
 
       <div className="mr-8 flex flex-col justify-between gap-6 md:flex-row md:items-center">
         <div className="max-w-xl flex-1">
-          <div
-            className="mb-3 inline-flex items-center gap-1.5 rounded-full bg-[#F0EAE0]/60 px-2.5 py-0.5 font-medium text-[#8B7355] text-[10px] uppercase tracking-widest"
-            style={{ fontFamily: 'DM Sans, sans-serif' }}
-          >
+          <div className="mb-3 inline-flex items-center gap-1.5 rounded-full bg-[#F0EAE0]/60 px-2.5 py-0.5 font-medium font-sans-display text-[#8B7355] text-[10px] uppercase tracking-widest">
             <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[#C9A87C]"></span>
             Thiết lập chưa hoàn tất
           </div>
-          <h3
-            className="mb-1 font-medium text-[#2C2416] text-xl"
-            style={{ fontFamily: 'Lora, serif' }}
-          >
+          <h3 className="mb-1 font-normal font-serif text-[#2C2416] text-xl">
             Sẵn sàng khám phá?
           </h3>
-          <p
-            className="text-[#8B7355] text-sm leading-relaxed"
-            style={{ fontFamily: 'DM Sans, sans-serif' }}
-          >
+          <p className="font-sans-display text-[#8B7355] text-sm leading-relaxed">
             Chỉ cần vài bước đơn giản để Nhẩm AI hiểu khẩu vị và thói quen của
             riêng bạn.
           </p>
@@ -68,8 +59,7 @@ export function OnboardingCard({
         <div className="flex-shrink-0">
           <Link
             href="/onboarding"
-            className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-[#2C2416] px-6 font-medium text-[#FFFCF8] text-sm transition-colors hover:bg-[#3D3425]"
-            style={{ fontFamily: 'DM Sans, sans-serif' }}
+            className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-[#2C2416] px-6 font-medium font-sans-display text-[#FFFCF8] text-sm transition-colors hover:bg-[#3D3425]"
           >
             Tiếp tục thiết lập
             <ArrowRight className="h-4 w-4" />

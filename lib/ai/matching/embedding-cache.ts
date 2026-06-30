@@ -1,6 +1,6 @@
 import { sql } from 'drizzle-orm';
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
-import { readBooleanEnv } from '@/lib/ai/pipeline/feature-flags';
+import { readBooleanEnv } from '@/lib/ai/pipeline/config/feature-flags';
 import type * as schema from '@/lib/db/schema';
 
 /**
@@ -93,8 +93,7 @@ export async function warmEmbeddingCache(
  * Prime L1 from rows already fetched by another caller — used by
  * `nutrition-cache.loadAll` so the boot-time `SELECT * FROM
  * vietnamese_food_composition WHERE source_id = 1` runs once instead of twice.
- * Marks the cache as warmed so the lazy `warmEmbeddingCache` call from the
- * L1-miss path becomes a no-op.
+ * Marks the cache as warmed so later explicit warm-up attempts become no-ops.
  */
 export function primeEmbeddingCacheFromRows(
   rows: Iterable<Record<string, unknown>>
@@ -139,20 +138,21 @@ export async function resolveQueryEmbedding(
   const normalized = normalizeIngredientKey(ingredientName);
   const logName = normalized.slice(0, 30);
 
-  // L1: in-memory cache — check before warm-up to short-circuit hot requests
+  // L1: in-memory cache — check first to short-circuit hot requests.
   const cached = memoryCache.get(normalized);
   if (cached) {
     console.info(`[embedding-cache] L1 HIT: "${logName}"`);
     return cached;
   }
 
-  // Trigger warm-up on first L1 miss (fire-and-forget — doesn't block this request)
-  warmEmbeddingCache(db);
-
   // L2: exact match on name_vi OR lower(name_en).
   // Both columns hold the cached embedding for the same row, so either match
   // returns the same vector. promoteToMemoryCache then caches under both keys.
-  // Treat DB errors as cache misses — the pipeline will generate a fresh embedding
+  // Treat DB errors as cache misses — the pipeline will generate a fresh
+  // embedding. Avoid kicking off the full-table warm-up here: cold requests
+  // already fan out several exact lookups, and the later nutrition-cache load
+  // primes the same L1 entries from the same source rows without contending on
+  // the critical matching path.
   try {
     const exactRows = await db.execute(
       sql`SELECT name_vi, name_en, embedding

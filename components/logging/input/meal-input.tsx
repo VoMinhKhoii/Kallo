@@ -10,11 +10,29 @@ import {
   useRef,
   useState,
 } from 'react';
-import { CheatModePicker } from '@/components/logging/input/cheat-mode-picker';
+import {
+  CheatModePicker,
+  type InputMode,
+} from '@/components/logging/input/cheat-mode-picker';
+import { ManualLoggingControls } from '@/components/logging/input/manual-logging-controls';
+import {
+  createEmptyRow,
+  hasCompleteRow,
+  type ManualMealRow,
+} from '@/lib/logging/manual-logging';
 import type { CheatIntensity } from '@/lib/types/cheat';
 import { BarcodeScannerDialog } from './barcode-scanner-dialog';
+import { cn } from '@/lib/utils';
 
 const STORAGE_KEY = 'nham:meal-input-draft';
+// v3: rows are {id, query, ingredient, grams} — `query` is the raw typed text.
+// Older shapes (v2 {id, ingredient, grams}, pre-rework {id, qty, name}) are
+// incompatible and their keys are deleted on first read.
+const MANUAL_ROWS_KEY = 'nham:meal-input-manual-items-v3';
+const LEGACY_MANUAL_ITEMS_KEYS = [
+  'nham:meal-input-manual-items',
+  'nham:meal-input-manual-items-v2',
+];
 const DEBOUNCE_MS = 500;
 // Single-line height matches the submit button (h-8 = 32px) so the placeholder
 // sits on the button's vertical centerline. Above MAX, textarea scrolls itself.
@@ -34,6 +52,7 @@ function autoResize(el: HTMLTextAreaElement) {
 
 export interface MealInputHandle {
   getText: () => string;
+  getManualRows: () => ManualMealRow[];
   clear: () => void;
   focus: () => void;
   setText: (text: string) => void;
@@ -45,9 +64,9 @@ interface MealInputProps {
    * submit button is replaced with a stop button that calls this. */
   onCancel?: () => void;
   disabled?: boolean;
-  /** Cheat-meal mode: a buffet/indulgent occasion logged via sliders. */
-  isCheat?: boolean;
-  onToggleCheat?: (next: boolean) => void;
+  /** Current input mode: normal | manual | cheat. Controlled from outside. */
+  mode?: InputMode;
+  onModeChange?: (mode: InputMode) => void;
   /** Indulgence magnitude shown in the mode picker (cheat mode). */
   cheatIntensity?: CheatIntensity;
   onChangeIntensity?: (next: CheatIntensity) => void;
@@ -75,6 +94,58 @@ function writeDraft(text: string) {
   }
 }
 
+function isValidManualRow(value: unknown): value is ManualMealRow {
+  if (typeof value !== 'object' || value === null) return false;
+  const row = value as Record<string, unknown>;
+  if (
+    typeof row.id !== 'string' ||
+    typeof row.query !== 'string' ||
+    typeof row.grams !== 'string'
+  ) {
+    return false;
+  }
+  if (row.ingredient === null) return true;
+  if (typeof row.ingredient !== 'object') return false;
+  const ingredient = row.ingredient as Record<string, unknown>;
+  return (
+    typeof ingredient.id === 'string' &&
+    typeof ingredient.namePrimary === 'string' &&
+    typeof ingredient.per100g === 'object' &&
+    ingredient.per100g !== null
+  );
+}
+
+function readManualRowsDraft(): ManualMealRow[] {
+  try {
+    for (const key of LEGACY_MANUAL_ITEMS_KEYS) localStorage.removeItem(key);
+    const raw = localStorage.getItem(MANUAL_ROWS_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (
+        Array.isArray(parsed) &&
+        parsed.length > 0 &&
+        parsed.every(isValidManualRow)
+      ) {
+        return parsed;
+      }
+    }
+  } catch {}
+  return [createEmptyRow(crypto.randomUUID())];
+}
+
+function writeManualRowsDraft(rows: ManualMealRow[]) {
+  try {
+    const filled = rows.filter(
+      (row) => row.ingredient || row.query.trim() || row.grams.trim()
+    );
+    if (filled.length === 0) {
+      localStorage.removeItem(MANUAL_ROWS_KEY);
+    } else {
+      localStorage.setItem(MANUAL_ROWS_KEY, JSON.stringify(rows));
+    }
+  } catch {}
+}
+
 const hasMeaningfulText = (text: string) => text.trim().length > 0;
 
 export const MealInput = forwardRef<MealInputHandle, MealInputProps>(
@@ -83,8 +154,8 @@ export const MealInput = forwardRef<MealInputHandle, MealInputProps>(
       onSubmit,
       onCancel,
       disabled,
-      isCheat,
-      onToggleCheat,
+      mode = 'normal',
+      onModeChange,
       cheatIntensity,
       onChangeIntensity,
       selectedDate,
@@ -99,6 +170,14 @@ export const MealInput = forwardRef<MealInputHandle, MealInputProps>(
     const [hasContent, setHasContent] = useState(() =>
       hasMeaningfulText(readDraft())
     );
+    const [manualRows, setManualRows] = useState<ManualMealRow[]>(() =>
+      readManualRowsDraft()
+    );
+    const manualRowsRef = useRef(manualRows);
+    manualRowsRef.current = manualRows;
+
+    const isManual = mode === 'manual';
+    const isCheat = mode === 'cheat';
 
     const updateText = useCallback((text: string) => {
       const el = textareaRef.current;
@@ -115,15 +194,22 @@ export const MealInput = forwardRef<MealInputHandle, MealInputProps>(
       ref,
       () => ({
         getText: () => textareaRef.current?.value ?? '',
+        // Read through the ref so the handle isn't rebuilt on every keystroke.
+        getManualRows: () => manualRowsRef.current,
         clear: () => {
-          updateText('');
+          if (isManual) {
+            setManualRows([createEmptyRow(crypto.randomUUID())]);
+            writeManualRowsDraft([]);
+          } else {
+            updateText('');
+          }
         },
         focus: () => textareaRef.current?.focus(),
         setText: (text: string) => {
           updateText(text);
         },
       }),
-      [updateText]
+      [isManual, updateText]
     );
 
     useEffect(() => {
@@ -135,6 +221,7 @@ export const MealInput = forwardRef<MealInputHandle, MealInputProps>(
       const flushDraft = () => {
         if (debounceRef.current) clearTimeout(debounceRef.current);
         writeDraft(el.value);
+        writeManualRowsDraft(manualRowsRef.current);
       };
 
       window.addEventListener('beforeunload', flushDraft);
@@ -148,6 +235,15 @@ export const MealInput = forwardRef<MealInputHandle, MealInputProps>(
         }
       };
     }, []);
+
+    // Persist manual rows draft on change.
+    useEffect(() => {
+      if (!isManual) return;
+      const timer = setTimeout(() => {
+        writeManualRowsDraft(manualRows);
+      }, DEBOUNCE_MS);
+      return () => clearTimeout(timer);
+    }, [isManual, manualRows]);
 
     const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
       const el = e.currentTarget;
@@ -170,14 +266,79 @@ export const MealInput = forwardRef<MealInputHandle, MealInputProps>(
       }
     };
 
-    const canSubmit = hasContent && !disabled;
+    const handleRowChange = (
+      id: string,
+      patch: Partial<Omit<ManualMealRow, 'id'>>
+    ) => {
+      setManualRows((prev) =>
+        prev.map((row) => (row.id === id ? { ...row, ...patch } : row))
+      );
+    };
+
+    const handleRowAdd = (afterId?: string): string => {
+      const newId = crypto.randomUUID();
+      setManualRows((prev) => {
+        const newRow = createEmptyRow(newId);
+        // Prepend: new rows appear at the top so the list grows upward toward
+        // the "Add food" button above it.
+        if (!afterId) return [newRow, ...prev];
+        const idx = prev.findIndex((row) => row.id === afterId);
+        const next = [...prev];
+        next.splice(idx + 1, 0, newRow);
+        return next;
+      });
+      return newId;
+    };
+
+    const handleRowRemove = (id: string) => {
+      setManualRows((prev) => {
+        const next = prev.filter((row) => row.id !== id);
+        return next.length > 0 ? next : [createEmptyRow(crypto.randomUUID())];
+      });
+    };
+
+    const canSubmit =
+      !disabled && (isManual ? hasCompleteRow(manualRows) : hasContent);
     const showStopButton = Boolean(disabled && onCancel);
+
+    const submitButton = showStopButton ? (
+      <button
+        type="button"
+        onClick={onCancel}
+        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-nham-btn text-white transition-all duration-200 hover:bg-nham-btn-hover active:scale-95"
+        aria-label={t('stopAnalyzing')}
+      >
+        <Square className="h-3.5 w-3.5 fill-current" />
+      </button>
+    ) : (
+      <button
+        type="button"
+        onClick={onSubmit}
+        disabled={!canSubmit}
+        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-nham-btn text-white transition-all duration-200 hover:bg-nham-btn-hover active:scale-95 disabled:opacity-30"
+        aria-label={t('submit')}
+      >
+        <ArrowUp className="h-4 w-4" />
+      </button>
+    );
 
     const placeholder = isCheat ? t('cheatPlaceholder') : t('placeholder');
 
     return (
       <div className="flex flex-col gap-2 rounded-2xl border border-nham-border/40 bg-background p-3 shadow-[0_4px_20px_color-mix(in_srgb,var(--color-nham-accent)_6%,transparent)] transition-all duration-300 focus-within:border-nham-accent/40 focus-within:shadow-[0_4px_20px_color-mix(in_srgb,var(--color-nham-accent)_12%,transparent)]">
-        <div className="flex items-end gap-2">
+        {/* Manual mode: DB-backed ingredient rows */}
+        {isManual && (
+          <ManualLoggingControls
+            disabled={disabled}
+            rows={manualRows}
+            onRowChange={handleRowChange}
+            onRowAdd={handleRowAdd}
+            onRowRemove={handleRowRemove}
+          />
+        )}
+
+        {/* Textarea — shown for normal and cheat mode */}
+        {!isManual && (
           <label htmlFor="meal-input" className="sr-only">
             {placeholder}
           </label>
@@ -205,33 +366,14 @@ export const MealInput = forwardRef<MealInputHandle, MealInputProps>(
           )}
           {onToggleCheat && (
             <CheatModePicker
-              isCheat={Boolean(isCheat)}
+              mode={mode}
               intensity={cheatIntensity ?? 'medium'}
               disabled={disabled}
-              onChangeMode={onToggleCheat}
+              onChangeMode={onModeChange}
               onChangeIntensity={(next) => onChangeIntensity?.(next)}
             />
           )}
-          {showStopButton ? (
-            <button
-              type="button"
-              onClick={onCancel}
-              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-nham-btn text-white transition-all duration-200 hover:bg-nham-btn-hover active:scale-95"
-              aria-label={t('stopAnalyzing')}
-            >
-              <Square className="h-3.5 w-3.5 fill-current" />
-            </button>
-          ) : (
-            <button
-              type="button"
-              onClick={onSubmit}
-              disabled={!canSubmit}
-              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-nham-btn text-white transition-all duration-200 hover:bg-nham-btn-hover active:scale-95 disabled:opacity-30"
-              aria-label={t('submit')}
-            >
-              <ArrowUp className="h-4 w-4" />
-            </button>
-          )}
+          {submitButton}
         </div>
         {selectedDate && onBarcodeSuccess && (
           <BarcodeScannerDialog

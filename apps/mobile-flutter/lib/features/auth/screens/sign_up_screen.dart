@@ -5,9 +5,8 @@ import '../widgets/auth_page.dart';
 
 /// The sign-up route.
 ///
-/// A flat full-page auth surface (header, in-place Sign in / Sign up toggle,
-/// Google button, divider, form, footer) on the cream surface. Opens on the
-/// sign-up tab; the toggle/footer switches to sign-in in place (no route change).
+/// Renders the same pre-auth welcome surface as `/sign-in` — the sign-in/sign-up
+/// split is collapsed into one path, so both routes land on the welcome screen.
 class SignUpScreen extends StatelessWidget {
   const SignUpScreen({super.key});
 
@@ -15,7 +14,7 @@ class SignUpScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return const Scaffold(
       backgroundColor: NhamColors.surface,
-      body: AuthPage(initialSignIn: false),
+      body: AuthPage(),
     );
   }
 }

@@ -3,7 +3,7 @@
 import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
 import { CircleError } from '@/components/groups/circle-error';
-import { useFriends, useRemoveFriend } from '@/hooks/use-friends';
+import { useFriends, useRemoveFriend } from '@/hooks/social/use-friends';
 import type { CircleMember } from '@/lib/groups/client';
 import { ProfileIdentity } from './profile-identity';
 
@@ -23,10 +23,7 @@ export function CircleList() {
 
   if (circle.length === 0) {
     return (
-      <p
-        className="px-1 py-2 text-[12px] text-nham-text-muted"
-        style={{ fontFamily: 'DM Sans, sans-serif' }}
-      >
+      <p className="px-1 py-2 font-sans-display text-[12px] text-nham-text-muted">
         {t('empty')}
       </p>
     );
@@ -34,10 +31,7 @@ export function CircleList() {
 
   return (
     <section className="space-y-2">
-      <h3
-        className="px-1 font-medium text-[10px] text-nham-text-muted uppercase tracking-[0.08em]"
-        style={{ fontFamily: 'DM Sans, sans-serif' }}
-      >
+      <h3 className="px-1 font-medium font-sans-display text-[10px] text-nham-text-muted uppercase tracking-[0.08em]">
         {t('title', { count: circle.length })}
       </h3>
       <ul className="space-y-2">
@@ -56,8 +50,7 @@ export function CircleList() {
               }
               disabled={removeFriend.isPending}
               aria-busy={removeFriend.isPending}
-              className="inline-flex shrink-0 items-center rounded-lg border border-nham-border/60 px-2.5 py-1.5 font-medium text-[12px] text-nham-text-muted transition-colors hover:bg-nham-danger/10 hover:text-nham-danger disabled:cursor-not-allowed disabled:opacity-60"
-              style={{ fontFamily: 'DM Sans, sans-serif' }}
+              className="inline-flex shrink-0 items-center rounded-lg border border-nham-border/60 px-2.5 py-1.5 font-medium font-sans-display text-[12px] text-nham-text-muted transition-colors hover:bg-nham-danger/10 hover:text-nham-danger disabled:cursor-not-allowed disabled:opacity-60"
             >
               {t('remove')}
             </button>

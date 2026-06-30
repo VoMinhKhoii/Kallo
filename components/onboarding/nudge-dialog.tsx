@@ -69,16 +69,10 @@ export function NudgeDialog({
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogContent className="overflow-hidden rounded-2xl border border-[#E8D5B5]/60 bg-[#FFFCF8] p-6 shadow-lg sm:max-w-md">
         <DialogHeader className="space-y-3 pb-2 text-left">
-          <DialogTitle
-            className="font-medium text-[#2C2416] text-xl"
-            style={{ fontFamily: 'Lora, serif' }}
-          >
+          <DialogTitle className="font-normal font-serif text-[#2C2416] text-xl">
             Hồ sơ chưa hoàn tất
           </DialogTitle>
-          <DialogDescription
-            className="text-[#8B7355] text-sm leading-relaxed"
-            style={{ fontFamily: 'DM Sans, sans-serif' }}
-          >
+          <DialogDescription className="font-sans-display text-[#8B7355] text-sm leading-relaxed">
             Bạn đã dùng Nhẩm được 1 tuần! Hoàn tất hồ sơ giúp Nhẩm thông minh
             hơn và cá nhân hóa chính xác lượng dinh dưỡng cho riêng bạn.
           </DialogDescription>
@@ -87,15 +81,13 @@ export function NudgeDialog({
           <Button
             variant="ghost"
             onClick={handleDismiss}
-            className="h-10 w-full rounded-xl px-4 font-medium text-[#8B7355] text-sm transition-colors hover:bg-[#F0EAE0]/50 hover:text-[#2C2416] sm:w-auto"
-            style={{ fontFamily: 'DM Sans, sans-serif' }}
+            className="h-10 w-full rounded-xl px-4 font-medium font-sans-display text-[#8B7355] text-sm transition-colors hover:bg-[#F0EAE0]/50 hover:text-[#2C2416] sm:w-auto"
           >
             Để sau
           </Button>
           <Button
             onClick={handleGoToOnboarding}
-            className="h-10 w-full rounded-xl bg-[#2C2416] px-6 font-medium text-[#FFFCF8] text-sm transition-colors hover:bg-[#3D3425] sm:w-auto"
-            style={{ fontFamily: 'DM Sans, sans-serif' }}
+            className="h-10 w-full rounded-xl bg-[#2C2416] px-6 font-medium font-sans-display text-[#FFFCF8] text-sm transition-colors hover:bg-[#3D3425] sm:w-auto"
           >
             Hoàn tất ngay
           </Button>

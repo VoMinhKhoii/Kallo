@@ -39,13 +39,3 @@ String joinNames(List<String> names, String locale) {
   final head = names.sublist(0, names.length - 1).join(', ');
   return '$head, $conj ${names.last}';
 }
-
-double? getAverageConfidence(NutritionOverview overview) {
-  final items = [
-    ...overview.summary.mostConsistent,
-    ...overview.summary.needsAttention,
-  ];
-  if (items.isEmpty) return null;
-  return items.fold<double>(0, (total, item) => total + item.confidence) /
-      items.length;
-}

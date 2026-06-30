@@ -1,5 +1,8 @@
+import 'dart:math';
+
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../shared/widgets/nham_text.dart';
 import '../../../theme/nham_colors.dart';
@@ -7,15 +10,28 @@ import '../../../theme/nham_theme.dart';
 import '../../../theme/nham_typography.dart';
 import 'entrances.dart';
 
-// Hardcoded Vietnamese suggestions (matches web — these are NOT localized).
-const _suggestions = ['2 mực kho + cơm', 'Phở bò tái', 'Bún chả Hà Nội'];
+// The "what did you eat?" prompt has several phrasings; one is chosen at random
+// per visit so the empty feed feels alive instead of canned.
+const _titleKeys = [
+  'logging.emptyState.title',
+  'logging.emptyState.title2',
+  'logging.emptyState.title3',
+  'logging.emptyState.title4',
+  'logging.emptyState.title5',
+];
 
-/// The "what did you eat?" empty feed. Staggered entrances mirror the web:
-/// icon scale (delay 50), title (100), subtitle (200), chips (300).
-class EmptyState extends StatelessWidget {
-  const EmptyState({super.key, required this.onSuggestion});
+/// The empty feed: an icon tile and a single rotating "What did you eat?"
+/// prompt. Staggered icon→title entrance (mirrors the web: icon scale delay 50,
+/// title 100).
+class EmptyState extends StatefulWidget {
+  const EmptyState({super.key});
 
-  final ValueChanged<String> onSuggestion;
+  @override
+  State<EmptyState> createState() => _EmptyStateState();
+}
+
+class _EmptyStateState extends State<EmptyState> {
+  late final String _titleKey = _titleKeys[Random().nextInt(_titleKeys.length)];
 
   @override
   Widget build(BuildContext context) {
@@ -36,93 +52,23 @@ class EmptyState extends StatelessWidget {
                 borderRadius: BorderRadius.circular(NhamRadii.xl), // rounded-xl
               ),
               child: const Icon(
-                Icons.restaurant, // lucide UtensilsCrossed → Icons.restaurant
+                LucideIcons.utensilsCrossed,
                 size: 20,
                 color: NhamColors.textMuted,
               ),
             ),
           ),
           const SizedBox(height: NhamSpacing.sp4), // gap-4
-          Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              FadeInDown(
-                delay: const Duration(milliseconds: 100),
-                child: NhamText(
-                  'logging.emptyState.title'.tr(),
-                  variant: NhamTextVariant.h4,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(letterSpacing: NhamTracking.tight),
-                ),
-              ),
-              const SizedBox(height: 6), // gap-1.5
-              FadeInDown(
-                delay: const Duration(milliseconds: 200),
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 280),
-                  child: NhamText(
-                    'logging.emptyState.subtitle'.tr(),
-                    variant: NhamTextVariant.small,
-                    textAlign: TextAlign.center,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: NhamSpacing.sp4), // gap-4
           FadeInDown(
-            delay: const Duration(milliseconds: 300),
-            child: Wrap(
-              alignment: WrapAlignment.center,
-              spacing: 6, // gap-1.5
-              runSpacing: 6,
-              children: [
-                for (final s in _suggestions)
-                  _SuggestionChip(label: s, onTap: () => onSuggestion(s)),
-              ],
+            delay: const Duration(milliseconds: 100),
+            child: NhamText(
+              _titleKey.tr(),
+              variant: NhamTextVariant.h4,
+              textAlign: TextAlign.center,
+              style: const TextStyle(letterSpacing: NhamTracking.tight),
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-/// A suggestion pill: border/60 rounded-full px-3 py-1 bg-white/80; pressed →
-/// accent/50 border + border/15 fill (web `hover:` touch affordance).
-class _SuggestionChip extends StatefulWidget {
-  const _SuggestionChip({required this.label, required this.onTap});
-  final String label;
-  final VoidCallback onTap;
-
-  @override
-  State<_SuggestionChip> createState() => _SuggestionChipState();
-}
-
-class _SuggestionChipState extends State<_SuggestionChip> {
-  bool _pressed = false;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTapDown: (_) => setState(() => _pressed = true),
-      onTapUp: (_) => setState(() => _pressed = false),
-      onTapCancel: () => setState(() => _pressed = false),
-      onTap: widget.onTap,
-      child: Container(
-        padding:
-            const EdgeInsets.symmetric(horizontal: 12, vertical: 4), // px-3 py-1
-        decoration: BoxDecoration(
-          // Pressed fill is bg-nham-border/15 (border @15%), not accent.
-          color: _pressed
-              ? const Color(0x26E8D5B5)
-              : NhamColors.elevTranslucent,
-          borderRadius: BorderRadius.circular(NhamRadii.pill),
-          border: Border.all(
-            color: _pressed ? NhamColors.accent50 : NhamColors.borderSoft,
-          ),
-        ),
-        child: NhamText(widget.label, variant: NhamTextVariant.chipText),
       ),
     );
   }
