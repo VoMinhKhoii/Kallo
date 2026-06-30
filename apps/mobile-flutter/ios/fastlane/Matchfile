@@ -1,0 +1,18 @@
+# fastlane match — code-signing storage for CI + local parity.
+#
+# Certs/profiles live ENCRYPTED in a private git repo (MATCH_GIT_URL), unlocked
+# with MATCH_PASSWORD. Auth to Apple is the same ASC API key the other lanes use
+# (no Apple ID / 2FA), so this works headless on a macOS runner.
+#
+# One-time seed (locally, with MATCH_GIT_URL + MATCH_PASSWORD exported):
+#   fastlane match appstore          # creates+stores the dist cert + App Store profile
+# CI then fetches read-only. See apps/docs/mobile/releasing.md → "CI".
+
+git_url(ENV["MATCH_GIT_URL"])
+storage_mode("git")
+
+type("appstore")
+app_identifier([ENV["ASC_APP_IDENTIFIER"] || "com.khoivo.nham"])
+
+# CI must never mint/mutate certs — it only fetches what the seed run stored.
+readonly(ENV["CI"] == "true")
