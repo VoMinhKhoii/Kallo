@@ -179,6 +179,36 @@ const samplePipelineResult: PipelineResult = {
   ],
 };
 
+// Routes tx.insert by table: meals/mealItems push their values into
+// `capturedValues` (so existing index-based assertions stay stable), while the
+// default share-to-circle insert on mealShares returns its own
+// `.values().onConflictDoNothing().returning()` chain without polluting
+// capturedValues. Returns a stub share row { id: 'share-1', visibility }.
+function mockInsertRouting(
+  capturedValues: unknown[] = [],
+  mealId: string = UUID_MEAL
+) {
+  return (table: { id?: string }) => {
+    if (table?.id === 'mealShares.id') {
+      return {
+        values: vi.fn().mockReturnValue({
+          onConflictDoNothing: vi.fn().mockReturnValue({
+            returning: vi
+              .fn()
+              .mockResolvedValue([{ id: 'share-1', visibility: 'circle' }]),
+          }),
+        }),
+      };
+    }
+    return {
+      values: vi.fn().mockImplementation((vals: unknown) => {
+        capturedValues.push(vals);
+        return { returning: vi.fn().mockResolvedValue([{ id: mealId }]) };
+      }),
+    };
+  };
+}
+
 // ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
@@ -217,13 +247,8 @@ describe('confirmAndSaveMealAction', () => {
       }),
     });
 
-    // INSERT meals RETURNING
-    const mealReturning = vi.fn().mockResolvedValue([{ id: UUID_MEAL }]);
-    const mealValues = vi.fn().mockReturnValue({ returning: mealReturning });
-    mockTxInsert.mockImplementation((_table: unknown) => {
-      // First call = meals, second call = mealItems
-      return { values: mealValues };
-    });
+    // INSERT routing: meals + mealShares (default circle share) + mealItems
+    mockTxInsert.mockImplementation(mockInsertRouting());
 
     // UPDATE for unmatched — not called in this case (empty array)
     mockTxUpdate.mockReturnValue({
@@ -243,8 +268,13 @@ describe('confirmAndSaveMealAction', () => {
     expect(result).toMatchObject({ mealId: UUID_MEAL });
     expect(result.meal.id).toBe(UUID_MEAL);
     expect(result.meal.nutrition).toBeDefined();
-    // INSERT called twice: meals + mealItems
-    expect(mockTxInsert).toHaveBeenCalledTimes(2);
+    // Shared to circle by default — the confirm response carries the share.
+    expect(result.meal.share).toEqual({
+      shareId: 'share-1',
+      visibility: 'circle',
+    });
+    // INSERT called three times: meals + mealShares + mealItems
+    expect(mockTxInsert).toHaveBeenCalledTimes(3);
   });
 
   it('persists the client-provided meal id when supplied', async () => {
@@ -264,14 +294,7 @@ describe('confirmAndSaveMealAction', () => {
       }),
     });
 
-    mockTxInsert.mockImplementation(() => ({
-      values: vi.fn().mockImplementation((vals: unknown) => {
-        capturedValues.push(vals);
-        return {
-          returning: vi.fn().mockResolvedValue([{ id: UUID_MEAL }]),
-        };
-      }),
-    }));
+    mockTxInsert.mockImplementation(mockInsertRouting(capturedValues));
 
     await confirmAndSaveMealAction({ analysisId: UUID_2, mealId: UUID_MEAL });
 
@@ -330,12 +353,9 @@ describe('confirmAndSaveMealAction', () => {
       }),
     });
 
-    mockTxInsert.mockImplementation(() => ({
-      values: vi.fn().mockImplementation((vals: Record<string, unknown>) => {
-        capturedValues.push(vals);
-        return { returning: vi.fn().mockResolvedValue([{ id: UUID_MEAL }]) };
-      }),
-    }));
+    mockTxInsert.mockImplementation(
+      mockInsertRouting(capturedValues as unknown[])
+    );
 
     const result = await confirmAndSaveMealAction({
       analysisId: UUID_1,
@@ -350,8 +370,13 @@ describe('confirmAndSaveMealAction', () => {
     expect(result.meal.alcoholG).toBe(40);
     expect(result.meal.nutrition.caloriesKcal).toBe(1120);
     expect(result.meal.mealItemGroups).toEqual([]);
-    // Only the meals row — no meal_items insert for a cheat meal.
-    expect(mockTxInsert).toHaveBeenCalledTimes(1);
+    // Shared to circle by default, just like a precise meal.
+    expect(result.meal.share).toEqual({
+      shareId: 'share-1',
+      visibility: 'circle',
+    });
+    // meals row + mealShares row — no meal_items insert for a cheat meal.
+    expect(mockTxInsert).toHaveBeenCalledTimes(2);
 
     const mealRow = capturedValues[0];
     expect(mealRow.entryMode).toBe('cheat');
@@ -415,14 +440,7 @@ describe('confirmAndSaveMealAction', () => {
       }),
     });
 
-    mockTxInsert.mockImplementation(() => ({
-      values: vi.fn().mockImplementation((vals: unknown) => {
-        capturedValues.push(vals);
-        return {
-          returning: vi.fn().mockResolvedValue([{ id: UUID_MEAL }]),
-        };
-      }),
-    }));
+    mockTxInsert.mockImplementation(mockInsertRouting(capturedValues));
 
     await confirmAndSaveMealAction({
       analysisId: UUID_2,
@@ -472,14 +490,7 @@ describe('confirmAndSaveMealAction', () => {
       }),
     });
 
-    mockTxInsert.mockImplementation(() => ({
-      values: vi.fn().mockImplementation((vals: unknown) => {
-        capturedValues.push(vals);
-        return {
-          returning: vi.fn().mockResolvedValue([{ id: UUID_MEAL }]),
-        };
-      }),
-    }));
+    mockTxInsert.mockImplementation(mockInsertRouting(capturedValues));
 
     await confirmAndSaveMealAction({
       analysisId: UUID_2,
@@ -511,14 +522,7 @@ describe('confirmAndSaveMealAction', () => {
       }),
     });
 
-    mockTxInsert.mockImplementation(() => ({
-      values: vi.fn().mockImplementation((vals: unknown) => {
-        capturedValues.push(vals);
-        return {
-          returning: vi.fn().mockResolvedValue([{ id: UUID_MEAL }]),
-        };
-      }),
-    }));
+    mockTxInsert.mockImplementation(mockInsertRouting(capturedValues));
 
     // Dish total is 200g + 100g = 300g; doubling to 600g should scale both
     // ingredients by 2x (goal adjustment is linear, so outputs double too).
@@ -1113,16 +1117,12 @@ describe('duplicateMealAction', () => {
     };
   }
 
-  // `.values()` captures the inserted rows; the meals insert chains `.returning`
-  // and the item insert is awaited directly (awaiting the plain object is a
-  // no-op), so one impl serves both.
+  // `.values()` captures the inserted meal/item rows; the meals insert chains
+  // `.returning` and the item insert is awaited directly (awaiting the plain
+  // object is a no-op). The default share-to-circle insert on mealShares is
+  // routed to its own chain so it never lands in `captured`.
   function captureInserts(captured: unknown[]) {
-    mockTxInsert.mockImplementation(() => ({
-      values: vi.fn().mockImplementation((vals: unknown) => {
-        captured.push(vals);
-        return { returning: vi.fn().mockResolvedValue([{ id: UUID_2 }]) };
-      }),
-    }));
+    mockTxInsert.mockImplementation(mockInsertRouting(captured, UUID_2));
   }
 
   it('rejects a meal that belongs to another user (userId-scoped lookup)', async () => {
@@ -1200,6 +1200,11 @@ describe('duplicateMealAction', () => {
     expect(result.meal.id).toBe(UUID_2);
     expect(result.meal.nutrition.caloriesKcal).toBe(520);
     expect(result.meal.mealItemGroups[0]?.ingredients).toHaveLength(2);
+    // A re-log is a brand-new meal, shared to circle by default.
+    expect(result.meal.share).toEqual({
+      shareId: 'share-1',
+      visibility: 'circle',
+    });
   });
 
   it('rejects an invalid mealId', async () => {

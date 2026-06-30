@@ -136,7 +136,11 @@ function buildOptimisticMeal(
       entryMode: 'cheat',
       alcoholG: resolved.alcoholG,
       cheatSliders: { spec: cheat.spec, levels: cheat.levels },
-      share: null,
+      // Shared to circle by default. shareId is left empty optimistically (the
+      // real one arrives with the confirm response); the toggle reads only
+      // visibility for its pressed state, and the Macro Card button stays hidden
+      // until a server shareId is present.
+      share: { shareId: '', visibility: 'circle' },
     };
   }
 
@@ -163,8 +167,11 @@ function buildOptimisticMeal(
     entryMode: 'precise',
     alcoholG: null,
     cheatSliders: null,
-    // A freshly-saved meal is never shared yet.
-    share: null,
+    // Shared to circle by default. shareId is left empty optimistically (the
+    // real one arrives with the confirm response); the toggle reads only
+    // visibility for its pressed state, and the Macro Card button stays hidden
+    // until a server shareId is present.
+    share: { shareId: '', visibility: 'circle' },
   };
 }
 
@@ -431,7 +438,11 @@ function buildOptimisticManualMeal(
     entryMode: 'precise',
     alcoholG: null,
     cheatSliders: null,
-    share: null,
+    // Shared to circle by default. shareId is left empty optimistically (the
+    // real one arrives with the save response); the toggle reads only
+    // visibility for its pressed state, and the Macro Card button stays hidden
+    // until a server shareId is present.
+    share: { shareId: '', visibility: 'circle' },
   };
 }
 
@@ -563,7 +574,10 @@ export function useDuplicateMeal(userId: string) {
         ...v.source,
         id: v.newMealId,
         loggedAt: v.loggedAt,
-        share: null,
+        // A re-log is a brand-new meal, shared to circle by default — not a
+        // carry-over of the source's share state. shareId is empty until the
+        // save response brings the real one.
+        share: { shareId: '', visibility: 'circle' },
       }),
     onSuccess: (data, v) =>
       reconcileSavedMeal(queryClient, userId, v.originDate, data.meal),
