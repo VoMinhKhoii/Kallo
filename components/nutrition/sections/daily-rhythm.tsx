@@ -148,7 +148,7 @@ export function DailyRhythm({ macros, daySeries }: DailyRhythmProps) {
           ) : null}
         </div>
 
-        {hasTimeAxis ? (
+        {hasTimeAxis && caloriesSeries ? (
           <div className="mt-6 space-y-2 border-nham-border/40 border-t border-dashed pt-5">
             <p className="text-nham-text-muted text-xs uppercase tracking-[0.18em]">
               {daySeries.unit === 'day'
