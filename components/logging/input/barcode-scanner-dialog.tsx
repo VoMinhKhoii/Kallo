@@ -135,7 +135,9 @@ export function BarcodeScannerDialog({
           // 3. Fallback standard facingMode environment configuration
           const cameraConfig =
             selectedCameraId ||
-            (devices.length > 0 ? devices[0].id : { facingMode: 'environment' });
+            (devices.length > 0
+              ? devices[0].id
+              : { facingMode: 'environment' });
 
           await scanner.start(
             cameraConfig,
@@ -337,7 +339,7 @@ export function BarcodeScannerDialog({
                   {/* html5-qrcode video viewport container */}
                   <div
                     id="nham-barcode-scanner"
-                    className="h-full w-full [&>video]:h-full [&>video]:w-full [&>video]:object-cover [&_#qr-shaded-region]:!hidden"
+                    className="[&_#qr-shaded-region]:!hidden h-full w-full [&>video]:h-full [&>video]:w-full [&>video]:object-cover"
                   />
 
                   {/* Premium overlay frame */}
@@ -372,18 +374,24 @@ export function BarcodeScannerDialog({
                       <span>{t('barcodeCameraScanning')}</span>
                       {cameras.length > 1 ? (
                         <div className="mx-auto flex max-w-[280px] flex-col items-center gap-1.5 px-4">
-                          <label htmlFor="camera-select" className="text-xs text-nham-text-muted font-medium">
+                          <label
+                            htmlFor="camera-select"
+                            className="font-medium text-nham-text-muted text-xs"
+                          >
                             {t('barcodeSelectCamera')}
                           </label>
                           <select
                             id="camera-select"
                             value={selectedCameraId || cameras[0]?.id}
-                            onChange={(e) => setSelectedCameraId(e.target.value)}
-                            className="w-full rounded-lg border border-nham-border/40 bg-nham-cream px-3 py-1.5 text-sm text-nham-text shadow-sm focus:border-nham-accent focus:outline-none transition-colors duration-200"
+                            onChange={(e) =>
+                              setSelectedCameraId(e.target.value)
+                            }
+                            className="w-full rounded-lg border border-nham-border/40 bg-nham-cream px-3 py-1.5 text-nham-text text-sm shadow-sm transition-colors duration-200 focus:border-nham-accent focus:outline-none"
                           >
                             {cameras.map((device) => (
                               <option key={device.id} value={device.id}>
-                                {device.label || `Camera ${device.id.substring(0, 5)}`}
+                                {device.label ||
+                                  `Camera ${device.id.substring(0, 5)}`}
                               </option>
                             ))}
                           </select>

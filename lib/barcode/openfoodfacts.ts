@@ -1,31 +1,37 @@
 import { z } from 'zod';
 
 // Open Food Facts API response validation schema
-const openFoodFactsNutrimentsSchema = z.object({
-  'energy-kcal_100g': z.union([z.number(), z.string()]).optional().nullable(),
-  'energy-kcal': z.union([z.number(), z.string()]).optional().nullable(),
-  'energy_100g': z.union([z.number(), z.string()]).optional().nullable(),
-  carbohydrates_100g: z.union([z.number(), z.string()]).optional().nullable(),
-  sugars_100g: z.union([z.number(), z.string()]).optional().nullable(),
-  proteins_100g: z.union([z.number(), z.string()]).optional().nullable(),
-  fat_100g: z.union([z.number(), z.string()]).optional().nullable(),
-  fiber_100g: z.union([z.number(), z.string()]).optional().nullable(),
-  sodium_100g: z.union([z.number(), z.string()]).optional().nullable(),
-  salt_100g: z.union([z.number(), z.string()]).optional().nullable(),
-}).passthrough();
+const openFoodFactsNutrimentsSchema = z
+  .object({
+    'energy-kcal_100g': z.union([z.number(), z.string()]).optional().nullable(),
+    'energy-kcal': z.union([z.number(), z.string()]).optional().nullable(),
+    energy_100g: z.union([z.number(), z.string()]).optional().nullable(),
+    carbohydrates_100g: z.union([z.number(), z.string()]).optional().nullable(),
+    sugars_100g: z.union([z.number(), z.string()]).optional().nullable(),
+    proteins_100g: z.union([z.number(), z.string()]).optional().nullable(),
+    fat_100g: z.union([z.number(), z.string()]).optional().nullable(),
+    fiber_100g: z.union([z.number(), z.string()]).optional().nullable(),
+    sodium_100g: z.union([z.number(), z.string()]).optional().nullable(),
+    salt_100g: z.union([z.number(), z.string()]).optional().nullable(),
+  })
+  .passthrough();
 
-const openFoodFactsProductSchema = z.object({
-  product_name: z.string().optional().nullable(),
-  product_name_vi: z.string().optional().nullable(),
-  product_name_en: z.string().optional().nullable(),
-  brands: z.string().optional().nullable(),
-  nutriments: openFoodFactsNutrimentsSchema.optional().nullable(),
-}).passthrough();
+const openFoodFactsProductSchema = z
+  .object({
+    product_name: z.string().optional().nullable(),
+    product_name_vi: z.string().optional().nullable(),
+    product_name_en: z.string().optional().nullable(),
+    brands: z.string().optional().nullable(),
+    nutriments: openFoodFactsNutrimentsSchema.optional().nullable(),
+  })
+  .passthrough();
 
-export const openFoodFactsResponseSchema = z.object({
-  status: z.union([z.number(), z.string()]).optional().nullable(),
-  product: openFoodFactsProductSchema.optional().nullable(),
-}).passthrough();
+export const openFoodFactsResponseSchema = z
+  .object({
+    status: z.union([z.number(), z.string()]).optional().nullable(),
+    product: openFoodFactsProductSchema.optional().nullable(),
+  })
+  .passthrough();
 
 export interface ParsedBarcodeProduct {
   barcode: string;
@@ -62,8 +68,9 @@ export async function fetchProductFromOpenFoodFacts(
     const res = await fetch(url, {
       headers: {
         // Required by Open Food Facts policy to identify the app and avoid blocking
-        'User-Agent': 'Nham Meal Tracker - Version 1.0 - Contact: support@nham.app',
-        'Accept': 'application/json',
+        'User-Agent':
+          'Nham Meal Tracker - Version 1.0 - Contact: support@nham.app',
+        Accept: 'application/json',
       },
       next: { revalidate: 86400 }, // Cache on the server side for 24h
     });
@@ -94,8 +101,10 @@ export async function fetchProductFromOpenFoodFacts(
     const nutriments = product.nutriments;
 
     // Macro/nutrient parsing
-    let caloriesKcal = parseNumber(nutriments?.['energy-kcal_100g'] ?? nutriments?.['energy-kcal']);
-    
+    let caloriesKcal = parseNumber(
+      nutriments?.['energy-kcal_100g'] ?? nutriments?.['energy-kcal']
+    );
+
     // Fallback: convert kJ to kcal (1 kcal = 4.184 kJ)
     if (caloriesKcal === null) {
       const energyKj = parseNumber(nutriments?.energy_100g);
@@ -134,7 +143,10 @@ export async function fetchProductFromOpenFoodFacts(
       sodiumMg,
     };
   } catch (error) {
-    console.error(`Error fetching from Open Food Facts API for barcode ${cleanBarcode}:`, error);
+    console.error(
+      `Error fetching from Open Food Facts API for barcode ${cleanBarcode}:`,
+      error
+    );
     return null;
   }
 }

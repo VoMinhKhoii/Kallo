@@ -101,7 +101,7 @@
     <script>
       // Self-contained bilingual copy — the offline page can't negotiate a
       // locale through the (unreachable) server, so pick from navigator.language.
-      (function () {
+      (() => {
         var vi = {
           title: 'Bạn đang ngoại tuyến.',
           body: 'Ghi chú của bạn được giữ lại — chúng tôi sẽ ước tính khi bạn quay lại.',
@@ -109,7 +109,7 @@
         };
         if ((navigator.language || '').toLowerCase().indexOf('vi') === 0) {
           document.documentElement.lang = 'vi';
-          document.querySelectorAll('[data-i18n]').forEach(function (el) {
+          document.querySelectorAll('[data-i18n]').forEach((el) => {
             var key = el.getAttribute('data-i18n');
             if (vi[key]) el.textContent = vi[key];
           });

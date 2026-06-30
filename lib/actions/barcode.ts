@@ -22,7 +22,6 @@ import {
 } from '@/lib/db/schema';
 import { dateStringSchema, timezoneOffsetSchema } from '@/lib/validation';
 
-
 const searchBarcodeSchema = z.object({
   barcode: z
     .string()

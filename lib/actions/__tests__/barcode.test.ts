@@ -1,16 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const mockUser = { id: 'user-123', email: 'test@example.com' };
-
-const {
-  mockDbSelect,
-  mockDbInsert,
-} = vi.hoisted(() => {
+const { mockDbSelect, mockDbInsert, mockUser } = vi.hoisted(() => {
   const mockDbSelect = vi.fn();
   const mockDbInsert = vi.fn();
+  const mockUser = { id: 'user-123', email: 'test@example.com' };
   return {
     mockDbSelect,
     mockDbInsert,
+    mockUser,
   };
 });
 
@@ -33,7 +30,10 @@ vi.mock('@/lib/db', () => ({
 
 vi.mock('@/lib/db/schema', () => ({
   vietnameseFoodComposition: { id: 'vietnameseFoodComposition.id' },
-  ingredientSources: { id: 'ingredientSources.id', code: 'ingredientSources.code' },
+  ingredientSources: {
+    id: 'ingredientSources.id',
+    code: 'ingredientSources.code',
+  },
   pendingAnalyses: { id: 'pendingAnalyses.id' },
 }));
 
@@ -41,9 +41,9 @@ vi.mock('@/lib/barcode/openfoodfacts', () => ({
   fetchProductFromOpenFoodFacts: vi.fn(),
 }));
 
+import { fetchProductFromOpenFoodFacts } from '@/lib/barcode/openfoodfacts';
 // Import modules under test
 import { searchBarcodeAction, stageBarcodeMealAction } from '../barcode';
-import { fetchProductFromOpenFoodFacts } from '@/lib/barcode/openfoodfacts';
 
 describe('searchBarcodeAction', () => {
   beforeEach(() => {
@@ -198,7 +198,9 @@ describe('stageBarcodeMealAction', () => {
       values: vi.fn().mockImplementation((val) => {
         capturedValues.push(val);
         return {
-          returning: vi.fn().mockResolvedValue([{ id: 'pending-analysis-999' }]),
+          returning: vi
+            .fn()
+            .mockResolvedValue([{ id: 'pending-analysis-999' }]),
         };
       }),
     });
@@ -219,10 +221,14 @@ describe('stageBarcodeMealAction', () => {
     const stagedRow = capturedValues[0] as Record<string, unknown>;
     expect(stagedRow.userId).toBe(mockUser.id);
     expect(stagedRow.entryMode).toBe('precise');
-    
+
     const pipelineResult = stagedRow.pipelineResult as any;
     expect(pipelineResult.displayedNutrition.caloriesKcal).toBe(700); // 350 * 2
     expect(pipelineResult.displayedNutrition.proteinG).toBe(16); // 8 * 2
-    expect(pipelineResult.boundedNutrition.caloriesKcal).toEqual({ low: 700, mid: 700, high: 700 });
+    expect(pipelineResult.boundedNutrition.caloriesKcal).toEqual({
+      low: 700,
+      mid: 700,
+      high: 700,
+    });
   });
 });

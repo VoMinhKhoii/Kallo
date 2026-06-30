@@ -15,7 +15,7 @@ export function tryDecodeFontEncodedBarcode(text: string): string {
     const code = text.charCodeAt(i);
     let val = -1;
 
-    if (code >= 32 && code <= 126) {
+    if (code >= 32 && code <= 126 && !(code >= 97 && code <= 122)) {
       val = code - 32;
     } else {
       // Handle common extended ASCII mappings in barcode fonts
@@ -25,13 +25,27 @@ export function tryDecodeFontEncodedBarcode(text: string): string {
         case 8206:
           val = 0;
           break;
-        case 178: val = 82; break; // ²
-        case 179: val = 83; break; // ³
-        case 185: val = 85; break; // ¹
-        case 186: val = 86; break; // º
-        case 188: val = 88; break; // ¼
-        case 189: val = 89; break; // ½
-        case 190: val = 90; break; // ¾
+        case 178:
+          val = 82;
+          break; // ²
+        case 179:
+          val = 83;
+          break; // ³
+        case 185:
+          val = 85;
+          break; // ¹
+        case 186:
+          val = 86;
+          break; // º
+        case 188:
+          val = 88;
+          break; // ¼
+        case 189:
+          val = 89;
+          break; // ½
+        case 190:
+          val = 90;
+          break; // ¾
         default:
           if (code >= 194 && code <= 206) {
             val = code - 99; // Maps 194-206 to 95-107
@@ -51,7 +65,11 @@ export function tryDecodeFontEncodedBarcode(text: string): string {
   }
 
   // If we converted it to a valid numeric string and it's longer than 5 digits, use it!
-  if (successfullyDecodedAll && /^\d+$/.test(numericString) && numericString.length >= 6) {
+  if (
+    successfullyDecodedAll &&
+    /^\d+$/.test(numericString) &&
+    numericString.length >= 6
+  ) {
     return numericString;
   }
 

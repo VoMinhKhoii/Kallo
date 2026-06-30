@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { tryDecodeFontEncodedBarcode } from '../decode';
 
 describe('tryDecodeFontEncodedBarcode', () => {
@@ -21,7 +21,9 @@ describe('tryDecodeFontEncodedBarcode', () => {
   });
 
   it('falls back to stripping non-digits if character map fails but digits exist', () => {
-    expect(tryDecodeFontEncodedBarcode('barcode-12345678-xyz')).toBe('12345678');
+    expect(tryDecodeFontEncodedBarcode('barcode-12345678-xyz')).toBe(
+      '12345678'
+    );
   });
 
   it('returns original input if no decoding is possible and no digits exist', () => {
