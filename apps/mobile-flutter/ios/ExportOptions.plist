@@ -15,7 +15,7 @@
 	<key>provisioningProfiles</key>
 	<dict>
 		<key>com.khoivo.nham</key>
-		<string>com.khoivo.nham AppStore</string>
+		<string>match AppStore com.khoivo.nham</string>
 	</dict>
 </dict>
 </plist>
