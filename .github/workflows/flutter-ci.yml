@@ -1,0 +1,50 @@
+name: Flutter CI
+
+# Static analysis + tests for the Flutter app. Runs only when the mobile app (or
+# this workflow) changes, so web-only PRs don't pay for a Flutter toolchain spin-up.
+# iOS release builds live in ios-testflight.yml; this is the per-PR quality gate.
+on:
+  push:
+    branches: [main, staging]
+    paths:
+      - 'apps/mobile-flutter/**'
+      - '.github/workflows/flutter-ci.yml'
+  pull_request:
+    branches: [main, staging]
+    paths:
+      - 'apps/mobile-flutter/**'
+      - '.github/workflows/flutter-ci.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: flutter-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  analyze-test:
+    name: Analyze & Test
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/mobile-flutter
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.44.1
+          channel: stable
+          cache: true
+
+      # --enforce-lockfile fails on any pubspec.lock drift, so CI builds the
+      # exact resolved dependency set (no silent transitive bumps).
+      - name: Install dependencies
+        run: flutter pub get --enforce-lockfile
+
+      - name: Analyze
+        run: flutter analyze
+
+      - name: Test
+        run: flutter test
