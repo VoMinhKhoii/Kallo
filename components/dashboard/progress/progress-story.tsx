@@ -123,6 +123,9 @@ export function ProgressStory({
           expectedEndWeight={weightSummary.expectedEndWeight}
           goalDirection={weightSummary.goalDirection}
           range={range}
+          projectedEndWeight={summary.projectedEndWeight}
+          canProject={summary.canProject}
+          periodElapsedDays={weightSummary.periodElapsedDays}
         />
       </div>
     </section>
