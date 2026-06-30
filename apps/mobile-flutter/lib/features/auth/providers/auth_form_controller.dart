@@ -5,20 +5,25 @@ import 'package:crypto/crypto.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../data/session_provider.dart';
 import '../../../services/supabase_service.dart';
 
-/// OAuth redirect target — mirrors the RN `Linking.createURL('auth-callback')`
-/// on the `nham` scheme (`apps/mobile/app.json`), i.e. `nham://auth-callback`.
-const String kAuthRedirect = 'nham://auth-callback';
-
 /// Which auth action is currently in flight. Lets the UI spin only the button
 /// that was tapped while still disabling the others — replacing the old single
 /// `busy` bool that made one tap spin every control.
 enum AuthAction { email, google, apple }
+
+/// Substring that identifies the `before_user_created` hook's duplicate-email
+/// rejection. Hard contract with the SQL hook's message — see
+/// `supabase/migrations/20260629120000_block_duplicate_email_signup.sql` (and
+/// the matching `DUPLICATE_EMAIL_MARKER` in the web client's callback route). A
+/// test in `auth_form_controller_test.dart` asserts the migration message still
+/// contains this string, so editing the SQL prose fails loudly here too.
+const String kDuplicateEmailMarker = 'already exists for this email';
 
 /// Maps a Supabase [AuthException] to warm, localized copy — the raw English
 /// `e.message` never reaches the UI. Wrong-password and no-account are
@@ -26,6 +31,12 @@ enum AuthAction { email, google, apple }
 /// `invalid_credentials` for both), so they share one neutral line.
 String authErrorMessage(AuthException e) {
   if (e is AuthRetryableFetchException) return tr('auth.errors.network');
+  // The `before_user_created` hook rejects a duplicate-email signup with this
+  // marker in its message — surface the "use your original method" copy so a
+  // user signing in with a new provider on an existing email isn't dead-ended.
+  if (e.message.toLowerCase().contains(kDuplicateEmailMarker)) {
+    return tr('auth.errors.accountExists');
+  }
   switch (e.code) {
     case 'invalid_credentials':
       return tr('auth.errors.invalidCredentials');
@@ -170,11 +181,12 @@ class AuthFormController extends StateNotifier<AuthFormState> {
     }
   }
 
-  /// RN `signInWithGoogle` / `signUpWithGoogle` (identical): launch the Google
-  /// OAuth flow. `supabase_flutter`'s `signInWithOAuth` opens the auth session
-  /// and completes the PKCE `exchangeCodeForSession` on the deep-link return —
-  /// the same end state the RN screens reached via `expo-web-browser` +
-  /// `exchangeCodeForSession`. A cancelled flow returns `false` (no error).
+  /// Native Google sign-in. Opens the in-app Google account picker
+  /// (`google_sign_in` v7), then hands Supabase the returned identity token via
+  /// `signInWithIdToken` — the same end state Apple reaches, with no Safari
+  /// app-switch or `nham://auth-callback` deep-link round-trip. We only
+  /// authenticate (no Google API calls), so the ID token alone is passed; no
+  /// access token and no nonce (Google's `authenticate()` doesn't expose one).
   Future<void> signInWithGoogle() async {
     state = state.copyWith(
       action: AuthAction.google,
@@ -182,17 +194,37 @@ class AuthFormController extends StateNotifier<AuthFormState> {
       clearNotice: true,
     );
     try {
-      await _auth.signInWithOAuth(
-        OAuthProvider.google,
-        redirectTo: kAuthRedirect,
-        authScreenLaunchMode: LaunchMode.externalApplication,
+      // Native account picker / one-tap. Throws GoogleSignInException on cancel.
+      final account = await GoogleSignIn.instance.authenticate(
+        scopeHint: const ['email', 'profile'],
       );
-      // The browser hands off; supabase_flutter's deep-link observer completes
-      // the PKCE exchange on the nham://auth-callback return, onAuthStateChange
-      // fires, and the router redirect routes in. Keep the `google` action set
-      // so the UI can hold a "Finishing sign-in…" state across the Safari
-      // app-switch; the UI's lifecycle listener clears it if the user cancels
-      // and resumes still signed-out.
+      // `authentication` is a synchronous getter in v7; idToken is minted for
+      // the `serverClientId` (Web) audience configured at init.
+      final idToken = account.authentication.idToken;
+      if (idToken == null) {
+        state = state.copyWith(
+          clearAction: true,
+          error: tr('auth.dialog.googleError'),
+        );
+        return;
+      }
+      await _auth.signInWithIdToken(
+        provider: OAuthProvider.google,
+        idToken: idToken,
+      );
+      // Success: onAuthStateChange fires and the router redirect routes in.
+      state = state.copyWith(clearAction: true);
+    } on GoogleSignInException catch (e) {
+      // User dismissed the native sheet → clear the spinner silently (mirrors
+      // the Apple cancel path); surface anything else as the generic error.
+      if (e.code == GoogleSignInExceptionCode.canceled) {
+        state = state.copyWith(clearAction: true);
+        return;
+      }
+      state = state.copyWith(
+        clearAction: true,
+        error: tr('auth.dialog.googleError'),
+      );
     } on AuthException catch (e) {
       state = state.copyWith(clearAction: true, error: authErrorMessage(e));
     } catch (_) {
@@ -291,12 +323,6 @@ class AuthFormController extends StateNotifier<AuthFormState> {
         error: tr('auth.errors.generic'),
       );
     }
-  }
-
-  /// Drop the in-flight action (e.g. the OAuth browser round-trip was
-  /// cancelled and the app resumed still signed-out).
-  void resetAction() {
-    if (state.action != null) state = state.copyWith(clearAction: true);
   }
 
   /// Leave the confirm-email state (the "Back" affordance).

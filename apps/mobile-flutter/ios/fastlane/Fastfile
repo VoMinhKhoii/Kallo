@@ -23,8 +23,24 @@ API_BASE_URL      = ENV["NHAM_API_BASE_URL"]  || "https://nham-internal-71432123
 SUPABASE_URL      = ENV["NHAM_SUPABASE_URL"]  || "https://oudpzhfzirgjbhrzcett.supabase.co"
 SUPABASE_ANON_KEY = ENV["NHAM_SUPABASE_KEY"]  || "sb_publishable_TIrP9KQanbXTxsxJcERbLA_cI6PSNeV"
 
+# Native Google sign-in client IDs (client-PUBLIC, like SUPABASE_* above — the
+# Web ID is passed to google_sign_in as serverClientId and must be in Supabase's
+# "Authorized Client IDs"; the iOS ID is its `clientId`). Baked in as defaults so
+# the beta lane never silently ships with Google sign-in disabled; override per
+# env if they ever change.
+GOOGLE_WEB_CLIENT_ID = ENV["NHAM_GOOGLE_WEB_CLIENT_ID"] ||
+                       "714321235532-2voptgejsba4bkm6fe440omv9q4bmbq1.apps.googleusercontent.com"
+GOOGLE_IOS_CLIENT_ID = ENV["NHAM_GOOGLE_IOS_CLIENT_ID"] ||
+                       "714321235532-psunb7uh1ddgm7veditd2shmbjln7m1t.apps.googleusercontent.com"
+
 KEYCHAIN_NAME = "nham-ci.keychain-db"
 KEYCHAIN_PASS = ENV["NHAM_KEYCHAIN_PASSWORD"] || "nham-ci"
+
+# GitHub Actions (and most CI) set CI=true. In CI, match runs read-only and the
+# keychain is ephemeral; locally, the signing lane may create/refresh material.
+def ci?
+  ENV["CI"] == "true"
+end
 
 def asc_api_key
   app_store_connect_api_key(
@@ -43,7 +59,7 @@ platform :ios do
     UI.success("Auth OK. #{APP_ID} latest TestFlight build: #{n}")
   end
 
-  desc "Create/refresh the Apple Distribution cert + App Store profile from the API key"
+  desc "Install the Apple Distribution cert + App Store profile via fastlane match"
   lane :signing do
     key = asc_api_key
     kc_path = File.expand_path("~/Library/Keychains/#{KEYCHAIN_NAME}")
@@ -52,9 +68,21 @@ platform :ios do
                       unlock: true, timeout: 21600, lock_when_sleeps: false, add_to_search_list: true)
     end
     sh("security", "unlock-keychain", "-p", KEYCHAIN_PASS, kc_path)
-    cert(api_key: key, keychain_path: kc_path, keychain_password: KEYCHAIN_PASS)
-    get_provisioning_profile(api_key: key, app_identifier: APP_ID, fail_on_name_taken: false)
-    lane_context[SharedValues::SIGH_NAME]
+
+    # Pull the cert + App Store profile from the encrypted match repo into the
+    # isolated keychain. Auth is the ASC API key (no Apple ID/2FA); CI is
+    # read-only so it can never mint or mutate signing material — that only
+    # happens during the local `fastlane match appstore` seed. Config (git_url,
+    # type, app id, readonly) lives in fastlane/Matchfile.
+    match(
+      api_key: key,
+      keychain_name: KEYCHAIN_NAME,
+      keychain_password: KEYCHAIN_PASS,
+    )
+
+    # match names its profile "match AppStore <bundle>"; hand it to the build +
+    # ExportOptions.plist (which references the same name).
+    ENV["sigh_#{APP_ID}_appstore_profile-name"] || "match AppStore #{APP_ID}"
   end
 
   desc "Build the Flutter release IPA (prod config) and upload to TestFlight"
@@ -63,7 +91,14 @@ platform :ios do
     next_build = latest_testflight_build_number(api_key: key, app_identifier: APP_ID, initial_build_number: 0) + 1
     UI.message("Building #{APP_ID} → build #{next_build}")
 
-    profile_name = self.runner.execute(:signing, :ios) # cert + profile; returns profile name
+    # The app boots fine without these (the Google button self-disables), so a
+    # blank value is not fatal — but a TestFlight build with broken Google
+    # sign-in should never ship *silently*. Warn loudly instead.
+    if GOOGLE_WEB_CLIENT_ID.empty? || GOOGLE_IOS_CLIENT_ID.empty?
+      UI.important("⚠️  NHAM_GOOGLE_WEB_CLIENT_ID / NHAM_GOOGLE_IOS_CLIENT_ID not set — this build ships with native Google sign-in disabled.")
+    end
+
+    profile_name = self.runner.execute(:signing, :ios) # match install; returns profile name
 
     # Compile Dart with PROD defines. --no-codesign so the Flutter build phase
     # doesn't need a cert; signing happens in the xcodebuild archive below.
@@ -85,7 +120,9 @@ platform :ios do
            "--build-name=1.0.1", "--build-number=#{next_build}",
            "--dart-define=API_BASE_URL=#{API_BASE_URL}",
            "--dart-define=SUPABASE_URL=#{SUPABASE_URL}",
-           "--dart-define=SUPABASE_ANON_KEY=#{SUPABASE_ANON_KEY}")
+           "--dart-define=SUPABASE_ANON_KEY=#{SUPABASE_ANON_KEY}",
+           "--dart-define=GOOGLE_WEB_CLIENT_ID=#{GOOGLE_WEB_CLIENT_ID}",
+           "--dart-define=GOOGLE_IOS_CLIENT_ID=#{GOOGLE_IOS_CLIENT_ID}")
       ensure
         saved.each { |k, v| ENV[k] = v unless v.nil? }
       end

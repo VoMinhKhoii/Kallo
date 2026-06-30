@@ -59,8 +59,12 @@ profile — all client-public values):
 - `API_BASE_URL=https://nham-internal-714321235532.asia-southeast3.run.app`
 - `SUPABASE_URL=https://oudpzhfzirgjbhrzcett.supabase.co`
 - `SUPABASE_ANON_KEY=sb_publishable_…`
+- `GOOGLE_WEB_CLIENT_ID` / `GOOGLE_IOS_CLIENT_ID` — native Google sign-in (baked into the
+  Fastfile defaults; the iOS client ID's reversed form is also the URL scheme in
+  `ios/Runner/Info.plist`).
 
-Override via `NHAM_API_BASE_URL`, `NHAM_SUPABASE_URL`, `NHAM_SUPABASE_KEY`.
+Override via `NHAM_API_BASE_URL`, `NHAM_SUPABASE_URL`, `NHAM_SUPABASE_KEY`,
+`NHAM_GOOGLE_WEB_CLIENT_ID`, `NHAM_GOOGLE_IOS_CLIENT_ID`.
 
 ## How signing works (and why it's shaped this way)
 
@@ -115,12 +119,47 @@ to your testers.
 | `CocoaPods is installed but broken` | Ruby bump orphaned `ffi`; `brew reinstall cocoapods`. |
 | `X does not support provisioning profiles` | A profile/identity was applied globally; scope signing to the `Runner` target only. |
 | `your team has no devices … iOS App Development profile` | Automatic signing chose a dev profile; use manual distribution signing (the `beta` lane does). |
-| `No profiles for 'com.khoivo.nham' were found` | Run `fastlane ios signing` to (re)create the cert + App Store profile. |
+| `No profiles for 'com.khoivo.nham' were found` | Run `fastlane ios signing` (fetches from match); if the match repo is empty, seed it with `fastlane match appstore`. |
 | Build stuck "Missing Compliance" in TestFlight | Pre-flag build; answer the encryption/France prompt once, or ship a new build (flag is set). |
 | `latest_testflight_build_number` auth fails | Check the `.p8` path + Key/Issuer IDs; `fastlane ios validate`. |
 
-## CI (future)
+## CI (GitHub Actions)
 
-The same lanes run on a macOS CI runner with the `.p8` stored as a secret (base64) and
-`ASC_*` / `NHAM_*` as env. fastlane is preinstalled on GitHub-hosted macOS runners. Not wired up
-yet — `fastlane ios beta` from a dev machine is the current path.
+`.github/workflows/ios-testflight.yml` runs `fastlane ios beta` on a `macos-15` runner —
+**manual trigger only** (Actions tab → "iOS TestFlight" → Run workflow). Signing comes from
+[`fastlane match`](https://docs.fastlane.tools/actions/match/): certs + the App Store profile
+live **encrypted in a private git repo** and are fetched **read-only** in CI, so a fresh runner
+never mints a new certificate (which would burn Apple's cert cap). The `signing` lane uses match;
+`ExportOptions.plist` and the lane both reference the match profile name `match AppStore com.khoivo.nham`.
+
+### One-time setup
+
+1. **Create a private "match" repo** (e.g. `VoMinhKhoii/nham-ios-certs`) — empty is fine.
+2. **Seed it locally** from the app dir, authenticating with the same ASC API key:
+   ```bash
+   cd apps/mobile-flutter/ios
+   export MATCH_GIT_URL=https://github.com/<you>/nham-ios-certs.git
+   export MATCH_PASSWORD=<pick a strong passphrase>   # encrypts the repo
+   bundle install
+   bundle exec fastlane match appstore                 # creates + stores cert + profile
+   ```
+   (If you'd rather reuse your existing distribution cert instead of minting a new one, use
+   `fastlane match import` — see the match docs.)
+3. **Add the GitHub repo secrets** (Settings → Secrets and variables → Actions):
+
+   | Secret | What |
+   |--------|------|
+   | `ASC_KEY_P8_BASE64` | `base64 -i AuthKey_<KEYID>.p8` (the App Store Connect API key) |
+   | `ASC_KEY_ID` / `ASC_ISSUER_ID` | from the API key (public, but kept as secrets for tidiness) |
+   | `MATCH_GIT_URL` | HTTPS URL of the private match repo |
+   | `MATCH_PASSWORD` | the passphrase from step 2 |
+   | `MATCH_GIT_BASIC_AUTHORIZATION` | `base64 "<gh-user>:<PAT-with-repo-scope>"` — lets CI read the match repo |
+   | `NHAM_KEYCHAIN_PASSWORD` | any string; password for the ephemeral CI keychain |
+
+Client-public values (`API_BASE_URL`, `SUPABASE_*`, the Google client IDs, team/app id) are baked
+into the `Fastfile` defaults — no secrets needed.
+
+**Local builds after the migration:** `fastlane ios beta` from your machine now also pulls signing
+from match, so export `MATCH_GIT_URL` + `MATCH_PASSWORD` first (same as the seed). Outside CI it's
+not read-only, so it can refresh the cert/profile if needed. Add them to your shell profile or a
+local env file so you don't re-export each time.

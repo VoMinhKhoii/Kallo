@@ -28,6 +28,18 @@
 				<string>nham</string>
 			</array>
 		</dict>
+		<!-- Native Google sign-in (google_sign_in): the reversed iOS OAuth
+		     client ID, so Google returns to the app. This is GOOGLE_IOS_CLIENT_ID
+		     (714321235532-psunb7uh1ddgm7veditd2shmbjln7m1t.apps.googleusercontent.com)
+		     with its two dot-segments swapped to the reverse-DNS scheme. -->
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>com.googleusercontent.apps.714321235532-psunb7uh1ddgm7veditd2shmbjln7m1t</string>
+			</array>
+		</dict>
 	</array>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>

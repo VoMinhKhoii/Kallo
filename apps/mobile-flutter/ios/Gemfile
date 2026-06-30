@@ -1,0 +1,5 @@
+# Pin fastlane so CI matches the local toolchain (verified with 2.235.0).
+# CI: `bundle install` then `bundle exec fastlane ios beta`.
+source "https://rubygems.org"
+
+gem "fastlane", "~> 2.235"

@@ -1,10 +1,13 @@
 import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 
 import 'app.dart';
+import 'data/env.dart';
 import 'services/supabase_service.dart';
 
 /// Supabase connection, supplied at build/run time via `--dart-define`
@@ -37,6 +40,25 @@ Future<void> main() async {
     url: _supabaseUrl,
     anonKey: _supabaseAnonKey,
   );
+
+  // Initialize native Google sign-in once (v7 requires a single async init
+  // before the first `authenticate()`). Guarded on the Web client ID so a dev
+  // build without Google config still boots — the Google button then surfaces a
+  // clear error instead of crashing at startup. `serverClientId` is the Web
+  // OAuth client ID (the audience Supabase's "Authorized Client IDs" verifies);
+  // `clientId` is the iOS client ID, needed on iOS only.
+  if (Env.googleWebClientId.isNotEmpty) {
+    // `clientId` is an iOS-only concern (Android derives it from serverClientId
+    // + the registered SHA-1); passing the iOS client ID on Android can be
+    // rejected, so scope it to iOS.
+    final isIos = defaultTargetPlatform == TargetPlatform.iOS;
+    await GoogleSignIn.instance.initialize(
+      clientId: isIos && Env.googleIosClientId.isNotEmpty
+          ? Env.googleIosClientId
+          : null,
+      serverClientId: Env.googleWebClientId,
+    );
+  }
 
   // Dark status-bar content on the cream surface — RN `<StatusBar style="dark" />`.
   SystemChrome.setSystemUIOverlayStyle(
