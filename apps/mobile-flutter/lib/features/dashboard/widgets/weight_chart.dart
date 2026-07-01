@@ -241,14 +241,16 @@ void _openLogSheet(
     builder: (sheetContext) {
       final mq = MediaQuery.of(sheetContext);
       // A tall sheet — cap to the space above the keyboard — with the field +
-      // Save centred vertically, so they sit around mid-screen (thumb zone)
-      // with generous empty space below.
+      // Save bottom-aligned so they sit right above the number keypad (which
+      // the viewInsets padding already lifts the sheet clear of), with only a
+      // small breathing gap below.
       final available = mq.size.height - mq.viewInsets.bottom;
       final target = mq.size.height * 0.68;
       final sheetHeight = target < available ? target : available;
       return Padding(
         padding: EdgeInsets.only(bottom: mq.viewInsets.bottom),
-        // Scroll-safe centring: the Spacers centre the content when it fits, and
+        // Scroll-safe bottom-alignment: the top Spacer pushes the content to the
+        // bottom (just above the keypad) when it fits, and
         // ConstrainedBox+IntrinsicHeight let the whole thing scroll instead of
         // overflowing when the height is tight (landscape, split-screen).
         child: SingleChildScrollView(
@@ -280,7 +282,7 @@ void _openLogSheet(
                       onSaved: () => Navigator.of(sheetContext).pop(),
                     ),
                   ),
-                  const Spacer(),
+                  const SizedBox(height: NhamSpacing.sp4),
                 ],
               ),
             ),
