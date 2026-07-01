@@ -71,18 +71,27 @@ export function useBarcodeCameraScanner({
   const [cameras, setCameras] = useState<CameraDevice[]>([]);
   const [selectedCameraId, setSelectedCameraId] = useState<string | null>(null);
   const qrCodeScannerRef = useRef<any>(null);
+  // Guards a concurrent stop() — two callers (decode success + effect cleanup)
+  // can both observe isScanning === true before either stop() resolves.
+  const isStoppingRef = useRef(false);
+  // Single-flight guard: html5-qrcode can fire the success callback multiple
+  // times (per decoded frame) before stop() actually halts scanning. Ensures
+  // only the first decode kicks off the scan→lookup pipeline. Reset when the
+  // scanner (re)starts for a fresh scan attempt.
+  const hasDecodedRef = useRef(false);
 
   const stopScanner = useCallback(async () => {
-    if (qrCodeScannerRef.current) {
-      try {
-        if (qrCodeScannerRef.current.isScanning) {
-          await qrCodeScannerRef.current.stop();
-        }
-      } catch (err) {
-        console.error('Error stopping scanner:', err);
-      } finally {
-        qrCodeScannerRef.current = null;
+    if (!qrCodeScannerRef.current || isStoppingRef.current) return;
+    isStoppingRef.current = true;
+    try {
+      if (qrCodeScannerRef.current.isScanning) {
+        await qrCodeScannerRef.current.stop();
       }
+    } catch (err) {
+      console.error('Error stopping scanner:', err);
+    } finally {
+      qrCodeScannerRef.current = null;
+      isStoppingRef.current = false;
     }
   }, []);
 
@@ -91,6 +100,7 @@ export function useBarcodeCameraScanner({
 
     let isMounted = true;
     setCameraStatus('initializing');
+    hasDecodedRef.current = false;
     let scannerInstance: any = null;
 
     const startScanner = async () => {
@@ -138,6 +148,10 @@ export function useBarcodeCameraScanner({
             aspectRatio: 1.777778,
           },
           (decodedText: string) => {
+            // Suppress repeat firings while the first decode is in flight.
+            if (hasDecodedRef.current) return;
+            hasDecodedRef.current = true;
+
             playBeep();
             vibrate();
 

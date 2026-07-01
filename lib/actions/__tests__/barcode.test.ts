@@ -125,7 +125,9 @@ describe('searchBarcodeAction', () => {
     mockDbInsert.mockReturnValue({
       values: vi.fn().mockImplementation((val) => {
         capturedValues.push(val);
-        return Promise.resolve();
+        return {
+          onConflictDoNothing: vi.fn().mockResolvedValue(undefined),
+        };
       }),
     });
 
@@ -169,7 +171,7 @@ describe('stageBarcodeMealAction', () => {
 
     expect(result).toEqual({
       success: false,
-      error: 'Sản phẩm chưa được lưu hoặc không tồn tại.',
+      code: 'not_cached',
     });
   });
 

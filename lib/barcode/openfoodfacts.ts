@@ -1,4 +1,9 @@
 import { z } from 'zod';
+import { fetchWithTimeout } from '@/lib/fetch-with-timeout';
+
+// Open Food Facts can be slow/unresponsive; bound the wait so the server
+// action (awaited directly by the client dialog) never hangs indefinitely.
+const OFF_TIMEOUT_MS = 8000;
 
 // Open Food Facts API response validation schema
 const openFoodFactsNutrimentsSchema = z
@@ -65,15 +70,21 @@ export async function fetchProductFromOpenFoodFacts(
   const url = `https://world.openfoodfacts.org/api/v3/product/${cleanBarcode}.json`;
 
   try {
-    const res = await fetch(url, {
-      headers: {
-        // Required by Open Food Facts policy to identify the app and avoid blocking
-        'User-Agent':
-          'Nham Meal Tracker - Version 1.0 - Contact: support@nham.app',
-        Accept: 'application/json',
-      },
-      next: { revalidate: 86400 }, // Cache on the server side for 24h
-    });
+    const res = await fetchWithTimeout(
+      (signal) =>
+        fetch(url, {
+          headers: {
+            // Required by Open Food Facts policy to identify the app and avoid blocking
+            'User-Agent':
+              'Nham Meal Tracker - Version 1.0 - Contact: support@nham.app',
+            Accept: 'application/json',
+          },
+          next: { revalidate: 86400 }, // Cache on the server side for 24h
+          signal,
+        }),
+      OFF_TIMEOUT_MS,
+      'openfoodfacts'
+    );
 
     if (!res.ok) {
       return null;
