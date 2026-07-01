@@ -1,15 +1,8 @@
 'use client';
 
-import {
-  Barcode,
-  ChevronLeft,
-  Loader2,
-  Minus,
-  Plus,
-  Search,
-} from 'lucide-react';
+import { Barcode, Loader2, Search } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import {
@@ -20,12 +13,14 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
+import { useBarcodeCameraScanner } from '@/hooks/meals/use-barcode-camera-scanner';
 import {
   searchBarcodeAction,
   stageBarcodeMealAction,
 } from '@/lib/actions/barcode';
 import { tryDecodeFontEncodedBarcode } from '@/lib/barcode/decode';
 import type { ParsedBarcodeProduct } from '@/lib/barcode/openfoodfacts';
+import { BarcodeProductStep } from './barcode-product-step';
 
 interface BarcodeScannerDialogProps {
   isOpen: boolean;
@@ -43,197 +38,20 @@ export function BarcodeScannerDialog({
   const t = useTranslations('logging');
   const [step, setStep] = useState<'input' | 'quantity'>('input');
   const [scanMode, setScanMode] = useState<'camera' | 'manual'>('camera');
-  const [cameraStatus, setCameraStatus] = useState<
-    'initializing' | 'scanning' | 'permission-denied' | 'error'
-  >('initializing');
   const [barcode, setBarcode] = useState('');
   const [searchError, setSearchError] = useState<string | null>(null);
   const [isSearching, setIsSearching] = useState(false);
   const [product, setProduct] = useState<ParsedBarcodeProduct | null>(null);
 
-  // Camera selection states
-  const [cameras, setCameras] = useState<{ id: string; label: string }[]>([]);
-  const [selectedCameraId, setSelectedCameraId] = useState<string | null>(null);
-
-  // Scanner instance ref
-  const qrCodeScannerRef = useRef<any>(null);
-
   // Quantity states
   const [grams, setGrams] = useState<number>(100);
   const [isStaging, setIsStaging] = useState(false);
 
-  const stopScanner = useCallback(async () => {
-    if (qrCodeScannerRef.current) {
-      try {
-        if (qrCodeScannerRef.current.isScanning) {
-          await qrCodeScannerRef.current.stop();
-        }
-      } catch (err) {
-        console.error('Error stopping scanner:', err);
-      } finally {
-        qrCodeScannerRef.current = null;
-      }
-    }
-  }, []);
-
-  useEffect(() => {
-    if (isOpen && step === 'input' && scanMode === 'camera') {
-      let isMounted = true;
-      setCameraStatus('initializing');
-      let scannerInstance: any = null;
-
-      const playBeep = () => {
-        try {
-          const ctx = new (
-            window.AudioContext || (window as any).webkitAudioContext
-          )();
-          const osc = ctx.createOscillator();
-          const gain = ctx.createGain();
-          osc.connect(gain);
-          gain.connect(ctx.destination);
-          osc.frequency.setValueAtTime(880, ctx.currentTime); // A5 note
-          gain.gain.setValueAtTime(0.08, ctx.currentTime);
-          osc.start();
-          setTimeout(() => {
-            try {
-              osc.stop();
-              ctx.close();
-            } catch {}
-          }, 120);
-        } catch (e) {
-          console.warn('Audio beep failed', e);
-        }
-      };
-
-      const startScanner = async () => {
-        try {
-          const { Html5Qrcode } = await import('html5-qrcode');
-          if (!isMounted) return;
-
-          // Query available cameras
-          let devices: { id: string; label: string }[] = [];
-          try {
-            devices = await Html5Qrcode.getCameras();
-            if (isMounted) {
-              setCameras(devices);
-            }
-          } catch (e) {
-            console.warn('Failed to get cameras:', e);
-          }
-
-          // Wait slightly for DOM element to render
-          await new Promise((resolve) => setTimeout(resolve, 150));
-          if (!isMounted) return;
-
-          const scanner = new Html5Qrcode('nham-barcode-scanner');
-          qrCodeScannerRef.current = scanner;
-          scannerInstance = scanner;
-
-          // Select camera config:
-          // 1. User selected camera ID
-          // 2. First camera from queried list
-          // 3. Fallback standard facingMode environment configuration
-          const cameraConfig =
-            selectedCameraId ||
-            (devices.length > 0
-              ? devices[0].id
-              : { facingMode: 'environment' });
-
-          await scanner.start(
-            cameraConfig,
-            {
-              fps: 10,
-              qrbox: (width, height) => {
-                // Ensure qrbox dimensions are always at least 50px to prevent library errors
-                const w = Math.max(50, Math.round(width * 0.75));
-                const h = Math.max(50, Math.round(height * 0.4));
-                return { width: w, height: h };
-              },
-              aspectRatio: 1.777778,
-            },
-            (decodedText) => {
-              playBeep();
-              if (navigator.vibrate) {
-                try {
-                  navigator.vibrate(80);
-                } catch {}
-              }
-
-              stopScanner().then(() => {
-                if (!isMounted) return;
-                const sanitized = tryDecodeFontEncodedBarcode(decodedText);
-                setBarcode(sanitized);
-                setIsSearching(true);
-                setSearchError(null);
-
-                searchBarcodeAction({ barcode: sanitized }).then((res) => {
-                  if (!isMounted) return;
-                  setIsSearching(false);
-                  if (res.success) {
-                    setProduct(res.data);
-                    setStep('quantity');
-                  } else {
-                    setSearchError(res.error);
-                    setScanMode('manual');
-                  }
-                });
-              });
-            },
-            () => {
-              // Ignore verbose scanning errors
-            }
-          );
-
-          if (isMounted) {
-            setCameraStatus('scanning');
-          }
-        } catch (err: any) {
-          console.error('Failed to start scanner:', err);
-          if (isMounted) {
-            const errStr = String(err).toLowerCase();
-            if (
-              errStr.includes('permission') ||
-              errStr.includes('notallowed')
-            ) {
-              setCameraStatus('permission-denied');
-            } else {
-              setCameraStatus('error');
-            }
-            // Auto switch to manual mode after 3 seconds on failure
-            setTimeout(() => {
-              if (isMounted) {
-                setScanMode('manual');
-              }
-            }, 3000);
-          }
-        }
-      };
-
-      startScanner();
-
-      return () => {
-        isMounted = false;
-        if (scannerInstance) {
-          try {
-            if (scannerInstance.isScanning) {
-              scannerInstance.stop().catch(console.error);
-            }
-          } catch {}
-        }
-      };
-    }
-  }, [isOpen, step, scanMode, stopScanner, selectedCameraId]);
-
-  const handleSearch = async (e?: React.FormEvent) => {
-    e?.preventDefault();
-    const trimmed = barcode.trim();
-    if (!trimmed) return;
-
+  const runSearch = useCallback(async (rawBarcode: string) => {
+    const sanitized = tryDecodeFontEncodedBarcode(rawBarcode);
+    setBarcode(sanitized);
     setIsSearching(true);
     setSearchError(null);
-
-    const sanitized = tryDecodeFontEncodedBarcode(trimmed);
-    setBarcode(sanitized);
 
     const res = await searchBarcodeAction({ barcode: sanitized });
     setIsSearching(false);
@@ -244,6 +62,41 @@ export function BarcodeScannerDialog({
     } else {
       setSearchError(res.error);
     }
+    return res.success;
+  }, []);
+
+  const handleDecode = useCallback(
+    (decodedText: string) => {
+      runSearch(decodedText).then((success) => {
+        if (!success) {
+          setScanMode('manual');
+        }
+      });
+    },
+    [runSearch]
+  );
+
+  const handleCameraFailure = useCallback(() => {
+    setScanMode('manual');
+  }, []);
+
+  const {
+    cameraStatus,
+    cameras,
+    selectedCameraId,
+    setSelectedCameraId,
+    stopScanner,
+  } = useBarcodeCameraScanner({
+    isActive: isOpen && step === 'input' && scanMode === 'camera',
+    onDecode: handleDecode,
+    onCameraFailure: handleCameraFailure,
+  });
+
+  const handleSearch = async (e?: React.FormEvent) => {
+    e?.preventDefault();
+    const trimmed = barcode.trim();
+    if (!trimmed) return;
+    await runSearch(trimmed);
   };
 
   const handleStageMeal = async () => {
@@ -282,10 +135,6 @@ export function BarcodeScannerDialog({
       setProduct(null);
       setGrams(100);
     }, 200);
-  };
-
-  const adjustGrams = (amount: number) => {
-    setGrams((prev) => Math.max(1, prev + amount));
   };
 
   return (
@@ -362,7 +211,10 @@ export function BarcodeScannerDialog({
                   </div>
                 </div>
 
-                <div className="text-center text-nham-text-muted text-sm">
+                <div
+                  className="text-center text-nham-text-muted text-sm"
+                  aria-live="polite"
+                >
                   {cameraStatus === 'initializing' ? (
                     <div className="flex items-center justify-center gap-2">
                       <Loader2 className="h-4 w-4 animate-spin text-nham-accent" />
@@ -400,12 +252,18 @@ export function BarcodeScannerDialog({
                     </div>
                   ) : null}
                   {cameraStatus === 'permission-denied' ? (
-                    <span className="block rounded-lg bg-nham-danger/10 p-2 px-4 text-nham-danger text-xs leading-normal">
+                    <span
+                      role="alert"
+                      className="block rounded-lg bg-nham-danger/10 p-2 px-4 text-nham-danger text-xs leading-normal"
+                    >
                       {t('barcodeCameraPermissionDenied')}
                     </span>
                   ) : null}
                   {cameraStatus === 'error' ? (
-                    <span className="block rounded-lg bg-nham-danger/10 p-2 px-4 text-nham-danger text-xs leading-normal">
+                    <span
+                      role="alert"
+                      className="block rounded-lg bg-nham-danger/10 p-2 px-4 text-nham-danger text-xs leading-normal"
+                    >
                       {t('barcodeCameraError')}
                     </span>
                   ) : null}
@@ -437,12 +295,16 @@ export function BarcodeScannerDialog({
                       }}
                       autoFocus
                       disabled={isSearching}
+                      aria-invalid={Boolean(searchError)}
                       className="border-nham-border/60 bg-background pl-10 focus-visible:border-nham-accent/50 focus-visible:ring-1 focus-visible:ring-nham-accent/50"
                     />
                   </div>
 
                   {searchError ? (
-                    <div className="rounded-lg bg-nham-danger/10 p-3 text-nham-danger text-sm leading-snug">
+                    <div
+                      role="alert"
+                      className="rounded-lg bg-nham-danger/10 p-3 text-nham-danger text-sm leading-snug"
+                    >
                       {searchError}
                     </div>
                   ) : null}
@@ -460,6 +322,7 @@ export function BarcodeScannerDialog({
                   <Button
                     type="submit"
                     disabled={isSearching || !barcode.trim()}
+                    aria-busy={isSearching}
                     className="bg-nham-btn text-white hover:bg-nham-btn-hover active:scale-95 disabled:opacity-50"
                   >
                     {isSearching ? (
@@ -479,171 +342,14 @@ export function BarcodeScannerDialog({
             )}
           </div>
         ) : product ? (
-          <div className="space-y-6">
-            {/* Product Header */}
-            <div className="border-nham-border/40 border-b pb-3">
-              {product.brand ? (
-                <span className="font-[var(--font-dm-sans)] text-nham-text-muted text-xs uppercase tracking-wider">
-                  {product.brand}
-                </span>
-              ) : null}
-              <h3 className="font-[var(--font-lora)] font-normal text-nham-text text-xl">
-                {product.name}
-              </h3>
-            </div>
-
-            {/* Nutrition Profile per 100g */}
-            <div className="space-y-2">
-              <span className="text-nham-text-muted text-xs">
-                Dinh dưỡng trên 100g:
-              </span>
-              <div className="grid grid-cols-4 gap-2">
-                <div className="rounded-xl border border-nham-border/30 bg-background p-2.5 text-center">
-                  <span className="block text-[10px] text-nham-text-muted uppercase tracking-wider">
-                    Calo
-                  </span>
-                  <span className="font-[var(--font-lora)] font-normal text-base text-nham-text">
-                    {product.caloriesKcal !== null
-                      ? Math.round(product.caloriesKcal)
-                      : '--'}
-                  </span>
-                  <span className="block text-[9px] text-nham-text-muted">
-                    kcal
-                  </span>
-                </div>
-
-                <div className="rounded-xl border border-nham-border/30 bg-background p-2.5 text-center">
-                  <span className="block text-[10px] text-nham-text-muted uppercase tracking-wider">
-                    Đạm
-                  </span>
-                  <span className="font-[var(--font-lora)] font-normal text-base text-nham-text">
-                    {product.proteinG !== null ? product.proteinG : '--'}
-                  </span>
-                  <span className="block text-[9px] text-nham-text-muted">
-                    g
-                  </span>
-                </div>
-
-                <div className="rounded-xl border border-nham-border/30 bg-background p-2.5 text-center">
-                  <span className="block text-[10px] text-nham-text-muted uppercase tracking-wider">
-                    Carb
-                  </span>
-                  <span className="font-[var(--font-lora)] font-normal text-base text-nham-text">
-                    {product.carbohydrateG !== null
-                      ? product.carbohydrateG
-                      : '--'}
-                  </span>
-                  <span className="block text-[9px] text-nham-text-muted">
-                    g
-                  </span>
-                </div>
-
-                <div className="rounded-xl border border-nham-border/30 bg-background p-2.5 text-center">
-                  <span className="block text-[10px] text-nham-text-muted uppercase tracking-wider">
-                    Béo
-                  </span>
-                  <span className="font-[var(--font-lora)] font-normal text-base text-nham-text">
-                    {product.fatG !== null ? product.fatG : '--'}
-                  </span>
-                  <span className="block text-[9px] text-nham-text-muted">
-                    g
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Quantity Input */}
-            <div className="space-y-2">
-              <label
-                htmlFor="grams-input"
-                className="font-medium text-nham-text-muted text-sm"
-              >
-                {t('barcodeGramsLabel')}
-              </label>
-              <div className="flex items-center gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon"
-                  onClick={() => adjustGrams(-50)}
-                  disabled={grams <= 50}
-                  className="border-nham-border/60 hover:bg-nham-hover"
-                >
-                  <Minus className="h-4 w-4" />
-                </Button>
-
-                <Input
-                  id="grams-input"
-                  type="number"
-                  min="1"
-                  max="10000"
-                  value={grams}
-                  onChange={(e) =>
-                    setGrams(
-                      Math.max(1, Number.parseInt(e.target.value, 10) || 0)
-                    )
-                  }
-                  className="border-nham-border/60 bg-background text-center font-medium focus-visible:border-nham-accent/50 focus-visible:ring-1 focus-visible:ring-nham-accent/50"
-                />
-
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon"
-                  onClick={() => adjustGrams(50)}
-                  className="border-nham-border/60 hover:bg-nham-hover"
-                >
-                  <Plus className="h-4 w-4" />
-                </Button>
-              </div>
-
-              {/* Quick select chips */}
-              <div className="flex gap-2 pt-1">
-                {[50, 100, 150, 200, 250].map((val) => (
-                  <button
-                    key={val}
-                    type="button"
-                    onClick={() => setGrams(val)}
-                    className={`rounded-full border px-3 py-1 text-xs transition-all duration-200 ${
-                      grams === val
-                        ? 'border-nham-accent/60 bg-nham-cheat-fill text-nham-text'
-                        : 'border-nham-border/30 bg-background text-nham-text-muted hover:bg-nham-hover'
-                    }`}
-                  >
-                    {val}g
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Action Buttons */}
-            <div className="flex items-center justify-between pt-2">
-              <Button
-                type="button"
-                variant="ghost"
-                onClick={() => setStep('input')}
-                className="text-nham-text-muted hover:bg-nham-hover hover:text-nham-text"
-              >
-                <ChevronLeft className="mr-1 h-4 w-4" />
-                {t('barcodeBack')}
-              </Button>
-              <Button
-                type="button"
-                onClick={handleStageMeal}
-                disabled={isStaging || grams <= 0}
-                className="bg-nham-btn text-white hover:bg-nham-btn-hover active:scale-95 disabled:opacity-50"
-              >
-                {isStaging ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    {t('analyzing')}
-                  </>
-                ) : (
-                  t('barcodeAddMeal')
-                )}
-              </Button>
-            </div>
-          </div>
+          <BarcodeProductStep
+            product={product}
+            grams={grams}
+            onGramsChange={setGrams}
+            isStaging={isStaging}
+            onBack={() => setStep('input')}
+            onConfirm={handleStageMeal}
+          />
         ) : null}
       </DialogContent>
     </Dialog>
