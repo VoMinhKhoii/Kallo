@@ -36,7 +36,20 @@ function parseTimestamp(ts) {
   // Filename digits are already UTC — do not shift by the GMT+7 offset.
   const utcMs = Date.UTC(year, month, day, hour, min, sec);
   const d = new Date(utcMs);
-  return Number.isNaN(d.getTime()) ? null : d;
+  if (Number.isNaN(d.getTime())) return null;
+  // Date.UTC normalizes impossible dates (e.g. 20250231 → March 3), so
+  // round-trip the components and reject anything that didn't survive.
+  if (
+    d.getUTCFullYear() !== year ||
+    d.getUTCMonth() !== month ||
+    d.getUTCDate() !== day ||
+    d.getUTCHours() !== hour ||
+    d.getUTCMinutes() !== min ||
+    d.getUTCSeconds() !== sec
+  ) {
+    return null;
+  }
+  return d;
 }
 
 function extractTimestamp(filename) {

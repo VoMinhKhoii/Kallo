@@ -174,6 +174,7 @@ export function BarcodeScannerDialog({
             <div className="flex rounded-lg border border-nham-border/20 bg-nham-hover/30 p-1">
               <button
                 type="button"
+                aria-pressed={scanMode === 'camera'}
                 onClick={() => setScanMode('camera')}
                 className={`flex-1 cursor-pointer rounded-md py-1.5 font-medium text-xs transition-all duration-200 ${
                   scanMode === 'camera'
@@ -185,6 +186,7 @@ export function BarcodeScannerDialog({
               </button>
               <button
                 type="button"
+                aria-pressed={scanMode === 'manual'}
                 onClick={() => setScanMode('manual')}
                 className={`flex-1 cursor-pointer rounded-md py-1.5 font-medium text-xs transition-all duration-200 ${
                   scanMode === 'manual'

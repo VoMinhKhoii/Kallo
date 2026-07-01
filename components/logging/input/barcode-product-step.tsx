@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import type { ParsedBarcodeProduct } from '@/lib/barcode/openfoodfacts';
 
 const GRAM_STEP = 50;
+const MAX_GRAMS = 10_000;
 const QUICK_GRAM_OPTIONS = [50, 100, 150, 200, 250];
 
 interface NutrientCellProps {
@@ -52,7 +53,7 @@ export function BarcodeProductStep({
   const t = useTranslations('logging');
 
   const adjustGrams = (amount: number) => {
-    onGramsChange(Math.max(1, grams + amount));
+    onGramsChange(Math.min(MAX_GRAMS, Math.max(1, grams + amount)));
   };
 
   return (
@@ -123,11 +124,14 @@ export function BarcodeProductStep({
             id="grams-input"
             type="number"
             min="1"
-            max="10000"
+            max={MAX_GRAMS}
             value={grams}
             onChange={(e) =>
               onGramsChange(
-                Math.max(1, Number.parseInt(e.target.value, 10) || 0)
+                Math.min(
+                  MAX_GRAMS,
+                  Math.max(1, Number.parseInt(e.target.value, 10) || 0)
+                )
               )
             }
             className="border-nham-border/60 bg-background text-center font-medium focus-visible:border-nham-accent/50 focus-visible:ring-1 focus-visible:ring-nham-accent/50"
@@ -138,6 +142,7 @@ export function BarcodeProductStep({
             variant="outline"
             size="icon"
             onClick={() => adjustGrams(GRAM_STEP)}
+            disabled={grams >= MAX_GRAMS}
             aria-label={t('barcodeIncreaseGrams')}
             className="border-nham-border/60 hover:bg-nham-hover"
           >
