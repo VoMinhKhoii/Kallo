@@ -1,15 +1,14 @@
 /// WeightChart — the dashboard's weight-trend card.
 ///
-/// 2026 redesign (round 2): a flat white card with NO trend interpretation —
-/// the current weight as the bold hero number, the today's-weight input, and an
-/// integrated minimal line (no axis frame, no off-track band; a dotted goal line
-/// + tiny start/now end-labels). The line bleeds to the card edges so it reads
-/// as part of the card, not a pasted-in chart.
+/// 2026 redesign (Apple Health style): the card is a clean data surface — the
+/// current weight as the bold hero number with a small net-change badge beside
+/// it, and a full-width line chart ([WeightChartCanvas]). Logging lives in a
+/// focused bottom sheet opened by a "Log" button (no resident form).
 library;
 
 import 'package:easy_localization/easy_localization.dart';
-import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
@@ -20,8 +19,7 @@ import '../data/dashboard_providers.dart';
 import 'compact_weight_log.dart';
 import 'dashboard_tokens.dart';
 import 'skeleton.dart';
-
-const double _chartAspect = 2.2; // canvas width : height (minimal band)
+import 'weight_chart_canvas.dart';
 
 class WeightChart extends ConsumerWidget {
   const WeightChart({super.key, required this.todayDate, required this.args});
@@ -95,18 +93,19 @@ class _Body extends StatelessWidget {
   Widget build(BuildContext context) {
     final kg = tr('dashboard.units.kg');
 
-    // Net change over the window (current − period start). The top-right stat
-    // that fills what used to be an empty corner — a SaaS-style metric pair.
+    // Net change over the window (current − period start), shown as a small
+    // badge right beside the hero number.
     final delta = data.currentWeight - data.periodStartWeight;
     final hasTrend = data.weights.length > 1 && delta.abs() >= 0.05;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // Hero — current weight (left) + net-change stat (right) so the corner
-        // never reads empty.
+        // Hero — current weight + a small net-change badge, and a "Log weight"
+        // button. The card stays a clean data surface; logging lives in a
+        // focused sheet (Apple Health style), not a resident form.
         Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             Expanded(
               child: Row(
@@ -117,242 +116,177 @@ class _Body extends StatelessWidget {
                       style: dashHero()),
                   const SizedBox(width: 6),
                   Text(kg, style: dashBody(color: kInkSecondary)),
+                  if (hasTrend) ...[
+                    const SizedBox(width: NhamSpacing.sp2),
+                    _TrendBadge(delta: delta),
+                  ],
                 ],
               ),
             ),
-            _TrendStat(delta: delta, hasTrend: hasTrend, kg: kg),
+            const SizedBox(width: NhamSpacing.sp2),
+            _LogButton(
+              onTap: () => _openLogSheet(context, data, todayDate, args),
+            ),
           ],
         ),
         const SizedBox(height: NhamSpacing.sp4),
 
-        // Today's-weight input.
-        CompactWeightLog(
-          currentWeight: data.currentWeight,
-          todayWeight: data.todayWeight,
-          todayDate: todayDate,
-          args: args,
-        ),
-        const SizedBox(height: NhamSpacing.sp4),
-
-        // Integrated minimal chart.
-        _ChartCanvas(
+        WeightChartCanvas(
           weights: data.weights,
-          periodStartWeight: data.periodStartWeight,
-          expectedEndWeight: data.expectedEndWeight,
+          periodElapsedDays: data.periodElapsedDays,
+          projectedEndWeight: data.projectedEndWeight,
+          canProject: data.canProject,
         ),
       ],
     );
   }
 }
 
-/// The top-right net-change metric. A signed delta + kg with a small eyebrow,
-/// turning the empty corner into a SaaS-style metric pair. No trend-arrow icon
-/// (a SaaS trope per the brand drift-watchlist) — the sign carries direction.
-class _TrendStat extends StatelessWidget {
-  const _TrendStat({
-    required this.delta,
-    required this.hasTrend,
-    required this.kg,
-  });
+/// A small net-change badge shown beside the hero weight, e.g. "↑ 3.0". Uses a
+/// text arrow (not an icon) so it sits on the hero number's baseline. Only
+/// rendered when there's a real trend (the caller guards on it).
+class _TrendBadge extends StatelessWidget {
+  const _TrendBadge({required this.delta});
 
   final double delta;
-  final bool hasTrend;
-  final String kg;
 
   @override
   Widget build(BuildContext context) {
-    // No history yet → a plain "steady" word (no number, no label).
-    if (!hasTrend) {
-      return Padding(
-        padding: const EdgeInsets.only(top: 6),
-        child: Text(
-          tr('dashboard.weightCard.steady'),
-          style: dashMeta(color: kInkSecondary),
-        ),
-      );
-    }
-
-    // The net-change stat — arrow + value + kg, no caption label.
-    final value = delta.abs().toStringAsFixed(1);
-    final arrow = delta > 0 ? LucideIcons.arrowUp : LucideIcons.arrowDown;
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.center,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(arrow, size: 18, color: kInk),
-        const SizedBox(width: 1),
-        Text(value, style: dashValue(color: kInk)),
-        const SizedBox(width: 3),
-        Padding(
-          padding: const EdgeInsets.only(bottom: 1),
-          child: Text(kg, style: dashMeta(color: kInkDisabled)),
-        ),
-      ],
+    final arrow = delta > 0 ? '↑' : '↓';
+    return Text(
+      '$arrow ${delta.abs().toStringAsFixed(1)}',
+      style: dashBody(
+        color: kInkSecondary,
+        weight: FontWeight.w600,
+        tabular: true,
+      ),
     );
   }
 }
 
-/// A frameless area line that bleeds to the card edges, with a dotted goal line
-/// and tiny start/now end-labels — no axes, no band, no interpretation.
-class _ChartCanvas extends StatelessWidget {
-  const _ChartCanvas({
-    required this.weights,
-    required this.periodStartWeight,
-    required this.expectedEndWeight,
-  });
+/// The card's log affordance — a filled accent "Log weight" pill (icon + label)
+/// so the action is unmistakable. 44pt tall (iOS HIG) with a soft shadow and an
+/// accessibility label.
+class _LogButton extends StatelessWidget {
+  const _LogButton({required this.onTap});
 
-  final List<double> weights;
-  final double periodStartWeight;
-  final double expectedEndWeight;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    if (weights.isEmpty) {
-      return Container(
-        constraints: const BoxConstraints(minHeight: 120),
-        alignment: Alignment.center,
-        child: Text(
-          tr('dashboard.noWeightData'),
-          textAlign: TextAlign.center,
-          style: dashMeta(color: kInkDisabled),
+    final radius = BorderRadius.circular(NhamRadii.xl);
+    return Semantics(
+      button: true,
+      label: tr('dashboard.weightCard.logWeight'),
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          borderRadius: radius,
+          boxShadow: [
+            BoxShadow(
+              color: NhamColors.accent.withValues(alpha: 0.3),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
         ),
-      );
-    }
-
-    final kg = tr('dashboard.units.kg');
-    final isSinglePoint = weights.length == 1;
-
-    final goalTop = periodStartWeight > expectedEndWeight
-        ? periodStartWeight
-        : expectedEndWeight;
-    final goalBottom = periodStartWeight < expectedEndWeight
-        ? periodStartWeight
-        : expectedEndWeight;
-    final dataMin = weights.reduce((a, b) => a < b ? a : b);
-    final dataMax = weights.reduce((a, b) => a > b ? a : b);
-    final yMin = (goalBottom < dataMin ? goalBottom : dataMin) - 0.3;
-    final yMax = (goalTop > dataMax ? goalTop : dataMax) + 0.3;
-    final xMax = (isSinglePoint ? 1 : weights.length - 1).toDouble();
-
-    final spots = <FlSpot>[
-      for (var i = 0; i < weights.length; i++) FlSpot(i.toDouble(), weights[i]),
-    ];
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        AspectRatio(
-          aspectRatio: _chartAspect,
-          child: LineChart(
-            LineChartData(
-              minX: 0,
-              maxX: xMax,
-              minY: yMin,
-              maxY: yMax,
-              clipData: const FlClipData.all(),
-              backgroundColor: Colors.transparent,
-              gridData: const FlGridData(show: false),
-              borderData: FlBorderData(show: false), // no frame
-              titlesData: const FlTitlesData(show: false), // no gutter / axes
-              // Dotted goal line.
-              extraLinesData: ExtraLinesData(
-                horizontalLines: [
-                  HorizontalLine(
-                    y: expectedEndWeight,
-                    color: NhamColors.accent.withValues(alpha: 0.45),
-                    strokeWidth: 1,
-                    dashArray: const [4, 3],
-                    label: HorizontalLineLabel(
-                      show: true,
-                      alignment: Alignment.topRight,
-                      padding: const EdgeInsets.only(right: 2, bottom: 2),
-                      style: dashMeta(color: kInkDisabled),
-                      labelResolver: (_) =>
-                          '${tr('dashboard.goal')} ${expectedEndWeight.toStringAsFixed(1)}',
-                    ),
+        child: Material(
+          color: NhamColors.accent,
+          borderRadius: radius,
+          clipBehavior: Clip.antiAlias,
+          child: InkWell(
+            onTap: onTap,
+            child: Container(
+              constraints: const BoxConstraints(minHeight: 40),
+              padding: const EdgeInsets.symmetric(
+                horizontal: NhamSpacing.sp3,
+                vertical: NhamSpacing.sp2,
+              ),
+              alignment: Alignment.center,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(LucideIcons.plus, size: 16, color: Colors.white),
+                  const SizedBox(width: 5),
+                  Text(
+                    tr('dashboard.weightCard.logWeight'),
+                    style:
+                        dashBody(color: Colors.white, weight: FontWeight.w600),
                   ),
                 ],
               ),
-              lineTouchData: LineTouchData(
-                handleBuiltInTouches: true,
-                getTouchedSpotIndicator: (barData, indexes) => indexes
-                    .map(
-                      (i) => TouchedSpotIndicatorData(
-                        const FlLine(color: Colors.transparent),
-                        FlDotData(
-                          getDotPainter: (spot, pct, bar, idx) =>
-                              FlDotCirclePainter(
-                            radius: 4,
-                            color: NhamColors.accent,
-                            strokeWidth: 2,
-                            strokeColor: Colors.white,
-                          ),
-                        ),
-                      ),
-                    )
-                    .toList(),
-                touchTooltipData: LineTouchTooltipData(
-                  getTooltipColor: (_) => kCardSurface,
-                  tooltipBorder: const BorderSide(color: kHairline),
-                  tooltipRoundedRadius: NhamRadii.md,
-                  getTooltipItems: (touchedSpots) => touchedSpots
-                      .map(
-                        (s) => LineTooltipItem(
-                          '${s.y.toStringAsFixed(1)} $kg',
-                          dashMeta(color: kInk, tabular: true),
-                        ),
-                      )
-                      .toList(),
-                ),
-              ),
-              lineBarsData: [
-                LineChartBarData(
-                  spots: spots,
-                  // Sharp, angular line — no smoothing (was a rounded curve).
-                  isCurved: false,
-                  color: NhamColors.accent,
-                  barWidth: 2,
-                  isStrokeCapRound: false,
-                  isStrokeJoinRound: false,
-                  dotData: FlDotData(
-                    show: isSinglePoint,
-                    getDotPainter: (spot, pct, bar, idx) => FlDotCirclePainter(
-                      radius: 4,
-                      color: NhamColors.accent,
-                      strokeWidth: 2,
-                      strokeColor: Colors.white,
-                    ),
-                  ),
-                  belowBarData: BarAreaData(
-                    show: true,
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [
-                        NhamColors.accent.withValues(alpha: 0.18),
-                        NhamColors.accent.withValues(alpha: 0),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
             ),
-            duration: const Duration(milliseconds: 1500),
-            curve: Curves.easeInOut,
           ),
         ),
-        const SizedBox(height: NhamSpacing.sp1),
-        // Tiny start / now end-labels (in place of an axis).
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text('${weights.first.toStringAsFixed(1)} $kg',
-                style: dashMeta(color: kInkDisabled, tabular: true)),
-            Text('${weights.last.toStringAsFixed(1)} $kg',
-                style: dashMeta(color: kInkSecondary, tabular: true)),
-          ],
-        ),
-      ],
+      ),
     );
   }
+}
+
+/// Opens the focused "log today's weight" bottom sheet — a keypad-first form
+/// where a prominent field + Save button is the right call (unlike in the card).
+void _openLogSheet(
+  BuildContext context,
+  WeightSummaryData data,
+  String todayDate,
+  DashboardArgs args,
+) {
+  HapticFeedback.lightImpact(); // open cue, matching the meal trigger
+  showModalBottomSheet<void>(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: kCardSurface,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(kCardRadius)),
+    ),
+    builder: (sheetContext) {
+      final mq = MediaQuery.of(sheetContext);
+      // A tall sheet — cap to the space above the keyboard — with the field +
+      // Save centred vertically, so they sit around mid-screen (thumb zone)
+      // with generous empty space below.
+      final available = mq.size.height - mq.viewInsets.bottom;
+      final target = mq.size.height * 0.68;
+      final sheetHeight = target < available ? target : available;
+      return Padding(
+        padding: EdgeInsets.only(bottom: mq.viewInsets.bottom),
+        // Scroll-safe centring: the Spacers centre the content when it fits, and
+        // ConstrainedBox+IntrinsicHeight let the whole thing scroll instead of
+        // overflowing when the height is tight (landscape, split-screen).
+        child: SingleChildScrollView(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minHeight: sheetHeight),
+            child: IntrinsicHeight(
+              child: Column(
+                children: [
+                  Container(
+                    width: 36,
+                    height: 4,
+                    margin: const EdgeInsets.only(top: NhamSpacing.sp3),
+                    decoration: BoxDecoration(
+                      color: NhamColors.border,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                  const Spacer(),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: NhamSpacing.sp5,
+                    ),
+                    child: CompactWeightLog(
+                      currentWeight: data.currentWeight,
+                      todayWeight: data.todayWeight,
+                      todayDate: todayDate,
+                      args: args,
+                      autofocus: true,
+                      onSaved: () => Navigator.of(sheetContext).pop(),
+                    ),
+                  ),
+                  const Spacer(),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+    },
+  );
 }

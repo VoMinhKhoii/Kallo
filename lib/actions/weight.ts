@@ -3,6 +3,7 @@
 import { and, desc, eq, gte, lte } from 'drizzle-orm';
 import { z } from 'zod';
 import { requireAuthAndProfile } from '@/lib/auth';
+import { buildWeightTrendSummary } from '@/lib/dashboard/weight-trend';
 import { db } from '@/lib/db';
 import { bodyWeightLog, userProfiles } from '@/lib/db/schema';
 import { Errors } from '@/lib/errors';
@@ -206,6 +207,17 @@ export async function loadWeightSummaryAction(input: {
         ? 'down'
         : 'flat';
 
+  // Projection is a property of the summary, computed once here so web and
+  // mobile both render the forecast from identical numbers.
+  const { projectedEndWeight, canProject } = buildWeightTrendSummary({
+    weights,
+    periodStartWeight,
+    expectedEndWeight,
+    goalDirection,
+    range: parsed.range,
+    elapsedDays: periodElapsedDays,
+  });
+
   return {
     range: parsed.range,
     weights,
@@ -217,5 +229,7 @@ export async function loadWeightSummaryAction(input: {
     expectedEndWeight,
     goalDirection,
     periodElapsedDays,
+    projectedEndWeight,
+    canProject,
   };
 }

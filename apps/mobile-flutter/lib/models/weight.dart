@@ -17,6 +17,11 @@ class WeightSummaryData {
   final WeightGoalDirection goalDirection;
   final int? periodElapsedDays;
 
+  /// Forecast, computed server-side (see `buildWeightTrendSummary`) so the chart
+  /// renders the projection from the same numbers as web instead of re-deriving.
+  final double projectedEndWeight;
+  final bool canProject;
+
   const WeightSummaryData({
     required this.range,
     required this.weights,
@@ -28,6 +33,8 @@ class WeightSummaryData {
     required this.expectedEndWeight,
     required this.goalDirection,
     required this.periodElapsedDays,
+    required this.projectedEndWeight,
+    required this.canProject,
   });
 
   factory WeightSummaryData.fromJson(Map<String, dynamic> json) =>
@@ -45,6 +52,8 @@ class WeightSummaryData {
         goalDirection: WeightGoalDirection.values
             .byName(json['goalDirection'] as String),
         periodElapsedDays: json['periodElapsedDays'] as int?,
+        projectedEndWeight: (json['projectedEndWeight'] as num).toDouble(),
+        canProject: json['canProject'] as bool,
       );
 
   Map<String, dynamic> toJson() => {
@@ -58,6 +67,8 @@ class WeightSummaryData {
         'expectedEndWeight': expectedEndWeight,
         'goalDirection': goalDirection.name,
         'periodElapsedDays': periodElapsedDays,
+        'projectedEndWeight': projectedEndWeight,
+        'canProject': canProject,
       };
 
   WeightSummaryData copyWith({
@@ -71,6 +82,8 @@ class WeightSummaryData {
     double? expectedEndWeight,
     WeightGoalDirection? goalDirection,
     int? Function()? periodElapsedDays,
+    double? projectedEndWeight,
+    bool? canProject,
   }) =>
       WeightSummaryData(
         range: range ?? this.range,
@@ -86,5 +99,7 @@ class WeightSummaryData {
         periodElapsedDays: periodElapsedDays != null
             ? periodElapsedDays()
             : this.periodElapsedDays,
+        projectedEndWeight: projectedEndWeight ?? this.projectedEndWeight,
+        canProject: canProject ?? this.canProject,
       );
 }
