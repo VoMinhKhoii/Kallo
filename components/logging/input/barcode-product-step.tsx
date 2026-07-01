@@ -31,26 +31,6 @@ function scaleValue(
   return decimals === 0 ? Math.round(value) : Number(value.toFixed(decimals));
 }
 
-interface NutrientCellProps {
-  label: string;
-  value: number | null;
-  unit: string;
-}
-
-function NutrientCell({ label, value, unit }: NutrientCellProps) {
-  return (
-    <div className="rounded-xl border border-nham-border/30 bg-background p-2.5 text-center">
-      <span className="block text-[10px] text-nham-text-muted uppercase tracking-wider">
-        {label}
-      </span>
-      <span className="font-[var(--font-lora)] font-normal text-base text-nham-text">
-        {value !== null ? value : '--'}
-      </span>
-      <span className="block text-[9px] text-nham-text-muted">{unit}</span>
-    </div>
-  );
-}
-
 interface BarcodeProductStepProps {
   product: ParsedBarcodeProduct;
   isStaging: boolean;
@@ -106,16 +86,29 @@ export function BarcodeProductStep({
     grams: t('barcodeAmountGrams'),
   };
 
+  const calories = scaleValue(product.caloriesKcal, grams, 0);
+  const macros = [
+    {
+      label: t('barcodeProtein'),
+      value: scaleValue(product.proteinG, grams, 1),
+    },
+    {
+      label: t('barcodeCarbs'),
+      value: scaleValue(product.carbohydrateG, grams, 1),
+    },
+    { label: t('barcodeFat'), value: scaleValue(product.fatG, grams, 1) },
+  ];
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       {/* Product Header */}
       <div className="border-nham-border/40 border-b pb-3">
         {product.brand ? (
-          <span className="font-[var(--font-dm-sans)] text-nham-text-muted text-xs uppercase tracking-wider">
+          <span className="font-medium font-sans-display text-[11px] text-nham-text-muted uppercase tracking-[0.12em]">
             {product.brand}
           </span>
         ) : null}
-        <h3 className="font-[var(--font-lora)] font-normal text-nham-text text-xl">
+        <h3 className="font-normal font-serif text-[20px] text-nham-text leading-snug">
           {product.name}
         </h3>
       </div>
@@ -133,7 +126,7 @@ export function BarcodeProductStep({
               type="button"
               aria-pressed={mode === m}
               onClick={() => setMode(m)}
-              className={`flex-1 cursor-pointer rounded-md py-1.5 font-medium text-xs transition-all duration-200 ${
+              className={`flex-1 cursor-pointer rounded-md py-1.5 font-medium font-sans-display text-xs transition-all duration-200 ${
                 mode === m
                   ? 'bg-nham-btn text-white shadow-sm'
                   : 'text-nham-text-muted hover:bg-nham-hover/50 hover:text-nham-text'
@@ -151,7 +144,7 @@ export function BarcodeProductStep({
           <div className="space-y-2">
             <label
               htmlFor="servings-input"
-              className="font-medium text-nham-text-muted text-sm"
+              className="font-medium font-sans-display text-nham-text-muted text-sm"
             >
               {t('barcodeServingsLabel')}
             </label>
@@ -181,7 +174,7 @@ export function BarcodeProductStep({
                     )
                   )
                 }
-                className="border-nham-border/60 bg-background text-center font-medium focus-visible:border-nham-accent/50 focus-visible:ring-1 focus-visible:ring-nham-accent/50"
+                className="border-nham-border/60 bg-background text-center font-medium tabular-nums focus-visible:border-nham-accent/50 focus-visible:ring-1 focus-visible:ring-nham-accent/50"
               />
               <Button
                 type="button"
@@ -195,7 +188,7 @@ export function BarcodeProductStep({
                 <Plus className="h-4 w-4" />
               </Button>
             </div>
-            <span className="block text-nham-text-muted text-xs">
+            <span className="block font-sans-display text-nham-text-muted text-xs tabular-nums">
               {t('barcodePerServing', { grams: servingSizeG })} ·{' '}
               {t('barcodeTotalGrams', { grams })}
             </span>
@@ -203,11 +196,11 @@ export function BarcodeProductStep({
         ) : null}
 
         {mode === 'package' && packageSizeG ? (
-          <div className="rounded-xl border border-nham-border/30 bg-background p-3 text-center">
-            <span className="block text-nham-text-muted text-xs">
+          <div className="flex items-center justify-between rounded-2xl border border-nham-border/40 bg-white px-4 py-3">
+            <span className="font-sans-display text-nham-text-muted text-sm">
               {t('barcodeWholePackage')}
             </span>
-            <span className="font-[var(--font-lora)] text-lg text-nham-text">
+            <span className="font-normal font-serif text-[22px] text-nham-text tabular-nums">
               {t('barcodeTotalGrams', { grams })}
             </span>
           </div>
@@ -217,7 +210,7 @@ export function BarcodeProductStep({
           <div className="space-y-2">
             <label
               htmlFor="grams-input"
-              className="font-medium text-nham-text-muted text-sm"
+              className="font-medium font-sans-display text-nham-text-muted text-sm"
             >
               {t('barcodeGramsLabel')}
             </label>
@@ -244,7 +237,7 @@ export function BarcodeProductStep({
                     clampGrams(Number.parseInt(e.target.value, 10) || 0)
                   )
                 }
-                className="border-nham-border/60 bg-background text-center font-medium focus-visible:border-nham-accent/50 focus-visible:ring-1 focus-visible:ring-nham-accent/50"
+                className="border-nham-border/60 bg-background text-center font-medium tabular-nums focus-visible:border-nham-accent/50 focus-visible:ring-1 focus-visible:ring-nham-accent/50"
               />
               <Button
                 type="button"
@@ -258,16 +251,16 @@ export function BarcodeProductStep({
                 <Plus className="h-4 w-4" />
               </Button>
             </div>
-            <div className="flex gap-2 pt-1">
+            <div className="flex flex-wrap gap-2 pt-1">
               {QUICK_GRAM_OPTIONS.map((val) => (
                 <button
                   key={val}
                   type="button"
                   onClick={() => setCustomGrams(val)}
-                  className={`rounded-full border px-3 py-1 text-xs transition-all duration-200 ${
+                  className={`rounded-full border px-3 py-1 font-sans-display text-xs tabular-nums transition-colors duration-200 ${
                     customGrams === val
-                      ? 'border-nham-accent/60 bg-nham-cheat-fill text-nham-text'
-                      : 'border-nham-border/30 bg-background text-nham-text-muted hover:bg-nham-hover'
+                      ? 'border-nham-accent/40 bg-nham-accent/15 text-nham-text'
+                      : 'border-nham-border/50 bg-white text-nham-text-muted hover:bg-nham-hover/50'
                   }`}
                 >
                   {val}g
@@ -278,32 +271,33 @@ export function BarcodeProductStep({
         ) : null}
       </div>
 
-      {/* Nutrition for the selected amount */}
-      <div className="space-y-2">
-        <span className="text-nham-text-muted text-xs">
-          {t('barcodeNutritionForAmount', { grams })}
-        </span>
-        <div className="grid grid-cols-4 gap-2">
-          <NutrientCell
-            label={t('barcodeCalories')}
-            value={scaleValue(product.caloriesKcal, grams, 0)}
-            unit="kcal"
-          />
-          <NutrientCell
-            label={t('barcodeProtein')}
-            value={scaleValue(product.proteinG, grams, 1)}
-            unit="g"
-          />
-          <NutrientCell
-            label={t('barcodeCarbs')}
-            value={scaleValue(product.carbohydrateG, grams, 1)}
-            unit="g"
-          />
-          <NutrientCell
-            label={t('barcodeFat')}
-            value={scaleValue(product.fatG, grams, 1)}
-            unit="g"
-          />
+      {/* Nutrition for the selected amount — big Lora calorie figure with a
+          tabular macro row underneath (per-amount, not per-100g). */}
+      <div className="rounded-2xl border border-nham-border/40 bg-white p-4">
+        <div className="flex items-baseline justify-between gap-3">
+          <span className="font-sans-display text-nham-text-muted text-xs">
+            {t('barcodeNutritionForAmount', { grams })}
+          </span>
+          <div className="flex items-baseline gap-1">
+            <span className="font-normal font-serif text-[26px] text-nham-text tabular-nums leading-none">
+              {calories !== null ? calories : '--'}
+            </span>
+            <span className="font-sans-display text-nham-text-muted text-xs">
+              kcal
+            </span>
+          </div>
+        </div>
+        <div className="mt-3 grid grid-cols-3 gap-2 border-nham-border/30 border-t pt-3">
+          {macros.map((macro) => (
+            <div key={macro.label} className="text-center">
+              <span className="block font-medium font-sans-display text-[10px] text-nham-text-muted uppercase tracking-wide">
+                {macro.label}
+              </span>
+              <span className="mt-0.5 block font-sans-display font-semibold text-[15px] text-nham-text tabular-nums">
+                {macro.value !== null ? `${macro.value}g` : '--'}
+              </span>
+            </div>
+          ))}
         </div>
       </div>
 
