@@ -47,23 +47,26 @@ export function BarcodeScannerDialog({
   const [grams, setGrams] = useState<number>(100);
   const [isStaging, setIsStaging] = useState(false);
 
-  const runSearch = useCallback(async (rawBarcode: string) => {
-    const sanitized = tryDecodeFontEncodedBarcode(rawBarcode);
-    setBarcode(sanitized);
-    setIsSearching(true);
-    setSearchError(null);
+  const runSearch = useCallback(
+    async (rawBarcode: string) => {
+      const sanitized = tryDecodeFontEncodedBarcode(rawBarcode);
+      setBarcode(sanitized);
+      setIsSearching(true);
+      setSearchError(null);
 
-    const res = await searchBarcodeAction({ barcode: sanitized });
-    setIsSearching(false);
+      const res = await searchBarcodeAction({ barcode: sanitized });
+      setIsSearching(false);
 
-    if (res.success) {
-      setProduct(res.data);
-      setStep('quantity');
-    } else {
-      setSearchError(res.error);
-    }
-    return res.success;
-  }, []);
+      if (res.success) {
+        setProduct(res.data);
+        setStep('quantity');
+      } else {
+        setSearchError(t(`barcodeError.${res.code}`));
+      }
+      return res.success;
+    },
+    [t]
+  );
 
   const handleDecode = useCallback(
     (decodedText: string) => {
@@ -119,7 +122,7 @@ export function BarcodeScannerDialog({
       onSuccess();
       handleClose();
     } else {
-      toast.error(res.error);
+      toast.error(t(`barcodeError.${res.code}`));
     }
   };
 
@@ -276,7 +279,7 @@ export function BarcodeScannerDialog({
                     onClick={handleClose}
                     className="text-nham-text-muted hover:bg-nham-hover hover:text-nham-text"
                   >
-                    {t('feedArea.partialYesterdayPrompt.dismiss')}
+                    {t('barcodeCancel')}
                   </Button>
                 </div>
               </div>
@@ -317,7 +320,7 @@ export function BarcodeScannerDialog({
                     onClick={handleClose}
                     className="text-nham-text-muted hover:bg-nham-hover hover:text-nham-text"
                   >
-                    {t('feedArea.partialYesterdayPrompt.dismiss')}
+                    {t('barcodeCancel')}
                   </Button>
                   <Button
                     type="submit"

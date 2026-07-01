@@ -987,6 +987,14 @@
     "barcodeProtein": "Đạm",
     "barcodeCarbs": "Carb",
     "barcodeFat": "Béo",
+    "barcodeCancel": "Hủy",
+    "barcodeError": {
+      "invalid_input": "Mã vạch không hợp lệ. Vui lòng chỉ nhập chữ số.",
+      "not_found": "Không tìm thấy sản phẩm với mã vạch này.",
+      "not_cached": "Sản phẩm không còn khả dụng. Vui lòng quét lại.",
+      "stage_failed": "Không thể thêm bữa ăn này. Vui lòng thử lại.",
+      "server_error": "Đã xảy ra lỗi. Vui lòng thử lại."
+    },
     "submit": "Phân tích",
     "stopAnalyzing": "Dừng phân tích",
     "analyzing": "Đang phân tích bữa ăn…",

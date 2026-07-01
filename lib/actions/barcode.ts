@@ -43,12 +43,20 @@ const stageBarcodeMealSchema = z.object({
   timezoneOffset: timezoneOffsetSchema,
 });
 
-function getErrorMessage(error: unknown): string {
-  if (error instanceof z.ZodError) {
-    const issue = error.issues[0];
-    return issue ? issue.message : 'Dữ liệu đầu vào không hợp lệ.';
-  }
-  return error instanceof Error ? error.message : 'Đã xảy ra lỗi hệ thống.';
+/**
+ * Stable, locale-agnostic error codes returned to the client, which maps them
+ * to a localized message via `t('barcodeError.<code>')`. Server-side text is
+ * never returned directly, so error copy honors the user's locale.
+ */
+export type BarcodeErrorCode =
+  | 'invalid_input'
+  | 'not_found'
+  | 'not_cached'
+  | 'stage_failed'
+  | 'server_error';
+
+function getErrorCode(error: unknown): BarcodeErrorCode {
+  return error instanceof z.ZodError ? 'invalid_input' : 'server_error';
 }
 
 function scaleNutrition(
@@ -80,7 +88,7 @@ export async function searchBarcodeAction(input: {
   barcode: string;
 }): Promise<
   | { success: true; data: ParsedBarcodeProduct }
-  | { success: false; error: string }
+  | { success: false; code: BarcodeErrorCode }
 > {
   try {
     const parsed = searchBarcodeSchema.parse(input);
@@ -123,46 +131,63 @@ export async function searchBarcodeAction(input: {
       };
     }
 
-    // 2. Fetch from Open Food Facts
-    const product = await fetchProductFromOpenFoodFacts(parsed.barcode);
+    // 2. Fetch from Open Food Facts and resolve the OFF source id in parallel —
+    // the source lookup is independent of the product fetch, so there's no
+    // reason to wait for the (slow, external) fetch before starting it.
+    const [product, sourceRow] = await Promise.all([
+      fetchProductFromOpenFoodFacts(parsed.barcode),
+      db
+        .select({ id: ingredientSources.id })
+        .from(ingredientSources)
+        .where(eq(ingredientSources.code, 'OFF'))
+        .limit(1)
+        .then((rows) => rows[0]),
+    ]);
+
     if (!product) {
-      return {
-        success: false,
-        error: 'Không tìm thấy sản phẩm với mã vạch này.',
-      };
+      return { success: false, code: 'not_found' };
+    }
+
+    // The 'OFF' ingredient source is seeded by migration; its absence is a
+    // server misconfiguration, not a user error. Fail loudly rather than
+    // silently mislabeling provenance with an arbitrary fallback id.
+    if (!sourceRow) {
+      console.error(
+        "Missing 'OFF' ingredient source — cannot cache barcode product"
+      );
+      return { success: false, code: 'server_error' };
     }
 
     // 3. Cache in Database
-    const [sourceRow] = await db
-      .select({ id: ingredientSources.id })
-      .from(ingredientSources)
-      .where(eq(ingredientSources.code, 'OFF'))
-      .limit(1);
-
-    const sourceId = sourceRow ? sourceRow.id : 1;
+    const sourceId = sourceRow.id;
     const namePrimary = product.brand
       ? `[${product.brand}] ${product.name}`
       : product.name;
 
-    await db.insert(vietnameseFoodComposition).values({
-      id: dbId,
-      namePrimary,
-      nameEn: product.name,
-      typeVn: 'Sản phẩm đóng gói',
-      typeEn: 'Packaged product',
-      sourceId,
-      state: 'cooked',
-      caloriesKcal:
-        product.caloriesKcal !== null ? String(product.caloriesKcal) : null,
-      proteinG: product.proteinG !== null ? String(product.proteinG) : null,
-      carbohydrateG:
-        product.carbohydrateG !== null ? String(product.carbohydrateG) : null,
-      fatG: product.fatG !== null ? String(product.fatG) : null,
-      fiberG: product.fiberG !== null ? String(product.fiberG) : null,
-      sodiumMg: product.sodiumMg !== null ? String(product.sodiumMg) : null,
-      searchText: namePrimary.toLowerCase(),
-      searchTextAscii: namePrimary.toLowerCase(),
-    });
+    // onConflictDoNothing: two concurrent first-time scans of the same barcode
+    // would otherwise race on the primary key; the loser is harmlessly ignored.
+    await db
+      .insert(vietnameseFoodComposition)
+      .values({
+        id: dbId,
+        namePrimary,
+        nameEn: product.name,
+        typeVn: 'Sản phẩm đóng gói',
+        typeEn: 'Packaged product',
+        sourceId,
+        state: 'cooked',
+        caloriesKcal:
+          product.caloriesKcal !== null ? String(product.caloriesKcal) : null,
+        proteinG: product.proteinG !== null ? String(product.proteinG) : null,
+        carbohydrateG:
+          product.carbohydrateG !== null ? String(product.carbohydrateG) : null,
+        fatG: product.fatG !== null ? String(product.fatG) : null,
+        fiberG: product.fiberG !== null ? String(product.fiberG) : null,
+        sodiumMg: product.sodiumMg !== null ? String(product.sodiumMg) : null,
+        searchText: namePrimary.toLowerCase(),
+        searchTextAscii: namePrimary.toLowerCase(),
+      })
+      .onConflictDoNothing({ target: vietnameseFoodComposition.id });
 
     return {
       success: true,
@@ -172,7 +197,7 @@ export async function searchBarcodeAction(input: {
     console.error('Error in searchBarcodeAction:', error);
     return {
       success: false,
-      error: getErrorMessage(error),
+      code: getErrorCode(error),
     };
   }
 }
@@ -186,7 +211,8 @@ export async function stageBarcodeMealAction(input: {
   loggedDate: string;
   timezoneOffset: number;
 }): Promise<
-  { success: true; analysisId: string } | { success: false; error: string }
+  | { success: true; analysisId: string }
+  | { success: false; code: BarcodeErrorCode }
 > {
   try {
     const parsed = stageBarcodeMealSchema.parse(input);
@@ -202,10 +228,7 @@ export async function stageBarcodeMealAction(input: {
       .limit(1);
 
     if (!dbProduct) {
-      return {
-        success: false,
-        error: 'Sản phẩm chưa được lưu hoặc không tồn tại.',
-      };
+      return { success: false, code: 'not_cached' };
     }
 
     const nutrition = extractNutritionValues(dbProduct);
@@ -259,10 +282,7 @@ export async function stageBarcodeMealAction(input: {
       .returning({ id: pendingAnalyses.id });
 
     if (!inserted) {
-      return {
-        success: false,
-        error: 'Không thể thêm phân tích chờ duyệt.',
-      };
+      return { success: false, code: 'stage_failed' };
     }
 
     return {
@@ -273,7 +293,7 @@ export async function stageBarcodeMealAction(input: {
     console.error('Error in stageBarcodeMealAction:', error);
     return {
       success: false,
-      error: getErrorMessage(error),
+      code: getErrorCode(error),
     };
   }
 }

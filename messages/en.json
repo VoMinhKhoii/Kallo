@@ -987,6 +987,14 @@
     "barcodeProtein": "Protein",
     "barcodeCarbs": "Carbs",
     "barcodeFat": "Fat",
+    "barcodeCancel": "Cancel",
+    "barcodeError": {
+      "invalid_input": "That barcode doesn't look right. Enter digits only.",
+      "not_found": "No product found for this barcode.",
+      "not_cached": "This product is no longer available. Please scan it again.",
+      "stage_failed": "Couldn't add this meal. Please try again.",
+      "server_error": "Something went wrong. Please try again."
+    },
     "submit": "Analyze",
     "stopAnalyzing": "Stop analyzing",
     "analyzing": "Analyzing your meal…",
