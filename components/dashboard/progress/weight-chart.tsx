@@ -18,9 +18,6 @@ import { buildXTicks } from './weight-chart-utils';
 
 interface WeightChartProps {
   data: number[];
-  periodStartWeight: number;
-  expectedEndWeight: number;
-  goalDirection: 'up' | 'down' | 'flat';
   range: TimeRange;
   projectedEndWeight?: number;
   canProject?: boolean;
@@ -37,8 +34,6 @@ const ACCENT = 'var(--nham-accent)';
 
 export function WeightChart({
   data,
-  periodStartWeight,
-  expectedEndWeight,
   range,
   projectedEndWeight,
   canProject = false,
@@ -46,9 +41,6 @@ export function WeightChart({
 }: WeightChartProps) {
   const locale = useLocale();
   const t = useTranslations('dashboard');
-  const yTicks = [periodStartWeight, expectedEndWeight].filter(
-    (value, index, array) => array.indexOf(value) === index
-  );
 
   const isSinglePoint = data.length === 1;
   const rangeDays = range === '30d' ? 30 : 90;
@@ -58,15 +50,21 @@ export function WeightChart({
   // weight. Logged weights are sparse (one point per logged day) and plotted by
   // position, so the forecast endpoint is extended *proportionally* into the
   // remaining period rather than to a fixed calendar day.
-  const showForecast =
-    canProject && typeof projectedEndWeight === 'number' && data.length >= 2;
+  // `canProject` already implies ≥3 logged points (see buildWeightTrendSummary);
+  // the typeof guard is only for the optional prop.
+  const showForecast = canProject && typeof projectedEndWeight === 'number';
 
   const elapsed =
     typeof periodElapsedDays === 'number' && periodElapsedDays > 0
       ? periodElapsedDays
       : lastIndex || 1;
+  // Cap the forecast tail so the logged data always spans ≥80% of the width
+  // (a short dotted tail) instead of being squashed when the period is early.
   const forecastDay = showForecast
-    ? lastIndex + (lastIndex * (rangeDays - elapsed)) / elapsed
+    ? Math.min(
+        lastIndex + (lastIndex * (rangeDays - elapsed)) / elapsed,
+        lastIndex / 0.8
+      )
     : lastIndex;
 
   const chartData = useMemo<ChartPoint[]>(() => {
@@ -105,17 +103,27 @@ export function WeightChart({
     );
   }
 
-  // Y-axis clamped to goal range, expanding to fit data and the forecast endpoint.
-  const goalTop = Math.max(periodStartWeight, expectedEndWeight);
-  const goalBottom = Math.min(periodStartWeight, expectedEndWeight);
+  // Uniform, round-number Y axis fitted to the data (+ forecast endpoint): pick
+  // a step that yields a few evenly spaced gridlines, snap the bounds outward to
+  // whole steps, then emit a tick at every step (mirrors the mobile chart).
   const extremes = [
     ...data,
     ...(showForecast ? [projectedEndWeight as number] : []),
   ];
-  const dataMin = Math.min(...extremes);
-  const dataMax = Math.max(...extremes);
-  const yMin = Math.min(goalBottom, dataMin) - 0.3;
-  const yMax = Math.max(goalTop, dataMax) + 0.3;
+  const rawMin = Math.min(...extremes);
+  const rawMax = Math.max(...extremes);
+  const span = Math.max(rawMax - rawMin, 0.5);
+  const yStep = span <= 2 ? 0.5 : span <= 5 ? 1 : span <= 12 ? 2 : 5;
+  let yMin = Math.floor(rawMin / yStep) * yStep;
+  let yMax = Math.ceil(rawMax / yStep) * yStep;
+  if (yMax - yMin < yStep * 1.5) {
+    yMin -= yStep;
+    yMax += yStep;
+  }
+  const yTicks: number[] = [];
+  for (let v = yMin; v <= yMax + 1e-9; v += yStep) {
+    yTicks.push(Number(v.toFixed(2)));
+  }
 
   return (
     <div className="flex h-full min-h-[200px] flex-col">
@@ -123,7 +131,9 @@ export function WeightChart({
         <ResponsiveContainer width="100%" height="100%">
           <LineChart
             data={chartData}
-            margin={{ top: 8, right: 12, bottom: 4, left: 0 }}
+            // Numbers live in the YAxis gutter on the left; the plot fills to the
+            // right edge (small right margin so the last label isn't clipped).
+            margin={{ top: 8, right: 8, bottom: 4, left: 0 }}
           >
             <CartesianGrid
               vertical={false}
@@ -143,12 +153,14 @@ export function WeightChart({
             />
             <YAxis
               domain={[yMin, yMax]}
-              tickLine={false}
-              axisLine={{ stroke: 'var(--nham-border)' }}
-              tick={{ fontSize: 9, fill: 'var(--nham-stone)' }}
               ticks={yTicks}
-              tickFormatter={(v: number) => v.toFixed(1)}
-              width={36}
+              tickLine={false}
+              axisLine={false}
+              tick={{ fontSize: 9, fill: 'var(--nham-stone)' }}
+              tickFormatter={(v: number) =>
+                yStep >= 1 ? v.toFixed(0) : v.toFixed(1)
+              }
+              width={26}
             />
 
             <Tooltip content={<WeightChartTooltip />} />

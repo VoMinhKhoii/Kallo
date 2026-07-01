@@ -40,6 +40,8 @@ class CompactWeightLog extends ConsumerStatefulWidget {
     required this.todayWeight,
     required this.todayDate,
     required this.args,
+    this.autofocus = false,
+    this.onSaved,
   });
 
   final double currentWeight;
@@ -48,6 +50,13 @@ class CompactWeightLog extends ConsumerStatefulWidget {
 
   /// Dashboard key so the log mutation invalidates the right bundle.
   final DashboardArgs args;
+
+  /// Focus the field on mount — used when hosted in a log sheet so the keypad
+  /// opens immediately (no effect inline, where autofocus would be intrusive).
+  final bool autofocus;
+
+  /// Called after a successful save — the log sheet uses this to dismiss itself.
+  final VoidCallback? onSaved;
 
   @override
   ConsumerState<CompactWeightLog> createState() => _CompactWeightLogState();
@@ -142,9 +151,13 @@ class _CompactWeightLogState extends ConsumerState<CompactWeightLog> {
         _pending = false;
       });
       HapticFeedback.mediumImpact(); // success cue on save
-      _showFeedback(
-        _Feedback(_FeedbackKind.success, tr('dashboard.weightCard.saved')),
-      );
+      if (widget.onSaved != null) {
+        widget.onSaved!(); // hosted in a sheet → dismiss; skip inline feedback
+      } else {
+        _showFeedback(
+          _Feedback(_FeedbackKind.success, tr('dashboard.weightCard.saved')),
+        );
+      }
     } catch (error) {
       if (!mounted) return;
       setState(() => _pending = false);
@@ -186,6 +199,7 @@ class _CompactWeightLogState extends ConsumerState<CompactWeightLog> {
           controller: _controller,
           onChanged: _onChanged,
           enabled: !_pending,
+          autofocus: widget.autofocus,
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
           inputFormatters: [
             FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]')),
