@@ -35,6 +35,11 @@ vi.mock('@/lib/db', () => ({
 vi.mock('@/lib/db/schema', () => ({
   meals: { id: 'meals.id' },
   mealItems: { mealId: 'mealItems.mealId' },
+  mealShares: {
+    mealId: 'mealShares.mealId',
+    id: 'mealShares.id',
+    visibility: 'mealShares.visibility',
+  },
   vietnameseFoodComposition: { id: 'vfc.id' },
 }));
 
@@ -82,12 +87,27 @@ function mockCompositionRows(rows: Record<string, unknown>[]) {
 
 function mockInserts(mealId: string) {
   const insertedValues: unknown[] = [];
-  mockTxInsert.mockImplementation(() => ({
-    values: (values: unknown) => {
-      insertedValues.push(values);
-      return { returning: () => Promise.resolve([{ id: mealId }]) };
-    },
-  }));
+  mockTxInsert.mockImplementation((table: { id?: string }) => {
+    // The default share-to-circle insert on mealShares gets its own
+    // `.values().onConflictDoNothing().returning()` chain so it never lands in
+    // `insertedValues` — keeping the meal/item index assertions stable.
+    if (table?.id === 'mealShares.id') {
+      return {
+        values: () => ({
+          onConflictDoNothing: () => ({
+            returning: () =>
+              Promise.resolve([{ id: 'share-1', visibility: 'circle' }]),
+          }),
+        }),
+      };
+    }
+    return {
+      values: (values: unknown) => {
+        insertedValues.push(values);
+        return { returning: () => Promise.resolve([{ id: mealId }]) };
+      },
+    };
+  });
   return insertedValues;
 }
 
@@ -226,7 +246,8 @@ describe('saveManualMealAction', () => {
       entryMode: 'precise',
       alcoholG: null,
       cheatSliders: null,
-      share: null,
+      // Shared to circle by default, like every other meal-creation path.
+      share: { shareId: 'share-1', visibility: 'circle' },
       confidenceOverall: 'high',
     });
     // One flat group per ingredient; group nutrition equals its single
