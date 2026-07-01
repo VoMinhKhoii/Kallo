@@ -54,16 +54,23 @@ export function BarcodeScannerDialog({
       setIsSearching(true);
       setSearchError(null);
 
-      const res = await searchBarcodeAction({ barcode: sanitized });
-      setIsSearching(false);
-
-      if (res.success) {
-        setProduct(res.data);
-        setStep('quantity');
-      } else {
+      try {
+        const res = await searchBarcodeAction({ barcode: sanitized });
+        if (res.success) {
+          setProduct(res.data);
+          setStep('quantity');
+          return true;
+        }
         setSearchError(t(`barcodeError.${res.code}`));
+        return false;
+      } catch {
+        // A rejected server action (e.g. network/transport error) would
+        // otherwise leave isSearching stuck true — surface a retryable error.
+        setSearchError(t('barcodeError.server_error'));
+        return false;
+      } finally {
+        setIsSearching(false);
       }
-      return res.success;
     },
     [t]
   );
@@ -108,21 +115,25 @@ export function BarcodeScannerDialog({
     setIsStaging(true);
     const timezoneOffset = new Date().getTimezoneOffset();
 
-    const res = await stageBarcodeMealAction({
-      barcode: product.barcode,
-      grams,
-      loggedDate: selectedDate,
-      timezoneOffset,
-    });
+    try {
+      const res = await stageBarcodeMealAction({
+        barcode: product.barcode,
+        grams,
+        loggedDate: selectedDate,
+        timezoneOffset,
+      });
 
-    setIsStaging(false);
-
-    if (res.success) {
-      toast.success(t('feedArea.savedMeal'));
-      onSuccess();
-      handleClose();
-    } else {
-      toast.error(t(`barcodeError.${res.code}`));
+      if (res.success) {
+        toast.success(t('feedArea.savedMeal'));
+        onSuccess();
+        handleClose();
+      } else {
+        toast.error(t(`barcodeError.${res.code}`));
+      }
+    } catch {
+      toast.error(t('barcodeError.server_error'));
+    } finally {
+      setIsStaging(false);
     }
   };
 

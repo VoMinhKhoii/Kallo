@@ -988,6 +988,8 @@
     "barcodeCarbs": "Carb",
     "barcodeFat": "Béo",
     "barcodeCancel": "Hủy",
+    "barcodeDecreaseGrams": "Giảm khối lượng",
+    "barcodeIncreaseGrams": "Tăng khối lượng",
     "barcodeError": {
       "invalid_input": "Mã vạch không hợp lệ. Vui lòng chỉ nhập chữ số.",
       "not_found": "Không tìm thấy sản phẩm với mã vạch này.",

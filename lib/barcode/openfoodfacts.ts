@@ -52,6 +52,9 @@ export interface ParsedBarcodeProduct {
 
 function parseNumber(val: unknown): number | null {
   if (val === undefined || val === null) return null;
+  // Blank/whitespace strings would coerce to 0 via Number(), turning unknown
+  // OFF nutriments into authoritative zeroes — treat them as missing.
+  if (typeof val === 'string' && val.trim() === '') return null;
   const num = Number(val);
   return Number.isNaN(num) ? null : num;
 }

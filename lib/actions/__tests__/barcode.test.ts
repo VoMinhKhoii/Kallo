@@ -41,6 +41,7 @@ vi.mock('@/lib/barcode/openfoodfacts', () => ({
   fetchProductFromOpenFoodFacts: vi.fn(),
 }));
 
+import type { PipelineResult } from '@/lib/ai/types';
 import { fetchProductFromOpenFoodFacts } from '@/lib/barcode/openfoodfacts';
 // Import modules under test
 import { searchBarcodeAction, stageBarcodeMealAction } from '../barcode';
@@ -224,7 +225,7 @@ describe('stageBarcodeMealAction', () => {
     expect(stagedRow.userId).toBe(mockUser.id);
     expect(stagedRow.entryMode).toBe('precise');
 
-    const pipelineResult = stagedRow.pipelineResult as any;
+    const pipelineResult = stagedRow.pipelineResult as PipelineResult;
     expect(pipelineResult.displayedNutrition.caloriesKcal).toBe(700); // 350 * 2
     expect(pipelineResult.displayedNutrition.proteinG).toBe(16); // 8 * 2
     expect(pipelineResult.boundedNutrition.caloriesKcal).toEqual({
