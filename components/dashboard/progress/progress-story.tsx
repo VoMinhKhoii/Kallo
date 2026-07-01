@@ -83,7 +83,7 @@ export function ProgressStory({
               <div
                 className={cn(
                   'grid gap-2 text-sm',
-                  summary.canProject ? 'grid-cols-2' : 'grid-cols-1'
+                  weightSummary.canProject ? 'grid-cols-2' : 'grid-cols-1'
                 )}
               >
                 <div className="rounded-xl bg-card/80 px-2.5 py-2">
@@ -94,13 +94,14 @@ export function ProgressStory({
                     {summary.currentWeight.toFixed(1)} {t('units.kg')}
                   </strong>
                 </div>
-                {summary.canProject && (
+                {weightSummary.canProject && (
                   <div className="rounded-xl bg-card/80 px-2.5 py-2">
                     <span className="block text-[9px] text-nham-stone uppercase tracking-[0.14em]">
                       {t('projected')}
                     </span>
                     <strong className="font-mono text-nham-text text-xs">
-                      {summary.projectedEndWeight.toFixed(1)} {t('units.kg')}
+                      {weightSummary.projectedEndWeight.toFixed(1)}{' '}
+                      {t('units.kg')}
                     </strong>
                   </div>
                 )}
@@ -119,10 +120,10 @@ export function ProgressStory({
       <div className="min-h-[200px] xl:min-h-0">
         <WeightChart
           data={weightSummary.weights}
-          periodStartWeight={weightSummary.periodStartWeight}
-          expectedEndWeight={weightSummary.expectedEndWeight}
-          goalDirection={weightSummary.goalDirection}
           range={range}
+          projectedEndWeight={weightSummary.projectedEndWeight}
+          canProject={weightSummary.canProject}
+          periodElapsedDays={weightSummary.periodElapsedDays}
         />
       </div>
     </section>
