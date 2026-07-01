@@ -5,10 +5,13 @@ import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { MAX_FOOD_ITEM_GRAMS } from '@/lib/barcode/constants';
 import type { ParsedBarcodeProduct } from '@/lib/barcode/openfoodfacts';
 
 const GRAM_STEP = 50;
-const MAX_GRAMS = 10_000;
+// Shared cap so a large-but-valid package (OFF allows up to 100kg) is never
+// silently clipped when resolved in serving/package mode.
+const MAX_GRAMS = MAX_FOOD_ITEM_GRAMS;
 const MAX_SERVINGS = 99;
 const QUICK_GRAM_OPTIONS = [50, 100, 150, 200, 250];
 

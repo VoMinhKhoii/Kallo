@@ -37,9 +37,16 @@ vi.mock('@/lib/db/schema', () => ({
   pendingAnalyses: { id: 'pendingAnalyses.id' },
 }));
 
-vi.mock('@/lib/barcode/openfoodfacts', () => ({
-  fetchProductFromOpenFoodFacts: vi.fn(),
-}));
+vi.mock('@/lib/barcode/openfoodfacts', async (importActual) => {
+  // Keep the real parseSizeGrams (used by the cache-read path); only the
+  // network fetch is stubbed.
+  const actual =
+    await importActual<typeof import('@/lib/barcode/openfoodfacts')>();
+  return {
+    ...actual,
+    fetchProductFromOpenFoodFacts: vi.fn(),
+  };
+});
 
 import type { PipelineResult } from '@/lib/ai/types';
 import { fetchProductFromOpenFoodFacts } from '@/lib/barcode/openfoodfacts';

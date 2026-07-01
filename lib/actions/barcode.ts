@@ -10,9 +10,11 @@ import type {
   PipelineResult,
 } from '@/lib/ai/types';
 import { requireAuthAndProfile } from '@/lib/auth';
+import { MAX_FOOD_ITEM_GRAMS } from '@/lib/barcode/constants';
 import {
   fetchProductFromOpenFoodFacts,
   type ParsedBarcodeProduct,
+  parseSizeGrams,
 } from '@/lib/barcode/openfoodfacts';
 import { getUtcInstantForLocalDate } from '@/lib/date/local-day';
 import { db } from '@/lib/db';
@@ -38,7 +40,7 @@ const stageBarcodeMealSchema = z.object({
   grams: z
     .number()
     .positive('Khối lượng phải lớn hơn 0')
-    .max(100000, 'Khối lượng quá lớn'),
+    .max(MAX_FOOD_ITEM_GRAMS, 'Khối lượng quá lớn'),
   loggedDate: dateStringSchema,
   timezoneOffset: timezoneOffsetSchema,
 });
@@ -57,14 +59,6 @@ export type BarcodeErrorCode =
 
 function getErrorCode(error: unknown): BarcodeErrorCode {
   return error instanceof z.ZodError ? 'invalid_input' : 'server_error';
-}
-
-/** Coerce a Drizzle numeric column (string | null) to a positive number, or
- *  null. Used for serving/package sizes, where 0 means "not provided". */
-function parsePositiveNumeric(val: string | null): number | null {
-  if (val === null) return null;
-  const num = Number(val);
-  return Number.isFinite(num) && num > 0 ? num : null;
 }
 
 function scaleNutrition(
@@ -135,10 +129,11 @@ export async function searchBarcodeAction(input: {
           fatG: nutrition.fatG,
           fiberG: nutrition.fiberG,
           sodiumMg: nutrition.sodiumMg,
-          // numeric columns surface as strings; coerce and drop anything
-          // non-positive so the picker only offers real serving/package sizes.
-          servingSizeG: parsePositiveNumeric(cached.servingSizeG),
-          packageSizeG: parsePositiveNumeric(cached.packageSizeG),
+          // numeric columns surface as strings; run through the same sizing
+          // validation as ingestion so cache reads apply the identical
+          // positivity + 100kg-cap invariant (single source of truth).
+          servingSizeG: parseSizeGrams(cached.servingSizeG),
+          packageSizeG: parseSizeGrams(cached.packageSizeG),
         },
       };
     }

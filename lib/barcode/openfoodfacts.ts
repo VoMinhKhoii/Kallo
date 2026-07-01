@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { MAX_FOOD_ITEM_GRAMS } from '@/lib/barcode/constants';
 import { fetchWithTimeout } from '@/lib/fetch-with-timeout';
 
 // Open Food Facts can be slow/unresponsive; bound the wait so the server
@@ -69,11 +70,11 @@ function parseNumber(val: unknown): number | null {
 
 // Reject OFF sizing that can't be a usable gram weight: non-positive, or larger
 // than the staging cap (100kg). Keeps a stray "0"/"1500000" from becoming a
-// nonsensical serving/package amount in the picker.
-const MAX_SIZE_G = 100_000;
-function parseSizeGrams(val: unknown): number | null {
+// nonsensical serving/package amount in the picker. Exported so the cache-read
+// path (`lib/actions/barcode.ts`) validates persisted sizes the same way.
+export function parseSizeGrams(val: unknown): number | null {
   const num = parseNumber(val);
-  if (num === null || num <= 0 || num > MAX_SIZE_G) return null;
+  if (num === null || num <= 0 || num > MAX_FOOD_ITEM_GRAMS) return null;
   return num;
 }
 
