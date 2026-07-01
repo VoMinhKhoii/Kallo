@@ -1,5 +1,6 @@
 'use client';
 
+import type { Html5Qrcode } from 'html5-qrcode';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 export type CameraStatus =
@@ -27,7 +28,10 @@ interface UseBarcodeCameraScannerOptions {
 function playBeep() {
   try {
     const AudioContextCtor =
-      window.AudioContext || (window as any).webkitAudioContext;
+      window.AudioContext ||
+      (window as unknown as { webkitAudioContext?: typeof AudioContext })
+        .webkitAudioContext;
+    if (!AudioContextCtor) return;
     const ctx = new AudioContextCtor();
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
@@ -70,7 +74,7 @@ export function useBarcodeCameraScanner({
     useState<CameraStatus>('initializing');
   const [cameras, setCameras] = useState<CameraDevice[]>([]);
   const [selectedCameraId, setSelectedCameraId] = useState<string | null>(null);
-  const qrCodeScannerRef = useRef<any>(null);
+  const qrCodeScannerRef = useRef<Html5Qrcode | null>(null);
   // Guards a concurrent stop() — two callers (decode success + effect cleanup)
   // can both observe isScanning === true before either stop() resolves.
   const isStoppingRef = useRef(false);
@@ -99,12 +103,14 @@ export function useBarcodeCameraScanner({
     if (!isActive) return;
 
     let isMounted = true;
-    setCameraStatus('initializing');
     hasDecodedRef.current = false;
-    let scannerInstance: any = null;
+    let scannerInstance: Html5Qrcode | null = null;
 
     const startScanner = async () => {
       try {
+        // Kept inside the async start path (not the effect body) to avoid the
+        // react-hooks/set-state-in-effect lint on a synchronous effect setState.
+        setCameraStatus('initializing');
         const { Html5Qrcode } = await import('html5-qrcode');
         if (!isMounted) return;
 
@@ -168,7 +174,7 @@ export function useBarcodeCameraScanner({
         if (isMounted) {
           setCameraStatus('scanning');
         }
-      } catch (err: any) {
+      } catch (err) {
         console.error('Failed to start scanner:', err);
         if (isMounted) {
           const errStr = String(err).toLowerCase();
