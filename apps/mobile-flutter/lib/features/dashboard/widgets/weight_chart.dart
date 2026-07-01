@@ -274,9 +274,13 @@ void _openLogSheet(
                   onSaved: () => Navigator.of(sheetContext).pop(),
                 ),
               ),
-              // Breathing gap above the keypad, plus the home-indicator inset for
-              // the brief moments the keyboard is dismissed while the sheet is up.
-              SizedBox(height: NhamSpacing.sp4 + mq.viewPadding.bottom),
+              // Breathing gap above the keypad. viewPadding.bottom is NOT reduced
+              // by the keyboard, so only add the home-indicator inset while the
+              // keypad is dismissed — otherwise the gap above the keys balloons.
+              SizedBox(
+                height: NhamSpacing.sp4 +
+                    (mq.viewInsets.bottom > 0 ? 0 : mq.viewPadding.bottom),
+              ),
             ],
           ),
         ),
