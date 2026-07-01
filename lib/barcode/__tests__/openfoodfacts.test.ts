@@ -18,6 +18,8 @@ describe('fetchProductFromOpenFoodFacts', () => {
         product_name: 'Regular Name',
         product_name_vi: 'Tên Tiếng Việt',
         brands: 'Test Brand',
+        serving_quantity: '30',
+        product_quantity: 150,
         nutriments: {
           'energy-kcal_100g': 120,
           proteins_100g: 5.5,
@@ -50,7 +52,30 @@ describe('fetchProductFromOpenFoodFacts', () => {
       fatG: 3,
       fiberG: 1.5,
       sodiumMg: 250,
+      servingSizeG: 30,
+      packageSizeG: 150,
     });
+  });
+
+  it('omits serving/package sizes that are absent or non-positive', async () => {
+    const mockApiResponse = {
+      status: 1,
+      product: {
+        product_name: 'No sizing',
+        serving_quantity: 0, // non-positive → dropped
+        // product_quantity absent → null
+        nutriments: { 'energy-kcal_100g': 120 },
+      },
+    };
+
+    vi.spyOn(global, 'fetch').mockResolvedValue({
+      ok: true,
+      json: async () => mockApiResponse,
+    } as Response);
+
+    const result = await fetchProductFromOpenFoodFacts('8934563138162');
+    expect(result?.servingSizeG).toBeNull();
+    expect(result?.packageSizeG).toBeNull();
   });
 
   it('falls back to English name when Vietnamese is absent', async () => {
