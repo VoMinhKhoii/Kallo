@@ -1,5 +1,50 @@
 # Changelog
 
+## [1.5.0](https://github.com/VoMinhKhoii/Nham/compare/v1.4.0...v1.5.0) (2026-07-01)
+
+
+### Features
+
+* **auth:** enforce one account per email + Connect-account flow ([21b3de1](https://github.com/VoMinhKhoii/Nham/commit/21b3de181483dd99284207f4783e1327fee9b82e))
+* **auth:** native Google sign-in, one-account-per-email, account linking + CSP ([24612cc](https://github.com/VoMinhKhoii/Nham/commit/24612cc08d35c23191c1bdd365e7f246d0cbbba1))
+* **auth:** nonce CSP, duplicate-email contract guards, linking UX polish ([66c26d5](https://github.com/VoMinhKhoii/Nham/commit/66c26d5d6cb5f4f2c4ee250924fab2f9f62aa54a))
+* barcode scanning ([3d1d343](https://github.com/VoMinhKhoii/Nham/commit/3d1d343b5f60f70e9208cb507b416e51422e62d3))
+* **meals:** share to circle by default on every meal-creation path ([c95b915](https://github.com/VoMinhKhoii/Nham/commit/c95b915fb148fd28fd2cb91f2cd8bc14c4e7bbc8))
+* **meals:** share to circle by default on every meal-creation path ([3d7493d](https://github.com/VoMinhKhoii/Nham/commit/3d7493d8b75579c42634b90a017d1afaf9ae5c24))
+* **mobile:** modernize dashboard & nav mobile UX ([d7d05e6](https://github.com/VoMinhKhoii/Nham/commit/d7d05e6a9e6896144b155b3b8076e864944bd3e9))
+* **mobile:** modernize dashboard & nav mobile UX ([8a146a9](https://github.com/VoMinhKhoii/Nham/commit/8a146a9a73519bf25acd448dd9872af5f3328f14))
+* **mobile:** switch Google sign-in to native flow ([ed86d1e](https://github.com/VoMinhKhoii/Nham/commit/ed86d1e4f03c9d399fe069a1579974367e292220))
+* **nutrition:** compact suggested-foods sheet + clearer drawer hierarchy ([eb9c318](https://github.com/VoMinhKhoii/Nham/commit/eb9c3186695a82c0e76690917f29988dadddc14c))
+* **nutrition:** derive food suggestions from the composition DB for any nutrient ([4f415d9](https://github.com/VoMinhKhoii/Nham/commit/4f415d9543e9208b1871e3654e95747cfb22e9a8))
+* **nutrition:** filter impractical foods from candidate suggestions ([fdfb9c9](https://github.com/VoMinhKhoii/Nham/commit/fdfb9c9b20879bf69daf9626f58ca57f6f1af9d9))
+* **nutrition:** mobile foods sheet — DB-derived foods, reserve + cycle ([df07081](https://github.com/VoMinhKhoii/Nham/commit/df070813db6a95f9e0c4e445ffd14e62281bcffc))
+* **nutrition:** redesign mobile Nutrition tab into a single dense view ([64bdf9c](https://github.com/VoMinhKhoii/Nham/commit/64bdf9c3cb5de0aed8f73f05a101ac0455a5e35a))
+* pre-launch UX overhaul (mobile/Flutter) — full audit, Waves 0–3 ([355073c](https://github.com/VoMinhKhoii/Nham/commit/355073cae195556f7e7dcbcbbde557131c2affd7))
+
+
+### Bug Fixes
+
+* address CodeRabbit review comments ([59f6405](https://github.com/VoMinhKhoii/Nham/commit/59f64059702b9739c51ea6c74e1361474eb94bc5))
+* **barcode:** address CodeRabbit review comments on [#162](https://github.com/VoMinhKhoii/Nham/issues/162) ([dfc6e89](https://github.com/VoMinhKhoii/Nham/commit/dfc6e890fa11f55e03502f653370266561998e08))
+* **barcode:** address review escalations (races, timeout, i18n errors) ([f7ac129](https://github.com/VoMinhKhoii/Nham/commit/f7ac12997a10886327e4306e987e4f26891799dc))
+* **barcode:** second round of CodeRabbit review fixes ([80b3322](https://github.com/VoMinhKhoii/Nham/commit/80b3322911ecbb1d713257b2d7d4af35fa5f5d27))
+* **ci:** interpret migration timestamps as UTC + re-date off-source migration ([d66dc02](https://github.com/VoMinhKhoii/Nham/commit/d66dc0264923a737147e444dade0ac862271d9b7))
+* **dashboard-mobile:** equalize weight field and button height ([e4833dd](https://github.com/VoMinhKhoii/Nham/commit/e4833ddd2fc74b768e840ad6b60cee1b43167827))
+* **db:** remove back-dated add_off_ingredient_source migration ([9ca5d7a](https://github.com/VoMinhKhoii/Nham/commit/9ca5d7ae7a56cf5f4f3f7ff4455015422cfe49f4))
+* **mobile:** settle nav drawer on canceled edge-swipe ([9af7a06](https://github.com/VoMinhKhoii/Nham/commit/9af7a06b57a3eefb3cbfbfc11cee7790988ffede))
+* **nutrition-mobile:** add missing vi 'one' plural for partialNote ([831cd6a](https://github.com/VoMinhKhoii/Nham/commit/831cd6af3efed5a09d558c1d3f892ca960c37627))
+* **nutrition-mobile:** clamp food chip width to stop Wrap overflow ([6e14403](https://github.com/VoMinhKhoii/Nham/commit/6e1440327103b81531720eed935d65fd88fcc24c))
+* **nutrition:** default to sex-neutral average targets when sex is unknown ([482ba13](https://github.com/VoMinhKhoii/Nham/commit/482ba133a0332de1f18684f585c11c5bcbbe583b))
+* **nutrition:** type resolved target unit as the mg|mcg union ([638138c](https://github.com/VoMinhKhoii/Nham/commit/638138c3804dd4603077246fea694f3648652fa2))
+
+
+### Refactor
+
+* **barcode:** review-applied cleanups + a11y for scanner dialog ([34bc31e](https://github.com/VoMinhKhoii/Nham/commit/34bc31e3298a99191c76bb17aeb8392391c926c9))
+* **mobile:** flatten onboarding nudge card ([e7c676a](https://github.com/VoMinhKhoii/Nham/commit/e7c676a0493d27711e8ed2af987231fb23db96a2))
+* **nutrition:** drop vestigial supportsCandidates + table-drive bucket unit ([0ecba5b](https://github.com/VoMinhKhoii/Nham/commit/0ecba5b98ee4a55529147fec06ded94d3dc6a038))
+* **nutrition:** model VN iron target as age-banded ([4360bca](https://github.com/VoMinhKhoii/Nham/commit/4360bca97592077a77e8e0b01191a42fb775f6fa))
+
 ## [1.4.0](https://github.com/VoMinhKhoii/Nham/compare/v1.3.0...v1.4.0) (2026-06-26)
 
 
