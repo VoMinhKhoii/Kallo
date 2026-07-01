@@ -153,10 +153,12 @@ describe('Reset staging database workflow', () => {
     // Default ref is `staging` (the canonical pre-prod source of truth), with
     // an optional override input for emergency recovery.
     expect(workflow).toContain('default: staging');
+    // biome-ignore lint/suspicious/noTemplateCurlyInString: matches exact workflow string
     expect(workflow).toContain('ref: ${{ github.event.inputs.ref }}');
     // Must not silently fall back to the repo default branch — that would
     // replay `main`'s migrations and miss anything already applied to staging.
     expect(workflow).not.toContain(
+      // biome-ignore lint/suspicious/noTemplateCurlyInString: matches exact workflow string
       'ref: ${{ github.event.repository.default_branch }}'
     );
   });

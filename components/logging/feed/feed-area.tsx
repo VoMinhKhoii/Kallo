@@ -468,6 +468,13 @@ export function FeedArea({
     queryClient.invalidateQueries({ queryKey: ['meal-dates'] });
   }, [messages, profile.userId, queryClient, selectedDate, streamingMsgId]);
 
+  const handleBarcodeSuccess = useCallback(() => {
+    queryClient.invalidateQueries({
+      queryKey: loggingDayKeys.byUserDate(profile.userId, selectedDate),
+    });
+    queryClient.invalidateQueries({ queryKey: ['meal-dates'] });
+  }, [profile.userId, queryClient, selectedDate]);
+
   useStreamingTerminalEffects({
     stream,
     streamingMsgId,
@@ -939,6 +946,8 @@ export function FeedArea({
               onModeChange={setLoggingMode}
               cheatIntensity={cheatIntensity}
               onChangeIntensity={setCheatIntensity}
+              selectedDate={selectedDate}
+              onBarcodeSuccess={handleBarcodeSuccess}
             />
           </div>
         </motion.div>
