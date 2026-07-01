@@ -167,6 +167,11 @@ export const vietnameseFoodComposition = pgTable(
     state: text('state').notNull(),
     inediblePortionPct: numeric('inedible_portion_pct'),
 
+    // Packaged-product sizing (Open Food Facts): grams per serving and grams
+    // in the whole package. Nullable — most non-packaged rows have neither.
+    servingSizeG: numeric('serving_size_g'),
+    packageSizeG: numeric('package_size_g'),
+
     // Macros
     caloriesKcal: numeric('calories_kcal'),
     proteinG: numeric('protein_g'),

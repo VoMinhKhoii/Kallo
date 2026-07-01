@@ -1,15 +1,14 @@
 'use client';
 
-import { Barcode, Loader2, Search } from 'lucide-react';
+import { Barcode, Loader2, Search, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useCallback, useState } from 'react';
 import { toast } from 'sonner';
-import { Button } from '@/components/ui/button';
 import {
   Dialog,
+  DialogClose,
   DialogContent,
   DialogDescription,
-  DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -18,6 +17,7 @@ import {
   searchBarcodeAction,
   stageBarcodeMealAction,
 } from '@/lib/actions/barcode';
+import { confirmAndSaveMealAction } from '@/lib/actions/meals';
 import { tryDecodeFontEncodedBarcode } from '@/lib/barcode/decode';
 import type { ParsedBarcodeProduct } from '@/lib/barcode/openfoodfacts';
 import { BarcodeProductStep } from './barcode-product-step';
@@ -28,6 +28,8 @@ interface BarcodeScannerDialogProps {
   selectedDate: string;
   onSuccess: () => void;
 }
+
+const SCAN_MODES = ['camera', 'manual'] as const;
 
 export function BarcodeScannerDialog({
   isOpen,
@@ -43,8 +45,7 @@ export function BarcodeScannerDialog({
   const [isSearching, setIsSearching] = useState(false);
   const [product, setProduct] = useState<ParsedBarcodeProduct | null>(null);
 
-  // Quantity states
-  const [grams, setGrams] = useState<number>(100);
+  // Quantity state (the resolved gram amount is owned by BarcodeProductStep).
   const [isStaging, setIsStaging] = useState(false);
 
   const runSearch = useCallback(
@@ -109,7 +110,7 @@ export function BarcodeScannerDialog({
     await runSearch(trimmed);
   };
 
-  const handleStageMeal = async () => {
+  const handleStageMeal = async (grams: number) => {
     if (!product) return;
 
     setIsStaging(true);
@@ -123,13 +124,20 @@ export function BarcodeScannerDialog({
         timezoneOffset,
       });
 
-      if (res.success) {
-        toast.success(t('feedArea.savedMeal'));
-        onSuccess();
-        handleClose();
-      } else {
+      if (!res.success) {
         toast.error(t(`barcodeError.${res.code}`));
+        return;
       }
+
+      // Confirm-and-save immediately so the barcode flow persists the meal in
+      // one action — no separate pending-confirmation step in the feed. This is
+      // the same server path the pending card's confirm button runs; the amount
+      // was already chosen here, so no edits are passed.
+      await confirmAndSaveMealAction({ analysisId: res.analysisId });
+
+      toast.success(t('feedArea.savedMeal'));
+      onSuccess();
+      handleClose();
     } catch {
       toast.error(t('barcodeError.server_error'));
     } finally {
@@ -147,7 +155,6 @@ export function BarcodeScannerDialog({
       setBarcode('');
       setSearchError(null);
       setProduct(null);
-      setGrams(100);
     }, 200);
   };
 
@@ -158,149 +165,141 @@ export function BarcodeScannerDialog({
         if (!open) handleClose();
       }}
     >
-      <DialogContent className="border-nham-border bg-nham-surface text-nham-text sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle className="font-[var(--font-lora)] font-normal text-2xl text-nham-text">
-            {t('barcodeDialogTitle')}
-          </DialogTitle>
-          <DialogDescription className="text-nham-text-muted text-sm leading-normal">
-            {t('barcodeDialogDesc')}
-          </DialogDescription>
-        </DialogHeader>
+      <DialogContent
+        showCloseButton={false}
+        className="flex max-h-[85dvh] flex-col gap-0 overflow-hidden rounded-[24px] border border-[#EAE7E0] bg-[#FDFCF8] p-0 font-sans-display text-[#2C2416] sm:max-w-md"
+      >
+        {/* Header */}
+        <div className="flex shrink-0 items-start justify-between gap-4 border-[#EAE7E0]/70 border-b px-6 py-4">
+          <div className="min-w-0 space-y-1">
+            <DialogTitle className="font-normal font-serif text-[#2C2416] text-[22px] leading-tight tracking-tight">
+              {t('barcodeDialogTitle')}
+            </DialogTitle>
+            <DialogDescription className="font-sans-display text-[#8B8682] text-[13px] leading-normal">
+              {t('barcodeDialogDesc')}
+            </DialogDescription>
+          </div>
+          <DialogClose
+            aria-label={t('barcodeCancel')}
+            className="-mr-1 shrink-0 rounded-full p-2 text-[#8B8682] transition-colors hover:bg-[#EAE7E0]/50 hover:text-[#2C2416]"
+          >
+            <X className="h-5 w-5" />
+          </DialogClose>
+        </div>
 
         {step === 'input' ? (
-          <div className="space-y-4">
-            {/* Tabs for scanning mode */}
-            <div className="flex rounded-lg border border-nham-border/20 bg-nham-hover/30 p-1">
-              <button
-                type="button"
-                aria-pressed={scanMode === 'camera'}
-                onClick={() => setScanMode('camera')}
-                className={`flex-1 cursor-pointer rounded-md py-1.5 font-medium text-xs transition-all duration-200 ${
-                  scanMode === 'camera'
-                    ? 'bg-nham-btn text-white shadow-sm'
-                    : 'text-nham-text-muted hover:bg-nham-hover/50 hover:text-nham-text'
-                }`}
-              >
-                {t('barcodeScanTab')}
-              </button>
-              <button
-                type="button"
-                aria-pressed={scanMode === 'manual'}
-                onClick={() => setScanMode('manual')}
-                className={`flex-1 cursor-pointer rounded-md py-1.5 font-medium text-xs transition-all duration-200 ${
-                  scanMode === 'manual'
-                    ? 'bg-nham-btn text-white shadow-sm'
-                    : 'text-nham-text-muted hover:bg-nham-hover/50 hover:text-nham-text'
-                }`}
-              >
-                {t('barcodeManualTab')}
-              </button>
-            </div>
+          <form
+            onSubmit={handleSearch}
+            className="flex min-h-0 flex-1 flex-col"
+          >
+            <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-6 py-5">
+              {/* Scan-mode segmented control */}
+              <div className="grid grid-cols-2 rounded-xl bg-[#F5F4F0] p-1">
+                {SCAN_MODES.map((m) => (
+                  <button
+                    key={m}
+                    type="button"
+                    aria-pressed={scanMode === m}
+                    onClick={() => setScanMode(m)}
+                    className={`rounded-lg px-3 py-2 font-medium font-sans-display text-[13px] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C9A87C]/30 ${
+                      scanMode === m
+                        ? 'bg-white text-[#2C2416] shadow-sm'
+                        : 'text-[#8B8682] hover:text-[#2C2416]'
+                    }`}
+                  >
+                    {m === 'camera'
+                      ? t('barcodeScanTab')
+                      : t('barcodeManualTab')}
+                  </button>
+                ))}
+              </div>
 
-            {scanMode === 'camera' ? (
-              <div className="space-y-4">
-                <div className="relative aspect-video w-full overflow-hidden rounded-xl border border-nham-border/40 bg-black shadow-[0_4px_12px_rgba(0,0,0,0.15)]">
-                  {/* html5-qrcode video viewport container */}
-                  <div
-                    id="nham-barcode-scanner"
-                    className="[&_#qr-shaded-region]:!hidden h-full w-full [&>video]:h-full [&>video]:w-full [&>video]:object-cover"
-                  />
+              {scanMode === 'camera' ? (
+                <div className="space-y-4">
+                  <div className="relative aspect-video w-full overflow-hidden rounded-2xl border border-[#EAE7E0] bg-black shadow-sm">
+                    {/* html5-qrcode video viewport container */}
+                    <div
+                      id="nham-barcode-scanner"
+                      className="[&_#qr-shaded-region]:!hidden h-full w-full [&>video]:h-full [&>video]:w-full [&>video]:object-cover"
+                    />
 
-                  {/* Premium overlay frame */}
-                  <div className="pointer-events-none absolute inset-0 z-10 flex flex-col justify-between p-4">
-                    <div className="absolute inset-0 bg-black/30" />
-
-                    {/* Centered Cutout Frame */}
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <div className="relative aspect-[2/1] w-2/3 max-w-[280px] rounded-lg border-2 border-nham-accent/80 shadow-[0_0_0_100vmax_rgba(0,0,0,0.4)]">
-                        {/* Glow Corners */}
-                        <div className="absolute -top-1 -left-1 h-4 w-4 rounded-tl border-nham-accent border-t-4 border-l-4" />
-                        <div className="absolute -top-1 -right-1 h-4 w-4 rounded-tr border-nham-accent border-t-4 border-r-4" />
-                        <div className="absolute -bottom-1 -left-1 h-4 w-4 rounded-bl border-nham-accent border-b-4 border-l-4" />
-                        <div className="absolute -right-1 -bottom-1 h-4 w-4 rounded-br border-nham-accent border-r-4 border-b-4" />
-
-                        {/* Scanning Laser Line */}
-                        <div className="absolute top-1/2 right-0 left-0 h-0.5 -translate-y-1/2 animate-pulse bg-nham-accent opacity-80 shadow-[0_0_8px_rgba(224,116,62,0.8)]" />
+                    {/* Overlay frame */}
+                    <div className="pointer-events-none absolute inset-0 z-10">
+                      <div className="absolute inset-0 bg-black/30" />
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <div className="relative aspect-[2/1] w-2/3 max-w-[280px] rounded-lg border-2 border-[#C9A87C]/80 shadow-[0_0_0_100vmax_rgba(0,0,0,0.4)]">
+                          <div className="absolute -top-1 -left-1 h-4 w-4 rounded-tl border-[#C9A87C] border-t-4 border-l-4" />
+                          <div className="absolute -top-1 -right-1 h-4 w-4 rounded-tr border-[#C9A87C] border-t-4 border-r-4" />
+                          <div className="absolute -bottom-1 -left-1 h-4 w-4 rounded-bl border-[#C9A87C] border-b-4 border-l-4" />
+                          <div className="absolute -right-1 -bottom-1 h-4 w-4 rounded-br border-[#C9A87C] border-r-4 border-b-4" />
+                          <div className="absolute top-1/2 right-0 left-0 h-0.5 -translate-y-1/2 animate-pulse bg-[#C9A87C] opacity-80 shadow-[0_0_8px_rgba(224,116,62,0.8)]" />
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
 
-                <div
-                  className="text-center text-nham-text-muted text-sm"
-                  aria-live="polite"
-                >
-                  {cameraStatus === 'initializing' ? (
-                    <div className="flex items-center justify-center gap-2">
-                      <Loader2 className="h-4 w-4 animate-spin text-nham-accent" />
-                      <span>{t('barcodeCameraInitializing')}</span>
-                    </div>
-                  ) : null}
-                  {cameraStatus === 'scanning' ? (
-                    <div className="space-y-3">
-                      <span>{t('barcodeCameraScanning')}</span>
-                      {cameras.length > 1 ? (
-                        <div className="mx-auto flex max-w-[280px] flex-col items-center gap-1.5 px-4">
-                          <label
-                            htmlFor="camera-select"
-                            className="font-medium text-nham-text-muted text-xs"
-                          >
-                            {t('barcodeSelectCamera')}
-                          </label>
-                          <select
-                            id="camera-select"
-                            value={selectedCameraId || cameras[0]?.id}
-                            onChange={(e) =>
-                              setSelectedCameraId(e.target.value)
-                            }
-                            className="w-full rounded-lg border border-nham-border/40 bg-nham-cream px-3 py-1.5 text-nham-text text-sm shadow-sm transition-colors duration-200 focus:border-nham-accent focus:outline-none"
-                          >
-                            {cameras.map((device) => (
-                              <option key={device.id} value={device.id}>
-                                {device.label ||
-                                  `Camera ${device.id.substring(0, 5)}`}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-                      ) : null}
-                    </div>
-                  ) : null}
-                  {cameraStatus === 'permission-denied' ? (
-                    <span
-                      role="alert"
-                      className="block rounded-lg bg-nham-danger/10 p-2 px-4 text-nham-danger text-xs leading-normal"
-                    >
-                      {t('barcodeCameraPermissionDenied')}
-                    </span>
-                  ) : null}
-                  {cameraStatus === 'error' ? (
-                    <span
-                      role="alert"
-                      className="block rounded-lg bg-nham-danger/10 p-2 px-4 text-nham-danger text-xs leading-normal"
-                    >
-                      {t('barcodeCameraError')}
-                    </span>
-                  ) : null}
-                </div>
-
-                <div className="flex justify-end pt-2">
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    onClick={handleClose}
-                    className="text-nham-text-muted hover:bg-nham-hover hover:text-nham-text"
+                  <div
+                    className="text-center font-sans-display text-[#8B8682] text-[13px]"
+                    aria-live="polite"
                   >
-                    {t('barcodeCancel')}
-                  </Button>
+                    {cameraStatus === 'initializing' ? (
+                      <div className="flex items-center justify-center gap-2">
+                        <Loader2 className="h-4 w-4 animate-spin text-[#C9A87C]" />
+                        <span>{t('barcodeCameraInitializing')}</span>
+                      </div>
+                    ) : null}
+                    {cameraStatus === 'scanning' ? (
+                      <div className="space-y-3">
+                        <span>{t('barcodeCameraScanning')}</span>
+                        {cameras.length > 1 ? (
+                          <div className="mx-auto flex w-full max-w-[280px] flex-col items-stretch gap-1.5">
+                            <label
+                              htmlFor="camera-select"
+                              className="font-medium font-sans-display text-[#8B8682] text-[12px]"
+                            >
+                              {t('barcodeSelectCamera')}
+                            </label>
+                            <select
+                              id="camera-select"
+                              value={selectedCameraId || cameras[0]?.id}
+                              onChange={(e) =>
+                                setSelectedCameraId(e.target.value)
+                              }
+                              className="w-full rounded-lg border border-[#EAE7E0] bg-white px-3 py-2 font-sans-display text-[#2C2416] text-sm shadow-sm transition-colors duration-200 focus:border-[#C9A87C] focus:outline-none"
+                            >
+                              {cameras.map((device) => (
+                                <option key={device.id} value={device.id}>
+                                  {device.label ||
+                                    `Camera ${device.id.substring(0, 5)}`}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                        ) : null}
+                      </div>
+                    ) : null}
+                    {cameraStatus === 'permission-denied' ? (
+                      <span
+                        role="alert"
+                        className="block rounded-lg bg-nham-danger/10 p-2 px-4 text-[13px] text-nham-danger leading-normal"
+                      >
+                        {t('barcodeCameraPermissionDenied')}
+                      </span>
+                    ) : null}
+                    {cameraStatus === 'error' ? (
+                      <span
+                        role="alert"
+                        className="block rounded-lg bg-nham-danger/10 p-2 px-4 text-[13px] text-nham-danger leading-normal"
+                      >
+                        {t('barcodeCameraError')}
+                      </span>
+                    ) : null}
+                  </div>
                 </div>
-              </div>
-            ) : (
-              <form onSubmit={handleSearch} className="space-y-4">
+              ) : (
                 <div className="space-y-2">
                   <div className="relative flex items-center">
-                    <Barcode className="absolute left-3 h-5 w-5 text-nham-text-muted/60" />
+                    <Barcode className="absolute left-3 h-5 w-5 text-[#8B8682]/60" />
                     <Input
                       type="text"
                       placeholder={t('barcodePlaceholder')}
@@ -312,56 +311,51 @@ export function BarcodeScannerDialog({
                       autoFocus
                       disabled={isSearching}
                       aria-invalid={Boolean(searchError)}
-                      className="border-nham-border/60 bg-background pl-10 focus-visible:border-nham-accent/50 focus-visible:ring-1 focus-visible:ring-nham-accent/50"
+                      className="rounded-lg border-[#EAE7E0] bg-white pl-10 font-sans-display text-[#2C2416] text-[14px] focus-visible:border-[#C9A87C] focus-visible:ring-1 focus-visible:ring-[#C9A87C]/40"
                     />
                   </div>
 
                   {searchError ? (
                     <div
                       role="alert"
-                      className="rounded-lg bg-nham-danger/10 p-3 text-nham-danger text-sm leading-snug"
+                      className="rounded-lg bg-nham-danger/10 p-3 font-sans-display text-[13px] text-nham-danger leading-snug"
                     >
                       {searchError}
                     </div>
                   ) : null}
                 </div>
+              )}
+            </div>
 
-                <div className="flex justify-end gap-2 pt-2">
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    onClick={handleClose}
-                    className="text-nham-text-muted hover:bg-nham-hover hover:text-nham-text"
-                  >
-                    {t('barcodeCancel')}
-                  </Button>
-                  <Button
-                    type="submit"
-                    disabled={isSearching || !barcode.trim()}
-                    aria-busy={isSearching}
-                    className="bg-nham-btn text-white hover:bg-nham-btn-hover active:scale-95 disabled:opacity-50"
-                  >
-                    {isSearching ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        {t('barcodeSearching')}
-                      </>
-                    ) : (
-                      <>
-                        <Search className="mr-2 h-4 w-4" />
-                        {t('barcodeSearch')}
-                      </>
-                    )}
-                  </Button>
-                </div>
-              </form>
-            )}
-          </div>
+            {/* Footer — only manual entry has a submit action; camera mode
+                auto-detects, so its dismissal is the header close button. */}
+            {scanMode === 'manual' ? (
+              <div className="flex shrink-0 justify-end border-[#EAE7E0]/70 border-t bg-[#F5F4F0]/50 px-6 py-4">
+                <button
+                  type="submit"
+                  disabled={isSearching || !barcode.trim()}
+                  aria-busy={isSearching}
+                  className="inline-flex touch-manipulation items-center justify-center gap-2 rounded-xl bg-[#2C2416] px-5 py-2.5 font-medium font-sans-display text-[#FDFCF8] text-[14px] shadow-sm transition-colors hover:bg-[#1C1917] disabled:opacity-50"
+                >
+                  {isSearching ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      {t('barcodeSearching')}
+                    </>
+                  ) : (
+                    <>
+                      <Search className="h-4 w-4" />
+                      {t('barcodeSearch')}
+                    </>
+                  )}
+                </button>
+              </div>
+            ) : null}
+          </form>
         ) : product ? (
           <BarcodeProductStep
+            key={product.barcode}
             product={product}
-            grams={grams}
-            onGramsChange={setGrams}
             isStaging={isStaging}
             onBack={() => setStep('input')}
             onConfirm={handleStageMeal}

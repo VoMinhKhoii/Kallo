@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { MAX_FOOD_ITEM_GRAMS } from '@/lib/barcode/constants';
 import { fetchWithTimeout } from '@/lib/fetch-with-timeout';
 
 // Open Food Facts can be slow/unresponsive; bound the wait so the server
@@ -10,6 +11,7 @@ const openFoodFactsNutrimentsSchema = z
   .object({
     'energy-kcal_100g': z.union([z.number(), z.string()]).optional().nullable(),
     'energy-kcal': z.union([z.number(), z.string()]).optional().nullable(),
+    'energy-kj_100g': z.union([z.number(), z.string()]).optional().nullable(),
     energy_100g: z.union([z.number(), z.string()]).optional().nullable(),
     carbohydrates_100g: z.union([z.number(), z.string()]).optional().nullable(),
     sugars_100g: z.union([z.number(), z.string()]).optional().nullable(),
@@ -27,6 +29,10 @@ const openFoodFactsProductSchema = z
     product_name_vi: z.string().optional().nullable(),
     product_name_en: z.string().optional().nullable(),
     brands: z.string().optional().nullable(),
+    // Numeric grams per serving (OFF normalizes `serving_size` text to this).
+    serving_quantity: z.union([z.number(), z.string()]).optional().nullable(),
+    // Numeric grams in the whole package (net quantity).
+    product_quantity: z.union([z.number(), z.string()]).optional().nullable(),
     nutriments: openFoodFactsNutrimentsSchema.optional().nullable(),
   })
   .passthrough();
@@ -48,6 +54,10 @@ export interface ParsedBarcodeProduct {
   fatG: number | null;
   fiberG: number | null;
   sodiumMg: number | null;
+  /** Grams per serving, if OFF provides a plausible value. */
+  servingSizeG: number | null;
+  /** Grams in the whole package (net quantity), if plausible. */
+  packageSizeG: number | null;
 }
 
 function parseNumber(val: unknown): number | null {
@@ -57,6 +67,16 @@ function parseNumber(val: unknown): number | null {
   if (typeof val === 'string' && val.trim() === '') return null;
   const num = Number(val);
   return Number.isNaN(num) ? null : num;
+}
+
+// Reject OFF sizing that can't be a usable gram weight: non-positive, or larger
+// than the staging cap (100kg). Keeps a stray "0"/"1500000" from becoming a
+// nonsensical serving/package amount in the picker. Exported so the cache-read
+// path (`lib/actions/barcode.ts`) validates persisted sizes the same way.
+export function parseSizeGrams(val: unknown): number | null {
+  const num = parseNumber(val);
+  if (num === null || num <= 0 || num > MAX_FOOD_ITEM_GRAMS) return null;
+  return num;
 }
 
 /**
@@ -114,16 +134,31 @@ export async function fetchProductFromOpenFoodFacts(
     const brand = product.brands?.trim() || null;
     const nutriments = product.nutriments;
 
-    // Macro/nutrient parsing
-    let caloriesKcal = parseNumber(
+    // Macro/nutrient parsing. kcal = kJ / 4.184 by definition, so the kJ value
+    // is the more trustworthy anchor: OFF products sometimes carry a garbage
+    // `energy-kcal_100g` (e.g. 3.27 kcal for a 411 kcal drink) next to a
+    // correct kJ. Prefer the stated kcal, but fall back to — or override with —
+    // the kJ-derived value when kcal is missing, non-positive, or wildly
+    // inconsistent with kJ (differs by more than ~25%).
+    const KCAL_PER_KJ = 1 / 4.184;
+    const statedKcal = parseNumber(
       nutriments?.['energy-kcal_100g'] ?? nutriments?.['energy-kcal']
     );
+    const energyKj = parseNumber(
+      nutriments?.['energy-kj_100g'] ?? nutriments?.energy_100g
+    );
+    const kcalFromKj =
+      energyKj !== null && energyKj > 0 ? energyKj * KCAL_PER_KJ : null;
 
-    // Fallback: convert kJ to kcal (1 kcal = 4.184 kJ)
-    if (caloriesKcal === null) {
-      const energyKj = parseNumber(nutriments?.energy_100g);
-      if (energyKj !== null) {
-        caloriesKcal = Math.round(energyKj / 4.184);
+    let caloriesKcal = statedKcal;
+    if (kcalFromKj !== null) {
+      if (statedKcal === null || statedKcal <= 0) {
+        caloriesKcal = Math.round(kcalFromKj);
+      } else {
+        const ratio = statedKcal / kcalFromKj;
+        if (ratio < 0.75 || ratio > 1.25) {
+          caloriesKcal = Math.round(kcalFromKj);
+        }
       }
     }
 
@@ -155,6 +190,8 @@ export async function fetchProductFromOpenFoodFacts(
       fatG,
       fiberG,
       sodiumMg,
+      servingSizeG: parseSizeGrams(product.serving_quantity),
+      packageSizeG: parseSizeGrams(product.product_quantity),
     };
   } catch (error) {
     console.error(

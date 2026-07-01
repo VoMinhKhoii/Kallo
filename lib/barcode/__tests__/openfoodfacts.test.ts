@@ -18,6 +18,8 @@ describe('fetchProductFromOpenFoodFacts', () => {
         product_name: 'Regular Name',
         product_name_vi: 'Tên Tiếng Việt',
         brands: 'Test Brand',
+        serving_quantity: '30',
+        product_quantity: 150,
         nutriments: {
           'energy-kcal_100g': 120,
           proteins_100g: 5.5,
@@ -50,7 +52,30 @@ describe('fetchProductFromOpenFoodFacts', () => {
       fatG: 3,
       fiberG: 1.5,
       sodiumMg: 250,
+      servingSizeG: 30,
+      packageSizeG: 150,
     });
+  });
+
+  it('omits serving/package sizes that are absent or non-positive', async () => {
+    const mockApiResponse = {
+      status: 1,
+      product: {
+        product_name: 'No sizing',
+        serving_quantity: 0, // non-positive → dropped
+        // product_quantity absent → null
+        nutriments: { 'energy-kcal_100g': 120 },
+      },
+    };
+
+    vi.spyOn(global, 'fetch').mockResolvedValue({
+      ok: true,
+      json: async () => mockApiResponse,
+    } as Response);
+
+    const result = await fetchProductFromOpenFoodFacts('8934563138162');
+    expect(result?.servingSizeG).toBeNull();
+    expect(result?.packageSizeG).toBeNull();
   });
 
   it('falls back to English name when Vietnamese is absent', async () => {
@@ -93,6 +118,50 @@ describe('fetchProductFromOpenFoodFacts', () => {
 
     const result = await fetchProductFromOpenFoodFacts('8934563138162');
     expect(result?.caloriesKcal).toBe(100);
+  });
+
+  it('overrides a garbage kcal value with the kJ-derived one', async () => {
+    // Real OFF data for Ensure (8710428998392): a bogus 3.27 kcal alongside a
+    // correct 1718.8 kJ (≈ 411 kcal). Trust the kJ.
+    const mockApiResponse = {
+      status: 1,
+      product: {
+        product_name: 'Ensure',
+        nutriments: {
+          'energy-kcal_100g': 3.27,
+          'energy-kj_100g': 1718.8,
+        },
+      },
+    };
+
+    vi.spyOn(global, 'fetch').mockResolvedValue({
+      ok: true,
+      json: async () => mockApiResponse,
+    } as Response);
+
+    const result = await fetchProductFromOpenFoodFacts('8710428998392');
+    expect(result?.caloriesKcal).toBe(411);
+  });
+
+  it('keeps a stated kcal that agrees with kJ', async () => {
+    const mockApiResponse = {
+      status: 1,
+      product: {
+        product_name: 'Consistent product',
+        nutriments: {
+          'energy-kcal_100g': 250,
+          'energy-kj_100g': 1046, // ≈ 250 kcal — within tolerance, keep stated
+        },
+      },
+    };
+
+    vi.spyOn(global, 'fetch').mockResolvedValue({
+      ok: true,
+      json: async () => mockApiResponse,
+    } as Response);
+
+    const result = await fetchProductFromOpenFoodFacts('8934563138162');
+    expect(result?.caloriesKcal).toBe(250);
   });
 
   it('resolves sodium from salt when sodium is missing', async () => {

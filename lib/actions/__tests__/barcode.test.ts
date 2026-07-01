@@ -37,9 +37,16 @@ vi.mock('@/lib/db/schema', () => ({
   pendingAnalyses: { id: 'pendingAnalyses.id' },
 }));
 
-vi.mock('@/lib/barcode/openfoodfacts', () => ({
-  fetchProductFromOpenFoodFacts: vi.fn(),
-}));
+vi.mock('@/lib/barcode/openfoodfacts', async (importActual) => {
+  // Keep the real parseSizeGrams (used by the cache-read path); only the
+  // network fetch is stubbed.
+  const actual =
+    await importActual<typeof import('@/lib/barcode/openfoodfacts')>();
+  return {
+    ...actual,
+    fetchProductFromOpenFoodFacts: vi.fn(),
+  };
+});
 
 import type { PipelineResult } from '@/lib/ai/types';
 import { fetchProductFromOpenFoodFacts } from '@/lib/barcode/openfoodfacts';
@@ -65,6 +72,8 @@ describe('searchBarcodeAction', () => {
               fatG: 12,
               fiberG: 2,
               sodiumMg: 850,
+              servingSizeG: '75',
+              packageSizeG: '150',
             },
           ]),
         }),
@@ -85,6 +94,8 @@ describe('searchBarcodeAction', () => {
         fatG: 12,
         fiberG: 2,
         sodiumMg: 850,
+        servingSizeG: 75,
+        packageSizeG: 150,
       },
     });
   });
@@ -118,6 +129,8 @@ describe('searchBarcodeAction', () => {
       fatG: 12,
       fiberG: 2,
       sodiumMg: 850,
+      servingSizeG: 75,
+      packageSizeG: null,
     };
 
     vi.mocked(fetchProductFromOpenFoodFacts).mockResolvedValue(mockProduct);
@@ -145,6 +158,8 @@ describe('searchBarcodeAction', () => {
       namePrimary: '[Acecook] Hảo Hảo Chua Cay',
       caloriesKcal: '350',
       sourceId: 42,
+      servingSizeG: '75',
+      packageSizeG: null,
     });
   });
 });

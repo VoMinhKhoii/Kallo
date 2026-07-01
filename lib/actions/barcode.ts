@@ -10,9 +10,11 @@ import type {
   PipelineResult,
 } from '@/lib/ai/types';
 import { requireAuthAndProfile } from '@/lib/auth';
+import { MAX_FOOD_ITEM_GRAMS } from '@/lib/barcode/constants';
 import {
   fetchProductFromOpenFoodFacts,
   type ParsedBarcodeProduct,
+  parseSizeGrams,
 } from '@/lib/barcode/openfoodfacts';
 import { getUtcInstantForLocalDate } from '@/lib/date/local-day';
 import { db } from '@/lib/db';
@@ -38,7 +40,7 @@ const stageBarcodeMealSchema = z.object({
   grams: z
     .number()
     .positive('Khối lượng phải lớn hơn 0')
-    .max(100000, 'Khối lượng quá lớn'),
+    .max(MAX_FOOD_ITEM_GRAMS, 'Khối lượng quá lớn'),
   loggedDate: dateStringSchema,
   timezoneOffset: timezoneOffsetSchema,
 });
@@ -127,6 +129,11 @@ export async function searchBarcodeAction(input: {
           fatG: nutrition.fatG,
           fiberG: nutrition.fiberG,
           sodiumMg: nutrition.sodiumMg,
+          // numeric columns surface as strings; run through the same sizing
+          // validation as ingestion so cache reads apply the identical
+          // positivity + 100kg-cap invariant (single source of truth).
+          servingSizeG: parseSizeGrams(cached.servingSizeG),
+          packageSizeG: parseSizeGrams(cached.packageSizeG),
         },
       };
     }
@@ -176,6 +183,10 @@ export async function searchBarcodeAction(input: {
         typeEn: 'Packaged product',
         sourceId,
         state: 'cooked',
+        servingSizeG:
+          product.servingSizeG !== null ? String(product.servingSizeG) : null,
+        packageSizeG:
+          product.packageSizeG !== null ? String(product.packageSizeG) : null,
         caloriesKcal:
           product.caloriesKcal !== null ? String(product.caloriesKcal) : null,
         proteinG: product.proteinG !== null ? String(product.proteinG) : null,
