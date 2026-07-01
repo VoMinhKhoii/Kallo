@@ -49,9 +49,9 @@ export function DailyRhythm({ macros, daySeries }: DailyRhythmProps) {
 
   const calories = macros.find((m) => m.key === 'calories');
   const caloriesSeries = daySeries.series.find((s) => s.metric === 'calories');
-  const hasTimeAxis =
-    caloriesSeries !== undefined &&
-    caloriesSeries.buckets.some((bucket) => bucket.value !== null);
+  const hasTimeAxis = caloriesSeries?.buckets.some(
+    (bucket) => bucket.value !== null
+  );
   const compositionLabels = Object.fromEntries(
     COMPOSITION_KEYS.map((key) => {
       const macro = macros.find((m) => m.key === key);
@@ -148,7 +148,7 @@ export function DailyRhythm({ macros, daySeries }: DailyRhythmProps) {
           ) : null}
         </div>
 
-        {hasTimeAxis ? (
+        {hasTimeAxis && caloriesSeries ? (
           <div className="mt-6 space-y-2 border-nham-border/40 border-t border-dashed pt-5">
             <p className="text-nham-text-muted text-xs uppercase tracking-[0.18em]">
               {daySeries.unit === 'day'

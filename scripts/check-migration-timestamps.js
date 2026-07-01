@@ -5,7 +5,8 @@
  * Validates all Supabase migration files for:
  *   1. Correct filename format: YYYYMMDDHHMMSS_description.sql
  *   2. Strict chronological ordering (no duplicates, no out-of-order)
- *   3. No future-dated timestamps (interpreted as GMT+7 / Asia/Ho_Chi_Minh)
+ *   3. No future-dated timestamps (filename digits are UTC, matching the
+ *      Supabase CLI, which stamps `supabase migration new` files in UTC)
  *
  * Exit codes:
  *   0 - All migrations valid
@@ -20,8 +21,9 @@ const MIGRATIONS_DIR = 'supabase/migrations';
 const GMT7_MS = 7 * 60 * 60 * 1000;
 
 /**
- * Parse YYYYMMDDHHMMSS string as a GMT+7 wall-clock time → UTC Date.
- * Returns null if invalid.
+ * Parse YYYYMMDDHHMMSS string as a UTC instant → Date.
+ * The Supabase CLI stamps migration filenames in UTC, so the digits are
+ * interpreted as UTC (not GMT+7 wall-clock). Returns null if invalid.
  */
 function parseTimestamp(ts) {
   if (!/^\d{14}$/.test(ts)) return null;
@@ -31,10 +33,23 @@ function parseTimestamp(ts) {
   const hour = parseInt(ts.slice(8, 10), 10);
   const min = parseInt(ts.slice(10, 12), 10);
   const sec = parseInt(ts.slice(12, 14), 10);
-  // Treat the digits as GMT+7, convert to UTC
-  const utcMs = Date.UTC(year, month, day, hour, min, sec) - GMT7_MS;
+  // Filename digits are already UTC — do not shift by the GMT+7 offset.
+  const utcMs = Date.UTC(year, month, day, hour, min, sec);
   const d = new Date(utcMs);
-  return Number.isNaN(d.getTime()) ? null : d;
+  if (Number.isNaN(d.getTime())) return null;
+  // Date.UTC normalizes impossible dates (e.g. 20250231 → March 3), so
+  // round-trip the components and reject anything that didn't survive.
+  if (
+    d.getUTCFullYear() !== year ||
+    d.getUTCMonth() !== month ||
+    d.getUTCDate() !== day ||
+    d.getUTCHours() !== hour ||
+    d.getUTCMinutes() !== min ||
+    d.getUTCSeconds() !== sec
+  ) {
+    return null;
+  }
+  return d;
 }
 
 function extractTimestamp(filename) {
@@ -114,7 +129,7 @@ function main() {
       }
     }
 
-    // 3. Future timestamp check (GMT+7)
+    // 3. Future timestamp check (UTC)
     if (date > now) {
       console.error(`ERROR: Future-dated migration — ${filename}`);
       console.error(`  Timestamp: ${ts}`);
