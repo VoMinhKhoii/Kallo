@@ -2,6 +2,7 @@
 
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
+import { extractNutritionValues } from '@/lib/actions/persisted-meal';
 import { NUTRITION_KEYS } from '@/lib/ai/constants';
 import type {
   BoundedNutrition,
@@ -48,24 +49,6 @@ function getErrorMessage(error: unknown): string {
     return issue ? issue.message : 'Dữ liệu đầu vào không hợp lệ.';
   }
   return error instanceof Error ? error.message : 'Đã xảy ra lỗi hệ thống.';
-}
-
-function extractNutritionValues(row: Record<string, unknown>): NutritionValues {
-  const result = {} as NutritionValues;
-  for (const key of NUTRITION_KEYS) {
-    const val = row[key];
-    if (typeof val === 'number') {
-      result[key] = Number.isFinite(val) ? val : null;
-      continue;
-    }
-    if (typeof val === 'string') {
-      const parsed = Number(val);
-      result[key] = Number.isFinite(parsed) ? parsed : null;
-      continue;
-    }
-    result[key] = null;
-  }
-  return result;
 }
 
 function scaleNutrition(
