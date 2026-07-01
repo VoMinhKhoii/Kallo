@@ -245,37 +245,45 @@ void _openLogSheet(
       // with generous empty space below.
       final available = mq.size.height - mq.viewInsets.bottom;
       final target = mq.size.height * 0.68;
+      final sheetHeight = target < available ? target : available;
       return Padding(
         padding: EdgeInsets.only(bottom: mq.viewInsets.bottom),
-        child: SizedBox(
-          height: target < available ? target : available,
-          child: Column(
-            children: [
-              Container(
-                width: 36,
-                height: 4,
-                margin: const EdgeInsets.only(top: NhamSpacing.sp3),
-                decoration: BoxDecoration(
-                  color: NhamColors.border,
-                  borderRadius: BorderRadius.circular(2),
-                ),
+        // Scroll-safe centring: the Spacers centre the content when it fits, and
+        // ConstrainedBox+IntrinsicHeight let the whole thing scroll instead of
+        // overflowing when the height is tight (landscape, split-screen).
+        child: SingleChildScrollView(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minHeight: sheetHeight),
+            child: IntrinsicHeight(
+              child: Column(
+                children: [
+                  Container(
+                    width: 36,
+                    height: 4,
+                    margin: const EdgeInsets.only(top: NhamSpacing.sp3),
+                    decoration: BoxDecoration(
+                      color: NhamColors.border,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                  const Spacer(),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: NhamSpacing.sp5,
+                    ),
+                    child: CompactWeightLog(
+                      currentWeight: data.currentWeight,
+                      todayWeight: data.todayWeight,
+                      todayDate: todayDate,
+                      args: args,
+                      autofocus: true,
+                      onSaved: () => Navigator.of(sheetContext).pop(),
+                    ),
+                  ),
+                  const Spacer(),
+                ],
               ),
-              const Spacer(),
-              Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: NhamSpacing.sp5,
-                ),
-                child: CompactWeightLog(
-                  currentWeight: data.currentWeight,
-                  todayWeight: data.todayWeight,
-                  todayDate: todayDate,
-                  args: args,
-                  autofocus: true,
-                  onSaved: () => Navigator.of(sheetContext).pop(),
-                ),
-              ),
-              const Spacer(),
-            ],
+            ),
           ),
         ),
       );
