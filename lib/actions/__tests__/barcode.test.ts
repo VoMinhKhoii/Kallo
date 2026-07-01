@@ -65,6 +65,8 @@ describe('searchBarcodeAction', () => {
               fatG: 12,
               fiberG: 2,
               sodiumMg: 850,
+              servingSizeG: '75',
+              packageSizeG: '150',
             },
           ]),
         }),
@@ -85,6 +87,8 @@ describe('searchBarcodeAction', () => {
         fatG: 12,
         fiberG: 2,
         sodiumMg: 850,
+        servingSizeG: 75,
+        packageSizeG: 150,
       },
     });
   });
@@ -118,6 +122,8 @@ describe('searchBarcodeAction', () => {
       fatG: 12,
       fiberG: 2,
       sodiumMg: 850,
+      servingSizeG: 75,
+      packageSizeG: null,
     };
 
     vi.mocked(fetchProductFromOpenFoodFacts).mockResolvedValue(mockProduct);
@@ -145,6 +151,8 @@ describe('searchBarcodeAction', () => {
       namePrimary: '[Acecook] Hảo Hảo Chua Cay',
       caloriesKcal: '350',
       sourceId: 42,
+      servingSizeG: '75',
+      packageSizeG: null,
     });
   });
 });

@@ -27,6 +27,10 @@ const openFoodFactsProductSchema = z
     product_name_vi: z.string().optional().nullable(),
     product_name_en: z.string().optional().nullable(),
     brands: z.string().optional().nullable(),
+    // Numeric grams per serving (OFF normalizes `serving_size` text to this).
+    serving_quantity: z.union([z.number(), z.string()]).optional().nullable(),
+    // Numeric grams in the whole package (net quantity).
+    product_quantity: z.union([z.number(), z.string()]).optional().nullable(),
     nutriments: openFoodFactsNutrimentsSchema.optional().nullable(),
   })
   .passthrough();
@@ -48,6 +52,10 @@ export interface ParsedBarcodeProduct {
   fatG: number | null;
   fiberG: number | null;
   sodiumMg: number | null;
+  /** Grams per serving, if OFF provides a plausible value. */
+  servingSizeG: number | null;
+  /** Grams in the whole package (net quantity), if plausible. */
+  packageSizeG: number | null;
 }
 
 function parseNumber(val: unknown): number | null {
@@ -57,6 +65,16 @@ function parseNumber(val: unknown): number | null {
   if (typeof val === 'string' && val.trim() === '') return null;
   const num = Number(val);
   return Number.isNaN(num) ? null : num;
+}
+
+// Reject OFF sizing that can't be a usable gram weight: non-positive, or larger
+// than the staging cap (100kg). Keeps a stray "0"/"1500000" from becoming a
+// nonsensical serving/package amount in the picker.
+const MAX_SIZE_G = 100_000;
+function parseSizeGrams(val: unknown): number | null {
+  const num = parseNumber(val);
+  if (num === null || num <= 0 || num > MAX_SIZE_G) return null;
+  return num;
 }
 
 /**
@@ -155,6 +173,8 @@ export async function fetchProductFromOpenFoodFacts(
       fatG,
       fiberG,
       sodiumMg,
+      servingSizeG: parseSizeGrams(product.serving_quantity),
+      packageSizeG: parseSizeGrams(product.product_quantity),
     };
   } catch (error) {
     console.error(

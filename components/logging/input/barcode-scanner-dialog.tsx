@@ -43,8 +43,7 @@ export function BarcodeScannerDialog({
   const [isSearching, setIsSearching] = useState(false);
   const [product, setProduct] = useState<ParsedBarcodeProduct | null>(null);
 
-  // Quantity states
-  const [grams, setGrams] = useState<number>(100);
+  // Quantity state (the resolved gram amount is owned by BarcodeProductStep).
   const [isStaging, setIsStaging] = useState(false);
 
   const runSearch = useCallback(
@@ -109,7 +108,7 @@ export function BarcodeScannerDialog({
     await runSearch(trimmed);
   };
 
-  const handleStageMeal = async () => {
+  const handleStageMeal = async (grams: number) => {
     if (!product) return;
 
     setIsStaging(true);
@@ -147,7 +146,6 @@ export function BarcodeScannerDialog({
       setBarcode('');
       setSearchError(null);
       setProduct(null);
-      setGrams(100);
     }, 200);
   };
 
@@ -359,9 +357,8 @@ export function BarcodeScannerDialog({
           </div>
         ) : product ? (
           <BarcodeProductStep
+            key={product.barcode}
             product={product}
-            grams={grams}
-            onGramsChange={setGrams}
             isStaging={isStaging}
             onBack={() => setStep('input')}
             onConfirm={handleStageMeal}

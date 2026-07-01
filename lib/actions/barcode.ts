@@ -59,6 +59,14 @@ function getErrorCode(error: unknown): BarcodeErrorCode {
   return error instanceof z.ZodError ? 'invalid_input' : 'server_error';
 }
 
+/** Coerce a Drizzle numeric column (string | null) to a positive number, or
+ *  null. Used for serving/package sizes, where 0 means "not provided". */
+function parsePositiveNumeric(val: string | null): number | null {
+  if (val === null) return null;
+  const num = Number(val);
+  return Number.isFinite(num) && num > 0 ? num : null;
+}
+
 function scaleNutrition(
   nutrition: NutritionValues,
   factor: number
@@ -127,6 +135,10 @@ export async function searchBarcodeAction(input: {
           fatG: nutrition.fatG,
           fiberG: nutrition.fiberG,
           sodiumMg: nutrition.sodiumMg,
+          // numeric columns surface as strings; coerce and drop anything
+          // non-positive so the picker only offers real serving/package sizes.
+          servingSizeG: parsePositiveNumeric(cached.servingSizeG),
+          packageSizeG: parsePositiveNumeric(cached.packageSizeG),
         },
       };
     }
@@ -176,6 +188,10 @@ export async function searchBarcodeAction(input: {
         typeEn: 'Packaged product',
         sourceId,
         state: 'cooked',
+        servingSizeG:
+          product.servingSizeG !== null ? String(product.servingSizeG) : null,
+        packageSizeG:
+          product.packageSizeG !== null ? String(product.packageSizeG) : null,
         caloriesKcal:
           product.caloriesKcal !== null ? String(product.caloriesKcal) : null,
         proteinG: product.proteinG !== null ? String(product.proteinG) : null,
