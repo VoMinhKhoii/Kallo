@@ -18,6 +18,7 @@ import {
   searchBarcodeAction,
   stageBarcodeMealAction,
 } from '@/lib/actions/barcode';
+import { confirmAndSaveMealAction } from '@/lib/actions/meals';
 import { tryDecodeFontEncodedBarcode } from '@/lib/barcode/decode';
 import type { ParsedBarcodeProduct } from '@/lib/barcode/openfoodfacts';
 import { BarcodeProductStep } from './barcode-product-step';
@@ -122,13 +123,20 @@ export function BarcodeScannerDialog({
         timezoneOffset,
       });
 
-      if (res.success) {
-        toast.success(t('feedArea.savedMeal'));
-        onSuccess();
-        handleClose();
-      } else {
+      if (!res.success) {
         toast.error(t(`barcodeError.${res.code}`));
+        return;
       }
+
+      // Confirm-and-save immediately so the barcode flow persists the meal in
+      // one action — no separate pending-confirmation step in the feed. This is
+      // the same server path the pending card's confirm button runs; the amount
+      // was already chosen here, so no edits are passed.
+      await confirmAndSaveMealAction({ analysisId: res.analysisId });
+
+      toast.success(t('feedArea.savedMeal'));
+      onSuccess();
+      handleClose();
     } catch {
       toast.error(t('barcodeError.server_error'));
     } finally {
