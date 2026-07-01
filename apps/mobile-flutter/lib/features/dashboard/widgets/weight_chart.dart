@@ -240,52 +240,48 @@ void _openLogSheet(
     ),
     builder: (sheetContext) {
       final mq = MediaQuery.of(sheetContext);
-      // A tall sheet — cap to the space above the keyboard — with the field +
-      // Save bottom-aligned so they sit right above the number keypad (which
-      // the viewInsets padding already lifts the sheet clear of), with only a
-      // small breathing gap below.
-      final available = mq.size.height - mq.viewInsets.bottom;
-      final target = mq.size.height * 0.68;
-      final sheetHeight = target < available ? target : available;
+      // Keypad-first sheet: it wraps its content (handle + field + Save) instead
+      // of claiming a fixed slice of the screen, and the viewInsets padding lifts
+      // that compact stack to ride right above the keyboard — so there's no empty
+      // band above the field. SingleChildScrollView + MainAxisSize.min keep it
+      // scroll-safe when the height is tight (landscape, split-screen).
       return Padding(
         padding: EdgeInsets.only(bottom: mq.viewInsets.bottom),
-        // Scroll-safe bottom-alignment: the top Spacer pushes the content to the
-        // bottom (just above the keypad) when it fits, and
-        // ConstrainedBox+IntrinsicHeight let the whole thing scroll instead of
-        // overflowing when the height is tight (landscape, split-screen).
         child: SingleChildScrollView(
-          child: ConstrainedBox(
-            constraints: BoxConstraints(minHeight: sheetHeight),
-            child: IntrinsicHeight(
-              child: Column(
-                children: [
-                  Container(
-                    width: 36,
-                    height: 4,
-                    margin: const EdgeInsets.only(top: NhamSpacing.sp3),
-                    decoration: BoxDecoration(
-                      color: NhamColors.border,
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                  const Spacer(),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: NhamSpacing.sp5,
-                    ),
-                    child: CompactWeightLog(
-                      currentWeight: data.currentWeight,
-                      todayWeight: data.todayWeight,
-                      todayDate: todayDate,
-                      args: args,
-                      autofocus: true,
-                      onSaved: () => Navigator.of(sheetContext).pop(),
-                    ),
-                  ),
-                  const SizedBox(height: NhamSpacing.sp4),
-                ],
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 36,
+                height: 4,
+                margin: const EdgeInsets.only(top: NhamSpacing.sp3),
+                decoration: BoxDecoration(
+                  color: NhamColors.border,
+                  borderRadius: BorderRadius.circular(2),
+                ),
               ),
-            ),
+              const SizedBox(height: NhamSpacing.sp6),
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: NhamSpacing.sp5,
+                ),
+                child: CompactWeightLog(
+                  currentWeight: data.currentWeight,
+                  todayWeight: data.todayWeight,
+                  todayDate: todayDate,
+                  args: args,
+                  autofocus: true,
+                  onSaved: () => Navigator.of(sheetContext).pop(),
+                ),
+              ),
+              // Breathing gap above the keypad. viewPadding.bottom is NOT reduced
+              // by the keyboard, so only add the home-indicator inset while the
+              // keypad is dismissed — otherwise the gap above the keys balloons.
+              SizedBox(
+                height: NhamSpacing.sp4 +
+                    (mq.viewInsets.bottom > 0 ? 0 : mq.viewPadding.bottom),
+              ),
+            ],
           ),
         ),
       );
