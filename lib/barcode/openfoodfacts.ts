@@ -11,6 +11,7 @@ const openFoodFactsNutrimentsSchema = z
   .object({
     'energy-kcal_100g': z.union([z.number(), z.string()]).optional().nullable(),
     'energy-kcal': z.union([z.number(), z.string()]).optional().nullable(),
+    'energy-kj_100g': z.union([z.number(), z.string()]).optional().nullable(),
     energy_100g: z.union([z.number(), z.string()]).optional().nullable(),
     carbohydrates_100g: z.union([z.number(), z.string()]).optional().nullable(),
     sugars_100g: z.union([z.number(), z.string()]).optional().nullable(),
@@ -133,16 +134,31 @@ export async function fetchProductFromOpenFoodFacts(
     const brand = product.brands?.trim() || null;
     const nutriments = product.nutriments;
 
-    // Macro/nutrient parsing
-    let caloriesKcal = parseNumber(
+    // Macro/nutrient parsing. kcal = kJ / 4.184 by definition, so the kJ value
+    // is the more trustworthy anchor: OFF products sometimes carry a garbage
+    // `energy-kcal_100g` (e.g. 3.27 kcal for a 411 kcal drink) next to a
+    // correct kJ. Prefer the stated kcal, but fall back to — or override with —
+    // the kJ-derived value when kcal is missing, non-positive, or wildly
+    // inconsistent with kJ (differs by more than ~25%).
+    const KCAL_PER_KJ = 1 / 4.184;
+    const statedKcal = parseNumber(
       nutriments?.['energy-kcal_100g'] ?? nutriments?.['energy-kcal']
     );
+    const energyKj = parseNumber(
+      nutriments?.['energy-kj_100g'] ?? nutriments?.energy_100g
+    );
+    const kcalFromKj =
+      energyKj !== null && energyKj > 0 ? energyKj * KCAL_PER_KJ : null;
 
-    // Fallback: convert kJ to kcal (1 kcal = 4.184 kJ)
-    if (caloriesKcal === null) {
-      const energyKj = parseNumber(nutriments?.energy_100g);
-      if (energyKj !== null) {
-        caloriesKcal = Math.round(energyKj / 4.184);
+    let caloriesKcal = statedKcal;
+    if (kcalFromKj !== null) {
+      if (statedKcal === null || statedKcal <= 0) {
+        caloriesKcal = Math.round(kcalFromKj);
+      } else {
+        const ratio = statedKcal / kcalFromKj;
+        if (ratio < 0.75 || ratio > 1.25) {
+          caloriesKcal = Math.round(kcalFromKj);
+        }
       }
     }
 
