@@ -1,6 +1,6 @@
 'use client';
 
-import { ArrowUp, Square } from 'lucide-react';
+import { ArrowUp, Barcode, Square } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import {
   forwardRef,
@@ -21,7 +21,7 @@ import {
   type ManualMealRow,
 } from '@/lib/logging/manual-logging';
 import type { CheatIntensity } from '@/lib/types/cheat';
-import { cn } from '@/lib/utils';
+import { BarcodeScannerDialog } from './barcode-scanner-dialog';
 
 const STORAGE_KEY = 'nham:meal-input-draft';
 // v3: rows are {id, query, ingredient, grams} — `query` is the raw typed text.
@@ -59,7 +59,7 @@ export interface MealInputHandle {
 
 interface MealInputProps {
   onSubmit: () => void;
-  /** When provided and the input is disabled (analysis in flight), the
+  /** When provided and the condition (analysis in flight) is active, the
    * submit button is replaced with a stop button that calls this. */
   onCancel?: () => void;
   disabled?: boolean;
@@ -69,6 +69,8 @@ interface MealInputProps {
   /** Indulgence magnitude shown in the mode picker (cheat mode). */
   cheatIntensity?: CheatIntensity;
   onChangeIntensity?: (next: CheatIntensity) => void;
+  selectedDate?: string;
+  onBarcodeSuccess?: () => void;
 }
 
 function readDraft(): string {
@@ -155,12 +157,15 @@ export const MealInput = forwardRef<MealInputHandle, MealInputProps>(
       onModeChange,
       cheatIntensity,
       onChangeIntensity,
+      selectedDate,
+      onBarcodeSuccess,
     },
     ref
   ) {
     const t = useTranslations('logging');
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const debounceRef = useRef<ReturnType<typeof setTimeout>>(null);
+    const [isBarcodeOpen, setIsBarcodeOpen] = useState(false);
     const [hasContent, setHasContent] = useState(() =>
       hasMeaningfulText(readDraft())
     );
@@ -331,31 +336,39 @@ export const MealInput = forwardRef<MealInputHandle, MealInputProps>(
           />
         )}
 
-        {/* Textarea — shown for normal and cheat mode */}
-        {!isManual && (
-          <label htmlFor="meal-input" className="sr-only">
-            {placeholder}
-          </label>
-        )}
-        <textarea
-          ref={textareaRef}
-          id="meal-input"
-          rows={1}
-          defaultValue={readDraft()}
-          onChange={handleChange}
-          onKeyDown={handleKeyDown}
-          placeholder={placeholder}
-          disabled={disabled}
-          aria-hidden={isManual || undefined}
-          className={cn(
-            'flex-1 resize-none bg-transparent py-1.5 font-[var(--font-dm-sans)] font-normal text-nham-text text-sm leading-5 placeholder:text-nham-text-muted/40 focus:outline-none disabled:opacity-50',
-            isManual && 'hidden'
-          )}
-        />
-
-        {/* Action row: picker + submit — always at the bottom, picker adjacent to send */}
         <div className="flex items-center gap-2">
-          <div className="flex-1" />
+          {!isManual && (
+            <>
+              <label htmlFor="meal-input" className="sr-only">
+                {placeholder}
+              </label>
+              <textarea
+                ref={textareaRef}
+                id="meal-input"
+                rows={1}
+                defaultValue={readDraft()}
+                onChange={handleChange}
+                onKeyDown={handleKeyDown}
+                placeholder={placeholder}
+                disabled={disabled}
+                className="flex-1 resize-none bg-transparent py-1.5 font-[var(--font-dm-sans)] font-normal text-nham-text text-sm leading-5 placeholder:text-nham-text-muted/40 focus:outline-none disabled:opacity-50"
+              />
+              {selectedDate && onBarcodeSuccess && (
+                <button
+                  type="button"
+                  disabled={disabled}
+                  onClick={() => setIsBarcodeOpen(true)}
+                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-nham-border/40 text-nham-text-muted transition-all duration-200 hover:bg-nham-hover hover:text-nham-text active:scale-95 disabled:opacity-30"
+                  aria-label={t('barcodeScan')}
+                >
+                  <Barcode className="h-4 w-4" />
+                </button>
+              )}
+            </>
+          )}
+
+          {isManual && <div className="flex-1" />}
+
           {onModeChange && (
             <CheatModePicker
               mode={mode}
@@ -367,6 +380,14 @@ export const MealInput = forwardRef<MealInputHandle, MealInputProps>(
           )}
           {submitButton}
         </div>
+        {selectedDate && onBarcodeSuccess && (
+          <BarcodeScannerDialog
+            isOpen={isBarcodeOpen}
+            onOpenChange={setIsBarcodeOpen}
+            selectedDate={selectedDate}
+            onSuccess={onBarcodeSuccess}
+          />
+        )}
       </div>
     );
   }
