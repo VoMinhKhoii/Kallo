@@ -20,7 +20,12 @@ import {
 import { requireAuthAndProfile } from '@/lib/auth';
 import { getUtcInstantForLocalDate } from '@/lib/date/local-day';
 import { db } from '@/lib/db';
-import { mealItems, meals, vietnameseFoodComposition } from '@/lib/db/schema';
+import {
+  mealItems,
+  mealShares,
+  meals,
+  vietnameseFoodComposition,
+} from '@/lib/db/schema';
 import { Errors } from '@/lib/errors';
 import { scaleNutritionValues } from '@/lib/logging/manual-logging';
 
@@ -95,7 +100,7 @@ export async function saveManualMealAction(
     .map((item) => `${item.grams}g ${item.name}`)
     .join(', ');
 
-  const mealId = await db.transaction(async (tx) => {
+  const { mealId, share } = await db.transaction(async (tx) => {
     const [meal] = await tx
       .insert(meals)
       .values({
@@ -127,7 +132,21 @@ export async function saveManualMealAction(
       }))
     );
 
-    return meal.id;
+    // Share to circle by default: every freshly-logged meal shares
+    // automatically (the AFTER INSERT trigger fans out the meal_shared circle
+    // event). The user can still opt this meal back out via the per-meal
+    // toggle. onConflictDoNothing preserves a prior explicit choice on the
+    // re-confirm/edit path (existing meal id).
+    const [shareRow] = await tx
+      .insert(mealShares)
+      .values({ mealId: meal.id, actorId: user.id, visibility: 'circle' })
+      .onConflictDoNothing({ target: mealShares.mealId })
+      .returning({ id: mealShares.id, visibility: mealShares.visibility });
+    const share = shareRow
+      ? { shareId: shareRow.id, visibility: shareRow.visibility }
+      : null;
+
+    return { mealId: meal.id, share };
   });
 
   // One group per ingredient — a manual meal is a flat Cronometer-style list,
@@ -159,7 +178,8 @@ export async function saveManualMealAction(
     entryMode: 'precise',
     alcoholG: null,
     cheatSliders: null,
-    share: null,
+    // Shared to circle by default (see the meal_shares insert above).
+    share,
   });
 
   return { mealId, meal: savedMeal };
