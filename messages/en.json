@@ -988,6 +988,8 @@
     "barcodeCarbs": "Carbs",
     "barcodeFat": "Fat",
     "barcodeCancel": "Cancel",
+    "barcodeDecreaseGrams": "Decrease quantity",
+    "barcodeIncreaseGrams": "Increase quantity",
     "barcodeError": {
       "invalid_input": "That barcode doesn't look right. Enter digits only.",
       "not_found": "No product found for this barcode.",

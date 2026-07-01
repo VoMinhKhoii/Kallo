@@ -113,6 +113,7 @@ export function BarcodeProductStep({
             size="icon"
             onClick={() => adjustGrams(-GRAM_STEP)}
             disabled={grams <= GRAM_STEP}
+            aria-label={t('barcodeDecreaseGrams')}
             className="border-nham-border/60 hover:bg-nham-hover"
           >
             <Minus className="h-4 w-4" />
@@ -137,6 +138,7 @@ export function BarcodeProductStep({
             variant="outline"
             size="icon"
             onClick={() => adjustGrams(GRAM_STEP)}
+            aria-label={t('barcodeIncreaseGrams')}
             className="border-nham-border/60 hover:bg-nham-hover"
           >
             <Plus className="h-4 w-4" />
