@@ -972,7 +972,7 @@
     "barcodeSearching": "Searching product...",
     "barcodeGramsLabel": "Quantity (g)",
     "barcodeAddMeal": "Add meal",
-    "barcodeDialogTitle": "Lookup Barcode",
+    "barcodeDialogTitle": "Look up barcode",
     "barcodeDialogDesc": "Enter a barcode to retrieve nutrition values of packaged products from Open Food Facts.",
     "barcodeBack": "Back",
     "barcodeScanTab": "Camera Scan",
