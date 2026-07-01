@@ -116,7 +116,7 @@ function main() {
       }
     }
 
-    // 3. Future timestamp check (GMT+7)
+    // 3. Future timestamp check (UTC)
     if (date > now) {
       console.error(`ERROR: Future-dated migration — ${filename}`);
       console.error(`  Timestamp: ${ts}`);
