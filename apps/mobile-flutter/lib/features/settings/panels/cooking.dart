@@ -2,9 +2,9 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
 import '../../../models/onboarding.dart';
+import '../../../theme/calm_tokens.dart';
 import '../../../theme/nham_colors.dart';
 import '../../../theme/nham_theme.dart';
-import '../../../theme/nham_typography.dart';
 import '../controls/option_strip.dart';
 import '../widgets/profile_form_controller.dart';
 
@@ -119,8 +119,7 @@ class _CookingCard extends StatelessWidget {
         children: [
           Text(
             field.label,
-            style: NhamTextStyles.sansBold(fontSize: NhamFontSize.detail)
-                .copyWith(color: NhamColors.text),
+            style: dashBody(weight: FontWeight.w500),
           ),
           const SizedBox(height: NhamSpacing.sp3),
           OptionStrip(

@@ -20,7 +20,7 @@ import '../../../shared/widgets/widgets.dart';
 import '../../../theme/nham_colors.dart';
 import '../../../theme/nham_theme.dart';
 import '../data/dashboard_providers.dart';
-import 'dashboard_tokens.dart';
+import '../../../theme/calm_tokens.dart';
 
 const double _weightMin = 30;
 const double _weightMax = 300;

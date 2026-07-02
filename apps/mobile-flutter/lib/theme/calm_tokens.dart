@@ -1,22 +1,22 @@
-/// Dashboard design tokens — the flat, high-contrast system (2026 redesign).
+/// Calm design tokens — the mobile app's shared type/colour/spacing system.
 ///
-/// The dashboard deliberately diverges from the web's "Apple Notes on cream
-/// paper" port. The palette is unchanged (cream / espresso / tan); what changed
-/// is the APPLICATION: solid surfaces (no stacked translucency), ONE sans
-/// family (Be Vietnam Pro) on a 5-size scale, exactly 3 text colors, one card
-/// radius.
+/// Born on the dashboard (2026 redesign) and now the canonical system for the
+/// whole Flutter app. The palette stays cream / espresso / tan; the APPLICATION
+/// is calm: solid surfaces (no stacked translucency), ONE sans family (Be
+/// Vietnam Pro), exactly TWO text colours, one card radius.
 ///
-/// Threads-style typography test (2026): compacter sizes, lighter weights, and
-/// hierarchy carried by weight + colour rather than size — minimal tracking,
-/// quiet muted labels. The one editorial serif greeting is kept. Reference:
-/// Threads (calm feed) + Apple Health (labels recede) + getdesign.md. The
+/// Threads / Apple-Health tuned: compact sizes, lighter weights, hierarchy
+/// carried by weight + colour rather than size — minimal tracking, quiet muted
+/// labels. One editorial serif moment (the greeting) per viewport. The
 /// throughline — hierarchy comes from contrast + weight, not from loud type.
+///
+/// Canonical doc: `.agents/skills/nham-design/mobile.md`.
 library;
 
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-import '../../../theme/nham_typography.dart';
+import 'nham_typography.dart';
 
 // ── Surfaces (all solid, 100% opacity) ───────────────────────────────────
 const Color kPage = Color(0xFFFEFBF6); // app page — paper cream
@@ -25,16 +25,12 @@ const Color kTrack = Color(0xFFF1EFE9); // ring/bar tracks — the ONLY low-cont
 const Color kHairline = Color(0xFFE8D5B5); // the one border (biscotti, solid)
 const Color kFieldFill = Color(0xFFF6F1E8); // soft warm fill for inputs
 
-// ── Text colours — the dashboard uses exactly TWO (Threads: black + grey) ──
+// ── Text colours — the app uses exactly TWO (Threads: black + grey) ────────
 const Color kInk = Color(0xFF2C2416); // espresso "black" — primary data
 // Canonical calm secondary: ONE warm neutral grey for every secondary role
 // (labels, units, captions, meta, dates). This is the mobile design-system
-// secondary text colour going forward — reach for this, not the legacy pair.
+// secondary text colour — the only secondary text colour there is.
 const Color kInkMuted = Color(0xFF8C867C);
-// Legacy warm taupe / stone — still consumed by the not-yet-migrated Nutrition
-// screens. The DASHBOARD no longer uses these; do not add new usages.
-const Color kInkSecondary = Color(0xFF8B7355);
-const Color kInkDisabled = Color(0xFFA8A29E);
 
 // ── Shape ────────────────────────────────────────────────────────────────
 const double kCardRadius = 22; // one card radius — modern iOS grouped-card feel
@@ -64,7 +60,7 @@ const BoxShadow kCardShadow = BoxShadow(
 
 const List<FontFeature> _tnum = [FontFeature.tabularFigures()];
 
-// ── Type — Be Vietnam Pro only, 5 sizes (29 / 17 / 14 / 12 / 11) ──────────
+// ── Type — Be Vietnam Pro only, 5 sizes (40 / 17 / 14 / 12 / 11) ──────────
 // Threads / Apple Health calm: labels recede (muted taupe, never espresso),
 // content is small + regular, hierarchy comes from weight + colour, not size.
 

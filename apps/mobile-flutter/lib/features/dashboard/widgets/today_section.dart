@@ -3,7 +3,7 @@
 /// 2026 redesign: ONE flat white card (no nested translucent cream blocks), the
 /// calorie-remaining number as the bold-sans hero, macro bars with readable
 /// values, and a plain meal list. Zones are separated by whitespace, not by
-/// stacked fills. See `dashboard_tokens.dart` for the type/color system.
+/// stacked fills. See `theme/calm_tokens.dart` for the type/color system.
 library;
 
 import 'package:easy_localization/easy_localization.dart';
@@ -19,7 +19,7 @@ import '../data/dashboard_providers.dart';
 import '../data/logging_day.dart';
 import '../logic/dashboard_format.dart';
 import 'calorie_ring.dart';
-import 'dashboard_tokens.dart';
+import '../../../theme/calm_tokens.dart';
 import 'section_header.dart';
 import 'skeleton.dart';
 

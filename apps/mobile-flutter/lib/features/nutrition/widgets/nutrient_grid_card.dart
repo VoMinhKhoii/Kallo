@@ -1,12 +1,11 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
-import '../../../features/dashboard/widgets/dashboard_tokens.dart';
+import '../../../theme/calm_tokens.dart';
 import '../../../models/nutrition.dart';
 import '../../../shared/widgets/target_progress_bar.dart';
 import '../../../theme/nham_colors.dart';
 import '../../../theme/nham_theme.dart';
-import '../../../theme/nham_typography.dart';
 import '../logic/helpers.dart';
 import '../logic/status.dart';
 
@@ -56,7 +55,7 @@ class NutrientGridCard extends StatelessWidget {
     final Color figureColor = showExceed
         ? NhamColors.danger
         : isLimited || pct == null
-            ? kInkDisabled
+            ? kInkMuted
             : adequate
                 ? NhamColors.successDark
                 : kInk;
@@ -123,10 +122,7 @@ class NutrientGridCard extends StatelessWidget {
             goalText,
             maxLines: 1,
             overflow: TextOverflow.clip,
-            style: NhamTextStyles.sansRegular(fontSize: NhamFontSize.xxs).copyWith(
-              color: kInkDisabled,
-              fontFeatures: const [FontFeature.tabularFigures()],
-            ),
+            style: dashMeta(color: kInkMuted, tabular: true),
           ),
         ],
       ),

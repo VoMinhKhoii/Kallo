@@ -16,6 +16,7 @@ import '../../../data/api_client.dart';
 import '../../../data/session_provider.dart';
 import '../../../shared/widgets/nham_primitives.dart';
 import '../../../shared/widgets/top_toast.dart';
+import '../../../theme/calm_tokens.dart';
 import '../../../theme/nham_colors.dart';
 import '../../../theme/nham_theme.dart';
 import '../../../theme/nham_typography.dart';
@@ -110,9 +111,7 @@ class _AccountSectionState extends ConsumerState<AccountSection> {
           padding: const EdgeInsets.only(left: NhamSpacing.sp3, bottom: 4),
           child: Text(
             tr('settings.account.title').toUpperCase(),
-            style: NhamTextStyles.sansBold(
-              fontSize: 10,
-            ).copyWith(letterSpacing: 2.0, color: NhamColors.textMuted),
+            style: dashEyebrow(),
           ),
         ),
         const _LinkedAccountsRows(),
@@ -349,8 +348,8 @@ class _AccountRowState extends State<_AccountRow> {
 
   @override
   Widget build(BuildContext context) {
-    final color = widget.danger ? NhamColors.danger : NhamColors.textMuted;
-    final pressedColor = widget.danger ? NhamColors.danger : NhamColors.text;
+    final color = widget.danger ? NhamColors.danger : kInkMuted;
+    final pressedColor = widget.danger ? NhamColors.danger : kInk;
     final fill =
         widget.danger
             ? const Color(0x1AD37B69) // danger @ 10%
@@ -392,9 +391,7 @@ class _AccountRowState extends State<_AccountRow> {
                 Expanded(
                   child: Text(
                     widget.label,
-                    style: NhamTextStyles.sansMedium(
-                      fontSize: NhamFontSize.sm,
-                    ).copyWith(color: _pressed ? pressedColor : color),
+                    style: dashBody(color: _pressed ? pressedColor : color),
                   ),
                 ),
                 if (widget.busy)
@@ -497,9 +494,7 @@ class _AccountDeleteScreenState extends ConsumerState<_AccountDeleteScreen> {
                   const SizedBox(height: NhamSpacing.sp3),
                   Text(
                     tr('settings.account.deleteConsequence'),
-                    style: NhamTextStyles.sansRegular(
-                      fontSize: NhamFontSize.sm,
-                    ).copyWith(color: NhamColors.text, height: 1.5),
+                    style: dashBody(),
                   ),
                   const SizedBox(height: NhamSpacing.sp5),
                   Text(
@@ -509,9 +504,7 @@ class _AccountDeleteScreenState extends ConsumerState<_AccountDeleteScreen> {
                         'word': tr('settings.account.deleteConfirmWord'),
                       },
                     ),
-                    style: NhamTextStyles.sansRegular(
-                      fontSize: 12,
-                    ).copyWith(color: NhamColors.textMuted),
+                    style: dashMeta(),
                   ),
                   const SizedBox(height: 6),
                   TextField(
@@ -519,9 +512,7 @@ class _AccountDeleteScreenState extends ConsumerState<_AccountDeleteScreen> {
                     autocorrect: false,
                     enableSuggestions: false,
                     textCapitalization: TextCapitalization.characters,
-                    style: NhamTextStyles.sansRegular(
-                      fontSize: NhamFontSize.sm,
-                    ).copyWith(color: NhamColors.text),
+                    style: dashBody(),
                     decoration: InputDecoration(
                       filled: true,
                       fillColor: NhamColors.surface,
@@ -591,9 +582,7 @@ class _DeleteButton extends StatelessWidget {
                     )
                     : Text(
                       tr('settings.account.deleteConfirmAction'),
-                      style: NhamTextStyles.sansMedium(
-                        fontSize: NhamFontSize.sm,
-                      ).copyWith(color: Colors.white),
+                      style: dashBody(weight: FontWeight.w500, color: Colors.white),
                     ),
           ),
         ),
@@ -629,9 +618,7 @@ class _DeleteBackHeader extends StatelessWidget {
               const SizedBox(width: 6),
               Text(
                 tr('settings.title'),
-                style: NhamTextStyles.sansMedium(
-                  fontSize: NhamFontSize.sm,
-                ).copyWith(color: NhamColors.textMuted),
+                style: dashBody(weight: FontWeight.w500, color: kInkMuted),
               ),
             ],
           ),

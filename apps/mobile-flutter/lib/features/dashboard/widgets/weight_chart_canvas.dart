@@ -17,7 +17,7 @@ import 'package:flutter/material.dart';
 
 import '../../../theme/nham_colors.dart';
 import '../../../theme/nham_theme.dart';
-import 'dashboard_tokens.dart';
+import '../../../theme/calm_tokens.dart';
 
 const double _chartAspect = 1.95; // canvas width : height (framed chart)
 const int _rangeDays = 30; // mobile resolves the weight window to 30 days

@@ -17,7 +17,7 @@ import '../../../theme/nham_colors.dart';
 import '../../../theme/nham_theme.dart';
 import '../data/dashboard_providers.dart';
 import 'compact_weight_log.dart';
-import 'dashboard_tokens.dart';
+import '../../../theme/calm_tokens.dart';
 import 'skeleton.dart';
 import 'weight_chart_canvas.dart';
 

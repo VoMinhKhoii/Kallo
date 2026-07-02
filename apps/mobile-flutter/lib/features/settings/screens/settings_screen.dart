@@ -12,6 +12,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../data/session_provider.dart';
 import '../../../shared/widgets/nham_primitives.dart';
 import '../../../shell/app_header.dart';
+import '../../../theme/calm_tokens.dart';
 import '../../../theme/nham_colors.dart';
 import '../../../theme/nham_theme.dart';
 import '../../../theme/nham_typography.dart';
@@ -81,12 +82,7 @@ class _SettingsList extends ConsumerWidget {
               children: [
                 Text(
                   tr('settings.title'),
-                  style: NhamTextStyles.serifRegular(
-                    fontSize: NhamFontSize.lg,
-                  ).copyWith(
-                    letterSpacing: NhamTracking.tight,
-                    color: NhamColors.text,
-                  ),
+                  style: dashHeadline(),
                 ),
                 const SizedBox(height: NhamSpacing.sp4),
 
@@ -211,9 +207,7 @@ class _GroupLabel extends StatelessWidget {
       padding: const EdgeInsets.only(left: NhamSpacing.sp3, bottom: 4),
       child: Text(
         text.toUpperCase(),
-        style: NhamTextStyles.sansBold(
-          fontSize: 10,
-        ).copyWith(letterSpacing: 2.0, color: NhamColors.textMuted),
+        style: dashEyebrow(),
       ),
     );
   }
@@ -276,18 +270,14 @@ class _PreferenceRowState extends State<_PreferenceRow> {
                   children: [
                     Text(
                       widget.label,
-                      style: NhamTextStyles.sansMedium(
-                        fontSize: NhamFontSize.sm,
-                      ).copyWith(color: NhamColors.text),
+                      style: dashBody(),
                     ),
                     const SizedBox(height: 2),
                     Text(
                       widget.subline,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: NhamTextStyles.sansRegular(
-                        fontSize: NhamFontSize.xs,
-                      ).copyWith(color: NhamColors.textMuted),
+                      style: dashMeta(),
                     ),
                   ],
                 ),
@@ -332,19 +322,12 @@ class _InfoRow extends StatelessWidget {
           Expanded(
             child: Text(
               label,
-              style: NhamTextStyles.sansMedium(
-                fontSize: NhamFontSize.sm,
-              ).copyWith(color: NhamColors.text),
+              style: dashBody(),
             ),
           ),
           Text(
             value,
-            style: NhamTextStyles.sansRegular(
-              fontSize: NhamFontSize.sm,
-            ).copyWith(
-              color: NhamColors.textMuted,
-              fontFeatures: const [FontFeature.tabularFigures()],
-            ),
+            style: dashMeta(tabular: true),
           ),
         ],
       ),
@@ -378,9 +361,7 @@ class _ProfileScreen extends ConsumerWidget {
                     ? _Centered(
                       child: Text(
                         tr('common.notSignedIn'),
-                        style: NhamTextStyles.bodySmall().copyWith(
-                          color: NhamColors.text,
-                        ),
+                        style: dashBody(),
                       ),
                     )
                     : profileAsync.when(
@@ -465,9 +446,7 @@ class _ProfileEmpty extends StatelessWidget {
           const SizedBox(height: NhamSpacing.sp4),
           Text(
             tr('settings.profilePage.emptyDescription'),
-            style: NhamTextStyles.sansRegular(
-              fontSize: NhamFontSize.sm,
-            ).copyWith(height: 22 / 14, color: NhamColors.textWarm),
+            style: dashBody(color: kInkMuted),
           ),
           const SizedBox(height: NhamSpacing.sp4),
           // RN routes "Start setup" to /logging (where the onboarding overlay
@@ -493,9 +472,7 @@ class _ProfileEmpty extends StatelessWidget {
                   ),
                   child: Text(
                     tr('settings.profilePage.startSetup'),
-                    style: NhamTextStyles.sansMedium(
-                      fontSize: NhamFontSize.sm,
-                    ).copyWith(color: Colors.white),
+                    style: dashBody(weight: FontWeight.w500, color: Colors.white),
                   ),
                 ),
               ),
@@ -553,9 +530,7 @@ class _ProfileLoadError extends StatelessWidget {
                   ),
                   child: Text(
                     tr('common.retry'),
-                    style: NhamTextStyles.sansMedium(
-                      fontSize: NhamFontSize.sm,
-                    ).copyWith(color: Colors.white),
+                    style: dashBody(weight: FontWeight.w500, color: Colors.white),
                   ),
                 ),
               ),
@@ -582,7 +557,7 @@ class _BackHeaderState extends State<_BackHeader> {
 
   @override
   Widget build(BuildContext context) {
-    final color = _pressed ? NhamColors.text : NhamColors.textWarm;
+    final color = _pressed ? kInk : kInkMuted;
     return ClipRect(
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8), // backdrop-blur-sm
@@ -615,9 +590,7 @@ class _BackHeaderState extends State<_BackHeader> {
                   const SizedBox(width: 6), // gap-1.5
                   Text(
                     tr('settings.title'),
-                    style: NhamTextStyles.sansMedium(
-                      fontSize: NhamFontSize.sm,
-                    ).copyWith(color: color),
+                    style: dashBody(weight: FontWeight.w500, color: color),
                   ),
                 ],
               ),

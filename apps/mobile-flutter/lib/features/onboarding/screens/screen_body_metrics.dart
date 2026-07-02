@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 
 import '../../../models/onboarding.dart';
 import '../../../shared/widgets/decimal_input.dart';
+import '../../../theme/calm_tokens.dart';
 import '../../../theme/nham_colors.dart';
 import '../../../theme/nham_theme.dart';
 import '../../../theme/nham_typography.dart';
@@ -232,10 +233,7 @@ class _ScreenBodyMetricsState extends State<ScreenBodyMetrics> {
         const SizedBox(height: NhamSpacing.sp1),
         Text(
           tr('onboarding.bodyMetrics.subtitle'),
-          style: NhamTextStyles.sansRegular(
-            fontSize: 14,
-            height: 22 / 14,
-          ).copyWith(color: NhamColors.textHelp),
+          style: dashBody(color: kInkMuted),
         ),
         const SizedBox(height: NhamSpacing.sp5), // space-y-5
         // Metrics card.
@@ -252,17 +250,12 @@ class _ScreenBodyMetricsState extends State<ScreenBodyMetrics> {
               // "About you" header block (mb-4 before the grid).
               Text(
                 tr('onboarding.bodyMetrics.aboutYou').toUpperCase(),
-                style: NhamTextStyles.sansBold(
-                  fontSize: 11,
-                ).copyWith(letterSpacing: 1.5, color: NhamColors.stone),
+                style: dashEyebrow(),
               ),
               const SizedBox(height: NhamSpacing.sp1), // mt-1
               Text(
                 tr('onboarding.bodyMetrics.aboutYouHint'),
-                style: NhamTextStyles.sansRegular(
-                  fontSize: 13,
-                  height: 1.625,
-                ).copyWith(color: NhamColors.textHelp),
+                style: dashMeta(),
               ),
               const SizedBox(height: NhamSpacing.sp4), // mb-4
               _buildGrid(),
@@ -284,17 +277,12 @@ class _ScreenBodyMetricsState extends State<ScreenBodyMetrics> {
         children: [
           Text(
             tr('onboarding.bodyMetrics.unlockTitle'),
-            style: NhamTextStyles.sansMedium(
-              fontSize: 14,
-            ).copyWith(color: NhamColors.text),
+            style: dashBody(weight: FontWeight.w500),
           ),
           const SizedBox(height: NhamSpacing.sp1), // mt-1
           Text(
             tr('onboarding.bodyMetrics.unlockHint'),
-            style: NhamTextStyles.sansRegular(
-              fontSize: 13,
-              height: 1.625,
-            ).copyWith(color: NhamColors.textHelp),
+            style: dashMeta(),
           ),
         ],
       ),
@@ -587,9 +575,7 @@ class _DailyTargetCard extends StatelessWidget {
           Text(
             tr('onboarding.bodyMetrics.calorieTarget').toUpperCase(),
             textAlign: TextAlign.center,
-            style: NhamTextStyles.sansBold(
-              fontSize: 11,
-            ).copyWith(color: NhamColors.stone, letterSpacing: 1.5),
+            style: dashEyebrow(),
           ),
           const SizedBox(height: NhamSpacing.sp2),
           Text.rich(
@@ -598,9 +584,7 @@ class _DailyTargetCard extends StatelessWidget {
                 TextSpan(text: formatCount(calorieTarget.round(), locale)),
                 TextSpan(
                   text: ' ${tr('onboarding.bodyMetrics.kcal')}',
-                  style: NhamTextStyles.sansRegular(
-                    fontSize: 18,
-                  ).copyWith(color: NhamColors.textHelp),
+                  style: dashMeta(),
                 ),
               ],
             ),
@@ -612,10 +596,7 @@ class _DailyTargetCard extends StatelessWidget {
           Text(
             caption.toString(),
             textAlign: TextAlign.center,
-            style: NhamTextStyles.sansRegular(
-              fontSize: 12,
-              height: 16 / 12,
-            ).copyWith(color: NhamColors.textHelp),
+            style: dashMeta(),
           ),
           if (m != null) ...[
             const SizedBox(height: NhamSpacing.sp4),
@@ -638,16 +619,12 @@ class _DailyTargetCard extends StatelessWidget {
       children: [
         Text(
           label.toUpperCase(),
-          style: NhamTextStyles.sansMedium(
-            fontSize: 10,
-          ).copyWith(color: NhamColors.textMuted, letterSpacing: 0.5),
+          style: dashEyebrow(),
         ),
         const SizedBox(height: 2),
         Text(
           '${grams.round()}${tr('onboarding.bodyMetrics.grams')}',
-          style: NhamTextStyles.sansSemiBold(
-            fontSize: 15,
-          ).copyWith(color: NhamColors.text),
+          style: dashValue(),
         ),
       ],
     );
@@ -673,9 +650,7 @@ class _TdeeHero extends StatelessWidget {
               TextSpan(text: '~${formatCount(tdee, locale)} '),
               TextSpan(
                 text: tr('onboarding.bodyMetrics.kcal'),
-                style: NhamTextStyles.sansRegular(
-                  fontSize: 18,
-                ).copyWith(color: NhamColors.textHelp),
+                style: dashMeta(),
               ),
             ],
           ),
@@ -762,9 +737,7 @@ class _FieldLabel extends StatelessWidget {
   Widget build(BuildContext context) {
     return Text(
       text.toUpperCase(),
-      style: NhamTextStyles.sansBold(
-        fontSize: 11,
-      ).copyWith(letterSpacing: 1.5, color: NhamColors.stone),
+      style: dashEyebrow(),
     );
   }
 }
@@ -788,9 +761,7 @@ class _Cell extends StatelessWidget {
           const SizedBox(height: 6),
           Text(
             error!,
-            style: NhamTextStyles.sansRegular(
-              fontSize: 12,
-            ).copyWith(color: NhamColors.danger),
+            style: dashMeta(color: NhamColors.danger),
           ),
         ],
       ],
@@ -857,9 +828,7 @@ class _GoalButtonState extends State<_GoalButton> {
   Widget build(BuildContext context) {
     // active bg-white #2C2416 shadow-sm; inactive #8B8682 + hover:text-#2C2416.
     final color =
-        widget.active
-            ? NhamColors.text
-            : (_pressed ? NhamColors.text : NhamColors.textHelp);
+        widget.active ? kInk : (_pressed ? kInk : kInkMuted);
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTapDown: (_) => setState(() => _pressed = true),
@@ -884,7 +853,7 @@ class _GoalButtonState extends State<_GoalButton> {
                 : const BoxDecoration(),
         child: Text(
           widget.label,
-          style: NhamTextStyles.sansMedium(fontSize: 14).copyWith(color: color),
+          style: dashBody(color: color, weight: FontWeight.w500),
         ),
       ),
     );
@@ -985,20 +954,12 @@ class _CarbCardState extends State<_CarbCard> {
                 children: [
                   Text(
                     _label,
-                    style: NhamTextStyles.sansMedium(
-                      fontSize: 13,
-                    ).copyWith(color: NhamColors.text),
+                    style: dashBody(weight: FontWeight.w500),
                   ),
                   const SizedBox(height: 2), // mt-0.5
                   Text(
                     _desc,
-                    style: NhamTextStyles.sansRegular(fontSize: 10).copyWith(
-                      color:
-                          active
-                              ? NhamColors
-                                  .textSelected // #6F6556
-                              : NhamColors.textHelp, // #8B8682
-                    ),
+                    style: dashMeta(),
                   ),
                 ],
               ),
@@ -1018,18 +979,14 @@ class _CarbCardState extends State<_CarbCard> {
                       children: [
                         Text(
                           rows[i].$1.toUpperCase(),
-                          style: NhamTextStyles.sansRegular(
-                            fontSize: 10,
-                          ).copyWith(
-                            letterSpacing: 0.4, // tracking-wide
-                            color: NhamColors.textSelected, // #6F6556
-                          ),
+                          style: dashEyebrow(),
                         ),
                         Text(
                           '${rows[i].$2}$grams',
-                          style: NhamTextStyles.sansSemiBold(
-                            fontSize: 12,
-                          ).copyWith(color: NhamColors.text),
+                          style: dashBody(
+                            weight: FontWeight.w500,
+                            tabular: true,
+                          ),
                         ),
                       ],
                     ),

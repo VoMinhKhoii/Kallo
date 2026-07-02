@@ -1,9 +1,9 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
+import '../../../theme/calm_tokens.dart';
 import '../../../theme/nham_colors.dart';
 import '../../../theme/nham_theme.dart';
-import '../../../theme/nham_typography.dart';
 import 'google_logo.dart';
 
 /// "Continue with Google" button.
@@ -79,7 +79,7 @@ class _GoogleButtonState extends State<GoogleButton> {
               const SizedBox(width: 10), // gap-2.5
               Text(
                 tr('auth.dialog.continueWithGoogle'),
-                style: NhamTextStyles.sansMedium(fontSize: NhamFontSize.md)
+                style: dashBody(weight: FontWeight.w500)
                     .copyWith(color: NhamColors.text, letterSpacing: -0.2),
               ),
             ],

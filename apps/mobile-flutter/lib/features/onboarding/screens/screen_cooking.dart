@@ -1,6 +1,7 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
+import '../../../theme/calm_tokens.dart';
 import '../../../theme/nham_colors.dart';
 import '../../../theme/nham_theme.dart';
 import '../../../theme/nham_typography.dart';
@@ -182,8 +183,7 @@ class _ScreenCookingState extends State<ScreenCooking> {
         const SizedBox(height: NhamSpacing.sp1),
         Text(
           tr('onboarding.cooking.subtitle'),
-          style: NhamTextStyles.sansRegular(fontSize: 15, height: 24 / 15)
-              .copyWith(color: NhamColors.textHelp),
+          style: dashBody(color: kInkMuted),
         ),
         const SizedBox(height: NhamSpacing.sp6),
         for (var i = 0; i < fields.length; i++) ...[
@@ -202,8 +202,7 @@ class _ScreenCookingState extends State<ScreenCooking> {
       children: [
         Text(
           f.label,
-          style: NhamTextStyles.sansBold(fontSize: 13)
-              .copyWith(color: NhamColors.text),
+          style: dashBody(weight: FontWeight.w500),
         ),
         if (f.hint != null)
           Padding(
@@ -211,8 +210,7 @@ class _ScreenCookingState extends State<ScreenCooking> {
             padding: const EdgeInsets.only(top: NhamSpacing.sp3 - NhamSpacing.sp1),
             child: Text(
               f.hint!,
-              style: NhamTextStyles.sansRegular(fontSize: 12, height: 18 / 12)
-                  .copyWith(color: NhamColors.textHelp),
+              style: dashMeta(),
             ),
           ),
         const SizedBox(height: NhamSpacing.sp3),

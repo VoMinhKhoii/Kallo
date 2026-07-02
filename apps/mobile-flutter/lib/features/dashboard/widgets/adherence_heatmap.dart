@@ -17,7 +17,7 @@ import '../../../theme/nham_colors.dart';
 import '../../../theme/nham_theme.dart';
 import '../data/dashboard_providers.dart';
 import '../logic/heatmap_colors.dart';
-import 'dashboard_tokens.dart';
+import '../../../theme/calm_tokens.dart';
 
 /// Monday-first narrow weekday initials for [locale] (en → M T W T F S S; vi →
 /// the localized initials). Anchored on a known Monday so DST/locale offsets

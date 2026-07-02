@@ -2,6 +2,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../theme/calm_tokens.dart';
 import '../../../theme/nham_colors.dart';
 import '../../../theme/nham_typography.dart';
 import 'fade_in_down.dart';
@@ -41,10 +42,7 @@ class _EmptyStateState extends State<EmptyState> {
             const SizedBox(height: 12),
             Text(
               tr('nutrition.emptyV2.description'),
-              style: NhamTextStyles.sansRegular(fontSize: 14).copyWith(
-                height: 28 / 14,
-                color: NhamColors.textMuted,
-              ),
+              style: dashBody(color: kInkMuted).copyWith(height: 28 / 14),
             ),
             const SizedBox(height: 24),
             GestureDetector(
@@ -66,8 +64,10 @@ class _EmptyStateState extends State<EmptyState> {
                   ),
                   child: Text(
                     tr('nutrition.emptyV2.logMeal'),
-                    style: NhamTextStyles.sansMedium(fontSize: 14)
-                        .copyWith(color: NhamColors.surface),
+                    style: dashBody(
+                      weight: FontWeight.w500,
+                      color: NhamColors.surface,
+                    ),
                   ),
                 ),
               ),

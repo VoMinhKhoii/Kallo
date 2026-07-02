@@ -5,9 +5,9 @@ import 'package:flutter/services.dart';
 
 import '../../../shared/widgets/nham_text.dart';
 import '../../../shell/app_header.dart';
+import '../../../theme/calm_tokens.dart';
 import '../../../theme/nham_colors.dart';
 import '../../../theme/nham_theme.dart';
-import '../../../theme/nham_typography.dart';
 import '../logic/timeline_utils.dart';
 
 /// The collapsed date pill that lives in the app header. Tapping it asks the
@@ -69,7 +69,7 @@ class _TimelineChipState extends State<TimelineChip> {
                   variant: NhamTextVariant.chipText,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(color: NhamColors.text),
+                  style: const TextStyle(color: kInk),
                 ),
               ),
               if (hasMeal) ...[
@@ -471,7 +471,7 @@ class _DayCellState extends State<_DayCell> {
     // Non-selected hover/press affordance: bg-nham-hover/40.
     if (_pressed && !isSelected) bg = NhamColors.hover40;
 
-    final labelColor = isSelected ? NhamColors.text : NhamColors.textMuted;
+    final labelColor = isSelected ? kInk : kInkMuted;
 
     Widget dot;
     if (isFuture) {
@@ -521,18 +521,17 @@ class _DayCellState extends State<_DayCell> {
               NhamText(
                 dayName,
                 variant: NhamTextVariant.macroLabel,
-                style: NhamTextStyles.sansSemiBold(
-                  fontSize: NhamFontSize.eyebrow,
-                ).copyWith(
-                  letterSpacing: NhamTracking.tight,
-                  color: labelColor,
-                ),
+                style: dashEyebrow(color: labelColor),
               ),
               const SizedBox(height: 2), // gap-0.5
               NhamText(
                 dayNum,
                 variant: NhamTextVariant.numInline,
-                style: TextStyle(fontSize: 13, color: labelColor),
+                style: dashBody(
+                  color: labelColor,
+                  weight: FontWeight.w500,
+                  tabular: true,
+                ),
               ),
               const SizedBox(height: 2),
               dot,

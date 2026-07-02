@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../../../theme/calm_tokens.dart';
 import '../../../theme/nham_colors.dart';
 import '../../../theme/nham_theme.dart';
-import '../../../theme/nham_typography.dart';
 
 class OptionStripItem {
   final String value;
@@ -72,9 +72,7 @@ class _SegmentState extends State<_Segment> {
   Widget build(BuildContext context) {
     // active #2C2416, inactive #8B8682; press subtly darkens inactive toward
     // #2C2416 (web has no active: opacity dim — uses hover:text-#2C2416).
-    final color = widget.active
-        ? NhamColors.text
-        : (_pressed ? NhamColors.text : NhamColors.textHelp);
+    final color = widget.active ? kInk : (_pressed ? kInk : kInkMuted);
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTapDown: (_) => setState(() => _pressed = true),
@@ -103,8 +101,7 @@ class _SegmentState extends State<_Segment> {
             Text(
               widget.item.label,
               textAlign: TextAlign.center,
-              style: NhamTextStyles.sansMedium(fontSize: 13)
-                  .copyWith(color: color),
+              style: dashBody(color: color, weight: FontWeight.w500),
             ),
             if (widget.item.hint != null)
               Padding(
@@ -116,8 +113,7 @@ class _SegmentState extends State<_Segment> {
                     textAlign: TextAlign.center,
                     maxLines: 2, // line-clamp-2
                     overflow: TextOverflow.ellipsis,
-                    style: NhamTextStyles.sansRegular(fontSize: 10, height: 1.3)
-                        .copyWith(color: color),
+                    style: dashMeta(color: color),
                   ),
                 ),
               ),

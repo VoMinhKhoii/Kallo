@@ -2,6 +2,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import '../../../theme/calm_tokens.dart';
 import '../../../theme/nham_colors.dart';
 import '../../../theme/nham_theme.dart';
 import '../../../theme/nham_typography.dart';
@@ -64,8 +65,7 @@ class _ScreenOriginState extends State<ScreenOrigin> {
         const SizedBox(height: NhamSpacing.sp1),
         Text(
           tr('onboarding.origin.subtitle'),
-          style: NhamTextStyles.sansRegular(fontSize: 15, height: 24 / 15)
-              .copyWith(color: NhamColors.textHelp),
+          style: dashBody(color: kInkMuted),
         ),
         const SizedBox(height: NhamSpacing.sp6),
 
@@ -121,8 +121,7 @@ class _ScreenOriginState extends State<ScreenOrigin> {
             const SizedBox(height: NhamSpacing.sp4),
             Text(
               tr('onboarding.origin.fallbackNote'),
-              style: NhamTextStyles.sansRegular(fontSize: 13, height: 20 / 13)
-                  .copyWith(color: NhamColors.textHelp),
+              style: dashMeta(),
             ),
           ],
         ),
@@ -167,8 +166,7 @@ class _LabelRow extends StatelessWidget {
         const SizedBox(width: NhamSpacing.sp2),
         Text(
           label,
-          style: NhamTextStyles.sansBold(fontSize: 13)
-              .copyWith(color: NhamColors.text),
+          style: dashBody(weight: FontWeight.w500),
         ),
       ],
     );
@@ -197,8 +195,7 @@ class _Field extends StatelessWidget {
         const SizedBox(height: NhamSpacing.sp2),
         Text(
           hint,
-          style: NhamTextStyles.sansRegular(fontSize: 12, height: 18 / 12)
-              .copyWith(color: NhamColors.textHelp),
+          style: dashMeta(),
         ),
         const SizedBox(height: NhamSpacing.sp3), // mb-3 before the field
         child,

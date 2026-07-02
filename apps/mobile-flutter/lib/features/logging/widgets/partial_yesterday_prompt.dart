@@ -4,9 +4,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../shared/widgets/nham_text.dart';
+import '../../../theme/calm_tokens.dart';
 import '../../../theme/nham_colors.dart';
 import '../../../theme/nham_theme.dart';
-import '../../../theme/nham_typography.dart';
 import '../../dashboard/logic/dashboard_format.dart' show formatCount;
 import '../data/logging_models.dart';
 import '../data/logging_providers.dart';
@@ -99,7 +99,7 @@ class PartialYesterdayPrompt extends ConsumerWidget {
                       },
                     ),
                     variant: NhamTextVariant.small,
-                    style: const TextStyle(color: NhamColors.textMuted),
+                    style: dashMeta(),
                   ),
                   const SizedBox(height: NhamSpacing.sp3), // mt-3
                   _OpenButton(
@@ -179,9 +179,7 @@ class _OpenButtonState extends State<_OpenButton> {
               NhamText(
                 widget.label,
                 variant: NhamTextVariant.body,
-                style: NhamTextStyles.sansMedium(
-                  fontSize: NhamFontSize.sm,
-                ).copyWith(color: NhamColors.text),
+                style: dashBody(weight: FontWeight.w500),
               ),
             ],
           ),

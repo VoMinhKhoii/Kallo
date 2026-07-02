@@ -7,6 +7,7 @@ import '../data/profile_providers.dart';
 import '../logic/profile_payload.dart';
 import 'profile_form_controller.dart';
 import 'profile_form_values.dart';
+import '../../../theme/calm_tokens.dart';
 import '../../../theme/nham_colors.dart';
 import '../../../theme/nham_theme.dart';
 import '../../../theme/nham_typography.dart';
@@ -185,9 +186,7 @@ class _InstantCommitEditorState extends ConsumerState<InstantCommitEditor> {
             padding: const EdgeInsets.only(bottom: NhamSpacing.sp4),
             child: Text(
               widget.subtitle,
-              style: NhamTextStyles.sansRegular(
-                fontSize: NhamFontSize.detail,
-              ).copyWith(height: 20 / 13, color: NhamColors.textWarm),
+              style: dashMeta(),
             ),
           ),
           if (_errorText != null)
@@ -199,9 +198,7 @@ class _InstantCommitEditorState extends ConsumerState<InstantCommitEditor> {
                   Expanded(
                     child: Text(
                       _errorText!,
-                      style: NhamTextStyles.sansRegular(
-                        fontSize: NhamFontSize.sm,
-                      ).copyWith(color: NhamColors.danger),
+                      style: dashBody(color: NhamColors.danger),
                     ),
                   ),
                   if (_failedValues != null) ...[
@@ -216,9 +213,7 @@ class _InstantCommitEditorState extends ConsumerState<InstantCommitEditor> {
                         onTap: _retry,
                         child: Text(
                           tr('settings.profilePanel.retry'),
-                          style: NhamTextStyles.sansMedium(
-                            fontSize: NhamFontSize.sm,
-                          ).copyWith(color: NhamColors.text),
+                          style: dashBody(weight: FontWeight.w500),
                         ),
                       ),
                     ),

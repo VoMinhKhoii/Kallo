@@ -9,6 +9,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../features/logging/widgets/count_up.dart';
+import '../../../theme/calm_tokens.dart';
 import '../../../theme/nham_colors.dart';
 import '../../../theme/nham_theme.dart';
 import '../../../theme/nham_typography.dart';
@@ -137,8 +138,7 @@ class _ProfileFormState extends ConsumerState<ProfileForm> {
                 padding: const EdgeInsets.only(bottom: NhamSpacing.sp4),
                 child: Text(
                   tr('settings.profilePanel.bodyMetricsSubtitle'),
-                  style: NhamTextStyles.sansRegular(fontSize: NhamFontSize.detail)
-                      .copyWith(height: 20 / 13, color: NhamColors.textWarm),
+                  style: dashMeta(),
                 ),
               ),
               Container(
@@ -352,9 +352,7 @@ class _BackdropCard extends StatelessWidget {
                         child: Text(
                           errorText!,
                           textAlign: TextAlign.right,
-                          style: NhamTextStyles.sansRegular(
-                                  fontSize: NhamFontSize.xs)
-                              .copyWith(color: NhamColors.danger),
+                          style: dashMeta(color: NhamColors.danger),
                         ),
                       ),
                     Row(
@@ -411,8 +409,9 @@ class _GhostButtonState extends State<_GhostButton> {
         ),
         child: AnimatedDefaultTextStyle(
           duration: const Duration(milliseconds: 150),
-          style: NhamTextStyles.sansMedium(fontSize: NhamFontSize.sm).copyWith(
-            color: _pressed ? NhamColors.text : NhamColors.textWarm,
+          style: dashBody(
+            weight: FontWeight.w500,
+            color: _pressed ? kInk : kInkMuted,
           ),
           child: Text(widget.label),
         ),
@@ -447,15 +446,13 @@ class _SavedConfirmation extends StatelessWidget {
         const SizedBox(width: 8),
         Text(
           tr('settings.saved'),
-          style: NhamTextStyles.sansMedium(fontSize: NhamFontSize.sm)
-              .copyWith(color: NhamColors.text),
+          style: dashBody(weight: FontWeight.w500),
         ),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 8),
           child: Text(
             '·',
-            style: NhamTextStyles.sansMedium(fontSize: NhamFontSize.sm)
-                .copyWith(color: NhamColors.border),
+            style: dashBody(weight: FontWeight.w500, color: NhamColors.border),
           ),
         ),
         CountUpText(
@@ -464,10 +461,7 @@ class _SavedConfirmation extends StatelessWidget {
           enabled: !reduceMotion,
           format: (v) => '${fmt.format(v.round())} '
               '${tr('onboarding.bodyMetrics.perDay')}',
-          style: NhamTextStyles.sansMedium(fontSize: NhamFontSize.sm).copyWith(
-            color: NhamColors.text,
-            fontFeatures: const [FontFeature.tabularFigures()],
-          ),
+          style: dashBody(weight: FontWeight.w500, tabular: true),
         ),
       ],
     );
@@ -520,8 +514,7 @@ class _SaveButtonState extends State<_SaveButton> {
                 )
               : Text(
                   tr('settings.save'),
-                  style: NhamTextStyles.sansMedium(fontSize: NhamFontSize.sm)
-                      .copyWith(color: NhamColors.cream),
+                  style: dashBody(weight: FontWeight.w500, color: NhamColors.cream),
                 ),
         ),
       ),
