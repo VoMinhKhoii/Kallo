@@ -613,7 +613,7 @@ class _DeleteBackHeader extends StatelessWidget {
               const Icon(
                 LucideIcons.arrowLeft,
                 size: 16,
-                color: NhamColors.textMuted,
+                color: kInkMuted,
               ),
               const SizedBox(width: 6),
               Text(

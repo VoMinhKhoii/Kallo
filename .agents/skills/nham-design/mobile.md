@@ -9,9 +9,9 @@ or the web scale here.
 Throughline: **hierarchy comes from weight + colour, not size**; a compact,
 uniform vertical rhythm; exactly one editorial serif moment per viewport.
 
-**Live on the Dashboard.** Nutrition / Logging / Onboarding / Settings are **not
-yet migrated** — do new work against this doc; migrate existing screens
-per-screen with QA (see _Status_).
+**Live across the app.** Dashboard, Nutrition, Logging, Onboarding, and Settings
+all run on this system; Auth is a deliberate **light-touch** (see _Status_). Do
+all new mobile UI work against this doc.
 
 ## Font
 
