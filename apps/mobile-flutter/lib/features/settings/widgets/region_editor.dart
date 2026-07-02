@@ -5,9 +5,9 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../onboarding/widgets/language_toggle.dart';
 import '../data/profile_providers.dart';
 import '../panels/regional.dart';
+import '../../../theme/calm_tokens.dart';
 import '../../../theme/nham_colors.dart';
 import '../../../theme/nham_theme.dart';
-import '../../../theme/nham_typography.dart';
 import 'instant_commit_editor.dart';
 import 'profile_form_controller.dart';
 
@@ -67,9 +67,7 @@ class _LanguageFieldState extends State<_LanguageField> {
             const SizedBox(width: NhamSpacing.sp2),
             Text(
               tr('settings.language'),
-              style: NhamTextStyles.sansMedium(
-                fontSize: NhamFontSize.detail,
-              ).copyWith(color: NhamColors.text),
+              style: dashBody(),
             ),
           ],
         ),

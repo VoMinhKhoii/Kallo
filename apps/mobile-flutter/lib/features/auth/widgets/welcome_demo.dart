@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
+import '../../../theme/calm_tokens.dart';
 import '../../../theme/nham_colors.dart';
 import '../../../theme/nham_theme.dart';
 import '../../../theme/nham_typography.dart';
@@ -147,9 +148,7 @@ class _WelcomeDemoState extends State<WelcomeDemo>
       ),
       child: Text(
         tr('auth.welcome.demoResult', namedArgs: {'kcal': '620'}),
-        style: NhamTextStyles.sansSemiBold(
-          fontSize: NhamFontSize.sm,
-        ).copyWith(color: NhamColors.text),
+        style: dashBody(weight: FontWeight.w500),
       ),
     );
   }

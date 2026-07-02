@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import '../../../theme/calm_tokens.dart';
 import '../../../theme/nham_colors.dart';
 import '../../../theme/nham_typography.dart';
 import '../providers/auth_form_controller.dart';
@@ -92,9 +93,7 @@ class _EmailAuthFormState extends ConsumerState<EmailAuthForm> {
                   const SizedBox(width: 6),
                   Text(
                     tr('auth.confirm.back'),
-                    style: NhamTextStyles.sansMedium(
-                      fontSize: NhamFontSize.sm,
-                    ).copyWith(color: NhamColors.textMuted),
+                    style: dashBody(color: kInkMuted),
                   ),
                 ],
               ),
@@ -159,9 +158,7 @@ class _EmailAuthFormState extends ConsumerState<EmailAuthForm> {
                       ),
               child: Text(
                 tr('auth.signIn.forgotPassword'),
-                style: NhamTextStyles.sansRegular(
-                  fontSize: 12,
-                ).copyWith(color: NhamColors.textMuted),
+                style: dashMeta(),
               ),
             ),
           ),
@@ -172,10 +169,7 @@ class _EmailAuthFormState extends ConsumerState<EmailAuthForm> {
           const SizedBox(height: 12),
           Text(
             state.error!,
-            style: NhamTextStyles.sansRegular(
-              fontSize: NhamFontSize.sm,
-              height: NhamLeading.normal,
-            ).copyWith(color: NhamColors.danger),
+            style: dashMeta(color: NhamColors.danger),
           ),
         ],
         const SizedBox(height: 16),
@@ -195,9 +189,7 @@ class _EmailAuthFormState extends ConsumerState<EmailAuthForm> {
               _createMode
                   ? '${tr('auth.signUp.hasAccount')} '
                   : '${tr('auth.signIn.noAccount')} ',
-              style: NhamTextStyles.sansRegular(
-                fontSize: NhamFontSize.sm,
-              ).copyWith(color: NhamColors.textMuted),
+              style: dashBody(color: kInkMuted),
             ),
             Opacity(
               opacity: busy ? 0.6 : 1.0,
@@ -213,9 +205,7 @@ class _EmailAuthFormState extends ConsumerState<EmailAuthForm> {
                     _createMode
                         ? tr('auth.signUp.signInLink')
                         : tr('auth.signIn.signUpLink'),
-                    style: NhamTextStyles.sansSemiBold(
-                      fontSize: NhamFontSize.sm,
-                    ).copyWith(color: NhamColors.accent),
+                    style: dashBody(color: NhamColors.accent, weight: FontWeight.w500),
                   ),
                 ),
               ),

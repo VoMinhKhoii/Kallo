@@ -2,7 +2,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 
-import '../../../features/dashboard/widgets/dashboard_tokens.dart';
+import '../../../theme/calm_tokens.dart';
 import '../../../models/nutrition.dart';
 import '../../../theme/nham_colors.dart';
 import '../logic/rhythm_logic.dart';
@@ -112,7 +112,7 @@ class MacroTrendChart extends StatelessWidget {
                     child: Text(
                       value.round().toString(),
                       textAlign: TextAlign.right,
-                      style: dashMeta(color: kInkDisabled).copyWith(fontSize: 10),
+                      style: dashMeta(color: kInkMuted).copyWith(fontSize: 10),
                     ),
                   );
                 },
@@ -133,7 +133,7 @@ class MacroTrendChart extends StatelessWidget {
                     child: Text(
                       _label(buckets[i].startDate, daySeries.unit,
                           context.locale.toString()),
-                      style: dashEyebrow(color: kInkDisabled)
+                      style: dashEyebrow(color: kInkMuted)
                           .copyWith(letterSpacing: 0.4),
                     ),
                   );

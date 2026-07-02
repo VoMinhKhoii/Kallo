@@ -5,14 +5,21 @@ import 'package:flutter/services.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../shared/widgets/nham_text.dart';
+import '../../../theme/calm_tokens.dart';
 import '../../../theme/nham_colors.dart';
 import '../../../theme/nham_theme.dart';
-import '../../../theme/nham_typography.dart';
 
 /// How a meal gets logged. `normal` = describe it in words (AI); `cheat` = the
 /// cheat-meal flow (ported from web later); `manual` = search foods + grams;
 /// `barcode` = scan a packaged product.
 enum MealLogMode { normal, cheat, manual, barcode }
+
+/// Single source of truth for whether barcode logging is offered. iOS-only for
+/// now — Android support (permission copy, device testing) is unscoped. Both
+/// entry points (this mode sheet's row and the composer icon in `feed_area`)
+/// gate on this so they can't drift apart.
+bool get isBarcodeLoggingSupported =>
+    defaultTargetPlatform == TargetPlatform.iOS;
 
 IconData mealModeIcon(MealLogMode mode) => switch (mode) {
   MealLogMode.normal => LucideIcons.zap, // lightning
@@ -81,9 +88,7 @@ class _MealModeSheet extends StatelessWidget {
                     child: NhamText(
                       'logging.modeSelector.title'.tr(),
                       variant: NhamTextVariant.body,
-                      style: NhamTextStyles.sansSemiBold(
-                        fontSize: NhamFontSize.md,
-                      ).copyWith(color: NhamColors.text),
+                      style: dashBody(weight: FontWeight.w500),
                     ),
                   ),
                 ),
@@ -126,10 +131,7 @@ class _MealModeSheet extends StatelessWidget {
                   selected: current == MealLogMode.manual,
                   onTap: () => Navigator.of(context).pop(MealLogMode.manual),
                 ),
-                // iOS-only for now: Android support (permission copy, device
-                // testing) hasn't been scoped, so the entry point is hidden
-                // there rather than shipping a broken path.
-                if (defaultTargetPlatform == TargetPlatform.iOS)
+                if (isBarcodeLoggingSupported)
                   _ModeRow(
                     icon: mealModeIcon(MealLogMode.barcode),
                     iconColor: NhamColors.accentDark,
@@ -207,9 +209,7 @@ class _ModeRowState extends State<_ModeRow> {
                       NhamText(
                         widget.title,
                         variant: NhamTextVariant.body,
-                        style: NhamTextStyles.sansMedium(
-                          fontSize: NhamFontSize.lg,
-                        ).copyWith(color: NhamColors.text),
+                        style: dashBody(weight: FontWeight.w500),
                       ),
                       if (widget.soon) ...[
                         const SizedBox(width: NhamSpacing.sp2),
@@ -221,7 +221,7 @@ class _ModeRowState extends State<_ModeRow> {
                   NhamText(
                     widget.desc,
                     variant: NhamTextVariant.small,
-                    style: const TextStyle(color: NhamColors.textMuted),
+                    style: dashMeta(),
                   ),
                 ],
               ),
@@ -246,12 +246,7 @@ class _SoonBadge extends StatelessWidget {
         color: NhamColors.hover,
         borderRadius: BorderRadius.circular(999),
       ),
-      child: Text(
-        'logging.modeSelector.soon'.tr(),
-        style: NhamTextStyles.sansMedium(
-          fontSize: 10,
-        ).copyWith(color: NhamColors.textMuted, letterSpacing: 0.4),
-      ),
+      child: Text('logging.modeSelector.soon'.tr(), style: dashEyebrow()),
     );
   }
 }

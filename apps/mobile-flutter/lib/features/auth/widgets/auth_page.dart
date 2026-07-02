@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../theme/calm_tokens.dart';
 import '../../../theme/nham_colors.dart';
 import '../../../theme/nham_theme.dart';
 import '../../../theme/nham_typography.dart';
@@ -206,10 +207,7 @@ class _AuthPageState extends ConsumerState<AuthPage> {
         Text(
           tr('auth.welcome.terms'),
           textAlign: TextAlign.center,
-          style: NhamTextStyles.sansRegular(
-            fontSize: NhamFontSize.xs,
-            height: NhamLeading.normal,
-          ).copyWith(color: NhamColors.textMuted),
+          style: dashMeta(),
         ),
       ],
     );
@@ -256,7 +254,7 @@ class _EmailEntryButtonState extends State<_EmailEntryButton> {
           alignment: Alignment.center,
           child: Text(
             tr('auth.welcome.continueWithEmail'),
-            style: NhamTextStyles.sansMedium(fontSize: NhamFontSize.md)
+            style: dashBody(weight: FontWeight.w500)
                 .copyWith(color: NhamColors.text, letterSpacing: -0.2),
           ),
         ),

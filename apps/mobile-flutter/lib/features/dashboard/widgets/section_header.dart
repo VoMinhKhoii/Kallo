@@ -6,7 +6,7 @@ import 'package:flutter/material.dart';
 
 import '../../../theme/nham_colors.dart';
 import '../../../theme/nham_theme.dart';
-import 'dashboard_tokens.dart';
+import '../../../theme/calm_tokens.dart';
 
 /// The dashboard section label: an 11px bold uppercase taupe eyebrow with wide
 /// tracking. A [range] (or [action]) makes it a space-between row with a
@@ -33,12 +33,13 @@ class SectionHeader extends StatelessWidget {
     final Widget? trailing = action ??
         (range != null
             ? Text(range!.toUpperCase(),
-                style: dashEyebrow(weight: FontWeight.w500))
+                style: dashEyebrow(
+                    color: kInkMuted, weight: FontWeight.w500))
             : null);
 
     final label = Text(
       title.toUpperCase(),
-      style: dashEyebrow(color: kInk),
+      style: dashEyebrow(),
     );
 
     if (trailing == null) {
@@ -167,7 +168,7 @@ class _SectionStateState extends State<SectionState> {
           Text(
             widget.message,
             textAlign: TextAlign.center,
-            style: dashBody(color: kInkSecondary),
+            style: dashBody(color: kInkMuted),
           ),
           if (hasAction) ...[
             const SizedBox(height: NhamSpacing.sp3),

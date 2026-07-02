@@ -1,20 +1,22 @@
-/// Dashboard design tokens — the flat, high-contrast system (2026 redesign).
+/// Calm design tokens — the mobile app's shared type/colour/spacing system.
 ///
-/// The dashboard deliberately diverges from the web's "Apple Notes on cream
-/// paper" port. The palette is unchanged (cream / espresso / tan); what changed
-/// is the APPLICATION: solid surfaces (no stacked translucency), ONE sans
-/// family (Be Vietnam Pro) on a 5-size scale, exactly 3 text colors, one card
-/// radius,
-/// and serif reserved for a single editorial headline per viewport.
+/// Born on the dashboard (2026 redesign) and now the canonical system for the
+/// whole Flutter app. The palette stays cream / espresso / tan; the APPLICATION
+/// is calm: solid surfaces (no stacked translucency), ONE sans family (Be
+/// Vietnam Pro), exactly TWO text colours, one card radius.
 ///
-/// Reference: getdesign.md (Anthropic/Notion/Linear) + CalAI. The throughline —
-/// hierarchy comes from contrast + size, not from a dozen faint tints.
+/// Threads / Apple-Health tuned: compact sizes, lighter weights, hierarchy
+/// carried by weight + colour rather than size — minimal tracking, quiet muted
+/// labels. One editorial serif moment (the greeting) per viewport. The
+/// throughline — hierarchy comes from contrast + weight, not from loud type.
+///
+/// Canonical doc: `.agents/skills/nham-design/mobile.md`.
 library;
 
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-import '../../../theme/nham_typography.dart';
+import 'nham_typography.dart';
 
 // ── Surfaces (all solid, 100% opacity) ───────────────────────────────────
 const Color kPage = Color(0xFFFEFBF6); // app page — paper cream
@@ -23,10 +25,12 @@ const Color kTrack = Color(0xFFF1EFE9); // ring/bar tracks — the ONLY low-cont
 const Color kHairline = Color(0xFFE8D5B5); // the one border (biscotti, solid)
 const Color kFieldFill = Color(0xFFF6F1E8); // soft warm fill for inputs
 
-// ── Text — exactly 3 colors, all 100% opacity ────────────────────────────
-const Color kInk = Color(0xFF2C2416); // espresso — primary data
-const Color kInkSecondary = Color(0xFF8B7355); // warm taupe — labels/units/captions
-const Color kInkDisabled = Color(0xFFA8A29E); // stone — disabled metadata ≥13px ONLY
+// ── Text colours — the app uses exactly TWO (Threads: black + grey) ────────
+const Color kInk = Color(0xFF2C2416); // espresso "black" — primary data
+// Canonical calm secondary: ONE warm neutral grey for every secondary role
+// (labels, units, captions, meta, dates). This is the mobile design-system
+// secondary text colour — the only secondary text colour there is.
+const Color kInkMuted = Color(0xFF8C867C);
 
 // ── Shape ────────────────────────────────────────────────────────────────
 const double kCardRadius = 22; // one card radius — modern iOS grouped-card feel
@@ -56,30 +60,34 @@ const BoxShadow kCardShadow = BoxShadow(
 
 const List<FontFeature> _tnum = [FontFeature.tabularFigures()];
 
-// ── Type — Be Vietnam Pro only, 5 sizes (40 / 20 / 15 / 13 / 11) ──────────
+// ── Type — Be Vietnam Pro only, 5 sizes (40 / 17 / 14 / 12 / 11) ──────────
+// Threads / Apple Health calm: labels recede (muted taupe, never espresso),
+// content is small + regular, hierarchy comes from weight + colour, not size.
 
-/// 40 / 600 — the ONE hero number per card (calories remaining, weight).
+/// 40 / 500 — the ONE hero number per card (calories remaining, weight).
+/// Full size (the number is the point) but MEDIUM, not semibold — Be Vietnam
+/// Pro reads heavy, so w500 keeps it prominent without the "thick" feel.
 TextStyle dashHero({Color color = kInk}) => TextStyle(
       fontFamily: NhamTextStyles.sansFamily,
       fontSize: 40,
-      fontWeight: FontWeight.w600,
+      fontWeight: FontWeight.w500,
       height: 1.0,
-      letterSpacing: -1.2,
+      letterSpacing: -1.0,
       color: color,
       fontFeatures: _tnum,
     );
 
-/// 20 / 600 — ring-center number, macro gram values, metric values.
+/// 17 / 500 — ring-center number, macro gram values, metric values.
 TextStyle dashValue({Color color = kInk}) => TextStyle(
       fontFamily: NhamTextStyles.sansFamily,
-      fontSize: 20,
-      fontWeight: FontWeight.w600,
+      fontSize: 17,
+      fontWeight: FontWeight.w500,
       height: 1.1,
       color: color,
       fontFeatures: _tnum,
     );
 
-/// 15 / 400·500 — meal names, callout detail, the "/ target" denominator.
+/// 14 / 400·500 — meal names, callout detail, the "/ target" denominator.
 TextStyle dashBody({
   Color color = kInk,
   FontWeight weight = FontWeight.w400,
@@ -87,39 +95,42 @@ TextStyle dashBody({
 }) =>
     TextStyle(
       fontFamily: NhamTextStyles.sansFamily,
-      fontSize: 15,
+      fontSize: 14,
       fontWeight: weight,
-      height: 1.4,
+      height: 1.45,
       color: color,
       fontFeatures: tabular ? _tnum : null,
     );
 
-/// 13 / 500 — secondary captions, stat values.
-TextStyle dashMeta({Color color = kInkSecondary, bool tabular = false}) =>
+/// 12 / 400 — secondary captions, stat values (quiet, Threads-light meta).
+TextStyle dashMeta({Color color = kInkMuted, bool tabular = false}) =>
     TextStyle(
       fontFamily: NhamTextStyles.sansFamily,
-      fontSize: 13,
-      fontWeight: FontWeight.w500,
+      fontSize: 12,
+      fontWeight: FontWeight.w400,
       height: 1.35,
       color: color,
       fontFeatures: tabular ? _tnum : null,
     );
 
-/// 11 / 700 — ALL-CAPS labels (PROTEIN/CARBS/FAT, section headers, LEFT).
+/// 11 / 500 — ALL-CAPS labels (PROTEIN/CARBS/FAT, section headers). Quiet:
+/// muted taupe by default, medium weight, minimal tracking — they structure the
+/// screen without shouting. Callers should NOT force espresso (kInk) here;
+/// let labels recede so the data reads first (the Apple Health move).
 TextStyle dashEyebrow({
-  Color color = kInkSecondary,
-  FontWeight weight = FontWeight.w700,
+  Color color = kInkMuted,
+  FontWeight weight = FontWeight.w500,
 }) =>
     TextStyle(
       fontFamily: NhamTextStyles.sansFamily,
       fontSize: 11,
       fontWeight: weight,
       height: 1.3,
-      letterSpacing: 1.5,
+      letterSpacing: 0.3,
       color: color,
     );
 
-/// Lora 22 / 400 — the single editorial serif moment per viewport (week title).
+/// Lora 22 / 400 — the single editorial serif moment per viewport (greeting).
 /// Serif appears ONCE, never bold, never repeated (the Anthropic-greeting rule).
 TextStyle dashHeadline({Color color = kInk}) => GoogleFonts.lora(
       fontSize: 22,

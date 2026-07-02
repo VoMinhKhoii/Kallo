@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import '../../../theme/calm_tokens.dart';
 import '../../../theme/nham_colors.dart';
 import '../../../theme/nham_theme.dart';
-import '../../../theme/nham_typography.dart';
 
 /// A single option for [CustomSelect].
 class CustomSelectOption {
@@ -166,13 +166,8 @@ class _CustomSelectState extends State<CustomSelect>
                         selected ?? widget.placeholder ?? '',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: NhamTextStyles.sansRegular(
-                          fontSize: NhamFontSize.sm,
-                        ).copyWith(
-                          color:
-                              selected != null
-                                  ? NhamColors.text
-                                  : NhamColors.textHelp,
+                        style: dashBody(
+                          color: selected != null ? kInk : kInkMuted,
                         ),
                       ),
                     ),
@@ -335,12 +330,11 @@ class _DropdownRowState extends State<_DropdownRow> {
               Expanded(
                 child: Text(
                   widget.option.label,
-                  style: (widget.selected
-                          ? NhamTextStyles.sansMedium(fontSize: NhamFontSize.sm)
-                          : NhamTextStyles.sansRegular(
-                            fontSize: NhamFontSize.sm,
-                          ))
-                      .copyWith(color: NhamColors.text),
+                  style: dashBody(
+                    weight: widget.selected
+                        ? FontWeight.w500
+                        : FontWeight.w400,
+                  ),
                 ),
               ),
               if (widget.selected)

@@ -2,9 +2,9 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import '../../../theme/calm_tokens.dart';
 import '../../../theme/nham_colors.dart';
 import '../../../theme/nham_theme.dart';
-import '../../../theme/nham_typography.dart';
 import '../controls/country_select.dart';
 import '../widgets/profile_form_controller.dart';
 
@@ -23,9 +23,7 @@ class Regional extends StatelessWidget {
       children: [
         Text(
           tr('settings.regionalPanel.description'),
-          style: NhamTextStyles.sansRegular(fontSize: NhamFontSize.sm)
-              // leading-relaxed = 1.625
-              .copyWith(height: 1.625, color: NhamColors.textWarm),
+          style: dashBody(color: kInkMuted),
         ),
         const SizedBox(height: NhamSpacing.sp5),
         _CountryField(
@@ -70,8 +68,7 @@ class _CountryField extends StatelessWidget {
             const SizedBox(width: NhamSpacing.sp2),
             Text(
               label,
-              style: NhamTextStyles.sansMedium(fontSize: NhamFontSize.detail)
-                  .copyWith(color: NhamColors.text),
+              style: dashBody(),
             ),
           ],
         ),

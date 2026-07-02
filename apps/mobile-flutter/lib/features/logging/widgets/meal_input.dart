@@ -3,9 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:flutter/services.dart';
 
+import '../../../theme/calm_tokens.dart';
 import '../../../theme/nham_colors.dart';
 import '../../../theme/nham_theme.dart';
-import '../../../theme/nham_typography.dart';
 
 /// Imperative handle for [MealInput] — the RN `MealInputHandle`
 /// (`getText` / `clear` / `focus` / `setText`). The feed clears the field on
@@ -171,10 +171,7 @@ class _MealInputState extends State<MealInput>
               maxLines: null,
               keyboardType: TextInputType.multiline,
               textInputAction: TextInputAction.newline,
-              style: NhamTextStyles.sansRegular(
-                fontSize: NhamFontSize.sm,
-                height: 20 / 14, // leading-5 (20px) at text-sm (14px)
-              ).copyWith(color: NhamColors.text),
+              style: dashBody(),
               cursorColor: NhamColors.accent,
               decoration: InputDecoration(
                 isCollapsed: true,
@@ -186,10 +183,7 @@ class _MealInputState extends State<MealInput>
                   vertical: 6,
                 ), // py-1.5
                 hintText: 'logging.composerPlaceholder'.tr(),
-                hintStyle: NhamTextStyles.sansRegular(
-                  fontSize: NhamFontSize.sm,
-                  height: 20 / 14,
-                ).copyWith(color: NhamColors.placeholderMuted40),
+                hintStyle: dashBody(color: kInkMuted),
               ),
             ),
           ),
@@ -276,9 +270,10 @@ class _ModeButtonState extends State<_ModeButton> {
                     const SizedBox(width: 6),
                     Text(
                       widget.label,
-                      style: NhamTextStyles.sansMedium(
-                        fontSize: NhamFontSize.sm,
-                      ).copyWith(color: NhamColors.btn),
+                      style: dashBody(
+                        color: NhamColors.btn,
+                        weight: FontWeight.w500,
+                      ),
                     ),
                   ],
                 ),

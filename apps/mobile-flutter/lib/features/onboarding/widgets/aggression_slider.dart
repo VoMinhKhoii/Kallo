@@ -1,9 +1,9 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
+import '../../../theme/calm_tokens.dart';
 import '../../../theme/nham_colors.dart';
 import '../../../theme/nham_theme.dart';
-import '../../../theme/nham_typography.dart';
 import '../data/constants.dart';
 
 /// Mirror of `components/onboarding/screen-body-metrics.tsx` aggression block.
@@ -47,21 +47,19 @@ class AggressionSlider extends StatelessWidget {
             children: [
               Text(
                 tr('onboarding.bodyMetrics.aggression'),
-                style: NhamTextStyles.sansBold(fontSize: 13)
-                    .copyWith(color: NhamColors.text),
+                style: dashBody(weight: FontWeight.w500),
               ),
               Text.rich(
                 TextSpan(
                   children: [
                     TextSpan(text: aggressionKg.toStringAsFixed(1)),
-                    const TextSpan(
+                    TextSpan(
                       text: ' kg/week',
-                      style: TextStyle(color: NhamColors.textHelp),
+                      style: dashMeta(),
                     ),
                   ],
                 ),
-                style: NhamTextStyles.sansMedium(fontSize: 14)
-                    .copyWith(color: NhamColors.text),
+                style: dashBody(weight: FontWeight.w500, tabular: true),
               ),
             ],
           ),
@@ -121,15 +119,13 @@ class AggressionSlider extends StatelessWidget {
                   const TextSpan(text: 'Translates to a '),
                   TextSpan(
                     text: '~$kcalDelta kcal/day',
-                    style: NhamTextStyles.sansMedium(fontSize: 12)
-                        .copyWith(color: NhamColors.text),
+                    style: dashMeta(color: kInk),
                   ),
                   TextSpan(text: ' ${isCutting ? 'deficit' : 'surplus'}.'),
                 ],
               ),
               textAlign: TextAlign.center,
-              style: NhamTextStyles.sansRegular(fontSize: 12)
-                  .copyWith(color: NhamColors.stone), // #A8A29E
+              style: dashMeta(),
             ),
           ),
         ],
@@ -139,11 +135,6 @@ class AggressionSlider extends StatelessWidget {
 
   Widget _endLabel(String text, {required bool active}) => Text(
         text,
-        style: (active
-                ? NhamTextStyles.sansBold(fontSize: 11)
-                : NhamTextStyles.sansRegular(fontSize: 11))
-            .copyWith(
-          color: active ? NhamColors.text : NhamColors.textHelp,
-        ),
+        style: dashMeta(color: active ? kInk : kInkMuted),
       );
 }

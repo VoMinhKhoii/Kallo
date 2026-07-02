@@ -20,7 +20,7 @@ import '../../../shared/widgets/widgets.dart';
 import '../../../theme/nham_colors.dart';
 import '../../../theme/nham_theme.dart';
 import '../data/dashboard_providers.dart';
-import 'dashboard_tokens.dart';
+import '../../../theme/calm_tokens.dart';
 
 const double _weightMin = 30;
 const double _weightMax = 300;
@@ -224,7 +224,7 @@ class _CompactWeightLogState extends ConsumerState<CompactWeightLog> {
             ),
             // Suffix in-flow (no Positioned overlay → no overlap).
             suffixText: tr('dashboard.units.kg'),
-            suffixStyle: dashMeta(color: kInkSecondary),
+            suffixStyle: dashMeta(color: kInkMuted),
             border: _border(Colors.transparent),
             enabledBorder:
                 _border(hasError ? NhamColors.danger : Colors.transparent),
@@ -273,7 +273,7 @@ class _CompactWeightLogState extends ConsumerState<CompactWeightLog> {
             padding: const EdgeInsets.only(top: NhamSpacing.sp2),
             child: Text(
               tr('dashboard.weightCard.editHint'),
-              style: dashMeta(color: kInkDisabled),
+              style: dashMeta(color: kInkMuted),
             ),
           ),
       ],

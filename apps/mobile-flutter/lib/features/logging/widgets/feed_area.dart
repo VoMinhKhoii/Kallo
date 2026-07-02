@@ -2,7 +2,6 @@ import 'dart:async' show unawaited;
 import 'dart:math' as math;
 
 import 'package:easy_localization/easy_localization.dart';
-import 'package:flutter/foundation.dart' show defaultTargetPlatform;
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:flutter/services.dart';
@@ -13,9 +12,9 @@ import '../../../data/api_client.dart';
 import '../../../models/meal.dart';
 import '../../../models/streaming.dart';
 import '../../../shared/widgets/nham_text.dart';
+import '../../../theme/calm_tokens.dart';
 import '../../../theme/nham_colors.dart';
 import '../../../theme/nham_theme.dart';
-import '../../../theme/nham_typography.dart';
 import '../data/logging_keys.dart';
 import '../data/logging_models.dart';
 import '../data/logging_providers.dart';
@@ -460,9 +459,7 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
                       child: NhamText(
                         'logging.feedArea.legacyMacroWarning'.tr(),
                         variant: NhamTextVariant.small,
-                        style: NhamTextStyles.sansMedium(
-                          fontSize: NhamFontSize.eyebrow + 1,
-                        ).copyWith(color: NhamColors.textMuted80),
+                        style: dashMeta(),
                       ),
                     )
                     : Row(
@@ -545,7 +542,7 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
             child: NhamText(
               _errorText!,
               variant: NhamTextVariant.small,
-              style: const TextStyle(color: NhamColors.danger),
+              style: dashMeta(color: NhamColors.danger),
             ),
           ),
 
@@ -566,10 +563,10 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
             onModePressed: _openModeSheet,
             // iOS-only for now (matches the mode sheet's gating); null hides
             // the composer icon entirely.
+            // Gated to iOS via the shared `isBarcodeLoggingSupported` (same
+            // source of truth as the mode sheet); null hides the composer icon.
             onBarcodePressed:
-                defaultTargetPlatform == TargetPlatform.iOS
-                    ? _openBarcodeSheet
-                    : null,
+                isBarcodeLoggingSupported ? _openBarcodeSheet : null,
           ),
         ),
       ],
@@ -907,7 +904,7 @@ class _FailedAttemptCard extends StatelessWidget {
             NhamText(
               'logging.failedAttempt.message'.tr(),
               variant: NhamTextVariant.small,
-              style: const TextStyle(color: NhamColors.danger),
+              style: dashMeta(color: NhamColors.danger),
             ),
             const SizedBox(height: NhamSpacing.sp4),
             Row(
@@ -963,9 +960,7 @@ class _RetryButtonState extends State<_RetryButton> {
               NhamText(
                 'logging.failedAttempt.tryAgain'.tr(),
                 variant: NhamTextVariant.body,
-                style: NhamTextStyles.sansMedium(
-                  fontSize: NhamFontSize.xs,
-                ).copyWith(color: Colors.white),
+                style: dashBody(color: Colors.white, weight: FontWeight.w500),
               ),
             ],
           ),
@@ -1007,9 +1002,7 @@ class _DiscardButtonState extends State<_DiscardButton> {
           child: NhamText(
             'logging.discard'.tr(),
             variant: NhamTextVariant.body,
-            style: NhamTextStyles.sansMedium(
-              fontSize: NhamFontSize.xs,
-            ).copyWith(color: NhamColors.textMuted),
+            style: dashBody(color: kInkMuted, weight: FontWeight.w500),
           ),
         ),
       ),
@@ -1054,7 +1047,7 @@ class _PartialDayNotice extends StatelessWidget {
               },
             ),
             variant: NhamTextVariant.small,
-            style: const TextStyle(color: NhamColors.textMuted),
+            style: dashMeta(),
           ),
         ],
       ),
@@ -1092,7 +1085,7 @@ class _MacroRow extends StatelessWidget {
             maxLines: 1,
             softWrap: false,
             overflow: TextOverflow.clip,
-            style: const TextStyle(color: NhamColors.textMuted70),
+            style: dashEyebrow(),
           ),
         ),
         const SizedBox(width: NhamSpacing.sp3), // gap-3
@@ -1409,15 +1402,13 @@ class _LoggingDayErrorState extends StatelessWidget {
                     NhamText(
                       'logging.feedArea.loadErrorTitle'.tr(),
                       variant: NhamTextVariant.small,
-                      style: NhamTextStyles.sansSemiBold(
-                        fontSize: NhamFontSize.sm,
-                      ).copyWith(color: NhamColors.text),
+                      style: dashBody(weight: FontWeight.w500),
                     ),
                     const SizedBox(height: 4), // mt-1
                     NhamText(
                       'logging.feedArea.loadErrorDescription'.tr(),
                       variant: NhamTextVariant.small,
-                      style: const TextStyle(color: NhamColors.textMuted),
+                      style: dashMeta(),
                     ),
                     const SizedBox(height: NhamSpacing.sp3), // mt-3
                     _RetryPill(onRetry: onRetry),
@@ -1462,9 +1453,10 @@ class _RetryPill extends StatelessWidget {
             NhamText(
               'logging.feedArea.retryDay'.tr(),
               variant: NhamTextVariant.small,
-              style: NhamTextStyles.sansMedium(
-                fontSize: NhamFontSize.sm,
-              ).copyWith(color: NhamColors.danger),
+              style: dashBody(
+                color: NhamColors.danger,
+                weight: FontWeight.w500,
+              ),
             ),
           ],
         ),

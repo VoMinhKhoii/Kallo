@@ -1,9 +1,9 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
+import '../../../theme/calm_tokens.dart';
 import '../../../theme/nham_colors.dart';
 import '../../../theme/nham_theme.dart';
-import '../../../theme/nham_typography.dart';
 
 /// "Continue with Apple" — a custom button matching the Google / email buttons.
 ///
@@ -71,7 +71,7 @@ class _AppleButtonState extends State<AppleButton> {
               const SizedBox(width: 8),
               Text(
                 tr('auth.dialog.continueWithApple'),
-                style: NhamTextStyles.sansMedium(fontSize: NhamFontSize.md)
+                style: dashBody(weight: FontWeight.w500)
                     .copyWith(color: NhamColors.elev, letterSpacing: -0.2),
               ),
             ],

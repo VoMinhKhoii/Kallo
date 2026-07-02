@@ -17,7 +17,7 @@ import 'package:flutter/material.dart';
 
 import '../../../theme/nham_colors.dart';
 import '../../../theme/nham_theme.dart';
-import 'dashboard_tokens.dart';
+import '../../../theme/calm_tokens.dart';
 
 const double _chartAspect = 1.95; // canvas width : height (framed chart)
 const int _rangeDays = 30; // mobile resolves the weight window to 30 days
@@ -88,7 +88,7 @@ class WeightChartCanvas extends StatelessWidget {
         child: Text(
           tr('dashboard.noWeightData'),
           textAlign: TextAlign.center,
-          style: dashMeta(color: kInkDisabled),
+          style: dashMeta(color: kInkMuted),
         ),
       );
     }
@@ -123,7 +123,7 @@ class WeightChartCanvas extends StatelessWidget {
       for (var i = 0; i < weights.length; i++) FlSpot(i.toDouble(), weights[i]),
     ];
 
-    final axisLabel = dashMeta(color: kInkDisabled).copyWith(fontSize: 9);
+    final axisLabel = dashMeta(color: kInkMuted).copyWith(fontSize: 9);
     final gridLine = FlLine(
       color: NhamColors.border.withValues(alpha: 0.5),
       strokeWidth: 1,
@@ -162,7 +162,7 @@ class WeightChartCanvas extends StatelessWidget {
             leftTitles: AxisTitles(
               sideTitles: SideTitles(
                 showTitles: true,
-                reservedSize: 28,
+                reservedSize: 34,
                 interval: yStep,
                 getTitlesWidget: (value, meta) => SideTitleWidget(
                   meta: meta,
@@ -171,6 +171,9 @@ class WeightChartCanvas extends StatelessWidget {
                         ? value.toStringAsFixed(0)
                         : value.toStringAsFixed(1),
                     style: axisLabel,
+                    maxLines: 1,
+                    softWrap: false,
+                    overflow: TextOverflow.visible,
                   ),
                 ),
               ),

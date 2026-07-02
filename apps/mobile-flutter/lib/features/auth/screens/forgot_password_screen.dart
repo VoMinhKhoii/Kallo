@@ -5,6 +5,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../data/env.dart';
 import '../../../services/supabase_service.dart';
 import '../../../shared/widgets/nham_primitives.dart';
+import '../../../theme/calm_tokens.dart';
 import '../../../theme/nham_colors.dart';
 import '../../../theme/nham_typography.dart';
 import '../widgets/auth_submit_button.dart';
@@ -103,9 +104,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
         Text(
           tr('auth.forgot.description'),
           textAlign: TextAlign.center,
-          style: NhamTextStyles.sansRegular(
-            fontSize: NhamFontSize.sm,
-          ).copyWith(color: NhamColors.textMuted, height: 1.5),
+          style: dashBody(color: kInkMuted),
         ),
         const SizedBox(height: 20),
         AuthTextField(
@@ -164,9 +163,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
         Text(
           tr('auth.forgot.sentDescription'),
           textAlign: TextAlign.center,
-          style: NhamTextStyles.sansRegular(
-            fontSize: NhamFontSize.sm,
-          ).copyWith(color: NhamColors.textMuted, height: 1.5),
+          style: dashBody(color: kInkMuted),
         ),
         const SizedBox(height: 4),
         Text(
@@ -212,9 +209,7 @@ class _BackHeader extends StatelessWidget {
               const SizedBox(width: 6),
               Text(
                 tr('auth.forgot.back'),
-                style: NhamTextStyles.sansMedium(
-                  fontSize: NhamFontSize.sm,
-                ).copyWith(color: NhamColors.textMuted),
+                style: dashBody(color: kInkMuted),
               ),
             ],
           ),
