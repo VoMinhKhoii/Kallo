@@ -50,7 +50,7 @@ const List<_NavItem> _navItems = [
     icon: LucideIcons.utensilsCrossed,
   ),
   _NavItem(
-    href: '/groups',
+    href: '/circle',
     labelKey: 'app.mainSidebar.groups',
     icon: LucideIcons.users,
   ),

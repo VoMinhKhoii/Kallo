@@ -8,6 +8,9 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'data/session_provider.dart';
 import 'features/auth/screens/sign_in_screen.dart';
 import 'features/auth/screens/sign_up_screen.dart';
+import 'features/circle/data/circle_providers.dart';
+import 'features/circle/screens/circle_screen.dart';
+import 'features/circle/screens/connect_screen.dart';
 import 'features/dashboard/screens/dashboard_screen.dart';
 import 'features/logging/screens/logging_screen.dart';
 import 'features/nutrition/screens/nutrition_screen.dart';
@@ -29,7 +32,7 @@ final _shellKey = GlobalKey<NavigatorState>(debugLabel: 'shell');
 /// Routing model (per the port contract):
 ///   • A [StatefulShellRoute] hosts the primary destinations behind the bottom
 ///     tab bar (`/dashboard`, `/nutrition`, `/logging`) plus the off-bar
-///     `/groups` and `/admin`. Each is its own branch so state/scroll persist
+///     `/circle` and `/admin`. Each is its own branch so state/scroll persist
 ///     across tab switches.
 ///   • `/sign-in`, `/sign-up`, `/onboarding`, `/welcome`, and `/settings` are
 ///     standalone root routes (`/settings` pushes over the shell from the
@@ -83,9 +86,12 @@ final routerProvider = Provider<GoRouter>((ref) {
       final atOnboarding = loc == '/onboarding';
       final atWelcome = loc == '/welcome';
 
-      // Signed out: only the auth routes are reachable.
+      // Signed out: only the auth routes — and the invite connect screen —
+      // are reachable. The connect screen renders the "sign in to connect"
+      // state itself (and stashes the slug), so it must NOT bounce to sign-in.
       if (!signedIn) {
-        return atAuth ? null : '/sign-in';
+        if (atAuth || loc.startsWith('/circle/invite/')) return null;
+        return '/sign-in';
       }
 
       // The post-finish setup interstitial is always reachable while signed in
@@ -118,6 +124,11 @@ final routerProvider = Provider<GoRouter>((ref) {
       // Not forced: bounce away from the index / auth / onboarding routes into
       // the app; leave in-app tab routes (and /welcome, handled above) alone.
       if (loc == '/' || atAuth || atOnboarding) {
+        // A pending invite (stashed when a signed-out user opened an invite
+        // link) wins over the dashboard, so the invite survives the sign-in
+        // detour. The connect screen clears it on mount.
+        final pending = ref.read(pendingInviteSlugProvider);
+        if (pending != null) return '/circle/invite/$pending';
         return '/dashboard';
       }
       return null;
@@ -146,6 +157,15 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/welcome',
         parentNavigatorKey: _rootKey,
         builder: (context, state) => const WelcomeSetupScreen(),
+      ),
+      // Invite-accept deep link (`nham://invite/<slug>` / https invite links).
+      // Pushed over the shell so it overlays the app; reachable while signed
+      // out (it renders the sign-in CTA itself).
+      GoRoute(
+        path: '/circle/invite/:slug',
+        parentNavigatorKey: _rootKey,
+        builder: (context, state) =>
+            ConnectScreen(slug: state.pathParameters['slug'] ?? ''),
       ),
       // Settings pushes over the shell (Cupertino swipe-back) from the header
       // avatar — it's an account surface, not a primary tab destination.
@@ -191,17 +211,13 @@ final routerProvider = Provider<GoRouter>((ref) {
               ),
             ],
           ),
-          // Groups + Admin exist as web nav destinations but their Flutter
-          // feature screens aren't ported yet; route to a shell placeholder so
-          // the drawer nav model stays faithful without inventing feature UI.
+          // Circle (the social surface, formerly "Groups"). Admin remains a
+          // placeholder until its Flutter screen is ported.
           StatefulShellBranch(
             routes: [
               GoRoute(
-                path: '/groups',
-                builder:
-                    (context, state) => const PlaceholderScreen(
-                      titleKey: 'app.mainSidebar.groups',
-                    ),
+                path: '/circle',
+                builder: (context, state) => const CircleScreen(),
               ),
             ],
           ),

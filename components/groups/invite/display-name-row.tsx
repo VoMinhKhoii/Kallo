@@ -32,11 +32,12 @@ export function DisplayNameRow({ profile }: { profile: PublicProfile }) {
       return;
     }
     saveProfile.mutate(
-      // Empty draft clears the name (undefined → null server-side); the handle
-      // always rides along because the upsert requires it.
+      // Empty draft clears the name (explicit null — omitting the field now
+      // means "keep"); the handle always rides along because the upsert
+      // requires it.
       {
         handle: profile.handle,
-        displayName: next.length > 0 ? next : undefined,
+        displayName: next.length > 0 ? next : null,
       },
       {
         onSuccess: () => {

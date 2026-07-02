@@ -55,7 +55,8 @@ export function fetchMyProfile(): Promise<PublicProfile> {
 
 export function saveMyProfile(input: {
   handle: string;
-  displayName?: string;
+  /** Omitted = keep the stored name; `null` = clear it back to the handle. */
+  displayName?: string | null;
 }): Promise<PublicProfile> {
   return postJson<{ profile: PublicProfile }>(
     '/api/v1/groups/profile',

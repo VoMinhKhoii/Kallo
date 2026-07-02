@@ -84,7 +84,7 @@ export const CIRCLE_FEED_FRIEND_CAP = 20;
 
 export async function upsertPublicProfile(
   actorId: string,
-  input: { handle: string; displayName?: string; avatarSeed?: string },
+  input: { handle: string; displayName?: string | null; avatarSeed?: string },
   db: Db = defaultDb
 ): Promise<PublicProfile> {
   const parsed = upsertPublicProfileSchema.parse(input);
@@ -115,6 +115,20 @@ export async function upsertPublicProfile(
   // not supply one, so every claimed profile renders a stable, distinct color.
   const avatarSeed = parsed.avatarSeed ?? handle;
 
+  // Tri-state update: an omitted field KEEPS the stored value (a slug-only
+  // save must not wipe the display name or reset the avatar seed); an explicit
+  // `displayName: null` clears it back to the handle fallback.
+  const update: Partial<typeof publicProfiles.$inferInsert> = {
+    handle,
+    updatedAt: new Date(),
+  };
+  if (parsed.displayName !== undefined) {
+    update.displayName = parsed.displayName;
+  }
+  if (parsed.avatarSeed !== undefined) {
+    update.avatarSeed = parsed.avatarSeed;
+  }
+
   try {
     const [row] = await db
       .insert(publicProfiles)
@@ -126,12 +140,7 @@ export async function upsertPublicProfile(
       })
       .onConflictDoUpdate({
         target: publicProfiles.userId,
-        set: {
-          handle,
-          displayName: parsed.displayName ?? null,
-          avatarSeed,
-          updatedAt: new Date(),
-        },
+        set: update,
       })
       .returning();
 

@@ -171,8 +171,10 @@ class ApiClient {
   Future<T> put<T>(String path, [Object? body]) =>
       _request<T>('PUT', path, body ?? const <String, dynamic>{});
 
-  /// DELETE.
-  Future<T> delete<T>(String path) => _request<T>('DELETE', path);
+  /// DELETE — optionally with a JSON body (e.g. `friends/remove` takes
+  /// `{ targetUserId }`).
+  Future<T> delete<T>(String path, [Object? body]) =>
+      _request<T>('DELETE', path, body);
 
   /// Permanently delete the signed-in user's account and all their data
   /// (`DELETE /api/v1/account`). The server removes the Supabase auth user,

@@ -26,12 +26,18 @@ dependencies:
   lucide_icons_flutter: ^3.1.14
   mobile_scanner: ^7.0.1
   intl: ^0.20.2
+  # Grapheme-safe string handling for avatar initials (already transitive via
+  # Flutter; declared directly since lib/models is pure Dart, no Flutter import).
+  characters: ^1.4.0
   uuid: ^4.5.1
   sign_in_with_apple: ^6.1.4
   google_sign_in: ^7.2.0
   crypto: ^3.0.6
   share_plus: ^10.1.4
   path_provider: ^2.1.5
+  # Inbound deep links (invite links). Already present transitively via
+  # supabase_flutter; promoted to a direct dep for the invite-link listener.
+  app_links: ^7.1.1
 
 dev_dependencies:
   flutter_test:

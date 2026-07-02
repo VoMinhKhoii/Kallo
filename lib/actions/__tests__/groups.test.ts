@@ -93,6 +93,7 @@ import {
   getProfileBySlug,
   listCircleFeed,
   removeFriend,
+  upsertPublicProfile,
 } from '@/lib/actions/groups';
 
 // Valid v4 UUIDs (the remove/uuid schemas validate version+variant bits).
@@ -523,5 +524,85 @@ describe('listCircleFeed', () => {
     const serialized = JSON.stringify(capture.where ?? {});
     expect(serialized).toContain(ACTOR);
     expect(serialized).toContain(FRIEND);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// upsertPublicProfile — tri-state displayName (omitted=keep, null=clear)
+// ---------------------------------------------------------------------------
+
+describe('upsertPublicProfile', () => {
+  // Capture the insert values and the ON CONFLICT update set.
+  function captureUpsert() {
+    const captured: {
+      values?: Record<string, unknown>;
+      set?: Record<string, unknown>;
+    } = {};
+    mockDbInsert.mockImplementation(() => ({
+      values: vi.fn().mockImplementation((vals: Record<string, unknown>) => {
+        captured.values = vals;
+        return {
+          onConflictDoUpdate: vi
+            .fn()
+            .mockImplementation((cfg: { set: Record<string, unknown> }) => {
+              captured.set = cfg.set;
+              return {
+                returning: vi.fn().mockResolvedValue([
+                  {
+                    userId: ACTOR,
+                    handle: SLUG,
+                    displayName: 'Phở Fan',
+                    avatarSeed: SLUG,
+                  },
+                ]),
+              };
+            }),
+        };
+      }),
+    }));
+    return captured;
+  }
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    // Handle-taken pre-check: not taken.
+    mockDbSelect.mockReturnValue(selectRows([]));
+  });
+
+  it('a slug-only save preserves the stored display name and avatar seed', async () => {
+    const captured = captureUpsert();
+
+    await upsertPublicProfile(ACTOR, { handle: SLUG });
+
+    // The update set must NOT touch displayName/avatarSeed when omitted —
+    // this is the regression where renaming your link wiped your name.
+    expect(captured.set).not.toHaveProperty('displayName');
+    expect(captured.set).not.toHaveProperty('avatarSeed');
+    expect(captured.set).toHaveProperty('handle', SLUG);
+  });
+
+  it('an explicit null clears the display name', async () => {
+    const captured = captureUpsert();
+
+    await upsertPublicProfile(ACTOR, { handle: SLUG, displayName: null });
+
+    expect(captured.set).toHaveProperty('displayName', null);
+  });
+
+  it('a provided display name is set on both insert and update', async () => {
+    const captured = captureUpsert();
+
+    await upsertPublicProfile(ACTOR, { handle: SLUG, displayName: 'Bún Chả' });
+
+    expect(captured.values).toHaveProperty('displayName', 'Bún Chả');
+    expect(captured.set).toHaveProperty('displayName', 'Bún Chả');
+  });
+
+  it('rejects an empty-string display name (clear is null, not "")', async () => {
+    captureUpsert();
+
+    await expect(
+      upsertPublicProfile(ACTOR, { handle: SLUG, displayName: '' })
+    ).rejects.toThrow();
   });
 });

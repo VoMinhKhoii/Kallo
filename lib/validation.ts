@@ -99,10 +99,14 @@ export const handleSchema = z
   .max(20, 'Handle tối đa 20 ký tự.')
   .regex(/^[a-z0-9_]+$/u, 'Handle chỉ gồm chữ thường, số và dấu gạch dưới.');
 
-/** Upsert the caller's own public profile. */
+/** Upsert the caller's own public profile.
+ *
+ * `displayName` is tri-state: omitted = keep the stored value, `null` = clear
+ * it (fall back to the handle), string = set it. A slug-only save must never
+ * wipe the display name. `avatarSeed` likewise only overwrites when provided. */
 export const upsertPublicProfileSchema = z.object({
   handle: handleSchema,
-  displayName: z.string().trim().min(1).max(50).optional(),
+  displayName: z.string().trim().min(1).max(50).nullish(),
   avatarSeed: z.string().trim().min(1).max(64).optional(),
 });
 
