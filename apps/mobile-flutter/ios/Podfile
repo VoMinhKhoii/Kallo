@@ -1,5 +1,6 @@
-# Uncomment this line to define a global platform for your project
-# platform :ios, '13.0'
+# mobile_scanner's iOS implementation (Vision / AVFoundation) requires 15.5+.
+# That floor still covers every device back to the iPhone 6s.
+platform :ios, '15.5'
 
 # CocoaPods analytics sends network stats synchronously affecting flutter build latency.
 ENV['COCOAPODS_DISABLE_STATS'] = 'true'

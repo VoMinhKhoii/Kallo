@@ -27,6 +27,7 @@ import 'calorie_ring.dart';
 import '../../../shared/widgets/top_toast.dart';
 import 'empty_state.dart';
 import 'entrances.dart';
+import 'barcode_scanner_sheet.dart';
 import 'manual_log_sheet.dart';
 import 'meal_entry.dart';
 import 'meal_input.dart';
@@ -147,8 +148,9 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
   }
 
   /// The first step: choose how to log. Normal focuses the composer; Manual
-  /// opens the search-and-grams sheet (a one-shot, not a persistent mode); Cheat
-  /// meal ports from web later, so it just acknowledges for now.
+  /// opens the search-and-grams sheet (a one-shot, not a persistent mode);
+  /// Barcode opens the scanner sheet (also one-shot); Cheat meal ports from
+  /// web later, so it just acknowledges for now.
   Future<void> _openModeSheet() async {
     final picked = await showMealModeSheet(context, current: _mode);
     if (picked == null || !mounted) return;
@@ -162,8 +164,28 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
           userId: widget.profile.userId,
           date: widget.date,
         );
+      case MealLogMode.barcode:
+        _openBarcodeSheet();
       case MealLogMode.cheat:
         showTopToast(context, 'logging.modeSelector.comingSoon'.tr());
+    }
+  }
+
+  /// One-shot barcode scan → quantity → save. Unlike manual (which saves
+  /// silently), barcode persists the meal in one server call with no pending
+  /// card, so a success toast is the only confirmation the user gets.
+  Future<void> _openBarcodeSheet() async {
+    final saved = await showBarcodeScannerSheet(
+      context,
+      userId: widget.profile.userId,
+      date: widget.date,
+      // Product not found → the AI composer is the better tool: pop the sheet
+      // and hand the user the keyboard.
+      onFallbackToText: () => _inputController.focus(),
+    );
+    if (saved == true && mounted) {
+      HapticFeedback.mediumImpact();
+      showTopToast(context, 'logging.barcode.savedMeal'.tr());
     }
   }
 
@@ -193,60 +215,60 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
         }
       },
     ).then((_) async {
-          if (undone || !mounted) return;
-          try {
-            await ref
-                .read(apiClientProvider)
-                .delete<void>('/api/v1/meals/${Uri.encodeComponent(meal.id)}');
-          } catch (_) {
-            // The server rejected the delete — releasing the id makes the card
-            // reappear (the cache was never mutated), keeping the feed truthful.
-            ref.invalidate(loggingDayProvider(_dayArgs));
-            ref.invalidate(
-              dash.dashboardBundleProvider((
-                userId: widget.profile.userId,
-                date: widget.date,
-              )),
-            );
-            ref.invalidate(
-              dash.dashboardDayProvider((
-                userId: widget.profile.userId,
-                date: widget.date,
-              )),
-            );
-            if (mounted) {
-              setState(() {
-                _pendingRemovalIds.remove(meal.id);
-                _errorText = 'errors.internal'.tr();
-              });
-            }
-            return;
-          }
-          if (!mounted) return;
-          // The delete landed — heal every cache that carries this date before
-          // releasing the id, so the refetched day (sans meal) is what renders.
-          ref.invalidate(mealDatesProvider(widget.profile.userId));
-          ref.invalidate(
-            dash.dashboardBundleProvider((
-              userId: widget.profile.userId,
-              date: widget.date,
-            )),
-          );
-          ref.invalidate(
-            dash.dashboardDayProvider((
-              userId: widget.profile.userId,
-              date: widget.date,
-            )),
-          );
-          try {
-            await ref.read(loggingDayProvider(_dayArgs).notifier).refresh();
-          } catch (_) {
-            // The refetch failing doesn't un-delete the meal — keep the id
-            // filtered (a harmless no-op once a later fetch succeeds).
-            return;
-          }
-          if (mounted) setState(() => _pendingRemovalIds.remove(meal.id));
-        });
+      if (undone || !mounted) return;
+      try {
+        await ref
+            .read(apiClientProvider)
+            .delete<void>('/api/v1/meals/${Uri.encodeComponent(meal.id)}');
+      } catch (_) {
+        // The server rejected the delete — releasing the id makes the card
+        // reappear (the cache was never mutated), keeping the feed truthful.
+        ref.invalidate(loggingDayProvider(_dayArgs));
+        ref.invalidate(
+          dash.dashboardBundleProvider((
+            userId: widget.profile.userId,
+            date: widget.date,
+          )),
+        );
+        ref.invalidate(
+          dash.dashboardDayProvider((
+            userId: widget.profile.userId,
+            date: widget.date,
+          )),
+        );
+        if (mounted) {
+          setState(() {
+            _pendingRemovalIds.remove(meal.id);
+            _errorText = 'errors.internal'.tr();
+          });
+        }
+        return;
+      }
+      if (!mounted) return;
+      // The delete landed — heal every cache that carries this date before
+      // releasing the id, so the refetched day (sans meal) is what renders.
+      ref.invalidate(mealDatesProvider(widget.profile.userId));
+      ref.invalidate(
+        dash.dashboardBundleProvider((
+          userId: widget.profile.userId,
+          date: widget.date,
+        )),
+      );
+      ref.invalidate(
+        dash.dashboardDayProvider((
+          userId: widget.profile.userId,
+          date: widget.date,
+        )),
+      );
+      try {
+        await ref.read(loggingDayProvider(_dayArgs).notifier).refresh();
+      } catch (_) {
+        // The refetch failing doesn't un-delete the meal — keep the id
+        // filtered (a harmless no-op once a later fetch succeeds).
+        return;
+      }
+      if (mounted) setState(() => _pendingRemovalIds.remove(meal.id));
+    });
   }
 
   /// Pull-to-refresh: refetch the day + the meal-dates strip. Awaited so the
@@ -539,6 +561,12 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
             modeLabel: mealModeLabel(_mode),
             modeIcon: mealModeIcon(_mode),
             onModePressed: _openModeSheet,
+            // iOS-only for now (matches the mode sheet's gating); null hides
+            // the composer icon entirely.
+            // Gated to iOS via the shared `isBarcodeLoggingSupported` (same
+            // source of truth as the mode sheet); null hides the composer icon.
+            onBarcodePressed:
+                isBarcodeLoggingSupported ? _openBarcodeSheet : null,
           ),
         ),
       ],
@@ -857,39 +885,39 @@ class _FailedAttemptCard extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(bottom: NhamSpacing.sp3),
       child: Container(
-          padding: const EdgeInsets.all(NhamSpacing.sp4),
-          decoration: BoxDecoration(
-            color: NhamColors.surface,
-            borderRadius: BorderRadius.circular(NhamRadii.containerLg),
-            border: Border.all(color: NhamColors.borderSoft),
-            boxShadow: const [NhamShadows.sm],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              NhamText(
-                rawInput,
-                variant: NhamTextVariant.mealQuote,
-                style: const TextStyle(fontSize: 17, height: 28 / 17),
-              ),
-              const SizedBox(height: NhamSpacing.sp3),
-              NhamText(
-                'logging.failedAttempt.message'.tr(),
-                variant: NhamTextVariant.small,
-                style: dashMeta(color: NhamColors.danger),
-              ),
-              const SizedBox(height: NhamSpacing.sp4),
-              Row(
-                children: [
-                  Expanded(child: _RetryButton(onTap: onRetry)),
-                  const SizedBox(width: NhamSpacing.sp2),
-                  _DiscardButton(onTap: onDiscard),
-                ],
-              ),
-            ],
-          ),
+        padding: const EdgeInsets.all(NhamSpacing.sp4),
+        decoration: BoxDecoration(
+          color: NhamColors.surface,
+          borderRadius: BorderRadius.circular(NhamRadii.containerLg),
+          border: Border.all(color: NhamColors.borderSoft),
+          boxShadow: const [NhamShadows.sm],
         ),
-      );
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            NhamText(
+              rawInput,
+              variant: NhamTextVariant.mealQuote,
+              style: const TextStyle(fontSize: 17, height: 28 / 17),
+            ),
+            const SizedBox(height: NhamSpacing.sp3),
+            NhamText(
+              'logging.failedAttempt.message'.tr(),
+              variant: NhamTextVariant.small,
+              style: dashMeta(color: NhamColors.danger),
+            ),
+            const SizedBox(height: NhamSpacing.sp4),
+            Row(
+              children: [
+                Expanded(child: _RetryButton(onTap: onRetry)),
+                const SizedBox(width: NhamSpacing.sp2),
+                _DiscardButton(onTap: onDiscard),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
 
@@ -1267,67 +1295,66 @@ class _LoggingDaySkeleton extends StatelessWidget {
     Widget ghostCard(bool isLast) => Padding(
       padding: const EdgeInsets.only(bottom: NhamSpacing.sp8), // gap-8
       child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _bar(64, 12, const Color(0xB3E8D5B5)), // border/70 time bar
-            const SizedBox(height: NhamSpacing.sp2), // mb-2
-            Container(
-              padding: const EdgeInsets.all(NhamSpacing.sp4), // p-5→16
-              decoration: BoxDecoration(
-                color: const Color(0x33F0EAE0), // bg-nham-hover/20
-                borderRadius: BorderRadius.circular(
-                  NhamRadii.containerLg,
-                ), // 2xl
-                border: Border.all(color: NhamColors.borderSoft), // /60
-                boxShadow: const [NhamShadows.sm],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  LayoutBuilder(
-                    builder:
-                        (_, c) => _bar(
-                          c.maxWidth * 2 / 3,
-                          20,
-                          const Color(0xB3E8D5B5),
-                        ),
-                  ),
-                  const SizedBox(height: NhamSpacing.sp4), // mb-4
-                  LayoutBuilder(
-                    builder:
-                        (_, c) => _bar(c.maxWidth, 12, NhamColors.borderSoft),
-                  ),
-                  const SizedBox(height: NhamSpacing.sp2),
-                  LayoutBuilder(
-                    builder:
-                        (_, c) =>
-                            _bar(c.maxWidth * 5 / 6, 12, NhamColors.borderHalf),
-                  ),
-                  const SizedBox(height: NhamSpacing.sp2),
-                  LayoutBuilder(
-                    builder:
-                        (_, c) => _bar(
-                          c.maxWidth * 3 / 5,
-                          12,
-                          NhamColors.borderBiscotti40,
-                        ),
-                  ),
-                  const SizedBox(height: NhamSpacing.sp5), // mt-5
-                  const Divider(height: 1, thickness: 1, color:NhamColors.borderHalf),
-                  const SizedBox(height: NhamSpacing.sp3), // pt-3
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      _bar(112, 12, NhamColors.borderHalf), // w-28
-                      _bar(64, 16, NhamColors.accent35), // accent/25
-                    ],
-                  ),
-                ],
-              ),
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _bar(64, 12, const Color(0xB3E8D5B5)), // border/70 time bar
+          const SizedBox(height: NhamSpacing.sp2), // mb-2
+          Container(
+            padding: const EdgeInsets.all(NhamSpacing.sp4), // p-5→16
+            decoration: BoxDecoration(
+              color: const Color(0x33F0EAE0), // bg-nham-hover/20
+              borderRadius: BorderRadius.circular(NhamRadii.containerLg), // 2xl
+              border: Border.all(color: NhamColors.borderSoft), // /60
+              boxShadow: const [NhamShadows.sm],
             ),
-          ],
-        ),
-      );
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                LayoutBuilder(
+                  builder:
+                      (_, c) =>
+                          _bar(c.maxWidth * 2 / 3, 20, const Color(0xB3E8D5B5)),
+                ),
+                const SizedBox(height: NhamSpacing.sp4), // mb-4
+                LayoutBuilder(
+                  builder:
+                      (_, c) => _bar(c.maxWidth, 12, NhamColors.borderSoft),
+                ),
+                const SizedBox(height: NhamSpacing.sp2),
+                LayoutBuilder(
+                  builder:
+                      (_, c) =>
+                          _bar(c.maxWidth * 5 / 6, 12, NhamColors.borderHalf),
+                ),
+                const SizedBox(height: NhamSpacing.sp2),
+                LayoutBuilder(
+                  builder:
+                      (_, c) => _bar(
+                        c.maxWidth * 3 / 5,
+                        12,
+                        NhamColors.borderBiscotti40,
+                      ),
+                ),
+                const SizedBox(height: NhamSpacing.sp5), // mt-5
+                const Divider(
+                  height: 1,
+                  thickness: 1,
+                  color: NhamColors.borderHalf,
+                ),
+                const SizedBox(height: NhamSpacing.sp3), // pt-3
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    _bar(112, 12, NhamColors.borderHalf), // w-28
+                    _bar(64, 16, NhamColors.accent35), // accent/25
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
 
     return _Pulse(child: Column(children: [ghostCard(false), ghostCard(true)]));
   }
@@ -1426,7 +1453,10 @@ class _RetryPill extends StatelessWidget {
             NhamText(
               'logging.feedArea.retryDay'.tr(),
               variant: NhamTextVariant.small,
-              style: dashBody(color: NhamColors.danger, weight: FontWeight.w500),
+              style: dashBody(
+                color: NhamColors.danger,
+                weight: FontWeight.w500,
+              ),
             ),
           ],
         ),
