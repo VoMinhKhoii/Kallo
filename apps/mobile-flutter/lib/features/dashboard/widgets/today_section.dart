@@ -134,7 +134,7 @@ class _FirstRunCard extends StatelessWidget {
             const SizedBox(height: NhamSpacing.sp2),
             Text(
               tr('dashboard.firstRunHint'),
-              style: dashBody(color: kInkSecondary),
+              style: dashBody(color: kInkMuted),
             ),
             const SizedBox(height: NhamSpacing.sp4),
             Wrap(
@@ -248,9 +248,9 @@ class _Dock extends StatelessWidget {
         children: [
           // Section header OUTSIDE the card — label left, day right. Same
           // eyebrow treatment + flush alignment as the Progress / Consistency
-          // headers so all three sections share one rhythm.
+          // headers so all three sections share one rhythm (12px title→card).
           Padding(
-            padding: const EdgeInsets.only(bottom: NhamSpacing.sp2),
+            padding: const EdgeInsets.only(bottom: NhamSpacing.sp3),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               crossAxisAlignment: CrossAxisAlignment.center,
@@ -261,11 +261,12 @@ class _Dock extends StatelessWidget {
                             ? tr('dashboard.caloriesOverTarget')
                             : tr('dashboard.caloriesRemaining'))
                         .toUpperCase(),
-                    style: dashEyebrow(color: kInk),
+                    style: dashEyebrow(),
                   ),
                 ),
                 Text(dateLabel.toUpperCase(),
-                    style: dashEyebrow(weight: FontWeight.w500)),
+                    style: dashEyebrow(
+                        color: kInkMuted, weight: FontWeight.w500)),
               ],
             ),
           ),
@@ -308,14 +309,14 @@ class _Dock extends StatelessWidget {
                                 overTarget
                                     ? tr('dashboard.over')
                                     : '/ ${_fmt(targets.calorieTarget.round(), locale)}',
-                                style: dashBody(color: kInkSecondary),
+                                style: dashBody(color: kInkMuted),
                               ),
                             ],
                           ),
                           const SizedBox(height: NhamSpacing.sp1),
                           Text(
                             '${_fmt(calories, locale)} ${tr('dashboard.caloriesLogged')}',
-                            style: dashMeta(color: kInkDisabled),
+                            style: dashMeta(color: kInkMuted),
                           ),
                         ],
                       ),
@@ -332,11 +333,11 @@ class _Dock extends StatelessWidget {
                   ],
                 ),
 
-                const SizedBox(height: NhamSpacing.sp5),
+                const SizedBox(height: NhamSpacing.sp4),
 
                 // (b) Macro bars — full width.
                 for (var i = 0; i < macroBars.length; i++) ...[
-                  if (i > 0) const SizedBox(height: NhamSpacing.sp3),
+                  if (i > 0) const SizedBox(height: NhamSpacing.sp2_5),
                   _MacroRow(bar: macroBars[i], idx: i),
                 ],
 
@@ -365,7 +366,7 @@ class _Separator extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Container(
         height: 1,
-        margin: const EdgeInsets.symmetric(vertical: NhamSpacing.sp4),
+        margin: const EdgeInsets.symmetric(vertical: NhamSpacing.sp3_5),
         color: const Color(0xFFE4E1DC), // soft neutral grey hairline
       );
 }
@@ -511,7 +512,7 @@ class _EmptyMeals extends StatelessWidget {
           Text(
             tr('dashboard.mealReceiptsHint'),
             textAlign: TextAlign.center,
-            style: dashMeta(color: kInkDisabled),
+            style: dashMeta(color: kInkMuted),
           ),
         ],
       ),
@@ -541,14 +542,14 @@ class _MealList extends StatelessWidget {
               Text(
                 tr('dashboard.mealsLogged',
                     namedArgs: {'count': '${meals.length}'}),
-                style: dashMeta(color: kInkDisabled),
+                style: dashMeta(color: kInkMuted),
               ),
             ],
           ),
         ),
         for (var i = 0; i < meals.length; i++) ...[
-          if (i > 0) const SizedBox(height: NhamSpacing.sp2),
-          _MealRow(index: i, meal: meals[i]),
+          if (i > 0) const SizedBox(height: NhamSpacing.sp1_5),
+          _MealRow(meal: meals[i]),
         ],
       ],
     );
@@ -556,30 +557,20 @@ class _MealList extends StatelessWidget {
 }
 
 class _MealRow extends StatelessWidget {
-  const _MealRow({required this.index, required this.meal});
-  final int index;
+  const _MealRow({required this.meal});
   final PersistedMeal meal;
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
-      // Baseline-align the index, name and kcal so the row reads on one line;
-      // index sits in an 18px column (left edge = content-left, like the macro
-      // labels) and kcal in the shared right column (aligned with the macro
-      // values).
+      padding: const EdgeInsets.symmetric(vertical: 5),
+      // Baseline-align the name and kcal so the row reads on one line; the meal
+      // name sits at content-left (aligned with the macro labels above) and
+      // kcal in the shared right column (aligned with the macro values).
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.baseline,
         textBaseline: TextBaseline.alphabetic,
         children: [
-          SizedBox(
-            width: 18,
-            child: Text(
-              '${index + 1}',
-              style: dashMeta(color: kInkSecondary, tabular: true),
-            ),
-          ),
-          const SizedBox(width: NhamSpacing.sp1),
           Expanded(
             child: Text(
               meal.rawInput,
@@ -594,7 +585,7 @@ class _MealRow extends StatelessWidget {
             child: Text(
               '${round0(meal.nutrition.caloriesKcal)} kcal',
               textAlign: TextAlign.right,
-              style: dashMeta(color: kInkSecondary, tabular: true),
+              style: dashMeta(color: kInkMuted, tabular: true),
             ),
           ),
         ],

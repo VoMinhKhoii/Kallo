@@ -56,7 +56,7 @@ class WeightChart extends ConsumerWidget {
               Text(
                 tr('dashboard.progressLoadError'),
                 textAlign: TextAlign.center,
-                style: dashMeta(color: kInkSecondary),
+                style: dashMeta(color: kInkMuted),
               ),
             ],
           ),
@@ -115,7 +115,7 @@ class _Body extends StatelessWidget {
                   Text(data.currentWeight.toStringAsFixed(1),
                       style: dashHero()),
                   const SizedBox(width: 6),
-                  Text(kg, style: dashBody(color: kInkSecondary)),
+                  Text(kg, style: dashBody(color: kInkMuted)),
                   if (hasTrend) ...[
                     const SizedBox(width: NhamSpacing.sp2),
                     _TrendBadge(delta: delta),
@@ -156,7 +156,7 @@ class _TrendBadge extends StatelessWidget {
     return Text(
       '$arrow ${delta.abs().toStringAsFixed(1)}',
       style: dashBody(
-        color: kInkSecondary,
+        color: kInkMuted,
         weight: FontWeight.w600,
         tabular: true,
       ),

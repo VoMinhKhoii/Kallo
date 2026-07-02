@@ -229,7 +229,7 @@ class _ContentState extends State<_Content> {
           padding: EdgeInsets.only(
             left: NhamSpacing.sp3,
             right: NhamSpacing.sp3,
-            top: NhamSpacing.sp3,
+            top: NhamSpacing.sp2,
             // Clear the FAB's resting footprint (44 + 20 bottom) with a small
             // gap — no more than that, so the scroll doesn't end in dead space.
             bottom: bottomInset + 76,
@@ -244,7 +244,7 @@ class _ContentState extends State<_Content> {
               onSelectDay: _onSelectDay,
             ),
             Padding(
-              padding: const EdgeInsets.only(bottom: NhamSpacing.sp4),
+              padding: const EdgeInsets.only(bottom: NhamSpacing.sp3),
               child: widget.isFirstRun
                   ? TodaySection(
                       args: widget.args,
@@ -491,12 +491,12 @@ class _Section extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: EdgeInsets.only(bottom: last ? 0 : NhamSpacing.sp4),
+      padding: EdgeInsets.only(bottom: last ? 0 : NhamSpacing.sp3),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           for (var i = 0; i < children.length; i++) ...[
-            if (i > 0) const SizedBox(height: 6),
+            if (i > 0) const SizedBox(height: NhamSpacing.sp3),
             children[i],
           ],
         ],

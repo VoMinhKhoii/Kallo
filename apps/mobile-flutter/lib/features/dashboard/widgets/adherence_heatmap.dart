@@ -71,7 +71,7 @@ class AdherenceHeatmap extends ConsumerWidget {
                   child: Text(
                     tr('dashboard.heatmapLoadError'),
                     textAlign: TextAlign.center,
-                    style: dashMeta(color: kInkDisabled),
+                    style: dashMeta(color: kInkMuted),
                   ),
                 ),
                 const SizedBox(height: NhamSpacing.sp3),
@@ -229,7 +229,7 @@ class _HeatmapBodyState extends State<_HeatmapBody>
                             child: Text(
                               dayLabels[i],
                               style: dashEyebrow(
-                                color: kInkSecondary,
+                                color: kInkMuted,
                                 weight: FontWeight.w600,
                               ),
                             ),
@@ -262,7 +262,7 @@ class _HeatmapBodyState extends State<_HeatmapBody>
                                   maxLines: 1,
                                   overflow: TextOverflow.clip,
                                   style: dashEyebrow(
-                                    color: kInkSecondary,
+                                    color: kInkMuted,
                                     weight: FontWeight.w600,
                                   ),
                                 ),
@@ -349,7 +349,7 @@ class _HeatmapBodyState extends State<_HeatmapBody>
                   children: [
                     Text(
                       tr('dashboard.adherenceHeatmap.offTarget'),
-                      style: dashMeta(color: kInkDisabled),
+                      style: dashMeta(color: kInkMuted),
                     ),
                     const SizedBox(width: NhamSpacing.sp2),
                     Expanded(
@@ -379,7 +379,7 @@ class _HeatmapBodyState extends State<_HeatmapBody>
                     const SizedBox(width: NhamSpacing.sp2),
                     Text(
                       tr('dashboard.adherenceHeatmap.onTarget'),
-                      style: dashMeta(color: kInkDisabled),
+                      style: dashMeta(color: kInkMuted),
                     ),
                   ],
                 ),
