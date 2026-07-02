@@ -233,6 +233,7 @@ class _DisplayNameRowState extends ConsumerState<_DisplayNameRow> {
               const SizedBox(width: NhamSpacing.sp2),
               _IconAction(
                 icon: LucideIcons.check,
+                semanticsLabel: tr('groups.invite.save'),
                 loading: _saving,
                 onTap: _save,
                 filled: true,
@@ -240,6 +241,7 @@ class _DisplayNameRowState extends ConsumerState<_DisplayNameRow> {
               const SizedBox(width: NhamSpacing.sp2),
               _IconAction(
                 icon: LucideIcons.x,
+                semanticsLabel: tr('groups.invite.cancel'),
                 onTap: () => setState(() => _editing = false),
               ),
             ],
@@ -419,6 +421,7 @@ class _InviteLinkRowState extends ConsumerState<_InviteLinkRow> {
               const SizedBox(width: NhamSpacing.sp2),
               _IconAction(
                 icon: LucideIcons.check,
+                semanticsLabel: tr('groups.invite.save'),
                 loading: _saving,
                 disabled: !canSave,
                 onTap: _save,
@@ -427,6 +430,7 @@ class _InviteLinkRowState extends ConsumerState<_InviteLinkRow> {
               const SizedBox(width: NhamSpacing.sp2),
               _IconAction(
                 icon: LucideIcons.x,
+                semanticsLabel: tr('groups.invite.cancel'),
                 onTap: () => setState(() => _editing = false),
               ),
             ],
@@ -685,10 +689,10 @@ class _IconAction extends StatelessWidget {
   const _IconAction({
     required this.icon,
     required this.onTap,
+    required this.semanticsLabel,
     this.filled = false,
     this.loading = false,
     this.disabled = false,
-    this.semanticsLabel,
   });
 
   final IconData icon;
@@ -696,7 +700,7 @@ class _IconAction extends StatelessWidget {
   final bool filled;
   final bool loading;
   final bool disabled;
-  final String? semanticsLabel;
+  final String semanticsLabel;
 
   @override
   Widget build(BuildContext context) {

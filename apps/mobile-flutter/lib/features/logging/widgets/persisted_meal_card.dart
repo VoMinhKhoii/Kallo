@@ -405,10 +405,13 @@ class _ShareToCircleButtonState extends ConsumerState<_ShareToCircleButton> {
   void didUpdateWidget(covariant _ShareToCircleButton old) {
     super.didUpdateWidget(old);
     // Re-seed from fresh server state when the day refetches — but never mid
-    // mutation, so the optimistic flip isn't stomped by a stale frame.
-    if (!_pending && widget.share?.visibility != old.share?.visibility) {
+    // mutation, so the optimistic flip isn't stomped by a stale frame. Compare
+    // the FULL share state: the shareId can change under the same visibility.
+    final changed = widget.share?.visibility != old.share?.visibility ||
+        widget.share?.shareId != old.share?.shareId;
+    if (!_pending && changed) {
       _shared = widget.share?.isShared ?? false;
-      _shareId = _shared ? widget.share!.shareId : null;
+      _shareId = _shared ? widget.share?.shareId : null;
     }
   }
 
@@ -427,9 +430,12 @@ class _ShareToCircleButtonState extends ConsumerState<_ShareToCircleButton> {
         visibility: next,
       );
       if (!mounted) return;
+      // The server response is the truth — not the requested `next` value.
+      final isShared = result.visibility != 'private';
       setState(() {
         _pending = false;
-        _shareId = next == 'circle' ? result.shareId : null;
+        _shared = isShared;
+        _shareId = isShared ? result.shareId : null;
       });
     } catch (_) {
       if (!mounted) return;

@@ -63,13 +63,15 @@ class PersistedMealItemGroup {
 class MealShare {
   const MealShare({required this.shareId, required this.visibility});
 
-  final String shareId;
+  /// Nullable — absent in the payload must not masquerade as a real id (the
+  /// share-card link is keyed off it).
+  final String? shareId;
   final String visibility;
 
   bool get isShared => visibility != 'private';
 
   factory MealShare.fromJson(Map<String, dynamic> json) => MealShare(
-        shareId: json['shareId'] as String? ?? '',
+        shareId: json['shareId'] as String?,
         visibility: json['visibility'] as String? ?? 'private',
       );
 }

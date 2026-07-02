@@ -26,9 +26,11 @@ final pendingInviteSlugProvider = StateProvider<String?>((ref) => null);
 
 Future<List<CircleFeedEntry>> _fetchFeed(ApiClient api) => runWithRetry(() async {
       final tz = localTimezoneOffsetMinutes();
-      final json = await api.get<Map<String, dynamic>>(
-        '/api/v1/groups/feed?timezoneOffset=$tz',
-      );
+      // Timeout so a hung request can't block the initial load or wedge a
+      // poll tick forever; TimeoutException is retryable per shouldRetryQuery.
+      final json = await api
+          .get<Map<String, dynamic>>('/api/v1/groups/feed?timezoneOffset=$tz')
+          .timeout(const Duration(seconds: 15));
       final list = (json['feed'] as List<dynamic>?) ?? const [];
       return list
           .map((e) => CircleFeedEntry.fromJson(e as Map<String, dynamic>))
@@ -58,8 +60,13 @@ final circleFeedProvider =
     }
     try {
       yield await _fetchFeed(api);
+    } on ApiError catch (error) {
+      // A terminal error (401 expired session, 400, 404) must not hide behind
+      // a stale wall forever — surface it so the UI shows retry. Retryable
+      // server blips (5xx/429) keep the last good frame until the next tick.
+      if (!error.retryable) rethrow;
     } catch (_) {
-      // Keep the last good frame on a transient poll failure.
+      // Network/transport blip — keep the last good frame.
     }
   }
 });
@@ -135,8 +142,13 @@ Future<CircleProfile> saveCircleProfile(
 }
 
 /// Accept an invite link (`POST /api/v1/groups/invite/accept`). Creates the
-/// bilateral friendship, then invalidates friends + feed + this slug's preview
-/// so every surface reflects the new connection. Returns the inviter.
+/// bilateral friendship, then invalidates friends + feed so every surface
+/// reflects the new connection. Deliberately does NOT invalidate this slug's
+/// [invitePreviewProvider]: the connect panel resolves the acceptance in place
+/// (disc slides in, title crossfades), and a refetch flipping the relation to
+/// `accepted` would swap the panel for the static "already connected" shell
+/// mid-animation. The preview is autoDispose, so the next fresh mount of the
+/// connect screen refetches the true state anyway. Returns the inviter.
 Future<CircleProfile> acceptCircleInvite(WidgetRef ref, String slug) async {
   final api = ref.read(apiClientProvider);
   final json = await api.post<Map<String, dynamic>>(
@@ -146,7 +158,6 @@ Future<CircleProfile> acceptCircleInvite(WidgetRef ref, String slug) async {
   final inviter = CircleProfile.fromJson(json['inviter'] as Map<String, dynamic>);
   ref.invalidate(circleFriendsProvider);
   ref.invalidate(circleFeedProvider);
-  ref.invalidate(invitePreviewProvider(slug));
   return inviter;
 }
 
