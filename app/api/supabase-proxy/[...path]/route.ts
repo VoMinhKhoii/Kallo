@@ -59,10 +59,7 @@ async function proxy(
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   if (!supabaseUrl) {
     console.error('[supabase-proxy] NEXT_PUBLIC_SUPABASE_URL is not set');
-    return NextResponse.json(
-      { error: 'proxy_misconfigured' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'proxy_misconfigured' }, { status: 500 });
   }
 
   const upstreamUrl = new URL(
@@ -97,7 +94,10 @@ async function proxy(
     console.error('[supabase-proxy] upstream fetch failed', error);
     // 502 is retryable for supabase clients, so apps surface their normal
     // network-error copy instead of hanging.
-    return NextResponse.json({ error: 'upstream_unreachable' }, { status: 502 });
+    return NextResponse.json(
+      { error: 'upstream_unreachable' },
+      { status: 502 }
+    );
   }
 
   const responseHeaders = new Headers();
