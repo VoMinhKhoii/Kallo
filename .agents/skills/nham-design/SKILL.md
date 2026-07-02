@@ -1,6 +1,6 @@
 ---
 name: nham-design
-description: Use this skill to generate well-branded interfaces and assets for Nhẩm — the AI-powered Vietnamese meal tracker — either for production or throwaway prototypes/mocks/etc. Contains essential design guidelines, colors (warm earthy palette anchored on a cream surface and a tan accent), type (Lora serif + DM Sans), fonts, assets (logo + app mark + favicon), Lucide iconography conventions, and a click-through React UI kit recreating the Landing / Dashboard / Logging surfaces of the product.
+description: Use this skill to generate well-branded interfaces and assets for Nhẩm — the AI-powered Vietnamese meal tracker — either for production or throwaway prototypes/mocks/etc. Contains essential design guidelines, colors (warm earthy palette anchored on a cream surface and a tan accent), type (Lora serif + DM Sans), fonts, assets (logo + app mark + favicon), Lucide iconography conventions, and a click-through React UI kit recreating the Landing / Dashboard / Logging surfaces of the product. Covers two platforms — web (Next.js, DM Sans + Lora, --nham-* tokens) and the mobile Flutter app (Be Vietnam Pro, a calmer Threads-tuned type scale; see mobile.md) — routed by platform so you only load what you need.
 user-invocable: true
 ---
 
@@ -8,7 +8,22 @@ user-invocable: true
 
 Nhẩm (read: "n-yum"; colloquially Vietnamese for "to estimate roughly in your head") is an AI-powered Vietnamese meal tracker. Users describe meals in natural language — `2 mực kho mặn + 50gr nạc dăm luộc + 1 chén cơm + canh chua` — and the app decomposes them into Vietnamese ingredients, looks up real food-composition data, and returns a bounded calorie/macro estimate. Visual direction is **Apple Notes on cream paper**: warm, beigy, restrained, more typography than chrome. Less is more.
 
-## How to use this skill
+## Platforms — pick your surface first
+
+This skill covers two surfaces that share the **brand** (warm palette, logo,
+Vietnamese-diacritic rule, no-emoji, Lucide icons) but **diverge in type, tokens
+and layout**. Read only the doc for the surface you're building — not both.
+
+- **Web** (Next.js / React — marketing + app): the sections below, plus
+  `README.md`, `colors_and_type.css`, `preview/`, `ui_kits/nham_app/`. Type is
+  **DM Sans + Lora**; tokens are `--nham-*` CSS custom properties. Everything in
+  the rest of this file and in `README.md` is the **web** system.
+- **Mobile** (Flutter app, `apps/mobile-flutter`): read **`mobile.md`**. It is a
+  *different, calmer* system — **Be Vietnam Pro** sans (Vietnamese-safe), a
+  compact Threads / Apple-Health–tuned scale, **two** text colours, one 12px
+  rhythm. Do **not** apply the web type scale or `--nham-*` tokens to Flutter.
+
+## How to use this skill (web)
 
 1. **Read `README.md`** first — it has the full Content Fundamentals, Visual Foundations, and Iconography rules. It is the source of truth.
 2. **Pull tokens from `colors_and_type.css`** — every color, type family, radius, shadow, and spacing variable lives there as a CSS custom property. Import it directly rather than re-deriving the palette.

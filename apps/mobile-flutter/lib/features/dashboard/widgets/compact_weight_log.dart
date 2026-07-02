@@ -224,7 +224,7 @@ class _CompactWeightLogState extends ConsumerState<CompactWeightLog> {
             ),
             // Suffix in-flow (no Positioned overlay → no overlap).
             suffixText: tr('dashboard.units.kg'),
-            suffixStyle: dashMeta(color: kInkSecondary),
+            suffixStyle: dashMeta(color: kInkMuted),
             border: _border(Colors.transparent),
             enabledBorder:
                 _border(hasError ? NhamColors.danger : Colors.transparent),
@@ -273,7 +273,7 @@ class _CompactWeightLogState extends ConsumerState<CompactWeightLog> {
             padding: const EdgeInsets.only(top: NhamSpacing.sp2),
             child: Text(
               tr('dashboard.weightCard.editHint'),
-              style: dashMeta(color: kInkDisabled),
+              style: dashMeta(color: kInkMuted),
             ),
           ),
       ],

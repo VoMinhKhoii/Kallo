@@ -101,7 +101,7 @@ class _DayCell extends StatelessWidget {
   Widget build(BuildContext context) {
     final dt = dateStringToDate(date);
     final weekday = DateFormat('EEE', locale).format(dt); // locale-aware, e.g. "Sun"
-    final labelColor = isToday ? NhamColors.accentDark : kInkSecondary;
+    final labelColor = isToday ? NhamColors.accentDark : kInkMuted;
 
     final consumed = cell?.consumedRatio;
     final isFuture = cell?.status == HeatmapCellStatus.future ||
@@ -138,10 +138,10 @@ class _DayCell extends StatelessWidget {
           Text(
             weekday,
             maxLines: 1,
-            // 11px DM Sans semibold, tight tracking (mixed-case, locale-safe).
+            // 11px medium, tight tracking (mixed-case, locale-safe).
             style: dashMeta(color: labelColor).copyWith(
               fontSize: 11,
-              fontWeight: FontWeight.w600,
+              fontWeight: FontWeight.w500,
               letterSpacing: -0.2,
             ),
           ),
@@ -160,7 +160,7 @@ class _DayCell extends StatelessWidget {
                 child: Text(
                   '${dt.day}',
                   style: dashBody(
-                    color: isFuture ? kInkDisabled : kInk,
+                    color: isFuture ? kInkMuted : kInk,
                     weight: isToday ? FontWeight.w600 : FontWeight.w400,
                     tabular: true,
                   ),
