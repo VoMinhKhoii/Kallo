@@ -9,19 +9,22 @@ import '../../../theme/nham_theme.dart';
 import '../../../theme/nham_typography.dart';
 
 /// How a meal gets logged. `normal` = describe it in words (AI); `cheat` = the
-/// cheat-meal flow (ported from web later); `manual` = search foods + grams.
-enum MealLogMode { normal, cheat, manual }
+/// cheat-meal flow (ported from web later); `manual` = search foods + grams;
+/// `barcode` = scan a packaged product.
+enum MealLogMode { normal, cheat, manual, barcode }
 
 IconData mealModeIcon(MealLogMode mode) => switch (mode) {
       MealLogMode.normal => LucideIcons.zap, // lightning
       MealLogMode.cheat => LucideIcons.pizza,
       MealLogMode.manual => LucideIcons.pencil,
+      MealLogMode.barcode => LucideIcons.scanBarcode,
     };
 
 String mealModeLabel(MealLogMode mode) => switch (mode) {
       MealLogMode.normal => 'logging.modeSelector.normal'.tr(),
       MealLogMode.cheat => 'logging.modeSelector.cheat'.tr(),
       MealLogMode.manual => 'logging.modeSelector.manual'.tr(),
+      MealLogMode.barcode => 'logging.modeSelector.barcode'.tr(),
     };
 
 /// Opens the "select mode" chooser — the first step before the composer. Minimal
@@ -119,6 +122,14 @@ class _MealModeSheet extends StatelessWidget {
                   desc: 'logging.modeSelector.manualDesc'.tr(),
                   selected: current == MealLogMode.manual,
                   onTap: () => Navigator.of(context).pop(MealLogMode.manual),
+                ),
+                _ModeRow(
+                  icon: mealModeIcon(MealLogMode.barcode),
+                  iconColor: NhamColors.accentDark,
+                  title: 'logging.modeSelector.barcode'.tr(),
+                  desc: 'logging.modeSelector.barcodeDesc'.tr(),
+                  selected: current == MealLogMode.barcode,
+                  onTap: () => Navigator.of(context).pop(MealLogMode.barcode),
                 ),
               ],
             ),

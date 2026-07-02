@@ -27,6 +27,7 @@ import 'calorie_ring.dart';
 import '../../../shared/widgets/top_toast.dart';
 import 'empty_state.dart';
 import 'entrances.dart';
+import 'barcode_scanner_sheet.dart';
 import 'manual_log_sheet.dart';
 import 'meal_entry.dart';
 import 'meal_input.dart';
@@ -147,8 +148,9 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
   }
 
   /// The first step: choose how to log. Normal focuses the composer; Manual
-  /// opens the search-and-grams sheet (a one-shot, not a persistent mode); Cheat
-  /// meal ports from web later, so it just acknowledges for now.
+  /// opens the search-and-grams sheet (a one-shot, not a persistent mode);
+  /// Barcode opens the scanner sheet (also one-shot); Cheat meal ports from
+  /// web later, so it just acknowledges for now.
   Future<void> _openModeSheet() async {
     final picked = await showMealModeSheet(context, current: _mode);
     if (picked == null || !mounted) return;
@@ -162,8 +164,28 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
           userId: widget.profile.userId,
           date: widget.date,
         );
+      case MealLogMode.barcode:
+        _openBarcodeSheet();
       case MealLogMode.cheat:
         showTopToast(context, 'logging.modeSelector.comingSoon'.tr());
+    }
+  }
+
+  /// One-shot barcode scan → quantity → save. Unlike manual (which saves
+  /// silently), barcode persists the meal in one server call with no pending
+  /// card, so a success toast is the only confirmation the user gets.
+  Future<void> _openBarcodeSheet() async {
+    final saved = await showBarcodeScannerSheet(
+      context,
+      userId: widget.profile.userId,
+      date: widget.date,
+      // Product not found → the AI composer is the better tool: pop the sheet
+      // and hand the user the keyboard.
+      onFallbackToText: () => _inputController.focus(),
+    );
+    if (saved == true && mounted) {
+      HapticFeedback.mediumImpact();
+      showTopToast(context, 'logging.barcode.savedMeal'.tr());
     }
   }
 
@@ -541,6 +563,7 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
             modeLabel: mealModeLabel(_mode),
             modeIcon: mealModeIcon(_mode),
             onModePressed: _openModeSheet,
+            onBarcodePressed: _openBarcodeSheet,
           ),
         ),
       ],

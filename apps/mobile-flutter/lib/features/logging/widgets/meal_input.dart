@@ -29,6 +29,7 @@ class MealInput extends StatefulWidget {
     required this.onSubmit,
     this.onCancel,
     this.onModePressed,
+    this.onBarcodePressed,
     this.modeLabel,
     this.modeIcon,
     this.analyzing = false,
@@ -46,6 +47,10 @@ class MealInput extends StatefulWidget {
   /// Opens the mode selector (Normal / Cheat meal / Manual). Rendered as an
   /// icon + label on the input bar's second line.
   final VoidCallback? onModePressed;
+
+  /// One-tap barcode scanning next to the mode control — scanning a packaged
+  /// product is frequent enough to skip the mode-sheet detour.
+  final VoidCallback? onBarcodePressed;
 
   /// Label + icon of the currently selected mode, shown on the mode control.
   final String? modeLabel;
@@ -199,6 +204,8 @@ class _MealInputState extends State<MealInput>
                       'logging.modeSelector.button'.tr(),
                   onTap: widget.onModePressed!,
                 ),
+              if (widget.onBarcodePressed != null && !widget.analyzing)
+                _BarcodeButton(onTap: widget.onBarcodePressed!),
               const Spacer(),
               if (!_canSubmit && widget.analyzing && widget.onCancel != null)
                 _ActionButton(
@@ -275,6 +282,53 @@ class _ModeButtonState extends State<_ModeButton> {
                     ),
                   ],
                 ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Icon-only barcode trigger beside the mode control — same quiet styling,
+/// 44pt tap target.
+class _BarcodeButton extends StatefulWidget {
+  const _BarcodeButton({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  State<_BarcodeButton> createState() => _BarcodeButtonState();
+}
+
+class _BarcodeButtonState extends State<_BarcodeButton> {
+  bool _pressed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      button: true,
+      label: 'logging.barcode.title'.tr(),
+      child: GestureDetector(
+        onTapDown: (_) => setState(() => _pressed = true),
+        onTapUp: (_) => setState(() => _pressed = false),
+        onTapCancel: () => setState(() => _pressed = false),
+        onTap: () {
+          HapticFeedback.selectionClick();
+          widget.onTap();
+        },
+        child: SizedBox(
+          width: 44,
+          height: 44,
+          child: Center(
+            child: AnimatedScale(
+              scale: _pressed ? 0.96 : 1,
+              duration: const Duration(milliseconds: 200),
+              child: const Icon(
+                LucideIcons.scanBarcode,
+                size: 18,
+                color: NhamColors.btn,
               ),
             ),
           ),
