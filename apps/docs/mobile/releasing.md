@@ -57,7 +57,8 @@ The `beta` lane injects the **prod** backend via `--dart-define` (mirrors the RN
 profile — all client-public values):
 
 - `API_BASE_URL=https://nham-internal-714321235532.asia-southeast3.run.app`
-- `SUPABASE_URL=https://oudpzhfzirgjbhrzcett.supabase.co`
+- `SUPABASE_URL=<API_BASE_URL>/api/supabase-proxy` — auth is proxied through Cloud Run because
+  some VN ISPs blackhole the supabase.co Cloudflare edge (prod project stays `oudpzhfzirgjbhrzcett…`)
 - `SUPABASE_ANON_KEY=sb_publishable_…`
 - `GOOGLE_WEB_CLIENT_ID` / `GOOGLE_IOS_CLIENT_ID` — native Google sign-in (baked into the
   Fastfile defaults; the iOS client ID's reversed form is also the URL scheme in
@@ -65,6 +66,10 @@ profile — all client-public values):
 
 Override via `NHAM_API_BASE_URL`, `NHAM_SUPABASE_URL`, `NHAM_SUPABASE_KEY`,
 `NHAM_GOOGLE_WEB_CLIENT_ID`, `NHAM_GOOGLE_IOS_CLIENT_ID`.
+
+> **Deploy order:** the `/api/supabase-proxy` route must be live on the Cloud Run
+> service before a build ships, or that build cannot authenticate at all. To cut a
+> build against supabase.co directly, set `NHAM_SUPABASE_URL`.
 
 ## How signing works (and why it's shaped this way)
 

@@ -92,7 +92,18 @@ Google sign-in — empty disables the Google button without blocking startup).
 | Environment | API_BASE_URL | Supabase |
 |-------------|--------------|----------|
 | **dev** (sim) | `http://localhost:3000` | dev project (`jqgmcnlfxzzhrvrzpoye…`) |
-| **prod** (TestFlight) | `https://nham-internal-…run.app` | prod project (`oudpzhfzirgjbhrzcett…`) |
+| **prod** (TestFlight) | `https://nham-internal-…run.app` | `…run.app/api/supabase-proxy` (proxied to the prod project `oudpzhfzirgjbhrzcett…`) |
+
+Prod auth rides the Cloud Run host's `/api/supabase-proxy` route instead of
+`supabase.co` directly, because some VN ISPs blackhole the Supabase Cloudflare
+edge (the anon key is unchanged; only the URL differs). Dev still talks to the
+dev project directly. To exercise the proxy locally, run the Next.js dev server
+and point the app at it:
+
+```sh
+SUPABASE_URL=http://localhost:3000/api/supabase-proxy \
+SUPABASE_ANON_KEY=<dev publishable key> ./tool/run_dev.sh
+```
 
 The dev values live in your `.env.local` (`NEXT_PUBLIC_SUPABASE_URL` /
 `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`); prod values are baked into the [release lane](./releasing.md).
