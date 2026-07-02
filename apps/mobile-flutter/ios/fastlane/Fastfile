@@ -20,7 +20,9 @@ default_platform(:ios)
 APP_ID            = ENV["ASC_APP_IDENTIFIER"] || "com.khoivo.nham"
 TEAM_ID           = ENV["ASC_TEAM_ID"]        || "ZNG57U88R5"
 API_BASE_URL      = ENV["NHAM_API_BASE_URL"]  || "https://nham-internal-714321235532.asia-southeast3.run.app"
-SUPABASE_URL      = ENV["NHAM_SUPABASE_URL"]  || "https://oudpzhfzirgjbhrzcett.supabase.co"
+# Auth goes through the Cloud Run proxy (see app/api/supabase-proxy) because
+# some VN ISPs blackhole the supabase.co Cloudflare edge. Anon key unchanged.
+SUPABASE_URL      = ENV["NHAM_SUPABASE_URL"]  || "#{API_BASE_URL}/api/supabase-proxy"
 SUPABASE_ANON_KEY = ENV["NHAM_SUPABASE_KEY"]  || "sb_publishable_TIrP9KQanbXTxsxJcERbLA_cI6PSNeV"
 
 # Native Google sign-in client IDs (client-PUBLIC, like SUPABASE_* above — the
