@@ -10,7 +10,11 @@ import { z } from 'zod';
 import { MAX_FOOD_ITEM_GRAMS } from '@/lib/barcode/constants';
 import { dateStringSchema, timezoneOffsetSchema } from '@/lib/validation';
 
-const barcodeSchema = z
+/**
+ * The one source of truth for what a barcode string looks like — shared by
+ * the REST contract below and the server actions in `lib/actions/barcode.ts`.
+ */
+export const barcodeSchema = z
   .string()
   .min(1, 'Mã vạch không được để trống')
   .max(64)

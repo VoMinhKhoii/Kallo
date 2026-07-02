@@ -1,6 +1,7 @@
 'use server';
 
 import { z } from 'zod';
+import { barcodeSchema } from '@/lib/api/contracts/barcode';
 import { requireAuthAndProfile } from '@/lib/auth';
 import { MAX_FOOD_ITEM_GRAMS } from '@/lib/barcode/constants';
 import type { ParsedBarcodeProduct } from '@/lib/barcode/openfoodfacts';
@@ -15,17 +16,11 @@ import { dateStringSchema, timezoneOffsetSchema } from '@/lib/validation';
 export type { BarcodeErrorCode } from '@/lib/barcode/types';
 
 const searchBarcodeSchema = z.object({
-  barcode: z
-    .string()
-    .min(1, 'Mã vạch không được để trống')
-    .regex(/^\d+$/, 'Mã vạch chỉ được chứa số'),
+  barcode: barcodeSchema,
 });
 
 const stageBarcodeMealSchema = z.object({
-  barcode: z
-    .string()
-    .min(1, 'Mã vạch không được để trống')
-    .regex(/^\d+$/, 'Mã vạch chỉ được chứa số'),
+  barcode: barcodeSchema,
   grams: z
     .number()
     .positive('Khối lượng phải lớn hơn 0')

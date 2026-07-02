@@ -1,4 +1,5 @@
 import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter/foundation.dart' show defaultTargetPlatform;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
@@ -14,18 +15,18 @@ import '../../../theme/nham_typography.dart';
 enum MealLogMode { normal, cheat, manual, barcode }
 
 IconData mealModeIcon(MealLogMode mode) => switch (mode) {
-      MealLogMode.normal => LucideIcons.zap, // lightning
-      MealLogMode.cheat => LucideIcons.pizza,
-      MealLogMode.manual => LucideIcons.pencil,
-      MealLogMode.barcode => LucideIcons.scanBarcode,
-    };
+  MealLogMode.normal => LucideIcons.zap, // lightning
+  MealLogMode.cheat => LucideIcons.pizza,
+  MealLogMode.manual => LucideIcons.pencil,
+  MealLogMode.barcode => LucideIcons.scanBarcode,
+};
 
 String mealModeLabel(MealLogMode mode) => switch (mode) {
-      MealLogMode.normal => 'logging.modeSelector.normal'.tr(),
-      MealLogMode.cheat => 'logging.modeSelector.cheat'.tr(),
-      MealLogMode.manual => 'logging.modeSelector.manual'.tr(),
-      MealLogMode.barcode => 'logging.modeSelector.barcode'.tr(),
-    };
+  MealLogMode.normal => 'logging.modeSelector.normal'.tr(),
+  MealLogMode.cheat => 'logging.modeSelector.cheat'.tr(),
+  MealLogMode.manual => 'logging.modeSelector.manual'.tr(),
+  MealLogMode.barcode => 'logging.modeSelector.barcode'.tr(),
+};
 
 /// Opens the "select mode" chooser — the first step before the composer. Minimal
 /// list (bare colored icon · title · description · check), mirroring the Claude
@@ -52,7 +53,9 @@ class _MealModeSheet extends StatelessWidget {
     return Container(
       decoration: const BoxDecoration(
         color: NhamColors.surface,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(NhamRadii.xxl)),
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(NhamRadii.xxl),
+        ),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -123,14 +126,18 @@ class _MealModeSheet extends StatelessWidget {
                   selected: current == MealLogMode.manual,
                   onTap: () => Navigator.of(context).pop(MealLogMode.manual),
                 ),
-                _ModeRow(
-                  icon: mealModeIcon(MealLogMode.barcode),
-                  iconColor: NhamColors.accentDark,
-                  title: 'logging.modeSelector.barcode'.tr(),
-                  desc: 'logging.modeSelector.barcodeDesc'.tr(),
-                  selected: current == MealLogMode.barcode,
-                  onTap: () => Navigator.of(context).pop(MealLogMode.barcode),
-                ),
+                // iOS-only for now: Android support (permission copy, device
+                // testing) hasn't been scoped, so the entry point is hidden
+                // there rather than shipping a broken path.
+                if (defaultTargetPlatform == TargetPlatform.iOS)
+                  _ModeRow(
+                    icon: mealModeIcon(MealLogMode.barcode),
+                    iconColor: NhamColors.accentDark,
+                    title: 'logging.modeSelector.barcode'.tr(),
+                    desc: 'logging.modeSelector.barcodeDesc'.tr(),
+                    selected: current == MealLogMode.barcode,
+                    onTap: () => Navigator.of(context).pop(MealLogMode.barcode),
+                  ),
               ],
             ),
           ),
@@ -241,10 +248,9 @@ class _SoonBadge extends StatelessWidget {
       ),
       child: Text(
         'logging.modeSelector.soon'.tr(),
-        style: NhamTextStyles.sansMedium(fontSize: 10).copyWith(
-          color: NhamColors.textMuted,
-          letterSpacing: 0.4,
-        ),
+        style: NhamTextStyles.sansMedium(
+          fontSize: 10,
+        ).copyWith(color: NhamColors.textMuted, letterSpacing: 0.4),
       ),
     );
   }

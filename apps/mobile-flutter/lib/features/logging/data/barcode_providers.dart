@@ -179,11 +179,6 @@ class BarcodeFlowController extends AutoDisposeNotifier<BarcodeFlowState> {
       errorKey: () => null,
     );
   }
-
-  /// Clear a save error while staying on the quantity step.
-  void clearError() {
-    state = state.copyWith(errorKey: () => null);
-  }
 }
 
 final barcodeFlowProvider =

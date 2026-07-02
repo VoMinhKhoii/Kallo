@@ -25,8 +25,11 @@ export const runtime = 'nodejs';
  */
 export async function POST(req: NextRequest) {
   try {
-    const body = logBarcodeMealSchema.parse(await req.json());
+    // Auth before validation, matching the sibling search route and the
+    // wider /api/v1 convention: unauthenticated callers get a 401, not a
+    // validation-shaped 400.
     const { user } = await requireAuthAndProfile();
+    const body = logBarcodeMealSchema.parse(await req.json());
 
     const { analysisId } = await stageBarcodeMeal(user.id, body);
     const result = await confirmAndSaveMealAction({

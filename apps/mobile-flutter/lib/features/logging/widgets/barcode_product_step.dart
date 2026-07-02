@@ -119,8 +119,11 @@ class _BarcodeProductStepState extends State<BarcodeProductStep> {
                   _SegmentedControl(
                     segments: [
                       for (final mode in _modes)
-                        (label: _modeLabel(mode), selected: mode == _mode,
-                            onTap: () => _setMode(mode)),
+                        (
+                          label: _modeLabel(mode),
+                          selected: mode == _mode,
+                          onTap: () => _setMode(mode),
+                        ),
                     ],
                   ),
                   const SizedBox(height: NhamSpacing.sp3),
@@ -219,39 +222,46 @@ class _SegmentedControl extends StatelessWidget {
         children: [
           for (final segment in segments)
             Expanded(
-              child: GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onTap: segment.onTap,
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 150),
-                  padding: const EdgeInsets.symmetric(
-                    vertical: NhamSpacing.sp2,
-                  ),
-                  decoration: BoxDecoration(
-                    color:
-                        segment.selected ? NhamColors.elev : Colors.transparent,
-                    borderRadius: BorderRadius.circular(NhamRadii.md),
-                    boxShadow:
-                        segment.selected
-                            ? [
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.06),
-                                blurRadius: 4,
-                                offset: const Offset(0, 1),
-                              ),
-                            ]
-                            : null,
-                  ),
-                  child: Center(
-                    child: Text(
-                      segment.label,
-                      style: NhamTextStyles.sansSemiBold(
-                        fontSize: NhamFontSize.xs,
-                      ).copyWith(
-                        color:
-                            segment.selected
-                                ? NhamColors.text
-                                : NhamColors.textMuted,
+              child: Semantics(
+                button: true,
+                selected: segment.selected,
+                label: segment.label,
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: segment.onTap,
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 150),
+                    padding: const EdgeInsets.symmetric(
+                      vertical: NhamSpacing.sp2,
+                    ),
+                    decoration: BoxDecoration(
+                      color:
+                          segment.selected
+                              ? NhamColors.elev
+                              : Colors.transparent,
+                      borderRadius: BorderRadius.circular(NhamRadii.md),
+                      boxShadow:
+                          segment.selected
+                              ? [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.06),
+                                  blurRadius: 4,
+                                  offset: const Offset(0, 1),
+                                ),
+                              ]
+                              : null,
+                    ),
+                    child: Center(
+                      child: Text(
+                        segment.label,
+                        style: NhamTextStyles.sansSemiBold(
+                          fontSize: NhamFontSize.xs,
+                        ).copyWith(
+                          color:
+                              segment.selected
+                                  ? NhamColors.text
+                                  : NhamColors.textMuted,
+                        ),
                       ),
                     ),
                   ),
@@ -323,8 +333,7 @@ class _ServingPicker extends StatelessWidget {
             _StepperButton(
               icon: LucideIcons.minus,
               label: 'logging.barcode.decreaseServings'.tr(),
-              onTap:
-                  disabled || servings <= 1 ? null : () => onAdjust(-1),
+              onTap: disabled || servings <= 1 ? null : () => onAdjust(-1),
             ),
             Expanded(
               child: Center(
@@ -414,8 +423,7 @@ class _GramsPicker extends StatelessWidget {
             _StepperButton(
               icon: LucideIcons.minus,
               label: 'logging.barcode.decreaseGrams'.tr(),
-              onTap:
-                  disabled || grams <= 1 ? null : () => onAdjust(-gramStep),
+              onTap: disabled || grams <= 1 ? null : () => onAdjust(-gramStep),
             ),
             const SizedBox(width: NhamSpacing.sp2),
             Expanded(
@@ -474,24 +482,34 @@ class _QuickChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(
-          horizontal: NhamSpacing.sp3,
-          vertical: 6,
-        ),
-        decoration: BoxDecoration(
-          color: selected ? NhamColors.accent15 : NhamColors.elev,
-          borderRadius: BorderRadius.circular(999),
-          border: Border.all(
-            color: selected ? NhamColors.accent : NhamColors.inputBorder,
+    return Semantics(
+      button: true,
+      selected: selected,
+      label: label,
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(
+            horizontal: NhamSpacing.sp3,
+            // Tap-target height: ~40px with the xs label, close to the app's
+            // 44pt convention — the previous 6px made ~30px chips in a tight
+            // row, inviting mis-taps.
+            vertical: 10,
           ),
-        ),
-        child: Text(
-          label,
-          style: NhamTextStyles.sansMedium(fontSize: NhamFontSize.xs).copyWith(
-            color: selected ? NhamColors.accentDark : NhamColors.textMuted,
+          decoration: BoxDecoration(
+            color: selected ? NhamColors.accent15 : NhamColors.elev,
+            borderRadius: BorderRadius.circular(999),
+            border: Border.all(
+              color: selected ? NhamColors.accent : NhamColors.inputBorder,
+            ),
+          ),
+          child: Text(
+            label,
+            style: NhamTextStyles.sansMedium(
+              fontSize: NhamFontSize.xs,
+            ).copyWith(
+              color: selected ? NhamColors.accentDark : NhamColors.textMuted,
+            ),
           ),
         ),
       ),

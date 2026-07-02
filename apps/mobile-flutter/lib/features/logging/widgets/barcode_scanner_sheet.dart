@@ -126,84 +126,109 @@ class _BarcodeScannerSheetState extends ConsumerState<BarcodeScannerSheet> {
   Widget build(BuildContext context) {
     // Tear the camera down whenever the flow leaves the live-scanning phase
     // (it must not keep running behind the quantity step), and re-arm the
-    // decode guard whenever scanning resumes. ref.listen fires outside build,
-    // so disposing the controller here is safe.
+    // decode guard whenever scanning resumes. The listener fires synchronously
+    // with the state change — which can originate inside the scanner's own
+    // detection callback — so disposal is deferred a frame rather than tearing
+    // the controller down from within its own stream's callstack.
     ref.listen(barcodeFlowProvider, (previous, next) {
       final showsCamera =
           next.phase == BarcodeFlowPhase.scanning && next.errorKey == null;
       if (showsCamera) {
         _handledDetection = false;
-      } else {
-        _releaseController();
+      } else if (_controller != null) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) return; // dispose() already released it
+          final current = ref.read(barcodeFlowProvider);
+          final backToScanning =
+              current.phase == BarcodeFlowPhase.scanning &&
+              current.errorKey == null;
+          if (!backToScanning) _releaseController();
+        });
       }
     });
 
     final state = ref.watch(barcodeFlowProvider);
+    final saving = state.phase == BarcodeFlowPhase.saving;
     final maxHeight = MediaQuery.of(context).size.height * 0.9;
     final keyboardInset = MediaQuery.of(context).viewInsets.bottom;
 
-    return Padding(
-      padding: EdgeInsets.only(bottom: keyboardInset),
-      child: Container(
-        constraints: BoxConstraints(maxHeight: maxHeight),
-        decoration: const BoxDecoration(
-          color: NhamColors.surface,
-          borderRadius: BorderRadius.vertical(
-            top: Radius.circular(NhamRadii.xxl),
-          ),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const SizedBox(height: NhamSpacing.sp2),
-            // Drag handle.
-            Container(
-              width: 36,
-              height: 4,
-              decoration: BoxDecoration(
-                color: NhamColors.borderSoft,
-                borderRadius: BorderRadius.circular(2),
+    // While the log request is in flight the sheet must not be dismissable:
+    // the POST would still complete server-side, silently logging a meal the
+    // user never saw confirmed (and a re-scan would then duplicate it).
+    // PopScope covers the scrim tap and system back (both go through
+    // maybePop); IgnorePointer covers drag-to-dismiss, whose route-level
+    // gesture detector defers its hit test to this child.
+    return PopScope(
+      canPop: !saving,
+      child: IgnorePointer(
+        ignoring: saving,
+        child: Padding(
+          padding: EdgeInsets.only(bottom: keyboardInset),
+          child: Container(
+            constraints: BoxConstraints(maxHeight: maxHeight),
+            decoration: const BoxDecoration(
+              color: NhamColors.surface,
+              borderRadius: BorderRadius.vertical(
+                top: Radius.circular(NhamRadii.xxl),
               ),
             ),
-            // Header: title/subtitle left, X right.
-            Padding(
-              padding: const EdgeInsets.fromLTRB(
-                NhamSpacing.sp4,
-                NhamSpacing.sp3,
-                NhamSpacing.sp2,
-                NhamSpacing.sp2,
-              ),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        NhamText(
-                          'logging.barcode.title'.tr(),
-                          variant: NhamTextVariant.h3,
-                        ),
-                        const SizedBox(height: 2),
-                        NhamText(
-                          'logging.barcode.subtitle'.tr(),
-                          variant: NhamTextVariant.small,
-                          style: const TextStyle(color: NhamColors.textMuted),
-                        ),
-                      ],
-                    ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const SizedBox(height: NhamSpacing.sp2),
+                // Drag handle.
+                Container(
+                  width: 36,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: NhamColors.borderSoft,
+                    borderRadius: BorderRadius.circular(2),
                   ),
-                  IconButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    icon: const Icon(LucideIcons.x, size: 20),
-                    color: NhamColors.textMuted,
-                    tooltip: 'common.cancel'.tr(),
+                ),
+                // Header: title/subtitle left, X right.
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                    NhamSpacing.sp4,
+                    NhamSpacing.sp3,
+                    NhamSpacing.sp2,
+                    NhamSpacing.sp2,
                   ),
-                ],
-              ),
-            ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            NhamText(
+                              'logging.barcode.title'.tr(),
+                              variant: NhamTextVariant.h3,
+                            ),
+                            const SizedBox(height: 2),
+                            NhamText(
+                              'logging.barcode.subtitle'.tr(),
+                              variant: NhamTextVariant.small,
+                              style: const TextStyle(
+                                color: NhamColors.textMuted,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      IconButton(
+                        onPressed:
+                            saving ? null : () => Navigator.of(context).pop(),
+                        icon: const Icon(LucideIcons.x, size: 20),
+                        color: NhamColors.textMuted,
+                        tooltip: 'common.cancel'.tr(),
+                      ),
+                    ],
+                  ),
+                ),
 
-            Flexible(child: _buildBody(state)),
-          ],
+                Flexible(child: _buildBody(state)),
+              ],
+            ),
+          ),
         ),
       ),
     );
@@ -450,6 +475,7 @@ class _TorchButton extends StatelessWidget {
         final on = state.torchState == TorchState.on;
         return Semantics(
           button: true,
+          toggled: on,
           label: 'logging.barcode.torch'.tr(),
           child: GestureDetector(
             onTap: () {
@@ -581,10 +607,7 @@ class _ManualEntryView extends StatelessWidget {
             ),
           ),
           const SizedBox(height: NhamSpacing.sp3),
-          _PrimaryButton(
-            label: 'logging.barcode.search'.tr(),
-            onTap: onSubmit,
-          ),
+          _PrimaryButton(label: 'logging.barcode.search'.tr(), onTap: onSubmit),
           const SizedBox(height: NhamSpacing.sp2),
           Center(
             child: _QuietButton(

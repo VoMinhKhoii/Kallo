@@ -1034,7 +1034,7 @@
       "subtitle": "Nutrition for packaged products, via Open Food Facts",
       "scanning": "Center the barcode inside the frame",
       "torch": "Flashlight",
-      "cameraDenied": "Camera access is off. Enable it for Nham in Settings > Privacy > Camera, or enter the barcode below.",
+      "cameraDenied": "Camera access is off. Enable it for Nhẩm in Settings > Privacy > Camera, or enter the barcode below.",
       "cameraError": "The camera isn't available on this device.",
       "manualEntry": "Enter barcode manually",
       "backToCamera": "Back to camera",
