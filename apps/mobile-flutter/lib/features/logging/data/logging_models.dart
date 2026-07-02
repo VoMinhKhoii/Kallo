@@ -56,6 +56,26 @@ class PersistedMealItemGroup {
 }
 
 /// A saved meal in the day's feed.
+/// A meal's circle-share state, or null if it was never shared. `shareId` keys
+/// the shareable Macro Card; `visibility` (`'private' | 'circle' | 'public'`)
+/// seeds the "Share to circle" toggle from real server state. Mirrors the web
+/// `PersistedMeal['share']` (`lib/actions/meals/types.ts`).
+class MealShare {
+  const MealShare({required this.shareId, required this.visibility});
+
+  /// Nullable — absent in the payload must not masquerade as a real id (the
+  /// share-card link is keyed off it).
+  final String? shareId;
+  final String visibility;
+
+  bool get isShared => visibility != 'private';
+
+  factory MealShare.fromJson(Map<String, dynamic> json) => MealShare(
+        shareId: json['shareId'] as String?,
+        visibility: json['visibility'] as String? ?? 'private',
+      );
+}
+
 class PersistedMeal {
   final String id;
   final String rawInput;
@@ -63,12 +83,16 @@ class PersistedMeal {
   final MealNutrition nutrition;
   final List<PersistedMealItemGroup> mealItemGroups;
 
+  /// Circle-share state (null when never shared).
+  final MealShare? share;
+
   const PersistedMeal({
     required this.id,
     required this.rawInput,
     required this.loggedAt,
     required this.nutrition,
     required this.mealItemGroups,
+    this.share,
   });
 
   factory PersistedMeal.fromJson(Map<String, dynamic> json) => PersistedMeal(
@@ -81,6 +105,9 @@ class PersistedMeal {
             .map((e) =>
                 PersistedMealItemGroup.fromJson(e as Map<String, dynamic>))
             .toList(),
+        share: json['share'] == null
+            ? null
+            : MealShare.fromJson(json['share'] as Map<String, dynamic>),
       );
 }
 

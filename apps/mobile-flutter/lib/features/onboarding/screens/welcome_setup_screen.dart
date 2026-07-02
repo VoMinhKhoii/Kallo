@@ -7,6 +7,7 @@ import '../../../data/session_provider.dart';
 import '../../../theme/calm_tokens.dart';
 import '../../../theme/nham_colors.dart';
 import '../../../theme/nham_typography.dart';
+import '../../circle/data/circle_providers.dart';
 import '../../dashboard/data/dashboard_providers.dart';
 import '../../dashboard/logic/dashboard_format.dart';
 import '../../logging/data/logging_providers.dart';
@@ -95,6 +96,13 @@ class _WelcomeSetupScreenState extends ConsumerState<WelcomeSetupScreen>
     // session (covers the skip-all-to-finish case, where the profile is still
     // "incomplete" but they shouldn't be bounced back into onboarding).
     ref.read(onboardingForceDismissedProvider.notifier).state = true;
+    // A pending circle invite (the link that brought this brand-new user here)
+    // outranks the default landing — finish the connect they came for.
+    final pendingInvite = ref.read(pendingInviteSlugProvider);
+    if (pendingInvite != null) {
+      context.go('/circle/invite/$pendingInvite');
+      return;
+    }
     context.go('/logging');
   }
 

@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'data/analytics.dart';
 import 'data/session_provider.dart';
+import 'features/circle/circle_deep_links.dart';
 import 'router.dart';
 import 'theme/nham_theme.dart';
 
@@ -34,16 +35,21 @@ class NhamApp extends ConsumerWidget {
       }
     });
 
-    return MaterialApp.router(
-      title: 'Nhẩm',
-      debugShowCheckedModeBanner: false,
-      theme: NhamTheme.light(),
-      routerConfig: router,
-      // easy_localization wiring (locale source of truth lives on the
-      // EasyLocalization wrapper in main()).
-      localizationsDelegates: context.localizationDelegates,
-      supportedLocales: context.supportedLocales,
-      locale: context.locale,
+    // Wraps the app so a single invite-deep-link listener lives for the whole
+    // session, routing `nham://invite/<slug>` (and https invite links) to the
+    // in-app connect screen.
+    return CircleDeepLinkListener(
+      child: MaterialApp.router(
+        title: 'Nhẩm',
+        debugShowCheckedModeBanner: false,
+        theme: NhamTheme.light(),
+        routerConfig: router,
+        // easy_localization wiring (locale source of truth lives on the
+        // EasyLocalization wrapper in main()).
+        localizationsDelegates: context.localizationDelegates,
+        supportedLocales: context.supportedLocales,
+        locale: context.locale,
+      ),
     );
   }
 }

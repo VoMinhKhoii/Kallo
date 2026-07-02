@@ -1,0 +1,205 @@
+import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:nham_mobile/features/circle/circle_deep_links.dart';
+import 'package:nham_mobile/features/circle/widgets/circle_card.dart';
+import 'package:nham_mobile/features/circle/widgets/circle_presence_strip.dart';
+import 'package:nham_mobile/models/circle.dart';
+
+import 'l10n_test_loader.dart';
+
+void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
+  setUpAll(() async {
+    // easy_localization persists the locale via shared_preferences.
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(
+          const MethodChannel('plugins.flutter.io/shared_preferences'),
+          (call) async => call.method == 'getAll' ? <String, Object>{} : null,
+        );
+    await EasyLocalization.ensureInitialized();
+  });
+
+  group('CircleProfile.label / initial', () {
+    test('prefers a trimmed display name, else the handle', () {
+      expect(
+        const CircleProfile(
+                userId: 'u', handle: 'alice_1', displayName: '  Alice  ')
+            .label,
+        'Alice',
+      );
+      expect(
+        const CircleProfile(userId: 'u', handle: 'alice_1', displayName: '   ')
+            .label,
+        'alice_1',
+      );
+      expect(
+        const CircleProfile(userId: 'u', handle: 'alice_1').initial,
+        'A',
+      );
+    });
+  });
+
+  group('CircleFeedEntry.fromJson', () {
+    test('parses friend + meal, macros as doubles, isSelf default false', () {
+      final entry = CircleFeedEntry.fromJson(const {
+        'friend': {
+          'userId': 'u2',
+          'handle': 'bob',
+          'displayName': null,
+          'avatarSeed': 'bob',
+        },
+        'meal': {
+          'mealId': 'm1',
+          'shareId': 's1',
+          'rawInput': '2 bowls phở',
+          'caloriesKcal': 540,
+          'proteinG': 30,
+          'carbohydrateG': null,
+          'fatG': 12.5,
+          'sharedAt': '2026-07-01T09:00:00Z',
+        },
+      });
+
+      expect(entry.isSelf, false);
+      expect(entry.friend.label, 'bob');
+      expect(entry.meal.rawInput, '2 bowls phở');
+      expect(entry.meal.caloriesKcal, 540.0);
+      expect(entry.meal.carbohydrateG, isNull);
+      expect(entry.meal.fatG, 12.5);
+    });
+  });
+
+  group('InvitePreview.fromJson', () {
+    test('maps status strings to relations and reads signedOut', () {
+      InvitePreview parse(String? status, {bool signedOut = false}) =>
+          InvitePreview.fromJson({
+            'inviter': const {'userId': 'u', 'handle': 'alice'},
+            'status': status,
+            'signedOut': signedOut,
+          });
+
+      expect(parse('self').relation, InviteRelation.self);
+      expect(parse('accepted').relation, InviteRelation.accepted);
+      expect(parse('blocked').relation, InviteRelation.blocked);
+      expect(parse('none').relation, InviteRelation.none);
+      expect(parse(null).relation, InviteRelation.none);
+      expect(parse('none', signedOut: true).signedOut, true);
+    });
+  });
+
+  group('inviteSlugFrom', () {
+    test('extracts the slug from custom-scheme and https invite links', () {
+      expect(inviteSlugFrom(Uri.parse('nham://invite/alice_1')), 'alice_1');
+      expect(
+        inviteSlugFrom(Uri.parse('https://nham.app/en/invite/bob')),
+        'bob',
+      );
+      expect(
+        inviteSlugFrom(Uri.parse('https://nham.app/invite/carol')),
+        'carol',
+      );
+    });
+
+    test('lowercases the slug (handles are stored lowercase)', () {
+      expect(inviteSlugFrom(Uri.parse('nham://invite/Alice_1')), 'alice_1');
+      expect(
+        inviteSlugFrom(Uri.parse('https://nham.app/en/invite/BOB')),
+        'bob',
+      );
+    });
+
+    test('returns null for non-invite links', () {
+      expect(inviteSlugFrom(Uri.parse('nham://auth-callback')), isNull);
+      expect(inviteSlugFrom(Uri.parse('https://nham.app/dashboard')), isNull);
+    });
+  });
+
+  group('discTintIndex', () {
+    test('replicates the web signed-32-bit hash (same tint cross-platform)',
+        () {
+      // 'alice' hashes to 92903040 under the JS `hash*31+code|0` scheme.
+      expect(discTintIndex(null, 'alice'), 92903040 % 3);
+    });
+
+    test('is deterministic and prefers the seed over the handle', () {
+      final a = discTintIndex('seed_x', 'ignored');
+      final b = discTintIndex('seed_x', 'other_handle');
+      expect(a, b);
+      expect(a, inInclusiveRange(0, 2));
+    });
+  });
+
+  group('CircleCard', () {
+    const entry = CircleFeedEntry(
+      friend: CircleProfile(
+        userId: 'u2',
+        handle: 'bob',
+        displayName: 'Bob',
+        avatarSeed: 'bob',
+      ),
+      isSelf: false,
+      meal: CircleFeedMeal(
+        mealId: 'm1',
+        shareId: 's1',
+        rawInput: '2 bowls phở',
+        sharedAt: '2026-07-01T09:00:00Z',
+        caloriesKcal: 540,
+        proteinG: 30,
+        carbohydrateG: 60,
+        fatG: 12,
+      ),
+    );
+
+    Future<void> pumpCard(WidgetTester tester) async {
+      await EasyLocalization.ensureInitialized();
+      await tester.pumpWidget(
+        EasyLocalization(
+          supportedLocales: const [Locale('en')],
+          path: 'assets/l10n',
+          fallbackLocale: const Locale('en'),
+          // Disk loader: rootBundle.loadString isolate-decodes >50KiB assets,
+          // which never completes in the fake-async test zone.
+          assetLoader: const FsL10nLoader(),
+          child: Builder(
+            builder: (context) => MaterialApp(
+              localizationsDelegates: context.localizationDelegates,
+              supportedLocales: context.supportedLocales,
+              locale: context.locale,
+              home: const Scaffold(
+                body: SingleChildScrollView(child: CircleCard(entry: entry)),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('renders the quote + collapsed macro summary', (tester) async {
+      await pumpCard(tester);
+
+      expect(find.text('2 bowls phở'), findsOneWidget);
+      expect(find.text('540 kcal'), findsOneWidget);
+      expect(find.textContaining('P: 30g'), findsOneWidget);
+      // Expanded-only content is absent while collapsed.
+      expect(find.text('Total'), findsNothing);
+    });
+
+    testWidgets('chevron expands to the Total row and collapses back',
+        (tester) async {
+      await pumpCard(tester);
+
+      await tester.tap(find.byIcon(LucideIcons.chevronDown));
+      await tester.pumpAndSettle();
+      expect(find.text('Total'), findsOneWidget);
+
+      await tester.tap(find.byIcon(LucideIcons.chevronDown));
+      await tester.pumpAndSettle();
+      expect(find.text('Total'), findsNothing);
+    });
+  });
+}

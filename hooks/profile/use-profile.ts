@@ -24,7 +24,7 @@ export function useMyProfile() {
 export function useSaveProfile() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (input: { handle: string; displayName?: string }) =>
+    mutationFn: (input: { handle: string; displayName?: string | null }) =>
       saveMyProfile(input),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: profileKeys.mine });

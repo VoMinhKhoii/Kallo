@@ -33,6 +33,18 @@
                 <category android:name="android.intent.category.BROWSABLE"/>
                 <data android:scheme="nham" android:host="auth-callback"/>
             </intent-filter>
+            <!-- Circle invite deep link: nham://invite/<slug>. Captured by the
+                 app_links listener (CircleDeepLinkListener) and routed to the
+                 in-app connect screen. iOS accepts any host on the registered
+                 `nham` scheme, so no Info.plist change is needed there.
+                 TODO(P2): add an autoVerify https App Link + assetlinks.json so
+                 shareable https invite links open the app too (infra handoff). -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <data android:scheme="nham" android:host="invite"/>
+            </intent-filter>
         </activity>
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->
