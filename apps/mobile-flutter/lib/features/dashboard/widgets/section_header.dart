@@ -6,7 +6,7 @@ import 'package:flutter/material.dart';
 
 import '../../../theme/nham_colors.dart';
 import '../../../theme/nham_theme.dart';
-import 'dashboard_tokens.dart';
+import '../../../theme/calm_tokens.dart';
 
 /// The dashboard section label: an 11px bold uppercase taupe eyebrow with wide
 /// tracking. A [range] (or [action]) makes it a space-between row with a

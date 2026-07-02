@@ -27,7 +27,7 @@ import '../../logging/logic/timeline_utils.dart' hide WeekStrip;
 import '../data/dashboard_providers.dart';
 import '../logic/dashboard_format.dart';
 import '../widgets/adherence_heatmap.dart';
-import '../widgets/dashboard_tokens.dart';
+import '../../../theme/calm_tokens.dart';
 import '../widgets/floating_meal_trigger.dart';
 import '../widgets/section_header.dart';
 import '../widgets/skeleton.dart';

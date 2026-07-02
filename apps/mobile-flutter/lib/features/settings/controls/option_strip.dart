@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../../../theme/calm_tokens.dart';
 import '../../../theme/nham_colors.dart';
 import '../../../theme/nham_theme.dart';
-import '../../../theme/nham_typography.dart';
 
 /// A single option for [OptionStrip], with an optional hint sub-label.
 class OptionStripItem {
@@ -76,9 +76,8 @@ class _OptionButtonState extends State<_OptionButton> {
 
   @override
   Widget build(BuildContext context) {
-    // Inactive `hover:text-[#2C2416]` — text darkens to `text` on press.
-    final color =
-        widget.active || _pressed ? NhamColors.text : NhamColors.textWarm;
+    // Inactive `hover:text-[#2C2416]` — text darkens to `kInk` on press.
+    final color = widget.active || _pressed ? kInk : kInkMuted;
     final label =
         widget.option.hint == null
             ? widget.option.label
@@ -110,9 +109,7 @@ class _OptionButtonState extends State<_OptionButton> {
               Text(
                 widget.option.label,
                 textAlign: TextAlign.center,
-                style: NhamTextStyles.sansMedium(
-                  fontSize: NhamFontSize.detail,
-                ).copyWith(color: color),
+                style: dashBody(weight: FontWeight.w500, color: color),
               ),
               if (widget.option.hint != null)
                 Padding(
@@ -120,12 +117,7 @@ class _OptionButtonState extends State<_OptionButton> {
                   child: Text(
                     widget.option.hint!,
                     textAlign: TextAlign.center,
-                    style: NhamTextStyles.sansRegular(
-                      fontSize: NhamFontSize.eyebrow,
-                    ).copyWith(
-                      height: 13 / 10,
-                      color: color.withValues(alpha: 0.7),
-                    ),
+                    style: dashMeta(color: color.withValues(alpha: 0.7)),
                   ),
                 ),
             ],

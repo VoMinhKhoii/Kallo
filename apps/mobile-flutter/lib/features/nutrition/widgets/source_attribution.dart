@@ -2,7 +2,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
-import '../../../features/dashboard/widgets/dashboard_tokens.dart';
+import '../../../theme/calm_tokens.dart';
 import '../../../theme/nham_colors.dart';
 import '../../../theme/nham_theme.dart';
 
@@ -23,18 +23,18 @@ class SourceAttribution extends StatelessWidget {
           const Icon(
             LucideIcons.shieldCheck,
             size: 13,
-            color: kInkDisabled,
+            color: kInkMuted,
           ),
           const SizedBox(width: NhamSpacing.sp1_5),
           Flexible(
             child: Text(
               tr('nutrition.sources.caption'),
               textAlign: TextAlign.center,
-              style: dashMeta(color: kInkDisabled),
+              style: dashMeta(color: kInkMuted),
             ),
           ),
           const SizedBox(width: NhamSpacing.sp1),
-          const Icon(LucideIcons.info, size: 13, color: kInkDisabled),
+          const Icon(LucideIcons.info, size: 13, color: kInkMuted),
         ],
       ),
     );
@@ -129,7 +129,7 @@ class _Citation extends StatelessWidget {
         children: [
           Text(label, style: dashBody(weight: FontWeight.w600)),
           const SizedBox(height: 2),
-          Text(detail, style: dashMeta(color: kInkSecondary)),
+          Text(detail, style: dashMeta(color: kInkMuted)),
         ],
       ),
     );

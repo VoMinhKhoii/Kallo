@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../data/session_provider.dart';
-import '../../../features/dashboard/widgets/dashboard_tokens.dart';
+import '../../../theme/calm_tokens.dart';
 import '../../../models/nutrition.dart';
 import '../../../shared/widgets/nham_primitives.dart';
 import '../../../shared/widgets/nham_text.dart';

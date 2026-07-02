@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import '../../../theme/calm_tokens.dart';
 import '../../../theme/nham_colors.dart';
 import '../../../theme/nham_theme.dart';
-import '../../../theme/nham_typography.dart';
 
 class CustomSelectOption {
   final String value;
@@ -143,8 +143,7 @@ class _CustomSelectState extends State<CustomSelect>
                       _selected?.label ?? '',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: NhamTextStyles.sansRegular(fontSize: 14)
-                          .copyWith(color: NhamColors.text),
+                      style: dashBody(),
                     ),
                   ),
                 ),
@@ -305,10 +304,9 @@ class _OptionRowState extends State<_OptionRow> {
             Expanded(
               child: Text(
                 widget.option.label,
-                style: (widget.selected
-                        ? NhamTextStyles.sansMedium(fontSize: 14)
-                        : NhamTextStyles.sansRegular(fontSize: 14))
-                    .copyWith(color: NhamColors.text),
+                style: dashBody(
+                  weight: widget.selected ? FontWeight.w500 : FontWeight.w400,
+                ),
               ),
             ),
             if (widget.selected)

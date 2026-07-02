@@ -2,7 +2,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import '../../../features/dashboard/widgets/dashboard_tokens.dart';
+import '../../../theme/calm_tokens.dart';
 import '../../../models/nutrition.dart';
 import '../../../theme/nham_theme.dart';
 import '../../../theme/nham_typography.dart';
@@ -126,7 +126,7 @@ class _Segment extends StatelessWidget {
             duration: const Duration(milliseconds: 200),
             style: NhamTextStyles.sansSemiBold(fontSize: NhamFontSize.xs)
                 .copyWith(
-              color: active ? kInk : kInkSecondary,
+              color: active ? kInk : kInkMuted,
               fontFeatures: const [FontFeature.tabularFigures()],
             ),
             child: Text(label),

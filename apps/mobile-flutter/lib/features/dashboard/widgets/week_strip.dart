@@ -21,7 +21,7 @@ import '../../../theme/nham_colors.dart';
 import '../../../theme/nham_theme.dart';
 import '../../logging/logic/timeline_utils.dart';
 import '../data/dashboard_providers.dart';
-import 'dashboard_tokens.dart';
+import '../../../theme/calm_tokens.dart';
 
 class WeekStrip extends ConsumerWidget {
   const WeekStrip({

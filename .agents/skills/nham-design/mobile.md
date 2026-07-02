@@ -9,9 +9,9 @@ or the web scale here.
 Throughline: **hierarchy comes from weight + colour, not size**; a compact,
 uniform vertical rhythm; exactly one editorial serif moment per viewport.
 
-**Live on the Dashboard.** Nutrition / Logging / Onboarding / Settings are **not
-yet migrated** — do new work against this doc; migrate existing screens
-per-screen with QA (see _Status_).
+**Live across the app.** Dashboard, Nutrition, Logging, Onboarding, and Settings
+all run on this system; Auth is a deliberate **light-touch** (see _Status_). Do
+all new mobile UI work against this doc.
 
 ## Font
 
@@ -41,8 +41,8 @@ semibold felt thick; body/meta stay regular (400). Serif is never bold.
 | `kInk` | `#2C2416` | primary data — numbers, meal names, macro labels |
 | `kInkMuted` | `#8C867C` | everything secondary — labels, units, captions, dates |
 
-No third "disabled" tier. (`kInkSecondary` / `kInkDisabled` still exist for the
-un-migrated Nutrition screens — do **not** add new usages.)
+No third "disabled" tier. The old `kInkSecondary` (taupe) / `kInkDisabled`
+(stone) constants have been **deleted** — every surface is on `kInk` + `kInkMuted`.
 
 ## Spacing — one 12px rhythm
 
@@ -53,17 +53,21 @@ the 12px rule governs the *between-component* rhythm.
 
 ## Reference implementation (source of truth)
 
-`apps/mobile-flutter/lib/features/dashboard/widgets/dashboard_tokens.dart` —
+`apps/mobile-flutter/lib/theme/calm_tokens.dart` —
 `dashHero` / `dashValue` / `dashBody` / `dashMeta` / `dashEyebrow` /
 `dashHeadline`, plus `kInk` / `kInkMuted`. Inter-component spacing lives in
 `dashboard_screen.dart` (the `sp3` rhythm) and the section widgets.
 
 ## Status / migration
 
-- ✅ **Dashboard** — live on this system.
-- ⛔ **Nutrition** — still on legacy `kInkSecondary` (taupe) / `kInkDisabled`
-  (stone) and the old scale. Migrate to `kInkMuted` + the scale above.
-- ⛔ **Logging, Onboarding, Settings** — not yet reviewed.
+- ✅ **Dashboard, Nutrition, Logging, Onboarding, Settings** — live on this system
+  (`kInk` + `kInkMuted`, the calm scale).
+- 🔸 **Auth** — a deliberate **light-touch**: body / labels / buttons are on the
+  calm sans tokens and the two-colour palette, but its serif brand identity is
+  preserved intact (the "Nhẩm" wordmark, the italic tagline, and the form titles
+  stay serif — that is the one surface where serif is the point, not an accent).
 
-When every screen is migrated and nothing references `kInkSecondary` /
-`kInkDisabled`, delete those constants.
+Two shared-widget paths still carry pre-calm styling where a call site didn't
+override them: `lib/shared/widgets/nham_text.dart` (its `NhamTextVariant`
+defaults) and the logging `mealQuote` serif variant. These are intentional and
+out of the calm token set; migrate the shared widget separately if desired.

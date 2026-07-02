@@ -3,9 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import '../../../theme/calm_tokens.dart';
 import '../../../theme/nham_colors.dart';
 import '../../../theme/nham_theme.dart';
-import '../../../theme/nham_typography.dart';
 import '../data/countries.dart';
 
 /// ISO values pinned above the alphabet — Việt Nam first, then the destinations
@@ -87,9 +87,7 @@ class _CountrySelectState extends State<CountrySelect> {
                 display,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: NhamTextStyles.sansRegular(fontSize: 14).copyWith(
-                  color: hasValue ? NhamColors.text : NhamColors.textHelp,
-                ),
+                style: dashBody(color: hasValue ? kInk : kInkMuted),
               ),
             ),
             const SizedBox(width: NhamSpacing.sp2),
@@ -174,8 +172,7 @@ class _CountrySheetState extends State<_CountrySheet> {
                   autofocus: false,
                   onChanged: (v) => setState(() => _query = v),
                   cursorColor: NhamColors.accent,
-                  style: NhamTextStyles.sansRegular(fontSize: 14)
-                      .copyWith(color: NhamColors.text),
+                  style: dashBody(),
                   decoration: InputDecoration(
                     isDense: true,
                     filled: true,
@@ -186,8 +183,7 @@ class _CountrySheetState extends State<_CountrySheet> {
                       color: NhamColors.textHelp,
                     ),
                     hintText: tr('onboarding.origin.searchCountry'),
-                    hintStyle: NhamTextStyles.sansRegular(fontSize: 14)
-                        .copyWith(color: NhamColors.textHelp),
+                    hintStyle: dashBody(color: kInkMuted),
                     contentPadding: const EdgeInsets.symmetric(
                       horizontal: NhamSpacing.sp3,
                       vertical: NhamSpacing.sp3,
@@ -204,8 +200,7 @@ class _CountrySheetState extends State<_CountrySheet> {
                     ? Center(
                         child: Text(
                           tr('onboarding.origin.noCountries'),
-                          style: NhamTextStyles.sansRegular(fontSize: 14)
-                              .copyWith(color: NhamColors.textHelp),
+                          style: dashBody(color: kInkMuted),
                         ),
                       )
                     : ListView(
@@ -259,8 +254,7 @@ class _SectionLabel extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(12, 4, 12, 6),
       child: Text(
         text.toUpperCase(),
-        style: NhamTextStyles.sansBold(fontSize: 10)
-            .copyWith(letterSpacing: 1.5, color: NhamColors.stone),
+        style: dashEyebrow(),
       ),
     );
   }
@@ -319,17 +313,15 @@ class _OptionRowState extends State<_OptionRow> {
                 widget.country.value,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: (widget.selected
-                        ? NhamTextStyles.sansMedium(fontSize: 14)
-                        : NhamTextStyles.sansRegular(fontSize: 14))
-                    .copyWith(color: NhamColors.text),
+                style: dashBody(
+                  weight: widget.selected ? FontWeight.w500 : FontWeight.w400,
+                ),
               ),
             ),
             const SizedBox(width: NhamSpacing.sp3),
             Text(
               widget.country.vi,
-              style: NhamTextStyles.sansRegular(fontSize: 12)
-                  .copyWith(color: NhamColors.textHelp),
+              style: dashMeta(),
             ),
             if (widget.selected) ...[
               const SizedBox(width: NhamSpacing.sp2),

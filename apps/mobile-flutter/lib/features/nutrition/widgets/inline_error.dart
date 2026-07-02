@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../../shared/widgets/nham_text.dart';
+import '../../../theme/calm_tokens.dart';
 import '../../../theme/nham_colors.dart';
-import '../../../theme/nham_typography.dart';
 
 /// RN port of `apps/mobile/src/components/nutrition/states/inline-error.tsx`.
 class InlineError extends StatefulWidget {
@@ -81,9 +81,7 @@ class _InlineErrorState extends State<InlineError> {
                     child: NhamText(
                       widget.retryLabel,
                       variant: NhamTextVariant.small,
-                      style: NhamTextStyles.sansMedium(
-                        fontSize: NhamFontSize.sm,
-                      ).copyWith(color: NhamColors.text),
+                      style: dashBody(weight: FontWeight.w500),
                     ),
                   ),
                 ),

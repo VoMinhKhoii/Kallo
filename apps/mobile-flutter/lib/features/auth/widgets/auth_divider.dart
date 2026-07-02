@@ -1,8 +1,8 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
+import '../../../theme/calm_tokens.dart';
 import '../../../theme/nham_colors.dart';
-import '../../../theme/nham_typography.dart';
 
 /// "or continue with email" divider.
 ///
@@ -24,8 +24,7 @@ class AuthDivider extends StatelessWidget {
         const SizedBox(width: 12), // gap-3
         Text(
           tr('auth.dialog.orContinueWithEmail'),
-          style: NhamTextStyles.sansRegular(fontSize: NhamFontSize.xs)
-              .copyWith(color: NhamColors.textMuted),
+          style: dashMeta(),
         ),
         const SizedBox(width: 12),
         rule,

@@ -4,7 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
-import '../../../features/dashboard/widgets/dashboard_tokens.dart';
+import '../../../theme/calm_tokens.dart';
 import '../../../models/nutrition.dart';
 import '../../../theme/nham_colors.dart';
 import '../../../theme/nham_theme.dart';
@@ -155,9 +155,9 @@ class _NutrientGapState extends ConsumerState<_NutrientGap> {
         const SizedBox(height: NhamSpacing.sp2_5),
         async.when(
           loading: () => Text(tr('nutrition.candidates.loading'),
-              style: dashMeta(color: kInkDisabled)),
+              style: dashMeta(color: kInkMuted)),
           error: (_, __) => Text(tr('nutrition.candidates.error'),
-              style: dashMeta(color: kInkDisabled)),
+              style: dashMeta(color: kInkMuted)),
           data: (response) => _foods(response, vi),
         ),
       ],
@@ -168,7 +168,7 @@ class _NutrientGapState extends ConsumerState<_NutrientGap> {
     final pool = response.foods;
     if (pool.isEmpty) {
       return Text(tr('nutrition.candidates.empty'),
-          style: dashMeta(color: kInkDisabled));
+          style: dashMeta(color: kInkMuted));
     }
 
     final reserved = pool.where((f) => _reserved.contains(f.id)).toList();
@@ -288,11 +288,11 @@ class _RefreshButton extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(LucideIcons.refreshCw, size: 13, color: kInkSecondary),
+            const Icon(LucideIcons.refreshCw, size: 13, color: kInkMuted),
             const SizedBox(width: 5),
             Text(
               tr('nutrition.suggestedFoods.refresh'),
-              style: dashMeta(color: kInkSecondary),
+              style: dashMeta(color: kInkMuted),
             ),
           ],
         ),

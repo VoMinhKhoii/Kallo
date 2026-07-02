@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import '../../../theme/calm_tokens.dart';
 import '../../../theme/nham_colors.dart';
 import '../../../theme/nham_theme.dart';
 import '../../../theme/nham_typography.dart';
@@ -120,26 +121,19 @@ class _ConfirmEmailViewState extends ConsumerState<ConfirmEmailView> {
         Text(
           tr('auth.confirm.description'),
           textAlign: TextAlign.center,
-          style: NhamTextStyles.sansRegular(
-            fontSize: NhamFontSize.sm,
-          ).copyWith(color: NhamColors.textMuted),
+          style: dashBody(color: kInkMuted),
         ),
         const SizedBox(height: 2),
         Text(
           email,
           textAlign: TextAlign.center,
-          style: NhamTextStyles.sansSemiBold(
-            fontSize: NhamFontSize.sm,
-          ).copyWith(color: NhamColors.text),
+          style: dashBody(weight: FontWeight.w500),
         ),
         const SizedBox(height: 12),
         Text(
           tr('auth.confirm.hint'),
           textAlign: TextAlign.center,
-          style: NhamTextStyles.sansRegular(
-            fontSize: NhamFontSize.xs,
-            height: NhamLeading.normal,
-          ).copyWith(color: NhamColors.textMuted),
+          style: dashMeta(),
         ),
         const SizedBox(height: 24),
         // Resend (cooldown-gated).
@@ -164,12 +158,10 @@ class _ConfirmEmailViewState extends ConsumerState<ConfirmEmailView> {
                       'auth.confirm.resendIn',
                       namedArgs: {'seconds': '$_remaining'},
                     ),
-              style: NhamTextStyles.sansMedium(fontSize: NhamFontSize.md)
-                  .copyWith(
-                    color: canResend
-                        ? NhamColors.text
-                        : NhamColors.textMuted,
-                  ),
+              style: dashBody(
+                weight: FontWeight.w500,
+                color: canResend ? NhamColors.text : kInkMuted,
+              ),
             ),
           ),
         ),
@@ -180,9 +172,7 @@ class _ConfirmEmailViewState extends ConsumerState<ConfirmEmailView> {
             onTap: busy ? null : _controller.clearPendingEmail,
             child: Text(
               tr('auth.confirm.back'),
-              style: NhamTextStyles.sansMedium(
-                fontSize: NhamFontSize.sm,
-              ).copyWith(color: NhamColors.textMuted),
+              style: dashBody(color: kInkMuted),
             ),
           ),
         ),

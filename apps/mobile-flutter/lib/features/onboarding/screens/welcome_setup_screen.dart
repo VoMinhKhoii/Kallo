@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../data/session_provider.dart';
+import '../../../theme/calm_tokens.dart';
 import '../../../theme/nham_colors.dart';
 import '../../../theme/nham_typography.dart';
 import '../../dashboard/data/dashboard_providers.dart';
@@ -112,8 +113,7 @@ class _WelcomeSetupScreenState extends ConsumerState<WelcomeSetupScreen>
                   Text(
                     tr('onboarding.setup.targetReadyLabel').toUpperCase(),
                     textAlign: TextAlign.center,
-                    style: NhamTextStyles.eyebrow()
-                        .copyWith(color: NhamColors.stone),
+                    style: dashEyebrow(),
                   ),
                   const SizedBox(height: 10),
                   // The target counts up in Lora 40.
@@ -133,9 +133,7 @@ class _WelcomeSetupScreenState extends ConsumerState<WelcomeSetupScreen>
                             ),
                             TextSpan(
                               text: ' ${tr('onboarding.setup.perDay')}',
-                              style: NhamTextStyles.sansRegular(
-                                fontSize: NhamFontSize.md,
-                              ).copyWith(color: NhamColors.textMuted),
+                              style: dashMeta(),
                             ),
                           ],
                         ),
@@ -158,8 +156,7 @@ class _WelcomeSetupScreenState extends ConsumerState<WelcomeSetupScreen>
                 Text(
                   tr('onboarding.setup.subtitle'),
                   textAlign: TextAlign.center,
-                  style: NhamTextStyles.sansRegular(fontSize: NhamFontSize.md)
-                      .copyWith(color: NhamColors.textMuted, height: 1.4),
+                  style: dashBody(color: kInkMuted),
                 ),
               ],
             ),

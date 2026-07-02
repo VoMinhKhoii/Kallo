@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 
 import '../../../models/onboarding.dart';
 import '../../../shared/widgets/decimal_input.dart';
+import '../../../theme/calm_tokens.dart';
 import '../../../theme/nham_colors.dart';
 import '../../../theme/nham_theme.dart';
 import '../../../theme/nham_typography.dart';
@@ -81,9 +82,7 @@ class BodyMetrics extends StatelessWidget {
                     const SizedBox(height: 6), // gap-1.5
                     Text(
                       form.errorFor(ProfileField.biologicalSex)!,
-                      style:
-                          NhamTextStyles.sansRegular(fontSize: NhamFontSize.xs)
-                              .copyWith(color: NhamColors.danger),
+                      style: dashMeta(color: NhamColors.danger),
                     ),
                   ],
                 ],
@@ -249,12 +248,9 @@ class _FieldLabel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Web: font-bold text-[11px] uppercase tracking-widest (0.1em ≈ 1.1px at
-    // 11px) text-[#6B5D4F].
     return Text(
       text.toUpperCase(),
-      style: NhamTextStyles.sansBold(fontSize: NhamFontSize.xxs)
-          .copyWith(letterSpacing: 1.1, color: NhamColors.textSoft),
+      style: dashEyebrow(),
     );
   }
 }
@@ -289,8 +285,7 @@ class _NumberField extends StatelessWidget {
           const SizedBox(height: 6), // gap-1.5
           Text(
             error!,
-            style: NhamTextStyles.sansRegular(fontSize: NhamFontSize.xs)
-                .copyWith(color: NhamColors.danger),
+            style: dashMeta(color: NhamColors.danger),
           ),
         ],
       ],
@@ -362,10 +357,8 @@ class _SegmentButtonState extends State<_SegmentButton> {
 
   @override
   Widget build(BuildContext context) {
-    // Inactive `hover:text-[#2C2416]` — text darkens to `text` on press.
-    final color = widget.active || _pressed
-        ? NhamColors.text
-        : NhamColors.textWarm;
+    // Inactive `hover:text-[#2C2416]` — text darkens to `kInk` on press.
+    final color = widget.active || _pressed ? kInk : kInkMuted;
     return GestureDetector(
       onTap: widget.onTap,
       onTapDown: (_) => setState(() => _pressed = true),
@@ -387,8 +380,7 @@ class _SegmentButtonState extends State<_SegmentButton> {
         child: Text(
           widget.label,
           textAlign: TextAlign.center,
-          style: NhamTextStyles.sansMedium(fontSize: NhamFontSize.sm)
-              .copyWith(color: color),
+          style: dashBody(weight: FontWeight.w500, color: color),
         ),
       ),
     );
@@ -508,14 +500,12 @@ class _CarbCardState extends State<_CarbCard> {
           children: [
             Text(
               widget.label,
-              style: NhamTextStyles.sansMedium(fontSize: NhamFontSize.sm)
-                  .copyWith(color: NhamColors.text),
+              style: dashBody(weight: FontWeight.w500),
             ),
             const SizedBox(height: NhamSpacing.sp1),
             Text(
               widget.desc,
-              style: NhamTextStyles.sansRegular(fontSize: NhamFontSize.xxs)
-                  .copyWith(color: NhamColors.textWarm),
+              style: dashMeta(),
             ),
             // gap-1 + mt-1 → ~8px above the macros row.
             const SizedBox(height: NhamSpacing.sp2),
@@ -536,8 +526,7 @@ class _CarbCardState extends State<_CarbCard> {
 
   Widget _macro(String s) => Text(
         s,
-        style: NhamTextStyles.sansRegular(fontSize: NhamFontSize.xxs)
-            .copyWith(color: NhamColors.textWarm),
+        style: dashMeta(),
       );
 }
 
@@ -596,8 +585,7 @@ class _HeroTarget extends StatelessWidget {
               ),
               Text(
                 ' ${t('kcal')}',
-                style: NhamTextStyles.sansRegular(fontSize: NhamFontSize.lg)
-                    .copyWith(color: NhamColors.textWarm),
+                style: dashMeta(),
               ),
             ],
           ),
@@ -605,8 +593,7 @@ class _HeroTarget extends StatelessWidget {
           Text(
             subtitle.toString(),
             textAlign: TextAlign.center,
-            style: NhamTextStyles.sansRegular(fontSize: NhamFontSize.xs)
-                .copyWith(color: NhamColors.textWarm),
+            style: dashMeta(),
           ),
           const SizedBox(height: NhamSpacing.sp5),
           Container(
@@ -632,15 +619,12 @@ class _HeroTarget extends StatelessWidget {
           children: [
             Text(
               label.toUpperCase(),
-              // tracking-widest = 0.1em ≈ 1.0px at 10px
-              style: NhamTextStyles.sansBold(fontSize: NhamFontSize.eyebrow)
-                  .copyWith(letterSpacing: 1.0, color: NhamColors.textSoft),
+              style: dashEyebrow(),
             ),
             const SizedBox(height: 2), // gap-0.5
             Text(
               '${grams}g',
-              style: NhamTextStyles.sansMedium(fontSize: NhamFontSize.lg)
-                  .copyWith(color: NhamColors.text),
+              style: dashValue(),
             ),
           ],
         ),

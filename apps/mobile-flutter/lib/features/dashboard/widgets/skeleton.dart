@@ -8,7 +8,7 @@ library;
 
 import 'package:flutter/material.dart';
 
-import 'dashboard_tokens.dart';
+import '../../../theme/calm_tokens.dart';
 
 const Color _skelBase = Color(0xFFE0D6C2); // warm placeholder grey
 const Color _skelHi = Color(0xFFF1EADC); // shimmer highlight

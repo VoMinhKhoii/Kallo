@@ -7,9 +7,9 @@ import 'package:flutter/services.dart';
 
 import '../../../models/meal.dart';
 import '../../../shared/widgets/nham_text.dart';
+import '../../../theme/calm_tokens.dart';
 import '../../../theme/nham_colors.dart';
 import '../../../theme/nham_theme.dart';
-import '../../../theme/nham_typography.dart';
 import '../logic/format.dart';
 import '../logic/meal_utils.dart';
 import 'count_up.dart';
@@ -166,16 +166,14 @@ class _MealEntryState extends State<MealEntry> {
                       NhamText(
                         'logging.mealEntry.total'.tr(),
                         variant: NhamTextVariant.itemName,
-                        style: NhamTextStyles.sansBold(
-                          fontSize: NhamFontSize.detail,
-                        ).copyWith(color: NhamColors.text),
+                        style: dashBody(weight: FontWeight.w500),
                       ),
                       Row(
                         children: [
                           NhamText(
                             'P: ${fmtG(totals.protein)}  C: ${fmtG(totals.carbs)}  F: ${fmtG(totals.fat)}',
                             variant: NhamTextVariant.captionTabular,
-                            style: const TextStyle(color: NhamColors.textMuted),
+                            style: dashMeta(tabular: true),
                           ),
                           const SizedBox(width: NhamSpacing.sp4), // gap-4
                           CountUpText(
@@ -277,9 +275,7 @@ class _ItemRow extends StatelessWidget {
                             item.quantity.round().toString(),
                             variant: NhamTextVariant.numStrong,
                             textAlign: TextAlign.center,
-                            style: NhamTextStyles.sansSemiBold(
-                              fontSize: 11,
-                            ).copyWith(color: NhamColors.text),
+                            style: dashMeta(color: kInk, tabular: true),
                           ),
                         ),
                         const SizedBox(width: 2),
@@ -301,8 +297,8 @@ class _ItemRow extends StatelessWidget {
                         struck
                             ? const TextStyle(
                               decoration: TextDecoration.lineThrough,
-                              decorationColor: NhamColors.textMuted,
-                              color: NhamColors.textMuted,
+                              decorationColor: kInkMuted,
+                              color: kInkMuted,
                             )
                             : null,
                   ),
@@ -452,7 +448,7 @@ class _EditPill extends StatelessWidget {
                     : 'logging.mealEntry.edit'.tr(),
                 variant: NhamTextVariant.pillLabel,
                 style: TextStyle(
-                  color: editing ? NhamColors.accent : NhamColors.textMuted,
+                  color: editing ? NhamColors.accent : kInkMuted,
                 ),
               ),
             ],
@@ -543,9 +539,7 @@ class _ConfirmButtonState extends State<_ConfirmButton> {
                 NhamText(
                   'logging.confirm'.tr(),
                   variant: NhamTextVariant.body,
-                  style: NhamTextStyles.sansMedium(
-                    fontSize: NhamFontSize.xs,
-                  ).copyWith(color: fg),
+                  style: dashBody(color: fg, weight: FontWeight.w500),
                 ),
               ],
             ),

@@ -9,9 +9,9 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../models/ingredient.dart';
 import '../../../shared/widgets/decimal_input.dart';
 import '../../../shared/widgets/nham_text.dart';
+import '../../../theme/calm_tokens.dart';
 import '../../../theme/nham_colors.dart';
 import '../../../theme/nham_theme.dart';
-import '../../../theme/nham_typography.dart';
 import '../data/manual_log_providers.dart';
 
 /// Open the manual-log sheet: search the food database, enter exact grams,
@@ -136,7 +136,7 @@ class _ManualLogSheetState extends ConsumerState<ManualLogSheet> {
                         NhamText(
                           'logging.manualLogging.subtitle'.tr(),
                           variant: NhamTextVariant.small,
-                          style: const TextStyle(color: NhamColors.textMuted),
+                          style: dashMeta(),
                         ),
                       ],
                     ),
@@ -157,9 +157,7 @@ class _ManualLogSheetState extends ConsumerState<ManualLogSheet> {
               child: TextField(
                 controller: _searchController,
                 autofocus: true,
-                style: NhamTextStyles.sansRegular(
-                  fontSize: NhamFontSize.sm,
-                ).copyWith(color: NhamColors.text),
+                style: dashBody(),
                 cursorColor: NhamColors.accent,
                 decoration: InputDecoration(
                   isDense: true,
@@ -169,9 +167,7 @@ class _ManualLogSheetState extends ConsumerState<ManualLogSheet> {
                     color: NhamColors.textMuted,
                   ),
                   hintText: 'logging.manualLogging.searchPlaceholder'.tr(),
-                  hintStyle: NhamTextStyles.sansRegular(
-                    fontSize: NhamFontSize.sm,
-                  ).copyWith(color: NhamColors.placeholderMuted40),
+                  hintStyle: dashBody(color: kInkMuted),
                   filled: true,
                   fillColor: NhamColors.elev,
                   contentPadding: const EdgeInsets.symmetric(
@@ -247,7 +243,7 @@ class _ManualLogSheetState extends ConsumerState<ManualLogSheet> {
                 child: NhamText(
                   _errorText!,
                   variant: NhamTextVariant.small,
-                  style: const TextStyle(color: NhamColors.danger),
+                  style: dashMeta(color: NhamColors.danger),
                 ),
               ),
 
@@ -313,9 +309,8 @@ class _StateBadge extends StatelessWidget {
                 ? 'logging.manualLogging.stateCooked'
                 : 'logging.manualLogging.stateRaw')
             .tr(),
-        style: NhamTextStyles.sansMedium(fontSize: 10).copyWith(
-          color: cooked ? NhamColors.accentDark : NhamColors.textMuted,
-          letterSpacing: 0.4,
+        style: dashEyebrow(
+          color: cooked ? NhamColors.accentDark : kInkMuted,
         ),
       ),
     );
@@ -373,7 +368,7 @@ class _SelectedItemRow extends StatelessWidget {
                       ? '—'
                       : '${kcal.round()} ${'logging.manualLogging.kcal'.tr()}',
                   variant: NhamTextVariant.numCaption,
-                  style: const TextStyle(color: NhamColors.textMuted),
+                  style: dashMeta(tabular: true),
                 ),
               ],
             ),
@@ -392,7 +387,7 @@ class _SelectedItemRow extends StatelessWidget {
           NhamText(
             'logging.manualLogging.gramsUnit'.tr(),
             variant: NhamTextVariant.small,
-            style: const TextStyle(color: NhamColors.textMuted),
+            style: dashMeta(),
           ),
           IconButton(
             onPressed: disabled ? null : onRemove,
@@ -440,7 +435,7 @@ class _ResultsSection extends StatelessWidget {
                   child: NhamText(
                     'logging.manualLogging.searching'.tr(),
                     variant: NhamTextVariant.small,
-                    style: const TextStyle(color: NhamColors.textMuted),
+                    style: dashMeta(),
                   ),
                 ),
               ),
@@ -450,7 +445,7 @@ class _ResultsSection extends StatelessWidget {
                 child: NhamText(
                   'errors.internal'.tr(),
                   variant: NhamTextVariant.small,
-                  style: const TextStyle(color: NhamColors.danger),
+                  style: dashMeta(color: NhamColors.danger),
                 ),
               ),
           data: (results) {
@@ -464,7 +459,7 @@ class _ResultsSection extends StatelessWidget {
                     child: NhamText(
                       'logging.manualLogging.recentsHint'.tr(),
                       variant: NhamTextVariant.small,
-                      style: const TextStyle(color: NhamColors.textMuted),
+                      style: dashMeta(),
                     ),
                   ),
                 );
@@ -474,7 +469,7 @@ class _ResultsSection extends StatelessWidget {
                 child: NhamText(
                   'logging.manualLogging.noResults'.tr(),
                   variant: NhamTextVariant.small,
-                  style: const TextStyle(color: NhamColors.textMuted),
+                  style: dashMeta(),
                 ),
               );
             }
@@ -551,9 +546,7 @@ class _ResultTileState extends State<_ResultTile> {
                           const SizedBox(width: 6),
                           Text(
                             '≈ ${'logging.manualLogging.relatedMatch'.tr()}',
-                            style: NhamTextStyles.sansRegular(
-                              fontSize: 10,
-                            ).copyWith(color: NhamColors.textMuted60),
+                            style: dashMeta(),
                           ),
                         ],
                       ],
@@ -564,7 +557,7 @@ class _ResultTileState extends State<_ResultTile> {
                         variant: NhamTextVariant.small,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(color: NhamColors.textMuted),
+                        style: dashMeta(),
                       ),
                   ],
                 ),
@@ -575,7 +568,7 @@ class _ResultTileState extends State<_ResultTile> {
                     ? '—'
                     : '${kcal.round()} ${'logging.manualLogging.kcalPer100g'.tr()}',
                 variant: NhamTextVariant.numCaption,
-                style: const TextStyle(color: NhamColors.textMuted),
+                style: dashMeta(tabular: true),
               ),
               const SizedBox(width: NhamSpacing.sp1),
               const Icon(
@@ -611,7 +604,7 @@ class _TotalsSummary extends StatelessWidget {
         NhamText(
           'P: ${_fmtG(totals.proteinG)} · C: ${_fmtG(totals.carbohydrateG)} · F: ${_fmtG(totals.fatG)}',
           variant: NhamTextVariant.numCaption,
-          style: const TextStyle(color: NhamColors.textMuted),
+          style: dashMeta(tabular: true),
         ),
       ],
     );
@@ -678,9 +671,10 @@ class _SaveButtonState extends State<_SaveButton> {
                     )
                   : Text(
                       'logging.manualLogging.save'.tr(),
-                      style: NhamTextStyles.sansSemiBold(
-                        fontSize: NhamFontSize.sm,
-                      ).copyWith(color: Colors.white),
+                      style: dashBody(
+                        color: Colors.white,
+                        weight: FontWeight.w500,
+                      ),
                     ),
             ),
           ),

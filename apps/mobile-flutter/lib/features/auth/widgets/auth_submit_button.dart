@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../../../theme/calm_tokens.dart';
 import '../../../theme/nham_colors.dart';
 import '../../../theme/nham_theme.dart';
-import '../../../theme/nham_typography.dart';
 
 /// The email submit button.
 ///
@@ -79,7 +79,7 @@ class _AuthSubmitButtonState extends State<AuthSubmitButton> {
               ],
               Text(
                 widget.label,
-                style: NhamTextStyles.sansMedium(fontSize: NhamFontSize.md)
+                style: dashBody(weight: FontWeight.w500)
                     .copyWith(color: NhamColors.elev, letterSpacing: -0.2),
               ),
             ],

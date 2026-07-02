@@ -1,9 +1,9 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
+import '../../../theme/calm_tokens.dart';
 import '../../../theme/nham_colors.dart';
 import '../../../theme/nham_theme.dart';
-import '../../../theme/nham_typography.dart';
 import '../logic/tdee.dart';
 
 /// RN port of the web aggression `<input type=range>` (body-metrics.tsx).
@@ -48,7 +48,7 @@ class AggressionSlider extends StatelessWidget {
                 ),
                 const TextSpan(
                   text: ' · ',
-                  style: TextStyle(color: NhamColors.textWarm),
+                  style: TextStyle(color: kInkMuted),
                 ),
                 TextSpan(
                   text: '$sign$kcalDelta ${tr('onboarding.bodyMetrics.perDay')}',
@@ -56,8 +56,7 @@ class AggressionSlider extends StatelessWidget {
               ],
             ),
             textAlign: TextAlign.center,
-            style: NhamTextStyles.sansMedium(fontSize: 15)
-                .copyWith(color: NhamColors.text),
+            style: dashValue(),
           ),
           const SizedBox(height: NhamSpacing.sp3),
           SliderTheme(
@@ -87,13 +86,11 @@ class AggressionSlider extends StatelessWidget {
             children: [
               Text(
                 tr('onboarding.bodyMetrics.aggressionLow'),
-                style: NhamTextStyles.sansRegular(fontSize: NhamFontSize.xs)
-                    .copyWith(color: NhamColors.textWarm),
+                style: dashMeta(),
               ),
               Text(
                 tr('onboarding.bodyMetrics.aggressionHigh'),
-                style: NhamTextStyles.sansRegular(fontSize: NhamFontSize.xs)
-                    .copyWith(color: NhamColors.textWarm),
+                style: dashMeta(),
               ),
             ],
           ),

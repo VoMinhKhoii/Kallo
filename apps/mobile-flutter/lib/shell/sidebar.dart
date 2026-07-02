@@ -220,7 +220,9 @@ class Sidebar extends ConsumerWidget {
                     active: _isActiveRoute(location, '/settings'),
                     onTap: () {
                       onClose();
-                      context.go('/settings');
+                      // Push (not go) so /settings stacks over the shell and its
+                      // header back button / Cupertino swipe-back can pop it.
+                      context.push('/settings');
                     },
                   ),
                   const SizedBox(height: 4), // mt-1

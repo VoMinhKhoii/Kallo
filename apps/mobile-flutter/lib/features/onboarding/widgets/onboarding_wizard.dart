@@ -4,9 +4,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../models/onboarding.dart';
+import '../../../theme/calm_tokens.dart';
 import '../../../theme/nham_colors.dart';
 import '../../../theme/nham_theme.dart';
-import '../../../theme/nham_typography.dart';
 import '../data/constants.dart';
 import '../data/profile_row.dart';
 import '../logic/step_one_defaults.dart';
@@ -550,8 +550,7 @@ class _BackButtonState extends State<_BackButton> {
           const SizedBox(width: NhamSpacing.sp2),
           Text(
             tr('common.back'),
-            style:
-                NhamTextStyles.sansMedium(fontSize: 14).copyWith(color: color),
+            style: dashBody(color: color, weight: FontWeight.w500),
           ),
         ],
       ),
@@ -596,8 +595,7 @@ class _SkipButtonState extends State<_SkipButton> {
           children: [
             Text(
               tr('common.skip'),
-              style: NhamTextStyles.sansMedium(fontSize: 14)
-                  .copyWith(color: textColor),
+              style: dashBody(color: textColor, weight: FontWeight.w500),
             ),
             const SizedBox(width: 6),
             // Skipping spins HERE (replacing the skip glyph), not on Next.
@@ -668,8 +666,7 @@ class _NextButtonState extends State<_NextButton> {
               // Label stays put; the trailing arrow is what becomes the spinner.
               Text(
                 isLastStep ? tr('common.finish') : tr('common.next'),
-                style: NhamTextStyles.sansMedium(fontSize: 14)
-                    .copyWith(color: NhamColors.cream),
+                style: dashBody(color: NhamColors.cream, weight: FontWeight.w500),
               ),
               const SizedBox(width: NhamSpacing.sp2),
               if (pending)

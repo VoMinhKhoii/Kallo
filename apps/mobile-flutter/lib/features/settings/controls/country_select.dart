@@ -1,6 +1,7 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
+import '../../../theme/calm_tokens.dart';
 import '../../../theme/nham_colors.dart';
 import '../../../theme/nham_theme.dart';
 import '../../../theme/nham_typography.dart';
@@ -127,11 +128,7 @@ class _CountrySelectState extends State<CountrySelect> {
                   triggerLabel,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: NhamTextStyles.sansRegular(
-                    fontSize: NhamFontSize.sm,
-                  ).copyWith(
-                    color: hasValue ? NhamColors.text : NhamColors.textWarm,
-                  ),
+                  style: dashBody(color: hasValue ? kInk : kInkMuted),
                 ),
               ),
             ),
@@ -277,17 +274,13 @@ class _CountryDropdownState extends State<_CountryDropdown> {
                           controller: _search,
                           autofocus: true,
                           onChanged: (v) => setState(() => _query = v),
-                          style: NhamTextStyles.sansRegular(
-                            fontSize: NhamFontSize.detail,
-                          ).copyWith(color: NhamColors.text),
+                          style: dashBody(),
                           decoration: InputDecoration(
                             isDense: true,
                             filled: true,
                             fillColor: NhamColors.track,
                             hintText: tr('onboarding.origin.searchCountry'),
-                            hintStyle: NhamTextStyles.sansRegular(
-                              fontSize: NhamFontSize.detail,
-                            ).copyWith(color: NhamColors.textWarm),
+                            hintStyle: dashBody(color: kInkMuted),
                             contentPadding: const EdgeInsets.symmetric(
                               horizontal: NhamSpacing.sp3,
                               vertical: NhamSpacing.sp2,
@@ -311,9 +304,7 @@ class _CountryDropdownState extends State<_CountryDropdown> {
                                   child: Text(
                                     tr('onboarding.origin.noCountries'),
                                     textAlign: TextAlign.center,
-                                    style: NhamTextStyles.sansRegular(
-                                      fontSize: NhamFontSize.detail,
-                                    ).copyWith(color: NhamColors.textWarm),
+                                    style: dashMeta(),
                                   ),
                                 )
                                 : ListView.builder(
@@ -407,21 +398,16 @@ class _CountryRowState extends State<_CountryRow> {
               Expanded(
                 child: Text(
                   widget.label,
-                  style: (widget.selected
-                          ? NhamTextStyles.sansMedium(
-                            fontSize: NhamFontSize.detail,
-                          )
-                          : NhamTextStyles.sansRegular(
-                            fontSize: NhamFontSize.detail,
-                          ))
-                      .copyWith(color: NhamColors.text),
+                  style: dashBody(
+                    weight: widget.selected
+                        ? FontWeight.w500
+                        : FontWeight.w400,
+                  ),
                 ),
               ),
               Text(
                 widget.vi,
-                style: NhamTextStyles.sansRegular(
-                  fontSize: NhamFontSize.xxs,
-                ).copyWith(color: NhamColors.textWarm),
+                style: dashMeta(),
               ),
             ],
           ),

@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 
 import '../../../features/dashboard/logic/dashboard_format.dart' show formatCount;
 import '../../../shared/widgets/nham_text.dart';
+import '../../../theme/calm_tokens.dart';
 import '../../../theme/nham_colors.dart';
 
 /// The calorie ring fills with CONSUMED calories (`current / target`) — it fills
@@ -128,17 +129,17 @@ class _DefaultCenter extends StatelessWidget {
         NhamText(
           formatCount(value, locale),
           variant: NhamTextVariant.numDisplay,
-          style: const TextStyle(
-            fontSize: 17,
-            height: 1, // lineHeight 17 / fontSize 17
-            letterSpacing: 0,
-          ),
+          // Calm: the ring-centre number is a sans metric value (dashValue), not
+          // a serif moment — the screen's one serif is the empty-state heading.
+          style: dashValue().copyWith(height: 1),
         ),
         const SizedBox(height: 2),
         NhamText(
           over ? tr('dashboard.over') : tr('dashboard.left'),
           variant: NhamTextVariant.eyebrow,
-          style: const TextStyle(fontSize: 8, letterSpacing: 1.2),
+          // Calm eyebrow (w500, muted) held at 8px so it never overflows the
+          // fixed 78px ring.
+          style: dashEyebrow().copyWith(fontSize: 8, letterSpacing: 1.2),
         ),
       ],
     );

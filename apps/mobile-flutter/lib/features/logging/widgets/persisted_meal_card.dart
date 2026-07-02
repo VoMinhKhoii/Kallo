@@ -4,9 +4,9 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:flutter/services.dart';
 
 import '../../../shared/widgets/nham_text.dart';
+import '../../../theme/calm_tokens.dart';
 import '../../../theme/nham_colors.dart';
 import '../../../theme/nham_theme.dart';
-import '../../../theme/nham_typography.dart';
 import '../data/logging_models.dart';
 import '../logic/format.dart';
 
@@ -87,8 +87,7 @@ class _PersistedMealCardState extends State<PersistedMealCard>
             NhamText(
               'logging.remove'.tr(),
               variant: NhamTextVariant.body,
-              style: NhamTextStyles.sansMedium(fontSize: NhamFontSize.xs)
-                  .copyWith(color: Colors.white),
+              style: dashBody(color: Colors.white, weight: FontWeight.w500),
             ),
           ],
         ),
@@ -180,7 +179,7 @@ class _PersistedMealCardState extends State<PersistedMealCard>
                           NhamText(
                             fmtKcal(n.caloriesKcal),
                             variant: NhamTextVariant.numStrong,
-                            style: const TextStyle(fontSize: 14), // text-sm
+                            style: dashValue(),
                           ),
                         ],
                       ),

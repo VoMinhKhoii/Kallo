@@ -2,7 +2,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
-import '../../../features/dashboard/widgets/dashboard_tokens.dart';
+import '../../../theme/calm_tokens.dart';
 import '../../../models/nutrition.dart';
 import '../../../theme/nham_theme.dart';
 import '../logic/helpers.dart';
@@ -72,7 +72,7 @@ class DaySummary extends StatelessWidget {
                       padding: const EdgeInsets.only(bottom: 2),
                       child: Text(
                         tr('nutrition.rhythm.calories'),
-                        style: dashMeta(color: kInkSecondary),
+                        style: dashMeta(color: kInkMuted),
                       ),
                     ),
                   ],
@@ -91,7 +91,7 @@ class DaySummary extends StatelessWidget {
           const SizedBox(height: NhamSpacing.sp3),
           Text(
             tr('nutrition.rhythm.avgPerLoggedDay').toUpperCase(),
-            style: dashEyebrow(color: kInkDisabled),
+            style: dashEyebrow(color: kInkMuted),
           ),
           if (composition.totalKcal > 0) ...[
             const SizedBox(height: NhamSpacing.sp3),
@@ -196,11 +196,11 @@ class _MacroLegend extends StatelessWidget {
           Icon(
             dev >= 0 ? LucideIcons.arrowUp : LucideIcons.arrowDown,
             size: 12,
-            color: kInkDisabled,
+            color: kInkMuted,
           ),
           Text(
             '${dev.abs()}%',
-            style: dashMeta(color: kInkDisabled, tabular: true),
+            style: dashMeta(color: kInkMuted, tabular: true),
           ),
         ],
       ],
@@ -231,12 +231,12 @@ class _CalorieTarget extends StatelessWidget {
           Icon(
             over ? LucideIcons.arrowUp : LucideIcons.arrowDown,
             size: 15,
-            color: kInkSecondary,
+            color: kInkMuted,
           ),
           const SizedBox(width: 2),
           Text(
             '${formatLocalizedNumber(target, locale)} ${tr('nutrition.rhythm.calories')}',
-            style: dashMeta(color: kInkSecondary, tabular: true),
+            style: dashMeta(color: kInkMuted, tabular: true),
           ),
         ],
       ),

@@ -6,7 +6,7 @@ colours, and the 12px spacing rhythm — lives in the `nham-design` skill:
 > **`.agents/skills/nham-design/mobile.md`**
 
 The reference implementation is
-`lib/features/dashboard/widgets/dashboard_tokens.dart` (`dashHero` / `dashValue`
+`lib/theme/calm_tokens.dart` (`dashHero` / `dashValue`
 / `dashBody` / `dashMeta` / `dashEyebrow` / `dashHeadline`, `kInk` / `kInkMuted`).
 
 It's a calmer, Threads / Apple-Health–tuned system, currently **live on the
