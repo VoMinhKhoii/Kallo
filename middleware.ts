@@ -34,6 +34,6 @@ export const config = {
     // intentionally locale-agnostic and reads the locale from the `next`
     // query parameter. New /auth/* routes must opt out individually here so
     // they keep getting locale rewriting + Supabase session refresh.
-    '/((?!_next/static|_next/image|favicon.ico|manifest.webmanifest|api|auth/callback|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    '/((?!_next/static|_next/image|favicon.ico|manifest.webmanifest|api|auth/callback|.*\\.(?:svg|png|jpg|jpeg|gif|webp|geojson)$).*)',
   ],
 };

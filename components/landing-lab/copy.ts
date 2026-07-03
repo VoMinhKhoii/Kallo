@@ -27,6 +27,18 @@ export const LAB_COPY = {
     save: 'Save this meal',
     tryAnother: 'Or try one of these',
   },
+  globe: {
+    eyebrow: 'Taste the world',
+    title: 'Every kitchen,',
+    titleHighlight: 'one sentence away.',
+    hint: 'Spin the globe — hover a country to taste its kitchen.',
+    hintTouch: 'Spin the globe — tap a country to taste its kitchen.',
+    hintSub: 'The raised countries have a story waiting.',
+    genericTitle: 'Every kitchen counts',
+    genericBody:
+      "Nhẩm speaks your food language too — type any dish the way you'd say it.",
+    chipCaption: "log it like you'd say it",
+  },
   derivation: {
     eyebrow: 'The derivation',
     title: 'From a sentence,',

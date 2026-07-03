@@ -67,3 +67,6 @@ seed_food.sql
 
 # Local Claude Code MCP server config (no secrets, but per-developer)
 .mcp.json
+
+# Playwright MCP session artifacts
+.playwright-mcp/

@@ -12,7 +12,7 @@ export type LabPhase = 'typing' | 'matching' | 'estimating' | 'result';
 
 /**
  * The coarse state each variant's signature visual reacts to
- * (shader hue, 3D orbit, type-field convergence).
+ * (shader hue, 3D orbit, globe spin).
  */
 export type LabMood = 'idle' | 'typing' | 'analyzing' | 'result';
 
