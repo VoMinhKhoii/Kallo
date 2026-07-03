@@ -4,6 +4,7 @@ import { ArrowRight, Sparkles } from 'lucide-react';
 import {
   motion,
   useMotionValueEvent,
+  useReducedMotion,
   useScroll,
   useTransform,
 } from 'motion/react';
@@ -58,6 +59,8 @@ export function V3Hero() {
   const darknessCurve = useMemo(() => makeDarknessCurve(new Date()), []);
   const darkness = useTransform(scrollYProgress, darknessCurve);
   const ink = useInk(darkness);
+  // Skip the entrance slide for users who prefer reduced motion.
+  const entrance = useReducedMotion() ? false : { opacity: 0, y: 16 };
 
   // Which screen the viewport is nearest: 0 = hero, 1..N = tour stops,
   // N+1 = free explore. The globe's facing and the card overlays follow
@@ -170,7 +173,7 @@ export function V3Hero() {
         <div className="flex min-h-screen flex-col items-center justify-center px-6 pt-28 pb-16 text-center">
           <div className="pointer-events-auto flex w-full flex-col items-center">
             <motion.div
-              initial={{ opacity: 0, y: 16 }}
+              initial={entrance}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.7 }}
               className="mb-8 inline-flex items-center gap-2 rounded-full border border-[#E8D5B5] bg-white/80 px-4 py-1.5 shadow-sm backdrop-blur-sm"
@@ -194,7 +197,7 @@ export function V3Hero() {
             </p>
 
             <motion.div
-              initial={{ opacity: 0, y: 16 }}
+              initial={entrance}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.7, delay: 0.15 }}
               className="w-full"
@@ -211,7 +214,7 @@ export function V3Hero() {
             </div>
 
             <motion.div
-              initial={{ opacity: 0, y: 16 }}
+              initial={entrance}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.7, delay: 0.3 }}
               className="mt-2 flex flex-col items-center gap-4 sm:flex-row"

@@ -1,7 +1,7 @@
 'use client';
 
 import { ArrowRight, Sparkles } from 'lucide-react';
-import { motion } from 'motion/react';
+import { motion, useReducedMotion } from 'motion/react';
 import { scrollToAnchorId } from '@/components/landing-page/scroll-to-anchor';
 import { CommandBar, DemoChips } from '../command-bar';
 import { LAB_COPY } from '../copy';
@@ -29,6 +29,8 @@ export function Grain() {
  */
 export function V4Hero() {
   const demo = useLabDemo();
+  // Skip the entrance slide for users who prefer reduced motion.
+  const entrance = useReducedMotion() ? false : { opacity: 0, y: 16 };
 
   return (
     <section className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-[#2C2416] px-6 pt-28 pb-16 text-center">
@@ -45,7 +47,7 @@ export function V4Hero() {
 
       <div className="relative z-10 flex w-full flex-col items-center">
         <motion.div
-          initial={{ opacity: 0, y: 16 }}
+          initial={entrance}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7 }}
           className="mb-10 flex items-center gap-4"
@@ -71,7 +73,7 @@ export function V4Hero() {
         </p>
 
         <motion.div
-          initial={{ opacity: 0, y: 16 }}
+          initial={entrance}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7, delay: 0.15 }}
           className="w-full [&>form]:shadow-[0_0_80px_-10px_rgba(201,168,124,0.35)]"
@@ -88,7 +90,7 @@ export function V4Hero() {
         </div>
 
         <motion.div
-          initial={{ opacity: 0, y: 16 }}
+          initial={entrance}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7, delay: 0.3 }}
           className="mt-2 flex flex-col items-center gap-4 sm:flex-row"

@@ -84,17 +84,19 @@ function FeaturedCountry({
           </li>
         ))}
       </ul>
-      <div className="mt-5 border-[#F0EAE0] border-t pt-4">
-        <p className="mb-2 font-medium text-[#8B7355] text-[11px] uppercase tracking-[0.16em]">
-          {LAB_COPY.globe.chipCaption}
-        </p>
-        <div className="inline-flex min-h-11 items-center gap-2 rounded-full border border-[#E8D5B5] bg-white px-4 py-2">
-          <Sparkles className="h-3.5 w-3.5 shrink-0 text-[#C9A87C]" />
-          <span className="font-sans-display text-[#2C2416] text-sm">
-            {country.dishes[0].logExample}
-          </span>
+      {country.dishes[0] && (
+        <div className="mt-5 border-[#F0EAE0] border-t pt-4">
+          <p className="mb-2 font-medium text-[#8B7355] text-[11px] uppercase tracking-[0.16em]">
+            {LAB_COPY.globe.chipCaption}
+          </p>
+          <div className="inline-flex min-h-11 items-center gap-2 rounded-full border border-[#E8D5B5] bg-white px-4 py-2">
+            <Sparkles className="h-3.5 w-3.5 shrink-0 text-[#C9A87C]" />
+            <span className="font-sans-display text-[#2C2416] text-sm">
+              {country.dishes[0].logExample}
+            </span>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
