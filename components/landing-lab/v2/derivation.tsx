@@ -69,7 +69,9 @@ export function V2Derivation() {
             initial={{ opacity: 0, y: 32 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, margin: '-80px' }}
-            transition={prefersReducedMotion ? { duration: 0 } : { duration: 0.8 }}
+            transition={
+              prefersReducedMotion ? { duration: 0 } : { duration: 0.8 }
+            }
             style={{ transform: 'rotateX(4deg) rotateY(-7deg)' }}
           >
             <motion.div
