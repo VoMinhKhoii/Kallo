@@ -9,13 +9,15 @@ const HANDLED_CODES = new Set([
   'oauth_missing_code',
   'oauth_exchange',
   'account_exists',
+  'verify_failed',
 ]);
 
 /**
- * Surfaces OAuth callback failures redirected to /{locale}/?error=oauth_*.
- * Mounted on the landing page (the only destination the callback uses for
- * its error redirect today). After firing once we strip the param from the
- * URL via history.replaceState so a refresh doesn't replay the toast.
+ * Surfaces auth callback/verify failures redirected to /{locale}/?error=*.
+ * Mounted on the landing page (the only destination the callback and the
+ * emailed-link verify route use for their error redirects today). After
+ * firing once we strip the param from the URL via history.replaceState so a
+ * refresh doesn't replay the toast.
  */
 export function OAuthErrorToast() {
   const t = useTranslations('auth.dialog');
@@ -27,9 +29,10 @@ export function OAuthErrorToast() {
     const error = params.get('error');
     if (!error || !HANDLED_CODES.has(error)) return;
     fired.current = true;
-    toast.error(
-      error === 'account_exists' ? t('accountExists') : t('googleError')
-    );
+    let message = t('googleError');
+    if (error === 'account_exists') message = t('accountExists');
+    else if (error === 'verify_failed') message = t('verifyLinkError');
+    toast.error(message);
 
     // Strip the param so a refresh doesn't replay the toast. Preserve
     // existing history.state — Next's App Router stores routing metadata

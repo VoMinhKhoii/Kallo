@@ -19,8 +19,8 @@ export const runtime = 'nodejs';
  * errors ever show up.
  */
 
-const ALLOWED_PREFIX = 'auth/v1/';
-const BLOCKED_PREFIX = 'auth/v1/admin';
+const ALLOWED_PATH_PREFIX = '/auth/v1/';
+const BLOCKED_PATH_PREFIX = '/auth/v1/admin';
 const UPSTREAM_TIMEOUT_MS = 15_000;
 
 /** Request headers forwarded upstream; everything else (cookies…) is dropped. */
@@ -51,21 +51,40 @@ async function proxy(
   req: NextRequest,
   { params }: { params: Promise<{ path: string[] }> }
 ): Promise<Response> {
-  const path = (await params).path.join('/');
-  if (!path.startsWith(ALLOWED_PREFIX) || path.startsWith(BLOCKED_PREFIX)) {
-    return NextResponse.json({ error: 'Not found' }, { status: 404 });
-  }
-
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   if (!supabaseUrl) {
     console.error('[supabase-proxy] NEXT_PUBLIC_SUPABASE_URL is not set');
     return NextResponse.json({ error: 'proxy_misconfigured' }, { status: 500 });
   }
 
-  const upstreamUrl = new URL(
-    `${path}${req.nextUrl.search}`,
-    supabaseUrl.endsWith('/') ? supabaseUrl : `${supabaseUrl}/`
-  );
+  const base = supabaseUrl.endsWith('/') ? supabaseUrl : `${supabaseUrl}/`;
+  const path = (await params).path.join('/');
+
+  // Validate the RESOLVED URL, not the raw `path` string. A prefix check on
+  // the joined segments is escapable: `new URL()` collapses `..` segments
+  // (`auth/v1/../../rest/v1/x` → `/rest/v1/x`) and honours protocol-relative
+  // references (`//evil.example/auth/v1/x` → a foreign host). Resolving first
+  // and then asserting origin + pathname keeps the proxy pinned to
+  // `<supabase>/auth/v1/*`, so it can never reach /rest, /storage, /realtime,
+  // the admin API, or an attacker-chosen origin.
+  let upstreamUrl: URL;
+  try {
+    upstreamUrl = new URL(`${path}${req.nextUrl.search}`, base);
+  } catch {
+    return NextResponse.json({ error: 'Not found' }, { status: 404 });
+  }
+
+  // `base` comes from env-validated supabaseUrl; Next's [...path] segments
+  // are never absolute URLs, so new URL(base) cannot be reached via a path
+  // that bypassed the try/catch above.
+  const baseOrigin = new URL(base).origin;
+  if (
+    upstreamUrl.origin !== baseOrigin ||
+    !upstreamUrl.pathname.startsWith(ALLOWED_PATH_PREFIX) ||
+    upstreamUrl.pathname.startsWith(BLOCKED_PATH_PREFIX)
+  ) {
+    return NextResponse.json({ error: 'Not found' }, { status: 404 });
+  }
 
   const headers = new Headers();
   for (const name of REQUEST_HEADERS) {
