@@ -1,11 +1,9 @@
 import { type NextRequest, NextResponse } from 'next/server';
+import { localeFromNext, publicUrl } from '@/lib/auth/redirects';
 import { safeNextPath } from '@/lib/auth/safe-next';
 import { createClient } from '@/lib/supabase/server';
 
 export const runtime = 'nodejs';
-
-const DEFAULT_LOCALE = 'en';
-const SUPPORTED_LOCALES = ['en', 'vi'] as const;
 
 /**
  * Substring that identifies the `before_user_created` hook's duplicate-email
@@ -22,36 +20,6 @@ export const DUPLICATE_EMAIL_MARKER = 'already exists for this email';
  * query params without pre-coercing. */
 function isDuplicateError(message: string | null): boolean {
   return (message ?? '').toLowerCase().includes(DUPLICATE_EMAIL_MARKER);
-}
-
-function localeFromNext(next: string | null): string {
-  if (!next) return DEFAULT_LOCALE;
-  const match = next.match(/^\/(en|vi)(\/|$)/);
-  const candidate = match?.[1];
-  return (SUPPORTED_LOCALES as readonly string[]).includes(candidate ?? '')
-    ? (candidate as string)
-    : DEFAULT_LOCALE;
-}
-
-/**
- * Build a URL using the externally-facing host. Behind a reverse proxy
- * (Cloud Run, Vercel, etc.) `request.url`'s host reflects the container's
- * internal listen address (e.g. `0.0.0.0:8080`), not the public hostname.
- * Prefer `x-forwarded-host` / `x-forwarded-proto` when present so the
- * `Location` header points the browser at a reachable origin.
- */
-export function publicUrl(
-  request: NextRequest,
-  path: string,
-  fallbackOrigin: string
-): URL {
-  const forwardedHost = request.headers.get('x-forwarded-host');
-  const forwardedProto = request.headers.get('x-forwarded-proto');
-  if (forwardedHost) {
-    const proto = forwardedProto ?? 'https';
-    return new URL(path, `${proto}://${forwardedHost}`);
-  }
-  return new URL(path, fallbackOrigin);
 }
 
 /**

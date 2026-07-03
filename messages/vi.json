@@ -669,7 +669,8 @@
       "continueWithGoogle": "Tiếp tục với Google",
       "orContinueWithEmail": "hoặc tiếp tục với email",
       "googleError": "Đăng nhập bằng Google thất bại. Vui lòng thử lại.",
-      "accountExists": "Bạn đã có tài khoản với email này. Vui lòng đăng nhập bằng phương thức bạn đã dùng ban đầu."
+      "accountExists": "Bạn đã có tài khoản với email này. Vui lòng đăng nhập bằng phương thức bạn đã dùng ban đầu.",
+      "verifyLinkError": "Liên kết này không hợp lệ hoặc đã hết hạn. Vui lòng yêu cầu liên kết mới."
     },
     "otp": {
       "title": "Kiểm tra email",

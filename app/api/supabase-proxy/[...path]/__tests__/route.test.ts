@@ -121,6 +121,14 @@ describe('supabase-proxy route', () => {
     'storage/v1/object/foo',
     'auth/v1/admin/users',
     'auth/v2/token',
+    // Path-traversal escapes: `new URL()` collapses these `..` segments, so a
+    // raw-string prefix check would forward them to /rest and the admin API.
+    // Validating the RESOLVED pathname rejects them.
+    'auth/v1/../../rest/v1/meals',
+    'auth/v1/token/../admin/users',
+    // Protocol-relative escape: resolves to a foreign origin, caught by the
+    // origin check.
+    '//evil.example/auth/v1/token',
   ])('rejects %s with 404 without contacting upstream', async (path) => {
     const { req, params } = makeRequest(path, { method: 'POST' });
     const res = await POST(req, params);

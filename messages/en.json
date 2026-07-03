@@ -669,7 +669,8 @@
       "continueWithGoogle": "Continue with Google",
       "orContinueWithEmail": "or continue with email",
       "googleError": "Google sign-in failed. Please try again.",
-      "accountExists": "You already have an account with this email. Please sign in with the method you used originally."
+      "accountExists": "You already have an account with this email. Please sign in with the method you used originally.",
+      "verifyLinkError": "This link is invalid or has expired. Please request a new one."
     },
     "otp": {
       "title": "Check your email",
