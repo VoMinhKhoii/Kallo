@@ -1,5 +1,35 @@
 # Changelog
 
+## [1.6.0](https://github.com/VoMinhKhoii/Nham/compare/v1.5.0...v1.6.0) (2026-07-02)
+
+
+### Features
+
+* **barcode:** serving- and package-based amount selection ([a19808f](https://github.com/VoMinhKhoii/Nham/commit/a19808f99616f8b00145bc004210da83e5a91a0e))
+* **circle:** port Circle (Groups) to the Flutter app at full parity ([b4f531f](https://github.com/VoMinhKhoii/Nham/commit/b4f531f661835d6e94487d7023bc79364efa60d4))
+* **circle:** port Circle (Groups) to the Flutter app at full parity ([184d1f3](https://github.com/VoMinhKhoii/Nham/commit/184d1f3cbe3fd6875a42328f9493840da2c22053))
+* **dashboard:** redesign weight chart (web + Flutter) with single-source forecast ([7506c25](https://github.com/VoMinhKhoii/Nham/commit/7506c251dafc6f5f1d0fa14891f37c2e18f0a921))
+* **mobile:** port barcode scanning to the Flutter app ([52a0e79](https://github.com/VoMinhKhoii/Nham/commit/52a0e796f16e6c20727e487e1ab2465ec3d48c33))
+* **mobile:** port barcode scanning to the Flutter app ([9ac2d7c](https://github.com/VoMinhKhoii/Nham/commit/9ac2d7c9285d96a68001c9975859222af3dd233c))
+
+
+### Bug Fixes
+
+* **auth:** proxy Supabase auth through Cloud Run for VN-blocked networks ([1cc1edd](https://github.com/VoMinhKhoii/Nham/commit/1cc1edd8640c09a43d6e74f476a1d16c464b4e7a))
+* **circle:** address CodeRabbit review ([94d464a](https://github.com/VoMinhKhoii/Nham/commit/94d464a5acbf3de7a62115501905eccf34e617d0))
+* **mobile:** apply pre-PR review fixes to barcode flow ([6eecaa6](https://github.com/VoMinhKhoii/Nham/commit/6eecaa683bda25162df3f85516596017bb98dca6))
+* **mobile:** make the log sheet scroll-safe on short layouts ([a0ca934](https://github.com/VoMinhKhoii/Nham/commit/a0ca934ae2ae563757fc39f47d75ac96b33e5179))
+* **mobile:** only add home-indicator inset when keypad is hidden ([b0caf57](https://github.com/VoMinhKhoii/Nham/commit/b0caf574db1c192d8f59c8d28bd3de96361c000b))
+* **mobile:** pin log-weight Save button just above the keypad ([e5b84dc](https://github.com/VoMinhKhoii/Nham/commit/e5b84dc5c1bec19ea7bc356bc08f451b2b7724e6))
+* **mobile:** size log-weight sheet to its content ([4885d48](https://github.com/VoMinhKhoii/Nham/commit/4885d48f208340ba82d7bd041155cb8cc477ce71))
+* **mobile:** size log-weight sheet to its content ([42a57c7](https://github.com/VoMinhKhoii/Nham/commit/42a57c7c7fc9e5d8428588d8dd3fce359eb7d4cc))
+* **settings:** let the settings header back button pop the route ([3cf7a46](https://github.com/VoMinhKhoii/Nham/commit/3cf7a46feec50ec1c59a4c2ccae55d25e1fee579))
+
+
+### Documentation
+
+* **design:** fold the mobile system into the nham-design skill ([8a80c07](https://github.com/VoMinhKhoii/Nham/commit/8a80c07e437c3a8fab503e1069fc55dd7deebd8b))
+
 ## [1.5.0](https://github.com/VoMinhKhoii/Nham/compare/v1.4.0...v1.5.0) (2026-07-01)
 
 
