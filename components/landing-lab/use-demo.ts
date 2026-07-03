@@ -11,8 +11,7 @@ import {
 export type LabPhase = 'typing' | 'matching' | 'estimating' | 'result';
 
 /**
- * The coarse state each variant's signature visual reacts to
- * (shader hue, 3D orbit, globe spin).
+ * The coarse state the globe reacts to (spin speed per phase).
  */
 export type LabMood = 'idle' | 'typing' | 'analyzing' | 'result';
 
@@ -38,7 +37,7 @@ export interface LabDemo {
 
 /**
  * The playable derivation demo, lifted from the production hero
- * (components/landing-page/hero.tsx) so all four lab variants share one
+ * (components/landing-page/hero.tsx) so the lab prototype shares one
  * state machine: type the meal, run the staged phases, reveal the card.
  * Reduced motion skips straight to the result with no typing or delays.
  */

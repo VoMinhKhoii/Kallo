@@ -5,6 +5,7 @@ import { type MotionValue, useReducedMotion } from 'motion/react';
 import R3fGlobe from 'r3f-globe';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import * as THREE from 'three';
+import { FallbackBlobs } from '../fallback-blobs';
 import type { LabMood } from '../use-demo';
 import { FEATURED_ISOS, GLOBE_PALETTE } from './globe-dishes';
 import { type TourMarker, tourFocusAt } from './globe-tour';
@@ -499,7 +500,7 @@ export const V3GlobeScene = memo(function V3GlobeScene(
   return (
     <div ref={wrapper} className="absolute inset-0">
       <Canvas
-        fallback={<FallbackBlobsLazy />}
+        fallback={<FallbackBlobs />}
         frameloop={animating ? 'always' : 'demand'}
         dpr={[1, 1.5]}
         camera={{ fov: 42, position: [0, 0, 300] }}
@@ -525,16 +526,3 @@ export const V3GlobeScene = memo(function V3GlobeScene(
     </div>
   );
 });
-
-/**
- * Local copy of v1's FallbackBlobs: importing shader-field here would pull
- * its WebGL module into this lazily-split chunk for two gradient divs.
- */
-function FallbackBlobsLazy() {
-  return (
-    <div aria-hidden className="pointer-events-none absolute inset-0 z-0">
-      <div className="absolute top-[-10%] right-[-5%] h-[600px] w-[600px] rounded-full bg-[#E8D5B5]/20 blur-[120px]" />
-      <div className="absolute bottom-[-10%] left-[-10%] h-[500px] w-[500px] rounded-full bg-[#C9A87C]/10 blur-[100px]" />
-    </div>
-  );
-}
