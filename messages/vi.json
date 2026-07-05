@@ -1295,7 +1295,34 @@
       "bodyMetrics": "Mục tiêu & chỉ số",
       "regional": "Khu vực & ngôn ngữ",
       "cooking": "Nấu nướng",
-      "account": "Tài khoản"
+      "account": "Tài khoản",
+      "feedback": "Góp ý"
+    },
+    "feedback": {
+      "title": "Gửi góp ý",
+      "description": "Gặp lỗi, thiếu nguyên liệu, hay có ý tưởng? Hãy cho chúng tôi biết — góp ý sẽ đến thẳng đội ngũ.",
+      "typeLabel": "Bạn muốn góp ý về điều gì?",
+      "types": {
+        "bug": "Lỗi",
+        "ingredient": "Nguyên liệu",
+        "idea": "Ý tưởng"
+      },
+      "messageLabel": "Nội dung phản hồi",
+      "placeholder": {
+        "bug": "Điều gì đã xảy ra? Bạn mong đợi điều gì?",
+        "ingredient": "Nguyên liệu hoặc món ăn nào đang thiếu?",
+        "idea": "Điều gì sẽ giúp Nhẩm tốt hơn cho bạn?"
+      },
+      "addScreenshot": "Thêm ảnh chụp màn hình",
+      "removeScreenshot": "Bỏ ảnh chụp màn hình",
+      "screenshotTooLarge": "Ảnh vượt quá 5 MB. Vui lòng chọn ảnh nhỏ hơn.",
+      "submit": "Gửi góp ý",
+      "submitting": "Đang gửi…",
+      "successTitle": "Cảm ơn — chúng tôi đã nhận được",
+      "successBody": "Góp ý của bạn đã đến đội ngũ. Chúng tôi đọc từng góp ý một.",
+      "sendAnother": "Gửi thêm góp ý",
+      "error": "Không thể gửi góp ý. Vui lòng thử lại.",
+      "rateLimitError": "Bạn vừa gửi khá nhiều góp ý. Vui lòng đợi một lát rồi thử lại."
     },
     "account": {
       "title": "Tài khoản",

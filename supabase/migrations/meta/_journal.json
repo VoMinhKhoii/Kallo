@@ -323,6 +323,13 @@
       "when": 1780290000000,
       "tag": "20260601090000_add_cheat_meal_columns",
       "breakpoints": true
+    },
+    {
+      "idx": 46,
+      "version": "7",
+      "when": 1783152604741,
+      "tag": "20260704081004_add_user_feedback",
+      "breakpoints": true
     }
   ]
 }

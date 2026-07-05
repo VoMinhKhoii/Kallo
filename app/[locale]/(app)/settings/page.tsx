@@ -3,8 +3,10 @@ import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { AccountPanel } from '@/components/settings/account/account-panel';
 import {
   ACCOUNT_ANCHOR,
+  FEEDBACK_ANCHOR,
   SettingsAnchorNav,
 } from '@/components/settings/anchor-nav';
+import { FeedbackPanel } from '@/components/settings/feedback/feedback-panel';
 import { Profile } from '@/components/settings/profile';
 import { Link } from '@/i18n/navigation';
 import { getOnboardingProfile } from '@/lib/onboarding/actions';
@@ -28,6 +30,7 @@ export default async function SettingsPage() {
   const t = await getTranslations('settings');
   const tProfile = await getTranslations('settings.profilePage');
   const tAccount = await getTranslations('settings.account');
+  const tFeedback = await getTranslations('settings.feedback');
 
   const [profile, supabase] = await Promise.all([
     getOnboardingProfile(),
@@ -70,6 +73,24 @@ export default async function SettingsPage() {
             </Link>
           </div>
         )}
+
+        {/* Feedback section — kept above Account so it doesn't sit below the
+            delete-account danger zone. */}
+        <section
+          id={FEEDBACK_ANCHOR}
+          aria-label={tFeedback('title')}
+          className="mt-8 scroll-mt-20"
+        >
+          <div className="mb-4">
+            <h2 className="font-normal font-serif text-[#2C2416] text-xl tracking-tight">
+              {tFeedback('title')}
+            </h2>
+            <p className="mt-1 text-[#7B6F62] text-[14px]">
+              {tFeedback('description')}
+            </p>
+          </div>
+          <FeedbackPanel />
+        </section>
 
         {/* Account section — same single page, anchored. */}
         <section

@@ -53,6 +53,8 @@
 	<true/>
 	<key>NSCameraUsageDescription</key>
 	<string>Nhẩm uses the camera to scan product barcodes so you can log packaged foods.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Nhẩm lets you attach a screenshot from your photo library when you send feedback.</string>
 	<key>NSAppTransportSecurity</key>
 	<dict>
 		<key>NSAllowsLocalNetworking</key>

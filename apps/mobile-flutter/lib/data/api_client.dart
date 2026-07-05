@@ -12,9 +12,11 @@ library;
 
 import 'dart:async';
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
+import 'package:http_parser/http_parser.dart' show MediaType;
 import 'package:supabase_flutter/supabase_flutter.dart' show Session;
 
 import '../models/streaming.dart';
@@ -185,6 +187,61 @@ class ApiClient {
   /// (`GET /api/v1/account`): profile, meals (with items), and weights.
   Future<Map<String, dynamic>> exportMyData() =>
       get<Map<String, dynamic>>('/api/v1/account');
+
+  /// Submit in-app feedback (`POST /api/v1/feedback`). Returns the new row id.
+  /// [screenshotPath] comes from [uploadFeedbackScreenshot] when the user
+  /// attached an image.
+  Future<String> submitFeedback({
+    required String type,
+    required String message,
+    String? screenshotPath,
+    String? appVersion,
+    String? platform,
+    String? locale,
+    String? route,
+  }) async {
+    final res = await post<Map<String, dynamic>>('/api/v1/feedback', {
+      'type': type,
+      'message': message,
+      if (screenshotPath != null) 'screenshotPath': screenshotPath,
+      if (appVersion != null) 'appVersion': appVersion,
+      if (platform != null) 'platform': platform,
+      if (locale != null) 'locale': locale,
+      if (route != null) 'route': route,
+    });
+    return res['id'] as String;
+  }
+
+  /// Upload an optional feedback screenshot as multipart form-data
+  /// (`POST /api/v1/feedback/screenshot`, field `file`). Returns the storage
+  /// path to pass as `screenshotPath` on [submitFeedback]. Uploads go through
+  /// the backend because the mobile supabase client rides the auth-only proxy
+  /// and can't reach Storage directly.
+  Future<String> uploadFeedbackScreenshot({
+    required Uint8List bytes,
+    required String filename,
+    required String contentType,
+  }) async {
+    final headers = await _authHeaders();
+    final uri = Uri.parse('$_baseUrl/api/v1/feedback/screenshot');
+    final req = http.MultipartRequest('POST', uri)
+      ..headers.addAll(headers)
+      ..files.add(
+        http.MultipartFile.fromBytes(
+          'file',
+          bytes,
+          filename: filename,
+          contentType: MediaType.parse(contentType),
+        ),
+      );
+    final streamed = await _http.send(req);
+    final res = await http.Response.fromStream(streamed);
+    if (res.statusCode < 200 || res.statusCode >= 300) {
+      throw _toApiError(res);
+    }
+    final body = jsonDecode(res.body) as Map<String, dynamic>;
+    return body['path'] as String;
+  }
 
   /// Fire-and-forget ping to wake a scale-to-zero backend on launch. Failures
   /// are swallowed (offline / unreachable is fine). Mirrors `warmupApi()`.

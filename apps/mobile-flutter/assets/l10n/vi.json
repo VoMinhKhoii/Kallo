@@ -1350,6 +1350,35 @@
       "notSet": "Chưa thiết lập",
       "pacePerWeek": "{pace} {unit}/tuần"
     },
+    "feedback": {
+      "groupLabel": "Góp ý",
+      "rowLabel": "Gửi góp ý",
+      "rowSubline": "Báo lỗi, yêu cầu nguyên liệu, hoặc chia sẻ ý tưởng",
+      "title": "Gửi góp ý",
+      "description": "Gặp lỗi, thiếu nguyên liệu, hay có ý tưởng? Góp ý sẽ đến thẳng đội ngũ.",
+      "typeLabel": "Bạn muốn góp ý về điều gì?",
+      "types": {
+        "bug": "Lỗi",
+        "ingredient": "Nguyên liệu",
+        "idea": "Ý tưởng"
+      },
+      "messageLabel": "Nội dung",
+      "placeholder": {
+        "bug": "Điều gì đã xảy ra? Bạn mong đợi điều gì?",
+        "ingredient": "Nguyên liệu hoặc món ăn nào đang thiếu?",
+        "idea": "Điều gì sẽ giúp Nhẩm tốt hơn cho bạn?"
+      },
+      "addScreenshot": "Thêm ảnh chụp màn hình",
+      "removeScreenshot": "Bỏ ảnh chụp màn hình",
+      "screenshotTooLarge": "Ảnh vượt quá 5 MB. Vui lòng chọn ảnh nhỏ hơn.",
+      "photoPermission": "Nhẩm cần quyền truy cập ảnh để đính kèm ảnh chụp màn hình. Hãy bật trong Cài đặt.",
+      "submit": "Gửi góp ý",
+      "successTitle": "Cảm ơn — chúng tôi đã nhận được",
+      "successBody": "Góp ý của bạn đã đến đội ngũ. Chúng tôi đọc từng góp ý một.",
+      "done": "Xong",
+      "sendAnother": "Gửi thêm góp ý",
+      "error": "Không thể gửi góp ý. Vui lòng thử lại."
+    },
     "about": {
       "title": "Giới thiệu",
       "version": "Phiên bản",
