@@ -4,6 +4,7 @@ import { useTranslations } from 'next-intl';
 import { SETTINGS_SECTION_ANCHOR } from './profile';
 
 const ACCOUNT_ANCHOR = 'settings-account';
+const FEEDBACK_ANCHOR = 'settings-feedback';
 
 interface AnchorItem {
   id: string;
@@ -14,6 +15,7 @@ const ANCHORS: readonly AnchorItem[] = [
   { id: SETTINGS_SECTION_ANCHOR['body-metrics'], labelKey: 'bodyMetrics' },
   { id: SETTINGS_SECTION_ANCHOR.regional, labelKey: 'regional' },
   { id: SETTINGS_SECTION_ANCHOR.cooking, labelKey: 'cooking' },
+  { id: FEEDBACK_ANCHOR, labelKey: 'feedback' },
   { id: ACCOUNT_ANCHOR, labelKey: 'account' },
 ] as const;
 
@@ -58,4 +60,4 @@ export function SettingsAnchorNav() {
   );
 }
 
-export { ACCOUNT_ANCHOR };
+export { ACCOUNT_ANCHOR, FEEDBACK_ANCHOR };

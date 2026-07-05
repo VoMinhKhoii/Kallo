@@ -1350,6 +1350,35 @@
       "notSet": "Not set",
       "pacePerWeek": "{pace} {unit}/wk"
     },
+    "feedback": {
+      "groupLabel": "Feedback",
+      "rowLabel": "Send feedback",
+      "rowSubline": "Report a bug, request an ingredient, or share an idea",
+      "title": "Send feedback",
+      "description": "Found a bug, missing an ingredient, or have an idea? It goes straight to the team.",
+      "typeLabel": "What's this about?",
+      "types": {
+        "bug": "Bug",
+        "ingredient": "Ingredient",
+        "idea": "Idea"
+      },
+      "messageLabel": "Your message",
+      "placeholder": {
+        "bug": "What went wrong? What did you expect to happen?",
+        "ingredient": "Which ingredient or food is missing?",
+        "idea": "What would make Nhẩm better for you?"
+      },
+      "addScreenshot": "Add a screenshot",
+      "removeScreenshot": "Remove screenshot",
+      "screenshotTooLarge": "That image is over 5 MB. Please pick a smaller one.",
+      "photoPermission": "Nhẩm needs photo access to attach a screenshot. Enable it in Settings.",
+      "submit": "Send feedback",
+      "successTitle": "Thanks — we got it",
+      "successBody": "Your feedback is with the team. We read every one.",
+      "done": "Done",
+      "sendAnother": "Send more feedback",
+      "error": "Couldn't send your feedback. Please try again."
+    },
     "about": {
       "title": "About",
       "version": "Version",

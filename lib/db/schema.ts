@@ -1084,3 +1084,65 @@ export const circleEvents = pgTable(
     ),
   ]
 );
+
+// ---------------------------------------------------------------------------
+// User feedback — in-app bug reports, ingredient requests, and ideas.
+// Submitted from web + mobile; triaged by admins via /admin/feedback.
+// ---------------------------------------------------------------------------
+
+export const userFeedback = pgTable(
+  'user_feedback',
+  {
+    id: uuid('id').primaryKey().default(sql`gen_random_uuid()`),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => authUsers.id, { onDelete: 'cascade' }),
+    // 'bug' | 'ingredient' | 'idea'
+    type: text('type').notNull(),
+    message: text('message').notNull(),
+    // Storage object path in the private `feedback-screenshots` bucket.
+    screenshotPath: text('screenshot_path'),
+    // Context captured client-side at submit time.
+    appVersion: text('app_version'),
+    // 'web' | 'ios' | 'android' | null (not captured). NULL passes the CHECK
+    // (Postgres CHECK only fails on FALSE), so the column stays nullable.
+    platform: text('platform'),
+    locale: text('locale'),
+    route: text('route'),
+    metadata: jsonb('metadata'),
+    // Admin triage: 'open' | 'triaged' | 'resolved' | 'wontfix'
+    status: text('status').notNull().default('open'),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    check(
+      'user_feedback_type_check',
+      sql`${table.type} IN ('bug', 'ingredient', 'idea')`
+    ),
+    check(
+      'user_feedback_platform_check',
+      sql`${table.platform} IN ('web', 'ios', 'android')`
+    ),
+    check(
+      'user_feedback_status_check',
+      sql`${table.status} IN ('open', 'triaged', 'resolved', 'wontfix')`
+    ),
+    index('user_feedback_status_created_idx').on(
+      table.status,
+      sql`${table.createdAt} DESC`
+    ),
+    index('user_feedback_type_created_idx').on(
+      table.type,
+      sql`${table.createdAt} DESC`
+    ),
+    index('user_feedback_user_created_idx').on(
+      table.userId,
+      sql`${table.createdAt} DESC`
+    ),
+  ]
+);
