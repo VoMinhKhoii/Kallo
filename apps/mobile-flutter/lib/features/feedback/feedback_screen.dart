@@ -51,6 +51,10 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
   bool _busy = false;
   bool _sent = false;
   String? _error;
+  // Cache the uploaded screenshot path keyed by the picked file, so a failed
+  // submit retry reuses the object instead of uploading a new orphan each time.
+  String? _uploadedPath;
+  String? _uploadedForImagePath;
 
   @override
   void dispose() {
@@ -79,6 +83,8 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
       }
       setState(() {
         _image = picked;
+        _uploadedPath = null;
+        _uploadedForImagePath = null;
         _error = null;
       });
     } on PlatformException {
@@ -131,13 +137,21 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
     try {
       final api = ref.read(apiClientProvider);
       String? screenshotPath;
-      if (_image != null) {
-        final bytes = await _image!.readAsBytes();
-        screenshotPath = await api.uploadFeedbackScreenshot(
-          bytes: bytes,
-          filename: _image!.name,
-          contentType: _contentTypeFor(_image!),
-        );
+      final image = _image;
+      if (image != null) {
+        if (_uploadedPath != null && _uploadedForImagePath == image.path) {
+          // Already uploaded this exact file on a previous (failed) attempt.
+          screenshotPath = _uploadedPath;
+        } else {
+          final bytes = await image.readAsBytes();
+          screenshotPath = await api.uploadFeedbackScreenshot(
+            bytes: bytes,
+            filename: image.name,
+            contentType: _contentTypeFor(image),
+          );
+          _uploadedPath = screenshotPath;
+          _uploadedForImagePath = image.path;
+        }
       }
       await api.submitFeedback(
         type: _type,
@@ -177,6 +191,8 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
       // Keep the last-selected type — a follow-up is often the same kind.
       _message.clear();
       _image = null;
+      _uploadedPath = null;
+      _uploadedForImagePath = null;
       _error = null;
     });
   }
@@ -323,7 +339,13 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
         _ScreenshotField(
           file: _image,
           onAdd: _busy ? null : _pickImage,
-          onRemove: _busy ? null : () => setState(() => _image = null),
+          onRemove: _busy
+              ? null
+              : () => setState(() {
+                  _image = null;
+                  _uploadedPath = null;
+                  _uploadedForImagePath = null;
+                }),
         ),
 
         if (_error != null) ...[

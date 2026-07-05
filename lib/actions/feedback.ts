@@ -140,15 +140,27 @@ function signatureMatches(bytes: Uint8Array, mime: string): boolean {
   }
 }
 
-/** Reject when the user has uploaded too many screenshots in the last hour. */
+/**
+ * Best-effort per-user upload cap. This is a soft secondary guard — the hard
+ * cap is the advisory-locked submit limit in `submitFeedbackAction`. It is not
+ * strictly synchronized (concurrent uploads could momentarily exceed the count)
+ * and, on a storage/list error, it allows the upload rather than blocking a
+ * legitimate user. Both are intentional given the real cap lives on the submit.
+ */
 async function assertUploadQuota(
   admin: SupabaseClient,
   userId: string
 ): Promise<void> {
-  const { data } = await admin.storage.from(SCREENSHOT_BUCKET).list(userId, {
-    limit: 100,
-    sortBy: { column: 'created_at', order: 'desc' },
-  });
+  const { data, error } = await admin.storage
+    .from(SCREENSHOT_BUCKET)
+    .list(userId, {
+      limit: 100,
+      sortBy: { column: 'created_at', order: 'desc' },
+    });
+  if (error) {
+    console.error('[feedback] upload-quota list failed:', error.message);
+    return;
+  }
   if (!data) return;
   const oneHourAgo = Date.now() - 60 * 60 * 1000;
   const recent = data.filter(
