@@ -3,6 +3,7 @@
 import {
   Bug,
   CheckCircle2,
+  ImageIcon,
   ImagePlus,
   Lightbulb,
   Sprout,
@@ -43,7 +44,6 @@ export function FeedbackPanel() {
   const [type, setType] = useState<FeedbackType>('bug');
   const [message, setMessage] = useState('');
   const [file, setFile] = useState<File | null>(null);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [fileError, setFileError] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
@@ -53,17 +53,6 @@ export function FeedbackPanel() {
   // Cache the uploaded screenshot per file so a failed submit retry reuses the
   // object instead of uploading a new orphan each attempt.
   const uploaded = useRef<{ file: File; path: string } | null>(null);
-
-  // Object-URL preview for the chosen image; revoked when it changes / unmounts.
-  useEffect(() => {
-    if (!file) {
-      setPreviewUrl(null);
-      return;
-    }
-    const url = URL.createObjectURL(file);
-    setPreviewUrl(url);
-    return () => URL.revokeObjectURL(url);
-  }, [file]);
 
   // Move focus to the confirmation so screen-reader + keyboard users land on it.
   useEffect(() => {
@@ -252,15 +241,8 @@ export function FeedbackPanel() {
           className="hidden"
         />
         {file ? (
-          <div className="flex items-center gap-3 rounded-xl border border-[#EAE7E0] bg-white px-3 py-2 text-[13px]">
-            {previewUrl && (
-              // biome-ignore lint/performance/noImgElement: local object-URL thumbnail of the just-picked file; next/image can't optimize a blob URL.
-              <img
-                src={previewUrl}
-                alt=""
-                className="size-9 shrink-0 rounded-md object-cover"
-              />
-            )}
+          <div className="flex items-center gap-2 rounded-xl border border-[#EAE7E0] bg-white px-3 py-2 text-[13px]">
+            <ImageIcon className="size-4 shrink-0 text-[#7B6F62]" aria-hidden />
             <span className="min-w-0 flex-1 truncate text-[#2C2416]">
               {file.name}
             </span>
