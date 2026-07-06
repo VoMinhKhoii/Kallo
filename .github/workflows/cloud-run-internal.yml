@@ -48,6 +48,7 @@ jobs:
           gcloud artifacts docker images describe "$IMAGE_TAG"
           gcloud secrets describe nham-nonprod-database-url
           gcloud secrets describe nham-nonprod-gemini-api-key
+          gcloud secrets describe kallo-supabase-service-role-key
           gcloud iam service-accounts describe "${{ vars.GCP_RUNTIME_SERVICE_ACCOUNT }}"
           [[ "$SERVICE_NAME" = "nham-internal" ]]
           node ./scripts/cloud-run/shared-db.mjs assert-target --db-url "$INTERNAL_DATABASE_URL" --project-ref "$SUPABASE_PROJECT_ID"
