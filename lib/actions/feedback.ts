@@ -1,15 +1,16 @@
 'use server';
 
 import { randomUUID } from 'node:crypto';
-import type { SupabaseClient } from '@supabase/supabase-js';
 import { and, eq, gte, sql } from 'drizzle-orm';
 import type { SubmitFeedbackInput } from '@/lib/api/contracts/feedback';
 import { submitFeedbackSchema } from '@/lib/api/contracts/feedback';
 import { db } from '@/lib/db';
 import { userFeedback } from '@/lib/db/schema';
 import { Errors } from '@/lib/errors';
-import { createAdminClient } from '@/lib/supabase/admin';
 import { createClient } from '@/lib/supabase/server';
+
+/** The request-scoped Supabase client (user's own session, RLS-enforced). */
+type ScopedClient = Awaited<ReturnType<typeof createClient>>;
 
 /** Max feedback submissions a single user may make per rolling hour. */
 const HOURLY_LIMIT = 10;
@@ -36,7 +37,7 @@ async function requireUser() {
   if (error || !data.user) {
     throw Errors.notAuthenticated();
   }
-  return data.user;
+  return { supabase, user: data.user };
 }
 
 /**
@@ -49,7 +50,7 @@ export async function submitFeedbackAction(
   input: SubmitFeedbackInput
 ): Promise<{ id: string }> {
   const parsed = submitFeedbackSchema.parse(input);
-  const user = await requireUser();
+  const { user } = await requireUser();
 
   // The path format is already validated by the schema; this proves the object
   // belongs to the submitter (its first segment is the uploader's id), so a
@@ -148,10 +149,10 @@ function signatureMatches(bytes: Uint8Array, mime: string): boolean {
  * legitimate user. Both are intentional given the real cap lives on the submit.
  */
 async function assertUploadQuota(
-  admin: SupabaseClient,
+  supabase: ScopedClient,
   userId: string
 ): Promise<void> {
-  const { data, error } = await admin.storage
+  const { data, error } = await supabase.storage
     .from(SCREENSHOT_BUCKET)
     .list(userId, {
       limit: 100,
@@ -175,16 +176,17 @@ async function assertUploadQuota(
  * Upload an optional feedback screenshot for the authenticated user and return
  * its storage path (to be passed as `screenshotPath` to `submitFeedbackAction`).
  *
- * Uploads run through the service-role admin client, not the browser/mobile
- * supabase client: those ride the auth-only `/api/supabase-proxy` origin, which
- * rejects `/storage/v1/*`. The object is namespaced by uploader
- * (`{userId}/{uuid}.{ext}`) in a private bucket; admins read it later via a
- * short-lived signed URL.
+ * The upload runs server-side (the browser/mobile supabase client rides the
+ * auth-only `/api/supabase-proxy` origin, which rejects `/storage/v1/*`) but
+ * through the user's OWN session client, not the service-role admin client — so
+ * the `feedback_screenshots_insert_own` RLS policy enforces that the object
+ * lands under the uploader's `{userId}/…` prefix, backing up the code-set path.
+ * Admins read it back later via a short-lived signed URL (service-role).
  */
 export async function uploadFeedbackScreenshotAction(
   file: File
 ): Promise<{ path: string }> {
-  const user = await requireUser();
+  const { supabase, user } = await requireUser();
 
   const ext = SCREENSHOT_TYPES[file.type];
   if (!ext) {
@@ -194,8 +196,7 @@ export async function uploadFeedbackScreenshotAction(
     throw Errors.validationFailed('Image must be between 1 byte and 5 MB.');
   }
 
-  const admin = createAdminClient();
-  await assertUploadQuota(admin, user.id);
+  await assertUploadQuota(supabase, user.id);
 
   const bytes = new Uint8Array(await file.arrayBuffer());
   if (!signatureMatches(bytes, file.type)) {
@@ -203,7 +204,7 @@ export async function uploadFeedbackScreenshotAction(
   }
 
   const path = `${user.id}/${randomUUID()}.${ext}`;
-  const { error } = await admin.storage
+  const { error } = await supabase.storage
     .from(SCREENSHOT_BUCKET)
     .upload(path, bytes, {
       contentType: file.type,
