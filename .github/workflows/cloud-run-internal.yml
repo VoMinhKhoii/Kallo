@@ -48,6 +48,7 @@ jobs:
           gcloud artifacts docker images describe "$IMAGE_TAG"
           gcloud secrets describe nham-nonprod-database-url
           gcloud secrets describe nham-nonprod-gemini-api-key
+          gcloud secrets describe kallo-supabase-service-role-key
           gcloud iam service-accounts describe "${{ vars.GCP_RUNTIME_SERVICE_ACCOUNT }}"
           [[ "$SERVICE_NAME" = "nham-internal" ]]
           node ./scripts/cloud-run/shared-db.mjs assert-target --db-url "$INTERNAL_DATABASE_URL" --project-ref "$SUPABASE_PROJECT_ID"
@@ -118,7 +119,7 @@ jobs:
             --timeout=60
             --min-instances=0
             --max-instances=10
-            --set-secrets=DATABASE_URL=nham-nonprod-database-url:latest,GEMINI_API_KEY=nham-nonprod-gemini-api-key:latest,ANALYSIS_GUARD_HASH_SECRET=nham-nonprod-analysis-guard-hash-secret:latest
+            --set-secrets=DATABASE_URL=nham-nonprod-database-url:latest,GEMINI_API_KEY=nham-nonprod-gemini-api-key:latest,ANALYSIS_GUARD_HASH_SECRET=nham-nonprod-analysis-guard-hash-secret:latest,SUPABASE_SERVICE_ROLE_KEY=kallo-supabase-service-role-key:latest
             --update-env-vars=^|^AI_PROVIDER=vertex|GOOGLE_CLOUD_PROJECT=${{ vars.GCP_PROJECT_ID }}|GOOGLE_CLOUD_LOCATION=global|PIPELINE_V2_ENABLED=true
       - id: smoke
         run: ./scripts/cloud-run/smoke-check.sh "${{ steps.deploy.outputs.url }}"
