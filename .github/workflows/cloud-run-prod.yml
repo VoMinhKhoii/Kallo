@@ -123,6 +123,18 @@ jobs:
         run: |
           digest="$(gcloud artifacts docker images describe "$IMAGE_TAG" --format='value(image_summary.digest)')"
           echo "IMAGE_URI=${IMAGE_TAG%:*}@${digest}" >> "$GITHUB_ENV"
+      - id: svc
+        name: Check if service already exists
+        # --no-traffic + --tag are only valid once a first revision exists. On the
+        # very first deploy the service must be created WITH traffic; blue-green
+        # (no-traffic → smoke candidate → promote) applies to every deploy after.
+        run: |
+          if gcloud run services describe "$SERVICE_NAME" --region="${{ env.PROD_REGION }}" >/dev/null 2>&1; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+            echo "First deploy of $SERVICE_NAME — the first revision will serve traffic directly."
+          fi
       - id: deploy
         uses: google-github-actions/deploy-cloudrun@2028e2d7d30a78c6910e0632e48dd561b064884d # v3.0.1
         with:
@@ -148,8 +160,7 @@ jobs:
           flags: >-
             --allow-unauthenticated
             --ingress=all
-            --no-traffic
-            --tag=candidate
+            ${{ steps.svc.outputs.exists == 'true' && '--no-traffic --tag=candidate' || '' }}
             --service-account=${{ vars.GCP_RUNTIME_SERVICE_ACCOUNT }}
             --memory=2Gi
             --cpu=1
@@ -159,33 +170,41 @@ jobs:
             --max-instances=20
             --set-secrets=DATABASE_URL=kallo-prod-database-url:latest,GEMINI_API_KEY=kallo-prod-gemini-api-key:latest,ANALYSIS_GUARD_HASH_SECRET=kallo-prod-analysis-guard-hash-secret:latest,ORIGIN_SHARED_SECRET=kallo-prod-origin-shared-secret:latest
             --update-env-vars=^|^AI_PROVIDER=vertex|GOOGLE_CLOUD_PROJECT=${{ vars.GCP_PROJECT_ID }}|GOOGLE_CLOUD_LOCATION=global|PIPELINE_V2_ENABLED=true
-      - name: Resolve candidate revision URL
-        # The candidate was deployed with --no-traffic, so the service URL still
-        # serves the old revision. Smoke the tagged candidate URL instead.
+      - name: Resolve smoke URL
+        # Existing service → the candidate was deployed with --no-traffic, so smoke
+        # its tagged URL (the live service URL still serves the old revision).
+        # First deploy → no candidate tag; the first revision serves the service
+        # URL directly, so smoke that.
         run: |
-          candidate_url="$(gcloud run services describe "$SERVICE_NAME" \
-            --region="${{ env.PROD_REGION }}" --format='json' \
-            | jq -r '.status.traffic[] | select(.tag == "candidate") | .url' | head -n1)"
-          if [ -z "$candidate_url" ] || [ "$candidate_url" = "null" ]; then
-            echo "Could not resolve the candidate revision URL." >&2
+          if [ "${{ steps.svc.outputs.exists }}" = "true" ]; then
+            smoke_url="$(gcloud run services describe "$SERVICE_NAME" \
+              --region="${{ env.PROD_REGION }}" --format='json' \
+              | jq -r '.status.traffic[] | select(.tag == "candidate") | .url' | head -n1)"
+          else
+            smoke_url="$(gcloud run services describe "$SERVICE_NAME" \
+              --region="${{ env.PROD_REGION }}" --format='value(status.url)')"
+          fi
+          if [ -z "$smoke_url" ] || [ "$smoke_url" = "null" ]; then
+            echo "Could not resolve the smoke URL." >&2
             exit 1
           fi
-          echo "CANDIDATE_URL=$candidate_url" >> "$GITHUB_ENV"
+          echo "SMOKE_URL=$smoke_url" >> "$GITHUB_ENV"
       - id: smoke
-        # Smoke the tagged candidate (not the live service URL). It bypasses
-        # Cloudflare, so it must present the origin secret or middleware.ts 403s
-        # it. CANDIDATE_URL is passed via env, not template interpolation, to keep
-        # workflow-output text out of the shell command line.
+        # Smoke the resolved URL. It bypasses Cloudflare, so it must present the
+        # origin secret or middleware.ts 403s it. SMOKE_URL is passed via env, not
+        # template interpolation, to keep workflow-output text off the command line.
         env:
-          CANDIDATE_URL: ${{ env.CANDIDATE_URL }}
+          SMOKE_URL: ${{ env.SMOKE_URL }}
         run: |
           ORIGIN_SHARED_SECRET="$(gcloud secrets versions access latest --secret=kallo-prod-origin-shared-secret)"
           echo "::add-mask::$ORIGIN_SHARED_SECRET"
           export ORIGIN_SHARED_SECRET
-          ./scripts/cloud-run/smoke-check.sh "$CANDIDATE_URL"
+          ./scripts/cloud-run/smoke-check.sh "$SMOKE_URL"
       - name: Promote candidate after smoke pass
-        # Only reached when smoke passed. Shift 100% traffic to the validated
-        # (latest) revision, then drop the now-redundant candidate tag.
+        # Only for an existing service: shift 100% traffic to the validated
+        # (latest) revision, then drop the candidate tag. On a first deploy the
+        # first revision already serves traffic, so there is nothing to promote.
+        if: steps.svc.outputs.exists == 'true'
         run: |
           gcloud run services update-traffic "$SERVICE_NAME" \
             --region="${{ env.PROD_REGION }}" \
