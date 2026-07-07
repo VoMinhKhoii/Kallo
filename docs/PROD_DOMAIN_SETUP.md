@@ -36,7 +36,8 @@ Singapore); Cloudflare's edge keeps users fast regardless.
   readable by the Cloud Run runtime SA.
 - GCS lease bucket `gs://kallo-prod-leases`.
 - GitHub repo var `GCS_PROD_LEASE_BUCKET=kallo-prod-leases`; secret
-  `KALLO_PROD_PROJECT_ID=oudpzhfzirgjbhrzcett`.
+  `KALLO_PROD_PROJECT_ID` (prod's Supabase project ref — value stored in GitHub
+  secrets, omitted here).
 
 You do **not** need to touch GCP for the steps below.
 

@@ -95,8 +95,10 @@ export async function generateMetadata({
     description: t('description'),
     manifest: '/manifest.webmanifest',
     openGraph: {
+      // No shared `url` here: child pages (e.g. /privacy, /terms) would inherit
+      // the locale-root URL as their canonical. Pages that need a canonical set
+      // their own openGraph.url.
       type: 'website',
-      url: `/${locale}`,
       siteName: t('title'),
       title: t('title'),
       description: t('description'),

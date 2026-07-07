@@ -7,7 +7,13 @@ healthz_body_file="$(mktemp "${TMPDIR:-/tmp}/nham-healthz-body.XXXXXX")"
 curl_config_file=""
 cleanup() {
   rm -f "$healthz_body_file"
-  [ -n "$curl_config_file" ] && rm -f "$curl_config_file"
+  # Use an if-block, not `[ -n … ] && rm`: when curl_config_file is empty (the
+  # common no-secret path) the `&&` test returns non-zero as the function's last
+  # command, and that status leaks out through the EXIT trap — turning a healthy
+  # `exit 0` into a spurious failure.
+  if [ -n "$curl_config_file" ]; then
+    rm -f "$curl_config_file"
+  fi
 }
 trap cleanup EXIT
 

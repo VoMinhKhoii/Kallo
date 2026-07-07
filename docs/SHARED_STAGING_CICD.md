@@ -254,6 +254,7 @@ the migration race disappears; `kallo-prod` owns its DB outright.
   `workflow_dispatch` for arbitrary refs; leased and intended for intentional
   shared-environment QA
 - **Prod (`kallo-prod`):** automatic from `main`; leased, applies migrations to
-  the prod DB, behind Cloudflare + domain mapping (see `docs/PROD_DOMAIN_SETUP.md`)
+  the prod DB, behind Cloudflare (proxied to the run.app origin via an Origin Rule,
+  no domain mapping — see `docs/PROD_DOMAIN_SETUP.md`)
 - **Reset DB:** emergency-only recovery path; guarded against wiping prod during
   the DB transition

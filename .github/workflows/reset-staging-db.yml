@@ -61,11 +61,24 @@ jobs:
         # mirrors extractProjectRefFromDatabaseUrl in shared-db.mjs; it is inlined
         # so it does not depend on the checked-out ref's copy of that script.
         run: |
-          prod_url="$(gcloud secrets versions access latest --secret=kallo-prod-database-url 2>/dev/null || true)"
-          if [ -z "$prod_url" ]; then
+          # Distinguish "secret genuinely absent" (safe to proceed) from any
+          # other failure (permission/API/network). Swallowing every error would
+          # let a reset run against prod just because the lookup happened to fail,
+          # so we fail closed on anything that is not a clean NOT_FOUND.
+          err_file="$(mktemp)"
+          if prod_url="$(gcloud secrets versions access latest --secret=kallo-prod-database-url 2>"$err_file")"; then
+            :
+          elif grep -qiE 'NOT_FOUND|was not found|does not exist' "$err_file"; then
             echo "No kallo-prod-database-url secret; no production DB to protect."
+            rm -f "$err_file"
             exit 0
+          else
+            echo "Refusing: could not read kallo-prod-database-url (not a NOT_FOUND) — failing closed to avoid wiping production." >&2
+            cat "$err_file" >&2
+            rm -f "$err_file"
+            exit 1
           fi
+          rm -f "$err_file"
           echo "::add-mask::$prod_url"
           prod_ref="$(PROD_URL="$prod_url" node -e '
             const u = process.env.PROD_URL || "";
