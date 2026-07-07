@@ -99,7 +99,7 @@ export async function fetchProductFromOpenFoodFacts(
           headers: {
             // Required by Open Food Facts policy to identify the app and avoid blocking
             'User-Agent':
-              'Nham Meal Tracker - Version 1.0 - Contact: support@nham.app',
+              'Kallo Meal Tracker - Version 1.0 - Contact: support@kallo.fit',
             Accept: 'application/json',
           },
           next: { revalidate: 86400 }, // Cache on the server side for 24h

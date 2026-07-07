@@ -28,8 +28,8 @@ import 'account_section.dart';
 /// The marketing version string (no `package_info_plus` dependency in pubspec,
 /// so this is rendered statically — keep in sync with `pubspec.yaml`).
 const String _appVersion = '1.0.1';
-const String _privacyUrl = 'https://nham.app/privacy';
-const String _termsUrl = 'https://nham.app/terms';
+const String _privacyUrl = 'https://kallo.fit/privacy';
+const String _termsUrl = 'https://kallo.fit/terms';
 
 /// Settings tab — a single scrollable root of grouped preference rows, each
 /// pushing ONE focused editor (Cupertino swipe-back). The numeric goal editor

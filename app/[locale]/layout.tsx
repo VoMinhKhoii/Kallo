@@ -18,6 +18,7 @@ import { ServiceWorkerRegister } from '@/components/app/shell/service-worker-reg
 import { QueryProvider } from '@/components/providers/query-provider';
 import { Toaster } from '@/components/ui/sonner';
 import { routing } from '@/i18n/navigation';
+import { SITE_URL } from '@/lib/site';
 import '../globals.css';
 
 const fraunces = Fraunces({
@@ -89,9 +90,23 @@ export async function generateMetadata({
   });
 
   return {
+    metadataBase: new URL(SITE_URL),
     title: t('title'),
     description: t('description'),
     manifest: '/manifest.webmanifest',
+    openGraph: {
+      type: 'website',
+      url: `/${locale}`,
+      siteName: t('title'),
+      title: t('title'),
+      description: t('description'),
+      locale,
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: t('title'),
+      description: t('description'),
+    },
     appleWebApp: {
       capable: true,
       statusBarStyle: 'default',

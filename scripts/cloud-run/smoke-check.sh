@@ -4,15 +4,32 @@ set -euo pipefail
 base_url="${1:?base URL required}"
 base_url="${base_url%/}"
 healthz_body_file="$(mktemp "${TMPDIR:-/tmp}/nham-healthz-body.XXXXXX")"
-trap 'rm -f "$healthz_body_file"' EXIT
+curl_config_file=""
+cleanup() {
+  rm -f "$healthz_body_file"
+  [ -n "$curl_config_file" ] && rm -f "$curl_config_file"
+}
+trap cleanup EXIT
+
+# Deploy smoke checks hit the raw *.run.app URL directly, bypassing Cloudflare.
+# When the service enforces the origin-lock (middleware.ts, prod), that request
+# is missing the X-Origin-Verify header Cloudflare injects and would 403. Send
+# the same shared secret here when it is available — via a 0600 curl config file
+# (mktemp default perms) rather than --header, so the secret never lands in the
+# process argv (/proc/<pid>/cmdline). Off-Cloudflare envs leave
+# ORIGIN_SHARED_SECRET unset, so no header is added and the array only holds the
+# base flags (never empty — safe under `set -u`).
+curl_opts=(--silent --show-error --connect-timeout 2 --max-time 5)
+if [ -n "${ORIGIN_SHARED_SECRET:-}" ]; then
+  curl_config_file="$(mktemp "${TMPDIR:-/tmp}/nham-curl-cfg.XXXXXX")"
+  printf 'header = "X-Origin-Verify: %s"\n' "$ORIGIN_SHARED_SECRET" > "$curl_config_file"
+  curl_opts+=(--config "$curl_config_file")
+fi
 
 check_landing_page() {
   landing_status="$(
     curl \
-      --silent \
-      --show-error \
-      --connect-timeout 2 \
-      --max-time 5 \
+      "${curl_opts[@]}" \
       --output /dev/null \
       --write-out '%{http_code}' \
       "$base_url/en" 2>/dev/null || true
@@ -24,10 +41,7 @@ check_landing_page() {
 for _ in 1 2 3 4 5; do
   health_response="$(
     curl \
-      --silent \
-      --show-error \
-      --connect-timeout 2 \
-      --max-time 5 \
+      "${curl_opts[@]}" \
       --output "$healthz_body_file" \
       --write-out '%{http_code}' \
       "$base_url/api/healthz" 2>/dev/null || true
