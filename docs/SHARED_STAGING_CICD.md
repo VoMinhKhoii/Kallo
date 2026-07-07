@@ -192,35 +192,69 @@ Current supporting resources:
 - GCS bucket:
   - `gs://nham-staging-leases`
 
-## Future production environment
+## Production environment (`kallo-prod`)
 
-Currently `main` only feeds `nham-internal`. There is no production environment
-yet — both internal and staging point at the same shared non-prod Supabase
-project (`[INTERNAL] Nhẩm`). When we are ready to run a real production
-service, the plan is:
+Production runs as the `kallo-prod` Cloud Run service, fronting the **kallo.fit**
+domain (the app is rebranding Nhẩm → Kallo). Deploy pipeline:
 
-- New Supabase project (`[PROD] Nhẩm`) with its own database URL, stored as a
-  separate Secret Manager secret (`nham-prod-database-url`).
-- New Cloud Run service `nham-prod` with prod-only runtime config (memory,
-  scaling, secrets).
-- New workflow `cloud-run-prod.yml` triggered on `push: branches: [main]`,
-  mirroring the staging workflow's lease + `supabase db push` + deploy +
-  smoke-check pattern, but against its own lease bucket
-  (`gs://nham-prod-leases`) so prod and staging cannot block each other.
-- Internal continues to deploy from `main` against the non-prod DB for
-  dogfooding. Once prod exists, internal becomes "production-shape, non-prod
-  data" — unchanged.
+- **Workflow:** `.github/workflows/cloud-run-prod.yml` — triggered by a
+  successful `CI` run on `main` (`workflow_run`), the same gate as internal. It
+  mirrors the staging lease + `supabase db push` + deploy + smoke pattern, using
+  its own lease bucket (`gs://kallo-prod-leases`, object `prod/lease.json`) so
+  prod and staging deploys never block each other.
+- **Region:** `asia-southeast1` (Singapore), overriding `vars.GCP_REGION`
+  (`asia-southeast3` / Bangkok, where internal + staging run) via `env.PROD_REGION`
+  in the workflow — prod co-locates with the Supabase DB (AWS ap-southeast-1). The
+  image is still built to the Bangkok Artifact Registry and pulled cross-region.
+- **Runtime:** `--min-instances=1 --max-instances=20 --memory=2Gi --cpu=1`,
+  `--ingress=all` (Cloudflare reaches the run.app origin over the public internet —
+  no Cloud Run domain mapping; Cloudflare proxies to run.app and rewrites the Host
+  header with an Origin Rule). The origin is sealed at the app layer instead:
+  Cloudflare injects an `X-Origin-Verify` secret and `middleware.ts` (via
+  `ORIGIN_SHARED_SECRET`) 403s anything that did not arrive through Cloudflare. The
+  deploy smoke-check sends the same secret so it can reach the raw run.app URL.
+- **Secrets (Secret Manager):** `kallo-prod-database-url`,
+  `kallo-prod-gemini-api-key`, `kallo-prod-analysis-guard-hash-secret`,
+  `kallo-prod-origin-shared-secret`.
+- **GitHub secret:** `KALLO_PROD_PROJECT_ID` — prod's own Supabase project ref,
+  used by `assert-target`. Deliberately separate from the shared
+  `SUPABASE_PROJECT_ID` so the non-prod DB split can't break prod validation.
+- **Repo variable / bucket:** `GCS_PROD_LEASE_BUCKET=kallo-prod-leases`,
+  `gs://kallo-prod-leases`.
 
-This section is intentionally a plan, not a runbook. None of these resources
-exist yet.
+Full domain / DNS / Cloudflare / Supabase / OAuth runbook:
+**`docs/PROD_DOMAIN_SETUP.md`**.
+
+### Database: current transition
+
+To preserve real data and the already-wired Google/Apple OAuth, `kallo-prod`
+reuses the **current dogfood Supabase project** as production
+(`kallo-prod-database-url` = that project's DB URL). Because `nham-internal` and
+`nham-staging` still read `nham-nonprod-database-url`, which currently points at
+that same project, there is a transitional overlap:
+
+- Both `cloud-run-internal` and `cloud-run-prod` apply migrations to that DB on a
+  `main` merge. `supabase db push` applies only what is pending (idempotent); if
+  the two race, re-running `cloud-run-prod` is safe.
+- `reset-staging-db.yml` is **guarded**: it hard-fails while
+  `nham-nonprod-database-url` and `kallo-prod-database-url` are byte-identical,
+  so it cannot wipe production during the overlap.
+
+**Fast-follow (removes the overlap):** create a fresh non-prod Supabase project,
+repoint `nham-nonprod-database-url` (and `SUPABASE_PROJECT_ID`) at it for
+internal/staging. The reset guard then self-heals (the two secrets differ) and
+the migration race disappears; `kallo-prod` owns its DB outright.
 
 ## Summary
 
 - **PR preview:** disabled by default; only legacy/manual operations remain
-- **Internal:** automatic from `main`; refuses to deploy if migrations are
-  pending on the shared non-prod DB
+- **Internal:** automatic from `main`; applies pending migrations to the shared
+  non-prod DB before deploying
 - **Staging:** automatic on successful CI from `staging`, manual via
   `workflow_dispatch` for arbitrary refs; leased and intended for intentional
   shared-environment QA
-- **Reset DB:** emergency-only recovery path
-- **Prod:** not yet provisioned (see "Future production environment")
+- **Prod (`kallo-prod`):** automatic from `main`; leased, applies migrations to
+  the prod DB, behind Cloudflare (proxied to the run.app origin via an Origin Rule,
+  no domain mapping — see `docs/PROD_DOMAIN_SETUP.md`)
+- **Reset DB:** emergency-only recovery path; guarded against wiping prod during
+  the DB transition
