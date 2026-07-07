@@ -21,6 +21,7 @@ import '../data/profile_providers.dart';
 import '../panels/cooking.dart';
 import '../widgets/instant_commit_editor.dart';
 import '../../../shared/widgets/top_toast.dart';
+import '../../feedback/feedback_screen.dart';
 import '../widgets/profile_form.dart';
 import '../widgets/region_editor.dart';
 import 'account_section.dart';
@@ -108,6 +109,16 @@ class _SettingsList extends ConsumerWidget {
                 ),
 
                 const SizedBox(height: NhamSpacing.sp5),
+                // ── Feedback (kept above Account, away from delete-account) ───
+                _GroupLabel(tr('settings.feedback.groupLabel')),
+                _PreferenceRow(
+                  icon: LucideIcons.messageSquare,
+                  label: tr('settings.feedback.rowLabel'),
+                  subline: tr('settings.feedback.rowSubline'),
+                  onTap: () => _openFeedback(context),
+                ),
+
+                const SizedBox(height: NhamSpacing.sp5),
                 const AccountSection(),
 
                 const SizedBox(height: NhamSpacing.sp5),
@@ -142,6 +153,12 @@ class _SettingsList extends ConsumerWidget {
     Navigator.of(
       context,
     ).push(MaterialPageRoute<void>(builder: (_) => _ProfileScreen(kind: kind)));
+  }
+
+  void _openFeedback(BuildContext context) {
+    Navigator.of(
+      context,
+    ).push(MaterialPageRoute<void>(builder: (_) => const FeedbackScreen()));
   }
 
   void _copyLink(BuildContext context, String url) {
