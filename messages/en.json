@@ -1178,7 +1178,8 @@
     "page": {
       "title": "Your circle",
       "subtitle": "What your friends are eating today.",
-      "addFriend": "Add friend"
+      "addFriend": "Add friend",
+      "friendNoMealToday": "{name} hasn't shared a meal today."
     },
     "empty": {
       "title": "Your circle is quiet",

@@ -11,6 +11,7 @@ import { CircleWallSkeleton } from '@/components/groups/circle-wall-skeleton';
 import { labelFor } from '@/components/groups/invite/profile-identity';
 import { useCircleFeed } from '@/hooks/social/use-circle-feed';
 import type { CircleFeedEntry } from '@/lib/groups/client';
+import { cn } from '@/lib/utils';
 
 function formatMacro(value: number | null, na: string): string {
   return value == null ? na : `${Math.round(value)}g`;
@@ -22,14 +23,28 @@ function formatCalories(value: number | null, na: string): string {
 
 /**
  * One friend's most-recent shared meal for today. Read-only clone of the
- * persisted-meal-card aesthetic — timeline dot, Lora dish quote, collapsible
- * macros. No likes, no counts, no badges, no leaderboards.
+ * persisted-meal-card aesthetic — Lora dish quote, collapsible macros. No
+ * likes, no counts, no badges, no leaderboards.
+ *
+ * `align`: 'timeline' keeps the original single-column ambient-wall look
+ * (a connecting dot/line down the left edge — see CircleWall below). 'left'
+ * / 'right' drop the timeline and render as a chat bubble instead, for views
+ * that mix the actor's own entry in with friends' (own on the right, like an
+ * ordinary chat thread).
  */
-function CircleCard({ entry }: { entry: CircleFeedEntry }) {
+export function CircleCard({
+  entry,
+  align = 'timeline',
+}: {
+  entry: CircleFeedEntry;
+  align?: 'timeline' | 'left' | 'right';
+}) {
   const t = useTranslations('groups.wall');
   const locale = useLocale();
   const [isCollapsed, setIsCollapsed] = useState(true);
   const { friend, meal } = entry;
+  const isBubble = align !== 'timeline';
+  const isRight = align === 'right';
 
   const timeLabel = new Date(meal.sharedAt).toLocaleTimeString(locale, {
     hour: '2-digit',
@@ -49,14 +64,27 @@ function CircleCard({ entry }: { entry: CircleFeedEntry }) {
     <motion.article
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="group relative"
+      className={cn(
+        'group relative',
+        isBubble && 'max-w-[85%] sm:max-w-md',
+        isRight && 'ml-auto'
+      )}
     >
-      {/* Timeline dot & line */}
-      <div className="absolute top-2 bottom-0 -left-4 w-px bg-nham-border/60 group-last:bg-transparent sm:-left-10" />
-      <div className="absolute top-2 -left-5 h-2 w-2 rounded-full border-2 border-nham-accent bg-white sm:-left-[43px]" />
+      {/* Timeline dot & line — ambient-wall mode only */}
+      {align === 'timeline' && (
+        <>
+          <div className="absolute top-2 bottom-0 -left-4 w-px bg-nham-border/60 group-last:bg-transparent sm:-left-10" />
+          <div className="absolute top-2 -left-5 h-2 w-2 rounded-full border-2 border-nham-accent bg-white sm:-left-[43px]" />
+        </>
+      )}
 
       {/* Friend identity */}
-      <div className="mb-2 flex items-center gap-2">
+      <div
+        className={cn(
+          'mb-2 flex items-center gap-2',
+          isRight && 'flex-row-reverse'
+        )}
+      >
         <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-nham-accent/40 to-nham-border/55 ring-1 ring-nham-accent/25">
           <span className="font-bold font-sans-display text-[10px] text-nham-btn">
             {friendLabel.charAt(0).toUpperCase()}

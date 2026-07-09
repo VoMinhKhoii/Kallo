@@ -1178,7 +1178,8 @@
     "page": {
       "title": "Vòng kết nối của bạn",
       "subtitle": "Hôm nay bạn bè đang ăn gì.",
-      "addFriend": "Thêm bạn"
+      "addFriend": "Thêm bạn",
+      "friendNoMealToday": "{name} chưa chia sẻ bữa ăn nào hôm nay."
     },
     "empty": {
       "title": "Vòng kết nối đang yên ắng",

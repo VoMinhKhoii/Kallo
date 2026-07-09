@@ -132,6 +132,17 @@ export const circleFeedSchema = z.object({
   timezoneOffset: timezoneOffsetSchema,
 });
 
+/** Create a named group chat from a multi-select of the actor's friends. */
+export const createChatGroupSchema = z.object({
+  name: z.string().trim().min(1, 'Tên nhóm không được để trống.').max(60),
+  memberUserIds: z.array(uuidSchema).min(1, 'Chọn ít nhất một thành viên.'),
+});
+
+export const sendChatGroupMessageSchema = z.object({
+  groupId: uuidSchema,
+  body: z.string().trim().min(1).max(2000),
+});
+
 export type HandleInput = z.infer<typeof handleSchema>;
 export type UpsertPublicProfileInput = z.infer<
   typeof upsertPublicProfileSchema

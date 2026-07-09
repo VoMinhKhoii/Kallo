@@ -11,6 +11,7 @@
 // path (direct client reads + the OG card route).
 
 import { and, desc, eq, gte, inArray, lt, or, sql } from 'drizzle-orm';
+import { getOrCreateDirectChatGroup } from '@/lib/actions/chat-groups';
 import { getUtcDayRangeForLocalDate } from '@/lib/date/local-day';
 import { db as defaultDb } from '@/lib/db';
 import {
@@ -263,7 +264,12 @@ export async function getProfileBySlug(
 // ---------------------------------------------------------------------------
 // The recipient's tap IS the accept (Locket model): no separate inviter
 // approval. Creates an accepted edge, or promotes a pre-existing pending one.
-// The friendship write + event are transactional so an event can't be orphaned.
+// The friendship write + event + direct chat group are all transactional so
+// none of the three can end up orphaned relative to the others. A pair whose
+// edge was already accepted before this call (the early return below) is
+// assumed to already have its chat — legacy edges accepted before this
+// backfill existed are instead picked up lazily by
+// ensureDirectChatsForAcceptedFriends() on the next chat-list read.
 
 export async function acceptInvite(
   actorId: string,
@@ -326,49 +332,53 @@ export async function acceptInvite(
         type: 'friend_accepted',
         refId: existing[0].id,
       });
-      return { status: 'accepted' as const, inviter };
+    } else {
+      // No edge yet. The locked read can't lock a row that doesn't exist, so
+      // a racing accept/block may insert first; swallow the unique violation
+      // and reconcile instead of surfacing a spurious 500 on this core action.
+      const inserted = await tx
+        .insert(friendships)
+        .values({
+          userLow,
+          userHigh,
+          // The inviter initiated by sharing the link; the recipient accepted.
+          requestedBy: inviter.userId,
+          status: 'accepted',
+        })
+        .onConflictDoNothing({
+          target: [friendships.userLow, friendships.userHigh],
+        })
+        .returning({ id: friendships.id });
+
+      if (inserted[0]) {
+        await tx.insert(circleEvents).values({
+          actorId,
+          type: 'friend_accepted',
+          refId: inserted[0].id,
+        });
+      } else {
+        // A concurrent writer won the insert — re-read and honour a block.
+        const reconciled = await tx
+          .select({ status: friendships.status })
+          .from(friendships)
+          .where(
+            and(
+              eq(friendships.userLow, userLow),
+              eq(friendships.userHigh, userHigh)
+            )
+          )
+          .limit(1);
+        if (reconciled[0]?.status === 'blocked') {
+          throw Errors.conflict('Không thể kết nối.');
+        }
+      }
     }
 
-    // No edge yet. The locked read can't lock a row that doesn't exist, so a
-    // racing accept/block may insert first; swallow the unique violation and
-    // reconcile instead of surfacing a spurious 500 on this core action.
-    const inserted = await tx
-      .insert(friendships)
-      .values({
-        userLow,
-        userHigh,
-        // The inviter initiated by sharing the link; the recipient accepted.
-        requestedBy: inviter.userId,
-        status: 'accepted',
-      })
-      .onConflictDoNothing({
-        target: [friendships.userLow, friendships.userHigh],
-      })
-      .returning({ id: friendships.id });
+    // Every path that reaches here just (re)established an accepted edge —
+    // the ‘already accepted’ case above returns earlier and skips this.
+    // Idempotent, so re-running it on retries is harmless.
+    await getOrCreateDirectChatGroup(actorId, inviter.userId, tx);
 
-    if (inserted[0]) {
-      await tx.insert(circleEvents).values({
-        actorId,
-        type: 'friend_accepted',
-        refId: inserted[0].id,
-      });
-      return { status: 'accepted' as const, inviter };
-    }
-
-    // A concurrent writer won the insert — re-read and honour a block.
-    const reconciled = await tx
-      .select({ status: friendships.status })
-      .from(friendships)
-      .where(
-        and(
-          eq(friendships.userLow, userLow),
-          eq(friendships.userHigh, userHigh)
-        )
-      )
-      .limit(1);
-    if (reconciled[0]?.status === 'blocked') {
-      throw Errors.conflict('Không thể kết nối.');
-    }
     return { status: 'accepted' as const, inviter };
   });
 }

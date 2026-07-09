@@ -1,7 +1,7 @@
 import { type NextRequest, NextResponse } from 'next/server';
 import { blockFriend } from '@/lib/actions/groups';
+import { readJsonBody, requireUserId } from '@/lib/api/auth';
 import { serializeError } from '@/lib/errors';
-import { readJsonBody, requireUserId } from '../../_auth';
 
 export const runtime = 'nodejs';
 
