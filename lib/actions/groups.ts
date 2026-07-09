@@ -10,20 +10,18 @@
 // predicate. RLS is the source of truth only for the Supabase-session/PostgREST
 // path (direct client reads + the OG card route).
 
-import { and, desc, eq, gte, inArray, lt, or, sql } from 'drizzle-orm';
+import { and, desc, eq, or, sql } from 'drizzle-orm';
 import { getOrCreateDirectChatGroup } from '@/lib/actions/chat-groups';
 import { getUtcDayRangeForLocalDate } from '@/lib/date/local-day';
 import { db as defaultDb } from '@/lib/db';
-import {
-  circleEvents,
-  friendships,
-  mealShares,
-  meals,
-  publicProfiles,
-} from '@/lib/db/schema';
+import { circleEvents, friendships, publicProfiles } from '@/lib/db/schema';
 import { Errors } from '@/lib/errors';
 import { orderedPair } from '@/lib/groups/friendship';
 import { validateHandle } from '@/lib/groups/handles';
+import {
+  mostRecentSharedMealsToday,
+  todayLocalDate,
+} from '@/lib/groups/meal-feed';
 import { generateInviteSlug } from '@/lib/groups/slug';
 import {
   acceptInviteSchema,
@@ -569,34 +567,12 @@ export async function listCircleFeed(
   // the actor plus their (capped) friends. Self-inclusion stays userId-scoped:
   // a user only ever sees their own meal and meals of users they are accepted
   // friends with (the friendIds set is derived from accepted edges above).
-  const rows = await db
-    .selectDistinctOn([meals.userId], {
-      friendUserId: meals.userId,
-      mealId: meals.id,
-      shareId: mealShares.id,
-      rawInput: meals.rawInput,
-      caloriesKcal: meals.caloriesKcal,
-      proteinG: meals.proteinG,
-      carbohydrateG: meals.carbohydrateG,
-      fatG: meals.fatG,
-      sharedAt: mealShares.sharedAt,
-      handle: publicProfiles.handle,
-      displayName: publicProfiles.displayName,
-      avatarSeed: publicProfiles.avatarSeed,
-    })
-    .from(mealShares)
-    .innerJoin(meals, eq(meals.id, mealShares.mealId))
-    .innerJoin(publicProfiles, eq(publicProfiles.userId, meals.userId))
-    .where(
-      and(
-        inArray(meals.userId, queryUserIds),
-        sql`${mealShares.visibility} <> 'private'`,
-        gte(mealShares.sharedAt, dayStart),
-        lt(mealShares.sharedAt, dayEnd)
-      )
-    )
-    // DISTINCT ON requires the leading ORDER BY to match the distinct key.
-    .orderBy(meals.userId, desc(mealShares.sharedAt));
+  const rows = await mostRecentSharedMealsToday(
+    queryUserIds,
+    dayStart,
+    dayEnd,
+    db
+  );
 
   const entries = rows.map((r) => ({
     friend: {
@@ -628,14 +604,4 @@ export async function listCircleFeed(
         new Date(a.meal.sharedAt).getTime()
     );
   return [...self, ...friends];
-}
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-/** Local calendar date (YYYY-MM-DD) for a viewer's timezone offset. */
-function todayLocalDate(timezoneOffset: number): string {
-  const local = new Date(Date.now() - timezoneOffset * 60 * 1000);
-  return local.toISOString().slice(0, 10);
 }

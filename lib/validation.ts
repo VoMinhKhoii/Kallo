@@ -143,6 +143,12 @@ export const sendChatGroupMessageSchema = z.object({
   body: z.string().trim().min(1).max(2000),
 });
 
+/** Fetch a group's shared-meal feed for today, scoped to its membership. */
+export const groupMealFeedSchema = z.object({
+  groupId: uuidSchema,
+  timezoneOffset: timezoneOffsetSchema,
+});
+
 export type HandleInput = z.infer<typeof handleSchema>;
 export type UpsertPublicProfileInput = z.infer<
   typeof upsertPublicProfileSchema

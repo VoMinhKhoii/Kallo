@@ -1179,7 +1179,10 @@
       "title": "Your circle",
       "subtitle": "What your friends are eating today.",
       "addFriend": "Add friend",
-      "friendNoMealToday": "{name} hasn't shared a meal today."
+      "friendNoMealToday": "{name} hasn't shared a meal today.",
+      "groupNoMealToday": "No one in {name} has shared a meal today.",
+      "groupsSectionTitle": "Groups",
+      "friendsSectionTitle": "Friends"
     },
     "empty": {
       "title": "Your circle is quiet",
@@ -1188,8 +1191,6 @@
     },
     "wall": {
       "sharedAt": "Shared at {time}",
-      "toggleDetails": "Toggle meal details",
-      "total": "Total",
       "loading": "Loading your circle",
       "na": "N/A",
       "you": "You",
@@ -1218,6 +1219,8 @@
     "invite": {
       "title": "Invite to your circle",
       "description": "Share your link. Anyone who opens it can connect with you.",
+      "tabAddFriend": "Add friend",
+      "tabCreateGroup": "Create group",
       "yourLink": "Your invite link",
       "hint": "Anyone with this link can connect with you.",
       "copy": "Copy",
@@ -1239,6 +1242,19 @@
       "appearSaved": "Display name updated",
       "appearError": "Couldn't update your name",
       "appearFallback": "Set a display name"
+    },
+    "createGroup": {
+      "title": "Create a group",
+      "description": "Name it and add members from your circle.",
+      "nameLabel": "Group name",
+      "namePlaceholder": "e.g. Weekend hikers",
+      "membersLabel": "Add members",
+      "membersCount": "{count} selected",
+      "noFriends": "Add friends first — you can only add people already in your circle.",
+      "submit": "Create group",
+      "creating": "Creating…",
+      "created": "Group created",
+      "createError": "Couldn't create the group. Try again."
     },
     "circle": {
       "title": "Your circle ({count})",

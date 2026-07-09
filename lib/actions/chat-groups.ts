@@ -30,10 +30,16 @@ import {
   friendships,
   publicProfiles,
 } from '@/lib/db/schema';
+import { getUtcDayRangeForLocalDate } from '@/lib/date/local-day';
 import { Errors } from '@/lib/errors';
 import { orderedPair } from '@/lib/groups/friendship';
 import {
+  mostRecentSharedMealsToday,
+  todayLocalDate,
+} from '@/lib/groups/meal-feed';
+import {
   createChatGroupSchema,
+  groupMealFeedSchema,
   sendChatGroupMessageSchema,
 } from '@/lib/validation';
 
@@ -84,6 +90,27 @@ export interface ChatGroupMessage {
   senderId: string;
   body: string;
   createdAt: string;
+}
+
+export interface GroupMealFeedEntry {
+  friend: {
+    userId: string;
+    handle: string;
+    displayName: string | null;
+    avatarSeed: string | null;
+  };
+  /** True when this entry is the actor's own shared meal (their own table). */
+  isSelf: boolean;
+  meal: {
+    mealId: string;
+    shareId: string;
+    rawInput: string;
+    caloriesKcal: number | null;
+    proteinG: number | null;
+    carbohydrateG: number | null;
+    fatG: number | null;
+    sharedAt: string;
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -405,6 +432,59 @@ export async function getChatGroup(
     name: group.name,
     members: memberRows,
   };
+}
+
+// ---------------------------------------------------------------------------
+// listGroupMealFeed — this group's members' most-recent shared meal, today
+// ---------------------------------------------------------------------------
+// The group-thread counterpart to listCircleFeed (lib/actions/groups.ts):
+// same "most-recent shared meal per person, today" query, but scoped to a
+// chat group's membership instead of the actor's friend graph. A fellow
+// member need not be the viewer's own accepted friend — being in the same
+// group is its own visibility boundary, membership-gated the same way every
+// other chat-groups read is.
+
+export async function listGroupMealFeed(
+  actorId: string,
+  input: { groupId: string; timezoneOffset: number },
+  db: Db = defaultDb
+): Promise<GroupMealFeedEntry[]> {
+  const parsed = groupMealFeedSchema.parse(input);
+  await requireMembership(actorId, parsed.groupId, db);
+
+  const today = todayLocalDate(parsed.timezoneOffset);
+  const { dayStart, dayEnd } = getUtcDayRangeForLocalDate(
+    today,
+    parsed.timezoneOffset
+  );
+
+  const memberRows = await db
+    .select({ userId: chatGroupMembers.userId })
+    .from(chatGroupMembers)
+    .where(eq(chatGroupMembers.groupId, parsed.groupId));
+  const memberIds = memberRows.map((r) => r.userId);
+
+  const rows = await mostRecentSharedMealsToday(memberIds, dayStart, dayEnd, db);
+
+  return rows.map((r) => ({
+    friend: {
+      userId: r.friendUserId,
+      handle: r.handle,
+      displayName: r.displayName,
+      avatarSeed: r.avatarSeed,
+    },
+    isSelf: r.friendUserId === actorId,
+    meal: {
+      mealId: r.mealId,
+      shareId: r.shareId,
+      rawInput: r.rawInput,
+      caloriesKcal: r.caloriesKcal,
+      proteinG: r.proteinG,
+      carbohydrateG: r.carbohydrateG,
+      fatG: r.fatG,
+      sharedAt: r.sharedAt.toISOString(),
+    },
+  }));
 }
 
 // ---------------------------------------------------------------------------

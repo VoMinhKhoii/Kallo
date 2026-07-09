@@ -1179,7 +1179,10 @@
       "title": "Vòng kết nối của bạn",
       "subtitle": "Hôm nay bạn bè đang ăn gì.",
       "addFriend": "Thêm bạn",
-      "friendNoMealToday": "{name} chưa chia sẻ bữa ăn nào hôm nay."
+      "friendNoMealToday": "{name} chưa chia sẻ bữa ăn nào hôm nay.",
+      "groupNoMealToday": "Chưa ai trong {name} chia sẻ bữa ăn nào hôm nay.",
+      "groupsSectionTitle": "Nhóm",
+      "friendsSectionTitle": "Bạn bè"
     },
     "empty": {
       "title": "Vòng kết nối đang yên ắng",
@@ -1188,8 +1191,6 @@
     },
     "wall": {
       "sharedAt": "Chia sẻ lúc {time}",
-      "toggleDetails": "Xem chi tiết bữa ăn",
-      "total": "Tổng",
       "loading": "Đang tải vòng kết nối của bạn",
       "na": "Không có",
       "you": "Bạn",
@@ -1218,6 +1219,8 @@
     "invite": {
       "title": "Mời vào vòng kết nối",
       "description": "Chia sẻ liên kết của bạn. Bất kỳ ai mở liên kết đều có thể kết nối với bạn.",
+      "tabAddFriend": "Thêm bạn",
+      "tabCreateGroup": "Tạo nhóm",
       "yourLink": "Liên kết mời của bạn",
       "hint": "Bất kỳ ai có liên kết này đều có thể kết nối với bạn.",
       "copy": "Sao chép",
@@ -1239,6 +1242,19 @@
       "appearSaved": "Đã cập nhật tên hiển thị",
       "appearError": "Không thể cập nhật tên của bạn",
       "appearFallback": "Đặt tên hiển thị"
+    },
+    "createGroup": {
+      "title": "Tạo nhóm",
+      "description": "Đặt tên và thêm thành viên từ vòng kết nối của bạn.",
+      "nameLabel": "Tên nhóm",
+      "namePlaceholder": "VD: Hội leo núi cuối tuần",
+      "membersLabel": "Thêm thành viên",
+      "membersCount": "Đã chọn {count}",
+      "noFriends": "Hãy kết bạn trước — bạn chỉ có thể thêm người đã có trong vòng kết nối.",
+      "submit": "Tạo nhóm",
+      "creating": "Đang tạo…",
+      "created": "Đã tạo nhóm",
+      "createError": "Không thể tạo nhóm. Hãy thử lại."
     },
     "circle": {
       "title": "Vòng kết nối ({count})",

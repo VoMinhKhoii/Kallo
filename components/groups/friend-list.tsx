@@ -92,10 +92,11 @@ function FriendRowMenu({ member }: { member: CircleMember }) {
   );
 }
 
-/** The left-pane master list: every accepted friend. Clicking one shows their
- * shared meals for today on the right — the original Circle feature,
+/** The left-pane's friends section: every accepted friend. Clicking one shows
+ * their shared meals for today on the right — the original Circle feature,
  * reorganized as a master-detail list instead of one combined ambient wall. */
 export function FriendList() {
+  const t = useTranslations('groups.page');
   const {
     data: members = [],
     isPending,
@@ -121,34 +122,42 @@ export function FriendList() {
   }
 
   return (
-    <ul className="space-y-2">
-      {friends.map((member: CircleMember) => {
-        const name = labelFor(member.profile);
-        const tint = tintFor(member.profile.avatarSeed, member.profile.handle);
-        return (
-          <li
-            key={member.friendshipId}
-            className="flex items-center gap-1 rounded-xl border border-nham-border/60 bg-white pr-1.5 transition-colors hover:border-nham-accent/40"
-          >
-            <Link
-              href={`/groups/${member.profile.userId}`}
-              className="flex min-w-0 flex-1 items-center gap-3 p-3"
+    <div className="space-y-2">
+      <h2 className="px-1 font-medium font-sans-display text-[10px] text-nham-text-muted uppercase tracking-[0.08em]">
+        {t('friendsSectionTitle')}
+      </h2>
+      <ul className="space-y-2">
+        {friends.map((member: CircleMember) => {
+          const name = labelFor(member.profile);
+          const tint = tintFor(
+            member.profile.avatarSeed,
+            member.profile.handle
+          );
+          return (
+            <li
+              key={member.friendshipId}
+              className="flex items-center gap-1 rounded-xl border border-nham-border/60 bg-white pr-1.5 transition-colors hover:border-nham-accent/40"
             >
-              <span
-                className={`flex size-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br ring-1 ring-nham-accent/25 ${tint}`}
+              <Link
+                href={`/groups/${member.profile.userId}`}
+                className="flex min-w-0 flex-1 items-center gap-3 p-3"
               >
-                <span className="font-bold font-sans-display text-[14px] text-nham-btn">
-                  {name.charAt(0).toUpperCase()}
+                <span
+                  className={`flex size-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br ring-1 ring-nham-accent/25 ${tint}`}
+                >
+                  <span className="font-bold font-sans-display text-[14px] text-nham-btn">
+                    {name.charAt(0).toUpperCase()}
+                  </span>
                 </span>
-              </span>
-              <span className="truncate font-sans-display text-[14px] text-nham-text">
-                {name}
-              </span>
-            </Link>
-            <FriendRowMenu member={member} />
-          </li>
-        );
-      })}
-    </ul>
+                <span className="truncate font-sans-display text-[14px] text-nham-text">
+                  {name}
+                </span>
+              </Link>
+              <FriendRowMenu member={member} />
+            </li>
+          );
+        })}
+      </ul>
+    </div>
   );
 }
