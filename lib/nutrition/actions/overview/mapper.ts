@@ -26,6 +26,7 @@ import {
   getTrendStatus,
 } from '../../pattern/summary';
 import type {
+  CalorieAverages,
   DaySeriesBucket,
   DaySeriesBucketUnit,
   DaySeriesMetricKey,
@@ -35,6 +36,7 @@ import type {
   NutrientCardData,
   NutrientDaySeries,
   NutrientSummaryItem,
+  NutritionDayScope,
   NutritionDaySeries,
   NutritionNutrientKey,
   NutritionOverview,
@@ -100,6 +102,14 @@ interface MapOverviewRowsInput {
   resolvedRange: NutritionOverview['resolvedRange'];
   loggedDaysLast30: number;
   period: NutritionPeriod;
+  /**
+   * Which day set the body (macros/series/nutrient grid) is averaged over.
+   * `undefined` = legacy behavior (complete days with the all-partial safety
+   * valve) for the web app; `'complete'` = strict complete days (no valve, may
+   * be empty); `'all'` = every logged day. Regardless of this, `calorieAverages`
+   * always carries both scopes.
+   */
+  dayScope?: NutritionDayScope;
 }
 
 function sumRows(rows: OverviewMealItemRow[], key: NumericRowKey): number {
@@ -534,6 +544,7 @@ export function mapOverviewRowsToDto({
   resolvedRange,
   loggedDaysLast30,
   period,
+  dayScope,
 }: MapOverviewRowsInput): NutritionOverview {
   const loggedDates = new Set(
     rows.filter((row) => row.calories > 0).map((row) => row.localDate)
@@ -564,6 +575,10 @@ export function mapOverviewRowsToDto({
         needsAttention: [],
         limitedDataCount: 0,
         macroConsistency: { averageConsistencyPct: 0, weakestMacro: null },
+      },
+      calorieAverages: {
+        all: { averagePerDay: null, days: 0 },
+        complete: { averagePerDay: null, days: 0 },
       },
       macros: [],
       daySeries: {
@@ -598,17 +613,121 @@ export function mapOverviewRowsToDto({
       (dayCalories.get(row.localDate) ?? 0) + row.calories
     );
   }
-  const { completeDates, completeDays, partialDays } = classifyDayCompleteness(
-    [...dayCalories].map(([date, calories]) => ({ date, calories })),
-    nullableNumber(profile.calorieTarget)
-  );
-  const completeRows = rows.filter((row) => completeDates.has(row.localDate));
+  const dayCalorieList = [...dayCalories].map(([date, calories]) => ({
+    date,
+    calories,
+  }));
+  const calorieTarget = nullableNumber(profile.calorieTarget);
 
-  // safeLoggedDays divides nutrient sums to produce "average per complete day".
-  // Both numerator (sumRows over completeRows) and denominator (completeDays)
-  // are scoped to the same set of complete days, so half-logged days neither
-  // inflate the divisor nor leak their partial sums into the average.
-  const safeLoggedDays = completeDays;
+  // Strict (no safety-valve) classification: a genuinely under-logged period
+  // yields zero complete days. Used for `calorieAverages.complete` and, when the
+  // caller asks for the `'complete'` scope, for the whole body too.
+  const strict = classifyDayCompleteness(dayCalorieList, calorieTarget, {
+    safetyValve: false,
+  });
+
+  // Both scopes' calorie averages, shipped regardless of `dayScope` so the
+  // client can show one as hero and the other as a subtle secondary and swap
+  // them without a refetch.
+  const loggedRows = rows.filter((row) => loggedDates.has(row.localDate));
+  const strictCompleteRows = rows.filter((row) =>
+    strict.completeDates.has(row.localDate)
+  );
+  const calorieAverages: CalorieAverages = {
+    all: {
+      averagePerDay:
+        loggedDays > 0 ? sumRows(loggedRows, 'calories') / loggedDays : null,
+      days: loggedDays,
+    },
+    complete: {
+      averagePerDay:
+        strict.completeDays > 0
+          ? sumRows(strictCompleteRows, 'calories') / strict.completeDays
+          : null,
+      days: strict.completeDays,
+    },
+  };
+
+  // Pick the day set the body (macros/series/grid) averages over. Legacy
+  // (`undefined`) keeps the valve so the web app is byte-identical to before;
+  // an explicit scope uses the strict classification.
+  const legacy =
+    dayScope === undefined
+      ? classifyDayCompleteness(dayCalorieList, calorieTarget)
+      : null;
+  const { averagingDates, averagingDayCount, completeDays, partialDays } =
+    dayScope === 'all'
+      ? {
+          averagingDates: loggedDates,
+          averagingDayCount: loggedDays,
+          completeDays: strict.completeDays,
+          partialDays: strict.partialDays,
+        }
+      : dayScope === 'complete'
+        ? {
+            averagingDates: strict.completeDates,
+            averagingDayCount: strict.completeDays,
+            completeDays: strict.completeDays,
+            partialDays: strict.partialDays,
+          }
+        : {
+            averagingDates: legacy!.completeDates,
+            averagingDayCount: legacy!.completeDays,
+            completeDays: legacy!.completeDays,
+            partialDays: legacy!.partialDays,
+          };
+
+  // Strict `'complete'` scope with no qualifying days: return a body-empty DTO
+  // (the client shows a "no complete days yet" state) while still carrying the
+  // real day counts and both calorie averages.
+  if (averagingDayCount === 0) {
+    return {
+      requestedRange,
+      resolvedRange,
+      bucketTimezone: period.bucketTimezone,
+      loggedDays,
+      completeDays,
+      partialDays,
+      loggedDaysLast30,
+      trendStatus: getTrendStatus(resolvedRange, completeDays),
+      period: {
+        startDate: period.startDate,
+        endDate: period.endDate,
+      },
+      summary: {
+        mostConsistent: [],
+        needsAttention: [],
+        limitedDataCount: 0,
+        macroConsistency: { averageConsistencyPct: 0, weakestMacro: null },
+      },
+      calorieAverages,
+      macros: [],
+      daySeries: {
+        unit: RANGE_BUCKET_UNIT[resolvedRange],
+        series: [],
+      },
+      micronutrients: [],
+      spotlight: [],
+      steady: [],
+      moreNutrients: [],
+      educationCards: [
+        {
+          id: 'vitamin_d',
+          titleKey: 'nutrition.education.vitaminD.title',
+          bodyKey: 'nutrition.education.vitaminD.body',
+        },
+      ],
+    };
+  }
+
+  const completeDates = averagingDates;
+  const completeRows = rows.filter((row) => averagingDates.has(row.localDate));
+
+  // safeLoggedDays divides nutrient sums to produce the per-day average over the
+  // selected day set. Both numerator (sumRows over completeRows) and denominator
+  // (averagingDayCount) are scoped to the same set, so days outside it neither
+  // inflate the divisor nor leak their sums into the average.
+  const safeLoggedDays = averagingDayCount;
   const totalCalories = completeRows.reduce(
     (sum, row) => sum + Math.max(0, row.calories),
     0
@@ -670,6 +789,7 @@ export function mapOverviewRowsToDto({
       ...summaryBuckets,
       macroConsistency,
     },
+    calorieAverages,
     macros,
     daySeries,
     micronutrients,

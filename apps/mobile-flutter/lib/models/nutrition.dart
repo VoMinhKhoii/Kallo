@@ -29,6 +29,16 @@ extension NutritionRangeInputValue on NutritionRangeInput {
 
 enum BucketTimezone { local, utc }
 
+/// Which day set the overview averages/series are scoped to.
+enum NutritionDayScope { complete, all }
+
+extension NutritionDayScopeValue on NutritionDayScope {
+  String get value => switch (this) {
+        NutritionDayScope.complete => 'complete',
+        NutritionDayScope.all => 'all',
+      };
+}
+
 enum TargetSource { vietnamRda, whoFao, nasem, unsupported }
 
 TargetSource targetSourceFromString(String s) => switch (s) {
@@ -663,6 +673,49 @@ class NutritionSummary {
       };
 }
 
+/// One day-scope's calorie average and the day-count backing it.
+class CalorieScopeAverage {
+  final double? averagePerDay;
+  final int days;
+
+  const CalorieScopeAverage({required this.averagePerDay, required this.days});
+
+  factory CalorieScopeAverage.fromJson(Map<String, dynamic> json) =>
+      CalorieScopeAverage(
+        averagePerDay: (json['averagePerDay'] as num?)?.toDouble(),
+        days: json['days'] as int,
+      );
+
+  Map<String, dynamic> toJson() => {
+        'averagePerDay': averagePerDay,
+        'days': days,
+      };
+}
+
+/// Both scopes' calorie averages, shipped together so the client can show one
+/// as the hero figure and the other as a subtle secondary and swap them.
+class CalorieAverages {
+  final CalorieScopeAverage all;
+  final CalorieScopeAverage complete;
+
+  const CalorieAverages({required this.all, required this.complete});
+
+  factory CalorieAverages.fromJson(Map<String, dynamic> json) => CalorieAverages(
+        all: CalorieScopeAverage.fromJson(json['all'] as Map<String, dynamic>),
+        complete: CalorieScopeAverage.fromJson(
+            json['complete'] as Map<String, dynamic>),
+      );
+
+  Map<String, dynamic> toJson() => {
+        'all': all.toJson(),
+        'complete': complete.toJson(),
+      };
+
+  /// The average for the given scope.
+  CalorieScopeAverage forScope(NutritionDayScope scope) =>
+      scope == NutritionDayScope.complete ? complete : all;
+}
+
 class NutritionOverview {
   final String requestedRange;
   final String resolvedRange;
@@ -674,6 +727,7 @@ class NutritionOverview {
   final String trendStatus;
   final ({String startDate, String endDate}) period;
   final NutritionSummary summary;
+  final CalorieAverages calorieAverages;
   final List<MacroPattern> macros;
   final List<NutrientCardData> micronutrients;
   final List<NutrientCardData> spotlight;
@@ -693,6 +747,7 @@ class NutritionOverview {
     required this.trendStatus,
     required this.period,
     required this.summary,
+    required this.calorieAverages,
     required this.macros,
     required this.micronutrients,
     required this.spotlight,
@@ -719,6 +774,8 @@ class NutritionOverview {
       ),
       summary: NutritionSummary.fromJson(
           json['summary'] as Map<String, dynamic>),
+      calorieAverages: CalorieAverages.fromJson(
+          json['calorieAverages'] as Map<String, dynamic>),
       macros: (json['macros'] as List<dynamic>)
           .map((e) => MacroPattern.fromJson(e as Map<String, dynamic>))
           .toList(),
@@ -757,6 +814,7 @@ class NutritionOverview {
           'endDate': period.endDate,
         },
         'summary': summary.toJson(),
+        'calorieAverages': calorieAverages.toJson(),
         'macros': macros.map((e) => e.toJson()).toList(),
         'micronutrients': micronutrients.map((e) => e.toJson()).toList(),
         'spotlight': spotlight.map((e) => e.toJson()).toList(),
@@ -777,6 +835,7 @@ class NutritionOverview {
     String? trendStatus,
     ({String startDate, String endDate})? period,
     NutritionSummary? summary,
+    CalorieAverages? calorieAverages,
     List<MacroPattern>? macros,
     List<NutrientCardData>? micronutrients,
     List<NutrientCardData>? spotlight,
@@ -796,6 +855,7 @@ class NutritionOverview {
         trendStatus: trendStatus ?? this.trendStatus,
         period: period ?? this.period,
         summary: summary ?? this.summary,
+        calorieAverages: calorieAverages ?? this.calorieAverages,
         macros: macros ?? this.macros,
         micronutrients: micronutrients ?? this.micronutrients,
         spotlight: spotlight ?? this.spotlight,

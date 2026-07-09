@@ -10,6 +10,7 @@
 import { z } from 'zod';
 import {
   foodSourceCandidatesInputSchema,
+  nutritionDayScopeSchema,
   nutritionRangeInputSchema,
   timezoneOffsetSchema,
 } from '@/lib/nutrition/schemas';
@@ -18,6 +19,7 @@ import {
 // truth for the nutrition range, nullable timezone offset, and nutrient enum.
 export {
   foodSourceCandidatesInputSchema,
+  nutritionDayScopeSchema,
   nutritionRangeInputSchema,
   timezoneOffsetSchema,
 } from '@/lib/nutrition/schemas';
@@ -30,6 +32,9 @@ export {
 export const overviewQuerySchema = z.object({
   range: nutritionRangeInputSchema,
   tz: timezoneOffsetSchema,
+  // Optional day-scope for the averages/series. Absent = legacy (complete days
+  // with the safety valve); the mobile client sends 'all' or 'complete'.
+  days: nutritionDayScopeSchema.optional(),
 });
 
 /**
