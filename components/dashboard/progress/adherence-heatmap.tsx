@@ -235,14 +235,18 @@ export function AdherenceHeatmap({ data, range }: AdherenceHeatmapProps) {
 
         {/* Legend */}
         <div className="mt-2 flex items-center gap-2">
-          <span className="text-[9px] text-nham-text-muted">{t('offTarget')}</span>
+          <span className="text-[9px] text-nham-text-muted">
+            {t('offTarget')}
+          </span>
           <div
             className="h-1.5 flex-1 rounded-full"
             style={{
               background: `linear-gradient(to right, ${HEATMAP_COLORS.far}, ${HEATMAP_COLORS.moderate}, ${HEATMAP_COLORS.slight}, ${HEATMAP_COLORS.close}, ${HEATMAP_COLORS.onTarget})`,
             }}
           />
-          <span className="text-[9px] text-nham-text-muted">{t('onTarget')}</span>
+          <span className="text-[9px] text-nham-text-muted">
+            {t('onTarget')}
+          </span>
         </div>
       </div>
     </TooltipProvider>

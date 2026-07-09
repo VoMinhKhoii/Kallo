@@ -68,11 +68,11 @@ export function ProgressStory({
           <div className="flex items-end justify-between gap-3">
             <div>
               {isInsufficient ? (
-                <h2 className="font-sans-display font-medium text-3xl text-nham-text tracking-[-0.04em]">
+                <h2 className="font-medium font-sans-display text-3xl text-nham-text tracking-[-0.04em]">
                   {summary.currentWeight.toFixed(1)} {t('units.kg')}
                 </h2>
               ) : (
-                <h2 className="font-sans-display font-medium text-3xl text-nham-text tracking-[-0.04em]">
+                <h2 className="font-medium font-sans-display text-3xl text-nham-text tracking-[-0.04em]">
                   {delta > 0 ? '+' : ''}
                   {delta.toFixed(1)} {t('units.kg')}
                 </h2>

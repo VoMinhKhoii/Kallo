@@ -64,7 +64,7 @@ export function TodayDock({ nutrition, meals, weekly }: TodayDockProps) {
             {t('caloriesRemaining')}
           </span>
           <div className="mt-1 flex items-baseline gap-1.5">
-            <span className="font-sans-display font-medium text-4xl text-nham-text tabular-nums leading-none tracking-[-0.04em] sm:text-5xl">
+            <span className="font-medium font-sans-display text-4xl text-nham-text tabular-nums leading-none tracking-[-0.04em] sm:text-5xl">
               {remaining.toLocaleString()}
             </span>
             <span className="font-sans-display text-lg text-nham-text-muted">
