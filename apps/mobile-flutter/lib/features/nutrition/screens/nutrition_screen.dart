@@ -37,6 +37,11 @@ class NutritionScreen extends ConsumerStatefulWidget {
 
 class _NutritionScreenState extends ConsumerState<NutritionScreen> {
   NutritionRangeInput _range = NutritionRangeInput.auto;
+  // The card opens on the informative complete-day average; the user can flip to
+  // "all days" via the in-card swap.
+  NutritionDayScope _dayScope = NutritionDayScope.complete;
+
+  NutritionOverviewArg get _arg => (range: _range, scope: _dayScope);
 
   @override
   Widget build(BuildContext context) {
@@ -61,7 +66,7 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> {
     // content on screen (copyWithPrevious) and surfaces the failure as a top
     // toast instead of nuking what the user is reading.
     ref.listen<AsyncValue<NutritionOverview>>(
-      nutritionOverviewProvider(_range),
+      nutritionOverviewProvider(_arg),
       (prev, next) {
         if (next.hasError && next.hasValue) {
           showTopToast(
@@ -73,7 +78,7 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> {
       },
     );
 
-    final async = ref.watch(nutritionOverviewProvider(_range));
+    final async = ref.watch(nutritionOverviewProvider(_arg));
     // `isFetching`: a refetch in flight while previous data is shown.
     final isFetching = async.isLoading && async.hasValue;
 
@@ -94,7 +99,7 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> {
           Expanded(
             child: RefreshIndicator(
               onRefresh: () => ref
-                  .read(nutritionOverviewProvider(_range).notifier)
+                  .read(nutritionOverviewProvider(_arg).notifier)
                   .refetch(),
               color: NhamColors.accent,
               child: SingleChildScrollView(
@@ -123,7 +128,7 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> {
         message: tr('nutrition.errors.overview'),
         retryLabel: tr('nutrition.errors.retry'),
         onRetry: () {
-          ref.read(nutritionOverviewProvider(_range).notifier).refetch();
+          ref.read(nutritionOverviewProvider(_arg).notifier).refetch();
         },
       );
     }
@@ -149,6 +154,9 @@ class _NutritionScreenState extends ConsumerState<NutritionScreen> {
           macros: overview.macros,
           resolvedRange: overview.resolvedRange,
           daySeries: overview.daySeries,
+          calorieAverages: overview.calorieAverages,
+          scope: _dayScope,
+          onScopeChange: (scope) => setState(() => _dayScope = scope),
         ),
         // The single CTA sits right under the summary so it's visible on load,
         // not buried below the full nutrient grid.

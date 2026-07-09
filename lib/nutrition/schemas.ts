@@ -16,9 +16,15 @@ export const timezoneOffsetSchema = z
   .max(720)
   .nullable();
 
+export const nutritionDayScopeSchema = z.enum(['all', 'complete']);
+
 export const nutritionOverviewInputSchema = z.object({
   range: nutritionRangeInputSchema,
   timezoneOffset: timezoneOffsetSchema,
+  // Which day set the averages/series are scoped to. Absent = legacy behavior
+  // (complete days with the all-partial safety valve). 'complete' is strict
+  // (no valve → an under-logged period yields zero complete days).
+  days: nutritionDayScopeSchema.optional(),
 });
 
 export const foodSourceCandidatesInputSchema = z.object({

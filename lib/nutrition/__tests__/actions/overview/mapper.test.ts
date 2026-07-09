@@ -221,4 +221,86 @@ describe('mapOverviewRowsToDto', () => {
       expect(overview.daySeries.series).toHaveLength(0);
     });
   });
+
+  describe('day scope', () => {
+    function mapScoped(
+      rows: OverviewMealItemRow[],
+      dayScope: 'all' | 'complete' | undefined
+    ) {
+      return mapOverviewRowsToDto({
+        rows,
+        profile: baseProfile,
+        requestedRange: '7d',
+        resolvedRange: '7d',
+        loggedDaysLast30: rows.length,
+        period: {
+          startDate: '2026-04-19',
+          endDate: '2026-04-25',
+          bucketTimezone: 'local',
+        },
+        dayScope,
+      });
+    }
+
+    // calorieTarget 2000 → partial-day floor is 1000 kcal.
+    const completeDay = row({ localDate: '2026-04-24', calories: 2000 });
+    const partialDay = row({ localDate: '2026-04-25', calories: 400 });
+    const caloriesAvg = (o: ReturnType<typeof mapScoped>) =>
+      o.macros.find((m) => m.key === 'calories')?.averagePerDay ?? null;
+
+    it('ships both calorie averages regardless of scope', () => {
+      const overview = mapScoped([completeDay, partialDay], undefined);
+      // all = (2000 + 400) / 2 logged days; complete = 2000 / 1 strict day.
+      expect(overview.calorieAverages.all).toEqual({
+        averagePerDay: 1200,
+        days: 2,
+      });
+      expect(overview.calorieAverages.complete).toEqual({
+        averagePerDay: 2000,
+        days: 1,
+      });
+    });
+
+    it("days:'all' averages the body over every logged day", () => {
+      const overview = mapScoped([completeDay, partialDay], 'all');
+      expect(caloriesAvg(overview)).toBe(1200);
+      // Counts still report the strict classification.
+      expect(overview.completeDays).toBe(1);
+      expect(overview.partialDays).toBe(1);
+    });
+
+    it("days:'complete' averages the body over strict complete days only", () => {
+      const overview = mapScoped([completeDay, partialDay], 'complete');
+      expect(caloriesAvg(overview)).toBe(2000);
+      expect(overview.completeDays).toBe(1);
+    });
+
+    it("days:'complete' with only under-logged days returns an empty body", () => {
+      const overview = mapScoped(
+        [
+          row({ localDate: '2026-04-24', calories: 400 }),
+          row({ localDate: '2026-04-25', calories: 300 }),
+        ],
+        'complete'
+      );
+      expect(overview.completeDays).toBe(0);
+      expect(overview.macros).toHaveLength(0);
+      expect(overview.daySeries.series).toHaveLength(0);
+      expect(overview.calorieAverages.complete.averagePerDay).toBeNull();
+      expect(overview.calorieAverages.all.averagePerDay).toBe(350);
+    });
+
+    it('legacy (no scope) keeps the safety valve for all-partial periods', () => {
+      const overview = mapScoped(
+        [
+          row({ localDate: '2026-04-24', calories: 400 }),
+          row({ localDate: '2026-04-25', calories: 300 }),
+        ],
+        undefined
+      );
+      // Valve treats both under-logged days as complete → body still populated.
+      expect(caloriesAvg(overview)).toBe(350);
+      expect(overview.completeDays).toBe(2);
+    });
+  });
 });

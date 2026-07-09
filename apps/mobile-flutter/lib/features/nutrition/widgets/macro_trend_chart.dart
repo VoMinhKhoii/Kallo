@@ -7,12 +7,12 @@ import '../../../models/nutrition.dart';
 import '../../../theme/nham_colors.dart';
 import '../logic/rhythm_logic.dart';
 
-/// A stacked line-area chart of macro **calories** per bucket (day for 7d, week
-/// for 30d): total height = that bucket's calories, each band's thickness = the
-/// energy from protein / carbs / fat. Reads the overview `daySeries` directly.
+/// A stacked **bar** chart of macro **calories** per bucket (day for 7d, week
+/// for 30d): total bar height = that bucket's calories, each stacked segment =
+/// the energy from protein / carbs / fat. Reads the overview `daySeries` directly.
 ///
-/// Curved (line-area, never columns), filled with the warm macro tokens that
-/// match the `DaySummary` legend.
+/// One rounded column per bucket, split into three regions filled with the warm
+/// macro tokens that match the `DaySummary` legend.
 class MacroTrendChart extends StatelessWidget {
   const MacroTrendChart({super.key, required this.daySeries});
 
@@ -34,38 +34,43 @@ class MacroTrendChart extends StatelessWidget {
     double g(NutrientDaySeries? s, int i) =>
         (s != null && i < s.buckets.length ? s.buckets[i].value : null) ?? 0;
 
-    final zero = <FlSpot>[];
-    final cum1 = <FlSpot>[]; // protein kcal
-    final cum2 = <FlSpot>[]; // + carbs
-    final cum3 = <FlSpot>[]; // + fat (total)
+    final protein = kCompositionColors['protein']!;
+    final carbs = kCompositionColors['carbohydrate']!;
+    final fat = kCompositionColors['fat']!;
+
+    // Fewer, fatter columns for the 7-day view; slimmer ones for the busier
+    // 30-day (weekly) axis so they don't crowd.
+    final barWidth = buckets.length <= 7 ? 18.0 : 10.0;
+
+    final groups = <BarChartGroupData>[];
     var maxY = 0.0;
     for (var i = 0; i < buckets.length; i++) {
       final pk = g(p, i) * kKcalPerGram['protein']!;
       final ck = g(c, i) * kKcalPerGram['carbohydrate']!;
       final fk = g(f, i) * kKcalPerGram['fat']!;
-      final x = i.toDouble();
-      zero.add(FlSpot(x, 0));
-      cum1.add(FlSpot(x, pk));
-      cum2.add(FlSpot(x, pk + ck));
-      cum3.add(FlSpot(x, pk + ck + fk));
-      if (pk + ck + fk > maxY) maxY = pk + ck + fk;
+      final total = pk + ck + fk;
+      if (total > maxY) maxY = total;
+      groups.add(
+        BarChartGroupData(
+          x: i,
+          barRods: [
+            BarChartRodData(
+              toY: total,
+              width: barWidth,
+              borderRadius:
+                  const BorderRadius.vertical(top: Radius.circular(4)),
+              // Stacked P/C/F kcal bands, matching the legend order & colors.
+              rodStackItems: [
+                BarChartRodStackItem(0, pk, protein),
+                BarChartRodStackItem(pk, pk + ck, carbs),
+                BarChartRodStackItem(pk + ck, total, fat),
+              ],
+            ),
+          ],
+        ),
+      );
     }
     if (maxY <= 0) return const SizedBox.shrink();
-
-    LineChartBarData band(List<FlSpot> spots, {Color? stroke}) =>
-        LineChartBarData(
-          spots: spots,
-          isCurved: true,
-          curveSmoothness: 0.28,
-          preventCurveOverShooting: true,
-          barWidth: stroke == null ? 0 : 1.5,
-          color: stroke ?? Colors.transparent,
-          dotData: const FlDotData(show: false),
-        );
-
-    final protein = kCompositionColors['protein']!;
-    final carbs = kCompositionColors['carbohydrate']!;
-    final fat = kCompositionColors['fat']!;
 
     // Axis always reaches at least 3000 kcal so the 2500 / 3000 guides show,
     // and grows past that if intake exceeds it.
@@ -76,13 +81,12 @@ class MacroTrendChart extends StatelessWidget {
 
     return SizedBox(
       height: 248,
-      child: LineChart(
-        LineChartData(
-          minX: 0,
-          maxX: (buckets.length - 1).toDouble(),
+      child: BarChart(
+        BarChartData(
           minY: 0,
           maxY: topY,
-          lineTouchData: const LineTouchData(enabled: false),
+          alignment: BarChartAlignment.spaceBetween,
+          barTouchData: BarTouchData(enabled: false),
           gridData: FlGridData(
             show: true,
             drawVerticalLine: false,
@@ -141,18 +145,7 @@ class MacroTrendChart extends StatelessWidget {
               ),
             ),
           ),
-          // Fills between the stacked cumulative lines.
-          betweenBarsData: [
-            BetweenBarsData(fromIndex: 0, toIndex: 1, color: protein.withValues(alpha: 0.85)),
-            BetweenBarsData(fromIndex: 1, toIndex: 2, color: carbs.withValues(alpha: 0.85)),
-            BetweenBarsData(fromIndex: 2, toIndex: 3, color: fat.withValues(alpha: 0.85)),
-          ],
-          lineBarsData: [
-            band(zero),
-            band(cum1),
-            band(cum2),
-            band(cum3, stroke: NhamColors.text.withValues(alpha: 0.28)),
-          ],
+          barGroups: groups,
         ),
       ),
     );

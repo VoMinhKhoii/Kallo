@@ -8,6 +8,14 @@
             "command": "bash scripts/link-worktree-env.sh"
           }
         ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/flutter-setup.sh"
+          }
+        ]
       }
     ]
   }

@@ -95,6 +95,7 @@ export async function getNutritionOverview(
       resolvedRange,
       loggedDaysLast30,
       period,
+      dayScope: parsed.days,
     });
     assertOverviewHasNoTrendArrays(overview);
     return overview;
@@ -132,6 +133,7 @@ export async function getNutritionOverview(
     resolvedRange,
     loggedDaysLast30,
     period,
+    dayScope: parsed.days,
   });
 
   assertOverviewHasNoTrendArrays(overview);
