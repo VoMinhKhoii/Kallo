@@ -37,8 +37,8 @@ export function ProgressStory({
 
   if (!weightSummary || !summary) {
     return (
-      <section className="flex min-h-[420px] flex-col rounded-[1.5rem] border border-nham-border/60 bg-card p-4 shadow-[0_10px_32px_rgba(44,36,22,0.05)] xl:h-full xl:min-h-0">
-        <div className="flex flex-1 items-center justify-center text-nham-stone text-sm">
+      <section className="flex min-h-[420px] flex-col rounded-[1.375rem] border border-nham-border/60 bg-card p-4 shadow-[0_10px_32px_rgba(44,36,22,0.05)] xl:h-full xl:min-h-0">
+        <div className="flex flex-1 items-center justify-center text-nham-text-muted text-sm">
           {t('loadingWeightTrend')}
         </div>
       </section>
@@ -51,12 +51,12 @@ export function ProgressStory({
   const Icon = delta <= 0 ? TrendingDown : TrendingUp;
 
   return (
-    <section className="grid min-h-[360px] gap-2 rounded-[1.5rem] border border-nham-border/60 bg-card p-2.5 shadow-[0_10px_32px_rgba(44,36,22,0.05)] xl:h-full xl:min-h-0 xl:grid-cols-[minmax(240px,0.32fr)_minmax(0,0.68fr)]">
-      <div className="grid min-h-0 gap-2 xl:grid-rows-[auto_auto] xl:content-start">
+    <section className="grid min-h-[360px] gap-2 rounded-[1.375rem] border border-nham-border/60 bg-card p-2.5 shadow-[0_10px_32px_rgba(44,36,22,0.05)] xl:h-full xl:min-h-0 xl:grid-cols-[minmax(240px,0.32fr)_minmax(0,0.68fr)]">
+      <div className="grid min-h-0 gap-3 xl:grid-rows-[auto_auto] xl:content-start">
         <div className="rounded-[1.25rem] bg-nham-surface/70 p-2.5">
           <div
             className={cn(
-              'mb-2 inline-flex items-center gap-2 rounded-full px-2.5 py-1 font-semibold text-xs',
+              'mb-2 inline-flex items-center gap-2 rounded-full px-2.5 py-1 font-medium text-xs',
               summary.status === 'behind'
                 ? 'bg-nham-danger/10 text-nham-danger'
                 : 'bg-nham-accent/10 text-nham-accent'
@@ -68,16 +68,16 @@ export function ProgressStory({
           <div className="flex items-end justify-between gap-3">
             <div>
               {isInsufficient ? (
-                <h2 className="font-sans-display font-semibold text-3xl text-nham-text tracking-[-0.04em]">
+                <h2 className="font-sans-display font-medium text-3xl text-nham-text tracking-[-0.04em]">
                   {summary.currentWeight.toFixed(1)} {t('units.kg')}
                 </h2>
               ) : (
-                <h2 className="font-sans-display font-semibold text-3xl text-nham-text tracking-[-0.04em]">
+                <h2 className="font-sans-display font-medium text-3xl text-nham-text tracking-[-0.04em]">
                   {delta > 0 ? '+' : ''}
                   {delta.toFixed(1)} {t('units.kg')}
                 </h2>
               )}
-              <p className="mt-1 text-nham-stone text-xs">{copy.detail}</p>
+              <p className="mt-1 text-nham-text-muted text-xs">{copy.detail}</p>
             </div>
             {!isInsufficient && (
               <div
@@ -87,19 +87,19 @@ export function ProgressStory({
                 )}
               >
                 <div className="rounded-xl bg-card/80 px-2.5 py-2">
-                  <span className="block text-[9px] text-nham-stone uppercase tracking-[0.14em]">
+                  <span className="block text-[9px] text-nham-text-muted uppercase tracking-[0.14em]">
                     {t('now')}
                   </span>
-                  <strong className="font-mono text-nham-text text-xs">
+                  <strong className="font-medium font-mono text-nham-text text-xs">
                     {summary.currentWeight.toFixed(1)} {t('units.kg')}
                   </strong>
                 </div>
                 {weightSummary.canProject && (
                   <div className="rounded-xl bg-card/80 px-2.5 py-2">
-                    <span className="block text-[9px] text-nham-stone uppercase tracking-[0.14em]">
+                    <span className="block text-[9px] text-nham-text-muted uppercase tracking-[0.14em]">
                       {t('projected')}
                     </span>
-                    <strong className="font-mono text-nham-text text-xs">
+                    <strong className="font-medium font-mono text-nham-text text-xs">
                       {weightSummary.projectedEndWeight.toFixed(1)}{' '}
                       {t('units.kg')}
                     </strong>
