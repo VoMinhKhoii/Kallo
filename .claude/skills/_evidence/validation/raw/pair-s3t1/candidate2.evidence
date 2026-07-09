@@ -1,0 +1,63 @@
+=== LOG ===
+61bd6b5 fix(utils): accept EU thousands format in weight input
+861c2e7 chore(ttr): add reusable task templates for bug reports and meeting minutes
+87c0c65 Merge pull request #175 from VoMinhKhoii/worktree-threads-typography-dashboard
+8a80c07 docs(design): fold the mobile system into the nham-design skill
+=== DIFF vs planted HEAD ===
+diff --git a/lib/utils.test.ts b/lib/utils.test.ts
+index 8ca3bd1..663be60 100644
+--- a/lib/utils.test.ts
++++ b/lib/utils.test.ts
+@@ -49,6 +49,15 @@ describe('parseDecimalInput', () => {
+     expect(parseDecimalInput('abc')).toBeNaN();
+   });
+ 
++  it('parses US thousands separators (comma group, period decimal)', () => {
++    expect(parseDecimalInput('1,234.5')).toBe(1234.5);
++    expect(parseDecimalInput('12,345.67')).toBe(12345.67);
++  });
++
++  it('parses EU thousands separators (period group, comma decimal)', () => {
++    expect(parseDecimalInput('1.234,5')).toBe(1234.5);
++  });
++
+   it('returns an already-numeric value unchanged (RHF setValueAs on numeric default)', () => {
+     expect(parseDecimalInput(65.3)).toBe(65.3);
+     expect(parseDecimalInput(70)).toBe(70);
+diff --git a/lib/utils.ts b/lib/utils.ts
+index 79c6dfc..31f5135 100644
+--- a/lib/utils.ts
++++ b/lib/utils.ts
+@@ -22,12 +22,26 @@ export function capitalizeFirst(s: string): string {
+ export function parseDecimalInput(value: string | number): number {
+   if (typeof value === 'number') return value;
+   let normalized = value.trim();
+-  // EU inputs like "1.234,5" use '.' for thousands and ',' for decimals.
+-  if (normalized.includes('.') && normalized.includes(',')) {
+-    normalized = normalized.replace('.', '');
+-  }
+-  normalized = normalized.replace(',', '.');
+   if (normalized === '') return Number.NaN;
++
++  const lastComma = normalized.lastIndexOf(',');
++  const lastDot = normalized.lastIndexOf('.');
++
++  if (lastComma !== -1 && lastDot !== -1) {
++    // Both separators present (e.g. US "1,234.5" or EU "1.234,5"). The
++    // right-most separator is the decimal point; the other groups thousands
++    // and must be stripped.
++    const decimalSep = lastComma > lastDot ? ',' : '.';
++    const thousandsSep = decimalSep === ',' ? '.' : ',';
++    normalized = normalized
++      .split(thousandsSep)
++      .join('')
++      .replace(decimalSep, '.');
++  } else {
++    // Only one separator kind: treat a lone comma as the decimal point, which
++    // is what iOS/EU keyboards emit (e.g. "65,3").
++    normalized = normalized.replace(',', '.');
++  }
+   return Number(normalized);
+ }
+ 
+=== UNTRACKED new files ===

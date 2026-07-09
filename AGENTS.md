@@ -25,6 +25,7 @@ This file is the **single source of truth** for agent behavior. Rules here take 
 
   | Skill | When to use |
   |-------|-------------|
+  | `feature-workflow` | **Invoke FIRST for any non-trivial fix, feature, or refactor — before exploring or editing.** The umbrella dev loop distilled from this repo's session history (blind-validated 13-2): orient/probe state → decision gate on design forks → implement with per-phase verification → `verify-before-done` → `grill-your-own-work` → ship. Routes to the discipline skills in `.claude/skills/` at the right phase boundaries. Validation records live in `.claude/skills/_evidence/`. Note: `absorb-steering` FAILED validation — do not load it. |
   | `vercel-react-best-practices` | **Default for all tasks.** Any React/Next.js code: components, pages, data fetching, hooks, server actions, bundle optimization, re-render prevention, SSR/client patterns. 68 rules across 8 categories. |
   | `vercel-composition-patterns` | Component architecture: refactoring prop-heavy components, building compound components, designing reusable APIs, lifting state, context providers, React 19 patterns. |
   | `nham-design` | **Required for ANY design or UI work in this app — even the lightest touch.** Nhẩm's brand system: warm earthy palette, Lora + DM Sans, italic-accent rule, Lucide icon allowlist, drift watchlist (`destructive` vs `nham-danger`, tiny-dot disease, trend-arrow tropes, etc.), and canonical-surface references. Invoke before changing colors, type, spacing, radii, shadows, copy tone, or any component visuals. |

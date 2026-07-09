@@ -1,0 +1,91 @@
+=== LOG ===
+861c2e7 chore(ttr): add reusable task templates for bug reports and meeting minutes
+87c0c65 Merge pull request #175 from VoMinhKhoii/worktree-threads-typography-dashboard
+=== DIFF ===
+diff --git a/lib/actions/__tests__/barcode.test.ts b/lib/actions/__tests__/barcode.test.ts
+index 9003a49..3c8af72 100644
+--- a/lib/actions/__tests__/barcode.test.ts
++++ b/lib/actions/__tests__/barcode.test.ts
+@@ -91,6 +91,7 @@ describe('searchBarcodeAction', () => {
+         caloriesKcal: 350,
+         proteinG: 7.5,
+         carbohydrateG: 52,
++        sugarsG: null,
+         fatG: 12,
+         fiberG: 2,
+         sodiumMg: 850,
+@@ -126,6 +127,7 @@ describe('searchBarcodeAction', () => {
+       caloriesKcal: 350,
+       proteinG: 7.5,
+       carbohydrateG: 52,
++      sugarsG: 8,
+       fatG: 12,
+       fiberG: 2,
+       sodiumMg: 850,
+diff --git a/lib/actions/barcode.ts b/lib/actions/barcode.ts
+index e1ae6e5..9f87671 100644
+--- a/lib/actions/barcode.ts
++++ b/lib/actions/barcode.ts
+@@ -126,6 +126,9 @@ export async function searchBarcodeAction(input: {
+           caloriesKcal: nutrition.caloriesKcal,
+           proteinG: nutrition.proteinG,
+           carbohydrateG: nutrition.carbohydrateG,
++          // The local cache schema has no sugars column; only fresh OFF fetches
++          // carry a sugars value.
++          sugarsG: null,
+           fatG: nutrition.fatG,
+           fiberG: nutrition.fiberG,
+           sodiumMg: nutrition.sodiumMg,
+diff --git a/lib/barcode/__tests__/openfoodfacts.test.ts b/lib/barcode/__tests__/openfoodfacts.test.ts
+index f2644db..222d94b 100644
+--- a/lib/barcode/__tests__/openfoodfacts.test.ts
++++ b/lib/barcode/__tests__/openfoodfacts.test.ts
+@@ -24,6 +24,7 @@ describe('fetchProductFromOpenFoodFacts', () => {
+           'energy-kcal_100g': 120,
+           proteins_100g: 5.5,
+           carbohydrates_100g: 22,
++          sugars_100g: 18,
+           fat_100g: 3,
+           fiber_100g: 1.5,
+           sodium_100g: 0.25,
+@@ -49,6 +50,7 @@ describe('fetchProductFromOpenFoodFacts', () => {
+       caloriesKcal: 120,
+       proteinG: 5.5,
+       carbohydrateG: 22,
++      sugarsG: 18,
+       fatG: 3,
+       fiberG: 1.5,
+       sodiumMg: 250,
+diff --git a/lib/barcode/openfoodfacts.ts b/lib/barcode/openfoodfacts.ts
+index cf1973e..cf8b674 100644
+--- a/lib/barcode/openfoodfacts.ts
++++ b/lib/barcode/openfoodfacts.ts
+@@ -51,6 +51,7 @@ export interface ParsedBarcodeProduct {
+   caloriesKcal: number | null;
+   proteinG: number | null;
+   carbohydrateG: number | null;
++  sugarsG: number | null;
+   fatG: number | null;
+   fiberG: number | null;
+   sodiumMg: number | null;
+@@ -164,6 +165,7 @@ export async function fetchProductFromOpenFoodFacts(
+ 
+     const proteinG = parseNumber(nutriments?.proteins_100g);
+     const carbohydrateG = parseNumber(nutriments?.carbohydrates_100g);
++    const sugarsG = parseNumber(nutriments?.sugars_100g);
+     const fatG = parseNumber(nutriments?.fat_100g);
+     const fiberG = parseNumber(nutriments?.fiber_100g);
+ 
+@@ -187,6 +189,7 @@ export async function fetchProductFromOpenFoodFacts(
+       caloriesKcal,
+       proteinG,
+       carbohydrateG,
++      sugarsG,
+       fatG,
+       fiberG,
+       sodiumMg,
+=== STATUS ===
+ M lib/actions/__tests__/barcode.test.ts
+ M lib/actions/barcode.ts
+ M lib/barcode/__tests__/openfoodfacts.test.ts
+ M lib/barcode/openfoodfacts.ts

@@ -1,0 +1,112 @@
+=== LOG ===
+9f89576 chore(db): reserve migration slot
+861c2e7 chore(ttr): add reusable task templates for bug reports and meeting minutes
+87c0c65 Merge pull request #175 from VoMinhKhoii/worktree-threads-typography-dashboard
+8a80c07 docs(design): fold the mobile system into the nham-design skill
+=== DIFF vs planted HEAD ===
+=== UNTRACKED new files ===
+?? scripts/check-migration-dates.mjs
+--- new file: scripts/check-migration-dates.mjs ---
+#!/usr/bin/env node
+/**
+ * Migration Date Guard
+ *
+ * Scans supabase/migrations/*.sql, prints the count and the newest filename,
+ * and fails (exit 1) if any migration's 14-digit timestamp prefix is in the
+ * future. Timestamp digits are interpreted as UTC, matching the Supabase CLI,
+ * which stamps `supabase migration new` filenames in UTC.
+ *
+ * Exit codes:
+ *   0 - No future-dated migrations
+ *   1 - One or more future-dated migrations (or the directory is missing)
+ */
+
+import fs from 'node:fs';
+import path from 'node:path';
+
+const MIGRATIONS_DIR = 'supabase/migrations';
+
+/**
+ * Parse a YYYYMMDDHHMMSS prefix as a UTC instant. Returns null when the digits
+ * are malformed or describe an impossible date (e.g. 20250231).
+ */
+function parseTimestamp(ts) {
+  if (!/^\d{14}$/.test(ts)) return null;
+  const year = Number(ts.slice(0, 4));
+  const month = Number(ts.slice(4, 6)) - 1;
+  const day = Number(ts.slice(6, 8));
+  const hour = Number(ts.slice(8, 10));
+  const min = Number(ts.slice(10, 12));
+  const sec = Number(ts.slice(12, 14));
+  const date = new Date(Date.UTC(year, month, day, hour, min, sec));
+  // Date.UTC normalizes impossible dates, so round-trip and reject drift.
+  if (
+    date.getUTCFullYear() !== year ||
+    date.getUTCMonth() !== month ||
+    date.getUTCDate() !== day ||
+    date.getUTCHours() !== hour ||
+    date.getUTCMinutes() !== min ||
+    date.getUTCSeconds() !== sec
+  ) {
+    return null;
+  }
+  return date;
+}
+
+function extractTimestamp(filename) {
+  const m = filename.match(/^(\d{14})_.+\.sql$/);
+  return m ? m[1] : null;
+}
+
+function main() {
+  const dir = path.join(process.cwd(), MIGRATIONS_DIR);
+
+  if (!fs.existsSync(dir)) {
+    console.error(`ERROR: Migration directory not found: ${MIGRATIONS_DIR}`);
+    process.exit(1);
+  }
+
+  const files = fs
+    .readdirSync(dir)
+    .filter((f) => f.endsWith('.sql'))
+    .sort();
+
+  console.log(`Found ${files.length} migration(s) in ${MIGRATIONS_DIR}`);
+
+  if (files.length === 0) {
+    console.log('No migration files to check.');
+    return;
+  }
+
+  console.log(`Newest: ${files[files.length - 1]}`);
+
+  const now = Date.now();
+  const future = [];
+
+  for (const filename of files) {
+    const ts = extractTimestamp(filename);
+    if (!ts) continue;
+    const date = parseTimestamp(ts);
+    if (!date) continue;
+    if (date.getTime() > now) {
+      future.push({ filename, iso: date.toISOString() });
+    }
+  }
+
+  if (future.length > 0) {
+    console.error(
+      `\nERROR: ${future.length} migration(s) are dated in the future (UTC now is ${new Date(now).toISOString()}):`
+    );
+    for (const { filename, iso } of future) {
+      console.error(`  - ${filename} (timestamp = ${iso})`);
+    }
+    console.error(
+      '\nMigration timestamp prefixes must not be in the future. Rename the file(s) to a past UTC timestamp.'
+    );
+    process.exit(1);
+  }
+
+  console.log('OK: no future-dated migrations.');
+}
+
+main();
