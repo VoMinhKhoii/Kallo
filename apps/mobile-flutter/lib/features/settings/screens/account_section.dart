@@ -54,6 +54,7 @@ class AccountSection extends ConsumerStatefulWidget {
 class _AccountSectionState extends ConsumerState<AccountSection> {
   bool _exporting = false;
   bool _signingOut = false;
+  bool _retrying = false; // manual retry of the initial identity fetch in flight
 
   // ── Linked sign-in methods state ──────────────────────────────────────
   List<UserIdentity>? _identities;
@@ -84,6 +85,10 @@ class _AccountSectionState extends ConsumerState<AccountSection> {
   }
 
   Future<void> _load() async {
+    // Only the manual retry row (shown after an empty initial load) gets a busy
+    // spinner; the silent initState/resume loads don't flash one.
+    final isRetry = _identities == null && _loadFailed;
+    if (isRetry) setState(() => _retrying = true);
     try {
       final list = await ref.read(authControllerProvider).getUserIdentities();
       if (!mounted) return;
@@ -91,6 +96,7 @@ class _AccountSectionState extends ConsumerState<AccountSection> {
         _identities = list;
         _busyProvider = null;
         _loadFailed = false;
+        _retrying = false;
       });
     } catch (_) {
       if (!mounted) return;
@@ -100,6 +106,7 @@ class _AccountSectionState extends ConsumerState<AccountSection> {
       setState(() {
         _busyProvider = null;
         _loadFailed = true;
+        _retrying = false;
       });
       // The retry row only covers the empty initial load; a failed *refresh*
       // (after link/unlink/resume) keeps the stale list, so toast it instead —
@@ -265,6 +272,8 @@ class _AccountSectionState extends ConsumerState<AccountSection> {
         SettingsRow(
           icon: LucideIcons.refreshCw,
           label: tr('settings.account.loadError'),
+          busy: _retrying,
+          enabled: !_retrying,
           onTap: _load,
         ),
       );

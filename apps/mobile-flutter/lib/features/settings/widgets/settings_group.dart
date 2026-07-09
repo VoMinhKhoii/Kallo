@@ -144,9 +144,26 @@ class _SettingsRowState extends State<SettingsRow> {
       ),
     );
 
-    if (!_interactive) {
+    // A purely static row (no onTap — the version row) is just dimmable
+    // content, no button semantics.
+    if (widget.onTap == null) {
       return Opacity(opacity: widget.enabled ? 1.0 : 0.6, child: row);
     }
+
+    // Any row with an onTap is announced as a button even while disabled (busy
+    // export, the last-remaining sign-in method) — so a screen reader says
+    // "dimmed button" instead of reading the raw text. Only a currently-
+    // interactive row gets the press gestures.
+    final Widget content = _interactive
+        ? GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: widget.onTap,
+            onTapDown: (_) => setState(() => _pressed = true),
+            onTapUp: (_) => setState(() => _pressed = false),
+            onTapCancel: () => setState(() => _pressed = false),
+            child: row,
+          )
+        : row;
 
     return Semantics(
       button: true,
@@ -155,18 +172,8 @@ class _SettingsRowState extends State<SettingsRow> {
       label: widget.subline != null
           ? '${widget.label}, ${widget.subline}'
           : widget.label,
-      onTap: widget.onTap,
-      child: Opacity(
-        opacity: widget.enabled ? 1.0 : 0.6,
-        child: GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          onTap: widget.onTap,
-          onTapDown: (_) => setState(() => _pressed = true),
-          onTapUp: (_) => setState(() => _pressed = false),
-          onTapCancel: () => setState(() => _pressed = false),
-          child: row,
-        ),
-      ),
+      onTap: widget.enabled ? widget.onTap : null,
+      child: Opacity(opacity: widget.enabled ? 1.0 : 0.6, child: content),
     );
   }
 
