@@ -511,7 +511,7 @@
     "rhythm": {
       "eyebrow": "Nhịp ăn mỗi ngày",
       "calories": "kcal",
-      "avgPerLoggedDay": "trung bình mỗi ngày đủ bữa",
+      "avgPerLoggedDay": "trung bình mỗi ngày ghi nhận",
       "compositionLabel": "{macro} {pct}%",
       "macroCompositionAria": "Tỷ lệ macro",
       "consistency": {

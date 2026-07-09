@@ -222,7 +222,10 @@ class _CalorieTarget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final over = avg >= target;
+    // Signed gap between the average and the goal — the arrow shows direction,
+    // the number shows how many calories over/under the target we are.
+    final diff = avg - target;
+    final over = diff >= 0;
     return Padding(
       padding: const EdgeInsets.only(top: 6),
       child: Row(
@@ -235,7 +238,7 @@ class _CalorieTarget extends StatelessWidget {
           ),
           const SizedBox(width: 2),
           Text(
-            '${formatLocalizedNumber(target, locale)} ${tr('nutrition.rhythm.calories')}',
+            '${formatLocalizedNumber(diff.abs(), locale)} ${tr('nutrition.rhythm.calories')}',
             style: dashMeta(color: kInkMuted, tabular: true),
           ),
         ],

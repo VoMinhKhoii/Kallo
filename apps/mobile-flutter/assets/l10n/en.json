@@ -511,7 +511,7 @@
     "rhythm": {
       "eyebrow": "The shape of your days",
       "calories": "kcal",
-      "avgPerLoggedDay": "avg per complete day",
+      "avgPerLoggedDay": "avg per logged day",
       "compositionLabel": "{macro} {pct}%",
       "macroCompositionAria": "Macro composition",
       "consistency": {
