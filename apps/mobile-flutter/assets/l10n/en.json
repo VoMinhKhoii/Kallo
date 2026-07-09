@@ -512,6 +512,9 @@
       "eyebrow": "The shape of your days",
       "calories": "kcal",
       "avgPerLoggedDay": "avg per logged day",
+      "avgPerCompleteDay": "avg per complete day",
+      "days": "days",
+      "noCompleteDays": "No fully-logged days yet — keep logging, or tap All.",
       "compositionLabel": "{macro} {pct}%",
       "macroCompositionAria": "Macro composition",
       "consistency": {

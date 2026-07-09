@@ -18,16 +18,24 @@ import '../../../models/nutrition.dart';
 /// Dart's `timeZoneOffset` is positive EAST of UTC, so we negate it.
 int nutritionTimezoneOffset() => -DateTime.now().timeZoneOffset.inMinutes;
 
-/// Family keyed by the requested range input (`auto` | `7d` | `30d` | `90d`).
-/// The query key registry tuple is `QueryKeys.nutritionOverview(range, tz)`.
+/// The family argument: the requested range plus the day scope (all vs complete
+/// days) the averages/series are computed over.
+typedef NutritionOverviewArg = ({
+  NutritionRangeInput range,
+  NutritionDayScope scope,
+});
+
+/// Family keyed by (range, scope). The query key registry tuple is
+/// `QueryKeys.nutritionOverview(range, tz, scope)`.
 ///
-/// `keepPreviousData` semantics: when the family arg changes (range toggle),
-/// the new provider instance keeps the previously-resolved overview as its
-/// initial value so the layout doesn't collapse to a skeleton mid-refetch.
+/// `keepPreviousData` semantics: when the family arg changes (range OR scope
+/// toggle), the new provider instance keeps the previously-resolved overview as
+/// its initial value so the layout doesn't collapse to a skeleton mid-refetch —
+/// which is what makes the All/Complete swap feel instant.
 final nutritionOverviewProvider = AsyncNotifierProvider.family<
   NutritionOverviewNotifier,
   NutritionOverview,
-  NutritionRangeInput
+  NutritionOverviewArg
 >(NutritionOverviewNotifier.new);
 
 /// Holds the last successful overview across the family so a range switch can
@@ -40,15 +48,15 @@ String _overviewCacheKey(String? userId) =>
     '${userId ?? 'signed-out'}:${nutritionTimezoneOffset()}';
 
 class NutritionOverviewNotifier
-    extends FamilyAsyncNotifier<NutritionOverview, NutritionRangeInput> {
+    extends FamilyAsyncNotifier<NutritionOverview, NutritionOverviewArg> {
   @override
-  Future<NutritionOverview> build(NutritionRangeInput arg) async {
+  Future<NutritionOverview> build(NutritionOverviewArg arg) async {
     final userId = ref.watch(currentSessionProvider)?.user.id;
     final cacheKey = _overviewCacheKey(userId);
     final previous = _lastOverviewByAccount[cacheKey];
     if (previous != null) {
       // Seed with the prior overview so consumers keep rendering the editorial
-      // stack while the new range loads (placeholderData: keepPreviousData).
+      // stack while the new range/scope loads (placeholderData: keepPreviousData).
       state = AsyncData(previous);
     }
     final overview = await _fetch(arg);
@@ -56,12 +64,13 @@ class NutritionOverviewNotifier
     return overview;
   }
 
-  Future<NutritionOverview> _fetch(NutritionRangeInput range) async {
+  Future<NutritionOverview> _fetch(NutritionOverviewArg arg) async {
     final api = ref.read(apiClientProvider);
     final tz = nutritionTimezoneOffset();
     // retry:false in RN — surface failures immediately (no runWithRetry).
     final json = await api.get<Map<String, dynamic>>(
-      '/api/v1/nutrition/overview?range=${range.value}&tz=$tz',
+      '/api/v1/nutrition/overview?range=${arg.range.value}&tz=$tz'
+      '&days=${arg.scope.value}',
     );
     return NutritionOverview.fromJson(json);
   }
@@ -75,14 +84,13 @@ class NutritionOverviewNotifier
   ///
   /// Returns true on success, false on failure (so the caller can toast).
   Future<bool> refetch() async {
-    final range = arg;
     final previous = state;
     // Show the in-flight (isLoading) state over the current value.
     state = const AsyncValue<NutritionOverview>.loading().copyWithPrevious(
       previous,
     );
     try {
-      final overview = await _fetch(range);
+      final overview = await _fetch(arg);
       final userId = ref.read(currentSessionProvider)?.user.id;
       _lastOverviewByAccount[_overviewCacheKey(userId)] = overview;
       state = AsyncData(overview);
@@ -100,5 +108,9 @@ class NutritionOverviewNotifier
 
 /// Convenience matching the RN `nutritionKeys.overview` tuple, exposed for
 /// invalidation parity (prefix matching — never exact).
-List<Object?> nutritionOverviewKey(NutritionRangeInput range) =>
-    QueryKeys.nutritionOverview(range.value, nutritionTimezoneOffset());
+List<Object?> nutritionOverviewKey(NutritionOverviewArg arg) =>
+    QueryKeys.nutritionOverview(
+      arg.range.value,
+      nutritionTimezoneOffset(),
+      arg.scope.value,
+    );
