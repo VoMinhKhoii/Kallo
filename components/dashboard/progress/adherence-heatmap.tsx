@@ -111,7 +111,7 @@ export function AdherenceHeatmap({ data, range }: AdherenceHeatmapProps) {
             {DAY_LABELS.map((d, i) => (
               <div
                 key={`lbl-${i}`}
-                className="flex items-center justify-end pr-1 font-semibold text-[10px] text-nham-text-muted"
+                className="flex items-center justify-end pr-1 font-medium text-[10px] text-nham-text-muted"
                 style={{ height: `${sq}px` }}
               >
                 {d}
@@ -121,7 +121,7 @@ export function AdherenceHeatmap({ data, range }: AdherenceHeatmapProps) {
 
           <div className="min-w-0 overflow-hidden">
             <div
-              className="relative mb-1 h-4 font-semibold text-[10px] text-nham-text-muted"
+              className="relative mb-1 h-4 font-medium text-[10px] text-nham-text-muted"
               style={{ width: `${heatmapWidth}px` }}
             >
               {data.monthHeaders.map((header) => (
@@ -235,14 +235,18 @@ export function AdherenceHeatmap({ data, range }: AdherenceHeatmapProps) {
 
         {/* Legend */}
         <div className="mt-2 flex items-center gap-2">
-          <span className="text-[9px] text-nham-stone">{t('offTarget')}</span>
+          <span className="text-[9px] text-nham-text-muted">
+            {t('offTarget')}
+          </span>
           <div
             className="h-1.5 flex-1 rounded-full"
             style={{
               background: `linear-gradient(to right, ${HEATMAP_COLORS.far}, ${HEATMAP_COLORS.moderate}, ${HEATMAP_COLORS.slight}, ${HEATMAP_COLORS.close}, ${HEATMAP_COLORS.onTarget})`,
             }}
           />
-          <span className="text-[9px] text-nham-stone">{t('onTarget')}</span>
+          <span className="text-[9px] text-nham-text-muted">
+            {t('onTarget')}
+          </span>
         </div>
       </div>
     </TooltipProvider>

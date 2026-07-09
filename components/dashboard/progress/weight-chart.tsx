@@ -97,7 +97,7 @@ export function WeightChart({
 
   if (data.length === 0) {
     return (
-      <div className="flex h-full min-h-[200px] items-center justify-center text-nham-stone text-sm">
+      <div className="flex h-full min-h-[200px] items-center justify-center text-nham-text-muted text-sm">
         {t('noWeightData')}
       </div>
     );
@@ -147,7 +147,7 @@ export function WeightChart({
               domain={[0, isSinglePoint ? rangeDays - 1 : forecastDay]}
               tickLine={false}
               axisLine={{ stroke: 'var(--nham-border)' }}
-              tick={{ fontSize: 9, fill: 'var(--nham-stone)' }}
+              tick={{ fontSize: 9, fill: 'var(--nham-text-muted)' }}
               ticks={xTicks}
               tickFormatter={(v: number, i: number) => xFormatter(v, i)}
             />
@@ -156,7 +156,7 @@ export function WeightChart({
               ticks={yTicks}
               tickLine={false}
               axisLine={false}
-              tick={{ fontSize: 9, fill: 'var(--nham-stone)' }}
+              tick={{ fontSize: 9, fill: 'var(--nham-text-muted)' }}
               tickFormatter={(v: number) =>
                 yStep >= 1 ? v.toFixed(0) : v.toFixed(1)
               }
