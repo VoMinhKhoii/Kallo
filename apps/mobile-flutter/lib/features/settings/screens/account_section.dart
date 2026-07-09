@@ -35,10 +35,10 @@ void _showErrorToast(BuildContext context, String message) =>
 /// Account deletion is an App Store requirement whenever the app offers account
 /// creation.
 ///
-/// Every row lives in ONE grouped [SettingsCard] — the linked-account rows and
-/// the export/sign-out/delete actions share the block — so the linked-account
+/// All rows live under ONE [SettingsGroup] — the linked-account rows and the
+/// export/sign-out/delete actions share the section — so the linked-account
 /// async state (identities, in-flight link/unlink) is held here rather than in a
-/// nested widget, keeping the card's inter-row hairlines uniform.
+/// nested widget.
 ///
 /// Linking uses the OAuth browser flow (no id-token link API), so it hands off
 /// to the browser and returns via the `nham://auth-callback` deep link; we
