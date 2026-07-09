@@ -92,4 +92,4 @@ verified that claim false. Retained for reference only; the one validated fragme
 `.claude/skills/_evidence/validation/results-batch2.md`.
 Evidence: `.claude/skills/_evidence/findings.md` §D6 (ad88fbba L1012/1343/1556/1613;
 8c0bed51 L383/L2908/L3883/L4221-4241; ca3ab2c1 L989).
-Last verified: 2026-07-05. Drift re-check: `ls ~/.claude/projects/-Users-khoivo-Documents-nham/memory/MEMORY.md`
+Last verified: 2026-07-05. Drift re-check: `find ~/.claude/projects -maxdepth 2 -name MEMORY.md | head -1` (session memory index; path varies per machine)

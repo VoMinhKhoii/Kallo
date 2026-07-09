@@ -101,4 +101,4 @@ assumed rather than carefully traced" — blind grader), while the skill arm rep
 before touching anything. Second win was thin (both arms solved the singleton-cache
 trap; rigor delta decided it). Details: `.claude/skills/_evidence/validation/results.md`.
 Evidence: `.claude/skills/_evidence/findings.md` §F3 vs §D3/D4.
-Last verified: 2026-07-04. Drift re-check: `ls ~/.claude/projects/-Users-khoivo-Documents-nham/memory/MEMORY.md && grep -n 'Gotchas' AGENTS.md`
+Last verified: 2026-07-04. Drift re-check: `find ~/.claude/projects -maxdepth 2 -name MEMORY.md | head -1 && grep -n 'Gotchas' AGENTS.md` (memory path varies per machine)

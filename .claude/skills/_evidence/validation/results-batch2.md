@@ -56,7 +56,8 @@ covered by decision-gate Rule 3, which ships.
 | absorb-steering | 1-2 | **FAILED — not shipped as validated** |
 | feature-workflow | — | composition, unvalidated |
 
-Totals: 13 wins, 2 losses, 0 ties across 15 graded comparisons (8 batch-1 + 7 batch-2
-incl. the re-run). Standing caveats: single-shot proxies for interactive behaviors;
+Totals: 12 clean wins + 1 void-trap win (DV-T2, graded on secondary criteria only —
+not evidence for the skill's dispatch claim), 2 losses, 0 ties across 15 graded
+comparisons (8 batch-1 + 7 batch-2 incl. the re-run). Standing caveats: single-shot proxies for interactive behaviors;
 short fresh arms ≠ long context-pressured sessions; grader style-correlation risk
 mitigated but not eliminated.

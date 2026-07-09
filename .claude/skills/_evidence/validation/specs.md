@@ -3,8 +3,9 @@
 Design: per skill, 2 trap tasks × 2 arms on Opus (`model: opus`), identical prompts
 except Arm A prepends the SKILL.md body as a "loaded project skill". Each arm works in
 its own pre-planted git worktree under `/tmp/nham-val/`. Arms know nothing about
-evaluation, skills authorship, or each other. Graders are fresh agents given the rubric
-+ both arms' (final report, git diff) as "Candidate 1/2" — label order = Arm A first
+evaluation, skills authorship, or each other. Graders are fresh agents given the
+rubric together with both arms' (final report, git diff) as "Candidate 1/2" — label
+order = Arm A first
 for task 1 of each skill, Arm B first for task 2; mapping withheld from graders.
 Verdict per pair: WIN (skill arm clearly better on rubric), LOSS, TIE.
 
