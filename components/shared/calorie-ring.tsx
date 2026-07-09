@@ -99,7 +99,7 @@ export function CalorieRing({
             <span className="font-normal font-serif text-[22px] text-nham-text tabular-nums leading-none">
               {remaining.toLocaleString()}
             </span>
-            <span className="mt-0.5 font-bold text-[8px] text-nham-stone uppercase tracking-[0.15em]">
+            <span className="mt-0.5 font-medium text-[8px] text-nham-text-muted uppercase tracking-[0.15em]">
               {t('left')}
             </span>
             <span className="mt-0.5 text-[9px] text-nham-text-muted tabular-nums">

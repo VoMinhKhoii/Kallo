@@ -7,7 +7,6 @@ import { CalorieRing } from '@/components/shared/calorie-ring';
 import { MacroBars } from '@/components/shared/macro-bars';
 import type { MealEntry, NutritionData } from '@/lib/types/dashboard';
 import { MealList } from './meal-list';
-import { InlineMealTrigger } from './meal-trigger';
 
 interface WeeklyAccumulator {
   consumed: number;
@@ -56,27 +55,27 @@ export function TodayDock({ nutrition, meals, weekly }: TodayDockProps) {
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.45 }}
-      className="grid gap-3 rounded-[1.5rem] border border-nham-border/70 bg-card/90 p-3 shadow-[0_10px_32px_rgba(44,36,22,0.05)] xl:h-full xl:min-h-0 xl:grid-cols-[minmax(0,0.68fr)_minmax(260px,0.32fr)] xl:p-4"
+      className="grid gap-3 rounded-[1.375rem] border border-nham-border/70 bg-card/90 p-3 shadow-[0_10px_32px_rgba(44,36,22,0.05)] xl:h-full xl:min-h-0 xl:grid-cols-[minmax(0,0.68fr)_minmax(260px,0.32fr)] xl:p-4"
       aria-label={t('today')}
     >
       <div className="grid min-h-0 gap-3 xl:grid-cols-[minmax(180px,0.34fr)_minmax(0,0.66fr)]">
         <div className="flex min-h-0 flex-col justify-center rounded-[1.25rem] bg-nham-surface/80 p-3">
-          <span className="block font-bold text-[10px] text-nham-stone uppercase tracking-[0.2em]">
+          <span className="block font-medium text-[10px] text-nham-text-muted uppercase tracking-[0.2em]">
             {t('caloriesRemaining')}
           </span>
           <div className="mt-1 flex items-baseline gap-1.5">
-            <span className="font-sans-display font-semibold text-4xl text-nham-text tabular-nums leading-none tracking-[-0.04em] sm:text-5xl">
+            <span className="font-medium font-sans-display text-4xl text-nham-text tabular-nums leading-none tracking-[-0.04em] sm:text-5xl">
               {remaining.toLocaleString()}
             </span>
             <span className="font-sans-display text-lg text-nham-text-muted">
               / {nutrition.calories.target.toLocaleString()}
             </span>
           </div>
-          <p className="mt-1 text-nham-stone text-xs">
+          <p className="mt-1 text-nham-text-muted text-xs">
             {nutrition.calories.current.toLocaleString()} {t('caloriesLogged')}
           </p>
           {weekly?.hasData && (
-            <p className="mt-0.5 text-nham-stone text-xs">
+            <p className="mt-0.5 text-nham-text-muted text-xs">
               {t('weeklyAccumulator', {
                 consumed: weekly.consumed.toLocaleString(),
                 target: weekly.target.toLocaleString(),
@@ -85,20 +84,15 @@ export function TodayDock({ nutrition, meals, weekly }: TodayDockProps) {
           )}
         </div>
 
-        <div className="grid min-h-0 gap-3 xl:grid-rows-[minmax(0,1fr)_auto]">
-          <div className="flex min-h-0 items-center gap-3 rounded-[1.25rem] bg-nham-surface/60 p-3">
-            <CalorieRing
-              current={nutrition.calories.current}
-              target={nutrition.calories.target}
-              size={72}
-              strokeWidth={4}
-              center={<Flame className="h-6 w-6 text-nham-accent" />}
-            />
-            <MacroBars items={macroItems} />
-          </div>
-          <div className="min-w-0">
-            <InlineMealTrigger />
-          </div>
+        <div className="flex min-h-0 items-center gap-3 rounded-[1.25rem] bg-nham-surface/60 p-3">
+          <CalorieRing
+            current={nutrition.calories.current}
+            target={nutrition.calories.target}
+            size={72}
+            strokeWidth={4}
+            center={<Flame className="h-6 w-6 text-nham-accent" />}
+          />
+          <MacroBars items={macroItems} />
         </div>
       </div>
 

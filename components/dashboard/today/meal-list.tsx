@@ -13,10 +13,10 @@ export function MealList({ meals }: MealListProps) {
   if (meals.length === 0) {
     return (
       <div className="flex h-full min-h-0 flex-col items-center justify-center gap-1.5 rounded-2xl border border-nham-border/60 border-dashed bg-card/40 px-3 py-3 text-center">
-        <span className="font-semibold text-nham-text text-sm">
+        <span className="font-medium text-nham-text text-sm">
           {t('noMealsToday')}
         </span>
-        <span className="text-[11px] text-nham-stone">
+        <span className="text-[11px] text-nham-text-muted">
           {t('mealReceiptsHint')}
         </span>
       </div>
@@ -26,10 +26,10 @@ export function MealList({ meals }: MealListProps) {
   return (
     <div className="flex h-full min-h-0 flex-col gap-2">
       <div className="flex items-baseline justify-between">
-        <span className="font-bold text-[9px] text-nham-stone uppercase tracking-[0.15em]">
+        <span className="font-medium text-[9px] text-nham-text-muted uppercase tracking-[0.15em]">
           {t('recentMeals')}
         </span>
-        <span className="text-[9px] text-nham-stone">
+        <span className="text-[9px] text-nham-text-muted">
           {t('mealsLogged', { count: meals.length })}
         </span>
       </div>
@@ -48,7 +48,7 @@ export function MealList({ meals }: MealListProps) {
                 {meal.label}
               </span>
             </div>
-            <span className="shrink-0 font-mono text-[10px] text-nham-stone tabular-nums">
+            <span className="shrink-0 font-mono text-[10px] text-nham-text-muted tabular-nums">
               {meal.calories}
             </span>
           </div>
