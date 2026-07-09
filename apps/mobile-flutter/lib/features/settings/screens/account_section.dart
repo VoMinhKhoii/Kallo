@@ -20,6 +20,7 @@ import '../../../theme/calm_tokens.dart';
 import '../../../theme/nham_colors.dart';
 import '../../../theme/nham_theme.dart';
 import '../../../theme/nham_typography.dart';
+import '../widgets/settings_group.dart';
 
 /// OAuth redirect for the manual-link browser flow — reuses the `nham://`
 /// deep link the app already registers (Android intent-filter + iOS URL scheme).
@@ -33,6 +34,16 @@ void _showErrorToast(BuildContext context, String message) =>
 /// sign out (with a confirmation sheet), and permanent account deletion.
 /// Account deletion is an App Store requirement whenever the app offers account
 /// creation.
+///
+/// Every row lives in ONE grouped [SettingsCard] — the linked-account rows and
+/// the export/sign-out/delete actions share the block — so the linked-account
+/// async state (identities, in-flight link/unlink) is held here rather than in a
+/// nested widget, keeping the card's inter-row hairlines uniform.
+///
+/// Linking uses the OAuth browser flow (no id-token link API), so it hands off
+/// to the browser and returns via the `nham://auth-callback` deep link; we
+/// refresh identities on the next app resume. The last remaining identity can't
+/// be removed (it would lock the user out).
 class AccountSection extends ConsumerStatefulWidget {
   const AccountSection({super.key});
 
@@ -44,116 +55,7 @@ class _AccountSectionState extends ConsumerState<AccountSection> {
   bool _exporting = false;
   bool _signingOut = false;
 
-  Future<void> _export() async {
-    if (_exporting) return;
-    setState(() => _exporting = true);
-    try {
-      final data = await ref.read(apiClientProvider).exportMyData();
-      final pretty = const JsonEncoder.withIndent('  ').convert(data);
-      final dir = await getTemporaryDirectory();
-      final stamp = DateTime.now().toIso8601String().split('T').first;
-      final file = File('${dir.path}/nham-data-$stamp.json');
-      await file.writeAsString(pretty);
-      await Share.shareXFiles([XFile(file.path)]);
-    } catch (_) {
-      if (mounted) _showErrorToast(context, tr('settings.account.exportError'));
-    } finally {
-      if (mounted) setState(() => _exporting = false);
-    }
-  }
-
-  Future<void> _confirmSignOut() async {
-    HapticFeedback.lightImpact(); // sheet-open cue
-    final confirmed = await showCupertinoModalPopup<bool>(
-      context: context,
-      builder:
-          (sheetContext) => CupertinoActionSheet(
-            title: Text(tr('settings.account.signOutConfirmTitle')),
-            actions: [
-              CupertinoActionSheetAction(
-                isDestructiveAction: true,
-                onPressed: () => Navigator.of(sheetContext).pop(true),
-                child: Text(tr('settings.account.signOut')),
-              ),
-            ],
-            cancelButton: CupertinoActionSheetAction(
-              onPressed: () => Navigator.of(sheetContext).pop(false),
-              child: Text(tr('settings.account.cancel')),
-            ),
-          ),
-    );
-    if (confirmed != true || _signingOut) return;
-    setState(() => _signingOut = true);
-    try {
-      await ref.read(authControllerProvider).signOut();
-      if (!mounted) return;
-      context.go('/sign-in');
-    } catch (_) {
-      if (!mounted) return;
-      setState(() => _signingOut = false);
-      _showErrorToast(context, tr('app.userMenu.signOutError'));
-    }
-  }
-
-  void _openDelete() {
-    Navigator.of(context).push(
-      MaterialPageRoute<void>(builder: (_) => const _AccountDeleteScreen()),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final busy = _exporting || _signingOut;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Padding(
-          padding: const EdgeInsets.only(left: NhamSpacing.sp3, bottom: 4),
-          child: Text(
-            tr('settings.account.title').toUpperCase(),
-            style: dashEyebrow(),
-          ),
-        ),
-        const _LinkedAccountsRows(),
-        _AccountRow(
-          icon: LucideIcons.download,
-          label: tr('settings.account.exportTitle'),
-          busy: _exporting,
-          enabled: !busy,
-          onTap: _export,
-        ),
-        _AccountRow(
-          icon: LucideIcons.logOut,
-          label: tr('settings.account.signOut'),
-          enabled: !busy,
-          onTap: _confirmSignOut,
-        ),
-        _AccountRow(
-          icon: LucideIcons.trash2,
-          label: tr('settings.account.delete'),
-          danger: true,
-          enabled: !busy,
-          onTap: _openDelete,
-        ),
-      ],
-    );
-  }
-}
-
-/// "Sign-in methods" rows: connect Google / Apple to this account, or
-/// disconnect them. Linking uses the OAuth browser flow (no id-token link API),
-/// so it hands off to the browser and returns via the `nham://auth-callback`
-/// deep link — we refresh identities on the next app resume. The last remaining
-/// identity can't be removed (it would lock the user out).
-class _LinkedAccountsRows extends ConsumerStatefulWidget {
-  const _LinkedAccountsRows();
-
-  @override
-  ConsumerState<_LinkedAccountsRows> createState() =>
-      _LinkedAccountsRowsState();
-}
-
-class _LinkedAccountsRowsState extends ConsumerState<_LinkedAccountsRows> {
+  // ── Linked sign-in methods state ──────────────────────────────────────
   List<UserIdentity>? _identities;
   String? _busyProvider; // provider with an action in flight
   bool _linkInFlight = false; // a browser link round-trip is pending
@@ -262,6 +164,8 @@ class _LinkedAccountsRowsState extends ConsumerState<_LinkedAccountsRows> {
     }
   }
 
+  /// One linked-account row: "Connected via …" (tap to disconnect) or "Connect
+  /// …" (tap to link). The last remaining identity can't be removed (lockout).
   Widget _providerRow(
     OAuthProvider provider,
     String connectLabel,
@@ -271,18 +175,17 @@ class _LinkedAccountsRowsState extends ConsumerState<_LinkedAccountsRows> {
     final key = provider.name;
     final total = _identities?.length ?? 0;
     if (_isLinked(key)) {
-      return _AccountRow(
+      return SettingsRow(
         icon: LucideIcons.check,
         label: connectedLabel,
         busy: _busyProvider == key,
         // Can't remove the last sign-in method (lockout), or mid-action.
         enabled: _busyProvider == null && total > 1,
-        onTap: () => _disconnect(
-          _identities!.firstWhere((i) => i.provider == key),
-        ),
+        onTap: () =>
+            _disconnect(_identities!.firstWhere((i) => i.provider == key)),
       );
     }
-    return _AccountRow(
+    return SettingsRow(
       icon: LucideIcons.link,
       label: connectLabel,
       busy: _busyProvider == key,
@@ -291,123 +194,130 @@ class _LinkedAccountsRowsState extends ConsumerState<_LinkedAccountsRows> {
     );
   }
 
+  Future<void> _export() async {
+    if (_exporting) return;
+    setState(() => _exporting = true);
+    try {
+      final data = await ref.read(apiClientProvider).exportMyData();
+      final pretty = const JsonEncoder.withIndent('  ').convert(data);
+      final dir = await getTemporaryDirectory();
+      final stamp = DateTime.now().toIso8601String().split('T').first;
+      final file = File('${dir.path}/nham-data-$stamp.json');
+      await file.writeAsString(pretty);
+      await Share.shareXFiles([XFile(file.path)]);
+    } catch (_) {
+      if (mounted) _showErrorToast(context, tr('settings.account.exportError'));
+    } finally {
+      if (mounted) setState(() => _exporting = false);
+    }
+  }
+
+  Future<void> _confirmSignOut() async {
+    HapticFeedback.lightImpact(); // sheet-open cue
+    final confirmed = await showCupertinoModalPopup<bool>(
+      context: context,
+      builder:
+          (sheetContext) => CupertinoActionSheet(
+            title: Text(tr('settings.account.signOutConfirmTitle')),
+            actions: [
+              CupertinoActionSheetAction(
+                isDestructiveAction: true,
+                onPressed: () => Navigator.of(sheetContext).pop(true),
+                child: Text(tr('settings.account.signOut')),
+              ),
+            ],
+            cancelButton: CupertinoActionSheetAction(
+              onPressed: () => Navigator.of(sheetContext).pop(false),
+              child: Text(tr('settings.account.cancel')),
+            ),
+          ),
+    );
+    if (confirmed != true || _signingOut) return;
+    setState(() => _signingOut = true);
+    try {
+      await ref.read(authControllerProvider).signOut();
+      if (!mounted) return;
+      context.go('/sign-in');
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _signingOut = false);
+      _showErrorToast(context, tr('app.userMenu.signOutError'));
+    }
+  }
+
+  void _openDelete() {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(builder: (_) => const _AccountDeleteScreen()),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    // Initial fetch failed and nothing loaded — offer a retry instead of
-    // silently disabled rows that misrepresent the user's linked methods.
+    final busy = _exporting || _signingOut;
+
+    final rows = <Widget>[];
+
+    // Linked sign-in methods — or a single retry row if the initial fetch
+    // failed and nothing loaded (silently-disabled rows would misrepresent the
+    // user's linked methods).
     if (_identities == null && _loadFailed) {
-      return _AccountRow(
-        icon: LucideIcons.refreshCw,
-        label: tr('settings.account.loadError'),
-        onTap: _load,
+      rows.add(
+        SettingsRow(
+          icon: LucideIcons.refreshCw,
+          label: tr('settings.account.loadError'),
+          onTap: _load,
+        ),
       );
-    }
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
+    } else {
+      rows.add(
         _providerRow(
           OAuthProvider.google,
           tr('settings.account.connectGoogle'),
           tr('settings.account.googleConnected'),
         ),
-        // Apple sign-in is only offered on Apple platforms (App Store 4.8).
-        if (Platform.isIOS || Platform.isMacOS)
+      );
+      // Apple sign-in is only offered on Apple platforms (App Store 4.8).
+      if (Platform.isIOS || Platform.isMacOS) {
+        rows.add(
           _providerRow(
             OAuthProvider.apple,
             tr('settings.account.connectApple'),
             tr('settings.account.appleConnected'),
           ),
-      ],
-    );
-  }
-}
+        );
+      }
+    }
 
-class _AccountRow extends StatefulWidget {
-  const _AccountRow({
-    required this.icon,
-    required this.label,
-    required this.onTap,
-    this.danger = false,
-    this.busy = false,
-    this.enabled = true,
-  });
-
-  final IconData icon;
-  final String label;
-  final VoidCallback onTap;
-  final bool danger;
-  final bool busy;
-  final bool enabled;
-
-  @override
-  State<_AccountRow> createState() => _AccountRowState();
-}
-
-class _AccountRowState extends State<_AccountRow> {
-  bool _pressed = false;
-
-  @override
-  Widget build(BuildContext context) {
-    final color = widget.danger ? NhamColors.danger : kInkMuted;
-    final pressedColor = widget.danger ? NhamColors.danger : kInk;
-    final fill =
-        widget.danger
-            ? const Color(0x1AD37B69) // danger @ 10%
-            : NhamColors.hover50;
-
-    return Semantics(
-      button: true,
-      enabled: widget.enabled,
-      excludeSemantics: true,
-      label: widget.label,
-      onTap: widget.enabled ? widget.onTap : null,
-      child: Opacity(
-        opacity: widget.enabled ? 1.0 : 0.6,
-        child: GestureDetector(
-          onTap: widget.enabled ? widget.onTap : null,
-          onTapDown:
-              widget.enabled ? (_) => setState(() => _pressed = true) : null,
-          onTapUp:
-              widget.enabled ? (_) => setState(() => _pressed = false) : null,
-          onTapCancel:
-              widget.enabled ? () => setState(() => _pressed = false) : null,
-          child: Container(
-            padding: const EdgeInsets.symmetric(
-              horizontal: NhamSpacing.sp3,
-              vertical: 10,
-            ),
-            decoration: BoxDecoration(
-              color: _pressed ? fill : Colors.transparent,
-              borderRadius: BorderRadius.circular(NhamRadii.buttonXl),
-            ),
-            child: Row(
-              children: [
-                Icon(
-                  widget.icon,
-                  size: 16,
-                  color: _pressed ? pressedColor : color,
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    widget.label,
-                    style: dashBody(color: _pressed ? pressedColor : color),
-                  ),
-                ),
-                if (widget.busy)
-                  const SizedBox(
-                    width: 14,
-                    height: 14,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: NhamColors.textMuted,
-                    ),
-                  ),
-              ],
-            ),
-          ),
-        ),
+    rows.add(
+      SettingsRow(
+        icon: LucideIcons.download,
+        label: tr('settings.account.exportTitle'),
+        busy: _exporting,
+        enabled: !busy,
+        onTap: _export,
       ),
+    );
+    rows.add(
+      SettingsRow(
+        icon: LucideIcons.logOut,
+        label: tr('settings.account.signOut'),
+        enabled: !busy,
+        onTap: _confirmSignOut,
+      ),
+    );
+    rows.add(
+      SettingsRow(
+        icon: LucideIcons.trash2,
+        label: tr('settings.account.delete'),
+        danger: true,
+        enabled: !busy,
+        onTap: _openDelete,
+      ),
+    );
+
+    return SettingsGroup(
+      label: tr('settings.account.title'),
+      children: rows,
     );
   }
 }
