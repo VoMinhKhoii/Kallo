@@ -85,4 +85,4 @@ arm. Treat its value claim as: "the pieces are proven; the order is evidence-der
 but unproven as a bundle."
 Evidence: `.claude/skills/_evidence/findings.md`; validation:
 `.claude/skills/_evidence/validation/results.md`.
-Last verified: 2026-07-05. Drift re-check: `ls .claude/skills/{verify-before-done,grill-your-own-work,root-cause-first,probe-state-before-acting,decision-gate,delegate-and-verify,absorb-steering}/SKILL.md`
+Last verified: 2026-07-09. Drift re-check: `ls .claude/skills/{verify-before-done,grill-your-own-work,root-cause-first,probe-state-before-acting,decision-gate,delegate-and-verify}/SKILL.md`

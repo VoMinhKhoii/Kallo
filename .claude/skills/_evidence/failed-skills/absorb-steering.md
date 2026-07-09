@@ -1,23 +1,13 @@
----
-name: absorb-steering
-description: |
-  Feedback discipline — invoke whenever the user sends feedback, corrections, a
-  multi-part message, a voice-note-style braindump, or mid-task redirection; also when
-  resuming work that has prior feedback on record. The recorded Opus failure is dropped
-  or half-applied feedback items forcing the user to repeat themselves; the recorded
-  Fable counter-behavior is parsing every steer into a numbered worklist and closing it
-  item-by-item.
-allowed-tools:
-  - Read
-  - Grep
-  - TaskCreate
-  - TaskUpdate
-metadata:
-  author: distilled-from-fable-5-sessions
-  version: "0.1.0-candidate"
----
+# Absorb Steering — FAILED SKILL (dropped from the registry)
 
-# Absorb Steering
+> **This is a failure record, not a loadable skill.** It lost blind validation 1-2
+> (including the post-revision re-run) and was removed from `.claude/skills/` per the
+> pre-registered disposition rule: one revision after a loss, then drop. Its only
+> validated fragment — check recorded preferences before proposing — ships inside
+> `decision-gate` Rule 3. Kept under `_evidence/` because the failure is instructive:
+> deferral-legitimizing skill language correlated with under-delivery. The original
+> skill frontmatter has been stripped so no harness ever registers this file.
+> Full analysis: `../validation/results-batch2.md`.
 
 **The recorded behaviors this encodes:** every steer in the flagship Fable session was
 answered first with an explicit parse — "Voice note parsed — four asks: (1)… the

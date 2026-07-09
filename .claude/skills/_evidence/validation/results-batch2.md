@@ -22,7 +22,7 @@ re-run (AS-T1) after a skill revision, per the pre-registered allowance.
 |---|---|---|
 | `decision-gate` | 2-0 (1 trap-level) | **Ship, validated** — with the DG-T2 build-defect caveat on record |
 | `delegate-and-verify` | 2-0 (1 thin, 1 void-trap) | **Ship, validated (weak)** — Rule 3 (verify claims) is what both wins actually exercised; Rule 1 (REPORT-ONLY dispatch) remains transcript-evidence only, untested by this harness |
-| `absorb-steering` | 1-2 (post-revision re-run lost) | **FAILED — does not ship as validated.** File retained, marked FAILED/do-not-autoload. See analysis below |
+| `absorb-steering` | 1-2 (post-revision re-run lost) | **FAILED — does not ship as validated.** Dropped from the registry 2026-07-09; failure record retained at `_evidence/failed-skills/absorb-steering.md`. See analysis below |
 | `feature-workflow` | n/a | Composition, unvalidated by design; router updated to drop the absorb-steering step |
 
 ## The absorb-steering failure — what it actually teaches
@@ -53,7 +53,7 @@ covered by decision-gate Rule 3, which ships.
 | probe-state-before-acting | 2-0 (both off-trap) | weakly validated |
 | decision-gate | 2-0 (1 trap-level) | validated |
 | delegate-and-verify | 2-0 (1 void) | weakly validated |
-| absorb-steering | 1-2 | **FAILED — not shipped as validated** |
+| absorb-steering | 1-2 | **FAILED — dropped from the registry** |
 | feature-workflow | — | composition, unvalidated |
 
 Totals: 12 clean wins + 1 void-trap win (DV-T2, graded on secondary criteria only —
