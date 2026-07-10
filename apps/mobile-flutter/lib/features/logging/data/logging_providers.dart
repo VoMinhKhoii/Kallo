@@ -14,6 +14,7 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../data/api_client.dart';
+import '../../../models/cheat.dart';
 // Prefixed: dashboard_providers also exports a `loggingDayProvider`.
 import '../../dashboard/data/dashboard_providers.dart' as dash;
 import 'logging_keys.dart';
@@ -107,6 +108,43 @@ final mealDatesProvider = FutureProvider.autoDispose.family<
       .then((list) => list.cast<String>());
 });
 
+/// Recent, de-duplicated cheat occasions — the "log it again" chips shown
+/// above the composer while in cheat mode (`GET /api/v1/meals/cheat-occasions`).
+/// Keyed per-user; invalidated by [invalidateMealSurfaces] so a fresh cheat
+/// save refreshes the chips.
+final recentCheatOccasionsProvider = FutureProvider.autoDispose
+    .family<List<RecentCheatOccasion>, String?>((ref, userId) async {
+      if (userId == null) return const [];
+      final api = ref.watch(apiClientProvider);
+      final list = await api.get<List<dynamic>>(
+        '/api/v1/meals/cheat-occasions?limit=5',
+      );
+      return list
+          .map((e) => RecentCheatOccasion.fromJson(e as Map<String, dynamic>))
+          .toList();
+    });
+
+/// Stage a past cheat occasion for re-logging without re-running the estimator
+/// (`POST /api/v1/meals/cheat-repeat`), then refresh the day so the staged
+/// pending surfaces as a seeded slider card. Same server path as the web's
+/// "log it again"; delivery is via the day refetch instead of local chat state.
+Future<void> stageCheatRepeat(
+  WidgetRef ref, {
+  required String userId,
+  required String sourceMealId,
+  required String date,
+}) async {
+  final api = ref.read(apiClientProvider);
+  await api.post<Map<String, dynamic>>('/api/v1/meals/cheat-repeat', {
+    'sourceMealId': sourceMealId,
+    'loggedDate': date,
+    'timezoneOffset': timezoneOffsetMinutes(),
+  });
+  await ref
+      .read(loggingDayProvider(LoggingDayArgs(userId, date)).notifier)
+      .refresh();
+}
+
 /// Session-scoped dismiss state for the once-daily "yesterday looks
 /// under-logged" nudge, keyed by the yesterday date so a fresh day re-prompts.
 /// Mirrors the web's in-memory `yesterdayPromptDismissed` useState — it resets
@@ -138,6 +176,7 @@ void invalidateMealSurfaces(
     ref.invalidate(loggingDayProvider(LoggingDayArgs(userId, date)));
   }
   ref.invalidate(mealDatesProvider(userId));
+  ref.invalidate(recentCheatOccasionsProvider(userId));
   ref.invalidate(dash.dashboardBundleProvider((userId: userId, date: date)));
   ref.invalidate(dash.dashboardDayProvider((userId: userId, date: date)));
 }
@@ -157,6 +196,9 @@ class ConfirmMealNotifier extends FamilyNotifier<bool, String> {
     required String mealId,
     required String originDate,
     List<Map<String, dynamic>>? edits,
+    // Cheat-meal: the user's chosen slider positions (wire-keyed, 0–10). The
+    // server recomputes nutrition from the staged spec + these levels.
+    Map<String, double>? levels,
   }) async {
     final api = ref.read(apiClientProvider);
     final dayArgs = LoggingDayArgs(arg, originDate);
@@ -170,6 +212,7 @@ class ConfirmMealNotifier extends FamilyNotifier<bool, String> {
         'analysisId': analysisId,
         'mealId': mealId,
         if (edits != null && edits.isNotEmpty) 'edits': edits,
+        if (levels != null) 'levels': levels,
       });
     } catch (error) {
       if (snapshot != null) notifier.restore(snapshot);

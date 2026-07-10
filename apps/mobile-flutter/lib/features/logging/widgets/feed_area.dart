@@ -818,18 +818,20 @@ class _Footer extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         for (var i = 0; i < pendingConfirmations.length; i++)
-          MealEntry(
-            key: ValueKey(pendingConfirmations[i].id),
-            rawInput: pendingConfirmations[i].rawInput,
-            parsedMeal: pendingConfirmations[i].parsedMeal,
-            busy: confirmPending,
-            isLast:
-                !isStreaming &&
-                !isRevealing &&
-                !hasFailed &&
-                i == pendingConfirmations.length - 1,
-            onConfirm: (edits) => onConfirm(pendingConfirmations[i].id, edits),
-          ),
+          if (pendingConfirmations[i].parsedMeal case final parsedMeal?)
+            MealEntry(
+              key: ValueKey(pendingConfirmations[i].id),
+              rawInput: pendingConfirmations[i].rawInput,
+              parsedMeal: parsedMeal,
+              busy: confirmPending,
+              isLast:
+                  !isStreaming &&
+                  !isRevealing &&
+                  !hasFailed &&
+                  i == pendingConfirmations.length - 1,
+              onConfirm:
+                  (edits) => onConfirm(pendingConfirmations[i].id, edits),
+            ),
         if (isStreaming)
           StreamingEntry(
             status: stream.status,
