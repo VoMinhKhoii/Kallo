@@ -11,7 +11,7 @@ import '../../../theme/nham_theme.dart';
 import '../data/logging_models.dart';
 import '../logic/format.dart';
 import '../logic/slider_nutrition.dart';
-import 'cheat_slider_card.dart' show cheatSliderColor;
+import 'cheat_slider_card.dart' show CheatBadge, cheatSliderColor;
 
 /// A saved cheat meal in the day's feed — accent-tinted (never red), the
 /// PartyPopper badge, an `≈`-prefixed calorie total, and an expandable
@@ -42,6 +42,13 @@ class _CheatMealCardState extends State<CheatMealCard>
     duration: const Duration(milliseconds: 200),
   );
 
+  // Built once (not per build): a CurvedAnimation holds a listener on its
+  // parent, so re-creating it each build would orphan listeners on _expand.
+  late final CurvedAnimation _curvedExpand = CurvedAnimation(
+    parent: _expand,
+    curve: Curves.easeInOut,
+  );
+
   void _toggle() {
     setState(() => _collapsed = !_collapsed);
     if (_collapsed) {
@@ -53,6 +60,7 @@ class _CheatMealCardState extends State<CheatMealCard>
 
   @override
   void dispose() {
+    _curvedExpand.dispose();
     _expand.dispose();
     super.dispose();
   }
@@ -117,10 +125,7 @@ class _CheatMealCardState extends State<CheatMealCard>
     final kcal = meal.nutrition.caloriesKcal;
     final caloriesApprox = kcal == null ? fmtKcal(kcal) : '≈ ${fmtKcal(kcal)}';
 
-    final curvedExpand = CurvedAnimation(
-      parent: _expand,
-      curve: Curves.easeInOut,
-    );
+    final curvedExpand = _curvedExpand;
 
     return Padding(
       padding: const EdgeInsets.only(bottom: NhamSpacing.sp3),
@@ -152,7 +157,9 @@ class _CheatMealCardState extends State<CheatMealCard>
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const _CheatBadge(),
+                              CheatBadge(
+                                label: 'logging.cheatMealCard.badge'.tr(),
+                              ),
                               const SizedBox(height: NhamSpacing.sp2),
                               NhamText(
                                 meal.rawInput,
@@ -376,34 +383,6 @@ class _StopScale extends StatelessWidget {
                 ),
               ),
             ),
-        ],
-      ),
-    );
-  }
-}
-
-/// The accent-tinted "Cheat meal" badge (PartyPopper, never red).
-class _CheatBadge extends StatelessWidget {
-  const _CheatBadge();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      decoration: BoxDecoration(
-        color: NhamColors.accent15,
-        borderRadius: BorderRadius.circular(NhamRadii.pill),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Icon(LucideIcons.partyPopper, size: 12, color: kInk),
-          const SizedBox(width: 4),
-          NhamText(
-            'logging.cheatMealCard.badge'.tr(),
-            variant: NhamTextVariant.pillLabel,
-            style: dashMeta(color: kInk),
-          ),
         ],
       ),
     );

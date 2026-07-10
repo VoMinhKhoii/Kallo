@@ -115,7 +115,7 @@ class _CheatSliderCardState extends State<CheatSliderCard> {
                       ),
                     ),
                     const SizedBox(width: NhamSpacing.sp3),
-                    const _CheatBadge(),
+                    CheatBadge(label: 'logging.cheatSliders.badge'.tr()),
                   ],
                 ),
                 const SizedBox(height: NhamSpacing.sp3),
@@ -476,8 +476,12 @@ class _ClarifyChipState extends State<_ClarifyChip> {
 }
 
 /// The accent-tinted "Cheat meal" badge with the PartyPopper icon (never red).
-class _CheatBadge extends StatelessWidget {
-  const _CheatBadge();
+/// Shared by the live slider card and the persisted cheat card; each passes its
+/// own localized [label].
+class CheatBadge extends StatelessWidget {
+  const CheatBadge({super.key, required this.label});
+
+  final String label;
 
   @override
   Widget build(BuildContext context) {
@@ -493,7 +497,7 @@ class _CheatBadge extends StatelessWidget {
           const Icon(LucideIcons.partyPopper, size: 12, color: kInk),
           const SizedBox(width: 4),
           NhamText(
-            'logging.cheatSliders.badge'.tr(),
+            label,
             variant: NhamTextVariant.pillLabel,
             style: dashMeta(color: kInk),
           ),
