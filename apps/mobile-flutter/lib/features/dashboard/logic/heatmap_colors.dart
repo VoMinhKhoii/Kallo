@@ -17,6 +17,11 @@ abstract final class HeatmapColors {
   static const Color slight = NhamColors.heatmapSlight; // #d4c9ad
   static const Color moderate = NhamColors.heatmapModerate; // #e09c84
   static const Color far = NhamColors.heatmapFar; // #d37b69
+
+  /// Cheat days are neutral — a calm warm ring + fill instead of intensity
+  /// grading (web `--nham-cheat` / `--nham-cheat-fill`), never red.
+  static const Color cheat = NhamColors.accent; // #c9a87c
+  static const Color cheatFill = Color(0xFFF3E6D2);
 }
 
 /// Resolved fill + i18n label key for a cell's adherence [ratio]

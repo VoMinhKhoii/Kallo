@@ -18,6 +18,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../data/api_client.dart';
+import '../../../models/cheat.dart';
 import '../../../models/meal.dart';
 import '../../../models/streaming.dart';
 
@@ -27,6 +28,11 @@ class StreamAnalysisState {
   final List<String> items; // streamed dish names (item_name)
   final List<MealItem> completedItems; // dishes with macros, upserted by id
   final ParsedMeal? result;
+
+  /// Cheat-meal slider spec (mode='cheat'); replaces [result]. A spec carrying
+  /// a clarifyingQuestion is terminal with no [analysisId] — the user must
+  /// re-ask with `clarifyAnswer`.
+  final CheatSliderSpec? cheatSpec;
   final String? analysisId;
   final String? error;
   final bool isAnalyzing;
@@ -41,6 +47,7 @@ class StreamAnalysisState {
     this.items = const [],
     this.completedItems = const [],
     this.result,
+    this.cheatSpec,
     this.analysisId,
     this.error,
     this.isAnalyzing = false,
@@ -52,6 +59,7 @@ class StreamAnalysisState {
     List<String>? items,
     List<MealItem>? completedItems,
     ParsedMeal? result,
+    CheatSliderSpec? cheatSpec,
     String? analysisId,
     String? error,
     bool? isAnalyzing,
@@ -61,6 +69,7 @@ class StreamAnalysisState {
     items: items ?? this.items,
     completedItems: completedItems ?? this.completedItems,
     result: result ?? this.result,
+    cheatSpec: cheatSpec ?? this.cheatSpec,
     analysisId: analysisId ?? this.analysisId,
     error: error ?? this.error,
     isAnalyzing: isAnalyzing ?? this.isAnalyzing,
@@ -137,6 +146,19 @@ class StreamAnalysisController extends Notifier<StreamAnalysisState> {
         }
       case ResultEvent(:final data):
         state = state.copyWith(result: data);
+      case CheatEstimateEvent(:final spec):
+        // A clarifying-question spec ends the stream with no analysis_complete
+        // (the client must re-ask with clarifyAnswer), so settle here. A full
+        // spec keeps streaming until analysis_complete. Mirrors the web hook.
+        if (spec.clarifyingQuestion != null) {
+          state = state.copyWith(
+            cheatSpec: spec,
+            status: StreamStatus.done,
+            isAnalyzing: false,
+          );
+        } else {
+          state = state.copyWith(cheatSpec: spec);
+        }
       case AnalysisCompleteEvent(:final analysisId):
         state = state.copyWith(
           status: StreamStatus.done,
@@ -169,7 +191,15 @@ class StreamAnalysisController extends Notifier<StreamAnalysisState> {
         .listen(
           (event) {
             _apply(event, reqId);
-            if (event is AnalysisCompleteEvent || event is StreamErrorEvent) {
+            // A clarify cheat_estimate is terminal too (the server ends the
+            // stream without analysis_complete) — close so the 70s timeout
+            // guard's `status == done` check disarms it.
+            final clarifyTerminal =
+                event is CheatEstimateEvent &&
+                event.spec.clarifyingQuestion != null;
+            if (event is AnalysisCompleteEvent ||
+                event is StreamErrorEvent ||
+                clarifyTerminal) {
               _closeStream();
             }
           },
