@@ -47,6 +47,8 @@ splits into `screens/`, `widgets/`, `data/` or `providers/`, and `logic/`:
 - **onboarding** — 3-step profile (origin, body metrics, cooking) + TDEE calc.
 - **dashboard** — calorie-remaining ring, macro bars, adherence heatmap, weight chart, recent meals.
 - **logging** — date timeline, calorie ring, streaming meal analysis (SSE), meal input/cards.
+  Composer modes: normal (AI), cheat meal (AI slider estimate — intensity strip, clarify
+  fallback, "log it again" chips via `/api/v1/meals/cheat-*`), manual, barcode.
 - **nutrition** — editorial overview, 7/30/90 toggle, macro composition, nutrient rows.
 - **settings** — two-level nav → profile form (body metrics, cooking, regional).
 
