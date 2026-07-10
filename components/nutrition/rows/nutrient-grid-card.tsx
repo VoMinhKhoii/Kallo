@@ -13,10 +13,12 @@ interface NutrientGridCardProps {
 }
 
 /**
- * Whether a nutrient reads as "on target" — a met floor or an in-limit ceiling.
- * Lifted from the (removed) editorial NutrientRow so the grid can green a card
- * when the reading is confident and adequate. An exceeded ceiling is never
- * "on target".
+ * Whether a nutrient reads as "on target" for the green-card DISPLAY tier —
+ * a met floor or an in-limit ceiling. This is intentionally NOT the server's
+ * `getNutrientStatus` bucket: a floor over 110% greens here (exceeding a
+ * minimum is good), where `getNutrientStatus` would call it `above_target`.
+ * Mirrors the Flutter NutrientGridCard's `statusKeyFor == onTarget`. An
+ * exceeded ceiling is never "on target".
  */
 function isOnTarget(card: NutrientCardData): boolean {
   const pct = card.percentOfTarget;
@@ -110,7 +112,7 @@ export function NutrientGridCard({
           delay={barDelay}
           duration={0.6}
           ariaLabel={label}
-          fillColor={adequate ? 'var(--nham-success-accent)' : undefined}
+          adequate={adequate}
         />
       </div>
       <p className="mt-2 truncate text-[12px] text-nham-text-muted tabular-nums">

@@ -30,7 +30,6 @@ export function NutritionHeader({
   disabled,
 }: NutritionHeaderProps) {
   const t = useTranslations('nutrition');
-  const tRange = useTranslations('nutrition.range');
 
   return (
     <header className="flex items-center justify-between gap-4">
@@ -39,7 +38,7 @@ export function NutritionHeader({
       </span>
       <div
         role="group"
-        aria-label={tRange('label')}
+        aria-label={t('range.label')}
         className="inline-flex items-center gap-px rounded-full bg-nham-track p-1"
       >
         {RANGES.map((range) => {
@@ -58,7 +57,7 @@ export function NutritionHeader({
                   : 'text-nham-text-muted hover:text-nham-text'
               )}
             >
-              {tRange(range)}
+              {t(`range.${range}`)}
             </button>
           );
         })}

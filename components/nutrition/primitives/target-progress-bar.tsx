@@ -15,18 +15,17 @@ interface TargetProgressBarProps {
   /** ARIA label for assistive tech. */
   ariaLabel: string;
   /**
-   * Optional fill color override (e.g. emerald for an adequate nutrient card).
-   * When set, it wins over the default ink/danger/no-target fill and the
-   * end-tick is dropped (the greened card already reads as "met").
+   * Whether the nutrient reads as adequate/on-target. Greens the fill and drops
+   * the end-tick — the met state already reads as complete, so the tick would
+   * be noise. The bar owns the emerald token and this decision, not the caller.
    */
-  fillColor?: string;
+  adequate?: boolean;
 }
 
 /**
- * Shared horizontal track used by spotlight rows, the steady detail panel,
- * and macro rows in the daily rhythm card. Uses `role="progressbar"` plus
- * aria-valuenow/min/max so screen readers announce a numeric value, not just
- * the visual label.
+ * Shared horizontal track for the nutrient grid cards. Uses `role="progressbar"`
+ * plus aria-valuenow/min/max so screen readers announce a numeric value, not
+ * just the visual label.
  */
 export function TargetProgressBar({
   percentOfTarget,
@@ -34,7 +33,7 @@ export function TargetProgressBar({
   delay = 0,
   duration = 0.7,
   ariaLabel,
-  fillColor,
+  adequate = false,
 }: TargetProgressBarProps) {
   const hasValue = percentOfTarget !== null;
   const fillWidth = hasValue ? Math.min(100, Math.max(0, percentOfTarget)) : 0;
@@ -56,11 +55,10 @@ export function TargetProgressBar({
         initial={{ width: 0 }}
         animate={{ width: `${fillWidth}%` }}
         transition={{ duration, ease: 'easeOut', delay }}
-        style={fillColor ? { backgroundColor: fillColor } : undefined}
         className={cn(
           'absolute inset-y-0 left-0 rounded-full',
-          fillColor
-            ? ''
+          adequate
+            ? 'bg-nham-success-accent'
             : !hasValue
               ? 'bg-nham-stone/50'
               : showExceed
@@ -68,7 +66,7 @@ export function TargetProgressBar({
                 : 'bg-nham-text'
         )}
       />
-      {hasValue && !fillColor ? (
+      {hasValue && !adequate ? (
         <span
           aria-hidden="true"
           className={cn(

@@ -942,7 +942,6 @@
       "farUnder": "Thiếu nhiều"
     },
     "caloriesLogged": "kcal đã ghi",
-    "weeklyAccumulator": "Tuần này: {consumed} / {target} kcal",
     "mealReceiptsHint": "Những bữa ăn sẽ hiển thị ở đây",
     "progressStatus": {
       "insufficient": {

@@ -53,9 +53,7 @@ export function DaySummary({ macros }: DaySummaryProps) {
   });
   const totalKcal = composition.reduce((sum, c) => sum + c.kcal, 0);
   const segments = composition.map((c) => ({
-    key: c.key,
-    label: c.label,
-    grams: c.grams,
+    ...c,
     pct: totalKcal > 0 ? (c.kcal / totalKcal) * 100 : 0,
   }));
 

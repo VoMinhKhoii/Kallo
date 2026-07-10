@@ -942,7 +942,6 @@
       "farUnder": "Far under"
     },
     "caloriesLogged": "kcal logged",
-    "weeklyAccumulator": "This week: {consumed} / {target} kcal",
     "mealReceiptsHint": "Your meal receipts will show up here",
     "progressStatus": {
       "insufficient": {
