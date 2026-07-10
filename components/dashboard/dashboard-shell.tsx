@@ -56,7 +56,6 @@ export function DashboardShell({ profile }: DashboardShellProps) {
   const {
     progressContainerRef,
     heatmapContainerRef,
-    progressWidth,
     heatmapSize,
     hasMeasuredProgress,
     hasMeasuredHeatmap,
@@ -65,8 +64,9 @@ export function DashboardShell({ profile }: DashboardShellProps) {
     () => getWeekTitle(locale, t('weekOf'), todayDate),
     [locale, t, todayDate]
   );
-  const weightRange: TimeRange =
-    progressWidth !== null && progressWidth >= 620 ? '90d' : '30d';
+  // Progress always covers a fixed 30-day window (matching the Flutter
+  // dashboard's passive 30d range), regardless of viewport width.
+  const weightRange: TimeRange = '30d';
   const renderedHeatmapRange = heatmapSize
     ? chooseRenderedHeatmapRange({
         preferredRange: 'year',
