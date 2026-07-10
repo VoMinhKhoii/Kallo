@@ -56,7 +56,6 @@ export function DashboardShell({ profile }: DashboardShellProps) {
   const {
     progressContainerRef,
     heatmapContainerRef,
-    progressWidth,
     heatmapSize,
     hasMeasuredProgress,
     hasMeasuredHeatmap,
@@ -65,8 +64,9 @@ export function DashboardShell({ profile }: DashboardShellProps) {
     () => getWeekTitle(locale, t('weekOf'), todayDate),
     [locale, t, todayDate]
   );
-  const weightRange: TimeRange =
-    progressWidth !== null && progressWidth >= 620 ? '90d' : '30d';
+  // Progress always covers a fixed 30-day window (matching the Flutter
+  // dashboard's passive 30d range), regardless of viewport width.
+  const weightRange: TimeRange = '30d';
   const renderedHeatmapRange = heatmapSize
     ? chooseRenderedHeatmapRange({
         preferredRange: 'year',
@@ -82,7 +82,6 @@ export function DashboardShell({ profile }: DashboardShellProps) {
     resolvedHeatmapData,
     todayMeals,
     todayNutrition,
-    weekly,
     weightSummary,
     weightSummaryQuery,
   } = useDashboardQueries({
@@ -119,11 +118,7 @@ export function DashboardShell({ profile }: DashboardShellProps) {
                   }}
                 />
               ) : (
-                <TodayDock
-                  nutrition={todayNutrition}
-                  meals={todayMeals}
-                  weekly={weekly}
-                />
+                <TodayDock nutrition={todayNutrition} meals={todayMeals} />
               )}
             </div>
           </section>
@@ -133,7 +128,7 @@ export function DashboardShell({ profile }: DashboardShellProps) {
             className="flex min-w-0 flex-col gap-1.5 xl:min-h-0"
           >
             <div className="flex items-center justify-between gap-3">
-              <span className="font-medium text-[12px] text-nham-text-muted uppercase tracking-[0.2em]">
+              <span className="font-medium text-[12px] text-nham-text-muted uppercase tracking-[0.08em]">
                 {t('progress')}
               </span>
               <span className="font-medium text-[11px] text-nham-text-muted">
@@ -167,7 +162,7 @@ export function DashboardShell({ profile }: DashboardShellProps) {
 
           <section className="flex min-w-0 flex-col gap-1.5 xl:min-h-0">
             <div className="flex items-center justify-between gap-3">
-              <span className="font-medium text-[12px] text-nham-text-muted uppercase tracking-[0.2em]">
+              <span className="font-medium text-[12px] text-nham-text-muted uppercase tracking-[0.08em]">
                 {t('consistency')}
               </span>
               <span className="font-medium text-[11px] text-nham-text-muted">
@@ -176,7 +171,7 @@ export function DashboardShell({ profile }: DashboardShellProps) {
             </div>
             <div
               ref={heatmapContainerRef}
-              className="min-h-[310px] rounded-[1.375rem] border border-nham-border/60 bg-card p-3 shadow-[0_10px_32px_rgba(44,36,22,0.05)] sm:min-h-[340px] md:min-h-[360px] xl:min-h-0 xl:flex-1 xl:p-4"
+              className="min-h-[310px] rounded-[1.375rem] bg-card p-4 shadow-[0_10px_32px_rgba(44,36,22,0.05)] sm:min-h-[340px] md:min-h-[360px] xl:min-h-0 xl:flex-1"
             >
               {!hasMeasuredHeatmap || heatmapQuery.isPending ? (
                 <HeatmapSkeleton range={renderedHeatmapRange} />

@@ -3,7 +3,10 @@
 import { useEffect, useRef, useState } from 'react';
 
 export function useDashboardMeasurements() {
-  const [progressWidth, setProgressWidth] = useState<number | null>(null);
+  // The progress container's exact width is no longer needed (the weight range
+  // is fixed at 30d) — only "has it laid out yet?", which gates the query. Track
+  // a boolean so repeated resizes don't re-render the whole shell.
+  const [hasMeasuredProgress, setHasMeasuredProgress] = useState(false);
   const [heatmapSize, setHeatmapSize] = useState<{
     width: number;
     height: number;
@@ -17,11 +20,9 @@ export function useDashboardMeasurements() {
     const observer = new ResizeObserver((entries) => {
       for (const entry of entries) {
         if (entry.target === progressNode) {
-          const width = entry.contentRect.width;
-          if (width > 0) {
-            setProgressWidth((current) =>
-              current === width ? current : width
-            );
+          if (entry.contentRect.width > 0) {
+            // Idempotent: React bails out once it's already true.
+            setHasMeasuredProgress(true);
           }
           continue;
         }
@@ -47,9 +48,8 @@ export function useDashboardMeasurements() {
   return {
     progressContainerRef,
     heatmapContainerRef,
-    progressWidth,
     heatmapSize,
-    hasMeasuredProgress: progressWidth !== null,
+    hasMeasuredProgress,
     hasMeasuredHeatmap: heatmapSize !== null,
   };
 }

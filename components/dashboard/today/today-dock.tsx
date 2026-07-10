@@ -8,19 +8,12 @@ import { MacroBars } from '@/components/shared/macro-bars';
 import type { MealEntry, NutritionData } from '@/lib/types/dashboard';
 import { MealList } from './meal-list';
 
-interface WeeklyAccumulator {
-  consumed: number;
-  target: number;
-  hasData: boolean;
-}
-
 interface TodayDockProps {
   nutrition: NutritionData;
   meals: MealEntry[];
-  weekly?: WeeklyAccumulator;
 }
 
-export function TodayDock({ nutrition, meals, weekly }: TodayDockProps) {
+export function TodayDock({ nutrition, meals }: TodayDockProps) {
   const t = useTranslations('dashboard');
   const remaining = Math.max(
     0,
@@ -50,53 +43,59 @@ export function TodayDock({ nutrition, meals, weekly }: TodayDockProps) {
     },
   ];
 
+  // ONE flat solid card (the Flutter TodaySection redesign): calorie hero + ring,
+  // macro bars, and a plain meal list. Zones are separated by whitespace and a
+  // single hairline — not by nested tinted sub-panels. Stacks on mobile (like
+  // Flutter); on wide screens the meal list moves beside the summary so the
+  // short dashboard row stays legible.
   return (
     <motion.section
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.45 }}
-      className="grid gap-3 rounded-[1.375rem] border border-nham-border/70 bg-card/90 p-3 shadow-[0_10px_32px_rgba(44,36,22,0.05)] xl:h-full xl:min-h-0 xl:grid-cols-[minmax(0,0.68fr)_minmax(260px,0.32fr)] xl:p-4"
+      className="flex min-h-0 flex-col gap-4 rounded-[1.375rem] bg-card p-4 shadow-[0_10px_32px_rgba(44,36,22,0.05)] xl:grid xl:h-full xl:grid-cols-[minmax(0,1fr)_minmax(240px,0.44fr)] xl:gap-5"
       aria-label={t('today')}
     >
-      <div className="grid min-h-0 gap-3 xl:grid-cols-[minmax(180px,0.34fr)_minmax(0,0.66fr)]">
-        <div className="flex min-h-0 flex-col justify-center rounded-[1.25rem] bg-nham-surface/80 p-3">
-          <span className="block font-medium text-[10px] text-nham-text-muted uppercase tracking-[0.2em]">
-            {t('caloriesRemaining')}
-          </span>
-          <div className="mt-1 flex items-baseline gap-1.5">
-            <span className="font-medium font-sans-display text-4xl text-nham-text tabular-nums leading-none tracking-[-0.04em] sm:text-5xl">
-              {remaining.toLocaleString()}
+      <div className="flex min-w-0 flex-col">
+        {/* (a) Hero: calories-remaining number on the left, ring on the right. */}
+        <div className="flex items-center gap-4">
+          <div className="min-w-0 flex-1">
+            <span className="block font-medium text-[11px] text-nham-text-muted uppercase tracking-[0.08em]">
+              {t('caloriesRemaining')}
             </span>
-            <span className="font-sans-display text-lg text-nham-text-muted">
-              / {nutrition.calories.target.toLocaleString()}
-            </span>
-          </div>
-          <p className="mt-1 text-nham-text-muted text-xs">
-            {nutrition.calories.current.toLocaleString()} {t('caloriesLogged')}
-          </p>
-          {weekly?.hasData && (
-            <p className="mt-0.5 text-nham-text-muted text-xs">
-              {t('weeklyAccumulator', {
-                consumed: weekly.consumed.toLocaleString(),
-                target: weekly.target.toLocaleString(),
-              })}
+            <div className="mt-1 flex items-baseline gap-1.5">
+              <span className="font-medium font-sans-display text-4xl text-nham-text tabular-nums leading-none tracking-[-0.04em] sm:text-5xl">
+                {remaining.toLocaleString()}
+              </span>
+              <span className="font-sans-display text-lg text-nham-text-muted">
+                / {nutrition.calories.target.toLocaleString()}
+              </span>
+            </div>
+            <p className="mt-1.5 text-nham-text-muted text-xs">
+              {nutrition.calories.current.toLocaleString()}{' '}
+              {t('caloriesLogged')}
             </p>
-          )}
-        </div>
+          </div>
 
-        <div className="flex min-h-0 items-center gap-3 rounded-[1.25rem] bg-nham-surface/60 p-3">
           <CalorieRing
             current={nutrition.calories.current}
             target={nutrition.calories.target}
-            size={72}
-            strokeWidth={4}
+            size={80}
+            strokeWidth={5}
             center={<Flame className="h-6 w-6 text-nham-accent" />}
           />
+        </div>
+
+        {/* (b) Macro bars — full width under the hero. */}
+        <div className="mt-4">
           <MacroBars items={macroItems} />
         </div>
       </div>
 
-      <div className="min-h-[140px] rounded-[1.25rem] border border-nham-border/60 bg-nham-surface/60 p-2.5 xl:min-h-0">
+      {/* (c) Meal list — plain, on the card surface (no nested fill). A hairline
+          separates it from the summary: horizontal when stacked, vertical when
+          the list sits beside the summary on wide screens. */}
+      <div className="min-h-0 border-nham-border/50 border-t pt-4 xl:border-t-0 xl:border-l xl:pt-0 xl:pl-5">
         <MealList meals={meals} />
       </div>
     </motion.section>
