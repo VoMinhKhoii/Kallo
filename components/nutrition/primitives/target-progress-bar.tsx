@@ -14,6 +14,12 @@ interface TargetProgressBarProps {
   duration?: number;
   /** ARIA label for assistive tech. */
   ariaLabel: string;
+  /**
+   * Optional fill color override (e.g. emerald for an adequate nutrient card).
+   * When set, it wins over the default ink/danger/no-target fill and the
+   * end-tick is dropped (the greened card already reads as "met").
+   */
+  fillColor?: string;
 }
 
 /**
@@ -28,6 +34,7 @@ export function TargetProgressBar({
   delay = 0,
   duration = 0.7,
   ariaLabel,
+  fillColor,
 }: TargetProgressBarProps) {
   const hasValue = percentOfTarget !== null;
   const fillWidth = hasValue ? Math.min(100, Math.max(0, percentOfTarget)) : 0;
@@ -49,16 +56,19 @@ export function TargetProgressBar({
         initial={{ width: 0 }}
         animate={{ width: `${fillWidth}%` }}
         transition={{ duration, ease: 'easeOut', delay }}
+        style={fillColor ? { backgroundColor: fillColor } : undefined}
         className={cn(
           'absolute inset-y-0 left-0 rounded-full',
-          !hasValue
-            ? 'bg-nham-stone/50'
-            : showExceed
-              ? 'bg-nham-danger'
-              : 'bg-nham-text'
+          fillColor
+            ? ''
+            : !hasValue
+              ? 'bg-nham-stone/50'
+              : showExceed
+                ? 'bg-nham-danger'
+                : 'bg-nham-text'
         )}
       />
-      {hasValue ? (
+      {hasValue && !fillColor ? (
         <span
           aria-hidden="true"
           className={cn(
