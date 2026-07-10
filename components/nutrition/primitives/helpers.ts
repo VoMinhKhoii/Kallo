@@ -1,26 +1,4 @@
-import type {
-  NutrientDaySeries,
-  NutrientType,
-  NutritionDaySeries,
-  NutritionNutrientKey,
-} from '@/lib/nutrition/types';
-
-/**
- * Find a nutrient's per-bucket time series within the overview's daySeries,
- * returning it only when it has at least one non-gap bucket (so a row can
- * decide whether to render a day-strip at all). Not every nutrient ships a
- * series — only the macros and default micronutrients do.
- */
-export function findNutrientSeries(
-  daySeries: NutritionDaySeries | undefined,
-  nutrient: NutritionNutrientKey
-): NutrientDaySeries | null {
-  if (!daySeries) return null;
-  const series = daySeries.series.find((s) => s.metric === nutrient);
-  if (!series) return null;
-  const hasData = series.buckets.some((bucket) => bucket.value !== null);
-  return hasData ? series : null;
-}
+import type { NutrientType } from '@/lib/nutrition/types';
 
 /**
  * Whether a nutrient with the given type & % of target should render the

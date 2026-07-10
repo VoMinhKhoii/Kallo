@@ -141,7 +141,11 @@ class _HeatmapBodyState extends State<_HeatmapBody>
     var total = 0;
     for (final row in data.cells) {
       for (final cell in row) {
-        if (cell.status == HeatmapCellStatus.logged && cell.ratio != null) {
+        // Cheat days are neutral: they intentionally exceed target, so they
+        // count as neither a hit nor a miss for the adherence rate.
+        if (cell.status == HeatmapCellStatus.logged &&
+            cell.ratio != null &&
+            !cell.hasCheatMeal) {
           total++;
           if ((cell.ratio! - 1.0).abs() <= 0.1) onTarget++;
         }
@@ -441,6 +445,9 @@ class _HeatmapBodyState extends State<_HeatmapBody>
         if (cell.ratio == null) {
           return tr('dashboard.adherenceHeatmap.notLogged');
         }
+        if (cell.hasCheatMeal) {
+          return tr('dashboard.adherenceHeatmap.cheatDay');
+        }
         final labelKey = getHeatmapColor(cell.ratio).labelKey;
         final pct = (cell.ratio! * 100).round();
         return '${tr('dashboard.adherenceHeatmap.$labelKey')} · $pct%';
@@ -448,23 +455,32 @@ class _HeatmapBodyState extends State<_HeatmapBody>
   }
 }
 
-/// One cell's solid fill + optional stroke. Three solid states (no fractional
-/// opacity multipliers): logged = scale colour, unlogged/partial = neutral
-/// track (partial gets a hairline ring), out-of-range = barely-there cream.
-({Color fill, Color? stroke}) _cellRectProps(HeatmapCell? cell) {
+/// One cell's solid fill + optional stroke (+ centered dot for cheat days).
+/// Three solid states (no fractional opacity multipliers): logged = scale
+/// colour, unlogged/partial = neutral track (partial gets a hairline ring),
+/// out-of-range = barely-there cream. A cheat day replaces its intensity
+/// colour with the calm warm ring + fill + accent dot (web parity, never red).
+({Color fill, Color? stroke, bool dot}) _cellRectProps(HeatmapCell? cell) {
   final ratio = cell?.ratio;
   final isLogged = cell?.status == HeatmapCellStatus.logged && ratio != null;
   if (isLogged) {
-    return (fill: getHeatmapColor(ratio).bg ?? kTrack, stroke: null);
+    if (cell!.hasCheatMeal) {
+      return (
+        fill: HeatmapColors.cheatFill,
+        stroke: HeatmapColors.cheat,
+        dot: true,
+      );
+    }
+    return (fill: getHeatmapColor(ratio).bg ?? kTrack, stroke: null, dot: false);
   }
   final isMuted =
       cell?.status == HeatmapCellStatus.future ||
       cell?.status == HeatmapCellStatus.outside;
   if (isMuted) {
-    return (fill: kPage, stroke: null); // out-of-range
+    return (fill: kPage, stroke: null, dot: false); // out-of-range
   }
   final isPartial = cell?.status == HeatmapCellStatus.partial;
-  return (fill: kTrack, stroke: isPartial ? kHairline : null);
+  return (fill: kTrack, stroke: isPartial ? kHairline : null, dot: false);
 }
 
 class _GridPainter extends CustomPainter {
@@ -541,6 +557,12 @@ class _GridPainter extends CustomPainter {
         if (props.stroke != null) {
           strokePaint.color = props.stroke!.withValues(alpha: cellAlpha);
           canvas.drawRRect(rrect, strokePaint);
+        }
+
+        // Cheat-day marker: a small centered accent dot (web's ● overlay).
+        if (props.dot) {
+          fillPaint.color = HeatmapColors.cheat.withValues(alpha: cellAlpha);
+          canvas.drawCircle(Offset(cx, cy), (sq * scale) * 0.12, fillPaint);
         }
       }
     }

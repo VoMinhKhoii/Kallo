@@ -94,11 +94,27 @@ class StreamAnalyzeInput {
   final int timezoneOffset;
   final String? locale; // 'en' | 'vi'
 
+  /// 'cheat' runs the slider estimator instead of the decomposition pipeline;
+  /// omitted/null means 'precise' (the default pipeline).
+  final String? mode;
+
+  /// Indulgence magnitude for cheat mode — 'light' | 'medium' | 'heavy';
+  /// scales the slider anchor grams server-side.
+  final String? cheatIntensity;
+  final String? cheatType;
+
+  /// Reply to a prior vague-input clarifying question.
+  final String? clarifyAnswer;
+
   const StreamAnalyzeInput({
     required this.message,
     required this.loggedDate,
     required this.timezoneOffset,
     this.locale,
+    this.mode,
+    this.cheatIntensity,
+    this.cheatType,
+    this.clarifyAnswer,
   });
 
   Map<String, dynamic> toJson() => {
@@ -106,6 +122,10 @@ class StreamAnalyzeInput {
     'loggedDate': loggedDate,
     'timezoneOffset': timezoneOffset,
     if (locale != null) 'locale': locale,
+    if (mode != null) 'mode': mode,
+    if (cheatIntensity != null) 'cheatIntensity': cheatIntensity,
+    if (cheatType != null) 'cheatType': cheatType,
+    if (clarifyAnswer != null) 'clarifyAnswer': clarifyAnswer,
   };
 }
 

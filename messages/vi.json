@@ -134,7 +134,10 @@
     "grid": {
       "eyebrow": "Vi chất",
       "title": "Độ phủ vi chất",
-      "description": "Dùng các thẻ này để xem vi chất nào có vẻ đủ, vi chất nào cần thêm dữ liệu và vi chất nào có lưu ý theo nguồn món ăn."
+      "description": "Dùng các thẻ này để xem vi chất nào có vẻ đủ, vi chất nào cần thêm dữ liệu và vi chất nào có lưu ý theo nguồn món ăn.",
+      "vitamins": "Vitamin",
+      "minerals": "Khoáng chất",
+      "sourceNote": "Mục tiêu theo tham chiếu WHO/FAO · RDA Việt Nam · NASEM DRI."
     },
     "more": {
       "show": "Xem thêm vi chất",
@@ -939,7 +942,6 @@
       "farUnder": "Thiếu nhiều"
     },
     "caloriesLogged": "kcal đã ghi",
-    "weeklyAccumulator": "Tuần này: {consumed} / {target} kcal",
     "mealReceiptsHint": "Những bữa ăn sẽ hiển thị ở đây",
     "progressStatus": {
       "insufficient": {

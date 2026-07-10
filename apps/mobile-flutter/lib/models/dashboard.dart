@@ -38,11 +38,16 @@ class HeatmapCell {
   final double? consumedRatio;
   final HeatmapCellStatus status;
 
+  /// Day had a cheat meal — rendered neutrally (neither hit nor miss) and
+  /// excluded from the adherence rate, matching the web heatmap.
+  final bool hasCheatMeal;
+
   const HeatmapCell({
     required this.date,
     required this.ratio,
     required this.consumedRatio,
     required this.status,
+    this.hasCheatMeal = false,
   });
 
   factory HeatmapCell.fromJson(Map<String, dynamic> json) => HeatmapCell(
@@ -50,6 +55,7 @@ class HeatmapCell {
         ratio: (json['ratio'] as num?)?.toDouble(),
         consumedRatio: (json['consumedRatio'] as num?)?.toDouble(),
         status: HeatmapCellStatus.values.byName(json['status'] as String),
+        hasCheatMeal: json['hasCheatMeal'] as bool? ?? false,
       );
 
   Map<String, dynamic> toJson() => {
@@ -57,6 +63,7 @@ class HeatmapCell {
         'ratio': ratio,
         'consumedRatio': consumedRatio,
         'status': status.name,
+        'hasCheatMeal': hasCheatMeal,
       };
 
   HeatmapCell copyWith({
@@ -64,6 +71,7 @@ class HeatmapCell {
     double? Function()? ratio,
     double? Function()? consumedRatio,
     HeatmapCellStatus? status,
+    bool? hasCheatMeal,
   }) =>
       HeatmapCell(
         date: date ?? this.date,
@@ -71,6 +79,7 @@ class HeatmapCell {
         consumedRatio:
             consumedRatio != null ? consumedRatio() : this.consumedRatio,
         status: status ?? this.status,
+        hasCheatMeal: hasCheatMeal ?? this.hasCheatMeal,
       );
 }
 

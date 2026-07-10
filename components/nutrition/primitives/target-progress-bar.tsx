@@ -14,13 +14,18 @@ interface TargetProgressBarProps {
   duration?: number;
   /** ARIA label for assistive tech. */
   ariaLabel: string;
+  /**
+   * Whether the nutrient reads as adequate/on-target. Greens the fill and drops
+   * the end-tick — the met state already reads as complete, so the tick would
+   * be noise. The bar owns the emerald token and this decision, not the caller.
+   */
+  adequate?: boolean;
 }
 
 /**
- * Shared horizontal track used by spotlight rows, the steady detail panel,
- * and macro rows in the daily rhythm card. Uses `role="progressbar"` plus
- * aria-valuenow/min/max so screen readers announce a numeric value, not just
- * the visual label.
+ * Shared horizontal track for the nutrient grid cards. Uses `role="progressbar"`
+ * plus aria-valuenow/min/max so screen readers announce a numeric value, not
+ * just the visual label.
  */
 export function TargetProgressBar({
   percentOfTarget,
@@ -28,6 +33,7 @@ export function TargetProgressBar({
   delay = 0,
   duration = 0.7,
   ariaLabel,
+  adequate = false,
 }: TargetProgressBarProps) {
   const hasValue = percentOfTarget !== null;
   const fillWidth = hasValue ? Math.min(100, Math.max(0, percentOfTarget)) : 0;
@@ -51,14 +57,16 @@ export function TargetProgressBar({
         transition={{ duration, ease: 'easeOut', delay }}
         className={cn(
           'absolute inset-y-0 left-0 rounded-full',
-          !hasValue
-            ? 'bg-nham-stone/50'
-            : showExceed
-              ? 'bg-nham-danger'
-              : 'bg-nham-text'
+          adequate
+            ? 'bg-nham-success-accent'
+            : !hasValue
+              ? 'bg-nham-stone/50'
+              : showExceed
+                ? 'bg-nham-danger'
+                : 'bg-nham-text'
         )}
       />
-      {hasValue ? (
+      {hasValue && !adequate ? (
         <span
           aria-hidden="true"
           className={cn(

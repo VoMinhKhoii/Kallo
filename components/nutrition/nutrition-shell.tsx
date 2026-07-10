@@ -8,13 +8,10 @@ import { toast } from 'sonner';
 import { getNutritionOverview } from '@/lib/nutrition/actions';
 import type { NutritionRangeInput } from '@/lib/nutrition/types';
 import { NutritionSkeleton } from './nutrition-skeleton';
-import { BackgroundSection } from './sections/background-section';
-import { DailyRhythm } from './sections/daily-rhythm';
-import { EditorialHeader } from './sections/editorial-header';
-import { FocusSection } from './sections/focus-section';
-import { PullQuote } from './sections/pull-quote';
-import { SteadySection } from './sections/steady-section';
-import { VerdictHero } from './sections/verdict-hero';
+import { DaySummary } from './sections/day-summary';
+import { NutrientGrid } from './sections/nutrient-grid';
+import { NutritionHeader } from './sections/nutrition-header';
+import { SourceAttribution } from './sections/source-attribution';
 import { EmptyState } from './states/empty-state';
 import { InlineError } from './states/inline-error';
 
@@ -38,7 +35,7 @@ export function NutritionShell() {
     // refetching on every focus/visibility change.
     staleTime: 5 * 60_000,
     // Render the previous range's data while a new range fetches so the
-    // editorial layout stays in place rather than collapsing to skeleton.
+    // layout stays in place rather than collapsing to skeleton.
     placeholderData: keepPreviousData,
   });
   const { isError, error } = overviewQuery;
@@ -75,21 +72,17 @@ export function NutritionShell() {
   }
 
   const overview = overviewQuery.data;
-  const resolvedRange = overview.resolvedRange;
   const isEmpty = overview.loggedDays === 0;
 
   return (
     <MotionConfig reducedMotion="user">
-      <main className="flex-1 overflow-y-auto px-5 py-6 sm:px-8 lg:px-12">
+      <main className="flex-1 overflow-y-auto px-4 py-4 pb-20 sm:px-6 lg:px-8">
         <h1 className="sr-only">{t('title')}</h1>
-        <div className="flex flex-col gap-12">
-          <EditorialHeader
-            resolvedRange={resolvedRange}
+        <div className="mx-auto flex max-w-2xl flex-col gap-5">
+          <NutritionHeader
+            resolvedRange={overview.resolvedRange}
             onRangeChange={setRange}
-            startDate={overview.period.startDate}
-            endDate={overview.period.endDate}
             disabled={overviewQuery.isFetching}
-            verdict={isEmpty ? null : <VerdictHero overview={overview} />}
           />
 
           {isEmpty ? (
@@ -98,40 +91,14 @@ export function NutritionShell() {
             <div
               aria-live="polite"
               aria-busy={overviewQuery.isFetching}
-              className="flex flex-col gap-12"
+              className="flex flex-col gap-7"
             >
-              {overview.spotlight.length > 0 ? (
-                <div className="grid gap-8 lg:grid-cols-12 lg:gap-10">
-                  <div className="lg:col-span-6 xl:col-span-7">
-                    <DailyRhythm
-                      macros={overview.macros}
-                      daySeries={overview.daySeries}
-                    />
-                  </div>
-                  <div className="lg:col-span-6 xl:col-span-5">
-                    <FocusSection
-                      cards={overview.spotlight}
-                      daySeries={overview.daySeries}
-                    />
-                  </div>
-                </div>
-              ) : (
-                <DailyRhythm
-                  macros={overview.macros}
-                  daySeries={overview.daySeries}
-                />
-              )}
-
-              <SteadySection
-                cards={overview.steady}
-                daySeries={overview.daySeries}
+              <DaySummary macros={overview.macros} />
+              <NutrientGrid
+                micronutrients={overview.micronutrients}
+                moreNutrients={overview.moreNutrients}
               />
-
-              <BackgroundSection cards={overview.moreNutrients} />
-
-              {overview.educationCards.map((card) => (
-                <PullQuote key={card.id} card={card} />
-              ))}
+              <SourceAttribution />
             </div>
           )}
         </div>

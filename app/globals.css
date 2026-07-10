@@ -131,6 +131,10 @@
   --color-nham-macro-fat: var(--nham-macro-fat);
   /* Semantic status tokens */
   --color-nham-success: var(--nham-success);
+  --color-nham-success-faint: var(--nham-success-faint);
+  --color-nham-success-border: var(--nham-success-border);
+  --color-nham-success-accent: var(--nham-success-accent);
+  --color-nham-success-dark: var(--nham-success-dark);
   --color-nham-danger: var(--nham-danger);
   /* Heatmap gradient tokens */
   --color-nham-heatmap-on-target: var(--nham-heatmap-on-target);
@@ -203,6 +207,13 @@
   --nham-macro-fat: #a8a29e;
   /* Semantic status tokens */
   --nham-success: #7ca368;
+  /* Fresh emerald for "on target" nutrient cards — brighter + cleaner than the
+     olive sage, reads modern against the warm cream surface. Mirrors the mobile
+     app's success tokens (calm_tokens.dart / nham_colors.dart). */
+  --nham-success-faint: #eaf7f0;
+  --nham-success-border: rgba(31, 169, 113, 0.2);
+  --nham-success-accent: #1fa971;
+  --nham-success-dark: #14855a;
   --nham-danger: #d37b69;
   /* Heatmap gradient tokens */
   --nham-heatmap-on-target: #7ca368;
@@ -271,6 +282,10 @@
   --nham-macro-fat: #8a8580;
   /* Semantic status tokens */
   --nham-success: #7faf6a;
+  --nham-success-faint: #16281f;
+  --nham-success-border: rgba(52, 200, 145, 0.28);
+  --nham-success-accent: #34c891;
+  --nham-success-dark: #34c891;
   --nham-danger: #e08878;
   /* Heatmap gradient tokens */
   --nham-heatmap-on-target: #7faf6a;
