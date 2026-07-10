@@ -9,6 +9,7 @@ import { FormControl, FormField, FormItem } from '@/components/ui/form';
 import { useLocaleSwitch } from '@/hooks/profile/use-locale-switch';
 import type { Locale } from '@/i18n/config';
 import { COUNTRIES } from '@/lib/onboarding/countries';
+import { cn } from '@/lib/utils';
 import type { ProfileFormValues } from './index';
 
 function CountrySelect({
@@ -37,16 +38,19 @@ function CountrySelect({
         type="button"
         onClick={() => setIsOpen(!isOpen)}
         aria-expanded={isOpen}
-        className={`flex w-full items-center justify-between gap-2 rounded-xl border py-2.5 pl-4 text-left text-[14px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent/30 ${
-          value ? 'pr-10' : 'pr-4'
-        } ${
+        className={cn(
+          'flex w-full items-center justify-between gap-2 rounded-xl border py-2.5 pl-4 text-left text-[14px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent/30',
+          value ? 'pr-10' : 'pr-4',
           isOpen
             ? 'border-nham-accent bg-white'
             : 'border-[#EAE7E0] bg-[#FDFCF8] hover:border-nham-accent/50'
-        }`}
+        )}
       >
         <span
-          className={`min-w-0 truncate ${value ? 'text-nham-text' : 'text-[#7B6F62]'}`}
+          className={cn(
+            'min-w-0 truncate',
+            value ? 'text-nham-text' : 'text-[#7B6F62]'
+          )}
         >
           {value
             ? (() => {
@@ -96,11 +100,12 @@ function CountrySelect({
                     setIsOpen(false);
                     setSearch('');
                   }}
-                  className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-[13px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent/30 ${
+                  className={cn(
+                    'flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-[13px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent/30',
                     value === c.value
                       ? 'bg-nham-accent/10 font-medium text-nham-text'
                       : 'text-nham-text hover:bg-nham-track'
-                  }`}
+                  )}
                 >
                   <span>{c.value}</span>
                   <span className="text-[#7B6F62] text-[11px]">{c.vi}</span>

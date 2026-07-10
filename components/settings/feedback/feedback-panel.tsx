@@ -14,6 +14,7 @@ import { useEffect, useRef, useState } from 'react';
 import { usePathname } from '@/i18n/navigation';
 import type { SubmitFeedbackInput } from '@/lib/api/contracts/feedback';
 import { FEEDBACK_TYPES } from '@/lib/api/contracts/feedback';
+import { cn } from '@/lib/utils';
 
 type FeedbackType = (typeof FEEDBACK_TYPES)[number];
 
@@ -196,11 +197,12 @@ export function FeedbackPanel() {
                 type="button"
                 onClick={() => setType(option)}
                 aria-pressed={active}
-                className={`flex flex-col items-center gap-1.5 rounded-xl border px-2 py-3 text-[13px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent/60 ${
+                className={cn(
+                  'flex flex-col items-center gap-1.5 rounded-xl border px-2 py-3 text-[13px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent/60',
                   active
                     ? 'border-nham-accent bg-nham-accent/10 text-nham-text'
                     : 'border-[#EAE7E0] bg-white text-[#7B6F62] hover:border-nham-accent/50'
-                }`}
+                )}
               >
                 <Icon className="size-4" aria-hidden />
                 {t(`types.${option}`)}

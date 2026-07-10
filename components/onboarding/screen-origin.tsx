@@ -11,6 +11,7 @@ import {
   type StepOneLocaleDraft,
   writeStepOneLocaleDraft,
 } from '@/lib/onboarding/step-one-locale-draft';
+import { cn } from '@/lib/utils';
 import { LanguageToggle } from './language-toggle';
 
 interface ScreenOriginProps {
@@ -152,11 +153,12 @@ function CountryPicker({
         }}
         aria-haspopup="listbox"
         aria-expanded={isOpen}
-        className={`flex w-full items-center justify-between rounded-2xl border px-4 py-3 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent/30 ${
+        className={cn(
+          'flex w-full items-center justify-between rounded-2xl border px-4 py-3 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent/30',
           isOpen
             ? 'border-nham-accent bg-white'
             : 'border-[#EAE7E0] bg-[#FDFCF8] hover:border-nham-accent/50'
-        }`}
+        )}
       >
         <span
           className={

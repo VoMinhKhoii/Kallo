@@ -18,6 +18,7 @@ import {
   cookingHabitsSchema,
 } from '@/lib/onboarding/schemas';
 import type { CookingHabits } from '@/lib/onboarding/types';
+import { cn } from '@/lib/utils';
 
 interface ScreenCookingProps {
   defaultValues: Partial<CookingHabits>;
@@ -56,11 +57,12 @@ function OptionStrip({
           key={opt.value}
           type="button"
           onClick={() => onChange(opt.value)}
-          className={`flex min-w-0 flex-col items-center rounded-lg px-2 py-2.5 text-center transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent/30 ${
+          className={cn(
+            'flex min-w-0 flex-col items-center rounded-lg px-2 py-2.5 text-center transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent/30',
             value === opt.value
               ? 'bg-white text-nham-text shadow-sm'
               : 'text-[#8B8682] hover:text-nham-text'
-          }`}
+          )}
         >
           <span className="font-medium text-[13px]">{opt.label}</span>
           {opt.hint && (

@@ -84,7 +84,7 @@ export function DerivationCard({
                   }
                   className="flex items-center justify-between gap-3 text-sm"
                 >
-                  <span className="truncate text-nham-text-soft">
+                  <span className="min-w-0 truncate text-nham-text-soft">
                     {row.name}
                   </span>
                   <span className="shrink-0 font-mono font-semibold text-nham-text tabular-nums">

@@ -1,5 +1,7 @@
 'use client';
 
+import { cn } from '@/lib/utils';
+
 interface OptionStripItem {
   value: string;
   label: string;
@@ -21,11 +23,12 @@ export function OptionStrip({ options, value, onChange }: OptionStripProps) {
           type="button"
           aria-pressed={value === opt.value}
           onClick={() => onChange(opt.value)}
-          className={`flex flex-1 flex-col items-center rounded-lg py-2 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent/40 ${
+          className={cn(
+            'flex flex-1 flex-col items-center rounded-lg py-2 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent/40',
             value === opt.value
               ? 'bg-white text-nham-text shadow-sm'
               : 'text-[#7B6F62] hover:text-nham-text'
-          }`}
+          )}
         >
           <span className="font-medium text-[13px]">{opt.label}</span>
           {opt.hint && (
