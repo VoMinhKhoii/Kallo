@@ -9,6 +9,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../../data/api_client.dart';
+import '../../../models/cheat.dart';
 import '../../../models/meal.dart';
 import '../../../models/streaming.dart';
 import '../../../shared/widgets/nham_text.dart';
@@ -25,6 +26,10 @@ import '../logic/format.dart';
 import '../logic/meal_utils.dart' show isLikelyPartialDay;
 import 'calorie_ring.dart';
 import '../../../shared/widgets/top_toast.dart';
+import '../../settings/controls/option_strip.dart';
+import 'cheat_meal_card.dart';
+import 'cheat_occasion_chips.dart';
+import 'cheat_slider_card.dart';
 import 'empty_state.dart';
 import 'entrances.dart';
 import 'barcode_scanner_sheet.dart';
@@ -54,10 +59,17 @@ class FeedArea extends ConsumerStatefulWidget {
 class _FeedAreaState extends ConsumerState<FeedArea> {
   final MealInputController _inputController = MealInputController();
 
-  /// The selected composer mode (the pill on the input bar). Cheat meal ports
-  /// from web later; manual is a one-shot sheet, so the persistent mode is
-  /// effectively Normal for now.
+  /// The selected composer mode (the pill on the input bar). Normal and Cheat
+  /// are persistent modes (matching web); manual and barcode are one-shot
+  /// sheets that leave the persistent mode untouched.
   MealLogMode _mode = MealLogMode.normal;
+
+  /// Indulgence magnitude for cheat mode — scales the slider anchor grams
+  /// server-side. Defaults to medium, like the web picker.
+  CheatIntensity _cheatIntensity = CheatIntensity.medium;
+
+  /// True while a "log it again" occasion is being re-staged server-side.
+  bool _stagingRepeat = false;
 
   /// Scrolls the freshly-revealed answer into view (nothing scrolled it before).
   final ScrollController _scrollController = ScrollController();
@@ -130,6 +142,7 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
     });
     _inputController.clear();
     _scrollToAnswer();
+    final isCheat = _mode == MealLogMode.cheat;
     ref
         .read(streamAnalysisProvider.notifier)
         .analyze(
@@ -137,6 +150,8 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
             message: text,
             loggedDate: widget.date,
             timezoneOffset: timezoneOffsetMinutes(),
+            mode: isCheat ? 'cheat' : null,
+            cheatIntensity: isCheat ? _cheatIntensity.name : null,
           ),
         );
   }
@@ -147,10 +162,10 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
     _submit(text);
   }
 
-  /// The first step: choose how to log. Normal focuses the composer; Manual
-  /// opens the search-and-grams sheet (a one-shot, not a persistent mode);
-  /// Barcode opens the scanner sheet (also one-shot); Cheat meal ports from
-  /// web later, so it just acknowledges for now.
+  /// The first step: choose how to log. Normal and Cheat set the persistent
+  /// composer mode and focus the field; Manual opens the search-and-grams
+  /// sheet (a one-shot, not a persistent mode); Barcode opens the scanner
+  /// sheet (also one-shot).
   Future<void> _openModeSheet() async {
     final picked = await showMealModeSheet(context, current: _mode);
     if (picked == null || !mounted) return;
@@ -167,7 +182,8 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
       case MealLogMode.barcode:
         _openBarcodeSheet();
       case MealLogMode.cheat:
-        showTopToast(context, 'logging.modeSelector.comingSoon'.tr());
+        setState(() => _mode = MealLogMode.cheat);
+        _inputController.focus();
     }
   }
 
@@ -284,8 +300,11 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
     // totals count up, spinner row swaps for Edit/Confirm). One light impact
     // marks the moment the answer lands; nothing unmounts. The refetch + reset
     // happens only once the user confirms (_confirmReveal).
+    // The cheat clarify terminal reaches done with a cheatSpec but NO
+    // analysisId (nothing is staged for a vague input) — it still reveals as a
+    // card, so it takes the same transition.
     if (next.status == StreamStatus.done &&
-        next.analysisId != null &&
+        (next.analysisId != null || next.cheatSpec != null) &&
         prev?.status != StreamStatus.done) {
       _revealRawInput = _inFlightText;
       _inFlightText = null;
@@ -362,6 +381,13 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
         stream.result != null &&
         stream.analysisId != null;
 
+    // The cheat counterpart: a completed slider estimate (analysisId set) or a
+    // clarifying question (no analysisId — nothing staged; the user re-asks).
+    final isCheatRevealing =
+        streamIsForThisDay &&
+        stream.status == StreamStatus.done &&
+        stream.cheatSpec != null;
+
     final dailyCalories = round0(
       persistedMeals.fold<double>(
         0,
@@ -389,12 +415,14 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
         pendingConfirmations.isEmpty &&
         !isStreaming &&
         !isRevealing &&
+        !isCheatRevealing &&
         !hasFailedAttempt;
 
     final hasFooterItems =
         pendingConfirmations.isNotEmpty ||
         isStreaming ||
         isRevealing ||
+        isCheatRevealing ||
         hasFailedAttempt;
 
     // A past day with real meals but under half the target reads as
@@ -410,6 +438,7 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
         pendingConfirmations.isEmpty &&
         !isStreaming &&
         !isRevealing &&
+        !isCheatRevealing &&
         isLikelyPartialDay(dailyCalories.toDouble(), profile.calorieTarget);
 
     final macroBars = [
@@ -522,6 +551,7 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
             pendingConfirmations: pendingConfirmations,
             isStreaming: isStreaming,
             isRevealing: isRevealing,
+            isCheatRevealing: isCheatRevealing,
             stream: stream,
             hasFooterItems: hasFooterItems,
             confirmPending: confirmPending,
@@ -553,20 +583,47 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
             NhamSpacing.sp3,
             bottomInset + NhamSpacing.sp2,
           ),
-          child: MealInput(
-            controller: _inputController,
-            onSubmit: _submit,
-            onCancel: () => ref.read(streamAnalysisProvider.notifier).cancel(),
-            analyzing: stream.isAnalyzing,
-            modeLabel: mealModeLabel(_mode),
-            modeIcon: mealModeIcon(_mode),
-            onModePressed: _openModeSheet,
-            // iOS-only for now (matches the mode sheet's gating); null hides
-            // the composer icon entirely.
-            // Gated to iOS via the shared `isBarcodeLoggingSupported` (same
-            // source of truth as the mode sheet); null hides the composer icon.
-            onBarcodePressed:
-                isBarcodeLoggingSupported ? _openBarcodeSheet : null,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Cheat mode's per-meal controls sit above the composer: the
+              // light/medium/heavy intensity strip and the "log it again"
+              // chips (the web keeps both beside/above the input too).
+              if (_mode == MealLogMode.cheat) ...[
+                CheatOccasionChips(
+                  userId: widget.profile.userId,
+                  disabled: _stagingRepeat || stream.isAnalyzing,
+                  onSelect: _repeatCheat,
+                ),
+                _CheatIntensityRow(
+                  value: _cheatIntensity,
+                  onChange:
+                      (intensity) =>
+                          setState(() => _cheatIntensity = intensity),
+                ),
+                const SizedBox(height: NhamSpacing.sp2),
+              ],
+              MealInput(
+                controller: _inputController,
+                onSubmit: _submit,
+                onCancel:
+                    () => ref.read(streamAnalysisProvider.notifier).cancel(),
+                analyzing: stream.isAnalyzing,
+                modeLabel: mealModeLabel(_mode),
+                modeIcon: mealModeIcon(_mode),
+                hintText:
+                    _mode == MealLogMode.cheat
+                        ? 'logging.cheatPlaceholder'.tr()
+                        : null,
+                onModePressed: _openModeSheet,
+                // iOS-only for now (matches the mode sheet's gating); null
+                // hides the composer icon entirely.
+                // Gated to iOS via the shared `isBarcodeLoggingSupported`
+                // (same source of truth as the mode sheet).
+                onBarcodePressed:
+                    isBarcodeLoggingSupported ? _openBarcodeSheet : null,
+              ),
+            ],
           ),
         ),
       ],
@@ -581,6 +638,7 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
     required List<PendingMealConfirmation> pendingConfirmations,
     required bool isStreaming,
     required bool isRevealing,
+    required bool isCheatRevealing,
     required StreamAnalysisState stream,
     required bool hasFooterItems,
     required bool confirmPending,
@@ -624,11 +682,15 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
             pendingConfirmations: pendingConfirmations,
             isStreaming: isStreaming,
             isRevealing: isRevealing,
+            isCheatRevealing: isCheatRevealing,
             stream: stream,
             streamingRawInput: _inFlightText,
             confirmPending: confirmPending,
             onConfirm: _confirm,
             onConfirmReveal: _confirmReveal,
+            onConfirmCheat: _confirmCheatPending,
+            onConfirmCheatReveal: _confirmCheatReveal,
+            onClarifyCheat: _clarifyCheat,
             revealRawInput: _revealRawInput,
             failedText: failedText,
             onRetry: onRetry,
@@ -681,22 +743,34 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
             final meal = persistedMeals[index];
             return FadeIn(
               key: ValueKey(meal.id),
-              child: PersistedMealCard(
-                meal: meal,
-                isLast: !hasFooterItems && index == persistedMeals.length - 1,
-                onRemove: () => _removeMeal(meal),
-              ),
+              child:
+                  meal.isCheat
+                      ? CheatMealCard(
+                        meal: meal,
+                        onRemove: () => _removeMeal(meal),
+                      )
+                      : PersistedMealCard(
+                        meal: meal,
+                        isLast:
+                            !hasFooterItems &&
+                            index == persistedMeals.length - 1,
+                        onRemove: () => _removeMeal(meal),
+                      ),
             );
           }
           return _Footer(
             pendingConfirmations: pendingConfirmations,
             isStreaming: isStreaming,
             isRevealing: isRevealing,
+            isCheatRevealing: isCheatRevealing,
             stream: stream,
             streamingRawInput: _inFlightText,
             confirmPending: confirmPending,
             onConfirm: _confirm,
             onConfirmReveal: _confirmReveal,
+            onConfirmCheat: _confirmCheatPending,
+            onConfirmCheatReveal: _confirmCheatReveal,
+            onClarifyCheat: _clarifyCheat,
             revealRawInput: _revealRawInput,
             failedText: failedText,
             onRetry: onRetry,
@@ -775,6 +849,148 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
       if (mounted) setState(() => _errorText = 'errors.internal'.tr());
     }
   }
+
+  /// Confirm a server-loaded cheat pending card. The server recomputes
+  /// nutrition from the staged spec + these levels — never client numbers.
+  Future<void> _confirmCheatPending(
+    String analysisId,
+    CheatSliderLevels levels,
+  ) async {
+    try {
+      await ref
+          .read(confirmMealProvider(widget.profile.userId).notifier)
+          .confirm(
+            analysisId: analysisId,
+            mealId: _uuid.v4(),
+            originDate: widget.date,
+            levels: cheatLevelsToWire(levels),
+          );
+      HapticFeedback.mediumImpact();
+      if (mounted) showTopToast(context, 'logging.feedArea.savedMeal'.tr());
+    } catch (_) {
+      if (mounted) setState(() => _errorText = 'errors.internal'.tr());
+    }
+  }
+
+  /// Confirm straight from the revealed cheat slider card (the analysis is
+  /// already staged — analysis_complete arrived with the spec). Mirrors
+  /// [_confirmReveal]: on success the stream resets so the card hands off to
+  /// the refetched persisted cheat card.
+  Future<void> _confirmCheatReveal(CheatSliderLevels levels) async {
+    final stream = ref.read(streamAnalysisProvider);
+    final analysisId = stream.analysisId;
+    if (analysisId == null) return;
+    final originDate = stream.loggedDate ?? widget.date;
+    try {
+      await ref
+          .read(confirmMealProvider(widget.profile.userId).notifier)
+          .confirm(
+            analysisId: analysisId,
+            mealId: _uuid.v4(),
+            originDate: originDate,
+            levels: cheatLevelsToWire(levels),
+          );
+      HapticFeedback.mediumImpact();
+      if (mounted) showTopToast(context, 'logging.feedArea.savedMeal'.tr());
+      _revealRawInput = null;
+      ref.read(streamAnalysisProvider.notifier).reset();
+    } catch (_) {
+      if (mounted) setState(() => _errorText = 'errors.internal'.tr());
+    }
+  }
+
+  /// Vague-input fallback: re-run the cheat estimator with the chosen answer.
+  /// Nothing was staged for the vague attempt, so this is a fresh analyze of
+  /// the same occasion text plus `clarifyAnswer` (mirrors web
+  /// `handleCheatClarify`).
+  void _clarifyCheat(String answer) {
+    final text = _revealRawInput;
+    if (text == null || text.isEmpty) return;
+    setState(() {
+      _revealRawInput = null;
+      _inFlightText = text;
+    });
+    _scrollToAnswer();
+    ref
+        .read(streamAnalysisProvider.notifier)
+        .analyze(
+          StreamAnalyzeInput(
+            message: text,
+            loggedDate: widget.date,
+            timezoneOffset: timezoneOffsetMinutes(),
+            mode: 'cheat',
+            cheatIntensity: _cheatIntensity.name,
+            clarifyAnswer: answer,
+          ),
+        );
+  }
+
+  /// "Log it again": re-stage a past cheat occasion's sliders (seeded with
+  /// last time's amounts) without re-running the estimator. The staged pending
+  /// surfaces as a seeded slider card via the awaited day refresh.
+  Future<void> _repeatCheat(RecentCheatOccasion occasion) async {
+    if (_stagingRepeat) return;
+    setState(() => _stagingRepeat = true);
+    try {
+      await stageCheatRepeat(
+        ref,
+        userId: widget.profile.userId,
+        sourceMealId: occasion.mealId,
+        date: widget.date,
+      );
+      _scrollToAnswer();
+    } catch (_) {
+      if (mounted) showTopToast(context, 'errors.internal'.tr());
+    } finally {
+      if (mounted) setState(() => _stagingRepeat = false);
+    }
+  }
+}
+
+/// The light/medium/heavy intensity picker shown above the composer in cheat
+/// mode — a quiet label + the shared segmented strip.
+class _CheatIntensityRow extends StatelessWidget {
+  const _CheatIntensityRow({required this.value, required this.onChange});
+
+  final CheatIntensity value;
+  final ValueChanged<CheatIntensity> onChange;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'logging.cheatIntensity.label'.tr(),
+                style: dashEyebrow(),
+              ),
+              const SizedBox(height: 2),
+              Text('logging.cheatIntensity.helper'.tr(), style: dashMeta()),
+            ],
+          ),
+        ),
+        const SizedBox(width: NhamSpacing.sp3),
+        SizedBox(
+          width: 200,
+          child: OptionStrip(
+            value: value.name,
+            options: [
+              for (final intensity in CheatIntensity.values)
+                OptionStripItem(
+                  value: intensity.name,
+                  label: 'logging.cheatIntensity.${intensity.name}'.tr(),
+                ),
+            ],
+            onChange:
+                (name) => onChange(CheatIntensity.values.byName(name)),
+          ),
+        ),
+      ],
+    );
+  }
 }
 
 class _Footer extends StatelessWidget {
@@ -782,11 +998,15 @@ class _Footer extends StatelessWidget {
     required this.pendingConfirmations,
     required this.isStreaming,
     required this.isRevealing,
+    required this.isCheatRevealing,
     required this.stream,
     required this.streamingRawInput,
     required this.confirmPending,
     required this.onConfirm,
     required this.onConfirmReveal,
+    required this.onConfirmCheat,
+    required this.onConfirmCheatReveal,
+    required this.onClarifyCheat,
     required this.revealRawInput,
     required this.failedText,
     required this.onRetry,
@@ -796,6 +1016,7 @@ class _Footer extends StatelessWidget {
   final List<PendingMealConfirmation> pendingConfirmations;
   final bool isStreaming;
   final bool isRevealing;
+  final bool isCheatRevealing;
   final String? revealRawInput;
 
   /// The just-typed text of the in-flight analysis, shown on the streaming card
@@ -807,6 +1028,10 @@ class _Footer extends StatelessWidget {
   onConfirm;
   final void Function(String analysisId, List<MealQuantityEdit> edits)
   onConfirmReveal;
+  final void Function(String analysisId, CheatSliderLevels levels)
+  onConfirmCheat;
+  final ValueChanged<CheatSliderLevels> onConfirmCheatReveal;
+  final ValueChanged<String> onClarifyCheat;
   final String? failedText;
   final VoidCallback onRetry;
   final VoidCallback onDiscardFailed;
@@ -818,7 +1043,17 @@ class _Footer extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         for (var i = 0; i < pendingConfirmations.length; i++)
-          if (pendingConfirmations[i].parsedMeal case final parsedMeal?)
+          if (pendingConfirmations[i].cheatSpec case final cheatSpec?)
+            CheatSliderCard(
+              key: ValueKey(pendingConfirmations[i].id),
+              spec: cheatSpec,
+              rawInput: pendingConfirmations[i].rawInput,
+              busy: confirmPending,
+              onConfirm:
+                  (levels) =>
+                      onConfirmCheat(pendingConfirmations[i].id, levels),
+            )
+          else if (pendingConfirmations[i].parsedMeal case final parsedMeal?)
             MealEntry(
               key: ValueKey(pendingConfirmations[i].id),
               rawInput: pendingConfirmations[i].rawInput,
@@ -827,6 +1062,7 @@ class _Footer extends StatelessWidget {
               isLast:
                   !isStreaming &&
                   !isRevealing &&
+                  !isCheatRevealing &&
                   !hasFailed &&
                   i == pendingConfirmations.length - 1,
               onConfirm:
@@ -855,6 +1091,21 @@ class _Footer extends StatelessWidget {
             revealing: true,
             isLast: !hasFailed,
             onConfirm: (edits) => onConfirmReveal(stream.analysisId!, edits),
+          ),
+        // The cheat reveal: an interactive slider card when the estimate is
+        // staged (analysisId set), or the clarifying-question card when the
+        // input was too vague (no analysisId — answering re-runs the
+        // estimator).
+        if (isCheatRevealing)
+          CheatSliderCard(
+            key: ValueKey(
+              'cheat-reveal-${stream.analysisId ?? 'clarify'}',
+            ),
+            spec: stream.cheatSpec!,
+            rawInput: revealRawInput ?? '',
+            busy: confirmPending,
+            onConfirm: onConfirmCheatReveal,
+            onClarify: onClarifyCheat,
           ),
         if (hasFailed)
           _FailedAttemptCard(
