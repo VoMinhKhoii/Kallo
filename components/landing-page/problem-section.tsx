@@ -12,7 +12,7 @@ export function ProblemSection() {
   return (
     <section
       id="how"
-      className="relative overflow-hidden bg-[#2C2416] py-32 text-[#FEFBF6] lg:py-48"
+      className="relative overflow-hidden bg-nham-ink py-32 text-nham-surface lg:py-48"
     >
       {/* Grain Overlay — static texture, no animation */}
       <div
@@ -33,8 +33,8 @@ export function ProblemSection() {
             transition={{ duration: 0.7, ease: 'easeOut' }}
           >
             <div className="mb-8 flex items-center gap-3">
-              <div className="h-px w-12 bg-[#C9A87C]" />
-              <span className="font-medium text-[#C9A87C] text-xs uppercase tracking-[0.2em]">
+              <div className="h-px w-12 bg-nham-accent" />
+              <span className="font-medium text-nham-accent text-xs uppercase tracking-[0.2em]">
                 {t('label')}
               </span>
             </div>
@@ -42,7 +42,7 @@ export function ProblemSection() {
             <h2 className="mb-8 font-normal font-serif text-5xl leading-[1.1] lg:text-6xl">
               {t('title')}
               <br />
-              <span className="font-light text-[#C9A87C] italic">
+              <span className="font-light text-nham-accent italic">
                 {t('titleHighlight')}
               </span>
             </h2>
@@ -51,13 +51,13 @@ export function ProblemSection() {
               {t('subtitle')}
             </p>
 
-            <div className="flex flex-col gap-7 border-[#FEFBF6]/10 border-l pl-8">
+            <div className="flex flex-col gap-7 border-nham-surface/10 border-l pl-8">
               {(['card1', 'card2', 'card3'] as const).map((card) => (
                 <div key={card}>
-                  <h3 className="mb-1.5 font-medium text-[#FEFBF6] text-lg">
+                  <h3 className="mb-1.5 font-medium text-lg text-nham-surface">
                     {t(`${card}Title`)}
                   </h3>
-                  <p className="text-[#8B7355] text-sm leading-relaxed">
+                  <p className="text-nham-text-muted text-sm leading-relaxed">
                     {t(`${card}Text`)}
                   </p>
                 </div>
@@ -74,18 +74,18 @@ export function ProblemSection() {
           transition={{ duration: 0.7, ease: 'easeOut', delay: 0.1 }}
           className="relative mx-auto w-full max-w-[420px]"
         >
-          <div className="overflow-hidden rounded-2xl border border-[#E8D5B5]/15 bg-[#FEFBF6] shadow-2xl">
-            <div className="border-[#E8D5B5]/40 border-b px-5 py-3">
-              <span className="font-medium text-[#8B7355] text-[10px] uppercase tracking-[0.2em]">
+          <div className="overflow-hidden rounded-2xl border border-nham-border/15 bg-nham-surface shadow-2xl">
+            <div className="border-nham-border/40 border-b px-5 py-3">
+              <span className="font-medium text-[10px] text-nham-text-muted uppercase tracking-[0.2em]">
                 {t('visual.appLabel')}
               </span>
             </div>
 
             {/* Search field */}
             <div className="px-5 pt-5">
-              <div className="flex items-center gap-2 rounded-lg border border-[#E8D5B5]/60 bg-white px-3 py-2.5">
-                <Search className="h-4 w-4 text-[#8B7355]" />
-                <span className="font-serif text-[#2C2416] text-sm">
+              <div className="flex items-center gap-2 rounded-lg border border-nham-border/60 bg-white px-3 py-2.5">
+                <Search className="h-4 w-4 text-nham-text-muted" />
+                <span className="font-serif text-nham-text text-sm">
                   {t('visual.query')}
                 </span>
               </div>
@@ -93,29 +93,29 @@ export function ProblemSection() {
 
             {/* Wrong results */}
             <div className="space-y-2 px-5 pt-4">
-              <div className="flex items-center justify-between rounded-lg border border-[#E8D5B5]/40 px-3 py-2.5">
+              <div className="flex items-center justify-between rounded-lg border border-nham-border/40 px-3 py-2.5">
                 <div>
-                  <div className="text-[#2C2416] text-sm">
+                  <div className="text-nham-text text-sm">
                     {t('visual.result1')}
                   </div>
-                  <div className="text-[#8B7355] text-xs">
+                  <div className="text-nham-text-muted text-xs">
                     {t('visual.result1Note')}
                   </div>
                 </div>
-                <span className="font-mono text-[#8B7355] text-xs">
+                <span className="font-mono text-nham-text-muted text-xs">
                   92 kcal
                 </span>
               </div>
-              <div className="flex items-center justify-between rounded-lg border border-[#E8D5B5]/40 px-3 py-2.5">
+              <div className="flex items-center justify-between rounded-lg border border-nham-border/40 px-3 py-2.5">
                 <div>
-                  <div className="text-[#2C2416] text-sm">
+                  <div className="text-nham-text text-sm">
                     {t('visual.result2')}
                   </div>
-                  <div className="text-[#8B7355] text-xs">
+                  <div className="text-nham-text-muted text-xs">
                     {t('visual.result2Note')}
                   </div>
                 </div>
-                <span className="font-mono text-[#8B7355] text-xs">
+                <span className="font-mono text-nham-text-muted text-xs">
                   175 kcal
                 </span>
               </div>
@@ -138,7 +138,7 @@ export function ProblemSection() {
             </div>
           </div>
 
-          <p className="mt-5 px-1 font-light text-[#8B7355] text-sm italic leading-relaxed">
+          <p className="mt-5 px-1 font-light text-nham-text-muted text-sm italic leading-relaxed">
             {t('visual.caption')}
           </p>
         </motion.div>
@@ -151,21 +151,21 @@ export function ProblemSection() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.7 }}
-          className="relative border-[#C9A87C]/20 border-t pt-16 text-center"
+          className="relative border-nham-accent/20 border-t pt-16 text-center"
         >
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#2C2416] px-4 text-[#C9A87C]">
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-nham-ink px-4 text-nham-accent">
             <span className="font-serif text-4xl">&quot;</span>
           </div>
 
-          <p className="mx-auto max-w-4xl font-serif text-2xl text-[#E8D5B5] italic leading-normal lg:text-3xl">
+          <p className="mx-auto max-w-4xl font-serif text-2xl text-nham-border italic leading-normal lg:text-3xl">
             {t('quote')}
           </p>
           <div className="mt-6 flex items-center justify-center gap-3">
-            <div className="h-px w-8 bg-[#C9A87C]/50" />
-            <span className="font-medium text-[#8B7355] text-xs uppercase tracking-[0.2em]">
+            <div className="h-px w-8 bg-nham-accent/50" />
+            <span className="font-medium text-nham-text-muted text-xs uppercase tracking-[0.2em]">
               {t('quoteLabel')}
             </span>
-            <div className="h-px w-8 bg-[#C9A87C]/50" />
+            <div className="h-px w-8 bg-nham-accent/50" />
           </div>
         </motion.div>
       </div>

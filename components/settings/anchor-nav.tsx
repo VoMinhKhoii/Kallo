@@ -49,7 +49,7 @@ export function SettingsAnchorNav() {
             <a
               href={`#${item.id}`}
               onClick={handleJump(item.id)}
-              className="block whitespace-nowrap rounded-xl px-3 py-2 font-medium text-[#7B6F62] text-[14px] transition-colors hover:bg-nham-hover/50 hover:text-[#2C2416] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent"
+              className="block whitespace-nowrap rounded-xl px-3 py-2 font-medium text-[#7B6F62] text-[14px] transition-colors hover:bg-nham-hover/50 hover:text-nham-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent"
             >
               {t(item.labelKey)}
             </a>

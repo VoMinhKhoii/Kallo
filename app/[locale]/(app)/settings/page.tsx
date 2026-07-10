@@ -49,7 +49,7 @@ export default async function SettingsPage() {
 
       <div className="min-w-0 flex-1">
         <header className="mb-5 sm:mb-7">
-          <h1 className="font-normal font-serif text-2xl text-[#2C2416] tracking-tight">
+          <h1 className="font-normal font-serif text-2xl text-nham-text tracking-tight">
             {t('title')}
           </h1>
           <p className="mt-1 text-[#7B6F62] text-[14px]">{t('description')}</p>
@@ -59,15 +59,15 @@ export default async function SettingsPage() {
           <Profile profile={profile} />
         ) : (
           <div className="flex flex-col items-center gap-4 rounded-2xl border border-[#EAE7E0] bg-[#FDFCF8] px-4 py-12 text-center">
-            <h2 className="font-serif text-[#2C2416] text-lg">
+            <h2 className="font-serif text-lg text-nham-text">
               {tProfile('emptyTitle')}
             </h2>
-            <p className="max-w-sm text-[#6B5D4F] text-[14px]">
+            <p className="max-w-sm text-[14px] text-nham-text-soft">
               {tProfile('emptyDescription')}
             </p>
             <Link
               href="/onboarding"
-              className="rounded-lg bg-[#2C2416] px-4 py-2 font-medium text-[#FEFBF6] text-sm"
+              className="rounded-lg bg-nham-ink px-4 py-2 font-medium text-nham-surface text-sm"
             >
               {tProfile('startSetup')}
             </Link>
@@ -82,7 +82,7 @@ export default async function SettingsPage() {
           className="mt-8 scroll-mt-20"
         >
           <div className="mb-4">
-            <h2 className="font-normal font-serif text-[#2C2416] text-xl tracking-tight">
+            <h2 className="font-normal font-serif text-nham-text text-xl tracking-tight">
               {tFeedback('title')}
             </h2>
             <p className="mt-1 text-[#7B6F62] text-[14px]">
@@ -99,7 +99,7 @@ export default async function SettingsPage() {
           className="mt-8 scroll-mt-20"
         >
           <div className="mb-4">
-            <h2 className="font-normal font-serif text-[#2C2416] text-xl tracking-tight">
+            <h2 className="font-normal font-serif text-nham-text text-xl tracking-tight">
               {tAccount('title')}
             </h2>
             <p className="mt-1 text-[#7B6F62] text-[14px]">

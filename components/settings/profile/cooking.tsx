@@ -25,7 +25,7 @@ export function Cooking() {
         name="oilUsage"
         render={({ field }) => (
           <FormItem className={cardClass}>
-            <FormLabel className="mb-3 block font-bold text-[#2C2416] text-[13px]">
+            <FormLabel className="mb-3 block font-bold text-[13px] text-nham-text">
               {t('oilUsage')}
             </FormLabel>
             <FormControl>
@@ -61,7 +61,7 @@ export function Cooking() {
         name="defaultRicePortion"
         render={({ field }) => (
           <FormItem className={cardClass}>
-            <FormLabel className="mb-3 block font-bold text-[#2C2416] text-[13px]">
+            <FormLabel className="mb-3 block font-bold text-[13px] text-nham-text">
               {t('ricePortion')}
             </FormLabel>
             <FormControl>
@@ -97,7 +97,7 @@ export function Cooking() {
         name="sugarBraised"
         render={({ field }) => (
           <FormItem className={cardClass}>
-            <FormLabel className="mb-3 block font-bold text-[#2C2416] text-[13px]">
+            <FormLabel className="mb-3 block font-bold text-[13px] text-nham-text">
               {t('sugar')}
             </FormLabel>
             <FormControl>
@@ -121,7 +121,7 @@ export function Cooking() {
         name="defaultProteinPortion"
         render={({ field }) => (
           <FormItem className={cardClass}>
-            <FormLabel className="mb-3 block font-bold text-[#2C2416] text-[13px]">
+            <FormLabel className="mb-3 block font-bold text-[13px] text-nham-text">
               {t('proteinPortion')}
             </FormLabel>
             <FormControl>
@@ -157,7 +157,7 @@ export function Cooking() {
         name="brothConsumption"
         render={({ field }) => (
           <FormItem className={cardClass}>
-            <FormLabel className="mb-3 block font-bold text-[#2C2416] text-[13px]">
+            <FormLabel className="mb-3 block font-bold text-[13px] text-nham-text">
               {t('broth')}
             </FormLabel>
             <FormControl>

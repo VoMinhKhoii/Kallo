@@ -37,16 +37,16 @@ function CountrySelect({
         type="button"
         onClick={() => setIsOpen(!isOpen)}
         aria-expanded={isOpen}
-        className={`flex w-full items-center justify-between gap-2 rounded-xl border py-2.5 pl-4 text-left text-[14px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C9A87C]/30 ${
+        className={`flex w-full items-center justify-between gap-2 rounded-xl border py-2.5 pl-4 text-left text-[14px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent/30 ${
           value ? 'pr-10' : 'pr-4'
         } ${
           isOpen
-            ? 'border-[#C9A87C] bg-white'
-            : 'border-[#EAE7E0] bg-[#FDFCF8] hover:border-[#C9A87C]/50'
+            ? 'border-nham-accent bg-white'
+            : 'border-[#EAE7E0] bg-[#FDFCF8] hover:border-nham-accent/50'
         }`}
       >
         <span
-          className={`min-w-0 truncate ${value ? 'text-[#2C2416]' : 'text-[#7B6F62]'}`}
+          className={`min-w-0 truncate ${value ? 'text-nham-text' : 'text-[#7B6F62]'}`}
         >
           {value
             ? (() => {
@@ -61,7 +61,7 @@ function CountrySelect({
           type="button"
           onClick={() => onChange(null)}
           aria-label={tRegional('clearLabel')}
-          className="absolute top-1/2 right-2.5 -translate-y-1/2 rounded-md p-1 text-[#7B6F62] leading-none transition-colors hover:text-[#2C2416] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C9A87C]/30"
+          className="absolute top-1/2 right-2.5 -translate-y-1/2 rounded-md p-1 text-[#7B6F62] leading-none transition-colors hover:text-nham-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent/30"
         >
           ×
         </button>
@@ -77,7 +77,7 @@ function CountrySelect({
               onChange={(e) => setSearch(e.target.value)}
               aria-label={tRegional('searchCountryLabel')}
               placeholder={tOrigin('searchCountry')}
-              className="w-full rounded-lg bg-[#F5F4F0] px-3 py-2 text-[13px] outline-none placeholder:text-[#7B6F62] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C9A87C]/30"
+              className="w-full rounded-lg bg-nham-track px-3 py-2 text-[13px] outline-none placeholder:text-[#7B6F62] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent/30"
             />
           </div>
           <div className="max-h-48 overflow-y-auto p-1">
@@ -96,10 +96,10 @@ function CountrySelect({
                     setIsOpen(false);
                     setSearch('');
                   }}
-                  className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-[13px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C9A87C]/30 ${
+                  className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-[13px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent/30 ${
                     value === c.value
-                      ? 'bg-[#C9A87C]/10 font-medium text-[#2C2416]'
-                      : 'text-[#2C2416] hover:bg-[#F5F4F0]'
+                      ? 'bg-nham-accent/10 font-medium text-nham-text'
+                      : 'text-nham-text hover:bg-nham-track'
                   }`}
                 >
                   <span>{c.value}</span>
@@ -132,8 +132,8 @@ export function Regional() {
           settings.language keys were orphaned). Switches the locale in place;
           it lives outside the profile form's dirty state. */}
       <div>
-        <div className="mb-2 flex items-center gap-2 font-medium text-[#2C2416] text-[13px]">
-          <Languages className="h-4 w-4 text-[#C9A87C]" />
+        <div className="mb-2 flex items-center gap-2 font-medium text-[13px] text-nham-text">
+          <Languages className="h-4 w-4 text-nham-accent" />
           {tSettings('language')}
         </div>
         <LanguageToggle
@@ -151,8 +151,8 @@ export function Regional() {
           name="countryOfOrigin"
           render={({ field }) => (
             <FormItem>
-              <div className="mb-2 flex items-center gap-2 font-medium text-[#2C2416] text-[13px]">
-                <Globe className="h-4 w-4 text-[#C9A87C]" />
+              <div className="mb-2 flex items-center gap-2 font-medium text-[13px] text-nham-text">
+                <Globe className="h-4 w-4 text-nham-accent" />
                 {tOrigin('countryOfOrigin')}
               </div>
               <FormControl>
@@ -167,8 +167,8 @@ export function Regional() {
           name="countryOfResidence"
           render={({ field }) => (
             <FormItem>
-              <div className="mb-2 flex items-center gap-2 font-medium text-[#2C2416] text-[13px]">
-                <MapPin className="h-4 w-4 text-[#C9A87C]" />
+              <div className="mb-2 flex items-center gap-2 font-medium text-[13px] text-nham-text">
+                <MapPin className="h-4 w-4 text-nham-accent" />
                 {tOrigin('countryOfResidence')}
               </div>
               <FormControl>

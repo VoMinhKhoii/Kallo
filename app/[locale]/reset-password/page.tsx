@@ -71,24 +71,24 @@ export default function ResetPasswordPage() {
 
   return (
     <main className="flex min-h-dvh items-center justify-center bg-nham-surface px-4 font-sans-display">
-      <div className="w-full max-w-[400px] rounded-2xl border border-[#E8D5B5]/40 bg-[#FFFCF8] p-8 shadow-[0_25px_60px_-12px_rgba(44,36,22,0.18)]">
-        <h1 className="mb-1 text-center font-normal font-serif text-2xl text-[#2C2416]">
+      <div className="w-full max-w-[400px] rounded-2xl border border-nham-border/40 bg-[#FFFCF8] p-8 shadow-[0_25px_60px_-12px_rgba(44,36,22,0.18)]">
+        <h1 className="mb-1 text-center font-normal font-serif text-2xl text-nham-text">
           {t('title')}
         </h1>
-        <p className="mb-6 text-center text-[#8B7355] text-sm">
+        <p className="mb-6 text-center text-nham-text-muted text-sm">
           {status === 'expired' ? t('expiredSubtitle') : t('subtitle')}
         </p>
 
         {status === 'checking' && (
           <div className="flex justify-center py-6">
-            <Loader2 className="h-5 w-5 animate-spin text-[#C9A87C]" />
+            <Loader2 className="h-5 w-5 animate-spin text-nham-accent" />
           </div>
         )}
 
         {status === 'expired' && (
           <Link
             href="/"
-            className="block w-full rounded-xl bg-[#2C2416] px-4 py-3 text-center font-medium text-sm text-white transition-colors hover:bg-[#3D3425]"
+            className="block w-full rounded-xl bg-nham-ink px-4 py-3 text-center font-medium text-sm text-white transition-colors hover:bg-[#3D3425]"
           >
             {t('backHome')}
           </Link>
@@ -116,7 +116,7 @@ export default function ResetPasswordPage() {
             <button
               type="submit"
               disabled={loading || done}
-              className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#2C2416] px-4 py-3 font-medium text-sm text-white transition-colors hover:bg-[#3D3425] disabled:opacity-60"
+              className="flex w-full items-center justify-center gap-2 rounded-xl bg-nham-ink px-4 py-3 font-medium text-sm text-white transition-colors hover:bg-[#3D3425] disabled:opacity-60"
             >
               {(loading || done) && (
                 <Loader2 className="h-4 w-4 animate-spin" />

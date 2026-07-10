@@ -306,7 +306,7 @@ export function Profile({ profile }: ProfileProps) {
                 aria-label={section.title}
                 className="scroll-mt-20 rounded-2xl border border-[#EAE7E0] bg-[#FDFCF8] p-3 sm:p-5 lg:p-6"
               >
-                <h2 className="font-normal font-serif text-[#2C2416] text-lg tracking-tight">
+                <h2 className="font-normal font-serif text-lg text-nham-text tracking-tight">
                   {section.title}
                 </h2>
                 <p className="mt-1 mb-5 text-[#7B6F62] text-[13px] sm:mb-6">
@@ -341,14 +341,14 @@ export function Profile({ profile }: ProfileProps) {
                     type="button"
                     onClick={handleCancel}
                     disabled={isPending}
-                    className="rounded-xl px-5 py-2.5 font-medium text-[#7B6F62] text-[14px] transition-colors hover:bg-[#F5F4F0] hover:text-[#2C2416] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C9A87C]/40"
+                    className="rounded-xl px-5 py-2.5 font-medium text-[#7B6F62] text-[14px] transition-colors hover:bg-nham-track hover:text-nham-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent/40"
                   >
                     {tc('cancel')}
                   </button>
                   <button
                     type="submit"
                     disabled={isPending}
-                    className="flex items-center gap-2 rounded-xl bg-[#2C2416] px-5 py-2.5 font-medium text-[#FDFCF8] text-[14px] shadow-sm transition-all hover:bg-[#1C1917] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C9A87C]/60 disabled:opacity-50"
+                    className="flex items-center gap-2 rounded-xl bg-nham-ink px-5 py-2.5 font-medium text-[#FDFCF8] text-[14px] shadow-sm transition-all hover:bg-[#1C1917] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent/60 disabled:opacity-50"
                   >
                     {isPending && <Loader2 className="h-4 w-4 animate-spin" />}
                     {pendingTarget !== null

@@ -50,16 +50,16 @@ function OptionStrip({
   onChange: (v: string) => void;
 }) {
   return (
-    <div className="grid grid-cols-3 rounded-xl bg-[#F5F4F0] p-1">
+    <div className="grid grid-cols-3 rounded-xl bg-nham-track p-1">
       {options.map((opt) => (
         <button
           key={opt.value}
           type="button"
           onClick={() => onChange(opt.value)}
-          className={`flex min-w-0 flex-col items-center rounded-lg px-2 py-2.5 text-center transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C9A87C]/30 ${
+          className={`flex min-w-0 flex-col items-center rounded-lg px-2 py-2.5 text-center transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent/30 ${
             value === opt.value
-              ? 'bg-white text-[#2C2416] shadow-sm'
-              : 'text-[#8B8682] hover:text-[#2C2416]'
+              ? 'bg-white text-nham-text shadow-sm'
+              : 'text-[#8B8682] hover:text-nham-text'
           }`}
         >
           <span className="font-medium text-[13px]">{opt.label}</span>
@@ -109,7 +109,7 @@ export function ScreenCooking({ defaultValues, onChange }: ScreenCookingProps) {
     <Form {...form}>
       <form className="space-y-6 lg:space-y-7">
         <div className="max-w-2xl">
-          <h2 className="mb-2 font-normal font-serif text-2xl text-[#2C2416] tracking-tight">
+          <h2 className="mb-2 font-normal font-serif text-2xl text-nham-text tracking-tight">
             {t('cooking.title')}
           </h2>
           <p className="font-sans-display text-[#8B8682] text-[15px] leading-relaxed">
@@ -124,7 +124,7 @@ export function ScreenCooking({ defaultValues, onChange }: ScreenCookingProps) {
             name="oilUsage"
             render={({ field }) => (
               <FormItem className="rounded-[24px] border border-[#EAE7E0] bg-white p-5 sm:p-6">
-                <FormLabel className="mb-3 block font-bold text-[#2C2416] text-[13px]">
+                <FormLabel className="mb-3 block font-bold text-[13px] text-nham-text">
                   {t('cooking.oilUsage')}
                 </FormLabel>
                 <FormControl>
@@ -163,7 +163,7 @@ export function ScreenCooking({ defaultValues, onChange }: ScreenCookingProps) {
             name="defaultRicePortion"
             render={({ field }) => (
               <FormItem className="rounded-[24px] border border-[#EAE7E0] bg-white p-5 sm:p-6">
-                <FormLabel className="mb-3 block font-bold text-[#2C2416] text-[13px]">
+                <FormLabel className="mb-3 block font-bold text-[13px] text-nham-text">
                   {t('cooking.ricePortion')}
                 </FormLabel>
                 <FormControl>
@@ -202,7 +202,7 @@ export function ScreenCooking({ defaultValues, onChange }: ScreenCookingProps) {
             name="sugarBraised"
             render={({ field }) => (
               <FormItem className="rounded-[24px] border border-[#EAE7E0] bg-white p-5 sm:p-6">
-                <FormLabel className="mb-3 block font-bold text-[#2C2416] text-[13px]">
+                <FormLabel className="mb-3 block font-bold text-[13px] text-nham-text">
                   {t('cooking.sugar')}
                 </FormLabel>
                 <FormDescription className="-mt-1 mb-3 text-[#8B8682] text-[12px] leading-relaxed">
@@ -232,7 +232,7 @@ export function ScreenCooking({ defaultValues, onChange }: ScreenCookingProps) {
             name="defaultProteinPortion"
             render={({ field }) => (
               <FormItem className="rounded-[24px] border border-[#EAE7E0] bg-white p-5 sm:p-6">
-                <FormLabel className="mb-3 block font-bold text-[#2C2416] text-[13px]">
+                <FormLabel className="mb-3 block font-bold text-[13px] text-nham-text">
                   {t('cooking.proteinPortion')}
                 </FormLabel>
                 <FormControl>
@@ -271,7 +271,7 @@ export function ScreenCooking({ defaultValues, onChange }: ScreenCookingProps) {
             name="brothConsumption"
             render={({ field }) => (
               <FormItem className="rounded-[24px] border border-[#EAE7E0] bg-white p-5 sm:p-6">
-                <FormLabel className="mb-3 block font-bold text-[#2C2416] text-[13px]">
+                <FormLabel className="mb-3 block font-bold text-[13px] text-nham-text">
                   {t('cooking.broth')}
                 </FormLabel>
                 <FormControl>
