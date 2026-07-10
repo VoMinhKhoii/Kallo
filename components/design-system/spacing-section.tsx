@@ -1,3 +1,4 @@
+import { cn } from '@/lib/utils';
 import { DsCard, DsMeta, DsSection } from './specimen';
 
 const STEPS = [
@@ -32,7 +33,7 @@ export function SpacingSection() {
               <div className="w-16 shrink-0">
                 <DsMeta>{s.label}</DsMeta>
               </div>
-              <div className={`h-4 rounded-sm bg-nham-accent ${s.cls}`} />
+              <div className={cn('h-4 rounded-sm bg-nham-accent', s.cls)} />
               <p className="text-2xs text-nham-text-muted">{s.use}</p>
             </div>
           ))}

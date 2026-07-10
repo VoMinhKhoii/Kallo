@@ -1,3 +1,4 @@
+import { cn } from '@/lib/utils';
 import { DsCard, DsMeta, DsSection } from './specimen';
 
 type Swatch = {
@@ -166,9 +167,11 @@ function SwatchGrid({ swatches }: { swatches: Swatch[] }) {
       {swatches.map((s) => (
         <div key={s.token}>
           <div
-            className={`h-14 rounded-xl ${s.className} ${
-              s.border ? 'border border-nham-border/60' : ''
-            }`}
+            className={cn(
+              'h-14 rounded-xl',
+              s.className,
+              s.border && 'border border-nham-border/60'
+            )}
           />
           <p className="mt-2 font-medium text-nham-text text-sm">{s.name}</p>
           <DsMeta>{s.token}</DsMeta>

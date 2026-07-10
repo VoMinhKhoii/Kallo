@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { cn } from '@/lib/utils';
 
 /**
  * Shared scaffolding for the /design-system style guide. Every section is
@@ -55,7 +56,10 @@ export function DsCard({
 }) {
   return (
     <div
-      className={`rounded-2xl border border-nham-border/60 bg-white p-card shadow-xs ${className}`}
+      className={cn(
+        'rounded-2xl border border-nham-border/60 bg-white p-card shadow-xs',
+        className
+      )}
     >
       {title ? (
         <p className="mb-4 font-medium text-nham-text-muted text-xs">{title}</p>

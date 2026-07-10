@@ -1,3 +1,4 @@
+import { cn } from '@/lib/utils';
 import { DsCard, DsMeta, DsSection } from './specimen';
 
 const RADII = [
@@ -40,7 +41,10 @@ export function ElevationSection() {
           {RADII.map((r) => (
             <div key={r.cls}>
               <div
-                className={`h-16 border border-nham-border bg-nham-surface ${r.cls}`}
+                className={cn(
+                  'h-16 border border-nham-border bg-nham-surface',
+                  r.cls
+                )}
               />
               <p className="mt-2 font-medium text-nham-text text-sm">
                 {r.label}
@@ -55,7 +59,7 @@ export function ElevationSection() {
         <div className="grid grid-cols-2 gap-6 py-4 sm:grid-cols-3 lg:grid-cols-6">
           {SHADOWS.map((s) => (
             <div key={s.cls}>
-              <div className={`h-16 rounded-2xl bg-white ${s.cls}`} />
+              <div className={cn('h-16 rounded-2xl bg-white', s.cls)} />
               <div className="mt-3">
                 <DsMeta>{s.label}</DsMeta>
                 <p className="mt-0.5 text-2xs text-nham-text-muted">{s.use}</p>

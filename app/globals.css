@@ -83,11 +83,9 @@
   --text-caption--font-weight: 500;
   --text-2xs: 0.6875rem; /* 11px — timestamps, meta rows */
   --text-2xs--line-height: 1.35;
+  /* Eyebrow size only — the metrics (uppercase, 700, 0.2em tracking) live
+     in the `.eyebrow` @utility, its sole consumer. */
   --text-eyebrow: 0.625rem; /* 10px — uppercase section labels */
-  --text-eyebrow--line-height: 1.2;
-  --text-eyebrow--letter-spacing: 0.2em;
-  --text-eyebrow--font-weight: 700;
-  --tracking-eyebrow: 0.2em;
   /* ---------- Semantic spacing — rhythm on the 4px base ----------
      p-card-sm / p-card for product card padding (brand: 16–20px),
      p-card-lg for marketing feature cards (Anthropic 32px tier),
