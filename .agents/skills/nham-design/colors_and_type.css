@@ -5,12 +5,15 @@
 
 /* ---------- Webfonts (Google Fonts, exact matches) -----------
    Lora — display / serif (titles, big numbers, quoted meal text)
-   DM Sans — body / UI sans (buttons, labels, all running text)
+   Be Vietnam Pro — body / UI sans (buttons, labels, all running
+   text). It replaced DM Sans as the primary UI face web-wide: full
+   Vietnamese diacritic coverage, near-identical geometry. DM Sans
+   stays in the import only so older mocks keep rendering.
    JetBrains Mono — monospace fallback (the repo uses Geist Mono
    via next/font; on the public web JetBrains Mono is the closest
    neutral mono — flag if you want a different sub).
 */
-@import url("https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;1,400;1,500&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&family=JetBrains+Mono:wght@400;500;600&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Be+Vietnam+Pro:wght@300;400;500;600;700&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&family=JetBrains+Mono:wght@400;500;600&display=swap");
 
 :root {
   /* ---------- Brand palette — warm earthy / "Apple notes on cream"
@@ -18,7 +21,11 @@
   --nham-surface:      #fefbf6; /* app background — paper-cream */
   --nham-text:         #2c2416; /* primary text — espresso */
   --nham-text-muted:   #8b7355; /* secondary text — warm taupe */
+  --nham-text-soft:    #6b5d4f; /* landing body copy — between the two */
+  --nham-ink:          #2c2416; /* espresso as a SURFACE (hero-dark CTA) */
+  --nham-ink-hover:    #4a3f30;
   --nham-accent:       #c9a87c; /* signature tan — highlights, italics */
+  --nham-accent-hover: #b89968; /* accent darkened one step on hover */
   --nham-border:       #e8d5b5; /* hairlines, dividers, biscotti */
   --nham-hover:        #f0eae0; /* hover wash for nav, list rows */
   --nham-track:        #f5f4f0; /* disabled / track / chip ground */
@@ -56,49 +63,55 @@
 
   /* ---------- Type families ---------- */
   --font-serif:   "Lora", "Source Serif Pro", Georgia, serif;
-  --font-sans:    "DM Sans", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-sans:    "Be Vietnam Pro", "DM Sans", ui-sans-serif, system-ui, -apple-system, sans-serif;
   --font-mono:    "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
   --font-display: var(--font-serif);    /* hero, big numbers, meal quote */
   --font-ui:      var(--font-sans);     /* every other piece of UI text */
 
-  /* ---------- Type scale ---------- */
-  /* Display & headings use Lora at *normal* (400) or *light* (300);
-     never bold. The signature move is a serif + italic accent. */
-  --text-display:   clamp(3rem, 6vw, 4.75rem); /* hero h1 — 48–76px */
-  --text-h1:        2.5rem;   /* 40 */
-  --text-h2:        2rem;     /* 32 */
-  --text-h3:        1.5rem;   /* 24 */
-  --text-h4:        1.25rem;  /* 20 */
+  /* ---------- Type scale ----------
+     Metrics calibrated to Anthropic's display ramp (64/48/36/28/22,
+     leading tightening as size grows, per-size negative tracking) but
+     expressed in the Nhẩm faces. Display & headings use Lora at
+     *normal* (400) or *light* (300); never bold. The signature move is
+     a serif + italic accent. */
+  --text-display:   clamp(2rem, 5vw, 4rem); /* hero h1 — 32–64px */
+  --text-h1:        3rem;     /* 48 */
+  --text-h2:        2.25rem;  /* 36 */
+  --text-h3:        1.75rem;  /* 28 */
+  --text-h4:        1.375rem; /* 22 */
   --text-lg:        1.125rem; /* 18 */
   --text-md:        1rem;     /* 16 */
   --text-sm:        0.875rem; /* 14 */
+  --text-caption:   0.8125rem;/* 13 — form labels, list captions (500) */
   --text-xs:        0.75rem;  /* 12 */
   --text-2xs:       0.6875rem;/* 11 — meta, timestamps */
   --text-eyebrow:   0.625rem; /* 10 — uppercase section labels */
 
-  --leading-display: 1.1;
-  --leading-tight:   1.2;
-  --leading-snug:    1.35;
-  --leading-normal:  1.5;
+  --leading-display: 1.05;
+  --leading-tight:   1.15;
+  --leading-snug:    1.3;
+  --leading-normal:  1.55;   /* body reads at 1.55 (Anthropic body spec) */
   --leading-relaxed: 1.65;
 
   --tracking-eyebrow: 0.2em;   /* uppercase section labels */
   --tracking-wide:    0.06em;
-  --tracking-tight:  -0.02em;
-  --tracking-display:-0.04em;  /* big tabular calorie numbers */
+  --tracking-tight:  -0.014em;
+  --tracking-display:-0.023em; /* hero display + big tabular numbers */
 
-  /* ---------- Radii ---------- */
-  --radius:     0.625rem;             /* 10px — shadcn base */
-  --radius-sm:  calc(var(--radius) - 4px);
-  --radius-md:  calc(var(--radius) - 2px);
-  --radius-lg:  var(--radius);
-  --radius-xl:  calc(var(--radius) + 4px);  /* 14 — inputs, chips */
-  --radius-2xl: calc(var(--radius) + 8px);  /* 18 — cards */
-  --radius-3xl: calc(var(--radius) + 12px); /* 22 — meal cards, today dock */
-  --radius-4xl: calc(var(--radius) + 16px); /* 26 — hero phone bezel-ish */
+  /* ---------- Radii — Anthropic 4/6/8/12/16 scale ---------- */
+  --radius:     0.5rem;               /* 8px — shadcn base */
+  --radius-sm:  calc(var(--radius) - 4px);  /* 4 */
+  --radius-md:  calc(var(--radius) - 2px);  /* 6 */
+  --radius-lg:  var(--radius);              /* 8 — inputs, buttons */
+  --radius-xl:  calc(var(--radius) + 4px);  /* 12 — chips, pills */
+  --radius-2xl: calc(var(--radius) + 8px);  /* 16 — cards */
+  --radius-3xl: calc(var(--radius) + 12px); /* 20 — meal cards, today dock */
+  --radius-4xl: calc(var(--radius) + 16px); /* 24 — hero phone bezel-ish */
   --radius-pill: 999px;
 
-  /* ---------- Spacing — 4px base ---------- */
+  /* ---------- Spacing — 4px base, Anthropic rhythm ----------
+     Semantic beats: product cards pad 16–20 (--space-4/-5), marketing
+     feature cards 32 (--space-8), sections 32, marketing bands 96. */
   --space-1:  0.25rem;
   --space-2:  0.5rem;
   --space-3:  0.75rem;
@@ -110,14 +123,18 @@
   --space-12: 3rem;
   --space-16: 4rem;
   --space-20: 5rem;
+  --space-24: 6rem;   /* 96 — marketing band rhythm */
 
-  /* ---------- Elevation — warm, very low contrast ----------
-     Nhẩm shadows are tinted with the espresso text color so they
-     don't read cold on cream. Almost never use #000-based shadow. */
-  --shadow-xs: 0 1px 2px rgba(44, 36, 22, 0.04);
-  --shadow-sm: 0 2px 8px rgba(44, 36, 22, 0.05);
-  --shadow-md: 0 10px 32px rgba(44, 36, 22, 0.05);
-  --shadow-lg: 0 20px 50px rgba(44, 36, 22, 0.08);
+  /* ---------- Elevation — warm, minimal ----------
+     Anthropic's minimal-shadow philosophy: depth comes from surface
+     color-blocking and hairline borders; shadows only confirm it.
+     Tinted with the espresso text color so they don't read cold on
+     cream. Almost never use #000-based shadow. --shadow-sm is
+     Anthropic's one canonical shadow (0 1px 3px @ 8%), warmed. */
+  --shadow-xs: 0 1px 3px rgba(44, 36, 22, 0.06);
+  --shadow-sm: 0 1px 3px rgba(44, 36, 22, 0.08);
+  --shadow-md: 0 2px 8px rgba(44, 36, 22, 0.08);
+  --shadow-lg: 0 4px 16px rgba(44, 36, 22, 0.1);
   --shadow-hero: 0 30px 60px -15px rgba(201, 168, 124, 0.25); /* tan glow */
 
   --ring-accent: 0 0 0 3px color-mix(in srgb, var(--nham-accent) 35%, transparent);
@@ -128,7 +145,11 @@
   --nham-surface:      #1c1810;
   --nham-text:         #f5f0e8;
   --nham-text-muted:   #b8a88e;
+  --nham-text-soft:    #cbbda6;
+  --nham-ink:          #f5f0e8; /* ink flips with text in dark */
+  --nham-ink-hover:    #e5ddce;
   --nham-accent:       #c9a87c;
+  --nham-accent-hover: #d4b88c;
   --nham-border:       #3d3529;
   --nham-hover:        #2a2418;
   --nham-track:        #2a2418;

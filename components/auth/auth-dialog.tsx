@@ -98,7 +98,7 @@ export function AuthDialog() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className="fixed inset-0 z-100 bg-[#2C2416]/40 backdrop-blur-sm"
+            className="fixed inset-0 z-100 bg-nham-ink/40 backdrop-blur-sm"
             onClick={closeDialog}
           />
 
@@ -120,16 +120,16 @@ export function AuthDialog() {
             }}
             className="fixed top-1/2 left-1/2 z-101 w-[calc(100%-2rem)] max-w-[420px] -translate-x-1/2 -translate-y-1/2 focus:outline-none"
           >
-            <div className="overflow-hidden rounded-2xl border border-[#E8D5B5]/40 bg-[#FFFCF8] shadow-[0_25px_60px_-12px_rgba(44,36,22,0.25),0_0_0_1px_rgba(201,168,124,0.08)]">
+            <div className="overflow-hidden rounded-2xl border border-nham-border/40 bg-[#FFFCF8] shadow-[0_25px_60px_-12px_rgba(44,36,22,0.25),0_0_0_1px_rgba(201,168,124,0.08)]">
               {/* Header */}
               <div className="px-8 pt-8 pb-2 text-center">
                 <h2
                   id="auth-dialog-title"
-                  className="mb-1 font-normal font-serif text-2xl text-[#2C2416]"
+                  className="mb-1 font-normal font-serif text-2xl text-nham-text"
                 >
                   {title}
                 </h2>
-                <p className="font-sans-display text-[#8B7355] text-sm">
+                <p className="font-sans-display text-nham-text-muted text-sm">
                   {subtitle}
                 </p>
               </div>
@@ -143,11 +143,11 @@ export function AuthDialog() {
                   <div className="space-y-3 px-8 pt-4">
                     <GoogleSignInButton />
                     <div className="flex items-center gap-3">
-                      <div className="h-px flex-1 bg-[#E8D5B5]/60" />
-                      <span className="font-sans-display text-[#8B7355] text-xs">
+                      <div className="h-px flex-1 bg-nham-border/60" />
+                      <span className="font-sans-display text-nham-text-muted text-xs">
                         {tDialog('orContinueWithEmail')}
                       </span>
-                      <div className="h-px flex-1 bg-[#E8D5B5]/60" />
+                      <div className="h-px flex-1 bg-nham-border/60" />
                     </div>
                   </div>
 
@@ -169,7 +169,7 @@ export function AuthDialog() {
                     </AnimatePresence>
 
                     {/* Toggle Link */}
-                    <p className="mt-5 text-center font-sans-display text-[#8B7355] text-sm">
+                    <p className="mt-5 text-center font-sans-display text-nham-text-muted text-sm">
                       {tab === 'sign-in'
                         ? tSignIn('noAccount')
                         : tSignUp('hasAccount')}
@@ -178,7 +178,7 @@ export function AuthDialog() {
                         onClick={() =>
                           setTab(tab === 'sign-in' ? 'sign-up' : 'sign-in')
                         }
-                        className="font-semibold text-[#C9A87C] transition-colors hover:text-[#A88B63]"
+                        className="font-semibold text-nham-accent transition-colors hover:text-[#A88B63]"
                       >
                         {tab === 'sign-in'
                           ? tSignIn('signUpLink')

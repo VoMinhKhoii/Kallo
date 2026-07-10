@@ -48,8 +48,8 @@ export function LocaleSwitcher() {
             className={cn(
               'flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs transition-colors',
               selected
-                ? 'border-[#C9A87C] bg-[#E8D5B5]/30 text-[#2C2416]'
-                : 'border-[#E8D5B5]/50 bg-white/70 text-[#6B5D4F] hover:border-[#C9A87C]/60 hover:text-[#2C2416]',
+                ? 'border-nham-accent bg-nham-border/30 text-nham-text'
+                : 'border-nham-border/50 bg-white/70 text-nham-text-soft hover:border-nham-accent/60 hover:text-nham-text',
               isPending && 'opacity-70'
             )}
           >

@@ -1,6 +1,6 @@
 ---
 name: nham-design
-description: Use this skill to generate well-branded interfaces and assets for Nhẩm — the AI-powered Vietnamese meal tracker — either for production or throwaway prototypes/mocks/etc. Contains essential design guidelines, colors (warm earthy palette anchored on a cream surface and a tan accent), type (Lora serif + DM Sans), fonts, assets (logo + app mark + favicon), Lucide iconography conventions, and a click-through React UI kit recreating the Landing / Dashboard / Logging surfaces of the product. Covers two platforms — web (Next.js, DM Sans + Lora, --nham-* tokens) and the mobile Flutter app (Be Vietnam Pro, a calmer Threads-tuned type scale; see mobile.md) — routed by platform so you only load what you need.
+description: Use this skill to generate well-branded interfaces and assets for Nhẩm — the AI-powered Vietnamese meal tracker — either for production or throwaway prototypes/mocks/etc. Contains essential design guidelines, colors (warm earthy palette anchored on a cream surface and a tan accent), type (Lora serif + Be Vietnam Pro sans), fonts, assets (logo + app mark + favicon), Lucide iconography conventions, and a click-through React UI kit recreating the Landing / Dashboard / Logging surfaces of the product. Covers two platforms — web (Next.js, Be Vietnam Pro + Lora, --nham-* tokens) and the mobile Flutter app (Be Vietnam Pro, a calmer Threads-tuned type scale; see mobile.md) — routed by platform so you only load what you need.
 user-invocable: true
 ---
 
@@ -16,7 +16,9 @@ and layout**. Read only the doc for the surface you're building — not both.
 
 - **Web** (Next.js / React — marketing + app): the sections below, plus
   `README.md`, `colors_and_type.css`, `preview/`, `ui_kits/nham_app/`. Type is
-  **DM Sans + Lora**; tokens are `--nham-*` CSS custom properties. Everything in
+  **Be Vietnam Pro + Lora** (Be Vietnam Pro replaced DM Sans as the primary UI
+  sans web-wide — full Vietnamese diacritics; DM Sans remains only as a legacy
+  fallback); tokens are `--nham-*` CSS custom properties. Everything in
   the rest of this file and in `README.md` is the **web** system.
 - **Mobile** (Flutter app, `apps/mobile-flutter`): read **`mobile.md`**. It is a
   *different, calmer* system — **Be Vietnam Pro** sans (Vietnamese-safe), a
@@ -33,9 +35,9 @@ and layout**. Read only the doc for the surface you're building — not both.
 
 ## When the user asks you to build something
 
-If they want a **visual artifact** (slide, mock, throwaway prototype, marketing surface): copy the assets you need out of this skill folder into the working project, link `colors_and_type.css`, follow the type and color rules from README.md, and produce a single self-contained HTML file the user can view. Prefer Lora for any text above 18px; prefer DM Sans for everything else.
+If they want a **visual artifact** (slide, mock, throwaway prototype, marketing surface): copy the assets you need out of this skill folder into the working project, link `colors_and_type.css`, follow the type and color rules from README.md, and produce a single self-contained HTML file the user can view. Prefer Lora for any text above 18px; prefer Be Vietnam Pro for everything else.
 
-If they're working on **production Next.js code** for the actual Nhẩm app: read the originals at https://github.com/VoMinhKhoii/Nham — this skill is a reference, not a replacement. The repo's `app/globals.css` and `components/ui/button.tsx` define the canonical `--nham-*` tokens and `buttonVariants` table.
+If they're working on **production Next.js code** for the actual Nhẩm app: read the originals at https://github.com/VoMinhKhoii/Nham — this skill is a reference, not a replacement. The repo's `app/globals.css` and `components/ui/button.tsx` define the canonical `--nham-*` tokens and `buttonVariants` table. The foundations are first-class Tailwind tokens there, with metrics calibrated to **Anthropic's design system** (type ramp 64/48/36/28/22, body leading 1.55, radii on the 4/6/8/12/16 scale, minimal espresso-tinted shadows, 40px touch targets) but expressed entirely in the Nhẩm palette and faces: a named type ramp (`text-display`, `text-h1`–`text-h4`, `text-caption`, `text-2xs`, `text-eyebrow` — each carrying its line-height/tracking/weight), `eyebrow` and `italic-accent` utilities, semantic spacing (`p-card`, `p-card-sm`, `p-card-lg`, `gap-section`, `py-band`), a warm shadow scale replacing Tailwind's black defaults, and shadcn semantic tokens (`primary`, `destructive`, `ring`, `border`, …) re-pointed at the warm palette so stock components are on-brand at the source. The live specimen page is `/design-system` in the running app (unlisted, noindexed).
 
 If the user invokes this skill **with no other guidance**: ask them what they want to build (deck? marketing page? prototype? new app screen?), get a couple specifics (audience, surface, length), then act as an expert designer who outputs HTML artifacts *or* production code, depending on the need.
 

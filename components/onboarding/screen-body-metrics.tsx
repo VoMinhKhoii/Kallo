@@ -174,10 +174,10 @@ function CustomSelect({
         }}
         aria-haspopup="listbox"
         aria-expanded={isOpen}
-        className={`flex w-full items-center justify-between rounded-lg border bg-white px-3 py-2 text-[#2C2416] text-[14px] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C9A87C]/30 ${
+        className={`flex w-full items-center justify-between rounded-lg border bg-white px-3 py-2 text-[14px] text-nham-text transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent/30 ${
           isOpen
-            ? 'border-[#C9A87C] shadow-sm ring-1 ring-[#C9A87C]/20'
-            : 'border-[#EAE7E0] hover:border-[#C9A87C]/50'
+            ? 'border-nham-accent shadow-sm ring-1 ring-nham-accent/20'
+            : 'border-[#EAE7E0] hover:border-nham-accent/50'
         }`}
       >
         <span className="truncate pr-2">{selectedOption?.label}</span>
@@ -215,13 +215,13 @@ function CustomSelect({
                       onChange(opt.value);
                       setIsOpen(false);
                     }}
-                    className="flex w-full items-center justify-between px-3 py-2.5 text-left text-[#2C2416] text-[14px] transition-colors hover:bg-[#F5F4F0]"
+                    className="flex w-full items-center justify-between px-3 py-2.5 text-left text-[14px] text-nham-text transition-colors hover:bg-nham-track"
                   >
                     <span className={value === opt.value ? 'font-medium' : ''}>
                       {opt.label}
                     </span>
                     {value === opt.value && (
-                      <Check className="h-4 w-4 text-[#C9A87C]" />
+                      <Check className="h-4 w-4 text-nham-accent" />
                     )}
                   </button>
                 ))}
@@ -369,13 +369,13 @@ export function ScreenBodyMetrics({
   }, [tdee, finalTargets, reportChange]);
 
   const inputClass =
-    'w-full rounded-lg border border-[#EAE7E0] bg-white px-3 py-2 text-[14px] text-[#2C2416] transition-colors hover:border-[#C9A87C]/50 focus-visible:border-[#C9A87C] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C9A87C]/20';
+    'w-full rounded-lg border border-[#EAE7E0] bg-white px-3 py-2 text-[14px] text-nham-text transition-colors hover:border-nham-accent/50 focus-visible:border-nham-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent/20';
 
   return (
     <Form {...form}>
       <form className="space-y-5 lg:space-y-6">
         <div className="max-w-xl">
-          <h2 className="mb-1.5 font-normal font-serif text-2xl text-[#2C2416] tracking-tight">
+          <h2 className="mb-1.5 font-normal font-serif text-2xl text-nham-text tracking-tight">
             {t('bodyMetrics.title')}
           </h2>
           <p className="text-[#8B8682] text-[14px] leading-relaxed">
@@ -393,7 +393,7 @@ export function ScreenBodyMetrics({
           <section className="rounded-[28px] border border-[#EAE7E0] bg-white p-5">
             <div className="mb-4">
               <div>
-                <p className="font-bold text-[#A8A29E] text-[11px] uppercase tracking-widest">
+                <p className="font-bold text-[11px] text-nham-stone uppercase tracking-widest">
                   About You
                 </p>
                 <p className="mt-1 text-[#8B8682] text-[13px] leading-relaxed">
@@ -410,7 +410,7 @@ export function ScreenBodyMetrics({
                   name="biologicalSex"
                   render={({ field }) => (
                     <FormItem>
-                      <label className="mb-1.5 block font-bold text-[#A8A29E] text-[11px] uppercase tracking-widest">
+                      <label className="mb-1.5 block font-bold text-[11px] text-nham-stone uppercase tracking-widest">
                         {t('bodyMetrics.biologicalSex')}
                       </label>
                       <FormControl>
@@ -436,7 +436,7 @@ export function ScreenBodyMetrics({
                 name="weightKg"
                 render={({ field }) => (
                   <FormItem>
-                    <label className="mb-1.5 block font-bold text-[#A8A29E] text-[11px] uppercase tracking-widest">
+                    <label className="mb-1.5 block font-bold text-[11px] text-nham-stone uppercase tracking-widest">
                       {`${t('bodyMetrics.weight')} (${t('bodyMetrics.weightUnit')})`}
                     </label>
                     <FormControl>
@@ -463,7 +463,7 @@ export function ScreenBodyMetrics({
                 name="heightCm"
                 render={({ field }) => (
                   <FormItem>
-                    <label className="mb-1.5 block font-bold text-[#A8A29E] text-[11px] uppercase tracking-widest">
+                    <label className="mb-1.5 block font-bold text-[11px] text-nham-stone uppercase tracking-widest">
                       {`${t('bodyMetrics.height')} (${t('bodyMetrics.heightUnit')})`}
                     </label>
                     <FormControl>
@@ -491,7 +491,7 @@ export function ScreenBodyMetrics({
                 name="age"
                 render={({ field }) => (
                   <FormItem>
-                    <label className="mb-1.5 block font-bold text-[#A8A29E] text-[11px] uppercase tracking-widest">
+                    <label className="mb-1.5 block font-bold text-[11px] text-nham-stone uppercase tracking-widest">
                       {t('bodyMetrics.age')}
                     </label>
                     <FormControl>
@@ -520,7 +520,7 @@ export function ScreenBodyMetrics({
                   name="activityLevel"
                   render={({ field }) => (
                     <FormItem>
-                      <label className="mb-1.5 block font-bold text-[#A8A29E] text-[11px] uppercase tracking-widest">
+                      <label className="mb-1.5 block font-bold text-[11px] text-nham-stone uppercase tracking-widest">
                         {t('bodyMetrics.activityLevel')}
                       </label>
                       <FormControl>
@@ -547,10 +547,10 @@ export function ScreenBodyMetrics({
             <section className="space-y-4 rounded-[28px] border border-[#EAE7E0] bg-white p-5">
               <div className="flex flex-col gap-4 border-[#EAE7E0]/80 border-b pb-4 xl:flex-row xl:items-end xl:justify-between">
                 <div>
-                  <span className="mb-1 block font-bold text-[#A8A29E] text-[11px] uppercase tracking-widest">
+                  <span className="mb-1 block font-bold text-[11px] text-nham-stone uppercase tracking-widest">
                     {t('bodyMetrics.tdee')}
                   </span>
-                  <div className="font-normal font-serif text-4xl text-[#2C2416] tracking-tighter">
+                  <div className="font-normal font-serif text-4xl text-nham-text tracking-tighter">
                     ~{Math.round(tdee).toLocaleString()}{' '}
                     <span className="font-sans text-[#8B8682] text-lg">
                       {t('bodyMetrics.kcal')}
@@ -559,7 +559,7 @@ export function ScreenBodyMetrics({
                 </div>
 
                 <div className="w-full xl:w-auto">
-                  <label className="mb-2 block font-bold text-[#A8A29E] text-[11px] uppercase tracking-widest">
+                  <label className="mb-2 block font-bold text-[11px] text-nham-stone uppercase tracking-widest">
                     {t('bodyMetrics.goal')}
                   </label>
                   <FormField
@@ -579,8 +579,8 @@ export function ScreenBodyMetrics({
                                 }}
                                 className={`rounded-lg px-3 py-1.5 font-medium text-[14px] transition-all ${
                                   field.value === g
-                                    ? 'bg-white text-[#2C2416] shadow-sm'
-                                    : 'text-[#8B8682] hover:text-[#2C2416]'
+                                    ? 'bg-white text-nham-text shadow-sm'
+                                    : 'text-[#8B8682] hover:text-nham-text'
                                 }`}
                               >
                                 {t(GOAL_KEYS[g])}
@@ -605,10 +605,10 @@ export function ScreenBodyMetrics({
                         <FormControl>
                           <div className="rounded-2xl border border-[#EAE7E0] bg-white p-4">
                             <div className="mb-3 flex items-end justify-between">
-                              <label className="block font-bold text-[#2C2416] text-[13px]">
+                              <label className="block font-bold text-[13px] text-nham-text">
                                 {t('bodyMetrics.aggression')}
                               </label>
-                              <div className="font-medium text-[#2C2416] text-[14px]">
+                              <div className="font-medium text-[14px] text-nham-text">
                                 {aggressionKg.toFixed(1)}{' '}
                                 <span className="text-[#8B8682]">kg/week</span>
                               </div>
@@ -625,13 +625,13 @@ export function ScreenBodyMetrics({
                                   field.onChange(v);
                                   reportChange();
                                 }}
-                                className="h-1.5 w-full cursor-pointer appearance-none rounded-lg bg-[#EAE7E0] accent-[#2C2416]"
+                                className="h-1.5 w-full cursor-pointer appearance-none rounded-lg bg-[#EAE7E0] accent-nham-ink"
                               />
                               <div className="mt-2.5 flex justify-between text-[#8B8682] text-[11px]">
                                 <span
                                   className={
                                     aggressionKg <= 0.3
-                                      ? 'font-bold text-[#2C2416]'
+                                      ? 'font-bold text-nham-text'
                                       : ''
                                   }
                                 >
@@ -640,7 +640,7 @@ export function ScreenBodyMetrics({
                                 <span
                                   className={
                                     aggressionKg > 0.3 && aggressionKg <= 0.6
-                                      ? 'font-bold text-[#2C2416]'
+                                      ? 'font-bold text-nham-text'
                                       : ''
                                   }
                                 >
@@ -649,7 +649,7 @@ export function ScreenBodyMetrics({
                                 <span
                                   className={
                                     aggressionKg > 0.6
-                                      ? 'font-bold text-[#2C2416]'
+                                      ? 'font-bold text-nham-text'
                                       : ''
                                   }
                                 >
@@ -657,9 +657,9 @@ export function ScreenBodyMetrics({
                                 </span>
                               </div>
                             </div>
-                            <div className="mt-3 rounded-lg bg-[#F5F4F0] px-3 py-2 text-center text-[#A8A29E] text-[12px]">
+                            <div className="mt-3 rounded-lg bg-nham-track px-3 py-2 text-center text-[12px] text-nham-stone">
                               Translates to a{' '}
-                              <span className="font-medium text-[#2C2416]">
+                              <span className="font-medium text-nham-text">
                                 ~
                                 {Math.round(
                                   aggressionKg * AGGRESSION_KCAL_PER_KG
@@ -682,10 +682,10 @@ export function ScreenBodyMetrics({
               {targetCalories > 0 && (
                 <div>
                   <div className="mb-3 flex items-baseline justify-between">
-                    <label className="block font-bold text-[#A8A29E] text-[11px] uppercase tracking-widest">
+                    <label className="block font-bold text-[11px] text-nham-stone uppercase tracking-widest">
                       {t('bodyMetrics.macroSummary')}
                     </label>
-                    <div className="font-normal font-serif text-2xl text-[#2C2416]">
+                    <div className="font-normal font-serif text-2xl text-nham-text">
                       {targetCalories}{' '}
                       <span className="font-sans text-[#8B8682] text-sm">
                         {t('bodyMetrics.kcal')}
@@ -709,15 +709,15 @@ export function ScreenBodyMetrics({
                                 }}
                                 className={`overflow-hidden rounded-[22px] border text-left transition-all ${
                                   field.value === opt.id
-                                    ? 'border-[#C9A87C] bg-[#FFF8EF] shadow-[0_10px_24px_rgba(201,168,124,0.14)]'
-                                    : 'border-[#EAE7E0] bg-white hover:border-[#C9A87C]/50'
+                                    ? 'border-nham-accent bg-[#FFF8EF] shadow-[0_10px_24px_rgba(201,168,124,0.14)]'
+                                    : 'border-[#EAE7E0] bg-white hover:border-nham-accent/50'
                                 }`}
                               >
                                 <div
                                   className={`px-3.5 py-2.5 ${
                                     field.value === opt.id
-                                      ? 'bg-[#FBF2E6] text-[#2C2416]'
-                                      : 'bg-[#F5F4F0] text-[#2C2416]'
+                                      ? 'bg-[#FBF2E6] text-nham-text'
+                                      : 'bg-nham-track text-nham-text'
                                   }`}
                                 >
                                   <div className="font-medium text-[13px]">
@@ -756,7 +756,7 @@ export function ScreenBodyMetrics({
                                         <span className="text-[#6F6556] text-[10px] uppercase tracking-wide">
                                           {macro.label}
                                         </span>
-                                        <span className="font-semibold text-[#2C2416] text-[12px]">
+                                        <span className="font-semibold text-[12px] text-nham-text">
                                           {macro.value}
                                           {t('bodyMetrics.grams')}
                                         </span>
@@ -776,7 +776,7 @@ export function ScreenBodyMetrics({
             </section>
           ) : (
             <div className="rounded-[28px] border border-[#EAE7E0] border-dashed bg-[#FFFCF8] p-5">
-              <p className="font-medium text-[#2C2416] text-[14px]">
+              <p className="font-medium text-[14px] text-nham-text">
                 Fill the basics to unlock targets.
               </p>
               <p className="mt-1 text-[#8B8682] text-[13px] leading-relaxed">

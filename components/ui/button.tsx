@@ -19,19 +19,20 @@ const buttonVariants = cva(
         ghost:
           'hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50',
         link: 'text-primary underline-offset-4 hover:underline',
-        // Landing page variants
+        // Landing page variants — token-only; colors resolve to the same
+        // hexes the previous raw values hardcoded (see --nham-* in globals.css)
         'landing-primary':
-          'rounded-xl bg-[#C9A87C] text-white shadow-sm hover:bg-[#B89968] !font-medium text-base',
+          'rounded-xl bg-nham-accent text-white shadow-sm hover:bg-nham-accent-hover !font-medium text-base',
         'landing-secondary':
-          'rounded-xl border border-[#E8D5B5] text-[#6B5D4F] hover:bg-[#FEFBF6] !font-medium text-base',
+          'rounded-xl border border-nham-border text-nham-text-soft hover:bg-nham-surface !font-medium text-base',
         'landing-ghost':
-          'text-[#6B5D4F] text-sm hover:text-[#2C2416] h-auto p-0 !font-normal',
+          'text-nham-text-soft text-sm hover:text-nham-text h-auto p-0 !font-normal',
         'hero-dark':
-          'rounded-xl bg-[#2C2416] text-[#FEFBF6] shadow-lg hover:-translate-y-0.5 hover:bg-[#4A3F30] hover:shadow-xl !font-medium tracking-wide text-base',
+          'rounded-xl bg-nham-ink text-nham-surface shadow-lg hover:-translate-y-0.5 hover:bg-nham-ink-hover hover:shadow-xl !font-medium tracking-wide text-base',
         'hero-outline':
-          'rounded-xl border border-[#E8D5B5] text-[#6B5D4F] hover:-translate-y-0.5 hover:bg-[#E8D5B5]/20 !font-medium tracking-wide text-base',
+          'rounded-xl border border-nham-border text-nham-text-soft hover:-translate-y-0.5 hover:bg-nham-border/20 !font-medium tracking-wide text-base',
         'header-cta':
-          'rounded-lg bg-[#C9A87C] text-white hover:bg-[#B89968] !font-medium text-sm',
+          'rounded-lg bg-nham-accent text-white hover:bg-nham-accent-hover !font-medium text-sm',
       },
       size: {
         default: 'h-9 px-4 py-2 has-[>svg]:px-3',

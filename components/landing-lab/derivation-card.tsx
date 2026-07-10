@@ -18,7 +18,7 @@ export function DerivationCard({
   demo: LabDemo;
   tone?: LabTone;
 }) {
-  const mutedText = tone === 'dark' ? 'text-[#B8A88E]' : 'text-[#8B7355]';
+  const mutedText = tone === 'dark' ? 'text-[#B8A88E]' : 'text-nham-text-muted';
 
   return (
     <div className="mx-auto flex min-h-[300px] w-full max-w-xl flex-col items-center gap-4">
@@ -34,8 +34,8 @@ export function DerivationCard({
               transition={{ duration: 0.25 }}
               className={`flex items-center gap-2 text-xs ${mutedText}`}
             >
-              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#2C2416]">
-                <Sparkles className="h-2.5 w-2.5 animate-pulse text-[#C9A87C]" />
+              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-nham-ink">
+                <Sparkles className="h-2.5 w-2.5 animate-pulse text-nham-accent" />
               </span>
               <span className="font-medium">
                 {demo.phase === 'matching'
@@ -59,13 +59,13 @@ export function DerivationCard({
           }
           className="w-full"
         >
-          <div className="rounded-2xl border border-[#E8D5B5]/60 bg-white p-5 text-left shadow-[0_20px_50px_-20px_rgba(44,36,22,0.18)]">
-            <div className="mb-3 flex items-center justify-between border-[#F0EAE0] border-b pb-3">
+          <div className="rounded-2xl border border-nham-border/60 bg-white p-5 text-left shadow-[0_20px_50px_-20px_rgba(44,36,22,0.18)]">
+            <div className="mb-3 flex items-center justify-between border-nham-hover border-b pb-3">
               <div className="flex items-center gap-2">
-                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#2C2416]">
-                  <Sparkles className="h-2.5 w-2.5 text-[#C9A87C]" />
+                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-nham-ink">
+                  <Sparkles className="h-2.5 w-2.5 text-nham-accent" />
                 </span>
-                <span className="font-bold text-[#8B7355] text-[10px] uppercase tracking-[0.2em]">
+                <span className="font-bold text-[10px] text-nham-text-muted uppercase tracking-[0.2em]">
                   {LAB_COPY.demo.analysis}
                 </span>
               </div>
@@ -84,20 +84,22 @@ export function DerivationCard({
                   }
                   className="flex items-center justify-between gap-3 text-sm"
                 >
-                  <span className="truncate text-[#6B5D4F]">{row.name}</span>
-                  <span className="shrink-0 font-mono font-semibold text-[#2C2416] tabular-nums">
+                  <span className="min-w-0 truncate text-nham-text-soft">
+                    {row.name}
+                  </span>
+                  <span className="shrink-0 font-mono font-semibold text-nham-text tabular-nums">
                     {row.cal}
                   </span>
                 </motion.div>
               ))}
 
-              <div className="mt-1 flex items-baseline justify-between border-[#F0EAE0] border-t pt-3">
-                <span className="font-serif text-[#2C2416] text-sm">
+              <div className="mt-1 flex items-baseline justify-between border-nham-hover border-t pt-3">
+                <span className="font-serif text-nham-text text-sm">
                   {LAB_COPY.demo.total}
                 </span>
                 <span className="font-mono font-semibold text-[#A9834E] text-lg tabular-nums">
                   {demo.fixture.totalRange}
-                  <span className="ml-1 font-sans text-[#8B7355] text-xs">
+                  <span className="ml-1 font-sans text-nham-text-muted text-xs">
                     {LAB_COPY.demo.unit}
                   </span>
                 </span>
@@ -105,7 +107,7 @@ export function DerivationCard({
 
               <button
                 type="button"
-                className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-full bg-[#2C2416] py-2.5 font-medium text-[#FEFBF6] text-xs transition-transform active:scale-[0.98]"
+                className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-full bg-nham-ink py-2.5 font-medium text-nham-surface text-xs transition-transform active:scale-[0.98]"
               >
                 {LAB_COPY.demo.save}
               </button>
