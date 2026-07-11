@@ -11,10 +11,14 @@ import {
 } from '@/hooks/meals/use-meal-mutations';
 import { useStreamAnalysis } from '@/hooks/meals/use-stream-analysis';
 
-/** One frame of the input-bar ticker; a new `key` flips the text in place. */
+/** One frame of the input-bar ticker; a new `key` flips the text in place.
+ *  `phase` frames are quiet sans labels; `item`/`macros` frames carry the
+ *  meal's own words (serif italic), with `detail` as the resolved kcal. */
 export interface StreamTickerFrame {
   key: string;
+  kind: 'phase' | 'item' | 'macros';
   text: string;
+  detail?: string;
 }
 
 export interface DashboardMealStream {
@@ -112,6 +116,7 @@ export function useDashboardMealLog({
     if (stream.items.length === 0 || stream.status === 'assembling') {
       setTicker({
         key: `phase-${stream.status}`,
+        kind: 'phase',
         text: getStreamingPhaseLabel(ts, stream.status),
       });
     }
@@ -121,7 +126,11 @@ export function useDashboardMealLog({
   useEffect(() => {
     const name = stream.items.at(-1);
     if (!name) return;
-    setTicker({ key: `name-${stream.items.length}`, text: `${name}…` });
+    setTicker({
+      key: `name-${stream.items.length}`,
+      kind: 'item',
+      text: `${name}…`,
+    });
   }, [stream.items]);
 
   // A resolved item — name + kcal.
@@ -130,16 +139,31 @@ export function useDashboardMealLog({
     if (!item) return;
     setTicker({
       key: `done-${item.id}`,
-      text: `${item.name} · ${Math.round(item.macros.calories)} kcal`,
+      kind: 'macros',
+      text: item.name,
+      detail: `${Math.round(item.macros.calories)} kcal`,
     });
   }, [stream.completedItems]);
 
   // Saving.
   useEffect(() => {
     if (isSaving) {
-      setTicker({ key: 'saving', text: t('saving') });
+      setTicker({ key: 'saving', kind: 'phase', text: t('saving') });
     }
   }, [isSaving, t]);
+
+  // Step the sidebar back with the dimmed sections while a run is live (the
+  // sidebar lives outside the dashboard tree, so it's flagged via <body>;
+  // see globals.css `body[data-meal-streaming]`).
+  const isActive = stream.isAnalyzing || isSaving;
+  useEffect(() => {
+    if (isActive) {
+      document.body.setAttribute('data-meal-streaming', '');
+    } else {
+      document.body.removeAttribute('data-meal-streaming');
+    }
+    return () => document.body.removeAttribute('data-meal-streaming');
+  }, [isActive]);
 
   // --- Auto-save -----------------------------------------------------------
   // The dashboard is quick capture — no confirm step. Undo (via the toast)
@@ -192,7 +216,7 @@ export function useDashboardMealLog({
   ]);
 
   const streaming: DashboardMealStream = {
-    isActive: stream.isAnalyzing || isSaving,
+    isActive,
     ticker,
     loaderIndex,
     error: stream.status === 'error' ? stream.error : null,

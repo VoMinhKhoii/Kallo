@@ -418,3 +418,13 @@
     display: none; /* WebKit (Safari/Chrome) */
   }
 }
+
+/* Dashboard meal-streaming focus: while the input bar streams an analysis,
+   the app sidebar steps back alongside the dimmed dashboard sections. The
+   flag is set on <body> by useDashboardMealLog; the aside's own transition
+   list includes opacity/filter. */
+body[data-meal-streaming] [data-app-sidebar] {
+  opacity: 0.5;
+  filter: saturate(0.7);
+  pointer-events: none;
+}

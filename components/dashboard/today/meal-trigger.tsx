@@ -78,13 +78,20 @@ function MealInputForm({
     wasActiveRef.current = isStreaming;
   }, [isStreaming, streaming.error]);
 
+  const isStreamingLive = isStreaming && !streaming.error;
+
   return (
     <form
       onSubmit={handleSubmit}
       className={cn(
-        'flex min-w-0 items-center gap-2 rounded-2xl border border-nham-border/70 bg-card px-3 shadow-none transition-colors focus-within:border-nham-accent/50 hover:border-nham-accent/50',
+        'flex min-w-0 items-center gap-2 rounded-2xl px-3 transition-colors',
         compact ? 'h-11' : 'h-12',
-        showTicker && 'border-nham-accent/50'
+        // While streaming, the box chrome falls away — just the loader and
+        // the flipping text on the page surface.
+        isStreamingLive
+          ? 'border border-transparent'
+          : 'border border-nham-border/70 bg-card shadow-none focus-within:border-nham-accent/50 hover:border-nham-accent/50',
+        streaming.error && 'border-nham-danger/40'
       )}
     >
       {streaming.error ? (
@@ -112,24 +119,36 @@ function MealInputForm({
         </div>
       ) : isStreaming ? (
         /* The bar becomes the stream: one loader for the whole run, the text
-           flipping in place as stages, item names, and macros arrive. */
+           flipping in place as stages, item names, and macros arrive. Stage
+           labels stay quiet sans; the meal's own words flip in serif italic
+           with the resolved kcal in tan. */
         <div
           aria-live="polite"
-          className="flex min-w-0 flex-1 items-center gap-2.5"
+          className="flex min-w-0 flex-1 items-center gap-3"
         >
           <span className="flex h-8 w-8 shrink-0 items-center justify-center text-nham-accent">
-            <Loader size={18} />
+            <Loader size={20} />
           </span>
           <AnimatePresence mode="wait" initial={false}>
             <motion.span
               key={streaming.ticker?.key ?? 'connecting'}
-              initial={{ opacity: 0, y: 9 }}
+              initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -9 }}
+              exit={{ opacity: 0, y: -10 }}
               transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
-              className="min-w-0 truncate text-nham-text text-sm"
+              className={cn(
+                'min-w-0 truncate text-sm',
+                streaming.ticker && streaming.ticker.kind !== 'phase'
+                  ? 'font-serif text-nham-text italic'
+                  : 'text-nham-text-muted'
+              )}
             >
               {streaming.ticker?.text ?? tm('analyzing')}
+              {streaming.ticker?.detail && (
+                <span className="ml-1.5 font-sans text-nham-accent not-italic tabular-nums">
+                  · {streaming.ticker.detail}
+                </span>
+              )}
             </motion.span>
           </AnimatePresence>
         </div>
