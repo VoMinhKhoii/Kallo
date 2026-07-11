@@ -269,6 +269,20 @@ The logging timeline writes `P: 38g  C: 72g  F: 14g` — letter, colon, space, v
 
 ---
 
+## Dashboard discipline (hardened 2026-07)
+
+The web dashboard (`components/dashboard/*`) is locked to these rules. They exist as tokens, not conventions — reach for the token, don't invent a value.
+
+**Type — exactly three sizes.** `text-hero` (44px stat numbers; the `--text-hero` theme token in `app/globals.css` carries weight 500, line-height 1, −0.04em tracking), `text-sm` (14px body: meal names, inputs, empty states), `text-xs` (12px labels + meta: eyebrows, section headers, chart ticks, heatmap labels, legend, tooltips). No `text-lg`, no bracket sizes, no fourth step. Both stat heroes (calories remaining, current weight) are `text-hero` — never differently sized.
+
+**Ink — three colors.** Espresso `--nham-text` for numbers and primary copy, taupe `--nham-text-muted` for everything secondary, tan `--nham-accent` as the single highlight (flame, chart line, focus rings). White appears only on the umber `--nham-btn` CTAs; terracotta `--nham-danger` only on live validation errors. Data-viz pigments (heatmap diverging scale, macro-bar gold/taupe/stone) are chart ink, not text ink — don't promote them.
+
+**Card chrome — one recipe.** `rounded-2xl border border-nham-border/60 bg-card p-4 shadow-nham-text/[0.03] shadow-sm` (the sidebar's crisp language) plus the shared hover: `transition-[border-color,box-shadow] duration-200 hover:border-nham-accent/50 hover:shadow-md hover:shadow-nham-text/[0.06]`. Inner elements are `rounded-xl`. No borderless floating-blob cards, no `rounded-[1.375rem]`, no 32px-blur shadows.
+
+**Section headers — one spec.** `font-medium text-xs uppercase tracking-[0.08em] text-nham-text-muted` on the left, a plain `text-xs` context label on the right (range, "Today"). Headers live outside the card.
+
+---
+
 ## Designing a new feature — the extrapolation rules
 
 When you add a feature that doesn't exist yet (Workouts, Sleep, Mood, Reminders, anything), don't generalize from "this is a Tailwind dashboard". And don't just rename meal-logging components either. **Find the feature's own mental model first, then borrow tokens to dress it.**

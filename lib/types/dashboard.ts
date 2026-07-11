@@ -65,6 +65,8 @@ export interface NutritionData {
 }
 
 export interface DashboardProfile {
+  /** Scopes client-side query caches (e.g. the meal-confirm choreography). */
+  userId: string;
   calorieTarget: number;
   proteinTargetG: number;
   carbsTargetG: number;
