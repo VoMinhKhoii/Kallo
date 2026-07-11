@@ -12,7 +12,6 @@
     "apps/mobile-flutter/lib/features/settings/panels/body_metrics.dart": 647,
     "apps/mobile-flutter/lib/shell/sidebar.dart": 642,
     "apps/mobile-flutter/lib/features/dashboard/widgets/today_section.dart": 636,
-    "lib/actions/groups.ts": 631,
     "hooks/meals/use-meal-mutations.ts": 630,
     "lib/ai/gemini.ts": 618,
     "apps/mobile-flutter/lib/features/logging/widgets/persisted_meal_card.dart": 618,

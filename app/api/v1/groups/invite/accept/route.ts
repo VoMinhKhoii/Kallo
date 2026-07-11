@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from 'next/server';
-import { acceptInvite } from '@/lib/actions/groups';
+import { acceptInvite } from '@/lib/actions/groups/friendship';
 import { serializeError } from '@/lib/errors';
 import { readJsonBody, requireUserId } from '../../_auth';
 

@@ -3,12 +3,12 @@ import type { ReactNode } from 'react';
 import { ConnectPanel } from '@/components/groups/invite/connect-panel';
 import { InviteAuthCta } from '@/components/groups/invite/invite-auth-cta';
 import { Link } from '@/i18n/navigation';
+import { getFriendshipStatus } from '@/lib/actions/groups/friendship';
 import {
-  getFriendshipStatus,
   getMyPublicProfile,
   getProfileBySlug,
-  type PublicProfile,
-} from '@/lib/actions/groups';
+} from '@/lib/actions/groups/profile';
+import type { PublicProfile } from '@/lib/actions/groups/types';
 import { createClient } from '@/lib/supabase/server';
 
 export const runtime = 'nodejs';
