@@ -905,7 +905,8 @@
     },
     "mealTrigger": {
       "close": "Close meal composer",
-      "send": "Send meal"
+      "send": "Send meal",
+      "analyzing": "Analyzing your meal…"
     },
     "weightCard": {
       "required": "Weight is required",
@@ -940,7 +941,12 @@
       "farUnder": "Far under"
     },
     "caloriesLogged": "kcal logged",
-    "mealReceiptsHint": "Your meal receipts will show up here"
+    "mealReceiptsHint": "Your meal receipts will show up here",
+    "streaming": {
+      "saved": "Meal saved",
+      "undo": "Undo",
+      "dismiss": "Dismiss"
+    }
   },
   "logging": {
     "title": "What did you eat?",

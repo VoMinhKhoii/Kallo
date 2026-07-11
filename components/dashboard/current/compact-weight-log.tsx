@@ -108,8 +108,8 @@ export function CompactWeightLog({
             aria-invalid={Boolean(errors.weightKg)}
             aria-describedby={errorId}
             className={cn(
-              'h-9 rounded-xl border-nham-border bg-card pr-8 font-mono text-sm shadow-none',
-              errors.weightKg && 'border-nham-danger'
+              'h-9 rounded-xl border-nham-border bg-card pr-8 font-mono text-sm shadow-none transition-colors hover:border-nham-accent/50',
+              errors.weightKg && 'border-nham-danger hover:border-nham-danger'
             )}
           />
           <span className="absolute top-1/2 right-3 -translate-y-1/2 text-nham-text-muted text-xs">

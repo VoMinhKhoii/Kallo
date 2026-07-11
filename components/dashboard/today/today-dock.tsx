@@ -6,14 +6,21 @@ import { useTranslations } from 'next-intl';
 import { CalorieRing } from '@/components/shared/calorie-ring';
 import { MacroBars } from '@/components/shared/macro-bars';
 import type { MealEntry, NutritionData } from '@/lib/types/dashboard';
+import { cn } from '@/lib/utils';
 import { MealList } from './meal-list';
 
 interface TodayDockProps {
   nutrition: NutritionData;
   meals: MealEntry[];
+  /** True while the input bar is streaming an analysis — the card leans in. */
+  isStreaming?: boolean;
 }
 
-export function TodayDock({ nutrition, meals }: TodayDockProps) {
+export function TodayDock({
+  nutrition,
+  meals,
+  isStreaming = false,
+}: TodayDockProps) {
   const t = useTranslations('dashboard');
   const remaining = Math.max(
     0,
@@ -53,7 +60,10 @@ export function TodayDock({ nutrition, meals }: TodayDockProps) {
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.45 }}
-      className="flex min-h-0 flex-col gap-4 rounded-2xl border border-nham-border/60 bg-card p-4 shadow-nham-text/[0.03] shadow-sm transition-[border-color,box-shadow] duration-200 hover:border-nham-accent/50 hover:shadow-md hover:shadow-nham-text/[0.06] xl:grid xl:h-full xl:grid-cols-[minmax(0,1fr)_minmax(240px,0.44fr)] xl:gap-5"
+      className={cn(
+        'flex min-h-0 flex-col gap-4 rounded-2xl border border-nham-border/60 bg-card p-4 shadow-nham-text/[0.03] shadow-sm transition-[border-color,box-shadow] duration-200 hover:border-nham-accent/50 hover:shadow-md hover:shadow-nham-text/[0.06] xl:grid xl:h-full xl:grid-cols-[minmax(0,1fr)_minmax(240px,0.44fr)] xl:gap-5',
+        isStreaming && 'border-nham-accent/60'
+      )}
       aria-label={t('today')}
     >
       <div className="flex min-w-0 flex-col justify-center">
@@ -86,7 +96,14 @@ export function TodayDock({ nutrition, meals }: TodayDockProps) {
               target={nutrition.calories.target}
               size={80}
               strokeWidth={5}
-              center={<Flame className="h-6 w-6 text-nham-accent" />}
+              center={
+                <Flame
+                  className={cn(
+                    'h-6 w-6 text-nham-accent',
+                    isStreaming && 'animate-pulse'
+                  )}
+                />
+              }
             />
           </div>
         </div>

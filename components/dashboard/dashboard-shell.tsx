@@ -8,6 +8,7 @@ import type {
   HeatmapRange,
   TimeRange,
 } from '@/lib/types/dashboard';
+import { cn } from '@/lib/utils';
 import { DashboardSectionState } from './dashboard-section-state';
 import { AdherenceHeatmap } from './progress/adherence-heatmap';
 import { HeatmapSkeleton } from './progress/progress-section-skeleton';
@@ -15,6 +16,7 @@ import { ProgressStory } from './progress/progress-story';
 import { FloatingMealTrigger, InlineMealTrigger } from './today/meal-trigger';
 import { TodayDock } from './today/today-dock';
 import { useDashboardDateRefresh } from './use-dashboard-date-refresh';
+import { useDashboardMealLog } from './use-dashboard-meal-log';
 import { useDashboardMeasurements } from './use-dashboard-measurements';
 import { useDashboardQueries } from './use-dashboard-queries';
 
@@ -68,6 +70,16 @@ export function DashboardShell({ profile }: DashboardShellProps) {
     hasMeasuredHeatmap,
     heatmapLoadErrorMessage: t('heatmapLoadError'),
   });
+  // In-place meal logging: the input streams the AI analysis into the Today
+  // card and auto-saves; the other sections step back while it runs.
+  const { submit, streaming, restoredDraft } = useDashboardMealLog({
+    userId: profile.userId,
+    todayDate,
+  });
+  const dimClass = cn(
+    'transition-[opacity,filter] duration-300',
+    streaming.isActive && 'pointer-events-none opacity-50 saturate-[0.7]'
+  );
 
   return (
     <main className="relative flex min-h-0 flex-1 flex-col overflow-y-auto overflow-x-hidden bg-nham-surface/30 font-sans-display">
@@ -90,7 +102,11 @@ export function DashboardShell({ profile }: DashboardShellProps) {
                 affordance, separated from the read-only Today display below.
                 Mobile uses the FloatingMealTrigger instead. */}
             <div className="hidden md:block">
-              <InlineMealTrigger />
+              <InlineMealTrigger
+                onSubmitMeal={submit}
+                streaming={streaming}
+                restoredDraft={restoredDraft}
+              />
             </div>
             <div className="xl:min-h-0 xl:flex-1">
               {dailyMealsQuery.isPending ? (
@@ -104,14 +120,18 @@ export function DashboardShell({ profile }: DashboardShellProps) {
                   }}
                 />
               ) : (
-                <TodayDock nutrition={todayNutrition} meals={todayMeals} />
+                <TodayDock
+                  nutrition={todayNutrition}
+                  meals={todayMeals}
+                  isStreaming={streaming.isActive}
+                />
               )}
             </div>
           </section>
 
           <section
             ref={progressContainerRef}
-            className="flex min-w-0 flex-col gap-1.5 xl:min-h-0"
+            className={cn('flex min-w-0 flex-col gap-1.5 xl:min-h-0', dimClass)}
           >
             <div className="flex items-center justify-between gap-3">
               <span className="font-medium text-nham-text-muted text-xs uppercase tracking-[0.08em]">
@@ -146,7 +166,9 @@ export function DashboardShell({ profile }: DashboardShellProps) {
             </div>
           </section>
 
-          <section className="flex min-w-0 flex-col gap-1.5 xl:min-h-0">
+          <section
+            className={cn('flex min-w-0 flex-col gap-1.5 xl:min-h-0', dimClass)}
+          >
             <div className="flex items-center justify-between gap-3">
               <span className="font-medium text-nham-text-muted text-xs uppercase tracking-[0.08em]">
                 {t('consistency')}
@@ -182,7 +204,11 @@ export function DashboardShell({ profile }: DashboardShellProps) {
         </div>
       </div>
 
-      <FloatingMealTrigger />
+      <FloatingMealTrigger
+        onSubmitMeal={submit}
+        streaming={streaming}
+        restoredDraft={restoredDraft}
+      />
     </main>
   );
 }

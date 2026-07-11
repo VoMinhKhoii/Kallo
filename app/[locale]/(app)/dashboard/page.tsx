@@ -5,6 +5,7 @@ import { getOnboardingProfile } from '@/lib/onboarding/actions';
 import type { DashboardProfile } from '@/lib/types/dashboard';
 
 const DEFAULT_PROFILE: DashboardProfile = {
+  userId: '',
   calorieTarget: 2000,
   proteinTargetG: 150,
   carbsTargetG: 250,
@@ -23,6 +24,7 @@ export default async function DashboardPage() {
   const profileRow = await getOnboardingProfile();
 
   const profile: DashboardProfile = {
+    userId: profileRow?.userId ?? DEFAULT_PROFILE.userId,
     calorieTarget: profileRow?.calorieTarget ?? DEFAULT_PROFILE.calorieTarget,
     proteinTargetG:
       profileRow?.proteinTargetG ?? DEFAULT_PROFILE.proteinTargetG,

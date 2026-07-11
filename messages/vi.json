@@ -905,7 +905,8 @@
     },
     "mealTrigger": {
       "close": "Đóng khung nhập bữa ăn",
-      "send": "Gửi bữa ăn"
+      "send": "Gửi bữa ăn",
+      "analyzing": "Đang phân tích bữa ăn…"
     },
     "weightCard": {
       "required": "Vui lòng nhập cân nặng",
@@ -940,7 +941,12 @@
       "farUnder": "Thiếu nhiều"
     },
     "caloriesLogged": "kcal đã ghi",
-    "mealReceiptsHint": "Những bữa ăn sẽ hiển thị ở đây"
+    "mealReceiptsHint": "Những bữa ăn sẽ hiển thị ở đây",
+    "streaming": {
+      "saved": "Đã lưu bữa ăn",
+      "undo": "Hoàn tác",
+      "dismiss": "Bỏ qua"
+    }
   },
   "logging": {
     "title": "Bạn đã ăn gì?",
