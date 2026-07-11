@@ -1,16 +1,9 @@
-import { randomUUID } from 'node:crypto';
 import { toJSONSchema } from 'zod';
 import type { AppDb } from '@/lib/db';
 import { fetchWithTimeout } from '@/lib/fetch-with-timeout';
-import {
-  type AnalysisModelBudgetWorkKind,
-  type AnalysisModelProviderErrorCategory,
-  checkNonessentialAnalysisGuards,
-  type RecordAnalysisModelBudgetEventInput,
-  recordAnalysisModelBudgetEvent,
-} from '@/lib/rate-limit/analysis-guards';
+import type { AnalysisModelBudgetWorkKind } from '@/lib/rate-limit/analysis-guards';
 import { capitalizeFirst } from '@/lib/utils';
-import type { GeminiClient, StreamOptions } from '../gemini';
+import type { GeminiClient } from '../gemini';
 import {
   buildLanguageCorrectionMessage,
   checkDecompositionLanguage,
@@ -36,6 +29,13 @@ import type {
   UserContext,
 } from '../types';
 import { assembleResult } from './assembly';
+import {
+  ANALYSIS_MODEL_BUDGET_ROUTE,
+  ANALYSIS_MODEL_PROVIDER,
+  classifyProviderError,
+  createBudgetAttemptRecorder,
+  recordAnalysisModelBudgetEventBestEffort,
+} from './budget-telemetry';
 import { countCanonicalNameMisses } from './canonical-name-validator';
 import {
   assertMealFactsShape,
@@ -46,6 +46,10 @@ import {
 import { readBooleanEnv } from './config/feature-flags';
 import { resolveModelProfile } from './config/model-profile';
 import { isPipelineV2Enabled } from './config/pipeline-feature-flag';
+import {
+  DECOMPOSITION_TIMEOUT_MS,
+  NUTRITION_TIMEOUT_MS,
+} from './config/stage-timeouts';
 import { deriveExpectedState } from './cooking-method-state';
 import {
   buildDecompositionCacheKey,
@@ -70,6 +74,7 @@ import {
   ingredientGrams as decompositionIngredientGrams,
   ingredientDisplayName as decompositionIngredientName,
 } from './ingredient-accessors';
+import { logMetrics } from './metrics';
 import {
   computeMacroBaseMap,
   type RawNutritionAdjustment,
@@ -78,23 +83,13 @@ import {
 } from './nutrition';
 import { aggregateRrfMeasurements } from './rrf-aggregation';
 import { mealDecompositionSchema, nutritionAdjustmentSchema } from './schemas';
-import {
-  createShadowGuard,
-  getPrimaryP95Ms,
-  isEmbeddingRateLimited,
-} from './shadow/shadow-guards';
-import {
-  runShadowAsync,
-  type ShadowGuard,
-  type ShadowRunnerDeps,
-  type ShadowRunPersistRow,
-} from './shadow/shadow-runner';
-import { isShadowSampled } from './shadow/shadow-sampling';
+import { type ShadowConfig, scheduleShadowRun } from './shadow/shadow-dispatch';
+import { withStageLog } from './stage-instrumentation';
 import {
   buildPipelineRunRow,
   writePipelineRun,
 } from './telemetry/run-telemetry';
-import { buildLlmStageTrace, logStage } from './telemetry/trace';
+import { buildLlmStageTrace } from './telemetry/trace';
 import {
   classifyAnomalies,
   detectAnomalies,
@@ -112,48 +107,6 @@ const DECOMPOSITION_MODEL = MODEL_PROFILE.decompositionModel;
 /** Model for LLM Call 2 (nutrition estimation). */
 const NUTRITION_MODEL = MODEL_PROFILE.nutritionModel;
 
-const NUTRITION_PROMPT_LABEL_CANDIDATE =
-  process.env.SHADOW_CANDIDATE_PROMPT_LABEL ?? 'production';
-const NUTRITION_MODEL_CANDIDATE =
-  process.env.SHADOW_CANDIDATE_MODEL ?? NUTRITION_MODEL;
-const ANALYSIS_MODEL_BUDGET_ROUTE = '/api/analyze-meal';
-const ANALYSIS_MODEL_PROVIDER = 'gemini';
-const SHADOW_PRIMARY_P95_THRESHOLD_MS = 4000;
-const SHADOW_DB_POOL_WAIT_THRESHOLD_MS = 1000;
-
-/**
- * Per-stage Gemini timeout (ms).
- *
- * Phase B baseline (2026-05-08) showed:
- *   - decomposition cold p95: 10707 ms (lightweight prompt, smaller output)
- *   - nutrition cold p95:     24377 ms (full-meal output, more variance)
- *
- * A single ceiling either aborts legitimate slow nutrition runs (too tight)
- * or wastes ~10 s of recovery time when decomposition genuinely hangs (too
- * loose). Splitting the budget gives each stage a value derived from its
- * own observed p95 + headroom.
- *
- * Defaults:
- *   - decomposition: 20 s  (≈ p95 × 1.9, leaves room for transient 5xx)
- *   - nutrition:     30 s  (≈ p95 × 1.25, the realistic worst case)
- *
- * `LLM_TIMEOUT_MS` is honoured as a global fallback for both when set; the
- * stage-specific envs override it when present.
- */
-function readStageTimeoutMs(envKey: string, fallbackMs: number): number {
-  const raw = process.env[envKey] ?? process.env.LLM_TIMEOUT_MS;
-  if (!raw) return fallbackMs;
-  const parsed = Number(raw);
-  return Number.isInteger(parsed) && parsed > 0 ? parsed : fallbackMs;
-}
-const DECOMPOSITION_TIMEOUT_MS = readStageTimeoutMs(
-  'PIPELINE_DECOMPOSITION_TIMEOUT_MS',
-  20_000
-);
-const NUTRITION_TIMEOUT_MS = readStageTimeoutMs(
-  'PIPELINE_NUTRITION_TIMEOUT_MS',
-  30_000
-);
 const L4_CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 const DECOMPOSITION_SCHEMA_HASH = sha256Hex(
   stableStringify(toJSONSchema(mealDecompositionSchema))
@@ -181,15 +134,8 @@ export interface AnalyzeMealTraceContext {
   promptVersionsUsed: Map<string, string>;
 }
 
-export interface ShadowConfig {
-  enabled: boolean;
-  /** Optional override of the locked 5% sampling rate for tests. */
-  rate?: number;
-  persistShadowRun?: ShadowRunnerDeps['persistShadowRun'];
-  guard?: ShadowGuard;
-  candidatePromptLabel?: string;
-  candidateModel?: string;
-}
+export type { PipelineMetrics } from './metrics';
+export type { ShadowConfig } from './shadow/shadow-dispatch';
 
 export interface AnalyzeMealOptions {
   shadow?: ShadowConfig;
@@ -207,8 +153,6 @@ interface RunPipelineOptions {
   };
 }
 
-type StageName = 'decomposition' | 'matching' | 'nutrition' | 'assembly';
-
 type DecompositionLanguageMetadata = {
   inputLanguage: UserContext['inputLanguage'] | null;
   outputLanguage: UserContext['outputLanguage'] | null;
@@ -223,192 +167,6 @@ function attachLanguageMetadata(
   metadata: DecompositionLanguageMetadata
 ): MealDecomposition & { languageMetadata: DecompositionLanguageMetadata } {
   return { ...decomposition, languageMetadata: metadata };
-}
-
-/**
- * Wraps a pipeline stage with logStage instrumentation. No-op when trace is undefined.
- */
-async function withStageLog<T>(
-  trace: AnalyzeMealTraceContext | undefined,
-  stage: StageName,
-  stageIndex: number,
-  inputJson: unknown,
-  fn: (ctx: { stageLogId: string }) => Promise<T>
-): Promise<T> {
-  if (!trace) return fn({ stageLogId: '' });
-  const stageLogId = randomUUID();
-  const t0 = Date.now();
-  try {
-    const result = await fn({ stageLogId });
-    logStage({
-      db: trace.db,
-      requestId: trace.requestId,
-      stageLogId,
-      stage,
-      stageIndex,
-      inputJson,
-      outputJson: result,
-      status: 'success',
-      durationMs: Date.now() - t0,
-    });
-    return result;
-  } catch (e) {
-    const message = e instanceof Error ? e.message : String(e);
-    logStage({
-      db: trace.db,
-      requestId: trace.requestId,
-      stageLogId,
-      stage,
-      stageIndex,
-      inputJson,
-      outputJson: null,
-      status: 'error',
-      error: message,
-      durationMs: Date.now() - t0,
-    });
-    throw e;
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Structured logging
-// ---------------------------------------------------------------------------
-
-export interface PipelineMetrics {
-  decomposeMs: number;
-  matchMs: number;
-  nutritionMs: number;
-  assemblyMs: number;
-  totalMs: number;
-  ingredientCount: number;
-  matchedCount: number;
-  unmatchedCount: number;
-  mealItemCount: number;
-  anomalies: ValidationAnomaly[];
-  /** Phase A substage fire-rate signals (Phase A.4). */
-  cacheHitL4: boolean;
-  languageRetryCount: number;
-  nutritionAnomalyRetry: boolean;
-  nutritionEscalated: boolean;
-  aliasFallbackFired: boolean;
-  /**
-   * Per-chunk extractor cost (Phase A.7 / C8). Sums sync regex+JSON-parse
-   * time across every stream chunk per stage. Lets us decide whether
-   * deferring extraction off the chunk-loop is worth doing.
-   */
-  decomposeChunkExtractMs: number;
-  decomposeChunkCount: number;
-  nutritionChunkExtractMs: number;
-  nutritionChunkCount: number;
-}
-
-function logMetrics(metrics: PipelineMetrics): void {
-  console.info('[pipeline] metrics', JSON.stringify(metrics));
-}
-
-function recordAnalysisModelBudgetEventBestEffort(
-  input: RecordAnalysisModelBudgetEventInput
-): void {
-  // ANALYSIS_BUDGET_EVENTS_ENABLED=false silences the always-on telemetry
-  // table writes (3/request) when chasing pool contention or DB cost spikes.
-  if (!readBooleanEnv('ANALYSIS_BUDGET_EVENTS_ENABLED', true)) return;
-  void recordAnalysisModelBudgetEvent(input).catch((error) => {
-    console.error('[ai/pipeline] failed to write model budget event', error);
-  });
-}
-
-function createBudgetAttemptRecorder(args: {
-  db: AppDb;
-  requestId: string | null;
-  workKind: AnalysisModelBudgetWorkKind;
-  model: string;
-  providerErrorState?: { recorded: boolean };
-}): NonNullable<StreamOptions['onAttemptComplete']> {
-  return ({ error, inputTokens, model, outputTokens }) => {
-    const errorCategory = error == null ? null : classifyProviderError(error);
-
-    if (inputTokens == null && outputTokens == null && errorCategory == null) {
-      return;
-    }
-
-    if (errorCategory) {
-      if (args.providerErrorState) {
-        args.providerErrorState.recorded = true;
-      }
-    }
-
-    recordAnalysisModelBudgetEventBestEffort({
-      db: args.db,
-      requestId: args.requestId,
-      route: ANALYSIS_MODEL_BUDGET_ROUTE,
-      workKind: args.workKind,
-      provider: ANALYSIS_MODEL_PROVIDER,
-      model: model || args.model,
-      requestCount: 0,
-      inputTokens,
-      outputTokens,
-      errorCategory,
-    });
-  };
-}
-
-function getErrorStatus(error: unknown): number | null {
-  if (
-    error &&
-    typeof error === 'object' &&
-    'status' in error &&
-    typeof (error as { status?: unknown }).status === 'number'
-  ) {
-    return (error as { status: number }).status;
-  }
-
-  if (!(error instanceof Error)) {
-    return null;
-  }
-
-  const statusMatch = error.message.match(/\b(408|429|500|502|503|504)\b/);
-  return statusMatch ? Number.parseInt(statusMatch[1], 10) : null;
-}
-
-function classifyProviderError(
-  error: unknown
-): AnalysisModelProviderErrorCategory | null {
-  const message = error instanceof Error ? error.message : String(error);
-  const status = getErrorStatus(error);
-
-  if (/quota/i.test(message)) {
-    return 'quota';
-  }
-
-  if (status === 429) {
-    return 'rate_limit';
-  }
-
-  if (
-    status === 408 ||
-    status === 504 ||
-    /timeout|timed out|AbortError/i.test(message)
-  ) {
-    return 'timeout';
-  }
-
-  if (status != null && status >= 500) {
-    return 'server_error';
-  }
-
-  if (/UNAVAILABLE/i.test(message)) {
-    return 'server_error';
-  }
-
-  if (
-    /fetch failed|network error|socket hang up|ECONNRESET|EAI_AGAIN/i.test(
-      message
-    )
-  ) {
-    return 'network';
-  }
-
-  return null;
 }
 
 /**
@@ -474,14 +232,20 @@ export async function analyzeMeal(
       }
     );
     scheduleShadowRun({
-      rawInput,
-      userContext,
       db,
-      gemini,
       traceContext,
       response,
       primaryMs: Date.now() - analyzeStart,
       shadow: options?.shadow,
+      runCandidate: (candidateModel) =>
+        runPipeline(rawInput, userContext, db, gemini, undefined, undefined, {
+          matchingConcurrency: 1,
+          nutritionModel: candidateModel,
+          budget: {
+            workKind: 'shadow',
+            requestId: traceContext?.requestId ?? null,
+          },
+        }),
     });
     return response;
   } catch (error) {
@@ -1345,141 +1109,4 @@ function countAmbiguityFlags(
     }
   }
   return counts;
-}
-
-function scheduleShadowRun(args: {
-  rawInput: string;
-  userContext: UserContext;
-  db: AppDb;
-  gemini: GeminiClient;
-  traceContext?: AnalyzeMealTraceContext;
-  response: PipelineResponse;
-  primaryMs: number;
-  shadow?: ShadowConfig;
-}): void {
-  if (!args.traceContext) {
-    return;
-  }
-
-  const shadowCfg = args.shadow ?? defaultShadowConfigFromEnv(args.db);
-  const candidateModel = shadowCfg.candidateModel ?? NUTRITION_MODEL_CANDIDATE;
-  const guard =
-    shadowCfg.guard ??
-    defaultShadowGuard({
-      db: args.db,
-      requestId: args.traceContext.requestId,
-      candidateModel,
-    });
-  guard.onPrimaryComplete(args.primaryMs);
-
-  if (
-    !shadowCfg.enabled ||
-    !isShadowSampled(args.traceContext.requestId, {
-      enabled: true,
-      rate: shadowCfg.rate,
-    })
-  ) {
-    return;
-  }
-
-  // Defer to a microtask so the response can stream to the client first.
-  // We also wait for the parent pipeline_runs row to persist before kicking
-  // off the shadow path: pipeline_shadow_runs.primary_run_id is an FK to
-  // pipeline_runs.id, and the parent insert is fire-and-forget. Without this
-  // await the shadow row could race the parent and either drop its FK link
-  // (set null) or fail the insert outright.
-  queueMicrotask(async () => {
-    if (args.response.__telemetryRunPersisted) {
-      try {
-        await args.response.__telemetryRunPersisted;
-      } catch {
-        // The parent write already logged its own error. Continue: the
-        // shadow row will simply land with primary_run_id=null and the
-        // outcome captured below, which still gives us divergence data.
-      }
-    }
-    void runShadowAsync(
-      {
-        requestId: args.traceContext?.requestId ?? '',
-        primary: args.response,
-        primaryRunId: args.response.__telemetryRunId,
-        candidatePromptLabel:
-          shadowCfg.candidatePromptLabel ?? NUTRITION_PROMPT_LABEL_CANDIDATE,
-        candidateModel,
-      },
-      {
-        runCandidate: () =>
-          runPipeline(
-            args.rawInput,
-            args.userContext,
-            args.db,
-            args.gemini,
-            undefined,
-            undefined,
-            {
-              matchingConcurrency: 1,
-              nutritionModel: candidateModel,
-              budget: {
-                workKind: 'shadow',
-                requestId: args.traceContext?.requestId ?? null,
-              },
-            }
-          ),
-        persistShadowRun:
-          shadowCfg.persistShadowRun ?? persistShadowRunDefault(args.db),
-        now: () => Date.now(),
-      },
-      guard
-    );
-  });
-}
-
-function defaultShadowConfigFromEnv(db: AppDb): ShadowConfig {
-  return {
-    enabled: readBooleanEnv('SHADOW_RUNNER_ENABLED', false),
-    persistShadowRun: persistShadowRunDefault(db),
-  };
-}
-
-function defaultShadowGuard(args: {
-  db: AppDb;
-  requestId: string;
-  candidateModel: string;
-}): ShadowGuard {
-  return createShadowGuard({
-    primaryP95Ms: getPrimaryP95Ms,
-    primaryP95ThresholdMs: SHADOW_PRIMARY_P95_THRESHOLD_MS,
-    dbPoolWaitMs: () => 0,
-    dbPoolWaitThresholdMs: SHADOW_DB_POOL_WAIT_THRESHOLD_MS,
-    embeddingRateLimited: isEmbeddingRateLimited,
-    nonessentialGuard: () =>
-      checkNonessentialAnalysisGuards({
-        db: args.db,
-        requestId: args.requestId,
-        route: ANALYSIS_MODEL_BUDGET_ROUTE,
-        workKind: 'shadow',
-        provider: ANALYSIS_MODEL_PROVIDER,
-        model: args.candidateModel,
-        reserve: true,
-      }),
-  });
-}
-
-function persistShadowRunDefault(
-  db: AppDb
-): ShadowRunnerDeps['persistShadowRun'] {
-  return async (row: ShadowRunPersistRow) => {
-    const { pipelineShadowRuns } = await import('@/lib/db/schema');
-    await db.insert(pipelineShadowRuns).values({
-      requestId: row.requestId,
-      primaryRunId: row.primaryRunId,
-      candidatePromptLabel: row.candidatePromptLabel,
-      candidateModel: row.candidateModel,
-      primaryOutput: row.primaryOutput,
-      candidateOutput: row.candidateOutput,
-      divergence: row.divergence,
-      outcome: row.outcome,
-      candidateMs: row.candidateMs,
-    });
-  };
 }
