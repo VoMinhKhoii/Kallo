@@ -84,11 +84,13 @@ export function AdherenceHeatmap({ data, range }: AdherenceHeatmapProps) {
     <TooltipProvider delayDuration={100}>
       <div className="flex h-full flex-col">
         {/* The month-header row and the label+grid row live in one column so
-            the whole block centers vertically as a unit, while the day labels
+            the whole block centers as a unit — vertically AND horizontally
+            (the year grid is height-bound, so a wide card would otherwise
+            leave all its slack as a dead band on the right). The day labels
             sit in a fixed-width gutter that keeps them level with the rows. */}
         <div
           ref={gridRef}
-          className="flex min-h-0 flex-1 flex-col justify-center"
+          className="flex min-h-0 flex-1 flex-col items-center justify-center"
         >
           <div className="min-w-0">
             <div
@@ -195,9 +197,13 @@ export function AdherenceHeatmap({ data, range }: AdherenceHeatmapProps) {
                                 <div
                                   className={cn(
                                     'absolute inset-0 rounded-[3px]',
+                                    // Empty cells take their tint from the
+                                    // muted-ink taupe so the grid reads on
+                                    // the white card; future/outside days
+                                    // recede to a fainter step.
                                     isMuted
-                                      ? 'bg-nham-track/55 opacity-70'
-                                      : 'bg-nham-track/30',
+                                      ? 'bg-nham-text-muted/6'
+                                      : 'bg-nham-text-muted/12',
                                     isPartial && 'border border-nham-border'
                                   )}
                                 />
