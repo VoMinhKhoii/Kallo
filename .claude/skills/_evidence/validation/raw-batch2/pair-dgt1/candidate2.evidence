@@ -1,0 +1,466 @@
+=== LOG ===
+861c2e7 chore(ttr): add reusable task templates for bug reports and meeting minutes
+87c0c65 Merge pull request #175 from VoMinhKhoii/worktree-threads-typography-dashboard
+8a80c07 docs(design): fold the mobile system into the nham-design skill
+=== STATUS ===
+ M components/logging/input/barcode-product-step.tsx
+ M components/logging/input/barcode-scanner-dialog.tsx
+ M lib/actions/__tests__/barcode.test.ts
+ M lib/actions/barcode.ts
+ M lib/barcode/openfoodfacts.ts
+ M lib/db/schema.ts
+ M messages/en.json
+ M messages/vi.json
+?? supabase/migrations/20260705120000_add_product_serving_overrides.sql
+=== DIFF (working tree vs planted HEAD) ===
+diff --git a/components/logging/input/barcode-product-step.tsx b/components/logging/input/barcode-product-step.tsx
+index 8f451d6..9e00dd2 100644
+--- a/components/logging/input/barcode-product-step.tsx
++++ b/components/logging/input/barcode-product-step.tsx
+@@ -1,8 +1,8 @@
+ 'use client';
+ 
+-import { ArrowLeft, Loader2, Minus, Plus } from 'lucide-react';
++import { ArrowLeft, Loader2, Minus, Pencil, Plus } from 'lucide-react';
+ import { useTranslations } from 'next-intl';
+-import { useMemo, useState } from 'react';
++import { useEffect, useMemo, useState } from 'react';
+ import { MAX_FOOD_ITEM_GRAMS } from '@/lib/barcode/constants';
+ import type { ParsedBarcodeProduct } from '@/lib/barcode/openfoodfacts';
+ 
+@@ -43,6 +43,14 @@ interface BarcodeProductStepProps {
+   onBack: () => void;
+   /** Called with the resolved gram amount to stage. */
+   onConfirm: (grams: number) => void;
++  /** Persist the user's serving-size override for this product. Resolves true
++   *  on success so the step can switch to serving mode. */
++  onSaveServingOverride: (
++    servingSizeG: number,
++    label: string | null
++  ) => Promise<boolean>;
++  /** Remove the saved override, reverting to the shared default. */
++  onClearServingOverride: () => Promise<boolean>;
+ }
+ 
+ /** The "quantity" step of the barcode dialog. Lets the user pick an amount by
+@@ -57,28 +65,46 @@ export function BarcodeProductStep({
+   isStaging,
+   onBack,
+   onConfirm,
++  onSaveServingOverride,
++  onClearServingOverride,
+ }: BarcodeProductStepProps) {
+   const t = useTranslations('logging');
+-  const { servingSizeG, packageSizeG } = product;
++  const { packageSizeG } = product;
++  const override = product.servingOverride ?? null;
++  // The user's saved serving wins over the shared OFF serving size, and can
++  // enable serving mode even when OFF provides no serving at all.
++  const effectiveServingG = override?.servingSizeG ?? product.servingSizeG;
+ 
+   // Available modes, in priority order. Grams is always offered as a fallback.
+   const modes = useMemo<AmountMode[]>(() => {
+     const list: AmountMode[] = [];
+-    if (servingSizeG) list.push('serving');
++    if (effectiveServingG) list.push('serving');
+     if (packageSizeG) list.push('package');
+     list.push('grams');
+     return list;
+-  }, [servingSizeG, packageSizeG]);
++  }, [effectiveServingG, packageSizeG]);
+ 
+   const [mode, setMode] = useState<AmountMode>(modes[0]);
+   const [servings, setServings] = useState(1);
+   const [customGrams, setCustomGrams] = useState(
+-    clampGrams(Math.round(servingSizeG ?? packageSizeG ?? 100))
++    clampGrams(Math.round(effectiveServingG ?? packageSizeG ?? 100))
+   );
+ 
++  // Serving-override editor state.
++  const [isEditingServing, setIsEditingServing] = useState(false);
++  const [draftGrams, setDraftGrams] = useState(1);
++  const [draftLabel, setDraftLabel] = useState('');
++  const [isSavingOverride, setIsSavingOverride] = useState(false);
++
++  // If a mode disappears (e.g. the serving override was cleared and OFF had no
++  // serving), fall back to the first still-available mode.
++  useEffect(() => {
++    if (!modes.includes(mode)) setMode(modes[0]);
++  }, [modes, mode]);
++
+   const grams =
+-    mode === 'serving' && servingSizeG
+-      ? clampGrams(Math.round(servings * servingSizeG))
++    mode === 'serving' && effectiveServingG
++      ? clampGrams(Math.round(servings * effectiveServingG))
+       : mode === 'package' && packageSizeG
+         ? clampGrams(Math.round(packageSizeG))
+         : clampGrams(customGrams);
+@@ -88,6 +114,34 @@ export function BarcodeProductStep({
+   const adjustGrams = (delta: number) =>
+     setCustomGrams((g) => clampGrams(g + delta));
+ 
++  const openServingEditor = () => {
++    setDraftGrams(clampGrams(Math.round(effectiveServingG ?? 100)));
++    setDraftLabel(override?.label ?? '');
++    setIsEditingServing(true);
++  };
++
++  const handleSaveServing = async () => {
++    setIsSavingOverride(true);
++    const ok = await onSaveServingOverride(
++      clampGrams(Math.round(draftGrams)),
++      draftLabel.trim() || null
++    );
++    setIsSavingOverride(false);
++    if (ok) {
++      setIsEditingServing(false);
++      // A saved serving is an explicit choice — surface it as the active mode.
++      setMode('serving');
++      setServings(1);
++    }
++  };
++
++  const handleClearServing = async () => {
++    setIsSavingOverride(true);
++    const ok = await onClearServingOverride();
++    setIsSavingOverride(false);
++    if (ok) setIsEditingServing(false);
++  };
++
+   const modeLabel: Record<AmountMode, string> = {
+     serving: t('barcodeAmountServing'),
+     package: t('barcodeAmountPackage'),
+@@ -151,7 +205,7 @@ export function BarcodeProductStep({
+         ) : null}
+ 
+         {/* Amount control */}
+-        {mode === 'serving' && servingSizeG ? (
++        {mode === 'serving' && effectiveServingG ? (
+           <div className="space-y-2">
+             <label htmlFor="servings-input" className={FIELD_LABEL}>
+               {t('barcodeServingsLabel')}
+@@ -193,7 +247,8 @@ export function BarcodeProductStep({
+               </button>
+             </div>
+             <span className="block font-sans-display text-[#8B8682] text-[12px] tabular-nums">
+-              {t('barcodePerServing', { grams: servingSizeG })} ·{' '}
++              {override?.label ? `${override.label} · ` : ''}
++              {t('barcodePerServing', { grams: effectiveServingG })} ·{' '}
+               {t('barcodeTotalGrams', { grams })}
+             </span>
+           </div>
+@@ -267,6 +322,99 @@ export function BarcodeProductStep({
+           </div>
+         ) : null}
+ 
++        {/* Custom serving-size override — remember a personal serving for this
++            product (e.g. "2 pieces = 22g"). Available in every mode so a user
++            can define a serving even when OFF provides none. */}
++        {isEditingServing ? (
++          <div className="space-y-3 rounded-[20px] border border-[#EAE7E0] bg-white p-4">
++            <div>
++              <span className={FIELD_LABEL}>
++                {t('barcodeServingSizeLabel')}
++              </span>
++              <p className="mt-0.5 font-sans-display text-[#8B8682] text-[12px] leading-snug">
++                {t('barcodeServingSizeHelp')}
++              </p>
++            </div>
++            <div className="flex items-center gap-2">
++              <input
++                id="serving-override-grams"
++                type="number"
++                min="1"
++                max={MAX_GRAMS}
++                value={draftGrams}
++                aria-label={t('barcodeServingSizeLabel')}
++                onChange={(e) =>
++                  setDraftGrams(
++                    clampGrams(Number.parseInt(e.target.value, 10) || 0)
++                  )
++                }
++                className={NUMBER_INPUT}
++              />
++              <span className="font-sans-display text-[#8B8682] text-[14px]">
++                g
++              </span>
++            </div>
++            <div className="space-y-1">
++              <label htmlFor="serving-override-label" className={FIELD_LABEL}>
++                {t('barcodeServingLabelLabel')}
++              </label>
++              <input
++                id="serving-override-label"
++                type="text"
++                maxLength={60}
++                value={draftLabel}
++                placeholder={t('barcodeServingLabelPlaceholder')}
++                onChange={(e) => setDraftLabel(e.target.value)}
++                className="h-10 w-full rounded-lg border border-[#EAE7E0] bg-white px-3 font-sans-display text-[#2C2416] text-[14px] focus:border-[#C9A87C] focus:outline-none focus:ring-1 focus:ring-[#C9A87C]/40"
++              />
++            </div>
++            <div className="flex items-center justify-between gap-2 pt-1">
++              {override ? (
++                <button
++                  type="button"
++                  onClick={handleClearServing}
++                  disabled={isSavingOverride}
++                  className="font-medium font-sans-display text-[#8B8682] text-[13px] transition-colors hover:text-nham-danger disabled:opacity-50"
++                >
++                  {t('barcodeResetServing')}
++                </button>
++              ) : (
++                <button
++                  type="button"
++                  onClick={() => setIsEditingServing(false)}
++                  disabled={isSavingOverride}
++                  className="font-medium font-sans-display text-[#8B8682] text-[13px] transition-colors hover:text-[#2C2416] disabled:opacity-50"
++                >
++                  {t('barcodeCancel')}
++                </button>
++              )}
++              <button
++                type="button"
++                onClick={handleSaveServing}
++                disabled={isSavingOverride || draftGrams < 1}
++                aria-busy={isSavingOverride}
++                className="inline-flex touch-manipulation items-center justify-center gap-2 rounded-xl bg-[#2C2416] px-4 py-2 font-medium font-sans-display text-[#FDFCF8] text-[13px] shadow-sm transition-colors hover:bg-[#1C1917] disabled:opacity-50"
++              >
++                {isSavingOverride ? (
++                  <Loader2 className="h-4 w-4 animate-spin" />
++                ) : null}
++                {t('barcodeSaveServing')}
++              </button>
++            </div>
++          </div>
++        ) : (
++          <button
++            type="button"
++            onClick={openServingEditor}
++            className="flex w-full touch-manipulation items-center justify-center gap-2 rounded-xl border border-[#EAE7E0] border-dashed bg-white/50 px-4 py-2.5 font-medium font-sans-display text-[#8B8682] text-[13px] transition-colors hover:border-[#C9A87C]/50 hover:text-[#2C2416]"
++          >
++            <Pencil className="h-3.5 w-3.5" />
++            {override
++              ? t('barcodeEditServingSize')
++              : t('barcodeSetServingSize')}
++          </button>
++        )}
++
+         {/* Nutrition for the selected amount — big Lora calorie figure with a
+             tabular macro row underneath (per-amount, not per-100g). */}
+         <div className="rounded-[20px] border border-[#EAE7E0] bg-white p-4">
+diff --git a/components/logging/input/barcode-scanner-dialog.tsx b/components/logging/input/barcode-scanner-dialog.tsx
+index 5f63bae..8927431 100644
+--- a/components/logging/input/barcode-scanner-dialog.tsx
++++ b/components/logging/input/barcode-scanner-dialog.tsx
+@@ -14,6 +14,8 @@ import {
+ import { Input } from '@/components/ui/input';
+ import { useBarcodeCameraScanner } from '@/hooks/meals/use-barcode-camera-scanner';
+ import {
++  clearServingOverrideAction,
++  saveServingOverrideAction,
+   searchBarcodeAction,
+   stageBarcodeMealAction,
+ } from '@/lib/actions/barcode';
+@@ -145,6 +147,50 @@ export function BarcodeScannerDialog({
+     }
+   };
+ 
++  const handleSaveServingOverride = async (
++    servingSizeG: number,
++    label: string | null
++  ): Promise<boolean> => {
++    if (!product) return false;
++    try {
++      const res = await saveServingOverrideAction({
++        barcode: product.barcode,
++        servingSizeG,
++        label,
++      });
++      if (!res.success) {
++        toast.error(t(`barcodeError.${res.code}`));
++        return false;
++      }
++      // Reflect the saved override locally so the picker re-derives its serving
++      // size without a re-fetch. Same barcode ⇒ the step doesn't remount.
++      setProduct((p) => (p ? { ...p, servingOverride: res.data } : p));
++      toast.success(t('barcodeServingSaved'));
++      return true;
++    } catch {
++      toast.error(t('barcodeError.server_error'));
++      return false;
++    }
++  };
++
++  const handleClearServingOverride = async (): Promise<boolean> => {
++    if (!product) return false;
++    try {
++      const res = await clearServingOverrideAction({
++        barcode: product.barcode,
++      });
++      if (!res.success) {
++        toast.error(t(`barcodeError.${res.code}`));
++        return false;
++      }
++      setProduct((p) => (p ? { ...p, servingOverride: null } : p));
++      return true;
++    } catch {
++      toast.error(t('barcodeError.server_error'));
++      return false;
++    }
++  };
++
+   const handleClose = () => {
+     onOpenChange(false);
+     stopScanner();
+@@ -359,6 +405,8 @@ export function BarcodeScannerDialog({
+             isStaging={isStaging}
+             onBack={() => setStep('input')}
+             onConfirm={handleStageMeal}
++            onSaveServingOverride={handleSaveServingOverride}
++            onClearServingOverride={handleClearServingOverride}
+           />
+         ) : null}
+       </DialogContent>
+diff --git a/lib/actions/__tests__/barcode.test.ts b/lib/actions/__tests__/barcode.test.ts
+index 9003a49..05d4eb4 100644
+--- a/lib/actions/__tests__/barcode.test.ts
++++ b/lib/actions/__tests__/barcode.test.ts
+@@ -1,15 +1,30 @@
+ import { beforeEach, describe, expect, it, vi } from 'vitest';
+ 
+-const { mockDbSelect, mockDbInsert, mockUser } = vi.hoisted(() => {
+-  const mockDbSelect = vi.fn();
+-  const mockDbInsert = vi.fn();
+-  const mockUser = { id: 'user-123', email: 'test@example.com' };
++const { mockDbSelect, mockDbInsert, mockDbDelete, mockUser } = vi.hoisted(
++  () => {
++    const mockDbSelect = vi.fn();
++    const mockDbInsert = vi.fn();
++    const mockDbDelete = vi.fn();
++    const mockUser = { id: 'user-123', email: 'test@example.com' };
++    return {
++      mockDbSelect,
++      mockDbInsert,
++      mockDbDelete,
++      mockUser,
++    };
++  }
++);
++
++// A db.select chain that resolves to `rows`.
++function selectResolving(rows: unknown[]) {
+   return {
+-    mockDbSelect,
+-    mockDbInsert,
+-    mockUser,
++    from: vi.fn().mockReturnValue({
++      where: vi.fn().mockReturnValue({
++        limit: vi.fn().mockResolvedValue(rows),
++      }),
++    }),
+   };
+-});
++}
+ 
+ vi.mock('@/lib/auth', () => ({
+   requireAuthAndProfile: vi.fn().mockResolvedValue({
+@@ -25,6 +40,7 @@ vi.mock('@/lib/db', () => ({
+   db: {
+     select: mockDbSelect,
+     insert: mockDbInsert,
++    delete: mockDbDelete,
+   },
+ }));
+ 
+@@ -35,6 +51,12 @@ vi.mock('@/lib/db/schema', () => ({
+     code: 'ingredientSources.code',
+   },
+   pendingAnalyses: { id: 'pendingAnalyses.id' },
++  productServingOverrides: {
++    userId: 'productServingOverrides.userId',
++    foodCompositionId: 'productServingOverrides.foodCompositionId',
++    servingSizeG: 'productServingOverrides.servingSizeG',
++    label: 'productServingOverrides.label',
++  },
+ }));
+ 
+ vi.mock('@/lib/barcode/openfoodfacts', async (importActual) => {
+@@ -51,7 +73,12 @@ vi.mock('@/lib/barcode/openfoodfacts', async (importActual) => {
+ import type { PipelineResult } from '@/lib/ai/types';
+ import { fetchProductFromOpenFoodFacts } from '@/lib/barcode/openfoodfacts';
+ // Import modules under test
+-import { searchBarcodeAction, stageBarcodeMealAction } from '../barcode';
++import {
++  clearServingOverrideAction,
++  saveServingOverrideAction,
++  searchBarcodeAction,
++  stageBarcodeMealAction,
++} from '../barcode';
+ 
+ describe('searchBarcodeAction', () => {
+   beforeEach(() => {
+@@ -59,26 +86,25 @@ describe('searchBarcodeAction', () => {
+   });
+ 
+   it('should return from local cache if present', async () => {
+-    mockDbSelect.mockReturnValue({
+-      from: vi.fn().mockReturnValue({
+-        where: vi.fn().mockReturnValue({
+-          limit: vi.fn().mockResolvedValue([
+-            {
+-              id: 'off_8934563138162',
+-              namePrimary: '[Mì ăn liền] Hảo Hảo',
+-              caloriesKcal: 350,
+=== NEW FILES ===
+--- supabase/migrations/20260705120000_add_product_serving_overrides.sql ---
+-- Per-user, per-product serving-size overrides for scanned barcode products.
+--
+-- The Open Food Facts serving size stored on vietnamese_food_composition is a
+-- single shared value across all users. This table lets each user remember
+-- their own serving definition for a specific product — e.g. "for this cookie,
+-- one serving is 2 pieces = 22g" — without mutating the shared row.
+--
+-- Composite PK (user_id, food_composition_id): at most one override per user
+-- per product. Both FKs cascade on delete so overrides disappear when the user
+-- account or the cached product row is removed. Additive; safe to re-run.
+
+CREATE TABLE IF NOT EXISTS public.product_serving_overrides (
+  user_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  food_composition_id text NOT NULL
+    REFERENCES public.vietnamese_food_composition(id) ON DELETE CASCADE,
+  serving_size_g numeric NOT NULL,
+  label text,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now(),
+  PRIMARY KEY (user_id, food_composition_id)
+);
+
+-- Keep updated_at fresh on upsert-driven updates (reuses the shared trigger fn
+-- defined in 20260228155945_rls_new_tables.sql).
+DROP TRIGGER IF EXISTS on_product_serving_overrides_updated
+  ON public.product_serving_overrides;
+CREATE TRIGGER on_product_serving_overrides_updated
+  BEFORE UPDATE ON public.product_serving_overrides
+  FOR EACH ROW
+  EXECUTE FUNCTION public.handle_updated_at();
+
+-- RLS: direct user_id ownership (mirrors body_weight_log).
+ALTER TABLE public.product_serving_overrides ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can view own serving overrides"
+  ON public.product_serving_overrides FOR SELECT
+  USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can insert own serving overrides"
+  ON public.product_serving_overrides FOR INSERT
+  WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can update own serving overrides"
+  ON public.product_serving_overrides FOR UPDATE
+  USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can delete own serving overrides"
+  ON public.product_serving_overrides FOR DELETE
+  USING (auth.uid() = user_id);

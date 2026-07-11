@@ -1,0 +1,7 @@
+=== LOG ===
+49c3c73 feat(account): tighten export snapshot
+2a39681 chore(account): document settings snapshot in export shape
+861c2e7 chore(ttr): add reusable task templates for bug reports and meeting minutes
+87c0c65 Merge pull request #175 from VoMinhKhoii/worktree-threads-typography-dashboard
+=== DIFF vs planted HEAD ===
+=== UNTRACKED new files ===

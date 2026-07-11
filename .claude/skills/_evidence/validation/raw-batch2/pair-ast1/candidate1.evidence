@@ -1,0 +1,76 @@
+=== LOG ===
+861c2e7 chore(ttr): add reusable task templates for bug reports and meeting minutes
+87c0c65 Merge pull request #175 from VoMinhKhoii/worktree-threads-typography-dashboard
+8a80c07 docs(design): fold the mobile system into the nham-design skill
+=== STATUS ===
+ M components/logging/input/barcode-product-step.tsx
+ M components/logging/input/barcode-scanner-dialog.tsx
+=== DIFF (working tree vs planted HEAD) ===
+diff --git a/components/logging/input/barcode-product-step.tsx b/components/logging/input/barcode-product-step.tsx
+index 8f451d6..12dd463 100644
+--- a/components/logging/input/barcode-product-step.tsx
++++ b/components/logging/input/barcode-product-step.tsx
+@@ -109,17 +109,17 @@ export function BarcodeProductStep({
+ 
+   return (
+     <div className="flex min-h-0 flex-1 flex-col">
+-      <div className="min-h-0 flex-1 space-y-5 overflow-y-auto px-6 py-5">
++      <div className="min-h-0 flex-1 space-y-5 overflow-y-auto px-6 py-6">
+         {/* Product header */}
+         <div>
++          <h3 className="font-normal font-serif text-[#2C2416] text-[20px] leading-snug tracking-tight">
++            {product.name}
++          </h3>
+           {product.brand ? (
+-            <span className="font-medium font-sans-display text-[#8B8682] text-[11px] uppercase tracking-[0.12em]">
++            <span className="mt-0.5 block font-sans-display text-[#8B8682] text-[13px] leading-normal">
+               {product.brand}
+             </span>
+           ) : null}
+-          <h3 className="font-normal font-serif text-[#2C2416] text-[20px] leading-snug tracking-tight">
+-            {product.name}
+-          </h3>
+         </div>
+ 
+         {/* Amount-mode segmented control (only when >1 mode is available) */}
+@@ -275,7 +275,7 @@ export function BarcodeProductStep({
+               {t('barcodeNutritionForAmount', { grams })}
+             </span>
+             <div className="flex items-baseline gap-1">
+-              <span className="font-normal font-serif text-[#2C2416] text-[26px] tabular-nums leading-none">
++              <span className="font-sans-display font-semibold text-[#2C2416] text-[26px] tabular-nums leading-none tracking-[-0.02em]">
+                 {calories !== null ? calories : '--'}
+               </span>
+               <span className="font-sans-display text-[#8B8682] text-[12px]">
+@@ -313,7 +313,7 @@ export function BarcodeProductStep({
+           onClick={() => onConfirm(grams)}
+           disabled={isStaging || grams <= 0}
+           aria-busy={isStaging}
+-          className="inline-flex touch-manipulation items-center justify-center gap-2 rounded-xl bg-[#2C2416] px-5 py-2.5 font-medium font-sans-display text-[#FDFCF8] text-[14px] shadow-sm transition-colors hover:bg-[#1C1917] disabled:opacity-50"
++          className="inline-flex touch-manipulation items-center justify-center gap-2 rounded-xl bg-nham-btn px-5 py-2.5 font-medium font-sans-display text-[14px] text-white shadow-sm transition-colors hover:bg-nham-btn-hover disabled:opacity-50"
+         >
+           {isStaging ? (
+             <>
+diff --git a/components/logging/input/barcode-scanner-dialog.tsx b/components/logging/input/barcode-scanner-dialog.tsx
+index 5f63bae..9b9b284 100644
+--- a/components/logging/input/barcode-scanner-dialog.tsx
++++ b/components/logging/input/barcode-scanner-dialog.tsx
+@@ -192,7 +192,7 @@ export function BarcodeScannerDialog({
+             onSubmit={handleSearch}
+             className="flex min-h-0 flex-1 flex-col"
+           >
+-            <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-6 py-5">
++            <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-6 py-6">
+               {/* Scan-mode segmented control */}
+               <div className="grid grid-cols-2 rounded-xl bg-[#F5F4F0] p-1">
+                 {SCAN_MODES.map((m) => (
+@@ -335,7 +335,7 @@ export function BarcodeScannerDialog({
+                   type="submit"
+                   disabled={isSearching || !barcode.trim()}
+                   aria-busy={isSearching}
+-                  className="inline-flex touch-manipulation items-center justify-center gap-2 rounded-xl bg-[#2C2416] px-5 py-2.5 font-medium font-sans-display text-[#FDFCF8] text-[14px] shadow-sm transition-colors hover:bg-[#1C1917] disabled:opacity-50"
++                  className="inline-flex touch-manipulation items-center justify-center gap-2 rounded-xl bg-nham-btn px-5 py-2.5 font-medium font-sans-display text-[14px] text-white shadow-sm transition-colors hover:bg-nham-btn-hover disabled:opacity-50"
+                 >
+                   {isSearching ? (
+                     <>
+=== NEW FILES ===
