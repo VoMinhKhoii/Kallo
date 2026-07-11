@@ -91,9 +91,11 @@ export function DashboardShell({ profile }: DashboardShellProps) {
         <div className="mx-auto grid w-full max-w-[1440px] gap-3 xl:flex-1 xl:grid-rows-[minmax(210px,0.6fr)_minmax(260px,1.4fr)_minmax(250px,1fr)]">
           <section className="flex min-h-0 flex-col gap-1.5">
             {/* The primary action — logging a meal — leads the page; the
-                section header sits beneath it, over the Today card. Mobile
-                uses the FloatingMealTrigger instead. */}
-            <div className="hidden md:block">
+                section header sits beneath it, over the Today card. The
+                18px margin + the section's 6px gap = 24px below the bar,
+                twice the 12px inter-card beat, so the input reads as its
+                own zone. Mobile uses the FloatingMealTrigger instead. */}
+            <div className="hidden md:mb-[18px] md:block">
               <InlineMealTrigger
                 onSubmitMeal={submit}
                 streaming={streaming}

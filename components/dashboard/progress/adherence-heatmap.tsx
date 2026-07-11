@@ -36,7 +36,10 @@ interface AdherenceHeatmapProps {
 export function AdherenceHeatmap({ data, range }: AdherenceHeatmapProps) {
   const t = useTranslations('dashboard.adherenceHeatmap');
   const gridRef = useRef<HTMLDivElement>(null);
-  const [sq, setSq] = useState(19);
+  // Cells stretch-fit the card: width and height are computed independently
+  // (slightly rectangular cells) so the grid fills BOTH axes instead of
+  // leaving a dead band when one dimension has room to spare.
+  const [cell, setCell] = useState({ w: 19, h: 19 });
   // The 'year' range stagger fires up to 371 cells. Honour the OS-level
   // reduced-motion preference so users with vestibular-motion sensitivity
   // don't get a wall of moving cells. They still see the final state.
@@ -45,7 +48,7 @@ export function AdherenceHeatmap({ data, range }: AdherenceHeatmapProps) {
   const gap = GAP[range];
   const numWeeks = data.cells[0]?.length ?? 0;
   const heatmapWidth =
-    numWeeks > 0 ? numWeeks * sq + Math.max(0, numWeeks - 1) * gap : 0;
+    numWeeks > 0 ? numWeeks * cell.w + Math.max(0, numWeeks - 1) * gap : 0;
 
   useEffect(() => {
     const el = gridRef.current;
@@ -55,14 +58,12 @@ export function AdherenceHeatmap({ data, range }: AdherenceHeatmapProps) {
       const height = entries[0]?.contentRect.height ?? 0;
       if (width > 0 && height > 0 && numWeeks > 0) {
         const gap = GAP[range];
-        const widthSq = Math.floor(
+        const w = Math.floor(
           (width - DAY_LABEL_WIDTH - 6 - Math.max(0, numWeeks - 1) * gap) /
             numWeeks
         );
-        const heightSq = Math.floor(
-          (height - HEATMAP_VERTICAL_CHROME - 6 * gap) / 7
-        );
-        setSq(Math.max(10, Math.min(widthSq, heightSq)));
+        const h = Math.floor((height - HEATMAP_VERTICAL_CHROME - 6 * gap) / 7);
+        setCell({ w: Math.max(10, w), h: Math.max(10, h) });
       }
     });
     observer.observe(el);
@@ -84,13 +85,13 @@ export function AdherenceHeatmap({ data, range }: AdherenceHeatmapProps) {
     <TooltipProvider delayDuration={100}>
       <div className="flex h-full flex-col">
         {/* The month-header row and the label+grid row live in one column so
-            the whole block centers as a unit — vertically AND horizontally
-            (the year grid is height-bound, so a wide card would otherwise
-            leave all its slack as a dead band on the right). The day labels
-            sit in a fixed-width gutter that keeps them level with the rows. */}
+            the whole block centers vertically as a unit, while the day labels
+            sit in a fixed-width gutter that keeps them level with the rows.
+            Stretch-fit cells absorb the width, so no horizontal centering is
+            needed. */}
         <div
           ref={gridRef}
-          className="flex min-h-0 flex-1 flex-col items-center justify-center"
+          className="flex min-h-0 flex-1 flex-col justify-center"
         >
           <div className="min-w-0">
             <div
@@ -105,8 +106,8 @@ export function AdherenceHeatmap({ data, range }: AdherenceHeatmapProps) {
                   key={`${header.month}-${header.startColumn}`}
                   className="absolute top-0 truncate"
                   style={{
-                    left: `${header.startColumn * (sq + gap)}px`,
-                    width: `${header.span * sq + Math.max(0, header.span - 1) * gap}px`,
+                    left: `${header.startColumn * (cell.w + gap)}px`,
+                    width: `${header.span * cell.w + Math.max(0, header.span - 1) * gap}px`,
                   }}
                 >
                   {header.month}
@@ -124,7 +125,7 @@ export function AdherenceHeatmap({ data, range }: AdherenceHeatmapProps) {
                   <div
                     key={`lbl-${i}`}
                     className="flex items-center justify-end pr-1 font-medium text-nham-text-muted text-xs"
-                    style={{ height: `${sq}px` }}
+                    style={{ height: `${cell.h}px` }}
                   >
                     {d}
                   </div>
@@ -135,8 +136,8 @@ export function AdherenceHeatmap({ data, range }: AdherenceHeatmapProps) {
                 <div
                   className="grid"
                   style={{
-                    gridTemplateColumns: `repeat(${numWeeks}, ${sq}px)`,
-                    gridTemplateRows: `repeat(7, ${sq}px)`,
+                    gridTemplateColumns: `repeat(${numWeeks}, ${cell.w}px)`,
+                    gridTemplateRows: `repeat(7, ${cell.h}px)`,
                     gap: `${gap}px`,
                     gridAutoFlow: 'column',
                   }}
