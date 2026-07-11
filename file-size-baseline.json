@@ -5,7 +5,6 @@
     "apps/mobile-flutter/lib/features/onboarding/screens/screen_body_metrics.dart": 1002,
     "apps/mobile-flutter/lib/features/logging/widgets/barcode_scanner_sheet.dart": 906,
     "apps/mobile-flutter/lib/models/nutrition.dart": 867,
-    "lib/ai/pipeline/grounded-orchestrator.ts": 795,
     "components/onboarding/screen-body-metrics.tsx": 792,
     "apps/mobile-flutter/lib/features/circle/widgets/add_friend_sheet.dart": 743,
     "apps/mobile-flutter/lib/features/logging/widgets/barcode_product_step.dart": 713,
