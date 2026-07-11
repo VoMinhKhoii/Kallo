@@ -59,7 +59,11 @@ export function ProgressStory({
         />
       </div>
 
-      <div className="min-h-[200px] flex-1 xl:min-h-0">
+      {/* Below xl the card is content-sized, which gives Recharts'
+          ResponsiveContainer no definite height to measure (it collapses on
+          mobile and balloons mid-width) — so the chart gets a fixed height
+          there and only fills the row at xl, where the height is definite. */}
+      <div className="h-[220px] shrink-0 xl:h-auto xl:min-h-0 xl:flex-1">
         <WeightChart
           data={weightSummary.weights}
           range={range}

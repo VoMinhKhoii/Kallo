@@ -36,7 +36,7 @@ export function MealList({ meals }: MealListProps) {
 
       {/* Plain rows on the card surface — meal name at content-left, kcal in a
           fixed right column so every value lines up (no per-row boxes/borders). */}
-      <div className="flex min-h-0 flex-col gap-1 overflow-y-auto">
+      <div className="flex min-h-0 flex-col gap-1 overflow-y-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {meals.map((meal) => (
           <div
             key={meal.id}

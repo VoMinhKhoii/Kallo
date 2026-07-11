@@ -89,7 +89,7 @@ export function DashboardShell({ profile }: DashboardShellProps) {
           gentle scroll (main is overflow-y-auto) instead of letting cards
           bleed over the section below. */}
       <div className="min-h-full px-3 py-3 pb-24 sm:px-5 sm:py-4 lg:px-8 xl:flex xl:flex-col xl:py-3 xl:pb-3">
-        <div className="mx-auto grid w-full max-w-[1440px] gap-3 xl:flex-1 xl:grid-rows-[minmax(210px,320px)_minmax(260px,1fr)_auto]">
+        <div className="mx-auto grid w-full max-w-[1440px] gap-3 xl:flex-1 xl:grid-rows-[minmax(210px,250px)_minmax(260px,1fr)_auto]">
           <section className="flex min-h-0 flex-col gap-1.5">
             {/* The primary action — logging a meal — leads the page; the
                 section header sits beneath it, over the Today card. The
