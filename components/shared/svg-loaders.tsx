@@ -76,14 +76,15 @@ const DOT = (cx: number, initialR: number, values: string, opacity: string) => (
   </circle>
 );
 
-/** Three pulsing dots. */
+/** Three pulsing dots. Wider than tall (4:1), so it renders at 1.5×size wide
+ *  to hold its own next to the square loaders in the random pool. */
 export function ThreeDotsLoader({ size = 16, className }: LoaderProps) {
   return (
     <Frame
       size={size}
       className={className}
-      width={size}
-      height={size / 4}
+      width={size * 1.5}
+      height={size * 0.375}
       viewBox="0 0 120 30"
       fill="currentColor"
     >

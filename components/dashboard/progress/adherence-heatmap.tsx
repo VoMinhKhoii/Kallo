@@ -21,6 +21,9 @@ const DAY_LABELS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 
 const GAP: Record<HeatmapRange, number> = { '30d': 3, '90d': 2, year: 1 };
 const DAY_LABEL_WIDTH = 16;
+// Left inset that aligns the month headers and the legend with the first
+// week column: the day-label gutter plus the gap-1 (4px) beside it.
+const GRID_LEFT_INSET = DAY_LABEL_WIDTH + 4;
 // Month-header row (20) + legend row (~24) + slack, all inside the measured
 // container now that the legend travels with the centered grid cluster.
 const HEATMAP_VERTICAL_CHROME = 56;
@@ -92,7 +95,7 @@ export function AdherenceHeatmap({ data, range }: AdherenceHeatmapProps) {
               className="relative mb-1 h-4 font-medium text-nham-text-muted text-xs"
               style={{
                 width: `${heatmapWidth}px`,
-                marginLeft: `${DAY_LABEL_WIDTH + 4}px`,
+                marginLeft: `${GRID_LEFT_INSET}px`,
               }}
             >
               {data.monthHeaders.map((header) => (
@@ -230,7 +233,7 @@ export function AdherenceHeatmap({ data, range }: AdherenceHeatmapProps) {
               className="mt-3 flex items-center gap-2"
               style={{
                 width: `${heatmapWidth}px`,
-                marginLeft: `${DAY_LABEL_WIDTH + 4}px`,
+                marginLeft: `${GRID_LEFT_INSET}px`,
               }}
             >
               <span className="text-nham-text-muted text-xs">

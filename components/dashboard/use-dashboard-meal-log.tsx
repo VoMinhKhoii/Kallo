@@ -2,7 +2,7 @@
 
 import { Undo2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { getStreamingPhaseLabel } from '@/components/logging/feed/streaming/streaming-phase-label';
 import { DASH_LOADERS } from '@/components/shared/svg-loaders';
@@ -57,7 +57,6 @@ export function useDashboardMealLog({
   const [submittedText, setSubmittedText] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [loaderIndex, setLoaderIndex] = useState(0);
-  const [ticker, setTicker] = useState<StreamTickerFrame | null>(null);
   // Bumped object identity tells the input to restore a dismissed draft.
   const [restoredDraft, setRestoredDraft] = useState<{ text: string } | null>(
     null
@@ -87,16 +86,8 @@ export function useDashboardMealLog({
   );
 
   const onRetry = useCallback(() => {
-    if (!submittedText || stream.isAnalyzing) return;
-    setLoaderIndex(Math.floor(Math.random() * DASH_LOADERS.length));
-    submittedAtRef.current = new Date();
-    void analyze({
-      message: submittedText,
-      loggedDate: todayDate,
-      timezoneOffset: new Date().getTimezoneOffset(),
-      mode: 'precise',
-    });
-  }, [analyze, stream.isAnalyzing, submittedText, todayDate]);
+    if (submittedText) submit(submittedText);
+  }, [submit, submittedText]);
 
   const onDismiss = useCallback(() => {
     // Hand the text back to the input so a mistyped meal is one edit away.
@@ -105,53 +96,49 @@ export function useDashboardMealLog({
     reset();
   }, [reset, submittedText]);
 
-  // --- Ticker frames -------------------------------------------------------
-  // The bar shows ONE line that flips as the stream progresses. Later effects
-  // win over earlier ones within a render pass, so a resolved item beats the
-  // name announcement it accompanies.
-
-  // Pipeline stage (only before any item has been named, and again while
-  // assembling — between those, item traffic carries the story).
-  useEffect(() => {
-    if (!stream.isAnalyzing) return;
-    if (stream.items.length === 0 || stream.status === 'assembling') {
-      setTicker({
-        key: `phase-${stream.status}`,
-        kind: 'phase',
-        text: getStreamingPhaseLabel(ts, stream.status),
-      });
-    }
-  }, [stream.isAnalyzing, stream.items.length, stream.status, ts]);
-
-  // A newly named item.
-  useEffect(() => {
-    const name = stream.items.at(-1);
-    if (!name) return;
-    setTicker({
-      key: `name-${stream.items.length}`,
-      kind: 'item',
-      text: `${name}…`,
-    });
-  }, [stream.items]);
-
-  // A resolved item — name + kcal.
-  useEffect(() => {
-    const item = stream.completedItems.at(-1);
-    if (!item) return;
-    setTicker({
-      key: `done-${item.id}`,
-      kind: 'macros',
-      text: item.name,
-      detail: `${Math.round(item.macros.calories)} kcal`,
-    });
-  }, [stream.completedItems]);
-
-  // Saving.
-  useEffect(() => {
+  // --- Ticker --------------------------------------------------------------
+  // The bar shows ONE line that flips as the stream progresses. The frame is
+  // derived, not accumulated: the pipeline emits names (decomposing) before
+  // macros (estimating), so precedence is saving > assembling label > latest
+  // resolved item > latest named item > stage label.
+  const ticker = useMemo<StreamTickerFrame | null>(() => {
     if (isSaving) {
-      setTicker({ key: 'saving', kind: 'phase', text: t('saving') });
+      return { key: 'saving', kind: 'phase', text: t('saving') };
     }
-  }, [isSaving, t]);
+    if (!stream.isAnalyzing) return null;
+    if (stream.status !== 'assembling') {
+      const done = stream.completedItems.at(-1);
+      if (done) {
+        return {
+          key: `done-${done.id}`,
+          kind: 'macros',
+          text: done.name,
+          detail: `${Math.round(done.macros.calories)} kcal`,
+        };
+      }
+      const name = stream.items.at(-1);
+      if (name) {
+        return {
+          key: `name-${stream.items.length}`,
+          kind: 'item',
+          text: `${name}…`,
+        };
+      }
+    }
+    return {
+      key: `phase-${stream.status}`,
+      kind: 'phase',
+      text: getStreamingPhaseLabel(ts, stream.status),
+    };
+  }, [
+    isSaving,
+    stream.completedItems,
+    stream.isAnalyzing,
+    stream.items,
+    stream.status,
+    t,
+    ts,
+  ]);
 
   // Step the sidebar back with the dimmed sections while a run is live (the
   // sidebar lives outside the dashboard tree, so it's flagged via <body>;
@@ -210,7 +197,6 @@ export function useDashboardMealLog({
         onSettled: () => {
           setIsSaving(false);
           setSubmittedText(null);
-          setTicker(null);
           reset();
         },
       }
