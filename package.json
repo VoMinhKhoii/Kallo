@@ -10,6 +10,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "check:filesize": "node scripts/check-file-sizes.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
     "db:generate": "bunx drizzle-kit generate",

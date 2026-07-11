@@ -32,6 +32,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # Runs from the repo root (job default cwd is apps/mobile-flutter).
+      - name: File size ratchet
+        run: node scripts/check-file-sizes.mjs
+        working-directory: ${{ github.workspace }}
+
       - uses: subosito/flutter-action@v2
         with:
           flutter-version: 3.44.1
