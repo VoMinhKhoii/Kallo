@@ -24,9 +24,10 @@ const DAY_LABEL_WIDTH = 16;
 // Left inset that aligns the month headers and the legend with the first
 // week column: the day-label gutter plus the gap-1 (4px) beside it.
 const GRID_LEFT_INSET = DAY_LABEL_WIDTH + 4;
-// Month-header row (20) + legend row (~24) + slack, all inside the measured
-// container now that the legend travels with the centered grid cluster.
-const HEATMAP_VERTICAL_CHROME = 56;
+// Ceiling per range so a wide card can't inflate sparse grids (a 5-column
+// 30d grid at full width would be comically tall). Under these caps the
+// year grid spans the full 1440px-capped dashboard width.
+const MAX_SQ: Record<HeatmapRange, number> = { '30d': 32, '90d': 24, year: 26 };
 
 interface AdherenceHeatmapProps {
   data: HeatmapData;
@@ -36,11 +37,10 @@ interface AdherenceHeatmapProps {
 export function AdherenceHeatmap({ data, range }: AdherenceHeatmapProps) {
   const t = useTranslations('dashboard.adherenceHeatmap');
   const gridRef = useRef<HTMLDivElement>(null);
-  // Square cells, sized by whichever axis binds. At xl the dashboard grid is
-  // width-capped (max-w 1440), which keeps the width-driven year square ≤
-  // ~24px, and the consistency row's 290px minimum keeps the height-driven
-  // square ≥ ~24px — so width always binds and the grid spans the full card
-  // instead of leaving a dead band on the right.
+  // Square cells, driven by WIDTH alone (capped per range): the grid always
+  // spans the card — collapse the sidebar and the cells grow to fill. The
+  // card's height follows the grid (the consistency row is content-sized),
+  // so no slack collects above or below.
   const [sq, setSq] = useState(19);
   // The 'year' range stagger fires up to 371 cells. Honour the OS-level
   // reduced-motion preference so users with vestibular-motion sensitivity
@@ -57,17 +57,13 @@ export function AdherenceHeatmap({ data, range }: AdherenceHeatmapProps) {
     if (!el) return;
     const observer = new ResizeObserver((entries) => {
       const width = entries[0]?.contentRect.width ?? 0;
-      const height = entries[0]?.contentRect.height ?? 0;
-      if (width > 0 && height > 0 && numWeeks > 0) {
+      if (width > 0 && numWeeks > 0) {
         const gap = GAP[range];
         const widthSq = Math.floor(
           (width - DAY_LABEL_WIDTH - 6 - Math.max(0, numWeeks - 1) * gap) /
             numWeeks
         );
-        const heightSq = Math.floor(
-          (height - HEATMAP_VERTICAL_CHROME - 6 * gap) / 7
-        );
-        setSq(Math.max(10, Math.min(widthSq, heightSq)));
+        setSq(Math.max(10, Math.min(widthSq, MAX_SQ[range])));
       }
     });
     observer.observe(el);

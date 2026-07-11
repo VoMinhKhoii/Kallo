@@ -44,11 +44,12 @@ export function DashboardShell({ profile }: DashboardShellProps) {
   // Progress always covers a fixed 30-day window (matching the Flutter
   // dashboard's passive 30d range), regardless of viewport width.
   const weightRange: TimeRange = '30d';
+  // Width alone picks the range: the consistency card is content-sized (its
+  // row is `auto` at xl), so height never constrains the grid.
   const renderedHeatmapRange = heatmapSize
     ? chooseRenderedHeatmapRange({
         preferredRange: 'year',
         availableWidth: heatmapSize.width,
-        availableHeight: heatmapSize.height,
         weekCount: { '30d': 5, '90d': 14, year: 53 },
       })
     : '30d';
@@ -88,7 +89,7 @@ export function DashboardShell({ profile }: DashboardShellProps) {
           gentle scroll (main is overflow-y-auto) instead of letting cards
           bleed over the section below. */}
       <div className="min-h-full px-3 py-3 pb-24 sm:px-5 sm:py-4 lg:px-8 xl:flex xl:flex-col xl:py-3 xl:pb-3">
-        <div className="mx-auto grid w-full max-w-[1440px] gap-3 xl:flex-1 xl:grid-rows-[minmax(210px,0.6fr)_minmax(260px,1.4fr)_minmax(290px,1fr)]">
+        <div className="mx-auto grid w-full max-w-[1440px] gap-3 xl:flex-1 xl:grid-rows-[minmax(210px,0.6fr)_minmax(260px,1.4fr)_auto]">
           <section className="flex min-h-0 flex-col gap-1.5">
             {/* The primary action — logging a meal — leads the page; the
                 section header sits beneath it, over the Today card. The
@@ -168,9 +169,7 @@ export function DashboardShell({ profile }: DashboardShellProps) {
             </div>
           </section>
 
-          <section
-            className={cn('flex min-w-0 flex-col gap-1.5 xl:min-h-0', dimClass)}
-          >
+          <section className={cn('flex min-w-0 flex-col gap-1.5', dimClass)}>
             <div className="flex items-center justify-between gap-3">
               <span className="font-medium text-nham-text-muted text-xs uppercase tracking-[0.08em]">
                 {t('consistency')}
@@ -181,7 +180,7 @@ export function DashboardShell({ profile }: DashboardShellProps) {
             </div>
             <div
               ref={heatmapContainerRef}
-              className="min-h-[310px] rounded-2xl border border-nham-border/60 bg-card p-4 shadow-nham-text/[0.03] shadow-sm transition-[border-color,box-shadow] duration-200 hover:border-nham-accent/50 hover:shadow-md hover:shadow-nham-text/[0.06] sm:min-h-[340px] md:min-h-[360px] xl:min-h-0 xl:flex-1"
+              className="min-h-[310px] rounded-2xl border border-nham-border/60 bg-card p-4 shadow-nham-text/[0.03] shadow-sm transition-[border-color,box-shadow] duration-200 hover:border-nham-accent/50 hover:shadow-md hover:shadow-nham-text/[0.06] sm:min-h-[340px] md:min-h-[360px] xl:min-h-0"
             >
               {!hasMeasuredHeatmap || heatmapQuery.isPending ? (
                 <HeatmapSkeleton range={renderedHeatmapRange} />
