@@ -8,7 +8,6 @@
     "apps/mobile-flutter/lib/features/circle/widgets/add_friend_sheet.dart": 743,
     "apps/mobile-flutter/lib/features/logging/widgets/barcode_product_step.dart": 713,
     "apps/mobile-flutter/lib/features/onboarding/widgets/onboarding_wizard.dart": 691,
-    "components/logging/feed/persisted/persisted-meal-card.tsx": 685,
     "apps/mobile-flutter/lib/features/logging/widgets/manual_log_sheet.dart": 685,
     "apps/mobile-flutter/lib/features/settings/panels/body_metrics.dart": 647,
     "apps/mobile-flutter/lib/shell/sidebar.dart": 642,
