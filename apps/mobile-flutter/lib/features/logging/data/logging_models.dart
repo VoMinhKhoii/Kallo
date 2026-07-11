@@ -7,6 +7,7 @@
 /// four macros the feed renders. Unknown fields are ignored on decode.
 library;
 
+import '../../../models/cheat.dart';
 import '../../../models/meal.dart';
 
 /// The macro subset of `NutritionValues` the feed shows. Each value is nullable
@@ -83,6 +84,15 @@ class PersistedMeal {
   final MealNutrition nutrition;
   final List<PersistedMealItemGroup> mealItemGroups;
 
+  /// 'precise' (default pipeline) or 'cheat' (slider estimate).
+  final String entryMode;
+
+  /// Cheat-only: ethanol grams folded into the calorie total.
+  final double? alcoholG;
+
+  /// Cheat-only: slider spec + chosen levels, for the "you set" recap.
+  final CheatSlidersPersisted? cheatSliders;
+
   /// Circle-share state (null when never shared).
   final MealShare? share;
 
@@ -92,8 +102,13 @@ class PersistedMeal {
     required this.loggedAt,
     required this.nutrition,
     required this.mealItemGroups,
+    this.entryMode = 'precise',
+    this.alcoholG,
+    this.cheatSliders,
     this.share,
   });
+
+  bool get isCheat => entryMode == 'cheat';
 
   factory PersistedMeal.fromJson(Map<String, dynamic> json) => PersistedMeal(
         id: json['id'] as String,
@@ -105,6 +120,12 @@ class PersistedMeal {
             .map((e) =>
                 PersistedMealItemGroup.fromJson(e as Map<String, dynamic>))
             .toList(),
+        entryMode: json['entryMode'] as String? ?? 'precise',
+        alcoholG: MealNutrition._num(json['alcoholG']),
+        cheatSliders: json['cheatSliders'] == null
+            ? null
+            : CheatSlidersPersisted.fromJson(
+                json['cheatSliders'] as Map<String, dynamic>),
         share: json['share'] == null
             ? null
             : MealShare.fromJson(json['share'] as Map<String, dynamic>),
@@ -116,13 +137,19 @@ class PendingMealConfirmation {
   final String id;
   final String rawInput;
   final String loggedAt;
-  final ParsedMeal parsedMeal;
+
+  /// Set for precise entries. Null for cheat entries (which carry [cheatSpec]).
+  final ParsedMeal? parsedMeal;
+
+  /// Set for cheat entries: the staged slider spec the user confirms against.
+  final CheatSliderSpec? cheatSpec;
 
   const PendingMealConfirmation({
     required this.id,
     required this.rawInput,
     required this.loggedAt,
-    required this.parsedMeal,
+    this.parsedMeal,
+    this.cheatSpec,
   });
 
   factory PendingMealConfirmation.fromJson(Map<String, dynamic> json) =>
@@ -130,8 +157,13 @@ class PendingMealConfirmation {
         id: json['id'] as String,
         rawInput: json['rawInput'] as String? ?? '',
         loggedAt: json['loggedAt'] as String,
-        parsedMeal:
-            ParsedMeal.fromJson(json['parsedMeal'] as Map<String, dynamic>),
+        parsedMeal: json['parsedMeal'] == null
+            ? null
+            : ParsedMeal.fromJson(json['parsedMeal'] as Map<String, dynamic>),
+        cheatSpec: json['cheatSpec'] == null
+            ? null
+            : CheatSliderSpec.fromJson(
+                json['cheatSpec'] as Map<String, dynamic>),
       );
 }
 

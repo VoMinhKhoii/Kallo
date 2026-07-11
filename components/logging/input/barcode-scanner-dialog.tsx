@@ -167,12 +167,12 @@ export function BarcodeScannerDialog({
     >
       <DialogContent
         showCloseButton={false}
-        className="flex max-h-[85dvh] flex-col gap-0 overflow-hidden rounded-[24px] border border-[#EAE7E0] bg-[#FDFCF8] p-0 font-sans-display text-[#2C2416] sm:max-w-md"
+        className="flex max-h-[85dvh] flex-col gap-0 overflow-hidden rounded-[24px] border border-[#EAE7E0] bg-[#FDFCF8] p-0 font-sans-display text-nham-text sm:max-w-md"
       >
         {/* Header */}
         <div className="flex shrink-0 items-start justify-between gap-4 border-[#EAE7E0]/70 border-b px-6 py-4">
           <div className="min-w-0 space-y-1">
-            <DialogTitle className="font-normal font-serif text-[#2C2416] text-[22px] leading-tight tracking-tight">
+            <DialogTitle className="font-normal font-serif text-[22px] text-nham-text leading-tight tracking-tight">
               {t('barcodeDialogTitle')}
             </DialogTitle>
             <DialogDescription className="font-sans-display text-[#8B8682] text-[13px] leading-normal">
@@ -181,7 +181,7 @@ export function BarcodeScannerDialog({
           </div>
           <DialogClose
             aria-label={t('barcodeCancel')}
-            className="-mr-1 shrink-0 rounded-full p-2 text-[#8B8682] transition-colors hover:bg-[#EAE7E0]/50 hover:text-[#2C2416]"
+            className="-mr-1 shrink-0 rounded-full p-2 text-[#8B8682] transition-colors hover:bg-[#EAE7E0]/50 hover:text-nham-text"
           >
             <X className="h-5 w-5" />
           </DialogClose>
@@ -194,17 +194,17 @@ export function BarcodeScannerDialog({
           >
             <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-6 py-5">
               {/* Scan-mode segmented control */}
-              <div className="grid grid-cols-2 rounded-xl bg-[#F5F4F0] p-1">
+              <div className="grid grid-cols-2 rounded-xl bg-nham-track p-1">
                 {SCAN_MODES.map((m) => (
                   <button
                     key={m}
                     type="button"
                     aria-pressed={scanMode === m}
                     onClick={() => setScanMode(m)}
-                    className={`rounded-lg px-3 py-2 font-medium font-sans-display text-[13px] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C9A87C]/30 ${
+                    className={`rounded-lg px-3 py-2 font-medium font-sans-display text-[13px] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent/30 ${
                       scanMode === m
-                        ? 'bg-white text-[#2C2416] shadow-sm'
-                        : 'text-[#8B8682] hover:text-[#2C2416]'
+                        ? 'bg-white text-nham-text shadow-sm'
+                        : 'text-[#8B8682] hover:text-nham-text'
                     }`}
                   >
                     {m === 'camera'
@@ -227,12 +227,12 @@ export function BarcodeScannerDialog({
                     <div className="pointer-events-none absolute inset-0 z-10">
                       <div className="absolute inset-0 bg-black/30" />
                       <div className="absolute inset-0 flex items-center justify-center">
-                        <div className="relative aspect-[2/1] w-2/3 max-w-[280px] rounded-lg border-2 border-[#C9A87C]/80 shadow-[0_0_0_100vmax_rgba(0,0,0,0.4)]">
-                          <div className="absolute -top-1 -left-1 h-4 w-4 rounded-tl border-[#C9A87C] border-t-4 border-l-4" />
-                          <div className="absolute -top-1 -right-1 h-4 w-4 rounded-tr border-[#C9A87C] border-t-4 border-r-4" />
-                          <div className="absolute -bottom-1 -left-1 h-4 w-4 rounded-bl border-[#C9A87C] border-b-4 border-l-4" />
-                          <div className="absolute -right-1 -bottom-1 h-4 w-4 rounded-br border-[#C9A87C] border-r-4 border-b-4" />
-                          <div className="absolute top-1/2 right-0 left-0 h-0.5 -translate-y-1/2 animate-pulse bg-[#C9A87C] opacity-80 shadow-[0_0_8px_rgba(224,116,62,0.8)]" />
+                        <div className="relative aspect-[2/1] w-2/3 max-w-[280px] rounded-lg border-2 border-nham-accent/80 shadow-[0_0_0_100vmax_rgba(0,0,0,0.4)]">
+                          <div className="absolute -top-1 -left-1 h-4 w-4 rounded-tl border-nham-accent border-t-4 border-l-4" />
+                          <div className="absolute -top-1 -right-1 h-4 w-4 rounded-tr border-nham-accent border-t-4 border-r-4" />
+                          <div className="absolute -bottom-1 -left-1 h-4 w-4 rounded-bl border-nham-accent border-b-4 border-l-4" />
+                          <div className="absolute -right-1 -bottom-1 h-4 w-4 rounded-br border-nham-accent border-r-4 border-b-4" />
+                          <div className="absolute top-1/2 right-0 left-0 h-0.5 -translate-y-1/2 animate-pulse bg-nham-accent opacity-80 shadow-[0_0_8px_rgba(224,116,62,0.8)]" />
                         </div>
                       </div>
                     </div>
@@ -244,7 +244,7 @@ export function BarcodeScannerDialog({
                   >
                     {cameraStatus === 'initializing' ? (
                       <div className="flex items-center justify-center gap-2">
-                        <Loader2 className="h-4 w-4 animate-spin text-[#C9A87C]" />
+                        <Loader2 className="h-4 w-4 animate-spin text-nham-accent" />
                         <span>{t('barcodeCameraInitializing')}</span>
                       </div>
                     ) : null}
@@ -265,7 +265,7 @@ export function BarcodeScannerDialog({
                               onChange={(e) =>
                                 setSelectedCameraId(e.target.value)
                               }
-                              className="w-full rounded-lg border border-[#EAE7E0] bg-white px-3 py-2 font-sans-display text-[#2C2416] text-sm shadow-sm transition-colors duration-200 focus:border-[#C9A87C] focus:outline-none"
+                              className="w-full rounded-lg border border-[#EAE7E0] bg-white px-3 py-2 font-sans-display text-nham-text text-sm shadow-sm transition-colors duration-200 focus:border-nham-accent focus:outline-none"
                             >
                               {cameras.map((device) => (
                                 <option key={device.id} value={device.id}>
@@ -311,7 +311,7 @@ export function BarcodeScannerDialog({
                       autoFocus
                       disabled={isSearching}
                       aria-invalid={Boolean(searchError)}
-                      className="rounded-lg border-[#EAE7E0] bg-white pl-10 font-sans-display text-[#2C2416] text-[14px] focus-visible:border-[#C9A87C] focus-visible:ring-1 focus-visible:ring-[#C9A87C]/40"
+                      className="rounded-lg border-[#EAE7E0] bg-white pl-10 font-sans-display text-[14px] text-nham-text focus-visible:border-nham-accent focus-visible:ring-1 focus-visible:ring-nham-accent/40"
                     />
                   </div>
 
@@ -330,12 +330,12 @@ export function BarcodeScannerDialog({
             {/* Footer — only manual entry has a submit action; camera mode
                 auto-detects, so its dismissal is the header close button. */}
             {scanMode === 'manual' ? (
-              <div className="flex shrink-0 justify-end border-[#EAE7E0]/70 border-t bg-[#F5F4F0]/50 px-6 py-4">
+              <div className="flex shrink-0 justify-end border-[#EAE7E0]/70 border-t bg-nham-track/50 px-6 py-4">
                 <button
                   type="submit"
                   disabled={isSearching || !barcode.trim()}
                   aria-busy={isSearching}
-                  className="inline-flex touch-manipulation items-center justify-center gap-2 rounded-xl bg-[#2C2416] px-5 py-2.5 font-medium font-sans-display text-[#FDFCF8] text-[14px] shadow-sm transition-colors hover:bg-[#1C1917] disabled:opacity-50"
+                  className="inline-flex touch-manipulation items-center justify-center gap-2 rounded-xl bg-nham-ink px-5 py-2.5 font-medium font-sans-display text-[#FDFCF8] text-[14px] shadow-sm transition-colors hover:bg-[#1C1917] disabled:opacity-50"
                 >
                   {isSearching ? (
                     <>

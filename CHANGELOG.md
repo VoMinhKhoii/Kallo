@@ -1,5 +1,75 @@
 # Changelog
 
+## [1.7.0](https://github.com/VoMinhKhoii/Kallo/compare/v1.6.0...v1.7.0) (2026-07-11)
+
+
+### Features
+
+* **api:** accept cheat slider levels on v1 confirm + cheat occasion routes ([c7b729d](https://github.com/VoMinhKhoii/Kallo/commit/c7b729d51282a950737ec061d9aecc29de0206f8))
+* **dashboard:** boxless streaming ticker, sidebar dim, richer stream voice ([0228891](https://github.com/VoMinhKhoii/Kallo/commit/0228891c104e506bfaea6dbf7fc624c71b9f5601))
+* **dashboard:** calm redesign — overlap fix, lean weight card, hardened type/color/chrome ([b89a8d3](https://github.com/VoMinhKhoii/Kallo/commit/b89a8d32361fdf155d807505bcf717181acb8dc9))
+* **dashboard:** calm redesign + in-place streaming meal log ([b940041](https://github.com/VoMinhKhoii/Kallo/commit/b940041c175a5ca2d13507e392c034539e542e2a))
+* **dashboard:** separate inputs from displays + adopt the calm system ([d3adec9](https://github.com/VoMinhKhoii/Kallo/commit/d3adec9570c153e20a94d43749a6037cf5e91a6e))
+* **dashboard:** separate inputs from displays and adopt the calm system ([5e4add0](https://github.com/VoMinhKhoii/Kallo/commit/5e4add096c13f76f39442e4c3e2420f1fa8f829a))
+* **dashboard:** stream meal analysis in place in the input bar ([e2e79e5](https://github.com/VoMinhKhoii/Kallo/commit/e2e79e5fd8ecb2d004bd115fc54148d5a7df4c0b))
+* **dashboard:** width-driven heatmap squares in a content-sized card ([799d14f](https://github.com/VoMinhKhoii/Kallo/commit/799d14fc02df7561f1416bdaa00065b7a77a61a4))
+* **deploy:** kallo.fit production launch — kallo-prod service, Cloudflare origin-lock, SEO ([376caf7](https://github.com/VoMinhKhoii/Kallo/commit/376caf7ccfee371be8722f185e56da519ba5bb15))
+* **deploy:** kallo.fit production launch (kallo-prod, Cloudflare origin-lock, SEO) ([c14f8e0](https://github.com/VoMinhKhoii/Kallo/commit/c14f8e0da26cba8e12c9c8c0ab14390063a753f1))
+* **design:** codify design-system foundations on Anthropic-calibrated tokens ([5a26ffc](https://github.com/VoMinhKhoii/Kallo/commit/5a26ffcaa0c5b7a99b45ea6bb1a4436255f3da97))
+* **feedback:** add in-app user feedback on web + mobile ([88d9a71](https://github.com/VoMinhKhoii/Kallo/commit/88d9a7184f58da34cd55a2beb9c9a2e4f7208f96))
+* **feedback:** in-app user feedback (bug / ingredient / idea) on web + mobile ([0d7f423](https://github.com/VoMinhKhoii/Kallo/commit/0d7f423ca398dce4dd5f505e78c3a01b5e833664))
+* **landing-lab:** rebuild v3 as the scroll-morphing cuisine globe ([a91d60a](https://github.com/VoMinhKhoii/Kallo/commit/a91d60ac1f1196e193af8b13afab7df814948c3c))
+* **landing-lab:** v3 cuisine globe — scroll-morphing continent tour with real day/night ([33637aa](https://github.com/VoMinhKhoii/Kallo/commit/33637aa07a37c9968ca847684220306305907f77))
+* **mobile-nutrition:** stacked bar macro chart + accurate calorie over/under ([bf60115](https://github.com/VoMinhKhoii/Kallo/commit/bf60115ea256765fd19f796c4d83259ba21e2bda))
+* **mobile/settings:** regroup Settings into Threads-style cards ([fee3458](https://github.com/VoMinhKhoii/Kallo/commit/fee34586c10d988baf5ea0c142c827ad88bc1dd4))
+* **mobile:** cheat-meal data layer (models, slider math, SSE event, providers) ([e9f342a](https://github.com/VoMinhKhoii/Kallo/commit/e9f342a9662a8ea547f1f4a0acef419c8bbd4c53))
+* **mobile:** cheat-meal logging UI + l10n ([68b5b4f](https://github.com/VoMinhKhoii/Kallo/commit/68b5b4fd2c1425d1b61ceee017a840e178d06bfc))
+* **mobile:** neutral cheat days on the adherence heatmap ([eb04093](https://github.com/VoMinhKhoii/Kallo/commit/eb0409387a09274cbefdfda92f2023b0951b0d9f))
+* **nutrition:** All/Complete calorie averages with buttery swap ([9a7be2a](https://github.com/VoMinhKhoii/Kallo/commit/9a7be2a49413f68f4451584adb0980d948c8acaa))
+* **nutrition:** stacked bar chart + All/Complete calorie averages with swap ([27acee4](https://github.com/VoMinhKhoii/Kallo/commit/27acee4d5711aa00c188b10e3ff80cc321eec0a5))
+* **web:** lean dashboard + nutrition to match the Flutter calm system ([cdd7a3f](https://github.com/VoMinhKhoii/Kallo/commit/cdd7a3fa505ee42698888f5d6b02b499791520bc))
+
+
+### Bug Fixes
+
+* **auth:** harden proxy allowlist + verify emailed links via Cloud Run ([0e22059](https://github.com/VoMinhKhoii/Kallo/commit/0e220597692ebb1c85e60fd501cd034ce30b1175))
+* **auth:** harden proxy allowlist + verify emailed links via Cloud Run ([0de4606](https://github.com/VoMinhKhoii/Kallo/commit/0de4606ab771e150bf9e9ab74d61494aca4bf56d))
+* **auth:** pin browser client cookie name to the Supabase project ref ([bfaeac5](https://github.com/VoMinhKhoii/Kallo/commit/bfaeac548016af1abc2cf6f6425aa1c4fa746d62))
+* **dashboard:** always show the weight chart over a fixed 30-day window ([506cd81](https://github.com/VoMinhKhoii/Kallo/commit/506cd81cdb61dc1828bf5cb530f367cc94638dda))
+* **dashboard:** center the heatmap cluster horizontally; taupe empty cells ([63dc911](https://github.com/VoMinhKhoii/Kallo/commit/63dc91163d79961b991da24307614f8e08798f86))
+* **dashboard:** definite chart height below xl; tighter Today row; hidden meal scrollbar ([8aadeaf](https://github.com/VoMinhKhoii/Kallo/commit/8aadeaf9dc74c62f6ce341e68ffb99d9a610b59b))
+* **dashboard:** keep heatmap cells square, guarantee full-width fill via row minimum ([04a53ba](https://github.com/VoMinhKhoii/Kallo/commit/04a53bad5be137e06cb876d60c09adad416d9136))
+* **dashboard:** stretch-fit heatmap cells to both axes; air below the input bar ([747f4b2](https://github.com/VoMinhKhoii/Kallo/commit/747f4b2a566f69610d46b9008f8e1a6fcc7f7d75))
+* **dashboard:** warm cream tooltip ink on the espresso surface (CodeRabbit) ([e77fa40](https://github.com/VoMinhKhoii/Kallo/commit/e77fa40880b73d040370587232ebf8bd1891b5e0))
+* **deploy:** fix smoke-check exit-code leak; address review ([367dc5a](https://github.com/VoMinhKhoii/Kallo/commit/367dc5a469082209eba87f0ee5ada2587540a793))
+* **deploy:** make cloud-run-prod first-deploy-aware ([2dfcee9](https://github.com/VoMinhKhoii/Kallo/commit/2dfcee9b86ce0e03684c5b34d489a7129ec4a090))
+* **deploy:** make cloud-run-prod first-deploy-aware ([91e1816](https://github.com/VoMinhKhoii/Kallo/commit/91e18162dce5e327849c2f3ec21fb06917771fcd))
+* **feedback:** cache mobile screenshot upload; harden upload quota ([338d9c5](https://github.com/VoMinhKhoii/Kallo/commit/338d9c5a307acd8c23b5152edf74bde69752b23a))
+* **feedback:** drop web screenshot object-URL preview ([76539fd](https://github.com/VoMinhKhoii/Kallo/commit/76539fd7f180b19a301217471fe64bad86a95d8a))
+* **feedback:** RLS-enforce screenshot upload + mount service-role secret ([4dcb3db](https://github.com/VoMinhKhoii/Kallo/commit/4dcb3db3086d042f49cf093de52fa3eb0604f172))
+* **feedback:** upload screenshots via user session so RLS enforces ownership ([9cc6424](https://github.com/VoMinhKhoii/Kallo/commit/9cc642474520146edd294087e7d2de040bf7f006))
+* **landing-lab:** address CodeRabbit review — dish guard + reduced-motion entrances ([800fe8a](https://github.com/VoMinhKhoii/Kallo/commit/800fe8a400a23bbcf701922b0861b0d7ba072ac5))
+* **mobile/settings:** keep button semantics on disabled rows; retry busy state ([c0356b1](https://github.com/VoMinhKhoii/Kallo/commit/c0356b1fabc2fada8e1d72938b36df983820530a))
+
+
+### Refactor
+
+* **dashboard:** derive the stream ticker; collapse retry; polish loaders ([7aee8e5](https://github.com/VoMinhKhoii/Kallo/commit/7aee8e5a3287cb6f03cc24cdbb8a877d5844bb21))
+* **dashboard:** pure-CSS heatmap layout — 1fr columns + aspect-square cells ([5d32912](https://github.com/VoMinhKhoii/Kallo/commit/5d32912fedcdc4524158d72ccd3328471f740586))
+* **design:** adopt cn() for conditional classes; fix truncation ([ee771b5](https://github.com/VoMinhKhoii/Kallo/commit/ee771b5204c1dd8b82797113aeb544c8084724b3))
+* **design:** adopt cn() in specimen components, drop dead eyebrow tokens ([5e4dd66](https://github.com/VoMinhKhoii/Kallo/commit/5e4dd66551466bea69dc9583418e01f0583168dd))
+* **design:** sweep hardcoded warm hexes onto nham tokens ([ab15543](https://github.com/VoMinhKhoii/Kallo/commit/ab15543132f09887fec5cee72a2a085bd41f914c))
+* **landing-lab:** keep only the winning v3 cuisine globe ([e32b546](https://github.com/VoMinhKhoii/Kallo/commit/e32b5462de776cab44f00102f2b23449c7e980e4))
+* **mobile/settings:** align Settings rows on a shared icon gutter ([6ce9692](https://github.com/VoMinhKhoii/Kallo/commit/6ce96923e73cfc04e38a6dd432c786fabe99e3fd))
+* **mobile/settings:** drop grouped-card surfaces, keep flat rows ([8bc2a91](https://github.com/VoMinhKhoii/Kallo/commit/8bc2a911c30d007b4697f4f3c7e536182ee47822))
+* **mobile:** dedup cheat badge + fix curved-animation lifecycle ([1c35f29](https://github.com/VoMinhKhoii/Kallo/commit/1c35f2909e4ba4bf35d523f69debeaf29cafff76))
+* **web:** apply post-redesign cleanups ([11a9a1c](https://github.com/VoMinhKhoii/Kallo/commit/11a9a1c600c714810babb7c064533a5d6b4c88a9))
+
+
+### Documentation
+
+* **mobile:** note cheat-meal parity in the architecture doc ([2f47237](https://github.com/VoMinhKhoii/Kallo/commit/2f4723770fe531a6a3d0e6c4a384ec071e448803))
+
 ## [1.6.0](https://github.com/VoMinhKhoii/Nham/compare/v1.5.0...v1.6.0) (2026-07-02)
 
 

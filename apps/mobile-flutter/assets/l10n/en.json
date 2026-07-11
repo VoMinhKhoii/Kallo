@@ -995,7 +995,8 @@
       "over": "Over",
       "under": "Under",
       "farOver": "Far over",
-      "farUnder": "Far under"
+      "farUnder": "Far under",
+      "cheatDay": "Cheat day"
     },
     "caloriesLogged": "kcal logged",
     "mealReceiptsHint": "Your meal receipts will show up here",
@@ -1021,8 +1022,6 @@
     "modeSelector": {
       "title": "How do you want to log?",
       "button": "Mode",
-      "soon": "Soon",
-      "comingSoon": "Cheat meal mode is coming soon",
       "normal": "Normal",
       "normalDesc": "Describe a meal in your own words",
       "cheat": "Cheat meal",
@@ -1031,6 +1030,33 @@
       "manualDesc": "Search foods, enter exact grams",
       "barcode": "Barcode",
       "barcodeDesc": "Scan a packaged product"
+    },
+    "cheatPlaceholder": "Korean BBQ buffet, went all out…",
+    "cheatIntensity": {
+      "label": "How much did you eat?",
+      "helper": "Scales the estimate",
+      "light": "Light",
+      "medium": "Medium",
+      "heavy": "Heavy"
+    },
+    "cheatSliders": {
+      "badge": "Cheat meal",
+      "confirm": "Save meal",
+      "kcal": "kcal",
+      "alcohol": "alcohol",
+      "between": "Between {low} and {high}"
+    },
+    "cheatRepeat": {
+      "title": "Log it again"
+    },
+    "cheatMealCard": {
+      "badge": "Cheat meal",
+      "remove": "Remove",
+      "toggleDetails": "Toggle meal details",
+      "total": "Total",
+      "youSet": "You set",
+      "alcoholShort": "Alc",
+      "reassurance": "One meal is a rounding error on your trend — tomorrow's plan is unchanged."
     },
     "barcode": {
       "title": "Scan barcode",

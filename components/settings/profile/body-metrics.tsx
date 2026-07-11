@@ -25,7 +25,7 @@ const GOALS: Goal[] = ['cutting', 'maintaining', 'bulking'];
 const CARB_SPLITS: CarbSplit[] = ['moderate_carb', 'lower_carb', 'higher_carb'];
 
 const inputClass =
-  'w-full rounded-lg border border-[#EAE7E0] bg-white px-3 py-2 text-[14px] text-[#2C2416] transition-colors hover:border-[#C9A87C]/50 focus:border-[#C9A87C] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C9A87C]/40';
+  'w-full rounded-lg border border-[#EAE7E0] bg-white px-3 py-2 text-[14px] text-nham-text transition-colors hover:border-nham-accent/50 focus:border-nham-accent focus:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent/40';
 
 const AGGRESSIVE_PACE_KG = 0.6;
 
@@ -140,7 +140,7 @@ export function BodyMetrics({ savedCalorieTarget }: BodyMetricsProps) {
             name="biologicalSex"
             render={({ field }) => (
               <FormItem>
-                <label className="mb-1.5 block font-bold text-[#6B5D4F] text-[11px] uppercase tracking-widest">
+                <label className="mb-1.5 block font-bold text-[11px] text-nham-text-soft uppercase tracking-widest">
                   {t('biologicalSex')}
                 </label>
                 <FormControl>
@@ -164,7 +164,7 @@ export function BodyMetrics({ savedCalorieTarget }: BodyMetricsProps) {
           name="weightKg"
           render={({ field }) => (
             <FormItem>
-              <label className="mb-1.5 block font-bold text-[#6B5D4F] text-[11px] uppercase tracking-widest">
+              <label className="mb-1.5 block font-bold text-[11px] text-nham-text-soft uppercase tracking-widest">
                 {t('weight')} ({t('weightUnit')})
               </label>
               <FormControl>
@@ -189,7 +189,7 @@ export function BodyMetrics({ savedCalorieTarget }: BodyMetricsProps) {
           name="heightCm"
           render={({ field }) => (
             <FormItem>
-              <label className="mb-1.5 block font-bold text-[#6B5D4F] text-[11px] uppercase tracking-widest">
+              <label className="mb-1.5 block font-bold text-[11px] text-nham-text-soft uppercase tracking-widest">
                 {t('height')} ({t('heightUnit')})
               </label>
               <FormControl>
@@ -215,7 +215,7 @@ export function BodyMetrics({ savedCalorieTarget }: BodyMetricsProps) {
           name="age"
           render={({ field }) => (
             <FormItem>
-              <label className="mb-1.5 block font-bold text-[#6B5D4F] text-[11px] uppercase tracking-widest">
+              <label className="mb-1.5 block font-bold text-[11px] text-nham-text-soft uppercase tracking-widest">
                 {t('age')}
               </label>
               <FormControl>
@@ -242,7 +242,7 @@ export function BodyMetrics({ savedCalorieTarget }: BodyMetricsProps) {
             name="activityLevel"
             render={({ field }) => (
               <FormItem>
-                <label className="mb-1.5 block font-bold text-[#6B5D4F] text-[11px] uppercase tracking-widest">
+                <label className="mb-1.5 block font-bold text-[11px] text-nham-text-soft uppercase tracking-widest">
                   {t('activityLevel')}
                 </label>
                 <FormControl>
@@ -267,7 +267,7 @@ export function BodyMetrics({ savedCalorieTarget }: BodyMetricsProps) {
             name="goal"
             render={({ field }) => (
               <FormItem>
-                <label className="mb-2 block font-bold text-[#6B5D4F] text-[11px] uppercase tracking-widest">
+                <label className="mb-2 block font-bold text-[11px] text-nham-text-soft uppercase tracking-widest">
                   {t('goal')}
                 </label>
                 <FormControl>
@@ -288,10 +288,10 @@ export function BodyMetrics({ savedCalorieTarget }: BodyMetricsProps) {
                             });
                           }
                         }}
-                        className={`flex-1 rounded-lg px-2 py-2 text-center font-medium text-[14px] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C9A87C]/40 ${
+                        className={`flex-1 rounded-lg px-2 py-2 text-center font-medium text-[14px] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent/40 ${
                           field.value === g
-                            ? 'bg-white text-[#2C2416] shadow-sm'
-                            : 'text-[#7B6F62] hover:text-[#2C2416]'
+                            ? 'bg-white text-nham-text shadow-sm'
+                            : 'text-[#7B6F62] hover:text-nham-text'
                         }`}
                       >
                         {GOAL_LABELS[g]}
@@ -315,7 +315,7 @@ export function BodyMetrics({ savedCalorieTarget }: BodyMetricsProps) {
                 );
                 return (
                   <FormItem>
-                    <label className="mb-2 block font-bold text-[#6B5D4F] text-[11px] uppercase tracking-widest">
+                    <label className="mb-2 block font-bold text-[11px] text-nham-text-soft uppercase tracking-widest">
                       {t('aggressionLabel')} (
                       {watchGoal === 'cutting'
                         ? t('aggressionDeficit')
@@ -324,7 +324,7 @@ export function BodyMetrics({ savedCalorieTarget }: BodyMetricsProps) {
                     </label>
                     <div className="space-y-3 rounded-2xl border border-[#EAE7E0] bg-white p-4 sm:p-5">
                       {/* Readout on its own line so it never collides with the end labels */}
-                      <div className="text-center font-medium text-[#2C2416] text-[15px]">
+                      <div className="text-center font-medium text-[15px] text-nham-text">
                         {aggressionKg.toFixed(2)} {t('weightUnit')}/wk
                         <span className="text-[#7B6F62]"> · </span>
                         {watchGoal === 'cutting' ? '−' : '+'}
@@ -344,7 +344,7 @@ export function BodyMetrics({ savedCalorieTarget }: BodyMetricsProps) {
                           aria-valuetext={`${aggressionKg.toFixed(2)} ${t('weightUnit')}/wk, ${
                             watchGoal === 'cutting' ? '−' : '+'
                           }${kcalDelta} ${t('perDay')}`}
-                          className="w-full accent-[#C9A87C] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C9A87C]/40"
+                          className="w-full accent-nham-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent/40"
                         />
                       </FormControl>
                       <div className="flex items-center justify-between text-[#7B6F62] text-[12px]">
@@ -360,7 +360,7 @@ export function BodyMetrics({ savedCalorieTarget }: BodyMetricsProps) {
 
           {/* Carb Split */}
           <div>
-            <label className="mb-2 block font-bold text-[#6B5D4F] text-[11px] uppercase tracking-widest">
+            <label className="mb-2 block font-bold text-[11px] text-nham-text-soft uppercase tracking-widest">
               {t('carbSplit')}
             </label>
             <FormField
@@ -376,13 +376,13 @@ export function BodyMetrics({ savedCalorieTarget }: BodyMetricsProps) {
                           type="button"
                           aria-pressed={field.value === opt.id}
                           onClick={() => field.onChange(opt.id)}
-                          className={`flex flex-col gap-1 rounded-2xl border p-4 text-left transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C9A87C]/40 ${
+                          className={`flex flex-col gap-1 rounded-2xl border p-4 text-left transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent/40 ${
                             field.value === opt.id
-                              ? 'border-[#C9A87C] bg-[#C9A87C]/5 shadow-sm'
-                              : 'border-[#EAE7E0] bg-white hover:border-[#C9A87C]/50'
+                              ? 'border-nham-accent bg-nham-accent/5 shadow-sm'
+                              : 'border-[#EAE7E0] bg-white hover:border-nham-accent/50'
                           }`}
                         >
-                          <span className="font-medium text-[#2C2416] text-[14px]">
+                          <span className="font-medium text-[14px] text-nham-text">
                             {opt.label}
                           </span>
                           <span className="text-[#7B6F62] text-[11px]">
@@ -423,10 +423,10 @@ export function BodyMetrics({ savedCalorieTarget }: BodyMetricsProps) {
                 (watchAggression ?? 0) > AGGRESSIVE_PACE_KG;
               const newTargetClass = aggressivePace
                 ? 'text-nham-danger'
-                : 'text-[#2C2416]';
+                : 'text-nham-text';
               return (
-                <div className="rounded-2xl border border-[#C9A87C]/40 bg-gradient-to-b from-[#C9A87C]/[0.07] to-transparent p-5 text-center sm:p-6">
-                  <span className="block font-bold text-[#6B5D4F] text-[11px] uppercase tracking-widest">
+                <div className="rounded-2xl border border-nham-accent/40 bg-gradient-to-b from-nham-accent/[0.07] to-transparent p-5 text-center sm:p-6">
+                  <span className="block font-bold text-[11px] text-nham-text-soft uppercase tracking-widest">
                     {diverged
                       ? tSettings('targetRitual.newLabel')
                       : t('calorieTarget')}
@@ -472,28 +472,28 @@ export function BodyMetrics({ savedCalorieTarget }: BodyMetricsProps) {
                       </>
                     )}
                   </p>
-                  <div className="mt-5 grid grid-cols-3 gap-4 border-[#C9A87C]/20 border-t pt-4">
+                  <div className="mt-5 grid grid-cols-3 gap-4 border-nham-accent/20 border-t pt-4">
                     <div>
-                      <div className="font-bold text-[#6B5D4F] text-[10px] uppercase tracking-widest">
+                      <div className="font-bold text-[10px] text-nham-text-soft uppercase tracking-widest">
                         {t('protein')}
                       </div>
-                      <div className="font-medium text-[#2C2416] text-lg">
+                      <div className="font-medium text-lg text-nham-text">
                         {macros.proteinG}g
                       </div>
                     </div>
                     <div>
-                      <div className="font-bold text-[#6B5D4F] text-[10px] uppercase tracking-widest">
+                      <div className="font-bold text-[10px] text-nham-text-soft uppercase tracking-widest">
                         {t('carbs')}
                       </div>
-                      <div className="font-medium text-[#2C2416] text-lg">
+                      <div className="font-medium text-lg text-nham-text">
                         {macros.carbsG}g
                       </div>
                     </div>
                     <div>
-                      <div className="font-bold text-[#6B5D4F] text-[10px] uppercase tracking-widest">
+                      <div className="font-bold text-[10px] text-nham-text-soft uppercase tracking-widest">
                         {t('fat')}
                       </div>
-                      <div className="font-medium text-[#2C2416] text-lg">
+                      <div className="font-medium text-lg text-nham-text">
                         {macros.fatG}g
                       </div>
                     </div>

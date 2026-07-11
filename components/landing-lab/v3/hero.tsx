@@ -130,7 +130,7 @@ export function V3Hero() {
   );
 
   return (
-    <section ref={storyRef} className="relative bg-[#FEFBF6]">
+    <section ref={storyRef} className="relative bg-nham-surface">
       {/* The pinned stage: one globe serves both screens. Pointer events
           stay off until the sphere has arrived so hero CTAs never fight
           the canvas. */}
@@ -176,15 +176,15 @@ export function V3Hero() {
               initial={entrance}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.7 }}
-              className="mb-8 inline-flex items-center gap-2 rounded-full border border-[#E8D5B5] bg-white/80 px-4 py-1.5 shadow-sm backdrop-blur-sm"
+              className="mb-8 inline-flex items-center gap-2 rounded-full border border-nham-border bg-white/80 px-4 py-1.5 shadow-sm backdrop-blur-sm"
             >
-              <Sparkles className="h-3.5 w-3.5 text-[#C9A87C]" />
-              <span className="font-semibold text-[#8B7355] text-xs uppercase tracking-[0.2em]">
+              <Sparkles className="h-3.5 w-3.5 text-nham-accent" />
+              <span className="font-semibold text-nham-text-muted text-xs uppercase tracking-[0.2em]">
                 {LAB_COPY.badge}
               </span>
             </motion.div>
 
-            <h1 className="mb-6 font-normal font-serif text-5xl text-[#2C2416] leading-[1.08] tracking-[-0.02em] sm:text-6xl lg:text-7xl">
+            <h1 className="mb-6 font-normal font-serif text-5xl text-nham-text leading-[1.08] tracking-[-0.02em] sm:text-6xl lg:text-7xl">
               {LAB_COPY.title}
               <br />
               <span className="font-light text-[#A9834E] italic">
@@ -192,7 +192,7 @@ export function V3Hero() {
               </span>
             </h1>
 
-            <p className="mx-auto mb-10 max-w-xl font-light font-sans-display text-[#6B5D4F] text-lg leading-relaxed">
+            <p className="mx-auto mb-10 max-w-xl font-light font-sans-display text-lg text-nham-text-soft leading-relaxed">
               {LAB_COPY.subtitle}
             </p>
 
@@ -234,7 +234,7 @@ export function V3Hero() {
               </Button>
             </motion.div>
 
-            <p className="mt-10 font-medium text-[#8B7355] text-sm">
+            <p className="mt-10 font-medium text-nham-text-muted text-sm">
               {LAB_COPY.beta}
             </p>
           </div>

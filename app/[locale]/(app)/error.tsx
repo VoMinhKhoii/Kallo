@@ -25,7 +25,7 @@ export default function AppError({
       className="flex min-h-[60vh] flex-1 flex-col items-center justify-center gap-4 px-6 text-center font-sans-display"
       role="alert"
     >
-      <h2 className="font-serif text-[#2C2416] text-xl">This didn’t load.</h2>
+      <h2 className="font-serif text-nham-text text-xl">This didn’t load.</h2>
       <p className="max-w-sm text-[14px] text-nham-text-muted leading-relaxed">
         Something went wrong on our side. Give it another try.
       </p>

@@ -3,6 +3,7 @@
 /// Ported from `lib/ai/streaming/types.ts`.
 library;
 
+import 'cheat.dart';
 import 'meal.dart';
 
 /// Pipeline stages emitted as progress updates.
@@ -25,6 +26,7 @@ sealed class StreamEvent {
       'item_name' => ItemNameEvent.fromJson(json),
       'item_macros' => ItemMacrosEvent.fromJson(json),
       'result' => ResultEvent.fromJson(json),
+      'cheat_estimate' => CheatEstimateEvent.fromJson(json),
       'analysis_complete' => AnalysisCompleteEvent.fromJson(json),
       'error' => StreamErrorEvent.fromJson(json),
       _ => throw ArgumentError('Unknown StreamEvent type: $type'),
@@ -113,6 +115,25 @@ class ResultEvent extends StreamEvent {
   Map<String, dynamic> toJson() => {
         'type': 'result',
         'data': data.toJson(),
+      };
+}
+
+/// Cheat-meal slider spec (mode='cheat'); replaces `result`. When the spec
+/// carries a clarifyingQuestion the stream ends WITHOUT analysis_complete —
+/// the client must re-ask with `clarifyAnswer`.
+class CheatEstimateEvent extends StreamEvent {
+  final CheatSliderSpec spec;
+
+  const CheatEstimateEvent({required this.spec});
+
+  factory CheatEstimateEvent.fromJson(Map<String, dynamic> json) =>
+      CheatEstimateEvent(
+        spec: CheatSliderSpec.fromJson(json['spec'] as Map<String, dynamic>),
+      );
+
+  Map<String, dynamic> toJson() => {
+        'type': 'cheat_estimate',
+        'spec': spec.toJson(),
       };
 }
 

@@ -19,7 +19,7 @@ export default async function TermsPage({
 
   return (
     <main className="mx-auto min-h-dvh max-w-2xl bg-nham-surface px-6 py-16 font-sans-display">
-      <h1 className="mb-4 font-normal font-serif text-3xl text-[#2C2416]">
+      <h1 className="mb-4 font-normal font-serif text-3xl text-nham-text">
         Terms of Service
       </h1>
       <p className="mb-4 text-[#5C5140] leading-relaxed">
@@ -27,7 +27,7 @@ export default async function TermsPage({
         general guidance only and are not medical or dietary advice. Use the app
         responsibly and consult a professional for health decisions.
       </p>
-      <p className="text-[#8B7355] text-sm leading-relaxed">
+      <p className="text-nham-text-muted text-sm leading-relaxed">
         These terms are being finalized. For any question, contact{' '}
         <a className="underline" href="mailto:support@kallo.fit">
           support@kallo.fit

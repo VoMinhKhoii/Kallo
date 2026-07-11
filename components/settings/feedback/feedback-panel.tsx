@@ -14,6 +14,7 @@ import { useEffect, useRef, useState } from 'react';
 import { usePathname } from '@/i18n/navigation';
 import type { SubmitFeedbackInput } from '@/lib/api/contracts/feedback';
 import { FEEDBACK_TYPES } from '@/lib/api/contracts/feedback';
+import { cn } from '@/lib/utils';
 
 type FeedbackType = (typeof FEEDBACK_TYPES)[number];
 
@@ -160,18 +161,18 @@ export function FeedbackPanel() {
           <h3
             ref={sentHeading}
             tabIndex={-1}
-            className="font-serif text-[#2C2416] text-lg outline-none"
+            className="font-serif text-lg text-nham-text outline-none"
           >
             {t('successTitle')}
           </h3>
-          <p className="mt-1 max-w-sm text-[#6B5D4F] text-[14px]">
+          <p className="mt-1 max-w-sm text-[14px] text-nham-text-soft">
             {t('successBody')}
           </p>
         </div>
         <button
           type="button"
           onClick={reset}
-          className="rounded-lg border border-[#EAE7E0] bg-white px-4 py-2 font-medium text-[#2C2416] text-sm transition-colors hover:border-[#C9A87C]/50"
+          className="rounded-lg border border-[#EAE7E0] bg-white px-4 py-2 font-medium text-nham-text text-sm transition-colors hover:border-nham-accent/50"
         >
           {t('sendAnother')}
         </button>
@@ -183,7 +184,7 @@ export function FeedbackPanel() {
     <div className="rounded-2xl border border-[#EAE7E0] bg-[#FDFCF8] p-4 sm:p-5">
       {/* Type selector */}
       <fieldset>
-        <legend className="mb-2 font-medium text-[#2C2416] text-[14px]">
+        <legend className="mb-2 font-medium text-[14px] text-nham-text">
           {t('typeLabel')}
         </legend>
         <div className="grid grid-cols-3 gap-2">
@@ -196,11 +197,12 @@ export function FeedbackPanel() {
                 type="button"
                 onClick={() => setType(option)}
                 aria-pressed={active}
-                className={`flex flex-col items-center gap-1.5 rounded-xl border px-2 py-3 text-[13px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C9A87C]/60 ${
+                className={cn(
+                  'flex flex-col items-center gap-1.5 rounded-xl border px-2 py-3 text-[13px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent/60',
                   active
-                    ? 'border-[#C9A87C] bg-[#C9A87C]/10 text-[#2C2416]'
-                    : 'border-[#EAE7E0] bg-white text-[#7B6F62] hover:border-[#C9A87C]/50'
-                }`}
+                    ? 'border-nham-accent bg-nham-accent/10 text-nham-text'
+                    : 'border-[#EAE7E0] bg-white text-[#7B6F62] hover:border-nham-accent/50'
+                )}
               >
                 <Icon className="size-4" aria-hidden />
                 {t(`types.${option}`)}
@@ -213,7 +215,7 @@ export function FeedbackPanel() {
       {/* Message */}
       <label
         htmlFor="feedback-message"
-        className="mt-4 mb-2 block font-medium text-[#2C2416] text-[14px]"
+        className="mt-4 mb-2 block font-medium text-[14px] text-nham-text"
       >
         {t('messageLabel')}
       </label>
@@ -225,7 +227,7 @@ export function FeedbackPanel() {
         maxLength={MAX_LENGTH}
         rows={5}
         aria-required="true"
-        className="w-full resize-y rounded-xl border border-[#EAE7E0] bg-white px-3 py-2.5 text-[#2C2416] text-[14px] placeholder:text-[#A79B8B] focus-visible:border-[#C9A87C] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C9A87C]/60"
+        className="w-full resize-y rounded-xl border border-[#EAE7E0] bg-white px-3 py-2.5 text-[14px] text-nham-text placeholder:text-[#A79B8B] focus-visible:border-nham-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent/60"
       />
       <p className="mt-1 text-right text-[#A79B8B] text-[12px] tabular-nums">
         {message.length} / {MAX_LENGTH}
@@ -243,14 +245,14 @@ export function FeedbackPanel() {
         {file ? (
           <div className="flex items-center gap-2 rounded-xl border border-[#EAE7E0] bg-white px-3 py-2 text-[13px]">
             <ImageIcon className="size-4 shrink-0 text-[#7B6F62]" aria-hidden />
-            <span className="min-w-0 flex-1 truncate text-[#2C2416]">
+            <span className="min-w-0 flex-1 truncate text-nham-text">
               {file.name}
             </span>
             <button
               type="button"
               onClick={clearFile}
               aria-label={t('removeScreenshot')}
-              className="shrink-0 rounded-md p-1 text-[#7B6F62] transition-colors hover:text-[#2C2416]"
+              className="shrink-0 rounded-md p-1 text-[#7B6F62] transition-colors hover:text-nham-text"
             >
               <X className="size-4" aria-hidden />
             </button>
@@ -259,21 +261,21 @@ export function FeedbackPanel() {
           <button
             type="button"
             onClick={() => fileInput.current?.click()}
-            className="flex items-center gap-2 rounded-xl border border-[#EAE7E0] border-dashed bg-white px-3 py-2 text-[#7B6F62] text-[13px] transition-colors hover:border-[#C9A87C]/50 hover:text-[#2C2416]"
+            className="flex items-center gap-2 rounded-xl border border-[#EAE7E0] border-dashed bg-white px-3 py-2 text-[#7B6F62] text-[13px] transition-colors hover:border-nham-accent/50 hover:text-nham-text"
           >
             <ImagePlus className="size-4" aria-hidden />
             {t('addScreenshot')}
           </button>
         )}
         {fileError && (
-          <p role="alert" className="mt-1.5 text-[#D37B69] text-[13px]">
+          <p role="alert" className="mt-1.5 text-[13px] text-nham-danger">
             {fileError}
           </p>
         )}
       </div>
 
       {submitError && (
-        <p role="alert" className="mt-3 text-[#D37B69] text-[13px]">
+        <p role="alert" className="mt-3 text-[13px] text-nham-danger">
           {submitError}
         </p>
       )}
@@ -283,7 +285,7 @@ export function FeedbackPanel() {
         type="button"
         onClick={handleSubmit}
         disabled={!canSubmit}
-        className="mt-4 w-full rounded-lg bg-[#2C2416] px-4 py-2.5 font-medium text-[#FEFBF6] text-sm transition-opacity disabled:opacity-50 sm:w-auto"
+        className="mt-4 w-full rounded-lg bg-nham-ink px-4 py-2.5 font-medium text-nham-surface text-sm transition-opacity disabled:opacity-50 sm:w-auto"
       >
         {pending ? t('submitting') : t('submit')}
       </button>

@@ -19,11 +19,11 @@ export function CTASection() {
           viewport={{ once: true }}
           transition={{ duration: 0.8 }}
         >
-          <h2 className="mb-6 font-normal font-serif text-5xl text-[#2C2416] leading-tight lg:text-6xl">
+          <h2 className="mb-6 font-normal font-serif text-5xl text-nham-text leading-tight lg:text-6xl">
             {t('title')}
           </h2>
 
-          <p className="mx-auto mb-12 max-w-2xl font-sans-display text-[#6B5D4F] text-xl leading-relaxed">
+          <p className="mx-auto mb-12 max-w-2xl font-sans-display text-nham-text-soft text-xl leading-relaxed">
             {t('subtitle')}
           </p>
 
@@ -53,17 +53,17 @@ export function CTASection() {
           </div>
 
           {/* Features */}
-          <div className="mb-16 flex flex-wrap justify-center gap-8 text-[#8B7355] text-sm">
+          <div className="mb-16 flex flex-wrap justify-center gap-8 text-nham-text-muted text-sm">
             <div className="flex items-center gap-2">
-              <Check className="h-4 w-4 text-[#C9A87C]" />
+              <Check className="h-4 w-4 text-nham-accent" />
               <span className="font-sans-display">{t('feature1')}</span>
             </div>
             <div className="flex items-center gap-2">
-              <Check className="h-4 w-4 text-[#C9A87C]" />
+              <Check className="h-4 w-4 text-nham-accent" />
               <span className="font-sans-display">{t('feature2')}</span>
             </div>
             <div className="flex items-center gap-2">
-              <Check className="h-4 w-4 text-[#C9A87C]" />
+              <Check className="h-4 w-4 text-nham-accent" />
               <span className="font-sans-display">{t('feature3')}</span>
             </div>
           </div>
@@ -75,9 +75,9 @@ export function CTASection() {
             whileInView={{ opacity: 1 }}
             viewport={{ once: true }}
             transition={{ duration: 0.8, delay: 0.2 }}
-            className="border-[#E8D5B5]/30 border-t pt-12"
+            className="border-nham-border/30 border-t pt-12"
           >
-            <p className="font-sans-display text-[#8B7355] text-sm">
+            <p className="font-sans-display text-nham-text-muted text-sm">
               {t('trust')}
             </p>
           </motion.div>

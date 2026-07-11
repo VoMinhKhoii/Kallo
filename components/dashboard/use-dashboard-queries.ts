@@ -88,31 +88,6 @@ export function useDashboardQueries({
     [persistedMeals, profile]
   );
 
-  // De-emphasized weekly reassurance: sum the last 7 logged days' calories from
-  // the already-loaded heatmap (cheat days included — no exclusion). Derived
-  // from `ratio × target`; only shown once real data is present.
-  const weekly = useMemo(() => {
-    const data = heatmapQuery.data;
-    const target = profile.calorieTarget;
-    if (!data || target <= 0) {
-      return { consumed: 0, target: target * 7, hasData: false };
-    }
-    const days = data.cells
-      .flat()
-      .filter((cell) => cell.status === 'logged' && cell.ratio !== null)
-      .sort((a, b) => b.date.localeCompare(a.date))
-      .slice(0, 7);
-    const consumed = days.reduce(
-      (sum, cell) => sum + (cell.ratio ?? 0) * target,
-      0
-    );
-    return {
-      consumed: Math.round(consumed),
-      target: target * 7,
-      hasData: days.length > 0,
-    };
-  }, [heatmapQuery.data, profile.calorieTarget]);
-
   return {
     dailyMealsQuery,
     heatmapData: heatmapQuery.data,
@@ -120,7 +95,6 @@ export function useDashboardQueries({
     resolvedHeatmapData: heatmapQuery.data ?? emptyHeatmapData,
     todayMeals,
     todayNutrition,
-    weekly,
     weightSummary: weightSummaryQuery.data,
     weightSummaryQuery,
   };

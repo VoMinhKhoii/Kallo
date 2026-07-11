@@ -23,7 +23,7 @@ export function FormInput({
 
   return (
     <div className="space-y-1.5">
-      <label className="block font-medium font-sans-display text-[#2C2416] text-xs tracking-wide">
+      <label className="block font-medium font-sans-display text-nham-text text-xs tracking-wide">
         {label}
       </label>
       <div className="relative">
@@ -31,10 +31,10 @@ export function FormInput({
           type={isPassword && showPassword ? 'text' : type}
           placeholder={placeholder}
           className={cn(
-            'w-full rounded-xl border bg-white px-4 py-3 text-[#2C2416] text-sm outline-none transition-all duration-200 placeholder:text-[#B0A695]',
+            'w-full rounded-xl border bg-white px-4 py-3 text-nham-text text-sm outline-none transition-all duration-200 placeholder:text-[#B0A695]',
             error
               ? 'border-nham-danger/50 focus:border-nham-danger focus:ring-2 focus:ring-nham-danger/10'
-              : 'border-[#E8D5B5]/60 focus:border-[#C9A87C] focus:ring-2 focus:ring-[#C9A87C]/10',
+              : 'border-nham-border/60 focus:border-nham-accent focus:ring-2 focus:ring-nham-accent/10',
             'font-sans-display'
           )}
           {...props}
@@ -43,7 +43,7 @@ export function FormInput({
           <button
             type="button"
             onClick={() => setShowPassword(!showPassword)}
-            className="absolute top-1/2 right-3 -translate-y-1/2 text-[#8B7355]/50 transition-colors hover:text-[#8B7355]"
+            className="absolute top-1/2 right-3 -translate-y-1/2 text-nham-text-muted/50 transition-colors hover:text-nham-text-muted"
           >
             {showPassword ? (
               <EyeOff className="h-4 w-4" />
