@@ -20,7 +20,7 @@ import {
   formatMacroOrNA,
 } from '@/components/logging/feed/format-inline-nutrition';
 import { useShareMeal } from '@/hooks/social/use-share-meal';
-import type { PersistedMeal } from '@/lib/actions/meals';
+import type { PersistedMeal } from '@/lib/actions/meals/types';
 import { MIN_DISH_GRAMS } from '@/lib/meal-utils';
 import { cn } from '@/lib/utils';
 import { MEAL_TEXT_MAX_LENGTH } from '@/lib/validation';

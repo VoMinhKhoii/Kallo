@@ -2,9 +2,8 @@
   "note": "Ratchet baseline for scripts/check-file-sizes.mjs. Frozen legacy oversize files: may shrink, never grow. Do not add entries by hand — split the file instead (see AGENTS.md \"File & Folder Organization\").",
   "files": {
     "apps/mobile-flutter/lib/features/logging/widgets/feed_area.dart": 1719,
-    "lib/actions/meals/index.ts": 1206,
     "apps/mobile-flutter/lib/features/onboarding/screens/screen_body_metrics.dart": 1002,
-    "components/logging/feed/feed-area.tsx": 957,
+    "components/logging/feed/feed-area.tsx": 955,
     "lib/rate-limit/analysis-guards.ts": 911,
     "apps/mobile-flutter/lib/features/logging/widgets/barcode_scanner_sheet.dart": 906,
     "app/[locale]/(app)/admin/requests/[id]/_components/pipeline-summary.tsx": 895,

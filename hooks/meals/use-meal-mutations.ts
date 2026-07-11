@@ -10,17 +10,17 @@ import { toast } from 'sonner';
 import { dailyMealsKeys } from '@/hooks/meals/use-daily-meals';
 import { loggingDayKeys } from '@/hooks/meals/use-logging-day';
 import { saveManualMealAction } from '@/lib/actions/manual-meals';
+import { confirmAndSaveMealAction } from '@/lib/actions/meals/confirm-and-save';
+import { duplicateMealAction } from '@/lib/actions/meals/duplicate-meal';
+import {
+  deleteMealAction,
+  updateMealAction,
+} from '@/lib/actions/meals/mutate-meal';
 import type {
   LoggingDayData,
   PersistedMeal,
   PersistedMealItemGroup,
-} from '@/lib/actions/meals';
-import {
-  confirmAndSaveMealAction,
-  deleteMealAction,
-  duplicateMealAction,
-  updateMealAction,
-} from '@/lib/actions/meals';
+} from '@/lib/actions/meals/types';
 import { NUTRITION_KEYS } from '@/lib/ai/constants';
 import type { NutritionValues } from '@/lib/ai/types';
 import type { SaveManualMealInput } from '@/lib/api/contracts/meals';

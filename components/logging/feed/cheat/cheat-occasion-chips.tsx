@@ -2,7 +2,7 @@
 
 import { Cookie } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import type { RecentCheatOccasion } from '@/lib/actions/meals';
+import type { RecentCheatOccasion } from '@/lib/actions/meals/types';
 
 interface CheatOccasionChipsProps {
   occasions: RecentCheatOccasion[];

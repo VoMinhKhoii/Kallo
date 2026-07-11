@@ -17,7 +17,7 @@ import {
   searchBarcodeAction,
   stageBarcodeMealAction,
 } from '@/lib/actions/barcode';
-import { confirmAndSaveMealAction } from '@/lib/actions/meals';
+import { confirmAndSaveMealAction } from '@/lib/actions/meals/confirm-and-save';
 import { tryDecodeFontEncodedBarcode } from '@/lib/barcode/decode';
 import type { ParsedBarcodeProduct } from '@/lib/barcode/openfoodfacts';
 import { BarcodeProductStep } from './barcode-product-step';

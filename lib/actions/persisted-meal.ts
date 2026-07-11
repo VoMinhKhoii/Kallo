@@ -10,7 +10,7 @@ import type {
   PersistedIngredient,
   PersistedMeal,
   PersistedMealItemGroup,
-} from '@/lib/actions/meals';
+} from '@/lib/actions/meals/types';
 import { NUTRITION_KEYS } from '@/lib/ai/constants';
 import { sumDisplayedNutrition } from '@/lib/ai/pipeline/goal-adjustment';
 import type { NutritionValues } from '@/lib/ai/types';

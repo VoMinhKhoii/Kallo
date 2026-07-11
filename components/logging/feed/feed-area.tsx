@@ -32,10 +32,8 @@ import { useRecentCheatOccasions } from '@/hooks/meals/use-recent-cheat-occasion
 import { useStreamAnalysis } from '@/hooks/meals/use-stream-analysis';
 import { useStreamingTerminalEffects } from '@/hooks/meals/use-streaming-terminal-effects';
 import { useSubmitGuard } from '@/hooks/meals/use-submit-guard';
-import {
-  type RecentCheatOccasion,
-  stageCheatRepeatAction,
-} from '@/lib/actions/meals';
+import { stageCheatRepeatAction } from '@/lib/actions/meals/cheat';
+import type { RecentCheatOccasion } from '@/lib/actions/meals/types';
 import { sumDisplayedNutrition } from '@/lib/ai/pipeline/goal-adjustment';
 import { rowIsComplete } from '@/lib/logging/manual-logging';
 import { isLikelyPartialDay } from '@/lib/nutrition/pattern/completeness';

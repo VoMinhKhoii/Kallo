@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { PersistedMeal } from '@/lib/actions/meals';
+import type { PersistedMeal } from '@/lib/actions/meals/types';
 import {
   buildTodayNutritionData,
   getTodayDateString,

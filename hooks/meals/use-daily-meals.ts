@@ -1,8 +1,8 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import type { PersistedMeal } from '@/lib/actions/meals';
-import { loadMealsByDate } from '@/lib/actions/meals';
+import { loadMealsByDate } from '@/lib/actions/meals/load-meals';
+import type { PersistedMeal } from '@/lib/actions/meals/types';
 
 /** Query key factory for daily meals */
 export const dailyMealsKeys = {

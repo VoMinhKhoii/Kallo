@@ -2,7 +2,7 @@
 
 import { randomUUID } from 'node:crypto';
 import { inArray } from 'drizzle-orm';
-import type { ConfirmMealResponse } from '@/lib/actions/meals';
+import type { ConfirmMealResponse } from '@/lib/actions/meals/types';
 import {
   buildPersistedIngredient,
   buildPersistedMeal,
