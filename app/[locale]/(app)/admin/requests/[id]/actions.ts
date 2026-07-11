@@ -26,8 +26,8 @@ import {
   pipelineRequestReplayAuditLogs,
   pipelineRequests,
 } from '@/lib/db/schema';
+import { adminReplayGuardRoute } from '@/lib/rate-limit/analysis-guard-limits';
 import {
-  adminReplayGuardRoute,
   buildAnalysisGuardEvent,
   checkAdminReplayGuard,
 } from '@/lib/rate-limit/analysis-guards';

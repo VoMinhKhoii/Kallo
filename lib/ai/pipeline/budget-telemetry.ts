@@ -1,10 +1,10 @@
 import type { AppDb } from '@/lib/db';
-import {
-  type AnalysisModelBudgetWorkKind,
-  type AnalysisModelProviderErrorCategory,
-  type RecordAnalysisModelBudgetEventInput,
-  recordAnalysisModelBudgetEvent,
-} from '@/lib/rate-limit/analysis-guards';
+import type {
+  AnalysisModelBudgetWorkKind,
+  AnalysisModelProviderErrorCategory,
+  RecordAnalysisModelBudgetEventInput,
+} from '@/lib/rate-limit/analysis-guard-types';
+import { recordAnalysisModelBudgetEvent } from '@/lib/rate-limit/analysis-model-budget';
 import type { StreamOptions } from '../gemini';
 import { readBooleanEnv } from './config/feature-flags';
 

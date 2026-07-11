@@ -29,8 +29,8 @@ import {
   userProfiles,
 } from '@/lib/db/schema';
 import { Errors, serializeError } from '@/lib/errors';
+import type { AnalysisGuardAllowedResult } from '@/lib/rate-limit/analysis-guard-types';
 import {
-  type AnalysisGuardAllowedResult,
   buildAnalysisGuardEvent,
   checkAnalysisGuards,
 } from '@/lib/rate-limit/analysis-guards';
