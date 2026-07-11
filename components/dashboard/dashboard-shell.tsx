@@ -1,8 +1,7 @@
 'use client';
 
 import { useQueryClient } from '@tanstack/react-query';
-import { useLocale, useTranslations } from 'next-intl';
-import { useMemo } from 'react';
+import { useTranslations } from 'next-intl';
 import { chooseRenderedHeatmapRange } from '@/lib/dashboard/heatmap-range';
 import type {
   DashboardProfile,
@@ -13,30 +12,11 @@ import { DashboardSectionState } from './dashboard-section-state';
 import { AdherenceHeatmap } from './progress/adherence-heatmap';
 import { HeatmapSkeleton } from './progress/progress-section-skeleton';
 import { ProgressStory } from './progress/progress-story';
-import { SectionHeader } from './section-header';
 import { FloatingMealTrigger, InlineMealTrigger } from './today/meal-trigger';
 import { TodayDock } from './today/today-dock';
 import { useDashboardDateRefresh } from './use-dashboard-date-refresh';
 import { useDashboardMeasurements } from './use-dashboard-measurements';
 import { useDashboardQueries } from './use-dashboard-queries';
-
-function getWeekTitle(locale: string, label: string, today: string): string {
-  const now = new Date(today);
-  const day = now.getDay(); // 0=Sun, 1=Mon...
-  const diffToMon = day === 0 ? -6 : 1 - day;
-  const monday = new Date(today);
-  monday.setDate(now.getDate() + diffToMon);
-  const sunday = new Date(monday);
-  sunday.setDate(monday.getDate() + 6);
-
-  const formatter = new Intl.DateTimeFormat(locale, {
-    month: 'long',
-    day: 'numeric',
-  });
-  const year = sunday.getFullYear();
-
-  return `${label} ${formatter.format(monday)} – ${formatter.format(sunday)}, ${year}`;
-}
 
 const RANGE_LABEL_KEYS: Record<HeatmapRange, string> = {
   '30d': 'ranges.thirtyDays',
@@ -50,7 +30,6 @@ interface DashboardShellProps {
 
 export function DashboardShell({ profile }: DashboardShellProps) {
   const t = useTranslations('dashboard');
-  const locale = useLocale();
   const queryClient = useQueryClient();
   const todayDate = useDashboardDateRefresh(queryClient);
   const {
@@ -60,10 +39,6 @@ export function DashboardShell({ profile }: DashboardShellProps) {
     hasMeasuredProgress,
     hasMeasuredHeatmap,
   } = useDashboardMeasurements();
-  const weekTitle = useMemo(
-    () => getWeekTitle(locale, t('weekOf'), todayDate),
-    [locale, t, todayDate]
-  );
   // Progress always covers a fixed 30-day window (matching the Flutter
   // dashboard's passive 30d range), regardless of viewport width.
   const weightRange: TimeRange = '30d';
@@ -95,11 +70,22 @@ export function DashboardShell({ profile }: DashboardShellProps) {
   });
 
   return (
-    <main className="relative flex min-h-0 flex-1 flex-col overflow-y-auto overflow-x-hidden bg-nham-surface/30 font-sans-display xl:overflow-hidden">
-      <div className="min-h-full px-3 py-3 pb-24 sm:px-5 sm:py-4 lg:px-8 xl:h-full xl:min-h-0 xl:overflow-hidden xl:py-3 xl:pb-3">
-        <div className="mx-auto grid max-w-[1440px] gap-3 xl:h-full xl:min-h-0 xl:grid-rows-[minmax(150px,0.78fr)_minmax(220px,1.1fr)_minmax(240px,1.12fr)]">
+    <main className="relative flex min-h-0 flex-1 flex-col overflow-y-auto overflow-x-hidden bg-nham-surface/30 font-sans-display">
+      {/* The xl layout fills the viewport with fr rows; when the viewport is
+          too short for the rows' content minimums the page degrades to a
+          gentle scroll (main is overflow-y-auto) instead of letting cards
+          bleed over the section below. */}
+      <div className="min-h-full px-3 py-3 pb-24 sm:px-5 sm:py-4 lg:px-8 xl:flex xl:flex-col xl:py-3 xl:pb-3">
+        <div className="mx-auto grid w-full max-w-[1440px] gap-3 xl:flex-1 xl:grid-rows-[minmax(210px,0.6fr)_minmax(260px,1.4fr)_minmax(250px,1fr)]">
           <section className="flex min-h-0 flex-col gap-1.5">
-            <SectionHeader title={weekTitle} />
+            <div className="flex items-center justify-between gap-3">
+              <span className="font-medium text-nham-text-muted text-xs uppercase tracking-[0.08em]">
+                {t('caloriesRemaining')}
+              </span>
+              <span className="font-medium text-nham-text-muted text-xs">
+                {t('today')}
+              </span>
+            </div>
             {/* The primary action — logging a meal — sits as its own input
                 affordance, separated from the read-only Today display below.
                 Mobile uses the FloatingMealTrigger instead. */}
@@ -128,10 +114,10 @@ export function DashboardShell({ profile }: DashboardShellProps) {
             className="flex min-w-0 flex-col gap-1.5 xl:min-h-0"
           >
             <div className="flex items-center justify-between gap-3">
-              <span className="font-medium text-[12px] text-nham-text-muted uppercase tracking-[0.08em]">
+              <span className="font-medium text-nham-text-muted text-xs uppercase tracking-[0.08em]">
                 {t('progress')}
               </span>
-              <span className="font-medium text-[11px] text-nham-text-muted">
+              <span className="font-medium text-nham-text-muted text-xs">
                 {t(RANGE_LABEL_KEYS[weightRange])}
               </span>
             </div>
@@ -162,16 +148,16 @@ export function DashboardShell({ profile }: DashboardShellProps) {
 
           <section className="flex min-w-0 flex-col gap-1.5 xl:min-h-0">
             <div className="flex items-center justify-between gap-3">
-              <span className="font-medium text-[12px] text-nham-text-muted uppercase tracking-[0.08em]">
+              <span className="font-medium text-nham-text-muted text-xs uppercase tracking-[0.08em]">
                 {t('consistency')}
               </span>
-              <span className="font-medium text-[11px] text-nham-text-muted">
+              <span className="font-medium text-nham-text-muted text-xs">
                 {t(RANGE_LABEL_KEYS[renderedHeatmapRange])}
               </span>
             </div>
             <div
               ref={heatmapContainerRef}
-              className="min-h-[310px] rounded-[1.375rem] bg-card p-4 shadow-[0_10px_32px_rgba(44,36,22,0.05)] sm:min-h-[340px] md:min-h-[360px] xl:min-h-0 xl:flex-1"
+              className="min-h-[310px] rounded-2xl border border-nham-border/60 bg-card p-4 shadow-nham-text/[0.03] shadow-sm transition-[border-color,box-shadow] duration-200 hover:border-nham-accent/50 hover:shadow-md hover:shadow-nham-text/[0.06] sm:min-h-[340px] md:min-h-[360px] xl:min-h-0 xl:flex-1"
             >
               {!hasMeasuredHeatmap || heatmapQuery.isPending ? (
                 <HeatmapSkeleton range={renderedHeatmapRange} />

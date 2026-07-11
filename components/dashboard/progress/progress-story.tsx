@@ -1,10 +1,8 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { useMemo } from 'react';
-import { CompactWeightLog } from '@/components/dashboard/current/compact-weight-log';
 import { WeightChart } from '@/components/dashboard/progress/weight-chart';
-import { buildWeightTrendSummary } from '@/lib/dashboard/weight-trend';
+import { WeightLogPopover } from '@/components/dashboard/progress/weight-log-popover';
 import type { TimeRange } from '@/lib/types/dashboard';
 import type { WeightSummaryData } from '@/lib/types/weight';
 
@@ -20,22 +18,10 @@ export function ProgressStory({
   todayDate,
 }: ProgressStoryProps) {
   const t = useTranslations('dashboard');
-  const summary = useMemo(() => {
-    if (!weightSummary) return null;
 
-    return buildWeightTrendSummary({
-      weights: weightSummary.weights,
-      periodStartWeight: weightSummary.periodStartWeight,
-      expectedEndWeight: weightSummary.expectedEndWeight,
-      goalDirection: weightSummary.goalDirection,
-      range,
-      elapsedDays: weightSummary.periodElapsedDays,
-    });
-  }, [range, weightSummary]);
-
-  if (!weightSummary || !summary) {
+  if (!weightSummary) {
     return (
-      <section className="flex min-h-[360px] flex-col rounded-[1.375rem] bg-card p-4 shadow-[0_10px_32px_rgba(44,36,22,0.05)] xl:h-full xl:min-h-0">
+      <section className="flex min-h-[320px] flex-col rounded-2xl border border-nham-border/60 bg-card p-4 shadow-nham-text/[0.03] shadow-sm transition-[border-color,box-shadow] duration-200 hover:border-nham-accent/50 hover:shadow-md hover:shadow-nham-text/[0.06] xl:h-full xl:min-h-0">
         <div className="flex flex-1 items-center justify-center text-nham-text-muted text-sm">
           {t('loadingWeightTrend')}
         </div>
@@ -43,33 +29,37 @@ export function ProgressStory({
     );
   }
 
-  const copy = t.raw(`progressStatus.${summary.status}`);
-  const isInsufficient = summary.status === 'insufficient';
-  const delta = summary.currentWeight - summary.startWeight;
+  // Net change over the window (current − period start), shown as a small
+  // text-arrow badge beside the hero number — mirrors the Flutter card.
+  const delta = weightSummary.currentWeight - weightSummary.periodStartWeight;
+  const hasTrend = weightSummary.weights.length > 1 && Math.abs(delta) >= 0.05;
 
-  // ONE flat solid card: a single headline figure + a short status word, then
-  // the chart. No nested tinted panels, no trend-arrow icon, no status pill,
-  // no "now / projected" mini-boxes — the chart itself carries the projection.
+  // ONE flat solid card (the Flutter WeightChart redesign): the current weight
+  // as the hero with a small net-change badge and a "Log weight" popover
+  // affordance, then the full-width chart. No resident form, no status copy —
+  // the chart itself carries the story.
   return (
-    <section className="grid min-h-[320px] gap-3 rounded-[1.375rem] bg-card p-4 shadow-[0_10px_32px_rgba(44,36,22,0.05)] xl:h-full xl:min-h-0 xl:grid-cols-[minmax(220px,0.32fr)_minmax(0,0.68fr)]">
-      <div className="flex min-h-0 flex-col gap-3 xl:content-start">
-        <div>
-          <h2 className="font-medium font-sans-display text-3xl text-nham-text tracking-[-0.04em]">
-            {isInsufficient
-              ? `${summary.currentWeight.toFixed(1)} ${t('units.kg')}`
-              : `${delta > 0 ? '+' : ''}${delta.toFixed(1)} ${t('units.kg')}`}
+    <section className="flex min-h-[320px] flex-col gap-3 rounded-2xl border border-nham-border/60 bg-card p-4 shadow-nham-text/[0.03] shadow-sm transition-[border-color,box-shadow] duration-200 hover:border-nham-accent/50 hover:shadow-md hover:shadow-nham-text/[0.06] xl:h-full xl:min-h-0">
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex min-w-0 items-baseline gap-1.5">
+          <h2 className="font-sans-display text-hero text-nham-text tabular-nums">
+            {weightSummary.currentWeight.toFixed(1)}
           </h2>
-          <p className="mt-1 text-nham-text-muted text-sm">{copy.label}</p>
+          <span className="text-nham-text-muted text-sm">{t('units.kg')}</span>
+          {hasTrend && (
+            <span className="ml-1 font-medium text-nham-text-muted text-sm tabular-nums">
+              {delta > 0 ? '↑' : '↓'} {Math.abs(delta).toFixed(1)}
+            </span>
+          )}
         </div>
-
-        <CompactWeightLog
+        <WeightLogPopover
           currentWeight={weightSummary.currentWeight}
           todayWeight={weightSummary.todayWeight}
           todayDate={todayDate}
         />
       </div>
 
-      <div className="min-h-[200px] xl:min-h-0">
+      <div className="min-h-[200px] flex-1 xl:min-h-0">
         <WeightChart
           data={weightSummary.weights}
           range={range}

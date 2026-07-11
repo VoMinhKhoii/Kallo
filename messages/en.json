@@ -879,7 +879,6 @@
     "consistency": "Consistency",
     "weeklyAverage": "Weekly average",
     "target": "Target",
-    "weekOf": "Week of",
     "save": "Save",
     "saving": "Saving…",
     "retry": "Try again",
@@ -924,7 +923,6 @@
       "saveFailed": "Failed to save weight"
     },
     "adherenceHeatmap": {
-      "onTrack": "{percent}% on track",
       "notLogged": "Not logged",
       "partial": "Partial day (under-logged)",
       "cheatDay": "Cheat day",
@@ -942,29 +940,7 @@
       "farUnder": "Far under"
     },
     "caloriesLogged": "kcal logged",
-    "mealReceiptsHint": "Your meal receipts will show up here",
-    "progressStatus": {
-      "insufficient": {
-        "label": "Tracking started",
-        "detail": "Log tomorrow to see your trend."
-      },
-      "on_pace": {
-        "label": "On pace",
-        "detail": "Your current pace is matching the plan."
-      },
-      "ahead": {
-        "label": "Ahead of plan",
-        "detail": "Progress is moving faster than expected."
-      },
-      "behind": {
-        "label": "Needs attention",
-        "detail": "The trend is softer than the plan right now."
-      },
-      "stable": {
-        "label": "Stable",
-        "detail": "Your weight is staying within a quiet maintenance band."
-      }
-    }
+    "mealReceiptsHint": "Your meal receipts will show up here"
   },
   "logging": {
     "title": "What did you eat?",

@@ -879,7 +879,6 @@
     "consistency": "Độ đều đặn",
     "weeklyAverage": "Trung bình tuần",
     "target": "Mục tiêu",
-    "weekOf": "Tuần",
     "save": "Lưu",
     "saving": "Đang lưu…",
     "retry": "Thử lại",
@@ -924,7 +923,6 @@
       "saveFailed": "Không thể lưu cân nặng"
     },
     "adherenceHeatmap": {
-      "onTrack": "{percent}% đúng mục tiêu",
       "notLogged": "Chưa ghi nhận",
       "partial": "Ngày ghi thiếu",
       "cheatDay": "Ngày xả",
@@ -942,29 +940,7 @@
       "farUnder": "Thiếu nhiều"
     },
     "caloriesLogged": "kcal đã ghi",
-    "mealReceiptsHint": "Những bữa ăn sẽ hiển thị ở đây",
-    "progressStatus": {
-      "insufficient": {
-        "label": "Đã bắt đầu theo dõi",
-        "detail": "Ghi cân nặng vào ngày mai để thấy xu hướng."
-      },
-      "on_pace": {
-        "label": "Đúng kế hoạch",
-        "detail": "Tốc độ hiện tại của bạn phù hợp với kế hoạch."
-      },
-      "ahead": {
-        "label": "Vượt kế hoạch",
-        "detail": "Tiến độ nhanh hơn dự kiến."
-      },
-      "behind": {
-        "label": "Cần chú ý",
-        "detail": "Xu hướng hiện tại yếu hơn kế hoạch."
-      },
-      "stable": {
-        "label": "Ổn định",
-        "detail": "Cân nặng của bạn đang ổn định ở mức duy trì."
-      }
-    }
+    "mealReceiptsHint": "Những bữa ăn sẽ hiển thị ở đây"
   },
   "logging": {
     "title": "Bạn đã ăn gì?",

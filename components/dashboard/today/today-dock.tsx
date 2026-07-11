@@ -53,21 +53,20 @@ export function TodayDock({ nutrition, meals }: TodayDockProps) {
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.45 }}
-      className="flex min-h-0 flex-col gap-4 rounded-[1.375rem] bg-card p-4 shadow-[0_10px_32px_rgba(44,36,22,0.05)] xl:grid xl:h-full xl:grid-cols-[minmax(0,1fr)_minmax(240px,0.44fr)] xl:gap-5"
+      className="flex min-h-0 flex-col gap-4 rounded-2xl border border-nham-border/60 bg-card p-4 shadow-nham-text/[0.03] shadow-sm transition-[border-color,box-shadow] duration-200 hover:border-nham-accent/50 hover:shadow-md hover:shadow-nham-text/[0.06] xl:grid xl:h-full xl:grid-cols-[minmax(0,1fr)_minmax(240px,0.44fr)] xl:gap-5"
       aria-label={t('today')}
     >
-      <div className="flex min-w-0 flex-col">
-        {/* (a) Hero: calories-remaining number on the left, ring on the right. */}
-        <div className="flex items-center gap-4">
-          <div className="min-w-0 flex-1">
-            <span className="block font-medium text-[11px] text-nham-text-muted uppercase tracking-[0.08em]">
-              {t('caloriesRemaining')}
-            </span>
-            <div className="mt-1 flex items-baseline gap-1.5">
-              <span className="font-medium font-sans-display text-4xl text-nham-text tabular-nums leading-none tracking-[-0.04em] sm:text-5xl">
+      <div className="flex min-w-0 flex-col justify-center">
+        {/* (a) Hero: calories-remaining number on the left, macro bars in the
+            middle (md+), ring on the right. On narrow screens the bars drop
+            below the hero instead. */}
+        <div className="flex items-center gap-4 md:gap-6">
+          <div className="min-w-0 shrink-0">
+            <div className="flex items-baseline gap-1.5">
+              <span className="font-sans-display text-hero text-nham-text tabular-nums">
                 {remaining.toLocaleString()}
               </span>
-              <span className="font-sans-display text-lg text-nham-text-muted">
+              <span className="font-sans-display text-nham-text-muted text-sm">
                 / {nutrition.calories.target.toLocaleString()}
               </span>
             </div>
@@ -77,17 +76,23 @@ export function TodayDock({ nutrition, meals }: TodayDockProps) {
             </p>
           </div>
 
-          <CalorieRing
-            current={nutrition.calories.current}
-            target={nutrition.calories.target}
-            size={80}
-            strokeWidth={5}
-            center={<Flame className="h-6 w-6 text-nham-accent" />}
-          />
+          <div className="hidden min-w-0 flex-1 md:block">
+            <MacroBars items={macroItems} />
+          </div>
+
+          <div className="ml-auto shrink-0 md:ml-0">
+            <CalorieRing
+              current={nutrition.calories.current}
+              target={nutrition.calories.target}
+              size={80}
+              strokeWidth={5}
+              center={<Flame className="h-6 w-6 text-nham-accent" />}
+            />
+          </div>
         </div>
 
-        {/* (b) Macro bars — full width under the hero. */}
-        <div className="mt-4">
+        {/* (b) Macro bars — full width under the hero on narrow screens. */}
+        <div className="mt-4 md:hidden">
           <MacroBars items={macroItems} />
         </div>
       </div>

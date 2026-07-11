@@ -26,10 +26,10 @@ export function MealList({ meals }: MealListProps) {
   return (
     <div className="flex h-full min-h-0 flex-col">
       <div className="mb-2 flex items-baseline justify-between">
-        <span className="font-medium text-[11px] text-nham-text-muted uppercase tracking-[0.08em]">
+        <span className="font-medium text-nham-text-muted text-xs uppercase tracking-[0.08em]">
           {t('recentMeals')}
         </span>
-        <span className="text-[12px] text-nham-text-muted tabular-nums">
+        <span className="text-nham-text-muted text-xs tabular-nums">
           {t('mealsLogged', { count: meals.length })}
         </span>
       </div>
@@ -45,7 +45,7 @@ export function MealList({ meals }: MealListProps) {
             <span className="line-clamp-2 min-w-0 text-nham-text text-sm leading-snug">
               {meal.label}
             </span>
-            <span className="shrink-0 text-[12px] text-nham-text-muted tabular-nums">
+            <span className="shrink-0 text-nham-text-muted text-xs tabular-nums">
               {meal.calories} kcal
             </span>
           </div>
