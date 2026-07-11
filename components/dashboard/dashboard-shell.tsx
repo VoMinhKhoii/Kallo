@@ -90,6 +90,16 @@ export function DashboardShell({ profile }: DashboardShellProps) {
       <div className="min-h-full px-3 py-3 pb-24 sm:px-5 sm:py-4 lg:px-8 xl:flex xl:flex-col xl:py-3 xl:pb-3">
         <div className="mx-auto grid w-full max-w-[1440px] gap-3 xl:flex-1 xl:grid-rows-[minmax(210px,0.6fr)_minmax(260px,1.4fr)_minmax(250px,1fr)]">
           <section className="flex min-h-0 flex-col gap-1.5">
+            {/* The primary action — logging a meal — leads the page; the
+                section header sits beneath it, over the Today card. Mobile
+                uses the FloatingMealTrigger instead. */}
+            <div className="hidden md:block">
+              <InlineMealTrigger
+                onSubmitMeal={submit}
+                streaming={streaming}
+                restoredDraft={restoredDraft}
+              />
+            </div>
             <div className="flex items-center justify-between gap-3">
               <span className="font-medium text-nham-text-muted text-xs uppercase tracking-[0.08em]">
                 {t('caloriesRemaining')}
@@ -97,16 +107,6 @@ export function DashboardShell({ profile }: DashboardShellProps) {
               <span className="font-medium text-nham-text-muted text-xs">
                 {t('today')}
               </span>
-            </div>
-            {/* The primary action — logging a meal — sits as its own input
-                affordance, separated from the read-only Today display below.
-                Mobile uses the FloatingMealTrigger instead. */}
-            <div className="hidden md:block">
-              <InlineMealTrigger
-                onSubmitMeal={submit}
-                streaming={streaming}
-                restoredDraft={restoredDraft}
-              />
             </div>
             <div className="xl:min-h-0 xl:flex-1">
               {dailyMealsQuery.isPending ? (
