@@ -214,7 +214,7 @@ export function AdherenceHeatmap({ data, range }: AdherenceHeatmapProps) {
                           </TooltipTrigger>
                           <TooltipContent
                             side="top"
-                            className="bg-nham-text text-white text-xs"
+                            className="bg-nham-text text-nham-surface text-xs"
                           >
                             {tooltipText}
                           </TooltipContent>
