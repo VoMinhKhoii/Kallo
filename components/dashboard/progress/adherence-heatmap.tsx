@@ -2,7 +2,6 @@
 
 import { motion, useReducedMotion } from 'motion/react';
 import { useTranslations } from 'next-intl';
-import { useEffect, useRef, useState } from 'react';
 import {
   Tooltip,
   TooltipContent,
@@ -20,28 +19,25 @@ import { getHeatmapColor, HEATMAP_COLORS } from './heatmap-colors';
 const DAY_LABELS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 
 const GAP: Record<HeatmapRange, number> = { '30d': 3, '90d': 2, year: 1 };
-const DAY_LABEL_WIDTH = 16;
-// Left inset that aligns the month headers and the legend with the first
-// week column: the day-label gutter plus the gap-1 (4px) beside it.
-const GRID_LEFT_INSET = DAY_LABEL_WIDTH + 4;
+const DAY_LABEL_COL = 20;
 // Ceiling per range so a wide card can't inflate sparse grids (a 5-column
-// 30d grid at full width would be comically tall). Under these caps the
-// year grid spans the full 1440px-capped dashboard width.
-const MAX_SQ: Record<HeatmapRange, number> = { '30d': 32, '90d': 24, year: 26 };
+// 30d grid at full width would be comically tall). The year grid never hits
+// its cap inside the 1440px-capped dashboard, so it always spans the card.
+const MAX_SQ: Record<HeatmapRange, number> = { '30d': 32, '90d': 24, year: 28 };
 
 interface AdherenceHeatmapProps {
   data: HeatmapData;
   range: HeatmapRange;
 }
 
+/**
+ * One CSS grid carries everything — the day-label gutter, the month headers,
+ * the cells, and the legend — with `1fr` week columns, so the grid always
+ * spans the card's width (sidebar collapsed or not) and the `aspect-square`
+ * cells keep themselves square, sizing the rows. No measurement code.
+ */
 export function AdherenceHeatmap({ data, range }: AdherenceHeatmapProps) {
   const t = useTranslations('dashboard.adherenceHeatmap');
-  const gridRef = useRef<HTMLDivElement>(null);
-  // Square cells, driven by WIDTH alone (capped per range): the grid always
-  // spans the card — collapse the sidebar and the cells grow to fill. The
-  // card's height follows the grid (the consistency row is content-sized),
-  // so no slack collects above or below.
-  const [sq, setSq] = useState(19);
   // The 'year' range stagger fires up to 371 cells. Honour the OS-level
   // reduced-motion preference so users with vestibular-motion sensitivity
   // don't get a wall of moving cells. They still see the final state.
@@ -49,26 +45,6 @@ export function AdherenceHeatmap({ data, range }: AdherenceHeatmapProps) {
 
   const gap = GAP[range];
   const numWeeks = data.cells[0]?.length ?? 0;
-  const heatmapWidth =
-    numWeeks > 0 ? numWeeks * sq + Math.max(0, numWeeks - 1) * gap : 0;
-
-  useEffect(() => {
-    const el = gridRef.current;
-    if (!el) return;
-    const observer = new ResizeObserver((entries) => {
-      const width = entries[0]?.contentRect.width ?? 0;
-      if (width > 0 && numWeeks > 0) {
-        const gap = GAP[range];
-        const widthSq = Math.floor(
-          (width - DAY_LABEL_WIDTH - 6 - Math.max(0, numWeeks - 1) * gap) /
-            numWeeks
-        );
-        setSq(Math.max(10, Math.min(widthSq, MAX_SQ[range])));
-      }
-    });
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, [numWeeks, range]);
 
   const getTooltipText = (cell: HeatmapCell) => {
     if (cell.status === 'future') return t('future');
@@ -81,179 +57,149 @@ export function AdherenceHeatmap({ data, range }: AdherenceHeatmapProps) {
     return `${t(labelKey)} · ${Math.round(cell.ratio * 100)}%`;
   };
 
+  if (numWeeks === 0) return null;
+
   return (
     <TooltipProvider delayDuration={100}>
-      <div className="flex h-full flex-col">
-        {/* The month-header row and the label+grid row live in one column so
-            the whole block centers vertically as a unit, while the day labels
-            sit in a fixed-width gutter that keeps them level with the rows. */}
+      <div className="flex h-full flex-col justify-center">
         <div
-          ref={gridRef}
-          className="flex min-h-0 flex-1 flex-col justify-center"
+          className="grid w-full"
+          style={{
+            gridTemplateColumns: `${DAY_LABEL_COL}px repeat(${numWeeks}, minmax(0, 1fr))`,
+            gap: `${gap}px`,
+            maxWidth: `${DAY_LABEL_COL + numWeeks * MAX_SQ[range] + numWeeks * gap}px`,
+          }}
         >
-          <div className="min-w-0">
+          {/* Row 1 — month headers, placed on the week columns they span. */}
+          {data.monthHeaders.map((header) => (
             <div
-              className="relative mb-1 h-4 font-medium text-nham-text-muted text-xs"
+              key={`${header.month}-${header.startColumn}`}
+              className="truncate pb-1 font-medium text-nham-text-muted text-xs"
               style={{
-                width: `${heatmapWidth}px`,
-                marginLeft: `${GRID_LEFT_INSET}px`,
+                gridRow: 1,
+                gridColumn: `${header.startColumn + 2} / span ${header.span}`,
               }}
             >
-              {data.monthHeaders.map((header) => (
-                <span
-                  key={`${header.month}-${header.startColumn}`}
-                  className="absolute top-0 truncate"
-                  style={{
-                    left: `${header.startColumn * (sq + gap)}px`,
-                    width: `${header.span * sq + Math.max(0, header.span - 1) * gap}px`,
-                  }}
-                >
-                  {header.month}
-                </span>
-              ))}
+              {header.month}
             </div>
+          ))}
 
-            <div className="flex gap-1">
-              {/* Day labels */}
-              <div
-                className="flex shrink-0 flex-col"
-                style={{ width: `${DAY_LABEL_WIDTH}px`, gap: `${gap}px` }}
-              >
-                {DAY_LABELS.map((d, i) => (
-                  <div
-                    key={`lbl-${i}`}
-                    className="flex items-center justify-end pr-1 font-medium text-nham-text-muted text-xs"
-                    style={{ height: `${sq}px` }}
+          {/* Gutter — day labels, one per cell row. */}
+          {DAY_LABELS.map((d, i) => (
+            <div
+              key={`lbl-${i}`}
+              className="flex h-full items-center justify-end pr-1.5 font-medium text-nham-text-muted text-xs"
+              style={{ gridRow: i + 2, gridColumn: 1 }}
+            >
+              {d}
+            </div>
+          ))}
+
+          {/* Cells — square via aspect-ratio; their width (1fr) sizes the rows. */}
+          {Array.from({ length: numWeeks }, (_, wi) =>
+            data.cells.map((dayRow, di) => {
+              const cell = dayRow[wi];
+              const ratio = cell?.ratio ?? null;
+              const { bg } = getHeatmapColor(ratio);
+              const isLogged = cell?.status === 'logged' && ratio !== null;
+              const isCheat = isLogged && Boolean(cell?.hasCheatMeal);
+              const isPartial = cell?.status === 'partial';
+              const isMuted =
+                cell?.status === 'future' || cell?.status === 'outside';
+              const isFocusable = (isLogged || isPartial) && !isMuted;
+              const tooltipText = cell ? getTooltipText(cell) : t('notLogged');
+
+              return (
+                <Tooltip key={`${di}-${wi}`}>
+                  <TooltipTrigger asChild>
+                    <motion.button
+                      type="button"
+                      aria-label={tooltipText}
+                      aria-disabled={!isFocusable}
+                      tabIndex={isFocusable ? 0 : -1}
+                      initial={
+                        prefersReducedMotion
+                          ? false
+                          : { opacity: 0, scale: 0.6 }
+                      }
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={
+                        prefersReducedMotion
+                          ? { duration: 0 }
+                          : {
+                              duration: 0.16,
+                              delay: wi * 0.01 + di * 0.005,
+                            }
+                      }
+                      className={cn(
+                        'relative aspect-square w-full cursor-default rounded-[3px] transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent/60',
+                        // Cheat day: a calm warm ring instead of intensity
+                        // grading — recognizable, never red.
+                        isCheat && 'ring-1 ring-nham-cheat ring-inset'
+                      )}
+                      style={{
+                        gridRow: di + 2,
+                        gridColumn: wi + 2,
+                        backgroundColor: isCheat
+                          ? 'var(--nham-cheat-fill)'
+                          : isLogged
+                            ? bg
+                            : undefined,
+                      }}
+                    >
+                      {!isLogged && (
+                        <div
+                          className={cn(
+                            'absolute inset-0 rounded-[3px]',
+                            // Empty cells take their tint from the muted-ink
+                            // taupe so the grid reads on the white card;
+                            // future/outside days recede to a fainter step.
+                            isMuted
+                              ? 'bg-nham-text-muted/6'
+                              : 'bg-nham-text-muted/12',
+                            isPartial && 'border border-nham-border'
+                          )}
+                        />
+                      )}
+                      {isCheat && (
+                        <span
+                          aria-hidden
+                          className="absolute inset-0 flex items-center justify-center text-[8px] text-nham-cheat"
+                        >
+                          ●
+                        </span>
+                      )}
+                    </motion.button>
+                  </TooltipTrigger>
+                  <TooltipContent
+                    side="top"
+                    className="bg-nham-text text-nham-surface text-xs"
                   >
-                    {d}
-                  </div>
-                ))}
-              </div>
+                    {tooltipText}
+                  </TooltipContent>
+                </Tooltip>
+              );
+            })
+          )}
 
-              <div className="min-w-0 overflow-hidden">
-                <div
-                  className="grid"
-                  style={{
-                    gridTemplateColumns: `repeat(${numWeeks}, ${sq}px)`,
-                    gridTemplateRows: `repeat(7, ${sq}px)`,
-                    gap: `${gap}px`,
-                    gridAutoFlow: 'column',
-                  }}
-                >
-                  {Array.from({ length: numWeeks }, (_, wi) =>
-                    data.cells.map((dayRow, di) => {
-                      const cell = dayRow[wi];
-                      const ratio = cell?.ratio ?? null;
-                      const { bg } = getHeatmapColor(ratio);
-                      const isLogged =
-                        cell?.status === 'logged' && ratio !== null;
-                      const isCheat = isLogged && Boolean(cell?.hasCheatMeal);
-                      const isPartial = cell?.status === 'partial';
-                      const isMuted =
-                        cell?.status === 'future' || cell?.status === 'outside';
-                      const isFocusable = (isLogged || isPartial) && !isMuted;
-                      const tooltipText = cell
-                        ? getTooltipText(cell)
-                        : t('notLogged');
-
-                      return (
-                        <Tooltip key={`${di}-${wi}`}>
-                          <TooltipTrigger asChild>
-                            <motion.button
-                              type="button"
-                              aria-label={tooltipText}
-                              aria-disabled={!isFocusable}
-                              tabIndex={isFocusable ? 0 : -1}
-                              initial={
-                                prefersReducedMotion
-                                  ? false
-                                  : { opacity: 0, scale: 0.6 }
-                              }
-                              animate={{ opacity: 1, scale: 1 }}
-                              transition={
-                                prefersReducedMotion
-                                  ? { duration: 0 }
-                                  : {
-                                      duration: 0.16,
-                                      delay: wi * 0.01 + di * 0.005,
-                                    }
-                              }
-                              className={cn(
-                                'relative cursor-default rounded-[3px] transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent/60',
-                                // Cheat day: a calm warm ring instead of intensity
-                                // grading — recognizable, never red.
-                                isCheat && 'ring-1 ring-nham-cheat ring-inset'
-                              )}
-                              style={{
-                                backgroundColor: isCheat
-                                  ? 'var(--nham-cheat-fill)'
-                                  : isLogged
-                                    ? bg
-                                    : undefined,
-                              }}
-                            >
-                              {!isLogged && (
-                                <div
-                                  className={cn(
-                                    'absolute inset-0 rounded-[3px]',
-                                    // Empty cells take their tint from the
-                                    // muted-ink taupe so the grid reads on
-                                    // the white card; future/outside days
-                                    // recede to a fainter step.
-                                    isMuted
-                                      ? 'bg-nham-text-muted/6'
-                                      : 'bg-nham-text-muted/12',
-                                    isPartial && 'border border-nham-border'
-                                  )}
-                                />
-                              )}
-                              {isCheat && (
-                                <span
-                                  aria-hidden
-                                  className="absolute inset-0 flex items-center justify-center text-[8px] text-nham-cheat"
-                                >
-                                  ●
-                                </span>
-                              )}
-                            </motion.button>
-                          </TooltipTrigger>
-                          <TooltipContent
-                            side="top"
-                            className="bg-nham-text text-nham-surface text-xs"
-                          >
-                            {tooltipText}
-                          </TooltipContent>
-                        </Tooltip>
-                      );
-                    })
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* Legend — travels with the grid cluster and matches its width,
-                so the card reads as one centered block instead of a grid
-                floating above a full-width bar. */}
+          {/* Legend — the grid's final row, spanning exactly the week columns
+              so its edges align with the cells above. */}
+          <div
+            className="flex items-center gap-2 pt-2"
+            style={{ gridRow: 9, gridColumn: `2 / span ${numWeeks}` }}
+          >
+            <span className="text-nham-text-muted text-xs">
+              {t('offTarget')}
+            </span>
             <div
-              className="mt-3 flex items-center gap-2"
+              className="h-1.5 flex-1 rounded-full"
               style={{
-                width: `${heatmapWidth}px`,
-                marginLeft: `${GRID_LEFT_INSET}px`,
+                background: `linear-gradient(to right, ${HEATMAP_COLORS.far}, ${HEATMAP_COLORS.moderate}, ${HEATMAP_COLORS.slight}, ${HEATMAP_COLORS.close}, ${HEATMAP_COLORS.onTarget})`,
               }}
-            >
-              <span className="text-nham-text-muted text-xs">
-                {t('offTarget')}
-              </span>
-              <div
-                className="h-1.5 flex-1 rounded-full"
-                style={{
-                  background: `linear-gradient(to right, ${HEATMAP_COLORS.far}, ${HEATMAP_COLORS.moderate}, ${HEATMAP_COLORS.slight}, ${HEATMAP_COLORS.close}, ${HEATMAP_COLORS.onTarget})`,
-                }}
-              />
-              <span className="text-nham-text-muted text-xs">
-                {t('onTarget')}
-              </span>
-            </div>
+            />
+            <span className="text-nham-text-muted text-xs">
+              {t('onTarget')}
+            </span>
           </div>
         </div>
       </div>
