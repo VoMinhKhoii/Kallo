@@ -3,7 +3,6 @@
   "files": {
     "apps/mobile-flutter/lib/features/logging/widgets/feed_area.dart": 1719,
     "apps/mobile-flutter/lib/features/onboarding/screens/screen_body_metrics.dart": 1002,
-    "components/logging/feed/feed-area.tsx": 955,
     "lib/rate-limit/analysis-guards.ts": 911,
     "apps/mobile-flutter/lib/features/logging/widgets/barcode_scanner_sheet.dart": 906,
     "app/[locale]/(app)/admin/requests/[id]/_components/pipeline-summary.tsx": 895,
