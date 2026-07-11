@@ -112,7 +112,7 @@ export async function analyzeMealV2(
   const t0 = Date.now();
 
   // Buffer item_name events until the language guard passes — same pattern
-  // as v1 (orchestrator.ts:573-589). Without this, a language-mismatch
+  // as v1 (decomposition-stage.ts item_name buffering). Without this, a language-mismatch
   // retry would leak attempt-1's names to the client, and the client's
   // useStreamAnalysis appends item_name events without dedupe → visible
   // duplicate skeleton rows and React key-collision warnings.
@@ -196,7 +196,7 @@ export async function analyzeMealV2(
       }
     );
 
-    // Language guard — mirrors v1 (orchestrator.ts:716-754). Retries once
+    // Language guard — mirrors v1 (decomposition-stage.ts language guard). Retries once
     // when the LLM emits Vietnamese for an English user (or vice versa).
     // Recreate the stream controller (NOT just resetAttempt) so the failed
     // attempt's mealItemIds + buffered events are fully discarded.
@@ -251,7 +251,7 @@ export async function analyzeMealV2(
     flushBufferedItemNames();
 
     // Capitalize meal-item and ingredient display names in place — same
-    // pattern v1 uses (orchestrator.ts:785-788) so the UI always shows
+    // pattern v1 uses (decomposition-stage.ts emitUnstreamed flush) so the UI always shows
     // titlecase regardless of how the user typed the input.
     for (const mi of decomposition.mealItems) {
       mi.name = capitalizeFirst(mi.name);

@@ -11,6 +11,13 @@ import { readBooleanEnv } from './config/feature-flags';
 export const ANALYSIS_MODEL_BUDGET_ROUTE = '/api/analyze-meal';
 export const ANALYSIS_MODEL_PROVIDER = 'gemini';
 
+/** Model-budget attribution for a pipeline run (primary vs shadow work). */
+export interface PipelineBudget {
+  workKind: AnalysisModelBudgetWorkKind;
+  requestId?: string | null;
+  providerErrorState?: { recorded: boolean };
+}
+
 export function recordAnalysisModelBudgetEventBestEffort(
   input: RecordAnalysisModelBudgetEventInput
 ): void {
