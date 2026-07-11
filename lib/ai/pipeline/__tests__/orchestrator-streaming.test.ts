@@ -6,7 +6,7 @@ import {
 import type { StreamEvent } from '../../streaming/types';
 import type { UserContext } from '../../types';
 import { analyzeMealV2 } from '../grounded-orchestrator';
-import type { GroundedEstimation, MealDecompositionV2 } from '../schemas';
+import type { GroundedEstimation, MealDecompositionV2 } from '../schemas-v2';
 
 afterEach(() => {
   vi.restoreAllMocks();

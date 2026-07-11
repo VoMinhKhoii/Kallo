@@ -4,7 +4,7 @@ import { mapWithConcurrency } from '@/lib/utils';
 import { getInedibleCache } from '../cache/nutrition-cache';
 import type { GeminiClient } from '../gemini';
 import { deriveExpectedState } from '../pipeline/cooking-method-state';
-import type { DecomposedIngredientV2 } from '../pipeline/schemas';
+import type { DecomposedIngredientV2 } from '../pipeline/schemas-v2';
 import type { MatchType, NutritionPer100g } from '../types';
 import { cacheQueryEmbedding, resolveQueryEmbedding } from './embedding-cache';
 import { batchFetchNutrition } from './nutrition-batch';

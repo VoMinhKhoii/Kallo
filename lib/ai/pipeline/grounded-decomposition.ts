@@ -12,7 +12,10 @@ import type { ModelProfile } from './config/model-profile';
 import { createDecompositionStreamController } from './decomposition-stream';
 import { withStageLogV2 } from './grounded-support';
 import type { AnalyzeMealTraceContext } from './orchestrator';
-import { type MealDecompositionV2, mealDecompositionV2Schema } from './schemas';
+import {
+  type MealDecompositionV2,
+  mealDecompositionV2Schema,
+} from './schemas-v2';
 import { buildLlmStageTrace } from './telemetry/trace';
 
 type StreamedMealItemIds = ReturnType<

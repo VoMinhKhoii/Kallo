@@ -4,7 +4,7 @@ import {
   createSourceAwareMockDb,
 } from '../../__tests__/test-helpers';
 import type { UserContext } from '../../types';
-import type { GroundedEstimation, MealDecompositionV2 } from '../schemas';
+import type { GroundedEstimation, MealDecompositionV2 } from '../schemas-v2';
 
 // Capture logStage calls — v2 must populate the same admin/audit timeline
 // v1 populates so requests/[id] shows stages. buildLlmStageTrace is also

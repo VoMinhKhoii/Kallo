@@ -33,7 +33,7 @@ import { computeStreamingMealItem } from '../streaming/parsers';
 import type { StreamEvent } from '../streaming/types';
 import type { UserContext } from '../types';
 import type { AnalyzeMealTraceContext } from './orchestrator';
-import type { GroundedEstimation, MealDecompositionV2 } from './schemas';
+import type { GroundedEstimation, MealDecompositionV2 } from './schemas-v2';
 import { logStage } from './telemetry/trace';
 
 export async function withStageLogV2<T>(

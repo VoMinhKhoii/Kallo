@@ -4,7 +4,7 @@ import {
   groundedEstimationSchema,
   groundedIngredientEstimateSchema,
   mealDecompositionV2Schema,
-} from '../schemas';
+} from '../schemas-v2';
 
 describe('decomposedIngredientV2Schema', () => {
   it('accepts the minimum required fields (rawName + canonicalName)', () => {

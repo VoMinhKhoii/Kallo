@@ -3,7 +3,7 @@ import type { UserContext } from '../types';
 import type { bridgeV2ToV1 } from './bridge';
 import type { resolveModelProfile } from './config/model-profile';
 import type { AnalyzeMealTraceContext } from './orchestrator';
-import type { GroundedEstimation, MealDecompositionV2 } from './schemas';
+import type { GroundedEstimation, MealDecompositionV2 } from './schemas-v2';
 import {
   buildPipelineRunRow,
   writePipelineRun,

@@ -37,7 +37,7 @@ import type {
   GroundedEstimation,
   GroundedIngredientEstimate,
   MealDecompositionV2,
-} from './schemas';
+} from './schemas-v2';
 
 export interface VerdictPerIngredient {
   /** Position in the original decomposition (meal-item, ingredient) tuple. */

@@ -33,7 +33,10 @@ import {
 import { logV2Telemetry, persistV2PipelineRun } from './grounded-telemetry';
 import { reconcileNutritionIds } from './nutrition';
 import type { AnalyzeMealTraceContext } from './orchestrator';
-import { type GroundedEstimation, groundedEstimationSchema } from './schemas';
+import {
+  type GroundedEstimation,
+  groundedEstimationSchema,
+} from './schemas-v2';
 import { buildLlmStageTrace } from './telemetry/trace';
 
 export interface AnalyzeMealV2Options {

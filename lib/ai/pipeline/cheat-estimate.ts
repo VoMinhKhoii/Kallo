@@ -4,7 +4,7 @@ import { resolveModelProfile } from '@/lib/ai/pipeline/config/model-profile';
 import {
   type CheatEstimate,
   cheatEstimateSchema,
-} from '@/lib/ai/pipeline/schemas';
+} from '@/lib/ai/pipeline/schemas-v2';
 import {
   buildCheatEstimatePrompt,
   type CheatEstimatePromptInput,
