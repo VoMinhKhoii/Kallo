@@ -37,7 +37,6 @@
     "apps/mobile-flutter/lib/features/settings/controls/country_select.dart": 422,
     "apps/mobile-flutter/lib/features/circle/screens/connect_screen.dart": 412,
     "apps/mobile-flutter/lib/features/logging/widgets/meal_input.dart": 409,
-    "lib/admin/queries.ts": 406,
     "components/logging/input/meal-input.tsx": 394,
     "components/onboarding/wizard-shell.tsx": 387,
     "apps/mobile-flutter/lib/features/nutrition/widgets/day_summary.dart": 371,
