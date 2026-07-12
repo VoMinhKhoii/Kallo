@@ -1207,10 +1207,7 @@ export const entitlementGrants = pgTable(
       table.source,
       table.externalRef
     ),
-    index('entitlement_grants_user_status_idx').on(
-      table.userId,
-      table.status
-    ),
+    index('entitlement_grants_user_status_idx').on(table.userId, table.status),
   ]
 );
 
