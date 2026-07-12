@@ -69,6 +69,10 @@ vi.mock('@/lib/db/schema', () => ({
     requestedBy: 'f.requestedBy',
     updatedAt: 'f.updatedAt',
   },
+  friendsFeedReadMarkers: {
+    userId: 'ffrm.userId',
+    lastReadAt: 'ffrm.lastReadAt',
+  },
   circleEvents: { actorId: 'ce.actorId', type: 'ce.type', refId: 'ce.refId' },
   chatGroups: {
     id: 'cg.id',
@@ -110,6 +114,7 @@ vi.mock('@/lib/db/schema', () => ({
 
 import {
   acceptInvite,
+  getFriendsFeedReadMarker,
   getOrCreateMyProfile,
   getProfileBySlug,
   listCircleFeed,
@@ -637,10 +642,23 @@ describe('listFriendsThreadFeed', () => {
     };
   }
 
+  // Page 1 upsert-bumps the read marker — stub both onConflictDoUpdate (used
+  // here) and onConflictDoNothing (used by getFriendsFeedReadMarker) on the
+  // same chain so either call shape resolves.
+  function stubReadMarkerUpsert() {
+    mockDbInsert.mockReturnValue({
+      values: vi.fn().mockReturnValue({
+        onConflictDoUpdate: vi.fn().mockResolvedValue(undefined),
+        onConflictDoNothing: vi.fn().mockResolvedValue(undefined),
+      }),
+    });
+  }
+
   it('scopes the query to accepted friends only, never the actor', async () => {
     friendsQuery([{ userLow: ACTOR, userHigh: FRIEND }]);
     const capture: { where?: unknown } = {};
     sharedMealsBeforeQuery([], capture);
+    stubReadMarkerUpsert();
 
     await listFriendsThreadFeed(ACTOR, {});
 
@@ -655,6 +673,7 @@ describe('listFriendsThreadFeed', () => {
       sharedMeal(FRIEND, 2, new Date('2026-01-01T18:00:00Z')), // dinner
       sharedMeal(FRIEND, 1, new Date('2026-01-01T08:00:00Z')), // breakfast, same day
     ]);
+    stubReadMarkerUpsert();
 
     const page = await listFriendsThreadFeed(ACTOR, {});
 
@@ -681,11 +700,59 @@ describe('listFriendsThreadFeed', () => {
 
   it('returns an empty page without querying shared meals when there are no accepted friends', async () => {
     friendsQuery([]);
+    stubReadMarkerUpsert();
 
     const page = await listFriendsThreadFeed(ACTOR, {});
 
     expect(page.entries).toEqual([]);
     expect(page.nextCursor).toBeNull();
+  });
+
+  it('bumps the read marker on page 1', async () => {
+    friendsQuery([{ userLow: ACTOR, userHigh: FRIEND }]);
+    sharedMealsBeforeQuery([]);
+    stubReadMarkerUpsert();
+
+    await listFriendsThreadFeed(ACTOR, {});
+
+    expect(mockDbInsert).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not touch the read marker when paginating with a before cursor', async () => {
+    friendsQuery([{ userLow: ACTOR, userHigh: FRIEND }]);
+    sharedMealsBeforeQuery([]);
+
+    await listFriendsThreadFeed(ACTOR, {
+      before: '2026-01-22T00:00:00.000Z',
+    });
+
+    expect(mockDbInsert).not.toHaveBeenCalled();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// getFriendsFeedReadMarker — lazily provisions on first read
+// ---------------------------------------------------------------------------
+
+describe('getFriendsFeedReadMarker', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('provisions the row on first read and returns its lastReadAt', async () => {
+    mockDbInsert.mockReturnValue({
+      values: vi.fn().mockReturnValue({
+        onConflictDoNothing: vi.fn().mockResolvedValue(undefined),
+      }),
+    });
+    mockDbSelect.mockReturnValueOnce(
+      selectRows([{ lastReadAt: new Date('2026-01-01T00:00:00Z') }])
+    );
+
+    const marker = await getFriendsFeedReadMarker(ACTOR);
+
+    expect(mockDbInsert).toHaveBeenCalledTimes(1);
+    expect(marker.lastReadAt).toBe('2026-01-01T00:00:00.000Z');
   });
 });
 

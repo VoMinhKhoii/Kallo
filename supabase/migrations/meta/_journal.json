@@ -344,6 +344,13 @@
       "when": 1783520071681,
       "tag": "20260708141431_add_chat_group_members_last_read_at",
       "breakpoints": true
+    },
+    {
+      "idx": 49,
+      "version": "7",
+      "when": 1783841696291,
+      "tag": "20260712073456_add_friends_feed_read_markers",
+      "breakpoints": true
     }
   ]
 }

@@ -57,6 +57,11 @@ export function fetchFriendsThreadFeed(
   return request<FriendsThreadFeedPage>(`/api/v1/groups/friends/feed${query}`);
 }
 
+/** The actor's "last checked the combined Friends feed" marker. */
+export function fetchFriendsFeedReadMarker(): Promise<{ lastReadAt: string }> {
+  return request<{ lastReadAt: string }>('/api/v1/groups/friends/read-marker');
+}
+
 export function fetchFriends(): Promise<CircleMember[]> {
   return request<{ circle: CircleMember[] }>('/api/v1/groups/friends').then(
     (r) => r.circle

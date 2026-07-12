@@ -14,7 +14,12 @@ import { and, desc, eq, or, sql } from 'drizzle-orm';
 import { getOrCreateDirectChatGroup } from '@/lib/actions/chat-groups';
 import { getUtcDayRangeForLocalDate } from '@/lib/date/local-day';
 import { db as defaultDb } from '@/lib/db';
-import { circleEvents, friendships, publicProfiles } from '@/lib/db/schema';
+import {
+  circleEvents,
+  friendsFeedReadMarkers,
+  friendships,
+  publicProfiles,
+} from '@/lib/db/schema';
 import { Errors } from '@/lib/errors';
 import { orderedPair } from '@/lib/groups/friendship';
 import { validateHandle } from '@/lib/groups/handles';
@@ -586,6 +591,33 @@ export async function listCircleFeed(
 }
 
 // ---------------------------------------------------------------------------
+// getFriendsFeedReadMarker — the actor's "last checked the Friends feed" time
+// ---------------------------------------------------------------------------
+// friends_feed_read_markers is its own table (not a column on public_profiles
+// — see schema.ts's comment on why) so this stays owner-only. Lazily
+// provisions the row on first read, defaulting to "now" so a first-time
+// viewer never sees a backlog as unread — same idea as
+// chat_group_members.last_read_at's DEFAULT now().
+
+export async function getFriendsFeedReadMarker(
+  actorId: string,
+  db: Db = defaultDb
+): Promise<{ lastReadAt: string }> {
+  await db
+    .insert(friendsFeedReadMarkers)
+    .values({ userId: actorId })
+    .onConflictDoNothing();
+
+  const [row] = await db
+    .select({ lastReadAt: friendsFeedReadMarkers.lastReadAt })
+    .from(friendsFeedReadMarkers)
+    .where(eq(friendsFeedReadMarkers.userId, actorId))
+    .limit(1);
+
+  return { lastReadAt: row.lastReadAt.toISOString() };
+}
+
+// ---------------------------------------------------------------------------
 // listFriendsThreadFeed — every friend's shared-meal history, merged, paginated
 // ---------------------------------------------------------------------------
 // The Friends section is one combined thread (not one row per friend): every
@@ -594,8 +626,7 @@ export async function listCircleFeed(
 // separate query rather than a variant of listCircleFeed: that one must stay
 // exactly "today, latest per friend, capped" for the sidebar subtitle, while
 // this shows every shared meal across the whole friend graph, seek-paginated
-// oldest-ward via `before`. No read-marker — this isn't a real chat_groups
-// row, so there's no lastReadAt to bump (unread tracking deferred).
+// oldest-ward via `before`.
 
 export interface FriendsThreadFeedPage {
   entries: CircleFeedEntry[];
@@ -611,7 +642,21 @@ export async function listFriendsThreadFeed(
 
   const friendIds = await getAcceptedFriendIds(actorId, db);
   const before = parsed.before ? new Date(parsed.before) : null;
-  const { rows, nextCursor } = await sharedMealsBefore(friendIds, before, db);
+
+  // Opening the thread IS the read receipt (page 1 only — not every "load
+  // older" scroll fetch), mirroring listGroupMealFeed's pattern.
+  const [{ rows, nextCursor }] = await Promise.all([
+    sharedMealsBefore(friendIds, before, db),
+    parsed.before
+      ? Promise.resolve(undefined)
+      : db
+          .insert(friendsFeedReadMarkers)
+          .values({ userId: actorId, lastReadAt: new Date() })
+          .onConflictDoUpdate({
+            target: friendsFeedReadMarkers.userId,
+            set: { lastReadAt: new Date() },
+          }),
+  ]);
 
   return {
     entries: rows.map((r) => toSharedMealEntry(r, actorId)),

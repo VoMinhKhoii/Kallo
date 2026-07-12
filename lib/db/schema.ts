@@ -922,6 +922,25 @@ export const publicProfiles = pgTable(
 );
 
 // ---------------------------------------------------------------------------
+// Friends feed — read marker
+// ---------------------------------------------------------------------------
+// The combined "all friends" thread isn't a real chat_groups row, so it has
+// nowhere to hang a lastReadAt column the way group/direct chats do — this is
+// its own table. Deliberately NOT a column on public_profiles: that table's
+// RLS lets accepted friends read each other's rows (for names/avatars), and
+// this is a private "when did you last check your feed" marker that must
+// stay owner-only (see its own RLS migration).
+
+export const friendsFeedReadMarkers = pgTable('friends_feed_read_markers', {
+  userId: uuid('user_id')
+    .primaryKey()
+    .references(() => authUsers.id, { onDelete: 'cascade' }),
+  lastReadAt: timestamp('last_read_at', { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+
+// ---------------------------------------------------------------------------
 // Group Tracking — Friendships
 // ---------------------------------------------------------------------------
 // Symmetric, canonical-ordered friendship edge. The user_low < user_high check

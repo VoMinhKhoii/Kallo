@@ -4,9 +4,11 @@ import { Users2 } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { CircleError } from '@/components/groups/circle-error';
 import { useCircleFeed } from '@/hooks/social/use-circle-feed';
+import { useFriendsFeedReadMarker } from '@/hooks/social/use-friend-thread-feed';
 import { useFriends } from '@/hooks/social/use-friends';
 import { Link } from '@/i18n/navigation';
 import { formatElapsed } from '@/lib/date/format-elapsed';
+import { cn } from '@/lib/utils';
 
 function FriendsRowSkeleton() {
   return <div className="h-[60px] animate-pulse rounded-xl bg-nham-hover/50" />;
@@ -28,6 +30,7 @@ export function FriendsRow() {
     refetch,
   } = useFriends();
   const { data: feed = [] } = useCircleFeed();
+  const { data: readMarker } = useFriendsFeedReadMarker();
 
   if (isPending) {
     return <FriendsRowSkeleton />;
@@ -56,6 +59,13 @@ export function FriendsRow() {
       null
     );
 
+  // Defaults to false while the marker is still loading, to avoid a flash.
+  const unread = Boolean(
+    latestSharedAt &&
+      readMarker &&
+      new Date(latestSharedAt) > new Date(readMarker.lastReadAt)
+  );
+
   return (
     <Link
       href="/groups/friends"
@@ -65,8 +75,21 @@ export function FriendsRow() {
         <Users2 className="h-4 w-4 text-nham-btn" />
       </span>
       <span className="flex min-w-0 flex-1 flex-col">
-        <span className="truncate font-sans-display text-[14px] text-nham-text">
-          {t('friendsSectionTitle')}
+        <span className="flex items-center gap-1.5">
+          <span
+            className={cn(
+              'truncate font-sans-display text-[14px] text-nham-text',
+              unread && 'font-semibold'
+            )}
+          >
+            {t('friendsSectionTitle')}
+          </span>
+          {unread && (
+            <span
+              aria-hidden="true"
+              className="size-2 shrink-0 rounded-full bg-nham-accent"
+            />
+          )}
         </span>
         {latestSharedAt && (
           <span className="truncate font-sans-display text-[11px] text-nham-text-muted">

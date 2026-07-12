@@ -1,13 +1,22 @@
 'use client';
 
-import { useInfiniteQuery } from '@tanstack/react-query';
+import {
+  useInfiniteQuery,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query';
 import {
   type FriendsThreadFeedPage,
+  fetchFriendsFeedReadMarker,
   fetchFriendsThreadFeed,
 } from '@/lib/groups/client';
 
 export const friendsThreadFeedKeys = {
   all: ['friends-thread-feed'] as const,
+};
+
+export const friendsFeedReadMarkerKeys = {
+  all: ['friends-feed-read-marker'] as const,
 };
 
 /** The combined Friends thread — every accepted friend's shared meal, merged
@@ -16,19 +25,40 @@ export const friendsThreadFeedKeys = {
  * quiet today, the most recent shares regardless of day. Deliberately
  * separate from useCircleFeed: that hook backs the sidebar's per-section
  * "New food log" subtitle and must keep its own "today, latest per friend"
- * shape — this one shows every shared meal, paginated. No read-marker/
- * sidebar-invalidation on open (unlike useGroupMealFeed) — this isn't a
- * real chat_groups row, so there's no unread state to clear yet. */
+ * shape — this one shows every shared meal, paginated. */
 export function useFriendsThreadFeed() {
+  const queryClient = useQueryClient();
   return useInfiniteQuery<FriendsThreadFeedPage>({
     queryKey: friendsThreadFeedKeys.all,
-    queryFn: ({ pageParam }) =>
-      fetchFriendsThreadFeed(pageParam as string | undefined),
+    queryFn: async ({ pageParam }) => {
+      const page = await fetchFriendsThreadFeed(
+        pageParam as string | undefined
+      );
+      // Page 1 = the thread was just opened, which marks it read server-side
+      // (see listFriendsThreadFeed) — refresh FriendsRow's unread state to
+      // match, same pattern useGroupMealFeed uses for chatGroupsKeys.all.
+      if (pageParam === undefined) {
+        queryClient.invalidateQueries({
+          queryKey: friendsFeedReadMarkerKeys.all,
+        });
+      }
+      return page;
+    },
     initialPageParam: undefined,
     getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
     // See useGroupMealFeed's comment: staleTime applies to the whole
     // paginated query, so 5min is the middle ground between "today's page
     // is live" and "older pages are effectively permanent."
     staleTime: 5 * 60_000,
+  });
+}
+
+/** The actor's "last checked the combined Friends feed" marker — compared
+ * against the latest shared meal (from useCircleFeed) to drive FriendsRow's
+ * unread bold/dot. */
+export function useFriendsFeedReadMarker() {
+  return useQuery({
+    queryKey: friendsFeedReadMarkerKeys.all,
+    queryFn: fetchFriendsFeedReadMarker,
   });
 }
