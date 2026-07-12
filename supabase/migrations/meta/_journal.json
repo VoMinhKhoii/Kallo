@@ -330,6 +330,13 @@
       "when": 1783152604741,
       "tag": "20260704081004_add_user_feedback",
       "breakpoints": true
+    },
+    {
+      "idx": 47,
+      "version": "7",
+      "when": 1783837298929,
+      "tag": "20260712062138_add_billing_entitlements",
+      "breakpoints": true
     }
   ]
 }
