@@ -6,6 +6,7 @@ import { CircleError } from '@/components/groups/circle-error';
 import { useMyChatGroups } from '@/hooks/social/use-chat-groups';
 import { Link } from '@/i18n/navigation';
 import { formatElapsed } from '@/lib/date/format-elapsed';
+import { cn } from '@/lib/utils';
 
 function GroupListSkeleton() {
   return (
@@ -73,8 +74,21 @@ export function GroupList() {
                   </span>
                 </span>
                 <span className="flex min-w-0 flex-1 flex-col">
-                  <span className="truncate font-sans-display text-[14px] text-nham-text">
-                    {group.title}
+                  <span className="flex items-center gap-1.5">
+                    <span
+                      className={cn(
+                        'truncate font-sans-display text-[14px] text-nham-text',
+                        group.unread && 'font-semibold'
+                      )}
+                    >
+                      {group.title}
+                    </span>
+                    {group.unread && (
+                      <span
+                        aria-hidden="true"
+                        className="size-2 shrink-0 rounded-full bg-nham-accent"
+                      />
+                    )}
                   </span>
                   {group.lastMealSharedAt && (
                     <span className="truncate font-sans-display text-[11px] text-nham-text-muted">

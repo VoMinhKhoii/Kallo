@@ -12,6 +12,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
+import { useMyChatGroups } from '@/hooks/social/use-chat-groups';
 import { useCircleFeed } from '@/hooks/social/use-circle-feed';
 import {
   useBlockFriend,
@@ -21,6 +22,7 @@ import {
 import { Link } from '@/i18n/navigation';
 import { formatElapsed } from '@/lib/date/format-elapsed';
 import type { CircleMember } from '@/lib/groups/client';
+import { cn } from '@/lib/utils';
 
 function FriendListSkeleton() {
   return (
@@ -108,6 +110,7 @@ export function FriendList() {
     refetch,
   } = useFriends();
   const { data: feed = [] } = useCircleFeed();
+  const { data: chats = [] } = useMyChatGroups();
 
   if (isPending) {
     return <FriendListSkeleton />;
@@ -133,13 +136,31 @@ export function FriendList() {
       .map((entry) => [entry.friend.userId, entry.meal.sharedAt])
   );
 
+  // Unread state + recency order come from listMyChatGroups (message OR
+  // meal activity vs. this actor's read marker) — chats is already sorted
+  // most-recently-active first, so friends without a direct-chat entry
+  // (shouldn't happen — every accepted friend gets one backfilled) sort last.
+  const directChatByFriendId = new Map(
+    chats
+      .filter((c) => c.kind === 'direct' && c.otherUserId)
+      .map((c) => [c.otherUserId as string, c])
+  );
+  const orderIndexByFriendId = new Map(
+    chats.map((c, index) => [c.otherUserId, index])
+  );
+  const sortedFriends = [...friends].sort(
+    (a, b) =>
+      (orderIndexByFriendId.get(a.profile.userId) ?? Number.POSITIVE_INFINITY) -
+      (orderIndexByFriendId.get(b.profile.userId) ?? Number.POSITIVE_INFINITY)
+  );
+
   return (
     <div className="space-y-2">
       <h2 className="px-1 font-medium font-sans-display text-[10px] text-nham-text-muted uppercase tracking-[0.08em]">
         {t('friendsSectionTitle')}
       </h2>
       <ul className="space-y-2">
-        {friends.map((member: CircleMember) => {
+        {sortedFriends.map((member: CircleMember) => {
           const name = labelFor(member.profile);
           const tint = tintFor(
             member.profile.avatarSeed,
@@ -148,6 +169,8 @@ export function FriendList() {
           const lastMealSharedAt = lastMealSharedAtByFriendId.get(
             member.profile.userId
           );
+          const unread =
+            directChatByFriendId.get(member.profile.userId)?.unread ?? false;
           return (
             <li
               key={member.friendshipId}
@@ -165,8 +188,21 @@ export function FriendList() {
                   </span>
                 </span>
                 <span className="flex min-w-0 flex-1 flex-col">
-                  <span className="truncate font-sans-display text-[14px] text-nham-text">
-                    {name}
+                  <span className="flex items-center gap-1.5">
+                    <span
+                      className={cn(
+                        'truncate font-sans-display text-[14px] text-nham-text',
+                        unread && 'font-semibold'
+                      )}
+                    >
+                      {name}
+                    </span>
+                    {unread && (
+                      <span
+                        aria-hidden="true"
+                        className="size-2 shrink-0 rounded-full bg-nham-accent"
+                      />
+                    )}
                   </span>
                   {lastMealSharedAt && (
                     <span className="truncate font-sans-display text-[11px] text-nham-text-muted">

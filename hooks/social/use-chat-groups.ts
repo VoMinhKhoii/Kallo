@@ -64,10 +64,22 @@ export function useChatGroup(groupId: string) {
  * reuses everything already scrolled through — including scroll position —
  * instead of refetching and snapping back to today. */
 export function useGroupMealFeed(groupId: string) {
+  const queryClient = useQueryClient();
   return useInfiniteQuery<GroupMealFeedPage>({
     queryKey: chatGroupsKeys.feed(groupId),
-    queryFn: ({ pageParam }) =>
-      fetchGroupMealFeed(groupId, pageParam as string | undefined),
+    queryFn: async ({ pageParam }) => {
+      const page = await fetchGroupMealFeed(
+        groupId,
+        pageParam as string | undefined
+      );
+      // Page 1 = the thread was just opened, which marks it read server-side
+      // (see listGroupMealFeed) — refresh the sidebar so its unread/order
+      // state matches without a full reload.
+      if (pageParam === undefined) {
+        queryClient.invalidateQueries({ queryKey: chatGroupsKeys.all });
+      }
+      return page;
+    },
     initialPageParam: undefined,
     getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
     staleTime: 5 * 60_000,

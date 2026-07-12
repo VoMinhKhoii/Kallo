@@ -14,7 +14,12 @@ import { and, desc, eq, or, sql } from 'drizzle-orm';
 import { getOrCreateDirectChatGroup } from '@/lib/actions/chat-groups';
 import { getUtcDayRangeForLocalDate } from '@/lib/date/local-day';
 import { db as defaultDb } from '@/lib/db';
-import { circleEvents, friendships, publicProfiles } from '@/lib/db/schema';
+import {
+  chatGroupMembers,
+  circleEvents,
+  friendships,
+  publicProfiles,
+} from '@/lib/db/schema';
 import { Errors } from '@/lib/errors';
 import { orderedPair } from '@/lib/groups/friendship';
 import { validateHandle } from '@/lib/groups/handles';
@@ -601,11 +606,31 @@ export async function listFriendThreadFeed(
   }
 
   const before = parsed.before ? new Date(parsed.before) : null;
-  const { rows, nextCursor } = await sharedMealsBefore(
-    [actorId, parsed.friendUserId],
-    before,
-    db
-  );
+
+  // Opening the thread IS the read receipt (page 1 only — not every "load
+  // older" scroll fetch). Unlike listGroupMealFeed, the direct chat's own
+  // group id isn't resolved yet here — get/create it (idempotent) first.
+  const [{ rows, nextCursor }] = await Promise.all([
+    sharedMealsBefore([actorId, parsed.friendUserId], before, db),
+    parsed.before
+      ? Promise.resolve(undefined)
+      : (async () => {
+          const { id: groupId } = await getOrCreateDirectChatGroup(
+            actorId,
+            parsed.friendUserId,
+            db
+          );
+          await db
+            .update(chatGroupMembers)
+            .set({ lastReadAt: new Date() })
+            .where(
+              and(
+                eq(chatGroupMembers.groupId, groupId),
+                eq(chatGroupMembers.userId, actorId)
+              )
+            );
+        })(),
+  ]);
 
   return {
     entries: rows.map((r) => toSharedMealEntry(r, actorId)),

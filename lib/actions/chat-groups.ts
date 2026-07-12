@@ -70,13 +70,18 @@ export interface ChatGroupIdentity {
   /** Most recent message's text (raw, untruncated — the UI clips it). */
   lastMessagePreview: string | null;
   lastMessageAt: string | null;
-  /** True when the most recent message postdates this actor's read marker. */
+  /** True when the most recent message OR shared meal postdates this actor's
+   * read marker (bumped when the thread's feed is opened — see
+   * listGroupMealFeed/listFriendThreadFeed). */
   unread: boolean;
   /** Most recent shared-meal timestamp among this chat's members, today —
    * null when no member has shared a meal yet today. Drives the row's
    * "New food log · Xm ago" subtitle in place of a real chat preview until
    * text messaging has a UI. */
   lastMealSharedAt: string | null;
+  /** The other member's user id for a 'direct' chat, so callers (FriendList)
+   * can match a chat entry back to a friend; null for 'group'. */
+  otherUserId: string | null;
 }
 
 export interface ChatGroupMember {
@@ -330,6 +335,7 @@ export async function listMyChatGroups(
       : db
           .select({
             groupId: chatGroupMembers.groupId,
+            userId: chatGroupMembers.userId,
             handle: publicProfiles.handle,
             displayName: publicProfiles.displayName,
             avatarSeed: publicProfiles.avatarSeed,
@@ -383,23 +389,39 @@ export async function listMyChatGroups(
 
   const otherByGroupId = new Map(otherMembers.map((m) => [m.groupId, m]));
   const lastMessageByGroupId = new Map(lastMessages.map((m) => [m.groupId, m]));
+  // `sql<Date>` on a raw MAX(...) aggregate is only a type hint — drizzle
+  // doesn't actually coerce the driver's return value, which comes back as a
+  // string, not a Date. Normalize here, once, so every consumer below can
+  // trust `Date` methods without re-wrapping at each call site.
   const lastMealSharedAtByGroupId = new Map(
-    lastMealShares.map((m) => [m.groupId, m.lastSharedAt])
+    lastMealShares.map((m) => [m.groupId, new Date(m.lastSharedAt)])
   );
 
-  return myGroups.map((g) => {
+  const identities = myGroups.map((g) => {
     const lastMessage = lastMessageByGroupId.get(g.id) ?? null;
-    const unread = lastMessage ? lastMessage.createdAt > g.lastReadAt : false;
     const lastMealSharedAt = lastMealSharedAtByGroupId.get(g.id) ?? null;
+    const messageUnread = lastMessage
+      ? lastMessage.createdAt > g.lastReadAt
+      : false;
+    const mealUnread = lastMealSharedAt
+      ? lastMealSharedAt > g.lastReadAt
+      : false;
     const shared = {
       avatarSeed: g.avatarSeed,
       updatedAt: g.updatedAt.toISOString(),
       lastMessagePreview: lastMessage?.body ?? null,
       lastMessageAt: lastMessage?.createdAt.toISOString() ?? null,
-      unread,
+      unread: messageUnread || mealUnread,
       lastMealSharedAt: lastMealSharedAt
-        ? new Date(lastMealSharedAt).toISOString()
+        ? lastMealSharedAt.toISOString()
         : null,
+      // Ranked by the more-recent of "a message was sent" or "a member
+      // shared a meal" — chatGroups.updatedAt alone misses meal activity,
+      // since only sendChatGroupMessage bumps it.
+      activityRank: Math.max(
+        g.updatedAt.getTime(),
+        lastMealSharedAt?.getTime() ?? 0
+      ),
     };
 
     if (g.kind === 'group') {
@@ -407,6 +429,7 @@ export async function listMyChatGroups(
         id: g.id,
         kind: 'group' as const,
         title: g.name ?? '',
+        otherUserId: null,
         ...shared,
       };
     }
@@ -416,10 +439,15 @@ export async function listMyChatGroups(
       id: g.id,
       kind: 'direct' as const,
       title,
+      otherUserId: other?.userId ?? null,
       ...shared,
       avatarSeed: other?.avatarSeed ?? null,
     };
   });
+
+  return identities
+    .sort((a, b) => b.activityRank - a.activityRank)
+    .map(({ activityRank: _activityRank, ...identity }) => identity);
 }
 
 // ---------------------------------------------------------------------------
@@ -489,7 +517,24 @@ export async function listGroupMealFeed(
   const memberIds = memberRows.map((r) => r.userId);
 
   const before = parsed.before ? new Date(parsed.before) : null;
-  const { rows, nextCursor } = await sharedMealsBefore(memberIds, before, db);
+
+  // Opening the thread IS the read receipt (page 1 only — not every "load
+  // older" scroll fetch) — same pattern as listChatGroupMessages, just keyed
+  // off the meal feed since that's what the UI actually surfaces.
+  const [{ rows, nextCursor }] = await Promise.all([
+    sharedMealsBefore(memberIds, before, db),
+    parsed.before
+      ? Promise.resolve(undefined)
+      : db
+          .update(chatGroupMembers)
+          .set({ lastReadAt: new Date() })
+          .where(
+            and(
+              eq(chatGroupMembers.groupId, parsed.groupId),
+              eq(chatGroupMembers.userId, actorId)
+            )
+          ),
+  ]);
 
   return {
     entries: rows.map((r) => toSharedMealEntry(r, actorId)),

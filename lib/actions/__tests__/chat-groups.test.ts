@@ -458,6 +458,110 @@ describe('listMyChatGroups', () => {
     expect(result).toHaveLength(1);
     expect(result[0]?.title).toBe('Phở Fan');
   });
+
+  it('is unread from meal activity alone, with no messages at all', async () => {
+    friendsBackfillQuery([]);
+    myGroupsQuery([
+      {
+        id: GROUP_ID,
+        kind: 'group',
+        name: 'Trip',
+        avatarSeed: null,
+        updatedAt: new Date('2026-01-01T01:00:00Z'),
+        lastReadAt: new Date('2026-01-01T00:00:00Z'),
+      },
+    ]);
+    lastMessagesQuery([]);
+    lastMealSharesQuery([
+      { groupId: GROUP_ID, lastSharedAt: new Date('2026-01-01T02:00:00Z') }, // after lastReadAt
+    ]);
+
+    const [entry] = await listMyChatGroups(USER_A, { timezoneOffset: 0 });
+
+    expect(entry.unread).toBe(true);
+  });
+
+  it('includes the other member’s userId on a direct chat entry', async () => {
+    friendsBackfillQuery([]);
+    myGroupsQuery([
+      {
+        id: DIRECT_GROUP_ID,
+        kind: 'direct',
+        name: null,
+        avatarSeed: null,
+        updatedAt: new Date('2026-01-01T01:00:00Z'),
+        lastReadAt: new Date('2026-01-01T01:00:00Z'),
+      },
+    ]);
+    otherMemberQuery([
+      {
+        groupId: DIRECT_GROUP_ID,
+        userId: USER_B,
+        handle: 'phofan',
+        displayName: 'Phở Fan',
+        avatarSeed: 'phofan',
+      },
+    ]);
+    lastMessagesQuery([]);
+    lastMealSharesQuery([]);
+
+    const [entry] = await listMyChatGroups(USER_A, { timezoneOffset: 0 });
+
+    expect(entry.otherUserId).toBe(USER_B);
+  });
+
+  it('has a null otherUserId on a group chat entry', async () => {
+    friendsBackfillQuery([]);
+    myGroupsQuery([
+      {
+        id: GROUP_ID,
+        kind: 'group',
+        name: 'Trip',
+        avatarSeed: null,
+        updatedAt: new Date('2026-01-01T01:00:00Z'),
+        lastReadAt: new Date('2026-01-01T00:00:00Z'),
+      },
+    ]);
+    lastMessagesQuery([]);
+    lastMealSharesQuery([]);
+
+    const [entry] = await listMyChatGroups(USER_A, { timezoneOffset: 0 });
+
+    expect(entry.otherUserId).toBeNull();
+  });
+
+  it('sorts by the more-recent of message activity or meal activity, not just chatGroups.updatedAt', async () => {
+    friendsBackfillQuery([]);
+    // "Trip" has an OLDER chatGroups.updatedAt than "Roommates", but a
+    // meal was shared in it more recently than anything in "Roommates" —
+    // it should still sort first.
+    myGroupsQuery([
+      {
+        id: DIRECT_GROUP_ID,
+        kind: 'group',
+        name: 'Roommates',
+        avatarSeed: null,
+        updatedAt: new Date('2026-01-05T00:00:00Z'),
+        lastReadAt: new Date('2026-01-01T00:00:00Z'),
+      },
+      {
+        id: GROUP_ID,
+        kind: 'group',
+        name: 'Trip',
+        avatarSeed: null,
+        updatedAt: new Date('2026-01-01T00:00:00Z'),
+        lastReadAt: new Date('2026-01-01T00:00:00Z'),
+      },
+    ]);
+    lastMessagesQuery([]);
+    lastMealSharesQuery([
+      { groupId: GROUP_ID, lastSharedAt: new Date('2026-01-10T00:00:00Z') },
+    ]);
+
+    const result = await listMyChatGroups(USER_A, { timezoneOffset: 0 });
+
+    expect(result.map((r) => r.title)).toEqual(['Trip', 'Roommates']);
+  });
 });
 
 describe('listGroupMealFeed', () => {
@@ -528,6 +632,7 @@ describe('listGroupMealFeed', () => {
       sharedMeal(2, new Date('2026-01-01T18:00:00Z')),
       sharedMeal(1, new Date('2026-01-01T08:00:00Z')),
     ]);
+    stubUpdate(); // page 1 bumps lastReadAt
 
     const page = await listGroupMealFeed(USER_A, { groupId: GROUP_ID });
 
@@ -542,11 +647,36 @@ describe('listGroupMealFeed', () => {
       sharedMeal(i, new Date(Date.UTC(2026, 0, 21 - i)))
     );
     sharedMealsBeforeQuery(rows);
+    stubUpdate(); // page 1 bumps lastReadAt
 
     const page = await listGroupMealFeed(USER_A, { groupId: GROUP_ID });
 
     expect(page.entries).toHaveLength(20);
     expect(page.nextCursor).not.toBeNull();
+  });
+
+  it('bumps lastReadAt on page 1 (opening the thread is the read receipt)', async () => {
+    membershipQuery([{ id: 'member-row' }]);
+    memberRowsQuery([{ userId: USER_A }]);
+    sharedMealsBeforeQuery([]);
+    stubUpdate();
+
+    await listGroupMealFeed(USER_A, { groupId: GROUP_ID });
+
+    expect(mockDbUpdate).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not bump lastReadAt when paginating with a `before` cursor', async () => {
+    membershipQuery([{ id: 'member-row' }]);
+    memberRowsQuery([{ userId: USER_A }]);
+    sharedMealsBeforeQuery([]);
+
+    await listGroupMealFeed(USER_A, {
+      groupId: GROUP_ID,
+      before: '2026-01-01T00:00:00.000Z',
+    });
+
+    expect(mockDbUpdate).not.toHaveBeenCalled();
   });
 });
 

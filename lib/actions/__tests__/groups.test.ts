@@ -11,6 +11,7 @@ const {
   mockDbSelect,
   mockDbSelectDistinctOn,
   mockDbInsert,
+  mockDbUpdate,
   mockDbDelete,
   mockTxSelect,
   mockTxInsert,
@@ -24,6 +25,7 @@ const {
     mockDbSelect: vi.fn(),
     mockDbSelectDistinctOn: vi.fn(),
     mockDbInsert: vi.fn(),
+    mockDbUpdate: vi.fn(),
     mockDbDelete: vi.fn(),
     mockTxSelect,
     mockTxInsert,
@@ -41,6 +43,7 @@ vi.mock('@/lib/db', () => ({
     select: mockDbSelect,
     selectDistinctOn: mockDbSelectDistinctOn,
     insert: mockDbInsert,
+    update: mockDbUpdate,
     delete: mockDbDelete,
     transaction: vi.fn((fn: (tx: typeof mockTx) => Promise<unknown>) =>
       fn(mockTx)
@@ -628,6 +631,22 @@ describe('listFriendThreadFeed', () => {
     };
   }
 
+  // Page 1 resolves/creates the direct chat (getOrCreateDirectChatGroup) then
+  // bumps lastReadAt — stub its insert + re-select + update chain.
+  function stubMarkFriendThreadRead() {
+    mockDbInsert.mockImplementation(() => ({
+      values: vi.fn().mockReturnValue({
+        onConflictDoNothing: vi.fn().mockResolvedValue(undefined),
+      }),
+    }));
+    mockDbSelect.mockReturnValueOnce(selectRows([{ id: DIRECT_GROUP_ID }]));
+    mockDbUpdate.mockReturnValue({
+      set: vi.fn().mockReturnValue({
+        where: vi.fn().mockResolvedValue(undefined),
+      }),
+    });
+  }
+
   it('rejects a non-friend without leaking whether the user exists', async () => {
     friendshipStatusQuery([]); // no friendship edge at all
 
@@ -650,6 +669,7 @@ describe('listFriendThreadFeed', () => {
       sharedMeal(FRIEND, 2, new Date('2026-01-01T18:00:00Z')), // dinner
       sharedMeal(FRIEND, 1, new Date('2026-01-01T08:00:00Z')), // breakfast, same day
     ]);
+    stubMarkFriendThreadRead(); // page 1 bumps lastReadAt
 
     const page = await listFriendThreadFeed(ACTOR, { friendUserId: FRIEND });
 
@@ -672,6 +692,29 @@ describe('listFriendThreadFeed', () => {
 
     expect(page.entries).toHaveLength(20);
     expect(page.nextCursor).not.toBeNull();
+  });
+
+  it('does not resolve/mark-read a direct chat when paginating with a before cursor', async () => {
+    friendshipStatusQuery([{ status: 'accepted' }]);
+    sharedMealsBeforeQuery([]);
+
+    await listFriendThreadFeed(ACTOR, {
+      friendUserId: FRIEND,
+      before: '2026-01-22T00:00:00.000Z',
+    });
+
+    expect(mockDbInsert).not.toHaveBeenCalled();
+    expect(mockDbUpdate).not.toHaveBeenCalled();
+  });
+
+  it('bumps lastReadAt on page 1 via the resolved direct chat', async () => {
+    friendshipStatusQuery([{ status: 'accepted' }]);
+    sharedMealsBeforeQuery([]);
+    stubMarkFriendThreadRead();
+
+    await listFriendThreadFeed(ACTOR, { friendUserId: FRIEND });
+
+    expect(mockDbUpdate).toHaveBeenCalledTimes(1);
   });
 });
 

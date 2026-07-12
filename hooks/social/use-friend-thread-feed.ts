@@ -1,6 +1,7 @@
 'use client';
 
-import { useInfiniteQuery } from '@tanstack/react-query';
+import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
+import { chatGroupsKeys } from '@/hooks/social/use-chat-groups';
 import {
   type FriendThreadFeedPage,
   fetchFriendThreadFeed,
@@ -18,10 +19,22 @@ export const friendThreadFeedKeys = {
  * "New food log" sidebar subtitle and must keep its own "one per friend,
  * today" shape — this one shows every shared meal, paginated. */
 export function useFriendThreadFeed(friendUserId: string) {
+  const queryClient = useQueryClient();
   return useInfiniteQuery<FriendThreadFeedPage>({
     queryKey: friendThreadFeedKeys.byFriend(friendUserId),
-    queryFn: ({ pageParam }) =>
-      fetchFriendThreadFeed(friendUserId, pageParam as string | undefined),
+    queryFn: async ({ pageParam }) => {
+      const page = await fetchFriendThreadFeed(
+        friendUserId,
+        pageParam as string | undefined
+      );
+      // Page 1 = the thread was just opened, which marks it read server-side
+      // (see listFriendThreadFeed) — refresh the sidebar so its unread/order
+      // state matches without a full reload.
+      if (pageParam === undefined) {
+        queryClient.invalidateQueries({ queryKey: chatGroupsKeys.all });
+      }
+      return page;
+    },
     initialPageParam: undefined,
     getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
     // See useGroupMealFeed's comment: staleTime applies to the whole
