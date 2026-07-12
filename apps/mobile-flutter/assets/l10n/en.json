@@ -1413,6 +1413,19 @@
       "version": "Version",
       "privacy": "Privacy policy",
       "terms": "Terms of service"
+    },
+    "subscription": {
+      "groupLabel": "Subscription",
+      "row": "Nhẩm Premium",
+      "statusFree": "Free plan",
+      "statusTrial": "Free trial · {days} days left",
+      "statusTrialLastDay": "Free trial · last day",
+      "statusPremium": "Premium · renews {date}",
+      "statusPremiumExpires": "Premium · until {date}",
+      "statusPremiumCancelled": "Premium · ends {date}",
+      "statusLifetime": "Premium · lifetime",
+      "manage": "Manage subscription",
+      "restore": "Restore purchases"
     }
   },
   "errors": {
@@ -1437,5 +1450,40 @@
       "ageMin": "Age must be at least 13.",
       "ageMax": "Age must be at most 100."
     }
+  },
+  "paywall": {
+    "upsellEyebrow": "Nhẩm Premium",
+    "upsellTitle": "Snap a meal, know the macros",
+    "upsellBody": "AI meal analysis reads what you ate — dishes, portions, calories and macros — from a photo or a sentence. Log in seconds, in Vietnamese or English.",
+    "expiredEyebrow": "Your free week has ended",
+    "expiredTitle": "Keep your AI analysis",
+    "expiredBody": "Your free trial is over. Go Premium to keep logging meals with AI analysis — no more counting by hand.",
+    "trialCountdown": "{days} days left in your free trial",
+    "trialCountdownLastDay": "Last day of your free trial",
+    "feature1": "AI reads meals from a photo or a sentence",
+    "feature2": "Vietnamese dishes, portions and macros",
+    "feature3": "Unlimited meal logging",
+    "purchase": "Start Premium",
+    "purchaseTrial": "Continue Premium",
+    "restore": "Restore purchases",
+    "manageActive": "Manage subscription",
+    "alreadyPremiumTitle": "You're on Premium",
+    "alreadyPremiumBody": "AI meal analysis is unlocked. Manage your plan in the store any time.",
+    "alreadyLifetimeBody": "You have lifetime Premium. AI meal analysis is yours to keep.",
+    "unavailableTitle": "Purchases unavailable",
+    "unavailableBody": "In-app purchases aren't available right now. Please try again later.",
+    "loadError": "Couldn't load subscription options.",
+    "purchaseError": "Purchase couldn't be completed. Please try again.",
+    "restoreError": "Couldn't restore purchases. Please try again.",
+    "restoreNothing": "No previous purchases found to restore.",
+    "verifying": "Confirming your purchase…",
+    "verifyPending": "Payment received — we're still activating Premium. It'll unlock shortly.",
+    "bestValue": "Best value",
+    "perMonth": "/mo",
+    "perYear": "/yr",
+    "packageMonthly": "Monthly",
+    "packageAnnual": "Annual",
+    "packageLifetime": "Lifetime",
+    "legal": "Payment is charged to your store account. Subscriptions renew automatically unless cancelled at least 24 hours before the period ends."
   }
 }

@@ -244,16 +244,17 @@ class ApiClient {
   }) async {
     final headers = await _authHeaders();
     final uri = Uri.parse('$_baseUrl/api/v1/feedback/screenshot');
-    final req = http.MultipartRequest('POST', uri)
-      ..headers.addAll(headers)
-      ..files.add(
-        http.MultipartFile.fromBytes(
-          'file',
-          bytes,
-          filename: filename,
-          contentType: MediaType.parse(contentType),
-        ),
-      );
+    final req =
+        http.MultipartRequest('POST', uri)
+          ..headers.addAll(headers)
+          ..files.add(
+            http.MultipartFile.fromBytes(
+              'file',
+              bytes,
+              filename: filename,
+              contentType: MediaType.parse(contentType),
+            ),
+          );
     final streamed = await _http.send(req);
     final res = await http.Response.fromStream(streamed);
     if (res.statusCode < 200 || res.statusCode >= 300) {
@@ -306,12 +307,15 @@ class ApiClient {
 
     if (streamed.statusCode < 200 || streamed.statusCode >= 300) {
       // Drain + surface as a terminal error, mirroring the RN `error` branch.
+      // The HTTP status rides along so a `402 Payment Required` (feature locked
+      // — post Phase E) can route the consumer to the paywall.
       final res = await http.Response.fromStream(streamed);
       final apiErr = _toApiError(res);
       yield StreamErrorEvent(
         code: apiErr.code,
         message: apiErr.message,
         retryable: apiErr.retryable,
+        status: res.statusCode,
       );
       return;
     }

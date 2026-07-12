@@ -77,8 +77,14 @@ the [release lanes](./releasing.md) all build from a `/tmp` mirror for this reas
 Runtime config comes from compile-time `--dart-define`s, read in
 [`lib/data/env.dart`](../../mobile-flutter/lib/data/env.dart). Required: `SUPABASE_URL`,
 `SUPABASE_ANON_KEY`, `API_BASE_URL` (defaults to `http://localhost:3000`). Optional:
-`POSTHOG_KEY`, `POSTHOG_HOST`, and `GOOGLE_WEB_CLIENT_ID` / `GOOGLE_IOS_CLIENT_ID` (native
-Google sign-in — empty disables the Google button without blocking startup).
+`POSTHOG_KEY`, `POSTHOG_HOST`, `GOOGLE_WEB_CLIENT_ID` / `GOOGLE_IOS_CLIENT_ID` (native
+Google sign-in — empty disables the Google button without blocking startup), and
+`REVENUECAT_APPLE_API_KEY` / `REVENUECAT_GOOGLE_API_KEY` (RevenueCat public SDK keys for
+in-app subscriptions — the platform key is picked per-OS in
+[`lib/data/billing/purchases_service.dart`](../../mobile-flutter/lib/data/billing/purchases_service.dart);
+when the current platform's key is empty the purchases service reports
+`purchasesAvailable = false` and the paywall renders a graceful "unavailable" state, so a
+dev build without RevenueCat config still boots).
 
 > **Native Google sign-in setup.** `GOOGLE_WEB_CLIENT_ID` is the Google Cloud **Web**
 > OAuth client ID (passed to `google_sign_in` as `serverClientId`); it must also be added

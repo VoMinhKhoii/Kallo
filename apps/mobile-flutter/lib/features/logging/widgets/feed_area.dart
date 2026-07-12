@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../../data/api_client.dart';
@@ -315,6 +316,7 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
     // composer AND render the failed attempt as a feed card (Try again).
     if (next.status == StreamStatus.error) {
       final text = _inFlightText;
+      final paymentRequired = next.paymentRequired;
       setState(() {
         _failedText = text;
         _inFlightText = null;
@@ -323,6 +325,12 @@ class _FeedAreaState extends ConsumerState<FeedArea> {
         _inputController.setText(text);
       }
       ref.read(streamAnalysisProvider.notifier).reset();
+      // HTTP 402 (feature locked, post Phase E): route to the paywall instead
+      // of leaving a plain retry-error card. The composer text is already
+      // restored above, so the user can retry after subscribing.
+      if (paymentRequired && mounted) {
+        context.push('/paywall');
+      }
     }
   }
 
@@ -963,10 +971,7 @@ class _CheatIntensityRow extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                'logging.cheatIntensity.label'.tr(),
-                style: dashEyebrow(),
-              ),
+              Text('logging.cheatIntensity.label'.tr(), style: dashEyebrow()),
               const SizedBox(height: 2),
               Text('logging.cheatIntensity.helper'.tr(), style: dashMeta()),
             ],
@@ -984,8 +989,7 @@ class _CheatIntensityRow extends StatelessWidget {
                   label: 'logging.cheatIntensity.${intensity.name}'.tr(),
                 ),
             ],
-            onChange:
-                (name) => onChange(CheatIntensity.values.byName(name)),
+            onChange: (name) => onChange(CheatIntensity.values.byName(name)),
           ),
         ),
       ],
@@ -1098,9 +1102,7 @@ class _Footer extends StatelessWidget {
         // estimator).
         if (isCheatRevealing)
           CheatSliderCard(
-            key: ValueKey(
-              'cheat-reveal-${stream.analysisId ?? 'clarify'}',
-            ),
+            key: ValueKey('cheat-reveal-${stream.analysisId ?? 'clarify'}'),
             spec: stream.cheatSpec!,
             rawInput: revealRawInput ?? '',
             busy: confirmPending,

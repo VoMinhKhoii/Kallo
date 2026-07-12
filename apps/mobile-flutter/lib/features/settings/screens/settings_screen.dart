@@ -9,6 +9,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import '../../../data/billing/entitlements_provider.dart';
+import '../../../data/billing/purchases_service.dart';
 import '../../../data/session_provider.dart';
 import '../../../shared/widgets/nham_primitives.dart';
 import '../../../shell/app_header.dart';
@@ -22,6 +24,7 @@ import '../panels/cooking.dart';
 import '../widgets/instant_commit_editor.dart';
 import '../../../shared/widgets/top_toast.dart';
 import '../../feedback/feedback_screen.dart';
+import '../../paywall/screens/paywall_screen.dart' show openStoreSubscriptions;
 import '../widgets/profile_form.dart';
 import '../widgets/region_editor.dart';
 import '../widgets/settings_group.dart';
@@ -82,12 +85,13 @@ class _SettingsList extends ConsumerWidget {
                 NhamSpacing.sp6,
               ),
               children: [
-                Text(
-                  tr('settings.title'),
-                  style: dashHeadline(),
-                ),
+                Text(tr('settings.title'), style: dashHeadline()),
                 const SizedBox(height: NhamSpacing.sp4),
 
+                // ── Subscription ────────────────────────────────────────────
+                _SubscriptionSection(),
+
+                const SizedBox(height: NhamSpacing.sp5),
                 // ── Preferences ─────────────────────────────────────────────
                 SettingsGroup(
                   label: tr('settings.preferences'),
@@ -228,6 +232,143 @@ class _SettingsList extends ConsumerWidget {
   }
 }
 
+/// Subscription section: current plan state (free / trial / premium / lifetime
+/// + expiry), tapping into the paywall, plus store-manage and restore access.
+/// Server entitlement state ([entitlementsProvider]) drives the subline.
+class _SubscriptionSection extends ConsumerStatefulWidget {
+  @override
+  ConsumerState<_SubscriptionSection> createState() =>
+      _SubscriptionSectionState();
+}
+
+class _SubscriptionSectionState extends ConsumerState<_SubscriptionSection> {
+  bool _restoring = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final entitlementAsync = ref.watch(entitlementsProvider);
+    final entitlement = entitlementAsync.valueOrNull;
+    final isPremium = entitlement?.isPremium ?? false;
+    final isLifetime = entitlement?.isLifetime ?? false;
+
+    final rows = <Widget>[
+      SettingsRow(
+        icon: LucideIcons.sparkles,
+        label: tr('settings.subscription.row'),
+        subline: _statusSubline(context, entitlementAsync),
+        showChevron: true,
+        onTap: () => context.push('/paywall'),
+      ),
+    ];
+
+    // Manage-in-store only makes sense for an active (non-lifetime) subscription.
+    if (isPremium && !isLifetime) {
+      rows.add(
+        SettingsRow(
+          icon: LucideIcons.externalLink,
+          label: tr('settings.subscription.manage'),
+          onTap: () => openStoreSubscriptions(context),
+        ),
+      );
+    }
+
+    // Restore is always available (a reinstalled premium user needs it).
+    rows.add(
+      SettingsRow(
+        icon: LucideIcons.refreshCw,
+        label: tr('settings.subscription.restore'),
+        busy: _restoring,
+        enabled: !_restoring,
+        onTap: _restore,
+      ),
+    );
+
+    return SettingsGroup(
+      label: tr('settings.subscription.groupLabel'),
+      children: rows,
+    );
+  }
+
+  /// Localized plan-state subline from the server entitlement snapshot.
+  String _statusSubline(BuildContext context, AsyncValue<EntitlementState> e) {
+    final value = e.valueOrNull;
+    if (value == null) return tr('common.loading');
+    if (value.isLifetime) return tr('settings.subscription.statusLifetime');
+    if (value.trial.active) {
+      final days = value.trial.daysRemaining;
+      return days <= 1
+          ? tr('settings.subscription.statusTrialLastDay')
+          : tr(
+            'settings.subscription.statusTrial',
+            namedArgs: {'days': '$days'},
+          );
+    }
+    if (value.isPremium) {
+      final date = value.expiresAt;
+      if (date == null) {
+        return tr(
+          'settings.subscription.statusPremium',
+          namedArgs: {'date': ''},
+        ).trim();
+      }
+      final fmt = DateFormat.yMMMd(context.locale.languageCode).format(date);
+      if (value.willRenew) {
+        return tr(
+          'settings.subscription.statusPremium',
+          namedArgs: {'date': fmt},
+        );
+      }
+      return tr(
+        'settings.subscription.statusPremiumCancelled',
+        namedArgs: {'date': fmt},
+      );
+    }
+    return tr('settings.subscription.statusFree');
+  }
+
+  Future<void> _restore() async {
+    if (_restoring) return;
+    setState(() => _restoring = true);
+    final purchases = ref.read(purchasesServiceProvider);
+    if (!purchases.purchasesAvailable) {
+      if (mounted) {
+        setState(() => _restoring = false);
+        showTopToast(
+          context,
+          tr('paywall.unavailableBody'),
+          variant: TopToastVariant.error,
+        );
+      }
+      return;
+    }
+    final ok = await purchases.restorePurchases();
+    if (!mounted) return;
+    if (!ok) {
+      setState(() => _restoring = false);
+      showTopToast(
+        context,
+        tr('paywall.restoreError'),
+        variant: TopToastVariant.error,
+      );
+      return;
+    }
+    final premium =
+        await ref.read(entitlementsProvider.notifier).pollUntilPremium();
+    if (!mounted) return;
+    setState(() => _restoring = false);
+    showTopToast(
+      context,
+      premium
+          ? tr(
+            'settings.subscription.statusPremium',
+            namedArgs: {'date': ''},
+          ).trim()
+          : tr('paywall.restoreNothing'),
+      variant: premium ? TopToastVariant.success : TopToastVariant.error,
+    );
+  }
+}
+
 /// The focused editor a preference row pushes onto the stack.
 enum _EditorKind { goal, cooking, region }
 
@@ -255,10 +396,7 @@ class _ProfileScreen extends ConsumerWidget {
             child:
                 userId == null
                     ? _Centered(
-                      child: Text(
-                        tr('common.notSignedIn'),
-                        style: dashBody(),
-                      ),
+                      child: Text(tr('common.notSignedIn'), style: dashBody()),
                     )
                     : profileAsync.when(
                       loading:
@@ -368,7 +506,10 @@ class _ProfileEmpty extends StatelessWidget {
                   ),
                   child: Text(
                     tr('settings.profilePage.startSetup'),
-                    style: dashBody(weight: FontWeight.w500, color: Colors.white),
+                    style: dashBody(
+                      weight: FontWeight.w500,
+                      color: Colors.white,
+                    ),
                   ),
                 ),
               ),
@@ -426,7 +567,10 @@ class _ProfileLoadError extends StatelessWidget {
                   ),
                   child: Text(
                     tr('common.retry'),
-                    style: dashBody(weight: FontWeight.w500, color: Colors.white),
+                    style: dashBody(
+                      weight: FontWeight.w500,
+                      color: Colors.white,
+                    ),
                   ),
                 ),
               ),

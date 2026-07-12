@@ -1413,6 +1413,19 @@
       "version": "Phiên bản",
       "privacy": "Chính sách bảo mật",
       "terms": "Điều khoản dịch vụ"
+    },
+    "subscription": {
+      "groupLabel": "Gói đăng ký",
+      "row": "Nhẩm Premium",
+      "statusFree": "Gói miễn phí",
+      "statusTrial": "Dùng thử · còn {days} ngày",
+      "statusTrialLastDay": "Dùng thử · ngày cuối",
+      "statusPremium": "Premium · gia hạn {date}",
+      "statusPremiumExpires": "Premium · đến {date}",
+      "statusPremiumCancelled": "Premium · kết thúc {date}",
+      "statusLifetime": "Premium · trọn đời",
+      "manage": "Quản lý gói đăng ký",
+      "restore": "Khôi phục giao dịch"
     }
   },
   "errors": {
@@ -1437,5 +1450,40 @@
       "ageMin": "Tuổi phải từ 13 trở lên.",
       "ageMax": "Tuổi phải từ 100 trở xuống."
     }
+  },
+  "paywall": {
+    "upsellEyebrow": "Nhẩm Premium",
+    "upsellTitle": "Chụp bữa ăn, biết ngay dinh dưỡng",
+    "upsellBody": "Phân tích bữa ăn bằng AI đọc ra món ăn, khẩu phần, calo và macro — chỉ từ một tấm ảnh hoặc một câu. Ghi lại trong vài giây, bằng tiếng Việt hay tiếng Anh.",
+    "expiredEyebrow": "Tuần dùng thử đã kết thúc",
+    "expiredTitle": "Giữ lại phân tích AI của bạn",
+    "expiredBody": "Thời gian dùng thử đã hết. Nâng cấp Premium để tiếp tục ghi bữa ăn bằng phân tích AI — không phải tính tay nữa.",
+    "trialCountdown": "Còn {days} ngày dùng thử miễn phí",
+    "trialCountdownLastDay": "Ngày dùng thử miễn phí cuối cùng",
+    "feature1": "AI đọc bữa ăn từ ảnh hoặc một câu",
+    "feature2": "Món Việt, khẩu phần và macro",
+    "feature3": "Ghi bữa ăn không giới hạn",
+    "purchase": "Bắt đầu Premium",
+    "purchaseTrial": "Tiếp tục Premium",
+    "restore": "Khôi phục giao dịch",
+    "manageActive": "Quản lý gói đăng ký",
+    "alreadyPremiumTitle": "Bạn đang dùng Premium",
+    "alreadyPremiumBody": "Phân tích bữa ăn bằng AI đã được mở khóa. Bạn có thể quản lý gói trong cửa hàng bất cứ lúc nào.",
+    "alreadyLifetimeBody": "Bạn có Premium trọn đời. Phân tích bữa ăn bằng AI luôn thuộc về bạn.",
+    "unavailableTitle": "Không thể mua hàng",
+    "unavailableBody": "Mua hàng trong ứng dụng hiện chưa khả dụng. Vui lòng thử lại sau.",
+    "loadError": "Không tải được các gói đăng ký.",
+    "purchaseError": "Không hoàn tất được giao dịch. Vui lòng thử lại.",
+    "restoreError": "Không khôi phục được giao dịch. Vui lòng thử lại.",
+    "restoreNothing": "Không tìm thấy giao dịch trước đó để khôi phục.",
+    "verifying": "Đang xác nhận giao dịch…",
+    "verifyPending": "Đã nhận thanh toán — chúng tôi đang kích hoạt Premium. Sẽ mở khóa trong giây lát.",
+    "bestValue": "Đáng giá nhất",
+    "perMonth": "/tháng",
+    "perYear": "/năm",
+    "packageMonthly": "Hằng tháng",
+    "packageAnnual": "Hằng năm",
+    "packageLifetime": "Trọn đời",
+    "legal": "Thanh toán sẽ được tính vào tài khoản cửa hàng của bạn. Gói tự động gia hạn trừ khi bạn hủy ít nhất 24 giờ trước khi kỳ hiện tại kết thúc."
   }
 }

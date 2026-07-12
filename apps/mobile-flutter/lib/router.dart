@@ -17,6 +17,7 @@ import 'features/nutrition/screens/nutrition_screen.dart';
 import 'features/onboarding/providers/onboarding_providers.dart';
 import 'features/onboarding/screens/onboarding_screen.dart';
 import 'features/onboarding/screens/welcome_setup_screen.dart';
+import 'features/paywall/screens/paywall_screen.dart';
 import 'features/settings/screens/settings_screen.dart';
 import 'services/supabase_service.dart';
 import 'shell/placeholder_screen.dart';
@@ -164,8 +165,9 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/circle/invite/:slug',
         parentNavigatorKey: _rootKey,
-        builder: (context, state) =>
-            ConnectScreen(slug: state.pathParameters['slug'] ?? ''),
+        builder:
+            (context, state) =>
+                ConnectScreen(slug: state.pathParameters['slug'] ?? ''),
       ),
       // Settings pushes over the shell (Cupertino swipe-back) from the header
       // avatar — it's an account surface, not a primary tab destination.
@@ -175,6 +177,15 @@ final routerProvider = Provider<GoRouter>((ref) {
         pageBuilder:
             (context, state) =>
                 const CupertinoPage<void>(child: SettingsScreen()),
+      ),
+      // Paywall — pushed over the shell (from Settings, or when a gated action
+      // hits an HTTP 402). Cupertino swipe-back like Settings.
+      GoRoute(
+        path: '/paywall',
+        parentNavigatorKey: _rootKey,
+        pageBuilder:
+            (context, state) =>
+                const CupertinoPage<void>(child: PaywallScreen()),
       ),
 
       // The primary destinations — each its own branch so state/scroll persist

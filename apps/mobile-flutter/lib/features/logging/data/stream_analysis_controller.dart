@@ -37,6 +37,10 @@ class StreamAnalysisState {
   final String? error;
   final bool isAnalyzing;
 
+  /// Set when the analysis failed with HTTP 402 (feature locked) — the UI
+  /// routes to the paywall instead of showing a retry error.
+  final bool paymentRequired;
+
   /// The day this run logs into (`StreamAnalyzeInput.loggedDate`). Lets the
   /// feed pin the streaming/reveal cards to their origin date, so switching
   /// the selected day doesn't render them on the wrong day's feed.
@@ -52,6 +56,7 @@ class StreamAnalysisState {
     this.error,
     this.isAnalyzing = false,
     this.loggedDate,
+    this.paymentRequired = false,
   });
 
   StreamAnalysisState copyWith({
@@ -64,6 +69,7 @@ class StreamAnalysisState {
     String? error,
     bool? isAnalyzing,
     String? loggedDate,
+    bool? paymentRequired,
   }) => StreamAnalysisState(
     status: status ?? this.status,
     items: items ?? this.items,
@@ -74,6 +80,7 @@ class StreamAnalysisState {
     error: error ?? this.error,
     isAnalyzing: isAnalyzing ?? this.isAnalyzing,
     loggedDate: loggedDate ?? this.loggedDate,
+    paymentRequired: paymentRequired ?? this.paymentRequired,
   );
 
   static const StreamAnalysisState initial = StreamAnalysisState();
@@ -170,6 +177,9 @@ class StreamAnalysisController extends Notifier<StreamAnalysisState> {
           status: StreamStatus.error,
           error: message,
           isAnalyzing: false,
+          // 402 (feature locked, post Phase E) → route to the paywall instead
+          // of the retry-error card. Flagged here; the feed reads it on error.
+          paymentRequired: event.isPaymentRequired,
         );
     }
   }
