@@ -1,4 +1,5 @@
 import { sql } from 'drizzle-orm';
+import type { DecomposedIngredient } from '@/lib/ai/types';
 import type { AppDb } from '@/lib/db';
 import { buildMatchResult } from './candidate-ranking';
 import {
@@ -32,6 +33,13 @@ export function pickBestSource(
 
   return fao!.similarity >= usda!.similarity ? fao : usda;
 }
+
+export const ingredientStateInfo = (
+  ing: DecomposedIngredient
+): MatchStateInfo => ({
+  expectedState: ing.expectedState ?? 'cooked',
+  stateSource: ing._stateSource ?? 'unknown',
+});
 
 export interface MatchStateInfo {
   expectedState: 'raw' | 'cooked';
