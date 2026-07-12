@@ -1,5 +1,6 @@
 import { sql } from 'drizzle-orm';
 import {
+  bigint,
   boolean,
   check,
   date,
@@ -1141,6 +1142,142 @@ export const userFeedback = pgTable(
       sql`${table.createdAt} DESC`
     ),
     index('user_feedback_user_created_idx').on(
+      table.userId,
+      sql`${table.createdAt} DESC`
+    ),
+  ]
+);
+
+// ---------------------------------------------------------------------------
+// Billing & Entitlements
+//
+// Source of truth for premium access. Rows are written ONLY by payment
+// webhooks (RevenueCat for mobile IAP, Polar for web card subscriptions,
+// PayOS for VietQR one-time packages) and admin/promo tooling — never from
+// client input. Server-side gating (lib/entitlements/) reads exclusively
+// from these tables; clients get a derived view via
+// GET /api/v1/account/entitlements.
+// ---------------------------------------------------------------------------
+
+export const entitlementGrants = pgTable(
+  'entitlement_grants',
+  {
+    id: uuid('id').primaryKey().default(sql`gen_random_uuid()`),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => authUsers.id, { onDelete: 'cascade' }),
+    // Tier key ('premium'). New tiers = new keys; no schema change needed.
+    entitlementKey: text('entitlement_key').notNull(),
+    source: text('source').notNull(),
+    // Store/gateway product identifier (RC product, Polar product, PayOS
+    // package id) — for support/debugging, not for gating decisions.
+    productId: text('product_id'),
+    startsAt: timestamp('starts_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    // NULL = lifetime (never expires).
+    expiresAt: timestamp('expires_at', { withTimezone: true }),
+    status: text('status').notNull().default('active'),
+    // Auto-renewing subscription that will renew at expiresAt. Always false
+    // for PayOS packages and lifetime grants. A canceled-but-not-expired sub
+    // is status='active' + willRenew=false (access runs to period end).
+    willRenew: boolean('will_renew').notNull().default(false),
+    // Stable id at the source (RC original_transaction/subscription id,
+    // Polar subscription/order id, PayOS order code) — upsert key so webhook
+    // retries and renewals update one row instead of stacking duplicates.
+    externalRef: text('external_ref').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    check(
+      'entitlement_grants_source_check',
+      sql`${table.source} IN ('revenuecat', 'polar', 'payos', 'promo')`
+    ),
+    check(
+      'entitlement_grants_status_check',
+      sql`${table.status} IN ('active', 'canceled', 'expired', 'refunded')`
+    ),
+    unique('entitlement_grants_source_external_ref_unique').on(
+      table.source,
+      table.externalRef
+    ),
+    index('entitlement_grants_user_status_idx').on(
+      table.userId,
+      table.status
+    ),
+  ]
+);
+
+export const billingWebhookEvents = pgTable(
+  'billing_webhook_events',
+  {
+    id: uuid('id').primaryKey().default(sql`gen_random_uuid()`),
+    source: text('source').notNull(),
+    // Provider event id; the (source, external_event_id) unique constraint is
+    // the idempotency barrier — a redelivered webhook inserts nothing and is
+    // skipped before any grant mutation.
+    externalEventId: text('external_event_id').notNull(),
+    eventType: text('event_type').notNull(),
+    // Nullable, deliberately no FK: events can reference users we cannot
+    // resolve (deleted accounts, transfers) and must still be recorded.
+    userId: uuid('user_id'),
+    rawPayload: jsonb('raw_payload').notNull(),
+    // NULL until the handler finished applying the event to grants.
+    processedAt: timestamp('processed_at', { withTimezone: true }),
+    processingError: text('processing_error'),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    check(
+      'billing_webhook_events_source_check',
+      sql`${table.source} IN ('revenuecat', 'polar', 'payos')`
+    ),
+    unique('billing_webhook_events_source_event_unique').on(
+      table.source,
+      table.externalEventId
+    ),
+    index('billing_webhook_events_user_idx').on(table.userId),
+    index('billing_webhook_events_created_idx').on(
+      sql`${table.createdAt} DESC`
+    ),
+  ]
+);
+
+export const payosOrders = pgTable(
+  'payos_orders',
+  {
+    // PayOS requires a numeric orderCode (safe-integer range); we generate it
+    // at checkout and it is the join key for the payment webhook.
+    orderCode: bigint('order_code', { mode: 'number' }).primaryKey(),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => authUsers.id, { onDelete: 'cascade' }),
+    // Key into lib/billing/packages.ts (duration + amount live in code).
+    packageId: text('package_id').notNull(),
+    amountVnd: integer('amount_vnd').notNull(),
+    status: text('status').notNull().default('pending'),
+    paymentLinkId: text('payment_link_id'),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    check(
+      'payos_orders_status_check',
+      sql`${table.status} IN ('pending', 'paid', 'canceled')`
+    ),
+    check('payos_orders_amount_vnd_check', sql`${table.amountVnd} > 0`),
+    index('payos_orders_user_idx').on(
       table.userId,
       sql`${table.createdAt} DESC`
     ),
