@@ -1,0 +1,1 @@
+ALTER TABLE "entitlement_grants" ADD COLUMN "store" text;

@@ -16,6 +16,10 @@ export interface EntitlementsResponse {
   expiresAt: string | null;
   willRenew: boolean;
   source: string | null;
+  // RC's lowercased event.store on the winning grant (app_store, play_store,
+  // paddle, ...) — used to route the "manage subscription" deep link. null for
+  // web/Paddle grants or when the grant carried no store.
+  store: string | null;
   trial: {
     active: boolean;
     endsAt: string | null;

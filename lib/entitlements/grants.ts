@@ -20,6 +20,10 @@ export interface UpsertGrantInput {
   userId: string;
   entitlementKey: string;
   source: string;
+  // RC's event.store lowercased (app_store, play_store, paddle, ...). Nullable
+  // — not every source/event carries a store. Persisted for the settings
+  // "manage subscription" deep link, never for gating.
+  store: string | null;
   productId: string | null;
   startsAt: Date;
   // null = lifetime (never expires).
@@ -52,6 +56,7 @@ export async function upsertGrant(
       userId: input.userId,
       entitlementKey: input.entitlementKey,
       source: input.source,
+      store: input.store,
       productId: input.productId,
       startsAt: input.startsAt,
       expiresAt: input.expiresAt,
@@ -65,6 +70,7 @@ export async function upsertGrant(
       target: [entitlementGrants.source, entitlementGrants.externalRef],
       set: {
         userId: input.userId,
+        store: input.store,
         productId: input.productId,
         startsAt: input.startsAt,
         expiresAt: input.expiresAt,

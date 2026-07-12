@@ -33,6 +33,10 @@ export interface EntitlementState {
   expiresAt: Date | null;
   willRenew: boolean;
   source: string | null;
+  // RC's lowercased event.store on the winning grant (app_store, play_store,
+  // paddle, ...) — drives the settings "manage subscription" deep link. null
+  // when there is no active grant or the grant carried no store.
+  store: string | null;
   trial: TrialState;
   features: Record<FeatureKey, FeatureAccess>;
 }
@@ -159,6 +163,7 @@ export async function getEntitlementState(
     expiresAt: winner?.expiresAt ?? null,
     willRenew: winner?.willRenew ?? false,
     source: winner?.source ?? null,
+    store: winner?.store ?? null,
     trial,
     features,
   };

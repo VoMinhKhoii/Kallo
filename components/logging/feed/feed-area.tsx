@@ -82,6 +82,9 @@ interface FeedAreaProps {
   isDateNavigationPending?: boolean;
   onInitialMealApplied?: () => void;
   onSelectDate: (date: string) => void;
+  // Called when the analyze endpoint returns a pre-stream 402 (AI analysis
+  // locked). The shell owns the paywall dialog and opens it.
+  onPaymentRequired?: () => void;
 }
 
 function MacroSummarySkeleton() {
@@ -201,6 +204,7 @@ export function FeedArea({
   isDateNavigationPending = false,
   onInitialMealApplied,
   onSelectDate,
+  onPaymentRequired,
 }: FeedAreaProps) {
   const t = useTranslations('logging.feedArea');
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -484,6 +488,7 @@ export function FeedArea({
     lastAnalysisIdRef,
     lastErrorRef,
     onAnalysisComplete: handleAnalysisComplete,
+    onPaymentRequired,
   });
 
   const handleConfirmMeal = (

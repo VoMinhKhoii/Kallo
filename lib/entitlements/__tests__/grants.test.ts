@@ -57,6 +57,7 @@ describe('upsertGrant', () => {
         userId,
         entitlementKey: 'premium',
         source: 'revenuecat',
+        store: 'app_store',
         productId: 'nham_premium_monthly',
         startsAt: fixedNow,
         expiresAt,
@@ -71,6 +72,7 @@ describe('upsertGrant', () => {
       userId,
       entitlementKey: 'premium',
       source: 'revenuecat',
+      store: 'app_store',
       productId: 'nham_premium_monthly',
       startsAt: fixedNow,
       expiresAt,
@@ -85,6 +87,7 @@ describe('upsertGrant', () => {
     expect(captured.onConflict?.target).toHaveLength(2);
     expect(captured.onConflict?.set).toMatchObject({
       userId,
+      store: 'app_store',
       productId: 'nham_premium_monthly',
       startsAt: fixedNow,
       expiresAt,
@@ -104,6 +107,7 @@ describe('upsertGrant', () => {
         userId,
         entitlementKey: 'premium',
         source: 'revenuecat',
+        store: null,
         productId: 'nham_premium_lifetime',
         startsAt: fixedNow,
         expiresAt: null,

@@ -1170,6 +1170,11 @@ export const entitlementGrants = pgTable(
     // Tier key ('premium'). New tiers = new keys; no schema change needed.
     entitlementKey: text('entitlement_key').notNull(),
     source: text('source').notNull(),
+    // RC's event.store lowercased (app_store, play_store, mac_app_store,
+    // rc_billing, paddle, stripe, promotional, ...). NO check constraint — RC
+    // adds stores over time. Used to route the "manage subscription" deep link
+    // on the settings screen; NOT a gating input.
+    store: text('store'),
     // Store product identifier (App Store / Play / Paddle product id as
     // reported by RC) — for support/debugging, not for gating decisions.
     productId: text('product_id'),

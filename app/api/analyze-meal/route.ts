@@ -28,7 +28,9 @@ import {
   pendingAnalyses,
   userProfiles,
 } from '@/lib/db/schema';
-import { Errors, serializeError } from '@/lib/errors';
+import { getBillingConfig } from '@/lib/entitlements/config';
+import { checkFeatureAccess } from '@/lib/entitlements/service';
+import { Errors, type FeatureLockedReason, serializeError } from '@/lib/errors';
 import {
   type AnalysisGuardAllowedResult,
   buildAnalysisGuardEvent,
@@ -171,6 +173,34 @@ export async function POST(request: NextRequest) {
     profile,
     geminiConfig,
   } = validation.data;
+
+  // Entitlement gate: block before any AI spend when enforcement is on. This
+  // runs BEFORE the rate-limit guards so a locked-out user never consumes a
+  // guard slot, and returns a pre-stream 402 the Flutter/web clients key on.
+  if (getBillingConfig().enforcementEnabled) {
+    const access = await checkFeatureAccess(
+      { userId, profileCreatedAt: profile.createdAt },
+      'ai_analysis'
+    );
+    if (!access.allowed) {
+      const t = await getTranslations({
+        locale: locale ?? profile.preferredLocale ?? 'en',
+        namespace: 'errors',
+      });
+      // A blocked feature is only ever trial_expired or not_entitled; anything
+      // else falls back to not_entitled copy.
+      const reason: FeatureLockedReason =
+        access.reason === 'trial_expired' ? 'trial_expired' : 'not_entitled';
+      const lockedMessage =
+        reason === 'trial_expired'
+          ? t('featureLockedTrialExpired')
+          : t('featureLockedNotEntitled');
+      return Response.json(
+        Errors.featureLocked('ai_analysis', reason, lockedMessage).toJSON(),
+        { status: 402 }
+      );
+    }
+  }
 
   const userContext = buildAiRequestContext(buildUserContext(profile), {
     mealText: message,

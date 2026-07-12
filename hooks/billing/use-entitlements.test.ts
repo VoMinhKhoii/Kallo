@@ -15,6 +15,7 @@ function make(
     expiresAt: null,
     willRenew: false,
     source: null,
+    store: null,
     trial: { active: false, endsAt: null, daysRemaining: 0 },
     features: { ai_analysis: { allowed: false, reason: 'not_entitled' } },
     ...overrides,

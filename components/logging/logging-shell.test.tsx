@@ -28,6 +28,17 @@ vi.mock('@/components/logging/feed/feed-area', () => ({
   ),
 }));
 
+// The billing surfaces pull next-intl + entitlements; the shell only mounts
+// them, so stub them out to keep this test focused on date/timeline behavior.
+vi.mock('@/components/billing/trial-banner', () => ({
+  TrialBanner: () => <div data-testid="trial-banner" />,
+}));
+
+vi.mock('@/components/billing/paywall-dialog', () => ({
+  PaywallDialog: ({ open }: { open: boolean }) =>
+    open ? <div data-testid="paywall-dialog" /> : null,
+}));
+
 vi.mock('@/components/logging/sidebar/timeline-sidebar', () => ({
   TimelineSidebar: ({
     selectedDate,

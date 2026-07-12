@@ -19,6 +19,7 @@ export async function GET() {
       expiresAt: state.expiresAt?.toISOString() ?? null,
       willRenew: state.willRenew,
       source: state.source,
+      store: state.store,
       trial: {
         active: state.trial.active,
         endsAt: state.trial.endsAt?.toISOString() ?? null,

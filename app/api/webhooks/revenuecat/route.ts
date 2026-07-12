@@ -1,5 +1,5 @@
 import { timingSafeEqual } from 'node:crypto';
-import { eq } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { resolveProduct } from '@/lib/billing/products';
@@ -140,6 +140,7 @@ async function applyEvent(
         userId,
         entitlementKey: ENTITLEMENT_KEY,
         source: SOURCE,
+        store: event.store?.toLowerCase() ?? null,
         productId: event.product_id ?? null,
         startsAt,
         expiresAt,
@@ -179,6 +180,7 @@ async function applyEvent(
           userId,
           entitlementKey: ENTITLEMENT_KEY,
           source: SOURCE,
+          store: event.store?.toLowerCase() ?? null,
           productId: event.product_id ?? null,
           startsAt:
             event.purchased_at_ms != null
@@ -295,8 +297,7 @@ export async function POST(request: Request, deps?: WebhookDeps) {
   const userId = resolveUserId(event);
 
   // --- Idempotency barrier: record FIRST. A redelivery (same event id)
-  // inserts nothing (onConflictDoNothing) and short-circuits before any grant
-  // mutation. ---
+  // inserts nothing (onConflictDoNothing). ---
   const inserted = await database
     .insert(billingWebhookEvents)
     .values({
@@ -315,12 +316,37 @@ export async function POST(request: Request, deps?: WebhookDeps) {
     })
     .returning({ id: billingWebhookEvents.id });
 
+  let eventRowId: string;
   if (inserted.length === 0) {
-    return NextResponse.json({ received: true, duplicate: true });
+    // A row already exists for this (source, event id). If it was already
+    // processed (processedAt set), this is a true duplicate — short-circuit.
+    // If processedAt is NULL, the previous attempt failed or crashed after
+    // recording only a processing_error, so re-run it against the same row
+    // rather than poisoning it as a permanent duplicate.
+    const existing = await database
+      .select({
+        id: billingWebhookEvents.id,
+        processedAt: billingWebhookEvents.processedAt,
+      })
+      .from(billingWebhookEvents)
+      .where(
+        and(
+          eq(billingWebhookEvents.source, SOURCE),
+          eq(billingWebhookEvents.externalEventId, event.id)
+        )
+      )
+      .limit(1);
+
+    const existingRow = existing[0];
+    if (!existingRow || existingRow.processedAt !== null) {
+      return NextResponse.json({ received: true, duplicate: true });
+    }
+    eventRowId = existingRow.id;
+  } else {
+    eventRowId = inserted[0].id;
   }
 
-  const eventRowId = inserted[0].id;
-
+  // Success stamp: sets processedAt + clears/records a soft processing_error.
   const finish = async (processingError: string | null) => {
     await database
       .update(billingWebhookEvents)
@@ -330,6 +356,15 @@ export async function POST(request: Request, deps?: WebhookDeps) {
           ? truncateError(processingError)
           : null,
       })
+      .where(eq(billingWebhookEvents.id, eventRowId));
+  };
+
+  // Failure stamp: records the error but leaves processedAt NULL so a RC
+  // redelivery re-runs the event instead of short-circuiting as a duplicate.
+  const recordError = async (processingError: string) => {
+    await database
+      .update(billingWebhookEvents)
+      .set({ processingError: truncateError(processingError) })
       .where(eq(billingWebhookEvents.id, eventRowId));
   };
 
@@ -353,12 +388,13 @@ export async function POST(request: Request, deps?: WebhookDeps) {
     await finish(outcome.processingError);
     return NextResponse.json({ received: true });
   } catch (error) {
-    // Persist the failure and return 500 so RC retries with the same event id
-    // (which our idempotency barrier already deduplicates on success).
+    // Persist the failure WITHOUT stamping processedAt and return 500 so RC
+    // retries with the same event id; the retry finds processedAt NULL and
+    // re-runs applyEvent (see the duplicate-insert branch above).
     const message =
       error instanceof Error ? error.message : 'unknown_processing_error';
     try {
-      await finish(message);
+      await recordError(message);
     } catch {
       // If even the error write fails, still surface a 500 to trigger retry.
     }

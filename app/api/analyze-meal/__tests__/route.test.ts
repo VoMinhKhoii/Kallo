@@ -10,6 +10,8 @@ const mockBuildUserContext = vi.fn();
 const mockInsert = vi.fn();
 const mockCreateGeminiClient = vi.fn((..._args: unknown[]) => ({}));
 const mockCheckAnalysisGuards = vi.fn();
+const mockCheckFeatureAccess = vi.fn();
+const mockGetBillingConfig = vi.fn();
 const mockLogPipelineStart = vi.fn();
 const mockLogPipelineEnd = vi.fn();
 const mockDbInsert = vi.fn();
@@ -100,6 +102,14 @@ vi.mock('@/lib/ai/gemini', () => ({
     if (!apiKey) throw new Error('GEMINI_API_KEY missing');
     return { provider: 'ai-studio' as const, apiKey };
   },
+}));
+
+vi.mock('@/lib/entitlements/config', () => ({
+  getBillingConfig: () => mockGetBillingConfig(),
+}));
+
+vi.mock('@/lib/entitlements/service', () => ({
+  checkFeatureAccess: (...args: unknown[]) => mockCheckFeatureAccess(...args),
 }));
 
 vi.mock('@/lib/rate-limit/analysis-guards', () => ({
@@ -211,6 +221,7 @@ const mockProfile = {
   defaultProteinPortion: 'medium',
   brothConsumption: 'some',
   preferredLocale: 'en',
+  createdAt: new Date('2026-01-01T00:00:00Z'),
 };
 
 const mockPipelineData = {
@@ -280,6 +291,15 @@ describe('POST /api/analyze-meal', () => {
     mockCreateGeminiClient.mockReturnValue({});
     mockCheckAnalysisGuards.mockReset();
     mockCheckAnalysisGuards.mockResolvedValue({ allowed: true });
+    // Enforcement OFF by default — existing tests must see no gating call.
+    mockGetBillingConfig.mockReset();
+    mockGetBillingConfig.mockReturnValue({
+      launchDate: null,
+      trialDays: 7,
+      enforcementEnabled: false,
+    });
+    mockCheckFeatureAccess.mockReset();
+    mockCheckFeatureAccess.mockResolvedValue({ allowed: true });
     mockBuildAnalysisGuardEvent.mockClear();
     mockLogPipelineStart.mockReset();
     mockLogPipelineStart.mockResolvedValue('request-123');
@@ -541,6 +561,97 @@ describe('POST /api/analyze-meal', () => {
 
     expect(streamCompleted).toBe(true);
     expect(release).toHaveBeenCalledTimes(1);
+  });
+
+  // Entitlement enforcement (Phase E)
+  it('does not call the gating check when enforcement is off', async () => {
+    mockAnalyzeMeal.mockResolvedValue({
+      success: true,
+      data: mockPipelineData,
+    });
+
+    const res = await POST(createRequest(mealRequestBody('phở bò')));
+    await res.text();
+
+    expect(res.status).toBe(200);
+    expect(mockCheckFeatureAccess).not.toHaveBeenCalled();
+  });
+
+  it('passes through when enforcement is on and the trial is active', async () => {
+    mockGetBillingConfig.mockReturnValue({
+      launchDate: null,
+      trialDays: 7,
+      enforcementEnabled: true,
+    });
+    mockCheckFeatureAccess.mockResolvedValue({ allowed: true });
+    mockAnalyzeMeal.mockResolvedValue({
+      success: true,
+      data: mockPipelineData,
+    });
+
+    const res = await POST(createRequest(mealRequestBody('phở bò')));
+    expect(res.status).toBe(200);
+
+    const events = await readSSEEvents(res);
+    expect(events.map((e) => e.type)).toContain('analysis_complete');
+
+    expect(mockCheckFeatureAccess).toHaveBeenCalledWith(
+      { userId: 'user-1', profileCreatedAt: mockProfile.createdAt },
+      'ai_analysis'
+    );
+  });
+
+  it('returns 402 with the feature_locked body when blocked', async () => {
+    mockGetBillingConfig.mockReturnValue({
+      launchDate: new Date('2026-01-01T00:00:00Z'),
+      trialDays: 7,
+      enforcementEnabled: true,
+    });
+    mockCheckFeatureAccess.mockResolvedValue({
+      allowed: false,
+      reason: 'trial_expired',
+    });
+
+    const res = await POST(createRequest(mealRequestBody('phở bò')));
+
+    expect(res.status).toBe(402);
+    expect(res.headers.get('Content-Type')).toContain('application/json');
+    expect(res.headers.get('Content-Type')).not.toContain('text/event-stream');
+
+    const json = await res.json();
+    expect(json.error.code).toBe('feature_locked');
+    expect(json.error.status).toBe(402);
+    expect(json.error.retryable).toBe(false);
+    expect(json.error.feature).toBe('ai_analysis');
+    expect(json.error.reason).toBe('trial_expired');
+    expect(typeof json.error.message).toBe('string');
+    expect(json.error.message.length).toBeGreaterThan(0);
+
+    // Blocked BEFORE the pipeline / any streaming starts.
+    expect(mockCreateGeminiClient).not.toHaveBeenCalled();
+    expect(mockLogPipelineStart).not.toHaveBeenCalled();
+  });
+
+  it('checks entitlement BEFORE the rate-limit guards', async () => {
+    mockGetBillingConfig.mockReturnValue({
+      launchDate: new Date('2026-01-01T00:00:00Z'),
+      trialDays: 7,
+      enforcementEnabled: true,
+    });
+    mockCheckFeatureAccess.mockResolvedValue({
+      allowed: false,
+      reason: 'not_entitled',
+    });
+
+    const res = await POST(createRequest(mealRequestBody('phở bò')));
+    expect(res.status).toBe(402);
+
+    const json = await res.json();
+    expect(json.error.reason).toBe('not_entitled');
+
+    // The guard check must never run for a locked-out user — they don't
+    // consume a rate-limit slot.
+    expect(mockCheckAnalysisGuards).not.toHaveBeenCalled();
   });
 
   // SSE streaming tests — these return 200 with event stream

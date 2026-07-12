@@ -337,6 +337,13 @@
       "when": 1783837298929,
       "tag": "20260712062138_add_billing_entitlements",
       "breakpoints": true
+    },
+    {
+      "idx": 48,
+      "version": "7",
+      "when": 1783841091114,
+      "tag": "20260712072451_add_entitlement_grant_store",
+      "breakpoints": true
     }
   ]
 }

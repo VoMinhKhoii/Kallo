@@ -29,6 +29,7 @@ interface GrantRow {
   userId: string;
   entitlementKey: string;
   source: string;
+  store: string | null;
   productId: string | null;
   startsAt: Date;
   expiresAt: Date | null;
@@ -48,12 +49,38 @@ interface GrantRow {
 class InMemoryDb {
   events: WebhookEventRow[] = [];
   grants: GrantRow[] = [];
+  // When set, the grants upsert throws — simulates the writer failing so the
+  // route records a processing_error and leaves processedAt NULL.
+  failGrantWrite = false;
 
   get client(): AppDb {
     return {
       insert: (table: unknown) => this.buildInsert(table),
       update: (table: unknown) => this.buildUpdate(table),
+      select: (_cols: unknown) => this.buildSelect(),
     } as unknown as AppDb;
+  }
+
+  // Only the events-by-(source, externalEventId) lookup the route uses on a
+  // duplicate insert. The where() expression carries the bound params (source
+  // + event id); we resolve the row against them.
+  private buildSelect() {
+    return {
+      from: (_table: unknown) => ({
+        where: (expr: unknown) => ({
+          limit: (_n: number) => {
+            const params = extractParams(expr);
+            const row = this.events.find(
+              (e) =>
+                params.includes(e.source) && params.includes(e.externalEventId)
+            );
+            return Promise.resolve(
+              row ? [{ id: row.id, processedAt: row.processedAt }] : []
+            );
+          },
+        }),
+      }),
+    };
   }
 
   private buildInsert(table: unknown) {
@@ -85,6 +112,9 @@ class InMemoryDb {
         // Grants upsert path.
         onConflictDoUpdate: (config: { set: Record<string, unknown> }) => {
           if (table === entitlementGrants) {
+            if (this.failGrantWrite) {
+              return Promise.reject(new Error('grant_write_failed'));
+            }
             const externalRef = values.externalRef as string;
             const source = values.source as string;
             const existing = this.grants.find(
@@ -98,6 +128,7 @@ class InMemoryDb {
                 userId: values.userId as string,
                 entitlementKey: values.entitlementKey as string,
                 source,
+                store: (values.store as string | null) ?? null,
                 productId: (values.productId as string | null) ?? null,
                 startsAt: values.startsAt as Date,
                 expiresAt: (values.expiresAt as Date | null) ?? null,
@@ -252,6 +283,71 @@ describe('RevenueCat webhook — idempotency', () => {
   });
 });
 
+describe('RevenueCat webhook — retry after a failed attempt', () => {
+  const event = () =>
+    baseEvent({
+      id: 'evt_retry',
+      type: 'INITIAL_PURCHASE',
+      product_id: 'nham_premium_monthly',
+      original_transaction_id: 'otx_retry',
+      purchased_at_ms: fixedNow.getTime(),
+      expiration_at_ms: fixedNow.getTime() + 30 * 86_400_000,
+    });
+
+  it('first attempt where the grant writer throws → 500, error recorded, processedAt NULL', async () => {
+    dbStub.failGrantWrite = true;
+
+    const res = await post(event());
+    expect(res.status).toBe(500);
+    expect(await res.json()).toEqual({ error: 'processing_failed' });
+
+    // The event row exists with the error recorded but is NOT marked processed,
+    // so a redelivery can re-run it.
+    expect(dbStub.events).toHaveLength(1);
+    expect(dbStub.events[0].processedAt).toBeNull();
+    expect(dbStub.events[0].processingError).toBe('grant_write_failed');
+    // No grant was written.
+    expect(dbStub.grants).toHaveLength(0);
+  });
+
+  it('redelivery of the failed event id → grant applied, 200, processedAt set', async () => {
+    dbStub.failGrantWrite = true;
+    const firstRes = await post(event());
+    expect(firstRes.status).toBe(500);
+
+    // RC redelivers the same event id; this time the writer succeeds.
+    dbStub.failGrantWrite = false;
+    const retryRes = await post(event());
+    expect(retryRes.status).toBe(200);
+    expect(await retryRes.json()).toEqual({ received: true });
+
+    // Still one event row, now processed with no error, and the grant applied.
+    expect(dbStub.events).toHaveLength(1);
+    expect(dbStub.events[0].processedAt).toEqual(fixedNow);
+    expect(dbStub.events[0].processingError).toBeNull();
+    expect(dbStub.grants).toHaveLength(1);
+    expect(dbStub.grants[0]).toMatchObject({
+      externalRef: 'otx_retry',
+      status: 'active',
+    });
+  });
+
+  it('redelivery of a SUCCESSFULLY processed event id → duplicate, no grant call', async () => {
+    // First delivery succeeds.
+    const first = await post(event());
+    expect(first.status).toBe(200);
+    expect(dbStub.grants).toHaveLength(1);
+
+    // A later grant write would throw — but a true duplicate must never call
+    // the writer at all, so this stays green.
+    dbStub.failGrantWrite = true;
+    const second = await post(event());
+    expect(second.status).toBe(200);
+    expect(await second.json()).toEqual({ received: true, duplicate: true });
+    expect(dbStub.grants).toHaveLength(1);
+  });
+});
+
 describe('RevenueCat webhook — grant lifecycle', () => {
   const monthlyExpiry = fixedNow.getTime() + 30 * 86_400_000;
 
@@ -273,6 +369,8 @@ describe('RevenueCat webhook — grant lifecycle', () => {
       userId: USER_ID,
       entitlementKey: 'premium',
       source: 'revenuecat',
+      // event.store 'APP_STORE' persisted lowercased.
+      store: 'app_store',
       status: 'active',
       willRenew: true,
       externalRef: 'otx_1',

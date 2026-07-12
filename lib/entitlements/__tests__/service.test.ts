@@ -18,6 +18,7 @@ function makeGrant(overrides: Partial<GrantRow>): GrantRow {
     userId,
     entitlementKey: 'premium',
     source: 'revenuecat',
+    store: null,
     productId: 'nham_premium_monthly',
     startsAt: new Date('2026-08-01T00:00:00.000Z'),
     expiresAt: new Date('2026-09-01T00:00:00.000Z'),
@@ -123,6 +124,7 @@ describe('getEntitlementState — grants', () => {
       expiresAt: new Date('2026-09-01T00:00:00.000Z'),
       willRenew: true,
       source: 'revenuecat',
+      store: 'app_store',
     });
     const state = await getEntitlementState(
       { userId, profileCreatedAt: oldSignup },
@@ -134,6 +136,8 @@ describe('getEntitlementState — grants', () => {
     expect(state.expiresAt?.toISOString()).toBe('2026-09-01T00:00:00.000Z');
     expect(state.willRenew).toBe(true);
     expect(state.source).toBe('revenuecat');
+    // The winning grant's store passes through for the settings deep link.
+    expect(state.store).toBe('app_store');
     expect(state.features.ai_analysis).toEqual({
       allowed: true,
       reason: 'entitled',

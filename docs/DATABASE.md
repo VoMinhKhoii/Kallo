@@ -91,6 +91,7 @@ Supabase uses timestamp-based filenames: `YYYYMMDDHHMMSS_description.sql`
 | `20260319083800_rls_synonym_candidates.sql` | B (Manual) | RLS policies for synonym_candidates (read/write/update for authenticated) |
 | `20260319083900_normalize_query_embeddings_keys.sql` | B (Manual) | Normalize existing `name_vi` PKs to lowercase + NFC (with collision resolution) |
 | `20260416161845_flatten_meal_nutrition_values.sql` | A (Drizzle) | Flatten persisted `meals` and `meal_items` nutrient columns from JSONB bounds to single numeric values |
+| `20260712072451_add_entitlement_grant_store.sql` | A (Drizzle) | Add nullable `store` column to `entitlement_grants` (RC's lowercased `event.store` — app_store, play_store, paddle, etc.); routes the settings "manage subscription" deep link |
 
 **Migration ordering matters**: Drizzle migrations that add columns must be timestamped BEFORE manual migrations that reference those columns (e.g., `search_text` column must exist before the trgm migration creates a GIN index on it).
 

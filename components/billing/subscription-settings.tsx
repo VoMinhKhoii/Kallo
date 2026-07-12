@@ -9,7 +9,9 @@ import { ExpiryReminderBanner } from './expiry-reminder-banner';
 import { PaywallDialog } from './paywall-dialog';
 
 // App-store management deep links for grants that originate from a mobile IAP.
-// The RC webhook records the originating store as the grant `source`.
+// The RC webhook records the originating store (event.store lowercased) on the
+// grant `store` column — `source` is always 'revenuecat' and can't be branched
+// on. Anything not in this map (paddle, rc_billing, ...) is web-managed.
 const STORE_MANAGE_URLS: Record<string, string> = {
   app_store: 'https://apps.apple.com/account/subscriptions',
   play_store: 'https://play.google.com/store/account/subscriptions',
@@ -70,7 +72,7 @@ export function SubscriptionSettings({
   }
 
   const isStoreSource =
-    data.source === 'app_store' || data.source === 'play_store';
+    data.store === 'app_store' || data.store === 'play_store';
   const expiryDays = daysUntil(data.expiresAt);
   const showExpiryBanner =
     data.tier === 'premium' &&
@@ -160,7 +162,7 @@ function PremiumState({
   t: ReturnType<typeof useTranslations>;
 }) {
   const renewalDate = formatDate(data.expiresAt, locale);
-  const storeUrl = data.source ? STORE_MANAGE_URLS[data.source] : undefined;
+  const storeUrl = data.store ? STORE_MANAGE_URLS[data.store] : undefined;
 
   return (
     <div className="flex flex-col gap-3">
@@ -192,7 +194,7 @@ function PremiumState({
               )}
             >
               <ExternalLink className="h-3.5 w-3.5" />
-              {data.source === 'app_store'
+              {data.store === 'app_store'
                 ? t('manageAppStore')
                 : t('managePlayStore')}
             </a>

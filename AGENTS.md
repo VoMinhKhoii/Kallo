@@ -110,6 +110,7 @@ This file is the **single source of truth** for agent behavior. Rules here take 
 - `app/layout.tsx` — Root layout (fonts, providers, global styles)
 - `drizzle.config.ts` — Drizzle ORM configuration
 - `docs/DATABASE.md` — Full database architecture documentation
+- `docs/BILLING.md` — Billing & entitlements runbook (RC single brain, webhook → grants, trial/enforcement flags, dashboard setup, sandbox + rollout)
 - `docs/DATA.md` — VTN FCT 2007 food data documentation
 - `docs/PRD.md` — Product requirements
 - `docs/DESIGN.md` — Design specifications
