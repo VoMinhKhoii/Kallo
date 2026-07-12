@@ -14,12 +14,7 @@ import { and, desc, eq, or, sql } from 'drizzle-orm';
 import { getOrCreateDirectChatGroup } from '@/lib/actions/chat-groups';
 import { getUtcDayRangeForLocalDate } from '@/lib/date/local-day';
 import { db as defaultDb } from '@/lib/db';
-import {
-  chatGroupMembers,
-  circleEvents,
-  friendships,
-  publicProfiles,
-} from '@/lib/db/schema';
+import { circleEvents, friendships, publicProfiles } from '@/lib/db/schema';
 import { Errors } from '@/lib/errors';
 import { orderedPair } from '@/lib/groups/friendship';
 import { validateHandle } from '@/lib/groups/handles';
@@ -35,7 +30,7 @@ import {
   acceptInviteSchema,
   blockFriendSchema,
   circleFeedSchema,
-  friendThreadFeedSchema,
+  friendsThreadFeedSchema,
   handleSchema,
   removeFriendSchema,
   upsertPublicProfileSchema,
@@ -510,6 +505,35 @@ export async function listCircle(
 }
 
 // ---------------------------------------------------------------------------
+// getAcceptedFriendIds — the actor's accepted friends, most-recent edge first
+// ---------------------------------------------------------------------------
+// Shared by listCircleFeed (capped, today-only ambient snapshot) and
+// listFriendsThreadFeed (uncapped, paginated combined thread).
+
+async function getAcceptedFriendIds(
+  actorId: string,
+  db: Db
+): Promise<string[]> {
+  const friendRows = await db
+    .select({
+      userLow: friendships.userLow,
+      userHigh: friendships.userHigh,
+    })
+    .from(friendships)
+    .where(
+      and(
+        or(eq(friendships.userLow, actorId), eq(friendships.userHigh, actorId)),
+        eq(friendships.status, 'accepted')
+      )
+    )
+    .orderBy(desc(friendships.updatedAt));
+
+  return friendRows.map((r) =>
+    r.userLow === actorId ? r.userHigh : r.userLow
+  );
+}
+
+// ---------------------------------------------------------------------------
 // listCircleFeed — most-recent shared meal per friend, today, capped + deduped
 // ---------------------------------------------------------------------------
 
@@ -527,25 +551,8 @@ export async function listCircleFeed(
     parsed.timezoneOffset
   );
 
-  // Resolve the actor's accepted friends, most-recently-connected first so the
-  // cap below is deterministic (not arbitrary physical row order).
-  const friendRows = await db
-    .select({
-      userLow: friendships.userLow,
-      userHigh: friendships.userHigh,
-    })
-    .from(friendships)
-    .where(
-      and(
-        or(eq(friendships.userLow, actorId), eq(friendships.userHigh, actorId)),
-        eq(friendships.status, 'accepted')
-      )
-    )
-    .orderBy(desc(friendships.updatedAt));
-
-  const friendIds = friendRows.map((r) =>
-    r.userLow === actorId ? r.userHigh : r.userLow
-  );
+  // Most-recently-connected first so the cap below is deterministic.
+  const friendIds = await getAcceptedFriendIds(actorId, db);
 
   // Cap the number of FRIENDS considered (non-scrollable ambient wall). The
   // actor is always included beyond the cap so they keep their own table even
@@ -579,58 +586,32 @@ export async function listCircleFeed(
 }
 
 // ---------------------------------------------------------------------------
-// listFriendThreadFeed — a 1:1 thread's shared-meal history, paginated
+// listFriendsThreadFeed — every friend's shared-meal history, merged, paginated
 // ---------------------------------------------------------------------------
-// The scrollable counterpart to listCircleFeed's today-only snapshot (which
-// now only backs FriendList's per-friend "New food log" sidebar subtitle).
-// Deliberately a separate query rather than a variant of listCircleFeed: that
-// one must stay exactly "today, latest per friend", while a thread shows
-// every shared meal between the actor and one friend, seek-paginated
-// oldest-ward via `before`.
+// The Friends section is one combined thread (not one row per friend): every
+// accepted friend's shared meal, merged into a single feed, EXCLUDING the
+// actor's own — the actor is simply never in the query scope. Deliberately a
+// separate query rather than a variant of listCircleFeed: that one must stay
+// exactly "today, latest per friend, capped" for the sidebar subtitle, while
+// this shows every shared meal across the whole friend graph, seek-paginated
+// oldest-ward via `before`. No read-marker — this isn't a real chat_groups
+// row, so there's no lastReadAt to bump (unread tracking deferred).
 
-export interface FriendThreadFeedPage {
+export interface FriendsThreadFeedPage {
   entries: CircleFeedEntry[];
   nextCursor: string | null;
 }
 
-export async function listFriendThreadFeed(
+export async function listFriendsThreadFeed(
   actorId: string,
-  input: { friendUserId: string; before?: string },
+  input: { before?: string },
   db: Db = defaultDb
-): Promise<FriendThreadFeedPage> {
-  const parsed = friendThreadFeedSchema.parse(input);
+): Promise<FriendsThreadFeedPage> {
+  const parsed = friendsThreadFeedSchema.parse(input);
 
-  const status = await getFriendshipStatus(actorId, parsed.friendUserId, db);
-  if (status !== 'accepted') {
-    throw Errors.notFound('Không tìm thấy người bạn này.');
-  }
-
+  const friendIds = await getAcceptedFriendIds(actorId, db);
   const before = parsed.before ? new Date(parsed.before) : null;
-
-  // Opening the thread IS the read receipt (page 1 only — not every "load
-  // older" scroll fetch). Unlike listGroupMealFeed, the direct chat's own
-  // group id isn't resolved yet here — get/create it (idempotent) first.
-  const [{ rows, nextCursor }] = await Promise.all([
-    sharedMealsBefore([actorId, parsed.friendUserId], before, db),
-    parsed.before
-      ? Promise.resolve(undefined)
-      : (async () => {
-          const { id: groupId } = await getOrCreateDirectChatGroup(
-            actorId,
-            parsed.friendUserId,
-            db
-          );
-          await db
-            .update(chatGroupMembers)
-            .set({ lastReadAt: new Date() })
-            .where(
-              and(
-                eq(chatGroupMembers.groupId, groupId),
-                eq(chatGroupMembers.userId, actorId)
-              )
-            );
-        })(),
-  ]);
+  const { rows, nextCursor } = await sharedMealsBefore(friendIds, before, db);
 
   return {
     entries: rows.map((r) => toSharedMealEntry(r, actorId)),

@@ -113,7 +113,7 @@ import {
   getOrCreateMyProfile,
   getProfileBySlug,
   listCircleFeed,
-  listFriendThreadFeed,
+  listFriendsThreadFeed,
   removeFriend,
   upsertPublicProfile,
 } from '@/lib/actions/groups';
@@ -576,37 +576,43 @@ describe('listCircleFeed', () => {
 });
 
 // ---------------------------------------------------------------------------
-// listFriendThreadFeed — a 1:1 thread's paginated shared-meal history
+// listFriendsThreadFeed — the combined Friends thread's paginated history
 // ---------------------------------------------------------------------------
 
-describe('listFriendThreadFeed', () => {
+describe('listFriendsThreadFeed', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
   const FRIEND = INVITER;
 
-  // getFriendshipStatus: db.select().from().where().limit().
-  function friendshipStatusQuery(rows: unknown[]) {
+  // getAcceptedFriendIds: db.select().from().where().orderBy().
+  function friendsQuery(rows: unknown[]) {
     mockDbSelect.mockReturnValueOnce({
       from: vi.fn().mockReturnValue({
         where: vi.fn().mockReturnValue({
-          limit: vi.fn().mockResolvedValue(rows),
+          orderBy: vi.fn().mockResolvedValue(rows),
         }),
       }),
     });
   }
 
   // sharedMealsBefore: db.select().from().innerJoin().innerJoin().where().orderBy().limit().
-  function sharedMealsBeforeQuery(rows: unknown[]) {
+  function sharedMealsBeforeQuery(
+    rows: unknown[],
+    capture?: { where?: unknown }
+  ) {
     mockDbSelect.mockReturnValueOnce({
       from: vi.fn().mockReturnValue({
         innerJoin: vi.fn().mockReturnValue({
           innerJoin: vi.fn().mockReturnValue({
-            where: vi.fn().mockReturnValue({
-              orderBy: vi.fn().mockReturnValue({
-                limit: vi.fn().mockResolvedValue(rows),
-              }),
+            where: vi.fn().mockImplementation((arg: unknown) => {
+              if (capture) capture.where = arg;
+              return {
+                orderBy: vi.fn().mockReturnValue({
+                  limit: vi.fn().mockResolvedValue(rows),
+                }),
+              };
             }),
           }),
         }),
@@ -631,62 +637,41 @@ describe('listFriendThreadFeed', () => {
     };
   }
 
-  // Page 1 resolves/creates the direct chat (getOrCreateDirectChatGroup) then
-  // bumps lastReadAt — stub its insert + re-select + update chain.
-  function stubMarkFriendThreadRead() {
-    mockDbInsert.mockImplementation(() => ({
-      values: vi.fn().mockReturnValue({
-        onConflictDoNothing: vi.fn().mockResolvedValue(undefined),
-      }),
-    }));
-    mockDbSelect.mockReturnValueOnce(selectRows([{ id: DIRECT_GROUP_ID }]));
-    mockDbUpdate.mockReturnValue({
-      set: vi.fn().mockReturnValue({
-        where: vi.fn().mockResolvedValue(undefined),
-      }),
-    });
-  }
+  it('scopes the query to accepted friends only, never the actor', async () => {
+    friendsQuery([{ userLow: ACTOR, userHigh: FRIEND }]);
+    const capture: { where?: unknown } = {};
+    sharedMealsBeforeQuery([], capture);
 
-  it('rejects a non-friend without leaking whether the user exists', async () => {
-    friendshipStatusQuery([]); // no friendship edge at all
+    await listFriendsThreadFeed(ACTOR, {});
 
-    await expect(
-      listFriendThreadFeed(ACTOR, { friendUserId: FRIEND })
-    ).rejects.toThrow('Không tìm thấy người bạn này.');
+    const serialized = JSON.stringify(capture.where ?? {});
+    expect(serialized).toContain(FRIEND);
+    expect(serialized).not.toContain(ACTOR);
   });
 
-  it('rejects a pending (not yet accepted) friendship', async () => {
-    friendshipStatusQuery([{ status: 'pending' }]);
-
-    await expect(
-      listFriendThreadFeed(ACTOR, { friendUserId: FRIEND })
-    ).rejects.toThrow('Không tìm thấy người bạn này.');
-  });
-
-  it('returns every shared meal, not collapsed to one per day', async () => {
-    friendshipStatusQuery([{ status: 'accepted' }]);
+  it('returns every shared meal, not collapsed to one per day, all tagged isSelf: false', async () => {
+    friendsQuery([{ userLow: ACTOR, userHigh: FRIEND }]);
     sharedMealsBeforeQuery([
       sharedMeal(FRIEND, 2, new Date('2026-01-01T18:00:00Z')), // dinner
       sharedMeal(FRIEND, 1, new Date('2026-01-01T08:00:00Z')), // breakfast, same day
     ]);
-    stubMarkFriendThreadRead(); // page 1 bumps lastReadAt
 
-    const page = await listFriendThreadFeed(ACTOR, { friendUserId: FRIEND });
+    const page = await listFriendsThreadFeed(ACTOR, {});
 
     expect(page.entries).toHaveLength(2);
+    expect(page.entries.every((e) => !e.isSelf)).toBe(true);
     expect(page.nextCursor).toBeNull();
   });
 
   it('forwards the before cursor and reports nextCursor when more history remains', async () => {
-    friendshipStatusQuery([{ status: 'accepted' }]);
+    friendsQuery([{ userLow: ACTOR, userHigh: FRIEND }]);
     // 21 rows for the default page size of 20 signals more history exists.
     const rows = Array.from({ length: 21 }, (_, i) =>
       sharedMeal(FRIEND, i, new Date(Date.UTC(2026, 0, 21 - i)))
     );
     sharedMealsBeforeQuery(rows);
 
-    const page = await listFriendThreadFeed(ACTOR, {
-      friendUserId: FRIEND,
+    const page = await listFriendsThreadFeed(ACTOR, {
       before: '2026-01-22T00:00:00.000Z',
     });
 
@@ -694,27 +679,13 @@ describe('listFriendThreadFeed', () => {
     expect(page.nextCursor).not.toBeNull();
   });
 
-  it('does not resolve/mark-read a direct chat when paginating with a before cursor', async () => {
-    friendshipStatusQuery([{ status: 'accepted' }]);
-    sharedMealsBeforeQuery([]);
+  it('returns an empty page without querying shared meals when there are no accepted friends', async () => {
+    friendsQuery([]);
 
-    await listFriendThreadFeed(ACTOR, {
-      friendUserId: FRIEND,
-      before: '2026-01-22T00:00:00.000Z',
-    });
+    const page = await listFriendsThreadFeed(ACTOR, {});
 
-    expect(mockDbInsert).not.toHaveBeenCalled();
-    expect(mockDbUpdate).not.toHaveBeenCalled();
-  });
-
-  it('bumps lastReadAt on page 1 via the resolved direct chat', async () => {
-    friendshipStatusQuery([{ status: 'accepted' }]);
-    sharedMealsBeforeQuery([]);
-    stubMarkFriendThreadRead();
-
-    await listFriendThreadFeed(ACTOR, { friendUserId: FRIEND });
-
-    expect(mockDbUpdate).toHaveBeenCalledTimes(1);
+    expect(page.entries).toEqual([]);
+    expect(page.nextCursor).toBeNull();
   });
 });
 

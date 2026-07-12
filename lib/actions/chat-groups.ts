@@ -72,16 +72,13 @@ export interface ChatGroupIdentity {
   lastMessageAt: string | null;
   /** True when the most recent message OR shared meal postdates this actor's
    * read marker (bumped when the thread's feed is opened — see
-   * listGroupMealFeed/listFriendThreadFeed). */
+   * listGroupMealFeed). */
   unread: boolean;
   /** Most recent shared-meal timestamp among this chat's members, today —
    * null when no member has shared a meal yet today. Drives the row's
    * "New food log · Xm ago" subtitle in place of a real chat preview until
    * text messaging has a UI. */
   lastMealSharedAt: string | null;
-  /** The other member's user id for a 'direct' chat, so callers (FriendList)
-   * can match a chat entry back to a friend; null for 'group'. */
-  otherUserId: string | null;
 }
 
 export interface ChatGroupMember {
@@ -335,7 +332,6 @@ export async function listMyChatGroups(
       : db
           .select({
             groupId: chatGroupMembers.groupId,
-            userId: chatGroupMembers.userId,
             handle: publicProfiles.handle,
             displayName: publicProfiles.displayName,
             avatarSeed: publicProfiles.avatarSeed,
@@ -429,7 +425,6 @@ export async function listMyChatGroups(
         id: g.id,
         kind: 'group' as const,
         title: g.name ?? '',
-        otherUserId: null,
         ...shared,
       };
     }
@@ -439,7 +434,6 @@ export async function listMyChatGroups(
       id: g.id,
       kind: 'direct' as const,
       title,
-      otherUserId: other?.userId ?? null,
       ...shared,
       avatarSeed: other?.avatarSeed ?? null,
     };
@@ -496,7 +490,7 @@ export async function getChatGroup(
 // ---------------------------------------------------------------------------
 // listGroupMealFeed — this group's shared-meal history, paginated
 // ---------------------------------------------------------------------------
-// The group-thread counterpart to listFriendThreadFeed (lib/actions/groups.ts):
+// The group-thread counterpart to listFriendsThreadFeed (lib/actions/groups.ts):
 // every shared meal among the group's members, seek-paginated oldest-ward via
 // `before`, no cap. A fellow member need not be the viewer's own accepted
 // friend — being in the same group is its own visibility boundary,

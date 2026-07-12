@@ -1179,7 +1179,7 @@
       "title": "Your circle",
       "subtitle": "What your friends are eating today.",
       "addFriend": "Add friend",
-      "friendNoMealToday": "{name} hasn't shared a meal today.",
+      "friendsNoMealToday": "None of your friends have shared a meal yet.",
       "groupNoMealToday": "No one in {name} has shared a meal today.",
       "groupsSectionTitle": "Groups",
       "friendsSectionTitle": "Friends",

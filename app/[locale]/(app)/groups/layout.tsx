@@ -4,7 +4,7 @@ import { UserPlus } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';
 import { AddFriendDialog } from '@/components/groups/add-friend-dialog';
-import { FriendList } from '@/components/groups/friend-list';
+import { FriendsRow } from '@/components/groups/friends-row';
 import { GroupList } from '@/components/groups/group-list';
 import { usePathname } from '@/i18n/navigation';
 import { cn } from '@/lib/utils';
@@ -52,8 +52,8 @@ export default function GroupsLayout({ children }: { children: ReactNode }) {
           />
         </header>
         <div className="flex-1 space-y-5 overflow-y-auto px-3 py-3">
+          <FriendsRow />
           <GroupList />
-          <FriendList />
         </div>
       </aside>
 

@@ -9,7 +9,7 @@
 import type {
   CircleFeedEntry,
   CircleMember,
-  FriendThreadFeedPage,
+  FriendsThreadFeedPage,
   PublicProfile,
 } from '@/lib/actions/groups';
 import { parseApiError } from '@/lib/errors';
@@ -17,7 +17,7 @@ import { parseApiError } from '@/lib/errors';
 export type {
   CircleFeedEntry,
   CircleMember,
-  FriendThreadFeedPage,
+  FriendsThreadFeedPage,
   PublicProfile,
 };
 
@@ -46,17 +46,15 @@ export function fetchCircleFeed(
   ).then((r) => r.feed);
 }
 
-/** One page of a friend thread's shared-meal history, newest-first. Omit
- * `before` for the first page ("today's or the latest"); pass a prior page's
+/** One page of the combined Friends thread's shared-meal history (every
+ * accepted friend, merged, excluding the actor), newest-first. Omit `before`
+ * for the first page ("today's or the latest"); pass a prior page's
  * `nextCursor` to load older shares. */
-export function fetchFriendThreadFeed(
-  friendUserId: string,
+export function fetchFriendsThreadFeed(
   before?: string
-): Promise<FriendThreadFeedPage> {
+): Promise<FriendsThreadFeedPage> {
   const query = before ? `?before=${encodeURIComponent(before)}` : '';
-  return request<FriendThreadFeedPage>(
-    `/api/v1/groups/friends/${friendUserId}/feed${query}`
-  );
+  return request<FriendsThreadFeedPage>(`/api/v1/groups/friends/feed${query}`);
 }
 
 export function fetchFriends(): Promise<CircleMember[]> {

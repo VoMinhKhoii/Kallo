@@ -3,15 +3,23 @@
 import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
 import { CircleError } from '@/components/groups/circle-error';
-import { useFriends, useRemoveFriend } from '@/hooks/social/use-friends';
+import {
+  useBlockFriend,
+  useFriends,
+  useRemoveFriend,
+} from '@/hooks/social/use-friends';
 import type { CircleMember } from '@/lib/groups/client';
 import { ProfileIdentity } from './profile-identity';
 
-/** The signed-in user's accepted connections, each with a Remove action. */
+/** The signed-in user's accepted connections, each with Remove/Block actions
+ * — the only friend-management surface now that the sidebar's Friends
+ * section is one combined thread instead of a per-friend row list. */
 export function CircleList() {
   const t = useTranslations('groups.circle');
+  const tWall = useTranslations('groups.wall');
   const { data: members = [], isError, isFetching, refetch } = useFriends();
   const removeFriend = useRemoveFriend();
+  const blockFriend = useBlockFriend();
 
   if (isError) {
     return (
@@ -41,19 +49,35 @@ export function CircleList() {
             className="flex items-center justify-between gap-3 rounded-xl border border-nham-border/60 bg-white p-3"
           >
             <ProfileIdentity profile={member.profile} />
-            <button
-              type="button"
-              onClick={() =>
-                removeFriend.mutate(member.profile.userId, {
-                  onError: () => toast.error(t('removeError')),
-                })
-              }
-              disabled={removeFriend.isPending}
-              aria-busy={removeFriend.isPending}
-              className="inline-flex shrink-0 items-center rounded-lg border border-nham-border/60 px-2.5 py-1.5 font-medium font-sans-display text-[12px] text-nham-text-muted transition-colors hover:bg-nham-danger/10 hover:text-nham-danger disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {t('remove')}
-            </button>
+            <div className="flex shrink-0 items-center gap-1.5">
+              <button
+                type="button"
+                onClick={() =>
+                  blockFriend.mutate(member.profile.userId, {
+                    onSuccess: () => toast.success(tWall('blocked')),
+                    onError: () => toast.error(tWall('actionError')),
+                  })
+                }
+                disabled={blockFriend.isPending}
+                aria-busy={blockFriend.isPending}
+                className="inline-flex items-center rounded-lg border border-nham-border/60 px-2.5 py-1.5 font-medium font-sans-display text-[12px] text-nham-text-muted transition-colors hover:bg-nham-danger/10 hover:text-nham-danger disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {tWall('block')}
+              </button>
+              <button
+                type="button"
+                onClick={() =>
+                  removeFriend.mutate(member.profile.userId, {
+                    onError: () => toast.error(t('removeError')),
+                  })
+                }
+                disabled={removeFriend.isPending}
+                aria-busy={removeFriend.isPending}
+                className="inline-flex items-center rounded-lg border border-nham-border/60 px-2.5 py-1.5 font-medium font-sans-display text-[12px] text-nham-text-muted transition-colors hover:bg-nham-danger/10 hover:text-nham-danger disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {t('remove')}
+              </button>
+            </div>
           </li>
         ))}
       </ul>

@@ -1179,7 +1179,7 @@
       "title": "Vòng kết nối của bạn",
       "subtitle": "Hôm nay bạn bè đang ăn gì.",
       "addFriend": "Thêm bạn",
-      "friendNoMealToday": "{name} chưa chia sẻ bữa ăn nào hôm nay.",
+      "friendsNoMealToday": "Chưa có người bạn nào chia sẻ bữa ăn.",
       "groupNoMealToday": "Chưa ai trong {name} chia sẻ bữa ăn nào hôm nay.",
       "groupsSectionTitle": "Nhóm",
       "friendsSectionTitle": "Bạn bè",

@@ -6,8 +6,8 @@ import { useChatGroup, useGroupMealFeed } from '@/hooks/social/use-chat-groups';
 
 /** Right-pane detail for a group: every member's shared-meal history,
  * infinite-scrolled — newest at the bottom by default, scrolling up loads
- * earlier days. Same layout as FriendFeed, just scoped to a chat group's
- * membership instead of a single friend. */
+ * earlier days. Same layout as FriendsFeed, just scoped to a chat group's
+ * membership instead of the actor's whole friend graph. */
 export function GroupFeed({ groupId }: { groupId: string }) {
   const t = useTranslations('groups.page');
   const { data: group } = useChatGroup(groupId);

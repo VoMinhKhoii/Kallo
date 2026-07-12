@@ -1,40 +1,29 @@
 'use client';
 
-import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
-import { chatGroupsKeys } from '@/hooks/social/use-chat-groups';
+import { useInfiniteQuery } from '@tanstack/react-query';
 import {
-  type FriendThreadFeedPage,
-  fetchFriendThreadFeed,
+  type FriendsThreadFeedPage,
+  fetchFriendsThreadFeed,
 } from '@/lib/groups/client';
 
-export const friendThreadFeedKeys = {
-  byFriend: (friendUserId: string) =>
-    ['friend-thread-feed', friendUserId] as const,
+export const friendsThreadFeedKeys = {
+  all: ['friends-thread-feed'] as const,
 };
 
-/** A 1:1 thread's shared-meal history with a friend, newest page first —
- * scroll up (`fetchNextPage`) to load earlier shares. First page is today's
- * or, if quiet today, the most recent shares regardless of day. Deliberately
- * separate from useCircleFeed: that hook backs FriendList's per-friend
- * "New food log" sidebar subtitle and must keep its own "one per friend,
- * today" shape — this one shows every shared meal, paginated. */
-export function useFriendThreadFeed(friendUserId: string) {
-  const queryClient = useQueryClient();
-  return useInfiniteQuery<FriendThreadFeedPage>({
-    queryKey: friendThreadFeedKeys.byFriend(friendUserId),
-    queryFn: async ({ pageParam }) => {
-      const page = await fetchFriendThreadFeed(
-        friendUserId,
-        pageParam as string | undefined
-      );
-      // Page 1 = the thread was just opened, which marks it read server-side
-      // (see listFriendThreadFeed) — refresh the sidebar so its unread/order
-      // state matches without a full reload.
-      if (pageParam === undefined) {
-        queryClient.invalidateQueries({ queryKey: chatGroupsKeys.all });
-      }
-      return page;
-    },
+/** The combined Friends thread — every accepted friend's shared meal, merged
+ * into one feed (excluding the actor's own), newest page first. Scroll up
+ * (`fetchNextPage`) to load earlier shares. First page is today's or, if
+ * quiet today, the most recent shares regardless of day. Deliberately
+ * separate from useCircleFeed: that hook backs the sidebar's per-section
+ * "New food log" subtitle and must keep its own "today, latest per friend"
+ * shape — this one shows every shared meal, paginated. No read-marker/
+ * sidebar-invalidation on open (unlike useGroupMealFeed) — this isn't a
+ * real chat_groups row, so there's no unread state to clear yet. */
+export function useFriendsThreadFeed() {
+  return useInfiniteQuery<FriendsThreadFeedPage>({
+    queryKey: friendsThreadFeedKeys.all,
+    queryFn: ({ pageParam }) =>
+      fetchFriendsThreadFeed(pageParam as string | undefined),
     initialPageParam: undefined,
     getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
     // See useGroupMealFeed's comment: staleTime applies to the whole

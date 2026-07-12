@@ -1,18 +1,15 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { labelFor } from '@/components/groups/invite/profile-identity';
 import { ThreadFeed } from '@/components/groups/thread-feed';
-import { useFriendThreadFeed } from '@/hooks/social/use-friend-thread-feed';
-import { useFriends } from '@/hooks/social/use-friends';
+import { useFriendsThreadFeed } from '@/hooks/social/use-friend-thread-feed';
 
-/** Right-pane detail: this friend's shared-meal history with the actor,
+/** Right-pane detail for the combined Friends thread: every accepted
+ * friend's shared meal, merged into one feed (excluding the actor's own),
  * infinite-scrolled — newest at the bottom by default, scrolling up loads
- * earlier days. Laid out like an ordinary 1:1 chat thread (their meal on the
- * left, the actor's own on the right). */
-export function FriendFeed({ friendUserId }: { friendUserId: string }) {
+ * earlier days. Replaces the old per-friend 1:1 thread pages. */
+export function FriendsFeed() {
   const t = useTranslations('groups.page');
-  const { data: members = [] } = useFriends();
   const {
     data,
     isPending,
@@ -22,10 +19,7 @@ export function FriendFeed({ friendUserId }: { friendUserId: string }) {
     hasNextPage,
     isFetchingNextPage,
     fetchNextPage,
-  } = useFriendThreadFeed(friendUserId);
-
-  const friendMember = members.find((m) => m.profile.userId === friendUserId);
-  const friendName = friendMember ? labelFor(friendMember.profile) : '';
+  } = useFriendsThreadFeed();
 
   // Pages arrive newest-page-first, each page newest-entry-first — flattening
   // in that order already yields one continuous newest→oldest sequence, so a
@@ -34,9 +28,9 @@ export function FriendFeed({ friendUserId }: { friendUserId: string }) {
 
   return (
     <ThreadFeed
-      title={friendName}
+      title={t('friendsSectionTitle')}
       entries={entries}
-      emptyMessage={t('friendNoMealToday', { name: friendName })}
+      emptyMessage={t('friendsNoMealToday')}
       isPending={isPending}
       isError={isError}
       isFetching={isFetching}

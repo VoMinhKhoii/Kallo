@@ -165,7 +165,7 @@ export interface SharedMealEntry {
   };
 }
 
-/** Shared row → entry projection, reused by listCircleFeed, listFriendThreadFeed,
+/** Shared row → entry projection, reused by listCircleFeed, listFriendsThreadFeed,
  * and listGroupMealFeed so the shape only lives in one place. */
 export function toSharedMealEntry(
   row: SharedMealRow,

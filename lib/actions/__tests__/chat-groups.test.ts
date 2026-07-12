@@ -481,55 +481,6 @@ describe('listMyChatGroups', () => {
     expect(entry.unread).toBe(true);
   });
 
-  it('includes the other member’s userId on a direct chat entry', async () => {
-    friendsBackfillQuery([]);
-    myGroupsQuery([
-      {
-        id: DIRECT_GROUP_ID,
-        kind: 'direct',
-        name: null,
-        avatarSeed: null,
-        updatedAt: new Date('2026-01-01T01:00:00Z'),
-        lastReadAt: new Date('2026-01-01T01:00:00Z'),
-      },
-    ]);
-    otherMemberQuery([
-      {
-        groupId: DIRECT_GROUP_ID,
-        userId: USER_B,
-        handle: 'phofan',
-        displayName: 'Phở Fan',
-        avatarSeed: 'phofan',
-      },
-    ]);
-    lastMessagesQuery([]);
-    lastMealSharesQuery([]);
-
-    const [entry] = await listMyChatGroups(USER_A, { timezoneOffset: 0 });
-
-    expect(entry.otherUserId).toBe(USER_B);
-  });
-
-  it('has a null otherUserId on a group chat entry', async () => {
-    friendsBackfillQuery([]);
-    myGroupsQuery([
-      {
-        id: GROUP_ID,
-        kind: 'group',
-        name: 'Trip',
-        avatarSeed: null,
-        updatedAt: new Date('2026-01-01T01:00:00Z'),
-        lastReadAt: new Date('2026-01-01T00:00:00Z'),
-      },
-    ]);
-    lastMessagesQuery([]);
-    lastMealSharesQuery([]);
-
-    const [entry] = await listMyChatGroups(USER_A, { timezoneOffset: 0 });
-
-    expect(entry.otherUserId).toBeNull();
-  });
-
   it('sorts by the more-recent of message activity or meal activity, not just chatGroups.updatedAt', async () => {
     friendsBackfillQuery([]);
     // "Trip" has an OLDER chatGroups.updatedAt than "Roommates", but a

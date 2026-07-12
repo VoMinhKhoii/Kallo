@@ -136,9 +136,9 @@ export const circleFeedSchema = z.object({
  * strictly-older-than a prior page's oldest `sharedAt`, omitted for page 1. */
 const beforeCursorSchema = z.string().datetime().optional();
 
-/** Fetch a 1:1 thread's shared-meal history, newest-first, paginated. */
-export const friendThreadFeedSchema = z.object({
-  friendUserId: uuidSchema,
+/** Fetch the combined Friends thread's shared-meal history (every accepted
+ * friend, merged, excluding the actor), newest-first, paginated. */
+export const friendsThreadFeedSchema = z.object({
   before: beforeCursorSchema,
 });
 

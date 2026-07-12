@@ -50,7 +50,7 @@ interface ThreadFeedProps {
   fetchNextPage: () => void;
 }
 
-/** Shared infinite-scroll thread body for FriendFeed/GroupFeed. Renders
+/** Shared infinite-scroll thread body for FriendsFeed/GroupFeed. Renders
  * newest entry at the bottom, loads older shares as a sentinel above the
  * oldest entry scrolls into view, and preserves scroll position when older
  * entries are prepended (without this the viewport visually jumps by the
