@@ -1,0 +1,416 @@
+=== LOG ===
+861c2e7 chore(ttr): add reusable task templates for bug reports and meeting minutes
+87c0c65 Merge pull request #175 from VoMinhKhoii/worktree-threads-typography-dashboard
+8a80c07 docs(design): fold the mobile system into the nham-design skill
+=== STATUS ===
+ M components/logging/input/barcode-product-step.tsx
+ M components/logging/input/barcode-scanner-dialog.tsx
+ M lib/actions/__tests__/barcode.test.ts
+ M lib/actions/barcode.ts
+ M lib/barcode/__tests__/openfoodfacts.test.ts
+ M lib/barcode/constants.ts
+ M lib/barcode/openfoodfacts.ts
+ M messages/en.json
+ M messages/vi.json
+=== DIFF (working tree vs planted HEAD) ===
+diff --git a/components/logging/input/barcode-product-step.tsx b/components/logging/input/barcode-product-step.tsx
+index 8f451d6..e553172 100644
+--- a/components/logging/input/barcode-product-step.tsx
++++ b/components/logging/input/barcode-product-step.tsx
+@@ -59,7 +59,7 @@ export function BarcodeProductStep({
+   onConfirm,
+ }: BarcodeProductStepProps) {
+   const t = useTranslations('logging');
+-  const { servingSizeG, packageSizeG } = product;
++  const { servingSizeG, packageSizeG, unit } = product;
+ 
+   // Available modes, in priority order. Grams is always offered as a fallback.
+   const modes = useMemo<AmountMode[]>(() => {
+@@ -91,7 +91,7 @@ export function BarcodeProductStep({
+   const modeLabel: Record<AmountMode, string> = {
+     serving: t('barcodeAmountServing'),
+     package: t('barcodeAmountPackage'),
+-    grams: t('barcodeAmountGrams'),
++    grams: unit === 'ml' ? t('barcodeAmountMl') : t('barcodeAmountGrams'),
+   };
+ 
+   const calories = scaleValue(product.caloriesKcal, grams, 0);
+@@ -109,17 +109,17 @@ export function BarcodeProductStep({
+ 
+   return (
+     <div className="flex min-h-0 flex-1 flex-col">
+-      <div className="min-h-0 flex-1 space-y-5 overflow-y-auto px-6 py-5">
++      <div className="min-h-0 flex-1 space-y-5 overflow-y-auto px-7 py-6">
+         {/* Product header */}
+         <div>
++          <h3 className="font-normal font-serif text-[#2C2416] text-[20px] leading-snug tracking-tight">
++            {product.name}
++          </h3>
+           {product.brand ? (
+-            <span className="font-medium font-sans-display text-[#8B8682] text-[11px] uppercase tracking-[0.12em]">
++            <span className="mt-1 block font-sans-display text-[#8B8682] text-[13px] leading-normal">
+               {product.brand}
+             </span>
+           ) : null}
+-          <h3 className="font-normal font-serif text-[#2C2416] text-[20px] leading-snug tracking-tight">
+-            {product.name}
+-          </h3>
+         </div>
+ 
+         {/* Amount-mode segmented control (only when >1 mode is available) */}
+@@ -193,8 +193,8 @@ export function BarcodeProductStep({
+               </button>
+             </div>
+             <span className="block font-sans-display text-[#8B8682] text-[12px] tabular-nums">
+-              {t('barcodePerServing', { grams: servingSizeG })} ·{' '}
+-              {t('barcodeTotalGrams', { grams })}
++              {t('barcodePerServing', { grams: servingSizeG, unit })} ·{' '}
++              {t('barcodeTotalGrams', { grams, unit })}
+             </span>
+           </div>
+         ) : null}
+@@ -204,8 +204,8 @@ export function BarcodeProductStep({
+             <span className="font-sans-display text-[#8B8682] text-[14px]">
+               {t('barcodeWholePackage')}
+             </span>
+-            <span className="font-normal font-serif text-[#2C2416] text-[22px] tabular-nums">
+-              {t('barcodeTotalGrams', { grams })}
++            <span className="font-sans-display font-semibold text-[#2C2416] text-[22px] tabular-nums tracking-[-0.04em]">
++              {t('barcodeTotalGrams', { grams, unit })}
+             </span>
+           </div>
+         ) : null}
+@@ -213,7 +213,7 @@ export function BarcodeProductStep({
+         {mode === 'grams' ? (
+           <div className="space-y-2">
+             <label htmlFor="grams-input" className={FIELD_LABEL}>
+-              {t('barcodeGramsLabel')}
++              {t('barcodeGramsLabel', { unit })}
+             </label>
+             <div className="flex items-center gap-2">
+               <button
+@@ -260,7 +260,8 @@ export function BarcodeProductStep({
+                       : 'border-[#EAE7E0] bg-white text-[#8B8682] hover:bg-[#F5F4F0]'
+                   }`}
+                 >
+-                  {val}g
++                  {val}
++                  {unit}
+                 </button>
+               ))}
+             </div>
+@@ -272,10 +273,10 @@ export function BarcodeProductStep({
+         <div className="rounded-[20px] border border-[#EAE7E0] bg-white p-4">
+           <div className="flex items-baseline justify-between gap-3">
+             <span className="font-sans-display text-[#8B8682] text-[12px]">
+-              {t('barcodeNutritionForAmount', { grams })}
++              {t('barcodeNutritionForAmount', { grams, unit })}
+             </span>
+             <div className="flex items-baseline gap-1">
+-              <span className="font-normal font-serif text-[#2C2416] text-[26px] tabular-nums leading-none">
++              <span className="font-sans-display font-semibold text-[#2C2416] text-[26px] tabular-nums leading-none tracking-[-0.04em]">
+                 {calories !== null ? calories : '--'}
+               </span>
+               <span className="font-sans-display text-[#8B8682] text-[12px]">
+@@ -299,7 +300,7 @@ export function BarcodeProductStep({
+       </div>
+ 
+       {/* Footer */}
+-      <div className="flex shrink-0 items-center justify-between border-[#EAE7E0]/70 border-t bg-[#F5F4F0]/50 px-6 py-4">
++      <div className="flex shrink-0 items-center justify-between border-[#EAE7E0]/70 border-t bg-[#F5F4F0]/50 px-7 py-5">
+         <button
+           type="button"
+           onClick={onBack}
+@@ -313,7 +314,7 @@ export function BarcodeProductStep({
+           onClick={() => onConfirm(grams)}
+           disabled={isStaging || grams <= 0}
+           aria-busy={isStaging}
+-          className="inline-flex touch-manipulation items-center justify-center gap-2 rounded-xl bg-[#2C2416] px-5 py-2.5 font-medium font-sans-display text-[#FDFCF8] text-[14px] shadow-sm transition-colors hover:bg-[#1C1917] disabled:opacity-50"
++          className="inline-flex touch-manipulation items-center justify-center gap-2 rounded-xl bg-[#C9A87C] px-5 py-2.5 font-medium font-sans-display text-[14px] text-white shadow-sm transition-colors hover:bg-[#B89968] disabled:opacity-50"
+         >
+           {isStaging ? (
+             <>
+diff --git a/components/logging/input/barcode-scanner-dialog.tsx b/components/logging/input/barcode-scanner-dialog.tsx
+index 5f63bae..57ee39d 100644
+--- a/components/logging/input/barcode-scanner-dialog.tsx
++++ b/components/logging/input/barcode-scanner-dialog.tsx
+@@ -167,10 +167,10 @@ export function BarcodeScannerDialog({
+     >
+       <DialogContent
+         showCloseButton={false}
+-        className="flex max-h-[85dvh] flex-col gap-0 overflow-hidden rounded-[24px] border border-[#EAE7E0] bg-[#FDFCF8] p-0 font-sans-display text-[#2C2416] sm:max-w-md"
++        className="flex max-h-[85dvh] flex-col gap-0 overflow-hidden rounded-[28px] border border-[#EAE7E0] bg-[#FDFCF8] p-0 font-sans-display text-[#2C2416] sm:max-w-md"
+       >
+         {/* Header */}
+-        <div className="flex shrink-0 items-start justify-between gap-4 border-[#EAE7E0]/70 border-b px-6 py-4">
++        <div className="flex shrink-0 items-start justify-between gap-4 border-[#EAE7E0]/70 border-b px-7 py-5">
+           <div className="min-w-0 space-y-1">
+             <DialogTitle className="font-normal font-serif text-[#2C2416] text-[22px] leading-tight tracking-tight">
+               {t('barcodeDialogTitle')}
+@@ -192,7 +192,7 @@ export function BarcodeScannerDialog({
+             onSubmit={handleSearch}
+             className="flex min-h-0 flex-1 flex-col"
+           >
+-            <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-6 py-5">
++            <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-7 py-6">
+               {/* Scan-mode segmented control */}
+               <div className="grid grid-cols-2 rounded-xl bg-[#F5F4F0] p-1">
+                 {SCAN_MODES.map((m) => (
+@@ -330,12 +330,12 @@ export function BarcodeScannerDialog({
+             {/* Footer — only manual entry has a submit action; camera mode
+                 auto-detects, so its dismissal is the header close button. */}
+             {scanMode === 'manual' ? (
+-              <div className="flex shrink-0 justify-end border-[#EAE7E0]/70 border-t bg-[#F5F4F0]/50 px-6 py-4">
++              <div className="flex shrink-0 justify-end border-[#EAE7E0]/70 border-t bg-[#F5F4F0]/50 px-7 py-5">
+                 <button
+                   type="submit"
+                   disabled={isSearching || !barcode.trim()}
+                   aria-busy={isSearching}
+-                  className="inline-flex touch-manipulation items-center justify-center gap-2 rounded-xl bg-[#2C2416] px-5 py-2.5 font-medium font-sans-display text-[#FDFCF8] text-[14px] shadow-sm transition-colors hover:bg-[#1C1917] disabled:opacity-50"
++                  className="inline-flex touch-manipulation items-center justify-center gap-2 rounded-xl bg-[#C9A87C] px-5 py-2.5 font-medium font-sans-display text-[14px] text-white shadow-sm transition-colors hover:bg-[#B89968] disabled:opacity-50"
+                 >
+                   {isSearching ? (
+                     <>
+diff --git a/lib/actions/__tests__/barcode.test.ts b/lib/actions/__tests__/barcode.test.ts
+index 9003a49..f441d8a 100644
+--- a/lib/actions/__tests__/barcode.test.ts
++++ b/lib/actions/__tests__/barcode.test.ts
+@@ -96,6 +96,7 @@ describe('searchBarcodeAction', () => {
+         sodiumMg: 850,
+         servingSizeG: 75,
+         packageSizeG: 150,
++        unit: 'g',
+       },
+     });
+   });
+@@ -131,6 +132,7 @@ describe('searchBarcodeAction', () => {
+       sodiumMg: 850,
+       servingSizeG: 75,
+       packageSizeG: null,
++      unit: 'g' as const,
+     };
+ 
+     vi.mocked(fetchProductFromOpenFoodFacts).mockResolvedValue(mockProduct);
+diff --git a/lib/actions/barcode.ts b/lib/actions/barcode.ts
+index e1ae6e5..b50968e 100644
+--- a/lib/actions/barcode.ts
++++ b/lib/actions/barcode.ts
+@@ -10,7 +10,14 @@ import type {
+   PipelineResult,
+ } from '@/lib/ai/types';
+ import { requireAuthAndProfile } from '@/lib/auth';
+-import { MAX_FOOD_ITEM_GRAMS } from '@/lib/barcode/constants';
++import {
++  BEVERAGE_TYPE_EN,
++  BEVERAGE_TYPE_VN,
++  MAX_FOOD_ITEM_GRAMS,
++  PACKAGED_TYPE_EN,
++  PACKAGED_TYPE_VN,
++  unitFromTypeEn,
++} from '@/lib/barcode/constants';
+ import {
+   fetchProductFromOpenFoodFacts,
+   type ParsedBarcodeProduct,
+@@ -134,6 +141,7 @@ export async function searchBarcodeAction(input: {
+           // positivity + 100kg-cap invariant (single source of truth).
+           servingSizeG: parseSizeGrams(cached.servingSizeG),
+           packageSizeG: parseSizeGrams(cached.packageSizeG),
++          unit: unitFromTypeEn(cached.typeEn),
+         },
+       };
+     }
+@@ -179,8 +187,8 @@ export async function searchBarcodeAction(input: {
+         id: dbId,
+         namePrimary,
+         nameEn: product.name,
+-        typeVn: 'Sản phẩm đóng gói',
+-        typeEn: 'Packaged product',
++        typeVn: product.unit === 'ml' ? BEVERAGE_TYPE_VN : PACKAGED_TYPE_VN,
++        typeEn: product.unit === 'ml' ? BEVERAGE_TYPE_EN : PACKAGED_TYPE_EN,
+         sourceId,
+         state: 'cooked',
+         servingSizeG:
+@@ -242,6 +250,7 @@ export async function stageBarcodeMealAction(input: {
+       return { success: false, code: 'not_cached' };
+     }
+ 
++    const unit = unitFromTypeEn(dbProduct.typeEn);
+     const nutrition = extractNutritionValues(dbProduct);
+     const scaledNutrition = scaleNutrition(nutrition, parsed.grams / 100);
+     const boundedNutrition = buildBoundedNutrition(scaledNutrition);
+@@ -270,7 +279,7 @@ export async function stageBarcodeMealAction(input: {
+               estimatedGrams: parsed.grams,
+               rawEquivalentGrams: parsed.grams,
+               cookingMethod: null,
+-              userFacingUnit: 'g',
++              userFacingUnit: unit,
+               matchConfidence: 1,
+               boundedNutrition: boundedNutrition,
+               displayedNutrition: scaledNutrition,
+@@ -286,7 +295,7 @@ export async function stageBarcodeMealAction(input: {
+       .values({
+         userId: user.id,
+         pipelineResult,
+-        rawInput: `${dbProduct.namePrimary} (${parsed.grams}g)`,
++        rawInput: `${dbProduct.namePrimary} (${parsed.grams}${unit})`,
+         entryMode: 'precise',
+         loggedAt,
+       })
+diff --git a/lib/barcode/__tests__/openfoodfacts.test.ts b/lib/barcode/__tests__/openfoodfacts.test.ts
+index f2644db..0180091 100644
+--- a/lib/barcode/__tests__/openfoodfacts.test.ts
++++ b/lib/barcode/__tests__/openfoodfacts.test.ts
+@@ -54,9 +54,50 @@ describe('fetchProductFromOpenFoodFacts', () => {
+       sodiumMg: 250,
+       servingSizeG: 30,
+       packageSizeG: 150,
++      unit: 'g',
+     });
+   });
+ 
++  it('reports ml for beverages via the explicit OFF unit field', async () => {
++    const mockApiResponse = {
++      status: 1,
++      product: {
++        product_name: 'Cola',
++        product_quantity: 330,
++        product_quantity_unit: 'ml',
++        nutriments: { 'energy-kcal_100g': 42 },
++      },
++    };
++
++    vi.spyOn(global, 'fetch').mockResolvedValue({
++      ok: true,
++      json: async () => mockApiResponse,
++    } as Response);
++
++    const result = await fetchProductFromOpenFoodFacts('8934563138162');
++    expect(result?.unit).toBe('ml');
++  });
++
++  it('falls back to the beverages category to detect ml', async () => {
++    const mockApiResponse = {
++      status: 1,
++      product: {
++        product_name: 'Juice',
++        quantity: '1 L',
++        categories_tags: ['en:beverages', 'en:juices'],
++        nutriments: { 'energy-kcal_100g': 45 },
++      },
++    };
++
++    vi.spyOn(global, 'fetch').mockResolvedValue({
++      ok: true,
++      json: async () => mockApiResponse,
++    } as Response);
++
++    const result = await fetchProductFromOpenFoodFacts('8934563138162');
++    expect(result?.unit).toBe('ml');
++  });
++
+   it('omits serving/package sizes that are absent or non-positive', async () => {
+     const mockApiResponse = {
+       status: 1,
+diff --git a/lib/barcode/constants.ts b/lib/barcode/constants.ts
+index b51c346..0b4dd8d 100644
+--- a/lib/barcode/constants.ts
++++ b/lib/barcode/constants.ts
+@@ -6,3 +6,21 @@
+  *  dependency-light module so the client picker can import it without pulling
+  *  in server-side fetch code. */
+ export const MAX_FOOD_ITEM_GRAMS = 100_000;
++
++/** Measurement unit for a packaged product's amount. Beverages are sold and
++ *  logged by volume (ml); everything else by weight (g). Macros are always in
++ *  grams regardless. */
++export type ProductUnit = 'g' | 'ml';
++
++/** Cached type labels for the food-composition row. The unit is not stored in a
++ *  dedicated column — it's recovered on cache read from `typeEn` — so these
++ *  strings are the single source of truth for both write and read. */
++export const PACKAGED_TYPE_VN = 'Sản phẩm đóng gói';
++export const PACKAGED_TYPE_EN = 'Packaged product';
++export const BEVERAGE_TYPE_VN = 'Đồ uống đóng gói';
++export const BEVERAGE_TYPE_EN = 'Packaged beverage';
++
++/** Recover the amount unit from a cached row's English type label. */
++export function unitFromTypeEn(typeEn: string): ProductUnit {
++  return typeEn === BEVERAGE_TYPE_EN ? 'ml' : 'g';
++}
+diff --git a/lib/barcode/openfoodfacts.ts b/lib/barcode/openfoodfacts.ts
+index cf1973e..24a8dd2 100644
+--- a/lib/barcode/openfoodfacts.ts
++++ b/lib/barcode/openfoodfacts.ts
+@@ -1,5 +1,5 @@
+ import { z } from 'zod';
+-import { MAX_FOOD_ITEM_GRAMS } from '@/lib/barcode/constants';
++import { MAX_FOOD_ITEM_GRAMS, type ProductUnit } from '@/lib/barcode/constants';
+ import { fetchWithTimeout } from '@/lib/fetch-with-timeout';
+ 
+ // Open Food Facts can be slow/unresponsive; bound the wait so the server
+@@ -33,6 +33,14 @@ const openFoodFactsProductSchema = z
+     serving_quantity: z.union([z.number(), z.string()]).optional().nullable(),
+     // Numeric grams in the whole package (net quantity).
+     product_quantity: z.union([z.number(), z.string()]).optional().nullable(),
++    // Unit OFF measured the sizing in — 'g' or 'ml' for liquids. Populated for
++    // newer products; older ones fall back to category/free-text detection.
++    product_quantity_unit: z.string().optional().nullable(),
++    serving_quantity_unit: z.string().optional().nullable(),
++    // Free-text net quantity, e.g. "330 ml" — a reliable liquid signal.
++    quantity: z.string().optional().nullable(),
++    // Taxonomy tags, e.g. ["en:beverages", ...] — beverages are sold by volume.
++    categories_tags: z.array(z.string()).optional().nullable(),
+     nutriments: openFoodFactsNutrimentsSchema.optional().nullable(),
+   })
+   .passthrough();
+@@ -58,6 +66,9 @@ export interface ParsedBarcodeProduct {
+   servingSizeG: number | null;
+   /** Grams in the whole package (net quantity), if plausible. */
+   packageSizeG: number | null;
++  /** Whether the amount is measured by volume (beverages) or weight. Sizing
++   *  numbers stay numerically the same; only the displayed unit differs. */
++  unit: ProductUnit;
+ }
+ 
+ function parseNumber(val: unknown): number | null {
+@@ -79,6 +90,38 @@ export function parseSizeGrams(val: unknown): number | null {
+   return num;
+ }
+ 
++const VOLUME_UNITS = new Set(['ml', 'cl', 'dl', 'l']);
++
++/** Decide whether a product is measured by volume (ml) or weight (g). Prefers
++ *  OFF's explicit unit fields, then the beverages category, then a free-text
++ *  net-quantity like "330 ml". Defaults to grams — the common case. */
++function resolveUnit(
++  product: z.infer<typeof openFoodFactsProductSchema>
++): ProductUnit {
++  const explicit = (
++    product.product_quantity_unit ??
++    product.serving_quantity_unit ??
++    ''
++  )
++    .trim()
++    .toLowerCase();
++  if (VOLUME_UNITS.has(explicit)) return 'ml';
++  if (explicit === 'g' || explicit === 'kg' || explicit === 'mg') return 'g';
++
++  if (product.categories_tags?.some((tag) => tag.includes('beverages'))) {
++    return 'ml';
++  }
++
++  if (
++    typeof product.quantity === 'string' &&
++    /\d\s*(?:ml|cl|dl|l)\b/i.test(product.quantity)
++  ) {
++    return 'ml';
++  }
++
++  return 'g';
++}
++
+ /**
+  * Fetch food product details from Open Food Facts API using the barcode.
+  */
+@@ -192,6 +235,7 @@ export async function fetchProductFromOpenFoodFacts(
+=== NEW FILES ===

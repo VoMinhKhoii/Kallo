@@ -32,6 +32,7 @@ class MealInput extends StatefulWidget {
     this.onBarcodePressed,
     this.modeLabel,
     this.modeIcon,
+    this.hintText,
     this.analyzing = false,
   });
 
@@ -55,6 +56,9 @@ class MealInput extends StatefulWidget {
   /// Label + icon of the currently selected mode, shown on the mode control.
   final String? modeLabel;
   final IconData? modeIcon;
+
+  /// Placeholder override — cheat mode swaps in the occasion-flavored hint.
+  final String? hintText;
 
   @override
   State<MealInput> createState() => _MealInputState();
@@ -182,7 +186,7 @@ class _MealInputState extends State<MealInput>
                 contentPadding: const EdgeInsets.symmetric(
                   vertical: 6,
                 ), // py-1.5
-                hintText: 'logging.composerPlaceholder'.tr(),
+                hintText: widget.hintText ?? 'logging.composerPlaceholder'.tr(),
                 hintStyle: dashBody(color: kInkMuted),
               ),
             ),

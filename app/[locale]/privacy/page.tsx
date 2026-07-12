@@ -19,7 +19,7 @@ export default async function PrivacyPage({
 
   return (
     <main className="mx-auto min-h-dvh max-w-2xl bg-nham-surface px-6 py-16 font-sans-display">
-      <h1 className="mb-4 font-normal font-serif text-3xl text-[#2C2416]">
+      <h1 className="mb-4 font-normal font-serif text-3xl text-nham-text">
         Privacy Policy
       </h1>
       <p className="mb-4 text-[#5C5140] leading-relaxed">
@@ -27,7 +27,7 @@ export default async function PrivacyPage({
         show you your intake and progress. Your data belongs to you and is not
         sold.
       </p>
-      <p className="text-[#8B7355] text-sm leading-relaxed">
+      <p className="text-nham-text-muted text-sm leading-relaxed">
         This policy is being finalized. For any privacy question or a data
         deletion request, contact{' '}
         <a className="underline" href="mailto:support@kallo.fit">

@@ -1,0 +1,22 @@
+=== LOG ===
+861c2e7 chore(ttr): add reusable task templates for bug reports and meeting minutes
+87c0c65 Merge pull request #175 from VoMinhKhoii/worktree-threads-typography-dashboard
+8a80c07 docs(design): fold the mobile system into the nham-design skill
+=== STATUS ===
+ M lib/barcode/openfoodfacts.ts
+?? HANDOFF.md
+=== DIFF (working tree vs planted HEAD) ===
+diff --git a/lib/barcode/openfoodfacts.ts b/lib/barcode/openfoodfacts.ts
+index cf1973e..ec71128 100644
+--- a/lib/barcode/openfoodfacts.ts
++++ b/lib/barcode/openfoodfacts.ts
+@@ -140,7 +140,7 @@ export async function fetchProductFromOpenFoodFacts(
+     // correct kJ. Prefer the stated kcal, but fall back to — or override with —
+     // the kJ-derived value when kcal is missing, non-positive, or wildly
+     // inconsistent with kJ (differs by more than ~25%).
+-    const KCAL_PER_KJ = 1 / 4.184;
++    const KCAL_PER_KJ = 1 / 4.2;
+     const statedKcal = parseNumber(
+       nutriments?.['energy-kcal_100g'] ?? nutriments?.['energy-kcal']
+     );
+=== NEW FILES ===

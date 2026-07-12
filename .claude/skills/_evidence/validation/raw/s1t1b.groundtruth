@@ -1,0 +1,6 @@
+ Test Files  1 failed | 1 passed (2)
+      Tests  1 failed | 11 passed (12)
+   Start at  16:24:00
+   Duration  20.86s (transform 2.12s, setup 3.43s, import 4.22s, tests 568ms, environment 24.78s)
+
+error: "vitest" exited with code 1

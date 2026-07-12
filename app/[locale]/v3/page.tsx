@@ -17,7 +17,7 @@ export const metadata: Metadata = {
  */
 export default function V3Page() {
   return (
-    <div className="bg-[#FEFBF6]">
+    <div className="bg-nham-surface">
       <LabHeader />
       <main>
         <V3Hero />

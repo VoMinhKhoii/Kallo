@@ -134,7 +134,10 @@
     "grid": {
       "eyebrow": "Vi chất",
       "title": "Độ phủ vi chất",
-      "description": "Dùng các thẻ này để xem vi chất nào có vẻ đủ, vi chất nào cần thêm dữ liệu và vi chất nào có lưu ý theo nguồn món ăn."
+      "description": "Dùng các thẻ này để xem vi chất nào có vẻ đủ, vi chất nào cần thêm dữ liệu và vi chất nào có lưu ý theo nguồn món ăn.",
+      "vitamins": "Vitamin",
+      "minerals": "Khoáng chất",
+      "sourceNote": "Mục tiêu theo tham chiếu WHO/FAO · RDA Việt Nam · NASEM DRI."
     },
     "more": {
       "show": "Xem thêm vi chất",
@@ -876,7 +879,6 @@
     "consistency": "Độ đều đặn",
     "weeklyAverage": "Trung bình tuần",
     "target": "Mục tiêu",
-    "weekOf": "Tuần",
     "save": "Lưu",
     "saving": "Đang lưu…",
     "retry": "Thử lại",
@@ -903,7 +905,8 @@
     },
     "mealTrigger": {
       "close": "Đóng khung nhập bữa ăn",
-      "send": "Gửi bữa ăn"
+      "send": "Gửi bữa ăn",
+      "analyzing": "Đang phân tích bữa ăn…"
     },
     "weightCard": {
       "required": "Vui lòng nhập cân nặng",
@@ -921,7 +924,6 @@
       "saveFailed": "Không thể lưu cân nặng"
     },
     "adherenceHeatmap": {
-      "onTrack": "{percent}% đúng mục tiêu",
       "notLogged": "Chưa ghi nhận",
       "partial": "Ngày ghi thiếu",
       "cheatDay": "Ngày xả",
@@ -939,29 +941,11 @@
       "farUnder": "Thiếu nhiều"
     },
     "caloriesLogged": "kcal đã ghi",
-    "weeklyAccumulator": "Tuần này: {consumed} / {target} kcal",
     "mealReceiptsHint": "Những bữa ăn sẽ hiển thị ở đây",
-    "progressStatus": {
-      "insufficient": {
-        "label": "Đã bắt đầu theo dõi",
-        "detail": "Ghi cân nặng vào ngày mai để thấy xu hướng."
-      },
-      "on_pace": {
-        "label": "Đúng kế hoạch",
-        "detail": "Tốc độ hiện tại của bạn phù hợp với kế hoạch."
-      },
-      "ahead": {
-        "label": "Vượt kế hoạch",
-        "detail": "Tiến độ nhanh hơn dự kiến."
-      },
-      "behind": {
-        "label": "Cần chú ý",
-        "detail": "Xu hướng hiện tại yếu hơn kế hoạch."
-      },
-      "stable": {
-        "label": "Ổn định",
-        "detail": "Cân nặng của bạn đang ổn định ở mức duy trì."
-      }
+    "streaming": {
+      "saved": "Đã lưu bữa ăn",
+      "undo": "Hoàn tác",
+      "dismiss": "Bỏ qua"
     }
   },
   "logging": {

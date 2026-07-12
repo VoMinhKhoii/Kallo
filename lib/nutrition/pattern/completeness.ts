@@ -63,10 +63,22 @@ export function medianOf(values: number[]): number {
  *
  * `dayCalories` must already be aggregated to one entry per local date.
  */
+export interface ClassifyDayCompletenessOptions {
+  /**
+   * When true (default), the all-partial fallback treats every logged day as
+   * complete rather than collapsing to zero — this keeps chronic under-loggers'
+   * averages from emptying out. Pass false for a strict classification where a
+   * genuinely under-logged period yields zero complete days.
+   */
+  safetyValve?: boolean;
+}
+
 export function classifyDayCompleteness(
   dayCalories: { date: string; calories: number }[],
-  calorieTarget: number | null
+  calorieTarget: number | null,
+  options: ClassifyDayCompletenessOptions = {}
 ): DayCompleteness {
+  const { safetyValve = true } = options;
   const loggedDays = dayCalories.filter((day) => day.calories > 0);
 
   const allComplete = (): DayCompleteness => ({
@@ -76,6 +88,7 @@ export function classifyDayCompleteness(
     partialDays: 0,
   });
 
+  // No logged days: nothing to classify either way.
   if (loggedDays.length === 0) {
     return allComplete();
   }
@@ -86,6 +99,8 @@ export function classifyDayCompleteness(
       : medianOf(loggedDays.map((day) => day.calories));
 
   if (baseline <= 0) {
+    // Without a usable baseline we can't judge partiality. The valve treats all
+    // as complete; strict mode has no basis to exclude any, so does the same.
     return allComplete();
   }
 
@@ -101,7 +116,7 @@ export function classifyDayCompleteness(
     }
   }
 
-  if (completeDates.size === 0) {
+  if (safetyValve && completeDates.size === 0) {
     return allComplete();
   }
 

@@ -10,8 +10,8 @@ import '../../../theme/nham_colors.dart';
 import '../../../theme/nham_theme.dart';
 
 /// How a meal gets logged. `normal` = describe it in words (AI); `cheat` = the
-/// cheat-meal flow (ported from web later); `manual` = search foods + grams;
-/// `barcode` = scan a packaged product.
+/// slider-estimate flow for hard-to-count occasions; `manual` = search foods +
+/// grams; `barcode` = scan a packaged product.
 enum MealLogMode { normal, cheat, manual, barcode }
 
 /// Single source of truth for whether barcode logging is offered. iOS-only for
@@ -120,7 +120,6 @@ class _MealModeSheet extends StatelessWidget {
                   title: 'logging.modeSelector.cheat'.tr(),
                   desc: 'logging.modeSelector.cheatDesc'.tr(),
                   selected: current == MealLogMode.cheat,
-                  soon: true,
                   onTap: () => Navigator.of(context).pop(MealLogMode.cheat),
                 ),
                 _ModeRow(
@@ -157,7 +156,6 @@ class _ModeRow extends StatefulWidget {
     required this.desc,
     required this.selected,
     required this.onTap,
-    this.soon = false,
   });
 
   final IconData icon;
@@ -165,7 +163,6 @@ class _ModeRow extends StatefulWidget {
   final String title;
   final String desc;
   final bool selected;
-  final bool soon;
   final VoidCallback onTap;
 
   @override
@@ -204,18 +201,10 @@ class _ModeRowState extends State<_ModeRow> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    children: [
-                      NhamText(
-                        widget.title,
-                        variant: NhamTextVariant.body,
-                        style: dashBody(weight: FontWeight.w500),
-                      ),
-                      if (widget.soon) ...[
-                        const SizedBox(width: NhamSpacing.sp2),
-                        const _SoonBadge(),
-                      ],
-                    ],
+                  NhamText(
+                    widget.title,
+                    variant: NhamTextVariant.body,
+                    style: dashBody(weight: FontWeight.w500),
                   ),
                   const SizedBox(height: 1),
                   NhamText(
@@ -235,18 +224,3 @@ class _ModeRowState extends State<_ModeRow> {
   }
 }
 
-class _SoonBadge extends StatelessWidget {
-  const _SoonBadge();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
-      decoration: BoxDecoration(
-        color: NhamColors.hover,
-        borderRadius: BorderRadius.circular(999),
-      ),
-      child: Text('logging.modeSelector.soon'.tr(), style: dashEyebrow()),
-    );
-  }
-}

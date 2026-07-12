@@ -6,8 +6,8 @@
 export function FallbackBlobs() {
   return (
     <div aria-hidden className="pointer-events-none absolute inset-0 z-0">
-      <div className="absolute top-[-10%] right-[-5%] h-[600px] w-[600px] rounded-full bg-[#E8D5B5]/20 blur-[120px]" />
-      <div className="absolute bottom-[-10%] left-[-10%] h-[500px] w-[500px] rounded-full bg-[#C9A87C]/10 blur-[100px]" />
+      <div className="absolute top-[-10%] right-[-5%] h-[600px] w-[600px] rounded-full bg-nham-border/20 blur-[120px]" />
+      <div className="absolute bottom-[-10%] left-[-10%] h-[500px] w-[500px] rounded-full bg-nham-accent/10 blur-[100px]" />
     </div>
   );
 }

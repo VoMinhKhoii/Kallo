@@ -1,5 +1,7 @@
 export type NutritionRange = '1d' | '7d' | '30d' | '90d';
 export type NutritionRangeInput = 'auto' | NutritionRange;
+/** Which day set the overview averages/series are scoped to. */
+export type NutritionDayScope = 'all' | 'complete';
 export type BucketTimezone = 'local' | 'utc';
 export type TargetSource = 'vietnam_rda' | 'who_fao' | 'nasem' | 'unsupported';
 export type NutrientGroup = 'mineral' | 'vitamin' | 'other';
@@ -154,6 +156,20 @@ export interface EducationCardData {
   bodyKey: string;
 }
 
+/** One day-scope's calorie average and the day-count backing it. */
+export interface CalorieScopeAverage {
+  /** Average calories per day over this scope's days; null when it has none. */
+  averagePerDay: number | null;
+  /** Number of days backing the average (its denominator). */
+  days: number;
+}
+
+/** Both scopes' calorie averages, shipped together for the client's swap UI. */
+export interface CalorieAverages {
+  all: CalorieScopeAverage;
+  complete: CalorieScopeAverage;
+}
+
 export interface NutritionOverview {
   requestedRange: NutritionRangeInput;
   resolvedRange: NutritionRange;
@@ -172,6 +188,14 @@ export interface NutritionOverview {
     limitedDataCount: number;
     macroConsistency: MacroConsistencySummary;
   };
+  /**
+   * Both day-scope calorie averages, always present regardless of the requested
+   * `days` scope, so the client can show one as the hero figure and the other as
+   * a subtle secondary and swap them without a refetch. `complete` is strict
+   * (no all-partial safety valve), so `averagePerDay` is null when there are no
+   * complete days.
+   */
+  calorieAverages: CalorieAverages;
   macros: MacroPattern[];
   /**
    * Per-bucket time series for the macros and default micronutrients. Days for

@@ -1,0 +1,206 @@
+=== LOG ===
+861c2e7 chore(ttr): add reusable task templates for bug reports and meeting minutes
+87c0c65 Merge pull request #175 from VoMinhKhoii/worktree-threads-typography-dashboard
+8a80c07 docs(design): fold the mobile system into the nham-design skill
+=== STATUS ===
+ M components/dashboard/progress/progress-story.tsx
+ M lib/actions/__tests__/weight.test.ts
+ M lib/actions/weight.ts
+ M lib/types/weight.ts
+ M messages/en.json
+ M messages/vi.json
+=== DIFF (working tree vs planted HEAD) ===
+diff --git a/components/dashboard/progress/progress-story.tsx b/components/dashboard/progress/progress-story.tsx
+index e0376aa..eec362c 100644
+--- a/components/dashboard/progress/progress-story.tsx
++++ b/components/dashboard/progress/progress-story.tsx
+@@ -78,6 +78,15 @@ export function ProgressStory({
+                 </h2>
+               )}
+               <p className="mt-1 text-nham-stone text-xs">{copy.detail}</p>
++              {weightSummary.weeklyChange !== null && (
++                <p className="mt-1 text-[11px] text-nham-stone">
++                  {t('sinceLastWeek')}{' '}
++                  <span className="font-sans-display font-semibold text-nham-text">
++                    {weightSummary.weeklyChange > 0 ? '+' : ''}
++                    {weightSummary.weeklyChange.toFixed(1)} {t('units.kg')}
++                  </span>
++                </p>
++              )}
+             </div>
+             {!isInsufficient && (
+               <div
+diff --git a/lib/actions/__tests__/weight.test.ts b/lib/actions/__tests__/weight.test.ts
+index 14907b8..c4b808d 100644
+--- a/lib/actions/__tests__/weight.test.ts
++++ b/lib/actions/__tests__/weight.test.ts
+@@ -242,6 +242,87 @@ describe('loadWeightSummaryAction', () => {
+     expect(result.expectedEndWeight).toBeLessThan(result.periodStartWeight);
+   });
+ 
++  it('computes the change since about a week ago', async () => {
++    const today = new Date().toISOString().slice(0, 10);
++    const shift = (days: number) => {
++      const d = new Date(`${today}T00:00:00.000Z`);
++      d.setUTCDate(d.getUTCDate() - days);
++      return d.toISOString().slice(0, 10);
++    };
++
++    // Nearest entry on or before (today − 7d) is the day-7 log at 73.0.
++    const rangeRows = [
++      { loggedDate: shift(8), weightKg: '73.4' },
++      { loggedDate: shift(7), weightKg: '73.0' },
++      { loggedDate: shift(1), weightKg: '72.1' },
++      { loggedDate: today, weightKg: '71.8' },
++    ];
++    const latestRows = [{ loggedDate: today, weightKg: '71.8' }];
++
++    mockDbSelect
++      .mockReturnValueOnce({
++        from: vi.fn().mockReturnValue({
++          where: vi.fn().mockReturnValue({
++            orderBy: vi.fn().mockResolvedValue(rangeRows),
++          }),
++        }),
++      })
++      .mockReturnValueOnce({
++        from: vi.fn().mockReturnValue({
++          where: vi.fn().mockReturnValue({
++            orderBy: vi.fn().mockReturnValue({
++              limit: vi.fn().mockResolvedValue(latestRows),
++            }),
++          }),
++        }),
++      });
++
++    const result = await loadWeightSummaryAction({
++      range: '30d',
++      timezoneOffset: 0,
++    });
++
++    expect(result.weeklyChange).toBeCloseTo(-1.2, 5);
++  });
++
++  it('returns a null weekly change without a week-old entry', async () => {
++    const today = new Date().toISOString().slice(0, 10);
++    const twoDaysAgo = new Date(`${today}T00:00:00.000Z`);
++    twoDaysAgo.setUTCDate(twoDaysAgo.getUTCDate() - 2);
++    const twoDaysAgoDate = twoDaysAgo.toISOString().slice(0, 10);
++
++    const rangeRows = [
++      { loggedDate: twoDaysAgoDate, weightKg: '72.4' },
++      { loggedDate: today, weightKg: '71.8' },
++    ];
++    const latestRows = [{ loggedDate: today, weightKg: '71.8' }];
++
++    mockDbSelect
++      .mockReturnValueOnce({
++        from: vi.fn().mockReturnValue({
++          where: vi.fn().mockReturnValue({
++            orderBy: vi.fn().mockResolvedValue(rangeRows),
++          }),
++        }),
++      })
++      .mockReturnValueOnce({
++        from: vi.fn().mockReturnValue({
++          where: vi.fn().mockReturnValue({
++            orderBy: vi.fn().mockReturnValue({
++              limit: vi.fn().mockResolvedValue(latestRows),
++            }),
++          }),
++        }),
++      });
++
++    const result = await loadWeightSummaryAction({
++      range: '30d',
++      timezoneOffset: 0,
++    });
++
++    expect(result.weeklyChange).toBeNull();
++  });
++
+   it('marks goal direction as flat for maintenance goals', async () => {
+     const today = new Date().toISOString().slice(0, 10);
+     const twoDaysAgo = new Date(`${today}T00:00:00.000Z`);
+diff --git a/lib/actions/weight.ts b/lib/actions/weight.ts
+index f00244a..d3cfa6b 100644
+--- a/lib/actions/weight.ts
++++ b/lib/actions/weight.ts
+@@ -46,6 +46,28 @@ function toNumber(value: string | number | null | undefined): number | null {
+   return Number.isFinite(parsed) ? parsed : null;
+ }
+ 
++function computeWeeklyChange(
++  rows: { loggedDate: string; weightKg: string | null }[]
++): number | null {
++  if (rows.length < 2) return null;
++  const latest = rows[rows.length - 1];
++  const latestWeight = toNumber(latest.weightKg);
++  if (latestWeight === null) return null;
++
++  // rows are sorted ascending by loggedDate, so the last entry on or before the
++  // week-ago boundary is the closest one from "about a week" back.
++  const referenceDate = shiftDate(latest.loggedDate, -7);
++  let priorWeight: number | null = null;
++  for (const row of rows) {
++    if (row.loggedDate > referenceDate) break;
++    const weight = toNumber(row.weightKg);
++    if (weight !== null) priorWeight = weight;
++  }
++  if (priorWeight === null) return null;
++
++  return latestWeight - priorWeight;
++}
++
+ function getWeeklyRate(goal: string | null): number {
+   if (goal === 'bulking') return 0.25;
+   if (goal === 'cutting') return -0.4;
+@@ -231,5 +253,6 @@ export async function loadWeightSummaryAction(input: {
+     periodElapsedDays,
+     projectedEndWeight,
+     canProject,
++    weeklyChange: computeWeeklyChange(rows),
+   };
+ }
+diff --git a/lib/types/weight.ts b/lib/types/weight.ts
+index db89b11..0863398 100644
+--- a/lib/types/weight.ts
++++ b/lib/types/weight.ts
+@@ -13,6 +13,12 @@ export interface WeightSummaryData {
+   expectedEndWeight: number;
+   goalDirection: WeightGoalDirection;
+   periodElapsedDays: number | null;
++  /**
++   * Change (kg) between the latest logged weight and the weight logged about a
++   * week earlier — the nearest entry on or before `latestDate − 7 days`. `null`
++   * when there is no logged weight at least a week old to compare against.
++   */
++  weeklyChange: number | null;
+   /**
+    * Projected end-of-period weight and whether a projection is meaningful,
+    * computed once server-side (via `buildWeightTrendSummary`) so every client —
+diff --git a/messages/en.json b/messages/en.json
+index d07137e..f34269b 100644
+--- a/messages/en.json
++++ b/messages/en.json
+@@ -888,6 +888,7 @@
+     "start": "Start",
+     "weekPrefix": "W",
+     "projected": "Projected",
++    "sinceLastWeek": "Since last week",
+     "insufficientWeightData": "First entry in — log again tomorrow to draw your trend.",
+     "noWeightData": "Log your first weight to start tracking your trend.",
+     "offTrack": "Off track",
+diff --git a/messages/vi.json b/messages/vi.json
+index 4f5e176..d80d04a 100644
+--- a/messages/vi.json
++++ b/messages/vi.json
+@@ -888,6 +888,7 @@
+     "start": "Bắt đầu",
+     "weekPrefix": "T",
+     "projected": "Dự kiến",
++    "sinceLastWeek": "So với tuần trước",
+     "insufficientWeightData": "Đã ghi ngày đầu tiên — ghi lại vào ngày mai để vẽ xu hướng.",
+     "noWeightData": "Ghi cân nặng đầu tiên để bắt đầu theo dõi xu hướng.",
+     "offTrack": "Lệch kế hoạch",
+=== NEW FILES ===

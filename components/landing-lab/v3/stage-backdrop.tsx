@@ -20,7 +20,7 @@ export function StageBackdrop({ darkness }: { darkness: MotionValue<number> }) {
           repeat: Number.POSITIVE_INFINITY,
           ease: 'easeInOut',
         }}
-        className="absolute top-[-12%] right-[-8%] h-[560px] w-[560px] rounded-full bg-[#E8D5B5]/35 blur-[110px]"
+        className="absolute top-[-12%] right-[-8%] h-[560px] w-[560px] rounded-full bg-nham-border/35 blur-[110px]"
       />
       <motion.div
         animate={{ x: [0, -50, 40, 0], y: [0, 35, -25, 0] }}
@@ -29,7 +29,7 @@ export function StageBackdrop({ darkness }: { darkness: MotionValue<number> }) {
           repeat: Number.POSITIVE_INFINITY,
           ease: 'easeInOut',
         }}
-        className="absolute bottom-[-14%] left-[-10%] h-[520px] w-[520px] rounded-full bg-[#C9A87C]/25 blur-[100px]"
+        className="absolute bottom-[-14%] left-[-10%] h-[520px] w-[520px] rounded-full bg-nham-accent/25 blur-[100px]"
       />
       <motion.div
         animate={{ x: [0, 40, -40, 0] }}
@@ -58,7 +58,7 @@ export function StageBackdrop({ darkness }: { darkness: MotionValue<number> }) {
             repeat: Number.POSITIVE_INFINITY,
             ease: 'easeInOut',
           }}
-          className="absolute top-[6%] right-[4%] h-[640px] w-[640px] rounded-full bg-[#C9A87C]/14 blur-[130px]"
+          className="absolute top-[6%] right-[4%] h-[640px] w-[640px] rounded-full bg-nham-accent/14 blur-[130px]"
         />
         <motion.div
           animate={{ x: [0, -60, 40, 0], y: [0, 45, -30, 0] }}

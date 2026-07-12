@@ -34,6 +34,15 @@ export const confirmMealSchema = z.object({
     )
     .max(50)
     .optional(),
+  // Cheat-meal: chosen slider positions (0–10 per axis). Must mirror
+  // `confirmAndSaveSchema` — Zod strips unknown keys, so omitting this here
+  // would silently save mobile cheat confirms at the spec's default levels.
+  levels: z
+    .partialRecord(
+      z.enum(['protein', 'carbs', 'fat', 'drinks']),
+      z.number().min(0).max(10)
+    )
+    .optional(),
 });
 
 export type ConfirmMealInput = z.infer<typeof confirmMealSchema>;
@@ -68,6 +77,30 @@ export const saveManualMealSchema = z.object({
 
 export type SaveManualMealInput = z.infer<typeof saveManualMealSchema>;
 
+/**
+ * Query params for `GET /api/v1/meals/cheat-occasions` →
+ * `loadRecentCheatOccasionsAction`. Mirrors the action's (un-exported)
+ * `loadRecentCheatOccasionsSchema`; `limit` arrives as a search param string.
+ */
+export const cheatOccasionsQuerySchema = z.object({
+  limit: z.coerce.number().int().min(1).max(12).optional(),
+});
+
+export type CheatOccasionsQuery = z.infer<typeof cheatOccasionsQuerySchema>;
+
+/**
+ * Request body for `POST /api/v1/meals/cheat-repeat` →
+ * `stageCheatRepeatAction`. Mirrors the action's (un-exported)
+ * `stageCheatRepeatSchema` exactly.
+ */
+export const cheatRepeatSchema = z.object({
+  sourceMealId: z.string().uuid('sourceMealId phải là UUID hợp lệ.'),
+  loggedDate: dateStringSchema,
+  timezoneOffset: timezoneOffsetSchema,
+});
+
+export type CheatRepeatInput = z.infer<typeof cheatRepeatSchema>;
+
 export type {
   ConfirmMealResponse,
   LoggingDayData,
@@ -75,4 +108,5 @@ export type {
   PersistedIngredient,
   PersistedMeal,
   PersistedMealItemGroup,
+  RecentCheatOccasion,
 } from '@/lib/actions/meals';

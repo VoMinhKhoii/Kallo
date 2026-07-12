@@ -69,8 +69,9 @@ abstract final class QueryKeys {
 
   // ---- nutrition ----------------------------------------------------------
   static const List<Object?> nutritionAll = ['nutrition'];
-  static List<Object?> nutritionOverview(Object range, int? tz) =>
-      ['nutrition', 'overview', range, tz ?? 'utc'];
+  static List<Object?> nutritionOverview(Object range, int? tz,
+          [Object? scope]) =>
+      ['nutrition', 'overview', range, tz ?? 'utc', scope ?? 'complete'];
   static List<Object?> nutritionCandidates(String nutrient) =>
       ['nutrition', 'candidates', nutrient];
 }
