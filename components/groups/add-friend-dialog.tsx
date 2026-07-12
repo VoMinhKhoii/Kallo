@@ -50,10 +50,7 @@ export function AddFriendDialog({ trigger }: AddFriendDialogProps) {
           </DialogDescription>
         </DialogHeader>
 
-        <Tabs
-          value={tab}
-          onValueChange={(value) => setTab(value as DialogTab)}
-        >
+        <Tabs value={tab} onValueChange={(value) => setTab(value as DialogTab)}>
           <TabsList className="w-full rounded-xl bg-nham-hover/40 p-1">
             <TabsTrigger
               value="friend"

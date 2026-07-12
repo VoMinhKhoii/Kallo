@@ -36,7 +36,9 @@ function photoPlaceholderTint(seed: string): string {
   for (let i = 0; i < seed.length; i++) {
     hash = (hash * 31 + seed.charCodeAt(i)) | 0;
   }
-  return PHOTO_PLACEHOLDER_TINTS[Math.abs(hash) % PHOTO_PLACEHOLDER_TINTS.length];
+  return PHOTO_PLACEHOLDER_TINTS[
+    Math.abs(hash) % PHOTO_PLACEHOLDER_TINTS.length
+  ];
 }
 
 /**
@@ -112,8 +114,8 @@ export function CircleCard({
             photoTint
           )}
         >
-          <div className="-top-6 -right-6 absolute h-24 w-24 rounded-full bg-white/25 blur-2xl" />
-          <div className="-bottom-8 -left-8 absolute h-28 w-28 rounded-full bg-black/10 blur-2xl" />
+          <div className="absolute -top-6 -right-6 h-24 w-24 rounded-full bg-white/25 blur-2xl" />
+          <div className="absolute -bottom-8 -left-8 h-28 w-28 rounded-full bg-black/10 blur-2xl" />
           <Soup
             className="absolute inset-0 m-auto h-9 w-9 text-white/50"
             strokeWidth={1.5}
