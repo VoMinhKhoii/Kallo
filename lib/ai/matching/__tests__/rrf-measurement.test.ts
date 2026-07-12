@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
+import type { FuzzyMatchRow } from '../match-constants';
 import { captureRrfCandidates } from '../rrf-measurement';
-import type { FuzzyMatchRow } from '../source-matching';
 
 const row = (
   namePrimary: string,

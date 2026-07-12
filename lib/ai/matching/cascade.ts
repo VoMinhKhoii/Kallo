@@ -4,9 +4,9 @@ import {
   cacheQueryEmbedding,
   resolveQueryEmbedding,
 } from '@/lib/ai/matching/embedding-cache';
+import type { MatchInfo } from '@/lib/ai/matching/match-constants';
 import { batchFetchNutrition } from '@/lib/ai/matching/nutrition-batch';
 import {
-  type MatchInfo,
   type MatchMeasurementContext,
   type MatchStateInfo,
   matchSingleIngredientWithEmbedding,
@@ -26,18 +26,18 @@ import type { AppDb } from '@/lib/db';
 import { mapWithConcurrency } from '@/lib/utils';
 
 // Re-export all constants and types for backward compat (index.ts barrel imports from here)
+export { rerankCandidates } from './candidate-ranking';
 export {
   CONFIDENCE_THRESHOLDS,
   classifyConfidence,
   FAO_VECTOR_THRESHOLD,
   FUZZY_FALLBACK_THRESHOLD,
   FUZZY_SIMILARITY_THRESHOLD,
-  rerankCandidates,
   SOURCE_FAO,
   SOURCE_USDA,
   USDA_VECTOR_THRESHOLD,
   VECTOR_SIMILARITY_THRESHOLD,
-} from './source-matching';
+} from './match-constants';
 
 export interface MatchResult {
   matched: MatchedIngredient[];
