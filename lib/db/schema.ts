@@ -1,6 +1,5 @@
 import { sql } from 'drizzle-orm';
 import {
-  bigint,
   boolean,
   check,
   date,
@@ -1151,12 +1150,14 @@ export const userFeedback = pgTable(
 // ---------------------------------------------------------------------------
 // Billing & Entitlements
 //
-// Source of truth for premium access. Rows are written ONLY by payment
-// webhooks (RevenueCat for mobile IAP, Polar for web card subscriptions,
-// PayOS for VietQR one-time packages) and admin/promo tooling — never from
-// client input. Server-side gating (lib/entitlements/) reads exclusively
-// from these tables; clients get a derived view via
-// GET /api/v1/account/entitlements.
+// Source of truth for premium access. Rows are written ONLY by the
+// RevenueCat webhook (RC manages all three purchase platforms: Apple IAP,
+// Google Play Billing, and Paddle-powered web checkout) and admin/promo
+// tooling — never from client input. The source CHECKs deliberately allow
+// values for rails we may bolt on later (e.g. a VietQR gateway) so adding
+// one is a new webhook writer, not a constraint migration.
+// Server-side gating (lib/entitlements/) reads exclusively from these
+// tables; clients get a derived view via GET /api/v1/account/entitlements.
 // ---------------------------------------------------------------------------
 
 export const entitlementGrants = pgTable(
@@ -1169,8 +1170,8 @@ export const entitlementGrants = pgTable(
     // Tier key ('premium'). New tiers = new keys; no schema change needed.
     entitlementKey: text('entitlement_key').notNull(),
     source: text('source').notNull(),
-    // Store/gateway product identifier (RC product, Polar product, PayOS
-    // package id) — for support/debugging, not for gating decisions.
+    // Store product identifier (App Store / Play / Paddle product id as
+    // reported by RC) — for support/debugging, not for gating decisions.
     productId: text('product_id'),
     startsAt: timestamp('starts_at', { withTimezone: true })
       .notNull()
@@ -1179,12 +1180,12 @@ export const entitlementGrants = pgTable(
     expiresAt: timestamp('expires_at', { withTimezone: true }),
     status: text('status').notNull().default('active'),
     // Auto-renewing subscription that will renew at expiresAt. Always false
-    // for PayOS packages and lifetime grants. A canceled-but-not-expired sub
-    // is status='active' + willRenew=false (access runs to period end).
+    // for lifetime grants. A canceled-but-not-expired sub is
+    // status='active' + willRenew=false (access runs to period end).
     willRenew: boolean('will_renew').notNull().default(false),
-    // Stable id at the source (RC original_transaction/subscription id,
-    // Polar subscription/order id, PayOS order code) — upsert key so webhook
-    // retries and renewals update one row instead of stacking duplicates.
+    // Stable id at the source (RC original transaction / subscription id) —
+    // upsert key so webhook retries and renewals update one row instead of
+    // stacking duplicates.
     externalRef: text('external_ref').notNull(),
     createdAt: timestamp('created_at', { withTimezone: true })
       .notNull()
@@ -1245,40 +1246,6 @@ export const billingWebhookEvents = pgTable(
     ),
     index('billing_webhook_events_user_idx').on(table.userId),
     index('billing_webhook_events_created_idx').on(
-      sql`${table.createdAt} DESC`
-    ),
-  ]
-);
-
-export const payosOrders = pgTable(
-  'payos_orders',
-  {
-    // PayOS requires a numeric orderCode (safe-integer range); we generate it
-    // at checkout and it is the join key for the payment webhook.
-    orderCode: bigint('order_code', { mode: 'number' }).primaryKey(),
-    userId: uuid('user_id')
-      .notNull()
-      .references(() => authUsers.id, { onDelete: 'cascade' }),
-    // Key into lib/billing/packages.ts (duration + amount live in code).
-    packageId: text('package_id').notNull(),
-    amountVnd: integer('amount_vnd').notNull(),
-    status: text('status').notNull().default('pending'),
-    paymentLinkId: text('payment_link_id'),
-    createdAt: timestamp('created_at', { withTimezone: true })
-      .notNull()
-      .defaultNow(),
-    updatedAt: timestamp('updated_at', { withTimezone: true })
-      .notNull()
-      .defaultNow(),
-  },
-  (table) => [
-    check(
-      'payos_orders_status_check',
-      sql`${table.status} IN ('pending', 'paid', 'canceled')`
-    ),
-    check('payos_orders_amount_vnd_check', sql`${table.amountVnd} > 0`),
-    index('payos_orders_user_idx').on(
-      table.userId,
       sql`${table.createdAt} DESC`
     ),
   ]
