@@ -1280,7 +1280,8 @@
       "regional": "Region & language",
       "cooking": "Cooking",
       "account": "Account",
-      "feedback": "Feedback"
+      "feedback": "Feedback",
+      "subscription": "Subscription"
     },
     "feedback": {
       "title": "Send feedback",
@@ -1381,6 +1382,62 @@
       "ageInt": "Age must be a whole number.",
       "ageMin": "Age must be at least 13.",
       "ageMax": "Age must be at most 100."
+    }
+  },
+  "billing": {
+    "paywall": {
+      "eyebrow": "Nhẩm Premium",
+      "titleLead": "Estimate every meal,",
+      "titleAccent": "instantly",
+      "subtitle": "Unlock AI meal analysis — describe a dish in your own words and get a bounded calorie and macro estimate in seconds.",
+      "trialCountdown": "You have {days} {days, plural, one {day} other {days}} left on your trial.",
+      "perk1": "AI analysis of any Vietnamese meal you describe",
+      "perk2": "Real food-composition data behind every estimate",
+      "perk3": "Bounded calorie and macro ranges, never fake precision",
+      "planMonthly": "Monthly",
+      "planAnnual": "Annual",
+      "planLifetime": "Lifetime",
+      "cadenceMonth": "/ month",
+      "cadenceYear": "/ year",
+      "cadenceOnce": "once",
+      "annualHint": "Best value",
+      "choosePlan": "Choose",
+      "opening": "Opening…",
+      "unavailable": "Purchases aren't available right now. Please try again later.",
+      "finetext": "Cancel anytime. Prices shown include applicable taxes.",
+      "successToast": "Welcome to Nhẩm Premium.",
+      "successPendingToast": "Payment received — your premium access will appear shortly.",
+      "errorToast": "Something went wrong with the purchase. Please try again.",
+      "successTitle": "You're all set",
+      "successBody": "Premium is active. AI meal analysis is unlocked across the app.",
+      "successCta": "Start estimating"
+    },
+    "settings": {
+      "title": "Subscription",
+      "description": "Your plan, renewal, and how to manage it.",
+      "loading": "Loading your plan…",
+      "loadError": "We couldn't load your subscription. Please refresh.",
+      "freePlan": "Free plan",
+      "freeDescription": "Upgrade to unlock AI meal analysis.",
+      "trialPlan": "Free trial",
+      "trialRemaining": "{days} {days, plural, one {day} other {days}} left in your trial.",
+      "premiumPlan": "Nhẩm Premium",
+      "premiumDescription": "AI meal analysis is unlocked.",
+      "lifetimePlan": "Nhẩm Premium — Lifetime",
+      "lifetimeDescription": "You have lifetime access. No renewal, ever.",
+      "renewsOn": "Renews on {date}.",
+      "expiresOn": "Access ends on {date}.",
+      "upgradeCta": "Upgrade",
+      "manageAppStore": "Manage in App Store",
+      "managePlayStore": "Manage in Google Play",
+      "manageWebEmail": "To update or cancel your subscription, contact billing from {email}.",
+      "manageWebGeneric": "To update or cancel your subscription, contact billing support.",
+      "expiryTitle": "Your subscription is ending soon",
+      "expiryBody": "Access ends in {days} {days, plural, one {day} other {days}}. Renew to keep AI meal analysis."
+    },
+    "trialBanner": {
+      "daysRemaining": "{days} {days, plural, one {day} other {days}} left in your free trial",
+      "upgrade": "Upgrade"
     }
   }
 }

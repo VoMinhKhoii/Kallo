@@ -5,6 +5,7 @@ import { SETTINGS_SECTION_ANCHOR } from './profile';
 
 const ACCOUNT_ANCHOR = 'settings-account';
 const FEEDBACK_ANCHOR = 'settings-feedback';
+const SUBSCRIPTION_ANCHOR = 'settings-subscription';
 
 interface AnchorItem {
   id: string;
@@ -15,6 +16,7 @@ const ANCHORS: readonly AnchorItem[] = [
   { id: SETTINGS_SECTION_ANCHOR['body-metrics'], labelKey: 'bodyMetrics' },
   { id: SETTINGS_SECTION_ANCHOR.regional, labelKey: 'regional' },
   { id: SETTINGS_SECTION_ANCHOR.cooking, labelKey: 'cooking' },
+  { id: SUBSCRIPTION_ANCHOR, labelKey: 'subscription' },
   { id: FEEDBACK_ANCHOR, labelKey: 'feedback' },
   { id: ACCOUNT_ANCHOR, labelKey: 'account' },
 ] as const;
@@ -60,4 +62,4 @@ export function SettingsAnchorNav() {
   );
 }
 
-export { ACCOUNT_ANCHOR, FEEDBACK_ANCHOR };
+export { ACCOUNT_ANCHOR, FEEDBACK_ANCHOR, SUBSCRIPTION_ANCHOR };
