@@ -29,7 +29,6 @@
     "app/api/analyze-meal/route.ts": 474,
     "apps/mobile-flutter/lib/models/dashboard.dart": 474,
     "apps/mobile-flutter/lib/features/logging/widgets/cheat_meal_card.dart": 460,
-    "lib/ai/pipeline/bridge.ts": 456,
     "app/api/og/macro-card/[shareId]/route.tsx": 447,
     "components/landing-page/hero.tsx": 441,
     "apps/mobile-flutter/lib/features/settings/controls/country_select.dart": 422,

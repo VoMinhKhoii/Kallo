@@ -6,10 +6,7 @@ import type {
   MealItemNutrition,
   NutritionAdjustment,
 } from '../types';
-import {
-  computeMacroBaseMap,
-  resolveIngredientMacros,
-} from './bounded-macros';
+import { computeMacroBaseMap, resolveIngredientMacros } from './bounded-macros';
 import type { MealDecompositionWithIds } from './ids';
 
 export {
