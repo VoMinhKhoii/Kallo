@@ -1,5 +1,5 @@
 import type { NextRequest } from 'next/server';
-import { loadMealDates } from '@/lib/actions/meals';
+import { loadMealDates } from '@/lib/actions/meals/load-meals';
 import { timezoneOffsetSchema } from '@/lib/api/contracts/meals';
 import { parseTzParam } from '@/lib/api/query';
 import { handleRouteError } from '@/lib/api/respond';

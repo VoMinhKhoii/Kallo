@@ -9,7 +9,7 @@ import {
   useConfirmMeal,
   useSaveManualMeal,
 } from '@/hooks/meals/use-meal-mutations';
-import type { LoggingDayData, PersistedMeal } from '@/lib/actions/meals';
+import type { LoggingDayData, PersistedMeal } from '@/lib/actions/meals/types';
 import { NUTRITION_KEYS } from '@/lib/ai/constants';
 import type { CompleteManualMealRow } from '@/lib/logging/manual-logging';
 import type { ParsedMeal } from '@/lib/types/meal';
@@ -19,8 +19,11 @@ const { mockConfirm, mockSaveManual } = vi.hoisted(() => ({
   mockSaveManual: vi.fn(),
 }));
 
-vi.mock('@/lib/actions/meals', () => ({
+vi.mock('@/lib/actions/meals/confirm-and-save', () => ({
   confirmAndSaveMealAction: mockConfirm,
+}));
+
+vi.mock('@/lib/actions/meals/mutate-meal', () => ({
   deleteMealAction: vi.fn(),
 }));
 

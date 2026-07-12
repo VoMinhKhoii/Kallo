@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from 'next/server';
-import { listCircleFeed } from '@/lib/actions/groups';
+import { listCircleFeed } from '@/lib/actions/groups/feed';
 import { serializeError } from '@/lib/errors';
 import { timezoneOffsetSchema } from '@/lib/validation';
 import { requireUserId } from '../_auth';

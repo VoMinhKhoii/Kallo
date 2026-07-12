@@ -1,8 +1,7 @@
 import { describe, expect, it } from 'vitest';
-
+import { healthAggregates } from '../health-queries';
 import {
   buildRequestsWhere,
-  healthAggregates,
   REPLAY_EXCLUSION,
   requestFiltersSchema,
 } from '../queries';

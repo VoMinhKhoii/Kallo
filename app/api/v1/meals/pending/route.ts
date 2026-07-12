@@ -1,5 +1,5 @@
 import type { NextRequest } from 'next/server';
-import { loadPendingAnalysesByDate } from '@/lib/actions/meals';
+import { loadPendingAnalysesByDate } from '@/lib/actions/meals/load-meals';
 import {
   dateStringSchema,
   timezoneOffsetSchema,

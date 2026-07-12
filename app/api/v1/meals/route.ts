@@ -1,5 +1,5 @@
 import type { NextRequest } from 'next/server';
-import { loadMealsByDate } from '@/lib/actions/meals';
+import { loadMealsByDate } from '@/lib/actions/meals/load-meals';
 import {
   dateStringSchema,
   timezoneOffsetSchema,
