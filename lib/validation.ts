@@ -132,6 +132,16 @@ export const circleFeedSchema = z.object({
   timezoneOffset: timezoneOffsetSchema,
 });
 
+/** Seek-paginated cursor shared by the friend/group thread history feeds —
+ * strictly-older-than a prior page's oldest `sharedAt`, omitted for page 1. */
+const beforeCursorSchema = z.string().datetime().optional();
+
+/** Fetch a 1:1 thread's shared-meal history, newest-first, paginated. */
+export const friendThreadFeedSchema = z.object({
+  friendUserId: uuidSchema,
+  before: beforeCursorSchema,
+});
+
 /** Create a named group chat from a multi-select of the actor's friends. */
 export const createChatGroupSchema = z.object({
   name: z.string().trim().min(1, 'Tên nhóm không được để trống.').max(60),
@@ -143,10 +153,10 @@ export const sendChatGroupMessageSchema = z.object({
   body: z.string().trim().min(1).max(2000),
 });
 
-/** Fetch a group's shared-meal feed for today, scoped to its membership. */
+/** Fetch a group thread's shared-meal history, newest-first, paginated. */
 export const groupMealFeedSchema = z.object({
   groupId: uuidSchema,
-  timezoneOffset: timezoneOffsetSchema,
+  before: beforeCursorSchema,
 });
 
 export type HandleInput = z.infer<typeof handleSchema>;

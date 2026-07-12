@@ -1,10 +1,11 @@
 'use client';
 
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { tintFor } from '@/components/groups/avatar-tint';
 import { CircleError } from '@/components/groups/circle-error';
 import { useMyChatGroups } from '@/hooks/social/use-chat-groups';
 import { Link } from '@/i18n/navigation';
+import { formatElapsed } from '@/lib/date/format-elapsed';
 
 function GroupListSkeleton() {
   return (
@@ -25,6 +26,7 @@ function GroupListSkeleton() {
  * for today on the right, the same way a friend does. */
 export function GroupList() {
   const t = useTranslations('groups.page');
+  const locale = useLocale();
   const {
     data: groups = [],
     isPending,
@@ -70,8 +72,16 @@ export function GroupList() {
                     {group.title.charAt(0).toUpperCase()}
                   </span>
                 </span>
-                <span className="truncate font-sans-display text-[14px] text-nham-text">
-                  {group.title}
+                <span className="flex min-w-0 flex-1 flex-col">
+                  <span className="truncate font-sans-display text-[14px] text-nham-text">
+                    {group.title}
+                  </span>
+                  {group.lastMealSharedAt && (
+                    <span className="truncate font-sans-display text-[11px] text-nham-text-muted">
+                      {t('newFoodLog')} ·{' '}
+                      {formatElapsed(group.lastMealSharedAt, locale)}
+                    </span>
+                  )}
                 </span>
               </Link>
             </li>

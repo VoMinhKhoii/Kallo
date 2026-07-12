@@ -20,13 +20,17 @@ import { orderedPair } from '@/lib/groups/friendship';
 import { validateHandle } from '@/lib/groups/handles';
 import {
   mostRecentSharedMealsToday,
+  type SharedMealEntry,
+  sharedMealsBefore,
   todayLocalDate,
+  toSharedMealEntry,
 } from '@/lib/groups/meal-feed';
 import { generateInviteSlug } from '@/lib/groups/slug';
 import {
   acceptInviteSchema,
   blockFriendSchema,
   circleFeedSchema,
+  friendThreadFeedSchema,
   handleSchema,
   removeFriendSchema,
   upsertPublicProfileSchema,
@@ -53,26 +57,7 @@ export interface CircleMember {
   profile: PublicProfile;
 }
 
-export interface CircleFeedEntry {
-  friend: {
-    userId: string;
-    handle: string;
-    displayName: string | null;
-    avatarSeed: string | null;
-  };
-  /** True when this entry is the actor's own shared meal (their own table). */
-  isSelf: boolean;
-  meal: {
-    mealId: string;
-    shareId: string;
-    rawInput: string;
-    caloriesKcal: number | null;
-    proteinG: number | null;
-    carbohydrateG: number | null;
-    fatG: number | null;
-    sharedAt: string;
-  };
-}
+export type CircleFeedEntry = SharedMealEntry;
 
 /** Hard cap on the ambient wall: top friends, last 24h, non-scrollable. */
 export const CIRCLE_FEED_FRIEND_CAP = 20;
@@ -574,25 +559,7 @@ export async function listCircleFeed(
     db
   );
 
-  const entries = rows.map((r) => ({
-    friend: {
-      userId: r.friendUserId,
-      handle: r.handle,
-      displayName: r.displayName,
-      avatarSeed: r.avatarSeed,
-    },
-    isSelf: r.friendUserId === actorId,
-    meal: {
-      mealId: r.mealId,
-      shareId: r.shareId,
-      rawInput: r.rawInput,
-      caloriesKcal: r.caloriesKcal,
-      proteinG: r.proteinG,
-      carbohydrateG: r.carbohydrateG,
-      fatG: r.fatG,
-      sharedAt: r.sharedAt.toISOString(),
-    },
-  }));
+  const entries = rows.map((r) => toSharedMealEntry(r, actorId));
 
   // The actor's own table is the first slot; friends follow newest-first.
   const self = entries.filter((e) => e.isSelf);
@@ -604,4 +571,44 @@ export async function listCircleFeed(
         new Date(a.meal.sharedAt).getTime()
     );
   return [...self, ...friends];
+}
+
+// ---------------------------------------------------------------------------
+// listFriendThreadFeed — a 1:1 thread's shared-meal history, paginated
+// ---------------------------------------------------------------------------
+// The scrollable counterpart to listCircleFeed's today-only snapshot (which
+// now only backs FriendList's per-friend "New food log" sidebar subtitle).
+// Deliberately a separate query rather than a variant of listCircleFeed: that
+// one must stay exactly "today, latest per friend", while a thread shows
+// every shared meal between the actor and one friend, seek-paginated
+// oldest-ward via `before`.
+
+export interface FriendThreadFeedPage {
+  entries: CircleFeedEntry[];
+  nextCursor: string | null;
+}
+
+export async function listFriendThreadFeed(
+  actorId: string,
+  input: { friendUserId: string; before?: string },
+  db: Db = defaultDb
+): Promise<FriendThreadFeedPage> {
+  const parsed = friendThreadFeedSchema.parse(input);
+
+  const status = await getFriendshipStatus(actorId, parsed.friendUserId, db);
+  if (status !== 'accepted') {
+    throw Errors.notFound('Không tìm thấy người bạn này.');
+  }
+
+  const before = parsed.before ? new Date(parsed.before) : null;
+  const { rows, nextCursor } = await sharedMealsBefore(
+    [actorId, parsed.friendUserId],
+    before,
+    db
+  );
+
+  return {
+    entries: rows.map((r) => toSharedMealEntry(r, actorId)),
+    nextCursor,
+  };
 }

@@ -10,10 +10,16 @@ import type {
   ChatGroupDetail,
   ChatGroupIdentity,
   GroupMealFeedEntry,
+  GroupMealFeedPage,
 } from '@/lib/actions/chat-groups';
 import { parseApiError } from '@/lib/errors';
 
-export type { ChatGroupDetail, ChatGroupIdentity, GroupMealFeedEntry };
+export type {
+  ChatGroupDetail,
+  ChatGroupIdentity,
+  GroupMealFeedEntry,
+  GroupMealFeedPage,
+};
 
 async function request<T>(input: string, init?: RequestInit): Promise<T> {
   const response = await fetch(input, init);
@@ -37,17 +43,18 @@ export function createChatGroup(input: {
   name: string;
   memberUserIds: string[];
 }): Promise<{ id: string }> {
-  return postJson<{ group: { id: string } }>(
-    '/api/v1/chat-groups',
-    input
-  ).then((r) => r.group);
+  return postJson<{ group: { id: string } }>('/api/v1/chat-groups', input).then(
+    (r) => r.group
+  );
 }
 
 /** Every chat (direct + group) the actor belongs to, most-recent first. */
-export function fetchMyChatGroups(): Promise<ChatGroupIdentity[]> {
-  return request<{ groups: ChatGroupIdentity[] }>('/api/v1/chat-groups').then(
-    (r) => r.groups
-  );
+export function fetchMyChatGroups(
+  timezoneOffset: number
+): Promise<ChatGroupIdentity[]> {
+  return request<{ groups: ChatGroupIdentity[] }>(
+    `/api/v1/chat-groups?timezoneOffset=${timezoneOffset}`
+  ).then((r) => r.groups);
 }
 
 /** A group's detail + member list (membership-gated). */
@@ -57,12 +64,15 @@ export function fetchChatGroup(groupId: string): Promise<ChatGroupDetail> {
   ).then((r) => r.group);
 }
 
-/** This group's members' most-recent shared meal today. */
+/** One page of this group's shared-meal history, newest-first. Omit `before`
+ * for the first page ("today's or the latest"); pass a prior page's
+ * `nextCursor` to load older shares. */
 export function fetchGroupMealFeed(
   groupId: string,
-  timezoneOffset: number
-): Promise<GroupMealFeedEntry[]> {
-  return request<{ feed: GroupMealFeedEntry[] }>(
-    `/api/v1/chat-groups/${groupId}/feed?timezoneOffset=${timezoneOffset}`
-  ).then((r) => r.feed);
+  before?: string
+): Promise<GroupMealFeedPage> {
+  const query = before ? `?before=${encodeURIComponent(before)}` : '';
+  return request<GroupMealFeedPage>(
+    `/api/v1/chat-groups/${groupId}/feed${query}`
+  );
 }

@@ -20,7 +20,8 @@
 // BYPASSES RLS — every query below carries an explicit membership/ownership
 // predicate as the PRIMARY authorization control, not defense-in-depth.
 
-import { and, desc, eq, inArray, or, sql } from 'drizzle-orm';
+import { and, desc, eq, gte, inArray, lt, or, sql } from 'drizzle-orm';
+import { getUtcDayRangeForLocalDate } from '@/lib/date/local-day';
 import type { AppTransaction } from '@/lib/db';
 import { db as defaultDb } from '@/lib/db';
 import {
@@ -28,16 +29,20 @@ import {
   chatGroupMessages,
   chatGroups,
   friendships,
+  mealShares,
+  meals,
   publicProfiles,
 } from '@/lib/db/schema';
-import { getUtcDayRangeForLocalDate } from '@/lib/date/local-day';
 import { Errors } from '@/lib/errors';
 import { orderedPair } from '@/lib/groups/friendship';
 import {
-  mostRecentSharedMealsToday,
+  type SharedMealEntry,
+  sharedMealsBefore,
   todayLocalDate,
+  toSharedMealEntry,
 } from '@/lib/groups/meal-feed';
 import {
+  circleFeedSchema,
   createChatGroupSchema,
   groupMealFeedSchema,
   sendChatGroupMessageSchema,
@@ -67,6 +72,11 @@ export interface ChatGroupIdentity {
   lastMessageAt: string | null;
   /** True when the most recent message postdates this actor's read marker. */
   unread: boolean;
+  /** Most recent shared-meal timestamp among this chat's members, today —
+   * null when no member has shared a meal yet today. Drives the row's
+   * "New food log · Xm ago" subtitle in place of a real chat preview until
+   * text messaging has a UI. */
+  lastMealSharedAt: string | null;
 }
 
 export interface ChatGroupMember {
@@ -92,25 +102,11 @@ export interface ChatGroupMessage {
   createdAt: string;
 }
 
-export interface GroupMealFeedEntry {
-  friend: {
-    userId: string;
-    handle: string;
-    displayName: string | null;
-    avatarSeed: string | null;
-  };
-  /** True when this entry is the actor's own shared meal (their own table). */
-  isSelf: boolean;
-  meal: {
-    mealId: string;
-    shareId: string;
-    rawInput: string;
-    caloriesKcal: number | null;
-    proteinG: number | null;
-    carbohydrateG: number | null;
-    fatG: number | null;
-    sharedAt: string;
-  };
+export type GroupMealFeedEntry = SharedMealEntry;
+
+export interface GroupMealFeedPage {
+  entries: GroupMealFeedEntry[];
+  nextCursor: string | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -294,8 +290,10 @@ async function ensureDirectChatsForAcceptedFriends(
 
 export async function listMyChatGroups(
   actorId: string,
+  input: { timezoneOffset: number },
   db: Db = defaultDb
 ): Promise<ChatGroupIdentity[]> {
+  const { timezoneOffset } = circleFeedSchema.parse(input);
   await ensureDirectChatsForAcceptedFriends(actorId, db);
 
   const myGroups = await db
@@ -317,9 +315,16 @@ export async function listMyChatGroups(
     .filter((g) => g.kind === 'direct')
     .map((g) => g.id);
 
-  // Resolve the OTHER member's identity for every direct chat, and the most
-  // recent message per chat (any kind), in parallel — independent queries.
-  const [otherMembers, lastMessages] = await Promise.all([
+  const today = todayLocalDate(timezoneOffset);
+  const { dayStart, dayEnd } = getUtcDayRangeForLocalDate(
+    today,
+    timezoneOffset
+  );
+
+  // Resolve the OTHER member's identity for every direct chat, the most
+  // recent message per chat (any kind), and each chat's most recent shared
+  // meal today (any member), in parallel — independent queries.
+  const [otherMembers, lastMessages, lastMealShares] = await Promise.all([
     directGroupIds.length === 0
       ? Promise.resolve([])
       : db
@@ -355,20 +360,46 @@ export async function listMyChatGroups(
             chatGroupMessages.groupId,
             desc(chatGroupMessages.createdAt)
           ),
+    groupIds.length === 0
+      ? Promise.resolve([])
+      : db
+          .select({
+            groupId: chatGroupMembers.groupId,
+            lastSharedAt: sql<Date>`max(${mealShares.sharedAt})`,
+          })
+          .from(chatGroupMembers)
+          .innerJoin(meals, eq(meals.userId, chatGroupMembers.userId))
+          .innerJoin(mealShares, eq(mealShares.mealId, meals.id))
+          .where(
+            and(
+              inArray(chatGroupMembers.groupId, groupIds),
+              sql`${mealShares.visibility} <> 'private'`,
+              gte(mealShares.sharedAt, dayStart),
+              lt(mealShares.sharedAt, dayEnd)
+            )
+          )
+          .groupBy(chatGroupMembers.groupId),
   ]);
 
   const otherByGroupId = new Map(otherMembers.map((m) => [m.groupId, m]));
   const lastMessageByGroupId = new Map(lastMessages.map((m) => [m.groupId, m]));
+  const lastMealSharedAtByGroupId = new Map(
+    lastMealShares.map((m) => [m.groupId, m.lastSharedAt])
+  );
 
   return myGroups.map((g) => {
     const lastMessage = lastMessageByGroupId.get(g.id) ?? null;
     const unread = lastMessage ? lastMessage.createdAt > g.lastReadAt : false;
+    const lastMealSharedAt = lastMealSharedAtByGroupId.get(g.id) ?? null;
     const shared = {
       avatarSeed: g.avatarSeed,
       updatedAt: g.updatedAt.toISOString(),
       lastMessagePreview: lastMessage?.body ?? null,
       lastMessageAt: lastMessage?.createdAt.toISOString() ?? null,
       unread,
+      lastMealSharedAt: lastMealSharedAt
+        ? new Date(lastMealSharedAt).toISOString()
+        : null,
     };
 
     if (g.kind === 'group') {
@@ -435,28 +466,21 @@ export async function getChatGroup(
 }
 
 // ---------------------------------------------------------------------------
-// listGroupMealFeed — this group's members' most-recent shared meal, today
+// listGroupMealFeed — this group's shared-meal history, paginated
 // ---------------------------------------------------------------------------
-// The group-thread counterpart to listCircleFeed (lib/actions/groups.ts):
-// same "most-recent shared meal per person, today" query, but scoped to a
-// chat group's membership instead of the actor's friend graph. A fellow
-// member need not be the viewer's own accepted friend — being in the same
-// group is its own visibility boundary, membership-gated the same way every
-// other chat-groups read is.
+// The group-thread counterpart to listFriendThreadFeed (lib/actions/groups.ts):
+// every shared meal among the group's members, seek-paginated oldest-ward via
+// `before`, no cap. A fellow member need not be the viewer's own accepted
+// friend — being in the same group is its own visibility boundary,
+// membership-gated the same way every other chat-groups read is.
 
 export async function listGroupMealFeed(
   actorId: string,
-  input: { groupId: string; timezoneOffset: number },
+  input: { groupId: string; before?: string },
   db: Db = defaultDb
-): Promise<GroupMealFeedEntry[]> {
+): Promise<GroupMealFeedPage> {
   const parsed = groupMealFeedSchema.parse(input);
   await requireMembership(actorId, parsed.groupId, db);
-
-  const today = todayLocalDate(parsed.timezoneOffset);
-  const { dayStart, dayEnd } = getUtcDayRangeForLocalDate(
-    today,
-    parsed.timezoneOffset
-  );
 
   const memberRows = await db
     .select({ userId: chatGroupMembers.userId })
@@ -464,27 +488,13 @@ export async function listGroupMealFeed(
     .where(eq(chatGroupMembers.groupId, parsed.groupId));
   const memberIds = memberRows.map((r) => r.userId);
 
-  const rows = await mostRecentSharedMealsToday(memberIds, dayStart, dayEnd, db);
+  const before = parsed.before ? new Date(parsed.before) : null;
+  const { rows, nextCursor } = await sharedMealsBefore(memberIds, before, db);
 
-  return rows.map((r) => ({
-    friend: {
-      userId: r.friendUserId,
-      handle: r.handle,
-      displayName: r.displayName,
-      avatarSeed: r.avatarSeed,
-    },
-    isSelf: r.friendUserId === actorId,
-    meal: {
-      mealId: r.mealId,
-      shareId: r.shareId,
-      rawInput: r.rawInput,
-      caloriesKcal: r.caloriesKcal,
-      proteinG: r.proteinG,
-      carbohydrateG: r.carbohydrateG,
-      fatG: r.fatG,
-      sharedAt: r.sharedAt.toISOString(),
-    },
-  }));
+  return {
+    entries: rows.map((r) => toSharedMealEntry(r, actorId)),
+    nextCursor,
+  };
 }
 
 // ---------------------------------------------------------------------------

@@ -7,7 +7,7 @@ import { useTranslations } from 'next-intl';
 const SKELETON_COUNT = 3;
 
 /**
- * Loading state for a Circle thread (AllFriendsFeed / FriendFeed). Mirrors
+ * Loading state for a Circle thread (FriendFeed / GroupFeed). Mirrors
  * CircleCard's bubble/photo-card geometry so the layout doesn't shift when
  * real data arrives, and prevents a flash of the empty state during the
  * initial fetch.

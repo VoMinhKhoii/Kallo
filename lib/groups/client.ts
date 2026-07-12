@@ -9,11 +9,17 @@
 import type {
   CircleFeedEntry,
   CircleMember,
+  FriendThreadFeedPage,
   PublicProfile,
 } from '@/lib/actions/groups';
 import { parseApiError } from '@/lib/errors';
 
-export type { CircleFeedEntry, CircleMember, PublicProfile };
+export type {
+  CircleFeedEntry,
+  CircleMember,
+  FriendThreadFeedPage,
+  PublicProfile,
+};
 
 async function request<T>(input: string, init?: RequestInit): Promise<T> {
   const response = await fetch(input, init);
@@ -38,6 +44,19 @@ export function fetchCircleFeed(
   return request<{ feed: CircleFeedEntry[] }>(
     `/api/v1/groups/feed?timezoneOffset=${timezoneOffset}`
   ).then((r) => r.feed);
+}
+
+/** One page of a friend thread's shared-meal history, newest-first. Omit
+ * `before` for the first page ("today's or the latest"); pass a prior page's
+ * `nextCursor` to load older shares. */
+export function fetchFriendThreadFeed(
+  friendUserId: string,
+  before?: string
+): Promise<FriendThreadFeedPage> {
+  const query = before ? `?before=${encodeURIComponent(before)}` : '';
+  return request<FriendThreadFeedPage>(
+    `/api/v1/groups/friends/${friendUserId}/feed${query}`
+  );
 }
 
 export function fetchFriends(): Promise<CircleMember[]> {

@@ -1182,7 +1182,12 @@
       "friendNoMealToday": "{name} hasn't shared a meal today.",
       "groupNoMealToday": "No one in {name} has shared a meal today.",
       "groupsSectionTitle": "Groups",
-      "friendsSectionTitle": "Friends"
+      "friendsSectionTitle": "Friends",
+      "newFoodLog": "New food log"
+    },
+    "noThreadSelected": {
+      "title": "Select a thread",
+      "subtitle": "Pick a friend or group on the left to see their shared meals."
     },
     "empty": {
       "title": "Your circle is quiet",
@@ -1192,6 +1197,9 @@
     "wall": {
       "sharedAt": "Shared at {time}",
       "loading": "Loading your circle",
+      "loadingMore": "Loading earlier days…",
+      "todayLabel": "Today",
+      "yesterdayLabel": "Yesterday",
       "na": "N/A",
       "you": "You",
       "presenceLabel": "Who's in your circle",

@@ -1182,7 +1182,12 @@
       "friendNoMealToday": "{name} chưa chia sẻ bữa ăn nào hôm nay.",
       "groupNoMealToday": "Chưa ai trong {name} chia sẻ bữa ăn nào hôm nay.",
       "groupsSectionTitle": "Nhóm",
-      "friendsSectionTitle": "Bạn bè"
+      "friendsSectionTitle": "Bạn bè",
+      "newFoodLog": "Nhật ký món ăn mới"
+    },
+    "noThreadSelected": {
+      "title": "Chọn một cuộc trò chuyện",
+      "subtitle": "Chọn một người bạn hoặc nhóm bên trái để xem các bữa ăn đã chia sẻ."
     },
     "empty": {
       "title": "Vòng kết nối đang yên ắng",
@@ -1192,6 +1197,9 @@
     "wall": {
       "sharedAt": "Chia sẻ lúc {time}",
       "loading": "Đang tải vòng kết nối của bạn",
+      "loadingMore": "Đang tải các ngày trước…",
+      "todayLabel": "Hôm nay",
+      "yesterdayLabel": "Hôm qua",
       "na": "Không có",
       "you": "Bạn",
       "presenceLabel": "Ai trong vòng kết nối của bạn",

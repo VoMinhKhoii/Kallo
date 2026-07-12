@@ -110,6 +110,7 @@ import {
   getOrCreateMyProfile,
   getProfileBySlug,
   listCircleFeed,
+  listFriendThreadFeed,
   removeFriend,
   upsertPublicProfile,
 } from '@/lib/actions/groups';
@@ -568,6 +569,109 @@ describe('listCircleFeed', () => {
     const serialized = JSON.stringify(capture.where ?? {});
     expect(serialized).toContain(ACTOR);
     expect(serialized).toContain(FRIEND);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// listFriendThreadFeed — a 1:1 thread's paginated shared-meal history
+// ---------------------------------------------------------------------------
+
+describe('listFriendThreadFeed', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  const FRIEND = INVITER;
+
+  // getFriendshipStatus: db.select().from().where().limit().
+  function friendshipStatusQuery(rows: unknown[]) {
+    mockDbSelect.mockReturnValueOnce({
+      from: vi.fn().mockReturnValue({
+        where: vi.fn().mockReturnValue({
+          limit: vi.fn().mockResolvedValue(rows),
+        }),
+      }),
+    });
+  }
+
+  // sharedMealsBefore: db.select().from().innerJoin().innerJoin().where().orderBy().limit().
+  function sharedMealsBeforeQuery(rows: unknown[]) {
+    mockDbSelect.mockReturnValueOnce({
+      from: vi.fn().mockReturnValue({
+        innerJoin: vi.fn().mockReturnValue({
+          innerJoin: vi.fn().mockReturnValue({
+            where: vi.fn().mockReturnValue({
+              orderBy: vi.fn().mockReturnValue({
+                limit: vi.fn().mockResolvedValue(rows),
+              }),
+            }),
+          }),
+        }),
+      }),
+    });
+  }
+
+  function sharedMeal(userId: string, index: number, sharedAt: Date) {
+    return {
+      friendUserId: userId,
+      mealId: `meal-${index}`,
+      shareId: `share-${index}`,
+      rawInput: `meal ${index}`,
+      caloriesKcal: 500,
+      proteinG: 20,
+      carbohydrateG: 50,
+      fatG: 15,
+      sharedAt,
+      handle: 'phofan',
+      displayName: null,
+      avatarSeed: 'phofan',
+    };
+  }
+
+  it('rejects a non-friend without leaking whether the user exists', async () => {
+    friendshipStatusQuery([]); // no friendship edge at all
+
+    await expect(
+      listFriendThreadFeed(ACTOR, { friendUserId: FRIEND })
+    ).rejects.toThrow('Không tìm thấy người bạn này.');
+  });
+
+  it('rejects a pending (not yet accepted) friendship', async () => {
+    friendshipStatusQuery([{ status: 'pending' }]);
+
+    await expect(
+      listFriendThreadFeed(ACTOR, { friendUserId: FRIEND })
+    ).rejects.toThrow('Không tìm thấy người bạn này.');
+  });
+
+  it('returns every shared meal, not collapsed to one per day', async () => {
+    friendshipStatusQuery([{ status: 'accepted' }]);
+    sharedMealsBeforeQuery([
+      sharedMeal(FRIEND, 2, new Date('2026-01-01T18:00:00Z')), // dinner
+      sharedMeal(FRIEND, 1, new Date('2026-01-01T08:00:00Z')), // breakfast, same day
+    ]);
+
+    const page = await listFriendThreadFeed(ACTOR, { friendUserId: FRIEND });
+
+    expect(page.entries).toHaveLength(2);
+    expect(page.nextCursor).toBeNull();
+  });
+
+  it('forwards the before cursor and reports nextCursor when more history remains', async () => {
+    friendshipStatusQuery([{ status: 'accepted' }]);
+    // 21 rows for the default page size of 20 signals more history exists.
+    const rows = Array.from({ length: 21 }, (_, i) =>
+      sharedMeal(FRIEND, i, new Date(Date.UTC(2026, 0, 21 - i)))
+    );
+    sharedMealsBeforeQuery(rows);
+
+    const page = await listFriendThreadFeed(ACTOR, {
+      friendUserId: FRIEND,
+      before: '2026-01-22T00:00:00.000Z',
+    });
+
+    expect(page.entries).toHaveLength(20);
+    expect(page.nextCursor).not.toBeNull();
   });
 });
 

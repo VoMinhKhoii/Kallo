@@ -1,7 +1,7 @@
 'use client';
 
 import { MoreVertical } from 'lucide-react';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { toast } from 'sonner';
 import { tintFor } from '@/components/groups/avatar-tint';
 import { CircleEmpty } from '@/components/groups/circle-empty';
@@ -12,12 +12,14 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
+import { useCircleFeed } from '@/hooks/social/use-circle-feed';
 import {
   useBlockFriend,
   useFriends,
   useRemoveFriend,
 } from '@/hooks/social/use-friends';
 import { Link } from '@/i18n/navigation';
+import { formatElapsed } from '@/lib/date/format-elapsed';
 import type { CircleMember } from '@/lib/groups/client';
 
 function FriendListSkeleton() {
@@ -97,6 +99,7 @@ function FriendRowMenu({ member }: { member: CircleMember }) {
  * reorganized as a master-detail list instead of one combined ambient wall. */
 export function FriendList() {
   const t = useTranslations('groups.page');
+  const locale = useLocale();
   const {
     data: members = [],
     isPending,
@@ -104,6 +107,7 @@ export function FriendList() {
     isFetching,
     refetch,
   } = useFriends();
+  const { data: feed = [] } = useCircleFeed();
 
   if (isPending) {
     return <FriendListSkeleton />;
@@ -121,6 +125,14 @@ export function FriendList() {
     return <CircleEmpty />;
   }
 
+  // Each friend's own most-recent shared meal today — same ambient feed
+  // FriendFeed reads from, so no extra request beyond what's already cached.
+  const lastMealSharedAtByFriendId = new Map(
+    feed
+      .filter((entry) => !entry.isSelf)
+      .map((entry) => [entry.friend.userId, entry.meal.sharedAt])
+  );
+
   return (
     <div className="space-y-2">
       <h2 className="px-1 font-medium font-sans-display text-[10px] text-nham-text-muted uppercase tracking-[0.08em]">
@@ -132,6 +144,9 @@ export function FriendList() {
           const tint = tintFor(
             member.profile.avatarSeed,
             member.profile.handle
+          );
+          const lastMealSharedAt = lastMealSharedAtByFriendId.get(
+            member.profile.userId
           );
           return (
             <li
@@ -149,8 +164,16 @@ export function FriendList() {
                     {name.charAt(0).toUpperCase()}
                   </span>
                 </span>
-                <span className="truncate font-sans-display text-[14px] text-nham-text">
-                  {name}
+                <span className="flex min-w-0 flex-1 flex-col">
+                  <span className="truncate font-sans-display text-[14px] text-nham-text">
+                    {name}
+                  </span>
+                  {lastMealSharedAt && (
+                    <span className="truncate font-sans-display text-[11px] text-nham-text-muted">
+                      {t('newFoodLog')} ·{' '}
+                      {formatElapsed(lastMealSharedAt, locale)}
+                    </span>
+                  )}
                 </span>
               </Link>
               <FriendRowMenu member={member} />

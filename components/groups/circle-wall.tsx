@@ -9,6 +9,7 @@ import { CirclePresenceStrip } from '@/components/groups/circle-presence-strip';
 import { CircleWallSkeleton } from '@/components/groups/circle-wall-skeleton';
 import { labelFor } from '@/components/groups/invite/profile-identity';
 import { useCircleFeed } from '@/hooks/social/use-circle-feed';
+import { formatElapsed } from '@/lib/date/format-elapsed';
 import type { CircleFeedEntry } from '@/lib/groups/client';
 import { cn } from '@/lib/utils';
 
@@ -18,20 +19,6 @@ function formatMacro(value: number | null, na: string): string {
 
 function formatCalories(value: number | null, na: string): string {
   return value == null ? na : `${Math.round(value)} kcal`;
-}
-
-/** Compact "Xm/Xh/Xd ago" for the photo-card time badge — Intl handles the
- * locale (English "1h ago" vs Vietnamese "1 giờ trước") for free. */
-function formatElapsed(iso: string, locale: string): string {
-  const rtf = new Intl.RelativeTimeFormat(locale, {
-    numeric: 'always',
-    style: 'narrow',
-  });
-  const minutes = Math.max(1, Math.round((Date.now() - new Date(iso).getTime()) / 60_000));
-  if (minutes < 60) return rtf.format(-minutes, 'minute');
-  const hours = Math.round(minutes / 60);
-  if (hours < 24) return rtf.format(-hours, 'hour');
-  return rtf.format(-Math.round(hours / 24), 'day');
 }
 
 // No real food photos yet (deliberate placeholder, not a general product

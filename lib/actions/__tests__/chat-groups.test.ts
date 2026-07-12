@@ -69,6 +69,16 @@ vi.mock('@/lib/db/schema', () => ({
     userLow: 'f.userLow',
     userHigh: 'f.userHigh',
   },
+  meals: {
+    id: 'm.id',
+    userId: 'm.userId',
+  },
+  mealShares: {
+    id: 'ms.id',
+    mealId: 'ms.mealId',
+    visibility: 'ms.visibility',
+    sharedAt: 'ms.sharedAt',
+  },
   publicProfiles: {
     userId: 'pp.userId',
     handle: 'pp.handle',
@@ -86,6 +96,7 @@ import {
   getChatGroup,
   getOrCreateDirectChatGroup,
   listChatGroupMessages,
+  listGroupMealFeed,
   listMyChatGroups,
   sendChatGroupMessage,
 } from '@/lib/actions/chat-groups';
@@ -264,6 +275,22 @@ describe('listMyChatGroups', () => {
     });
   }
 
+  // db.select().from().innerJoin().innerJoin().where().groupBy() -> each
+  // group's most recent shared meal today (any member).
+  function lastMealSharesQuery(rows: unknown[]) {
+    mockDbSelect.mockReturnValueOnce({
+      from: vi.fn().mockReturnValue({
+        innerJoin: vi.fn().mockReturnValue({
+          innerJoin: vi.fn().mockReturnValue({
+            where: vi.fn().mockReturnValue({
+              groupBy: vi.fn().mockResolvedValue(rows),
+            }),
+          }),
+        }),
+      }),
+    });
+  }
+
   it('marks a group chat unread when the last message postdates the read marker', async () => {
     friendsBackfillQuery([]); // no accepted friends to backfill
     const lastReadAt = new Date('2026-01-01T00:00:00Z');
@@ -284,8 +311,9 @@ describe('listMyChatGroups', () => {
         createdAt: new Date('2026-01-01T00:30:00Z'), // after lastReadAt
       },
     ]);
+    lastMealSharesQuery([]);
 
-    const [entry] = await listMyChatGroups(USER_A);
+    const [entry] = await listMyChatGroups(USER_A, { timezoneOffset: 0 });
 
     expect(entry.title).toBe('Trip');
     expect(entry.lastMessagePreview).toBe('See you there!');
@@ -312,10 +340,53 @@ describe('listMyChatGroups', () => {
         createdAt: new Date('2026-01-01T00:30:00Z'), // before lastReadAt
       },
     ]);
+    lastMealSharesQuery([]);
 
-    const [entry] = await listMyChatGroups(USER_A);
+    const [entry] = await listMyChatGroups(USER_A, { timezoneOffset: 0 });
 
     expect(entry.unread).toBe(false);
+  });
+
+  it('surfaces the most recent shared meal among a group’s members today', async () => {
+    friendsBackfillQuery([]);
+    myGroupsQuery([
+      {
+        id: GROUP_ID,
+        kind: 'group',
+        name: 'Trip',
+        avatarSeed: null,
+        updatedAt: new Date('2026-01-01T01:00:00Z'),
+        lastReadAt: new Date('2026-01-01T00:00:00Z'),
+      },
+    ]);
+    lastMessagesQuery([]);
+    lastMealSharesQuery([
+      { groupId: GROUP_ID, lastSharedAt: new Date('2026-01-01T02:00:00Z') },
+    ]);
+
+    const [entry] = await listMyChatGroups(USER_A, { timezoneOffset: 0 });
+
+    expect(entry.lastMealSharedAt).toBe('2026-01-01T02:00:00.000Z');
+  });
+
+  it('has a null lastMealSharedAt when no member shared a meal today', async () => {
+    friendsBackfillQuery([]);
+    myGroupsQuery([
+      {
+        id: GROUP_ID,
+        kind: 'group',
+        name: 'Trip',
+        avatarSeed: null,
+        updatedAt: new Date('2026-01-01T01:00:00Z'),
+        lastReadAt: new Date('2026-01-01T00:00:00Z'),
+      },
+    ]);
+    lastMessagesQuery([]);
+    lastMealSharesQuery([]);
+
+    const [entry] = await listMyChatGroups(USER_A, { timezoneOffset: 0 });
+
+    expect(entry.lastMealSharedAt).toBeNull();
   });
 
   it('resolves a direct chat title to the OTHER member, not the actor', async () => {
@@ -339,8 +410,9 @@ describe('listMyChatGroups', () => {
       },
     ]);
     lastMessagesQuery([]);
+    lastMealSharesQuery([]);
 
-    const [entry] = await listMyChatGroups(USER_A);
+    const [entry] = await listMyChatGroups(USER_A, { timezoneOffset: 0 });
 
     expect(entry.title).toBe('Phở Fan');
     expect(entry.lastMessagePreview).toBeNull();
@@ -378,12 +450,103 @@ describe('listMyChatGroups', () => {
       },
     ]);
     lastMessagesQuery([]);
+    lastMealSharesQuery([]);
 
-    const result = await listMyChatGroups(USER_A);
+    const result = await listMyChatGroups(USER_A, { timezoneOffset: 0 });
 
     expect(mockDbInsert).toHaveBeenCalled(); // the backfill actually wrote the chat + membership
     expect(result).toHaveLength(1);
     expect(result[0]?.title).toBe('Phở Fan');
+  });
+});
+
+describe('listGroupMealFeed', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  // requireMembership: db.select().from().where().limit().
+  function membershipQuery(rows: unknown[]) {
+    mockDbSelect.mockReturnValueOnce(selectRows(rows));
+  }
+
+  // memberRows: db.select().from().where() — resolves directly, no .limit().
+  function memberRowsQuery(rows: unknown[]) {
+    mockDbSelect.mockReturnValueOnce({
+      from: vi.fn().mockReturnValue({
+        where: vi.fn().mockResolvedValue(rows),
+      }),
+    });
+  }
+
+  // sharedMealsBefore: db.select().from().innerJoin().innerJoin().where().orderBy().limit().
+  function sharedMealsBeforeQuery(rows: unknown[]) {
+    mockDbSelect.mockReturnValueOnce({
+      from: vi.fn().mockReturnValue({
+        innerJoin: vi.fn().mockReturnValue({
+          innerJoin: vi.fn().mockReturnValue({
+            where: vi.fn().mockReturnValue({
+              orderBy: vi.fn().mockReturnValue({
+                limit: vi.fn().mockResolvedValue(rows),
+              }),
+            }),
+          }),
+        }),
+      }),
+    });
+  }
+
+  function sharedMeal(index: number, sharedAt: Date) {
+    return {
+      friendUserId: USER_B,
+      mealId: `meal-${index}`,
+      shareId: `share-${index}`,
+      rawInput: `meal ${index}`,
+      caloriesKcal: 500,
+      proteinG: 20,
+      carbohydrateG: 50,
+      fatG: 15,
+      sharedAt,
+      handle: 'phofan',
+      displayName: null,
+      avatarSeed: 'phofan',
+    };
+  }
+
+  it('rejects a non-member', async () => {
+    membershipQuery([]);
+
+    await expect(
+      listGroupMealFeed(USER_A, { groupId: GROUP_ID })
+    ).rejects.toThrow('Không tìm thấy nhóm chat.');
+  });
+
+  it('returns every shared meal among members, not collapsed per person', async () => {
+    membershipQuery([{ id: 'member-row' }]);
+    memberRowsQuery([{ userId: USER_A }, { userId: USER_B }]);
+    sharedMealsBeforeQuery([
+      sharedMeal(2, new Date('2026-01-01T18:00:00Z')),
+      sharedMeal(1, new Date('2026-01-01T08:00:00Z')),
+    ]);
+
+    const page = await listGroupMealFeed(USER_A, { groupId: GROUP_ID });
+
+    expect(page.entries).toHaveLength(2);
+    expect(page.nextCursor).toBeNull();
+  });
+
+  it('reports a nextCursor when more history remains', async () => {
+    membershipQuery([{ id: 'member-row' }]);
+    memberRowsQuery([{ userId: USER_A }, { userId: USER_B }]);
+    const rows = Array.from({ length: 21 }, (_, i) =>
+      sharedMeal(i, new Date(Date.UTC(2026, 0, 21 - i)))
+    );
+    sharedMealsBeforeQuery(rows);
+
+    const page = await listGroupMealFeed(USER_A, { groupId: GROUP_ID });
+
+    expect(page.entries).toHaveLength(20);
+    expect(page.nextCursor).not.toBeNull();
   });
 });
 
