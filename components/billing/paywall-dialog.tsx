@@ -15,6 +15,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import {
   type EntitlementsResponse,
   entitlementsKeys,
+  fetchEntitlements,
   useEntitlements,
 } from '@/hooks/billing/use-entitlements';
 import {
@@ -46,11 +47,20 @@ async function pollUntilPremium(
 ): Promise<boolean> {
   for (let attempt = 0; attempt < POLL_MAX_ATTEMPTS; attempt++) {
     await new Promise((resolve) => setTimeout(resolve, POLL_INTERVAL_MS));
-    await queryClient.invalidateQueries({ queryKey: entitlementsKeys.all });
-    const data = queryClient.getQueryData<EntitlementsResponse>(
-      entitlementsKeys.all
-    );
-    if (data?.tier === 'premium') return true;
+    try {
+      // Imperative fetch (staleTime 0 forces a network hit) so the read does
+      // not depend on an active observer being mounted — invalidate-then-read
+      // only awaits refetches of ACTIVE queries. fetchQuery also writes the
+      // result into the cache, so any mounted useEntitlements updates too.
+      const data = await queryClient.fetchQuery<EntitlementsResponse>({
+        queryKey: entitlementsKeys.all,
+        queryFn: fetchEntitlements,
+        staleTime: 0,
+      });
+      if (data.tier === 'premium') return true;
+    } catch {
+      // Transient fetch failure — keep polling until the window elapses.
+    }
   }
   return false;
 }

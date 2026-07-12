@@ -34,7 +34,7 @@ export const entitlementsKeys = {
   all: ['entitlements'] as const,
 };
 
-async function fetchEntitlements(): Promise<EntitlementsResponse> {
+export async function fetchEntitlements(): Promise<EntitlementsResponse> {
   const res = await fetch('/api/v1/account/entitlements', {
     headers: { accept: 'application/json' },
   });
