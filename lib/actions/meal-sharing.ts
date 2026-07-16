@@ -14,12 +14,11 @@
 // the accept path performs the one deliberate cross-user meal read, authorized
 // solely by a pending invite row addressed to the reader.
 
-import { randomUUID } from 'node:crypto';
 import { and, desc, eq, inArray, notInArray, or, sql } from 'drizzle-orm';
+import { copyMealVerbatim } from '@/lib/actions/meals/copy-meal-verbatim';
 import {
   buildMealItemGroupsFromRows,
   buildPersistedMeal,
-  extractNutritionValues,
   inferMealSlot,
   nutritionValuesToRow,
   scaleNutritionRow,
@@ -502,88 +501,26 @@ export async function acceptMealShareInviteAction(input: {
       parsed.timezoneOffset
     );
     const mealSlot = inferMealSlot(loggedAt);
-    const mealNutrition = extractNutritionValues(source);
 
-    const [meal] = await tx
-      .insert(meals)
-      .values({
-        ...(parsed.newMealId ? { id: parsed.newMealId } : {}),
-        userId: user.id,
-        rawInput: source.rawInput,
-        mealSlot,
-        confidenceOverall: source.confidenceOverall,
-        loggedAt,
-        entryMode: 'precise',
-        alcoholG: source.alcoholG,
-        // The copy represents the same fraction of the natural full portion the
-        // source does — already the sender's share for a split.
-        portionFactor: source.portionFactor,
-        ...nutritionValuesToRow(mealNutrition),
-      })
-      .returning({ id: meals.id });
-
-    // Share the accepted copy to my own circle by default, exactly like any
-    // freshly logged meal (the AFTER INSERT trigger fans out the event).
-    const [shareRow] = await tx
-      .insert(mealShares)
-      .values({ mealId: meal.id, actorId: user.id, visibility: 'circle' })
-      .onConflictDoNothing({ target: mealShares.mealId })
-      .returning({ id: mealShares.id, visibility: mealShares.visibility });
-    const share = shareRow
-      ? { shareId: shareRow.id, visibility: shareRow.visibility }
-      : null;
-
-    // Copy each item verbatim with a fresh id (no re-scaling — a split's share
-    // is already baked into the source meal's stored values).
-    const copies = sourceItems.map((row) => ({
-      id: randomUUID(),
-      row,
-      nutrition: extractNutritionValues(row),
-    }));
-    if (copies.length > 0) {
-      await tx.insert(mealItems).values(
-        copies.map(({ id, row, nutrition }) => ({
-          id,
-          mealId: meal.id,
-          ingredientName: row.ingredientName,
-          mealItemName: row.mealItemName,
-          mealItemOrder: row.mealItemOrder,
-          foodCompositionId: row.foodCompositionId,
-          estimatedGrams: row.estimatedGrams,
-          userFacingUnit: row.userFacingUnit,
-          cookingMethod: row.cookingMethod,
-          matchConfidence: row.matchConfidence,
-          ...nutritionValuesToRow(nutrition),
-        }))
-      );
-    }
+    // Materialize the sender's meal in my diary — verbatim, no re-scaling (a
+    // split's share is already baked into the source's stored values). Shared
+    // helper — the same copy the "log again" path performs.
+    const { mealId, meal } = await copyMealVerbatim(tx, {
+      source,
+      sourceItems,
+      userId: user.id,
+      newMealId: parsed.newMealId,
+      loggedAt,
+      mealSlot,
+    });
 
     // Point the already-claimed invite at the materialized meal.
     await tx
       .update(mealShareInvites)
-      .set({ acceptedMealId: meal.id })
+      .set({ acceptedMealId: mealId })
       .where(eq(mealShareInvites.id, parsed.inviteId));
 
-    const mealItemGroups = buildMealItemGroupsFromRows(
-      copies.map(({ id, row, nutrition }) => ({ ...row, id, nutrition }))
-    );
-
-    const savedMeal = buildPersistedMeal({
-      id: meal.id,
-      rawInput: source.rawInput,
-      mealSlot,
-      confidenceOverall: source.confidenceOverall,
-      loggedAt: loggedAt.toISOString(),
-      nutrition: mealNutrition,
-      mealItemGroups,
-      entryMode: 'precise',
-      alcoholG: source.alcoholG ?? null,
-      cheatSliders: null,
-      share,
-      portionFactor: source.portionFactor,
-    });
-
-    return { mealId: meal.id, meal: savedMeal };
+    return { mealId, meal };
   });
 }
 
