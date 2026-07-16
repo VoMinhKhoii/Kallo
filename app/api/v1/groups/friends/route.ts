@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { listCircle } from '@/lib/actions/groups';
+import { requireUserId } from '@/lib/api/auth';
 import { serializeError } from '@/lib/errors';
-import { requireUserId } from '../_auth';
 
 export const runtime = 'nodejs';
 

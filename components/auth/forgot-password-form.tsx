@@ -45,7 +45,7 @@ export function ForgotPasswordForm() {
 
   return (
     <div className="space-y-4">
-      <p className="font-sans-display text-[#8B7355] text-sm leading-relaxed">
+      <p className="font-sans-display text-nham-text-muted text-sm leading-relaxed">
         {t('description')}
       </p>
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
@@ -59,7 +59,7 @@ export function ForgotPasswordForm() {
         <button
           type="submit"
           disabled={loading}
-          className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#2C2416] px-4 py-3 font-medium font-sans-display text-sm text-white tracking-tight transition-all duration-200 hover:bg-[#3D3425] disabled:opacity-60"
+          className="flex w-full items-center justify-center gap-2 rounded-xl bg-nham-ink px-4 py-3 font-medium font-sans-display text-sm text-white tracking-tight transition-all duration-200 hover:bg-[#3D3425] disabled:opacity-60"
         >
           {loading && <Loader2 className="h-4 w-4 animate-spin" />}
           {t('submit')}
@@ -68,7 +68,7 @@ export function ForgotPasswordForm() {
       <button
         type="button"
         onClick={showAuth}
-        className="mx-auto flex items-center gap-1.5 font-sans-display text-[#8B7355] text-sm transition-colors hover:text-[#2C2416]"
+        className="mx-auto flex items-center gap-1.5 font-sans-display text-nham-text-muted text-sm transition-colors hover:text-nham-text"
       >
         <ArrowLeft className="h-3.5 w-3.5" />
         {t('back')}

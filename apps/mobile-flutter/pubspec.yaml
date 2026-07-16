@@ -18,6 +18,11 @@ dependencies:
   flutter_riverpod: ^2.6.1
   go_router: ^15.1.0
   http: ^1.3.0
+  # Multipart MediaType for feedback screenshot uploads (already transitive via
+  # http; declared directly since api_client references MediaType).
+  http_parser: ^4.1.2
+  # Optional screenshot attachment on the feedback form.
+  image_picker: ^1.1.2
   fl_chart: ^0.70.2
   flutter_svg: ^2.0.17
   flutter_secure_storage: ^9.2.4

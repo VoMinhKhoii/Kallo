@@ -1,0 +1,52 @@
+=== LOG ===
+35c421e feat(meals): speed up post-confirm refresh of day and cheat chips
+861c2e7 chore(ttr): add reusable task templates for bug reports and meeting minutes
+87c0c65 Merge pull request #175 from VoMinhKhoii/worktree-threads-typography-dashboard
+=== DIFF vs HEAD ===
+diff --git a/hooks/meals/use-meal-mutations.test.ts b/hooks/meals/use-meal-mutations.test.ts
+index b7792e7..7835c03 100644
+--- a/hooks/meals/use-meal-mutations.test.ts
++++ b/hooks/meals/use-meal-mutations.test.ts
+@@ -287,6 +287,10 @@ describe('useConfirmMeal optimistic update', () => {
+         loggingDayKeys.byUserDate(USER_ID, DATE)
+       );
+       expect(invalidateKeys).toContainEqual(['meal-dates']);
++      // Refreshes the "log it again" cheat chips (recentCheatOccasionsKeys.all).
++      // Must match the registered ['recent-cheat-occasions', userId] key by
++      // prefix — a singular typo here silently no-ops the invalidation.
++      expect(invalidateKeys).toContainEqual(['recent-cheat-occasions']);
+     });
+   });
+ 
+diff --git a/hooks/meals/use-meal-mutations.ts b/hooks/meals/use-meal-mutations.ts
+index 24f36f9..e45fa85 100644
+--- a/hooks/meals/use-meal-mutations.ts
++++ b/hooks/meals/use-meal-mutations.ts
+@@ -391,7 +391,7 @@ export function useConfirmMeal(userId: string) {
+       // The extra key refreshes the "log it again" chips so a newly-saved
+       // cheat occasion appears.
+       settleMealSave(queryClient, userId, variables.originDate, error, [
+-        ['recent-cheat-occasion'],
++        ['recent-cheat-occasions'],
+       ]),
+   });
+ }
+@@ -628,18 +628,3 @@ export function useDeleteMeal() {
+     },
+   });
+ }
+-
+-/**
+- * Read the cached logging day right after a confirm. Always returns the
+- * refreshed day (never null) for confirmed meals, so callers can render the
+- * updated totals synchronously without waiting for a refetch.
+- */
+-export function getConfirmedDaySnapshot(
+-  queryClient: QueryClient,
+-  userId: string,
+-  date: string
+-) {
+-  return (
+-    queryClient.getQueryData(loggingDayKeys.byUserDate(userId, date)) ?? null
+-  );
+-}

@@ -1,7 +1,7 @@
 import { type NextRequest, NextResponse } from 'next/server';
 import { shareMealWithFriendsAction } from '@/lib/actions/meal-sharing';
+import { readJsonBody } from '@/lib/api/auth';
 import { serializeError } from '@/lib/errors';
-import { readJsonBody } from '../_auth';
 
 export const runtime = 'nodejs';
 

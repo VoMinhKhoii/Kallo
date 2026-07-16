@@ -9,13 +9,20 @@
 import type {
   CircleFeedEntry,
   CircleMember,
+  FriendsThreadFeedPage,
   PublicProfile,
 } from '@/lib/actions/groups';
 import type { MealShareInvite } from '@/lib/actions/meal-sharing';
 import type { ConfirmMealResponse } from '@/lib/actions/meals';
 import { parseApiError } from '@/lib/errors';
 
-export type { CircleFeedEntry, CircleMember, MealShareInvite, PublicProfile };
+export type {
+  CircleFeedEntry,
+  CircleMember,
+  FriendsThreadFeedPage,
+  MealShareInvite,
+  PublicProfile,
+};
 
 async function request<T>(input: string, init?: RequestInit): Promise<T> {
   const response = await fetch(input, init);
@@ -40,6 +47,22 @@ export function fetchCircleFeed(
   return request<{ feed: CircleFeedEntry[] }>(
     `/api/v1/groups/feed?timezoneOffset=${timezoneOffset}`
   ).then((r) => r.feed);
+}
+
+/** One page of the combined Friends thread's shared-meal history (every
+ * accepted friend, merged, excluding the actor), newest-first. Omit `before`
+ * for the first page ("today's or the latest"); pass a prior page's
+ * `nextCursor` to load older shares. */
+export function fetchFriendsThreadFeed(
+  before?: string
+): Promise<FriendsThreadFeedPage> {
+  const query = before ? `?before=${encodeURIComponent(before)}` : '';
+  return request<FriendsThreadFeedPage>(`/api/v1/groups/friends/feed${query}`);
+}
+
+/** The actor's "last checked the combined Friends feed" marker. */
+export function fetchFriendsFeedReadMarker(): Promise<{ lastReadAt: string }> {
+  return request<{ lastReadAt: string }>('/api/v1/groups/friends/read-marker');
 }
 
 export function fetchFriends(): Promise<CircleMember[]> {

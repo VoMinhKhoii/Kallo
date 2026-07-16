@@ -1,0 +1,167 @@
+=== LOG (current branch) ===
+5a3e361 chore(nutrition): stage legacy alias tooling for removal review
+861c2e7 chore(ttr): add reusable task templates for bug reports and meeting minutes
+87c0c65 Merge pull request #175 from VoMinhKhoii/worktree-threads-typography-dashboard
+8a80c07 docs(design): fold the mobile system into the nham-design skill
+4888da1 style(dashboard): adopt the calm Threads-tuned typography system
+4885d48 Merge pull request #174 from VoMinhKhoii/claude/mobile-log-weight-spacing-8q5uc6
+=== BRANCHES ===
++ chore/ttr-task-templates                         861c2e7 chore(ttr): add reusable task templates for bug reports and meeting minutes
++ ci/flutter-mobile                                8b062c4 ci(mobile): add Flutter analyze + test gate on PRs
+  ci/main-deploy-migrations                        7523484 [gone] ci(deploy): pin supabase/setup-cli to a commit SHA
++ claude/cheatmeal-logging-research-W3D4w          78296ef [gone] fix(cheat): stop right-edge label collapse + move Save outside the card
++ claude/landing-page-redesign-pn19ea              e32b546 refactor(landing-lab): keep only the winning v3 cuisine globe
+=== DIFF (uncommitted) ===
+diff --git a/lib/nutrition/alias-lookup.ts b/lib/nutrition/alias-lookup.ts
+deleted file mode 100644
+index 598b9bd..0000000
+--- a/lib/nutrition/alias-lookup.ts
++++ /dev/null
+@@ -1,9 +0,0 @@
+-import { resolveLegacyAlias } from '@/lib/nutrition/legacy-aliases';
+-
+-/**
+- * Expand a raw ingredient query with its legacy aliases so old client
+- * payloads keep matching. New code should rely on ascii routing instead.
+- */
+-export function expandQueryWithLegacyAliases(query: string): string[] {
+-  return [query, ...resolveLegacyAlias(query)];
+-}
+diff --git a/lib/nutrition/legacy-aliases.json b/lib/nutrition/legacy-aliases.json
+deleted file mode 100644
+index 97135d5..0000000
+--- a/lib/nutrition/legacy-aliases.json
++++ /dev/null
+@@ -1,5 +0,0 @@
+-{
+-  "gạo tẻ": ["gao te", "com trang", "white rice"],
+-  "thịt ba chỉ": ["thit ba chi", "ba roi", "pork belly"],
+-  "nước mắm": ["nuoc mam", "fish sauce"]
+-}
+diff --git a/lib/nutrition/legacy-aliases.ts b/lib/nutrition/legacy-aliases.ts
+deleted file mode 100644
+index ef95fa3..0000000
+--- a/lib/nutrition/legacy-aliases.ts
++++ /dev/null
+@@ -1,14 +0,0 @@
+-/**
+- * Legacy ingredient alias table (pre-VTN-FCT normalization).
+- * @deprecated superseded by search_text_ascii routing; scheduled for removal.
+- */
+-export const legacyAliases: Record<string, string[]> = {
+-  'gạo tẻ': ['gao te', 'com trang', 'white rice'],
+-  'thịt ba chỉ': ['thit ba chi', 'ba roi', 'pork belly'],
+-  'nước mắm': ['nuoc mam', 'fish sauce'],
+-};
+-
+-/** @deprecated Resolve a legacy alias list for an ingredient name. */
+-export function resolveLegacyAlias(name: string): string[] {
+-  return legacyAliases[name] ?? [];
+-}
+diff --git a/package.json b/package.json
+index b6370c7..29fb1fb 100644
+--- a/package.json
++++ b/package.json
+@@ -10,7 +10,6 @@
+     "build": "next build",
+     "start": "next start",
+     "lint": "eslint",
+-    "check:aliases": "node scripts/validate-aliases.mjs",
+     "test": "vitest run",
+     "test:watch": "vitest",
+     "db:generate": "bunx drizzle-kit generate",
+diff --git a/scripts/validate-aliases.mjs b/scripts/validate-aliases.mjs
+deleted file mode 100644
+index 159b7be..0000000
+--- a/scripts/validate-aliases.mjs
++++ /dev/null
+@@ -1,15 +0,0 @@
+-import fs from 'node:fs';
+-
+-// Keep the runtime alias JSON in sync with the typed table until the
+-// legacy pathway is removed.
+-const raw = fs.readFileSync('lib/nutrition/legacy-aliases.json', 'utf8');
+-const table = JSON.parse(raw);
+-let bad = 0;
+-for (const [key, aliases] of Object.entries(table)) {
+-  if (!Array.isArray(aliases) || aliases.some((a) => typeof a !== 'string')) {
+-    console.error(`invalid alias list for ${key}`);
+-    bad += 1;
+-  }
+-}
+-if (bad > 0) process.exit(1);
+-console.log(`aliases ok (${Object.keys(table).length} entries)`);
+=== STAGED ===
+diff --git a/lib/nutrition/alias-lookup.ts b/lib/nutrition/alias-lookup.ts
+deleted file mode 100644
+index 598b9bd..0000000
+--- a/lib/nutrition/alias-lookup.ts
++++ /dev/null
+@@ -1,9 +0,0 @@
+-import { resolveLegacyAlias } from '@/lib/nutrition/legacy-aliases';
+-
+-/**
+- * Expand a raw ingredient query with its legacy aliases so old client
+- * payloads keep matching. New code should rely on ascii routing instead.
+- */
+-export function expandQueryWithLegacyAliases(query: string): string[] {
+-  return [query, ...resolveLegacyAlias(query)];
+-}
+diff --git a/lib/nutrition/legacy-aliases.json b/lib/nutrition/legacy-aliases.json
+deleted file mode 100644
+index 97135d5..0000000
+--- a/lib/nutrition/legacy-aliases.json
++++ /dev/null
+@@ -1,5 +0,0 @@
+-{
+-  "gạo tẻ": ["gao te", "com trang", "white rice"],
+-  "thịt ba chỉ": ["thit ba chi", "ba roi", "pork belly"],
+-  "nước mắm": ["nuoc mam", "fish sauce"]
+-}
+diff --git a/lib/nutrition/legacy-aliases.ts b/lib/nutrition/legacy-aliases.ts
+deleted file mode 100644
+index ef95fa3..0000000
+--- a/lib/nutrition/legacy-aliases.ts
++++ /dev/null
+@@ -1,14 +0,0 @@
+-/**
+- * Legacy ingredient alias table (pre-VTN-FCT normalization).
+- * @deprecated superseded by search_text_ascii routing; scheduled for removal.
+- */
+-export const legacyAliases: Record<string, string[]> = {
+-  'gạo tẻ': ['gao te', 'com trang', 'white rice'],
+-  'thịt ba chỉ': ['thit ba chi', 'ba roi', 'pork belly'],
+-  'nước mắm': ['nuoc mam', 'fish sauce'],
+-};
+-
+-/** @deprecated Resolve a legacy alias list for an ingredient name. */
+-export function resolveLegacyAlias(name: string): string[] {
+-  return legacyAliases[name] ?? [];
+-}
+diff --git a/scripts/validate-aliases.mjs b/scripts/validate-aliases.mjs
+deleted file mode 100644
+index 159b7be..0000000
+--- a/scripts/validate-aliases.mjs
++++ /dev/null
+@@ -1,15 +0,0 @@
+-import fs from 'node:fs';
+-
+-// Keep the runtime alias JSON in sync with the typed table until the
+-// legacy pathway is removed.
+-const raw = fs.readFileSync('lib/nutrition/legacy-aliases.json', 'utf8');
+-const table = JSON.parse(raw);
+-let bad = 0;
+-for (const [key, aliases] of Object.entries(table)) {
+-  if (!Array.isArray(aliases) || aliases.some((a) => typeof a !== 'string')) {
+-    console.error(`invalid alias list for ${key}`);
+-    bad += 1;
+-  }
+-}
+-if (bad > 0) process.exit(1);
+-console.log(`aliases ok (${Object.keys(table).length} entries)`);
+=== STATUS ===
+D  lib/nutrition/alias-lookup.ts
+D  lib/nutrition/legacy-aliases.json
+D  lib/nutrition/legacy-aliases.ts
+ M package.json
+D  scripts/validate-aliases.mjs

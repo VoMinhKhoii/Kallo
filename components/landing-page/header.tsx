@@ -31,12 +31,12 @@ export function Header() {
       initial={{ y: -20, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.6 }}
-      className="fixed top-0 right-0 left-0 z-50 border-[#E8D5B5]/30 border-b bg-[#FEFBF6]/80 backdrop-blur-xl"
+      className="fixed top-0 right-0 left-0 z-50 border-nham-border/30 border-b bg-nham-surface/80 backdrop-blur-xl"
     >
       <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-5">
         {/* Logo */}
         <div className="flex items-center gap-2">
-          <div className="font-medium font-serif text-2xl text-[#2C2416]">
+          <div className="font-medium font-serif text-2xl text-nham-text">
             Nhẩm
           </div>
         </div>
@@ -46,21 +46,21 @@ export function Header() {
           <a
             href="#features"
             onClick={scrollToAnchor('features')}
-            className="font-sans-display text-[#6B5D4F] text-sm transition-colors hover:text-[#2C2416]"
+            className="font-sans-display text-nham-text-soft text-sm transition-colors hover:text-nham-text"
           >
             {t('features')}
           </a>
           <a
             href="#how"
             onClick={scrollToAnchor('how')}
-            className="font-sans-display text-[#6B5D4F] text-sm transition-colors hover:text-[#2C2416]"
+            className="font-sans-display text-nham-text-soft text-sm transition-colors hover:text-nham-text"
           >
             {t('howItWorks')}
           </a>
           <a
             href="#pricing"
             onClick={scrollToAnchor('pricing')}
-            className="font-sans-display text-[#6B5D4F] text-sm transition-colors hover:text-[#2C2416]"
+            className="font-sans-display text-nham-text-soft text-sm transition-colors hover:text-nham-text"
           >
             {t('pricing')}
           </a>

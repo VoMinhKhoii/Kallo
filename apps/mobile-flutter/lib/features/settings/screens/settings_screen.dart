@@ -21,15 +21,17 @@ import '../data/profile_providers.dart';
 import '../panels/cooking.dart';
 import '../widgets/instant_commit_editor.dart';
 import '../../../shared/widgets/top_toast.dart';
+import '../../feedback/feedback_screen.dart';
 import '../widgets/profile_form.dart';
 import '../widgets/region_editor.dart';
+import '../widgets/settings_group.dart';
 import 'account_section.dart';
 
 /// The marketing version string (no `package_info_plus` dependency in pubspec,
 /// so this is rendered statically — keep in sync with `pubspec.yaml`).
 const String _appVersion = '1.0.1';
-const String _privacyUrl = 'https://nham.app/privacy';
-const String _termsUrl = 'https://nham.app/terms';
+const String _privacyUrl = 'https://kallo.fit/privacy';
+const String _termsUrl = 'https://kallo.fit/terms';
 
 /// Settings tab — a single scrollable root of grouped preference rows, each
 /// pushing ONE focused editor (Cupertino swipe-back). The numeric goal editor
@@ -87,24 +89,46 @@ class _SettingsList extends ConsumerWidget {
                 const SizedBox(height: NhamSpacing.sp4),
 
                 // ── Preferences ─────────────────────────────────────────────
-                _GroupLabel(tr('settings.preferences')),
-                _PreferenceRow(
-                  icon: LucideIcons.target,
-                  label: tr('settings.rows.goalPace'),
-                  subline: _goalPaceSubline(context, profile),
-                  onTap: () => _push(context, _EditorKind.goal),
+                SettingsGroup(
+                  label: tr('settings.preferences'),
+                  children: [
+                    SettingsRow(
+                      icon: LucideIcons.target,
+                      label: tr('settings.rows.goalPace'),
+                      subline: _goalPaceSubline(context, profile),
+                      showChevron: true,
+                      onTap: () => _push(context, _EditorKind.goal),
+                    ),
+                    SettingsRow(
+                      icon: LucideIcons.utensilsCrossed,
+                      label: tr('settings.rows.cooking'),
+                      subline: tr('settings.profilePanel.cookingSubtitle'),
+                      showChevron: true,
+                      onTap: () => _push(context, _EditorKind.cooking),
+                    ),
+                    SettingsRow(
+                      icon: LucideIcons.globe,
+                      label: tr('settings.rows.region'),
+                      subline: _regionSubline(context, profile),
+                      showChevron: true,
+                      onTap: () => _push(context, _EditorKind.region),
+                    ),
+                  ],
                 ),
-                _PreferenceRow(
-                  icon: LucideIcons.utensilsCrossed,
-                  label: tr('settings.rows.cooking'),
-                  subline: tr('settings.profilePanel.cookingSubtitle'),
-                  onTap: () => _push(context, _EditorKind.cooking),
-                ),
-                _PreferenceRow(
-                  icon: LucideIcons.globe,
-                  label: tr('settings.rows.region'),
-                  subline: _regionSubline(context, profile),
-                  onTap: () => _push(context, _EditorKind.region),
+
+                const SizedBox(height: NhamSpacing.sp5),
+                // ── Feedback (kept above Account, away from delete-account) ───
+                SettingsGroup(
+                  label: tr('settings.feedback.groupLabel'),
+                  children: [
+                    SettingsRow(
+                      icon: LucideIcons.messageSquare,
+                      label: tr('settings.feedback.rowLabel'),
+                      subline: tr('settings.feedback.rowSubline'),
+                      showChevron: true,
+                      onTap: () => _openFeedback(context),
+                    ),
+                  ],
                 ),
 
                 const SizedBox(height: NhamSpacing.sp5),
@@ -112,23 +136,27 @@ class _SettingsList extends ConsumerWidget {
 
                 const SizedBox(height: NhamSpacing.sp5),
                 // ── About ───────────────────────────────────────────────────
-                _GroupLabel(tr('settings.about.title')),
-                _InfoRow(
-                  icon: LucideIcons.info,
-                  label: tr('settings.about.version'),
-                  value: _appVersion,
-                ),
-                _PreferenceRow(
-                  icon: LucideIcons.shieldCheck,
-                  label: tr('settings.about.privacy'),
-                  subline: _privacyUrl,
-                  onTap: () => _copyLink(context, _privacyUrl),
-                ),
-                _PreferenceRow(
-                  icon: LucideIcons.fileText,
-                  label: tr('settings.about.terms'),
-                  subline: _termsUrl,
-                  onTap: () => _copyLink(context, _termsUrl),
+                SettingsGroup(
+                  label: tr('settings.about.title'),
+                  children: [
+                    SettingsRow(
+                      icon: LucideIcons.info,
+                      label: tr('settings.about.version'),
+                      value: _appVersion,
+                    ),
+                    SettingsRow(
+                      icon: LucideIcons.shieldCheck,
+                      label: tr('settings.about.privacy'),
+                      subline: _privacyUrl,
+                      onTap: () => _copyLink(context, _privacyUrl),
+                    ),
+                    SettingsRow(
+                      icon: LucideIcons.fileText,
+                      label: tr('settings.about.terms'),
+                      subline: _termsUrl,
+                      onTap: () => _copyLink(context, _termsUrl),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -142,6 +170,12 @@ class _SettingsList extends ConsumerWidget {
     Navigator.of(
       context,
     ).push(MaterialPageRoute<void>(builder: (_) => _ProfileScreen(kind: kind)));
+  }
+
+  void _openFeedback(BuildContext context) {
+    Navigator.of(
+      context,
+    ).push(MaterialPageRoute<void>(builder: (_) => const FeedbackScreen()));
   }
 
   void _copyLink(BuildContext context, String url) {
@@ -196,144 +230,6 @@ class _SettingsList extends ConsumerWidget {
 
 /// The focused editor a preference row pushes onto the stack.
 enum _EditorKind { goal, cooking, region }
-
-class _GroupLabel extends StatelessWidget {
-  const _GroupLabel(this.text);
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(left: NhamSpacing.sp3, bottom: 4),
-      child: Text(
-        text.toUpperCase(),
-        style: dashEyebrow(),
-      ),
-    );
-  }
-}
-
-/// A grouped preference row: an icon, a label with a current-value subline, and
-/// a trailing chevron. Presses fade the hover fill in and darken the text.
-class _PreferenceRow extends StatefulWidget {
-  const _PreferenceRow({
-    required this.icon,
-    required this.label,
-    required this.subline,
-    required this.onTap,
-  });
-
-  final IconData icon;
-  final String label;
-  final String subline;
-  final VoidCallback onTap;
-
-  @override
-  State<_PreferenceRow> createState() => _PreferenceRowState();
-}
-
-class _PreferenceRowState extends State<_PreferenceRow> {
-  bool _pressed = false;
-
-  @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      button: true,
-      excludeSemantics: true,
-      label: '${widget.label}, ${widget.subline}',
-      onTap: widget.onTap,
-      child: GestureDetector(
-        onTap: widget.onTap,
-        onTapDown: (_) => setState(() => _pressed = true),
-        onTapUp: (_) => setState(() => _pressed = false),
-        onTapCancel: () => setState(() => _pressed = false),
-        child: Container(
-          padding: const EdgeInsets.symmetric(
-            horizontal: NhamSpacing.sp3,
-            vertical: 10,
-          ),
-          decoration: BoxDecoration(
-            color: _pressed ? NhamColors.hover50 : Colors.transparent,
-            borderRadius: BorderRadius.circular(NhamRadii.buttonXl),
-          ),
-          child: Row(
-            children: [
-              Icon(
-                widget.icon,
-                size: 16,
-                color: _pressed ? NhamColors.text : NhamColors.textMuted,
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      widget.label,
-                      style: dashBody(),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      widget.subline,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: dashMeta(),
-                    ),
-                  ],
-                ),
-              ),
-              const Icon(
-                LucideIcons.chevronRight,
-                size: 16,
-                color: NhamColors.textMuted50,
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// A non-navigating info row (label on the left, a static value on the right) —
-/// used for the app version.
-class _InfoRow extends StatelessWidget {
-  const _InfoRow({
-    required this.icon,
-    required this.label,
-    required this.value,
-  });
-
-  final IconData icon;
-  final String label;
-  final String value;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(
-        horizontal: NhamSpacing.sp3,
-        vertical: 10,
-      ),
-      child: Row(
-        children: [
-          Icon(icon, size: 16, color: NhamColors.textMuted),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Text(
-              label,
-              style: dashBody(),
-            ),
-          ),
-          Text(
-            value,
-            style: dashMeta(tabular: true),
-          ),
-        ],
-      ),
-    );
-  }
-}
 
 /// Focused profile editor screen — pushed from a settings row. Renders ONE of
 /// the goal / cooking / region editors. Back header mirrors the web shell's

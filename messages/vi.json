@@ -134,7 +134,10 @@
     "grid": {
       "eyebrow": "Vi chất",
       "title": "Độ phủ vi chất",
-      "description": "Dùng các thẻ này để xem vi chất nào có vẻ đủ, vi chất nào cần thêm dữ liệu và vi chất nào có lưu ý theo nguồn món ăn."
+      "description": "Dùng các thẻ này để xem vi chất nào có vẻ đủ, vi chất nào cần thêm dữ liệu và vi chất nào có lưu ý theo nguồn món ăn.",
+      "vitamins": "Vitamin",
+      "minerals": "Khoáng chất",
+      "sourceNote": "Mục tiêu theo tham chiếu WHO/FAO · RDA Việt Nam · NASEM DRI."
     },
     "more": {
       "show": "Xem thêm vi chất",
@@ -876,7 +879,6 @@
     "consistency": "Độ đều đặn",
     "weeklyAverage": "Trung bình tuần",
     "target": "Mục tiêu",
-    "weekOf": "Tuần",
     "save": "Lưu",
     "saving": "Đang lưu…",
     "retry": "Thử lại",
@@ -903,7 +905,8 @@
     },
     "mealTrigger": {
       "close": "Đóng khung nhập bữa ăn",
-      "send": "Gửi bữa ăn"
+      "send": "Gửi bữa ăn",
+      "analyzing": "Đang phân tích bữa ăn…"
     },
     "weightCard": {
       "required": "Vui lòng nhập cân nặng",
@@ -921,7 +924,6 @@
       "saveFailed": "Không thể lưu cân nặng"
     },
     "adherenceHeatmap": {
-      "onTrack": "{percent}% đúng mục tiêu",
       "notLogged": "Chưa ghi nhận",
       "partial": "Ngày ghi thiếu",
       "cheatDay": "Ngày xả",
@@ -939,29 +941,11 @@
       "farUnder": "Thiếu nhiều"
     },
     "caloriesLogged": "kcal đã ghi",
-    "weeklyAccumulator": "Tuần này: {consumed} / {target} kcal",
     "mealReceiptsHint": "Những bữa ăn sẽ hiển thị ở đây",
-    "progressStatus": {
-      "insufficient": {
-        "label": "Đã bắt đầu theo dõi",
-        "detail": "Ghi cân nặng vào ngày mai để thấy xu hướng."
-      },
-      "on_pace": {
-        "label": "Đúng kế hoạch",
-        "detail": "Tốc độ hiện tại của bạn phù hợp với kế hoạch."
-      },
-      "ahead": {
-        "label": "Vượt kế hoạch",
-        "detail": "Tiến độ nhanh hơn dự kiến."
-      },
-      "behind": {
-        "label": "Cần chú ý",
-        "detail": "Xu hướng hiện tại yếu hơn kế hoạch."
-      },
-      "stable": {
-        "label": "Ổn định",
-        "detail": "Cân nặng của bạn đang ổn định ở mức duy trì."
-      }
+    "streaming": {
+      "saved": "Đã lưu bữa ăn",
+      "undo": "Hoàn tác",
+      "dismiss": "Bỏ qua"
     }
   },
   "logging": {
@@ -1180,7 +1164,16 @@
     "page": {
       "title": "Vòng kết nối của bạn",
       "subtitle": "Hôm nay bạn bè đang ăn gì.",
-      "addFriend": "Thêm bạn"
+      "addFriend": "Thêm bạn",
+      "friendsNoMealToday": "Chưa có người bạn nào chia sẻ bữa ăn.",
+      "groupNoMealToday": "Chưa ai trong {name} chia sẻ bữa ăn nào hôm nay.",
+      "groupsSectionTitle": "Nhóm",
+      "friendsSectionTitle": "Bạn bè",
+      "newFoodLog": "Nhật ký món ăn mới"
+    },
+    "noThreadSelected": {
+      "title": "Chọn một cuộc trò chuyện",
+      "subtitle": "Chọn một người bạn hoặc nhóm bên trái để xem các bữa ăn đã chia sẻ."
     },
     "empty": {
       "title": "Vòng kết nối đang yên ắng",
@@ -1189,9 +1182,10 @@
     },
     "wall": {
       "sharedAt": "Chia sẻ lúc {time}",
-      "toggleDetails": "Xem chi tiết bữa ăn",
-      "total": "Tổng",
       "loading": "Đang tải vòng kết nối của bạn",
+      "loadingMore": "Đang tải các ngày trước…",
+      "todayLabel": "Hôm nay",
+      "yesterdayLabel": "Hôm qua",
       "na": "Không có",
       "you": "Bạn",
       "presenceLabel": "Ai trong vòng kết nối của bạn",
@@ -1253,6 +1247,8 @@
     "invite": {
       "title": "Mời vào vòng kết nối",
       "description": "Chia sẻ liên kết của bạn. Bất kỳ ai mở liên kết đều có thể kết nối với bạn.",
+      "tabAddFriend": "Thêm bạn",
+      "tabCreateGroup": "Tạo nhóm",
       "yourLink": "Liên kết mời của bạn",
       "hint": "Bất kỳ ai có liên kết này đều có thể kết nối với bạn.",
       "copy": "Sao chép",
@@ -1274,6 +1270,19 @@
       "appearSaved": "Đã cập nhật tên hiển thị",
       "appearError": "Không thể cập nhật tên của bạn",
       "appearFallback": "Đặt tên hiển thị"
+    },
+    "createGroup": {
+      "title": "Tạo nhóm",
+      "description": "Đặt tên và thêm thành viên từ vòng kết nối của bạn.",
+      "nameLabel": "Tên nhóm",
+      "namePlaceholder": "VD: Hội leo núi cuối tuần",
+      "membersLabel": "Thêm thành viên",
+      "membersCount": "Đã chọn {count}",
+      "noFriends": "Hãy kết bạn trước — bạn chỉ có thể thêm người đã có trong vòng kết nối.",
+      "submit": "Tạo nhóm",
+      "creating": "Đang tạo…",
+      "created": "Đã tạo nhóm",
+      "createError": "Không thể tạo nhóm. Hãy thử lại."
     },
     "circle": {
       "title": "Vòng kết nối ({count})",
@@ -1331,7 +1340,34 @@
       "bodyMetrics": "Mục tiêu & chỉ số",
       "regional": "Khu vực & ngôn ngữ",
       "cooking": "Nấu nướng",
-      "account": "Tài khoản"
+      "account": "Tài khoản",
+      "feedback": "Góp ý"
+    },
+    "feedback": {
+      "title": "Gửi góp ý",
+      "description": "Gặp lỗi, thiếu nguyên liệu, hay có ý tưởng? Hãy cho chúng tôi biết — góp ý sẽ đến thẳng đội ngũ.",
+      "typeLabel": "Bạn muốn góp ý về điều gì?",
+      "types": {
+        "bug": "Lỗi",
+        "ingredient": "Nguyên liệu",
+        "idea": "Ý tưởng"
+      },
+      "messageLabel": "Nội dung phản hồi",
+      "placeholder": {
+        "bug": "Điều gì đã xảy ra? Bạn mong đợi điều gì?",
+        "ingredient": "Nguyên liệu hoặc món ăn nào đang thiếu?",
+        "idea": "Điều gì sẽ giúp Nhẩm tốt hơn cho bạn?"
+      },
+      "addScreenshot": "Thêm ảnh chụp màn hình",
+      "removeScreenshot": "Bỏ ảnh chụp màn hình",
+      "screenshotTooLarge": "Ảnh vượt quá 5 MB. Vui lòng chọn ảnh nhỏ hơn.",
+      "submit": "Gửi góp ý",
+      "submitting": "Đang gửi…",
+      "successTitle": "Cảm ơn — chúng tôi đã nhận được",
+      "successBody": "Góp ý của bạn đã đến đội ngũ. Chúng tôi đọc từng góp ý một.",
+      "sendAnother": "Gửi thêm góp ý",
+      "error": "Không thể gửi góp ý. Vui lòng thử lại.",
+      "rateLimitError": "Bạn vừa gửi khá nhiều góp ý. Vui lòng đợi một lát rồi thử lại."
     },
     "account": {
       "title": "Tài khoản",

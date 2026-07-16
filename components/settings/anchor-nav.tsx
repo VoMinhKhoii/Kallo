@@ -4,6 +4,7 @@ import { useTranslations } from 'next-intl';
 import { SETTINGS_SECTION_ANCHOR } from './profile';
 
 const ACCOUNT_ANCHOR = 'settings-account';
+const FEEDBACK_ANCHOR = 'settings-feedback';
 
 interface AnchorItem {
   id: string;
@@ -14,6 +15,7 @@ const ANCHORS: readonly AnchorItem[] = [
   { id: SETTINGS_SECTION_ANCHOR['body-metrics'], labelKey: 'bodyMetrics' },
   { id: SETTINGS_SECTION_ANCHOR.regional, labelKey: 'regional' },
   { id: SETTINGS_SECTION_ANCHOR.cooking, labelKey: 'cooking' },
+  { id: FEEDBACK_ANCHOR, labelKey: 'feedback' },
   { id: ACCOUNT_ANCHOR, labelKey: 'account' },
 ] as const;
 
@@ -47,7 +49,7 @@ export function SettingsAnchorNav() {
             <a
               href={`#${item.id}`}
               onClick={handleJump(item.id)}
-              className="block whitespace-nowrap rounded-xl px-3 py-2 font-medium text-[#7B6F62] text-[14px] transition-colors hover:bg-nham-hover/50 hover:text-[#2C2416] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent"
+              className="block whitespace-nowrap rounded-xl px-3 py-2 font-medium text-[#7B6F62] text-[14px] transition-colors hover:bg-nham-hover/50 hover:text-nham-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent"
             >
               {t(item.labelKey)}
             </a>
@@ -58,4 +60,4 @@ export function SettingsAnchorNav() {
   );
 }
 
-export { ACCOUNT_ANCHOR };
+export { ACCOUNT_ANCHOR, FEEDBACK_ANCHOR };

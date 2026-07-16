@@ -50,7 +50,12 @@ export default async function RequestsPage({
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h1 className="font-semibold text-xl">Pipeline Requests</h1>
-        <span className="text-muted-foreground text-sm">{total} total</span>
+        <div className="flex items-center gap-3 text-muted-foreground text-sm">
+          <span>{total} total</span>
+          <Link href="/admin/feedback" className="hover:underline">
+            Feedback →
+          </Link>
+        </div>
       </div>
 
       <FiltersForm current={flat} />

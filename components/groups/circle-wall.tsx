@@ -1,16 +1,17 @@
 'use client';
 
-import { ChevronDown } from 'lucide-react';
-import { AnimatePresence, motion } from 'motion/react';
+import { Soup } from 'lucide-react';
+import { motion } from 'motion/react';
 import { useLocale, useTranslations } from 'next-intl';
-import { useState } from 'react';
 import { CircleEmpty } from '@/components/groups/circle-empty';
 import { CircleError } from '@/components/groups/circle-error';
 import { CirclePresenceStrip } from '@/components/groups/circle-presence-strip';
 import { CircleWallSkeleton } from '@/components/groups/circle-wall-skeleton';
 import { labelFor } from '@/components/groups/invite/profile-identity';
 import { useCircleFeed } from '@/hooks/social/use-circle-feed';
+import { formatElapsed } from '@/lib/date/format-elapsed';
 import type { CircleFeedEntry } from '@/lib/groups/client';
+import { cn } from '@/lib/utils';
 
 function formatMacro(value: number | null, na: string): string {
   return value == null ? na : `${Math.round(value)}g`;
@@ -20,16 +21,49 @@ function formatCalories(value: number | null, na: string): string {
   return value == null ? na : `${Math.round(value)} kcal`;
 }
 
+// No real food photos yet (deliberate placeholder, not a general product
+// pattern — Nhẩm is otherwise photograph-free by design). A warm, deterministic
+// gradient stands in per meal so the thread doesn't read as a wall of
+// identical grey boxes once photo capture ships.
+const PHOTO_PLACEHOLDER_TINTS = [
+  'from-[#e3c99a] via-[#d4a876] to-[#b98a5c]', // golden hour
+  'from-[#cbb89e] via-[#b39c81] to-[#8f7a63]', // taupe
+  'from-[#ddd2c0] via-[#c4b6a0] to-[#a4917a]', // stone
+] as const;
+
+function photoPlaceholderTint(seed: string): string {
+  let hash = 0;
+  for (let i = 0; i < seed.length; i++) {
+    hash = (hash * 31 + seed.charCodeAt(i)) | 0;
+  }
+  return PHOTO_PLACEHOLDER_TINTS[
+    Math.abs(hash) % PHOTO_PLACEHOLDER_TINTS.length
+  ];
+}
+
 /**
  * One friend's most-recent shared meal for today. Read-only clone of the
- * persisted-meal-card aesthetic — timeline dot, Lora dish quote, collapsible
- * macros. No likes, no counts, no badges, no leaderboards.
+ * persisted-meal-card aesthetic — Lora dish quote, collapsible macros. No
+ * likes, no counts, no badges, no leaderboards.
+ *
+ * `align`: 'timeline' keeps the original single-column ambient-wall look
+ * (a connecting dot/line down the left edge — see CircleWall below). 'left'
+ * / 'right' drop the timeline and render as a chat bubble instead, for views
+ * that mix the actor's own entry in with friends' (own on the right, like an
+ * ordinary chat thread).
  */
-function CircleCard({ entry }: { entry: CircleFeedEntry }) {
+export function CircleCard({
+  entry,
+  align = 'timeline',
+}: {
+  entry: CircleFeedEntry;
+  align?: 'timeline' | 'left' | 'right';
+}) {
   const t = useTranslations('groups.wall');
   const locale = useLocale();
-  const [isCollapsed, setIsCollapsed] = useState(true);
   const { friend, meal } = entry;
+  const isBubble = align !== 'timeline';
+  const isRight = align === 'right';
 
   const timeLabel = new Date(meal.sharedAt).toLocaleTimeString(locale, {
     hour: '2-digit',
@@ -44,6 +78,77 @@ function CircleCard({ entry }: { entry: CircleFeedEntry }) {
 
   // The actor's own table reads as "You"/"Bạn"; everyone else by their label.
   const friendLabel = entry.isSelf ? t('you') : labelFor(friend);
+
+  // Shared macro summary — same copy in both layouts, just repositioned
+  // (under the dish quote in timeline mode, under the photo in bubble mode).
+  const macroSummary = (
+    <div className="flex items-center justify-between font-sans-display">
+      <span className="text-[11px] text-nham-text-muted tabular-nums">
+        P: {protein}
+        {'  '}C: {carbs}
+        {'  '}F: {fat}
+      </span>
+      <span className="font-bold text-nham-text text-sm tabular-nums">
+        {calories}
+      </span>
+    </div>
+  );
+
+  if (isBubble) {
+    const elapsedLabel = formatElapsed(meal.sharedAt, locale);
+    const photoTint = photoPlaceholderTint(meal.mealId);
+
+    return (
+      <motion.article
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className={cn(
+          'w-[270px] shrink-0 overflow-hidden rounded-3xl border border-nham-border/60 bg-white shadow-sm sm:w-[300px]',
+          isRight && 'ml-auto'
+        )}
+      >
+        {/* Placeholder photo — no real food photos yet, see comment above */}
+        <div
+          className={cn(
+            'relative aspect-square w-full overflow-hidden bg-gradient-to-br',
+            photoTint
+          )}
+        >
+          <div className="absolute -top-6 -right-6 h-24 w-24 rounded-full bg-white/25 blur-2xl" />
+          <div className="absolute -bottom-8 -left-8 h-28 w-28 rounded-full bg-black/10 blur-2xl" />
+          <Soup
+            className="absolute inset-0 m-auto h-9 w-9 text-white/50"
+            strokeWidth={1.5}
+          />
+
+          <div className="absolute inset-x-0 top-0 flex items-start justify-between gap-2 p-2">
+            <span className="flex min-w-0 items-center gap-1.5 rounded-full bg-black/35 py-1 pr-2.5 pl-1 backdrop-blur-sm">
+              <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-white/90">
+                <span className="font-bold font-sans-display text-[9px] text-nham-btn">
+                  {friendLabel.charAt(0).toUpperCase()}
+                </span>
+              </span>
+              <span className="truncate font-medium font-sans-display text-[11px] text-white">
+                {friendLabel}
+              </span>
+            </span>
+            <span className="shrink-0 rounded-full bg-black/35 px-2 py-1 font-sans-display text-[10px] text-white backdrop-blur-sm">
+              {elapsedLabel}
+            </span>
+          </div>
+
+          <div className="absolute inset-x-2 bottom-2">
+            <p className="truncate rounded-full bg-black/35 px-3 py-1.5 font-sans-display text-[12px] text-white backdrop-blur-sm">
+              {meal.rawInput}
+            </p>
+          </div>
+        </div>
+
+        {/* Macro footer */}
+        <div className="p-3">{macroSummary}</div>
+      </motion.article>
+    );
+  }
 
   return (
     <motion.article
@@ -72,77 +177,10 @@ function CircleCard({ entry }: { entry: CircleFeedEntry }) {
 
       {/* Card */}
       <div className="rounded-2xl border border-nham-border/60 bg-white p-4 shadow-sm transition-shadow hover:shadow-md sm:p-5">
-        <div className="flex items-start justify-between gap-3">
-          <p className="font-serif text-[17px] text-nham-text leading-relaxed sm:text-[19px]">
-            {meal.rawInput}
-          </p>
-          <button
-            type="button"
-            aria-label={t('toggleDetails')}
-            aria-expanded={!isCollapsed}
-            onClick={() => setIsCollapsed((prev) => !prev)}
-            className="rounded-full p-1 text-nham-text-muted/60 transition-colors hover:bg-nham-hover/40 hover:text-nham-text"
-          >
-            <ChevronDown
-              className={`h-4 w-4 transition-transform duration-200 ${isCollapsed ? '' : 'rotate-180'}`}
-            />
-          </button>
-        </div>
-
-        {/* Collapsed summary */}
-        <AnimatePresence initial={false}>
-          {isCollapsed && (
-            <motion.div
-              key="summary"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.15 }}
-              className="mt-2 flex items-center justify-between font-sans-display"
-            >
-              <span className="text-[11px] text-nham-text-muted tabular-nums">
-                P: {protein}
-                {'  '}C: {carbs}
-                {'  '}F: {fat}
-              </span>
-              <span className="font-bold text-nham-text text-sm tabular-nums">
-                {calories}
-              </span>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* Expanded details */}
-        <AnimatePresence initial={false}>
-          {!isCollapsed && (
-            <motion.div
-              key="details"
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              transition={{ duration: 0.2, ease: 'easeInOut' }}
-              style={{ overflow: 'hidden' }}
-            >
-              <div className="mt-5 border-nham-border/50 border-t border-dashed pt-3">
-                <div className="flex items-center justify-between">
-                  <span className="font-bold font-sans-display text-[13px] text-nham-text">
-                    {t('total')}
-                  </span>
-                  <div className="flex items-center gap-4">
-                    <span className="font-sans-display text-[11px] text-nham-text-muted tabular-nums">
-                      P: {protein}
-                      {'  '}C: {carbs}
-                      {'  '}F: {fat}
-                    </span>
-                    <span className="font-bold font-sans-display text-nham-text tabular-nums">
-                      {calories}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+        <p className="font-serif text-[17px] text-nham-text leading-relaxed sm:text-[19px]">
+          {meal.rawInput}
+        </p>
+        <div className="mt-2">{macroSummary}</div>
       </div>
     </motion.article>
   );

@@ -1,5 +1,5 @@
 {
-  "id": "fdc37f38-e96c-4f5c-b0d9-de2e408af8ab",
+  "id": "feeb8f7c-e175-45c0-ad93-b381316dd798",
   "prevId": "926297f8-a48a-4856-baa9-30bf05e82f37",
   "version": "7",
   "dialect": "postgresql",
@@ -1265,179 +1265,6 @@
       "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.meal_share_invites": {
-      "name": "meal_share_invites",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "uuid",
-          "primaryKey": true,
-          "notNull": true,
-          "default": "gen_random_uuid()"
-        },
-        "source_meal_id": {
-          "name": "source_meal_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "from_user_id": {
-          "name": "from_user_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "to_user_id": {
-          "name": "to_user_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "mode": {
-          "name": "mode",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "portion_factor": {
-          "name": "portion_factor",
-          "type": "numeric",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'1'"
-        },
-        "status": {
-          "name": "status",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'pending'"
-        },
-        "accepted_meal_id": {
-          "name": "accepted_meal_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        },
-        "responded_at": {
-          "name": "responded_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": false
-        }
-      },
-      "indexes": {
-        "meal_share_invites_recipient_status_idx": {
-          "name": "meal_share_invites_recipient_status_idx",
-          "columns": [
-            {
-              "expression": "to_user_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "\"created_at\" DESC",
-              "asc": true,
-              "isExpression": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "where": "status = 'pending'",
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {
-        "meal_share_invites_source_meal_id_meals_id_fk": {
-          "name": "meal_share_invites_source_meal_id_meals_id_fk",
-          "tableFrom": "meal_share_invites",
-          "tableTo": "meals",
-          "columnsFrom": [
-            "source_meal_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "meal_share_invites_from_user_id_users_id_fk": {
-          "name": "meal_share_invites_from_user_id_users_id_fk",
-          "tableFrom": "meal_share_invites",
-          "tableTo": "users",
-          "schemaTo": "auth",
-          "columnsFrom": [
-            "from_user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "meal_share_invites_to_user_id_users_id_fk": {
-          "name": "meal_share_invites_to_user_id_users_id_fk",
-          "tableFrom": "meal_share_invites",
-          "tableTo": "users",
-          "schemaTo": "auth",
-          "columnsFrom": [
-            "to_user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "meal_share_invites_accepted_meal_id_meals_id_fk": {
-          "name": "meal_share_invites_accepted_meal_id_meals_id_fk",
-          "tableFrom": "meal_share_invites",
-          "tableTo": "meals",
-          "columnsFrom": [
-            "accepted_meal_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "set null",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {
-        "meal_share_invites_meal_recipient_uniq": {
-          "name": "meal_share_invites_meal_recipient_uniq",
-          "nullsNotDistinct": false,
-          "columns": [
-            "source_meal_id",
-            "to_user_id"
-          ]
-        }
-      },
-      "policies": {},
-      "checkConstraints": {
-        "meal_share_invites_mode_check": {
-          "name": "meal_share_invites_mode_check",
-          "value": "\"meal_share_invites\".\"mode\" IN ('copy', 'split')"
-        },
-        "meal_share_invites_status_check": {
-          "name": "meal_share_invites_status_check",
-          "value": "\"meal_share_invites\".\"status\" IN ('pending', 'accepted', 'dismissed')"
-        }
-      },
       "isRLSEnabled": false
     },
     "public.meal_shares": {
@@ -3268,6 +3095,193 @@
       "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.user_feedback": {
+      "name": "user_feedback",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "type": {
+          "name": "type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "message": {
+          "name": "message",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "screenshot_path": {
+          "name": "screenshot_path",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "app_version": {
+          "name": "app_version",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "platform": {
+          "name": "platform",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "locale": {
+          "name": "locale",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "route": {
+          "name": "route",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "metadata": {
+          "name": "metadata",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'open'"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "user_feedback_status_created_idx": {
+          "name": "user_feedback_status_created_idx",
+          "columns": [
+            {
+              "expression": "status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "\"created_at\" DESC",
+              "asc": true,
+              "isExpression": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "user_feedback_type_created_idx": {
+          "name": "user_feedback_type_created_idx",
+          "columns": [
+            {
+              "expression": "type",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "\"created_at\" DESC",
+              "asc": true,
+              "isExpression": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "user_feedback_user_created_idx": {
+          "name": "user_feedback_user_created_idx",
+          "columns": [
+            {
+              "expression": "user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "\"created_at\" DESC",
+              "asc": true,
+              "isExpression": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "user_feedback_user_id_users_id_fk": {
+          "name": "user_feedback_user_id_users_id_fk",
+          "tableFrom": "user_feedback",
+          "tableTo": "users",
+          "schemaTo": "auth",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "user_feedback_type_check": {
+          "name": "user_feedback_type_check",
+          "value": "\"user_feedback\".\"type\" IN ('bug', 'ingredient', 'idea')"
+        },
+        "user_feedback_platform_check": {
+          "name": "user_feedback_platform_check",
+          "value": "\"user_feedback\".\"platform\" IN ('web', 'ios', 'android')"
+        },
+        "user_feedback_status_check": {
+          "name": "user_feedback_status_check",
+          "value": "\"user_feedback\".\"status\" IN ('open', 'triaged', 'resolved', 'wontfix')"
+        }
+      },
       "isRLSEnabled": false
     },
     "public.user_profiles": {

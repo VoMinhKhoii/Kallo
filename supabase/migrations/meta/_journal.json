@@ -327,15 +327,36 @@
     {
       "idx": 46,
       "version": "7",
-      "when": 1783152604742,
-      "tag": "20260704081004_meal_share_invites",
+      "when": 1783152604741,
+      "tag": "20260704081004_add_user_feedback",
       "breakpoints": true
     },
     {
       "idx": 47,
       "version": "7",
-      "when": 1783238409817,
-      "tag": "20260705080009_meals_portion_factor",
+      "when": 1783509089999,
+      "tag": "20260708111129_add_chat_groups",
+      "breakpoints": true
+    },
+    {
+      "idx": 48,
+      "version": "7",
+      "when": 1783520071681,
+      "tag": "20260708141431_add_chat_group_members_last_read_at",
+      "breakpoints": true
+    },
+    {
+      "idx": 49,
+      "version": "7",
+      "when": 1783841696291,
+      "tag": "20260712073456_add_friends_feed_read_markers",
+      "breakpoints": true
+    },
+    {
+      "idx": 50,
+      "version": "7",
+      "when": 1784175119917,
+      "tag": "20260716041159_woozy_namorita",
       "breakpoints": true
     }
   ]

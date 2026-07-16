@@ -50,10 +50,10 @@ export function CustomSelect({ options, value, onChange }: CustomSelectProps) {
         type="button"
         onClick={() => setIsOpen(!isOpen)}
         aria-expanded={isOpen}
-        className={`flex w-full items-center justify-between rounded-lg border bg-white px-3 py-2 text-[#2C2416] text-[14px] transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C9A87C]/40 ${
+        className={`flex w-full items-center justify-between rounded-lg border bg-white px-3 py-2 text-[14px] text-nham-text transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent/40 ${
           isOpen
-            ? 'border-[#C9A87C] shadow-sm ring-1 ring-[#C9A87C]/20'
-            : 'border-[#EAE7E0] hover:border-[#C9A87C]/50'
+            ? 'border-nham-accent shadow-sm ring-1 ring-nham-accent/20'
+            : 'border-[#EAE7E0] hover:border-nham-accent/50'
         }`}
       >
         <span className="min-w-0 truncate pr-2">{selectedOption?.label}</span>
@@ -79,13 +79,13 @@ export function CustomSelect({ options, value, onChange }: CustomSelectProps) {
                   onChange(opt.value);
                   setIsOpen(false);
                 }}
-                className="flex w-full items-center justify-between px-3 py-2.5 text-left text-[#2C2416] text-[14px] transition-colors hover:bg-[#F5F4F0] focus-visible:bg-[#F5F4F0] focus-visible:outline-none"
+                className="flex w-full items-center justify-between px-3 py-2.5 text-left text-[14px] text-nham-text transition-colors hover:bg-nham-track focus-visible:bg-nham-track focus-visible:outline-none"
               >
                 <span className={value === opt.value ? 'font-medium' : ''}>
                   {opt.label}
                 </span>
                 {value === opt.value && (
-                  <Check className="h-4 w-4 text-[#C9A87C]" />
+                  <Check className="h-4 w-4 text-nham-accent" />
                 )}
               </button>
             ))}

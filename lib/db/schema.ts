@@ -931,6 +931,25 @@ export const publicProfiles = pgTable(
 );
 
 // ---------------------------------------------------------------------------
+// Friends feed — read marker
+// ---------------------------------------------------------------------------
+// The combined "all friends" thread isn't a real chat_groups row, so it has
+// nowhere to hang a lastReadAt column the way group/direct chats do — this is
+// its own table. Deliberately NOT a column on public_profiles: that table's
+// RLS lets accepted friends read each other's rows (for names/avatars), and
+// this is a private "when did you last check your feed" marker that must
+// stay owner-only (see its own RLS migration).
+
+export const friendsFeedReadMarkers = pgTable('friends_feed_read_markers', {
+  userId: uuid('user_id')
+    .primaryKey()
+    .references(() => authUsers.id, { onDelete: 'cascade' }),
+  lastReadAt: timestamp('last_read_at', { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+
+// ---------------------------------------------------------------------------
 // Group Tracking — Friendships
 // ---------------------------------------------------------------------------
 // Symmetric, canonical-ordered friendship edge. The user_low < user_high check
@@ -1151,6 +1170,184 @@ export const mealShareInvites = pgTable(
     check(
       'meal_share_invites_status_check',
       sql`${table.status} IN ('pending', 'accepted', 'dismissed')`
+    ),
+  ]
+);
+
+// ---------------------------------------------------------------------------
+// Chat Groups — unified 1:1 + group messaging
+// ---------------------------------------------------------------------------
+// One chat concept, N >= 2 members — no separate 1:1 code path. `kind`
+// distinguishes an auto-created 2-person chat ('direct', one per accepted
+// friendship — created by acceptInvite) from a user-created named chat
+// ('group', membership drawn from the creator's existing accepted friends
+// only). direct_user_low/high use the SAME canonical-ordering convention as
+// friendships.user_low/high (orderedPair()), and are NULL for 'group' rows;
+// the unique index on that pair makes direct-chat creation idempotent per
+// friend pair (Postgres does not treat NULL = NULL, so 'group' rows with
+// both columns NULL never collide with each other).
+
+export const chatGroups = pgTable(
+  'chat_groups',
+  {
+    id: uuid('id').primaryKey().default(sql`gen_random_uuid()`),
+    kind: text('kind').notNull(),
+    name: text('name'),
+    createdBy: uuid('created_by')
+      .notNull()
+      .references(() => authUsers.id, { onDelete: 'cascade' }),
+    directUserLow: uuid('direct_user_low').references(() => authUsers.id, {
+      onDelete: 'cascade',
+    }),
+    directUserHigh: uuid('direct_user_high').references(() => authUsers.id, {
+      onDelete: 'cascade',
+    }),
+    avatarSeed: text('avatar_seed'),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    unique('chat_groups_direct_pair_uniq').on(
+      table.directUserLow,
+      table.directUserHigh
+    ),
+    check('chat_groups_kind_check', sql`${table.kind} IN ('direct', 'group')`),
+    check(
+      'chat_groups_direct_shape_check',
+      sql`(${table.kind} = 'direct' AND ${table.directUserLow} IS NOT NULL AND ${table.directUserHigh} IS NOT NULL AND ${table.directUserLow} < ${table.directUserHigh})
+          OR (${table.kind} = 'group' AND ${table.directUserLow} IS NULL AND ${table.directUserHigh} IS NULL)`
+    ),
+  ]
+);
+
+// ---------------------------------------------------------------------------
+// Chat Groups — Members
+// ---------------------------------------------------------------------------
+
+export const chatGroupMembers = pgTable(
+  'chat_group_members',
+  {
+    id: uuid('id').primaryKey().default(sql`gen_random_uuid()`),
+    groupId: uuid('group_id')
+      .notNull()
+      .references(() => chatGroups.id, { onDelete: 'cascade' }),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => authUsers.id, { onDelete: 'cascade' }),
+    role: text('role').notNull().default('member'),
+    joinedAt: timestamp('joined_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    // Bumped to now() whenever this member opens the thread (listChatGroupMessages).
+    // A message is unread when its created_at is after this — defaults to
+    // joined_at (now()) so a fresh join never shows a backlog as unread.
+    lastReadAt: timestamp('last_read_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    unique('chat_group_members_group_user_uniq').on(
+      table.groupId,
+      table.userId
+    ),
+    index('chat_group_members_user_idx').on(table.userId),
+    index('chat_group_members_group_idx').on(table.groupId),
+    check(
+      'chat_group_members_role_check',
+      sql`${table.role} IN ('owner', 'member')`
+    ),
+  ]
+);
+
+// ---------------------------------------------------------------------------
+// Chat Groups — Messages
+// ---------------------------------------------------------------------------
+
+export const chatGroupMessages = pgTable(
+  'chat_group_messages',
+  {
+    id: uuid('id').primaryKey().default(sql`gen_random_uuid()`),
+    groupId: uuid('group_id')
+      .notNull()
+      .references(() => chatGroups.id, { onDelete: 'cascade' }),
+    senderId: uuid('sender_id')
+      .notNull()
+      .references(() => authUsers.id, { onDelete: 'cascade' }),
+    body: text('body').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    index('chat_group_messages_group_created_idx').on(
+      table.groupId,
+      sql`${table.createdAt} DESC`
+    ),
+  ]
+);
+
+// ---------------------------------------------------------------------------
+// User feedback — in-app bug reports, ingredient requests, and ideas.
+// Submitted from web + mobile; triaged by admins via /admin/feedback.
+// ---------------------------------------------------------------------------
+
+export const userFeedback = pgTable(
+  'user_feedback',
+  {
+    id: uuid('id').primaryKey().default(sql`gen_random_uuid()`),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => authUsers.id, { onDelete: 'cascade' }),
+    // 'bug' | 'ingredient' | 'idea'
+    type: text('type').notNull(),
+    message: text('message').notNull(),
+    // Storage object path in the private `feedback-screenshots` bucket.
+    screenshotPath: text('screenshot_path'),
+    // Context captured client-side at submit time.
+    appVersion: text('app_version'),
+    // 'web' | 'ios' | 'android' | null (not captured). NULL passes the CHECK
+    // (Postgres CHECK only fails on FALSE), so the column stays nullable.
+    platform: text('platform'),
+    locale: text('locale'),
+    route: text('route'),
+    metadata: jsonb('metadata'),
+    // Admin triage: 'open' | 'triaged' | 'resolved' | 'wontfix'
+    status: text('status').notNull().default('open'),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    check(
+      'user_feedback_type_check',
+      sql`${table.type} IN ('bug', 'ingredient', 'idea')`
+    ),
+    check(
+      'user_feedback_platform_check',
+      sql`${table.platform} IN ('web', 'ios', 'android')`
+    ),
+    check(
+      'user_feedback_status_check',
+      sql`${table.status} IN ('open', 'triaged', 'resolved', 'wontfix')`
+    ),
+    index('user_feedback_status_created_idx').on(
+      table.status,
+      sql`${table.createdAt} DESC`
+    ),
+    index('user_feedback_type_created_idx').on(
+      table.type,
+      sql`${table.createdAt} DESC`
+    ),
+    index('user_feedback_user_created_idx').on(
+      table.userId,
+      sql`${table.createdAt} DESC`
     ),
   ]
 );

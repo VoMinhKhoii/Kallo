@@ -10,24 +10,32 @@
 // predicate. RLS is the source of truth only for the Supabase-session/PostgREST
 // path (direct client reads + the OG card route).
 
-import { and, desc, eq, gte, inArray, lt, or, sql } from 'drizzle-orm';
+import { and, desc, eq, or, sql } from 'drizzle-orm';
+import { getOrCreateDirectChatGroup } from '@/lib/actions/chat-groups';
 import { getUtcDayRangeForLocalDate } from '@/lib/date/local-day';
 import { db as defaultDb } from '@/lib/db';
 import {
   circleEvents,
+  friendsFeedReadMarkers,
   friendships,
-  mealShares,
-  meals,
   publicProfiles,
 } from '@/lib/db/schema';
 import { Errors } from '@/lib/errors';
 import { orderedPair } from '@/lib/groups/friendship';
 import { validateHandle } from '@/lib/groups/handles';
+import {
+  mostRecentSharedMealsToday,
+  type SharedMealEntry,
+  sharedMealsBefore,
+  todayLocalDate,
+  toSharedMealEntry,
+} from '@/lib/groups/meal-feed';
 import { generateInviteSlug } from '@/lib/groups/slug';
 import {
   acceptInviteSchema,
   blockFriendSchema,
   circleFeedSchema,
+  friendsThreadFeedSchema,
   handleSchema,
   removeFriendSchema,
   upsertPublicProfileSchema,
@@ -54,26 +62,7 @@ export interface CircleMember {
   profile: PublicProfile;
 }
 
-export interface CircleFeedEntry {
-  friend: {
-    userId: string;
-    handle: string;
-    displayName: string | null;
-    avatarSeed: string | null;
-  };
-  /** True when this entry is the actor's own shared meal (their own table). */
-  isSelf: boolean;
-  meal: {
-    mealId: string;
-    shareId: string;
-    rawInput: string;
-    caloriesKcal: number | null;
-    proteinG: number | null;
-    carbohydrateG: number | null;
-    fatG: number | null;
-    sharedAt: string;
-  };
-}
+export type CircleFeedEntry = SharedMealEntry;
 
 /** Hard cap on the ambient wall: top friends, last 24h, non-scrollable. */
 export const CIRCLE_FEED_FRIEND_CAP = 20;
@@ -263,7 +252,12 @@ export async function getProfileBySlug(
 // ---------------------------------------------------------------------------
 // The recipient's tap IS the accept (Locket model): no separate inviter
 // approval. Creates an accepted edge, or promotes a pre-existing pending one.
-// The friendship write + event are transactional so an event can't be orphaned.
+// The friendship write + event + direct chat group are all transactional so
+// none of the three can end up orphaned relative to the others. A pair whose
+// edge was already accepted before this call (the early return below) is
+// assumed to already have its chat — legacy edges accepted before this
+// backfill existed are instead picked up lazily by
+// ensureDirectChatsForAcceptedFriends() on the next chat-list read.
 
 export async function acceptInvite(
   actorId: string,
@@ -326,49 +320,53 @@ export async function acceptInvite(
         type: 'friend_accepted',
         refId: existing[0].id,
       });
-      return { status: 'accepted' as const, inviter };
+    } else {
+      // No edge yet. The locked read can't lock a row that doesn't exist, so
+      // a racing accept/block may insert first; swallow the unique violation
+      // and reconcile instead of surfacing a spurious 500 on this core action.
+      const inserted = await tx
+        .insert(friendships)
+        .values({
+          userLow,
+          userHigh,
+          // The inviter initiated by sharing the link; the recipient accepted.
+          requestedBy: inviter.userId,
+          status: 'accepted',
+        })
+        .onConflictDoNothing({
+          target: [friendships.userLow, friendships.userHigh],
+        })
+        .returning({ id: friendships.id });
+
+      if (inserted[0]) {
+        await tx.insert(circleEvents).values({
+          actorId,
+          type: 'friend_accepted',
+          refId: inserted[0].id,
+        });
+      } else {
+        // A concurrent writer won the insert — re-read and honour a block.
+        const reconciled = await tx
+          .select({ status: friendships.status })
+          .from(friendships)
+          .where(
+            and(
+              eq(friendships.userLow, userLow),
+              eq(friendships.userHigh, userHigh)
+            )
+          )
+          .limit(1);
+        if (reconciled[0]?.status === 'blocked') {
+          throw Errors.conflict('Không thể kết nối.');
+        }
+      }
     }
 
-    // No edge yet. The locked read can't lock a row that doesn't exist, so a
-    // racing accept/block may insert first; swallow the unique violation and
-    // reconcile instead of surfacing a spurious 500 on this core action.
-    const inserted = await tx
-      .insert(friendships)
-      .values({
-        userLow,
-        userHigh,
-        // The inviter initiated by sharing the link; the recipient accepted.
-        requestedBy: inviter.userId,
-        status: 'accepted',
-      })
-      .onConflictDoNothing({
-        target: [friendships.userLow, friendships.userHigh],
-      })
-      .returning({ id: friendships.id });
+    // Every path that reaches here just (re)established an accepted edge —
+    // the ‘already accepted’ case above returns earlier and skips this.
+    // Idempotent, so re-running it on retries is harmless.
+    await getOrCreateDirectChatGroup(actorId, inviter.userId, tx);
 
-    if (inserted[0]) {
-      await tx.insert(circleEvents).values({
-        actorId,
-        type: 'friend_accepted',
-        refId: inserted[0].id,
-      });
-      return { status: 'accepted' as const, inviter };
-    }
-
-    // A concurrent writer won the insert — re-read and honour a block.
-    const reconciled = await tx
-      .select({ status: friendships.status })
-      .from(friendships)
-      .where(
-        and(
-          eq(friendships.userLow, userLow),
-          eq(friendships.userHigh, userHigh)
-        )
-      )
-      .limit(1);
-    if (reconciled[0]?.status === 'blocked') {
-      throw Errors.conflict('Không thể kết nối.');
-    }
     return { status: 'accepted' as const, inviter };
   });
 }
@@ -512,6 +510,35 @@ export async function listCircle(
 }
 
 // ---------------------------------------------------------------------------
+// getAcceptedFriendIds — the actor's accepted friends, most-recent edge first
+// ---------------------------------------------------------------------------
+// Shared by listCircleFeed (capped, today-only ambient snapshot) and
+// listFriendsThreadFeed (uncapped, paginated combined thread).
+
+async function getAcceptedFriendIds(
+  actorId: string,
+  db: Db
+): Promise<string[]> {
+  const friendRows = await db
+    .select({
+      userLow: friendships.userLow,
+      userHigh: friendships.userHigh,
+    })
+    .from(friendships)
+    .where(
+      and(
+        or(eq(friendships.userLow, actorId), eq(friendships.userHigh, actorId)),
+        eq(friendships.status, 'accepted')
+      )
+    )
+    .orderBy(desc(friendships.updatedAt));
+
+  return friendRows.map((r) =>
+    r.userLow === actorId ? r.userHigh : r.userLow
+  );
+}
+
+// ---------------------------------------------------------------------------
 // listCircleFeed — most-recent shared meal per friend, today, capped + deduped
 // ---------------------------------------------------------------------------
 
@@ -529,25 +556,8 @@ export async function listCircleFeed(
     parsed.timezoneOffset
   );
 
-  // Resolve the actor's accepted friends, most-recently-connected first so the
-  // cap below is deterministic (not arbitrary physical row order).
-  const friendRows = await db
-    .select({
-      userLow: friendships.userLow,
-      userHigh: friendships.userHigh,
-    })
-    .from(friendships)
-    .where(
-      and(
-        or(eq(friendships.userLow, actorId), eq(friendships.userHigh, actorId)),
-        eq(friendships.status, 'accepted')
-      )
-    )
-    .orderBy(desc(friendships.updatedAt));
-
-  const friendIds = friendRows.map((r) =>
-    r.userLow === actorId ? r.userHigh : r.userLow
-  );
+  // Most-recently-connected first so the cap below is deterministic.
+  const friendIds = await getAcceptedFriendIds(actorId, db);
 
   // Cap the number of FRIENDS considered (non-scrollable ambient wall). The
   // actor is always included beyond the cap so they keep their own table even
@@ -559,54 +569,14 @@ export async function listCircleFeed(
   // the actor plus their (capped) friends. Self-inclusion stays userId-scoped:
   // a user only ever sees their own meal and meals of users they are accepted
   // friends with (the friendIds set is derived from accepted edges above).
-  const rows = await db
-    .selectDistinctOn([meals.userId], {
-      friendUserId: meals.userId,
-      mealId: meals.id,
-      shareId: mealShares.id,
-      rawInput: meals.rawInput,
-      caloriesKcal: meals.caloriesKcal,
-      proteinG: meals.proteinG,
-      carbohydrateG: meals.carbohydrateG,
-      fatG: meals.fatG,
-      sharedAt: mealShares.sharedAt,
-      handle: publicProfiles.handle,
-      displayName: publicProfiles.displayName,
-      avatarSeed: publicProfiles.avatarSeed,
-    })
-    .from(mealShares)
-    .innerJoin(meals, eq(meals.id, mealShares.mealId))
-    .innerJoin(publicProfiles, eq(publicProfiles.userId, meals.userId))
-    .where(
-      and(
-        inArray(meals.userId, queryUserIds),
-        sql`${mealShares.visibility} <> 'private'`,
-        gte(mealShares.sharedAt, dayStart),
-        lt(mealShares.sharedAt, dayEnd)
-      )
-    )
-    // DISTINCT ON requires the leading ORDER BY to match the distinct key.
-    .orderBy(meals.userId, desc(mealShares.sharedAt));
+  const rows = await mostRecentSharedMealsToday(
+    queryUserIds,
+    dayStart,
+    dayEnd,
+    db
+  );
 
-  const entries = rows.map((r) => ({
-    friend: {
-      userId: r.friendUserId,
-      handle: r.handle,
-      displayName: r.displayName,
-      avatarSeed: r.avatarSeed,
-    },
-    isSelf: r.friendUserId === actorId,
-    meal: {
-      mealId: r.mealId,
-      shareId: r.shareId,
-      rawInput: r.rawInput,
-      caloriesKcal: r.caloriesKcal,
-      proteinG: r.proteinG,
-      carbohydrateG: r.carbohydrateG,
-      fatG: r.fatG,
-      sharedAt: r.sharedAt.toISOString(),
-    },
-  }));
+  const entries = rows.map((r) => toSharedMealEntry(r, actorId));
 
   // The actor's own table is the first slot; friends follow newest-first.
   const self = entries.filter((e) => e.isSelf);
@@ -621,11 +591,75 @@ export async function listCircleFeed(
 }
 
 // ---------------------------------------------------------------------------
-// Helpers
+// getFriendsFeedReadMarker — the actor's "last checked the Friends feed" time
 // ---------------------------------------------------------------------------
+// friends_feed_read_markers is its own table (not a column on public_profiles
+// — see schema.ts's comment on why) so this stays owner-only. Lazily
+// provisions the row on first read, defaulting to "now" so a first-time
+// viewer never sees a backlog as unread — same idea as
+// chat_group_members.last_read_at's DEFAULT now().
 
-/** Local calendar date (YYYY-MM-DD) for a viewer's timezone offset. */
-function todayLocalDate(timezoneOffset: number): string {
-  const local = new Date(Date.now() - timezoneOffset * 60 * 1000);
-  return local.toISOString().slice(0, 10);
+export async function getFriendsFeedReadMarker(
+  actorId: string,
+  db: Db = defaultDb
+): Promise<{ lastReadAt: string }> {
+  await db
+    .insert(friendsFeedReadMarkers)
+    .values({ userId: actorId })
+    .onConflictDoNothing();
+
+  const [row] = await db
+    .select({ lastReadAt: friendsFeedReadMarkers.lastReadAt })
+    .from(friendsFeedReadMarkers)
+    .where(eq(friendsFeedReadMarkers.userId, actorId))
+    .limit(1);
+
+  return { lastReadAt: row.lastReadAt.toISOString() };
+}
+
+// ---------------------------------------------------------------------------
+// listFriendsThreadFeed — every friend's shared-meal history, merged, paginated
+// ---------------------------------------------------------------------------
+// The Friends section is one combined thread (not one row per friend): every
+// accepted friend's shared meal, merged into a single feed, EXCLUDING the
+// actor's own — the actor is simply never in the query scope. Deliberately a
+// separate query rather than a variant of listCircleFeed: that one must stay
+// exactly "today, latest per friend, capped" for the sidebar subtitle, while
+// this shows every shared meal across the whole friend graph, seek-paginated
+// oldest-ward via `before`.
+
+export interface FriendsThreadFeedPage {
+  entries: CircleFeedEntry[];
+  nextCursor: string | null;
+}
+
+export async function listFriendsThreadFeed(
+  actorId: string,
+  input: { before?: string },
+  db: Db = defaultDb
+): Promise<FriendsThreadFeedPage> {
+  const parsed = friendsThreadFeedSchema.parse(input);
+
+  const friendIds = await getAcceptedFriendIds(actorId, db);
+  const before = parsed.before ? new Date(parsed.before) : null;
+
+  // Opening the thread IS the read receipt (page 1 only — not every "load
+  // older" scroll fetch), mirroring listGroupMealFeed's pattern.
+  const [{ rows, nextCursor }] = await Promise.all([
+    sharedMealsBefore(friendIds, before, db),
+    parsed.before
+      ? Promise.resolve(undefined)
+      : db
+          .insert(friendsFeedReadMarkers)
+          .values({ userId: actorId, lastReadAt: new Date() })
+          .onConflictDoUpdate({
+            target: friendsFeedReadMarkers.userId,
+            set: { lastReadAt: new Date() },
+          }),
+  ]);
+
+  return {
+    entries: rows.map((r) => toSharedMealEntry(r, actorId)),
+    nextCursor,
+  };
 }

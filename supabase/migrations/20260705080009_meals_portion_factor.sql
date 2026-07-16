@@ -1,1 +1,0 @@
-ALTER TABLE "meals" ADD COLUMN "portion_factor" numeric DEFAULT '1' NOT NULL;

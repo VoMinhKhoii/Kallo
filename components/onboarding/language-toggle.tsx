@@ -2,6 +2,7 @@
 
 import { GB, VN } from 'country-flag-icons/react/3x2';
 import { Check } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface LanguageToggleProps {
   value: string;
@@ -23,18 +24,19 @@ export function LanguageToggle({ value, onChange }: LanguageToggleProps) {
             key={code}
             type="button"
             onClick={() => onChange(code)}
-            className={`flex items-center gap-3 rounded-2xl border px-4 py-3 transition-colors ${
+            className={cn(
+              'flex items-center gap-3 rounded-2xl border px-4 py-3 transition-colors',
               selected
-                ? 'border-[#C9A87C] bg-[#C9A87C]/10'
-                : 'border-[#EAE7E0] bg-[#FDFCF8] hover:border-[#C9A87C]/50'
-            }`}
+                ? 'border-nham-accent bg-nham-accent/10'
+                : 'border-[#EAE7E0] bg-[#FDFCF8] hover:border-nham-accent/50'
+            )}
           >
             <Flag className="h-5 w-7 shrink-0 rounded-[3px]" />
-            <span className="min-w-0 truncate font-medium text-[#2C2416] text-[14px]">
+            <span className="min-w-0 truncate font-medium text-[14px] text-nham-text">
               {label}
             </span>
             {selected && (
-              <Check className="ml-auto h-4 w-4 shrink-0 text-[#C9A87C]" />
+              <Check className="ml-auto h-4 w-4 shrink-0 text-nham-accent" />
             )}
           </button>
         );

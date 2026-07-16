@@ -91,6 +91,10 @@ Supabase uses timestamp-based filenames: `YYYYMMDDHHMMSS_description.sql`
 | `20260319083800_rls_synonym_candidates.sql` | B (Manual) | RLS policies for synonym_candidates (read/write/update for authenticated) |
 | `20260319083900_normalize_query_embeddings_keys.sql` | B (Manual) | Normalize existing `name_vi` PKs to lowercase + NFC (with collision resolution) |
 | `20260416161845_flatten_meal_nutrition_values.sql` | A (Drizzle) | Flatten persisted `meals` and `meal_items` nutrient columns from JSONB bounds to single numeric values |
+| `20260708111129_add_chat_groups.sql` | A (Drizzle) | `chat_groups`, `chat_group_members`, `chat_group_messages` tables — unified 1:1 + group chat |
+| `20260708111205_chat_groups_rls.sql` | B (Manual) | RLS policies + `updated_at` trigger for the chat groups tables |
+| `20260708141431_add_chat_group_members_last_read_at.sql` | A (Drizzle) | `chat_group_members.last_read_at` — per-member read marker driving the unread indicator |
+| `20260708141500_chat_group_members_last_read_rls.sql` | B (Manual) | RLS UPDATE policy so a member can bump their own `last_read_at` |
 
 **Migration ordering matters**: Drizzle migrations that add columns must be timestamped BEFORE manual migrations that reference those columns (e.g., `search_text` column must exist before the trgm migration creates a GIN index on it).
 

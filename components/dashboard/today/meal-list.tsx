@@ -12,11 +12,11 @@ export function MealList({ meals }: MealListProps) {
 
   if (meals.length === 0) {
     return (
-      <div className="flex h-full min-h-0 flex-col items-center justify-center gap-1.5 rounded-2xl border border-nham-border/60 border-dashed bg-card/40 px-3 py-3 text-center">
-        <span className="font-semibold text-nham-text text-sm">
+      <div className="flex h-full min-h-[96px] flex-col items-center justify-center gap-1 text-center">
+        <span className="font-medium text-nham-text text-sm">
           {t('noMealsToday')}
         </span>
-        <span className="text-[11px] text-nham-stone">
+        <span className="text-nham-text-muted text-xs">
           {t('mealReceiptsHint')}
         </span>
       </div>
@@ -24,32 +24,29 @@ export function MealList({ meals }: MealListProps) {
   }
 
   return (
-    <div className="flex h-full min-h-0 flex-col gap-2">
-      <div className="flex items-baseline justify-between">
-        <span className="font-bold text-[9px] text-nham-stone uppercase tracking-[0.15em]">
+    <div className="flex h-full min-h-0 flex-col">
+      <div className="mb-2 flex items-baseline justify-between">
+        <span className="font-medium text-nham-text-muted text-xs uppercase tracking-[0.08em]">
           {t('recentMeals')}
         </span>
-        <span className="text-[9px] text-nham-stone">
+        <span className="text-nham-text-muted text-xs tabular-nums">
           {t('mealsLogged', { count: meals.length })}
         </span>
       </div>
 
-      <div className="flex min-h-0 flex-col gap-1.5 overflow-y-auto pr-1">
-        {meals.map((meal, idx) => (
+      {/* Plain rows on the card surface — meal name at content-left, kcal in a
+          fixed right column so every value lines up (no per-row boxes/borders). */}
+      <div className="flex min-h-0 flex-col gap-1 overflow-y-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        {meals.map((meal) => (
           <div
             key={meal.id}
-            className="flex items-start justify-between gap-2 rounded-xl border border-transparent px-2.5 py-1.5 transition-colors hover:border-nham-border/60 hover:bg-card/80"
+            className="flex items-baseline justify-between gap-3 py-1"
           >
-            <div className="flex min-w-0 items-start gap-2">
-              <span className="mt-0.5 shrink-0 font-sans-display text-[10px] text-nham-accent tabular-nums leading-none">
-                {idx + 1}
-              </span>
-              <span className="line-clamp-2 text-[11px] text-nham-text leading-tight">
-                {meal.label}
-              </span>
-            </div>
-            <span className="shrink-0 font-mono text-[10px] text-nham-stone tabular-nums">
-              {meal.calories}
+            <span className="line-clamp-2 min-w-0 text-nham-text text-sm leading-snug">
+              {meal.label}
+            </span>
+            <span className="shrink-0 text-nham-text-muted text-xs tabular-nums">
+              {meal.calories} kcal
             </span>
           </div>
         ))}

@@ -49,6 +49,54 @@ jobs:
       - uses: google-github-actions/setup-gcloud@v2
         with:
           project_id: ${{ vars.GCP_PROJECT_ID }}
+      - name: Refuse to reset the project production runs on
+        # The reset does `supabase link --project-ref "$SUPABASE_PROJECT_ID"`
+        # then `db reset --linked` — it wipes the project SUPABASE_PROJECT_ID
+        # names. During the DB transition that project also backs kallo-prod, so
+        # compare the PROJECT REF production runs on (derived from
+        # kallo-prod-database-url) against the reset target. A project-ref check
+        # is immune to the URL-form / password / query-param drift that a byte
+        # comparison of the two connection strings would miss. Fail closed: if a
+        # prod secret exists but its ref cannot be parsed, refuse. The extraction
+        # mirrors extractProjectRefFromDatabaseUrl in shared-db.mjs; it is inlined
+        # so it does not depend on the checked-out ref's copy of that script.
+        run: |
+          # Distinguish "secret genuinely absent" (safe to proceed) from any
+          # other failure (permission/API/network). Swallowing every error would
+          # let a reset run against prod just because the lookup happened to fail,
+          # so we fail closed on anything that is not a clean NOT_FOUND.
+          err_file="$(mktemp)"
+          if prod_url="$(gcloud secrets versions access latest --secret=kallo-prod-database-url 2>"$err_file")"; then
+            :
+          elif grep -qiE 'NOT_FOUND|was not found|does not exist' "$err_file"; then
+            echo "No kallo-prod-database-url secret; no production DB to protect."
+            rm -f "$err_file"
+            exit 0
+          else
+            echo "Refusing: could not read kallo-prod-database-url (not a NOT_FOUND) — failing closed to avoid wiping production." >&2
+            cat "$err_file" >&2
+            rm -f "$err_file"
+            exit 1
+          fi
+          rm -f "$err_file"
+          echo "::add-mask::$prod_url"
+          prod_ref="$(PROD_URL="$prod_url" node -e '
+            const u = process.env.PROD_URL || "";
+            const direct = u.match(/@db\.([a-z0-9]+)\.supabase\.co(?::\d+)?\//i);
+            const pooler = u.match(/^[a-z]+:\/\/([^:]+):.*@[^/]*pooler\.supabase\.com(?::\d+)?\//i);
+            let ref = direct ? direct[1] : null;
+            if (!ref && pooler) { const p = decodeURIComponent(pooler[1]).split("."); if (p.length >= 2) ref = p[p.length - 1]; }
+            process.stdout.write(ref || "");
+          ')"
+          if [ -z "$prod_ref" ]; then
+            echo "Refusing: a kallo-prod-database-url secret exists but its project ref could not be parsed — cannot prove this reset will not wipe production." >&2
+            exit 1
+          fi
+          if [ "$prod_ref" = "$SUPABASE_PROJECT_ID" ]; then
+            echo "Refusing: reset target SUPABASE_PROJECT_ID ($SUPABASE_PROJECT_ID) is the project kallo-prod (production) runs on. Split the non-prod DB first — see docs/SHARED_STAGING_CICD.md." >&2
+            exit 1
+          fi
+          echo "Reset target ($SUPABASE_PROJECT_ID) differs from the production project; proceeding."
       - name: Pre-reset validation
         run: |
           gcloud secrets describe nham-nonprod-database-url

@@ -511,7 +511,10 @@
     "rhythm": {
       "eyebrow": "Nhịp ăn mỗi ngày",
       "calories": "kcal",
-      "avgPerLoggedDay": "trung bình mỗi ngày đủ bữa",
+      "avgPerLoggedDay": "trung bình mỗi ngày ghi nhận",
+      "avgPerCompleteDay": "trung bình mỗi ngày đủ bữa",
+      "days": "ngày",
+      "noCompleteDays": "Chưa có ngày nào ghi đủ — hãy tiếp tục ghi, hoặc chạm Tất cả.",
       "compositionLabel": "{macro} {pct}%",
       "macroCompositionAria": "Tỷ lệ macro",
       "consistency": {
@@ -992,7 +995,8 @@
       "over": "Vượt",
       "under": "Thiếu",
       "farOver": "Vượt nhiều",
-      "farUnder": "Thiếu nhiều"
+      "farUnder": "Thiếu nhiều",
+      "cheatDay": "Ngày xả"
     },
     "caloriesLogged": "kcal đã ghi",
     "mealReceiptsHint": "Những bữa ăn sẽ hiển thị ở đây",
@@ -1018,8 +1022,6 @@
     "modeSelector": {
       "title": "Bạn muốn ghi thế nào?",
       "button": "Chế độ",
-      "soon": "Sắp có",
-      "comingSoon": "Chế độ bữa xả sắp ra mắt",
       "normal": "Bình thường",
       "normalDesc": "Mô tả bữa ăn bằng lời của bạn",
       "cheat": "Bữa xả",
@@ -1028,6 +1030,33 @@
       "manualDesc": "Tìm món, nhập gram chính xác",
       "barcode": "Mã vạch",
       "barcodeDesc": "Quét sản phẩm đóng gói"
+    },
+    "cheatPlaceholder": "Buffet nướng Hàn, ăn hết mình luôn…",
+    "cheatIntensity": {
+      "label": "Bạn đã ăn nhiều cỡ nào?",
+      "helper": "Điều chỉnh mức ước tính",
+      "light": "Nhẹ",
+      "medium": "Vừa",
+      "heavy": "Nhiều"
+    },
+    "cheatSliders": {
+      "badge": "Bữa xả",
+      "confirm": "Lưu bữa ăn",
+      "kcal": "kcal",
+      "alcohol": "cồn",
+      "between": "Giữa {low} và {high}"
+    },
+    "cheatRepeat": {
+      "title": "Ghi lại lần nữa"
+    },
+    "cheatMealCard": {
+      "badge": "Bữa xả",
+      "remove": "Xóa",
+      "toggleDetails": "Bật/tắt chi tiết bữa ăn",
+      "total": "Tổng",
+      "youSet": "Bạn đã chọn",
+      "alcoholShort": "Cồn",
+      "reassurance": "Một bữa ăn chỉ là sai số nhỏ trên hành trình của bạn — kế hoạch ngày mai không đổi."
     },
     "barcode": {
       "title": "Quét mã vạch",
@@ -1393,6 +1422,35 @@
       "region": "Khu vực & ngôn ngữ",
       "notSet": "Chưa thiết lập",
       "pacePerWeek": "{pace} {unit}/tuần"
+    },
+    "feedback": {
+      "groupLabel": "Góp ý",
+      "rowLabel": "Gửi góp ý",
+      "rowSubline": "Báo lỗi, yêu cầu nguyên liệu, hoặc chia sẻ ý tưởng",
+      "title": "Gửi góp ý",
+      "description": "Gặp lỗi, thiếu nguyên liệu, hay có ý tưởng? Góp ý sẽ đến thẳng đội ngũ.",
+      "typeLabel": "Bạn muốn góp ý về điều gì?",
+      "types": {
+        "bug": "Lỗi",
+        "ingredient": "Nguyên liệu",
+        "idea": "Ý tưởng"
+      },
+      "messageLabel": "Nội dung",
+      "placeholder": {
+        "bug": "Điều gì đã xảy ra? Bạn mong đợi điều gì?",
+        "ingredient": "Nguyên liệu hoặc món ăn nào đang thiếu?",
+        "idea": "Điều gì sẽ giúp Nhẩm tốt hơn cho bạn?"
+      },
+      "addScreenshot": "Thêm ảnh chụp màn hình",
+      "removeScreenshot": "Bỏ ảnh chụp màn hình",
+      "screenshotTooLarge": "Ảnh vượt quá 5 MB. Vui lòng chọn ảnh nhỏ hơn.",
+      "photoPermission": "Nhẩm cần quyền truy cập ảnh để đính kèm ảnh chụp màn hình. Hãy bật trong Cài đặt.",
+      "submit": "Gửi góp ý",
+      "successTitle": "Cảm ơn — chúng tôi đã nhận được",
+      "successBody": "Góp ý của bạn đã đến đội ngũ. Chúng tôi đọc từng góp ý một.",
+      "done": "Xong",
+      "sendAnother": "Gửi thêm góp ý",
+      "error": "Không thể gửi góp ý. Vui lòng thử lại."
     },
     "about": {
       "title": "Giới thiệu",

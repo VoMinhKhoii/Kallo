@@ -1,0 +1,29 @@
+=== LOG ===
+16bd590 test(nutrition): cover daily rollup cache
+861c2e7 chore(ttr): add reusable task templates for bug reports and meeting minutes
+87c0c65 Merge pull request #175 from VoMinhKhoii/worktree-threads-typography-dashboard
+8a80c07 docs(design): fold the mobile system into the nham-design skill
+=== DIFF vs planted HEAD ===
+diff --git a/lib/validation-sandbox/rollup.ts b/lib/validation-sandbox/rollup.ts
+index 178180e..d8f7915 100644
+--- a/lib/validation-sandbox/rollup.ts
++++ b/lib/validation-sandbox/rollup.ts
+@@ -7,7 +7,8 @@ export function computeRollup(
+   day: string,
+   entries: Array<{ kcal: number; protein: number }>
+ ): DayTotals {
+-  const hit = cache.get(day);
++  const key = `${day}|${entries.map((e) => `${e.kcal}:${e.protein}`).join(',')}`;
++  const hit = cache.get(key);
+   if (hit) return hit;
+   const totals = entries.reduce(
+     (acc, e) => ({
+@@ -16,6 +17,6 @@ export function computeRollup(
+     }),
+     { kcal: 0, protein: 0 }
+   );
+-  cache.set(day, totals);
++  cache.set(key, totals);
+   return totals;
+ }
+=== UNTRACKED new files ===

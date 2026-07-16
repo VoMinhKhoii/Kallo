@@ -134,7 +134,10 @@
     "grid": {
       "eyebrow": "Micronutrients",
       "title": "Micronutrient coverage",
-      "description": "Use these cards to see which nutrients look adequate, which need more data, and which have source-specific caveats."
+      "description": "Use these cards to see which nutrients look adequate, which need more data, and which have source-specific caveats.",
+      "vitamins": "Vitamins",
+      "minerals": "Minerals",
+      "sourceNote": "Targets from WHO/FAO · Vietnam RDA · NASEM DRI reference intakes."
     },
     "more": {
       "show": "Show more nutrients",
@@ -876,7 +879,6 @@
     "consistency": "Consistency",
     "weeklyAverage": "Weekly average",
     "target": "Target",
-    "weekOf": "Week of",
     "save": "Save",
     "saving": "Saving…",
     "retry": "Try again",
@@ -903,7 +905,8 @@
     },
     "mealTrigger": {
       "close": "Close meal composer",
-      "send": "Send meal"
+      "send": "Send meal",
+      "analyzing": "Analyzing your meal…"
     },
     "weightCard": {
       "required": "Weight is required",
@@ -921,7 +924,6 @@
       "saveFailed": "Failed to save weight"
     },
     "adherenceHeatmap": {
-      "onTrack": "{percent}% on track",
       "notLogged": "Not logged",
       "partial": "Partial day (under-logged)",
       "cheatDay": "Cheat day",
@@ -939,29 +941,11 @@
       "farUnder": "Far under"
     },
     "caloriesLogged": "kcal logged",
-    "weeklyAccumulator": "This week: {consumed} / {target} kcal",
     "mealReceiptsHint": "Your meal receipts will show up here",
-    "progressStatus": {
-      "insufficient": {
-        "label": "Tracking started",
-        "detail": "Log tomorrow to see your trend."
-      },
-      "on_pace": {
-        "label": "On pace",
-        "detail": "Your current pace is matching the plan."
-      },
-      "ahead": {
-        "label": "Ahead of plan",
-        "detail": "Progress is moving faster than expected."
-      },
-      "behind": {
-        "label": "Needs attention",
-        "detail": "The trend is softer than the plan right now."
-      },
-      "stable": {
-        "label": "Stable",
-        "detail": "Your weight is staying within a quiet maintenance band."
-      }
+    "streaming": {
+      "saved": "Meal saved",
+      "undo": "Undo",
+      "dismiss": "Dismiss"
     }
   },
   "logging": {
@@ -1180,7 +1164,16 @@
     "page": {
       "title": "Your circle",
       "subtitle": "What your friends are eating today.",
-      "addFriend": "Add friend"
+      "addFriend": "Add friend",
+      "friendsNoMealToday": "None of your friends have shared a meal yet.",
+      "groupNoMealToday": "No one in {name} has shared a meal today.",
+      "groupsSectionTitle": "Groups",
+      "friendsSectionTitle": "Friends",
+      "newFoodLog": "New food log"
+    },
+    "noThreadSelected": {
+      "title": "Select a thread",
+      "subtitle": "Pick a friend or group on the left to see their shared meals."
     },
     "empty": {
       "title": "Your circle is quiet",
@@ -1189,9 +1182,10 @@
     },
     "wall": {
       "sharedAt": "Shared at {time}",
-      "toggleDetails": "Toggle meal details",
-      "total": "Total",
       "loading": "Loading your circle",
+      "loadingMore": "Loading earlier days…",
+      "todayLabel": "Today",
+      "yesterdayLabel": "Yesterday",
       "na": "N/A",
       "you": "You",
       "presenceLabel": "Who's in your circle",
@@ -1253,6 +1247,8 @@
     "invite": {
       "title": "Invite to your circle",
       "description": "Share your link. Anyone who opens it can connect with you.",
+      "tabAddFriend": "Add friend",
+      "tabCreateGroup": "Create group",
       "yourLink": "Your invite link",
       "hint": "Anyone with this link can connect with you.",
       "copy": "Copy",
@@ -1274,6 +1270,19 @@
       "appearSaved": "Display name updated",
       "appearError": "Couldn't update your name",
       "appearFallback": "Set a display name"
+    },
+    "createGroup": {
+      "title": "Create a group",
+      "description": "Name it and add members from your circle.",
+      "nameLabel": "Group name",
+      "namePlaceholder": "e.g. Weekend hikers",
+      "membersLabel": "Add members",
+      "membersCount": "{count} selected",
+      "noFriends": "Add friends first — you can only add people already in your circle.",
+      "submit": "Create group",
+      "creating": "Creating…",
+      "created": "Group created",
+      "createError": "Couldn't create the group. Try again."
     },
     "circle": {
       "title": "Your circle ({count})",
@@ -1331,7 +1340,34 @@
       "bodyMetrics": "Goal & metrics",
       "regional": "Region & language",
       "cooking": "Cooking",
-      "account": "Account"
+      "account": "Account",
+      "feedback": "Feedback"
+    },
+    "feedback": {
+      "title": "Send feedback",
+      "description": "Found a bug, missing an ingredient, or have an idea? Tell us — it goes straight to the team.",
+      "typeLabel": "What's this about?",
+      "types": {
+        "bug": "Bug",
+        "ingredient": "Ingredient",
+        "idea": "Idea"
+      },
+      "messageLabel": "Your message",
+      "placeholder": {
+        "bug": "What went wrong? What did you expect to happen?",
+        "ingredient": "Which ingredient or food is missing?",
+        "idea": "What would make Nhẩm better for you?"
+      },
+      "addScreenshot": "Add a screenshot",
+      "removeScreenshot": "Remove screenshot",
+      "screenshotTooLarge": "That image is over 5 MB. Please pick a smaller one.",
+      "submit": "Send feedback",
+      "submitting": "Sending…",
+      "successTitle": "Thanks — we got it",
+      "successBody": "Your feedback is with the team. We read every one.",
+      "sendAnother": "Send more feedback",
+      "error": "Couldn't send your feedback. Please try again.",
+      "rateLimitError": "You've sent a lot of feedback just now. Please wait a little while and try again."
     },
     "account": {
       "title": "Account",

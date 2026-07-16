@@ -16,16 +16,16 @@ interface MacroBarsProps {
 
 export function MacroBars({ items }: MacroBarsProps) {
   return (
-    <div className="flex flex-1 flex-col justify-center gap-3.5">
+    <div className="flex flex-col gap-2.5">
       {items.map(({ label, current, target, color, unit = 'g' }, idx) => {
         const pct =
           target > 0 ? Math.max(0, Math.min((current / target) * 100, 100)) : 0;
         return (
           <div key={label} className="flex items-center gap-3">
-            <span className="w-12 font-bold text-[9px] text-nham-stone uppercase tracking-widest">
+            <span className="w-16 font-medium text-nham-text text-xs uppercase tracking-[0.08em]">
               {label}
             </span>
-            <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-nham-track">
+            <div className="h-2 flex-1 overflow-hidden rounded-full bg-nham-track">
               <motion.div
                 className="h-full rounded-full"
                 style={{ backgroundColor: color }}
@@ -38,7 +38,7 @@ export function MacroBars({ items }: MacroBarsProps) {
                 }}
               />
             </div>
-            <span className="w-[52px] text-right font-mono text-[10px] text-nham-stone tabular-nums">
+            <span className="w-[68px] text-right text-nham-text text-xs tabular-nums">
               {Math.round(current)}/{target}
               {unit}
             </span>

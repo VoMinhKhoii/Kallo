@@ -225,6 +225,7 @@ export function DesktopSidebar({
   return (
     <aside
       aria-label={t('navigationLabel')}
+      data-app-sidebar=""
       data-collapsed={collapsed ? 'true' : 'false'}
       onPointerEnter={onPointerEnter}
       onPointerLeave={handlePointerLeave}
@@ -232,7 +233,7 @@ export function DesktopSidebar({
       onBlurCapture={handleFocusLeave}
       onClick={handleAsideClick}
       className={cn(
-        'sticky top-3 flex h-[calc(100vh-1.5rem)] shrink-0 flex-col rounded-xl border border-nham-border/60 bg-white shadow-nham-text/[0.03] shadow-sm transition-[width] duration-[220ms] ease-out',
+        'sticky top-3 flex h-[calc(100vh-1.5rem)] shrink-0 flex-col rounded-xl border border-nham-border/60 bg-white shadow-nham-text/[0.03] shadow-sm transition-[width,opacity,filter] duration-[220ms] ease-out',
         collapsed ? COLLAPSED_WIDTH : EXPANDED_WIDTH,
         pinnedCollapsed && collapsed && 'cursor-pointer'
       )}

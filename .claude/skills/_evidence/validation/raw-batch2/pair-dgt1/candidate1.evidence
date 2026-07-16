@@ -1,0 +1,477 @@
+=== LOG ===
+861c2e7 chore(ttr): add reusable task templates for bug reports and meeting minutes
+87c0c65 Merge pull request #175 from VoMinhKhoii/worktree-threads-typography-dashboard
+8a80c07 docs(design): fold the mobile system into the nham-design skill
+=== STATUS ===
+ M components/logging/input/barcode-product-step.tsx
+ M components/logging/input/barcode-scanner-dialog.tsx
+ M lib/actions/__tests__/barcode.test.ts
+ M lib/actions/barcode.ts
+ M lib/barcode/openfoodfacts.ts
+ M lib/db/schema.ts
+ M messages/en.json
+ M messages/vi.json
+?? supabase/migrations/20260705120000_add_barcode_serving_overrides.sql
+=== DIFF (working tree vs planted HEAD) ===
+diff --git a/components/logging/input/barcode-product-step.tsx b/components/logging/input/barcode-product-step.tsx
+index 8f451d6..1db15e2 100644
+--- a/components/logging/input/barcode-product-step.tsx
++++ b/components/logging/input/barcode-product-step.tsx
+@@ -1,8 +1,13 @@
+ 'use client';
+ 
+-import { ArrowLeft, Loader2, Minus, Plus } from 'lucide-react';
++import { ArrowLeft, Loader2, Minus, Pencil, Plus } from 'lucide-react';
+ import { useTranslations } from 'next-intl';
+ import { useMemo, useState } from 'react';
++import { toast } from 'sonner';
++import {
++  deleteBarcodeServingOverrideAction,
++  saveBarcodeServingOverrideAction,
++} from '@/lib/actions/barcode';
+ import { MAX_FOOD_ITEM_GRAMS } from '@/lib/barcode/constants';
+ import type { ParsedBarcodeProduct } from '@/lib/barcode/openfoodfacts';
+ 
+@@ -43,6 +48,9 @@ interface BarcodeProductStepProps {
+   onBack: () => void;
+   /** Called with the resolved gram amount to stage. */
+   onConfirm: (grams: number) => void;
++  /** Called when the user saves/clears their serving override, so the dialog's
++   *  cached product reflects it if the step is remounted (e.g. back + forward). */
++  onProductChange?: (next: ParsedBarcodeProduct) => void;
+ }
+ 
+ /** The "quantity" step of the barcode dialog. Lets the user pick an amount by
+@@ -57,37 +65,130 @@ export function BarcodeProductStep({
+   isStaging,
+   onBack,
+   onConfirm,
++  onProductChange,
+ }: BarcodeProductStepProps) {
+   const t = useTranslations('logging');
+-  const { servingSizeG, packageSizeG } = product;
++  const { servingSizeG: offServingSizeG, packageSizeG } = product;
+ 
+-  // Available modes, in priority order. Grams is always offered as a fallback.
++  // The user's remembered serving takes precedence over the OFF value. Held in
++  // local state so a save/clear reflects immediately without a re-scan.
++  const [override, setOverride] = useState<{
++    g: number;
++    label: string | null;
++  } | null>(
++    product.servingOverrideG !== null
++      ? { g: product.servingOverrideG, label: product.servingOverrideLabel }
++      : null
++  );
++
++  // Grams for one serving, preferring the user's override over the OFF value.
++  const effectiveServingG = override?.g ?? offServingSizeG;
++  const servingLabel = override?.label ?? null;
++
++  // Serving is always offered so the user can define + remember one even when
++  // OFF has no serving (e.g. a cookie sold by the piece). Package only when OFF
++  // provides a net quantity.
+   const modes = useMemo<AmountMode[]>(() => {
+-    const list: AmountMode[] = [];
+-    if (servingSizeG) list.push('serving');
++    const list: AmountMode[] = ['serving'];
+     if (packageSizeG) list.push('package');
+     list.push('grams');
+     return list;
+-  }, [servingSizeG, packageSizeG]);
++  }, [packageSizeG]);
+ 
+-  const [mode, setMode] = useState<AmountMode>(modes[0]);
++  const [mode, setMode] = useState<AmountMode>(
++    effectiveServingG ? 'serving' : packageSizeG ? 'package' : 'grams'
++  );
+   const [servings, setServings] = useState(1);
+   const [customGrams, setCustomGrams] = useState(
+-    clampGrams(Math.round(servingSizeG ?? packageSizeG ?? 100))
++    clampGrams(Math.round(effectiveServingG ?? packageSizeG ?? 100))
+   );
+ 
++  // Serving-override editor state. Seeded from the current serving (or a sane
++  // default) so opening it pre-fills what the user already has.
++  const [isEditingServing, setIsEditingServing] = useState(false);
++  const [editGrams, setEditGrams] = useState(
++    clampGrams(Math.round(effectiveServingG ?? offServingSizeG ?? 100))
++  );
++  const [editLabel, setEditLabel] = useState(servingLabel ?? '');
++  const [isSavingOverride, setIsSavingOverride] = useState(false);
++
+   const grams =
+-    mode === 'serving' && servingSizeG
+-      ? clampGrams(Math.round(servings * servingSizeG))
++    mode === 'serving' && effectiveServingG
++      ? clampGrams(Math.round(servings * effectiveServingG))
+       : mode === 'package' && packageSizeG
+         ? clampGrams(Math.round(packageSizeG))
+-        : clampGrams(customGrams);
++        : mode === 'grams'
++          ? clampGrams(customGrams)
++          : 0;
+ 
+   const adjustServings = (delta: number) =>
+     setServings((s) => Math.min(MAX_SERVINGS, Math.max(1, s + delta)));
+   const adjustGrams = (delta: number) =>
+     setCustomGrams((g) => clampGrams(g + delta));
+ 
++  const openServingEditor = () => {
++    setEditGrams(clampGrams(Math.round(effectiveServingG ?? 100)));
++    setEditLabel(servingLabel ?? '');
++    setIsEditingServing(true);
++  };
++
++  const handleSaveOverride = async () => {
++    setIsSavingOverride(true);
++    try {
++      const res = await saveBarcodeServingOverrideAction({
++        barcode: product.barcode,
++        servingSizeG: editGrams,
++        servingLabel: editLabel.trim() || undefined,
++      });
++      if (!res.success) {
++        toast.error(t(`barcodeError.${res.code}`));
++        return;
++      }
++      setOverride({ g: res.servingSizeG, label: res.servingLabel });
++      onProductChange?.({
++        ...product,
++        servingOverrideG: res.servingSizeG,
++        servingOverrideLabel: res.servingLabel,
++      });
++      setIsEditingServing(false);
++      setServings(1);
++      setMode('serving');
++      toast.success(t('barcodeServingSaved'));
++    } catch {
++      toast.error(t('barcodeError.server_error'));
++    } finally {
++      setIsSavingOverride(false);
++    }
++  };
++
++  const handleResetOverride = async () => {
++    setIsSavingOverride(true);
++    try {
++      const res = await deleteBarcodeServingOverrideAction({
++        barcode: product.barcode,
++      });
++      if (!res.success) {
++        toast.error(t(`barcodeError.${res.code}`));
++        return;
++      }
++      setOverride(null);
++      onProductChange?.({
++        ...product,
++        servingOverrideG: null,
++        servingOverrideLabel: null,
++      });
++      setIsEditingServing(false);
++      setServings(1);
++      // Fall back to OFF serving if there is one, else grams.
++      setMode(offServingSizeG ? 'serving' : packageSizeG ? 'package' : 'grams');
++      toast.success(t('barcodeServingReset'));
++    } catch {
++      toast.error(t('barcodeError.server_error'));
++    } finally {
++      setIsSavingOverride(false);
++    }
++  };
++
+   const modeLabel: Record<AmountMode, string> = {
+     serving: t('barcodeAmountServing'),
+     package: t('barcodeAmountPackage'),
+@@ -150,53 +251,177 @@ export function BarcodeProductStep({
+           </div>
+         ) : null}
+ 
+-        {/* Amount control */}
+-        {mode === 'serving' && servingSizeG ? (
+-          <div className="space-y-2">
+-            <label htmlFor="servings-input" className={FIELD_LABEL}>
+-              {t('barcodeServingsLabel')}
+-            </label>
+-            <div className="flex items-center gap-2">
+-              <button
+-                type="button"
+-                onClick={() => adjustServings(-1)}
+-                disabled={servings <= 1}
+-                aria-label={t('barcodeDecreaseServings')}
+-                className={STEPPER_BTN}
+-              >
+-                <Minus className="h-4 w-4" />
+-              </button>
+-              <input
+-                id="servings-input"
+-                type="number"
+-                min="1"
+-                max={MAX_SERVINGS}
+-                value={servings}
+-                onChange={(e) =>
+-                  setServings(
+-                    Math.min(
+-                      MAX_SERVINGS,
+-                      Math.max(1, Number.parseInt(e.target.value, 10) || 1)
++        {/* Amount control — serving. Shows the stepper when a serving exists
++            (OFF or the user's own), otherwise the editor to define one. */}
++        {mode === 'serving' ? (
++          isEditingServing || !effectiveServingG ? (
++            <div className="space-y-3 rounded-[20px] border border-[#EAE7E0] bg-white p-4">
++              <div>
++                <span className="block font-bold font-sans-display text-[#2C2416] text-[13px]">
++                  {t('barcodeServingEditorTitle')}
++                </span>
++                <span className="mt-0.5 block font-sans-display text-[#8B8682] text-[12px] leading-snug">
++                  {t('barcodeServingEditorHint')}
++                </span>
++              </div>
++              <div className="space-y-1.5">
++                <label htmlFor="serving-grams-input" className={FIELD_LABEL}>
++                  {t('barcodeServingGramsLabel')}
++                </label>
++                <div className="flex items-center gap-2">
++                  <button
++                    type="button"
++                    onClick={() =>
++                      setEditGrams((g) => clampGrams(g - GRAM_STEP))
++                    }
++                    disabled={editGrams <= 1}
++                    aria-label={t('barcodeDecreaseGrams')}
++                    className={STEPPER_BTN}
++                  >
++                    <Minus className="h-4 w-4" />
++                  </button>
++                  <input
++                    id="serving-grams-input"
++                    type="number"
++                    min="1"
++                    max={MAX_GRAMS}
++                    value={editGrams}
++                    onChange={(e) =>
++                      setEditGrams(
++                        clampGrams(Number.parseInt(e.target.value, 10) || 0)
++                      )
++                    }
++                    className={NUMBER_INPUT}
++                  />
++                  <button
++                    type="button"
++                    onClick={() =>
++                      setEditGrams((g) => clampGrams(g + GRAM_STEP))
++                    }
++                    disabled={editGrams >= MAX_GRAMS}
++                    aria-label={t('barcodeIncreaseGrams')}
++                    className={STEPPER_BTN}
++                  >
++                    <Plus className="h-4 w-4" />
++                  </button>
++                </div>
++              </div>
++              <div className="space-y-1.5">
++                <label htmlFor="serving-label-input" className={FIELD_LABEL}>
++                  {t('barcodeServingLabelLabel')}{' '}
++                  <span className="font-medium font-sans-display text-[#8B8682] text-[12px]">
++                    {t('barcodeOptional')}
++                  </span>
++                </label>
++                <input
++                  id="serving-label-input"
++                  type="text"
++                  value={editLabel}
++                  maxLength={60}
++                  onChange={(e) => setEditLabel(e.target.value)}
++                  placeholder={t('barcodeServingLabelPlaceholder')}
++                  className="h-10 w-full rounded-lg border border-[#EAE7E0] bg-white px-3 font-sans-display text-[#2C2416] text-[14px] focus:border-[#C9A87C] focus:outline-none focus:ring-1 focus:ring-[#C9A87C]/40"
++                />
++              </div>
++              <div className="flex items-center gap-2 pt-1">
++                <button
++                  type="button"
++                  onClick={handleSaveOverride}
++                  disabled={isSavingOverride || editGrams <= 0}
++                  aria-busy={isSavingOverride}
++                  className="inline-flex touch-manipulation items-center justify-center gap-1.5 rounded-lg bg-[#2C2416] px-3.5 py-2 font-medium font-sans-display text-[#FDFCF8] text-[13px] transition-colors hover:bg-[#1C1917] disabled:opacity-50"
++                >
++                  {isSavingOverride ? (
++                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
++                  ) : null}
++                  {t('barcodeSaveServing')}
++                </button>
++                {effectiveServingG ? (
++                  <button
++                    type="button"
++                    onClick={() => setIsEditingServing(false)}
++                    disabled={isSavingOverride}
++                    className="rounded-lg px-3 py-2 font-medium font-sans-display text-[#8B8682] text-[13px] transition-colors hover:text-[#2C2416] disabled:opacity-50"
++                  >
++                    {t('barcodeCancel')}
++                  </button>
++                ) : null}
++                {override ? (
++                  <button
++                    type="button"
++                    onClick={handleResetOverride}
++                    disabled={isSavingOverride}
++                    className="ml-auto rounded-lg px-3 py-2 font-medium font-sans-display text-[13px] text-nham-danger/80 transition-colors hover:text-nham-danger disabled:opacity-50"
++                  >
++                    {t('barcodeResetServing')}
++                  </button>
++                ) : null}
++              </div>
++            </div>
++          ) : (
++            <div className="space-y-2">
++              <div className="flex items-center justify-between gap-2">
++                <label htmlFor="servings-input" className={FIELD_LABEL}>
++                  {t('barcodeServingsLabel')}
++                </label>
++                <button
++                  type="button"
++                  onClick={openServingEditor}
++                  className="inline-flex touch-manipulation items-center gap-1 font-medium font-sans-display text-[#8B8682] text-[12px] transition-colors hover:text-[#2C2416]"
++                >
++                  <Pencil className="h-3 w-3" />
++                  {override ? t('barcodeEditServing') : t('barcodeSetServing')}
++                </button>
++              </div>
++              <div className="flex items-center gap-2">
++                <button
++                  type="button"
++                  onClick={() => adjustServings(-1)}
++                  disabled={servings <= 1}
++                  aria-label={t('barcodeDecreaseServings')}
++                  className={STEPPER_BTN}
++                >
++                  <Minus className="h-4 w-4" />
++                </button>
++                <input
++                  id="servings-input"
++                  type="number"
++                  min="1"
++                  max={MAX_SERVINGS}
++                  value={servings}
++                  onChange={(e) =>
++                    setServings(
++                      Math.min(
++                        MAX_SERVINGS,
++                        Math.max(1, Number.parseInt(e.target.value, 10) || 1)
++                      )
+                     )
+-                  )
+-                }
+-                className={NUMBER_INPUT}
+-              />
+-              <button
+-                type="button"
+-                onClick={() => adjustServings(1)}
+-                disabled={servings >= MAX_SERVINGS}
+-                aria-label={t('barcodeIncreaseServings')}
+-                className={STEPPER_BTN}
+-              >
+-                <Plus className="h-4 w-4" />
+-              </button>
++                  }
++                  className={NUMBER_INPUT}
++                />
++                <button
++                  type="button"
++                  onClick={() => adjustServings(1)}
++                  disabled={servings >= MAX_SERVINGS}
++                  aria-label={t('barcodeIncreaseServings')}
++                  className={STEPPER_BTN}
++                >
++                  <Plus className="h-4 w-4" />
++                </button>
++              </div>
++              <span className="block font-sans-display text-[#8B8682] text-[12px] tabular-nums">
++                {servingLabel
++                  ? `${servingLabel} · ${t('barcodePerServing', { grams: effectiveServingG })}`
++                  : t('barcodePerServing', { grams: effectiveServingG })}{' '}
++                · {t('barcodeTotalGrams', { grams })}
++                {override ? (
++                  <span className="ml-1 font-medium text-[#C9A87C]">
++                    · {t('barcodeMyServingBadge')}
++                  </span>
++                ) : null}
++              </span>
+             </div>
+-            <span className="block font-sans-display text-[#8B8682] text-[12px] tabular-nums">
+-              {t('barcodePerServing', { grams: servingSizeG })} ·{' '}
+-              {t('barcodeTotalGrams', { grams })}
+-            </span>
+-          </div>
++          )
+         ) : null}
+ 
+         {mode === 'package' && packageSizeG ? (
+diff --git a/components/logging/input/barcode-scanner-dialog.tsx b/components/logging/input/barcode-scanner-dialog.tsx
+index 5f63bae..5a32b64 100644
+--- a/components/logging/input/barcode-scanner-dialog.tsx
++++ b/components/logging/input/barcode-scanner-dialog.tsx
+@@ -359,6 +359,7 @@ export function BarcodeScannerDialog({
+             isStaging={isStaging}
+             onBack={() => setStep('input')}
+=== NEW FILES ===
+--- supabase/migrations/20260705120000_add_barcode_serving_overrides.sql ---
+-- Per-user serving-size overrides for scanned barcode products.
+--
+-- The product cache (vietnamese_food_composition, id `off_<barcode>`) is global
+-- and shared, so it cannot store a personal serving. This table remembers each
+-- user's own serving definition for a product — e.g. "one serving of this
+-- cookie is 2 pieces = 22g" — which the barcode amount picker uses in place of
+-- (or in the absence of) the Open Food Facts serving size.
+--
+-- Additive and idempotent; safe to re-run. Dropping this table fully reverts
+-- the feature without touching any existing data.
+
+CREATE TABLE IF NOT EXISTS "barcode_serving_overrides" (
+	"user_id" uuid NOT NULL,
+	"food_composition_id" text NOT NULL,
+	"serving_size_g" numeric NOT NULL,
+	"serving_label" text,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
+	CONSTRAINT "barcode_serving_overrides_pkey" PRIMARY KEY ("user_id", "food_composition_id"),
+	CONSTRAINT "barcode_serving_overrides_size_positive" CHECK ("serving_size_g" > 0)
+);
+
+DO $$ BEGIN
+	ALTER TABLE "barcode_serving_overrides"
+		ADD CONSTRAINT "barcode_serving_overrides_user_id_users_id_fk"
+		FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE cascade ON UPDATE no action;
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+
+DO $$ BEGIN
+	ALTER TABLE "barcode_serving_overrides"
+		ADD CONSTRAINT "barcode_serving_overrides_food_composition_id_fk"
+		FOREIGN KEY ("food_composition_id") REFERENCES "public"."vietnamese_food_composition"("id") ON DELETE cascade ON UPDATE no action;
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+
+-- RLS: an override is strictly private to its owner. Every operation is scoped
+-- to the calling user (the Drizzle path additionally filters by user_id; these
+-- policies protect the PostgREST/anon-key path).
+ALTER TABLE "barcode_serving_overrides" ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Owner can view own serving overrides" ON "barcode_serving_overrides";
+CREATE POLICY "Owner can view own serving overrides"
+	ON "barcode_serving_overrides" FOR SELECT
+	TO authenticated
+	USING (user_id = auth.uid());
+
+DROP POLICY IF EXISTS "Owner can insert own serving overrides" ON "barcode_serving_overrides";
+CREATE POLICY "Owner can insert own serving overrides"
+	ON "barcode_serving_overrides" FOR INSERT
+	TO authenticated
+	WITH CHECK (user_id = auth.uid());
+
+DROP POLICY IF EXISTS "Owner can update own serving overrides" ON "barcode_serving_overrides";
+CREATE POLICY "Owner can update own serving overrides"
+	ON "barcode_serving_overrides" FOR UPDATE
+	TO authenticated
+	USING (user_id = auth.uid())
+	WITH CHECK (user_id = auth.uid());
+
+DROP POLICY IF EXISTS "Owner can delete own serving overrides" ON "barcode_serving_overrides";

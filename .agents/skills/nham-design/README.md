@@ -76,7 +76,7 @@ The product is bilingual (`en` / `vi`) using `next-intl`. Every string in the ru
 
 **Type system.** Two typefaces, doing very different jobs.
 - **Lora** (serif) — every headline, every number bigger than 18px, every quoted meal string, every "feature" title. Always *normal weight* (`font-weight: 400` or `300`); never bold. The signature move is the second clause of a headline rendered in **italic + light + tan** (`#c9a87c`, weight 300, italic) — `Track Vietnamese meals` / *`without the guesswork`*.
-- **DM Sans** (sans-serif) — every button, every label, every paragraph below 18px, every uppercase eyebrow, every tabular macro number. Weights used: 400 / 500 / 600 / 700.
+- **Be Vietnam Pro** (sans-serif) — every button, every label, every paragraph below 18px, every uppercase eyebrow, every tabular macro number. Weights used: 400 / 500 / 600 / 700. (It replaced DM Sans as the primary UI sans web-wide — near-identical geometry with full Vietnamese diacritic coverage; DM Sans survives only as a legacy fallback in old mocks.)
 - Numbers are always **tabular** (`font-variant-numeric: tabular-nums`) so totals don't jitter.
 
 **Color.** A single warm palette anchored by `#c9a87c` (the "Nhẩm tan" accent), `#2c2416` (espresso text), `#8b7355` (warm taupe muted), `#e8d5b5` (biscotti border). Macros are *not* a separate palette — protein = the tan accent, carbs = the taupe muted, fat = a cool stone gray. Status colors are deliberately warm: success is a leafy sage (`#7ca368`), danger is terracotta (`#d37b69`). **No pure red, no pure green, no electric blue, no purple gradients, ever.**
@@ -85,17 +85,17 @@ The product is bilingual (`en` / `vi`) using `next-intl`. Every string in the ru
 
 **Borders.** Almost everything is a hairline (`1px solid #e8d5b5` or that color at 60% / 40% opacity). Borders are *softer* than backgrounds — `var(--nham-border)` always blends slightly. The product almost never uses a thick or accent-colored border. Inputs gain an `border: 1px solid var(--nham-accent)/40` on focus-within, paired with a tan-tinted shadow.
 
-**Corner radii.** Generously rounded but never circular:
-- 10 (`--radius-lg`) — inputs, small buttons
-- 14 (`--radius-xl`) — chips, suggestion pills
-- 18 (`--radius-2xl`) — most cards, meal entries
-- 22 (`--radius-3xl`) — feature panels, the "Today" dock
-- 26 (`--radius-4xl`) — the hero phone bezel
+**Corner radii.** Rounded but never circular — the family sits on Anthropic's 4/6/8/12/16 scale (base `--radius: 0.5rem`):
+- 8 (`--radius-lg`) — inputs, small buttons
+- 12 (`--radius-xl`) — chips, suggestion pills
+- 16 (`--radius-2xl`) — most cards, meal entries
+- 20 (`--radius-3xl`) — feature panels, the "Today" dock
+- 24 (`--radius-4xl`) — the hero phone bezel
 - `9999px` — avatar circles, the floating meal trigger pill, the input bar's submit button
 
 Submit buttons inside input bars are a **smaller, slightly square** rounded rect (`rounded-lg`), not a circle — see `meal-input.tsx`. This is intentional and consistent across logging and dashboard.
 
-**Shadows.** Always tinted with the espresso text color (`rgba(44, 36, 22, 0.04–0.08)`) so they don't read cold on cream. The one exception is the hero phone mockup, which uses a tan-tinted shadow (`rgba(201, 168, 124, 0.25)`) for a sunlit warmth. Card shadows are **almost imperceptible** — the product leans on borders for separation, not elevation.
+**Shadows.** Minimal-shadow philosophy (per Anthropic): depth comes from surface color-blocking (cream ↔ white ↔ ink) and hairline borders — shadows only confirm it. Always tinted with the espresso text color (`rgba(44, 36, 22, 0.04–0.14)`) so they don't read cold on cream; the canonical card shadow is `0 1px 3px rgba(44, 36, 22, 0.08)`. The one exception is the hero phone mockup, which uses a tan-tinted shadow (`rgba(201, 168, 124, 0.25)`) for a sunlit warmth. Card shadows are **almost imperceptible** — the product leans on borders for separation, not elevation.
 
 **Animation.** Subtle, slow, mostly fades and short y-translations.
 - Mount: `opacity 0→1, y +20→0`, duration `0.6–1.0s`, `delay` staggered by index.
@@ -269,6 +269,20 @@ The logging timeline writes `P: 38g  C: 72g  F: 14g` — letter, colon, space, v
 
 ---
 
+## Dashboard discipline (hardened 2026-07)
+
+The web dashboard (`components/dashboard/*`) is locked to these rules. They exist as tokens, not conventions — reach for the token, don't invent a value.
+
+**Type — exactly three sizes.** `text-hero` (44px stat numbers; the `--text-hero` theme token in `app/globals.css` carries weight 500, line-height 1, −0.04em tracking), `text-sm` (14px body: meal names, inputs, empty states), `text-xs` (12px labels + meta: eyebrows, section headers, chart ticks, heatmap labels, legend, tooltips). No `text-lg`, no bracket sizes, no fourth step. Both stat heroes (calories remaining, current weight) are `text-hero` — never differently sized.
+
+**Ink — three colors.** Espresso `--nham-text` for numbers and primary copy, taupe `--nham-text-muted` for everything secondary, tan `--nham-accent` as the single highlight (flame, chart line, focus rings). White appears only on the umber `--nham-btn` CTAs; terracotta `--nham-danger` only on live validation errors. Data-viz pigments (heatmap diverging scale, macro-bar gold/taupe/stone) are chart ink, not text ink — don't promote them.
+
+**Card chrome — one recipe.** `rounded-2xl border border-nham-border/60 bg-card p-4 shadow-nham-text/[0.03] shadow-sm` (the sidebar's crisp language) plus the shared hover: `transition-[border-color,box-shadow] duration-200 hover:border-nham-accent/50 hover:shadow-md hover:shadow-nham-text/[0.06]`. Inner elements are `rounded-xl`. No borderless floating-blob cards, no `rounded-[1.375rem]`, no 32px-blur shadows.
+
+**Section headers — one spec.** `font-medium text-xs uppercase tracking-[0.08em] text-nham-text-muted` on the left, a plain `text-xs` context label on the right (range, "Today"). Headers live outside the card.
+
+---
+
 ## Designing a new feature — the extrapolation rules
 
 When you add a feature that doesn't exist yet (Workouts, Sleep, Mood, Reminders, anything), don't generalize from "this is a Tailwind dashboard". And don't just rename meal-logging components either. **Find the feature's own mental model first, then borrow tokens to dress it.**
@@ -309,6 +323,6 @@ The same recipe extends to any new feature. If you're not sure where to start, m
 ## Caveats & open questions
 
 - **No real logo file ships in the repo.** The wordmark and "Nh" mark in `assets/` are reproductions typeset in Lora. If you have an official mark, drop it in.
-- **Fonts are loaded from Google Fonts** (Lora + DM Sans, both exact matches to the production `next/font` setup). The repo also uses `Geist Sans` and `Geist Mono` via `next/font` for utility text — neither is used in the visible UI we recreated, so we did not include them here. If you specifically need Geist, please confirm.
+- **Fonts are loaded from Google Fonts** (Lora + Be Vietnam Pro, both exact matches to the production `next/font` setup; DM Sans is kept in the import only for older mocks that still reference it). The repo also uses `Geist Mono` via `next/font` for utility text — not used in the visible UI we recreated. If you specifically need Geist, please confirm.
 - **Photography direction is undocumented in the source repo** — the product has no images. The guidance above is inferred from the warm palette and is offered as a starting point, not a rule.
 - **Dark mode tokens are real** (the repo defines a full `.dark` block) but the running product appears to ship light-mode only. The dark palette in `colors_and_type.css` is preserved verbatim; treat it as untested.

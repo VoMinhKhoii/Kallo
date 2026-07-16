@@ -511,7 +511,10 @@
     "rhythm": {
       "eyebrow": "The shape of your days",
       "calories": "kcal",
-      "avgPerLoggedDay": "avg per complete day",
+      "avgPerLoggedDay": "avg per logged day",
+      "avgPerCompleteDay": "avg per complete day",
+      "days": "days",
+      "noCompleteDays": "No fully-logged days yet — keep logging, or tap All.",
       "compositionLabel": "{macro} {pct}%",
       "macroCompositionAria": "Macro composition",
       "consistency": {
@@ -992,7 +995,8 @@
       "over": "Over",
       "under": "Under",
       "farOver": "Far over",
-      "farUnder": "Far under"
+      "farUnder": "Far under",
+      "cheatDay": "Cheat day"
     },
     "caloriesLogged": "kcal logged",
     "mealReceiptsHint": "Your meal receipts will show up here",
@@ -1018,8 +1022,6 @@
     "modeSelector": {
       "title": "How do you want to log?",
       "button": "Mode",
-      "soon": "Soon",
-      "comingSoon": "Cheat meal mode is coming soon",
       "normal": "Normal",
       "normalDesc": "Describe a meal in your own words",
       "cheat": "Cheat meal",
@@ -1028,6 +1030,33 @@
       "manualDesc": "Search foods, enter exact grams",
       "barcode": "Barcode",
       "barcodeDesc": "Scan a packaged product"
+    },
+    "cheatPlaceholder": "Korean BBQ buffet, went all out…",
+    "cheatIntensity": {
+      "label": "How much did you eat?",
+      "helper": "Scales the estimate",
+      "light": "Light",
+      "medium": "Medium",
+      "heavy": "Heavy"
+    },
+    "cheatSliders": {
+      "badge": "Cheat meal",
+      "confirm": "Save meal",
+      "kcal": "kcal",
+      "alcohol": "alcohol",
+      "between": "Between {low} and {high}"
+    },
+    "cheatRepeat": {
+      "title": "Log it again"
+    },
+    "cheatMealCard": {
+      "badge": "Cheat meal",
+      "remove": "Remove",
+      "toggleDetails": "Toggle meal details",
+      "total": "Total",
+      "youSet": "You set",
+      "alcoholShort": "Alc",
+      "reassurance": "One meal is a rounding error on your trend — tomorrow's plan is unchanged."
     },
     "barcode": {
       "title": "Scan barcode",
@@ -1393,6 +1422,35 @@
       "region": "Region & language",
       "notSet": "Not set",
       "pacePerWeek": "{pace} {unit}/wk"
+    },
+    "feedback": {
+      "groupLabel": "Feedback",
+      "rowLabel": "Send feedback",
+      "rowSubline": "Report a bug, request an ingredient, or share an idea",
+      "title": "Send feedback",
+      "description": "Found a bug, missing an ingredient, or have an idea? It goes straight to the team.",
+      "typeLabel": "What's this about?",
+      "types": {
+        "bug": "Bug",
+        "ingredient": "Ingredient",
+        "idea": "Idea"
+      },
+      "messageLabel": "Your message",
+      "placeholder": {
+        "bug": "What went wrong? What did you expect to happen?",
+        "ingredient": "Which ingredient or food is missing?",
+        "idea": "What would make Nhẩm better for you?"
+      },
+      "addScreenshot": "Add a screenshot",
+      "removeScreenshot": "Remove screenshot",
+      "screenshotTooLarge": "That image is over 5 MB. Please pick a smaller one.",
+      "photoPermission": "Nhẩm needs photo access to attach a screenshot. Enable it in Settings.",
+      "submit": "Send feedback",
+      "successTitle": "Thanks — we got it",
+      "successBody": "Your feedback is with the team. We read every one.",
+      "done": "Done",
+      "sendAnother": "Send more feedback",
+      "error": "Couldn't send your feedback. Please try again."
     },
     "about": {
       "title": "About",

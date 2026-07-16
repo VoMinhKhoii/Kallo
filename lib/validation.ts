@@ -153,6 +153,33 @@ export const dismissMealShareInviteSchema = z.object({
   inviteId: uuidSchema,
 });
 
+/** Seek-paginated cursor shared by the friend/group thread history feeds —
+ * strictly-older-than a prior page's oldest `sharedAt`, omitted for page 1. */
+const beforeCursorSchema = z.string().datetime().optional();
+
+/** Fetch the combined Friends thread's shared-meal history (every accepted
+ * friend, merged, excluding the actor), newest-first, paginated. */
+export const friendsThreadFeedSchema = z.object({
+  before: beforeCursorSchema,
+});
+
+/** Create a named group chat from a multi-select of the actor's friends. */
+export const createChatGroupSchema = z.object({
+  name: z.string().trim().min(1, 'Tên nhóm không được để trống.').max(60),
+  memberUserIds: z.array(uuidSchema).min(1, 'Chọn ít nhất một thành viên.'),
+});
+
+export const sendChatGroupMessageSchema = z.object({
+  groupId: uuidSchema,
+  body: z.string().trim().min(1).max(2000),
+});
+
+/** Fetch a group thread's shared-meal history, newest-first, paginated. */
+export const groupMealFeedSchema = z.object({
+  groupId: uuidSchema,
+  before: beforeCursorSchema,
+});
+
 export type HandleInput = z.infer<typeof handleSchema>;
 export type UpsertPublicProfileInput = z.infer<
   typeof upsertPublicProfileSchema
