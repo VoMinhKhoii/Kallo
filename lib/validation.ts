@@ -166,7 +166,12 @@ export const friendsThreadFeedSchema = z.object({
 /** Create a named group chat from a multi-select of the actor's friends. */
 export const createChatGroupSchema = z.object({
   name: z.string().trim().min(1, 'Tên nhóm không được để trống.').max(60),
-  memberUserIds: z.array(uuidSchema).min(1, 'Chọn ít nhất một thành viên.'),
+  // Capped so the per-member friendship fan-out (one query each) can't be
+  // driven to exhaust the connection pool with a large UUID list.
+  memberUserIds: z
+    .array(uuidSchema)
+    .min(1, 'Chọn ít nhất một thành viên.')
+    .max(50, 'Nhóm tối đa 50 thành viên.'),
 });
 
 export const sendChatGroupMessageSchema = z.object({

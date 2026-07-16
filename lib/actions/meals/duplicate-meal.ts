@@ -94,6 +94,10 @@ export async function duplicateMealAction(input: {
         loggedAt,
         entryMode: 'precise',
         alcoholG: source.alcoholG,
+        // Item rows are copied verbatim, so a fractional source stays
+        // fractional — carry its portion_factor or the copy would be
+        // mislabeled as a full portion and become re-splittable.
+        portionFactor: source.portionFactor,
         ...nutritionValuesToRow(mealNutrition),
       })
       .returning({ id: meals.id });
@@ -156,6 +160,7 @@ export async function duplicateMealAction(input: {
       cheatSliders: null,
       // Shared to circle by default (see the meal_shares insert above).
       share,
+      portionFactor: source.portionFactor,
     });
 
     return { mealId: meal.id, meal: savedMeal };

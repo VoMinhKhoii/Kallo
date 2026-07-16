@@ -393,7 +393,15 @@ describe('listMyChatGroups', () => {
   });
 
   it('resolves a direct chat title to the OTHER member, not the actor', async () => {
-    friendsBackfillQuery([]);
+    // The counterpart must be a current accepted friend or the direct chat is
+    // gated out of the list (removed/blocked friends' chats don't surface).
+    friendsBackfillQuery([{ userLow: LOW, userHigh: HIGH }]);
+    mockDbInsert.mockImplementation(() => ({
+      values: vi.fn().mockReturnValue({
+        onConflictDoNothing: vi.fn().mockResolvedValue(undefined),
+      }),
+    }));
+    mockDbSelect.mockReturnValueOnce(selectRows([{ id: DIRECT_GROUP_ID }]));
     myGroupsQuery([
       {
         id: DIRECT_GROUP_ID,
@@ -402,6 +410,8 @@ describe('listMyChatGroups', () => {
         avatarSeed: null,
         updatedAt: new Date('2026-01-01T01:00:00Z'),
         lastReadAt: new Date('2026-01-01T01:00:00Z'),
+        directUserLow: LOW,
+        directUserHigh: HIGH,
       },
     ]);
     otherMemberQuery([
@@ -420,6 +430,30 @@ describe('listMyChatGroups', () => {
     expect(entry.title).toBe('Phở Fan');
     expect(entry.lastMessagePreview).toBeNull();
     expect(entry.unread).toBe(false);
+  });
+
+  it('hides a direct chat whose counterpart is no longer an accepted friend', async () => {
+    // Membership row survives a remove/block, but with no accepted friendship
+    // the direct chat must not appear (matching requireMembership's gate).
+    friendsBackfillQuery([]); // no accepted friends
+    myGroupsQuery([
+      {
+        id: DIRECT_GROUP_ID,
+        kind: 'direct',
+        name: null,
+        avatarSeed: null,
+        updatedAt: new Date('2026-01-01T01:00:00Z'),
+        lastReadAt: new Date('2026-01-01T01:00:00Z'),
+        directUserLow: LOW,
+        directUserHigh: HIGH,
+      },
+    ]);
+    // No direct groups survive the filter, so the other-member / message /
+    // meal queries never run — none are queued.
+
+    const result = await listMyChatGroups(USER_A, { timezoneOffset: 0 });
+
+    expect(result).toHaveLength(0);
   });
 
   it('backfills a direct chat for an accepted friend who never got one, so they still show up', async () => {
@@ -442,6 +476,8 @@ describe('listMyChatGroups', () => {
         avatarSeed: null,
         updatedAt: new Date('2026-01-01T01:00:00Z'),
         lastReadAt: new Date('2026-01-01T01:00:00Z'),
+        directUserLow: LOW,
+        directUserHigh: HIGH,
       },
     ]);
     otherMemberQuery([

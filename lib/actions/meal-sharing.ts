@@ -15,7 +15,7 @@
 // solely by a pending invite row addressed to the reader.
 
 import { randomUUID } from 'node:crypto';
-import { and, desc, eq, inArray, or, sql } from 'drizzle-orm';
+import { and, desc, eq, inArray, notInArray, or, sql } from 'drizzle-orm';
 import {
   buildMealItemGroupsFromRows,
   buildPersistedMeal,
@@ -228,6 +228,24 @@ export async function shareMealWithFriendsAction(input: {
         },
         setWhere: sql`${mealShareInvites.status} <> 'accepted'`,
       });
+
+    // A split just shrank the source in place. Accept copies the source
+    // verbatim (its current fraction), so any OTHER still-pending invite for
+    // this meal — e.g. a copy sent to someone not in this split — would now
+    // silently deliver the halved portion under a "full copy" label. Dismiss
+    // those stragglers; the recipients of THIS split were just re-pended above.
+    if (parsed.mode === 'split') {
+      await tx
+        .update(mealShareInvites)
+        .set({ status: 'dismissed', respondedAt: now })
+        .where(
+          and(
+            eq(mealShareInvites.sourceMealId, source.id),
+            eq(mealShareInvites.status, 'pending'),
+            notInArray(mealShareInvites.toUserId, recipientIds)
+          )
+        );
+    }
 
     return { invitedCount: recipientIds.length, portionFactor, meal };
   });

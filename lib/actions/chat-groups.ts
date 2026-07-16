@@ -280,10 +280,14 @@ export async function createChatGroup(
 // when the friendship was formed. Idempotent + parallel — cheap for a
 // circle-sized friend list.
 
+// Returns the actor's current accepted-friend ids so the caller can also gate
+// direct chats on a live friendship (a removed/blocked friend keeps their
+// membership row, so the list must exclude direct chats whose counterpart is
+// no longer an accepted friend — matching requireMembership's direct-chat gate).
 async function ensureDirectChatsForAcceptedFriends(
   actorId: string,
   db: Db
-): Promise<void> {
+): Promise<string[]> {
   const friendRows = await db
     .select({ userLow: friendships.userLow, userHigh: friendships.userHigh })
     .from(friendships)
@@ -297,13 +301,14 @@ async function ensureDirectChatsForAcceptedFriends(
   const friendIds = friendRows.map((r) =>
     r.userLow === actorId ? r.userHigh : r.userLow
   );
-  if (friendIds.length === 0) return;
+  if (friendIds.length === 0) return [];
 
   await Promise.all(
     friendIds.map((friendId) =>
       getOrCreateDirectChatGroup(actorId, friendId, db)
     )
   );
+  return friendIds;
 }
 
 // ---------------------------------------------------------------------------
@@ -316,9 +321,11 @@ export async function listMyChatGroups(
   db: Db = defaultDb
 ): Promise<ChatGroupIdentity[]> {
   const { timezoneOffset } = circleFeedSchema.parse(input);
-  await ensureDirectChatsForAcceptedFriends(actorId, db);
+  const acceptedFriendIds = new Set(
+    await ensureDirectChatsForAcceptedFriends(actorId, db)
+  );
 
-  const myGroups = await db
+  const allGroups = await db
     .select({
       id: chatGroups.id,
       kind: chatGroups.kind,
@@ -326,11 +333,23 @@ export async function listMyChatGroups(
       avatarSeed: chatGroups.avatarSeed,
       updatedAt: chatGroups.updatedAt,
       lastReadAt: chatGroupMembers.lastReadAt,
+      directUserLow: chatGroups.directUserLow,
+      directUserHigh: chatGroups.directUserHigh,
     })
     .from(chatGroupMembers)
     .innerJoin(chatGroups, eq(chatGroups.id, chatGroupMembers.groupId))
     .where(eq(chatGroupMembers.userId, actorId))
     .orderBy(desc(chatGroups.updatedAt));
+
+  // A direct chat only surfaces while the counterpart is still an accepted
+  // friend — removing/blocking leaves the membership row but must hide the
+  // chat and its previews (same rule requireMembership enforces on reads).
+  const myGroups = allGroups.filter((g) => {
+    if (g.kind !== 'direct') return true;
+    const other =
+      g.directUserLow === actorId ? g.directUserHigh : g.directUserLow;
+    return other != null && acceptedFriendIds.has(other);
+  });
 
   const groupIds = myGroups.map((g) => g.id);
   const directGroupIds = myGroups
