@@ -1,4 +1,5 @@
-import { drizzle } from 'drizzle-orm/postgres-js';
+import type { ExtractTablesWithRelations } from 'drizzle-orm';
+import { drizzle, type PostgresJsTransaction } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 import * as schema from './schema';
 
@@ -55,3 +56,15 @@ export const db = new Proxy({} as ReturnType<typeof drizzle<typeof schema>>, {
 
 /** Convenience type for the app's Drizzle database instance. */
 export type AppDb = typeof db;
+
+/**
+ * The `tx` handle a `db.transaction(async (tx) => ...)` callback receives.
+ * Lets a service function typed to accept `AppDb` also accept a transaction
+ * from a caller's own `db.transaction`, so two writes (e.g. two service
+ * functions from different modules) can share one atomic transaction instead
+ * of each opening its own.
+ */
+export type AppTransaction = PostgresJsTransaction<
+  typeof schema,
+  ExtractTablesWithRelations<typeof schema>
+>;

@@ -11,6 +11,7 @@
 // path (direct client reads + the OG card route).
 
 import type { db as defaultDb } from '@/lib/db';
+import type { SharedMealEntry } from '@/lib/groups/meal-feed';
 
 export type Db = typeof defaultDb;
 
@@ -33,25 +34,12 @@ export interface CircleMember {
   profile: PublicProfile;
 }
 
-export interface CircleFeedEntry {
-  friend: {
-    userId: string;
-    handle: string;
-    displayName: string | null;
-    avatarSeed: string | null;
-  };
-  /** True when this entry is the actor's own shared meal (their own table). */
-  isSelf: boolean;
-  meal: {
-    mealId: string;
-    shareId: string;
-    rawInput: string;
-    caloriesKcal: number | null;
-    proteinG: number | null;
-    carbohydrateG: number | null;
-    fatG: number | null;
-    sharedAt: string;
-  };
+export type CircleFeedEntry = SharedMealEntry;
+
+/** One page of the combined Friends thread (seek-paginated oldest-ward). */
+export interface FriendsThreadFeedPage {
+  entries: CircleFeedEntry[];
+  nextCursor: string | null;
 }
 
 /** Hard cap on the ambient wall: top friends, last 24h, non-scrollable. */

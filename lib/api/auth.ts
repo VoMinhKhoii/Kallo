@@ -1,5 +1,5 @@
 // ---------------------------------------------------------------------------
-// Shared auth guard for /api/v1/groups/* routes
+// Shared auth guard for app/api/v1/* routes
 // ---------------------------------------------------------------------------
 // Resolves the authenticated user via the unified Supabase server client
 // (Bearer for mobile, cookie for web). Throws a structured AppError that the

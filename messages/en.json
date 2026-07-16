@@ -1072,6 +1072,8 @@
       "remove": "Remove",
       "logAgain": "Log again",
       "editAmounts": "Edit amounts",
+      "shareWithFriends": "Send to friends",
+      "portionChip": "{portion} portion",
       "cancelEdit": "Cancel",
       "saveEdit": "Save changes",
       "savingEdit": "Saving…",
@@ -1169,7 +1171,16 @@
     "page": {
       "title": "Your circle",
       "subtitle": "What your friends are eating today.",
-      "addFriend": "Add friend"
+      "addFriend": "Add friend",
+      "friendsNoMealToday": "None of your friends have shared a meal yet.",
+      "groupNoMealToday": "No one in {name} has shared a meal today.",
+      "groupsSectionTitle": "Groups",
+      "friendsSectionTitle": "Friends",
+      "newFoodLog": "New food log"
+    },
+    "noThreadSelected": {
+      "title": "Select a thread",
+      "subtitle": "Pick a friend or group on the left to see their shared meals."
     },
     "empty": {
       "title": "Your circle is quiet",
@@ -1178,9 +1189,10 @@
     },
     "wall": {
       "sharedAt": "Shared at {time}",
-      "toggleDetails": "Toggle meal details",
-      "total": "Total",
       "loading": "Loading your circle",
+      "loadingMore": "Loading earlier days…",
+      "todayLabel": "Today",
+      "yesterdayLabel": "Yesterday",
       "na": "N/A",
       "you": "You",
       "presenceLabel": "Who's in your circle",
@@ -1205,9 +1217,45 @@
       "copiedLink": "Card link copied to clipboard",
       "errorCopy": "Couldn't copy the card link. Try again."
     },
+    "shareMeal": {
+      "title": "Share this meal",
+      "description": "Pick friends who ate with you. They'll get it in their inbox to add to their own diary.",
+      "mode": {
+        "copy": {
+          "label": "Same meal",
+          "hint": "Everyone logs the full dish."
+        },
+        "split": {
+          "label": "Split it",
+          "hint": "Divide one item evenly between you."
+        }
+      },
+      "splitPreview": "Your logged portion drops to {portion} now — everyone gets an equal share.",
+      "loadingFriends": "Loading your circle…",
+      "noFriends": "No one in your circle yet. Add a friend first.",
+      "submitEmpty": "Pick a friend",
+      "submit": "Share with {count, plural, one {# friend} other {# friends}}",
+      "copySuccess": "Sent to {count, plural, one {# friend} other {# friends}}",
+      "splitSuccess": "Split with {count, plural, one {# friend} other {# friends}}",
+      "error": "Couldn't share the meal. Try again."
+    },
+    "invites": {
+      "title": "Shared with you",
+      "na": "N/A",
+      "sharedCopy": "{name} shared a meal with you",
+      "sharedSplit": "{name} split a meal with you",
+      "portion": "{portion} portion",
+      "accept": "Add to my diary",
+      "dismiss": "Dismiss",
+      "accepted": "Added to your diary",
+      "error": "That didn't work — try again.",
+      "loadError": "Couldn't load your invites. Tap to retry."
+    },
     "invite": {
       "title": "Invite to your circle",
       "description": "Share your link. Anyone who opens it can connect with you.",
+      "tabAddFriend": "Add friend",
+      "tabCreateGroup": "Create group",
       "yourLink": "Your invite link",
       "hint": "Anyone with this link can connect with you.",
       "copy": "Copy",
@@ -1229,6 +1277,19 @@
       "appearSaved": "Display name updated",
       "appearError": "Couldn't update your name",
       "appearFallback": "Set a display name"
+    },
+    "createGroup": {
+      "title": "Create a group",
+      "description": "Name it and add members from your circle.",
+      "nameLabel": "Group name",
+      "namePlaceholder": "e.g. Weekend hikers",
+      "membersLabel": "Add members",
+      "membersCount": "{count} selected",
+      "noFriends": "Add friends first — you can only add people already in your circle.",
+      "submit": "Create group",
+      "creating": "Creating…",
+      "created": "Group created",
+      "createError": "Couldn't create the group. Try again."
     },
     "circle": {
       "title": "Your circle ({count})",

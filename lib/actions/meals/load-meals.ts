@@ -119,6 +119,7 @@ async function loadMealsByDateForUser(
       alcoholG: meal.alcoholG ?? null,
       cheatSliders: (meal.cheatSliders as CheatSlidersPersisted | null) ?? null,
       share: share ? { shareId: share.id, visibility: share.visibility } : null,
+      portionFactor: meal.portionFactor ?? 1,
     });
   });
 }

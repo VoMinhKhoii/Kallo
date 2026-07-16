@@ -1,0 +1,128 @@
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+const { mockDbSelect } = vi.hoisted(() => ({ mockDbSelect: vi.fn() }));
+
+vi.mock('@/lib/db', () => ({ db: { select: mockDbSelect } }));
+
+vi.mock('@/lib/db/schema', () => ({
+  mealShares: {
+    id: 'ms.id',
+    mealId: 'ms.mealId',
+    visibility: 'ms.visibility',
+    sharedAt: 'ms.sharedAt',
+  },
+  meals: {
+    id: 'm.id',
+    userId: 'm.userId',
+    rawInput: 'm.rawInput',
+    caloriesKcal: 'm.caloriesKcal',
+    proteinG: 'm.proteinG',
+    carbohydrateG: 'm.carbohydrateG',
+    fatG: 'm.fatG',
+  },
+  publicProfiles: {
+    userId: 'pp.userId',
+    handle: 'pp.handle',
+    displayName: 'pp.displayName',
+    avatarSeed: 'pp.avatarSeed',
+  },
+}));
+
+import { sharedMealsBefore, toSharedMealEntry } from '@/lib/groups/meal-feed';
+
+const USER_A = 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11';
+
+function sharedMeal(index: number, sharedAt: Date) {
+  return {
+    friendUserId: USER_A,
+    mealId: `meal-${index}`,
+    shareId: `share-${index}`,
+    rawInput: `meal ${index}`,
+    caloriesKcal: 500,
+    proteinG: 20,
+    carbohydrateG: 50,
+    fatG: 15,
+    sharedAt,
+    handle: 'me',
+    displayName: null,
+    avatarSeed: 'me',
+  };
+}
+
+// db.select().from().innerJoin().innerJoin().where().orderBy().limit()
+function sharedMealsQuery(rows: unknown[]) {
+  mockDbSelect.mockReturnValueOnce({
+    from: vi.fn().mockReturnValue({
+      innerJoin: vi.fn().mockReturnValue({
+        innerJoin: vi.fn().mockReturnValue({
+          where: vi.fn().mockReturnValue({
+            orderBy: vi.fn().mockReturnValue({
+              limit: vi.fn().mockResolvedValue(rows),
+            }),
+          }),
+        }),
+      }),
+    }),
+  });
+}
+
+describe('sharedMealsBefore', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('returns an empty page for an empty userIds list without querying', async () => {
+    const page = await sharedMealsBefore([], null);
+
+    expect(page).toEqual({ rows: [], nextCursor: null });
+    expect(mockDbSelect).not.toHaveBeenCalled();
+  });
+
+  it('has a null nextCursor when fewer rows than the limit are returned', async () => {
+    const rows = [sharedMeal(1, new Date('2026-01-03T00:00:00Z'))];
+    sharedMealsQuery(rows);
+
+    const page = await sharedMealsBefore([USER_A], null, undefined, 20);
+
+    expect(page.rows).toHaveLength(1);
+    expect(page.nextCursor).toBeNull();
+  });
+
+  it('slices to `limit` and sets nextCursor to the oldest row when more history exists', async () => {
+    // 3 rows returned for a limit of 2 — the +1 over-fetch signals "more exists".
+    const rows = [
+      sharedMeal(3, new Date('2026-01-03T00:00:00Z')),
+      sharedMeal(2, new Date('2026-01-02T00:00:00Z')),
+      sharedMeal(1, new Date('2026-01-01T00:00:00Z')),
+    ];
+    sharedMealsQuery(rows);
+
+    const page = await sharedMealsBefore([USER_A], null, undefined, 2);
+
+    expect(page.rows).toHaveLength(2);
+    expect(page.rows.map((r) => r.mealId)).toEqual(['meal-3', 'meal-2']);
+    // The cursor is the oldest row IN THE PAGE, not the dropped extra row.
+    expect(page.nextCursor).toBe('2026-01-02T00:00:00.000Z');
+  });
+
+  it('does not collapse multiple shares from the same user (unlike mostRecentSharedMealsToday)', async () => {
+    const rows = [
+      sharedMeal(2, new Date('2026-01-01T18:00:00Z')), // dinner
+      sharedMeal(1, new Date('2026-01-01T08:00:00Z')), // breakfast
+    ];
+    sharedMealsQuery(rows);
+
+    const page = await sharedMealsBefore([USER_A], null, undefined, 20);
+
+    expect(page.rows).toHaveLength(2);
+  });
+});
+
+describe('toSharedMealEntry', () => {
+  it('tags isSelf based on the actor id', () => {
+    const row = sharedMeal(1, new Date('2026-01-01T00:00:00Z'));
+
+    expect(toSharedMealEntry(row, USER_A).isSelf).toBe(true);
+    expect(toSharedMealEntry(row, 'someone-else').isSelf).toBe(false);
+  });
+});

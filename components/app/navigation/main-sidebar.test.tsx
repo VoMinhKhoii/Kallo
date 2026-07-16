@@ -10,6 +10,12 @@ vi.mock('@/lib/supabase/client', () => ({
   }),
 }));
 
+// The nav's invite-count badge is out of scope here; stub it so the component
+// doesn't require a QueryClientProvider.
+vi.mock('@/hooks/social/use-meal-share-invites', () => ({
+  useMealShareInviteCount: () => 0,
+}));
+
 describe('MainSidebar (back-compat re-export of DesktopSidebar)', () => {
   it('renders the nutrition link, not tracking', () => {
     render(

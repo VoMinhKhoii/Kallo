@@ -14,6 +14,7 @@ import '../widgets/add_friend_sheet.dart';
 import '../widgets/circle_error.dart';
 import '../widgets/circle_skeleton.dart';
 import '../widgets/circle_wall.dart';
+import '../widgets/meal_invites.dart';
 
 /// The Circle surface: your friends' most-recent shared meals for today, plus
 /// an Add-friend affordance. Read-only ambient wall — polls every 30s. Mirrors
@@ -64,6 +65,7 @@ class CircleScreen extends ConsumerWidget {
                           onAddFriend: () => showAddFriendSheet(context),
                         ),
                         const SizedBox(height: NhamSpacing.sp6),
+                        const MealInvitesSection(),
                         feedAsync.when(
                           loading: () => const CircleWallSkeleton(),
                           error: (_, __) => CircleErrorCard(

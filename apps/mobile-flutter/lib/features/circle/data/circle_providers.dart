@@ -14,6 +14,7 @@ import '../../../data/api_client.dart';
 import '../../../data/query.dart';
 import '../../../models/circle.dart';
 import '../../dashboard/data/dashboard_providers.dart' show localTimezoneOffsetMinutes;
+import '../../logging/data/logging_providers.dart' show loggingDayProvider;
 
 /// How often the ambient wall re-polls for new shared meals (web parity).
 const Duration kCirclePollInterval = Duration(seconds: 30);
@@ -181,6 +182,74 @@ Future<void> blockCircleFriend(WidgetRef ref, String targetUserId) async {
   });
   ref.invalidate(circleFriendsProvider);
   ref.invalidate(circleFeedProvider);
+}
+
+// ---------------------------------------------------------------------------
+// Copy / split a meal between friends
+// ---------------------------------------------------------------------------
+
+/// Pending copy/split offers addressed to me (the Circle inbox). Mirrors the
+/// web `useMealShareInvites` against `GET /api/v1/groups/invites`.
+final mealShareInvitesProvider =
+    FutureProvider.autoDispose<List<MealShareInvite>>((ref) async {
+  final api = ref.watch(apiClientProvider);
+  return runWithRetry(() async {
+    final json = await api.get<Map<String, dynamic>>('/api/v1/groups/invites');
+    final list = (json['invites'] as List<dynamic>?) ?? const [];
+    return list
+        .map((e) => MealShareInvite.fromJson(e as Map<String, dynamic>))
+        .toList(growable: false);
+  });
+});
+
+/// Local calendar date (YYYY-MM-DD) — the day an accepted meal is stamped.
+String _todayLocalDate() {
+  final now = DateTime.now();
+  final mm = now.month.toString().padLeft(2, '0');
+  final dd = now.day.toString().padLeft(2, '0');
+  return '${now.year}-$mm-$dd';
+}
+
+/// Offer a saved meal to specific friends as a full copy or an even split
+/// (`POST /api/v1/groups/meal-share`). A split rescales the logger's own meal
+/// down to their share, so the day + wall are invalidated. Throws [ApiError].
+Future<void> shareMealWithFriends(
+  WidgetRef ref, {
+  required String mealId,
+  required List<String> friendUserIds,
+  required String mode, // 'copy' | 'split'
+}) async {
+  final api = ref.read(apiClientProvider);
+  await api.post<Map<String, dynamic>>('/api/v1/groups/meal-share', {
+    'mealId': mealId,
+    'friendUserIds': friendUserIds,
+    'mode': mode,
+  });
+  ref.invalidate(loggingDayProvider);
+  ref.invalidate(circleFeedProvider);
+}
+
+/// Accept an invite (`POST /api/v1/groups/invites/accept`) — the scaled meal
+/// lands in today's diary. Invalidates the inbox, the day, and the wall.
+Future<void> acceptMealShareInvite(WidgetRef ref, String inviteId) async {
+  final api = ref.read(apiClientProvider);
+  await api.post<Map<String, dynamic>>('/api/v1/groups/invites/accept', {
+    'inviteId': inviteId,
+    'loggedDate': _todayLocalDate(),
+    'timezoneOffset': localTimezoneOffsetMinutes(),
+  });
+  ref.invalidate(mealShareInvitesProvider);
+  ref.invalidate(loggingDayProvider);
+  ref.invalidate(circleFeedProvider);
+}
+
+/// Dismiss an invite (`POST /api/v1/groups/invites/dismiss`).
+Future<void> dismissMealShareInvite(WidgetRef ref, String inviteId) async {
+  final api = ref.read(apiClientProvider);
+  await api.post<dynamic>('/api/v1/groups/invites/dismiss', {
+    'inviteId': inviteId,
+  });
+  ref.invalidate(mealShareInvitesProvider);
 }
 
 /// The result of toggling a meal's circle visibility.

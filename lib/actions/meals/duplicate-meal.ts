@@ -1,21 +1,15 @@
 'use server';
 
-import { randomUUID } from 'node:crypto';
 import { and, eq } from 'drizzle-orm';
 import { z } from 'zod';
-import {
-  buildMealItemGroupsFromRows,
-  buildPersistedMeal,
-  extractNutritionValues,
-  inferMealSlot,
-  nutritionValuesToRow,
-} from '@/lib/actions/persisted-meal';
+import { inferMealSlot } from '@/lib/actions/persisted-meal';
 import { requireAuthAndProfile } from '@/lib/auth';
 import { getUtcInstantForLocalDate } from '@/lib/date/local-day';
 import { db } from '@/lib/db';
-import { mealItems, mealShares, meals } from '@/lib/db/schema';
+import { mealItems, meals } from '@/lib/db/schema';
 import { Errors } from '@/lib/errors';
 import { dateStringSchema, timezoneOffsetSchema } from '@/lib/validation';
+import { copyMealVerbatim } from './copy-meal-verbatim';
 import type { ConfirmMealResponse } from './types';
 
 // ---------------------------------------------------------------------------
@@ -81,83 +75,16 @@ export async function duplicateMealAction(input: {
       parsed.timezoneOffset
     );
     const mealSlot = inferMealSlot(loggedAt);
-    const mealNutrition = extractNutritionValues(source);
 
-    const [meal] = await tx
-      .insert(meals)
-      .values({
-        ...(parsed.newMealId ? { id: parsed.newMealId } : {}),
-        userId: user.id,
-        rawInput: source.rawInput,
-        mealSlot,
-        confidenceOverall: source.confidenceOverall,
-        loggedAt,
-        entryMode: 'precise',
-        alcoholG: source.alcoholG,
-        ...nutritionValuesToRow(mealNutrition),
-      })
-      .returning({ id: meals.id });
-
-    // Share to circle by default: a re-log is a brand-new eating event, so it
-    // shares automatically just like a fresh log (the AFTER INSERT trigger fans
-    // out the meal_shared circle event). The new meal id never collides, so this
-    // always inserts; the user can still opt this copy back out via the toggle.
-    const [shareRow] = await tx
-      .insert(mealShares)
-      .values({ mealId: meal.id, actorId: user.id, visibility: 'circle' })
-      .onConflictDoNothing({ target: mealShares.mealId })
-      .returning({ id: mealShares.id, visibility: mealShares.visibility });
-    const share = shareRow
-      ? { shareId: shareRow.id, visibility: shareRow.visibility }
-      : null;
-
-    // Copy each item with a fresh id, preserving order/composition/grams and the
-    // stored per-row nutrition exactly (extract → write the same values back).
-    const copies = sourceItems.map((row) => ({
-      id: randomUUID(),
-      row,
-      nutrition: extractNutritionValues(row),
-    }));
-
-    if (copies.length > 0) {
-      await tx.insert(mealItems).values(
-        copies.map(({ id, row, nutrition }) => ({
-          id,
-          mealId: meal.id,
-          ingredientName: row.ingredientName,
-          mealItemName: row.mealItemName,
-          mealItemOrder: row.mealItemOrder,
-          foodCompositionId: row.foodCompositionId,
-          estimatedGrams: row.estimatedGrams,
-          userFacingUnit: row.userFacingUnit,
-          cookingMethod: row.cookingMethod,
-          matchConfidence: row.matchConfidence,
-          ...nutritionValuesToRow(nutrition),
-        }))
-      );
-    }
-
-    // Rebuild the saved meal in loadMealsByDate's shape, grouped by dish, so the
-    // client reconciles its optimistic card in place (same id, no day refetch).
-    const mealItemGroups = buildMealItemGroupsFromRows(
-      copies.map(({ id, row, nutrition }) => ({ ...row, id, nutrition }))
-    );
-
-    const savedMeal = buildPersistedMeal({
-      id: meal.id,
-      rawInput: source.rawInput,
+    // Copy the source verbatim into a new meal for this user (shared helper —
+    // same materialization the accept-a-share path uses).
+    return await copyMealVerbatim(tx, {
+      source,
+      sourceItems,
+      userId: user.id,
+      newMealId: parsed.newMealId,
+      loggedAt,
       mealSlot,
-      confidenceOverall: source.confidenceOverall,
-      loggedAt: loggedAt.toISOString(),
-      nutrition: mealNutrition,
-      mealItemGroups,
-      entryMode: 'precise',
-      alcoholG: source.alcoholG ?? null,
-      cheatSliders: null,
-      // Shared to circle by default (see the meal_shares insert above).
-      share,
     });
-
-    return { mealId: meal.id, meal: savedMeal };
   });
 }

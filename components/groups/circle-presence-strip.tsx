@@ -2,6 +2,7 @@
 
 import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
+import { tintFor } from '@/components/groups/avatar-tint';
 import { labelFor } from '@/components/groups/invite/profile-identity';
 import {
   Popover,
@@ -15,23 +16,6 @@ import {
 } from '@/hooks/social/use-friends';
 import type { CircleMember } from '@/lib/groups/client';
 import { cn } from '@/lib/utils';
-
-// Warm, status-free disc tints. Sage is reserved for status, so members are
-// tinted across tan / taupe / stone only (deterministic from avatarSeed).
-const DISC_TINTS = [
-  'from-nham-accent/35 to-nham-border/45', // tan
-  'from-[#b8a890]/40 to-[#9c8c78]/35', // taupe
-  'from-[#cfc6ba]/45 to-[#a9a193]/35', // stone
-] as const;
-
-function tintFor(seed: string | null, handle: string): string {
-  const key = seed ?? handle;
-  let hash = 0;
-  for (let i = 0; i < key.length; i++) {
-    hash = (hash * 31 + key.charCodeAt(i)) | 0;
-  }
-  return DISC_TINTS[Math.abs(hash) % DISC_TINTS.length];
-}
 
 function MemberDisc({
   member,
