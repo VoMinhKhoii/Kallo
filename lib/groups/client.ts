@@ -12,7 +12,7 @@ import type {
   FriendsThreadFeedPage,
   PublicProfile,
 } from '@/lib/actions/groups/types';
-import type { MealShareInvite } from '@/lib/actions/meal-sharing';
+import type { MealShareInvite } from '@/lib/actions/meal-sharing/types';
 import type { ConfirmMealResponse } from '@/lib/actions/meals/types';
 import { parseApiError } from '@/lib/errors';
 

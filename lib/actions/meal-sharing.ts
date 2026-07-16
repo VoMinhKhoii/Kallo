@@ -35,8 +35,9 @@ import {
 } from '@/lib/validation';
 import type { ConfirmMealResponse, PersistedMeal } from './meals/types';
 
-export { listMealShareInvitesAction } from './meal-sharing/invites-list';
-export type { MealShareInvite } from './meal-sharing/types';
+// A "use server" module may only export async server actions — no value or type
+// re-exports. Consumers import listMealShareInvitesAction / MealShareInvite
+// directly from ./meal-sharing/{invites-list,types}.
 
 // ---------------------------------------------------------------------------
 // S1: Share a meal with friends (copy or split)

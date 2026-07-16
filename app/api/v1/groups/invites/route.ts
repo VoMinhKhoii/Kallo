@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { listMealShareInvitesAction } from '@/lib/actions/meal-sharing';
+import { listMealShareInvitesAction } from '@/lib/actions/meal-sharing/invites-list';
 import { serializeError } from '@/lib/errors';
 
 export const runtime = 'nodejs';
