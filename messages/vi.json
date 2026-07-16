@@ -672,6 +672,13 @@
       "continueWithGoogle": "Tiếp tục với Google",
       "orContinueWithEmail": "hoặc tiếp tục với email",
       "googleError": "Đăng nhập bằng Google thất bại. Vui lòng thử lại.",
+      "webviewNoticeTitle": "Không thể đăng nhập Google tại đây",
+      "webviewNotice": "Trình duyệt trong ứng dụng này chặn đăng nhập Google. Hãy dùng email bên dưới, hoặc mở trang này trong trình duyệt.",
+      "webviewNoticeIosHint": "Nhấn nút ••• và chọn \"Mở bằng Safari\".",
+      "webviewOpenInChrome": "Mở bằng Chrome",
+      "webviewCopyLink": "Sao chép liên kết",
+      "webviewLinkCopied": "Đã sao chép liên kết — dán vào trình duyệt để tiếp tục.",
+      "webviewCopyError": "Không thể sao chép liên kết. Vui lòng sao chép từ thanh địa chỉ.",
       "accountExists": "Bạn đã có tài khoản với email này. Vui lòng đăng nhập bằng phương thức bạn đã dùng ban đầu.",
       "verifyLinkError": "Liên kết này không hợp lệ hoặc đã hết hạn. Vui lòng yêu cầu liên kết mới."
     },

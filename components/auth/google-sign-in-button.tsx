@@ -5,6 +5,9 @@ import { useLocale, useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { useAuthDialog } from '@/components/auth/auth-provider';
+import { WebviewGoogleNotice } from '@/components/auth/webview-google-notice';
+import { useIsInAppBrowser } from '@/hooks/ui/use-in-app-browser';
+import { isInAppBrowser } from '@/lib/in-app-browser';
 import { createClient } from '@/lib/supabase/client';
 
 export function GoogleSignInButton() {
@@ -12,8 +15,15 @@ export function GoogleSignInButton() {
   const locale = useLocale();
   const { next } = useAuthDialog();
   const [loading, setLoading] = useState(false);
+  // Client-only (resolves after hydration): in-app browsers block Google OAuth,
+  // so we swap the button for a notice that routes users to a real browser.
+  const inApp = useIsInAppBrowser();
 
   const onClick = async () => {
+    // Guard the sub-frame before `inApp` resolves post-hydration: Google blocks
+    // OAuth in webviews, so never start the flow there. Runs client-side only;
+    // the hook's effect swaps in the notice on the same tick.
+    if (isInAppBrowser()) return;
     setLoading(true);
     const supabase = createClient();
     // Prefer the invite return-path when present; otherwise land in the app.
@@ -32,6 +42,8 @@ export function GoogleSignInButton() {
     }
     // On success the browser is redirected to Google; no further work here.
   };
+
+  if (inApp) return <WebviewGoogleNotice />;
 
   return (
     <button
