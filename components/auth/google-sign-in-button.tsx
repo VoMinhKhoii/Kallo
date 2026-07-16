@@ -5,6 +5,8 @@ import { useLocale, useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { useAuthDialog } from '@/components/auth/auth-provider';
+import { WebviewGoogleNotice } from '@/components/auth/webview-google-notice';
+import { isInAppBrowser } from '@/lib/in-app-browser';
 import { createClient } from '@/lib/supabase/client';
 
 export function GoogleSignInButton() {
@@ -12,6 +14,9 @@ export function GoogleSignInButton() {
   const locale = useLocale();
   const { next } = useAuthDialog();
   const [loading, setLoading] = useState(false);
+  // Evaluated once, client-only: in-app browsers block Google OAuth, so we
+  // swap the button for a notice that routes users to a real browser.
+  const [inApp] = useState(() => isInAppBrowser());
 
   const onClick = async () => {
     setLoading(true);
@@ -32,6 +37,8 @@ export function GoogleSignInButton() {
     }
     // On success the browser is redirected to Google; no further work here.
   };
+
+  if (inApp) return <WebviewGoogleNotice />;
 
   return (
     <button
