@@ -14,7 +14,8 @@ from the option B wordmark's capital K with its junction hidden:
 - Files: `refinements/kallo-mark-segmented-k.svg` (symbol, 656×708),
   `exports/kallo-wordmark-segmented.svg` (wordmark with the segmented K as its
   capital — the K is never doubled next to the wordmark), and
-  `refinements/segmented-k-preview.html` (approval board).
+  `refinements/segmented-k-preview.html` (approval board, renders the mark
+  live in the browser).
 
 Everything below this section is the historical study that led here.
 

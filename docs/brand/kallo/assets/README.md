@@ -18,17 +18,23 @@ Palette: cream `#FEFBF6`, espresso `#2C2416`, tan `#C9A87C`, umber `#695E4E`.
 | `favicon.svg` | Mark alone; espresso by default, cream under `prefers-color-scheme: dark` |
 | `og-image.svg` | 1200×630 social card, wordmark on cream |
 
-## Rasters (`png/`)
+## Rasters
 
-| File | Target |
+The SVGs above are the only sources kept here; the platform rasters generated
+from them live directly at their wired locations (regenerate from the SVGs —
+render `app-icon.svg` at the target size, with rounded corners baked for the
+splash tiles):
+
+| Wired location | Contents |
 | --- | --- |
-| `app-icon-1024.png` | iOS app icon master |
-| `icon-512.png`, `icon-192.png` | Web manifest icons (replaces `public/icon-*.png`) |
-| `icon-maskable-512.png` | Web manifest maskable icon |
-| `apple-touch-icon-180.png` | `public/apple-icon.png` |
-| `favicon.ico` (16/32/48), `favicon-{16,32,48}.png` | `app/favicon.ico` |
-| `android-adaptive-foreground-512.png` | Flutter/Android adaptive foreground layer |
-| `og-image-1200x630.png` | Open Graph / Twitter card |
+| `app/favicon.ico` | 16/32/48 multi-size ICO from the app-icon tile |
+| `public/apple-icon.png`, `public/icon-{192,512}.png`, `public/icon-maskable-512.png` | Web manifest + touch icons |
+| `public/og-image.png` | 1200×630 Open Graph / Twitter card |
+| `apps/mobile-flutter/ios/Runner/Assets.xcassets/AppIcon.appiconset/` | Full iOS icon set (15 sizes, no alpha) |
+| `apps/mobile-flutter/ios/Runner/Assets.xcassets/LaunchImage.imageset/` | Splash tile 1x/2x/3x (rounded corners baked) |
+| `apps/mobile-flutter/android/.../mipmap-*/ic_launcher.png` | Launcher icons, 5 densities |
+| `apps/mobile-flutter/android/.../drawable-*/launch_image.png` | Splash tiles, 5 densities |
+| `apps/mobile-flutter/web/icons/`, `apps/mobile-flutter/web/favicon.png` | Flutter web icons |
 
 The lockup rule: the mark is never placed next to the wordmark (the wordmark's
 capital *is* the mark). Use the mark alone for icons and tight spaces, the
