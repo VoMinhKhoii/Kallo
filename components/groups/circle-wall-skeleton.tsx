@@ -1,16 +1,15 @@
 'use client';
 
-import { motion } from 'motion/react';
 import { useTranslations } from 'next-intl';
 
-/** Number of placeholder cards shown while the circle feed loads. */
+/** Number of placeholder rows shown while the circle feed loads. */
 const SKELETON_COUNT = 3;
 
 /**
- * Loading state for a Circle thread (FriendsFeed / GroupFeed). Mirrors
- * CircleCard's bubble/photo-card geometry so the layout doesn't shift when
- * real data arrives, and prevents a flash of the empty state during the
- * initial fetch.
+ * Loading state for a Circle thread (FriendsFeed / GroupFeed). Mirrors the
+ * flat Threads-style panel anatomy — the bordered feed frame holding a few
+ * placeholder rows (avatar disc plus two text bars) — so the layout doesn't
+ * shift when real posts arrive, and no empty state flashes during the fetch.
  */
 export function CircleWallSkeleton() {
   const t = useTranslations('groups.wall');
@@ -19,27 +18,19 @@ export function CircleWallSkeleton() {
       role="status"
       aria-busy="true"
       aria-label={t('loading')}
-      className="flex flex-col gap-4"
+      className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-[20px] border border-nham-border/60 bg-white"
     >
       {Array.from({ length: SKELETON_COUNT }, (_, index) => (
-        <motion.div
+        <div
           key={index}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: index * 0.08 }}
-          className="w-[270px] overflow-hidden rounded-3xl border border-nham-border/60 bg-white shadow-sm sm:w-[300px]"
+          className="flex gap-3 border-nham-border/60 border-b p-4 last:border-b-0"
         >
-          {/* Photo placeholder */}
-          <div className="aspect-square w-full animate-pulse bg-nham-border/30" />
-
-          {/* Macro footer */}
-          <div className="p-3">
-            <div className="flex items-center justify-between">
-              <div className="h-3 w-24 animate-pulse rounded bg-nham-border/30" />
-              <div className="h-3.5 w-14 animate-pulse rounded bg-nham-border/40" />
-            </div>
+          <div className="size-8 shrink-0 animate-pulse rounded-full bg-nham-border/30" />
+          <div className="flex-1 space-y-2 pt-1">
+            <div className="h-3 w-1/3 animate-pulse rounded bg-nham-border/30" />
+            <div className="h-3 w-2/3 animate-pulse rounded bg-nham-border/30" />
           </div>
-        </motion.div>
+        </div>
       ))}
     </div>
   );

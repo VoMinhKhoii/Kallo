@@ -2,11 +2,10 @@
 
 import { useLocale, useTranslations } from 'next-intl';
 import { Fragment, useEffect, useLayoutEffect, useRef } from 'react';
-import { CircleCard } from '@/components/groups/circle-card';
 import { CircleError } from '@/components/groups/circle-error';
 import { CircleWallSkeleton } from '@/components/groups/circle-wall-skeleton';
+import { FeedEntry } from '@/components/groups/feed-entry';
 import type { CircleFeedEntry } from '@/lib/groups/client';
-import { cn } from '@/lib/utils';
 
 /** Local calendar-day identity for an ISO timestamp — used only for
  * same-day grouping, not display, so timezone-dependent formatting is fine. */
@@ -37,7 +36,6 @@ function dayLabel(
 }
 
 interface ThreadFeedProps {
-  title: string;
   /** Oldest-first — the render order (chat convention: newest at the bottom). */
   entries: CircleFeedEntry[];
   emptyMessage: string;
@@ -50,13 +48,14 @@ interface ThreadFeedProps {
   fetchNextPage: () => void;
 }
 
-/** Shared infinite-scroll thread body for FriendsFeed/GroupFeed. Renders
- * newest entry at the bottom, loads older shares as a sentinel above the
- * oldest entry scrolls into view, and preserves scroll position when older
- * entries are prepended (without this the viewport visually jumps by the
- * height of whatever was just inserted above it). */
+/** Shared infinite-scroll thread body for FriendsFeed/GroupFeed. Renders the
+ * feed as flat Threads-style posts inside one bordered panel: each entry is a
+ * FeedEntry row, hairline-separated, all left-aligned, with hairline day
+ * separators. Newest entry sits at the bottom; a sentinel above the oldest
+ * entry loads older shares as it scrolls into view, and scroll position is
+ * preserved when older entries are prepended (without this the viewport
+ * visually jumps by the height of whatever was just inserted above it). */
 export function ThreadFeed({
-  title,
   entries,
   emptyMessage,
   isPending,
@@ -129,24 +128,13 @@ export function ThreadFeed({
   let lastDayKey: string | null = null;
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col">
-      {/* Outside the scroll area (not just `sticky`) so the thread's name is
-       * always visible — the view lands on the newest entry at the bottom by
-       * default, which would otherwise scroll the title off-screen above. */}
-      <header className="shrink-0 border-nham-border/60 border-b px-5 py-4 sm:px-8">
-        <h1 className="font-normal font-serif text-nham-text text-xl tracking-tight">
-          {title}
-        </h1>
-      </header>
-      <div
-        ref={containerRef}
-        className="min-h-0 flex-1 overflow-y-auto px-5 py-4 sm:px-8"
-      >
+    <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-[20px] border border-nham-border/60 bg-white">
+      <div ref={containerRef} className="min-h-0 flex-1 overflow-y-auto">
         {entries.length > 0 ? (
-          <div className="flex flex-col gap-4">
+          <>
             <div ref={sentinelRef} />
             {isFetchingNextPage && (
-              <p className="text-center font-sans-display text-[11px] text-nham-text-muted">
+              <p className="py-2 text-center font-sans-display text-[11px] text-nham-text-muted">
                 {t('loadingMore')}
               </p>
             )}
@@ -157,34 +145,26 @@ export function ThreadFeed({
               return (
                 <Fragment key={entry.meal.shareId}>
                   {showSeparator && (
-                    <div className="flex items-center justify-center">
-                      <span className="rounded-full bg-nham-hover/60 px-3 py-1 font-sans-display text-[11px] text-nham-text-muted">
-                        {dayLabel(
-                          entry.meal.sharedAt,
-                          locale,
-                          t('todayLabel'),
-                          t('yesterdayLabel')
-                        )}
-                      </span>
+                    <div className="flex items-center gap-2.5 px-4 pt-5 pb-3 font-sans-display text-[11px] text-nham-text-muted">
+                      <span className="h-px flex-1 bg-nham-border/60" />
+                      {dayLabel(
+                        entry.meal.sharedAt,
+                        locale,
+                        t('todayLabel'),
+                        t('yesterdayLabel')
+                      )}
+                      <span className="h-px flex-1 bg-nham-border/60" />
                     </div>
                   )}
-                  <div
-                    className={cn(
-                      'flex',
-                      entry.isSelf ? 'justify-end' : 'justify-start'
-                    )}
-                  >
-                    <CircleCard
-                      entry={entry}
-                      align={entry.isSelf ? 'right' : 'left'}
-                    />
+                  <div className="border-nham-border/60 border-b p-4 last:border-b-0">
+                    <FeedEntry entry={entry} />
                   </div>
                 </Fragment>
               );
             })}
-          </div>
+          </>
         ) : (
-          <p className="font-sans-display text-[13px] text-nham-text-muted">
+          <p className="p-4 font-sans-display text-[13px] text-nham-text-muted">
             {emptyMessage}
           </p>
         )}

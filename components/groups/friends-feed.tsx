@@ -28,7 +28,6 @@ export function FriendsFeed() {
 
   return (
     <ThreadFeed
-      title={t('friendsSectionTitle')}
       entries={entries}
       emptyMessage={t('friendsNoMealToday')}
       isPending={isPending}

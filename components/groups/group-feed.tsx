@@ -31,7 +31,6 @@ export function GroupFeed({ groupId }: { groupId: string }) {
 
   return (
     <ThreadFeed
-      title={groupName}
       entries={entries}
       emptyMessage={t('groupNoMealToday', { name: groupName })}
       isPending={isPending}

@@ -4,69 +4,58 @@ import { UserPlus } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';
 import { AddFriendDialog } from '@/components/groups/add-friend-dialog';
-import { FriendsRow } from '@/components/groups/friends-row';
-import { GroupList } from '@/components/groups/group-list';
 import { MealInvites } from '@/components/groups/meal-invites';
-import { usePathname } from '@/i18n/navigation';
-import { cn } from '@/lib/utils';
+import { ViewSwitcher } from '@/components/groups/view-switcher';
 
 /**
- * The original Circle feature (friends' shared meals), reorganized as a
- * master-detail list instead of one combined ambient wall: a persistent list
- * of friends on the left, the selected friend's shared meals for today on the
- * right. On narrow screens only one pane shows at a time — the list at the
- * bare `/groups` route, the feed once a friend is selected — driven by
- * pathname rather than a toggle control.
+ * The Circle surface as one centered Threads-style column: a compact header,
+ * the view-switcher pill row, the pending-invites inbox, and the active feed
+ * panel (the "All" friends feed or a group feed) filling the rest of the
+ * height. Replaces the old master-detail two-pane layout — there is no list
+ * pane anymore, navigation happens through the pill row.
  */
 export default function GroupsLayout({ children }: { children: ReactNode }) {
   const t = useTranslations('groups.page');
-  const pathname = usePathname();
-  const isListView = pathname === '/groups';
 
   return (
-    <main className="flex h-full flex-1 overflow-hidden rounded-2xl border border-nham-border/60 bg-white">
-      <aside
-        className={cn(
-          'flex w-full shrink-0 flex-col overflow-hidden md:w-[340px] md:border-nham-border/60 md:border-r',
-          !isListView && 'hidden md:flex'
-        )}
-      >
-        <header className="flex items-start justify-between gap-3 border-nham-border/60 border-b px-4 py-4">
-          <div className="min-w-0 space-y-0.5">
-            <h1 className="font-normal font-serif text-nham-text text-xl tracking-tight">
-              {t('title')}
-            </h1>
-            <p className="truncate font-sans-display text-[12px] text-nham-text-muted">
-              {t('subtitle')}
-            </p>
-          </div>
-          <AddFriendDialog
-            trigger={
-              <button
-                type="button"
-                aria-label={t('addFriend')}
-                className="inline-flex shrink-0 items-center justify-center rounded-lg bg-nham-btn p-2 text-white transition-colors hover:bg-nham-btn/90"
-              >
-                <UserPlus className="h-4 w-4" />
-              </button>
-            }
-          />
-        </header>
-        <div className="flex-1 space-y-5 overflow-y-auto px-3 py-3">
-          <MealInvites />
-          <FriendsRow />
-          <GroupList />
+    <main className="mx-auto flex h-full w-full max-w-2xl flex-1 flex-col overflow-hidden px-4 pt-6 pb-4 sm:px-5">
+      <header className="mb-3.5 flex shrink-0 items-start justify-between gap-3">
+        <div className="min-w-0">
+          <h1 className="font-bold font-sans-display text-[20px] text-nham-text tracking-[-0.01em]">
+            {t('title')}
+          </h1>
+          <p className="font-sans-display text-[12px] text-nham-text-muted">
+            {t('subtitlePlain')}{' '}
+            <span className="font-light font-serif text-[13px] text-nham-accent italic">
+              {t('subtitleAccent')}
+            </span>
+          </p>
         </div>
-      </aside>
+        <AddFriendDialog
+          trigger={
+            <button
+              type="button"
+              aria-label={t('addFriend')}
+              className="inline-flex shrink-0 items-center gap-1.5 rounded-xl bg-nham-btn px-3 py-2 text-white transition-colors hover:bg-nham-btn/90"
+            >
+              <UserPlus className="h-3.5 w-3.5" />
+              <span className="font-medium font-sans-display text-[12px]">
+                {t('addFriend')}
+              </span>
+            </button>
+          }
+        />
+      </header>
 
-      <div
-        className={cn(
-          'flex min-w-0 flex-1 flex-col',
-          isListView && 'hidden md:flex'
-        )}
-      >
-        {children}
+      <ViewSwitcher />
+
+      {/* empty:hidden — MealInvites renders null when the inbox is empty,
+       * which would otherwise leave this wrapper's margin as a phantom gap. */}
+      <div className="mb-4 shrink-0 empty:hidden">
+        <MealInvites />
       </div>
+
+      <div className="flex min-h-0 flex-1 flex-col">{children}</div>
     </main>
   );
 }

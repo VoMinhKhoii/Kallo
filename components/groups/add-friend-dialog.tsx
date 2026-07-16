@@ -16,12 +16,14 @@ import { CircleList } from './invite/circle-list';
 import { CreateGroupForm } from './invite/create-group-form';
 import { InviteLinkSection } from './invite/invite-link-section';
 
+type DialogTab = 'friend' | 'group';
+
 interface AddFriendDialogProps {
   /** The control that opens the dialog (e.g. a button). */
   trigger: ReactNode;
+  /** Which tab to open on first render. */
+  defaultTab?: DialogTab;
 }
-
-type DialogTab = 'friend' | 'group';
 
 /**
  * The invite surface, switching between two tabs:
@@ -31,11 +33,14 @@ type DialogTab = 'friend' | 'group';
  * - Create group: name a group chat and add members from your circle (no
  *   invite-link path for groups — members must already be accepted friends).
  */
-export function AddFriendDialog({ trigger }: AddFriendDialogProps) {
+export function AddFriendDialog({
+  trigger,
+  defaultTab = 'friend',
+}: AddFriendDialogProps) {
   const t = useTranslations('groups.invite');
   const tGroup = useTranslations('groups.createGroup');
   const [open, setOpen] = useState(false);
-  const [tab, setTab] = useState<DialogTab>('friend');
+  const [tab, setTab] = useState<DialogTab>(defaultTab);
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>

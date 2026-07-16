@@ -1163,17 +1163,15 @@
   "groups": {
     "page": {
       "title": "Your circle",
-      "subtitle": "What your friends are eating today.",
+      "subtitlePlain": "Today —",
+      "subtitleAccent": "what's everyone eating?",
       "addFriend": "Add friend",
       "friendsNoMealToday": "None of your friends have shared a meal yet.",
-      "groupNoMealToday": "No one in {name} has shared a meal today.",
-      "groupsSectionTitle": "Groups",
-      "friendsSectionTitle": "Friends",
-      "newFoodLog": "New food log"
+      "groupNoMealToday": "No one in {name} has shared a meal today."
     },
-    "noThreadSelected": {
-      "title": "Select a thread",
-      "subtitle": "Pick a friend or group on the left to see their shared meals."
+    "switcher": {
+      "all": "All",
+      "new": "+ New"
     },
     "empty": {
       "title": "Your circle is quiet",
@@ -1181,22 +1179,14 @@
       "cta": "Add a friend"
     },
     "wall": {
-      "sharedAt": "Shared at {time}",
       "loading": "Loading your circle",
       "loadingMore": "Loading earlier days…",
       "todayLabel": "Today",
       "yesterdayLabel": "Yesterday",
       "na": "N/A",
       "you": "You",
-      "presenceLabel": "Who's in your circle",
-      "sharedTodayHint": "Shared something today",
-      "quietHint": "Quiet today",
-      "memberActions": "Actions for {name}",
-      "remove": "Remove",
       "block": "Block",
-      "removed": "Removed from your circle",
       "blocked": "Blocked",
-      "undo": "Undo",
       "actionError": "That didn't work — try again."
     },
     "shareControl": {

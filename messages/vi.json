@@ -1163,17 +1163,15 @@
   "groups": {
     "page": {
       "title": "Vòng kết nối của bạn",
-      "subtitle": "Hôm nay bạn bè đang ăn gì.",
+      "subtitlePlain": "Hôm nay",
+      "subtitleAccent": "cả nhà ăn gì?",
       "addFriend": "Thêm bạn",
       "friendsNoMealToday": "Chưa có người bạn nào chia sẻ bữa ăn.",
-      "groupNoMealToday": "Chưa ai trong {name} chia sẻ bữa ăn nào hôm nay.",
-      "groupsSectionTitle": "Nhóm",
-      "friendsSectionTitle": "Bạn bè",
-      "newFoodLog": "Nhật ký món ăn mới"
+      "groupNoMealToday": "Chưa ai trong {name} chia sẻ bữa ăn nào hôm nay."
     },
-    "noThreadSelected": {
-      "title": "Chọn một cuộc trò chuyện",
-      "subtitle": "Chọn một người bạn hoặc nhóm bên trái để xem các bữa ăn đã chia sẻ."
+    "switcher": {
+      "all": "Tất cả",
+      "new": "+ Nhóm mới"
     },
     "empty": {
       "title": "Vòng kết nối đang yên ắng",
@@ -1181,22 +1179,14 @@
       "cta": "Thêm một người bạn"
     },
     "wall": {
-      "sharedAt": "Chia sẻ lúc {time}",
       "loading": "Đang tải vòng kết nối của bạn",
       "loadingMore": "Đang tải các ngày trước…",
       "todayLabel": "Hôm nay",
       "yesterdayLabel": "Hôm qua",
       "na": "Không có",
       "you": "Bạn",
-      "presenceLabel": "Ai trong vòng kết nối của bạn",
-      "sharedTodayHint": "Hôm nay đã chia sẻ",
-      "quietHint": "Hôm nay yên ắng",
-      "memberActions": "Tùy chọn cho {name}",
-      "remove": "Xóa",
       "block": "Chặn",
-      "removed": "Đã xóa khỏi vòng kết nối",
       "blocked": "Đã chặn",
-      "undo": "Hoàn tác",
       "actionError": "Chưa được — hãy thử lại."
     },
     "shareControl": {
