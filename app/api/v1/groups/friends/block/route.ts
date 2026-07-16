@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from 'next/server';
-import { blockFriend } from '@/lib/actions/groups';
+import { blockFriend } from '@/lib/actions/groups/friendship';
 import { readJsonBody, requireUserId } from '@/lib/api/auth';
 import { serializeError } from '@/lib/errors';
 

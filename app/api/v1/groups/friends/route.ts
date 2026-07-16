@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { listCircle } from '@/lib/actions/groups';
+import { listCircle } from '@/lib/actions/groups/feed';
 import { requireUserId } from '@/lib/api/auth';
 import { serializeError } from '@/lib/errors';
 

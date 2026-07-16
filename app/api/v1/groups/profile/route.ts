@@ -2,7 +2,7 @@ import { type NextRequest, NextResponse } from 'next/server';
 import {
   getOrCreateMyProfile,
   upsertPublicProfile,
-} from '@/lib/actions/groups';
+} from '@/lib/actions/groups/profile';
 import { readJsonBody, requireUserId } from '@/lib/api/auth';
 import { serializeError } from '@/lib/errors';
 

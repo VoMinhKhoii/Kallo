@@ -25,7 +25,7 @@ import type {
   LoggingDayData,
   PendingMealConfirmation,
   PersistedMeal,
-} from '@/lib/actions/meals';
+} from '@/lib/actions/meals/types';
 import { NUTRITION_KEYS } from '@/lib/ai/constants';
 import type { ParsedMeal } from '@/lib/types/meal';
 
@@ -70,10 +70,16 @@ const { mockLoadLoggingDay, mockLoadMealsByDate, mockConfirm } = vi.hoisted(
   })
 );
 
-vi.mock('@/lib/actions/meals', () => ({
+vi.mock('@/lib/actions/meals/load-meals', () => ({
   loadLoggingDay: mockLoadLoggingDay,
   loadMealsByDate: mockLoadMealsByDate,
+}));
+
+vi.mock('@/lib/actions/meals/confirm-and-save', () => ({
   confirmAndSaveMealAction: mockConfirm,
+}));
+
+vi.mock('@/lib/actions/meals/mutate-meal', () => ({
   deleteMealAction: vi.fn(),
 }));
 

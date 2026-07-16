@@ -6,23 +6,27 @@ import {
   analysisModelBudgetEvents,
   analysisRateLimitWindows,
 } from '@/lib/db/schema';
+import { adminReplayGuardRoute } from '../analysis-guard-limits';
+import type {
+  AdminReplayGuardLimits,
+  AnalysisGuardLimits,
+  AnalysisGuardResult,
+  AnalysisModelBudgetSource,
+  AnalysisRateLimitWindowKind,
+  BuildAnalysisGuardEventInput,
+  NonessentialAnalysisGuardLimits,
+} from '../analysis-guard-types';
 import {
-  type AdminReplayGuardLimits,
-  type AnalysisGuardLimits,
-  type AnalysisGuardResult,
-  type AnalysisModelBudgetSource,
-  type AnalysisRateLimitWindowKind,
-  adminReplayGuardRoute,
-  type BuildAnalysisGuardEventInput,
   buildAnalysisGuardEvent,
   checkAdminReplayGuard,
   checkAnalysisGuards,
   checkNonessentialAnalysisGuards,
+} from '../analysis-guards';
+import { recordAnalysisModelBudgetEvent } from '../analysis-model-budget';
+import {
   getAnalysisWindowRetryAfterSeconds,
   getAnalysisWindowStart,
-  type NonessentialAnalysisGuardLimits,
-  recordAnalysisModelBudgetEvent,
-} from '../analysis-guards';
+} from '../analysis-windows';
 
 const hashSecret = 'analysis-guard-unit-test-secret';
 const analyzeMealRoute = '/api/analyze-meal';

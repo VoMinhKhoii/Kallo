@@ -109,4 +109,4 @@ export type {
   PersistedMeal,
   PersistedMealItemGroup,
   RecentCheatOccasion,
-} from '@/lib/actions/meals';
+} from '@/lib/actions/meals/types';

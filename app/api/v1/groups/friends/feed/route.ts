@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from 'next/server';
-import { listFriendsThreadFeed } from '@/lib/actions/groups';
+import { listFriendsThreadFeed } from '@/lib/actions/groups/feed';
 import { requireUserId } from '@/lib/api/auth';
 import { serializeError } from '@/lib/errors';
 

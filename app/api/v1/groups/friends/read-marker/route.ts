@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getFriendsFeedReadMarker } from '@/lib/actions/groups';
+import { getFriendsFeedReadMarker } from '@/lib/actions/groups/feed';
 import { requireUserId } from '@/lib/api/auth';
 import { serializeError } from '@/lib/errors';
 

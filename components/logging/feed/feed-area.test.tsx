@@ -91,7 +91,7 @@ vi.mock('@/hooks/meals/use-recent-cheat-occasions', () => ({
   useRecentCheatOccasions: () => ({ data: [] }),
 }));
 
-vi.mock('@/lib/actions/meals', () => ({
+vi.mock('@/lib/actions/meals/cheat', () => ({
   stageCheatRepeatAction: vi.fn(),
 }));
 

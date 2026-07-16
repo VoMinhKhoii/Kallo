@@ -11,9 +11,9 @@ import type {
   CircleMember,
   FriendsThreadFeedPage,
   PublicProfile,
-} from '@/lib/actions/groups';
+} from '@/lib/actions/groups/types';
 import type { MealShareInvite } from '@/lib/actions/meal-sharing';
-import type { ConfirmMealResponse } from '@/lib/actions/meals';
+import type { ConfirmMealResponse } from '@/lib/actions/meals/types';
 import { parseApiError } from '@/lib/errors';
 
 export type {

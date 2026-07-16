@@ -10,11 +10,8 @@ import {
   useDuplicateMeal,
   useUpdateMeal,
 } from '@/hooks/meals/use-meal-mutations';
-import {
-  deleteMealAction,
-  type LoggingDayData,
-  type PersistedMeal,
-} from '@/lib/actions/meals';
+import { deleteMealAction } from '@/lib/actions/meals/mutate-meal';
+import type { LoggingDayData, PersistedMeal } from '@/lib/actions/meals/types';
 
 interface UseMealCardActionsParams {
   userId: string;

@@ -1,4 +1,4 @@
-import type { PersistedMeal } from '@/lib/actions/meals';
+import type { PersistedMeal } from '@/lib/actions/meals/types';
 import type { MealEntry, NutritionData } from '@/lib/types/dashboard';
 
 export interface DashboardTodayTargets {

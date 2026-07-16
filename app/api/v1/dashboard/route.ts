@@ -1,6 +1,6 @@
 import type { NextRequest } from 'next/server';
 import { loadCalorieAdherenceHeatmap } from '@/lib/actions/dashboard';
-import { loadLoggingDay } from '@/lib/actions/meals';
+import { loadLoggingDay } from '@/lib/actions/meals/load-meals';
 import { loadWeightSummaryAction } from '@/lib/actions/weight';
 import type { DashboardBundle } from '@/lib/api/contracts/dashboard';
 import {

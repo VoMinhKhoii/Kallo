@@ -9,7 +9,7 @@ import {
   formatMacroOrNA,
 } from '@/components/logging/feed/format-inline-nutrition';
 import { Badge } from '@/components/ui/badge';
-import type { PersistedMeal } from '@/lib/actions/meals';
+import type { PersistedMeal } from '@/lib/actions/meals/types';
 import {
   activeAnchorLabel,
   CHEAT_SLIDER_COLORS,

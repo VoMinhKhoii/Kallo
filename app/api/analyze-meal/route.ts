@@ -1,11 +1,6 @@
-import { eq } from 'drizzle-orm';
 import type { NextRequest } from 'next/server';
 import { getTranslations } from 'next-intl/server';
-import {
-  createGeminiClient,
-  type GeminiProviderConfig,
-  resolveGeminiProvider,
-} from '@/lib/ai/gemini';
+import { createGeminiClient } from '@/lib/ai/gemini';
 import {
   buildAiRequestContext,
   buildUserContext,
@@ -21,140 +16,24 @@ import {
 } from '@/lib/ai/pipeline/telemetry/logging';
 import type { StreamEvent } from '@/lib/ai/streaming';
 import { encodeSSE } from '@/lib/ai/streaming';
-import { getUtcInstantForLocalDate } from '@/lib/date/local-day';
 import { db } from '@/lib/db';
+import { analysisGuardEvents, pendingAnalyses } from '@/lib/db/schema';
+import { Errors } from '@/lib/errors';
 import {
-  analysisGuardEvents,
-  pendingAnalyses,
-  userProfiles,
-} from '@/lib/db/schema';
-import { Errors, serializeError } from '@/lib/errors';
-import {
-  type AnalysisGuardAllowedResult,
   buildAnalysisGuardEvent,
   checkAnalysisGuards,
 } from '@/lib/rate-limit/analysis-guards';
-import { createClient } from '@/lib/supabase/server';
-import { mealMessageSchema } from '@/lib/validation';
+
+import {
+  createGuardRelease,
+  getRequestIp,
+  validateRequest,
+} from './request-validation';
 
 export const runtime = 'nodejs';
 export const maxDuration = 60;
 
 const analyzeMealRoute = '/api/analyze-meal';
-
-function getRequestIp(request: NextRequest) {
-  const forwardedFor = request.headers.get('x-forwarded-for');
-  const forwardedIp = forwardedFor?.split(',')[0]?.trim();
-
-  return forwardedIp || request.headers.get('x-real-ip');
-}
-
-function createGuardRelease(release: AnalysisGuardAllowedResult['release']) {
-  let releasePromise: Promise<void> | undefined;
-
-  return () => {
-    if (!release) return Promise.resolve();
-
-    releasePromise ??= (async () => {
-      try {
-        await release();
-      } catch (error) {
-        console.error(
-          '[analyze-meal] Failed to release analysis guard:',
-          error
-        );
-      }
-    })();
-
-    return releasePromise;
-  };
-}
-
-/**
- * Pre-stream validation: auth, input, profile, config.
- * Returns structured JSON error responses before SSE starts.
- *
- * Auth verification and body parsing run in parallel to reduce latency by
- * ~50-100ms on each request (saves one sequential network round-trip).
- */
-async function validateRequest(request: NextRequest) {
-  try {
-    const supabase = await createClient();
-
-    // Parallelize auth and body parsing — independent operations
-    const [authResult, bodyResult] = await Promise.allSettled([
-      supabase.auth.getUser(),
-      request.json() as Promise<unknown>,
-    ]);
-
-    // Validate auth — getUser() can resolve with { data: { user: null }, error: AuthError }
-    if (
-      authResult.status === 'rejected' ||
-      authResult.value.error ||
-      !authResult.value.data.user
-    ) {
-      throw Errors.notAuthenticated();
-    }
-    const user = authResult.value.data.user;
-
-    // Validate body parse
-    if (bodyResult.status === 'rejected') {
-      throw Errors.validationFailed('Invalid JSON in request body');
-    }
-    const body = bodyResult.value;
-
-    // Fetch profile (requires user.id from auth above)
-    const rows = await db
-      .select()
-      .from(userProfiles)
-      .where(eq(userProfiles.userId, user.id))
-      .limit(1);
-    const profile = rows[0];
-    if (!profile) {
-      throw Errors.profileNotFound();
-    }
-
-    const parsed = mealMessageSchema.safeParse(body);
-    if (!parsed.success) {
-      throw Errors.validationFailed(
-        parsed.error.issues[0]?.message ?? 'Invalid input'
-      );
-    }
-
-    let geminiConfig: GeminiProviderConfig;
-    try {
-      geminiConfig = resolveGeminiProvider();
-    } catch (error) {
-      console.error('[analyze-meal] AI provider misconfigured:', error);
-      throw Errors.internal();
-    }
-
-    return {
-      data: {
-        userId: user.id,
-        message: parsed.data.message,
-        locale: parsed.data.locale,
-        // A refine inherits the original meal's instant so the corrected meal
-        // keeps its timeline position/slot; a fresh log stamps from the day.
-        loggedAt: parsed.data.inheritLoggedAt
-          ? new Date(parsed.data.inheritLoggedAt)
-          : getUtcInstantForLocalDate(
-              parsed.data.loggedDate,
-              parsed.data.timezoneOffset
-            ),
-        mode: parsed.data.mode ?? 'precise',
-        cheatType: parsed.data.cheatType,
-        clarifyAnswer: parsed.data.clarifyAnswer,
-        cheatIntensity: parsed.data.cheatIntensity,
-        profile,
-        geminiConfig,
-      },
-    };
-  } catch (error) {
-    return { error: serializeError(error) };
-  }
-}
-
 export async function POST(request: NextRequest) {
   // Phase 1: Pre-stream validation — errors returned as JSON
   const validation = await validateRequest(request);

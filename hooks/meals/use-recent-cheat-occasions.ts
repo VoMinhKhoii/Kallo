@@ -1,10 +1,8 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import {
-  loadRecentCheatOccasionsAction,
-  type RecentCheatOccasion,
-} from '@/lib/actions/meals';
+import { loadRecentCheatOccasionsAction } from '@/lib/actions/meals/cheat';
+import type { RecentCheatOccasion } from '@/lib/actions/meals/types';
 
 export const recentCheatOccasionsKeys = {
   all: ['recent-cheat-occasions'] as const,

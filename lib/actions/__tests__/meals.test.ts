@@ -92,16 +92,18 @@ vi.mock('@/lib/db/schema', () => ({
 // Module under test — imported AFTER mocks
 // ---------------------------------------------------------------------------
 
+import { confirmAndSaveMealAction } from '@/lib/actions/meals/confirm-and-save';
+import { duplicateMealAction } from '@/lib/actions/meals/duplicate-meal';
 import {
-  confirmAndSaveMealAction,
-  deleteMealAction,
-  duplicateMealAction,
   loadMealDates,
   loadMealsByDate,
   loadPendingAnalysesByDate,
-  type PersistedMeal,
+} from '@/lib/actions/meals/load-meals';
+import {
+  deleteMealAction,
   updateMealAction,
-} from '@/lib/actions/meals';
+} from '@/lib/actions/meals/mutate-meal';
+import type { PersistedMeal } from '@/lib/actions/meals/types';
 import {
   buildPersistedIngredient,
   buildPersistedMeal,

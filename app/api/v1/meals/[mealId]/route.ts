@@ -1,5 +1,5 @@
 import type { NextRequest } from 'next/server';
-import { deleteMealAction } from '@/lib/actions/meals';
+import { deleteMealAction } from '@/lib/actions/meals/mutate-meal';
 import { handleRouteError } from '@/lib/api/respond';
 
 export const runtime = 'nodejs';
