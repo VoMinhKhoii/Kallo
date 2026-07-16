@@ -3,8 +3,7 @@
 import { Globe } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
-import { useIsAndroid } from '@/hooks/ui/use-in-app-browser';
-import { chromeIntentUrl } from '@/lib/in-app-browser';
+import { chromeIntentUrl, isAndroid } from '@/lib/in-app-browser';
 
 /**
  * Shown in place of the Google button when the app runs inside an in-app
@@ -14,8 +13,10 @@ import { chromeIntentUrl } from '@/lib/in-app-browser';
  */
 export function WebviewGoogleNotice() {
   const t = useTranslations('auth.dialog');
-  // Client-only (resolves after hydration) — the Chrome escape is Android-only.
-  const android = useIsAndroid();
+  // Safe to read synchronously: this notice only renders once the parent's
+  // in-app-browser check has resolved true, so it is never server-rendered —
+  // no hydration mismatch, and no post-effect iOS→Android flash.
+  const android = isAndroid();
 
   const openInChrome = () => {
     window.location.href = chromeIntentUrl(window.location.href);

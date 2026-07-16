@@ -7,6 +7,7 @@ import { toast } from 'sonner';
 import { useAuthDialog } from '@/components/auth/auth-provider';
 import { WebviewGoogleNotice } from '@/components/auth/webview-google-notice';
 import { useIsInAppBrowser } from '@/hooks/ui/use-in-app-browser';
+import { isInAppBrowser } from '@/lib/in-app-browser';
 import { createClient } from '@/lib/supabase/client';
 
 export function GoogleSignInButton() {
@@ -19,6 +20,10 @@ export function GoogleSignInButton() {
   const inApp = useIsInAppBrowser();
 
   const onClick = async () => {
+    // Guard the sub-frame before `inApp` resolves post-hydration: Google blocks
+    // OAuth in webviews, so never start the flow there. Runs client-side only;
+    // the hook's effect swaps in the notice on the same tick.
+    if (isInAppBrowser()) return;
     setLoading(true);
     const supabase = createClient();
     // Prefer the invite return-path when present; otherwise land in the app.
