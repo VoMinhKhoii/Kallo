@@ -1171,7 +1171,9 @@
     },
     "switcher": {
       "all": "Tất cả",
-      "new": "+ Nhóm mới"
+      "new": "+ Nhóm mới",
+      "label": "Chế độ xem vòng kết nối",
+      "retry": "Thử lại"
     },
     "empty": {
       "title": "Vòng kết nối đang yên ắng",

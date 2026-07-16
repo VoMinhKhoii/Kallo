@@ -42,8 +42,16 @@ export function AddFriendDialog({
   const [open, setOpen] = useState(false);
   const [tab, setTab] = useState<DialogTab>(defaultTab);
 
+  // Re-seed the tab on every open — the dialog stays mounted between opens
+  // (e.g. the "+ New" pill wants Create group each time, not whatever tab the
+  // user last left it on).
+  function handleOpenChange(next: boolean) {
+    if (next) setTab(defaultTab);
+    setOpen(next);
+  }
+
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>{trigger}</DialogTrigger>
       <DialogContent className="gap-5 border-nham-border/60 bg-nham-surface">
         <DialogHeader>

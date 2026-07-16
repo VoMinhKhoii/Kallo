@@ -1171,7 +1171,9 @@
     },
     "switcher": {
       "all": "All",
-      "new": "+ New"
+      "new": "+ New",
+      "label": "Circle views",
+      "retry": "Retry"
     },
     "empty": {
       "title": "Your circle is quiet",

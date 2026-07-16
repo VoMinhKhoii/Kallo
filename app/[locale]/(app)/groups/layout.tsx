@@ -1,7 +1,5 @@
-'use client';
-
 import { UserPlus } from 'lucide-react';
-import { useTranslations } from 'next-intl';
+import { getTranslations } from 'next-intl/server';
 import type { ReactNode } from 'react';
 import { AddFriendDialog } from '@/components/groups/add-friend-dialog';
 import { MealInvites } from '@/components/groups/meal-invites';
@@ -12,10 +10,16 @@ import { ViewSwitcher } from '@/components/groups/view-switcher';
  * the view-switcher pill row, the pending-invites inbox, and the active feed
  * panel (the "All" friends feed or a group feed) filling the rest of the
  * height. Replaces the old master-detail two-pane layout — there is no list
- * pane anymore, navigation happens through the pill row.
+ * pane anymore, navigation happens through the pill row. The chrome is static,
+ * so this stays a Server Component; the dialog, invites, and switcher are the
+ * client islands.
  */
-export default function GroupsLayout({ children }: { children: ReactNode }) {
-  const t = useTranslations('groups.page');
+export default async function GroupsLayout({
+  children,
+}: {
+  children: ReactNode;
+}) {
+  const t = await getTranslations('groups.page');
 
   return (
     <main className="mx-auto flex h-full w-full max-w-2xl flex-1 flex-col overflow-hidden px-4 pt-6 pb-4 sm:px-5">
@@ -49,9 +53,11 @@ export default function GroupsLayout({ children }: { children: ReactNode }) {
 
       <ViewSwitcher />
 
-      {/* empty:hidden — MealInvites renders null when the inbox is empty,
-       * which would otherwise leave this wrapper's margin as a phantom gap. */}
-      <div className="mb-4 shrink-0 empty:hidden">
+      {/* empty:hidden — MealInvites renders null when the inbox is empty, so
+       * the wrapper's margin doesn't become a phantom gap. max-h + scroll caps
+       * a long invite list so it can't push the feed panel off a short
+       * viewport. */}
+      <div className="mb-4 max-h-[35vh] shrink-0 overflow-y-auto empty:hidden">
         <MealInvites />
       </div>
 
