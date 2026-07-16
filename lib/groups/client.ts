@@ -10,7 +10,7 @@ import type {
   CircleFeedEntry,
   CircleMember,
   PublicProfile,
-} from '@/lib/actions/groups';
+} from '@/lib/actions/groups/types';
 import { parseApiError } from '@/lib/errors';
 
 export type { CircleFeedEntry, CircleMember, PublicProfile };

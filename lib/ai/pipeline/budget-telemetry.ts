@@ -1,0 +1,124 @@
+import type { AppDb } from '@/lib/db';
+import type {
+  AnalysisModelBudgetWorkKind,
+  AnalysisModelProviderErrorCategory,
+  RecordAnalysisModelBudgetEventInput,
+} from '@/lib/rate-limit/analysis-guard-types';
+import { recordAnalysisModelBudgetEvent } from '@/lib/rate-limit/analysis-model-budget';
+import type { StreamOptions } from '../gemini';
+import { readBooleanEnv } from './config/feature-flags';
+
+export const ANALYSIS_MODEL_BUDGET_ROUTE = '/api/analyze-meal';
+export const ANALYSIS_MODEL_PROVIDER = 'gemini';
+
+/** Model-budget attribution for a pipeline run (primary vs shadow work). */
+export interface PipelineBudget {
+  workKind: AnalysisModelBudgetWorkKind;
+  requestId?: string | null;
+  providerErrorState?: { recorded: boolean };
+}
+
+export function recordAnalysisModelBudgetEventBestEffort(
+  input: RecordAnalysisModelBudgetEventInput
+): void {
+  // ANALYSIS_BUDGET_EVENTS_ENABLED=false silences the always-on telemetry
+  // table writes (3/request) when chasing pool contention or DB cost spikes.
+  if (!readBooleanEnv('ANALYSIS_BUDGET_EVENTS_ENABLED', true)) return;
+  void recordAnalysisModelBudgetEvent(input).catch((error) => {
+    console.error('[ai/pipeline] failed to write model budget event', error);
+  });
+}
+
+export function createBudgetAttemptRecorder(args: {
+  db: AppDb;
+  requestId: string | null;
+  workKind: AnalysisModelBudgetWorkKind;
+  model: string;
+  providerErrorState?: { recorded: boolean };
+}): NonNullable<StreamOptions['onAttemptComplete']> {
+  return ({ error, inputTokens, model, outputTokens }) => {
+    const errorCategory = error == null ? null : classifyProviderError(error);
+
+    if (inputTokens == null && outputTokens == null && errorCategory == null) {
+      return;
+    }
+
+    if (errorCategory) {
+      if (args.providerErrorState) {
+        args.providerErrorState.recorded = true;
+      }
+    }
+
+    recordAnalysisModelBudgetEventBestEffort({
+      db: args.db,
+      requestId: args.requestId,
+      route: ANALYSIS_MODEL_BUDGET_ROUTE,
+      workKind: args.workKind,
+      provider: ANALYSIS_MODEL_PROVIDER,
+      model: model || args.model,
+      requestCount: 0,
+      inputTokens,
+      outputTokens,
+      errorCategory,
+    });
+  };
+}
+
+function getErrorStatus(error: unknown): number | null {
+  if (
+    error &&
+    typeof error === 'object' &&
+    'status' in error &&
+    typeof (error as { status?: unknown }).status === 'number'
+  ) {
+    return (error as { status: number }).status;
+  }
+
+  if (!(error instanceof Error)) {
+    return null;
+  }
+
+  const statusMatch = error.message.match(/\b(408|429|500|502|503|504)\b/);
+  return statusMatch ? Number.parseInt(statusMatch[1], 10) : null;
+}
+
+export function classifyProviderError(
+  error: unknown
+): AnalysisModelProviderErrorCategory | null {
+  const message = error instanceof Error ? error.message : String(error);
+  const status = getErrorStatus(error);
+
+  if (/quota/i.test(message)) {
+    return 'quota';
+  }
+
+  if (status === 429) {
+    return 'rate_limit';
+  }
+
+  if (
+    status === 408 ||
+    status === 504 ||
+    /timeout|timed out|AbortError/i.test(message)
+  ) {
+    return 'timeout';
+  }
+
+  if (status != null && status >= 500) {
+    return 'server_error';
+  }
+
+  if (/UNAVAILABLE/i.test(message)) {
+    return 'server_error';
+  }
+
+  if (
+    /fetch failed|network error|socket hang up|ECONNRESET|EAI_AGAIN/i.test(
+      message
+    )
+  ) {
+    return 'network';
+  }
+
+  return null;
+}

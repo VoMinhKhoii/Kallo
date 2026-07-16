@@ -1,5 +1,5 @@
 import type { NextRequest } from 'next/server';
-import { confirmAndSaveMealAction } from '@/lib/actions/meals';
+import { confirmAndSaveMealAction } from '@/lib/actions/meals/confirm-and-save';
 import { confirmMealSchema } from '@/lib/api/contracts/meals';
 import { handleRouteError } from '@/lib/api/respond';
 

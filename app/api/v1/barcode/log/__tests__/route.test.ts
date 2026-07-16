@@ -20,7 +20,7 @@ vi.mock('@/lib/barcode/service', async (importActual) => {
   };
 });
 
-vi.mock('@/lib/actions/meals', () => ({
+vi.mock('@/lib/actions/meals/confirm-and-save', () => ({
   confirmAndSaveMealAction,
 }));
 

@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import {
   buildMatchTopK,
-  type FuzzyMatchRow,
   mergeTopKAcrossSources,
   rrfFuseCandidates,
-} from '../source-matching';
+} from '../candidate-ranking';
+import type { FuzzyMatchRow } from '../match-constants';
 
 function row(
   overrides: Partial<FuzzyMatchRow> & {

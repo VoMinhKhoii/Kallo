@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { MatchInfo } from '../source-matching';
+import type { MatchInfo } from '../match-constants';
 import { pickBestSource } from '../source-matching';
 
 const candidate = (

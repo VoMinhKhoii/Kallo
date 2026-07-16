@@ -1,8 +1,8 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import type { LoggingDayData } from '@/lib/actions/meals';
-import { loadLoggingDay } from '@/lib/actions/meals';
+import { loadLoggingDay } from '@/lib/actions/meals/load-meals';
+import type { LoggingDayData } from '@/lib/actions/meals/types';
 
 export const loggingDayKeys = {
   all: ['logging-day'] as const,

@@ -87,14 +87,13 @@ vi.mock('@/lib/db/schema', () => ({
 // Module under test — imported AFTER mocks
 // ---------------------------------------------------------------------------
 
+import { listCircleFeed } from '@/lib/actions/groups/feed';
+import { acceptInvite, removeFriend } from '@/lib/actions/groups/friendship';
 import {
-  acceptInvite,
   getOrCreateMyProfile,
   getProfileBySlug,
-  listCircleFeed,
-  removeFriend,
   upsertPublicProfile,
-} from '@/lib/actions/groups';
+} from '@/lib/actions/groups/profile';
 
 // Valid v4 UUIDs (the remove/uuid schemas validate version+variant bits).
 const ACTOR = 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11';

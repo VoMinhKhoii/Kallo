@@ -21,7 +21,7 @@ import type {
   DecomposedIngredientV2,
   GroundedIngredientEstimate,
   GroundedMealItem,
-} from '../pipeline/schemas';
+} from '../pipeline/schemas-v2';
 import type {
   IngredientLlmNutrition,
   MacroBase,

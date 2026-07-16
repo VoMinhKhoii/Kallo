@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from 'next/server';
-import { getFriendshipStatus, getProfileBySlug } from '@/lib/actions/groups';
+import { getFriendshipStatus } from '@/lib/actions/groups/friendship';
+import { getProfileBySlug } from '@/lib/actions/groups/profile';
 import { Errors, serializeError } from '@/lib/errors';
 import { createClient } from '@/lib/supabase/server';
 

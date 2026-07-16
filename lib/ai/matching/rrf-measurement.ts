@@ -1,4 +1,4 @@
-import type { FuzzyMatchRow } from './source-matching';
+import type { FuzzyMatchRow } from './match-constants';
 
 export interface RrfCandidate {
   canonicalName: string;
