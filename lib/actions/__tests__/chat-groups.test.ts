@@ -108,15 +108,18 @@ const GROUP_ID = 'd3bbde22-cf3e-4bb1-9e9f-9eecef613d44';
 const DIRECT_GROUP_ID = 'e4ccef33-df4f-4cc2-af0f-0ffdf0724e55';
 const [LOW, HIGH] = USER_A < USER_B ? [USER_A, USER_B] : [USER_B, USER_A];
 
-// A `.from().where().limit()` chain resolving to the given rows (db.select).
+// A `.from()[.innerJoin()...].where().limit()` chain resolving to the given
+// rows (db.select). innerJoin returns the same level so chains with zero or
+// more joins (requireMembership joins chat_groups) all land on where().limit().
 function selectRows(rows: unknown[]) {
-  return {
-    from: vi.fn().mockReturnValue({
-      where: vi.fn().mockReturnValue({
-        limit: vi.fn().mockResolvedValue(rows),
-      }),
+  const level: Record<string, ReturnType<typeof vi.fn>> = {
+    where: vi.fn().mockReturnValue({
+      limit: vi.fn().mockResolvedValue(rows),
     }),
+    innerJoin: vi.fn(),
   };
+  level.innerJoin.mockReturnValue(level);
+  return { from: vi.fn().mockReturnValue(level) };
 }
 
 // A stub update chain: db.update(table).set(vals).where(cond) -> resolves.
@@ -693,6 +696,63 @@ describe('membership-gated reads', () => {
 
     expect(messages.map((m) => m.id)).toEqual(['m1', 'm2']);
     expect(mockDbUpdate).toHaveBeenCalledTimes(1);
+  });
+
+  it('direct chat: a removed/blocked ex-friend is rejected despite membership', async () => {
+    // Membership row still exists (remove/block only mutates friendships) but
+    // the pair no longer has an accepted edge — the gate must 404, not serve.
+    mockDbSelect
+      .mockReturnValueOnce(
+        selectRows([
+          {
+            id: 'member-row',
+            kind: 'direct',
+            directUserLow: LOW,
+            directUserHigh: HIGH,
+          },
+        ])
+      )
+      .mockReturnValueOnce(selectRows([])); // no accepted friendship edge
+
+    await expect(
+      sendChatGroupMessage(USER_A, { groupId: DIRECT_GROUP_ID, body: 'hi' })
+    ).rejects.toThrow('Không tìm thấy nhóm chat.');
+    expect(mockDbInsert).not.toHaveBeenCalled();
+  });
+
+  it('direct chat: a current accepted friend passes the gate', async () => {
+    mockDbSelect
+      .mockReturnValueOnce(
+        selectRows([
+          {
+            id: 'member-row',
+            kind: 'direct',
+            directUserLow: LOW,
+            directUserHigh: HIGH,
+          },
+        ])
+      )
+      .mockReturnValueOnce(selectRows([{ status: 'accepted' }]));
+    mockDbInsert.mockReturnValue({
+      values: vi.fn().mockReturnValue({
+        returning: vi.fn().mockResolvedValue([
+          {
+            id: 'm1',
+            groupId: DIRECT_GROUP_ID,
+            senderId: USER_A,
+            body: 'hi',
+            createdAt: new Date('2026-01-01T00:00:00Z'),
+          },
+        ]),
+      }),
+    });
+    stubUpdate();
+
+    const message = await sendChatGroupMessage(USER_A, {
+      groupId: DIRECT_GROUP_ID,
+      body: 'hi',
+    });
+    expect(message.body).toBe('hi');
   });
 
   it('sendChatGroupMessage bumps the group activity timestamp', async () => {

@@ -91,11 +91,19 @@ const UUID_NEW = 'f5dd0044-e150-4dd3-b012-b00e01835f66';
 const LOGGED_AT = new Date('2026-04-05T17:30:00.000Z');
 
 // select ending in .limit(1) — meal / friendship / source / share lookups.
+// The resolved value also carries .for() so the row-locked source lookup
+// (`.limit(1).for('update')`) consumes the same queue slot.
 function queueLimitSelect(rows: unknown[]) {
   mockTxSelect.mockReturnValueOnce({
     from: vi.fn().mockReturnValue({
       where: vi.fn().mockReturnValue({
-        limit: vi.fn().mockResolvedValue(rows),
+        limit: vi
+          .fn()
+          .mockReturnValue(
+            Object.assign(Promise.resolve(rows), {
+              for: vi.fn().mockResolvedValue(rows),
+            })
+          ),
       }),
     }),
   });
@@ -303,6 +311,7 @@ describe('shareMealWithFriendsAction', () => {
   it('split mode: halves the meal for two participants and stores factor 0.5', async () => {
     queueLimitSelect([sourceMeal()]);
     queueWhereSelect([sourceItem()]);
+    queueLimitSelect([]); // no already-accepted invite among the recipients
     queueWhereSelect([friendEdge]);
     queueLimitSelect([]); // no existing share row (scaleOwnMealInPlace)
 
@@ -336,6 +345,7 @@ describe('shareMealWithFriendsAction', () => {
   it('split mode: three participants → factor 1/3 for two friends', async () => {
     queueLimitSelect([sourceMeal()]);
     queueWhereSelect([sourceItem()]);
+    queueLimitSelect([]); // no already-accepted invite among the recipients
     queueWhereSelect([
       friendEdge,
       { userLow: UUID_FRIEND_2, userHigh: mockUser.id },
@@ -355,6 +365,24 @@ describe('shareMealWithFriendsAction', () => {
     expect(result.invitedCount).toBe(2);
     const invites = captured.invites.vals as Array<Record<string, unknown>>;
     expect(invites).toHaveLength(2);
+  });
+
+  it('rejects a split when a selected friend already accepted this meal', async () => {
+    // Copy-then-split path: the friend accepted a copy earlier; a split would
+    // scale the sender's meal while the protected upsert creates no new offer.
+    queueLimitSelect([sourceMeal()]);
+    queueWhereSelect([sourceItem()]);
+    queueLimitSelect([{ toUserId: UUID_FRIEND }]); // accepted invite exists
+    await expect(
+      shareMealWithFriendsAction({
+        mealId: UUID_MEAL,
+        friendUserIds: [UUID_FRIEND],
+        mode: 'split',
+      })
+    ).rejects.toThrow('đã nhận phần');
+    // The sender's meal must NOT be scaled and no invite rows written.
+    expect(mockTxUpdate).not.toHaveBeenCalled();
+    expect(mockTxInsert).not.toHaveBeenCalled();
   });
 
   it('rejects an invalid mealId', async () => {

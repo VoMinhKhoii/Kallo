@@ -102,12 +102,15 @@ export async function shareMealWithFriendsAction(input: {
 
   return await db.transaction(async (tx) => {
     // Ownership + precise gate (mirrors duplicateMealAction). Cheat meals carry
-    // no item rows, so there is nothing to copy or split.
+    // no item rows, so there is nothing to copy or split. Locked FOR UPDATE so
+    // two concurrent splits can't both read portionFactor = 1 and each scale
+    // the same meal from the stale full portion.
     const [source] = await tx
       .select()
       .from(meals)
       .where(and(eq(meals.id, parsed.mealId), eq(meals.userId, user.id)))
-      .limit(1);
+      .limit(1)
+      .for('update');
     if (!source) {
       throw Errors.notFound('Bữa ăn không tồn tại hoặc không thuộc về bạn.');
     }
@@ -130,6 +133,29 @@ export async function shareMealWithFriendsAction(input: {
     // the shrink — refuse rather than silently double-scale the logger's meal.
     if (parsed.mode === 'split' && source.portionFactor < 1) {
       throw Errors.validationFailed('Bữa ăn này đã được chia phần rồi.');
+    }
+
+    // A split must also be rejected when any selected friend already ACCEPTED
+    // an offer for this meal: the upsert below deliberately never resets an
+    // accepted invite (no duplicate logs), so scaling first would shrink the
+    // sender's meal while creating no pending offer for that friend.
+    if (parsed.mode === 'split') {
+      const accepted = await tx
+        .select({ toUserId: mealShareInvites.toUserId })
+        .from(mealShareInvites)
+        .where(
+          and(
+            eq(mealShareInvites.sourceMealId, source.id),
+            inArray(mealShareInvites.toUserId, recipientIds),
+            eq(mealShareInvites.status, 'accepted')
+          )
+        )
+        .limit(1);
+      if (accepted[0]) {
+        throw Errors.validationFailed(
+          'Một người bạn đã nhận phần bữa này rồi — không thể chia thêm.'
+        );
+      }
     }
 
     // Every recipient must be an accepted friend of the actor. One query over
@@ -301,7 +327,16 @@ export async function listMealShareInvitesAction(): Promise<MealShareInvite[]> {
       avatarSeed: publicProfiles.avatarSeed,
     })
     .from(mealShareInvites)
-    .innerJoin(meals, eq(meals.id, mealShareInvites.sourceMealId))
+    // The userId join is defense-in-depth: invites are only ever created by
+    // the meal's owner, but nothing in the schema proves from_user_id owns
+    // source_meal_id — keep the invariant enforced at read time too.
+    .innerJoin(
+      meals,
+      and(
+        eq(meals.id, mealShareInvites.sourceMealId),
+        eq(meals.userId, mealShareInvites.fromUserId)
+      )
+    )
     .innerJoin(
       publicProfiles,
       eq(publicProfiles.userId, mealShareInvites.fromUserId)
@@ -418,11 +453,18 @@ export async function acceptMealShareInviteAction(input: {
     }
 
     // Authorized cross-user read: the source meal belongs to the SENDER. The
-    // invite I just claimed is what permits this single read.
+    // invite I just claimed is what permits this single read. The userId
+    // predicate re-proves the sender owns the meal (defense-in-depth — no
+    // schema constraint ties from_user_id to source_meal_id's owner).
     const [source] = await tx
       .select()
       .from(meals)
-      .where(eq(meals.id, invite.sourceMealId))
+      .where(
+        and(
+          eq(meals.id, invite.sourceMealId),
+          eq(meals.userId, invite.fromUserId)
+        )
+      )
       .limit(1);
     if (!source) {
       throw Errors.notFound('Bữa ăn không còn tồn tại.');

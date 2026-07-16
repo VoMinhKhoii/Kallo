@@ -134,6 +134,11 @@ async function isAcceptedFriend(
 // ---------------------------------------------------------------------------
 // requireMembership — throws notFound (never leaks existence) if not a member
 // ---------------------------------------------------------------------------
+// For DIRECT chats, membership alone is not enough: removing or blocking a
+// friend only mutates `friendships`, so the stale membership rows would keep
+// authorizing an ex/blocked friend to read shared meals and send messages.
+// Direct-chat operations therefore also require a CURRENT accepted friendship
+// between the pair (rows are kept so history survives a re-friend).
 
 async function requireMembership(
   actorId: string,
@@ -141,8 +146,14 @@ async function requireMembership(
   db: Db
 ): Promise<void> {
   const rows = await db
-    .select({ id: chatGroupMembers.id })
+    .select({
+      id: chatGroupMembers.id,
+      kind: chatGroups.kind,
+      directUserLow: chatGroups.directUserLow,
+      directUserHigh: chatGroups.directUserHigh,
+    })
     .from(chatGroupMembers)
+    .innerJoin(chatGroups, eq(chatGroups.id, chatGroupMembers.groupId))
     .where(
       and(
         eq(chatGroupMembers.groupId, groupId),
@@ -152,6 +163,15 @@ async function requireMembership(
     .limit(1);
   if (!rows[0]) {
     throw Errors.notFound('Không tìm thấy nhóm chat.');
+  }
+  const row = rows[0];
+  if (row.kind === 'direct' && row.directUserLow && row.directUserHigh) {
+    const otherUserId =
+      row.directUserLow === actorId ? row.directUserHigh : row.directUserLow;
+    const stillFriends = await isAcceptedFriend(actorId, otherUserId, db);
+    if (!stillFriends) {
+      throw Errors.notFound('Không tìm thấy nhóm chat.');
+    }
   }
 }
 
