@@ -132,6 +132,27 @@ export const circleFeedSchema = z.object({
   timezoneOffset: timezoneOffsetSchema,
 });
 
+/** Share one of my meals with specific friends as a full copy or a split. */
+export const shareMealWithFriendsSchema = z.object({
+  mealId: uuidSchema,
+  friendUserIds: z.array(uuidSchema).min(1).max(20),
+  mode: z.enum(['copy', 'split']),
+});
+
+/** Accept a pending meal-share invite into my own diary for the chosen day. */
+export const acceptMealShareInviteSchema = z.object({
+  inviteId: uuidSchema,
+  // Client-generated id so the optimistic card and the persisted row share a
+  // stable React key (mirrors confirm/duplicate).
+  newMealId: uuidSchema.optional(),
+  loggedDate: dateStringSchema,
+  timezoneOffset: timezoneOffsetSchema,
+});
+
+export const dismissMealShareInviteSchema = z.object({
+  inviteId: uuidSchema,
+});
+
 export type HandleInput = z.infer<typeof handleSchema>;
 export type UpsertPublicProfileInput = z.infer<
   typeof upsertPublicProfileSchema

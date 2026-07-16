@@ -253,6 +253,15 @@ export const meals = pgTable(
     cheatSliders: jsonb('cheat_sliders'),
     // ≤280-char "we get the occasion" line shown on the cheat-meal card.
     estimateRationale: text('estimate_rationale'),
+    // Fraction of the "natural full portion" this logged meal represents. 1 for
+    // a normal meal or a full copy; <1 for a split (sender's share, or a
+    // recipient's accepted split copy). Powers the "½ portion" chip and blocks
+    // re-splitting an already-fractional meal (which would compound the shrink)
+    // and NL-refine (which would re-estimate the full portion, silently undoing
+    // the split).
+    portionFactor: numeric('portion_factor', { mode: 'number' })
+      .notNull()
+      .default(1),
 
     // Persisted nutrition — one numeric value per nutrient
     caloriesKcal: numeric('calories_kcal', { mode: 'number' }),
@@ -1081,6 +1090,67 @@ export const circleEvents = pgTable(
     index('circle_events_actor_created_idx').on(
       table.actorId,
       sql`${table.createdAt} DESC`
+    ),
+  ]
+);
+
+// ---------------------------------------------------------------------------
+// Group Tracking — Meal Share Invites (copy / split between friends)
+// ---------------------------------------------------------------------------
+// A directed, actionable offer distinct from meal_shares (broadcast visibility):
+// friend A shares one of their own meals with a specific friend B, either as a
+// full copy or as a split fraction. B one-tap-accepts to materialize a scaled
+// copy in their own diary (accepted_meal_id) or dismisses it. This drives the
+// Circle inbox. Isolation is the from_user_id / to_user_id filters (Drizzle
+// bypasses RLS); the accept path is the one deliberate cross-user meal read,
+// authorized solely by a pending invite row addressed to the reader.
+
+export const mealShareInvites = pgTable(
+  'meal_share_invites',
+  {
+    id: uuid('id').primaryKey().default(sql`gen_random_uuid()`),
+    sourceMealId: uuid('source_meal_id')
+      .notNull()
+      .references(() => meals.id, { onDelete: 'cascade' }),
+    fromUserId: uuid('from_user_id')
+      .notNull()
+      .references(() => authUsers.id, { onDelete: 'cascade' }),
+    toUserId: uuid('to_user_id')
+      .notNull()
+      .references(() => authUsers.id, { onDelete: 'cascade' }),
+    mode: text('mode').notNull(),
+    // Fraction of the source meal the recipient receives: 1 for a full copy,
+    // 1/(participants) for a split. Stored so the inbox can label "½ portion"
+    // and accept scales the copied rows by exactly this factor.
+    portionFactor: numeric('portion_factor').notNull().default('1'),
+    status: text('status').notNull().default('pending'),
+    // The meal materialized in the recipient's diary once accepted (NULL until).
+    acceptedMealId: uuid('accepted_meal_id').references(() => meals.id, {
+      onDelete: 'set null',
+    }),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    respondedAt: timestamp('responded_at', { withTimezone: true }),
+  },
+  (table) => [
+    // One offer per (meal, recipient): re-sharing upserts instead of piling up
+    // duplicate invites.
+    unique('meal_share_invites_meal_recipient_uniq').on(
+      table.sourceMealId,
+      table.toUserId
+    ),
+    // The inbox query: pending invites addressed to the viewer, newest first.
+    index('meal_share_invites_recipient_status_idx')
+      .on(table.toUserId, sql`${table.createdAt} DESC`)
+      .where(sql`status = 'pending'`),
+    check(
+      'meal_share_invites_mode_check',
+      sql`${table.mode} IN ('copy', 'split')`
+    ),
+    check(
+      'meal_share_invites_status_check',
+      sql`${table.status} IN ('pending', 'accepted', 'dismissed')`
     ),
   ]
 );

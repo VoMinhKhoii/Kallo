@@ -1081,6 +1081,8 @@
       "remove": "Remove",
       "logAgain": "Log again",
       "editAmounts": "Edit amounts",
+      "shareWithFriends": "Send to friends",
+      "portionChip": "{portion} portion",
       "cancelEdit": "Cancel",
       "saveEdit": "Save changes",
       "savingEdit": "Saving…",
@@ -1213,6 +1215,40 @@
       "shareCardTitle": "My meal on Nhẩm",
       "copiedLink": "Card link copied to clipboard",
       "errorCopy": "Couldn't copy the card link. Try again."
+    },
+    "shareMeal": {
+      "title": "Share this meal",
+      "description": "Pick friends who ate with you. They'll get it in their inbox to add to their own diary.",
+      "mode": {
+        "copy": {
+          "label": "Same meal",
+          "hint": "Everyone logs the full dish."
+        },
+        "split": {
+          "label": "Split it",
+          "hint": "Divide one item evenly between you."
+        }
+      },
+      "splitPreview": "Your logged portion drops to {portion} now — everyone gets an equal share.",
+      "loadingFriends": "Loading your circle…",
+      "noFriends": "No one in your circle yet. Add a friend first.",
+      "submitEmpty": "Pick a friend",
+      "submit": "Share with {count, plural, one {# friend} other {# friends}}",
+      "copySuccess": "Sent to {count, plural, one {# friend} other {# friends}}",
+      "splitSuccess": "Split with {count, plural, one {# friend} other {# friends}}",
+      "error": "Couldn't share the meal. Try again."
+    },
+    "invites": {
+      "title": "Shared with you",
+      "na": "N/A",
+      "sharedCopy": "{name} shared a meal with you",
+      "sharedSplit": "{name} split a meal with you",
+      "portion": "{portion} portion",
+      "accept": "Add to my diary",
+      "dismiss": "Dismiss",
+      "accepted": "Added to your diary",
+      "error": "That didn't work — try again.",
+      "loadError": "Couldn't load your invites. Tap to retry."
     },
     "invite": {
       "title": "Invite to your circle",

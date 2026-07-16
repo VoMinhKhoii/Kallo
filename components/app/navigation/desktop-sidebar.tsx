@@ -4,6 +4,7 @@ import { PanelLeftClose, PanelLeftOpen, Settings } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import type * as React from 'react';
 import { useState } from 'react';
+import { useMealShareInviteCount } from '@/hooks/social/use-meal-share-invites';
 import { useSidebarState } from '@/hooks/ui/use-sidebar-state';
 import { Link, usePathname } from '@/i18n/navigation';
 import { cn } from '@/lib/utils';
@@ -67,10 +68,13 @@ function SidebarNavLink({
   item,
   collapsed,
   isActive,
+  showBadge = false,
 }: {
   item: NavItem;
   collapsed: boolean;
   isActive: boolean;
+  /** A pending-attention dot (e.g. unaccepted meal-share invites). */
+  showBadge?: boolean;
 }) {
   return (
     <SidebarTooltip enabled={collapsed} label={item.label}>
@@ -87,11 +91,15 @@ function SidebarNavLink({
       >
         <span
           className={cn(
-            'flex h-5 w-5 shrink-0 items-center justify-center transition-colors',
+            'relative flex h-5 w-5 shrink-0 items-center justify-center transition-colors',
             collapsed ? 'mx-auto' : ''
           )}
         >
           {item.icon}
+          {/* Collapsed: the label is hidden, so the status dot rides the icon. */}
+          {showBadge && collapsed && (
+            <span className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-nham-accent ring-2 ring-white" />
+          )}
         </span>
         <span
           className={cn(
@@ -101,6 +109,10 @@ function SidebarNavLink({
         >
           {item.label}
         </span>
+        {/* Expanded: a trailing dot after the label. */}
+        {showBadge && !collapsed && (
+          <span className="ml-auto h-2 w-2 shrink-0 rounded-full bg-nham-accent" />
+        )}
       </Link>
     </SidebarTooltip>
   );
@@ -135,6 +147,7 @@ export function DesktopSidebar({
 }: DesktopSidebarProps) {
   const pathname = usePathname();
   const t = useTranslations('app.mainSidebar');
+  const inviteCount = useMealShareInviteCount();
   const {
     pinnedCollapsed,
     effectiveCollapsed: collapsed,
@@ -265,6 +278,7 @@ export function DesktopSidebar({
                   item={item}
                   collapsed={collapsed}
                   isActive={isActiveRoute(pathname, item.href)}
+                  showBadge={item.id === 'groups' && inviteCount > 0}
                 />
               </li>
             ))}

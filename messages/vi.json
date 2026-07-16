@@ -1081,6 +1081,8 @@
       "remove": "Xóa",
       "logAgain": "Ghi lại",
       "editAmounts": "Sửa lượng",
+      "shareWithFriends": "Gửi cho bạn bè",
+      "portionChip": "{portion} phần",
       "cancelEdit": "Hủy",
       "saveEdit": "Lưu thay đổi",
       "savingEdit": "Đang lưu…",
@@ -1213,6 +1215,40 @@
       "shareCardTitle": "Bữa ăn của tôi trên Nhẩm",
       "copiedLink": "Đã sao chép liên kết thẻ",
       "errorCopy": "Không thể sao chép liên kết. Vui lòng thử lại."
+    },
+    "shareMeal": {
+      "title": "Chia sẻ bữa ăn này",
+      "description": "Chọn những người bạn đã ăn cùng. Họ sẽ nhận được lời mời để thêm vào nhật ký của mình.",
+      "mode": {
+        "copy": {
+          "label": "Cùng một món",
+          "hint": "Mỗi người ghi trọn phần món ăn."
+        },
+        "split": {
+          "label": "Chia phần",
+          "hint": "Chia đều một món cho mỗi người."
+        }
+      },
+      "splitPreview": "Phần của bạn giảm còn {portion} ngay bây giờ — mỗi người một phần bằng nhau.",
+      "loadingFriends": "Đang tải danh sách bạn bè…",
+      "noFriends": "Chưa có ai trong danh sách. Hãy thêm bạn trước.",
+      "submitEmpty": "Chọn một người bạn",
+      "submit": "Chia sẻ với {count, plural, other {# người bạn}}",
+      "copySuccess": "Đã gửi cho {count, plural, other {# người bạn}}",
+      "splitSuccess": "Đã chia phần với {count, plural, other {# người bạn}}",
+      "error": "Không thể chia sẻ bữa ăn. Vui lòng thử lại."
+    },
+    "invites": {
+      "title": "Được chia sẻ với bạn",
+      "na": "N/A",
+      "sharedCopy": "{name} đã chia sẻ một bữa ăn với bạn",
+      "sharedSplit": "{name} đã chia phần một bữa ăn với bạn",
+      "portion": "{portion} phần",
+      "accept": "Thêm vào nhật ký",
+      "dismiss": "Bỏ qua",
+      "accepted": "Đã thêm vào nhật ký",
+      "error": "Chưa được — vui lòng thử lại.",
+      "loadError": "Không tải được lời mời. Chạm để thử lại."
     },
     "invite": {
       "title": "Mời vào vòng kết nối",

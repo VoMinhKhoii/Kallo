@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import '../features/circle/data/circle_providers.dart';
 import '../features/onboarding/providers/onboarding_providers.dart';
 import '../theme/nham_colors.dart';
 import '../theme/nham_theme.dart';
@@ -52,8 +53,7 @@ class AppHeader extends StatelessWidget {
           ),
           // Trailing slot, or a spacer that mirrors the leading slot so the
           // center stays centered when there's nothing on the right.
-          trailing ??
-              const SizedBox(width: _hit, height: _hit),
+          trailing ?? const SizedBox(width: _hit, height: _hit),
         ],
       ),
     );
@@ -78,6 +78,11 @@ class _AppMenuButtonState extends ConsumerState<AppMenuButton> {
   @override
   Widget build(BuildContext context) {
     final onboardingIncomplete = ref.watch(onboardingResumeProvider);
+    // Pending copy/split offers surface a dot on the hamburger — but never
+    // stacked on the onboarding pulse (onboarding takes precedence).
+    final hasInvites =
+        !onboardingIncomplete &&
+        (ref.watch(mealShareInvitesProvider).valueOrNull?.isNotEmpty ?? false);
 
     return Semantics(
       button: true,
@@ -113,7 +118,20 @@ class _AppMenuButtonState extends ConsumerState<AppMenuButton> {
                   ),
                 ),
                 if (onboardingIncomplete)
-                  const Positioned(top: 2, right: 2, child: _OnboardingDot()),
+                  const Positioned(top: 2, right: 2, child: _OnboardingDot())
+                else if (hasInvites)
+                  Positioned(
+                    top: 2,
+                    right: 2,
+                    child: Container(
+                      width: 8,
+                      height: 8,
+                      decoration: const BoxDecoration(
+                        color: NhamColors.accent,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                  ),
               ],
             ),
           ),

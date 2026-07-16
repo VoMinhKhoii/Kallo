@@ -202,4 +202,44 @@ void main() {
       expect(find.text('Total'), findsNothing);
     });
   });
+
+  group('MealShareInvite.fromJson', () {
+    test('parses a split invite with sender + portioned macros', () {
+      final invite = MealShareInvite.fromJson(const {
+        'id': 'inv-1',
+        'mode': 'split',
+        'portionFactor': 0.5,
+        'createdAt': '2026-04-05T10:00:00.000Z',
+        'from': {'userId': 'u2', 'handle': 'bob', 'displayName': 'Bob'},
+        'meal': {
+          'rawInput': 'Trà sữa',
+          'caloriesKcal': 100,
+          'proteinG': 2,
+          'carbohydrateG': 20,
+          'fatG': 2.5,
+        },
+      });
+
+      expect(invite.isSplit, isTrue);
+      expect(invite.portionFactor, 0.5);
+      expect(invite.from.label, 'Bob');
+      expect(invite.rawInput, 'Trà sữa');
+      expect(invite.caloriesKcal, 100);
+      expect(invite.fatG, 2.5);
+    });
+
+    test('defaults mode to copy and factor to 1, tolerates null macros', () {
+      final invite = MealShareInvite.fromJson(const {
+        'id': 'inv-2',
+        'from': {'userId': 'u3', 'handle': 'cara'},
+        'meal': {'rawInput': 'Phở bò'},
+      });
+
+      expect(invite.isSplit, isFalse);
+      expect(invite.mode, 'copy');
+      expect(invite.portionFactor, 1);
+      expect(invite.caloriesKcal, isNull);
+      expect(invite.from.label, 'cara');
+    });
+  });
 }

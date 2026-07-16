@@ -13,6 +13,7 @@ import '../../../theme/nham_colors.dart';
 import '../../../theme/nham_theme.dart';
 import '../../../theme/nham_typography.dart';
 import '../../circle/data/circle_providers.dart';
+import '../../circle/widgets/share_meal_sheet.dart';
 import '../data/logging_models.dart';
 import '../logic/format.dart';
 
@@ -202,15 +203,20 @@ class _PersistedMealCardState extends State<PersistedMealCard>
                     ),
                   ),
 
-                  // Per-meal circle-share toggle (post-save, opt-in).
+                  // Actions: "Share with friends" (copy/split) on the left, the
+                  // per-meal circle-share toggle on the right (web parity).
                   Padding(
                     padding: const EdgeInsets.only(top: NhamSpacing.sp3),
-                    child: Align(
-                      alignment: Alignment.centerLeft,
-                      child: _ShareToCircleButton(
-                        mealId: meal.id,
-                        share: meal.share,
-                      ),
+                    child: Row(
+                      children: [
+                        if (meal.mealItemGroups.isNotEmpty)
+                          _ShareWithFriendsButton(mealId: meal.id),
+                        const Spacer(),
+                        _ShareToCircleButton(
+                          mealId: meal.id,
+                          share: meal.share,
+                        ),
+                      ],
                     ),
                   ),
                 ],
@@ -591,6 +597,39 @@ class _ShareChip extends StatelessWidget {
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+/// The "Share with friends" action — opens the copy/split sheet. Text-only, in
+/// the muted action-row voice (web parity with the meal card's action buttons).
+class _ShareWithFriendsButton extends StatelessWidget {
+  const _ShareWithFriendsButton({required this.mealId});
+
+  final String mealId;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () {
+        HapticFeedback.lightImpact();
+        showShareMealSheet(context, mealId);
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(
+          horizontal: NhamSpacing.sp2_5,
+          vertical: NhamSpacing.sp1_5,
+        ),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(NhamRadii.pill),
+        ),
+        child: NhamText(
+          tr('logging.persistedMealCard.shareWithFriends'),
+          variant: NhamTextVariant.chipText,
+          style: NhamTextStyles.sansMedium(fontSize: NhamFontSize.xs)
+              .copyWith(color: NhamColors.textMuted),
         ),
       ),
     );

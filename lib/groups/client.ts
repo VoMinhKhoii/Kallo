@@ -11,9 +11,11 @@ import type {
   CircleMember,
   PublicProfile,
 } from '@/lib/actions/groups';
+import type { MealShareInvite } from '@/lib/actions/meal-sharing';
+import type { ConfirmMealResponse } from '@/lib/actions/meals';
 import { parseApiError } from '@/lib/errors';
 
-export type { CircleFeedEntry, CircleMember, PublicProfile };
+export type { CircleFeedEntry, CircleMember, MealShareInvite, PublicProfile };
 
 async function request<T>(input: string, init?: RequestInit): Promise<T> {
   const response = await fetch(input, init);
@@ -97,4 +99,44 @@ export function setMealShareVisibility(
     visibility: 'private' | 'circle';
     shareId: string;
   }>('/api/v1/groups/shares', { mealId, visibility });
+}
+
+// ---------------------------------------------------------------------------
+// Copy / split a meal between friends
+// ---------------------------------------------------------------------------
+
+/** Offer one of my meals to specific friends as a full copy or a split. */
+export function shareMealWithFriends(input: {
+  mealId: string;
+  friendUserIds: string[];
+  mode: 'copy' | 'split';
+}) {
+  return postJson<{
+    invitedCount: number;
+    portionFactor: number;
+    meal: ConfirmMealResponse['meal'] | null;
+  }>('/api/v1/groups/meal-share', input);
+}
+
+/** Pending copy/split offers addressed to me (the Circle inbox). */
+export function fetchMealShareInvites(): Promise<MealShareInvite[]> {
+  return request<{ invites: MealShareInvite[] }>('/api/v1/groups/invites').then(
+    (r) => r.invites
+  );
+}
+
+/** Accept an offer — materialize the (already-portioned) meal in my diary. */
+export function acceptMealShareInvite(input: {
+  inviteId: string;
+  newMealId?: string;
+  loggedDate: string;
+  timezoneOffset: number;
+}): Promise<ConfirmMealResponse> {
+  return postJson<ConfirmMealResponse>('/api/v1/groups/invites/accept', input);
+}
+
+export function dismissMealShareInvite(inviteId: string) {
+  return postJson<{ success: true }>('/api/v1/groups/invites/dismiss', {
+    inviteId,
+  });
 }

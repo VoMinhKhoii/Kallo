@@ -24,6 +24,10 @@ export interface PersistedMeal {
    *  meal_shares row id used to key the shareable Macro Card. Lets the card seed
    *  the share toggle from real server state instead of always "not shared". */
   share: { shareId: string; visibility: string } | null;
+  /** Fraction of the natural full portion this meal represents: 1 (or absent)
+   *  for a normal meal / full copy, <1 for a split share. Drives the "½ portion"
+   *  chip and hides NL-refine (which would re-estimate the full portion). */
+  portionFactor?: number;
 }
 
 export interface PersistedMealItemGroup {

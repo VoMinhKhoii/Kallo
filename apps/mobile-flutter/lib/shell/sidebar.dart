@@ -6,6 +6,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../data/session_provider.dart';
+import '../features/circle/data/circle_providers.dart';
 import '../features/onboarding/providers/onboarding_providers.dart';
 import '../features/onboarding/widgets/onboarding_dialog.dart';
 import '../shared/widgets/top_toast.dart';
@@ -104,6 +105,11 @@ class Sidebar extends ConsumerWidget {
     final location = GoRouterState.of(context).matchedLocation;
     final bottomInset = MediaQuery.of(context).padding.bottom;
 
+    // Pending copy/split offers drive the dot on the Circle row (0 while
+    // loading/erroring — the badge is ambient, never blocks the drawer).
+    final inviteCount =
+        ref.watch(mealShareInvitesProvider).valueOrNull?.length ?? 0;
+
     return Material(
       color: NhamColors.surface,
       // Top inset only — the footer applies its own bottom safe-area padding.
@@ -177,6 +183,8 @@ class Sidebar extends ConsumerWidget {
                       _NavRow(
                         item: items[i],
                         active: _isActiveRoute(location, items[i].href),
+                        showBadge:
+                            items[i].href == '/circle' && inviteCount > 0,
                         onTap: () {
                           onClose();
                           context.go(items[i].href);
@@ -256,11 +264,15 @@ class _NavRow extends StatefulWidget {
     required this.item,
     required this.active,
     required this.onTap,
+    this.showBadge = false,
   });
 
   final _NavItem item;
   final bool active;
   final VoidCallback onTap;
+
+  /// A pending-attention dot (e.g. unaccepted meal-share invites).
+  final bool showBadge;
 
   @override
   State<_NavRow> createState() => _NavRowState();
@@ -310,6 +322,17 @@ class _NavRowState extends State<_NavRow> {
                 fontSize: 14,
               ).copyWith(color: contentColor),
             ),
+            if (widget.showBadge) ...[
+              const Spacer(),
+              Container(
+                width: 8,
+                height: 8,
+                decoration: BoxDecoration(
+                  color: active ? Colors.white : NhamColors.accent,
+                  shape: BoxShape.circle,
+                ),
+              ),
+            ],
           ],
         ),
       ),
@@ -344,9 +367,9 @@ class _Avatar extends StatelessWidget {
       ),
       child: Text(
         initial,
-        style: NhamTextStyles.sansBold(fontSize: 16).copyWith(
-          color: NhamColors.btn,
-        ),
+        style: NhamTextStyles.sansBold(
+          fontSize: 16,
+        ).copyWith(color: NhamColors.btn),
       ),
     );
   }
@@ -484,7 +507,11 @@ class _SignOutRowState extends State<_SignOutRow> {
           ),
           child: Row(
             children: [
-              const Icon(LucideIcons.logOut, size: 16, color: NhamColors.danger),
+              const Icon(
+                LucideIcons.logOut,
+                size: 16,
+                color: NhamColors.danger,
+              ),
               const SizedBox(width: 12),
               Text(
                 tr('app.userMenu.signOut'),
@@ -539,8 +566,9 @@ class _OnboardingNudge extends ConsumerWidget {
               'app.onboardingNudge.stepCounter',
               namedArgs: {'current': '$safeStep', 'total': '$_total'},
             ).toUpperCase(),
-            style: NhamTextStyles.sansMedium(fontSize: NhamFontSize.eyebrow)
-                .copyWith(
+            style: NhamTextStyles.sansMedium(
+              fontSize: NhamFontSize.eyebrow,
+            ).copyWith(
               color: NhamColors.textMuted,
               letterSpacing: NhamTracking.wide, // 0.06em
             ),

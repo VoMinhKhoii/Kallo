@@ -57,6 +57,29 @@ export function extractNutritionValues(
   return result as unknown as NutritionValues;
 }
 
+/** Scale every stored nutrient on a Drizzle row by `ratio`, preserving nulls.
+ *  Numeric columns may surface as strings (columns declared without
+ *  `mode: 'number'`) — coerced with a finite guard. Shared by the meal edit
+ *  path and the friend copy/split path so scaling lives in exactly one place. */
+export function scaleNutritionRow(
+  row: Record<string, unknown>,
+  ratio: number
+): NutritionValues {
+  const result = {} as Record<string, number | null>;
+  for (const key of NUTRITION_KEYS) {
+    const raw = row[key];
+    const value =
+      typeof raw === 'number'
+        ? raw
+        : typeof raw === 'string'
+          ? Number(raw)
+          : null;
+    result[key] =
+      value != null && Number.isFinite(value) ? value * ratio : null;
+  }
+  return result as unknown as NutritionValues;
+}
+
 /** Build a PersistedIngredient — the single construction point for its shape. */
 export function buildPersistedIngredient(
   fields: PersistedIngredient

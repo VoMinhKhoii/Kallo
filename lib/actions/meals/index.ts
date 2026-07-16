@@ -11,6 +11,7 @@ import {
   extractNutritionValues,
   inferMealSlot,
   nutritionValuesToRow,
+  scaleNutritionRow,
 } from '@/lib/actions/persisted-meal';
 import { NUTRITION_KEYS } from '@/lib/ai/constants';
 import { toParsedMeal } from '@/lib/ai/mappers';
@@ -591,6 +592,7 @@ async function loadMealsByDateForUser(
       alcoholG: meal.alcoholG ?? null,
       cheatSliders: (meal.cheatSliders as CheatSlidersPersisted | null) ?? null,
       share: share ? { shareId: share.id, visibility: share.visibility } : null,
+      portionFactor: meal.portionFactor ?? 1,
     });
   });
 }
@@ -818,26 +820,6 @@ export async function deleteMealAction(input: { mealId: string }) {
 // ---------------------------------------------------------------------------
 // C4: Edit a persisted meal (gram overrides + per-row removal)
 // ---------------------------------------------------------------------------
-
-/** Scale every stored nutrient on a row by `ratio`, preserving nulls. */
-function scaleNutritionRow(
-  row: Record<string, unknown>,
-  ratio: number
-): NutritionValues {
-  const result = { ...EMPTY_NUTRITION };
-  for (const key of NUTRITION_KEYS) {
-    const raw = row[key];
-    const value =
-      typeof raw === 'number'
-        ? raw
-        : typeof raw === 'string'
-          ? Number(raw)
-          : null;
-    result[key] =
-      value != null && Number.isFinite(value) ? value * ratio : null;
-  }
-  return result;
-}
 
 /**
  * Edit a persisted (precise) meal: override the cooked grams of stored items

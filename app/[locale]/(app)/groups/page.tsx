@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 import { AddFriendDialog } from '@/components/groups/add-friend-dialog';
 import { CircleWall } from '@/components/groups/circle-wall';
+import { MealInvites } from '@/components/groups/meal-invites';
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations('metadata.groups');
@@ -37,6 +38,8 @@ export default async function GroupsPage() {
             }
           />
         </header>
+
+        <MealInvites />
 
         <CircleWall />
       </div>

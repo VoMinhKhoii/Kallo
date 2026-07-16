@@ -12,6 +12,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from '@/components/ui/sheet';
+import { useMealShareInviteCount } from '@/hooks/social/use-meal-share-invites';
 import { Link, usePathname } from '@/i18n/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { cn } from '@/lib/utils';
@@ -67,6 +68,7 @@ export function MobileNav({
   const [signingOut, setSigningOut] = useState(false);
 
   const items = visibleNavItems(isAdmin);
+  const inviteCount = useMealShareInviteCount();
   const initial = deriveInitial(user);
   const label = deriveLabel(user);
   const settingsActive = isActiveRoute(pathname, '/settings');
@@ -101,6 +103,8 @@ export function MobileNav({
             <Menu className="h-5 w-5" aria-hidden="true" />
             {onboardingIncomplete ? (
               <OnboardingDot className="top-1.5 right-1.5" />
+            ) : inviteCount > 0 ? (
+              <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-nham-accent ring-2 ring-nham-surface" />
             ) : null}
           </button>
         </SheetTrigger>
@@ -146,6 +150,14 @@ export function MobileNav({
                       <span className="font-medium font-sans-display text-[14px]">
                         {tNav(item.labelKey)}
                       </span>
+                      {item.id === 'groups' && inviteCount > 0 && (
+                        <span
+                          className={cn(
+                            'ml-auto h-2 w-2 shrink-0 rounded-full',
+                            active ? 'bg-white' : 'bg-nham-accent'
+                          )}
+                        />
+                      )}
                     </Link>
                   </li>
                 );
