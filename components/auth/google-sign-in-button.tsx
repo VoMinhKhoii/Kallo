@@ -6,7 +6,7 @@ import { useState } from 'react';
 import { toast } from 'sonner';
 import { useAuthDialog } from '@/components/auth/auth-provider';
 import { WebviewGoogleNotice } from '@/components/auth/webview-google-notice';
-import { isInAppBrowser } from '@/lib/in-app-browser';
+import { useIsInAppBrowser } from '@/hooks/ui/use-in-app-browser';
 import { createClient } from '@/lib/supabase/client';
 
 export function GoogleSignInButton() {
@@ -14,9 +14,9 @@ export function GoogleSignInButton() {
   const locale = useLocale();
   const { next } = useAuthDialog();
   const [loading, setLoading] = useState(false);
-  // Evaluated once, client-only: in-app browsers block Google OAuth, so we
-  // swap the button for a notice that routes users to a real browser.
-  const [inApp] = useState(() => isInAppBrowser());
+  // Client-only (resolves after hydration): in-app browsers block Google OAuth,
+  // so we swap the button for a notice that routes users to a real browser.
+  const inApp = useIsInAppBrowser();
 
   const onClick = async () => {
     setLoading(true);

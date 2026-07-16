@@ -2,9 +2,9 @@
 
 import { Globe } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { useState } from 'react';
 import { toast } from 'sonner';
-import { chromeIntentUrl, isAndroid } from '@/lib/in-app-browser';
+import { useIsAndroid } from '@/hooks/ui/use-in-app-browser';
+import { chromeIntentUrl } from '@/lib/in-app-browser';
 
 /**
  * Shown in place of the Google button when the app runs inside an in-app
@@ -14,8 +14,8 @@ import { chromeIntentUrl, isAndroid } from '@/lib/in-app-browser';
  */
 export function WebviewGoogleNotice() {
   const t = useTranslations('auth.dialog');
-  // Evaluated once on mount — the UA doesn't change while the dialog is open.
-  const [android] = useState(() => isAndroid());
+  // Client-only (resolves after hydration) — the Chrome escape is Android-only.
+  const android = useIsAndroid();
 
   const openInChrome = () => {
     window.location.href = chromeIntentUrl(window.location.href);
