@@ -227,17 +227,16 @@ export function DesktopSidebar({
         pinnedCollapsed && collapsed && 'cursor-pointer'
       )}
     >
-      {/* Header — brand + pin/unpin toggle. Wordmark when expanded, the mark
-          alone when collapsed (the lockup rule: never both side by side). */}
+      {/* Header — brand + pin/unpin toggle. Expanded: wordmark left, close
+          toggle right. Collapsed: one button that IS the K mark and morphs
+          into the expand icon on hover/focus. */}
       <div
         className={cn(
           'flex shrink-0 items-center px-3 pt-3',
-          collapsed ? 'flex-col gap-1.5' : 'justify-between'
+          collapsed ? 'justify-center' : 'justify-between'
         )}
       >
-        {collapsed ? (
-          <KalloMark className="h-5 w-auto text-nham-text" />
-        ) : (
+        {!collapsed && (
           <KalloWordmark className="ml-1.5 h-4 w-auto text-nham-text" />
         )}
         <SidebarTooltip
@@ -252,10 +251,16 @@ export function DesktopSidebar({
             }
             aria-pressed={pinnedCollapsed}
             aria-keyshortcuts="Meta+B Control+B"
-            className="flex h-7 w-7 items-center justify-center rounded-md text-nham-text-muted transition-colors hover:bg-nham-hover/60 hover:text-nham-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent"
+            className={cn(
+              'group/toggle relative flex items-center justify-center rounded-md text-nham-text-muted transition-colors hover:bg-nham-hover/60 hover:text-nham-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent',
+              collapsed ? 'h-8 w-8' : 'h-7 w-7'
+            )}
           >
-            {pinnedCollapsed ? (
-              <PanelLeftOpen className="h-4 w-4" />
+            {collapsed ? (
+              <>
+                <KalloMark className="h-5 w-auto text-nham-text transition-opacity duration-150 group-hover/toggle:opacity-0 group-focus-visible/toggle:opacity-0" />
+                <PanelLeftOpen className="absolute h-4 w-4 opacity-0 transition-opacity duration-150 group-hover/toggle:opacity-100 group-focus-visible/toggle:opacity-100" />
+              </>
             ) : (
               <PanelLeftClose className="h-4 w-4" />
             )}
