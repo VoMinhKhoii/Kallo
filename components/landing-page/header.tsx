@@ -3,6 +3,7 @@
 import { motion } from 'motion/react';
 import { useTranslations } from 'next-intl';
 import { useAuthDialog } from '@/components/auth/auth-provider';
+import { KalloWordmark } from '@/components/brand/kallo-wordmark';
 import { Button } from '@/components/ui/button';
 import { LocaleSwitcher } from './locale-switcher';
 
@@ -36,9 +37,7 @@ export function Header() {
       <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-5">
         {/* Logo */}
         <div className="flex items-center gap-2">
-          <div className="font-medium font-serif text-2xl text-nham-text">
-            Nhẩm
-          </div>
+          <KalloWordmark className="h-5 w-auto text-nham-text" />
         </div>
 
         {/* Nav Links */}

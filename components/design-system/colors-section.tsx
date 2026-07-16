@@ -188,7 +188,7 @@ export function ColorsSection() {
       accent="one warm palette"
       eyebrow="Color"
       id="color"
-      intro="Everything is anchored on cream, espresso, and the Nhẩm tan. The shadcn semantic tokens (primary, destructive, ring, border…) are re-pointed at this palette, so stock components are on-brand without per-component overrides. No pure red, no pure green, no electric blue, no purple gradients — ever."
+      intro="Everything is anchored on cream, espresso, and the Kallo tan. The shadcn semantic tokens (primary, destructive, ring, border…) are re-pointed at this palette, so stock components are on-brand without per-component overrides. No pure red, no pure green, no electric blue, no purple gradients — ever."
       title="Only"
     >
       <DsCard title="Brand tokens">

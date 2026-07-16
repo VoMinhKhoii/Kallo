@@ -1,6 +1,6 @@
 'use client';
 
-import { PanelLeftClose, PanelLeftOpen, Settings } from 'lucide-react';
+import { Settings } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import type * as React from 'react';
 import { useState } from 'react';
@@ -9,6 +9,7 @@ import { Link, usePathname } from '@/i18n/navigation';
 import { cn } from '@/lib/utils';
 import { isActiveRoute, visibleNavItems } from './nav-items';
 import { OnboardingNudge } from './onboarding-nudge';
+import { SidebarBrandHeader } from './sidebar-brand-header';
 import { SidebarTooltip } from './sidebar-tooltip';
 import { UserMenu, type UserMenuUser } from './user-menu';
 
@@ -225,35 +226,11 @@ export function DesktopSidebar({
         pinnedCollapsed && collapsed && 'cursor-pointer'
       )}
     >
-      {/* Header — pin/unpin toggle */}
-      <div
-        className={cn(
-          'flex shrink-0 items-center px-3 pt-3',
-          collapsed ? 'justify-center' : 'justify-end'
-        )}
-      >
-        <SidebarTooltip
-          enabled={collapsed}
-          label={pinnedCollapsed ? t('expandSidebar') : t('collapseSidebar')}
-        >
-          <button
-            type="button"
-            onClick={togglePinned}
-            aria-label={
-              pinnedCollapsed ? t('expandSidebar') : t('collapseSidebar')
-            }
-            aria-pressed={pinnedCollapsed}
-            aria-keyshortcuts="Meta+B Control+B"
-            className="flex h-7 w-7 items-center justify-center rounded-md text-nham-text-muted transition-colors hover:bg-nham-hover/60 hover:text-nham-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent"
-          >
-            {pinnedCollapsed ? (
-              <PanelLeftOpen className="h-4 w-4" />
-            ) : (
-              <PanelLeftClose className="h-4 w-4" />
-            )}
-          </button>
-        </SidebarTooltip>
-      </div>
+      <SidebarBrandHeader
+        collapsed={collapsed}
+        pinnedCollapsed={pinnedCollapsed}
+        onTogglePinned={togglePinned}
+      />
 
       {/* Scroll region: nav + onboarding + settings */}
       <div className="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto p-3">

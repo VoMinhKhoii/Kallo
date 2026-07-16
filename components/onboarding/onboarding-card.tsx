@@ -51,7 +51,7 @@ export function OnboardingCard({
             Sẵn sàng khám phá?
           </h3>
           <p className="font-sans-display text-nham-text-muted text-sm leading-relaxed">
-            Chỉ cần vài bước đơn giản để Nhẩm AI hiểu khẩu vị và thói quen của
+            Chỉ cần vài bước đơn giản để Kallo AI hiểu khẩu vị và thói quen của
             riêng bạn.
           </p>
         </div>

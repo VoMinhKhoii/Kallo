@@ -7,7 +7,7 @@ import { SpacingSection } from '@/components/design-system/spacing-section';
 import { TypographySection } from '@/components/design-system/typography-section';
 
 export const metadata: Metadata = {
-  title: 'Nhẩm — design system foundations',
+  title: 'Kallo — design system foundations',
   robots: { index: false },
 };
 
@@ -38,7 +38,7 @@ export default async function DesignSystemPage({
     <main className="min-h-dvh bg-nham-surface">
       <div className="mx-auto max-w-5xl px-6 py-16">
         <header>
-          <p className="eyebrow">Nhẩm design system</p>
+          <p className="eyebrow">Kallo design system</p>
           <h1 className="mt-3 font-serif text-h1">
             The small stuff, <span className="italic-accent">codified</span>
           </h1>
@@ -47,7 +47,7 @@ export default async function DesignSystemPage({
             spacing, elevation, and buttons. Metrics are calibrated to
             Anthropic&rsquo;s design system — the type ramp, spacing rhythm,
             radii, and minimal-shadow philosophy — expressed entirely in
-            Nhẩm&rsquo;s warm palette and faces. Each specimen renders from the
+            Kallo&rsquo;s warm palette and faces. Each specimen renders from the
             live production tokens — if it looks right here, the utility names
             shown are the ones to use.
           </p>

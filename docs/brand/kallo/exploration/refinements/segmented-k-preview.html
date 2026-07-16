@@ -1,0 +1,300 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light" />
+    <title>Kallo — segmented K, production geometry</title>
+    <style>
+      :root {
+        --cream: #fefbf6;
+        --paper: #ffffff;
+        --ink: #2c2416;
+        --muted: #8b7355;
+        --tan: #c9a87c;
+        --umber: #695e4e;
+        --border: #e8d5b5;
+        color: var(--ink);
+        font-family: "Avenir Next", Avenir, "Be Vietnam Pro", sans-serif;
+        font-synthesis: none;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-width: 320px;
+        background: var(--cream);
+      }
+
+      .page {
+        width: min(1160px, calc(100% - 40px));
+        margin: 0 auto;
+        padding: 28px 0 80px;
+      }
+
+      .back-link {
+        color: var(--muted);
+        font-size: 12px;
+        text-decoration: none;
+      }
+
+      .back-link:hover {
+        color: var(--ink);
+      }
+
+      .eyebrow {
+        margin: 0;
+        color: var(--muted);
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+      }
+
+      h1,
+      h2,
+      p {
+        margin-top: 0;
+      }
+
+      h1 {
+        margin: 12px 0 16px;
+        font-family: Lora, Georgia, serif;
+        font-size: clamp(44px, 6vw, 80px);
+        font-weight: 400;
+        letter-spacing: -0.06em;
+        line-height: 0.92;
+      }
+
+      h1 em {
+        color: var(--tan);
+        font-weight: 300;
+      }
+
+      .masthead {
+        padding: 56px 0 44px;
+        border-bottom: 1px solid var(--border);
+      }
+
+      .intro {
+        max-width: 56ch;
+        color: var(--muted);
+        font-size: 15px;
+        line-height: 1.65;
+      }
+
+      .mark {
+        display: block;
+      }
+
+      .hero {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 18px;
+        margin: 32px 0 18px;
+      }
+
+      .panel {
+        min-height: 380px;
+        border-radius: 28px;
+        display: grid;
+        place-items: center;
+        padding: 44px;
+      }
+
+      .panel.on-cream {
+        background: var(--paper);
+        border: 1px solid var(--border);
+        color: var(--ink);
+      }
+
+      .panel.on-ink {
+        background: var(--ink);
+        color: var(--cream);
+      }
+
+      .panel .mark {
+        width: min(240px, 60%);
+      }
+
+      .lockup-band {
+        margin-top: 18px;
+        padding: 48px 44px;
+        border: 1px solid var(--border);
+        border-radius: 28px;
+        background: var(--paper);
+        display: grid;
+        place-items: center;
+      }
+
+      .lockup {
+        display: flex;
+        align-items: flex-start;
+        gap: 26px;
+        color: var(--ink);
+      }
+
+      .lockup .mark {
+        height: 92px;
+        width: auto;
+      }
+
+      .lockup .word {
+        height: 105.51px; /* 92 × 812/708, cap-height aligned */
+        width: auto;
+        margin-top: -8.83px; /* wordmark box starts 68/812 above cap line */
+      }
+
+      .row {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 12px;
+        margin-top: 18px;
+      }
+
+      .cell {
+        min-height: 170px;
+        padding: 18px;
+        border: 1px solid var(--border);
+        border-radius: 18px;
+        background: var(--paper);
+        display: grid;
+        gap: 14px;
+        place-items: center;
+        align-content: center;
+      }
+
+      .cell > span {
+        color: var(--muted);
+        font-size: 11px;
+      }
+
+      .cell.icon-tile {
+        border: none;
+        background: var(--tan);
+      }
+
+      .cell.icon-tile > span {
+        color: var(--ink);
+      }
+
+      .icon {
+        width: 96px;
+        height: 96px;
+        border-radius: 24px;
+        background: var(--ink);
+        color: var(--cream);
+        display: grid;
+        place-items: center;
+      }
+
+      .icon .mark {
+        width: 52%;
+      }
+
+      .spec {
+        max-width: 680px;
+        margin: 44px auto 0;
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.7;
+        text-align: center;
+      }
+
+      @media (max-width: 760px) {
+        .hero,
+        .row {
+          grid-template-columns: 1fr;
+        }
+
+        .lockup {
+          gap: 14px;
+        }
+
+        .lockup .mark {
+          height: 54px;
+        }
+
+        .lockup .word {
+          height: 61.93px;
+          margin-top: -5.18px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="page">
+      <a class="back-link" href="../round-three.html">← Return to matched lockup refinement</a>
+
+      <header class="masthead">
+        <p class="eyebrow">Kallo identity study · production geometry</p>
+        <h1>Three parts.<br />One <em>space.</em></h1>
+        <p class="intro">
+          The option B wordmark's K with its junction hidden — three components. The
+          stem, the cap and baseline tips, and the stroke widths are the original
+          letterform's; the arm and leg close as perfect parallelograms. The channels
+          follow a 1:4 rhythm anchored to the stroke: a 28-unit slit beside the stem
+          (stem ÷ 6), and a 112-unit void (⅔ stem) where the junction disappears.
+        </p>
+      </header>
+
+      <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+        <defs>
+          <symbol id="k-mark" viewBox="0 0 656 708">
+            <path fill="currentColor" d="M0 0H168V708H0ZM424 0H638L410 277H196ZM196 389H419L656 708H433Z" />
+          </symbol>
+          <symbol id="kallo-word" viewBox="0 0 2180 812">
+            <path fill="currentColor" d="M20 68H188V776H20ZM444 68H658L430 345H216ZM216 457H439L676 776H453ZM944 559H923Q896 559 868.5 561.5Q841 564 819.5 571.0Q798 578 784.0 591.5Q770 605 770 627Q770 641 776.5 651.0Q783 661 793.0 667.0Q803 673 816.0 675.5Q829 678 841 678Q891 678 917.5 650.5Q944 623 944 576ZM643 346Q687 304 745.5 283.0Q804 262 865 262Q928 262 971.5 277.5Q1015 293 1042.0 325.5Q1069 358 1081.5 407.5Q1094 457 1094 525V776H944V723H941Q922 754 883.5 771.0Q845 788 800 788Q770 788 738.0 780.0Q706 772 679.5 754.0Q653 736 636.0 706.0Q619 676 619 632Q619 578 648.5 545.0Q678 512 724.5 494.0Q771 476 828.0 470.0Q885 464 939 464V456Q939 419 913.0 401.5Q887 384 849 384Q814 384 781.5 399.0Q749 414 726 435ZM1158 776V20H1324V776ZM1396 776V20H1562V776ZM2160 525Q2160 586 2138.0 635.5Q2116 685 2078.0 719.5Q2040 754 1990.0 773.0Q1940 792 1883 792Q1827 792 1776.5 773.0Q1726 754 1688.5 719.5Q1651 685 1629.0 635.5Q1607 586 1607 525Q1607 464 1629.0 415.0Q1651 366 1688.5 332.0Q1726 298 1776.5 280.0Q1827 262 1883 262Q1940 262 1990.0 280.0Q2040 298 2078.0 332.0Q2116 366 2138.0 415.0Q2160 464 2160 525ZM2002 525Q2002 501 1994.0 478.0Q1986 455 1971.0 437.5Q1956 420 1934.0 409.0Q1912 398 1883 398Q1854 398 1832.0 409.0Q1810 420 1795.5 437.5Q1781 455 1773.5 478.0Q1766 501 1766 525Q1766 549 1773.5 572.0Q1781 595 1796.0 613.5Q1811 632 1833.0 643.0Q1855 654 1884 654Q1913 654 1935.0 643.0Q1957 632 1972.0 613.5Q1987 595 1994.5 572.0Q2002 549 2002 525Z" />
+          </symbol>
+        </defs>
+      </svg>
+
+      <div class="hero">
+        <div class="panel on-cream">
+          <svg class="mark" viewBox="0 0 656 708" role="img" aria-label="Kallo mark on cream"><use href="#k-mark" /></svg>
+        </div>
+        <div class="panel on-ink">
+          <svg class="mark" viewBox="0 0 656 708" role="img" aria-label="Kallo mark on espresso"><use href="#k-mark" /></svg>
+        </div>
+      </div>
+
+      <div class="lockup-band">
+        <div class="lockup" aria-label="Kallo lockup">
+          <svg class="word" viewBox="0 0 2180 812"><use href="#kallo-word" /></svg>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="cell">
+          <svg class="mark" viewBox="0 0 656 708" style="height:64px;width:auto"><use href="#k-mark" /></svg>
+          <span>64px</span>
+        </div>
+        <div class="cell">
+          <svg class="mark" viewBox="0 0 656 708" style="height:32px;width:auto"><use href="#k-mark" /></svg>
+          <span>32px</span>
+        </div>
+        <div class="cell">
+          <svg class="mark" viewBox="0 0 656 708" style="height:24px;width:auto"><use href="#k-mark" /></svg>
+          <span>24px minimum</span>
+        </div>
+        <div class="cell icon-tile">
+          <div class="icon">
+            <svg class="mark" viewBox="0 0 656 708"><use href="#k-mark" /></svg>
+          </div>
+          <span>App icon test</span>
+        </div>
+      </div>
+
+      <p class="spec">
+        Source: <code>refinements/kallo-mark-segmented-k.svg</code> · 656×708 box ·
+        stem 168×708 untouched · original cap/baseline tip edges and widths kept ·
+        stem channel 28 (stem ÷ 6) · arm–leg channel 112 (4 × 28 = ⅔ stem) · arm and
+        leg are perfect parallelograms · diagonals pivot on the fixed tips (arm ≈50.6°,
+        leg ≈53.4°, near the font's 46.9°/49.8°) · fill <code>currentColor</code>.
+      </p>
+    </main>
+  </body>
+</html>

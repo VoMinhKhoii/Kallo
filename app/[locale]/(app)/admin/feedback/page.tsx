@@ -11,7 +11,7 @@ import { FeedbackTable } from './_components/feedback-table';
 export const dynamic = 'force-dynamic';
 
 export const metadata = {
-  title: 'Feedback · Nhẩm Admin',
+  title: 'Feedback · Kallo Admin',
   robots: { index: false, follow: false },
 };
 

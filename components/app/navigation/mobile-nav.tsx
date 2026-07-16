@@ -4,6 +4,7 @@ import { LogOut, Menu, Settings } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { toast } from 'sonner';
+import { KalloWordmark } from '@/components/brand/kallo-wordmark';
 import {
   Sheet,
   SheetContent,
@@ -17,6 +18,7 @@ import { createClient } from '@/lib/supabase/client';
 import { cn } from '@/lib/utils';
 import { isActiveRoute, visibleNavItems } from './nav-items';
 import { OnboardingDot, OnboardingNudge } from './onboarding-nudge';
+import { deriveInitial, deriveLabel } from './user-label';
 import type { UserMenuUser } from './user-menu';
 
 interface MobileNavProps {
@@ -28,19 +30,6 @@ interface MobileNavProps {
   isOnboardingMinimized?: boolean;
   onMinimizeOnboarding?: () => Promise<void> | void;
   onRestoreOnboarding?: () => Promise<void> | void;
-}
-
-function deriveInitial(user: UserMenuUser): string {
-  const source = user.displayName || user.email || '';
-  const trimmed = source.trim();
-  if (!trimmed) return '·';
-  return trimmed.charAt(0).toUpperCase();
-}
-
-function deriveLabel(user: UserMenuUser): string {
-  if (user.displayName?.trim()) return user.displayName.trim();
-  if (user.email) return user.email.split('@')[0] ?? user.email;
-  return '';
 }
 
 /**
@@ -111,6 +100,7 @@ export function MobileNav({
           className="flex h-full w-[88vw] max-w-[320px] flex-col gap-0 border-nham-border/60 bg-nham-surface p-0"
         >
           <SheetHeader className="gap-1 border-nham-border/40 border-b px-4 py-4 text-left">
+            <KalloWordmark className="mb-2 h-4 w-auto text-nham-text" />
             <SheetTitle className="font-sans-display text-[15px] text-nham-text">
               {label || tMenu('account')}
             </SheetTitle>

@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 270 100" role="img" aria-labelledby="title desc">
+  <title id="title">Custom Kallo wordmark concept</title>
+  <desc id="desc">A custom monoline Kallo wordmark with an open single-storey a and softly finished letters.</desc>
+  <g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="10">
+    <path d="M19 23v54M24 50l24-23M24 50l24 23" />
+    <path d="M112 43c-3-10-14-15-24-11-12 4-17 18-11 29 6 12 21 14 31 6 6-5 8-12 7-20M118 29v45" />
+    <path d="M146 23v43c0 7 4 11 11 11" />
+    <path d="M177 23v43c0 7 4 11 11 11" />
+    <circle cx="226" cy="54" r="23" />
+  </g>
+</svg>

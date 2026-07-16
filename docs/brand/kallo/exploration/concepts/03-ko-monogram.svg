@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" role="img" aria-labelledby="title desc">
+  <title id="title">KO monogram concept</title>
+  <desc id="desc">A compact K and open O fused into one continuous monogram.</desc>
+  <g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="9">
+    <path d="M24 22v56" />
+    <path d="M29 50 54 25M29 50l25 25" />
+    <path d="M60 27a27 27 0 1 1 0 46" />
+  </g>
+</svg>

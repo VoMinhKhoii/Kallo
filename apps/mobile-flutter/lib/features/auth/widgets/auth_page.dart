@@ -9,6 +9,7 @@ import '../../../theme/nham_theme.dart';
 import '../../../theme/nham_typography.dart';
 import '../providers/auth_form_controller.dart';
 import 'apple_button.dart';
+import 'auth_brand_hero.dart';
 import 'auth_divider.dart';
 import 'confirm_email_view.dart';
 import '../../../shared/widgets/top_toast.dart';
@@ -152,15 +153,7 @@ class _AuthPageState extends ConsumerState<AuthPage> {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // Wordmark.
-        Center(
-          child: Text(
-            'Nhẩm',
-            style: NhamTextStyles.serifRegular(
-              fontSize: 28,
-            ).copyWith(color: NhamColors.text),
-          ),
-        ),
+        const AuthBrandHero(),
         const SizedBox(height: 14),
         // Tagline — sentence, with the second clause italic-tan.
         Text.rich(

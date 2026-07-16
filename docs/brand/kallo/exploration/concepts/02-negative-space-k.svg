@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" role="img" aria-labelledby="title desc">
+  <title id="title">Negative-space K concept</title>
+  <desc id="desc">A soft square containing a K-shaped negative-space cut.</desc>
+  <defs>
+    <mask id="negative-k">
+      <rect width="100" height="100" fill="white" />
+      <path d="M37 29v42M41 50l24-22M41 50l24 22" fill="none" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-width="11" />
+    </mask>
+  </defs>
+  <rect x="16" y="16" width="68" height="68" rx="22" fill="currentColor" mask="url(#negative-k)" />
+</svg>
