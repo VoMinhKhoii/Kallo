@@ -155,7 +155,7 @@ class _AuthPageState extends ConsumerState<AuthPage> {
         // Wordmark.
         Center(
           child: Text(
-            'Nhẩm',
+            'Kallo',
             style: NhamTextStyles.serifRegular(
               fontSize: 28,
             ).copyWith(color: NhamColors.text),

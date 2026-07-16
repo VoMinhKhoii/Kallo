@@ -1,11 +1,11 @@
 {
-    "name": "nham_mobile",
-    "short_name": "nham_mobile",
+    "name": "Kallo",
+    "short_name": "Kallo",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "background_color": "#FEFBF6",
+    "theme_color": "#FEFBF6",
+    "description": "Kallo — AI-powered calorie tracking",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

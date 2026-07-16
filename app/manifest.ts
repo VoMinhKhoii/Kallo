@@ -3,8 +3,8 @@ import type { MetadataRoute } from 'next';
 export default function manifest(): MetadataRoute.Manifest {
   return {
     id: '/dashboard',
-    name: 'Nhẩm — Vietnamese Meal Tracker',
-    short_name: 'Nhẩm',
+    name: 'Kallo — Vietnamese Meal Tracker',
+    short_name: 'Kallo',
     description: 'Track Vietnamese meals with AI-powered nutrition analysis',
     start_url: '/dashboard',
     scope: '/',

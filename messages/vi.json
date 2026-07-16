@@ -26,17 +26,17 @@
   },
   "metadata": {
     "root": {
-      "title": "Nhẩm — Trình theo dõi bữa ăn Việt",
+      "title": "Kallo — Trình theo dõi bữa ăn Việt",
       "description": "Theo dõi bữa ăn Việt với phân tích dinh dưỡng bằng AI"
     },
     "dashboard": {
-      "title": "Tổng quan — Nhẩm"
+      "title": "Tổng quan — Kallo"
     },
     "nutrition": {
-      "title": "Dinh dưỡng — Nhẩm"
+      "title": "Dinh dưỡng — Kallo"
     },
     "groups": {
-      "title": "Nhóm — Nhẩm"
+      "title": "Nhóm — Kallo"
     }
   },
   "shared": {
@@ -731,7 +731,7 @@
       "badge": "Thiết kế cho bữa ăn Việt",
       "title": "Theo dõi bữa ăn Việt",
       "titleHighlight": "không cần đoán mò",
-      "subtitle": "Mô tả bữa ăn như khi bạn kể với bạn bè — bằng tiếng Việt, tiếng Anh, hoặc cả hai. Nhẩm hiểu phở, bánh mì và hơn 500 món Việt, cùng cách bạn nấu, rồi ước lượng dinh dưỡng từ dữ liệu thành phần thực phẩm Việt Nam.",
+      "subtitle": "Mô tả bữa ăn như khi bạn kể với bạn bè — bằng tiếng Việt, tiếng Anh, hoặc cả hai. Kallo hiểu phở, bánh mì và hơn 500 món Việt, cùng cách bạn nấu, rồi ước lượng dinh dưỡng từ dữ liệu thành phần thực phẩm Việt Nam.",
       "cta": "Bắt đầu ngay",
       "ctaSecondary": "Xem cách hoạt động",
       "beta": "Đang thử nghiệm · làm tại Việt Nam",
@@ -786,18 +786,18 @@
       "step1TextMobile": "Mô tả bữa ăn tự nhiên bằng tiếng Việt, tiếng Anh hoặc cả hai.",
       "step2Label": "Bước 2",
       "step2Title": "Chúng tôi tách nó thành nguyên liệu thật",
-      "step2Text": "Nhẩm ánh xạ mô tả của bạn sang nguyên liệu và thành phần món ăn Việt từ bộ dữ liệu dinh dưỡng được tuyển chọn.",
-      "step2TextMobile": "Nhẩm ánh xạ mô tả sang nguyên liệu và thành phần món ăn Việt thật.",
+      "step2Text": "Kallo ánh xạ mô tả của bạn sang nguyên liệu và thành phần món ăn Việt từ bộ dữ liệu dinh dưỡng được tuyển chọn.",
+      "step2TextMobile": "Kallo ánh xạ mô tả sang nguyên liệu và thành phần món ăn Việt thật.",
       "step3Label": "Bước 3",
       "step3Title": "Ngữ cảnh cá nhân làm ước tính chính xác hơn",
       "step3Text": "Vùng miền, thói quen nấu ăn và mục tiêu dinh dưỡng giúp AI hiểu calo ẩn và điều chỉnh khẩu phần hợp lý hơn.",
       "step3TextMobile": "Vùng miền, thói quen nấu ăn và mục tiêu giúp AI siết chặt ước tính.",
       "step4Label": "Bước 4",
       "step4Title": "Bạn nhận được một con số đáng tin",
-      "step4Text": "Nhẩm trả về một con số calo và macro đáng tin, dựa trên dữ liệu thực phẩm Việt thật và cách bạn thực sự nấu.",
+      "step4Text": "Kallo trả về một con số calo và macro đáng tin, dựa trên dữ liệu thực phẩm Việt thật và cách bạn thực sự nấu.",
       "step4TextMobile": "Một con số đáng tin, dựa trên dữ liệu thực phẩm Việt thật.",
       "cta": "Bắt đầu theo dõi",
-      "whyLabel": "Vì sao Nhẩm tốt hơn",
+      "whyLabel": "Vì sao Kallo tốt hơn",
       "whyTitle": "Được xây dựng theo cách bữa ăn Việt thực sự diễn ra",
       "feature1Title": "Khớp nguyên liệu theo ngữ cảnh Việt Nam",
       "feature1Text": "Đối chiếu món ăn với dữ liệu thành phần thực phẩm Việt thay vì ép sang món thay thế phương Tây.",
@@ -856,7 +856,7 @@
       "blog": "Blog",
       "contact": "Liên hệ",
       "privacy": "Quyền riêng tư",
-      "copyright": "© {year} Nhẩm. Mọi quyền được bảo lưu.",
+      "copyright": "© {year} Kallo. Mọi quyền được bảo lưu.",
       "terms": "Điều khoản",
       "privacyLink": "Chính sách riêng tư",
       "security": "Bảo mật"
@@ -1194,7 +1194,7 @@
       "errorShare": "Không thể chia sẻ. Vui lòng thử lại.",
       "errorUnshare": "Không thể cập nhật chia sẻ. Vui lòng thử lại.",
       "shareCard": "Chia sẻ thẻ",
-      "shareCardTitle": "Bữa ăn của tôi trên Nhẩm",
+      "shareCardTitle": "Bữa ăn của tôi trên Kallo",
       "copiedLink": "Đã sao chép liên kết thẻ",
       "errorCopy": "Không thể sao chép liên kết. Vui lòng thử lại."
     },
@@ -1295,7 +1295,7 @@
       "placeholder": {
         "bug": "Điều gì đã xảy ra? Bạn mong đợi điều gì?",
         "ingredient": "Nguyên liệu hoặc món ăn nào đang thiếu?",
-        "idea": "Điều gì sẽ giúp Nhẩm tốt hơn cho bạn?"
+        "idea": "Điều gì sẽ giúp Kallo tốt hơn cho bạn?"
       },
       "addScreenshot": "Thêm ảnh chụp màn hình",
       "removeScreenshot": "Bỏ ảnh chụp màn hình",
@@ -1324,7 +1324,7 @@
       "linkedLoading": "Đang tải phương thức đăng nhập…",
       "linkedRetry": "Thử lại",
       "exportTitle": "Xuất dữ liệu của tôi",
-      "exportDescription": "Tải về mọi thứ Nhẩm đang lưu cho bạn, dưới dạng tệp JSON.",
+      "exportDescription": "Tải về mọi thứ Kallo đang lưu cho bạn, dưới dạng tệp JSON.",
       "exportAction": "Xuất",
       "exporting": "Đang chuẩn bị dữ liệu…",
       "exportError": "Không thể xuất dữ liệu. Vui lòng thử lại.",

@@ -9,7 +9,7 @@ import '../../../theme/nham_theme.dart';
 import '../data/countries.dart';
 
 /// ISO values pinned above the alphabet — Việt Nam first, then the destinations
-/// most Nhẩm users live in. Keeps Việt Nam one tap away instead of buried at "V".
+/// most Kallo users live in. Keeps Việt Nam one tap away instead of buried at "V".
 const List<String> _pinnedValues = [
   'Vietnam',
   'United States',

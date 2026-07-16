@@ -277,7 +277,7 @@ class _GoRouterAuthRefresh extends ChangeNotifier {
 }
 
 /// Cream splash shown on the index route while the redirect resolves. The
-/// first frame of brand: the Lora "Nhẩm" wordmark breathing gently on the cream
+/// first frame of brand: the Lora "Kallo" wordmark breathing gently on the cream
 /// surface, instead of a generic Material spinner. The cream background matches
 /// the native LaunchScreen so the native→Flutter handoff is seamless.
 class _SplashScreen extends StatefulWidget {
@@ -318,7 +318,7 @@ class _SplashScreenState extends State<_SplashScreen>
   @override
   Widget build(BuildContext context) {
     final wordmark = Text(
-      'Nhẩm',
+      'Kallo',
       style: NhamTextStyles.serifRegular(
         fontSize: 32,
       ).copyWith(color: NhamColors.text),

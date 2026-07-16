@@ -2,6 +2,7 @@ import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { ImageResponse } from '@vercel/og';
 import { type NextRequest, NextResponse } from 'next/server';
+import { KALLO_WORDMARK_D, KALLO_WORDMARK_VIEWBOX } from '@/lib/brand/kallo';
 import { Errors, serializeError } from '@/lib/errors';
 import {
   buildAnalysisGuardEvent,
@@ -27,7 +28,7 @@ const RING_RADIUS = 46;
 const RING_CENTER = RING_VIEWBOX / 2;
 const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS;
 
-// Nhẩm warm palette (from app/globals.css :root — satori needs literal hex).
+// Kallo warm palette (from app/globals.css :root — satori needs literal hex).
 const NHAM_SURFACE = '#fefbf6';
 const NHAM_TEXT = '#2c2416';
 const NHAM_TEXT_MUTED = '#8b7355';
@@ -237,16 +238,14 @@ export async function GET(
               backgroundColor: swatch,
             }}
           />
-          <div
-            style={{
-              fontFamily: 'Lora',
-              fontSize: 44,
-              color: NHAM_TEXT,
-              letterSpacing: '0.01em',
-            }}
+          <svg
+            width={118}
+            height={44}
+            viewBox={KALLO_WORDMARK_VIEWBOX}
+            fill={NHAM_TEXT}
           >
-            nhẩm
-          </div>
+            <path d={KALLO_WORDMARK_D} />
+          </svg>
         </div>
 
         {/* Middle: dish name + calorie ring */}
@@ -422,7 +421,7 @@ export async function GET(
               letterSpacing: '0.02em',
             }}
           >
-            Logged with Nhẩm
+            Logged with Kallo
           </div>
         </div>
       </div>,

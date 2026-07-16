@@ -397,7 +397,7 @@ export function ScreenBodyMetrics({
                   About You
                 </p>
                 <p className="mt-1 text-[#8B8682] text-[13px] leading-relaxed">
-                  These stay optional, but once you fill them in, Nhẩm can
+                  These stay optional, but once you fill them in, Kallo can
                   compute more tailored targets locally.
                 </p>
               </div>

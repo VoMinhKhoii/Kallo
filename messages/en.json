@@ -26,17 +26,17 @@
   },
   "metadata": {
     "root": {
-      "title": "Nhẩm — Vietnamese Meal Tracker",
+      "title": "Kallo — Vietnamese Meal Tracker",
       "description": "Track Vietnamese meals with AI-powered nutrition analysis"
     },
     "dashboard": {
-      "title": "Dashboard — Nhẩm"
+      "title": "Dashboard — Kallo"
     },
     "nutrition": {
-      "title": "Nutrition — Nhẩm"
+      "title": "Nutrition — Kallo"
     },
     "groups": {
-      "title": "Groups — Nhẩm"
+      "title": "Groups — Kallo"
     }
   },
   "shared": {
@@ -731,7 +731,7 @@
       "badge": "Built for Vietnamese meals",
       "title": "Track Vietnamese meals",
       "titleHighlight": "without the guesswork",
-      "subtitle": "Describe your meal the way you'd tell a friend — in Vietnamese, English, or both. Nhẩm knows phở, bánh mì, and 500+ Vietnamese dishes, and how you cook them, then estimates the nutrition from Vietnamese food-composition data.",
+      "subtitle": "Describe your meal the way you'd tell a friend — in Vietnamese, English, or both. Kallo knows phở, bánh mì, and 500+ Vietnamese dishes, and how you cook them, then estimates the nutrition from Vietnamese food-composition data.",
       "cta": "Get started",
       "ctaSecondary": "See how it works",
       "beta": "In beta · built in Vietnam",
@@ -786,18 +786,18 @@
       "step1TextMobile": "Describe your meal naturally in Vietnamese, English, or both.",
       "step2Label": "Step 2",
       "step2Title": "We break it into real ingredients",
-      "step2Text": "Nhẩm maps your description to Vietnamese ingredients and dish components from a curated nutrition dataset.",
-      "step2TextMobile": "Nhẩm maps your text to real Vietnamese ingredients and dish components.",
+      "step2Text": "Kallo maps your description to Vietnamese ingredients and dish components from a curated nutrition dataset.",
+      "step2TextMobile": "Kallo maps your text to real Vietnamese ingredients and dish components.",
       "step3Label": "Step 3",
       "step3Title": "Personal context sharpens the estimate",
       "step3Text": "Region, cooking habits, and nutrition goals help the AI understand hidden calories and likely portion adjustments.",
       "step3TextMobile": "Region, cooking habits, and goals help the AI tighten the estimate.",
       "step4Label": "Step 4",
       "step4Title": "You get one number you can trust",
-      "step4Text": "Nhẩm gives you one calorie and macro number you can trust, built from real Vietnamese food data and how you actually cook.",
+      "step4Text": "Kallo gives you one calorie and macro number you can trust, built from real Vietnamese food data and how you actually cook.",
       "step4TextMobile": "One number you can trust, built from real Vietnamese food data.",
       "cta": "Start tracking now",
-      "whyLabel": "Why Nhẩm works better",
+      "whyLabel": "Why Kallo works better",
       "whyTitle": "Built around how Vietnamese meals are actually eaten",
       "feature1Title": "Vietnamese-first ingredient matching",
       "feature1Text": "Matches meals against Vietnamese food composition data instead of forcing Western substitutes.",
@@ -856,7 +856,7 @@
       "blog": "Blog",
       "contact": "Contact",
       "privacy": "Privacy",
-      "copyright": "© {year} Nhẩm. All rights reserved.",
+      "copyright": "© {year} Kallo. All rights reserved.",
       "terms": "Terms",
       "privacyLink": "Privacy policy",
       "security": "Security"
@@ -1194,7 +1194,7 @@
       "errorShare": "Couldn't share to your circle. Try again.",
       "errorUnshare": "Couldn't update sharing. Try again.",
       "shareCard": "Share card",
-      "shareCardTitle": "My meal on Nhẩm",
+      "shareCardTitle": "My meal on Kallo",
       "copiedLink": "Card link copied to clipboard",
       "errorCopy": "Couldn't copy the card link. Try again."
     },
@@ -1295,7 +1295,7 @@
       "placeholder": {
         "bug": "What went wrong? What did you expect to happen?",
         "ingredient": "Which ingredient or food is missing?",
-        "idea": "What would make Nhẩm better for you?"
+        "idea": "What would make Kallo better for you?"
       },
       "addScreenshot": "Add a screenshot",
       "removeScreenshot": "Remove screenshot",
@@ -1324,7 +1324,7 @@
       "linkedLoading": "Loading sign-in methods…",
       "linkedRetry": "Try again",
       "exportTitle": "Export my data",
-      "exportDescription": "Download everything Nhẩm holds for you, as a JSON file.",
+      "exportDescription": "Download everything Kallo holds for you, as a JSON file.",
       "exportAction": "Export",
       "exporting": "Preparing your data…",
       "exportError": "Could not export your data. Please try again.",
