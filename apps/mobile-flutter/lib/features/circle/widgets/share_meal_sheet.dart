@@ -1,15 +1,16 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../shared/widgets/top_toast.dart';
 import '../../../theme/nham_colors.dart';
 import '../../../theme/nham_theme.dart';
 import '../../../theme/nham_typography.dart';
 import '../data/circle_providers.dart';
-import 'circle_avatar.dart';
+import 'friend_pick_row.dart';
+import 'share_meal_mode_selector.dart';
+import 'share_meal_sheet_header.dart';
+import 'share_meal_submit_button.dart';
 
 /// Opens the "share this meal" sheet: pick a mode (full copy or even split) and
 /// the friends who ate with you. Mirrors the web `ShareMealDialog`.
@@ -92,34 +93,8 @@ class _ShareMealSheetState extends ConsumerState<_ShareMealSheet> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(
-              NhamSpacing.sp2,
-              NhamSpacing.sp2,
-              NhamSpacing.sp2,
-              NhamSpacing.sp1,
-            ),
-            child: Row(
-              children: [
-                IconButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  icon: const Icon(LucideIcons.x, size: 22),
-                  color: NhamColors.textMuted,
-                  tooltip: tr('groups.invite.cancel'),
-                ),
-                Expanded(
-                  child: Center(
-                    child: Text(
-                      tr('groups.shareMeal.title'),
-                      style: NhamTextStyles.serifRegular(
-                        fontSize: NhamFontSize.h4,
-                      ).copyWith(color: NhamColors.text),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 48, height: 48),
-              ],
-            ),
+          ShareMealSheetHeader(
+            onClose: () => Navigator.of(context).pop(),
           ),
           Flexible(
             child: SingleChildScrollView(
@@ -140,26 +115,9 @@ class _ShareMealSheetState extends ConsumerState<_ShareMealSheet> {
                     ).copyWith(color: NhamColors.textMuted),
                   ),
                   const SizedBox(height: NhamSpacing.sp4),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _ModeCard(
-                          label: tr('groups.shareMeal.mode.copy.label'),
-                          hint: tr('groups.shareMeal.mode.copy.hint'),
-                          selected: _mode == 'copy',
-                          onTap: () => setState(() => _mode = 'copy'),
-                        ),
-                      ),
-                      const SizedBox(width: NhamSpacing.sp2),
-                      Expanded(
-                        child: _ModeCard(
-                          label: tr('groups.shareMeal.mode.split.label'),
-                          hint: tr('groups.shareMeal.mode.split.hint'),
-                          selected: _mode == 'split',
-                          onTap: () => setState(() => _mode = 'split'),
-                        ),
-                      ),
-                    ],
+                  ShareMealModeSelector(
+                    mode: _mode,
+                    onChanged: (mode) => setState(() => _mode = mode),
                   ),
                   // Only once a friend is picked — no bare em-dash placeholder.
                   if (_mode == 'split' && _selected.isNotEmpty) ...[
@@ -204,7 +162,7 @@ class _ShareMealSheetState extends ConsumerState<_ShareMealSheet> {
                       return Column(
                         children: [
                           for (final m in friends) ...[
-                            _FriendPickRow(
+                            FriendPickRow(
                               label: m.profile.label,
                               initial: m.profile.initial,
                               selected: _selected.contains(m.profile.userId),
@@ -217,7 +175,7 @@ class _ShareMealSheetState extends ConsumerState<_ShareMealSheet> {
                     },
                   ),
                   const SizedBox(height: NhamSpacing.sp4),
-                  _SubmitButton(
+                  SubmitButton(
                     label:
                         count == 0
                             ? tr('groups.shareMeal.submitEmpty')
@@ -234,176 +192,6 @@ class _ShareMealSheetState extends ConsumerState<_ShareMealSheet> {
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _ModeCard extends StatelessWidget {
-  const _ModeCard({
-    required this.label,
-    required this.hint,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final String label;
-  final String hint;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      button: true,
-      selected: selected,
-      label: label,
-      child: GestureDetector(
-        onTap: onTap,
-        child: Container(
-          padding: const EdgeInsets.symmetric(
-            horizontal: NhamSpacing.sp3,
-            vertical: NhamSpacing.sp2_5,
-          ),
-          decoration: BoxDecoration(
-            color: selected ? NhamColors.accent10 : NhamColors.elev,
-            borderRadius: BorderRadius.circular(NhamRadii.lg),
-            border: Border.all(
-              color: selected ? NhamColors.accent50 : NhamColors.borderSoft,
-            ),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                label,
-                style: NhamTextStyles.sansMedium(
-                  fontSize: NhamFontSize.detail,
-                ).copyWith(color: NhamColors.text),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                hint,
-                style: NhamTextStyles.sansRegular(
-                  fontSize: NhamFontSize.xxs,
-                ).copyWith(color: NhamColors.textMuted),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _FriendPickRow extends StatelessWidget {
-  const _FriendPickRow({
-    required this.label,
-    required this.initial,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final String label;
-  final String initial;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      button: true,
-      selected: selected,
-      label: label,
-      child: GestureDetector(
-        onTap: () {
-          HapticFeedback.selectionClick();
-          onTap();
-        },
-        child: Container(
-          padding: const EdgeInsets.symmetric(
-            horizontal: NhamSpacing.sp3,
-            vertical: NhamSpacing.sp2_5,
-          ),
-          decoration: BoxDecoration(
-            color: selected ? NhamColors.accent10 : Colors.transparent,
-            borderRadius: BorderRadius.circular(NhamRadii.containerLg),
-          ),
-          child: Row(
-            children: [
-              CircleInitialsAvatar(initial: initial, size: 32),
-              const SizedBox(width: NhamSpacing.sp3),
-              Expanded(
-                child: Text(
-                  label,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: NhamTextStyles.sansRegular(
-                    fontSize: NhamFontSize.sm,
-                  ).copyWith(color: NhamColors.text),
-                ),
-              ),
-              if (selected)
-                const Icon(LucideIcons.check, size: 16, color: NhamColors.btn),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _SubmitButton extends StatelessWidget {
-  const _SubmitButton({
-    required this.label,
-    required this.enabled,
-    required this.loading,
-    required this.onTap,
-  });
-
-  final String label;
-  final bool enabled;
-  final bool loading;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Opacity(
-      opacity: enabled ? 1 : 0.5,
-      child: GestureDetector(
-        onTap: enabled ? onTap : null,
-        child: Container(
-          width: double.infinity,
-          alignment: Alignment.center,
-          padding: const EdgeInsets.symmetric(vertical: NhamSpacing.sp3),
-          decoration: BoxDecoration(
-            color: NhamColors.btn,
-            borderRadius: BorderRadius.circular(NhamRadii.buttonXl),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (loading)
-                const SizedBox(
-                  width: 16,
-                  height: 16,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: Colors.white,
-                  ),
-                )
-              else
-                const Icon(LucideIcons.users, size: 16, color: Colors.white),
-              const SizedBox(width: NhamSpacing.sp2),
-              Text(
-                label,
-                style: NhamTextStyles.sansMedium(
-                  fontSize: NhamFontSize.sm,
-                ).copyWith(color: Colors.white),
-              ),
-            ],
-          ),
-        ),
       ),
     );
   }
