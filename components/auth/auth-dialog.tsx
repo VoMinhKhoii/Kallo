@@ -3,13 +3,13 @@
 import { AnimatePresence, motion } from 'motion/react';
 import { useTranslations } from 'next-intl';
 import { useEffect, useRef } from 'react';
+import { AuthDialogHeader } from '@/components/auth/auth-dialog-header';
 import { useAuthDialog } from '@/components/auth/auth-provider';
 import { CheckEmailPanel } from '@/components/auth/check-email-panel';
 import { ForgotPasswordForm } from '@/components/auth/forgot-password-form';
 import { GoogleSignInButton } from '@/components/auth/google-sign-in-button';
 import { SignInForm } from '@/components/auth/sign-in-form';
 import { SignUpForm } from '@/components/auth/sign-up-form';
-import { KalloAppIcon } from '@/components/brand/kallo-app-icon';
 
 const FOCUSABLE_SELECTOR =
   'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
@@ -122,19 +122,7 @@ export function AuthDialog() {
             className="fixed top-1/2 left-1/2 z-101 w-[calc(100%-2rem)] max-w-[420px] -translate-x-1/2 -translate-y-1/2 focus:outline-none"
           >
             <div className="overflow-hidden rounded-2xl border border-nham-border/40 bg-[#FFFCF8] shadow-[0_25px_60px_-12px_rgba(44,36,22,0.25),0_0_0_1px_rgba(201,168,124,0.08)]">
-              {/* Header */}
-              <div className="px-8 pt-8 pb-2 text-center">
-                <KalloAppIcon className="mx-auto mb-4 w-12 rounded-xl" />
-                <h2
-                  id="auth-dialog-title"
-                  className="mb-1 font-normal font-serif text-2xl text-nham-text"
-                >
-                  {title}
-                </h2>
-                <p className="font-sans-display text-nham-text-muted text-sm">
-                  {subtitle}
-                </p>
-              </div>
+              <AuthDialogHeader title={title} subtitle={subtitle} />
 
               {/* Credentials screen: Google first, then email form. The mode
                   (sign in vs create account) is carried by the title + the one

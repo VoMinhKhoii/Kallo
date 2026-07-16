@@ -18,6 +18,7 @@ import { createClient } from '@/lib/supabase/client';
 import { cn } from '@/lib/utils';
 import { isActiveRoute, visibleNavItems } from './nav-items';
 import { OnboardingDot, OnboardingNudge } from './onboarding-nudge';
+import { deriveInitial, deriveLabel } from './user-label';
 import type { UserMenuUser } from './user-menu';
 
 interface MobileNavProps {
@@ -29,19 +30,6 @@ interface MobileNavProps {
   isOnboardingMinimized?: boolean;
   onMinimizeOnboarding?: () => Promise<void> | void;
   onRestoreOnboarding?: () => Promise<void> | void;
-}
-
-function deriveInitial(user: UserMenuUser): string {
-  const source = user.displayName || user.email || '';
-  const trimmed = source.trim();
-  if (!trimmed) return '·';
-  return trimmed.charAt(0).toUpperCase();
-}
-
-function deriveLabel(user: UserMenuUser): string {
-  if (user.displayName?.trim()) return user.displayName.trim();
-  if (user.email) return user.email.split('@')[0] ?? user.email;
-  return '';
 }
 
 /**

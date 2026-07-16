@@ -7,10 +7,9 @@ import '../../../theme/calm_tokens.dart';
 import '../../../theme/nham_colors.dart';
 import '../../../theme/nham_theme.dart';
 import '../../../theme/nham_typography.dart';
-import '../../../shared/widgets/kallo_mark.dart';
-import '../../../shared/widgets/kallo_wordmark.dart';
 import '../providers/auth_form_controller.dart';
 import 'apple_button.dart';
+import 'auth_brand_hero.dart';
 import 'auth_divider.dart';
 import 'confirm_email_view.dart';
 import '../../../shared/widgets/top_toast.dart';
@@ -154,25 +153,7 @@ class _AuthPageState extends ConsumerState<AuthPage> {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // App icon tile + wordmark — the standard mobile auth hero. The tile
-        // is decorative next to the wordmark, so it's excluded from semantics
-        // to avoid announcing "Kallo" twice.
-        Center(
-          child: ExcludeSemantics(
-            child: Container(
-              width: 64,
-              height: 64,
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                color: NhamColors.text,
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: const KalloMark(height: 32, color: NhamColors.surface),
-            ),
-          ),
-        ),
-        const SizedBox(height: 16),
-        const Center(child: KalloWordmark(height: 22)),
+        const AuthBrandHero(),
         const SizedBox(height: 14),
         // Tagline — sentence, with the second clause italic-tan.
         Text.rich(

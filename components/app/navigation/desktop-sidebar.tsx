@@ -1,16 +1,15 @@
 'use client';
 
-import { PanelLeftClose, PanelLeftOpen, Settings } from 'lucide-react';
+import { Settings } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import type * as React from 'react';
 import { useState } from 'react';
-import { KalloMark } from '@/components/brand/kallo-mark';
-import { KalloWordmark } from '@/components/brand/kallo-wordmark';
 import { useSidebarState } from '@/hooks/ui/use-sidebar-state';
 import { Link, usePathname } from '@/i18n/navigation';
 import { cn } from '@/lib/utils';
 import { isActiveRoute, visibleNavItems } from './nav-items';
 import { OnboardingNudge } from './onboarding-nudge';
+import { SidebarBrandHeader } from './sidebar-brand-header';
 import { SidebarTooltip } from './sidebar-tooltip';
 import { UserMenu, type UserMenuUser } from './user-menu';
 
@@ -227,46 +226,11 @@ export function DesktopSidebar({
         pinnedCollapsed && collapsed && 'cursor-pointer'
       )}
     >
-      {/* Header — brand + pin/unpin toggle. Expanded: wordmark left, close
-          toggle right. Collapsed: one button that IS the K mark and morphs
-          into the expand icon on hover/focus. */}
-      <div
-        className={cn(
-          'flex shrink-0 items-center px-3 pt-3',
-          collapsed ? 'justify-center' : 'justify-between'
-        )}
-      >
-        {!collapsed && (
-          <KalloWordmark className="ml-1.5 h-4 w-auto text-nham-text" />
-        )}
-        <SidebarTooltip
-          enabled={collapsed}
-          label={pinnedCollapsed ? t('expandSidebar') : t('collapseSidebar')}
-        >
-          <button
-            type="button"
-            onClick={togglePinned}
-            aria-label={
-              pinnedCollapsed ? t('expandSidebar') : t('collapseSidebar')
-            }
-            aria-pressed={pinnedCollapsed}
-            aria-keyshortcuts="Meta+B Control+B"
-            className={cn(
-              'group/toggle relative flex items-center justify-center rounded-md text-nham-text-muted transition-colors hover:bg-nham-hover/60 hover:text-nham-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent',
-              collapsed ? 'h-8 w-8' : 'h-7 w-7'
-            )}
-          >
-            {collapsed ? (
-              <>
-                <KalloMark className="h-5 w-auto text-nham-text transition-opacity duration-150 group-hover/toggle:opacity-0 group-focus-visible/toggle:opacity-0" />
-                <PanelLeftOpen className="absolute h-4 w-4 opacity-0 transition-opacity duration-150 group-hover/toggle:opacity-100 group-focus-visible/toggle:opacity-100" />
-              </>
-            ) : (
-              <PanelLeftClose className="h-4 w-4" />
-            )}
-          </button>
-        </SidebarTooltip>
-      </div>
+      <SidebarBrandHeader
+        collapsed={collapsed}
+        pinnedCollapsed={pinnedCollapsed}
+        onTogglePinned={togglePinned}
+      />
 
       {/* Scroll region: nav + onboarding + settings */}
       <div className="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto p-3">
