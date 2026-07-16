@@ -7,15 +7,14 @@ import {
   buildPersistedMeal,
   extractNutritionValues,
   nutritionValuesToRow,
+  scaleNutritionRow,
 } from '@/lib/actions/persisted-meal';
-import { NUTRITION_KEYS } from '@/lib/ai/constants';
 import { sumDisplayedNutrition } from '@/lib/ai/pipeline/goal-adjustment';
 import type { NutritionValues } from '@/lib/ai/types';
 import { requireAuthAndProfile } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { mealItems, mealShares, meals } from '@/lib/db/schema';
 import { Errors } from '@/lib/errors';
-import { EMPTY_NUTRITION } from './shared';
 import type { ConfirmMealResponse } from './types';
 
 const deleteMealSchema = z.object({
@@ -65,26 +64,6 @@ export async function deleteMealAction(input: { mealId: string }) {
 // ---------------------------------------------------------------------------
 // C4: Edit a persisted meal (gram overrides + per-row removal)
 // ---------------------------------------------------------------------------
-
-/** Scale every stored nutrient on a row by `ratio`, preserving nulls. */
-function scaleNutritionRow(
-  row: Record<string, unknown>,
-  ratio: number
-): NutritionValues {
-  const result = { ...EMPTY_NUTRITION };
-  for (const key of NUTRITION_KEYS) {
-    const raw = row[key];
-    const value =
-      typeof raw === 'number'
-        ? raw
-        : typeof raw === 'string'
-          ? Number(raw)
-          : null;
-    result[key] =
-      value != null && Number.isFinite(value) ? value * ratio : null;
-  }
-  return result;
-}
 
 /**
  * Edit a persisted (precise) meal: override the cooked grams of stored items

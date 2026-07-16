@@ -18,6 +18,12 @@ vi.mock('sonner', () => ({
   },
 }));
 
+// The nav's invite-count badge is out of scope here; stub it so the component
+// doesn't require a QueryClientProvider.
+vi.mock('@/hooks/social/use-meal-share-invites', () => ({
+  useMealShareInviteCount: () => 0,
+}));
+
 // Render Sheet primitives inline so the drawer content is queryable without
 // having to drive the trigger through Radix's portal-based open animation.
 vi.mock('@/components/ui/sheet', () => ({

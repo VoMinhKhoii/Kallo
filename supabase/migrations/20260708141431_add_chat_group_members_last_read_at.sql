@@ -1,0 +1,1 @@
+ALTER TABLE "chat_group_members" ADD COLUMN "last_read_at" timestamp with time zone DEFAULT now() NOT NULL;

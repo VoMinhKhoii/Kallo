@@ -1,8 +1,8 @@
 import { type NextRequest, NextResponse } from 'next/server';
 import { listCircleFeed } from '@/lib/actions/groups/feed';
+import { requireUserId } from '@/lib/api/auth';
 import { serializeError } from '@/lib/errors';
 import { timezoneOffsetSchema } from '@/lib/validation';
-import { requireUserId } from '../_auth';
 
 export const runtime = 'nodejs';
 

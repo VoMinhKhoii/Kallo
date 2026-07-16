@@ -132,6 +132,59 @@ export const circleFeedSchema = z.object({
   timezoneOffset: timezoneOffsetSchema,
 });
 
+/** Share one of my meals with specific friends as a full copy or a split. */
+export const shareMealWithFriendsSchema = z.object({
+  mealId: uuidSchema,
+  friendUserIds: z.array(uuidSchema).min(1).max(20),
+  mode: z.enum(['copy', 'split']),
+});
+
+/** Accept a pending meal-share invite into my own diary for the chosen day. */
+export const acceptMealShareInviteSchema = z.object({
+  inviteId: uuidSchema,
+  // Client-generated id so the optimistic card and the persisted row share a
+  // stable React key (mirrors confirm/duplicate).
+  newMealId: uuidSchema.optional(),
+  loggedDate: dateStringSchema,
+  timezoneOffset: timezoneOffsetSchema,
+});
+
+export const dismissMealShareInviteSchema = z.object({
+  inviteId: uuidSchema,
+});
+
+/** Seek-paginated cursor shared by the friend/group thread history feeds —
+ * strictly-older-than a prior page's oldest `sharedAt`, omitted for page 1. */
+const beforeCursorSchema = z.string().datetime().optional();
+
+/** Fetch the combined Friends thread's shared-meal history (every accepted
+ * friend, merged, excluding the actor), newest-first, paginated. */
+export const friendsThreadFeedSchema = z.object({
+  before: beforeCursorSchema,
+});
+
+/** Create a named group chat from a multi-select of the actor's friends. */
+export const createChatGroupSchema = z.object({
+  name: z.string().trim().min(1, 'Tên nhóm không được để trống.').max(60),
+  // Capped so the per-member friendship fan-out (one query each) can't be
+  // driven to exhaust the connection pool with a large UUID list.
+  memberUserIds: z
+    .array(uuidSchema)
+    .min(1, 'Chọn ít nhất một thành viên.')
+    .max(50, 'Nhóm tối đa 50 thành viên.'),
+});
+
+export const sendChatGroupMessageSchema = z.object({
+  groupId: uuidSchema,
+  body: z.string().trim().min(1).max(2000),
+});
+
+/** Fetch a group thread's shared-meal history, newest-first, paginated. */
+export const groupMealFeedSchema = z.object({
+  groupId: uuidSchema,
+  before: beforeCursorSchema,
+});
+
 export type HandleInput = z.infer<typeof handleSchema>;
 export type UpsertPublicProfileInput = z.infer<
   typeof upsertPublicProfileSchema

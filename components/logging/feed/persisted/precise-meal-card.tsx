@@ -36,6 +36,16 @@ export function PrecisePersistedMealCard({
     meal.mealItemGroups.some((g) =>
       g.ingredients.some((i) => i.estimatedGrams != null)
     );
+  // Copy/split need item rows to reproduce; a legacy/empty meal has none.
+  const canShare = meal.mealItemGroups.some((g) => g.ingredients.length > 0);
+  // A split share (or accepted split copy) is a fraction of a full portion.
+  const portionFactor = meal.portionFactor ?? 1;
+  const isFractional = portionFactor > 0 && portionFactor < 1;
+  const portionText = isFractional ? `1/${Math.round(1 / portionFactor)}` : '';
+  // NL-refine re-estimates the FULL portion from the text, silently undoing a
+  // split — so hide "Fix with words" on a fractional meal (amount-edit still
+  // works for tweaking the share).
+  const refine = isFractional ? undefined : onRefine;
 
   const timeLabel = new Date(meal.loggedAt).toLocaleTimeString(locale, {
     hour: '2-digit',
@@ -58,11 +68,16 @@ export function PrecisePersistedMealCard({
       <div className="absolute top-2 bottom-0 -left-4 w-px bg-nham-border/60 group-last:bg-transparent sm:-left-10" />
       <div className="absolute top-2 -left-5 h-2 w-2 rounded-full border-2 border-nham-accent bg-white sm:-left-[43px]" />
 
-      {/* Time label */}
-      <div className="mb-2">
+      {/* Time label + split-portion chip */}
+      <div className="mb-2 flex items-center gap-2">
         <span className="font-bold font-sans-display text-[11px] text-nham-text-muted/60 tracking-widest">
           {timeLabel}
         </span>
+        {isFractional && (
+          <span className="rounded-full bg-nham-accent/15 px-2 py-0.5 font-medium font-sans-display text-[10px] text-nham-text">
+            {t('portionChip', { portion: portionText })}
+          </span>
+        )}
       </div>
 
       {/* Card */}
@@ -115,10 +130,10 @@ export function PrecisePersistedMealCard({
             onCancel={() => setIsEditing(false)}
             onSave={onUpdate}
             onRefine={
-              onRefine
+              refine
                 ? (correction) => {
                     setIsEditing(false);
-                    onRefine(correction);
+                    refine(correction);
                   }
                 : undefined
             }
@@ -149,10 +164,11 @@ export function PrecisePersistedMealCard({
           <CardActionRow
             meal={meal}
             canEdit={canEdit}
+            canShare={canShare}
             isRefineOpen={isRefineOpen}
             onLogAgain={onLogAgain}
             onRefineToggle={
-              onRefine ? () => setIsRefineOpen((prev) => !prev) : undefined
+              refine ? () => setIsRefineOpen((prev) => !prev) : undefined
             }
             onEditAmounts={() => {
               setIsRefineOpen(false);
@@ -165,14 +181,14 @@ export function PrecisePersistedMealCard({
 
         {/* The refine field opened from the action row — one interaction from
             the collapsed card. Also available inside the amount editor. */}
-        {!isEditing && isRefineOpen && onRefine && (
+        {!isEditing && isRefineOpen && refine && (
           <div className="mt-3 border-nham-border/40 border-t border-dashed pt-3">
             <RefineField
               meal={meal}
               autoFocus
               onRefine={(correction) => {
                 setIsRefineOpen(false);
-                onRefine(correction);
+                refine(correction);
               }}
             />
           </div>

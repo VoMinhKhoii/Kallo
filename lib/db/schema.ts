@@ -253,6 +253,15 @@ export const meals = pgTable(
     cheatSliders: jsonb('cheat_sliders'),
     // ≤280-char "we get the occasion" line shown on the cheat-meal card.
     estimateRationale: text('estimate_rationale'),
+    // Fraction of the "natural full portion" this logged meal represents. 1 for
+    // a normal meal or a full copy; <1 for a split (sender's share, or a
+    // recipient's accepted split copy). Powers the "½ portion" chip and blocks
+    // re-splitting an already-fractional meal (which would compound the shrink)
+    // and NL-refine (which would re-estimate the full portion, silently undoing
+    // the split).
+    portionFactor: numeric('portion_factor', { mode: 'number' })
+      .notNull()
+      .default(1),
 
     // Persisted nutrition — one numeric value per nutrient
     caloriesKcal: numeric('calories_kcal', { mode: 'number' }),
@@ -922,6 +931,25 @@ export const publicProfiles = pgTable(
 );
 
 // ---------------------------------------------------------------------------
+// Friends feed — read marker
+// ---------------------------------------------------------------------------
+// The combined "all friends" thread isn't a real chat_groups row, so it has
+// nowhere to hang a lastReadAt column the way group/direct chats do — this is
+// its own table. Deliberately NOT a column on public_profiles: that table's
+// RLS lets accepted friends read each other's rows (for names/avatars), and
+// this is a private "when did you last check your feed" marker that must
+// stay owner-only (see its own RLS migration).
+
+export const friendsFeedReadMarkers = pgTable('friends_feed_read_markers', {
+  userId: uuid('user_id')
+    .primaryKey()
+    .references(() => authUsers.id, { onDelete: 'cascade' }),
+  lastReadAt: timestamp('last_read_at', { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+
+// ---------------------------------------------------------------------------
 // Group Tracking — Friendships
 // ---------------------------------------------------------------------------
 // Symmetric, canonical-ordered friendship edge. The user_low < user_high check
@@ -1080,6 +1108,183 @@ export const circleEvents = pgTable(
     ),
     index('circle_events_actor_created_idx').on(
       table.actorId,
+      sql`${table.createdAt} DESC`
+    ),
+  ]
+);
+
+// ---------------------------------------------------------------------------
+// Group Tracking — Meal Share Invites (copy / split between friends)
+// ---------------------------------------------------------------------------
+// A directed, actionable offer distinct from meal_shares (broadcast visibility):
+// friend A shares one of their own meals with a specific friend B, either as a
+// full copy or as a split fraction. B one-tap-accepts to materialize a scaled
+// copy in their own diary (accepted_meal_id) or dismisses it. This drives the
+// Circle inbox. Isolation is the from_user_id / to_user_id filters (Drizzle
+// bypasses RLS); the accept path is the one deliberate cross-user meal read,
+// authorized solely by a pending invite row addressed to the reader.
+
+export const mealShareInvites = pgTable(
+  'meal_share_invites',
+  {
+    id: uuid('id').primaryKey().default(sql`gen_random_uuid()`),
+    sourceMealId: uuid('source_meal_id')
+      .notNull()
+      .references(() => meals.id, { onDelete: 'cascade' }),
+    fromUserId: uuid('from_user_id')
+      .notNull()
+      .references(() => authUsers.id, { onDelete: 'cascade' }),
+    toUserId: uuid('to_user_id')
+      .notNull()
+      .references(() => authUsers.id, { onDelete: 'cascade' }),
+    mode: text('mode').notNull(),
+    // Fraction of the source meal the recipient receives: 1 for a full copy,
+    // 1/(participants) for a split. Stored so the inbox can label "½ portion"
+    // and accept scales the copied rows by exactly this factor.
+    portionFactor: numeric('portion_factor').notNull().default('1'),
+    status: text('status').notNull().default('pending'),
+    // The meal materialized in the recipient's diary once accepted (NULL until).
+    acceptedMealId: uuid('accepted_meal_id').references(() => meals.id, {
+      onDelete: 'set null',
+    }),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    respondedAt: timestamp('responded_at', { withTimezone: true }),
+  },
+  (table) => [
+    // One offer per (meal, recipient): re-sharing upserts instead of piling up
+    // duplicate invites.
+    unique('meal_share_invites_meal_recipient_uniq').on(
+      table.sourceMealId,
+      table.toUserId
+    ),
+    // The inbox query: pending invites addressed to the viewer, newest first.
+    index('meal_share_invites_recipient_status_idx')
+      .on(table.toUserId, sql`${table.createdAt} DESC`)
+      .where(sql`status = 'pending'`),
+    check(
+      'meal_share_invites_mode_check',
+      sql`${table.mode} IN ('copy', 'split')`
+    ),
+    check(
+      'meal_share_invites_status_check',
+      sql`${table.status} IN ('pending', 'accepted', 'dismissed')`
+    ),
+  ]
+);
+
+// ---------------------------------------------------------------------------
+// Chat Groups — unified 1:1 + group messaging
+// ---------------------------------------------------------------------------
+// One chat concept, N >= 2 members — no separate 1:1 code path. `kind`
+// distinguishes an auto-created 2-person chat ('direct', one per accepted
+// friendship — created by acceptInvite) from a user-created named chat
+// ('group', membership drawn from the creator's existing accepted friends
+// only). direct_user_low/high use the SAME canonical-ordering convention as
+// friendships.user_low/high (orderedPair()), and are NULL for 'group' rows;
+// the unique index on that pair makes direct-chat creation idempotent per
+// friend pair (Postgres does not treat NULL = NULL, so 'group' rows with
+// both columns NULL never collide with each other).
+
+export const chatGroups = pgTable(
+  'chat_groups',
+  {
+    id: uuid('id').primaryKey().default(sql`gen_random_uuid()`),
+    kind: text('kind').notNull(),
+    name: text('name'),
+    createdBy: uuid('created_by')
+      .notNull()
+      .references(() => authUsers.id, { onDelete: 'cascade' }),
+    directUserLow: uuid('direct_user_low').references(() => authUsers.id, {
+      onDelete: 'cascade',
+    }),
+    directUserHigh: uuid('direct_user_high').references(() => authUsers.id, {
+      onDelete: 'cascade',
+    }),
+    avatarSeed: text('avatar_seed'),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    unique('chat_groups_direct_pair_uniq').on(
+      table.directUserLow,
+      table.directUserHigh
+    ),
+    check('chat_groups_kind_check', sql`${table.kind} IN ('direct', 'group')`),
+    check(
+      'chat_groups_direct_shape_check',
+      sql`(${table.kind} = 'direct' AND ${table.directUserLow} IS NOT NULL AND ${table.directUserHigh} IS NOT NULL AND ${table.directUserLow} < ${table.directUserHigh})
+          OR (${table.kind} = 'group' AND ${table.directUserLow} IS NULL AND ${table.directUserHigh} IS NULL)`
+    ),
+  ]
+);
+
+// ---------------------------------------------------------------------------
+// Chat Groups — Members
+// ---------------------------------------------------------------------------
+
+export const chatGroupMembers = pgTable(
+  'chat_group_members',
+  {
+    id: uuid('id').primaryKey().default(sql`gen_random_uuid()`),
+    groupId: uuid('group_id')
+      .notNull()
+      .references(() => chatGroups.id, { onDelete: 'cascade' }),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => authUsers.id, { onDelete: 'cascade' }),
+    role: text('role').notNull().default('member'),
+    joinedAt: timestamp('joined_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    // Bumped to now() whenever this member opens the thread (listChatGroupMessages).
+    // A message is unread when its created_at is after this — defaults to
+    // joined_at (now()) so a fresh join never shows a backlog as unread.
+    lastReadAt: timestamp('last_read_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    unique('chat_group_members_group_user_uniq').on(
+      table.groupId,
+      table.userId
+    ),
+    index('chat_group_members_user_idx').on(table.userId),
+    index('chat_group_members_group_idx').on(table.groupId),
+    check(
+      'chat_group_members_role_check',
+      sql`${table.role} IN ('owner', 'member')`
+    ),
+  ]
+);
+
+// ---------------------------------------------------------------------------
+// Chat Groups — Messages
+// ---------------------------------------------------------------------------
+
+export const chatGroupMessages = pgTable(
+  'chat_group_messages',
+  {
+    id: uuid('id').primaryKey().default(sql`gen_random_uuid()`),
+    groupId: uuid('group_id')
+      .notNull()
+      .references(() => chatGroups.id, { onDelete: 'cascade' }),
+    senderId: uuid('sender_id')
+      .notNull()
+      .references(() => authUsers.id, { onDelete: 'cascade' }),
+    body: text('body').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    index('chat_group_messages_group_created_idx').on(
+      table.groupId,
       sql`${table.createdAt} DESC`
     ),
   ]

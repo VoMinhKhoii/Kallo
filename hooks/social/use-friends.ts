@@ -13,11 +13,13 @@ export const friendsKeys = {
   all: ['friends'] as const,
 };
 
-/** The actor's circle (accepted friends). */
-export function useFriends() {
+/** The actor's circle (accepted friends). `enabled` lets callers defer the
+ *  fetch until needed (e.g. a dialog only queries once opened). */
+export function useFriends(options?: { enabled?: boolean }) {
   return useQuery<CircleMember[]>({
     queryKey: friendsKeys.all,
     queryFn: fetchFriends,
+    enabled: options?.enabled ?? true,
   });
 }
 

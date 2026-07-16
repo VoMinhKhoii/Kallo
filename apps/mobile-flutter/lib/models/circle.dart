@@ -130,6 +130,55 @@ class CircleFeedEntry {
       );
 }
 
+/// A pending copy/split offer addressed to the viewer — the Circle inbox item.
+/// Contract source: `MealShareInvite` in `lib/actions/meal-sharing.ts`. The
+/// macros are the portion the recipient will receive (already the sender's share
+/// for a split — the source meal was scaled down when it was shared).
+class MealShareInvite {
+  const MealShareInvite({
+    required this.id,
+    required this.mode,
+    required this.portionFactor,
+    required this.from,
+    required this.rawInput,
+    this.caloriesKcal,
+    this.proteinG,
+    this.carbohydrateG,
+    this.fatG,
+  });
+
+  final String id;
+
+  /// `'copy' | 'split'`.
+  final String mode;
+
+  /// Fraction of the original the recipient gets (1 copy, 1/(N+1) split).
+  final double portionFactor;
+  final CircleProfile from;
+  final String rawInput;
+  final double? caloriesKcal;
+  final double? proteinG;
+  final double? carbohydrateG;
+  final double? fatG;
+
+  bool get isSplit => mode == 'split';
+
+  factory MealShareInvite.fromJson(Map<String, dynamic> json) {
+    final meal = (json['meal'] as Map<String, dynamic>?) ?? const {};
+    return MealShareInvite(
+      id: json['id'] as String,
+      mode: json['mode'] as String? ?? 'copy',
+      portionFactor: (json['portionFactor'] as num?)?.toDouble() ?? 1,
+      from: CircleProfile.fromJson(json['from'] as Map<String, dynamic>),
+      rawInput: meal['rawInput'] as String? ?? '',
+      caloriesKcal: (meal['caloriesKcal'] as num?)?.toDouble(),
+      proteinG: (meal['proteinG'] as num?)?.toDouble(),
+      carbohydrateG: (meal['carbohydrateG'] as num?)?.toDouble(),
+      fatG: (meal['fatG'] as num?)?.toDouble(),
+    );
+  }
+}
+
 /// The relationship between the viewer and an invite's inviter, resolved by the
 /// preview endpoint (`GET /api/v1/groups/invite/<slug>`) without mutating.
 enum InviteRelation { none, accepted, blocked, self }

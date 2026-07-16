@@ -1,6 +1,7 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
+import { ShareMealDialog } from '@/components/groups/share-meal-dialog';
 import type { PersistedMeal } from '@/lib/actions/meals/types';
 import { ShareToCircleButton } from './share-buttons';
 
@@ -8,6 +9,7 @@ import { ShareToCircleButton } from './share-buttons';
 export function CardActionRow({
   meal,
   canEdit,
+  canShare,
   isRefineOpen,
   onLogAgain,
   onRefineToggle,
@@ -16,6 +18,8 @@ export function CardActionRow({
 }: {
   meal: PersistedMeal;
   canEdit: boolean;
+  /** Copy/split need item rows to reproduce; a legacy/empty meal has none. */
+  canShare?: boolean;
   isRefineOpen: boolean;
   onLogAgain?: () => void;
   onRefineToggle?: () => void;
@@ -53,6 +57,19 @@ export function CardActionRow({
           >
             {t('editAmounts')}
           </button>
+        )}
+        {canShare && (
+          <ShareMealDialog
+            mealId={meal.id}
+            trigger={
+              <button
+                type="button"
+                className="rounded-full px-2.5 py-1 font-medium font-sans-display text-[11px] text-nham-text-muted/70 transition-colors hover:bg-nham-hover/40 hover:text-nham-text"
+              >
+                {t('shareWithFriends')}
+              </button>
+            }
+          />
         )}
         {onDelete && (
           <button

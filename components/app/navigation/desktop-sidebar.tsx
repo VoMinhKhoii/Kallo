@@ -4,21 +4,18 @@ import { Settings } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import type * as React from 'react';
 import { useState } from 'react';
+import { useMealShareInviteCount } from '@/hooks/social/use-meal-share-invites';
 import { useSidebarState } from '@/hooks/ui/use-sidebar-state';
-import { Link, usePathname } from '@/i18n/navigation';
+import { usePathname } from '@/i18n/navigation';
 import { cn } from '@/lib/utils';
 import { isActiveRoute, visibleNavItems } from './nav-items';
 import { OnboardingNudge } from './onboarding-nudge';
+import {
+  type SidebarNavItem,
+  SidebarNavLink,
+} from './sidebar/sidebar-nav-link';
 import { SidebarBrandHeader } from './sidebar-brand-header';
-import { SidebarTooltip } from './sidebar-tooltip';
 import { UserMenu, type UserMenuUser } from './user-menu';
-
-interface NavItem {
-  id: string;
-  label: string;
-  href: string;
-  icon: React.ReactNode;
-}
 
 export interface DesktopSidebarProps {
   user: UserMenuUser;
@@ -64,49 +61,6 @@ function SectionHeader({
   );
 }
 
-function SidebarNavLink({
-  item,
-  collapsed,
-  isActive,
-}: {
-  item: NavItem;
-  collapsed: boolean;
-  isActive: boolean;
-}) {
-  return (
-    <SidebarTooltip enabled={collapsed} label={item.label}>
-      <Link
-        href={item.href}
-        aria-current={isActive ? 'page' : undefined}
-        aria-label={collapsed ? item.label : undefined}
-        className={cn(
-          'group/nav relative flex items-center rounded-lg px-3 py-2 transition-colors duration-200',
-          isActive
-            ? 'bg-nham-btn text-white shadow-nham-btn/20 shadow-sm'
-            : 'text-nham-text-muted hover:bg-nham-hover/60 hover:text-nham-text'
-        )}
-      >
-        <span
-          className={cn(
-            'flex h-5 w-5 shrink-0 items-center justify-center transition-colors',
-            collapsed ? 'mx-auto' : ''
-          )}
-        >
-          {item.icon}
-        </span>
-        <span
-          className={cn(
-            'overflow-hidden whitespace-nowrap font-medium font-sans-display text-[13px] tracking-tight transition-all duration-300',
-            collapsed ? 'ml-0 max-w-0 opacity-0' : 'ml-3 max-w-40 opacity-100'
-          )}
-        >
-          {item.label}
-        </span>
-      </Link>
-    </SidebarTooltip>
-  );
-}
-
 /**
  * Desktop sidebar — production-ready replacement for `MainSidebar`.
  *
@@ -136,6 +90,7 @@ export function DesktopSidebar({
 }: DesktopSidebarProps) {
   const pathname = usePathname();
   const t = useTranslations('app.mainSidebar');
+  const inviteCount = useMealShareInviteCount();
   const {
     pinnedCollapsed,
     effectiveCollapsed: collapsed,
@@ -200,7 +155,7 @@ export function DesktopSidebar({
     onFocusLeave();
   };
 
-  const navItems: NavItem[] = visibleNavItems(isAdmin).map((item) => {
+  const navItems: SidebarNavItem[] = visibleNavItems(isAdmin).map((item) => {
     const Icon = item.icon;
     return {
       id: item.id,
@@ -243,6 +198,7 @@ export function DesktopSidebar({
                   item={item}
                   collapsed={collapsed}
                   isActive={isActiveRoute(pathname, item.href)}
+                  showBadge={item.id === 'groups' && inviteCount > 0}
                 />
               </li>
             ))}

@@ -1,6 +1,6 @@
 'use client';
 
-import { LogOut, Menu, Settings } from 'lucide-react';
+import { LogOut, Settings } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { toast } from 'sonner';
@@ -13,12 +13,15 @@ import {
   SheetTitle,
   SheetTrigger,
 } from '@/components/ui/sheet';
+import { useMealShareInviteCount } from '@/hooks/social/use-meal-share-invites';
 import { Link, usePathname } from '@/i18n/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { cn } from '@/lib/utils';
+import { MobileMenuButton } from './mobile/mobile-menu-button';
+import { MobileNavList } from './mobile/mobile-nav-list';
+import { deriveInitial, deriveLabel } from './mobile/mobile-user-label';
 import { isActiveRoute, visibleNavItems } from './nav-items';
-import { OnboardingDot, OnboardingNudge } from './onboarding-nudge';
-import { deriveInitial, deriveLabel } from './user-label';
+import { OnboardingNudge } from './onboarding-nudge';
 import type { UserMenuUser } from './user-menu';
 
 interface MobileNavProps {
@@ -56,6 +59,7 @@ export function MobileNav({
   const [signingOut, setSigningOut] = useState(false);
 
   const items = visibleNavItems(isAdmin);
+  const inviteCount = useMealShareInviteCount();
   const initial = deriveInitial(user);
   const label = deriveLabel(user);
   const settingsActive = isActiveRoute(pathname, '/settings');
@@ -80,18 +84,12 @@ export function MobileNav({
     <header className="group/mobileheader mb-1 flex items-center gap-2 md:hidden">
       <Sheet open={open} onOpenChange={setOpen}>
         <SheetTrigger asChild>
-          <button
-            type="button"
-            aria-label={tShell('openMenu')}
-            aria-haspopup="dialog"
-            aria-expanded={open}
-            className="relative inline-flex size-11 shrink-0 items-center justify-center rounded-md text-nham-text transition-colors hover:bg-nham-hover/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent group-has-[[data-strip-mode=true]]/mobileheader:hidden"
-          >
-            <Menu className="h-5 w-5" aria-hidden="true" />
-            {onboardingIncomplete ? (
-              <OnboardingDot className="top-1.5 right-1.5" />
-            ) : null}
-          </button>
+          <MobileMenuButton
+            open={open}
+            label={tShell('openMenu')}
+            onboardingIncomplete={onboardingIncomplete}
+            inviteCount={inviteCount}
+          />
         </SheetTrigger>
 
         <SheetContent
@@ -115,32 +113,12 @@ export function MobileNav({
             aria-label={tShell('navigationMenu')}
             className="flex min-h-0 flex-1 flex-col overflow-y-auto px-3 py-3"
           >
-            <ul className="flex flex-col gap-1">
-              {items.map((item) => {
-                const Icon = item.icon;
-                const active = isActiveRoute(pathname, item.href);
-                return (
-                  <li key={item.id}>
-                    <Link
-                      href={item.href}
-                      onClick={() => setOpen(false)}
-                      aria-current={active ? 'page' : undefined}
-                      className={cn(
-                        'flex items-center gap-3 rounded-lg px-3 py-2.5 transition-colors',
-                        active
-                          ? 'bg-nham-btn text-white shadow-nham-btn/20 shadow-sm'
-                          : 'text-nham-text hover:bg-nham-hover/60'
-                      )}
-                    >
-                      <Icon className="h-5 w-5" aria-hidden="true" />
-                      <span className="font-medium font-sans-display text-[14px]">
-                        {tNav(item.labelKey)}
-                      </span>
-                    </Link>
-                  </li>
-                );
-              })}
-            </ul>
+            <MobileNavList
+              items={items}
+              pathname={pathname}
+              inviteCount={inviteCount}
+              onNavigate={() => setOpen(false)}
+            />
           </nav>
 
           <div className="shrink-0 border-nham-border/40 border-t bg-white/40 px-3 pt-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)]">
