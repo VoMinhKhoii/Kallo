@@ -4,6 +4,8 @@ import { PanelLeftClose, PanelLeftOpen, Settings } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import type * as React from 'react';
 import { useState } from 'react';
+import { KalloMark } from '@/components/brand/kallo-mark';
+import { KalloWordmark } from '@/components/brand/kallo-wordmark';
 import { useSidebarState } from '@/hooks/ui/use-sidebar-state';
 import { Link, usePathname } from '@/i18n/navigation';
 import { cn } from '@/lib/utils';
@@ -225,13 +227,19 @@ export function DesktopSidebar({
         pinnedCollapsed && collapsed && 'cursor-pointer'
       )}
     >
-      {/* Header — pin/unpin toggle */}
+      {/* Header — brand + pin/unpin toggle. Wordmark when expanded, the mark
+          alone when collapsed (the lockup rule: never both side by side). */}
       <div
         className={cn(
           'flex shrink-0 items-center px-3 pt-3',
-          collapsed ? 'justify-center' : 'justify-end'
+          collapsed ? 'flex-col gap-1.5' : 'justify-between'
         )}
       >
+        {collapsed ? (
+          <KalloMark className="h-5 w-auto text-nham-text" />
+        ) : (
+          <KalloWordmark className="ml-1.5 h-4 w-auto text-nham-text" />
+        )}
         <SidebarTooltip
           enabled={collapsed}
           label={pinnedCollapsed ? t('expandSidebar') : t('collapseSidebar')}

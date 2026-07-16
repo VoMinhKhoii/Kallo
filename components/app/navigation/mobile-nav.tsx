@@ -12,6 +12,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from '@/components/ui/sheet';
+import { KalloWordmark } from '@/components/brand/kallo-wordmark';
 import { Link, usePathname } from '@/i18n/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { cn } from '@/lib/utils';
@@ -111,6 +112,7 @@ export function MobileNav({
           className="flex h-full w-[88vw] max-w-[320px] flex-col gap-0 border-nham-border/60 bg-nham-surface p-0"
         >
           <SheetHeader className="gap-1 border-nham-border/40 border-b px-4 py-4 text-left">
+            <KalloWordmark className="mb-2 h-4 w-auto text-nham-text" />
             <SheetTitle className="font-sans-display text-[15px] text-nham-text">
               {label || tMenu('account')}
             </SheetTitle>

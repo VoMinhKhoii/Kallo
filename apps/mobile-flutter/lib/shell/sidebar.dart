@@ -8,6 +8,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../data/session_provider.dart';
 import '../features/onboarding/providers/onboarding_providers.dart';
 import '../features/onboarding/widgets/onboarding_dialog.dart';
+import '../shared/widgets/kallo_wordmark.dart';
 import '../shared/widgets/top_toast.dart';
 import '../theme/nham_colors.dart';
 import '../theme/nham_theme.dart';
@@ -128,36 +129,44 @@ class Sidebar extends ConsumerWidget {
                   ),
                 ),
               ),
-              child: Row(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _Avatar(initial: _deriveInitial(label, email)),
-                  const SizedBox(width: NhamSpacing.sp3),
-                  Expanded(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          label,
-                          style: NhamTextStyles.sansSemiBold(
-                            fontSize: 16,
-                          ).copyWith(color: NhamColors.text),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+                  // Brand row — mirrors the web drawer's SheetHeader wordmark.
+                  const KalloWordmark(height: 16),
+                  const SizedBox(height: NhamSpacing.sp4),
+                  Row(
+                    children: [
+                      _Avatar(initial: _deriveInitial(label, email)),
+                      const SizedBox(width: NhamSpacing.sp3),
+                      Expanded(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              label,
+                              style: NhamTextStyles.sansSemiBold(
+                                fontSize: 16,
+                              ).copyWith(color: NhamColors.text),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            if (email != null) ...[
+                              const SizedBox(height: 2),
+                              Text(
+                                email,
+                                style: NhamTextStyles.sansRegular(
+                                  fontSize: 12,
+                                ).copyWith(color: NhamColors.textMuted),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
+                          ],
                         ),
-                        if (email != null) ...[
-                          const SizedBox(height: 2),
-                          Text(
-                            email,
-                            style: NhamTextStyles.sansRegular(
-                              fontSize: 12,
-                            ).copyWith(color: NhamColors.textMuted),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ],
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
                 ],
               ),
