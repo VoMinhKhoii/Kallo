@@ -7,8 +7,8 @@ import '../data/session_provider.dart';
 import '../features/circle/data/circle_providers.dart';
 import '../features/onboarding/providers/onboarding_providers.dart';
 import '../theme/nham_colors.dart';
-import 'sidebar_account_header.dart';
 import 'sidebar_footer.dart';
+import 'sidebar_header.dart';
 import 'sidebar_nav_list.dart';
 
 /// Left slide-in navigation panel — the Flutter equivalent of the web mobile
@@ -52,8 +52,8 @@ class Sidebar extends ConsumerWidget {
         bottom: false,
         child: Column(
           children: [
-            // ── Header: avatar + name + email (the primary identity block) ──
-            SidebarAccountHeader(label: label, email: email),
+            // ── Header: brand + avatar + name + email ──────────────────────
+            SidebarHeader(label: label, email: email),
 
             // ── Scrollable nav list ───────────────────────────────────────
             Expanded(

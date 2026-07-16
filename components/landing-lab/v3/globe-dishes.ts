@@ -6,7 +6,7 @@
  * leaves as "-99" for France and Norway. Dish copy follows the product
  * voice: adjustments read like a regular's order (in the local language
  * where a local would), and `logExample` is the exact sentence you'd type
- * into Nhẩm. Content researched per-country (2026-07) with the brief
+ * into Kallo. Content researched per-country (2026-07) with the brief
  * "dishes locals actually order, not tourist clichés".
  */
 

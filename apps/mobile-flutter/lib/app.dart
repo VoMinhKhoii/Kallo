@@ -40,7 +40,7 @@ class NhamApp extends ConsumerWidget {
     // in-app connect screen.
     return CircleDeepLinkListener(
       child: MaterialApp.router(
-        title: 'Nhẩm',
+        title: 'Kallo',
         debugShowCheckedModeBanner: false,
         theme: NhamTheme.light(),
         routerConfig: router,

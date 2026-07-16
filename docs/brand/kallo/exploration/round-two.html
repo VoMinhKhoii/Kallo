@@ -1,0 +1,511 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light" />
+    <title>Kallo — typography refinement</title>
+    <style>
+      :root {
+        --cream: #fefbf6;
+        --paper: #ffffff;
+        --ink: #2c2416;
+        --muted: #8b7355;
+        --tan: #c9a87c;
+        --umber: #695e4e;
+        --border: #e8d5b5;
+        color: var(--ink);
+        font-family: "Avenir Next", Avenir, "Be Vietnam Pro", sans-serif;
+        font-synthesis: none;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-width: 320px;
+        background: var(--cream);
+      }
+
+      button {
+        color: inherit;
+        font: inherit;
+      }
+
+      .page {
+        width: min(1240px, calc(100% - 40px));
+        margin: 0 auto;
+        padding: 28px 0 80px;
+      }
+
+      .back-link {
+        color: var(--muted);
+        font-size: 12px;
+        text-decoration: none;
+      }
+
+      .back-link:hover {
+        color: var(--ink);
+      }
+
+      .masthead {
+        display: grid;
+        grid-template-columns: minmax(0, 1.15fr) minmax(280px, 0.85fr);
+        gap: 48px;
+        align-items: end;
+        padding: 64px 0 52px;
+        border-bottom: 1px solid var(--border);
+      }
+
+      .eyebrow {
+        margin: 0;
+        color: var(--muted);
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+      }
+
+      h1,
+      h2,
+      p {
+        margin-top: 0;
+      }
+
+      h1 {
+        margin: 12px 0 0;
+        font-family: Lora, Georgia, serif;
+        font-size: clamp(58px, 7vw, 100px);
+        font-weight: 400;
+        letter-spacing: -0.065em;
+        line-height: 0.9;
+      }
+
+      h1 em {
+        color: var(--tan);
+        font-weight: 300;
+      }
+
+      .intro {
+        max-width: 48ch;
+        margin-bottom: 4px;
+        color: var(--muted);
+        font-size: 15px;
+        line-height: 1.65;
+      }
+
+      .locked-mark {
+        display: flex;
+        gap: 18px;
+        align-items: center;
+        margin: 28px 0 52px;
+        padding: 18px 22px;
+        border: 1px solid var(--border);
+        border-radius: 18px;
+        background: var(--paper);
+      }
+
+      .selected-refinement {
+        margin: -28px 0 52px;
+        padding: 16px 18px;
+        border: 1px solid var(--tan);
+        border-radius: 16px;
+        background: var(--paper);
+        color: var(--ink);
+        display: flex;
+        gap: 16px;
+        align-items: center;
+        justify-content: space-between;
+        text-decoration: none;
+      }
+
+      .selected-refinement strong {
+        display: block;
+        margin-bottom: 3px;
+        font-size: 14px;
+      }
+
+      .selected-refinement span {
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      .locked-icon {
+        width: 64px;
+        height: 64px;
+        border-radius: 16px;
+        background: var(--umber);
+        color: var(--cream);
+        display: grid;
+        flex: 0 0 auto;
+        place-items: center;
+      }
+
+      .mark {
+        width: var(--mark-size, 40px);
+        aspect-ratio: 1;
+        background: currentColor;
+        -webkit-mask: url("./concepts/01-calibrated-letter.svg") center / contain no-repeat;
+        mask: url("./concepts/01-calibrated-letter.svg") center / contain no-repeat;
+      }
+
+      .locked-copy strong {
+        display: block;
+        margin-bottom: 4px;
+        font-size: 14px;
+      }
+
+      .locked-copy span {
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      .section-heading {
+        display: flex;
+        gap: 24px;
+        align-items: end;
+        justify-content: space-between;
+        margin-bottom: 22px;
+      }
+
+      .section-heading h2 {
+        margin: 7px 0 0;
+        font-family: Lora, Georgia, serif;
+        font-size: clamp(34px, 4vw, 52px);
+        font-weight: 400;
+        letter-spacing: -0.04em;
+      }
+
+      .mode-toggle {
+        min-height: 44px;
+        padding: 0 16px;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        background: var(--paper);
+        cursor: pointer;
+        font-size: 12px;
+        font-weight: 600;
+      }
+
+      .type-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 18px;
+      }
+
+      .type-card {
+        overflow: hidden;
+        border: 1px solid var(--border);
+        border-radius: 24px;
+        background: var(--paper);
+        transition:
+          border-color 180ms ease,
+          box-shadow 180ms ease,
+          transform 180ms ease;
+      }
+
+      .type-card:hover,
+      .type-card[data-selected="true"] {
+        border-color: var(--tan);
+        box-shadow: 0 16px 44px rgba(44, 36, 22, 0.08);
+        transform: translateY(-2px);
+      }
+
+      .specimen {
+        min-height: 230px;
+        padding: 34px;
+        background: var(--cream);
+        display: grid;
+        place-items: center;
+      }
+
+      body[data-mode="reverse"] .specimen {
+        background: var(--ink);
+        color: var(--cream);
+      }
+
+      .lockup {
+        display: flex;
+        gap: 20px;
+        align-items: center;
+      }
+
+      .lockup .mark {
+        --mark-size: 64px;
+        flex: 0 0 auto;
+      }
+
+      .wordmark {
+        font-family: var(--wordmark-font);
+        font-size: clamp(50px, 6vw, 72px);
+        font-stretch: var(--wordmark-stretch, normal);
+        font-weight: var(--wordmark-weight);
+        letter-spacing: var(--wordmark-tracking);
+        line-height: 1;
+        white-space: nowrap;
+      }
+
+      .type-meta {
+        padding: 22px 24px 24px;
+      }
+
+      .type-title-row {
+        display: flex;
+        gap: 16px;
+        align-items: start;
+        justify-content: space-between;
+      }
+
+      .type-number {
+        color: var(--tan);
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+      }
+
+      .type-card h2 {
+        margin: 5px 0 8px;
+        font-family: Lora, Georgia, serif;
+        font-size: 25px;
+        font-weight: 400;
+        letter-spacing: -0.025em;
+      }
+
+      .type-source {
+        margin-bottom: 16px;
+        color: var(--muted);
+        font-size: 11px;
+        font-weight: 600;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .type-note {
+        min-height: 46px;
+        margin-bottom: 20px;
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.55;
+      }
+
+      .choose {
+        min-height: 44px;
+        padding: 0 16px;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        background: transparent;
+        cursor: pointer;
+        font-size: 12px;
+        font-weight: 600;
+      }
+
+      .type-card[data-selected="true"] .choose {
+        border-color: var(--umber);
+        background: var(--umber);
+        color: var(--cream);
+      }
+
+      .footer-note {
+        max-width: 680px;
+        margin: 44px auto 0;
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.6;
+        text-align: center;
+      }
+
+      @media (max-width: 760px) {
+        .page {
+          width: min(100% - 24px, 1240px);
+        }
+
+        .masthead {
+          grid-template-columns: 1fr;
+          gap: 24px;
+          padding-top: 44px;
+        }
+
+        .type-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .section-heading {
+          align-items: start;
+          flex-direction: column;
+        }
+
+        .specimen {
+          min-height: 190px;
+          padding: 24px;
+        }
+
+        .lockup {
+          gap: 14px;
+        }
+
+        .lockup .mark {
+          --mark-size: 48px;
+        }
+
+        .wordmark {
+          font-size: clamp(42px, 14vw, 58px);
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .type-card {
+          transition: none;
+        }
+      }
+    </style>
+  </head>
+  <body data-mode="cream">
+    <main class="page">
+      <a class="back-link" href="./index.html">← Return to all eight directions</a>
+
+      <header class="masthead">
+        <div>
+          <p class="eyebrow">Kallo identity study · round two</p>
+          <h1>One mark.<br />Four <em>voices.</em></h1>
+        </div>
+        <p class="intro">
+          The segmented K is locked. This round changes only the lettering, using the
+          typography moods you liked in concepts 03, 05, 06, and 08.
+        </p>
+      </header>
+
+      <div class="locked-mark">
+        <div class="locked-icon" aria-hidden="true"><span class="mark"></span></div>
+        <div class="locked-copy">
+          <strong>Symbol locked · concept 01</strong>
+          <span>Segmented geometric K with measured, inspectable spacing.</span>
+        </div>
+      </div>
+
+      <a class="selected-refinement" href="./round-three.html">
+        <span><strong>Option B selected</strong>The K keeps option B's weight with three pieces and mirrored parallelogram arms.</span>
+        <strong aria-hidden="true">View refinement →</strong>
+      </a>
+
+      <section aria-labelledby="type-title">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Typography refinement</p>
+            <h2 id="type-title">Which voice feels most like Kallo?</h2>
+          </div>
+          <button class="mode-toggle" type="button" aria-pressed="false">
+            Reverse preview
+          </button>
+        </div>
+
+        <div class="type-grid">
+          <article
+            class="type-card"
+            data-type="A"
+            data-selected="false"
+            style="--wordmark-font: 'Avenir Next', Avenir, 'Be Vietnam Pro', sans-serif; --wordmark-weight: 500; --wordmark-tracking: -0.045em"
+          >
+            <div class="specimen">
+              <div class="lockup"><span class="mark" aria-hidden="true"></span><span class="wordmark">Kallo</span></div>
+            </div>
+            <div class="type-meta">
+              <div class="type-title-row">
+                <div><span class="type-number">A</span><h2>Balanced geometric</h2></div>
+                <button class="choose" type="button" aria-pressed="false">Choose A</button>
+              </div>
+              <p class="type-source">Derived from concept 03</p>
+              <p class="type-note">Calm, modern, and neutral. The symbol carries the personality while the wordmark stays highly legible.</p>
+            </div>
+          </article>
+
+          <article
+            class="type-card"
+            data-type="B"
+            data-selected="false"
+            style="--wordmark-font: 'Avenir Next', Avenir, 'Be Vietnam Pro', sans-serif; --wordmark-weight: 650; --wordmark-tracking: -0.06em"
+          >
+            <div class="specimen">
+              <div class="lockup"><span class="mark" aria-hidden="true"></span><span class="wordmark">Kallo</span></div>
+            </div>
+            <div class="type-meta">
+              <div class="type-title-row">
+                <div><span class="type-number">B</span><h2>Performance sans</h2></div>
+                <button class="choose" type="button" aria-pressed="false">Choose B</button>
+              </div>
+              <p class="type-source">Derived from concept 05</p>
+              <p class="type-note">Heavier and more compact. It gives the lockup confidence without turning aggressive or gym-coded.</p>
+            </div>
+          </article>
+
+          <article
+            class="type-card"
+            data-type="C"
+            data-selected="false"
+            style="--wordmark-font: ui-monospace, 'SFMono-Regular', Menlo, monospace; --wordmark-weight: 500; --wordmark-tracking: -0.07em"
+          >
+            <div class="specimen">
+              <div class="lockup"><span class="mark" aria-hidden="true"></span><span class="wordmark">Kallo</span></div>
+            </div>
+            <div class="type-meta">
+              <div class="type-title-row">
+                <div><span class="type-number">C</span><h2>Measured mono</h2></div>
+                <button class="choose" type="button" aria-pressed="false">Choose C</button>
+              </div>
+              <p class="type-source">Derived from concept 06</p>
+              <p class="type-note">The most instrument-like option. It reinforces inspectable numbers and honest estimates with a technical rhythm.</p>
+            </div>
+          </article>
+
+          <article
+            class="type-card"
+            data-type="D"
+            data-selected="false"
+            style="--wordmark-font: 'Arial Narrow', 'Avenir Next Condensed', sans-serif; --wordmark-weight: 600; --wordmark-tracking: -0.035em; --wordmark-stretch: condensed"
+          >
+            <div class="specimen">
+              <div class="lockup"><span class="mark" aria-hidden="true"></span><span class="wordmark">Kallo</span></div>
+            </div>
+            <div class="type-meta">
+              <div class="type-title-row">
+                <div><span class="type-number">D</span><h2>Condensed signature</h2></div>
+                <button class="choose" type="button" aria-pressed="false">Choose D</button>
+              </div>
+              <p class="type-source">Derived from concept 08</p>
+              <p class="type-note">Narrower and more fashion-adjacent. It creates the most distinctive silhouette in tight headers and app chrome.</p>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <p class="footer-note">
+        These are live typographic references, not production font dependencies. Once
+        one voice is chosen, the Kallo letters will be redrawn as custom SVG paths and
+        tuned beside the locked mark.
+      </p>
+    </main>
+
+    <script>
+      const cards = document.querySelectorAll('.type-card');
+
+      cards.forEach((card) => {
+        card.querySelector('.choose').addEventListener('click', () => {
+          cards.forEach((peer) => {
+            const selected = peer === card;
+            peer.dataset.selected = String(selected);
+            const button = peer.querySelector('.choose');
+            button.setAttribute('aria-pressed', String(selected));
+            button.textContent = selected ? `Selected ${peer.dataset.type}` : `Choose ${peer.dataset.type}`;
+          });
+        });
+      });
+
+      document.querySelector('.mode-toggle').addEventListener('click', (event) => {
+        const reverse = document.body.dataset.mode !== 'reverse';
+        document.body.dataset.mode = reverse ? 'reverse' : 'cream';
+        event.currentTarget.setAttribute('aria-pressed', String(reverse));
+      });
+    </script>
+  </body>
+</html>

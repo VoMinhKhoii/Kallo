@@ -10,6 +10,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:nham_mobile/app.dart';
 import 'package:nham_mobile/services/supabase_service.dart';
+import 'package:nham_mobile/shared/widgets/kallo_wordmark.dart';
 
 /// Serves the l10n JSON from memory. `AssetBundle.loadString` decodes assets
 /// larger than 50KB on a background isolate (`compute`), which never completes
@@ -62,7 +63,8 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Nhẩm'), findsOneWidget);
+    // The brand is the vector wordmark widget now, not a Text node.
+    expect(find.byType(KalloWordmark), findsOneWidget);
     expect(
       find.text('Track Vietnamese meals without the guesswork'),
       findsOneWidget,

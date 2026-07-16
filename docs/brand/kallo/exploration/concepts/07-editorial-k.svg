@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" role="img" aria-labelledby="title desc">
+  <title id="title">Editorial K concept</title>
+  <desc id="desc">A bespoke high-contrast K with softened, calligraphic joins.</desc>
+  <g fill="currentColor">
+    <path d="M21 18c8 0 13 4 13 12v40c0 8-5 12-13 12V18Z" />
+    <path d="M38 47c10-9 18-19 29-28 6-5 14 1 9 8-9 12-19 20-30 27-5 3-11-3-8-7Z" />
+    <path d="M38 54c4-5 9-5 14-1 9 8 18 15 29 21 7 4 2 13-5 9-14-7-26-15-37-23-3-2-3-4-1-6Z" />
+  </g>
+</svg>

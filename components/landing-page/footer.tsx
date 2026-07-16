@@ -1,4 +1,5 @@
 import { getTranslations } from 'next-intl/server';
+import { KalloWordmark } from '@/components/brand/kallo-wordmark';
 
 export async function Footer() {
   const t = await getTranslations('landing.footer');
@@ -9,8 +10,8 @@ export async function Footer() {
         <div className="mb-12 grid gap-12 md:grid-cols-4">
           {/* Brand */}
           <div className="md:col-span-3">
-            <div className="mb-4 font-medium font-serif text-2xl text-nham-text">
-              Nhẩm
+            <div className="mb-4">
+              <KalloWordmark className="h-5 w-auto text-nham-text" />
             </div>
             <p className="max-w-sm font-sans-display text-nham-text-soft leading-relaxed">
               {t('tagline')}

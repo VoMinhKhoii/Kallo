@@ -3,7 +3,7 @@ import { LabHeader } from '@/components/landing-lab/header';
 import { V3Hero } from '@/components/landing-lab/v3/hero';
 
 export const metadata: Metadata = {
-  title: 'Nhẩm — design lab · v3 cuisine globe',
+  title: 'Kallo — design lab · v3 cuisine globe',
   robots: { index: false },
 };
 

@@ -4,6 +4,7 @@ import { LogOut, Settings } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { toast } from 'sonner';
+import { KalloWordmark } from '@/components/brand/kallo-wordmark';
 import {
   Sheet,
   SheetContent,
@@ -17,6 +18,7 @@ import { Link, usePathname } from '@/i18n/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { cn } from '@/lib/utils';
 import { MobileMenuButton } from './mobile/mobile-menu-button';
+import { MobileNavList } from './mobile/mobile-nav-list';
 import { deriveInitial, deriveLabel } from './mobile/mobile-user-label';
 import { isActiveRoute, visibleNavItems } from './nav-items';
 import { OnboardingNudge } from './onboarding-nudge';
@@ -96,6 +98,7 @@ export function MobileNav({
           className="flex h-full w-[88vw] max-w-[320px] flex-col gap-0 border-nham-border/60 bg-nham-surface p-0"
         >
           <SheetHeader className="gap-1 border-nham-border/40 border-b px-4 py-4 text-left">
+            <KalloWordmark className="mb-2 h-4 w-auto text-nham-text" />
             <SheetTitle className="font-sans-display text-[15px] text-nham-text">
               {label || tMenu('account')}
             </SheetTitle>
@@ -110,40 +113,12 @@ export function MobileNav({
             aria-label={tShell('navigationMenu')}
             className="flex min-h-0 flex-1 flex-col overflow-y-auto px-3 py-3"
           >
-            <ul className="flex flex-col gap-1">
-              {items.map((item) => {
-                const Icon = item.icon;
-                const active = isActiveRoute(pathname, item.href);
-                return (
-                  <li key={item.id}>
-                    <Link
-                      href={item.href}
-                      onClick={() => setOpen(false)}
-                      aria-current={active ? 'page' : undefined}
-                      className={cn(
-                        'flex items-center gap-3 rounded-lg px-3 py-2.5 transition-colors',
-                        active
-                          ? 'bg-nham-btn text-white shadow-nham-btn/20 shadow-sm'
-                          : 'text-nham-text hover:bg-nham-hover/60'
-                      )}
-                    >
-                      <Icon className="h-5 w-5" aria-hidden="true" />
-                      <span className="font-medium font-sans-display text-[14px]">
-                        {tNav(item.labelKey)}
-                      </span>
-                      {item.id === 'groups' && inviteCount > 0 && (
-                        <span
-                          className={cn(
-                            'ml-auto h-2 w-2 shrink-0 rounded-full',
-                            active ? 'bg-white' : 'bg-nham-accent'
-                          )}
-                        />
-                      )}
-                    </Link>
-                  </li>
-                );
-              })}
-            </ul>
+            <MobileNavList
+              items={items}
+              pathname={pathname}
+              inviteCount={inviteCount}
+              onNavigate={() => setOpen(false)}
+            />
           </nav>
 
           <div className="shrink-0 border-nham-border/40 border-t bg-white/40 px-3 pt-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)]">

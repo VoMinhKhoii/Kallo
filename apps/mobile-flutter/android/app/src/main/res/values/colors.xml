@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Kallo brand cream — splash background behind the centered app icon. -->
+    <color name="launch_background">#FEFBF6</color>
+</resources>

@@ -73,7 +73,7 @@ export function NudgeDialog({
             Hồ sơ chưa hoàn tất
           </DialogTitle>
           <DialogDescription className="font-sans-display text-nham-text-muted text-sm leading-relaxed">
-            Bạn đã dùng Nhẩm được 1 tuần! Hoàn tất hồ sơ giúp Nhẩm thông minh
+            Bạn đã dùng Kallo được 1 tuần! Hoàn tất hồ sơ giúp Kallo thông minh
             hơn và cá nhân hóa chính xác lượng dinh dưỡng cho riêng bạn.
           </DialogDescription>
         </DialogHeader>

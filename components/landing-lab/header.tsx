@@ -24,7 +24,7 @@ export function LabHeader({ tone = 'light' }: { tone?: LabTone }) {
             dark ? 'text-nham-surface' : 'text-nham-text'
           }`}
         >
-          Nhẩm<span className="text-nham-accent">.</span>
+          Kallo<span className="text-nham-accent">.</span>
         </div>
 
         <button
