@@ -1,5 +1,5 @@
 import type { NextRequest } from 'next/server';
-import { stageCheatRepeatAction } from '@/lib/actions/meals';
+import { stageCheatRepeatAction } from '@/lib/actions/meals/cheat';
 import { cheatRepeatSchema } from '@/lib/api/contracts/meals';
 import { handleRouteError } from '@/lib/api/respond';
 

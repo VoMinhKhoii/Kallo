@@ -5,7 +5,7 @@ import {
 import type {
   DecomposedDishV2,
   DecomposedIngredientV2,
-} from '../pipeline/schemas';
+} from '../pipeline/schemas-v2';
 import { buildPromptContextLine } from './sanitize';
 import type { PromptPersonalizationContext } from './types';
 

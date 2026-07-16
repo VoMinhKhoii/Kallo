@@ -1,4 +1,4 @@
-import { healthAggregates } from '@/lib/admin/queries';
+import { healthAggregates } from '@/lib/admin/health-queries';
 import { requireAdmin } from '@/lib/admin/require-admin';
 import { db } from '@/lib/db';
 import { Sparkline } from './_components/sparkline';

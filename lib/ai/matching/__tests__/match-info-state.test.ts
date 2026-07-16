@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { buildMatchResult, type FuzzyMatchRow } from '../source-matching';
+import { buildMatchResult } from '../candidate-ranking';
+import type { FuzzyMatchRow } from '../match-constants';
 
 describe('MatchInfo carries DB state', () => {
   it('preserves the state field from the matched row', () => {
