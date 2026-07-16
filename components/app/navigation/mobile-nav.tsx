@@ -4,6 +4,7 @@ import { LogOut, Menu, Settings } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { toast } from 'sonner';
+import { KalloWordmark } from '@/components/brand/kallo-wordmark';
 import {
   Sheet,
   SheetContent,
@@ -12,7 +13,6 @@ import {
   SheetTitle,
   SheetTrigger,
 } from '@/components/ui/sheet';
-import { KalloWordmark } from '@/components/brand/kallo-wordmark';
 import { Link, usePathname } from '@/i18n/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { cn } from '@/lib/utils';

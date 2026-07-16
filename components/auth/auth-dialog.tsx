@@ -5,11 +5,11 @@ import { useTranslations } from 'next-intl';
 import { useEffect, useRef } from 'react';
 import { useAuthDialog } from '@/components/auth/auth-provider';
 import { CheckEmailPanel } from '@/components/auth/check-email-panel';
-import { KalloAppIcon } from '@/components/brand/kallo-app-icon';
 import { ForgotPasswordForm } from '@/components/auth/forgot-password-form';
 import { GoogleSignInButton } from '@/components/auth/google-sign-in-button';
 import { SignInForm } from '@/components/auth/sign-in-form';
 import { SignUpForm } from '@/components/auth/sign-up-form';
+import { KalloAppIcon } from '@/components/brand/kallo-app-icon';
 
 const FOCUSABLE_SELECTOR =
   'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
