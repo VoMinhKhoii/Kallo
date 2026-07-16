@@ -154,17 +154,21 @@ class _AuthPageState extends ConsumerState<AuthPage> {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // App icon tile + wordmark — the standard mobile auth hero.
+        // App icon tile + wordmark — the standard mobile auth hero. The tile
+        // is decorative next to the wordmark, so it's excluded from semantics
+        // to avoid announcing "Kallo" twice.
         Center(
-          child: Container(
-            width: 64,
-            height: 64,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: NhamColors.text,
-              borderRadius: BorderRadius.circular(16),
+          child: ExcludeSemantics(
+            child: Container(
+              width: 64,
+              height: 64,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: NhamColors.text,
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: const KalloMark(height: 32, color: NhamColors.surface),
             ),
-            child: const KalloMark(height: 32, color: NhamColors.surface),
           ),
         ),
         const SizedBox(height: 16),
