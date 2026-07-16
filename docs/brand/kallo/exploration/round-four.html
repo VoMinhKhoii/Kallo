@@ -1,0 +1,333 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light" />
+    <title>Kallo — geometric K constructions</title>
+    <style>
+      :root {
+        --cream: #fefbf6;
+        --paper: #ffffff;
+        --ink: #2c2416;
+        --muted: #8b7355;
+        --tan: #c9a87c;
+        --umber: #695e4e;
+        --border: #e8d5b5;
+        color: var(--ink);
+        font-family: "Avenir Next", Avenir, "Be Vietnam Pro", sans-serif;
+        font-synthesis: none;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-width: 320px;
+        background: var(--cream);
+      }
+
+      .page {
+        width: min(1160px, calc(100% - 40px));
+        margin: 0 auto;
+        padding: 28px 0 80px;
+      }
+
+      .back-link {
+        color: var(--muted);
+        font-size: 12px;
+        text-decoration: none;
+      }
+
+      .back-link:hover {
+        color: var(--ink);
+      }
+
+      .eyebrow {
+        margin: 0;
+        color: var(--muted);
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+      }
+
+      h1,
+      h2,
+      p {
+        margin-top: 0;
+      }
+
+      h1 {
+        margin: 12px 0 16px;
+        font-family: Lora, Georgia, serif;
+        font-size: clamp(44px, 6vw, 80px);
+        font-weight: 400;
+        letter-spacing: -0.06em;
+        line-height: 0.92;
+      }
+
+      h1 em {
+        color: var(--tan);
+        font-weight: 300;
+      }
+
+      .masthead {
+        padding: 56px 0 44px;
+        border-bottom: 1px solid var(--border);
+      }
+
+      .intro {
+        max-width: 58ch;
+        color: var(--muted);
+        font-size: 15px;
+        line-height: 1.65;
+      }
+
+      .before-strip {
+        display: flex;
+        align-items: center;
+        gap: 20px;
+        margin: 28px 0 10px;
+        padding: 18px 24px;
+        border: 1px dashed var(--border);
+        border-radius: 18px;
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.55;
+      }
+
+      .before-strip svg {
+        height: 56px;
+        width: auto;
+        flex: none;
+        opacity: 0.45;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 18px;
+        margin-top: 24px;
+      }
+
+      .card {
+        overflow: hidden;
+        border: 1px solid var(--border);
+        border-radius: 24px;
+        background: var(--paper);
+      }
+
+      .preview {
+        min-height: 300px;
+        padding: 40px;
+        background: var(--cream);
+        display: grid;
+        place-items: center;
+        position: relative;
+      }
+
+      .preview svg.main {
+        height: 210px;
+        width: auto;
+        color: var(--ink);
+      }
+
+      .chips {
+        position: absolute;
+        right: 16px;
+        bottom: 16px;
+        display: flex;
+        align-items: flex-end;
+        gap: 10px;
+      }
+
+      .chip {
+        width: 56px;
+        height: 56px;
+        border-radius: 14px;
+        background: var(--ink);
+        color: var(--cream);
+        display: grid;
+        place-items: center;
+      }
+
+      .chip svg {
+        height: 30px;
+        width: auto;
+      }
+
+      .chip.small {
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
+      }
+
+      .chip.small svg {
+        height: 20px;
+      }
+
+      .meta {
+        padding: 22px 24px 24px;
+      }
+
+      .meta h2 {
+        margin: 5px 0 10px;
+        font-family: Lora, Georgia, serif;
+        font-size: 25px;
+        font-weight: 400;
+        letter-spacing: -0.025em;
+      }
+
+      .meta p {
+        margin-bottom: 0;
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.55;
+      }
+
+      .decision-note {
+        max-width: 680px;
+        margin: 40px auto 0;
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.6;
+        text-align: center;
+      }
+
+      @media (max-width: 760px) {
+        .grid {
+          grid-template-columns: 1fr;
+        }
+
+        .before-strip {
+          flex-direction: column;
+          align-items: flex-start;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="page">
+      <a class="back-link" href="./round-three.html">← Return to matched lockup refinement</a>
+
+      <header class="masthead">
+        <p class="eyebrow">Kallo identity study · round four</p>
+        <h1>Built, not<br /><em>disassembled.</em></h1>
+        <p class="intro">
+          Round-four constructions drop the font's arm geometry entirely. Every option
+          keeps the same skeleton — a 168-wide stem, uniform 56-unit channels, matched
+          stroke weight — but the right side is drawn from pure geometry, not from
+          Avenir's K. Pick a direction; angles and gaps stay tunable after.
+        </p>
+      </header>
+
+      <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+        <defs>
+          <symbol id="v0" viewBox="0 0 656 708"><path fill="currentColor" d="M0 0H168V708H0ZM224 148L656 0V178L224 326ZM224 382L656 530V708L224 560Z" /></symbol>
+          <symbol id="v1" viewBox="0 0 453 708"><path fill="currentColor" d="M0 0H168V708H0ZM224 132L453 0V194L224 326ZM224 382L453 514V708L224 576Z" /></symbol>
+          <symbol id="v2" viewBox="0 0 550 708"><path fill="currentColor" d="M0 0H168V708H0ZM224 207L431 0L550 119L343 326ZM224 501L343 382L550 589L431 708Z" /></symbol>
+          <symbol id="v3" viewBox="0 0 656 708"><path fill="currentColor" d="M0 0H168V708H0ZM224 462L412 261V507L224 708ZM468 201L656 0V246L468 447Z" /></symbol>
+          <symbol id="v4" viewBox="0 0 708 708"><path fill="currentColor" d="M0 0H168V708H0ZM224 0H538L224 314ZM264 354L618 0H708V708H618ZM224 708V394L538 708Z" /></symbol>
+        </defs>
+      </svg>
+
+      <div class="before-strip">
+        <svg viewBox="0 0 656 708" style="color:var(--ink)"><use href="#v0" /></svg>
+        <span>
+          <strong>Rejected — round one.</strong> Arms followed the wordmark's shallow angle
+          and cap/baseline tips, so it read as the font's K taken apart rather than a
+          designed mark.
+        </span>
+      </div>
+
+      <div class="grid">
+        <article class="card">
+          <div class="preview">
+            <svg class="main" viewBox="0 0 453 708"><use href="#v1" /></svg>
+            <div class="chips">
+              <div class="chip"><svg viewBox="0 0 453 708"><use href="#v1" /></svg></div>
+              <div class="chip small"><svg viewBox="0 0 453 708"><use href="#v1" /></svg></div>
+            </div>
+          </div>
+          <div class="meta">
+            <p class="eyebrow">A · condensed chevron</p>
+            <h2>Steep &amp; upright</h2>
+            <p>
+              Mirrored parallelograms at 30°, condensed into a 453×708 box. The most
+              conservative option — clearly a K, but tighter and more deliberate than
+              the font. Closest to round one.
+            </p>
+          </div>
+        </article>
+
+        <article class="card">
+          <div class="preview">
+            <svg class="main" viewBox="0 0 550 708"><use href="#v2" /></svg>
+            <div class="chips">
+              <div class="chip"><svg viewBox="0 0 550 708"><use href="#v2" /></svg></div>
+              <div class="chip small"><svg viewBox="0 0 550 708"><use href="#v2" /></svg></div>
+            </div>
+          </div>
+          <div class="meta">
+            <p class="eyebrow">B · chisel arms</p>
+            <h2>Perfect 45°, mitered tips</h2>
+            <p>
+              Each arm is a true rotated rectangle at exactly 45° — tips cut
+              perpendicular, like a chisel or a folded ribbon. No letterform in any
+              font has this; it reads as a constructed emblem that happens to spell K.
+            </p>
+          </div>
+        </article>
+
+        <article class="card">
+          <div class="preview">
+            <svg class="main" viewBox="0 0 656 708"><use href="#v3" /></svg>
+            <div class="chips">
+              <div class="chip"><svg viewBox="0 0 656 708"><use href="#v3" /></svg></div>
+              <div class="chip small"><svg viewBox="0 0 656 708"><use href="#v3" /></svg></div>
+            </div>
+          </div>
+          <div class="meta">
+            <p class="eyebrow">C · parallel ascent</p>
+            <h2>One slab, one cut</h2>
+            <p>
+              The right side is a single 47° slab split by the same vertical 56 channel
+              that separates the stem — every space in the mark is literally identical.
+              The purest geometry and the most abstract; K-ness is at its weakest here,
+              it leans toward a pure "ascent" symbol.
+            </p>
+          </div>
+        </article>
+
+        <article class="card">
+          <div class="preview">
+            <svg class="main" viewBox="0 0 708 708"><use href="#v4" /></svg>
+            <div class="chips">
+              <div class="chip"><svg viewBox="0 0 708 708"><use href="#v4" /></svg></div>
+              <div class="chip small"><svg viewBox="0 0 708 708"><use href="#v4" /></svg></div>
+            </div>
+          </div>
+          <div class="meta">
+            <p class="eyebrow">D · carved block</p>
+            <h2>The spaces are the logo</h2>
+            <p>
+              A solid 708×708 square with the K drawn entirely by the 56-unit channels
+              of light — the stem cut and two 45° cuts. Nothing here is a letterform;
+              the K only exists in the negative space. The strongest app-icon
+              silhouette of the four.
+            </p>
+          </div>
+        </article>
+      </div>
+
+      <p class="decision-note">
+        All four share the wordmark stem's 168 stroke and the uniform 56 channel, so any
+        of them still locks up with the option B lettering. Choose a direction — or name
+        a hybrid — and the next pass tunes its angle, gap, and proportions only.
+      </p>
+    </main>
+  </body>
+</html>

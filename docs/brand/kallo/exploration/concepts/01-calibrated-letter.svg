@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" role="img" aria-labelledby="title desc">
+  <title id="title">Calibrated letter concept</title>
+  <desc id="desc">A segmented geometric K built from three rounded strokes.</desc>
+  <g fill="currentColor">
+    <rect x="22" y="18" width="14" height="64" rx="7" />
+    <path d="M44 44a6 6 0 0 1 0-8l23-20a7 7 0 0 1 9 10L53 47a6 6 0 0 1-9-3Z" />
+    <path d="M44 56a6 6 0 0 0 0 8l23 20a7 7 0 0 0 9-10L53 53a6 6 0 0 0-9 3Z" />
+  </g>
+</svg>

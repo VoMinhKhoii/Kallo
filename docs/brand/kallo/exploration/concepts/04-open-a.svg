@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" role="img" aria-labelledby="title desc">
+  <title id="title">Open A concept</title>
+  <desc id="desc">A custom single-storey lowercase a with a deliberately open bowl.</desc>
+  <g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="11">
+    <path d="M67 43c-4-12-17-18-29-13-14 5-20 22-13 35 7 14 25 17 36 7 7-6 9-14 8-23" />
+    <path d="M72 26v49" />
+  </g>
+</svg>

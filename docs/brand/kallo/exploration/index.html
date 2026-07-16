@@ -1,0 +1,811 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light" />
+    <title>Kallo — logo exploration</title>
+    <style>
+      :root {
+        --cream: #fefbf6;
+        --paper: #ffffff;
+        --ink: #2c2416;
+        --muted: #8b7355;
+        --tan: #c9a87c;
+        --umber: #695e4e;
+        --border: #e8d5b5;
+        --wash: #f0eae0;
+        --preview-background: var(--cream);
+        --preview-ink: var(--ink);
+        --radius: 20px;
+        --shadow: 0 16px 44px rgba(44, 36, 22, 0.08);
+        color: var(--ink);
+        font-family:
+          "Be Vietnam Pro", "Avenir Next", Avenir, Helvetica, Arial,
+          sans-serif;
+        font-synthesis: none;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html {
+        scroll-behavior: smooth;
+      }
+
+      body {
+        margin: 0;
+        min-width: 320px;
+        background: var(--cream);
+      }
+
+      button {
+        color: inherit;
+        font: inherit;
+      }
+
+      .page {
+        width: min(1480px, calc(100% - 40px));
+        margin: 0 auto;
+        padding: 28px 0 96px;
+      }
+
+      .eyebrow {
+        margin: 0;
+        color: var(--muted);
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+      }
+
+      .masthead {
+        display: grid;
+        grid-template-columns: minmax(0, 1.1fr) minmax(300px, 0.9fr);
+        gap: 48px;
+        align-items: end;
+        padding: 72px 0 60px;
+        border-bottom: 1px solid var(--border);
+      }
+
+      h1,
+      h2,
+      h3,
+      p {
+        margin-top: 0;
+      }
+
+      h1 {
+        max-width: 880px;
+        margin-bottom: 0;
+        font-family: Lora, Georgia, serif;
+        font-size: clamp(54px, 7.5vw, 112px);
+        font-weight: 400;
+        letter-spacing: -0.055em;
+        line-height: 0.92;
+      }
+
+      h1 em {
+        color: var(--tan);
+        font-weight: 400;
+      }
+
+      .brief {
+        margin-bottom: 2px;
+        color: var(--muted);
+        font-size: 15px;
+        line-height: 1.7;
+      }
+
+      .territories {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 12px;
+        margin: 20px 0 80px;
+      }
+
+      .round-two-link {
+        margin: 28px 0 0;
+        padding: 18px 20px;
+        border: 1px solid var(--tan);
+        border-radius: 16px;
+        background: var(--paper);
+        color: var(--ink);
+        display: flex;
+        gap: 16px;
+        align-items: center;
+        justify-content: space-between;
+        text-decoration: none;
+      }
+
+      .round-two-link strong {
+        display: block;
+        margin-bottom: 3px;
+        font-size: 14px;
+      }
+
+      .round-two-link span {
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      .territory {
+        min-height: 220px;
+        padding: 24px;
+        border: 1px solid color-mix(in srgb, var(--border) 72%, transparent);
+        border-radius: var(--radius);
+        background: var(--paper);
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+      }
+
+      .territory:nth-child(2) {
+        background: var(--ink);
+        color: var(--cream);
+      }
+
+      .territory:nth-child(2) .eyebrow,
+      .territory:nth-child(2) p {
+        color: color-mix(in srgb, var(--cream) 68%, transparent);
+      }
+
+      .territory:nth-child(3) {
+        background: var(--tan);
+      }
+
+      .territory h2 {
+        margin-bottom: 8px;
+        font-family: Lora, Georgia, serif;
+        font-size: 30px;
+        font-weight: 400;
+        letter-spacing: -0.03em;
+      }
+
+      .territory p {
+        max-width: 36ch;
+        margin-bottom: 0;
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.55;
+      }
+
+      .section-header {
+        display: flex;
+        gap: 24px;
+        align-items: end;
+        justify-content: space-between;
+        margin-bottom: 24px;
+      }
+
+      .section-header h2 {
+        margin: 8px 0 0;
+        font-family: Lora, Georgia, serif;
+        font-size: clamp(34px, 4vw, 54px);
+        font-weight: 400;
+        letter-spacing: -0.04em;
+      }
+
+      .controls {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        justify-content: flex-end;
+      }
+
+      .control {
+        min-height: 44px;
+        padding: 0 16px;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        background: var(--paper);
+        cursor: pointer;
+        font-size: 12px;
+        font-weight: 600;
+        transition:
+          background-color 180ms ease,
+          border-color 180ms ease;
+      }
+
+      .control:hover,
+      .control[aria-pressed="true"] {
+        border-color: var(--tan);
+        background: var(--wash);
+      }
+
+      .concept-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 20px;
+      }
+
+      .concept-card {
+        overflow: hidden;
+        border: 1px solid color-mix(in srgb, var(--border) 80%, transparent);
+        border-radius: 28px;
+        background: var(--paper);
+        box-shadow: 0 1px 2px rgba(44, 36, 22, 0.03);
+        transition:
+          border-color 180ms ease,
+          box-shadow 180ms ease,
+          transform 180ms ease;
+      }
+
+      .concept-card:hover,
+      .concept-card[data-shortlisted="true"] {
+        border-color: var(--tan);
+        box-shadow: var(--shadow);
+        transform: translateY(-2px);
+      }
+
+      .concept-preview {
+        min-height: 360px;
+        padding: 42px;
+        background: var(--preview-background);
+        color: var(--preview-ink);
+        display: grid;
+        place-items: center;
+        transition:
+          background-color 180ms ease,
+          color 180ms ease;
+      }
+
+      .mark {
+        width: var(--mark-size, 160px);
+        aspect-ratio: 1;
+        background: currentColor;
+        -webkit-mask: var(--asset) center / contain no-repeat;
+        mask: var(--asset) center / contain no-repeat;
+      }
+
+      .mark.vector-wordmark {
+        --mark-size: min(320px, 90%);
+        aspect-ratio: 2.7;
+      }
+
+      .concept-meta {
+        padding: 26px 28px 28px;
+      }
+
+      .concept-title-row {
+        display: flex;
+        gap: 20px;
+        align-items: start;
+        justify-content: space-between;
+      }
+
+      .concept-number {
+        color: var(--tan);
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+      }
+
+      .concept-card h3 {
+        margin: 5px 0 8px;
+        font-family: Lora, Georgia, serif;
+        font-size: 26px;
+        font-weight: 400;
+        letter-spacing: -0.025em;
+      }
+
+      .concept-subtitle {
+        margin-bottom: 18px;
+        color: var(--muted);
+        font-size: 12px;
+        font-weight: 600;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .concept-rationale {
+        min-height: 64px;
+        margin-bottom: 24px;
+        color: var(--muted);
+        font-size: 14px;
+        line-height: 1.55;
+      }
+
+      .shortlist {
+        min-height: 44px;
+        padding: 0 16px;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        background: transparent;
+        cursor: pointer;
+        font-size: 12px;
+        font-weight: 600;
+      }
+
+      .concept-card[data-shortlisted="true"] .shortlist {
+        border-color: var(--umber);
+        background: var(--umber);
+        color: var(--cream);
+      }
+
+      .tests {
+        display: grid;
+        grid-template-columns: 88px 1fr 84px;
+        gap: 12px;
+        align-items: center;
+      }
+
+      .app-icon,
+      .micro-test,
+      .lockup {
+        border: 1px solid color-mix(in srgb, var(--border) 72%, transparent);
+        background: var(--cream);
+      }
+
+      .app-icon {
+        width: 88px;
+        height: 88px;
+        border-radius: 22px;
+        background: var(--umber);
+        color: var(--cream);
+        display: grid;
+        place-items: center;
+      }
+
+      .app-icon .mark {
+        --mark-size: 50px;
+      }
+
+      .lockup {
+        min-width: 0;
+        height: 88px;
+        padding: 14px 18px;
+        border-radius: 16px;
+        display: flex;
+        gap: 14px;
+        align-items: center;
+      }
+
+      .lockup .mark {
+        --mark-size: 38px;
+        flex: 0 0 auto;
+      }
+
+      .lockup .vector-wordmark {
+        --mark-size: min(170px, 100%);
+      }
+
+      .wordmark {
+        overflow: hidden;
+        font-family: var(--wordmark-font, "Avenir Next", Avenir, sans-serif);
+        font-size: 28px;
+        font-style: var(--wordmark-style, normal);
+        font-weight: var(--wordmark-weight, 600);
+        letter-spacing: var(--wordmark-tracking, -0.055em);
+        line-height: 1;
+        text-overflow: clip;
+        white-space: nowrap;
+      }
+
+      .micro-test {
+        width: 84px;
+        height: 88px;
+        border-radius: 16px;
+        color: var(--ink);
+        display: grid;
+        place-items: center;
+      }
+
+      .micro-test .mark {
+        --mark-size: 24px;
+      }
+
+      .selection-summary {
+        width: min(760px, calc(100% - 24px));
+        min-height: 60px;
+        margin: 48px auto 0;
+        padding: 12px 16px 12px 20px;
+        border: 1px solid color-mix(in srgb, var(--border) 80%, transparent);
+        border-radius: 18px;
+        background: color-mix(in srgb, var(--paper) 94%, transparent);
+        box-shadow: var(--shadow);
+        display: flex;
+        gap: 16px;
+        align-items: center;
+        justify-content: space-between;
+      }
+
+      .selection-summary p {
+        margin: 0;
+        font-size: 13px;
+        line-height: 1.4;
+      }
+
+      .selection-summary strong {
+        font-weight: 700;
+      }
+
+      .selection-summary button {
+        min-height: 40px;
+        padding: 0 14px;
+        border: 0;
+        border-radius: 10px;
+        background: var(--ink);
+        color: var(--cream);
+        cursor: pointer;
+        font-size: 12px;
+        font-weight: 600;
+      }
+
+      .footer-note {
+        max-width: 760px;
+        margin: 80px auto 0;
+        text-align: center;
+      }
+
+      .footer-note p:last-child {
+        color: var(--muted);
+        font-family: Lora, Georgia, serif;
+        font-size: 24px;
+        line-height: 1.45;
+      }
+
+      body[data-mode="reverse"] {
+        --preview-background: var(--ink);
+        --preview-ink: var(--cream);
+      }
+
+      body[data-mode="tan"] {
+        --preview-background: var(--tan);
+        --preview-ink: var(--ink);
+      }
+
+      body[data-size="compact"] .concept-preview {
+        min-height: 220px;
+      }
+
+      body[data-size="compact"] .concept-preview .mark {
+        --mark-size: 64px;
+      }
+
+      @media (max-width: 920px) {
+        .masthead {
+          grid-template-columns: 1fr;
+        }
+
+        .territories,
+        .concept-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      @media (max-width: 620px) {
+        .page {
+          width: min(100% - 24px, 1480px);
+          padding-top: 12px;
+        }
+
+        .masthead {
+          padding: 48px 0 40px;
+        }
+
+        .territories {
+          margin-bottom: 56px;
+        }
+
+        .section-header {
+          align-items: start;
+          flex-direction: column;
+        }
+
+        .controls {
+          justify-content: flex-start;
+        }
+
+        .concept-preview {
+          min-height: 280px;
+        }
+
+        .concept-meta {
+          padding: 22px 20px 24px;
+        }
+
+        .tests {
+          grid-template-columns: 78px 1fr;
+        }
+
+        .app-icon {
+          width: 78px;
+          height: 78px;
+          border-radius: 19px;
+        }
+
+        .lockup {
+          height: 78px;
+        }
+
+        .micro-test {
+          display: none;
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        html {
+          scroll-behavior: auto;
+        }
+
+        *,
+        *::before,
+        *::after {
+          scroll-behavior: auto;
+          transition-duration: 0.01ms;
+        }
+      }
+    </style>
+  </head>
+  <body data-mode="cream" data-size="large">
+    <main class="page">
+      <header class="masthead">
+        <div>
+          <p class="eyebrow">Kallo identity study · round one</p>
+          <h1>Eight ways to make tracking feel <em>lighter.</em></h1>
+        </div>
+        <p class="brief">
+          Kallo is a premium calorie-tracking instrument for people who already
+          understand the numbers. These are deliberately different ideas, held
+          to the same mobile-icon and 24-pixel tests. No food symbols, fitness
+          tropes, camera metaphors, or generic AI effects.
+        </p>
+      </header>
+
+      <section class="territories" aria-label="Premium reference territories">
+        <article class="territory">
+          <p class="eyebrow">Territory 01</p>
+          <div>
+            <h2>Quiet precision</h2>
+            <p>Measured spacing and calm contrast. A dependable instrument, not a dashboard shouting for attention.</p>
+          </div>
+        </article>
+        <article class="territory">
+          <p class="eyebrow">Territory 02</p>
+          <div>
+            <h2>Editorial craft</h2>
+            <p>Warm paper and typographic confidence. Human enough to live with every day, disciplined enough to trust.</p>
+          </div>
+        </article>
+        <article class="territory">
+          <p class="eyebrow">Territory 03</p>
+          <div>
+            <h2>Performance object</h2>
+            <p>Strong mass and a memorable silhouette. Premium training equipment without aggressive gym language.</p>
+          </div>
+        </article>
+      </section>
+
+      <a class="round-two-link" href="./round-two.html">
+        <span><strong>Round two is ready</strong>Concept 01 mark · typography voices from 03, 05, 06, and 08</span>
+        <strong aria-hidden="true">View →</strong>
+      </a>
+
+      <section aria-labelledby="concepts-title">
+        <div class="section-header">
+          <div>
+            <p class="eyebrow">Comparison field</p>
+            <h2 id="concepts-title">Choose what deserves a second round.</h2>
+          </div>
+          <div class="controls" aria-label="Preview controls">
+            <button class="control" type="button" data-mode="cream" aria-pressed="true">Cream</button>
+            <button class="control" type="button" data-mode="reverse" aria-pressed="false">Reverse</button>
+            <button class="control" type="button" data-mode="tan" aria-pressed="false">Tan</button>
+            <button class="control" type="button" data-size="compact" aria-pressed="false">Compact test</button>
+          </div>
+        </div>
+
+        <div class="concept-grid" id="concept-grid"></div>
+      </section>
+
+      <aside class="selection-summary" aria-live="polite">
+        <p><strong id="selection-count">No concepts shortlisted.</strong> Choose up to three, then send their numbers with any mix-and-match notes.</p>
+        <button id="clear-selection" type="button">Clear selection</button>
+      </aside>
+
+      <footer class="footer-note">
+        <p class="eyebrow">Selection gate</p>
+        <p>The next round refines only what you choose. Production assets and the Kallo rollout remain untouched until one direction is locked.</p>
+      </footer>
+    </main>
+
+    <script>
+      const concepts = [
+        {
+          number: '01',
+          title: 'Custom Kallo wordmark',
+          subtitle: 'Wordmark-led · quiet precision',
+          asset: './concepts/01-calibrated-letter.svg',
+          wordmarkAsset: './wordmarks/01-custom-kallo-wordmark.svg',
+          rationale: 'A complete custom wordmark pairs measured K strokes with an open single-storey a and softly finished lowercase letters. The K extraction supplies the mobile icon without making the whole identity another isolated initial.',
+          font: '"Avenir Next", Avenir, sans-serif',
+          weight: '650',
+          tracking: '-0.065em',
+        },
+        {
+          number: '02',
+          title: 'Negative-space K',
+          subtitle: 'Symbol-led · performance object',
+          asset: './concepts/02-negative-space-k.svg',
+          rationale: 'A dense soft square with the name initial removed rather than added. It has the strongest app-tile silhouette and remains legible with almost no detail.',
+          font: 'Lora, Georgia, serif',
+          weight: '400',
+          tracking: '-0.05em',
+        },
+        {
+          number: '03',
+          title: 'KO monogram',
+          subtitle: 'Hybrid · compact ownership',
+          asset: './concepts/03-ko-monogram.svg',
+          rationale: 'The first and final sounds of Kallo share one open construction. The mark is name-specific while the unfinished O keeps the system from feeling sealed or opaque.',
+          font: '"Avenir Next", Avenir, sans-serif',
+          weight: '500',
+          tracking: '-0.045em',
+        },
+        {
+          number: '04',
+          title: 'Open A',
+          subtitle: 'Wordmark fragment · editorial craft',
+          asset: './concepts/04-open-a.svg',
+          rationale: 'The second letter becomes a single-storey custom glyph with an intentionally open bowl. It explores a wordmark whose memorability does not depend on another K icon.',
+          font: 'Lora, Georgia, serif',
+          weight: '400',
+          tracking: '-0.055em',
+        },
+        {
+          number: '05',
+          title: 'Earned path',
+          subtitle: 'Abstract · disciplined progress',
+          asset: './concepts/05-earned-path.svg',
+          rationale: 'One continuous path takes every step without adding an arrow or finish-line trophy. It is the most explicit expression of progress earned rather than promised.',
+          font: '"Avenir Next", Avenir, sans-serif',
+          weight: '600',
+          tracking: '-0.055em',
+        },
+        {
+          number: '06',
+          title: 'Approximate',
+          subtitle: 'Abstract · honest estimation',
+          asset: './concepts/06-approximate.svg',
+          rationale: 'The mathematical approximately-equal sign is redrawn as two confident, asymmetric gestures. It makes Kallo’s honesty about estimation the identity itself.',
+          font: 'ui-monospace, "SFMono-Regular", monospace',
+          weight: '500',
+          tracking: '-0.07em',
+        },
+        {
+          number: '07',
+          title: 'Editorial K',
+          subtitle: 'Custom letter · editorial craft',
+          asset: './concepts/07-editorial-k.svg',
+          rationale: 'A bespoke K uses thick and thin mass instead of monoline geometry. It is deliberately closer to a fashion or publishing mark than a nutrition app.',
+          font: 'Lora, Georgia, serif',
+          weight: '400',
+          tracking: '-0.06em',
+        },
+        {
+          number: '08',
+          title: 'LLO glyph',
+          subtitle: 'Typographic abstraction · memorable short form',
+          asset: './concepts/08-llo-glyph.svg',
+          rationale: 'Kallo’s double L and final O become a compact signature instead of another K monogram. It is deliberately more ambiguous, designed to become meaningful through use.',
+          font: '"Arial Narrow", "Avenir Next Condensed", sans-serif',
+          weight: '600',
+          tracking: '-0.035em',
+        },
+      ];
+
+      const grid = document.querySelector('#concept-grid');
+      const selected = new Set();
+
+      function mark(asset, extraClass = '') {
+        return `<span class="mark ${extraClass}" style="--asset: url('${asset}')" aria-hidden="true"></span>`;
+      }
+
+      function lockup(concept) {
+        if (concept.wordmarkAsset) {
+          return mark(concept.wordmarkAsset, 'vector-wordmark');
+        }
+
+        return `
+          ${mark(concept.asset)}
+          <span
+            class="wordmark"
+            style="--wordmark-font: ${concept.font}; --wordmark-weight: ${concept.weight}; --wordmark-tracking: ${concept.tracking}; --wordmark-style: ${concept.style ?? 'normal'}"
+          >Kallo</span>
+        `;
+      }
+
+      grid.innerHTML = concepts
+        .map(
+          (concept) => `
+            <article class="concept-card" data-concept="${concept.number}" data-shortlisted="false">
+              <div class="concept-preview">
+                ${mark(concept.wordmarkAsset ?? concept.asset, concept.wordmarkAsset ? 'vector-wordmark' : '')}
+              </div>
+              <div class="concept-meta">
+                <div class="concept-title-row">
+                  <div>
+                    <span class="concept-number">${concept.number}</span>
+                    <h3>${concept.title}</h3>
+                  </div>
+                  <button class="shortlist" type="button" aria-pressed="false">Shortlist</button>
+                </div>
+                <p class="concept-subtitle">${concept.subtitle}</p>
+                <p class="concept-rationale">${concept.rationale}</p>
+                <div class="tests" aria-label="Application tests for ${concept.title}">
+                  <div class="app-icon" title="App icon test">
+                    ${mark(concept.asset)}
+                  </div>
+                  <div class="lockup" title="Horizontal lockup test">
+                    ${lockup(concept)}
+                  </div>
+                  <div class="micro-test" title="24 pixel test">
+                    ${mark(concept.asset)}
+                  </div>
+                </div>
+              </div>
+            </article>
+          `,
+        )
+        .join('');
+
+      const summary = document.querySelector('#selection-count');
+
+      function updateSummary() {
+        const values = Array.from(selected).sort();
+        summary.textContent =
+          values.length === 0
+            ? 'No concepts shortlisted.'
+            : `Shortlisted: ${values.join(', ')}.`;
+      }
+
+      grid.addEventListener('click', (event) => {
+        const button = event.target.closest('.shortlist');
+        if (!button) return;
+
+        const card = button.closest('.concept-card');
+        const number = card.dataset.concept;
+        const willSelect = !selected.has(number);
+
+        if (willSelect && selected.size >= 3) return;
+
+        if (willSelect) selected.add(number);
+        else selected.delete(number);
+
+        card.dataset.shortlisted = String(willSelect);
+        button.setAttribute('aria-pressed', String(willSelect));
+        button.textContent = willSelect ? 'Shortlisted' : 'Shortlist';
+        updateSummary();
+      });
+
+      document.querySelector('#clear-selection').addEventListener('click', () => {
+        selected.clear();
+        document.querySelectorAll('.concept-card').forEach((card) => {
+          card.dataset.shortlisted = 'false';
+          const button = card.querySelector('.shortlist');
+          button.setAttribute('aria-pressed', 'false');
+          button.textContent = 'Shortlist';
+        });
+        updateSummary();
+      });
+
+      document.querySelectorAll('[data-mode]').forEach((button) => {
+        button.addEventListener('click', () => {
+          document.body.dataset.mode = button.dataset.mode;
+          document.querySelectorAll('[data-mode]').forEach((peer) => {
+            peer.setAttribute('aria-pressed', String(peer === button));
+          });
+        });
+      });
+
+      document.querySelector('[data-size]').addEventListener('click', (event) => {
+        const button = event.currentTarget;
+        const compact = document.body.dataset.size !== 'compact';
+        document.body.dataset.size = compact ? 'compact' : 'large';
+        button.setAttribute('aria-pressed', String(compact));
+      });
+    </script>
+  </body>
+</html>
