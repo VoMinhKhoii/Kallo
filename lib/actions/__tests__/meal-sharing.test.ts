@@ -97,13 +97,11 @@ function queueLimitSelect(rows: unknown[]) {
   mockTxSelect.mockReturnValueOnce({
     from: vi.fn().mockReturnValue({
       where: vi.fn().mockReturnValue({
-        limit: vi
-          .fn()
-          .mockReturnValue(
-            Object.assign(Promise.resolve(rows), {
-              for: vi.fn().mockResolvedValue(rows),
-            })
-          ),
+        limit: vi.fn().mockReturnValue(
+          Object.assign(Promise.resolve(rows), {
+            for: vi.fn().mockResolvedValue(rows),
+          })
+        ),
       }),
     }),
   });
