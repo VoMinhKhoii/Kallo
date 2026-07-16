@@ -14,15 +14,10 @@
 // the accept path performs the one deliberate cross-user meal read, authorized
 // solely by a pending invite row addressed to the reader.
 
-import { and, desc, eq, inArray, notInArray, or, sql } from 'drizzle-orm';
+import { and, eq, inArray, notInArray, or, sql } from 'drizzle-orm';
+import { scaleOwnMealInPlace } from '@/lib/actions/meal-sharing/scale';
 import { copyMealVerbatim } from '@/lib/actions/meals/copy-meal-verbatim';
-import {
-  buildMealItemGroupsFromRows,
-  buildPersistedMeal,
-  inferMealSlot,
-  nutritionValuesToRow,
-  scaleNutritionRow,
-} from '@/lib/actions/persisted-meal';
+import { inferMealSlot } from '@/lib/actions/persisted-meal';
 import { requireAuthAndProfile } from '@/lib/auth';
 import { getUtcInstantForLocalDate } from '@/lib/date/local-day';
 import { db } from '@/lib/db';
@@ -30,9 +25,7 @@ import {
   friendships,
   mealItems,
   mealShareInvites,
-  mealShares,
   meals,
-  publicProfiles,
 } from '@/lib/db/schema';
 import { Errors } from '@/lib/errors';
 import {
@@ -42,36 +35,8 @@ import {
 } from '@/lib/validation';
 import type { ConfirmMealResponse, PersistedMeal } from './meals/types';
 
-type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
-type MealRow = typeof meals.$inferSelect;
-type MealItemRow = typeof mealItems.$inferSelect;
-
-// ---------------------------------------------------------------------------
-// Response shapes
-// ---------------------------------------------------------------------------
-
-export interface MealShareInvite {
-  id: string;
-  mode: 'copy' | 'split';
-  /** Fraction of the original the recipient gets — for the "½ portion" label. */
-  portionFactor: number;
-  createdAt: string;
-  from: {
-    userId: string;
-    handle: string;
-    displayName: string | null;
-    avatarSeed: string | null;
-  };
-  /** The portion the recipient will receive (already the sender's share for a
-   *  split — the source meal was scaled down when it was shared). */
-  meal: {
-    rawInput: string;
-    caloriesKcal: number | null;
-    proteinG: number | null;
-    carbohydrateG: number | null;
-    fatG: number | null;
-  };
-}
+export { listMealShareInvitesAction } from './meal-sharing/invites-list';
+export type { MealShareInvite } from './meal-sharing/types';
 
 // ---------------------------------------------------------------------------
 // S1: Share a meal with friends (copy or split)
@@ -248,164 +213,6 @@ export async function shareMealWithFriendsAction(input: {
 
     return { invitedCount: recipientIds.length, portionFactor, meal };
   });
-}
-
-/**
- * Scale the actor's own meal (item rows + totals + alcohol) in place by `factor`
- * and rebuild it in loadMealsByDate's shape so the card reconciles without a
- * refetch. Used only for a split, where the logger keeps their share of a shared
- * item. Mirrors updateMealAction's scaling, applied uniformly across every row.
- */
-async function scaleOwnMealInPlace(
-  tx: Tx,
-  source: MealRow,
-  itemRows: MealItemRow[],
-  factor: number
-): Promise<PersistedMeal> {
-  const scaled = itemRows.map((row) => ({
-    row,
-    grams: row.estimatedGrams != null ? row.estimatedGrams * factor : null,
-    nutrition: scaleNutritionRow(row, factor),
-  }));
-
-  for (const { row, grams, nutrition } of scaled) {
-    await tx
-      .update(mealItems)
-      .set({ estimatedGrams: grams, ...nutritionValuesToRow(nutrition) })
-      .where(and(eq(mealItems.id, row.id), eq(mealItems.mealId, source.id)));
-  }
-
-  const mealNutrition = scaleNutritionRow(source, factor);
-  const newAlcoholG = source.alcoholG != null ? source.alcoholG * factor : null;
-
-  await tx
-    .update(meals)
-    .set({
-      ...nutritionValuesToRow(mealNutrition),
-      alcoholG: newAlcoholG,
-      portionFactor: factor,
-    })
-    .where(and(eq(meals.id, source.id), eq(meals.userId, source.userId)));
-
-  const mealItemGroups = buildMealItemGroupsFromRows(
-    scaled.map(({ row, grams, nutrition }) => ({
-      ...row,
-      estimatedGrams: grams,
-      nutrition,
-    }))
-  );
-
-  // Carry the existing share row through so the card keeps its shared state.
-  const [shareRow] = await tx
-    .select({ id: mealShares.id, visibility: mealShares.visibility })
-    .from(mealShares)
-    .where(eq(mealShares.mealId, source.id))
-    .limit(1);
-
-  return buildPersistedMeal({
-    id: source.id,
-    rawInput: source.rawInput,
-    mealSlot: source.mealSlot,
-    confidenceOverall: source.confidenceOverall,
-    loggedAt: source.loggedAt.toISOString(),
-    nutrition: mealNutrition,
-    mealItemGroups,
-    entryMode: 'precise',
-    alcoholG: newAlcoholG,
-    cheatSliders: null,
-    share: shareRow
-      ? { shareId: shareRow.id, visibility: shareRow.visibility }
-      : null,
-    portionFactor: factor,
-  });
-}
-
-// ---------------------------------------------------------------------------
-// S2: List my pending invites (the Circle inbox)
-// ---------------------------------------------------------------------------
-
-export async function listMealShareInvitesAction(): Promise<MealShareInvite[]> {
-  const { user } = await requireAuthAndProfile();
-
-  const rows = await db
-    .select({
-      id: mealShareInvites.id,
-      mode: mealShareInvites.mode,
-      portionFactor: mealShareInvites.portionFactor,
-      createdAt: mealShareInvites.createdAt,
-      fromUserId: mealShareInvites.fromUserId,
-      rawInput: meals.rawInput,
-      caloriesKcal: meals.caloriesKcal,
-      proteinG: meals.proteinG,
-      carbohydrateG: meals.carbohydrateG,
-      fatG: meals.fatG,
-      handle: publicProfiles.handle,
-      displayName: publicProfiles.displayName,
-      avatarSeed: publicProfiles.avatarSeed,
-    })
-    .from(mealShareInvites)
-    // The userId join is defense-in-depth: invites are only ever created by
-    // the meal's owner, but nothing in the schema proves from_user_id owns
-    // source_meal_id — keep the invariant enforced at read time too.
-    .innerJoin(
-      meals,
-      and(
-        eq(meals.id, mealShareInvites.sourceMealId),
-        eq(meals.userId, mealShareInvites.fromUserId)
-      )
-    )
-    .innerJoin(
-      publicProfiles,
-      eq(publicProfiles.userId, mealShareInvites.fromUserId)
-    )
-    // Only surface invites from someone still an accepted friend — unfriending
-    // or blocking the sender must drop their offer from the inbox, not leave it
-    // acceptable indefinitely.
-    .innerJoin(
-      friendships,
-      and(
-        eq(friendships.status, 'accepted'),
-        or(
-          and(
-            eq(friendships.userLow, user.id),
-            eq(friendships.userHigh, mealShareInvites.fromUserId)
-          ),
-          and(
-            eq(friendships.userHigh, user.id),
-            eq(friendships.userLow, mealShareInvites.fromUserId)
-          )
-        )
-      )
-    )
-    .where(
-      and(
-        eq(mealShareInvites.toUserId, user.id),
-        eq(mealShareInvites.status, 'pending')
-      )
-    )
-    .orderBy(desc(mealShareInvites.createdAt));
-
-  return rows.map((r) => ({
-    id: r.id,
-    mode: r.mode === 'split' ? 'split' : 'copy',
-    portionFactor: Number(r.portionFactor) || 1,
-    createdAt: r.createdAt.toISOString(),
-    from: {
-      userId: r.fromUserId,
-      handle: r.handle,
-      displayName: r.displayName,
-      avatarSeed: r.avatarSeed,
-    },
-    // Macros are the source meal's CURRENT values — already the recipient's
-    // share for a split (the sender's meal was scaled down when shared).
-    meal: {
-      rawInput: r.rawInput,
-      caloriesKcal: r.caloriesKcal,
-      proteinG: r.proteinG,
-      carbohydrateG: r.carbohydrateG,
-      fatG: r.fatG,
-    },
-  }));
 }
 
 // ---------------------------------------------------------------------------

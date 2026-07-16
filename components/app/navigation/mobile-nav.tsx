@@ -1,6 +1,6 @@
 'use client';
 
-import { LogOut, Menu, Settings } from 'lucide-react';
+import { LogOut, Settings } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { toast } from 'sonner';
@@ -16,8 +16,10 @@ import { useMealShareInviteCount } from '@/hooks/social/use-meal-share-invites';
 import { Link, usePathname } from '@/i18n/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { cn } from '@/lib/utils';
+import { MobileMenuButton } from './mobile/mobile-menu-button';
+import { deriveInitial, deriveLabel } from './mobile/mobile-user-label';
 import { isActiveRoute, visibleNavItems } from './nav-items';
-import { OnboardingDot, OnboardingNudge } from './onboarding-nudge';
+import { OnboardingNudge } from './onboarding-nudge';
 import type { UserMenuUser } from './user-menu';
 
 interface MobileNavProps {
@@ -29,19 +31,6 @@ interface MobileNavProps {
   isOnboardingMinimized?: boolean;
   onMinimizeOnboarding?: () => Promise<void> | void;
   onRestoreOnboarding?: () => Promise<void> | void;
-}
-
-function deriveInitial(user: UserMenuUser): string {
-  const source = user.displayName || user.email || '';
-  const trimmed = source.trim();
-  if (!trimmed) return '·';
-  return trimmed.charAt(0).toUpperCase();
-}
-
-function deriveLabel(user: UserMenuUser): string {
-  if (user.displayName?.trim()) return user.displayName.trim();
-  if (user.email) return user.email.split('@')[0] ?? user.email;
-  return '';
 }
 
 /**
@@ -93,20 +82,12 @@ export function MobileNav({
     <header className="group/mobileheader mb-1 flex items-center gap-2 md:hidden">
       <Sheet open={open} onOpenChange={setOpen}>
         <SheetTrigger asChild>
-          <button
-            type="button"
-            aria-label={tShell('openMenu')}
-            aria-haspopup="dialog"
-            aria-expanded={open}
-            className="relative inline-flex size-11 shrink-0 items-center justify-center rounded-md text-nham-text transition-colors hover:bg-nham-hover/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nham-accent group-has-[[data-strip-mode=true]]/mobileheader:hidden"
-          >
-            <Menu className="h-5 w-5" aria-hidden="true" />
-            {onboardingIncomplete ? (
-              <OnboardingDot className="top-1.5 right-1.5" />
-            ) : inviteCount > 0 ? (
-              <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-nham-accent ring-2 ring-nham-surface" />
-            ) : null}
-          </button>
+          <MobileMenuButton
+            open={open}
+            label={tShell('openMenu')}
+            onboardingIncomplete={onboardingIncomplete}
+            inviteCount={inviteCount}
+          />
         </SheetTrigger>
 
         <SheetContent

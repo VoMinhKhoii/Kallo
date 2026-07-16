@@ -2,8 +2,8 @@
 
 import { useLocale, useTranslations } from 'next-intl';
 import { Fragment, useEffect, useLayoutEffect, useRef } from 'react';
+import { CircleCard } from '@/components/groups/circle-card';
 import { CircleError } from '@/components/groups/circle-error';
-import { CircleCard } from '@/components/groups/circle-wall';
 import { CircleWallSkeleton } from '@/components/groups/circle-wall-skeleton';
 import type { CircleFeedEntry } from '@/lib/groups/client';
 import { cn } from '@/lib/utils';
