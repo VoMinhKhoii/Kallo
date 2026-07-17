@@ -5,7 +5,10 @@ import {
   buildLanguageCorrectionMessage,
   checkDecompositionLanguage,
 } from '../language/guard';
-import { buildDecompositionV2Prompt } from '../prompts/decomposition-v2';
+import {
+  buildDecompositionV2Prompt,
+  wrapUserMealTextAsData,
+} from '../prompts/decomposition-v2';
 import type { PromptPersonalizationContext } from '../prompts/types';
 import type { StreamEvent } from '../streaming/types';
 import type { MealDecomposition, UserContext } from '../types';
@@ -25,6 +28,21 @@ type StreamedMealItemIds = ReturnType<
     typeof createDecompositionStreamController
   >['getStreamedMealItemIds']
 >;
+
+/**
+ * Append a precise-mode clarify reply to the original meal text as an extra
+ * data line, so Call 1 re-decomposes with the portion/food answer in hand.
+ * Both halves are user-authored DATA — the decomposition system prompt's
+ * delimiter rule guards against embedded instructions.
+ */
+function buildClarifiedDecompositionInput(
+  rawInput: string,
+  clarifyAnswer: string
+): string {
+  const answer = clarifyAnswer.trim();
+  if (!answer) return rawInput;
+  return `${rawInput}\n(clarification: ${answer})`;
+}
 
 export type GroundedDecompositionResult =
   | { nonFood: true }
@@ -52,9 +70,17 @@ export async function runGroundedDecomposition(args: {
   emit: (event: StreamEvent) => void;
   promptCtx: PromptPersonalizationContext;
   profile: ModelProfile;
+  /** Reply to a prior precise-mode clarify question; woven into the Call-1 message. */
+  clarifyAnswer?: string;
 }): Promise<GroundedDecompositionResult> {
   const { rawInput, userContext, gemini, traceContext, emit, promptCtx } = args;
   const profile = args.profile;
+  // Weave a clarify reply into the Call-1 user message so the re-analysis
+  // reasons with the answer (mirrors cheat mode threading clarifyAnswer into
+  // its prompt). Sanitized to keep it DATA, never instructions.
+  const decompositionInput = args.clarifyAnswer
+    ? buildClarifiedDecompositionInput(rawInput, args.clarifyAnswer)
+    : rawInput;
 
   const bufferedItemNameEvents: Array<
     Extract<StreamEvent, { type: 'item_name' }>
@@ -87,7 +113,8 @@ export async function runGroundedDecomposition(args: {
   let providerRetryCount = 0;
 
   const decompSystemPrompt = buildDecompositionV2Prompt(promptCtx);
-  const promptCharsCall1 = decompSystemPrompt.length + rawInput.length;
+  const promptCharsCall1 =
+    decompSystemPrompt.length + decompositionInput.length;
 
   const runDecompositionAttempt = async (
     userMessage: string,
@@ -142,7 +169,10 @@ export async function runGroundedDecomposition(args: {
     { rawInputLength: rawInput.length, model: profile.decompositionModel },
     ({ stageLogId }) => {
       emit({ type: 'stage', stage: 'decomposing' });
-      return runDecompositionAttempt(rawInput, stageLogId);
+      return runDecompositionAttempt(
+        wrapUserMealTextAsData(decompositionInput),
+        stageLogId
+      );
     }
   );
 
@@ -175,7 +205,10 @@ export async function runGroundedDecomposition(args: {
       },
       ({ stageLogId }) =>
         runDecompositionAttempt(
-          buildLanguageCorrectionMessage(rawInput, userContext),
+          buildLanguageCorrectionMessage(
+            wrapUserMealTextAsData(decompositionInput),
+            userContext
+          ),
           stageLogId
         )
     );

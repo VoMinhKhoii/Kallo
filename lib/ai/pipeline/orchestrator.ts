@@ -55,6 +55,12 @@ export interface AnalyzeMealTraceContext {
 export interface AnalyzeMealOptions {
   shadow?: ShadowConfig;
   l4Cache?: { enabled?: boolean };
+  /**
+   * Precise-mode clarify reply: threaded into the Call-1 decomposition user
+   * message so a re-analysis after a `clarify` event uses the answer. Only the
+   * v2 grounded path consumes it (mirrors cheat mode's `clarifyAnswer`).
+   */
+  clarifyAnswer?: string;
 }
 
 interface RunPipelineOptions {
@@ -93,6 +99,7 @@ export async function analyzeMeal(
     console.info('[pipeline] dispatching to v2 (default)');
     return analyzeMealV2(rawInput, userContext, db, gemini, onEvent, {
       traceContext,
+      clarifyAnswer: options?.clarifyAnswer,
     });
   }
   console.info('[pipeline] running v1 (PIPELINE_V2_ENABLED=false fallback)');

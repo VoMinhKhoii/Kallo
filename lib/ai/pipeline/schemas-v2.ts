@@ -153,8 +153,18 @@ export const groundedIngredientEstimateSchema = z
       .describe(
         'When selectedCandidateId="none", a short reason (e.g. "category mismatch — ức gà ≠ generic chicken meat"). Used for telemetry, not user-facing.'
       ),
+    // `.positive().finite()` is genuinely enforcing: Zod's `schema.parse()`
+    // (run post-provider-parse in gemini.ts) rejects 0/negative/NaN/Infinity
+    // grams and THROWS, which routes the whole call into the existing
+    // `withRetry` parse-retry path — instead of the old silent grams=1
+    // fallback in bridge.ts. We enforce at the Zod layer rather than relying
+    // on the provider JSON schema because Gemini's `responseJsonSchema` does
+    // not reliably honor `exclusiveMinimum` (same class of limitation that
+    // forced the cheat-slider `.max()` drop above).
     grams: z
       .number()
+      .positive()
+      .finite()
       .describe(
         "As-eaten or raw mass in grams, scoped to the selected candidate's state when present. Must be > 0."
       ),

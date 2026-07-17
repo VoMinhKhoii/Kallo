@@ -28,6 +28,7 @@ import { handleError, nonFoodResponse } from './errors';
 import { runGroundedDecomposition } from './grounded-decomposition';
 import {
   buildCallTwoPayload,
+  buildUnresolvedFromPlausibility,
   flushUnstreamedItemMacros,
   toPromptPersonalizationContext,
   withStageLogV2,
@@ -58,6 +59,11 @@ export interface AnalyzeMealV2Options {
   traceContext?: AnalyzeMealTraceContext;
   /** Read-only internals used by the offline eval harness. */
   onDiagnostics?: (diagnostics: V2PipelineDiagnostics) => void;
+  /**
+   * Precise-mode clarify reply, threaded into the Call-1 decomposition user
+   * message on a re-analysis (mirrors cheat mode's `clarifyAnswer`).
+   */
+  clarifyAnswer?: string;
 }
 
 export interface V2PipelineDiagnostics {
@@ -103,6 +109,7 @@ export async function analyzeMealV2(
       emit,
       promptCtx,
       profile,
+      clarifyAnswer: options.clarifyAnswer,
     });
     if (stage1.nonFood) {
       return nonFoodResponse();
@@ -357,6 +364,14 @@ export async function analyzeMealV2(
       await persistPromise;
     } else {
       void persistPromise;
+    }
+
+    // Completeness gate: if any ingredient's portion/match couldn't be
+    // resolved, surface the most-impactful one so the route emits a precise
+    // clarify event INSTEAD of persisting an under-weighted meal (Phase 1).
+    const unresolved = buildUnresolvedFromPlausibility(bridged.plausibility);
+    if (unresolved) {
+      return { success: true, data: assembly.result, unresolved };
     }
 
     return { success: true, data: assembly.result };

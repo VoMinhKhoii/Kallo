@@ -204,7 +204,8 @@ export async function POST(request: NextRequest) {
           db,
           gemini,
           emit,
-          traceContext
+          traceContext,
+          { clarifyAnswer }
         );
 
         // Check for abort after pipeline completes
@@ -264,6 +265,42 @@ export async function POST(request: NextRequest) {
               'Could not estimate nutrition for this meal. Please try describing it differently.',
             retryable: true,
           });
+          return;
+        }
+
+        // Completeness gate (precise clarify): the pipeline finished but ≥1
+        // ingredient's portion/match couldn't be resolved. Mirror the cheat
+        // clarify early-exit — surface ONE targeted question and stop WITHOUT
+        // persisting an incomplete pending_analyses row. The client re-submits
+        // with `clarifyAnswer`.
+        if (result.unresolved) {
+          const tClarify = await getTranslations({
+            locale: locale ?? profile.preferredLocale ?? 'en',
+            namespace: 'logging.clarify',
+          });
+          const question =
+            result.unresolved.reason === 'ambiguous_food'
+              ? tClarify('food', {
+                  ingredient: result.unresolved.ingredientName,
+                  mealItem: result.unresolved.mealItemName,
+                })
+              : tClarify('portion', {
+                  ingredient: result.unresolved.ingredientName,
+                  mealItem: result.unresolved.mealItemName,
+                });
+          emit({
+            type: 'clarify',
+            question,
+            reason: result.unresolved.reason,
+          });
+          logPipelineEnd(
+            requestId,
+            'success',
+            Date.now() - startTime,
+            db,
+            undefined,
+            pvu
+          );
           return;
         }
 

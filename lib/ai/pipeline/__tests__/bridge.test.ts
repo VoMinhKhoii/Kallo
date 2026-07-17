@@ -257,6 +257,45 @@ describe('bridgeV2ToV1 — selectedCandidateId out of range', () => {
   });
 });
 
+describe('bridgeV2ToV1 — unresolved (Call 2 dropped the ingredient)', () => {
+  it('emits no 1g placeholder row and marks the ingredient unresolved_estimate', () => {
+    // Call 2 returned NO grounded estimate for this ingredient (verdict=missing).
+    const grounded: GroundedEstimation = { mealItems: [] };
+    const out = bridgeV2ToV1({
+      v2: v2Decomp(),
+      matches: matchResultWithCandidate(),
+      grounded,
+      mealContext: 'm',
+    });
+
+    // No silent grams=1 row: the decomposition ingredient carries grams=0, and
+    // NO matched / unmatched / rawNutrition row is synthesized for it.
+    expect(out.decomposition.mealItems[0].ingredients[0].grams).toBe(0);
+    expect(out.matched).toHaveLength(0);
+    expect(out.unmatched).toHaveLength(0);
+    expect(out.rawNutrition.mealItems).toHaveLength(0);
+
+    // Plausibility trail exposes the unresolved state for the completeness gate.
+    expect(out.plausibility).toHaveLength(1);
+    expect(out.plausibility[0].state).toBe('unresolved_estimate');
+    expect(out.plausibility[0].ingredientName).toBe('đùi gà');
+    expect(out.plausibility[0].ingredientId).toBe(
+      out.decomposition.mealItems[0].ingredients[0].ingredientId
+    );
+  });
+
+  it('classifies a resolved matched ingredient as ok', () => {
+    const out = bridgeV2ToV1({
+      v2: v2Decomp(),
+      matches: matchResultWithCandidate(),
+      grounded: groundedAccepted(),
+      mealContext: 'm',
+    });
+    expect(out.plausibility).toHaveLength(1);
+    expect(out.plausibility[0].state).toBe('ok');
+  });
+});
+
 describe('bridgeV2ToV1 — case-insensitive name matching', () => {
   it('pairs v2 decomp (capitalized) with grounded output (lowercase) correctly', () => {
     // Mimics what happens in production: the orchestrator capitalizes
