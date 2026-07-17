@@ -7,9 +7,9 @@ const SKELETON_COUNT = 3;
 
 /**
  * Loading state for a Circle thread (FriendsFeed / GroupFeed). Mirrors the
- * flat Threads-style panel anatomy — the bordered feed frame holding a few
- * placeholder rows (avatar disc plus two text bars) — so the layout doesn't
- * shift when real posts arrive, and no empty state flashes during the fetch.
+ * flat, borderless Threads-style feed — hairline-divided placeholder rows
+ * (avatar disc plus two text bars) — so the layout doesn't shift when real
+ * posts arrive, and no empty state flashes during the fetch.
  */
 export function CircleWallSkeleton() {
   const t = useTranslations('groups.wall');
@@ -18,7 +18,7 @@ export function CircleWallSkeleton() {
       role="status"
       aria-busy="true"
       aria-label={t('loading')}
-      className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-[20px] border border-nham-border/60 bg-white"
+      className="flex min-h-0 flex-1 flex-col"
     >
       {Array.from({ length: SKELETON_COUNT }, (_, index) => (
         <div

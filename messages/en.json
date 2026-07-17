@@ -58,7 +58,7 @@
       "tracking": "Tracking",
       "nutrition": "Nutrition",
       "logging": "Logging",
-      "groups": "Groups",
+      "groups": "Circle",
       "admin": "Admin",
       "settings": "Settings",
       "expandSidebar": "Expand sidebar",
@@ -1172,7 +1172,9 @@
     },
     "switcher": {
       "all": "All",
-      "new": "+ New"
+      "new": "+ New",
+      "label": "Circle views",
+      "retry": "Retry"
     },
     "empty": {
       "title": "Your circle is quiet",

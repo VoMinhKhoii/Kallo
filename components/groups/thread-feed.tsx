@@ -116,7 +116,7 @@ export function ThreadFeed({
   let lastDayKey: string | null = null;
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-[20px] border border-nham-border/60 bg-white">
+    <div className="flex min-h-0 flex-1 flex-col">
       {composer}
       <div ref={containerRef} className="min-h-0 flex-1 overflow-y-auto">
         {entries.length > 0 ? (
@@ -153,9 +153,11 @@ export function ThreadFeed({
             })}
           </>
         ) : (
-          <p className="p-4 font-sans-display text-[13px] text-nham-text-muted">
-            {emptyMessage}
-          </p>
+          <div className="flex h-full items-center justify-center px-6 py-16 text-center">
+            <p className="max-w-xs font-sans-display text-[13px] text-nham-text-muted leading-relaxed">
+              {emptyMessage}
+            </p>
+          </div>
         )}
       </div>
     </div>

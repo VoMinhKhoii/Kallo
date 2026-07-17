@@ -58,7 +58,7 @@
       "tracking": "Theo dõi",
       "nutrition": "Dinh dưỡng",
       "logging": "Ghi nhận",
-      "groups": "Nhóm",
+      "groups": "Vòng kết nối",
       "admin": "Quản trị",
       "settings": "Cài đặt",
       "expandSidebar": "Mở rộng thanh bên",
@@ -1172,7 +1172,9 @@
     },
     "switcher": {
       "all": "Tất cả",
-      "new": "+ Nhóm mới"
+      "new": "+ Nhóm mới",
+      "label": "Chế độ xem vòng kết nối",
+      "retry": "Thử lại"
     },
     "empty": {
       "title": "Vòng kết nối đang yên ắng",

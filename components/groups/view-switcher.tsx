@@ -31,7 +31,7 @@ function UnreadDot() {
 export function ViewSwitcher() {
   const t = useTranslations('groups.switcher');
   const pathname = usePathname();
-  const { data: groups = [] } = useMyChatGroups();
+  const { data: groups = [], isError, refetch } = useMyChatGroups();
   const { data: feed = [] } = useCircleFeed();
   const { data: readMarker } = useFriendsFeedReadMarker();
 
@@ -57,9 +57,13 @@ export function ViewSwitcher() {
   );
 
   return (
-    <nav className="my-0.5 mb-4 flex items-center gap-2.5 overflow-x-auto">
+    <nav
+      aria-label={t('label')}
+      className="my-0.5 mb-4 flex items-center gap-2.5 overflow-x-auto"
+    >
       <Link
         href="/groups"
+        aria-current={pathname === '/groups' ? 'page' : undefined}
         className={cn(
           'border border-nham-border/60 bg-white',
           PILL_BASE,
@@ -73,14 +77,16 @@ export function ViewSwitcher() {
       <div className="inline-flex gap-0.5 rounded-full border border-nham-border/60 bg-white p-1">
         {namedGroups.map((group) => {
           const href = `/groups/g/${group.id}`;
+          const active = pathname === href;
           return (
             <Link
               key={group.id}
               href={href}
+              aria-current={active ? 'page' : undefined}
               className={cn(
                 PILL_BASE,
                 'px-[13px] py-[5px]',
-                pathname === href && PILL_ACTIVE
+                active && PILL_ACTIVE
               )}
             >
               {group.unread && <UnreadDot />}
@@ -88,6 +94,18 @@ export function ViewSwitcher() {
             </Link>
           );
         })}
+
+        {/* On a load failure the group pills would otherwise vanish silently,
+         * stranding the only path to a group — offer an explicit retry. */}
+        {isError && (
+          <button
+            type="button"
+            onClick={() => void refetch()}
+            className={cn(PILL_BASE, 'px-[13px] py-[5px]')}
+          >
+            {t('retry')}
+          </button>
+        )}
 
         <AddFriendDialog
           defaultTab="group"
