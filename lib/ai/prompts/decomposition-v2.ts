@@ -108,8 +108,10 @@ export function buildCompressedDecompositionV2Prompt(
 <schema_fields>
   Root: isFood, mealSlot, mealItems.
   mealItems[]: name, cookingMethod, cuisineNote?, ingredients[].
-  ingredients[]: rawName, canonicalName, cookingMethod?, stateHint?, stateNote?, prepNotes?.
+  ingredients[]: rawName, canonicalName, cookingMethod?, stateHint?, stateNote?, count?, unitToken?, sizeModifier?, explicitMass?, prepNotes?.
   stateHint enum: "raw_weight" | "cooked_weight" | "unspecified". Default omitted.
+  count: number the user stated (2 in "2 bánh bao"). unitToken: verbatim counter/unit word ("bánh bao","cái","lát","slice","cup","tô"). sizeModifier enum: "small"|"medium"|"large" ("nhỏ"→small,"vừa"→medium,"lớn"→large). explicitMass: { grams, basis:"raw"|"cooked" } ONLY when the user typed a weight.
+  You do NOT emit grams and NEVER invent count/unitToken/explicitMass — extract only what the user wrote. A server resolver turns these into a weight.
   prepNotes: max 6 short strings (≤60 chars each), preserve user's language and diacritics.
 </schema_fields>
 
@@ -124,7 +126,10 @@ ${INPUT_HANDLING_RULE}
 
 <modifier_routing>
   When the user types qualifiers, route each to EXACTLY ONE field — never duplicate into prepNotes once routed elsewhere:
-    1. Quantity cues ("nhiều cơm", "ít thịt", "nửa phần", "extra protein", "double", "light") → THESE ARE NOT YOUR PROBLEM IN V2. You do not emit grams. Mention quantity in stateNote only if it's load-bearing for portion priors (e.g., "ăn ít" → stateNote: "ăn ít").
+    1. Quantity cues:
+       - Countable units ("2 bánh bao", "3 lát", "2 slices", "1 tô", "nửa cái") → count + unitToken (verbatim word). sizeModifier when the user sized the unit ("bánh bao lớn"→large). You still do NOT emit grams; the server resolves the weight.
+       - Explicit weights ("250gr ức gà", "100g cơm") → explicitMass:{grams, basis}. basis="raw" if paired with a raw-weight cue ("cân sống"), else "cooked".
+       - Vague cues ("nhiều cơm", "ít thịt", "nửa phần", "extra protein", "light") stay portion hints: capture in stateNote if load-bearing (e.g., "ăn ít" → stateNote: "ăn ít"). No count.
     2. Identity changes — modifier names a different DB food entity:
        - "chỉ lòng trắng" / "egg whites only" → canonicalName for egg white, not whole egg.
        - "chỉ phần thịt nạc" on ba chỉ → lean pork canonical.
@@ -157,7 +162,7 @@ export function buildDecompositionV2Prompt(
     3. Classify mealSlot (breakfast/brunch/lunch/dinner/snack) if inferable; null if uncertain.
     4. Emit the dish-wrapped schema exactly:
        mealItems[]: { name, cookingMethod, cuisineNote?, ingredients[] }
-       ingredients[]: { rawName, canonicalName, cookingMethod?, stateHint?, stateNote?, prepNotes? }
+       ingredients[]: { rawName, canonicalName, cookingMethod?, stateHint?, stateNote?, count?, unitToken?, sizeModifier?, explicitMass?, prepNotes? }
   </task>
 
   <ingredient_naming_rule>
@@ -184,7 +189,10 @@ export function buildDecompositionV2Prompt(
   <modifier_routing>
     Route every user-typed qualifier to EXACTLY ONE field. No cross-contamination.
 
-    1. **Quantity cues** ("nhiều cơm", "ít thịt", "extra protein", "nửa phần", "double", "light portion", "đầy bát") — Call 2 owns grams. You do NOT emit grams. Capture genuinely portion-load-bearing phrases in stateNote (e.g., "ăn ít" / "đầy bát") so Call 2's portion estimate picks them up.
+    1. **Quantity cues** — route to structured fields. You NEVER emit grams and NEVER invent numbers; extract only what the user wrote:
+       - **Counted units** ("2 bánh bao", "3 lát bánh mì", "2 slices", "1 tô phở", "nửa cái") → count (the number; "nửa"→0.5) + unitToken (the verbatim counter/unit word: "bánh bao", "lát", "slice", "tô", "cái"). Put these on the ingredient the count applies to. Add sizeModifier when the user sized the unit ("bánh bao lớn"→"large", "tô nhỏ"→"small").
+       - **Explicit weights** ("250gr ức gà", "100g cơm") → explicitMass: grams + basis. Set basis="raw" when paired with a raw-weight cue ("cân sống", "trước khi nấu"), otherwise basis="cooked".
+       - **Vague portion cues** ("nhiều cơm", "ít thịt", "extra protein", "nửa phần", "đầy bát") — no count. Capture genuinely portion-load-bearing phrases in stateNote (e.g., "ăn ít" / "đầy bát") so the resolver / Call 2 can bias the estimate.
 
     2. **Identity changes** — the modifier names a different DB food entity:
        - "chỉ lòng trắng" / "egg whites only" → canonicalName for egg white, not whole egg.
@@ -342,6 +350,27 @@ ${countryLines.length > 0 ? countryLines.join('\n') : '  country: unspecified'}
   </example>
 
   <example>
+    <input>2 bánh bao trứng cút</input>
+    <output>
+    {
+      "isFood": true,
+      "mealSlot": null,
+      "mealItems": [
+        {
+          "name": "bánh bao trứng cút",
+          "cookingMethod": "hấp",
+          "ingredients": [
+            { "rawName": "bánh bao", "canonicalName": "Bánh bao nhân thịt", "count": 2, "unitToken": "bánh bao" },
+            { "rawName": "trứng cút", "canonicalName": "Trứng chim cút", "count": 2, "unitToken": "quả" }
+          ]
+        }
+      ]
+    }
+    </output>
+    <!-- "2 bánh bao" → count=2, unitToken="bánh bao". NO grams: the server portion resolver turns 2 × the bánh-bao prior into grams. The quail eggs inside inherit count=2. -->
+  </example>
+
+  <example>
     <input>xin chào bạn</input>
     <output>{ "isFood": false, "mealSlot": null, "mealItems": [] }</output>
   </example>
@@ -353,5 +382,5 @@ ${countryLines.length > 0 ? countryLines.join('\n') : '  country: unspecified'}
   </example>
 </examples>
 
-Return JSON matching the provided schema. Every meal item must have name, cookingMethod, and at least one ingredient. Every ingredient must have rawName and canonicalName. Do NOT emit grams, weightBasis, expectedState, or ambiguityFlags — those fields do not exist in V2 schema.`;
+Return JSON matching the provided schema. Every meal item must have name, cookingMethod, and at least one ingredient. Every ingredient must have rawName and canonicalName. You MAY emit count/unitToken/sizeModifier/explicitMass when the user expressed them, but do NOT emit grams, weightBasis, expectedState, or ambiguityFlags — those fields do not exist in V2 schema.`;
 }

@@ -35,6 +35,27 @@ describe('decomposition-v2 prompt', () => {
     expect(out).not.toMatch(/ingredients\[\]:\s*\{[^}]*grams/);
   });
 
+  it('both builders instruct structured quantity extraction (count/unitToken/explicitMass) without emitting grams', () => {
+    for (const build of [
+      buildDecompositionV2Prompt,
+      buildCompressedDecompositionV2Prompt,
+    ]) {
+      const out = build(baseUserContext);
+      expect(out).toMatch(/count/);
+      expect(out).toMatch(/unitToken/);
+      expect(out).toMatch(/explicitMass/);
+      // The model must still be told it does NOT compute grams itself.
+      expect(out).toMatch(/do not emit grams|do NOT emit grams|NEVER emit grams/i);
+    }
+  });
+
+  it('production builder carries the "2 bánh bao" count example', () => {
+    const out = buildDecompositionV2Prompt(baseUserContext);
+    expect(out).toMatch(/2 bánh bao/);
+    expect(out).toMatch(/"count":\s*2/);
+    expect(out).toMatch(/"unitToken":\s*"bánh bao"/);
+  });
+
   it('production builder includes modifier routing for all 5 categories', () => {
     const out = buildDecompositionV2Prompt(baseUserContext);
     expect(out).toMatch(/Quantity cues/);

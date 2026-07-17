@@ -144,13 +144,20 @@ export function flushUnstreamedItemMacros(args: {
  */
 export function buildCallTwoPayload(
   decomposition: MealDecompositionV2,
-  matchResults: IngredientV2MatchResult[]
+  matchResults: IngredientV2MatchResult[],
+  /**
+   * Server-resolved portion grams per flat ingredient (Phase 3). When present
+   * and > 0, becomes the Call-2 ANCHOR so the LLM does not re-estimate weight.
+   * Indexed in the same flat order as `matchResults`.
+   */
+  resolvedGramsByFlatIdx?: Array<number | null>
 ): MealItemWithCandidates[] {
   let flatIdx = 0;
   return decomposition.mealItems.map((mi) => ({
     mealItem: mi,
     ingredients: mi.ingredients.map((ing) => {
       const matchResult = matchResults[flatIdx];
+      const anchor = resolvedGramsByFlatIdx?.[flatIdx] ?? null;
       flatIdx++;
       const candidates = (matchResult?.candidates ?? []).map((c, i) => ({
         id: `c${i + 1}`,
@@ -164,7 +171,7 @@ export function buildCallTwoPayload(
         per100gFatG: c.nutrition?.fatG ?? null,
         inediblePct: c.inediblePct,
       }));
-      return { ingredient: ing, candidates };
+      return { ingredient: ing, candidates, resolvedGramsAnchor: anchor };
     }),
   }));
 }
@@ -209,7 +216,7 @@ export function buildUnresolvedFromPlausibility(
   return {
     mealItemName: primary.mealItemName,
     ingredientName: primary.ingredientName,
-    reason: 'unresolved_portion',
+    reason: primary.unresolvedReason ?? 'unresolved_portion',
     unresolvedCount: unresolved.length,
   };
 }

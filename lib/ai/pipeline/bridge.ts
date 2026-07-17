@@ -35,6 +35,7 @@ import {
   v2IngredientToV1,
   ZERO_TRIPLE,
 } from './bridge-verdicts';
+import type { PortionResolution } from '../portion/types';
 import { ensureIdsOnDecomposition, type MealDecompositionWithIds } from './ids';
 import type { RawNutritionAdjustment } from './nutrition';
 import {
@@ -76,6 +77,12 @@ export interface PlausibilityPerIngredient {
   /** Owning meal-item display name. */
   mealItemName: string;
   state: IngredientPlausibility;
+  /**
+   * When `state === 'unresolved_estimate'`, why — drives the clarify reason.
+   * 'ambiguous_food' when the portion resolver couldn't scope the concept;
+   * 'unresolved_portion' (default) for a missing/too-wide portion.
+   */
+  unresolvedReason?: 'ambiguous_food' | 'unresolved_portion';
 }
 
 export interface V2BridgeOutput {
@@ -107,8 +114,24 @@ export function bridgeV2ToV1(args: {
    * final `result` event.
    */
   preMintedMealItemIds?: Map<string, string>;
+  /**
+   * Phase 3 portion-resolver output, one entry per flat ingredient (same order
+   * as the decomposition walk). When a resolution grounded grams (steps 1–4),
+   * it OVERRIDES the LLM grams so Call 2 cannot drift from the server anchor.
+   * When a resolution is `unresolved`, the ingredient is forced to
+   * `unresolved_estimate` so the completeness gate clarifies. Omitted on the
+   * v1-shadow / test paths that don't run the resolver.
+   */
+  portionResolutions?: PortionResolution[];
 }): V2BridgeOutput {
-  const { v2, matches, grounded, mealContext, preMintedMealItemIds } = args;
+  const {
+    v2,
+    matches,
+    grounded,
+    mealContext,
+    preMintedMealItemIds,
+    portionResolutions,
+  } = args;
 
   const paired = pairIngredientsWithGrounded(v2, grounded);
   const matchByIndex = new Map<number, IngredientV2MatchResult>();
@@ -159,34 +182,56 @@ export function bridgeV2ToV1(args: {
       });
 
       const cookingMethodForIng = ing.cookingMethod ?? mi.cookingMethod;
+      const portion = portionResolutions?.[flatIngredientIdx];
+      // Server ANCHOR override (Phase 3): when the portion resolver grounded
+      // grams (ladder steps 1–4), that number is authoritative — Call 2 must
+      // not drift from it. Prefer the resolver's grams over the LLM's.
+      const anchorGrams =
+        portion &&
+        portion.grams != null &&
+        portion.provenance !== 'llm_range' &&
+        portion.provenance !== 'unresolved' &&
+        Number.isFinite(portion.grams.mid) &&
+        portion.grams.mid > 0
+          ? portion.grams.mid
+          : null;
       // NO FALLBACK_GRAMS: a missing/invalid grams is left unresolved rather
       // than coerced to a 1g placeholder row. `schemas-v2.ts` enforces
       // grams.positive().finite() at parse time, so an invalid value here can
       // only mean Call 2 dropped the ingredient entirely (verdict='missing').
-      const resolvedGrams =
+      const llmGrams =
         ground?.grams != null &&
         Number.isFinite(ground.grams) &&
         ground.grams > 0
           ? ground.grams
           : null;
+      const resolvedGrams = anchorGrams ?? llmGrams;
+      // When the resolver explicitly deferred to clarify, force the ingredient
+      // unresolved regardless of whatever grams Call 2 emitted.
+      const resolverUnresolved = portion?.provenance === 'unresolved';
 
       const acceptedCandidate =
         verdict === 'accepted' && selectedCandidateIdx !== null
           ? candidates[selectedCandidateIdx]
           : null;
 
-      const state = classifyIngredientPlausibility({
-        grams: resolvedGrams,
-        hasNutrition: ground != null,
-        caloriesPer100g: acceptedCandidate?.nutrition?.caloriesKcal ?? null,
-        name: ing.rawName || ing.canonicalName,
-      });
+      const state = resolverUnresolved
+        ? 'unresolved_estimate'
+        : classifyIngredientPlausibility({
+            grams: resolvedGrams,
+            hasNutrition: ground != null,
+            caloriesPer100g: acceptedCandidate?.nutrition?.caloriesKcal ?? null,
+            name: ing.rawName || ing.canonicalName,
+          });
       plausibilityPartialByFlatIdx.set(flatIngredientIdx, {
         mealItemIdx,
         ingredientIdx,
         ingredientName: ing.rawName,
         mealItemName: mi.name,
         state,
+        ...(state === 'unresolved_estimate' && portion?.unresolvedReason
+          ? { unresolvedReason: portion.unresolvedReason }
+          : {}),
       });
 
       // Unresolved: emit NEITHER a matched row NOR a zero/1g-filled nutrition

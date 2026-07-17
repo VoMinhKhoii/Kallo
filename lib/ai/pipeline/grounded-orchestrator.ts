@@ -8,6 +8,7 @@ import {
   type IngredientV2MatchResult,
   matchTopKPerIngredient,
 } from '../matching/top-k-cascade';
+import { resolvePortionsForCallTwo } from '../portion/ingredient-portion';
 import {
   buildGroundedEstimationPrompt,
   type MealItemWithCandidates,
@@ -148,9 +149,14 @@ export async function analyzeMealV2(
       }
     );
 
+    // Portion resolver (Phase 3): a grounded weight becomes a Call-2 ANCHOR;
+    // null → LLM estimates; unresolved → Phase-1 clarify. See `resolver.ts`.
+    const { resolutions: portionResolutions, anchors: resolvedGramsAnchors } =
+      resolvePortionsForCallTwo(flatIngredients, userContext.inputLanguage);
+
     // ---- Stage 3: Call 2 — grounded estimation with item_macros stream --
     const mealItemsWithCandidates: MealItemWithCandidates[] =
-      buildCallTwoPayload(decomposition, matchResults);
+      buildCallTwoPayload(decomposition, matchResults, resolvedGramsAnchors);
     const call2SystemPrompt = buildGroundedEstimationPrompt({
       originalPrompt: rawInput,
       mealItems: mealItemsWithCandidates,
@@ -290,6 +296,7 @@ export async function analyzeMealV2(
           grounded,
           mealContext: rawInput,
           preMintedMealItemIds: streamedMealItemIds,
+          portionResolutions,
         });
         const reconciled = reconcileNutritionIds(
           bridged.rawNutrition,
@@ -339,6 +346,7 @@ export async function analyzeMealV2(
       decomposeChunkCount,
       nutritionChunkCount,
       languageRetryCount,
+      portionProvenance: portionResolutions.map((r) => r.provenance),
     });
 
     // Persist a pipeline_runs row when request-level tracing is enabled,

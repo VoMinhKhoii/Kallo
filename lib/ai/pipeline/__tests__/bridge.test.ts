@@ -343,3 +343,59 @@ describe('bridgeV2ToV1 — case-insensitive name matching', () => {
     expect(out.matched[0].foodCompositionId).toBe('fc-thigh');
   });
 });
+
+describe('bridgeV2ToV1 — Phase 3 portion-resolution anchor', () => {
+  it('OVERRIDES the LLM grams with the resolver anchor (steps 1–4)', () => {
+    const out = bridgeV2ToV1({
+      v2: v2Decomp(),
+      matches: matchResultWithCandidate(),
+      grounded: groundedAccepted(), // Call 2 said 150g
+      mealContext: 'm',
+      portionResolutions: [
+        {
+          grams: { low: 300, mid: 330, high: 360 },
+          provenance: 'retrieved_prior',
+          confidence: 'high',
+          note: 'prior',
+        },
+      ],
+    });
+    // The server anchor (330) wins over the LLM's 150.
+    expect(out.decomposition.mealItems[0].ingredients[0].grams).toBe(330);
+  });
+
+  it('keeps the LLM grams when the resolver deferred (llm_range)', () => {
+    const out = bridgeV2ToV1({
+      v2: v2Decomp(),
+      matches: matchResultWithCandidate(),
+      grounded: groundedAccepted(),
+      mealContext: 'm',
+      portionResolutions: [
+        { grams: null, provenance: 'llm_range', confidence: 'none', note: '' },
+      ],
+    });
+    expect(out.decomposition.mealItems[0].ingredients[0].grams).toBe(150);
+  });
+
+  it('forces unresolved_estimate + ambiguous_food reason when the resolver clarifies', () => {
+    const out = bridgeV2ToV1({
+      v2: v2Decomp(),
+      matches: matchResultWithCandidate(),
+      grounded: groundedAccepted(),
+      mealContext: 'm',
+      portionResolutions: [
+        {
+          grams: null,
+          provenance: 'unresolved',
+          confidence: 'none',
+          unresolvedReason: 'ambiguous_food',
+          note: 'ambiguous',
+        },
+      ],
+    });
+    expect(out.plausibility[0].state).toBe('unresolved_estimate');
+    expect(out.plausibility[0].unresolvedReason).toBe('ambiguous_food');
+    // Unresolved ingredients contribute no matched row.
+    expect(out.matched).toHaveLength(0);
+  });
+});

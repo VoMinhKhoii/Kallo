@@ -23,6 +23,12 @@ export interface V2TelemetryInput {
   /** Same probe for Call 2 / item_macros. */
   nutritionChunkCount: number;
   languageRetryCount: number;
+  /**
+   * Phase 3 portion-resolver provenance per flat ingredient (same order as
+   * `verdicts`). Summarized into per-ladder-step counts so telemetry can show
+   * how many portions were server-grounded vs deferred to the LLM vs clarified.
+   */
+  portionProvenance?: string[];
 }
 
 export function logV2Telemetry(input: V2TelemetryInput): void {
@@ -43,6 +49,12 @@ export function logV2Telemetry(input: V2TelemetryInput): void {
       v.selectedCandidateIdx !== null &&
       v.selectedCandidateIdx > 0
   ).length;
+  const portionProvenanceCounts = (input.portionProvenance ?? []).reduce<
+    Record<string, number>
+  >((acc, p) => {
+    acc[p] = (acc[p] ?? 0) + 1;
+    return acc;
+  }, {});
   console.info('[v2-pipeline] verdicts', {
     totalIngredients,
     accepted,
@@ -56,6 +68,7 @@ export function logV2Telemetry(input: V2TelemetryInput): void {
     decomposeChunkCount: input.decomposeChunkCount,
     nutritionChunkCount: input.nutritionChunkCount,
     languageRetryCount: input.languageRetryCount,
+    portionProvenance: portionProvenanceCounts,
   });
 }
 

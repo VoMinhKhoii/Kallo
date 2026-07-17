@@ -1,0 +1,126 @@
+/**
+ * Shared types for the server-side portion / concept resolver (Phase 3).
+ *
+ * The resolver turns NLP-shaped quantity evidence (count, unit token, size,
+ * explicit mass) into a grams band for a food CONCEPT — never a context-free
+ * global gram value. Every prior is scoped to concept × unit-type × locale ×
+ * form. See `resolver.ts` for the fallback ladder.
+ */
+
+/** BCP-47-ish locale tag used to scope units and priors. */
+export type Locale = 'vi' | 'en' | 'global';
+
+/**
+ * Semantic unit TYPE a surface unit token maps to. NOT grams: "slice"/"bowl"
+ * carry no global mass, only a shape of measurement. `mass` is a literal
+ * weight; `count` is a discrete whole item; `container`/`volume`/`slice` need
+ * a concept-scoped prior to become grams.
+ */
+export type UnitType = 'count' | 'slice' | 'volume' | 'mass' | 'container';
+
+/** Cooking / physical form a prior is scoped to. */
+export type FoodForm = 'raw' | 'cooked' | 'composed' | 'any';
+
+/** Size cue → picks low/mid/high within a prior's band. */
+export type SizeModifier = 'small' | 'medium' | 'large';
+
+/** A grams triple: the resolver always returns a distribution, never a point. */
+export interface GramsBand {
+  low: number;
+  mid: number;
+  high: number;
+}
+
+/**
+ * Stable food-concept id. A concept is the anchor a prior is scoped to; it may
+ * (optionally) point to a nutrition DB row for verification. Concept ids are
+ * kebab-case and locale-agnostic (e.g. `banh-bao`, `quail-egg`).
+ */
+export type ConceptId = string;
+
+/** A curated food concept: what a normalized surface form resolves to. */
+export interface FoodConcept {
+  id: ConceptId;
+  /** Human label for logs/telemetry. */
+  label: string;
+  /**
+   * Optional link to a real DB `vietnamese_food_composition.name_primary` for
+   * nutrition. Verified against the dev DB at authoring time. Absent when no
+   * correct row exists yet (the concept still resolves a portion prior).
+   */
+  dbRowName?: string;
+}
+
+/** A locale-tagged unit lexicon entry: token → semantic unit type. */
+export interface UnitLexiconEntry {
+  token: string;
+  locale: Locale;
+  unitType: UnitType;
+}
+
+/**
+ * A portion prior: (concept × unitType × locale × form) → grams band. This is
+ * the ONLY layer that carries numeric grams for count/slice/volume/container
+ * units, and it is always concept-scoped. `source` documents provenance.
+ */
+export interface PortionPrior {
+  conceptId: ConceptId;
+  unitType: UnitType;
+  locale: Locale;
+  form: FoodForm;
+  /** Grams for ONE unit of this type (per-unit; resolver multiplies by count). */
+  perUnit: GramsBand;
+  confidence: 'high' | 'medium' | 'low';
+  /** Free-text provenance note (source + review basis). */
+  source: string;
+}
+
+/**
+ * How the resolver arrived at grams. Mirrors the ladder step ordering so
+ * telemetry can attribute the number.
+ */
+export type PortionProvenance =
+  | 'explicit_user_mass' // step 1
+  | 'packaged_serving' // step 2
+  | 'retrieved_prior' // step 3 (locale/form-matched prior)
+  | 'curated_prior' // step 4 (head-of-distribution prior)
+  | 'user_prior' // step 5 (SEAM — not implemented)
+  | 'llm_range' // step 6 (null → Call 2 estimates)
+  | 'unresolved'; // step 7 (ambiguous / interval too wide → clarify)
+
+/** Structured quantity evidence the resolver consumes (from Call 1 schema). */
+export interface QuantityEvidence {
+  count?: number;
+  unitToken?: string;
+  sizeModifier?: SizeModifier;
+  explicitMass?: { grams: number; basis: 'raw' | 'cooked' };
+  /** Raw-weight cue from stateHint, used as a fallback explicit-mass basis. */
+  stateHintRawWeight?: boolean;
+}
+
+/**
+ * A matched food concept handed to the resolver. `dbServingSizeG` /
+ * `dbPackageSizeG` carry the matched row's packaged weight when present
+ * (ladder step 2). Both null for the vast majority of FAO rows.
+ */
+export interface ResolverConceptInput {
+  conceptId: ConceptId | null;
+  /** True when the surface form mapped to MORE than one concept (ambiguous). */
+  ambiguous: boolean;
+  locale: Locale;
+  form: FoodForm;
+  dbServingSizeG?: number | null;
+  dbPackageSizeG?: number | null;
+}
+
+/** The resolver's verdict for one ingredient. */
+export interface PortionResolution {
+  /** null → defer to Call 2 (llm_range) or clarify (unresolved). */
+  grams: GramsBand | null;
+  provenance: PortionProvenance;
+  confidence: 'high' | 'medium' | 'low' | 'none';
+  /** Set when provenance='unresolved' — drives the clarify reason. */
+  unresolvedReason?: 'ambiguous_food' | 'unresolved_portion';
+  /** Human note for telemetry (which prior, why null, etc.). */
+  note: string;
+}

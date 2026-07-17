@@ -69,6 +69,15 @@ export interface IngredientWithCandidates {
   ingredient: DecomposedIngredientV2;
   /** Candidates already sorted by similarity desc. May be empty (unmatched). */
   candidates: MatchCandidate[];
+  /**
+   * Server-resolved portion ANCHOR (Phase 3). When the portion resolver
+   * grounded grams via the fallback ladder (explicit mass / packaged serving /
+   * a concept-scoped prior), the mid grams is passed here so Call 2 does NOT
+   * freely re-estimate the weight — it anchors to this number and only does
+   * macro / prep adjustment. Absent when the resolver returned null (LLM
+   * estimates grams as before).
+   */
+  resolvedGramsAnchor?: number | null;
 }
 
 export interface MealItemWithCandidates {
@@ -130,6 +139,11 @@ function renderIngredient(ing: IngredientWithCandidates): string {
     `name="${escapeXmlAttribute(inputIng.rawName)}"`,
     `canonicalName="${escapeXmlAttribute(inputIng.canonicalName)}"`,
   ];
+  if (ing.resolvedGramsAnchor != null && ing.resolvedGramsAnchor > 0) {
+    // Server ANCHOR: the portion resolver already grounded the weight. Echo it
+    // back verbatim as grams; do NOT re-estimate.
+    attrs.push(`resolved_grams="${ing.resolvedGramsAnchor.toFixed(1)}"`);
+  }
   if (cookingMethod) {
     attrs.push(`cooking="${escapeXmlAttribute(cookingMethod)}"`);
   }
@@ -266,7 +280,8 @@ const STATIC_PREFIX_COMPRESSED = `You are a grounded nutrition estimator. Return
 </verdict_rule>
 
 <grams_rule>
-  Estimate the portion the user actually ate, scoped to the selected candidate's state:
+  If an ingredient carries resolved_grams="N", the server already grounded the portion (explicit user weight, package size, or a curated concept prior). Emit grams EXACTLY = N. Do NOT re-estimate, scale, or "correct" it. You may still adjust macros / fat for cooking method and prep_notes. resolved_grams is already in the selected candidate's state.
+  Otherwise, estimate the portion the user actually ate, scoped to the selected candidate's state:
     - If state_hint="raw_weight": emit raw mass (Call 2 trusts the user's number; you still estimate when a quantity is not given verbatim).
     - If state_hint="cooked_weight" or absent: emit cooked / as-eaten mass.
   Use cuisine priors from <user_context>:
@@ -364,7 +379,9 @@ const STATIC_PREFIX_PRODUCTION = `You are a grounded nutrition expert. For each 
 </verdict_rule>
 
 <grams_rule>
-  Estimate the portion the user actually consumed. Scope the number to the selected candidate's db_state:
+  If an ingredient carries resolved_grams="N", the server already grounded the portion via the fallback ladder (explicit user weight, package serving size, or a curated concept×unit×locale prior). Emit grams EXACTLY = N — do NOT re-estimate, rescale, or override it. The number is already scoped to the selected candidate's state. You retain full control of macros (fat / prep adjustment); only the weight is fixed.
+
+  Otherwise, estimate the portion the user actually consumed. Scope the number to the selected candidate's db_state:
     - candidate db_state="cooked" → emit cooked / as-eaten grams.
     - candidate db_state="raw" → emit raw grams (the server scales 1:1 against the raw per-100g row).
     - candidate db_state="unknown" → treat as cooked unless the user weighed raw.

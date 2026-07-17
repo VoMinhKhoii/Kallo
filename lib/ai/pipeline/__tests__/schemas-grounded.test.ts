@@ -59,6 +59,62 @@ describe('decomposedIngredientV2Schema', () => {
     expect(parsed.stateNote).toBe('cân sống');
   });
 
+  it('accepts Phase-3 structured quantity evidence (count/unitToken/sizeModifier)', () => {
+    const parsed = decomposedIngredientV2Schema.parse({
+      rawName: 'bánh bao',
+      canonicalName: 'Bánh bao nhân thịt',
+      count: 2,
+      unitToken: 'bánh bao',
+      sizeModifier: 'large',
+    });
+    expect(parsed.count).toBe(2);
+    expect(parsed.unitToken).toBe('bánh bao');
+    expect(parsed.sizeModifier).toBe('large');
+  });
+
+  it('accepts a structured explicitMass with a raw/cooked basis', () => {
+    const parsed = decomposedIngredientV2Schema.parse({
+      rawName: 'ức gà',
+      canonicalName: 'Ức gà',
+      explicitMass: { grams: 250, basis: 'raw' },
+    });
+    expect(parsed.explicitMass).toEqual({ grams: 250, basis: 'raw' });
+  });
+
+  it('REJECTS a non-positive count and an invalid sizeModifier', () => {
+    expect(() =>
+      decomposedIngredientV2Schema.parse({
+        rawName: 'x',
+        canonicalName: 'x',
+        count: 0,
+      })
+    ).toThrow();
+    expect(() =>
+      decomposedIngredientV2Schema.parse({
+        rawName: 'x',
+        canonicalName: 'x',
+        sizeModifier: 'huge',
+      })
+    ).toThrow();
+  });
+
+  it('REJECTS explicitMass with a non-positive weight or bad basis', () => {
+    expect(() =>
+      decomposedIngredientV2Schema.parse({
+        rawName: 'x',
+        canonicalName: 'x',
+        explicitMass: { grams: -5, basis: 'raw' },
+      })
+    ).toThrow();
+    expect(() =>
+      decomposedIngredientV2Schema.parse({
+        rawName: 'x',
+        canonicalName: 'x',
+        explicitMass: { grams: 100, basis: 'frozen' },
+      })
+    ).toThrow();
+  });
+
   it('caps prepNotes at 6 entries and 60 chars each', () => {
     expect(() =>
       decomposedIngredientV2Schema.parse({
