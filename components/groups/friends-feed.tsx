@@ -1,6 +1,8 @@
 'use client';
 
+import { UserPlus, Users2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { AddFriendDialog } from '@/components/groups/add-friend-dialog';
 import { FeedEntry } from '@/components/groups/feed-entry';
 import { ThreadFeed } from '@/components/groups/thread-feed';
 import { useFriendsThreadFeed } from '@/hooks/social/use-friend-thread-feed';
@@ -35,7 +37,22 @@ export function FriendsFeed() {
   return (
     <ThreadFeed
       entries={items}
+      emptyIcon={Users2}
+      emptyTitle={t('friendsEmptyTitle')}
       emptyMessage={t('friendsNoMealToday')}
+      emptyAction={
+        <AddFriendDialog
+          trigger={
+            <button
+              type="button"
+              className="inline-flex items-center gap-1.5 rounded-xl bg-nham-btn px-3.5 py-2 font-medium font-sans-display text-[13px] text-white transition-colors hover:bg-nham-btn/90"
+            >
+              <UserPlus className="h-3.5 w-3.5" />
+              {t('addFriend')}
+            </button>
+          }
+        />
+      }
       isPending={isPending}
       isError={isError}
       isFetching={isFetching}

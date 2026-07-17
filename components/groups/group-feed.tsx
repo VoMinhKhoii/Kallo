@@ -1,5 +1,6 @@
 'use client';
 
+import { MessagesSquare } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { FeedEntry } from '@/components/groups/feed-entry';
 import { ThreadFeed } from '@/components/groups/thread-feed';
@@ -58,6 +59,7 @@ export function GroupFeed({ groupId }: { groupId: string }) {
             profile={profile}
           />
         }
+        emptyIcon={MessagesSquare}
         emptyMessage={t('groupNoActivity', { name: groupName })}
         isPending={isPending}
         isError={isError}

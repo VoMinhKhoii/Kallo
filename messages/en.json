@@ -1166,6 +1166,7 @@
       "subtitlePlain": "Today —",
       "subtitleAccent": "what's everyone eating?",
       "addFriend": "Add friend",
+      "friendsEmptyTitle": "No shared meals yet",
       "friendsNoMealToday": "None of your friends have shared a meal yet.",
       "groupNoMealToday": "No one in {name} has shared a meal today.",
       "groupNoActivity": "Nothing has been shared in {name} yet."

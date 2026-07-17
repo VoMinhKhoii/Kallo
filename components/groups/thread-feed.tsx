@@ -1,5 +1,6 @@
 'use client';
 
+import type { LucideIcon } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import {
   Fragment,
@@ -14,6 +15,7 @@ import {
   threadDayKey,
   threadDayLabel,
 } from '@/components/groups/timeline/thread-day';
+import { EmptyState } from '@/components/ui/empty-state';
 
 export interface ThreadFeedItem {
   id: string;
@@ -25,7 +27,12 @@ interface ThreadFeedProps {
   /** Oldest-first — the render order (chat convention: newest at the bottom). */
   entries: ThreadFeedItem[];
   composer?: ReactNode;
+  /** Shown centered when the feed is empty. `emptyMessage` is the supporting
+   *  line; pass `emptyTitle`/`emptyIcon`/`emptyAction` for the fuller state. */
   emptyMessage: string;
+  emptyTitle?: string;
+  emptyIcon?: LucideIcon;
+  emptyAction?: ReactNode;
   isPending: boolean;
   isError: boolean;
   isFetching: boolean;
@@ -46,6 +53,9 @@ export function ThreadFeed({
   entries,
   composer,
   emptyMessage,
+  emptyTitle,
+  emptyIcon,
+  emptyAction,
   isPending,
   isError,
   isFetching,
@@ -153,10 +163,14 @@ export function ThreadFeed({
             })}
           </>
         ) : (
-          <div className="flex h-full items-center justify-center px-6 py-16 text-center">
-            <p className="max-w-xs font-sans-display text-[13px] text-nham-text-muted leading-relaxed">
-              {emptyMessage}
-            </p>
+          <div className="flex h-full items-center justify-center">
+            <EmptyState
+              icon={emptyIcon}
+              title={emptyTitle ?? emptyMessage}
+              description={emptyTitle ? emptyMessage : undefined}
+            >
+              {emptyAction}
+            </EmptyState>
           </div>
         )}
       </div>

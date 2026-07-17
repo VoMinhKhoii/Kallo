@@ -1166,6 +1166,7 @@
       "subtitlePlain": "Hôm nay",
       "subtitleAccent": "cả nhà ăn gì?",
       "addFriend": "Thêm bạn",
+      "friendsEmptyTitle": "Chưa có bữa ăn được chia sẻ",
       "friendsNoMealToday": "Chưa có người bạn nào chia sẻ bữa ăn.",
       "groupNoMealToday": "Chưa ai trong {name} chia sẻ bữa ăn nào hôm nay.",
       "groupNoActivity": "Chưa có gì được chia sẻ trong {name}."
