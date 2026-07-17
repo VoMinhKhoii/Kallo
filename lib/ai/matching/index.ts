@@ -28,5 +28,7 @@ export {
 } from './nutrition-db';
 export {
   createSpeculativeMatcher,
+  createV2SpeculativeMatcher,
   extractIngredientNames,
+  extractV2CanonicalNames,
 } from './speculative';

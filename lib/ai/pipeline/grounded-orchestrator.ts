@@ -104,6 +104,7 @@ export async function analyzeMealV2(
     const stage1 = await runGroundedDecomposition({
       rawInput,
       userContext,
+      db,
       gemini,
       traceContext,
       emit,

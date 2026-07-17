@@ -1,3 +1,4 @@
+import type { AppDb } from '@/lib/db';
 import { fetchWithTimeout } from '@/lib/fetch-with-timeout';
 import { capitalizeFirst } from '@/lib/utils';
 import type { GeminiClient } from '../gemini';
@@ -5,6 +6,8 @@ import {
   buildLanguageCorrectionMessage,
   checkDecompositionLanguage,
 } from '../language/guard';
+import { createV2SpeculativeMatcher } from '../matching/speculative';
+import { readBooleanEnv } from './config/feature-flags';
 import {
   buildDecompositionV2Prompt,
   wrapUserMealTextAsData,
@@ -65,6 +68,7 @@ export type GroundedDecompositionResult =
 export async function runGroundedDecomposition(args: {
   rawInput: string;
   userContext: UserContext;
+  db: AppDb;
   gemini: GeminiClient;
   traceContext: AnalyzeMealTraceContext | undefined;
   emit: (event: StreamEvent) => void;
@@ -73,8 +77,20 @@ export async function runGroundedDecomposition(args: {
   /** Reply to a prior precise-mode clarify question; woven into the Call-1 message. */
   clarifyAnswer?: string;
 }): Promise<GroundedDecompositionResult> {
-  const { rawInput, userContext, gemini, traceContext, emit, promptCtx } = args;
+  const { rawInput, userContext, db, gemini, traceContext, emit, promptCtx } =
+    args;
   const profile = args.profile;
+
+  // v2-aware speculative prewarm: as Call-1 decomposition streams, warm the
+  // embedding cache for each ingredient's canonicalName in the background so
+  // embeddings are ready when matching runs. Feature-flagged; on abort the
+  // matcher stops firing new embeds. A prewarm error can never reject the
+  // stream (the matcher is fully catch-guarded).
+  const prewarmEnabled = readBooleanEnv('PIPELINE_V2_PREWARM_ENABLED', true);
+  const prewarmAbort = new AbortController();
+  const prewarm = prewarmEnabled
+    ? createV2SpeculativeMatcher(db, gemini, prewarmAbort.signal)
+    : () => {};
   // Weave a clarify reply into the Call-1 user message so the re-analysis
   // reasons with the answer (mirrors cheat mode threading clarifyAnswer into
   // its prompt). Sanitized to keep it DATA, never instructions.
@@ -98,13 +114,13 @@ export async function runGroundedDecomposition(args: {
   };
   let decompStream = createDecompositionStreamController({
     emit: itemNameBufferingEmit,
-    prewarm: () => {},
+    prewarm,
   });
   const recreateDecompStream = () => {
     bufferedItemNameEvents.length = 0;
     decompStream = createDecompositionStreamController({
       emit: itemNameBufferingEmit,
-      prewarm: () => {},
+      prewarm,
     });
   };
 
@@ -130,8 +146,13 @@ export async function runGroundedDecomposition(args: {
     });
     let maxAttempt = 0;
     const result = await fetchWithTimeout(
-      (signal) =>
-        gemini.generateStructuredOutputStream(
+      (signal) => {
+        // Propagate a decomposition timeout/abort to the prewarm so it stops
+        // firing background embeds for an abandoned request.
+        signal.addEventListener('abort', () => prewarmAbort.abort(), {
+          once: true,
+        });
+        return gemini.generateStructuredOutputStream(
           {
             schema: mealDecompositionV2Schema,
             systemPrompt: decompSystemPrompt,
@@ -154,7 +175,8 @@ export async function runGroundedDecomposition(args: {
             },
             ...(callTrace ? { trace: callTrace } : {}),
           }
-        ),
+        );
+      },
       DECOMPOSITION_TIMEOUT_MS,
       'grounded-decomposition'
     );

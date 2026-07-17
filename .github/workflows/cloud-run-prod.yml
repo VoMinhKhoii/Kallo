@@ -157,6 +157,18 @@ jobs:
           # smoke check validates the candidate. Traffic is promoted only after
           # smoke passes (see "Promote candidate…"). This closes the window where a
           # broken revision could serve prod before validation.
+          #
+          # --min-instances=0: cold-start on most requests is an intentional
+          # product/cost decision (do NOT set a floor here). The matching
+          # pipeline is hardened to keep the multi-MB full-table load, embedding
+          # warm, and exact/lexical matching OFF the cold critical path
+          # (pipeline Phase 2, Deliverables 1-3), so cold requests stay fast.
+          #
+          # --concurrency=80 on --cpu=1 is a very high request-per-vCPU ratio.
+          # Staging was ratcheted 20→8 to remove vCPU starvation; the same
+          # tightening likely applies here but is deliberately left unchanged in
+          # this phase — prod's concurrency change must be benchmarked under
+          # representative load before shipping.
           flags: >-
             --allow-unauthenticated
             --ingress=all

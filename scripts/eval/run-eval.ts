@@ -93,15 +93,34 @@ async function runCase(
   let response: PipelineResponse | undefined;
   let thrownError: string | null = null;
 
+  // Harness-level hard ceiling so one internally-retrying case (Gemini
+  // backoff, a wedged deadline) can never stall the whole run — the pipeline's
+  // own deadlines bound each LLM call, but a case with many calls + retries can
+  // still exceed a sane per-case budget. 90s covers the 55s stress fixture plus
+  // headroom; anything past it is recorded as a harness timeout, not a hang.
+  const HARNESS_CASE_TIMEOUT_MS = 90_000;
   try {
-    response = await dependencies.analyzeMealV2(
-      fixture.input,
-      USER_CONTEXT,
-      dependencies.db,
-      dependencies.gemini,
-      tracker.onEvent,
-      { onDiagnostics: (value) => (diagnostics = value) }
-    );
+    response = await Promise.race([
+      dependencies.analyzeMealV2(
+        fixture.input,
+        USER_CONTEXT,
+        dependencies.db,
+        dependencies.gemini,
+        tracker.onEvent,
+        { onDiagnostics: (value) => (diagnostics = value) }
+      ),
+      new Promise<never>((_, reject) =>
+        setTimeout(
+          () =>
+            reject(
+              new Error(
+                `harness timeout: case exceeded ${HARNESS_CASE_TIMEOUT_MS}ms`
+              )
+            ),
+          HARNESS_CASE_TIMEOUT_MS
+        ).unref()
+      ),
+    ]);
   } catch (error) {
     thrownError = error instanceof Error ? error.message : String(error);
   } finally {
