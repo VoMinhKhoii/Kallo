@@ -108,10 +108,20 @@ describe('eval CLI', () => {
       filter: 'vi',
       concurrency: 2,
       profile: 'next',
+      estimator: 'gemini',
     });
   });
 
   it('rejects unsafe concurrency', () => {
     expect(() => parseEvalArgs(['--concurrency', '0'])).toThrow();
+  });
+
+  it('parses --estimator and rejects an unknown adapter', () => {
+    expect(parseEvalArgs(['--estimator', 'claude'])).toEqual({
+      concurrency: 2,
+      profile: 'stable',
+      estimator: 'claude',
+    });
+    expect(() => parseEvalArgs(['--estimator', 'bogus'])).toThrow();
   });
 });

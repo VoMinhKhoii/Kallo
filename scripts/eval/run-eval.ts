@@ -2,6 +2,10 @@
 
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
+import {
+  ESTIMATOR_PRICING,
+  selectEstimator,
+} from '@/lib/ai/pipeline/estimator/select';
 import type { StreamEvent } from '@/lib/ai/streaming/types';
 import type { PipelineResponse, UserContext } from '@/lib/ai/types';
 import { buildIngredientResults, findSilentZeros } from './eval-diagnostics';
@@ -11,6 +15,7 @@ import {
   cliOptionsSchema,
   type EvalCaseResult,
   type EvalCliOptions,
+  type EvalEstimatorSummary,
   type EvalFixtureCase,
   type EvalStageTimings,
   fixtureFileSchema,
@@ -37,7 +42,9 @@ export function parseEvalArgs(argv: string[]): EvalCliOptions {
   for (let index = 0; index < argv.length; index++) {
     const arg = argv[index];
     const [flag, inline] = arg.split('=', 2);
-    if (!['--filter', '--concurrency', '--profile'].includes(flag)) {
+    if (
+      !['--filter', '--concurrency', '--profile', '--estimator'].includes(flag)
+    ) {
       throw new Error(`Unknown argument: ${arg}`);
     }
     const value = inline ?? argv[++index];
@@ -107,7 +114,10 @@ async function runCase(
         dependencies.db,
         dependencies.gemini,
         tracker.onEvent,
-        { onDiagnostics: (value) => (diagnostics = value) }
+        {
+          onDiagnostics: (value) => (diagnostics = value),
+          estimator: dependencies.estimator,
+        }
       ),
       new Promise<never>((_, reject) =>
         setTimeout(
@@ -155,19 +165,25 @@ async function runCase(
   return scoreCase(fixture, observed);
 }
 
-async function loadPipeline() {
-  const [{ analyzeMealV2 }, geminiModule, { db }] = await Promise.all([
-    import('@/lib/ai/pipeline/grounded-orchestrator'),
-    import('@/lib/ai/gemini'),
-    import('@/lib/db'),
-  ]);
-  return {
-    analyzeMealV2,
-    db,
-    gemini: geminiModule.createGeminiClient(
-      geminiModule.resolveGeminiProvider()
-    ),
-  };
+async function loadPipeline(estimatorName: EvalCliOptions['estimator']) {
+  const [{ analyzeMealV2 }, geminiModule, { db }, { resolveModelProfile }] =
+    await Promise.all([
+      import('@/lib/ai/pipeline/grounded-orchestrator'),
+      import('@/lib/ai/gemini'),
+      import('@/lib/db'),
+      import('@/lib/ai/pipeline/config/model-profile'),
+    ]);
+  const gemini = geminiModule.createGeminiClient(
+    geminiModule.resolveGeminiProvider()
+  );
+  // Build the selected Call-2 adapter. `gemini` is the production path;
+  // `claude`/`openai` are stubs that throw when their `estimate` is first
+  // called (fully-grounded fast-path meals never reach it — by design).
+  const estimator = selectEstimator(estimatorName, {
+    gemini,
+    geminiModel: resolveModelProfile().nutritionModel,
+  });
+  return { analyzeMealV2, db, gemini, estimator };
 }
 
 async function mapConcurrent<T, R>(
@@ -204,17 +220,28 @@ async function main() {
     throw new Error(`No fixture cases matched tag: ${options.filter}`);
   }
 
-  const dependencies = await loadPipeline();
+  const dependencies = await loadPipeline(options.estimator);
   const results = await mapConcurrent(selected, options.concurrency, (item) =>
     runCase(item, dependencies)
   );
   const generatedAt = new Date().toISOString();
+  const pricing = ESTIMATOR_PRICING[options.estimator];
+  const estimatorSummary: EvalEstimatorSummary = {
+    name: options.estimator,
+    model: dependencies.estimator.model,
+    inputPerMTokUsd: pricing.inputPerMTokUsd,
+    outputPerMTokUsd: pricing.outputPerMTokUsd,
+    // Token usage isn't surfaced through the offline harness yet, so the
+    // per-1k-meals cost projection is deferred to the live bakeoff (tomorrow).
+    costUsdPer1kMeals: null,
+  };
   const report = {
     generatedAt,
     fixtureVersion: fixture.version,
     profile: options.profile,
     filter: options.filter ?? null,
     concurrency: options.concurrency,
+    estimator: estimatorSummary,
     aggregate: aggregateResults(results),
     cases: results,
     clarifyGap: results.filter((result) => result.expectClarify),

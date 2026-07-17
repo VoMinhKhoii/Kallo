@@ -1,5 +1,4 @@
 import type { AppDb } from '@/lib/db';
-import { fetchWithTimeout } from '@/lib/fetch-with-timeout';
 import type { GeminiClient } from '../gemini';
 import {
   DEFAULT_K,
@@ -8,10 +7,7 @@ import {
   matchTopKPerIngredient,
 } from '../matching/top-k-cascade';
 import { resolvePortionsForCallTwo } from '../portion/ingredient-portion';
-import {
-  buildGroundedEstimationPrompt,
-  type MealItemWithCandidates,
-} from '../prompts/grounded-estimation';
+import type { MealItemWithCandidates } from '../prompts/grounded-estimation';
 import {
   buildMealItemOffsetByName,
   buildPerMealItemOffsetMap,
@@ -20,9 +16,15 @@ import type { StreamEvent } from '../streaming/types';
 import type { PipelineResponse, UserContext } from '../types';
 import { assembleResult } from './assembly';
 import { bridgeV2ToV1 } from './bridge';
+import { createChunkEmitContext, runCallTwo } from './call-two';
 import { resolveModelProfile } from './config/model-profile';
-import { NUTRITION_TIMEOUT_MS } from './config/stage-timeouts';
 import { handleError, nonFoodResponse } from './errors';
+import {
+  createGeminiEstimator,
+  renderGeminiEstimatorPrompt,
+} from './estimator/gemini-estimator';
+import type { GroundedEstimator } from './estimator/types';
+import { buildFastPathEstimation, isFullyGrounded } from './fast-path';
 import { runGroundedDecomposition } from './grounded-decomposition';
 import {
   buildCallTwoPayload,
@@ -37,11 +39,7 @@ import {
 import { logV2Telemetry, persistV2PipelineRun } from './grounded-telemetry';
 import { reconcileNutritionIds } from './nutrition';
 import type { AnalyzeMealTraceContext } from './orchestrator';
-import {
-  type GroundedEstimation,
-  groundedEstimationSchema,
-  type MealDecompositionV2,
-} from './schemas-v2';
+import type { GroundedEstimation, MealDecompositionV2 } from './schemas-v2';
 import { buildLlmStageTrace } from './telemetry/trace';
 
 export interface AnalyzeMealV2Options {
@@ -65,6 +63,13 @@ export interface AnalyzeMealV2Options {
    * message on a re-analysis (mirrors cheat mode's `clarifyAnswer`).
    */
   clarifyAnswer?: string;
+  /**
+   * Call-2 provider adapter (D3 seam). Offline-eval-only override for the
+   * bakeoff harness (`--estimator gemini|claude|openai`). When omitted the
+   * orchestrator builds the Gemini adapter itself, so the production route —
+   * which never passes this — stays Gemini-only with no behavior change.
+   */
+  estimator?: GroundedEstimator;
 }
 
 export interface V2PipelineDiagnostics {
@@ -157,10 +162,23 @@ export async function analyzeMealV2(
     // ---- Stage 3: Call 2 — grounded estimation with item_macros stream --
     const mealItemsWithCandidates: MealItemWithCandidates[] =
       buildCallTwoPayload(decomposition, matchResults, resolvedGramsAnchors);
-    const call2SystemPrompt = buildGroundedEstimationPrompt({
+    // D2 fast path: when EVERY ingredient is fully grounded (exact-match +
+    // server anchor, no prep notes), skip Call 2 and synthesize the estimation
+    // server-side (numerically identical to the full path). Otherwise Call 2
+    // runs against the Gemini estimator (D3 seam) — chunked for large meals.
+    const fullyGrounded = isFullyGrounded({
+      decomposition,
+      matchResults,
+      portionResolutions,
+    });
+    const estimator =
+      options.estimator ??
+      createGeminiEstimator(gemini, profile.nutritionModel);
+    const call2SystemPrompt = renderGeminiEstimatorPrompt({
       originalPrompt: rawInput,
       mealItems: mealItemsWithCandidates,
       userContext: promptCtx,
+      temperature: call2Temperature,
     });
     promptCharsCall2 = call2SystemPrompt.length;
 
@@ -179,9 +197,18 @@ export async function analyzeMealV2(
       aggression: userContext.aggression,
       emit,
     });
+    const chunkEmit = createChunkEmitContext({
+      mealItems: decomposition.mealItems,
+      matchResults,
+      streamedMealItemIds,
+      itemMacrosStreamed,
+      goal: userContext.goal,
+      aggression: userContext.aggression,
+      emit,
+    });
 
     let nutritionMaxAttempt = 0;
-    const grounded: GroundedEstimation = await withStageLogV2(
+    const call2 = await withStageLogV2(
       traceContext,
       'nutrition',
       3,
@@ -192,6 +219,7 @@ export async function analyzeMealV2(
         unmatchedCount: matchResults.filter((m) => m.candidates.length === 0)
           .length,
         model: profile.nutritionModel,
+        fastPath: fullyGrounded,
       },
       async ({ stageLogId }) => {
         emit({ type: 'stage', stage: 'estimating' });
@@ -199,41 +227,42 @@ export async function analyzeMealV2(
           trace: traceContext,
           stageLogId,
           name: 'grounded-estimation',
-          builder: buildGroundedEstimationPrompt as (...a: unknown[]) => string,
+          builder: renderGeminiEstimatorPrompt as (...a: unknown[]) => string,
           templateSample: call2SystemPrompt,
           model: profile.nutritionModel,
         });
-        return fetchWithTimeout(
-          (signal) =>
-            gemini.generateStructuredOutputStream(
-              {
-                schema: groundedEstimationSchema,
-                systemPrompt: call2SystemPrompt,
-                userMessage:
-                  'Verify each candidate (CRAG verdict), estimate grams scoped to the selected candidate state, and emit bounded macros per the rules above.',
-                model: profile.nutritionModel,
-                temperature: call2Temperature,
-                topP: 1,
-                topK: 1,
-                abortSignal: signal,
-              },
-              {
-                onAttemptStart: (attempt) => {
-                  nutritionMaxAttempt = Math.max(nutritionMaxAttempt, attempt);
-                  if (attempt > 1) call2Stream.resetForRetry();
-                },
-                onChunk: (accumulated) => {
-                  nutritionChunkCount++;
-                  call2Stream.handleChunk(accumulated);
-                },
-                ...(callTrace ? { trace: callTrace } : {}),
+        return runCallTwo({
+          estimator,
+          mealItems: mealItemsWithCandidates,
+          originalPrompt: rawInput,
+          promptCtx,
+          temperature: call2Temperature,
+          stream: {
+            handleChunk: call2Stream.handleChunk,
+            resetForRetry: call2Stream.resetForRetry,
+            onAttemptStart: (attempt) => {
+              nutritionMaxAttempt = Math.max(nutritionMaxAttempt, attempt);
+              if (attempt > 1) call2Stream.resetForRetry();
+            },
+            onChunkTick: () => {
+              nutritionChunkCount++;
+            },
+          },
+          chunkEmit,
+          ...(fullyGrounded
+            ? {
+                fastPath: buildFastPathEstimation({
+                  decomposition,
+                  matchResults,
+                  portionResolutions,
+                }),
               }
-            ),
-          NUTRITION_TIMEOUT_MS,
-          'grounded-nutrition'
-        );
+            : {}),
+          ...(callTrace ? { trace: callTrace } : {}),
+        });
       }
     );
+    const grounded: GroundedEstimation = call2.grounded;
 
     // ---- Stage 4: Bridge + Reconcile + Assemble (single trace stage) ---
     const assembly = await withStageLogV2(

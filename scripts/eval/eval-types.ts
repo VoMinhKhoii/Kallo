@@ -28,6 +28,10 @@ export const cliOptionsSchema = z.object({
   filter: z.string().min(1).optional(),
   concurrency: z.number().int().min(1).max(8).default(2),
   profile: z.enum(['stable', 'next']).default('stable'),
+  // D3 bakeoff seam: which Call-2 provider adapter to run. Default `gemini`
+  // (the production path). `claude`/`openai` throw until their SDKs are wired
+  // (Phase 5 follow-up) — the run fails loudly with the adapter's message.
+  estimator: z.enum(['gemini', 'claude', 'openai']).default('gemini'),
 });
 
 export type EvalFixtureCase = z.infer<typeof fixtureCaseSchema>;
@@ -95,12 +99,27 @@ export interface EvalAggregate {
   latencyP90Ms: number | null;
 }
 
+/**
+ * Per-estimator bakeoff summary (D3). `costUsdPer1kMeals` is a PROJECTION from
+ * the published pricing table × the fixture's observed token usage; until the
+ * bakeoff runs with real usage counts it is null (tokens unavailable offline).
+ */
+export interface EvalEstimatorSummary {
+  name: 'gemini' | 'claude' | 'openai';
+  model: string;
+  inputPerMTokUsd: number;
+  outputPerMTokUsd: number;
+  /** Projected USD per 1,000 meals, or null when token usage isn't observed. */
+  costUsdPer1kMeals: number | null;
+}
+
 export interface EvalReport {
   generatedAt: string;
   fixtureVersion: number;
   profile: 'stable' | 'next';
   filter: string | null;
   concurrency: number;
+  estimator: EvalEstimatorSummary;
   aggregate: EvalAggregate;
   cases: EvalCaseResult[];
   clarifyGap: EvalCaseResult[];

@@ -63,6 +63,8 @@ This file is the **single source of truth** for agent behavior in this repo. Rul
 
 Key files: `lib/db/schema.ts` (schema source of truth) · `lib/db/index.ts` (client + `encodeDbUrl()`) · `middleware.ts` (auth/session + origin lock) · `drizzle.config.ts` · `biome.json` (disabled rules documented there).
 
+**AI meal pipeline** (v2 grounded is the default; entry `lib/ai/pipeline/grounded-orchestrator.ts`): Call 1 decomposes the meal text into items + ingredients (no grams) → retrieval + exact-match against FAO/USDA food data (`lib/ai/matching/`) → server-side portion resolver produces gram anchors (`lib/ai/portion/`) → Call 2 grounded estimation runs a per-ingredient CRAG verdict and emits bounded macros, behind the provider-agnostic `GroundedEstimator` seam (`lib/ai/pipeline/estimator/`, Gemini adapter default). Large meals chunk Call 2 with a wall-clock deadline + degrade-to-unresolved contract; fully-grounded simple meals skip Call 2 (server-synthesized, numerically identical). Deploys on **Google Cloud Run** (not Vercel; `docs/GOOGLE_CLOUD_RUN.md`, `.github/workflows/cloud-run-*.yml`), route `app/api/analyze-meal` has `maxDuration=60`.
+
 **Import aliases** (always use, never deep-relative): `@/*` root, `@/components`, `@/lib`, `@/hooks`, `@/ui`.
 
 ## 5. Key Conventions
