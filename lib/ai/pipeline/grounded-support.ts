@@ -27,15 +27,98 @@ import type { MealItemWithCandidates } from '../prompts/grounded-estimation';
 import type { PromptPersonalizationContext } from '../prompts/types';
 import {
   type buildPerMealItemOffsetMap,
+  extractCompletedGroundedMealItems,
+  type MealItemOffset,
   resolveStreamingV2MealItem,
 } from '../streaming/grounded-parsers';
 import { computeStreamingMealItem } from '../streaming/parsers';
 import type { StreamEvent } from '../streaming/types';
-import type { UserContext } from '../types';
+import type {
+  MatchedIngredient,
+  PipelineResult,
+  UnmatchedIngredient,
+  UserContext,
+} from '../types';
+import {
+  classifyV2Anomalies,
+  summarizeV2Anomalies,
+  type V2AnomalySummary,
+} from './anomaly-v2';
 import type { PlausibilityPerIngredient } from './bridge';
+import type { ModelProfile } from './config/model-profile';
 import type { AnalyzeMealTraceContext } from './orchestrator';
 import type { GroundedEstimation, MealDecompositionV2 } from './schemas-v2';
 import { logStage } from './telemetry/trace';
+
+/**
+ * Env flag gating the v2 correctness-escalation re-run. Default OFF: the
+ * escalation seam (re-run Call 2 on `profile.escalationModel` for a
+ * high-confidence correctness anomaly) does NOT add latency until an operator
+ * opts in. `stable` has `escalationModel: null` so escalation is impossible
+ * there regardless of the flag; only `next` can escalate, and only when the
+ * flag is on. Fire-count is always telemetered.
+ */
+export const V2_ESCALATION_FLAG_ENV = 'PIPELINE_V2_ESCALATION';
+
+export function isV2EscalationEnabled(
+  env: Record<string, string | undefined> = process.env
+): boolean {
+  return env[V2_ESCALATION_FLAG_ENV] === 'on';
+}
+
+/**
+ * Decide whether the gated escalation seam should fire for this run. Fires only
+ * when ALL of: the flag is on, the profile carries a non-null escalationModel,
+ * and the anomaly pass surfaced a high-confidence correctness anomaly. Pure so
+ * the orchestrator's escalation decision is unit-testable without an LLM.
+ */
+export function shouldEscalateV2(args: {
+  profile: Pick<ModelProfile, 'escalationModel'>;
+  summary: Pick<V2AnomalySummary, 'hasEscalationCandidate'>;
+  env?: Record<string, string | undefined>;
+}): boolean {
+  return (
+    isV2EscalationEnabled(args.env) &&
+    args.profile.escalationModel != null &&
+    args.summary.hasEscalationCandidate
+  );
+}
+
+/**
+ * Run the v2 anomaly pass over the assembled result: classify each anomaly by
+ * CAUSE, apply the SAFE actions' bookkeeping, and fold into telemetry counts +
+ * markers. Best-effort observability — never throws into the pipeline. Returns
+ * the summary the telemetry writer + escalation gate read.
+ */
+export function runV2AnomalyPass(args: {
+  result: PipelineResult;
+  matched: MatchedIngredient[];
+  unmatched: UnmatchedIngredient[];
+  decomposition: MealDecompositionV2;
+}): V2AnomalySummary {
+  const prepNoteIngredientNames = new Set<string>();
+  for (const mi of args.decomposition.mealItems) {
+    for (const ing of mi.ingredients) {
+      const hasPrep = (ing.prepNotes ?? []).some(
+        (n) => typeof n === 'string' && n.trim().length > 0
+      );
+      if (hasPrep) prepNoteIngredientNames.add(ing.rawName);
+    }
+  }
+  const anomalies = classifyV2Anomalies({
+    result: args.result,
+    matched: args.matched,
+    unmatched: args.unmatched,
+    prepNoteIngredientNames,
+  });
+  const summary = summarizeV2Anomalies(anomalies);
+  console.info('[v2-pipeline] anomalies', {
+    causeCounts: summary.causeCounts,
+    actionCounts: summary.actionCounts,
+    escalationCandidate: summary.hasEscalationCandidate,
+  });
+  return summary;
+}
 
 export async function withStageLogV2<T>(
   trace: AnalyzeMealTraceContext | undefined,
@@ -77,6 +160,98 @@ export async function withStageLogV2<T>(
     });
     throw e;
   }
+}
+
+/**
+ * Build the Call-2 streaming chunk handler. Extracted from the orchestrator so
+ * the closure state (extraction cursor, per-name occurrence counters) and the
+ * per-attempt reset live behind one testable factory.
+ *
+ * The handler resolves each streamed meal item to its decomposition slice by
+ * IDENTITY (name + occurrence) via `offsetByName`, not by stream position (D4)
+ * — Call 2 streams meal items in the prompt's SORTED order, which need not
+ * equal decomposition order. `resetForRetry` clears the cursors before a
+ * provider retry re-streams from scratch.
+ */
+export function createCall2StreamHandler(args: {
+  offsetByName: Map<string, MealItemOffset>;
+  matchResults: IngredientV2MatchResult[];
+  streamedMealItemIds: Map<string, string>;
+  itemMacrosStreamed: Set<string>;
+  goal: UserContext['goal'];
+  aggression: UserContext['aggression'];
+  emit: (event: StreamEvent) => void;
+}): { handleChunk: (accumulated: string) => void; resetForRetry: () => void } {
+  const {
+    offsetByName,
+    matchResults,
+    streamedMealItemIds,
+    itemMacrosStreamed,
+    goal,
+    aggression,
+    emit,
+  } = args;
+  const streamOffsetOcc = new Map<string, number>();
+  const itemMacrosNameOcc = new Map<string, number>();
+  let lastExtractedCount = 0;
+
+  const resolveMealItemId = (rawName: string, fallbackId: string): string => {
+    const cap = capitalizeFirst(rawName);
+    const occ = (itemMacrosNameOcc.get(cap) ?? 0) + 1;
+    itemMacrosNameOcc.set(cap, occ);
+    return (
+      streamedMealItemIds.get(`${cap}::${occ}`) ??
+      streamedMealItemIds.get(`${rawName}::${occ}`) ??
+      fallbackId
+    );
+  };
+
+  const handleChunk = (accumulated: string) => {
+    const { items, newCount } = extractCompletedGroundedMealItems(
+      accumulated,
+      lastExtractedCount
+    );
+    if (items.length === 0) return;
+    const indexBase = lastExtractedCount;
+    lastExtractedCount = newCount;
+
+    for (let i = 0; i < items.length; i++) {
+      const itemIdx = indexBase + i;
+      const rawItem = items[i];
+      const offKey = rawItem.mealItemName.trim().toLocaleLowerCase('vi-VN');
+      const offOcc = (streamOffsetOcc.get(offKey) ?? 0) + 1;
+      streamOffsetOcc.set(offKey, offOcc);
+      const offset = offsetByName.get(`${offKey}::${offOcc}`);
+      if (!offset) continue;
+
+      const { nutrition, totalGrams } = resolveStreamingV2MealItem(
+        rawItem,
+        offset.decomposedIngredients,
+        matchResults,
+        offset.flatIngredientStart
+      );
+      const streamItem = computeStreamingMealItem(
+        nutrition,
+        totalGrams,
+        itemIdx,
+        goal,
+        aggression
+      );
+      streamItem.name = capitalizeFirst(streamItem.name);
+      const mealItemId = resolveMealItemId(rawItem.mealItemName, streamItem.id);
+      if (itemMacrosStreamed.has(mealItemId)) continue;
+      itemMacrosStreamed.add(mealItemId);
+      emit({ type: 'item_macros', mealItemId, item: streamItem });
+    }
+  };
+
+  const resetForRetry = () => {
+    lastExtractedCount = 0;
+    itemMacrosNameOcc.clear();
+    streamOffsetOcc.clear();
+  };
+
+  return { handleChunk, resetForRetry };
 }
 
 /**

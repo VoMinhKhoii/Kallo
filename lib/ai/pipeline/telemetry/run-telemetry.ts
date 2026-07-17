@@ -106,10 +106,44 @@ export function buildPipelineRunRow(input: BuildPipelineRunRowInput) {
 
 export type PipelineRunRow = ReturnType<typeof buildPipelineRunRow>;
 
+/**
+ * Row shape accepted by `writePipelineRun`. `v2AnomalyCauses` maps to the NEW
+ * `v2_anomaly_causes` column (Phase 4, D2) whose migration is UNAPPLIED this
+ * phase — the writer tolerates its absence (see below).
+ */
+export type PipelineRunRowWithV2 = PipelineRunRow & {
+  v2AnomalyCauses?: Record<string, number> | null;
+};
+
+/** Postgres `undefined_column` — thrown when a target column doesn't exist. */
+const PG_UNDEFINED_COLUMN = '42703';
+
+function isUndefinedColumnError(err: unknown): boolean {
+  if (typeof err !== 'object' || err === null) return false;
+  const code = (err as { code?: unknown }).code;
+  if (code === PG_UNDEFINED_COLUMN) return true;
+  // Some drivers surface the code only in the message.
+  const message = (err as { message?: unknown }).message;
+  return (
+    typeof message === 'string' &&
+    (message.includes('v2_anomaly_causes') ||
+      message.includes(PG_UNDEFINED_COLUMN))
+  );
+}
+
 export async function writePipelineRun(
   db: AppDb,
-  row: PipelineRunRow
+  row: PipelineRunRow | PipelineRunRowWithV2
 ): Promise<void> {
   const { pipelineRuns } = await import('@/lib/db/schema');
-  await db.insert(pipelineRuns).values(row);
+  try {
+    await db.insert(pipelineRuns).values(row as PipelineRunRow);
+  } catch (err) {
+    // D2: tolerate the UNAPPLIED `v2_anomaly_causes` migration. If the insert
+    // failed because that column doesn't exist yet, strip it and retry so the
+    // rest of the telemetry row still lands (like Phase 0's pipeline_version).
+    if (!isUndefinedColumnError(err) || !('v2AnomalyCauses' in row)) throw err;
+    const { v2AnomalyCauses: _dropped, ...rest } = row as PipelineRunRowWithV2;
+    await db.insert(pipelineRuns).values(rest as PipelineRunRow);
+  }
 }

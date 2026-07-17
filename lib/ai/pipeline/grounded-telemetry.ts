@@ -1,5 +1,6 @@
 import type { IngredientV2MatchResult } from '../matching/top-k-cascade';
 import type { UserContext } from '../types';
+import type { V2AnomalySummary } from './anomaly-v2';
 import type { bridgeV2ToV1 } from './bridge';
 import type { resolveModelProfile } from './config/model-profile';
 import type { AnalyzeMealTraceContext } from './orchestrator';
@@ -88,6 +89,11 @@ export async function persistV2PipelineRun(args: {
   matched: ReturnType<typeof bridgeV2ToV1>['matched'];
   unmatched: ReturnType<typeof bridgeV2ToV1>['unmatched'];
   verdicts: ReturnType<typeof bridgeV2ToV1>['verdicts'];
+  /** Phase 4 (D2) anomaly cause/action counts. Optional so callers/tests that
+   *  don't run the anomaly pass still persist a row. */
+  anomalySummary?: V2AnomalySummary;
+  /** Whether the gated escalation seam fired this run. */
+  escalated?: boolean;
   totalMs: number;
   languageRetryCount: number;
   providerRetryCount: number;
@@ -123,6 +129,15 @@ export async function persistV2PipelineRun(args: {
     if (rejected > 0) anomalyMarkers.push(`v2_rejected_${rejected}`);
     if (overturnedTopOne > 0)
       anomalyMarkers.push(`v2_overturned_${overturnedTopOne}`);
+    // D2: fold per-cause anomaly markers into the existing anomaly_types text[]
+    // (no schema change needed for these — the column already exists). The new
+    // dedicated v2 anomaly columns below are guarded by column presence.
+    if (args.anomalySummary) {
+      anomalyMarkers.push(...args.anomalySummary.markers);
+    }
+    const macroInconsistentFires =
+      args.anomalySummary?.causeCounts.macro_inconsistent ?? 0;
+    const escalationFired = args.escalated ?? false;
 
     const row = buildPipelineRunRow({
       userId: trace.userId,
@@ -152,7 +167,7 @@ export async function persistV2PipelineRun(args: {
       },
       // v2 has no L4 cache/escalation — false means "not applicable",
       // disambiguated by pipeline_version.
-      escalated: false,
+      escalated: escalationFired,
       cacheHitL4: false,
       retryCount: args.providerRetryCount,
       languageGuardMisfire: args.languageRetryCount > 0,
@@ -161,10 +176,24 @@ export async function persistV2PipelineRun(args: {
       promptPersonalizationFields: personalizationFields,
     });
 
+    // D2: `macro_inconsistent_fires` already exists in the schema, so it's safe
+    // to set unconditionally.
+    row.macroInconsistentFires = macroInconsistentFires;
+
+    // D2: the per-cause breakdown lives in a NEW column `v2_anomaly_causes`
+    // whose migration is intentionally UNAPPLIED this phase. writePipelineRun
+    // detects the column's absence and drops it, so the rest of the row still
+    // persists on a DB that hasn't run the migration yet (mirrors Phase 0's
+    // pipeline_version tolerance).
+    const rowWithV2 = {
+      ...row,
+      v2AnomalyCauses: args.anomalySummary?.causeCounts ?? null,
+    };
+
     if (process.env.NODE_ENV === 'test') {
-      await writePipelineRun(trace.db, row);
+      await writePipelineRun(trace.db, rowWithV2);
     } else {
-      writePipelineRun(trace.db, row).catch((err) => {
+      writePipelineRun(trace.db, rowWithV2).catch((err) => {
         console.error(
           '[ai/pipeline] v2 failed to write pipeline_runs row',
           err

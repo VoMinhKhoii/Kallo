@@ -305,9 +305,9 @@ const STATIC_PREFIX_COMPRESSED = `You are a grounded nutrition estimator. Return
 </grams_rule>
 
 <macro_rule>
-  Per-ingredient default behavior:
-    - protein, carb, calories: when prep_notes is EMPTY, emit any reasonable values — the server overrides with DB-anchored base = (per_100g × grams) / 100 and derives kcal from 4P + 4C + 9F. Spend zero reasoning on these.
-    - fat: always reflect cooking-method effect.
+  Per-ingredient default behavior (MATCHED ingredient, prep_notes EMPTY):
+    - protein, carb, calories: OMIT these fields entirely. The server overrides them with DB-anchored base = (per_100g × grams) / 100 and derives kcal from 4P + 4C + 9F, so any value you emit is discarded. Do not emit proteinG, carbohydrateG, or caloriesKcal for these ingredients — it only wastes output.
+    - fat: always emit; reflect cooking-method effect.
         · chiên/rán/xào (oil): +30–80% over base.
         · luộc/hấp: near base.
         · nướng without basting: near base.
@@ -326,7 +326,7 @@ const STATIC_PREFIX_COMPRESSED = `You are a grounded nutrition estimator. Return
       - "extra sauce", "thêm đường": carb up if sweet.
       - Flavor / sodium / spice only ("ít muối", "no MSG", "extra spicy"): keep ALL macros at base.
 
-  For UNMATCHED ingredients (match_status="unmatched"): estimate ABSOLUTE LOW/MID/HIGH kcal/P/C/F for the as-eaten portion from cuisine knowledge. Density priors for common Vietnamese items: nem lụi ~250–290 kcal/100g; chả giò ~250–320 kcal/100g; bún tươi ~100–130 kcal/100g; light broth ~5–50 kcal/100g; sốt đậu phộng ~250–350 kcal/100g. Stay under 900 kcal/100g.
+  For UNMATCHED ingredients (match_status="unmatched"): you MUST emit ABSOLUTE LOW/MID/HIGH for caloriesKcal, proteinG, carbohydrateG, and fatG for the as-eaten portion from cuisine knowledge (these are the truth — nothing overrides them). Density priors for common Vietnamese items: nem lụi ~250–290 kcal/100g; chả giò ~250–320 kcal/100g; bún tươi ~100–130 kcal/100g; light broth ~5–50 kcal/100g; sốt đậu phộng ~250–350 kcal/100g. Stay under 900 kcal/100g.
 
   Macro identity: kcal ≈ 4P + 4C + 9F. The server enforces this for matched ingredients.
 </macro_rule>
@@ -334,7 +334,10 @@ const STATIC_PREFIX_COMPRESSED = `You are a grounded nutrition estimator. Return
 <output_format>
   Top-level "mealItems" array.
   Each meal item: { mealItemName, ingredients[] }.
-  Each ingredient: { ingredientName, selectedCandidateId?, rejectReason?, grams, caloriesKcal{low,mid,high}, proteinG{low,mid,high}, carbohydrateG{low,mid,high}, fatG{low,mid,high} }.
+  Each ingredient: { ingredientName, selectedCandidateId?, rejectReason?, grams, fatG{low,mid,high}, and — ONLY when required — caloriesKcal/proteinG/carbohydrateG{low,mid,high} }.
+    - MATCHED ingredient, prep_notes EMPTY → emit ONLY: ingredientName, selectedCandidateId, grams, fatG. OMIT caloriesKcal, proteinG, carbohydrateG.
+    - MATCHED ingredient, prep_notes NON-EMPTY → also emit proteinG, carbohydrateG (and fatG); caloriesKcal still optional (server derives it).
+    - UNMATCHED ingredient → emit caloriesKcal, proteinG, carbohydrateG, fatG (all four).
   Round numerical fields to 1 decimal place.
 </output_format>`;
 
@@ -410,8 +413,8 @@ const STATIC_PREFIX_PRODUCTION = `You are a grounded nutrition expert. For each 
 
 <macro_rule>
   For each MATCHED ingredient (accepted candidate, prep_notes EMPTY):
-    - protein, carb, calories: emit any reasonable values; the server overrides with DB-anchored base = (per_100g × grams) / 100 and derives kcal from the macro identity 4P + 4C + 9F. Do not spend reasoning budget here.
-    - fat: reflect cooking-method effect on base.fatG:
+    - protein, carb, calories: OMIT proteinG, carbohydrateG, and caloriesKcal entirely. The server overrides them with the DB-anchored base = (per_100g × grams) / 100 and derives kcal from the macro identity 4P + 4C + 9F, so any values you emit are discarded. Emitting them only wastes output tokens (and Call-2 latency). Skip them.
+    - fat: always emit; reflect cooking-method effect on base.fatG:
         · chiên / rán / xào (frying with oil) — absorbed oil raises fat by 30–80% over base.
         · luộc / hấp (boil / steam, no added oil) — fat near base.
         · nướng (grill / roast without basting) — fat near base; light moisture-loss only.
@@ -432,7 +435,7 @@ const STATIC_PREFIX_PRODUCTION = `You are a grounded nutrition expert. For each 
       - Flavor / sodium / spice only ("ít muối", "no MSG", "extra spicy"): keep all macros at base.
     If a prep_note implies a swing larger than the band allows, you have likely misclassified it as a prep modifier — emit values at the boundary, not beyond.
 
-  For UNMATCHED ingredients (match_status="unmatched"): estimate ABSOLUTE LOW/MID/HIGH for kcal/P/C/F for the as-eaten portion from cuisine knowledge. Density priors:
+  For UNMATCHED ingredients (match_status="unmatched"): you MUST emit ABSOLUTE LOW/MID/HIGH for caloriesKcal, proteinG, carbohydrateG, and fatG for the as-eaten portion from cuisine knowledge — these are the truth, nothing overrides them. Density priors:
     - nem lụi ~250–290 kcal/100g, chả giò ~250–320, bún tươi ~100–130, light broth ~5–50, rich broth ~30–80, sốt đậu phộng ~250–350.
     - Stay under 900 kcal/100g physical ceiling.
     - kcal ≈ 4P + 4C + 9F.
@@ -441,6 +444,10 @@ const STATIC_PREFIX_PRODUCTION = `You are a grounded nutrition expert. For each 
 <output_format>
   Top-level "mealItems" array.
   Each meal item: { mealItemName, ingredients[] }.
-  Each ingredient: { ingredientName, selectedCandidateId?, rejectReason?, grams, caloriesKcal{low,mid,high}, proteinG{low,mid,high}, carbohydrateG{low,mid,high}, fatG{low,mid,high} }.
+  Emit ONLY the fields each ingredient class needs — the server discards the rest, so extra fields only waste output tokens:
+    - MATCHED, prep_notes EMPTY → { ingredientName, selectedCandidateId, grams, fatG{low,mid,high} }. OMIT caloriesKcal, proteinG, carbohydrateG.
+    - MATCHED, prep_notes NON-EMPTY → additionally { proteinG{low,mid,high}, carbohydrateG{low,mid,high} }; caloriesKcal remains optional (server derives it from 4P+4C+9F).
+    - UNMATCHED → { ingredientName, grams, caloriesKcal{low,mid,high}, proteinG{low,mid,high}, carbohydrateG{low,mid,high}, fatG{low,mid,high} }.
+    - selectedCandidateId="none" also requires rejectReason.
   Round numerical fields to 1 decimal place.
 </output_format>`;

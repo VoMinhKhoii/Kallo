@@ -1,0 +1,14 @@
+-- Phase 4 (D2): v2 anomaly cause breakdown.
+--
+-- Adds a nullable jsonb column holding the per-cause anomaly counts for a v2
+-- run: { wrong_row, wrong_state, implausible_grams, macro_inconsistent,
+-- unmatched_high_uncertainty, legit_prep_adjustment } -> integer.
+--
+-- INTENTIONALLY UNAPPLIED this phase (Phase 4 is A/B-ready + observability-only;
+-- the model flip and eval are deferred). The application code
+-- (lib/ai/pipeline/telemetry/run-telemetry.ts writePipelineRun) tolerates the
+-- column's absence: on Postgres undefined_column (42703) it strips
+-- v2_anomaly_causes and retries the insert, so telemetry rows still persist on
+-- a DB that has not run this migration. Additive + nullable → safe to apply
+-- later with zero backfill.
+ALTER TABLE "pipeline_runs" ADD COLUMN "v2_anomaly_causes" jsonb;

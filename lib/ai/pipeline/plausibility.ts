@@ -36,6 +36,19 @@ export interface PlausibilityInput {
   caloriesPer100g: number | null;
   /** Ingredient name (rawName or canonicalName) for name-class heuristics. */
   name: string;
+  /**
+   * UNMATCHED-path defense-in-depth (Phase 4/D3 regression guard). Set `true`
+   * ONLY for an unmatched / rejected-resolvable ingredient whose Call 2 output
+   * OMITTED the caloric macro triple (caloriesKcal/proteinG/carbohydrateG) — the
+   * values the server does NOT anchor for unmatched foods. When true, the
+   * ingredient is treated as `unresolved_estimate` (routes to clarify) rather
+   * than silently persisting a ZERO_TRIPLE row, UNLESS its name is genuinely
+   * non-caloric (water/black coffee/plain tea).
+   *
+   * MUST stay `false`/omitted for matched ingredients: the server anchors their
+   * P/C/kcal from the DB row, so an omitted D3 triple is correct there.
+   */
+  emittedCaloricMacrosMissing?: boolean;
 }
 
 /** Foods whose correct calorie contribution is ~zero regardless of volume. */
@@ -121,7 +134,9 @@ export function classifyIngredientPlausibility(
 
   // Genuinely non-caloric drinks: correct at any volume when the matched row
   // is near-zero density, or the name is unambiguously water/plain tea/black
-  // coffee. Do NOT flag these.
+  // coffee. Do NOT flag these. This check precedes the D3-missing-macro guard
+  // so a water/coffee/tea name with omitted macros is still non-caloric, not
+  // spuriously unresolved.
   const totalKcal =
     caloriesPer100g != null ? (caloriesPer100g * grams) / 100 : null;
   const densityIsNearZero =
@@ -131,6 +146,16 @@ export function classifyIngredientPlausibility(
     (totalKcal != null && densityIsNearZero && totalKcal < NEAR_ZERO_KCAL)
   ) {
     return 'genuinely_noncaloric';
+  }
+
+  // Phase 4/D3 regression guard (UNMATCHED path only): the ingredient resolved
+  // grams and Call 2 emitted SOMETHING (hasNutrition — fatG is always present),
+  // but the caloric macro triple the server does NOT anchor for unmatched foods
+  // was omitted. Defense-in-depth: never trust the prompt. A ZERO_TRIPLE row
+  // here would be a silent zero-macro persist, so route to clarify instead.
+  // Non-caloric names already returned above, so this only bites real foods.
+  if (input.emittedCaloricMacrosMissing) {
+    return 'unresolved_estimate';
   }
 
   // Small concentrated portions (spices/oils/sweeteners/sauces): a small gram

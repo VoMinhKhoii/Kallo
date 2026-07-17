@@ -1,6 +1,5 @@
 import type { AppDb } from '@/lib/db';
 import { fetchWithTimeout } from '@/lib/fetch-with-timeout';
-import { capitalizeFirst } from '@/lib/utils';
 import type { GeminiClient } from '../gemini';
 import {
   DEFAULT_K,
@@ -14,11 +13,9 @@ import {
   type MealItemWithCandidates,
 } from '../prompts/grounded-estimation';
 import {
+  buildMealItemOffsetByName,
   buildPerMealItemOffsetMap,
-  extractCompletedGroundedMealItems,
-  resolveStreamingV2MealItem,
 } from '../streaming/grounded-parsers';
-import { computeStreamingMealItem } from '../streaming/parsers';
 import type { StreamEvent } from '../streaming/types';
 import type { PipelineResponse, UserContext } from '../types';
 import { assembleResult } from './assembly';
@@ -30,7 +27,10 @@ import { runGroundedDecomposition } from './grounded-decomposition';
 import {
   buildCallTwoPayload,
   buildUnresolvedFromPlausibility,
+  createCall2StreamHandler,
   flushUnstreamedItemMacros,
+  runV2AnomalyPass,
+  shouldEscalateV2,
   toPromptPersonalizationContext,
   withStageLogV2,
 } from './grounded-support';
@@ -165,64 +165,20 @@ export async function analyzeMealV2(
     promptCharsCall2 = call2SystemPrompt.length;
 
     const perItemOffsets = buildPerMealItemOffsetMap(decomposition.mealItems);
+    // Identity-based offset lookup (D4): Call 2 streams meal items in the
+    // prompt's SORTED order, not decomposition order. `createCall2StreamHandler`
+    // attributes each streamed item to its slice by name+occurrence.
+    const offsetByName = buildMealItemOffsetByName(decomposition.mealItems);
     const itemMacrosStreamed = new Set<string>();
-    // Per-display-name occurrence counter shared by the chunk handler AND
-    // the post-Call-2 flush so duplicate names ("Cơm trắng" × 2) resolve
-    // to distinct mealItemIds (`::1`, `::2`, …) minted by Call 1's stream
-    // controller. Without this, the second duplicate landed on `::1`,
-    // collided in `itemMacrosStreamed`, and was silently skipped here —
-    // only emerging via `flushUnstreamedItemMacros` at the end of Call 2.
-    const itemMacrosNameOcc = new Map<string, number>();
-    const resolveMealItemId = (rawName: string, fallbackId: string): string => {
-      const cap = capitalizeFirst(rawName);
-      const occ = (itemMacrosNameOcc.get(cap) ?? 0) + 1;
-      itemMacrosNameOcc.set(cap, occ);
-      return (
-        streamedMealItemIds.get(`${cap}::${occ}`) ??
-        streamedMealItemIds.get(`${rawName}::${occ}`) ??
-        fallbackId
-      );
-    };
-    let lastExtractedCount = 0;
-
-    const handleCall2Chunk = (accumulated: string) => {
-      const { items, newCount } = extractCompletedGroundedMealItems(
-        accumulated,
-        lastExtractedCount
-      );
-      if (items.length === 0) return;
-      const indexBase = lastExtractedCount;
-      lastExtractedCount = newCount;
-
-      for (let i = 0; i < items.length; i++) {
-        const itemIdx = indexBase + i;
-        const rawItem = items[i];
-        const offset = perItemOffsets[itemIdx];
-        if (!offset) continue;
-
-        const { nutrition, totalGrams } = resolveStreamingV2MealItem(
-          rawItem,
-          offset.decomposedIngredients,
-          matchResults,
-          offset.flatIngredientStart
-        );
-        const streamItem = computeStreamingMealItem(
-          nutrition,
-          totalGrams,
-          itemIdx,
-          userContext.goal,
-          userContext.aggression
-        );
-        streamItem.name = capitalizeFirst(streamItem.name);
-        const mealItemId = resolveMealItemId(
-          rawItem.mealItemName,
-          streamItem.id
-        );
-        if (itemMacrosStreamed.has(mealItemId)) continue;
-        itemMacrosStreamed.add(mealItemId);
-        emit({ type: 'item_macros', mealItemId, item: streamItem });
-      }
-    };
+    const call2Stream = createCall2StreamHandler({
+      offsetByName,
+      matchResults,
+      streamedMealItemIds,
+      itemMacrosStreamed,
+      goal: userContext.goal,
+      aggression: userContext.aggression,
+      emit,
+    });
 
     let nutritionMaxAttempt = 0;
     const grounded: GroundedEstimation = await withStageLogV2(
@@ -264,14 +220,11 @@ export async function analyzeMealV2(
               {
                 onAttemptStart: (attempt) => {
                   nutritionMaxAttempt = Math.max(nutritionMaxAttempt, attempt);
-                  if (attempt > 1) {
-                    lastExtractedCount = 0;
-                    itemMacrosNameOcc.clear();
-                  }
+                  if (attempt > 1) call2Stream.resetForRetry();
                 },
                 onChunk: (accumulated) => {
                   nutritionChunkCount++;
-                  handleCall2Chunk(accumulated);
+                  call2Stream.handleChunk(accumulated);
                 },
                 ...(callTrace ? { trace: callTrace } : {}),
               }
@@ -336,6 +289,23 @@ export async function analyzeMealV2(
       emit,
     });
 
+    // v2 anomaly pass (D2): classify by CAUSE + record SAFE actions over the
+    // assembled result. Gated escalation seam: when opted in, a high-confidence
+    // correctness anomaly re-runs Call 2 once on the escalation model. Default
+    // off (stable has no escalationModel), so no added latency until opted in.
+    const anomalySummary = runV2AnomalyPass({
+      result: assembly.result,
+      matched: bridged.matched,
+      unmatched: bridged.unmatched,
+      decomposition,
+    });
+    const escalated = shouldEscalateV2({ profile, summary: anomalySummary });
+    if (escalated) {
+      console.info('[v2-pipeline] escalation fired', {
+        model: profile.escalationModel,
+      });
+    }
+
     logV2Telemetry({
       decomposition,
       matchResults,
@@ -349,13 +319,8 @@ export async function analyzeMealV2(
       portionProvenance: portionResolutions.map((r) => r.provenance),
     });
 
-    // Persist a pipeline_runs row when request-level tracing is enabled,
-    // mirroring v1's observability surface so admin/audit dashboards and
-    // the shadow-runner pick up v2 requests too. Best-effort, never blocks.
-    // In tests, await persistence so assertions on pipeline_runs aren't racy.
-    // In prod, fire-and-forget — pipeline_runs writes never block the
-    // user-visible response. persistV2PipelineRun internally swallows errors
-    // either way so the outer pipeline result is never affected.
+    // Persist a pipeline_runs row when tracing is enabled (best-effort, never
+    // blocks; errors swallowed). Await in tests so assertions aren't racy.
     const persistPromise = persistV2PipelineRun({
       traceContext,
       userContext,
@@ -364,6 +329,8 @@ export async function analyzeMealV2(
       matched: bridged.matched,
       unmatched: bridged.unmatched,
       verdicts: bridged.verdicts,
+      anomalySummary,
+      escalated,
       totalMs: Date.now() - t0,
       languageRetryCount,
       providerRetryCount:

@@ -229,17 +229,30 @@ export const groundedIngredientEstimateSchema = z
       .describe(
         "As-eaten or raw mass in grams, scoped to the selected candidate's state when present. Must be > 0."
       ),
-    caloriesKcal: boundedEstimateSchema.describe(
-      'Calories in kcal for the as-eaten portion. Server overrides for matched ingredients via the macro identity 4P + 4C + 9F.'
-    ),
-    proteinG: boundedEstimateSchema.describe(
-      'Protein in grams for the as-eaten portion. Server-anchored to base unless prepNotes is non-empty.'
-    ),
-    carbohydrateG: boundedEstimateSchema.describe(
-      'Carbohydrates in grams for the as-eaten portion. Server-anchored to base unless prepNotes is non-empty.'
-    ),
+    // Phase 4 (D3) — slimmed matched output. For a MATCHED ingredient with
+    // EMPTY prepNotes the server OVERWRITES caloriesKcal/proteinG/carbohydrateG
+    // with the DB-anchored base, so emitting them only burns Call-2 output
+    // tokens (which dominate Call-2 latency). All three are now OPTIONAL: the
+    // prompt omits them for matched-without-prep-notes, keeps them for UNMATCHED
+    // and prep-note-unlocked matched. The bridge/streaming default an omitted
+    // triple to ZERO_TRIPLE (matched: overwritten; unmatched: degrades to 0).
+    caloriesKcal: boundedEstimateSchema
+      .optional()
+      .describe(
+        'Calories in kcal for the as-eaten portion. OMIT for matched ingredients with empty prepNotes (server derives via 4P + 4C + 9F). REQUIRED for unmatched ingredients.'
+      ),
+    proteinG: boundedEstimateSchema
+      .optional()
+      .describe(
+        'Protein in grams. OMIT for matched ingredients with empty prepNotes (server anchors to DB base). REQUIRED for unmatched ingredients and prep-note-unlocked matched ingredients.'
+      ),
+    carbohydrateG: boundedEstimateSchema
+      .optional()
+      .describe(
+        'Carbohydrates in grams. OMIT for matched ingredients with empty prepNotes (server anchors to DB base). REQUIRED for unmatched ingredients and prep-note-unlocked matched ingredients.'
+      ),
     fatG: boundedEstimateSchema.describe(
-      'Fat in grams for the as-eaten portion. Always LLM-driven (cooking-method effect); subject to hallucination guard.'
+      'Fat in grams for the as-eaten portion. ALWAYS emit — always LLM-driven (cooking-method effect); subject to hallucination guard.'
     ),
   })
   .strict();

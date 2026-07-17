@@ -215,6 +215,20 @@ export function bridgeV2ToV1(args: {
           ? candidates[selectedCandidateIdx]
           : null;
 
+      // UNMATCHED-path defense-in-depth (Phase 4/D3): when the ingredient will
+      // flow through the unmatched path (no accepted candidate), the server does
+      // NOT anchor its P/C/kcal — those come from Call 2. If Call 2 omitted the
+      // whole caloric triple (D3 made it optional), degrading to ZERO_TRIPLE
+      // would be a silent zero-macro persist. Signal that to the classifier so
+      // it routes to clarify instead. Matched ingredients keep this `false`:
+      // their omitted triple is correctly re-derived from the DB row.
+      const unmatchedCaloricMacrosMissing =
+        acceptedCandidate == null &&
+        ground != null &&
+        ground.caloriesKcal == null &&
+        ground.proteinG == null &&
+        ground.carbohydrateG == null;
+
       const state = resolverUnresolved
         ? 'unresolved_estimate'
         : classifyIngredientPlausibility({
@@ -222,6 +236,7 @@ export function bridgeV2ToV1(args: {
             hasNutrition: ground != null,
             caloriesPer100g: acceptedCandidate?.nutrition?.caloriesKcal ?? null,
             name: ing.rawName || ing.canonicalName,
+            emittedCaloricMacrosMissing: unmatchedCaloricMacrosMissing,
           });
       plausibilityPartialByFlatIdx.set(flatIngredientIdx, {
         mealItemIdx,
