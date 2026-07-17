@@ -42,6 +42,7 @@ function sharedMeal(index: number, sharedAt: Date) {
     proteinG: 20,
     carbohydrateG: 50,
     fatG: 15,
+    portionFactor: 1,
     sharedAt,
     handle: 'me',
     displayName: null,

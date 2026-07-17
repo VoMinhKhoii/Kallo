@@ -1035,6 +1035,41 @@ export const mealShares = pgTable(
 );
 
 // ---------------------------------------------------------------------------
+// Group Tracking — Meal Share Reactions
+// ---------------------------------------------------------------------------
+// Reactions belong to the broadcast share, not the private meal row. The
+// one-per-user constraint makes the v1 heart a true toggle while the widened
+// kind CHECK leaves room for richer reactions without another table rewrite.
+
+export const mealShareReactions = pgTable(
+  'meal_share_reactions',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    shareId: uuid('share_id')
+      .notNull()
+      .references(() => mealShares.id, { onDelete: 'cascade' }),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => authUsers.id, { onDelete: 'cascade' }),
+    kind: text('kind').notNull().default('yum'),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    unique('meal_share_reactions_share_user_uniq').on(
+      table.shareId,
+      table.userId
+    ),
+    index('meal_share_reactions_share_idx').on(table.shareId),
+    check(
+      'meal_share_reactions_kind_check',
+      sql`${table.kind} IN ('yum', 'cheer', 'strong', 'wow', 'heart')`
+    ),
+  ]
+);
+
+// ---------------------------------------------------------------------------
 // Group Tracking — Coach Assignments (schema-only, UI dark)
 // ---------------------------------------------------------------------------
 // Directed coach -> client relationship. Reserved for a later coach console;
@@ -1121,8 +1156,9 @@ export const circleEvents = pgTable(
 // full copy or as a split fraction. B one-tap-accepts to materialize a scaled
 // copy in their own diary (accepted_meal_id) or dismisses it. This drives the
 // Circle inbox. Isolation is the from_user_id / to_user_id filters (Drizzle
-// bypasses RLS); the accept path is the one deliberate cross-user meal read,
-// authorized solely by a pending invite row addressed to the reader.
+// bypasses RLS); invite acceptance is a deliberate cross-user meal read,
+// authorized solely by a pending invite row addressed to the reader. The other
+// deliberate read starts from meal_shares and is gated by canViewShare.
 
 export const mealShareInvites = pgTable(
   'meal_share_invites',

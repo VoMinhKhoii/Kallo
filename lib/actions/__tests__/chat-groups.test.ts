@@ -13,9 +13,13 @@ const {
   mockDbUpdate,
   mockDbTransaction,
   mockTxInsert,
+  mockTxSelect,
+  mockTxDelete,
   mockTx,
 } = vi.hoisted(() => {
   const mockTxInsert = vi.fn();
+  const mockTxSelect = vi.fn();
+  const mockTxDelete = vi.fn();
   return {
     mockDbSelect: vi.fn(),
     mockDbSelectDistinctOn: vi.fn(),
@@ -23,7 +27,13 @@ const {
     mockDbUpdate: vi.fn(),
     mockDbTransaction: vi.fn(),
     mockTxInsert,
-    mockTx: { insert: mockTxInsert },
+    mockTxSelect,
+    mockTxDelete,
+    mockTx: {
+      insert: mockTxInsert,
+      select: mockTxSelect,
+      delete: mockTxDelete,
+    },
   };
 });
 
@@ -36,6 +46,11 @@ vi.mock('@/lib/db', () => ({
     transaction: mockDbTransaction,
   },
 }));
+
+vi.mock('drizzle-orm/pg-core', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('drizzle-orm/pg-core')>();
+  return { ...actual, alias: (table: unknown) => table };
+});
 
 // Export EVERY table chat-groups.ts imports — a missing one makes the
 // module-level import `undefined` and breaks unrelated queries.
@@ -56,6 +71,7 @@ vi.mock('@/lib/db/schema', () => ({
     userId: 'cgm.userId',
     role: 'cgm.role',
     lastReadAt: 'cgm.lastReadAt',
+    joinedAt: 'cgm.joinedAt',
   },
   chatGroupMessages: {
     id: 'cgmsg.id',
@@ -87,6 +103,13 @@ vi.mock('@/lib/db/schema', () => ({
   },
 }));
 
+vi.mock('@/lib/groups/shares/reactions', () => ({
+  reactionsForShares: vi.fn(
+    async (_actorId: string, shareIds: string[]) =>
+      new Map(shareIds.map((id) => [id, { count: 0, mine: false }]))
+  ),
+}));
+
 // ---------------------------------------------------------------------------
 // Module under test — imported AFTER mocks
 // ---------------------------------------------------------------------------
@@ -95,8 +118,10 @@ import {
   createChatGroup,
   getChatGroup,
   getOrCreateDirectChatGroup,
+  leaveChatGroup,
   listChatGroupMessages,
   listGroupMealFeed,
+  listGroupTimeline,
   listMyChatGroups,
   sendChatGroupMessage,
 } from '@/lib/actions/chat-groups';
@@ -278,19 +303,18 @@ describe('listMyChatGroups', () => {
     });
   }
 
-  // db.select().from().innerJoin().innerJoin().where().groupBy() -> each
+  // db.select().from().innerJoin()*.where().groupBy() -> each
   // group's most recent shared meal today (any member).
   function lastMealSharesQuery(rows: unknown[]) {
-    mockDbSelect.mockReturnValueOnce({
-      from: vi.fn().mockReturnValue({
-        innerJoin: vi.fn().mockReturnValue({
-          innerJoin: vi.fn().mockReturnValue({
-            where: vi.fn().mockReturnValue({
-              groupBy: vi.fn().mockResolvedValue(rows),
-            }),
-          }),
-        }),
+    const level: Record<string, ReturnType<typeof vi.fn>> = {
+      innerJoin: vi.fn(),
+      where: vi.fn().mockReturnValue({
+        groupBy: vi.fn().mockResolvedValue(rows),
       }),
+    };
+    level.innerJoin.mockReturnValue(level);
+    mockDbSelect.mockReturnValueOnce({
+      from: vi.fn().mockReturnValue(level),
     });
   }
 
@@ -568,25 +592,34 @@ describe('listGroupMealFeed', () => {
   function memberRowsQuery(rows: unknown[]) {
     mockDbSelect.mockReturnValueOnce({
       from: vi.fn().mockReturnValue({
-        where: vi.fn().mockResolvedValue(rows),
+        where: vi.fn().mockResolvedValue(
+          rows.map((row) => ({
+            ...(row as Record<string, unknown>),
+            joinedAt: new Date('2020-01-01T00:00:00.000Z'),
+          }))
+        ),
       }),
     });
   }
 
-  // sharedMealsBefore: db.select().from().innerJoin().innerJoin().where().orderBy().limit().
+  // sharedGroupMealsBefore: four joins, then seek/order/limit.
   function sharedMealsBeforeQuery(rows: unknown[]) {
+    const boundedRows = rows.map((row) => ({
+      ...(row as Record<string, unknown>),
+      ownerJoinedAt: new Date('2020-01-01T00:00:00.000Z'),
+      visibilitySharedAt: (row as { sharedAt?: Date }).sharedAt,
+    }));
+    const query = {
+      innerJoin: vi.fn(),
+      where: vi.fn(),
+      orderBy: vi.fn(),
+      limit: vi.fn().mockResolvedValue(boundedRows),
+    };
+    query.innerJoin.mockReturnValue(query);
+    query.where.mockReturnValue(query);
+    query.orderBy.mockReturnValue(query);
     mockDbSelect.mockReturnValueOnce({
-      from: vi.fn().mockReturnValue({
-        innerJoin: vi.fn().mockReturnValue({
-          innerJoin: vi.fn().mockReturnValue({
-            where: vi.fn().mockReturnValue({
-              orderBy: vi.fn().mockReturnValue({
-                limit: vi.fn().mockResolvedValue(rows),
-              }),
-            }),
-          }),
-        }),
-      }),
+      from: vi.fn().mockReturnValue(query),
     });
   }
 
@@ -600,6 +633,7 @@ describe('listGroupMealFeed', () => {
       proteinG: 20,
       carbohydrateG: 50,
       fatG: 15,
+      portionFactor: 1,
       sharedAt,
       handle: 'phofan',
       displayName: null,
@@ -815,5 +849,80 @@ describe('membership-gated reads', () => {
 
     expect(message.body).toBe('hi');
     expect(mockDbUpdate).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('leaveChatGroup', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockDbTransaction.mockImplementation((fn: (tx: typeof mockTx) => unknown) =>
+      fn(mockTx)
+    );
+  });
+
+  function queueTxSelect(rows: unknown[], locked = false) {
+    const limitResult = locked
+      ? Object.assign(Promise.resolve(rows), {
+          for: vi.fn().mockResolvedValue(rows),
+        })
+      : Promise.resolve(rows);
+    const query = {
+      innerJoin: vi.fn(),
+      where: vi.fn(),
+      limit: vi.fn().mockReturnValue(limitResult),
+    };
+    query.innerJoin.mockReturnValue(query);
+    query.where.mockReturnValue(query);
+    mockTxSelect.mockReturnValueOnce({
+      from: vi.fn().mockReturnValue(query),
+    });
+  }
+
+  it('rejects a malformed group id before opening a transaction', async () => {
+    await expect(leaveChatGroup(USER_A, 'not-a-uuid')).rejects.toThrow();
+    expect(mockDbTransaction).not.toHaveBeenCalled();
+  });
+
+  it('refuses to orphan a group while the owner has other members', async () => {
+    queueTxSelect([
+      {
+        id: 'membership',
+        kind: 'group',
+        directUserLow: null,
+        directUserHigh: null,
+      },
+    ]);
+    queueTxSelect([{ role: 'owner' }], true);
+    queueTxSelect([{ id: 'other-member' }]);
+
+    await expect(leaveChatGroup(USER_A, GROUP_ID)).rejects.toThrow(
+      'Chủ nhóm không thể rời'
+    );
+    expect(mockTxDelete).not.toHaveBeenCalled();
+  });
+
+  it('removes a member so the next timeline read fails membership', async () => {
+    queueTxSelect([
+      {
+        id: 'membership',
+        kind: 'group',
+        directUserLow: null,
+        directUserHigh: null,
+      },
+    ]);
+    queueTxSelect([{ role: 'member' }], true);
+    mockTxDelete.mockReturnValue({
+      where: vi.fn().mockResolvedValue(undefined),
+    });
+
+    await expect(leaveChatGroup(USER_A, GROUP_ID)).resolves.toEqual({
+      left: true,
+    });
+    expect(mockTxDelete).toHaveBeenCalledTimes(1);
+
+    mockDbSelect.mockReturnValueOnce(selectRows([]));
+    await expect(
+      listGroupTimeline(USER_A, { groupId: GROUP_ID })
+    ).rejects.toThrow('Không tìm thấy nhóm chat.');
   });
 });

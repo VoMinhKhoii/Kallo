@@ -1,43 +1,30 @@
 'use client';
 
 import { useLocale, useTranslations } from 'next-intl';
-import { Fragment, useEffect, useLayoutEffect, useRef } from 'react';
+import {
+  Fragment,
+  type ReactNode,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+} from 'react';
 import { CircleError } from '@/components/groups/circle-error';
 import { CircleWallSkeleton } from '@/components/groups/circle-wall-skeleton';
-import { FeedEntry } from '@/components/groups/feed-entry';
-import type { CircleFeedEntry } from '@/lib/groups/client';
+import {
+  threadDayKey,
+  threadDayLabel,
+} from '@/components/groups/timeline/thread-day';
 
-/** Local calendar-day identity for an ISO timestamp — used only for
- * same-day grouping, not display, so timezone-dependent formatting is fine. */
-function localDateKey(iso: string): string {
-  return new Date(iso).toDateString();
-}
-
-function dayLabel(
-  iso: string,
-  locale: string,
-  todayLabel: string,
-  yesterdayLabel: string
-): string {
-  const now = new Date();
-  const key = localDateKey(iso);
-  if (key === localDateKey(now.toISOString())) return todayLabel;
-
-  const yesterday = new Date(now);
-  yesterday.setDate(now.getDate() - 1);
-  if (key === localDateKey(yesterday.toISOString())) return yesterdayLabel;
-
-  const date = new Date(iso);
-  return date.toLocaleDateString(locale, {
-    month: 'long',
-    day: 'numeric',
-    year: date.getFullYear() === now.getFullYear() ? undefined : 'numeric',
-  });
+export interface ThreadFeedItem {
+  id: string;
+  timestamp: string;
+  content: ReactNode;
 }
 
 interface ThreadFeedProps {
   /** Oldest-first — the render order (chat convention: newest at the bottom). */
-  entries: CircleFeedEntry[];
+  entries: ThreadFeedItem[];
+  composer?: ReactNode;
   emptyMessage: string;
   isPending: boolean;
   isError: boolean;
@@ -57,6 +44,7 @@ interface ThreadFeedProps {
  * visually jumps by the height of whatever was just inserted above it). */
 export function ThreadFeed({
   entries,
+  composer,
   emptyMessage,
   isPending,
   isError,
@@ -129,6 +117,7 @@ export function ThreadFeed({
 
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-[20px] border border-nham-border/60 bg-white">
+      {composer}
       <div ref={containerRef} className="min-h-0 flex-1 overflow-y-auto">
         {entries.length > 0 ? (
           <>
@@ -139,16 +128,16 @@ export function ThreadFeed({
               </p>
             )}
             {entries.map((entry) => {
-              const dayKey = localDateKey(entry.meal.sharedAt);
+              const dayKey = threadDayKey(entry.timestamp);
               const showSeparator = dayKey !== lastDayKey;
               lastDayKey = dayKey;
               return (
-                <Fragment key={entry.meal.shareId}>
+                <Fragment key={entry.id}>
                   {showSeparator && (
                     <div className="flex items-center gap-2.5 px-4 pt-5 pb-3 font-sans-display text-[11px] text-nham-text-muted">
                       <span className="h-px flex-1 bg-nham-border/60" />
-                      {dayLabel(
-                        entry.meal.sharedAt,
+                      {threadDayLabel(
+                        entry.timestamp,
                         locale,
                         t('todayLabel'),
                         t('yesterdayLabel')
@@ -157,7 +146,7 @@ export function ThreadFeed({
                     </div>
                   )}
                   <div className="border-nham-border/60 border-b p-4 last:border-b-0">
-                    <FeedEntry entry={entry} />
+                    {entry.content}
                   </div>
                 </Fragment>
               );

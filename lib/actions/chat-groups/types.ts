@@ -46,3 +46,28 @@ export interface GroupMealFeedPage {
   entries: GroupMealFeedEntry[];
   nextCursor: string | null;
 }
+
+export type GroupTimelineMealEntry = { type: 'meal' } & SharedMealEntry;
+
+export interface GroupTimelineMessageEntry {
+  type: 'message';
+  id: string;
+  author: {
+    userId: string;
+    handle: string;
+    displayName: string | null;
+    avatarSeed: string | null;
+  };
+  isSelf: boolean;
+  body: string;
+  sentAt: string;
+}
+
+export type GroupTimelineEntry =
+  | GroupTimelineMealEntry
+  | GroupTimelineMessageEntry;
+
+export interface GroupTimelinePage {
+  entries: GroupTimelineEntry[];
+  nextCursor: string | null;
+}

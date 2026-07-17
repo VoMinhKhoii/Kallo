@@ -163,3 +163,22 @@ export function dismissMealShareInvite(inviteId: string) {
     inviteId,
   });
 }
+
+/** Toggle the viewer's heart on an authorized meal share. */
+export function toggleShareReaction(shareId: string) {
+  return postJson<{ reacted: boolean; count: number }>(
+    '/api/v1/groups/shares/reaction',
+    { shareId }
+  );
+}
+
+/** Copy a visible meal into today's diary at a full or half factor. */
+export function logSharedMeal(input: {
+  shareId: string;
+  factor: 1 | 0.5;
+  loggedDate: string;
+  timezoneOffset: number;
+  newMealId?: string;
+}): Promise<ConfirmMealResponse> {
+  return postJson<ConfirmMealResponse>('/api/v1/groups/shares/log', input);
+}

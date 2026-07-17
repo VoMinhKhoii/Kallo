@@ -11,11 +11,15 @@ export {
   listMyChatGroups,
 } from '@/lib/actions/chat-groups/create-and-list';
 export { listGroupMealFeed } from '@/lib/actions/chat-groups/feed';
-export { getOrCreateDirectChatGroup } from '@/lib/actions/chat-groups/membership';
+export {
+  getOrCreateDirectChatGroup,
+  leaveChatGroup,
+} from '@/lib/actions/chat-groups/membership';
 export {
   listChatGroupMessages,
   sendChatGroupMessage,
 } from '@/lib/actions/chat-groups/messages';
+export { listGroupTimeline } from '@/lib/actions/chat-groups/timeline';
 export type {
   ChatGroupDetail,
   ChatGroupIdentity,
@@ -23,4 +27,8 @@ export type {
   ChatGroupMessage,
   GroupMealFeedEntry,
   GroupMealFeedPage,
+  GroupTimelineEntry,
+  GroupTimelineMealEntry,
+  GroupTimelineMessageEntry,
+  GroupTimelinePage,
 } from '@/lib/actions/chat-groups/types';

@@ -1167,7 +1167,8 @@
       "subtitleAccent": "what's everyone eating?",
       "addFriend": "Add friend",
       "friendsNoMealToday": "None of your friends have shared a meal yet.",
-      "groupNoMealToday": "No one in {name} has shared a meal today."
+      "groupNoMealToday": "No one in {name} has shared a meal today.",
+      "groupNoActivity": "Nothing has been shared in {name} yet."
     },
     "switcher": {
       "all": "All",
@@ -1188,6 +1189,27 @@
       "block": "Block",
       "blocked": "Blocked",
       "actionError": "That didn't work — try again."
+    },
+    "feed": {
+      "you": "You",
+      "heart": "Heart",
+      "reactionError": "Couldn't update the reaction. Try again.",
+      "portion": "{portion} portion",
+      "logCopy": "Log this too",
+      "logHalf": "Split half",
+      "logSuccess": "Added to today's diary",
+      "logError": "Couldn't add this meal. Try again.",
+      "composerLabel": "Message",
+      "composerPlaceholder": "Message {name}…",
+      "send": "Send",
+      "sendError": "Couldn't send the message. Try again.",
+      "members": "Members: {names}",
+      "leave": "Leave group",
+      "leaveTitle": "Leave this group?",
+      "leaveDescription": "You'll lose access to this group's timeline.",
+      "leaveConfirm": "Leave group",
+      "leaveError": "Couldn't leave the group. Try again.",
+      "cancel": "Cancel"
     },
     "shareControl": {
       "share": "Share to circle",

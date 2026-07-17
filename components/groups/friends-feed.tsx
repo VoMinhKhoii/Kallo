@@ -1,6 +1,7 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
+import { FeedEntry } from '@/components/groups/feed-entry';
 import { ThreadFeed } from '@/components/groups/thread-feed';
 import { useFriendsThreadFeed } from '@/hooks/social/use-friend-thread-feed';
 
@@ -25,10 +26,15 @@ export function FriendsFeed() {
   // in that order already yields one continuous newest→oldest sequence, so a
   // single reverse() gives the oldest-first order ThreadFeed renders in.
   const entries = (data?.pages ?? []).flatMap((page) => page.entries).reverse();
+  const items = entries.map((entry) => ({
+    id: entry.meal.shareId,
+    timestamp: entry.meal.sharedAt,
+    content: <FeedEntry entry={entry} />,
+  }));
 
   return (
     <ThreadFeed
-      entries={entries}
+      entries={items}
       emptyMessage={t('friendsNoMealToday')}
       isPending={isPending}
       isError={isError}

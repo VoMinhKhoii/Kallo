@@ -15,6 +15,7 @@ import {
   todayLocalDate,
   toSharedMealEntry,
 } from '@/lib/groups/meal-feed';
+import { reactionsForShares } from '@/lib/groups/shares/reactions';
 import { circleFeedSchema, friendsThreadFeedSchema } from '@/lib/validation';
 
 import {
@@ -145,7 +146,14 @@ export async function listCircleFeed(
     db
   );
 
-  const entries = rows.map((r) => toSharedMealEntry(r, actorId));
+  const reactions = await reactionsForShares(
+    actorId,
+    rows.map((row) => row.shareId),
+    db
+  );
+  const entries = rows.map((row) =>
+    toSharedMealEntry(row, actorId, reactions.get(row.shareId))
+  );
 
   // The actor's own table is the first slot; friends follow newest-first.
   const self = entries.filter((e) => e.isSelf);
@@ -222,8 +230,16 @@ export async function listFriendsThreadFeed(
           }),
   ]);
 
+  const reactions = await reactionsForShares(
+    actorId,
+    rows.map((row) => row.shareId),
+    db
+  );
+
   return {
-    entries: rows.map((r) => toSharedMealEntry(r, actorId)),
+    entries: rows.map((row) =>
+      toSharedMealEntry(row, actorId, reactions.get(row.shareId))
+    ),
     nextCursor,
   };
 }

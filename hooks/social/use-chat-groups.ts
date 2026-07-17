@@ -14,14 +14,20 @@ import {
   fetchGroupMealFeed,
   fetchMyChatGroups,
   type GroupMealFeedPage,
+  leaveGroup,
 } from '@/lib/chat-groups/client';
 
 export const chatGroupsKeys = {
   all: ['chat-groups'] as const,
+  /** Prefix over every timezone-scoped chat list — invalidate this (not `all`)
+   * from inside a feed/timeline queryFn, so refreshing the sidebar's unread
+   * state can't invalidate the active query itself into a refetch loop. */
+  lists: () => ['chat-groups', 'list'] as const,
   list: (timezoneOffset: number) =>
     ['chat-groups', 'list', timezoneOffset] as const,
   detail: (groupId: string) => ['chat-groups', groupId] as const,
   feed: (groupId: string) => ['chat-groups', groupId, 'feed'] as const,
+  timeline: (groupId: string) => ['chat-groups', groupId, 'timeline'] as const,
 };
 
 /** Every chat (direct + group) the actor belongs to. */
@@ -53,6 +59,22 @@ export function useChatGroup(groupId: string) {
   });
 }
 
+/** Leave a group and evict every list/detail/timeline view on success. */
+export function useLeaveChatGroup() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (groupId: string) => leaveGroup(groupId),
+    onSuccess: (_data, groupId) => {
+      // Evict the departed group's now-unauthorized detail/feed/timeline
+      // (detail's key prefixes all three) so back-nav can't render stale rows
+      // while an unauthorized refetch is pending; then refresh the list.
+      queryClient.cancelQueries({ queryKey: chatGroupsKeys.detail(groupId) });
+      queryClient.removeQueries({ queryKey: chatGroupsKeys.detail(groupId) });
+      queryClient.invalidateQueries({ queryKey: chatGroupsKeys.lists() });
+    },
+  });
+}
+
 /** This group's shared-meal history, newest page first — scroll up
  * (`fetchNextPage`) to load earlier shares. First page is today's or, if
  * quiet today, the most recent shares regardless of day.
@@ -74,9 +96,10 @@ export function useGroupMealFeed(groupId: string) {
       );
       // Page 1 = the thread was just opened, which marks it read server-side
       // (see listGroupMealFeed) — refresh the sidebar so its unread/order
-      // state matches without a full reload.
+      // state matches. Invalidate only the list prefix, never `all`: `all`
+      // prefixes this feed query, so it would invalidate itself into a loop.
       if (pageParam === undefined) {
-        queryClient.invalidateQueries({ queryKey: chatGroupsKeys.all });
+        queryClient.invalidateQueries({ queryKey: chatGroupsKeys.lists() });
       }
       return page;
     },

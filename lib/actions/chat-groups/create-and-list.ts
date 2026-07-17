@@ -1,4 +1,5 @@
 import { and, desc, eq, gte, inArray, lt, sql } from 'drizzle-orm';
+import { alias } from 'drizzle-orm/pg-core';
 import { getUtcDayRangeForLocalDate } from '@/lib/date/local-day';
 import { db as defaultDb } from '@/lib/db';
 import {
@@ -67,6 +68,10 @@ export async function listMyChatGroups(
   input: { timezoneOffset: number },
   db: ChatGroupDb = defaultDb
 ): Promise<ChatGroupIdentity[]> {
+  const viewerMembership = alias(
+    chatGroupMembers,
+    'activity_viewer_membership'
+  );
   const { timezoneOffset } = circleFeedSchema.parse(input);
   const acceptedFriendIds = new Set(
     await ensureDirectChatsForAcceptedFriends(actorId, db)
@@ -151,12 +156,21 @@ export async function listMyChatGroups(
             lastSharedAt: sql<Date>`max(${mealShares.sharedAt})`,
           })
           .from(chatGroupMembers)
+          .innerJoin(
+            viewerMembership,
+            and(
+              eq(viewerMembership.groupId, chatGroupMembers.groupId),
+              eq(viewerMembership.userId, actorId)
+            )
+          )
           .innerJoin(meals, eq(meals.userId, chatGroupMembers.userId))
           .innerJoin(mealShares, eq(mealShares.mealId, meals.id))
           .where(
             and(
               inArray(chatGroupMembers.groupId, groupIds),
               sql`${mealShares.visibility} <> 'private'`,
+              gte(mealShares.sharedAt, viewerMembership.joinedAt),
+              gte(mealShares.sharedAt, chatGroupMembers.joinedAt),
               gte(mealShares.sharedAt, dayStart),
               lt(mealShares.sharedAt, dayEnd)
             )

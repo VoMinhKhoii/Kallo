@@ -1167,7 +1167,8 @@
       "subtitleAccent": "cả nhà ăn gì?",
       "addFriend": "Thêm bạn",
       "friendsNoMealToday": "Chưa có người bạn nào chia sẻ bữa ăn.",
-      "groupNoMealToday": "Chưa ai trong {name} chia sẻ bữa ăn nào hôm nay."
+      "groupNoMealToday": "Chưa ai trong {name} chia sẻ bữa ăn nào hôm nay.",
+      "groupNoActivity": "Chưa có gì được chia sẻ trong {name}."
     },
     "switcher": {
       "all": "Tất cả",
@@ -1188,6 +1189,27 @@
       "block": "Chặn",
       "blocked": "Đã chặn",
       "actionError": "Chưa được — hãy thử lại."
+    },
+    "feed": {
+      "you": "Bạn",
+      "heart": "Thả tim",
+      "reactionError": "Không thể cập nhật lượt thả tim. Hãy thử lại.",
+      "portion": "{portion} phần",
+      "logCopy": "Ăn theo",
+      "logHalf": "Chia đôi",
+      "logSuccess": "Đã thêm vào nhật ký hôm nay",
+      "logError": "Không thể thêm bữa ăn này. Hãy thử lại.",
+      "composerLabel": "Tin nhắn",
+      "composerPlaceholder": "Nhắn {name}…",
+      "send": "Gửi",
+      "sendError": "Không thể gửi tin nhắn. Hãy thử lại.",
+      "members": "Thành viên: {names}",
+      "leave": "Rời nhóm",
+      "leaveTitle": "Rời nhóm này?",
+      "leaveDescription": "Bạn sẽ không còn xem được dòng thời gian của nhóm.",
+      "leaveConfirm": "Rời nhóm",
+      "leaveError": "Không thể rời nhóm. Hãy thử lại.",
+      "cancel": "Huỷ"
     },
     "shareControl": {
       "share": "Chia sẻ với vòng kết nối",

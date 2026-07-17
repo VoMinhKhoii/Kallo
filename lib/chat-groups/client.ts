@@ -9,16 +9,24 @@
 import type {
   ChatGroupDetail,
   ChatGroupIdentity,
+  ChatGroupMessage,
   GroupMealFeedEntry,
   GroupMealFeedPage,
+  GroupTimelineEntry,
+  GroupTimelineMessageEntry,
+  GroupTimelinePage,
 } from '@/lib/actions/chat-groups';
 import { parseApiError } from '@/lib/errors';
 
 export type {
   ChatGroupDetail,
   ChatGroupIdentity,
+  ChatGroupMessage,
   GroupMealFeedEntry,
   GroupMealFeedPage,
+  GroupTimelineEntry,
+  GroupTimelineMessageEntry,
+  GroupTimelinePage,
 };
 
 async function request<T>(input: string, init?: RequestInit): Promise<T> {
@@ -75,4 +83,33 @@ export function fetchGroupMealFeed(
   return request<GroupMealFeedPage>(
     `/api/v1/chat-groups/${groupId}/feed${query}`
   );
+}
+
+/** One tuple-seek page of messages and privacy-bounded meal shares. */
+export function fetchGroupTimeline(
+  groupId: string,
+  before?: string
+): Promise<GroupTimelinePage> {
+  const query = before ? `?before=${encodeURIComponent(before)}` : '';
+  return request<GroupTimelinePage>(
+    `/api/v1/chat-groups/${groupId}/timeline${query}`
+  );
+}
+
+/** Post through the established messages endpoint. */
+export function sendGroupMessage(
+  groupId: string,
+  body: string
+): Promise<ChatGroupMessage> {
+  return postJson<{ message: ChatGroupMessage }>(
+    `/api/v1/chat-groups/${groupId}/messages`,
+    { body }
+  ).then((response) => response.message);
+}
+
+/** Remove the actor's own membership from a named chat group. */
+export function leaveGroup(groupId: string): Promise<{ left: true }> {
+  return request<{ left: true }>(`/api/v1/chat-groups/${groupId}/leave`, {
+    method: 'DELETE',
+  });
 }

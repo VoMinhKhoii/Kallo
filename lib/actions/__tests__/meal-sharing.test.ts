@@ -398,6 +398,8 @@ describe('acceptMealShareInviteAction', () => {
   beforeEach(() => vi.clearAllMocks());
 
   it('rejects when the invite cannot be claimed (tenant safety / race)', async () => {
+    queueLimitSelect([{ sourceMealId: UUID_MEAL, fromUserId: UUID_FRIEND }]);
+    queueLimitSelect([sourceMeal()]);
     installUpdate({ returning: [] }); // claim UPDATE matches zero rows
     await expect(
       acceptMealShareInviteAction({
@@ -410,9 +412,9 @@ describe('acceptMealShareInviteAction', () => {
   });
 
   it('rejects when no longer an accepted friend of the sender', async () => {
-    installUpdate({
-      returning: [{ sourceMealId: UUID_MEAL, fromUserId: UUID_FRIEND }],
-    });
+    queueLimitSelect([{ sourceMealId: UUID_MEAL, fromUserId: UUID_FRIEND }]);
+    queueLimitSelect([sourceMeal()]);
+    installUpdate({ returning: [{ id: UUID_INVITE }] });
     queueLimitSelect([]); // friendship recheck finds nothing
     await expect(
       acceptMealShareInviteAction({
@@ -425,11 +427,10 @@ describe('acceptMealShareInviteAction', () => {
   });
 
   it('copies the source meal verbatim into my diary with its portion', async () => {
-    installUpdate({
-      returning: [{ sourceMealId: UUID_MEAL, fromUserId: UUID_FRIEND }],
-    });
+    queueLimitSelect([{ sourceMealId: UUID_MEAL, fromUserId: UUID_FRIEND }]);
+    queueLimitSelect([sourceMeal({ portionFactor: 0.5, caloriesKcal: 100 })]); // the sender's split share, row-locked before claim
+    installUpdate({ returning: [{ id: UUID_INVITE }] });
     queueLimitSelect([{ id: 'friendship-1' }]); // still friends
-    queueLimitSelect([sourceMeal({ portionFactor: 0.5, caloriesKcal: 100 })]); // the sender's split share
     queueWhereSelect([sourceItem({ estimatedGrams: 200, caloriesKcal: 100 })]);
 
     const captured: Record<string, { vals: unknown }> = {};

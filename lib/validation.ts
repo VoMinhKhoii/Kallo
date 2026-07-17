@@ -185,6 +185,18 @@ export const groupMealFeedSchema = z.object({
   before: beforeCursorSchema,
 });
 
+/** Mixed group timeline cursor is opaque to clients and validated/decoded by
+ * the service; the length cap prevents oversized base64 payloads. */
+export const groupTimelineSchema = z.object({
+  groupId: uuidSchema,
+  before: z.string().trim().min(1).max(500).optional(),
+});
+
+/** Remove the actor from one membership-gated chat group. */
+export const leaveChatGroupSchema = z.object({
+  groupId: uuidSchema,
+});
+
 export type HandleInput = z.infer<typeof handleSchema>;
 export type UpsertPublicProfileInput = z.infer<
   typeof upsertPublicProfileSchema

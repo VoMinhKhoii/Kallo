@@ -1,9 +1,10 @@
-import { and, eq, or } from 'drizzle-orm';
+import { and, eq, or, sql } from 'drizzle-orm';
 import type { AppTransaction } from '@/lib/db';
 import { db as defaultDb } from '@/lib/db';
 import { chatGroupMembers, chatGroups, friendships } from '@/lib/db/schema';
 import { Errors } from '@/lib/errors';
 import { orderedPair } from '@/lib/groups/friendship';
+import { leaveChatGroupSchema } from '@/lib/validation';
 
 // Accepts the app db singleton OR a transaction handle, so acceptInvite can
 // pass its transaction through and keep friendship + chat creation atomic.
@@ -132,4 +133,64 @@ export async function ensureDirectChatsForAcceptedFriends(
     )
   );
   return friendIds;
+}
+
+/**
+ * Remove only the actor's membership. A named-group owner must first become
+ * the final member (or transfer/remove members in a future management flow),
+ * preventing a live group from being left without an owner.
+ */
+export async function leaveChatGroup(
+  actorId: string,
+  groupId: string,
+  db: ChatGroupDb = defaultDb
+): Promise<{ left: true }> {
+  const parsed = leaveChatGroupSchema.parse({ groupId });
+
+  return db.transaction(async (tx) => {
+    await requireMembership(actorId, parsed.groupId, tx);
+
+    const [membership] = await tx
+      .select({ role: chatGroupMembers.role })
+      .from(chatGroupMembers)
+      .where(
+        and(
+          eq(chatGroupMembers.groupId, parsed.groupId),
+          eq(chatGroupMembers.userId, actorId)
+        )
+      )
+      .limit(1)
+      .for('update');
+    if (!membership) {
+      throw Errors.notFound('Không tìm thấy nhóm chat.');
+    }
+
+    if (membership.role === 'owner') {
+      const otherMembers = await tx
+        .select({ id: chatGroupMembers.id })
+        .from(chatGroupMembers)
+        .where(
+          and(
+            eq(chatGroupMembers.groupId, parsed.groupId),
+            sql`${chatGroupMembers.userId} <> ${actorId}`
+          )
+        )
+        .limit(1);
+      if (otherMembers[0]) {
+        throw Errors.validationFailed(
+          'Chủ nhóm không thể rời khi nhóm vẫn còn thành viên.'
+        );
+      }
+    }
+
+    await tx
+      .delete(chatGroupMembers)
+      .where(
+        and(
+          eq(chatGroupMembers.groupId, parsed.groupId),
+          eq(chatGroupMembers.userId, actorId)
+        )
+      );
+    return { left: true };
+  });
 }

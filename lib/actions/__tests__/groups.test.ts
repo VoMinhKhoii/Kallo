@@ -108,6 +108,13 @@ vi.mock('@/lib/db/schema', () => ({
   },
 }));
 
+vi.mock('@/lib/groups/shares/reactions', () => ({
+  reactionsForShares: vi.fn(
+    async (_actorId: string, shareIds: string[]) =>
+      new Map(shareIds.map((id) => [id, { count: 0, mine: false }]))
+  ),
+}));
+
 // ---------------------------------------------------------------------------
 // Module under test — imported AFTER mocks
 // ---------------------------------------------------------------------------
@@ -531,6 +538,7 @@ describe('listCircleFeed', () => {
       proteinG: 20,
       carbohydrateG: 50,
       fatG: 15,
+      portionFactor: 1,
       sharedAt,
       handle,
       displayName: null,
@@ -636,6 +644,7 @@ describe('listFriendsThreadFeed', () => {
       proteinG: 20,
       carbohydrateG: 50,
       fatG: 15,
+      portionFactor: 1,
       sharedAt,
       handle: 'phofan',
       displayName: null,
