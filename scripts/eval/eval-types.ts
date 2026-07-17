@@ -1,19 +1,52 @@
 import { z } from 'zod';
 
+const macroRangeSchema = z.tuple([z.number().min(0), z.number().min(0)]);
+
 const expectationSchema = z.object({
   isFood: z.boolean(),
   staples: z.array(z.string().min(1)).optional(),
   kcalRange: z.tuple([z.number(), z.number()]).optional(),
+  /**
+   * Golden-set macro bands (grams, meal total, checked against the mid
+   * estimate). Bands are deliberately generous (±25-35%) — wide enough not to
+   * false-alarm on legitimate variance, tight enough to catch the 2x-class
+   * errors that hurt users (e.g. "2 buns = 390 kcal").
+   */
+  macroRanges: z
+    .object({
+      proteinG: macroRangeSchema.optional(),
+      carbohydrateG: macroRangeSchema.optional(),
+      fatG: macroRangeSchema.optional(),
+    })
+    .optional(),
   noSilentZeros: z.boolean().optional(),
   expectClarify: z.boolean().optional(),
   maxDurationMs: z.number().positive().optional(),
+  /**
+   * SOFT latency budget by complexity class (simple ~8s, medium ~15s,
+   * complex ~30s, stress ~60s). Violations are reported in the aggregate but
+   * never fail the case — wall-clock is environment-dependent (local quota
+   * throttling vs Cloud Run), unlike `maxDurationMs` which is a hard gate for
+   * degrade-contract cases.
+   */
+  latencyBudgetMs: z.number().positive().optional(),
+});
+
+/** Where a golden expectation came from — makes incremental updates auditable. */
+const provenanceSchema = z.object({
+  source: z.enum(['knowledge-estimate', 'staging-confirmed', 'user-corrected']),
+  setAt: z.string().min(1),
+  note: z.string().optional(),
 });
 
 export const fixtureCaseSchema = z.object({
   id: z.string().min(1),
   input: z.string().min(1),
   tags: z.array(z.string().min(1)),
+  /** CI tier: smoke = per-PR (~12 cheap cases), core = nightly, extended = on-demand. */
+  tier: z.enum(['smoke', 'core', 'extended']).default('core'),
   expect: expectationSchema,
+  provenance: provenanceSchema.optional(),
   note: z.string().optional(),
 });
 
@@ -26,6 +59,8 @@ export const fixtureFileSchema = z.object({
 
 export const cliOptionsSchema = z.object({
   filter: z.string().min(1).optional(),
+  /** Run only cases at/below this tier: smoke ⊂ core ⊂ extended (default all). */
+  tier: z.enum(['smoke', 'core', 'extended']).optional(),
   concurrency: z.number().int().min(1).max(8).default(2),
   profile: z.enum(['stable', 'next']).default('stable'),
   // D3 bakeoff seam: which Call-2 provider adapter to run. Default `gemini`
@@ -78,6 +113,11 @@ export interface EvalCaseResult {
   isFood: boolean | null;
   ingredients: EvalIngredientResult[];
   mealKcal: { low: number; mid: number; high: number } | null;
+  mealMacros: {
+    proteinG: { low: number; mid: number; high: number } | null;
+    carbohydrateG: { low: number; mid: number; high: number } | null;
+    fatG: { low: number; mid: number; high: number } | null;
+  } | null;
   silentZeroViolations: SilentZeroViolation[];
   error: string | null;
   timedOut: boolean;
@@ -92,11 +132,14 @@ export interface EvalAggregate {
   failed: number;
   stapleMatchRate: number | null;
   kcalInRangeRate: number | null;
+  macroInRangeRate: number | null;
   silentZeroCount: number;
   nonFoodRejectionRate: number | null;
   injectionResistanceRate: number | null;
   latencyP50Ms: number | null;
   latencyP90Ms: number | null;
+  /** Soft-gate: cases exceeding their latencyBudgetMs (reported, never failed). */
+  latencyBudgetViolations: number;
 }
 
 /**

@@ -13,6 +13,7 @@ const fixture: EvalFixtureCase = {
   id: 'pho',
   input: '1 phở',
   tags: ['vi', 'staple'],
+  tier: 'core',
   expect: {
     isFood: true,
     staples: ['phở'],
@@ -47,6 +48,7 @@ function observed(): Omit<EvalCaseResult, 'checks' | 'pass' | 'expectClarify'> {
       },
     ],
     mealKcal: { low: 400, mid: 500, high: 600 },
+    mealMacros: null,
     silentZeroViolations: [],
     error: null,
     timedOut: false,

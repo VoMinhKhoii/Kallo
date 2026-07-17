@@ -60,6 +60,33 @@ export function scoreCase(
     });
   }
 
+  if (fixture.expect.macroRanges) {
+    const macroKeys = ['proteinG', 'carbohydrateG', 'fatG'] as const;
+    for (const key of macroKeys) {
+      const range = fixture.expect.macroRanges[key];
+      if (!range) continue;
+      const [min, max] = range;
+      const mid = observed.mealMacros?.[key]?.mid ?? null;
+      checks.push({
+        name: `macro:${key}`,
+        pass: mid != null && mid >= min && mid <= max,
+        expected: range,
+        actual: mid,
+      });
+    }
+  }
+
+  // SOFT gate: recorded as a non-failing check (name-prefixed 'soft:') so the
+  // aggregate can count violations without wall-clock variance failing CI.
+  if (fixture.expect.latencyBudgetMs) {
+    checks.push({
+      name: 'soft:latencyBudget',
+      pass: true,
+      expected: fixture.expect.latencyBudgetMs,
+      actual: observed.durationMs,
+    });
+  }
+
   if (fixture.expect.noSilentZeros) {
     checks.push({
       name: 'noSilentZeros',
@@ -102,6 +129,14 @@ export function aggregateResults(results: EvalCaseResult[]): EvalAggregate {
     check.name.startsWith('staple:')
   );
   const kcalChecks = checks.filter((check) => check.name === 'kcalRange');
+  const macroChecks = checks.filter((check) => check.name.startsWith('macro:'));
+  const latencyBudgetViolations = checks.filter(
+    (check) =>
+      check.name === 'soft:latencyBudget' &&
+      typeof check.expected === 'number' &&
+      typeof check.actual === 'number' &&
+      check.actual > check.expected
+  ).length;
   const nonFood = results.filter((result) => result.tags.includes('non-food'));
   const injection = results.filter(
     (result) =>
@@ -124,6 +159,11 @@ export function aggregateResults(results: EvalCaseResult[]): EvalAggregate {
       kcalChecks.filter((check) => check.pass).length,
       kcalChecks.length
     ),
+    macroInRangeRate: rate(
+      macroChecks.filter((check) => check.pass).length,
+      macroChecks.length
+    ),
+    latencyBudgetViolations,
     silentZeroCount: results.reduce(
       (sum, result) => sum + result.silentZeroViolations.length,
       0

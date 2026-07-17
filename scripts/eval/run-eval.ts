@@ -1,6 +1,6 @@
 #!/usr/bin/env bun
 
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import {
   ESTIMATOR_PRICING,
@@ -43,7 +43,13 @@ export function parseEvalArgs(argv: string[]): EvalCliOptions {
     const arg = argv[index];
     const [flag, inline] = arg.split('=', 2);
     if (
-      !['--filter', '--concurrency', '--profile', '--estimator'].includes(flag)
+      ![
+        '--filter',
+        '--tier',
+        '--concurrency',
+        '--profile',
+        '--estimator',
+      ].includes(flag)
     ) {
       throw new Error(`Unknown argument: ${arg}`);
     }
@@ -147,6 +153,13 @@ async function runCase(
       ? false
       : null;
   const mealKcal = successData?.boundedNutrition.caloriesKcal ?? null;
+  const mealMacros = successData
+    ? {
+        proteinG: successData.boundedNutrition.proteinG ?? null,
+        carbohydrateG: successData.boundedNutrition.carbohydrateG ?? null,
+        fatG: successData.boundedNutrition.fatG ?? null,
+      }
+    : null;
   const observed = {
     id: fixture.id,
     input: fixture.input,
@@ -156,6 +169,7 @@ async function runCase(
     isFood,
     ingredients: diagnostics ? buildIngredientResults(diagnostics) : [],
     mealKcal,
+    mealMacros,
     silentZeroViolations: successData
       ? findSilentZeros(successData, fixture.tags.includes('zero-cal'))
       : [],
@@ -209,15 +223,43 @@ async function mapConcurrent<T, R>(
 async function main() {
   const options = parseEvalArgs(process.argv.slice(2));
   process.env.PIPELINE_MODEL_PROFILE = options.profile;
-  const fixtureUrl = new URL('./fixtures/meals.json', import.meta.url);
-  const fixture = fixtureFileSchema.parse(
-    JSON.parse(readFileSync(fixtureUrl, 'utf8'))
-  );
+  // Golden set spans multiple fixture files (meals.json = the phase-0 seed,
+  // golden-*.json = the CI golden set). All are loaded; duplicate ids reject.
+  const fixturesDir = fileURLToPath(new URL('./fixtures/', import.meta.url));
+  const fixtureFiles = readdirSync(fixturesDir)
+    .filter((name) => name.endsWith('.json') && !name.endsWith('.schema.json'))
+    .sort();
+  const allCases: EvalFixtureCase[] = [];
+  let fixtureVersion = 0;
+  for (const name of fixtureFiles) {
+    const parsed = fixtureFileSchema.parse(
+      JSON.parse(readFileSync(`${fixturesDir}${name}`, 'utf8'))
+    );
+    fixtureVersion = Math.max(fixtureVersion, parsed.version);
+    allCases.push(...parsed.cases);
+  }
+  const seenIds = new Set<string>();
+  for (const item of allCases) {
+    if (seenIds.has(item.id)) {
+      throw new Error(`Duplicate fixture case id across files: ${item.id}`);
+    }
+    seenIds.add(item.id);
+  }
+  // Tier ordering: smoke ⊂ core ⊂ extended. `--tier smoke` runs only smoke;
+  // `--tier core` runs smoke+core; omitted runs everything.
+  const TIER_ORDER = { smoke: 0, core: 1, extended: 2 } as const;
+  const tierFiltered = options.tier
+    ? allCases.filter(
+        (item) => TIER_ORDER[item.tier] <= TIER_ORDER[options.tier!]
+      )
+    : allCases;
   const selected = options.filter
-    ? fixture.cases.filter((item) => item.tags.includes(options.filter!))
-    : fixture.cases;
+    ? tierFiltered.filter((item) => item.tags.includes(options.filter!))
+    : tierFiltered;
   if (selected.length === 0) {
-    throw new Error(`No fixture cases matched tag: ${options.filter}`);
+    throw new Error(
+      `No fixture cases matched tag=${options.filter ?? '*'} tier=${options.tier ?? '*'}`
+    );
   }
 
   const dependencies = await loadPipeline(options.estimator);
@@ -237,7 +279,7 @@ async function main() {
   };
   const report = {
     generatedAt,
-    fixtureVersion: fixture.version,
+    fixtureVersion,
     profile: options.profile,
     filter: options.filter ?? null,
     concurrency: options.concurrency,

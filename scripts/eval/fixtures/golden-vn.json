@@ -1,0 +1,1468 @@
+{
+  "version": 2,
+  "notes": "Golden CI set — Vietnamese cuisine. Expectations are knowledge-estimate macro bands (±25-35%) for standard portions; NOT derived from current pipeline output. latencyBudgetMs is a SOFT gate by complexity class (simple 8s / medium 15s / complex 30s / stress 60s). Update incrementally: user-corrected staging data graduates cases to provenance.source=user-corrected. TOLERANCE RUBRIC (specificity-proportional): explicit grams/label-known foods ±10-15%; counted standard units ±20-25%; named dish, vague portion ±30-35%; fully vague → expectClarify, never a number. The more specified the input, the less deviation allowed.",
+  "cases": [
+    {
+      "id": "gvn-pho-bo-full",
+      "input": "1 tô phở bò tái nạm",
+      "tags": [
+        "vi",
+        "staple",
+        "golden"
+      ],
+      "tier": "smoke",
+      "expect": {
+        "isFood": true,
+        "staples": [
+          "phở"
+        ],
+        "kcalRange": [
+          380,
+          700
+        ],
+        "macroRanges": {
+          "proteinG": [
+            22,
+            45
+          ],
+          "carbohydrateG": [
+            45,
+            85
+          ],
+          "fatG": [
+            8,
+            25
+          ]
+        },
+        "latencyBudgetMs": 15000,
+        "noSilentZeros": true
+      },
+      "provenance": {
+        "source": "knowledge-estimate",
+        "setAt": "2026-07-18"
+      }
+    },
+    {
+      "id": "gvn-pho-ga",
+      "input": "1 tô phở gà",
+      "tags": [
+        "vi",
+        "staple",
+        "golden"
+      ],
+      "tier": "core",
+      "expect": {
+        "isFood": true,
+        "staples": [
+          "phở"
+        ],
+        "kcalRange": [
+          350,
+          650
+        ],
+        "macroRanges": {
+          "proteinG": [
+            20,
+            40
+          ],
+          "carbohydrateG": [
+            45,
+            80
+          ],
+          "fatG": [
+            6,
+            20
+          ]
+        },
+        "latencyBudgetMs": 15000
+      },
+      "provenance": {
+        "source": "knowledge-estimate",
+        "setAt": "2026-07-18"
+      }
+    },
+    {
+      "id": "gvn-bun-bo-hue",
+      "input": "1 tô bún bò Huế",
+      "tags": [
+        "vi",
+        "staple",
+        "golden"
+      ],
+      "tier": "smoke",
+      "expect": {
+        "isFood": true,
+        "staples": [
+          "bún bò"
+        ],
+        "kcalRange": [
+          450,
+          750
+        ],
+        "macroRanges": {
+          "proteinG": [
+            25,
+            45
+          ],
+          "carbohydrateG": [
+            50,
+            90
+          ],
+          "fatG": [
+            12,
+            30
+          ]
+        },
+        "latencyBudgetMs": 15000
+      },
+      "provenance": {
+        "source": "knowledge-estimate",
+        "setAt": "2026-07-18"
+      }
+    },
+    {
+      "id": "gvn-com-tam",
+      "input": "1 dĩa cơm tấm sườn bì chả",
+      "tags": [
+        "vi",
+        "staple",
+        "golden"
+      ],
+      "tier": "smoke",
+      "expect": {
+        "isFood": true,
+        "staples": [
+          "cơm tấm",
+          "sườn"
+        ],
+        "kcalRange": [
+          600,
+          1000
+        ],
+        "macroRanges": {
+          "proteinG": [
+            28,
+            55
+          ],
+          "carbohydrateG": [
+            70,
+            120
+          ],
+          "fatG": [
+            18,
+            45
+          ]
+        },
+        "latencyBudgetMs": 15000
+      },
+      "provenance": {
+        "source": "knowledge-estimate",
+        "setAt": "2026-07-18"
+      }
+    },
+    {
+      "id": "gvn-banh-xeo",
+      "input": "2 cái bánh xèo tôm thịt",
+      "tags": [
+        "vi",
+        "staple",
+        "golden",
+        "count-portion"
+      ],
+      "tier": "core",
+      "expect": {
+        "isFood": true,
+        "kcalRange": [
+          500,
+          900
+        ],
+        "macroRanges": {
+          "proteinG": [
+            18,
+            40
+          ],
+          "fatG": [
+            25,
+            55
+          ]
+        },
+        "latencyBudgetMs": 15000
+      },
+      "provenance": {
+        "source": "knowledge-estimate",
+        "setAt": "2026-07-18"
+      }
+    },
+    {
+      "id": "gvn-goi-cuon",
+      "input": "4 gỏi cuốn tôm thịt",
+      "tags": [
+        "vi",
+        "staple",
+        "golden",
+        "count-portion"
+      ],
+      "tier": "core",
+      "expect": {
+        "isFood": true,
+        "kcalRange": [
+          240,
+          480
+        ],
+        "macroRanges": {
+          "proteinG": [
+            14,
+            30
+          ],
+          "carbohydrateG": [
+            30,
+            60
+          ],
+          "fatG": [
+            3,
+            12
+          ]
+        },
+        "latencyBudgetMs": 15000
+      },
+      "provenance": {
+        "source": "knowledge-estimate",
+        "setAt": "2026-07-18"
+      }
+    },
+    {
+      "id": "gvn-cha-gio",
+      "input": "5 chả giò",
+      "tags": [
+        "vi",
+        "staple",
+        "golden",
+        "count-portion"
+      ],
+      "tier": "core",
+      "expect": {
+        "isFood": true,
+        "kcalRange": [
+          350,
+          650
+        ],
+        "macroRanges": {
+          "proteinG": [
+            12,
+            28
+          ],
+          "fatG": [
+            20,
+            45
+          ]
+        },
+        "latencyBudgetMs": 15000
+      },
+      "provenance": {
+        "source": "knowledge-estimate",
+        "setAt": "2026-07-18"
+      }
+    },
+    {
+      "id": "gvn-com-ga-hoi-an",
+      "input": "1 dĩa cơm gà Hội An",
+      "tags": [
+        "vi",
+        "staple",
+        "golden"
+      ],
+      "tier": "core",
+      "expect": {
+        "isFood": true,
+        "kcalRange": [
+          500,
+          850
+        ],
+        "macroRanges": {
+          "proteinG": [
+            25,
+            45
+          ],
+          "carbohydrateG": [
+            60,
+            100
+          ]
+        },
+        "latencyBudgetMs": 15000
+      },
+      "provenance": {
+        "source": "knowledge-estimate",
+        "setAt": "2026-07-18"
+      }
+    },
+    {
+      "id": "gvn-mi-quang",
+      "input": "1 tô mì Quảng tôm thịt",
+      "tags": [
+        "vi",
+        "staple",
+        "golden"
+      ],
+      "tier": "core",
+      "expect": {
+        "isFood": true,
+        "kcalRange": [
+          450,
+          800
+        ],
+        "macroRanges": {
+          "proteinG": [
+            22,
+            42
+          ],
+          "carbohydrateG": [
+            50,
+            90
+          ]
+        },
+        "latencyBudgetMs": 15000
+      },
+      "provenance": {
+        "source": "knowledge-estimate",
+        "setAt": "2026-07-18"
+      }
+    },
+    {
+      "id": "gvn-hu-tieu-nuoc",
+      "input": "1 tô hủ tiếu nam vang nước",
+      "tags": [
+        "vi",
+        "staple",
+        "golden"
+      ],
+      "tier": "core",
+      "expect": {
+        "isFood": true,
+        "staples": [
+          "hủ tiếu"
+        ],
+        "kcalRange": [
+          400,
+          700
+        ],
+        "macroRanges": {
+          "proteinG": [
+            20,
+            40
+          ],
+          "carbohydrateG": [
+            50,
+            90
+          ]
+        },
+        "latencyBudgetMs": 15000
+      },
+      "provenance": {
+        "source": "knowledge-estimate",
+        "setAt": "2026-07-18"
+      }
+    },
+    {
+      "id": "gvn-chao-ga",
+      "input": "1 tô cháo gà",
+      "tags": [
+        "vi",
+        "staple",
+        "golden"
+      ],
+      "tier": "core",
+      "expect": {
+        "isFood": true,
+        "kcalRange": [
+          250,
+          500
+        ],
+        "macroRanges": {
+          "proteinG": [
+            15,
+            32
+          ],
+          "carbohydrateG": [
+            35,
+            65
+          ],
+          "fatG": [
+            4,
+            15
+          ]
+        },
+        "latencyBudgetMs": 15000
+      },
+      "provenance": {
+        "source": "knowledge-estimate",
+        "setAt": "2026-07-18"
+      }
+    },
+    {
+      "id": "gvn-xoi-man",
+      "input": "1 gói xôi mặn chả lụa trứng cút",
+      "tags": [
+        "vi",
+        "staple",
+        "golden"
+      ],
+      "tier": "core",
+      "expect": {
+        "isFood": true,
+        "kcalRange": [
+          450,
+          800
+        ],
+        "macroRanges": {
+          "carbohydrateG": [
+            60,
+            110
+          ],
+          "fatG": [
+            12,
+            30
+          ]
+        },
+        "latencyBudgetMs": 15000
+      },
+      "provenance": {
+        "source": "knowledge-estimate",
+        "setAt": "2026-07-18"
+      }
+    },
+    {
+      "id": "gvn-banh-mi-thit",
+      "input": "1 ổ bánh mì thịt nguội đầy đủ",
+      "tags": [
+        "vi",
+        "staple",
+        "golden",
+        "unit-o"
+      ],
+      "tier": "smoke",
+      "expect": {
+        "isFood": true,
+        "staples": [
+          "bánh mì"
+        ],
+        "kcalRange": [
+          400,
+          650
+        ],
+        "macroRanges": {
+          "proteinG": [
+            15,
+            32
+          ],
+          "carbohydrateG": [
+            45,
+            75
+          ],
+          "fatG": [
+            12,
+            30
+          ]
+        },
+        "latencyBudgetMs": 8000
+      },
+      "provenance": {
+        "source": "knowledge-estimate",
+        "setAt": "2026-07-18"
+      }
+    },
+    {
+      "id": "gvn-banh-cuon-full",
+      "input": "1 dĩa bánh cuốn chả lụa",
+      "tags": [
+        "vi",
+        "staple",
+        "golden"
+      ],
+      "tier": "core",
+      "expect": {
+        "isFood": true,
+        "kcalRange": [
+          350,
+          650
+        ],
+        "macroRanges": {
+          "proteinG": [
+            14,
+            30
+          ],
+          "carbohydrateG": [
+            45,
+            85
+          ]
+        },
+        "latencyBudgetMs": 15000
+      },
+      "provenance": {
+        "source": "knowledge-estimate",
+        "setAt": "2026-07-18"
+      }
+    },
+    {
+      "id": "gvn-bo-kho",
+      "input": "1 tô bò kho với bánh mì",
+      "tags": [
+        "vi",
+        "staple",
+        "golden"
+      ],
+      "tier": "core",
+      "expect": {
+        "isFood": true,
+        "kcalRange": [
+          500,
+          850
+        ],
+        "macroRanges": {
+          "proteinG": [
+            28,
+            50
+          ],
+          "fatG": [
+            15,
+            38
+          ]
+        },
+        "latencyBudgetMs": 15000
+      },
+      "provenance": {
+        "source": "knowledge-estimate",
+        "setAt": "2026-07-18"
+      }
+    },
+    {
+      "id": "gvn-canh-chua-ca",
+      "input": "1 tô canh chua cá lóc + 1 chén cơm",
+      "tags": [
+        "vi",
+        "home-meal",
+        "golden"
+      ],
+      "tier": "core",
+      "expect": {
+        "isFood": true,
+        "kcalRange": [
+          350,
+          650
+        ],
+        "macroRanges": {
+          "proteinG": [
+            20,
+            40
+          ],
+          "carbohydrateG": [
+            45,
+            80
+          ]
+        },
+        "latencyBudgetMs": 15000
+      },
+      "provenance": {
+        "source": "knowledge-estimate",
+        "setAt": "2026-07-18"
+      }
+    },
+    {
+      "id": "gvn-thit-kho-trung",
+      "input": "thịt kho trứng + 1.5 chén cơm + dưa leo",
+      "tags": [
+        "vi",
+        "home-meal",
+        "golden"
+      ],
+      "tier": "smoke",
+      "expect": {
+        "isFood": true,
+        "kcalRange": [
+          600,
+          1000
+        ],
+        "macroRanges": {
+          "proteinG": [
+            25,
+            50
+          ],
+          "carbohydrateG": [
+            65,
+            110
+          ],
+          "fatG": [
+            20,
+            45
+          ]
+        },
+        "latencyBudgetMs": 15000
+      },
+      "provenance": {
+        "source": "knowledge-estimate",
+        "setAt": "2026-07-18"
+      }
+    },
+    {
+      "id": "gvn-ca-kho-to",
+      "input": "cá kho tộ + 1 chén cơm + rau muống xào tỏi",
+      "tags": [
+        "vi",
+        "home-meal",
+        "golden"
+      ],
+      "tier": "core",
+      "expect": {
+        "isFood": true,
+        "kcalRange": [
+          500,
+          850
+        ],
+        "macroRanges": {
+          "proteinG": [
+            25,
+            45
+          ],
+          "fatG": [
+            15,
+            35
+          ]
+        },
+        "latencyBudgetMs": 15000
+      },
+      "provenance": {
+        "source": "knowledge-estimate",
+        "setAt": "2026-07-18"
+      }
+    },
+    {
+      "id": "gvn-ga-kho-gung",
+      "input": "gà kho gừng + 1 chén cơm gạo lứt + canh bí đao",
+      "tags": [
+        "vi",
+        "home-meal",
+        "golden"
+      ],
+      "tier": "core",
+      "expect": {
+        "isFood": true,
+        "kcalRange": [
+          450,
+          800
+        ],
+        "macroRanges": {
+          "proteinG": [
+            25,
+            48
+          ],
+          "carbohydrateG": [
+            45,
+            85
+          ]
+        },
+        "latencyBudgetMs": 15000
+      },
+      "provenance": {
+        "source": "knowledge-estimate",
+        "setAt": "2026-07-18"
+      }
+    },
+    {
+      "id": "gvn-trung-chien-thit",
+      "input": "trứng chiên thịt bằm + 1 chén cơm + canh rau ngót",
+      "tags": [
+        "vi",
+        "home-meal",
+        "golden"
+      ],
+      "tier": "core",
+      "expect": {
+        "isFood": true,
+        "kcalRange": [
+          450,
+          750
+        ],
+        "macroRanges": {
+          "proteinG": [
+            22,
+            42
+          ],
+          "fatG": [
+            15,
+            35
+          ]
+        },
+        "latencyBudgetMs": 15000
+      },
+      "provenance": {
+        "source": "knowledge-estimate",
+        "setAt": "2026-07-18"
+      }
+    },
+    {
+      "id": "gvn-dau-hu-sot-ca",
+      "input": "đậu hũ sốt cà chua + 1 chén cơm + rau luộc",
+      "tags": [
+        "vi",
+        "home-meal",
+        "golden",
+        "vegetarian"
+      ],
+      "tier": "core",
+      "expect": {
+        "isFood": true,
+        "kcalRange": [
+          350,
+          650
+        ],
+        "macroRanges": {
+          "proteinG": [
+            12,
+            28
+          ],
+          "carbohydrateG": [
+            45,
+            80
+          ]
+        },
+        "latencyBudgetMs": 15000
+      },
+      "provenance": {
+        "source": "knowledge-estimate",
+        "setAt": "2026-07-18"
+      }
+    },
+    {
+      "id": "gvn-muc-xao",
+      "input": "mực xào cần tây + 1 chén cơm",
+      "tags": [
+        "vi",
+        "home-meal",
+        "golden"
+      ],
+      "tier": "core",
+      "expect": {
+        "isFood": true,
+        "kcalRange": [
+          350,
+          650
+        ],
+        "macroRanges": {
+          "proteinG": [
+            20,
+            40
+          ]
+        },
+        "latencyBudgetMs": 15000
+      },
+      "provenance": {
+        "source": "knowledge-estimate",
+        "setAt": "2026-07-18"
+      }
+    },
+    {
+      "id": "gvn-2-banh-bao-regression",
+      "input": "2 bánh bao trứng cút",
+      "tags": [
+        "vi",
+        "golden",
+        "count-portion",
+        "regression-bug"
+      ],
+      "tier": "smoke",
+      "expect": {
+        "isFood": true,
+        "staples": [
+          "bánh bao"
+        ],
+        "kcalRange": [
+          600,
+          950
+        ],
+        "macroRanges": {
+          "proteinG": [
+            20,
+            42
+          ],
+          "carbohydrateG": [
+            70,
+            130
+          ],
+          "fatG": [
+            12,
+            32
+          ]
+        },
+        "latencyBudgetMs": 8000,
+        "noSilentZeros": true
+      },
+      "provenance": {
+        "source": "staging-confirmed",
+        "setAt": "2026-07-18",
+        "note": "The original production under-estimation bug (was 390 kcal). Range from ~160-180g/bun × 2 + fillings."
+      }
+    },
+    {
+      "id": "gvn-3-banh-bao-chay",
+      "input": "3 bánh bao chay nhỏ",
+      "tags": [
+        "vi",
+        "golden",
+        "count-portion",
+        "size-modifier"
+      ],
+      "tier": "core",
+      "expect": {
+        "isFood": true,
+        "kcalRange": [
+          400,
+          750
+        ],
+        "latencyBudgetMs": 8000
+      },
+      "provenance": {
+        "source": "knowledge-estimate",
+        "setAt": "2026-07-18"
+      }
+    },
+    {
+      "id": "gvn-6-nem-nuong",
+      "input": "6 xiên nem nướng + bánh tráng + rau sống",
+      "tags": [
+        "vi",
+        "golden",
+        "count-portion",
+        "unit-xien"
+      ],
+      "tier": "core",
+      "expect": {
+        "isFood": true,
+        "kcalRange": [
+          500,
+          900
+        ],
+        "macroRanges": {
+          "proteinG": [
+            25,
+            50
+          ]
+        },
+        "latencyBudgetMs": 15000
+      },
+      "provenance": {
+        "source": "knowledge-estimate",
+        "setAt": "2026-07-18"
+      }
+    },
+    {
+      "id": "gvn-10-tom-nuong",
+      "input": "10 con tôm sú nướng muối ớt",
+      "tags": [
+        "vi",
+        "golden",
+        "count-portion",
+        "inedible-portion"
+      ],
+      "tier": "core",
+      "expect": {
+        "isFood": true,
+        "staples": [
+          "tôm"
+        ],
+        "kcalRange": [
+          180,
+          400
+        ],
+        "macroRanges": {
+          "proteinG": [
+            30,
+            60
+          ],
+          "fatG": [
+            2,
+            12
+          ]
+        },
+        "latencyBudgetMs": 15000
+      },
+      "provenance": {
+        "source": "knowledge-estimate",
+        "setAt": "2026-07-18",
+        "note": "Shell/head inedible portion matters — ~15-20g edible meat per large prawn."
+      }
+    },
+    {
+      "id": "gvn-200g-uc-ga-raw",
+      "input": "200g ức gà áp chảo (cân sống) + 100g cơm trắng + salad",
+      "tags": [
+        "vi",
+        "golden",
+        "explicit-mass",
+        "raw-weight"
+      ],
+      "tier": "smoke",
+      "expect": {
+        "isFood": true,
+        "kcalRange": [
+          430,
+          610
+        ],
+        "macroRanges": {
+          "proteinG": [
+            46,
+            64
+          ],
+          "carbohydrateG": [
+            32,
+            50
+          ],
+          "fatG": [
+            6,
+            20
+          ]
+        },
+        "latencyBudgetMs": 8000
+      },
+      "provenance": {
+        "source": "knowledge-estimate",
+        "setAt": "2026-07-18",
+        "note": "200g raw breast = ~44g protein; raw basis must NOT get yield-converted. Tight band: high-specificity input."
+      }
+    },
+    {
+      "id": "gvn-100g-ba-roi",
+      "input": "100g ba rọi luộc + bún + mắm tôm",
+      "tags": [
+        "vi",
+        "golden",
+        "explicit-mass"
+      ],
+      "tier": "core",
+      "expect": {
+        "isFood": true,
+        "kcalRange": [
+          500,
+          850
+        ],
+        "macroRanges": {
+          "fatG": [
+            30,
+            60
+          ]
+        },
+        "latencyBudgetMs": 15000
+      },
+      "provenance": {
+        "source": "knowledge-estimate",
+        "setAt": "2026-07-18"
+      }
+    },
+    {
+      "id": "gvn-nua-con-ga",
+      "input": "nửa con gà luộc chấm muối tiêu chanh",
+      "tags": [
+        "vi",
+        "golden",
+        "fraction",
+        "inedible-portion"
+      ],
+      "tier": "core",
+      "expect": {
+        "isFood": true,
+        "kcalRange": [
+          500,
+          950
+        ],
+        "macroRanges": {
+          "proteinG": [
+            55,
+            100
+          ]
+        },
+        "latencyBudgetMs": 15000
+      },
+      "provenance": {
+        "source": "knowledge-estimate",
+        "setAt": "2026-07-18"
+      }
+    },
+    {
+      "id": "gvn-banh-trang-tron",
+      "input": "1 bịch bánh tráng trộn",
+      "tags": [
+        "vi",
+        "golden",
+        "snack"
+      ],
+      "tier": "core",
+      "expect": {
+        "isFood": true,
+        "kcalRange": [
+          300,
+          600
+        ],
+        "latencyBudgetMs": 8000
+      },
+      "provenance": {
+        "source": "knowledge-estimate",
+        "setAt": "2026-07-18"
+      }
+    },
+    {
+      "id": "gvn-che-ba-mau",
+      "input": "1 ly chè ba màu",
+      "tags": [
+        "vi",
+        "golden",
+        "dessert"
+      ],
+      "tier": "core",
+      "expect": {
+        "isFood": true,
+        "kcalRange": [
+          250,
+          500
+        ],
+        "macroRanges": {
+          "carbohydrateG": [
+            40,
+            85
+          ]
+        },
+        "latencyBudgetMs": 8000
+      },
+      "provenance": {
+        "source": "knowledge-estimate",
+        "setAt": "2026-07-18"
+      }
+    },
+    {
+      "id": "gvn-sinh-to-bo",
+      "input": "1 ly sinh tố bơ",
+      "tags": [
+        "vi",
+        "golden",
+        "beverage"
+      ],
+      "tier": "core",
+      "expect": {
+        "isFood": true,
+        "kcalRange": [
+          280,
+          550
+        ],
+        "macroRanges": {
+          "fatG": [
+            15,
+            35
+          ]
+        },
+        "latencyBudgetMs": 8000
+      },
+      "provenance": {
+        "source": "knowledge-estimate",
+        "setAt": "2026-07-18"
+      }
+    },
+    {
+      "id": "gvn-ca-phe-sua-da",
+      "input": "1 ly cà phê sữa đá",
+      "tags": [
+        "vi",
+        "golden",
+        "beverage"
+      ],
+      "tier": "smoke",
+      "expect": {
+        "isFood": true,
+        "kcalRange": [
+          90,
+          220
+        ],
+        "macroRanges": {
+          "carbohydrateG": [
+            12,
+            35
+          ],
+          "fatG": [
+            2,
+            10
+          ]
+        },
+        "latencyBudgetMs": 8000
+      },
+      "provenance": {
+        "source": "knowledge-estimate",
+        "setAt": "2026-07-18"
+      }
+    },
+    {
+      "id": "gvn-tra-da",
+      "input": "1 ly trà đá",
+      "tags": [
+        "vi",
+        "golden",
+        "beverage",
+        "zero-cal"
+      ],
+      "tier": "core",
+      "expect": {
+        "isFood": true,
+        "kcalRange": [
+          0,
+          10
+        ],
+        "latencyBudgetMs": 8000
+      },
+      "provenance": {
+        "source": "knowledge-estimate",
+        "setAt": "2026-07-18"
+      }
+    },
+    {
+      "id": "gvn-bia",
+      "input": "2 lon bia",
+      "tags": [
+        "vi",
+        "golden",
+        "beverage",
+        "alcohol",
+        "count-portion"
+      ],
+      "tier": "core",
+      "expect": {
+        "isFood": true,
+        "kcalRange": [
+          240,
+          400
+        ],
+        "latencyBudgetMs": 8000
+      },
+      "provenance": {
+        "source": "knowledge-estimate",
+        "setAt": "2026-07-18"
+      }
+    },
+    {
+      "id": "gvn-lau-thai",
+      "input": "lẩu Thái hải sản cho 1 người + bún",
+      "tags": [
+        "vi",
+        "golden",
+        "complex",
+        "ambiguous-ish"
+      ],
+      "tier": "extended",
+      "expect": {
+        "isFood": true,
+        "kcalRange": [
+          450,
+          900
+        ],
+        "latencyBudgetMs": 30000
+      },
+      "provenance": {
+        "source": "knowledge-estimate",
+        "setAt": "2026-07-18"
+      }
+    },
+    {
+      "id": "gvn-bun-rieu-cua",
+      "input": "1 tô bún riêu cua đầy đủ",
+      "tags": [
+        "vi",
+        "staple",
+        "golden"
+      ],
+      "tier": "core",
+      "expect": {
+        "isFood": true,
+        "staples": [
+          "bún riêu"
+        ],
+        "kcalRange": [
+          400,
+          700
+        ],
+        "macroRanges": {
+          "proteinG": [
+            20,
+            40
+          ]
+        },
+        "latencyBudgetMs": 15000
+      },
+      "provenance": {
+        "source": "knowledge-estimate",
+        "setAt": "2026-07-18"
+      }
+    },
+    {
+      "id": "gvn-op-la-2-trung",
+      "input": "bánh mì ốp la 2 trứng + pate",
+      "tags": [
+        "vi",
+        "staple",
+        "golden",
+        "count-portion"
+      ],
+      "tier": "core",
+      "expect": {
+        "isFood": true,
+        "kcalRange": [
+          450,
+          750
+        ],
+        "macroRanges": {
+          "proteinG": [
+            18,
+            35
+          ],
+          "fatG": [
+            18,
+            42
+          ]
+        },
+        "latencyBudgetMs": 8000
+      },
+      "provenance": {
+        "source": "knowledge-estimate",
+        "setAt": "2026-07-18"
+      }
+    },
+    {
+      "id": "gvn-bot-chien",
+      "input": "1 dĩa bột chiên trứng",
+      "tags": [
+        "vi",
+        "golden",
+        "street-food"
+      ],
+      "tier": "core",
+      "expect": {
+        "isFood": true,
+        "kcalRange": [
+          400,
+          750
+        ],
+        "macroRanges": {
+          "fatG": [
+            20,
+            45
+          ]
+        },
+        "latencyBudgetMs": 8000
+      },
+      "provenance": {
+        "source": "knowledge-estimate",
+        "setAt": "2026-07-18"
+      }
+    },
+    {
+      "id": "gvn-banh-canh-cua",
+      "input": "1 tô bánh canh cua",
+      "tags": [
+        "vi",
+        "staple",
+        "golden"
+      ],
+      "tier": "core",
+      "expect": {
+        "isFood": true,
+        "staples": [
+          "bánh canh"
+        ],
+        "kcalRange": [
+          400,
+          700
+        ],
+        "latencyBudgetMs": 15000
+      },
+      "provenance": {
+        "source": "knowledge-estimate",
+        "setAt": "2026-07-18"
+      }
+    },
+    {
+      "id": "gvn-bun-thit-nuong",
+      "input": "1 tô bún thịt nướng chả giò",
+      "tags": [
+        "vi",
+        "staple",
+        "golden"
+      ],
+      "tier": "smoke",
+      "expect": {
+        "isFood": true,
+        "staples": [
+          "bún"
+        ],
+        "kcalRange": [
+          500,
+          850
+        ],
+        "macroRanges": {
+          "proteinG": [
+            22,
+            45
+          ],
+          "carbohydrateG": [
+            55,
+            95
+          ],
+          "fatG": [
+            15,
+            38
+          ]
+        },
+        "latencyBudgetMs": 15000
+      },
+      "provenance": {
+        "source": "knowledge-estimate",
+        "setAt": "2026-07-18"
+      }
+    },
+    {
+      "id": "gvn-yaourt",
+      "input": "2 hủ yaourt nhà làm",
+      "tags": [
+        "vi",
+        "golden",
+        "count-portion",
+        "dessert"
+      ],
+      "tier": "core",
+      "expect": {
+        "isFood": true,
+        "kcalRange": [
+          140,
+          320
+        ],
+        "latencyBudgetMs": 8000
+      },
+      "provenance": {
+        "source": "knowledge-estimate",
+        "setAt": "2026-07-18"
+      }
+    },
+    {
+      "id": "gvn-hat-dieu",
+      "input": "1 nắm hạt điều rang muối",
+      "tags": [
+        "vi",
+        "golden",
+        "snack",
+        "quantifier-vague"
+      ],
+      "tier": "core",
+      "expect": {
+        "isFood": true,
+        "kcalRange": [
+          150,
+          400
+        ],
+        "macroRanges": {
+          "fatG": [
+            12,
+            35
+          ]
+        },
+        "latencyBudgetMs": 8000
+      },
+      "provenance": {
+        "source": "knowledge-estimate",
+        "setAt": "2026-07-18"
+      }
+    },
+    {
+      "id": "gvn-mixed-day-log",
+      "input": "sáng: 1 bánh mì trứng. trưa: cơm gà xối mỡ. tối: 1 tô hủ tiếu",
+      "tags": [
+        "vi",
+        "golden",
+        "multi-meal",
+        "complex"
+      ],
+      "tier": "extended",
+      "expect": {
+        "isFood": true,
+        "kcalRange": [
+          1300,
+          2200
+        ],
+        "latencyBudgetMs": 30000
+      },
+      "provenance": {
+        "source": "knowledge-estimate",
+        "setAt": "2026-07-18",
+        "note": "Multi-meal single input — tests decomposition of meal-slot-spanning logs."
+      }
+    },
+    {
+      "id": "gvn-om-nguyen-lieu",
+      "input": "100g yến mạch + 1 muỗng bơ đậu phộng + 1 quả chuối + 300ml sữa tươi không đường",
+      "tags": [
+        "vi",
+        "golden",
+        "explicit-mass",
+        "unit-muong"
+      ],
+      "tier": "core",
+      "expect": {
+        "isFood": true,
+        "kcalRange": [
+          580,
+          800
+        ],
+        "macroRanges": {
+          "proteinG": [
+            20,
+            33
+          ],
+          "carbohydrateG": [
+            80,
+            115
+          ],
+          "fatG": [
+            16,
+            30
+          ]
+        },
+        "latencyBudgetMs": 15000
+      },
+      "provenance": {
+        "source": "knowledge-estimate",
+        "setAt": "2026-07-18",
+        "note": "Tight band: high-specificity input."
+      }
+    },
+    {
+      "id": "gvn-an-vat-van-phong",
+      "input": "3 cái bánh quy + 1 ly trà sữa trân châu size M",
+      "tags": [
+        "vi",
+        "golden",
+        "snack",
+        "count-portion"
+      ],
+      "tier": "core",
+      "expect": {
+        "isFood": true,
+        "kcalRange": [
+          450,
+          800
+        ],
+        "macroRanges": {
+          "carbohydrateG": [
+            65,
+            120
+          ]
+        },
+        "latencyBudgetMs": 8000
+      },
+      "provenance": {
+        "source": "knowledge-estimate",
+        "setAt": "2026-07-18"
+      }
+    }
+  ]
+}

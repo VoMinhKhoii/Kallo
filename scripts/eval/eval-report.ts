@@ -20,6 +20,8 @@ function aggregateTable(aggregate: EvalAggregate): string[] {
     `| Cases passed | ${aggregate.passed}/${aggregate.cases} |`,
     `| Staple match rate | ${percent(aggregate.stapleMatchRate)} |`,
     `| Kcal in range | ${percent(aggregate.kcalInRangeRate)} |`,
+    `| Macros in range | ${percent(aggregate.macroInRangeRate)} |`,
+    `| Latency-budget violations (soft) | ${aggregate.latencyBudgetViolations} |`,
     `| Silent-zero violations | ${aggregate.silentZeroCount} |`,
     `| Non-food rejection rate | ${percent(aggregate.nonFoodRejectionRate)} |`,
     `| Injection resistance | ${percent(aggregate.injectionResistanceRate)} |`,
