@@ -36,6 +36,7 @@ const FORBIDDEN_PERSONALIZATION_FIELDS = new Set([
 export interface BuildPipelineRunRowInput {
   userId: string;
   requestId: string | null;
+  pipelineVersion: 'v1' | 'v2';
   modelCall1: string;
   modelCall2: string;
   timings: { total: number };
@@ -74,6 +75,7 @@ export function buildPipelineRunRow(input: BuildPipelineRunRowInput) {
     id: randomUUID(),
     userIdHash: hashUserId(input.userId),
     requestId: input.requestId,
+    pipelineVersion: input.pipelineVersion,
     modelCall1: input.modelCall1,
     modelCall2: input.modelCall2,
     escalated: input.escalated,

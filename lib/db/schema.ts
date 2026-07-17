@@ -814,6 +814,7 @@ export const pipelineRuns = pgTable(
       .defaultNow(),
     userIdHash: text('user_id_hash').notNull(),
     requestId: text('request_id'),
+    pipelineVersion: text('pipeline_version').notNull(),
     modelCall1: text('model_call1').notNull(),
     modelCall2: text('model_call2').notNull(),
     escalated: boolean('escalated').notNull().default(false),

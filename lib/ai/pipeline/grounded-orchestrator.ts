@@ -1,4 +1,5 @@
 import type { AppDb } from '@/lib/db';
+import { fetchWithTimeout } from '@/lib/fetch-with-timeout';
 import { capitalizeFirst } from '@/lib/utils';
 import type { GeminiClient } from '../gemini';
 import {
@@ -22,6 +23,7 @@ import type { PipelineResponse, UserContext } from '../types';
 import { assembleResult } from './assembly';
 import { bridgeV2ToV1 } from './bridge';
 import { resolveModelProfile } from './config/model-profile';
+import { NUTRITION_TIMEOUT_MS } from './config/stage-timeouts';
 import { handleError, nonFoodResponse } from './errors';
 import { runGroundedDecomposition } from './grounded-decomposition';
 import {
@@ -36,6 +38,7 @@ import type { AnalyzeMealTraceContext } from './orchestrator';
 import {
   type GroundedEstimation,
   groundedEstimationSchema,
+  type MealDecompositionV2,
 } from './schemas-v2';
 import { buildLlmStageTrace } from './telemetry/trace';
 
@@ -53,6 +56,14 @@ export interface AnalyzeMealV2Options {
    * runs alongside v1.
    */
   traceContext?: AnalyzeMealTraceContext;
+  /** Read-only internals used by the offline eval harness. */
+  onDiagnostics?: (diagnostics: V2PipelineDiagnostics) => void;
+}
+
+export interface V2PipelineDiagnostics {
+  decomposition: MealDecompositionV2;
+  matchResults: IngredientV2MatchResult[];
+  verdicts: ReturnType<typeof bridgeV2ToV1>['verdicts'];
 }
 
 /**
@@ -101,6 +112,7 @@ export async function analyzeMealV2(
       streamedMealItemIds,
       decomposeChunkCount,
       languageRetryCount,
+      providerRetryCount: decompositionProviderRetryCount,
       promptCharsCall1,
     } = stage1;
 
@@ -198,6 +210,7 @@ export async function analyzeMealV2(
       }
     };
 
+    let nutritionMaxAttempt = 0;
     const grounded: GroundedEstimation = await withStageLogV2(
       traceContext,
       'nutrition',
@@ -220,24 +233,37 @@ export async function analyzeMealV2(
           templateSample: call2SystemPrompt,
           model: profile.nutritionModel,
         });
-        return gemini.generateStructuredOutputStream(
-          {
-            schema: groundedEstimationSchema,
-            systemPrompt: call2SystemPrompt,
-            userMessage:
-              'Verify each candidate (CRAG verdict), estimate grams scoped to the selected candidate state, and emit bounded macros per the rules above.',
-            model: profile.nutritionModel,
-            temperature: call2Temperature,
-            topP: 1,
-            topK: 1,
-          },
-          {
-            onChunk: (accumulated) => {
-              nutritionChunkCount++;
-              handleCall2Chunk(accumulated);
-            },
-            ...(callTrace ? { trace: callTrace } : {}),
-          }
+        return fetchWithTimeout(
+          (signal) =>
+            gemini.generateStructuredOutputStream(
+              {
+                schema: groundedEstimationSchema,
+                systemPrompt: call2SystemPrompt,
+                userMessage:
+                  'Verify each candidate (CRAG verdict), estimate grams scoped to the selected candidate state, and emit bounded macros per the rules above.',
+                model: profile.nutritionModel,
+                temperature: call2Temperature,
+                topP: 1,
+                topK: 1,
+                abortSignal: signal,
+              },
+              {
+                onAttemptStart: (attempt) => {
+                  nutritionMaxAttempt = Math.max(nutritionMaxAttempt, attempt);
+                  if (attempt > 1) {
+                    lastExtractedCount = 0;
+                    itemMacrosNameOcc.clear();
+                  }
+                },
+                onChunk: (accumulated) => {
+                  nutritionChunkCount++;
+                  handleCall2Chunk(accumulated);
+                },
+                ...(callTrace ? { trace: callTrace } : {}),
+              }
+            ),
+          NUTRITION_TIMEOUT_MS,
+          'grounded-nutrition'
         );
       }
     );
@@ -275,6 +301,11 @@ export async function analyzeMealV2(
       }
     );
     const bridged = assembly.bridged;
+    options.onDiagnostics?.({
+      decomposition,
+      matchResults,
+      verdicts: bridged.verdicts,
+    });
 
     // Flush any meal items whose macros didn't stream (e.g., final closing
     // brace arrived without a separator marker, so the regex didn't catch
@@ -319,6 +350,8 @@ export async function analyzeMealV2(
       verdicts: bridged.verdicts,
       totalMs: Date.now() - t0,
       languageRetryCount,
+      providerRetryCount:
+        decompositionProviderRetryCount + Math.max(0, nutritionMaxAttempt - 1),
     });
     if (process.env.NODE_ENV === 'test') {
       await persistPromise;

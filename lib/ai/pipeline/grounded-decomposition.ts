@@ -1,3 +1,4 @@
+import { fetchWithTimeout } from '@/lib/fetch-with-timeout';
 import { capitalizeFirst } from '@/lib/utils';
 import type { GeminiClient } from '../gemini';
 import {
@@ -9,6 +10,7 @@ import type { PromptPersonalizationContext } from '../prompts/types';
 import type { StreamEvent } from '../streaming/types';
 import type { MealDecomposition, UserContext } from '../types';
 import type { ModelProfile } from './config/model-profile';
+import { DECOMPOSITION_TIMEOUT_MS } from './config/stage-timeouts';
 import { createDecompositionStreamController } from './decomposition-stream';
 import { withStageLogV2 } from './grounded-support';
 import type { AnalyzeMealTraceContext } from './orchestrator';
@@ -32,6 +34,7 @@ export type GroundedDecompositionResult =
       streamedMealItemIds: StreamedMealItemIds;
       decomposeChunkCount: number;
       languageRetryCount: number;
+      providerRetryCount: number;
       promptCharsCall1: number;
     };
 
@@ -81,6 +84,7 @@ export async function runGroundedDecomposition(args: {
 
   let decomposeChunkCount = 0;
   let languageRetryCount = 0;
+  let providerRetryCount = 0;
 
   const decompSystemPrompt = buildDecompositionV2Prompt(promptCtx);
   const promptCharsCall1 = decompSystemPrompt.length + rawInput.length;
@@ -97,24 +101,38 @@ export async function runGroundedDecomposition(args: {
       templateSample: decompSystemPrompt,
       model: profile.decompositionModel,
     });
-    return gemini.generateStructuredOutputStream(
-      {
-        schema: mealDecompositionV2Schema,
-        systemPrompt: decompSystemPrompt,
-        userMessage,
-        model: profile.decompositionModel,
-        temperature: 0.3,
-        topP: 1,
-        topK: 1,
-      },
-      {
-        onChunk: (accumulated) => {
-          decomposeChunkCount++;
-          decompStream.handleChunk(accumulated);
-        },
-        ...(callTrace ? { trace: callTrace } : {}),
-      }
+    let maxAttempt = 0;
+    const result = await fetchWithTimeout(
+      (signal) =>
+        gemini.generateStructuredOutputStream(
+          {
+            schema: mealDecompositionV2Schema,
+            systemPrompt: decompSystemPrompt,
+            userMessage,
+            model: profile.decompositionModel,
+            temperature: 0.3,
+            topP: 1,
+            topK: 1,
+            abortSignal: signal,
+          },
+          {
+            onAttemptStart: (attempt) => {
+              maxAttempt = Math.max(maxAttempt, attempt);
+              if (attempt > 1) bufferedItemNameEvents.length = 0;
+              decompStream.resetAttempt();
+            },
+            onChunk: (accumulated) => {
+              decomposeChunkCount++;
+              decompStream.handleChunk(accumulated);
+            },
+            ...(callTrace ? { trace: callTrace } : {}),
+          }
+        ),
+      DECOMPOSITION_TIMEOUT_MS,
+      'grounded-decomposition'
     );
+    providerRetryCount += Math.max(0, maxAttempt - 1);
+    return result;
   };
 
   let decomposition: MealDecompositionV2 = await withStageLogV2(
@@ -199,6 +217,7 @@ export async function runGroundedDecomposition(args: {
     streamedMealItemIds: decompStream.getStreamedMealItemIds(),
     decomposeChunkCount,
     languageRetryCount,
+    providerRetryCount,
     promptCharsCall1,
   };
 }

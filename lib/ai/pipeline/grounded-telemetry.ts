@@ -63,10 +63,9 @@ export function logV2Telemetry(input: V2TelemetryInput): void {
  * Persist a `pipeline_runs` row for an observed v2 run so admin / audit /
  * shadow-runner queries surface v2 alongside v1.
  *
- * Schema reuse: the v1 `buildPipelineRunRow` fields cover most of what we
- * want to report. v2-specific signals (verdict counts, overturnedTopOne,
- * prompt sizes) ride along in `anomalyTypes` as marker strings prefixed
- * `v2_*` until a dedicated column exists. Best-effort write.
+ * Schema reuse: `pipeline_version` is the authoritative v1/v2 discriminator.
+ * The legacy `v2_run` anomaly marker remains for existing dashboards, while
+ * v2-specific verdict signals continue as `v2_*` markers. Best-effort write.
  */
 export async function persistV2PipelineRun(args: {
   traceContext: AnalyzeMealTraceContext | undefined;
@@ -78,6 +77,7 @@ export async function persistV2PipelineRun(args: {
   verdicts: ReturnType<typeof bridgeV2ToV1>['verdicts'];
   totalMs: number;
   languageRetryCount: number;
+  providerRetryCount: number;
 }): Promise<void> {
   const trace = args.traceContext;
   if (!trace) return;
@@ -114,6 +114,7 @@ export async function persistV2PipelineRun(args: {
     const row = buildPipelineRunRow({
       userId: trace.userId,
       requestId: trace.requestId,
+      pipelineVersion: 'v2',
       modelCall1: args.profile.decompositionModel,
       modelCall2: args.profile.nutritionModel,
       timings: { total: args.totalMs },
@@ -136,9 +137,11 @@ export async function persistV2PipelineRun(args: {
         dbStateUnknownFires: 0,
         retryStep2Count: 0,
       },
+      // v2 has no L4 cache/escalation — false means "not applicable",
+      // disambiguated by pipeline_version.
       escalated: false,
       cacheHitL4: false,
-      retryCount: args.languageRetryCount,
+      retryCount: args.providerRetryCount,
       languageGuardMisfire: args.languageRetryCount > 0,
       languageRetryCount: args.languageRetryCount,
       aliasFallbackFired: false,
