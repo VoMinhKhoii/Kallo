@@ -60,6 +60,13 @@ export default async function AppLayout({
   const displayName = publicProfile?.displayName ?? metadataName;
   const avatarUrl = publicProfile?.avatarUrl ?? null;
 
+  const avatarSource =
+    user.user_metadata?.avatar_url ?? user.user_metadata?.picture;
+  const avatarUrl =
+    typeof avatarSource === 'string' && avatarSource.length > 0
+      ? avatarSource
+      : null;
+
   // Read sidebar UI prefs from cookies so the first paint matches the user's
   // saved state (no flash, no hydration mismatch). Falls back to sensible
   // defaults: open + click mode.

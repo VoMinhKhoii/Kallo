@@ -1,7 +1,8 @@
 import { type NextRequest, NextResponse } from 'next/server';
 import { getFriendshipStatus } from '@/lib/actions/groups/friendship';
 import { getProfileBySlug } from '@/lib/actions/groups/profile';
-import { Errors, serializeError } from '@/lib/errors';
+import { handleRouteError } from '@/lib/api/respond';
+import { Errors } from '@/lib/errors';
 import { createClient } from '@/lib/supabase/server';
 
 export const runtime = 'nodejs';
@@ -61,6 +62,6 @@ export async function GET(
 
     return NextResponse.json({ inviter, status, signedOut: false });
   } catch (error) {
-    return serializeError(error);
+    return handleRouteError(error);
   }
 }

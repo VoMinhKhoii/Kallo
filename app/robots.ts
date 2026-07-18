@@ -13,7 +13,7 @@ import { SITE_URL } from '@/lib/site';
 const AUTH_PATHS = [
   '/dashboard',
   '/settings',
-  '/groups',
+  '/circle',
   '/nutrition',
   '/logging',
   '/onboarding',

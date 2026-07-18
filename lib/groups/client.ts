@@ -15,6 +15,7 @@ import type {
 import type { MealShareInvite } from '@/lib/actions/meal-sharing/types';
 import type { ConfirmMealResponse } from '@/lib/actions/meals/types';
 import { parseApiError } from '@/lib/errors';
+import type { ShareReply } from '@/lib/groups/shares/replies';
 
 export type {
   CircleFeedEntry,
@@ -22,6 +23,7 @@ export type {
   FriendsThreadFeedPage,
   MealShareInvite,
   PublicProfile,
+  ShareReply,
 };
 
 async function request<T>(input: string, init?: RequestInit): Promise<T> {
@@ -49,8 +51,8 @@ export function fetchCircleFeed(
   ).then((r) => r.feed);
 }
 
-/** One page of the combined Friends thread's shared-meal history (every
- * accepted friend, merged, excluding the actor), newest-first. Omit `before`
+/** One page of the combined Friends thread's shared-meal history (the actor
+ * plus every accepted friend), newest-first. Omit `before`
  * for the first page ("today's or the latest"); pass a prior page's
  * `nextCursor` to load older shares. */
 export function fetchFriendsThreadFeed(
@@ -187,4 +189,32 @@ export function dismissMealShareInvite(inviteId: string) {
   return postJson<{ success: true }>('/api/v1/groups/invites/dismiss', {
     inviteId,
   });
+}
+
+/** Toggle the viewer's heart on an authorized meal share. */
+export function toggleShareReaction(shareId: string) {
+  return postJson<{ reacted: boolean; count: number }>(
+    '/api/v1/groups/shares/reaction',
+    { shareId }
+  );
+}
+
+/** Post a text reply to a visible meal share. Returns the enriched reply. */
+export function createShareReply(input: {
+  shareId: string;
+  replyId?: string;
+  body: string;
+}): Promise<ShareReply> {
+  return postJson<ShareReply>('/api/v1/groups/shares/reply', input);
+}
+
+/** Copy a visible meal into today's diary at a full or half factor. */
+export function logSharedMeal(input: {
+  shareId: string;
+  factor: 1 | 0.5;
+  loggedDate: string;
+  timezoneOffset: number;
+  newMealId?: string;
+}): Promise<ConfirmMealResponse> {
+  return postJson<ConfirmMealResponse>('/api/v1/groups/shares/log', input);
 }

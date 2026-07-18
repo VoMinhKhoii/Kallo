@@ -4,7 +4,7 @@ import {
   sendChatGroupMessage,
 } from '@/lib/actions/chat-groups';
 import { readJsonBody, requireUserId } from '@/lib/api/auth';
-import { serializeError } from '@/lib/errors';
+import { handleRouteError } from '@/lib/api/respond';
 
 export const runtime = 'nodejs';
 
@@ -18,7 +18,7 @@ export async function GET(
     const messages = await listChatGroupMessages(actorId, { groupId });
     return NextResponse.json({ messages });
   } catch (error) {
-    return serializeError(error);
+    return handleRouteError(error);
   }
 }
 
@@ -36,6 +36,6 @@ export async function POST(
     });
     return NextResponse.json({ message });
   } catch (error) {
-    return serializeError(error);
+    return handleRouteError(error);
   }
 }

@@ -84,7 +84,7 @@ export type WeightLogInput = z.infer<typeof weightLogSchema>;
 // the JS canonical-pair ordering (lib/groups/friendship.ts orderedPair) sorts
 // lexicographically, so an uppercase-hex id would order differently than the
 // stored lowercase row. Normalising here keeps both authorities in agreement.
-const uuidSchema = z.string().uuid('Phải là UUID hợp lệ.').toLowerCase();
+export const uuidSchema = z.string().uuid('Phải là UUID hợp lệ.').toLowerCase();
 
 /**
  * A handle as accepted by the API: lowercased, 3-20 chars, [a-z0-9_]. The
@@ -159,12 +159,12 @@ export const dismissMealShareInviteSchema = z.object({
   inviteId: uuidSchema,
 });
 
-/** Seek-paginated cursor shared by the friend/group thread history feeds —
- * strictly-older-than a prior page's oldest `sharedAt`, omitted for page 1. */
-const beforeCursorSchema = z.string().datetime().optional();
+/** Opaque tuple cursor shared by the friend/group history feeds. A plain ISO
+ * timestamp remains valid for legacy Flutter clients. */
+const beforeCursorSchema = z.string().trim().min(1).max(500).optional();
 
-/** Fetch the combined Friends thread's shared-meal history (every accepted
- * friend, merged, excluding the actor), newest-first, paginated. */
+/** Fetch the combined Friends thread's shared-meal history (the actor plus
+ * every accepted friend), newest-first, paginated. */
 export const friendsThreadFeedSchema = z.object({
   before: beforeCursorSchema,
 });
@@ -172,12 +172,37 @@ export const friendsThreadFeedSchema = z.object({
 /** Create a named group chat from a multi-select of the actor's friends. */
 export const createChatGroupSchema = z.object({
   name: z.string().trim().min(1, 'Tên nhóm không được để trống.').max(60),
-  // Capped so the per-member friendship fan-out (one query each) can't be
-  // driven to exhaust the connection pool with a large UUID list.
+  // The 49 invitee cap plus the owner enforces the 50-member group limit.
+  memberUserIds: z
+    .array(uuidSchema)
+    .min(1, 'Chọn ít nhất một thành viên.')
+    .max(49, 'Nhóm tối đa 50 thành viên.'),
+});
+
+/** Fetch one membership-gated chat group by path id. */
+export const getChatGroupSchema = z.object({
+  groupId: uuidSchema,
+});
+
+/** Add members to an existing named group (same cap rationale as create). */
+export const addChatGroupMembersSchema = z.object({
+  groupId: uuidSchema,
   memberUserIds: z
     .array(uuidSchema)
     .min(1, 'Chọn ít nhất một thành viên.')
     .max(50, 'Nhóm tối đa 50 thành viên.'),
+});
+
+/** Owner removes one member from a named group. */
+export const removeChatGroupMemberSchema = z.object({
+  groupId: uuidSchema,
+  memberUserId: uuidSchema,
+});
+
+/** Owner renames a named group. */
+export const renameChatGroupSchema = z.object({
+  groupId: uuidSchema,
+  name: z.string().trim().min(1, 'Tên nhóm không được để trống.').max(60),
 });
 
 export const sendChatGroupMessageSchema = z.object({
@@ -189,6 +214,11 @@ export const sendChatGroupMessageSchema = z.object({
 export const groupMealFeedSchema = z.object({
   groupId: uuidSchema,
   before: beforeCursorSchema,
+});
+
+/** Remove the actor from one membership-gated chat group. */
+export const leaveChatGroupSchema = z.object({
+  groupId: uuidSchema,
 });
 
 export type HandleInput = z.infer<typeof handleSchema>;

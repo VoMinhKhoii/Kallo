@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { KalloWordmark } from '@/components/brand/kallo-wordmark';
+import { ProfileAvatar } from '@/components/shared/profile-avatar';
 import {
   Sheet,
   SheetContent,
@@ -19,10 +20,9 @@ import { createClient } from '@/lib/supabase/client';
 import { cn } from '@/lib/utils';
 import { MobileMenuButton } from './mobile/mobile-menu-button';
 import { MobileNavList } from './mobile/mobile-nav-list';
-import { deriveInitial, deriveLabel } from './mobile/mobile-user-label';
+import { deriveLabel } from './mobile/mobile-user-label';
 import { isActiveRoute, visibleNavItems } from './nav-items';
 import { OnboardingNudge } from './onboarding-nudge';
-import { UserAvatarDisc } from './user-avatar-disc';
 import type { UserMenuUser } from './user-menu';
 
 interface MobileNavProps {
@@ -61,7 +61,6 @@ export function MobileNav({
 
   const items = visibleNavItems(isAdmin);
   const inviteCount = useMealShareInviteCount();
-  const initial = deriveInitial(user);
   const label = deriveLabel(user);
   const settingsActive = isActiveRoute(pathname, '/settings');
 
@@ -140,7 +139,7 @@ export function MobileNav({
             ) : null}
 
             <div className="flex items-center gap-3 rounded-xl bg-white px-3 py-2.5">
-              <UserAvatarDisc initial={initial} avatarUrl={user.avatarUrl} />
+              <ProfileAvatar avatarUrl={user.avatarUrl} label={label} />
               <div className="flex min-w-0 flex-1 flex-col">
                 <span className="truncate font-medium font-sans-display text-[13px] text-nham-text">
                   {label || tMenu('account')}
@@ -160,8 +159,8 @@ export function MobileNav({
               className={cn(
                 'mt-2 flex items-center gap-3 rounded-xl px-3 py-2.5 transition-colors',
                 settingsActive
-                  ? 'bg-nham-btn text-white'
-                  : 'text-nham-text hover:bg-nham-hover/60'
+                  ? 'bg-nham-hover text-[#141413]'
+                  : 'text-[#6E6D66] hover:bg-nham-hover hover:text-[#141413]'
               )}
             >
               <Settings className="h-4 w-4" aria-hidden="true" />

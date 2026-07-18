@@ -6,11 +6,39 @@
 // a chat group's membership). Lives in neither action module so both can
 // import it without creating a circular dependency between them.
 
-import { and, desc, eq, gte, inArray, lt, sql } from 'drizzle-orm';
+import {
+  and,
+  desc,
+  eq,
+  gte,
+  inArray,
+  isNotNull,
+  lt,
+  or,
+  sql,
+} from 'drizzle-orm';
 import type { AppDb, AppTransaction } from '@/lib/db';
 import { db as defaultDb } from '@/lib/db';
-import { mealShares, meals, publicProfiles } from '@/lib/db/schema';
-import { avatarUrlFor } from '@/lib/groups/avatar-url';
+import {
+  friendships,
+  mealShares,
+  meals,
+  publicProfiles,
+} from '@/lib/db/schema';
+import {
+  encodeSharedMealCursor,
+  type SharedMealCursor,
+} from '@/lib/groups/feed/cursor';
+import {
+  type PublicIdentity,
+  publicProfileColumns,
+  toPublicIdentity,
+} from '@/lib/groups/public-identity';
+import type { ShareReactions } from '@/lib/groups/shares/reactions';
+import type {
+  ShareRepliesSummary,
+  ShareReply,
+} from '@/lib/groups/shares/replies';
 
 type Db = AppDb | AppTransaction;
 
@@ -23,11 +51,14 @@ export interface SharedMealRow {
   proteinG: number | null;
   carbohydrateG: number | null;
   fatG: number | null;
+  portionFactor: number;
   sharedAt: Date;
+  /** Full PostgreSQL timestamptz precision used only to construct cursors. */
+  sharedAtText: string;
   handle: string;
   displayName: string | null;
   avatarSeed: string | null;
-  avatarPath: string | null;
+  avatarUrl: string | null;
 }
 
 /** Local calendar date (YYYY-MM-DD) for a viewer's timezone offset. */
@@ -52,8 +83,8 @@ export async function mostRecentSharedMealsToday(
 
   return (
     db
-      .selectDistinctOn([meals.userId], {
-        friendUserId: meals.userId,
+      .selectDistinctOn([mealShares.actorId], {
+        friendUserId: mealShares.actorId,
         mealId: meals.id,
         shareId: mealShares.id,
         rawInput: meals.rawInput,
@@ -61,31 +92,40 @@ export async function mostRecentSharedMealsToday(
         proteinG: meals.proteinG,
         carbohydrateG: meals.carbohydrateG,
         fatG: meals.fatG,
+        portionFactor: meals.portionFactor,
         sharedAt: mealShares.sharedAt,
-        handle: publicProfiles.handle,
-        displayName: publicProfiles.displayName,
-        avatarSeed: publicProfiles.avatarSeed,
-        avatarPath: publicProfiles.avatarPath,
+        sharedAtText: sql<string>`${mealShares.sharedAt}::text`,
+        ...publicProfileColumns,
       })
       .from(mealShares)
-      .innerJoin(meals, eq(meals.id, mealShares.mealId))
-      .innerJoin(publicProfiles, eq(publicProfiles.userId, meals.userId))
+      .innerJoin(
+        meals,
+        and(
+          eq(meals.id, mealShares.mealId),
+          eq(meals.userId, mealShares.actorId)
+        )
+      )
+      .innerJoin(publicProfiles, eq(publicProfiles.userId, mealShares.actorId))
       .where(
         and(
-          inArray(meals.userId, userIds),
+          inArray(mealShares.actorId, userIds),
           sql`${mealShares.visibility} <> 'private'`,
           gte(mealShares.sharedAt, dayStart),
           lt(mealShares.sharedAt, dayEnd)
         )
       )
       // DISTINCT ON requires the leading ORDER BY to match the distinct key.
-      .orderBy(meals.userId, desc(mealShares.sharedAt))
+      .orderBy(
+        mealShares.actorId,
+        desc(mealShares.sharedAt),
+        desc(mealShares.id)
+      )
   );
 }
 
 /** One page of a thread's shared-meal history — every share, not collapsed
- * per user. `nextCursor` is the oldest row's `sharedAt` (ISO), pass it back
- * as `before` to fetch the next page; `null` means history is exhausted. */
+ * per user. Pass the opaque `nextCursor` back as `before`; `null` means the
+ * history is exhausted. */
 export interface SharedMealPage {
   rows: SharedMealRow[];
   nextCursor: string | null;
@@ -94,25 +134,21 @@ export interface SharedMealPage {
 const THREAD_PAGE_SIZE = 20;
 
 /**
- * Seek-paginated shared-meal history for a friend/group thread: every
- * non-private share among `userIds`, newest-first, strictly before `before`
- * (or unbounded when `before` is null — "today's or the latest" default
- * page). Unlike `mostRecentSharedMealsToday` this deliberately does NOT
- * collapse to one row per user — a thread shows every meal someone shared.
+ * Seek-paginated Friends history: every non-private share from the actor or a
+ * live accepted friend, newest-first. Friendship authorization is joined into
+ * this query so the owner-role connection never fetches an unscoped share.
  */
 export async function sharedMealsBefore(
-  userIds: string[],
-  before: Date | null,
+  actorId: string,
+  before: SharedMealCursor | null,
   db: Db = defaultDb,
   limit = THREAD_PAGE_SIZE
 ): Promise<SharedMealPage> {
-  if (userIds.length === 0) return { rows: [], nextCursor: null };
-
   // Fetch one extra row so hasMore/nextCursor is known from a single
   // round trip instead of a separate count query.
   const rows = await db
     .select({
-      friendUserId: meals.userId,
+      friendUserId: mealShares.actorId,
       mealId: meals.id,
       shareId: mealShares.id,
       rawInput: meals.rawInput,
@@ -120,23 +156,49 @@ export async function sharedMealsBefore(
       proteinG: meals.proteinG,
       carbohydrateG: meals.carbohydrateG,
       fatG: meals.fatG,
+      portionFactor: meals.portionFactor,
       sharedAt: mealShares.sharedAt,
-      handle: publicProfiles.handle,
-      displayName: publicProfiles.displayName,
-      avatarSeed: publicProfiles.avatarSeed,
-      avatarPath: publicProfiles.avatarPath,
+      sharedAtText: sql<string>`${mealShares.sharedAt}::text`,
+      ...publicProfileColumns,
     })
     .from(mealShares)
-    .innerJoin(meals, eq(meals.id, mealShares.mealId))
-    .innerJoin(publicProfiles, eq(publicProfiles.userId, meals.userId))
-    .where(
+    .innerJoin(
+      meals,
+      and(eq(meals.id, mealShares.mealId), eq(meals.userId, mealShares.actorId))
+    )
+    .innerJoin(publicProfiles, eq(publicProfiles.userId, mealShares.actorId))
+    .leftJoin(
+      friendships,
       and(
-        inArray(meals.userId, userIds),
-        sql`${mealShares.visibility} <> 'private'`,
-        before ? lt(mealShares.sharedAt, before) : undefined
+        eq(friendships.status, 'accepted'),
+        or(
+          and(
+            eq(friendships.userLow, actorId),
+            eq(friendships.userHigh, mealShares.actorId)
+          ),
+          and(
+            eq(friendships.userHigh, actorId),
+            eq(friendships.userLow, mealShares.actorId)
+          )
+        )
       )
     )
-    .orderBy(desc(mealShares.sharedAt))
+    .where(
+      and(
+        or(eq(mealShares.actorId, actorId), isNotNull(friendships.id)),
+        sql`${mealShares.visibility} <> 'private'`,
+        before
+          ? or(
+              sql`${mealShares.sharedAt} < ${before.ts}::timestamptz`,
+              and(
+                sql`${mealShares.sharedAt} = ${before.ts}::timestamptz`,
+                lt(mealShares.id, before.id)
+              )
+            )
+          : undefined
+      )
+    )
+    .orderBy(desc(mealShares.sharedAt), desc(mealShares.id))
     .limit(limit + 1);
 
   const hasMore = rows.length > limit;
@@ -145,18 +207,15 @@ export async function sharedMealsBefore(
 
   return {
     rows: page,
-    nextCursor: hasMore && last ? last.sharedAt.toISOString() : null,
+    nextCursor:
+      hasMore && last
+        ? encodeSharedMealCursor({ ts: last.sharedAtText, id: last.shareId })
+        : null,
   };
 }
 
 export interface SharedMealEntry {
-  friend: {
-    userId: string;
-    handle: string;
-    displayName: string | null;
-    avatarSeed: string | null;
-    avatarUrl: string | null;
-  };
+  friend: PublicIdentity;
   isSelf: boolean;
   meal: {
     mealId: string;
@@ -166,24 +225,30 @@ export interface SharedMealEntry {
     proteinG: number | null;
     carbohydrateG: number | null;
     fatG: number | null;
+    portionFactor: number;
     sharedAt: string;
   };
+  reactions: ShareReactions;
+  replies: ShareReply[];
+  repliesTotal: number;
 }
 
 /** Shared row → entry projection, reused by listCircleFeed, listFriendsThreadFeed,
  * and listGroupMealFeed so the shape only lives in one place. */
 export function toSharedMealEntry(
   row: SharedMealRow,
-  actorId: string
+  actorId: string,
+  reactions: ShareReactions = { count: 0, mine: false },
+  replySummary: ShareRepliesSummary = { replies: [], total: 0 }
 ): SharedMealEntry {
   return {
-    friend: {
+    friend: toPublicIdentity({
       userId: row.friendUserId,
       handle: row.handle,
       displayName: row.displayName,
       avatarSeed: row.avatarSeed,
-      avatarUrl: avatarUrlFor(row.avatarPath),
-    },
+      avatarUrl: row.avatarUrl,
+    }),
     isSelf: row.friendUserId === actorId,
     meal: {
       mealId: row.mealId,
@@ -193,7 +258,11 @@ export function toSharedMealEntry(
       proteinG: row.proteinG,
       carbohydrateG: row.carbohydrateG,
       fatG: row.fatG,
+      portionFactor: row.portionFactor,
       sharedAt: row.sharedAt.toISOString(),
     },
+    reactions,
+    replies: replySummary.replies,
+    repliesTotal: replySummary.total,
   };
 }

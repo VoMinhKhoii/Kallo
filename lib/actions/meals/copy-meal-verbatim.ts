@@ -1,46 +1,47 @@
 import { randomUUID } from 'node:crypto';
+import type { PersistedMeal } from '@/lib/actions/meals/types';
 import {
   buildMealItemGroupsFromRows,
   buildPersistedMeal,
   extractNutritionValues,
+  inferMealSlot,
   nutritionValuesToRow,
+  scaleNutritionRow,
 } from '@/lib/actions/persisted-meal';
-import type { db } from '@/lib/db';
+import type { AppTransaction } from '@/lib/db';
 import { mealItems, mealShares, meals } from '@/lib/db/schema';
-import type { PersistedMeal } from './types';
 
-type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 type MealRow = typeof meals.$inferSelect;
-type MealItemRow = typeof mealItems.$inferSelect;
+type MealItemDbRow = typeof mealItems.$inferSelect;
 
 /**
- * Materialize an existing meal as a fresh log owned by `userId`: copy the meal
- * row + its item rows verbatim (grams / composition ids / per-row nutrition),
- * share it to the actor's circle by default, and rebuild it in loadMealsByDate's
- * shape so the client reconciles its optimistic card in place (same id, no day
- * refetch). No AI re-estimation and no re-scaling — a fractional split share
- * stays fractional and its portion_factor carries through.
- *
- * The single construction point for "re-log this meal", shared by re-log
- * (duplicateMealAction) and accept-a-share (acceptMealShareInviteAction). The
- * caller owns loading `source`/`sourceItems` (each authorizes that read its own
- * way — ownership for re-log, a claimed invite for accept) and any follow-up
- * (accept points its invite at the returned mealId).
+ * Copy one stored meal (and its items) into a new meal for `userId`, scaling
+ * every nutrition/gram value by `factor` when it isn't 1. This is the single
+ * persistence seam shared by the three copy paths — accept-a-share, duplicate,
+ * and recipient-initiated "log this too" / "chia đôi" — so they can never drift.
+ * Kept out of persisted-meal.ts (which is synchronous client-shape builders) on
+ * purpose: this is an async transaction writer. `factor` is `1 | 0.5` only —
+ * the sole supported portions.
  */
 export async function copyMealVerbatim(
-  tx: Tx,
-  args: {
-    source: MealRow;
-    sourceItems: MealItemRow[];
+  tx: AppTransaction,
+  source: MealRow,
+  sourceItems: MealItemDbRow[],
+  options: {
     userId: string;
-    /** Client-generated id so the optimistic card shares the persisted key. */
     newMealId?: string;
     loggedAt: Date;
-    mealSlot: string;
+    factor: 1 | 0.5;
   }
 ): Promise<{ mealId: string; meal: PersistedMeal }> {
-  const { source, sourceItems, userId, newMealId, loggedAt, mealSlot } = args;
-  const mealNutrition = extractNutritionValues(source);
+  const { userId, newMealId, loggedAt, factor } = options;
+  const mealSlot = inferMealSlot(loggedAt);
+  const mealNutrition =
+    factor === 1
+      ? extractNutritionValues(source)
+      : scaleNutritionRow(source, factor);
+  const alcoholG = source.alcoholG == null ? null : source.alcoholG * factor;
+  const portionFactor = source.portionFactor * factor;
 
   const [meal] = await tx
     .insert(meals)
@@ -52,14 +53,12 @@ export async function copyMealVerbatim(
       confidenceOverall: source.confidenceOverall,
       loggedAt,
       entryMode: 'precise',
-      alcoholG: source.alcoholG,
-      portionFactor: source.portionFactor,
+      alcoholG,
+      portionFactor,
       ...nutritionValuesToRow(mealNutrition),
     })
     .returning({ id: meals.id });
 
-  // Share to circle by default, exactly like any freshly logged meal (the AFTER
-  // INSERT trigger fans out the circle event). The new id never collides.
   const [shareRow] = await tx
     .insert(mealShares)
     .values({ mealId: meal.id, actorId: userId, visibility: 'circle' })
@@ -69,12 +68,13 @@ export async function copyMealVerbatim(
     ? { shareId: shareRow.id, visibility: shareRow.visibility }
     : null;
 
-  // Copy each item with a fresh id, preserving order / composition / grams and
-  // the stored per-row nutrition exactly (extract → write the same values back).
   const copies = sourceItems.map((row) => ({
     id: randomUUID(),
     row,
-    nutrition: extractNutritionValues(row),
+    nutrition:
+      factor === 1
+        ? extractNutritionValues(row)
+        : scaleNutritionRow(row, factor),
   }));
   if (copies.length > 0) {
     await tx.insert(mealItems).values(
@@ -85,7 +85,8 @@ export async function copyMealVerbatim(
         mealItemName: row.mealItemName,
         mealItemOrder: row.mealItemOrder,
         foodCompositionId: row.foodCompositionId,
-        estimatedGrams: row.estimatedGrams,
+        estimatedGrams:
+          row.estimatedGrams == null ? null : row.estimatedGrams * factor,
         userFacingUnit: row.userFacingUnit,
         cookingMethod: row.cookingMethod,
         matchConfidence: row.matchConfidence,
@@ -95,7 +96,13 @@ export async function copyMealVerbatim(
   }
 
   const mealItemGroups = buildMealItemGroupsFromRows(
-    copies.map(({ id, row, nutrition }) => ({ ...row, id, nutrition }))
+    copies.map(({ id, row, nutrition }) => ({
+      ...row,
+      id,
+      estimatedGrams:
+        row.estimatedGrams == null ? null : row.estimatedGrams * factor,
+      nutrition,
+    }))
   );
 
   return {
@@ -109,10 +116,10 @@ export async function copyMealVerbatim(
       nutrition: mealNutrition,
       mealItemGroups,
       entryMode: 'precise',
-      alcoholG: source.alcoholG ?? null,
+      alcoholG,
       cheatSliders: null,
       share,
-      portionFactor: source.portionFactor,
+      portionFactor,
     }),
   };
 }

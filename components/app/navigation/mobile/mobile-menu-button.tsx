@@ -1,7 +1,8 @@
 import { Menu } from 'lucide-react';
+import type { ComponentProps } from 'react';
 import { OnboardingDot } from '../onboarding-nudge';
 
-interface MobileMenuButtonProps {
+interface MobileMenuButtonProps extends ComponentProps<'button'> {
   open: boolean;
   label: string;
   onboardingIncomplete: boolean;
@@ -13,10 +14,15 @@ export function MobileMenuButton({
   label,
   onboardingIncomplete,
   inviteCount,
+  ...triggerProps
 }: MobileMenuButtonProps) {
+  // Rendered via Radix `SheetTrigger asChild`, which injects its onClick/ref
+  // through these props — they MUST reach the real <button>, or the hamburger
+  // silently stops opening the drawer.
   return (
     <button
       type="button"
+      {...triggerProps}
       aria-label={label}
       aria-haspopup="dialog"
       aria-expanded={open}

@@ -8,6 +8,7 @@ vi.mock('@/lib/db/schema', () => ({
   mealShares: {
     id: 'ms.id',
     mealId: 'ms.mealId',
+    actorId: 'ms.actorId',
     visibility: 'ms.visibility',
     sharedAt: 'ms.sharedAt',
   },
@@ -25,10 +26,17 @@ vi.mock('@/lib/db/schema', () => ({
     handle: 'pp.handle',
     displayName: 'pp.displayName',
     avatarSeed: 'pp.avatarSeed',
-    avatarPath: 'pp.avatarPath',
+    avatarUrl: 'pp.avatarUrl',
+  },
+  friendships: {
+    id: 'f.id',
+    userLow: 'f.userLow',
+    userHigh: 'f.userHigh',
+    status: 'f.status',
   },
 }));
 
+import { decodeSharedMealCursor } from '@/lib/groups/feed/cursor';
 import { sharedMealsBefore, toSharedMealEntry } from '@/lib/groups/meal-feed';
 
 const USER_A = 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11';
@@ -37,35 +45,36 @@ function sharedMeal(index: number, sharedAt: Date) {
   return {
     friendUserId: USER_A,
     mealId: `meal-${index}`,
-    shareId: `share-${index}`,
+    shareId: `00000000-0000-4000-8000-${index.toString(16).padStart(12, '0')}`,
     rawInput: `meal ${index}`,
     caloriesKcal: 500,
     proteinG: 20,
     carbohydrateG: 50,
     fatG: 15,
+    portionFactor: 1,
     sharedAt,
+    sharedAtText: sharedAt.toISOString().replace('Z', '123+00'),
     handle: 'me',
     displayName: null,
     avatarSeed: 'me',
-    avatarPath: null,
+    avatarUrl: null,
   };
 }
 
 // db.select().from().innerJoin().innerJoin().where().orderBy().limit()
 function sharedMealsQuery(rows: unknown[]) {
-  mockDbSelect.mockReturnValueOnce({
-    from: vi.fn().mockReturnValue({
-      innerJoin: vi.fn().mockReturnValue({
-        innerJoin: vi.fn().mockReturnValue({
-          where: vi.fn().mockReturnValue({
-            orderBy: vi.fn().mockReturnValue({
-              limit: vi.fn().mockResolvedValue(rows),
-            }),
-          }),
-        }),
-      }),
-    }),
-  });
+  const query = {
+    innerJoin: vi.fn(),
+    leftJoin: vi.fn(),
+    where: vi.fn(),
+    orderBy: vi.fn(),
+    limit: vi.fn().mockResolvedValue(rows),
+  };
+  query.innerJoin.mockReturnValue(query);
+  query.leftJoin.mockReturnValue(query);
+  query.where.mockReturnValue(query);
+  query.orderBy.mockReturnValue(query);
+  mockDbSelect.mockReturnValueOnce({ from: vi.fn().mockReturnValue(query) });
 }
 
 describe('sharedMealsBefore', () => {
@@ -73,18 +82,19 @@ describe('sharedMealsBefore', () => {
     vi.clearAllMocks();
   });
 
-  it('returns an empty page for an empty userIds list without querying', async () => {
-    const page = await sharedMealsBefore([], null);
+  it('returns an empty page when the authorized query has no rows', async () => {
+    sharedMealsQuery([]);
+    const page = await sharedMealsBefore(USER_A, null);
 
     expect(page).toEqual({ rows: [], nextCursor: null });
-    expect(mockDbSelect).not.toHaveBeenCalled();
+    expect(mockDbSelect).toHaveBeenCalledTimes(1);
   });
 
   it('has a null nextCursor when fewer rows than the limit are returned', async () => {
     const rows = [sharedMeal(1, new Date('2026-01-03T00:00:00Z'))];
     sharedMealsQuery(rows);
 
-    const page = await sharedMealsBefore([USER_A], null, undefined, 20);
+    const page = await sharedMealsBefore(USER_A, null, undefined, 20);
 
     expect(page.rows).toHaveLength(1);
     expect(page.nextCursor).toBeNull();
@@ -99,12 +109,15 @@ describe('sharedMealsBefore', () => {
     ];
     sharedMealsQuery(rows);
 
-    const page = await sharedMealsBefore([USER_A], null, undefined, 2);
+    const page = await sharedMealsBefore(USER_A, null, undefined, 2);
 
     expect(page.rows).toHaveLength(2);
     expect(page.rows.map((r) => r.mealId)).toEqual(['meal-3', 'meal-2']);
     // The cursor is the oldest row IN THE PAGE, not the dropped extra row.
-    expect(page.nextCursor).toBe('2026-01-02T00:00:00.000Z');
+    expect(decodeSharedMealCursor(page.nextCursor ?? undefined)).toEqual({
+      ts: rows[1].sharedAtText,
+      id: rows[1].shareId,
+    });
   });
 
   it('does not collapse multiple shares from the same user (unlike mostRecentSharedMealsToday)', async () => {
@@ -114,7 +127,7 @@ describe('sharedMealsBefore', () => {
     ];
     sharedMealsQuery(rows);
 
-    const page = await sharedMealsBefore([USER_A], null, undefined, 20);
+    const page = await sharedMealsBefore(USER_A, null, undefined, 20);
 
     expect(page.rows).toHaveLength(2);
   });

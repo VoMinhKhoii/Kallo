@@ -1,4 +1,5 @@
 import type { SharedMealEntry } from '@/lib/groups/meal-feed';
+import type { PublicIdentity } from '@/lib/groups/public-identity';
 
 export interface ChatGroupIdentity {
   id: string;
@@ -17,12 +18,8 @@ export interface ChatGroupIdentity {
   lastMealSharedAt: string | null;
 }
 
-export interface ChatGroupMember {
-  userId: string;
+export interface ChatGroupMember extends PublicIdentity {
   role: string;
-  handle: string;
-  displayName: string | null;
-  avatarSeed: string | null;
 }
 
 export interface ChatGroupDetail {
@@ -30,6 +27,8 @@ export interface ChatGroupDetail {
   kind: 'direct' | 'group';
   name: string | null;
   members: ChatGroupMember[];
+  /** The requesting actor's own role — gates owner-only UI (rename, remove). */
+  myRole: 'owner' | 'member';
 }
 
 export interface ChatGroupMessage {
